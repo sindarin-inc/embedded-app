@@ -36,13 +36,7 @@
 #include "SPIFFS.h"
 #include "mbedtls/md.h"
 
-#define EINK154in
-//#define OLED96in
-//#define SHARPMEM
-
-//#define PlanoConvex20x40
-//#define PlanoConvex16x36
-#define Hastings20x40_3
+#include "config.h"
 
 #include "Contents/Readable.hpp"
 #include "Displays/AllDisplays.hpp"
@@ -97,9 +91,12 @@ OpticsHastings20mmX40_3mm* my_optics;
 Renderer* box_renderer;
 MenuSystem* main_menu;
 IRRemoteInput *ir_remote_input;
-// Currently incompatible with TTRemoteInput -cojo
-// BLERemoteInput *ble_remote_input;
+#ifdef USE_BLE_SERVER_REMOTE
+BLERemoteInput *ble_remote_input;
+#endif
+#ifdef USE_TURN_TOUCH_REMOTE
 TTRemoteInput *tt_remote_input;
+#endif
 
 #define IR_REMOTE_INPUT_PIN 12
 
@@ -203,43 +200,42 @@ void setup(void)
   ir_remote_input = new IRRemoteInput();
   ir_remote_input->start_remote(IR_REMOTE_INPUT_PIN);
 
-  /* Currently incompatible with TTRemoteInput -cojo
-  ble_remote_input = new BLERemoteInput();
-  ble_remote_input->start_remote();
+  #ifdef USE_BLE_SERVER_REMOTE
+    ble_remote_input = new BLERemoteInput();
+    ble_remote_input->start_remote();
 
+    // TEST: Setup receiver for new data via BLE
+    BLECharacteristic *newDataCharacteristic = BLEManager::getInstance()->service->createCharacteristic(
+        BLEUUID("6851fc86-9284-4ff9-9ea8-82e22bc2f1b1"),
+        BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE);
 
-  // TEST: Setup receiver for new data via BLE
-  BLECharacteristic *newDataCharacteristic = BLEManager::getInstance()->service->createCharacteristic(
-      BLEUUID("6851fc86-9284-4ff9-9ea8-82e22bc2f1b1"),
-      BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE);
-
-  class DataCharacteristicCallbacks : public BLECharacteristicCallbacks
-  {
-  public:
-    RawRenderer **renderer = nullptr;
-    int *update_flag;
-    DataCharacteristicCallbacks(RawRenderer **render, int *update_box) : renderer(render), update_flag(update_box) {}
-
-    void onWrite(BLECharacteristic *characteristic)
+    class DataCharacteristicCallbacks : public BLECharacteristicCallbacks
     {
-      std::string value = characteristic->getValue();
-      *renderer = new RawRenderer(my_optics, my_display, value);
-      *update_flag = 1;
-      if (value.length() > 0)
+    public:
+      RawRenderer **renderer = nullptr;
+      int *update_flag;
+      DataCharacteristicCallbacks(RawRenderer **render, int *update_box) : renderer(render), update_flag(update_box) {}
+
+      void onWrite(BLECharacteristic *characteristic)
       {
-        DEBUG_LN("*********");
-        DEBUG_F("New value: %s \n", value);
-        DEBUG_LN("*********");
+        std::string value = characteristic->getValue();
+        *renderer = new RawRenderer(my_optics, my_display, value);
+        *update_flag = 1;
+        if (value.length() > 0)
+        {
+          DEBUG_LN("*********");
+          DEBUG_F("New value: %s \n", value);
+          DEBUG_LN("*********");
+        }
       }
-    }
-  };
+    };
 
-  newDataCharacteristic->setCallbacks(new DataCharacteristicCallbacks(&raw_renderer, &update_box));
-  // END TEST code
+    newDataCharacteristic->setCallbacks(new DataCharacteristicCallbacks(&raw_renderer, &update_box));
+    // END TEST code
 
-  BLEManager::getInstance()->startServiceAndAdvertising();
-  
-  Currently incompatible with TTRemoteInput -cojo */
+    BLEManager::getInstance()->startServiceAndAdvertising();
+
+  #endif
 
   // Load the preferences
   //
@@ -390,14 +386,17 @@ void loop(void) {
 
   // Always have to do a check press and check release. In this case, we don't care about press.
   ir_remote_input->check_press();
-  // Incompatible with Turntouch -cojo
-  // ble_remote_input->check_press();
-  if (tt_remote_input == nullptr)
-  {
-    tt_remote_input = new TTRemoteInput();
-    tt_remote_input->start_remote();
-  }
-  tt_remote_input->check_press();
+  #ifdef USE_BLE_SERVER_REMOTE
+    ble_remote_input->check_press();
+  #endif
+  #ifdef USE_TURN_TOUCH_REMOTE
+    if (tt_remote_input == nullptr)
+    {
+      tt_remote_input = new TTRemoteInput();
+      tt_remote_input->start_remote();
+    }
+    tt_remote_input->check_press();
+  #endif
 
   // We could do this better by iterating, but fine for now with only 2 input devices.
   // Note that if an IR input comes in and then a BLE input comes at the same time,
@@ -410,19 +409,20 @@ void loop(void) {
     code_from_release = ir_remote_input->get_code();
   }
 
-  // Incompatible with turntouch -cojo
-  /*
-  if (ble_remote_input->check_release()) {
-    got_a_release = 1;
-    code_from_release = ble_remote_input->get_code();
-  }
-  */
+  #ifdef USE_BLE_SERVER_REMOTE
+    if (ble_remote_input->check_release()) {
+      got_a_release = 1;
+      code_from_release = ble_remote_input->get_code();
+    }
+  #endif
 
-  if (tt_remote_input->check_release())
-  {
-    got_a_release = 1;
-    code_from_release = tt_remote_input->get_code();
-  }
+  #ifdef USE_TURN_TOUCH_REMOTE
+    if (tt_remote_input->check_release())
+    {
+      got_a_release = 1;
+      code_from_release = tt_remote_input->get_code();
+    }
+  #endif
 
   auto select = []()
   {

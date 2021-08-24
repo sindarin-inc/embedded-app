@@ -1,4 +1,5 @@
 #include "BLEManager.hpp"
+#include "config.h"
 
 #define SERVICE_UUID "db65598c-04b1-469f-833f-517f285db256"
 
@@ -16,10 +17,13 @@ BLEManager *BLEManager::getInstance()
 BLEManager::BLEManager()
 {
     BLEDevice::init("Sindarin (July)");
-    client = BLEDevice::createClient();
-    // Incompatible with Turntouch -cojo
-    //server = BLEDevice::createServer();
-    //service = server->createService(BLEUUID(SERVICE_UUID));
+    #ifdef USE_TURN_TOUCH_REMOTE
+        client = BLEDevice::createClient();
+    #endif
+    #ifdef USE_BLE_SERVER_REMOTE
+        server = BLEDevice::createServer();
+        service = server->createService(BLEUUID(SERVICE_UUID));
+    #endif
 }
 
 void BLEManager::startServiceAndAdvertising()
