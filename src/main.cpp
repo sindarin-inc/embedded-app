@@ -224,7 +224,7 @@ void setup(void)
         if (value.length() > 0)
         {
           DEBUG_LN("*********");
-          DEBUG_F("New value: %s \n", value);
+          DEBUG_F("New value: %s \n", value.c_str());
           DEBUG_LN("*********");
         }
       }

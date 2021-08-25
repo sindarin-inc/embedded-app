@@ -22,7 +22,7 @@ void TTRemoteInput::start_remote()
     wasDeviceConnected = false;
 
     // Ensure BLEManager is initialized by this point
-    BLEManager *manager = BLEManager::getInstance();
+    BLEManager::getInstance();
     scanForDevice();
 }
 
