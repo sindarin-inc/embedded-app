@@ -90,7 +90,9 @@ OpticsHastings20mmX40_3mm* my_optics;
 
 Renderer* box_renderer;
 MenuSystem* main_menu;
+#ifdef USE_IR_REMOTE
 IRRemoteInput *ir_remote_input;
+#endif
 #ifdef USE_BLE_SERVER_REMOTE
 BLERemoteInput *ble_remote_input;
 #endif
@@ -196,9 +198,10 @@ void setup(void)
   box_renderer = new Renderer(my_optics, my_display);
 
   //my_display->put_up_hello_world();
-
-  ir_remote_input = new IRRemoteInput();
-  ir_remote_input->start_remote(IR_REMOTE_INPUT_PIN);
+  #ifdef USE_IR_REMOTE
+    ir_remote_input = new IRRemoteInput();
+    ir_remote_input->start_remote(IR_REMOTE_INPUT_PIN);
+  #endif
 
   #ifdef USE_BLE_SERVER_REMOTE
     ble_remote_input = new BLERemoteInput();
@@ -385,7 +388,9 @@ void loop(void) {
     readables[area_in_browsing].place_screed = book_renderer->render_continue_screed(local_x_offset, local_y_offset);
 
   // Always have to do a check press and check release. In this case, we don't care about press.
-  ir_remote_input->check_press();
+  #ifdef USE_IR_REMOTE
+    ir_remote_input->check_press();
+  #endif
   #ifdef USE_BLE_SERVER_REMOTE
     ble_remote_input->check_press();
   #endif
@@ -404,10 +409,12 @@ void loop(void) {
   int got_a_release = 0;
   int code_from_release = 0;
 
-  if (ir_remote_input->check_release()) {
-    got_a_release = 1;
-    code_from_release = ir_remote_input->get_code();
-  }
+  #ifdef USE_IR_REMOTE
+    if (ir_remote_input->check_release()) {
+      got_a_release = 1;
+      code_from_release = ir_remote_input->get_code();
+    }
+  #endif
 
   #ifdef USE_BLE_SERVER_REMOTE
     if (ble_remote_input->check_release()) {

@@ -13,3 +13,4 @@
 // other.
 #define USE_TURN_TOUCH_REMOTE
 // #define USE_BLE_SERVER_REMOTE
+#define USE_IR_REMOTE
