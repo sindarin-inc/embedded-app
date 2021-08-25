@@ -45,9 +45,6 @@
 #include "Renderers/RawRenderer.hpp"
 #include "Menus/MenuSystem.hpp"
 #include "Inputs/RemoteInput.hpp"
-#include "Inputs/IRRemoteInput.hpp"
-#include "Inputs/BLERemoteInput.hpp"
-#include "Inputs/TTRemoteInput.hpp"
 #include "Contents/Json.hpp"
 
 #include "sindarin-debug.h"
@@ -91,12 +88,20 @@ OpticsHastings20mmX40_3mm* my_optics;
 Renderer* box_renderer;
 MenuSystem* main_menu;
 #ifdef USE_IR_REMOTE
+#include "Inputs/IRRemoteInput.hpp"
 IRRemoteInput *ir_remote_input;
 #endif
 #ifdef USE_BLE_SERVER_REMOTE
+#include "Inputs/BLERemoteInput.hpp"
+#include "Communications/BLEWifi.hpp"
 BLERemoteInput *ble_remote_input;
+// TODO(john): For now, grouping BLEWifi with BLERemoteInput since they're both
+// BLE server services. These are separate things and it will be better to make
+// them independent.
+BLEWifi *ble_wifi;
 #endif
 #ifdef USE_TURN_TOUCH_REMOTE
+#include "Inputs/TTRemoteInput.hpp"
 TTRemoteInput *tt_remote_input;
 #endif
 
@@ -236,6 +241,9 @@ void setup(void)
     newDataCharacteristic->setCallbacks(new DataCharacteristicCallbacks(&raw_renderer, &update_box));
     // END TEST code
 
+    ble_wifi = new BLEWifi();
+    ble_wifi->startService();
+
     BLEManager::getInstance()->startServiceAndAdvertising();
 
   #endif
@@ -327,6 +335,10 @@ void loop(void) {
   //my_display->draw_box(34, 12, 94, 52);
   //delay(10000);
   //FileRenderer* current_render = 0;
+
+  #ifdef USE_BLE_SERVER_REMOTE
+    ble_wifi->loop();
+  #endif
 
   if (update_box)
   {
