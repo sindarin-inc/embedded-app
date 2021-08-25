@@ -31,7 +31,6 @@
 
 #include <Arduino.h>
 #include <Preferences.h>
-#include <ArduinoJson.h>
 
 #include "SPIFFS.h"
 #include "mbedtls/md.h"
@@ -49,6 +48,7 @@
 #include "Inputs/IRRemoteInput.hpp"
 #include "Inputs/BLERemoteInput.hpp"
 #include "Inputs/TTRemoteInput.hpp"
+#include "Contents/Json.hpp"
 
 #include "sindarin-debug.h"
 
@@ -129,7 +129,7 @@ void (*resetFunc)(void) = 0; //declare reset function @ address 0
 int cur_menu_page = 0;
 #define NUM_LINES_PER_MENU_PAGE 5
 
-DynamicJsonDocument *manifest = nullptr;
+SpiRamJsonDocument *manifest = nullptr;
 std::vector<Readable> readables;
 
 void setup(void)
@@ -151,7 +151,7 @@ void setup(void)
   }
 
   DEBUG_F("Free heap: %d\n", ESP.getFreeHeap());
-  manifest = new DynamicJsonDocument(2048);
+  manifest = new SpiRamJsonDocument(2048);
   File manifestFile = SPIFFS.open("/manifest.json");
   if (!manifestFile)
   {
