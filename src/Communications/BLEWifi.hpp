@@ -35,7 +35,7 @@ class BLEWifi {
     improv::ImprovCommand lastCommand;
 
     void setState(BLEWifiState state);
-    void setError(improv::Error error);
+    void setError(improv::Error error, bool notify = true);
 
     class ServerCallbacks : public BLEServerCallbacks {
       public: 

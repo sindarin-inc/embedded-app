@@ -11,10 +11,10 @@
 void BLEWifi::startService() {
   DEBUG_LN("BLEWifi::startService");
 
-  // TODO(john): I'm not sure why, but running this seems to make WiFi
-  // work just a little bit better. I wonder if there's something about the WiFi/BLE
-  // coexistence that likes to have the WiFi enabled first. More research is needed
-  // To make WiFi reliable here.
+  // TODO(john): I'm not sure why, but calling WiFi.begin before starting Bluetooth
+  // seems to make WiFi work just a little bit better. I wonder if there's something
+  // about the WiFi/BLE coexistence that likes to have the WiFi enabled first. More
+  // research is needed To make WiFi reliable here.
   WiFi.begin();
 
   BLEServer *server = BLEManager::getInstance()->server;
@@ -83,10 +83,13 @@ void BLEWifi::setState(BLEWifiState state) {
   if (state == STATE_WAITING) {
     improv_state = improv::STATE_AUTHORIZED;
   } else if (state == STATE_READY_TO_CONNECT) {
+    this->setError(improv::ERROR_NONE, false);
     improv_state = improv::STATE_PROVISIONING;
   } else if (state == STATE_CONNECTING) {
+    this->setError(improv::ERROR_NONE, false);
     improv_state = improv::STATE_PROVISIONING;
   } else if (state == STATE_CONNECTED) {
+    this->setError(improv::ERROR_NONE, false);
     improv_state = improv::STATE_PROVISIONED;
   }
   this->current_state_characteristic->setValue(improv_state);
@@ -94,10 +97,12 @@ void BLEWifi::setState(BLEWifiState state) {
   this->last_state_change_millis = millis();
 }
 
-void BLEWifi::setError(improv::Error error) {
-    int error_int = error;
-    this->error_state_characteristic->setValue(error_int);
+void BLEWifi::setError(improv::Error error, bool notify) {
+  int error_int = error;
+  this->error_state_characteristic->setValue(error_int);
+  if (notify) {
     this->error_state_characteristic->notify();
+  }
 }
 
 void BLEWifi::loop() {

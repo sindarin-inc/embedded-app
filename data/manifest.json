@@ -11,11 +11,6 @@
         "path": "/enders.txt"
     },
     {
-        "name": "Dune",
-        "id": "dune",
-        "path": "/dune.txt"
-    },
-    {
         "name": "Last Question",
         "id": "last",
         "path": "/last-question.txt"
