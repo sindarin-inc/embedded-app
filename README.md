@@ -32,4 +32,19 @@ Make sure you have `clang-format` installed (`brew install clang-format`). Then 
 
 ```bash
 find src -iname "*.hpp" -o -iname "*.h" -o -iname "*.cpp" -o -iname "*.c" | xargs clang-format -i
+
+## Using ESP-IDF Menuconfig
+
+You can use the ESP-IDF menuconfig using
+
+```
+pio run -t menuconfig
+```
+
+You may need to first update to a more modern version of `flex`
+
+```
+brew install flex
+export PATH="/opt/homebrew/opt/flex/bin:$PATH"
+pio run -t menuconfig
 ```

@@ -116,7 +116,10 @@ void setup() {
     SHOW_HEAP();
 
     // Launch SPIFFS file system
-    if (!SPIFFS.begin(false, "/spiffs", 255, nullptr)) {
+    // Note(john): The version of framework-arduinoespressif32
+    // (https://github.com/marcovannoord/arduino-esp32.git#idf-release/v4.0) has a slightly
+    // different API here.
+    if (!SPIFFS.begin(false, "/spiffs", 255)) {
         DEBUG_LN("An Error has occurred while mounting SPIFFS");
     }
 
