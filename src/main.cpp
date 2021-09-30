@@ -46,6 +46,7 @@
 #include "Menus/MenuSystem.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Contents/Json.hpp"
+#include "Communications/PocketAPI.hpp"
 
 #include "sindarin-debug.h"
 
@@ -272,8 +273,8 @@ void setup(void)
   // ugly way to clear the screen
   local_x_offset = prefs.getInt("x-offset");
   local_y_offset = prefs.getInt("y-offset");
-  // Default area for browsing should be MAIN MENU which is readables length + 1 (length is SETTINGS MENU)
-  area_in_browsing = prefs.getInt("browse-area", readables.size() + 1);
+  // Default area for browsing should be MAIN MENU which is readables length + 2 (length is SETTINGS MENU)
+  area_in_browsing = prefs.getInt("browse-area", readables.size() + 2);
 
   DEBUG_VAR(area_in_browsing);
   DEBUG_LN(" was the area read in");
@@ -299,6 +300,7 @@ void setup(void)
     SIZE_OF(*book_renderer);
   }
 
+  main_menu->add_menu_item("Pocket Articles");
   main_menu->add_menu_item(SETTINGS_MENU_TEXT);
  
   //box_renderer->render_max_box_with_text(local_x_offset,local_y_offset, "The Lord is my shepherd\n");
@@ -388,7 +390,31 @@ void loop(void) {
         box_renderer->render_max_box_with_text(local_x_offset, local_y_offset, total_to_display);
       }
     }
-    else if (area_in_browsing == readables.size())
+    else if (area_in_browsing == readables.size()) // Pocket API menu
+    {
+      if (!WiFi.isConnected()) {
+        box_renderer->render_max_box_with_text(local_x_offset, local_y_offset, String("WiFi Disconnected"));
+      } else {
+        // TODO: This is a proof-of-concept. To implement this for real, we'll probably want
+        // to implement loading a submenu of all your articles, but that should probably be
+        // a part of a larger menu refactor.
+        log_i("Loading top Pocket article");
+        box_renderer->render_max_box_with_text(local_x_offset, local_y_offset, String("Downloading..."));
+        PocketAPI *pocket = PocketAPI::getInstance();
+        // TODO: This will come from the phone
+        pocket->setAccessToken("b85f0441-ef7d-1c3b-fe48-16ad06");
+        const char *text;
+        auto code = pocket->getFirstArticleText(&text);
+        if (code == 200) {
+          auto str = std::string(text);
+          raw_renderer = new RawRenderer(my_optics, my_display, str);
+          raw_renderer->render_page_with_box(raw_place, local_x_offset, local_y_offset);
+        } else {
+          box_renderer->render_max_box_with_text(local_x_offset, local_y_offset, String("Pocket Error: ") + code);
+        }
+      }
+    }
+    else if (area_in_browsing == readables.size() + 1)
     {
       menu_string = "Press arrows to move\nbox around to your\nliking. Then press\nenter when done!\nHave a nice day.\n";
       bat_life = get_battery_life();

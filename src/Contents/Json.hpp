@@ -1,3 +1,4 @@
+#pragma once
 #include <ArduinoJson.h>
 
 // Allocator to use the SPI RAM for JSON document

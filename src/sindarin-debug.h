@@ -11,6 +11,6 @@
 
 #endif
 
-#define SHOW_HEAP() DEBUG_F("%s:%d Free heap: %dk/%dk Free PSRAM: %dk/%dk\n", __FILE__, __LINE__, ESP.getFreeHeap() / 1000, ESP.getHeapSize() / 1000, ESP.getFreePsram() / 1000, ESP.getPsramSize() / 1000)
+#define SHOW_HEAP() log_d("Free heap: %dk/%dk Free PSRAM: %dk/%dk", ESP.getFreeHeap() / 1000, ESP.getHeapSize() / 1000, ESP.getFreePsram() / 1000, ESP.getPsramSize() / 1000)
 
-#define SIZE_OF(obj) DEBUG_F("%s:%d SIZE_OF(%s): %d\n",  __FILE__, __LINE__, #obj, sizeof(obj))
+#define SIZE_OF(obj) log_d("SIZE_OF(%s): %d", #obj, sizeof(obj))
