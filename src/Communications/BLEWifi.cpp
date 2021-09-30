@@ -7,12 +7,7 @@
 
 void BLEWifi::startService() {
   DEBUG_LN("BLEWifi::startService");
-
-  // TODO(john): I'm not sure why, but calling WiFi.begin before starting Bluetooth
-  // seems to make WiFi work just a little bit better. I wonder if there's something
-  // about the WiFi/BLE coexistence that likes to have the WiFi enabled first. More
-  // research is needed To make WiFi reliable here.
-  WiFi.begin();
+  SHOW_HEAP();
 
   BLEServer *server = BLEManager::getInstance()->server;
 
@@ -20,8 +15,7 @@ void BLEWifi::startService() {
   // as one service. However keeping these services separate for now allows us
   // to use the Improv WebBluetooth implementation for Wifi provisioning and
   // also use the Sindarin mobile app as-is after provisioning is done.
-  BLEService *service = server->createService(BLEUUID(improv::SERVICE_UUID));
-  server->setCallbacks(new ServerCallbacks(this));
+  service = server->createService(BLEUUID(improv::SERVICE_UUID));
 
   CharacteristicCallbacks *characteristic_callbacks = new CharacteristicCallbacks(this);
 
@@ -58,6 +52,20 @@ void BLEWifi::startService() {
   service->start();
   BLEAdvertising *advertising = server->getAdvertising();
   advertising->addServiceUUID(service->getUUID());
+  SHOW_HEAP();
+
+  // If credentials are available, go ahead and attempt WiFi connection
+  if(!WiFi.enableSTA(true)) {
+    DEBUG_F("STA enable failed!");
+  }
+  wifi_config_t conf;
+  esp_wifi_get_config(WIFI_IF_STA, &conf);
+  const char *ssid = (const char *)conf.sta.ssid;
+  const char *password = (const char *)conf.sta.password;
+  if (strlen(ssid) > 0 && strlen(password) > 0) {
+    DEBUG_F("Found WiFi credentials for %s:%s. Attempting connection...\n", ssid, password);
+    WiFi.begin();
+  }
 }
 
 void BLEWifi::setState(BLEWifiState state) {
@@ -92,34 +100,52 @@ void BLEWifi::setError(improv::Error error, bool notify) {
   }
 }
 
+void BLEWifi::doneConnecting() {
+  this->setState(STATE_CONNECTED);
+  DEBUG_LN("Connected, IP address: ");
+  DEBUG_LN(WiFi.localIP());
+  SHOW_HEAP();
+  // Now that we're connected, we may want to close the Improv service
+  DEBUG_LN("Closing down Improv service: ");
+  BLEServer *server = BLEManager::getInstance()->server;
+  server->removeService(service, true);
+  service = NULL;
+  // Not exactly sure why, but it seems necessary to restart other Bluetooth services
+  // after stopping this one.
+  BLEManager::getInstance()->startServiceAndAdvertising();
+  SHOW_HEAP();
+}
+
 void BLEWifi::loop() {
-  if (this->state == STATE_READY_TO_CONNECT) {
+  if (this->state == STATE_WAITING) {
+    if (WiFi.isConnected()) {
+      this->doneConnecting();
+    }
+  } else if (this->state == STATE_READY_TO_CONNECT) {
     improv::ImprovCommand command = this->lastCommand;
     DEBUG_F("Attempting connection to: %s Password: %s (WiFi status = %d)\n", command.ssid.c_str(), command.password.c_str(), WiFi.status());
-    // TODO(john): Store the credentials and reconnect automatically at boot if
-    // credentials already exist.
     WiFi.begin(command.ssid.c_str(), command.password.c_str());
     this->setState(STATE_CONNECTING);
     return;
   } else if (this->state == STATE_CONNECTING) {
     uint32_t now = millis();
     if (WiFi.status() == WL_CONNECTED) {
-      DEBUG_LN("Connected to WiFi");
-
-      // Optionally return some data to the host app
-      // std::string url = WiFi.localIP().toString().c_str();
-      // std::vector<uint8_t> response = improv::build_rpc_response(improv::WIFI_SETTINGS, {url});
-      // this->rpc_result_characteristic->setValue(response.data(), response.size());
-      // this->rpc_result_characteristic->notify();
-
-      this->setState(STATE_CONNECTED);
-      DEBUG_LN("Connected, IP address: ");
-      DEBUG_LN(WiFi.localIP());
+      std::string ip = WiFi.localIP().toString().c_str();
+      std::vector<uint8_t> response = improv::build_rpc_response(improv::WIFI_SETTINGS, {ip});
+      log_d("Reporting RPC result to client");
+      this->rpc_result_characteristic->setValue(response.data(), response.size());
+      this->rpc_result_characteristic->notify();
+      this->doneConnecting();
     } else if (now - this->last_state_change_millis > 30000) {
       DEBUG_F("Timed out connecting to WiFi %d\n", WiFi.status());
       this->setState(STATE_WAITING);
       this->setError(improv::ERROR_UNABLE_TO_CONNECT);
       WiFi.disconnect();
+    }
+  } else if (this->state == STATE_CONNECTED) {
+    if (!WiFi.isConnected()) {
+      this->setState(STATE_WAITING);
+      this->startService();
     }
   }
 }

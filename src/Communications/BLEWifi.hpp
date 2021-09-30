@@ -29,24 +29,13 @@ class BLEWifi {
     BLECharacteristic *current_state_characteristic;
     BLECharacteristic *error_state_characteristic;
     BLECharacteristic *rpc_result_characteristic;
+    BLEService *service;
     BLEWifiState state;
     improv::ImprovCommand lastCommand;
 
     void setState(BLEWifiState state);
     void setError(improv::Error error, bool notify = true);
-
-    class ServerCallbacks : public BLEServerCallbacks {
-      public: 
-        ServerCallbacks(BLEWifi* improv) { 
-          DEBUG_LN("BLEWifi server callbacks created");
-        }
-        void onConnect(BLEServer *server) {
-          DEBUG_LN("BLEWifi client connected to our server!");
-        }
-        void onDisconnect(BLEServer *server) {
-          DEBUG_LN("BLEWifi client disconnected from our server!");
-        }
-    };
+    void doneConnecting();
 
     class CharacteristicCallbacks : public BLECharacteristicCallbacks {
       public:
