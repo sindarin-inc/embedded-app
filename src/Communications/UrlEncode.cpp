@@ -1,3 +1,6 @@
+// Based on example here:
+// https://github.com/zenmanenergy/ESP8266-Arduino-Examples/blob/master/helloWorld_urlencoded/urlencode.ino
+
 #include "UrlEncode.hpp"
 
 unsigned char h2int(char c)
