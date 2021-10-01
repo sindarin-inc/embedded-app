@@ -47,6 +47,7 @@
 #include "Inputs/RemoteInput.hpp"
 #include "Contents/Json.hpp"
 #include "Communications/PocketAPI.hpp"
+#include "Communications/BLESettings.hpp"
 
 #include "sindarin-debug.h"
 
@@ -96,6 +97,7 @@ IRRemoteInput *ir_remote_input;
 #include "Inputs/BLERemoteInput.hpp"
 #include "Communications/BLEWifi.hpp"
 BLERemoteInput *ble_remote_input;
+BLESettings *ble_settings;
 // TODO(john): For now, grouping BLEWifi with BLERemoteInput since they're both
 // BLE server services. These are separate things and it will be better to make
 // them independent.
@@ -224,6 +226,8 @@ void setup(void)
     ble_remote_input = new BLERemoteInput();
     SIZE_OF(*ble_remote_input);
     ble_remote_input->start_remote();
+    ble_settings = new BLESettings(&prefs);
+    ble_settings->listen_for_settings();
 
     // TEST: Setup receiver for new data via BLE
     BLECharacteristic *newDataCharacteristic = BLEManager::getInstance()->service->createCharacteristic(
@@ -402,7 +406,9 @@ void loop(void) {
         box_renderer->render_max_box_with_text(local_x_offset, local_y_offset, String("Downloading..."));
         PocketAPI *pocket = PocketAPI::getInstance();
         // TODO: This will come from the phone
-        pocket->setAccessToken("b85f0441-ef7d-1c3b-fe48-16ad06");
+        char access_token[40];
+        prefs.getString(POCKET_API_TOKEN_PREFS_KEY, access_token, sizeof(access_token));
+        pocket->setAccessToken(access_token);
         const char *text;
         auto code = pocket->getFirstArticleText(&text);
         if (code == 200) {

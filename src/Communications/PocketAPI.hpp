@@ -5,6 +5,7 @@
 #include <ArduinoJson.h>
 #include "Contents/Json.hpp"
 
+#define POCKET_API_TOKEN_PREFS_KEY "pocket-token"
 class PocketAPI
 {
 public:
