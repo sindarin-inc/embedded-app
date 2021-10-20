@@ -4,14 +4,11 @@
 #include <Arduino.h>
 
 #define DEBUG_VAR(x)                                                                               \
-    if (Serial)                                                                                    \
-    Serial.print(x)
+    if (Serial) Serial.print(x)
 #define DEBUG_LN(y)                                                                                \
-    if (Serial)                                                                                    \
-    Serial.println(y)
+    if (Serial) Serial.println(y)
 #define DEBUG_F(format, ...)                                                                       \
-    if (Serial)                                                                                    \
-    Serial.printf(format, ##__VA_ARGS__)
+    if (Serial) Serial.printf(format, ##__VA_ARGS__)
 
 #endif
 

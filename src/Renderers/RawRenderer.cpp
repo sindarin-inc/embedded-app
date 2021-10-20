@@ -37,31 +37,26 @@ void RawRenderer::flip_read_mode() {
 void RawRenderer::increase_speed() {
     screed_speed += 10;
 
-    if (screed_speed > 1000)
-        screed_speed = 1000;
+    if (screed_speed > 1000) screed_speed = 1000;
 }
 
 void RawRenderer::decrease_speed() {
     screed_speed -= 10;
 
-    if (screed_speed < 50)
-        screed_speed = 50;
+    if (screed_speed < 50) screed_speed = 50;
 }
 
 void RawRenderer::set_speed(int new_speed) {
 
     screed_speed = new_speed;
 
-    if (screed_speed < 50)
-        screed_speed = 50;
+    if (screed_speed < 50) screed_speed = 50;
 
-    if (screed_speed > 1000)
-        screed_speed = 1000;
+    if (screed_speed > 1000) screed_speed = 1000;
 }
 
 auto RawRenderer::render_continue_screed(int x_offset, int y_offset) -> unsigned long {
-    if (read_mode != SCREED_READ)
-        return current_place;
+    if (read_mode != SCREED_READ) return current_place;
 
     if ((millis() - screed_last_time) > (60000 / screed_speed)) {
         char buffer[MAX_CHARS_PER_LINE];

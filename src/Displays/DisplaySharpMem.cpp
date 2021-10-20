@@ -35,8 +35,7 @@ DisplaySharpMem::DisplaySharpMem() {
 }
 
 DisplaySharpMem::~DisplaySharpMem() {
-    if (u8g2)
-        delete u8g2;
+    if (u8g2) delete u8g2;
 }
 
 // Show off the "Friend" graphic.

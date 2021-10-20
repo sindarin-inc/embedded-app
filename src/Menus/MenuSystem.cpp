@@ -22,8 +22,7 @@ auto MenuSystem::next_selection() -> int {
     int old_sel = curr_selection;
     curr_selection++;
     // Don't go further than the last item in the menu
-    if (curr_selection >= num_menu_items)
-        curr_selection = num_menu_items - 1;
+    if (curr_selection >= num_menu_items) curr_selection = num_menu_items - 1;
 
     return curr_selection - old_sel;
 }
@@ -33,8 +32,7 @@ auto MenuSystem::prev_selection() -> int {
     int old_sel = curr_selection;
     curr_selection--;
     // Don't go before the first menu item
-    if (curr_selection < 0)
-        curr_selection = 0;
+    if (curr_selection < 0) curr_selection = 0;
     return old_sel - curr_selection;
 }
 

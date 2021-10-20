@@ -24,8 +24,7 @@ DisplayOLED96in::DisplayOLED96in() {
 }
 
 DisplayOLED96in::~DisplayOLED96in() {
-    if (u8g2)
-        delete u8g2;
+    if (u8g2) delete u8g2;
 }
 
 // Show off the "Friend" graphic.

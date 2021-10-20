@@ -2,10 +2,10 @@
 #define BLEWifi_H
 
 #include <NimBLEDevice.h>
+#include <WiFi.h>
 #include <improv.h>
 
 #include "Communications/BLEManager.hpp"
-#include "WiFi.h"
 #include "sindarin-debug.h"
 
 enum BLEWifiState : uint8_t {

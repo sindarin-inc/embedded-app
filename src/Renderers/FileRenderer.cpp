@@ -57,31 +57,26 @@ void FileRenderer::flip_read_mode() {
 void FileRenderer::increase_speed() {
     screed_speed += 10;
 
-    if (screed_speed > 1000)
-        screed_speed = 1000;
+    if (screed_speed > 1000) screed_speed = 1000;
 }
 
 void FileRenderer::decrease_speed() {
     screed_speed -= 10;
 
-    if (screed_speed < 50)
-        screed_speed = 50;
+    if (screed_speed < 50) screed_speed = 50;
 }
 
 void FileRenderer::set_speed(int new_speed) {
 
     screed_speed = new_speed;
 
-    if (screed_speed < 50)
-        screed_speed = 50;
+    if (screed_speed < 50) screed_speed = 50;
 
-    if (screed_speed > 1000)
-        screed_speed = 1000;
+    if (screed_speed > 1000) screed_speed = 1000;
 }
 
 auto FileRenderer::render_continue_screed(int x_offset, int y_offset) -> unsigned long {
-    if (read_mode != SCREED_READ)
-        return current_place;
+    if (read_mode != SCREED_READ) return current_place;
 
     if ((millis() - screed_last_time) > (60000 / screed_speed)) {
         char buffer[MAX_CHARS_PER_LINE];
@@ -186,8 +181,7 @@ auto FileRenderer::go_backwards_one_page(unsigned long place) -> unsigned long {
     } else {
         num_chars_to_read = MAX_CHARS_PER_PAGE;
         seek_place = place - num_chars_to_read - PLACE_REWIND;
-        if (place - num_chars_to_read - PLACE_REWIND < 0)
-            seek_place = 0;
+        if (place - num_chars_to_read - PLACE_REWIND < 0) seek_place = 0;
     }
 
     main_backwards_buffer[num_chars_to_read] = '\0';
@@ -195,8 +189,7 @@ auto FileRenderer::go_backwards_one_page(unsigned long place) -> unsigned long {
     int total_chars_read = 0;
 
     // If we are at the beginning of the file, we stay there.
-    if (place == 0)
-        return 0;
+    if (place == 0) return 0;
 
     if (!file_handle.seek(seek_place)) {
         DEBUG_F("failed to seek in go_backwards: %lu is the place", place);

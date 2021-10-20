@@ -4,16 +4,17 @@
 
 #include "Communications/BLEManager.hpp"
 #include "Communications/PocketAPI.hpp"
+#include "Storage/PreferencesStore.hpp"
 #include "sindarin-debug.h"
 
 class BLESettings {
 
 public:
-    BLESettings(Preferences *prefs);
+    BLESettings(PreferencesStore *prefs);
     void listen_for_settings();
 
 protected:
-    Preferences *prefs;
+    PreferencesStore *prefs;
     class CharacteristicCallbacks : public BLECharacteristicCallbacks {
     public:
         BLESettings *enclosed;
@@ -23,7 +24,8 @@ protected:
         void onWrite(BLECharacteristic *characteristic) override {
             std::string value = characteristic->getValue();
             if (value.length() > 0) {
-                enclosed->prefs->putString(POCKET_API_TOKEN_PREFS_KEY, value.c_str());
+                // TODO: Handle other types of settings values
+                enclosed->prefs->setPocketApiToken(value.c_str());
                 log_i("Got Pocket Access Token");
             }
         }

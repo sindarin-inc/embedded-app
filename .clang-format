@@ -19,3 +19,4 @@ IncludeCategories:
   # All other headers
   - Regex:           '.*'
     Priority:        3
+AllowShortIfStatementsOnASingleLine: true
