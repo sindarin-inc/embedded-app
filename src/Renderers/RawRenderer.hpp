@@ -27,13 +27,12 @@ public:
 
     // Always call this on each loop.
     // If not screed, it'll be a nop
-    auto render_continue_screed(int x_offset, int y_offset) -> unsigned long;
+    auto render_continue_screed() -> unsigned long;
 
     // Render a page of text with the current place
     // returns the next place for reading so the calling function can
     // track place.
-    auto render_page_with_box(unsigned long place_in_file, int x_offset, int y_offset)
-        -> unsigned long;
+    auto render_page_with_box(unsigned long place_in_file) -> unsigned long;
 
     auto get_previous_place() -> unsigned long;
 

@@ -75,7 +75,7 @@ void FileRenderer::set_speed(int new_speed) {
     if (screed_speed > 1000) screed_speed = 1000;
 }
 
-auto FileRenderer::render_continue_screed(int x_offset, int y_offset) -> unsigned long {
+auto FileRenderer::render_continue_screed() -> unsigned long {
     if (read_mode != SCREED_READ) return current_place;
 
     if ((millis() - screed_last_time) > (60000 / screed_speed)) {
@@ -108,7 +108,7 @@ auto FileRenderer::render_continue_screed(int x_offset, int y_offset) -> unsigne
 
             if (buffer[plc_in_buffer] == ' ') {
                 buffer[plc_in_buffer] = '\0';
-                render_max_box_with_word(x_offset, y_offset, String(buffer));
+                render_max_box_with_word(String(buffer));
                 DEBUG_LN(buffer);
                 current_place++;
                 break;
@@ -126,15 +126,14 @@ auto FileRenderer::get_previous_place() -> unsigned long { return previous_place
 
 // Show the (already loaded into buffer) current page
 // and load the next page into the next buffer so we have it.
-auto FileRenderer::render_page_with_box(unsigned long place_in_file, int x_offset, int y_offset)
-    -> unsigned long {
+auto FileRenderer::render_page_with_box(unsigned long place_in_file) -> unsigned long {
     unsigned long next_pos = 0;
 
     DEBUG_VAR(place_in_file);
     DEBUG_LN(" is place in file being requested");
     current_place = place_in_file;
     next_place = load_curr_into_buffer();
-    render_max_box_with_text(x_offset, y_offset, curr_buffer);
+    render_max_box_with_text(curr_buffer);
     next_pos = next_place;
     load_next_into_buffer();
     previous_place = go_backwards_one_page(current_place);

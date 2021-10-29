@@ -13,8 +13,9 @@ void TTRemoteInput::start_remote(int receive_pin_input) {
 }
 
 void TTRemoteInput::start_remote() {
-    last_code = -1;
-    ble_code = -1;
+    last_code = RemoteCommand::NONE;
+    // TODO: Is ble_code necessary? Why not use last_code?
+    ble_code = RemoteCommand::NONE;
     // No code to process, so we set this to true
     was_code_processed = 1;
 
@@ -157,7 +158,7 @@ auto TTRemoteInput::check_release() -> int {
     int found_release = 0;
     if (!was_code_processed) {
         was_code_processed = 1;
-        last_code = ble_code;
+        last_code = (RemoteCommand)ble_code;
         found_release = 1;
         print_out_code("Got a BLE code", last_code);
     }

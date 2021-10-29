@@ -3,16 +3,32 @@
 
 #include <Arduino.h>
 
+#include "Inputs/RemoteInput.hpp"
+#include "Renderers/Renderer.hpp"
+#include "UI/Screen.hpp"
 #include "sindarin-debug.h"
 
 #define MAX_NUM_MENU_ITEMS 10
 
-class MenuSystem {
+class MenuItem {
+public:
+    MenuItem(){};
+    MenuItem(const String &title) : title(title){};
+    MenuItem(const String &title, std::function<void()> callback)
+        : title(title), callback(callback){};
+
+    String title;
+    // Called when this menu item is selected
+    std::function<void()> callback;
+};
+
+class MenuScreen : public Screen {
 
 public:
-    MenuSystem();
+    MenuScreen(Renderer &renderer) : renderer(renderer) { num_menu_items = 0; };
 
-    void add_menu_item(const String &new_item);
+    void add_menu_item(const MenuItem &new_item);
+    void add_menu_item(const String &new_item_title);
 
     void reset_menu_items();
 
@@ -22,6 +38,8 @@ public:
 
     auto get_curr_selection() -> int;
 
+    auto get_curr_item() -> MenuItem;
+
     // Returns 1 if the selection was updated, 0 otherwise
     // Helps client to know if it needs to refresh (at beginning or end of menu)
     auto next_selection() -> int;
@@ -29,7 +47,9 @@ public:
 
     // Includes the name of the item and it's number preceding it for easy display
     // Offset by two spaces
-    auto get_item_at(int index) -> String;
+    auto get_item_title_at(int index) -> String;
+
+    auto get_item_at(int index) -> MenuItem;
 
     // Easy \n separated list of the items in the menu that can simply be passed
     // to a display. May want to handle this in a Renderer? But for now, this
@@ -42,11 +62,19 @@ public:
     // selection is outside of this range.
     auto get_menu_range_as_string(int start_item, int end_item) -> String;
 
+    auto get_paginated_menu_string() -> String;
+
+    void render();
+
+    void process_command(RemoteCommand command);
+
 protected:
-    // Doesn't check for max size yet -- assumes all fit on one page
     int num_menu_items = 0;
-    String menu_items[MAX_NUM_MENU_ITEMS];
+    std::array<MenuItem, MAX_NUM_MENU_ITEMS> menu_items;
     int curr_selection = 0;
+    int cur_menu_page = 0;
+
+    Renderer &renderer;
 };
 
 #endif

@@ -8,12 +8,15 @@ class Renderer {
 public:
     Renderer(OpticsSystem *optic_input, DisplaySystem *display_input);
 
-    void render_max_box(int x_offset, int y_offset);
-    void render_max_box_with_text(int x_offset, int y_offset, const String &text);
+    void render_max_box();
+    void render_max_box_with_text(const String &text);
 
-    void render_max_box_with_word(int x_offset, int y_offset, const String &word);
+    void render_max_box_with_word(const String &word);
 
     auto get_previous_place() -> unsigned long;
+
+    int local_x_offset = 0;
+    int local_y_offset = 0;
 
 protected:
     OpticsSystem *optic;

@@ -64,16 +64,17 @@ void Renderer::compute_min_max() {
 
 void Renderer::compute_max_lines() {}
 
-void Renderer::render_max_box(int x_offset, int y_offset) {
-    display->draw_box(x_min + x_offset, y_min + y_offset, x_max + x_offset, y_max + y_offset);
+void Renderer::render_max_box() {
+    display->draw_box(x_min + local_x_offset, y_min + local_y_offset, x_max + local_x_offset,
+                      y_max + local_y_offset);
 }
 
-void Renderer::render_max_box_with_text(int x_offset, int y_offset, const String &text) {
-    display->draw_text_in_box(std::move(text), x_min + x_offset, y_min + y_offset, x_max + x_offset,
-                              y_max + y_offset);
+void Renderer::render_max_box_with_text(const String &text) {
+    display->draw_text_in_box(std::move(text), x_min + local_x_offset, y_min + local_y_offset,
+                              x_max + local_x_offset, y_max + local_y_offset);
 }
 
-void Renderer::render_max_box_with_word(int x_offset, int y_offset, const String &word) {
-    display->draw_big_word_in_box(std::move(word), x_min + x_offset, y_min + y_offset,
-                                  x_max + x_offset, y_max + y_offset);
+void Renderer::render_max_box_with_word(const String &word) {
+    display->draw_big_word_in_box(std::move(word), x_min + local_x_offset, y_min + local_y_offset,
+                                  x_max + local_x_offset, y_max + local_y_offset);
 }

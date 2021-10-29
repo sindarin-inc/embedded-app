@@ -55,7 +55,7 @@ void RawRenderer::set_speed(int new_speed) {
     if (screed_speed > 1000) screed_speed = 1000;
 }
 
-auto RawRenderer::render_continue_screed(int x_offset, int y_offset) -> unsigned long {
+auto RawRenderer::render_continue_screed() -> unsigned long {
     if (read_mode != SCREED_READ) return current_place;
 
     if ((millis() - screed_last_time) > (60000 / screed_speed)) {
@@ -88,7 +88,7 @@ auto RawRenderer::render_continue_screed(int x_offset, int y_offset) -> unsigned
 
             if (buffer[plc_in_buffer] == ' ') {
                 buffer[plc_in_buffer] = '\0';
-                render_max_box_with_word(x_offset, y_offset, String(buffer));
+                render_max_box_with_word(String(buffer));
                 DEBUG_LN(buffer);
                 current_place++;
                 break;
@@ -104,15 +104,14 @@ auto RawRenderer::render_continue_screed(int x_offset, int y_offset) -> unsigned
 
 // Show the (already loaded into buffer) current page
 // and load the next page into the next buffer so we have it.
-auto RawRenderer::render_page_with_box(unsigned long place_in_file, int x_offset, int y_offset)
-    -> unsigned long {
+auto RawRenderer::render_page_with_box(unsigned long place_in_file) -> unsigned long {
     unsigned long next_pos = 0;
 
     if (place_in_file == current_place) {
         DEBUG_LN("input place is same as current place");
         DEBUG_VAR(place_in_file);
         DEBUG_LN(" is place in file and current place");
-        render_max_box_with_text(x_offset, y_offset, curr_buffer);
+        render_max_box_with_text(curr_buffer);
         // DEBUG_LN(curr_buffer);
         // DEBUG_VAR(next_place);
         // DEBUG_LN(" IS THE NEXT PLACE FROM REDNER_PAGE_WITH_BOX");
@@ -128,7 +127,7 @@ auto RawRenderer::render_page_with_box(unsigned long place_in_file, int x_offset
         DEBUG_LN("input place is same as previous place");
         // Only do something if we haven't pressed previous twice
         if (current_place != previous_place) {
-            render_max_box_with_text(x_offset, y_offset, prev_buffer);
+            render_max_box_with_text(prev_buffer);
             strcpy(next_buffer, curr_buffer);
             strcpy(curr_buffer, prev_buffer);
             next_pos = current_place;
@@ -140,7 +139,7 @@ auto RawRenderer::render_page_with_box(unsigned long place_in_file, int x_offset
         strcpy(prev_buffer, curr_buffer);
         strcpy(curr_buffer, next_buffer);
         current_place = next_place;
-        render_max_box_with_text(x_offset, y_offset, next_buffer);
+        render_max_box_with_text(next_buffer);
         next_pos = load_next_into_buffer();
     } else {
         DEBUG_VAR(next_place);
@@ -149,7 +148,7 @@ auto RawRenderer::render_page_with_box(unsigned long place_in_file, int x_offset
         DEBUG_LN(" was the place passed in");
         current_place = place_in_file;
         next_pos = load_curr_into_buffer();
-        render_max_box_with_text(x_offset, y_offset, curr_buffer);
+        render_max_box_with_text(curr_buffer);
     }
     next_place = next_pos;
     return next_pos;

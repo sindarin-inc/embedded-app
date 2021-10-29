@@ -18,9 +18,9 @@
 #include "Contents/Readable.hpp"
 #include "Displays/AllDisplays.hpp"
 #include "Inputs/RemoteInput.hpp"
-#include "Menus/Menu.hpp"
 #include "Optics/AllOptics.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "UI/RootUI.hpp"
 #include "sindarin-debug.h"
 
 #ifdef U8X8_HAVE_HW_SPI
@@ -80,7 +80,7 @@ TTRemoteInput *tt_remote_input;
 #endif
 
 PreferencesStore prefs;
-Menu menu(prefs);
+RootUI root_ui(prefs);
 
 void setupDisplayAndOptics() {
 #ifdef EINK154in
@@ -131,8 +131,10 @@ void setup() {
     manifestFile.close();
 
     JsonArray array = manifest->as<JsonArray>();
+    auto readables = new std::vector<Readable>();
+    readables->reserve(array.size());
     for (JsonVariant v : array) {
-        menu.readables.emplace_back(v["id"], v["name"], v["path"]);
+        readables->emplace_back(v["id"], v["name"], v["path"]);
     }
 
     SHOW_HEAP();
@@ -153,9 +155,11 @@ void setup() {
     ble_settings = new BLESettings(&prefs);
     ble_settings->listen_for_settings();
 
-    ble_readable_server =
-        new BLEReadableServer(&(menu.raw_renderer), &(menu.update_box), my_optics, my_display);
-    ble_readable_server->setup();
+    // TODO: Disabling this for now
+    // QQ: Do we still want to keep this code?
+    // ble_readable_server = new BLEReadableServer(&(root_ui.raw_renderer), &(root_ui.update_box),
+    //                                             my_optics, my_display);
+    // ble_readable_server->setup();
 
     ble_wifi = new BLEWifi();
     SIZE_OF(*ble_wifi);
@@ -170,7 +174,7 @@ void setup() {
 
     delay(500);
 
-    menu.setup(my_display, my_optics);
+    root_ui.setup(my_display, my_optics, *readables);
 
     SHOW_HEAP();
 }
@@ -200,29 +204,25 @@ void loop() {
     // We could do this better by iterating, but fine for now with only 2 input devices.
     // Note that if an IR input comes in and then a BLE input comes at the same time,
     // it may only get one of them. This seems unlikely.
-    bool got_a_release = false;
-    int code_from_release = 0;
+    RemoteCommand code_from_release = RemoteCommand::NONE;
 
 #ifdef USE_IR_REMOTE
     if (ir_remote_input->check_release()) {
-        got_a_release = true;
         code_from_release = ir_remote_input->get_code();
     }
 #endif
 
 #ifdef USE_BLE_SERVER_REMOTE
     if (ble_remote_input->check_release()) {
-        got_a_release = true;
         code_from_release = ble_remote_input->get_code();
     }
 #endif
 
 #ifdef USE_TURN_TOUCH_REMOTE
     if (tt_remote_input->check_release()) {
-        got_a_release = true;
         code_from_release = tt_remote_input->get_code();
     }
 #endif
 
-    menu.loop(got_a_release, code_from_release);
+    root_ui.loop(code_from_release);
 }

@@ -19,7 +19,7 @@ protected:
     bool wasDeviceConnected;
     bool deviceConnected;
     int was_code_processed;
-    int ble_code;
+    RemoteCommand ble_code;
 
     class ServerCallbacks : public BLEServerCallbacks {
     public:
@@ -50,7 +50,7 @@ protected:
                 DEBUG_LN("*********");
                 DEBUG_F("New value: %.2x \n", value[0]);
                 DEBUG_LN("*********");
-                enclosed->ble_code = value.data()[0];
+                enclosed->ble_code = (RemoteCommand)value.data()[0];
                 enclosed->was_code_processed = 0;
             }
         }

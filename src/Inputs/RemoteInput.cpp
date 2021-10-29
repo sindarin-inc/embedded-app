@@ -47,4 +47,4 @@ void print_out_code(const char *prec_msg, int code) {
 }
 
 // Returns the IR code of the last button pressed or released
-auto RemoteInput::get_code() -> int { return last_code; }
+auto RemoteInput::get_code() -> RemoteCommand { return last_code; }

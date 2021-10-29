@@ -9,7 +9,7 @@ void IRRemoteInput::start_remote(int receive_pin_input) {
     // Start the receiver, enable feedback LED,
     // take LED feedback pin from the internal boards definition
     IrReceiver.begin(receive_pin, true);
-    last_code = -1;
+    last_code = RemoteCommand::NONE;
     lastPressTime = 0;
     state = LOW;
 }
@@ -22,7 +22,7 @@ void IRRemoteInput::start_remote() {
 auto IRRemoteInput::check_press() -> int {
     int new_press = 0;
     if (IrReceiver.decode()) {
-        last_code = IrReceiver.decodedIRData.command;
+        last_code = (RemoteCommand)IrReceiver.decodedIRData.command;
         if (state == LOW) {
             state = HIGH; // Button pressed, so set state to HIGH
             print_out_code("Pressed down on", last_code);

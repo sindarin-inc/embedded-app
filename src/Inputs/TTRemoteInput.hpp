@@ -40,7 +40,7 @@ protected:
     BLEAdvertisedDevice *turntouchDevice = nullptr;
     bool deviceConnected, wasDeviceConnected;
     int was_code_processed;
-    int ble_code;
+    RemoteCommand ble_code;
     long lastScanMs = 0;
 
     void connectToDevice(BLEAdvertisedDevice *device);
@@ -103,7 +103,7 @@ protected:
                 DEBUG_LN("*********");
                 DEBUG_F("New value: %.2x \n", value[0]);
                 DEBUG_LN("*********");
-                enclosed->ble_code = value.data()[0];
+                enclosed->ble_code = (RemoteCommand)(uint8_t)value.data()[0];
                 enclosed->was_code_processed = 0;
             }
         }
