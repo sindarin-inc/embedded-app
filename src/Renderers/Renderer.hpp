@@ -13,7 +13,12 @@ public:
 
     void render_max_box_with_word(const String &word);
 
+    void render_box(int x_start, int y_start, int x_end, int y_end);
+
     auto get_previous_place() -> unsigned long;
+
+    auto get_pixel_width() -> int { return max_pixels_x; }
+    auto get_pixel_height() -> int { return max_pixels_y; }
 
     int local_x_offset = 0;
     int local_y_offset = 0;

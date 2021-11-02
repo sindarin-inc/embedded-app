@@ -7,6 +7,7 @@
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Platform.hpp"
 #include "Renderers/FileRenderer.hpp"
+#include "UI/LoadingScreen.hpp"
 #include "UI/MenuScreen.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
 #include "UI/ReadableScreen.hpp"
@@ -100,6 +101,14 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
 
         resetFunc();
     }));
+    settings_menu->add_menu_item(MenuItem("Loading Test", [this, settings_menu]() {
+        auto loading_screen = new LoadingScreen(renderer);
+        set_current_screen(*loading_screen);
+        loading_screen->back_callback = [this, loading_screen, settings_menu]() {
+            set_current_screen(*settings_menu);
+            delete loading_screen;
+        };
+    }));
     settings_menu->back_callback = [this, main_menu]() { set_current_screen(*main_menu); };
 
     main_menu->add_menu_item(
@@ -113,15 +122,4 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
     set_current_screen(*main_menu);
 
     SHOW_HEAP();
-}
-
-void RootUI::loop(RemoteCommand remote_command) {
-    if (remote_command != RemoteCommand::NONE) {
-        current_screen->process_command(remote_command);
-    }
-    current_screen->render();
-
-    // NOTE(John): This does not work after coming back to the main menu and it is very mysterious
-    // to me why that might be the case
-    // current_screen->loop(remote_command);
 }
