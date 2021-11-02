@@ -113,12 +113,10 @@ void MenuScreen::render() {
 void MenuScreen::process_command(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::PREV:
-        prev_selection();
-        needs_rerender = true;
+        needs_rerender = prev_selection();
         break;
     case RemoteCommand::NEXT:
-        next_selection();
-        needs_rerender = true;
+        needs_rerender = next_selection();
         break;
     case RemoteCommand::ENTER:
         if (get_curr_item().callback != nullptr) {
