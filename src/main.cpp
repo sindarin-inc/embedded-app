@@ -61,13 +61,11 @@ IRRemoteInput *ir_remote_input;
 #endif
 
 #ifdef USE_BLE_SERVER_REMOTE
-#include "Communications/BLEReadableServer.hpp"
 #include "Communications/BLESettings.hpp"
 #include "Communications/BLEWifi.hpp"
 #include "Inputs/BLERemoteInput.hpp"
 BLERemoteInput *ble_remote_input;
 BLESettings *ble_settings;
-BLEReadableServer *ble_readable_server;
 // TODO(john): For now, grouping BLEWifi with BLERemoteInput since they're both
 // BLE server services. These are separate things and it will be better to make
 // them independent.
@@ -154,12 +152,6 @@ void setup() {
 
     ble_settings = new BLESettings(&prefs);
     ble_settings->listen_for_settings();
-
-    // TODO: Disabling this for now
-    // QQ: Do we still want to keep this code?
-    // ble_readable_server = new BLEReadableServer(&(root_ui.raw_renderer), &(root_ui.update_box),
-    //                                             my_optics, my_display);
-    // ble_readable_server->setup();
 
     ble_wifi = new BLEWifi();
     SIZE_OF(*ble_wifi);
