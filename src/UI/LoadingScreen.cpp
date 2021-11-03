@@ -19,7 +19,6 @@ void LoadingScreen::render() {
         int startX = (width / 2) - (3 * BOX_WIDTH + 2 * SPACING) / 2;
         int xOffset = state * (BOX_WIDTH + SPACING);
         int startY = (height / 2) - BOX_WIDTH / 2;
-        log_d("Drawing box at %d %d for %d %d", startX + xOffset, startY, width, height);
         renderer->render_box(startX + xOffset, startY, startX + xOffset + BOX_WIDTH,
                              startY + BOX_WIDTH);
         state++;

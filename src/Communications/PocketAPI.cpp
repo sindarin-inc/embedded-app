@@ -42,10 +42,15 @@ auto PocketAPI::text(const char *url, SpiRamJsonDocument **response) -> int {
 
     int http_code = http.POST((uint8_t *)request, request_len);
     if (http_code == 200) {
-        SpiRamJsonDocument *resp = new SpiRamJsonDocument(16384);
+        auto size = http.getSize();
+        if (size < 0) {
+            log_e("Failed to parse Pocket response size=%d", size);
+            return size;
+        }
+        log_d("Parsing Pocket response with size=%d", size);
+        SpiRamJsonDocument *resp = new SpiRamJsonDocument(size);
         ArduinoJson::deserializeJson(*resp, http.getStream(),
                                      DeserializationOption::Filter(filter));
-        log_i("Pocket request succeeded");
         *response = resp;
     } else {
         log_w("Pocket request failed with code %d\n", http_code);
@@ -84,7 +89,13 @@ auto PocketAPI::get(SpiRamJsonDocument **response) -> int {
 
     int http_code = http.POST((uint8_t *)request, request_len);
     if (http_code == 200) {
-        SpiRamJsonDocument *resp = new SpiRamJsonDocument(2048);
+        auto size = http.getSize();
+        if (size < 0) {
+            log_e("Failed to parse Pocket response size=%d", size);
+            return size;
+        }
+        log_d("Parsing Pocket response with size=%d", size);
+        SpiRamJsonDocument *resp = new SpiRamJsonDocument(size);
         ArduinoJson::deserializeJson(*resp, http.getStream(),
                                      DeserializationOption::Filter(filter));
         log_i("Pocket request succeeded");

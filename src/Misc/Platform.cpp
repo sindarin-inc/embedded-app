@@ -32,5 +32,3 @@ auto get_battery_life() -> String {
     SHOW_HEAP();
     return battery_output;
 }
-
-void (*resetFunc)() = nullptr; // declare reset function @ address 0
