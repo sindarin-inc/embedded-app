@@ -62,14 +62,16 @@ IRRemoteInput *ir_remote_input;
 
 #ifdef USE_BLE_SERVER_REMOTE
 #include "Communications/BLESettings.hpp"
-#include "Communications/BLEWifi.hpp"
 #include "Inputs/BLERemoteInput.hpp"
 BLERemoteInput *ble_remote_input;
 BLESettings *ble_settings;
 // TODO(john): For now, grouping BLEWifi with BLERemoteInput since they're both
 // BLE server services. These are separate things and it will be better to make
 // them independent.
+#if !defined(DISABLE_WIFI)
+#include "Communications/BLEWifi.hpp"
 BLEWifi *ble_wifi;
+#endif // DISABLE_WIFI
 #endif
 
 #ifdef USE_TURN_TOUCH_REMOTE
@@ -120,7 +122,11 @@ void setup() {
 
     SHOW_HEAP();
 
+#if !defined(DISABLE_SPIRAM)
     SpiRamJsonDocument *manifest = new SpiRamJsonDocument(2048);
+#else
+    DynamicJsonDocument *manifest = new DynamicJsonDocument(2048);
+#endif
     File manifestFile = SPIFFS.open("/manifest.json");
     if (!manifestFile) {
         DEBUG_LN("Failed to open manifest file.");
@@ -153,9 +159,11 @@ void setup() {
     ble_settings = new BLESettings(&prefs);
     ble_settings->listen_for_settings();
 
+#if !defined(DISABLE_WIFI)
     ble_wifi = new BLEWifi();
     SIZE_OF(*ble_wifi);
     ble_wifi->startService();
+#endif // DISABLE_WIFI
 
     BLEManager::getInstance()->startServiceAndAdvertising();
 #endif
@@ -172,7 +180,7 @@ void setup() {
 }
 
 void loop() {
-#ifdef USE_BLE_SERVER_REMOTE
+#if defined(USE_BLE_SERVER_REMOTE) && !defined(DISABLE_WIFI)
     ble_wifi->loop();
 #endif
 

@@ -24,4 +24,4 @@ jobs:
         pip install platformio
 
     - name: PlatformIO run
-      run: pio run -e tinypico -e featheresp32
+      run: pio run -e tinypico -e featheresp32 -e d1mini32

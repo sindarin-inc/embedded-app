@@ -56,6 +56,7 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
     }
 
     // Set up pocket article menu
+#if !defined(DISABLE_WIFI)
     main_menu->add_menu_item(MenuItem("Pocket Articles", [this, main_menu, optics, display]() {
         if (!WiFi.isConnected()) {
             log_w("Tried to load Pocket articles but WiFi not connected");
@@ -153,6 +154,7 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
             delete response;
         };
     }));
+#endif // DISABLE_WIFI
 
     // Settings menu
     auto settings_menu = new MenuScreen(*renderer);

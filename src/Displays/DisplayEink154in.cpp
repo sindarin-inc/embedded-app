@@ -28,13 +28,12 @@ void DisplayEink154in::put_up_hello_world() {
 // Set up the U8g2lib display
 DisplayEink154in::DisplayEink154in() {
     font = u8g2_font_tom_thumb_4x6_tf;
-#ifdef TINYPICO_SINDARIN
-    display.init();
-    display.setRotation(0);
-#endif
 #ifdef HUZZAH32_SINDARIN
     display.init();
     display.setRotation(2);
+#else
+    display.init();
+    display.setRotation(0);
 #endif
     u8g2Fonts.begin(display);
     u8g2Fonts.setFont(font);

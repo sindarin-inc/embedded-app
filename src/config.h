@@ -16,3 +16,6 @@
 #define USE_IR_REMOTE
 
 #define IR_REMOTE_INPUT_PIN 12
+
+// #define DISABLE_WIFI
+// #define DISABLE_SPIRAM
