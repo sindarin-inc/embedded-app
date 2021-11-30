@@ -9,5 +9,8 @@
 #ifdef EINKET013TT1
 #include "DisplayEinkET013TT1.hpp"
 #endif
+#ifdef SIMULATOR
+#include "DisplaySDLSimulator.hpp"
+#endif
 
 #endif

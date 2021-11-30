@@ -6,9 +6,13 @@
 #define DEBUG_VAR(x) log_d("%s", String(x).c_str())
 #define DEBUG_LN(y) log_d("%s", String(y).c_str())
 
+#ifdef SIMULATOR
+#define SHOW_HEAP()
+#else
 #define SHOW_HEAP()                                                                                \
     log_d("Free heap: %dk/%dk Free PSRAM: %dk/%dk", ESP.getFreeHeap() / 1000,                      \
           ESP.getHeapSize() / 1000, ESP.getFreePsram() / 1000, ESP.getPsramSize() / 1000)
+#endif
 
 #define SIZE_OF(obj) log_d("SIZE_OF(%s): %d", #obj, sizeof(obj))
 

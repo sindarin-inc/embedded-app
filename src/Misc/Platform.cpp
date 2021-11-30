@@ -6,6 +6,8 @@
 
 #include "sindarin-debug.h"
 
+#ifndef SIMULATOR
+
 #define UPPER_DIVIDER 442
 #define LOWER_DIVIDER 160
 #define DEFAULT_VREF 1100 // Default referance voltage in mv
@@ -59,3 +61,13 @@ auto GetBatteryVoltageRight() -> float {
 
     return (float)mv / 1000.0;
 }
+
+#else
+
+void InitializePlatform() {}
+
+auto GetBatteryVoltageLeft() -> float { return 0; }
+
+auto GetBatteryVoltageRight() -> float { return 0; }
+
+#endif

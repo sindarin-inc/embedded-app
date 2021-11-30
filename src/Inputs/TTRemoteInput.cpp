@@ -1,3 +1,5 @@
+#if defined(USE_TURN_TOUCH_REMOTE)
+
 #include "TTRemoteInput.hpp"
 
 #include <Arduino.h>
@@ -201,3 +203,5 @@ auto TTRemoteInput::checkRelease() -> int {
     }
     return foundRelease;
 }
+
+#endif

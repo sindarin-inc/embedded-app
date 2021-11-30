@@ -1,9 +1,9 @@
-#include "OTA.hpp"
+#include "config.h"
+#ifdef ENABLE_OTA
 
 #include <ArduinoOTA.h>
 
-#include "config.h"
-
+#include "OTA.hpp"
 #include "sindarin-debug.h"
 
 void OTA::setup() {
@@ -26,3 +26,5 @@ void OTA::setup() {
 }
 
 void OTA::loop() { ArduinoOTA.handle(); }
+
+#endif

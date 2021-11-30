@@ -1,12 +1,11 @@
-#include "IRRemoteInput.hpp"
-
 #include "config.h"
-
-#include "sindarin-debug.h"
 
 #if defined(USE_IR_REMOTE)
 
 #include <IRremote.h>
+
+#include "IRRemoteInput.hpp"
+#include "sindarin-debug.h"
 
 void IRRemoteInput::start_remote(int receive_pin_input) {
     receive_pin = receive_pin_input;

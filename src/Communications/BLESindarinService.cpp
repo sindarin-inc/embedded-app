@@ -1,3 +1,7 @@
+#include "config.h"
+
+#if defined(USE_BLE_SERVER_REMOTE) || defined(USE_BLE_SERVER_SETTINGS)
+
 #include "BLESindarinService.hpp"
 
 #define SERVICE_UUID "db65598c-04b1-469f-833f-517f285db256"
@@ -9,3 +13,5 @@ auto BLESindarinService::configureService(BLEServer *server) -> BLEService * {
 };
 
 void BLESindarinService::start() { service_->start(); }
+
+#endif

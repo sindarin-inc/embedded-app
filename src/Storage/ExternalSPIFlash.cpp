@@ -1,5 +1,7 @@
 #include "Storage/ExternalSPIFlash.hpp"
 
+#ifndef SIMULATOR
+
 #include <driver/spi_common.h>
 #include <esp32-hal-log.h>
 #include <esp_flash.h>
@@ -86,3 +88,5 @@ void SpiFlashListPartitions() {
 
     esp_partition_iterator_release(it);
 }
+
+#endif

@@ -37,6 +37,10 @@
 DisplayEinkET013TT1 *myDisplay;
 #endif
 
+#ifdef SIMULATOR
+DisplaySDLSimulator *myDisplay;
+#endif
+
 PreferencesStore prefs;
 
 #ifdef USE_IR_REMOTE
@@ -69,6 +73,11 @@ BLEImprov *bleWifi;
 TTRemoteInput ttRemoteInput(prefs);
 #endif
 
+#ifdef SIMULATOR
+#include "Inputs/SimulatorRemoteInput.hpp"
+SimulatorRemoteInput simulatorRemoteInput;
+#endif
+
 #ifdef ENABLE_OTA
 OTA ota;
 #endif
@@ -77,8 +86,13 @@ Power power;
 
 RootUI rootUi(prefs, power);
 
+#ifdef SIMULATOR
+#include "Storage/PosixFileSystem.hpp"
+PosixFileSystem fileSystem;
+#else
 #include "Storage/SpiffsFileSystem.hpp"
 SpiffsFileSystem fileSystem;
+#endif
 
 void setup() {
     bool inputDeviceConnected = false;
@@ -103,6 +117,14 @@ void setup() {
     myDisplay->invertDisplay(prefs.invertSetting.get().value());
 #endif
 
+#ifdef SIMULATOR
+    myDisplay = new DisplaySDLSimulator();
+    myDisplay->localXOffset = 0;
+    myDisplay->localYOffset = 0;
+    myDisplay->setFocusSize(15, 15);
+    myDisplay->setFocusOffset(0, 0);
+#endif
+
     SIZE_OF(*myDisplay);
 
 #ifdef USE_IR_REMOTE
@@ -111,7 +133,10 @@ void setup() {
     ir_remote_input->start_remote(IR_REMOTE_INPUT_PIN);
 #endif
 
+#if defined(USE_BLE_SERVER_REMOTE) || defined(USE_BLE_SERVER_SETTINGS) ||                          \
+    defined(USE_BLE_SERVER_IMPROV)
     BLEManager *bleManager = BLEManager::getInstance();
+#endif
 
 #if defined(USE_BLE_SERVER_REMOTE) || defined(USE_BLE_SERVER_SETTINGS)
     auto sindarinService = bleSindarinService.configureService(bleManager->server());
@@ -141,7 +166,10 @@ void setup() {
     bleWifi->start();
 #endif
 
+#if defined(USE_BLE_SERVER_REMOTE) || defined(USE_BLE_SERVER_SETTINGS) ||                          \
+    defined(USE_BLE_SERVER_IMPROV)
     bleManager->startAdvertisingIfNecessary();
+#endif
 
 #ifdef USE_TURN_TOUCH_REMOTE
     ttRemoteInput.startRemote();
@@ -209,6 +237,12 @@ void loop() {
 #ifdef USE_TURN_TOUCH_REMOTE
     if (ttRemoteInput.checkRelease()) {
         codeFromRelease = ttRemoteInput.getCode();
+    }
+#endif
+
+#ifdef SIMULATOR
+    if (simulatorRemoteInput.checkRelease()) {
+        codeFromRelease = simulatorRemoteInput.getCode();
     }
 #endif
 

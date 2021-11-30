@@ -1,4 +1,6 @@
 
+#if defined(USE_BLE_SERVER_REMOTE)
+
 #include "BLERemoteInput.hpp"
 
 #include <Arduino.h>
@@ -33,3 +35,5 @@ auto BLERemoteInput::checkRelease() -> int {
     }
     return foundRelease;
 }
+
+#endif

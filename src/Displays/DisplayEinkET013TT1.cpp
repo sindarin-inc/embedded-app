@@ -1,7 +1,10 @@
-#include "DisplayEinkET013TT1.hpp"
+#include "config.h"
+
+#ifdef EINKET013TT1
 
 #include <algorithm>
 
+#include "DisplayEinkET013TT1.hpp"
 #include "Displays/EinkWaveforms.hpp"
 
 #define EinkET013TT1_WIDTH_IN_MM 23.3
@@ -35,3 +38,5 @@ void DisplayEinkET013TT1::updateDisplay() {
     // Clear buffer afterwards
     fillScreen(bg);
 }
+
+#endif

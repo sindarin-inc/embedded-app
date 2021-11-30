@@ -1,10 +1,11 @@
 #include "RootUI.hpp"
 
-#include <WiFi.h>
-#include <nvs_flash.h>
+// #include <WiFi.h>
+// #include <nvs_flash.h>
+#include <Arduino.h>
 
 #include "Bitmaps/Logo.hpp"
-#include "Communications/PocketAPI.hpp"
+// #include "Communications/PocketAPI.hpp"
 #include "Contents/Readable.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Inputs/TTRemoteInput.hpp"
@@ -65,7 +66,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
     SHOW_HEAP();
 
     // Set up pocket article menu
-#if !defined(DISABLE_WIFI)
+#if !defined(DISABLE_WIFI) && defined(ENABLE_POCKET)
     mainMenu->addMenuItem(MenuItem("Pocket Articles", [this, mainMenu, display]() {
         if (!WiFi.isConnected()) {
             log_w("Tried to load Pocket articles but WiFi not connected");
@@ -224,6 +225,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
             delete bitmapScreen;
         };
     }));
+#ifdef USE_TURN_TOUCH_REMOTE
     settingsMenu->addMenuItem(MenuItem("Unpair TurnTouch", [this, display]() {
         prefs_.pairedTurnTouchAddress.remove();
         log_w("Unpaired TurnTouch. Rebooting...");
@@ -231,6 +233,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
         delay(2000);
         esp_restart();
     }));
+#endif
     settingsMenu->backCallback = [this, mainMenu]() { setCurrentScreen(*mainMenu); };
 
     mainMenu->addMenuItem(

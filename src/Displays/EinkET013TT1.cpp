@@ -1,9 +1,12 @@
-#include "EinkET013TT1.hpp"
+#include "config.h"
+
+#ifdef EINKET013TT1
 
 #include <Arduino.h>
 #include <SPI.h>
 #include <algorithm>
 
+#include "EinkET013TT1.hpp"
 #include "sindarin-debug.h"
 
 extern "C" {
@@ -399,3 +402,5 @@ inline void EinkET013TT1::waitForNotBusy() {
     while (digitalRead(busy_) == HIGH) {
     }
 }
+
+#endif

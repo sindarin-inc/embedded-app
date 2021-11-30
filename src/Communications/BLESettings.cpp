@@ -1,8 +1,10 @@
+#include "config.h"
 
-#include "BLESettings.hpp"
+#if defined(USE_BLE_SERVER_REMOTE)
 
 #include <Arduino.h>
 
+#include "BLESettings.hpp"
 #include "sindarin-debug.h"
 
 #define SETTINGS_CHARACTERISTIC_UUID "611f68af-5ffe-4944-9b8f-ef6773326268"
@@ -15,3 +17,5 @@ void BLESettings::configureCharacteristics(BLEService *service) {
 
     characteristic->setCallbacks(new CharacteristicCallbacks(this));
 };
+
+#endif

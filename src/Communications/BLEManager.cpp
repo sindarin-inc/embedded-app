@@ -1,6 +1,8 @@
-#include "BLEManager.hpp"
-
 #include "config.h"
+
+#if defined(USE_BLE_SERVER_REMOTE)
+
+#include "BLEManager.hpp"
 
 BLEManager *BLEManager::instance = nullptr;
 
@@ -27,3 +29,5 @@ void BLEManager::startAdvertisingIfNecessary() {
         advertising->start();
     }
 }
+
+#endif

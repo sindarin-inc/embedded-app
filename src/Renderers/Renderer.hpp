@@ -1,7 +1,9 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
-#include "../Displays/DisplaySystem.hpp"
+#include <Arduino.h>
+
+#include "Displays/DisplaySystem.hpp"
 
 #define MAX_CHARS_PER_PAGE 1500
 #define MAX_CHARS_PER_LINE 200

@@ -1,10 +1,11 @@
+#include "config.h"
 
-#include "Communications/WiFi.hpp"
+#ifndef DISABLE_WIFI
 
 #include <WiFi.h>
 #include <esp_wifi.h>
 
-#include "config.h"
+#include "Communications/WiFi.hpp"
 
 void ConnectWiFiIfCredentialsExist() {
     // If credentials are available, go ahead and attempt WiFi connection
@@ -22,3 +23,5 @@ void ConnectWiFiIfCredentialsExist() {
         WiFi.setAutoReconnect(true);
     }
 }
+
+#endif
