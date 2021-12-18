@@ -24,4 +24,10 @@ jobs:
         pip install platformio
 
     - name: PlatformIO run
-      run: pio run -e tinypico -e featheresp32 -e d1mini32
+      run: pio run -e tinypico -e featheresp32 -e d1mini32 -e gilpico
+
+    - name: Upload binary firmwares for Gilpico
+      uses: actions/upload-artifact@v2
+      with:
+        name: gilpico-binaries
+        path: .pio/build/gilpico/*.bin
