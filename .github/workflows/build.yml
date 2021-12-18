@@ -10,6 +10,13 @@ jobs:
   build:
     name: "pio run"
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        pioenv:
+          - tinypico
+          - featheresp32
+          - d1mini32
+          - gilpico
 
     steps:
     - name: Check out code
@@ -24,10 +31,11 @@ jobs:
         pip install platformio
 
     - name: PlatformIO run
-      run: pio run -e tinypico -e featheresp32 -e d1mini32 -e gilpico
+      run: pio run -e ${{ matrix.pioenv }}
 
     - name: Upload binary firmwares for Gilpico
       uses: actions/upload-artifact@v2
+      if: matrix.pioenv == 'gilpico'
       with:
         name: gilpico-binaries
         path: .pio/build/gilpico/*.bin
