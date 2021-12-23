@@ -46,7 +46,11 @@ DisplayEinkET013TT1::DisplayEinkET013TT1(uint8_t CS, uint8_t OEI, uint8_t RST, u
     setFullWindow();
 
     font = u8g2_font_tom_thumb_4x6_tf;
-    setRotation(2);
+#ifdef DISPLAY_ROTATION
+    setRotation(DISPLAY_ROTATION);
+#else
+    setRotation(0);
+#endif
     u8g2Fonts.begin(*this);
     u8g2Fonts.setFont(font);
     log_d("Set up display (%ld)", (long)this);
