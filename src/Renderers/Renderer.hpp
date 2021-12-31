@@ -17,6 +17,8 @@ public:
 
     auto get_previous_place() -> unsigned long;
 
+    auto get_display() -> DisplaySystem* { return display; }
+
     auto get_pixel_width() -> int { return max_pixels_x; }
     auto get_pixel_height() -> int { return max_pixels_y; }
 

@@ -277,6 +277,16 @@ void DisplayEinkET013TT1::drawPixel(int16_t x, int16_t y, uint16_t color) {
         (color == 0x0000) ? (buffer[i] & ~(1 << (7 - x % 8))) : (buffer[i] | (1 << (7 - x % 8)));
 }
 
+void DisplayEinkET013TT1::drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[],
+                               int16_t w, int16_t h, uint16_t color) {
+    if (get_partial_refresh()) {
+        setPartialWindow(x, y, w, h);
+    }
+    Adafruit_GFX::drawXBitmap(x, y, bitmap, w, h, color);
+    log_d("Bitmap drawn, updating display!");
+    updateDisplay();
+}
+
 void DisplayEinkET013TT1::updateDisplay() {
     if (get_partial_refresh()) {
         writePartialImage(partialX, partialY, buffer, partialW, partialH);

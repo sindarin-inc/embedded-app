@@ -3,12 +3,14 @@
 #include <WiFi.h>
 #include <nvs_flash.h>
 
+#include "Bitmaps/Logo.hpp"
 #include "Communications/PocketAPI.hpp"
 #include "Contents/Readable.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Platform.hpp"
 #include "Renderers/FileRenderer.hpp"
 #include "Renderers/RawRenderer.hpp"
+#include "UI/CalibrationScreen.hpp"
 #include "UI/LoadingScreen.hpp"
 #include "UI/MenuScreen.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
@@ -26,9 +28,6 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
     renderer->local_x_offset = prefs.local_x_offset;
     renderer->local_y_offset = prefs.local_y_offset;
     SIZE_OF(*renderer);
-
-    display->display_splash_screen();
-    delay(500);
 
     auto main_menu = new MenuScreen(*renderer);
     SIZE_OF(*main_menu);
@@ -194,17 +193,32 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
             delete loading_screen;
         };
     }));
+    settings_menu->add_menu_item(MenuItem("Test Bitmap Screen", [this, settings_menu]() {
+        auto bitmap_screen = new BitmapScreen(*renderer, Logo_bits);
+        set_current_screen(*bitmap_screen);
+        bitmap_screen->back_callback = [this, bitmap_screen, settings_menu]() {
+            set_current_screen(*settings_menu);
+            delete bitmap_screen;
+        };
+    }));
     settings_menu->back_callback = [this, main_menu]() { set_current_screen(*main_menu); };
 
     main_menu->add_menu_item(
         MenuItem("**SETTINGS**", [this, settings_menu]() { set_current_screen(*settings_menu); }));
 
-    renderer->render_max_box();
-    delay(250);
+    auto calibration_screen = new CalibrationScreen(*renderer);
+    calibration_screen->back_callback = [this, &calibration_screen, display, main_menu]() {
+        renderer->render_max_box();
+        delay(100);
 
-    display->set_partial_refresh();
+        display->set_partial_refresh();
 
-    set_current_screen(*main_menu);
+        set_current_screen(*main_menu);
+        delete calibration_screen;
+        calibration_screen = nullptr;
+    };
+
+    set_current_screen(*calibration_screen);
 
     SHOW_HEAP();
 }
