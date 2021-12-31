@@ -38,9 +38,9 @@ public:
 
     void set_coordinates(int x, int y);
 
-    void set_partial_refresh();
-    void unset_partial_refresh();
-    auto get_partial_refresh() -> int;
+    virtual void set_partial_refresh();
+    virtual void unset_partial_refresh();
+    virtual auto get_partial_refresh() -> int;
 
     virtual auto get_text_height() -> int = 0;
     virtual auto get_text_width(const char *buffer) -> int = 0;
