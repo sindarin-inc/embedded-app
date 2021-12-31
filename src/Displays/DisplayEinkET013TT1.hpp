@@ -62,7 +62,7 @@ public:
             buffer[x] = data;
         }
     }
-    
+
     uint16_t bg = 0x0000; // 0xFFFF;
     uint16_t fg = 0xFFFF; // 0x0000;
 

@@ -1,6 +1,6 @@
-#include "config.h"
-
 #include "UI/BitmapScreen.hpp"
+
+#include "config.h"
 
 #include "Displays/DisplayEinkET013TT1.hpp"
 #include "UI/Bitmaps/Calibration.hpp"

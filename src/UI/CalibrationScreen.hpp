@@ -1,7 +1,6 @@
-#include "UI/BitmapScreen.hpp"
-
-#include "Renderers/Renderer.hpp"
 #include "Bitmaps/Calibration.hpp"
+#include "Renderers/Renderer.hpp"
+#include "UI/BitmapScreen.hpp"
 
 class CalibrationScreen : public BitmapScreen {
 public:

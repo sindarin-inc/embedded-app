@@ -1,6 +1,5 @@
-#include "UI/Screen.hpp"
-
 #include "Renderers/Renderer.hpp"
+#include "UI/Screen.hpp"
 
 class BitmapScreen : public Screen {
 public:
