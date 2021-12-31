@@ -121,25 +121,6 @@ void DisplayEinkET013TT1::draw_text_in_box(String new_text, int start_x, int sta
     draw_text_cmds_only(new_text, start_x + 3, start_y + line_height + 1, line_height);
     // DO WRITE AND REFRESH
     updateDisplay();
-
-    /*
-     display.setRotation(2);
-  display.setFont(&FreeMonoBold9pt7b);
-  display.setTextColor(GxEPD_BLACK);
-  int16_t tbx, tby; uint16_t tbw, tbh;
-  display.getTextBounds(HelloWorld, 0, 0, &tbx, &tby, &tbw, &tbh);
-  // center the bounding box by transposition of the origin:
-  uint16_t x = ((display.width() - tbw) / 2) - tbx;
-  uint16_t y = ((display.height() - tbh) / 2) - tby;
-  display.setFullWindow();
-  display.firstPage();
-  do
-  {
-    display.fillScreen(GxEPD_WHITE);
-    display.setCursor(x, y);
-    display.print(HelloWorld);
-  }
-  while (display.nextPage());*/
 }
 
 void DisplayEinkET013TT1::draw_box_cmds_only(int start_x, int start_y, int end_x, int end_y) {
