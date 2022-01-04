@@ -177,14 +177,8 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
         delay(2000);
         esp_restart();
     }));
-    settings_menu->add_menu_item(MenuItem("Reset NVS", [this, settings_menu]() {
-        nvs_flash_erase();
-        log_w("NVS cleared. Rebooting...");
-
-        renderer->render_max_box_with_text("NVS cleared! Resetting...");
-        delay(2000);
-        esp_restart();
-    }));
+    settings_menu->add_menu_item(
+        MenuItem("Factory Defaults", [this, settings_menu]() { this->restoreFactoryDefaults(); }));
     settings_menu->add_menu_item(MenuItem("Loading Test", [this, settings_menu]() {
         auto loading_screen = new LoadingScreen(renderer);
         set_current_screen(*loading_screen);
@@ -221,4 +215,19 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
     set_current_screen(*calibration_screen);
 
     SHOW_HEAP();
+}
+
+void RootUI::process_command(RemoteCommand command) {
+    if (command == FACTORY_DEFAULTS) {
+        restoreFactoryDefaults();
+    }
+    ContainerScreen::process_command(command);
+}
+
+void RootUI::restoreFactoryDefaults() {
+    nvs_flash_erase();
+    log_w("NVS cleared. Rebooting...");
+    renderer->render_max_box_with_text("NVS cleared! Resetting...");
+    delay(2000);
+    esp_restart();
 }

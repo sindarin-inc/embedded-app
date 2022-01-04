@@ -123,8 +123,11 @@ void TTRemoteInput::buttonNotificationCallback(BLERemoteCharacteristic *remoteCh
     case TT_MULTI_E_W:
         ble_code = ENTER;
         break;
+    case TT_MULTI_E_N_W:
+        ble_code = FACTORY_DEFAULTS;
+        break;
     default:
-        log_w("Invalid code processed from Turntouch: %u", processed);
+        log_w("Invalid code processed from Turntouch: %X", processed);
         break;
     }
     was_code_processed = 0;

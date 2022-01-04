@@ -14,6 +14,7 @@ enum RemoteCommand : int {
     NOP_BUTTON = 0xC,
     NEXT = 0xD,
     BACK = 0xE,
+    FACTORY_DEFAULTS = 0xFF,
 
     NONE = -1,
 };

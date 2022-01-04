@@ -9,7 +9,7 @@ class ContainerScreen : public Screen {
 public:
     void set_current_screen(Screen &screen);
     void render();
-    void process_command(RemoteCommand command);
+    virtual void process_command(RemoteCommand command);
 
 protected:
     Screen *current_screen;

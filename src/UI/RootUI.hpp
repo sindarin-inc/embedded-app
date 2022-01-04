@@ -15,8 +15,12 @@ public:
     RootUI(PreferencesStore &prefs) : prefs(prefs) {}
 
     void setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Readable> &readables);
+    void process_command(RemoteCommand command) override;
 
 protected:
     Renderer *renderer;
     PreferencesStore &prefs;
+
+private:
+    void restoreFactoryDefaults();
 };
