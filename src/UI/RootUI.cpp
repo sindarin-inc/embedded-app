@@ -207,7 +207,7 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
         MenuItem("**SETTINGS**", [this, settings_menu]() { set_current_screen(*settings_menu); }));
 
     auto calibration_screen = new CalibrationScreen(*renderer);
-    calibration_screen->back_callback = [this, &calibration_screen, display, main_menu]() {
+    calibration_screen->back_callback = [this, calibration_screen, display, main_menu]() {
         renderer->render_max_box();
         delay(100);
 
@@ -215,7 +215,6 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
 
         set_current_screen(*main_menu);
         delete calibration_screen;
-        calibration_screen = nullptr;
     };
 
     set_current_screen(*calibration_screen);
