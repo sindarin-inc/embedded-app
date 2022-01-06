@@ -138,15 +138,20 @@ void DisplayEinkET013TT1::draw_menu_lines_with_item(String new_text, int start_x
         setPartialWindow(start_x - 2, start_y - 2, (end_x - start_x) + 4, (end_y - start_y) + 4);
     }                                               
 
+    log_d("set partial window complete");
+
     draw_menu_lines_cmds_only(start_x, start_y, end_x, end_y);
 
+    log_d("drew commands only");
 // ugly
     u8g2Fonts.setFont(u8g2_font_t0_22b_tf);
     line_height = get_text_height();
     draw_text_cmds_only(new_text, start_x + 10, (end_y - start_y)/2 + start_y - 7, line_height);
 
+    log_d("drew text commands only");
+
     updateDisplay();
-  
+    log_d("completed update display");
 }
 
 void DisplayEinkET013TT1::draw_box_cmds_only(int start_x, int start_y, int end_x, int end_y) {
@@ -163,11 +168,19 @@ void DisplayEinkET013TT1::draw_menu_lines_cmds_only(int start_x, int start_y, in
         fillScreen(bg);
     }
     /* INSERT ALL THE LINES AND TRIANGLES HERE */
-    fillRect(start_x, start_y + (end_y-start_y)/3 - 1, end_x, start_y + (end_y-start_y)/3 + 1, fg);
-    fillRect(start_x, start_y + 2*(end_y-start_y)/3 - 1, end_x, start_y + 2*(end_y-start_y)/3 + 1, fg);
+      log_d("start cmds");
+    fillRect(start_x, start_y + (end_y-start_y)/3 - 1, end_x-start_x, 3, fg);
+      log_d("rect 1 complete %d %d %d %d", start_x, start_y, end_x, end_y);
+      log_d("rec coordinates %d %d %d %d", start_x, start_y + (end_y-start_y)/3 - 1, end_x-start_x, 5);
+    fillRect(start_x, end_y - (end_y-start_y)/3 - 1, end_x-start_x, 3, fg);
+      log_d("rect 2 complete");
     fillTriangle(end_x, (end_y-start_y) / 2, end_x-6, (end_y-start_y) / 2-6, end_x+6, (end_y-start_y) / 2+6, fg);
+      log_d("triangle 1 complete");
     fillTriangle((end_x-start_x)/2, start_y, (end_x-start_x)/2-12, start_y+6, (end_x-start_x)/2+12, start_y+6, fg);
+      log_d("triangle 2 complete");
     fillTriangle((end_x-start_x)/2, end_y, (end_x-start_x)/2-12, end_y - 6, (end_x-start_x)/2+12, end_y-6, fg);
+      log_d("triangle 3 complete");
+      log_d("end cmds");
 }
 
 void DisplayEinkET013TT1::draw_box(int start_x, int start_y, int end_x, int end_y) {
