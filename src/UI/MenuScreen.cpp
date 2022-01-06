@@ -101,6 +101,8 @@ void MenuScreen::render() {
     String bat_life = power.getBatteryLifeString();
     String total_to_display = menu_string + String("\n\n") + bat_life;
     renderer.render_max_box_with_text(total_to_display);
+    //renderer.render_menu_lines_with_item(get_curr_item().title);
+
     needs_rerender = false;
 }
 

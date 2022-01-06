@@ -57,6 +57,9 @@ public:
     virtual void draw_big_word_in_box(String new_text, int start_x, int start_y, int end_x,
                                       int end_y) = 0;
 
+    virtual void draw_menu_lines_with_item(String new_text, int start_x, int start_y, int end_x,
+                                           int end_y) = 0;
+
     virtual void display_splash_screen() = 0;
 
     DisplaySystem();

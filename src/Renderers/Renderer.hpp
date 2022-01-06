@@ -13,6 +13,8 @@ public:
 
     void render_max_box_with_word(const String &word);
 
+    void render_menu_lines_with_item(const String &item);
+
     void render_box(int x_start, int y_start, int x_end, int y_end);
 
     auto get_previous_place() -> unsigned long;
