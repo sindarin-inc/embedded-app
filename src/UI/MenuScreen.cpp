@@ -2,8 +2,6 @@
 
 #include <utility>
 
-#include "Misc/Platform.hpp"
-
 #define NUM_LINES_PER_MENU_PAGE 5
 
 void MenuScreen::add_menu_item(const MenuItem &new_item) {
@@ -100,7 +98,7 @@ void MenuScreen::render() {
     }
     log_i("Menuscreen render (selected = %s)", get_curr_item().title.c_str());
     String menu_string = get_paginated_menu_string();
-    String bat_life = BatteryLifeString();
+    String bat_life = power.getBatteryLifeString();
     String total_to_display = menu_string + String("\n\n") + bat_life;
     renderer.render_max_box_with_text(total_to_display);
     needs_rerender = false;

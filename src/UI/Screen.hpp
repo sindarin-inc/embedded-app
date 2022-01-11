@@ -15,7 +15,7 @@ public:
     virtual void render() = 0;
     virtual void process_command(RemoteCommand command) = 0;
 
-    void loop(RemoteCommand command) {
+    virtual void loop(RemoteCommand command) {
         if (command != RemoteCommand::NONE) {
             process_command(command);
         }

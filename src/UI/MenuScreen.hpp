@@ -4,6 +4,7 @@
 #include <Arduino.h>
 
 #include "Inputs/RemoteInput.hpp"
+#include "Misc/Power.hpp"
 #include "Renderers/Renderer.hpp"
 #include "UI/Screen.hpp"
 #include "sindarin-debug.h"
@@ -25,7 +26,9 @@ public:
 class MenuScreen : public Screen {
 
 public:
-    MenuScreen(Renderer &renderer) : renderer(renderer) { num_menu_items = 0; };
+    MenuScreen(Renderer &renderer, Power &power) : renderer(renderer), power(power) {
+        num_menu_items = 0;
+    };
 
     void add_menu_item(const MenuItem &new_item);
 
@@ -74,6 +77,7 @@ protected:
     int cur_menu_page = 0;
 
     Renderer &renderer;
+    Power &power;
 };
 
 #endif

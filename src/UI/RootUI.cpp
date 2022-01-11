@@ -14,6 +14,7 @@
 #include "UI/LoadingScreen.hpp"
 #include "UI/MenuScreen.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
+#include "UI/PowerDepletedScreen.hpp"
 #include "UI/RawRendererScreen.hpp"
 #include "UI/ReadableScreen.hpp"
 #include "sindarin-debug.h"
@@ -29,7 +30,7 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
     renderer->local_y_offset = prefs.local_y_offset;
     SIZE_OF(*renderer);
 
-    auto main_menu = new MenuScreen(*renderer);
+    auto main_menu = new MenuScreen(*renderer, this->power);
     SIZE_OF(*main_menu);
 
     for (Readable &r : readables) {
@@ -96,7 +97,7 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
         }
 
         log_i("Pocket /get request succeeded");
-        auto pocket_menu = new MenuScreen(*renderer);
+        auto pocket_menu = new MenuScreen(*renderer, this->power);
 
         for (JsonPair keyValue : list) {
             JsonObject article = keyValue.value().as<JsonObject>();
@@ -156,11 +157,11 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
 #endif // DISABLE_WIFI
 
     // Settings menu
-    auto settings_menu = new MenuScreen(*renderer);
+    auto settings_menu = new MenuScreen(*renderer, this->power);
 
     settings_menu->add_menu_item(MenuItem("Adjust Offset", [this, settings_menu]() {
         log_d("Loading adjust offset");
-        auto offset_adjust = new OffsetAdjustScreen(*renderer, prefs);
+        auto offset_adjust = new OffsetAdjustScreen(*renderer, prefs, this->power);
         set_current_screen(*offset_adjust);
         log_d("setting up callback");
         offset_adjust->back_callback = [this, offset_adjust, settings_menu]() {
@@ -221,6 +222,20 @@ void RootUI::process_command(RemoteCommand command) {
         restoreFactoryDefaults();
     }
     ContainerScreen::process_command(command);
+}
+
+void RootUI::loop(RemoteCommand command) {
+    if (this->power.getDepleted()) {
+        // Force render immediately as we are about to shut off
+        PowerDepletedScreen powerDepleted(*(this->renderer));
+        set_current_screen(powerDepleted);
+        this->render();
+        // Wait 5 seconds to be able to see the message
+        delay(5000);
+        // Unless wake sources are defined, nothing can wake us up. Goodnight.
+        esp_deep_sleep_start();
+    }
+    Screen::loop(command);
 }
 
 void RootUI::restoreFactoryDefaults() {

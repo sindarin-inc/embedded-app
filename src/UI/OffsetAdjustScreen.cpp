@@ -1,6 +1,5 @@
 #include "UI/OffsetAdjustScreen.hpp"
 
-#include "Misc/Platform.hpp"
 #include "sindarin-debug.h"
 
 void OffsetAdjustScreen::render() {
@@ -14,7 +13,7 @@ void OffsetAdjustScreen::render() {
     String total_to_display;
     menu_string = "Press arrows to move\nbox around to your\nliking. Then press\nenter "
                   "when done!\nHave a nice day.\n";
-    bat_life = BatteryLifeString();
+    bat_life = this->power.getBatteryLifeString();
     total_to_display = menu_string + String("\n\n") + bat_life;
     renderer.render_max_box_with_text(total_to_display);
     needs_rerender = false;

@@ -19,6 +19,7 @@
 #include "Displays/AllDisplays.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Platform.hpp"
+#include "Misc/Power.hpp"
 #include "Optics/AllOptics.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
@@ -95,8 +96,10 @@ TTRemoteInput *tt_remote_input;
 OTA ota;
 #endif
 
+Power power;
+
 PreferencesStore prefs;
-RootUI root_ui(prefs);
+RootUI root_ui(prefs, power);
 
 void setupDisplayAndOptics() {
 #ifdef EINK154in
@@ -208,6 +211,8 @@ void setup() {
 
     SHOW_HEAP();
 
+    power.setup();
+
     root_ui.setup(my_display, my_optics, *readables);
 
     SHOW_HEAP();
@@ -265,4 +270,6 @@ void loop() {
 #ifdef ENABLE_OTA
     ota.loop();
 #endif
+
+    power.loop();
 }

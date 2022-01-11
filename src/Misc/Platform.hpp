@@ -3,4 +3,6 @@
 
 void InitializePlatform();
 
-auto BatteryLifeString() -> String;
+auto GetBatteryVoltageLeft() -> float;
+
+auto GetBatteryVoltageRight() -> float;
