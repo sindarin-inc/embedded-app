@@ -37,8 +37,6 @@ void Power::loop() {
             this->rightIndex = 0;
         }
 
-        this->getBatteryLifeString();
-
         // Check if both batteries are below the threshold. If so, show the battery screen and halt
         // everything
         if (this->getLeftBatteryVoltage() < BATTERY_MIN_VOLTAGE &&
