@@ -1,0 +1,4 @@
+#define NotoSans_CondensedMedium14pt7bBitmaps_width  3
+#define NotoSans_CondensedMedium14pt7bBitmaps_height 19
+static unsigned char NotoSans_CondensedMedium14pt7bBitmaps_bits[] = {
+  0xFF, 0xFF, 0xFF, 0xFF, 0xFE, 0x07, 0xFF, 0x80 };

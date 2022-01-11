@@ -214,6 +214,24 @@ void setup() {
     SHOW_HEAP();
 
     log_i("Setup done");
+    pinMode(RED_LED, OUTPUT);
+    pinMode(GREEN_LED, OUTPUT);
+    /*
+        log_d("Flashing LEDs");
+        for (int i = 0; i < 5; i++) {
+           digitalWrite(RED_LED, LOW);
+            digitalWrite(GREEN_LED, LOW);
+            delay(1000);
+            digitalWrite(RED_LED, HIGH);
+            digitalWrite(GREEN_LED, LOW);
+            delay(1000);
+            digitalWrite(RED_LED, LOW);
+            digitalWrite(GREEN_LED, HIGH);
+            delay(1000);
+        }
+
+        log_d("end Flashing LEDs");
+    */
 }
 
 void loop() {

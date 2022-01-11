@@ -1,5 +1,17 @@
 #include "DisplayEinkET013TT1.hpp"
 
+#include "../UI/Bitmaps/Menu_Blank.hpp"
+#include "../UI/Bitmaps/Popup_Menu_Blank.hpp"
+#include "../lib/bmps-for-splash/NotoSans_CondensedMedium10pt7b.h"
+#include "../lib/bmps-for-splash/NotoSans_CondensedMedium14pt7b.h"
+#include "../lib/bmps-for-splash/NotoSans_CondensedMedium20pt7b.h"
+#include "../lib/bmps-for-splash/NotoSans_CondensedMedium5pt7b.h"
+#include "../lib/bmps-for-splash/NotoSans_CondensedMedium6pt7b.h"
+//#include "../lib/bmps-for-splash/Bookerly_Display6pt7b.h"
+//#include "../lib/bmps-for-splash/Bookerly_Light6pt7b.h"
+//#include "../lib/bmps-for-splash/Bookerly6pt7b.h"
+//#include "../lib/bmps-for-splash/Bookerly5pt7b.h"
+
 #include <EPD_TCON.h>
 #include <UI/Fonts/LucidaGrande5pt7b.h>
 
@@ -125,29 +137,84 @@ void DisplayEinkET013TT1::draw_text_in_box(String new_text, int start_x, int sta
     }
 }
 
-void DisplayEinkET013TT1::draw_menu_lines_with_item(String new_text, int start_x, int start_y, int end_x,
-                                                    int end_y) {
+void DisplayEinkET013TT1::draw_menu_lines_with_item(String new_text, int start_x, int start_y,
+                                                    int end_x, int end_y) {
     int line_height = 0;
-
-    
-    setup_display_for_text();
 
     log_d("Printing some stuff to screen from menu items! (%ld)", (long)this);
 
     if (get_partial_refresh()) {
         setPartialWindow(start_x - 2, start_y - 2, (end_x - start_x) + 4, (end_y - start_y) + 4);
-    }                                               
+    }
 
     log_d("set partial window complete");
 
     draw_menu_lines_cmds_only(start_x, start_y, end_x, end_y);
 
     log_d("drew commands only");
-// ugly
-    u8g2Fonts.setFont(u8g2_font_t0_22b_tf);
-    line_height = get_text_height();
-    draw_text_cmds_only(new_text, start_x + 10, (end_y - start_y)/2 + start_y - 7, line_height);
+    // ugly
+    setup_display_for_text();
+    // u8g2Fonts.setFont(u8g2_font_t0_22b_tf);
+    /*
+       u8g2Fonts.setFont(u8g2_font_6x10_tf);
+       line_height = get_text_height();
+       partial_refresh = 1;
+       u8g2Fonts.setCursor((end_x-start_x)/2+start_x-12, (end_y - start_y)/6 + start_y);
+       u8g2Fonts.println("Exit");
 
+       u8g2Fonts.setCursor(start_x+3, (end_y - start_y)/2 + start_y-8);
+       u8g2Fonts.println("Home");
+
+       u8g2Fonts.setCursor(end_x-30, (end_y - start_y)/2 + start_y-8);
+       u8g2Fonts.println("Items");
+
+       u8g2Fonts.setCursor((end_x-start_x)/2+start_x-21, end_y-(end_y - start_y)/4);
+       u8g2Fonts.println("Settings");
+
+
+       u8g2Fonts.setCursor((end_x-start_x)/2+start_x-30, end_y-3);
+       u8g2Fonts.println(new_text);
+
+      */
+    /* Popup menu text!
+        setFont(&NotoSans_CondensedMedium5pt7b);
+        setCursor((end_x-start_x)/2+start_x-12, (end_y - start_y)/6 + start_y);
+        println("Exit");
+
+        setCursor(start_x+3, (end_y - start_y)/2 + start_y-8);
+        println("Home");
+
+        setCursor(end_x-30, (end_y - start_y)/2 + start_y-8);
+        println("Items");
+
+        setCursor((end_x-start_x)/2+start_x-21, end_y-(end_y - start_y)/4);
+        println("Settings");
+
+        setFont(&NotoSans_CondensedMedium10pt7b);
+        setCursor((end_x-start_x)/2+start_x-30, end_y-3);
+        println(new_text);
+        */
+    // setCursor((end_x-start_x)/2+start_x - 20,50);
+    // println("Let's Focus");
+    int16_t returnX, returnY;
+    uint16_t returnW, returnH;
+
+    // getTextBounds("Let's Focus", (end_x-start_x)/2+start_x-20, 50, &returnX, &returnY, &returnW,
+    // &returnH);
+
+    // log_d("all the return vals from getTextBounds: %d %d %d %d", returnX, returnY, returnW,
+    // returnH);
+    setFont(&NotoSans_CondensedMedium10pt7b);
+    setCursor((end_x - start_x) / 2 + start_x - get_text_width(new_text.c_str()) / 2,
+              (end_y - start_y) / 2 + start_y + get_text_height() / 2 - 3);
+    // this is at the bottom
+    // setCursor((end_x-start_x)/2+start_x-get_text_width(new_text.c_str())/2,
+    // (end_y-3)-get_text_height());
+    println(new_text);
+    setFont(&NotoSans_CondensedMedium6pt7b);
+
+    // draw_text_cmds_only(new_text, start_x + 10, (end_y - start_y)/2 + start_y, line_height);
+    // partial_refresh = 0;
     log_d("drew text commands only");
 
     updateDisplay();
@@ -162,25 +229,61 @@ void DisplayEinkET013TT1::draw_box_cmds_only(int start_x, int start_y, int end_x
     drawRect(start_x, start_y, end_x - start_x, end_y - start_y, fg);
 }
 
-void DisplayEinkET013TT1::draw_menu_lines_cmds_only(int start_x, int start_y, int end_x, int end_y) {
+void DisplayEinkET013TT1::draw_menu_lines_cmds_only(int start_x, int start_y, int end_x,
+                                                    int end_y) {
 
     if (!get_partial_refresh()) {
         fillScreen(bg);
     }
     /* INSERT ALL THE LINES AND TRIANGLES HERE */
-      log_d("start cmds");
-    fillRect(start_x, start_y + (end_y-start_y)/3 - 1, end_x-start_x, 3, fg);
-      log_d("rect 1 complete %d %d %d %d", start_x, start_y, end_x, end_y);
-      log_d("rec coordinates %d %d %d %d", start_x, start_y + (end_y-start_y)/3 - 1, end_x-start_x, 5);
-    fillRect(start_x, end_y - (end_y-start_y)/3 - 1, end_x-start_x, 3, fg);
-      log_d("rect 2 complete");
-    fillTriangle(end_x, (end_y-start_y) / 2, end_x-6, (end_y-start_y) / 2-6, end_x+6, (end_y-start_y) / 2+6, fg);
-      log_d("triangle 1 complete");
-    fillTriangle((end_x-start_x)/2, start_y, (end_x-start_x)/2-12, start_y+6, (end_x-start_x)/2+12, start_y+6, fg);
-      log_d("triangle 2 complete");
-    fillTriangle((end_x-start_x)/2, end_y, (end_x-start_x)/2-12, end_y - 6, (end_x-start_x)/2+12, end_y-6, fg);
-      log_d("triangle 3 complete");
-      log_d("end cmds");
+    log_d("start cmds");
+    Adafruit_GFX::drawXBitmap(0, 0, Menu_Blank_bits, 256, 256, fg);
+    // Adafruit_GFX::drawXBitmap(0, 0, Popup_Menu_Blank_bits, 256, 256, fg);
+    /*
+     fillRect(start_x, start_y + (end_y-start_y)/3 - 1, end_x-start_x, 3, fg);
+       log_d("rect 1 complete %d %d %d %d", start_x, start_y, end_x, end_y);
+       log_d("rec coordinates %d %d %d %d", start_x, start_y + (end_y-start_y)/3 - 1, end_x-start_x,
+     5); fillRect(start_x, end_y - (end_y-start_y)/3 - 1, end_x-start_x, 3, fg); log_d("rect 2
+     complete"); fillTriangle(end_x, (end_y-start_y) / 2, end_x-6, (end_y-start_y) / 2-6, end_x+6,
+     (end_y-start_y) / 2+6, fg); log_d("triangle 1 complete"); fillTriangle((end_x-start_x)/2,
+     start_y, (end_x-start_x)/2-12, start_y+6, (end_x-start_x)/2+12, start_y+6, fg); log_d("triangle
+     2 complete"); fillTriangle((end_x-start_x)/2, end_y, (end_x-start_x)/2-12, end_y - 6,
+     (end_x-start_x)/2+12, end_y-6, fg); log_d("triangle 3 complete"); log_d("end cmds");
+     */
+    /* BC: CALIBRATION SCREEN
+        int midpoint_x = ((end_x-start_x)/2) + start_x;
+        int midpoint_y = ((end_y-start_y)/2) + start_y;
+        int box_width = end_x - start_x;
+        int box_height = end_y - start_y;
+
+        fillRect(start_x, start_y, box_width, box_height, fg);
+        fillRect(start_x+2, start_y+2, box_width-4, box_height-4, bg);
+        setFont(&NotoSans_CondensedMedium6pt7b);
+        int lets_width = get_text_width("let's");
+        int focus_width= get_text_width("focus");
+        int lets_height = get_text_height();
+        int focus_height = get_text_height();
+
+        for (int i = 30; i > 23; i--) {
+            drawCircle(midpoint_x, midpoint_y, i, fg);
+        }
+
+        setCursor(midpoint_x - lets_width / 2, midpoint_y - 3);
+        println("let's");
+        setCursor(midpoint_x - focus_width / 2, midpoint_y + focus_height - 6);
+        println("focus");
+
+        int EDGE_OFFSET = 5;
+
+        setCursor(end_x - get_text_width("lower right") - EDGE_OFFSET, end_y - EDGE_OFFSET - 2);
+        println("lower right");
+        setCursor(start_x + EDGE_OFFSET, end_y - EDGE_OFFSET - 2); // lower left
+        println("lower left");
+        setCursor(start_x + EDGE_OFFSET, start_y + get_text_height() - 2); // upper left
+        println("upper left");
+        setCursor(end_x - get_text_width("upper right") - EDGE_OFFSET, start_y + get_text_height() -
+       2); println("upper right");
+    */
 }
 
 void DisplayEinkET013TT1::draw_box(int start_x, int start_y, int end_x, int end_y) {
