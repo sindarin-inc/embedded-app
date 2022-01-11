@@ -1,14 +1,10 @@
 
 #include "Renderers/Renderer.hpp"
+#include "UI/Bitmaps/Battery_Low.hpp"
 #include "UI/Screen.hpp"
 
-class PowerDepletedScreen : public Screen {
+class PowerDepletedScreen : public BitmapScreen {
 public:
-    PowerDepletedScreen(Renderer &renderer) : renderer(renderer) {}
-
-    void render();
-    void process_command(RemoteCommand command);
-
-protected:
-    Renderer &renderer;
+    PowerDepletedScreen(Renderer &renderer) : BitmapScreen(renderer, Battery_Low_bits) {}
+    ~PowerDepletedScreen() = default;
 };
