@@ -58,7 +58,7 @@ public:
                                       int end_y) = 0;
 
     virtual void draw_menu_lines_with_item(String new_text, int start_x, int start_y, int end_x,
-                                           int end_y) = 0;
+                                           int end_y, String battery_status) = 0;
 
     virtual void display_splash_screen() = 0;
 

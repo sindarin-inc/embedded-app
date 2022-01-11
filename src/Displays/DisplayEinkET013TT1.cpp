@@ -2,6 +2,10 @@
 
 #include "../UI/Bitmaps/Menu_Blank.hpp"
 #include "../UI/Bitmaps/Popup_Menu_Blank.hpp"
+#include "../lib/bmps-for-splash/LucidaGrande10pt7b.h"
+#include "../lib/bmps-for-splash/LucidaGrande14pt7b.h"
+#include "../lib/bmps-for-splash/LucidaGrande5pt7b.h"
+#include "../lib/bmps-for-splash/LucidaGrande6pt7b.h"
 #include "../lib/bmps-for-splash/NotoSans_CondensedMedium10pt7b.h"
 #include "../lib/bmps-for-splash/NotoSans_CondensedMedium14pt7b.h"
 #include "../lib/bmps-for-splash/NotoSans_CondensedMedium20pt7b.h"
@@ -138,7 +142,7 @@ void DisplayEinkET013TT1::draw_text_in_box(String new_text, int start_x, int sta
 }
 
 void DisplayEinkET013TT1::draw_menu_lines_with_item(String new_text, int start_x, int start_y,
-                                                    int end_x, int end_y) {
+                                                    int end_x, int end_y, String battery_status) {
     int line_height = 0;
 
     log_d("Printing some stuff to screen from menu items! (%ld)", (long)this);
@@ -204,14 +208,24 @@ void DisplayEinkET013TT1::draw_menu_lines_with_item(String new_text, int start_x
 
     // log_d("all the return vals from getTextBounds: %d %d %d %d", returnX, returnY, returnW,
     // returnH);
-    setFont(&NotoSans_CondensedMedium10pt7b);
+    setFont(&LucidaGrande10pt7b);
+    // setFont(&NotoSans_CondensedMedium10pt7b);
     setCursor((end_x - start_x) / 2 + start_x - get_text_width(new_text.c_str()) / 2,
-              (end_y - start_y) / 2 + start_y + get_text_height() / 2 - 3);
+              (end_y - start_y) / 2 + start_y + get_text_height() / 2 - 2);
     // this is at the bottom
     // setCursor((end_x-start_x)/2+start_x-get_text_width(new_text.c_str())/2,
     // (end_y-3)-get_text_height());
     println(new_text);
-    setFont(&NotoSans_CondensedMedium6pt7b);
+
+    setFont(&LucidaGrande5pt7b);
+
+    setCursor((end_x - start_x) / 2 + start_x - get_text_width(battery_status.c_str()) / 2, end_y);
+
+    println(battery_status);
+
+    // setFont(&LucidaGrande5pt7b);
+
+    // setFont(&NotoSans_CondensedMedium6pt7b);
 
     // draw_text_cmds_only(new_text, start_x + 10, (end_y - start_y)/2 + start_y, line_height);
     // partial_refresh = 0;

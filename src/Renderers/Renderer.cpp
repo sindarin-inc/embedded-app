@@ -63,9 +63,10 @@ void Renderer::render_max_box_with_word(const String &word) {
                                   x_max + local_x_offset, y_max + local_y_offset);
 }
 
-void Renderer::render_menu_lines_with_item(const String &item) {
-    display->draw_menu_lines_with_item(std::move(item), x_min + local_x_offset, y_min + local_y_offset,
-                                       x_max + local_x_offset, y_max + local_y_offset);
+void Renderer::render_menu_lines_with_item(const String &item, const String &battery_status) {
+    display->draw_menu_lines_with_item(std::move(item), x_min + local_x_offset,
+                                       y_min + local_y_offset, x_max + local_x_offset,
+                                       y_max + local_y_offset, std::move(battery_status));
 }
 
 void Renderer::render_box(int x_start, int y_start, int x_end, int y_end) {

@@ -26,7 +26,8 @@ public:
     void draw_text(String new_text, int x, int y);
 
     void draw_text_in_box(String new_text, int start_x, int start_y, int end_x, int end_y);
-    void draw_menu_lines_with_item(String new_text, int start_x, int start_y, int end_x, int end_y);
+    void draw_menu_lines_with_item(String new_text, int start_x, int start_y, int end_x, int end_y,
+                                   String battery_status);
 
     void get_text_bounds(const char *buffer, uint16_t *w, uint16_t *h);
     int get_text_height();
