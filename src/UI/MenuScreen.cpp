@@ -2,7 +2,7 @@
 
 #include <utility>
 
-#define NUM_LINES_PER_MENU_PAGE 5
+#define NUM_LINES_PER_MENU_PAGE 8
 
 void MenuScreen::add_menu_item(const MenuItem &new_item) {
     menu_items[num_menu_items] = std::move(new_item);

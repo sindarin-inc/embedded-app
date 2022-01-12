@@ -267,7 +267,6 @@ void DisplayEinkET013TT1::setPartialWindow(uint16_t x, uint16_t y, uint16_t w, u
 
 void DisplayEinkET013TT1::drawPixel(int16_t x, int16_t y, uint16_t color) {
     if ((x < 0) || (x >= width()) || (y < 0) || (y >= height())) {
-        DEBUG_LN("drawPixel received invalid parameters; short-circuiting call");
         return;
     }
     // Move according to rotation as needed

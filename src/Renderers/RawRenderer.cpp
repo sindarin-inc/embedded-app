@@ -4,23 +4,24 @@
 
 #define MAX_CHARS_PER_LINE 200
 
-RawRenderer::RawRenderer(OpticsSystem *optic_input, DisplaySystem *display_input, std::string &raw)
-    : Renderer(optic_input, display_input), raw_data(raw), data_stream(raw_data) {
-    raw_data = raw;
-    data_stream = std::istringstream(raw_data);
-    current_place = 0;
-    previous_place = 0;
+RawRenderer::RawRenderer(OpticsSystem *optic_input, DisplaySystem *display_input,
+                         std::string &string)
+    : Renderer(optic_input, display_input) {
+    this->set_string(string);
+}
+
+void RawRenderer::set_string(std::string &string) {
+    this->data_stream = std::istringstream(string);
+    this->current_place = 0;
+    this->previous_place = 0;
 
     // LOAD TEXT for prev, current.
-    load_prev_into_buffer();
-    load_curr_into_buffer();
+    this->load_prev_into_buffer();
+    this->load_curr_into_buffer();
 
-    screed_speed = 150;
-    screed_last_time = 0;
-    read_mode = PAGE_READ;
-    // load_next_into_buffer();
-    //  HACK
-    // strcpy(next_buffer, curr_buffer);
+    this->screed_speed = 150;
+    this->screed_last_time = 0;
+    this->read_mode = PAGE_READ;
 }
 
 void RawRenderer::set_read_mode(int new_mode) { read_mode = new_mode; }
@@ -155,6 +156,8 @@ auto RawRenderer::render_page_with_box(unsigned long place_in_file) -> unsigned 
 }
 
 // returns the new place of the file_handle
+// TODO(john): Unify this with the version in FileRenderer perhaps as a part of the holistic
+// Renderer / Display / Optics refactor we've been discussing.
 auto RawRenderer::load_into_buffer(char *buffer, unsigned long place) -> unsigned long {
     char cur_char = '\0';
     unsigned int plc_in_buffer = 0;

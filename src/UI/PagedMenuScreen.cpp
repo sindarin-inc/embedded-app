@@ -33,7 +33,8 @@ void PagedMenuScreen::render() {
         // Blank out screen
         eink->fillScreen(eink->bg);
         // Draw menu surroundings
-        eink->drawXBitmap(0, 0, Menu_Blank_bits, 256, 256, eink->fg);
+        eink->drawXBitmap(this->renderer.local_x_offset, this->renderer.local_y_offset,
+                          Menu_Blank_bits, 256, 256, eink->fg);
         String itemTitle = get_curr_item().title;
         // Cache / replace old font; then try descending size fonts until we find one that fits our
         // string in the desired space.

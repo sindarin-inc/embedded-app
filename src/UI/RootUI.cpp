@@ -29,12 +29,12 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
     // TODO: Reload the current book / spot / menu
 
     // General renderer shared by menus and simple UIs
-    renderer = new Renderer(optics, display);
-    renderer->local_x_offset = prefs.localXOffset.get().value();
-    renderer->local_y_offset = prefs.localYOffset.get().value();
-    SIZE_OF(*renderer);
+    this->renderer = new Renderer(optics, display);
+    this->renderer->local_x_offset = prefs.localXOffset.get().value();
+    this->renderer->local_y_offset = prefs.localYOffset.get().value();
+    SIZE_OF(*this->renderer);
 
-    auto main_menu = new PagedMenuScreen(*renderer, this->power);
+    auto main_menu = new PagedMenuScreen(*this->renderer, this->power);
     SIZE_OF(*main_menu);
 
     auto createReadableScreen = [this, optics, display,
@@ -70,7 +70,7 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
     main_menu->add_menu_item(MenuItem("Pocket Articles", [this, main_menu, optics, display]() {
         if (!WiFi.isConnected()) {
             log_w("Tried to load Pocket articles but WiFi not connected");
-            renderer->render_max_box_with_text(String("WiFi Disconnected"));
+            this->renderer->render_max_box_with_text(String("WiFi Disconnected"));
             delay(2000);
             needs_rerender = true;
             return;
@@ -79,7 +79,7 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
         log_i("Loading top Pocket article");
         // TODO(John): I wanted to make a loading indicator for this but then realized I'll
         // need to add threading / tasks since the HTTP code is synchronous right now.
-        renderer->render_max_box_with_text(String("Downloading..."));
+        this->renderer->render_max_box_with_text(String("Downloading..."));
         PocketAPI *pocket = PocketAPI::getInstance();
         pocket->setAccessToken(prefs.pocketApiToken.get().value().c_str());
 
@@ -90,7 +90,7 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
         int code = pocket->get(&response);
         if (code != 200) {
             log_e("Pocket HTTP error: %d", code);
-            renderer->render_max_box_with_text(String("HTTP error: ") + String(code));
+            this->renderer->render_max_box_with_text(String("HTTP error: ") + String(code));
             delay(2000);
             set_current_screen(*main_menu);
             return;
@@ -99,7 +99,7 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
         JsonObject list = (*response)["list"].as<JsonObject>();
         if (list.size() <= 0) {
             log_w("No Pocket articles found");
-            renderer->render_max_box_with_text(String("No articles found"));
+            this->renderer->render_max_box_with_text(String("No articles found"));
             delay(2000);
             set_current_screen(*main_menu);
             delete response;
@@ -114,47 +114,47 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
             const char *url = article["resolved_url"].as<const char *>();
             log_i("Got Pocket url %s", url);
             const char *title = article["resolved_title"].as<const char *>();
-            pocket_menu->add_menu_item(
-                MenuItem(title, [this, pocket_menu, title, url, pocket, optics, display]() {
-                    log_d("Loading article %s (%s)", title, url);
-                    renderer->render_max_box_with_text(String("Downloading..."));
-                    SpiRamJsonDocument *response;
-                    auto code = pocket->text(url, &response);
-                    if (code != 200) {
-                        if (code == -1) {
-                            log_e("Pocket HTTP Error: %d (Article too long?)", code);
-                            renderer->render_max_box_with_text(String("Error: Too long"));
-                        } else {
-                            log_e("Pocket HTTP Error: %d", code);
-                            renderer->render_max_box_with_text(String("Pocket Error: ") + code);
-                        }
-                        delay(2000);
-                        set_current_screen(*pocket_menu);
-                        return;
+            pocket_menu->add_menu_item(MenuItem(title, [this, pocket_menu, title, url, pocket,
+                                                        optics, display]() {
+                log_d("Loading article %s (%s)", title, url);
+                renderer->render_max_box_with_text(String("Downloading..."));
+                SpiRamJsonDocument *response;
+                auto code = pocket->text(url, &response);
+                if (code != 200) {
+                    if (code == -1) {
+                        log_e("Pocket HTTP Error: %d (Article too long?)", code);
+                        this->renderer->render_max_box_with_text(String("Error: Too long"));
+                    } else {
+                        log_e("Pocket HTTP Error: %d", code);
+                        this->renderer->render_max_box_with_text(String("Pocket Error: ") + code);
                     }
-                    const char *text = (*response)["article"].as<const char *>();
-                    log_i("Pocket text succeeded for %s", url);
-                    // TODO(john): We should eventually just save these to files and handle them
-                    // the same as any other readable. Probably not great to be copying this whole
-                    // article anyways.
-                    auto str = std::string(text);
-                    auto raw_renderer = new RawRenderer(optics, display, str);
-                    raw_renderer->local_x_offset = prefs.localXOffset.get().value();
-                    raw_renderer->local_y_offset = prefs.localYOffset.get().value();
-                    SIZE_OF(*raw_renderer);
-                    raw_renderer->render_page_with_box(0);
+                    delay(2000);
+                    set_current_screen(*pocket_menu);
+                    return;
+                }
+                const char *text = (*response)["article"].as<const char *>();
+                log_i("Pocket text succeeded for %s", url);
+                // TODO(john): We should eventually just save these to files and handle them
+                // the same as any other readable. Probably not great to be copying this whole
+                // article anyways.
+                auto str = std::string(text);
+                auto raw_renderer = new RawRenderer(optics, display, str);
+                raw_renderer->local_x_offset = prefs.localXOffset.get().value();
+                raw_renderer->local_y_offset = prefs.localYOffset.get().value();
+                SIZE_OF(*raw_renderer);
+                raw_renderer->render_page_with_box(0);
 
-                    auto raw_renderer_screen = new RawRendererScreen(raw_renderer);
-                    set_current_screen(*raw_renderer_screen);
+                auto raw_renderer_screen = new RawRendererScreen(raw_renderer);
+                set_current_screen(*raw_renderer_screen);
 
-                    raw_renderer_screen->back_callback = [this, raw_renderer, raw_renderer_screen,
-                                                          pocket_menu, response]() {
-                        set_current_screen(*pocket_menu);
-                        delete raw_renderer_screen;
-                        delete raw_renderer;
-                        delete response;
-                    };
-                }));
+                raw_renderer_screen->back_callback = [this, raw_renderer, raw_renderer_screen,
+                                                      pocket_menu, response]() {
+                    set_current_screen(*pocket_menu);
+                    delete raw_renderer_screen;
+                    delete raw_renderer;
+                    delete response;
+                };
+            }));
         }
 
         set_current_screen(*pocket_menu);
@@ -169,29 +169,36 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
     // Settings menu
     auto settings_menu = new MenuScreen(*renderer, this->power);
 
-    settings_menu->add_menu_item(MenuItem("Adjust Offset", [this, settings_menu]() {
-        log_d("Loading adjust offset");
-        auto offset_adjust = new OffsetAdjustScreen(*renderer, prefs, this->power);
-        set_current_screen(*offset_adjust);
-        log_d("setting up callback");
-        offset_adjust->back_callback = [this, offset_adjust, settings_menu]() {
-            set_current_screen(*settings_menu);
-            delete offset_adjust;
-        };
-        log_d("set up callback");
-    }));
+    settings_menu->add_menu_item(
+        MenuItem("Adjust Offset", [this, settings_menu, optics, display]() {
+            log_d("Loading adjust offset");
+            auto str = std::string();
+            auto raw_renderer = new RawRenderer(optics, display, str);
+            raw_renderer->local_x_offset = prefs.localXOffset.get().value();
+            raw_renderer->local_y_offset = prefs.localYOffset.get().value();
+            auto offset_adjust = new OffsetAdjustScreen(*raw_renderer, prefs, this->power);
+            this->set_current_screen(*offset_adjust);
+            log_d("setting up callback");
+            offset_adjust->back_callback = [this, offset_adjust, settings_menu]() {
+                set_current_screen(*settings_menu);
+                delete offset_adjust;
+                this->renderer->local_x_offset = prefs.localXOffset.get().value();
+                this->renderer->local_y_offset = prefs.localYOffset.get().value();
+            };
+            log_d("set up callback");
+        }));
     settings_menu->add_menu_item(MenuItem("Reset Prefs", [this, settings_menu]() {
         prefs.clear();
         log_w("Preferences cleared. Rebooting...");
 
-        renderer->render_max_box_with_text("Preferences cleared! Resetting...");
+        this->renderer->render_max_box_with_text("Preferences cleared! Resetting...");
         delay(2000);
         esp_restart();
     }));
     settings_menu->add_menu_item(
         MenuItem("Factory Defaults", [this, settings_menu]() { this->restoreFactoryDefaults(); }));
     settings_menu->add_menu_item(MenuItem("Loading Test", [this, settings_menu]() {
-        auto loading_screen = new LoadingScreen(renderer);
+        auto loading_screen = new LoadingScreen(this->renderer);
         set_current_screen(*loading_screen);
         loading_screen->back_callback = [this, loading_screen, settings_menu]() {
             set_current_screen(*settings_menu);
@@ -199,7 +206,7 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
         };
     }));
     settings_menu->add_menu_item(MenuItem("Test Bitmap Screen", [this, settings_menu]() {
-        auto bitmap_screen = new BitmapScreen(*renderer, Logo_bits);
+        auto bitmap_screen = new BitmapScreen(*this->renderer, Logo_bits);
         set_current_screen(*bitmap_screen);
         bitmap_screen->back_callback = [this, bitmap_screen, settings_menu]() {
             set_current_screen(*settings_menu);
@@ -209,7 +216,7 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
     settings_menu->add_menu_item(MenuItem("Unpair TurnTouch", [this, settings_menu]() {
         prefs.pairedTurnTouchAddress.remove();
         log_w("Unpaired TurnTouch. Rebooting...");
-        renderer->render_max_box_with_text("Unpaired TurnTouch! Resetting...");
+        this->renderer->render_max_box_with_text("Unpaired TurnTouch! Resetting...");
         delay(2000);
         esp_restart();
     }));
@@ -239,9 +246,9 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
     // By default, if we don't already have a different first screen ready, show the calibration
     // screen
     if (this->current_screen == nullptr) {
-        auto calibration_screen = new CalibrationScreen(*renderer);
+        auto calibration_screen = new CalibrationScreen(*this->renderer);
         calibration_screen->back_callback = [this, calibration_screen, display, main_menu]() {
-            renderer->render_max_box();
+            this->renderer->render_max_box();
             delay(100);
 
             display->set_partial_refresh();

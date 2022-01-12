@@ -15,7 +15,9 @@
 
 class RawRenderer : public Renderer {
 public:
-    RawRenderer(OpticsSystem *optic_input, DisplaySystem *display_input, std::string &rawData);
+    RawRenderer(OpticsSystem *optic_input, DisplaySystem *display_input, std::string &string);
+
+    void set_string(std::string &string);
 
     void set_read_mode(int new_mode);
     auto get_read_mode() -> int;
@@ -37,7 +39,6 @@ public:
     auto get_previous_place() -> unsigned long;
 
 protected:
-    std::string &raw_data;
     std::istringstream data_stream;
 
     unsigned long screed_last_time;

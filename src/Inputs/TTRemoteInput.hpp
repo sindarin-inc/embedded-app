@@ -9,6 +9,7 @@
 #include "sindarin-debug.h"
 
 #define RESCAN_INTERVAL_MS 3000
+// See also: https://shop.turntouch.com/pages/open-source
 #define TURNTOUCH_BUTTON_SVC_ID "1523"
 #define TURNTOUCH_BUTTON_SVC_UUID "99c31523-dc4f-41b1-bb04-4e4deb81fadd"
 #define TURNTOUCH_BUTTON_CHR_UUID "99c31525-dc4f-41b1-bb04-4e4deb81fadd"

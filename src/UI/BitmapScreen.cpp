@@ -16,6 +16,9 @@ void BitmapScreen::render() {
     DisplayEinkET013TT1 *eink = (DisplayEinkET013TT1 *)renderer.get_display();
     if (eink != nullptr) {
         eink->fillScreen(eink->bg);
+        // TODO: We should figure out what we really want for these 'full-screen' bitmaps
+        // so that they can use the screen offset settings as well. Probably we want 'full-screen'
+        // to mean the full width of the focus area, in which case we shouldn't hardcode 256 here.
         eink->drawXBitmap(0, 0, bitmap, 256, 256, eink->fg);
     }
 #endif
