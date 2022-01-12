@@ -14,7 +14,11 @@ VSCode provides a nice platformio IDE. Download VSCode and get the PlatformIO ID
 
 You can use the "Upload and Monitor" project tasks under PlatformIO Icon (left bar) -> Project Tasks -> gilpico -> General -> Upload and Monitor
 
-You'll also need to build and upload the filesystem. You can do this in VSCode from PlatformIO Icon (left bar) -> Project Tasks -> gilpico -> Custom -> Build Filesystem Image (ext) and then Upload Filesystem Image (ext). Or you can do this at the command line with `pio run -t buildfs-ext -t uploadfs-ext`.
+## Add Readables to SPIFFS
+
+To put Readables on the device, you'll need to collect some readables. Perhaps from the [sindarin-inc/readables](https://github.com/sindarin-inc/readables) repo. Just download the Readables you want and put them in a directory in the root of this repo named `data`.
+
+Then you'll need to build and upload the filesystem. You can do this in VSCode from PlatformIO Icon (left bar) -> Project Tasks -> gilpico -> Custom -> Build Filesystem Image (ext) and then Upload Filesystem Image (ext). Or you can do this at the command line with `pio run -t buildfs-ext -t uploadfs-ext`.
 
 Note: If you don't see these options in your PlatformIO bar in VSCode, try restarting VSCode.
 

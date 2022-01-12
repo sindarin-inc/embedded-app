@@ -4,5 +4,5 @@
 .vscode/launch.json
 .vscode/ipch
 .DS_Store
-# Automatically generated from scripts/pio_external_flash.py
-data/manifest.json
+# Where to put all your data you want in SPIFFS (i.e. Readables)
+data
