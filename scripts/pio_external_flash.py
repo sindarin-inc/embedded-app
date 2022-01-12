@@ -4,6 +4,7 @@
 # See: https://github.com/platformio/platform-espressif32/blob/master/builder/main.py#L113
 Import("env")
 import json
+import os
 from os.path import join
 from pathlib import Path
 
@@ -25,6 +26,8 @@ mcu = board.get("build.mcu", "esp32")
 
 def generate_manifest(path):
     """Generate manifest.json dynamically based on .txt files in `path`"""
+    os.makedirs(path, exist_ok=True)
+
     manifest_file = path / Path("manifest.json")
 
     p = Path(path).glob("*.txt")
