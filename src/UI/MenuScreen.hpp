@@ -44,8 +44,8 @@ public:
 
     // Returns 1 if the selection was updated, 0 otherwise
     // Helps client to know if it needs to refresh (at beginning or end of menu)
-    auto next_selection() -> int;
-    auto prev_selection() -> int;
+    virtual auto next_selection() -> int;
+    virtual auto prev_selection() -> int;
 
     // Includes the name of the item and it's number preceding it for easy display
     // Offset by two spaces
@@ -66,7 +66,7 @@ public:
 
     auto get_paginated_menu_string() -> String;
 
-    void render();
+    virtual void render();
 
     void process_command(RemoteCommand command);
 

@@ -1,6 +1,7 @@
 #include "DisplayEinkET013TT1.hpp"
 
 #include <EPD_TCON.h>
+#include <UI/Fonts/LucidaGrande5pt7b.h>
 
 extern const EPD_TCON_DRIVER_HAL g_TCON_HAL;
 extern void EPD_HAL_Init(uint8_t CS, uint8_t OEI, uint8_t RST, uint8_t BUSY);
@@ -10,6 +11,8 @@ extern const unsigned char g_WaveformData[];
 DisplayEinkET013TT1::DisplayEinkET013TT1(uint8_t CS, uint8_t OEI, uint8_t RST, uint8_t BUSY)
     : Adafruit_GFX(EinkET013TT1_X_PIXELS, EinkET013TT1_Y_PIXELS) {
     EPD_HAL_Init(CS, OEI, RST, BUSY);
+
+    auto_update = true;
 
     int32_t ret = EPD_TCON_Init(&g_TCON_HAL);
 
@@ -45,14 +48,12 @@ DisplayEinkET013TT1::DisplayEinkET013TT1(uint8_t CS, uint8_t OEI, uint8_t RST, u
 
     setFullWindow();
 
-    font = u8g2_font_tom_thumb_4x6_tf;
 #ifdef DISPLAY_ROTATION
     setRotation(DISPLAY_ROTATION);
 #else
     setRotation(0);
 #endif
-    u8g2Fonts.begin(*this);
-    u8g2Fonts.setFont(font);
+    setFont(&LucidaGrande5pt7b);
     log_d("Set up display (%ld)", (long)this);
 
     set_x(EinkET013TT1_X_PIXELS);
@@ -74,40 +75,27 @@ void DisplayEinkET013TT1::unset_partial_refresh() { partial_refresh = 0; }
 
 auto DisplayEinkET013TT1::get_partial_refresh() -> int { return partial_refresh; }
 
-void DisplayEinkET013TT1::set_font(const uint8_t *new_font) { font = new_font; }
+void DisplayEinkET013TT1::set_auto_update(bool update) { auto_update = update; }
 
-auto DisplayEinkET013TT1::get_text_height() -> int {
-    int ascent = 0;
-    int descent = 0;
-    int line_height = 0;
+bool DisplayEinkET013TT1::get_auto_update() { return auto_update; }
 
-    // hack for now
-    // figure out what the right window is
-    // SUPER HACK -- the y value is just guessing about ascent
-    // Need to figure out ascent
+const GFXfont *DisplayEinkET013TT1::get_font() { return gfxFont; }
 
-    // text to squeeze as much in there as we can
-    ascent = u8g2Fonts.getFontAscent();
-    descent = u8g2Fonts.getFontDescent();
+void DisplayEinkET013TT1::set_font(const GFXfont *new_font) { setFont(new_font); }
 
-    // Note that descent is returned as a negative number. Therefore to get
-    // the correct height, you have to subtract off the descent. We add
-    // 1 to add the additional pixel between lines.
-    line_height = ascent - descent + 1;
-
-    return line_height;
-}
+auto DisplayEinkET013TT1::get_text_height() -> int { return gfxFont->yAdvance + 1; }
 
 auto DisplayEinkET013TT1::get_text_width(const char *buffer) -> int {
-    return u8g2Fonts.getUTF8Width(buffer);
+    int16_t x, y;
+    uint16_t w, h;
+    getTextBounds(buffer, 0, 0, &x, &y, &w, &h);
+    return w;
 }
 
 void DisplayEinkET013TT1::draw_text_in_box(String new_text, int start_x, int start_y, int end_x,
                                            int end_y) {
 
     int line_height = 0;
-
-    setup_display_for_text();
 
     log_d("Printing some stuff to screen! (%ld)", (long)this);
 
@@ -119,13 +107,15 @@ void DisplayEinkET013TT1::draw_text_in_box(String new_text, int start_x, int sta
 
     draw_box_cmds_only(start_x, start_y, end_x, end_y);
     draw_text_cmds_only(new_text, start_x + 3, start_y + line_height + 1, line_height);
-    // DO WRITE AND REFRESH
-    updateDisplay();
+    if (auto_update) {
+        // DO WRITE AND REFRESH
+        updateDisplay();
+    }
 }
 
 void DisplayEinkET013TT1::draw_box_cmds_only(int start_x, int start_y, int end_x, int end_y) {
 
-    if (!get_partial_refresh()) {
+    if (!get_partial_refresh() && auto_update) {
         fillScreen(bg);
     }
     drawRect(start_x, start_y, end_x - start_x, end_y - start_y, fg);
@@ -140,8 +130,10 @@ void DisplayEinkET013TT1::draw_box(int start_x, int start_y, int end_x, int end_
     log_d("Got here - drawing a box: %d %d | %d %d", start_x, start_y, end_x, end_y);
 
     draw_box_cmds_only(start_x, start_y, end_x, end_y);
-    // DO WRITE AND REFRESH
-    updateDisplay();
+    if (auto_update) {
+        // DO WRITE AND REFRESH
+        updateDisplay();
+    }
 }
 
 void DisplayEinkET013TT1::draw_text() { draw_text(string_to_draw, x_to_draw, y_to_draw); }
@@ -154,13 +146,6 @@ void DisplayEinkET013TT1::draw_text(String new_text) { draw_text(new_text, x_to_
 // in order to determine the right placement of each new line.
 
 void DisplayEinkET013TT1::draw_text(String new_text, int x, int y) {
-
-    int ascent = 0;
-    int descent = 0;
-    int line_height = 0;
-
-    setup_display_for_text();
-
     DEBUG_LN("Printing to screen!");
 
     // hack for now
@@ -168,31 +153,17 @@ void DisplayEinkET013TT1::draw_text(String new_text, int x, int y) {
     // SUPER HACK -- the y value is just guessing about ascent
     // Need to figure out ascent
 
-    // text to squeeze as much in there as we can
-    ascent = u8g2Fonts.getFontAscent();
-    descent = u8g2Fonts.getFontDescent();
-
-    // Note that descent is returned as a negative number. Therefore to get
-    // the correct height, you have to subtract off the descent. We add
-    // 1 to add the additional pixel between lines.
-    line_height = ascent - descent + 1;
+    int lineHeight = get_text_height();
 
     if (get_partial_refresh()) {
-        setPartialWindow(x, y - 10, EinkET013TT1_X_PIXELS, (line_height + 1) * num_lines + 10);
+        setPartialWindow(x, y - 10, EinkET013TT1_X_PIXELS, lineHeight * num_lines + 10);
     }
 
-    draw_text_cmds_only(new_text, x, y, line_height);
-    // DO WRITE AND REFRESH
-    updateDisplay();
-}
-
-void DisplayEinkET013TT1::setup_display_for_text() {
-
-    u8g2Fonts.setFontMode(1);
-    u8g2Fonts.setFontDirection(0);
-    u8g2Fonts.setForegroundColor(fg);
-    u8g2Fonts.setBackgroundColor(bg);
-    u8g2Fonts.setFont(font);
+    draw_text_cmds_only(new_text, x, y, lineHeight);
+    if (auto_update) {
+        // DO WRITE AND REFRESH
+        updateDisplay();
+    }
 }
 
 void DisplayEinkET013TT1::draw_text_cmds_only(const String &new_text, int x, int y,
@@ -212,14 +183,14 @@ void DisplayEinkET013TT1::draw_text_cmds_only(const String &new_text, int x, int
     // ascent = u8g2Fonts->getAscent();
     // descent = u8g2Fonts->getDescent();
 
-    if (!get_partial_refresh()) {
+    if (!get_partial_refresh() && auto_update) {
         fillScreen(bg);
     }
 
     for (int i = 0; i < num_lines; i++) {
         // Don't know if it starts the line from the baseline or from the top -- TO LEARN: HACK
-        u8g2Fonts.setCursor(x, y + i * (line_height));
-        u8g2Fonts.println(lines[i] + "\n");
+        setCursor(x, y + i * (line_height));
+        println(lines[i] + "\n");
         // DEBUG_LN(lines[i]);
         // DEBUG_VAR(x);
         // DEBUG_LN(" is the x direction");
@@ -284,7 +255,10 @@ void DisplayEinkET013TT1::drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap
     }
     Adafruit_GFX::drawXBitmap(x, y, bitmap, w, h, color);
     log_d("Bitmap drawn, updating display!");
-    updateDisplay();
+    if (auto_update) {
+        // DO WRITE AND REFRESH
+        updateDisplay();
+    }
 }
 
 void DisplayEinkET013TT1::updateDisplay() {

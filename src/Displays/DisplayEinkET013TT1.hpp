@@ -1,7 +1,7 @@
 #ifndef DISPLAY_EINK_154IN_H
 #define DISPLAY_EINK_154IN_H
 
-#include <U8g2_for_Adafruit_GFX.h>
+#include <Adafruit_GFX.h>
 
 #include "DisplaySystem.hpp"
 #include "sindarin-debug.h"
@@ -34,18 +34,22 @@ public:
     void unset_partial_refresh();
     int get_partial_refresh();
 
+    void set_auto_update(bool update);
+    bool get_auto_update();
+
     void display_splash_screen();
 
     void draw_big_word_in_box(String new_text, int start_x, int start_y, int end_x, int end_y) {
         assert(0);
     }
 
-    void set_font(const uint8_t *new_font);
+    const GFXfont* get_font();
+    void set_font(const GFXfont *new_font);
 
     virtual void drawPixel(int16_t x, int16_t y, uint16_t color);
     virtual void drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, int16_t h,
                              uint16_t color);
-    void refresh();
+    void updateDisplay();
     void setPartialWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
     void setFullWindow() {
         unset_partial_refresh();
@@ -67,12 +71,10 @@ public:
     uint16_t fg = 0xFFFF; // 0x0000;
 
 protected:
+    bool auto_update;
+
     void draw_text_cmds_only(const String &new_text, int x, int y, int line_height);
     void draw_box_cmds_only(int x_start, int y_start, int x_end, int y_end);
-    void setup_display_for_text();
-
-    const uint8_t *font;
-    U8G2_FOR_ADAFRUIT_GFX u8g2Fonts;
 
     static inline uint16_t min(uint16_t a, uint16_t b) { return (a < b ? a : b); };
     static inline uint16_t max(uint16_t a, uint16_t b) { return (a > b ? a : b); };
@@ -102,7 +104,6 @@ protected:
             break;
         }
     }
-    void updateDisplay();
     void writeImage(uint8_t *fb, const unsigned char *img, uint16_t size);
     uint8_t writePartialImage(uint16_t x, uint16_t y, const unsigned char *img, uint16_t img_w,
                               uint16_t img_h);

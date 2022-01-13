@@ -14,6 +14,7 @@
 #include "UI/CalibrationScreen.hpp"
 #include "UI/LoadingScreen.hpp"
 #include "UI/MenuScreen.hpp"
+#include "UI/PagedMenuScreen.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
 #include "UI/PowerDepletedScreen.hpp"
 #include "UI/RawRendererScreen.hpp"
@@ -33,7 +34,7 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
     renderer->local_y_offset = prefs.local_y_offset;
     SIZE_OF(*renderer);
 
-    auto main_menu = new MenuScreen(*renderer, this->power);
+    auto main_menu = new PagedMenuScreen(*renderer, this->power);
     SIZE_OF(*main_menu);
 
     auto createReadableScreen = [this, optics, display,
