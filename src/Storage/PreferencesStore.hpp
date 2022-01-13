@@ -71,43 +71,54 @@ public:
         }
     };
 
+    template <typename T> class KeyedPrefsItem {
+    public:
+        KeyedPrefsItem(Preferences &prefs, const char *suffix) : prefs(prefs), suffix(suffix) {}
+
+        void makeKey(char *key, const char *prefix) { sprintf(key, "%s%s", prefix, this->suffix); }
+
+        T get(const char *prefix) {
+            char key[MAX_KEY_LENGTH + 1];
+            this->makeKey(key, prefix);
+            if constexpr (std::is_same_v<T, int>) {
+                return prefs.getInt(key);
+            } else {
+                log_e("Unhandled prefs type");
+                assert(0);
+            }
+        }
+
+        void set(const char *prefix, T value) {
+            char key[MAX_KEY_LENGTH + 1];
+            this->makeKey(key, prefix);
+            if constexpr (std::is_same_v<T, int>) {
+                this->prefs.putInt(key, value);
+            } else {
+                log_e("Unhandled prefs type");
+                assert(0);
+            }
+        }
+
+    protected:
+        Preferences &prefs;
+        const char *suffix;
+    };
+
     PreferencesStore()
         : localXOffset(this->prefs, "x-offset"), localYOffset(this->prefs, "y-offset"),
           pairedTurnTouchAddress(this->prefs, "paired-tt"),
-          pocketApiToken(this->prefs, "pocket-token"),
-          lastReadableId(this->prefs, "rui-readable"){};
+          pocketApiToken(this->prefs, "pocket-token"), lastReadableId(this->prefs, "rui-readable"),
+          readablePlace(this->prefs, "-p"), readablePreviousPlace(this->prefs, "-pr-p"){};
     void begin();
     void clear() { prefs.clear(); }
-
-    void setReadablePlace(const char *readableId, uint32_t place) {
-        char key[16];
-        sprintf(key, "%s%s", readableId, "-p");
-        prefs.putULong(key, place);
-    }
-
-    void setReadablePreviousPlace(const char *readableId, uint32_t place) {
-        char key[16];
-        sprintf(key, "%s%s", readableId, "-pr-p");
-        prefs.putULong(key, place);
-    }
-
-    uint32_t getReadablePlace(const char *readableId) {
-        char key[16];
-        sprintf(key, "%s%s", readableId, "-p");
-        return prefs.getULong(key);
-    }
-
-    uint32_t getReadablePreviousPlace(const char *readableId) {
-        char key[16];
-        sprintf(key, "%s%s", readableId, "-pr-p");
-        return prefs.getULong(key);
-    }
 
     PrefsItem<int> localXOffset;
     PrefsItem<int> localYOffset;
     PrefsItem<String> pocketApiToken;
     BLEAddressPrefsItem pairedTurnTouchAddress;
     PrefsItem<String> lastReadableId;
+    KeyedPrefsItem<int> readablePlace;
+    KeyedPrefsItem<int> readablePreviousPlace;
 
 protected:
     Preferences prefs;

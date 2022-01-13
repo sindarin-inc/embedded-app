@@ -21,8 +21,8 @@ void ReadableScreen::process_command(RemoteCommand command) {
         if (file_renderer != nullptr && file_renderer->get_read_mode() == SCREED_READ) {
             readable.place_prev = readable.place;
             readable.place = readable.place_screed;
-            prefs.setReadablePlace(readable.id, readable.place);
-            prefs.setReadablePreviousPlace(readable.id, readable.place_prev);
+            prefs.readablePlace.set(readable.id, readable.place);
+            prefs.readablePreviousPlace.set(readable.id, readable.place_prev);
         }
 
         if (back_callback != nullptr) {
@@ -34,15 +34,15 @@ void ReadableScreen::process_command(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS: {
         readable.place = file_renderer->get_previous_place();
-        prefs.setReadablePreviousPlace(readable.id, readable.place);
+        prefs.readablePreviousPlace.set(readable.id, readable.place);
         needs_rerender = true;
         break;
     }
     case RemoteCommand::CHANNEL_PLUS: {
         readable.place_prev = readable.place;
         readable.place = new_place;
-        prefs.setReadablePlace(readable.id, readable.place);
-        prefs.setReadablePreviousPlace(readable.id, readable.place_prev);
+        prefs.readablePlace.set(readable.id, readable.place);
+        prefs.readablePreviousPlace.set(readable.id, readable.place_prev);
         needs_rerender = true;
         break;
     }
@@ -65,8 +65,8 @@ void ReadableScreen::process_command(RemoteCommand command) {
         if (file_renderer->get_read_mode() == SCREED_READ) {
             readable.place_prev = readable.place;
             readable.place = readable.place_screed;
-            prefs.setReadablePlace(readable.id, readable.place);
-            prefs.setReadablePreviousPlace(readable.id, readable.place_prev);
+            prefs.readablePlace.set(readable.id, readable.place);
+            prefs.readablePreviousPlace.set(readable.id, readable.place_prev);
         }
         file_renderer->flip_read_mode();
         needs_rerender = true;
