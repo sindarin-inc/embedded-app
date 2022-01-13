@@ -60,7 +60,7 @@ bool TTRemoteInput::connectToDevice(BLEAdvertisedDevice *device) {
     }
 
     // Save the id of this turn touch for future connection attempts
-    this->prefs.setPairedTurnTouchAddress(device->getAddress());
+    this->prefs.pairedTurnTouchAddress.set(device->getAddress());
 
     log_i("Connected to TurnTouch");
     return true;
@@ -73,7 +73,7 @@ void TTRemoteInput::doneScanning(NimBLEScanResults results) {
 
 void TTRemoteInput::scanForDevice() {
     // Run a scan for 3 seconds
-    auto address = this->prefs.pairedTurnTouchAddress;
+    auto address = this->prefs.pairedTurnTouchAddress.get();
     if (address.has_value()) {
         log_d("Scanning for paired TurnTouch %s", std::string(address.value()).c_str());
     } else {

@@ -3,52 +3,83 @@
 #include <Preferences.h>
 #include <optional>
 
-#define PAIRED_TURNTOUCH_KEY "paired-tt"
-
 class PreferencesStore {
 public:
+    template <typename T> class PrefsItem {
+    public:
+        PrefsItem(Preferences &prefs, const char *key) : prefs(prefs) { strcpy(this->key, key); }
+
+        virtual void loadValue() {
+            if constexpr (std::is_same_v<T, int>) {
+                this->value = prefs.getInt(this->key);
+            } else if constexpr (std::is_same_v<T, String>) {
+                String val = prefs.getString(this->key);
+                if (!val.isEmpty()) {
+                    this->value = val;
+                }
+            } else {
+                log_e("Unhandled prefs type");
+                assert(0);
+            }
+        }
+
+        virtual std::optional<T> get() {
+            if (!this->loaded) {
+                this->loadValue();
+                this->loaded = true;
+            }
+            return this->value;
+        }
+
+        virtual void set(T value) {
+            this->value = value;
+            if constexpr (std::is_same_v<T, int>) {
+                this->prefs.putInt(this->key, value);
+            } else if constexpr (std::is_same_v<T, String>) {
+                this->prefs.putString(this->key, value);
+            } else {
+                log_e("Unhandled prefs type");
+                assert(0);
+            }
+        }
+
+        void remove() { this->prefs.remove(key); }
+
+    protected:
+        Preferences &prefs;
+        bool loaded;
+        std::optional<T> value;
+        char key[16];
+    };
+
+    class BLEAddressPrefsItem : public PrefsItem<BLEAddress> {
+    public:
+        BLEAddressPrefsItem(Preferences &prefs, const char *key) : PrefsItem(prefs, key){};
+
+        void loadValue() override {
+            uint64_t addressValue = this->prefs.getULong64(this->key, -1);
+            if (addressValue != -1) {
+                this->value = BLEAddress(addressValue);
+            }
+        }
+
+        void set(BLEAddress address) override {
+            this->prefs.putULong64(this->key, uint64_t(address));
+            this->value = address;
+        }
+    };
+
+    PreferencesStore()
+        : localXOffset(this->prefs, "x-offset"), localYOffset(this->prefs, "y-offset"),
+          pairedTurnTouchAddress(this->prefs, "paired-tt"),
+          pocketApiToken(this->prefs, "pocket-token"){};
+
     Preferences prefs;
 
-    int local_x_offset;
-    void setLocalXOffset(int local_x_offset) {
-        this->local_x_offset = local_x_offset;
-        prefs.putInt("x-offset", local_x_offset);
-    }
-
-    int local_y_offset;
-    void setLocalYOffset(int local_y_offset) {
-        this->local_y_offset = local_y_offset;
-        prefs.putInt("y-offset", local_y_offset);
-    }
-
-    // Default area for browsing should be MAIN MENU which is readables length + 2 (length is
-    // SETTINGS MENU)
-    int area_in_browsing;
-    void setAreaInBrowsing(int area_in_browsing) {
-        this->area_in_browsing = area_in_browsing;
-        prefs.putInt("browse-area", area_in_browsing);
-    }
-
-    char pocket_api_token[40];
-    void setPocketApiToken(const char *pocketApiToken) {
-        strcpy(pocket_api_token, pocketApiToken);
-        prefs.putString("pocket-token", pocket_api_token);
-    }
-
-    std::optional<BLEAddress> pairedTurnTouchAddress;
-    void setPairedTurnTouchAddress(const BLEAddress &address) {
-        this->prefs.putULong64(PAIRED_TURNTOUCH_KEY, uint64_t(address));
-        this->pairedTurnTouchAddress = address;
-    }
-    void removePairedTurnTouchAddress() { this->prefs.remove(PAIRED_TURNTOUCH_KEY); }
+    PrefsItem<int> localXOffset;
+    PrefsItem<int> localYOffset;
+    PrefsItem<String> pocketApiToken;
+    BLEAddressPrefsItem pairedTurnTouchAddress;
 
     void begin();
-
-    auto getInstance() -> PreferencesStore * {
-        if (instance == nullptr) instance = new PreferencesStore();
-        return instance;
-    }
-
-protected:
-    static PreferencesStore *instance;
 };

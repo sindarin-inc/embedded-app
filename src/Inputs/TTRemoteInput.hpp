@@ -75,7 +75,7 @@ protected:
                 //  - This is the paired device
                 //  - We don't have any paired devices and this device is advertising the TurnTouch
                 //    button service
-                std::optional<BLEAddress> address = enclosed->prefs.pairedTurnTouchAddress;
+                std::optional<BLEAddress> address = enclosed->prefs.pairedTurnTouchAddress.get();
                 if ((address.has_value() && address.value() == advertisedDevice->getAddress()) ||
                     (!address.has_value() &&
                      advertisedDevice->isAdvertisingService(BLEUUID(TURNTOUCH_BUTTON_SVC_ID)))) {

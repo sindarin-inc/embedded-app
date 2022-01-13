@@ -29,8 +29,8 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
 
     // General renderer shared by menus and simple UIs
     renderer = new Renderer(optics, display);
-    renderer->local_x_offset = prefs.local_x_offset;
-    renderer->local_y_offset = prefs.local_y_offset;
+    renderer->local_x_offset = prefs.localXOffset.get().value();
+    renderer->local_y_offset = prefs.localYOffset.get().value();
     SIZE_OF(*renderer);
 
     auto main_menu = new MenuScreen(*renderer, this->power);
@@ -40,8 +40,8 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
                                  main_menu](Readable *readable) -> ReadableScreen * {
         // TODO: Would be better to not allocate / delete these all the time
         FileRenderer *bookRenderer = new FileRenderer(optics, display, *readable);
-        bookRenderer->local_x_offset = this->prefs.local_x_offset;
-        bookRenderer->local_y_offset = this->prefs.local_y_offset;
+        bookRenderer->local_x_offset = this->prefs.localXOffset.get().value();
+        bookRenderer->local_y_offset = this->prefs.localYOffset.get().value();
         this->prefs.prefs.putString(LAST_READABLE_ID, readable->id);
         ReadableScreen *readableScreen = new ReadableScreen(bookRenderer, *readable, this->prefs);
         readableScreen->back_callback = [this, bookRenderer, readableScreen, main_menu]() {
@@ -82,7 +82,7 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
         // need to add threading / tasks since the HTTP code is synchronous right now.
         renderer->render_max_box_with_text(String("Downloading..."));
         PocketAPI *pocket = PocketAPI::getInstance();
-        pocket->setAccessToken(prefs.pocket_api_token);
+        pocket->setAccessToken(prefs.pocketApiToken.get().value().c_str());
 
         // Since we're reading this directly out of this from the closures, this needs to exist
         // until the closures no longer exist. That or we need to copy some strings.
@@ -140,8 +140,8 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
                     // article anyways.
                     auto str = std::string(text);
                     auto raw_renderer = new RawRenderer(optics, display, str);
-                    raw_renderer->local_x_offset = prefs.local_x_offset;
-                    raw_renderer->local_y_offset = prefs.local_y_offset;
+                    raw_renderer->local_x_offset = prefs.localXOffset.get().value();
+                    raw_renderer->local_y_offset = prefs.localYOffset.get().value();
                     SIZE_OF(*raw_renderer);
                     raw_renderer->render_page_with_box(0);
 
@@ -208,7 +208,7 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
         };
     }));
     settings_menu->add_menu_item(MenuItem("Unpair TurnTouch", [this, settings_menu]() {
-        prefs.removePairedTurnTouchAddress();
+        prefs.pairedTurnTouchAddress.remove();
         log_w("Unpaired TurnTouch. Rebooting...");
         renderer->render_max_box_with_text("Unpaired TurnTouch! Resetting...");
         delay(2000);

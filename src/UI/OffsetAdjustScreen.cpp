@@ -22,32 +22,31 @@ void OffsetAdjustScreen::render() {
 void OffsetAdjustScreen::process_command(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
-        prefs.local_x_offset--;
+        xOffset--;
         needs_rerender = true;
         break;
     case RemoteCommand::CHANNEL_PLUS:
-        prefs.local_x_offset++;
+        xOffset++;
         needs_rerender = true;
         break;
     case RemoteCommand::PREV:
-        prefs.local_y_offset--;
+        yOffset--;
         needs_rerender = true;
         break;
     case RemoteCommand::NEXT:
-        prefs.local_y_offset++;
+        yOffset++;
         needs_rerender = true;
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::ENTER:
-        prefs.setLocalXOffset(prefs.local_x_offset);
-        prefs.setLocalYOffset(prefs.local_y_offset);
-        log_d("Saving x and y offset to preferences: (%d, %d)", prefs.local_x_offset,
-              prefs.local_y_offset);
+        prefs.localXOffset.set(xOffset);
+        prefs.localYOffset.set(yOffset);
+        log_d("Saving x and y offset to preferences: (%d, %d)", xOffset, yOffset);
         back_callback();
         break;
     default:
         break;
     }
-    renderer.local_x_offset = prefs.local_x_offset;
-    renderer.local_y_offset = prefs.local_y_offset;
+    renderer.local_x_offset = xOffset;
+    renderer.local_y_offset = yOffset;
 }

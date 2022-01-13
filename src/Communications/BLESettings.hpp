@@ -26,7 +26,7 @@ protected:
             std::string value = characteristic->getValue();
             if (value.length() > 0) {
                 // TODO: Handle other types of settings values
-                enclosed->prefs->setPocketApiToken(value.c_str());
+                enclosed->prefs->pocketApiToken.set(String(value.c_str()));
                 log_i("Got Pocket Access Token");
             }
         }
