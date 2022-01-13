@@ -1,19 +1,21 @@
+#include "PagedMenuScreen.hpp"
+
 #include <Adafruit_GFX.h>
 #include <string>
 
 #include "config.h"
-#include "PagedMenuScreen.hpp"
 
-#include "Displays/DisplayEinkET013TT1.hpp"
 #include "Bitmaps/Menu_Blank.hpp"
-#include "Fonts/LucidaGrande14pt7b.h"
+#include "Displays/DisplayEinkET013TT1.hpp"
 #include "Fonts/LucidaGrande10pt7b.h"
-#include "Fonts/LucidaGrande6pt7b.h"
+#include "Fonts/LucidaGrande14pt7b.h"
 #include "Fonts/LucidaGrande5pt7b.h"
+#include "Fonts/LucidaGrande6pt7b.h"
 
 #define MAX_WIDTH 152
 #define NUM_FONTS_TO_TRY 4
-const GFXfont *shrinkingFonts[] = {&LucidaGrande14pt7b, &LucidaGrande10pt7b, &LucidaGrande6pt7b, &LucidaGrande5pt7b};
+const GFXfont *shrinkingFonts[] = {&LucidaGrande14pt7b, &LucidaGrande10pt7b, &LucidaGrande6pt7b,
+                                   &LucidaGrande5pt7b};
 
 void PagedMenuScreen::render() {
     if (!needs_rerender) {
@@ -42,7 +44,8 @@ void PagedMenuScreen::render() {
         }
         // If we still don't fit, shrink the string until we do.
         while (eink->get_text_width(itemTitle.c_str()) > MAX_WIDTH) {
-            log_d("Item title %s still too long at smallest font size; truncating...", itemTitle.c_str());
+            log_d("Item title %s still too long at smallest font size; truncating...",
+                  itemTitle.c_str());
             itemTitle = itemTitle.substring(0, itemTitle.length() - 4) + "...";
         }
         // Now draw!
@@ -50,7 +53,8 @@ void PagedMenuScreen::render() {
         int height = eink->get_text_height();
         // Not sure exactly why it needs to be 70% instead of 50%; I suspect it has something
         // to do with average lowercase character height and may be font-specific. -cojo
-        eink->draw_text(itemTitle.c_str(), (EinkET013TT1_X_PIXELS - width) / 2, (EinkET013TT1_Y_PIXELS - height) / 2 + (height * 0.7));
+        eink->draw_text(itemTitle.c_str(), (EinkET013TT1_X_PIXELS - width) / 2,
+                        (EinkET013TT1_Y_PIXELS - height) / 2 + (height * 0.7));
         eink->updateDisplay();
         eink->setFont(prevFont);
         eink->set_auto_update(autoUpdate);

@@ -43,7 +43,7 @@ public:
         assert(0);
     }
 
-    const GFXfont* get_font();
+    const GFXfont *get_font();
     void set_font(const GFXfont *new_font);
 
     virtual void drawPixel(int16_t x, int16_t y, uint16_t color);

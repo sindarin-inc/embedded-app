@@ -6,11 +6,10 @@
 #include "UI/MenuScreen.hpp"
 #include "sindarin-debug.h"
 
-
 class PagedMenuScreen : public MenuScreen {
 
 public:
-    PagedMenuScreen(Renderer &renderer, Power &power) : MenuScreen(renderer, power) {};
+    PagedMenuScreen(Renderer &renderer, Power &power) : MenuScreen(renderer, power){};
 
     auto next_selection() -> int override;
     auto prev_selection() -> int override;
