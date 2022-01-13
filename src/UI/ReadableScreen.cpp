@@ -19,12 +19,10 @@ void ReadableScreen::render() {
 void ReadableScreen::process_command(RemoteCommand command) {
     auto back = [this]() {
         if (file_renderer != nullptr && file_renderer->get_read_mode() == SCREED_READ) {
-            String prefs_prev_name = String(readable.id) + "-pr-p";
-            String prefs_name = String(readable.id) + "-p";
             readable.place_prev = readable.place;
             readable.place = readable.place_screed;
-            prefs.prefs.putULong(prefs_name.c_str(), readable.place);
-            prefs.prefs.putULong(prefs_prev_name.c_str(), readable.place_prev);
+            prefs.setReadablePlace(readable.id, readable.place);
+            prefs.setReadablePreviousPlace(readable.id, readable.place_prev);
         }
 
         if (back_callback != nullptr) {
@@ -35,20 +33,16 @@ void ReadableScreen::process_command(RemoteCommand command) {
 
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS: {
-        String prefs_name = String(readable.id) + "-pr-p";
         readable.place = file_renderer->get_previous_place();
-        prefs.prefs.putULong(prefs_name.c_str(), readable.place);
+        prefs.setReadablePreviousPlace(readable.id, readable.place);
         needs_rerender = true;
         break;
     }
     case RemoteCommand::CHANNEL_PLUS: {
-        String prefs_prev_name = String(readable.id) + "-pr-p";
-        String prefs_name = String(readable.id) + "-p";
-
         readable.place_prev = readable.place;
         readable.place = new_place;
-        prefs.prefs.putULong(prefs_name.c_str(), readable.place);
-        prefs.prefs.putULong(prefs_prev_name.c_str(), readable.place_prev);
+        prefs.setReadablePlace(readable.id, readable.place);
+        prefs.setReadablePreviousPlace(readable.id, readable.place_prev);
         needs_rerender = true;
         break;
     }
@@ -69,12 +63,10 @@ void ReadableScreen::process_command(RemoteCommand command) {
         break;
     case RemoteCommand::NOP_BUTTON:
         if (file_renderer->get_read_mode() == SCREED_READ) {
-            String prefs_prev_name = String(readable.id) + "-pr-p";
-            String prefs_name = String(readable.id) + "-p";
             readable.place_prev = readable.place;
             readable.place = readable.place_screed;
-            prefs.prefs.putULong(prefs_name.c_str(), readable.place);
-            prefs.prefs.putULong(prefs_prev_name.c_str(), readable.place_prev);
+            prefs.setReadablePlace(readable.id, readable.place);
+            prefs.setReadablePreviousPlace(readable.id, readable.place_prev);
         }
         file_renderer->flip_read_mode();
         needs_rerender = true;

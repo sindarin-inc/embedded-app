@@ -3,6 +3,8 @@
 #include <Preferences.h>
 #include <optional>
 
+#define MAX_KEY_LENGTH 15
+
 class PreferencesStore {
 public:
     template <typename T> class PrefsItem {
@@ -49,7 +51,7 @@ public:
         Preferences &prefs;
         bool loaded;
         std::optional<T> value;
-        char key[16];
+        char key[MAX_KEY_LENGTH + 1];
     };
 
     class BLEAddressPrefsItem : public PrefsItem<BLEAddress> {
@@ -72,14 +74,41 @@ public:
     PreferencesStore()
         : localXOffset(this->prefs, "x-offset"), localYOffset(this->prefs, "y-offset"),
           pairedTurnTouchAddress(this->prefs, "paired-tt"),
-          pocketApiToken(this->prefs, "pocket-token"){};
+          pocketApiToken(this->prefs, "pocket-token"),
+          lastReadableId(this->prefs, "rui-readable"){};
+    void begin();
+    void clear() { prefs.clear(); }
 
-    Preferences prefs;
+    void setReadablePlace(const char *readableId, uint32_t place) {
+        char key[16];
+        sprintf(key, "%s%s", readableId, "-p");
+        prefs.putULong(key, place);
+    }
+
+    void setReadablePreviousPlace(const char *readableId, uint32_t place) {
+        char key[16];
+        sprintf(key, "%s%s", readableId, "-pr-p");
+        prefs.putULong(key, place);
+    }
+
+    uint32_t getReadablePlace(const char *readableId) {
+        char key[16];
+        sprintf(key, "%s%s", readableId, "-p");
+        return prefs.getULong(key);
+    }
+
+    uint32_t getReadablePreviousPlace(const char *readableId) {
+        char key[16];
+        sprintf(key, "%s%s", readableId, "-pr-p");
+        return prefs.getULong(key);
+    }
 
     PrefsItem<int> localXOffset;
     PrefsItem<int> localYOffset;
     PrefsItem<String> pocketApiToken;
     BLEAddressPrefsItem pairedTurnTouchAddress;
+    PrefsItem<String> lastReadableId;
 
-    void begin();
+protected:
+    Preferences prefs;
 };
