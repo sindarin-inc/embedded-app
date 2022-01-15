@@ -2,10 +2,6 @@
 
 #include "../UI/Bitmaps/Menu_Blank.hpp"
 #include "../UI/Bitmaps/Popup_Menu_Blank.hpp"
-#include "../lib/bmps-for-splash/LucidaGrande10pt7b.h"
-#include "../lib/bmps-for-splash/LucidaGrande14pt7b.h"
-#include "../lib/bmps-for-splash/LucidaGrande5pt7b.h"
-#include "../lib/bmps-for-splash/LucidaGrande6pt7b.h"
 #include "../lib/bmps-for-splash/NotoSans_CondensedMedium10pt7b.h"
 #include "../lib/bmps-for-splash/NotoSans_CondensedMedium14pt7b.h"
 #include "../lib/bmps-for-splash/NotoSans_CondensedMedium20pt7b.h"
@@ -69,7 +65,7 @@ DisplayEinkET013TT1::DisplayEinkET013TT1(uint8_t CS, uint8_t OEI, uint8_t RST, u
 #else
     setRotation(0);
 #endif
-    setFont(&LucidaGrande5pt7b);
+    //(&LucidaGrande5pt7b);
     log_d("Set up display (%ld)", (long)this);
 
     set_x(EinkET013TT1_X_PIXELS);
@@ -157,7 +153,6 @@ void DisplayEinkET013TT1::draw_menu_lines_with_item(String new_text, int start_x
 
     log_d("drew commands only");
     // ugly
-    setup_display_for_text();
     // u8g2Fonts.setFont(u8g2_font_t0_22b_tf);
     /*
        u8g2Fonts.setFont(u8g2_font_6x10_tf);
@@ -208,7 +203,7 @@ void DisplayEinkET013TT1::draw_menu_lines_with_item(String new_text, int start_x
 
     // log_d("all the return vals from getTextBounds: %d %d %d %d", returnX, returnY, returnW,
     // returnH);
-    setFont(&LucidaGrande10pt7b);
+    // setFont(&LucidaGrande10pt7b);
     // setFont(&NotoSans_CondensedMedium10pt7b);
     setCursor((end_x - start_x) / 2 + start_x - get_text_width(new_text.c_str()) / 2,
               (end_y - start_y) / 2 + start_y + get_text_height() / 2 - 2);
@@ -217,7 +212,7 @@ void DisplayEinkET013TT1::draw_menu_lines_with_item(String new_text, int start_x
     // (end_y-3)-get_text_height());
     println(new_text);
 
-    setFont(&LucidaGrande5pt7b);
+    // setFont(&LucidaGrande5pt7b);
 
     setCursor((end_x - start_x) / 2 + start_x - get_text_width(battery_status.c_str()) / 2, end_y);
 
