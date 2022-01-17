@@ -79,6 +79,7 @@ protected:
 
     void draw_text_cmds_only(const String &new_text, int x, int y, int line_height);
     void draw_box_cmds_only(int x_start, int y_start, int x_end, int y_end);
+
     static inline uint16_t min(uint16_t a, uint16_t b) { return (a < b ? a : b); };
     static inline uint16_t max(uint16_t a, uint16_t b) { return (a > b ? a : b); };
     template <typename T> static inline void swap(T &a, T &b) {
