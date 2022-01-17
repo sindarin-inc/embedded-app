@@ -100,11 +100,7 @@ void MenuScreen::render() {
     String menu_string = get_paginated_menu_string();
     String bat_life = power.getBatteryLifeString();
     String total_to_display = menu_string + String("\n\n") + bat_life;
-    // renderer.render_max_box_with_text(total_to_display);
-    log_d("about to render menu lines");
-    renderer.render_menu_lines_with_item(get_curr_item().title, bat_life);
-    log_d("finished redner menu lines");
-
+    renderer.render_max_box_with_text(total_to_display);
     needs_rerender = false;
 }
 
