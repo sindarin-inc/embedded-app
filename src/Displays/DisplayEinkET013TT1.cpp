@@ -54,6 +54,7 @@ DisplayEinkET013TT1::DisplayEinkET013TT1(uint8_t CS, uint8_t OEI, uint8_t RST, u
     setRotation(0);
 #endif
     setFont(&LucidaGrande5pt7b);
+    setTextColor(fg, bg);
     log_d("Set up display (%ld)", (long)this);
 
     set_x(EinkET013TT1_X_PIXELS);
