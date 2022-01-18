@@ -217,6 +217,7 @@ void DisplayEinkET013TT1::draw_text_cmds_only(const String &new_text, int x, int
    calculates where everything needs to go. It currently isn't called
    from anywhere. */
 void DisplayEinkET013TT1::draw_calibration_screen(int start_x, int start_y, int end_x, int end_y) {
+    const int edge_offset = 5;
     int midpoint_x = ((end_x - start_x) / 2) + start_x;
     int midpoint_y = ((end_y - start_y) / 2) + start_y;
     int box_width = end_x - start_x;
@@ -240,15 +241,13 @@ void DisplayEinkET013TT1::draw_calibration_screen(int start_x, int start_y, int 
     setCursor(midpoint_x - focus_width / 2, midpoint_y + focus_height - 6);
     println("focus");
 
-    int EDGE_OFFSET = 5;
-
-    setCursor(end_x - get_text_width("lower right") - EDGE_OFFSET, end_y - EDGE_OFFSET - 2);
+    setCursor(end_x - get_text_width("lower right") - edge_offset, end_y - edge_offset - 2);
     println("lower right");
-    setCursor(start_x + EDGE_OFFSET, end_y - EDGE_OFFSET - 2); // lower left
+    setCursor(start_x + edge_offset, end_y - edge_offset - 2); // lower left
     println("lower left");
-    setCursor(start_x + EDGE_OFFSET, start_y + get_text_height() - 2); // upper left
+    setCursor(start_x + edge_offset, start_y + get_text_height() - 2); // upper left
     println("upper left");
-    setCursor(end_x - get_text_width("upper right") - EDGE_OFFSET, start_y + get_text_height() - 2);
+    setCursor(end_x - get_text_width("upper right") - edge_offset, start_y + get_text_height() - 2);
     println("upper right");
 }
 
