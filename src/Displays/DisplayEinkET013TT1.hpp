@@ -71,8 +71,8 @@ public:
         }
     }
 
-    uint16_t bg = 0x0000; // 0xFFFF;
-    uint16_t fg = 0xFFFF; // 0x0000;
+    uint16_t fg = 0x0000; // 0xFFFF;
+    uint16_t bg = 0xFFFF; // 0x0000;
 
 protected:
     bool autoUpdate_;
