@@ -26,6 +26,7 @@
 #include "UI/RootUI.hpp"
 #include "sindarin-debug.h"
 
+// Required for olikraus/U8g2 font lib
 #ifdef U8X8_HAVE_HW_SPI
 #include <SPI.h>
 #endif
@@ -34,28 +35,8 @@
 #include <Wire.h>
 #endif
 
-#ifdef EINK154in
-DisplayEink154in *my_display;
-#endif
-
 #ifdef EINKET013TT1
 DisplayEinkET013TT1 *myDisplay;
-#endif
-
-#ifdef OLED96in
-DisplayOLED96in *my_display;
-#endif
-
-#ifdef SHARPMEM
-DisplaySharpMem *my_display;
-#endif
-
-#ifdef PlanoConvex20x40
-OpticsPlanoConvex20mmX40mm *my_optics;
-#endif
-
-#ifdef PlanoConvex16x36
-OpticsPlanoConvex16mmX36mm *my_optics;
 #endif
 
 #ifdef Hastings20x40_3
@@ -103,12 +84,6 @@ Power power;
 RootUI rootUi(prefs, power);
 
 void SetupDisplayAndOptics() {
-#ifdef EINK154in
-    my_display = new DisplayEink154in();
-    SIZE_OF(*my_display);
-    // my_display->set_font(u8g2_font_6x10_tf);
-#endif
-
 #ifdef EINKET013TT1
 #ifdef GILPICO_SINDARIN
     // Turn on power to the screen
@@ -116,22 +91,6 @@ void SetupDisplayAndOptics() {
     myDisplay = new DisplayEinkET013TT1(DISPLAY_CS, DISPLAY_OEI, DISPLAY_RST, DISPLAY_BUSY);
 #endif
     SIZE_OF(*myDisplay);
-#endif
-
-#ifdef OLED96in
-    my_display = new DisplayOLED96in();
-#endif
-
-#ifdef SHARPMEM
-    my_display = new DisplaySharpMem();
-#endif
-
-#ifdef PlanoConvex20x40
-    my_optics = new OpticsPlanoConvex20mmX40mm();
-#endif
-
-#ifdef PlanoConvex16x36
-    my_optics = new OpticsPlanoConvex16mmX36mm();
 #endif
 
 #ifdef Hastings20x40_3
