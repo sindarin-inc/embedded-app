@@ -106,7 +106,7 @@ void BLEImprov::loop() {
         uint32_t now = millis();
         if (WiFi.status() == WL_CONNECTED) {
             std::string ip = WiFi.localIP().toString().c_str();
-            std::vector<uint8_t> response = improv::BuildRpcResponse(improv::WIFI_SETTINGS, {ip});
+            std::vector<uint8_t> response = improv::build_rpc_response(improv::WIFI_SETTINGS, {ip});
             log_d("Reporting RPC result to client");
             this->rpcResultCharacteristic_->setValue(response.data(), response.size());
             this->rpcResultCharacteristic_->notify();

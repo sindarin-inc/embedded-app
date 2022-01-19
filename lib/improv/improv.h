@@ -46,10 +46,10 @@ struct ImprovCommand {
   std::string password;
 };
 
-auto ParseImprovData(const std::vector<uint8_t> &data) -> ImprovCommand;
-auto ParseImprovData(const uint8_t *data, size_t length) -> ImprovCommand;
+ImprovCommand parse_improv_data(const std::vector<uint8_t> &data);
+ImprovCommand parse_improv_data(const uint8_t *data, size_t length);
 
-auto BuildRpcResponse(Command command, const std::vector<std::string> &datum) -> std::vector<uint8_t>;
-auto BuildRpcResponse(Command command, const std::vector<String> &datum) -> std::vector<uint8_t>;
+std::vector<uint8_t> build_rpc_response(Command command, const std::vector<std::string> &datum);
+std::vector<uint8_t> build_rpc_response(Command command, const std::vector<String> &datum);
 
 }  // namespace improv

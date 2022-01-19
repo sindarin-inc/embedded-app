@@ -52,7 +52,7 @@ protected:
             if (characteristic->getUUID().equals(BLEUUID(improv::RPC_COMMAND_UUID))) {
                 std::string value = characteristic->getValue();
                 improv::ImprovCommand command =
-                    improv::ParseImprovData((uint8_t *)value.c_str(), value.length());
+                    improv::parse_improv_data((uint8_t *)value.c_str(), value.length());
                 switch (command.command) {
                 case improv::BAD_CHECKSUM: {
                     log_e("Error: Bad Checksum from Improv message");
