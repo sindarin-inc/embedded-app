@@ -5,9 +5,8 @@
 
 #define MAX_CHARS_PER_LINE 200
 
-FileRenderer::FileRenderer(OpticsSystem *opticInput, DisplaySystem *displayInput,
-                           Readable &readableInput)
-    : Renderer(opticInput, displayInput) {
+FileRenderer::FileRenderer(DisplaySystem *displayInput, Readable &readableInput)
+    : Renderer(displayInput) {
     int oldNextPlace;
 
     log_d("Attempting to open: %s", readableInput.path);

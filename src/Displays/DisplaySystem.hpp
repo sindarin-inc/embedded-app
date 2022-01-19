@@ -31,6 +31,11 @@ public:
     void setX(int newX);
     void setY(int newY);
 
+    //! Size of the focused area in the optics in mm
+    void setFocusSize(float width, float height);
+    auto getFocusWidth() -> float { return focusWidthInMm_; }
+    auto getFocusHeight() -> float { return focusHeightInMm_; }
+
     void setWidth(float newWidth);
     void setHeight(float newHeight);
 
@@ -66,8 +71,11 @@ protected:
     // Number of pixels in the Y direction
     int y_;
 
-    float widthInMm_;
-    float heightInMm_;
+    float focusWidthInMm_;
+    float focusHeightInMm_;
+
+    float widthInMm_ = 0;
+    float heightInMm_ = 0;
 
     int xToDraw_ = 0;
     int yToDraw_ = 0;

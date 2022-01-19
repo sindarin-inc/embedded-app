@@ -1,5 +1,4 @@
 #include "Displays/DisplaySystem.hpp"
-#include "Optics/OpticsSystem.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Screen.hpp"

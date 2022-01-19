@@ -20,6 +20,11 @@ void DisplaySystem::setX(int newX) { x_ = newX; }
 
 void DisplaySystem::setY(int newY) { y_ = newY; }
 
+void DisplaySystem::setFocusSize(float width, float height) {
+    focusWidthInMm_ = width;
+    focusHeightInMm_ = height;
+}
+
 auto DisplaySystem::getX() -> int { return x_; }
 
 auto DisplaySystem::getY() -> int { return y_; }

@@ -12,7 +12,7 @@
 
 class FileRenderer : public Renderer {
 public:
-    FileRenderer(OpticsSystem *opticInput, DisplaySystem *displayInput, Readable &readableInput);
+    FileRenderer(DisplaySystem *displayInput, Readable &readableInput);
 
     void setReadMode(int newMode);
     auto getReadMode() -> int;

@@ -15,7 +15,7 @@
 
 class RawRenderer : public Renderer {
 public:
-    RawRenderer(OpticsSystem *opticInput, DisplaySystem *displayInput, std::string &string);
+    RawRenderer(DisplaySystem *displayInput, std::string &string);
 
     void setString(std::string &string);
 

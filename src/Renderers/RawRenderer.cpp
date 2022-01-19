@@ -4,8 +4,8 @@
 
 #define MAX_CHARS_PER_LINE 200
 
-RawRenderer::RawRenderer(OpticsSystem *opticInput, DisplaySystem *displayInput, std::string &string)
-    : Renderer(opticInput, displayInput) {
+RawRenderer::RawRenderer(DisplaySystem *displayInput, std::string &string)
+    : Renderer(displayInput) {
     this->setString(string);
 }
 

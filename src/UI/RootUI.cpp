@@ -23,13 +23,13 @@
 
 #define LAST_READABLE_ID "rui-readable"
 
-void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Readable> &readables) {
+void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables) {
     SHOW_HEAP();
 
     // TODO: Reload the current book / spot / menu
 
     // General renderer shared by menus and simple UIs
-    this->renderer_ = new Renderer(optics, display);
+    this->renderer_ = new Renderer(display);
     this->renderer_->localXOffset = prefs_.localXOffset.get().value();
     this->renderer_->localYOffset = prefs_.localYOffset.get().value();
     SIZE_OF(*this->renderer_);
@@ -37,10 +37,9 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
     auto mainMenu = new PagedMenuScreen(*this->renderer_, this->power_);
     SIZE_OF(*mainMenu);
 
-    auto createReadableScreen = [this, optics, display,
-                                 mainMenu](Readable *readable) -> ReadableScreen * {
+    auto createReadableScreen = [this, display, mainMenu](Readable *readable) -> ReadableScreen * {
         // TODO: Would be better to not allocate / delete these all the time
-        auto *bookRenderer = new FileRenderer(optics, display, *readable);
+        auto *bookRenderer = new FileRenderer(display, *readable);
         bookRenderer->localXOffset = this->prefs_.localXOffset.get().value();
         bookRenderer->localYOffset = this->prefs_.localYOffset.get().value();
         this->prefs_.lastReadableId.set(readable->id);
@@ -67,7 +66,7 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
 
     // Set up pocket article menu
 #if !defined(DISABLE_WIFI)
-    mainMenu->addMenuItem(MenuItem("Pocket Articles", [this, mainMenu, optics, display]() {
+    mainMenu->addMenuItem(MenuItem("Pocket Articles", [this, mainMenu, display]() {
         if (!WiFi.isConnected()) {
             log_w("Tried to load Pocket articles but WiFi not connected");
             this->renderer_->renderMaxBoxWithText(String("WiFi Disconnected"));
@@ -115,7 +114,7 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
             log_i("Got Pocket url %s", url);
             const char *title = article["resolved_title"].as<const char *>();
             pocketMenu->addMenuItem(
-                MenuItem(title, [this, pocketMenu, title, url, pocket, optics, display]() {
+                MenuItem(title, [this, pocketMenu, title, url, pocket, display]() {
                     log_d("Loading article %s (%s)", title, url);
                     renderer_->renderMaxBoxWithText(String("Downloading..."));
                     SpiRamJsonDocument *response;
@@ -138,7 +137,7 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
                     // the same as any other readable. Probably not great to be copying this whole
                     // article anyways.
                     auto str = std::string(text);
-                    auto rawRenderer = new RawRenderer(optics, display, str);
+                    auto rawRenderer = new RawRenderer(display, str);
                     rawRenderer->localXOffset = prefs_.localXOffset.get().value();
                     rawRenderer->localYOffset = prefs_.localYOffset.get().value();
                     SIZE_OF(*rawRenderer);
@@ -169,10 +168,10 @@ void RootUI::setup(DisplaySystem *display, OpticsSystem *optics, std::vector<Rea
     // Settings menu
     auto settingsMenu = new MenuScreen(*renderer_, this->power_);
 
-    settingsMenu->addMenuItem(MenuItem("Adjust Offset", [this, settingsMenu, optics, display]() {
+    settingsMenu->addMenuItem(MenuItem("Adjust Offset", [this, settingsMenu, display]() {
         log_d("Loading adjust offset");
         auto str = std::string();
-        auto rawRenderer = new RawRenderer(optics, display, str);
+        auto rawRenderer = new RawRenderer(display, str);
         rawRenderer->localXOffset = prefs_.localXOffset.get().value();
         rawRenderer->localYOffset = prefs_.localYOffset.get().value();
         auto offsetAdjust = new OffsetAdjustScreen(*rawRenderer, prefs_, this->power_);

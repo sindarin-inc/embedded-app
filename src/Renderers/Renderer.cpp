@@ -4,8 +4,7 @@
 
 #include "sindarin-debug.h"
 
-Renderer::Renderer(OpticsSystem *opticInput, DisplaySystem *displayInput) {
-    optic_ = opticInput;
+Renderer::Renderer(DisplaySystem *displayInput) {
     display_ = displayInput;
     computeMinMax();
 }
@@ -30,8 +29,8 @@ void Renderer::computeMinMax() {
     log_d("pixel pitch = (%d, %d)", pixelPitchX, pixelPitchY);
 
     // rounding down is ok here and what we want.
-    maxPixelsX_ = (int)(optic_->getXMm() * pixelPitchX);
-    maxPixelsY_ = (int)(optic_->getYMm() * pixelPitchY);
+    maxPixelsX_ = (int)(display_->getFocusWidth() * pixelPitchX);
+    maxPixelsY_ = (int)(display_->getFocusHeight() * pixelPitchY);
 
     log_d("max pixels = (%d, %d)", maxPixelsX_, maxPixelsY_);
 

@@ -20,7 +20,6 @@
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/Power.hpp"
-#include "Optics/AllOptics.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/RootUI.hpp"
@@ -37,10 +36,6 @@
 
 #ifdef EINKET013TT1
 DisplayEinkET013TT1 *myDisplay;
-#endif
-
-#ifdef Hastings20x40_3
-OpticsHastings20mmX403mm *myOptics;
 #endif
 
 PreferencesStore prefs;
@@ -83,22 +78,6 @@ Power power;
 
 RootUI rootUi(prefs, power);
 
-void SetupDisplayAndOptics() {
-#ifdef EINKET013TT1
-#ifdef GILPICO_SINDARIN
-    // Turn on power to the screen
-    digitalWrite(DISPLAY_POWER, HIGH);
-    myDisplay = new DisplayEinkET013TT1(DISPLAY_CS, DISPLAY_OEI, DISPLAY_RST, DISPLAY_BUSY);
-#endif
-    SIZE_OF(*myDisplay);
-#endif
-
-#ifdef Hastings20x40_3
-    myOptics = new OpticsHastings20mmX403mm();
-    SIZE_OF(*myOptics);
-#endif
-}
-
 void setup() {
     InitializePlatform();
 
@@ -106,7 +85,14 @@ void setup() {
 
     SHOW_HEAP();
 
-    SetupDisplayAndOptics();
+#ifdef EINKET013TT1
+    // Turn on power to the screen
+    digitalWrite(DISPLAY_POWER, HIGH);
+    myDisplay = new DisplayEinkET013TT1(DISPLAY_CS, DISPLAY_OEI, DISPLAY_RST, DISPLAY_BUSY);
+    myDisplay->setFocusSize(15, 15);
+#endif
+
+    SIZE_OF(*myDisplay);
 
 #ifdef USE_IR_REMOTE
     ir_remote_input = new IRRemoteInput();
@@ -168,7 +154,7 @@ void setup() {
 
     power.setup();
 
-    rootUi.setup(myDisplay, myOptics, *readables);
+    rootUi.setup(myDisplay, *readables);
 
     SHOW_HEAP();
 

@@ -2,11 +2,10 @@
 #define RENDERER_H
 
 #include "../Displays/DisplaySystem.hpp"
-#include "../Optics/OpticsSystem.hpp"
 
 class Renderer {
 public:
-    Renderer(OpticsSystem *opticInput, DisplaySystem *displayInput);
+    Renderer(DisplaySystem *displayInput);
 
     void renderMaxBox();
     void renderMaxBoxWithText(const String &text);
@@ -26,7 +25,6 @@ public:
     int localYOffset = 0;
 
 protected:
-    OpticsSystem *optic_;
     DisplaySystem *display_;
 
     void computeMinMax();
