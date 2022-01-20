@@ -247,7 +247,7 @@ static TIMER_STATE_TYPE _GetTimerState(void)
     //Serial.printf("cycle_counts: %u | cycle_counts_start: %u | cycles_since_start: %lld\n", cycle_counts, cycle_counts_start, cycles_since_start);
     if (cycles_since_start * nanos_per_cycle +
             (((cycles_since_start * picos_remainder_per_cycle) / 1000)) <
-        timer_duration_ns * 2)
+        timer_duration_ns /* * 2 */) // If you want to mees with the timer, here's an easy way to do that. Not officially recommended by eink.
     {
         return TIMER_RUNNING;
     }
