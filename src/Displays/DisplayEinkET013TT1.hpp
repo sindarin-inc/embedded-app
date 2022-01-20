@@ -1,8 +1,6 @@
 #ifndef DISPLAY_EINK_154IN_H
 #define DISPLAY_EINK_154IN_H
 
-#include <Adafruit_GFX.h>
-
 #include "DisplaySystem.hpp"
 #include "sindarin-debug.h"
 
@@ -14,7 +12,7 @@
 
 #define EPD_TCON_FRAME_RATE_HZ 24
 
-class DisplayEinkET013TT1 : public DisplaySystem, public Adafruit_GFX {
+class DisplayEinkET013TT1 : public DisplaySystem {
 public:
     DisplayEinkET013TT1(uint8_t cs, uint8_t oei, uint8_t rst, uint8_t busy);
     ~DisplayEinkET013TT1() override = default;
@@ -35,20 +33,13 @@ public:
     auto getTextWidth(const char *buffer) -> int override;
 
     void setPartialRefresh() override;
-    void unsetPartialRefresh() override;
-    auto getPartialRefresh() -> int override;
 
     void setAutoUpdate(bool update);
     auto getAutoUpdate() -> bool;
 
-    void displaySplashScreen() override;
-
     void drawBigWordInBox(String newText, int startX, int startY, int endX, int endY) override {
         assert(0);
     }
-
-    auto getFont() -> const GFXfont *;
-    void setFont(const GFXfont *newFont);
 
     void drawPixel(int16_t x, int16_t y, uint16_t color) override;
     virtual void drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, int16_t h,

@@ -4,7 +4,7 @@
 
 #include "sindarin-debug.h"
 
-DisplaySystem::DisplaySystem() {
+DisplaySystem::DisplaySystem(int16_t w, int16_t h) : Adafruit_GFX(w, h) {
     xToDraw_ = 0;
     yToDraw_ = 0;
     stringToDraw_ = "";
@@ -49,6 +49,8 @@ void DisplaySystem::setCoordinates(int initX, int initY) {
 }
 
 void DisplaySystem::setText(const String &newText) { stringToDraw_ = newText; }
+
+auto DisplaySystem::getFont() -> const GFXfont * { return gfxFont; }
 
 // Takes the member variable string_to_draw and splits it
 // based on the \n characater and populates the String* lines;

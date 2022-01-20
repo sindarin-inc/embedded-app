@@ -15,13 +15,14 @@
 #ifndef DISPLAY_SYSTEM_H
 #define DISPLAY_SYSTEM_H
 
+#include <Adafruit_GFX.h>
 #include <Arduino.h>
 
 // This isn't the best -- we may want to make this dynamically
 // allocated instead in the object?
 #define MAX_LINES_IN_SPLIT 100
 
-class DisplaySystem {
+class DisplaySystem : public Adafruit_GFX {
 public:
     auto getX() -> int;
     auto getY() -> int;
@@ -40,6 +41,8 @@ public:
     void setHeight(float newHeight);
 
     void setText(const String &newText);
+
+    auto getFont() -> const GFXfont *;
 
     void setCoordinates(int x, int y);
 
@@ -60,9 +63,7 @@ public:
 
     virtual void drawBigWordInBox(String newText, int startX, int startY, int endX, int endY) = 0;
 
-    virtual void displaySplashScreen() = 0;
-
-    DisplaySystem();
+    DisplaySystem(int16_t w, int16_t h);
     ~DisplaySystem() = default;
 
 protected:

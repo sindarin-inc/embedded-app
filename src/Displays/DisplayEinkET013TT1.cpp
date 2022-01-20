@@ -13,7 +13,7 @@ extern const unsigned char g_WaveformData[];
 
 // Set up the U8g2lib display
 DisplayEinkET013TT1::DisplayEinkET013TT1(uint8_t cs, uint8_t oei, uint8_t rst, uint8_t busy)
-    : Adafruit_GFX(EinkET013TT1_X_PIXELS, EinkET013TT1_Y_PIXELS) {
+    : DisplaySystem(EinkET013TT1_X_PIXELS, EinkET013TT1_Y_PIXELS) {
     EPD_HAL_Init(cs, oei, rst, busy);
 
     autoUpdate_ = true;
@@ -67,24 +67,13 @@ DisplayEinkET013TT1::DisplayEinkET013TT1(uint8_t cs, uint8_t oei, uint8_t rst, u
     setHeight(EinkET013TT1_HEIGHT_IN_MM);
 }
 
-// Fill in with the right splash screen for Eink
-void DisplayEinkET013TT1::displaySplashScreen() {}
-
 // BC: Changed to never do partial_referesh for now.
 // Change to = 1 when we want to try partial refresh again.
 void DisplayEinkET013TT1::setPartialRefresh() { partialRefresh_ = 0; }
 
-void DisplayEinkET013TT1::unsetPartialRefresh() { partialRefresh_ = 0; }
-
-auto DisplayEinkET013TT1::getPartialRefresh() -> int { return partialRefresh_; }
-
 void DisplayEinkET013TT1::setAutoUpdate(bool update) { autoUpdate_ = update; }
 
 auto DisplayEinkET013TT1::getAutoUpdate() -> bool { return autoUpdate_; }
-
-auto DisplayEinkET013TT1::getFont() -> const GFXfont * { return gfxFont; }
-
-void DisplayEinkET013TT1::setFont(const GFXfont *newFont) { Adafruit_GFX::setFont(newFont); }
 
 void DisplayEinkET013TT1::getTextBounds(const char *buffer, uint16_t *w, uint16_t *h) {
     int16_t x, y;
