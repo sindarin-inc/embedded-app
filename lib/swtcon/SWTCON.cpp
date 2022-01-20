@@ -204,51 +204,18 @@ static void _OnFrameStartEvent()
 #endif
 }
 
-static uint32_t timer_duration_ns = 0;
-static volatile uint32_t cycle_counts = 0;
+static uint32_t timer_duration_cycles = 0;
 static volatile uint32_t cycle_counts_start = 0;
-static int64_t cycles_since_start = 0;
-static int32_t clock_freq = 0;
-static uint32_t nanos_per_cycle = 0;
-static uint32_t picos_remainder_per_cycle = 0;
 
-static void _StartTimer(uint32_t ns)
-{
-    //Serial.printf("Starting timer: %d!\n", ns);
-    if (clock_freq == 0)
-    {
-        clock_freq = esp_clk_cpu_freq();
-        nanos_per_cycle = (uint32_t)round(1000000000.0 / clock_freq);
-        Serial.printf("Clock freq: %d | nanos per: %d\n", clock_freq, nanos_per_cycle);
-        picos_remainder_per_cycle =
-            (uint32_t)round((1000000000000.0 / clock_freq) - nanos_per_cycle * 1000);
-        Serial.printf("Clock freq: %d | nanos per: %d, pico remainder per: %d\n", clock_freq,
-                      nanos_per_cycle, picos_remainder_per_cycle);
-    }
+static void _StartTimer(uint32_t ns) {
     RSR(CCOUNT, cycle_counts_start);
-    timer_duration_ns = ns;
+    timer_duration_cycles = (esp_clk_cpu_freq() * ns) / 1000000000.0;
 }
 
-static TIMER_STATE_TYPE _GetTimerState(void)
-{
-    if (clock_freq == 0)
-    {
-        clock_freq = esp_clk_cpu_freq();
-        nanos_per_cycle = (uint32_t)round(1000000000.0 / clock_freq);
-        Serial.printf("Clock freq: %d | nanos per: %d, pico remainder per: %d\n", clock_freq, nanos_per_cycle,
-            picos_remainder_per_cycle);
-    }
-
+static TIMER_STATE_TYPE _GetTimerState(void) {
+    volatile uint32_t cycle_counts = 0;
     RSR(CCOUNT, cycle_counts);
-    cycles_since_start = (int64_t)cycle_counts - cycle_counts_start;
-    if (cycles_since_start < 0) {
-        cycles_since_start = UINT32_MAX + cycle_counts;
-    }
-    //Serial.printf("cycle_counts: %u | cycle_counts_start: %u | cycles_since_start: %lld\n", cycle_counts, cycle_counts_start, cycles_since_start);
-    if (cycles_since_start * nanos_per_cycle +
-            (((cycles_since_start * picos_remainder_per_cycle) / 1000)) <
-        timer_duration_ns /* * 2 */) // If you want to mees with the timer, here's an easy way to do that. Not officially recommended by eink.
-    {
+    if (cycle_counts - cycle_counts_start < timer_duration_cycles) {
         return TIMER_RUNNING;
     }
     return TIMER_STOP;
