@@ -210,6 +210,8 @@ static volatile uint32_t cycle_counts_start = 0;
 static int64_t cycles_since_start = 0;
 static int32_t clock_freq = 0;
 static uint32_t nanos_per_cycle = 0;
+static uint32_t picos_remainder_per_cycle = 0;
+
 static void _StartTimer(uint32_t ns)
 {
     //Serial.printf("Starting timer: %d!\n", ns);
@@ -218,6 +220,10 @@ static void _StartTimer(uint32_t ns)
         clock_freq = esp_clk_cpu_freq();
         nanos_per_cycle = (uint32_t)round(1000000000.0 / clock_freq);
         Serial.printf("Clock freq: %d | nanos per: %d\n", clock_freq, nanos_per_cycle);
+        picos_remainder_per_cycle =
+            (uint32_t)round((1000000000000.0 / clock_freq) - nanos_per_cycle * 1000);
+        Serial.printf("Clock freq: %d | nanos per: %d, pico remainder per: %d\n", clock_freq,
+                      nanos_per_cycle, picos_remainder_per_cycle);
     }
     RSR(CCOUNT, cycle_counts_start);
     timer_duration_ns = ns;
@@ -229,7 +235,8 @@ static TIMER_STATE_TYPE _GetTimerState(void)
     {
         clock_freq = esp_clk_cpu_freq();
         nanos_per_cycle = (uint32_t)round(1000000000.0 / clock_freq);
-        Serial.printf("Clock freq: %d | nanos per: %d\n", clock_freq, nanos_per_cycle);
+        Serial.printf("Clock freq: %d | nanos per: %d, pico remainder per: %d\n", clock_freq, nanos_per_cycle,
+            picos_remainder_per_cycle);
     }
 
     RSR(CCOUNT, cycle_counts);
@@ -238,7 +245,9 @@ static TIMER_STATE_TYPE _GetTimerState(void)
         cycles_since_start = UINT32_MAX + cycle_counts;
     }
     //Serial.printf("cycle_counts: %u | cycle_counts_start: %u | cycles_since_start: %lld\n", cycle_counts, cycle_counts_start, cycles_since_start);
-    if (cycles_since_start * nanos_per_cycle < timer_duration_ns)
+    if (cycles_since_start * nanos_per_cycle +
+            (((cycles_since_start * picos_remainder_per_cycle) / 1000)) <
+        timer_duration_ns * 2)
     {
         return TIMER_RUNNING;
     }
