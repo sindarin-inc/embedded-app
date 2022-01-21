@@ -24,7 +24,9 @@ auto MenuScreen::nextSelection() -> int {
     int oldSel = currSelection_;
     currSelection_++;
     // Don't go further than the last item in the menu
-    if (currSelection_ >= numMenuItems_) currSelection_ = numMenuItems_ - 1;
+    if (currSelection_ >= numMenuItems_) {
+        currSelection_ = numMenuItems_ - 1;
+    }
     auto diff = currSelection_ - oldSel;
     if (diff) {
         // Hit a page boundary -- update the page!
@@ -40,7 +42,9 @@ auto MenuScreen::prevSelection() -> int {
     int oldSel = currSelection_;
     currSelection_--;
     // Don't go before the first menu item
-    if (currSelection_ < 0) currSelection_ = 0;
+    if (currSelection_ < 0) {
+        currSelection_ = 0;
+    }
     auto diff = oldSel - currSelection_;
     if (diff) {
         // Hit a page boundary -- update the page!
@@ -57,10 +61,11 @@ auto MenuScreen::getItemTitleAt(int index) -> String {
     String all;
     assert(index < numMenuItems_);
     // Add the indicator for where we are in the menu based on the current selection
-    if (index == currSelection_)
+    if (index == currSelection_) {
         all = " ->";
-    else
+    } else {
         all = "   ";
+    }
     all = all + " " + menuItems_[index].title;
     return all;
 }

@@ -327,7 +327,9 @@ def main():
     if args.fix:
         print("Applying fixes ...")
         try:
-            subprocess.call([clang_apply_replacements_path, tmpdir])
+            subprocess.call(
+                [clang_apply_replacements_path, "-format", "-style=file", tmpdir]
+            )
         except:
             print("Error applying fixes.\n", file=sys.stderr)
             raise

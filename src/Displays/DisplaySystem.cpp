@@ -48,7 +48,9 @@ void DisplaySystem::setPartialWindow(uint16_t x, uint16_t y, uint16_t w, uint16_
     rotate(partialX_, partialY_, partialW_, partialH_);
     // force partialX, partialW multiple of 8?
     partialW_ += partialX_ % 8;
-    if (partialW_ % 8 > 0) partialW_ += 8 - partialW_ % 8;
+    if (partialW_ % 8 > 0) {
+        partialW_ += 8 - partialW_ % 8;
+    }
     partialX_ -= partialX_ % 8;
 }
 
@@ -112,10 +114,11 @@ void DisplaySystem::splitStringToLines(const String &stringToSplit,
     //
     // The second part of this || is to handle when there's just a single line with
     // a single character on it with no \n.
-    if ((startPos != endPos) || stringToSplit.charAt(endPos) != '\n')
+    if ((startPos != endPos) || stringToSplit.charAt(endPos) != '\n') {
         lines[numLines - 1] = stringToSplit.substring(startPos, endPos + 1);
-    else
+    } else {
         numLines--;
+    }
 }
 
 void DisplaySystem::drawTextCmdsOnly(const String &newText, int x, int y, int lineHeight) {

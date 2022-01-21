@@ -76,7 +76,7 @@ def changed_files():
     check_remotes = ["upstream", "origin"]
     check_remotes.extend(splitlines_no_ends(get_output("git", "remote")))
     for remote in check_remotes:
-        command = ["git", "merge-base", f"refs/remotes/{remote}/dev", "HEAD"]
+        command = ["git", "merge-base", f"refs/remotes/{remote}/main", "HEAD"]
         try:
             merge_base = splitlines_no_ends(get_output(*command))[0]
             break

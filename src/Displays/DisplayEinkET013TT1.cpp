@@ -127,8 +127,9 @@ auto DisplayEinkET013TT1::writePartialImage(uint16_t x, uint16_t y, const unsign
     uint8_t *fb;
     uint32_t i;
 
-    if (((x + imgW) > EinkET013TT1_X_PIXELS) || ((y + imgH) > EinkET013TT1_Y_PIXELS))
+    if (((x + imgW) > EinkET013TT1_X_PIXELS) || ((y + imgH) > EinkET013TT1_Y_PIXELS)) {
         return 0; // over range
+    }
 
     for (i = 0; i < imgH; ++i) {
         fb = EPD_TCON_GetUpdateBuffer();

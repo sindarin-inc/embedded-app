@@ -87,7 +87,9 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     } else {
         numCharsToRead = MAX_CHARS_PER_PAGE;
         seekPlace = place - numCharsToRead - PLACE_REWIND;
-        if (place - numCharsToRead - PLACE_REWIND < 0) seekPlace = 0;
+        if (place - numCharsToRead - PLACE_REWIND < 0) {
+            seekPlace = 0;
+        }
     }
 
     mainBackwardsBuffer[numCharsToRead] = '\0';
@@ -95,7 +97,9 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     int totalCharsRead = 0;
 
     // If we are at the beginning of the file, we stay there.
-    if (place == 0) return 0;
+    if (place == 0) {
+        return 0;
+    }
 
     if (!seek(seekPlace)) {
         log_e("failed to seek in go_backwards: %lu is the place", place);
@@ -222,10 +226,11 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     // similarly to the logic above for starting PLACE_REWIND behind, we need move back those spaces
     // again when calculating what to return based on the number of characters read in lineify and
     // the place passed in.
-    if ((place - totalCharsRead - PLACE_REWIND) <= 0)
+    if ((place - totalCharsRead - PLACE_REWIND) <= 0) {
         previousPlaceInFile = 0;
-    else
+    } else {
         previousPlaceInFile = place - totalCharsRead - PLACE_REWIND;
+    }
 
     return previousPlaceInFile;
 }
@@ -263,8 +268,9 @@ auto Renderer::loadIntoBuffer(char *buffer, unsigned long place) -> unsigned lon
 
         // eliminate spaces at the beginning of the read
         // (This can happen due to heuristic to be able to go backwards arbitrarily)
-        while ((plcInBuffer == 0) && (curChar == ' ') && this->available())
+        while ((plcInBuffer == 0) && (curChar == ' ') && this->available()) {
             curChar = this->read();
+        }
 
         // Turn new lines into spaces, for now.
         // But remember that it was a new line.

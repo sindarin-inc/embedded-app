@@ -8,7 +8,8 @@ Checks: >-
   bugprone-*,
   performance-*,
   modernize-*,
-  readability-identifier-naming*
+  readability-identifier-naming*,
+  readability-braces-around-statements
 AnalyzeTemporaryDtors: false
 FormatStyle: file
 UseColor: true
