@@ -9,9 +9,9 @@
 #include "Contents/Readable.hpp"
 #include "Renderer.hpp"
 
-class RawRenderer : public Renderer {
+class StreamRenderer : public Renderer {
 public:
-    RawRenderer(DisplaySystem &display) : Renderer(display) {}
+    StreamRenderer(DisplaySystem &display) : Renderer(display) {}
 
     void setString(std::string &string);
 
@@ -25,8 +25,6 @@ public:
 
 protected:
     std::istringstream stream_;
-
-    int firstGoAround_ = 1;
 };
 
 #endif

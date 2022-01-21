@@ -1,8 +1,8 @@
-#include "RawRenderer.hpp"
+#include "StreamRenderer.hpp"
 
 #include "sindarin-debug.h"
 
-void RawRenderer::setString(std::string &string) {
+void StreamRenderer::setString(std::string &string) {
     this->stream_ = std::istringstream(string);
     this->currentPlace_ = 0;
     this->previousPlace_ = 0;

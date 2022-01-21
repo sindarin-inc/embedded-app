@@ -10,7 +10,7 @@
 #include "Inputs/TTRemoteInput.hpp"
 #include "Misc/Platform.hpp"
 #include "Renderers/FileRenderer.hpp"
-#include "Renderers/RawRenderer.hpp"
+#include "Renderers/StreamRenderer.hpp"
 #include "UI/CalibrationScreen.hpp"
 #include "UI/LoadingScreen.hpp"
 #include "UI/LogoScreen.hpp"
@@ -18,8 +18,8 @@
 #include "UI/OffsetAdjustScreen.hpp"
 #include "UI/PagedMenuScreen.hpp"
 #include "UI/PowerDepletedScreen.hpp"
-#include "UI/RawRendererScreen.hpp"
 #include "UI/ReadableScreen.hpp"
+#include "UI/StreamRendererScreen.hpp"
 #include "sindarin-debug.h"
 
 #define LAST_READABLE_ID "rui-readable"
@@ -130,20 +130,20 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables) {
                     // the same as any other readable. Probably not great to be copying this whole
                     // article anyways.
                     auto str = std::string(text);
-                    auto rawRenderer = new RawRenderer(*display);
-                    SIZE_OF(*rawRenderer);
-                    rawRenderer->renderPageWithBox(0);
+                    auto streamRenderer = new StreamRenderer(*display);
+                    SIZE_OF(*streamRenderer);
+                    streamRenderer->renderPageWithBox(0);
 
-                    auto rawRendererScreen = new RawRendererScreen(rawRenderer);
-                    setCurrentScreen(*rawRendererScreen);
+                    auto streamRendererScreen = new StreamRendererScreen(streamRenderer);
+                    setCurrentScreen(*streamRendererScreen);
 
-                    rawRendererScreen->backCallback = [this, rawRenderer, rawRendererScreen,
-                                                       pocketMenu, response]() {
-                        setCurrentScreen(*pocketMenu);
-                        delete rawRendererScreen;
-                        delete rawRenderer;
-                        delete response;
-                    };
+                    streamRendererScreen->backCallback =
+                        [this, streamRenderer, streamRendererScreen, pocketMenu, response]() {
+                            setCurrentScreen(*pocketMenu);
+                            delete streamRendererScreen;
+                            delete streamRenderer;
+                            delete response;
+                        };
                 }));
         }
 

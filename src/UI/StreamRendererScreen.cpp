@@ -1,18 +1,17 @@
-#include "UI/RawRendererScreen.hpp"
+#include "UI/StreamRendererScreen.hpp"
 
 #include "sindarin-debug.h"
 
-void RawRendererScreen::render(DisplaySystem &display) {
+void StreamRendererScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
     }
-    log_d("Rendering some text in READ MODE");
     newPlace_ = renderer_->renderPageWithBox(newPlace_);
     log_d("%d is the new place in the text", newPlace_);
     needsRerender = false;
 }
 
-void RawRendererScreen::processCommand(RemoteCommand command) {
+void StreamRendererScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS: {
         newPlace_ = prevPlace_;

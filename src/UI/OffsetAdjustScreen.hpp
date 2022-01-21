@@ -1,5 +1,5 @@
 #include "Misc/Power.hpp"
-#include "Renderers/RawRenderer.hpp"
+#include "Renderers/StreamRenderer.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Screen.hpp"
 
@@ -15,7 +15,7 @@ public:
 
 protected:
     DisplaySystem &display_;
-    RawRenderer renderer_;
+    StreamRenderer renderer_;
     PreferencesStore &prefs_;
     Power &power_;
 };
