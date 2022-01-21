@@ -117,7 +117,7 @@ def clang_options(idedata):
         ):
             cmd.extend(["-isystem", directory])
         # Intentionally skip clang-tidy-ing swtcon headers for now
-        elif directory.endswith("swtcon") or directory.endswith("improv"):
+        elif directory.endswith("swtcon"):
             cmd.extend(["-isystem", directory])
         else:
             # add the local include directories using -I
