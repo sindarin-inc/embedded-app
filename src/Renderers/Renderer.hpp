@@ -10,8 +10,6 @@ public:
     void renderMaxBox();
     void renderMaxBoxWithText(const String &text);
 
-    void renderMaxBoxWithWord(const String &word);
-
     void renderBox(int xStart, int yStart, int xEnd, int yEnd);
 
     auto getPreviousPlace() -> unsigned long;

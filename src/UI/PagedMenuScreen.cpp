@@ -6,7 +6,6 @@
 #include "config.h"
 
 #include "Bitmaps/Menu_Blank.hpp"
-#include "Displays/DisplayEinkET013TT1.hpp"
 #include "Fonts/LucidaGrande10pt7b.h"
 #include "Fonts/LucidaGrande14pt7b.h"
 #include "Fonts/LucidaGrande5pt7b.h"
@@ -25,29 +24,28 @@ void PagedMenuScreen::render() {
         return;
     }
     log_i("PagedMenuScreen render (selected = %s)", getCurrItem().title.c_str());
-#ifdef EINKET013TT1
-    auto *eink = (DisplayEinkET013TT1 *)renderer_.getDisplay();
-    if (eink != nullptr) {
-        auto autoUpdate = eink->getAutoUpdate();
-        eink->setAutoUpdate(false);
+    auto *display = renderer_.getDisplay();
+    if (display != nullptr) {
+        auto autoUpdate = display->getAutoUpdate();
+        display->setAutoUpdate(false);
         // Blank out screen
-        eink->fillScreen(eink->bg);
+        display->fillScreen(display->bg);
         // Draw menu surroundings
-        eink->drawXBitmap(this->renderer_.localXOffset, this->renderer_.localYOffset,
-                          MENU_BLANK_BITS, 256, 256, eink->fg);
+        display->drawXBitmap(this->renderer_.localXOffset, this->renderer_.localYOffset,
+                             MENU_BLANK_BITS, 256, 256, display->fg);
         String itemTitle = getCurrItem().title;
         // Cache / replace old font; then try descending size fonts until we find one that fits our
         // string in the desired space.
-        auto prevFont = eink->getFont();
+        auto prevFont = display->getFont();
         for (int i = 0; i < sizeof(shrinkingFonts); ++i) {
-            eink->setFont(shrinkingFonts[i]);
-            if (eink->getTextWidth(itemTitle.c_str()) < MAX_WIDTH) {
+            display->setFont(shrinkingFonts[i]);
+            if (display->getTextWidth(itemTitle.c_str()) < MAX_WIDTH) {
                 break;
             }
             log_d("Font size %d was too big for menu item title; stepping down!", i);
         }
         // If we still don't fit, shrink the string until we do.
-        while (eink->getTextWidth(itemTitle.c_str()) > MAX_WIDTH) {
+        while (display->getTextWidth(itemTitle.c_str()) > MAX_WIDTH) {
             log_d("Item title %s still too long at smallest font size; truncating...",
                   itemTitle.c_str());
             itemTitle = itemTitle.substring(0, itemTitle.length() - 4) + "...";
@@ -55,23 +53,25 @@ void PagedMenuScreen::render() {
         // Now draw!
         uint16_t width = 0, height = 0;
         String batteryStatus = this->power_.getBatteryLifeString();
-        eink->getTextBounds(itemTitle.c_str(), &width, &height);
-        eink->drawText(itemTitle.c_str(),
-                       this->renderer_.localXOffset + (EinkET013TT1_X_PIXELS) / 2 - (width / 2),
-                       this->renderer_.localYOffset + (EinkET013TT1_Y_PIXELS) / 2 + (height / 2));
-        eink->setFont(&LUCIDA_GRANDE5PT7B);
-        eink->getTextBounds(batteryStatus.c_str(), &width, &height);
+        display->getTextBounds(itemTitle.c_str(), &width, &height);
+        uint16_t screenWidth = this->renderer_.getDisplay()->width();
+        uint16_t screenHeight = this->renderer_.getDisplay()->height();
+        display->drawText(itemTitle.c_str(),
+                          this->renderer_.localXOffset + (screenWidth / 2) - (width / 2),
+                          this->renderer_.localYOffset + (screenHeight / 2) + (height / 2),
+                          screenWidth, screenHeight);
+        display->setFont(&LUCIDA_GRANDE5PT7B);
+        display->getTextBounds(batteryStatus.c_str(), &width, &height);
         // Arbitrarily put the battery text off of the bottom of the screen 20 pixels
         // This is just so we always have it in our prototype, not that it'll be
         // the right place (or icon) long term
         // Not taking into account the rednerer x and y offsets here on purpose
-        eink->drawText(batteryStatus.c_str(), (EinkET013TT1_X_PIXELS) / 2 - (width / 2),
-                       EinkET013TT1_Y_PIXELS - 20);
-        eink->updateDisplay();
-        eink->setFont(prevFont);
-        eink->setAutoUpdate(autoUpdate);
+        display->drawText(batteryStatus.c_str(), (screenWidth / 2) - (width / 2), screenHeight - 20,
+                          screenWidth, screenHeight);
+        display->updateDisplay();
+        display->setFont(prevFont);
+        display->setAutoUpdate(autoUpdate);
     }
-#endif
     needsRerender = false;
 }
 

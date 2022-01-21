@@ -106,7 +106,7 @@ auto FileRenderer::renderContinueScreed() -> unsigned long {
 
             if (buffer[plcInBuffer] == ' ') {
                 buffer[plcInBuffer] = '\0';
-                renderMaxBoxWithWord(String(buffer));
+                // renderMaxBoxWithWord(String(buffer));
                 DEBUG_LN(buffer);
                 currentPlace_++;
                 break;

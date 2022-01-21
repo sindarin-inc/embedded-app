@@ -17,6 +17,7 @@
 
 #include <Adafruit_GFX.h>
 #include <Arduino.h>
+#include <array>
 
 // This isn't the best -- we may want to make this dynamically
 // allocated instead in the object?
@@ -24,71 +25,82 @@
 
 class DisplaySystem : public Adafruit_GFX {
 public:
-    auto getX() -> int;
-    auto getY() -> int;
-    auto getWidth() -> float;
-    auto getHeight() -> float;
+    DisplaySystem(int16_t w, int16_t h);
+    ~DisplaySystem() override = default;
 
-    void setX(int newX);
-    void setY(int newY);
+    // MARK: - Required virtual methods that subclasses must implement
 
-    //! Size of the focused area in the optics in mm
+    void drawPixel(int16_t x, int16_t y, uint16_t color) override = 0;
+    virtual void updateDisplay() = 0;
+
+    // MARK: - Potentially overridable methods for configuring partial refresh
+
+    virtual void setPartialRefresh();
+    void unsetPartialRefresh();
+    auto getPartialRefresh() -> int;
+    virtual void setPartialWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
+    void setFullWindow();
+
+    // MARK: - AutoUpdate
+
+    // Whether or not the display will immediately update after drawing operations. If this is set
+    // to false, then updateDisplay must be called manually
+    // TODO(john): I don't love this paradigm and I think it'd probably be better to just always be
+    // explicit in our drawing code and call `updateDisplay` when we want to update the display.
+    void setAutoUpdate(bool update);
+    auto getAutoUpdate() -> bool;
+
+    // MARK: - Physical optics stuff
+
+    // Physical size of the display in mm
+    auto getWidthInMm() -> float;
+    auto getHeightInMm() -> float;
+
+    // Size of the focused area in the optics in mm
     void setFocusSize(float width, float height);
     auto getFocusWidth() -> float { return focusWidthInMm_; }
     auto getFocusHeight() -> float { return focusHeightInMm_; }
 
-    void setWidth(float newWidth);
-    void setHeight(float newHeight);
-
-    void setText(const String &newText);
+    // MARK: - Text rendering code
 
     auto getFont() -> const GFXfont *;
+    void drawText(const String &newText, int x, int y, int width, int height);
+    void drawTextInBox(const String &newText, int startX, int startY, int endX, int endY);
+    void getTextBounds(const char *buffer, uint16_t *w, uint16_t *h);
+    auto getTextHeight() -> int;
+    auto getTextHeight(const char *buffer) -> int;
+    auto getTextWidth(const char *buffer) -> int;
 
-    void setCoordinates(int x, int y);
+    // MARK: - Graphic drawing code
 
-    virtual void setPartialRefresh();
-    virtual void unsetPartialRefresh();
-    virtual auto getPartialRefresh() -> int;
+    // Basically Adafruit_GFX::drawRect with the necessary partial refresh stuff
+    // TODO: We might be able to instead just subclass `drawRect` here instead to be more consistent
+    // with Adafruit_GFX
+    void drawBox(int xStart, int yStart, int xEnd, int yEnd);
+    // Draw a bitmap
+    void drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, int16_t h,
+                     uint16_t color);
 
-    virtual auto getTextHeight() -> int = 0;
-    virtual auto getTextWidth(const char *buffer) -> int = 0;
-
-    virtual void drawBox(int xStart, int yStart, int xEnd, int yEnd) = 0;
-
-    virtual void drawText() = 0;
-    virtual void drawText(String newText) = 0;
-    virtual void drawText(String newText, int x, int y) = 0;
-
-    virtual void drawTextInBox(String newText, int startX, int startY, int endX, int endY) = 0;
-
-    virtual void drawBigWordInBox(String newText, int startX, int startY, int endX, int endY) = 0;
-
-    DisplaySystem(int16_t w, int16_t h);
-    ~DisplaySystem() = default;
+    // TODO: Just use `textcolor` and `textbgcolor` for these?
+    uint16_t bg = 0x0000; // 0xFFFF;
+    uint16_t fg = 0xFFFF; // 0x0000;
 
 protected:
-    // Number of pixels in the X direction
-    int x_;
-    // Number of pixels in the Y direction
-    int y_;
+    void drawTextCmdsOnly(const String &newText, int x, int y, int lineHeight);
+    void drawBoxCmdsOnly(int xStart, int yStart, int xEnd, int yEnd);
+    void splitStringToLines(const String &stringToSplit,
+                            std::array<String, MAX_LINES_IN_SPLIT> &lines, int &numLines);
+    void rotate(uint16_t &x, uint16_t &y, uint16_t &w, uint16_t &h);
 
-    float focusWidthInMm_;
-    float focusHeightInMm_;
+    int partialRefresh_ = 0;
+    uint16_t partialX_, partialY_, partialW_, partialH_;
+
+    bool autoUpdate_;
 
     float widthInMm_ = 0;
     float heightInMm_ = 0;
-
-    int xToDraw_ = 0;
-    int yToDraw_ = 0;
-
-    String stringToDraw_;
-
-    void splitStringToLines();
-
-    int partialRefresh_ = 0;
-
-    int numLines_ = 0;
-    String lines_[MAX_LINES_IN_SPLIT];
+    float focusWidthInMm_;
+    float focusHeightInMm_;
 };
 
 #endif

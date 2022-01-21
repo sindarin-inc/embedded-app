@@ -2,7 +2,6 @@
 
 #include "config.h"
 
-#include "Displays/DisplayEinkET013TT1.hpp"
 #include "UI/Bitmaps/Calibration.hpp"
 
 void BitmapScreen::render() {
@@ -12,16 +11,14 @@ void BitmapScreen::render() {
     if (!needsRerender) {
         return;
     }
-#ifdef EINKET013TT1
-    auto *eink = (DisplayEinkET013TT1 *)renderer_.getDisplay();
-    if (eink != nullptr) {
-        eink->fillScreen(eink->bg);
+    auto *display = renderer_.getDisplay();
+    if (display != nullptr) {
+        display->fillScreen(display->bg);
         // TODO: We should figure out what we really want for these 'full-screen' bitmaps
         // so that they can use the screen offset settings as well. Probably we want 'full-screen'
         // to mean the full width of the focus area, in which case we shouldn't hardcode 256 here.
-        eink->drawXBitmap(0, 0, bitmap_, 256, 256, eink->fg);
+        display->drawXBitmap(0, 0, bitmap_, 256, 256, display->fg);
     }
-#endif
     needsRerender = false;
 }
 

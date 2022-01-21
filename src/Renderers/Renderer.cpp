@@ -18,13 +18,13 @@ void Renderer::computeMinMax() {
 
     log_d("Computing Min and Max pixels for Renderer");
 
-    midpointX = display_->getX() / 2;
-    midpointY = display_->getY() / 2;
+    midpointX = display_->width() / 2;
+    midpointY = display_->height() / 2;
 
     log_d("midpoint = (%d, %d)", midpointX, midpointY);
 
-    pixelPitchX = ((float)display_->getX()) / display_->getWidth();
-    pixelPitchY = ((float)display_->getY()) / display_->getHeight();
+    pixelPitchX = ((float)display_->width()) / display_->getWidthInMm();
+    pixelPitchY = ((float)display_->height()) / display_->getHeightInMm();
 
     log_d("pixel pitch = (%d, %d)", pixelPitchX, pixelPitchY);
 
@@ -55,11 +55,6 @@ void Renderer::renderMaxBox() {
 void Renderer::renderMaxBoxWithText(const String &text) {
     display_->drawTextInBox(text, xMin_ + localXOffset, yMin_ + localYOffset, xMax_ + localXOffset,
                             yMax_ + localYOffset);
-}
-
-void Renderer::renderMaxBoxWithWord(const String &word) {
-    display_->drawBigWordInBox(word, xMin_ + localXOffset, yMin_ + localYOffset,
-                               xMax_ + localXOffset, yMax_ + localYOffset);
 }
 
 void Renderer::renderBox(int xStart, int yStart, int xEnd, int yEnd) {
