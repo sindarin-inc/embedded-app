@@ -95,7 +95,9 @@ public:
         KeyedPrefsItem(Preferences &prefs, const char *suffix)
             : PrefsItemBase<T>(prefs), suffix_(suffix) {}
 
-        void makeKey(char *key, const char *prefix) { sprintf(key, "%s%s", prefix, this->suffix_); }
+        void makeKey(char *key, const char *prefix) {
+            snprintf(key, MAX_KEY_LENGTH + 1, "%s%s", prefix, this->suffix_);
+        }
 
         auto get(const char *prefix) -> T {
             char key[MAX_KEY_LENGTH + 1];
