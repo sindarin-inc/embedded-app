@@ -1,10 +1,11 @@
 #include "Bitmaps/Calibration.hpp"
 #include "Displays/DisplaySystem.hpp"
-#include "UI/BitmapScreen.hpp"
-#include "UI/Bitmaps/Logo.hpp"
+#include "UI/Screen.hpp"
 
-class CalibrationScreen : public BitmapScreen {
+class CalibrationScreen : public Screen {
 public:
-    CalibrationScreen() : BitmapScreen(LOGO_BITS) {}
-    ~CalibrationScreen() override = default;
+    CalibrationScreen() : Screen() {}
+
+    void processCommand(RemoteCommand command) override;
+    void render(DisplaySystem &display) override;
 };

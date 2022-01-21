@@ -13,6 +13,7 @@
 #include "Renderers/RawRenderer.hpp"
 #include "UI/CalibrationScreen.hpp"
 #include "UI/LoadingScreen.hpp"
+#include "UI/LogoScreen.hpp"
 #include "UI/MenuScreen.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
 #include "UI/PagedMenuScreen.hpp"
@@ -169,6 +170,14 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables) {
         };
         log_d("set up callback");
     }));
+    settingsMenu->addMenuItem(MenuItem("Calibration Screen", [this, settingsMenu, display]() {
+        auto calibrationScreen = new CalibrationScreen();
+        this->setCurrentScreen(*calibrationScreen);
+        calibrationScreen->backCallback = [this, calibrationScreen, settingsMenu]() {
+            setCurrentScreen(*settingsMenu);
+            delete calibrationScreen;
+        };
+    }));
     settingsMenu->addMenuItem(MenuItem("Reset Prefs", [this, display]() {
         prefs_.clear();
         log_w("Preferences cleared. Rebooting...");
@@ -228,7 +237,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables) {
     // By default, if we don't already have a different first screen ready, show the calibration
     // screen
     if (this->currentScreen_ == nullptr) {
-        auto calibrationScreen = new CalibrationScreen();
+        auto calibrationScreen = new LogoScreen();
         calibrationScreen->backCallback = [this, calibrationScreen, display, mainMenu]() {
             display->clearScreen();
             delay(100);

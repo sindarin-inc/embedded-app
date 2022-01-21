@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Displays/DisplaySystem.hpp"
 #include "UI/Screen.hpp"
 
