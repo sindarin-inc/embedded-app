@@ -83,6 +83,8 @@ void setup() {
 
     Serial.begin(115200);
 
+    prefs.begin();
+
     SHOW_HEAP();
 
 #ifdef EINKET013TT1
@@ -137,8 +139,6 @@ void setup() {
 #ifdef USE_TURN_TOUCH_REMOTE
     ttRemoteInput.startRemote();
 #endif
-
-    prefs.begin();
 
 #ifndef DISABLE_WIFI
     ConnectWiFiIfCredentialsExist();
