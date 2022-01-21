@@ -7,7 +7,7 @@ class OffsetAdjustScreen : public Screen {
 public:
     OffsetAdjustScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power);
 
-    void render() override;
+    void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
 
     int xOffset;

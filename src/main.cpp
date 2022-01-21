@@ -208,7 +208,7 @@ void loop() {
         digitalWrite(RED_LED, HIGH);
     }
 
-    rootUi.loop(codeFromRelease);
+    rootUi.loop(*myDisplay, codeFromRelease);
 
     digitalWrite(RED_LED, LOW);
 

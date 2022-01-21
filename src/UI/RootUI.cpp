@@ -28,7 +28,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables) {
 
     display_ = display;
 
-    auto mainMenu = new PagedMenuScreen(*display, this->power_);
+    auto mainMenu = new PagedMenuScreen(this->power_);
     SIZE_OF(*mainMenu);
 
     auto createReadableScreen = [this, display, mainMenu](Readable *readable) -> ReadableScreen * {
@@ -98,7 +98,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables) {
         }
 
         log_i("Pocket /get request succeeded");
-        auto pocketMenu = new MenuScreen(*display_, this->power_);
+        auto pocketMenu = new MenuScreen(this->power_);
 
         for (JsonPair keyValue : list) {
             JsonObject article = keyValue.value().as<JsonObject>();
@@ -156,7 +156,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables) {
 #endif // DISABLE_WIFI
 
     // Settings menu
-    auto settingsMenu = new MenuScreen(*display_, this->power_);
+    auto settingsMenu = new MenuScreen(this->power_);
 
     settingsMenu->addMenuItem(MenuItem("Adjust Offset", [this, settingsMenu, display]() {
         log_d("Loading adjust offset");
@@ -180,7 +180,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables) {
     settingsMenu->addMenuItem(
         MenuItem("Factory Defaults", [this, settingsMenu]() { this->restoreFactoryDefaults(); }));
     settingsMenu->addMenuItem(MenuItem("Loading Test", [this, display, settingsMenu]() {
-        auto loadingScreen = new LoadingScreen(*display);
+        auto loadingScreen = new LoadingScreen();
         setCurrentScreen(*loadingScreen);
         loadingScreen->backCallback = [this, loadingScreen, settingsMenu]() {
             setCurrentScreen(*settingsMenu);
@@ -188,7 +188,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables) {
         };
     }));
     settingsMenu->addMenuItem(MenuItem("Test Bitmap Screen", [this, display, settingsMenu]() {
-        auto bitmapScreen = new BitmapScreen(*display, LOGO_BITS);
+        auto bitmapScreen = new BitmapScreen(LOGO_BITS);
         setCurrentScreen(*bitmapScreen);
         bitmapScreen->backCallback = [this, bitmapScreen, settingsMenu]() {
             setCurrentScreen(*settingsMenu);
@@ -228,7 +228,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables) {
     // By default, if we don't already have a different first screen ready, show the calibration
     // screen
     if (this->currentScreen_ == nullptr) {
-        auto calibrationScreen = new CalibrationScreen(*display);
+        auto calibrationScreen = new CalibrationScreen();
         calibrationScreen->backCallback = [this, calibrationScreen, display, mainMenu]() {
             display->clearScreen();
             delay(100);
@@ -252,18 +252,19 @@ void RootUI::processCommand(RemoteCommand command) {
     ContainerScreen::processCommand(command);
 }
 
-void RootUI::loop(RemoteCommand command) {
+void RootUI::loop(DisplaySystem &display, RemoteCommand command) {
     if (this->power_.getDepleted()) {
         // Force render immediately as we are about to shut off
-        PowerDepletedScreen powerDepleted(*display_);
+        // TODO: Is this bad?
+        PowerDepletedScreen powerDepleted;
         setCurrentScreen(powerDepleted);
-        this->render();
+        this->render(display);
         // Wait 5 seconds to be able to see the message
         delay(5000);
         // Unless wake sources are defined, nothing can wake us up. Goodnight.
         esp_deep_sleep_start();
     }
-    Screen::loop(command);
+    Screen::loop(display, command);
 }
 
 void RootUI::restoreFactoryDefaults() {

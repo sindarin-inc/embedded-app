@@ -2,7 +2,7 @@
 
 #include "sindarin-debug.h"
 
-void ReadableScreen::render() {
+void ReadableScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
     }

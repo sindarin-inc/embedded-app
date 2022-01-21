@@ -5,9 +5,9 @@ void ContainerScreen::setCurrentScreen(Screen &screen) {
     currentScreen_ = &screen;
 }
 
-void ContainerScreen::render() {
+void ContainerScreen::render(DisplaySystem &display) {
     if (currentScreen_ != nullptr) {
-        currentScreen_->render();
+        currentScreen_->render(display);
     }
 };
 

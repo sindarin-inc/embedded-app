@@ -12,14 +12,14 @@ screen.
 class Screen {
 public:
     virtual ~Screen() = default;
-    virtual void render() = 0;
+    virtual void render(DisplaySystem &display) = 0;
     virtual void processCommand(RemoteCommand command) = 0;
 
-    virtual void loop(RemoteCommand command) {
+    virtual void loop(DisplaySystem &display, RemoteCommand command) {
         if (command != RemoteCommand::NONE) {
             processCommand(command);
         }
-        render();
+        render(display);
     }
 
     std::function<void()> backCallback;

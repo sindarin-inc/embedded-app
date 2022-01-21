@@ -17,7 +17,7 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
     renderer_.setString(message);
 }
 
-void OffsetAdjustScreen::render() {
+void OffsetAdjustScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
     }

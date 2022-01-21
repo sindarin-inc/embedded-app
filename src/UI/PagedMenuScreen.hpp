@@ -9,12 +9,12 @@
 class PagedMenuScreen : public MenuScreen {
 
 public:
-    PagedMenuScreen(DisplaySystem &display, Power &power) : MenuScreen(display, power){};
+    PagedMenuScreen(Power &power) : MenuScreen(power){};
 
     auto nextSelection() -> int override;
     auto prevSelection() -> int override;
 
-    void render() override;
+    void render(DisplaySystem &display) override;
 };
 
 #endif

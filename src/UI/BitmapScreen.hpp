@@ -3,14 +3,12 @@
 
 class BitmapScreen : public Screen {
 public:
-    BitmapScreen(DisplaySystem &display, const uint8_t *bitmap)
-        : display_(display), bitmap_(bitmap) {}
+    BitmapScreen(const uint8_t *bitmap) : bitmap_(bitmap) {}
     ~BitmapScreen() override = default;
 
-    void render() override;
+    void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
 
 protected:
-    DisplaySystem &display_;
     const uint8_t *bitmap_;
 };

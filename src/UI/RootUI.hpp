@@ -15,7 +15,7 @@ public:
 
     void setup(DisplaySystem *display, std::vector<Readable> &readables);
     void processCommand(RemoteCommand command) override;
-    void loop(RemoteCommand command) override;
+    void loop(DisplaySystem &display, RemoteCommand command) override;
 
 protected:
     PreferencesStore &prefs_;

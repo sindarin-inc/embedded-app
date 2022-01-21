@@ -4,18 +4,18 @@
 
 #include "Displays/DisplaySystem.hpp"
 
-void BitmapScreen::render() {
+void BitmapScreen::render(DisplaySystem &display) {
     // Ideally this would just use dynamic_cast plus the null check,
     // but it appears ESP-IDF doesn't necessarily play nice yet with RTTI enabled,
     // so we will hack it with #ifdef for now... -cojo
     if (!needsRerender) {
         return;
     }
-    display_.fillScreen(display_.bg);
+    display.fillScreen(display.bg);
     // TODO: We should figure out what we really want for these 'full-screen' bitmaps
     // so that they can use the screen offset settings as well. Probably we want 'full-screen'
     // to mean the full width of the focus area, in which case we shouldn't hardcode 256 here.
-    display_.drawXBitmap(0, 0, bitmap_, 256, 256, display_.fg);
+    display.drawXBitmap(0, 0, bitmap_, 256, 256, display.fg);
     needsRerender = false;
 }
 

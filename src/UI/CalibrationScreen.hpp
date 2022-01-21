@@ -5,6 +5,6 @@
 
 class CalibrationScreen : public BitmapScreen {
 public:
-    CalibrationScreen(DisplaySystem &display) : BitmapScreen(display, LOGO_BITS) {}
+    CalibrationScreen() : BitmapScreen(LOGO_BITS) {}
     ~CalibrationScreen() override = default;
 };

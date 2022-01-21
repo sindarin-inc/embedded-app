@@ -10,7 +10,7 @@ public:
         : fileRenderer_(fileRenderer), readable_(readable), prefs_(prefs) {}
     ~ReadableScreen() override = default;
 
-    void render() override;
+    void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
 
 protected:

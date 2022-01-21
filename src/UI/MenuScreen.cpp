@@ -97,7 +97,7 @@ auto MenuScreen::getPaginatedMenuString() -> String {
     return menuString;
 }
 
-void MenuScreen::render() {
+void MenuScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
     }
@@ -105,10 +105,9 @@ void MenuScreen::render() {
     String menuString = getPaginatedMenuString();
     String batLife = power_.getBatteryLifeString();
     String totalToDisplay = menuString + String("\n\n") + batLife;
-    display_.drawTextInBox(totalToDisplay, display_.xMin + display_.localXOffset,
-                           display_.yMin + display_.localYOffset,
-                           display_.xMax + display_.localXOffset,
-                           display_.yMax + display_.localYOffset);
+    display.drawTextInBox(totalToDisplay, display.xMin + display.localXOffset,
+                          display.yMin + display.localYOffset, display.xMax + display.localXOffset,
+                          display.yMax + display.localYOffset);
     needsRerender = false;
 }
 

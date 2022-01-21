@@ -8,7 +8,7 @@ public:
     RawRendererScreen(RawRenderer *renderer) : renderer_(renderer) {}
     ~RawRendererScreen() override = default;
 
-    void render() override;
+    void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
 
 protected:

@@ -28,9 +28,7 @@ public:
 class MenuScreen : public Screen {
 
 public:
-    MenuScreen(DisplaySystem &display, Power &power) : display_(display), power_(power) {
-        numMenuItems_ = 0;
-    };
+    MenuScreen(Power &power) : power_(power) { numMenuItems_ = 0; };
 
     void addMenuItem(const MenuItem &newItem);
 
@@ -68,7 +66,7 @@ public:
 
     auto getPaginatedMenuString() -> String;
 
-    void render() override;
+    void render(DisplaySystem &display) override;
 
     void processCommand(RemoteCommand command) override;
 
@@ -78,7 +76,6 @@ protected:
     int currSelection_ = 0;
     int curMenuPage_ = 0;
 
-    DisplaySystem &display_;
     Power &power_;
 };
 
