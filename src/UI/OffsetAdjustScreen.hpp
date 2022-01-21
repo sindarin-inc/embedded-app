@@ -5,9 +5,7 @@
 
 class OffsetAdjustScreen : public Screen {
 public:
-    OffsetAdjustScreen(RawRenderer &renderer, PreferencesStore &prefs, Power &power)
-        : renderer_(renderer), prefs_(prefs), power_(power),
-          xOffset(prefs.localXOffset.get().value()), yOffset(prefs.localYOffset.get().value()) {}
+    OffsetAdjustScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power);
 
     void render() override;
     void processCommand(RemoteCommand command) override;
@@ -16,7 +14,8 @@ public:
     int yOffset;
 
 protected:
-    RawRenderer &renderer_;
+    DisplaySystem &display_;
+    RawRenderer renderer_;
     PreferencesStore &prefs_;
     Power &power_;
 };

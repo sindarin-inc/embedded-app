@@ -71,6 +71,7 @@ auto DisplaySystem::getHeightInMm() -> float { return heightInMm_; }
 void DisplaySystem::setFocusSize(float width, float height) {
     focusWidthInMm_ = width;
     focusHeightInMm_ = height;
+    computeMinMax();
 }
 
 auto DisplaySystem::getFont() -> const GFXfont * { return gfxFont; }
@@ -88,15 +89,12 @@ void DisplaySystem::splitStringToLines(const String &stringToSplit,
     startPos = 0;
     endPos = 0;
     numLines = 1;
-    // if (Serial) Serial.println("Got to split");
-    // if (Serial) Serial.println(string_to_draw);
 
     for (i = 0; i < len; i++) {
         // We found a new line. Split off the previous line and
         // start processing the new line
         // if (Serial) Serial.print(string_to_draw.charAt(i));
         if (stringToSplit.charAt(i) == '\n') {
-            // if (Serial) Serial.println("saw a new line");
             lines[numLines - 1] = stringToSplit.substring(startPos, endPos + 1);
             numLines++;
             assert(numLines < MAX_LINES_IN_SPLIT);
@@ -118,8 +116,6 @@ void DisplaySystem::splitStringToLines(const String &stringToSplit,
         lines[numLines - 1] = stringToSplit.substring(startPos, endPos + 1);
     else
         numLines--;
-
-    // if (Serial) Serial.println("Finishing split");
 }
 
 void DisplaySystem::drawTextCmdsOnly(const String &newText, int x, int y, int lineHeight) {
@@ -217,6 +213,17 @@ auto DisplaySystem::getTextWidth(const char *buffer) -> int {
     return w;
 }
 
+void DisplaySystem::renderMaxBoxWithText(const String &text) {
+    drawTextInBox(text, xMin + localXOffset, yMin + localYOffset, xMax + localXOffset,
+                  yMax + localYOffset);
+}
+
+void DisplaySystem::renderBox(int xStart, int yStart, int xEnd, int yEnd) {
+    int startX = xMin + localXOffset;
+    int startY = yMin + localYOffset;
+    drawBox(startX + xStart, startY + yStart, startX + xEnd, startY + yEnd);
+}
+
 void DisplaySystem::drawBoxCmdsOnly(int startX, int startY, int endX, int endY) {
 
     if (!getPartialRefresh() && autoUpdate_) {
@@ -250,4 +257,44 @@ void DisplaySystem::drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], in
         // DO WRITE AND REFRESH
         updateDisplay();
     }
+}
+
+void DisplaySystem::clearScreen() {
+    fillScreen(bg);
+    updateDisplay();
+}
+
+void DisplaySystem::computeMinMax() {
+    // TODO(john): How valuable is it to pre-compute all this
+
+    int midpointX;
+    int midpointY;
+    // pixels per mm
+    float pixelPitchX;
+    float pixelPitchY;
+
+    log_d("Computing Min and Max pixels for Renderer");
+
+    midpointX = this->width() / 2;
+    midpointY = this->height() / 2;
+
+    log_d("midpoint = (%d, %d)", midpointX, midpointY);
+
+    pixelPitchX = ((float)this->width()) / this->getWidthInMm();
+    pixelPitchY = ((float)this->height()) / this->getHeightInMm();
+
+    log_d("pixel pitch = (%d, %d)", pixelPitchX, pixelPitchY);
+
+    // rounding down is ok here and what we want.
+    maxPixelsX = (int)(this->getFocusWidth() * pixelPitchX);
+    maxPixelsY = (int)(this->getFocusHeight() * pixelPitchY);
+
+    log_d("max pixels = (%d, %d)", maxPixelsX, maxPixelsY);
+
+    xMin = midpointX - maxPixelsX / 2;
+    xMax = midpointX + maxPixelsX / 2;
+    yMin = midpointY - maxPixelsY / 2;
+    yMax = midpointY + maxPixelsY / 2;
+
+    log_d("min = (%d, %d) max = (%d, %d)", xMin, yMin, xMax, yMax);
 }

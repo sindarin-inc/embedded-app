@@ -26,22 +26,14 @@
 void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables) {
     SHOW_HEAP();
 
-    // TODO: Reload the current book / spot / menu
+    display_ = display;
 
-    // General renderer shared by menus and simple UIs
-    this->renderer_ = new Renderer(display);
-    this->renderer_->localXOffset = prefs_.localXOffset.get().value();
-    this->renderer_->localYOffset = prefs_.localYOffset.get().value();
-    SIZE_OF(*this->renderer_);
-
-    auto mainMenu = new PagedMenuScreen(*this->renderer_, this->power_);
+    auto mainMenu = new PagedMenuScreen(*display, this->power_);
     SIZE_OF(*mainMenu);
 
     auto createReadableScreen = [this, display, mainMenu](Readable *readable) -> ReadableScreen * {
         // TODO: Would be better to not allocate / delete these all the time
-        auto *bookRenderer = new FileRenderer(display, *readable);
-        bookRenderer->localXOffset = this->prefs_.localXOffset.get().value();
-        bookRenderer->localYOffset = this->prefs_.localYOffset.get().value();
+        auto *bookRenderer = new FileRenderer(*display, *readable);
         this->prefs_.lastReadableId.set(readable->id);
         auto *readableScreen = new ReadableScreen(bookRenderer, *readable, this->prefs_);
         readableScreen->backCallback = [this, bookRenderer, readableScreen, mainMenu]() {
@@ -69,7 +61,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables) {
     mainMenu->addMenuItem(MenuItem("Pocket Articles", [this, mainMenu, display]() {
         if (!WiFi.isConnected()) {
             log_w("Tried to load Pocket articles but WiFi not connected");
-            this->renderer_->renderMaxBoxWithText(String("WiFi Disconnected"));
+            display->renderMaxBoxWithText(String("WiFi Disconnected"));
             delay(2000);
             needsRerender = true;
             return;
@@ -78,7 +70,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables) {
         log_i("Loading top Pocket article");
         // TODO(John): I wanted to make a loading indicator for this but then realized I'll
         // need to add threading / tasks since the HTTP code is synchronous right now.
-        this->renderer_->renderMaxBoxWithText(String("Downloading..."));
+        display->renderMaxBoxWithText(String("Downloading..."));
         PocketAPI *pocket = PocketAPI::getInstance();
         pocket->setAccessToken(prefs_.pocketApiToken.get().value().c_str());
 
@@ -89,7 +81,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables) {
         int code = pocket->get(&response);
         if (code != 200) {
             log_e("Pocket HTTP error: %d", code);
-            this->renderer_->renderMaxBoxWithText(String("HTTP error: ") + String(code));
+            display->renderMaxBoxWithText(String("HTTP error: ") + String(code));
             delay(2000);
             setCurrentScreen(*mainMenu);
             return;
@@ -98,7 +90,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables) {
         JsonObject list = (*response)["list"].as<JsonObject>();
         if (list.size() <= 0) {
             log_w("No Pocket articles found");
-            this->renderer_->renderMaxBoxWithText(String("No articles found"));
+            display->renderMaxBoxWithText(String("No articles found"));
             delay(2000);
             setCurrentScreen(*mainMenu);
             delete response;
@@ -106,7 +98,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables) {
         }
 
         log_i("Pocket /get request succeeded");
-        auto pocketMenu = new MenuScreen(*renderer_, this->power_);
+        auto pocketMenu = new MenuScreen(*display_, this->power_);
 
         for (JsonPair keyValue : list) {
             JsonObject article = keyValue.value().as<JsonObject>();
@@ -116,16 +108,16 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables) {
             pocketMenu->addMenuItem(
                 MenuItem(title, [this, pocketMenu, title, url, pocket, display]() {
                     log_d("Loading article %s (%s)", title, url);
-                    renderer_->renderMaxBoxWithText(String("Downloading..."));
+                    display->renderMaxBoxWithText(String("Downloading..."));
                     SpiRamJsonDocument *response;
                     auto code = pocket->text(url, &response);
                     if (code != 200) {
                         if (code == -1) {
                             log_e("Pocket HTTP Error: %d (Article too long?)", code);
-                            this->renderer_->renderMaxBoxWithText(String("Error: Too long"));
+                            display->renderMaxBoxWithText(String("Error: Too long"));
                         } else {
                             log_e("Pocket HTTP Error: %d", code);
-                            this->renderer_->renderMaxBoxWithText(String("Pocket Error: ") + code);
+                            display->renderMaxBoxWithText(String("Pocket Error: ") + code);
                         }
                         delay(2000);
                         setCurrentScreen(*pocketMenu);
@@ -137,9 +129,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables) {
                     // the same as any other readable. Probably not great to be copying this whole
                     // article anyways.
                     auto str = std::string(text);
-                    auto rawRenderer = new RawRenderer(display, str);
-                    rawRenderer->localXOffset = prefs_.localXOffset.get().value();
-                    rawRenderer->localYOffset = prefs_.localYOffset.get().value();
+                    auto rawRenderer = new RawRenderer(*display);
                     SIZE_OF(*rawRenderer);
                     rawRenderer->renderPageWithBox(0);
 
@@ -166,55 +156,49 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables) {
 #endif // DISABLE_WIFI
 
     // Settings menu
-    auto settingsMenu = new MenuScreen(*renderer_, this->power_);
+    auto settingsMenu = new MenuScreen(*display_, this->power_);
 
     settingsMenu->addMenuItem(MenuItem("Adjust Offset", [this, settingsMenu, display]() {
         log_d("Loading adjust offset");
-        auto str = std::string();
-        auto rawRenderer = new RawRenderer(display, str);
-        rawRenderer->localXOffset = prefs_.localXOffset.get().value();
-        rawRenderer->localYOffset = prefs_.localYOffset.get().value();
-        auto offsetAdjust = new OffsetAdjustScreen(*rawRenderer, prefs_, this->power_);
+        auto offsetAdjust = new OffsetAdjustScreen(*display, prefs_, this->power_);
         this->setCurrentScreen(*offsetAdjust);
         log_d("setting up callback");
         offsetAdjust->backCallback = [this, offsetAdjust, settingsMenu]() {
             setCurrentScreen(*settingsMenu);
             delete offsetAdjust;
-            this->renderer_->localXOffset = prefs_.localXOffset.get().value();
-            this->renderer_->localYOffset = prefs_.localYOffset.get().value();
         };
         log_d("set up callback");
     }));
-    settingsMenu->addMenuItem(MenuItem("Reset Prefs", [this, settingsMenu]() {
+    settingsMenu->addMenuItem(MenuItem("Reset Prefs", [this, display]() {
         prefs_.clear();
         log_w("Preferences cleared. Rebooting...");
 
-        this->renderer_->renderMaxBoxWithText("Preferences cleared! Resetting...");
+        display->renderMaxBoxWithText("Preferences cleared! Resetting...");
         delay(2000);
         esp_restart();
     }));
     settingsMenu->addMenuItem(
         MenuItem("Factory Defaults", [this, settingsMenu]() { this->restoreFactoryDefaults(); }));
-    settingsMenu->addMenuItem(MenuItem("Loading Test", [this, settingsMenu]() {
-        auto loadingScreen = new LoadingScreen(this->renderer_);
+    settingsMenu->addMenuItem(MenuItem("Loading Test", [this, display, settingsMenu]() {
+        auto loadingScreen = new LoadingScreen(*display);
         setCurrentScreen(*loadingScreen);
         loadingScreen->backCallback = [this, loadingScreen, settingsMenu]() {
             setCurrentScreen(*settingsMenu);
             delete loadingScreen;
         };
     }));
-    settingsMenu->addMenuItem(MenuItem("Test Bitmap Screen", [this, settingsMenu]() {
-        auto bitmapScreen = new BitmapScreen(*this->renderer_, LOGO_BITS);
+    settingsMenu->addMenuItem(MenuItem("Test Bitmap Screen", [this, display, settingsMenu]() {
+        auto bitmapScreen = new BitmapScreen(*display, LOGO_BITS);
         setCurrentScreen(*bitmapScreen);
         bitmapScreen->backCallback = [this, bitmapScreen, settingsMenu]() {
             setCurrentScreen(*settingsMenu);
             delete bitmapScreen;
         };
     }));
-    settingsMenu->addMenuItem(MenuItem("Unpair TurnTouch", [this, settingsMenu]() {
+    settingsMenu->addMenuItem(MenuItem("Unpair TurnTouch", [this, display]() {
         prefs_.pairedTurnTouchAddress.remove();
         log_w("Unpaired TurnTouch. Rebooting...");
-        this->renderer_->renderMaxBoxWithText("Unpaired TurnTouch! Resetting...");
+        display->renderMaxBoxWithText("Unpaired TurnTouch! Resetting...");
         delay(2000);
         esp_restart();
     }));
@@ -244,9 +228,9 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables) {
     // By default, if we don't already have a different first screen ready, show the calibration
     // screen
     if (this->currentScreen_ == nullptr) {
-        auto calibrationScreen = new CalibrationScreen(*this->renderer_);
+        auto calibrationScreen = new CalibrationScreen(*display);
         calibrationScreen->backCallback = [this, calibrationScreen, display, mainMenu]() {
-            this->renderer_->renderMaxBox();
+            display->clearScreen();
             delay(100);
 
             display->setPartialRefresh();
@@ -271,7 +255,7 @@ void RootUI::processCommand(RemoteCommand command) {
 void RootUI::loop(RemoteCommand command) {
     if (this->power_.getDepleted()) {
         // Force render immediately as we are about to shut off
-        PowerDepletedScreen powerDepleted(*(this->renderer_));
+        PowerDepletedScreen powerDepleted(*display_);
         setCurrentScreen(powerDepleted);
         this->render();
         // Wait 5 seconds to be able to see the message
@@ -285,7 +269,7 @@ void RootUI::loop(RemoteCommand command) {
 void RootUI::restoreFactoryDefaults() {
     nvs_flash_erase();
     log_w("NVS cleared. Rebooting...");
-    renderer_->renderMaxBoxWithText("NVS cleared! Resetting...");
+    display_->renderMaxBoxWithText("NVS cleared! Resetting...");
     delay(2000);
     esp_restart();
 }

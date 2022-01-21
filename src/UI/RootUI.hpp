@@ -6,7 +6,6 @@
 #include "Displays/DisplaySystem.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Power.hpp"
-#include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/ContainerScreen.hpp"
 
@@ -19,9 +18,9 @@ public:
     void loop(RemoteCommand command) override;
 
 protected:
-    Renderer *renderer_;
     PreferencesStore &prefs_;
     Power &power_;
+    DisplaySystem *display_;
 
 private:
     void restoreFactoryDefaults();

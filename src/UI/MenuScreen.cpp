@@ -100,7 +100,10 @@ void MenuScreen::render() {
     String menuString = getPaginatedMenuString();
     String batLife = power_.getBatteryLifeString();
     String totalToDisplay = menuString + String("\n\n") + batLife;
-    renderer_.renderMaxBoxWithText(totalToDisplay);
+    display_.drawTextInBox(totalToDisplay, display_.xMin + display_.localXOffset,
+                           display_.yMin + display_.localYOffset,
+                           display_.xMax + display_.localXOffset,
+                           display_.yMax + display_.localYOffset);
     needsRerender = false;
 }
 

@@ -3,39 +3,51 @@
 
 #include "../Displays/DisplaySystem.hpp"
 
+#define MAX_CHARS_PER_PAGE 1500
+#define MAX_CHARS_PER_LINE 200
+
 class Renderer {
 public:
-    Renderer(DisplaySystem *displayInput);
+    Renderer(DisplaySystem &display);
 
-    void renderMaxBox();
-    void renderMaxBoxWithText(const String &text);
-
-    void renderBox(int xStart, int yStart, int xEnd, int yEnd);
+    virtual auto available() -> int = 0;
+    virtual auto read() -> int = 0;
+    virtual auto seek(uint32_t pos) -> bool = 0;
+    virtual auto position() -> size_t = 0;
 
     auto getPreviousPlace() -> unsigned long;
 
-    auto getDisplay() -> DisplaySystem * { return display_; }
+    // Render a page of text with the current place
+    // returns the next place for reading so the calling function can
+    // track place.
+    auto renderPageWithBox(unsigned long placeInFile) -> unsigned long;
 
-    auto getPixelWidth() -> int { return maxPixelsX_; }
-    auto getPixelHeight() -> int { return maxPixelsY_; }
-
-    int localXOffset = 0;
-    int localYOffset = 0;
+    auto goBackwardsOnePage(unsigned long place) -> unsigned long;
 
 protected:
-    DisplaySystem *display_;
+    DisplaySystem &display_;
+
+    // This should be called by subclasses after content is loaded
+    void loaded();
 
     void computeMinMax();
     void computeMaxLines();
 
-    int xMin_ = 0;
-    int xMax_ = 0;
-    int yMin_ = 0;
-    int yMax_ = 0;
-    int maxPixelsX_ = 0;
-    int maxPixelsY_ = 0;
+    unsigned long currentPlace_ = 0;
+    unsigned long previousPlace_ = 0;
+    unsigned long nextPlace_ = 0;
 
-    int maxLines_ = 0;
+    auto loadPrevIntoBuffer() -> unsigned long;
+    auto loadCurrIntoBuffer() -> unsigned long;
+    auto loadNextIntoBuffer() -> unsigned long;
+
+    char prevBuffer_[MAX_CHARS_PER_PAGE];
+    char currBuffer_[MAX_CHARS_PER_PAGE];
+    char nextBuffer_[MAX_CHARS_PER_PAGE];
+
+    // This does the work of lineify from the old system. Loads one page of
+    // text into that buffer given the current offset in the file
+    auto loadIntoBuffer(char *buffer, unsigned long place) -> unsigned long;
 };
 
 #endif

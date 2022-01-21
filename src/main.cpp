@@ -90,6 +90,8 @@ void setup() {
     digitalWrite(DISPLAY_POWER, HIGH);
     myDisplay = new DisplayEinkET013TT1(DISPLAY_CS, DISPLAY_OEI, DISPLAY_RST, DISPLAY_BUSY);
     myDisplay->setFocusSize(15, 15);
+    myDisplay->localXOffset = prefs.localXOffset.get().value();
+    myDisplay->localYOffset = prefs.localYOffset.get().value();
 #endif
 
     SIZE_OF(*myDisplay);

@@ -2,7 +2,7 @@
 
 #include "config.h"
 
-#include "UI/Bitmaps/Calibration.hpp"
+#include "Displays/DisplaySystem.hpp"
 
 void BitmapScreen::render() {
     // Ideally this would just use dynamic_cast plus the null check,
@@ -11,14 +11,11 @@ void BitmapScreen::render() {
     if (!needsRerender) {
         return;
     }
-    auto *display = renderer_.getDisplay();
-    if (display != nullptr) {
-        display->fillScreen(display->bg);
-        // TODO: We should figure out what we really want for these 'full-screen' bitmaps
-        // so that they can use the screen offset settings as well. Probably we want 'full-screen'
-        // to mean the full width of the focus area, in which case we shouldn't hardcode 256 here.
-        display->drawXBitmap(0, 0, bitmap_, 256, 256, display->fg);
-    }
+    display_.fillScreen(display_.bg);
+    // TODO: We should figure out what we really want for these 'full-screen' bitmaps
+    // so that they can use the screen offset settings as well. Probably we want 'full-screen'
+    // to mean the full width of the focus area, in which case we shouldn't hardcode 256 here.
+    display_.drawXBitmap(0, 0, bitmap_, 256, 256, display_.fg);
     needsRerender = false;
 }
 

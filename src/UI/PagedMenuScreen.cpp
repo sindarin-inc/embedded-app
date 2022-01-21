@@ -24,54 +24,50 @@ void PagedMenuScreen::render() {
         return;
     }
     log_i("PagedMenuScreen render (selected = %s)", getCurrItem().title.c_str());
-    auto *display = renderer_.getDisplay();
-    if (display != nullptr) {
-        auto autoUpdate = display->getAutoUpdate();
-        display->setAutoUpdate(false);
-        // Blank out screen
-        display->fillScreen(display->bg);
-        // Draw menu surroundings
-        display->drawXBitmap(this->renderer_.localXOffset, this->renderer_.localYOffset,
-                             MENU_BLANK_BITS, 256, 256, display->fg);
-        String itemTitle = getCurrItem().title;
-        // Cache / replace old font; then try descending size fonts until we find one that fits our
-        // string in the desired space.
-        auto prevFont = display->getFont();
-        for (int i = 0; i < sizeof(shrinkingFonts); ++i) {
-            display->setFont(shrinkingFonts[i]);
-            if (display->getTextWidth(itemTitle.c_str()) < MAX_WIDTH) {
-                break;
-            }
-            log_d("Font size %d was too big for menu item title; stepping down!", i);
+    auto autoUpdate = display_.getAutoUpdate();
+    display_.setAutoUpdate(false);
+    // Blank out screen
+    display_.fillScreen(display_.bg);
+    // Draw menu surroundings
+    display_.drawXBitmap(display_.localXOffset, display_.localYOffset, MENU_BLANK_BITS, 256, 256,
+                         display_.fg);
+    String itemTitle = getCurrItem().title;
+    // Cache / replace old font; then try descending size fonts until we find one that fits our
+    // string in the desired space.
+    auto prevFont = display_.getFont();
+    for (int i = 0; i < sizeof(shrinkingFonts); ++i) {
+        display_.setFont(shrinkingFonts[i]);
+        if (display_.getTextWidth(itemTitle.c_str()) < MAX_WIDTH) {
+            break;
         }
-        // If we still don't fit, shrink the string until we do.
-        while (display->getTextWidth(itemTitle.c_str()) > MAX_WIDTH) {
-            log_d("Item title %s still too long at smallest font size; truncating...",
-                  itemTitle.c_str());
-            itemTitle = itemTitle.substring(0, itemTitle.length() - 4) + "...";
-        }
-        // Now draw!
-        uint16_t width = 0, height = 0;
-        String batteryStatus = this->power_.getBatteryLifeString();
-        display->getTextBounds(itemTitle.c_str(), &width, &height);
-        uint16_t screenWidth = this->renderer_.getDisplay()->width();
-        uint16_t screenHeight = this->renderer_.getDisplay()->height();
-        display->drawText(itemTitle.c_str(),
-                          this->renderer_.localXOffset + (screenWidth / 2) - (width / 2),
-                          this->renderer_.localYOffset + (screenHeight / 2) + (height / 2),
-                          screenWidth, screenHeight);
-        display->setFont(&LUCIDA_GRANDE5PT7B);
-        display->getTextBounds(batteryStatus.c_str(), &width, &height);
-        // Arbitrarily put the battery text off of the bottom of the screen 20 pixels
-        // This is just so we always have it in our prototype, not that it'll be
-        // the right place (or icon) long term
-        // Not taking into account the rednerer x and y offsets here on purpose
-        display->drawText(batteryStatus.c_str(), (screenWidth / 2) - (width / 2), screenHeight - 20,
-                          screenWidth, screenHeight);
-        display->updateDisplay();
-        display->setFont(prevFont);
-        display->setAutoUpdate(autoUpdate);
+        log_d("Font size %d was too big for menu item title; stepping down!", i);
     }
+    // If we still don't fit, shrink the string until we do.
+    while (display_.getTextWidth(itemTitle.c_str()) > MAX_WIDTH) {
+        log_d("Item title %s still too long at smallest font size; truncating...",
+              itemTitle.c_str());
+        itemTitle = itemTitle.substring(0, itemTitle.length() - 4) + "...";
+    }
+    // Now draw!
+    uint16_t width = 0, height = 0;
+    String batteryStatus = this->power_.getBatteryLifeString();
+    display_.getTextBounds(itemTitle.c_str(), &width, &height);
+    uint16_t screenWidth = display_.width();
+    uint16_t screenHeight = display_.height();
+    display_.drawText(itemTitle.c_str(), display_.localXOffset + (screenWidth / 2) - (width / 2),
+                      display_.localYOffset + (screenHeight / 2) + (height / 2), screenWidth,
+                      screenHeight);
+    display_.setFont(&LUCIDA_GRANDE5PT7B);
+    display_.getTextBounds(batteryStatus.c_str(), &width, &height);
+    // Arbitrarily put the battery text off of the bottom of the screen 20 pixels
+    // This is just so we always have it in our prototype, not that it'll be
+    // the right place (or icon) long term
+    // Not taking into account the rednerer x and y offsets here on purpose
+    display_.drawText(batteryStatus.c_str(), (screenWidth / 2) - (width / 2), screenHeight - 20,
+                      screenWidth, screenHeight);
+    display_.updateDisplay();
+    display_.setFont(prevFont);
+    display_.setAutoUpdate(autoUpdate);
     needsRerender = false;
 }
 

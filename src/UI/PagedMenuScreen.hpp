@@ -9,7 +9,7 @@
 class PagedMenuScreen : public MenuScreen {
 
 public:
-    PagedMenuScreen(Renderer &renderer, Power &power) : MenuScreen(renderer, power){};
+    PagedMenuScreen(DisplaySystem &display, Power &power) : MenuScreen(display, power){};
 
     auto nextSelection() -> int override;
     auto prevSelection() -> int override;

@@ -4,18 +4,24 @@
 
 #define OFFSET_ADJUST_AMOUNT 3
 
-void OffsetAdjustScreen::render() {
-    if (!needsRerender) {
-        return;
-    }
+OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore &prefs,
+                                       Power &power)
+    : display_(display), prefs_(prefs), power_(power), xOffset(prefs.localXOffset.get().value()),
+      yOffset(prefs.localYOffset.get().value()), renderer_(display) {
 
     std::string message;
     for (int i = 0; i < 5; i++) {
         message += "Press arrows to move box around to your liking. Then "
                    "long-press the left button when done! Message repeats. ";
     }
+    renderer_.setString(message);
+}
 
-    this->renderer_.setString(message);
+void OffsetAdjustScreen::render() {
+    if (!needsRerender) {
+        return;
+    }
+
     this->renderer_.renderPageWithBox(0);
 
     needsRerender = false;
@@ -56,6 +62,6 @@ void OffsetAdjustScreen::processCommand(RemoteCommand command) {
     default:
         break;
     }
-    renderer_.localXOffset = xOffset;
-    renderer_.localYOffset = yOffset;
+    display_.localXOffset = xOffset;
+    display_.localYOffset = yOffset;
 }

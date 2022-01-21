@@ -28,7 +28,7 @@ public:
 class MenuScreen : public Screen {
 
 public:
-    MenuScreen(Renderer &renderer, Power &power) : renderer_(renderer), power_(power) {
+    MenuScreen(DisplaySystem &display, Power &power) : display_(display), power_(power) {
         numMenuItems_ = 0;
     };
 
@@ -78,7 +78,7 @@ protected:
     int currSelection_ = 0;
     int curMenuPage_ = 0;
 
-    Renderer &renderer_;
+    DisplaySystem &display_;
     Power &power_;
 };
 

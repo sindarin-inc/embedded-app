@@ -71,6 +71,10 @@ public:
     auto getTextHeight(const char *buffer) -> int;
     auto getTextWidth(const char *buffer) -> int;
 
+    // Convenience methods for drawing that take into account offsets
+    void renderMaxBoxWithText(const String &text);
+    void renderBox(int xStart, int yStart, int xEnd, int yEnd);
+
     // MARK: - Graphic drawing code
 
     // Basically Adafruit_GFX::drawRect with the necessary partial refresh stuff
@@ -81,9 +85,23 @@ public:
     void drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, int16_t h,
                      uint16_t color);
 
+    // Clear the whole screen
+    void clearScreen();
+
     // TODO: Just use `textcolor` and `textbgcolor` for these?
     uint16_t bg = 0x0000; // 0xFFFF;
     uint16_t fg = 0xFFFF; // 0x0000;
+
+    // TODO: Eventually we'll probably want our draw commands to handle the offsets
+    // internally without ever needing to expose them.
+    int localXOffset = 0;
+    int localYOffset = 0;
+    int xMin = 0;
+    int xMax = 0;
+    int yMin = 0;
+    int yMax = 0;
+    int maxPixelsX = 0;
+    int maxPixelsY = 0;
 
 protected:
     void drawTextCmdsOnly(const String &newText, int x, int y, int lineHeight);
@@ -91,6 +109,7 @@ protected:
     void splitStringToLines(const String &stringToSplit,
                             std::array<String, MAX_LINES_IN_SPLIT> &lines, int &numLines);
     void rotate(uint16_t &x, uint16_t &y, uint16_t &w, uint16_t &h);
+    void computeMinMax();
 
     int partialRefresh_ = 0;
     uint16_t partialX_, partialY_, partialW_, partialH_;
