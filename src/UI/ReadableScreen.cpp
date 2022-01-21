@@ -3,10 +3,6 @@
 #include "sindarin-debug.h"
 
 void ReadableScreen::render() {
-    if (fileRenderer_ != nullptr && fileRenderer_->getReadMode() == PAGE_READ) {
-        readable_.placeScreed = fileRenderer_->renderContinueScreed();
-    }
-
     if (!needsRerender) {
         return;
     }
@@ -18,13 +14,6 @@ void ReadableScreen::render() {
 
 void ReadableScreen::processCommand(RemoteCommand command) {
     auto back = [this]() {
-        if (fileRenderer_ != nullptr && fileRenderer_->getReadMode() == SCREED_READ) {
-            readable_.placePrev = readable_.place;
-            readable_.place = readable_.placeScreed;
-            prefs_.readablePlace.set(readable_.id, readable_.place);
-            prefs_.readablePreviousPlace.set(readable_.id, readable_.placePrev);
-        }
-
         if (backCallback != nullptr) {
             backCallback();
         }
@@ -47,28 +36,15 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         break;
     }
     case RemoteCommand::PREV:
-        if (fileRenderer_->getReadMode() == SCREED_READ) {
-            fileRenderer_->increaseSpeed();
-        }
         back();
         break;
     case RemoteCommand::NEXT:
-        if (fileRenderer_->getReadMode() == SCREED_READ) {
-            fileRenderer_->decreaseSpeed();
-        }
         needsRerender = true;
         break;
     case RemoteCommand::BACK:
         back();
         break;
     case RemoteCommand::NOP_BUTTON:
-        if (fileRenderer_->getReadMode() == SCREED_READ) {
-            readable_.placePrev = readable_.place;
-            readable_.place = readable_.placeScreed;
-            prefs_.readablePlace.set(readable_.id, readable_.place);
-            prefs_.readablePreviousPlace.set(readable_.id, readable_.placePrev);
-        }
-        fileRenderer_->flipReadMode();
         needsRerender = true;
         break;
     default:

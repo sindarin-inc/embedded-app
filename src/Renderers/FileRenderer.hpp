@@ -7,26 +7,12 @@
 #include "Renderer.hpp"
 
 #define MAX_CHARS_PER_PAGE 1500
-#define PAGE_READ 1
-#define SCREED_READ 2
 
 class FileRenderer : public Renderer {
 public:
     FileRenderer(DisplaySystem *displayInput, Readable &readableInput);
 
-    void setReadMode(int newMode);
-    auto getReadMode() -> int;
-    void flipReadMode();
-
-    void increaseSpeed();
-    void decreaseSpeed();
-    void setSpeed(int newSpeed);
-
     auto getPreviousPlace() -> unsigned long;
-
-    // Always call this on each loop.
-    // If not screed, it'll be a nop
-    auto renderContinueScreed() -> unsigned long;
 
     // Render a page of text with the current place
     // returns the next place for reading so the calling function can
@@ -36,12 +22,6 @@ public:
     auto goBackwardsOnePage(unsigned long place) -> unsigned long;
 
 protected:
-    unsigned long screedLastTime_;
-
-    int screedSpeed_;
-
-    int readMode_;
-
     File fileHandle_;
 
     unsigned long currentPlace_ = 0;

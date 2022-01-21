@@ -7,9 +7,9 @@ public:
     const char *id;
     const char *name;
     const char *path;
-    unsigned long place, placePrev, placeScreed;
+    unsigned long place, placePrev;
     Readable(const char *id, const char *name, const char *path)
-        : id(id), name(name), path(path), place(0), placePrev(0), placeScreed(0){};
+        : id(id), name(name), path(path), place(0), placePrev(0){};
     Readable(const Readable &r) = default;
     ;
 };

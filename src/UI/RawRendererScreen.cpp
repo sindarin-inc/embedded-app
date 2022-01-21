@@ -3,10 +3,6 @@
 #include "sindarin-debug.h"
 
 void RawRendererScreen::render() {
-    if (renderer_ != nullptr && renderer_->getReadMode() == PAGE_READ) {
-        renderer_->renderContinueScreed();
-    }
-
     if (!needsRerender) {
         return;
     }
@@ -29,15 +25,9 @@ void RawRendererScreen::processCommand(RemoteCommand command) {
         break;
     }
     case RemoteCommand::PREV:
-        if (renderer_->getReadMode() == SCREED_READ) {
-            renderer_->increaseSpeed();
-        }
         needsRerender = true;
         break;
     case RemoteCommand::NEXT:
-        if (renderer_->getReadMode() == SCREED_READ) {
-            renderer_->decreaseSpeed();
-        }
         needsRerender = true;
         break;
     case RemoteCommand::BACK:
@@ -46,7 +36,6 @@ void RawRendererScreen::processCommand(RemoteCommand command) {
         }
         break;
     case RemoteCommand::NOP_BUTTON:
-        renderer_->flipReadMode();
         needsRerender = true;
         break;
     default:
