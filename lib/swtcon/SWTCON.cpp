@@ -209,7 +209,7 @@ static volatile uint32_t cycle_counts_start = 0;
 
 static void _StartTimer(uint32_t ns) {
     RSR(CCOUNT, cycle_counts_start);
-    timer_duration_cycles = (esp_clk_cpu_freq() * ns) / 1000000000.0;
+    timer_duration_cycles = (esp_clk_cpu_freq() / 1000000000.0) * ns;
 }
 
 static TIMER_STATE_TYPE _GetTimerState(void) {
