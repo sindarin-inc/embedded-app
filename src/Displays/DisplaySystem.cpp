@@ -128,7 +128,6 @@ void DisplaySystem::drawTextCmdsOnly(const String &newText, int x, int y, int li
     // u8g2Fonts->setFontPosTop();
 
     std::array<String, MAX_LINES_IN_SPLIT> lines;
-    // TODO: can we use lines.size() here?
     int numLines;
     splitStringToLines(newText, lines, numLines);
 

@@ -264,9 +264,8 @@ void RootUI::processCommand(RemoteCommand command) {
 void RootUI::loop(DisplaySystem &display, RemoteCommand command) {
     if (this->power_.getDepleted()) {
         // Force render immediately as we are about to shut off
-        // TODO: Is this bad?
-        PowerDepletedScreen powerDepleted;
-        setCurrentScreen(powerDepleted);
+        auto powerDepletedScreen = new PowerDepletedScreen();
+        setCurrentScreen(*powerDepletedScreen);
         this->render(display);
         // Wait 5 seconds to be able to see the message
         delay(5000);
