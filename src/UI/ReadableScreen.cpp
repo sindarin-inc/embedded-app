@@ -32,13 +32,14 @@ void ReadableScreen::processCommand(RemoteCommand command) {
 
     auto back = [this]() {
         if (backCallback != nullptr) {
+            needsRerender = true;
             backCallback();
         }
         needsRerender = true;
     };
 
     switch (command) {
-    case RemoteCommand::CHANNEL_MINUS: {
+    case RemoteCommand::CHANNEL_MINUS:
         if (!inPopup) {
             readable_.place = fileRenderer_->getPreviousPlace();
             prefs_.readablePreviousPlace.set(readable_.id, readable_.place);
@@ -48,8 +49,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             back();
         }
         break;
-    }
-    case RemoteCommand::CHANNEL_PLUS: {
+    case RemoteCommand::CHANNEL_PLUS:
         if (!inPopup) {
             readable_.placePrev = readable_.place;
             readable_.place = newPlace_;
@@ -60,7 +60,6 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             // Reserved for future use? Potentially lighting up and down?
         }
         break;
-    }
     case RemoteCommand::PREV:
         if (!inPopup) {
             back();
@@ -115,9 +114,10 @@ void ReadableScreen::processCommand(RemoteCommand command) {
                 esp_restart();
             }));
             settingsMenu->backCallback = [this]() {
-                setCurrentScreen(*this);
                 inPopup = false;
+                setCurrentScreen(*this);
                 needsRerender = true;
+                popup_->needsRerender = true;
             };
             log_i("Setting current screen to the newly created settingsMenu");
             setCurrentScreen(*settingsMenu);
