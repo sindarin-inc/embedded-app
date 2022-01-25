@@ -197,7 +197,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables) {
         };
     }));
     settingsMenu->addMenuItem(MenuItem("Test Bitmap Screen", [this, display, settingsMenu]() {
-        auto bitmapScreen = new BitmapScreen(LOGO_BITS);
+        auto bitmapScreen = new BitmapScreen(LOGO_BITS, LOGO_WIDTH, LOGO_HEIGHT);
         setCurrentScreen(*bitmapScreen);
         bitmapScreen->backCallback = [this, bitmapScreen, settingsMenu]() {
             setCurrentScreen(*settingsMenu);
