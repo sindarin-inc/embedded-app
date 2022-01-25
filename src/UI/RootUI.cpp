@@ -36,7 +36,8 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables) {
         // TODO: Would be better to not allocate / delete these all the time
         auto *bookRenderer = new FileRenderer(*display, *readable);
         this->prefs_.lastReadableId.set(readable->id);
-        auto *readableScreen = new ReadableScreen(bookRenderer, *readable, this->prefs_);
+        auto *readableScreen =
+            new ReadableScreen(bookRenderer, *readable, this->prefs_, this->power_);
         readableScreen->backCallback = [this, bookRenderer, readableScreen, mainMenu]() {
             delete bookRenderer;
             delete readableScreen;

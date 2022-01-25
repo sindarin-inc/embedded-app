@@ -19,6 +19,7 @@ public:
     void loop();
 
     auto getBatteryLifeString() -> String;
+    auto getBatteryPercentageOnlyString() -> String;
     auto getLeftBatteryVoltage() -> float;
     auto getRightBatteryVoltage() -> float;
 

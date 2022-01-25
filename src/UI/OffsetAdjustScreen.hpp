@@ -1,3 +1,6 @@
+#ifndef OFFSET_ADJUST_SCREEN_HPP
+#define OFFSET_ADJUST_SCREEN_HPP
+
 #include "Misc/Power.hpp"
 #include "Renderers/StreamRenderer.hpp"
 #include "Storage/PreferencesStore.hpp"
@@ -19,3 +22,5 @@ protected:
     PreferencesStore &prefs_;
     Power &power_;
 };
+
+#endif

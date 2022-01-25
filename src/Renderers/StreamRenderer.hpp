@@ -22,6 +22,7 @@ public:
         return stream_.good();
     };
     auto position() -> size_t override { return stream_.tellg(); }
+    auto size() -> size_t override { return 0; }
 
 protected:
     std::istringstream stream_;
