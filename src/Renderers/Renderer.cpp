@@ -347,7 +347,14 @@ auto Renderer::loadIntoBuffer(char *buffer, unsigned long place) -> unsigned lon
         plcInBuffer++;
     }
 
-    return prevSeekPos;
+    // If we got through the above check and this one fails, this means we are at
+    // the end of file, so we should wrap around and start over.
+    if (!this->available()) {
+        log_i("Found the end of file and so starting over at the beginning.");
+        return 0;
+    } else {
+        return prevSeekPos;
+    }
 }
 
 auto Renderer::loadPrevIntoBuffer() -> unsigned long {
