@@ -1,6 +1,7 @@
 #include "DisplayEinkET013TT1.hpp"
 
 #include <EPD_TCON.h>
+#include <EPD_Waveform.h>
 #include <UI/Fonts/LucidaGrande5pt7b.h>
 #include <algorithm>
 
@@ -15,6 +16,8 @@ extern const EPD_TCON_DRIVER_HAL g_TCON_HAL;
 extern void EPD_HAL_Init(uint8_t CS, uint8_t OEI, uint8_t RST, uint8_t BUSY);
 // NOLINTNEXTLINE(readability-identifier-naming)
 extern const unsigned char g_WaveformData[];
+// NOLINTNEXTLINE(readability-identifier-naming)
+extern WaveformInfo _wf_info;
 
 DisplayEinkET013TT1::DisplayEinkET013TT1(uint8_t cs, uint8_t oei, uint8_t rst, uint8_t busy)
     : DisplaySystem(EinkET013TT1_X_PIXELS, EinkET013TT1_Y_PIXELS) {
@@ -33,6 +36,56 @@ DisplayEinkET013TT1::DisplayEinkET013TT1(uint8_t cs, uint8_t oei, uint8_t rst, u
         log_e("Bad return code from waveform load: %d", ret);
         esp_deep_sleep_start();
     }
+
+    log_d("_wf_info = WaveformInfo{");
+    if (_wf_info.Header == nullptr) {
+        log_d("  Header=nullptr,");
+    } else {
+        auto header = (WaveformHeaderV3 *)_wf_info.Header;
+        log_d("  Header=WaveformHeaderV3{");
+        log_d("    Version=%d,", header->Version);
+        log_d("    CheckSum=%d,", header->CheckSum);
+        log_d("    DataSize=%d,", header->DataSize);
+        log_d("    TemperatureCount=%d,", header->TemperatureCount);
+        log_d("    ModeCount=%d,", header->ModeCount);
+        log_d("    Bpp=%d,", header->Bpp);
+        log_d("    srcDataMode=%d,", header->srcDataMode);
+        log_d("    Reserved[0]=%d,", header->Reserved[0]);
+        log_d("    Reserved[1]=%d,", header->Reserved[1]);
+        log_d("  };");
+    }
+    if (_wf_info.TemperatureTable == nullptr) {
+        log_d("  TemperatureTable=nullptr,");
+    } else {
+        log_d("  TemperatureTable={");
+        for (int i = 0; i < _wf_info.Header->TemperatureCount; ++i) {
+            auto tempItem = (const TemperatureItem *)(_wf_info.TemperatureTable +
+                                                      _wf_info.TemperatureItemSize * i);
+            log_d("    Temperautre=%d", tempItem->Temperautre);
+            log_d("    Reserved[0]=%d", tempItem->Reserved[0]);
+            log_d("    Reserved[1]=%d", tempItem->Reserved[1]);
+            // log_d("    DataAddress=%d", tempItem->DataAddress);
+            for (int mode = 0; mode < _wf_info.Header->ModeCount; mode++) {
+                auto offset = (&tempItem->DataAddress)[mode];
+                auto waveform =
+                    (const WaveformDataBlock *)((const uint8_t *)_wf_info.Header + offset);
+                log_d("    DataAddress[mode=%d] (offset:%d) = WaveformDataBlock{", mode, offset);
+                log_d("      FrameCount = %d", waveform->FrameCount);
+                log_d("      Reserved[0] = %d", waveform->Reserved[0]);
+                log_d("      Reserved[1] = %d", waveform->Reserved[1]);
+                for (int i = 0; i < waveform->FrameCount; i++) {
+                    auto frame = (uint8_t *)(&waveform->Data + 2 * i);
+                    log_d("      Frame[%d] = 0x%02X, 0x%02X", i, frame[0], frame[1]);
+                }
+                log_d("    },");
+            }
+        }
+        log_d("  }");
+    }
+    // Derived fields (not from the byte string)
+    log_d("  TemperatureItemSize=%d,", _wf_info.TemperatureItemSize);
+    log_d("  available=%d,", _wf_info.Available);
+    log_d("};");
 
     // Written on back of each individual display - value is in mV so -2.81 on back should be -2810
     // here. -cojo
