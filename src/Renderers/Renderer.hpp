@@ -27,7 +27,7 @@ public:
 
     auto goBackwardsOnePage(unsigned long place) -> unsigned long;
 
-    DisplaySystem *getDisplay() { return &display_; }
+    auto getDisplay() -> DisplaySystem * { return &display_; }
 
 protected:
     DisplaySystem &display_;

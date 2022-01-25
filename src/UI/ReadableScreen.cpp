@@ -12,7 +12,7 @@ void ReadableScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
     }
-    if (!inPopup) {
+    if (!inPopup_) {
         log_d("Rendering some text in READ MODE");
         newPlace_ = fileRenderer_->renderPageWithBox(readable_.place);
         log_d("%d is the new place in the text", newPlace_);
@@ -40,7 +40,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
 
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
-        if (!inPopup) {
+        if (!inPopup_) {
             readable_.place = fileRenderer_->getPreviousPlace();
             prefs_.readablePreviousPlace.set(readable_.id, readable_.place);
             needsRerender = true;
@@ -50,7 +50,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         }
         break;
     case RemoteCommand::CHANNEL_PLUS:
-        if (!inPopup) {
+        if (!inPopup_) {
             readable_.placePrev = readable_.place;
             readable_.place = newPlace_;
             prefs_.readablePlace.set(readable_.id, readable_.place);
@@ -61,17 +61,17 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         }
         break;
     case RemoteCommand::PREV:
-        if (!inPopup) {
+        if (!inPopup_) {
             back();
         } else {
-            inPopup = false;
+            inPopup_ = false;
             needsRerender = true;
             popup_->needsRerender = true;
         }
         break;
     case RemoteCommand::NEXT:
-        if (!inPopup) {
-            inPopup = true;
+        if (!inPopup_) {
+            inPopup_ = true;
             needsRerender = true;
         } else {
             DisplaySystem *display = this->fileRenderer_->getDisplay();
@@ -114,14 +114,14 @@ void ReadableScreen::processCommand(RemoteCommand command) {
                 esp_restart();
             }));
             settingsMenu->backCallback = [this]() {
-                inPopup = false;
+                inPopup_ = false;
                 setCurrentScreen(*this);
                 needsRerender = true;
                 popup_->needsRerender = true;
             };
             log_i("Setting current screen to the newly created settingsMenu");
             setCurrentScreen(*settingsMenu);
-            inPopup = false;
+            inPopup_ = false;
         }
         break;
     case RemoteCommand::BACK:

@@ -66,8 +66,9 @@ auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice *device) -> bool {
     // Save the id of this turn touch for future connection attempts, but only
     // if it wasn't set already. Strange behavior where connecting to it after
     // a disconnect sometimes garbles the device->getAddress. For further exploration.
-    if (!this->prefs_.pairedTurnTouchAddress.get().has_value())
+    if (!this->prefs_.pairedTurnTouchAddress.get().has_value()) {
         this->prefs_.pairedTurnTouchAddress.set(device->getAddress());
+    }
 
     log_i("Connected to TurnTouch %s", device->getAddress().toString().c_str());
     return true;

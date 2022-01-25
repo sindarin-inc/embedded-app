@@ -32,7 +32,7 @@ protected:
 
     PopupMenuScreen *popup_;
 
-    bool inPopup = false;
+    bool inPopup_ = false;
 
     unsigned long newPlace_ = 0;
 };

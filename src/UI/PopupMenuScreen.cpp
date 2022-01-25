@@ -27,7 +27,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     // Draw menu surroundings
     display.drawXBitmap(display.localXOffset + (256 - POPUP_MENU_BLANK_WIDTH) / 2,
                         display.localYOffset + (256 - POPUP_MENU_BLANK_HEIGHT) / 2,
-                        POPUP_MENU_BLANK_BITS, POPUP_MENU_BLANK_WIDTH, POPUP_MENU_BLANK_HEIGHT,
+                        popupMenuBlankBits, POPUP_MENU_BLANK_WIDTH, POPUP_MENU_BLANK_HEIGHT,
                         display.fg);
 
     display.setFont(&LUCIDA_GRANDE6PT7B);
