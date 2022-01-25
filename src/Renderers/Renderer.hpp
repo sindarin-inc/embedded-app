@@ -18,6 +18,8 @@ public:
 
     auto getPreviousPlace() -> unsigned long;
 
+    auto getCurrentPlace() -> unsigned long;
+
     // Render a page of text with the current place
     // returns the next place for reading so the calling function can
     // track place.
