@@ -19,7 +19,7 @@ public:
 
     void render(DisplaySystem &display) override;
 
-    void processCommand(RemoteCommand command) override;
+    void processCommand(RemoteCommand command) override{};
 
 protected:
     Power &power_;

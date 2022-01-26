@@ -113,13 +113,14 @@ void ReadableScreen::processCommand(RemoteCommand command) {
                 delay(2000);
                 esp_restart();
             }));
-            settingsMenu->backCallback = [this]() {
+            settingsMenu->backCallback = [this, settingsMenu]() {
                 inPopup_ = false;
                 setCurrentScreen(*this);
                 needsRerender = true;
                 popup_->needsRerender = true;
+                delete settingsMenu;
             };
-            log_i("Setting current screen to the newly created settingsMenu");
+            log_d("Setting current screen to the newly created settingsMenu");
             setCurrentScreen(*settingsMenu);
             inPopup_ = false;
         }

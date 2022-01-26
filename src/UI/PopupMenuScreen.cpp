@@ -11,15 +11,12 @@
 #include "Fonts/LucidaGrande5pt7b.h"
 #include "Fonts/LucidaGrande6pt7b.h"
 
-#define MAX_WIDTH ((display))
-
 void PopupMenuScreen::render(DisplaySystem &display) {
     const int edgeOffset = 5;
-    log_i("PopupMenuScreen render pre check");
     if (!needsRerender) {
         return;
     }
-    log_i("PopupMenuScreen render");
+    log_d("PopupMenuScreen render");
     auto autoUpdate = display.getAutoUpdate();
     display.setAutoUpdate(false);
     // Blank out screen
@@ -82,21 +79,4 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     display.updateDisplay();
     display.setAutoUpdate(autoUpdate);
     needsRerender = false;
-}
-
-void PopupMenuScreen::processCommand(RemoteCommand command) {
-    switch (command) {
-    case RemoteCommand::PREV:
-        break;
-    case RemoteCommand::NEXT:
-        break;
-    case RemoteCommand::ENTER:
-    case RemoteCommand::CHANNEL_PLUS:
-        break;
-    case RemoteCommand::BACK:
-    case RemoteCommand::CHANNEL_MINUS:
-        break;
-    default:
-        break;
-    }
 }
