@@ -5,12 +5,6 @@
 
 class BitmapScreen : public Screen {
 public:
-    // If you only pass in bits, assume it's a full screen bitmap
-    BitmapScreen(const uint8_t *bitmap) : bitmap_(bitmap) {
-        width_ = 256;
-        height_ = 256;
-    }
-
     // Allow custom size bitmaps. By default they'll be rendered in the middle of the
     // screen. Can go from here if we want to do something different and extend the
     // functionality of this class.

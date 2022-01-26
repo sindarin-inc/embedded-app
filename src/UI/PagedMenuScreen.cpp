@@ -29,9 +29,9 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     // Blank out screen
     display.fillScreen(display.bg);
     // Draw menu surroundings
-    display.drawXBitmap(display.localXOffset + (256 - MENU_BLANK_WIDTH) / 2,
-                        display.localYOffset + (256 - MENU_BLANK_HEIGHT) / 2, MENU_BLANK_BITS,
-                        MENU_BLANK_WIDTH, MENU_BLANK_HEIGHT, display.fg);
+    display.drawXBitmap(display.localXOffset + (display.width() - MENU_BLANK_WIDTH) / 2,
+                        display.localYOffset + (display.height() - MENU_BLANK_HEIGHT) / 2,
+                        MENU_BLANK_BITS, MENU_BLANK_WIDTH, MENU_BLANK_HEIGHT, display.fg);
 
     String itemTitle = getCurrItem().title;
     // Cache / replace old font; then try descending size fonts until we find one that fits our
