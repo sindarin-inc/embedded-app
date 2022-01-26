@@ -3,7 +3,6 @@
 #include <string.h>
 #include "EPD_TCON.h"
 #include "EPD_Driver.h"
-#include <Arduino.h>
 
 #define Device_ID 0x00
 
@@ -252,7 +251,6 @@ static void ReadRegData(int16_t idx, uint8_t *value)
     g_drvHal->Spi_CS_Enable();
     g_drvHal->Spi_Write(buf, 1);
     uint8_t prefix = g_drvHal->Spi_ReadByte();
-    //Serial.printf("Header: %u\n", prefix);
     result = g_drvHal->Spi_ReadByte();
     g_drvHal->Spi_CS_Disable();
 
@@ -276,7 +274,6 @@ uint32_t EPD_DRV_CheckConnect()
     g_drvHal->Spi_CS_Enable();
     g_drvHal->Spi_Write(&data, 1);
     data = g_drvHal->Spi_ReadByte();
-    Serial.printf("id: %u\n", data);
     g_drvHal->Spi_CS_Disable();
 
     g_drvHal->Spi_SetClock(SPI_SPEED_HIGH);

@@ -5,7 +5,6 @@
 #include "EPD_TCON.h"
 #include "EPD_Driver.h"
 #include "EPD_Waveform.h"
-#include <Arduino.h>
 
 #define PANEL_BPP 1
 #define PANEL_WIDTH 256
@@ -220,9 +219,7 @@ void EPD_TCON_Update(uint8_t mode)
     }
 
     status = EPD_DRV_ReadPumpStatus();
-    //Serial.printf("Status: %d\n", status);
     temperature = EPD_DRV_ReadTemperature();
-    //Serial.printf("Temperature: %d\n", temperature);
 
     GetWaveformLUT(temperature, mode);
 
@@ -306,15 +303,12 @@ uint8_t *EPD_TCON_GetUpdateBuffer()
 void EPD_TCON_PanelClear()
 {
     uint32_t i;
-    Serial.println("Starting panel clear...");
     for (i = 0; i < sizeof(_updateBuffer); ++i)
     {
         _updateBuffer[i] |= 0x0F;
     }
-    Serial.println("Finished panel clear! Setting EPD border...");
     EPD_TCON_Set_Border(EPD_BORDER_WHITE);
 
-    Serial.println("Finished setting border!");
     EPD_TCON_Update(0);
 }
 
