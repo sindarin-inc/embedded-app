@@ -29,8 +29,10 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     // Blank out screen
     display.fillScreen(display.bg);
     // Draw menu surroundings
-    display.drawXBitmap(display.localXOffset, display.localYOffset, MENU_BLANK_BITS, 256, 256,
-                        display.fg);
+    display.drawXBitmap(display.localXOffset + (display.width() - MENU_BLANK_WIDTH) / 2,
+                        display.localYOffset + (display.height() - MENU_BLANK_HEIGHT) / 2,
+                        MENU_BLANK_BITS, MENU_BLANK_WIDTH, MENU_BLANK_HEIGHT, display.fg);
+
     String itemTitle = getCurrItem().title;
     // Cache / replace old font; then try descending size fonts until we find one that fits our
     // string in the desired space.
@@ -55,7 +57,7 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     uint16_t screenWidth = display.width();
     uint16_t screenHeight = display.height();
     display.drawText(itemTitle.c_str(), display.localXOffset + (screenWidth / 2) - (width / 2),
-                     display.localYOffset + (screenHeight / 2) + (height / 2), screenWidth,
+                     display.localYOffset + (screenHeight / 2) + (height / 2) - 3, screenWidth,
                      screenHeight);
     display.setFont(&LUCIDA_GRANDE5PT7B);
     display.getTextBounds(batteryStatus.c_str(), &width, &height);

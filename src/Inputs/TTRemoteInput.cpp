@@ -70,7 +70,8 @@ auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice *device) -> bool {
         this->prefs_.pairedTurnTouchAddress.set(device->getAddress());
     }
 
-    log_i("Connected to TurnTouch %s", device->getAddress().toString().c_str());
+    log_d("Connected to TurnTouch %s", device->getAddress().toString().c_str());
+
     return true;
 }
 

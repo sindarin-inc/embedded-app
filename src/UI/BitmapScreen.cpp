@@ -12,10 +12,16 @@ void BitmapScreen::render(DisplaySystem &display) {
         return;
     }
     display.fillScreen(display.bg);
+
     // TODO: We should figure out what we really want for these 'full-screen' bitmaps
     // so that they can use the screen offset settings as well. Probably we want 'full-screen'
     // to mean the full width of the focus area, in which case we shouldn't hardcode 256 here.
-    display.drawXBitmap(0, 0, bitmap_, 256, 256, display.fg);
+
+    // By default, we draw the bitmap in the middle of the screen. TODO: add the screen offset if
+    // we'd like. This is one step closer to that, however.
+    display.drawXBitmap((display.width() - width_) / 2, (display.height() - height_) / 2, bitmap_,
+                        width_, height_, display.fg);
+
     needsRerender = false;
 }
 
