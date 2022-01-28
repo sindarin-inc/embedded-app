@@ -62,9 +62,9 @@ uint32_t EPD_WF_Init(const uint8_t *data)
     if (_wf_info.Header->TemperatureCount == 0)
         return 0;
 
-    checkSum = GetCheckSum(data, _wf_info.Header->DataSize);
-    if (checkSum != _wf_info.Header->CheckSum)
-        return 0;
+    // checkSum = GetCheckSum(data, _wf_info.Header->DataSize);
+    // if (checkSum != _wf_info.Header->CheckSum)
+    //     return 0;
 
     if (_wf_info.Header->Version > MAX_WAVEFORM_VERSION) //kevint:20150413:add wf version check
         return 0;

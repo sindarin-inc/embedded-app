@@ -522,7 +522,7 @@ void EPD_DRV_SendScanLine(uint32_t gateCount, uint16_t *srcData)
         srcData++;
     }
 
-    SpiSendData(_txBuffer + 2, 50);
+    SpiSendData(_txBuffer + 2, 50); // what... why the +2.. dumb
 
 #if 1
     while (g_drvHal->GetTimerState() == TIMER_RUNNING)
@@ -575,7 +575,7 @@ void EPD_DRV_SetFrameRate(uint16_t fr)
         fr = 100;
     _scanlineT = 1000000000 / fr;
     _scanlineT /= GATE_LENGTH;
-    _scanlineT -= 380;
+    _scanlineT -= 380; // Could probably be removed to be even more accurate
 }
 
 void EPD_DRV_OffScanLine()

@@ -20,6 +20,8 @@ static void _OnFrameStartEvent(void);
 static void _StartTimer(uint32_t ns);
 static TIMER_STATE_TYPE _GetTimerState(void);
 
+extern void EPD_DRV_SendScanLine(uint32_t gateCount, uint16_t *srcData);
+
 extern const EPD_TCON_DRIVER_HAL g_TCON_HAL = {
     _Spi_SetClock, _Spi_CS_Enable,     _Spi_CS_Disable, _Spi_Write,     _Spi_ReadByte,
     _SetResetPin,  _ClrResetPin,       _SetOEIPin,      _ClrOEIPin,     _ReadBusyPin,
@@ -111,6 +113,7 @@ int main(void) {
     log_d("Waveform loaded?");
     if (!ret) {
         log_d("Bad return code from waveform load: %d", ret);
+        return 0;
     }
 
     log_d("_wf_info = WaveformInfo{");
@@ -173,12 +176,57 @@ int main(void) {
     EPD_TCON_PowerOn();
     log_d("Powered on! Clearing panel...");
     EPD_TCON_PanelClear();
-    log_d("Panel cleared! Powering off...");
+
+//     for (int gate = 0; gate < 512; gate++) {
+//         uint8_t buffer[] = {
+// 0x00, 0x00, 0x70, 0x0A, // Header (first two bytes are ignored by EPD_DRV_SendScanLine)
+// 0x00, 0xFF, 0x00, 0x0C, // Border
+// 0x00, 0x00, 0x00, 0x0C, // Gate Block 32 Low
+// 0xC0, 0x00, // Gate Select Low
+// // Start Data (32 bytes / 256 bits)
+// // 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+// // 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+// // 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+// // 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+// 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+// 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+// 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+// 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+// // End Data
+// 0x00, 0x00, // Gate Select High
+// 0x00, 0x00, 0x00, 0x00 // Gate Block 32 Low
+//         };
+//         EPD_DRV_SendScanLine(gate, (uint16_t *)buffer);
+//     }
+
+//     log_d("Panel cleared! Powering off...");
+//     EPD_TCON_PowerOff();
+
+//     // We might also consider trying some stuff with
+//     // EPD_TCON_GetUpdateBuffer to write images and understand
+//     // the output data.
+
+//     log_d("Bytes sent: %d", BytesSent);
+
+//     // uint8_t *fb = EPD_TCON_GetUpdateBuffer();
+
+//     // for (i = 0; i < imgH; ++i) {
+//     //     fb = EPD_TCON_GetUpdateBuffer();
+
+//     //     fb += (y + i) * (EinkET013TT1_X_PIXELS / 4);
+//     //     fb += (x >> 2);
+
+//     //     // writeImage(fb, img + (i * (imgW / 8)), (imgW / 8));
+//     //     for (i = 0; i < size; i`++) {
+//     //         fb[i * 2] &= 0xf0;
+//     //         fb[i * 2] |= img[i] >> 4;
+//     //         fb[(i * 2) + 1] &= 0xf0;
+//     //         fb[(i * 2) + 1] |= img[i] & 0x0f;
+//     //     }
+//     // }
+
+    // writePartialImage(partialX_, partialY_, buffer_, partialW_, partialH_);
+    // EPD_TCON_PowerOn();
+    // EPD_TCON_Update(WF_MODE_GU4);
     EPD_TCON_PowerOff();
-
-    // We might also consider trying some stuff with
-    // EPD_TCON_GetUpdateBuffer to write images and understand
-    // the output data.
-
-    log_d("Bytes sent: %d", BytesSent);
 }

@@ -5,6 +5,7 @@
 #include "EPD_TCON.h"
 #include "EPD_Driver.h"
 #include "EPD_Waveform.h"
+#include <Arduino.h>
 
 #define PANEL_BPP 1
 #define PANEL_WIDTH 256
@@ -40,7 +41,7 @@ typedef union
     uint8_t Value;
     struct
     {
-        uint8_t C4 : 1;
+        uint8_t C4 : 1; // these could theoretically be in a different order https://stackoverflow.com/a/1490142
         uint8_t C3 : 1;
         uint8_t C2 : 1;
         uint8_t C1 : 1;
@@ -66,10 +67,10 @@ static void LUT_Preprocess(const uint8_t *wfDataPtr)
     switch (bpp)
     {
     case 1:
-        srcValue[0][0] = wfDataPtr[0] & 0x03;
-        srcValue[0][1] = (wfDataPtr[0] >> 2) & 0x03;
-        srcValue[0][2] = wfDataPtr[1] & 0x03;
-        srcValue[0][3] = (wfDataPtr[1] >> 2) & 0x03;
+        srcValue[0][0] = wfDataPtr[0] & 0x03; // first frame byte & 0b0011
+        srcValue[0][1] = (wfDataPtr[0] >> 2) & 0x03; // first frame byte 0b1100 shifted 2
+        srcValue[0][2] = wfDataPtr[1] & 0x03; // second frame byte 0b0011
+        srcValue[0][3] = (wfDataPtr[1] >> 2) & 0x03; // second frame byte 0b1100 shifted 2
         break;
     case 2:
         srcValue[0][0] = wfDataPtr[0] & 0x03;
@@ -106,6 +107,7 @@ static void LUT_Preprocess(const uint8_t *wfDataPtr)
     srcValue[3][2] = srcValue[0][2] << 6;
     srcValue[3][3] = srcValue[0][3] << 6;
 
+    Serial.printf("wfDataPtr[0-1] = %X %X\n", wfDataPtr[0], wfDataPtr[1]);
     for (i = 0; i < 256; ++i)
     {
         pixel.Value = i;
@@ -114,6 +116,10 @@ static void LUT_Preprocess(const uint8_t *wfDataPtr)
         outValue |= srcValue[1][(pixel.Pixels.P3 << 1) | pixel.Pixels.C3];
         outValue |= srcValue[0][(pixel.Pixels.P4 << 1) | pixel.Pixels.C4];
         _lut[i] = outValue;
+        Serial.printf("Pixel.Value=%d P1:%d P2:%d P3:%d P4:%d C1:%d C2:%d C3:%d C4:%d\n", pixel.Value, pixel.Pixels.P1, pixel.Pixels.P2, pixel.Pixels.P3, pixel.Pixels.P4, pixel.Pixels.C1, pixel.Pixels.C2, pixel.Pixels.C3, pixel.Pixels.C4);
+        Serial.printf("srcValue[0] = %X %X %X %X\n", srcValue[0][0],srcValue[0][1], srcValue[0][2], srcValue[0][3]);
+        Serial.printf("outValue = %2X\n", outValue);
+
     }
 }
 
@@ -238,11 +244,11 @@ void EPD_TCON_Update(uint8_t mode)
         wfdataPtr += wfdata_offset; //next frame
 
         //Last line
-        ptr = _updateBuffer + (256 / 4) * 255;
+        ptr = _updateBuffer + (256 / 4) * 255; // last line of buffer
 
-        for (gate = 0; gate < 256; gate++)
+        for (gate = 0; gate < 256; gate++) // for every scanline (on one side??)
         {
-            for (source = 0; source < (128 / 4); source++)
+            for (source = 0; source < (128 / 4); source++) // for every pixel (32 bytes each with 4 2 bit pixels = 256 pixels)
             {
                 buf[source] = _lut[ptr[0]];
                 ptr++;
@@ -251,7 +257,7 @@ void EPD_TCON_Update(uint8_t mode)
             //ptr += 128;
             ptr -= (256 + 128) / 4;
             EPD_DRV_SetBorder(g_border_Setting, _lut[g_borderAct]);
-            EPD_DRV_SendScanLine(gate, (uint16_t *)_scanLineBuffer);
+            EPD_DRV_SendScanLine(gate, (uint16_t *)_scanLineBuffer); // send 32 byte scan line
         }
 
         //ptr -= (256+128);
@@ -267,7 +273,7 @@ void EPD_TCON_Update(uint8_t mode)
             }
 
             //ptr -= (256+128);
-            ptr -= (256 + 128) / 4;
+            ptr -= (256 + 128) / 4; // go back before our loop _and_ to the start of the prev page
             EPD_DRV_SetBorder(g_border_Setting, _lut[g_borderAct]);
             EPD_DRV_SendScanLine(gate, (uint16_t *)_scanLineBuffer);
         }
@@ -279,7 +285,7 @@ void EPD_TCON_Update(uint8_t mode)
         EPD_DRV_ResetOutput();
     }
 
-    for (gate = 0; gate < 256; gate++)
+    for (gate = 0; gate < 256; gate++) // Shift everything left so that the new bits become the previous bits
     {
         ptr = &_updateBuffer[gate * (256 / 4)];
         for (source = 0; source < (256 / 4); ++source)
