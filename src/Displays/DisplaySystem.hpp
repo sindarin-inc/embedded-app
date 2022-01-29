@@ -89,8 +89,7 @@ public:
     void clearScreen();
 
     // TODO: Just use `textcolor` and `textbgcolor` for these?
-    uint16_t bg = 0x0000; // 0xFFFF;
-    uint16_t fg = 0xFFFF; // 0x0000;
+    uint16_t bg, fg;
 
     // TODO: Eventually we'll probably want our draw commands to handle the offsets
     // internally without ever needing to expose them.

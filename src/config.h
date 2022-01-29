@@ -42,3 +42,5 @@
 #define DISPLAY_OEI 21
 #define DISPLAY_RST 32
 #define DISPLAY_BUSY 33
+
+#define INVERTED_DISPLAY true

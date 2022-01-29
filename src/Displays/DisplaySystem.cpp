@@ -2,6 +2,8 @@
 
 #include <utility>
 
+#include "config.h"
+
 #include "sindarin-debug.h"
 
 DisplaySystem::DisplaySystem(int16_t w, int16_t h) : Adafruit_GFX(w, h) {
@@ -12,6 +14,14 @@ DisplaySystem::DisplaySystem(int16_t w, int16_t h) : Adafruit_GFX(w, h) {
 #else
     setRotation(0);
 #endif
+
+    if (INVERTED_DISPLAY) {
+        bg = 0x0000;
+        fg = 0xFFFF;
+    } else {
+        bg = 0xFFFF;
+        fg = 0x0000;
+    }
 }
 
 void DisplaySystem::setPartialRefresh() { partialRefresh_ = 1; }
