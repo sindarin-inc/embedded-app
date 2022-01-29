@@ -15,6 +15,11 @@ public:
     auto prevSelection() -> int override;
 
     void render(DisplaySystem &display) override;
+
+    void setBidirectional() { isBidirectional_ = true; }
+
+protected:
+    bool isBidirectional_ = false;
 };
 
 #endif

@@ -78,6 +78,10 @@ void ReadableScreen::processCommand(RemoteCommand command) {
 
             auto settingsMenu = new PagedMenuScreen(this->power_);
 
+            // We want arrows on both sides so it's clear you can go back to the
+            // popup menu from this menu.
+            settingsMenu->setBidirectional();
+
             settingsMenu->addMenuItem(MenuItem("Adjust Offset", [this, settingsMenu, display]() {
                 log_d("Loading adjust offset");
                 auto offsetAdjust = new OffsetAdjustScreen(*display, prefs_, this->power_);

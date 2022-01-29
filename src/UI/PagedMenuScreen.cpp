@@ -6,6 +6,7 @@
 #include "config.h"
 
 #include "Bitmaps/Menu_Blank.hpp"
+#include "Bitmaps/Menu_Blank_Bidirectional.hpp"
 #include "Fonts/LucidaGrande10pt7b.h"
 #include "Fonts/LucidaGrande14pt7b.h"
 #include "Fonts/LucidaGrande5pt7b.h"
@@ -29,9 +30,26 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     // Blank out screen
     display.fillScreen(display.bg);
     // Draw menu surroundings
-    display.drawXBitmap(display.localXOffset + (display.width() - MENU_BLANK_WIDTH) / 2,
-                        display.localYOffset + (display.height() - MENU_BLANK_HEIGHT) / 2,
-                        MENU_BLANK_BITS, MENU_BLANK_WIDTH, MENU_BLANK_HEIGHT, display.fg);
+    const unsigned char *menuBits;
+    unsigned int menuWidth;
+    unsigned int menuHeight;
+
+    // Allows us to have arrows on both left and right side of the menu for
+    // when a PagedMenu is used as a sub-menu (as in the case of being called)
+    // from a PopupMenu from a readable.
+    if (!isBidirectional_) {
+        menuBits = MENU_BLANK_BITS;
+        menuWidth = MENU_BLANK_WIDTH;
+        menuHeight = MENU_BLANK_HEIGHT;
+    } else {
+        menuBits = MENU_BLANK_BIDIRECTIONAL_BITS;
+        menuWidth = MENU_BLANK_BIDIRECTIONAL_WIDTH;
+        menuHeight = MENU_BLANK_BIDIRECTIONAL_HEIGHT;
+    }
+
+    display.drawXBitmap(display.localXOffset + (display.width() - menuWidth) / 2,
+                        display.localYOffset + (display.height() - menuHeight) / 2, menuBits,
+                        menuWidth, menuHeight, display.fg);
 
     String itemTitle = getCurrItem().title;
     // Cache / replace old font; then try descending size fonts until we find one that fits our
