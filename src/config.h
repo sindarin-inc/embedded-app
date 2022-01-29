@@ -44,3 +44,4 @@
 #define DISPLAY_BUSY 33
 
 #define INVERTED_DISPLAY true
+// #define INVERTED_DISPLAY false
