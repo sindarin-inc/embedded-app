@@ -54,7 +54,7 @@ const EinkET013TT1Waveform PANEL_CLEAR_WAVEFORM = {
 
 const EinkET013TT1Waveform FULL_REFRESH_WAVEFORM = {
     "Full Refresh",
-    19,
+    18,
     std::array<Frame, MAX_FRAMES_PER_WAVEFORM>{
         Frame{bb : WHITE, bw : NOCHG, wb : NOCHG, ww : BLACK},
         Frame{bb : WHITE, bw : NOCHG, wb : NOCHG, ww : BLACK},
@@ -73,7 +73,7 @@ const EinkET013TT1Waveform FULL_REFRESH_WAVEFORM = {
         Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : NOCHG},
         Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : NOCHG},
         Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : NOCHG},
-        Frame{bb : BLACK, bw : BLACK, wb : NOCHG, ww : NOCHG},
+        // Frame{bb : BLACK, bw : BLACK, wb : NOCHG, ww : NOCHG},
         Frame{bb : NOCHG, bw : NOCHG, wb : NOCHG, ww : NOCHG},
     },
 };
