@@ -23,14 +23,13 @@
 // allocated instead in the object?
 #define MAX_LINES_IN_SPLIT 100
 
-class DisplaySystem : public Adafruit_GFX {
+class DisplaySystem : public GFXcanvas1 {
 public:
     DisplaySystem(int16_t w, int16_t h);
     ~DisplaySystem() override = default;
 
     // MARK: - Required virtual methods that subclasses must implement
 
-    void drawPixel(int16_t x, int16_t y, uint16_t color) override = 0;
     virtual void updateDisplay() = 0;
 
     // MARK: - Potentially overridable methods for configuring partial refresh

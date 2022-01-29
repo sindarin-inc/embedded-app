@@ -6,7 +6,7 @@
 
 #include "sindarin-debug.h"
 
-DisplaySystem::DisplaySystem(int16_t w, int16_t h) : Adafruit_GFX(w, h) {
+DisplaySystem::DisplaySystem(int16_t w, int16_t h) : GFXcanvas1(w, h) {
     autoUpdate_ = true;
 
 #ifdef DISPLAY_ROTATION
