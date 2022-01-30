@@ -81,7 +81,7 @@ void TTRemoteInput::doneScanning(const NimBLEScanResults &results) {
 }
 
 void TTRemoteInput::scanForDevice() {
-    // Run a scan for 3 seconds
+    // Run a scan for 1 second
     auto address = this->prefs_.pairedTurnTouchAddress.get();
     if (address.has_value()) {
         log_d("Scanning for paired TurnTouch %s", std::string(address.value()).c_str());
@@ -90,12 +90,12 @@ void TTRemoteInput::scanForDevice() {
     }
     BLEScan *scan = BLEDevice::getScan();
     scan->setAdvertisedDeviceCallbacks(new AdvertisedDeviceCallbacks(this));
-    scan->setInterval(1349);
-    scan->setWindow(449);
+    scan->setInterval(100);
+    scan->setWindow(99);
     scan->setActiveScan(true);
     // TODO: It'd be nice to use the non-blocking call here, but that doesn't take a std::function
     // so passing in a callback with access to `this` is a little clunky
-    scan->start(3, false);
+    scan->start(1, false);
     log_d("BLE scan completed.");
     lastScanMs_ = millis();
 }
@@ -155,6 +155,28 @@ void TTRemoteInput::buttonNotificationCallback(BLERemoteCharacteristic *remoteCh
         break;
     }
     wasCodeProcessed_ = 0;
+}
+
+// Start to make this a bit cleaner. Expect main to call
+// this up front and then pass the result to RootUI to
+// display the right thing when the initial connect
+// attempt works.
+auto TTRemoteInput::attemptConnect() -> bool {
+    log_d("Atempting Connect");
+    if (!deviceConnected_) {
+        log_d("about to attempt scan");
+        scanForDevice();
+    }
+    // Clunky but the above seems to be in interrupt mode so we need to wait
+    // before we try to connect.
+    delay(1000);
+    if (turntouchDevice_ != nullptr) {
+        log_d("About to attempt connectToDevice");
+        // TurnTouch has been found during scanning, attempt connection
+        deviceConnected_ = connectToDevice(turntouchDevice_);
+    }
+    log_d("End attempting connect");
+    return deviceConnected_;
 }
 
 auto TTRemoteInput::checkPress() -> int {

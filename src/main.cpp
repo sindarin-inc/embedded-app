@@ -79,6 +79,8 @@ Power power;
 RootUI rootUi(prefs, power);
 
 void setup() {
+    bool inputDeviceConnected = false;
+
     InitializePlatform();
 
     Serial.begin(115200);
@@ -138,6 +140,7 @@ void setup() {
 
 #ifdef USE_TURN_TOUCH_REMOTE
     ttRemoteInput.startRemote();
+    inputDeviceConnected = ttRemoteInput.attemptConnect();
 #endif
 
 #ifndef DISABLE_WIFI
@@ -156,7 +159,7 @@ void setup() {
 
     power.setup();
 
-    rootUi.setup(myDisplay, *readables);
+    rootUi.setup(myDisplay, *readables, inputDeviceConnected);
 
     SHOW_HEAP();
 

@@ -8,7 +8,7 @@
 #include "Storage/PreferencesStore.hpp"
 #include "sindarin-debug.h"
 
-#define RESCAN_INTERVAL_MS 3000
+#define RESCAN_INTERVAL_MS 2000
 // See also: https://shop.turntouch.com/pages/open-source
 #define TURNTOUCH_BUTTON_SVC_ID "1523"
 #define TURNTOUCH_BUTTON_SVC_UUID "99c31523-dc4f-41b1-bb04-4e4deb81fadd"
@@ -43,6 +43,8 @@ public:
     auto checkRelease() -> int override;
     void buttonNotificationCallback(BLERemoteCharacteristic *remoteCharacteristic, uint8_t *data,
                                     size_t length, bool isNotify);
+    auto isDeviceConnected() -> bool { return deviceConnected_; }
+    auto attemptConnect() -> bool;
 
 protected:
     void doneScanning(const NimBLEScanResults &results);

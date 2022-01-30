@@ -24,7 +24,7 @@
 
 #define LAST_READABLE_ID "rui-readable"
 
-void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables) {
+void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, bool inputConnected) {
     SHOW_HEAP();
 
     display_ = display;
@@ -249,7 +249,15 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables) {
             delete calibrationScreen;
         };
 
-        setCurrentScreen(*calibrationScreen);
+        // If we've already connected to an input device, go straight
+        // to the main menu. We will clean this up a bit moving forward
+        // but for now it makes it clear when it's connected and when it
+        // hasn't on boot.
+        if (!inputConnected) {
+            setCurrentScreen(*calibrationScreen);
+        } else {
+            setCurrentScreen(*mainMenu);
+        }
     }
 
     SHOW_HEAP();
