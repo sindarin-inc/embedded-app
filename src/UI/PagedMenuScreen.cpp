@@ -81,6 +81,10 @@ auto PagedMenuScreen::nextSelection() -> int {
 
 // Returns 1 if the selection was updated, 0 otherwise
 auto PagedMenuScreen::prevSelection() -> int {
-    currSelection_ = (currSelection_ - 1) % numMenuItems_;
+    if (currSelection_ == 0) {
+        currSelection_ = numMenuItems_ - 1;
+    } else {
+        currSelection_ = (currSelection_ - 1) % numMenuItems_;
+    }
     return numMenuItems_ > 1 ? 1 : 0;
 }
