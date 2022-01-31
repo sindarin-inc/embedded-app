@@ -30,6 +30,13 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
     display_ = display;
 
     auto mainMenu = new PagedMenuScreen(this->power_);
+
+    // I'll uncomment this line once the other PR is merged
+    // With the new paradigm, we want there to be arrows on all four sides
+    // all the time. We may just wish to get rid of the MENU_BITS eventually
+    // and stick with BIDIRECTIONAL.
+    // mainMenu.setBirectional();
+
     SIZE_OF(*mainMenu);
 
     auto createReadableScreen = [this, display, mainMenu](Readable *readable) -> ReadableScreen * {

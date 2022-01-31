@@ -106,3 +106,43 @@ auto PagedMenuScreen::prevSelection() -> int {
     }
     return numMenuItems_ > 1 ? 1 : 0;
 }
+
+//
+// For a PagedMenu, we actually want to progress through
+// the options via the left and right buttons and use
+// the down button (CHANNEL_PLUS) to select the text.
+//
+// This is more consistent with the behavior of turning pages
+// and using down to go to the popup menu and up to go back.
+//
+// While we are using the TurnTouch, we should make the commands
+// more consistent (left and right versus up and down).
+//
+// Up is back
+// Right is next, Left is previous
+// Down is select
+//
+void PagedMenuScreen::processCommand(RemoteCommand command) {
+    switch (command) {
+    case RemoteCommand::PREV:
+        if (backCallback != nullptr) {
+            backCallback();
+        }
+        break;
+    case RemoteCommand::NEXT:
+        if (getCurrItem().callback != nullptr) {
+            getCurrItem().callback();
+        }
+        break;
+    case RemoteCommand::ENTER:
+    case RemoteCommand::CHANNEL_PLUS:
+        needsRerender = nextSelection();
+        break;
+    case RemoteCommand::BACK:
+    case RemoteCommand::CHANNEL_MINUS:
+        needsRerender = prevSelection();
+        break;
+    default:
+        break;
+    }
+}
