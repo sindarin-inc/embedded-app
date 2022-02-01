@@ -39,9 +39,8 @@ static const uint32_t GATE_BLOCK_TABLE_H[] = {
 
 static const uint8_t CHANNEL_SETTINGS[] = {0x1E, 0x00, 0xE0};
 
-static uint8_t const BORDER_BLACK[4] = {0x00, 0x03, 0x00, 0x0C};
-
-static uint8_t const BORDER_WHITE[4] = {0x00, 0x02, 0x00, 0x0C};
+// Second byte will be replaced based on the frame transition
+static uint8_t const BORDER_TEMPLATE[4] = {0x00, 0x00, 0x00, 0x0C};
 
 static uint8_t const BORDER_NONE[4] = {0x00, 0x00, 0x00, 0x03};
 
@@ -75,10 +74,6 @@ void EinkET013TT1::init() {
     if (timerDelayNs_ == 0) {
         setFramerate(24);
     }
-    if (borderBits_ == nullptr) {
-        setBorder(NONE_BORDER);
-    }
-
     for (unsigned char &i : previousBuffer_) {
         i = 0xFF;
     }
@@ -96,17 +91,20 @@ void EinkET013TT1::setFramerate(int frameRate) {
 }
 
 void EinkET013TT1::setBorder(BorderSetting border) {
+    // In the future it will probably make sense to not overwrite previousBorder_ and just
+    // use whatever was already set there from the last `update`. But we're doing this for
+    // now to maintain compatibility with the behavior of the original EPD driver.
     switch (border) {
-    case BLACK_BORDER:
-        borderBits_ = BORDER_BLACK;
+    case BORDER_SETTING_BLACK:
+        previousBorder_ = BORDER_SETTING_WHITE;
         break;
-    case WHITE_BORDER:
-        borderBits_ = BORDER_WHITE;
+    case BORDER_SETTING_WHITE:
+        previousBorder_ = BORDER_SETTING_BLACK;
         break;
-    case NONE_BORDER:
-        borderBits_ = BORDER_NONE;
+    case BORDER_SETTING_NONE:
         break;
     }
+    border_ = border;
 }
 
 void EinkET013TT1::clear(const EinkET013TT1Waveform &waveform) {
@@ -118,7 +116,11 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     // TODO: Are there clever union types or other struct packing things we could do here?
     uint8_t scanLine[48];
     uint8_t *borderSettings = &(scanLine[0]);
-    memcpy(borderSettings, borderBits_, 4);
+    if (border_ == BORDER_SETTING_NONE) {
+        memcpy(borderSettings, BORDER_NONE, 4);
+    } else {
+        memcpy(borderSettings, BORDER_TEMPLATE, 4);
+    }
     auto *gateBlockLow = (uint32_t *)&(scanLine[4]);
     auto *gateSelectLow = (uint16_t *)&(scanLine[8]);
     uint8_t *sourceData = &(scanLine[10]);
@@ -131,6 +133,17 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     // For each frame in the waveform
     for (int frameIndex = 0; frameIndex < waveform.frameCount; frameIndex++) {
         auto frame = waveform.frames[frameIndex];
+
+        if (border_ != BORDER_SETTING_NONE) {
+            auto borderBits = frame.getSetting(previousBorder_ & 0x01, border_);
+            // In the original EPD driver, there were `Border_Black` and `Border_White` arrays
+            // that only set the rightmost two bits to either 0x03 or 0x02. But in the code,
+            // when calculating scan lines, all 8 bits would get set with the bit transition.
+            // I'm not sure if this is a material difference. Possible the right two bits actually
+            // set the border and the other 6 are noops. But doing the same thing as the original
+            // driver for now.
+            borderSettings[1] = borderBits | borderBits << 2 | borderBits << 4 | borderBits << 6;
+        }
 
         // For each horizontal half-line
         for (int gate = 0; gate < EinkET013TT1_GATE_COUNT; gate++) {
@@ -165,16 +178,7 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
                 auto newPixel = (newBuffer[rPixel / 8] & (0x80 >> (rPixel & 7))) != 0;
                 auto oldPixel = (previousBuffer_[rPixel / 8] & (0x80 >> (rPixel & 7))) != 0;
 
-                uint8_t sourceSetting = 0;
-                if (oldPixel == 0x0 && newPixel == 0x0) {
-                    sourceSetting = frame.bb;
-                } else if (oldPixel == 0x0 && newPixel == 0x1) {
-                    sourceSetting = frame.bw;
-                } else if (oldPixel == 0x1 && newPixel == 0x0) {
-                    sourceSetting = frame.wb;
-                } else if (oldPixel == 0x1 && newPixel == 0x1) {
-                    sourceSetting = frame.ww;
-                }
+                uint8_t sourceSetting = frame.getSetting(oldPixel, newPixel);
 
                 // Clear the bits
                 sourceData[pixel / 4] &= ~(0x03 << (2 * (3 - pixel % 4)));
@@ -206,6 +210,7 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
 
     // Move new buffer to be previous buffer
     memcpy(previousBuffer_, buffer, sizeof(previousBuffer_));
+    previousBorder_ = border_;
 }
 
 void EinkET013TT1::writeRegister(Register index, const uint8_t *data, size_t len) {

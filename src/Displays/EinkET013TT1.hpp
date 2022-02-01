@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <string>
 
 #define EinkET013TT1_PIXEL_WIDTH 256
 #define EinkET013TT1_PIXEL_HEIGHT 256
@@ -19,12 +20,26 @@ typedef enum {
 } PixelSetting;
 
 // Represents the possible pixel source settings for all 4 possible pixel transitions
-typedef struct {
+struct Frame {
     PixelSetting bb : 2; // PixelSetting for pixels that stay black (0 -> 0)
     PixelSetting bw : 2; // PixelSetting for pixels changing from black to white (0 -> 1)
     PixelSetting wb : 2; // PixelSetting for pixels changing from white to black (1 -> 0)
     PixelSetting ww : 2; // PixelSetting for pixels that stay white (1 -> 1)
-} Frame;
+
+    inline uint8_t getSetting(uint8_t oldPixel, uint8_t newPixel) {
+        if (oldPixel == 0x0 && newPixel == 0x0) {
+            return bb;
+        } else if (oldPixel == 0x0 && newPixel == 0x1) {
+            return bw;
+        } else if (oldPixel == 0x1 && newPixel == 0x0) {
+            return wb;
+        } else if (oldPixel == 0x1 && newPixel == 0x1) {
+            return ww;
+        }
+        assert(0);
+        return 0; // Should never get here
+    }
+};
 
 typedef struct {
     std::string name;
@@ -32,10 +47,10 @@ typedef struct {
     std::array<Frame, MAX_FRAMES_PER_WAVEFORM> frames;
 } EinkET013TT1Waveform;
 
-using BorderSetting = enum {
-    BLACK_BORDER,
-    WHITE_BORDER,
-    NONE_BORDER,
+enum BorderSetting {
+    BORDER_SETTING_BLACK = 0,
+    BORDER_SETTING_WHITE = 1,
+    BORDER_SETTING_NONE = 2,
 };
 
 using Register = enum {
@@ -98,9 +113,10 @@ protected:
     uint8_t busy_;
     uint8_t vcom_;
 
-    uint8_t previousBuffer_[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT / 8];
+    BorderSetting previousBorder_ = BORDER_SETTING_NONE;
+    BorderSetting border_ = BORDER_SETTING_NONE;
 
-    const uint8_t *borderBits_ = nullptr;
+    uint8_t previousBuffer_[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT / 8];
 
     float timerDelayNs_ = 0;
     uint32_t timerDurationCycles_ = 0;
