@@ -78,6 +78,10 @@ void EinkET013TT1::init() {
     if (borderBits_ == nullptr) {
         setBorder(NONE_BORDER);
     }
+
+    for (unsigned char &i : previousBuffer_) {
+        i = 0xFF;
+    }
 }
 
 void EinkET013TT1::setVcom(int mV) {
@@ -105,11 +109,8 @@ void EinkET013TT1::setBorder(BorderSetting border) {
     }
 }
 
-void EinkET013TT1::clear() {
-    for (unsigned char &i : previousBuffer_) {
-        i = 0xFF;
-    }
-    update(PANEL_CLEAR_WAVEFORM, previousBuffer_);
+void EinkET013TT1::clear(const EinkET013TT1Waveform &waveform) {
+    update(waveform, previousBuffer_);
 }
 
 void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer) {

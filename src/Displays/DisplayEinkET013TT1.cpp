@@ -3,15 +3,20 @@
 #include <UI/Fonts/LucidaGrande5pt7b.h>
 #include <algorithm>
 
+#include "Displays/EinkWaveforms.hpp"
+
 #define EinkET013TT1_WIDTH_IN_MM 23.3
 #define EinkET013TT1_HEIGHT_IN_MM 23.3
+const EinkET013TT1Waveform PANEL_CLEAR_WAVEFORM = EINK_31_35C_WAVEFORM_CLEAR;
+const EinkET013TT1Waveform FULL_REFRESH_WAVEFORM = EINK_31_35C_WAVEFORM_FULL;
+const EinkET013TT1Waveform PARTIAL_REFRESH_WAVEFORM = EINK_31_35C_WAVEFORM_PARTIAL;
 
 DisplayEinkET013TT1::DisplayEinkET013TT1(uint8_t cs, uint8_t oei, uint8_t rst, uint8_t busy)
     : driver_(cs, oei, rst, busy), DisplaySystem(EinkET013TT1_X_PIXELS, EinkET013TT1_Y_PIXELS) {
     log_d("Initializing EPD driver");
     driver_.init();
     log_d("Clearing display");
-    driver_.clear();
+    driver_.clear(PANEL_CLEAR_WAVEFORM);
 
     setFullWindow();
 
@@ -27,8 +32,7 @@ DisplayEinkET013TT1::DisplayEinkET013TT1(uint8_t cs, uint8_t oei, uint8_t rst, u
 
 void DisplayEinkET013TT1::updateDisplay() {
     if (getPartialRefresh()) {
-        // TODO: Load partial refresh waveform
-        // driver_.update(gPartialRefreshWaveform, getBuffer());
+        driver_.update(PARTIAL_REFRESH_WAVEFORM, getBuffer());
     } else {
         // TODO: Set border?
         driver_.update(FULL_REFRESH_WAVEFORM, getBuffer());

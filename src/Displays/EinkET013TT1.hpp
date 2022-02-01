@@ -6,7 +6,7 @@
 #define EinkET013TT1_PIXEL_WIDTH 256
 #define EinkET013TT1_PIXEL_HEIGHT 256
 #define EinkET013TT1_GATE_COUNT 512
-#define MAX_FRAMES_PER_WAVEFORM 20
+#define MAX_FRAMES_PER_WAVEFORM 31
 
 // The possible per-column TFT FET source settings.
 typedef enum {
@@ -31,52 +31,6 @@ typedef struct {
     uint8_t frameCount;
     std::array<Frame, MAX_FRAMES_PER_WAVEFORM> frames;
 } EinkET013TT1Waveform;
-
-const EinkET013TT1Waveform PANEL_CLEAR_WAVEFORM = {
-    "Panel Clear",
-    13,
-    std::array<Frame, MAX_FRAMES_PER_WAVEFORM>{
-        Frame{bb : BLACK, bw : BLACK, wb : BLACK, ww : BLACK},
-        Frame{bb : BLACK, bw : BLACK, wb : BLACK, ww : BLACK},
-        Frame{bb : WHITE, bw : WHITE, wb : WHITE, ww : WHITE},
-        Frame{bb : WHITE, bw : WHITE, wb : WHITE, ww : WHITE},
-        Frame{bb : WHITE, bw : WHITE, wb : WHITE, ww : WHITE},
-        Frame{bb : BLACK, bw : BLACK, wb : BLACK, ww : BLACK},
-        Frame{bb : BLACK, bw : BLACK, wb : BLACK, ww : BLACK},
-        Frame{bb : BLACK, bw : BLACK, wb : BLACK, ww : BLACK},
-        Frame{bb : WHITE, bw : WHITE, wb : WHITE, ww : WHITE},
-        Frame{bb : WHITE, bw : WHITE, wb : WHITE, ww : WHITE},
-        Frame{bb : WHITE, bw : WHITE, wb : WHITE, ww : WHITE},
-        Frame{bb : WHITE, bw : WHITE, wb : WHITE, ww : WHITE},
-        Frame{bb : NOCHG, bw : NOCHG, wb : NOCHG, ww : NOCHG},
-    },
-};
-
-const EinkET013TT1Waveform FULL_REFRESH_WAVEFORM = {
-    "Full Refresh",
-    18,
-    std::array<Frame, MAX_FRAMES_PER_WAVEFORM>{
-        Frame{bb : WHITE, bw : NOCHG, wb : NOCHG, ww : BLACK},
-        Frame{bb : WHITE, bw : NOCHG, wb : NOCHG, ww : BLACK},
-        Frame{bb : WHITE, bw : NOCHG, wb : NOCHG, ww : BLACK},
-        Frame{bb : WHITE, bw : NOCHG, wb : NOCHG, ww : BLACK},
-        Frame{bb : WHITE, bw : NOCHG, wb : NOCHG, ww : NOCHG},
-        Frame{bb : WHITE, bw : NOCHG, wb : WHITE, ww : NOCHG},
-        Frame{bb : WHITE, bw : BLACK, wb : WHITE, ww : NOCHG},
-        Frame{bb : WHITE, bw : BLACK, wb : WHITE, ww : NOCHG},
-        Frame{bb : WHITE, bw : BLACK, wb : WHITE, ww : NOCHG},
-        Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : WHITE},
-        Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : WHITE},
-        Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : WHITE},
-        Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : WHITE},
-        Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : NOCHG},
-        Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : NOCHG},
-        Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : NOCHG},
-        Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : NOCHG},
-        // Frame{bb : BLACK, bw : BLACK, wb : NOCHG, ww : NOCHG},
-        Frame{bb : NOCHG, bw : NOCHG, wb : NOCHG, ww : NOCHG},
-    },
-};
 
 using BorderSetting = enum {
     BLACK_BORDER,
@@ -124,7 +78,7 @@ public:
     // Configure border. This is set on every scan line.
     void setBorder(BorderSetting border);
 
-    void clear();
+    void clear(const EinkET013TT1Waveform &waveform);
 
     void update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer);
 
