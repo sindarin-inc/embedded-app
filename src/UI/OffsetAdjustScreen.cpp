@@ -10,7 +10,7 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
       yOffset(prefs.localYOffset.get().value()), renderer_(display) {
 
     std::string message;
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 15; i++) {
         message += "Press arrows to move box around to your liking. Then "
                    "long-press the left button when done! Message repeats. ";
     }

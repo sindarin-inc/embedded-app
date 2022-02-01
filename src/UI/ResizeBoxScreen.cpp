@@ -16,7 +16,7 @@ ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs
       boxHeightOffset(prefs.displayBoxHeightOffset.get().value()), renderer_(display) {
 
     std::string message;
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 15; i++) {
         message +=
             "Press up arrow to increase vertical dimension, down arrow to decrease vertical "
             "dimension, left arrow to increase horizontal dimension, right arrow to decrease "
