@@ -19,6 +19,7 @@
 #include "UI/PagedMenuScreen.hpp"
 #include "UI/PowerDepletedScreen.hpp"
 #include "UI/ReadableScreen.hpp"
+#include "UI/ResizeBoxScreen.hpp"
 #include "UI/StreamRendererScreen.hpp"
 #include "sindarin-debug.h"
 
@@ -171,6 +172,19 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
         };
         log_d("set up callback");
     }));
+
+    settingsMenu->addMenuItem(MenuItem("Resize Box", [this, settingsMenu, display]() {
+        log_d("Loading resize box");
+        auto resizeBox = new ResizeBoxScreen(*display, prefs_, this->power_);
+        this->setCurrentScreen(*resizeBox);
+        log_d("setting up callback");
+        resizeBox->backCallback = [this, resizeBox, settingsMenu]() {
+            setCurrentScreen(*settingsMenu);
+            delete resizeBox;
+        };
+        log_d("set up callback");
+    }));
+
     settingsMenu->addMenuItem(MenuItem("Calibration Screen", [this, settingsMenu, display]() {
         auto calibrationScreen = new CalibrationScreen();
         this->setCurrentScreen(*calibrationScreen);

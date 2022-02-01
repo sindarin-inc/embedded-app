@@ -61,6 +61,10 @@ public:
     auto getFocusWidth() -> float { return focusWidthInMm_; }
     auto getFocusHeight() -> float { return focusHeightInMm_; }
 
+    void setFocusOffset(float width, float height);
+    auto getFocusOffsetWidth() -> float { return focusWidthOffset_; }
+    auto getFocusOffsetHeight() -> float { return focusHeightOffset_; }
+
     // MARK: - Text rendering code
 
     auto getFont() -> const GFXfont *;
@@ -119,6 +123,8 @@ protected:
     float heightInMm_ = 0;
     float focusWidthInMm_;
     float focusHeightInMm_;
+    float focusWidthOffset_ = 0;
+    float focusHeightOffset_ = 0;
 };
 
 #endif
