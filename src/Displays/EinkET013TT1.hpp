@@ -10,14 +10,14 @@
 #define MAX_FRAMES_PER_WAVEFORM 31
 
 // The possible per-column TFT FET source settings.
-typedef enum {
+enum PixelSetting {
     // NOCHG sets no voltage (possibly VCOM) (As per datasheet, same as 0b01)
     NOCHG = 0b00,
     // WHITE (0b10) sets the source voltage to VDL (-14V) and attracts positive white particles
     WHITE = 0b10,
     // BLACK (0b11) sets the source voltage to VDH (+14V) and attracts negative black particles
     BLACK = 0b11,
-} PixelSetting;
+};
 
 // Represents the possible pixel source settings for all 4 possible pixel transitions
 struct Frame {
@@ -41,11 +41,11 @@ struct Frame {
     }
 };
 
-typedef struct {
+struct EinkET013TT1Waveform {
     std::string name;
     uint8_t frameCount;
     std::array<Frame, MAX_FRAMES_PER_WAVEFORM> frames;
-} EinkET013TT1Waveform;
+};
 
 enum BorderSetting {
     BORDER_SETTING_BLACK = 0,
@@ -53,7 +53,7 @@ enum BorderSetting {
     BORDER_SETTING_NONE = 2,
 };
 
-using Register = enum {
+enum Register {
     PUMP_STATUS = 0x00,
     CHANNEL_SETTING = 0x01,
     // Not included in the datasheet
