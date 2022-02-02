@@ -58,23 +58,18 @@ void EinkET013TT1::init() {
     digitalWrite(cs_, HIGH);
 
     digitalWrite(rst_, LOW);
-    // Not sure if this is necessary but it's in the orginal EPD driver
-    for (int i = 0; i < 100000; ++i) {
-        ;
-    }
+    delay(5);
     digitalWrite(oei_, LOW);
-    for (int i = 0; i < 100000; ++i) {
-        ;
-    }
+    delay(5);
     digitalWrite(rst_, HIGH);
 
     SPI.begin();
 
     if (vcom_ == 0) {
-        setVcom(-2810);
+        setVcom(VCOM_DEFAULT);
     }
     if (timerDelayNs_ == 0) {
-        setFramerate(24);
+        setFramerate(FRAMERATE_DEFAULT);
     }
     for (unsigned char &i : previousBuffer_) {
         i = 0xFF;

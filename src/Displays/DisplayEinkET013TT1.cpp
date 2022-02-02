@@ -34,7 +34,7 @@ void DisplayEinkET013TT1::updateDisplay() {
     if (getPartialRefresh()) {
         driver_.update(PARTIAL_REFRESH_WAVEFORM, getBuffer());
     } else {
-        // TODO: Set border?
+        driver_.setBorder(bg == 0x00 ? BORDER_SETTING_BLACK : BORDER_SETTING_WHITE);
         driver_.update(FULL_REFRESH_WAVEFORM, getBuffer());
     }
     // Clear buffer afterwards
