@@ -4,6 +4,8 @@
 #include <SPI.h>
 #include <algorithm>
 
+#include "sindarin-debug.h"
+
 extern "C" {
 #include <esp32/clk.h>
 }
@@ -127,12 +129,20 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     auto *gateSelectHigh = (uint16_t *)&(scanLine[42]);
     auto *gateBlockHigh = (uint32_t *)&(scanLine[44]);
 
-    powerOn();
     log_d("Updating dispay with waveform \"%s\"", waveform.name.c_str());
+
+    powerOn();
+
+    PROFILE_START(sendFrames);
 
     // For each frame in the waveform
     for (int frameIndex = 0; frameIndex < waveform.frameCount; frameIndex++) {
         auto frame = waveform.frames[frameIndex];
+
+        // Generate a look up table to quickly look up old bits -> new bits and the resulting
+        // transitions
+        std::array<uint8_t, 256> lut;
+        frame.makeLUT(&lut);
 
         if (border_ != BORDER_SETTING_NONE) {
             auto borderBits = frame.getSetting(previousBorder_ & 0x01, border_);
@@ -169,18 +179,17 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
             auto newBuffer = &(buffer[bufferIndex]);
             auto oldBuffer = &(previousBuffer_[bufferIndex]);
 
-            // If necessary, we can go back to the full-byte LUT for this and do 4 of these
-            // operations at a time. But for now, optimizing for readability / understandability.
-            for (int pixel = 0; pixel < EinkET013TT1_PIXEL_WIDTH / 2; pixel++) {
-                auto newPixel = (newBuffer[pixel / 8] & (0x80 >> (pixel % 8))) != 0;
-                auto oldPixel = (previousBuffer_[pixel / 8] & (0x80 >> (pixel % 8))) != 0;
-
-                uint8_t sourceSetting = frame.getSetting(oldPixel, newPixel);
-
-                // Clear the bits
-                sourceData[pixel / 4] &= ~(0x03 << (2 * (3 - pixel % 4)));
-                // Set the bits
-                sourceData[pixel / 4] |= (sourceSetting << (2 * (3 - pixel % 4)));
+            for (int pixel = 0; pixel < EinkET013TT1_PIXEL_WIDTH / 2; pixel += 4) {
+                uint8_t oldPixels;
+                uint8_t newPixels;
+                if (pixel % 8 == 0) {
+                    oldPixels = (previousBuffer_[pixel / 8] >> 4) & 0xF;
+                    newPixels = (newBuffer[pixel / 8] >> 4) & 0xF;
+                } else {
+                    oldPixels = previousBuffer_[pixel / 8] & 0xF;
+                    newPixels = newBuffer[pixel / 8] & 0xF;
+                }
+                sourceData[pixel / 4] = lut[oldPixels << 4 | newPixels];
             }
 
             // Send the scan line!
@@ -193,17 +202,21 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
             writeRegister(MYSTERY_SETTING_1, 0x10);
         }
 
-        // Extra wait time because that's what the original EPD driver did
-        // We should have already waited at the last gate, so this may not be necessary.
-        waitForTimer();
-
         // Send clear packet
         writeRegister(WRITE_GATE_SOURCE_DATA, CLEAR_PACKET, sizeof(CLEAR_PACKET));
+        waitForTimer();
         waitForNotBusy();
         writeRegister(MYSTERY_SETTING_1, 0x10);
     }
 
+    PROFILE_END(sendFrames);
+
     powerOff();
+
+    float timeNs = PROFILE_CALCULATE_NS(sendFrames);
+    log_d("Sent %d frames in %.2fms (%.2fms per frame, %.2fus per gate)", waveform.frameCount,
+          timeNs / 1000000, timeNs / waveform.frameCount / 1000000,
+          timeNs / waveform.frameCount / (EinkET013TT1_GATE_COUNT + 1) / 1000);
 
     // Move new buffer to be previous buffer
     memcpy(previousBuffer_, buffer, sizeof(previousBuffer_));
@@ -225,7 +238,9 @@ void EinkET013TT1::writeRegister(Register index, const uint8_t *data, size_t len
     SPI.endTransaction();
 }
 
-void EinkET013TT1::writeRegister(Register index, uint8_t data) { writeRegister(index, &data, 1); }
+inline void EinkET013TT1::writeRegister(Register index, uint8_t data) {
+    writeRegister(index, &data, 1);
+}
 
 void EinkET013TT1::powerOn() {
     log_d("Powering on EinkET013TT1");
@@ -301,12 +316,12 @@ void EinkET013TT1::powerOff() {
     log_d("EinkET013TT1 powered off");
 }
 
-void EinkET013TT1::startTimer(uint32_t ns) {
+inline void EinkET013TT1::startTimer(uint32_t ns) {
     RSR(CCOUNT, cycleCountStart_);
     timerDurationCycles_ = (esp_clk_cpu_freq() / 1000000000.0) * ns;
 }
 
-auto EinkET013TT1::timerRunning() -> bool {
+inline auto EinkET013TT1::timerRunning() -> bool {
     volatile uint32_t cycleCount = 0;
     RSR(CCOUNT, cycleCount);
     if (timerDurationCycles_ != 0 && cycleCount - cycleCountStart_ < timerDurationCycles_) {
@@ -315,12 +330,12 @@ auto EinkET013TT1::timerRunning() -> bool {
     return false;
 }
 
-void EinkET013TT1::waitForTimer() {
+inline void EinkET013TT1::waitForTimer() {
     while (timerRunning()) {
     }
 }
 
-void EinkET013TT1::waitForNotBusy() {
+inline void EinkET013TT1::waitForNotBusy() {
     while (digitalRead(busy_) == HIGH) {
     }
 }

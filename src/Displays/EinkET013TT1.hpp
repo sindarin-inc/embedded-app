@@ -19,6 +19,21 @@ enum PixelSetting {
     BLACK = 0b11,
 };
 
+typedef union {
+    uint8_t value;
+    struct {
+        uint8_t C4 : 1;
+        uint8_t C3 : 1;
+        uint8_t C2 : 1;
+        uint8_t C1 : 1;
+        uint8_t P4 : 1;
+        uint8_t P3 : 1;
+        uint8_t P2 : 1;
+        uint8_t P1 : 1;
+
+    } pixels;
+} LUTPixels;
+
 // Represents the possible pixel source settings for all 4 possible pixel transitions
 struct Frame {
     PixelSetting bb : 2; // PixelSetting for pixels that stay black (0 -> 0)
@@ -38,6 +53,44 @@ struct Frame {
         }
         assert(0);
         return 0; // Should never get here
+    }
+
+    // Populates a look up table that takes a 4 pixel byte where the most significant 4
+    // bits are the old pixels and the least significant 4 bits are the new pixels
+    void makeLUT(std::array<uint8_t, 256> *lut) {
+        LUTPixels pixel;
+        for (int i = 0; i < 256; ++i) {
+            pixel.value = i;
+            uint8_t outValue = getSetting(pixel.pixels.P1, pixel.pixels.C1) << 6;
+            outValue |= getSetting(pixel.pixels.P2, pixel.pixels.C2) << 4;
+            outValue |= getSetting(pixel.pixels.P3, pixel.pixels.C3) << 2;
+            outValue |= getSetting(pixel.pixels.P4, pixel.pixels.C4);
+            (*lut)[i] = outValue;
+        }
+    }
+
+    const char *pixelSettingString(PixelSetting setting) {
+        switch (setting) {
+        case NOCHG:
+            return "NOCHG";
+        case BLACK:
+            return "BLACK";
+        case WHITE:
+            return "WHITE";
+        }
+        return "???";
+    }
+
+    // Create a string from this frame (for debugging purposes)
+    void toString(std::string *string) {
+        string->append("bb: ");
+        string->append(pixelSettingString(bb));
+        string->append(" bw: ");
+        string->append(pixelSettingString(bw));
+        string->append(" wb: ");
+        string->append(pixelSettingString(wb));
+        string->append(" ww: ");
+        string->append(pixelSettingString(ww));
     }
 };
 
@@ -100,12 +153,12 @@ public:
 protected:
     void powerOn();
     void powerOff();
-    void writeRegister(Register index, uint8_t data);
+    inline void writeRegister(Register index, uint8_t data);
     void writeRegister(Register index, const uint8_t *data, size_t len);
-    void startTimer(uint32_t ns);
-    auto timerRunning() -> bool;
-    void waitForTimer();
-    void waitForNotBusy();
+    inline void startTimer(uint32_t ns);
+    inline auto timerRunning() -> bool;
+    inline void waitForTimer();
+    inline void waitForNotBusy();
 
     uint8_t cs_;
     uint8_t oei_;
