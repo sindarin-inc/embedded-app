@@ -133,11 +133,11 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
 
     auto pumpStatus = readPumpStatus();
     auto temp = readTemperature();
-    if (!pumpStatus.bits.VCPOK) {
-        log_e("Pump not ready! LVDS=%d VCPOK=%d temp=%dºC", pumpStatus.bits.LVDS,
-              pumpStatus.bits.VCPOK, temp);
+    if (!pumpStatus.bits.vcpok) {
+        log_e("Pump not ready! LVDS=%d VCPOK=%d temp=%dºC", pumpStatus.bits.lvds,
+              pumpStatus.bits.vcpok, temp);
     } else {
-        log_d("LVDS=%d VCPOK=%d temp=%dºC", pumpStatus.bits.LVDS, pumpStatus.bits.VCPOK, temp);
+        log_d("LVDS=%d VCPOK=%d temp=%dºC", pumpStatus.bits.lvds, pumpStatus.bits.vcpok, temp);
     }
 
     PROFILE_START(sendFrames);
@@ -249,7 +249,7 @@ inline void EinkET013TT1::writeRegister(Register index, uint8_t data) {
     writeRegister(index, &data, 1);
 }
 
-uint8_t EinkET013TT1::readRegister(uint8_t index) {
+auto EinkET013TT1::readRegister(uint8_t index) -> uint8_t {
     uint8_t buf[3];
     buf[0] = 0x70;
     buf[1] = index & 0x0F;
@@ -275,9 +275,9 @@ uint8_t EinkET013TT1::readRegister(uint8_t index) {
     return result;
 }
 
-PumpStatus EinkET013TT1::readPumpStatus() { return PumpStatus{readRegister(0x00)}; }
+auto EinkET013TT1::readPumpStatus() -> PumpStatus { return PumpStatus{readRegister(0x00)}; }
 
-int16_t EinkET013TT1::readTemperature() {
+auto EinkET013TT1::readTemperature() -> int16_t {
     uint16_t value = readRegister(0x0F);
 
     value &= 0x7F;
@@ -291,7 +291,7 @@ int16_t EinkET013TT1::readTemperature() {
     return -1;
 }
 
-uint8_t EinkET013TT1::readDeviceIdReg() {
+auto EinkET013TT1::readDeviceIdReg() -> uint8_t {
     SPI.beginTransaction(spiSettings);
     digitalWrite(cs_, LOW);
     SPI.write(0x71);

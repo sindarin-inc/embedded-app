@@ -22,14 +22,14 @@ enum PixelSetting {
 typedef union {
     uint8_t value;
     struct {
-        uint8_t C4 : 1;
-        uint8_t C3 : 1;
-        uint8_t C2 : 1;
-        uint8_t C1 : 1;
-        uint8_t P4 : 1;
-        uint8_t P3 : 1;
-        uint8_t P2 : 1;
-        uint8_t P1 : 1;
+        uint8_t c4 : 1;
+        uint8_t c3 : 1;
+        uint8_t c2 : 1;
+        uint8_t c1 : 1;
+        uint8_t p4 : 1;
+        uint8_t p3 : 1;
+        uint8_t p2 : 1;
+        uint8_t p1 : 1;
 
     } pixels;
 } LUTPixels;
@@ -39,9 +39,9 @@ typedef union {
     struct {
         uint8_t unused : 6;
         // Charge pump ready (1=ready)
-        uint8_t VCPOK : 1;
+        uint8_t vcpok : 1;
         // Low voltage detection status: (0=normal voltage)
-        uint8_t LVDS : 1;
+        uint8_t lvds : 1;
     } bits;
 } PumpStatus;
 
@@ -52,7 +52,7 @@ struct Frame {
     PixelSetting wb : 2; // PixelSetting for pixels changing from white to black (1 -> 0)
     PixelSetting ww : 2; // PixelSetting for pixels that stay white (1 -> 1)
 
-    inline uint8_t getSetting(uint8_t oldPixel, uint8_t newPixel) {
+    inline auto getSetting(uint8_t oldPixel, uint8_t newPixel) -> uint8_t {
         if (oldPixel == 0x0 && newPixel == 0x0) {
             return bb;
         } else if (oldPixel == 0x0 && newPixel == 0x1) {
@@ -72,15 +72,15 @@ struct Frame {
         LUTPixels pixel;
         for (int i = 0; i < 256; ++i) {
             pixel.value = i;
-            uint8_t outValue = getSetting(pixel.pixels.P1, pixel.pixels.C1) << 6;
-            outValue |= getSetting(pixel.pixels.P2, pixel.pixels.C2) << 4;
-            outValue |= getSetting(pixel.pixels.P3, pixel.pixels.C3) << 2;
-            outValue |= getSetting(pixel.pixels.P4, pixel.pixels.C4);
+            uint8_t outValue = getSetting(pixel.pixels.p1, pixel.pixels.c1) << 6;
+            outValue |= getSetting(pixel.pixels.p2, pixel.pixels.c2) << 4;
+            outValue |= getSetting(pixel.pixels.p3, pixel.pixels.c3) << 2;
+            outValue |= getSetting(pixel.pixels.p4, pixel.pixels.c4);
             (*lut)[i] = outValue;
         }
     }
 
-    const char *pixelSettingString(PixelSetting setting) {
+    auto pixelSettingString(PixelSetting setting) -> const char * {
         switch (setting) {
         case NOCHG:
             return "NOCHG";
@@ -139,7 +139,7 @@ enum Register {
 #define OSC_2MHZ (3 << 5)
 
 #define OSC_SELECT OSC_2MHZ
-#define VCOM_DEFAULT -2810
+#define VCOM_DEFAULT (-2810)
 #define FRAMERATE_DEFAULT 24
 
 class EinkET013TT1 {
@@ -169,10 +169,10 @@ protected:
     void powerOff();
     inline void writeRegister(Register index, uint8_t data);
     void writeRegister(Register index, const uint8_t *data, size_t len);
-    uint8_t readRegister(uint8_t index);
-    PumpStatus readPumpStatus();
-    int16_t readTemperature();
-    uint8_t readDeviceIdReg();
+    auto readRegister(uint8_t index) -> uint8_t;
+    auto readPumpStatus() -> PumpStatus;
+    auto readTemperature() -> int16_t;
+    auto readDeviceIdReg() -> uint8_t;
     inline void startTimer(uint32_t ns);
     inline auto timerRunning() -> bool;
     inline void waitForTimer();
