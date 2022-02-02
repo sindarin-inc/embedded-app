@@ -34,6 +34,17 @@ typedef union {
     } pixels;
 } LUTPixels;
 
+typedef union {
+    uint8_t value;
+    struct {
+        uint8_t unused : 6;
+        // Charge pump ready (1=ready)
+        uint8_t VCPOK : 1;
+        // Low voltage detection status: (0=normal voltage)
+        uint8_t LVDS : 1;
+    } bits;
+} PumpStatus;
+
 // Represents the possible pixel source settings for all 4 possible pixel transitions
 struct Frame {
     PixelSetting bb : 2; // PixelSetting for pixels that stay black (0 -> 0)
@@ -158,6 +169,10 @@ protected:
     void powerOff();
     inline void writeRegister(Register index, uint8_t data);
     void writeRegister(Register index, const uint8_t *data, size_t len);
+    uint8_t readRegister(uint8_t index);
+    PumpStatus readPumpStatus();
+    int16_t readTemperature();
+    uint8_t readDeviceIdReg();
     inline void startTimer(uint32_t ns);
     inline auto timerRunning() -> bool;
     inline void waitForTimer();

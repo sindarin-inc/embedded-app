@@ -62,6 +62,7 @@ void EinkET013TT1::init() {
     digitalWrite(oei_, LOW);
     delay(5);
     digitalWrite(rst_, HIGH);
+    delay(5);
 
     SPI.begin();
 
@@ -74,6 +75,8 @@ void EinkET013TT1::init() {
     for (unsigned char &i : previousBuffer_) {
         i = 0xFF;
     }
+
+    log_d("Initialized EinkET013TT1 ID:%d", readDeviceIdReg());
 }
 
 void EinkET013TT1::setVcom(int mV) {
@@ -128,6 +131,15 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
 
     powerOn();
 
+    auto pumpStatus = readPumpStatus();
+    auto temp = readTemperature();
+    if (!pumpStatus.bits.VCPOK) {
+        log_e("Pump not ready! LVDS=%d VCPOK=%d temp=%dºC", pumpStatus.bits.LVDS,
+              pumpStatus.bits.VCPOK, temp);
+    } else {
+        log_d("LVDS=%d VCPOK=%d temp=%dºC", pumpStatus.bits.LVDS, pumpStatus.bits.VCPOK, temp);
+    }
+
     PROFILE_START(sendFrames);
 
     // For each frame in the waveform
@@ -144,9 +156,9 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
             // In the original EPD driver, there were `Border_Black` and `Border_White` arrays
             // that only set the rightmost two bits to either 0x03 or 0x02. But in the code,
             // when calculating scan lines, all 8 bits would get set with the bit transition.
-            // I'm not sure if this is a material difference. Possible the right two bits actually
-            // set the border and the other 6 are noops. But doing the same thing as the original
-            // driver for now.
+            // I'm not sure if this is a material difference. Possible the right two bits
+            // actually set the border and the other 6 are noops. But doing the same thing as
+            // the original driver for now.
             borderSettings[1] = borderBits | borderBits << 2 | borderBits << 4 | borderBits << 6;
         }
 
@@ -235,6 +247,59 @@ void EinkET013TT1::writeRegister(Register index, const uint8_t *data, size_t len
 
 inline void EinkET013TT1::writeRegister(Register index, uint8_t data) {
     writeRegister(index, &data, 1);
+}
+
+uint8_t EinkET013TT1::readRegister(uint8_t index) {
+    uint8_t buf[3];
+    buf[0] = 0x70;
+    buf[1] = index & 0x0F;
+
+    SPI.beginTransaction(spiSettings);
+    digitalWrite(cs_, LOW);
+    SPI.writeBytes(buf, 2);
+    digitalWrite(cs_, HIGH);
+    SPI.endTransaction();
+
+    buf[0] = 0x73;
+    SPI.beginTransaction(spiSettings);
+    digitalWrite(cs_, LOW);
+    SPI.writeBytes(buf, 1);
+    SPI.write(0xFF); // necessary?
+    // Prefix
+    SPI.transfer(0xFF);
+    SPI.write(0xFF); // necessary?
+    auto result = SPI.transfer(0xFF);
+    digitalWrite(cs_, HIGH);
+    SPI.endTransaction();
+
+    return result;
+}
+
+PumpStatus EinkET013TT1::readPumpStatus() { return PumpStatus{readRegister(0x00)}; }
+
+int16_t EinkET013TT1::readTemperature() {
+    uint16_t value = readRegister(0x0F);
+
+    value &= 0x7F;
+
+    if (value >= 0x76) {
+        value |= 0x80;
+        return (int16_t)((int8_t)value * 2);
+    } else if (value <= 0x22) {
+        return value * 2;
+    }
+    return -1;
+}
+
+uint8_t EinkET013TT1::readDeviceIdReg() {
+    SPI.beginTransaction(spiSettings);
+    digitalWrite(cs_, LOW);
+    SPI.write(0x71);
+    SPI.write(0xFF);
+    auto deviceId = SPI.transfer(0xFF);
+    digitalWrite(cs_, HIGH);
+    SPI.endTransaction();
+    return deviceId;
 }
 
 void EinkET013TT1::powerOn() {
