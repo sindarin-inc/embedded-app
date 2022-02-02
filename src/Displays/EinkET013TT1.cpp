@@ -155,15 +155,15 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
             *gateSelectHigh = GATE_SELECT_TABLE_H[gs];
             *gateBlockHigh = GATE_BLOCK_TABLE_H[gb];
 
-            // Gate indices represent half-lines in this order:
-            // top right -> bottom right -> top left -> bottom left
-            int bufferIndex;
-            if (gate < EinkET013TT1_GATE_COUNT / 2) {
-                // The first half of the gates are on the right side of the screen, offset by
-                // width / 2
-                bufferIndex = (EinkET013TT1_PIXEL_WIDTH / 2 + EinkET013TT1_PIXEL_WIDTH * gate) / 8;
-            } else {
-                bufferIndex = (EinkET013TT1_PIXEL_WIDTH * (gate % EinkET013TT1_PIXEL_WIDTH)) / 8;
+            // Gate indices represent half-lines in this order (with connector down):
+            // bottom left -> top left -> bottom right -> top right
+            // Generate an index into our frame buffer that corresponds to this gate.
+            int bufferIndex = (EinkET013TT1_PIXEL_WIDTH / 8) *
+                              (EinkET013TT1_PIXEL_WIDTH - 1 - (gate % EinkET013TT1_PIXEL_WIDTH));
+            if (gate >= EinkET013TT1_GATE_COUNT / 2) {
+                // The latter gates are on the right half of the screen, so nudge the index
+                // to point to the right half of the line.
+                bufferIndex += EinkET013TT1_PIXEL_WIDTH / 2 / 8;
             }
 
             auto newBuffer = &(buffer[bufferIndex]);
@@ -172,11 +172,8 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
             // If necessary, we can go back to the full-byte LUT for this and do 4 of these
             // operations at a time. But for now, optimizing for readability / understandability.
             for (int pixel = 0; pixel < EinkET013TT1_PIXEL_WIDTH / 2; pixel++) {
-                // pixel ordering is the other way around from how it's stored in adafruit
-                // Flip our index
-                uint8_t rPixel = EinkET013TT1_PIXEL_WIDTH / 2 - pixel;
-                auto newPixel = (newBuffer[rPixel / 8] & (0x80 >> (rPixel & 7))) != 0;
-                auto oldPixel = (previousBuffer_[rPixel / 8] & (0x80 >> (rPixel & 7))) != 0;
+                auto newPixel = (newBuffer[pixel / 8] & (0x80 >> (pixel % 8))) != 0;
+                auto oldPixel = (previousBuffer_[pixel / 8] & (0x80 >> (pixel % 8))) != 0;
 
                 uint8_t sourceSetting = frame.getSetting(oldPixel, newPixel);
 
