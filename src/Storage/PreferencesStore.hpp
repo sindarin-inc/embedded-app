@@ -127,7 +127,7 @@ public:
           pairedTurnTouchAddress(this->prefs_, "paired-tt"),
           pocketApiToken(this->prefs_, "pocket-token"),
           lastReadableId(this->prefs_, "rui-readable"), readablePlace(this->prefs_, "-p"),
-          readablePreviousPlace(this->prefs_, "-pr-p"){};
+          readablePreviousPlace(this->prefs_, "-pr-p"), invertSetting(this->prefs_, "invert"){};
     void begin();
     void clear() { prefs_.clear(); }
 
@@ -140,6 +140,7 @@ public:
     PrefsItem<String> lastReadableId;
     KeyedPrefsItem<int> readablePlace;
     KeyedPrefsItem<int> readablePreviousPlace;
+    PrefsItem<int> invertSetting;
 
 protected:
     Preferences prefs_;

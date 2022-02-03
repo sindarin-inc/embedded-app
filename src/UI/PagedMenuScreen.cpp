@@ -106,3 +106,54 @@ auto PagedMenuScreen::prevSelection() -> int {
     }
     return numMenuItems_ > 1 ? 1 : 0;
 }
+
+//
+// For a PagedMenu, we actually want to progress through
+// the options via the left and right buttons and use
+// the down button (CHANNEL_PLUS) to select the text.
+//
+// This is more consistent with the behavior of turning pages
+// and using down to go to the popup menu and up to go back.
+//
+// While we are using the TurnTouch, we should make the commands
+// more consistent (left and right versus up and down).
+//
+// Up is back
+// Right is next, Left is previous
+// Down is select
+//
+void PagedMenuScreen::processCommand(RemoteCommand command) {
+    switch (command) {
+    case RemoteCommand::PREV:
+        // Discussion for BC and JB around the right way to change the inversion
+        // settting here. Should processCommand take a display? That seems clunky.
+        // But unlike the Readable, we don't have a clear path to the display here.
+        // Also need to get the prefs. Maybe it needs to be a callback. Not critical
+        // as this is a nice to have to invert the display here. So maybe we don't
+        // care at all.
+        //
+        // SOMEHOWgetDisplay()->flipInversion();
+        // SOMEHOWGETprefs_.invertSetting.set(SOMEHOWgetDisplay()->getInversion());
+        // needsRerender = true;
+
+        if (backCallback != nullptr) {
+            backCallback();
+        }
+        break;
+    case RemoteCommand::NEXT:
+        if (getCurrItem().callback != nullptr) {
+            getCurrItem().callback();
+        }
+        break;
+    case RemoteCommand::ENTER:
+    case RemoteCommand::CHANNEL_PLUS:
+        needsRerender = nextSelection();
+        break;
+    case RemoteCommand::BACK:
+    case RemoteCommand::CHANNEL_MINUS:
+        needsRerender = prevSelection();
+        break;
+    default:
+        break;
+    }
+}

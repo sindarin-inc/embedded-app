@@ -31,6 +31,9 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
     display_ = display;
 
     auto mainMenu = new PagedMenuScreen(this->power_);
+
+    mainMenu->setBidirectional();
+
     SIZE_OF(*mainMenu);
 
     auto createReadableScreen = [this, display, mainMenu](Readable *readable) -> ReadableScreen * {

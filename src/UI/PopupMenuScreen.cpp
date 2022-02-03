@@ -22,8 +22,8 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     // Blank out screen
     display.fillScreen(display.bg);
     // Draw menu surroundings
-    display.drawXBitmap(display.localXOffset + (256 - POPUP_MENU_BLANK_WIDTH) / 2,
-                        display.localYOffset + (256 - POPUP_MENU_BLANK_HEIGHT) / 2,
+    display.drawXBitmap(display.localXOffset + (display.width() - POPUP_MENU_BLANK_WIDTH) / 2,
+                        display.localYOffset + (display.height() - POPUP_MENU_BLANK_HEIGHT) / 2,
                         popupMenuBlankBits, POPUP_MENU_BLANK_WIDTH, POPUP_MENU_BLANK_HEIGHT,
                         display.fg);
 
@@ -67,12 +67,14 @@ void PopupMenuScreen::render(DisplaySystem &display) {
                      screenWidth, screenHeight);
 
     display.getTextBounds("Menu", &width, &height);
-    display.drawText("Menu", display.localXOffset + (256 - POPUP_MENU_BLANK_WIDTH) / 2 - width / 2,
-                     display.localYOffset + (screenHeight / 2) + 1, screenWidth, screenHeight);
+    display.drawText(
+        "Menu", display.localXOffset + (display.width() - POPUP_MENU_BLANK_WIDTH) / 2 - width / 2,
+        display.localYOffset + (screenHeight / 2) + 1, screenWidth, screenHeight);
 
-    display.getTextBounds("Lighting?", &width, &height);
-    display.drawText("Lighting?",
-                     display.localXOffset + (256 - ((256 - POPUP_MENU_BLANK_WIDTH) / 2)) -
+    display.getTextBounds("Invert", &width, &height);
+    display.drawText("Invert",
+                     display.localXOffset +
+                         (display.width() - ((display.width() - POPUP_MENU_BLANK_WIDTH) / 2)) -
                          width / 2,
                      display.localYOffset + (screenHeight / 2) + 1, screenWidth, screenHeight);
 

@@ -20,6 +20,7 @@ public:
 
 protected:
     bool isBidirectional_ = false;
+    void processCommand(RemoteCommand command) override;
 };
 
 #endif

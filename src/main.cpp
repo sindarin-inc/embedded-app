@@ -98,6 +98,7 @@ void setup() {
     myDisplay->localYOffset = prefs.localYOffset.get().value();
     myDisplay->setFocusOffset(prefs.displayBoxWidthOffsetMm.get().value(),
                               prefs.displayBoxHeightOffsetMm.get().value());
+    myDisplay->invertDisplay(prefs.invertSetting.get().value());
 #endif
 
     SIZE_OF(*myDisplay);

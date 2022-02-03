@@ -116,9 +116,6 @@ def clang_options(idedata):
             f"{root_path}/.pio/"
         ):
             cmd.extend(["-isystem", directory])
-        # Intentionally skip clang-tidy-ing swtcon headers for now
-        elif directory.endswith("swtcon"):
-            cmd.extend(["-isystem", directory])
         else:
             # add the local include directories using -I
             cmd.extend(["-I", directory])
@@ -258,9 +255,7 @@ def main():
 
     files = []
     for path in git_ls_files(["*.cpp"]):
-        # Skip swtcon for now
-        if "lib/swtcon" not in path:
-            files.append(os.path.relpath(path, os.getcwd()))
+        files.append(os.path.relpath(path, os.getcwd()))
 
     if args.files:
         # Match against files specified on command-line

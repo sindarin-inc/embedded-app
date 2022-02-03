@@ -58,6 +58,10 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             needsRerender = true;
         } else {
             // Reserved for future use? Potentially lighting up and down?
+            this->fileRenderer_->getDisplay()->flipInversion();
+            prefs_.invertSetting.set(this->fileRenderer_->getDisplay()->getInversion());
+            needsRerender = true;
+            popup_->needsRerender = true;
         }
         break;
     case RemoteCommand::PREV:

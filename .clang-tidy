@@ -8,6 +8,7 @@ Checks: >-
   bugprone-*,
   performance-*,
   modernize-*,
+  -modernize-use-using,
   readability-identifier-naming*,
   readability-braces-around-statements
 AnalyzeTemporaryDtors: false
