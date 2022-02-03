@@ -43,7 +43,7 @@ public:
     virtual void setPartialWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
     void setFullWindow();
 
-    void invertDisplay(bool newInvert);
+    void invertDisplay(bool newInvert) override;
     void flipInversion();
     auto getInversion() -> bool { return invertedDisplay_; }
 
