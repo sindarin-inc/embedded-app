@@ -4,7 +4,7 @@
 
 const EinkET013TT1Waveform BC_EINK_31_35C_WAVEFORM_FULL = {
     "BC edits of Eink 31-35C (FULL)",
-    17,
+    18,
     std::array<Frame, MAX_FRAMES_PER_WAVEFORM>{
         Frame{bb : WHITE, bw : NOCHG, wb : NOCHG, ww : BLACK},
         Frame{bb : WHITE, bw : NOCHG, wb : NOCHG, ww : BLACK},
