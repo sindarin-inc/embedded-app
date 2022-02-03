@@ -20,7 +20,7 @@ public:
     void setPartialRefresh() override { partialRefresh_ = 0; }
 
     void clearDisplay() override;
-    
+
 protected:
     EinkET013TT1 driver_;
 };
