@@ -12,8 +12,8 @@
 // I didn't want to over-engineer it here.
 ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power)
     : display_(display), prefs_(prefs), power_(power),
-      boxWidthOffset(prefs.displayBoxWidthOffset.get().value()),
-      boxHeightOffset(prefs.displayBoxHeightOffset.get().value()), renderer_(display) {
+      boxWidthOffset_(prefs.displayBoxWidthOffsetMm.get().value()),
+      boxHeightOffset_(prefs.displayBoxHeightOffsetMm.get().value()), renderer_(display) {
 
     std::string message;
     for (int i = 0; i < 15; i++) {
@@ -38,19 +38,19 @@ void ResizeBoxScreen::render(DisplaySystem &display) {
 void ResizeBoxScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
-        boxWidthOffset += BOX_OFFSET_ADJUST_AMOUNT;
+        boxWidthOffset_ += BOX_OFFSET_ADJUST_AMOUNT;
         needsRerender = true;
         break;
     case RemoteCommand::CHANNEL_PLUS:
-        boxWidthOffset -= BOX_OFFSET_ADJUST_AMOUNT;
+        boxWidthOffset_ -= BOX_OFFSET_ADJUST_AMOUNT;
         needsRerender = true;
         break;
     case RemoteCommand::PREV:
-        boxHeightOffset += BOX_OFFSET_ADJUST_AMOUNT;
+        boxHeightOffset_ += BOX_OFFSET_ADJUST_AMOUNT;
         needsRerender = true;
         break;
     case RemoteCommand::NEXT:
-        boxHeightOffset -= BOX_OFFSET_ADJUST_AMOUNT;
+        boxHeightOffset_ -= BOX_OFFSET_ADJUST_AMOUNT;
         needsRerender = true;
         break;
     case RemoteCommand::BACK:
@@ -60,21 +60,21 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
         // app but since we're using TurnTouch for demos, I think it's ok for now. In the future, it
         // might be good to pass more data to `process_command` including which remote is being used
         // so that we can have remote-specific workarounds if needed.
-        boxWidthOffset -= BOX_OFFSET_ADJUST_AMOUNT;
+        boxWidthOffset_ -= BOX_OFFSET_ADJUST_AMOUNT;
     case RemoteCommand::ENTER:
-        prefs_.displayBoxWidthOffset.set(boxWidthOffset);
-        prefs_.displayBoxHeightOffset.set(boxHeightOffset);
-        log_d("Saving box width and height to preferences: (%d, %d)", boxWidthOffset,
-              boxHeightOffset);
+        prefs_.displayBoxWidthOffsetMm.set(boxWidthOffset_);
+        prefs_.displayBoxHeightOffsetMm.set(boxHeightOffset_);
+        log_d("Saving box width and height to preferences: (%d, %d)", boxWidthOffset_,
+              boxHeightOffset_);
         backCallback();
         break;
     default:
         break;
     }
 
-    log_d("boxWidth and boxHeight offsets are %f %f", boxWidthOffset, boxHeightOffset);
+    log_d("boxWidth and boxHeight offsets are %f %f", boxWidthOffset_, boxHeightOffset_);
 
-    log_d("setting new focus size to be %f %f", display_.getFocusWidth() + boxWidthOffset,
-          display_.getFocusHeight() + boxHeightOffset);
-    display_.setFocusOffset(boxWidthOffset, boxHeightOffset);
+    log_d("setting new focus size to be %f %f", display_.getFocusWidth() + boxWidthOffset_,
+          display_.getFocusHeight() + boxHeightOffset_);
+    display_.setFocusOffset(boxWidthOffset_, boxHeightOffset_);
 }

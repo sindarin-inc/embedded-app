@@ -62,8 +62,8 @@ public:
     auto getFocusHeight() -> float { return focusHeightInMm_; }
 
     void setFocusOffset(float width, float height);
-    auto getFocusOffsetWidth() -> float { return focusWidthOffset_; }
-    auto getFocusOffsetHeight() -> float { return focusHeightOffset_; }
+    auto getFocusOffsetWidth() -> float { return focusWidthOffsetInMm_; }
+    auto getFocusOffsetHeight() -> float { return focusHeightOffsetInMm_; }
 
     // MARK: - Text rendering code
 
@@ -123,8 +123,8 @@ protected:
     float heightInMm_ = 0;
     float focusWidthInMm_;
     float focusHeightInMm_;
-    float focusWidthOffset_ = 0;
-    float focusHeightOffset_ = 0;
+    float focusWidthOffsetInMm_ = 0;
+    float focusHeightOffsetInMm_ = 0;
 };
 
 #endif

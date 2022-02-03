@@ -87,8 +87,8 @@ void DisplaySystem::setFocusSize(float width, float height) {
 }
 
 void DisplaySystem::setFocusOffset(float width, float height) {
-    focusWidthOffset_ = width;
-    focusHeightOffset_ = height;
+    focusWidthOffsetInMm_ = width;
+    focusHeightOffsetInMm_ = height;
     // Any time the Offset is set, we need to recompute the MinMax
     computeMinMax();
 }

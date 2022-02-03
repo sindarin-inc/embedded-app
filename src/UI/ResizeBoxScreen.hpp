@@ -13,13 +13,13 @@ class ResizeBoxScreen : public Screen {
 public:
     ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power);
 
+protected:
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
 
-    float boxWidthOffset;
-    float boxHeightOffset;
+    float boxWidthOffset_;
+    float boxHeightOffset_;
 
-protected:
     DisplaySystem &display_;
     StreamRenderer renderer_;
     PreferencesStore &prefs_;
