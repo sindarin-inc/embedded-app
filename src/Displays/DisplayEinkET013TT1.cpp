@@ -2,12 +2,13 @@
 
 #include <algorithm>
 
+#include "Displays/CustomWaveforms.hpp"
 #include "Displays/EinkWaveforms.hpp"
 
 #define EinkET013TT1_WIDTH_IN_MM 23.3
 #define EinkET013TT1_HEIGHT_IN_MM 23.3
 const EinkET013TT1Waveform PANEL_CLEAR_WAVEFORM = EINK_31_35C_WAVEFORM_CLEAR;
-const EinkET013TT1Waveform FULL_REFRESH_WAVEFORM = EINK_31_35C_WAVEFORM_FULL;
+const EinkET013TT1Waveform FULL_REFRESH_WAVEFORM = BC_EINK_31_35C_WAVEFORM_FULL;
 const EinkET013TT1Waveform PARTIAL_REFRESH_WAVEFORM = EINK_31_35C_WAVEFORM_PARTIAL;
 
 DisplayEinkET013TT1::DisplayEinkET013TT1(uint8_t cs, uint8_t oei, uint8_t rst, uint8_t busy)
