@@ -35,3 +35,5 @@ void DisplayEinkET013TT1::updateDisplay() {
     // Clear buffer afterwards
     fillScreen(bg);
 }
+
+void DisplayEinkET013TT1::clearDisplay() { driver_.clear(PANEL_CLEAR_WAVEFORM); }

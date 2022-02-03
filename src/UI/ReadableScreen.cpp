@@ -59,6 +59,9 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         } else {
             // Reserved for future use? Potentially lighting up and down?
             this->fileRenderer_->getDisplay()->flipInversion();
+            // When we invert, we should do a full clear of the display to make sure
+            // the blacks are really gone.
+            this->fileRenderer_->getDisplay()->clearDisplay();
             prefs_.invertSetting.set(this->fileRenderer_->getDisplay()->getInversion());
             needsRerender = true;
             popup_->needsRerender = true;

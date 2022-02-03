@@ -44,6 +44,9 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
         this->prefs_.lastReadableId.set(readable->id);
         auto *readableScreen =
             new ReadableScreen(bookRenderer, *readable, this->prefs_, this->power_);
+        // When switching to a readable from a menu, we should clear the display
+        // to make the whites really white and the blacks really black.
+        bookRenderer->getDisplay()->clearDisplay();
         readableScreen->backCallback = [this, bookRenderer, readableScreen, mainMenu]() {
             delete bookRenderer;
             delete readableScreen;
