@@ -15,13 +15,23 @@ DisplaySystem::DisplaySystem(int16_t w, int16_t h) : GFXcanvas1(w, h) {
     setRotation(0);
 #endif
 
-    if (INVERTED_DISPLAY) {
+    invertDisplay(false);
+}
+
+void DisplaySystem::invertDisplay(bool newInvert) {
+    invertedDisplay_ = newInvert;
+    if (invertedDisplay_) {
         bg = 0x0000;
         fg = 0xFFFF;
     } else {
         bg = 0xFFFF;
         fg = 0x0000;
     }
+}
+
+void DisplaySystem::flipInversion() {
+    invertedDisplay_ = !invertedDisplay_;
+    invertDisplay(invertedDisplay_);
 }
 
 void DisplaySystem::setPartialRefresh() { partialRefresh_ = 1; }
@@ -145,6 +155,8 @@ void DisplaySystem::drawTextCmdsOnly(const String &newText, int x, int y, int li
     // text to squeeze as much in there as we can
     // ascent = u8g2Fonts->getAscent();
     // descent = u8g2Fonts->getDescent();
+
+    setTextColor(fg);
 
     if (!getPartialRefresh() && autoUpdate_) {
         fillScreen(bg);

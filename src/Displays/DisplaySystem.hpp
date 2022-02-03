@@ -23,6 +23,9 @@
 // allocated instead in the object?
 #define MAX_LINES_IN_SPLIT 100
 
+#define INVERTED_DISPLAY true
+// #define INVERTED_DISPLAY false
+
 class DisplaySystem : public GFXcanvas1 {
 public:
     DisplaySystem(int16_t w, int16_t h);
@@ -39,6 +42,10 @@ public:
     auto getPartialRefresh() -> int;
     virtual void setPartialWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
     void setFullWindow();
+
+    void invertDisplay(bool newInvert);
+    void flipInversion();
+    auto getInversion() -> bool { return invertedDisplay_; }
 
     // MARK: - AutoUpdate
 
@@ -118,6 +125,8 @@ protected:
     float heightInMm_ = 0;
     float focusWidthInMm_;
     float focusHeightInMm_;
+
+    bool invertedDisplay_ = false;
 };
 
 #endif

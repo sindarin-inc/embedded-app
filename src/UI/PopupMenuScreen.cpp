@@ -70,11 +70,10 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     display.drawText("Menu", display.localXOffset + (256 - POPUP_MENU_BLANK_WIDTH) / 2 - width / 2,
                      display.localYOffset + (screenHeight / 2) + 1, screenWidth, screenHeight);
 
-    display.getTextBounds("Lighting?", &width, &height);
-    display.drawText("Lighting?",
-                     display.localXOffset + (256 - ((256 - POPUP_MENU_BLANK_WIDTH) / 2)) -
-                         width / 2,
-                     display.localYOffset + (screenHeight / 2) + 1, screenWidth, screenHeight);
+    display.getTextBounds("Invert", &width, &height);
+    display.drawText(
+        "Invert", display.localXOffset + (256 - ((256 - POPUP_MENU_BLANK_WIDTH) / 2)) - width / 2,
+        display.localYOffset + (screenHeight / 2) + 1, screenWidth, screenHeight);
 
     display.updateDisplay();
     display.setAutoUpdate(autoUpdate);
