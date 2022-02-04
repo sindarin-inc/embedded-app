@@ -64,7 +64,7 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::ENTER:
         prefs_.displayBoxWidthOffsetMm.set(boxWidthOffset_);
         prefs_.displayBoxHeightOffsetMm.set(boxHeightOffset_);
-        log_d("Saving box width and height to preferences: (%d, %d)", boxWidthOffset_,
+        log_d("Saving box width and height to preferences: (%.0f, %.0f)", boxWidthOffset_,
               boxHeightOffset_);
         backCallback();
         break;

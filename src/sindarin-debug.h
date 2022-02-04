@@ -14,7 +14,7 @@
           ESP.getHeapSize() / 1000, ESP.getFreePsram() / 1000, ESP.getPsramSize() / 1000)
 #endif
 
-#define SIZE_OF(obj) log_d("SIZE_OF(%s): %d", #obj, sizeof(obj))
+#define SIZE_OF(obj) log_d("SIZE_OF(%s): %zu", #obj, sizeof(obj))
 
 // NOTE: based on the uint32_t, this cannot profile anything longer than 17.89569707
 #define PROFILE_START(identifier)                                                                  \
