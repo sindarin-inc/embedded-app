@@ -211,7 +211,7 @@ void DisplaySystem::drawTextInBox(const String &newText, int startX, int startY,
 
     int lineHeight = 0;
 
-    log_d("Printing some stuff to screen! (%ld)", (long)this);
+    log_d("Printing some stuff to screen!");
 
     lineHeight = getTextHeight();
 
