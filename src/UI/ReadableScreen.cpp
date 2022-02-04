@@ -115,7 +115,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
                 delay(2000);
                 esp_restart();
             }));
-#ifdef USE_TURN_TOUCH_REMOTE
+#if USE_TURN_TOUCH_REMOTE
             settingsMenu->addMenuItem(MenuItem("Unpair TurnTouch", [this, display]() {
                 prefs_.pairedTurnTouchAddress.remove();
                 log_w("Unpaired TurnTouch. Rebooting...");

@@ -1,5 +1,5 @@
 #include "config.h"
-#ifdef ENABLE_OTA
+#if ENABLE_OTA
 
 #include <ArduinoOTA.h>
 

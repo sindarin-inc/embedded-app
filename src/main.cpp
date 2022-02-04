@@ -32,7 +32,7 @@
 #include <Wire.h>
 #endif
 
-#ifdef EINKET013TT1
+#if EINKET013TT1
 DisplayEinkET013TT1 *myDisplay;
 #endif
 
@@ -47,27 +47,27 @@ PreferencesStore prefs;
 IRRemoteInput *ir_remote_input;
 #endif
 
-#if defined(USE_BLE_SERVER_REMOTE) || defined(USE_BLE_SERVER_SETTINGS)
+#if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS
 #include "Communications/BLESindarinService.hpp"
 BLESindarinService bleSindarinService;
 #endif
 
-#ifdef USE_BLE_SERVER_REMOTE
+#if USE_BLE_SERVER_REMOTE
 #include "Inputs/BLERemoteInput.hpp"
 BLERemoteInput *bleRemoteInput;
 #endif
 
-#ifdef USE_BLE_SERVER_SETTINGS
+#if USE_BLE_SERVER_SETTINGS
 #include "Communications/BLESettings.hpp"
 BLESettings *bleSettings;
 #endif
 
-#ifdef USE_BLE_SERVER_IMPROV
+#if USE_BLE_SERVER_IMPROV
 #include "Communications/BLEImprov.hpp"
 BLEImprov *bleWifi;
 #endif
 
-#ifdef USE_TURN_TOUCH_REMOTE
+#if USE_TURN_TOUCH_REMOTE
 #include "Inputs/TTRemoteInput.hpp"
 TTRemoteInput ttRemoteInput(prefs);
 #endif
@@ -77,7 +77,7 @@ TTRemoteInput ttRemoteInput(prefs);
 SimulatorRemoteInput simulatorRemoteInput;
 #endif
 
-#ifdef ENABLE_OTA
+#if ENABLE_OTA
 OTA ota;
 #endif
 
@@ -104,7 +104,7 @@ void setup() {
 
     SHOW_HEAP();
 
-#ifdef EINKET013TT1
+#if EINKET013TT1
     // Turn on power to the screen
     digitalWrite(DISPLAY_POWER, HIGH);
     myDisplay = new DisplayEinkET013TT1(DISPLAY_CS, DISPLAY_OEI, DISPLAY_RST, DISPLAY_BUSY);
@@ -132,20 +132,19 @@ void setup() {
     ir_remote_input->start_remote(IR_REMOTE_INPUT_PIN);
 #endif
 
-#if defined(USE_BLE_SERVER_REMOTE) || defined(USE_BLE_SERVER_SETTINGS) ||                          \
-    defined(USE_BLE_SERVER_IMPROV)
+#if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
     BLEManager *bleManager = BLEManager::getInstance();
 #endif
 
-#if defined(USE_BLE_SERVER_REMOTE) || defined(USE_BLE_SERVER_SETTINGS)
+#if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS
     auto sindarinService = bleSindarinService.configureService(bleManager->server());
 
-#ifdef USE_BLE_SERVER_REMOTE
+#if USE_BLE_SERVER_REMOTE
     bleRemoteInput = new BLERemoteInput();
     bleRemoteInput->configureCharacteristics(sindarinService);
 #endif
 
-#ifdef USE_BLE_SERVER_SETTINGS
+#if USE_BLE_SERVER_SETTINGS
     bleSettings = new BLESettings(&prefs);
     bleSettings->configureCharacteristics(sindarinService);
 #endif
@@ -153,7 +152,7 @@ void setup() {
     bleSindarinService.start();
 #endif
 
-#ifdef USE_BLE_SERVER_IMPROV
+#if USE_BLE_SERVER_IMPROV
     // NOTE(john): It might make sense at some point to consolidate everything
     // as one service. However keeping these services separate for now allows us
     // to use the Improv WebBluetooth implementation for Wifi provisioning and
@@ -165,20 +164,19 @@ void setup() {
     bleWifi->start();
 #endif
 
-#if defined(USE_BLE_SERVER_REMOTE) || defined(USE_BLE_SERVER_SETTINGS) ||                          \
-    defined(USE_BLE_SERVER_IMPROV)
+#if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
     bleManager->startAdvertisingIfNecessary();
 #endif
 
-#ifdef USE_TURN_TOUCH_REMOTE
+#if USE_TURN_TOUCH_REMOTE
     ttRemoteInput.startRemote();
     inputDeviceConnected = ttRemoteInput.attemptConnect();
 #endif
 
-#ifndef DISABLE_WIFI
+#if !DISABLE_WIFI
     ConnectWiFiIfCredentialsExist();
 
-#ifdef ENABLE_OTA
+#if ENABLE_OTA
     ota.setup();
 #endif
 #endif
@@ -199,7 +197,7 @@ void setup() {
 }
 
 void loop() {
-#if defined(USE_BLE_SERVER_REMOTE) && !defined(DISABLE_WIFI)
+#if USE_BLE_SERVER_REMOTE && !DISABLE_WIFI
     bleWifi->loop();
 #endif
 
@@ -208,11 +206,11 @@ void loop() {
     ir_remote_input->check_press();
 #endif
 
-#ifdef USE_BLE_SERVER_REMOTE
+#if USE_BLE_SERVER_REMOTE
     bleRemoteInput->checkPress();
 #endif
 
-#ifdef USE_TURN_TOUCH_REMOTE
+#if USE_TURN_TOUCH_REMOTE
     ttRemoteInput.checkPress();
 #endif
 
@@ -227,13 +225,13 @@ void loop() {
     }
 #endif
 
-#ifdef USE_BLE_SERVER_REMOTE
+#if USE_BLE_SERVER_REMOTE
     if (bleRemoteInput->checkRelease()) {
         codeFromRelease = bleRemoteInput->getCode();
     }
 #endif
 
-#ifdef USE_TURN_TOUCH_REMOTE
+#if USE_TURN_TOUCH_REMOTE
     if (ttRemoteInput.checkRelease()) {
         codeFromRelease = ttRemoteInput.getCode();
     }
@@ -253,7 +251,7 @@ void loop() {
 
     digitalWrite(RED_LED, LOW);
 
-#ifdef ENABLE_OTA
+#if ENABLE_OTA
     ota.loop();
 #endif
 

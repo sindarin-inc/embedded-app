@@ -1,6 +1,6 @@
 #include "config.h"
 
-#ifdef USE_BLE_SERVER_IMPROV
+#if USE_BLE_SERVER_IMPROV
 
 #include <Arduino.h>
 

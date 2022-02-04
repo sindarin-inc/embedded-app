@@ -1,6 +1,6 @@
 #include "config.h"
 
-#if defined(USE_BLE_SERVER_REMOTE)
+#if USE_BLE_SERVER_REMOTE
 
 #include "BLEManager.hpp"
 

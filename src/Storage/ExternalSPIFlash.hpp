@@ -1,5 +1,3 @@
-#ifndef SIMULATOR
-
 #include <esp_flash.h>
 #include <esp_partition.h>
 
@@ -9,5 +7,3 @@ auto SpiFlashAddPartition(esp_flash_t *extFlash, const char *partitionLabel,
                           esp_partition_subtype_t subtype) -> const esp_partition_t *;
 
 void SpiFlashListPartitions();
-
-#endif

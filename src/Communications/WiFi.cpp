@@ -1,6 +1,6 @@
 #include "config.h"
 
-#ifndef DISABLE_WIFI
+#if !DISABLE_WIFI
 
 #include <WiFi.h>
 #include <esp_wifi.h>

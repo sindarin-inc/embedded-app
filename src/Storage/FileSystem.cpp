@@ -1,7 +1,6 @@
 #include "FileSystem.hpp"
 
 #include "Contents/Json.hpp"
-#include "Storage/ExternalSPIFlash.hpp"
 #include "sindarin-debug.h"
 
 void FileSystem::getReadables(std::vector<Readable> *readables) {

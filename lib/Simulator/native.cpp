@@ -31,12 +31,11 @@ enum RemoteCommand : int {
     NONE = -1,
 };
 
-using namespace std;
 SDL_Renderer *renderer;
 
 int main(int argc, char *argv[]) {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        cout << "Failed SDL_Init " << SDL_GetError() << endl;
+        std::cout << "Failed SDL_Init " << SDL_GetError() << std::endl;
         return 1;
     }
 
@@ -45,7 +44,7 @@ int main(int argc, char *argv[]) {
     SDL_RenderSetScale(renderer, SCALE, SCALE);
 
     if (renderer == NULL) {
-        fprintf(stderr, "could not create renderer: %s\n", SDL_GetError());
+        fprintf(stderr, "Could not create renderer: %s\n", SDL_GetError());
         return 1;
     }
 
@@ -96,7 +95,9 @@ int main(int argc, char *argv[]) {
     SDL_DestroyWindow(window);
     SDL_Quit();
 
-    printf("Quit\n");
+    std::cout << "Quit" << std::endl;
+
     return 0;
 }
+
 #endif

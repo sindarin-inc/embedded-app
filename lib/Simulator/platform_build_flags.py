@@ -26,23 +26,23 @@ lib_includes = "\n".join([f"-I{libs_dir}/{lib}" for lib in libs])
 
 # Build the big flags list
 flags = [
-    "-std=c++1z",
+    "-std=c++17",
     "-DARDUINO=100",
-    "-DSIMULATOR",
-    "-DPROGMEM=",
-    # "-Dpgm_read_byte(s)='(*(const uint8_t *)(s))'",
-    # "-Dpgm_read_byte_near(s)='(*(const uint8_t *)(s))'",
-    # "-Dpgm_read_word(s)='(*(const uint16_t *)(s))'",
-    # "-Dpgm_read_dword(s)='(*(const uint32_t *)(s))'",
     "-Dheap_caps_malloc(s,l)='((void *)malloc(s))'",
     "-Dheap_caps_realloc(p,s,l)='((void *)realloc(p,s))'",
     "-Dheap_caps_free(p)='( free(p) )'",
-    # "-DPGM_P=const char *",
-    # "-Dmemcpy_P=memcpy",
     "-DTTRemoteInput_H",
     "-Dnvs_flash_erase()=' '",
     "-Dtypeof(a)='auto '",
-    f"-I{script_dir}/stubs",
+    "-DSIMULATOR",
+    "-DUSE_TURN_TOUCH_REMOTE=0",
+    "-DUSE_BLE_SERVER_REMOTE=0",
+    "-DUSE_BLE_SERVER_SETTINGS=0",
+    "-DUSE_BLE_SERVER_IMPROV=0",
+    "-DDISABLE_WIFI=1",
+    "-DENABLE_OTA=0",
+    "-DENABLE_POCKET=0",
+    "-DEINKET013TT1=0",
     lib_includes,
 ]
 
@@ -84,7 +84,6 @@ else:
         sdl_flags,
         f"-I{prefix}/include",
         "--debug",
-        # "-glldb",  # Debug
     ]
 
 print(" ".join(flags))

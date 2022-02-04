@@ -1,10 +1,11 @@
-#if defined(USE_TURN_TOUCH_REMOTE)
+#include "config.h"
 
-#include "TTRemoteInput.hpp"
+#if USE_TURN_TOUCH_REMOTE
 
 #include <Arduino.h>
 #include <functional>
 
+#include "TTRemoteInput.hpp"
 #include "sindarin-debug.h"
 
 using namespace std::placeholders;

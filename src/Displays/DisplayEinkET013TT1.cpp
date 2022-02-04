@@ -1,6 +1,6 @@
 #include "config.h"
 
-#ifdef EINKET013TT1
+#if EINKET013TT1
 
 #include <algorithm>
 
