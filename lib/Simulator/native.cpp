@@ -9,9 +9,6 @@ extern void setup();
 extern void loop();
 extern int SimulatorRemoteCode;
 
-// FakeSerial Serial;
-void *SPI;
-
 #define SCALE 2
 #define WIDTH 256
 #define HEIGHT 256
@@ -52,7 +49,6 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    fprintf(stdout, "Calling setup\n");
     setup();
 
     SDL_Event e;
