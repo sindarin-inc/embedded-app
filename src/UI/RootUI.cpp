@@ -265,8 +265,6 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
             display->clearScreen();
             delay(100);
 
-            display->setPartialRefresh();
-
             setCurrentScreen(*mainMenu);
             delete calibrationScreen;
         };

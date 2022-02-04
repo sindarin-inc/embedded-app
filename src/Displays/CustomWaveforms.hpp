@@ -26,3 +26,23 @@ const EinkET013TT1Waveform BC_EINK_31_35C_WAVEFORM_FULL = {
         Frame{bb : NOCHG, bw : NOCHG, wb : NOCHG, ww : NOCHG},
     },
 };
+
+const EinkET013TT1Waveform BC_EINK_31_35C_WAVEFORM_PARTIAL = {
+    "BC edits of Eink 31-35C (PARTIAL)",
+    13,
+    std::array<Frame, MAX_FRAMES_PER_WAVEFORM>{
+        Frame{bb : NOCHG, bw : BLACK, wb : NOCHG, ww : NOCHG},
+        Frame{bb : NOCHG, bw : BLACK, wb : NOCHG, ww : NOCHG},
+        Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
+        Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
+        Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : WHITE},
+        Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : WHITE},
+        Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : WHITE},
+        Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : WHITE},
+        Frame{bb : NOCHG, bw : WHITE, wb : BLACK, ww : WHITE},
+        Frame{bb : NOCHG, bw : WHITE, wb : BLACK, ww : WHITE},
+        Frame{bb : NOCHG, bw : WHITE, wb : BLACK, ww : WHITE},
+        Frame{bb : NOCHG, bw : NOCHG, wb : BLACK, ww : NOCHG},
+        Frame{bb : NOCHG, bw : NOCHG, wb : NOCHG, ww : NOCHG},
+    },
+};
