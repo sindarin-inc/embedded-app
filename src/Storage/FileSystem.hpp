@@ -14,8 +14,8 @@ public:
     // Underlying methods to init and read data
     virtual void begin(){};
     // Note: File overrides bool and will be false if there's an error
-    virtual File open(const String &path) { assert(0); };
-    virtual bool exists(const String &path) { assert(0); };
+    virtual auto open(const String &path) -> File { assert(0); };
+    virtual auto exists(const String &path) -> bool { assert(0); };
 
 protected:
     FileSystem() = default;

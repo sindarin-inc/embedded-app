@@ -36,6 +36,6 @@ void SpiffsFileSystem::begin() {
 
 auto SpiffsFileSystem::open(const String &path) -> File { return SPIFFS.open(path); }
 
-bool SpiffsFileSystem::exists(const String &path) { return SPIFFS.exists(path); }
+auto SpiffsFileSystem::exists(const String &path) -> bool { return SPIFFS.exists(path); }
 
 #endif
