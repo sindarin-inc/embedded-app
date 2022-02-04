@@ -9,7 +9,6 @@
 //
 
 #include <Arduino.h>
-#include <mbedtls/md.h>
 
 #include "config.h"
 

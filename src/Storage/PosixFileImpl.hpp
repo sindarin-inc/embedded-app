@@ -9,11 +9,11 @@ extern "C" {
 class PosixFileImpl : public fs::FileImpl {
 protected:
     std::fstream file_;
-    const char *path_;
+    char path_[200];
     size_t pos_ = 0;
 
 public:
-    PosixFileImpl(const char *path) : file_(path) { path_ = path; };
+    PosixFileImpl(const char *path) : file_(path) { strncpy(path_, path, sizeof(path_)); };
     ~PosixFileImpl() override = default;
     size_t write(const uint8_t *buf, size_t size) override {
         file_.write((const char *)buf, size);
@@ -31,6 +31,8 @@ public:
         pos_ = pos;
         return file_.good();
     };
+    // Normally we would use `tellg` here, but since position is `const` we can't
+    // use `tellg` since it could potentially modify the FILE :/
     size_t position() const override { return pos_; };
     size_t size() const override {
         struct stat st;
