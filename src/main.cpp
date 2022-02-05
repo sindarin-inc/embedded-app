@@ -9,6 +9,8 @@
 //
 
 #include <Arduino.h>
+#include <SPI.h>
+#include <Wire.h>
 
 #include "config.h"
 
@@ -22,15 +24,6 @@
 #include "Storage/PreferencesStore.hpp"
 #include "UI/RootUI.hpp"
 #include "sindarin-debug.h"
-
-// Required for olikraus/U8g2 font lib
-#ifdef U8X8_HAVE_HW_SPI
-#include <SPI.h>
-#endif
-
-#ifdef U8X8_HAVE_HW_I2C
-#include <Wire.h>
-#endif
 
 #if EINKET013TT1
 DisplayEinkET013TT1 *myDisplay;
