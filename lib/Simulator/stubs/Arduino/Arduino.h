@@ -29,6 +29,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include <array>
+#include <cassert>
 
 // #include "freertos/FreeRTOS.h"
 // #include "freertos/task.h"
