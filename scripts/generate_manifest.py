@@ -1,3 +1,4 @@
+Import("env")
 import json
 import os
 from pathlib import Path
@@ -50,3 +51,10 @@ def generate_manifest(path):
 
     with open(manifest_file, "w") as outfile:
         json.dump(manifest, outfile, indent=4, sort_keys=True)
+
+
+# TODO: It will be cleaner to only generate the manifest when building the filesystem
+# but I'll need to learn more about target dependencies in SCons to do this. For now
+# we will just build it every time. It doesn't add much time.
+env["SPIFFS_SOURCES"] = "data"
+generate_manifest(env["SPIFFS_SOURCES"])

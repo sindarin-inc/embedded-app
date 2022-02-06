@@ -4,7 +4,6 @@
 # See: https://github.com/platformio/platform-espressif32/blob/master/builder/main.py#L113
 Import("env")
 from os.path import join
-from generate_manifest import generate_manifest
 
 
 # While we have a 512mbit flash chip on our board, we don't need all of it rn, and it's really slow
@@ -21,12 +20,6 @@ env["ESP32_SPIFFS_IMAGE_NAME"] = "spiffs-external"
 spiffs_file = join("$BUILD_DIR", "${ESP32_SPIFFS_IMAGE_NAME}.bin")
 board = env.BoardConfig()
 mcu = board.get("build.mcu", "esp32")
-
-
-# TODO: It will be cleaner to only generate the manifest when building the filesystem
-# but I'll need to learn more about target dependencies in SCons to do this. For now
-# we will just build it every time. It doesn't add much time.
-generate_manifest(env["SPIFFS_SOURCES"])
 
 
 build_action = env.VerboseAction(
