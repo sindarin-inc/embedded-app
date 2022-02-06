@@ -48,6 +48,9 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
         // to make the whites really white and the blacks really black.
         bookRenderer->getDisplay()->clearDisplay();
         readableScreen->backCallback = [this, bookRenderer, readableScreen, mainMenu]() {
+            // When leaving a readable to go back to the main menu, do a full clear
+            // of the display.
+            bookRenderer->getDisplay()->clearDisplay();
             delete bookRenderer;
             delete readableScreen;
             prefs_.lastReadableId.remove();
@@ -156,9 +159,10 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
                         };
                 }));
         }
-
+        display->clearDisplay();
         setCurrentScreen(*pocketMenu);
-        pocketMenu->backCallback = [this, mainMenu, pocketMenu, response]() {
+        pocketMenu->backCallback = [this, mainMenu, pocketMenu, response, display]() {
+            display->clearDisplay();
             setCurrentScreen(*mainMenu);
             delete pocketMenu;
             delete response;
