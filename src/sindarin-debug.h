@@ -6,7 +6,7 @@
 #define DEBUG_VAR(x) log_d("%s", String(x).c_str())
 #define DEBUG_LN(y) log_d("%s", String(y).c_str())
 
-#ifdef SIMULATOR
+#if SIMULATOR
 #define SHOW_HEAP()
 #else
 #define SHOW_HEAP()                                                                                \

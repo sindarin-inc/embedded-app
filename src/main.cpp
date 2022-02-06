@@ -27,13 +27,13 @@
 DisplayEinkET013TT1 *myDisplay;
 #endif
 
-#ifdef SIMULATOR
+#if SIMULATOR
 DisplaySDLSimulator *myDisplay;
 #endif
 
 PreferencesStore prefs;
 
-#ifdef USE_IR_REMOTE
+#if USE_IR_REMOTE
 #include "Inputs/IRRemoteInput.hpp"
 IRRemoteInput *ir_remote_input;
 #endif
@@ -63,7 +63,7 @@ BLEImprov *bleWifi;
 TTRemoteInput ttRemoteInput(prefs);
 #endif
 
-#ifdef SIMULATOR
+#if SIMULATOR
 #include "Inputs/SimulatorRemoteInput.hpp"
 SimulatorRemoteInput simulatorRemoteInput;
 #endif
@@ -76,7 +76,7 @@ Power power;
 
 RootUI rootUi(prefs, power);
 
-#ifdef SIMULATOR
+#if SIMULATOR
 #include "Storage/PosixFileSystem.hpp"
 PosixFileSystem fileSystem;
 #else
@@ -107,7 +107,7 @@ void setup() {
     myDisplay->invertDisplay(prefs.invertSetting.get().value());
 #endif
 
-#ifdef SIMULATOR
+#if SIMULATOR
     myDisplay = new DisplaySDLSimulator();
     myDisplay->localXOffset = 0;
     myDisplay->localYOffset = 0;
@@ -117,7 +117,7 @@ void setup() {
 
     SIZE_OF(*myDisplay);
 
-#ifdef USE_IR_REMOTE
+#if USE_IR_REMOTE
     ir_remote_input = new IRRemoteInput();
     SIZE_OF(*ir_remote_input);
     ir_remote_input->start_remote(IR_REMOTE_INPUT_PIN);
@@ -193,7 +193,7 @@ void loop() {
 #endif
 
 // Always have to do a check press and check release. In this case, we don't care about press.
-#ifdef USE_IR_REMOTE
+#if USE_IR_REMOTE
     ir_remote_input->check_press();
 #endif
 
@@ -210,7 +210,7 @@ void loop() {
     // it may only get one of them. This seems unlikely.
     RemoteCommand codeFromRelease = RemoteCommand::NONE;
 
-#ifdef USE_IR_REMOTE
+#if USE_IR_REMOTE
     if (ir_remote_input->check_release()) {
         code_from_release = ir_remote_input->get_code();
     }
@@ -228,7 +228,7 @@ void loop() {
     }
 #endif
 
-#ifdef SIMULATOR
+#if SIMULATOR
     if (simulatorRemoteInput.checkRelease()) {
         codeFromRelease = simulatorRemoteInput.getCode();
     }

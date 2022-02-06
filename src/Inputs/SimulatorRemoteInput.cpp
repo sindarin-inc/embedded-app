@@ -1,4 +1,4 @@
-#ifdef SIMULATOR
+#if SIMULATOR
 
 #include "SimulatorRemoteInput.hpp"
 

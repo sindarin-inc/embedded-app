@@ -1,4 +1,4 @@
-#ifndef SIMULATOR
+#if !SIMULATOR
 
 #include <esp_adc_cal.h>
 

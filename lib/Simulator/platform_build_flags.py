@@ -34,7 +34,7 @@ flags = [
     "-DTTRemoteInput_H",
     "-Dnvs_flash_erase()=' '",
     "-Dtypeof(a)='auto '",
-    "-DSIMULATOR",
+    "-DSIMULATOR=1",
     "-DUSE_TURN_TOUCH_REMOTE=0",
     "-DUSE_BLE_SERVER_REMOTE=0",
     "-DUSE_BLE_SERVER_SETTINGS=0",
