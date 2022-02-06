@@ -238,10 +238,15 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
         delay(2000);
         esp_restart();
     }));
-    settingsMenu->backCallback = [this, mainMenu]() { setCurrentScreen(*mainMenu); };
+    settingsMenu->backCallback = [this, mainMenu]() {
+        this->display_->clearDisplay();
+        setCurrentScreen(*mainMenu);
+    };
 
-    mainMenu->addMenuItem(
-        MenuItem("**SETTINGS**", [this, settingsMenu]() { setCurrentScreen(*settingsMenu); }));
+    mainMenu->addMenuItem(MenuItem("**SETTINGS**", [this, settingsMenu]() {
+        this->display_->clearDisplay();
+        setCurrentScreen(*settingsMenu);
+    }));
 
     // Check if we left-off on a readable and if so, reload that readable by default
     auto currentReadable = prefs_.lastReadableId.get();
