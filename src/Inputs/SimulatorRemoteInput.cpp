@@ -1,3 +1,5 @@
+#ifdef SIMULATOR
+
 #include "SimulatorRemoteInput.hpp"
 
 // This gets extern'd from native.cpp so the simulator can pass remote commands
@@ -18,3 +20,5 @@ auto SimulatorRemoteInput::checkRelease() -> int {
         return 1;
     }
 };
+
+#endif

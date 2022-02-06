@@ -1,10 +1,9 @@
-#include "Platform.hpp"
+#ifndef SIMULATOR
 
 #include <esp_adc_cal.h>
 
+#include "Platform.hpp"
 #include "sindarin-debug.h"
-
-#ifndef SIMULATOR
 
 #define UPPER_DIVIDER 442
 #define LOWER_DIVIDER 160
@@ -59,13 +58,5 @@ auto GetBatteryVoltageRight() -> float {
 
     return (float)mv / 1000.0;
 }
-
-#else
-
-void InitializePlatform() {}
-
-auto GetBatteryVoltageLeft() -> float { return 0; }
-
-auto GetBatteryVoltageRight() -> float { return 0; }
 
 #endif

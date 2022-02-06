@@ -1,4 +1,4 @@
-#if defined(USE_IR_REMOTE)
+#if USE_IR_REMOTE
 
 #include "IRRemoteInput.hpp"
 
