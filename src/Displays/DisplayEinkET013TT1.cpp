@@ -9,7 +9,10 @@
 #define EinkET013TT1_HEIGHT_IN_MM 23.3
 const EinkET013TT1Waveform PANEL_CLEAR_WAVEFORM = EINK_31_35C_WAVEFORM_CLEAR;
 const EinkET013TT1Waveform FULL_REFRESH_WAVEFORM = BC_EINK_31_35C_WAVEFORM_FULL;
-const EinkET013TT1Waveform PARTIAL_REFRESH_WAVEFORM = BC_REGULAR_EXPERIMENTAL_WAVEFORM_PARTIAL;
+const EinkET013TT1Waveform PARTIAL_REFRESH_WAVEFORM_REGULAR =
+    BC_REGULAR_EXPERIMENTAL_WAVEFORM_PARTIAL;
+const EinkET013TT1Waveform PARTIAL_REFRESH_WAVEFORM_INVERTED =
+    BC_INVERTED_EXPERIMENTAL_WAVEFORM_PARTIAL;
 const EinkET013TT1Waveform ORIGINAL_FULL_REFRESH_WAVEFORM = EINK_ORIGINAL_WAVEFORM_FULL;
 const EinkET013TT1Waveform ORIGINAL_PARTIAL_REFRESH_WAVEFORM = EINK_31_35C_WAVEFORM_PARTIAL;
 
@@ -32,7 +35,11 @@ DisplayEinkET013TT1::DisplayEinkET013TT1(uint8_t cs, uint8_t oei, uint8_t rst, u
 
 void DisplayEinkET013TT1::updateDisplay() {
     if (getPartialRefresh()) {
-        driver_.update(PARTIAL_REFRESH_WAVEFORM, getBuffer());
+        if (getInversion()) {
+            driver_.update(PARTIAL_REFRESH_WAVEFORM_INVERTED, getBuffer());
+        } else {
+            driver_.update(PARTIAL_REFRESH_WAVEFORM_REGULAR, getBuffer());
+        }
     } else {
         driver_.setBorder(bg == 0x00 ? BORDER_SETTING_BLACK : BORDER_SETTING_WHITE);
         driver_.update(FULL_REFRESH_WAVEFORM, getBuffer());
