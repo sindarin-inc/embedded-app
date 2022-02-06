@@ -1,9 +1,8 @@
-#include "config.h"
-
 #if ENABLE_POCKET
 
-#include "Contents/Json.hpp"
 #include "PocketAPI.hpp"
+
+#include "Contents/Json.hpp"
 #include "UrlEncode.hpp"
 #include "sindarin-debug.h"
 

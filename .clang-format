@@ -13,10 +13,7 @@ IncludeCategories:
   # All "Library" <> headers
   - Regex:           '<[[:alnum:].\/_-]+>'
     Priority:        1
-  # Place config.h above all other imports in case it #defines important things
-  - Regex:           '^"config\.h"'
-    Priority:        2
   # All other headers
   - Regex:           '.*'
-    Priority:        3
+    Priority:        2
 AllowShortIfStatementsOnASingleLine: true

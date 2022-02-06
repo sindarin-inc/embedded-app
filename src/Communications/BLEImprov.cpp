@@ -1,10 +1,9 @@
-#include "config.h"
-
 #if USE_BLE_SERVER_IMPROV
+
+#include "BLEImprov.hpp"
 
 #include <Arduino.h>
 
-#include "BLEImprov.hpp"
 #include "sindarin-debug.h"
 
 void BLEImprov::configureCharacteristics(BLEService *service) {

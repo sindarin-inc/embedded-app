@@ -1,5 +1,3 @@
-#include "config.h"
-
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS
 
 #include "BLESindarinService.hpp"

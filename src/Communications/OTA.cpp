@@ -1,9 +1,9 @@
-#include "config.h"
 #if ENABLE_OTA
+
+#include "OTA.hpp"
 
 #include <ArduinoOTA.h>
 
-#include "OTA.hpp"
 #include "sindarin-debug.h"
 
 void OTA::setup() {

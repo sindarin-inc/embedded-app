@@ -12,8 +12,6 @@
 #include <SPI.h>
 #include <Wire.h>
 
-#include "config.h"
-
 #include "Communications/OTA.hpp"
 #include "Communications/WiFi.hpp"
 #include "Contents/Readable.hpp"

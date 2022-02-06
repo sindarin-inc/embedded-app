@@ -2,8 +2,6 @@
 
 #include <esp_adc_cal.h>
 
-#include "config.h"
-
 #include "sindarin-debug.h"
 
 #ifndef SIMULATOR

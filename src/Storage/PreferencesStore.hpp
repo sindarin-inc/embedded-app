@@ -3,8 +3,6 @@
 #include <Preferences.h>
 #include <optional>
 
-#include "config.h"
-
 #if USE_TURN_TOUCH_REMOTE
 #include <NimBLEDevice.h>
 #endif

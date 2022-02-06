@@ -1,10 +1,9 @@
-#include "config.h"
-
 #if EINKET013TT1
+
+#include "DisplayEinkET013TT1.hpp"
 
 #include <algorithm>
 
-#include "DisplayEinkET013TT1.hpp"
 #include "Displays/EinkWaveforms.hpp"
 
 #define EinkET013TT1_WIDTH_IN_MM 23.3

@@ -1,10 +1,9 @@
-#include "config.h"
-
 #if USE_BLE_SERVER_REMOTE
+
+#include "BLERemoteInput.hpp"
 
 #include <Arduino.h>
 
-#include "BLERemoteInput.hpp"
 #include "sindarin-debug.h"
 
 #define CHARACTERISTIC_UUID "ed0c3501-a3cb-499f-93ad-2acbaa971d63"

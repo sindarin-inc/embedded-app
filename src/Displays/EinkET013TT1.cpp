@@ -1,12 +1,11 @@
-#include "config.h"
-
 #if EINKET013TT1
+
+#include "EinkET013TT1.hpp"
 
 #include <Arduino.h>
 #include <SPI.h>
 #include <algorithm>
 
-#include "EinkET013TT1.hpp"
 #include "sindarin-debug.h"
 
 extern "C" {

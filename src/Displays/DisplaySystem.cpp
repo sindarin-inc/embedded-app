@@ -3,8 +3,6 @@
 #include <UI/Fonts/LucidaGrande5pt7b.h>
 #include <utility>
 
-#include "config.h"
-
 #include "sindarin-debug.h"
 
 DisplaySystem::DisplaySystem(int16_t w, int16_t h) : GFXcanvas1(w, h) {

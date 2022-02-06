@@ -1,11 +1,9 @@
-#include "config.h"
-
 #if !DISABLE_WIFI
+
+#include "Communications/WiFi.hpp"
 
 #include <WiFi.h>
 #include <esp_wifi.h>
-
-#include "Communications/WiFi.hpp"
 
 void ConnectWiFiIfCredentialsExist() {
     // If credentials are available, go ahead and attempt WiFi connection
