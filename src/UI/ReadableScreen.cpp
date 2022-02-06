@@ -45,7 +45,8 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             prefs_.readablePreviousPlace.set(readable_.id, readable_.place);
             needsRerender = true;
         } else {
-            // Go back to the main menu from the popup menu of they press left
+            // Go back to the main menu from the popup menu if they press left
+            this->fileRenderer_->getDisplay()->clearDisplay();
             back();
         }
         break;
@@ -74,6 +75,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             inPopup_ = false;
             needsRerender = true;
             popup_->needsRerender = true;
+            this->fileRenderer_->getDisplay()->clearDisplay();
         }
         break;
     case RemoteCommand::NEXT:
@@ -132,6 +134,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
                 delete settingsMenu;
             };
             log_d("Setting current screen to the newly created settingsMenu");
+            this->fileRenderer_->getDisplay()->clearDisplay();
             setCurrentScreen(*settingsMenu);
             inPopup_ = false;
         }
