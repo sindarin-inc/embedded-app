@@ -7,9 +7,6 @@
 Renderer::Renderer(DisplaySystem &display) : display_(display) {}
 
 void Renderer::loaded() {
-    // Because we now handle going backwards, we no longer need
-    // to store the previousPlace in preferences on the device
-    // because it is always set here based on the current place.
     previousPlace_ = goBackwardsOnePage(currentPlace_);
 
     // LOAD TEXT for prev, current.
