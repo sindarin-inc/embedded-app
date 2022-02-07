@@ -94,6 +94,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             settingsMenu->addMenuItem(MenuItem("Adjust Offset", [this, settingsMenu, display]() {
                 log_d("Loading adjust offset");
                 auto offsetAdjust = new OffsetAdjustScreen(*display, prefs_, this->power_);
+                display->clearDisplay();
                 this->setCurrentScreen(*offsetAdjust);
                 log_d("setting up callback");
                 offsetAdjust->backCallback = [this, offsetAdjust, settingsMenu, display]() {
