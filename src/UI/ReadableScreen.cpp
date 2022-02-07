@@ -96,7 +96,8 @@ void ReadableScreen::processCommand(RemoteCommand command) {
                 auto offsetAdjust = new OffsetAdjustScreen(*display, prefs_, this->power_);
                 this->setCurrentScreen(*offsetAdjust);
                 log_d("setting up callback");
-                offsetAdjust->backCallback = [this, offsetAdjust, settingsMenu]() {
+                offsetAdjust->backCallback = [this, offsetAdjust, settingsMenu, display]() {
+                    display->clearDisplay();
                     setCurrentScreen(*settingsMenu);
                     delete offsetAdjust;
                 };
@@ -105,8 +106,11 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             settingsMenu->addMenuItem(
                 MenuItem("Calibration Screen", [this, settingsMenu, display]() {
                     auto calibrationScreen = new CalibrationScreen();
+                    display->clearDisplay();
                     this->setCurrentScreen(*calibrationScreen);
-                    calibrationScreen->backCallback = [this, calibrationScreen, settingsMenu]() {
+                    calibrationScreen->backCallback = [this, calibrationScreen, settingsMenu,
+                                                       display]() {
+                        display->clearDisplay();
                         setCurrentScreen(*settingsMenu);
                         delete calibrationScreen;
                     };
@@ -126,8 +130,9 @@ void ReadableScreen::processCommand(RemoteCommand command) {
                 delay(2000);
                 esp_restart();
             }));
-            settingsMenu->backCallback = [this, settingsMenu]() {
+            settingsMenu->backCallback = [this, settingsMenu, display]() {
                 inPopup_ = false;
+                display->clearDisplay();
                 setCurrentScreen(*this);
                 needsRerender = true;
                 popup_->needsRerender = true;
