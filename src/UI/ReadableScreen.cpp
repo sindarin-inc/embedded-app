@@ -47,7 +47,6 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             needsRerender = true;
         } else {
             // Go back to the main menu from the popup menu if they press left
-            this->fileRenderer_->getDisplay()->clearDisplay();
             back();
         }
         break;
