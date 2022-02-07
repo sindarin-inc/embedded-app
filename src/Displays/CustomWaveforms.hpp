@@ -60,7 +60,7 @@ const EinkET013TT1Waveform BC_EINK_31_35C_WAVEFORM_PARTIAL = {
 // in the foreground drawing.
 //
 // (2) For 2 or 3 frames, continue to reinforce the background color
-// for pixels background pixels that remain background pixels, but
+// for background pixels that remain background pixels, but
 // start to reinforce unchanged foreground pixels. Keep hammering
 // the changed pixels.
 //
