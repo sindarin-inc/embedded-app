@@ -12,4 +12,9 @@ public:
     ~DisplaySDLSimulator() = default;
 
     void updateDisplay() override;
+
+    // Clear the display must be implemented since Eink needs it. Note this is a
+    // command for the display directly (essentially), not the display buffer
+    // as clearScreen gets to above.
+    void clearDisplay() override {}
 };
