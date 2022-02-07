@@ -47,7 +47,7 @@ public:
     void flipInversion();
     auto getInversion() -> bool { return invertedDisplay_; }
 
-    virtual void clearDisplay() = 0;
+    virtual void clearDisplay(){};
 
     // MARK: - AutoUpdate
 
