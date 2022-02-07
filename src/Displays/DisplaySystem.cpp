@@ -82,7 +82,6 @@ void DisplaySystem::setFullWindow() {
     unsetPartialRefresh();
     partialX_ = 0;
     partialY_ = 0;
-    // is this an off by 1 error? Should this be WIDTH-1 and HEIGHT-1?
     partialW_ = WIDTH;
     partialH_ = HEIGHT;
 }
