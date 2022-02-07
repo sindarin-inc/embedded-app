@@ -1,3 +1,5 @@
+#if EINKET013TT1
+
 #include "DisplayEinkET013TT1.hpp"
 
 #include <algorithm>
@@ -48,4 +50,6 @@ void DisplayEinkET013TT1::updateDisplay() {
     fillScreen(bg);
 }
 
+
 void DisplayEinkET013TT1::clearDisplay() { driver_.clear(PANEL_CLEAR_WAVEFORM); }
+#endif

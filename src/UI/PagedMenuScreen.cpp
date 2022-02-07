@@ -3,8 +3,6 @@
 #include <Adafruit_GFX.h>
 #include <string>
 
-#include "config.h"
-
 #include "Bitmaps/Menu_Blank.hpp"
 #include "Bitmaps/Menu_Blank_Bidirectional.hpp"
 #include "Fonts/LucidaGrande10pt7b.h"

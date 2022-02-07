@@ -1,7 +1,5 @@
 #include "UI/BitmapScreen.hpp"
 
-#include "config.h"
-
 #include "Displays/DisplaySystem.hpp"
 
 void BitmapScreen::render(DisplaySystem &display) {

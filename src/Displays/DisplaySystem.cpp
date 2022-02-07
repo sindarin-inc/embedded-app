@@ -3,8 +3,6 @@
 #include <UI/Fonts/LucidaGrande5pt7b.h>
 #include <utility>
 
-#include "config.h"
-
 #include "sindarin-debug.h"
 
 DisplaySystem::DisplaySystem(int16_t w, int16_t h) : GFXcanvas1(w, h) {
@@ -211,7 +209,7 @@ void DisplaySystem::drawTextInBox(const String &newText, int startX, int startY,
 
     int lineHeight = 0;
 
-    log_d("Printing some stuff to screen! (%ld)", (long)this);
+    log_d("Printing some stuff to screen!");
 
     lineHeight = getTextHeight();
 
@@ -318,7 +316,7 @@ void DisplaySystem::computeMinMax() {
     pixelPitchX = ((float)this->width()) / this->getWidthInMm();
     pixelPitchY = ((float)this->height()) / this->getHeightInMm();
 
-    log_d("pixel pitch = (%d, %d)", pixelPitchX, pixelPitchY);
+    log_d("pixel pitch = (%.0f, %.0f)", pixelPitchX, pixelPitchY);
 
     // rounding down is ok here and what we want.
     maxPixelsX = (int)((this->getFocusWidth() + this->getFocusOffsetWidth()) * pixelPitchX);

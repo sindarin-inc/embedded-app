@@ -1,3 +1,4 @@
+#if USE_BLE_SERVER_REMOTE
 
 #include "BLESettings.hpp"
 
@@ -15,3 +16,5 @@ void BLESettings::configureCharacteristics(BLEService *service) {
 
     characteristic->setCallbacks(new CharacteristicCallbacks(this));
 };
+
+#endif

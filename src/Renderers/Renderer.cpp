@@ -40,7 +40,7 @@ auto Renderer::getCurrentPlace() -> unsigned long { return currentPlace_; }
 auto Renderer::renderPageWithBox(unsigned long placeInFile) -> unsigned long {
     unsigned long nextPos = 0;
 
-    log_i("%d is place in file being requested", placeInFile);
+    log_i("%lu is place in file being requested", placeInFile);
     currentPlace_ = placeInFile;
     nextPlace_ = loadCurrIntoBuffer();
     display_.renderMaxBoxWithText(currBuffer_);

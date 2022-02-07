@@ -1,9 +1,8 @@
-#include "Platform.hpp"
+#if !SIMULATOR
 
 #include <esp_adc_cal.h>
 
-#include "config.h"
-
+#include "Platform.hpp"
 #include "sindarin-debug.h"
 
 #define UPPER_DIVIDER 442
@@ -59,3 +58,5 @@ auto GetBatteryVoltageRight() -> float {
 
     return (float)mv / 1000.0;
 }
+
+#endif

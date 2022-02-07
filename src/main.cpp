@@ -9,9 +9,8 @@
 //
 
 #include <Arduino.h>
-#include <mbedtls/md.h>
-
-#include "config.h"
+#include <SPI.h>
+#include <Wire.h>
 
 #include "Communications/OTA.hpp"
 #include "Communications/WiFi.hpp"
@@ -24,52 +23,52 @@
 #include "UI/RootUI.hpp"
 #include "sindarin-debug.h"
 
-// Required for olikraus/U8g2 font lib
-#ifdef U8X8_HAVE_HW_SPI
-#include <SPI.h>
-#endif
-
-#ifdef U8X8_HAVE_HW_I2C
-#include <Wire.h>
-#endif
-
-#ifdef EINKET013TT1
+#if EINKET013TT1
 DisplayEinkET013TT1 *myDisplay;
+#endif
+
+#if SIMULATOR
+DisplaySDLSimulator *myDisplay;
 #endif
 
 PreferencesStore prefs;
 
-#ifdef USE_IR_REMOTE
+#if USE_IR_REMOTE
 #include "Inputs/IRRemoteInput.hpp"
 IRRemoteInput *ir_remote_input;
 #endif
 
-#if defined(USE_BLE_SERVER_REMOTE) || defined(USE_BLE_SERVER_SETTINGS)
+#if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS
 #include "Communications/BLESindarinService.hpp"
 BLESindarinService bleSindarinService;
 #endif
 
-#ifdef USE_BLE_SERVER_REMOTE
+#if USE_BLE_SERVER_REMOTE
 #include "Inputs/BLERemoteInput.hpp"
 BLERemoteInput *bleRemoteInput;
 #endif
 
-#ifdef USE_BLE_SERVER_SETTINGS
+#if USE_BLE_SERVER_SETTINGS
 #include "Communications/BLESettings.hpp"
 BLESettings *bleSettings;
 #endif
 
-#ifdef USE_BLE_SERVER_IMPROV
+#if USE_BLE_SERVER_IMPROV
 #include "Communications/BLEImprov.hpp"
 BLEImprov *bleWifi;
 #endif
 
-#ifdef USE_TURN_TOUCH_REMOTE
+#if USE_TURN_TOUCH_REMOTE
 #include "Inputs/TTRemoteInput.hpp"
 TTRemoteInput ttRemoteInput(prefs);
 #endif
 
-#ifdef ENABLE_OTA
+#if SIMULATOR
+#include "Inputs/SimulatorRemoteInput.hpp"
+SimulatorRemoteInput simulatorRemoteInput;
+#endif
+
+#if ENABLE_OTA
 OTA ota;
 #endif
 
@@ -77,8 +76,13 @@ Power power;
 
 RootUI rootUi(prefs, power);
 
+#if SIMULATOR
+#include "Storage/PosixFileSystem.hpp"
+PosixFileSystem fileSystem;
+#else
 #include "Storage/SpiffsFileSystem.hpp"
 SpiffsFileSystem fileSystem;
+#endif
 
 void setup() {
     bool inputDeviceConnected = false;
@@ -91,7 +95,7 @@ void setup() {
 
     SHOW_HEAP();
 
-#ifdef EINKET013TT1
+#if EINKET013TT1
     // Turn on power to the screen
     digitalWrite(DISPLAY_POWER, HIGH);
     myDisplay = new DisplayEinkET013TT1(DISPLAY_CS, DISPLAY_OEI, DISPLAY_RST, DISPLAY_BUSY);
@@ -103,25 +107,35 @@ void setup() {
     myDisplay->invertDisplay(prefs.invertSetting.get().value());
 #endif
 
+#if SIMULATOR
+    myDisplay = new DisplaySDLSimulator();
+    myDisplay->localXOffset = 0;
+    myDisplay->localYOffset = 0;
+    myDisplay->setFocusSize(15, 15);
+    myDisplay->setFocusOffset(0, 0);
+#endif
+
     SIZE_OF(*myDisplay);
 
-#ifdef USE_IR_REMOTE
+#if USE_IR_REMOTE
     ir_remote_input = new IRRemoteInput();
     SIZE_OF(*ir_remote_input);
     ir_remote_input->start_remote(IR_REMOTE_INPUT_PIN);
 #endif
 
+#if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
     BLEManager *bleManager = BLEManager::getInstance();
+#endif
 
-#if defined(USE_BLE_SERVER_REMOTE) || defined(USE_BLE_SERVER_SETTINGS)
+#if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS
     auto sindarinService = bleSindarinService.configureService(bleManager->server());
 
-#ifdef USE_BLE_SERVER_REMOTE
+#if USE_BLE_SERVER_REMOTE
     bleRemoteInput = new BLERemoteInput();
     bleRemoteInput->configureCharacteristics(sindarinService);
 #endif
 
-#ifdef USE_BLE_SERVER_SETTINGS
+#if USE_BLE_SERVER_SETTINGS
     bleSettings = new BLESettings(&prefs);
     bleSettings->configureCharacteristics(sindarinService);
 #endif
@@ -129,7 +143,7 @@ void setup() {
     bleSindarinService.start();
 #endif
 
-#ifdef USE_BLE_SERVER_IMPROV
+#if USE_BLE_SERVER_IMPROV
     // NOTE(john): It might make sense at some point to consolidate everything
     // as one service. However keeping these services separate for now allows us
     // to use the Improv WebBluetooth implementation for Wifi provisioning and
@@ -141,17 +155,19 @@ void setup() {
     bleWifi->start();
 #endif
 
+#if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
     bleManager->startAdvertisingIfNecessary();
+#endif
 
-#ifdef USE_TURN_TOUCH_REMOTE
+#if USE_TURN_TOUCH_REMOTE
     ttRemoteInput.startRemote();
     inputDeviceConnected = ttRemoteInput.attemptConnect();
 #endif
 
-#ifndef DISABLE_WIFI
+#if !DISABLE_WIFI
     ConnectWiFiIfCredentialsExist();
 
-#ifdef ENABLE_OTA
+#if ENABLE_OTA
     ota.setup();
 #endif
 #endif
@@ -172,20 +188,20 @@ void setup() {
 }
 
 void loop() {
-#if defined(USE_BLE_SERVER_REMOTE) && !defined(DISABLE_WIFI)
+#if USE_BLE_SERVER_REMOTE && !DISABLE_WIFI
     bleWifi->loop();
 #endif
 
 // Always have to do a check press and check release. In this case, we don't care about press.
-#ifdef USE_IR_REMOTE
+#if USE_IR_REMOTE
     ir_remote_input->check_press();
 #endif
 
-#ifdef USE_BLE_SERVER_REMOTE
+#if USE_BLE_SERVER_REMOTE
     bleRemoteInput->checkPress();
 #endif
 
-#ifdef USE_TURN_TOUCH_REMOTE
+#if USE_TURN_TOUCH_REMOTE
     ttRemoteInput.checkPress();
 #endif
 
@@ -194,21 +210,27 @@ void loop() {
     // it may only get one of them. This seems unlikely.
     RemoteCommand codeFromRelease = RemoteCommand::NONE;
 
-#ifdef USE_IR_REMOTE
+#if USE_IR_REMOTE
     if (ir_remote_input->check_release()) {
         code_from_release = ir_remote_input->get_code();
     }
 #endif
 
-#ifdef USE_BLE_SERVER_REMOTE
+#if USE_BLE_SERVER_REMOTE
     if (bleRemoteInput->checkRelease()) {
         codeFromRelease = bleRemoteInput->getCode();
     }
 #endif
 
-#ifdef USE_TURN_TOUCH_REMOTE
+#if USE_TURN_TOUCH_REMOTE
     if (ttRemoteInput.checkRelease()) {
         codeFromRelease = ttRemoteInput.getCode();
+    }
+#endif
+
+#if SIMULATOR
+    if (simulatorRemoteInput.checkRelease()) {
+        codeFromRelease = simulatorRemoteInput.getCode();
     }
 #endif
 
@@ -220,7 +242,7 @@ void loop() {
 
     digitalWrite(RED_LED, LOW);
 
-#ifdef ENABLE_OTA
+#if ENABLE_OTA
     ota.loop();
 #endif
 

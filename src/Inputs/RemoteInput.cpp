@@ -30,6 +30,10 @@ auto CodeToString(RemoteCommand code) -> const char * {
         return "Next";
     case BACK:
         return "Back";
+    case NONE:
+    case FACTORY_DEFAULTS:
+    default: {
+    }
     }
     return "Unknown";
 }

@@ -6,8 +6,11 @@
 #define ALL_DISPLAYS_HPP
 
 #include "DisplaySystem.hpp"
-#ifdef EINKET013TT1
+#if EINKET013TT1
 #include "DisplayEinkET013TT1.hpp"
+#endif
+#if SIMULATOR
+#include "DisplaySDLSimulator.hpp"
 #endif
 
 #endif

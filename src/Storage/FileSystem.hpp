@@ -6,6 +6,7 @@
 #include "Contents/Readable.hpp"
 
 // TODO: It's probably worth exploring `esp_vfs_t` as a generic filesystem interface
+// Or we could checkout the Arduino FS class since it supports custom file systems via FSImpl
 class FileSystem {
 public:
     // Convenience methods

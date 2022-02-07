@@ -1,3 +1,5 @@
+#if ENABLE_POCKET
+
 #include "PocketAPI.hpp"
 
 #include "Contents/Json.hpp"
@@ -149,3 +151,4 @@ auto PocketAPI::getFirstArticleText(const char **text) -> int {
 
     return 200;
 }
+#endif

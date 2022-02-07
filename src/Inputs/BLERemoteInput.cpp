@@ -1,3 +1,4 @@
+#if USE_BLE_SERVER_REMOTE
 
 #include "BLERemoteInput.hpp"
 
@@ -33,3 +34,5 @@ auto BLERemoteInput::checkRelease() -> int {
     }
     return foundRelease;
 }
+
+#endif

@@ -1,5 +1,3 @@
-#ifndef SIMULATOR
-
 #include "SpiffsFileSystem.hpp"
 
 #include <SPIFFS.h>
@@ -37,5 +35,3 @@ void SpiffsFileSystem::begin() {
 auto SpiffsFileSystem::open(const String &path) -> File { return SPIFFS.open(path); }
 
 auto SpiffsFileSystem::exists(const String &path) -> bool { return SPIFFS.exists(path); }
-
-#endif

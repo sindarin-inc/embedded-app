@@ -1,3 +1,5 @@
+#if EINKET013TT1
+
 #include "EinkET013TT1.hpp"
 
 #include <Arduino.h>
@@ -399,3 +401,5 @@ inline void EinkET013TT1::waitForNotBusy() {
     while (digitalRead(busy_) == HIGH) {
     }
 }
+
+#endif

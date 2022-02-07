@@ -1,7 +1,11 @@
 #pragma once
-#include <NimBLEDevice.h>
+
 #include <Preferences.h>
 #include <optional>
+
+#if USE_TURN_TOUCH_REMOTE
+#include <NimBLEDevice.h>
+#endif
 
 #define MAX_KEY_LENGTH 15
 
@@ -73,6 +77,7 @@ public:
         char key_[MAX_KEY_LENGTH + 1];
     };
 
+#if USE_TURN_TOUCH_REMOTE
     class BLEAddressPrefsItem : public PrefsItem<BLEAddress> {
     public:
         BLEAddressPrefsItem(Preferences &prefs, const char *key) : PrefsItem(prefs, key){};
@@ -89,6 +94,7 @@ public:
             this->value_ = address;
         }
     };
+#endif
 
     template <typename T> class KeyedPrefsItem : PrefsItemBase<T> {
     public:
@@ -124,7 +130,9 @@ public:
         : localXOffset(this->prefs_, "x-offset"), localYOffset(this->prefs_, "y-offset"),
           displayBoxWidthOffsetMm(this->prefs_, "box-w-off-mm"),
           displayBoxHeightOffsetMm(this->prefs_, "box-h-off-mm"),
+#if USE_TURN_TOUCH_REMOTE
           pairedTurnTouchAddress(this->prefs_, "paired-tt"),
+#endif
           pocketApiToken(this->prefs_, "pocket-token"),
           lastReadableId(this->prefs_, "rui-readable"), readablePlace(this->prefs_, "-p"),
           readablePreviousPlace(this->prefs_, "-pr-p"), invertSetting(this->prefs_, "invert"){};
@@ -136,7 +144,9 @@ public:
     PrefsItem<int> displayBoxWidthOffsetMm;
     PrefsItem<int> displayBoxHeightOffsetMm;
     PrefsItem<String> pocketApiToken;
+#if USE_TURN_TOUCH_REMOTE
     BLEAddressPrefsItem pairedTurnTouchAddress;
+#endif
     PrefsItem<String> lastReadableId;
     KeyedPrefsItem<int> readablePlace;
     KeyedPrefsItem<int> readablePreviousPlace;

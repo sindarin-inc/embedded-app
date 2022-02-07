@@ -1,8 +1,8 @@
+#if USE_BLE_SERVER_IMPROV
+
 #include "BLEImprov.hpp"
 
 #include <Arduino.h>
-
-#include "config.h"
 
 #include "sindarin-debug.h"
 
@@ -123,3 +123,5 @@ void BLEImprov::loop() {
         }
     }
 }
+
+#endif
