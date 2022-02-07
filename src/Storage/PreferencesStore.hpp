@@ -135,7 +135,7 @@ public:
 #endif
           pocketApiToken(this->prefs_, "pocket-token"),
           lastReadableId(this->prefs_, "rui-readable"), readablePlace(this->prefs_, "-p"),
-          readablePreviousPlace(this->prefs_, "-pr-p"), invertSetting(this->prefs_, "invert"){};
+          invertSetting(this->prefs_, "invert"){};
     void begin();
     void clear() { prefs_.clear(); }
 
@@ -149,7 +149,6 @@ public:
 #endif
     PrefsItem<String> lastReadableId;
     KeyedPrefsItem<int> readablePlace;
-    KeyedPrefsItem<int> readablePreviousPlace;
     PrefsItem<int> invertSetting;
 
 protected:

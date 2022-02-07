@@ -63,7 +63,6 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
     for (Readable &r : readables) {
         Readable *readable = &r;
         r.place = prefs_.readablePlace.get(r.id);
-        r.placePrev = prefs_.readablePreviousPlace.get(r.id);
         mainMenu->addMenuItem(MenuItem(r.name, [this, readable, createReadableScreen]() {
             auto readableScreen = createReadableScreen(readable);
             this->setCurrentScreen(*readableScreen);
