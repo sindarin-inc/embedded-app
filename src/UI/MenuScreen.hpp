@@ -3,14 +3,13 @@
 
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Power.hpp"
 #include "Renderers/Renderer.hpp"
 #include "UI/Screen.hpp"
 #include "sindarin-debug.h"
-
-#define MAX_NUM_MENU_ITEMS 10
 
 class MenuItem {
 public:
@@ -71,7 +70,7 @@ public:
 
 protected:
     unsigned int numMenuItems_ = 0;
-    std::array<MenuItem, MAX_NUM_MENU_ITEMS> menuItems_;
+    std::vector<MenuItem> menuItems_;
     unsigned int currSelection_ = 0;
     unsigned int curMenuPage_ = 0;
 

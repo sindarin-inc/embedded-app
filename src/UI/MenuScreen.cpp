@@ -5,7 +5,7 @@
 #define NUM_LINES_PER_MENU_PAGE 8
 
 void MenuScreen::addMenuItem(const MenuItem &newItem) {
-    menuItems_[numMenuItems_] = newItem;
+    menuItems_.push_back(newItem);
     numMenuItems_++;
 }
 
