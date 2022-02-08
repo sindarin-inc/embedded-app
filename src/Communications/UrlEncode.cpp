@@ -48,8 +48,7 @@ auto Urlencode(const std::string &str) -> std::string {
     char code0;
     char code1;
     char code2;
-    for (int i = 0; i < str.length(); i++) {
-        c = str.at(i);
+    for (char c : str) {
         if (c == ' ') {
             encodedString += '+';
         } else if (isalnum(c)) {

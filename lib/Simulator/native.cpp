@@ -1,13 +1,13 @@
 #if !defined(EMSCRIPTEN)
 
 #include <SDL2/SDL.h>
+#include <cstring>
 #include <iostream>
-#include <string.h>
 #include <unistd.h>
 
-extern void setup();
-extern void loop();
-extern int SimulatorRemoteCode;
+extern void setup();            // NOLINT(readability-identifier-naming)
+extern void loop();             // NOLINT(readability-identifier-naming)
+extern int SimulatorRemoteCode; // NOLINT(readability-identifier-naming)
 
 #define SCALE 2
 #define WIDTH 256
@@ -33,7 +33,7 @@ enum RemoteCommand : int {
 
 SDL_Renderer *renderer;
 
-int main(int argc, char *argv[]) {
+auto main(int argc, char *argv[]) -> int {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         std::cout << "Failed SDL_Init " << SDL_GetError() << std::endl;
         return 1;
