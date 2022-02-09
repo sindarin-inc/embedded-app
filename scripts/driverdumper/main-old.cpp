@@ -182,4 +182,16 @@ int main() {
     EPD_TCON_PowerOn();
     EPD_TCON_Update(WF_MODE_GC4);
     EPD_TCON_PowerOff();
+
+    for (int i = 0; i < 256 * 256; i += 5) {
+        // The EPD driver indexes bits starting with the MSB first.
+        // IE Bit 3 is the first bit read.
+        // F7,FE,FF,FD
+        // 1111 0111  1111 1110  1111 1111  1111 1101
+        buffer[i / 4] &= ~(0x1 << (3 - i % 4));
+    }
+    EPD_TCON_Set_Border(EPD_BORDER_WHITE);
+    EPD_TCON_PowerOn();
+    EPD_TCON_Update(WF_MODE_GC4);
+    EPD_TCON_PowerOff();
 }

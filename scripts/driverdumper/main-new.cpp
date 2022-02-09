@@ -37,4 +37,12 @@ int main() {
 
     driver_.setBorder(BORDER_SETTING_WHITE);
     driver_.update(EINK_ORIGINAL_WAVEFORM_FULL, buffer);
+
+    for (int i = 0; i < 256 * 256; i += 5) {
+        // Adafruit stores bits starting with MSB and going right
+        // EG pixel 0,0 is the MSB of the first byte
+        buffer[i / 8] &= ~(0x80 >> (i % 8));
+    }
+    driver_.setBorder(BORDER_SETTING_WHITE);
+    driver_.update(EINK_ORIGINAL_WAVEFORM_FULL, buffer);
 }
