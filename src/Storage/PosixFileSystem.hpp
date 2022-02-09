@@ -2,7 +2,7 @@
 
 class PosixFileSystem : public FileSystem {
 public:
-    PosixFileSystem() : FileSystem(){};
+    PosixFileSystem() noexcept : FileSystem(){};
 
     void begin() override;
     File open(const std::string &path) override;

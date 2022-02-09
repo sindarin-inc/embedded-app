@@ -17,8 +17,6 @@ DisplaySystem::DisplaySystem(int16_t w, int16_t h) : GFXcanvas1(w, h) {
 #else
     setRotation(0);
 #endif
-
-    invertDisplay(false);
 }
 
 void DisplaySystem::invertDisplay(bool newInvert) {

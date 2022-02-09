@@ -1,6 +1,6 @@
 #include "EPDWaveform.hpp"
 
-WaveformInfo _wf_info;
+WaveformInfo wfInfo;
 
 static auto getCheckSum(const uint8_t *data, uint32_t len) -> uint16_t {
     uint16_t result = 0;
@@ -21,36 +21,36 @@ static auto getCheckSum(const uint8_t *data, uint32_t len) -> uint16_t {
 auto EpdWfInit(const uint8_t *data) -> uint32_t {
     uint16_t checkSum;
 
-    _wf_info.available = 0;
-    _wf_info.header = (const WaveformHeader *)data;
+    wfInfo.available = 0;
+    wfInfo.header = (const WaveformHeader *)data;
 
-    if (_wf_info.header->version <= 3) {
-        _wf_info.temperatureTable = (const uint8_t *)(data + sizeof(WaveformHeaderV3));
-    } else if (_wf_info.header->version == 4) {
-        _wf_info.temperatureTable = (const uint8_t *)(data + sizeof(WaveformHeaderV4));
+    if (wfInfo.header->version <= 3) {
+        wfInfo.temperatureTable = (const uint8_t *)(data + sizeof(WaveformHeaderV3));
+    } else if (wfInfo.header->version == 4) {
+        wfInfo.temperatureTable = (const uint8_t *)(data + sizeof(WaveformHeaderV4));
     } else {
-        _wf_info.temperatureTable = (const uint8_t *)(data + sizeof(WaveformHeader));
+        wfInfo.temperatureTable = (const uint8_t *)(data + sizeof(WaveformHeader));
     }
 
-    _wf_info.temperatureItemSize = 4 + 4 * _wf_info.header->modeCount;
+    wfInfo.temperatureItemSize = 4 + 4 * wfInfo.header->modeCount;
 
-    if (_wf_info.header->modeCount == 0) {
+    if (wfInfo.header->modeCount == 0) {
         return 0;
     }
 
-    if (_wf_info.header->temperatureCount == 0) {
+    if (wfInfo.header->temperatureCount == 0) {
         return 0;
     }
 
-    checkSum = getCheckSum(data, _wf_info.header->dataSize);
-    if (checkSum != _wf_info.header->checkSum) {
+    checkSum = getCheckSum(data, wfInfo.header->dataSize);
+    if (checkSum != wfInfo.header->checkSum) {
         return 0;
     }
 
-    if (_wf_info.header->version > MAX_WAVEFORM_VERSION) {
+    if (wfInfo.header->version > MAX_WAVEFORM_VERSION) {
         return 0;
     }
 
-    _wf_info.available = 1;
+    wfInfo.available = 1;
     return 1;
 }

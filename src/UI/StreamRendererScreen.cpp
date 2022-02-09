@@ -24,8 +24,6 @@ void StreamRendererScreen::processCommand(RemoteCommand command) {
         break;
     }
     case RemoteCommand::PREV:
-        needsRerender = true;
-        break;
     case RemoteCommand::NEXT:
         needsRerender = true;
         break;

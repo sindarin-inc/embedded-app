@@ -25,7 +25,6 @@ void CalibrationScreen::render(DisplaySystem &display) {
 
     int letsWidth = display.getTextWidth("let's");
     int focusWidth = display.getTextWidth("focus");
-    int letsHeight = display.getTextHeight();
     int focusHeight = display.getTextHeight();
 
     for (int i = 30; i > 23; i--) {

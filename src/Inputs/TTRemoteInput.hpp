@@ -36,7 +36,7 @@
 class TTRemoteInput : public RemoteInput {
 
 public:
-    TTRemoteInput(PreferencesStore &prefs) : RemoteInput(), prefs_(prefs){};
+    TTRemoteInput(PreferencesStore &prefs) noexcept : RemoteInput(), prefs_(prefs){};
     void startRemote(int receivePinInput) override;
     void startRemote() override;
     auto checkPress() -> int override;

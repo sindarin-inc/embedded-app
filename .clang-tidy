@@ -1,5 +1,36 @@
 ---
 # See also: https://releases.llvm.org/13.0.0/tools/clang/tools/extra/docs/clang-tidy
+
+# Disable everything by default
+#   -*,
+# Cert checks
+#   cert-*,
+# Except
+#   -cert-dcl03-c,
+# Enable Clang static analysis
+#   clang-analyzer-*,
+# Enable Bugprone checks
+#   bugprone-*,
+# Enable performance checks
+#   performance-*,
+# Enable modernize checks
+#   modernize-*,
+# Except for replacing `typedef` with `using`. It doesn't compile.
+#   -modernize-use-using,
+# Rename stuff
+#   readability-identifier-naming*,
+# And make sure statements have brackets
+#   readability-braces-around-statements,
+# This check is kinda dumb IMO -- it means you can't have two arguments of the
+# same type in a function call
+#   -bugprone-easily-swappable-parameters,
+# This is probably a good check, but we have a _lot_ of c arrays and it's
+# non-trivial to replace them.
+#   -modernize-avoid-c-arrays,
+# This is also a good check, but we also have a lot of narrowing conversions
+# especially related to display stuff since Adafruit GFX uses uint16_t a lot.
+#   -bugprone-narrowing-conversions,
+
 Checks: >-
   -*,
   cert-*,
@@ -10,7 +41,10 @@ Checks: >-
   modernize-*,
   -modernize-use-using,
   readability-identifier-naming*,
-  readability-braces-around-statements
+  readability-braces-around-statements,
+  -bugprone-easily-swappable-parameters,
+  -modernize-avoid-c-arrays,
+  -bugprone-narrowing-conversions,
 AnalyzeTemporaryDtors: false
 FormatStyle: file
 UseColor: true

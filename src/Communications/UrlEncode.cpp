@@ -47,7 +47,6 @@ auto Urlencode(const std::string &str) -> std::string {
     char c;
     char code0;
     char code1;
-    char code2;
     for (char c : str) {
         if (c == ' ') {
             encodedString += '+';
@@ -63,11 +62,9 @@ auto Urlencode(const std::string &str) -> std::string {
             if (c > 9) {
                 code0 = c - 10 + 'A';
             }
-            code2 = '\0';
             encodedString += '%';
             encodedString += code0;
             encodedString += code1;
-            // encodedString+=code2;
         }
     }
     return encodedString;

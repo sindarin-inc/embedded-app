@@ -166,6 +166,11 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
 
     totalCharsRead = 0;
     while (totalCharsRead < numCharsToRead) {
+        // TODO: Clang-tidy says this can sometimes be garbage and it's probably right.
+        // But given that we're going to rewrite this before too long, I don't think it's
+        // worth spending any cycles on. To see what clang-tidy says just remove the // NOLINT
+        // comment/
+        // NOLINTNEXTLINE(clang-analyzer-core.uninitialized.Assign)
         curChar = mainBackwardsBuffer[totalCharsRead++];
 
         // Turn new lines into spaces, for now.

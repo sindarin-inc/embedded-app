@@ -69,10 +69,10 @@ public:
     void processCommand(RemoteCommand command) override;
 
 protected:
-    unsigned int numMenuItems_ = 0;
+    int numMenuItems_ = 0;
     std::vector<MenuItem> menuItems_;
-    unsigned int currSelection_ = 0;
-    unsigned int curMenuPage_ = 0;
+    int currSelection_ = 0;
+    int curMenuPage_ = 0;
 
     Power &power_;
 };

@@ -114,7 +114,7 @@ public:
         auto get(const char *prefix) -> T {
             char key[MAX_KEY_LENGTH + 1];
             this->makeKey(key, prefix);
-            if constexpr (std::is_same_v<T, int>) {
+            if constexpr (std::is_same_v<T, int> || std::is_same_v<T, uint32_t>) {
                 return this->prefs.getInt(key);
             } else {
                 log_e("Unhandled prefs type");
@@ -132,7 +132,7 @@ public:
         const char *suffix_;
     };
 
-    PreferencesStore()
+    PreferencesStore() noexcept
         : localXOffset(this->prefs_, "x-offset"), localYOffset(this->prefs_, "y-offset"),
           displayBoxWidthOffsetMm(this->prefs_, "box-w-off-mm"),
           displayBoxHeightOffsetMm(this->prefs_, "box-h-off-mm"),
@@ -154,7 +154,7 @@ public:
     BLEAddressPrefsItem pairedTurnTouchAddress;
 #endif
     PrefsItem<std::string> lastReadableId;
-    KeyedPrefsItem<int> readablePlace;
+    KeyedPrefsItem<uint32_t> readablePlace;
     PrefsItem<int> invertSetting;
 
 protected:

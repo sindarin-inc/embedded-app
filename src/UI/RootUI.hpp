@@ -12,7 +12,7 @@
 
 class RootUI : public ContainerScreen {
 public:
-    RootUI(PreferencesStore &prefs, Power &power) : prefs_(prefs), power_(power) {}
+    RootUI(PreferencesStore &prefs, Power &power) noexcept : prefs_(prefs), power_(power) {}
 
     void setup(DisplaySystem *display, std::vector<Readable> &readables, bool deviceConnected,
                FileSystem &fileSystem);

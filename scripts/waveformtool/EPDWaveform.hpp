@@ -84,7 +84,7 @@ typedef struct {
     uint8_t available;
 } WaveformInfo;
 
-extern WaveformInfo _wf_info;
+extern WaveformInfo wfInfo;
 
 auto EpdWfInit(const uint8_t *data) -> uint32_t;
 

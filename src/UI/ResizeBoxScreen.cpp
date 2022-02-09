@@ -12,8 +12,8 @@
 // I didn't want to over-engineer it here.
 ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power)
     : display_(display), prefs_(prefs), power_(power),
-      boxWidthOffset_(prefs.displayBoxWidthOffsetMm.get().value()),
-      boxHeightOffset_(prefs.displayBoxHeightOffsetMm.get().value()), renderer_(display) {
+      boxWidthOffset_((float)prefs.displayBoxWidthOffsetMm.get().value()),
+      boxHeightOffset_((float)prefs.displayBoxHeightOffsetMm.get().value()), renderer_(display) {
 
     std::string message;
     for (int i = 0; i < 15; i++) {
@@ -62,8 +62,8 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
         // so that we can have remote-specific workarounds if needed.
         boxWidthOffset_ -= BOX_OFFSET_ADJUST_AMOUNT;
     case RemoteCommand::ENTER:
-        prefs_.displayBoxWidthOffsetMm.set(boxWidthOffset_);
-        prefs_.displayBoxHeightOffsetMm.set(boxHeightOffset_);
+        prefs_.displayBoxWidthOffsetMm.set((int)boxWidthOffset_);
+        prefs_.displayBoxHeightOffsetMm.set((int)boxHeightOffset_);
         log_d("Saving box width and height to preferences: (%.0f, %.0f)", boxWidthOffset_,
               boxHeightOffset_);
         backCallback();

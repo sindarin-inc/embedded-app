@@ -60,13 +60,13 @@ auto main() -> int {
         auto name = waveformNames[i];
         // log_d("Processing waveform \"%s\"", name);
 
-        for (int j = 0; j < _wf_info.header->temperatureCount; ++j) {
-            auto tempItem = (const TemperatureItem *)(_wf_info.temperatureTable +
-                                                      _wf_info.temperatureItemSize * j);
-            for (int mode = 0; mode < _wf_info.header->modeCount; mode++) {
+        for (int j = 0; j < wfInfo.header->temperatureCount; ++j) {
+            auto tempItem =
+                (const TemperatureItem *)(wfInfo.temperatureTable + wfInfo.temperatureItemSize * j);
+            for (int mode = 0; mode < wfInfo.header->modeCount; mode++) {
                 auto offset = (&tempItem->dataAddress)[mode];
                 auto waveform =
-                    (const WaveformDataBlock *)((const uint8_t *)_wf_info.header + offset);
+                    (const WaveformDataBlock *)((const uint8_t *)wfInfo.header + offset);
 
                 out("const EinkET013TT1Waveform %s_WAVEFORM_%s = {\n", ToUpperUnderscore(name),
                     StringFromMode(mode));
@@ -76,7 +76,7 @@ auto main() -> int {
                 for (int i = 0; i < waveform->frameCount; i++) {
                     auto frame = (uint8_t *)(&waveform->data + 2 * i);
                     out("        Frame{");
-                    auto val = (frame[0] & 0x3);
+                    // auto val = (frame[0] & 0x3);
                     out("bb : %s, ", StringFromFrameBits(frame[0]));
                     out("bw : %s, ", StringFromFrameBits(frame[0] >> 2));
                     out("wb : %s, ", StringFromFrameBits(frame[1]));

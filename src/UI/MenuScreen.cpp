@@ -79,8 +79,8 @@ auto MenuScreen::getMenuRangeAsString(int startItem, int endItem) -> std::string
     // If the client gives us an end_item past the end of the range, just go to the
     // end only
     for (i = startItem - 1; i < endItem && i < numMenuItems_; i++) {
-        complete = complete + getItemTitleAt(i);
-        complete = complete + "\n";
+        complete += getItemTitleAt(i);
+        complete += "\n";
     }
     return complete;
 }

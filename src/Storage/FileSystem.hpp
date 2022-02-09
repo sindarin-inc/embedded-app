@@ -19,5 +19,5 @@ public:
     virtual auto exists(const std::string &path) -> bool { assert(0); };
 
 protected:
-    FileSystem() = default;
+    FileSystem() noexcept = default;
 };

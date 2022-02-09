@@ -20,9 +20,6 @@ const EinkET013TT1Waveform PARTIAL_REFRESH_WAVEFORM_INVERTED =
 const EinkET013TT1Waveform ORIGINAL_FULL_REFRESH_WAVEFORM = EINK_ORIGINAL_WAVEFORM_FULL;
 const EinkET013TT1Waveform ORIGINAL_PARTIAL_REFRESH_WAVEFORM = EINK_31_35C_WAVEFORM_PARTIAL;
 
-DisplayEinkET013TT1::DisplayEinkET013TT1(uint8_t cs, uint8_t oei, uint8_t rst, uint8_t busy)
-    : driver_(cs, oei, rst, busy), DisplaySystem(EinkET013TT1_X_PIXELS, EinkET013TT1_Y_PIXELS) {}
-
 void DisplayEinkET013TT1::setup() {
     log_d("Initializing EPD driver");
     driver_.init();

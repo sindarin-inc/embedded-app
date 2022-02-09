@@ -76,7 +76,8 @@
         "mutex": "cpp",
         "ratio": "cpp",
         "stack": "cpp",
-        "string.h": "c"
+        "string.h": "c",
+        "version": "cpp"
     },
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "xaver.clang-format",

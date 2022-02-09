@@ -21,10 +21,10 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     // Blank out screen
     display.fillScreen(display.bg);
     // Draw menu surroundings
-    display.drawXBitmap(display.localXOffset + (display.width() - POPUP_MENU_BLANK_WIDTH) / 2,
-                        display.localYOffset + (display.height() - POPUP_MENU_BLANK_HEIGHT) / 2,
-                        popupMenuBlankBits, POPUP_MENU_BLANK_WIDTH, POPUP_MENU_BLANK_HEIGHT,
-                        display.fg);
+    display.drawXBitmap(
+        (int16_t)(display.localXOffset + (display.width() - POPUP_MENU_BLANK_WIDTH) / 2),
+        (int16_t)(display.localYOffset + (display.height() - POPUP_MENU_BLANK_HEIGHT) / 2),
+        popupMenuBlankBits, POPUP_MENU_BLANK_WIDTH, POPUP_MENU_BLANK_HEIGHT, display.fg);
 
     display.setFont(&LUCIDA_GRANDE6PT7B);
 

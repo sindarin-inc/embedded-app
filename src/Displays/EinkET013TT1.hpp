@@ -106,7 +106,7 @@ struct Frame {
 };
 
 struct EinkET013TT1Waveform {
-    std::string name;
+    const char *name;
     uint8_t frameCount;
     std::array<Frame, MAX_FRAMES_PER_WAVEFORM> frames;
 };

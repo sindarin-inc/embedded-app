@@ -2,7 +2,7 @@
 
 class SpiffsFileSystem : public FileSystem {
 public:
-    SpiffsFileSystem() : FileSystem(){};
+    SpiffsFileSystem() noexcept : FileSystem(){};
 
     void begin() override;
     auto open(const std::string &path) -> File override;

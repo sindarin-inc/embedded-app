@@ -17,5 +17,5 @@ auto StringFormat(const std::string &format, ARGS... args) -> std::string {
     auto buf = std::make_unique<char[]>(size);
     std::snprintf(buf.get(), size, format.c_str(), args...);
     // We don't want the '\0' inside
-    return std::string(buf.get(), buf.get() + size - 1);
+    return {buf.get(), buf.get() + size - 1};
 }

@@ -127,7 +127,7 @@ void EinkET013TT1::setVcom(int mV) {
 
 void EinkET013TT1::setFramerate(int frameRate) {
     frameRate = std::clamp(frameRate, 0, 100);
-    timerDelayNs_ = 1000000000 / frameRate / EinkET013TT1_GATE_COUNT;
+    timerDelayNs_ = 1000000000.0f / frameRate / EinkET013TT1_GATE_COUNT;
 }
 
 void EinkET013TT1::setBorder(BorderSetting border) {
@@ -171,7 +171,7 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     auto *gateSelectHigh = (uint16_t *)&(scanLine[42]);
     auto *gateBlockHigh = (uint32_t *)&(scanLine[44]);
 
-    log_d("Updating dispay with waveform \"%s\"", waveform.name.c_str());
+    log_d("Updating dispay with waveform \"%s\"", waveform.name);
 
     powerOn();
 

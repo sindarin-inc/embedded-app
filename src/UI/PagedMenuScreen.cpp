@@ -43,9 +43,9 @@ void PagedMenuScreen::render(DisplaySystem &display) {
         menuHeight = MENU_BLANK_BIDIRECTIONAL_HEIGHT;
     }
 
-    display.drawXBitmap(display.localXOffset + (display.width() - menuWidth) / 2,
-                        display.localYOffset + (display.height() - menuHeight) / 2, menuBits,
-                        menuWidth, menuHeight, display.fg);
+    display.drawXBitmap((int16_t)(display.localXOffset + (display.width() - menuWidth) / 2),
+                        (int16_t)(display.localYOffset + (display.height() - menuHeight) / 2),
+                        menuBits, (int16_t)menuWidth, (int16_t)menuHeight, display.fg);
 
     auto itemTitle = getCurrItem().title;
     // Cache / replace old font; then try descending size fonts until we find one that fits our

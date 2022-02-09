@@ -76,6 +76,7 @@ def clang_options(idedata):
             "-D_SECTION_ATTR_IMPL=",
             "-D__ESP_ATTR_H__",
             "-DIRAM_ATTR=",
+            "-DDRAM_ATTR=",
             "-DFLAG_ATTR(x)=",
             "-DIDF_DEPRECATED(REASON)=__attribute__((deprecated(REASON)))",
             "-D__block=",
@@ -103,6 +104,7 @@ def clang_options(idedata):
             "-mfix-esp32-psram-cache-issue",
             "-mfix-esp32-psram-cache-strategy=memw",
             "-fno-tree-switch-conversion",
+            "-freorder-blocks",
         )
     )
 

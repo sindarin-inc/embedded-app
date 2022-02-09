@@ -13,7 +13,7 @@ auto BLEManager::getInstance() -> BLEManager * {
     return instance;
 }
 
-BLEManager::BLEManager() {}
+BLEManager::BLEManager() = default;
 
 auto BLEManager::server() -> BLEServer * {
     if (server_ == nullptr) {
