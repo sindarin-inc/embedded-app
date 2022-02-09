@@ -105,9 +105,9 @@ auto Power::getBatteryPercentageOnlyString() -> std::string {
 }
 
 auto Power::getDepleted() -> bool {
-#ifndef SIMULATOR
-    return this->depleted_;
-#else
+#if SIMULATOR
     return false;
+#else
+    return this->depleted_;
 #endif
 }
