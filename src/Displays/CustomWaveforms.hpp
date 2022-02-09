@@ -107,21 +107,21 @@ const EinkET013TT1Waveform BC_INVERTED_EXPERIMENTAL_WAVEFORM_PARTIAL = {
 
 const EinkET013TT1Waveform BC_REGULAR_EXPERIMENTAL_WAVEFORM_PARTIAL = {
     "BC EXPERIMENTAL REGULAR (PARTIAL)",
-    9,
+    13,
     std::array<Frame, MAX_FRAMES_PER_WAVEFORM>{
         Frame{bb : NOCHG, bw : WHITE, wb : BLACK, ww : WHITE},
         Frame{bb : NOCHG, bw : WHITE, wb : BLACK, ww : WHITE},
-        // Frame{bb : NOCHG, bw : WHITE, wb : BLACK, ww : WHITE},
+        Frame{bb : NOCHG, bw : WHITE, wb : BLACK, ww : WHITE},
         Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : WHITE},
         Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : WHITE},
-        // Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : WHITE},
+        Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : WHITE},
         Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
         Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
         Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
         Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
         Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
-        // Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
-        // Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
+        Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
+        Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
         Frame{bb : NOCHG, bw : NOCHG, wb : NOCHG, ww : NOCHG},
     },
 };
