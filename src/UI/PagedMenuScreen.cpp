@@ -9,6 +9,10 @@
 #include "Fonts/LucidaGrande14pt7b.h"
 #include "Fonts/LucidaGrande5pt7b.h"
 #include "Fonts/LucidaGrande6pt7b.h"
+#include "Misc/StringUtil.hpp"
+#if !SIMULATOR
+#include "Displays/DisplayEinkET013TT1.hpp"
+#endif
 
 #define MAX_WIDTH 152
 
@@ -69,6 +73,17 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     // Now draw!
     uint16_t width = 0, height = 0;
     auto batteryStatus = this->power_.getBatteryLifeString();
+    uint16_t temp;
+#if !SIMULATOR
+    // Be warned: using `auto` instead of `EinkET013TT1 &` or `auto &` caused a stack overflow crash
+    // here. This also works (though I don't really understand why):
+    //   decltype(auto) driver = ((DisplayEinkET013TT1 *)&display)->getDriver();
+    auto &driver = ((DisplayEinkET013TT1 *)&display)->getDriver();
+    temp = driver.readTemperature();
+#else
+    temp = 22;
+#endif
+    batteryStatus += StringFormat(" %dC", temp);
     display.getTextBounds(itemTitle.c_str(), &width, &height);
     uint16_t screenWidth = display.width();
     uint16_t screenHeight = display.height();

@@ -164,6 +164,8 @@ public:
 
     void update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer);
 
+    auto readTemperature() -> int16_t;
+
 protected:
     void powerOn();
     void powerOff();
@@ -171,7 +173,6 @@ protected:
     void writeRegister(Register index, const uint8_t *data, size_t len);
     auto readRegister(uint8_t index) -> uint8_t;
     auto readPumpStatus() -> PumpStatus;
-    auto readTemperature() -> int16_t;
     auto readDeviceIdReg() -> uint8_t;
     inline void startTimer(uint32_t ns);
     inline auto timerRunning() -> bool;

@@ -17,6 +17,9 @@ public:
 
     void clearDisplay() override;
 
+    // For those moments where you need to expose the driver directly
+    auto getDriver() -> EinkET013TT1 & { return driver_; }
+
 protected:
     EinkET013TT1 driver_;
 };
