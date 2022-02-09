@@ -191,10 +191,10 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
                 uint8_t oldPixels;
                 uint8_t newPixels;
                 if (pixel % 8 == 0) {
-                    oldPixels = (previousBuffer_[pixel / 8] >> 4) & 0xF;
+                    oldPixels = (oldBuffer[pixel / 8] >> 4) & 0xF;
                     newPixels = (newBuffer[pixel / 8] >> 4) & 0xF;
                 } else {
-                    oldPixels = previousBuffer_[pixel / 8] & 0xF;
+                    oldPixels = oldBuffer[pixel / 8] & 0xF;
                     newPixels = newBuffer[pixel / 8] & 0xF;
                 }
                 sourceData[pixel / 4] = lut[oldPixels << 4 | newPixels];
