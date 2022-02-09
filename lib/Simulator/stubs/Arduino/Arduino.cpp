@@ -10,4 +10,4 @@ void esp_restart(){};
 
 void digitalWrite(int, int){};
 
-unsigned long millis() { return 0; }
+unsigned long millis() { return SDL_GetTicks(); }
