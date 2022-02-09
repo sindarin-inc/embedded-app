@@ -1,7 +1,8 @@
-#if EINKET013TT1
+#if EINKET013TT1 || UNIT_TEST
 
 #include "EinkET013TT1.hpp"
 
+#include <Arduino.h>
 #include <SPI.h>
 #include <algorithm>
 

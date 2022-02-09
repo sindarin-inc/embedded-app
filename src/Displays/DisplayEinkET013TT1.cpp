@@ -1,4 +1,4 @@
-#if EINKET013TT1
+#if EINKET013TT1 || UNIT_TEST
 
 #include "DisplayEinkET013TT1.hpp"
 

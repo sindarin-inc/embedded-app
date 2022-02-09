@@ -1,0 +1,1 @@
+int esp_clk_cpu_freq(void) { return 0; }

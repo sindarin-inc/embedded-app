@@ -43,6 +43,7 @@ flags = [
     "-DENABLE_OTA=0",
     "-DENABLE_POCKET=0",
     "-DEINKET013TT1=0",
+    "-DRSR(a,b)=' '",
     lib_includes,
 ]
 

@@ -8,6 +8,10 @@ void esp_deep_sleep_start(){};
 
 void esp_restart(){};
 
-void digitalWrite(int, int){};
+void digitalWrite(uint8_t pin, uint8_t val){};
+
+void pinMode(uint8_t pin, uint8_t mode) {}
+
+int digitalRead(uint8_t pin) { return 0; }
 
 unsigned long millis() { return SDL_GetTicks(); }

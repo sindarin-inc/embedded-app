@@ -19,11 +19,11 @@
 #include "UI/RootUI.hpp"
 #include "sindarin-debug.h"
 
-#if EINKET013TT1
+#if EINKET013TT1 || UNIT_TEST
 DisplayEinkET013TT1 *myDisplay;
 #endif
 
-#if SIMULATOR
+#if SIMULATOR && DISPLAYSDL
 DisplaySDLSimulator *myDisplay;
 #endif
 
@@ -93,7 +93,7 @@ void setup() {
 
     SHOW_HEAP();
 
-#if EINKET013TT1
+#if EINKET013TT1 || UNIT_TEST
     // Turn on power to the screen
     digitalWrite(DISPLAY_POWER, HIGH);
     myDisplay = new DisplayEinkET013TT1(DISPLAY_CS, DISPLAY_OEI, DISPLAY_RST, DISPLAY_BUSY);
@@ -105,7 +105,7 @@ void setup() {
     myDisplay->invertDisplay(prefs.invertSetting.get().value());
 #endif
 
-#if SIMULATOR
+#if SIMULATOR && DISPLAYSDL
     myDisplay = new DisplaySDLSimulator();
     myDisplay->localXOffset = 0;
     myDisplay->localYOffset = 0;

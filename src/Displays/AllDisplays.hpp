@@ -6,7 +6,7 @@
 #define ALL_DISPLAYS_HPP
 
 #include "DisplaySystem.hpp"
-#if EINKET013TT1
+#if EINKET013TT1 || UNIT_TEST
 #include "DisplayEinkET013TT1.hpp"
 #endif
 #if SIMULATOR

@@ -1,4 +1,4 @@
-#if SIMULATOR
+#if SIMULATOR && DISPLAYSDL
 
 #include "DisplaySDLSimulator.hpp"
 
