@@ -15,6 +15,7 @@ const EinkET013TT1Waveform PARTIAL_REFRESH_WAVEFORM_REGULAR =
     BC_REGULAR_EXPERIMENTAL_WAVEFORM_PARTIAL;
 const EinkET013TT1Waveform PARTIAL_REFRESH_WAVEFORM_INVERTED =
     BC_INVERTED_EXPERIMENTAL_WAVEFORM_PARTIAL;
+const EinkET013TT1Waveform MEDITATIVE_WAVEFORM = BC_MEDITATIVE_REGULAR_31_35C_WAVEFORM;
 const EinkET013TT1Waveform ORIGINAL_FULL_REFRESH_WAVEFORM = EINK_ORIGINAL_WAVEFORM_FULL;
 const EinkET013TT1Waveform ORIGINAL_PARTIAL_REFRESH_WAVEFORM = EINK_31_35C_WAVEFORM_PARTIAL;
 
@@ -40,7 +41,11 @@ void DisplayEinkET013TT1::updateDisplay() {
         if (getInversion()) {
             driver_.update(PARTIAL_REFRESH_WAVEFORM_INVERTED, getBuffer());
         } else {
-            driver_.update(PARTIAL_REFRESH_WAVEFORM_REGULAR, getBuffer());
+            if (!meditativeMode_) {
+                driver_.update(PARTIAL_REFRESH_WAVEFORM_REGULAR, getBuffer());
+            } else {
+                driver_.update(MEDITATIVE_WAVEFORM, getBuffer());
+            }
         }
     } else {
         driver_.setBorder(bg == 0x00 ? BORDER_SETTING_BLACK : BORDER_SETTING_WHITE);

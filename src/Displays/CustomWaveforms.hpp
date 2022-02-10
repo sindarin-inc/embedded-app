@@ -125,3 +125,66 @@ const EinkET013TT1Waveform BC_REGULAR_EXPERIMENTAL_WAVEFORM_PARTIAL = {
         Frame{bb : NOCHG, bw : NOCHG, wb : NOCHG, ww : NOCHG},
     },
 };
+
+
+
+/* The idea here is to use the length of waveform transition
+as a feature, not something we have to try to minimize.
+This is a nice fade out and then fade back in to the new 
+thing that happens over 2 full seconds.*/
+
+const EinkET013TT1Waveform BC_MEDITATIVE_REGULAR_31_35C_WAVEFORM = {
+    "Meditative Transitions",
+    49,
+    std::array<Frame, MAX_FRAMES_PER_WAVEFORM>{
+        Frame{bb : WHITE, bw : WHITE, wb : WHITE, ww : WHITE},
+        Frame{bb : WHITE, bw : WHITE, wb : WHITE, ww : WHITE},
+        Frame{bb : WHITE, bw : WHITE, wb : WHITE, ww : WHITE},
+        Frame{bb : WHITE, bw : WHITE, wb : WHITE, ww : WHITE},
+        Frame{bb : WHITE, bw : WHITE, wb : WHITE, ww : WHITE},
+        Frame{bb : WHITE, bw : WHITE, wb : WHITE, ww : WHITE},
+        Frame{bb : WHITE, bw : WHITE, wb : WHITE, ww : WHITE},
+        Frame{bb : WHITE, bw : WHITE, wb : WHITE, ww : WHITE},
+        Frame{bb : WHITE, bw : WHITE, wb : WHITE, ww : WHITE},
+        Frame{bb : WHITE, bw : WHITE, wb : WHITE, ww : WHITE},
+        Frame{bb : WHITE, bw : WHITE, wb : WHITE, ww : WHITE},
+        Frame{bb : WHITE, bw : WHITE, wb : WHITE, ww : WHITE},
+        Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
+        Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
+        Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
+        Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
+        Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
+        Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
+        Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
+        Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
+        Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
+        Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
+        Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
+        Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
+        Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : WHITE},
+        Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : WHITE},
+        Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : WHITE},
+        Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : WHITE},
+        Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : WHITE},
+        Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : WHITE},
+        Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : WHITE},
+        Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : WHITE},
+        Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : WHITE},
+        Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : WHITE},
+        Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : WHITE},
+        Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : WHITE},
+        Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
+        Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
+        Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
+        Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
+        Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
+        Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
+        Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
+        Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
+        Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
+        Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
+        Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
+        Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
+        Frame{bb : NOCHG, bw : NOCHG, wb : NOCHG, ww : NOCHG},
+    },
+};

@@ -13,6 +13,7 @@
 #include "UI/CalibrationScreen.hpp"
 #include "UI/LoadingScreen.hpp"
 #include "UI/LogoScreen.hpp"
+#include "UI/MeditationScreen.hpp"
 #include "UI/MenuScreen.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
 #include "UI/PagedMenuScreen.hpp"
@@ -43,6 +44,20 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
     mainMenu->setBidirectional();
 
     SIZE_OF(*mainMenu);
+
+       // Settings menu
+    auto meditationScreen = new MeditationScreen();
+
+
+    meditationScreen->backCallback = [this, mainMenu]() {
+        setCurrentScreen(*mainMenu);
+    };
+
+
+    mainMenu->addMenuItem(MenuItem("Meditation", [this, meditationScreen]() {
+        this->display_->clearDisplay();
+        setCurrentScreen(*meditationScreen);
+    }));
 
     auto createReadableScreen = [this, display, mainMenu,
                                  &fileSystem](Readable *readable) -> ReadableScreen * {

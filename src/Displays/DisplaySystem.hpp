@@ -49,6 +49,8 @@ public:
 
     virtual void clearDisplay(){};
 
+    auto setMeditativeMode(bool newMode) { meditativeMode_ = newMode; }
+    
     // MARK: - AutoUpdate
 
     // Whether or not the display will immediately update after drawing operations. If this is set
@@ -134,6 +136,7 @@ protected:
     float focusWidthOffsetInMm_ = 0;
     float focusHeightOffsetInMm_ = 0;
     bool invertedDisplay_ = false;
+    bool meditativeMode_ = false;
 };
 
 #endif

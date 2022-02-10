@@ -7,7 +7,7 @@
 #define EinkET013TT1_PIXEL_WIDTH 256
 #define EinkET013TT1_PIXEL_HEIGHT 256
 #define EinkET013TT1_GATE_COUNT 512
-#define MAX_FRAMES_PER_WAVEFORM 31
+#define MAX_FRAMES_PER_WAVEFORM 50
 
 // The possible per-column TFT FET source settings.
 enum PixelSetting {
