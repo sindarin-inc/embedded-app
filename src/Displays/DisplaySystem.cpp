@@ -215,7 +215,7 @@ void DisplaySystem::drawTextInBox(const std::string &newText, int startX, int st
     if (getPartialRefresh()) {
         setPartialWindow(startX - 2, startY - 2, (endX - startX) + 4, (endY - startY) + 4);
     }
-    
+
     drawBoxCmdsOnly(startX, startY, endX, endY);
     drawTextCmdsOnly(newText, startX + 3, startY + lineHeight + 1, lineHeight);
     if (autoUpdate_) {
