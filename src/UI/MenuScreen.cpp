@@ -2,6 +2,8 @@
 
 #include <utility>
 
+#include "UI/Fonts/LucidaGrande5pt7b.h"
+
 #define NUM_LINES_PER_MENU_PAGE 8
 
 void MenuScreen::addMenuItem(const MenuItem &newItem) {
@@ -96,6 +98,9 @@ void MenuScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
     }
+
+    display.setFont(&LUCIDA_GRANDE5PT7B);
+
     log_i("Menuscreen render (selected = %s)", getCurrItem().title.c_str());
     auto menuString = getPaginatedMenuString();
     auto batLife = power_.getBatteryLifeString();

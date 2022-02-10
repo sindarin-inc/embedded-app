@@ -1,5 +1,6 @@
 #include "UI/ReadableScreen.hpp"
 
+#include "UI/Fonts/LucidaGrande5pt7b.h"
 #include "sindarin-debug.h"
 void ReadableScreen::render(DisplaySystem &display) {
 
@@ -11,6 +12,9 @@ void ReadableScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
     }
+
+    display.setFont(&LUCIDA_GRANDE5PT7B);
+
     if (!inPopup_) {
         log_d("Rendering some text in READ MODE");
         newPlace_ = fileRenderer_->renderPageWithBox(readable_.place);
