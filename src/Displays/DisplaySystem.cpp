@@ -327,12 +327,22 @@ void DisplaySystem::computeMinMax() {
     log_d("min = (%d, %d) max = (%d, %d)", xMin, yMin, xMax, yMax);
 }
 
-void DisplaySystem::boundsCheckOffsets() {
-    while (localXOffset + maxPixelsX > rawDisplayMaxX) {
-        localXOffset--;
+void DisplaySystem::boundsCheckOffsets(uint16_t pixelLeap) {
+    computeMinMax();
+
+    while (localXOffset * 2 + maxPixelsX > rawDisplayMaxX) {
+        localXOffset -= pixelLeap;
     }
 
-    while (localYOffset + maxPixelsY > rawDisplayMaxY) {
-        localYOffset--;
+    while (maxPixelsX - rawDisplayMaxX > localXOffset * 2) {
+        localXOffset += pixelLeap;
+    }
+
+    while (localYOffset * 2 + maxPixelsY > rawDisplayMaxY) {
+        localYOffset -= pixelLeap;
+    }
+
+    while (maxPixelsY - rawDisplayMaxY > localYOffset * 2) {
+        localYOffset += pixelLeap;
     }
 }

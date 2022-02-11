@@ -28,6 +28,8 @@ void OffsetAdjustScreen::render(DisplaySystem &display) {
 }
 
 void OffsetAdjustScreen::processCommand(RemoteCommand command) {
+    bool alreadySaved = false;
+
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
         xOffset -= OFFSET_ADJUST_AMOUNT;
@@ -56,16 +58,24 @@ void OffsetAdjustScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::ENTER:
         display_.localXOffset = xOffset;
         display_.localYOffset = yOffset;
-        display_.boundsCheckOffsets();
+        display_.boundsCheckOffsets(OFFSET_ADJUST_AMOUNT);
         prefs_.localXOffset.set(display_.localXOffset);
         prefs_.localYOffset.set(display_.localYOffset);
         log_d("Saving x and y offset to preferences: (%d, %d)", xOffset, yOffset);
+        xOffset = display_.localXOffset;
+        yOffset = display_.localYOffset;
         backCallback();
+        alreadySaved = true;
         break;
     default:
         break;
     }
-    display_.localXOffset = xOffset;
-    display_.localYOffset = yOffset;
-    display_.boundsCheckOffsets();
+
+    if (!alreadySaved) {
+        display_.localXOffset = xOffset;
+        display_.localYOffset = yOffset;
+        display_.boundsCheckOffsets(OFFSET_ADJUST_AMOUNT);
+        xOffset = display_.localXOffset;
+        yOffset = display_.localYOffset;
+    }
 }

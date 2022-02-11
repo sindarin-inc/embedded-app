@@ -75,24 +75,28 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
         break;
     }
 
-    log_d("boxWidth and boxHeight offsets before bounds check are %f %f", boxWidthOffset_, boxHeightOffset_);
+    log_d("boxWidth and boxHeight offsets before bounds check are %f %f", boxWidthOffset_,
+          boxHeightOffset_);
 
     // Bounds checking in both Y direction and X direction.
-    
+
     display_.setFocusOffset(prevBoxWidthOffset, boxHeightOffset_);
 
-    if (display_.maxPixelsY > display_.rawDisplayMaxY) {
+    // Have to check if it's greater than the max or less than 0
+    if ((display_.maxPixelsY + display_.localYOffset * 2 > display_.rawDisplayMaxY) ||
+        (display_.maxPixelsY - display_.rawDisplayMaxY > display_.localYOffset * 2)) {
         boxHeightOffset_ = prevBoxHeightOffset;
     }
 
     display_.setFocusOffset(boxWidthOffset_, prevBoxHeightOffset);
 
-    if (display_.maxPixelsX > display_.rawDisplayMaxX) {
+    if ((display_.maxPixelsX + display_.localXOffset * 2 > display_.rawDisplayMaxX) ||
+        ((display_.maxPixelsX - display_.rawDisplayMaxX > display_.localXOffset * 2))) {
         boxWidthOffset_ = prevBoxWidthOffset;
     }
 
     log_d("setting new focus size to be %f %f", display_.getFocusWidth() + boxWidthOffset_,
           display_.getFocusHeight() + boxHeightOffset_);
-    
+
     display_.setFocusOffset(boxWidthOffset_, boxHeightOffset_);
 }

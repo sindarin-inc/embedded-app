@@ -105,7 +105,7 @@ public:
 
     // Adjust local X and local Y offset to be the maximum value allowed given the focus
     // box
-    void boundsCheckOffsets();
+    void boundsCheckOffsets(uint16_t pixelLeap);
 
     // TODO: Eventually we'll probably want our draw commands to handle the offsets
     // internally without ever needing to expose them.
