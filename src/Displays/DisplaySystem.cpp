@@ -326,3 +326,13 @@ void DisplaySystem::computeMinMax() {
 
     log_d("min = (%d, %d) max = (%d, %d)", xMin, yMin, xMax, yMax);
 }
+
+void DisplaySystem::boundsCheckOffsets() {
+    while (localXOffset + maxPixelsX > rawDisplayMaxX) {
+        localXOffset--;
+    }
+
+    while (localYOffset + maxPixelsY > rawDisplayMaxY) {
+        localYOffset--;
+    }
+}

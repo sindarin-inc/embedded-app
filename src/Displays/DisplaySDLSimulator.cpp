@@ -14,6 +14,9 @@ DisplaySDLSimulator::DisplaySDLSimulator()
 
     widthInMm_ = 23.3;
     heightInMm_ = 23.3;
+
+    rawDisplayMaxX = DisplaySDL_X_PIXELS;
+    rawDisplayMaxY = DisplaySDL_Y_PIXELS;
 }
 
 void DisplaySDLSimulator::updateDisplay() {

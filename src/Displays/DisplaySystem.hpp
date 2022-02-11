@@ -103,6 +103,10 @@ public:
     // TODO: Just use `textcolor` and `textbgcolor` for these?
     uint16_t bg, fg;
 
+    // Adjust local X and local Y offset to be the maximum value allowed given the focus
+    // box
+    void boundsCheckOffsets();
+
     // TODO: Eventually we'll probably want our draw commands to handle the offsets
     // internally without ever needing to expose them.
     int localXOffset = 0;
@@ -113,6 +117,9 @@ public:
     int yMax = 0;
     int maxPixelsX = 0;
     int maxPixelsY = 0;
+
+    int rawDisplayMaxX = 0;
+    int rawDisplayMaxY = 0;
 
 protected:
     void drawTextCmdsOnly(const std::string &newText, int x, int y, int lineHeight);

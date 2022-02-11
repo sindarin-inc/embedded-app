@@ -54,8 +54,11 @@ void OffsetAdjustScreen::processCommand(RemoteCommand command) {
         // so that we can have remote-specific workarounds if needed.
         xOffset += OFFSET_ADJUST_AMOUNT;
     case RemoteCommand::ENTER:
-        prefs_.localXOffset.set(xOffset);
-        prefs_.localYOffset.set(yOffset);
+        display_.localXOffset = xOffset;
+        display_.localYOffset = yOffset;
+        display_.boundsCheckOffsets();
+        prefs_.localXOffset.set(display_.localXOffset);
+        prefs_.localYOffset.set(display_.localYOffset);
         log_d("Saving x and y offset to preferences: (%d, %d)", xOffset, yOffset);
         backCallback();
         break;
@@ -64,4 +67,5 @@ void OffsetAdjustScreen::processCommand(RemoteCommand command) {
     }
     display_.localXOffset = xOffset;
     display_.localYOffset = yOffset;
+    display_.boundsCheckOffsets();
 }

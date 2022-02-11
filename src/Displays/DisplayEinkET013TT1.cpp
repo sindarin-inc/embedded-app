@@ -30,6 +30,9 @@ DisplayEinkET013TT1::DisplayEinkET013TT1(uint8_t cs, uint8_t oei, uint8_t rst, u
     widthInMm_ = EinkET013TT1_WIDTH_IN_MM;
     heightInMm_ = EinkET013TT1_HEIGHT_IN_MM;
 
+    rawDisplayMaxX = EinkET013TT1_X_PIXELS;
+    rawDisplayMaxY = EinkET013TT1_Y_PIXELS;
+
     setPartialRefresh();
 
     log_i("Display ready!");
