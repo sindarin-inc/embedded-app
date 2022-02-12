@@ -81,9 +81,11 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     temp = 22;
 #endif
     batteryStatus += StringFormat(" %dC", temp);
-    uint16_t maxHeightForThisFont;
+
     // Get the letters in there that go below the base of the standard character
-    display.getTextBounds("Hi J g y p q Q j!!", &width, &maxHeightForThisFont);
+    if (maxHeightForThisFont == 0) {
+        display.getTextBounds("Hi J g y p q Q j!!", &width, &maxHeightForThisFont);
+    }
     display.getTextBounds(itemTitle.c_str(), &width, &height);
     uint16_t screenWidth = display.width();
     uint16_t screenHeight = display.height();
