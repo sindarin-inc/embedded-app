@@ -67,6 +67,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
         return readableScreen;
     };
 
+    auto currentReadable = prefs_.lastReadableId.get();
     for (Readable &r : readables) {
         Readable *readable = &r;
         r.place = prefs_.readablePlace.get(r.id);
@@ -74,6 +75,9 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
             auto readableScreen = createReadableScreen(readable);
             this->setCurrentScreen(*readableScreen);
         }));
+        if (currentReadable.has_value() && currentReadable.value() == r.id) {
+            mainMenu->setCurrSelection(mainMenu->getNumItems() - 1);
+        }
     }
     SHOW_HEAP();
 
@@ -259,7 +263,6 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
     }));
 
     // Check if we left-off on a readable and if so, reload that readable by default
-    auto currentReadable = prefs_.lastReadableId.get();
     if (currentReadable.has_value()) {
         log_d("Attempting to find readable: %s", currentReadable.value().c_str());
         // If we previously had a readable loaded, show that same readable by default
