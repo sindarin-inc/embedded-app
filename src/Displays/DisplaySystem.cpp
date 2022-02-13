@@ -246,7 +246,7 @@ auto DisplaySystem::getTextWidth(const char *buffer) -> int {
 }
 
 void DisplaySystem::renderTextWithoutBox(const std::string &text) {
-    drawText(text, xMin + localXOffset, yMin + localYOffset, xMax + localXOffset,
+    drawText(text, xMin + localXOffset, yMin + localYOffset + getTextHeight(), xMax + localXOffset,
              yMax + localYOffset);
 }
 

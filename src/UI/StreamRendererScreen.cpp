@@ -6,7 +6,7 @@ void StreamRendererScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
     }
-    newPlace_ = renderer_->renderPageWithoutBox(newPlace_);
+    newPlace_ = renderer_->renderPage(newPlace_);
     log_d("%lu is the new place in the text", newPlace_);
     needsRerender = false;
 }

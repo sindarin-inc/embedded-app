@@ -38,7 +38,7 @@ auto Renderer::getCurrentPlace() -> unsigned long { return currentPlace_; }
 
 // Show the (already loaded into buffer) current page
 // and load the next page into the next buffer so we have it.
-auto Renderer::renderPageWithoutBox(unsigned long placeInFile) -> unsigned long {
+auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
     unsigned long nextPos = 0;
     SetCpuSpeedMhz(CPU_FREQ_MHZ_HIGH);
 

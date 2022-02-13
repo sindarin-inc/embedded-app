@@ -22,7 +22,7 @@ static const DRAM_ATTR uint16_t GATE_SELECT_TABLE_L[] = {
     0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
 };
 
-inline IRAM_ATTR uint16_t gateSelectL(uint8_t i) {
+inline IRAM_ATTR auto GateSelectL(uint8_t i) -> uint16_t {
     if (i >= 8) {
         return 0;
     } else {
@@ -35,7 +35,7 @@ static const DRAM_ATTR uint16_t GATE_SELECT_TABLE_H[] = {
     0x00C0, 0x0030, 0x000C, 0x0003, 0xC000, 0x3000, 0x0C00, 0x0300,
 };
 
-inline IRAM_ATTR uint16_t gateSelectH(uint8_t i) {
+inline IRAM_ATTR auto GateSelectH(uint8_t i) -> uint16_t {
     if (i < 8) {
         return 0;
     } else {
@@ -51,7 +51,7 @@ static const DRAM_ATTR uint32_t GATE_BLOCK_TABLE_L[] = {
     0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
 };
 
-uint32_t IRAM_ATTR gateBlockL(uint8_t i) {
+auto IRAM_ATTR GateBlockL(uint8_t i) -> uint32_t {
     if (i >= 16) {
         return 0;
     } else {
@@ -66,7 +66,7 @@ static const DRAM_ATTR uint32_t GATE_BLOCK_TABLE_H[] = {
     0x00C00000, 0x00300000, 0x000C0000, 0x00030000, 0xC0000000, 0x30000000, 0x0C000000, 0x03000000,
 };
 
-uint32_t IRAM_ATTR gateBlockH(uint8_t i) {
+auto IRAM_ATTR GateBlockH(uint8_t i) -> uint32_t {
     if (i < 16) {
         return 0;
     } else {
@@ -214,10 +214,10 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
             // Pick the correct gate based on the index
             uint8_t gs = gate & 0x0F;
             uint8_t gb = gate >> 4;
-            *gateBlockLow = gateBlockL(gb);
-            *gateSelectLow = gateSelectL(gs);
-            *gateSelectHigh = gateSelectH(gs);
-            *gateBlockHigh = gateBlockH(gb);
+            *gateBlockLow = GateBlockL(gb);
+            *gateSelectLow = GateSelectL(gs);
+            *gateSelectHigh = GateSelectH(gs);
+            *gateBlockHigh = GateBlockH(gb);
 
             // Gate indices represent half-lines in this order (with connector down):
             // bottom left -> top left -> bottom right -> top right
