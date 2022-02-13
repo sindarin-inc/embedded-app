@@ -23,7 +23,7 @@ public:
     // Render a page of text with the current place
     // returns the next place for reading so the calling function can
     // track place.
-    auto renderPageWithBox(unsigned long placeInFile) -> unsigned long;
+    auto renderPageWithoutBox(unsigned long placeInFile) -> unsigned long;
 
     auto goBackwardsOnePage(unsigned long place) -> unsigned long;
 

@@ -12,7 +12,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
     if (!inPopup_) {
-        newPlace_ = fileRenderer_->renderPageWithBox(readable_.place);
+        newPlace_ = fileRenderer_->renderPageWithoutBox(readable_.place);
         log_d("%lu is the new place in the text", newPlace_);
         needsRerender = false;
     } else {

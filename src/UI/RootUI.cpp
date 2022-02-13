@@ -157,7 +157,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
                     std::string str = text;
                     streamRenderer->setString(str);
                     SIZE_OF(*streamRenderer);
-                    streamRenderer->renderPageWithBox(0);
+                    streamRenderer->renderPageWithoutBox(0);
 
                     auto streamRendererScreen = new StreamRendererScreen(streamRenderer);
                     setCurrentScreen(*streamRendererScreen);

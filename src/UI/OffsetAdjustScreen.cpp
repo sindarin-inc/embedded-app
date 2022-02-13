@@ -22,7 +22,7 @@ void OffsetAdjustScreen::render(DisplaySystem &display) {
         return;
     }
 
-    this->renderer_.renderPageWithBox(0);
+    this->renderer_.renderPageWithoutBox(0);
 
     needsRerender = false;
 }
