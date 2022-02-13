@@ -85,7 +85,8 @@ static uint8_t const BORDER_NONE[4] = {0x00, 0x00, 0x00, 0x03};
 // According to the EinkET013TT1 datasheet, the min clock time is 50ns which equates to 20MHz
 // though experimentally 30MHz seems to be fine (but doesnt seem to have much benefit)
 // at 20Mhz it should take 20us to send a 50 byte scanline (50*8*(1/20000000))
-static SPISettings spiSettings(20000000, SPI_MSBFIRST, SPI_MODE0);
+static SPISettings spiSettingsHigh(20000000, SPI_MSBFIRST, SPI_MODE0);
+static SPISettings spiSettingsLow(8000000, SPI_MSBFIRST, SPI_MODE0);
 
 void EinkET013TT1::init() {
     log_d("Initializing EinkET013TT1");
@@ -292,7 +293,7 @@ void EinkET013TT1::writeRegister(Register index, const uint8_t *data, size_t len
     buf[0] = 0x70; // Start byte
     buf[1] = index & 0x0F;
 
-    SPI.beginTransaction(spiSettings);
+    SPI.beginTransaction(spiSettingsHigh);
     digitalWrite(cs_, LOW);
 
     SPI.writeBytes(buf, 2);
@@ -311,14 +312,14 @@ auto EinkET013TT1::readRegister(uint8_t index) -> uint8_t {
     buf[0] = 0x70;
     buf[1] = index & 0x0F;
 
-    SPI.beginTransaction(spiSettings);
+    SPI.beginTransaction(spiSettingsLow);
     digitalWrite(cs_, LOW);
     SPI.writeBytes(buf, 2);
     digitalWrite(cs_, HIGH);
     SPI.endTransaction();
 
     buf[0] = 0x73;
-    SPI.beginTransaction(spiSettings);
+    SPI.beginTransaction(spiSettingsLow);
     digitalWrite(cs_, LOW);
     SPI.writeBytes(buf, 1);
     SPI.write(0xFF); // necessary?
@@ -349,7 +350,7 @@ auto EinkET013TT1::readTemperature() -> int16_t {
 }
 
 auto EinkET013TT1::readDeviceIdReg() -> uint8_t {
-    SPI.beginTransaction(spiSettings);
+    SPI.beginTransaction(spiSettingsLow);
     digitalWrite(cs_, LOW);
     SPI.write(0x71);
     SPI.write(0xFF);
