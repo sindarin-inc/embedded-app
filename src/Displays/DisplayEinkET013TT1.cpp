@@ -58,5 +58,12 @@ void DisplayEinkET013TT1::updateDisplay() {
     SetCpuSpeedMhz(CPU_FREQ_MHZ_LOW);
 }
 
-void DisplayEinkET013TT1::clearDisplay() { driver_.clear(PANEL_CLEAR_WAVEFORM); }
+void DisplayEinkET013TT1::clearDisplay() {
+    SetCpuSpeedMhz(CPU_FREQ_MHZ_HIGH);
+
+    fillScreen(bg);
+    driver_.clear(PANEL_CLEAR_WAVEFORM);
+
+    SetCpuSpeedMhz(CPU_FREQ_MHZ_LOW);
+}
 #endif
