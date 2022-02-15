@@ -14,7 +14,7 @@ class PopupMenuScreen : public Screen {
 
 public:
     PopupMenuScreen(Power &power, FileRenderer *fileRenderer)
-        : power_(power), fileRenderer_(fileRenderer){};
+        : power_(power), FileRenderer_(fileRenderer){};
 
     void render(DisplaySystem &display) override;
 
@@ -22,7 +22,7 @@ public:
 
 protected:
     Power &power_;
-    FileRenderer *fileRenderer_;
+    FileRenderer *FileRenderer_;
 };
 
 #endif
