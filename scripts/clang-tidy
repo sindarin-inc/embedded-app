@@ -160,7 +160,8 @@ def run_tidy(args, clang_tidy_path, options, tmpdir, queue, lock, failed_files):
         if proc.returncode != 0 or args.show_warnings:
             with lock:
                 print_error_for_file(path, proc.stdout)
-                failed_files.append(path)
+                if proc.returncode != 0:
+                    failed_files.append(path)
         queue.task_done()
 
 
@@ -206,6 +207,14 @@ def main():
         "--split-num", type=int, help="split the files into X jobs.", default=None
     )
     parser.add_argument(
+        "--clang-tidy-path", help="path to clang-tidy binary", default=None
+    )
+    parser.add_argument(
+        "--clang-apply-replacements-path",
+        help="path to clang-apply-replacements binary",
+        default=None,
+    )
+    parser.add_argument(
         "--split-at", type=int, help="which split is this? starts at 1", default=None
     )
     parser.add_argument(
@@ -218,8 +227,14 @@ def main():
     )
     args = parser.parse_args()
 
-    clang_tidy_path = shutil.which("clang-tidy")
-    clang_apply_replacements_path = shutil.which("clang-apply-replacements")
+    clang_tidy_path = args.clang_tidy_path
+    clang_apply_replacements_path = args.clang_apply_replacements_path
+
+    if clang_tidy_path is None:
+        clang_tidy_path = shutil.which("clang-tidy")
+
+    if clang_apply_replacements_path is None:
+        clang_apply_replacements_path = shutil.which("clang-apply-replacements")
 
     # Try to find clang-tidy in Homebrew
     if clang_tidy_path is None or (args.fix and clang_apply_replacements_path is None):
@@ -337,4 +352,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
