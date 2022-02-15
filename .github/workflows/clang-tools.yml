@@ -20,6 +20,9 @@ jobs:
         run: |
           pip install -r requirements-dev.txt
 
+      - name: Install SDL
+        run: sudo apt update && sudo apt install -y libsdl2-dev
+
       - name: Install clang-tidy-12
         run: sudo apt-get update && sudo apt install -y clang-tidy-12
 
