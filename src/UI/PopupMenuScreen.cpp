@@ -43,8 +43,8 @@ void PopupMenuScreen::render(DisplaySystem &display) {
                      display.localYOffset + (screenHeight / 2) + (height / 2) + 10, screenWidth,
                      screenHeight);
 
-    size_t place = FileRenderer_->getCurrentPlace();
-    size_t lengthOfFile = FileRenderer_->size();
+    size_t place = fileRenderer_->getCurrentPlace();
+    size_t lengthOfFile = fileRenderer_->size();
 
     float placeInTextPercentage = (float)place / (float)lengthOfFile * 100;
     std::string placeString = StringFormat("%.0f%%", placeInTextPercentage);
