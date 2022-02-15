@@ -24,6 +24,9 @@ jobs:
       - name: Run clang-tidy
         run: ./scripts/clang-tidy -w --fix --clang-tidy-path=/usr/bin/clang-tidy-12 --clang-apply-replacements-path=/usr/bin/clang-apply-replacements-12
 
+      - name: Install SDL
+        run: sudo apt install -y libsdl2-dev
+
         # Run clang-tidy with the simulator to post warnings
       - name: Generage compile_commands.json
         run: |
