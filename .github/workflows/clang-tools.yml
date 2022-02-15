@@ -18,7 +18,7 @@ jobs:
 
       - name: Install clang-tidy script dependencies
         run: |
-          pip install -r requiements-dev.txt
+          pip install -r requirements-dev.txt
 
       - name: Install clang-tidy-12
         run: sudo apt-get update && sudo apt install -y clang-tidy-12
