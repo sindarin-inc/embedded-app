@@ -39,8 +39,8 @@ auto main(int argc, char *argv[]) -> int {
         return 1;
     }
 
-    SDL_Window *window;
-    SDL_CreateWindowAndRenderer(WIDTH * SCALE, WIDTH * SCALE, 0, &window, &renderer);
+    SDL_Window *Window;
+    SDL_CreateWindowAndRenderer(WIDTH * SCALE, WIDTH * SCALE, 0, &Window, &renderer);
     SDL_RenderSetScale(renderer, SCALE, SCALE);
 
     if (renderer == NULL) {
@@ -92,7 +92,7 @@ auto main(int argc, char *argv[]) -> int {
     }
 
     SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
+    SDL_DestroyWindow(Window);
     SDL_Quit();
 
     std::cout << "Quit" << std::endl;
