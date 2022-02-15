@@ -26,9 +26,6 @@ jobs:
       - name: Run clang-tidy
         run: ./scripts/clang-tidy -w --fix --clang-tidy-path=/usr/bin/clang-tidy-12 --clang-apply-replacements-path=/usr/bin/clang-apply-replacements-12
 
-      - name: Install SDL
-        run: sudo apt install -y libsdl2-dev
-
         # Run clang-tidy with the simulator to post warnings
       - name: Generage compile_commands.json
         run: |
@@ -43,6 +40,7 @@ jobs:
         with:
           build_dir: .pio/build/simulator
           config_file: .clang-tidy
+          apt_packages: libsdl2-dev
       # If there are any comments, fail the check
       - if: steps.review.outputs.total_comments > 0
         run: exit 1
