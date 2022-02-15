@@ -12,6 +12,8 @@ jobs:
 
       - name: Set up Python
         uses: actions/setup-python@v2
+        with:
+          cache: "pip"
 
       - name: Install clang-tidy script dependencies
         run: |
@@ -31,6 +33,10 @@ jobs:
       - name: Generage compile_commands.json
         run: |
           pio run -e simulator -t compiledb
+
+      - name: cat compile_commands.json
+        run: |
+          cat .pio/build/simulator/compile_commands.json
 
       - uses: ZedThree/clang-tidy-review@v0.8.2
         id: review
