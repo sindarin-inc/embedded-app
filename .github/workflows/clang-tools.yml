@@ -32,7 +32,7 @@ jobs:
         run: |
           pio run -e simulator -t compiledb
 
-      - uses: ZedThree/clang-tidy-review@v0.7.0
+      - uses: ZedThree/clang-tidy-review@v0.8.2
         id: review
         with:
           build_dir: .pio/build/simulator
