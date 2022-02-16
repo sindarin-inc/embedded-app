@@ -4,8 +4,8 @@
 
 #define NUM_SPIKES 24
 
-void CalibrationScreen::drawSiemensCircle(DisplaySystem &display, u_int32_t originX,
-                                          u_int32_t originY, u_int32_t radius) {
+void CalibrationScreen::drawSiemensStar(DisplaySystem &display, u_int32_t originX,
+                                        u_int32_t originY, u_int32_t radius) {
     // Lot's of precision ;)
     float pi = 3.141592653585753;
     float theta[NUM_SPIKES];
@@ -112,11 +112,11 @@ void CalibrationScreen::render(DisplaySystem &display) {
 
         display.fillRect(256 - 64, 0, 64, 64, display.bg);
 
-        drawSiemensCircle(display, 128, 128, 32);
-        drawSiemensCircle(display, 32, 32, 32);
-        drawSiemensCircle(display, 256 - 32, 32, 32);
-        drawSiemensCircle(display, 256 - 32, 256 - 32, 32);
-        drawSiemensCircle(display, 32, 256 - 32, 32);
+        drawSiemensStar(display, 128, 128, 32);
+        drawSiemensStar(display, 32, 32, 32);
+        drawSiemensStar(display, 256 - 32, 32, 32);
+        drawSiemensStar(display, 256 - 32, 256 - 32, 32);
+        drawSiemensStar(display, 32, 256 - 32, 32);
 
         display.updateDisplay();
         display.setFocusSize(oldX, oldY);
