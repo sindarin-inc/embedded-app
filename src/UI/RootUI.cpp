@@ -227,6 +227,17 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
             delete calibrationScreen;
         };
     }));
+
+    settingsMenu->addMenuItem(MenuItem("Optics Test", [this, settingsMenu, display]() {
+        auto opticsTestScreen = new CalibrationScreen();
+        opticsTestScreen->setOpticsTest();
+        this->setCurrentScreen(*opticsTestScreen);
+        opticsTestScreen->backCallback = [this, opticsTestScreen, settingsMenu]() {
+            setCurrentScreen(*settingsMenu);
+            delete opticsTestScreen;
+        };
+    }));
+
     settingsMenu->addMenuItem(MenuItem("Reset Prefs", [this, display]() {
         prefs_.clear();
         log_w("Preferences cleared. Rebooting...");

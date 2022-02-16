@@ -9,8 +9,11 @@ class CalibrationScreen : public Screen {
 public:
     CalibrationScreen() : Screen() {}
 
+    void setOpticsTest() { opticsTest_ = true; }
     void processCommand(RemoteCommand command) override;
     void render(DisplaySystem &display) override;
+
+    bool opticsTest_ = false;
 };
 
 #endif
