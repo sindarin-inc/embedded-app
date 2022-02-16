@@ -4,6 +4,30 @@
 
 #define NUM_SPIKES 24
 
+void CalibrationScreen::drawSiemensCircle(DisplaySystem &display, u_int32_t originX,
+                                          u_int32_t originY, u_int32_t radius) {
+    // Lot's of precision ;)
+    float pi = 3.141592653585753;
+    float theta[NUM_SPIKES];
+    float x[NUM_SPIKES];
+    float y[NUM_SPIKES];
+
+    int i, k;
+
+    for (i = 0; i < NUM_SPIKES; i++) {
+
+        theta[i] = -pi + i * (2 * pi / NUM_SPIKES);
+
+        x[i] = radius * cosf(theta[i]) + originX;
+        y[i] = radius * sinf(theta[i]) + originY;
+    }
+
+    for (k = 0; k < NUM_SPIKES / 2; k++) {
+        display.fillTriangle(originX, originY, x[k * 2], y[k * 2], x[k * 2 + 1], y[k * 2 + 1],
+                             display.fg);
+    }
+}
+
 void CalibrationScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
@@ -59,18 +83,7 @@ void CalibrationScreen::render(DisplaySystem &display) {
 
         display.setFocusSize(23.4, 23.4);
 
-        int i = 0;
-
-        float pi = 3.141592653585753;
-        float radius = 32.0;
-        float theta[NUM_SPIKES];
-        float x[NUM_SPIKES];
-        float y[NUM_SPIKES];
-
-        int originX, originY;
-        int k;
-
-        int l = 0;
+        int i, l = 0;
 
         for (l = 0; l < 32; l++) {
             for (i = 0; i < (display.xMax) / 4; i++) {
@@ -99,90 +112,11 @@ void CalibrationScreen::render(DisplaySystem &display) {
 
         display.fillRect(256 - 64, 0, 64, 64, display.bg);
 
-        originX = 128;
-        originY = 128;
-
-        for (i = 0; i < NUM_SPIKES; i++) {
-
-            theta[i] = -pi + i * (2 * pi / NUM_SPIKES);
-
-            x[i] = radius * cosf(theta[i]) + originX;
-            y[i] = radius * sinf(theta[i]) + originY;
-            log_d("THETA X Y is %f %f %f", theta[i], x[i], y[i]);
-        }
-
-        for (k = 0; k < NUM_SPIKES / 2; k++) {
-            display.fillTriangle(originX, originY, x[k * 2], y[k * 2], x[k * 2 + 1], y[k * 2 + 1],
-                                 display.fg);
-        }
-
-        originX = 32;
-        originY = 32;
-
-        for (i = 0; i < NUM_SPIKES; i++) {
-
-            theta[i] = -pi + i * (2 * pi / NUM_SPIKES);
-
-            x[i] = radius * cosf(theta[i]) + originX;
-            y[i] = radius * sinf(theta[i]) + originY;
-            log_d("THETA X Y is %f %f %f", theta[i], x[i], y[i]);
-        }
-
-        for (k = 0; k < NUM_SPIKES / 2; k++) {
-            display.fillTriangle(originX, originY, x[k * 2], y[k * 2], x[k * 2 + 1], y[k * 2 + 1],
-                                 display.fg);
-        }
-
-        originX = 256 - 32;
-        originY = 32;
-
-        for (i = 0; i < NUM_SPIKES; i++) {
-
-            theta[i] = -pi + i * (2 * pi / NUM_SPIKES);
-
-            x[i] = radius * cosf(theta[i]) + originX;
-            y[i] = radius * sinf(theta[i]) + originY;
-            log_d("THETA X Y is %f %f %f", theta[i], x[i], y[i]);
-        }
-
-        for (k = 0; k < NUM_SPIKES / 2; k++) {
-            display.fillTriangle(originX, originY, x[k * 2], y[k * 2], x[k * 2 + 1], y[k * 2 + 1],
-                                 display.fg);
-        }
-
-        originX = 256 - 32;
-        originY = 256 - 32;
-
-        for (i = 0; i < NUM_SPIKES; i++) {
-
-            theta[i] = -pi + i * (2 * pi / NUM_SPIKES);
-
-            x[i] = radius * cosf(theta[i]) + originX;
-            y[i] = radius * sinf(theta[i]) + originY;
-            log_d("THETA X Y is %f %f %f", theta[i], x[i], y[i]);
-        }
-
-        for (k = 0; k < NUM_SPIKES / 2; k++) {
-            display.fillTriangle(originX, originY, x[k * 2], y[k * 2], x[k * 2 + 1], y[k * 2 + 1],
-                                 display.fg);
-        }
-
-        originX = 32;
-        originY = 256 - 32;
-
-        for (i = 0; i < NUM_SPIKES; i++) {
-
-            theta[i] = -pi + i * (2 * pi / NUM_SPIKES);
-
-            x[i] = radius * cosf(theta[i]) + originX;
-            y[i] = radius * sinf(theta[i]) + originY;
-            log_d("THETA X Y is %f %f %f", theta[i], x[i], y[i]);
-        }
-
-        for (k = 0; k < NUM_SPIKES / 2; k++) {
-            display.fillTriangle(originX, originY, x[k * 2], y[k * 2], x[k * 2 + 1], y[k * 2 + 1],
-                                 display.fg);
-        }
+        drawSiemensCircle(display, 128, 128, 32);
+        drawSiemensCircle(display, 32, 32, 32);
+        drawSiemensCircle(display, 256 - 32, 32, 32);
+        drawSiemensCircle(display, 256 - 32, 256 - 32, 32);
+        drawSiemensCircle(display, 32, 256 - 32, 32);
 
         display.updateDisplay();
         display.setFocusSize(oldX, oldY);
