@@ -9,7 +9,7 @@ void CalibrationScreen::render(DisplaySystem &display) {
         return;
     }
 
-    if (!opticsTest_) {
+    if (!opticsTest) {
         // TODO: DisplaySystem should just handle this stuff
         int xMin = display.localXOffset + display.xMin;
         int yMin = display.localYOffset + display.yMin;
@@ -64,10 +64,10 @@ void CalibrationScreen::render(DisplaySystem &display) {
         float pi = 3.141592653585753;
         float radius = 32.0;
         float theta[NUM_SPIKES];
-        float X[NUM_SPIKES];
-        float Y[NUM_SPIKES];
+        float x[NUM_SPIKES];
+        float y[NUM_SPIKES];
 
-        int origin_x, origin_y;
+        int originX, originY;
         int k;
 
         int l = 0;
@@ -99,88 +99,88 @@ void CalibrationScreen::render(DisplaySystem &display) {
 
         display.fillRect(256 - 64, 0, 64, 64, display.bg);
 
-        origin_x = 128;
-        origin_y = 128;
+        originX = 128;
+        originY = 128;
 
         for (i = 0; i < NUM_SPIKES; i++) {
 
             theta[i] = -pi + i * (2 * pi / NUM_SPIKES);
 
-            X[i] = radius * cosf(theta[i]) + origin_x;
-            Y[i] = radius * sinf(theta[i]) + origin_y;
-            log_d("THETA X Y is %f %f %f", theta[i], X[i], Y[i]);
+            x[i] = radius * cosf(theta[i]) + originX;
+            y[i] = radius * sinf(theta[i]) + originY;
+            log_d("THETA X Y is %f %f %f", theta[i], x[i], y[i]);
         }
 
         for (k = 0; k < NUM_SPIKES / 2; k++) {
-            display.fillTriangle(origin_x, origin_y, X[k * 2], Y[k * 2], X[k * 2 + 1], Y[k * 2 + 1],
+            display.fillTriangle(originX, originY, x[k * 2], y[k * 2], x[k * 2 + 1], y[k * 2 + 1],
                                  display.fg);
         }
 
-        origin_x = 32;
-        origin_y = 32;
+        originX = 32;
+        originY = 32;
 
         for (i = 0; i < NUM_SPIKES; i++) {
 
             theta[i] = -pi + i * (2 * pi / NUM_SPIKES);
 
-            X[i] = radius * cosf(theta[i]) + origin_x;
-            Y[i] = radius * sinf(theta[i]) + origin_y;
-            log_d("THETA X Y is %f %f %f", theta[i], X[i], Y[i]);
+            x[i] = radius * cosf(theta[i]) + originX;
+            y[i] = radius * sinf(theta[i]) + originY;
+            log_d("THETA X Y is %f %f %f", theta[i], x[i], y[i]);
         }
 
         for (k = 0; k < NUM_SPIKES / 2; k++) {
-            display.fillTriangle(origin_x, origin_y, X[k * 2], Y[k * 2], X[k * 2 + 1], Y[k * 2 + 1],
+            display.fillTriangle(originX, originY, x[k * 2], y[k * 2], x[k * 2 + 1], y[k * 2 + 1],
                                  display.fg);
         }
 
-        origin_x = 256 - 32;
-        origin_y = 32;
+        originX = 256 - 32;
+        originY = 32;
 
         for (i = 0; i < NUM_SPIKES; i++) {
 
             theta[i] = -pi + i * (2 * pi / NUM_SPIKES);
 
-            X[i] = radius * cosf(theta[i]) + origin_x;
-            Y[i] = radius * sinf(theta[i]) + origin_y;
-            log_d("THETA X Y is %f %f %f", theta[i], X[i], Y[i]);
+            x[i] = radius * cosf(theta[i]) + originX;
+            y[i] = radius * sinf(theta[i]) + originY;
+            log_d("THETA X Y is %f %f %f", theta[i], x[i], y[i]);
         }
 
         for (k = 0; k < NUM_SPIKES / 2; k++) {
-            display.fillTriangle(origin_x, origin_y, X[k * 2], Y[k * 2], X[k * 2 + 1], Y[k * 2 + 1],
+            display.fillTriangle(originX, originY, x[k * 2], y[k * 2], x[k * 2 + 1], y[k * 2 + 1],
                                  display.fg);
         }
 
-        origin_x = 256 - 32;
-        origin_y = 256 - 32;
+        originX = 256 - 32;
+        originY = 256 - 32;
 
         for (i = 0; i < NUM_SPIKES; i++) {
 
             theta[i] = -pi + i * (2 * pi / NUM_SPIKES);
 
-            X[i] = radius * cosf(theta[i]) + origin_x;
-            Y[i] = radius * sinf(theta[i]) + origin_y;
-            log_d("THETA X Y is %f %f %f", theta[i], X[i], Y[i]);
+            x[i] = radius * cosf(theta[i]) + originX;
+            y[i] = radius * sinf(theta[i]) + originY;
+            log_d("THETA X Y is %f %f %f", theta[i], x[i], y[i]);
         }
 
         for (k = 0; k < NUM_SPIKES / 2; k++) {
-            display.fillTriangle(origin_x, origin_y, X[k * 2], Y[k * 2], X[k * 2 + 1], Y[k * 2 + 1],
+            display.fillTriangle(originX, originY, x[k * 2], y[k * 2], x[k * 2 + 1], y[k * 2 + 1],
                                  display.fg);
         }
 
-        origin_x = 32;
-        origin_y = 256 - 32;
+        originX = 32;
+        originY = 256 - 32;
 
         for (i = 0; i < NUM_SPIKES; i++) {
 
             theta[i] = -pi + i * (2 * pi / NUM_SPIKES);
 
-            X[i] = radius * cosf(theta[i]) + origin_x;
-            Y[i] = radius * sinf(theta[i]) + origin_y;
-            log_d("THETA X Y is %f %f %f", theta[i], X[i], Y[i]);
+            x[i] = radius * cosf(theta[i]) + originX;
+            y[i] = radius * sinf(theta[i]) + originY;
+            log_d("THETA X Y is %f %f %f", theta[i], x[i], y[i]);
         }
 
         for (k = 0; k < NUM_SPIKES / 2; k++) {
-            display.fillTriangle(origin_x, origin_y, X[k * 2], Y[k * 2], X[k * 2 + 1], Y[k * 2 + 1],
+            display.fillTriangle(originX, originY, x[k * 2], y[k * 2], x[k * 2 + 1], y[k * 2 + 1],
                                  display.fg);
         }
 
