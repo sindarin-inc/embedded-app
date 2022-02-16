@@ -112,6 +112,7 @@ void setup() {
     myDisplay.localYOffset = 0;
     myDisplay.setFocusSize(15, 15);
     myDisplay.setFocusOffset(0, 0);
+    myDisplay.invertDisplay(prefs.invertSetting.get().value());
 #endif
 
     SIZE_OF(myDisplay);

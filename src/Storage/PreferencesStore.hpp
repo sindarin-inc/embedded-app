@@ -20,12 +20,12 @@ public:
         PrefsItemBase(Preferences &prefs) : prefs(prefs) {}
 
         void writeToStorage(const char *key, T value) {
-            if constexpr (std::is_same_v<T, int>) {
+            if constexpr (std::is_same_v<T, int> || std::is_same_v<T, uint32_t>) {
                 this->prefs.putInt(key, value);
             } else if constexpr (std::is_same_v<T, std::string>) {
                 this->prefs.putString(key, value.c_str());
             } else {
-                log_e("Unhandled prefs type");
+                log_e("Unhandled prefs type for key %s", key);
                 assert(0);
             }
         }
@@ -43,7 +43,7 @@ public:
         }
 
         virtual void loadValue() {
-            if constexpr (std::is_same_v<T, int>) {
+            if constexpr (std::is_same_v<T, int> || std::is_same_v<T, uint32_t>) {
                 this->value_ = this->prefs.getInt(this->key_);
             } else if constexpr (std::is_same_v<T, std::string>) {
                 // TODO: This behavior is a little inconsistent between types. For std::string
@@ -117,7 +117,7 @@ public:
             if constexpr (std::is_same_v<T, int> || std::is_same_v<T, uint32_t>) {
                 return this->prefs.getInt(key);
             } else {
-                log_e("Unhandled prefs type");
+                log_e("Unhandled prefs type for key %s", key);
                 assert(0);
             }
         }
