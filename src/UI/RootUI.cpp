@@ -225,6 +225,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
 
     settingsMenu->addMenuItem(MenuItem("Calibration Screen", [this, settingsMenu, display]() {
         auto calibrationScreen = new CalibrationScreen();
+        this->display_->clearDisplay();
         this->setCurrentScreen(*calibrationScreen);
         calibrationScreen->backCallback = [this, calibrationScreen, settingsMenu]() {
             setCurrentScreen(*settingsMenu);
@@ -235,6 +236,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
     settingsMenu->addMenuItem(MenuItem("Optics Test", [this, settingsMenu, display]() {
         auto opticsTestScreen = new CalibrationScreen();
         opticsTestScreen->setOpticsTest();
+        this->display_->clearDisplay();
         this->setCurrentScreen(*opticsTestScreen);
         opticsTestScreen->backCallback = [this, opticsTestScreen, settingsMenu]() {
             setCurrentScreen(*settingsMenu);
