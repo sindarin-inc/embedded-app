@@ -98,22 +98,18 @@ void setup() {
     // Turn on power to the screen
     digitalWrite(DISPLAY_POWER, HIGH);
     myDisplay.setup();
+#endif
+
+#if SIMULATOR
+    myDisplay.setup();
+#endif
+
     myDisplay.setFocusSize(15, 15);
     myDisplay.localXOffset = prefs.localXOffset.get().value();
     myDisplay.localYOffset = prefs.localYOffset.get().value();
     myDisplay.setFocusOffset((float)prefs.displayBoxWidthOffsetMm.get().value(),
                              (float)prefs.displayBoxHeightOffsetMm.get().value());
     myDisplay.invertDisplay(prefs.invertSetting.get().value());
-#endif
-
-#if SIMULATOR
-    myDisplay.setup();
-    myDisplay.localXOffset = 0;
-    myDisplay.localYOffset = 0;
-    myDisplay.setFocusSize(15, 15);
-    myDisplay.setFocusOffset(0, 0);
-    myDisplay.invertDisplay(prefs.invertSetting.get().value());
-#endif
 
     SIZE_OF(myDisplay);
 
