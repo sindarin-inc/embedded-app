@@ -57,7 +57,7 @@ void CalibrationScreen::render(DisplaySystem &display) {
         float oldX = display.getFocusWidth();
         float oldY = display.getFocusHeight();
 
-        display.setFocusSize(23.3, 23.3);
+        display.setFocusSize(23.4, 23.4);
 
         int i = 0;
 
