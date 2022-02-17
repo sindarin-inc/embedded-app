@@ -4,6 +4,7 @@
 
 #include "sindarin-debug.h"
 
+// NOLINTNEXTLINE(cert-err58-cpp)
 std::map<std::string, std::string> elementMap = {
     {"&nbsp;", " "},     //
     {"&lt;", "<"},       //
@@ -29,12 +30,12 @@ std::map<std::string, std::string> elementMap = {
     {"&reg;", "®"}       //
 };
 
-std::string ElementFromString(std::string &str) {
+auto ElementFromString(std::string &str) -> std::string {
     auto search = elementMap.find(str);
     if (search != elementMap.end()) {
         return search->second;
     } else {
-        log_d("HTML Element %s translated", str.c_str());
+        log_w("HTML Element %s not translated", str.c_str());
         return " ";
     }
 }
@@ -87,7 +88,7 @@ void StripHtml(std::stringstream &inStream, std::stringstream &outStream) {
     }
 }
 
-void StripHtml(std::string str, std::stringstream &outStream) {
+void StripHtml(const std::string &str, std::stringstream &outStream) {
     std::stringstream inStream;
     inStream << str;
 
