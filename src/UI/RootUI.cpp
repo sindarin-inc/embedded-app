@@ -3,6 +3,7 @@
 #include <nvs_flash.h>
 
 #include "Bitmaps/Logo.hpp"
+#include "Communications/HtmlCleaner.hpp"
 #include "Communications/WiFi.hpp"
 #include "Contents/Readable.hpp"
 #include "Inputs/RemoteInput.hpp"
@@ -169,7 +170,10 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
                     // article anyways.
                     auto streamRenderer = new StreamRenderer(*display);
                     std::string str = text;
-                    streamRenderer->setString(str);
+                    std::stringstream out;
+                    StripHtml(str, out);
+                    streamRenderer->setStream(out);
+
                     SIZE_OF(*streamRenderer);
                     streamRenderer->renderPage(0);
 

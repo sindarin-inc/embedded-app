@@ -17,6 +17,8 @@ DisplaySystem::DisplaySystem(int16_t w, int16_t h) : GFXcanvas1(w, h) {
 #else
     setRotation(0);
 #endif
+
+    setTextWrap(false);
 }
 
 void DisplaySystem::invertDisplay(bool newInvert) {
@@ -143,7 +145,7 @@ void DisplaySystem::splitStringToLines(const std::string &stringToSplit,
     //
     // The second part of this || is to handle when there's just a single line with
     // a single character on it with no \n.
-    if ((startPos != endPos) || stringToSplit.at(endPos) != '\n') {
+    if (stringToSplit.length() > 0 && ((startPos != endPos) || stringToSplit.at(endPos) != '\n')) {
         lines[numLines - 1] = stringToSplit.substr(startPos, endPos - startPos + 1);
     } else {
         numLines--;

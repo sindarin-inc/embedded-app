@@ -3,7 +3,17 @@
 #include "sindarin-debug.h"
 
 void StreamRenderer::setString(std::string &string) {
-    this->stream_ = std::istringstream(string);
+    this->stream_ = std::stringstream(string);
+    this->currentPlace_ = 0;
+    this->previousPlace_ = 0;
+
+    // LOAD TEXT for prev, current.
+    this->loadPrevIntoBuffer();
+    this->loadCurrIntoBuffer();
+}
+
+void StreamRenderer::setStream(std::stringstream &stream) {
+    this->stream_ = std::move(stream);
     this->currentPlace_ = 0;
     this->previousPlace_ = 0;
 

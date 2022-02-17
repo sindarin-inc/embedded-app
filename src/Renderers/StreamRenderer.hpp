@@ -14,6 +14,7 @@ public:
     StreamRenderer(DisplaySystem &display) : Renderer(display) {}
 
     void setString(std::string &string);
+    void setStream(std::stringstream &stream);
 
     auto available() -> int override { return stream_.peek() != EOF; }
     auto read() -> int override { return stream_.get(); };
@@ -25,7 +26,7 @@ public:
     auto size() -> size_t override { return 0; }
 
 protected:
-    std::istringstream stream_;
+    std::stringstream stream_;
 };
 
 #endif
