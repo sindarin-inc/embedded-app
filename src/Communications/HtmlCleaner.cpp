@@ -46,6 +46,39 @@ enum StripHtmlState {
     ELEMENT,
 };
 
+void addChar(StripHtmlState &state, std::string &element, const char x,
+             std::function<void(std::string)> writeString) {
+    if (state == TAG) {
+        if (x == '>') {
+            state = TEXT;
+        }
+        return;
+    } else if (state == ELEMENT) {
+        element.push_back(x);
+        if (x == ';') {
+            writeString(ElementFromString(element));
+            state = TEXT;
+        } else if (x == ' ') {
+            // Weird space in there, maybe this wasn't an element
+            writeString(element);
+            state = TEXT;
+        }
+        return;
+    }
+    // The start of a HTML tag
+    if (x == '<') {
+        state = TAG;
+        return;
+    }
+    // The possible star of a HTML Element
+    if (x == '&') {
+        element = "&";
+        state = ELEMENT;
+        return;
+    }
+    writeString(std::string(1, x));
+}
+
 void StripHtml(std::stringstream &inStream, std::stringstream &outStream) {
     StripHtmlState state = TEXT;
     std::string element;
@@ -56,39 +89,43 @@ void StripHtml(std::stringstream &inStream, std::stringstream &outStream) {
         if (inStream.eof() || !inStream.good()) {
             break;
         }
-        if (state == TAG) {
-            if (x == '>') {
-                state = TEXT;
-            }
-            continue;
-        } else if (state == ELEMENT) {
-            element.push_back(x);
-            if (x == ';') {
-                outStream << ElementFromString(element);
-                state = TEXT;
-            } else if (x == ' ') {
-                // Weird space in there, maybe this wasn't an element
-                outStream << element;
-                state = TEXT;
-            }
-            continue;
-        }
-        // The start of a HTML tag
-        if (x == '<') {
-            state = TAG;
-            continue;
-        }
-        // The possible star of a HTML Element
-        if (x == '&') {
-            element = "&";
-            state = ELEMENT;
-            continue;
-        }
-        outStream << x;
+        addChar(state, element, x, [&outStream](std::string x) { outStream << x; });
     }
 }
 
 void StripHtml(const std::string &str, std::stringstream &outStream) {
+    std::stringstream inStream;
+    inStream << str;
+
+    StripHtml(inStream, outStream);
+}
+
+void StripHtml(Stream &inStream, std::stringstream &outStream) {
+    StripHtmlState state = TEXT;
+    std::string element;
+
+    // Running loop till end of stream
+    while (inStream.available()) {
+        const char x = inStream.read();
+        addChar(state, element, x, [&outStream](std::string x) { outStream << x; });
+    }
+}
+
+void StripHtml(std::stringstream &inStream, Stream &outStream) {
+    StripHtmlState state = TEXT;
+    std::string element;
+
+    // Running loop till end of stream
+    while (true) {
+        const char x = inStream.get();
+        if (inStream.eof() || !inStream.good()) {
+            break;
+        }
+        addChar(state, element, x, [&outStream](std::string x) { outStream.write(x.c_str()); });
+    }
+}
+
+void StripHtml(const std::string &str, Stream &outStream) {
     std::stringstream inStream;
     inStream << str;
 

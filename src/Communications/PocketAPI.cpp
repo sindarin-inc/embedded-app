@@ -48,6 +48,8 @@ auto PocketAPI::text(const char *url, SpiRamJsonDocument **response) -> int {
     StaticJsonDocument<200> filter;
     filter["excerpt"] = true;
     filter["article"] = true;
+    filter["title"] = true;
+    filter["resolved_id"] = true;
 
     int httpCode = httpClient.POST((uint8_t *)request, requestLen);
     if (httpCode == 200) {

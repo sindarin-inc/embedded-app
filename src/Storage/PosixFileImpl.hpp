@@ -1,3 +1,4 @@
+#include <esp32-hal-log.h>
 #include <fstream>
 
 #include "FSImpl.h"
@@ -16,7 +17,13 @@ public:
     PosixFileImpl(const char *path) : file_(path) { strncpy(path_, path, sizeof(path_)); };
     ~PosixFileImpl() override = default;
     size_t write(const uint8_t *buf, size_t size) override {
+        if (!file_.is_open()) {
+            file_.open(path_, std::fstream::out);
+        }
         file_.write((const char *)buf, size);
+        if (!file_.good()) {
+            log_e("Problem writing to file %s: %s", path_, strerror(errno));
+        }
         return size;
     };
     size_t read(uint8_t *buf, size_t size) override {
@@ -39,7 +46,10 @@ public:
         stat(path_, &st);
         return st.st_size;
     };
-    void close() override { file_.close(); };
+    void close() override {
+        log_d("Closing file %s", path_);
+        file_.close();
+    };
     const char *name() const override { return ""; };
     time_t getLastWrite() override { return 0; };
     boolean isDirectory(void) override { return false; };

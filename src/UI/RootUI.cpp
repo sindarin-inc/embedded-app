@@ -90,7 +90,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
 
     // Set up pocket article menu
 #if ENABLE_POCKET
-    mainMenu->addMenuItem(MenuItem("Pocket Articles", [this, mainMenu, display]() {
+    mainMenu->addMenuItem(MenuItem("Pocket Articles", [this, mainMenu, display, &fileSystem]() {
         if (!NetworkConnected()) {
             log_w("Tried to load Pocket articles but WiFi not connected");
             display->renderMaxBoxWithText("WiFi Disconnected");
@@ -146,7 +146,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
             log_i("Got Pocket url %s", url);
             const char *title = article["resolved_title"].as<const char *>();
             pocketMenu->addMenuItem(
-                MenuItem(title, [this, pocketMenu, title, url, pocket, display]() {
+                MenuItem(title, [this, pocketMenu, title, url, pocket, display, &fileSystem]() {
                     log_d("Loading article %s (%s)", title, url);
                     display->renderMaxBoxWithText("Downloading...");
                     SpiRamJsonDocument *response;
@@ -165,28 +165,41 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
                     }
                     const char *text = (*response)["article"].as<const char *>();
                     log_i("Pocket text succeeded for %s", url);
-                    // TODO(john): We should eventually just save these to files and handle them
-                    // the same as any other readable. Probably not great to be copying this whole
-                    // article anyways.
-                    auto streamRenderer = new StreamRenderer(*display);
                     std::string str = text;
-                    std::stringstream out;
-                    StripHtml(str, out);
-                    streamRenderer->setStream(out);
 
-                    SIZE_OF(*streamRenderer);
-                    streamRenderer->renderPage(0);
+                    fileSystem.createDir("/pocket");
+                    auto id = StringFormat("pkt-%s", (*response)["resolved_id"].as<const char *>());
+                    auto path = StringFormat("/pocket/%s.txt", id.c_str());
+                    File file = fileSystem.open(path.c_str());
+                    const char *title = (*response)["title"].as<const char *>();
+                    file.write((const uint8_t *)title, strlen(title));
+                    file.write('\n');
 
-                    auto streamRendererScreen = new StreamRendererScreen(streamRenderer);
+                    StripHtml(str, file);
+
+                    file.flush();
+                    file.close();
+
+                    auto readable = new Readable(id.c_str(), title, path.c_str());
+
+                    // TODO(john): We should eventually just save these to files and handle them
+                    // the same as any other readable. Probably not great to be copying this
+                    // whole article anyways.
+                    auto fileRenderer = new FileRenderer(*display, *readable, fileSystem);
+                    SIZE_OF(*fileRenderer);
+                    fileRenderer->renderPage(0);
+
+                    auto streamRendererScreen =
+                        new ReadableScreen(fileRenderer, *readable, prefs_, power_);
                     setCurrentScreen(*streamRendererScreen);
 
-                    streamRendererScreen->backCallback =
-                        [this, streamRenderer, streamRendererScreen, pocketMenu, response]() {
-                            setCurrentScreen(*pocketMenu);
-                            delete streamRendererScreen;
-                            delete streamRenderer;
-                            delete response;
-                        };
+                    streamRendererScreen->backCallback = [this, fileRenderer, streamRendererScreen,
+                                                          pocketMenu, response]() {
+                        setCurrentScreen(*pocketMenu);
+                        delete streamRendererScreen;
+                        delete fileRenderer;
+                        delete response;
+                    };
                 }));
         }
         display->clearDisplay();
