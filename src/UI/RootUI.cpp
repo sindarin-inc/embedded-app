@@ -107,7 +107,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
             return;
         }
 
-        log_i("Loading top Pocket article");
+        log_i("Loading Pocket articles");
         // TODO(John): I wanted to make a loading indicator for this but then realized I'll
         // need to add threading / tasks since the HTTP code is synchronous right now.
         display->renderMaxBoxWithText("Downloading...");

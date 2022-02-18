@@ -23,10 +23,10 @@ void StreamRendererScreen::processCommand(RemoteCommand command) {
         needsRerender = true;
         break;
     }
-    case RemoteCommand::PREV:
     case RemoteCommand::NEXT:
         needsRerender = true;
         break;
+    case RemoteCommand::PREV:
     case RemoteCommand::BACK:
         if (backCallback != nullptr) {
             backCallback();

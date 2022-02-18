@@ -32,8 +32,10 @@ void SpiffsFileSystem::begin() {
     SHOW_HEAP();
 }
 
-auto SpiffsFileSystem::open(const std::string &path) -> File { return SPIFFS.open(path.c_str()); }
+auto SpiffsFileSystem::open(const std::string &path) const -> File {
+    return SPIFFS.open(path.c_str());
+}
 
-auto SpiffsFileSystem::exists(const std::string &path) -> bool {
+auto SpiffsFileSystem::exists(const std::string &path) const -> bool {
     return SPIFFS.exists(path.c_str());
 }
