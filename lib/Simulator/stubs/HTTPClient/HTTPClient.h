@@ -92,12 +92,14 @@ public:
 
     bool begin(String url);
     void end(void);
-    void useHTTP10(bool usehttp10 = true){};
+    void useHTTP10(bool usehttp10 = true) {}
+    void setTimeout(uint16_t timeout) {}
     int POST(uint8_t *payload, size_t size);
     void addHeader(const String &name, const String &value, bool first = false,
                    bool replace = true);
     int getSize(void);
     StringStream &getStream(void);
+    String getString();
 
 protected:
     httplib::Client *client_ = nullptr;
@@ -106,6 +108,7 @@ protected:
     std::string path_;
 
     StringStream *stream_ = nullptr;
+    String *string_ = nullptr;
 
     int size_ = -1;
 };

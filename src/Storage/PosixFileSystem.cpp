@@ -8,7 +8,7 @@
 #include "PosixFileImpl.hpp"
 void PosixFileSystem::begin() {}
 
-auto PosixFileSystem::open(const std::string &path) -> File {
+auto PosixFileSystem::open(const std::string &path) const -> File {
     char prefixedPath[200];
     getcwd(prefixedPath, sizeof(prefixedPath));
     strncat(prefixedPath, "/data", sizeof(prefixedPath) - 1);
@@ -16,7 +16,7 @@ auto PosixFileSystem::open(const std::string &path) -> File {
     return File(std::make_shared<PosixFileImpl>(prefixedPath));
 }
 
-bool PosixFileSystem::exists(const std::string &path) {
+bool PosixFileSystem::exists(const std::string &path) const {
     char prefixedPath[200];
     getcwd(prefixedPath, sizeof(prefixedPath));
     strncat(prefixedPath, "/data", sizeof(prefixedPath) - 1);

@@ -5,6 +5,6 @@ public:
     PosixFileSystem() noexcept : FileSystem(){};
 
     void begin() override;
-    File open(const std::string &path) override;
-    bool exists(const std::string &path) override;
+    [[nodiscard]] auto open(const std::string &path) const -> File override;
+    [[nodiscard]] auto exists(const std::string &path) const -> bool override;
 };

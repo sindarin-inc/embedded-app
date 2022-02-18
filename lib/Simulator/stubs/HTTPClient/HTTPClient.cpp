@@ -38,6 +38,7 @@ bool HTTPClient::begin(String url) {
 void HTTPClient::end(void) {
     delete client_;
     delete stream_;
+    delete string_;
 }
 
 /**
@@ -59,8 +60,8 @@ int HTTPClient::POST(uint8_t *payload, size_t size) {
     auto res = client_->Post(path_.c_str(), (const char *)payload, size,
                              "application/x-www-form-urlencoded");
     if (res) {
-        auto resStr = String(res->body.c_str());
-        stream_ = new StringStream(resStr);
+        string_ = new String(res->body.c_str());
+        stream_ = new StringStream(*string_);
         size_ = res->body.length();
     } else {
         log_e("Bad response object");
@@ -81,6 +82,12 @@ int HTTPClient::getSize(void) { return size_; }
  * @return WiFiClient
  */
 StringStream &HTTPClient::getStream(void) { return *stream_; }
+
+/**
+ * return all payload as String (may need lot of ram or trigger out of memory!)
+ * @return String
+ */
+String HTTPClient::getString(void) { return *string_; }
 
 /**
  * adds Header to the request
