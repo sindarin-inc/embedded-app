@@ -77,7 +77,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
     auto currentReadable = prefs_.lastReadableId.get();
     for (Readable &r : readables) {
         Readable *readable = &r;
-        r.place = prefs_.readablePlace.get(r.id);
+        r.place = prefs_.readablePlace.get(r.id.c_str());
         mainMenu->addMenuItem(MenuItem(r.name, [this, readable, createReadableScreen]() {
             auto readableScreen = createReadableScreen(readable);
             this->setCurrentScreen(*readableScreen);
@@ -145,62 +145,68 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
             const char *url = article["resolved_url"].as<const char *>();
             log_i("Got Pocket url %s", url);
             const char *title = article["resolved_title"].as<const char *>();
-            pocketMenu->addMenuItem(
-                MenuItem(title, [this, pocketMenu, title, url, pocket, display, &fileSystem]() {
-                    log_d("Loading article %s (%s)", title, url);
-                    display->renderMaxBoxWithText("Downloading...");
-                    SpiRamJsonDocument *response;
-                    auto code = pocket->text(url, &response);
-                    if (code != 200) {
-                        if (code == -1) {
-                            log_e("Pocket HTTP Error: %d (Article too long?)", code);
-                            display->renderMaxBoxWithText("Error: Too long");
-                        } else {
-                            log_e("Pocket HTTP Error: %d", code);
-                            display->renderMaxBoxWithText(StringFormat("Pocket Error: %d", code));
-                        }
-                        delay(2000);
-                        setCurrentScreen(*pocketMenu);
-                        return;
+            pocketMenu->addMenuItem(MenuItem(title, [this, pocketMenu, title, url, pocket, display,
+                                                     &fileSystem]() {
+                log_d("Loading article %s (%s)", title, url);
+                display->renderMaxBoxWithText("Downloading...");
+                SpiRamJsonDocument *response;
+                auto code = pocket->text(url, &response);
+                if (code != 200) {
+                    if (code == -1) {
+                        log_e("Pocket HTTP Error: %d (Article too long?)", code);
+                        display->renderMaxBoxWithText("Error: Too long");
+                    } else {
+                        log_e("Pocket HTTP Error: %d", code);
+                        display->renderMaxBoxWithText(StringFormat("Pocket Error: %d", code));
                     }
-                    const char *text = (*response)["article"].as<const char *>();
-                    log_i("Pocket text succeeded for %s", url);
-                    std::string str = text;
+                    delay(2000);
+                    setCurrentScreen(*pocketMenu);
+                    return;
+                }
+                const char *text = (*response)["article"].as<const char *>();
+                log_i("Pocket text succeeded for %s", url);
+                std::string str = text;
 
-                    fileSystem.createDir("/pocket");
-                    auto id = StringFormat("pkt-%s", (*response)["resolved_id"].as<const char *>());
-                    auto path = StringFormat("/pocket/%s.txt", id.c_str());
-                    File file = fileSystem.open(path.c_str());
-                    const char *title = (*response)["title"].as<const char *>();
-                    file.write((const uint8_t *)title, strlen(title));
-                    file.write('\n');
+                if (!fileSystem.createDir("/pocket")) {
+                    log_e("Unable to create Pocket dir");
+                    display->renderMaxBoxWithText(StringFormat("FS error createDir"));
+                    delay(2000);
+                    setCurrentScreen(*pocketMenu);
+                    return;
+                }
+                auto id = StringFormat("pkt-%s", (*response)["resolved_id"].as<const char *>());
+                auto path = StringFormat("/pocket/%s.txt", id.c_str());
+                File file = fileSystem.open(path.c_str(), FILE_WRITE);
+                const char *title = (*response)["title"].as<const char *>();
+                file.write((const uint8_t *)title, strlen(title));
+                file.write('\n');
 
-                    StripHtml(str, file);
+                StripHtml(str, file);
 
-                    file.flush();
-                    file.close();
+                file.flush();
+                file.close();
 
-                    auto readable = new Readable(id.c_str(), title, path.c_str());
+                auto readable = new Readable(id.c_str(), title, path.c_str());
 
-                    // TODO(john): We should eventually just save these to files and handle them
-                    // the same as any other readable. Probably not great to be copying this
-                    // whole article anyways.
-                    auto fileRenderer = new FileRenderer(*display, *readable, fileSystem);
-                    SIZE_OF(*fileRenderer);
-                    fileRenderer->renderPage(0);
+                // TODO(john): We should eventually just save these to files and handle them
+                // the same as any other readable. Probably not great to be copying this
+                // whole article anyways.
+                auto fileRenderer = new FileRenderer(*display, *readable, fileSystem);
+                SIZE_OF(*fileRenderer);
+                fileRenderer->renderPage(0);
 
-                    auto streamRendererScreen =
-                        new ReadableScreen(fileRenderer, *readable, prefs_, power_);
-                    setCurrentScreen(*streamRendererScreen);
+                auto readableScreen = new ReadableScreen(fileRenderer, *readable, prefs_, power_);
+                setCurrentScreen(*readableScreen);
 
-                    streamRendererScreen->backCallback = [this, fileRenderer, streamRendererScreen,
-                                                          pocketMenu, response]() {
-                        setCurrentScreen(*pocketMenu);
-                        delete streamRendererScreen;
-                        delete fileRenderer;
-                        delete response;
-                    };
-                }));
+                readableScreen->backCallback = [this, fileRenderer, readableScreen, pocketMenu,
+                                                response, readable]() {
+                    setCurrentScreen(*pocketMenu);
+                    delete readableScreen;
+                    delete fileRenderer;
+                    delete response;
+                    delete readable;
+                };
+            }));
         }
         display->clearDisplay();
         setCurrentScreen(*pocketMenu);
@@ -316,7 +322,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
         if (it != readables.end()) {
             auto readableScreen = createReadableScreen(&(*it));
             this->setCurrentScreen(*readableScreen);
-            log_i("Resuming readable from last session: %s", (*it).name);
+            log_i("Resuming readable from last session: %s", (*it).name.c_str());
         } else {
             // Assume this readable has gone away
             prefs_.lastReadableId.remove();

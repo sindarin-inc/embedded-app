@@ -40,7 +40,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::CHANNEL_MINUS:
         if (!inPopup_) {
             readable_.place = fileRenderer_->getPreviousPlace();
-            prefs_.readablePlace.set(readable_.id, readable_.place);
+            prefs_.readablePlace.set(readable_.id.c_str(), readable_.place);
             needsRerender = true;
         } else {
             // Go back to the main menu from the popup menu if they press left
@@ -51,7 +51,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         if (!inPopup_) {
             readable_.placePrev = readable_.place;
             readable_.place = newPlace_;
-            prefs_.readablePlace.set(readable_.id, readable_.place);
+            prefs_.readablePlace.set(readable_.id.c_str(), readable_.place);
             needsRerender = true;
         } else {
             // Reserved for future use? Potentially lighting up and down?

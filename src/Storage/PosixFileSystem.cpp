@@ -15,10 +15,12 @@ void createPath(char *output, size_t outputSize, const std::string &path) {
 
 void PosixFileSystem::begin() {}
 
-auto PosixFileSystem::open(const std::string &path) const -> File {
+auto PosixFileSystem::open(const std::string &path, const char *mode, const bool create) const
+    -> File {
     char prefixedPath[200];
     createPath(prefixedPath, sizeof(prefixedPath), std::string("/data") + path);
-    return File(std::make_shared<PosixFileImpl>(prefixedPath));
+    auto file = File(std::make_shared<PosixFileImpl>(prefixedPath));
+    return file;
 }
 
 bool PosixFileSystem::exists(const std::string &path) const {
@@ -46,7 +48,7 @@ auto PosixFileSystem::listDir(const std::string &path, FileList &files) const ->
     }
 }
 
-auto PosixFileSystem::createDir(const std::string &path, bool allowExists) const -> bool {
+auto PosixFileSystem::createDir(const std::string &path, bool allowExists) -> bool {
     char prefixedPath[200];
     createPath(prefixedPath, sizeof(prefixedPath), std::string("/data") + path);
     if (mkdir(prefixedPath, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {

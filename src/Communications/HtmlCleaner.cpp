@@ -1,5 +1,6 @@
 #include "HtmlCleaner.hpp"
 
+#include <functional>
 #include <map>
 
 #include "sindarin-debug.h"
@@ -46,8 +47,8 @@ enum StripHtmlState {
     ELEMENT,
 };
 
-void addChar(StripHtmlState &state, std::string &element, const char x,
-             std::function<void(std::string)> writeString) {
+void AddChar(StripHtmlState &state, std::string &element, const char x,
+             const std::function<void(std::string)> &writeString) {
     if (state == TAG) {
         if (x == '>') {
             state = TEXT;
@@ -89,7 +90,7 @@ void StripHtml(std::stringstream &inStream, std::stringstream &outStream) {
         if (inStream.eof() || !inStream.good()) {
             break;
         }
-        addChar(state, element, x, [&outStream](std::string x) { outStream << x; });
+        AddChar(state, element, x, [&outStream](const std::string &x) { outStream << x; });
     }
 }
 
@@ -107,7 +108,7 @@ void StripHtml(Stream &inStream, std::stringstream &outStream) {
     // Running loop till end of stream
     while (inStream.available()) {
         const char x = inStream.read();
-        addChar(state, element, x, [&outStream](std::string x) { outStream << x; });
+        AddChar(state, element, x, [&outStream](const std::string &x) { outStream << x; });
     }
 }
 
@@ -121,7 +122,8 @@ void StripHtml(std::stringstream &inStream, Stream &outStream) {
         if (inStream.eof() || !inStream.good()) {
             break;
         }
-        addChar(state, element, x, [&outStream](std::string x) { outStream.write(x.c_str()); });
+        AddChar(state, element, x,
+                [&outStream](const std::string &x) { outStream.write(x.c_str()); });
     }
 }
 

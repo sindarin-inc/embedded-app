@@ -15,6 +15,7 @@
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/Power.hpp"
+#include "Misc/StringUtil.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/RootUI.hpp"
 #include "config.h"
@@ -175,6 +176,7 @@ void setup() {
     auto readables = new std::vector<Readable>();
     fileSystem.begin();
     fileSystem.getReadables(readables);
+    fileSystem.getDownloadedPocketReadables(readables);
 
     SHOW_HEAP();
 
