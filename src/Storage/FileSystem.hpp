@@ -15,8 +15,8 @@ public:
     // Underlying methods to init and read data
     virtual void begin(){};
     // Note: File overrides bool and will be false if there's an error
-    virtual auto open(const std::string &path) const -> File { assert(0); };
-    virtual auto exists(const std::string &path) const -> bool { assert(0); };
+    [[nodiscard]] virtual auto open(const std::string &path) const -> File { assert(0); };
+    [[nodiscard]] virtual auto exists(const std::string &path) const -> bool { assert(0); };
 
 protected:
     FileSystem() noexcept = default;
