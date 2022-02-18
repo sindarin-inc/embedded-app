@@ -54,7 +54,7 @@ auto PocketAPI::text(const char *url, SpiRamJsonDocument **response) -> int {
         auto string = httpClient.getString();
         auto *resp = new SpiRamJsonDocument(string.length());
         ArduinoJson::deserializeJson(*resp, string, DeserializationOption::Filter(filter));
-        log_i("Pocket text succeeded for %s", url);
+        log_i("Pocket /text succeeded for %s", url);
         *response = resp;
     } else {
         log_w("Pocket request failed with code %d\n", httpCode);
@@ -97,20 +97,10 @@ auto PocketAPI::get(SpiRamJsonDocument **response) -> int {
 
     int httpCode = httpClient.POST((uint8_t *)request, requestLen);
     if (httpCode == 200) {
-        auto size = httpClient.getSize();
-        if (size < 0) {
-            log_e("Failed to parse Pocket response size=%d", size);
-            return size;
-        }
-        log_d("Parsing Pocket response with size=%d", size);
-
-        auto *resp = new SpiRamJsonDocument(size);
-        auto err = ArduinoJson::deserializeJson(*resp, httpClient.getStream(),
-                                                DeserializationOption::Filter(filter));
-        if (err != DeserializationError::Code::Ok) {
-            log_e("JSON error %s", err.c_str());
-        }
-        log_i("Pocket request succeeded");
+        auto string = httpClient.getString();
+        auto *resp = new SpiRamJsonDocument(string.length());
+        ArduinoJson::deserializeJson(*resp, string, DeserializationOption::Filter(filter));
+        log_i("Pocket /get succeeded");
         *response = resp;
     } else {
         log_w("Pocket request failed with code %d", httpCode);
