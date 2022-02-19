@@ -9,4 +9,5 @@ public:
     [[nodiscard]] auto exists(const std::string &path) const -> bool override;
     auto listDir(const std::string &path, FileList &files) const -> int override;
     auto createDir(const std::string &path, bool allowExists = true) -> bool override;
+    auto remove(const std::string &path) -> bool override;
 };

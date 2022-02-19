@@ -27,7 +27,7 @@ void FileSystem::getReadables(std::vector<Readable> *readables) {
                   readable.path.c_str());
             readables->emplace_back(readable);
         } else {
-            log_w("Couldn't find readable with path %s", readable.path);
+            log_w("Couldn't find readable with path %s", readable.path.c_str());
         }
     }
 

@@ -17,6 +17,18 @@ public:
         : fileRenderer_(fileRenderer), readable_(readable), prefs_(prefs), power_(power) {
         popup_ = new PopupMenuScreen(power, fileRenderer);
         currentScreen_ = this;
+        if (readable.id.rfind("pkt-", 0) == 0) {
+            popup_->setLeftButtonTitle("Delete");
+            leftButtonCallback_ = [this, readable, fileRenderer]() {
+                log_i("Deleting Pocket readable %s", readable.path.c_str());
+                if (!fileRenderer->fileSystem.remove(readable.path)) {
+                    log_e("Failed to delete Pocket readable %s", readable.path.c_str());
+                }
+                log_d("Rebooting to reload readables");
+                // TODO: Dynamically reload readables instead of rebooting
+                esp_restart();
+            };
+        }
     }
 
     ~ReadableScreen() override = default;
@@ -35,4 +47,6 @@ protected:
     bool inPopup_ = false;
 
     unsigned long newPlace_ = 0;
+
+    std::function<void(void)> leftButtonCallback_;
 };

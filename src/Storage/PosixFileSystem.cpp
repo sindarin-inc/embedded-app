@@ -62,4 +62,11 @@ auto PosixFileSystem::createDir(const std::string &path, bool allowExists) -> bo
     return true;
 }
 
+auto PosixFileSystem::remove(const std::string &path) -> bool {
+    char prefixedPath[200];
+    createPath(prefixedPath, sizeof(prefixedPath), std::string("/data") + path);
+
+    return (::remove(prefixedPath));
+};
+
 #endif

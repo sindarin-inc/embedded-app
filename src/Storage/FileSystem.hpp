@@ -24,22 +24,22 @@ public:
                       const bool create = false) const -> File {
         log_e("Abstract");
         assert(0);
-        return {};
     };
     [[nodiscard]] virtual auto exists(const std::string &path) const -> bool {
         log_e("Abstract");
         assert(0);
-        return false;
     };
     virtual auto listDir(const std::string &path, FileList &files) const -> int {
         log_e("Abstract");
         assert(0);
-        return 0;
     };
     virtual auto createDir(const std::string &path, bool allowExists = true) -> bool {
         log_e("Abstract");
         assert(0);
-        return false;
+    }
+    virtual auto remove(const std::string &path) -> bool {
+        log_e("Abstract");
+        assert(0);
     }
 
 protected:

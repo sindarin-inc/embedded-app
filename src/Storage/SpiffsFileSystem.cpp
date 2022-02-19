@@ -55,3 +55,7 @@ auto SpiffsFileSystem::createDir(const std::string &path, bool allowExists) -> b
     // SPIFFs does not really have directories
     return true;
 }
+
+auto SpiffsFileSystem::remove(const std::string &path) -> bool {
+    return SPIFFS.remove(path.c_str());
+}

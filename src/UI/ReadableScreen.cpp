@@ -43,8 +43,12 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             prefs_.readablePlace.set(readable_.id.c_str(), readable_.place);
             needsRerender = true;
         } else {
-            // Go back to the main menu from the popup menu if they press left
-            back();
+            if (leftButtonCallback_) {
+                leftButtonCallback_();
+            } else {
+                // Go back to the main menu from the popup menu if they press left
+                back();
+            }
         }
         break;
     case RemoteCommand::CHANNEL_PLUS:

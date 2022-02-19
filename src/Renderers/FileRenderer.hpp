@@ -17,6 +17,8 @@ public:
     auto position() -> size_t override { return fileHandle_.position(); }
     auto size() -> size_t override { return fileHandle_.size(); }
 
+    FileSystem &fileSystem;
+
 protected:
     File fileHandle_;
 };

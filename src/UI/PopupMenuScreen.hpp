@@ -14,15 +14,18 @@ class PopupMenuScreen : public Screen {
 
 public:
     PopupMenuScreen(Power &power, FileRenderer *fileRenderer)
-        : power_(power), fileRenderer_(fileRenderer){};
+        : power_(power), fileRenderer_(fileRenderer), leftButtonTitle_("Menu"){};
 
     void render(DisplaySystem &display) override;
 
     void processCommand(RemoteCommand command) override{};
 
+    void setLeftButtonTitle(const std::string &title) { leftButtonTitle_ = title; };
+
 protected:
     Power &power_;
     FileRenderer *fileRenderer_;
+    std::string leftButtonTitle_;
 };
 
 #endif

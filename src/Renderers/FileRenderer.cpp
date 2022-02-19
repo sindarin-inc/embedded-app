@@ -6,7 +6,7 @@
 #define MAX_CHARS_PER_LINE 200
 
 FileRenderer::FileRenderer(DisplaySystem &display, Readable &readableInput, FileSystem &fileSystem)
-    : Renderer(display) {
+    : fileSystem(fileSystem), Renderer(display) {
     log_d("Attempting to open: %s", readableInput.path.c_str());
     fileHandle_ = fileSystem.open(readableInput.path);
     if (!fileHandle_) {
