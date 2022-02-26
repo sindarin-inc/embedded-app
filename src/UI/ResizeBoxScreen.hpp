@@ -2,7 +2,7 @@
 #define RESIZE_BOX_SCREEN_HPP
 
 #include "Misc/Power.hpp"
-#include "Renderers/StreamRenderer.hpp"
+#include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Screen.hpp"
 
@@ -21,7 +21,7 @@ protected:
     float boxHeightOffset_;
 
     DisplaySystem &display_;
-    StreamRenderer renderer_;
+    Renderer renderer_;
     PreferencesStore &prefs_;
     Power &power_;
 };

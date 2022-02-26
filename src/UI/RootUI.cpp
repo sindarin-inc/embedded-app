@@ -9,8 +9,7 @@
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/StringUtil.hpp"
-#include "Renderers/FileRenderer.hpp"
-#include "Renderers/StreamRenderer.hpp"
+#include "Renderers/Renderer.hpp"
 #include "UI/CalibrationScreen.hpp"
 #include "UI/LoadingScreen.hpp"
 #include "UI/LogoScreen.hpp"
@@ -20,7 +19,6 @@
 #include "UI/PowerDepletedScreen.hpp"
 #include "UI/ReadableScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
-#include "UI/StreamRendererScreen.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
 
@@ -52,21 +50,32 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
         DisconnectWifi();
 #endif
         // TODO: Would be better to not allocate / delete these all the time
-        auto *bookRenderer = new FileRenderer(*display, *readable, fileSystem);
+        auto stream = fileSystem.newRendererStream(readable->path.c_str());
         this->prefs_.lastReadableId.set(readable->id);
         auto *readableScreen =
-            new ReadableScreen(bookRenderer, *readable, this->prefs_, this->power_);
+            new ReadableScreen(stream, *display, *readable, this->prefs_, this->power_);
+        if (readable->id.rfind("pkt-", 0) == 0) {
+            readableScreen->setLeftPopupButton("Delete", [this, readable, &fileSystem]() {
+                log_i("Deleting Pocket readable %s", readable->path.c_str());
+                if (!fileSystem.remove(readable->path)) {
+                    log_e("Failed to delete Pocket readable %s", readable->path.c_str());
+                }
+                log_d("Rebooting to reload readables");
+                // TODO: Dynamically reload readables instead of rebooting
+                esp_restart();
+            });
+        }
         // When switching to a readable from a menu, we should clear the display
         // to make the whites really white and the blacks really black.
-        bookRenderer->getDisplay()->clearDisplay();
-        readableScreen->backCallback = [this, bookRenderer, readableScreen, mainMenu]() {
+        display->clearDisplay();
+        readableScreen->backCallback = [this, display, stream, readableScreen, mainMenu]() {
 #if !DISABLE_WIFI
             ConnectWiFiIfCredentialsExist();
 #endif
             // When leaving a readable to go back to the main menu, do a full clear
             // of the display.
-            bookRenderer->getDisplay()->clearDisplay();
-            delete bookRenderer;
+            display->clearDisplay();
+            delete stream;
             delete readableScreen;
             prefs_.lastReadableId.remove();
             setCurrentScreen(*mainMenu);
@@ -90,7 +99,8 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
 
     // Set up pocket article menu
 #if ENABLE_POCKET
-    mainMenu->addMenuItem(MenuItem("Pocket Articles", [this, mainMenu, display, &fileSystem]() {
+    mainMenu->addMenuItem(MenuItem("Pocket Articles", [this, mainMenu, display, &fileSystem,
+                                                       createReadableScreen]() {
         if (!NetworkConnected()) {
             log_w("Tried to load Pocket articles but WiFi not connected");
             display->renderMaxBoxWithText("WiFi Disconnected");
@@ -146,7 +156,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
             log_i("Got Pocket url %s", url);
             const char *title = article["resolved_title"].as<const char *>();
             pocketMenu->addMenuItem(MenuItem(title, [this, pocketMenu, title, url, pocket, display,
-                                                     &fileSystem]() {
+                                                     &fileSystem, createReadableScreen]() {
                 log_d("Loading article %s (%s)", title, url);
                 display->renderMaxBoxWithText("Downloading...");
                 SpiRamJsonDocument *response;
@@ -188,21 +198,13 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
 
                 auto readable = new Readable(id.c_str(), title, path.c_str());
 
-                // TODO(john): We should eventually just save these to files and handle them
-                // the same as any other readable. Probably not great to be copying this
-                // whole article anyways.
-                auto fileRenderer = new FileRenderer(*display, *readable, fileSystem);
-                SIZE_OF(*fileRenderer);
-                fileRenderer->renderPage(0);
-
-                auto readableScreen = new ReadableScreen(fileRenderer, *readable, prefs_, power_);
+                auto readableScreen = createReadableScreen(readable);
                 setCurrentScreen(*readableScreen);
 
-                readableScreen->backCallback = [this, fileRenderer, readableScreen, pocketMenu,
-                                                response, readable]() {
+                readableScreen->backCallback = [this, readableScreen, pocketMenu, response,
+                                                readable]() {
                     setCurrentScreen(*pocketMenu);
                     delete readableScreen;
-                    delete fileRenderer;
                     delete response;
                     delete readable;
                 };

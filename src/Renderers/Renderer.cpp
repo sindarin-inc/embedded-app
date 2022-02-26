@@ -109,15 +109,15 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         return 0;
     }
 
-    if (!seek(seekPlace)) {
+    if (!stream_->seek(seekPlace)) {
         log_e("failed to seek in go_backwards: %lu is the place", place);
         // This is a fragile since 0 is a valid file handle position. TODO to fix.
         return 0;
     }
 
-    while (available()) {
+    while (stream_->available()) {
         if (totalCharsRead < numCharsToRead) {
-            curChar = read();
+            curChar = stream_->read();
 
             // We'll fill in the array backwards just so it's easier to read it forwards
             // to do the backwards lineify
@@ -259,19 +259,19 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
     buffer[plcInBuffer] = '\0';
     singleLine[charsInLine] = '\0';
 
-    if (!this->seek(place)) {
+    if (!stream_->seek(place)) {
         log_e("failed to seek %lu is the place", place);
         // This is a fragile since 0 is a valid file handle position. TODO to fix.
         return 0;
     }
 
-    while (this->available()) {
-        auto curChar = this->read();
+    while (stream_->available()) {
+        auto curChar = stream_->read();
 
         // eliminate spaces at the beginning of the read
         // (This can happen due to heuristic to be able to go backwards arbitrarily)
-        while ((plcInBuffer == 0) && (curChar == ' ') && this->available()) {
-            curChar = this->read();
+        while ((plcInBuffer == 0) && (curChar == ' ') && stream_->available()) {
+            curChar = stream_->read();
         }
 
         // Turn new lines into spaces, for now.
@@ -325,7 +325,7 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
                 if (linesInBuffer > maxLines) {
                     // reset the file_handle to the end of this buffer so
                     // the next reads do the right thing.
-                    this->seek(prevSeekPos);
+                    stream_->seek(prevSeekPos);
                     this->nextPlace_ = prevSeekPos;
                     buffer[prevSpace - charsInLine] = '\0';
                     break;
@@ -334,7 +334,7 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
                 // note where the previous space was in the buffer
                 // as well as in the file handle and then keep going
                 prevSpace = plcInBuffer;
-                prevSeekPos = this->position();
+                prevSeekPos = stream_->position();
                 charsInLine++;
             }
         } else {
@@ -346,7 +346,7 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
 
     // If we got through the above check and this one fails, this means we are at
     // the end of file, so we should wrap around and start over.
-    if (!this->available()) {
+    if (!stream_->available()) {
         log_i("Found the end of file and so starting over at the beginning.");
         return 0;
     } else {

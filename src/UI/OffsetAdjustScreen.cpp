@@ -14,7 +14,8 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
         message += "Press arrows to move box around to your liking. Then "
                    "long-press the left button when done! Message repeats. ";
     }
-    renderer_.setString(message);
+    auto stream = new StdStringStream(message);
+    renderer_.setStream(stream);
 }
 
 void OffsetAdjustScreen::render(DisplaySystem &display) {

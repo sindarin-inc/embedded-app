@@ -1,6 +1,12 @@
 #include "UI/ReadableScreen.hpp"
 
 #include "sindarin-debug.h"
+
+void ReadableScreen::setLeftPopupButton(std::string title, std::function<void(void)> callback) {
+    popup_.setLeftButtonTitle(title);
+    leftButtonCallback_ = callback;
+}
+
 void ReadableScreen::render(DisplaySystem &display) {
 
     if (currentScreen_ != this) {
@@ -12,12 +18,12 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
     if (!inPopup_) {
-        newPlace_ = fileRenderer_->renderPage(readable_.place);
+        newPlace_ = renderer_.renderPage(readable_.place);
         log_d("%lu is the new place in the text", newPlace_);
         needsRerender = false;
     } else {
         log_d("Rendering popup menu");
-        popup_->render(display);
+        popup_.render(display);
         needsRerender = false;
     }
 }
@@ -39,7 +45,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
         if (!inPopup_) {
-            readable_.place = fileRenderer_->getPreviousPlace();
+            readable_.place = renderer_.getPreviousPlace();
             prefs_.readablePlace.set(readable_.id.c_str(), readable_.place);
             needsRerender = true;
         } else {
@@ -59,13 +65,13 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             needsRerender = true;
         } else {
             // Reserved for future use? Potentially lighting up and down?
-            this->fileRenderer_->getDisplay()->flipInversion();
+            this->renderer_.getDisplay()->flipInversion();
             // When we invert, we should do a full clear of the display to make sure
             // the blacks are really gone.
-            this->fileRenderer_->getDisplay()->clearDisplay();
-            prefs_.invertSetting.set(this->fileRenderer_->getDisplay()->getInversion());
+            this->renderer_.getDisplay()->clearDisplay();
+            prefs_.invertSetting.set(this->renderer_.getDisplay()->getInversion());
             needsRerender = true;
-            popup_->needsRerender = true;
+            popup_.needsRerender = true;
         }
         break;
     case RemoteCommand::PREV:
@@ -74,8 +80,8 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         } else {
             inPopup_ = false;
             needsRerender = true;
-            popup_->needsRerender = true;
-            this->fileRenderer_->getDisplay()->clearDisplay();
+            popup_.needsRerender = true;
+            this->renderer_.getDisplay()->clearDisplay();
         }
         break;
     case RemoteCommand::NEXT:
@@ -83,7 +89,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             inPopup_ = true;
             needsRerender = true;
         } else {
-            DisplaySystem *display = this->fileRenderer_->getDisplay();
+            DisplaySystem *display = this->renderer_.getDisplay();
 
             auto settingsMenu = new PagedMenuScreen(this->power_);
 
@@ -138,11 +144,11 @@ void ReadableScreen::processCommand(RemoteCommand command) {
                 display->clearDisplay();
                 setCurrentScreen(*this);
                 needsRerender = true;
-                popup_->needsRerender = true;
+                popup_.needsRerender = true;
                 delete settingsMenu;
             };
             log_d("Setting current screen to the newly created settingsMenu");
-            this->fileRenderer_->getDisplay()->clearDisplay();
+            this->renderer_.getDisplay()->clearDisplay();
             setCurrentScreen(*settingsMenu);
             inPopup_ = false;
         }

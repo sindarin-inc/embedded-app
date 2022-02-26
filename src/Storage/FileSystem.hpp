@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Contents/Readable.hpp"
+#include "Renderers/RendererStream.hpp"
 
 typedef std::vector<std::string> FileList;
 
@@ -16,6 +17,8 @@ public:
     // Convenience methods
     void getReadables(std::vector<Readable> *readables);
     void getDownloadedPocketReadables(std::vector<Readable> *readables);
+    // Note: Allocates the ContainerStream on the heap, make sure to `delete` it somewhere.
+    auto newRendererStream(const char *path) -> ContainerStream<File> *;
 
     // Underlying methods to init and read data
     virtual void begin(){};

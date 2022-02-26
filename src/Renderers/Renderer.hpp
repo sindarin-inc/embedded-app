@@ -2,6 +2,7 @@
 #define RENDERER_H
 
 #include "Displays/DisplaySystem.hpp"
+#include "Renderers/RendererStream.hpp"
 
 #define MAX_CHARS_PER_PAGE 1500
 #define MAX_CHARS_PER_LINE 200
@@ -13,15 +14,11 @@ class Renderer {
 public:
     Renderer(DisplaySystem &display);
 
-    // TODO: Could be replaced with a stream, or a stream-like class
-    virtual auto available() -> int = 0;
-    virtual auto read() -> int = 0;
-    virtual auto seek(uint32_t pos) -> bool = 0;
-    virtual auto position() -> size_t = 0;
-    virtual auto size() -> size_t = 0;
+    void setStream(RendererStream *stream) { stream_ = stream; }
 
     auto getPreviousPlace() -> unsigned long { return previousPlace_; }
     auto getCurrentPlace() -> unsigned long { return currentPlace_; }
+    auto size() -> unsigned long { return stream_->size(); }
     auto getDisplay() -> DisplaySystem * { return &display_; }
 
     // Render a page of text with the current place
@@ -31,6 +28,7 @@ public:
 
 protected:
     DisplaySystem &display_;
+    RendererStream *stream_;
 
     // This should be called by subclasses after content is loaded
     void loaded();

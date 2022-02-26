@@ -2,7 +2,7 @@
 #define OFFSET_ADJUST_SCREEN_HPP
 
 #include "Misc/Power.hpp"
-#include "Renderers/StreamRenderer.hpp"
+#include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Screen.hpp"
 
@@ -18,7 +18,7 @@ public:
 
 protected:
     DisplaySystem &display_;
-    StreamRenderer renderer_;
+    Renderer renderer_;
     PreferencesStore &prefs_;
     Power &power_;
 };

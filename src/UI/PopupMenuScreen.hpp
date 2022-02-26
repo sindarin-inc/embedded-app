@@ -5,7 +5,6 @@
 
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Power.hpp"
-#include "Renderers/FileRenderer.hpp"
 #include "Renderers/Renderer.hpp"
 #include "UI/Screen.hpp"
 #include "sindarin-debug.h"
@@ -13,8 +12,8 @@
 class PopupMenuScreen : public Screen {
 
 public:
-    PopupMenuScreen(Power &power, FileRenderer *fileRenderer)
-        : power_(power), fileRenderer_(fileRenderer), leftButtonTitle_("Menu"){};
+    PopupMenuScreen(Power &power, Renderer &renderer)
+        : power_(power), renderer_(renderer), leftButtonTitle_("Menu"){};
 
     void render(DisplaySystem &display) override;
 
@@ -24,7 +23,7 @@ public:
 
 protected:
     Power &power_;
-    FileRenderer *fileRenderer_;
+    Renderer &renderer_;
     std::string leftButtonTitle_;
 };
 
