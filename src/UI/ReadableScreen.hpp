@@ -22,7 +22,7 @@ public:
 
     ~ReadableScreen() override = default;
 
-    void setLeftPopupButton(std::string title, std::function<void(void)> callback);
+    void setLeftPopupButton(const std::string &title, std::function<void(void)> callback);
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;

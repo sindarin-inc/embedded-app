@@ -1,10 +1,13 @@
 #include "UI/ReadableScreen.hpp"
 
+#include <utility>
+
 #include "sindarin-debug.h"
 
-void ReadableScreen::setLeftPopupButton(std::string title, std::function<void(void)> callback) {
+void ReadableScreen::setLeftPopupButton(const std::string &title,
+                                        std::function<void(void)> callback) {
     popup_.setLeftButtonTitle(title);
-    leftButtonCallback_ = callback;
+    leftButtonCallback_ = std::move(callback);
 }
 
 void ReadableScreen::render(DisplaySystem &display) {

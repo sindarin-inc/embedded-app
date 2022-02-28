@@ -1,15 +1,16 @@
 #pragma once
 
+#include <cinttypes>
+#include <cstddef>
 #include <fstream>
-#include <inttypes.h>
 #include <iostream>
 #include <sstream>
-#include <stddef.h>
 #include <string>
+#include <utility>
 
 class RendererStream {
 public:
-    virtual ~RendererStream() {}
+    virtual ~RendererStream() = default;
 
     virtual auto available() -> int = 0;
     virtual auto read() -> int = 0;
@@ -22,13 +23,13 @@ template <typename T>
 class ContainerStream : public RendererStream {
 public:
     ContainerStream() : contained_(T()) {}
-    ContainerStream(T contained) : contained_(contained) {}
+    ContainerStream(T contained) : contained_(std::move(contained)) {}
 
-    auto available() -> int { return contained_.available(); }
-    auto read() -> int { return contained_.read(); };
-    auto seek(uint32_t pos) -> bool { return contained_.seek(pos); };
-    auto position() -> size_t { return contained_.position(); }
-    auto size() -> size_t { return contained_.size(); }
+    auto available() -> int override { return contained_.available(); }
+    auto read() -> int override { return contained_.read(); };
+    auto seek(uint32_t pos) -> bool override { return contained_.seek(pos); };
+    auto position() -> size_t override { return contained_.position(); }
+    auto size() -> size_t override { return contained_.size(); }
 
 protected:
     T contained_;
