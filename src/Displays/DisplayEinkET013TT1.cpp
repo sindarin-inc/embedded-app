@@ -51,23 +51,21 @@ void DisplayEinkET013TT1::updateDisplay() {
                 driver_.update(PARTIAL_REFRESH_WAVEFORM_INVERTED, gfxClass()->getBuffer());
             } else {
                 driver_.update(FULL_REFRESH_WAVEFORM_INVERTED, gfxClass()->getBuffer());
-                fullRefreshNext_ = false;
             }
         } else {
             if (!fullRefreshNext_) {
                 driver_.update(PARTIAL_REFRESH_WAVEFORM_REGULAR, gfxClass()->getBuffer());
             } else {
                 driver_.update(FULL_REFRESH_WAVEFORM_REGULAR, gfxClass()->getBuffer());
-                fullRefreshNext_ = false;
             }
         }
     } else {
         driver_.setBorder(bg == 0x00 ? BORDER_SETTING_BLACK : BORDER_SETTING_WHITE);
-        driver_.update(FULL_REFRESH_WAVEFORM, gfxClass()->getBuffer());
+        driver_.update(FULL_REFRESH_WAVEFORM_REGULAR, gfxClass()->getBuffer());
     }
     // Clear buffer afterwards
     fillScreen(bg);
-
+    fullRefreshNext_ = false;
     SetCpuSpeedMhz(CPU_FREQ_MHZ_LOW);
 }
 
