@@ -20,13 +20,14 @@ public:
 
     void updateDisplay() override;
 
-    void clearDisplay() override;
+    void clearDisplay() override { fullRefreshNext_ = true; };
 
     // For those moments where you need to expose the driver directly
     auto getDriver() -> EinkET013TT1 & { return driver_; }
 
 protected:
     EinkET013TT1 driver_;
+    bool fullRefreshNext_ = false;
 };
 
 #endif
