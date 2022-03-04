@@ -139,7 +139,7 @@ enum Register {
 #define OSC_2MHZ (3 << 5)
 
 #define OSC_SELECT OSC_2MHZ
-#define VCOM_DEFAULT (-2810)
+#define VCOM_DEFAULT (-4000)
 #define FRAMERATE_DEFAULT 24
 
 class EinkET013TT1 {
