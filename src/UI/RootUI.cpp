@@ -19,6 +19,7 @@
 #include "UI/PowerDepletedScreen.hpp"
 #include "UI/ReadableScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
+#include "UI/VComAdjustScreen.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
 
@@ -288,6 +289,18 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
         vcomMenu->backCallback = [this, vcomMenu, settingsMenu]() {
             setCurrentScreen(*settingsMenu);
             delete vcomMenu;
+        };
+    }));
+#endif
+
+#if EINKET013TT1
+    settingsMenu->addMenuItem(MenuItem("Set Vcom Precise", [this, display, settingsMenu]() {
+        auto vcomPreciseScreen = new VComAdjustScreen(*display, this->prefs_, this->power_);
+        this->display_->clearDisplay();
+        setCurrentScreen(*vcomPreciseScreen);
+        vcomPreciseScreen->backCallback = [this, vcomPreciseScreen, settingsMenu]() {
+            setCurrentScreen(*settingsMenu);
+            delete vcomPreciseScreen;
         };
     }));
 #endif

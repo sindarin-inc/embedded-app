@@ -155,6 +155,9 @@ public:
     // It is written on back of each individual display
     void setVcom(int mV);
 
+    // For the settings menu to display current value.
+    int getVcom() { return (vcom_ * 5600) / 255 - 5600; }
+
     void setFramerate(int frameRate);
 
     // Configure border. This is set on every scan line.

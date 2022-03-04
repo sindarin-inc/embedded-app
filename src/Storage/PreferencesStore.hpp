@@ -141,7 +141,7 @@ public:
 #endif
           pocketApiToken(this->prefs_, "pocket-token"),
           lastReadableId(this->prefs_, "rui-readable"), readablePlace(this->prefs_, "-p"),
-          invertSetting(this->prefs_, "invert"){};
+          invertSetting(this->prefs_, "invert"), vCom(this->prefs_, "vcom"){};
     void begin();
     void clear() { prefs_.clear(); }
 
@@ -156,6 +156,7 @@ public:
     PrefsItem<std::string> lastReadableId;
     KeyedPrefsItem<uint32_t> readablePlace;
     PrefsItem<int> invertSetting;
+    PrefsItem<int> vCom;
 
 protected:
     Preferences prefs_;
