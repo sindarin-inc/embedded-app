@@ -30,6 +30,10 @@
 #include "Inputs/TTRemoteInput.hpp"
 #endif
 
+#if EINKET013TT1
+#include "Displays/DisplayEinkET013TT1.hpp"
+#endif
+
 #define LAST_READABLE_ID "rui-readable"
 
 void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, bool inputConnected,
@@ -248,6 +252,46 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
         log_d("set up callback");
     }));
 
+#if EINKET013TT1
+    settingsMenu->addMenuItem(MenuItem("Set Vcom", [this, display, settingsMenu]() {
+        auto vcomMenu = new MenuScreen(this->power_);
+        auto *driver = (static_cast<DisplayEinkET013TT1 *>(display))->getDriver();
+        vcomMenu->addMenuItem(MenuItem("0V", [this, vcomMenu, driver]() {
+            driver->setVcom(0);
+            vcomMenu->needsRerender = true;
+        }));
+        vcomMenu->addMenuItem(MenuItem("-1V", [this, vcomMenu, driver]() {
+            driver->setVcom(-1000);
+            vcomMenu->needsRerender = true;
+        }));
+        vcomMenu->addMenuItem(MenuItem("-2V", [this, vcomMenu, driver]() {
+            driver->setVcom(-2000);
+            vcomMenu->needsRerender = true;
+        }));
+        vcomMenu->addMenuItem(MenuItem("-3V", [this, vcomMenu, driver]() {
+            driver->setVcom(-3000);
+            vcomMenu->needsRerender = true;
+        }));
+        vcomMenu->addMenuItem(MenuItem("-4V", [this, vcomMenu, driver]() {
+            driver->setVcom(-4000);
+            vcomMenu->needsRerender = true;
+        }));
+        vcomMenu->addMenuItem(MenuItem("-5V", [this, vcomMenu, driver]() {
+            driver->setVcom(-5000);
+            vcomMenu->needsRerender = true;
+        }));
+        vcomMenu->addMenuItem(MenuItem("-5.6V", [this, vcomMenu, driver]() {
+            driver->setVcom(-5600);
+            vcomMenu->needsRerender = true;
+        }));
+        setCurrentScreen(*vcomMenu);
+        vcomMenu->backCallback = [this, vcomMenu, settingsMenu]() {
+            setCurrentScreen(*settingsMenu);
+            delete vcomMenu;
+        };
+    }));
+#endif
+
     settingsMenu->addMenuItem(MenuItem("Calibration Screen", [this, settingsMenu, display]() {
         auto calibrationScreen = new CalibrationScreen();
         this->display_->clearDisplay();
@@ -295,6 +339,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
             delete bitmapScreen;
         };
     }));
+
 #if USE_TURN_TOUCH_REMOTE
     settingsMenu->addMenuItem(MenuItem("Unpair TurnTouch", [this, display]() {
         prefs_.pairedTurnTouchAddress.remove();
@@ -304,6 +349,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
         esp_restart();
     }));
 #endif
+
     settingsMenu->backCallback = [this, mainMenu]() {
         this->display_->clearDisplay();
         setCurrentScreen(*mainMenu);

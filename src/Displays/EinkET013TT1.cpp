@@ -125,6 +125,7 @@ void EinkET013TT1::setVcom(int mV) {
     mV = std::clamp(mV, -5600, 0);
     // 0 for -5600mV, 255 for 0V
     vcom_ = ((5600 + mV) * 255) / 5600;
+    log_d("Setting VCOM to %d mV (register 0x9 = %d)", mV, vcom_);
 }
 
 void EinkET013TT1::setFramerate(int frameRate) {

@@ -2,7 +2,7 @@
 
 #include <utility>
 
-#define NUM_LINES_PER_MENU_PAGE 8
+#define NUM_LINES_PER_MENU_PAGE 12
 
 void MenuScreen::addMenuItem(const MenuItem &newItem) {
     menuItems_.push_back(newItem);

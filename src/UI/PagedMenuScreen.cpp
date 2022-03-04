@@ -72,11 +72,8 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     auto batteryStatus = this->power_.getBatteryLifeString();
     uint16_t temp;
 #if !SIMULATOR
-    // Be warned: using `auto` instead of `EinkET013TT1 &` or `auto &` caused a stack overflow crash
-    // here. This also works (though I don't really understand why):
-    //   decltype(auto) driver = ((DisplayEinkET013TT1 *)&display)->getDriver();
-    auto &driver = ((DisplayEinkET013TT1 *)&display)->getDriver();
-    temp = driver.readTemperature();
+    auto *driver = ((DisplayEinkET013TT1 *)&display)->getDriver();
+    temp = driver->readTemperature();
 #else
     temp = 22;
 #endif
