@@ -9,8 +9,8 @@
 #include "Displays/DisplayEinkET013TT1.hpp"
 
 #define STEP_IN_MV 50
-#define MIN_VCOM_IN_MV -4500
-#define MAX_VCOM_IN_MV -3500
+#define MIN_VCOM_IN_MV (-4500)
+#define MAX_VCOM_IN_MV (-3500)
 
 VComAdjustScreen::VComAdjustScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power)
     : display_(display), prefs_(prefs), power_(power), renderer_(display) {

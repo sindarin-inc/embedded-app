@@ -156,7 +156,7 @@ public:
     void setVcom(int mV);
 
     // For the settings menu to display current value.
-    int getVcom() { return (vcom_ * 5600) / 255 - 5600; }
+    auto getVcom() -> int { return (vcom_ * 5600) / 255 - 5600; }
 
     void setFramerate(int frameRate);
 
