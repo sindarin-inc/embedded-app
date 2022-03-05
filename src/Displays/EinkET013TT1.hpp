@@ -10,7 +10,6 @@
 #define MAX_FRAMES_PER_WAVEFORM 31
 
 enum WaveformInternalCheckErrors {
-    //
     WAVEFORM_OK = 0,
     WAVEFORM_BB_FAIL = 1,
     WAVEFORM_BWWB_FAIL = 2,
