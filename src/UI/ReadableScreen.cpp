@@ -96,12 +96,12 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             } else {
 #if EINKET013TT1
                 // Make lighting brighter
-                dutyCycle += PWMIncrement;
-                if (dutyCycle > MAX_DUTY_CYCLE) {
-                    dutyCycle = MAX_DUTY_CYCLE;
+                dutyCycle_ += pwmIncrement_;
+                if (dutyCycle_ > maxDutyCycle_) {
+                    dutyCycle_ = maxDutyCycle_;
                 }
                 // Note we need to do this for both left side and right side LEDs
-                ledcWrite(PWMChannel, dutyCycle);
+                ledcWrite(pwmChannel_, dutyCycle_);
                 // ledcWrite(PWMChannel, otherPin);
 #endif
             }
@@ -179,12 +179,12 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             } else {
 #if EINKET013TT1
                 // Make lighting brighter
-                dutyCycle -= PWMIncrement;
-                if (dutyCycle < 0) {
-                    dutyCycle = 0;
+                dutyCycle_ -= pwmIncrement_;
+                if (dutyCycle_ < 0) {
+                    dutyCycle_ = 0;
                 }
                 // Note we need to do this for both left side and right side LEDs
-                ledcWrite(PWMChannel, dutyCycle);
+                ledcWrite(pwmChannel_, dutyCycle_);
                 // ledcWrite(PWMChannel, otherPin);
                 // Make lighting dimmer
 #endif

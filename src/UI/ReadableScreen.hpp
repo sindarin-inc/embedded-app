@@ -19,11 +19,16 @@ public:
           popup_(power, renderer_) {
         currentScreen_ = this;
         renderer_.setStream(stream);
-#if EINKET013TT1
-        ledcSetup(PWMChannel, PWMFreq, PWMResolution);
+<<<<<<< HEAD
+#if EINKET013TT1 ledcSetup(PWMChannel, PWMFreq, PWMResolution);
         /* Attach the LED PWM Channel to the GPIO Pin */
         ledcAttachPin(LEDPin, PWMChannel);
 #endif
+=======
+        ledcSetup(pwmChannel_, pwmFreq_, pwmResolution_);
+        /* Attach the LED PWM Channel to the GPIO Pin */
+        ledcAttachPin(ledPin_, pwmChannel_);
+>>>>>>> 61de7a49ec4a0cd36d9b350b5fd67e742e539ac3
     }
 
     ~ReadableScreen() override = default;
@@ -44,21 +49,19 @@ protected:
     bool inPopup_ = false;
     bool inLighting_ = false;
 
-    int ledLevel;
+    int ledLevel_;
 
     unsigned long newPlace_ = 0;
 
     std::function<void(void)> leftButtonCallback_;
 
-#if EINKET013TT1
-    const int LEDPin = RED_LED; /* GPIO16 */
+    const int ledPin_ = RED_LED; /* GPIO16 */
 
-    int dutyCycle;
+    int dutyCycle_;
     /* Setting PWM Properties */
-    const int PWMFreq = 5000; /* 5 KHz */
-    const int PWMChannel = 0;
-    const int PWMResolution = 10;
-    const int PWMIncrement = 128;
-    const int MAX_DUTY_CYCLE = (int)(pow(2, PWMResolution) - 1);
-#endif
+    const int pwmFreq_ = 5000; /* 5 KHz */
+    const int pwmChannel_ = 0;
+    const int pwmResolution_ = 10;
+    const int pwmIncrement_ = 128;
+    const int maxDutyCycle_ = (int)(pow(2, pwmResolution_) - 1);
 };
