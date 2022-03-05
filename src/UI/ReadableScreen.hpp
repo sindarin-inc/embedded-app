@@ -19,16 +19,11 @@ public:
           popup_(power, renderer_) {
         currentScreen_ = this;
         renderer_.setStream(stream);
-<<<<<<< HEAD
-#if EINKET013TT1 ledcSetup(PWMChannel, PWMFreq, PWMResolution);
-        /* Attach the LED PWM Channel to the GPIO Pin */
-        ledcAttachPin(LEDPin, PWMChannel);
-#endif
-=======
+#if EINKET013TT1
         ledcSetup(pwmChannel_, pwmFreq_, pwmResolution_);
         /* Attach the LED PWM Channel to the GPIO Pin */
         ledcAttachPin(ledPin_, pwmChannel_);
->>>>>>> 61de7a49ec4a0cd36d9b350b5fd67e742e539ac3
+#endif
     }
 
     ~ReadableScreen() override = default;
