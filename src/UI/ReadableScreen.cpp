@@ -94,6 +94,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
                 popup_.needsRerender = true;
                 this->renderer_.getDisplay()->clearDisplay();
             } else {
+#if EINKET013TT1
                 // Make lighting brighter
                 dutyCycle += PWMIncrement;
                 if (dutyCycle > MAX_DUTY_CYCLE) {
@@ -102,6 +103,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
                 // Note we need to do this for both left side and right side LEDs
                 ledcWrite(PWMChannel, dutyCycle);
                 // ledcWrite(PWMChannel, otherPin);
+#endif
             }
         }
         break;
@@ -175,6 +177,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
                 setCurrentScreen(*settingsMenu);
                 inPopup_ = false;
             } else {
+#if EINKET013TT1
                 // Make lighting brighter
                 dutyCycle -= PWMIncrement;
                 if (dutyCycle < 0) {
@@ -184,6 +187,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
                 ledcWrite(PWMChannel, dutyCycle);
                 // ledcWrite(PWMChannel, otherPin);
                 // Make lighting dimmer
+#endif
             }
         }
         break;

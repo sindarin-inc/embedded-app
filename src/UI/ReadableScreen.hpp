@@ -19,9 +19,11 @@ public:
           popup_(power, renderer_) {
         currentScreen_ = this;
         renderer_.setStream(stream);
+#if EINKET013TT1
         ledcSetup(PWMChannel, PWMFreq, PWMResolution);
         /* Attach the LED PWM Channel to the GPIO Pin */
         ledcAttachPin(LEDPin, PWMChannel);
+#endif
     }
 
     ~ReadableScreen() override = default;
@@ -48,6 +50,7 @@ protected:
 
     std::function<void(void)> leftButtonCallback_;
 
+#if EINKET013TT1
     const int LEDPin = RED_LED; /* GPIO16 */
 
     int dutyCycle;
@@ -57,4 +60,5 @@ protected:
     const int PWMResolution = 10;
     const int PWMIncrement = 128;
     const int MAX_DUTY_CYCLE = (int)(pow(2, PWMResolution) - 1);
+#endif
 };
