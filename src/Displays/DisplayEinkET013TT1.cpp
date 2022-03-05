@@ -41,6 +41,20 @@ void DisplayEinkET013TT1::setup() {
 
     setPartialRefresh();
 
+    log_d("Checking Waveforms");
+
+    uint8_t retVal = driver_.checkWaveform(FULL_BIG_ORIGINAL_WAVEFORM);
+
+    if (retVal != WAVEFORM_OK) {
+        log_d("Caught a Waveform Error %d", retVal);
+    }
+
+    retVal = driver_.checkWaveform(PARTIAL_REFRESH_WAVEFORM_REGULAR);
+
+    if (retVal != WAVEFORM_OK) {
+        log_d("Caught a Waveform Error %d", retVal);
+    }
+
     log_i("Display ready!");
 }
 
