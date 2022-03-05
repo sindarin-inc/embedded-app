@@ -101,8 +101,8 @@ void setup() {
     myDisplay.setup();
 
     // If the saved prefs indicated a vcom, set it here.
-    if (prefs.vCom.get().value() != 0) {
-        myDisplay.getDriver()->setVcom(prefs.vCom.get().value());
+    if (prefs.vcom.get().value() != 0) {
+        myDisplay.getDriver()->setVcom(prefs.vcom.get().value());
     }
 #endif
 

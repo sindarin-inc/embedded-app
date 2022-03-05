@@ -6,9 +6,9 @@
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Screen.hpp"
 
-class VComAdjustScreen : public Screen {
+class VcomAdjustScreen : public Screen {
 public:
-    VComAdjustScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power);
+    VcomAdjustScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power);
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
