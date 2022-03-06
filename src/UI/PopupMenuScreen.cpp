@@ -52,8 +52,8 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     display.drawText(placeString.c_str(), (screenWidth / 2) - (textWidth / 2),
                      (screenHeight / 2) + (textHeight / 2) - 10, screenWidth, screenHeight);
 
-    display.getTextBounds("Settings", &textWidth, &textHeight);
-    display.drawText("Settings", (screenWidth / 2) - (textWidth / 2),
+    display.getTextBounds("Invert", &textWidth, &textHeight);
+    display.drawText("Invert", (screenWidth / 2) - (textWidth / 2),
                      (screenHeight / 2) + (textHeight / 2) + POPUP_MENU_BLANK_HEIGHT / 3,
                      screenWidth, screenHeight);
 
@@ -66,11 +66,10 @@ void PopupMenuScreen::render(DisplaySystem &display) {
                      (display.width() - POPUP_MENU_BLANK_WIDTH) / 2 - textWidth / 2,
                      (screenHeight / 2) + 1, screenWidth, screenHeight);
 
-    display.getTextBounds("Invert", &textWidth, &textHeight);
-    display.drawText("Invert",
-                     (display.width() - ((display.width() - POPUP_MENU_BLANK_WIDTH) / 2)) -
-                         textWidth / 2,
-                     (screenHeight / 2) + 1, screenWidth, screenHeight);
+    display.getTextBounds("+5%", &textWidth, &textHeight);
+    display.drawText(
+        "+5%", (display.width() - ((display.width() - POPUP_MENU_BLANK_WIDTH) / 2)) - textWidth / 2,
+        (screenHeight / 2) + 1, screenWidth, screenHeight);
 
     display.updateDisplay();
     display.setAutoUpdate(autoUpdate);

@@ -18,6 +18,8 @@ public:
 
     auto getPreviousPlace() -> unsigned long { return previousPlace_; }
     auto getCurrentPlace() -> unsigned long { return currentPlace_; }
+    auto setCurrentPlace(unsigned long newPlace) { currentPlace_ = newPlace; }
+
     auto size() -> unsigned long { return stream_->size(); }
     auto getDisplay() -> DisplaySystem * { return &display_; }
 

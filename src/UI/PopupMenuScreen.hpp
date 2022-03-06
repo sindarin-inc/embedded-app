@@ -13,7 +13,7 @@ class PopupMenuScreen : public Screen {
 
 public:
     PopupMenuScreen(Power &power, Renderer &renderer)
-        : power_(power), renderer_(renderer), leftButtonTitle_("Menu"){};
+        : power_(power), renderer_(renderer), leftButtonTitle_("-5%"){};
 
     void render(DisplaySystem &display) override;
 
