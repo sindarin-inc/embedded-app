@@ -11,9 +11,9 @@
 
 enum WaveformInternalCheckErrors {
     WAVEFORM_OK = 0,
-    WAVEFORM_BB_FAIL = 1,
-    WAVEFORM_BWWB_FAIL = 2,
-    WAVEFORM_WW_FAIL = 4,
+    WAVEFORM_BB_FAIL = 1 << 0,
+    WAVEFORM_BWWB_FAIL = 1 << 1,
+    WAVEFORM_WW_FAIL = 1 << 2,
 };
 
 // The possible per-column TFT FET source settings.
