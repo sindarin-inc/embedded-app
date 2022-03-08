@@ -6,19 +6,19 @@
 #include "Misc/StringUtil.hpp"
 #include "sindarin-debug.h"
 
-DisplaySystem::DisplaySystem(int16_t w, int16_t h) : GFXcanvas1(w, h) {
-    autoUpdate_ = true;
+DisplaySystem::DisplaySystem() { autoUpdate_ = true; }
 
+void DisplaySystem::setup() {
     setFont(&LUCIDA_GRANDE5PT7B);
-    setTextColor(fg, bg);
+    gfxClass_->setTextColor(fg, bg);
 
 #ifdef DISPLAY_ROTATION
     setRotation(DISPLAY_ROTATION);
 #else
-    setRotation(0);
+    gfxClass_->setRotation(0);
 #endif
 
-    setTextWrap(false);
+    gfxClass_->setTextWrap(false);
 }
 
 void DisplaySystem::invertDisplay(bool newInvert) {
@@ -45,20 +45,21 @@ void DisplaySystem::unsetPartialRefresh() { partialRefresh_ = 0; }
 auto DisplaySystem::getPartialRefresh() -> int { return partialRefresh_; }
 
 void DisplaySystem::rotate(uint16_t &x, uint16_t &y, uint16_t &w, uint16_t &h) {
-    switch (getRotation()) {
+
+    switch (gfxClass_->getRotation()) {
     case 1:
         std::swap(x, y);
         std::swap(w, h);
-        x = WIDTH - x - w;
+        x = gfxClass_->width() - x - w;
         break;
     case 2:
-        x = WIDTH - x - w;
-        y = HEIGHT - y - h;
+        x = gfxClass_->width() - x - w;
+        y = gfxClass_->height() - y - h;
         break;
     case 3:
         std::swap(x, y);
         std::swap(w, h);
-        y = HEIGHT - y - h;
+        y = gfxClass_->height() - y - h;
         break;
     }
 }
@@ -82,8 +83,8 @@ void DisplaySystem::setFullWindow() {
     unsetPartialRefresh();
     partialX_ = 0;
     partialY_ = 0;
-    partialW_ = WIDTH;
-    partialH_ = HEIGHT;
+    partialW_ = gfxClass_->width();
+    partialH_ = gfxClass_->height();
 }
 
 void DisplaySystem::setAutoUpdate(bool update) { autoUpdate_ = update; }
@@ -107,7 +108,7 @@ void DisplaySystem::setFocusOffset(float width, float height) {
     computeMinMax();
 }
 
-auto DisplaySystem::getFont() -> const GFXfont * { return gfxFont; }
+auto DisplaySystem::getFont() -> const GFXfont * { return font_; }
 
 // Takes the member variable string_to_draw and splits it
 // based on the \n characater and populates the String* lines;
@@ -167,12 +168,12 @@ void DisplaySystem::drawTextCmdsOnly(const std::string &newText, int x, int y, i
     // ascent = u8g2Fonts->getAscent();
     // descent = u8g2Fonts->getDescent();
 
-    setTextColor(fg);
+    gfxClass_->setTextColor(fg);
 
     for (int i = 0; i < numLines; i++) {
         // Don't know if it starts the line from the baseline or from the top -- TO LEARN: HACK
         setCursor(x, y + i * (lineHeight));
-        printf("%s\n", lines[i].c_str());
+        gfxClass_->printf("%s\n", lines[i].c_str());
     }
 }
 
@@ -227,22 +228,22 @@ void DisplaySystem::drawTextInBox(const std::string &newText, int startX, int st
 
 void DisplaySystem::getTextBounds(const char *buffer, uint16_t *w, uint16_t *h) {
     int16_t x, y;
-    Adafruit_GFX::getTextBounds(buffer, 0, 0, &x, &y, w, h);
+    gfxClass_->getTextBounds(buffer, 0, 0, &x, &y, w, h);
 }
 
-auto DisplaySystem::getTextHeight() -> int { return gfxFont->yAdvance + 1; }
+auto DisplaySystem::getTextHeight() -> int { return font_->yAdvance + 1; }
 
 auto DisplaySystem::getTextHeight(const char *buffer) -> int {
     int16_t x, y;
     uint16_t w, h;
-    Adafruit_GFX::getTextBounds(buffer, 0, 0, &x, &y, &w, &h);
+    gfxClass_->getTextBounds(buffer, 0, 0, &x, &y, &w, &h);
     return h;
 }
 
 auto DisplaySystem::getTextWidth(const char *buffer) -> int {
     int16_t x, y;
     uint16_t w, h;
-    Adafruit_GFX::getTextBounds(buffer, 0, 0, &x, &y, &w, &h);
+    gfxClass_->getTextBounds(buffer, 0, 0, &x, &y, &w, &h);
     return w;
 }
 
@@ -259,7 +260,7 @@ void DisplaySystem::renderBox(int xStart, int yStart, int xEnd, int yEnd) {
 }
 
 void DisplaySystem::drawBoxCmdsOnly(int startX, int startY, int endX, int endY) {
-    drawRect(xOffset(startX), yOffset(startY), endX - startX, endY - startY, fg);
+    gfxClass_->drawRect(xOffset(startX), yOffset(startY), endX - startX, endY - startY, fg);
 }
 
 void DisplaySystem::drawBox(int startX, int startY, int endX, int endY) {
@@ -281,7 +282,7 @@ void DisplaySystem::drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], in
     if (getPartialRefresh()) {
         setPartialWindow(x, y, w, h);
     }
-    Adafruit_GFX::drawXBitmap(xOffset(x), yOffset(y), bitmap, w, h, color);
+    gfxClass_->drawXBitmap(xOffset(x), yOffset(y), bitmap, w, h, color);
     log_d("Bitmap drawn, updating display!");
     if (autoUpdate_) {
         // DO WRITE AND REFRESH

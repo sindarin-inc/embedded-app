@@ -26,12 +26,12 @@
 #define INVERTED_DISPLAY true
 // #define INVERTED_DISPLAY false
 
-class DisplaySystem : GFXcanvas1 {
+class DisplaySystem {
 public:
-    DisplaySystem(int16_t w, int16_t h);
-    ~DisplaySystem() override = default;
+    DisplaySystem();
+    ~DisplaySystem() = default;
 
-    virtual void setup(){};
+    virtual void setup();
 
     // MARK: - Required virtual methods that subclasses must implement
 
@@ -39,7 +39,7 @@ public:
 
     // Use `gfxClass` when you need to get direct access to draw to the whole screen (potentially
     // outside of focus areas)
-    [[nodiscard]] auto gfxClass() const -> GFXcanvas1 * { return (GFXcanvas1 *)this; }
+    [[nodiscard]] auto gfxClass() const -> Adafruit_GFX * { return gfxClass_; }
 
     // MARK: - Brought in from Adafruit_GFX
     // Use these methods for normal drawing as they'll take into account the offsets and focus area
@@ -47,23 +47,26 @@ public:
     // should be copied in here.
     [[nodiscard]] auto width() const -> int16_t { return maxPixelsX_; };
     [[nodiscard]] auto height() const -> int16_t { return maxPixelsY_; };
-    void fillScreen(uint16_t color) override { GFXcanvas1::fillScreen(color); }
+    void fillScreen(uint16_t color) { gfxClass_->fillScreen(color); }
     void fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2,
                       uint16_t color) {
-        GFXcanvas1::fillTriangle(xOffset(x0), yOffset(y0), xOffset(x1), yOffset(y1), xOffset(x2),
-                                 yOffset(y2), color);
+        gfxClass_->fillTriangle(xOffset(x0), yOffset(y0), xOffset(x1), yOffset(y1), xOffset(x2),
+                                yOffset(y2), color);
     }
-    void setFont(const GFXfont *f) { GFXcanvas1::setFont(f); }
-    void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) override {
-        GFXcanvas1::fillRect(xOffset(x), yOffset(y), w, h, color);
+    void setFont(const GFXfont *f) {
+        font_ = f;
+        gfxClass_->setFont(f);
+    }
+    void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
+        gfxClass_->fillRect(xOffset(x), yOffset(y), w, h, color);
     }
     void drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) {
-        GFXcanvas1::drawCircle(xOffset(x0), yOffset(y0), r, color);
+        gfxClass_->drawCircle(xOffset(x0), yOffset(y0), r, color);
     }
-    void setCursor(int16_t x, int16_t y) { GFXcanvas1::setCursor(xOffset(x), yOffset(y)); }
+    void setCursor(int16_t x, int16_t y) { gfxClass_->setCursor(xOffset(x), yOffset(y)); }
     template <typename T>
     auto println(T in) -> size_t {
-        return GFXcanvas1::println(in);
+        return gfxClass_->println(in);
     }
 
     // MARK: - Potentially overridable methods for configuring partial refresh
@@ -74,7 +77,7 @@ public:
     virtual void setPartialWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
     void setFullWindow();
 
-    void invertDisplay(bool newInvert) override;
+    void invertDisplay(bool newInvert);
     void flipInversion();
     auto getInversion() -> bool { return invertedDisplay_; }
 
@@ -141,6 +144,10 @@ public:
     }
 
 protected:
+    // Must be set in the constructor of subclasses
+    Adafruit_GFX *gfxClass_;
+    const GFXfont *font_;
+
     inline auto xOffset(int16_t value) -> int16_t { return value + localXOffset_ + xMin_; }
     inline auto yOffset(int16_t value) -> int16_t { return value + localYOffset_ + yMin_; }
 

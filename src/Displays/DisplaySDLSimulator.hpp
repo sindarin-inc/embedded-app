@@ -13,4 +13,7 @@ public:
 
     void setup() override;
     void updateDisplay() override;
+
+protected:
+    GFXcanvas1 gfxCanvas_;
 };

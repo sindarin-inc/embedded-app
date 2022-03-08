@@ -6,6 +6,9 @@
 
 void CalibrationScreen::drawSiemensStar(DisplaySystem &display, u_int32_t originX,
                                         u_int32_t originY, u_int32_t radius) {
+    display.gfxClass()->fillRect(originX - radius, originY - radius, radius * 2, radius * 2,
+                                 display.bg);
+
     // Lot's of precision ;)
     float pi = 3.141592653585753;
     float theta[NUM_SPIKES];
@@ -23,8 +26,8 @@ void CalibrationScreen::drawSiemensStar(DisplaySystem &display, u_int32_t origin
     }
 
     for (k = 0; k < NUM_SPIKES / 2; k++) {
-        display.fillTriangle(originX, originY, x[k * 2], y[k * 2], x[k * 2 + 1], y[k * 2 + 1],
-                             display.fg);
+        display.gfxClass()->fillTriangle(originX, originY, x[k * 2], y[k * 2], x[k * 2 + 1],
+                                         y[k * 2 + 1], display.fg);
     }
 }
 
@@ -77,30 +80,20 @@ void CalibrationScreen::render(DisplaySystem &display) {
         int i, l = 0;
 
         for (l = 0; l < 32; l++) {
-            for (i = 0; i < display.width() / 4; i++) {
+            for (i = 0; i < display.gfxClass()->width() / 4; i++) {
                 // only every other
                 if (i % 2 == 0) {
-                    display.fillRect(i * 4, l * 8, 4, 4, display.fg);
+                    display.gfxClass()->fillRect(i * 4, l * 8, 4, 4, display.fg);
                 }
             }
 
-            for (i = 0; i < display.width() / 4; i++) {
+            for (i = 0; i < display.gfxClass()->width() / 4; i++) {
                 // only every other
                 if (i % 2 == 1) {
-                    display.fillRect(i * 4, 4 + l * 8, 4, 4, display.fg);
+                    display.gfxClass()->fillRect(i * 4, 4 + l * 8, 4, 4, display.fg);
                 }
             }
         }
-
-        display.fillRect(0, 0, 64, 64, display.bg);
-
-        display.fillRect(128 - 32, 128 - 32, 64, 64, display.bg);
-
-        display.fillRect(256 - 64, 256 - 64, 64, 64, display.bg);
-
-        display.fillRect(0, 256 - 64, 64, 64, display.bg);
-
-        display.fillRect(256 - 64, 0, 64, 64, display.bg);
 
         drawSiemensStar(display, 128, 128, 32);
         drawSiemensStar(display, 32, 32, 32);

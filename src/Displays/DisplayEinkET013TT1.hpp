@@ -11,10 +11,10 @@
 class DisplayEinkET013TT1 : public DisplaySystem {
 public:
     DisplayEinkET013TT1(uint8_t cs, uint8_t oei, uint8_t rst, uint8_t busy) noexcept
-        : driver_(cs, oei, rst, busy),
-          DisplaySystem(EinkET013TT1_X_PIXELS, EinkET013TT1_Y_PIXELS){};
+        : gfxCanvas_(EinkET013TT1_X_PIXELS, EinkET013TT1_Y_PIXELS), driver_(cs, oei, rst, busy),
+          DisplaySystem(){};
 
-    ~DisplayEinkET013TT1() override = default;
+    ~DisplayEinkET013TT1() = default;
 
     void setup() override;
 
@@ -26,6 +26,8 @@ public:
     auto getDriver() -> EinkET013TT1 * { return &driver_; }
 
 protected:
+    GFXcanvas1 gfxCanvas_;
+
     EinkET013TT1 driver_;
     bool fullRefreshNext_ = false;
 };

@@ -29,6 +29,8 @@ const EinkET013TT1Waveform PARTIAL_REFRESH_WAVEFORM_INVERTED =
     BC_INVERTED_EXPERIMENTAL_WAVEFORM_PARTIAL;
 
 void DisplayEinkET013TT1::setup() {
+    DisplaySystem::setup();
+
     log_d("Initializing EPD driver");
     driver_.init();
     log_d("Clearing display");
@@ -50,20 +52,20 @@ void DisplayEinkET013TT1::updateDisplay() {
     if (getPartialRefresh()) {
         if (getInversion()) {
             if (!fullRefreshNext_) {
-                driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxClass()->getBuffer());
+                driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
             } else {
-                driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxClass()->getBuffer());
+                driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
             }
         } else {
             if (!fullRefreshNext_) {
-                driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxClass()->getBuffer());
+                driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
             } else {
-                driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxClass()->getBuffer());
+                driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
             }
         }
     } else {
         driver_.setBorder(bg == 0x00 ? BORDER_SETTING_BLACK : BORDER_SETTING_WHITE);
-        driver_.update(FULL_REFRESH_WAVEFORM_REGULAR, gfxClass()->getBuffer());
+        driver_.update(FULL_REFRESH_WAVEFORM_REGULAR, gfxCanvas_.getBuffer());
     }
     // Clear buffer afterwards
     fillScreen(bg);
