@@ -17,6 +17,7 @@
 #include "Misc/Power.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "UI/Fonts/LucidaGrande5pt7b.h"
 #include "UI/RootUI.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
