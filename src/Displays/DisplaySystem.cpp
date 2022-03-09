@@ -9,12 +9,10 @@
 DisplaySystem::DisplaySystem() { autoUpdate_ = true; }
 
 void DisplaySystem::setup() {
-    // Default to original font
-    setFont(&LUCIDA_GRANDE5PT7B);
+    setFont(&LUCIDA_GRANDE5PT7B_SKINNY);
     gfxClass_->setTextColor(fg, bg);
 
-#ifdef DISPLAY_ROTATION
-    setRotation(DISPLAY_ROTATION);
+#ifdef DISPLAY_ROTATION setRotation(DISPLAY_ROTATION);
 #else
     gfxClass_->setRotation(0);
 #endif
