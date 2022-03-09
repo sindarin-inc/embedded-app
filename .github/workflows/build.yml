@@ -40,7 +40,7 @@ jobs:
       uses: actions/upload-artifact@v2
       if: matrix.pioenv == 'gilpico'
       with:
-        name: gilpico-binaries
+        name: gilpico-binaries-${{ github.sha }}
         path: |
           .pio/build/gilpico/*.bin
           .pio/build/gilpico/upload_command.sh
