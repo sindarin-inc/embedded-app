@@ -17,7 +17,6 @@
 #include "Misc/Power.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Storage/PreferencesStore.hpp"
-#include "UI/Fonts/LucidaGrande5pt7b.h"
 #include "UI/RootUI.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -118,9 +117,6 @@ void setup() {
 #if SIMULATOR
     myDisplay.setup();
 #endif
-
-    // Default to original font
-    myDisplay.setFont(&LUCIDA_GRANDE5PT7B);
 
     myDisplay.setFocusSize(15, 15);
     myDisplay.setOffset(prefs.localXOffset.get().value(), prefs.localYOffset.get().value());
