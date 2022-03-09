@@ -306,22 +306,31 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
     }));
 #endif
 
-    settingsMenu->addMenuItem(MenuItem("Set Font Skinny", [this, settingsMenu, display]() {
-        this->display_->setFont(&LUCIDA_GRANDE5PT7B_SKINNY);
-        this->display_->clearDisplay();
+    settingsMenu->addMenuItem(MenuItem("Set Font Size", [this, display, settingsMenu]() {
+        auto fontMenu = new MenuScreen(this->power_);
+
+        fontMenu->addMenuItem(MenuItem("Skinny", [this, fontMenu]() {
+            this->display_->setFont(&LUCIDA_GRANDE5PT7B_SKINNY);
+            this->display_->clearDisplay();
+            fontMenu->needsRerender = true;
+        }));
+        fontMenu->addMenuItem(MenuItem("Fat", [this, fontMenu]() {
+            this->display_->setFont(&LUCIDA_GRANDE5PT7B_FAT);
+            this->display_->clearDisplay();
+            fontMenu->needsRerender = true;
+        }));
+        fontMenu->addMenuItem(MenuItem("Original", [this, fontMenu]() {
+            this->display_->setFont(&LUCIDA_GRANDE5PT7B);
+            this->display_->clearDisplay();
+            fontMenu->needsRerender = true;
+        }));
+        setCurrentScreen(*fontMenu);
+        fontMenu->backCallback = [this, fontMenu, settingsMenu]() {
+            setCurrentScreen(*settingsMenu);
+            delete fontMenu;
+        };
     }));
 
-    settingsMenu->addMenuItem(MenuItem("Set Font Fat", [this, settingsMenu, display]() {
-        this->display_->setFont(&LUCIDA_GRANDE5PT7B_FAT);
-        this->display_->clearDisplay();
-    }));
-
-    settingsMenu->addMenuItem(MenuItem("Set Font Original", [this, settingsMenu, display]() {
-        this->display_->setFont(&LUCIDA_GRANDE5PT7B);
-        this->display_->clearDisplay();
-    }));
-
-#if 0
     settingsMenu->addMenuItem(MenuItem("Calibration Screen", [this, settingsMenu, display]() {
         auto calibrationScreen = new CalibrationScreen();
         this->display_->clearDisplay();
@@ -331,7 +340,6 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
             delete calibrationScreen;
         };
     }));
-#endif
 
     settingsMenu->addMenuItem(MenuItem("Optics Test", [this, settingsMenu, display]() {
         auto opticsTestScreen = new CalibrationScreen();
