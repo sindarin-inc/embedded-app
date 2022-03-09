@@ -1,3 +1,5 @@
+#include <utility>
+
 #include "Contents/Readable.hpp"
 #include "Misc/Power.hpp"
 #include "Renderers/RendererStream.hpp"
@@ -21,7 +23,7 @@ public:
     ~ReadableScreen() override = default;
 
     void setLeftPopupButton(const std::string &title, std::function<void(void)> callback) {
-        popup_.setLeftPopupButton(title, callback);
+        popup_.setLeftPopupButton(title, std::move(callback));
     }
 
     void render(DisplaySystem &display) override;

@@ -28,7 +28,7 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
     // TODO: Do this calculation dynamically, once we have a way to gracefully layout subviews
     int16_t y = (display.height() - 98) / 2;
 
-    display.drawXBitmap(x, y, Lightbulb_bits, Lightbulb_width, Lightbulb_height, display.fg);
+    display.drawXBitmap(x, y, lightbulbBits, Lightbulb_width, Lightbulb_height, display.fg);
 
     x += Lightbulb_width + spacing;
     display.drawRect(x, y, barWidth, Lightbulb_height, display.fg);
