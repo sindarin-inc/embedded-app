@@ -30,7 +30,7 @@ jobs:
         pip install platformio
 
     - name: Install SDL
-      run: sudo apt update && sudo apt install -y libsdl2-dev
+      run: sudo apt update && sudo apt install -y libsdl2-dev libsdl2-image-dev
       if: matrix.pioenv == 'simulator'
 
     - name: PlatformIO run

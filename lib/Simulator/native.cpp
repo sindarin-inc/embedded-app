@@ -1,6 +1,7 @@
 #if !defined(EMSCRIPTEN)
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <cstring>
 #include <iostream>
 #include <unistd.h>
@@ -32,6 +33,30 @@ enum RemoteCommand : int {
 };
 
 SDL_Renderer *renderer;
+
+bool saveScreenshotPng(std::string filepath, SDL_Window *window, SDL_Renderer *renderer) {
+    auto bytesPerPixel = 4;
+    auto pitch = WIDTH * SCALE * bytesPerPixel;
+
+    SDL_Surface *saveSurface =
+        SDL_CreateRGBSurface(0, WIDTH * SCALE, HEIGHT * SCALE, 32, 0, 0, 0, 0);
+    if (saveSurface == NULL) {
+        std::cerr << "SDL_CreateRGBSurface error: " << SDL_GetError() << "\n";
+        return false;
+    }
+    // Seems like this reads from the back buffer (SDL is double buffered), so it gets the last
+    // image, not the current one :/
+    SDL_Rect rect = {.x = 0, .y = 0, .w = WIDTH * SCALE, .h = HEIGHT * SCALE};
+    if (SDL_RenderReadPixels(renderer, &rect, 0, saveSurface->pixels, pitch) != 0) {
+        std::cerr << "SDL_RenderReadPixels error: " << SDL_GetError() << "\n";
+        return false;
+    }
+
+    IMG_SavePNG(saveSurface, filepath.c_str());
+    SDL_FreeSurface(saveSurface);
+
+    return true;
+}
 
 auto main(int argc, char *argv[]) -> int {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -77,6 +102,9 @@ auto main(int argc, char *argv[]) -> int {
                     break;
                 case SDLK_RETURN:
                     SimulatorRemoteCode = ENTER;
+                    break;
+                case 'p':
+                    saveScreenshotPng("./screenshot.png", window, renderer);
                     break;
                 }
             }

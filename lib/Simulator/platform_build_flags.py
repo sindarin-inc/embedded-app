@@ -45,6 +45,7 @@ flags = [
     "-DENABLE_OTA=0",
     "-DENABLE_POCKET=1",
     "-DEINKET013TT1=0",
+    "-lSDL2_image",
     lib_includes,
 ]
 
