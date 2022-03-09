@@ -6,25 +6,44 @@
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Power.hpp"
 #include "Renderers/Renderer.hpp"
-#include "UI/Screen.hpp"
+#include "Storage/PreferencesStore.hpp"
+#include "UI/ContainerScreen.hpp"
+#include "UI/LightingAdjustScreen.hpp"
+#include "UI/ReadableSeekScreen.hpp"
 #include "sindarin-debug.h"
 
-class PopupMenuScreen : public Screen {
+class PopupMenuScreen : public ContainerScreen {
 
 public:
-    PopupMenuScreen(Power &power, Renderer &renderer)
-        : power_(power), renderer_(renderer), leftButtonTitle_("-5%"){};
+    PopupMenuScreen(Power &power, Renderer &renderer, PreferencesStore &prefs, Readable &readable_)
+        : power_(power), renderer_(renderer), leftButtonTitle_("Lighting"), prefs_(prefs),
+          lightingAdjustScreen_(prefs), readableSeekScreen_(prefs, readable_, renderer_) {
+        currentScreen_ = this;
+        lightingAdjustScreen_.backCallback = [this]() { this->setCurrentScreen(*this); };
+        readableSeekScreen_.backCallback = [this]() { this->setCurrentScreen(*this); };
+        leftButtonCallback_ = [this]() {
+            lightingAdjustScreen_.firstLoad = true;
+            this->setCurrentScreen(lightingAdjustScreen_);
+        };
+    };
 
     void render(DisplaySystem &display) override;
 
-    void processCommand(RemoteCommand command) override{};
+    void processCommand(RemoteCommand command) override;
 
-    void setLeftButtonTitle(const std::string &title) { leftButtonTitle_ = title; };
+    void setLeftPopupButton(const std::string &title, std::function<void(void)> callback) {
+        leftButtonTitle_ = title;
+        leftButtonCallback_ = std::move(callback);
+    }
 
 protected:
+    PreferencesStore &prefs_;
     Power &power_;
     Renderer &renderer_;
     std::string leftButtonTitle_;
+    LightingAdjustScreen lightingAdjustScreen_;
+    ReadableSeekScreen readableSeekScreen_;
+    std::function<void(void)> leftButtonCallback_;
 };
 
 #endif

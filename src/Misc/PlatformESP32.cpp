@@ -4,11 +4,13 @@
 #include <esp_adc_cal.h>
 
 #include "Platform.hpp"
+#include "config.h"
 #include "sindarin-debug.h"
 
 #define UPPER_DIVIDER 442
 #define LOWER_DIVIDER 160
 #define DEFAULT_VREF 1100 // Default referance voltage in mv
+#define BACKLIGHT_PWM_CHANNEL 0
 
 void InitializePlatform() {
     pinMode(BAT_VOLTAGE_LEFT, ANALOG);
@@ -20,7 +22,18 @@ void InitializePlatform() {
     pinMode(RED_LED, OUTPUT);
     pinMode(GREEN_LED, OUTPUT);
 
+#if REVISION < 7
     pinMode(DISPLAY_POWER, OUTPUT);
+#else
+    // Backlight
+    const int pwmFreq = 5000;
+    const int pwmResolution = 8;
+    ledcSetup(BACKLIGHT_PWM_CHANNEL, pwmFreq, pwmResolution);
+
+    // Attach the LED PWM Channel to the GPIO Pins
+    ledcAttachPin(BACKLIGHT_LEFT, BACKLIGHT_PWM_CHANNEL);
+    ledcAttachPin(BACKLIGHT_RIGHT, BACKLIGHT_PWM_CHANNEL);
+#endif
 }
 
 // Forked from TinyPico's GetBatteryVoltage() method:
@@ -72,6 +85,14 @@ void SetCpuSpeedMhz(int speedMhz) {
     if (setCpuFrequencyMhz(speedMhz) != true) {
         log_e("Failed to setCpuFrequencyMhz(%d)", speedMhz);
     }
+}
+
+void SetBacklight(int percent) {
+    auto dutyCycle = percent * 255 / 100;
+    log_d("Setting backlight to %d%% (%d)", percent, dutyCycle);
+#if REVISION >= 7
+    ledcWrite(BACKLIGHT_PWM_CHANNEL, dutyCycle);
+#endif
 }
 
 #endif

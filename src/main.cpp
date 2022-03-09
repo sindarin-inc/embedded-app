@@ -97,7 +97,9 @@ void setup() {
 
 #if EINKET013TT1
     // Turn on power to the screen
+#if REVISION < 7
     digitalWrite(DISPLAY_POWER, HIGH);
+#endif
     myDisplay.setup();
 
     // If the saved prefs indicated a vcom, set it here.
@@ -105,6 +107,12 @@ void setup() {
         myDisplay.getDriver()->setVcom(prefs.vcom.get().value());
     }
 #endif
+
+    // If the saved prefs have a backlight of zero, turn on the lights anyways
+    if (prefs.backlight.get().value() == 0) {
+        prefs.backlight.set(20);
+    }
+    SetBacklight(prefs.backlight.get().value());
 
 #if SIMULATOR
     myDisplay.setup();

@@ -11,10 +11,14 @@
 #include "Misc/StringUtil.hpp"
 
 void PopupMenuScreen::render(DisplaySystem &display) {
-    const int edgeOffset = 5;
+    if (currentScreen_ != this) {
+        currentScreen_->render(display);
+        return;
+    }
     if (!needsRerender) {
         return;
     }
+    const int edgeOffset = 5;
     log_d("PopupMenuScreen render");
     auto autoUpdate = display.getAutoUpdate();
     display.setAutoUpdate(false);
@@ -52,13 +56,15 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     display.drawText(placeString.c_str(), (screenWidth / 2) - (textWidth / 2),
                      (screenHeight / 2) + (textHeight / 2) - 10, screenWidth, screenHeight);
 
-    display.getTextBounds("Invert", &textWidth, &textHeight);
-    display.drawText("Invert", (screenWidth / 2) - (textWidth / 2),
+    auto bottomStr = "Seek";
+    display.getTextBounds(bottomStr, &textWidth, &textHeight);
+    display.drawText(bottomStr, (screenWidth / 2) - (textWidth / 2),
                      (screenHeight / 2) + (textHeight / 2) + POPUP_MENU_BLANK_HEIGHT / 3,
                      screenWidth, screenHeight);
 
-    display.getTextBounds("Text", &textWidth, &textHeight);
-    display.drawText("Text", (screenWidth / 2) - (textWidth / 2),
+    auto topStr = "Text";
+    display.getTextBounds(topStr, &textWidth, &textHeight);
+    display.drawText(topStr, (screenWidth / 2) - (textWidth / 2),
                      (screenHeight / 2) - POPUP_MENU_BLANK_HEIGHT / 3, screenWidth, screenHeight);
 
     display.getTextBounds(leftButtonTitle_.c_str(), &textWidth, &textHeight);
@@ -66,12 +72,61 @@ void PopupMenuScreen::render(DisplaySystem &display) {
                      (display.width() - POPUP_MENU_BLANK_WIDTH) / 2 - textWidth / 2,
                      (screenHeight / 2) + 1, screenWidth, screenHeight);
 
-    display.getTextBounds("+5%", &textWidth, &textHeight);
-    display.drawText(
-        "+5%", (display.width() - ((display.width() - POPUP_MENU_BLANK_WIDTH) / 2)) - textWidth / 2,
-        (screenHeight / 2) + 1, screenWidth, screenHeight);
+    auto rightStr = "Invert";
+    display.getTextBounds(rightStr, &textWidth, &textHeight);
+    display.drawText(rightStr,
+                     (display.width() - ((display.width() - POPUP_MENU_BLANK_WIDTH) / 2)) -
+                         textWidth / 2,
+                     (screenHeight / 2) + 1, screenWidth, screenHeight);
 
     display.updateDisplay();
     display.setAutoUpdate(autoUpdate);
     needsRerender = false;
+}
+
+void PopupMenuScreen::processCommand(RemoteCommand command) {
+    if (currentScreen_ != this) {
+        currentScreen_->processCommand(command);
+        return;
+    }
+
+    auto back = [this]() {
+        if (backCallback != nullptr) {
+            needsRerender = true;
+            backCallback();
+        }
+        needsRerender = true;
+    };
+
+    switch (command) {
+    case RemoteCommand::CHANNEL_MINUS:
+        if (leftButtonCallback_) {
+            leftButtonCallback_();
+        }
+        break;
+    case RemoteCommand::CHANNEL_PLUS:
+        // Reserved for future use? Potentially lighting up and down?
+        this->renderer_.getDisplay()->flipInversion();
+        // When we invert, we should do a full clear of the display to make sure
+        // the blacks are really gone.
+        this->renderer_.getDisplay()->clearDisplay();
+        prefs_.invertSetting.set(this->renderer_.getDisplay()->getInversion());
+        needsRerender = true;
+        break;
+    case RemoteCommand::PREV:
+        back();
+        break;
+    case RemoteCommand::NEXT:
+        readableSeekScreen_.firstLoad = true;
+        setCurrentScreen(readableSeekScreen_);
+        break;
+    case RemoteCommand::BACK:
+        back();
+        break;
+    case RemoteCommand::NOP_BUTTON:
+        needsRerender = true;
+        break;
+    default:
+        break;
+    }
 }

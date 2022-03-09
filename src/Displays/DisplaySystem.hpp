@@ -65,6 +65,12 @@ public:
     void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
         gfxClass_->fillRect(xOffset(x), yOffset(y), w, h, color);
     }
+    void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color) {
+        gfxClass_->drawLine(xOffset(x0), yOffset(y0), xOffset(x1), yOffset(y1), color);
+    }
+    void drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
+        gfxClass_->drawRect(xOffset(x), yOffset(y), w, h, color);
+    }
     void drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) {
         gfxClass_->drawCircle(xOffset(x0), yOffset(y0), r, color);
     }

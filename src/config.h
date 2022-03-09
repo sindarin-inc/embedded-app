@@ -4,15 +4,14 @@
 // picked up you need to clean and build everything. Or make sure any files that
 // need stuff from here explicitly #include "config.h"
 
-//#define EINK154in
+#ifndef REVISION
+#define REVISION 7
+#endif
+
 #ifndef EINKET013TT1
 #define EINKET013TT1 1
 #endif
-//#define OLED96in
-//#define SHARPMEM
 
-//#define PlanoConvex20x40
-//#define PlanoConvex16x36
 #define Hastings20x40_3
 
 // Currently using the App (BLE Server in firmware) is incompatible with
@@ -58,12 +57,18 @@
 #define RED_LED 22
 #define GREEN_LED 25
 
+#define BACKLIGHT_RIGHT 26
+#define BACKLIGHT_LEFT 9
+
 #define BAT_VOLTAGE_RIGHT 37
 #define BAT_VOLTAGE_LEFT 38
 #define BATT_CHANNEL_RIGHT ADC1_CHANNEL_1
 #define BATT_CHANNEL_LEFT ADC1_CHANNEL_2
 
+// On revisions prior to 7, the screen's power was tied to pin 26 along with the backlight
+#if REVISION < 7
 #define DISPLAY_POWER 26
+#endif
 #define DISPLAY_CS 5
 #define DISPLAY_OEI 21
 #define DISPLAY_RST 32
