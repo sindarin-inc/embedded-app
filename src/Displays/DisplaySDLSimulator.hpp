@@ -12,7 +12,7 @@ public:
     ~DisplaySDLSimulator() = default;
 
     void setup() override;
-    void updateDisplay() override;
+    void updateDisplay(DisplaySystem::UpdateType updateType) override;
 
 protected:
     GFXcanvas1 gfxCanvas_;
