@@ -40,7 +40,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     uint16_t screenWidth = display.width();
     uint16_t screenHeight = display.height();
 
-    display.setFont(&LUCIDA_GRANDE5PT7B);
+    display.setFont(&LUCIDA_GRANDE5PT7B_SKINNY);
     display.getTextBounds(batteryStatus.c_str(), &textWidth, &textHeight);
 
     display.drawText(batteryStatus.c_str(), (screenWidth / 2) - (textWidth / 2),

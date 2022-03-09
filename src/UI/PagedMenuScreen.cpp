@@ -89,7 +89,7 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     display.drawText(itemTitle.c_str(), (screenWidth / 2) - (width / 2),
                      (screenHeight / 2) + (maxHeightForThisFont_ / 2) - 4, screenWidth,
                      screenHeight);
-    display.setFont(&LUCIDA_GRANDE5PT7B);
+    display.setFont(&LUCIDA_GRANDE5PT7B_SKINNY);
 
     display.getTextBounds(batteryStatus.c_str(), &width, &height);
     // Arbitrarily put the battery text off of the bottom of the screen 20 pixels
