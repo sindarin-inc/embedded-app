@@ -17,7 +17,6 @@
 #include "Misc/Power.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Storage/PreferencesStore.hpp"
-#include "UI/Fonts/LucidaGrande5pt7b.h"
 #include "UI/RootUI.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -119,7 +118,6 @@ void setup() {
     myDisplay.setup();
 #endif
 
-<<<<<<< HEAD
     switch (prefs.font.get().value()) {
     case PREFS_DEFAULT_FONT:
         myDisplay.setFont(&LUCIDA_GRANDE5PT7B);
@@ -131,10 +129,6 @@ void setup() {
         myDisplay.setFont(&LUCIDA_GRANDE5PT7B_FAT);
         break;
     }
-=======
-    // Default to original font
-    myDisplay.setFont(&LUCIDA_GRANDE5PT7B);
->>>>>>> dcbd1c7 (add menu items to set skinny font)
 
     myDisplay.setFocusSize(15, 15);
     myDisplay.setOffset(prefs.localXOffset.get().value(), prefs.localYOffset.get().value());

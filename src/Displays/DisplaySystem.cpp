@@ -1,5 +1,6 @@
 #include "DisplaySystem.hpp"
 
+#include <UI/Fonts/LucidaGrande5pt7b.h>
 #include <utility>
 
 #include "Misc/StringUtil.hpp"
@@ -8,10 +9,12 @@
 DisplaySystem::DisplaySystem() { autoUpdate_ = true; }
 
 void DisplaySystem::setup() {
-    setFont(font_);
+    // Default to original font
+    setFont(&LUCIDA_GRANDE5PT7B);
     gfxClass_->setTextColor(fg, bg);
 
-#ifdef DISPLAY_ROTATION setRotation(DISPLAY_ROTATION);
+#ifdef DISPLAY_ROTATION
+    setRotation(DISPLAY_ROTATION);
 #else
     gfxClass_->setRotation(0);
 #endif
