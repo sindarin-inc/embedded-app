@@ -343,6 +343,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
             delete calibrationScreen;
         };
     }));
+#endif
 
     settingsMenu->addMenuItem(MenuItem("Optics Test", [this, settingsMenu, display]() {
         auto opticsTestScreen = new CalibrationScreen();
