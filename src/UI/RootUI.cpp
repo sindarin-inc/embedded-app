@@ -1,5 +1,6 @@
 #include "RootUI.hpp"
 
+#include <UI/Fonts/LucidaGrande5pt7b.h>
 #include <nvs_flash.h>
 
 #include "Bitmaps/Logo.hpp"
@@ -305,6 +306,22 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
     }));
 #endif
 
+    settingsMenu->addMenuItem(MenuItem("Set Font Skinny", [this, settingsMenu, display]() {
+        this->display_->setFont(&LUCIDA_GRANDE5PT7B_SKINNY);
+        this->display_->clearDisplay();
+    }));
+
+    settingsMenu->addMenuItem(MenuItem("Set Font Fat", [this, settingsMenu, display]() {
+        this->display_->setFont(&LUCIDA_GRANDE5PT7B_FAT);
+        this->display_->clearDisplay();
+    }));
+
+    settingsMenu->addMenuItem(MenuItem("Set Font Original", [this, settingsMenu, display]() {
+        this->display_->setFont(&LUCIDA_GRANDE5PT7B);
+        this->display_->clearDisplay();
+    }));
+
+#if 0
     settingsMenu->addMenuItem(MenuItem("Calibration Screen", [this, settingsMenu, display]() {
         auto calibrationScreen = new CalibrationScreen();
         this->display_->clearDisplay();
@@ -314,6 +331,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
             delete calibrationScreen;
         };
     }));
+#endif
 
     settingsMenu->addMenuItem(MenuItem("Optics Test", [this, settingsMenu, display]() {
         auto opticsTestScreen = new CalibrationScreen();
