@@ -20,7 +20,7 @@ public:
 
     void setup() override;
 
-    void updateDisplay() override;
+    void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED) override;
 
     void clearDisplay() override { fullRefreshNext_ = true; };
 

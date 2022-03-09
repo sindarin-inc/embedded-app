@@ -60,27 +60,41 @@ void DisplayEinkET013TT1::setup() {
     log_i("Display ready!");
 }
 
-void DisplayEinkET013TT1::updateDisplay() {
+void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
     SetCpuSpeedMhz(CPU_FREQ_MHZ_HIGH);
 
-    if (getPartialRefresh()) {
-        if (getInversion()) {
-            if (!fullRefreshNext_) {
-                driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
+    switch (updateType) {
+    case UNSPECIFIED:
+        if (getPartialRefresh()) {
+            if (getInversion()) {
+                if (!fullRefreshNext_) {
+                    driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
+                } else {
+                    driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
+                }
             } else {
-                driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
+                if (!fullRefreshNext_) {
+                    driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
+                } else {
+                    driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
+                }
             }
         } else {
-            if (!fullRefreshNext_) {
-                driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
-            } else {
-                driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
-            }
+            driver_.setBorder(bg == 0x00 ? BORDER_SETTING_BLACK : BORDER_SETTING_WHITE);
+            driver_.update(FULL_REFRESH_WAVEFORM_REGULAR, gfxCanvas_.getBuffer());
         }
-    } else {
-        driver_.setBorder(bg == 0x00 ? BORDER_SETTING_BLACK : BORDER_SETTING_WHITE);
-        driver_.update(FULL_REFRESH_WAVEFORM_REGULAR, gfxCanvas_.getBuffer());
+        break;
+    case FULL:
+        driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
+        break;
+    case PARTIAL:
+        driver_.update(PARTIAL_REFRESH_WAVEFORM_REGULAR, gfxCanvas_.getBuffer());
+        break;
+    case FAST:
+        driver_.update(EINK_10_13C_WAVEFORM_AU4, gfxCanvas_.getBuffer());
+        break;
     }
+
     // Clear buffer afterwards
     fillScreen(bg);
     fullRefreshNext_ = false;

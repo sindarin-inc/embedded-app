@@ -20,7 +20,7 @@ void DisplaySDLSimulator::setup() {
     setFullWindow();
 }
 
-void DisplaySDLSimulator::updateDisplay() {
+void DisplaySDLSimulator::updateDisplay(DisplaySystem::UpdateType updateType) {
     for (int x = 0; x < gfxCanvas_.width(); x++) {
         for (int y = 0; y < gfxCanvas_.height(); y++) {
             auto pixel = gfxCanvas_.getPixel(x, y);

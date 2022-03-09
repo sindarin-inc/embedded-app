@@ -2,6 +2,7 @@
 
 #include <functional>
 
+#include "Displays/DisplaySystem.hpp"
 #include "Inputs/RemoteInput.hpp"
 
 /*!

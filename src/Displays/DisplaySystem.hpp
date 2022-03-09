@@ -34,8 +34,13 @@ public:
     virtual void setup();
 
     // MARK: - Required virtual methods that subclasses must implement
-
-    virtual void updateDisplay() = 0;
+    enum UpdateType {
+        UNSPECIFIED,
+        FULL,
+        PARTIAL,
+        FAST,
+    };
+    virtual void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED) = 0;
 
     // Use `gfxClass` when you need to get direct access to draw to the whole screen (potentially
     // outside of focus areas)
