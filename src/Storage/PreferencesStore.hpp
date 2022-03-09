@@ -12,6 +12,12 @@
 
 #define MAX_KEY_LENGTH 15
 
+enum FONT_CHOICES {
+    PREFS_DEFAULT_FONT = 0,
+    PREFS_SKINNY_FONT = 1,
+    PREFS_FAT_FONT = 2,
+};
+
 class PreferencesStore {
 public:
     template <typename T>
@@ -142,7 +148,8 @@ public:
           pocketApiToken(this->prefs_, "pocket-token"),
           lastReadableId(this->prefs_, "rui-readable"), readablePlace(this->prefs_, "-p"),
           invertSetting(this->prefs_, "invert"), vcom(this->prefs_, "vcom"),
-          backlight(this->prefs_, "backlight"){};
+          backlight(this->prefs_, "backlight"), font(this->prefs_, "font"){};
+
     void begin();
     void clear() { prefs_.clear(); }
 
@@ -159,6 +166,7 @@ public:
     PrefsItem<int> invertSetting;
     PrefsItem<int> vcom;
     PrefsItem<int> backlight;
+    PrefsItem<int> font;
 
 protected:
     Preferences prefs_;

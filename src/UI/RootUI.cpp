@@ -312,16 +312,19 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
         fontMenu->addMenuItem(MenuItem("Skinny", [this, fontMenu]() {
             this->display_->setFont(&LUCIDA_GRANDE5PT7B_SKINNY);
             this->display_->clearDisplay();
+            prefs_.font.set(PREFS_SKINNY_FONT);
             fontMenu->needsRerender = true;
         }));
         fontMenu->addMenuItem(MenuItem("Fat", [this, fontMenu]() {
             this->display_->setFont(&LUCIDA_GRANDE5PT7B_FAT);
             this->display_->clearDisplay();
+            prefs_.font.set(PREFS_FAT_FONT);
             fontMenu->needsRerender = true;
         }));
         fontMenu->addMenuItem(MenuItem("Original", [this, fontMenu]() {
             this->display_->setFont(&LUCIDA_GRANDE5PT7B);
             this->display_->clearDisplay();
+            prefs_.font.set(PREFS_DEFAULT_FONT);
             fontMenu->needsRerender = true;
         }));
         setCurrentScreen(*fontMenu);
