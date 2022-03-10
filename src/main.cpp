@@ -18,6 +18,8 @@
 #include "Misc/StringUtil.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Fonts/LucidaGrande5pt7b.h"
+#include "UI/Fonts/Tahoma5pt7b.h"
+#include "UI/Fonts/Tahoma6pt7b.h"
 #include "UI/RootUI.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -124,10 +126,12 @@ void setup() {
         myDisplay.setFont(&LUCIDA_GRANDE5PT7B);
         break;
     case PREFS_SKINNY_FONT:
-        myDisplay.setFont(&LUCIDA_GRANDE5PT7B_SKINNY);
+        // myDisplay.setFont(&LUCIDA_GRANDE5PT7B_SKINNY);
+        myDisplay.setFont(&Tahoma_Regular_font5pt7b);
         break;
     case PREFS_FAT_FONT:
-        myDisplay.setFont(&LUCIDA_GRANDE5PT7B_FAT);
+        // myDisplay.setFont(&LUCIDA_GRANDE5PT7B_FAT);
+        myDisplay.setFont(&Tahoma_Regular_font6pt7b);
         break;
     }
 

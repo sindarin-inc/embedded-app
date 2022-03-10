@@ -232,7 +232,7 @@ void DisplaySystem::getTextBounds(const char *buffer, uint16_t *w, uint16_t *h) 
     gfxClass_->getTextBounds(buffer, 0, 0, &x, &y, w, h);
 }
 
-auto DisplaySystem::getTextHeight() -> int { return font_->yAdvance + 1; }
+auto DisplaySystem::getTextHeight() -> int { return font_->yAdvance; }
 
 auto DisplaySystem::getTextHeight(const char *buffer) -> int {
     int16_t x, y;

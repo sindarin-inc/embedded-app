@@ -1,6 +1,8 @@
 #include "RootUI.hpp"
 
 #include <UI/Fonts/LucidaGrande5pt7b.h>
+#include <UI/Fonts/Tahoma5pt7b.h>
+#include <UI/Fonts/Tahoma6pt7b.h>
 #include <nvs_flash.h>
 
 #include "Bitmaps/Logo.hpp"
@@ -309,20 +311,36 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
     settingsMenu->addMenuItem(MenuItem("Set Font Size", [this, display, settingsMenu]() {
         auto fontMenu = new MenuScreen(this->power_);
 
-        fontMenu->addMenuItem(MenuItem("Skinny", [this, fontMenu]() {
+        fontMenu->addMenuItem(MenuItem("Lucida 1px space", [this, fontMenu]() {
             this->display_->setFont(&LUCIDA_GRANDE5PT7B_SKINNY);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_SKINNY_FONT);
             fontMenu->needsRerender = true;
         }));
-        fontMenu->addMenuItem(MenuItem("Fat", [this, fontMenu]() {
+        fontMenu->addMenuItem(MenuItem("Lucida 2px space", [this, fontMenu]() {
             this->display_->setFont(&LUCIDA_GRANDE5PT7B_FAT);
             this->display_->clearDisplay();
 
             prefs_.font.set(PREFS_FAT_FONT);
 
             fontMenu->needsRerender = true;
+        }));
+        fontMenu->addMenuItem(MenuItem("Lucida original", [this, fontMenu]() {
             this->display_->setFont(&LUCIDA_GRANDE5PT7B);
+            this->display_->clearDisplay();
+            prefs_.font.set(PREFS_DEFAULT_FONT);
+            fontMenu->needsRerender = true;
+        }));
+
+        fontMenu->addMenuItem(MenuItem("Tahoma 5pt", [this, fontMenu]() {
+            this->display_->setFont(&Tahoma_Regular_font5pt7b);
+            this->display_->clearDisplay();
+            prefs_.font.set(PREFS_DEFAULT_FONT);
+            fontMenu->needsRerender = true;
+        }));
+
+        fontMenu->addMenuItem(MenuItem("Tahoma 6pt", [this, fontMenu]() {
+            this->display_->setFont(&Tahoma_Regular_font6pt7b);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_DEFAULT_FONT);
             fontMenu->needsRerender = true;

@@ -30,6 +30,8 @@ void PopupMenuScreen::render(DisplaySystem &display) {
                         popupMenuBlankBits, POPUP_MENU_BLANK_WIDTH, POPUP_MENU_BLANK_HEIGHT,
                         display.fg);
 
+    auto prevFont = display.getFont();
+
     display.setFont(&LUCIDA_GRANDE6PT7B);
 
     // Now draw!
@@ -81,6 +83,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
 
     display.updateDisplay();
     display.setAutoUpdate(autoUpdate);
+    display.setFont(prevFont);
     needsRerender = false;
 }
 
