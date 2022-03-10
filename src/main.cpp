@@ -16,10 +16,8 @@
 #include "Misc/Platform.hpp"
 #include "Misc/Power.hpp"
 #include "Misc/StringUtil.hpp"
+#include "Misc/Style.hpp"
 #include "Storage/PreferencesStore.hpp"
-#include "UI/Fonts/LucidaGrande5pt7b.h"
-#include "UI/Fonts/Tahoma5pt7b.h"
-#include "UI/Fonts/Tahoma6pt7b.h"
 #include "UI/RootUI.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -74,6 +72,7 @@ OTA ota;
 #endif
 
 Power power;
+Style style;
 
 RootUI rootUi(prefs, power);
 
@@ -123,15 +122,19 @@ void setup() {
 
     switch (prefs.font.get().value()) {
     case PREFS_DEFAULT_FONT:
-        myDisplay.setFont(&LUCIDA_GRANDE5PT7B);
+        style.setFontFamily(style.lucindaRegular);
         break;
-    case PREFS_SKINNY_FONT:
-        // myDisplay.setFont(&LUCIDA_GRANDE5PT7B_SKINNY);
-        myDisplay.setFont(&Tahoma_Regular_font5pt7b);
+    case PREFS_LUCIDA_SKINNY:
+        style.setFontFamily(style.lucindaSkinny);
         break;
-    case PREFS_FAT_FONT:
-        // myDisplay.setFont(&LUCIDA_GRANDE5PT7B_FAT);
-        myDisplay.setFont(&Tahoma_Regular_font6pt7b);
+    case PREFS_LUCIDA_FAT:
+        style.setFontFamily(style.lucindaFat);
+        break;
+    case PREFS_TAHOMA_REGULAR:
+        style.setFontFamily(style.tahomaRegular);
+        break;
+    case PREFS_TAHOMA_LARGE:
+        style.setFontFamily(style.tahomaLarge);
         break;
     }
 

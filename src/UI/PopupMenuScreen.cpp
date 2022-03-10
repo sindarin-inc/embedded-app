@@ -4,11 +4,10 @@
 #include <string>
 
 #include "Bitmaps/Popup_Menu_Blank.hpp"
-#include "Fonts/LucidaGrande10pt7b.h"
-#include "Fonts/LucidaGrande14pt7b.h"
-#include "Fonts/LucidaGrande5pt7b.h"
-#include "Fonts/LucidaGrande6pt7b.h"
 #include "Misc/StringUtil.hpp"
+#include "Misc/Style.hpp"
+
+extern Style style;
 
 void PopupMenuScreen::render(DisplaySystem &display) {
     if (currentScreen_ != this) {
@@ -32,7 +31,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
 
     auto prevFont = display.getFont();
 
-    display.setFont(&LUCIDA_GRANDE6PT7B);
+    display.setFont(style.getFontFamily().popupFont);
 
     // Now draw!
     uint16_t textWidth = 0, textHeight = 0;
@@ -42,7 +41,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     uint16_t screenWidth = display.width();
     uint16_t screenHeight = display.height();
 
-    display.setFont(&LUCIDA_GRANDE5PT7B_SKINNY);
+    display.setFont(style.getFontFamily().popupFont);
     display.getTextBounds(batteryStatus.c_str(), &textWidth, &textHeight);
 
     display.drawText(batteryStatus.c_str(), (screenWidth / 2) - (textWidth / 2),
@@ -83,7 +82,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
 
     display.updateDisplay();
     display.setAutoUpdate(autoUpdate);
-    display.setFont(prevFont);
+    display.setFont(style.getFontFamily().readableFont);
     needsRerender = false;
 }
 

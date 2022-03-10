@@ -12,6 +12,7 @@
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/StringUtil.hpp"
+#include "Misc/Style.hpp"
 #include "Renderers/Renderer.hpp"
 #include "UI/CalibrationScreen.hpp"
 #include "UI/LoadingScreen.hpp"
@@ -39,6 +40,8 @@
 #endif
 
 #define LAST_READABLE_ID "rui-readable"
+
+extern Style style;
 
 void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, bool inputConnected,
                    FileSystem &fileSystem) {
@@ -308,41 +311,39 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
     }));
 #endif
 
-    settingsMenu->addMenuItem(MenuItem("Set Font Size", [this, display, settingsMenu]() {
+    settingsMenu->addMenuItem(MenuItem("Set Font", [this, display, settingsMenu]() {
         auto fontMenu = new MenuScreen(this->power_);
 
         fontMenu->addMenuItem(MenuItem("Lucida 1px space", [this, fontMenu]() {
-            this->display_->setFont(&LUCIDA_GRANDE5PT7B_SKINNY);
+            style.setFontFamily(style.lucindaSkinny);
             this->display_->clearDisplay();
-            prefs_.font.set(PREFS_SKINNY_FONT);
+            prefs_.font.set(PREFS_LUCIDA_SKINNY);
             fontMenu->needsRerender = true;
         }));
         fontMenu->addMenuItem(MenuItem("Lucida 2px space", [this, fontMenu]() {
-            this->display_->setFont(&LUCIDA_GRANDE5PT7B_FAT);
+            style.setFontFamily(style.lucindaFat);
             this->display_->clearDisplay();
-
-            prefs_.font.set(PREFS_FAT_FONT);
-
+            prefs_.font.set(PREFS_LUCIDA_FAT);
             fontMenu->needsRerender = true;
         }));
         fontMenu->addMenuItem(MenuItem("Lucida original", [this, fontMenu]() {
-            this->display_->setFont(&LUCIDA_GRANDE5PT7B);
+            style.setFontFamily(style.lucindaRegular);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_DEFAULT_FONT);
             fontMenu->needsRerender = true;
         }));
 
         fontMenu->addMenuItem(MenuItem("Tahoma 5pt", [this, fontMenu]() {
-            this->display_->setFont(&Tahoma_Regular_font5pt7b);
+            style.setFontFamily(style.tahomaRegular);
             this->display_->clearDisplay();
-            prefs_.font.set(PREFS_DEFAULT_FONT);
+            prefs_.font.set(PREFS_TAHOMA_REGULAR);
             fontMenu->needsRerender = true;
         }));
 
         fontMenu->addMenuItem(MenuItem("Tahoma 6pt", [this, fontMenu]() {
-            this->display_->setFont(&Tahoma_Regular_font6pt7b);
+            style.setFontFamily(style.tahomaLarge);
             this->display_->clearDisplay();
-            prefs_.font.set(PREFS_DEFAULT_FONT);
+            prefs_.font.set(PREFS_TAHOMA_LARGE);
             fontMenu->needsRerender = true;
         }));
         setCurrentScreen(*fontMenu);

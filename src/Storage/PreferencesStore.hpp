@@ -14,8 +14,10 @@
 
 enum FONT_CHOICES {
     PREFS_DEFAULT_FONT = 0,
-    PREFS_SKINNY_FONT = 1,
-    PREFS_FAT_FONT = 2,
+    PREFS_LUCIDA_SKINNY = 1,
+    PREFS_LUCIDA_FAT = 2,
+    PREFS_TAHOMA_REGULAR = 3,
+    PREFS_TAHOMA_LARGE = 4,
 };
 
 class PreferencesStore {

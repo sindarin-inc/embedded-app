@@ -4,13 +4,16 @@
 #include <utility>
 
 #include "Misc/StringUtil.hpp"
+#include "Misc/Style.hpp"
 #include "sindarin-debug.h"
+
+extern Style style;
 
 DisplaySystem::DisplaySystem() { autoUpdate_ = true; }
 
 void DisplaySystem::setup() {
     // Default to original font
-    setFont(&LUCIDA_GRANDE5PT7B);
+    setFont(style.getFontFamily().mainMenuFont);
     gfxClass_->setTextColor(fg, bg);
 
 #ifdef DISPLAY_ROTATION
