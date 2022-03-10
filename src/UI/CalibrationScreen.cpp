@@ -1,7 +1,6 @@
 #include "CalibrationScreen.hpp"
 
 #include "Misc/Style.hpp"
-#include "UI/Fonts/LucidaGrande5pt7b.h"
 
 extern Style style;
 

@@ -1,6 +1,5 @@
 #include "DisplaySystem.hpp"
 
-#include <UI/Fonts/LucidaGrande5pt7b.h>
 #include <utility>
 
 #include "Misc/StringUtil.hpp"
