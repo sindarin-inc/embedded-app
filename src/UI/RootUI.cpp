@@ -1,8 +1,5 @@
 #include "RootUI.hpp"
 
-#include <UI/Fonts/LucidaGrande5pt7b.h>
-#include <UI/Fonts/Tahoma5pt7b.h>
-#include <UI/Fonts/Tahoma6pt7b.h>
 #include <nvs_flash.h>
 
 #include "Bitmaps/Logo.hpp"
