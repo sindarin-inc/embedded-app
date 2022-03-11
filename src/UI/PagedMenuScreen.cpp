@@ -11,8 +11,6 @@
 #include "Displays/DisplayEinkET013TT1.hpp"
 #endif
 
-extern Style style;
-
 #define MAX_WIDTH 152
 
 void PagedMenuScreen::render(DisplaySystem &display) {
@@ -51,7 +49,7 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     // string in the desired space.
     auto prevFont = display.getFont();
 
-    display.setFont(style.getFontFamily().mainMenuFont);
+    display.setFont(display.style.getFontFamily().mainMenuFont);
 
     // If we still don't fit, shrink the string until we do.
     while (display.getTextWidth(itemTitle.c_str()) > MAX_WIDTH) {
@@ -88,7 +86,7 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     display.drawText(itemTitle.c_str(), (screenWidth / 2) - (width / 2),
                      (screenHeight / 2) + (maxHeightForThisFont_ / 2) - 4, screenWidth,
                      screenHeight);
-    display.setFont(style.getFontFamily().readableFont);
+    display.setFont(display.style.getFontFamily().readableFont);
 
     display.getTextBounds(batteryStatus.c_str(), &width, &height);
     // Arbitrarily put the battery text off of the bottom of the screen 20 pixels
@@ -100,7 +98,7 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     display.println(batteryStatus.c_str());
 
     display.updateDisplay();
-    display.setFont(style.getFontFamily().readableFont);
+    display.setFont(display.style.getFontFamily().readableFont);
     display.setAutoUpdate(autoUpdate);
     needsRerender = false;
 }

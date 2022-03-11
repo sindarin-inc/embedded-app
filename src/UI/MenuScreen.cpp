@@ -4,8 +4,6 @@
 
 #include "Misc/Style.hpp"
 
-extern Style style;
-
 #define NUM_LINES_PER_MENU_PAGE 12
 
 void MenuScreen::addMenuItem(const MenuItem &newItem) {
@@ -108,7 +106,7 @@ void MenuScreen::render(DisplaySystem &display) {
     // with long names)
     std::string totalToDisplay = menuString + std::string("\n\n") + batLife;
 
-    display.setFont(style.getFontFamily().settingsFont);
+    display.setFont(display.style.getFontFamily().settingsFont);
 
     display.drawTextInBox(totalToDisplay, 0, 0, display.width(), display.height());
     needsRerender = false;

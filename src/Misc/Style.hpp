@@ -10,7 +10,7 @@
 #include "UI/Fonts/Tahoma5pt7b.h"
 #include "UI/Fonts/Tahoma6pt7b.h"
 
-struct fontFamily {
+struct FontFamily {
     const GFXfont *settingsFont;
     const GFXfont *mainMenuFont;
     const GFXfont *popupFont;
@@ -35,32 +35,30 @@ public:
         lucindaSkinny.popupFont = &LUCIDA_GRANDE5PT7B_SKINNY;
         lucindaSkinny.readableFont = &LUCIDA_GRANDE5PT7B_SKINNY;
 
-        tahomaRegular.mainMenuFont = &Tahoma_Regular_font10pt7b;
-        tahomaRegular.settingsFont = &Tahoma_Regular_font5pt7b;
-        tahomaRegular.popupFont = &Tahoma_Regular_font5pt7b;
-        tahomaRegular.readableFont = &Tahoma_Regular_font5pt7b;
+        tahomaRegular.mainMenuFont = &TAHOMA_REGULAR_FONT10PT7B;
+        tahomaRegular.settingsFont = &TAHOMA_REGULAR_FONT5PT7B;
+        tahomaRegular.popupFont = &TAHOMA_REGULAR_FONT5PT7B;
+        tahomaRegular.readableFont = &TAHOMA_REGULAR_FONT5PT7B;
 
-        tahomaLarge.mainMenuFont = &Tahoma_Regular_font10pt7b;
-        tahomaLarge.settingsFont = &Tahoma_Regular_font5pt7b;
-        tahomaLarge.popupFont = &Tahoma_Regular_font5pt7b;
-        tahomaLarge.readableFont = &Tahoma_Regular_font6pt7b;
+        tahomaLarge.mainMenuFont = &TAHOMA_REGULAR_FONT10PT7B;
+        tahomaLarge.settingsFont = &TAHOMA_REGULAR_FONT5PT7B;
+        tahomaLarge.popupFont = &TAHOMA_REGULAR_FONT5PT7B;
+        tahomaLarge.readableFont = &TAHOMA_REGULAR_FONT6PT7B;
 
         currentFont = tahomaRegular;
     }
 
-    void setFontFamily(struct fontFamily newFont) { currentFont = newFont; }
+    void setFontFamily(FontFamily newFont) { currentFont = newFont; }
 
-    struct fontFamily getFontFamily() {
-        return currentFont;
-    }
+    auto getFontFamily() -> FontFamily { return currentFont; }
 
-    struct fontFamily lucindaRegular;
-    struct fontFamily lucindaFat;
-    struct fontFamily lucindaSkinny;
-    struct fontFamily tahomaRegular;
-    struct fontFamily tahomaLarge;
+    FontFamily lucindaRegular;
+    FontFamily lucindaFat;
+    FontFamily lucindaSkinny;
+    FontFamily tahomaRegular;
+    FontFamily tahomaLarge;
 
-    struct fontFamily currentFont;
+    FontFamily currentFont;
 
 protected:
 };

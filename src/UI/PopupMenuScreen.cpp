@@ -7,8 +7,6 @@
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
 
-extern Style style;
-
 void PopupMenuScreen::render(DisplaySystem &display) {
     if (currentScreen_ != this) {
         currentScreen_->render(display);
@@ -29,9 +27,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
                         popupMenuBlankBits, POPUP_MENU_BLANK_WIDTH, POPUP_MENU_BLANK_HEIGHT,
                         display.fg);
 
-    auto prevFont = display.getFont();
-
-    display.setFont(style.getFontFamily().popupFont);
+    display.setFont(display.style.getFontFamily().popupFont);
 
     // Now draw!
     uint16_t textWidth = 0, textHeight = 0;
@@ -41,7 +37,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     uint16_t screenWidth = display.width();
     uint16_t screenHeight = display.height();
 
-    display.setFont(style.getFontFamily().popupFont);
+    display.setFont(display.style.getFontFamily().popupFont);
     display.getTextBounds(batteryStatus.c_str(), &textWidth, &textHeight);
 
     display.drawText(batteryStatus.c_str(), (screenWidth / 2) - (textWidth / 2),
@@ -82,7 +78,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
 
     display.updateDisplay();
     display.setAutoUpdate(autoUpdate);
-    display.setFont(style.getFontFamily().readableFont);
+    display.setFont(display.style.getFontFamily().readableFont);
     needsRerender = false;
 }
 

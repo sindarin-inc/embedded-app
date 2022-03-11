@@ -72,7 +72,6 @@ OTA ota;
 #endif
 
 Power power;
-Style style;
 
 RootUI rootUi(prefs, power);
 
@@ -122,19 +121,19 @@ void setup() {
 
     switch (prefs.font.get().value()) {
     case PREFS_DEFAULT_FONT:
-        style.setFontFamily(style.lucindaRegular);
+        myDisplay.style.setFontFamily(myDisplay.style.lucindaRegular);
         break;
     case PREFS_LUCIDA_SKINNY:
-        style.setFontFamily(style.lucindaSkinny);
+        myDisplay.style.setFontFamily(myDisplay.style.lucindaSkinny);
         break;
     case PREFS_LUCIDA_FAT:
-        style.setFontFamily(style.lucindaFat);
+        myDisplay.style.setFontFamily(myDisplay.style.lucindaFat);
         break;
     case PREFS_TAHOMA_REGULAR:
-        style.setFontFamily(style.tahomaRegular);
+        myDisplay.style.setFontFamily(myDisplay.style.tahomaRegular);
         break;
     case PREFS_TAHOMA_LARGE:
-        style.setFontFamily(style.tahomaLarge);
+        myDisplay.style.setFontFamily(myDisplay.style.tahomaLarge);
         break;
     }
 

@@ -3,10 +3,7 @@
 #include <utility>
 
 #include "Misc/StringUtil.hpp"
-#include "Misc/Style.hpp"
 #include "sindarin-debug.h"
-
-extern Style style;
 
 DisplaySystem::DisplaySystem() { autoUpdate_ = true; }
 

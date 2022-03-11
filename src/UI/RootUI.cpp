@@ -41,8 +41,6 @@
 
 #define LAST_READABLE_ID "rui-readable"
 
-extern Style style;
-
 void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, bool inputConnected,
                    FileSystem &fileSystem) {
     SHOW_HEAP();
@@ -315,33 +313,33 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
         auto fontMenu = new MenuScreen(this->power_);
 
         fontMenu->addMenuItem(MenuItem("Lucida 1px space", [this, fontMenu]() {
-            style.setFontFamily(style.lucindaSkinny);
+            this->display_->style.setFontFamily(this->display_->style.lucindaSkinny);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_LUCIDA_SKINNY);
             fontMenu->needsRerender = true;
         }));
         fontMenu->addMenuItem(MenuItem("Lucida 2px space", [this, fontMenu]() {
-            style.setFontFamily(style.lucindaFat);
+            this->display_->style.setFontFamily(this->display_->style.lucindaFat);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_LUCIDA_FAT);
             fontMenu->needsRerender = true;
         }));
         fontMenu->addMenuItem(MenuItem("Lucida original", [this, fontMenu]() {
-            style.setFontFamily(style.lucindaRegular);
+            this->display_->style.setFontFamily(this->display_->style.lucindaRegular);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_DEFAULT_FONT);
             fontMenu->needsRerender = true;
         }));
 
         fontMenu->addMenuItem(MenuItem("Tahoma 5pt", [this, fontMenu]() {
-            style.setFontFamily(style.tahomaRegular);
+            this->display_->style.setFontFamily(this->display_->style.tahomaRegular);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_TAHOMA_REGULAR);
             fontMenu->needsRerender = true;
         }));
 
         fontMenu->addMenuItem(MenuItem("Tahoma 6pt", [this, fontMenu]() {
-            style.setFontFamily(style.tahomaLarge);
+            this->display_->style.setFontFamily(this->display_->style.tahomaLarge);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_TAHOMA_LARGE);
             fontMenu->needsRerender = true;
@@ -430,6 +428,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
                          [&currentReadable](const Readable &x) { return currentReadable == x.id; });
         if (it != readables.end()) {
             auto readableScreen = createReadableScreen(&(*it));
+            this->display_->setFont(this->display_->style.getFontFamily().readableFont);
             this->setCurrentScreen(*readableScreen);
             log_i("Resuming readable from last session: %s", (*it).name.c_str());
         } else {

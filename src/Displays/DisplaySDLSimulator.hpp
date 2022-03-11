@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DisplaySystem.hpp"
+#include "Misc/Style.hpp"
 #include "sindarin-debug.h"
 
 #define DisplaySDL_X_PIXELS 256

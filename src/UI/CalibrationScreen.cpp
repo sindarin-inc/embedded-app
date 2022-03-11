@@ -2,8 +2,6 @@
 
 #include "Misc/Style.hpp"
 
-extern Style style;
-
 #define NUM_SPIKES 24
 
 void CalibrationScreen::drawSiemensStar(DisplaySystem &display, u_int32_t originX,
@@ -45,7 +43,7 @@ void CalibrationScreen::render(DisplaySystem &display) {
 
         display.fillRect(0, 0, display.width(), display.height(), display.fg);
         display.fillRect(2, 2, display.width() - 4, display.height() - 4, display.bg);
-        display.setFont(style.getFontFamily().readableFont);
+        display.setFont(display.style.getFontFamily().readableFont);
 
         int letsWidth = display.getTextWidth("let's");
         int focusWidth = display.getTextWidth("focus");

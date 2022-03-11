@@ -19,6 +19,8 @@
 #include <array>
 #include <string>
 
+#include "Misc/Style.hpp"
+
 // This isn't the best -- we may want to make this dynamically
 // allocated instead in the object?
 #define MAX_LINES_IN_SPLIT 100
@@ -32,6 +34,8 @@ public:
     ~DisplaySystem() = default;
 
     virtual void setup();
+
+    Style style;
 
     // MARK: - Required virtual methods that subclasses must implement
     enum UpdateType {
