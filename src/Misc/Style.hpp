@@ -20,20 +20,20 @@ struct FontFamily {
 class Style {
 public:
     Style() {
-        lucindaRegular.mainMenuFont = &LUCIDA_GRANDE10PT7B;
-        lucindaRegular.settingsFont = &LUCIDA_GRANDE5PT7B;
-        lucindaRegular.popupFont = &LUCIDA_GRANDE5PT7B;
-        lucindaRegular.readableFont = &LUCIDA_GRANDE5PT7B;
+        lucidaRegular.mainMenuFont = &LUCIDA_GRANDE10PT7B;
+        lucidaRegular.settingsFont = &LUCIDA_GRANDE5PT7B;
+        lucidaRegular.popupFont = &LUCIDA_GRANDE5PT7B;
+        lucidaRegular.readableFont = &LUCIDA_GRANDE5PT7B;
 
-        lucindaFat.mainMenuFont = &LUCIDA_GRANDE10PT7B;
-        lucindaFat.settingsFont = &LUCIDA_GRANDE5PT7B_FAT;
-        lucindaFat.popupFont = &LUCIDA_GRANDE5PT7B;
-        lucindaFat.readableFont = &LUCIDA_GRANDE5PT7B_FAT;
+        lucidaFat.mainMenuFont = &LUCIDA_GRANDE10PT7B;
+        lucidaFat.settingsFont = &LUCIDA_GRANDE5PT7B_FAT;
+        lucidaFat.popupFont = &LUCIDA_GRANDE5PT7B;
+        lucidaFat.readableFont = &LUCIDA_GRANDE5PT7B_FAT;
 
-        lucindaSkinny.mainMenuFont = &LUCIDA_GRANDE10PT7B;
-        lucindaSkinny.settingsFont = &LUCIDA_GRANDE5PT7B_SKINNY;
-        lucindaSkinny.popupFont = &LUCIDA_GRANDE5PT7B_SKINNY;
-        lucindaSkinny.readableFont = &LUCIDA_GRANDE5PT7B_SKINNY;
+        lucidaSkinny.mainMenuFont = &LUCIDA_GRANDE10PT7B;
+        lucidaSkinny.settingsFont = &LUCIDA_GRANDE5PT7B_SKINNY;
+        lucidaSkinny.popupFont = &LUCIDA_GRANDE5PT7B_SKINNY;
+        lucidaSkinny.readableFont = &LUCIDA_GRANDE5PT7B_SKINNY;
 
         tahomaRegular.mainMenuFont = &TAHOMA_REGULAR_FONT10PT7B;
         tahomaRegular.settingsFont = &TAHOMA_REGULAR_FONT5PT7B;
@@ -52,9 +52,9 @@ public:
 
     auto getFontFamily() -> FontFamily { return currentFont; }
 
-    FontFamily lucindaRegular;
-    FontFamily lucindaFat;
-    FontFamily lucindaSkinny;
+    FontFamily lucidaRegular;
+    FontFamily lucidaFat;
+    FontFamily lucidaSkinny;
     FontFamily tahomaRegular;
     FontFamily tahomaLarge;
 

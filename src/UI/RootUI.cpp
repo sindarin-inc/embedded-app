@@ -310,19 +310,19 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
         auto fontMenu = new MenuScreen(this->power_);
 
         fontMenu->addMenuItem(MenuItem("Lucida 1px space", [this, fontMenu]() {
-            this->display_->style.setFontFamily(this->display_->style.lucindaSkinny);
+            this->display_->style.setFontFamily(this->display_->style.lucidaSkinny);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_LUCIDA_SKINNY);
             fontMenu->needsRerender = true;
         }));
         fontMenu->addMenuItem(MenuItem("Lucida 2px space", [this, fontMenu]() {
-            this->display_->style.setFontFamily(this->display_->style.lucindaFat);
+            this->display_->style.setFontFamily(this->display_->style.lucidaFat);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_LUCIDA_FAT);
             fontMenu->needsRerender = true;
         }));
         fontMenu->addMenuItem(MenuItem("Lucida original", [this, fontMenu]() {
-            this->display_->style.setFontFamily(this->display_->style.lucindaRegular);
+            this->display_->style.setFontFamily(this->display_->style.lucidaRegular);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_DEFAULT_FONT);
             fontMenu->needsRerender = true;

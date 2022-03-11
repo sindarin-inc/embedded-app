@@ -121,13 +121,13 @@ void setup() {
 
     switch (prefs.font.get().value()) {
     case PREFS_DEFAULT_FONT:
-        myDisplay.style.setFontFamily(myDisplay.style.lucindaRegular);
+        myDisplay.style.setFontFamily(myDisplay.style.lucidaRegular);
         break;
     case PREFS_LUCIDA_SKINNY:
-        myDisplay.style.setFontFamily(myDisplay.style.lucindaSkinny);
+        myDisplay.style.setFontFamily(myDisplay.style.lucidaSkinny);
         break;
     case PREFS_LUCIDA_FAT:
-        myDisplay.style.setFontFamily(myDisplay.style.lucindaFat);
+        myDisplay.style.setFontFamily(myDisplay.style.lucidaFat);
         break;
     case PREFS_TAHOMA_REGULAR:
         myDisplay.style.setFontFamily(myDisplay.style.tahomaRegular);
