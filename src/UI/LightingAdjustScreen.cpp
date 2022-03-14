@@ -6,6 +6,10 @@
 #include "UI/Bitmaps/Lightbulb.hpp"
 #include "UI/Fonts/LucidaGrande5pt7b.h"
 
+#define MIN_LIGHTING_VALUE 10
+#define MAX_LIGHTING_VALUE 30
+#define LIGHTING_STEP_INCREMENT 1
+
 void LightingAdjustScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
@@ -15,7 +19,9 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
     auto autoUpdate = display.getAutoUpdate();
     display.setAutoUpdate(false);
 
-    auto backlightPercent = prefs_.backlight.get().value();
+    auto backlightAbsolute = prefs_.backlight.get().value();
+    auto backlightPercent =
+        (backlightAbsolute - MIN_LIGHTING_VALUE) * 100 / (MAX_LIGHTING_VALUE - MIN_LIGHTING_VALUE);
 
     uint16_t percentWidth, percentHeight;
     // Just pick a number for measurement. We don't want the UI moving when the number changes
@@ -82,7 +88,7 @@ void LightingAdjustScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::PREV: {
         auto backlight = prefs_.backlight.get().value();
-        backlight = std::min(backlight + 5, 100);
+        backlight = std::min(backlight + LIGHTING_STEP_INCREMENT, MAX_LIGHTING_VALUE);
         SetBacklight(backlight);
         prefs_.backlight.set(backlight);
         needsRerender = true;
@@ -90,7 +96,7 @@ void LightingAdjustScreen::processCommand(RemoteCommand command) {
     }
     case RemoteCommand::NEXT: {
         auto backlight = prefs_.backlight.get().value();
-        backlight = std::max(backlight - 5, 0);
+        backlight = std::max(backlight - LIGHTING_STEP_INCREMENT, MIN_LIGHTING_VALUE);
         SetBacklight(backlight);
         prefs_.backlight.set(backlight);
         needsRerender = true;
