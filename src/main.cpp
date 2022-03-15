@@ -83,6 +83,60 @@ PosixFileSystem fileSystem;
 SpiffsFileSystem fileSystem;
 #endif
 
+#if !SIMULATOR
+QueueHandle_t remoteQueue = nullptr;
+
+void RemoteLoop(void *parameter) {
+    for (;;) {
+        // Always have to do a check press and check release. In this case, we don't care about
+        // press.
+#if USE_IR_REMOTE
+        ir_remote_input->check_press();
+#endif
+
+#if USE_BLE_SERVER_REMOTE
+        bleRemoteInput->checkPress();
+#endif
+
+#if USE_TURN_TOUCH_REMOTE
+        ttRemoteInput.checkPress();
+#endif
+
+        // We could do this better by iterating, but fine for now with only a few input devices.
+        // Note that if an IR input comes in and then a BLE input comes at the same time,
+        // it may only get one of them. This seems unlikely.
+        RemoteCommand codeFromRelease = RemoteCommand::NONE;
+
+#if USE_IR_REMOTE
+        if (ir_remote_input->check_release()) {
+            code_from_release = ir_remote_input->get_code();
+        }
+#endif
+
+#if USE_BLE_SERVER_REMOTE
+        if (bleRemoteInput->checkRelease()) {
+            codeFromRelease = bleRemoteInput->getCode();
+        }
+#endif
+
+#if USE_TURN_TOUCH_REMOTE
+        if (ttRemoteInput.checkRelease()) {
+            codeFromRelease = ttRemoteInput.getCode();
+        }
+#endif
+
+        if (codeFromRelease != RemoteCommand::NONE) {
+            xQueueSend(remoteQueue, (void *)&codeFromRelease, (TickType_t)0);
+        }
+
+        // TODO: Is there a way to idle until the exact moment we get a BT message for maximum
+        // responsiveness?
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
+    vTaskDelete(nullptr);
+}
+#endif
+
 void setup() {
     bool inputDeviceConnected = false;
 
@@ -219,6 +273,13 @@ void setup() {
 
     SetCpuSpeedMhz(CPU_FREQ_MHZ_LOW);
 
+#if !SIMULATOR
+    remoteQueue = xQueueCreate(10, sizeof(RemoteCommand));
+    // Run our Bluetooth task on core 0 since it's pretty simple anyways and the rest of the
+    // bluetooth stuff already runs there
+    xTaskCreatePinnedToCore(RemoteLoop, "Remote", 5000, nullptr, 1, nullptr, 0);
+#endif
+
     log_i("Setup done");
 }
 
@@ -226,54 +287,22 @@ void loop() {
 #if USE_BLE_SERVER_REMOTE && !DISABLE_WIFI
     bleWifi->loop();
 #endif
+    RemoteCommand command = RemoteCommand::NONE;
 
-// Always have to do a check press and check release. In this case, we don't care about press.
-#if USE_IR_REMOTE
-    ir_remote_input->check_press();
-#endif
-
-#if USE_BLE_SERVER_REMOTE
-    bleRemoteInput->checkPress();
-#endif
-
-#if USE_TURN_TOUCH_REMOTE
-    ttRemoteInput.checkPress();
-#endif
-
-    // We could do this better by iterating, but fine for now with only a few input devices.
-    // Note that if an IR input comes in and then a BLE input comes at the same time,
-    // it may only get one of them. This seems unlikely.
-    RemoteCommand codeFromRelease = RemoteCommand::NONE;
-
-#if USE_IR_REMOTE
-    if (ir_remote_input->check_release()) {
-        code_from_release = ir_remote_input->get_code();
-    }
-#endif
-
-#if USE_BLE_SERVER_REMOTE
-    if (bleRemoteInput->checkRelease()) {
-        codeFromRelease = bleRemoteInput->getCode();
-    }
-#endif
-
-#if USE_TURN_TOUCH_REMOTE
-    if (ttRemoteInput.checkRelease()) {
-        codeFromRelease = ttRemoteInput.getCode();
-    }
-#endif
-
-#if SIMULATOR
+#if !SIMULATOR
+    // TODO: Does this allow sleep/idle to happen gracefully while waiting?
+    xQueueReceive(remoteQueue, &command, (TickType_t)(1000 / portTICK_PERIOD_MS));
+#else
     if (simulatorRemoteInput.checkRelease()) {
-        codeFromRelease = simulatorRemoteInput.getCode();
+        command = simulatorRemoteInput.getCode();
     }
 #endif
 
-    if (codeFromRelease != RemoteCommand::NONE) {
+    if (command != RemoteCommand::NONE) {
         digitalWrite(RED_LED, HIGH);
     }
 
-    rootUi.loop(myDisplay, codeFromRelease);
+    rootUi.loop(myDisplay, command);
 
     digitalWrite(RED_LED, LOW);
 

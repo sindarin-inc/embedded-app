@@ -128,15 +128,12 @@ void TTRemoteInput::buttonNotificationCallback(BLERemoteCharacteristic *remoteCh
         bleCode_ = STOP;
         break;
     case TT_W_PRESS:
-    case TT_W_DOUBLE:
         bleCode_ = CHANNEL_MINUS;
         break;
     case TT_W_HOLD:
         bleCode_ = BACK;
         break;
     case TT_E_PRESS:
-    case TT_E_DOUBLE:
-    case TT_E_HOLD:
         bleCode_ = CHANNEL_PLUS;
         break;
     case TT_MULTI_N_S:
@@ -147,6 +144,13 @@ void TTRemoteInput::buttonNotificationCallback(BLERemoteCharacteristic *remoteCh
         break;
     case TT_MULTI_E_N_W:
         bleCode_ = FACTORY_DEFAULTS;
+        break;
+    // Be careful with the double press codes, since you also get two single press commands
+    // immediately before
+    case TT_W_DOUBLE:
+    case TT_E_DOUBLE:
+    case TT_E_HOLD:
+        bleCode_ = NONE;
         break;
     default:
         log_w("Invalid code processed from Turntouch: %X", processed);
