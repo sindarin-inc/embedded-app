@@ -2,7 +2,7 @@
 
 #include "sindarin-debug.h"
 
-#define MIN_LINE_SPACING -2
+#define MIN_LINE_SPACING (-2)
 #define MAX_LINE_SPACING 5
 
 LineSpacingScreen::LineSpacingScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power)
