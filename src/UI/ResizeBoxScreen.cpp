@@ -77,5 +77,11 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
 
     log_d("setting new focus size to be %f %f", display_.getFocusWidth() + boxWidthOffset_,
           display_.getFocusHeight() + boxHeightOffset_);
+
+          // display should do bounds checking any time the setFocusOffset is called
+          // or anytime setFocusSize is called. These will return -1 if it failed
+          // so you know to backout the chance you just made.
+          //
+          // 
     display_.setFocusOffset(boxWidthOffset_, boxHeightOffset_);
 }

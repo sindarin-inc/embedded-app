@@ -95,12 +95,16 @@ auto DisplaySystem::getWidthInMm() -> float { return widthInMm_; }
 
 auto DisplaySystem::getHeightInMm() -> float { return heightInMm_; }
 
+// Needs to do bounds checking here and return 0 if ok
+// and -1 if not ok.
 void DisplaySystem::setFocusSize(float width, float height) {
     focusWidthInMm_ = width;
     focusHeightInMm_ = height;
     computeMinMax();
 }
 
+// Needs to do bounds checking here and return 0 if ok
+// and -1 if not ok.
 void DisplaySystem::setFocusOffset(float width, float height) {
     focusWidthOffsetInMm_ = width;
     focusHeightOffsetInMm_ = height;

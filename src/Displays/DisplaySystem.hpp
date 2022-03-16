@@ -28,6 +28,13 @@
 #define INVERTED_DISPLAY true
 // #define INVERTED_DISPLAY false
 
+struct DisplayRect {
+    uint32_t x;
+    uint32_t y;
+    uint32_t width;
+    uint32_t height;
+};
+
 class DisplaySystem {
 public:
     DisplaySystem();
@@ -54,8 +61,8 @@ public:
     // Use these methods for normal drawing as they'll take into account the offsets and focus area
     // automatically. Any methods we need from Adafruit_GFX that need to respect the focus area
     // should be copied in here.
-    [[nodiscard]] auto width() const -> int16_t { return maxPixelsX_; };
-    [[nodiscard]] auto height() const -> int16_t { return maxPixelsY_; };
+    [[nodiscard]] auto width() const -> int16_t { return boundingBox_.width; };
+    [[nodiscard]] auto height() const -> int16_t { return boundingBox_.height; };
     void fillScreen(uint16_t color) { gfxClass_->fillScreen(color); }
     void fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2,
                       uint16_t color) {
@@ -113,7 +120,10 @@ public:
     auto getWidthInMm() -> float;
     auto getHeightInMm() -> float;
 
+    void setBoundingBox(DisplayRect newBox);
+
     // Size of the focused area in the optics in mm
+    /*
     void setFocusSize(float width, float height);
     auto getFocusWidth() -> float { return focusWidthInMm_; }
     auto getFocusHeight() -> float { return focusHeightInMm_; }
@@ -121,7 +131,7 @@ public:
     void setFocusOffset(float width, float height);
     auto getFocusOffsetWidth() -> float { return focusWidthOffsetInMm_; }
     auto getFocusOffsetHeight() -> float { return focusHeightOffsetInMm_; }
-
+*/
     // MARK: - Text rendering code
 
     auto getFont() -> const GFXfont *;
@@ -153,10 +163,14 @@ public:
     // TODO: Just use `textcolor` and `textbgcolor` for these?
     uint16_t bg, fg;
 
-    void setOffset(uint16_t xOffset, uint16_t yOffset) {
-        localXOffset_ = xOffset;
-        localYOffset_ = yOffset;
-    }
+    // Needs to do bounds checking here and return 0 if ok
+    // and -1 if not ok.
+    /*
+      void setOffset(uint16_t xOffset, uint16_t yOffset) {
+          localXOffset_ = xOffset;
+          localYOffset_ = yOffset;
+      }
+  */
 
 protected:
     // Must be set in the constructor of subclasses
@@ -178,23 +192,28 @@ protected:
 
     bool autoUpdate_;
 
-    float widthInMm_ = 0;
-    float heightInMm_ = 0;
-    float focusWidthInMm_;
-    float focusHeightInMm_;
-    float focusWidthOffsetInMm_ = 0;
-    float focusHeightOffsetInMm_ = 0;
     bool invertedDisplay_ = false;
 
-    // TODO: We can probably simplify these
-    int localXOffset_ = 0;
-    int localYOffset_ = 0;
-    int xMin_ = 0;
-    int xMax_ = 0;
-    int yMin_ = 0;
-    int yMax_ = 0;
-    int maxPixelsX_ = 0;
-    int maxPixelsY_ = 0;
+    DisplayRect boundingBox_ = {0, 0, 0, 0};
+
+    /*
+        float widthInMm_ = 0;
+        float heightInMm_ = 0;
+        float focusWidthInMm_;
+        float focusHeightInMm_;
+        float focusWidthOffsetInMm_ = 0;
+        float focusHeightOffsetInMm_ = 0;
+
+        // TODO: We can probably simplify these
+        int localXOffset_ = 0;
+        int localYOffset_ = 0;
+        int xMin_ = 0;
+        int xMax_ = 0;
+        int yMin_ = 0;
+        int yMax_ = 0;
+        int maxPixelsX_ = 0;
+        int maxPixelsY_ = 0;
+    */
 };
 
 #endif

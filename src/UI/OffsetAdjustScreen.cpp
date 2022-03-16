@@ -63,5 +63,9 @@ void OffsetAdjustScreen::processCommand(RemoteCommand command) {
     default:
         break;
     }
+
+    // Display needs to check that this is in bounds and if not
+    // return a -1 so the function that called it can undo the change
+    // 
     display_.setOffset(xOffset, yOffset);
 }
