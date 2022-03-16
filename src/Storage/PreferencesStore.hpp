@@ -150,7 +150,8 @@ public:
           pocketApiToken(this->prefs_, "pocket-token"),
           lastReadableId(this->prefs_, "rui-readable"), readablePlace(this->prefs_, "-p"),
           invertSetting(this->prefs_, "invert"), vcom(this->prefs_, "vcom"),
-          backlight(this->prefs_, "backlight"), font(this->prefs_, "font"){};
+          backlight(this->prefs_, "backlight"), font(this->prefs_, "font"),
+          lineSpacing(this->prefs_, "line-space"){};
 
     void begin();
     void clear() { prefs_.clear(); }
@@ -169,6 +170,7 @@ public:
     PrefsItem<int> vcom;
     PrefsItem<int> backlight;
     PrefsItem<int> font;
+    PrefsItem<int> lineSpacing;
 
 protected:
     Preferences prefs_;

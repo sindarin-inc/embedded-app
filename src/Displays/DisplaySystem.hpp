@@ -96,6 +96,9 @@ public:
     void flipInversion();
     auto getInversion() -> bool { return invertedDisplay_; }
 
+    auto getLineSpacing() -> int { return lineSpacing_; }
+    void setLineSpacing(int newSpacing) { lineSpacing_ = newSpacing; }
+
     virtual void clearDisplay(){};
 
     // MARK: - AutoUpdate
@@ -195,6 +198,7 @@ protected:
     int yMax_ = 0;
     int maxPixelsX_ = 0;
     int maxPixelsY_ = 0;
+    int lineSpacing_ = 0;
 };
 
 #endif

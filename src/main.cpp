@@ -196,6 +196,7 @@ void setup() {
     myDisplay.setFocusOffset((float)prefs.displayBoxWidthOffsetMm.get().value(),
                              (float)prefs.displayBoxHeightOffsetMm.get().value());
     myDisplay.invertDisplay(prefs.invertSetting.get().value());
+    myDisplay.setLineSpacing(prefs.lineSpacing.get().value());
 
     SIZE_OF(myDisplay);
 
