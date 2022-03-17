@@ -141,9 +141,7 @@ public:
     };
 
     PreferencesStore() noexcept
-        : localXOffset(this->prefs_, "x-offset"), localYOffset(this->prefs_, "y-offset"),
-          displayBoxWidthOffsetMm(this->prefs_, "box-w-off-mm"),
-          displayBoxHeightOffsetMm(this->prefs_, "box-h-off-mm"),
+        :
 #if USE_TURN_TOUCH_REMOTE
           pairedTurnTouchAddress(this->prefs_, "paired-tt"),
 #endif
@@ -157,10 +155,6 @@ public:
     void begin();
     void clear() { prefs_.clear(); }
 
-    PrefsItem<int> localXOffset;
-    PrefsItem<int> localYOffset;
-    PrefsItem<int> displayBoxWidthOffsetMm;
-    PrefsItem<int> displayBoxHeightOffsetMm;
     PrefsItem<std::string> pocketApiToken;
 #if USE_TURN_TOUCH_REMOTE
     BLEAddressPrefsItem pairedTurnTouchAddress;
