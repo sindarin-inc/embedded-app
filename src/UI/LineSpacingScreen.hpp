@@ -11,7 +11,7 @@
 // This is just to test that this concept works ok.
 class LineSpacingScreen : public Screen {
 public:
-    LineSpacingScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power);
+    LineSpacingScreen(DisplaySystem &display, PreferencesStore &prefs);
 
 protected:
     void render(DisplaySystem &display) override;
@@ -22,7 +22,6 @@ protected:
     DisplaySystem &display_;
     Renderer renderer_;
     PreferencesStore &prefs_;
-    Power &power_;
 };
 
 #endif

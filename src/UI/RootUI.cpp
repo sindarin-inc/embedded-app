@@ -350,15 +350,12 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
     }));
 
     settingsMenu->addMenuItem(MenuItem("Set Line Spacing", [this, settingsMenu, display]() {
-        log_d("Loading line spacing screen");
-        auto lineSpacingScreen = new LineSpacingScreen(*display, prefs_, this->power_);
+        auto lineSpacingScreen = new LineSpacingScreen(*display, prefs_);
         this->setCurrentScreen(*lineSpacingScreen);
-        log_d("setting up callback for line spacing screen");
         lineSpacingScreen->backCallback = [this, lineSpacingScreen, settingsMenu]() {
             setCurrentScreen(*settingsMenu);
             delete lineSpacingScreen;
         };
-        log_d("completed set up callback for line spacing screen");
     }));
 
     settingsMenu->addMenuItem(MenuItem("Calibration Screen", [this, settingsMenu, display]() {
