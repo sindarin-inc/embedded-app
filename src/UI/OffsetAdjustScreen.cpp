@@ -59,8 +59,10 @@ void OffsetAdjustScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::ENTER:
         prefs_.rectX.set(display_.getBoundingBox().x);
         prefs_.rectY.set(display_.getBoundingBox().y);
-        log_d("Saving x and y offset to preferences: (%d, %d)", display_.getBoundingBox().x,
-              display_.getBoundingBox().y);
+        prefs_.rectW.set(display_.getBoundingBox().width);
+        prefs_.rectH.set(display_.getBoundingBox().height);
+        log_d("Saving bounding box to preferences: (%s)",
+              display_.getBoundingBox().toString().c_str());
         backCallback();
         break;
     default:

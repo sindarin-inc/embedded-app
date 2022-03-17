@@ -19,6 +19,7 @@
 #include <array>
 #include <string>
 
+#include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
 
 // This isn't the best -- we may want to make this dynamically
@@ -34,6 +35,10 @@ struct DisplayRect {
     int32_t y;
     uint32_t width;
     uint32_t height;
+
+    auto toString() -> std::string {
+        return StringFormat("x:%d, y:%d, w:%d, h:%d", x, y, width, height);
+    }
 };
 
 class DisplaySystem {

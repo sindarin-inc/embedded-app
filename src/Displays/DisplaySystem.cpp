@@ -95,8 +95,7 @@ void DisplaySystem::ensureBoundaries() {
     int gfxW = gfxClass_->width();
     int gfxH = gfxClass_->height();
 
-    log_d("Bounding Box before is %d, %d, %d, %d", boundingBox_.x, boundingBox_.y,
-          boundingBox_.width, boundingBox_.height);
+    log_d("Bounding Box before is %s", boundingBox_.toString().c_str());
 
     if (boundingBox_.x < 0) {
         boundingBox_.x = 0;
@@ -104,14 +103,6 @@ void DisplaySystem::ensureBoundaries() {
 
     if (boundingBox_.y < 0) {
         boundingBox_.y = 0;
-    }
-
-    if (boundingBox_.width > gfxW) {
-        boundingBox_.width = gfxW;
-    }
-
-    if (boundingBox_.height > gfxH) {
-        boundingBox_.height = gfxH;
     }
 
     // Always keep the x & y the same. Use the width
@@ -127,8 +118,7 @@ void DisplaySystem::ensureBoundaries() {
         boundingBox_.height = gfxH - boundingBox_.y;
     }
 
-    log_d("Bounding Box after is %d, %d, %d, %d", boundingBox_.x, boundingBox_.y,
-          boundingBox_.width, boundingBox_.height);
+    log_d("Bounding Box after is %s", boundingBox_.toString().c_str());
 }
 
 auto DisplaySystem::setBoundingBox(DisplayRect newBox) -> DisplayRect {
@@ -221,7 +211,7 @@ void DisplaySystem::drawText(const std::string &newText, int x, int y, int width
     int numLines = height / lineHeight;
 
     if (getPartialRefresh()) {
-        //       setPartialWindow(x, y - 10, this->getWidthInMm(), lineHeight * numLines + 10);
+        setPartialWindow(x, y - 10, boundingBox_.width, lineHeight * numLines + 10);
     }
 
     drawTextCmdsOnly(newText, x, y, lineHeight);

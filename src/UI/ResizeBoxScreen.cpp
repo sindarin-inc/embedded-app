@@ -66,18 +66,19 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
         oldRect.x += BOX_OFFSET_ADJUST_AMOUNT / 2;
         display_.setBoundingBox(oldRect);
     case RemoteCommand::ENTER:
+        prefs_.rectX.set(display_.getBoundingBox().x);
+        prefs_.rectY.set(display_.getBoundingBox().y);
         prefs_.rectW.set(display_.getBoundingBox().width);
         prefs_.rectH.set(display_.getBoundingBox().height);
-        log_d("Saving box width and height to preferences: (%d, %d)",
-              display_.getBoundingBox().width, display_.getBoundingBox().height);
+        log_d("Saving bounding box to preferences: (%s)",
+              display_.getBoundingBox().toString().c_str());
         backCallback();
         break;
     default:
         break;
     }
 
-    log_d("boxWidth and boxHeight are %d %d", display_.getBoundingBox().width,
-          display_.getBoundingBox().height);
+    log_d("New bounding box is: (%s)", display_.getBoundingBox().toString().c_str());
 
     display_.setBoundingBox(oldRect);
 }
