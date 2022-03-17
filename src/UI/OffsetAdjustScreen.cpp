@@ -9,7 +9,8 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
     : display_(display), prefs_(prefs), power_(power), renderer_(display) {
 
     std::string message;
-    for (int i = 0; i < 15; i++) {
+    // This needs to be pretty big for smaller fonts
+    for (int i = 0; i < 30; i++) {
         message += "Press arrows to move box around to your liking. Then "
                    "long-press the left button when done! Message repeats. ";
     }
