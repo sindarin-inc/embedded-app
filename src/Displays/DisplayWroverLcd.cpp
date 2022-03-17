@@ -6,9 +6,6 @@
 DisplayWroverLcd::DisplayWroverLcd()
     : gfxCanvas_(WROVER_WIDTH, WROVER_HEIGHT), DisplaySystem(), WROVER_KIT_LCD() {
     gfxClass_ = &gfxCanvas_;
-
-    widthInMm_ = 23.3;
-    heightInMm_ = 23.3;
 }
 
 void DisplayWroverLcd::setup() {
