@@ -10,9 +10,6 @@ extern SDL_Renderer *renderer;
 DisplaySDLSimulator::DisplaySDLSimulator()
     : gfxCanvas_(DisplaySDL_X_PIXELS, DisplaySDL_Y_PIXELS), DisplaySystem() {
     gfxClass_ = &gfxCanvas_;
-
-    widthInMm_ = 23.3;
-    heightInMm_ = 23.3;
 }
 
 void DisplaySDLSimulator::setup() {

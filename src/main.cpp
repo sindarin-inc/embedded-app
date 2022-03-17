@@ -194,10 +194,27 @@ void setup() {
     }
 
     myDisplay.setup();
-    myDisplay.setFocusSize(15, 15);
-    myDisplay.setOffset(prefs.localXOffset.get().value(), prefs.localYOffset.get().value());
-    myDisplay.setFocusOffset((float)prefs.displayBoxWidthOffsetMm.get().value(),
-                             (float)prefs.displayBoxHeightOffsetMm.get().value());
+
+    DisplayRect initialRect;
+    initialRect.x = prefs.rectX.get().value();
+    initialRect.y = prefs.rectY.get().value();
+    initialRect.width = prefs.rectW.get().value();
+    initialRect.height = prefs.rectH.get().value();
+
+    // If prefs have never been set before set them.
+    if ((initialRect.width == 0) && (initialRect.height == 0) && (initialRect.x == 0) &&
+        (initialRect.y == 0)) {
+        initialRect.x = 33;
+        initialRect.y = 33;
+        initialRect.width = 190;
+        initialRect.height = 190;
+        prefs.rectX.set(initialRect.x);
+        prefs.rectY.set(initialRect.y);
+        prefs.rectW.set(initialRect.width);
+        prefs.rectH.set(initialRect.height);
+    }
+
+    myDisplay.setBoundingBox(initialRect);
     myDisplay.invertDisplay(prefs.invertSetting.get().value());
 
     SIZE_OF(myDisplay);

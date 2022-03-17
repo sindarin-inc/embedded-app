@@ -2,18 +2,14 @@
 
 #include "sindarin-debug.h"
 
-// This is in mm for now, which isn't the best, but easier than
-// adding all the Display accessors to do it via pixels.
-// For our displays, 0.273mm is about 3 pixels.
-#define BOX_OFFSET_ADJUST_AMOUNT 0.273
+// 3 pixels
+#define BOX_OFFSET_ADJUST_AMOUNT 4
 
 // We will want a more intuitive way to do this in the final system,
 // but since it's so dependent on what the PageTurner ends up being,
 // I didn't want to over-engineer it here.
 ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power)
-    : display_(display), prefs_(prefs), power_(power),
-      boxWidthOffset_((float)prefs.displayBoxWidthOffsetMm.get().value()),
-      boxHeightOffset_((float)prefs.displayBoxHeightOffsetMm.get().value()), renderer_(display) {
+    : display_(display), prefs_(prefs), power_(power), renderer_(display) {
 
     std::string message;
     for (int i = 0; i < 15; i++) {
@@ -37,21 +33,26 @@ void ResizeBoxScreen::render(DisplaySystem &display) {
 }
 
 void ResizeBoxScreen::processCommand(RemoteCommand command) {
+    DisplayRect oldRect = display_.getBoundingBox();
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
-        boxWidthOffset_ += BOX_OFFSET_ADJUST_AMOUNT;
+        oldRect.width += BOX_OFFSET_ADJUST_AMOUNT;
+        oldRect.x -= BOX_OFFSET_ADJUST_AMOUNT / 2;
         needsRerender = true;
         break;
     case RemoteCommand::CHANNEL_PLUS:
-        boxWidthOffset_ -= BOX_OFFSET_ADJUST_AMOUNT;
+        oldRect.width -= BOX_OFFSET_ADJUST_AMOUNT;
+        oldRect.x += BOX_OFFSET_ADJUST_AMOUNT / 2;
         needsRerender = true;
         break;
     case RemoteCommand::PREV:
-        boxHeightOffset_ += BOX_OFFSET_ADJUST_AMOUNT;
+        oldRect.height += BOX_OFFSET_ADJUST_AMOUNT;
+        oldRect.y -= BOX_OFFSET_ADJUST_AMOUNT / 2;
         needsRerender = true;
         break;
     case RemoteCommand::NEXT:
-        boxHeightOffset_ -= BOX_OFFSET_ADJUST_AMOUNT;
+        oldRect.height -= BOX_OFFSET_ADJUST_AMOUNT;
+        oldRect.y += BOX_OFFSET_ADJUST_AMOUNT / 2;
         needsRerender = true;
         break;
     case RemoteCommand::BACK:
@@ -61,27 +62,22 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
         // app but since we're using TurnTouch for demos, I think it's ok for now. In the future, it
         // might be good to pass more data to `process_command` including which remote is being used
         // so that we can have remote-specific workarounds if needed.
-        boxWidthOffset_ -= BOX_OFFSET_ADJUST_AMOUNT;
+        oldRect.width -= BOX_OFFSET_ADJUST_AMOUNT;
+        oldRect.x += BOX_OFFSET_ADJUST_AMOUNT / 2;
+        display_.setBoundingBox(oldRect);
     case RemoteCommand::ENTER:
-        prefs_.displayBoxWidthOffsetMm.set((int)boxWidthOffset_);
-        prefs_.displayBoxHeightOffsetMm.set((int)boxHeightOffset_);
-        log_d("Saving box width and height to preferences: (%.0f, %.0f)", boxWidthOffset_,
-              boxHeightOffset_);
+        prefs_.rectW.set(display_.getBoundingBox().width);
+        prefs_.rectH.set(display_.getBoundingBox().height);
+        log_d("Saving box width and height to preferences: (%d, %d)",
+              display_.getBoundingBox().width, display_.getBoundingBox().height);
         backCallback();
         break;
     default:
         break;
     }
 
-    log_d("boxWidth and boxHeight offsets are %f %f", boxWidthOffset_, boxHeightOffset_);
+    log_d("boxWidth and boxHeight are %d %d", display_.getBoundingBox().width,
+          display_.getBoundingBox().height);
 
-    log_d("setting new focus size to be %f %f", display_.getFocusWidth() + boxWidthOffset_,
-          display_.getFocusHeight() + boxHeightOffset_);
-
-          // display should do bounds checking any time the setFocusOffset is called
-          // or anytime setFocusSize is called. These will return -1 if it failed
-          // so you know to backout the chance you just made.
-          //
-          // 
-    display_.setFocusOffset(boxWidthOffset_, boxHeightOffset_);
+    display_.setBoundingBox(oldRect);
 }

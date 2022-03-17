@@ -17,9 +17,6 @@ protected:
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
 
-    float boxWidthOffset_;
-    float boxHeightOffset_;
-
     DisplaySystem &display_;
     Renderer renderer_;
     PreferencesStore &prefs_;

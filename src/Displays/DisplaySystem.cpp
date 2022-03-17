@@ -91,25 +91,51 @@ void DisplaySystem::setAutoUpdate(bool update) { autoUpdate_ = update; }
 
 auto DisplaySystem::getAutoUpdate() -> bool { return autoUpdate_; }
 
-auto DisplaySystem::getWidthInMm() -> float { return widthInMm_; }
+void DisplaySystem::ensureBoundaries() {
+    int gfxW = gfxClass_->width();
+    int gfxH = gfxClass_->height();
 
-auto DisplaySystem::getHeightInMm() -> float { return heightInMm_; }
+    log_d("Bounding Box before is %d, %d, %d, %d", boundingBox_.x, boundingBox_.y,
+          boundingBox_.width, boundingBox_.height);
 
-// Needs to do bounds checking here and return 0 if ok
-// and -1 if not ok.
-void DisplaySystem::setFocusSize(float width, float height) {
-    focusWidthInMm_ = width;
-    focusHeightInMm_ = height;
-    computeMinMax();
+    if (boundingBox_.x < 0) {
+        boundingBox_.x = 0;
+    }
+
+    if (boundingBox_.y < 0) {
+        boundingBox_.y = 0;
+    }
+
+    if (boundingBox_.width > gfxW) {
+        boundingBox_.width = gfxW;
+    }
+
+    if (boundingBox_.height > gfxH) {
+        boundingBox_.height = gfxH;
+    }
+
+    // Always keep the x & y the same. Use the width
+    // and height of the rectangle to stay in bounds.
+    //
+    // We may choose to do something more sophisticated later
+    // but for now this is fine.
+    if ((boundingBox_.x + boundingBox_.width) > gfxW) {
+        boundingBox_.width = gfxW - boundingBox_.x;
+    }
+
+    if ((boundingBox_.y + boundingBox_.height) > gfxH) {
+        boundingBox_.height = gfxH - boundingBox_.y;
+    }
+
+    log_d("Bounding Box after is %d, %d, %d, %d", boundingBox_.x, boundingBox_.y,
+          boundingBox_.width, boundingBox_.height);
 }
 
-// Needs to do bounds checking here and return 0 if ok
-// and -1 if not ok.
-void DisplaySystem::setFocusOffset(float width, float height) {
-    focusWidthOffsetInMm_ = width;
-    focusHeightOffsetInMm_ = height;
-    // Any time the Offset is set, we need to recompute the MinMax
-    computeMinMax();
+auto DisplaySystem::setBoundingBox(DisplayRect newBox) -> DisplayRect {
+    // Do the bounds checking
+    boundingBox_ = newBox;
+    ensureBoundaries();
+    return boundingBox_;
 }
 
 auto DisplaySystem::getFont() -> const GFXfont * { return font_; }
@@ -195,7 +221,7 @@ void DisplaySystem::drawText(const std::string &newText, int x, int y, int width
     int numLines = height / lineHeight;
 
     if (getPartialRefresh()) {
-        setPartialWindow(x, y - 10, this->getWidthInMm(), lineHeight * numLines + 10);
+        //       setPartialWindow(x, y - 10, this->getWidthInMm(), lineHeight * numLines + 10);
     }
 
     drawTextCmdsOnly(newText, x, y, lineHeight);
@@ -297,39 +323,4 @@ void DisplaySystem::drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], in
 void DisplaySystem::clearScreen() {
     fillScreen(bg);
     updateDisplay();
-}
-
-void DisplaySystem::computeMinMax() {
-    // TODO(john): How valuable is it to pre-compute all this
-
-    int midpointX;
-    int midpointY;
-    // pixels per mm
-    float pixelPitchX;
-    float pixelPitchY;
-
-    log_d("Computing Min and Max pixels for Renderer");
-
-    midpointX = this->gfxClass()->width() / 2;
-    midpointY = this->gfxClass()->height() / 2;
-
-    log_d("midpoint = (%d, %d)", midpointX, midpointY);
-
-    pixelPitchX = ((float)this->gfxClass()->width()) / this->getWidthInMm();
-    pixelPitchY = ((float)this->gfxClass()->height()) / this->getHeightInMm();
-
-    log_d("pixel pitch = (%.0f, %.0f)", pixelPitchX, pixelPitchY);
-
-    // rounding down is ok here and what we want.
-    maxPixelsX_ = (int)((this->getFocusWidth() + this->getFocusOffsetWidth()) * pixelPitchX);
-    maxPixelsY_ = (int)((this->getFocusHeight() + this->getFocusOffsetHeight()) * pixelPitchY);
-
-    log_d("max pixels = (%d, %d)", maxPixelsX_, maxPixelsY_);
-
-    xMin_ = midpointX - maxPixelsX_ / 2;
-    xMax_ = midpointX + maxPixelsX_ / 2;
-    yMin_ = midpointY - maxPixelsY_ / 2;
-    yMax_ = midpointY + maxPixelsY_ / 2;
-
-    log_d("min = (%d, %d) max = (%d, %d)", xMin_, yMin_, xMax_, yMax_);
 }

@@ -27,10 +27,11 @@
 
 #define INVERTED_DISPLAY true
 // #define INVERTED_DISPLAY false
-
+// We allow x & y to be negative so the bounds checking code is more
+// legible
 struct DisplayRect {
-    uint32_t x;
-    uint32_t y;
+    int32_t x;
+    int32_t y;
     uint32_t width;
     uint32_t height;
 };
@@ -114,24 +115,11 @@ public:
     void setAutoUpdate(bool update);
     auto getAutoUpdate() -> bool;
 
-    // MARK: - Physical optics stuff
+    auto setBoundingBox(DisplayRect newBox) -> DisplayRect;
+    auto getBoundingBox() -> DisplayRect { return boundingBox_; }
 
-    // Physical size of the display in mm
-    auto getWidthInMm() -> float;
-    auto getHeightInMm() -> float;
+    void ensureBoundaries();
 
-    void setBoundingBox(DisplayRect newBox);
-
-    // Size of the focused area in the optics in mm
-    /*
-    void setFocusSize(float width, float height);
-    auto getFocusWidth() -> float { return focusWidthInMm_; }
-    auto getFocusHeight() -> float { return focusHeightInMm_; }
-
-    void setFocusOffset(float width, float height);
-    auto getFocusOffsetWidth() -> float { return focusWidthOffsetInMm_; }
-    auto getFocusOffsetHeight() -> float { return focusHeightOffsetInMm_; }
-*/
     // MARK: - Text rendering code
 
     auto getFont() -> const GFXfont *;
@@ -163,22 +151,13 @@ public:
     // TODO: Just use `textcolor` and `textbgcolor` for these?
     uint16_t bg, fg;
 
-    // Needs to do bounds checking here and return 0 if ok
-    // and -1 if not ok.
-    /*
-      void setOffset(uint16_t xOffset, uint16_t yOffset) {
-          localXOffset_ = xOffset;
-          localYOffset_ = yOffset;
-      }
-  */
-
 protected:
     // Must be set in the constructor of subclasses
     Adafruit_GFX *gfxClass_;
     const GFXfont *font_;
 
-    inline auto xOffset(int16_t value) -> int16_t { return value + localXOffset_ + xMin_; }
-    inline auto yOffset(int16_t value) -> int16_t { return value + localYOffset_ + yMin_; }
+    inline auto xOffset(int16_t value) -> int16_t { return value + boundingBox_.x; }
+    inline auto yOffset(int16_t value) -> int16_t { return value + boundingBox_.y; }
 
     void drawTextCmdsOnly(const std::string &newText, int x, int y, int lineHeight);
     void drawBoxCmdsOnly(int xStart, int yStart, int xEnd, int yEnd);
@@ -194,26 +173,8 @@ protected:
 
     bool invertedDisplay_ = false;
 
-    DisplayRect boundingBox_ = {0, 0, 0, 0};
-
-    /*
-        float widthInMm_ = 0;
-        float heightInMm_ = 0;
-        float focusWidthInMm_;
-        float focusHeightInMm_;
-        float focusWidthOffsetInMm_ = 0;
-        float focusHeightOffsetInMm_ = 0;
-
-        // TODO: We can probably simplify these
-        int localXOffset_ = 0;
-        int localYOffset_ = 0;
-        int xMin_ = 0;
-        int xMax_ = 0;
-        int yMin_ = 0;
-        int yMax_ = 0;
-        int maxPixelsX_ = 0;
-        int maxPixelsY_ = 0;
-    */
+    // This is the default value from before of 15mmx15mm
+    DisplayRect boundingBox_ = {33, 33, 190, 190};
 };
 
 #endif

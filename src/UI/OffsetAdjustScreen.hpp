@@ -13,9 +13,6 @@ public:
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
 
-    int xOffset;
-    int yOffset;
-
 protected:
     DisplaySystem &display_;
     Renderer renderer_;
