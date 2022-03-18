@@ -93,6 +93,12 @@ auto Power::getBatteryLifeString() -> std::string {
 }
 
 auto Power::getBatteryPercentageOnlyString() -> std::string {
+    float batteryAverage = getBatteryPercentage();
+    std::string averageOutput = StringFormat("%.0f%%", batteryAverage);
+    return averageOutput;
+}
+
+auto Power::getBatteryPercentage() -> float {
     float voltageLevelLeft = this->getLeftBatteryVoltage();
     float batteryFractionLeft =
         (voltageLevelLeft - BATTERY_MIN_VOLTAGE) / (BATTERY_MAX_VOLTAGE - BATTERY_MIN_VOLTAGE);
@@ -102,8 +108,7 @@ auto Power::getBatteryPercentageOnlyString() -> std::string {
     batteryFractionLeft = std::clamp(batteryFractionLeft, 0.0f, 1.0f);
     batteryFractionRight = std::clamp(batteryFractionRight, 0.0f, 1.0f);
     float batteryAverage = (batteryFractionLeft + batteryFractionRight) / 2.0 * 100;
-    std::string averageOutput = StringFormat("%.0f%%", batteryAverage);
-    return averageOutput;
+    return batteryAverage;
 }
 
 auto Power::getDepleted() -> bool {

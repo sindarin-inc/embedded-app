@@ -7,6 +7,27 @@
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
 
+#define BATTERY_WIDTH 24
+#define BATTERY_HEIGHT 9
+
+// draw a battery with upper left at x, y and percentage full 'percentage' (out of 100)
+void PopupMenuScreen::drawBattery(DisplaySystem &display, int x, int y, int percentage) {
+    // We have 20 lines to represent so every 5% is 1 line.
+    int numBatteryLines = percentage / 5;
+
+    // Border
+    display.drawRect(x, y, BATTERY_WIDTH, BATTERY_HEIGHT, display.fg);
+    display.drawRect(x + 1, y + 1, BATTERY_WIDTH - 2, BATTERY_HEIGHT - 2, display.fg);
+
+    // Tip of battery
+    display.drawRect(x + BATTERY_WIDTH, y + 3, 2, 3, display.fg);
+
+    // Draw percentage lines
+    for (int i = 0; i < numBatteryLines; i++) {
+        display.drawLine(x + 2 + i, y + 2, x + 2 + i, y + BATTERY_HEIGHT - 2, display.fg);
+    }
+}
+
 void PopupMenuScreen::render(DisplaySystem &display) {
     if (currentScreen_ != this) {
         currentScreen_->render(display);
@@ -31,17 +52,22 @@ void PopupMenuScreen::render(DisplaySystem &display) {
 
     // Now draw!
     uint16_t textWidth = 0, textHeight = 0;
+    auto batteryPercentage = this->power_.getBatteryPercentage();
     auto batteryStatus = this->power_.getBatteryPercentageOnlyString();
-
-    display.getTextBounds(batteryStatus.c_str(), &textWidth, &textHeight);
     uint16_t screenWidth = display.width();
     uint16_t screenHeight = display.height();
+
+    // These magic numbers are just based on trying to make it look right
+    drawBattery(display, (screenWidth / 2) - 12, (screenHeight / 2) + 1, (int)batteryPercentage);
+
+    display.getTextBounds(batteryStatus.c_str(), &textWidth, &textHeight);
 
     display.setFont(display.style.getFontFamily().popupFont);
     display.getTextBounds(batteryStatus.c_str(), &textWidth, &textHeight);
 
-    display.drawText(batteryStatus.c_str(), (screenWidth / 2) - (textWidth / 2),
-                     (screenHeight / 2) + (textHeight / 2) + 10, screenWidth, screenHeight);
+    // Similar to the above, magic numbers are just to make it look nice
+    display.drawText(batteryStatus.c_str(), (screenWidth / 2) - (textWidth / 2) + 3,
+                     (screenHeight / 2) + (textHeight / 2) - 9, screenWidth, screenHeight);
 
     size_t place = renderer_.getCurrentPlace();
     size_t lengthOfFile = renderer_.size();
@@ -49,12 +75,10 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     float placeInTextPercentage = (float)place / (float)lengthOfFile * 100;
     std::string placeString = StringFormat("%.0f%%", placeInTextPercentage);
 
-    display.getTextBounds(placeString.c_str(), &textWidth, &textHeight);
-    display.drawText(placeString.c_str(), (screenWidth / 2) - (textWidth / 2),
-                     (screenHeight / 2) + (textHeight / 2) - 10, screenWidth, screenHeight);
+    std::string bottomStr =
+        std::string("Seek ") + std::string("(") + placeString + std::string(")");
 
-    auto bottomStr = "Seek";
-    display.getTextBounds(bottomStr, &textWidth, &textHeight);
+    display.getTextBounds(bottomStr.c_str(), &textWidth, &textHeight);
     display.drawText(bottomStr, (screenWidth / 2) - (textWidth / 2),
                      (screenHeight / 2) + (textHeight / 2) + POPUP_MENU_BLANK_HEIGHT / 3,
                      screenWidth, screenHeight);

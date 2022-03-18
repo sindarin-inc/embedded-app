@@ -27,6 +27,8 @@ public:
         };
     };
 
+    void drawBattery(DisplaySystem &display, int x, int y, int percentage);
+
     void render(DisplaySystem &display) override;
 
     void processCommand(RemoteCommand command) override;

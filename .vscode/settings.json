@@ -82,7 +82,10 @@
         "csignal": "cpp",
         "regex": "cpp",
         "set": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "compare": "cpp",
+        "concepts": "cpp",
+        "variant": "cpp"
     },
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "xaver.clang-format",
