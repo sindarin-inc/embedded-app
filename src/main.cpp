@@ -216,6 +216,7 @@ void setup() {
 
     myDisplay.setBoundingBox(initialRect);
     myDisplay.invertDisplay(prefs.invertSetting.get().value());
+    myDisplay.setLineSpacing(prefs.lineSpacing.get().value());
 
     SIZE_OF(myDisplay);
 

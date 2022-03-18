@@ -12,6 +12,7 @@
 #include "Misc/Style.hpp"
 #include "Renderers/Renderer.hpp"
 #include "UI/CalibrationScreen.hpp"
+#include "UI/LineSpacingScreen.hpp"
 #include "UI/LoadingScreen.hpp"
 #include "UI/LogoScreen.hpp"
 #include "UI/MenuScreen.hpp"
@@ -345,6 +346,15 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
         fontMenu->backCallback = [this, fontMenu, settingsMenu]() {
             setCurrentScreen(*settingsMenu);
             delete fontMenu;
+        };
+    }));
+
+    settingsMenu->addMenuItem(MenuItem("Set Line Spacing", [this, settingsMenu, display]() {
+        auto lineSpacingScreen = new LineSpacingScreen(*display, prefs_);
+        this->setCurrentScreen(*lineSpacingScreen);
+        lineSpacingScreen->backCallback = [this, lineSpacingScreen, settingsMenu]() {
+            setCurrentScreen(*settingsMenu);
+            delete lineSpacingScreen;
         };
     }));
 

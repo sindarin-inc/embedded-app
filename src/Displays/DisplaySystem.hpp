@@ -109,6 +109,9 @@ public:
     void flipInversion();
     auto getInversion() -> bool { return invertedDisplay_; }
 
+    auto getLineSpacing() -> int { return lineSpacing_; }
+    void setLineSpacing(int newSpacing) { lineSpacing_ = newSpacing; }
+
     virtual void clearDisplay(){};
 
     // MARK: - AutoUpdate
@@ -180,6 +183,7 @@ protected:
 
     // This is the default value from before of 15mmx15mm
     DisplayRect boundingBox_ = {33, 33, 190, 190};
+    int lineSpacing_ = 0;
 };
 
 #endif

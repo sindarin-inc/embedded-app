@@ -6,9 +6,9 @@
 #include "UI/Bitmaps/Lightbulb.hpp"
 #include "UI/Fonts/LucidaGrande5pt7b.h"
 
-#define MIN_LIGHTING_VALUE 10
-#define MAX_LIGHTING_VALUE 30
-#define LIGHTING_STEP_INCREMENT 1
+#define MIN_LIGHTING_VALUE 1
+#define MAX_LIGHTING_VALUE 21
+#define LIGHTING_STEP_INCREMENT 2
 
 void LightingAdjustScreen::render(DisplaySystem &display) {
     if (!needsRerender) {

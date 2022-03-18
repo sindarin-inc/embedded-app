@@ -22,6 +22,7 @@ public:
     auto getBatteryPercentageOnlyString() -> std::string;
     auto getLeftBatteryVoltage() -> float;
     auto getRightBatteryVoltage() -> float;
+    auto getBatteryPercentage() -> float;
 
     auto getDepleted() -> bool;
 

@@ -151,6 +151,7 @@ public:
           backlight(this->prefs_, "backlight"), font(this->prefs_, "font"),
           rectX(this->prefs_, "rectX"), rectY(this->prefs_, "rectY"), rectW(this->prefs_, "rectW"),
           rectH(this->prefs_, "rectH"){};
+          lineSpacing(this->prefs_, "line-space"){};
 
     void begin();
     void clear() { prefs_.clear(); }
@@ -169,6 +170,8 @@ public:
     PrefsItem<int> rectY;
     PrefsItem<int> rectW;
     PrefsItem<int> rectH;
+    PrefsItem<int> lineSpacing;
+
 
 protected:
     Preferences prefs_;
