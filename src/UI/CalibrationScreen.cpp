@@ -72,11 +72,6 @@ void CalibrationScreen::render(DisplaySystem &display) {
 
         display.updateDisplay();
     } else {
-        DisplayRect newRect = {0, 0, 255, 255};
-        DisplayRect oldRect = display.getBoundingBox();
-
-        display.setBoundingBox(newRect);
-
         int i, l = 0;
 
         for (l = 0; l < 32; l++) {
@@ -102,7 +97,6 @@ void CalibrationScreen::render(DisplaySystem &display) {
         drawSiemensStar(display, 32, 256 - 32, 32);
 
         display.updateDisplay();
-        display.setBoundingBox(oldRect);
     }
 
     needsRerender = false;

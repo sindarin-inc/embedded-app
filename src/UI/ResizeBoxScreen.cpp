@@ -2,7 +2,6 @@
 
 #include "sindarin-debug.h"
 
-// 3 pixels
 #define BOX_OFFSET_ADJUST_AMOUNT 4
 
 // We will want a more intuitive way to do this in the final system,
