@@ -78,7 +78,7 @@ extern "C"
 
 const char * pathToFileName(const char * path);
 #include <stdio.h>
-#define log_printf(fmt, ...) fprintf(stdout, fmt, ##__VA_ARGS__)
+#define log_printf(fmt, ...) fprintf(stdout, fmt, ##__VA_ARGS__); fflush(stdout)
 
 #define ARDUHAL_SHORT_LOG_FORMAT(letter, format)  ARDUHAL_LOG_COLOR_ ## letter format ARDUHAL_LOG_RESET_COLOR "\r\n"
 #define ARDUHAL_LOG_FORMAT(letter, format)  ARDUHAL_LOG_COLOR_ ## letter "[" #letter "][%s:%u] %s(): " format ARDUHAL_LOG_RESET_COLOR "\r\n", pathToFileName(__FILE__), __LINE__, __FUNCTION__
