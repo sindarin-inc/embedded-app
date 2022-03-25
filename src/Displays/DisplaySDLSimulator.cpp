@@ -6,6 +6,7 @@
 
 // TODO: Is there a better way to get the renderer here?
 extern SDL_Renderer *renderer;
+extern void SimulatorPrePresent();
 
 DisplaySDLSimulator::DisplaySDLSimulator()
     : gfxCanvas_(DisplaySDL_X_PIXELS, DisplaySDL_Y_PIXELS), DisplaySystem() {
@@ -26,6 +27,8 @@ void DisplaySDLSimulator::updateDisplay(DisplaySystem::UpdateType updateType) {
             SDL_RenderDrawPoint(renderer, x, y);
         }
     }
+    // Notify the simulator we are about to draw so it can snag the buffer if it wants
+    SimulatorPrePresent();
     SDL_RenderPresent(renderer);
     fillScreen(bg);
 };

@@ -1,10 +1,16 @@
 #if !defined(EMSCRIPTEN)
 
+#include <Adafruit_GFX.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <cstring>
 #include <iostream>
 #include <unistd.h>
+#include <vector>
+
+// TODO:
+// save images and script to disk when recording
+//
 
 extern void setup();            // NOLINT(readability-identifier-naming)
 extern void loop();             // NOLINT(readability-identifier-naming)
@@ -32,29 +38,68 @@ enum RemoteCommand : int {
     NONE = -1,
 };
 
+std::string commandToString(RemoteCommand command) {
+    switch (command) {
+    case VOL_DOWN:
+        return "VOL_DOWN";
+    case PLAY:
+        return "PLAY";
+    case VOL_UP:
+        return "VOL_UP";
+    case SETUP:
+        return "SETUP";
+    case PREV:
+        return "PREV";
+    case STOP:
+        return "STOP";
+    case CHANNEL_MINUS:
+        return "CHANNEL_MINUS";
+    case ENTER:
+        return "ENTER";
+    case CHANNEL_PLUS:
+        return "CHANNEL_PLUS";
+    case NOP_BUTTON:
+        return "NOP_BUTTON";
+    case NEXT:
+        return "NEXT";
+    case BACK:
+        return "BACK";
+    case FACTORY_DEFAULTS:
+        return "FACTORY_DEFAULTS";
+    case NONE:
+        return "";
+    }
+}
+
+std::vector<RemoteCommand> script;
+
 SDL_Renderer *renderer;
+SDL_Surface *saveSurface = nullptr;
 
-bool saveScreenshotPng(std::string filepath, SDL_Window *window, SDL_Renderer *renderer) {
-    auto bytesPerPixel = 4;
-    auto pitch = WIDTH * SCALE * bytesPerPixel;
-
-    SDL_Surface *saveSurface =
-        SDL_CreateRGBSurface(0, WIDTH * SCALE, HEIGHT * SCALE, 32, 0, 0, 0, 0);
+// This hook saves the about-to-be-rendered buffer to a SDL_Surface so that we can
+// grab the image before it is swapped to the back buffer.
+void SimulatorPrePresent() {
+    if (saveSurface != nullptr) {
+        SDL_FreeSurface(saveSurface);
+    }
+    saveSurface = SDL_CreateRGBSurface(0, WIDTH * SCALE, HEIGHT * SCALE, 32, 0, 0, 0, 0);
     if (saveSurface == NULL) {
         std::cerr << "SDL_CreateRGBSurface error: " << SDL_GetError() << "\n";
-        return false;
+        return;
     }
-    // Seems like this reads from the back buffer (SDL is double buffered), so it gets the last
-    // image, not the current one :/
+
     SDL_Rect rect = {.x = 0, .y = 0, .w = WIDTH * SCALE, .h = HEIGHT * SCALE};
-    if (SDL_RenderReadPixels(renderer, &rect, 0, saveSurface->pixels, pitch) != 0) {
+    if (SDL_RenderReadPixels(renderer, &rect, 0, saveSurface->pixels, saveSurface->pitch) != 0) {
         std::cerr << "SDL_RenderReadPixels error: " << SDL_GetError() << "\n";
+        return;
+    }
+}
+
+bool saveScreenshotPng(std::string filepath) {
+    if (IMG_SavePNG(saveSurface, filepath.c_str()) != 0) {
+        std::cerr << "IMG_SavePNG error: " << SDL_GetError() << "\n";
         return false;
     }
-
-    IMG_SavePNG(saveSurface, filepath.c_str());
-    SDL_FreeSurface(saveSurface);
-
     return true;
 }
 
@@ -77,8 +122,11 @@ auto main(int argc, char *argv[]) -> int {
 
     SDL_Event e;
     bool quit = false;
+    bool recordingCommands = false;
+    bool playingScript = false;
+    int scriptIndex = 0;
     while (!quit) {
-        while (SDL_PollEvent(&e)) {
+        while (!playingScript && SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) {
                 quit = true;
             }
@@ -103,13 +151,43 @@ auto main(int argc, char *argv[]) -> int {
                     SimulatorRemoteCode = ENTER;
                     break;
                 case 'p':
-                    saveScreenshotPng("./screenshot.png", window, renderer);
+                    saveScreenshotPng("./screenshot.png");
+                    break;
+                case 'r':
+                    if (recordingCommands) {
+                        std::cout << "done recording" << std::endl;
+                        recordingCommands = false;
+                    } else {
+                        recordingCommands = true;
+                    }
+                    break;
+                case 't':
+                    if (!playingScript) {
+                        playingScript = true;
+                        scriptIndex = 0;
+                        std::cout << "Starting script" << std::endl;
+                    }
                     break;
                 }
+                if (recordingCommands) {
+                    script.push_back((RemoteCommand)SimulatorRemoteCode);
+                    std::cout << commandToString((RemoteCommand)SimulatorRemoteCode) << std::endl;
+                }
+            }
+        }
+        if (playingScript) {
+            if (scriptIndex < script.size()) {
+                SimulatorRemoteCode = script[scriptIndex];
+                scriptIndex++;
+            } else {
+                playingScript = false;
             }
         }
 
         loop();
+        if (playingScript) {
+            usleep(1000000.0 / 3);
+        }
         // Limit to ~60fps so we don't murder battery unnecessarily
         usleep(1000000.0 / 60.0);
     }
