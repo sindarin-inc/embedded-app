@@ -25,7 +25,7 @@ const EinkET013TT1Waveform PARTIAL_REFRESH_WAVEFORM_REGULAR =
 const EinkET013TT1Waveform PARTIAL_REFRESH_WAVEFORM_INVERTED =
     BC_INVERTED_EXPERIMENTAL_WAVEFORM_PARTIAL;
 
-void DisplayEinkET013TT1::setup() {
+auto DisplayEinkET013TT1::setup() -> bool {
     DisplaySystem::setup();
 
     log_d("Initializing EPD driver");
@@ -52,6 +52,8 @@ void DisplayEinkET013TT1::setup() {
     }
 
     log_i("Display ready!");
+
+    return !driver_.errored();
 }
 
 void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {

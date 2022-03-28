@@ -8,9 +8,10 @@ DisplayWroverLcd::DisplayWroverLcd()
     gfxClass_ = &gfxCanvas_;
 }
 
-void DisplayWroverLcd::setup() {
+auto DisplayWroverLcd::setup() -> bool {
     DisplaySystem::setup();
     setFullWindow();
+    return true;
 }
 
 void DisplayWroverLcd::updateDisplay(DisplaySystem::UpdateType updateType) {

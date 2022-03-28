@@ -21,7 +21,7 @@ public:
     auto newRendererStream(const char *path) -> ContainerStream<File> *;
 
     // Underlying methods to init and read data
-    virtual void begin(){};
+    virtual auto begin() -> bool { return true; };
 
     virtual auto open(const std::string &path, const char *mode = FILE_READ,
                       const bool create = false) const -> File {

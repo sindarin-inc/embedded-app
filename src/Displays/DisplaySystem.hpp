@@ -46,7 +46,7 @@ public:
     DisplaySystem();
     ~DisplaySystem() = default;
 
-    virtual void setup();
+    virtual auto setup() -> bool;
 
     Style style;
 

@@ -4,7 +4,7 @@ class SpiffsFileSystem : public FileSystem {
 public:
     SpiffsFileSystem() noexcept : FileSystem(){};
 
-    void begin() override;
+    auto begin() -> bool override;
     auto open(const std::string &path, const char *mode = FILE_READ,
               const bool create = false) const -> File override;
     [[nodiscard]] auto exists(const std::string &path) const -> bool override;

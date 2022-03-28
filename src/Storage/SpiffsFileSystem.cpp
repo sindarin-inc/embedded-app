@@ -5,7 +5,7 @@
 #include "Storage/ExternalSPIFlash.hpp"
 #include "sindarin-debug.h"
 
-void SpiffsFileSystem::begin() {
+auto SpiffsFileSystem::begin() -> bool {
     SHOW_HEAP();
 
 #if INTERNAL_SPIFFS_FLASH
@@ -17,7 +17,7 @@ void SpiffsFileSystem::begin() {
     esp_flash_t *flash = SpiFlashInit();
     if (flash == nullptr) {
         log_e("Failed to load external flash");
-        return;
+        return false;
     }
 
     // Add the entire external flash chip as a partition
@@ -27,9 +27,11 @@ void SpiffsFileSystem::begin() {
     // Launch SPIFFS file system
     if (!SPIFFS.begin(false, "/spiffs", 255)) {
         log_e("An Error has occurred while mounting SPIFFS");
+        return false;
     }
 
     SHOW_HEAP();
+    return true;
 }
 
 auto SpiffsFileSystem::open(const std::string &path, const char *mode, const bool create) const

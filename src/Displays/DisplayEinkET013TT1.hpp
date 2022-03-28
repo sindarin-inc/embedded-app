@@ -18,7 +18,7 @@ public:
 
     ~DisplayEinkET013TT1() = default;
 
-    void setup() override;
+    auto setup() -> bool override;
 
     void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED) override;
 

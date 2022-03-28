@@ -103,6 +103,7 @@ void EinkET013TT1::init() {
 
     digitalWrite(rst_, LOW);
     delay(5);
+    // TODO: OEI is always low, can we reclaim it? What is it useful for?
     digitalWrite(oei_, LOW);
     delay(5);
     digitalWrite(rst_, HIGH);
@@ -120,7 +121,7 @@ void EinkET013TT1::init() {
         i = 0xFF;
     }
 
-    log_d("Initialized EinkET013TT1 ID:%d", readDeviceIdReg());
+    log_d("Initialized EinkET013TT1");
 }
 
 void EinkET013TT1::setVcom(int mV) {
@@ -226,6 +227,7 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     timerOverruns_ = 0;
     busyWaits_ = 0;
     maxFrameCycles_ = 0;
+    error_ = false;
 
     // Set up convenience variables to index into various parts of the scanline
     // TODO: Are there clever union types or other struct packing things we could do here?
@@ -251,6 +253,7 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     if (!pumpStatus.bits.vcpok) {
         log_e("Pump not ready! LVDS=%d VCPOK=%d temp=%dºC", pumpStatus.bits.lvds,
               pumpStatus.bits.vcpok, temp);
+        error_ = true;
     } else {
         log_d("LVDS=%d VCPOK=%d temp=%dºC", pumpStatus.bits.lvds, pumpStatus.bits.vcpok, temp);
     }

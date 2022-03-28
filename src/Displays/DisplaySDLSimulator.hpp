@@ -11,7 +11,7 @@ public:
     DisplaySDLSimulator();
     ~DisplaySDLSimulator() = default;
 
-    void setup() override;
+    bool setup() override;
     void updateDisplay(DisplaySystem::UpdateType updateType) override;
 
 protected:

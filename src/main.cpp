@@ -13,6 +13,7 @@
 #include "Contents/Readable.hpp"
 #include "Displays/AllDisplays.hpp"
 #include "Inputs/RemoteInput.hpp"
+#include "Misc/BootError.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/Power.hpp"
 #include "Misc/StringUtil.hpp"
@@ -174,6 +175,14 @@ void StatsLoop(void *parameter) {
 }
 
 void setup() {
+    std::vector<BootError> bootErrors;
+
+#if BOARD_HAS_PSRAM
+    if (ESP.getPsramSize() <= 0) {
+        bootErrors.push_back({.type = BootError::Type::ExternalRam});
+    }
+#endif
+
     bool inputDeviceConnected = false;
 
     InitializePlatform();
@@ -224,7 +233,9 @@ void setup() {
         break;
     }
 
-    myDisplay.setup();
+    if (!myDisplay.setup()) {
+        bootErrors.push_back({.type = BootError::Type::Display});
+    }
 
     DisplayRect initialRect;
     initialRect.x = prefs.rectX.get().value();
@@ -259,6 +270,10 @@ void setup() {
 
 #if USE_BLE
     BLEDevice::init("Sindarin");
+    auto bleStatus = esp_bt_controller_get_status();
+    if (bleStatus != ESP_BT_CONTROLLER_STATUS_ENABLED) {
+        bootErrors.push_back({.type = BootError::Type::BLE});
+    }
 #endif
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
@@ -316,11 +331,19 @@ void setup() {
         .min_freq_mhz = CPU_FREQ_MHZ_LOW,
         .light_sleep_enable = true,
     };
-    ESP_ERROR_CHECK(esp_pm_configure(&pmConfig));
+    if (esp_pm_configure(&pmConfig) != ESP_OK) {
+        bootErrors.push_back({.type = BootError::Type::PowerManagement});
+    }
+    if (rtc_clk_slow_freq_get() != RTC_SLOW_FREQ_32K_XTAL) {
+        bootErrors.push_back({.type = BootError::Type::LowPowerOscillator});
+    }
+
 #endif
 
     auto readables = new std::vector<Readable>();
-    fileSystem.begin();
+    if (!fileSystem.begin()) {
+        bootErrors.push_back({.type = BootError::Type::FileSystem});
+    }
     fileSystem.getReadables(readables);
     fileSystem.getDownloadedPocketReadables(readables);
 
@@ -341,7 +364,7 @@ void setup() {
     xTaskCreatePinnedToCore(StatsLoop, "Stats", 5000, nullptr, 0, nullptr, 1);
 #endif
 
-    log_i("Setup done");
+    BlinkBootErrors(bootErrors);
 }
 
 void loop() {

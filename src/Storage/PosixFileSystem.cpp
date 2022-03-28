@@ -13,7 +13,7 @@ void createPath(char *output, size_t outputSize, const std::string &path) {
     strncat(output, path.c_str(), outputSize - 1);
 }
 
-void PosixFileSystem::begin() {}
+bool PosixFileSystem::begin() { return true; }
 
 auto PosixFileSystem::open(const std::string &path, const char *mode, const bool create) const
     -> File {

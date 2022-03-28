@@ -7,7 +7,7 @@
 
 DisplaySystem::DisplaySystem() { autoUpdate_ = true; }
 
-void DisplaySystem::setup() {
+auto DisplaySystem::setup() -> bool {
     // Default to original font
     setFont(style.getFontFamily().mainMenuFont);
     gfxClass_->setTextColor(fg, bg);
@@ -19,6 +19,8 @@ void DisplaySystem::setup() {
 #endif
 
     gfxClass_->setTextWrap(false);
+
+    return true;
 }
 
 void DisplaySystem::invertDisplay(bool newInvert) {

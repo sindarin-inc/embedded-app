@@ -12,9 +12,10 @@ DisplaySDLSimulator::DisplaySDLSimulator()
     gfxClass_ = &gfxCanvas_;
 }
 
-void DisplaySDLSimulator::setup() {
+bool DisplaySDLSimulator::setup() {
     DisplaySystem::setup();
     setFullWindow();
+    return true;
 }
 
 void DisplaySDLSimulator::updateDisplay(DisplaySystem::UpdateType updateType) {

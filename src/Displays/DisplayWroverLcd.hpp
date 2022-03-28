@@ -11,7 +11,7 @@ public:
     ~DisplayWroverLcd() = default;
 
     void begin() { WROVER_KIT_LCD::begin(); }
-    void setup() override;
+    auto setup() -> bool override;
     void updateDisplay(DisplaySystem::UpdateType updateType) override;
 
     void invertDisplay(bool newInvert) { DisplaySystem::invertDisplay(newInvert); }

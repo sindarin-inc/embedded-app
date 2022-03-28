@@ -178,6 +178,8 @@ public:
 
     auto readTemperature() -> int16_t;
 
+    auto errored() -> bool { return error_; }
+
 protected:
     void powerOn();
     void powerOff();
@@ -185,6 +187,8 @@ protected:
     void writeRegister(Register index, const uint8_t *data, size_t len);
     auto readRegister(uint8_t index) -> uint8_t;
     auto readPumpStatus() -> PumpStatus;
+    // According to the data sheet the device ID is 0 by default, but that's the same
+    // when the screen is not connected. So I don't think `readDeviceIdReg` is useful.
     auto readDeviceIdReg() -> uint8_t;
     inline void startTimer(uint32_t ns);
     inline auto timerActivated() -> bool;
@@ -201,6 +205,7 @@ protected:
     uint16_t timerOverruns_;
     uint16_t busyWaits_;
     uint32_t maxFrameCycles_;
+    bool error_;
 
     BorderSetting previousBorder_ = BORDER_SETTING_NONE;
     BorderSetting border_ = BORDER_SETTING_NONE;
