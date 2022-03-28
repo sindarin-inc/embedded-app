@@ -16,7 +16,7 @@ class PopupMenuScreen : public ContainerScreen {
 
 public:
     PopupMenuScreen(Power &power, Renderer &renderer, PreferencesStore &prefs, Readable &readable)
-        : power_(power), renderer_(renderer), leftButtonTitle_("Lighting"), prefs_(prefs),
+        : prefs_(prefs), power_(power), renderer_(renderer), leftButtonTitle_("Lighting"),
           lightingAdjustScreen_(prefs), readableSeekScreen_(prefs, readable, renderer_) {
         currentScreen_ = this;
         lightingAdjustScreen_.backCallback = [this]() { this->setCurrentScreen(*this); };

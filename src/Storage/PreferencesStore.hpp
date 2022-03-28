@@ -155,10 +155,10 @@ public:
     void begin();
     void clear() { prefs_.clear(); }
 
-    PrefsItem<std::string> pocketApiToken;
 #if USE_TURN_TOUCH_REMOTE
     BLEAddressPrefsItem pairedTurnTouchAddress;
 #endif
+    PrefsItem<std::string> pocketApiToken;
     PrefsItem<std::string> lastReadableId;
     KeyedPrefsItem<uint32_t> readablePlace;
     PrefsItem<int> invertSetting;

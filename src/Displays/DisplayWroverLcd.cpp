@@ -4,7 +4,7 @@
 
 // Only use the top 240 px so we have a square screen and take less memory
 DisplayWroverLcd::DisplayWroverLcd()
-    : gfxCanvas_(WROVER_WIDTH, WROVER_HEIGHT), DisplaySystem(), WROVER_KIT_LCD() {
+    : DisplaySystem(), WROVER_KIT_LCD(), gfxCanvas_(WROVER_WIDTH, WROVER_HEIGHT) {
     gfxClass_ = &gfxCanvas_;
 }
 

@@ -41,7 +41,6 @@ void ReadableSeekScreen::render(DisplaySystem &display) {
 
     // Cursor is from the baseline of the text I think
     y += barHeight + spacing + display.getTextHeight();
-    x = 0;
     uint16_t textWidth, textHeight;
     auto message1 = "Press right and left";
     display.getTextBounds(message1, &textWidth, &textHeight);
@@ -84,7 +83,6 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
         // TODO: Do we need placePrev anymore except for logging?
         readable_.placePrev = readable_.place;
 
-        size_t place = readable_.place;
         size_t lengthOfFile = renderer_.size();
 
         // Subtract 5% to the file
@@ -105,7 +103,6 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
         // TODO: Do we need placePrev anymore except for logging?
         readable_.placePrev = readable_.place;
 
-        size_t place = renderer_.getCurrentPlace();
         size_t lengthOfFile = renderer_.size();
 
         // Add 5% to the file

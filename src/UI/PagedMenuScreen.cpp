@@ -45,9 +45,6 @@ void PagedMenuScreen::render(DisplaySystem &display) {
                         (int16_t)menuWidth, (int16_t)menuHeight, display.fg);
 
     auto itemTitle = getCurrItem().title;
-    // Cache / replace old font; then try descending size fonts until we find one that fits our
-    // string in the desired space.
-    auto prevFont = display.getFont();
 
     display.setFont(display.style.getFontFamily().mainMenuFont);
 

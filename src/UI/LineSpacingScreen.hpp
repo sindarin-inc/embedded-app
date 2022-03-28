@@ -17,11 +17,11 @@ protected:
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
 
-    int lineSpacing_;
-
     DisplaySystem &display_;
     Renderer renderer_;
     PreferencesStore &prefs_;
+
+    int lineSpacing_;
 };
 
 #endif

@@ -6,8 +6,8 @@
 #define MAX_LINE_SPACING 5
 
 LineSpacingScreen::LineSpacingScreen(DisplaySystem &display, PreferencesStore &prefs)
-    : display_(display), prefs_(prefs), lineSpacing_(prefs.lineSpacing.get().value()),
-      renderer_(display) {
+    : display_(display), renderer_(display), prefs_(prefs),
+      lineSpacing_(prefs.lineSpacing.get().value()) {
 
     std::string message;
     for (int i = 0; i < 200; i++) {

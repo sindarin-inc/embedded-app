@@ -8,7 +8,7 @@
 class ReadableSeekScreen : public Screen {
 public:
     ReadableSeekScreen(PreferencesStore &prefs, Readable &readable, Renderer &renderer)
-        : prefs_(prefs), readable_(readable), renderer_(renderer), Screen() {}
+        : Screen(), prefs_(prefs), readable_(readable), renderer_(renderer) {}
 
     void processCommand(RemoteCommand command) override;
     void render(DisplaySystem &display) override;

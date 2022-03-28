@@ -36,7 +36,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
     }
-    const int edgeOffset = 5;
+
     log_d("PopupMenuScreen render");
     auto autoUpdate = display.getAutoUpdate();
     display.setAutoUpdate(false);

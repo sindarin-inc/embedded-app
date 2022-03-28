@@ -13,7 +13,7 @@ class ReadableScreen : public ContainerScreen {
 public:
     ReadableScreen(RendererStream *stream, DisplaySystem &display, Readable &readable,
                    PreferencesStore &prefs, Power &power)
-        : readable_(readable), prefs_(prefs), renderer_(display),
+        : renderer_(display), readable_(readable), prefs_(prefs),
           popup_(power, renderer_, prefs_, readable_) {
         currentScreen_ = this;
         renderer_.setStream(stream);

@@ -49,7 +49,6 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
 
     // Cursor is from the baseline of the text I think
     y += Lightbulb_height + display.getTextHeight() + spacing;
-    x = 0;
     uint16_t textWidth, textHeight;
     auto message1 = "Press up and down";
     display.getTextBounds(message1, &textWidth, &textHeight);

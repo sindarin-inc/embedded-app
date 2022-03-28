@@ -173,6 +173,8 @@ auto EinkET013TT1::checkWaveform(const EinkET013TT1Waveform &waveform) -> uint8_
         case WHITE:
             numWhites[0]++;
             break;
+        default:
+            break;
         }
 
         switch (frame.bw) {
@@ -181,6 +183,8 @@ auto EinkET013TT1::checkWaveform(const EinkET013TT1Waveform &waveform) -> uint8_
             break;
         case WHITE:
             numWhites[1]++;
+            break;
+        default:
             break;
         }
 
@@ -191,6 +195,8 @@ auto EinkET013TT1::checkWaveform(const EinkET013TT1Waveform &waveform) -> uint8_
         case WHITE:
             numWhites[1]++;
             break;
+        default:
+            break;
         }
 
         switch (frame.ww) {
@@ -199,6 +205,8 @@ auto EinkET013TT1::checkWaveform(const EinkET013TT1Waveform &waveform) -> uint8_
             break;
         case WHITE:
             numWhites[2]++;
+            break;
+        default:
             break;
         }
     }

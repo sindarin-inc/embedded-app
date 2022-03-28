@@ -8,9 +8,7 @@
 void SpiffsFileSystem::begin() {
     SHOW_HEAP();
 
-#if INTERNAL_SPIFFS_FLASH
-    const char *partitionLabel = nullptr;
-#else
+#if !INTERNAL_SPIFFS_FLASH
     const char *partitionLabel = "storage";
 
     // Set up SPI bus and initialize the external SPI Flash chip

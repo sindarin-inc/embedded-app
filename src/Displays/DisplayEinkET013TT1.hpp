@@ -11,8 +11,8 @@
 class DisplayEinkET013TT1 : public DisplaySystem {
 public:
     DisplayEinkET013TT1(uint8_t cs, uint8_t oei, uint8_t rst, uint8_t busy) noexcept
-        : gfxCanvas_(EinkET013TT1_X_PIXELS, EinkET013TT1_Y_PIXELS), driver_(cs, oei, rst, busy),
-          DisplaySystem() {
+        : DisplaySystem(), gfxCanvas_(EinkET013TT1_X_PIXELS, EinkET013TT1_Y_PIXELS),
+          driver_(cs, oei, rst, busy) {
         gfxClass_ = &gfxCanvas_;
     };
 
