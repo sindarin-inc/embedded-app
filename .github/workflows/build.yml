@@ -15,6 +15,7 @@ jobs:
         pioenv:
           - gilpico
           - gilpico-idf
+          - gilpico-frankenoscillator
           - glasses
           - glasses-idf
           - optopax-poc4
