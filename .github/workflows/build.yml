@@ -43,11 +43,11 @@ jobs:
       - name: PlatformIO run
         run: pio run -e ${{ matrix.pioenv }}
 
-      - name: Upload binary firmwares for Gilpico
+      - name: Upload binary firmwares
         uses: actions/upload-artifact@v2
-        if: matrix.pioenv == 'gilpico'
+        if: matrix.pioenv == 'gilpico' || matrix.pioenv == 'gilpico-frankenoscillator'
         with:
-          name: gilpico-binaries-${{ github.sha }}
+          name: ${{ matrix.pioenv }}-binaries-${{ github.sha }}
           path: |
-            .pio/build/gilpico/*.bin
-            .pio/build/gilpico/upload_command.sh
+            .pio/build/${{ matrix.pioenv }}/*.bin
+            .pio/build/${{ matrix.pioenv }}/upload_command.sh
