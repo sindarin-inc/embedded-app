@@ -95,7 +95,7 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     } else {
         numCharsToRead = MAX_CHARS_PER_PAGE;
         seekPlace = place - numCharsToRead - PLACE_REWIND;
-        if (place - numCharsToRead - PLACE_REWIND < 0) {
+        if (place < numCharsToRead + PLACE_REWIND) {
             seekPlace = 0;
         }
     }
