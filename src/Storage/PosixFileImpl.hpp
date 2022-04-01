@@ -43,7 +43,11 @@ public:
     size_t position() const override { return pos_; };
     size_t size() const override {
         struct stat st;
-        stat(path_, &st);
+        int error = stat(path_, &st);
+        if (error != 0) {
+            log_e("stat error %d", error);
+            return 0;
+        }
         return st.st_size;
     };
     void close() override {

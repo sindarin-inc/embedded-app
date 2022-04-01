@@ -86,7 +86,8 @@ void StripHtml(std::stringstream &inStream, std::stringstream &outStream) {
 
     // Running loop till end of stream
     while (true) {
-        const char x = inStream.get();
+        char x;
+        inStream.get(x);
         if (inStream.eof() || !inStream.good()) {
             break;
         }
@@ -118,7 +119,8 @@ void StripHtml(std::stringstream &inStream, Stream &outStream) {
 
     // Running loop till end of stream
     while (true) {
-        const char x = inStream.get();
+        char x;
+        inStream.get(x);
         if (inStream.eof() || !inStream.good()) {
             break;
         }

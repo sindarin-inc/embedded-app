@@ -157,12 +157,12 @@ public:
     void clearScreen();
 
     // TODO: Just use `textcolor` and `textbgcolor` for these?
-    uint16_t bg, fg;
+    uint16_t bg = 0, fg = 0;
 
 protected:
     // Must be set in the constructor of subclasses
-    Adafruit_GFX *gfxClass_;
-    const GFXfont *font_;
+    Adafruit_GFX *gfxClass_ = nullptr;
+    const GFXfont *font_ = nullptr;
 
     inline auto xOffset(int16_t value) -> int16_t { return value + boundingBox_.x; }
     inline auto yOffset(int16_t value) -> int16_t { return value + boundingBox_.y; }
@@ -175,7 +175,7 @@ protected:
     void computeMinMax();
 
     int partialRefresh_ = 0;
-    uint16_t partialX_, partialY_, partialW_, partialH_;
+    uint16_t partialX_ = 0, partialY_ = 0, partialW_ = 0, partialH_ = 0;
 
     bool autoUpdate_;
 

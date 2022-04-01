@@ -22,7 +22,7 @@ public:
 protected:
     PreferencesStore &prefs_;
     Power &power_;
-    DisplaySystem *display_;
+    DisplaySystem *display_ = nullptr;
 
 private:
     void restoreFactoryDefaults();

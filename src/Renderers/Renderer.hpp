@@ -30,7 +30,7 @@ public:
 
 protected:
     DisplaySystem &display_;
-    RendererStream *stream_;
+    RendererStream *stream_ = nullptr;
 
     // This should be called by subclasses after content is loaded
     void loaded();

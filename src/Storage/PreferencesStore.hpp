@@ -85,7 +85,7 @@ public:
         void remove() { this->deleteFromStorage(this->key_); }
 
     protected:
-        bool loaded_;
+        bool loaded_ = false;
         std::optional<T> value_;
         char key_[MAX_KEY_LENGTH + 1];
     };
