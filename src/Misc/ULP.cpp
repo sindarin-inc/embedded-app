@@ -37,11 +37,11 @@ void UlpStart(void) {
         M_LABEL(LBL_LOOP),
 
         // Write 1 to the GPIO_OUT register's appropriate bit (turn on)
-        I_WR_REG_BIT(RTC_GPIO_OUT_REG, ledPWMBit, 1),
+        I_WR_REG_BIT(RTC_GPIO_OUT_REG, ledPWMBit, 0),
 
         // Load the on delay value from memory into R3
         I_MOVI(R3, 0),
-        I_GET(R0, R3, LcdBrightnessDelayOn),
+        I_GET(R0, R3, LcdBrightnessDelayOff),
 
         // Delay for R0 # of loops
         M_LABEL(LBL_WAIT_HIGH),
@@ -52,11 +52,11 @@ void UlpStart(void) {
 
         // Write 0 to the GPIO_OUT register's appropriate bit (turn off)
         // TODO: I_WR_REG_BIT is probably more right here
-        I_WR_REG_BIT(RTC_GPIO_OUT_REG, ledPWMBit, 0),
+        I_WR_REG_BIT(RTC_GPIO_OUT_REG, ledPWMBit, 1),
 
         // Load the off delay value from memory into R3
         I_MOVI(R3, 0),
-        I_GET(R0, R3, LcdBrightnessDelayOff),
+        I_GET(R0, R3, LcdBrightnessDelayOn),
 
         // Delay for R0 # of loops
         M_LABEL(LBL_WAIT_LOW),
