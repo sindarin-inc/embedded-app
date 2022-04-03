@@ -12,6 +12,7 @@
 #include "Misc/Style.hpp"
 #include "Renderers/Renderer.hpp"
 #include "UI/CalibrationScreen.hpp"
+#include "UI/DemoScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/LoadingScreen.hpp"
 #include "UI/LogoScreen.hpp"
@@ -244,6 +245,18 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
         offsetAdjust->backCallback = [this, offsetAdjust, settingsMenu]() {
             setCurrentScreen(*settingsMenu);
             delete offsetAdjust;
+        };
+        log_d("set up callback");
+    }));
+
+    settingsMenu->addMenuItem(MenuItem("Demo Screen", [this, settingsMenu, display]() {
+        log_d("Loading demo screen");
+        auto demoScreen = new DemoScreen(*display, prefs_, this->power_);
+        this->setCurrentScreen(*demoScreen);
+        log_d("setting up callback");
+        demoScreen->backCallback = [this, demoScreen, settingsMenu]() {
+            setCurrentScreen(*settingsMenu);
+            delete demoScreen;
         };
         log_d("set up callback");
     }));
