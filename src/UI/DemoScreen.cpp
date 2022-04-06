@@ -18,7 +18,7 @@ void DemoScreen::render(DisplaySystem &display) {
         return;
     }
 
-    std::string message = messages[currentScreen_];
+    std::string message = messages_[currentScreen_];
 
     auto stream = new StdStringStream(message);
 
@@ -27,10 +27,10 @@ void DemoScreen::render(DisplaySystem &display) {
         display.setFont(&TAHOMA_REGULAR_FONT10PT7B);
         break;
     case 1:
-        display.setFont(&Tahoma_Regular_font8pt7b);
+        display.setFont(&TAHOMA_REGULAR_FONT8PT7B);
         break;
     case 2:
-        display.setFont(&Tahoma_Regular_font7pt7b);
+        display.setFont(&TAHOMA_REGULAR_FONT7PT7B);
         break;
     case 3:
         display.setFont(&TAHOMA_REGULAR_FONT6PT7B);
