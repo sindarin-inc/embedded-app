@@ -1,5 +1,36 @@
 # Using Coverity
 
+## Running Coverity
+
+On x86 machines you can use Coverity directly. Install Coverity from the [Synopsys site](https://community.synopsys.com/s/) and download the `license.dat`. Then from the root of this project:
+
+You'll need to add the Coverity tools into your `PATH`. Probably something like this (and you might consider adding this to your `.zsh`/`.profile`/`.bashrc` so it's always set)
+
+```sh
+export PATH=/Applications/cov-analysis-macosx-2022.3.0/bin:$PATH
+```
+
+Then you can configure the compilers (both `clang` for the simulator and `xtensa-esp32-elf-gcc` for real builds)
+
+```sh
+cov-configure --clang
+cov-configure --comptype gcc --template --compiler xtensa-esp32-elf-gcc
+```
+
+Run the build
+
+```sh
+pio run -t clean && cov-build --dir coverity/cov-emit pio run
+```
+
+And analyze it
+
+```sh
+cov-analyze --dir coverity/cov-emit
+cov-format-errors -x --dir coverity/cov-emit --html-output coverity/out
+open coverity/out/index.html
+```
+
 ## Coverity inside Docker
 
 Coverity's `cov-build` doesn't work on arm64, so an alternate way to use it is by running it inside QEMU-emulated x86_64 Docker.
@@ -27,8 +58,7 @@ Now any Docker commands you use with `ghcr.io/sindarin-inc/coverity` should down
 Run this from the root directory of the embedded-app project. This takes ~20 minutes to build.
 
 ```sh
-pio run -t clean
-docker run -v $PWD:/project --platform linux/amd64 -it --rm ghcr.io/sindarin-inc/coverity:2022.3.0 cov-build --dir coverity/cov-emit pio run
+docker run -v $PWD:/project --platform linux/amd64 -it --rm ghcr.io/sindarin-inc/coverity:2022.3.0 bash -c "pio run -t clean && cov-build --dir coverity/cov-emit pio run"
 ```
 
 ### Now you can analyze and emit errors
