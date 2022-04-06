@@ -249,18 +249,6 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
         log_d("set up callback");
     }));
 
-    settingsMenu->addMenuItem(MenuItem("Demo Screen", [this, settingsMenu, display]() {
-        log_d("Loading demo screen");
-        auto demoScreen = new DemoScreen(*display, prefs_, this->power_);
-        this->setCurrentScreen(*demoScreen);
-        log_d("setting up callback");
-        demoScreen->backCallback = [this, demoScreen, settingsMenu]() {
-            setCurrentScreen(*settingsMenu);
-            delete demoScreen;
-        };
-        log_d("set up callback");
-    }));
-
     settingsMenu->addMenuItem(MenuItem("Resize Box", [this, settingsMenu, display]() {
         log_d("Loading resize box");
         auto resizeBox = new ResizeBoxScreen(*display, prefs_, this->power_);
@@ -272,6 +260,26 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
         };
         log_d("set up callback");
     }));
+
+    int inDemo = prefs_.demoMode.get().value();
+
+    if (inDemo) {
+        settingsMenu->addMenuItem(MenuItem("Turn off Demo Mode", [this, settingsMenu, display]() {
+            log_d("Exiting demo");
+            prefs_.demoMode.set(0);
+            display->renderMaxBoxWithText("Demo mode off! Resetting...");
+            delay(2000);
+            esp_restart();
+        }));
+    } else {
+        settingsMenu->addMenuItem(MenuItem("Turn on Demo Mode", [this, settingsMenu, display]() {
+            log_d("Entering demo");
+            prefs_.demoMode.set(1);
+            display->renderMaxBoxWithText("Demo mode on! Resetting...");
+            delay(2000);
+            esp_restart();
+        }));
+    }
 
 #if EINKET013TT1
     settingsMenu->addMenuItem(MenuItem("Set Vcom", [this, display, settingsMenu]() {
@@ -413,6 +421,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
         delay(2000);
         esp_restart();
     }));
+
     settingsMenu->addMenuItem(
         MenuItem("Factory Defaults", [this, settingsMenu]() { this->restoreFactoryDefaults(); }));
     settingsMenu->addMenuItem(MenuItem("Loading Test", [this, display, settingsMenu]() {
@@ -423,6 +432,19 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
             delete loadingScreen;
         };
     }));
+
+    settingsMenu->addMenuItem(MenuItem("Demo Screen", [this, settingsMenu, display]() {
+        log_d("Loading demo screen");
+        auto demoScreen = new DemoScreen(*display, prefs_, this->power_);
+        this->setCurrentScreen(*demoScreen);
+        log_d("setting up callback");
+        demoScreen->backCallback = [this, demoScreen, settingsMenu]() {
+            setCurrentScreen(*settingsMenu);
+            delete demoScreen;
+        };
+        log_d("set up callback");
+    }));
+
     settingsMenu->addMenuItem(MenuItem("Test Bitmap Screen", [this, display, settingsMenu]() {
         auto bitmapScreen = new BitmapScreen(LOGO_BITS, LOGO_WIDTH, LOGO_HEIGHT);
         setCurrentScreen(*bitmapScreen);
@@ -491,6 +513,19 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
         } else {
             setCurrentScreen(*mainMenu);
         }
+    }
+
+    // If we are in demo mode, overright whatever the current screen would have been
+    // with the demo code and set the back callback to mainMenu.
+    inDemo = prefs_.demoMode.get().value();
+
+    if (inDemo) {
+        auto demoScreen = new DemoScreen(*display, prefs_, this->power_);
+        demoScreen->backCallback = [this, demoScreen, mainMenu]() {
+            setCurrentScreen(*mainMenu);
+            delete demoScreen;
+        };
+        this->setCurrentScreen(*demoScreen);
     }
 
     SHOW_HEAP();

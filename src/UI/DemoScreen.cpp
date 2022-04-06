@@ -30,16 +30,16 @@ void DemoScreen::render(DisplaySystem &display) {
         display.setFont(&TAHOMA_REGULAR_FONT8PT7B);
         break;
     case 2:
-        display.setFont(&TAHOMA_REGULAR_FONT7PT7B);
+        display.setFont(&TAHOMA_REGULAR_FONT6PT7B);
         break;
     case 3:
-        display.setFont(&TAHOMA_REGULAR_FONT6PT7B);
+        display.setFont(&TAHOMA_REGULAR_FONT5PT7B);
         break;
     case 4:
         display.setFont(&TAHOMA_REGULAR_FONT5PT7B);
         break;
     }
-    renderer_.setStream(stream);
+    renderer_.setStream(stream, true, true);
 
     this->renderer_.renderPage(0);
 
@@ -47,28 +47,37 @@ void DemoScreen::render(DisplaySystem &display) {
 }
 
 void DemoScreen::processCommand(RemoteCommand command) {
+    // Note that this gets called even when there isn't a button press
+    // if the screen is set from RootUI as the first screen to be shown.
+    // That's why the increment is in the case statement instead of
+    // below.
+    //
+    // Eventually, we'll add more logic to do the right thing based on
+    // the messages, but for now, any button press is fine.
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
+        currentScreen_++;
         needsRerender = true;
         break;
     case RemoteCommand::CHANNEL_PLUS:
+        currentScreen_++;
         needsRerender = true;
         break;
     case RemoteCommand::PREV:
+        currentScreen_++;
         needsRerender = true;
         break;
     case RemoteCommand::NEXT:
+        currentScreen_++;
         needsRerender = true;
         break;
     case RemoteCommand::BACK:
-
     case RemoteCommand::ENTER:
-
         break;
     default:
         break;
     }
-    currentScreen_++;
+
     if (currentScreen_ >= NUM_DEMO_SCREENS) {
         backCallback();
     }

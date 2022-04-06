@@ -273,6 +273,23 @@ void DisplaySystem::renderTextWithoutBox(const std::string &text) {
     drawText(text, 0, getTextHeight(), width(), height());
 }
 
+void DisplaySystem::renderTextWithoutBox(const std::string &text, bool centerHorizontally,
+                                         bool centerVertically) {
+
+    int xOffset = 0;
+    int yOffset = 0;
+
+    if (centerHorizontally) {
+        xOffset = (width() - getTextWidth(text.c_str())) / 2;
+    }
+
+    if (centerVertically) {
+        yOffset = (height() - getTextHeight(text.c_str())) / 2;
+    }
+
+    drawText(text, 0 + xOffset, getTextHeight() + yOffset, width(), height());
+}
+
 void DisplaySystem::renderMaxBoxWithText(const std::string &text) {
     drawTextInBox(text, 0, 0, width(), height());
 }

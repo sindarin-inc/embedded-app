@@ -42,7 +42,7 @@ auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
     nextPlace_ = loadCurrIntoBuffer();
     PROFILE_END_LOG_MS(loadCurrIntoBuffer);
 
-    display_.renderTextWithoutBox(currBuffer_.data());
+    display_.renderTextWithoutBox(currBuffer_.data(), horizontalCenter_, verticalCenter_);
     SetCpuSpeedMhz(CPU_FREQ_MHZ_LOW);
 
     nextPos = nextPlace_;

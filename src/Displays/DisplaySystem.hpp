@@ -141,6 +141,8 @@ public:
     // Convenience methods for drawing that take into account offsets
     void renderMaxBoxWithText(const std::string &text);
     void renderTextWithoutBox(const std::string &text);
+    void renderTextWithoutBox(const std::string &text, bool centerHorizontally,
+                              bool centerVertically);
     void renderBox(int xStart, int yStart, int xEnd, int yEnd);
 
     // MARK: - Graphic drawing code
