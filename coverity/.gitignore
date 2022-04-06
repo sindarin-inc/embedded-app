@@ -1,0 +1,4 @@
+*.tar.gz
+cov-emit
+out
+license.dat
