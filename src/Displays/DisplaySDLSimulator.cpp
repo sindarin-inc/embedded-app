@@ -31,7 +31,6 @@ void DisplaySDLSimulator::updateDisplay(DisplaySystem::UpdateType updateType) {
                 SDL_SetRenderDrawColor(renderer, 40, 40, 40, 0xFF);
             }
             SDL_RenderDrawPoint(renderer, x, y);
-            SDL_RenderDrawPoint(renderer, x, y);
         }
     }
     SDL_RenderPresent(renderer);
