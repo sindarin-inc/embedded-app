@@ -28,8 +28,8 @@ auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice *device) -> bool {
     }
 
     // Obtain a reference to the service we are after in the remote BLE server.
-    BLERemoteService *remoteService = client_->getService(TURNTOUCH_BUTTON_SVC_UUID);
-    if (remoteService == nullptr) {
+    BLERemoteService *buttonService = client_->getService(TURNTOUCH_BUTTON_SVC_UUID);
+    if (buttonService == nullptr) {
         log_e("Failed to find TurnTouch button service UUID.");
         client_->disconnect();
         return false;
@@ -37,9 +37,9 @@ auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice *device) -> bool {
     log_d("TurnTouch service found.");
 
     // Obtain a reference to the characteristic in the service of the remote BLE server.
-    BLERemoteCharacteristic *remoteCharacteristic =
-        remoteService->getCharacteristic(TURNTOUCH_BUTTON_CHR_UUID);
-    if (remoteCharacteristic == nullptr) {
+    BLERemoteCharacteristic *buttonCharacteristic =
+        buttonService->getCharacteristic(TURNTOUCH_BUTTON_CHR_UUID);
+    if (buttonCharacteristic == nullptr) {
         log_e("Failed to find TurnTouch button characteristic UUID.");
         client_->disconnect();
         return false;
@@ -47,18 +47,34 @@ auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice *device) -> bool {
     log_d("BLE characteristic found");
 
     // Read the value of the characteristic.
-    if (remoteCharacteristic->canRead()) {
-        auto value = remoteCharacteristic->readValue<uint16_t>();
+    if (buttonCharacteristic->canRead()) {
+        auto value = buttonCharacteristic->readValue<uint16_t>();
         log_d("The characteristic value was: %X", value);
     }
 
-    if (remoteCharacteristic->canNotify()) {
+    if (buttonCharacteristic->canNotify()) {
         auto callback = [this](auto &&pH1, auto &&pH2, auto &&pH3, auto &&pH4) {
             buttonNotificationCallback(
                 std::forward<decltype(pH1)>(pH1), std::forward<decltype(pH2)>(pH2),
                 std::forward<decltype(pH3)>(pH3), std::forward<decltype(pH4)>(pH4));
         };
-        remoteCharacteristic->subscribe(true, callback);
+        buttonCharacteristic->subscribe(true, callback);
+    }
+
+    BLERemoteService *batteryService = client_->getService(TURNTOUCH_BATTERY_SVC_ID);
+    if (buttonService == nullptr) {
+        log_e("Failed to find TurnTouch battery service ID.");
+    }
+
+    BLERemoteCharacteristic *batteryCharacteristic =
+        batteryService->getCharacteristic(TURNTOUCH_BATTERY_CHR_ID);
+    if (batteryCharacteristic == nullptr) {
+        log_e("Failed to find TurnTouch battery characteristic UUID.");
+    }
+
+    uint8_t battery = 0;
+    if (batteryCharacteristic->canRead()) {
+        battery = batteryCharacteristic->readValue<uint8_t>();
     }
 
     // Save the id of this turn touch for future connection attempts, but only
@@ -68,7 +84,8 @@ auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice *device) -> bool {
         this->prefs_.pairedTurnTouchAddress.set(device->getAddress());
     }
 
-    log_d("Connected to TurnTouch %s", device->getAddress().toString().c_str());
+    log_i("Connected to TurnTouch %s (battery: %d%%)", device->getAddress().toString().c_str(),
+          battery);
 
     return true;
 }
