@@ -269,10 +269,6 @@ auto DisplaySystem::getTextWidth(const char *buffer) -> int {
     return w;
 }
 
-void DisplaySystem::renderTextWithoutBox(const std::string &text) {
-    drawText(text, 0, getTextHeight(), width(), height());
-}
-
 void DisplaySystem::renderTextWithoutBox(const std::string &text, bool centerHorizontally,
                                          bool centerVertically) {
 

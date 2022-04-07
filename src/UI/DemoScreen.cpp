@@ -8,8 +8,6 @@
 #include "UI/Fonts/Tahoma9pt7b.h"
 #include "sindarin-debug.h"
 
-#define OFFSET_ADJUST_AMOUNT 3
-
 DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power)
     : display_(display), renderer_(display), prefs_(prefs), power_(power) {}
 
@@ -39,7 +37,9 @@ void DemoScreen::render(DisplaySystem &display) {
         display.setFont(&TAHOMA_REGULAR_FONT5PT7B);
         break;
     }
-    renderer_.setStream(stream, true, true);
+    renderer_.setStream(stream);
+    renderer_.setHorizontalCenter(true);
+    renderer_.setVerticalCenter(true);
 
     this->renderer_.renderPage(0);
 

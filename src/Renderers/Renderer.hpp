@@ -15,12 +15,8 @@ public:
     Renderer(DisplaySystem &display);
 
     void setStream(RendererStream *stream) { stream_ = stream; }
-
-    void setStream(RendererStream *stream, bool verticalCenter, bool horizontalCenter) {
-        verticalCenter_ = verticalCenter;
-        horizontalCenter_ = horizontalCenter;
-        stream_ = stream;
-    }
+    void setVerticalCenter(bool verticalCenter) { verticalCenter_ = verticalCenter; }
+    void setHorizontalCenter(bool horizontalCenter) { horizontalCenter_ = horizontalCenter; }
 
     auto getPreviousPlace() -> unsigned long { return previousPlace_; }
     auto getCurrentPlace() -> unsigned long { return currentPlace_; }

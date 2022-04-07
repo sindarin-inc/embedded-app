@@ -434,15 +434,12 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
     }));
 
     settingsMenu->addMenuItem(MenuItem("Demo Screen", [this, settingsMenu, display]() {
-        log_d("Loading demo screen");
         auto demoScreen = new DemoScreen(*display, prefs_, this->power_);
         this->setCurrentScreen(*demoScreen);
-        log_d("setting up callback");
         demoScreen->backCallback = [this, demoScreen, settingsMenu]() {
             setCurrentScreen(*settingsMenu);
             delete demoScreen;
         };
-        log_d("set up callback");
     }));
 
     settingsMenu->addMenuItem(MenuItem("Test Bitmap Screen", [this, display, settingsMenu]() {
@@ -474,8 +471,17 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
         setCurrentScreen(*settingsMenu);
     }));
 
-    // Check if we left-off on a readable and if so, reload that readable by default
-    if (currentReadable.has_value()) {
+    inDemo = prefs_.demoMode.get().value();
+
+    if (inDemo) {
+        auto demoScreen = new DemoScreen(*display, prefs_, this->power_);
+        demoScreen->backCallback = [this, demoScreen, mainMenu]() {
+            setCurrentScreen(*mainMenu);
+            delete demoScreen;
+        };
+        this->setCurrentScreen(*demoScreen);
+    } else if (currentReadable.has_value()) {
+        // Check if we left-off on a readable and if so, reload that readable by default
         log_d("Attempting to find readable: %s", currentReadable.value().c_str());
         // If we previously had a readable loaded, show that same readable by default
         auto it =
@@ -492,9 +498,12 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
         }
     }
 
-    // By default, if we don't already have a different first screen ready, show the calibration
-    // screen
+    // This still has to be this way rather than else if because the currentReadable.has_value()
+    // Could return true but if we don't find that readable, no screen will be set. I asssume this
+    // would happen if the FS is updated underneath us to remove that readable.
     if (this->currentScreen_ == nullptr) {
+        // By default, if we don't already have a different first screen ready, show the calibration
+        // screen
         auto calibrationScreen = new LogoScreen();
         calibrationScreen->backCallback = [this, calibrationScreen, display, mainMenu]() {
             display->clearScreen();
@@ -517,16 +526,6 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
 
     // If we are in demo mode, overright whatever the current screen would have been
     // with the demo code and set the back callback to mainMenu.
-    inDemo = prefs_.demoMode.get().value();
-
-    if (inDemo) {
-        auto demoScreen = new DemoScreen(*display, prefs_, this->power_);
-        demoScreen->backCallback = [this, demoScreen, mainMenu]() {
-            setCurrentScreen(*mainMenu);
-            delete demoScreen;
-        };
-        this->setCurrentScreen(*demoScreen);
-    }
 
     SHOW_HEAP();
 }
