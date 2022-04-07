@@ -502,25 +502,24 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
     // Could return true but if we don't find that readable, no screen will be set. I asssume this
     // would happen if the FS is updated underneath us to remove that readable.
     if (this->currentScreen_ == nullptr) {
-        // By default, if we don't already have a different first screen ready, show the calibration
-        // screen
-        auto calibrationScreen = new LogoScreen();
-        calibrationScreen->backCallback = [this, calibrationScreen, display, mainMenu]() {
-            display->clearScreen();
-            delay(100);
-
-            setCurrentScreen(*mainMenu);
-            delete calibrationScreen;
-        };
-
         // If we've already connected to an input device, go straight
         // to the main menu. We will clean this up a bit moving forward
         // but for now it makes it clear when it's connected and when it
         // hasn't on boot.
         if (!inputConnected) {
+            // By default, if we don't already have a different first screen ready, show the
+            // calibration
+            // screen
+            auto calibrationScreen = new LogoScreen();
+            calibrationScreen->backCallback = [this, calibrationScreen, display, mainMenu]() {
+                display->clearScreen();
+                delay(100);
+
+                setCurrentScreen(*mainMenu);
+                delete calibrationScreen;
+            };
             setCurrentScreen(*calibrationScreen);
         } else {
-            delete calibrationScreen;
             setCurrentScreen(*mainMenu);
         }
     }
