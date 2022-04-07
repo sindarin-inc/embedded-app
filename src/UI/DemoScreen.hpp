@@ -24,8 +24,8 @@ public:
     void processCommand(RemoteCommand command) override;
 
 protected:
-    std::string messages_[NUM_DEMO_SCREENS] = {DEMO_SCREEN_1, DEMO_SCREEN_2, DEMO_SCREEN_3,
-                                               DEMO_SCREEN_4, DEMO_SCREEN_5};
+    std::array<std::string, NUM_DEMO_SCREENS> messages_ = {
+        DEMO_SCREEN_1, DEMO_SCREEN_2, DEMO_SCREEN_3, DEMO_SCREEN_4, DEMO_SCREEN_5};
     DisplaySystem &display_;
     Renderer renderer_;
     PreferencesStore &prefs_;

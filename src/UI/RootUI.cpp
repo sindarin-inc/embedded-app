@@ -520,6 +520,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
         if (!inputConnected) {
             setCurrentScreen(*calibrationScreen);
         } else {
+            delete calibrationScreen;
             setCurrentScreen(*mainMenu);
         }
     }
