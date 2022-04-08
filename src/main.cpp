@@ -34,11 +34,6 @@ DisplayWroverLcd myDisplay;
 
 PreferencesStore prefs;
 
-#if USE_IR_REMOTE
-#include "Inputs/IRRemoteInput.hpp"
-IRRemoteInput *ir_remote_input;
-#endif
-
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS
 #include "Communications/BLESindarinService.hpp"
 BLESindarinService bleSindarinService;
@@ -92,10 +87,6 @@ void RemoteLoop(void *parameter) {
     for (;;) {
         // Always have to do a check press and check release. In this case, we don't care about
         // press.
-#if USE_IR_REMOTE
-        ir_remote_input->check_press();
-#endif
-
 #if USE_BLE_SERVER_REMOTE
         bleRemoteInput->checkPress();
 #endif
@@ -109,12 +100,6 @@ void RemoteLoop(void *parameter) {
         // Note that if an IR input comes in and then a BLE input comes at the same time,
         // it may only get one of them. This seems unlikely.
         RemoteCommand codeFromRelease = RemoteCommand::NONE;
-
-#if USE_IR_REMOTE
-        if (ir_remote_input->check_release()) {
-            code_from_release = ir_remote_input->get_code();
-        }
-#endif
 
 #if USE_BLE_SERVER_REMOTE
         if (bleRemoteInput->checkRelease()) {
@@ -252,12 +237,6 @@ void setup() {
     myDisplay.setLineSpacing(prefs.lineSpacing.get().value());
 
     SIZE_OF(myDisplay);
-
-#if USE_IR_REMOTE
-    ir_remote_input = new IRRemoteInput();
-    SIZE_OF(*ir_remote_input);
-    ir_remote_input->start_remote(IR_REMOTE_INPUT_PIN);
-#endif
 
 #if USE_BLE
     BLEDevice::init("Sindarin");

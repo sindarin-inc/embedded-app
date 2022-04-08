@@ -33,10 +33,6 @@
     (USE_TURN_TOUCH_REMOTE || USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS ||                  \
      USE_BLE_SERVER_IMPROV)
 
-// #define USE_IR_REMOTE
-
-#define IR_REMOTE_INPUT_PIN 12
-
 #ifndef DISABLE_WIFI
 #define DISABLE_WIFI 0
 #endif
