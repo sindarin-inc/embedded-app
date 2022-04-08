@@ -11,3 +11,5 @@ void esp_restart(){};
 void digitalWrite(int, int){};
 
 unsigned long millis() { return SDL_GetTicks(); }
+
+void initArduino() {}

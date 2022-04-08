@@ -35,6 +35,3 @@ auto CodeToString(RemoteCommand code) -> const char * {
     }
     return "Unknown";
 }
-
-// Returns the IR code of the last button pressed or released
-auto RemoteInput::getCode() -> RemoteCommand { return lastCode_; }

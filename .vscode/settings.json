@@ -85,7 +85,9 @@
         "thread": "cpp",
         "compare": "cpp",
         "concepts": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "codecvt": "cpp",
+        "future": "cpp"
     },
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "xaver.clang-format",

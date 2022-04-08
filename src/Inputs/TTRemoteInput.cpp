@@ -8,10 +8,6 @@
 
 using namespace std::placeholders;
 
-void TTRemoteInput::startRemote(int receivePinInput) { assert(0); }
-
-void TTRemoteInput::startRemote() {}
-
 auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice *device) -> bool {
     if (client_ == nullptr) {
         log_d("Creating Turn Touch client");
@@ -31,7 +27,6 @@ auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice *device) -> bool {
     BLERemoteService *buttonService = client_->getService(TURNTOUCH_BUTTON_SVC_UUID);
     if (buttonService == nullptr) {
         log_e("Failed to find TurnTouch button service UUID.");
-        client_->disconnect();
         return false;
     }
     log_d("TurnTouch service found.");
@@ -41,7 +36,6 @@ auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice *device) -> bool {
         buttonService->getCharacteristic(TURNTOUCH_BUTTON_CHR_UUID);
     if (buttonCharacteristic == nullptr) {
         log_e("Failed to find TurnTouch button characteristic UUID.");
-        client_->disconnect();
         return false;
     }
     log_d("BLE characteristic found");
@@ -62,14 +56,16 @@ auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice *device) -> bool {
     }
 
     BLERemoteService *batteryService = client_->getService(TURNTOUCH_BATTERY_SVC_ID);
-    if (buttonService == nullptr) {
+    if (batteryService == nullptr) {
         log_e("Failed to find TurnTouch battery service ID.");
+        return false;
     }
 
     BLERemoteCharacteristic *batteryCharacteristic =
         batteryService->getCharacteristic(TURNTOUCH_BATTERY_CHR_ID);
     if (batteryCharacteristic == nullptr) {
         log_e("Failed to find TurnTouch battery characteristic UUID.");
+        return false;
     }
 
     uint8_t battery = 0;
@@ -80,8 +76,8 @@ auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice *device) -> bool {
     // Save the id of this turn touch for future connection attempts, but only
     // if it wasn't set already. Strange behavior where connecting to it after
     // a disconnect sometimes garbles the device->getAddress. For further exploration.
-    if (!this->prefs_.pairedTurnTouchAddress.get().has_value()) {
-        this->prefs_.pairedTurnTouchAddress.set(device->getAddress());
+    if (!prefs_.pairedTurnTouchAddress.get().has_value()) {
+        prefs_.pairedTurnTouchAddress.set(device->getAddress());
     }
 
     log_i("Connected to TurnTouch %s (battery: %d%%)", device->getAddress().toString().c_str(),
@@ -90,9 +86,21 @@ auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice *device) -> bool {
     return true;
 }
 
-void TTRemoteInput::doneScanning(const NimBLEScanResults &results) {
-    log_d("TurnTouch scan completed.");
-    this->lastScanMs_ = millis();
+void TTRemoteInput::connectTask(void *params) {
+    auto *tThis = (TTRemoteInput *)params;
+    if (tThis->connectToDevice(tThis->turntouchDevice_)) {
+        // Output a metric log on the very first TT connection
+        static bool sFirstConnection = true;
+        if (sFirstConnection) {
+            log_i("First TT connection in %.0f ms", esp_timer_get_time() / 1000.0f);
+            sFirstConnection = false;
+        }
+    } else {
+        tThis->client_->disconnect();
+        tThis->state_ = SCANNING;
+    }
+
+    vTaskDelete(nullptr);
 }
 
 void TTRemoteInput::scanForDevice() {
@@ -107,12 +115,15 @@ void TTRemoteInput::scanForDevice() {
     }
     BLEScan *scan = BLEDevice::getScan();
     scan->setAdvertisedDeviceCallbacks(new AdvertisedDeviceCallbacks(this));
+    // See: https://electronics.stackexchange.com/a/359158/16459
+    // Only one advertising channel is being looked at during each
+    // scanInterval and is rotated to the next of 3 channels with each interval. So if there is
+    // RF interference on that channel you might not see the device even if you have the
+    // scanWindow equal to the scanInterval in order to do continuous scanning.
     scan->setInterval(1349);
     scan->setWindow(449);
     scan->setActiveScan(true);
-    // TODO: It'd be nice to use the non-blocking call here, but that doesn't take a std::function
-    // so passing in a callback with access to `this` is a little clunky
-    scan->start(10, nullptr, false);
+    scan->start(3, nullptr, false);
     lastScanMs_ = millis();
     digitalWrite(RED_LED, LOW);
 }
@@ -133,73 +144,61 @@ void TTRemoteInput::buttonNotificationCallback(BLERemoteCharacteristic *remoteCh
         log_v("Turntouch sent code NONE, bailing early");
         return;
     }
+    RemoteCommand command = RemoteCommand::NONE;
     switch (processed) {
     case TT_N_PRESS:
     case TT_N_DOUBLE:
     case TT_N_HOLD:
-        bleCode_ = PREV;
+        command = PREV;
         break;
     case TT_S_PRESS:
     case TT_S_DOUBLE:
-        bleCode_ = NEXT;
+        command = NEXT;
         break;
     case TT_S_HOLD:
-        bleCode_ = STOP;
+        command = STOP;
         break;
     case TT_W_PRESS:
-        bleCode_ = CHANNEL_MINUS;
+        command = CHANNEL_MINUS;
         break;
     case TT_W_HOLD:
-        bleCode_ = BACK;
+        command = BACK;
         break;
     case TT_E_PRESS:
-        bleCode_ = CHANNEL_PLUS;
+        command = CHANNEL_PLUS;
         break;
     case TT_MULTI_N_S:
-        bleCode_ = SETUP;
+        command = SETUP;
         break;
     case TT_MULTI_E_W:
-        bleCode_ = ENTER;
+        command = ENTER;
         break;
     case TT_MULTI_E_N_W:
-        bleCode_ = FACTORY_DEFAULTS;
+        command = FACTORY_DEFAULTS;
         break;
     // Be careful with the double press codes, since you also get two single press commands
     // immediately before
     case TT_W_DOUBLE:
     case TT_E_DOUBLE:
     case TT_E_HOLD:
-        bleCode_ = NONE;
+        command = NONE;
         break;
     default:
         log_w("Invalid code processed from Turntouch: %X", processed);
         break;
     }
-    wasCodeProcessed_ = 0;
+
+    if (command != RemoteCommand::NONE) {
+        this->callback_(command);
+    }
 }
 
-auto TTRemoteInput::checkPress() -> int {
-    // This isn't the best place for all of this, but since we have a contract with clients
-    // that they have to check_presses, this is a reasonable spot to do this work.
-    if (!deviceConnected_ && turntouchDevice_ != nullptr) {
-        // TurnTouch has been found during scanning, attempt connection
-        deviceConnected_ = connectToDevice(turntouchDevice_);
-    } else if (!deviceConnected_ && !BLEDevice::getScan()->isScanning() &&
-               millis() > (lastScanMs_ + RESCAN_INTERVAL_MS)) {
+void TTRemoteInput::connect() {
+    if (state_ == SCANNING && !BLEDevice::getScan()->isScanning() &&
+        (lastScanMs_ == 0 || millis() > (lastScanMs_ + RESCAN_INTERVAL_MS))) {
+        lastScanMs_ = millis();
         scanForDevice();
     }
-    return 0;
-}
-
-auto TTRemoteInput::checkRelease() -> int {
-    int foundRelease = 0;
-    if (!wasCodeProcessed_) {
-        wasCodeProcessed_ = 1;
-        lastCode_ = (RemoteCommand)bleCode_;
-        foundRelease = 1;
-        log_d("TurnTouch code: %s", CodeToString(lastCode_));
-    }
-    return foundRelease;
 }
 
 #endif

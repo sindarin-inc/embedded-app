@@ -46,6 +46,7 @@ flags = [
     "-DENABLE_POCKET=1",
     "-DEINKET013TT1=0",
     "-lSDL2_image",
+    "-Isrc",
     lib_includes,
 ]
 

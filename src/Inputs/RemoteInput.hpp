@@ -1,6 +1,9 @@
 #ifndef RemoteInput_H
 #define RemoteInput_H
 
+#include <functional>
+#include <utility>
+
 enum RemoteCommand : int {
     VOL_DOWN = 0x0,
     PLAY = 0x1,
@@ -28,14 +31,12 @@ auto CodeToString(RemoteCommand code) -> const char *;
 class RemoteInput {
 
 public:
-    virtual void startRemote() = 0;
-    virtual void startRemote(int data) = 0;
-    virtual auto checkPress() -> int = 0;
-    virtual auto checkRelease() -> int = 0;
-    auto getCode() -> RemoteCommand;
+    auto setCallback(std::function<void(RemoteCommand)> callback) -> void {
+        callback_ = std::move(callback);
+    }
 
 protected:
-    RemoteCommand lastCode_ = RemoteCommand::NONE;
+    std::function<void(RemoteCommand)> callback_;
 };
 
 #endif

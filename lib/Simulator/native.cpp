@@ -6,31 +6,17 @@
 #include <iostream>
 #include <unistd.h>
 
-extern void setup();            // NOLINT(readability-identifier-naming)
-extern void loop();             // NOLINT(readability-identifier-naming)
-extern int SimulatorRemoteCode; // NOLINT(readability-identifier-naming)
+#include "Inputs/RemoteInput.hpp"
+
+// It will be cleaner to adopt the FreeRTOS POSIX port since then we don't have to work around
+// the multitasking architecture
+// https://www.freertos.org/FreeRTOS-simulator-for-Linux.html
+extern void UIInnerLoop(RemoteCommand command); // NOLINT(readability-identifier-naming)
+extern "C" void app_main(void);                 // NOLINT(readability-identifier-naming)
 
 #define SCALE 2
 #define WIDTH 256
 #define HEIGHT 256
-
-// TODO: It'd be nice to not duplicate this
-enum RemoteCommand : int {
-    VOL_DOWN = 0x0,
-    PLAY = 0x1,
-    VOL_UP = 0x2,
-    SETUP = 0x4,
-    PREV = 0x5,
-    STOP = 0x6,
-    CHANNEL_MINUS = 0x8,
-    ENTER = 0x9,
-    CHANNEL_PLUS = 0xA,
-    NOP_BUTTON = 0xC,
-    NEXT = 0xD,
-    BACK = 0xE,
-    FACTORY_DEFAULTS = 0xFF,
-    NONE = -1,
-};
 
 SDL_Renderer *renderer;
 
@@ -73,7 +59,9 @@ auto main(int argc, char *argv[]) -> int {
         return 1;
     }
 
-    setup();
+    app_main();
+    // Run the loop once to render the screen
+    UIInnerLoop(RemoteCommand::NONE);
 
     SDL_Event e;
     bool quit = false;
@@ -83,33 +71,36 @@ auto main(int argc, char *argv[]) -> int {
                 quit = true;
             }
             if (e.type == SDL_KEYDOWN) {
+                RemoteCommand remoteCode = RemoteCommand::NONE;
                 switch (e.key.keysym.sym) {
                 case SDLK_UP:
-                    SimulatorRemoteCode = PREV;
+                    remoteCode = RemoteCommand::PREV;
                     break;
                 case SDLK_DOWN:
-                    SimulatorRemoteCode = NEXT;
+                    remoteCode = RemoteCommand::NEXT;
                     break;
                 case SDLK_LEFT:
-                    SimulatorRemoteCode = CHANNEL_MINUS;
+                    remoteCode = RemoteCommand::CHANNEL_MINUS;
                     break;
                 case SDLK_RIGHT:
-                    SimulatorRemoteCode = CHANNEL_PLUS;
+                    remoteCode = RemoteCommand::CHANNEL_PLUS;
                     break;
                 case SDLK_ESCAPE:
-                    SimulatorRemoteCode = BACK;
+                    remoteCode = RemoteCommand::BACK;
                     break;
                 case SDLK_RETURN:
-                    SimulatorRemoteCode = ENTER;
+                    remoteCode = RemoteCommand::ENTER;
                     break;
                 case 'p':
                     saveScreenshotPng("./screenshot.png", window, renderer);
                     break;
                 }
+                if (remoteCode != RemoteCommand::NONE) {
+                    UIInnerLoop(remoteCode);
+                }
             }
         }
 
-        loop();
         // Limit to ~60fps so we don't murder battery unnecessarily
         usleep(1000000.0 / 60.0);
     }

@@ -288,7 +288,6 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
             // the original driver for now.
             borderSettings[1] = borderBits | borderBits << 2 | borderBits << 4 | borderBits << 6;
         }
-
         portDISABLE_INTERRUPTS();
 
         // For each horizontal half-line

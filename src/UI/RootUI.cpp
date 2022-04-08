@@ -40,7 +40,7 @@
 
 #define LAST_READABLE_ID "rui-readable"
 
-void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, bool inputConnected,
+void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
                    FileSystem &fileSystem) {
     SHOW_HEAP();
 
@@ -506,22 +506,19 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables, boo
         // to the main menu. We will clean this up a bit moving forward
         // but for now it makes it clear when it's connected and when it
         // hasn't on boot.
-        if (!inputConnected) {
-            // By default, if we don't already have a different first screen ready, show the
-            // calibration
-            // screen
-            auto calibrationScreen = new LogoScreen();
-            calibrationScreen->backCallback = [this, calibrationScreen, display, mainMenu]() {
-                display->clearScreen();
-                delay(100);
 
-                setCurrentScreen(*mainMenu);
-                delete calibrationScreen;
-            };
-            setCurrentScreen(*calibrationScreen);
-        } else {
+        // By default, if we don't already have a different first screen ready, show the
+        // calibration
+        // screen
+        auto calibrationScreen = new LogoScreen();
+        calibrationScreen->backCallback = [this, calibrationScreen, display, mainMenu]() {
+            display->clearScreen();
+            delay(100);
+
             setCurrentScreen(*mainMenu);
-        }
+            delete calibrationScreen;
+        };
+        setCurrentScreen(*calibrationScreen);
     }
 
     // If we are in demo mode, overright whatever the current screen would have been

@@ -13,24 +13,4 @@ void BLERemoteInput::configureCharacteristics(BLEService *service) {
     characteristic->setValue("Hello World");
 }
 
-void BLERemoteInput::startRemote(int receivePinInput) {
-    log_e("FAIL DUE TO BLE CONSTUCTOR NOT NEEDING THIS ONE");
-    assert(0);
-}
-
-void BLERemoteInput::startRemote() {}
-
-auto BLERemoteInput::checkPress() -> int { return 0; }
-
-auto BLERemoteInput::checkRelease() -> int {
-    int foundRelease = 0;
-    if (!wasCodeProcessed_) {
-        wasCodeProcessed_ = 1;
-        lastCode_ = (RemoteCommand)bleCode_;
-        foundRelease = 1;
-        log_d("Got a BLE code: %s", CodeToString(lastCode_));
-    }
-    return foundRelease;
-}
-
 #endif

@@ -8,7 +8,7 @@
 #include "Storage/PreferencesStore.hpp"
 #include "sindarin-debug.h"
 
-#define RESCAN_INTERVAL_MS 2000
+#define RESCAN_INTERVAL_MS 5000
 // See also: https://shop.turntouch.com/pages/open-source
 #define TURNTOUCH_BUTTON_SVC_ID "1523"
 #define TURNTOUCH_BUTTON_SVC_UUID "99c31523-dc4f-41b1-bb04-4e4deb81fadd"
@@ -35,30 +35,32 @@
 #define TT_MULTI_S_E_N 0xF200
 #define TT_MULTI_W_S_E 0xF100
 #define TT_MULTI_E_N_W_S 0xF000
-class TTRemoteInput : public RemoteInput {
 
+class TTRemoteInput : public RemoteInput {
 public:
-    TTRemoteInput(PreferencesStore &prefs) noexcept : RemoteInput(), prefs_(prefs){};
-    void startRemote(int receivePinInput) override;
-    void startRemote() override;
-    auto checkPress() -> int override;
-    auto checkRelease() -> int override;
-    void buttonNotificationCallback(BLERemoteCharacteristic *remoteCharacteristic, uint8_t *data,
-                                    size_t length, bool isNotify);
-    auto isDeviceConnected() -> bool { return deviceConnected_; }
+    TTRemoteInput(PreferencesStore &prefs) noexcept : prefs_(prefs){};
+
+    // Connect to the TurnTouch. Can be safely called even if the TurnTouch is already connected.
+    void connect();
 
 protected:
-    void doneScanning(const NimBLEScanResults &results);
+    enum State {
+        SCANNING,
+        CONNECTING,
+        CONNECTED,
+    };
+
+    void buttonNotificationCallback(BLERemoteCharacteristic *remoteCharacteristic, uint8_t *data,
+                                    size_t length, bool isNotify);
 
     PreferencesStore &prefs_;
+    State state_ = SCANNING;
     BLEAdvertisedDevice *turntouchDevice_ = nullptr;
-    bool deviceConnected_ = false;
-    int wasCodeProcessed_ = 1;
-    RemoteCommand bleCode_ = RemoteCommand::NONE;
     long lastScanMs_ = 0;
     BLEClient *client_ = nullptr;
 
     auto connectToDevice(BLEAdvertisedDevice *device) -> bool;
+    static void connectTask(void *params);
     void scanForDevice();
 
     class AdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
@@ -83,13 +85,17 @@ protected:
                 if ((address.has_value() && address.value() == advertisedDevice->getAddress()) ||
                     (!address.has_value() &&
                      advertisedDevice->isAdvertisingService(BLEUUID(TURNTOUCH_BUTTON_SVC_ID)))) {
+                    enclosed->state_ = CONNECTING;
                     BLEDevice::getScan()->stop();
-                    log_i("%s TurnTouch device found; queueing for connect...",
-                          address.has_value() ? "Paired" : "New");
                     if (enclosed->turntouchDevice_ != nullptr) {
                         delete enclosed->turntouchDevice_;
                     }
                     enclosed->turntouchDevice_ = new BLEAdvertisedDevice(*advertisedDevice);
+                    log_i("%s TurnTouch device found; queueing for connect...",
+                          address.has_value() ? "Paired" : "New");
+                    // Fire off a high-ish priority temporary task to connect the TT
+                    xTaskCreatePinnedToCore(this->enclosed->connectTask, "TTConnect", 10000,
+                                            this->enclosed, 2, nullptr, 0);
                 }
             }
         }
@@ -101,11 +107,14 @@ protected:
 
         ClientCallbacks(TTRemoteInput *enclosure) { enclosed = enclosure; }
 
-        void onConnect(BLEClient *client) override { log_d("BLE TurnTouch client connected!"); }
+        void onConnect(BLEClient *client) override {
+            log_d("BLE TurnTouch client connected!");
+            enclosed->state_ = CONNECTED;
+        }
 
         void onDisconnect(BLEClient *client) override {
             log_i("BLE TurnTouch client disconnected!");
-            enclosed->deviceConnected_ = false;
+            enclosed->state_ = SCANNING;
             if (enclosed->turntouchDevice_ != nullptr) {
                 delete enclosed->turntouchDevice_;
                 enclosed->turntouchDevice_ = nullptr;

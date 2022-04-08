@@ -41,7 +41,7 @@ BLESindarinService bleSindarinService;
 
 #if USE_BLE_SERVER_REMOTE
 #include "Inputs/BLERemoteInput.hpp"
-BLERemoteInput *bleRemoteInput;
+BLERemoteInput bleRemoteInput;
 #endif
 
 #if USE_BLE_SERVER_SETTINGS
@@ -57,11 +57,6 @@ BLEImprov *bleWifi;
 #if USE_TURN_TOUCH_REMOTE
 #include "Inputs/TTRemoteInput.hpp"
 TTRemoteInput ttRemoteInput(prefs);
-#endif
-
-#if SIMULATOR
-#include "Inputs/SimulatorRemoteInput.hpp"
-SimulatorRemoteInput simulatorRemoteInput;
 #endif
 
 #if ENABLE_OTA
@@ -83,43 +78,22 @@ SpiffsFileSystem fileSystem;
 #if !SIMULATOR
 QueueHandle_t remoteQueue = nullptr;
 
-void RemoteLoop(void *parameter) {
+// Resonsible for handling connecting / reconnecting to remotes
+void RadioTask(void *parameter) {
     for (;;) {
-        // Always have to do a check press and check release. In this case, we don't care about
-        // press.
-#if USE_BLE_SERVER_REMOTE
-        bleRemoteInput->checkPress();
-#endif
-
 #if USE_TURN_TOUCH_REMOTE
-        // This will start a scan if one is not already in progress.
-        ttRemoteInput.checkPress();
+        ttRemoteInput.connect();
 #endif
 
-        // We could do this better by iterating, but fine for now with only a few input devices.
-        // Note that if an IR input comes in and then a BLE input comes at the same time,
-        // it may only get one of them. This seems unlikely.
-        RemoteCommand codeFromRelease = RemoteCommand::NONE;
-
-#if USE_BLE_SERVER_REMOTE
-        if (bleRemoteInput->checkRelease()) {
-            codeFromRelease = bleRemoteInput->getCode();
-        }
+#if USE_BLE_SERVER_REMOTE && !DISABLE_WIFI
+        bleWifi->loop();
 #endif
 
-#if USE_TURN_TOUCH_REMOTE
-        if (ttRemoteInput.checkRelease()) {
-            codeFromRelease = ttRemoteInput.getCode();
-        }
+#if ENABLE_OTA
+        ota.loop();
 #endif
 
-        if (codeFromRelease != RemoteCommand::NONE) {
-            xQueueSend(remoteQueue, (void *)&codeFromRelease, (TickType_t)0);
-        }
-
-        // TODO: Is there a way to idle until the exact moment we get a BT message for maximum
-        // responsiveness?
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
     vTaskDelete(nullptr);
 }
@@ -129,7 +103,7 @@ void RemoteLoop(void *parameter) {
 static DRAM_ATTR esp_pm_lock_handle_t StatsLock;
 #endif
 
-void StatsLoop(void *parameter) {
+void StatsTask(void *parameter) {
 #if !SIMULATOR
 
 #if !DISABLE_POWER_MANAGEMENT
@@ -138,19 +112,46 @@ void StatsLoop(void *parameter) {
 
     for (;;) {
         // Spit out data on locks every 10s
-        vTaskDelay(10000 / portTICK_PERIOD_MS);
+        vTaskDelay(30000 / portTICK_PERIOD_MS);
 #if !DISABLE_POWER_MANAGEMENT
         esp_pm_lock_acquire(StatsLock);
         esp_pm_dump_locks(stdout);
+        power.loop();
         uart_wait_tx_done(0, 100 / portTICK_PERIOD_MS);
         esp_pm_lock_release(StatsLock);
+
 #endif
     }
     vTaskDelete(nullptr);
 #endif
 }
 
+void UIInnerLoop(RemoteCommand command) { rootUi.loop(myDisplay, command); }
+
+#if !SIMULATOR
+TaskHandle_t uiTaskHandle = nullptr;
+
+void UITask(void *parameter) {
+    RemoteCommand command = RemoteCommand::NONE;
+    for (;;) {
+        UIInnerLoop(command);
+
+        // Sleep the thread until we're told to wake up because there's something in the queue
+        xTaskNotifyWait(0, 0, nullptr, portMAX_DELAY);
+        xQueueReceive(remoteQueue, &command, (TickType_t)(1000 / portTICK_PERIOD_MS));
+    }
+    vTaskDelete(nullptr);
+}
+#endif
+
+#if CONFIG_AUTOSTART_ARDUINO
+void loop() { vTaskDelay(portMAX_DELAY); };
 void setup() {
+#else
+extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
+    initArduino();
+#endif
+
     std::vector<BootError> bootErrors;
 
 #if BOARD_HAS_PSRAM
@@ -158,8 +159,6 @@ void setup() {
         bootErrors.push_back({.type = BootError::Type::ExternalRam});
     }
 #endif
-
-    bool inputDeviceConnected = false;
 
     InitializePlatform();
 
@@ -175,8 +174,8 @@ void setup() {
     SHOW_HEAP();
 
 #if EINKET013TT1
-    // Turn on power to the screen
 #ifdef DISPLAY_POWER
+    // Turn on power to the screen
     digitalWrite(DISPLAY_POWER, HIGH);
 #endif
     // If the saved prefs indicated a vcom, set it here.
@@ -249,6 +248,18 @@ void setup() {
     }
 #endif
 
+#if USE_TURN_TOUCH_REMOTE || USE_BLE_SERVER_REMOTE
+    auto remoteCallback = [](RemoteCommand command) {
+        xQueueSend(remoteQueue, (void *)&command, (TickType_t)0);
+        // Notify the UI thread that we have a new command
+        xTaskNotify(uiTaskHandle, 0, eNoAction);
+    };
+#endif
+
+#if USE_TURN_TOUCH_REMOTE
+    ttRemoteInput.setCallback(remoteCallback);
+#endif
+
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
     BLEManager *bleManager = BLEManager::getInstance();
 #endif
@@ -257,8 +268,8 @@ void setup() {
     auto sindarinService = bleSindarinService.configureService(bleManager->server());
 
 #if USE_BLE_SERVER_REMOTE
-    bleRemoteInput = new BLERemoteInput();
-    bleRemoteInput->configureCharacteristics(sindarinService);
+    bleRemoteInput.configureCharacteristics(sindarinService);
+    bleRemoteInput.setCallback(remoteCallback);
 #endif
 
 #if USE_BLE_SERVER_SETTINGS
@@ -327,7 +338,7 @@ void setup() {
 
     power.setup();
 
-    rootUi.setup(&myDisplay, *readables, inputDeviceConnected, fileSystem);
+    rootUi.setup(&myDisplay, *readables, fileSystem);
 
     SHOW_HEAP();
 
@@ -337,32 +348,8 @@ void setup() {
 
 #if !SIMULATOR
     remoteQueue = xQueueCreate(10, sizeof(RemoteCommand));
-    xTaskCreatePinnedToCore(RemoteLoop, "Remote", 5000, nullptr, 1, nullptr, 0);
-
-    xTaskCreatePinnedToCore(StatsLoop, "Stats", 5000, nullptr, 0, nullptr, 1);
+    xTaskCreatePinnedToCore(RadioTask, "Radio", 5000, nullptr, 1, nullptr, 0);
+    xTaskCreatePinnedToCore(UITask, "UI", 10000, nullptr, 10, &uiTaskHandle, 1);
+    xTaskCreatePinnedToCore(StatsTask, "Stats", 5000, nullptr, 0, nullptr, 1);
 #endif
-}
-
-void loop() {
-#if USE_BLE_SERVER_REMOTE && !DISABLE_WIFI
-    bleWifi->loop();
-#endif
-    RemoteCommand command = RemoteCommand::NONE;
-
-#if !SIMULATOR
-    // TODO: Does this allow sleep/idle to happen gracefully while waiting?
-    xQueueReceive(remoteQueue, &command, (TickType_t)(1000 / portTICK_PERIOD_MS));
-#else
-    if (simulatorRemoteInput.checkRelease()) {
-        command = simulatorRemoteInput.getCode();
-    }
-#endif
-
-    rootUi.loop(myDisplay, command);
-
-#if ENABLE_OTA
-    ota.loop();
-#endif
-
-    power.loop();
 }
