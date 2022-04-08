@@ -136,9 +136,16 @@ void UITask(void *parameter) {
     for (;;) {
         UIInnerLoop(command);
 
-        // Sleep the thread until we're told to wake up because there's something in the queue
-        xTaskNotifyWait(0, 0, nullptr, portMAX_DELAY);
-        xQueueReceive(remoteQueue, &command, (TickType_t)(1000 / portTICK_PERIOD_MS));
+        // Peek if there's anything remaining in the queue
+        if (xQueuePeek(remoteQueue, &command, 0) != pdTRUE) {
+            // If there's nothing in the queue, sleep the thread until we're told to wake up
+            // (probably because there's something in the queue)
+            xTaskNotifyWait(0, 0, nullptr, portMAX_DELAY);
+        }
+        if (xQueueReceive(remoteQueue, &command, 0) != pdTRUE) {
+            log_w("Checking the remoteQueue but nothing was there");
+            command = RemoteCommand::NONE;
+        }
     }
     vTaskDelete(nullptr);
 }
