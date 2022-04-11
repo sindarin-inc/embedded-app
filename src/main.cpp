@@ -315,7 +315,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 
 #if ENABLE_OTA
-    ota.setup();
+    // Disabling for now since WiFi coexistance is not working
+    // ota.setup();
 #endif
 #endif
 

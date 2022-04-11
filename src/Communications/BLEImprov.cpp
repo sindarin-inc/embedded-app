@@ -2,6 +2,8 @@
 
 #include "BLEImprov.hpp"
 
+#include <ArduinoOTA.h>
+
 #include "sindarin-debug.h"
 
 void BLEImprov::configureCharacteristics(BLEService *service) {
@@ -91,7 +93,10 @@ void BLEImprov::loop() {
         improv::ImprovCommand command = this->lastCommand_;
         log_d("Attempting connection to: %s Password: %s (WiFi status = %d)", command.ssid.c_str(),
               command.password.c_str(), WiFi.status());
+        WiFi.setHostname(HOSTNAME);
         WiFi.begin(command.ssid.c_str(), command.password.c_str());
+        ArduinoOTA.setHostname(HOSTNAME);
+        ArduinoOTA.begin();
         this->setState(STATE_CONNECTING);
         return;
     } else if (this->state_ == STATE_CONNECTING) {

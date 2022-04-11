@@ -8,6 +8,9 @@
 #include "config.h"
 
 auto ConnectWiFiIfCredentialsExist() -> bool {
+    // Disabling for now since WiFi coexistance is not working
+    return true;
+
     // If credentials are available, go ahead and attempt WiFi connection
     if (!WiFi.enableSTA(true)) {
         log_e("STA enable failed!");
@@ -36,6 +39,9 @@ auto ConnectWiFiIfCredentialsExist() -> bool {
 }
 
 void DisconnectWifi() {
+    // Disabling for now since WiFi coexistance is not working
+    return;
+
     log_i("Disconnecting WiFi");
     WiFi.setAutoReconnect(false);
     WiFi.disconnect();
