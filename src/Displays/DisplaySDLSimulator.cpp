@@ -4,8 +4,8 @@
 
 #include <SDL2/SDL.h>
 
-// TODO: Is there a better way to get the renderer here?
 extern SDL_Renderer *renderer;
+extern SDL_Texture *deviceScreen;
 
 DisplaySDLSimulator::DisplaySDLSimulator()
     : gfxCanvas_(DisplaySDL_X_PIXELS, DisplaySDL_Y_PIXELS), DisplaySystem() {
@@ -19,6 +19,7 @@ bool DisplaySDLSimulator::setup() {
 }
 
 void DisplaySDLSimulator::updateDisplay(DisplaySystem::UpdateType updateType) {
+    SDL_SetRenderTarget(renderer, deviceScreen);
     for (int x = 0; x < gfxCanvas_.width(); x++) {
         for (int y = 0; y < gfxCanvas_.height(); y++) {
             auto pixel = gfxCanvas_.getPixel(x, y);
@@ -33,7 +34,7 @@ void DisplaySDLSimulator::updateDisplay(DisplaySystem::UpdateType updateType) {
             SDL_RenderDrawPoint(renderer, x, y);
         }
     }
-    SDL_RenderPresent(renderer);
+    SDL_SetRenderTarget(renderer, NULL);
     fillScreen(bg);
 };
 

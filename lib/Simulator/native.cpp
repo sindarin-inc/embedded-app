@@ -19,29 +19,63 @@ extern "C" void app_main(void);                 // NOLINT(readability-identifier
 #define HEIGHT 256
 
 SDL_Renderer *renderer;
+// Texture on which to draw the UI from the firmware
+SDL_Texture *deviceScreen;
+bool needsRedraw = true;
+
+// Variables related to drawing the overlay
+SDL_Surface *arrow;
+SDL_Texture *arrowTexture;
+Uint8 arrowOpacity = 0;
+double arrowRotation = 0;
 
 bool saveScreenshotPng(std::string filepath, SDL_Window *window, SDL_Renderer *renderer) {
-    auto bytesPerPixel = 4;
-    auto pitch = WIDTH * SCALE * bytesPerPixel;
+    // 4 bytes per pixel
+    auto pitch = WIDTH * 4;
 
-    SDL_Surface *saveSurface =
-        SDL_CreateRGBSurface(0, WIDTH * SCALE, HEIGHT * SCALE, 32, 0, 0, 0, 0);
+    SDL_Surface *saveSurface = SDL_CreateRGBSurface(0, WIDTH, HEIGHT, 32, 0, 0, 0, 0);
     if (saveSurface == NULL) {
         std::cerr << "SDL_CreateRGBSurface error: " << SDL_GetError() << "\n";
         return false;
     }
-    // Seems like this reads from the back buffer (SDL is double buffered), so it gets the last
-    // image, not the current one :/
-    SDL_Rect rect = {.x = 0, .y = 0, .w = WIDTH * SCALE, .h = HEIGHT * SCALE};
+    SDL_Rect rect = {.x = 0, .y = 0, .w = WIDTH, .h = HEIGHT};
+    SDL_SetRenderTarget(renderer, deviceScreen);
     if (SDL_RenderReadPixels(renderer, &rect, 0, saveSurface->pixels, pitch) != 0) {
         std::cerr << "SDL_RenderReadPixels error: " << SDL_GetError() << "\n";
         return false;
     }
+    SDL_SetRenderTarget(renderer, NULL);
 
     IMG_SavePNG(saveSurface, filepath.c_str());
     SDL_FreeSurface(saveSurface);
 
     return true;
+}
+
+void drawOverlay(RemoteCommand command) {
+    if (command == RemoteCommand::PREV) {
+        arrowOpacity = SDL_MAX_UINT8;
+        arrowRotation = 90;
+    } else if (command == RemoteCommand::NEXT) {
+        arrowOpacity = SDL_MAX_UINT8;
+        arrowRotation = 270;
+    } else if (command == RemoteCommand::CHANNEL_MINUS) {
+        arrowOpacity = SDL_MAX_UINT8;
+        arrowRotation = 0;
+    } else if (command == RemoteCommand::CHANNEL_PLUS) {
+        arrowOpacity = SDL_MAX_UINT8;
+        arrowRotation = 180;
+    }
+    if (arrowOpacity > 0) {
+        arrowOpacity = std::max(arrowOpacity - 10, 0);
+        // The left arrow default position
+        SDL_Rect left = {.x = 5, .y = (HEIGHT - arrow->h) / 2, .w = arrow->w, .h = arrow->h};
+        // The center of the screen, relative to left arrow coordinates
+        SDL_Point center = {.x = WIDTH / 2 - left.x, .y = arrow->h / 2};
+        SDL_SetTextureAlphaMod(arrowTexture, arrowOpacity);
+        SDL_RenderCopyEx(renderer, arrowTexture, NULL, &left, arrowRotation, &center,
+                         SDL_FLIP_NONE);
+    }
 }
 
 auto main(int argc, char *argv[]) -> int {
@@ -52,12 +86,23 @@ auto main(int argc, char *argv[]) -> int {
 
     SDL_Window *window;
     SDL_CreateWindowAndRenderer(WIDTH * SCALE, WIDTH * SCALE, 0, &window, &renderer);
-    SDL_RenderSetScale(renderer, SCALE, SCALE);
-
     if (renderer == NULL) {
         fprintf(stderr, "Could not create renderer: %s\n", SDL_GetError());
         return 1;
     }
+
+    deviceScreen = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
+                                     WIDTH, HEIGHT);
+    SDL_RenderSetScale(renderer, SCALE, SCALE);
+
+    IMG_Init(IMG_INIT_PNG);
+    arrow = IMG_Load("lib/Simulator/arrow.png");
+    if (arrow == NULL) {
+        fprintf(stderr, "Could not find arrow asset: %s\n", SDL_GetError());
+        return 1;
+    }
+    arrowTexture = SDL_CreateTextureFromSurface(renderer, arrow);
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
     app_main();
     // Run the loop once to render the screen
@@ -66,12 +111,11 @@ auto main(int argc, char *argv[]) -> int {
     SDL_Event e;
     bool quit = false;
     while (!quit) {
+        RemoteCommand remoteCode = RemoteCommand::NONE;
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) {
                 quit = true;
-            }
-            if (e.type == SDL_KEYDOWN) {
-                RemoteCommand remoteCode = RemoteCommand::NONE;
+            } else if (e.type == SDL_KEYDOWN) {
                 switch (e.key.keysym.sym) {
                 case SDLK_UP:
                     remoteCode = RemoteCommand::PREV;
@@ -97,8 +141,16 @@ auto main(int argc, char *argv[]) -> int {
                 }
                 if (remoteCode != RemoteCommand::NONE) {
                     UIInnerLoop(remoteCode);
+                    needsRedraw = true;
                 }
             }
+        }
+
+        if (needsRedraw || arrowOpacity > 0) {
+            SDL_SetRenderTarget(renderer, NULL);
+            SDL_RenderCopy(renderer, deviceScreen, NULL, NULL);
+            drawOverlay(remoteCode);
+            SDL_RenderPresent(renderer);
         }
 
         // Limit to ~60fps so we don't murder battery unnecessarily
