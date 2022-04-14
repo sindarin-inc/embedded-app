@@ -42,8 +42,8 @@ public:
 
     // Returns 1 if the selection was updated, 0 otherwise
     // Helps client to know if it needs to refresh (at beginning or end of menu)
-    virtual auto nextSelection() -> int;
-    virtual auto prevSelection() -> int;
+    virtual void nextSelection();
+    virtual void prevSelection();
 
     // Includes the name of the item and it's number preceding it for easy display
     // Offset by two spaces

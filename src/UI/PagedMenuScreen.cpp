@@ -100,20 +100,10 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     needsRerender = false;
 }
 
-// Returns 1 if the selection was updated, 0 otherwise
-auto PagedMenuScreen::nextSelection() -> int {
-    currSelection_ = (currSelection_ + 1) % numMenuItems_;
-    return numMenuItems_ > 1 ? 1 : 0;
-}
+void PagedMenuScreen::nextSelection() { currSelection_ = (currSelection_ + 1) % numMenuItems_; }
 
-// Returns 1 if the selection was updated, 0 otherwise
-auto PagedMenuScreen::prevSelection() -> int {
-    if (currSelection_ == 0) {
-        currSelection_ = numMenuItems_ - 1;
-    } else {
-        currSelection_ = (currSelection_ - 1) % numMenuItems_;
-    }
-    return numMenuItems_ > 1 ? 1 : 0;
+void PagedMenuScreen::prevSelection() {
+    currSelection_ = (currSelection_ + numMenuItems_ - 1) % numMenuItems_;
 }
 
 //
@@ -156,11 +146,13 @@ void PagedMenuScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::ENTER:
     case RemoteCommand::CHANNEL_PLUS:
-        needsRerender = nextSelection();
+        nextSelection();
+        needsRerender = true;
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::CHANNEL_MINUS:
-        needsRerender = prevSelection();
+        prevSelection();
+        needsRerender = true;
         break;
     default:
         break;

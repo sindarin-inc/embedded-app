@@ -22,33 +22,16 @@ auto MenuScreen::getCurrSelection() -> int { return currSelection_; }
 auto MenuScreen::getCurrItem() -> MenuItem { return menuItems_[currSelection_]; }
 
 // Returns 1 if the selection was updated, 0 otherwise
-auto MenuScreen::nextSelection() -> int {
-    int oldSel = currSelection_;
-    // Don't go further than the last item in the menu
-    currSelection_ = std::min(numMenuItems_ - 1, currSelection_ + 1);
-    auto diff = currSelection_ - oldSel;
-    if (diff) {
-        // Hit a page boundary -- update the page!
-        if (getCurrSelection() % NUM_LINES_PER_MENU_PAGE == 0) {
-            curMenuPage_++;
-        }
-    }
-    return diff;
+void MenuScreen::nextSelection() {
+    currSelection_ = (currSelection_ + 1) % numMenuItems_;
+    curMenuPage_ = currSelection_ / NUM_LINES_PER_MENU_PAGE;
 }
 
 // Returns 1 if the selection was updated, 0 otherwise
-auto MenuScreen::prevSelection() -> int {
-    int oldSel = currSelection_;
-    // Don't go before the first menu item
-    currSelection_ = std::max(0, (int)currSelection_ - 1);
-    auto diff = oldSel - currSelection_;
-    if (diff) {
-        // Hit a page boundary -- update the page!
-        if ((getCurrSelection() % NUM_LINES_PER_MENU_PAGE) == NUM_LINES_PER_MENU_PAGE - 1) {
-            curMenuPage_--;
-        }
-    };
-    return diff;
+void MenuScreen::prevSelection() {
+    // Wrap back around to the last item
+    currSelection_ = (currSelection_ + numMenuItems_ - 1) % numMenuItems_;
+    curMenuPage_ = currSelection_ / NUM_LINES_PER_MENU_PAGE;
 }
 
 // Includes the name of the item and it's number preceding it for easy display
@@ -115,10 +98,12 @@ void MenuScreen::render(DisplaySystem &display) {
 void MenuScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::PREV:
-        needsRerender = prevSelection();
+        prevSelection();
+        needsRerender = true;
         break;
     case RemoteCommand::NEXT:
-        needsRerender = nextSelection();
+        nextSelection();
+        needsRerender = true;
         break;
     case RemoteCommand::ENTER:
     case RemoteCommand::CHANNEL_PLUS:
