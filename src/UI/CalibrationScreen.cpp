@@ -4,8 +4,8 @@
 
 #define NUM_SPIKES 24
 
-void CalibrationScreen::drawSiemensStar(DisplaySystem &display, u_int32_t originX,
-                                        u_int32_t originY, u_int32_t radius) {
+void CalibrationScreen::drawSiemensStar(DisplaySystem &display, uint32_t originX, uint32_t originY,
+                                        uint32_t radius) {
     display.gfxClass()->fillRect(originX - radius, originY - radius, radius * 2, radius * 2,
                                  display.bg);
 

@@ -9,7 +9,7 @@
 #include "PosixFileImpl.hpp"
 
 void createPath(char *output, size_t outputSize, const std::string &path) {
-    getcwd(output, outputSize);
+    strncpy(output, ".", outputSize);
     strncat(output, path.c_str(), outputSize - 1);
 }
 

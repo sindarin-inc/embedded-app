@@ -51,7 +51,10 @@ flags = [
 ]
 
 if args.wasm:
-    flags += ["-sUSE_SDL=2"]
+    flags += [
+        "-sUSE_SDL=2",
+        "-sUSE_SDL_IMAGE=2",
+    ]
 else:
     # Native builds need to know how to find SDL2 and may need to set the correct architecture
     # Find SDL2

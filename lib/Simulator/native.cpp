@@ -1,5 +1,6 @@
-#if !defined(EMSCRIPTEN)
-
+#if defined(EMSCRIPTEN)
+#include <emscripten.h>
+#endif
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <cstring>
@@ -18,6 +19,7 @@ extern "C" void app_main(void);                 // NOLINT(readability-identifier
 #define WIDTH 256
 #define HEIGHT 256
 
+SDL_Window *window;
 SDL_Renderer *renderer;
 // Texture on which to draw the UI from the firmware
 SDL_Texture *deviceScreen;
@@ -78,13 +80,64 @@ void drawOverlay(RemoteCommand command) {
     }
 }
 
+// Returns false if the program should quit
+auto mainLoop() -> bool {
+    SDL_Event e;
+    RemoteCommand remoteCode = RemoteCommand::NONE;
+    while (SDL_PollEvent(&e)) {
+        if (e.type == SDL_QUIT) {
+            return false;
+        } else if (e.type == SDL_KEYDOWN) {
+            switch (e.key.keysym.sym) {
+            case SDLK_UP:
+                remoteCode = RemoteCommand::PREV;
+                break;
+            case SDLK_DOWN:
+                remoteCode = RemoteCommand::NEXT;
+                break;
+            case SDLK_LEFT:
+                remoteCode = RemoteCommand::CHANNEL_MINUS;
+                break;
+            case SDLK_RIGHT:
+                remoteCode = RemoteCommand::CHANNEL_PLUS;
+                break;
+            case SDLK_ESCAPE:
+                remoteCode = RemoteCommand::BACK;
+                break;
+            case SDLK_RETURN:
+                remoteCode = RemoteCommand::ENTER;
+                break;
+            case 'p':
+                saveScreenshotPng("./screenshot.png", window, renderer);
+                break;
+            }
+
+            if (remoteCode != RemoteCommand::NONE) {
+                UIInnerLoop(remoteCode);
+                needsRedraw = true;
+            }
+        }
+    }
+
+    if (needsRedraw || arrowOpacity > 0) {
+        SDL_SetRenderTarget(renderer, NULL);
+        SDL_RenderCopy(renderer, deviceScreen, NULL, NULL);
+        drawOverlay(remoteCode);
+        SDL_RenderPresent(renderer);
+        needsRedraw = false;
+    }
+
+    return true;
+}
+
+void emscriptemLoop() { mainLoop(); }
+
 auto main(int argc, char *argv[]) -> int {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         std::cout << "Failed SDL_Init " << SDL_GetError() << std::endl;
         return 1;
     }
 
-    SDL_Window *window;
     SDL_CreateWindowAndRenderer(WIDTH * SCALE, WIDTH * SCALE, 0, &window, &renderer);
     if (renderer == NULL) {
         fprintf(stderr, "Could not create renderer: %s\n", SDL_GetError());
@@ -96,7 +149,7 @@ auto main(int argc, char *argv[]) -> int {
     SDL_RenderSetScale(renderer, SCALE, SCALE);
 
     IMG_Init(IMG_INIT_PNG);
-    arrow = IMG_Load("lib/Simulator/arrow.png");
+    arrow = IMG_Load("lib/Simulator/assets/arrow.png");
     if (arrow == NULL) {
         fprintf(stderr, "Could not find arrow asset: %s\n", SDL_GetError());
         return 1;
@@ -108,63 +161,19 @@ auto main(int argc, char *argv[]) -> int {
     // Run the loop once to render the screen
     UIInnerLoop(RemoteCommand::NONE);
 
-    SDL_Event e;
-    bool quit = false;
-    while (!quit) {
-        RemoteCommand remoteCode = RemoteCommand::NONE;
-        while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_QUIT) {
-                quit = true;
-            } else if (e.type == SDL_KEYDOWN) {
-                switch (e.key.keysym.sym) {
-                case SDLK_UP:
-                    remoteCode = RemoteCommand::PREV;
-                    break;
-                case SDLK_DOWN:
-                    remoteCode = RemoteCommand::NEXT;
-                    break;
-                case SDLK_LEFT:
-                    remoteCode = RemoteCommand::CHANNEL_MINUS;
-                    break;
-                case SDLK_RIGHT:
-                    remoteCode = RemoteCommand::CHANNEL_PLUS;
-                    break;
-                case SDLK_ESCAPE:
-                    remoteCode = RemoteCommand::BACK;
-                    break;
-                case SDLK_RETURN:
-                    remoteCode = RemoteCommand::ENTER;
-                    break;
-                case 'p':
-                    saveScreenshotPng("./screenshot.png", window, renderer);
-                    break;
-                }
-                if (remoteCode != RemoteCommand::NONE) {
-                    UIInnerLoop(remoteCode);
-                    needsRedraw = true;
-                }
-            }
-        }
-
-        if (needsRedraw || arrowOpacity > 0) {
-            SDL_SetRenderTarget(renderer, NULL);
-            SDL_RenderCopy(renderer, deviceScreen, NULL, NULL);
-            drawOverlay(remoteCode);
-            SDL_RenderPresent(renderer);
-            needsRedraw = false;
-        }
-
+#if defined(EMSCRIPTEN)
+    emscripten_set_main_loop(emscriptemLoop, 0, 0);
+#else
+    while (mainLoop()) {
         // Limit to ~60fps so we don't murder battery unnecessarily
         usleep(1000000.0 / 60.0);
     }
-
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
 
     std::cout << "Quit" << std::endl;
+#endif
 
     return 0;
 }
-
-#endif

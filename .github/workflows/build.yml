@@ -23,6 +23,7 @@ jobs:
           - esp-wrover-kit
           - esp-wrover-kit-idf
           - simulator
+          - simulator-wasm
 
     steps:
       - name: Check out code
@@ -39,8 +40,12 @@ jobs:
           pip install platformio
 
       - name: Install SDL
-        run: sudo apt update && sudo apt install -y libsdl2-dev libsdl2-image-dev
         if: matrix.pioenv == 'simulator'
+        run: sudo apt update && sudo apt install -y libsdl2-dev libsdl2-image-dev
+
+      - name: Install Emscripten
+        if: matrix.pioenv == 'simulator-wasm'
+        uses: mymindstorm/setup-emsdk@v11
 
       - name: PlatformIO run
         run: pio run -e ${{ matrix.pioenv }}
