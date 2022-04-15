@@ -154,7 +154,18 @@ public:
           demoMode(this->prefs_, "demo"){};
 
     auto begin() -> bool;
-    void clear() { prefs_.clear(); }
+    void clear() {
+        // Save and re-set the Turn Touch
+#if USE_TURN_TOUCH_REMOTE
+        auto turnTouchAddress = this->pairedTurnTouchAddress.get();
+#endif
+        prefs_.clear();
+#if USE_TURN_TOUCH_REMOTE
+        if (turnTouchAddress.has_value()) {
+            this->pairedTurnTouchAddress.set(turnTouchAddress.value());
+        }
+#endif
+    }
 
 #if USE_TURN_TOUCH_REMOTE
     BLEAddressPrefsItem pairedTurnTouchAddress;
