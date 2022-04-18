@@ -16,8 +16,8 @@ auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice *device) -> bool {
         client_->setClientCallbacks(new ClientCallbacks(this));
     }
 
-    log_d("Attempting to connect to TurnTouch at address: %s",
-          device->getAddress().toString().c_str());
+    BLEAddress address = device->getAddress();
+    log_d("Attempting to connect to TurnTouch at address: %s", address.toString().c_str());
 
     if (!client_->connect(device)) {
         log_e("Failed to connect to TurnTouch");
@@ -75,14 +75,12 @@ auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice *device) -> bool {
     }
 
     // Save the id of this turn touch for future connection attempts, but only
-    // if it wasn't set already. Strange behavior where connecting to it after
-    // a disconnect sometimes garbles the device->getAddress. For further exploration.
+    // if it wasn't set already.
     if (!prefs_.pairedTurnTouchAddress.get().has_value()) {
-        prefs_.pairedTurnTouchAddress.set(device->getAddress());
+        prefs_.pairedTurnTouchAddress.set(address);
     }
 
-    log_i("Connected to TurnTouch %s (battery: %d%%)", device->getAddress().toString().c_str(),
-          battery);
+    log_i("Connected to TurnTouch %s (battery: %d%%)", address.toString().c_str(), battery);
 
     return true;
 }
