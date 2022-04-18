@@ -7,7 +7,7 @@
 
 #if EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
-#define VCOM_INVERTED_OFFSET_IN_MV -1500
+#define VCOM_INVERTED_OFFSET_IN_MV (-1500)
 #endif
 
 DisplaySystem::DisplaySystem() { autoUpdate_ = true; }
