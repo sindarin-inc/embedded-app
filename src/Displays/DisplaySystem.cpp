@@ -5,6 +5,11 @@
 #include "Misc/StringUtil.hpp"
 #include "sindarin-debug.h"
 
+#if EINKET013TT1
+#include "Displays/DisplayEinkET013TT1.hpp"
+#define VCOM_INVERTED_OFFSET_IN_MV -1500
+#endif
+
 DisplaySystem::DisplaySystem() { autoUpdate_ = true; }
 
 auto DisplaySystem::setup() -> bool {
@@ -25,12 +30,34 @@ auto DisplaySystem::setup() -> bool {
 
 void DisplaySystem::invertDisplay(bool newInvert) {
     invertedDisplay_ = newInvert;
+#if EINKET013TT1
+    bool previousInvert = invertedDisplay_;
+    auto *driver = (static_cast<DisplayEinkET013TT1 *>(this))->getDriver();
+#endif
+
     if (invertedDisplay_) {
         bg = 0x0000;
         fg = 0xFFFF;
+#if EINKET013TT1
+        // If we've changed from regular to inverted, we need to update the
+        // vcom to be lower negative millivolts.
+        // This is a hack that eventually should probably be fixed with waveforms.
+        if (previousInvert != newInvert) {
+            driver->setVcom(driver->getVcom() - VCOM_INVERTED_OFFSET_IN_MV);
+        }
+#endif
+
     } else {
         bg = 0xFFFF;
         fg = 0x0000;
+#if EINKET013TT1
+        // If we've changed from inverted to regular, we need to update the
+        // vcom to be higher negative millivolts.
+        // This is a hack that eventually should probably be fixed with waveforms.
+        if (previousInvert != newInvert) {
+            driver->setVcom(driver->getVcom() + VCOM_INVERTED_OFFSET_IN_MV);
+        }
+#endif
     }
     fillScreen(bg);
 }
