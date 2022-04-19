@@ -7,11 +7,12 @@
 #include "Misc/StringUtil.hpp"
 #include "sindarin-debug.h"
 
-void Power::setup() { this->lastMeasurementTime_ = millis(); }
+void Power::setup() {}
 
 void Power::loop() {
     auto now = millis();
-    if (now > this->lastMeasurementTime_ + BATTERY_MEASUREMENT_PERIOD_SECONDS * 1000) {
+    if (this->lastMeasurementTime_ == 0 ||
+        now > this->lastMeasurementTime_ + BATTERY_MEASUREMENT_PERIOD_SECONDS * 1000) {
         auto left = GetBatteryVoltageLeft();
         auto right = GetBatteryVoltageRight();
         this->leftConnected_ = left > BATTERY_DISCONNECT_THRESHOLD;

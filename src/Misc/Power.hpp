@@ -29,7 +29,7 @@ public:
 protected:
     auto average(const std::array<float, BATTERY_MEASUREMENTS_COUNT> &array, int count) -> float;
 
-    unsigned long lastMeasurementTime_;
+    unsigned long lastMeasurementTime_ = 0;
     bool depleted_;
     int leftIndex_;
     int rightIndex_;

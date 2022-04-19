@@ -111,15 +111,15 @@ void StatsTask(void *parameter) {
 #endif
 
     for (;;) {
-        // Spit out data on locks every 10s
+        // Run the power loop first so that we don't show a 0% battery reading
+        power.loop();
+        // Spit out data on locks every 30s
         vTaskDelay(30000 / portTICK_PERIOD_MS);
 #if !DISABLE_POWER_MANAGEMENT
         esp_pm_lock_acquire(StatsLock);
         esp_pm_dump_locks(stdout);
-        power.loop();
         uart_wait_tx_done(0, 100 / portTICK_PERIOD_MS);
         esp_pm_lock_release(StatsLock);
-
 #endif
     }
     vTaskDelete(nullptr);
