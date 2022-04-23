@@ -1,7 +1,16 @@
 FILE(GLOB_RECURSE app_sources ${CMAKE_SOURCE_DIR}/src/*.*)
 
-set(COMPONENT_SRCS ${app_sources})
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-set(REQUIRES arduino esp-nimble-cpp)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-register_component()
+idf_component_register(
+    SRCS ${app_sources}
+    INCLUDE_DIRS "."
+    REQUIRES arduino ArduinoJson Adafruit-GFX-Library spiffs improv esp-nimble-cpp
+)
+
+target_compile_options(${COMPONENT_TARGET} PUBLIC
+    -include config.h
+    -Wno-unknown-pragmas
+    -D IDF_LOG
+)

@@ -4,6 +4,7 @@
 #include <optional>
 #include <string>
 
+#include "config.h"
 #include "sindarin-debug.h"
 
 #if USE_TURN_TOUCH_REMOTE

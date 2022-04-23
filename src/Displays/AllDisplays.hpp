@@ -6,6 +6,8 @@
 #define ALL_DISPLAYS_HPP
 
 #include "DisplaySystem.hpp"
+#include "config.h"
+
 #if EINKET013TT1
 #include "DisplayEinkET013TT1.hpp"
 #endif

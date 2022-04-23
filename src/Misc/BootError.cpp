@@ -3,6 +3,8 @@
 #include <Arduino.h>
 #include <vector>
 
+#include "config.h"
+
 void BlinkBootErrors(const std::vector<BootError> &bootErrors) {
     // Blink out error codes:
     // TODO: How to cross-platfomr this?
