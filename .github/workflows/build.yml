@@ -60,6 +60,7 @@ jobs:
             .pio/build/${{ matrix.pioenv }}/upload_command.sh
 
   build-idf:
+    name: "idf.py build"
     runs-on: ubuntu-latest
 
     steps:
