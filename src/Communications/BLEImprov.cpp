@@ -4,6 +4,7 @@
 
 #include <ArduinoOTA.h>
 
+#include "config.h"
 #include "sindarin-debug.h"
 
 void BLEImprov::configureCharacteristics(BLEService *service) {

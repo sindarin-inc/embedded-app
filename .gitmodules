@@ -6,7 +6,7 @@
 	url = https://github.com/espressif/arduino-esp32.git
 [submodule "components/HULP"]
 	path = components/HULP
-	url = https://github.com/boarchuz/HULP.git
+	url = https://github.com/johnboiles/HULP.git
 [submodule "components/Adafruit-GFX-Library"]
 	path = components/Adafruit-GFX-Library
 	url = https://github.com/adafruit/Adafruit-GFX-Library.git
@@ -18,4 +18,4 @@
 	url = https://github.com/bblanchon/ArduinoJson.git
 [submodule "components/improv"]
 	path = components/improv
-	url = https://github.com/improv-wifi/sdk-cpp.git
+	url = https://github.com/johnboiles/sdk-cpp.git

@@ -6,11 +6,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 idf_component_register(
     SRCS ${app_sources}
     INCLUDE_DIRS "."
-    REQUIRES arduino ArduinoJson Adafruit-GFX-Library spiffs improv esp-nimble-cpp
+    REQUIRES improv arduino ArduinoJson Adafruit-GFX-Library spiffs esp-nimble-cpp
 )
 
 target_compile_options(${COMPONENT_TARGET} PUBLIC
-    -include config.h
+# No space here otherwise PlatformIO might split these up
+    -includeconfig.h
     -Wno-unknown-pragmas
-    -D IDF_LOG
+    -DIDF_LOG
 )
