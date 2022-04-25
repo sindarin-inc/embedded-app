@@ -9,6 +9,9 @@
 #include <esp_vfs.h>
 
 auto SpiFlashInit() -> esp_flash_t * {
+    // Ignore warnings for -Wmissing-field-initializers here
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
     // HSPI / SPI2
     const spi_bus_config_t busConfig = {
         .mosi_io_num = HSPI_IOMUX_PIN_NUM_MOSI, // IO13
@@ -27,6 +30,7 @@ auto SpiFlashInit() -> esp_flash_t * {
                                                         //  .io_mode = SPI_FLASH_QOUT,
                                                         //  .io_mode = SPI_FLASH_QIO,
                                                         .speed = ESP_FLASH_40MHZ};
+#pragma GCC diagnostic pop
     log_d("Initializing external SPI Flash");
     log_d("Pin assignments:\nSCLK: %2d MISO: %2d MOSI: %2d CS: %2d", busConfig.mosi_io_num,
           busConfig.miso_io_num, busConfig.sclk_io_num, deviceConfig.cs_io_num);

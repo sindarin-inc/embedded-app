@@ -56,6 +56,7 @@ void OffsetAdjustScreen::processCommand(RemoteCommand command) {
         // so that we can have remote-specific workarounds if needed.
         oldRect.x += OFFSET_ADJUST_AMOUNT;
         display_.setBoundingBox(oldRect);
+        [[fallthrough]];
     case RemoteCommand::ENTER:
         prefs_.rectX.set(display_.getBoundingBox().x);
         prefs_.rectY.set(display_.getBoundingBox().y);

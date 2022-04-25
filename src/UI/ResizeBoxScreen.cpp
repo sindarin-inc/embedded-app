@@ -64,6 +64,7 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
         oldRect.width -= BOX_OFFSET_ADJUST_AMOUNT;
         oldRect.x += BOX_OFFSET_ADJUST_AMOUNT / 2;
         display_.setBoundingBox(oldRect);
+        [[fallthrough]];
     case RemoteCommand::ENTER:
         prefs_.rectX.set(display_.getBoundingBox().x);
         prefs_.rectY.set(display_.getBoundingBox().y);

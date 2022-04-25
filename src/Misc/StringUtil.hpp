@@ -16,7 +16,7 @@ auto StringFormat(const char *format, ARGS... args) -> std::string {
     // This raises a warning about `format` not being a literal.
     int sizeS = std::snprintf(nullptr, 0, format, args...) + 1;
     if (sizeS <= 0) {
-        throw std::runtime_error("Error during formatting.");
+        abort();
     }
     auto size = static_cast<size_t>(sizeS);
     auto buf = std::make_unique<char[]>(size);
