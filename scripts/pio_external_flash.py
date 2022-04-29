@@ -25,7 +25,7 @@ mcu = board.get("build.mcu", "esp32")
 build_action = env.VerboseAction(
     " ".join(
         [
-            '"$MKSPIFFSTOOL"',
+            '"$MKFSTOOL"',
             "-c",
             "$SPIFFS_SOURCES",
             "-p",
@@ -85,7 +85,7 @@ env.AddCustomTarget(
 
 platform = env.PioPlatform()
 env["ESPOTA"] = join(
-    platform.get_package_dir("framework-arduinoespressif32") or "", "tools", "espota.py"
+    platform.get_package_dir("framework-arduinoespressif32") or "", "components", "arduino", "tools", "espota.py"
 )
 
 upload_ota_action = env.VerboseAction(
