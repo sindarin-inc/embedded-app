@@ -1,3 +1,6 @@
+#include <driver/uart.h>
+#include <esp_err.h>
+
 #include "Communications/OTA.hpp"
 #include "Communications/WiFi.hpp"
 #include "Contents/Readable.hpp"
@@ -14,8 +17,6 @@
 #include "sindarin-debug.h"
 
 #if !DISABLE_POWER_MANAGEMENT
-#include <driver/uart.h>
-#include <esp_err.h>
 #include <esp_pm.h>
 #endif
 
@@ -161,12 +162,12 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     std::vector<BootError> bootErrors;
 
 #if BOARD_HAS_PSRAM
-    if (ESP.getPsramSize() <= 0) {
+    multi_heap_info_t info;
+    heap_caps_get_info(&info, MALLOC_CAP_SPIRAM);
+    if (info.total_free_bytes + info.total_allocated_bytes <= 0) {
         bootErrors.push_back({.type = BootError::Type::ExternalRam});
     }
 #endif
-
-    InitializePlatform();
 
 #if !SIMULATOR
     esp_log_level_set("Sindarin", ESP_LOG_DEBUG);
@@ -180,12 +181,19 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     uartConfig.stop_bits = UART_STOP_BITS_1;
     uartConfig.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
     uartConfig.rx_flow_ctrl_thresh = 0;
+#if GILPICO_SINDARIN
     // This is the part Arduino gets wrong. The ref tick clock is stable even amidst light sleep.
     uartConfig.source_clk = UART_SCLK_REF_TICK;
+#else
+    // But on the ESP32-S3, since the UART is built into the chip, we use XTAL I guess.
+    uartConfig.source_clk = UART_SCLK_XTAL;
+#endif
     ESP_ERROR_CHECK(uart_driver_install(0, 256, 0, 20, nullptr, 0));
     ESP_ERROR_CHECK(uart_param_config(0, &uartConfig));
     ESP_ERROR_CHECK(uart_set_pin(0, 1, 3, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
 #endif
+
+    InitializePlatform();
 
 #if !SIMULATOR
     // Flash all the LEDs
@@ -369,7 +377,11 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 
 #if !DISABLE_POWER_MANAGEMENT
+#if GILPICO_SINDARIN
     esp_pm_config_esp32_t pmConfig = {
+#else
+    esp_pm_config_esp32s3_t pmConfig = {
+#endif
         .max_freq_mhz = CPU_FREQ_MHZ_HIGH,
         .min_freq_mhz = CPU_FREQ_MHZ_LOW,
         .light_sleep_enable = true,
@@ -377,6 +389,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     if (esp_pm_configure(&pmConfig) != ESP_OK) {
         bootErrors.push_back({.type = BootError::Type::PowerManagement});
     }
+    // There may be a magic incantation that keeps USB running through light sleep,
+    // but I haven't found it yet. I've tried every power domain in esp_sleep_pd_config but it
+    // didn't help
     if (rtc_clk_slow_freq_get() != RTC_SLOW_FREQ_32K_XTAL) {
         bootErrors.push_back({.type = BootError::Type::LowPowerOscillator});
     }

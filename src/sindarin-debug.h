@@ -37,6 +37,7 @@ extern "C" {
 #define log_e(format, ...) ESP_LOGE("Sindarin", format, ##__VA_ARGS__);
 #endif
 
+// TODO: getPsramSize() does not work on the ESP32-S3
 #define SHOW_HEAP()                                                                                \
     log_d("Free heap: %dk/%dk Free PSRAM: %dk/%dk", ESP.getFreeHeap() / 1000,                      \
           ESP.getHeapSize() / 1000, ESP.getFreePsram() / 1000, ESP.getPsramSize() / 1000)

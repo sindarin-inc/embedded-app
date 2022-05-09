@@ -53,10 +53,13 @@
 #ifdef WROVER_KIT
 #define RED_LED 0
 #define GREEN_LED 2
-#else
+#elif GILPICO_SINDARIN
 #define RED_LED 22
 #define GREEN_LED 25
-//#define BLUE_LED 18
+#else
+#define RED_LED 7
+#define GREEN_LED 6
+#define BLUE_LED 18
 #endif
 
 #ifdef LED_INVERT
@@ -67,8 +70,13 @@
 #define LED_OFF LOW
 #endif
 
+#if GILPICO_SINDARIN
 #define BAT_VOLTAGE_RIGHT 37
 #define BAT_VOLTAGE_LEFT 38
+#else
+#define BAT_VOLTAGE_RIGHT 10
+#define BAT_VOLTAGE_LEFT 4
+#endif
 #define BATT_CHANNEL_RIGHT ADC1_CHANNEL_1
 #define BATT_CHANNEL_LEFT ADC1_CHANNEL_2
 
@@ -83,22 +91,44 @@
 #ifndef ULP_BACKLIGHT
 #define ULP_BACKLIGHT 0
 #endif
+#if GILPICO_SINDARIN
 #define BACKLIGHT_RIGHT 26
 #define BACKLIGHT_LEFT 9
+#else
+#define BACKLIGHT_RIGHT 2
+#define BACKLIGHT_LEFT 17
+#endif
 #endif
 
 // Boards prior to Sol3 boards don't have separate CS pins, but it's safe to use the same pin twice
 // here
+#if GILPICO_SINDARIN
 #define DISPLAY_CS_LEFT 5
 #define DISPLAY_CS_RIGHT 5
 #define DISPLAY_OEI 21
+#else
+#define DISPLAY_CS_LEFT 21
+#define DISPLAY_CS_RIGHT 11
+#define DISPLAY_OEI 8
+#endif
 #ifndef DISPLAY_RST
-#define DISPLAY_RST 32
+#define DISPLAY_RST 9
 #endif
 #define DISPLAY_BUSY 33
 
 #ifndef DISABLE_BUSY
 #define DISABLE_BUSY 0
+#endif
+#if GILPICO_SINDARIN
+#define DISPLAY_SPI VSPI_HOST
+#define DISPLAY_MOSI VSPI_IOMUX_PIN_NUM_MOSI
+#define DISPLAY_MISO VSPI_IOMUX_PIN_NUM_MISO
+#define DISPLAY_CLK VSPI_IOMUX_PIN_NUM_CLK
+#else
+#define DISPLAY_SPI SPI2_HOST
+#define DISPLAY_MOSI 12
+#define DISPLAY_MISO 14
+#define DISPLAY_CLK 13
 #endif
 
 #define CPU_FREQ_MHZ_HIGH 240

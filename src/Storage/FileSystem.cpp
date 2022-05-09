@@ -15,7 +15,13 @@ void FileSystem::getReadables(std::vector<Readable> *readables) {
     if (!manifestFile) {
         log_e("Failed to open manifest file.");
     }
-    deserializeJson(*manifest, manifestFile);
+    auto error = deserializeJson(*manifest, manifestFile);
+    if (error.code() != DeserializationError::Ok) {
+        log_e("Failed to deserialize manifest file: %s", error.c_str());
+        manifestFile.close();
+        // TODO: Return a real error
+        return;
+    }
     manifestFile.close();
 
     auto array = manifest->as<JsonArray>();

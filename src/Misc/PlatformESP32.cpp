@@ -79,6 +79,10 @@ void InitializePlatform() {
     ledc_channel_config(&ledcChannel);
     ledcChannel.gpio_num = BACKLIGHT_RIGHT;
     ledc_channel_config(&ledcChannel);
+
+    // This allows LEDC to work in light sleep on ESP32-S3
+    // TODO: Is this safe on the ESP32
+    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC8M, ESP_PD_OPTION_ON);
 #endif
 #if ULP_BACKLIGHT
     UlpStart();

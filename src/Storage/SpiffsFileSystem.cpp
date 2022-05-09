@@ -2,8 +2,11 @@
 
 #include <SPIFFS.h>
 
-#include "Storage/ExternalSPIFlash.hpp"
 #include "sindarin-debug.h"
+
+#if !INTERNAL_SPIFFS_FLASH
+#include "Storage/ExternalSPIFlash.hpp"
+#endif
 
 auto SpiffsFileSystem::begin() -> bool {
     SHOW_HEAP();

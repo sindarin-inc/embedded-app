@@ -1,3 +1,5 @@
+#if !INTERNAL_SPIFFS_FLASH
+
 #include "Storage/ExternalSPIFlash.hpp"
 
 #include <driver/spi_common.h>
@@ -87,3 +89,5 @@ void SpiFlashListPartitions() {
 
     esp_partition_iterator_release(it);
 }
+
+#endif
