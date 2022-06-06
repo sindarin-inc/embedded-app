@@ -55,7 +55,7 @@ auto SpiFlashInit() -> esp_flash_t * {
         // really slow to upload images that big. Let's just pretend we have a 32mbit / 4MB chip.
         // See also: pio_external_flash.py where this is also hardcoded.
         // ext_flash->size = 1024 * 1024 * 512 / 8;
-        extFlash->size = 1024 * 1024 * 32 / 8;
+        extFlash->size = 1024 * 1024 * 128 / 8;
         log_i("Detected 512mbit (64MB) flash ID=0x%x, hardcoding size to %d", id, extFlash->size);
     }
     log_i("Initialized external Flash, size=%d KB, ID=0x%x", extFlash->size / 1024, id);

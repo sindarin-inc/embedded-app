@@ -9,7 +9,7 @@ from os.path import join
 # While we have a 512mbit flash chip on our board, we don't need all of it rn, and it's really slow
 # to upload images that big. Let's just pretend we have a 32mbit / 4MB chip.
 # See also ExternalSPIFlash.cpp -> SPIFlashInit where size is hardcoded.
-flash_size_megabits = 32
+flash_size_megabits = 128
 flash_size_megabytes = flash_size_megabits / 8
 env["SPIFFS_SIZE"] = int(1024 * 1024 * flash_size_megabytes)
 env["SPIFFS_SOURCES"] = "data"
