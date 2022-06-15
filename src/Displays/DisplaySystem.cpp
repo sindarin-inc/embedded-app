@@ -149,7 +149,6 @@ void DisplaySystem::splitStringToLines(const std::string &stringToSplit,
     for (i = 0; i < len; i++) {
         // We found a new line. Split off the previous line and
         // start processing the new line
-        // if (Serial) Serial.print(string_to_draw.charAt(i));
         if (stringToSplit.at(i) == '\n') {
             lines[numLines - 1] = stringToSplit.substr(startPos, endPos - startPos + 1);
             numLines++;
