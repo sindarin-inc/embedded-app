@@ -162,17 +162,17 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // Arduino breaks the UART with sleep. So we manually initialize the UART using IDF functions.
     // There's unfortunately no way currently to customize the source clock in Arduino:
     // https://github.com/espressif/arduino-esp32/blob/548412952ba58e299ad83d932cea417a2490fd78/cores/esp32/esp32-hal-uart.c#L163
-    uart_config_t uart_config;
-    uart_config.baud_rate = 115200;
-    uart_config.data_bits = UART_DATA_8_BITS;
-    uart_config.parity = UART_PARITY_DISABLE;
-    uart_config.stop_bits = UART_STOP_BITS_1;
-    uart_config.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
-    uart_config.rx_flow_ctrl_thresh = 0;
+    uart_config_t uartConfig;
+    uartConfig.baud_rate = 115200;
+    uartConfig.data_bits = UART_DATA_8_BITS;
+    uartConfig.parity = UART_PARITY_DISABLE;
+    uartConfig.stop_bits = UART_STOP_BITS_1;
+    uartConfig.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
+    uartConfig.rx_flow_ctrl_thresh = 0;
     // This is the part Arduino gets wrong. The ref tick clock is stable even amidst light sleep.
-    uart_config.source_clk = UART_SCLK_REF_TICK;
+    uartConfig.source_clk = UART_SCLK_REF_TICK;
     ESP_ERROR_CHECK(uart_driver_install(0, 256, 0, 20, nullptr, 0));
-    ESP_ERROR_CHECK(uart_param_config(0, &uart_config));
+    ESP_ERROR_CHECK(uart_param_config(0, &uartConfig));
     ESP_ERROR_CHECK(uart_set_pin(0, 1, 3, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
 #endif
 
