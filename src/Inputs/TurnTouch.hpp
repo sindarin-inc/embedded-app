@@ -1,7 +1,8 @@
 #pragma once
 
+#include <cstdint>
+
 #include "RemoteInput.hpp"
-#include <stdint.h>
 
 // See also: https://shop.turntouch.com/pages/open-source
 #define TURNTOUCH_BUTTON_SVC_ID "1523"
