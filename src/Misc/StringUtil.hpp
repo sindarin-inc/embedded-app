@@ -10,6 +10,9 @@
 // https://github.com/fmtlib/fmt
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wformat-security"
+
+int WordCount(char *str);
+
 template <typename... ARGS>
 auto StringFormat(const char *format, ARGS... args) -> std::string {
     // Extra space for '\0'
@@ -24,4 +27,5 @@ auto StringFormat(const char *format, ARGS... args) -> std::string {
     // We don't want the '\0' inside
     return {buf.get(), buf.get() + size - 1};
 }
+
 #pragma clang diagnostic pop

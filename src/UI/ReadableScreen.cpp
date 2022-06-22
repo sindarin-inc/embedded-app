@@ -14,6 +14,11 @@ void ReadableScreen::render(DisplaySystem &display) {
     }
     newPlace_ = renderer_.renderPage(readable_.place);
     log_d("%lu is the new place in the text", newPlace_);
+
+    uint32_t wc = prefs_.wordCount.get().value();
+    wc = wc + renderer_.getCurrentWordCount();
+    prefs_.wordCount.set(wc);
+
     needsRerender = false;
 }
 
