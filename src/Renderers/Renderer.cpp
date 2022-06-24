@@ -41,7 +41,6 @@ auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
     PROFILE_START(loadCurrIntoBuffer);
     nextPlace_ = loadCurrIntoBuffer();
     PROFILE_END_LOG_MS(loadCurrIntoBuffer);
-        
     currentPageWordCount_ = WordCount(currBuffer_.data());
 
     display_.renderTextWithoutBox(currBuffer_.data(), horizontalCenter_, verticalCenter_);

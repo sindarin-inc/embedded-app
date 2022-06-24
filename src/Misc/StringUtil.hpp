@@ -11,7 +11,7 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wformat-security"
 
-int WordCount(const char *str);
+auto WordCount(const char *str) -> int;
 
 template <typename... ARGS>
 auto StringFormat(const char *format, ARGS... args) -> std::string {
