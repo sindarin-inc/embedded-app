@@ -1,8 +1,8 @@
 #include "StringUtil.hpp"
 
-int WordCount(char *str) {
+int WordCount(const char *str) {
     int wordCount = 0;
-    char* s = str;
+    const char* s = str;
     bool newWord = true;
     while (*s) {
         if (isspace(*s)) {

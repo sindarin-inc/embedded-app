@@ -16,7 +16,7 @@ void ReadableScreen::render(DisplaySystem &display) {
     log_d("%lu is the new place in the text", newPlace_);
 
     uint32_t wc = prefs_.wordCount.get().value();
-    wc = wc + renderer_.getCurrentWordCount();
+    wc = wc + renderer_.getCurrentPageWordCount();
     prefs_.wordCount.set(wc);
 
     needsRerender = false;

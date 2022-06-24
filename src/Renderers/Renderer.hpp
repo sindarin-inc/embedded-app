@@ -30,7 +30,7 @@ public:
     // track place.
     auto renderPage(unsigned long placeInFile) -> unsigned long;
 
-    auto getCurrentWordCount() -> uint32_t { return currentWordCount_; }
+    auto getCurrentPageWordCount() -> uint32_t { return currentPageWordCount_; }
 
 protected:
     DisplaySystem &display_;
@@ -46,7 +46,7 @@ protected:
     unsigned long currentPlace_ = 0;
     unsigned long previousPlace_ = 0;
     unsigned long nextPlace_ = 0;
-    uint32_t currentWordCount_ = 0;
+    uint32_t currentPageWordCount_ = 0;
 
     auto loadPrevIntoBuffer() -> unsigned long;
     auto loadCurrIntoBuffer() -> unsigned long;
