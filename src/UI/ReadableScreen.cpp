@@ -34,7 +34,6 @@ void ReadableScreen::incrementReadingTime() {
     auto totalReadingTimeSeconds = prefs_.totalReadingTimeSeconds.get().value();
     totalReadingTimeSeconds += thisPageReadingTimeSeconds;
     prefs_.totalReadingTimeSeconds.set(totalReadingTimeSeconds);
-    log_d("this page reading %d ms, total reading time now %d seconds.", endMillis-startMillis, totalReadingTimeSeconds);
 }
 
 void ReadableScreen::processCommand(RemoteCommand command) {
