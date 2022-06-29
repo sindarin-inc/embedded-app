@@ -13,6 +13,7 @@
 #include "Renderers/Renderer.hpp"
 #include "UI/CalibrationScreen.hpp"
 #include "UI/DemoScreen.hpp"
+#include "UI/StatsScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/LoadingScreen.hpp"
 #include "UI/LogoScreen.hpp"
@@ -441,6 +442,16 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
             delete demoScreen;
         };
     }));
+
+    settingsMenu->addMenuItem(MenuItem("Statistics", [this, settingsMenu, display]() {
+        auto statsScreen = new StatsScreen(*display, prefs_, this->power_);
+        this->setCurrentScreen(*statsScreen);
+        statsScreen->backCallback = [this, statsScreen, settingsMenu]() {
+            setCurrentScreen(*settingsMenu);
+            delete statsScreen;
+        };
+    }));    
+    
 
     settingsMenu->addMenuItem(MenuItem("Test Bitmap Screen", [this, settingsMenu]() {
         auto bitmapScreen = new BitmapScreen(LOGO_BITS, LOGO_WIDTH, LOGO_HEIGHT);
