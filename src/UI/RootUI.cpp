@@ -13,7 +13,6 @@
 #include "Renderers/Renderer.hpp"
 #include "UI/CalibrationScreen.hpp"
 #include "UI/DemoScreen.hpp"
-#include "UI/StatsScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/LoadingScreen.hpp"
 #include "UI/LogoScreen.hpp"
@@ -23,6 +22,7 @@
 #include "UI/PowerDepletedScreen.hpp"
 #include "UI/ReadableScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
+#include "UI/StatsScreen.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
 
@@ -450,8 +450,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
             setCurrentScreen(*settingsMenu);
             delete statsScreen;
         };
-    }));    
-    
+    }));
 
     settingsMenu->addMenuItem(MenuItem("Test Bitmap Screen", [this, settingsMenu]() {
         auto bitmapScreen = new BitmapScreen(LOGO_BITS, LOGO_WIDTH, LOGO_HEIGHT);

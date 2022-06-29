@@ -30,7 +30,8 @@ void ReadableScreen::incrementReadingTime() {
     // increment total reading time
     auto endMillis = millis();
     auto startMillis = prefs_.readingStartTimeMillis.get().value();
-    auto thisPageReadingTimeSeconds = (endMillis > startMillis) ? (endMillis-startMillis) / 1000 : 0;
+    auto thisPageReadingTimeSeconds =
+        (endMillis > startMillis) ? (endMillis - startMillis) / 1000 : 0;
     auto totalReadingTimeSeconds = prefs_.totalReadingTimeSeconds.get().value();
     totalReadingTimeSeconds += thisPageReadingTimeSeconds;
     prefs_.totalReadingTimeSeconds.set(totalReadingTimeSeconds);

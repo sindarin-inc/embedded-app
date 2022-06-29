@@ -37,7 +37,7 @@ protected:
     PopupMenuScreen popup_;
 
     unsigned long newPlace_ = 0;
+
 private:
     void incrementReadingTime();
-
 };

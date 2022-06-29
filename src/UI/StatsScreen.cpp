@@ -1,4 +1,5 @@
 #include "UI/StatsScreen.hpp"
+
 #include "UI/Fonts/Tahoma8pt7b.h"
 #include "sindarin-debug.h"
 
@@ -10,13 +11,13 @@ void StatsScreen::render(DisplaySystem &display) {
         return;
     }
 
-    //std::string message = messages_[currentScreen_];
+    // std::string message = messages_[currentScreen_];
     auto wordCount = prefs_.wordCount.get().value();
     auto totalReadingTimeSeconds = prefs_.totalReadingTimeSeconds.get().value();
 
     // get time components
     auto secondsRead = totalReadingTimeSeconds % 60;
-    auto totalMinutesRead = (totalReadingTimeSeconds-secondsRead) / 60;
+    auto totalMinutesRead = (totalReadingTimeSeconds - secondsRead) / 60;
     auto minutesRead = totalMinutesRead % 60;
     auto hoursRead = totalMinutesRead / 60;
 
@@ -37,6 +38,4 @@ void StatsScreen::render(DisplaySystem &display) {
     needsRerender = false;
 }
 
-void StatsScreen::processCommand(RemoteCommand command) {
-    backCallback();
-}
+void StatsScreen::processCommand(RemoteCommand command) { backCallback(); }
