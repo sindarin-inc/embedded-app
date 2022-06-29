@@ -19,7 +19,22 @@ void ReadableScreen::render(DisplaySystem &display) {
     wc = wc + renderer_.getCurrentPageWordCount();
     prefs_.wordCount.set(wc);
 
+    // remember the time this page was rendered
+    auto startMillis = millis();
+    prefs_.readingStartTimeMillis.set(startMillis);
+
     needsRerender = false;
+}
+
+void ReadableScreen::incrementReadingTime() {
+    // increment total reading time
+    auto endMillis = millis();
+    auto startMillis = prefs_.readingStartTimeMillis.get().value();
+    auto thisPageReadingTimeSeconds = (endMillis > startMillis) ? (endMillis-startMillis) / 1000 : 0;
+    auto totalReadingTimeSeconds = prefs_.totalReadingTimeSeconds.get().value();
+    totalReadingTimeSeconds += thisPageReadingTimeSeconds;
+    prefs_.totalReadingTimeSeconds.set(totalReadingTimeSeconds);
+    log_d("this page reading %d ms, total reading time now %d seconds.", endMillis-startMillis, totalReadingTimeSeconds);
 }
 
 void ReadableScreen::processCommand(RemoteCommand command) {
@@ -61,5 +76,10 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         break;
     default:
         break;
+    }
+
+    if (needsRerender) {
+        log_d("rerender needed, time to record reading time");
+        incrementReadingTime();
     }
 }
