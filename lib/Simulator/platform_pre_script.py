@@ -20,4 +20,5 @@ def remove_non_simulator_files(node):
 
     return node
 
+
 env.AddBuildMiddleware(remove_non_simulator_files, "*")
