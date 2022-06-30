@@ -11,7 +11,6 @@ void StatsScreen::render(DisplaySystem &display) {
         return;
     }
 
-    // std::string message = messages_[currentScreen_];
     auto wordCount = prefs_.wordCount.get().value();
     auto totalReadingTimeSeconds = prefs_.totalReadingTimeSeconds.get().value();
 
@@ -32,7 +31,6 @@ void StatsScreen::render(DisplaySystem &display) {
         message += formattedString;
     }
 
-    auto stream = new StdStringStream(message);
     display.setFont(&TAHOMA_REGULAR_FONT8PT7B);
     display.drawTextInBox(message, 0, 0, display.width(), display.height());
     needsRerender = false;

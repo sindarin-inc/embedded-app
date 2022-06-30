@@ -40,4 +40,5 @@ protected:
 
 private:
     void incrementReadingTime();
+    uint32_t readingStartTime_;
 };

@@ -1,7 +1,11 @@
+#if !SIMULATOR
+    #include "RTOS.h"
+#else
+    #include "simRTOS.h"
+#endif
+
 #include "UI/ReadableScreen.hpp"
-
 #include <utility>
-
 #include "sindarin-debug.h"
 
 void ReadableScreen::render(DisplaySystem &display) {
@@ -20,18 +24,16 @@ void ReadableScreen::render(DisplaySystem &display) {
     prefs_.wordCount.set(wc);
 
     // remember the time this page was rendered
-    auto startMillis = millis();
-    prefs_.readingStartTimeMillis.set(startMillis);
-
+    readingStartTime_ = FreeRTOS::getTimeSinceStart();
+    
     needsRerender = false;
 }
 
 void ReadableScreen::incrementReadingTime() {
     // increment total reading time
-    auto endMillis = millis();
-    auto startMillis = prefs_.readingStartTimeMillis.get().value();
+    auto endMillis = FreeRTOS::getTimeSinceStart();
     auto thisPageReadingTimeSeconds =
-        (endMillis > startMillis) ? (endMillis - startMillis) / 1000 : 0;
+        (endMillis > readingStartTime_) ? (endMillis - readingStartTime_) / 1000 : 0;
     auto totalReadingTimeSeconds = prefs_.totalReadingTimeSeconds.get().value();
     totalReadingTimeSeconds += thisPageReadingTimeSeconds;
     prefs_.totalReadingTimeSeconds.set(totalReadingTimeSeconds);
@@ -79,7 +81,6 @@ void ReadableScreen::processCommand(RemoteCommand command) {
     }
 
     if (needsRerender) {
-        log_d("rerender needed, time to record reading time");
         incrementReadingTime();
     }
 }
