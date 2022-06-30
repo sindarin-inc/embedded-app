@@ -467,7 +467,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
         };
     }));
 
-    settingsMenu->addMenuItem(MenuItem("Build Info", [this, display]() {
+    settingsMenu->addMenuItem(MenuItem("Build Info", [display]() {
         #ifdef GITHASH
         std::string buildString = "Build " + std::string(GITHASH);
         #else
