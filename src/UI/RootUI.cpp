@@ -10,7 +10,6 @@
 #include "Misc/Platform.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
-#include "Misc/GitHash.hpp"
 #include "Renderers/Renderer.hpp"
 #include "UI/CalibrationScreen.hpp"
 #include "UI/DemoScreen.hpp"
@@ -469,7 +468,11 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
     }));
 
     settingsMenu->addMenuItem(MenuItem("Build Info", [this, display]() {
-        std::string buildString = "Build " + std::string(githash);
+        #ifdef GITHASH
+        std::string buildString = "Build " + std::string(GITHASH);
+        #else
+        std::string buildString = "No Build Info";
+        #endif
         display->renderMaxBoxWithText(buildString);
     }));
 
