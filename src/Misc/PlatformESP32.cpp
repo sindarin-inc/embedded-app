@@ -8,6 +8,7 @@
 #include "Platform.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
+#include "RTOS.h"
 
 #if ULP_BACKLIGHT
 #include "Misc/ULP.hpp"
@@ -122,6 +123,10 @@ void SetBacklight(int percent) {
 #if ULP_BACKLIGHT
     UlpSetBrightness(dutyCycle);
 #endif
+}
+
+uint32_t getRunTimeMs() {
+    return FreeRTOS::getTimeSinceStart();
 }
 
 #endif
