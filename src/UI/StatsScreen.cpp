@@ -3,8 +3,8 @@
 #include "UI/Fonts/Tahoma8pt7b.h"
 #include "sindarin-debug.h"
 
-StatsScreen::StatsScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power)
-    : display_(display), renderer_(display), prefs_(prefs), power_(power) {}
+StatsScreen::StatsScreen(DisplaySystem &display, PreferencesStore &prefs)
+    : display_(display), prefs_(prefs) {}
 
 void StatsScreen::render(DisplaySystem &display) {
     if (!needsRerender) {

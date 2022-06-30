@@ -444,12 +444,18 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
     }));
 
     settingsMenu->addMenuItem(MenuItem("Statistics", [this, settingsMenu, display]() {
-        auto statsScreen = new StatsScreen(*display, prefs_, this->power_);
+        auto statsScreen = new StatsScreen(*display, prefs_);
         this->setCurrentScreen(*statsScreen);
         statsScreen->backCallback = [this, statsScreen, settingsMenu]() {
             setCurrentScreen(*settingsMenu);
             delete statsScreen;
         };
+    }));
+
+    settingsMenu->addMenuItem(MenuItem("Reset Statistics", [this, display]() {
+        prefs_.wordCount.set(0);
+        prefs_.totalReadingTimeSeconds.set(0);
+        display->renderMaxBoxWithText("Statistics reset.");
     }));
 
     settingsMenu->addMenuItem(MenuItem("Test Bitmap Screen", [this, settingsMenu]() {

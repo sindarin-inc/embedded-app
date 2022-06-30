@@ -8,16 +8,14 @@
 
 class StatsScreen : public Screen {
 public:
-    StatsScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power);
+    StatsScreen(DisplaySystem &display, PreferencesStore &prefs);
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
 
 protected:
     DisplaySystem &display_;
-    Renderer renderer_;
     PreferencesStore &prefs_;
-    Power &power_;
 };
 
 #endif
