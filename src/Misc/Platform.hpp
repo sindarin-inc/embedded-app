@@ -12,4 +12,4 @@ void SetCpuSpeedMhz(int speedMhz);
 
 void SetBacklight(int percent);
 
-uint32_t getRunTimeMs();
+auto GetRunTimeMs() -> uint32_t;

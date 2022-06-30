@@ -6,9 +6,9 @@
 #include <soc/rtc.h>
 
 #include "Platform.hpp"
+#include "RTOS.h"
 #include "config.h"
 #include "sindarin-debug.h"
-#include "RTOS.h"
 
 #if ULP_BACKLIGHT
 #include "Misc/ULP.hpp"
@@ -125,8 +125,6 @@ void SetBacklight(int percent) {
 #endif
 }
 
-uint32_t getRunTimeMs() {
-    return FreeRTOS::getTimeSinceStart();
-}
+auto GetRunTimeMs() -> uint32_t { return FreeRTOS::getTimeSinceStart(); }
 
 #endif

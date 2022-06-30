@@ -1,6 +1,8 @@
-#include "Misc/Platform.hpp"
 #include "UI/ReadableScreen.hpp"
+
 #include <utility>
+
+#include "Misc/Platform.hpp"
 #include "sindarin-debug.h"
 
 void ReadableScreen::render(DisplaySystem &display) {
@@ -19,14 +21,14 @@ void ReadableScreen::render(DisplaySystem &display) {
     prefs_.wordCount.set(wc);
 
     // remember the time this page was rendered
-    readingStartTime_ = getRunTimeMs();
-    
+    readingStartTime_ = GetRunTimeMs();
+
     needsRerender = false;
 }
 
 void ReadableScreen::incrementReadingTime() {
     // increment total reading time
-    auto endMillis = getRunTimeMs();
+    auto endMillis = GetRunTimeMs();
     auto thisPageReadingTimeSeconds =
         (endMillis > readingStartTime_) ? (endMillis - readingStartTime_) / 1000 : 0;
     auto totalReadingTimeSeconds = prefs_.totalReadingTimeSeconds.get().value();
