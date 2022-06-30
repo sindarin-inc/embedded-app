@@ -468,11 +468,11 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
     }));
 
     settingsMenu->addMenuItem(MenuItem("Build Info", [display]() {
-        #ifdef GITHASH
+#ifdef GITHASH
         std::string buildString = "Build " + std::string(GITHASH);
-        #else
+#else
         std::string buildString = "No Build Info";
-        #endif
+#endif
         display->renderMaxBoxWithText(buildString);
     }));
 
