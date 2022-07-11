@@ -10,10 +10,11 @@
 
 #include <array>
 #include <string>
+#include "Storage/FileSystem.hpp"
 
 class Power {
 public:
-    Power() = default;
+    Power(FileSystem* fs) : fileSystem_(fs) {}
 
     void setup();
     void loop();
@@ -24,11 +25,14 @@ public:
     auto getRightBatteryVoltage() -> float;
     auto getBatteryPercentage() -> float;
 
+    void logVoltages();
+
     auto getDepleted() -> bool;
 
 protected:
     auto average(const std::array<float, BATTERY_MEASUREMENTS_COUNT> &array, int count) -> float;
 
+    FileSystem* fileSystem_;
     unsigned long lastMeasurementTime_ = 0;
     bool depleted_;
     int leftIndex_;

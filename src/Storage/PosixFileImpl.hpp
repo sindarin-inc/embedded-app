@@ -10,15 +10,20 @@ extern "C" {
 class PosixFileImpl : public fs::FileImpl {
 protected:
     std::fstream file_;
+    const char* mode_;
     char path_[200];
     size_t pos_ = 0;
 
 public:
-    PosixFileImpl(const char *path) : file_(path) { strncpy(path_, path, sizeof(path_)); };
+    PosixFileImpl(const char *path, const char *mode) : file_(), mode_(mode) { strncpy(path_, path, sizeof(path_)); };
     ~PosixFileImpl() override = default;
     size_t write(const uint8_t *buf, size_t size) override {
         if (!file_.is_open()) {
-            file_.open(path_, std::fstream::out);
+            if (strcmp(mode_, FILE_APPEND) == 0) {
+                file_.open(path_, std::fstream::app);
+            } else {
+                file_.open(path_, std::fstream::out);
+            }
         }
         file_.write((const char *)buf, size);
         if (!file_.good()) {
@@ -27,6 +32,9 @@ public:
         return size;
     };
     size_t read(uint8_t *buf, size_t size) override {
+        if (!file_.is_open()) {
+            file_.open(path_, std::fstream::in);
+        }
         file_.read((char *)buf, size);
         auto numRead = file_.gcount();
         pos_ += numRead;
@@ -34,6 +42,9 @@ public:
     };
     void flush() override { file_.flush(); }
     bool seek(uint32_t pos, SeekMode mode) override {
+        if (!file_.is_open()) {
+            file_.open(path_, std::fstream::in);
+        }
         file_.seekg(pos);
         pos_ = pos;
         return file_.good();

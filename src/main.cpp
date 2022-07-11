@@ -63,10 +63,6 @@ TTRemoteInput ttRemoteInput(prefs);
 OTA ota;
 #endif
 
-Power power;
-
-RootUI rootUi(prefs, power);
-
 #if SIMULATOR
 #include "Storage/PosixFileSystem.hpp"
 PosixFileSystem fileSystem;
@@ -74,6 +70,9 @@ PosixFileSystem fileSystem;
 #include "Storage/SpiffsFileSystem.hpp"
 SpiffsFileSystem fileSystem;
 #endif
+
+Power power(&fileSystem);
+RootUI rootUi(prefs, power);
 
 #if !SIMULATOR
 QueueHandle_t remoteQueue = nullptr;

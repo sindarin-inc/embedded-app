@@ -119,3 +119,24 @@ auto Power::getDepleted() -> bool {
     return this->depleted_;
 #endif
 }
+
+void Power::logVoltages() {
+    // create log directory in filesystem if it doesn't exist
+    if (!fileSystem_->createDir("/logs")) {
+        log_e("could not create /logs directory");
+        return;
+    }
+
+    auto runTimeMs = GetRunTimeMs();
+    auto lVoltage = getLeftBatteryVoltage();
+    auto rVoltage = getRightBatteryVoltage();
+    std::string logString = StringFormat("%d,%.2f,%.2f", runTimeMs, lVoltage, rVoltage);
+
+    std::string path = "/logs/voltagelog.txt";
+    File file = fileSystem_->open(path.c_str(), FILE_APPEND);
+    file.write((const uint8_t *)logString.c_str(), logString.length());
+    file.write('\n');
+    file.flush();
+    file.close();
+
+}
