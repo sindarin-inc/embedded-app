@@ -11,10 +11,14 @@
 #include <array>
 #include <string>
 #include "Storage/FileSystem.hpp"
+#include "Storage/PreferencesStore.hpp"
 
 class Power {
 public:
-    Power(FileSystem* fs) : fileSystem_(fs) {}
+    Power(FileSystem &fs, PreferencesStore &prefs) 
+    : fileSystem_(fs) 
+    , prefs_(prefs)
+    {}
 
     void setup();
     void loop();
@@ -32,7 +36,8 @@ public:
 protected:
     auto average(const std::array<float, BATTERY_MEASUREMENTS_COUNT> &array, int count) -> float;
 
-    FileSystem* fileSystem_;
+    FileSystem &fileSystem_;
+    PreferencesStore &prefs_;
     unsigned long lastMeasurementTime_ = 0;
     bool depleted_;
     int leftIndex_;

@@ -71,7 +71,7 @@ PosixFileSystem fileSystem;
 SpiffsFileSystem fileSystem;
 #endif
 
-Power power(&fileSystem);
+Power power(fileSystem, prefs);
 RootUI rootUi(prefs, power);
 
 #if !SIMULATOR
@@ -354,6 +354,11 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     SetCpuSpeedMhz(CPU_FREQ_MHZ_LOW);
 
     BlinkBootErrors(bootErrors);
+
+    // set current boot id
+    auto bootCount = prefs.bootCount.get().value();
+    bootCount++;
+    prefs.bootCount.set(bootCount);
 
 #if !SIMULATOR
     remoteQueue = xQueueCreate(10, sizeof(RemoteCommand));
