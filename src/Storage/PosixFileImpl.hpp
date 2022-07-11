@@ -10,12 +10,14 @@ extern "C" {
 class PosixFileImpl : public fs::FileImpl {
 protected:
     std::fstream file_;
-    const char* mode_;
+    const char *mode_;
     char path_[200];
     size_t pos_ = 0;
 
 public:
-    PosixFileImpl(const char *path, const char *mode) : file_(), mode_(mode) { strncpy(path_, path, sizeof(path_)); };
+    PosixFileImpl(const char *path, const char *mode) : file_(), mode_(mode) {
+        strncpy(path_, path, sizeof(path_));
+    };
     ~PosixFileImpl() override = default;
     size_t write(const uint8_t *buf, size_t size) override {
         if (!file_.is_open()) {

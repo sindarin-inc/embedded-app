@@ -130,11 +130,11 @@ void Power::logVoltages() {
     // get current boot count
     auto bootCount = prefs_.bootCount.get().value();
 
-
     auto runTimeMs = GetRunTimeMs();
     auto lVoltage = getLeftBatteryVoltage();
     auto rVoltage = getRightBatteryVoltage();
-    std::string logString = StringFormat("%d,%d,%.2f,%.2f", bootCount, runTimeMs, lVoltage, rVoltage);
+    std::string logString =
+        StringFormat("%d,%d,%.2f,%.2f", bootCount, runTimeMs, lVoltage, rVoltage);
 
     std::string path = "/logs/voltagelog.txt";
     File file = fileSystem_.open(path.c_str(), FILE_APPEND);
@@ -142,5 +142,4 @@ void Power::logVoltages() {
     file.write('\n');
     file.flush();
     file.close();
-
 }

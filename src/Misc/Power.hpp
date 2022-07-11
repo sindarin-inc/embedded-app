@@ -10,15 +10,13 @@
 
 #include <array>
 #include <string>
+
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
 
 class Power {
 public:
-    Power(FileSystem &fs, PreferencesStore &prefs) 
-    : fileSystem_(fs) 
-    , prefs_(prefs)
-    {}
+    Power(FileSystem &fs, PreferencesStore &prefs) : fileSystem_(fs), prefs_(prefs) {}
 
     void setup();
     void loop();
