@@ -19,7 +19,6 @@ auto PosixFileSystem::open(const std::string &path, const char *mode, const bool
     -> File {
     char prefixedPath[200];
     createPath(prefixedPath, sizeof(prefixedPath), std::string("/data") + path);
-    log_d("creating file");
     auto file = File(std::make_shared<PosixFileImpl>(prefixedPath, mode));
     return file;
 }
