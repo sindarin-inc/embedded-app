@@ -27,7 +27,7 @@ public:
     auto getRightBatteryVoltage() -> float;
     auto getBatteryPercentage() -> float;
 
-    void logVoltages();
+    void logVoltages(float lVoltage, float rVoltage);
 
     auto getDepleted() -> bool;
 

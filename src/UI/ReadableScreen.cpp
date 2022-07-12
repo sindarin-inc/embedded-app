@@ -24,7 +24,6 @@ void ReadableScreen::render(DisplaySystem &display) {
     readingStartTime_ = GetRunTimeMs();
 
     needsRerender = false;
-    power_.logVoltages();
 }
 
 void ReadableScreen::incrementReadingTime() {

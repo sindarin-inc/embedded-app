@@ -93,8 +93,6 @@ void MenuScreen::render(DisplaySystem &display) {
 
     display.drawTextInBox(totalToDisplay, 0, 0, display.width(), display.height());
     needsRerender = false;
-
-    power_.logVoltages();
 }
 
 void MenuScreen::processCommand(RemoteCommand command) {

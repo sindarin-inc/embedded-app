@@ -24,7 +24,9 @@ DisplayEinkET013TT1 myDisplay(DISPLAY_CS, DISPLAY_OEI, DISPLAY_RST, DISPLAY_BUSY
 #endif
 
 #if SIMULATOR
+#include <thread>
 DisplaySDLSimulator myDisplay;
+std::thread *simPowerThread;
 #endif
 
 #if WROVER_KIT
@@ -95,6 +97,15 @@ void RadioTask(void *parameter) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
     vTaskDelete(nullptr);
+}
+#endif
+
+#if SIMULATOR
+void simStatsTask(int intervalMs) {
+    for (;;) {
+        power.loop();
+        std::this_thread::sleep_for(std::chrono::milliseconds(intervalMs));
+    }
 }
 #endif
 
@@ -365,5 +376,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     xTaskCreatePinnedToCore(RadioTask, "Radio", 5000, nullptr, 1, nullptr, 0);
     xTaskCreatePinnedToCore(UITask, "UI", 10000, nullptr, 10, &uiTaskHandle, 1);
     xTaskCreatePinnedToCore(StatsTask, "Stats", 5000, nullptr, 0, nullptr, 1);
+#else
+    simPowerThread = new std::thread(simStatsTask, 5000);
 #endif
 }

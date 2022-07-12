@@ -98,8 +98,6 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     display.setFont(display.style.getFontFamily().readableFont);
     display.setAutoUpdate(autoUpdate);
     needsRerender = false;
-
-    power_.logVoltages();
 }
 
 void PagedMenuScreen::nextSelection() { currSelection_ = (currSelection_ + 1) % numMenuItems_; }
