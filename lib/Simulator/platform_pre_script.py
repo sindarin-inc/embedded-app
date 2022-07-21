@@ -13,6 +13,8 @@ def remove_non_simulator_files(node):
         "SpiffsFileSystem.cpp",
         "Adafruit_SPITFT.cpp",
         "Adafruit_GrayOLED.cpp",
+        "Ltr329Als.cpp",
+        "Mmc5603.cpp",
     ]
 
     if node.name in ignore:
