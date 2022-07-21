@@ -1,5 +1,5 @@
+#include <cinttypes>
 #include <esp_err.h>
-#include <inttypes.h>
 
 typedef enum {
     // ALS operation mode control SW reset (R/W)
@@ -41,10 +41,10 @@ typedef struct {
             uint8_t reserved : 2;
             // 0 = OLD data (data already read), (default)
             // 1 = NEW data (first time data is read)
-            uint8_t als_data_status : 1;
+            uint8_t alsDataStatus : 1;
             // 0 = Interrupt signal INACTIVE (default)
             // 1 = Interrupt signal ACTIVE
-            uint8_t als_interrupt_status : 1;
+            uint8_t alsInterruptStatus : 1;
             // 000 = ALS measured data in Gain 1X (default)
             // 001 = ALS measured data in Gain 2X
             // 010 = ALS measured data in Gain 4X
@@ -53,14 +53,14 @@ typedef struct {
             // 101 = Invalid
             // 110 = ALS measured data in Gain 48X
             // 111 = ALS measured data in Gain 96X
-            uint8_t als_data_gain_range : 3;
+            uint8_t alsDataGainRange : 3;
             // 0 = ALS Data is Valid (default)
             // 1 = ALS Data is Invalid
-            uint8_t als_data_valid : 1;
+            uint8_t alsDataValid : 1;
         };
     };
 
-    bool isValid() { return als_data_status == 1 && als_data_valid == 0; }
+    auto isValid() -> bool { return alsDataStatus == 1 && alsDataValid == 0; }
 
 } ltr329als01_status_value;
 
@@ -75,21 +75,21 @@ class Ltr329Als {
 public:
     Ltr329Als(int i2cNum) : i2cNum_(i2cNum) {}
 
-    uint8_t readPartId();
-    uint8_t readManufacturerId();
+    auto readPartId() -> uint8_t;
+    auto readManufacturerId() -> uint8_t;
 
     void enable();
     void disable();
 
-    ltr329als01_status_value readStatus();
+    auto readStatus() -> ltr329als01_status_value;
 
-    ltr329als01_als_data_value readChannel0();
-    ltr329als01_als_data_value readChannel1();
+    auto readChannel0() -> ltr329als01_als_data_value;
+    auto readChannel1() -> ltr329als01_als_data_value;
 
 private:
     int i2cNum_;
 
-    esp_err_t registerReadByte(ltr329als01_reg_t reg_addr, uint8_t *data);
+    auto registerReadByte(ltr329als01_reg_t regAddr, uint8_t *data) -> esp_err_t;
 
-    esp_err_t registerWriteByte(ltr329als01_reg_t reg_addr, uint8_t data);
+    auto registerWriteByte(ltr329als01_reg_t regAddr, uint8_t data) -> esp_err_t;
 };

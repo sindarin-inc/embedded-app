@@ -11,26 +11,26 @@ typedef struct {
         uint8_t raw;
         struct {
             // Factory use only, reset value is 0.
-            uint8_t meas_m_done_int : 1;
+            uint8_t measMDoneInt : 1;
             // Factory use only, reset value is 0.
-            uint8_t meas_t_done_int : 1;
+            uint8_t measTDoneInt : 1;
             // Factory use only, reset value is 0.
-            uint8_t mtd_flag_int : 1;
+            uint8_t mtdFlagInt : 1;
             // Factory use only, reset value is 0.
-            uint8_t st_fail : 1;
+            uint8_t stFail : 1;
             // This bit is an indicator of successfully reading its OTP memory either as part of its
             // power up sequence, or after an I2C command that reloads the OTP memory, such as
             // resetting the chip and refreshing the OTP registers.
-            uint8_t otp_read_done : 1;
+            uint8_t otpReadDone : 1;
             // This bit is an indicator of the selftest signal, it keeps low once the device PASS
             // selftest.
-            uint8_t sat_sensor : 1;
+            uint8_t satSensor : 1;
             // This bit indicates that a measurement of magnetic field is done and the data is ready
             // to be read. This bit is reset only when any of the magnetic data registers is read.
-            uint8_t meas_m_done : 1;
+            uint8_t measMDone : 1;
             // This bit indicates that a measurement of temperature is done and the data is ready to
             // be read. This bit is reset only when the temperature register is read.
-            uint8_t meas_t_done : 1;
+            uint8_t measTDone : 1;
         };
     };
 } mmc5603_status_value;
@@ -42,63 +42,63 @@ typedef struct {
             // Take Measure of Magnetic field, or TM_M bit. Writing a 1 into this location causes
             // the chip to perform a magnetic measurement. This bit is self-clearing at the end of
             // each measurement.
-            uint8_t take_meas_m : 1;
+            uint8_t takeMeasM : 1;
             // Take Measure of Temperature, or TM_T bit. Writing a 1 into this location causes the
             // chip to perform a temperature measurement. This bit is self-clearing at the end of
             // each measurement.
-            uint8_t take_meas_t : 1;
+            uint8_t takeMeasT : 1;
             // Factory use only, reset value is 0.
-            uint8_t start_mdt : 1;
+            uint8_t startMdt : 1;
             // Writing a 1 into this location will cause the chip to do the Set operation, which
             // will allow large set current to flow through the sensor coils for 375ns. This bit is
             // self-cleared at the end of Set operation.
-            uint8_t do_set : 1;
+            uint8_t doSet : 1;
             // Writing a 1 into this location will cause the chip to do the Reset operation, which
             // will allow large reset current to flow through the sensor coils for 375ns. This bit
             // is self-cleared at the end of Reset operation.
-            uint8_t do_reset : 1;
+            uint8_t doReset : 1;
             // Writing a 1 into this location will enable the function of automatic set/reset. This
             // function applies to both on-demand and continuous-time measurements. This bit must be
             // set to 1 in order to activate the feature of periodic set. This bit is recommended to
             // set to “1” in the application.
-            uint8_t auto_sr_en : 1;
+            uint8_t autoSrEn : 1;
             // Writing a 1 into this location will enable the function of automatic self-test. The
             // threshold in register 1EH, 1FH, 20H should be set before this bit is set to 1. This
             // bit clears itself after the operation is completed.
-            uint8_t auto_st_en : 1;
+            uint8_t autoStEn : 1;
             // Writing a 1 into this location will start the calculation of the measurement period
             // according to the ODR. This bit should be set before continuous-mode measurements are
             // started. This bit is self- cleared after the measurement period is calculated by
             // internal circuits.
-            uint8_t cmm_freq_en : 1;
+            uint8_t cmmFreqEn : 1;
         };
     };
 } mmc5603_ctrl_0_value;
 
-esp_err_t Mmc5603::registerReadByte(mmc5603_reg_t reg_addr, uint8_t *data) {
-    return i2c_master_write_read_device(i2cNum_, MMC5603_SENSOR_ADDR, (uint8_t *)&reg_addr, 1, data,
+auto Mmc5603::registerReadByte(mmc5603_reg_t regAddr, uint8_t *data) -> esp_err_t {
+    return i2c_master_write_read_device(i2cNum_, MMC5603_SENSOR_ADDR, (uint8_t *)&regAddr, 1, data,
                                         1, I2C_MASTER_TIMEOUT_MS / portTICK_RATE_MS);
 }
 
-esp_err_t Mmc5603::registerWriteByte(mmc5603_reg_t reg_addr, uint8_t data) {
+auto Mmc5603::registerWriteByte(mmc5603_reg_t regAddr, uint8_t data) -> esp_err_t {
     int ret;
-    uint8_t write_buf[2] = {reg_addr, data};
-    ret = i2c_master_write_to_device(i2cNum_, MMC5603_SENSOR_ADDR, write_buf, sizeof(write_buf),
+    uint8_t writeBuf[2] = {static_cast<uint8_t>(regAddr), data};
+    ret = i2c_master_write_to_device(i2cNum_, MMC5603_SENSOR_ADDR, writeBuf, sizeof(writeBuf),
                                      I2C_MASTER_TIMEOUT_MS / portTICK_RATE_MS);
 
     return ret;
 }
 
-uint8_t Mmc5603::readProductId() {
+auto Mmc5603::readProductId() -> uint8_t {
     uint8_t productId;
     registerReadByte(MMC5603_REG_PRODUCT_ID, &productId);
     return productId;
 }
 
-float Mmc5603::readX20Bit() {
+auto Mmc5603::readX20Bit() -> float {
     mmc5603_ctrl_0_value ctrl0Value;
-    ctrl0Value.auto_sr_en = 1;
-    ctrl0Value.take_meas_m = 1;
+    ctrl0Value.autoSrEn = 1;
+    ctrl0Value.takeMeasM = 1;
     ESP_ERROR_CHECK(registerWriteByte(MMC5603_REG_CTRL_0, ctrl0Value.raw));
 
     uint32_t xInt = 0;
@@ -114,10 +114,10 @@ float Mmc5603::readX20Bit() {
     return xValue;
 }
 
-float Mmc5603::readX() {
+auto Mmc5603::readX() -> float {
     mmc5603_ctrl_0_value ctrl0Value;
-    ctrl0Value.auto_sr_en = 1;
-    ctrl0Value.take_meas_m = 1;
+    ctrl0Value.autoSrEn = 1;
+    ctrl0Value.takeMeasM = 1;
     ESP_ERROR_CHECK(registerWriteByte(MMC5603_REG_CTRL_0, ctrl0Value.raw));
 
     // 16 bit mode

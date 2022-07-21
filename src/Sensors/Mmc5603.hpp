@@ -1,5 +1,5 @@
+#include <cinttypes>
 #include <esp_err.h>
-#include <inttypes.h>
 
 typedef enum {
     MMC5603_REG_XOUT_0 = 0x00,
@@ -30,15 +30,15 @@ class Mmc5603 {
 public:
     Mmc5603(int i2cNum) : i2cNum_(i2cNum) {}
 
-    uint8_t readProductId();
+    auto readProductId() -> uint8_t;
 
-    float readX();
-    float readX20Bit();
+    auto readX() -> float;
+    auto readX20Bit() -> float;
 
 private:
     int i2cNum_;
 
-    esp_err_t registerReadByte(mmc5603_reg_t reg_addr, uint8_t *data);
+    auto registerReadByte(mmc5603_reg_t regAddr, uint8_t *data) -> esp_err_t;
 
-    esp_err_t registerWriteByte(mmc5603_reg_t reg_addr, uint8_t data);
+    auto registerWriteByte(mmc5603_reg_t regAddr, uint8_t data) -> esp_err_t;
 };
