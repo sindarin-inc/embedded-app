@@ -200,6 +200,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     vTaskDelay(200 / portTICK_PERIOD_MS);
     digitalWrite(BLUE_LED, LED_OFF);
 #endif
+#endif
 
 #if USE_LTR329
     auto partId = lightSensor.readPartId();
