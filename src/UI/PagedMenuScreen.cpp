@@ -70,7 +70,7 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     // TODO: Add UI for right screen temp also
     leftTemp = driver->readTemperature(ScreenSide::Left);
 #else
-    temp = 22;
+    leftTemp = 22;
 #endif
     batteryStatus += StringFormat(" %dC", leftTemp);
 
