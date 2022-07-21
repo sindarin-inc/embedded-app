@@ -59,6 +59,16 @@ BLEImprov *bleWifi;
 TTRemoteInput ttRemoteInput(prefs);
 #endif
 
+#if USE_LTR329
+#include "Sensors/Ltr329Als.hpp"
+Ltr329Als lightSensor(0);
+#endif
+
+#if USE_MMC5603
+#include "Sensors/Mmc5603.hpp"
+Mmc5603 magSensor(0);
+#endif
+
 #if ENABLE_OTA
 OTA ota;
 #endif
@@ -174,6 +184,28 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     ESP_ERROR_CHECK(uart_driver_install(0, 256, 0, 20, nullptr, 0));
     ESP_ERROR_CHECK(uart_param_config(0, &uartConfig));
     ESP_ERROR_CHECK(uart_set_pin(0, 1, 3, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
+#endif
+
+    InitializePlatform();
+
+#if USE_LTR329
+    auto partId = lightSensor.readPartId();
+    auto manufacturerId = lightSensor.readManufacturerId();
+    if (partId != 0xA0 || manufacturerId != 0x05) {
+        bootErrors.push_back({.type = BootError::Type::AmbientLight});
+    } else {
+        log_i("LTR329 ambient light sensor found (partId: 0x%02X, manufacturerId: 0x%02X)", partId,
+              manufacturerId);
+    }
+#endif
+
+#if USE_MMC5603
+    auto mmcProductId = magSensor.readProductId();
+    if (mmcProductId != 0x10) {
+        bootErrors.push_back({.type = BootError::Type::Magnetometer});
+    } else {
+        log_i("MMC5603 magnetometer found (productId: 0x%02X)", mmcProductId);
+    }
 #endif
 
     if (!prefs.begin()) {

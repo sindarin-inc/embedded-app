@@ -1,5 +1,6 @@
 #if !SIMULATOR
 
+#include <driver/i2c.h>
 #include <driver/ledc.h>
 #include <driver/uart.h>
 #include <esp_adc_cal.h>
@@ -28,6 +29,21 @@ void InitializePlatform() {
 
     pinMode(RED_LED, OUTPUT);
     pinMode(GREEN_LED, OUTPUT);
+
+#if USE_I2C
+    // Initialize I2C port 0
+    int i2cPort = 0;
+    i2c_config_t conf = {
+        .mode = I2C_MODE_MASTER,
+        .sda_io_num = I2C_MASTER_SDA_IO,
+        .scl_io_num = I2C_MASTER_SCL_IO,
+        .sda_pullup_en = GPIO_PULLUP_ENABLE,
+        .scl_pullup_en = GPIO_PULLUP_ENABLE,
+    };
+    conf.master.clk_speed = I2C_MASTER_FREQ_HZ;
+    i2c_param_config(i2cPort, &conf);
+    i2c_driver_install(i2cPort, conf.mode, 0, 0, 0);
+#endif
 
 #if EINKET013TT1
 #ifdef DISPLAY_POWER

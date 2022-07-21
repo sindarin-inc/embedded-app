@@ -101,3 +101,15 @@
 #ifndef ARDUINO
 #define ARDUINO 10185
 #endif
+
+#if (USE_LTR329 || USE_MMC5603)
+#define USE_I2C 1
+#else
+#define USE_I2C 0
+#endif
+
+#if USE_I2C
+#define I2C_MASTER_SCL_IO 0
+#define I2C_MASTER_SDA_IO 1
+#define I2C_MASTER_FREQ_HZ 400000
+#endif
