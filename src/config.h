@@ -56,6 +56,15 @@
 #else
 #define RED_LED 22
 #define GREEN_LED 25
+//#define BLUE_LED 18
+#endif
+
+#ifdef LED_INVERT
+#define LED_ON LOW
+#define LED_OFF HIGH
+#else
+#define LED_ON HIGH
+#define LED_OFF LOW
 #endif
 
 #define BAT_VOLTAGE_RIGHT 37

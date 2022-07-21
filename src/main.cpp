@@ -176,6 +176,19 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     ESP_ERROR_CHECK(uart_set_pin(0, 1, 3, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
 #endif
 
+    // Flash all the LEDs
+    digitalWrite(RED_LED, LED_ON);
+    vTaskDelay(200 / portTICK_PERIOD_MS);
+    digitalWrite(RED_LED, LED_OFF);
+    digitalWrite(GREEN_LED, LED_ON);
+    vTaskDelay(200 / portTICK_PERIOD_MS);
+    digitalWrite(GREEN_LED, LED_OFF);
+#ifdef BLUE_LED
+    digitalWrite(BLUE_LED, LED_ON);
+    vTaskDelay(200 / portTICK_PERIOD_MS);
+    digitalWrite(BLUE_LED, LED_OFF);
+#endif
+
     if (!prefs.begin()) {
         bootErrors.push_back({.type = BootError::Type::Preferences});
     }
