@@ -78,7 +78,10 @@
 #define BACKLIGHT_LEFT 9
 #endif
 
-#define DISPLAY_CS 5
+// Boards prior to Sol3 boards don't have separate CS pins, but it's safe to use the same pin twice
+// here
+#define DISPLAY_CS_LEFT 5
+#define DISPLAY_CS_RIGHT 5
 #define DISPLAY_OEI 21
 #ifndef DISPLAY_RST
 #define DISPLAY_RST 32
