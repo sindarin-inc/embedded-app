@@ -84,14 +84,15 @@ static uint8_t const BORDER_NONE[4] = {0x00, 0x00, 0x00, 0x03};
 
 void EinkET013TT1::init() {
     log_d("Initializing EinkET013TT1");
-    pinMode(cs_, OUTPUT);
+    pinMode(csLeft_, OUTPUT);
+    pinMode(csRight_, OUTPUT);
     pinMode(oei_, OUTPUT);
     pinMode(rst_, OUTPUT);
 #if !DISABLE_BUSY
     pinMode(busy_, INPUT);
 #endif
 
-    digitalWrite(cs_, HIGH);
+    setCS(HIGH, ScreenSide::Both);
 
     digitalWrite(rst_, LOW);
     delay(5);
@@ -257,6 +258,17 @@ auto EinkET013TT1::checkWaveform(const EinkET013TT1Waveform &waveform) -> uint8_
     return returnVal;
 }
 
+inline void EinkET013TT1::setCS(bool value, ScreenSide screen) {
+    if (screen == ScreenSide::Left) {
+        digitalWrite(csLeft_, value);
+    } else if (screen == ScreenSide::Right) {
+        digitalWrite(csRight_, value);
+    } else if (screen == ScreenSide::Both) {
+        digitalWrite(csLeft_, value);
+        digitalWrite(csRight_, value);
+    }
+}
+
 void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer) {
     timerOverruns_ = 0;
     busyWaits_ = 0;
@@ -286,14 +298,21 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     ESP_ERROR_CHECK(esp_pm_lock_acquire(freqLock_));
 #endif
 
-    auto pumpStatus = readPumpStatus();
-    auto temp = readTemperature();
-    if (!pumpStatus.bits.vcpok) {
-        log_e("Pump not ready! LVDS=%d VCPOK=%d temp=%dºC", pumpStatus.bits.lvds,
-              pumpStatus.bits.vcpok, temp);
+    // TODO: This is a very useful debug thing but doesn't actually affect how well the displays
+    // refresh. Might be worth removing in release builds to slightly shorten refresh time.
+    auto leftPumpStatus = readPumpStatus(ScreenSide::Left);
+    auto leftTemp = readTemperature(ScreenSide::Left);
+    auto rightPumpStatus = readPumpStatus(ScreenSide::Right);
+    auto rightTemp = readTemperature(ScreenSide::Right);
+    if (!leftPumpStatus.bits.vcpok || !rightPumpStatus.bits.vcpok) {
+        log_e("Pump not ready! Left: LVDS=%d VCPOK=%d temp=%dºC Right: LVDS=%d VCPOK=%d temp=%dºC",
+              leftPumpStatus.bits.lvds, leftPumpStatus.bits.vcpok, leftTemp,
+              rightPumpStatus.bits.lvds, rightPumpStatus.bits.vcpok, rightTemp);
         error_ = true;
     } else {
-        log_d("LVDS=%d VCPOK=%d temp=%dºC", pumpStatus.bits.lvds, pumpStatus.bits.vcpok, temp);
+        log_d("Left: LVDS=%d VCPOK=%d temp=%dºC Right: LVDS=%d VCPOK=%d temp=%dºC",
+              leftPumpStatus.bits.lvds, leftPumpStatus.bits.vcpok, leftTemp,
+              rightPumpStatus.bits.lvds, rightPumpStatus.bits.vcpok, rightTemp);
     }
 
     ESP_ERROR_CHECK(spi_device_acquire_bus(spiHigh_, portMAX_DELAY));
@@ -409,21 +428,22 @@ void EinkET013TT1::writeRegister(Register index, const uint8_t *data, size_t len
         .length = len * 8,
         .tx_buffer = data};
 
-    digitalWrite(cs_, LOW);
+    setCS(LOW, ScreenSide::Both);
     ESP_ERROR_CHECK(spi_device_polling_transmit(spiHigh_, &t));
-    digitalWrite(cs_, HIGH);
+    setCS(HIGH, ScreenSide::Both);
 }
 
 inline void EinkET013TT1::writeRegister(Register index, uint8_t data) {
     writeRegister(index, &data, 1);
 }
 
-auto EinkET013TT1::readRegister(uint8_t index) -> uint8_t {
+auto EinkET013TT1::readRegister(uint8_t index, ScreenSide screen) -> uint8_t {
     ESP_ERROR_CHECK(spi_device_acquire_bus(spiHigh_, portMAX_DELAY));
     spi_transaction_t t = {.cmd = (uint16_t)((0x70 << 8) | (index & 0x0F))};
-    digitalWrite(cs_, LOW);
+    // TODO: Hardcoding reading to the left one for now
+    setCS(LOW, screen);
     ESP_ERROR_CHECK(spi_device_polling_transmit(spiHigh_, &t));
-    digitalWrite(cs_, HIGH);
+    setCS(HIGH, screen);
     spi_device_release_bus(spiHigh_);
 
     ESP_ERROR_CHECK(spi_device_acquire_bus(spiLow_, portMAX_DELAY));
@@ -431,19 +451,21 @@ auto EinkET013TT1::readRegister(uint8_t index) -> uint8_t {
                             .cmd = 0x73,
                             .length = 8,
                             .tx_data = {0xFF}};
-    digitalWrite(cs_, LOW);
+    setCS(LOW, screen);
     ESP_ERROR_CHECK(spi_device_polling_transmit(spiLow_, &t2));
-    digitalWrite(cs_, HIGH);
+    setCS(HIGH, screen);
     uint8_t result = t2.rx_data[0];
     spi_device_release_bus(spiLow_);
 
     return result;
 }
 
-auto EinkET013TT1::readPumpStatus() -> PumpStatus { return PumpStatus{readRegister(0x00)}; }
+auto EinkET013TT1::readPumpStatus(ScreenSide screen) -> PumpStatus {
+    return PumpStatus{readRegister(0x00, screen)};
+}
 
-auto EinkET013TT1::readTemperature() -> int16_t {
-    uint16_t value = readRegister(0x0F);
+auto EinkET013TT1::readTemperature(ScreenSide screen) -> int16_t {
+    uint16_t value = readRegister(0x0F, screen);
 
     value &= 0x7F;
 
@@ -456,15 +478,15 @@ auto EinkET013TT1::readTemperature() -> int16_t {
     return -1;
 }
 
-auto EinkET013TT1::readDeviceIdReg() -> uint8_t {
+auto EinkET013TT1::readDeviceIdReg(ScreenSide screen) -> uint8_t {
     ESP_ERROR_CHECK(spi_device_acquire_bus(spiLow_, portMAX_DELAY));
     spi_transaction_t t2 = {.flags = SPI_TRANS_USE_RXDATA | SPI_TRANS_USE_TXDATA,
                             .cmd = 0x71,
                             .length = 8,
                             .tx_data = {0xFF}};
-    digitalWrite(cs_, LOW);
+    setCS(LOW, screen);
     ESP_ERROR_CHECK(spi_device_polling_transmit(spiLow_, &t2));
-    digitalWrite(cs_, HIGH);
+    setCS(HIGH, screen);
 
     uint8_t result = t2.rx_data[0];
     spi_device_release_bus(spiLow_);

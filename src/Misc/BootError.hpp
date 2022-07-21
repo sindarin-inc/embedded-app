@@ -15,6 +15,8 @@ struct BootError {
         BLEManagerAdvertising = 10,
         WiFi = 11,
         Preferences = 12,
+        AmbientLight = 13,
+        Magnetometer = 14,
     };
     Type type;
 
@@ -42,6 +44,10 @@ struct BootError {
             return "Wifi";
         case Preferences:
             return "Preferences";
+        case AmbientLight:
+            return "Ambient Light";
+        case Magnetometer:
+            return "Magnetometer";
         };
         return "Unhandled";
     }

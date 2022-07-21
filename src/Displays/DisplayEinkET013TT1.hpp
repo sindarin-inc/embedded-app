@@ -10,9 +10,10 @@
 
 class DisplayEinkET013TT1 : public DisplaySystem {
 public:
-    DisplayEinkET013TT1(uint8_t cs, uint8_t oei, uint8_t rst, uint8_t busy) noexcept
+    DisplayEinkET013TT1(uint8_t csLeft, uint8_t csRight, uint8_t oei, uint8_t rst,
+                        uint8_t busy) noexcept
         : DisplaySystem(), gfxCanvas_(EinkET013TT1_X_PIXELS, EinkET013TT1_Y_PIXELS),
-          driver_(cs, oei, rst, busy) {
+          driver_(csLeft, csRight, oei, rst, busy) {
         gfxClass_ = &gfxCanvas_;
     };
 

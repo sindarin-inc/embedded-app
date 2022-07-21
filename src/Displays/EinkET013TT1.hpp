@@ -153,11 +153,18 @@ enum Register {
 #define VCOM_DEFAULT (-4000)
 #define FRAMERATE_DEFAULT 24
 
+enum class ScreenSide {
+    Left = 1 << 0,
+    Right = 1 << 1,
+    Both = Left | Right,
+};
+
+// Driver for dual Eink 1.3" 256x256 displays
 class EinkET013TT1 {
 public:
     // Constructor. Nothing interesting happens here until init()
-    EinkET013TT1(uint8_t cs, uint8_t oei, uint8_t rst, uint8_t busy)
-        : cs_(cs), oei_(oei), rst_(rst), busy_(busy){};
+    EinkET013TT1(uint8_t csLeft, uint8_t csRight, uint8_t oei, uint8_t rst, uint8_t busy)
+        : csLeft_(csLeft), csRight_(csRight), oei_(oei), rst_(rst), busy_(busy){};
     ~EinkET013TT1() = default;
 
     void init();
@@ -180,27 +187,29 @@ public:
 
     auto checkWaveform(const EinkET013TT1Waveform &waveform) -> uint8_t;
 
-    auto readTemperature() -> int16_t;
+    auto readTemperature(ScreenSide screen) -> int16_t;
 
     auto errored() -> bool { return error_; }
 
 protected:
+    inline void setCS(bool value, ScreenSide screen);
     void powerOn();
     void powerOff();
     inline void writeRegister(Register index, uint8_t data);
     void writeRegister(Register index, const uint8_t *data, size_t len);
-    auto readRegister(uint8_t index) -> uint8_t;
-    auto readPumpStatus() -> PumpStatus;
+    auto readRegister(uint8_t index, ScreenSide screen) -> uint8_t;
+    auto readPumpStatus(ScreenSide screen) -> PumpStatus;
     // According to the data sheet the device ID is 0 by default, but that's the same
     // when the screen is not connected. So I don't think `readDeviceIdReg` is useful.
-    auto readDeviceIdReg() -> uint8_t;
+    auto readDeviceIdReg(ScreenSide screen) -> uint8_t;
     inline void startTimer(uint32_t ns);
     inline auto timerActivated() -> bool;
     inline auto timerRunning() -> bool;
     inline void waitForTimer();
     inline void waitForNotBusy();
 
-    uint8_t cs_;
+    uint8_t csLeft_;
+    uint8_t csRight_;
     uint8_t oei_;
     uint8_t rst_;
     uint8_t busy_;

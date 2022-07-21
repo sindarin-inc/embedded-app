@@ -1,0 +1,44 @@
+#include <cinttypes>
+#include <esp_err.h>
+
+typedef enum {
+    MMC5603_REG_XOUT_0 = 0x00,
+    MMC5603_REG_XOUT_1 = 0x01,
+    MMC5603_REG_YOUT_0 = 0x02,
+    MMC5603_REG_YOUT_1 = 0x03,
+    MMC5603_REG_ZOUT_0 = 0x04,
+    MMC5603_REG_ZOUT_1 = 0x05,
+    MMC5603_REG_XOUT_2 = 0x06,
+    MMC5603_REG_YOUT_2 = 0x07,
+    MMC5603_REG_ZOUT_2 = 0x08,
+    MMC5603_REG_TOUT = 0x09,
+    MMC5603_REG_STATUS_1 = 0x18,
+    MMC5603_REG_ODR = 0x1A,
+    MMC5603_REG_CTRL_0 = 0x1B,
+    MMC5603_REG_CTRL_1 = 0x1C,
+    MMC5603_REG_CTRL_2 = 0x1D,
+    MMC5603_REG_ST_X_TH = 0x1E,
+    MMC5603_REG_ST_Y_TH = 0x1F,
+    MMC5603_REG_ST_Z_TH = 0x20,
+    MMC5603_REG_ST_X = 0x27,
+    MMC5603_REG_ST_Y = 0x28,
+    MMC5603_REG_ST_Z = 0x29,
+    MMC5603_REG_PRODUCT_ID = 0x39,
+} mmc5603_reg_t;
+
+class Mmc5603 {
+public:
+    Mmc5603(int i2cNum) : i2cNum_(i2cNum) {}
+
+    auto readProductId() -> uint8_t;
+
+    auto readX() -> float;
+    auto readX20Bit() -> float;
+
+private:
+    int i2cNum_;
+
+    auto registerReadByte(mmc5603_reg_t regAddr, uint8_t *data) -> esp_err_t;
+
+    auto registerWriteByte(mmc5603_reg_t regAddr, uint8_t data) -> esp_err_t;
+};

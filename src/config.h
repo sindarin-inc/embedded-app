@@ -87,7 +87,10 @@
 #define BACKLIGHT_LEFT 9
 #endif
 
-#define DISPLAY_CS 5
+// Boards prior to Sol3 boards don't have separate CS pins, but it's safe to use the same pin twice
+// here
+#define DISPLAY_CS_LEFT 5
+#define DISPLAY_CS_RIGHT 5
 #define DISPLAY_OEI 21
 #ifndef DISPLAY_RST
 #define DISPLAY_RST 32
@@ -109,4 +112,16 @@
 // complains it's already defined.
 #ifndef ARDUINO
 #define ARDUINO 10185
+#endif
+
+#if (USE_LTR329 || USE_MMC5603)
+#define USE_I2C 1
+#else
+#define USE_I2C 0
+#endif
+
+#if USE_I2C
+#define I2C_MASTER_SCL_IO 0
+#define I2C_MASTER_SDA_IO 1
+#define I2C_MASTER_FREQ_HZ 400000
 #endif

@@ -64,14 +64,15 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     // Now draw!
     uint16_t width = 0, height = 0;
     auto batteryStatus = this->power_.getBatteryLifeString();
-    uint16_t temp;
+    uint16_t leftTemp;
 #if EINKET013TT1
     auto *driver = ((DisplayEinkET013TT1 *)&display)->getDriver();
-    temp = driver->readTemperature();
+    // TODO: Add UI for right screen temp also
+    leftTemp = driver->readTemperature(ScreenSide::Left);
 #else
-    temp = 22;
+    leftTemp = 22;
 #endif
-    batteryStatus += StringFormat(" %dC", temp);
+    batteryStatus += StringFormat(" %dC", leftTemp);
 
     // Get the letters in there that go below the base of the standard character
     if (maxHeightForThisFont_ == 0) {

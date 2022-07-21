@@ -13,6 +13,7 @@
 #include "Renderers/Renderer.hpp"
 #include "UI/CalibrationScreen.hpp"
 #include "UI/DemoScreen.hpp"
+#include "UI/LightingAdjustScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/LoadingScreen.hpp"
 #include "UI/LogoScreen.hpp"
@@ -260,6 +261,16 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
             delete resizeBox;
         };
         log_d("set up callback");
+    }));
+
+    settingsMenu->addMenuItem(MenuItem("Set Lighting", [this, settingsMenu]() {
+        auto lightingAdjustScreen = new LightingAdjustScreen(this->prefs_);
+        this->display_->clearDisplay();
+        setCurrentScreen(*lightingAdjustScreen);
+        lightingAdjustScreen->backCallback = [this, lightingAdjustScreen, settingsMenu]() {
+            setCurrentScreen(*settingsMenu);
+            delete lightingAdjustScreen;
+        };
     }));
 
     int inDemo = prefs_.demoMode.get().value();
