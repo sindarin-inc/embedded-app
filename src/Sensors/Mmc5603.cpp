@@ -110,7 +110,9 @@ auto Mmc5603::readX20Bit() -> float {
     xInt |= data << 4;
     ESP_ERROR_CHECK(registerReadByte(MMC5603_REG_XOUT_2, &data));
     xInt |= (data >> 4);
-    xValue = ((float)xInt - 524288.0) / 16384.0f;
+    // Offset by half the range of a 20-bit unsigned number (2^19 = 524288)
+    // and divide by the range -30G - +30G (524288 / 30) to get the float value.
+    xValue = ((float)xInt - 524288.0) / 17476.267f;
     return xValue;
 }
 
@@ -128,6 +130,8 @@ auto Mmc5603::readX() -> float {
     xInt |= data << 8;
     ESP_ERROR_CHECK(registerReadByte(MMC5603_REG_XOUT_1, &data));
     xInt |= data;
-    xValue = ((float)xInt - 32768.0) / 1024.0f;
+    // Offset by half the range of a 16-bit unsigned number (2^15 = 32768)
+    // and divide by the range -30G - +30G (32768 / 30) to get the float value.
+    xValue = ((float)xInt - 32768.0) / 1092.267f;
     return xValue;
 }
