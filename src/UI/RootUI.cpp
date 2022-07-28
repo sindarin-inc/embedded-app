@@ -297,32 +297,39 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
     settingsMenu->addMenuItem(MenuItem("Set Vcom", [this, display, settingsMenu]() {
         auto vcomMenu = new MenuScreen(this->power_);
         auto *driver = (static_cast<DisplayEinkET013TT1 *>(display))->getDriver();
-        vcomMenu->addMenuItem(MenuItem("0V", [vcomMenu, driver]() {
+        vcomMenu->addMenuItem(MenuItem("0V", [this, vcomMenu, driver]() {
             driver->setVcom(0);
+            prefs_.vcom.set(0);
             vcomMenu->needsRerender = true;
         }));
-        vcomMenu->addMenuItem(MenuItem("-1V", [vcomMenu, driver]() {
+        vcomMenu->addMenuItem(MenuItem("-1V", [this, vcomMenu, driver]() {
             driver->setVcom(-1000);
+            prefs_.vcom.set(-1000);
             vcomMenu->needsRerender = true;
         }));
-        vcomMenu->addMenuItem(MenuItem("-2V", [vcomMenu, driver]() {
+        vcomMenu->addMenuItem(MenuItem("-2V", [this, vcomMenu, driver]() {
             driver->setVcom(-2000);
+            prefs_.vcom.set(-2000);
             vcomMenu->needsRerender = true;
         }));
-        vcomMenu->addMenuItem(MenuItem("-3V", [vcomMenu, driver]() {
+        vcomMenu->addMenuItem(MenuItem("-3V", [this, vcomMenu, driver]() {
             driver->setVcom(-3000);
+            prefs_.vcom.set(-3000);
             vcomMenu->needsRerender = true;
         }));
-        vcomMenu->addMenuItem(MenuItem("-4V", [vcomMenu, driver]() {
+        vcomMenu->addMenuItem(MenuItem("-4V", [this, vcomMenu, driver]() {
             driver->setVcom(-4000);
+            prefs_.vcom.set(-4000);
             vcomMenu->needsRerender = true;
         }));
-        vcomMenu->addMenuItem(MenuItem("-5V", [vcomMenu, driver]() {
+        vcomMenu->addMenuItem(MenuItem("-5V", [this, vcomMenu, driver]() {
             driver->setVcom(-5000);
+            prefs_.vcom.set(-5000);
             vcomMenu->needsRerender = true;
         }));
-        vcomMenu->addMenuItem(MenuItem("-5.6V", [vcomMenu, driver]() {
+        vcomMenu->addMenuItem(MenuItem("-5.6V", [this, vcomMenu, driver]() {
             driver->setVcom(-5600);
+            prefs_.vcom.set(-5600);
             vcomMenu->needsRerender = true;
         }));
         setCurrentScreen(*vcomMenu);

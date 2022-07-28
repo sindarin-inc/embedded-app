@@ -73,7 +73,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     size_t lengthOfFile = renderer_.size();
 
     float placeInTextPercentage = (float)place / (float)lengthOfFile * 100;
-    std::string placeString = StringFormat("%.0f%%", placeInTextPercentage);
+    std::string placeString = StringFormat("%.1f%%", placeInTextPercentage);
 
     std::string bottomStr =
         std::string("Seek ") + std::string("(") + placeString + std::string(")");
