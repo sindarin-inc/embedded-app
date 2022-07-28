@@ -25,7 +25,7 @@ public:
 
     void clearDisplay() override { fullRefreshNext_ = true; };
 
-    void invertDisplay(bool newInvert);
+    virtual void invertDisplay(bool newInvert) override;
 
     // For those moments where you need to expose the driver directly
     auto getDriver() -> EinkET013TT1 * { return &driver_; }
