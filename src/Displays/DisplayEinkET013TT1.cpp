@@ -9,6 +9,8 @@
 #include "Misc/Platform.hpp"
 #include "config.h"
 
+#define VCOM_INVERTED_MODE_DELTA 2500
+
 // Not currently used waveforms
 const EinkET013TT1Waveform FULL_REFRESH_WAVEFORM = BC_EINK_31_35C_WAVEFORM_FULL;
 const EinkET013TT1Waveform ORIGINAL_FULL_REFRESH_WAVEFORM = EINK_ORIGINAL_WAVEFORM_FULL;
@@ -54,6 +56,30 @@ auto DisplayEinkET013TT1::setup() -> bool {
     log_i("Display ready!");
 
     return !driver_.errored();
+}
+
+// We not only need to set the bg and fg for the display,
+// we also need to change the VCOM because black on white
+// and white on black behave differently.
+void DisplayEinkET013TT1::invertDisplay(bool newInvert) {
+    bool prevInvert = invertedDisplay_;
+    invertedDisplay_ = newInvert;
+    if (invertedDisplay_) {
+        bg = 0x0000;
+        fg = 0xFFFF;
+        // Only change the Vcom if the display inversion actually changes.
+        if (prevInvert != invertedDisplay_) {
+            driver_.setVcom(driver_.getVcom() + VCOM_INVERTED_MODE_DELTA);
+        }
+    } else {
+        bg = 0xFFFF;
+        fg = 0x0000;
+        // Only change the Vcom if the display inversion actually changes.
+        if (prevInvert != invertedDisplay_) {
+            driver_.setVcom(driver_.getVcom() - VCOM_INVERTED_MODE_DELTA);
+        }
+    }
+    fillScreen(bg);
 }
 
 void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {

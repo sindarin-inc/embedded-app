@@ -7,6 +7,10 @@
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
 
+#if EINKET013TT1
+#include "Displays/DisplayEinkET013TT1.hpp"
+#endif
+
 #define BATTERY_WIDTH 24
 #define BATTERY_HEIGHT 9
 
@@ -120,6 +124,13 @@ void PopupMenuScreen::processCommand(RemoteCommand command) {
         needsRerender = true;
     };
 
+#if EINKET013TT1
+    // Since inversion changes the vcom, we need to save this setting to prefs after
+    // the flip.
+    auto einkDisplay = (static_cast<DisplayEinkET013TT1 *>(this->renderer_.getDisplay()));
+    auto *driver = einkDisplay->getDriver();
+#endif
+
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
         if (leftButtonCallback_) {
@@ -133,6 +144,11 @@ void PopupMenuScreen::processCommand(RemoteCommand command) {
         // the blacks are really gone.
         this->renderer_.getDisplay()->clearDisplay();
         prefs_.invertSetting.set(this->renderer_.getDisplay()->getInversion());
+#if EINKET013TT1
+        // Since inversion changes the vcom, we need to save this setting to prefs after
+        // the flip.
+        prefs_.vcom.set(driver->getVcom());
+#endif
         needsRerender = true;
         break;
     case RemoteCommand::PREV:
