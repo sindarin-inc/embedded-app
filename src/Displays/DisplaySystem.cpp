@@ -35,10 +35,7 @@ void DisplaySystem::invertDisplay(bool newInvert) {
     fillScreen(bg);
 }
 
-void DisplaySystem::flipInversion() {
-    invertedDisplay_ = !invertedDisplay_;
-    invertDisplay(invertedDisplay_);
-}
+void DisplaySystem::flipInversion() { invertDisplay(!invertedDisplay_); }
 
 void DisplaySystem::setPartialRefresh() { partialRefresh_ = 1; }
 
