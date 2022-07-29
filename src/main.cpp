@@ -228,6 +228,14 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     SHOW_HEAP();
 
+    // This setting must happen *before* the below vcom set from
+    // preferences. Otherwise, when in dark mode, the vcom
+    // will have the wrong value due to the calculation that
+    // happens in this method. Clunky, for sure. But when
+    // we better understand vcom and don't need to have such fine-tuned
+    // settings for dark mode and vcom, we can probably clean it up then.
+    myDisplay.invertDisplay(prefs.invertSetting.get().value());
+
 #if EINKET013TT1
 #ifdef DISPLAY_POWER
     // Turn on power to the screen
@@ -290,7 +298,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 
     myDisplay.setBoundingBox(initialRect);
-    myDisplay.invertDisplay(prefs.invertSetting.get().value());
     myDisplay.setLineSpacing(prefs.lineSpacing.get().value());
 
     SIZE_OF(myDisplay);
