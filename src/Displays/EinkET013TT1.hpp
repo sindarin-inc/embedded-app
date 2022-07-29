@@ -174,7 +174,7 @@ public:
     void setVcom(int mV);
 
     // For the settings menu to display current value.
-    auto getVcom() -> int { return (vcom_ * 5600) / 255 - 5600; }
+    auto getVcom() -> int { return vcomInMV_; }
 
     void setFramerate(int frameRate);
 
@@ -214,6 +214,10 @@ protected:
     uint8_t rst_;
     uint8_t busy_;
     uint8_t vcom_;
+    // Keep track of both the vcom that the driver needs (8 bit)
+    // as well as the MV value (that is on the sticker on the back of the display).
+    // Otherwise the value will jitter when mapping 5600 numbers on a rnage of 0-255.
+    uint32_t vcomInMV_;
 
     uint16_t timerOverruns_;
     uint16_t busyWaits_;
