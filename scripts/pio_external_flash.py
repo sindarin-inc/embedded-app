@@ -40,6 +40,10 @@ build_action = env.VerboseAction(
     f"Building SPIFFS image from '$SPIFFS_SOURCES' directory to {spiffs_file}",
 )
 
+platform = env.PioPlatform()
+# Force tool-mkspiffs to get installed
+platform.packages["tool-mkspiffs"]["optional"] = False
+
 env.AddCustomTarget(
     "buildfs-ext",
     None,
@@ -83,9 +87,12 @@ env.AddCustomTarget(
     "Upload FS to external SPI flash",
 )
 
-platform = env.PioPlatform()
 env["ESPOTA"] = join(
-    platform.get_package_dir("framework-arduinoespressif32") or "", "components", "arduino", "tools", "espota.py"
+    platform.get_package_dir("framework-arduinoespressif32") or "",
+    "components",
+    "arduino",
+    "tools",
+    "espota.py",
 )
 
 upload_ota_action = env.VerboseAction(
