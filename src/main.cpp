@@ -1,5 +1,7 @@
+#if !SIMULATOR
 #include <driver/uart.h>
 #include <esp_err.h>
+#endif
 
 #include "Communications/OTA.hpp"
 #include "Communications/WiFi.hpp"
