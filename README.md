@@ -112,3 +112,16 @@ espcoredump.py -p /dev/tty.usb* info_corefile .pio/build/gilpico-frankenoscillat
 ```
 
 See also the [Core Dump docs](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/core_dump.html).
+
+## Build with IDF
+
+This repo also supports building with IDF. You need to first download and set up IDF through the [usual channels](https://docs.espressif.com/projects/esp-idf/en/v4.4.1/esp32/get-started/index.html). Ideally match the version of IDF used in PlatformIO (see the `common:idf` section in `platformio.ini`).
+
+You'll also need to apply [my IDF patch](https://github.com/espressif/esp-idf/pull/9381) to fix Winbond flashes > 512mbit in the bootloader.
+
+Then you can build the firmware with:
+
+```bash
+idf.py set-target esp32s3
+idf.py build flash monitor
+```
