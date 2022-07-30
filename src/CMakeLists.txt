@@ -3,11 +3,23 @@ FILE(GLOB_RECURSE app_sources ${CMAKE_SOURCE_DIR}/src/*.*)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(components improv arduino ArduinoJson Adafruit-GFX-Library spiffs esp-nimble-cpp)
+
+# get_cmake_property(_variableNames VARIABLES)
+# foreach (_variableName ${_variableNames})
+#     message(STATUS "${_variableName}=${${_variableName}}")
+# endforeach()
+
+# message("COMPONENT_TARGETS = ${__COMPONENT_TARGETS}")
+
+if(NOT IDF_TARGET MATCHES "esp32s3")
+    list(APPEND components HULP)
+endif()
+
 idf_component_register(
     SRCS ${app_sources}
     INCLUDE_DIRS "."
-    # TODO: How do I include `ulp HULP` only for Pico-D4 targets here?
-    REQUIRES improv arduino ArduinoJson Adafruit-GFX-Library spiffs esp-nimble-cpp
+    REQUIRES ${components}
 )
 
 target_compile_options(${COMPONENT_TARGET} PUBLIC
