@@ -16,3 +16,6 @@
 [submodule "components/improv"]
 	path = components/improv
 	url = https://github.com/johnboiles/sdk-cpp.git
+[submodule "components/HULP"]
+	path = components/HULP
+	url = https://github.com/boarchuz/HULP.git
