@@ -22,10 +22,14 @@ board = env.BoardConfig()
 mcu = board.get("build.mcu", "esp32")
 
 
+platform = env.PioPlatform()
+platform.install_package("tool-mkspiffs")
+mkspiffs_dir = platform.get_package_dir("tool-mkspiffs")
+
 build_action = env.VerboseAction(
     " ".join(
         [
-            '"$MKFSTOOL"',
+            f'{mkspiffs_dir}/"$MKFSTOOL"',
             "-c",
             "$SPIFFS_SOURCES",
             "-p",
@@ -39,10 +43,6 @@ build_action = env.VerboseAction(
     ),
     f"Building SPIFFS image from '$SPIFFS_SOURCES' directory to {spiffs_file}",
 )
-
-platform = env.PioPlatform()
-# Force tool-mkspiffs to get installed
-platform.packages["tool-mkspiffs"]["optional"] = False
 
 env.AddCustomTarget(
     "buildfs-ext",
