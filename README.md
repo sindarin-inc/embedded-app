@@ -115,7 +115,7 @@ See also the [Core Dump docs](https://docs.espressif.com/projects/esp-idf/en/lat
 
 ## Build with IDF
 
-This repo also supports building with IDF. You need to first download and set up IDF through the [usual channels](https://docs.espressif.com/projects/esp-idf/en/v4.4.1/esp32/get-started/index.html). Ideally match the version of IDF used in PlatformIO (see the `common:idf` section in `platformio.ini`).
+This repo also supports building with IDF.py. You need to first download and set up IDF through the [usual channels](https://docs.espressif.com/projects/esp-idf/en/v4.4.1/esp32/get-started/index.html). Ideally match the version of IDF used in PlatformIO (see the `common:idf` section in `platformio.ini`).
 
 You'll also need to apply [my IDF patch](https://github.com/espressif/esp-idf/pull/9381) to fix Winbond flashes > 512mbit in the bootloader.
 

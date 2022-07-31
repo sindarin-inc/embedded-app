@@ -37,10 +37,10 @@ extern "C" {
 #define log_e(format, ...) ESP_LOGE("Sindarin", format, ##__VA_ARGS__);
 #endif
 
-// TODO: getPsramSize() does not work on the ESP32-S3
 #define SHOW_HEAP()                                                                                \
     log_d("Free heap: %dk/%dk Free PSRAM: %dk/%dk", ESP.getFreeHeap() / 1000,                      \
-          ESP.getHeapSize() / 1000, ESP.getFreePsram() / 1000, ESP.getPsramSize() / 1000)
+          ESP.getHeapSize() / 1000, heap_caps_get_free_size(MALLOC_CAP_8BIT) / 1000,               \
+          heap_caps_get_total_size(MALLOC_CAP_8BIT) / 1000)
 
 // NOTE: based on the uint32_t, this cannot profile anything longer than 17.89569707
 #define PROFILE_START(identifier)                                                                  \
