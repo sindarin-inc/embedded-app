@@ -70,7 +70,7 @@ jobs:
         uses: espressif/esp-idf-ci-action@main
         with:
           esp_idf_version: v4.4.1
-          target: esp32
+          target: esp32s3
           path: .
 
   buildfs-ext:
