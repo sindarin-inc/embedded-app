@@ -14,14 +14,14 @@ list(APPEND EXTRA_COMPONENT_DIRS src)
 #    IDF 5+ has `idf.py save-defconfig` which will do this automatically for us so we should
 #    move to that when IDF 5 is ready. Docs are here:
 #    https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-reference/kconfig.html
-
-if(IDF_TARGET MATCHES "esp32s3")
+if(IDF_TARGET MATCHES "esp32s3" OR $ENV{IDF_TARGET} MATCHES "esp32s3")
     set(SDKCONFIG "sdkconfig.sol3dev")
     message("Removing HULP from esp32s3 target using EXCLUDE_COMPONENTS")
     set(EXCLUDE_COMPONENTS HULP)
 else()
     set(SDKCONFIG "sdkconfig.gilpico")
 endif()
+message("Using ${SDKCONFIG}")
 
 # IDF 4.4.1's mbedtls has compiler warnings so don't treat those as errors
 option(MBEDTLS_FATAL_WARNINGS OFF)
