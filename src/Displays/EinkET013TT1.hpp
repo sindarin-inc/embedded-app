@@ -213,10 +213,10 @@ protected:
     uint8_t oei_;
     uint8_t rst_;
     uint8_t busy_;
-    uint8_t vcom_;
-    // Keep track of both the vcom that the driver needs (8 bit)
-    // as well as the MV value (that is on the sticker on the back of the display).
-    // Otherwise the value will jitter when mapping 5600 numbers on a rnage of 0-255.
+    // Keep track of both the vcom in the MV value (that is on the
+    // sticker on the back of the display).
+    // The 8-bit register value is calculated when it is set in the
+    // register: ((5600 + vcomInMV_) * 255) / 5600.
     uint32_t vcomInMV_;
 
     uint16_t timerOverruns_;

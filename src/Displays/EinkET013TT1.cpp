@@ -134,7 +134,7 @@ void EinkET013TT1::init() {
 
     ESP_ERROR_CHECK(spi_bus_add_device(VSPI_HOST, &devcfg, &spiLow_));
 
-    if (vcom_ == 0) {
+    if (vcomInMV_ == 0) {
         setVcom(VCOM_DEFAULT);
     }
     if (timerDelayNs_ == 0) {
@@ -154,9 +154,8 @@ void EinkET013TT1::init() {
 void EinkET013TT1::setVcom(int mV) {
     mV = std::clamp(mV, -5600, 0);
     vcomInMV_ = mV;
-    // 0 for -5600mV, 255 for 0V
-    vcom_ = ((5600 + vcomInMV_) * 255) / 5600;
-    log_d("Setting VCOM to %d mV (register 0x9 = %d)", vcomInMV_, vcom_);
+    log_d("Setting VCOM to %d mV (register 0x9 = %d)", vcomInMV_,
+          ((5600 + vcomInMV_) * 255) / 5600);
 }
 
 void EinkET013TT1::setFramerate(int frameRate) {
@@ -518,7 +517,8 @@ void EinkET013TT1::powerOn() {
     writeRegister(PUMP_SETTING_1, 0x0F);
     // Select PWM width for vcom. Specified value is divided into 256 levels between the
     // voltages of GND and VCL (-5.6V)
-    writeRegister(PWM_WIDTH_SELECT, vcom_);
+    // 0 for -5600mV, 255 for 0V
+    writeRegister(PWM_WIDTH_SELECT, ((5600 + vcomInMV_) * 255) / 5600);
 
     // Fire up the charge pumps
     // Disable everything (probably a no-op)
