@@ -29,6 +29,7 @@ enum RENDERER_TOKEN {
 struct RendererToken {
     RENDERER_TOKEN token;
     unsigned long place;
+    unsigned long streamPlace;
 };
 
 typedef std::array<char, MAX_CHARS_PER_PAGE> PageBuffer;

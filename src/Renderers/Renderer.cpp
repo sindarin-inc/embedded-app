@@ -33,7 +33,7 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
     // and need room for EOF character.
     while (stream_->available() && plcInBuffer < MAX_CHARS_PER_PAGE - 1) {
         auto curChar = stream_->read();
-        RendererToken newToken = {TOKEN_EOF, plcInBuffer};
+        RendererToken newToken = {TOKEN_EOF, plcInBuffer, placeInFile + plcInBuffer};
         RendererToken prevToken;
 
         charTokenBuffer_[plcInBuffer] = curChar;
@@ -64,6 +64,7 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
                 if (prevToken.token == TOKEN_HYPHEN) {
                     newToken.token = TOKEN_EMDASH;
                     newToken.place = plcInBuffer - 1;
+                    newToken.streamPlace = placeInFile + plcInBuffer - 1;
                     currTokenBuffer_[plcInTokenBuffer] = newToken;
                     currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
                     // Specifically don't increment the token buffer
@@ -105,6 +106,7 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
 
     // Set the EOF place correctly.
     currTokenBuffer_[plcInTokenBuffer].place = plcInBuffer;
+    currTokenBuffer_[plcInTokenBuffer].streamPlace = placeInFile + plcInBuffer;
 }
 
 // debugging method
@@ -157,7 +159,8 @@ unsigned int Renderer::getLineOfTextForRendering(unsigned int placeInTokenBuffer
                 // been!
                 linePlace -=
                     currTokenBuffer_[bufferPlace + 1].place - currTokenBuffer_[bufferPlace].place;
-                inputLine[linePlace] = '\0';
+                inputLine[linePlace] = '\n';
+                inputLine[linePlace + 1] = '\0';
                 lineFull = true;
                 bufferPlace--;
             }
@@ -182,7 +185,7 @@ unsigned int Renderer::getLineOfTextForRendering(unsigned int placeInTokenBuffer
 }
 
 void Renderer::loaded() {
-    previousPlace_ = goBackwardsOnePage(currentPlace_);
+    // previousPlace_ = goBackwardsOnePage(currentPlace_);
 
     // LOAD TEXT for prev, current.
     // The contract for users of this class is that this class will always keep the current
@@ -196,10 +199,10 @@ void Renderer::loaded() {
     // here to make sure they are correct.
     // TODO(john): It doesn't look like it works this way right now. Our preloading does
     // nothing.
-    loadPrevIntoBuffer();
+    // loadPrevIntoBuffer();
     nextPlace_ = loadCurrIntoBuffer();
     int oldNextPlace = nextPlace_;
-    loadNextIntoBuffer();
+    // loadNextIntoBuffer();
     nextPlace_ = oldNextPlace;
 }
 
@@ -215,19 +218,21 @@ auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
     PROFILE_START(loadCurrIntoBuffer);
     nextPlace_ = loadCurrIntoBuffer();
     PROFILE_END_LOG_MS(loadCurrIntoBuffer);
+
     currentPageWordCount_ = WordCount(currBuffer_.data());
 
     display_.renderTextWithoutBox(currBuffer_.data(), horizontalCenter_, verticalCenter_);
+
     SetCpuSpeedMhz(CPU_FREQ_MHZ_LOW);
 
     nextPos = nextPlace_;
     PROFILE_START(loadNextIntoBuffer);
-    loadNextIntoBuffer();
+    // loadNextIntoBuffer();
     PROFILE_END_LOG_MS(loadNextIntoBuffer);
 
     PROFILE_START(loadPrevIntoBuffer);
-    previousPlace_ = goBackwardsOnePage(currentPlace_);
-    loadPrevIntoBuffer();
+    // previousPlace_ = goBackwardsOnePage(currentPlace_);
+    //  loadPrevIntoBuffer();
     PROFILE_END_LOG_MS(loadPrevIntoBuffer);
 
     nextPlace_ = nextPos;
@@ -417,139 +422,39 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
 
 // returns the new place of the stream
 auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsigned long {
+    unsigned int plcInTokenBuffer = 0;
     unsigned int plcInBuffer = 0;
     int linesInBuffer = 1;
-    int pixLen = 0;
     std::array<char, MAX_CHARS_PER_LINE> singleLine{};
-    std::array<char, MAX_CHARS_PER_LINE> singleLine1{};
-    std::array<char, MAX_CHARS_PER_LINE> singleLine2{};
-    std::array<char, MAX_CHARS_PER_LINE> singleLine3{};
-    int charsInLine = 0;
 
     // It's minus 4 because we want to start 2 off the top and not go below
     // 2 off the bottom due to the bounding box.
     // Note that get_text_height adds 1 over the max character height
     int maxLines = (display_.height() - 4) / this->display_.getTextHeight();
-    int maxWidth = (display_.width() - 4);
 
-    // Index of last word boundary
-    int prevSpace = 0;
-    unsigned long prevSeekPos = 0;
-
-    buffer[plcInBuffer] = '\0';
-    singleLine[charsInLine] = '\0';
+    buffer[0] = '\0';
+    singleLine[0] = '\0';
 
     // Debugging stuff
     loadAndTokenizePage(place);
     // printOutTokensInCurrTokenBuffer();
-    unsigned int ret1 = 0, ret2 = 0, ret3 = 0;
+    unsigned int nextToken = 0;
+    unsigned int currToken = 0;
 
-    ret1 = getLineOfTextForRendering(0, singleLine1);
-    ret2 = getLineOfTextForRendering(ret1, singleLine2);
-    ret3 = getLineOfTextForRendering(ret2, singleLine3);
-
-    log_d("%d %s", ret1, singleLine1.data());
-    log_d("%d %s", ret2, singleLine2.data());
-    log_d("%d %s", ret3, singleLine3.data());
-
-    if (!stream_->seek(place)) {
-        log_e("failed to seek %lu is the place", place);
-        // This is a fragile since 0 is a valid file handle position. TODO to fix.
-        return 0;
+    while (linesInBuffer <= maxLines) {
+        nextToken = getLineOfTextForRendering(currToken, singleLine);
+        std::copy_n(singleLine.data(), strlen(singleLine.data()), &buffer[plcInBuffer]);
+        plcInBuffer += strlen(singleLine.data());
+        buffer[plcInBuffer] = '\0';
+        linesInBuffer++;
+        currToken = nextToken;
     }
 
-    while (stream_->available()) {
-        auto curChar = stream_->read();
-
-        // eliminate spaces at the beginning of the read
-        // (This can happen due to heuristic to be able to go backwards arbitrarily)
-        while ((plcInBuffer == 0) && (curChar == ' ') && stream_->available()) {
-            curChar = stream_->read();
-        }
-
-        // Turn new lines into spaces, for now.
-        // But remember that it was a new line.
-        switch (curChar) {
-        case '\n':
-            curChar = ' ';
-            break;
-            /*
-        case '“':
-        case '”':
-            cur_char = '"';
-            break;
-        case '—':
-            cur_char = '-';
-            break;
-        case '‘':
-        case '’':
-            cur_char = '\'';
-            break;
-            */
-        }
-
-        // Terminate and add the character to the buffer
-        buffer[plcInBuffer + 1] = '\0';
-        buffer[plcInBuffer] = curChar;
-        // Same for the single_line. Note that the single line will
-        // reset at each new line but the buffer will not
-        singleLine[charsInLine + 1] = '\0';
-        singleLine[charsInLine] = curChar;
-
-        // Found a word break, do a check.
-        if (buffer[plcInBuffer] == ' ') {
-            // Check the length of the line
-            pixLen = this->display_.getTextWidth(singleLine.data());
-            if (pixLen > maxWidth) {
-                // rewind to last word and cut it off there.
-                //  start new line
-                buffer[prevSpace] = '\n';
-
-                // Reset the line buffer by putting this last word (the word that didn't fit) in
-                // it.
-                std::copy_n(buffer.begin() + prevSpace + 1, sizeof(singleLine), singleLine.begin());
-
-                // Update the prev_space to the current place.
-                charsInLine = strlen(singleLine.data());
-                prevSpace += charsInLine;
-
-                linesInBuffer++;
-                // we're done if this is true!
-                // Alternately could check if the last `getTextBounds` call exceeded the y
-                if (linesInBuffer > maxLines) {
-                    // reset the file_handle to the end of this buffer so
-                    // the next reads do the right thing.
-                    stream_->seek(prevSeekPos);
-                    this->nextPlace_ = prevSeekPos;
-                    buffer[prevSpace - charsInLine] = '\0';
-                    break;
-                }
-            } else {
-                // note where the previous space was in the buffer
-                // as well as in the file handle and then keep going
-                prevSpace = plcInBuffer;
-                prevSeekPos = stream_->position();
-                charsInLine++;
-            }
-        } else {
-            // Keep looking for the next space
-            charsInLine++;
-        }
-        plcInBuffer++;
-    }
-
-    // If we got through the above check and this one fails, this means we are at
-    // the end of file, so we should wrap around and start over.
-    if (!stream_->available()) {
-        log_i("Found the end of file and so starting over at the beginning.");
-        return 0;
-    } else {
-        return prevSeekPos;
-    }
+    return currTokenBuffer_[currToken].streamPlace;
 }
 
 auto Renderer::loadPrevIntoBuffer() -> unsigned long {
-    return loadIntoBuffer(prevBuffer_, previousPlace_);
+    // return loadIntoBuffer(prevBuffer_, previousPlace_);
 }
 
 auto Renderer::loadCurrIntoBuffer() -> unsigned long {
@@ -557,5 +462,5 @@ auto Renderer::loadCurrIntoBuffer() -> unsigned long {
 }
 
 auto Renderer::loadNextIntoBuffer() -> unsigned long {
-    return loadIntoBuffer(nextBuffer_, nextPlace_);
+    // return loadIntoBuffer(nextBuffer_, nextPlace_);
 }
