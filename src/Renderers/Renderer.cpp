@@ -8,20 +8,156 @@
 
 Renderer::Renderer(DisplaySystem &display) : display_(display) {}
 
+//
+// This loads from the stream character by character and populates
+// the token buffer based on the RENDERER_TOKEN enum.
+// After this is done, then we can do the heavy lifting of walking
+// through the tokens, checking size, and rendering the text on
+// a line by line basis.
+//
+void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
+    unsigned int plcInBuffer = 0;
+    unsigned int plcInTokenBuffer = 0;
+
+    charTokenBuffer_[plcInBuffer] = '\0';
+
+    RendererToken eofToken = {TOKEN_EOF, 0};
+    currTokenBuffer_[plcInBuffer] = eofToken;
+
+    if (!stream_->seek(placeInFile)) {
+        log_e("failed to seek %lu is the place", placeInFile);
+        return;
+    }
+
+    // Needs to be minus one for the corner case of all spaces or newlines
+    // and need room for EOF character.
+    while (stream_->available() && plcInBuffer < MAX_CHARS_PER_PAGE - 1) {
+        auto curChar = stream_->read();
+        RendererToken newToken = {TOKEN_EOF, plcInBuffer};
+        RendererToken prevToken;
+
+        charTokenBuffer_[plcInBuffer] = curChar;
+        charTokenBuffer_[plcInBuffer + 1] = '\0';
+        switch (curChar) {
+        case '\n':
+            newToken.token = TOKEN_NEWLINE;
+            currTokenBuffer_[plcInTokenBuffer] = newToken;
+            currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
+            plcInTokenBuffer++;
+            break;
+        case ' ':
+            newToken.token = TOKEN_SPACE;
+            currTokenBuffer_[plcInTokenBuffer] = newToken;
+            currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
+            plcInTokenBuffer++;
+            break;
+        case '\t':
+            newToken.token = TOKEN_TAB;
+            currTokenBuffer_[plcInTokenBuffer] = newToken;
+            currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
+            plcInTokenBuffer++;
+            break;
+        case '-':
+            // Check to see if this is an emdash case
+            if (plcInTokenBuffer > 0) {
+                prevToken = currTokenBuffer_[plcInTokenBuffer - 1];
+                if (prevToken.token == TOKEN_HYPHEN) {
+                    newToken.token = TOKEN_EMDASH;
+                    newToken.place = plcInBuffer - 1;
+                    currTokenBuffer_[plcInTokenBuffer] = newToken;
+                    currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
+                    // Specifically don't increment the token buffer
+                    // because the previous hyphen already did that
+                    break;
+                }
+            }
+            newToken.token = TOKEN_HYPHEN;
+            currTokenBuffer_[plcInTokenBuffer] = newToken;
+            currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
+            plcInTokenBuffer++;
+            break;
+        // All other characters are considered part of a text token,
+        // so we just increment and move on.
+        default:
+            if (plcInTokenBuffer > 0) {
+                prevToken = currTokenBuffer_[plcInTokenBuffer - 1];
+            } else {
+                // If this is the first character in the token buffer,
+                // pretend like the previous token was EOF so we handle
+                // the new token creation correctly below.
+                prevToken.token = TOKEN_EOF;
+            }
+            if (prevToken.token != TOKEN_TEXT) {
+                newToken.token = TOKEN_TEXT;
+                currTokenBuffer_[plcInTokenBuffer] = newToken;
+                currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
+                plcInTokenBuffer++;
+                break;
+            }
+        }
+        plcInBuffer++;
+    }
+}
+
+// debugging method
+void Renderer::printOutTokensInCurrTokenBuffer() {
+    auto currToken = currTokenBuffer_[0];
+    for (int i = 0; (i < MAX_CHARS_PER_PAGE) && (currToken.token != TOKEN_EOF); i++) {
+        currToken = currTokenBuffer_[i];
+        log_d("%u: %u", currToken.token, currToken.place);
+        if (currToken.token == TOKEN_TEXT) {
+            for (int j = currToken.place; j < currTokenBuffer_[i + 1].place; j++) {
+                log_d("%c", charTokenBuffer_[j]);
+            }
+            log_d("\n");
+        }
+    }
+}
+
+// This method takes in a place in the token buffer and returns
+// one line of text that can be rendered. It returns as a
+LineBuffer Renderer::getLineOfTextForRendering(unsigned int placeInTokenBuffer) {
+    LineBuffer singleLine;
+    unsigned int bufferPlace = placeInTokenBuffer;
+    singleLine[0] = '\0';
+    RendererToken curToken = currTokenBuffer_[bufferPlace];
+    switch (curToken.token) {
+    case TOKEN_TEXT:
+        break;
+    case TOKEN_SPACE:
+    case TOKEN_TAB:
+    case TOKEN_HYPHEN:
+
+        break;
+    case TOKEN_NEWLINE:
+        break;
+    case TOKEN_EMDASH:
+        break;
+    case TOKEN_EOF:
+        break;
+    default:
+        log_i("Should not have gotten here -- unrecognized token.");
+        break;
+    }
+
+    return singleLine;
+}
+
 void Renderer::loaded() {
     previousPlace_ = goBackwardsOnePage(currentPlace_);
 
     // LOAD TEXT for prev, current.
-    // The contract for users of this class is that this class will always keep the current page,
-    // the previous page, and the next page in a buffer so that on page swaps, the render can
-    // happen immediately without any filesystem access. Then, *after* a page is rendered, the new
-    // previous and next pages can be loaded. This allows for buffering to happen while a user
-    // is reading the current page.
+    // The contract for users of this class is that this class will always keep the current
+    // page, the previous page, and the next page in a buffer so that on page swaps, the render
+    // can happen immediately without any filesystem access. Then, *after* a page is rendered,
+    // the new previous and next pages can be loaded. This allows for buffering to happen while
+    // a user is reading the current page.
     //
     // It's a little broken in that load_curr_into_buffer does the wrong thing and updates class
-    // variables (essentially moving the current seek position in the file), hence this dance here
-    // to make sure they are correct.
-    // TODO(john): It doesn't look like it works this way right now. Our preloading does nothing.
+    // variables (essentially moving the current seek position in the file), hence this dance
+    // here to make sure they are correct.
+    // TODO(john): It doesn't look like it works this way right now. Our preloading does
+    // nothing.
     loadPrevIntoBuffer();
     nextPlace_ = loadCurrIntoBuffer();
     int oldNextPlace = nextPlace_;
@@ -191,7 +327,8 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
                 // rewind to last word and cut it off there.
                 //  start new line
                 buffer[prevSpace] = '\n';
-                // reset the line buffer by putting this last word (the word that didn't fit) in it.
+                // reset the line buffer by putting this last word (the word that didn't fit) in
+                // it.
                 std::copy_n(buffer.begin() + prevSpace + 1, sizeof(singleLine), singleLine.begin());
 
                 // Update the prev_space to the current place.
@@ -223,13 +360,14 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     }
 
     // At this point, total_chars_read is the number of characters that we need for the previous
-    // page. So we should just be able to subtract that from the input place. If it's < 0, return 0.
+    // page. So we should just be able to subtract that from the input place. If it's < 0,
+    // return 0.
 
     unsigned long previousPlaceInFile;
 
-    // similarly to the logic above for starting PLACE_REWIND behind, we need move back those spaces
-    // again when calculating what to return based on the number of characters read in lineify and
-    // the place passed in.
+    // similarly to the logic above for starting PLACE_REWIND behind, we need move back those
+    // spaces again when calculating what to return based on the number of characters read in
+    // lineify and the place passed in.
     if ((place - totalCharsRead - PLACE_REWIND) <= 0) {
         previousPlaceInFile = 0;
     } else {
@@ -259,6 +397,10 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
 
     buffer[plcInBuffer] = '\0';
     singleLine[charsInLine] = '\0';
+
+    // Debugging stuff
+    loadAndTokenizePage(place);
+    printOutTokensInCurrTokenBuffer();
 
     if (!stream_->seek(place)) {
         log_e("failed to seek %lu is the place", place);
@@ -313,7 +455,8 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
                 //  start new line
                 buffer[prevSpace] = '\n';
 
-                // Reset the line buffer by putting this last word (the word that didn't fit) in it.
+                // Reset the line buffer by putting this last word (the word that didn't fit) in
+                // it.
                 std::copy_n(buffer.begin() + prevSpace + 1, sizeof(singleLine), singleLine.begin());
 
                 // Update the prev_space to the current place.

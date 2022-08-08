@@ -7,8 +7,34 @@
 #define MAX_CHARS_PER_PAGE 1500
 #define MAX_CHARS_PER_LINE 200
 
+// These are the different tokens so as we parse a buffer
+// we more easily know what to do with the text.
+enum RENDERER_TOKEN {
+    TOKEN_TEXT = 0,
+    TOKEN_NEWLINE = 1,
+    TOKEN_SPACE = 2,
+    TOKEN_HYPHEN = 3,
+    TOKEN_EMDASH = 4,
+    TOKEN_TAB = 5,
+    TOKEN_EOF = 6,
+};
+
+// A token is simply a place in the buffer and a token identifer
+// that indicates what type of token it is.
+//
+// To determine the length of a token, we can simply look at the
+// next token in the buffer and subtract the current token's
+// place.
+
+struct RendererToken {
+    RENDERER_TOKEN token;
+    unsigned long place;
+};
+
 typedef std::array<char, MAX_CHARS_PER_PAGE> PageBuffer;
 typedef std::array<char, MAX_CHARS_PER_LINE> LineBuffer;
+typedef std::array<RendererToken, MAX_CHARS_PER_PAGE> PageTokenBuffer;
+typedef std::array<RendererToken, MAX_CHARS_PER_LINE> LineTokenBuffer;
 
 class Renderer {
 public:
@@ -53,9 +79,24 @@ protected:
     auto loadNextIntoBuffer() -> unsigned long;
     auto goBackwardsOnePage(unsigned long place) -> unsigned long;
 
+    void loadAndTokenizePage(unsigned long placeInFile);
+
+    // Debugging
+    void printOutTokensInCurrTokenBuffer();
+
     PageBuffer prevBuffer_{};
     PageBuffer currBuffer_{};
     PageBuffer nextBuffer_{};
+
+    // Character buffers for the current page
+    PageBuffer charTokenBuffer_{};
+
+    // This keeps all the tokens for the max amount of read from the stream
+    PageTokenBuffer currTokenBuffer_{};
+    // This keeps just the tokens for the current page being rendered
+    PageTokenBuffer singlePageTokenBuffer_{};
+
+    LineBuffer getLineOfTextForRendering(unsigned int placeInTokenBuffer);
 
     // This does the work of lineify from the old system. Loads one page of
     // text into that buffer given the current offset in the file
