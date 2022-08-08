@@ -45,7 +45,7 @@ public:
     void setVerticalCenter(bool verticalCenter) { verticalCenter_ = verticalCenter; }
     void setHorizontalCenter(bool horizontalCenter) { horizontalCenter_ = horizontalCenter; }
 
-    auto getPreviousPlace() -> unsigned long { return previousPlace_; }
+    auto getPreviousPlace() -> unsigned long;
     auto getCurrentPlace() -> unsigned long { return currentPlace_; }
     auto setCurrentPlace(unsigned long newPlace) { currentPlace_ = newPlace; }
 
@@ -94,11 +94,13 @@ protected:
 
     // This keeps all the tokens for the max amount of read from the stream
     PageTokenBuffer currTokenBuffer_{};
+    unsigned int numCurrTokens_ = 0;
+
     // This keeps just the tokens for the current page being rendered
     PageTokenBuffer singlePageTokenBuffer_{};
 
-    auto getLineOfTextForRendering(unsigned int placeInTokenBuffer, LineBuffer &inputLine)
-        -> unsigned int;
+    auto getLineOfTextForRendering(unsigned int placeInTokenBuffer, LineBuffer &inputLine,
+                                   bool readBackwards = false) -> unsigned int;
 
     // This does the work of lineify from the old system. Loads one page of
     // text into that buffer given the current offset in the file
