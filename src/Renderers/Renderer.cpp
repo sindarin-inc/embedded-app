@@ -340,7 +340,7 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         return 0;
     }
 
-    while ((linesInBuffer <= maxLines) && (currToken > 0)) {
+    while ((linesInBuffer < maxLines) && (currToken > 0)) {
         nextToken = getLineOfTextForRendering(currToken, singleLine, true);
         std::copy_n(singleLine.data(), strlen(singleLine.data()), &buffer[plcInBuffer]);
         plcInBuffer += strlen(singleLine.data());
