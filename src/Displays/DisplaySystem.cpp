@@ -146,6 +146,7 @@ void DisplaySystem::splitStringToLines(const std::string &stringToSplit,
     for (i = 0; i < len; i++) {
         // We found a new line. Split off the previous line and
         // start processing the new line
+
         if (stringToSplit.at(i) == '\n') {
             lines[numLines - 1] = stringToSplit.substr(startPos, endPos - startPos + 1);
             numLines++;
@@ -161,10 +162,7 @@ void DisplaySystem::splitStringToLines(const std::string &stringToSplit,
     // array, but if \n is the last character, we don't need to do anything and
     // we can decrement num_lines since the above loop assumes that there will
     // be more characters after the \n.
-    //
-    // The second part of this || is to handle when there's just a single line with
-    // a single character on it with no \n.
-    if (stringToSplit.length() > 0 && ((startPos != endPos) || stringToSplit.at(endPos) != '\n')) {
+    if (stringToSplit.length() > 0 && (startPos != endPos)) {
         lines[numLines - 1] = stringToSplit.substr(startPos, endPos - startPos + 1);
     } else {
         numLines--;
