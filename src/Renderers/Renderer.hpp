@@ -96,7 +96,8 @@ protected:
     // This keeps just the tokens for the current page being rendered
     PageTokenBuffer singlePageTokenBuffer_{};
 
-    LineBuffer getLineOfTextForRendering(unsigned int placeInTokenBuffer);
+    auto getLineOfTextForRendering(unsigned int placeInTokenBuffer, LineBuffer &inputLine)
+        -> unsigned int;
 
     // This does the work of lineify from the old system. Loads one page of
     // text into that buffer given the current offset in the file

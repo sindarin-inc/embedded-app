@@ -97,6 +97,14 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
         }
         plcInBuffer++;
     }
+    // Ended on a text token, so we move forward one before setting the EOF
+    // token.
+    if (currTokenBuffer_[plcInTokenBuffer].token != TOKEN_EOF) {
+        plcInTokenBuffer++;
+    }
+
+    // Set the EOF place correctly.
+    currTokenBuffer_[plcInTokenBuffer].place = plcInBuffer;
 }
 
 // debugging method
@@ -115,32 +123,62 @@ void Renderer::printOutTokensInCurrTokenBuffer() {
 }
 
 // This method takes in a place in the token buffer and returns
-// one line of text that can be rendered. It returns as a
-LineBuffer Renderer::getLineOfTextForRendering(unsigned int placeInTokenBuffer) {
-    LineBuffer singleLine;
+// one line of text that can be rendered. It puts the string in the inputLine.
+// It returns the next token in the TokenBuffer unless already at EOF, then
+// it returns EOF again.
+unsigned int Renderer::getLineOfTextForRendering(unsigned int placeInTokenBuffer,
+                                                 LineBuffer &inputLine) {
     unsigned int bufferPlace = placeInTokenBuffer;
-    singleLine[0] = '\0';
-    RendererToken curToken = currTokenBuffer_[bufferPlace];
-    switch (curToken.token) {
-    case TOKEN_TEXT:
-        break;
-    case TOKEN_SPACE:
-    case TOKEN_TAB:
-    case TOKEN_HYPHEN:
+    unsigned int linePlace = 0;
+    bool lineFull = false;
+    int maxWidth = (display_.width() - 4);
+    int pixLen;
 
-        break;
-    case TOKEN_NEWLINE:
-        break;
-    case TOKEN_EMDASH:
-        break;
-    case TOKEN_EOF:
-        break;
-    default:
-        log_i("Should not have gotten here -- unrecognized token.");
-        break;
+    inputLine[linePlace] = '\0';
+    while (!lineFull) {
+        RendererToken curToken = currTokenBuffer_[bufferPlace];
+        switch (curToken.token) {
+        case TOKEN_TEXT:
+        case TOKEN_SPACE:
+        case TOKEN_TAB:
+        case TOKEN_HYPHEN:
+        case TOKEN_EMDASH:
+            std::copy_n(&charTokenBuffer_[currTokenBuffer_[bufferPlace].place],
+                        currTokenBuffer_[bufferPlace + 1].place -
+                            currTokenBuffer_[bufferPlace].place,
+                        &inputLine[linePlace]);
+            linePlace +=
+                currTokenBuffer_[bufferPlace + 1].place - currTokenBuffer_[bufferPlace].place;
+            inputLine[linePlace] = '\0';
+            pixLen = display_.getTextWidth(inputLine.data());
+            // This token caused us to go too far, so we need to back up.
+            if (pixLen > maxWidth) {
+                // It's sufficient to simply null terminate the string where it should have
+                // been!
+                linePlace -=
+                    currTokenBuffer_[bufferPlace + 1].place - currTokenBuffer_[bufferPlace].place;
+                inputLine[linePlace] = '\0';
+                lineFull = true;
+                bufferPlace--;
+            }
+            break;
+        case TOKEN_NEWLINE:
+            lineFull = true;
+            inputLine[linePlace] = '\n';
+            inputLine[linePlace + 1] = '\0';
+            break;
+        case TOKEN_EOF:
+            lineFull = true;
+            // It'll be incremented later and we want to return this token to caller.
+            bufferPlace--;
+            break;
+        default:
+            log_i("Should not have gotten here -- unrecognized token.");
+            break;
+        }
+        bufferPlace++;
     }
-
-    return singleLine;
+    return bufferPlace;
 }
 
 void Renderer::loaded() {
@@ -383,6 +421,9 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
     int linesInBuffer = 1;
     int pixLen = 0;
     std::array<char, MAX_CHARS_PER_LINE> singleLine{};
+    std::array<char, MAX_CHARS_PER_LINE> singleLine1{};
+    std::array<char, MAX_CHARS_PER_LINE> singleLine2{};
+    std::array<char, MAX_CHARS_PER_LINE> singleLine3{};
     int charsInLine = 0;
 
     // It's minus 4 because we want to start 2 off the top and not go below
@@ -400,7 +441,16 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
 
     // Debugging stuff
     loadAndTokenizePage(place);
-    printOutTokensInCurrTokenBuffer();
+    // printOutTokensInCurrTokenBuffer();
+    unsigned int ret1 = 0, ret2 = 0, ret3 = 0;
+
+    ret1 = getLineOfTextForRendering(0, singleLine1);
+    ret2 = getLineOfTextForRendering(ret1, singleLine2);
+    ret3 = getLineOfTextForRendering(ret2, singleLine3);
+
+    log_d("%d %s", ret1, singleLine1.data());
+    log_d("%d %s", ret2, singleLine2.data());
+    log_d("%d %s", ret3, singleLine3.data());
 
     if (!stream_->seek(place)) {
         log_e("failed to seek %lu is the place", place);
