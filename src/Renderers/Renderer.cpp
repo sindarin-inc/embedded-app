@@ -42,18 +42,21 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
         case '\n':
             newToken.token = TOKEN_NEWLINE;
             currTokenBuffer_[plcInTokenBuffer] = newToken;
+            numCurrTokens_++;
             currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
             plcInTokenBuffer++;
             break;
         case ' ':
             newToken.token = TOKEN_SPACE;
             currTokenBuffer_[plcInTokenBuffer] = newToken;
+            numCurrTokens_++;
             currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
             plcInTokenBuffer++;
             break;
         case '\t':
             newToken.token = TOKEN_TAB;
             currTokenBuffer_[plcInTokenBuffer] = newToken;
+            numCurrTokens_++;
             currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
             plcInTokenBuffer++;
             break;
@@ -74,6 +77,7 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
             }
             newToken.token = TOKEN_HYPHEN;
             currTokenBuffer_[plcInTokenBuffer] = newToken;
+            numCurrTokens_++;
             currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
             plcInTokenBuffer++;
             break;
@@ -91,6 +95,7 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
             if (prevToken.token != TOKEN_TEXT) {
                 newToken.token = TOKEN_TEXT;
                 currTokenBuffer_[plcInTokenBuffer] = newToken;
+                numCurrTokens_++;
                 currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
                 plcInTokenBuffer++;
                 break;
@@ -129,7 +134,7 @@ void Renderer::printOutTokensInCurrTokenBuffer() {
 // It returns the next token in the TokenBuffer unless already at EOF, then
 // it returns EOF again.
 unsigned int Renderer::getLineOfTextForRendering(unsigned int placeInTokenBuffer,
-                                                 LineBuffer &inputLine) {
+                                                 LineBuffer &inputLine, bool readBackwards) {
     unsigned int bufferPlace = placeInTokenBuffer;
     unsigned int linePlace = 0;
     bool lineFull = false;
@@ -162,7 +167,11 @@ unsigned int Renderer::getLineOfTextForRendering(unsigned int placeInTokenBuffer
                 inputLine[linePlace] = '\n';
                 inputLine[linePlace + 1] = '\0';
                 lineFull = true;
-                bufferPlace--;
+                if (readBackwards) {
+                    bufferPlace++;
+                } else {
+                    bufferPlace--;
+                }
             }
             break;
         case TOKEN_NEWLINE:
@@ -173,19 +182,27 @@ unsigned int Renderer::getLineOfTextForRendering(unsigned int placeInTokenBuffer
         case TOKEN_EOF:
             lineFull = true;
             // It'll be incremented later and we want to return this token to caller.
-            bufferPlace--;
+            if (readBackwards) {
+                bufferPlace++;
+            } else {
+                bufferPlace--;
+            }
             break;
         default:
             log_i("Should not have gotten here -- unrecognized token.");
             break;
         }
-        bufferPlace++;
+        if (readBackwards) {
+            bufferPlace--;
+        } else {
+            bufferPlace++;
+        }
     }
     return bufferPlace;
 }
 
 void Renderer::loaded() {
-    // previousPlace_ = goBackwardsOnePage(currentPlace_);
+    previousPlace_ = goBackwardsOnePage(currentPlace_);
 
     // LOAD TEXT for prev, current.
     // The contract for users of this class is that this class will always keep the current
@@ -231,8 +248,8 @@ auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
     PROFILE_END_LOG_MS(loadNextIntoBuffer);
 
     PROFILE_START(loadPrevIntoBuffer);
-    // previousPlace_ = goBackwardsOnePage(currentPlace_);
-    //  loadPrevIntoBuffer();
+
+    //    loadPrevIntoBuffer();
     PROFILE_END_LOG_MS(loadPrevIntoBuffer);
 
     nextPlace_ = nextPos;
@@ -262,162 +279,75 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     unsigned long seekPlace = 0;
     int numCharsToRead;
 
-    // Place here will point to the first character of the first word
-    // on the current page. So we need to go back two from there to
-    // start with the correct word -- the last word on the previous
-    // page
-    // NOTE: This assumes that the previous page will have at least
-    // one word. But the above return 0 and check on place == 0
-    // should assure that.
-    if (place < MAX_CHARS_PER_PAGE) {
-        numCharsToRead = place - PLACE_REWIND;
-        seekPlace = 0;
-    } else {
+    if (place >= MAX_CHARS_PER_PAGE) {
+        seekPlace = place - MAX_CHARS_PER_PAGE;
         numCharsToRead = MAX_CHARS_PER_PAGE;
-        seekPlace = place - numCharsToRead - PLACE_REWIND;
-        if (place < numCharsToRead + PLACE_REWIND) {
-            seekPlace = 0;
-        }
+    } else {
+        seekPlace = 0;
+        numCharsToRead = place;
     }
 
-    mainBackwardsBuffer[numCharsToRead] = '\0';
+    log_d("Starting go Backwards: %d %d %d", place, seekPlace, numCharsToRead);
+    // We'll just tokenize everything from the last and work our way from the
+    // end of the tokens.
+    loadAndTokenizePage(seekPlace);
 
-    int totalCharsRead = 0;
+    log_d("finished the tokenization");
 
-    // If we are at the beginning of the file, we stay there.
-    if (place == 0) {
-        return 0;
-    }
+    // Go backwards from the last token and do the same as the loadIntoBuffer
+    // method.
 
-    if (!stream_->seek(seekPlace)) {
-        log_e("failed to seek in go_backwards: %lu is the place", place);
-        // This is a fragile since 0 is a valid file handle position. TODO to fix.
-        return 0;
-    }
-
-    while (stream_->available()) {
-        if (totalCharsRead < numCharsToRead) {
-            curChar = stream_->read();
-
-            // We'll fill in the array backwards just so it's easier to read it forwards
-            // to do the backwards lineify
-
-            mainBackwardsBuffer[numCharsToRead - totalCharsRead - 1] = curChar;
-            totalCharsRead++;
-        } else {
-            break;
-        }
-    }
-
-    // At this point, the main_backwards_buffer will have more than a page worth of
-    // characters in backwards. So if we read forward and lineify, we should be able to
-    // find the place where the previous place should start.
-
-    // This code is mostly copied from load_into_buffer, so you know, that's
-    // great.
-
-    curChar = '\0';
+    unsigned int plcInTokenBuffer = numCurrTokens_ - 1;
     unsigned int plcInBuffer = 0;
-    PageBuffer buffer{};
-
     int linesInBuffer = 1;
-    int pixLen = 0;
-    LineBuffer singleLine{};
-
-    int charsInLine = 0;
+    std::array<char, MAX_CHARS_PER_LINE> singleLine{};
 
     // It's minus 4 because we want to start 2 off the top and not go below
     // 2 off the bottom due to the bounding box.
     // Note that get_text_height adds 1 over the max character height
-    int maxLines = (display_.height() - 4) / display_.getTextHeight();
-    int maxWidth = (display_.width() - 4);
+    int maxLines = (display_.height() - 4) / this->display_.getTextHeight();
+    PageBuffer buffer;
 
-    int prevSpace = 0;
-    unsigned long prevSeekPos = 0;
+    buffer[0] = '\0';
+    singleLine[0] = '\0';
 
-    buffer[plcInBuffer] = curChar;
-    singleLine[charsInLine] = curChar;
+    // printOutTokensInCurrTokenBuffer();
+    unsigned int nextToken = plcInTokenBuffer;
+    unsigned int currToken = plcInTokenBuffer;
 
-    totalCharsRead = 0;
-    while (totalCharsRead < numCharsToRead) {
-        // TODO: Clang-tidy says this can sometimes be garbage and it's probably right.
-        // But given that we're going to rewrite this before too long, I don't think it's
-        // worth spending any cycles on. To see what clang-tidy says just remove the // NOLINT
-        // comment/
-        // NOLINTNEXTLINE(clang-analyzer-core.uninitialized.Assign)
-        curChar = mainBackwardsBuffer[totalCharsRead++];
+    log_d("end of token buffer is %d", currToken);
+    // Find which token to start with
 
-        // Turn new lines into spaces, for now.
-        switch (curChar) {
-        case '\n':
-            curChar = ' ';
-            break;
-        }
-
-        // Terminate and add the character to the buffer
-        buffer[plcInBuffer + 1] = '\0';
-        buffer[plcInBuffer] = curChar;
-        // Same for the single_line. Note that the single line will
-        // reset at each new line but the buffer will not
-        singleLine[charsInLine + 1] = '\0';
-        singleLine[charsInLine] = curChar;
-
-        // Found a word break, do a check.
-        if (buffer[plcInBuffer] == ' ') {
-            // Check the length of the buffer
-            pixLen = display_.getTextWidth(singleLine.data());
-            if (pixLen > maxWidth) {
-                // rewind to last word and cut it off there.
-                //  start new line
-                buffer[prevSpace] = '\n';
-                // reset the line buffer by putting this last word (the word that didn't fit) in
-                // it.
-                std::copy_n(buffer.begin() + prevSpace + 1, sizeof(singleLine), singleLine.begin());
-
-                // Update the prev_space to the current place.
-                charsInLine = strlen(singleLine.data());
-                prevSpace += charsInLine;
-
-                linesInBuffer++;
-                // we're done if this is true!
-                if (linesInBuffer > maxLines) {
-                    // reset the file_handle to the end of this buffer so
-                    // the next reads do the right thing.
-                    totalCharsRead = prevSeekPos;
-                    nextPlace_ = prevSeekPos;
-                    buffer[prevSpace - charsInLine] = '\0';
-                    break;
-                }
-            } else {
-                // note where the previous space was in the buffer
-                // as well as in the file handle and then keep going
-                prevSpace = plcInBuffer;
-                prevSeekPos = totalCharsRead;
-                charsInLine++;
-            }
-        } else {
-            // keep going
-            charsInLine++;
-        }
-        plcInBuffer++;
+    while ((currTokenBuffer_[currToken].streamPlace > place) && (currToken > 0)) {
+        currToken--;
     }
 
-    // At this point, total_chars_read is the number of characters that we need for the previous
-    // page. So we should just be able to subtract that from the input place. If it's < 0,
-    // return 0.
+    log_d("starting with %d as current token with a place of %d", currToken,
+          currTokenBuffer_[currToken].streamPlace);
 
-    unsigned long previousPlaceInFile;
-
-    // similarly to the logic above for starting PLACE_REWIND behind, we need move back those
-    // spaces again when calculating what to return based on the number of characters read in
-    // lineify and the place passed in.
-    if ((place - totalCharsRead - PLACE_REWIND) <= 0) {
-        previousPlaceInFile = 0;
-    } else {
-        previousPlaceInFile = place - totalCharsRead - PLACE_REWIND;
+    if (currToken == 0) {
+        // Can't go back any further, must be at beginnign of file.
+        return 0;
     }
 
-    return previousPlaceInFile;
+    while ((linesInBuffer <= maxLines) && (currToken > 0)) {
+        nextToken = getLineOfTextForRendering(currToken, singleLine, true);
+        std::copy_n(singleLine.data(), strlen(singleLine.data()), &buffer[plcInBuffer]);
+        plcInBuffer += strlen(singleLine.data());
+        buffer[plcInBuffer] = '\0';
+        linesInBuffer++;
+        currToken = nextToken;
+        log_d("line is %s", singleLine.data());
+    }
+
+    unsigned long returnValue = currTokenBuffer_[currToken].streamPlace;
+
+    log_d("about to tokenize current page");
+    // methods calling this method expect this to not change what's loaded
+    // into buffers, so we need to retokenize.
+    // we could probably avoid this rework by introducing an extra token buffer if we want
+    loadAndTokenizePage(place);
+    return returnValue;
 }
 
 // returns the new place of the stream
@@ -463,4 +393,9 @@ auto Renderer::loadCurrIntoBuffer() -> unsigned long {
 
 auto Renderer::loadNextIntoBuffer() -> unsigned long {
     // return loadIntoBuffer(nextBuffer_, nextPlace_);
+}
+
+auto Renderer::getPreviousPlace() -> unsigned long {
+    // previousPlace_ = goBackwardsOnePage(currentPlace_);
+    return previousPlace_;
 }
