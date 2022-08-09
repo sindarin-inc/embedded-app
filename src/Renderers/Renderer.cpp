@@ -136,8 +136,8 @@ void Renderer::printOutTokensInCurrTokenBuffer() {
 // one line of text that can be rendered. It puts the string in the inputLine.
 // It returns the next token in the TokenBuffer unless already at EOF, then
 // it returns EOF again.
-unsigned int Renderer::getLineOfTextForRendering(unsigned int placeInTokenBuffer,
-                                                 LineBuffer &inputLine, bool readBackwards) {
+auto Renderer::getLineOfTextForRendering(unsigned int placeInTokenBuffer, LineBuffer &inputLine,
+                                         bool readBackwards) -> unsigned int {
     unsigned int bufferPlace = placeInTokenBuffer;
     unsigned int linePlace = 0;
     bool lineFull = false;
