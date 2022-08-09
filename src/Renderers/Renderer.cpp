@@ -380,7 +380,12 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
         currToken = nextToken;
     }
 
-    return currTokenBuffer_[currToken].streamPlace;
+    // If we hit EOF, the next screen wraps around.
+    if (currTokenBuffer_[currToken].token == TOKEN_EOF) {
+        return 0;
+    } else {
+        return currTokenBuffer_[currToken].streamPlace;
+    }
 }
 
 // Deprecating this
