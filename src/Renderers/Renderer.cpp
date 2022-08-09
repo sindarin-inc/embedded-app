@@ -122,12 +122,12 @@ void Renderer::printOutTokensInCurrTokenBuffer() {
     auto currToken = currTokenBuffer_[0];
     for (int i = 0; (i < MAX_CHARS_PER_PAGE) && (currToken.token != TOKEN_EOF); i++) {
         currToken = currTokenBuffer_[i];
-        log_d("%u: %u", currToken.token, currToken.place);
+        // log_d("%u: %u", currToken.token, currToken.place);
         if (currToken.token == TOKEN_TEXT) {
             for (int j = currToken.place; j < currTokenBuffer_[i + 1].place; j++) {
-                log_d("%c", charTokenBuffer_[j]);
+                //        log_d("%c", charTokenBuffer_[j]);
             }
-            log_d("\n");
+            //    log_d("\n");
         }
     }
 }
@@ -296,12 +296,9 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         numCharsToRead = place;
     }
 
-    log_d("Starting go Backwards: %d %d %d", place, seekPlace, numCharsToRead);
     // We'll just tokenize everything from the last and work our way from the
     // end of the tokens.
     loadAndTokenizePage(seekPlace);
-
-    log_d("finished the tokenization");
 
     // Go backwards from the last token and do the same as the loadIntoBuffer
     // method.
@@ -324,16 +321,11 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     unsigned int nextToken = plcInTokenBuffer;
     unsigned int currToken = plcInTokenBuffer;
 
-    log_d("end of token buffer is %d with a stream place of: %d", currToken,
-          currTokenBuffer_[currToken].streamPlace);
     // Find which token to start with
 
     while ((currTokenBuffer_[currToken].streamPlace > place) && (currToken > 0)) {
         currToken--;
     }
-
-    log_d("starting with %d as current token with a place of %d", currToken,
-          currTokenBuffer_[currToken].streamPlace);
 
     if (currToken == 0) {
         // Can't go back any further, must be at beginnign of file.
@@ -347,12 +339,10 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         buffer[plcInBuffer] = '\0';
         linesInBuffer++;
         currToken = nextToken;
-        log_d("line is %s with nextToken %d", singleLine.data(), currToken);
     }
 
     unsigned long returnValue = currTokenBuffer_[currToken].streamPlace;
 
-    log_d("about to tokenize current page");
     // methods calling this method expect this to not change what's loaded
     // into buffers, so we need to retokenize.
     // we could probably avoid this rework by introducing an extra token buffer if we want
@@ -393,15 +383,19 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
     return currTokenBuffer_[currToken].streamPlace;
 }
 
+// Deprecating this
 auto Renderer::loadPrevIntoBuffer() -> unsigned long {
     // return loadIntoBuffer(prevBuffer_, previousPlace_);
+    return 0;
 }
 
 auto Renderer::loadCurrIntoBuffer() -> unsigned long {
     return loadIntoBuffer(currBuffer_, currentPlace_);
 }
 
+// Deprecating this
 auto Renderer::loadNextIntoBuffer() -> unsigned long {
+    return 0;
     // return loadIntoBuffer(nextBuffer_, nextPlace_);
 }
 
