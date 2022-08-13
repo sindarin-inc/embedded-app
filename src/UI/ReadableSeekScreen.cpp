@@ -8,9 +8,6 @@ void ReadableSeekScreen::render(DisplaySystem &display) {
         return;
     }
 
-    auto autoUpdate = display.getAutoUpdate();
-    display.setAutoUpdate(false);
-
     auto place = prefs_.readablePlace.get(readable_.id.c_str());
     auto progress = 100 * place / renderer_.size();
     auto percentStr = StringFormat("%d%%", progress);
@@ -69,8 +66,6 @@ void ReadableSeekScreen::render(DisplaySystem &display) {
     display.updateDisplay(firstLoad ? DisplaySystem::UpdateType::FULL
                                     : DisplaySystem::UpdateType::FAST);
     firstLoad = false;
-
-    display.setAutoUpdate(autoUpdate);
 
     needsRerender = false;
 }

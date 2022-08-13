@@ -114,15 +114,6 @@ public:
 
     virtual void clearDisplay(){};
 
-    // MARK: - AutoUpdate
-
-    // Whether or not the display will immediately update after drawing operations. If this is set
-    // to false, then updateDisplay must be called manually
-    // TODO(john): I don't love this paradigm and I think it'd probably be better to just always be
-    // explicit in our drawing code and call `updateDisplay` when we want to update the display.
-    void setAutoUpdate(bool update);
-    auto getAutoUpdate() -> bool;
-
     auto setBoundingBox(DisplayRect newBox) -> DisplayRect;
     auto getBoundingBox() -> DisplayRect { return boundingBox_; }
 
@@ -132,17 +123,10 @@ public:
 
     auto getFont() -> const GFXfont *;
     void drawText(const std::string &newText, int x, int y, int width, int height);
-    void drawTextInBox(const std::string &newText, int startX, int startY, int endX, int endY);
     void getTextBounds(const char *buffer, uint16_t *w, uint16_t *h);
     auto getTextHeight() -> int;
     auto getTextHeight(const char *buffer) -> int;
     auto getTextWidth(const char *buffer) -> int;
-
-    // Convenience methods for drawing that take into account offsets
-    void renderMaxBoxWithText(const std::string &text);
-    void renderTextWithoutBox(const std::string &text, bool centerHorizontally = false,
-                              bool centerVertically = false);
-    void renderBox(int xStart, int yStart, int xEnd, int yEnd);
 
     // MARK: - Graphic drawing code
 
@@ -157,6 +141,9 @@ public:
     // Clear the whole screen
     void clearScreen();
 
+    inline auto xOffset(int16_t value) -> int16_t { return value + boundingBox_.x; }
+    inline auto yOffset(int16_t value) -> int16_t { return value + boundingBox_.y; }
+
     // TODO: Just use `textcolor` and `textbgcolor` for these?
     uint16_t bg = 0, fg = 0;
 
@@ -165,11 +152,6 @@ protected:
     Adafruit_GFX *gfxClass_ = nullptr;
     const GFXfont *font_ = nullptr;
 
-    inline auto xOffset(int16_t value) -> int16_t { return value + boundingBox_.x; }
-    inline auto yOffset(int16_t value) -> int16_t { return value + boundingBox_.y; }
-
-    void drawTextCmdsOnly(const std::string &newText, int x, int y, int lineHeight);
-    void drawBoxCmdsOnly(int xStart, int yStart, int xEnd, int yEnd);
     void splitStringToLines(const std::string &stringToSplit,
                             std::array<std::string, MAX_LINES_IN_SPLIT> &lines, int &numLines);
     void rotate(uint16_t &x, uint16_t &y, uint16_t &w, uint16_t &h);
@@ -177,8 +159,6 @@ protected:
 
     int partialRefresh_ = 0;
     uint16_t partialX_ = 0, partialY_ = 0, partialW_ = 0, partialH_ = 0;
-
-    bool autoUpdate_;
 
     bool invertedDisplay_ = false;
 

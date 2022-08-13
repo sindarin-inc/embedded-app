@@ -247,7 +247,10 @@ auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
 
     currentPageWordCount_ = WordCount(currBuffer_.data());
 
-    display_.renderTextWithoutBox(currBuffer_.data(), horizontalCenter_, verticalCenter_);
+    display_.drawText(currBuffer_.data(), display_.xOffset(0), display_.yOffset(0),
+                      display_.width(), display_.height());
+
+    display_.updateDisplay();
 
     SetCpuSpeedMhz(CPU_FREQ_MHZ_LOW);
 

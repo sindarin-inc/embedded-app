@@ -18,8 +18,7 @@ void PagedMenuScreen::render(DisplaySystem &display) {
         return;
     }
     log_i("PagedMenuScreen render (selected = %s)", getCurrItem().title.c_str());
-    auto autoUpdate = display.getAutoUpdate();
-    display.setAutoUpdate(false);
+
     // Blank out screen
     display.fillScreen(display.bg);
     // Draw menu surroundings
@@ -97,7 +96,7 @@ void PagedMenuScreen::render(DisplaySystem &display) {
 
     display.updateDisplay();
     display.setFont(display.style.getFontFamily().readableFont);
-    display.setAutoUpdate(autoUpdate);
+
     needsRerender = false;
 }
 
