@@ -21,7 +21,6 @@ public:
 protected:
     bool isBidirectional_ = false;
     void processCommand(RemoteCommand command) override;
-    uint16_t maxHeightForThisFont_ = 0;
 };
 
 #endif

@@ -165,10 +165,7 @@ void DisplaySystem::splitStringToLines(const std::string &stringToSplit,
     }
 }
 
-// This method takes in a string, and assumes that it will have
-// \n characaters in it to determine new lines. By default, the u8g2
-// driver doesn't do new lines, so we have to do the parsing of that ourselves
-// in order to determine the right placement of each new line.
+// y is the y coordinate of the top of the first line
 void DisplaySystem::drawText(const std::string &newText, int x, int y, int width, int height) {
     // hack for now
     // figure out what the right window is
@@ -194,9 +191,11 @@ void DisplaySystem::drawText(const std::string &newText, int x, int y, int width
 
     gfxClass_->setTextColor(fg);
 
+    // We start at i+1 in the since setting the cursor puts where the lower left of the text
+    // will be, not upper left.
     for (int i = 0; i < numLines; i++) {
         // Don't know if it starts the line from the baseline or from the top -- TO LEARN: HACK
-        setCursor(x, y + i * (lineHeight));
+        setCursor(x, y + (i + 1) * (lineHeight));
         gfxClass_->printf("%s\n", lines[i].c_str());
     }
 }

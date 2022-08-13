@@ -163,7 +163,7 @@ protected:
     bool invertedDisplay_ = false;
 
     // This is the default value from before of 15mmx15mm
-    DisplayRect boundingBox_ = {33, 33, 190, 190};
+    DisplayRect boundingBox_ = {0, 0, 255, 255};
     int lineSpacing_ = 0;
 };
 
