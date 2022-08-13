@@ -307,16 +307,18 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // If prefs have never been set before set them.
     if ((initialRect.width == 0) && (initialRect.height == 0) && (initialRect.x == 0) &&
         (initialRect.y == 0)) {
-        initialRect.x = 33;
-        initialRect.y = 33;
-        initialRect.width = 190;
-        initialRect.height = 190;
+        initialRect.x = 0;
+        initialRect.y = 0;
+        initialRect.width = 255;
+        initialRect.height = 255;
         prefs.rectX.set(initialRect.x);
         prefs.rectY.set(initialRect.y);
         prefs.rectW.set(initialRect.width);
         prefs.rectH.set(initialRect.height);
     }
 
+    log_d("Setting bounding box %d %d %d %d", initialRect.x, initialRect.y, initialRect.width,
+          initialRect.height);
     myDisplay.setBoundingBox(initialRect);
     myDisplay.setLineSpacing(prefs.lineSpacing.get().value());
 
