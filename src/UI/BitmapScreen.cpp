@@ -19,6 +19,7 @@ void BitmapScreen::render(DisplaySystem &display) {
     // we'd like. This is one step closer to that, however.
     display.drawXBitmap((display.width() - width_) / 2, (display.height() - height_) / 2, bitmap_,
                         width_, height_, display.fg);
+    display.updateDisplay();
 
     needsRerender = false;
 }
