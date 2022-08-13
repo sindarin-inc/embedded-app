@@ -32,7 +32,8 @@ void StatsScreen::render(DisplaySystem &display) {
     }
 
     display.setFont(&TAHOMA_REGULAR_FONT8PT7B);
-    display.drawTextInBox(message, 0, 0, display.width(), display.height());
+    display.drawText(message, 0, 0, display.width(), display.height());
+    display.updateDisplay();
     needsRerender = false;
 }
 

@@ -14,10 +14,6 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
         return;
     }
 
-    // TODO: Kill this
-    auto autoUpdate = display.getAutoUpdate();
-    display.setAutoUpdate(false);
-
     auto backlightAbsolute = prefs_.backlight.get().value();
     auto backlightPercent =
         (backlightAbsolute - MIN_LIGHTING_VALUE) * 100 / (MAX_LIGHTING_VALUE - MIN_LIGHTING_VALUE);
@@ -70,7 +66,6 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
     display.updateDisplay(firstLoad ? DisplaySystem::UpdateType::FULL
                                     : DisplaySystem::UpdateType::FAST);
     firstLoad = false;
-    display.setAutoUpdate(autoUpdate);
 
     needsRerender = false;
 }

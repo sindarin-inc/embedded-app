@@ -42,8 +42,6 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     }
 
     log_d("PopupMenuScreen render");
-    auto autoUpdate = display.getAutoUpdate();
-    display.setAutoUpdate(false);
     // Blank out screen
     display.fillScreen(display.bg);
     // Draw menu surroundings
@@ -105,7 +103,6 @@ void PopupMenuScreen::render(DisplaySystem &display) {
                      (screenHeight / 2) + 1, screenWidth, screenHeight);
 
     display.updateDisplay();
-    display.setAutoUpdate(autoUpdate);
     display.setFont(display.style.getFontFamily().readableFont);
     needsRerender = false;
 }

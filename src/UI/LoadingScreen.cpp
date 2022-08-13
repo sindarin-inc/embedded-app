@@ -19,8 +19,8 @@ void LoadingScreen::render(DisplaySystem &display) {
         int startX = (width / 2) - (3 * BOX_WIDTH + 2 * SPACING) / 2;
         int xOffset = state_ * (BOX_WIDTH + SPACING);
         int startY = (height / 2) - BOX_WIDTH / 2;
-        display.renderBox(startX + xOffset, startY, startX + xOffset + BOX_WIDTH,
-                          startY + BOX_WIDTH);
+        display.drawBox(startX + xOffset, startY, startX + xOffset + BOX_WIDTH, startY + BOX_WIDTH);
+        display.updateDisplay();
         state_++;
         state_ = state_ % 3;
         timer_ = now;
