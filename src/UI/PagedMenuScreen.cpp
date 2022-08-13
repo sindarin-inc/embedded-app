@@ -39,8 +39,8 @@ void PagedMenuScreen::render(DisplaySystem &display) {
         menuHeight = MENU_BLANK_BIDIRECTIONAL_HEIGHT;
     }
 
-    display.drawXBitmap((int16_t)((display.width() - menuWidth) / 2),
-                        (int16_t)((display.height() - menuHeight) / 2), menuBits,
+    display.drawXBitmap(display.xOffset((int16_t)((display.width() - menuWidth) / 2)),
+                        display.yOffset((int16_t)((display.height() - menuHeight) / 2)), menuBits,
                         (int16_t)menuWidth, (int16_t)menuHeight, display.fg);
 
     auto itemTitle = getCurrItem().title;
@@ -80,9 +80,9 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     display.getTextBounds(itemTitle.c_str(), &width, &height);
     uint16_t screenWidth = display.width();
     uint16_t screenHeight = display.height();
-    display.drawText(itemTitle.c_str(), (screenWidth / 2) - (width / 2),
-                     (screenHeight / 2) + (maxHeightForThisFont_ / 2) - 4, screenWidth,
-                     screenHeight);
+    display.drawText(itemTitle.c_str(), display.xOffset((screenWidth / 2) - (width / 2)),
+                     display.yOffset((screenHeight / 2) + (maxHeightForThisFont_ / 2) - 4),
+                     screenWidth, screenHeight);
     display.setFont(display.style.getFontFamily().readableFont);
 
     display.getTextBounds(batteryStatus.c_str(), &width, &height);

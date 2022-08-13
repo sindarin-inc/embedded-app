@@ -247,6 +247,7 @@ auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
 
     currentPageWordCount_ = WordCount(currBuffer_.data());
 
+    log_d("Offsets are %d %d", display_.xOffset(0), display_.yOffset(0));
     display_.drawText(currBuffer_.data(), display_.xOffset(0), display_.yOffset(0),
                       display_.width(), display_.height());
 
