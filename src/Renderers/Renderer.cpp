@@ -246,9 +246,29 @@ auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
     PROFILE_END_LOG_MS(loadCurrIntoBuffer);
 
     currentPageWordCount_ = WordCount(currBuffer_.data());
+    /*
+        display_.drawText(currBuffer_.data(), display_.xOffset(0), display_.yOffset(0),
+                          display_.width(), display_.height());
+                          */
 
-    display_.drawText(currBuffer_.data(), display_.xOffset(0), display_.yOffset(0),
-                      display_.width(), display_.height());
+    int newLineAdjust = 0;
+    int currentY = 0;
+
+    // A first attempt at a hack to get the the text to look better with newlines as sole
+    // characters on the line
+    for (int j = 0; j < numLinesInBuffer_; j++) {
+        log_d("%s", lineBufferArray_[j].data());
+        if (lineBufferArray_[j][0] == '\n') {
+            newLineAdjust++;
+        } else {
+            display_.drawSingleLineOfText(
+                lineBufferArray_[j].data(), display_.xOffset(0),
+                display_.yOffset(j * (display_.getLineSpacing() + display_.getTextHeight()) -
+                                 display_.getTextHeight() * 2 * newLineAdjust / 3));
+        }
+        /*currentY = j * (display_.getLineSpacing() + display_.getTextHeight()) -
+                   display_.getTextHeight() * 2 * newLineAdjust / 3;*/
+    }
 
     display_.updateDisplay();
 
@@ -284,6 +304,15 @@ auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
 // page previous, not to load anything into buffers. It's a little less
 // efficient, but given the load_into_buffer function works, we will opt for
 // the inefficiency for now rather than rewrite the whole thing.
+//
+// XXX this is broken because it doesn't take into account the fact that the
+// token that causes the overflow is in a line in the current implemetation
+// is the PREVIOUS token to the line, not the NEXT token after the line.
+// So to make the "goBackwards" algorithm work, we need to keep the NEXT
+// token and use that to check to see if a line is full, not the PREVIOUS
+// token. This will require a bit more copying around, but should give us
+// a backwards seek that will yield exactly the same result as a forward
+// seek!
 auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
 
     char curChar = '\0';
@@ -363,6 +392,11 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
     // It's minus 4 because we want to start 2 off the top and not go below
     // 2 off the bottom due to the bounding box.
     // Note that get_text_height adds 1 over the max character height
+    //
+    // XXX: This has to be rethought to realize that the rendering will impact
+    // the max number of lines that can be rendered since \n will be handled
+    // differently as well chapter headers, etc.
+    //
     int maxLines = (display_.height() - 4) / this->display_.getTextHeight();
 
     buffer[0] = '\0';
@@ -374,9 +408,18 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
     unsigned int nextToken = 0;
     unsigned int currToken = 0;
 
+    numLinesInBuffer_ = 0;
+
     while (linesInBuffer <= maxLines) {
         nextToken = getLineOfTextForRendering(currToken, singleLine);
         std::copy_n(singleLine.data(), strlen(singleLine.data()), &buffer[plcInBuffer]);
+        std::copy_n(singleLine.data(), strlen(singleLine.data()),
+                    lineBufferArray_[numLinesInBuffer_].data());
+        lineBufferArray_[numLinesInBuffer_][strlen(singleLine.data())] = '\0';
+        if (lineBufferArray_[numLinesInBuffer_][0] == '\n') {
+            maxLines++;
+        }
+        numLinesInBuffer_++;
         plcInBuffer += strlen(singleLine.data());
         buffer[plcInBuffer] = '\0';
         linesInBuffer++;

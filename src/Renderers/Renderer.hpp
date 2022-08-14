@@ -7,6 +7,8 @@
 #define MAX_CHARS_PER_PAGE 1500
 #define MAX_CHARS_PER_LINE 200
 
+#define MAX_LINES_PER_PAGE 50
+
 // These are the different tokens so as we parse a buffer
 // we more easily know what to do with the text.
 enum RENDERER_TOKEN {
@@ -36,6 +38,8 @@ typedef std::array<char, MAX_CHARS_PER_PAGE> PageBuffer;
 typedef std::array<char, MAX_CHARS_PER_LINE> LineBuffer;
 typedef std::array<RendererToken, MAX_CHARS_PER_PAGE> PageTokenBuffer;
 typedef std::array<RendererToken, MAX_CHARS_PER_LINE> LineTokenBuffer;
+
+typedef std::array<LineBuffer, MAX_LINES_PER_PAGE> LineBufferArray;
 
 class Renderer {
 public:
@@ -95,6 +99,9 @@ protected:
     // This keeps all the tokens for the max amount of read from the stream
     PageTokenBuffer currTokenBuffer_{};
     unsigned int numCurrTokens_ = 0;
+
+    LineBufferArray lineBufferArray_{};
+    unsigned int numLinesInBuffer_ = 0;
 
     // This keeps just the tokens for the current page being rendered
     PageTokenBuffer singlePageTokenBuffer_{};

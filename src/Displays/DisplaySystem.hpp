@@ -122,6 +122,7 @@ public:
     // MARK: - Text rendering code
 
     auto getFont() -> const GFXfont *;
+    void drawSingleLineOfText(const std::string &line, int x, int y);
     void drawText(const std::string &newText, int x, int y, int width, int height);
     void getTextBounds(const char *buffer, uint16_t *w, uint16_t *h);
     auto getTextHeight() -> int;

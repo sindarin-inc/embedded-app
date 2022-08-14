@@ -165,6 +165,11 @@ void DisplaySystem::splitStringToLines(const std::string &stringToSplit,
     }
 }
 
+void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y) {
+    gfxClass_->setCursor(x, y + getTextHeight());
+    gfxClass_->printf("%s", line.c_str());
+}
+
 // y is the y coordinate of the top of the first line
 void DisplaySystem::drawText(const std::string &newText, int x, int y, int width, int height) {
     // hack for now
