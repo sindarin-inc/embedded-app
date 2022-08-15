@@ -451,8 +451,10 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
 
     // It's minus 2 because we want to start 1 off the top and leave 1 at the bottom
     // Note that get_text_height adds 1 over the max character height
-    int maxLines = (display_.height() - 2) /
-                   (this->display_.getTextHeight() + this->display_.getLineSpacing() + 1);
+    int maxLines = (display_.height() - 2) / (this->display_.getTextHeight());
+
+    log_d("BACKWARDS DISPLAY READOUT: %d, %d, %d", display_.height() - 2,
+          this->display_.getTextHeight(), this->display_.getLineSpacing());
     PageBuffer buffer;
 
     buffer[0] = '\0';
@@ -463,8 +465,11 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     unsigned int currToken = plcInTokenBuffer;
 
     // Find which token to start with
-
+    // Could switch to an algorithm that is log(n) instead of n if we need to
+    log_d("About to look for where to start: place = %d", place);
     while ((currTokenBuffer_[currToken].streamPlace > place) && (currToken > 0)) {
+        // log_d("Going back another token %d", currTokenBuffer_[currToken].streamPlace);
+        // log_d("The token is %d", currToken);
         currToken--;
     }
 
@@ -473,18 +478,21 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         return 0;
     }
 
-    while ((linesInBuffer < maxLines) && (currToken > 0)) {
+    while ((linesInBuffer <= maxLines) && (currToken > 0)) {
         nextToken = getLineOfTextForRendering(currToken, singleLine, true);
         std::copy_n(singleLine.data(), strlen(singleLine.data()), &buffer[plcInBuffer]);
+        log_d("GO BACKWARDS line is %s", singleLine.data());
         plcInBuffer += strlen(singleLine.data());
         // if it doesn't have a \n at the end of the line, we need to add it.
         if (singleLine[strlen(singleLine.data()) - 1] != '\n') {
             buffer[plcInBuffer] = '\n';
             plcInBuffer++;
         }
+
         buffer[plcInBuffer] = '\0';
         linesInBuffer++;
         currToken = nextToken;
+        log_d("lines in buffer %d, maxLines %d, currToken %d", linesInBuffer, maxLines, currToken);
     }
 
     unsigned long returnValue = currTokenBuffer_[currToken].streamPlace;
@@ -493,6 +501,7 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     // into buffers, so we need to retokenize.
     // we could probably avoid this rework by introducing an extra token buffer if we want
     loadAndTokenizePage(place);
+    log_d("RETURNING THE FOLLOWING PLACE! %d", returnValue);
     return returnValue;
 }
 
@@ -510,8 +519,7 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
     // the max number of lines that can be rendered since \n will be handled
     // differently as well chapter headers, etc.
     //
-    int maxLines = (display_.height() - 2) /
-                   (this->display_.getTextHeight() + this->display_.getLineSpacing() + 1);
+    int maxLines = (display_.height() - 2) / (this->display_.getTextHeight());
 
     log_d("Max lines calc: %d %d %d", display_.height(), display_.getTextHeight(),
           display_.getLineSpacing());
@@ -537,11 +545,11 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
                     lineBufferArray_[numLinesInBuffer_].data());
 
         lineBufferArray_[numLinesInBuffer_][strlen(singleLine.data())] = '\0';
-
-        if (lineBufferArray_[numLinesInBuffer_][0] == '\n') {
-            maxLines++;
-        }
-
+        /*
+                if (lineBufferArray_[numLinesInBuffer_][0] == '\n') {
+                    maxLines++;
+                }
+        */
         numLinesInBuffer_++;
         plcInBuffer += strlen(singleLine.data());
 
