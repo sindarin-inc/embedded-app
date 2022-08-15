@@ -6,6 +6,7 @@
 
 #define MAX_CHARS_PER_PAGE 1500
 #define MAX_CHARS_PER_LINE 200
+#define MAX_TOKEN_STRING_LENGTH 100
 
 #define MAX_LINES_PER_PAGE 50
 
@@ -19,6 +20,7 @@ enum RENDERER_TOKEN {
     TOKEN_EMDASH = 4,
     TOKEN_TAB = 5,
     TOKEN_EOF = 6,
+    TOKEN_NOTOKEN = 7,
 };
 
 // A token is simply a place in the buffer and a token identifer
@@ -32,10 +34,13 @@ struct RendererToken {
     RENDERER_TOKEN token;
     unsigned long place;
     unsigned long streamPlace;
+    u_int16_t width;
+    u_int16_t height;
 };
 
 typedef std::array<char, MAX_CHARS_PER_PAGE> PageBuffer;
 typedef std::array<char, MAX_CHARS_PER_LINE> LineBuffer;
+typedef std::array<char, MAX_TOKEN_STRING_LENGTH> TokenString;
 typedef std::array<RendererToken, MAX_CHARS_PER_PAGE> PageTokenBuffer;
 typedef std::array<RendererToken, MAX_CHARS_PER_LINE> LineTokenBuffer;
 
@@ -62,6 +67,11 @@ public:
     auto renderPage(unsigned long placeInFile) -> unsigned long;
 
     auto getCurrentPageWordCount() -> uint32_t { return currentPageWordCount_; }
+
+    void tokenToString(unsigned long placeInTokenBuffer, TokenString &outputString);
+    void tokenRenderedWidthHeight(unsigned long placeInTokenBuffer, uint16_t *renderedWidth,
+                                  uint16_t *renderedHeight);
+    void setSizeOfTextToken(unsigned long placeInTokenBuffer);
 
 protected:
     DisplaySystem &display_;

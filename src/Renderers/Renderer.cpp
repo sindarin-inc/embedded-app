@@ -8,6 +8,31 @@
 
 Renderer::Renderer(DisplaySystem &display) : display_(display) {}
 
+// must be called after loadAndTokenizePage
+void Renderer::tokenToString(unsigned long placeInTokenBuffer, TokenString &outputString) {
+    std::copy_n(&charTokenBuffer_[currTokenBuffer_[placeInTokenBuffer].place],
+                currTokenBuffer_[placeInTokenBuffer + 1].place -
+                    currTokenBuffer_[placeInTokenBuffer].place,
+                &outputString[0]);
+    outputString[currTokenBuffer_[placeInTokenBuffer + 1].place -
+                 currTokenBuffer_[placeInTokenBuffer].place] = '\0';
+}
+
+void Renderer::tokenRenderedWidthHeight(unsigned long placeInTokenBuffer, uint16_t *renderedWidth,
+                                        uint16_t *renderedHeight) {
+    TokenString converted;
+    tokenToString(placeInTokenBuffer, converted);
+    *renderedWidth = display_.getTextWidth(converted.data());
+    *renderedHeight = display_.getTextHeight(converted.data());
+}
+
+void Renderer::setSizeOfTextToken(unsigned long placeInTokenBuffer) {
+    TokenString converted;
+    tokenToString(placeInTokenBuffer, converted);
+    tokenRenderedWidthHeight(placeInTokenBuffer, &currTokenBuffer_[placeInTokenBuffer].width,
+                             &currTokenBuffer_[placeInTokenBuffer].height);
+}
+
 //
 // This loads from the stream character by character and populates
 // the token buffer based on the RENDERER_TOKEN enum.
@@ -23,7 +48,7 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
 
     charTokenBuffer_[plcInBuffer] = '\0';
 
-    RendererToken eofToken = {TOKEN_EOF, 0};
+    RendererToken eofToken = {TOKEN_EOF, 0, 0, 0, 0};
     currTokenBuffer_[plcInBuffer] = eofToken;
 
     if (!stream_->seek(placeInFile)) {
@@ -35,7 +60,7 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
     // and need room for EOF character.
     while (stream_->available() && plcInBuffer < MAX_CHARS_PER_PAGE - 1) {
         auto curChar = stream_->read();
-        RendererToken newToken = {TOKEN_EOF, plcInBuffer, placeInFile + plcInBuffer};
+        RendererToken newToken = {TOKEN_EOF, plcInBuffer, placeInFile + plcInBuffer, 0, 0};
         RendererToken prevToken;
 
         // log_d("Set the stream place to %lu", placeInFile + plcInBuffer);
@@ -47,20 +72,36 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
             currTokenBuffer_[plcInTokenBuffer] = newToken;
             numCurrTokens_++;
             currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
+            // we need to set the size of the previous token
+            if ((plcInBuffer > 0) && currTokenBuffer_[plcInBuffer - 1].token == TOKEN_TEXT) {
+                setSizeOfTextToken(plcInTokenBuffer - 1);
+            }
             plcInTokenBuffer++;
             break;
         case ' ':
             newToken.token = TOKEN_SPACE;
+            newToken.width = display_.getTextWidth(" ");
+            newToken.height = display_.getTextHeight(" ");
             currTokenBuffer_[plcInTokenBuffer] = newToken;
             numCurrTokens_++;
             currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
+            // we need to set the size of the previous token
+            if ((plcInBuffer > 0) && currTokenBuffer_[plcInBuffer - 1].token == TOKEN_TEXT) {
+                setSizeOfTextToken(plcInTokenBuffer - 1);
+            }
             plcInTokenBuffer++;
             break;
         case '\t':
             newToken.token = TOKEN_TAB;
+            newToken.width = display_.getTextWidth("\t");
+            newToken.height = display_.getTextHeight("\t");
             currTokenBuffer_[plcInTokenBuffer] = newToken;
             numCurrTokens_++;
             currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
+            // we need to set the size of the previous token
+            if ((plcInBuffer > 0) && currTokenBuffer_[plcInBuffer - 1].token == TOKEN_TEXT) {
+                setSizeOfTextToken(plcInTokenBuffer - 1);
+            }
             plcInTokenBuffer++;
             break;
         case '-':
@@ -69,6 +110,8 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
                 prevToken = currTokenBuffer_[plcInTokenBuffer - 1];
                 if (prevToken.token == TOKEN_HYPHEN) {
                     newToken.token = TOKEN_EMDASH;
+                    newToken.width = display_.getTextWidth("--");
+                    newToken.height = display_.getTextHeight("--");
                     newToken.place = plcInBuffer - 1;
                     newToken.streamPlace = placeInFile + plcInBuffer - 1;
                     currTokenBuffer_[plcInTokenBuffer] = newToken;
@@ -79,9 +122,15 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
                 }
             }
             newToken.token = TOKEN_HYPHEN;
+            newToken.width = display_.getTextWidth("-");
+            newToken.height = display_.getTextHeight("-");
             currTokenBuffer_[plcInTokenBuffer] = newToken;
             numCurrTokens_++;
             currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
+            // we need to set the size of the previous token
+            if ((plcInBuffer > 0) && currTokenBuffer_[plcInBuffer - 1].token == TOKEN_TEXT) {
+                setSizeOfTextToken(plcInTokenBuffer - 1);
+            }
             plcInTokenBuffer++;
             break;
         // All other characters are considered part of a text token,
@@ -136,6 +185,11 @@ void Renderer::printOutTokensInCurrTokenBuffer() {
 // one line of text that can be rendered. It puts the string in the inputLine.
 // It returns the next token in the TokenBuffer unless already at EOF, then
 // it returns EOF again.
+//
+// XXX: Ultimately this class should have helpers (render line, render token)
+// that does the heavy lifting of telling the other parts of rendering how tall and
+// wide a rendered line / token / page is.
+//
 auto Renderer::getLineOfTextForRendering(unsigned int placeInTokenBuffer, LineBuffer &inputLine,
                                          bool readBackwards) -> unsigned int {
     unsigned int bufferPlace = placeInTokenBuffer;
@@ -143,63 +197,33 @@ auto Renderer::getLineOfTextForRendering(unsigned int placeInTokenBuffer, LineBu
     bool lineFull = false;
     int maxWidth = (display_.width() - 4);
     int pixLen;
+    int runningWidth = 0;
 
     inputLine[linePlace] = '\0';
-    while (!lineFull) {
-        RendererToken curToken = currTokenBuffer_[bufferPlace];
-        switch (curToken.token) {
-        case TOKEN_TEXT:
-        case TOKEN_SPACE:
-        case TOKEN_TAB:
-        case TOKEN_HYPHEN:
-        case TOKEN_EMDASH:
-            std::copy_n(&charTokenBuffer_[currTokenBuffer_[bufferPlace].place],
-                        currTokenBuffer_[bufferPlace + 1].place -
-                            currTokenBuffer_[bufferPlace].place,
-                        &inputLine[linePlace]);
-            linePlace +=
-                currTokenBuffer_[bufferPlace + 1].place - currTokenBuffer_[bufferPlace].place;
-            inputLine[linePlace] = '\0';
-            pixLen = display_.getTextWidth(inputLine.data());
-            // This token caused us to go too far, so we need to back up.
-            if (pixLen > maxWidth) {
-                // It's sufficient to simply null terminate the string where it should have
-                // been!
-                linePlace -=
-                    currTokenBuffer_[bufferPlace + 1].place - currTokenBuffer_[bufferPlace].place;
-                inputLine[linePlace] = '\n';
-                inputLine[linePlace + 1] = '\0';
-                lineFull = true;
-                if (readBackwards) {
+
+    RendererToken nextTokenForBackwards = currTokenBuffer_[placeInTokenBuffer + 1];
+
+    if (readBackwards) {
+        runningWidth = nextTokenForBackwards.width;
+    }
+
+    while (runningWidth < maxWidth) {
+        RendererToken currToken = currTokenBuffer_[bufferPlace];
+        if (currToken.token == TOKEN_EOF || currToken.token == TOKEN_NEWLINE) {
+            if (currToken.token == TOKEN_NEWLINE) {
+                if (!readBackwards) {
                     bufferPlace++;
                 } else {
                     bufferPlace--;
                 }
             }
             break;
-        case TOKEN_NEWLINE:
-            lineFull = true;
-            inputLine[linePlace] = '\n';
-            inputLine[linePlace + 1] = '\0';
-            break;
-        case TOKEN_EOF:
-            lineFull = true;
-            // It'll be incremented later and we want to return this token to caller.
-            if (readBackwards) {
-                bufferPlace++;
-            } else {
-                bufferPlace--;
-            }
-            break;
-        default:
-            log_i("Should not have gotten here -- unrecognized token %d %d.", curToken.token,
-                  bufferPlace);
-            break;
         }
+        runningWidth += currToken.width;
         if (readBackwards) {
             // Catch the case where we are at the beginning of the buffer.
             if (bufferPlace == 0) {
-                lineFull = true;
+                break;
             } else {
                 bufferPlace--;
             }
@@ -207,6 +231,29 @@ auto Renderer::getLineOfTextForRendering(unsigned int placeInTokenBuffer, LineBu
             bufferPlace++;
         }
     }
+
+    // Go back one token as that was the token that caused the line to be full.
+    // This is only in the forwards direction because the backwards direction pre-loads
+    // the next token as part of the measurement to keep consistency in rendering the
+    // previous page.
+
+    if ((!readBackwards) && (runningWidth >= maxWidth)) {
+        bufferPlace--;
+    }
+
+    int i;
+    // Never done something like this before, but it should do the trick!
+    for ((readBackwards ? (i = bufferPlace) : (i = placeInTokenBuffer));
+         (readBackwards ? (i <= placeInTokenBuffer) : (i <= bufferPlace)); i++) {
+        RendererToken curToken = currTokenBuffer_[i];
+        std::copy_n(&charTokenBuffer_[currTokenBuffer_[i].place],
+                    currTokenBuffer_[i + 1].place - currTokenBuffer_[i].place,
+                    &inputLine[linePlace]);
+        linePlace += currTokenBuffer_[i + 1].place - currTokenBuffer_[i].place;
+        inputLine[linePlace] = '\0';
+    }
+
+    log_d("Returning place %d", bufferPlace);
     return bufferPlace;
 }
 
@@ -246,16 +293,15 @@ auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
     PROFILE_END_LOG_MS(loadCurrIntoBuffer);
 
     currentPageWordCount_ = WordCount(currBuffer_.data());
-    /*
-        display_.drawText(currBuffer_.data(), display_.xOffset(0), display_.yOffset(0),
-                          display_.width(), display_.height());
-                          */
+    display_.drawText(currBuffer_.data(), display_.xOffset(0), display_.yOffset(0),
+                      display_.width(), display_.height());
 
     int newLineAdjust = 0;
     int currentY = 0;
 
     // A first attempt at a hack to get the the text to look better with newlines as sole
     // characters on the line
+    /*
     for (int j = 0; j < numLinesInBuffer_; j++) {
         log_d("%s", lineBufferArray_[j].data());
         if (lineBufferArray_[j][0] == '\n') {
@@ -266,10 +312,10 @@ auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
                 display_.yOffset(j * (display_.getLineSpacing() + display_.getTextHeight()) -
                                  display_.getTextHeight() * 2 * newLineAdjust / 3));
         }
-        /*currentY = j * (display_.getLineSpacing() + display_.getTextHeight()) -
-                   display_.getTextHeight() * 2 * newLineAdjust / 3;*/
-    }
-
+        currentY = j * (display_.getLineSpacing() + display_.getTextHeight()) -
+                   display_.getTextHeight() * 2 * newLineAdjust / 3;
+}
+*/
     display_.updateDisplay();
 
     SetCpuSpeedMhz(CPU_FREQ_MHZ_LOW);
@@ -368,6 +414,14 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         nextToken = getLineOfTextForRendering(currToken, singleLine, true);
         std::copy_n(singleLine.data(), strlen(singleLine.data()), &buffer[plcInBuffer]);
         plcInBuffer += strlen(singleLine.data());
+        // if it doesn't have a \n at the end of the line, we need to add it.
+        if (singleLine[strlen(singleLine.data()) - 1] != '\n') {
+            log_d("adding a newline");
+            buffer[plcInBuffer] = '\n';
+            plcInBuffer++;
+        } else {
+            log_d("Decided i didn't need a newline");
+        }
         buffer[plcInBuffer] = '\0';
         linesInBuffer++;
         currToken = nextToken;
@@ -416,15 +470,29 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
         std::copy_n(singleLine.data(), strlen(singleLine.data()),
                     lineBufferArray_[numLinesInBuffer_].data());
         lineBufferArray_[numLinesInBuffer_][strlen(singleLine.data())] = '\0';
+
         if (lineBufferArray_[numLinesInBuffer_][0] == '\n') {
             maxLines++;
         }
         numLinesInBuffer_++;
         plcInBuffer += strlen(singleLine.data());
+
+        // if it doesn't have a \n at the end of the line, we need to add it.
+        if (singleLine[strlen(singleLine.data()) - 1] != '\n') {
+            log_d("adding a newline");
+            buffer[plcInBuffer] = '\n';
+            plcInBuffer++;
+        } else {
+            log_d("Decided i didn't need a newline");
+        }
         buffer[plcInBuffer] = '\0';
         linesInBuffer++;
         currToken = nextToken;
     }
+
+    log_d("loaded this into buffer %s", buffer.data());
+
+    log_d("Number of lines in buffer: %d out of a max of %d", linesInBuffer, maxLines);
 
     // If we hit EOF, the next screen wraps around.
     if (currTokenBuffer_[currToken].token == TOKEN_EOF) {
