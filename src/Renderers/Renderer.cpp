@@ -21,9 +21,36 @@ void Renderer::tokenToString(unsigned long placeInTokenBuffer, TokenString &outp
 void Renderer::tokenRenderedWidthHeight(unsigned long placeInTokenBuffer, uint16_t *renderedWidth,
                                         uint16_t *renderedHeight) {
     TokenString converted;
-    tokenToString(placeInTokenBuffer, converted);
-    *renderedWidth = display_.getTextWidth(converted.data());
-    *renderedHeight = display_.getTextHeight(converted.data());
+    // Spaces are a mess. The width of them depends on the tokens before and after. Joy.
+    if (currTokenBuffer_[placeInTokenBuffer].token != TOKEN_SPACE) {
+        tokenToString(placeInTokenBuffer, converted);
+        *renderedWidth = display_.getTextWidth(converted.data());
+        *renderedHeight = display_.getTextHeight(converted.data());
+    } else {
+        // Check bounds. Punt otherwise.
+        // Get the tokens before and after the space, then do the width
+        // of that whole thing and subtract out the two tokens. That's the
+        // real width of the rendered space.
+        if ((placeInTokenBuffer > 0) &&
+            (currTokenBuffer_[placeInTokenBuffer + 1].token != TOKEN_EOF)) {
+            TokenString prev, next;
+            LineBuffer temp;
+            tokenToString(placeInTokenBuffer - 1, prev);
+            tokenToString(placeInTokenBuffer + 1, next);
+            std::copy_n(prev.data(), strlen(prev.data()), &temp[0]);
+            temp[strlen(prev.data())] = ' ';
+            std::copy_n(next.data(), strlen(next.data()), &temp[strlen(prev.data()) + 1]);
+            temp[strlen(prev.data()) + strlen(next.data()) + 1] = '\0';
+            *renderedHeight = display_.getTextHeight(temp.data());
+            *renderedWidth = display_.getTextWidth(temp.data()) -
+                             display_.getTextWidth(prev.data()) -
+                             display_.getTextWidth(next.data());
+        } else {
+            tokenToString(placeInTokenBuffer, converted);
+            *renderedWidth = display_.getTextWidth(converted.data());
+            *renderedHeight = display_.getTextHeight(converted.data());
+        }
+    }
 }
 
 void Renderer::setSizeOfTextToken(unsigned long placeInTokenBuffer) {
@@ -73,8 +100,16 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
             numCurrTokens_++;
             currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
             // we need to set the size of the previous token
-            if ((plcInBuffer > 0) && currTokenBuffer_[plcInBuffer - 1].token == TOKEN_TEXT) {
+            if ((plcInTokenBuffer > 0) &&
+                currTokenBuffer_[plcInTokenBuffer - 1].token == TOKEN_TEXT) {
                 setSizeOfTextToken(plcInTokenBuffer - 1);
+                // If we've started a new text token and the previous token was a space
+                // we know that we should go back and set the size of that space token
+                // based on this token and the token before the space.
+                if ((plcInTokenBuffer > 2) &&
+                    currTokenBuffer_[plcInTokenBuffer - 2].token == TOKEN_SPACE) {
+                    setSizeOfTextToken(plcInTokenBuffer - 2);
+                }
             }
             plcInTokenBuffer++;
             break;
@@ -86,8 +121,16 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
             numCurrTokens_++;
             currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
             // we need to set the size of the previous token
-            if ((plcInBuffer > 0) && currTokenBuffer_[plcInBuffer - 1].token == TOKEN_TEXT) {
+            if ((plcInTokenBuffer > 0) &&
+                currTokenBuffer_[plcInTokenBuffer - 1].token == TOKEN_TEXT) {
                 setSizeOfTextToken(plcInTokenBuffer - 1);
+                // If we've started a new text token and the previous token was a space
+                // we know that we should go back and set the size of that space token
+                // based on this token and the token before the space.
+                if ((plcInTokenBuffer > 2) &&
+                    currTokenBuffer_[plcInTokenBuffer - 2].token == TOKEN_SPACE) {
+                    setSizeOfTextToken(plcInTokenBuffer - 2);
+                }
             }
             plcInTokenBuffer++;
             break;
@@ -99,8 +142,16 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
             numCurrTokens_++;
             currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
             // we need to set the size of the previous token
-            if ((plcInBuffer > 0) && currTokenBuffer_[plcInBuffer - 1].token == TOKEN_TEXT) {
+            if ((plcInTokenBuffer > 0) &&
+                currTokenBuffer_[plcInTokenBuffer - 1].token == TOKEN_TEXT) {
                 setSizeOfTextToken(plcInTokenBuffer - 1);
+                // If we've started a new text token and the previous token was a space
+                // we know that we should go back and set the size of that space token
+                // based on this token and the token before the space.
+                if ((plcInTokenBuffer > 2) &&
+                    currTokenBuffer_[plcInTokenBuffer - 2].token == TOKEN_SPACE) {
+                    setSizeOfTextToken(plcInTokenBuffer - 2);
+                }
             }
             plcInTokenBuffer++;
             break;
@@ -128,8 +179,16 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
             numCurrTokens_++;
             currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
             // we need to set the size of the previous token
-            if ((plcInBuffer > 0) && currTokenBuffer_[plcInBuffer - 1].token == TOKEN_TEXT) {
+            if ((plcInTokenBuffer > 0) &&
+                currTokenBuffer_[plcInTokenBuffer - 1].token == TOKEN_TEXT) {
                 setSizeOfTextToken(plcInTokenBuffer - 1);
+                // If we've started a new text token and the previous token was a space
+                // we know that we should go back and set the size of that space token
+                // based on this token and the token before the space.
+                if ((plcInTokenBuffer > 2) &&
+                    currTokenBuffer_[plcInTokenBuffer - 2].token == TOKEN_SPACE) {
+                    setSizeOfTextToken(plcInTokenBuffer - 2);
+                }
             }
             plcInTokenBuffer++;
             break;
@@ -246,7 +305,7 @@ auto Renderer::getLineOfTextForRendering(unsigned int placeInTokenBuffer, LineBu
 
     // Never done something like this before, but it should do the trick!
     for ((readBackwards ? (i = bufferPlace) : (i = placeInTokenBuffer));
-         (readBackwards ? (i <= placeInTokenBuffer) : (i <= bufferPlace)); i++) {
+         (readBackwards ? (i < placeInTokenBuffer) : (i < bufferPlace)); i++) {
         RendererToken curToken = currTokenBuffer_[i];
         if (currTokenBuffer_[i].token != TOKEN_EOF) {
             std::copy_n(&charTokenBuffer_[currTokenBuffer_[i].place],
@@ -390,10 +449,10 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     int linesInBuffer = 1;
     std::array<char, MAX_CHARS_PER_LINE> singleLine{};
 
-    // It's minus 4 because we want to start 2 off the top and not go below
-    // 2 off the bottom due to the bounding box.
+    // It's minus 2 because we want to start 1 off the top and leave 1 at the bottom
     // Note that get_text_height adds 1 over the max character height
-    int maxLines = (display_.height() - 4) / this->display_.getTextHeight();
+    int maxLines = (display_.height() - 2) /
+                   (this->display_.getTextHeight() + this->display_.getLineSpacing() + 1);
     PageBuffer buffer;
 
     buffer[0] = '\0';
@@ -444,15 +503,18 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
     int linesInBuffer = 1;
     std::array<char, MAX_CHARS_PER_LINE> singleLine{};
 
-    // It's minus 4 because we want to start 2 off the top and not go below
-    // 2 off the bottom due to the bounding box.
+    // It's minus 2 because we want to start 1 off the top and leave 1 at the bottom
     // Note that get_text_height adds 1 over the max character height
     //
     // XXX: This has to be rethought to realize that the rendering will impact
     // the max number of lines that can be rendered since \n will be handled
     // differently as well chapter headers, etc.
     //
-    int maxLines = (display_.height() - 4) / this->display_.getTextHeight();
+    int maxLines = (display_.height() - 2) /
+                   (this->display_.getTextHeight() + this->display_.getLineSpacing() + 1);
+
+    log_d("Max lines calc: %d %d %d", display_.height(), display_.getTextHeight(),
+          display_.getLineSpacing());
 
     buffer[0] = '\0';
     singleLine[0] = '\0';
