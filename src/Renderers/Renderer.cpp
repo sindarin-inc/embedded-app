@@ -209,6 +209,7 @@ auto Renderer::getLineOfTextForRendering(unsigned int placeInTokenBuffer, LineBu
 
     while (runningWidth < maxWidth) {
         RendererToken currToken = currTokenBuffer_[bufferPlace];
+
         if (currToken.token == TOKEN_EOF || currToken.token == TOKEN_NEWLINE) {
             if (currToken.token == TOKEN_NEWLINE) {
                 if (!readBackwards) {
@@ -242,15 +243,18 @@ auto Renderer::getLineOfTextForRendering(unsigned int placeInTokenBuffer, LineBu
     }
 
     int i;
+
     // Never done something like this before, but it should do the trick!
     for ((readBackwards ? (i = bufferPlace) : (i = placeInTokenBuffer));
          (readBackwards ? (i <= placeInTokenBuffer) : (i <= bufferPlace)); i++) {
         RendererToken curToken = currTokenBuffer_[i];
-        std::copy_n(&charTokenBuffer_[currTokenBuffer_[i].place],
-                    currTokenBuffer_[i + 1].place - currTokenBuffer_[i].place,
-                    &inputLine[linePlace]);
-        linePlace += currTokenBuffer_[i + 1].place - currTokenBuffer_[i].place;
-        inputLine[linePlace] = '\0';
+        if (currTokenBuffer_[i].token != TOKEN_EOF) {
+            std::copy_n(&charTokenBuffer_[currTokenBuffer_[i].place],
+                        currTokenBuffer_[i + 1].place - currTokenBuffer_[i].place,
+                        &inputLine[linePlace]);
+            linePlace += currTokenBuffer_[i + 1].place - currTokenBuffer_[i].place;
+            inputLine[linePlace] = '\0';
+        }
     }
 
     log_d("Returning place %d", bufferPlace);
@@ -416,11 +420,8 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         plcInBuffer += strlen(singleLine.data());
         // if it doesn't have a \n at the end of the line, we need to add it.
         if (singleLine[strlen(singleLine.data()) - 1] != '\n') {
-            log_d("adding a newline");
             buffer[plcInBuffer] = '\n';
             plcInBuffer++;
-        } else {
-            log_d("Decided i didn't need a newline");
         }
         buffer[plcInBuffer] = '\0';
         linesInBuffer++;
@@ -465,26 +466,29 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
     numLinesInBuffer_ = 0;
 
     while (linesInBuffer <= maxLines) {
+
         nextToken = getLineOfTextForRendering(currToken, singleLine);
+
         std::copy_n(singleLine.data(), strlen(singleLine.data()), &buffer[plcInBuffer]);
+
         std::copy_n(singleLine.data(), strlen(singleLine.data()),
                     lineBufferArray_[numLinesInBuffer_].data());
+
         lineBufferArray_[numLinesInBuffer_][strlen(singleLine.data())] = '\0';
 
         if (lineBufferArray_[numLinesInBuffer_][0] == '\n') {
             maxLines++;
         }
+
         numLinesInBuffer_++;
         plcInBuffer += strlen(singleLine.data());
 
         // if it doesn't have a \n at the end of the line, we need to add it.
         if (singleLine[strlen(singleLine.data()) - 1] != '\n') {
-            log_d("adding a newline");
             buffer[plcInBuffer] = '\n';
             plcInBuffer++;
-        } else {
-            log_d("Decided i didn't need a newline");
         }
+
         buffer[plcInBuffer] = '\0';
         linesInBuffer++;
         currToken = nextToken;
