@@ -319,7 +319,7 @@ auto Renderer::getLineOfTextForRendering(unsigned int placeInTokenBuffer, LineBu
         }
     }
 
-    log_d("Returning place %d", bufferPlace);
+    // log_d("Returning place %d", bufferPlace);
     return bufferPlace;
 }
 
@@ -352,27 +352,27 @@ auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
     SetCpuSpeedMhz(CPU_FREQ_MHZ_HIGH);
 
     // TODO: We're not taking advantage of the preloading work we do to load the next buffer
-    log_i("%lu is place in file being requested", placeInFile);
+    // log_i("%lu is place in file being requested", placeInFile);
     currentPlace_ = placeInFile;
     PROFILE_START(loadCurrIntoBuffer);
     nextPlace_ = loadCurrIntoBuffer();
     PROFILE_END_LOG_MS(loadCurrIntoBuffer);
 
     currentPageWordCount_ = WordCount(currBuffer_.data());
-    display_.drawText(currBuffer_.data(), display_.xOffset(0), display_.yOffset(0),
-                      display_.width(), display_.height());
+    // display_.drawText(currBuffer_.data(), display_.xOffset(0), display_.yOffset(0),
+    //                   display_.width(), display_.height());
 
     int newLineAdjust = 0;
     int currentY = 0;
 
     // A first attempt at a hack to get the the text to look better with newlines as sole
     // characters on the line
-    /*
+
     for (int j = 0; j < numLinesInBuffer_; j++) {
         log_d("%s", lineBufferArray_[j].data());
-        if (lineBufferArray_[j][0] == '\n') {
-            newLineAdjust++;
-        } else {
+        //        if (lineBufferArray_[j][0] == '\n') {
+        //         newLineAdjust++;
+        /*    } else */ {
             display_.drawSingleLineOfText(
                 lineBufferArray_[j].data(), display_.xOffset(0),
                 display_.yOffset(j * (display_.getLineSpacing() + display_.getTextHeight()) -
@@ -380,8 +380,8 @@ auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
         }
         currentY = j * (display_.getLineSpacing() + display_.getTextHeight()) -
                    display_.getTextHeight() * 2 * newLineAdjust / 3;
-}
-*/
+    }
+
     display_.updateDisplay();
 
     SetCpuSpeedMhz(CPU_FREQ_MHZ_LOW);
@@ -457,8 +457,8 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     // Note that get_text_height adds 1 over the max character height
     int maxLines = (display_.height() - 2) / (this->display_.getTextHeight());
 
-    log_d("BACKWARDS DISPLAY READOUT: %d, %d, %d", display_.height() - 2,
-          this->display_.getTextHeight(), this->display_.getLineSpacing());
+    // log_d("BACKWARDS DISPLAY READOUT: %d, %d, %d", display_.height() - 2,
+    //      this->display_.getTextHeight(), this->display_.getLineSpacing());
     PageBuffer buffer;
 
     buffer[0] = '\0';
@@ -470,7 +470,7 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
 
     // Find which token to start with
     // Could switch to an algorithm that is log(n) instead of n if we need to
-    log_d("About to look for where to start: place = %d", place);
+    // log_d("About to look for where to start: place = %d", place);
     while ((currTokenBuffer_[currToken].streamPlace > place) && (currToken > 0)) {
         // log_d("Going back another token %d", currTokenBuffer_[currToken].streamPlace);
         // log_d("The token is %d", currToken);
@@ -481,8 +481,8 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         // Can't go back any further, must be at beginning of file.
         return 0;
     }
-    log_d("Found the place to start and it's %d token type %d",
-          currTokenBuffer_[currToken].streamPlace, currTokenBuffer_[currToken + 1].token);
+    // log_d("Found the place to start and it's %d token type %d",
+    //       currTokenBuffer_[currToken].streamPlace, currTokenBuffer_[currToken + 1].token);
 
     unsigned int paragraphToken = currTokenBuffer_[currToken].prevNewline + 1;
 
@@ -490,8 +490,8 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     // the passed in token;
     while ((linesInBuffer <= maxLines) && (paragraphToken < currToken)) {
         paragraphToken = getLineOfTextForRendering(paragraphToken, singleLine);
-        log_d("paragraphToke: %d, currToke: %d, First PARAGRAPH ANALYSIS %s", paragraphToken,
-              currToken, singleLine.data());
+        //   log_d("paragraphToke: %d, currToke: %d, First PARAGRAPH ANALYSIS %s", paragraphToken,
+        //         currToken, singleLine.data());
         linesInBuffer++;
     }
 
@@ -506,11 +506,12 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         paragraphToken = prevParagraphToken;
         while (paragraphToken <= nextyToken) {
             paragraphToken = getLineOfTextForRendering(paragraphToken, singleLine);
-            log_d("paragraphToke: %d, PrevToke: %d, Second PARAGRAPH ANALYSIS %s", paragraphToken,
-                  prevParagraphToken, singleLine.data());
+            //  log_d("paragraphToke: %d, PrevToke: %d, Second PARAGRAPH ANALYSIS %s",
+            //  paragraphToken,
+            //        prevParagraphToken, singleLine.data());
             linesInBuffer++;
         }
-        log_d("Done with that paragraph! onto the next");
+        // log_d("Done with that paragraph! onto the next");
         prevParagraphToken =
             currTokenBuffer_[currTokenBuffer_[nextyToken].prevNewline].prevNewline + 1;
         // there's no newline at beginning of file, so need to check for that.
@@ -529,7 +530,7 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
 
     int firstParagraphLinesOffset = linesInBuffer + numLinesInLastParagraph - maxLines;
 
-    log_d("First Paragraph Lines Offset %d", firstParagraphLinesOffset);
+    // log_d("First Paragraph Lines Offset %d", firstParagraphLinesOffset);
 
     for (int i = 0; i < firstParagraphLinesOffset; i++) {
         paragraphToken = getLineOfTextForRendering(paragraphToken, singleLine);
@@ -563,7 +564,7 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     // into buffers, so we need to retokenize.
     // we could probably avoid this rework by introducing an extra token buffer if we want
     loadAndTokenizePage(place);
-    log_d("RETURNING THE FOLLOWING PLACE! %d", returnValue);
+    // log_d("RETURNING THE FOLLOWING PLACE! %d", returnValue);
     return returnValue;
 }
 
@@ -583,8 +584,8 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
     //
     int maxLines = (display_.height() - 2) / (this->display_.getTextHeight());
 
-    log_d("Max lines calc: %d %d %d", display_.height(), display_.getTextHeight(),
-          display_.getLineSpacing());
+    // log_d("Max lines calc: %d %d %d", display_.height(), display_.getTextHeight(),
+    //       display_.getLineSpacing());
 
     buffer[0] = '\0';
     singleLine[0] = '\0';
@@ -626,9 +627,9 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
         currToken = nextToken;
     }
 
-    log_d("loaded this into buffer %s", buffer.data());
+    // log_d("loaded this into buffer %s", buffer.data());
 
-    log_d("Number of lines in buffer: %d out of a max of %d", linesInBuffer, maxLines);
+    // log_d("Number of lines in buffer: %d out of a max of %d", linesInBuffer, maxLines);
 
     // If we hit EOF, the next screen wraps around.
     if (currTokenBuffer_[currToken].token == TOKEN_EOF) {
