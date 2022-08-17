@@ -70,6 +70,7 @@ void Renderer::setSizeOfTextToken(unsigned long placeInTokenBuffer) {
 void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
     unsigned int plcInBuffer = 0;
     unsigned int plcInTokenBuffer = 0;
+    unsigned int curPrevNewLine = 0;
 
     numCurrTokens_ = 0;
 
@@ -87,7 +88,8 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
     // and need room for EOF character.
     while (stream_->available() && plcInBuffer < MAX_CHARS_PER_PAGE - 1) {
         auto curChar = stream_->read();
-        RendererToken newToken = {TOKEN_EOF, plcInBuffer, placeInFile + plcInBuffer, 0, 0};
+        RendererToken newToken = {TOKEN_EOF,      plcInBuffer, placeInFile + plcInBuffer,
+                                  curPrevNewLine, 0,           0};
         RendererToken prevToken;
 
         // log_d("Set the stream place to %lu", placeInFile + plcInBuffer);
@@ -111,6 +113,7 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
                     setSizeOfTextToken(plcInTokenBuffer - 2);
                 }
             }
+            curPrevNewLine = plcInTokenBuffer;
             plcInTokenBuffer++;
             break;
         case ' ':
@@ -430,7 +433,8 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     int numCharsToRead;
 
     if (place >= MAX_CHARS_PER_PAGE) {
-        seekPlace = place - MAX_CHARS_PER_PAGE;
+        // Need to make sure we're at least 1 character past the place given. For tokenizer.
+        seekPlace = place - MAX_CHARS_PER_PAGE + 2;
         numCharsToRead = MAX_CHARS_PER_PAGE;
     } else {
         seekPlace = 0;
@@ -474,12 +478,70 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     }
 
     if (currToken == 0) {
-        // Can't go back any further, must be at beginnign of file.
+        // Can't go back any further, must be at beginning of file.
         return 0;
     }
+    log_d("Found the place to start and it's %d token type %d",
+          currTokenBuffer_[currToken].streamPlace, currTokenBuffer_[currToken + 1].token);
+
+    unsigned int paragraphToken = currTokenBuffer_[currToken].prevNewline + 1;
+
+    // First, check the immediate paragraph for how many lines fit before
+    // the passed in token;
+    while ((linesInBuffer <= maxLines) && (paragraphToken < currToken)) {
+        paragraphToken = getLineOfTextForRendering(paragraphToken, singleLine);
+        log_d("paragraphToke: %d, currToke: %d, First PARAGRAPH ANALYSIS %s", paragraphToken,
+              currToken, singleLine.data());
+        linesInBuffer++;
+    }
+
+    unsigned int numLinesInLastParagraph = linesInBuffer;
+
+    linesInBuffer = 1;
+    unsigned int prevParagraphToken =
+        currTokenBuffer_[currTokenBuffer_[currToken].prevNewline].prevNewline + 1;
+    unsigned int nextyToken = currTokenBuffer_[currToken].prevNewline;
+
+    while ((linesInBuffer + numLinesInLastParagraph) <= maxLines) {
+        paragraphToken = prevParagraphToken;
+        while (paragraphToken <= nextyToken) {
+            paragraphToken = getLineOfTextForRendering(paragraphToken, singleLine);
+            log_d("paragraphToke: %d, PrevToke: %d, Second PARAGRAPH ANALYSIS %s", paragraphToken,
+                  prevParagraphToken, singleLine.data());
+            linesInBuffer++;
+        }
+        log_d("Done with that paragraph! onto the next");
+        prevParagraphToken =
+            currTokenBuffer_[currTokenBuffer_[nextyToken].prevNewline].prevNewline + 1;
+        // there's no newline at beginning of file, so need to check for that.
+        if (prevParagraphToken == 1) {
+            prevParagraphToken = 0;
+        }
+        nextyToken = currTokenBuffer_[nextyToken].prevNewline;
+    }
+
+    if (prevParagraphToken != 0) {
+        paragraphToken = prevParagraphToken - 1;
+    } else {
+        paragraphToken = 0;
+        linesInBuffer--;
+    }
+
+    int firstParagraphLinesOffset = linesInBuffer + numLinesInLastParagraph - maxLines;
+
+    log_d("First Paragraph Lines Offset %d", firstParagraphLinesOffset);
+
+    for (int i = 0; i < firstParagraphLinesOffset; i++) {
+        paragraphToken = getLineOfTextForRendering(paragraphToken, singleLine);
+    }
+
+    // At this point, we found the place to start the new page!
+    currToken = paragraphToken;
+    /*
+    linesInBuffer = 1;
 
     while ((linesInBuffer <= maxLines) && (currToken > 0)) {
-        nextToken = getLineOfTextForRendering(currToken, singleLine, true);
+        nextToken = getLineOfTextForRendering(currToken, singleLine, false);
         std::copy_n(singleLine.data(), strlen(singleLine.data()), &buffer[plcInBuffer]);
         log_d("GO BACKWARDS line is %s", singleLine.data());
         plcInBuffer += strlen(singleLine.data());
@@ -493,7 +555,7 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         linesInBuffer++;
         currToken = nextToken;
         log_d("lines in buffer %d, maxLines %d, currToken %d", linesInBuffer, maxLines, currToken);
-    }
+    }*/
 
     unsigned long returnValue = currTokenBuffer_[currToken].streamPlace;
 

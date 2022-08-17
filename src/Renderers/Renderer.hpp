@@ -34,6 +34,10 @@ struct RendererToken {
     RENDERER_TOKEN token;
     unsigned long place;
     unsigned long streamPlace;
+    // This basically gives each token knowledge of where the paragraph
+    // start is for where it's located. It's useful for looking backwards
+    // while rendering backwards.
+    unsigned long prevNewline;
     u_int16_t width;
     u_int16_t height;
 };
