@@ -496,8 +496,7 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
 
     // First, check the immediate paragraph for how many lines fit before
     // the passed in token;
-    while ((deciLinesInBuffer <= maxDeciLines + FULL_DECI_LINE_HEIGHT) &&
-           (paragraphToken < currToken)) {
+    while ((deciLinesInBuffer <= maxDeciLines) && (paragraphToken < currToken)) {
         paragraphToken = getLineOfTextForRendering(paragraphToken, singleLine);
         //   log_d("paragraphToke: %d, currToke: %d, First PARAGRAPH ANALYSIS %s", paragraphToken,
         //         currToken, singleLine.data());
@@ -520,8 +519,7 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         currTokenBuffer_[currTokenBuffer_[currToken].prevNewline].prevNewline + 1;
     unsigned int nextyToken = currTokenBuffer_[currToken].prevNewline;
 
-    while ((deciLinesInBuffer + numDeciLinesInLastParagraph) <=
-           maxDeciLines + FULL_DECI_LINE_HEIGHT) {
+    while ((deciLinesInBuffer + numDeciLinesInLastParagraph) <= maxDeciLines) {
         paragraphToken = prevParagraphToken;
         while (paragraphToken <= nextyToken) {
             paragraphToken = getLineOfTextForRendering(paragraphToken, singleLine);
@@ -550,7 +548,8 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         paragraphToken = prevParagraphToken - 1;
     } else {
         paragraphToken = 0;
-        linesInBuffer--;
+        // ????
+        linesInBuffer -= 3;
     }
 
     int firstParagraphLinesOffset =
@@ -611,7 +610,8 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
     // Switch to 1/10 of a line as this gives us more flexibilty in rendering
     // precision between lines.
     int maxDeciLines =
-        ((display_.height() - 2) / (this->display_.getTextHeight())) * FULL_DECI_LINE_HEIGHT;
+        ((display_.height() - 2) / (this->display_.getTextHeight())) * FULL_DECI_LINE_HEIGHT -
+        FULL_DECI_LINE_HEIGHT;
 
     // log_d("Max lines calc: %d %d %d", display_.height(), display_.getTextHeight(),
     //       display_.getLineSpacing());
@@ -627,7 +627,7 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
 
     numLinesInBuffer_ = 0;
 
-    while (deciLinesInBuffer <= maxDeciLines - 2 * FULL_DECI_LINE_HEIGHT) {
+    while (deciLinesInBuffer <= maxDeciLines) {
 
         nextToken = getLineOfTextForRendering(currToken, singleLine);
 
