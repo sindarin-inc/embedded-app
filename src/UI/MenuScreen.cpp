@@ -91,8 +91,7 @@ void MenuScreen::render(DisplaySystem &display) {
 
     display.setFont(display.style.getFontFamily().settingsFont);
 
-    display.drawText(totalToDisplay, display.xOffset(0), display.yOffset(0), display.width(),
-                     display.height());
+    display.drawText(totalToDisplay, 0, 0, display.width(), display.height());
 
     display.updateDisplay();
     needsRerender = false;

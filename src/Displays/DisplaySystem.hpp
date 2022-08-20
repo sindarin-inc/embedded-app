@@ -142,9 +142,6 @@ public:
     // Clear the whole screen
     void clearScreen();
 
-    inline auto xOffset(int16_t value) -> int16_t { return value + boundingBox_.x; }
-    inline auto yOffset(int16_t value) -> int16_t { return value + boundingBox_.y; }
-
     // TODO: Just use `textcolor` and `textbgcolor` for these?
     uint16_t bg = 0, fg = 0;
 
@@ -152,6 +149,9 @@ protected:
     // Must be set in the constructor of subclasses
     Adafruit_GFX *gfxClass_ = nullptr;
     const GFXfont *font_ = nullptr;
+
+    inline auto xOffset(int16_t value) -> int16_t { return value + boundingBox_.x; }
+    inline auto yOffset(int16_t value) -> int16_t { return value + boundingBox_.y; }
 
     void splitStringToLines(const std::string &stringToSplit,
                             std::array<std::string, MAX_LINES_IN_SPLIT> &lines, int &numLines);

@@ -368,7 +368,7 @@ auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
     PROFILE_END_LOG_MS(loadCurrIntoBuffer);
 
     currentPageWordCount_ = WordCount(currBuffer_.data());
-    // display_.drawText(currBuffer_.data(), display_.xOffset(0), display_.yOffset(0),
+    // display_.drawText(currBuffer_.data(), 0, 0,
     //                   display_.width(), display_.height());
 
     int newLineAdjust = 0;
@@ -378,16 +378,16 @@ auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
     // characters on the line
 
     for (int j = 0; j < numLinesInBuffer_; j++) {
-        log_d("%s", lineBufferArray_[j].data());
+        // log_d("%s", lineBufferArray_[j].data());
         if (lineBufferArray_[j][0] == '\n') {
             newLineAdjust++;
         } else {
             display_.drawSingleLineOfText(
-                lineBufferArray_[j].data(), display_.xOffset(0),
-                display_.yOffset(j * (display_.getLineSpacing() + display_.getTextHeight()) -
-                                 display_.getTextHeight() *
-                                     (FULL_DECI_LINE_HEIGHT - NEWLINE_ONLY_DECI_LINE_HEIGHT) *
-                                     newLineAdjust / FULL_DECI_LINE_HEIGHT));
+                lineBufferArray_[j].data(), 0,
+                j * (display_.getLineSpacing() + display_.getTextHeight()) -
+                    display_.getTextHeight() *
+                        (FULL_DECI_LINE_HEIGHT - NEWLINE_ONLY_DECI_LINE_HEIGHT) * newLineAdjust /
+                        FULL_DECI_LINE_HEIGHT);
         }
         currentY = j * (display_.getLineSpacing() + display_.getTextHeight()) -
                    display_.getTextHeight() * 2 * newLineAdjust / 3;
@@ -496,8 +496,8 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         // Can't go back any further, must be at beginning of file.
         return 0;
     }
-    log_d("Found the place to start and it's %d token type %d",
-          currTokenBuffer_[currToken].streamPlace, currTokenBuffer_[currToken + 1].token);
+    // log_d("Found the place to start and it's %d token type %d",
+    // currTokenBuffer_[currToken].streamPlace, currTokenBuffer_[currToken + 1].token);
 
     unsigned int paragraphToken = currTokenBuffer_[currToken].prevNewline + 1;
 
@@ -505,10 +505,10 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     // the passed in token;
     while ((deciLinesInBuffer <= maxDeciLines) && (paragraphToken < currToken)) {
         paragraphToken = getLineOfTextForRendering(paragraphToken, singleLine);
-        log_d("paragraphToke: %d, currToke: %d, First PARAGRAPH ANALYSIS %s", paragraphToken,
-              currToken, singleLine.data());
+        // log_d("paragraphToke: %d, currToke: %d, First PARAGRAPH ANALYSIS %s", paragraphToken,
+        //       currToken, singleLine.data());
         if (singleLine[0] == '\n') {
-            log_d("Found a blank line");
+            // log_d("Found a blank line");
             deciLinesInBuffer += NEWLINE_ONLY_DECI_LINE_HEIGHT;
         } else {
             deciLinesInBuffer += FULL_DECI_LINE_HEIGHT;
@@ -532,10 +532,11 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         newlinesInLastSection = 0;
         while (paragraphToken <= nextyToken) {
             paragraphToken = getLineOfTextForRendering(paragraphToken, singleLine);
-            log_d("paragraphToke: %d, PrevToke: %d, Second PARAGRAPH ANALYSIS %s", paragraphToken,
-                  prevParagraphToken, singleLine.data());
+            // log_d("paragraphToke: %d, PrevToke: %d, Second PARAGRAPH ANALYSIS %s",
+            // paragraphToken,
+            //      prevParagraphToken, singleLine.data());
             if (singleLine[0] == '\n') {
-                log_d("Found a blank line");
+                //  log_d("Found a blank line");
                 deciLinesInBuffer += NEWLINE_ONLY_DECI_LINE_HEIGHT;
                 newlinesInLastSection++;
             } else {
@@ -543,11 +544,11 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
             }
             linesInBuffer++;
         }
-        log_d("Done with that paragraph! onto the next");
+        // log_d("Done with that paragraph! onto the next");
         prevParagraphToken =
             currTokenBuffer_[currTokenBuffer_[nextyToken].prevNewline].prevNewline + 1;
-        log_d("After done prevParagraphToken = %d", prevParagraphToken);
-        // there's no newline at beginning of file, so need to check for that.
+        // log_d("After done prevParagraphToken = %d", prevParagraphToken);
+        //  there's no newline at beginning of file, so need to check for that.
         if (prevParagraphToken == 1) {
             prevParagraphToken = 0;
         }
@@ -568,7 +569,7 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
 
     // Only index in if we need to.
     if (overage > FULL_DECI_LINE_HEIGHT) {
-        log_d("The overage was %d overlines", overage);
+        // log_d("The overage was %d overlines", overage);
         firstParagraphLinesOffset = overage / FULL_DECI_LINE_HEIGHT;
 
         if (overage % FULL_DECI_LINE_HEIGHT != 0) {
@@ -579,7 +580,7 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         // linesInBuffer + numLinesInLastParagraph - maxDeciLines / FULL_DECI_LINE_HEIGHT;
     }
 
-    log_d("First Paragraph Lines Offset %d", firstParagraphLinesOffset);
+    // log_d("First Paragraph Lines Offset %d", firstParagraphLinesOffset);
 
     for (int i = 0; i < firstParagraphLinesOffset; i++) {
         paragraphToken = getLineOfTextForRendering(paragraphToken, singleLine);
@@ -604,7 +605,8 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         buffer[plcInBuffer] = '\0';
         linesInBuffer++;
         currToken = nextToken;
-        log_d("lines in buffer %d, maxLines %d, currToken %d", linesInBuffer, maxLines, currToken);
+        log_d("lines in buffer %d, maxLines %d, currToken %d", linesInBuffer, maxLines,
+    currToken);
     }*/
 
     unsigned long returnValue = currTokenBuffer_[currToken].streamPlace;

@@ -166,7 +166,7 @@ void DisplaySystem::splitStringToLines(const std::string &stringToSplit,
 }
 
 void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y) {
-    gfxClass_->setCursor(x, y + getTextHeight());
+    gfxClass_->setCursor(xOffset(x), yOffset(y + getTextHeight()));
     gfxClass_->printf("%s", line.c_str());
 }
 
@@ -200,7 +200,7 @@ void DisplaySystem::drawText(const std::string &newText, int x, int y, int width
     // will be, not upper left.
     for (int i = 0; i < numLines; i++) {
         // Don't know if it starts the line from the baseline or from the top -- TO LEARN: HACK
-        setCursor(x, y + (i + 1) * (lineHeight));
+        setCursor(xOffset(x), yOffset(y + (i + 1) * (lineHeight)));
         gfxClass_->printf("%s\n", lines[i].c_str());
     }
 }
