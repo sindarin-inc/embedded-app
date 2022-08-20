@@ -307,10 +307,10 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // If prefs have never been set before set them.
     if ((initialRect.width == 0) && (initialRect.height == 0) && (initialRect.x == 0) &&
         (initialRect.y == 0)) {
-        initialRect.x = 0;
-        initialRect.y = 0;
-        initialRect.width = 255;
-        initialRect.height = 255;
+        initialRect.x = myDisplay.defaultBoundingBox_.x;
+        initialRect.y = myDisplay.defaultBoundingBox_.y;
+        initialRect.width = myDisplay.defaultBoundingBox_.width;
+        initialRect.height = myDisplay.defaultBoundingBox_.height;
         prefs.rectX.set(initialRect.x);
         prefs.rectY.set(initialRect.y);
         prefs.rectW.set(initialRect.width);

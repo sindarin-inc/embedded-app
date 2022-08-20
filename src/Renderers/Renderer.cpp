@@ -255,8 +255,8 @@ void Renderer::printOutTokensInCurrTokenBuffer() {
     }
 }
 
-// This method takes in a place in the token buffer and returns
-// one line of text that can be rendered. It puts the string in the inputLine.
+// This method takes in a place in the token buffer.
+// It puts the string in the inputLine.
 // It returns the next token in the TokenBuffer unless already at EOF, then
 // it returns EOF again.
 //
@@ -358,17 +358,15 @@ void Renderer::loaded() {
     // here to make sure they are correct.
     // TODO(john): It doesn't look like it works this way right now. Our preloading does
     // nothing.
-    // loadPrevIntoBuffer();
+
     nextPlace_ = loadCurrIntoBuffer();
     int oldNextPlace = nextPlace_;
-    // loadNextIntoBuffer();
     nextPlace_ = oldNextPlace;
 }
 
 // Show the (already loaded into buffer) current page
 // and load the next page into the next buffer so we have it.
 auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
-    unsigned long nextPos = 0;
     SetCpuSpeedMhz(CPU_FREQ_MHZ_HIGH);
 
     // TODO: We're not taking advantage of the preloading work we do to load the next buffer
@@ -379,14 +377,12 @@ auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
     PROFILE_END_LOG_MS(loadCurrIntoBuffer);
 
     currentPageWordCount_ = WordCount(currBuffer_.data());
-    // display_.drawText(currBuffer_.data(), 0, 0,
-    //                   display_.width(), display_.height());
 
     int newLineAdjust = 0;
     int currentY = 0;
 
-    // A first attempt at a hack to get the the text to look better with newlines as sole
-    // characters on the line
+    // A first attempt to get the the text to look better with newlines as sole
+    // characters on the line with a smaller height than a full line.
 
     for (int j = 0; j < numLinesInBuffer_; j++) {
 #ifdef RENDERER_DEBUG
@@ -410,18 +406,7 @@ auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
 
     SetCpuSpeedMhz(CPU_FREQ_MHZ_LOW);
 
-    nextPos = nextPlace_;
-    PROFILE_START(loadNextIntoBuffer);
-    // loadNextIntoBuffer();
-    PROFILE_END_LOG_MS(loadNextIntoBuffer);
-
-    PROFILE_START(loadPrevIntoBuffer);
-
-    //    loadPrevIntoBuffer();
-    PROFILE_END_LOG_MS(loadPrevIntoBuffer);
-
-    nextPlace_ = nextPos;
-    return nextPos;
+    return nextPlace_;
 }
 
 // The place that is being passed in points to the first character of a page.
