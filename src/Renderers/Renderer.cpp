@@ -521,7 +521,7 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
 
     deciLinesInBuffer = 1;
     linesInBuffer = 1;
-    unsigned int newlinesInLastParagraph = 0;
+    unsigned int newlinesInLastSection = 0;
 
     unsigned int prevParagraphToken =
         currTokenBuffer_[currTokenBuffer_[currToken].prevNewline].prevNewline + 1;
@@ -529,7 +529,7 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
 
     while ((deciLinesInBuffer + numDeciLinesInFirstParagraph) <= maxDeciLines) {
         paragraphToken = prevParagraphToken;
-        newlinesInLastParagraph = 0;
+        newlinesInLastSection = 0;
         while (paragraphToken <= nextyToken) {
             paragraphToken = getLineOfTextForRendering(paragraphToken, singleLine);
             log_d("paragraphToke: %d, PrevToke: %d, Second PARAGRAPH ANALYSIS %s", paragraphToken,
@@ -537,7 +537,7 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
             if (singleLine[0] == '\n') {
                 log_d("Found a blank line");
                 deciLinesInBuffer += NEWLINE_ONLY_DECI_LINE_HEIGHT;
-                newlinesInLastParagraph++;
+                newlinesInLastSection++;
             } else {
                 deciLinesInBuffer += FULL_DECI_LINE_HEIGHT;
             }
@@ -567,11 +567,16 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     int firstParagraphLinesOffset = 0;
 
     // Only index in if we need to.
-    if (overage <= 0) {
+    if (overage > FULL_DECI_LINE_HEIGHT) {
         log_d("The overage was %d overlines", overage);
-        // BUSTED. Doesn't take into account newlines are a different height.
-        firstParagraphLinesOffset =
-            linesInBuffer + numLinesInLastParagraph - maxDeciLines / FULL_DECI_LINE_HEIGHT;
+        firstParagraphLinesOffset = overage / FULL_DECI_LINE_HEIGHT;
+
+        if (overage % FULL_DECI_LINE_HEIGHT != 0) {
+            firstParagraphLinesOffset++;
+        }
+        firstParagraphLinesOffset++;
+
+        // linesInBuffer + numLinesInLastParagraph - maxDeciLines / FULL_DECI_LINE_HEIGHT;
     }
 
     log_d("First Paragraph Lines Offset %d", firstParagraphLinesOffset);
