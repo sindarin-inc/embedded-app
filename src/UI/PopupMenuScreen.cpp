@@ -70,7 +70,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     display.getTextBounds(batteryStatus.c_str(), &textWidth, &textHeight);
 
     // Similar to the above, magic numbers are just to make it look nice
-    display.drawText(batteryStatus.c_str(), (screenWidth / 2) - (textWidth / 2) + 3,
+    display.drawText(batteryStatus.c_str(), (screenWidth / 2) - (textWidth / 2),
                      (screenHeight / 2) + (textHeight / 2) - 9 - heightOffset, screenWidth,
                      screenHeight);
 
@@ -84,29 +84,29 @@ void PopupMenuScreen::render(DisplaySystem &display) {
         std::string("Seek ") + std::string("(") + placeString + std::string(")");
 
     display.getTextBounds(bottomStr.c_str(), &textWidth, &textHeight);
-    display.drawText(bottomStr, (screenWidth / 2) - (textWidth / 2),
+    display.drawText(bottomStr, (screenWidth / 2) - (textWidth / 2) - 2,
                      (screenHeight / 2) + (textHeight / 2) + POPUP_MENU_BLANK_HEIGHT / 3 -
                          heightOffset,
                      screenWidth, screenHeight);
 
     auto topStr = "Text";
     display.getTextBounds(topStr, &textWidth, &textHeight);
-    display.drawText(topStr, (screenWidth / 2) - (textWidth / 2),
+    display.drawText(topStr, (screenWidth / 2) - (textWidth / 2) - 6,
                      screenHeight / 2 - POPUP_MENU_BLANK_HEIGHT / 3 - heightOffset, screenWidth,
                      screenHeight);
 
     display.getTextBounds(leftButtonTitle_.c_str(), &textWidth, &textHeight);
     display.drawText(leftButtonTitle_.c_str(),
-                     (display.width() - POPUP_MENU_BLANK_WIDTH) / 2 - textWidth / 2,
-                     (screenHeight / 2) - heightOffset, screenWidth, screenHeight);
+                     (display.width() - POPUP_MENU_BLANK_WIDTH) / 2 - textWidth / 2 - 5,
+                     (screenHeight / 2) - heightOffset + 1, screenWidth, screenHeight);
 
     auto rightStr = "Invert";
     display.getTextBounds(rightStr, &textWidth, &textHeight);
     display.drawText(
         rightStr,
 
-        (display.width() - ((display.width() - POPUP_MENU_BLANK_WIDTH) / 2) - textWidth / 2),
-        (screenHeight / 2) - heightOffset, screenWidth, screenHeight);
+        (display.width() - ((display.width() - POPUP_MENU_BLANK_WIDTH) / 2) - textWidth / 2) - 5,
+        (screenHeight / 2) - heightOffset + 1, screenWidth, screenHeight);
 
     display.updateDisplay();
     display.setFont(display.style.getFontFamily().readableFont);
