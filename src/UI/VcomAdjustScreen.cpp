@@ -30,6 +30,8 @@ void VcomAdjustScreen::render(DisplaySystem &display) {
     int vcomStrWidth = display.getTextWidth(vcomStr.c_str());
     int vcomStrHeight = display.getTextHeight();
 
+    // This doesn't seem like the right interface.
+    // We should use the DisplaySystem.drawSingleLineOfText here
     display.setCursor(display.width() / 2 - vcomStrWidth / 2,
                       display.height() / 2 - vcomStrHeight / 2);
     display.println(vcomStr.c_str());

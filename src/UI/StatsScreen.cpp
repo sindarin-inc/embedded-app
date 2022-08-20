@@ -20,19 +20,20 @@ void StatsScreen::render(DisplaySystem &display) {
     auto minutesRead = totalMinutesRead % 60;
     auto hoursRead = totalMinutesRead / 60;
 
-    std::string message = "Words Read: " + std::to_string(wordCount);
-    message += "\nTime Read: ";
+    std::string wordsMessage = "Words Read: " + std::to_string(wordCount);
+    std::string timeMessage = "Time Read: ";
     char formattedString[32];
     if (hoursRead > 0) {
         sprintf(formattedString, "%02d:%02d:%02d", hoursRead, minutesRead, secondsRead);
-        message += formattedString;
+        timeMessage += formattedString;
     } else {
         sprintf(formattedString, "%02d:%02d", minutesRead, secondsRead);
-        message += formattedString;
+        timeMessage += formattedString;
     }
 
     display.setFont(&TAHOMA_REGULAR_FONT8PT7B);
-    display.drawText(message, 0, 0, display.width(), display.height());
+    display.drawSingleLineOfText(wordsMessage, 0, 0);
+    display.drawSingleLineOfText(timeMessage, 0, display.getTextHeight() + 1);
     display.updateDisplay();
     needsRerender = false;
 }

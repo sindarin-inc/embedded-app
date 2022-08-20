@@ -171,6 +171,9 @@ void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y) 
 }
 
 // y is the y coordinate of the top of the first line
+// MOSTLY DEPRECATED -- use drawSingleLineOfText instead.
+// The display class shouldn't be in charge rendering multiple lines because
+// it doesn't know what that should look like.
 void DisplaySystem::drawText(const std::string &newText, int x, int y, int width, int height) {
     // hack for now
     // figure out what the right window is

@@ -53,7 +53,7 @@ auto MenuScreen::getItemAt(int index) -> MenuItem {
     assert(index < numMenuItems_);
     return menuItems_[index];
 }
-
+/*
 auto MenuScreen::getWholeMenuAsString() -> std::string {
     return getMenuRangeAsString(0, numMenuItems_ - 1);
 }
@@ -76,22 +76,27 @@ auto MenuScreen::getPaginatedMenuString() -> std::string {
                              curMenuPage_ * NUM_LINES_PER_MENU_PAGE + NUM_LINES_PER_MENU_PAGE);
     return menuString;
 }
-
+*/
 void MenuScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
     }
     log_i("Menuscreen render (selected = %s)", getCurrItem().title.c_str());
-    auto menuString = getPaginatedMenuString();
+    // auto menuString = getPaginatedMenuString();
     auto batLife = power_.getBatteryLifeString();
     // TODO: Just rendering one gigantic screen limits our layout options here.
     // For example, it would be nice to have menu items take up multiple lines (e.g. Pocket articles
     // with long names)
-    std::string totalToDisplay = menuString + std::string("\n\n") + batLife;
+    // std::string totalToDisplay = menuString + std::string("\n\n") + batLife;
 
     display.setFont(display.style.getFontFamily().settingsFont);
 
-    display.drawText(totalToDisplay, 0, 0, display.width(), display.height());
+    for (int i = curMenuPage_ * NUM_LINES_PER_MENU_PAGE;
+         i < curMenuPage_ * NUM_LINES_PER_MENU_PAGE + NUM_LINES_PER_MENU_PAGE && i < numMenuItems_;
+         i++) {
+        display.drawSingleLineOfText(getItemTitleAt(i), 0,
+                                     (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight());
+    }
 
     display.updateDisplay();
     needsRerender = false;
