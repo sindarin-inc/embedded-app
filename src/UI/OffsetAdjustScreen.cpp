@@ -12,7 +12,7 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
     // This needs to be pretty big for smaller fonts
     for (int i = 0; i < 30; i++) {
         message += "Press arrows to move box around to your liking. Then "
-                   "long-press the left button when done! Message repeats. ";
+                   "long-press the left button when done! Message repeats.\n\n";
     }
     auto stream = new StdStringStream(message);
     renderer_.setStream(stream);

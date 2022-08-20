@@ -15,7 +15,7 @@ ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs
         message +=
             "Press up arrow to increase vertical dimension, down arrow to decrease vertical "
             "dimension, left arrow to increase horizontal dimension, right arrow to decrease "
-            "horizontal dimension. Press and hold left arrow when finished. Message repeats. ";
+            "horizontal dimension. Press and hold left arrow when finished. Message repeats.\n\n";
     }
     auto stream = new StdStringStream(message);
     renderer_.setStream(stream);
