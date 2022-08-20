@@ -7,7 +7,7 @@
 #include "sindarin-debug.h"
 
 #define FULL_DECI_LINE_HEIGHT 10
-#define NEWLINE_ONLY_DECI_LINE_HEIGHT 5
+#define NEWLINE_ONLY_DECI_LINE_HEIGHT 4
 
 Renderer::Renderer(DisplaySystem &display) : display_(display) {}
 
@@ -314,6 +314,12 @@ auto Renderer::getLineOfTextForRendering(unsigned int placeInTokenBuffer, LineBu
          (readBackwards ? (i < placeInTokenBuffer) : (i < bufferPlace)); i++) {
         RendererToken curToken = currTokenBuffer_[i];
         if (currTokenBuffer_[i].token != TOKEN_EOF) {
+            // Skip over a space if it's the first token in the line.
+            if (((readBackwards && (i == bufferPlace)) ||
+                 ((!readBackwards) && (i == placeInTokenBuffer))) &&
+                (currTokenBuffer_[i].token == TOKEN_SPACE)) {
+                continue;
+            }
             std::copy_n(&charTokenBuffer_[currTokenBuffer_[i].place],
                         currTokenBuffer_[i + 1].place - currTokenBuffer_[i].place,
                         &inputLine[linePlace]);
@@ -463,7 +469,8 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     // Note that get_text_height adds 1 over the max character height
     // change to deciLines for better newline performance
     int maxDeciLines =
-        (display_.height() - 2) / (this->display_.getTextHeight()) * FULL_DECI_LINE_HEIGHT;
+        (display_.height() - 2) / (this->display_.getTextHeight()) * FULL_DECI_LINE_HEIGHT -
+        FULL_DECI_LINE_HEIGHT * 3;
 
     // log_d("BACKWARDS DISPLAY READOUT: %d, %d, %d", display_.height() - 2,
     //      this->display_.getTextHeight(), this->display_.getLineSpacing());
@@ -489,8 +496,8 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         // Can't go back any further, must be at beginning of file.
         return 0;
     }
-    // log_d("Found the place to start and it's %d token type %d",
-    //       currTokenBuffer_[currToken].streamPlace, currTokenBuffer_[currToken + 1].token);
+    log_d("Found the place to start and it's %d token type %d",
+          currTokenBuffer_[currToken].streamPlace, currTokenBuffer_[currToken + 1].token);
 
     unsigned int paragraphToken = currTokenBuffer_[currToken].prevNewline + 1;
 
@@ -498,10 +505,10 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     // the passed in token;
     while ((deciLinesInBuffer <= maxDeciLines) && (paragraphToken < currToken)) {
         paragraphToken = getLineOfTextForRendering(paragraphToken, singleLine);
-        //   log_d("paragraphToke: %d, currToke: %d, First PARAGRAPH ANALYSIS %s", paragraphToken,
-        //         currToken, singleLine.data());
+        log_d("paragraphToke: %d, currToke: %d, First PARAGRAPH ANALYSIS %s", paragraphToken,
+              currToken, singleLine.data());
         if (singleLine[0] == '\n') {
-            // log_d("Found a blank line");
+            log_d("Found a blank line");
             deciLinesInBuffer += NEWLINE_ONLY_DECI_LINE_HEIGHT;
         } else {
             deciLinesInBuffer += FULL_DECI_LINE_HEIGHT;
@@ -510,33 +517,36 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     }
 
     unsigned int numLinesInLastParagraph = linesInBuffer;
-    unsigned int numDeciLinesInLastParagraph = deciLinesInBuffer;
+    unsigned int numDeciLinesInFirstParagraph = deciLinesInBuffer;
 
     deciLinesInBuffer = 1;
     linesInBuffer = 1;
+    unsigned int newlinesInLastParagraph = 0;
 
     unsigned int prevParagraphToken =
         currTokenBuffer_[currTokenBuffer_[currToken].prevNewline].prevNewline + 1;
     unsigned int nextyToken = currTokenBuffer_[currToken].prevNewline;
 
-    while ((deciLinesInBuffer + numDeciLinesInLastParagraph) <= maxDeciLines) {
+    while ((deciLinesInBuffer + numDeciLinesInFirstParagraph) <= maxDeciLines) {
         paragraphToken = prevParagraphToken;
+        newlinesInLastParagraph = 0;
         while (paragraphToken <= nextyToken) {
             paragraphToken = getLineOfTextForRendering(paragraphToken, singleLine);
-            //  log_d("paragraphToke: %d, PrevToke: %d, Second PARAGRAPH ANALYSIS %s",
-            //  paragraphToken,
-            //        prevParagraphToken, singleLine.data());
+            log_d("paragraphToke: %d, PrevToke: %d, Second PARAGRAPH ANALYSIS %s", paragraphToken,
+                  prevParagraphToken, singleLine.data());
             if (singleLine[0] == '\n') {
-                // log_d("Found a blank line");
+                log_d("Found a blank line");
                 deciLinesInBuffer += NEWLINE_ONLY_DECI_LINE_HEIGHT;
+                newlinesInLastParagraph++;
             } else {
                 deciLinesInBuffer += FULL_DECI_LINE_HEIGHT;
             }
             linesInBuffer++;
         }
-        // log_d("Done with that paragraph! onto the next");
+        log_d("Done with that paragraph! onto the next");
         prevParagraphToken =
             currTokenBuffer_[currTokenBuffer_[nextyToken].prevNewline].prevNewline + 1;
+        log_d("After done prevParagraphToken = %d", prevParagraphToken);
         // there's no newline at beginning of file, so need to check for that.
         if (prevParagraphToken == 1) {
             prevParagraphToken = 0;
@@ -552,10 +562,19 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         linesInBuffer -= 3;
     }
 
-    int firstParagraphLinesOffset =
-        linesInBuffer + numLinesInLastParagraph - maxDeciLines / FULL_DECI_LINE_HEIGHT;
+    int overage = (deciLinesInBuffer + numDeciLinesInFirstParagraph) - maxDeciLines;
 
-    // log_d("First Paragraph Lines Offset %d", firstParagraphLinesOffset);
+    int firstParagraphLinesOffset = 0;
+
+    // Only index in if we need to.
+    if (overage <= 0) {
+        log_d("The overage was %d overlines", overage);
+        // BUSTED. Doesn't take into account newlines are a different height.
+        firstParagraphLinesOffset =
+            linesInBuffer + numLinesInLastParagraph - maxDeciLines / FULL_DECI_LINE_HEIGHT;
+    }
+
+    log_d("First Paragraph Lines Offset %d", firstParagraphLinesOffset);
 
     for (int i = 0; i < firstParagraphLinesOffset; i++) {
         paragraphToken = getLineOfTextForRendering(paragraphToken, singleLine);
@@ -611,7 +630,7 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
     // precision between lines.
     int maxDeciLines =
         ((display_.height() - 2) / (this->display_.getTextHeight())) * FULL_DECI_LINE_HEIGHT -
-        FULL_DECI_LINE_HEIGHT;
+        FULL_DECI_LINE_HEIGHT * 3;
 
     // log_d("Max lines calc: %d %d %d", display_.height(), display_.getTextHeight(),
     //       display_.getLineSpacing());
@@ -628,7 +647,12 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
     numLinesInBuffer_ = 0;
 
     while (deciLinesInBuffer <= maxDeciLines) {
-
+        // Don't start pages with newlines.
+        if (nextToken == 0) {
+            while (currTokenBuffer_[currToken].token == TOKEN_NEWLINE) {
+                currToken++;
+            }
+        }
         nextToken = getLineOfTextForRendering(currToken, singleLine);
 
         std::copy_n(singleLine.data(), strlen(singleLine.data()), &buffer[plcInBuffer]);
@@ -638,7 +662,6 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
 
         lineBufferArray_[numLinesInBuffer_][strlen(singleLine.data())] = '\0';
 
-        numLinesInBuffer_++;
         plcInBuffer += strlen(singleLine.data());
 
         // if it doesn't have a \n at the end of the line, we need to add it.
@@ -649,14 +672,18 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
 
         buffer[plcInBuffer] = '\0';
 
-        // A regular new line is 10 deciLines, a newline all by itself is 3/10 (30% of a line)
+        // A regular new line is 10 deciLines, a newline all by itself is 4/10 (40% of a line)
         if (lineBufferArray_[numLinesInBuffer_][0] == '\n') {
             deciLinesInBuffer += NEWLINE_ONLY_DECI_LINE_HEIGHT;
         } else {
             deciLinesInBuffer += FULL_DECI_LINE_HEIGHT;
         }
 
+        numLinesInBuffer_++;
         currToken = nextToken;
+        // if (linesInBuffer <= maxLines) {
+        // nextToken = getLineOfTextForRendering(currToken, singleLine);
+        //}
     }
 
     // log_d("loaded this into buffer %s", buffer.data());
