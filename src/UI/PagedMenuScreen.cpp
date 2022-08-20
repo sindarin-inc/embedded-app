@@ -76,7 +76,7 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     display.getTextBounds(itemTitle.c_str(), &width, &height);
     uint16_t screenWidth = display.width();
     uint16_t screenHeight = display.height();
-    display.drawText(itemTitle.c_str(), (screenWidth / 2) - (width / 2),
+    display.drawText(itemTitle.c_str(), (screenWidth / 2) - (width / 2) - 4,
                      (screenHeight / 2) - (display.getTextHeight()) + 6, screenWidth, screenHeight);
     display.setFont(display.style.getFontFamily().readableFont);
 
