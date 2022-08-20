@@ -165,6 +165,9 @@ void DisplaySystem::splitStringToLines(const std::string &stringToSplit,
     }
 }
 
+// Eventually, we could add an optional argument at the end to wrap the text
+// and return whether the text was wrapped or not.
+// But that's for another day.
 void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y) {
     gfxClass_->setCursor(xOffset(x), yOffset(y + getTextHeight()));
     gfxClass_->printf("%s", line.c_str());
@@ -182,6 +185,8 @@ void DisplaySystem::drawText(const std::string &newText, int x, int y, int width
 
     int lineHeight = getTextHeight();
     int numLines = height / lineHeight;
+
+    log_w("This method is deprecated. Please use drawSingleLineOfText instead.");
 
     // We want to draw the characters down from the x/y coordinates given
     // so the renderer doesn't need to concern itself with how tall the

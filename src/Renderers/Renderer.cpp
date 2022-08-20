@@ -6,6 +6,9 @@
 #include "config.h"
 #include "sindarin-debug.h"
 
+// For deep logging when changing this file
+//#define RENDERER_DEBUG
+
 #define FULL_DECI_LINE_HEIGHT 10
 #define NEWLINE_ONLY_DECI_LINE_HEIGHT 4
 
@@ -95,7 +98,9 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
                                   curPrevNewLine, 0,           0};
         RendererToken prevToken;
 
-        // log_d("Set the stream place to %lu", placeInFile + plcInBuffer);
+#ifdef RENDERER_DEBUG
+        log_d("Set the stream place to %lu", placeInFile + plcInBuffer);
+#endif
         charTokenBuffer_[plcInBuffer] = curChar;
         charTokenBuffer_[plcInBuffer + 1] = '\0';
         switch (curChar) {
@@ -236,12 +241,16 @@ void Renderer::printOutTokensInCurrTokenBuffer() {
     auto currToken = currTokenBuffer_[0];
     for (int i = 0; (i < MAX_CHARS_PER_PAGE) && (currToken.token != TOKEN_EOF); i++) {
         currToken = currTokenBuffer_[i];
-        // log_d("%u: %u", currToken.token, currToken.place);
+#ifdef RENDERER_DEBUG
+        log_d("%u: %u", currToken.token, currToken.place);
+#endif
         if (currToken.token == TOKEN_TEXT) {
+#ifdef RENDERER_DEBUG
             for (int j = currToken.place; j < currTokenBuffer_[i + 1].place; j++) {
-                //        log_d("%c", charTokenBuffer_[j]);
+                log_d("%c", charTokenBuffer_[j]);
             }
-            //    log_d("\n");
+            log_d("\n");
+#endif
         }
     }
 }
@@ -328,7 +337,9 @@ auto Renderer::getLineOfTextForRendering(unsigned int placeInTokenBuffer, LineBu
         }
     }
 
-    // log_d("Returning place %d", bufferPlace);
+#ifdef RENDERER_DEBUG
+    log_d("Returning place %d", bufferPlace);
+#endif
     return bufferPlace;
 }
 
@@ -378,7 +389,9 @@ auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
     // characters on the line
 
     for (int j = 0; j < numLinesInBuffer_; j++) {
-        // log_d("%s", lineBufferArray_[j].data());
+#ifdef RENDERER_DEBUG
+        log_d("%s", lineBufferArray_[j].data());
+#endif
         if (lineBufferArray_[j][0] == '\n') {
             newLineAdjust++;
         } else {
@@ -472,8 +485,10 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         (display_.height() - 2) / (this->display_.getTextHeight()) * FULL_DECI_LINE_HEIGHT -
         FULL_DECI_LINE_HEIGHT * 3;
 
-    // log_d("BACKWARDS DISPLAY READOUT: %d, %d, %d", display_.height() - 2,
-    //      this->display_.getTextHeight(), this->display_.getLineSpacing());
+#ifdef RENDERER_DEBUG
+    log_d("BACKWARDS DISPLAY READOUT: %d, %d, %d", display_.height() - 2,
+          this->display_.getTextHeight(), this->display_.getLineSpacing());
+#endif
     PageBuffer buffer;
 
     buffer[0] = '\0';
@@ -483,12 +498,16 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     unsigned int nextToken = plcInTokenBuffer;
     unsigned int currToken = plcInTokenBuffer;
 
-    // Find which token to start with
-    // Could switch to an algorithm that is log(n) instead of n if we need to
-    // log_d("About to look for where to start: place = %d", place);
+// Find which token to start with
+// Could switch to an algorithm that is log(n) instead of n if we need to
+#ifdef RENDERER_DEBUG
+    log_d("About to look for where to start: place = %d", place);
+#endif
     while ((currTokenBuffer_[currToken].streamPlace > place) && (currToken > 0)) {
-        // log_d("Going back another token %d", currTokenBuffer_[currToken].streamPlace);
-        // log_d("The token is %d", currToken);
+#ifdef RENDERER_DEBUG
+        log_d("Going back another token %d", currTokenBuffer_[currToken].streamPlace);
+        log_d("The token is %d", currToken);
+#endif
         currToken--;
     }
 
@@ -496,8 +515,10 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         // Can't go back any further, must be at beginning of file.
         return 0;
     }
-    // log_d("Found the place to start and it's %d token type %d",
-    // currTokenBuffer_[currToken].streamPlace, currTokenBuffer_[currToken + 1].token);
+#ifdef RENDERER_DEBUG
+    log_d("Found the place to start and it's %d token type %d",
+          currTokenBuffer_[currToken].streamPlace, currTokenBuffer_[currToken + 1].token);
+#endif
 
     unsigned int paragraphToken = currTokenBuffer_[currToken].prevNewline + 1;
 
@@ -505,10 +526,14 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     // the passed in token;
     while ((deciLinesInBuffer <= maxDeciLines) && (paragraphToken < currToken)) {
         paragraphToken = getLineOfTextForRendering(paragraphToken, singleLine);
-        // log_d("paragraphToke: %d, currToke: %d, First PARAGRAPH ANALYSIS %s", paragraphToken,
-        //       currToken, singleLine.data());
+#ifdef RENDERER_DEBUG
+        log_d("paragraphToke: %d, currToke: %d, First PARAGRAPH ANALYSIS %s", paragraphToken,
+              currToken, singleLine.data());
+#endif
         if (singleLine[0] == '\n') {
-            // log_d("Found a blank line");
+#ifdef RENDERER_DEBUG
+            log_d("Found a blank line");
+#endif
             deciLinesInBuffer += NEWLINE_ONLY_DECI_LINE_HEIGHT;
         } else {
             deciLinesInBuffer += FULL_DECI_LINE_HEIGHT;
@@ -532,11 +557,14 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         newlinesInLastSection = 0;
         while (paragraphToken <= nextyToken) {
             paragraphToken = getLineOfTextForRendering(paragraphToken, singleLine);
-            // log_d("paragraphToke: %d, PrevToke: %d, Second PARAGRAPH ANALYSIS %s",
-            // paragraphToken,
-            //      prevParagraphToken, singleLine.data());
+#ifdef RENDERER_DEBUG
+            log_d("paragraphToke: %d, PrevToke: %d, Second PARAGRAPH ANALYSIS %s", paragraphToken,
+                  prevParagraphToken, singleLine.data());
+#endif
             if (singleLine[0] == '\n') {
-                //  log_d("Found a blank line");
+#ifdef RENDERER_DEBUG
+                log_d("Found a blank line");
+#endif
                 deciLinesInBuffer += NEWLINE_ONLY_DECI_LINE_HEIGHT;
                 newlinesInLastSection++;
             } else {
@@ -544,11 +572,15 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
             }
             linesInBuffer++;
         }
-        // log_d("Done with that paragraph! onto the next");
+#ifdef RENDERER_DEBUG
+        log_d("Done with that paragraph! onto the next");
+#endif
         prevParagraphToken =
             currTokenBuffer_[currTokenBuffer_[nextyToken].prevNewline].prevNewline + 1;
-        // log_d("After done prevParagraphToken = %d", prevParagraphToken);
-        //  there's no newline at beginning of file, so need to check for that.
+#ifdef RENDERER_DEBUG
+        log_d("After done prevParagraphToken = %d", prevParagraphToken);
+#endif
+        // there's no newline at beginning of file, so need to check for that.
         if (prevParagraphToken == 1) {
             prevParagraphToken = 0;
         }
@@ -569,18 +601,22 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
 
     // Only index in if we need to.
     if (overage > FULL_DECI_LINE_HEIGHT) {
-        // log_d("The overage was %d overlines", overage);
+#ifdef RENDERER_DEBUG
+        log_d("The overage was %d overlines", overage);
+#endif
         firstParagraphLinesOffset = overage / FULL_DECI_LINE_HEIGHT;
 
         if (overage % FULL_DECI_LINE_HEIGHT != 0) {
             firstParagraphLinesOffset++;
         }
         firstParagraphLinesOffset++;
-
-        // linesInBuffer + numLinesInLastParagraph - maxDeciLines / FULL_DECI_LINE_HEIGHT;
     }
 
-    // log_d("First Paragraph Lines Offset %d", firstParagraphLinesOffset);
+#ifdef RENDERER_DEBUG
+
+    log_d("First Paragraph Lines Offset %d", firstParagraphLinesOffset);
+
+#endif
 
     for (int i = 0; i < firstParagraphLinesOffset; i++) {
         paragraphToken = getLineOfTextForRendering(paragraphToken, singleLine);
@@ -588,26 +624,6 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
 
     // At this point, we found the place to start the new page!
     currToken = paragraphToken;
-    /*
-    linesInBuffer = 1;
-
-    while ((linesInBuffer <= maxLines) && (currToken > 0)) {
-        nextToken = getLineOfTextForRendering(currToken, singleLine, false);
-        std::copy_n(singleLine.data(), strlen(singleLine.data()), &buffer[plcInBuffer]);
-        log_d("GO BACKWARDS line is %s", singleLine.data());
-        plcInBuffer += strlen(singleLine.data());
-        // if it doesn't have a \n at the end of the line, we need to add it.
-        if (singleLine[strlen(singleLine.data()) - 1] != '\n') {
-            buffer[plcInBuffer] = '\n';
-            plcInBuffer++;
-        }
-
-        buffer[plcInBuffer] = '\0';
-        linesInBuffer++;
-        currToken = nextToken;
-        log_d("lines in buffer %d, maxLines %d, currToken %d", linesInBuffer, maxLines,
-    currToken);
-    }*/
 
     unsigned long returnValue = currTokenBuffer_[currToken].streamPlace;
 
@@ -615,7 +631,10 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     // into buffers, so we need to retokenize.
     // we could probably avoid this rework by introducing an extra token buffer if we want
     loadAndTokenizePage(place);
-    // log_d("RETURNING THE FOLLOWING PLACE! %d", returnValue);
+
+#ifdef RENDERER_DEBUG
+    log_d("RETURNING THE FOLLOWING PLACE! %d", returnValue);
+#endif
     return returnValue;
 }
 
@@ -639,8 +658,10 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
         ((display_.height() - 2) / (this->display_.getTextHeight())) * FULL_DECI_LINE_HEIGHT -
         FULL_DECI_LINE_HEIGHT * 3;
 
-    // log_d("Max lines calc: %d %d %d", display_.height(), display_.getTextHeight(),
-    //       display_.getLineSpacing());
+#ifdef RENDERER_DEBUG
+    log_d("Max lines calc: %d %d %d", display_.height(), display_.getTextHeight(),
+          display_.getLineSpacing());
+#endif
 
     buffer[0] = '\0';
     singleLine[0] = '\0';
@@ -688,14 +709,11 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
 
         numLinesInBuffer_++;
         currToken = nextToken;
-        // if (linesInBuffer <= maxLines) {
-        // nextToken = getLineOfTextForRendering(currToken, singleLine);
-        //}
     }
 
-    // log_d("loaded this into buffer %s", buffer.data());
-
-    // log_d("Number of lines in buffer: %d out of a max of %d", linesInBuffer, maxLines);
+#ifdef RENDERER_DEBUG
+    log_d("loaded this into buffer %s", buffer.data());
+#endif
 
     // If we hit EOF, the next screen wraps around.
     if (currTokenBuffer_[currToken].token == TOKEN_EOF) {
