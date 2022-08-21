@@ -15,6 +15,9 @@
 Renderer::Renderer(DisplaySystem &display) : display_(display) {}
 
 // must be called after loadAndTokenizePage
+// Takes a place in the token buffer and places the string that the token
+// represents in the outputString buffer. This is a helper since it's a
+// common thing we want to do in the rendering code.
 void Renderer::tokenToString(unsigned long placeInTokenBuffer, TokenString &outputString) {
     std::copy_n(&charTokenBuffer_[currTokenBuffer_[placeInTokenBuffer].place],
                 currTokenBuffer_[placeInTokenBuffer + 1].place -
@@ -24,6 +27,13 @@ void Renderer::tokenToString(unsigned long placeInTokenBuffer, TokenString &outp
                  currTokenBuffer_[placeInTokenBuffer].place] = '\0';
 }
 
+// The thing is, most tokens are easy to determine the width of because the
+// operation is the same regardless of context. Spaces are the exception.
+// A space may render differently based on the characters before and after it.
+// In my limited testing on our 5pt Tahoma font, spaces can be 3 or 4 pixels wide.
+// I suspect this will only grow as our font rendering becomes more sophisticated.
+// So this returns the obvious thing for non-spaces and does the math for spaces
+// based on the tokens before and after the space.
 void Renderer::tokenRenderedWidthHeight(unsigned long placeInTokenBuffer, uint16_t *renderedWidth,
                                         uint16_t *renderedHeight) {
     TokenString converted;
@@ -59,6 +69,8 @@ void Renderer::tokenRenderedWidthHeight(unsigned long placeInTokenBuffer, uint16
     }
 }
 
+// A helper method to fill the size of a token after the tokens have been loaded
+// into the token buffer.
 void Renderer::setSizeOfTextToken(unsigned long placeInTokenBuffer) {
     TokenString converted;
     tokenToString(placeInTokenBuffer, converted);
@@ -237,96 +249,62 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
 }
 
 // debugging method
+#ifdef RENDERER_DEBUG
 void Renderer::printOutTokensInCurrTokenBuffer() {
     auto currToken = currTokenBuffer_[0];
     for (int i = 0; (i < MAX_CHARS_PER_PAGE) && (currToken.token != TOKEN_EOF); i++) {
         currToken = currTokenBuffer_[i];
-#ifdef RENDERER_DEBUG
         log_d("%u: %u", currToken.token, currToken.place);
-#endif
         if (currToken.token == TOKEN_TEXT) {
-#ifdef RENDERER_DEBUG
             for (int j = currToken.place; j < currTokenBuffer_[i + 1].place; j++) {
                 log_d("%c", charTokenBuffer_[j]);
             }
             log_d("\n");
-#endif
         }
     }
 }
+#endif
 
 // This method takes in a place in the token buffer.
 // It puts the string in the inputLine.
 // It returns the next token in the TokenBuffer unless already at EOF, then
 // it returns EOF again.
 //
-// XXX: Ultimately this class should have helpers (render line, render token)
-// that does the heavy lifting of telling the other parts of rendering how tall and
-// wide a rendered line / token / page is.
 //
-auto Renderer::getLineOfTextForRendering(unsigned int placeInTokenBuffer, LineBuffer &inputLine,
-                                         bool readBackwards) -> unsigned int {
+auto Renderer::getLineOfTextForRendering(unsigned int placeInTokenBuffer, LineBuffer &inputLine)
+    -> unsigned int {
     unsigned int bufferPlace = placeInTokenBuffer;
     unsigned int linePlace = 0;
-    bool lineFull = false;
     int maxWidth = (display_.width() - 4);
-    int pixLen;
     int runningWidth = 0;
 
     inputLine[linePlace] = '\0';
-
-    RendererToken nextTokenForBackwards = currTokenBuffer_[placeInTokenBuffer + 1];
-
-    if (readBackwards) {
-        runningWidth = nextTokenForBackwards.width;
-    }
 
     while (runningWidth < maxWidth) {
         RendererToken currToken = currTokenBuffer_[bufferPlace];
 
         if (currToken.token == TOKEN_EOF || currToken.token == TOKEN_NEWLINE) {
             if (currToken.token == TOKEN_NEWLINE) {
-                if (!readBackwards) {
-                    bufferPlace++;
-                } else {
-                    bufferPlace--;
-                }
+                bufferPlace++;
             }
             break;
         }
         runningWidth += currToken.width;
-        if (readBackwards) {
-            // Catch the case where we are at the beginning of the buffer.
-            if (bufferPlace == 0) {
-                break;
-            } else {
-                bufferPlace--;
-            }
-        } else {
-            bufferPlace++;
-        }
+        bufferPlace++;
     }
 
     // Go back one token as that was the token that caused the line to be full.
-    // This is only in the forwards direction because the backwards direction pre-loads
-    // the next token as part of the measurement to keep consistency in rendering the
-    // previous page.
-
-    if ((!readBackwards) && (runningWidth >= maxWidth)) {
+    if (runningWidth >= maxWidth) {
         bufferPlace--;
     }
 
     int i;
 
     // Never done something like this before, but it should do the trick!
-    for ((readBackwards ? (i = bufferPlace) : (i = placeInTokenBuffer));
-         (readBackwards ? (i < placeInTokenBuffer) : (i < bufferPlace)); i++) {
-        RendererToken curToken = currTokenBuffer_[i];
+    for (i = placeInTokenBuffer; i < bufferPlace; i++) {
         if (currTokenBuffer_[i].token != TOKEN_EOF) {
             // Skip over a space if it's the first token in the line.
-            if (((readBackwards && (i == bufferPlace)) ||
-                 ((!readBackwards) && (i == placeInTokenBuffer))) &&
-                (currTokenBuffer_[i].token == TOKEN_SPACE)) {
+            if ((i == placeInTokenBuffer) && (currTokenBuffer_[i].token == TOKEN_SPACE)) {
                 continue;
             }
             std::copy_n(&charTokenBuffer_[currTokenBuffer_[i].place],
@@ -344,24 +322,8 @@ auto Renderer::getLineOfTextForRendering(unsigned int placeInTokenBuffer, LineBu
 }
 
 void Renderer::loaded() {
-    previousPlace_ = goBackwardsOnePage(currentPlace_);
-
-    // LOAD TEXT for prev, current.
-    // The contract for users of this class is that this class will always keep the current
-    // page, the previous page, and the next page in a buffer so that on page swaps, the render
-    // can happen immediately without any filesystem access. Then, *after* a page is rendered,
-    // the new previous and next pages can be loaded. This allows for buffering to happen while
-    // a user is reading the current page.
-    //
-    // It's a little broken in that load_curr_into_buffer does the wrong thing and updates class
-    // variables (essentially moving the current seek position in the file), hence this dance
-    // here to make sure they are correct.
-    // TODO(john): It doesn't look like it works this way right now. Our preloading does
-    // nothing.
-
+    // previousPlace_ = goBackwardsOnePage(currentPlace_);
     nextPlace_ = loadCurrIntoBuffer();
-    int oldNextPlace = nextPlace_;
-    nextPlace_ = oldNextPlace;
 }
 
 // Show the (already loaded into buffer) current page
@@ -369,8 +331,9 @@ void Renderer::loaded() {
 auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
     SetCpuSpeedMhz(CPU_FREQ_MHZ_HIGH);
 
-    // TODO: We're not taking advantage of the preloading work we do to load the next buffer
-    // log_i("%lu is place in file being requested", placeInFile);
+#ifdef RENDERER_DEBUG
+    log_d("%lu is place in file being requested", placeInFile);
+#endif
     currentPlace_ = placeInFile;
     PROFILE_START(loadCurrIntoBuffer);
     nextPlace_ = loadCurrIntoBuffer();
@@ -379,11 +342,14 @@ auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
     currentPageWordCount_ = WordCount(currBuffer_.data());
 
     int newLineAdjust = 0;
-    int currentY = 0;
 
     // A first attempt to get the the text to look better with newlines as sole
     // characters on the line with a smaller height than a full line.
-
+    // The logic is that we split each line into 10 "decilines" and then
+    // assign a height to each line based on if it's a newline or not. Newlines
+    // get NEWLINE_ONLY_DECI_LINE_HEIGHT decilines (currently set to 4 out of 10).
+    // The y position calucalted is based on the number of newlines we've seen so far
+    // in this page.
     for (int j = 0; j < numLinesInBuffer_; j++) {
 #ifdef RENDERER_DEBUG
         log_d("%s", lineBufferArray_[j].data());
@@ -398,8 +364,6 @@ auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
                         (FULL_DECI_LINE_HEIGHT - NEWLINE_ONLY_DECI_LINE_HEIGHT) * newLineAdjust /
                         FULL_DECI_LINE_HEIGHT);
         }
-        currentY = j * (display_.getLineSpacing() + display_.getTextHeight()) -
-                   display_.getTextHeight() * 2 * newLineAdjust / 3;
     }
 
     display_.updateDisplay();
@@ -409,56 +373,62 @@ auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
     return nextPlace_;
 }
 
-// The place that is being passed in points to the first character of a page.
-// Going back one place from there points to a space. Going back two places
-// from there points to the last character of the previous word. Hence, we
-// need to rewind two spaces from the place passed in for the work we do in
-// this method.
-//
-// Could also be a const int, but that's up to the code reviewer overlords ;)
-//
-#define PLACE_REWIND 2
-
-// Seeks backwards and returns the place of one page previous. Uses a similar
-// logic to the load_into_buffer function but working backwards instead.
+// Seeks backwards and returns the place of one page previous.
 // This function's purpose is only to find the place in the file that's one
-// page previous, not to load anything into buffers. It's a little less
-// efficient, but given the load_into_buffer function works, we will opt for
-// the inefficiency for now rather than rewrite the whole thing.
+// page previous, not to load anything into buffers.
 //
-// XXX this is broken because it doesn't take into account the fact that the
-// token that causes the overflow is in a line in the current implemetation
-// is the PREVIOUS token to the line, not the NEXT token after the line.
-// So to make the "goBackwards" algorithm work, we need to keep the NEXT
-// token and use that to check to see if a line is full, not the PREVIOUS
-// token. This will require a bit more copying around, but should give us
-// a backwards seek that will yield exactly the same result as a forward
-// seek!
+// This is the most complicated alogrithm in the whole renderer currently.
+//
+// In order to make this work correctly while not keeping the whole readable
+// in memory, we must find a previous point before the current place where
+// we know a token is at the beginning of a line. That's the only way to
+// ensure that our "backwards render" will match what happened in the similar
+// forwards render.
+//
+// To do this, the method is split into a couple of parts.
+//
+// Step 1: Figure out how much to read before the current place. If we're too
+// close to the beginning, we just read from the beginning. If we have enough
+// room, we read MAX_CHARS_PER_PAGE backwards. XXX if we *don't* hit a newline
+// in that number of characters, the results of this method won't be correct.
+// it'll still render something that should end in the token before the passed
+// in place, but it won't necessarily be the same rendering as what you'd see
+// if you rendered that page forwards.
+//
+// Step 2: Once the data is read into the buffer, tokenize it the same as you
+// would for a forwards render.
+//
+// Step 3: Find the place in the token buffer where the passed in place in file
+// is represented. Go back to the start of that paragraph (the last newline + 1) and
+// simulate a render from there, keeping track of how many lines we needed to render.
+// This is the "first paragraph" but it really represents the last set of lines on the
+// page before the place passed in.
+//
+// Step 4: Iterate through paragraphs (newline-terminated sequences of tokens) backwards
+// until we've done enough paragraphs to fill a page. Once we've done the last paragraph
+// this way, it'll likely be too many times, so we calculate the offset of the first paragraph
+// that is used in the page and start counting from there.
+//
+// Step 5: Save off the place in the token buffer where the prevous page starts and
+// return it.
 auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
-
-    char curChar = '\0';
-    std::array<char, MAX_CHARS_PER_PAGE + 1> mainBackwardsBuffer;
     unsigned long seekPlace = 0;
-    int numCharsToRead;
 
+    // Step 1 (See above)
     if (place >= MAX_CHARS_PER_PAGE) {
         // Need to make sure we're at least 1 character past the place given. For tokenizer.
         seekPlace = place - MAX_CHARS_PER_PAGE + 2;
-        numCharsToRead = MAX_CHARS_PER_PAGE;
     } else {
         seekPlace = 0;
-        numCharsToRead = place;
     }
 
-    // We'll just tokenize everything from the last and work our way from the
-    // end of the tokens.
+    // Step 2.
     loadAndTokenizePage(seekPlace);
 
     // Go backwards from the last token and do the same as the loadIntoBuffer
     // method.
 
     unsigned int plcInTokenBuffer = numCurrTokens_ - 1;
-    unsigned int plcInBuffer = 0;
     int deciLinesInBuffer = 1;
     int linesInBuffer = 1;
     std::array<char, MAX_CHARS_PER_LINE> singleLine{};
@@ -479,8 +449,6 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     buffer[0] = '\0';
     singleLine[0] = '\0';
 
-    // printOutTokensInCurrTokenBuffer();
-    unsigned int nextToken = plcInTokenBuffer;
     unsigned int currToken = plcInTokenBuffer;
 
 // Find which token to start with
@@ -507,6 +475,7 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
 
     unsigned int paragraphToken = currTokenBuffer_[currToken].prevNewline + 1;
 
+    // Step 3.
     // First, check the immediate paragraph for how many lines fit before
     // the passed in token;
     while ((deciLinesInBuffer <= maxDeciLines) && (paragraphToken < currToken)) {
@@ -526,7 +495,6 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         linesInBuffer++;
     }
 
-    unsigned int numLinesInLastParagraph = linesInBuffer;
     unsigned int numDeciLinesInFirstParagraph = deciLinesInBuffer;
 
     deciLinesInBuffer = 1;
@@ -537,6 +505,7 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         currTokenBuffer_[currTokenBuffer_[currToken].prevNewline].prevNewline + 1;
     unsigned int nextyToken = currTokenBuffer_[currToken].prevNewline;
 
+    // Step 4.
     while ((deciLinesInBuffer + numDeciLinesInFirstParagraph) <= maxDeciLines) {
         paragraphToken = prevParagraphToken;
         newlinesInLastSection = 0;
@@ -576,7 +545,8 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         paragraphToken = prevParagraphToken - 1;
     } else {
         paragraphToken = 0;
-        // ????
+        // I'm not entirely sure why the corner case of the first page (when going back and
+        // hitting place 0) requires this, but it does.
         linesInBuffer -= 3;
     }
 
@@ -607,6 +577,7 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         paragraphToken = getLineOfTextForRendering(paragraphToken, singleLine);
     }
 
+    // Step 5.
     // At this point, we found the place to start the new page!
     currToken = paragraphToken;
 
@@ -614,7 +585,7 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
 
     // methods calling this method expect this to not change what's loaded
     // into buffers, so we need to retokenize.
-    // we could probably avoid this rework by introducing an extra token buffer if we want
+    // we could probably avoid this rework by introducing an extra token buffer if we wanted to.
     loadAndTokenizePage(place);
 
 #ifdef RENDERER_DEBUG
@@ -625,17 +596,12 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
 
 // returns the new place of the stream
 auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsigned long {
-    unsigned int plcInTokenBuffer = 0;
     unsigned int plcInBuffer = 0;
     int deciLinesInBuffer = 1;
     std::array<char, MAX_CHARS_PER_LINE> singleLine{};
 
     // It's minus 2 because we want to start 1 off the top and leave 1 at the bottom
     // Note that get_text_height adds 1 over the max character height
-    //
-    // XXX: This has to be rethought to realize that the rendering will impact
-    // the max number of lines that can be rendered since \n will be handled
-    // differently as well chapter headers, etc.
     //
     // Switch to 1/10 of a line as this gives us more flexibilty in rendering
     // precision between lines.
@@ -653,7 +619,7 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
 
     // Debugging stuff
     loadAndTokenizePage(place);
-    // printOutTokensInCurrTokenBuffer();
+
     unsigned int nextToken = 0;
     unsigned int currToken = 0;
 
@@ -708,20 +674,8 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
     }
 }
 
-// Deprecating this
-auto Renderer::loadPrevIntoBuffer() -> unsigned long {
-    // return loadIntoBuffer(prevBuffer_, previousPlace_);
-    return 0;
-}
-
 auto Renderer::loadCurrIntoBuffer() -> unsigned long {
     return loadIntoBuffer(currBuffer_, currentPlace_);
-}
-
-// Deprecating this
-auto Renderer::loadNextIntoBuffer() -> unsigned long {
-    return 0;
-    // return loadIntoBuffer(nextBuffer_, nextPlace_);
 }
 
 auto Renderer::getPreviousPlace() -> unsigned long {

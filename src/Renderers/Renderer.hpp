@@ -95,9 +95,7 @@ protected:
     unsigned long nextPlace_ = 0;
     uint32_t currentPageWordCount_ = 0;
 
-    auto loadPrevIntoBuffer() -> unsigned long;
     auto loadCurrIntoBuffer() -> unsigned long;
-    auto loadNextIntoBuffer() -> unsigned long;
     auto goBackwardsOnePage(unsigned long place) -> unsigned long;
 
     void loadAndTokenizePage(unsigned long placeInFile);
@@ -122,8 +120,8 @@ protected:
     // This keeps just the tokens for the current page being rendered
     PageTokenBuffer singlePageTokenBuffer_{};
 
-    auto getLineOfTextForRendering(unsigned int placeInTokenBuffer, LineBuffer &inputLine,
-                                   bool readBackwards = false) -> unsigned int;
+    auto getLineOfTextForRendering(unsigned int placeInTokenBuffer, LineBuffer &inputLine)
+        -> unsigned int;
 
     // This does the work of lineify from the old system. Loads one page of
     // text into that buffer given the current offset in the file
