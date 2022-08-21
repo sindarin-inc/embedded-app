@@ -40,8 +40,8 @@ struct RendererToken {
     // start is for where it's located. It's useful for looking backwards
     // while rendering backwards.
     unsigned long prevNewline;
-    u_int16_t width;
-    u_int16_t height;
+    uint16_t width;
+    uint16_t height;
 };
 
 typedef std::array<char, MAX_CHARS_PER_PAGE> PageBuffer;
