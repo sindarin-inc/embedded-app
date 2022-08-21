@@ -77,9 +77,9 @@ void MenuScreen::render(DisplaySystem &display) {
 
     // Starting the process of doing this better eventually. Mimicking the lighting screen.
     // (But without the fast).
-    display.updateDisplay(firstLoad ? DisplaySystem::UpdateType::FULL
-                                    : DisplaySystem::UpdateType::FULL);
-    firstLoad = false;
+    display.updateDisplay(firstLoad_ ? DisplaySystem::UpdateType::FULL
+                                     : DisplaySystem::UpdateType::FULL);
+    firstLoad_ = false;
     needsRerender = false;
 }
 

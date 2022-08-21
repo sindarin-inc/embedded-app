@@ -73,7 +73,7 @@ protected:
     std::vector<MenuItem> menuItems_;
     int currSelection_ = 0;
     int curMenuPage_ = 0;
-    bool firstLoad = true;
+    bool firstLoad_ = true;
 
     Power &power_;
 };
