@@ -53,30 +53,7 @@ auto MenuScreen::getItemAt(int index) -> MenuItem {
     assert(index < numMenuItems_);
     return menuItems_[index];
 }
-/*
-auto MenuScreen::getWholeMenuAsString() -> std::string {
-    return getMenuRangeAsString(0, numMenuItems_ - 1);
-}
 
-auto MenuScreen::getMenuRangeAsString(int startItem, int endItem) -> std::string {
-    int i;
-    std::string complete("");
-    // If the client gives us an end_item past the end of the range, just go to the
-    // end only
-    for (i = startItem - 1; i < endItem && i < numMenuItems_; i++) {
-        complete += getItemTitleAt(i);
-        complete += "\n";
-    }
-    return complete;
-}
-
-auto MenuScreen::getPaginatedMenuString() -> std::string {
-    auto menuString =
-        getMenuRangeAsString(curMenuPage_ * NUM_LINES_PER_MENU_PAGE + 1,
-                             curMenuPage_ * NUM_LINES_PER_MENU_PAGE + NUM_LINES_PER_MENU_PAGE);
-    return menuString;
-}
-*/
 void MenuScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
@@ -98,7 +75,11 @@ void MenuScreen::render(DisplaySystem &display) {
                                      (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight());
     }
 
-    display.updateDisplay();
+    // Starting the process of doing this better eventually. Mimicking the lighting screen.
+    // (But without the fast).
+    display.updateDisplay(firstLoad ? DisplaySystem::UpdateType::FULL
+                                    : DisplaySystem::UpdateType::FULL);
+    firstLoad = false;
     needsRerender = false;
 }
 
