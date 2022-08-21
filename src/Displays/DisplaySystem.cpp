@@ -5,7 +5,7 @@
 #include "Misc/StringUtil.hpp"
 #include "sindarin-debug.h"
 
-DisplaySystem::DisplaySystem() {}
+DisplaySystem::DisplaySystem() = default;
 
 auto DisplaySystem::setup() -> bool {
     // Default to original font

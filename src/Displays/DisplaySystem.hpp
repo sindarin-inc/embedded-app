@@ -48,7 +48,7 @@ public:
 
     virtual auto setup() -> bool;
 
-    DisplayRect defaultBoundingBox_ = {0, 0, 255, 255};
+    DisplayRect defaultBoundingBox = {0, 0, 255, 255};
 
     Style style;
 
@@ -166,7 +166,7 @@ protected:
     bool invertedDisplay_ = false;
 
     // This is the default value from before of 15mmx15mm
-    DisplayRect boundingBox_ = defaultBoundingBox_;
+    DisplayRect boundingBox_ = defaultBoundingBox;
     int lineSpacing_ = 0;
 };
 
