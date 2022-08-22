@@ -6,14 +6,15 @@
 #include "Bitmaps/Logo.hpp"
 #include "Communications/HtmlCleaner.hpp"
 #include "Communications/WiFi.hpp"
-#include "Contents/Readable.hpp"
 #include "GitVersion.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/MenuStyle.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
+#include "Models/Readable.hpp"
 #include "Renderers/Renderer.hpp"
+#include "Storage/LocalStore.hpp"
 #include "UI/CalibrationScreen.hpp"
 #include "UI/DemoScreen.hpp"
 #include "UI/FirmwareUpdateScreen.hpp"
@@ -46,8 +47,7 @@
 
 #define LAST_READABLE_ID "rui-readable"
 
-void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
-                   FileSystem &fileSystem) {
+void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &fileSystem) {
     SHOW_HEAP();
 
     display_ = display;
@@ -58,20 +58,23 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
 
     SIZE_OF(*mainMenu);
 
+    auto readables = localStore.readables();
+
     auto createReadableScreen = [this, display, mainMenu,
-                                 &fileSystem](Readable *readable) -> ReadableScreen * {
+                                 &fileSystem](Readable readable) -> ReadableScreen * {
 #if !DISABLE_WIFI
         DisconnectWifi();
 #endif
         // TODO: Would be better to not allocate / delete these all the time
-        auto stream = fileSystem.newRendererStream(readable->path.c_str());
-        this->prefs_.lastReadableId.set(readable->id);
+        auto stream = fileSystem.newRendererStream(readable.localFilePath().c_str());
+        this->prefs_.lastReadableId.set(readable.id);
         auto *readableScreen =
-            new ReadableScreen(stream, *display, *readable, this->prefs_, this->power_, fileSystem);
+            new ReadableScreen(stream, *display, readable, this->prefs_, this->power_, fileSystem);
+#if ENABLE_POCKET
         if (readable->id.rfind("pkt-", 0) == 0) {
             readableScreen->setLeftPopupButton("Delete", [readable, &fileSystem]() {
                 log_i("Deleting Pocket readable %s", readable->path.c_str());
-                if (!fileSystem.remove(readable->path)) {
+                if (!fileSystem.remove(readable->localFilePath().c_str())) {
                     log_e("Failed to delete Pocket readable %s", readable->path.c_str());
                 }
                 log_d("Rebooting to reload readables");
@@ -79,6 +82,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
                 esp_restart();
             });
         }
+#endif
         // When switching to a readable from a menu, we should clear the display
         // to make the whites really white and the blacks really black.
         display->clearDisplay();
@@ -104,11 +108,10 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
     };
 
     auto currentReadable = prefs_.lastReadableId.get();
-    for (Readable &r : readables) {
-        Readable *readable = &r;
+    for (Readable &r : localStore.readables()) {
         r.place = prefs_.readablePlace.get(r.id.c_str());
-        mainMenu->addMenuItem(MenuItem(r.name, [this, readable, createReadableScreen]() {
-            auto readableScreen = createReadableScreen(readable);
+        mainMenu->addMenuItem(MenuItem(r.title, [this, r, createReadableScreen]() {
+            auto readableScreen = createReadableScreen(r);
             this->setCurrentScreen(*readableScreen);
         }));
         if (currentReadable.has_value() && currentReadable.value() == r.id) {
@@ -263,6 +266,30 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
         settingsMenu->setFirstLoad();
         setCurrentScreen(*settingsMenu);
     };
+
+    settingsMenu->addMenuItem(MenuItem(
+        "Sync content", [this, settingsMenu, &localStore, display]() {
+            if (!prefs_.cloudToken.get().has_value()) {
+                log_w("No Sindarin API token found");
+                display->drawSingleLineOfText("No Sindarin API token found", 0, 0);
+                display->updateDisplay();
+                delay(2000);
+                needsRerender = true;
+                return;
+            }
+
+            // TODO: Progress UI for this!
+            display->drawSingleLineOfText("Loading content from API...", 0, 0);
+            display->updateDisplay();
+            if (localStore.syncFromRemote()) {
+                display->drawSingleLineOfText("Success!", 0, 0);
+            } else {
+                display->drawSingleLineOfText("Failed :(", 0, 0);
+            }
+            display->updateDisplay();
+            delay(2000);
+            needsRerender = true;
+        }));
 
     settingsMenu->addMenuItem(MenuItem("Reading Font Size", [this, settingsMenu]() {
         auto fontMenu = new MenuScreen(this->power_, settingsMenu->getMyStyle());
@@ -560,7 +587,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
         // TODO: Add UI for right screen temp also
         leftTemp = driver->readTemperature(ScreenSide::Left);
 #else
-    leftTemp = 99;
+        leftTemp = 99;
 #endif
         batteryStatus += StringFormat(" %dC", leftTemp);
 
@@ -638,17 +665,18 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
         // Check if we left-off on a readable and if so, reload that readable by default
         log_d("Attempting to find readable: %s", currentReadable.value().c_str());
         // If we previously had a readable loaded, show that same readable by default
+
         auto it =
             std::find_if(readables.begin(), readables.end(),
                          [&currentReadable](const Readable &x) { return currentReadable == x.id; });
         if (it != readables.end()) {
-            auto readableScreen = createReadableScreen(&(*it));
+            auto readableScreen = createReadableScreen(*it);
             this->display_->setFont(this->display_->style.getFontFamily().readableFont);
 #if !SIMULATOR
             log_i("Setting Readable Screen on boot in %.0f ms", esp_timer_get_time() / 1000.0f);
 #endif
             this->setCurrentScreen(*readableScreen);
-            log_i("Resuming readable from last session: %s", (*it).name.c_str());
+            log_i("Resuming readable from last session: %s", (*it).title.c_str());
         } else {
             // Assume this readable has gone away
             prefs_.lastReadableId.remove();
@@ -656,8 +684,8 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
     }
 
     // This still has to be this way rather than else if because the currentReadable.has_value()
-    // Could return true but if we don't find that readable, no screen will be set. I asssume this
-    // would happen if the FS is updated underneath us to remove that readable.
+    // Could return true but if we don't find that readable, no screen will be set. I asssume
+    // this would happen if the FS is updated underneath us to remove that readable.
     if (this->currentScreen_ == nullptr) {
         // If we've already connected to an input device, go straight
         // to the main menu. We will clean this up a bit moving forward

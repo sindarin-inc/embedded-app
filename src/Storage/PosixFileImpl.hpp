@@ -58,7 +58,7 @@ public:
         struct stat st;
         int error = stat(path_, &st);
         if (error != 0) {
-            log_e("stat error %d", error);
+            log_e("stat error on %s %d", path_, error);
             return 0;
         }
         return st.st_size;

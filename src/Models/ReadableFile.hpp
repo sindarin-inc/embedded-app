@@ -1,0 +1,35 @@
+#pragma once
+
+#include "Models/Json.hpp"
+#include "Models/JsonSerializable.hpp"
+
+class ReadableFile : public JsonSerializable {
+public:
+    int id;
+    std::string name;
+    int size;
+    std::string filetype;
+    std::string uploadedAt;
+    std::string shaHash;
+    //! URL to download the file
+    std::string file;
+
+    auto fromJson(const JsonObject &j) -> bool override {
+        if (!j.containsKey("id") || !j.containsKey("name") || !j.containsKey("size") ||
+            !j.containsKey("filetype") || !j.containsKey("uploaded_at") ||
+            !j.containsKey("sha_hash") || !j.containsKey("file")) {
+            log_w("Failed to parse ReadableFile with JSON %s", DumpJson(j).c_str());
+            return false;
+        }
+        id = j["id"];
+        name = j["name"].as<std::string>();
+        size = j["size"];
+        filetype = j["filetype"].as<std::string>();
+        uploadedAt = j["uploaded_at"].as<std::string>();
+        shaHash = j["sha_hash"].as<std::string>();
+        file = j["file"].as<std::string>();
+        return true;
+    }
+};
+
+bool convertToJson(const ReadableFile &src, JsonVariant dst);

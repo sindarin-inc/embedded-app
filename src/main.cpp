@@ -4,8 +4,8 @@
 #endif
 
 #include "Communications/OTA.hpp"
+#include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
-#include "Contents/Readable.hpp"
 #include "Displays/AllDisplays.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/BootError.hpp"
@@ -13,6 +13,8 @@
 #include "Misc/Power.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
+#include "Models/Readable.hpp"
+#include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/RootUI.hpp"
 #include "config.h"
@@ -85,6 +87,8 @@ PosixFileSystem fileSystem;
 #include "Storage/LittleFSFileSystem.hpp"
 LittleFSFileSystem fileSystem;
 #endif
+
+LocalStore localStore(fileSystem, prefs);
 
 Power power(fileSystem, prefs);
 RootUI rootUi(prefs, power);
@@ -449,18 +453,20 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 #endif
 
-    auto readables = new std::vector<Readable>();
     if (!fileSystem.begin()) {
         bootErrors.push_back({.type = BootError::Type::FileSystem});
     }
-    fileSystem.getReadables(readables);
-    fileSystem.getDownloadedPocketReadables(readables);
+
+    if (!localStore.begin()) {
+        bootErrors.push_back({.type = BootError::Type::LocalStore});
+    }
+    auto readables = localStore.readables();
 
     SHOW_HEAP();
 
     power.setup();
 
-    rootUi.setup(&myDisplay, *readables, fileSystem);
+    rootUi.setup(&myDisplay, localStore, fileSystem);
 
     SHOW_HEAP();
 

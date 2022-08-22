@@ -23,3 +23,5 @@ struct SpiRamAllocator {
 using SpiRamJsonDocument = BasicJsonDocument<SpiRamAllocator>;
 
 #endif
+
+std::string DumpJson(const JsonVariant &v);

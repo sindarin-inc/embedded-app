@@ -17,6 +17,7 @@ struct BootError {
         Preferences = 12,
         AmbientLight = 13,
         Magnetometer = 14,
+        LocalStore = 15,
     };
     Type type;
 
@@ -48,6 +49,8 @@ struct BootError {
             return "Ambient Light";
         case Magnetometer:
             return "Magnetometer";
+        case LocalStore:
+            return "Local Store";
         };
         return "Unhandled";
     }
