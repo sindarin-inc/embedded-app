@@ -137,7 +137,7 @@ void runBackwardsUnitTest(SDL_Window *window, SDL_Renderer *renderer) {
             std::cerr << "check out next.png and nextprev.png for the diffs\n";
             exit(1);
         }
-        usleep(1000000.0 / 120.0);
+        usleep(1000000.0 / 240.0);
     }
     std::cerr << "unit test passed\n";
 }
