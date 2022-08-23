@@ -88,6 +88,33 @@ void drawOverlay(RemoteCommand command) {
 RemoteCommand ttCommand;
 #endif
 
+void sendCodeAndRender(RemoteCommand command, SDL_Renderer *renderer) {
+    UIInnerLoop(command);
+    SDL_SetRenderTarget(renderer, NULL);
+    SDL_RenderCopy(renderer, deviceScreen, NULL, NULL);
+    drawOverlay(command);
+    SDL_RenderPresent(renderer);
+}
+
+// Only press 'u' when you are on a page in a readable.
+void runBackwardsUnitTest(SDL_Window *window, SDL_Renderer *renderer) {
+    int i = 0;
+
+    for (i = 0; i < 1; i++) {
+        saveScreenshotPng("current.png", window, renderer);
+        sendCodeAndRender(RemoteCommand::CHANNEL_PLUS, renderer);
+        saveScreenshotPng("next.png", window, renderer);
+        sendCodeAndRender(RemoteCommand::CHANNEL_PLUS, renderer);
+        saveScreenshotPng("nextnext.png", window, renderer);
+        sendCodeAndRender(RemoteCommand::CHANNEL_MINUS, renderer);
+        saveScreenshotPng("nextprev.png", window, renderer);
+        // compare the most two recent pngs -- they should be the same.
+        // if not, error out.
+        std::cerr << "images don't match, sad face\n";
+        usleep(1000000.0 / 10.0);
+    }
+}
+
 // Returns false if the program should quit
 auto mainLoop() -> bool {
     SDL_Event e;
@@ -117,6 +144,9 @@ auto mainLoop() -> bool {
                 break;
             case 'p':
                 saveScreenshotPng("./screenshot.png", window, renderer);
+                break;
+            case 'u':
+                runBackwardsUnitTest(window, renderer);
                 break;
             }
 
