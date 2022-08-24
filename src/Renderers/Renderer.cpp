@@ -359,7 +359,7 @@ auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
         } else {
             display_.drawSingleLineOfText(
                 lineBufferArray_[j].data(), 0,
-                j * (/*display_.getLineSpacing() +*/ display_.getTextHeight()) -
+                j * (display_.getTextHeight()) -
                     display_.getTextHeight() *
                         (FULL_DECI_LINE_HEIGHT - NEWLINE_ONLY_DECI_LINE_HEIGHT) * newLineAdjust /
                         FULL_DECI_LINE_HEIGHT);
