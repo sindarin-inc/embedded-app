@@ -48,7 +48,11 @@ bool isPngEqual(std::string filepath1, std::string filepath2) {
             Uint32 pixel2 = pixels2[w + h * saveSurface2->w];
             SDL_GetRGB(pixel1, saveSurface1->format, &r1, &g1, &b1);
             SDL_GetRGB(pixel2, saveSurface2->format, &r2, &g2, &b2);
+            // std::cerr << "One time through\n";
             if ((r1 != r2) || (g1 != g2) || (b1 != b2)) {
+                std::cerr << "Got here and something went wrong " << w << " " << h << "\n";
+                std::cerr << r1 << " " << g1 << " " << b1 << "\n";
+                std::cerr << r2 << " " << g2 << " " << b2 << "\n";
                 return false;
             }
         }
