@@ -359,7 +359,7 @@ auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
         } else {
             display_.drawSingleLineOfText(
                 lineBufferArray_[j].data(), 0,
-                j * (display_.getLineSpacing() + display_.getTextHeight()) -
+                j * (/*display_.getLineSpacing() +*/ display_.getTextHeight()) -
                     display_.getTextHeight() *
                         (FULL_DECI_LINE_HEIGHT - NEWLINE_ONLY_DECI_LINE_HEIGHT) * newLineAdjust /
                         FULL_DECI_LINE_HEIGHT);
@@ -437,8 +437,7 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     // Note that get_text_height adds 1 over the max character height
     // change to deciLines for better newline performance
     int maxDeciLines =
-        (display_.height() - 2) / (this->display_.getTextHeight()) * FULL_DECI_LINE_HEIGHT -
-        FULL_DECI_LINE_HEIGHT * 3;
+        (display_.height() - 2) / (this->display_.getTextHeight()) * FULL_DECI_LINE_HEIGHT;
 
 #ifdef RENDERER_DEBUG
     log_d("BACKWARDS DISPLAY READOUT: %d, %d, %d", display_.height() - 2,
@@ -478,7 +477,7 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     // Step 3.
     // First, check the immediate paragraph for how many lines fit before
     // the passed in token;
-    while ((deciLinesInBuffer <= maxDeciLines) && (paragraphToken < currToken)) {
+    while (paragraphToken < currToken) {
         paragraphToken = getLineOfTextForRendering(paragraphToken, singleLine);
 #ifdef RENDERER_DEBUG
         log_d("paragraphToke: %d, currToke: %d, First PARAGRAPH ANALYSIS %s", paragraphToken,
@@ -545,9 +544,6 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         paragraphToken = prevParagraphToken - 1;
     } else {
         paragraphToken = 0;
-        // I'm not entirely sure why the corner case of the first page (when going back and
-        // hitting place 0) requires this, but it does.
-        linesInBuffer -= 3;
     }
 
     int overage = (deciLinesInBuffer + numDeciLinesInFirstParagraph) - maxDeciLines;
@@ -606,8 +602,7 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
     // Switch to 1/10 of a line as this gives us more flexibilty in rendering
     // precision between lines.
     int maxDeciLines =
-        ((display_.height() - 2) / (this->display_.getTextHeight())) * FULL_DECI_LINE_HEIGHT -
-        FULL_DECI_LINE_HEIGHT * 3;
+        ((display_.height() - 2) / (this->display_.getTextHeight())) * FULL_DECI_LINE_HEIGHT;
 
 #ifdef RENDERER_DEBUG
     log_d("Max lines calc: %d %d %d", display_.height(), display_.getTextHeight(),

@@ -170,7 +170,7 @@ void DisplaySystem::splitStringToLines(const std::string &stringToSplit,
 // But that's for another day.
 void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y) {
     gfxClass_->setTextColor(fg);
-    gfxClass_->setCursor(xOffset(x), yOffset(y + getTextHeight()));
+    gfxClass_->setCursor(xOffset(x), yOffset(y + getTextHeight() - lineSpacing_ - 3));
     gfxClass_->printf("%s", line.c_str());
 }
 
