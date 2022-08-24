@@ -139,6 +139,15 @@ void runBackwardsUnitTest(SDL_Window *window, SDL_Renderer *renderer) {
     std::cerr << "unit test passed\n";
 }
 
+void goBackNumPages(SDL_Window *window, SDL_Renderer *renderer, int numPages) {
+    int i = 0;
+
+    for (i = 0; i < numPages; i++) {
+        sendCodeAndRender(RemoteCommand::CHANNEL_MINUS, renderer);
+        usleep(1000000.0 / 240.0);
+    }
+}
+
 // Returns false if the program should quit
 auto mainLoop() -> bool {
     SDL_Event e;
@@ -171,6 +180,9 @@ auto mainLoop() -> bool {
                 break;
             case 'u':
                 runBackwardsUnitTest(window, renderer);
+                break;
+            case 'b':
+                goBackNumPages(window, renderer, 50);
                 break;
             }
 
