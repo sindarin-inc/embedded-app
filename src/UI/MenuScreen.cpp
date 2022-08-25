@@ -59,7 +59,7 @@ void MenuScreen::render(DisplaySystem &display) {
         return;
     }
     log_i("Menuscreen render (selected = %s)", getCurrItem().title.c_str());
-    // auto menuString = getPaginatedMenuString();
+
     auto batLife = power_.getBatteryLifeString();
     // TODO: Just rendering one gigantic screen limits our layout options here.
     // For example, it would be nice to have menu items take up multiple lines (e.g. Pocket articles

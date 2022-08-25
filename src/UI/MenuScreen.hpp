@@ -51,19 +51,6 @@ public:
 
     auto getItemAt(int index) -> MenuItem;
 
-    // Easy \n separated list of the items in the menu that can simply be passed
-    // to a display. May want to handle this in a Renderer? But for now, this
-    // is simple enough.
-    // auto getWholeMenuAsString() -> std::string;
-
-    // Allows the client to determine how many items from the menu it wants and
-    // to generate a string accordingly.
-    // Note it's up to the client to figure out what to do if the current
-    // selection is outside of this range.
-    // auto getMenuRangeAsString(int startItem, int endItem) -> std::string;
-
-    // auto getPaginatedMenuString() -> std::string;
-
     void render(DisplaySystem &display) override;
 
     void processCommand(RemoteCommand command) override;

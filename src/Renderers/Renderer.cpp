@@ -9,6 +9,13 @@
 // For deep logging when changing this file
 //#define RENDERER_DEBUG
 
+// This is the number of SUB-lines we want to split a line into
+// for the purpose of being able to render bare newlines as less
+// than a full line height of text. (Deci was chosen as 1/10)/
+// So what the two lines below mean is that a new line by itself
+// on a line will render as 4/10s of a full line height.
+// Theoretically we can do any percentage we want here, but there's
+// a lot of testing to do for that!
 #define FULL_DECI_LINE_HEIGHT 10
 #define NEWLINE_ONLY_DECI_LINE_HEIGHT 4
 
@@ -298,10 +305,7 @@ auto Renderer::getLineOfTextForRendering(unsigned int placeInTokenBuffer, LineBu
         bufferPlace--;
     }
 
-    int i;
-
-    // Never done something like this before, but it should do the trick!
-    for (i = placeInTokenBuffer; i < bufferPlace; i++) {
+    for (int i = placeInTokenBuffer; i < bufferPlace; i++) {
         if (currTokenBuffer_[i].token != TOKEN_EOF) {
             // Skip over a space if it's the first token in the line.
             if ((i == placeInTokenBuffer) && (currTokenBuffer_[i].token == TOKEN_SPACE)) {
