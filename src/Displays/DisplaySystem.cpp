@@ -170,6 +170,14 @@ void DisplaySystem::splitStringToLines(const std::string &stringToSplit,
 // But that's for another day.
 void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y) {
     gfxClass_->setTextColor(fg);
+    // We are allowing the this method to take an the upper left corner of the text
+    // as an argument. But the setCursor method takes the lower left corner of text
+    // to be drawn (or rather, that's how printf does it). So we need to adjust the
+    // y value by the height of the font. getTextHeight includes lineSpacing_ so
+    // we subtract that out.
+    // The magic number (3) is a hack for now to handle the bottom of the display.
+    // Need to investigate why the text is getting cut off when the y dimension is
+    // all the way at the bottom. This hasn't impacted the top.
     gfxClass_->setCursor(xOffset(x), yOffset(y + getTextHeight() - lineSpacing_ - 3));
     gfxClass_->printf("%s", line.c_str());
 }
