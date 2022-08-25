@@ -34,7 +34,7 @@ SDL_Texture *arrowTexture;
 Uint8 arrowOpacity = 0;
 double arrowRotation = 0;
 
-bool diffTwoPngs(std::string filepath1, std::string filepath2) {
+bool isPngEqual(std::string filepath1, std::string filepath2) {
     SDL_Surface *saveSurface1 = IMG_Load(filepath1.c_str());
     SDL_Surface *saveSurface2 = IMG_Load(filepath2.c_str());
 
@@ -120,9 +120,7 @@ void sendCodeAndRender(RemoteCommand command, SDL_Renderer *renderer) {
 
 // Only press 'u' when you are on a page in a readable.
 void runBackwardsUnitTest(SDL_Window *window, SDL_Renderer *renderer) {
-    int i = 0;
-
-    for (i = 0; i < 50; i++) {
+    for (int i = 0; i < 50; i++) {
         saveScreenshotPng("current.png", window, renderer);
         sendCodeAndRender(RemoteCommand::CHANNEL_PLUS, renderer);
         saveScreenshotPng("next.png", window, renderer);
@@ -132,12 +130,11 @@ void runBackwardsUnitTest(SDL_Window *window, SDL_Renderer *renderer) {
         saveScreenshotPng("nextprev.png", window, renderer);
         // compare the most two recent pngs -- they should be the same.
         // if not, error out.
-        if (!diffTwoPngs("./next.png", "./nextprev.png")) {
+        if (!isPngEqual("./next.png", "./nextprev.png")) {
             std::cerr << "images don't match, sad face\n";
             std::cerr << "check out next.png and nextprev.png for the diffs\n";
             exit(1);
         }
-        usleep(1000000.0 / 240.0);
     }
     std::cerr << "unit test passed\n";
 }
