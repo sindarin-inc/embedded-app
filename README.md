@@ -91,6 +91,18 @@ The simulator compiles in <3s from a clean build, and even less on an incrementa
 
 You'll need SDL2 & openssl for it to work: `brew install sdl2 sdl2_image openssl`. But then you can just hit the upload button in VSCode+PlatformIO and it should build and run! We haven't figured out how to get VSCode to properly debug the binary yet, but for now you can use the command line: `pio run -e simulator && lldb .pio/build/simulator/program`. Enjoy!
 
+To run any of the testsuite stuff, you'll need a very specific version of the `sdl2_image` package (2.0.5), because latest versions have a bug in reading in RGB values from pngs that we haven't debugged and fixed yet. Do a `brew info sdl2_image` -- if it's not 2.0.5, then do the following:
+
+`brew uninstall sdl2_image`
+
+`find $(brew --prefix) -name sdl2_image.rb`
+
+That should show you where the current formula lives. Replace that file with the formula found in `lib/Simulator/sdl2_image.rb`
+
+Then run: `brew install sdl2_image`
+
+You can then confirm you have version 2.0.5 with `brew info sdl2_image`
+
 ## Erasing / Resetting Non-Volatile Storage (NVS)
 
 You can erase NVS/Preferences from the command line using esptool. You can either erase the entire internal flash with:
