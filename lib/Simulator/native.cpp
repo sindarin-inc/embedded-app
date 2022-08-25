@@ -120,7 +120,7 @@ void sendCodeAndRender(RemoteCommand command, SDL_Renderer *renderer) {
 
 // Only press 'u' when you are on a page in a readable.
 void runBackwardsUnitTest(SDL_Window *window, SDL_Renderer *renderer) {
-    for (int i = 0; i < 50; i++) {
+    for (int i = 0; i < 500; i++) {
         saveScreenshotPng("current.png", window, renderer);
         sendCodeAndRender(RemoteCommand::CHANNEL_PLUS, renderer);
         saveScreenshotPng("next.png", window, renderer);
