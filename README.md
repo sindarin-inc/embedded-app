@@ -99,6 +99,10 @@ To run any of the testsuite stuff, you'll need a very specific version of the `s
 
 That should show you where the current formula lives. Replace that file with the formula found in `lib/Simulator/sdl2_image.rb`
 
+The magic incatation to do it all is:
+
+`find $(brew --prefix) -name sdl2_image.rb | xargs -I {} cp lib/Simulator/sdl2_image.rb {}`
+
 Then run: `brew install sdl2_image`
 
 You can then confirm you have version 2.0.5 with `brew info sdl2_image`
