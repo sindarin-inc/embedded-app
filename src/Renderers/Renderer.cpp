@@ -419,6 +419,12 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     unsigned long seekPlace = 0;
 
     // Step 1 (See above)
+    // You may wonder why we don't just seek backwards one characater at a time
+    // and tokenize from there. Doing a seek is much slower than reading a character
+    // as you can see in the ben/timing-seek-science branch.
+    // Reading forwards by this amount takes about 75ms. Reading backwards one character
+    // at a time takes about 390ms. So it's about 5x slower.
+    //
     if (place >= MAX_CHARS_PER_PAGE) {
         // Need to make sure we're at least 1 character past the place given. For tokenizer.
         seekPlace = place - MAX_CHARS_PER_PAGE + 2;
