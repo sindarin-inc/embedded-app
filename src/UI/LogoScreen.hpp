@@ -39,6 +39,8 @@ public:
                          display.fg);
 
         display.updateDisplay();
+
+        needsRerender = false;
     }
 };
 
