@@ -58,8 +58,10 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     // Middle circle
     uint16_t midX = display.width() / 2;
     uint16_t midY = display.height() / 2;
-    display.fillCircle(midX, midY, 40, display.fg);
-    display.fillRect(midX - 32, midY - 32, 64, 64, display.bg);
+    display.fillCircle(midX, midY, POPUP_MENU_RADIUS, display.fg);
+    display.fillRect(midX - POPUP_MENU_RADIUS * 1.6 / 2, midY - POPUP_MENU_RADIUS * 1.6 / 2,
+                     POPUP_MENU_RADIUS * 1.6, POPUP_MENU_RADIUS * 1.6, display.bg);
+
     display.setFont(display.style.getFontFamily().popupFont);
 
     // Now draw!
@@ -72,24 +74,21 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     uint16_t heightOffset = display.getTextHeight();
 
     // These magic numbers are just based on trying to make it look right
-    // drawBattery(display, (screenWidth / 2) - 12, (screenHeight / 2) - 1, (int)batteryPercentage);
+    drawBattery(display, (screenWidth / 2) - 12, (screenHeight / 2) - 1, (int)batteryPercentage);
 
     display.getTextBounds(batteryStatus.c_str(), &textWidth, &textHeight);
 
     display.setFont(display.style.getFontFamily().popupFont);
-<<<<<<< HEAD
-    display.getTextBounds(batteryStatus.c_str(), &textWidth, &textHeight);
-    // display.getTextBounds("Text", &textWidth, &textHeight);
-=======
+
     // display.getTextBounds(batteryStatus.c_str(), &textWidth, &textHeight);
     display.getTextBounds("Text", &textWidth, &textHeight);
->>>>>>> 56e5564 (add popup idea based on CS logo 4)
 
     // Similar to the above, magic numbers are just to make it look nice
-    /*  display.drawSingleLineOfText(batteryStatus.c_str(), (screenWidth / 2) - (textWidth / 2),
-                                   (screenHeight / 2) + (textHeight / 2) - 9 - heightOffset);*/
-    display.drawSingleLineOfText("Text", (screenWidth / 2) - (textWidth / 2),
-                                 screenHeight / 2 - textHeight / 2);
+    display.drawSingleLineOfText(batteryStatus.c_str(), (screenWidth / 2) - (textWidth / 2),
+                                 (screenHeight / 2) + (textHeight / 2) - 9 - heightOffset);
+
+    // display.drawSingleLineOfText("Text", (screenWidth / 2) - (textWidth / 2),
+    //                              screenHeight / 2 - textHeight / 2);
 
     // display.drawSingleLineOfText("Text", (screenWidth / 2) - (textWidth / 2),
     //                              screenHeight / 2 - textHeight / 2);
@@ -107,7 +106,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     display.drawSingleLineOfText(bottomStr, (screenWidth / 2) - (textWidth / 2),
                                  (screenHeight / 2) + (textHeight / 2) + 40);
 
-    auto topStr = "Font";
+    auto topStr = "Text";
     display.getTextBounds(topStr, &textWidth, &textHeight);
     display.drawSingleLineOfText(topStr, (screenWidth / 2) - (textWidth / 2),
                                  screenHeight / 2 - POPUP_MENU_BLANK_HEIGHT / 3 - heightOffset);
