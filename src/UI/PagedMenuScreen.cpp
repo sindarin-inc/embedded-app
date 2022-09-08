@@ -197,18 +197,31 @@ void PagedMenuScreen::prevSelection() {
 void PagedMenuScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::PREV:
+<<<<<<< HEAD
         // Settings are always the last item
         currSelection_ = numMenuItems_ - 1;
         if (getCurrItem().callback != nullptr) {
             getCurrItem().callback();
         }
+=======
+
+        prevSelection();
+        needsRerender = true;
+>>>>>>> 56e5564 (add popup idea based on CS logo 4)
         break;
 
     case RemoteCommand::NEXT:
+        nextSelection();
+        needsRerender = true;
+
+        break;
+    case RemoteCommand::ENTER:
+
         if (getCurrItem().callback != nullptr) {
             getCurrItem().callback();
         }
         break;
+<<<<<<< HEAD
         // Pocket articles is always one from the last
         /*
         currSelection_ = numMenuItems_ - 2;
@@ -228,12 +241,23 @@ void PagedMenuScreen::processCommand(RemoteCommand command) {
         nextSelection();
         needsRerender = true;
 
+=======
+    case RemoteCommand::CHANNEL_PLUS:
+        // Pocket articles is always one from the last
+        currSelection_ = numMenuItems_ - 2;
+        if (getCurrItem().callback != nullptr) {
+            getCurrItem().callback();
+        }
+>>>>>>> 56e5564 (add popup idea based on CS logo 4)
         break;
 
     case RemoteCommand::BACK:
     case RemoteCommand::CHANNEL_MINUS:
-        prevSelection();
-        needsRerender = true;
+        // Settings are always the last item
+        currSelection_ = numMenuItems_ - 1;
+        if (getCurrItem().callback != nullptr) {
+            getCurrItem().callback();
+        }
         break;
     default:
         break;
