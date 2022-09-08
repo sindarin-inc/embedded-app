@@ -387,9 +387,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 
 #if !DISABLE_WIFI
-    // if (!ConnectWiFiIfCredentialsExist()) {
-    //     bootErrors.push_back({.type = BootError::Type::WiFi});
-    // }
+    if (!ConnectWiFiIfCredentialsExist()) {
+        bootErrors.push_back({.type = BootError::Type::WiFi});
+    }
 
 #if ENABLE_OTA
     // Disabling for now since WiFi coexistance is not working
