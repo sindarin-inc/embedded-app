@@ -525,7 +525,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
         setCurrentScreen(*mainMenu);
     };
 
-    mainMenu->addMenuItem(MenuItem("**SETTINGS**", [this, settingsMenu]() {
+    mainMenu->addMenuItem(MenuItem("settings", [this, settingsMenu]() {
         this->display_->clearDisplay();
         setCurrentScreen(*settingsMenu);
     }));
