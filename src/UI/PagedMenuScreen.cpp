@@ -19,16 +19,26 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     uint16_t midY = display.height() / 2;
 
     // Top Arrow
-    display.drawLine(midX, 20, midX - 10, 25, display.fg);
-    display.drawLine(midX, 20, midX + 10, 25, display.fg);
+    display.drawLine(midX, 42, midX - 10, 47, display.fg);
+    display.drawLine(midX, 42, midX + 10, 47, display.fg);
 
     // Bottom Arrow
-    display.drawLine(midX, midY * 2 - 20, midX - 10, midY * 2 - 25, display.fg);
-    display.drawLine(midX, midY * 2 - 20, midX + 10, midY * 2 - 25, display.fg);
+    display.drawLine(midX, midY * 2 - 40, midX - 10, midY * 2 - 45, display.fg);
+    display.drawLine(midX, midY * 2 - 40, midX + 10, midY * 2 - 45, display.fg);
+
+    // Left Arrow
+    display.drawLine(10, midY, 15, midY - 10, display.fg);
+    display.drawLine(10, midY, 15, midY + 10, display.fg);
+
+    // Right Arrow
+    display.drawLine(midX * 2 - 10, midY, midX * 2 - 15, midY - 10, display.fg);
+    display.drawLine(midX * 2 - 10, midY, midX * 2 - 15, midY + 10, display.fg);
 
     // Middle circle
-    display.fillCircle(midX, midY, 80, display.fg);
-    display.fillRect(midX - 64, midY - 64, 128, 128, display.bg);
+    uint radius = display.height() / 256 * 80;
+    display.fillCircle(midX, midY, radius, display.fg);
+    display.fillRect(midX - radius * 0.8, midY - radius * 0.8, radius * 1.6, radius * 1.6,
+                     display.bg);
 
     // display.drawXBitmap((int16_t)((display.width() - MENU2_BLANK_WIDTH) / 2),
     //                     (int16_t)((display.height() - MENU2_BLANK_HEIGHT) / 2), MENU2_BLANK_BITS,
@@ -62,11 +72,11 @@ void PagedMenuScreen::render(DisplaySystem &display) {
 
     display.getTextBounds("Settings", &width, &height);
 
-    display.drawSingleLineOfText("Settings", 10, midY - height / 2);
+    display.drawSingleLineOfText("Settings", screenWidth / 2 - width / 2, 28);
 
-    display.getTextBounds("Articles", &width, &height);
+    display.getTextBounds("Read", &width, &height);
 
-    display.drawSingleLineOfText("Articles", screenWidth - width - 10, midY - height / 2);
+    display.drawSingleLineOfText("Read", screenWidth / 2 - width / 2, screenHeight - 30 - height);
 
     display.updateDisplay();
 
@@ -193,15 +203,26 @@ void PagedMenuScreen::prevSelection() {
 void PagedMenuScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::PREV:
-
-        prevSelection();
-        needsRerender = true;
+        // Settings are always the last item
+        currSelection_ = numMenuItems_ - 1;
+        if (getCurrItem().callback != nullptr) {
+            getCurrItem().callback();
+        }
         break;
+
     case RemoteCommand::NEXT:
-        nextSelection();
-        needsRerender = true;
-
+        if (getCurrItem().callback != nullptr) {
+            getCurrItem().callback();
+        }
         break;
+        // Pocket articles is always one from the last
+        /*
+        currSelection_ = numMenuItems_ - 2;
+        if (getCurrItem().callback != nullptr) {
+            getCurrItem().callback();
+        }
+        break;*/
+
     case RemoteCommand::ENTER:
 
         if (getCurrItem().callback != nullptr) {
@@ -210,25 +231,15 @@ void PagedMenuScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::CHANNEL_PLUS:
 
-        if (getCurrItem().callback != nullptr) {
-            getCurrItem().callback();
-        }
+        nextSelection();
+        needsRerender = true;
+
         break;
 
-        // Pocket articles is always one from the last
-        /*
-        currSelection_ = numMenuItems_ - 2;
-        if (getCurrItem().callback != nullptr) {
-            getCurrItem().callback();
-        }
-        break;*/
     case RemoteCommand::BACK:
     case RemoteCommand::CHANNEL_MINUS:
-        // Settings are always the last item
-        currSelection_ = numMenuItems_ - 1;
-        if (getCurrItem().callback != nullptr) {
-            getCurrItem().callback();
-        }
+        prevSelection();
+        needsRerender = true;
         break;
     default:
         break;
