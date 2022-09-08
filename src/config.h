@@ -18,7 +18,7 @@
 // Turn Touch (BLE client in firmware). Enable one of these options or the
 // other.
 #ifndef USE_TURN_TOUCH_REMOTE
-#define USE_TURN_TOUCH_REMOTE 0
+#define USE_TURN_TOUCH_REMOTE 1
 #endif
 #ifndef USE_BLE_SERVER_REMOTE
 #define USE_BLE_SERVER_REMOTE 1
