@@ -47,11 +47,19 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     // Draw menu surroundings
     log_d("RENDERING Popup menu bitmap %d %d %d %d", display.width(), display.height(),
           POPUP_MENU_BLANK_WIDTH, POPUP_MENU_BLANK_HEIGHT);
-    display.drawXBitmap((int16_t)((display.width() - POPUP_MENU_BLANK_WIDTH) / 2),
-                        (int16_t)((display.height() - POPUP_MENU_BLANK_HEIGHT) / 2),
-                        popupMenuBlankBits, POPUP_MENU_BLANK_WIDTH, POPUP_MENU_BLANK_HEIGHT,
-                        display.fg);
 
+    /*
+     display.drawXBitmap((int16_t)((display.width() - POPUP_MENU_BLANK_WIDTH) / 2),
+                         (int16_t)((display.height() - POPUP_MENU_BLANK_HEIGHT) / 2),
+                         popupMenuBlankBits, POPUP_MENU_BLANK_WIDTH, POPUP_MENU_BLANK_HEIGHT,
+                         display.fg);
+ */
+
+    // Middle circle
+    uint16_t midX = display.width() / 2;
+    uint16_t midY = display.height() / 2;
+    display.fillCircle(midX, midY, 40, display.fg);
+    display.fillRect(midX - 32, midY - 32, 64, 64, display.bg);
     display.setFont(display.style.getFontFamily().popupFont);
 
     // Now draw!
@@ -64,16 +72,19 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     uint16_t heightOffset = display.getTextHeight();
 
     // These magic numbers are just based on trying to make it look right
-    drawBattery(display, (screenWidth / 2) - 12, (screenHeight / 2) - 1, (int)batteryPercentage);
+    // drawBattery(display, (screenWidth / 2) - 12, (screenHeight / 2) - 1, (int)batteryPercentage);
 
     display.getTextBounds(batteryStatus.c_str(), &textWidth, &textHeight);
 
     display.setFont(display.style.getFontFamily().popupFont);
-    display.getTextBounds(batteryStatus.c_str(), &textWidth, &textHeight);
+    // display.getTextBounds(batteryStatus.c_str(), &textWidth, &textHeight);
+    display.getTextBounds("Text", &textWidth, &textHeight);
 
     // Similar to the above, magic numbers are just to make it look nice
-    display.drawSingleLineOfText(batteryStatus.c_str(), (screenWidth / 2) - (textWidth / 2),
-                                 (screenHeight / 2) + (textHeight / 2) - 9 - heightOffset);
+    /*  display.drawSingleLineOfText(batteryStatus.c_str(), (screenWidth / 2) - (textWidth / 2),
+                                   (screenHeight / 2) + (textHeight / 2) - 9 - heightOffset);*/
+    display.drawSingleLineOfText("Text", (screenWidth / 2) - (textWidth / 2),
+                                 screenHeight / 2 - textHeight / 2);
 
     size_t place = renderer_.getCurrentPlace();
     size_t lengthOfFile = renderer_.size();
@@ -86,10 +97,9 @@ void PopupMenuScreen::render(DisplaySystem &display) {
 
     display.getTextBounds(bottomStr.c_str(), &textWidth, &textHeight);
     display.drawSingleLineOfText(bottomStr, (screenWidth / 2) - (textWidth / 2),
-                                 (screenHeight / 2) + (textHeight / 2) +
-                                     POPUP_MENU_BLANK_HEIGHT / 3 - heightOffset);
+                                 (screenHeight / 2) + (textHeight / 2) + 40);
 
-    auto topStr = "Text";
+    auto topStr = "Font";
     display.getTextBounds(topStr, &textWidth, &textHeight);
     display.drawSingleLineOfText(topStr, (screenWidth / 2) - (textWidth / 2),
                                  screenHeight / 2 - POPUP_MENU_BLANK_HEIGHT / 3 - heightOffset);
@@ -97,14 +107,14 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     display.getTextBounds(leftButtonTitle_.c_str(), &textWidth, &textHeight);
     display.drawSingleLineOfText(leftButtonTitle_.c_str(),
                                  (display.width() - POPUP_MENU_BLANK_WIDTH) / 2 - textWidth / 2,
-                                 (screenHeight / 2) - heightOffset + 1);
+                                 (screenHeight / 2) - textHeight / 2);
 
     auto rightStr = "Invert";
     display.getTextBounds(rightStr, &textWidth, &textHeight);
     display.drawSingleLineOfText(
         rightStr,
         (display.width() - ((display.width() - POPUP_MENU_BLANK_WIDTH) / 2) - textWidth / 2),
-        (screenHeight / 2) - heightOffset + 1);
+        (screenHeight / 2) - textHeight / 2);
 
     display.updateDisplay();
     display.setFont(display.style.getFontFamily().readableFont);
