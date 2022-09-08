@@ -2,7 +2,7 @@
 #include "UI/BitmapScreen.hpp"
 #include "UI/Bitmaps/Logo.hpp"
 
-#define LOGO_O_RADIUS 15
+#define LOGO_O_RADIUS 80
 #define LOGO_CHARACTER_SPACING 6
 #define LOGO_L_HEIGHT 80
 #define LOGO_L_WIDTH 34
@@ -20,23 +20,22 @@ public:
            2, bitmap_, width_, height_, display.fg);
         */
         /* #4 */
-        /*
-                display.fillCircle(display.width() / 2, display.height() / 2, LOGO_O_RADIUS,
-           display.fg);
 
-                display.fillRect(display.width() / 2 - LOGO_O_RADIUS * 1.6 / 2 + 1,
-                                 display.height() / 2 - LOGO_O_RADIUS * 1.6 / 2 + 1, LOGO_O_RADIUS
-           * 1.6, LOGO_O_RADIUS * 1.6, display.bg);
+        display.fillCircle(display.width() / 2, display.height() / 2, LOGO_O_RADIUS, display.fg);
 
-        */
+        display.fillRect(display.width() / 2 - LOGO_O_RADIUS * 1.6 / 2 + 1,
+                         display.height() / 2 - LOGO_O_RADIUS * 1.6 / 2 + 1, LOGO_O_RADIUS * 1.6,
+                         LOGO_O_RADIUS * 1.6, display.bg);
+
         /* #1 */
+        /*
+                display.fillRect(display.width() / 2 - LOGO_O_RADIUS * 5 / 2,
+                                 display.height() / 2 - LOGO_O_RADIUS * 5 / 2, LOGO_O_RADIUS * 5,
+                                 LOGO_O_RADIUS * 5, display.fg);
 
-        display.fillRect(display.width() / 2 - LOGO_O_RADIUS * 5 / 2,
-                         display.height() / 2 - LOGO_O_RADIUS * 5 / 2, LOGO_O_RADIUS * 5,
-                         LOGO_O_RADIUS * 5, display.fg);
-
-        display.fillCircle(display.width() / 2, display.height() / 2, LOGO_O_RADIUS, display.bg);
-
+                display.fillCircle(display.width() / 2, display.height() / 2, LOGO_O_RADIUS,
+           display.bg);
+        */
         display.updateDisplay();
 
         needsRerender = false;
