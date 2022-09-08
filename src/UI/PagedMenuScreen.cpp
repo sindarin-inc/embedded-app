@@ -62,19 +62,11 @@ void PagedMenuScreen::render(DisplaySystem &display) {
 
     display.getTextBounds("Settings", &width, &height);
 
-<<<<<<< HEAD
-    display.drawSingleLineOfText("Settings", screenWidth / 2 - width / 2, 28);
-
-    display.getTextBounds("Read", &width, &height);
-
-    display.drawSingleLineOfText("Read", screenWidth / 2 - width / 2, screenHeight - 30 - height);
-=======
     display.drawSingleLineOfText("Settings", 10, midY - height / 2);
 
     display.getTextBounds("Articles", &width, &height);
 
     display.drawSingleLineOfText("Articles", screenWidth - width - 10, midY - height / 2);
->>>>>>> cbdc880 (use CS logo as main menu concept)
 
     display.updateDisplay();
 
@@ -247,14 +239,23 @@ void PagedMenuScreen::processCommand(RemoteCommand command) {
 
 =======
     case RemoteCommand::CHANNEL_PLUS:
-        // Pocket articles is always one from the last
-        currSelection_ = numMenuItems_ - 2;
+
         if (getCurrItem().callback != nullptr) {
             getCurrItem().callback();
         }
 >>>>>>> 56e5564 (add popup idea based on CS logo 4)
         break;
 
+<<<<<<< HEAD
+=======
+        // Pocket articles is always one from the last
+        /*
+        currSelection_ = numMenuItems_ - 2;
+        if (getCurrItem().callback != nullptr) {
+            getCurrItem().callback();
+        }
+        break;*/
+>>>>>>> 75ec884 (make TT work again and connect wifi if there)
     case RemoteCommand::BACK:
     case RemoteCommand::CHANNEL_MINUS:
         // Settings are always the last item
