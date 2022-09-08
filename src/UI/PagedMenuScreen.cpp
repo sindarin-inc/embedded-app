@@ -19,30 +19,16 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     uint16_t midY = display.height() / 2;
 
     // Top Arrow
-    display.drawLine(midX, 42, midX - 10, 47, display.fg);
-    display.drawLine(midX, 42, midX + 10, 47, display.fg);
+    display.drawLine(midX, 20, midX - 10, 25, display.fg);
+    display.drawLine(midX, 20, midX + 10, 25, display.fg);
 
     // Bottom Arrow
-    display.drawLine(midX, midY * 2 - 40, midX - 10, midY * 2 - 45, display.fg);
-    display.drawLine(midX, midY * 2 - 40, midX + 10, midY * 2 - 45, display.fg);
-
-    // Left Arrow
-    display.drawLine(10, midY, 15, midY - 10, display.fg);
-    display.drawLine(10, midY, 15, midY + 10, display.fg);
-
-    // Right Arrow
-    display.drawLine(midX * 2 - 10, midY, midX * 2 - 15, midY - 10, display.fg);
-    display.drawLine(midX * 2 - 10, midY, midX * 2 - 15, midY + 10, display.fg);
+    display.drawLine(midX, midY * 2 - 20, midX - 10, midY * 2 - 25, display.fg);
+    display.drawLine(midX, midY * 2 - 20, midX + 10, midY * 2 - 25, display.fg);
 
     // Middle circle
-    uint radius = display.height() / 256 * 80;
-    display.fillCircle(midX, midY, radius, display.fg);
-    display.fillRect(midX - radius * 0.8, midY - radius * 0.8, radius * 1.6, radius * 1.6,
-                     display.bg);
-
-    // display.drawXBitmap((int16_t)((display.width() - MENU2_BLANK_WIDTH) / 2),
-    //                     (int16_t)((display.height() - MENU2_BLANK_HEIGHT) / 2), MENU2_BLANK_BITS,
-    //                     MENU2_BLANK_WIDTH, MENU2_BLANK_HEIGHT, display.fg);
+    display.fillCircle(midX, midY, 80, display.fg);
+    display.fillRect(midX - 64, midY - 64, 128, 128, display.bg);
 
     display.setFont(display.style.getFontFamily().mainMenuFont);
     auto itemTitle = getCurrItem().title;
@@ -72,11 +58,19 @@ void PagedMenuScreen::render(DisplaySystem &display) {
 
     display.getTextBounds("Settings", &width, &height);
 
+<<<<<<< HEAD
     display.drawSingleLineOfText("Settings", screenWidth / 2 - width / 2, 28);
 
     display.getTextBounds("Read", &width, &height);
 
     display.drawSingleLineOfText("Read", screenWidth / 2 - width / 2, screenHeight - 30 - height);
+=======
+    display.drawSingleLineOfText("Settings", 10, midY - height / 2);
+
+    display.getTextBounds("Articles", &width, &height);
+
+    display.drawSingleLineOfText("Articles", screenWidth - width - 10, midY - height / 2);
+>>>>>>> cbdc880 (use CS logo as main menu concept)
 
     display.updateDisplay();
 
