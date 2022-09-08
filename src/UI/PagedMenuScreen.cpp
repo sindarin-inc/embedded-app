@@ -19,20 +19,20 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     uint16_t midY = display.height() / 2;
 
     // Top Arrow
-    // display.drawLine(midX, 20, midX - 10, 25, display.fg);
-    // display.drawLine(midX, 20, midX + 10, 25, display.fg);
+    display.drawLine(midX, 20, midX - 10, 25, display.fg);
+    display.drawLine(midX, 20, midX + 10, 25, display.fg);
 
     // Bottom Arrow
-    // display.drawLine(midX, midY * 2 - 20, midX - 10, midY * 2 - 25, display.fg);
-    // display.drawLine(midX, midY * 2 - 20, midX + 10, midY * 2 - 25, display.fg);
+    display.drawLine(midX, midY * 2 - 20, midX - 10, midY * 2 - 25, display.fg);
+    display.drawLine(midX, midY * 2 - 20, midX + 10, midY * 2 - 25, display.fg);
 
     // Middle circle
-    // display.fillCircle(midX, midY, 80, display.fg);
-    // display.fillRect(midX - 64, midY - 64, 128, 128, display.bg);
+    display.fillCircle(midX, midY, 80, display.fg);
+    display.fillRect(midX - 64, midY - 64, 128, 128, display.bg);
 
-    display.drawXBitmap((int16_t)((display.width() - MENU2_BLANK_WIDTH) / 2),
-                        (int16_t)((display.height() - MENU2_BLANK_HEIGHT) / 2), MENU2_BLANK_BITS,
-                        MENU2_BLANK_WIDTH, MENU2_BLANK_HEIGHT, display.fg);
+    // display.drawXBitmap((int16_t)((display.width() - MENU2_BLANK_WIDTH) / 2),
+    //                     (int16_t)((display.height() - MENU2_BLANK_HEIGHT) / 2), MENU2_BLANK_BITS,
+    //                     MENU2_BLANK_WIDTH, MENU2_BLANK_HEIGHT, display.fg);
 
     display.setFont(display.style.getFontFamily().mainMenuFont);
     auto itemTitle = getCurrItem().title;
