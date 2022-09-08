@@ -14,6 +14,64 @@
 #define MAX_WIDTH 152
 
 void PagedMenuScreen::render(DisplaySystem &display) {
+
+    uint16_t midX = display.width() / 2;
+    uint16_t midY = display.height() / 2;
+
+    // Top Arrow
+    display.drawLine(midX, 20, midX - 10, 25, display.fg);
+    display.drawLine(midX, 20, midX + 10, 25, display.fg);
+
+    // Bottom Arrow
+    display.drawLine(midX, midY * 2 - 20, midX - 10, midY * 2 - 25, display.fg);
+    display.drawLine(midX, midY * 2 - 20, midX + 10, midY * 2 - 25, display.fg);
+
+    // Middle circle
+    display.fillCircle(midX, midY, 80, display.fg);
+    display.fillRect(midX - 64, midY - 64, 128, 128, display.bg);
+
+    display.setFont(display.style.getFontFamily().mainMenuFont);
+    auto itemTitle = getCurrItem().title;
+    uint16_t width, height;
+
+    display.getTextBounds(itemTitle.c_str(), &width, &height);
+    uint16_t screenWidth = display.width();
+    uint16_t screenHeight = display.height();
+
+    display.drawSingleLineOfText(itemTitle.c_str(), (screenWidth / 2) - (width / 2),
+                                 (screenHeight / 2) - (display.getTextHeight()) / 2);
+    display.setFont(display.style.getFontFamily().readableFont);
+
+    auto prevTitle = getItemAt((currSelection_ > 0) ? ((currSelection_ - 1) % numMenuItems_)
+                                                    : (numMenuItems_ - 1))
+                         .title;
+    auto nextTitle = getItemAt((currSelection_ + 1) % numMenuItems_).title;
+
+    display.getTextBounds(prevTitle.c_str(), &width, &height);
+
+    // display.drawSingleLineOfText(prevTitle.c_str(), (screenWidth / 2) - (width / 2), 20);
+
+    display.getTextBounds(nextTitle.c_str(), &width, &height);
+
+    // display.drawSingleLineOfText(nextTitle.c_str(), (screenWidth / 2) - (width / 2),
+    //                             (screenHeight - 20 - display.getTextHeight()));
+
+    display.getTextBounds("Settings", &width, &height);
+
+    display.drawSingleLineOfText("Settings", 10, midY - height / 2);
+
+    display.getTextBounds("Articles", &width, &height);
+
+    display.drawSingleLineOfText("Articles", screenWidth - width - 10, midY - height / 2);
+
+    display.updateDisplay();
+
+    // display.drawLine(display.fg);
+    needsRerender = false;
+}
+
+/*
+void PagedMenuScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
     }
@@ -94,6 +152,7 @@ void PagedMenuScreen::render(DisplaySystem &display) {
 
     needsRerender = false;
 }
+*/
 
 void PagedMenuScreen::nextSelection() { currSelection_ = (currSelection_ + 1) % numMenuItems_; }
 

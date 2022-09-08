@@ -93,6 +93,10 @@ public:
     void drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) {
         gfxClass_->drawCircle(xOffset(x0), yOffset(y0), r, color);
     }
+
+    void fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) {
+        gfxClass_->fillCircle(xOffset(x0), yOffset(y0), r, color);
+    }
     void setCursor(int16_t x, int16_t y) { gfxClass_->setCursor(xOffset(x), yOffset(y)); }
     template <typename T>
     auto println(T in) -> size_t {
