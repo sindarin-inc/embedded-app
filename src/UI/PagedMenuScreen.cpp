@@ -154,10 +154,21 @@ void PagedMenuScreen::render(DisplaySystem &display) {
 }
 */
 
-void PagedMenuScreen::nextSelection() { currSelection_ = (currSelection_ + 1) % numMenuItems_; }
+void PagedMenuScreen::nextSelection() {
+    currSelection_ = (currSelection_ + 1) % numMenuItems_;
+    if (currSelection_ == numMenuItems_ - 2) {
+        currSelection_ = 0;
+    }
+    needsRerender = true;
+}
 
 void PagedMenuScreen::prevSelection() {
     currSelection_ = (currSelection_ + numMenuItems_ - 1) % numMenuItems_;
+    if (currSelection_ == numMenuItems_ - 1) {
+        // If there are 0 readables, this breaks the menu
+        currSelection_ = numMenuItems_ - 3;
+    }
+    needsRerender = true;
 }
 
 //
@@ -178,35 +189,35 @@ void PagedMenuScreen::prevSelection() {
 void PagedMenuScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::PREV:
-        // Discussion for BC and JB around the right way to change the inversion
-        // settting here. Should processCommand take a display? That seems clunky.
-        // But unlike the Readable, we don't have a clear path to the display here.
-        // Also need to get the prefs. Maybe it needs to be a callback. Not critical
-        // as this is a nice to have to invert the display here. So maybe we don't
-        // care at all.
-        //
-        // SOMEHOWgetDisplay()->flipInversion();
-        // SOMEHOWGETprefs_.invertSetting.set(SOMEHOWgetDisplay()->getInversion());
-        // needsRerender = true;
 
-        if (backCallback != nullptr) {
-            backCallback();
-        }
+        prevSelection();
+        needsRerender = true;
         break;
     case RemoteCommand::NEXT:
+        nextSelection();
+        needsRerender = true;
+
+        break;
+    case RemoteCommand::ENTER:
+
         if (getCurrItem().callback != nullptr) {
             getCurrItem().callback();
         }
         break;
-    case RemoteCommand::ENTER:
     case RemoteCommand::CHANNEL_PLUS:
-        nextSelection();
-        needsRerender = true;
+        // Pocket articles is always one from the last
+        currSelection_ = numMenuItems_ - 2;
+        if (getCurrItem().callback != nullptr) {
+            getCurrItem().callback();
+        }
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::CHANNEL_MINUS:
-        prevSelection();
-        needsRerender = true;
+        // Settings are always the last item
+        currSelection_ = numMenuItems_ - 1;
+        if (getCurrItem().callback != nullptr) {
+            getCurrItem().callback();
+        }
         break;
     default:
         break;
