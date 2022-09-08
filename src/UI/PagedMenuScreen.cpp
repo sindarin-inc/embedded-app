@@ -209,12 +209,19 @@ void PagedMenuScreen::processCommand(RemoteCommand command) {
         }
         break;
     case RemoteCommand::CHANNEL_PLUS:
-        // Pocket articles is always one from the last
-        currSelection_ = numMenuItems_ - 2;
+
         if (getCurrItem().callback != nullptr) {
             getCurrItem().callback();
         }
         break;
+
+        // Pocket articles is always one from the last
+        /*
+        currSelection_ = numMenuItems_ - 2;
+        if (getCurrItem().callback != nullptr) {
+            getCurrItem().callback();
+        }
+        break;*/
     case RemoteCommand::BACK:
     case RemoteCommand::CHANNEL_MINUS:
         // Settings are always the last item
