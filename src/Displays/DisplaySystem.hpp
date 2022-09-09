@@ -97,14 +97,9 @@ public:
     void fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) {
         gfxClass_->fillCircle(xOffset(x0), yOffset(y0), r, color);
     }
-<<<<<<< HEAD
-<<<<<<< HEAD
 
-=======
->>>>>>> cbdc880 (use CS logo as main menu concept)
-=======
+    void setRotation(uint8_t r) { gfxClass_->setRotation(r); }
 
->>>>>>> 2b1cbad (render the wb logo)
     void setCursor(int16_t x, int16_t y) { gfxClass_->setCursor(xOffset(x), yOffset(y)); }
     template <typename T>
     auto println(T in) -> size_t {
