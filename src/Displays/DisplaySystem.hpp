@@ -98,6 +98,11 @@ public:
         gfxClass_->fillCircle(xOffset(x0), yOffset(y0), r, color);
     }
 
+    void fillRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius,
+                       uint16_t color) {
+        gfxClass_->fillRoundRect(xOffset(x0), yOffset(y0), w, h, radius, color);
+    }
+
     void setRotation(uint8_t r) { gfxClass_->setRotation(r); }
 
     void setCursor(int16_t x, int16_t y) { gfxClass_->setCursor(xOffset(x), yOffset(y)); }
