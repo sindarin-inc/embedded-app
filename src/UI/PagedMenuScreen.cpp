@@ -35,11 +35,12 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     display.drawLine(midX * 2 - 10, midY, midX * 2 - 15, midY + 10, display.fg);
 
     // Middle circle
-    uint radius = display.height() / 256 * 80;
-    display.fillCircle(midX, midY, radius, display.fg);
-    display.fillRect(midX - radius * 0.8, midY - radius * 0.8, radius * 1.6, radius * 1.6,
-                     display.bg);
-
+    /*
+        uint radius = display.height() / 256 * 80;
+        display.fillCircle(midX, midY, radius, display.fg);
+        display.fillRect(midX - radius * 0.8, midY - radius * 0.8, radius * 1.6, radius * 1.6,
+                         display.bg);
+    */
     // display.drawXBitmap((int16_t)((display.width() - MENU2_BLANK_WIDTH) / 2),
     //                     (int16_t)((display.height() - MENU2_BLANK_HEIGHT) / 2), MENU2_BLANK_BITS,
     //                     MENU2_BLANK_WIDTH, MENU2_BLANK_HEIGHT, display.fg);
@@ -52,9 +53,9 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     uint16_t screenWidth = display.width();
     uint16_t screenHeight = display.height();
 
+    display.setRotation(0);
     display.drawSingleLineOfText(itemTitle.c_str(), (screenWidth / 2) - (width / 2),
                                  (screenHeight / 2) - (display.getTextHeight()) / 2);
-    display.setFont(display.style.getFontFamily().readableFont);
 
     auto prevTitle = getItemAt((currSelection_ > 0) ? ((currSelection_ - 1) % numMenuItems_)
                                                     : (numMenuItems_ - 1))
@@ -63,21 +64,35 @@ void PagedMenuScreen::render(DisplaySystem &display) {
 
     display.getTextBounds(prevTitle.c_str(), &width, &height);
 
-    // display.drawSingleLineOfText(prevTitle.c_str(), (screenWidth / 2) - (width / 2), 20);
+    display.drawSingleLineOfText(prevTitle.c_str(), (screenWidth / 2) - (width / 2), 80);
 
     display.getTextBounds(nextTitle.c_str(), &width, &height);
 
-    // display.drawSingleLineOfText(nextTitle.c_str(), (screenWidth / 2) - (width / 2),
-    //                             (screenHeight - 20 - display.getTextHeight()));
+    display.drawSingleLineOfText(nextTitle.c_str(), (screenWidth / 2) - (width / 2),
+                                 (screenHeight - 80 - display.getTextHeight()));
 
+    display.setFont(display.style.getFontFamily().readableFont);
+    display.setRotation(0);
     display.getTextBounds("Settings", &width, &height);
 
     display.drawSingleLineOfText("Settings", screenWidth / 2 - width / 2, 28);
+
+    display.drawXBitmap((int16_t)((display.width() - GEAR_WIDTH) / 2), 40, GEAR_BITS, GEAR_WIDTH,
+                        GEAR_HEIGHT, display.fg);
 
     display.getTextBounds("Read", &width, &height);
 
     display.drawSingleLineOfText("Read", screenWidth / 2 - width / 2, screenHeight - 30 - height);
 
+    display.drawXBitmap((int16_t)((display.width() - BOOK_WIDTH) / 2),
+                        screenHeight - 30 - height - 25, BOOK_BITS, BOOK_WIDTH, BOOK_HEIGHT,
+                        display.fg);
+
+    display.drawXBitmap((int16_t)((display.width() - ARTICLES_WIDTH) / 2) + 35,
+                        screenHeight - 30 - height - 25, ARTICLES_BITS, ARTICLES_WIDTH,
+                        ARTICLES_HEIGHT, display.fg);
+
+    display.setRotation(0);
     display.updateDisplay();
 
     // display.drawLine(display.fg);

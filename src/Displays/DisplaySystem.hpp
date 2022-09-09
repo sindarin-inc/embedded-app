@@ -98,6 +98,8 @@ public:
         gfxClass_->fillCircle(xOffset(x0), yOffset(y0), r, color);
     }
 
+    void setRotation(uint8_t r) { gfxClass_->setRotation(r); }
+
     void setCursor(int16_t x, int16_t y) { gfxClass_->setCursor(xOffset(x), yOffset(y)); }
     template <typename T>
     auto println(T in) -> size_t {
