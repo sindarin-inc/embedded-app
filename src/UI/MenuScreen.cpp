@@ -4,6 +4,10 @@
 
 #include "Misc/Style.hpp"
 
+#if EINKET013TT1
+#include "Displays/DisplayEinkET013TT1.hpp"
+#endif
+
 #define NUM_LINES_PER_MENU_PAGE 12
 
 void MenuScreen::addMenuItem(const MenuItem &newItem) {
@@ -21,17 +25,25 @@ auto MenuScreen::getCurrSelection() -> int { return currSelection_; }
 
 auto MenuScreen::getCurrItem() -> MenuItem { return menuItems_[currSelection_]; }
 
-// Returns 1 if the selection was updated, 0 otherwise
 void MenuScreen::nextSelection() {
+    int oldCurMenuPage = curMenuPage_;
     currSelection_ = (currSelection_ + 1) % numMenuItems_;
     curMenuPage_ = currSelection_ / NUM_LINES_PER_MENU_PAGE;
+    // This makes sure we do a full refresh when the page changes
+    if (oldCurMenuPage != curMenuPage_) {
+        firstLoad_ = true;
+    }
 }
 
-// Returns 1 if the selection was updated, 0 otherwise
 void MenuScreen::prevSelection() {
+    int oldCurMenuPage = curMenuPage_;
     // Wrap back around to the last item
     currSelection_ = (currSelection_ + numMenuItems_ - 1) % numMenuItems_;
     curMenuPage_ = currSelection_ / NUM_LINES_PER_MENU_PAGE;
+    // This makes sure we do a full refresh when the page changes
+    if (oldCurMenuPage != curMenuPage_) {
+        firstLoad_ = true;
+    }
 }
 
 // Includes the name of the item and it's number preceding it for easy display
@@ -73,18 +85,61 @@ void MenuScreen::render(DisplaySystem &display) {
          i++) {
         display.drawSingleLineOfText(getItemTitleAt(i), 10,
                                      (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight());
+
+        // On the first load, we want to only render the items in the menu because we are going
+        // to do a partial refresh with the selector button at a lower/higher vcom to reduce
+        // ghosting.
+
+        if (firstLoad_) {
+            if (i == currSelection_) {
+                display.fillRoundRect(
+                    2, (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight() + 2,
+                    display.getTextHeight() - 3, display.getTextHeight() - 3, 3, display.fg);
+            }
+        }
+    }
+
+    if (firstLoad_) {
+        display.updateDisplay(DisplaySystem::UpdateType::FULL);
+    }
+    // Starting the process of doing this better eventually. Mimicking the lighting screen.
+    // (But without the fast).
+    // display.updateDisplay(firstLoad_ ? DisplaySystem::UpdateType::FULL
+    //                                 : DisplaySystem::UpdateType::FAST);
+
+    //
+    // Duplicates the code above but only on the first load
+    // TODO: This is a hack. We should be able to do this in a single pass??
+    //
+    // change the vcom to reduce ghosting
+#if EINKET013TT1
+    int oldVcom = (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver()->getVcom();
+    int newVcom = 0;
+    if (display.getInversion()) {
+        newVcom = oldVcom - 2000;
+    } else {
+        newVcom = oldVcom + 2000;
+    }
+    (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver()->setVcom(newVcom);
+#endif
+
+    for (int i = curMenuPage_ * NUM_LINES_PER_MENU_PAGE;
+         i < curMenuPage_ * NUM_LINES_PER_MENU_PAGE + NUM_LINES_PER_MENU_PAGE && i < numMenuItems_;
+         i++) {
+        display.drawSingleLineOfText(getItemTitleAt(i), 10,
+                                     (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight());
+
         if (i == currSelection_) {
             display.fillRoundRect(2, (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight() + 2,
                                   display.getTextHeight() - 3, display.getTextHeight() - 3, 3,
                                   display.fg);
         }
     }
+    display.updateDisplay(DisplaySystem::UpdateType::FAST);
 
-    // Starting the process of doing this better eventually. Mimicking the lighting screen.
-    // (But without the fast).
-    display.updateDisplay(firstLoad_ ? DisplaySystem::UpdateType::FULL
-                                     : DisplaySystem::UpdateType::FAST);
-
+#if EINKET013TT1
+    (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver()->setVcom(oldVcom);
+#endif
     firstLoad_ = false;
     needsRerender = false;
 }
