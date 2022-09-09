@@ -49,19 +49,6 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     // Draw menu surroundings
     log_d("RENDERING Popup menu bitmap %d %d %d %d", display.width(), display.height(),
           POPUP_MENU_BLANK_WIDTH, POPUP_MENU_BLANK_HEIGHT);
-    /*
-
-        display.drawXBitmap((int16_t)((display.width() - POPUP2_MENU_BLANK_WIDTH) / 2),
-                            (int16_t)((display.height() - POPUP2_MENU_BLANK_HEIGHT) / 2),
-                            popup2MenuBlankBits, POPUP2_MENU_BLANK_WIDTH, POPUP2_MENU_BLANK_HEIGHT,
-                            display.fg);
-
-        // Middle circle
-        uint16_t midX = display.width() / 2;
-        uint16_t midY = display.height() / 2;
-        // display.fillCircle(midX, midY, 40, display.fg);
-        // display.fillRect(midX - 32, midY - 32, 64, 64, display.bg);
-    */
 
     // display.drawXBitmap((int16_t)((display.width() - POPUP2_MENU_BLANK_WIDTH) / 2),
     //                   (int16_t)((display.height() - POPUP2_MENU_BLANK_HEIGHT) / 2),
