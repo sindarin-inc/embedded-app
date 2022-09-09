@@ -41,9 +41,9 @@ auto MenuScreen::getItemTitleAt(int index) -> std::string {
     assert(index < numMenuItems_);
     // Add the indicator for where we are in the menu based on the current selection
     if (index == currSelection_) {
-        all = " ->";
+        all = " ";
     } else {
-        all = "   ";
+        all = " ";
     }
     all = all + " " + menuItems_[index].title;
     return all;
@@ -71,14 +71,20 @@ void MenuScreen::render(DisplaySystem &display) {
     for (int i = curMenuPage_ * NUM_LINES_PER_MENU_PAGE;
          i < curMenuPage_ * NUM_LINES_PER_MENU_PAGE + NUM_LINES_PER_MENU_PAGE && i < numMenuItems_;
          i++) {
-        display.drawSingleLineOfText(getItemTitleAt(i), 0,
+        display.drawSingleLineOfText(getItemTitleAt(i), 10,
                                      (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight());
+        if (i == currSelection_) {
+            display.fillRoundRect(2, (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight() + 2,
+                                  display.getTextHeight() - 3, display.getTextHeight() - 3, 3,
+                                  display.fg);
+        }
     }
 
     // Starting the process of doing this better eventually. Mimicking the lighting screen.
     // (But without the fast).
     display.updateDisplay(firstLoad_ ? DisplaySystem::UpdateType::FULL
-                                     : DisplaySystem::UpdateType::FULL);
+                                     : DisplaySystem::UpdateType::FAST);
+
     firstLoad_ = false;
     needsRerender = false;
 }
@@ -102,6 +108,7 @@ void MenuScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::BACK:
     case RemoteCommand::CHANNEL_MINUS:
         if (backCallback != nullptr) {
+            firstLoad_ = true;
             backCallback();
         }
         break;
