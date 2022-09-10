@@ -324,7 +324,10 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
 
         break;
 
+    // Long press down on the TT should count as enter since we don't have the
+    // 5th button
     case RemoteCommand::ENTER:
+    case RemoteCommand::STOP:
 
         if (getCurrItem().callback != nullptr) {
             getCurrItem().callback();
