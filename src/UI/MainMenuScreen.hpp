@@ -64,7 +64,8 @@ protected:
     int currBookPage_ = 0;
 
     bool inBooksMode_ = true;
-    bool firstLoad_ = false;
+    bool firstLoad_ = true;
+    bool beforeFirstLoad_ = true;
 };
 
 #endif // MAIN_MENU_SCREEN_H

@@ -13,23 +13,24 @@
 
 void MainMenuScreen::render(DisplaySystem &display) {
     NUM_LINES_PER_MENU_PAGE = 5;
-    if (firstLoad_) {
+    if (beforeFirstLoad_) {
         numBookItems_ = numMenuItems_;
         bookItems_ = menuItems_;
         currBookSelection_ = currSelection_;
         currBookPage_ = currMenuPage_;
+        beforeFirstLoad_ = false;
     }
 
     uint16_t midX = display.width() / 2;
     uint16_t midY = display.height() / 2;
 
     // Top Arrow
-    display.drawLine(midX, 42, midX - 10, 47, display.fg);
-    display.drawLine(midX, 42, midX + 10, 47, display.fg);
+    // display.drawLine(midX, 42, midX - 10, 47, display.fg);
+    // display.drawLine(midX, 42, midX + 10, 47, display.fg);
 
     // Bottom Arrow
-    display.drawLine(midX, midY * 2 - 40, midX - 10, midY * 2 - 45, display.fg);
-    display.drawLine(midX, midY * 2 - 40, midX + 10, midY * 2 - 45, display.fg);
+    // display.drawLine(midX, midY * 2 - 40, midX - 10, midY * 2 - 45, display.fg);
+    // display.drawLine(midX, midY * 2 - 40, midX + 10, midY * 2 - 45, display.fg);
 
     // Left Arrow
     // display.drawLine(25, midY, 35, midY - 10, display.fg);
@@ -156,6 +157,26 @@ void MainMenuScreen::render(DisplaySystem &display) {
                     (i % NUM_LINES_PER_MENU_PAGE) * (4 + display.getTextHeight()) + 2,
                 display.getTextHeight() - 3, display.getTextHeight() - 3, 3, display.fg);
         }
+    }
+
+    display.drawXBitmap(1, screenHeight / 2 - GEAR_HEIGHT / 2, GEAR_BITS, GEAR_WIDTH, GEAR_HEIGHT,
+                        display.fg);
+
+    /*
+        display.getTextBounds("Read", &width, &height);
+
+        display.drawSingleLineOfText("Read", screenWidth / 2 - width / 2, screenHeight - 30 -
+       height);
+    */
+    // Draw the icon for the opposite of the mode we're in. If you're reading books and press
+    // this direction, it takes you to articles, and vice versa.
+    if (!inBooksMode_) {
+        display.drawXBitmap(display.width() - BOOK_WIDTH - 1, screenHeight / 2 - BOOK_HEIGHT / 2,
+                            BOOK_BITS, BOOK_WIDTH, BOOK_HEIGHT, display.fg);
+    } else {
+        display.drawXBitmap(display.width() - ARTICLES_WIDTH - 1,
+                            screenHeight / 2 - ARTICLES_HEIGHT / 2, ARTICLES_BITS, ARTICLES_WIDTH,
+                            ARTICLES_HEIGHT, display.fg);
     }
     display.updateDisplay(DisplaySystem::UpdateType::FAST);
 
@@ -324,6 +345,11 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
             menuItems_ = articleItems_;
             currSelection_ = currArticleSelection_;
             currMenuPage_ = currArticlePage_;
+            log_d("setting it to articles mode (totalnum)%d %d %d (currselect)%d %d %d "
+                  "(currpage)%d %d %d",
+                  numBookItems_, numMenuItems_, numArticleItems_, currBookSelection_,
+                  currSelection_, currArticleSelection_, currBookPage_, currMenuPage_,
+                  currArticlePage_);
         } else {
             numArticleItems_ = numMenuItems_;
             articleItems_ = menuItems_;
@@ -334,6 +360,11 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
             menuItems_ = bookItems_;
             currSelection_ = currBookSelection_;
             currMenuPage_ = currBookPage_;
+            log_d("setting it to books mode (totalnum)%d %d %d (currselect)%d %d %d (currpage)%d "
+                  "%d %d",
+                  numBookItems_, numMenuItems_, numArticleItems_, currBookSelection_,
+                  currSelection_, currArticleSelection_, currBookPage_, currMenuPage_,
+                  currArticlePage_);
         }
         inBooksMode_ = !inBooksMode_;
         firstLoad_ = true;
