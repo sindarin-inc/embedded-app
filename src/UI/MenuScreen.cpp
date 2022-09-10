@@ -80,26 +80,18 @@ void MenuScreen::render(DisplaySystem &display) {
 
     display.setFont(display.style.getFontFamily().settingsFont);
 
-    for (int i = currMenuPage_ * NUM_LINES_PER_MENU_PAGE;
-         i < currMenuPage_ * NUM_LINES_PER_MENU_PAGE + NUM_LINES_PER_MENU_PAGE && i < numMenuItems_;
-         i++) {
-        display.drawSingleLineOfText(getItemTitleAt(i), 10,
-                                     (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight());
-
-        // On the first load, we want to only render the items in the menu because we are going
-        // to do a partial refresh with the selector button at a lower/higher vcom to reduce
-        // ghosting.
-
-        if (firstLoad_) {
-            if (i == currSelection_) {
-                display.fillRoundRect(
-                    2, (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight() + 2,
-                    display.getTextHeight() - 3, display.getTextHeight() - 3, 3, display.fg);
-            }
-        }
-    }
-
+    // On the first load, we want to only render the items in the menu because we are going
+    // to do a partial refresh with the selector button at a lower/higher vcom to reduce
+    // ghosting.
     if (firstLoad_) {
+        for (int i = currMenuPage_ * NUM_LINES_PER_MENU_PAGE;
+             i < currMenuPage_ * NUM_LINES_PER_MENU_PAGE + NUM_LINES_PER_MENU_PAGE &&
+             i < numMenuItems_;
+             i++) {
+            display.drawSingleLineOfText(getItemTitleAt(i), 10,
+                                         (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight());
+        }
+
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
     }
     // Starting the process of doing this better eventually. Mimicking the lighting screen.
