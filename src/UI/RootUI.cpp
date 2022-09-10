@@ -17,9 +17,9 @@
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/LoadingScreen.hpp"
 #include "UI/LogoScreen.hpp"
+#include "UI/MainMenuScreen.hpp"
 #include "UI/MenuScreen.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
-#include "UI/PagedMenuScreen.hpp"
 #include "UI/PowerDepletedScreen.hpp"
 #include "UI/ReadableScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
@@ -48,9 +48,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
 
     display_ = display;
 
-    auto mainMenu = new PagedMenuScreen(this->power_);
-
-    mainMenu->setBidirectional();
+    auto mainMenu = new MainMenuScreen(this->power_);
 
     SIZE_OF(*mainMenu);
 

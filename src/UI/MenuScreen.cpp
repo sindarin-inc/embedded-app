@@ -26,22 +26,22 @@ auto MenuScreen::getCurrSelection() -> int { return currSelection_; }
 auto MenuScreen::getCurrItem() -> MenuItem { return menuItems_[currSelection_]; }
 
 void MenuScreen::nextSelection() {
-    int oldCurMenuPage = curMenuPage_;
+    int oldCurMenuPage = currMenuPage_;
     currSelection_ = (currSelection_ + 1) % numMenuItems_;
-    curMenuPage_ = currSelection_ / NUM_LINES_PER_MENU_PAGE;
+    currMenuPage_ = currSelection_ / NUM_LINES_PER_MENU_PAGE;
     // This makes sure we do a full refresh when the page changes
-    if (oldCurMenuPage != curMenuPage_) {
+    if (oldCurMenuPage != currMenuPage_) {
         firstLoad_ = true;
     }
 }
 
 void MenuScreen::prevSelection() {
-    int oldCurMenuPage = curMenuPage_;
+    int oldCurMenuPage = currMenuPage_;
     // Wrap back around to the last item
     currSelection_ = (currSelection_ + numMenuItems_ - 1) % numMenuItems_;
-    curMenuPage_ = currSelection_ / NUM_LINES_PER_MENU_PAGE;
+    currMenuPage_ = currSelection_ / NUM_LINES_PER_MENU_PAGE;
     // This makes sure we do a full refresh when the page changes
-    if (oldCurMenuPage != curMenuPage_) {
+    if (oldCurMenuPage != currMenuPage_) {
         firstLoad_ = true;
     }
 }
@@ -80,8 +80,8 @@ void MenuScreen::render(DisplaySystem &display) {
 
     display.setFont(display.style.getFontFamily().settingsFont);
 
-    for (int i = curMenuPage_ * NUM_LINES_PER_MENU_PAGE;
-         i < curMenuPage_ * NUM_LINES_PER_MENU_PAGE + NUM_LINES_PER_MENU_PAGE && i < numMenuItems_;
+    for (int i = currMenuPage_ * NUM_LINES_PER_MENU_PAGE;
+         i < currMenuPage_ * NUM_LINES_PER_MENU_PAGE + NUM_LINES_PER_MENU_PAGE && i < numMenuItems_;
          i++) {
         display.drawSingleLineOfText(getItemTitleAt(i), 10,
                                      (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight());
@@ -123,8 +123,8 @@ void MenuScreen::render(DisplaySystem &display) {
     (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver()->setVcom(newVcom);
 #endif
 
-    for (int i = curMenuPage_ * NUM_LINES_PER_MENU_PAGE;
-         i < curMenuPage_ * NUM_LINES_PER_MENU_PAGE + NUM_LINES_PER_MENU_PAGE && i < numMenuItems_;
+    for (int i = currMenuPage_ * NUM_LINES_PER_MENU_PAGE;
+         i < currMenuPage_ * NUM_LINES_PER_MENU_PAGE + NUM_LINES_PER_MENU_PAGE && i < numMenuItems_;
          i++) {
         display.drawSingleLineOfText(getItemTitleAt(i), 10,
                                      (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight());
