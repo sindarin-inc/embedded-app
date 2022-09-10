@@ -42,8 +42,8 @@ public:
         articleItems_.push_back(dummy);
     };
 
-    void nextSelection() override;
-    void prevSelection() override;
+    // void nextSelection() override;
+    // void prevSelection() override;
 
     void render(DisplaySystem &display) override;
 

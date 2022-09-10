@@ -8,8 +8,6 @@
 #include "Displays/DisplayEinkET013TT1.hpp"
 #endif
 
-#define NUM_LINES_PER_MENU_PAGE 12
-
 void MenuScreen::addMenuItem(const MenuItem &newItem) {
     menuItems_.push_back(newItem);
     numMenuItems_++;
@@ -32,6 +30,7 @@ void MenuScreen::nextSelection() {
     // This makes sure we do a full refresh when the page changes
     if (oldCurMenuPage != currMenuPage_) {
         firstLoad_ = true;
+        needsRerender = true;
     }
 }
 
@@ -43,6 +42,7 @@ void MenuScreen::prevSelection() {
     // This makes sure we do a full refresh when the page changes
     if (oldCurMenuPage != currMenuPage_) {
         firstLoad_ = true;
+        needsRerender = true;
     }
 }
 

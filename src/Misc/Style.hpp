@@ -35,12 +35,12 @@ public:
         lucidaSkinny.popupFont = &LUCIDA_GRANDE5PT7B_SKINNY;
         lucidaSkinny.readableFont = &LUCIDA_GRANDE5PT7B_SKINNY;
 
-        tahomaRegular.mainMenuFont = &TAHOMA_REGULAR_FONT8PT7B;
+        tahomaRegular.mainMenuFont = &TAHOMA_REGULAR_FONT6PT7B;
         tahomaRegular.settingsFont = &TAHOMA_REGULAR_FONT5PT7B;
         tahomaRegular.popupFont = &TAHOMA_REGULAR_FONT5PT7B;
         tahomaRegular.readableFont = &TAHOMA_REGULAR_FONT5PT7B;
 
-        tahomaLarge.mainMenuFont = &TAHOMA_REGULAR_FONT8PT7B;
+        tahomaLarge.mainMenuFont = &TAHOMA_REGULAR_FONT6PT7B;
         tahomaLarge.settingsFont = &TAHOMA_REGULAR_FONT5PT7B;
         tahomaLarge.popupFont = &TAHOMA_REGULAR_FONT5PT7B;
         tahomaLarge.readableFont = &TAHOMA_REGULAR_FONT6PT7B;
