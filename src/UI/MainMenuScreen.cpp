@@ -12,13 +12,12 @@
 #endif
 
 void MainMenuScreen::render(DisplaySystem &display) {
-
+    NUM_LINES_PER_MENU_PAGE = 5;
     if (firstLoad_) {
         numBookItems_ = numMenuItems_;
         bookItems_ = menuItems_;
         currBookSelection_ = currSelection_;
         currBookPage_ = currMenuPage_;
-        firstLoad_ = false;
     }
 
     uint16_t midX = display.width() / 2;
@@ -33,12 +32,12 @@ void MainMenuScreen::render(DisplaySystem &display) {
     display.drawLine(midX, midY * 2 - 40, midX + 10, midY * 2 - 45, display.fg);
 
     // Left Arrow
-    display.drawLine(25, midY, 35, midY - 10, display.fg);
-    display.drawLine(25, midY, 35, midY + 10, display.fg);
+    // display.drawLine(25, midY, 35, midY - 10, display.fg);
+    // display.drawLine(25, midY, 35, midY + 10, display.fg);
 
     // Right Arrow
-    display.drawLine(midX * 2 - 25, midY, midX * 2 - 35, midY - 10, display.fg);
-    display.drawLine(midX * 2 - 25, midY, midX * 2 - 35, midY + 10, display.fg);
+    // display.drawLine(midX * 2 - 25, midY, midX * 2 - 35, midY - 10, display.fg);
+    // display.drawLine(midX * 2 - 25, midY, midX * 2 - 35, midY + 10, display.fg);
 
     // Middle circle
     /*
@@ -60,8 +59,8 @@ void MainMenuScreen::render(DisplaySystem &display) {
     uint16_t screenHeight = display.height();
 
     display.setRotation(0);
-    display.drawSingleLineOfText(itemTitle.c_str(), (screenWidth / 2) - (width / 2),
-                                 (screenHeight / 2) - (display.getTextHeight()) / 2);
+    // display.drawSingleLineOfText(itemTitle.c_str(), (screenWidth / 2) - (width / 2),
+    //                              (screenHeight / 2) - (display.getTextHeight()) / 2);
 
     auto prevTitle = getItemAt((currSelection_ > 0) ? ((currSelection_ - 1) % numMenuItems_)
                                                     : (numMenuItems_ - 1))
@@ -77,7 +76,6 @@ void MainMenuScreen::render(DisplaySystem &display) {
     // display.drawSingleLineOfText(nextTitle.c_str(), (screenWidth / 2) - (width / 2),
     //                              (screenHeight - 80 - display.getTextHeight()));
 
-    display.setFont(display.style.getFontFamily().readableFont);
     display.setRotation(0);
     /*
     display.getTextBounds("Settings", &width, &height);
@@ -106,10 +104,70 @@ void MainMenuScreen::render(DisplaySystem &display) {
     }
 
     display.setRotation(0);
-    display.updateDisplay();
 
-    // display.drawLine(display.fg);
+    // On the first load, we want to only render the items in the menu because we are going
+    // to do a partial refresh with the selector button at a lower/higher vcom to reduce
+    // ghosting.
+    if (firstLoad_) {
+        for (int i = currMenuPage_ * NUM_LINES_PER_MENU_PAGE;
+             i < currMenuPage_ * NUM_LINES_PER_MENU_PAGE + NUM_LINES_PER_MENU_PAGE &&
+             i < numMenuItems_;
+             i++) {
+            display.drawSingleLineOfText(getItemTitleAt(i), display.width() / 4,
+                                         display.height() / 3 + (i % NUM_LINES_PER_MENU_PAGE) *
+                                                                    (4 + display.getTextHeight()));
+        }
+
+        display.updateDisplay(DisplaySystem::UpdateType::FULL);
+    }
+    // Starting the process of doing this better eventually. Mimicking the lighting screen.
+    // (But without the fast).
+    // display.updateDisplay(firstLoad_ ? DisplaySystem::UpdateType::FULL
+    //                                 : DisplaySystem::UpdateType::FAST);
+
+    //
+    // Duplicates the code above but only on the first load
+    // TODO: This is a hack. We should be able to do this in a single pass??
+    //
+    // change the vcom to reduce ghosting
+#if EINKET013TT1
+    int oldVcom = (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver()->getVcom();
+    int newVcom = 0;
+    if (display.getInversion()) {
+        newVcom = oldVcom - 2000;
+    } else {
+        newVcom = oldVcom + 2000;
+    }
+    (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver()->setVcom(newVcom);
+#endif
+
+    for (int i = currMenuPage_ * NUM_LINES_PER_MENU_PAGE;
+         i < currMenuPage_ * NUM_LINES_PER_MENU_PAGE + NUM_LINES_PER_MENU_PAGE && i < numMenuItems_;
+         i++) {
+        display.drawSingleLineOfText(getItemTitleAt(i), display.width() / 4,
+                                     display.height() / 3 + (i % NUM_LINES_PER_MENU_PAGE) *
+                                                                (4 + display.getTextHeight()));
+
+        log_d("%d %d %d", i, currSelection_, currMenuPage_);
+        if (i == currSelection_) {
+            display.fillRoundRect(
+                display.width() / 4 - 15,
+                display.height() / 3 +
+                    (i % NUM_LINES_PER_MENU_PAGE) * (4 + display.getTextHeight()) + 2,
+                display.getTextHeight() - 3, display.getTextHeight() - 3, 3, display.fg);
+        }
+    }
+    display.updateDisplay(DisplaySystem::UpdateType::FAST);
+
+#if EINKET013TT1
+    (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver()->setVcom(oldVcom);
+#endif
+
+    // display.updateDisplay();
+    display.setFont(display.style.getFontFamily().readableFont);
     needsRerender = false;
+
+    firstLoad_ = false;
 }
 
 /*
@@ -195,24 +253,27 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     needsRerender = false;
 }
 */
-
+/*
 void MainMenuScreen::nextSelection() {
     currSelection_ = (currSelection_ + 1) % numMenuItems_;
-    if (currSelection_ == numMenuItems_ - 2) {
-        currSelection_ = 0;
-    }
+
+        if (currSelection_ == numMenuItems_ - 2) {
+            currSelection_ = 0;
+        }
+
     needsRerender = true;
 }
 
 void MainMenuScreen::prevSelection() {
     currSelection_ = (currSelection_ + numMenuItems_ - 1) % numMenuItems_;
-    if (currSelection_ == numMenuItems_ - 1) {
-        // If there are 0 readables, this breaks the menu
-        currSelection_ = numMenuItems_ - 3;
-    }
+      if (currSelection_ == numMenuItems_ - 1) {
+          // If there are 0 readables, this breaks the menu
+          currSelection_ = numMenuItems_ - 3;
+      }
     needsRerender = true;
 }
 
+*/
 //
 // For a PagedMenu, we actually want to progress through
 // the options via the left and right buttons and use
@@ -275,6 +336,7 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
             currMenuPage_ = currBookPage_;
         }
         inBooksMode_ = !inBooksMode_;
+        firstLoad_ = true;
         /*
         if (getCurrItem().callback != nullptr) {
             getCurrItem().callback();

@@ -62,6 +62,7 @@ protected:
     int currMenuPage_ = 0;
     bool firstLoad_ = true;
 
+    int NUM_LINES_PER_MENU_PAGE = 12;
     Power &power_;
 };
 
