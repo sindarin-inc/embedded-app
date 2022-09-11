@@ -50,24 +50,24 @@ void ReadableScreen::processCommand(RemoteCommand command) {
     };
 
     switch (command) {
-    case RemoteCommand::CHANNEL_MINUS:
+    case RemoteCommand::PREV:
         readable_.place = renderer_.getPreviousPlace();
         prefs_.readablePlace.set(readable_.id.c_str(), readable_.place);
         needsRerender = true;
         break;
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::NEXT:
+    case RemoteCommand::ENTER:
         readable_.placePrev = readable_.place;
         readable_.place = newPlace_;
         prefs_.readablePlace.set(readable_.id.c_str(), readable_.place);
         needsRerender = true;
         break;
-    case RemoteCommand::PREV:
-        back();
-        break;
-    case RemoteCommand::NEXT:
+
+    case RemoteCommand::CHANNEL_PLUS:
         setCurrentScreen(popup_);
         break;
     case RemoteCommand::BACK:
+    case RemoteCommand::CHANNEL_MINUS:
         back();
         break;
     case RemoteCommand::NOP_BUTTON:
