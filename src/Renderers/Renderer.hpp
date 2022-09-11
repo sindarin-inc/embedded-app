@@ -93,6 +93,8 @@ protected:
     unsigned long currentPlace_ = 0;
     unsigned long previousPlace_ = 0;
     unsigned long nextPlace_ = 0;
+    bool shownIcons_ = false;
+
     uint32_t currentPageWordCount_ = 0;
 
     auto loadCurrIntoBuffer() -> unsigned long;
