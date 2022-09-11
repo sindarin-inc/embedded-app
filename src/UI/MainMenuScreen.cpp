@@ -21,8 +21,15 @@ void MainMenuScreen::render(DisplaySystem &display) {
         beforeFirstLoad_ = false;
     }
 
-    uint16_t midX = display.width() / 2;
-    uint16_t midY = display.height() / 2;
+    // uint16_t midX = display.width() / 2;
+    // uint16_t midY = display.height() / 2;
+
+    // In case someone changed the selection out from underneath us.
+    int oldMenuPage = currMenuPage_;
+    currMenuPage_ = currSelection_ / NUM_LINES_PER_MENU_PAGE;
+    if (oldMenuPage != currMenuPage_) {
+        firstLoad_ = true;
+    }
 
     // Top Arrow
     // display.drawLine(midX, 42, midX - 10, 47, display.fg);
@@ -59,25 +66,25 @@ void MainMenuScreen::render(DisplaySystem &display) {
     uint16_t screenWidth = display.width();
     uint16_t screenHeight = display.height();
 
-    display.setRotation(0);
-    // display.drawSingleLineOfText(itemTitle.c_str(), (screenWidth / 2) - (width / 2),
-    //                              (screenHeight / 2) - (display.getTextHeight()) / 2);
+    // display.setRotation(0);
+    //  display.drawSingleLineOfText(itemTitle.c_str(), (screenWidth / 2) - (width / 2),
+    //                               (screenHeight / 2) - (display.getTextHeight()) / 2);
 
-    auto prevTitle = getItemAt((currSelection_ > 0) ? ((currSelection_ - 1) % numMenuItems_)
-                                                    : (numMenuItems_ - 1))
-                         .title;
-    auto nextTitle = getItemAt((currSelection_ + 1) % numMenuItems_).title;
+    // auto prevTitle = getItemAt((currSelection_ > 0) ? ((currSelection_ - 1) % numMenuItems_)
+    //                                                : (numMenuItems_ - 1))
+    //                    .title;
+    // auto nextTitle = getItemAt((currSelection_ + 1) % numMenuItems_).title;
 
-    display.getTextBounds(prevTitle.c_str(), &width, &height);
+    // display.getTextBounds(prevTitle.c_str(), &width, &height);
 
     // display.drawSingleLineOfText(prevTitle.c_str(), (screenWidth / 2) - (width / 2), 80);
 
-    display.getTextBounds(nextTitle.c_str(), &width, &height);
+    // display.getTextBounds(nextTitle.c_str(), &width, &height);
 
     // display.drawSingleLineOfText(nextTitle.c_str(), (screenWidth / 2) - (width / 2),
     //                              (screenHeight - 80 - display.getTextHeight()));
 
-    display.setRotation(0);
+    // display.setRotation(0);
     /*
     display.getTextBounds("Settings", &width, &height);
 
@@ -104,7 +111,7 @@ void MainMenuScreen::render(DisplaySystem &display) {
                             ARTICLES_HEIGHT, display.fg);
     }
 
-    display.setRotation(0);
+    // display.setRotation(0);
 
     // On the first load, we want to only render the items in the menu because we are going
     // to do a partial refresh with the selector button at a lower/higher vcom to reduce
@@ -149,7 +156,6 @@ void MainMenuScreen::render(DisplaySystem &display) {
                                      display.height() / 3 + (i % NUM_LINES_PER_MENU_PAGE) *
                                                                 (4 + display.getTextHeight()));
 
-        log_d("%d %d %d", i, currSelection_, currMenuPage_);
         if (i == currSelection_) {
             display.fillRoundRect(
                 display.width() / 4 - 15,
@@ -311,6 +317,8 @@ void MainMenuScreen::prevSelection() {
 // Down is select
 //
 void MainMenuScreen::processCommand(RemoteCommand command) {
+    int oldCurr = 0;
+
     switch (command) {
     case RemoteCommand::PREV:
 
@@ -348,11 +356,6 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
             menuItems_ = articleItems_;
             currSelection_ = currArticleSelection_;
             currMenuPage_ = currArticlePage_;
-            log_d("setting it to articles mode (totalnum)%d %d %d (currselect)%d %d %d "
-                  "(currpage)%d %d %d",
-                  numBookItems_, numMenuItems_, numArticleItems_, currBookSelection_,
-                  currSelection_, currArticleSelection_, currBookPage_, currMenuPage_,
-                  currArticlePage_);
         } else {
             numArticleItems_ = numMenuItems_;
             articleItems_ = menuItems_;
@@ -363,11 +366,6 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
             menuItems_ = bookItems_;
             currSelection_ = currBookSelection_;
             currMenuPage_ = currBookPage_;
-            log_d("setting it to books mode (totalnum)%d %d %d (currselect)%d %d %d (currpage)%d "
-                  "%d %d",
-                  numBookItems_, numMenuItems_, numArticleItems_, currBookSelection_,
-                  currSelection_, currArticleSelection_, currBookPage_, currMenuPage_,
-                  currArticlePage_);
         }
         inBooksMode_ = !inBooksMode_;
         firstLoad_ = true;
@@ -389,9 +387,14 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
 
         // Settings are always the last item
         // REWORK THIS!
+        oldCurr = currSelection_;
         currSelection_ = numMenuItems_ - 1;
+
         if (getCurrItem().callback != nullptr) {
-            getCurrItem().callback();
+            auto fn = getCurrItem().callback;
+            // Make sure we return to the right place.
+            currSelection_ = oldCurr;
+            fn();
         }
 
         break;

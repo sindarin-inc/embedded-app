@@ -84,6 +84,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
             // of the display.
             display->clearDisplay();
             prefs_.lastReadableId.remove();
+            mainMenu->setFirstLoad();
             setCurrentScreen(*mainMenu);
 
             // TODO: Probably not the most kosher practice to delete the `ReadableScreen` from
@@ -520,6 +521,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
 
     settingsMenu->backCallback = [this, mainMenu]() {
         this->display_->clearDisplay();
+        mainMenu->setFirstLoad();
         setCurrentScreen(*mainMenu);
     };
 
@@ -567,6 +569,9 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
         // By default, if we don't already have a different first screen ready, show the
         // calibration
         // screen
+
+        setCurrentScreen(*mainMenu);
+        /*
         auto calibrationScreen = new LogoScreen();
         calibrationScreen->backCallback = [this, calibrationScreen, display, mainMenu]() {
             display->clearScreen();
@@ -576,6 +581,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
             delete calibrationScreen;
         };
         setCurrentScreen(*calibrationScreen);
+        */
     }
 
     // If we are in demo mode, overright whatever the current screen would have been

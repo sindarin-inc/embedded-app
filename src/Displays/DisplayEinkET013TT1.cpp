@@ -114,10 +114,18 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
         driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
         break;
     case PARTIAL:
-        driver_.update(PARTIAL_REFRESH_WAVEFORM_REGULAR, gfxCanvas_.getBuffer());
+        if (!fullRefreshNext_) {
+            driver_.update(PARTIAL_REFRESH_WAVEFORM_REGULAR, gfxCanvas_.getBuffer());
+        } else {
+            driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
+        }
         break;
     case FAST:
-        driver_.update(EINK_10_13C_WAVEFORM_AU4, gfxCanvas_.getBuffer());
+        if (!fullRefreshNext_) {
+            driver_.update(EINK_10_13C_WAVEFORM_AU4, gfxCanvas_.getBuffer());
+        } else {
+            driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
+        }
         break;
     }
 

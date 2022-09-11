@@ -29,6 +29,7 @@ void MenuScreen::nextSelection() {
     currMenuPage_ = currSelection_ / NUM_LINES_PER_MENU_PAGE;
     // This makes sure we do a full refresh when the page changes
     if (oldCurMenuPage != currMenuPage_) {
+        log_d("Page changed, refreshing");
         firstLoad_ = true;
         needsRerender = true;
     }

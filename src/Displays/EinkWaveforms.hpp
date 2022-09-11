@@ -408,7 +408,7 @@ const EinkET013TT1Waveform EINK_10_13C_WAVEFORM_AU4 = {
     std::array<Frame, MAX_FRAMES_PER_WAVEFORM>{
         Frame{.bb = NOCHG, .bw = WHITE, .wb = BLACK, .ww = NOCHG},
         Frame{.bb = NOCHG, .bw = WHITE, .wb = BLACK, .ww = NOCHG},
-        Frame{.bb = NOCHG, .bw = WHITE, .wb = BLACK, .ww = NOCHG},
+        Frame{.bb = BLACK, .bw = WHITE, .wb = BLACK, .ww = NOCHG},
         Frame{.bb = NOCHG, .bw = NOCHG, .wb = NOCHG, .ww = NOCHG},
     },
 };

@@ -47,6 +47,8 @@ public:
 
     void render(DisplaySystem &display) override;
 
+    void setFirstLoad() { firstLoad_ = true; }
+
 protected:
     void processCommand(RemoteCommand command) override;
 
@@ -64,7 +66,6 @@ protected:
     int currBookPage_ = 0;
 
     bool inBooksMode_ = true;
-    bool firstLoad_ = true;
     bool beforeFirstLoad_ = true;
 };
 
