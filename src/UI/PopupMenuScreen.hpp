@@ -19,12 +19,18 @@ public:
         : prefs_(prefs), power_(power), renderer_(renderer), leftButtonTitle_("Lighting"),
           lightingAdjustScreen_(prefs), readableSeekScreen_(prefs, readable, renderer_) {
         currentScreen_ = this;
-        lightingAdjustScreen_.backCallback = [this]() { this->setCurrentScreen(*this); };
+
+        lightingAdjustScreen_.backCallback = [this]() {
+            this->needsRerender = true;
+            this->backCallback();
+        };
         readableSeekScreen_.backCallback = [this]() { this->setCurrentScreen(*this); };
         leftButtonCallback_ = [this]() {
             lightingAdjustScreen_.firstLoad = true;
             this->setCurrentScreen(lightingAdjustScreen_);
         };
+
+        leftButtonCallback_();
     };
 
     void drawBattery(DisplaySystem &display, int x, int y, int percentage);

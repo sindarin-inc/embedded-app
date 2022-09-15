@@ -13,31 +13,23 @@
 
 void MainMenuScreen::render(DisplaySystem &display) {
     NUM_LINES_PER_MENU_PAGE = 5;
-    if (beforeFirstLoad_) {
+    if (firstLoad_) {
         numBookItems_ = numMenuItems_;
         bookItems_ = menuItems_;
         currBookSelection_ = currSelection_;
         currBookPage_ = currMenuPage_;
-        beforeFirstLoad_ = false;
     }
 
-    // uint16_t midX = display.width() / 2;
-    // uint16_t midY = display.height() / 2;
-
-    // In case someone changed the selection out from underneath us.
-    int oldMenuPage = currMenuPage_;
-    currMenuPage_ = currSelection_ / NUM_LINES_PER_MENU_PAGE;
-    if (oldMenuPage != currMenuPage_) {
-        firstLoad_ = true;
-    }
+    uint16_t midX = display.width() / 2;
+    uint16_t midY = display.height() / 2;
 
     // Top Arrow
-    // display.drawLine(midX, 42, midX - 10, 47, display.fg);
-    // display.drawLine(midX, 42, midX + 10, 47, display.fg);
+    display.drawLine(midX, 42, midX - 10, 47, display.fg);
+    display.drawLine(midX, 42, midX + 10, 47, display.fg);
 
     // Bottom Arrow
-    // display.drawLine(midX, midY * 2 - 40, midX - 10, midY * 2 - 45, display.fg);
-    // display.drawLine(midX, midY * 2 - 40, midX + 10, midY * 2 - 45, display.fg);
+    display.drawLine(midX, midY * 2 - 40, midX - 10, midY * 2 - 45, display.fg);
+    display.drawLine(midX, midY * 2 - 40, midX + 10, midY * 2 - 45, display.fg);
 
     // Left Arrow
     // display.drawLine(25, midY, 35, midY - 10, display.fg);
@@ -66,33 +58,33 @@ void MainMenuScreen::render(DisplaySystem &display) {
     uint16_t screenWidth = display.width();
     uint16_t screenHeight = display.height();
 
-    // display.setRotation(0);
-    //  display.drawSingleLineOfText(itemTitle.c_str(), (screenWidth / 2) - (width / 2),
-    //                               (screenHeight / 2) - (display.getTextHeight()) / 2);
+    display.setRotation(0);
+    // display.drawSingleLineOfText(itemTitle.c_str(), (screenWidth / 2) - (width / 2),
+    //                              (screenHeight / 2) - (display.getTextHeight()) / 2);
 
-    // auto prevTitle = getItemAt((currSelection_ > 0) ? ((currSelection_ - 1) % numMenuItems_)
-    //                                                : (numMenuItems_ - 1))
-    //                    .title;
-    // auto nextTitle = getItemAt((currSelection_ + 1) % numMenuItems_).title;
+    auto prevTitle = getItemAt((currSelection_ > 0) ? ((currSelection_ - 1) % numMenuItems_)
+                                                    : (numMenuItems_ - 1))
+                         .title;
+    auto nextTitle = getItemAt((currSelection_ + 1) % numMenuItems_).title;
 
-    // display.getTextBounds(prevTitle.c_str(), &width, &height);
+    display.getTextBounds(prevTitle.c_str(), &width, &height);
 
     // display.drawSingleLineOfText(prevTitle.c_str(), (screenWidth / 2) - (width / 2), 80);
 
-    // display.getTextBounds(nextTitle.c_str(), &width, &height);
+    display.getTextBounds(nextTitle.c_str(), &width, &height);
 
     // display.drawSingleLineOfText(nextTitle.c_str(), (screenWidth / 2) - (width / 2),
     //                              (screenHeight - 80 - display.getTextHeight()));
 
-    // display.setRotation(0);
+    display.setRotation(0);
     /*
     display.getTextBounds("Settings", &width, &height);
 
     display.drawSingleLineOfText("Settings", screenWidth / 2 - width / 2, 28);
 */
 
-    display.drawXBitmap(display.width() - GEAR_WIDTH - 1, screenHeight / 2 - GEAR_HEIGHT / 2,
-                        GEAR_BITS, GEAR_WIDTH, GEAR_HEIGHT, display.fg);
+    display.drawXBitmap(1, screenHeight / 2 - GEAR_HEIGHT / 2, GEAR_BITS, GEAR_WIDTH, GEAR_HEIGHT,
+                        display.fg);
 
     /*
         display.getTextBounds("Read", &width, &height);
@@ -103,14 +95,15 @@ void MainMenuScreen::render(DisplaySystem &display) {
     // Draw the icon for the opposite of the mode we're in. If you're reading books and press
     // this direction, it takes you to articles, and vice versa.
     if (!inBooksMode_) {
-        display.drawXBitmap(1, screenHeight / 2 - BOOK_HEIGHT / 2, BOOK_BITS, BOOK_WIDTH,
-                            BOOK_HEIGHT, display.fg);
+        display.drawXBitmap(display.width() - BOOK_WIDTH - 1, screenHeight / 2 - BOOK_HEIGHT / 2,
+                            BOOK_BITS, BOOK_WIDTH, BOOK_HEIGHT, display.fg);
     } else {
-        display.drawXBitmap(1, screenHeight / 2 - ARTICLES_HEIGHT / 2, ARTICLES_BITS,
-                            ARTICLES_WIDTH, ARTICLES_HEIGHT, display.fg);
+        display.drawXBitmap(display.width() - ARTICLES_WIDTH - 1,
+                            screenHeight / 2 - ARTICLES_HEIGHT / 2, ARTICLES_BITS, ARTICLES_WIDTH,
+                            ARTICLES_HEIGHT, display.fg);
     }
 
-    // display.setRotation(0);
+    display.setRotation(0);
 
     // On the first load, we want to only render the items in the menu because we are going
     // to do a partial refresh with the selector button at a lower/higher vcom to reduce
@@ -155,6 +148,7 @@ void MainMenuScreen::render(DisplaySystem &display) {
                                      display.height() / 3 + (i % NUM_LINES_PER_MENU_PAGE) *
                                                                 (4 + display.getTextHeight()));
 
+        log_d("%d %d %d", i, currSelection_, currMenuPage_);
         if (i == currSelection_) {
             display.fillRoundRect(
                 display.width() / 4 - 15,
@@ -162,25 +156,6 @@ void MainMenuScreen::render(DisplaySystem &display) {
                     (i % NUM_LINES_PER_MENU_PAGE) * (4 + display.getTextHeight()) + 2,
                 display.getTextHeight() - 3, display.getTextHeight() - 3, 3, display.fg);
         }
-    }
-
-    display.drawXBitmap(display.width() - GEAR_WIDTH - 1, screenHeight / 2 - GEAR_HEIGHT / 2,
-                        GEAR_BITS, GEAR_WIDTH, GEAR_HEIGHT, display.fg);
-
-    /*
-        display.getTextBounds("Read", &width, &height);
-
-        display.drawSingleLineOfText("Read", screenWidth / 2 - width / 2, screenHeight - 30 -
-       height);
-    */
-    // Draw the icon for the opposite of the mode we're in. If you're reading books and press
-    // this direction, it takes you to articles, and vice versa.
-    if (!inBooksMode_) {
-        display.drawXBitmap(1, screenHeight / 2 - BOOK_HEIGHT / 2, BOOK_BITS, BOOK_WIDTH,
-                            BOOK_HEIGHT, display.fg);
-    } else {
-        display.drawXBitmap(1, screenHeight / 2 - ARTICLES_HEIGHT / 2, ARTICLES_BITS,
-                            ARTICLES_WIDTH, ARTICLES_HEIGHT, display.fg);
     }
     display.updateDisplay(DisplaySystem::UpdateType::FAST);
 
@@ -315,8 +290,6 @@ void MainMenuScreen::prevSelection() {
 // Down is select
 //
 void MainMenuScreen::processCommand(RemoteCommand command) {
-    int oldCurr = 0;
-
     switch (command) {
     case RemoteCommand::PREV:
 
@@ -330,16 +303,13 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
 
         break;
 
-    // Long press down on the TT should count as enter since we don't have the
-    // 5th button
     case RemoteCommand::ENTER:
-    case RemoteCommand::STOP:
 
         if (getCurrItem().callback != nullptr) {
             getCurrItem().callback();
         }
         break;
-    case RemoteCommand::CHANNEL_MINUS:
+    case RemoteCommand::CHANNEL_PLUS:
 
         // If we are going from Books to Articles in the menu, save off the current
         // place for the books, and swap in the place for the articles.
@@ -381,18 +351,13 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
         break;*/
 
     case RemoteCommand::BACK:
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::CHANNEL_MINUS:
 
         // Settings are always the last item
         // REWORK THIS!
-        oldCurr = currSelection_;
         currSelection_ = numMenuItems_ - 1;
-
         if (getCurrItem().callback != nullptr) {
-            auto fn = getCurrItem().callback;
-            // Make sure we return to the right place.
-            currSelection_ = oldCurr;
-            fn();
+            getCurrItem().callback();
         }
 
         break;
