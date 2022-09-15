@@ -70,7 +70,7 @@ public:
     // Render a page of text with the current place
     // returns the next place for reading so the calling function can
     // track place.
-    auto renderPage(unsigned long placeInFile) -> unsigned long;
+    auto renderPage(unsigned long placeInFile, bool withBookmark = false) -> unsigned long;
 
     auto getCurrentPageWordCount() -> uint32_t { return currentPageWordCount_; }
 

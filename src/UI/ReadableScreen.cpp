@@ -13,7 +13,8 @@ void ReadableScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
     }
-    newPlace_ = renderer_.renderPage(readable_.place);
+
+    newPlace_ = renderer_.renderPage(readable_.place, inBookmark_);
     log_d("%lu is the new place in the text", newPlace_);
 
     uint32_t wc = prefs_.wordCount.get().value();
@@ -50,24 +51,30 @@ void ReadableScreen::processCommand(RemoteCommand command) {
     };
 
     switch (command) {
-    case RemoteCommand::PREV:
+    case RemoteCommand::CHANNEL_MINUS:
         readable_.place = renderer_.getPreviousPlace();
         prefs_.readablePlace.set(readable_.id.c_str(), readable_.place);
         needsRerender = true;
         break;
-    case RemoteCommand::NEXT:
-    case RemoteCommand::ENTER:
+    case RemoteCommand::CHANNEL_PLUS:
+
         readable_.placePrev = readable_.place;
         readable_.place = newPlace_;
         prefs_.readablePlace.set(readable_.id.c_str(), readable_.place);
         needsRerender = true;
         break;
 
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::NEXT:
         setCurrentScreen(popup_);
         break;
+    case RemoteCommand::PREV:
+
+        inBookmark_ = !inBookmark_;
+        // NEed to make this partial refresh
+        needsRerender = true;
+        break;
     case RemoteCommand::BACK:
-    case RemoteCommand::CHANNEL_MINUS:
+    case RemoteCommand::ENTER:
         back();
         break;
     case RemoteCommand::NOP_BUTTON:

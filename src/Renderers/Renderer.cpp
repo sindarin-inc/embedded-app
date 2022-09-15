@@ -356,7 +356,7 @@ void Renderer::loaded() {
 
 // Show the (already loaded into buffer) current page
 // and load the next page into the next buffer so we have it.
-auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
+auto Renderer::renderPage(unsigned long placeInFile, bool withBookmark) -> unsigned long {
     SetCpuSpeedMhz(CPU_FREQ_MHZ_HIGH);
 
 #ifdef RENDERER_DEBUG
@@ -396,6 +396,7 @@ auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
 
     // Show the home screen and gear icon on the first page you read as a reminder. Then drop them
     // after that.
+    shownIcons_ = true;
     if (!shownIcons_) {
         display_.drawXBitmap(-25, display_.height() / 2 - HOME2_HEIGHT / 2, HOME2_BITS, HOME2_WIDTH,
                              HOME2_HEIGHT, display_.fg);
@@ -403,6 +404,13 @@ auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
         display_.drawXBitmap(display_.width() + 1, display_.height() / 2 - READ_GEAR_HEIGHT / 2,
                              READ_GEAR_BITS, READ_GEAR_WIDTH, READ_GEAR_HEIGHT, display_.fg);
         shownIcons_ = true;
+    }
+
+    if (withBookmark) {
+        log_d("Drawing bookmark!");
+        display_.fillRect(display_.width() + 1, -20, 13, 55, display_.fg);
+        display_.fillTriangle(display_.width() + 1, 35, display_.width() + 13, 35,
+                              display_.width() + 7, 30, display_.bg);
     }
 
     display_.updateDisplay();
