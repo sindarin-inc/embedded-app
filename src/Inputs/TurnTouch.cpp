@@ -18,12 +18,12 @@ auto DecodeTurntouch(uint16_t processed) -> RemoteCommand {
     case TT_MULTI_N_S:
         return SETUP;
     case TT_MULTI_E_W:
+    case TT_N_DOUBLE:
         return ENTER;
     case TT_MULTI_E_N_W:
         return FACTORY_DEFAULTS;
-    // Be careful with the double press codes, since you also get two single press commands
-    // immediately before
-    case TT_N_DOUBLE:
+        // Be careful with the double press codes, since you also get two single press commands
+        // immediately before
     case TT_S_DOUBLE:
     case TT_W_DOUBLE:
     case TT_E_DOUBLE:
