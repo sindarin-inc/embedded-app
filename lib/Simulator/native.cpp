@@ -95,6 +95,9 @@ void drawOverlay(RemoteCommand command) {
     } else if (command == RemoteCommand::CHANNEL_PLUS) {
         arrowOpacity = SDL_MAX_UINT8;
         arrowRotation = 180;
+    } else if (command == RemoteCommand::ENTER) {
+        arrowOpacity = SDL_MAX_UINT8;
+        arrowRotation = 225;
     }
     if (arrowOpacity > 0) {
         arrowOpacity = std::max(arrowOpacity - 10, 0);
