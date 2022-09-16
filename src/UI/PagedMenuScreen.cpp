@@ -222,7 +222,6 @@ void PagedMenuScreen::prevSelection() {
 void PagedMenuScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::PREV:
-
         // Settings are always the last item
         currSelection_ = numMenuItems_ - 1;
         if (getCurrItem().callback != nullptr) {
@@ -253,7 +252,6 @@ void PagedMenuScreen::processCommand(RemoteCommand command) {
             getCurrItem().callback();
         }
         break;
-
     case RemoteCommand::CHANNEL_PLUS:
 
         nextSelection();

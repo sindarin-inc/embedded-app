@@ -73,6 +73,12 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         // NEed to make this partial refresh
         needsRerender = true;
         break;
+    case RemoteCommand::PREV:
+
+        inBookmark_ = !inBookmark_;
+        // NEed to make this partial refresh
+        needsRerender = true;
+        break;
     case RemoteCommand::BACK:
     case RemoteCommand::ENTER:
         back();

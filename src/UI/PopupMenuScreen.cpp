@@ -84,16 +84,12 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     display.getTextBounds(batteryStatus.c_str(), &textWidth, &textHeight);
 
     display.setFont(display.style.getFontFamily().popupFont);
-
-    // display.getTextBounds(batteryStatus.c_str(), &textWidth, &textHeight);
-    display.getTextBounds("Text", &textWidth, &textHeight);
+    display.getTextBounds(batteryStatus.c_str(), &textWidth, &textHeight);
+    // display.getTextBounds("Text", &textWidth, &textHeight);
 
     // Similar to the above, magic numbers are just to make it look nice
     display.drawSingleLineOfText(batteryStatus.c_str(), (screenWidth / 2) - (textWidth / 2),
                                  (screenHeight / 2) + (textHeight / 2) - 9 - heightOffset);
-
-    // display.drawSingleLineOfText("Text", (screenWidth / 2) - (textWidth / 2),
-    //                              screenHeight / 2 - textHeight / 2);
 
     // display.drawSingleLineOfText("Text", (screenWidth / 2) - (textWidth / 2),
     //                              screenHeight / 2 - textHeight / 2);
