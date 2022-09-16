@@ -222,23 +222,16 @@ void PagedMenuScreen::prevSelection() {
 void PagedMenuScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::PREV:
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 83145fe (simplify main menu)
+
         // Settings are always the last item
         currSelection_ = numMenuItems_ - 1;
         if (getCurrItem().callback != nullptr) {
             getCurrItem().callback();
         }
-<<<<<<< HEAD
-=======
 
         prevSelection();
         needsRerender = true;
->>>>>>> 56e5564 (add popup idea based on CS logo 4)
-=======
->>>>>>> 83145fe (simplify main menu)
+
         break;
 
     case RemoteCommand::NEXT:
@@ -260,53 +253,14 @@ void PagedMenuScreen::processCommand(RemoteCommand command) {
             getCurrItem().callback();
         }
         break;
-<<<<<<< HEAD
-<<<<<<< HEAD
-        // Pocket articles is always one from the last
-        /*
-        currSelection_ = numMenuItems_ - 2;
-        if (getCurrItem().callback != nullptr) {
-            getCurrItem().callback();
-        }
-        break;*/
 
-    case RemoteCommand::ENTER:
-
-        if (getCurrItem().callback != nullptr) {
-            getCurrItem().callback();
-        }
-        break;
-=======
->>>>>>> 83145fe (simplify main menu)
     case RemoteCommand::CHANNEL_PLUS:
 
         nextSelection();
         needsRerender = true;
 
-<<<<<<< HEAD
-=======
-    case RemoteCommand::CHANNEL_PLUS:
-
-        if (getCurrItem().callback != nullptr) {
-            getCurrItem().callback();
-        }
->>>>>>> 56e5564 (add popup idea based on CS logo 4)
         break;
 
-<<<<<<< HEAD
-=======
-        // Pocket articles is always one from the last
-        /*
-        currSelection_ = numMenuItems_ - 2;
-        if (getCurrItem().callback != nullptr) {
-            getCurrItem().callback();
-        }
-        break;*/
->>>>>>> 75ec884 (make TT work again and connect wifi if there)
-=======
-        break;
-
->>>>>>> 83145fe (simplify main menu)
     case RemoteCommand::BACK:
     case RemoteCommand::CHANNEL_MINUS:
         prevSelection();

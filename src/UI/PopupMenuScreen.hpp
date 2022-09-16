@@ -43,13 +43,14 @@ public:
         leftButtonTitle_ = title;
         leftButtonCallback_ = std::move(callback);
     }
+    LightingAdjustScreen lightingAdjustScreen_;
 
 protected:
     PreferencesStore &prefs_;
     Power &power_;
     Renderer &renderer_;
     std::string leftButtonTitle_;
-    LightingAdjustScreen lightingAdjustScreen_;
+
     ReadableSeekScreen readableSeekScreen_;
     std::function<void(void)> leftButtonCallback_;
 };

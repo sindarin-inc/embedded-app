@@ -65,7 +65,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         break;
 
     case RemoteCommand::NEXT:
-        setCurrentScreen(popup_);
+        setCurrentScreen(popup_.lightingAdjustScreen_);
         break;
     case RemoteCommand::PREV:
 
