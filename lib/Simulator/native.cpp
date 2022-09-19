@@ -128,11 +128,11 @@ void sendCodeAndRender(RemoteCommand command, SDL_Renderer *renderer) {
 void runBackwardsUnitTest(SDL_Window *window, SDL_Renderer *renderer) {
     for (int i = 0; i < 500; i++) {
         saveScreenshotPng("current.png", window, renderer);
-        sendCodeAndRender(RemoteCommand::NEXT, renderer);
+        sendCodeAndRender(RemoteCommand::CHANNEL_PLUS, renderer);
         saveScreenshotPng("next.png", window, renderer);
-        sendCodeAndRender(RemoteCommand::NEXT, renderer);
+        sendCodeAndRender(RemoteCommand::CHANNEL_PLUS, renderer);
         saveScreenshotPng("nextnext.png", window, renderer);
-        sendCodeAndRender(RemoteCommand::PREV, renderer);
+        sendCodeAndRender(RemoteCommand::CHANNEL_MINUS, renderer);
         saveScreenshotPng("nextprev.png", window, renderer);
         // compare the most two recent pngs -- they should be the same.
         // if not, error out.
@@ -149,7 +149,7 @@ void goBackNumPages(SDL_Window *window, SDL_Renderer *renderer, int numPages) {
     int i = 0;
 
     for (i = 0; i < numPages; i++) {
-        sendCodeAndRender(RemoteCommand::PREV, renderer);
+        sendCodeAndRender(RemoteCommand::CHANNEL_MINUS, renderer);
         usleep(1000000.0 / 240.0);
     }
 }

@@ -22,7 +22,7 @@ public:
 
         lightingAdjustScreen_.backCallback = [this]() {
             this->needsRerender = true;
-            this->backCallback();
+            this->setCurrentScreen(*this);
         };
         readableSeekScreen_.backCallback = [this]() { this->setCurrentScreen(*this); };
         leftButtonCallback_ = [this]() {
@@ -30,7 +30,7 @@ public:
             this->setCurrentScreen(lightingAdjustScreen_);
         };
 
-        leftButtonCallback_();
+        //        leftButtonCallback_();
     };
 
     void drawBattery(DisplaySystem &display, int x, int y, int percentage);
@@ -43,13 +43,13 @@ public:
         leftButtonTitle_ = title;
         leftButtonCallback_ = std::move(callback);
     }
-    LightingAdjustScreen lightingAdjustScreen_;
 
 protected:
     PreferencesStore &prefs_;
     Power &power_;
     Renderer &renderer_;
     std::string leftButtonTitle_;
+    LightingAdjustScreen lightingAdjustScreen_;
 
     ReadableSeekScreen readableSeekScreen_;
     std::function<void(void)> leftButtonCallback_;

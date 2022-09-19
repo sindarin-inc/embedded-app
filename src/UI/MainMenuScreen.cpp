@@ -91,8 +91,8 @@ void MainMenuScreen::render(DisplaySystem &display) {
     display.drawSingleLineOfText("Settings", screenWidth / 2 - width / 2, 28);
 */
 
-    display.drawXBitmap(display.width() - GEAR_WIDTH - 1, screenHeight / 2 - GEAR_HEIGHT / 2,
-                        GEAR_BITS, GEAR_WIDTH, GEAR_HEIGHT, display.fg);
+    display.drawXBitmap(display.width() - BOOK_WIDTH - 1, screenHeight / 2 - BOOK_WIDTH / 2,
+                        BOOK_BITS, BOOK_WIDTH, BOOK_HEIGHT, display.fg);
 
     /*
         display.getTextBounds("Read", &width, &height);
@@ -102,13 +102,13 @@ void MainMenuScreen::render(DisplaySystem &display) {
     */
     // Draw the icon for the opposite of the mode we're in. If you're reading books and press
     // this direction, it takes you to articles, and vice versa.
-    if (!inBooksMode_) {
-        display.drawXBitmap(1, screenHeight / 2 - BOOK_HEIGHT / 2, BOOK_BITS, BOOK_WIDTH,
-                            BOOK_HEIGHT, display.fg);
-    } else {
-        display.drawXBitmap(1, screenHeight / 2 - ARTICLES_HEIGHT / 2, ARTICLES_BITS,
-                            ARTICLES_WIDTH, ARTICLES_HEIGHT, display.fg);
-    }
+    // if (!inBooksMode_) {
+    display.drawXBitmap(1, screenHeight / 2 - GEAR_HEIGHT / 2, GEAR_BITS, GEAR_WIDTH, GEAR_HEIGHT,
+                        display.fg);
+    // } else {
+    //     display.drawXBitmap(1, screenHeight / 2 - ARTICLES_HEIGHT / 2, ARTICLES_BITS,
+    //                         ARTICLES_WIDTH, ARTICLES_HEIGHT, display.fg);
+    // }
 
     // display.setRotation(0);
 
@@ -164,8 +164,8 @@ void MainMenuScreen::render(DisplaySystem &display) {
         }
     }
 
-    display.drawXBitmap(display.width() - GEAR_WIDTH - 1, screenHeight / 2 - GEAR_HEIGHT / 2,
-                        GEAR_BITS, GEAR_WIDTH, GEAR_HEIGHT, display.fg);
+    display.drawXBitmap(display.width() - BOOK_WIDTH - 1, screenHeight / 2 - BOOK_HEIGHT / 2,
+                        BOOK_BITS, BOOK_WIDTH, BOOK_HEIGHT, display.fg);
 
     /*
         display.getTextBounds("Read", &width, &height);
@@ -175,13 +175,13 @@ void MainMenuScreen::render(DisplaySystem &display) {
     */
     // Draw the icon for the opposite of the mode we're in. If you're reading books and press
     // this direction, it takes you to articles, and vice versa.
-    if (!inBooksMode_) {
-        display.drawXBitmap(1, screenHeight / 2 - BOOK_HEIGHT / 2, BOOK_BITS, BOOK_WIDTH,
-                            BOOK_HEIGHT, display.fg);
-    } else {
-        display.drawXBitmap(1, screenHeight / 2 - ARTICLES_HEIGHT / 2, ARTICLES_BITS,
-                            ARTICLES_WIDTH, ARTICLES_HEIGHT, display.fg);
-    }
+    // if (!inBooksMode_) {
+    display.drawXBitmap(1, screenHeight / 2 - GEAR_HEIGHT / 2, GEAR_BITS, GEAR_WIDTH, GEAR_HEIGHT,
+                        display.fg);
+    // } else {
+    //    display.drawXBitmap(1, screenHeight / 2 - ARTICLES_HEIGHT / 2, ARTICLES_BITS,
+    //                       ARTICLES_WIDTH, ARTICLES_HEIGHT, display.fg);
+    //}
     display.updateDisplay(DisplaySystem::UpdateType::FAST);
 
 #if EINKET013TT1
@@ -332,56 +332,48 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
 
     // Long press down on the TT should count as enter since we don't have the
     // 5th button
-    case RemoteCommand::ENTER:
+    // case RemoteCommand::ENTER:
+    case RemoteCommand::CHANNEL_PLUS:
     case RemoteCommand::STOP:
 
         if (getCurrItem().callback != nullptr) {
             getCurrItem().callback();
         }
         break;
-    case RemoteCommand::CHANNEL_MINUS:
+        /*case RemoteCommand::CHANNEL_MINUS:
 
-        // If we are going from Books to Articles in the menu, save off the current
-        // place for the books, and swap in the place for the articles.
-        // Otherwise, vice versa.
-        if (inBooksMode_) {
-            numBookItems_ = numMenuItems_;
-            bookItems_ = menuItems_;
-            currBookSelection_ = currSelection_;
-            currBookPage_ = currMenuPage_;
+            // If we are going from Books to Articles in the menu, save off the current
+            // place for the books, and swap in the place for the articles.
+            // Otherwise, vice versa.
+            if (inBooksMode_) {
+                numBookItems_ = numMenuItems_;
+                bookItems_ = menuItems_;
+                currBookSelection_ = currSelection_;
+                currBookPage_ = currMenuPage_;
 
-            numMenuItems_ = numArticleItems_;
-            menuItems_ = articleItems_;
-            currSelection_ = currArticleSelection_;
-            currMenuPage_ = currArticlePage_;
-        } else {
-            numArticleItems_ = numMenuItems_;
-            articleItems_ = menuItems_;
-            currArticleSelection_ = currSelection_;
-            currArticlePage_ = currMenuPage_;
+                numMenuItems_ = numArticleItems_;
+                menuItems_ = articleItems_;
+                currSelection_ = currArticleSelection_;
+                currMenuPage_ = currArticlePage_;
+            } else {
+                numArticleItems_ = numMenuItems_;
+                articleItems_ = menuItems_;
+                currArticleSelection_ = currSelection_;
+                currArticlePage_ = currMenuPage_;
 
-            numMenuItems_ = numBookItems_;
-            menuItems_ = bookItems_;
-            currSelection_ = currBookSelection_;
-            currMenuPage_ = currBookPage_;
-        }
-        inBooksMode_ = !inBooksMode_;
-        firstLoad_ = true;
-        /*
-        if (getCurrItem().callback != nullptr) {
-            getCurrItem().callback();
-        }*/
-        break;
-        // Pocket articles is always one from the last
-        /*
-        currSelection_ = numMenuItems_ - 2;
-        if (getCurrItem().callback != nullptr) {
-            getCurrItem().callback();
-        }
-        break;*/
+                numMenuItems_ = numBookItems_;
+                menuItems_ = bookItems_;
+                currSelection_ = currBookSelection_;
+                currMenuPage_ = currBookPage_;
+            }
+            inBooksMode_ = !inBooksMode_;
+            firstLoad_ = true;
+
+            break;
+            */
 
     case RemoteCommand::BACK:
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::CHANNEL_MINUS:
 
         // Settings are always the last item
         // REWORK THIS!

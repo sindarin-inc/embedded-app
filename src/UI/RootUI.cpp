@@ -112,7 +112,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
     SHOW_HEAP();
 
     // Set up pocket article menu
-#if ENABLE_POCKET
+#if 0
     mainMenu->addMenuItem(MenuItem("Pocket Articles", [this, mainMenu, display, &fileSystem,
                                                        createReadableScreen]() {
         if (!NetworkConnected()) {
@@ -525,7 +525,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
         setCurrentScreen(*mainMenu);
     };
 
-    mainMenu->addMenuItem(MenuItem("settings", [this, settingsMenu]() {
+    mainMenu->addMenuItem(MenuItem("Settings", [this, settingsMenu]() {
         this->display_->clearDisplay();
         setCurrentScreen(*settingsMenu);
     }));

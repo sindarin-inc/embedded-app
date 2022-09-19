@@ -44,11 +44,11 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     }
 
     log_d("PopupMenuScreen render");
-
-    lightingAdjustScreen_.needsRerender = true;
-    this->setCurrentScreen(lightingAdjustScreen_);
-    return;
-
+    /*
+        lightingAdjustScreen_.needsRerender = true;
+        this->setCurrentScreen(lightingAdjustScreen_);
+        return;
+    */
     // Blank out screen
     display.fillScreen(display.bg);
     // Draw menu surroundings

@@ -40,7 +40,7 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
     x += barWidth + spacing;
     display.setCursor(x, y + (Lightbulb_height + percentHeight) / 2);
     // Not drawing for some reason hmm
-    display.println(StringFormat("%d%%", backlightPercent).c_str());
+    // display.println(StringFormat("%d%%", backlightPercent).c_str());
 
     // Cursor is from the baseline of the text I think
     y += Lightbulb_height + display.getTextHeight() + spacing;
@@ -64,6 +64,12 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
                        display.fg);
     // Not drawing for some reason hmm
     // display.println(StringFormat("%d%%", backlightPercent).c_str());
+    // up arrow
+    uint16_t arrowWidth = 36, arrowHeight = 7;
+    x = (display.width() - arrowWidth) / 2;
+    y = 0;
+    display.drawLine(x, y, x + arrowWidth / 2, y - arrowHeight, display.fg);
+    display.drawLine(x + arrowWidth / 2, y - arrowHeight, x + arrowWidth, y, display.fg);
 
     display.updateDisplay(firstLoad ? DisplaySystem::UpdateType::FULL
                                     : DisplaySystem::UpdateType::FAST);
