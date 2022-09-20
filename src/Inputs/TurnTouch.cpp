@@ -18,7 +18,7 @@ auto DecodeTurntouch(uint16_t processed) -> RemoteCommand {
     case TT_MULTI_N_S:
         return SETUP;
     case TT_MULTI_E_W:
-    case TT_N_DOUBLE:
+        // case TT_N_DOUBLE:
         return ENTER;
     case TT_MULTI_E_N_W:
         return FACTORY_DEFAULTS;

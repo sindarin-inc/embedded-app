@@ -91,7 +91,7 @@ void MainMenuScreen::render(DisplaySystem &display) {
     display.drawSingleLineOfText("Settings", screenWidth / 2 - width / 2, 28);
 */
 
-    display.drawXBitmap(display.width() - BOOK_WIDTH - 1, screenHeight / 2 - BOOK_WIDTH / 2,
+    display.drawXBitmap(display.width() /* - BOOK_WIDTH - 1*/, screenHeight / 2 - BOOK_WIDTH / 2,
                         BOOK_BITS, BOOK_WIDTH, BOOK_HEIGHT, display.fg);
 
     /*
@@ -103,7 +103,7 @@ void MainMenuScreen::render(DisplaySystem &display) {
     // Draw the icon for the opposite of the mode we're in. If you're reading books and press
     // this direction, it takes you to articles, and vice versa.
     // if (!inBooksMode_) {
-    display.drawXBitmap(1, screenHeight / 2 - GEAR_HEIGHT / 2, GEAR_BITS, GEAR_WIDTH, GEAR_HEIGHT,
+    display.drawXBitmap(-20, screenHeight / 2 - GEAR_HEIGHT / 2, GEAR_BITS, GEAR_WIDTH, GEAR_HEIGHT,
                         display.fg);
     // } else {
     //     display.drawXBitmap(1, screenHeight / 2 - ARTICLES_HEIGHT / 2, ARTICLES_BITS,
@@ -164,7 +164,7 @@ void MainMenuScreen::render(DisplaySystem &display) {
         }
     }
 
-    display.drawXBitmap(display.width() - BOOK_WIDTH - 1, screenHeight / 2 - BOOK_HEIGHT / 2,
+    display.drawXBitmap(display.width() /* - BOOK_WIDTH - 1*/, screenHeight / 2 - BOOK_HEIGHT / 2,
                         BOOK_BITS, BOOK_WIDTH, BOOK_HEIGHT, display.fg);
 
     /*
@@ -176,7 +176,7 @@ void MainMenuScreen::render(DisplaySystem &display) {
     // Draw the icon for the opposite of the mode we're in. If you're reading books and press
     // this direction, it takes you to articles, and vice versa.
     // if (!inBooksMode_) {
-    display.drawXBitmap(1, screenHeight / 2 - GEAR_HEIGHT / 2, GEAR_BITS, GEAR_WIDTH, GEAR_HEIGHT,
+    display.drawXBitmap(-20, screenHeight / 2 - GEAR_HEIGHT / 2, GEAR_BITS, GEAR_WIDTH, GEAR_HEIGHT,
                         display.fg);
     // } else {
     //    display.drawXBitmap(1, screenHeight / 2 - ARTICLES_HEIGHT / 2, ARTICLES_BITS,
