@@ -1,5 +1,6 @@
 #include "UI/DemoScreen.hpp"
 
+#include "Misc/Platform.hpp"
 #include "UI/Fonts/Tahoma10pt7b.h"
 #include "UI/Fonts/Tahoma5pt7b.h"
 #include "UI/Fonts/Tahoma6pt7b.h"
@@ -37,12 +38,32 @@ void DemoScreen::render(DisplaySystem &display) {
         display.setFont(&TAHOMA_REGULAR_FONT5PT7B);
         break;
     }
-    renderer_.setStream(stream);
-    renderer_.setHorizontalCenter(true);
-    renderer_.setVerticalCenter(true);
+    if (currentScreen_ > 0) {
+        display.setFont(&TAHOMA_REGULAR_FONT5PT7B);
 
-    this->renderer_.renderPage(0);
+        renderer_.setStream(stream);
+        renderer_.setHorizontalCenter(true);
+        renderer_.setVerticalCenter(true);
+        this->renderer_.renderPage(0);
+    }
+    // Draw some dots
+    else {
+        display.fillCircle(display.xAbsolute(display.xAbsoluteCenter()),
+                           display.yAbsolute(display.yAbsoluteCenter()), 5, display.fg);
+        display.updateDisplay();
+    }
 
+#if !SIMULATOR
+    auto backlight = prefs_.backlight.get().value();
+
+    if (currentScreen_ % 2 == 1) {
+        SetRightBackLight(false, backlight);
+        SetLeftBackLight(true, backlight);
+    } else {
+        SetRightBackLight(true, backlight);
+        SetLeftBackLight(false, backlight);
+    }
+#endif
     needsRerender = false;
 }
 
@@ -79,6 +100,11 @@ void DemoScreen::processCommand(RemoteCommand command) {
     }
 
     if (currentScreen_ >= NUM_DEMO_SCREENS) {
+#if !SIMULATOR
+        auto backlight = prefs_.backlight.get().value();
+        SetRightBackLight(true, backlight);
+        SetLeftBackLight(true, backlight);
+#endif
         backCallback();
     }
 }

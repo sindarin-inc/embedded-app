@@ -160,6 +160,13 @@ public:
     // TODO: Just use `textcolor` and `textbgcolor` for these?
     uint16_t bg = 0, fg = 0;
 
+    // When we want to ignore the configured offsets
+    inline auto xAbsolute(int x) -> int { return x - boundingBox_.x; }
+    inline auto yAbsolute(int y) -> int { return y - boundingBox_.y; }
+
+    auto xAbsoluteCenter() -> int { return 128; }
+    auto yAbsoluteCenter() -> int { return 128; }
+
 protected:
     // Must be set in the constructor of subclasses
     Adafruit_GFX *gfxClass_ = nullptr;

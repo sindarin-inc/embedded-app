@@ -71,7 +71,7 @@ void InitializePlatform() {
     };
     ledc_timer_config(&ledcTimer);
 
-    ledc_channel_config_t ledcChannel = {
+    ledc_channel_config_t ledcLChannel = {
         .gpio_num = BACKLIGHT_LEFT,
         .speed_mode = LEDC_LOW_SPEED_MODE,
         .channel = LEDC_CHANNEL_0,
@@ -81,9 +81,18 @@ void InitializePlatform() {
         .hpoint = 0 //
     };
 
-    ledc_channel_config(&ledcChannel);
-    ledcChannel.gpio_num = BACKLIGHT_RIGHT;
-    ledc_channel_config(&ledcChannel);
+    ledc_channel_config_t ledcRChannel = {
+        .gpio_num = BACKLIGHT_RIGHT,
+        .speed_mode = LEDC_LOW_SPEED_MODE,
+        .channel = LEDC_CHANNEL_1,
+        .intr_type = LEDC_INTR_DISABLE,
+        .timer_sel = LEDC_TIMER_0,
+        .duty = 0,
+        .hpoint = 0 //
+    };
+
+    ledc_channel_config(&ledcLChannel);
+    ledc_channel_config(&ledcRChannel);
 
     // This allows LEDC to work in light sleep on ESP32-S3
     esp_sleep_pd_config(ESP_PD_DOMAIN_RTC8M, ESP_PD_OPTION_ON);
@@ -149,9 +158,31 @@ void SetBacklight(int percent) {
 #if LEDC_BACKLIGHT
     ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, dutyCycle);
     ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, dutyCycle);
+    ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
 #endif
 #if ULP_BACKLIGHT
     UlpSetBrightness(dutyCycle);
+#endif
+}
+
+void SetRightBackLight(bool on, int percent) {
+    // default 50% brightness
+    int onOff = on ? 50 : 0;
+    auto dutyCycle = onOff * 255 / 100;
+#if LEDC_BACKLIGHT
+    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, dutyCycle);
+    ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
+#endif
+}
+
+void SetLeftBackLight(bool on, int percent) {
+    // default 50% brightness
+    int onOff = on ? 50 : 0;
+    auto dutyCycle = onOff * 255 / 100;
+#if LEDC_BACKLIGHT
+    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, dutyCycle);
+    ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
 #endif
 }
 
