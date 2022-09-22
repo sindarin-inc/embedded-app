@@ -48,7 +48,7 @@ public:
 
     virtual auto setup() -> bool;
 
-    DisplayRect defaultBoundingBox = {0, 0, 255, 255};
+    DisplayRect defaultBoundingBox = {32, 32, 223, 223};
 
     Style style;
 
