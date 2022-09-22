@@ -8,6 +8,44 @@
 #include "Displays/DisplayEinkET013TT1.hpp"
 #endif
 
+void MenuScreen::drawArrowsAndSelections(DisplaySystem &display) {
+
+    display.setFont(display.style.getFontFamily().readableFont);
+    // Upper left arrow for Settings
+    display.drawLine(display.xAbsolute(xOffsetForArrows), display.yAbsolute(yOffsetForArrows),
+                     display.xAbsolute(xOffsetForArrows + arrowWidth),
+                     display.yAbsolute(yOffsetForArrows - arrowHeight / 2), display.fg);
+    display.drawLine(display.xAbsolute(xOffsetForArrows), display.yAbsolute(yOffsetForArrows),
+                     display.xAbsolute(xOffsetForArrows + arrowWidth),
+                     display.yAbsolute(yOffsetForArrows + arrowHeight / 2), display.fg);
+
+    // Lower right arrow for "Read" or flip between "Books and Articles"
+    display.drawLine(
+        display.xAbsolute(display.xAbsoluteMax() - xOffsetForArrows),
+        display.yAbsolute(display.yAbsoluteMax() - yOffsetForArrows),
+        display.xAbsolute(display.xAbsoluteMax() - (xOffsetForArrows + arrowWidth)),
+        display.yAbsolute(display.yAbsoluteMax() - (yOffsetForArrows - arrowHeight / 2)),
+        display.fg);
+    display.drawLine(
+        display.xAbsolute(display.xAbsoluteMax() - xOffsetForArrows),
+        display.yAbsolute(display.yAbsoluteMax() - yOffsetForArrows),
+        display.xAbsolute(display.yAbsoluteMax() - (xOffsetForArrows + arrowWidth)),
+        display.yAbsolute(display.yAbsoluteMax() - (yOffsetForArrows + arrowHeight / 2)),
+        display.fg);
+
+    display.drawSingleLineOfText(
+        upperLeftText_, display.xAbsolute(xOffsetForArrows + arrowWidth + arrowTextSpacing),
+        display.yAbsolute(yOffsetForArrows - display.getTextHeight() / 2));
+
+    display.drawSingleLineOfText(
+        lowerRightText_,
+        display.xAbsolute(display.xAbsoluteMax() -
+                          (xOffsetForArrows + arrowWidth + arrowTextSpacing +
+                           display.getTextWidth(lowerRightText_))),
+        display.yAbsolute(display.yAbsoluteMax() -
+                          (yOffsetForArrows + display.getTextHeight() / 2)));
+}
+
 void MenuScreen::addMenuItem(const MenuItem &newItem) {
     menuItems_.push_back(newItem);
     numMenuItems_++;
@@ -85,12 +123,14 @@ void MenuScreen::render(DisplaySystem &display) {
     // to do a partial refresh with the selector button at a lower/higher vcom to reduce
     // ghosting.
     if (firstLoad_) {
+        drawArrowsAndSelections(display);
         for (int i = currMenuPage_ * NUM_LINES_PER_MENU_PAGE;
              i < currMenuPage_ * NUM_LINES_PER_MENU_PAGE + NUM_LINES_PER_MENU_PAGE &&
              i < numMenuItems_;
              i++) {
-            display.drawSingleLineOfText(getItemTitleAt(i), 10,
-                                         (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight());
+            display.drawSingleLineOfText(getItemTitleAt(i), 30,
+                                         (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight() +
+                                             30);
         }
 
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
@@ -119,15 +159,16 @@ void MenuScreen::render(DisplaySystem &display) {
     for (int i = currMenuPage_ * NUM_LINES_PER_MENU_PAGE;
          i < currMenuPage_ * NUM_LINES_PER_MENU_PAGE + NUM_LINES_PER_MENU_PAGE && i < numMenuItems_;
          i++) {
-        display.drawSingleLineOfText(getItemTitleAt(i), 10,
-                                     (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight());
+        display.drawSingleLineOfText(getItemTitleAt(i), 30,
+                                     (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight() + 50);
 
         if (i == currSelection_) {
-            display.fillRoundRect(2, (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight() + 2,
-                                  display.getTextHeight() - 3, display.getTextHeight() - 3, 3,
-                                  display.fg);
+            display.fillRoundRect(
+                2 + 20, (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight() + 2 + 50,
+                display.getTextHeight() - 3, display.getTextHeight() - 3, 3, display.fg);
         }
     }
+    drawArrowsAndSelections(display);
     display.updateDisplay(DisplaySystem::UpdateType::FAST);
 
 #if EINKET013TT1

@@ -11,49 +11,6 @@
 #include "Displays/DisplayEinkET013TT1.hpp"
 #endif
 
-void MainMenuScreen::drawArrowsAndSelections(DisplaySystem &display) {
-
-    const int xOffsetForArrows = 25;
-    const int yOffsetForArrows = 40;
-    const int arrowWidth = 5;
-    const int arrowHeight = 10;
-    const int arrowTextSpacing = 5;
-
-    display.setFont(display.style.getFontFamily().readableFont);
-    // Upper left arrow for Settings
-    display.drawLine(display.xAbsolute(xOffsetForArrows), display.yAbsolute(yOffsetForArrows),
-                     display.xAbsolute(xOffsetForArrows + arrowWidth),
-                     display.yAbsolute(yOffsetForArrows - arrowHeight / 2), display.fg);
-    display.drawLine(display.xAbsolute(xOffsetForArrows), display.yAbsolute(yOffsetForArrows),
-                     display.xAbsolute(xOffsetForArrows + arrowWidth),
-                     display.yAbsolute(yOffsetForArrows + arrowHeight / 2), display.fg);
-
-    // Lower right arrow for "Read" or flip between "Books and Articles"
-    display.drawLine(
-        display.xAbsolute(display.xAbsoluteMax() - xOffsetForArrows),
-        display.yAbsolute(display.yAbsoluteMax() - yOffsetForArrows),
-        display.xAbsolute(display.xAbsoluteMax() - (xOffsetForArrows + arrowWidth)),
-        display.yAbsolute(display.yAbsoluteMax() - (yOffsetForArrows - arrowHeight / 2)),
-        display.fg);
-    display.drawLine(
-        display.xAbsolute(display.xAbsoluteMax() - xOffsetForArrows),
-        display.yAbsolute(display.yAbsoluteMax() - yOffsetForArrows),
-        display.xAbsolute(display.yAbsoluteMax() - (xOffsetForArrows + arrowWidth)),
-        display.yAbsolute(display.yAbsoluteMax() - (yOffsetForArrows + arrowHeight / 2)),
-        display.fg);
-
-    display.drawSingleLineOfText(
-        "Settings", display.xAbsolute(xOffsetForArrows + arrowWidth + arrowTextSpacing),
-        display.yAbsolute(yOffsetForArrows - display.getTextHeight() / 2));
-
-    display.drawSingleLineOfText(
-        "Read",
-        display.xAbsolute(
-            display.xAbsoluteMax() -
-            (xOffsetForArrows + arrowWidth + arrowTextSpacing + display.getTextWidth("Read"))),
-        display.yAbsolute(display.yAbsoluteMax() -
-                          (yOffsetForArrows + display.getTextHeight() / 2)));
-}
 
 void MainMenuScreen::render(DisplaySystem &display) {
     NUM_LINES_PER_MENU_PAGE = 5;

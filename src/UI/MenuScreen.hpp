@@ -56,13 +56,24 @@ public:
     void processCommand(RemoteCommand command) override;
 
 protected:
+    void drawArrowsAndSelections(DisplaySystem &display);
     int numMenuItems_ = 0;
     std::vector<MenuItem> menuItems_;
     int currSelection_ = 0;
     int currMenuPage_ = 0;
     bool firstLoad_ = true;
 
-    int NUM_LINES_PER_MENU_PAGE = 12;
+    int xOffsetForArrows = 25;
+    int yOffsetForArrows = 40;
+    int arrowWidth = 5;
+    int arrowHeight = 10;
+    int arrowTextSpacing = 5;
+
+    char *upperLeftText_ = "Back";
+    char *lowerRightText_ = "Select";
+
+    int NUM_LINES_PER_MENU_PAGE = 10;
+
     Power &power_;
 };
 
