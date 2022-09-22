@@ -130,7 +130,7 @@ void MenuScreen::render(DisplaySystem &display) {
              i++) {
             display.drawSingleLineOfText(getItemTitleAt(i), 30,
                                          (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight() +
-                                             30);
+                                             50);
         }
 
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
