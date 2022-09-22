@@ -11,6 +11,50 @@
 #include "Displays/DisplayEinkET013TT1.hpp"
 #endif
 
+void MainMenuScreen::drawArrowsAndSelections(DisplaySystem &display) {
+
+    const int xOffsetForArrows = 25;
+    const int yOffsetForArrows = 40;
+    const int arrowWidth = 5;
+    const int arrowHeight = 10;
+    const int arrowTextSpacing = 5;
+
+    display.setFont(display.style.getFontFamily().readableFont);
+    // Upper left arrow for Settings
+    display.drawLine(display.xAbsolute(xOffsetForArrows), display.yAbsolute(yOffsetForArrows),
+                     display.xAbsolute(xOffsetForArrows + arrowWidth),
+                     display.yAbsolute(yOffsetForArrows - arrowHeight / 2), display.fg);
+    display.drawLine(display.xAbsolute(xOffsetForArrows), display.yAbsolute(yOffsetForArrows),
+                     display.xAbsolute(xOffsetForArrows + arrowWidth),
+                     display.yAbsolute(yOffsetForArrows + arrowHeight / 2), display.fg);
+
+    // Lower right arrow for "Read" or flip between "Books and Articles"
+    display.drawLine(
+        display.xAbsolute(display.xAbsoluteMax() - xOffsetForArrows),
+        display.yAbsolute(display.yAbsoluteMax() - yOffsetForArrows),
+        display.xAbsolute(display.xAbsoluteMax() - (xOffsetForArrows + arrowWidth)),
+        display.yAbsolute(display.yAbsoluteMax() - (yOffsetForArrows - arrowHeight / 2)),
+        display.fg);
+    display.drawLine(
+        display.xAbsolute(display.xAbsoluteMax() - xOffsetForArrows),
+        display.yAbsolute(display.yAbsoluteMax() - yOffsetForArrows),
+        display.xAbsolute(display.yAbsoluteMax() - (xOffsetForArrows + arrowWidth)),
+        display.yAbsolute(display.yAbsoluteMax() - (yOffsetForArrows + arrowHeight / 2)),
+        display.fg);
+
+    display.drawSingleLineOfText(
+        "Settings", display.xAbsolute(xOffsetForArrows + arrowWidth + arrowTextSpacing),
+        display.yAbsolute(yOffsetForArrows - display.getTextHeight() / 2));
+
+    display.drawSingleLineOfText(
+        "Read",
+        display.xAbsolute(
+            display.xAbsoluteMax() -
+            (xOffsetForArrows + arrowWidth + arrowTextSpacing + display.getTextWidth("Read"))),
+        display.yAbsolute(display.yAbsoluteMax() -
+                          (yOffsetForArrows + display.getTextHeight() / 2)));
+}
+
 void MainMenuScreen::render(DisplaySystem &display) {
     NUM_LINES_PER_MENU_PAGE = 5;
     if (beforeFirstLoad_) {
@@ -91,8 +135,11 @@ void MainMenuScreen::render(DisplaySystem &display) {
     display.drawSingleLineOfText("Settings", screenWidth / 2 - width / 2, 28);
 */
 
-    display.drawXBitmap(display.width() /* - BOOK_WIDTH - 1*/, screenHeight / 2 - BOOK_WIDTH / 2,
-                        BOOK_BITS, BOOK_WIDTH, BOOK_HEIGHT, display.fg);
+    drawArrowsAndSelections(display);
+
+    display.setFont(display.style.getFontFamily().mainMenuFont);
+    // display.drawXBitmap(display.width() /* - BOOK_WIDTH - 1*/, screenHeight / 2 - BOOK_WIDTH / 2,
+    //                    BOOK_BITS, BOOK_WIDTH, BOOK_HEIGHT, display.fg);
 
     /*
         display.getTextBounds("Read", &width, &height);
@@ -103,8 +150,9 @@ void MainMenuScreen::render(DisplaySystem &display) {
     // Draw the icon for the opposite of the mode we're in. If you're reading books and press
     // this direction, it takes you to articles, and vice versa.
     // if (!inBooksMode_) {
-    display.drawXBitmap(-20, screenHeight / 2 - GEAR_HEIGHT / 2, GEAR_BITS, GEAR_WIDTH, GEAR_HEIGHT,
-                        display.fg);
+    // display.drawXBitmap(-20, screenHeight / 2 - GEAR_HEIGHT / 2, GEAR_BITS, GEAR_WIDTH,
+    // GEAR_HEIGHT,
+    //                   display.fg);
     // } else {
     //     display.drawXBitmap(1, screenHeight / 2 - ARTICLES_HEIGHT / 2, ARTICLES_BITS,
     //                         ARTICLES_WIDTH, ARTICLES_HEIGHT, display.fg);
@@ -164,24 +212,30 @@ void MainMenuScreen::render(DisplaySystem &display) {
         }
     }
 
-    display.drawXBitmap(display.width() /* - BOOK_WIDTH - 1*/, screenHeight / 2 - BOOK_HEIGHT / 2,
-                        BOOK_BITS, BOOK_WIDTH, BOOK_HEIGHT, display.fg);
-
     /*
-        display.getTextBounds("Read", &width, &height);
+        display.drawXBitmap(display.width() - BOOK_WIDTH - 1, screenHeight / 2 - BOOK_HEIGHT / 2,
+                            BOOK_BITS, BOOK_WIDTH, BOOK_HEIGHT, display.fg);
+    * /
 
-        display.drawSingleLineOfText("Read", screenWidth / 2 - width / 2, screenHeight - 30 -
-       height);
-    */
+        /*
+            display.getTextBounds("Read", &width, &height);
+
+            display.drawSingleLineOfText("Read", screenWidth / 2 - width / 2, screenHeight - 30 -
+           height);
+        */
     // Draw the icon for the opposite of the mode we're in. If you're reading books and press
     // this direction, it takes you to articles, and vice versa.
     // if (!inBooksMode_) {
-    display.drawXBitmap(-20, screenHeight / 2 - GEAR_HEIGHT / 2, GEAR_BITS, GEAR_WIDTH, GEAR_HEIGHT,
-                        display.fg);
+    /*
+display.drawXBitmap(-20, screenHeight / 2 - GEAR_HEIGHT / 2, GEAR_BITS, GEAR_WIDTH, GEAR_HEIGHT,
+                    display.fg);*/
+
     // } else {
     //    display.drawXBitmap(1, screenHeight / 2 - ARTICLES_HEIGHT / 2, ARTICLES_BITS,
     //                       ARTICLES_WIDTH, ARTICLES_HEIGHT, display.fg);
     //}
+
+    drawArrowsAndSelections(display);
     display.updateDisplay(DisplaySystem::UpdateType::FAST);
 
 #if EINKET013TT1

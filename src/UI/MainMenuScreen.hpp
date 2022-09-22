@@ -51,6 +51,7 @@ public:
 
 protected:
     void processCommand(RemoteCommand command) override;
+    void drawArrowsAndSelections(DisplaySystem &display);
 
     // The menu items for long-form books come from the parent class. Since the Main Menu
     // essentially keeps two lists, we need a second set of items for the articles.

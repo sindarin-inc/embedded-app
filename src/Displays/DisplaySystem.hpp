@@ -167,6 +167,9 @@ public:
     auto xAbsoluteCenter() -> int { return 128; }
     auto yAbsoluteCenter() -> int { return 128; }
 
+    auto xAbsoluteMax() -> int { return 255; }
+    auto yAbsoluteMax() -> int { return 255; }
+
 protected:
     // Must be set in the constructor of subclasses
     Adafruit_GFX *gfxClass_ = nullptr;
