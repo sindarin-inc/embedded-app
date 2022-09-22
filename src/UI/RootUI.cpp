@@ -281,27 +281,14 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
         };
     }));
 
-    int inDemo = prefs_.demoMode.get().value();
-
-    if (inDemo) {
-        settingsMenu->addMenuItem(MenuItem("Turn off Calibration Mode", [this, display]() {
-            log_d("Exiting calibration");
-            prefs_.demoMode.set(0);
-            display->drawSingleLineOfText("Calibration mode off! Resetting...", 0, 0);
-            display->updateDisplay();
-            delay(2000);
-            esp_restart();
-        }));
-    } else {
-        settingsMenu->addMenuItem(MenuItem("Turn on Calibration Mode", [this, display]() {
-            log_d("Entering calibration");
-            prefs_.demoMode.set(1);
-            display->drawSingleLineOfText("Calibration mode on! Resetting...", 0, 0);
-            display->updateDisplay();
-            delay(2000);
-            esp_restart();
-        }));
-    }
+    settingsMenu->addMenuItem(MenuItem("Turn on Calibration Mode", [this, display]() {
+        log_d("Entering calibration");
+        prefs_.demoMode.set(1);
+        display->drawSingleLineOfText("Calibration mode on! Resetting...", 0, 0);
+        display->updateDisplay();
+        delay(2000);
+        esp_restart();
+    }));
 
 #if EINKET013TT1
     settingsMenu->addMenuItem(MenuItem("Set Vcom", [this, display, settingsMenu]() {
