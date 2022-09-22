@@ -19,8 +19,6 @@ void DemoScreen::render(DisplaySystem &display) {
 
     std::string message = messages_[currentScreen_];
 
-    auto stream = new StdStringStream(message);
-
     switch (currentScreen_) {
     case 0:
         display.setFont(&TAHOMA_REGULAR_FONT10PT7B);
@@ -29,22 +27,25 @@ void DemoScreen::render(DisplaySystem &display) {
         display.setFont(&TAHOMA_REGULAR_FONT8PT7B);
         break;
     case 2:
-        display.setFont(&TAHOMA_REGULAR_FONT6PT7B);
+        display.setFont(&TAHOMA_REGULAR_FONT8PT7B);
         break;
     case 3:
-        display.setFont(&TAHOMA_REGULAR_FONT5PT7B);
+        display.setFont(&TAHOMA_REGULAR_FONT8PT7B);
         break;
     case 4:
-        display.setFont(&TAHOMA_REGULAR_FONT5PT7B);
+        display.setFont(&TAHOMA_REGULAR_FONT8PT7B);
         break;
     }
-    if (currentScreen_ > 0) {
-        display.setFont(&TAHOMA_REGULAR_FONT5PT7B);
+    if (currentScreen_ > 1) {
+        display.setFont(&TAHOMA_REGULAR_FONT8PT7B);
 
-        renderer_.setStream(stream);
-        renderer_.setHorizontalCenter(true);
-        renderer_.setVerticalCenter(true);
-        this->renderer_.renderPage(0);
+        // This Y coordinate is just a guess
+        display.drawSingleLineOfText(
+            message.c_str(),
+            display.xAbsolute(display.xAbsoluteCenter() -
+                              display.getTextWidth(message.c_str()) / 2),
+            display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2));
+        display.updateDisplay();
     }
     // Draw some dots
     else {
@@ -56,12 +57,19 @@ void DemoScreen::render(DisplaySystem &display) {
 #if !SIMULATOR
     auto backlight = prefs_.backlight.get().value();
 
+    // Alternate left and right on for setup.
     if (currentScreen_ % 2 == 1) {
         SetRightBackLight(false, backlight);
         SetLeftBackLight(true, backlight);
     } else {
         SetRightBackLight(true, backlight);
         SetLeftBackLight(false, backlight);
+    }
+
+    // Turn on both backlights for last case
+    if (currentScreen_ == 4) {
+        SetRightBackLight(true, backlight);
+        SetLeftBackLight(true, backlight);
     }
 #endif
     needsRerender = false;
@@ -105,6 +113,8 @@ void DemoScreen::processCommand(RemoteCommand command) {
         SetRightBackLight(true, backlight);
         SetLeftBackLight(true, backlight);
 #endif
+        // When we're done with the calibration screen, turn it off.
+        prefs_.demoMode.set(0);
         backCallback();
     }
 }

@@ -169,8 +169,8 @@ void SetBacklight(int percent) {
 void SetRightBackLight(bool on, int percent) {
     // default 50% brightness
     int onOff = on ? 50 : 0;
-    auto dutyCycle = onOff * 255 / 100;
 #if LEDC_BACKLIGHT
+    auto dutyCycle = onOff * 255 / 100;
     ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, dutyCycle);
     ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
 #endif
@@ -179,8 +179,8 @@ void SetRightBackLight(bool on, int percent) {
 void SetLeftBackLight(bool on, int percent) {
     // default 50% brightness
     int onOff = on ? 50 : 0;
-    auto dutyCycle = onOff * 255 / 100;
 #if LEDC_BACKLIGHT
+    auto dutyCycle = onOff * 255 / 100;
     ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, dutyCycle);
     ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
 #endif

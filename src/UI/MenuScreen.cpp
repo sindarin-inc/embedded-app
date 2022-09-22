@@ -34,14 +34,14 @@ void MenuScreen::drawArrowsAndSelections(DisplaySystem &display) {
         display.fg);
 
     display.drawSingleLineOfText(
-        upperLeftText_, display.xAbsolute(xOffsetForArrows + arrowWidth + arrowTextSpacing),
+        upperLeftText_.c_str(), display.xAbsolute(xOffsetForArrows + arrowWidth + arrowTextSpacing),
         display.yAbsolute(yOffsetForArrows - display.getTextHeight() / 2));
 
     display.drawSingleLineOfText(
-        lowerRightText_,
+        lowerRightText_.c_str(),
         display.xAbsolute(display.xAbsoluteMax() -
                           (xOffsetForArrows + arrowWidth + arrowTextSpacing +
-                           display.getTextWidth(lowerRightText_))),
+                           display.getTextWidth(lowerRightText_.c_str()))),
         display.yAbsolute(display.yAbsoluteMax() -
                           (yOffsetForArrows + display.getTextHeight() / 2)));
 }

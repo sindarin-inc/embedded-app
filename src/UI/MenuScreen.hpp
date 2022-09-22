@@ -69,8 +69,8 @@ protected:
     int arrowHeight = 10;
     int arrowTextSpacing = 5;
 
-    char *upperLeftText_ = "Back";
-    char *lowerRightText_ = "Select";
+    std::string upperLeftText_ = "Back";
+    std::string lowerRightText_ = "Select";
 
     int NUM_LINES_PER_MENU_PAGE = 10;
 

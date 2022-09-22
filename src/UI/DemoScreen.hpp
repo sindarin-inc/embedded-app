@@ -9,12 +9,9 @@
 #define NUM_DEMO_SCREENS 5
 #define DEMO_SCREEN_1 "Hello!"
 #define DEMO_SCREEN_2 "Let's read together"
-#define DEMO_SCREEN_3 "Press the right button to go to the next page"
-#define DEMO_SCREEN_4                                                                              \
-    "Now it seems like you are ready to read some real text. From the main menu, press the left "  \
-    "or right buttons to cycle through the readables. Then press down when you want to read "      \
-    "something."
-#define DEMO_SCREEN_5 "Ready? Press up to go to the main menu."
+#define DEMO_SCREEN_3 "Focus left eye"
+#define DEMO_SCREEN_4 "Focus right eye"
+#define DEMO_SCREEN_5 "Let's read!"
 
 class DemoScreen : public Screen {
 public:

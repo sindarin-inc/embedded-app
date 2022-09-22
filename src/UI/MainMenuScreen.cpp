@@ -11,7 +11,6 @@
 #include "Displays/DisplayEinkET013TT1.hpp"
 #endif
 
-
 void MainMenuScreen::render(DisplaySystem &display) {
     NUM_LINES_PER_MENU_PAGE = 5;
     if (beforeFirstLoad_) {
@@ -64,8 +63,8 @@ void MainMenuScreen::render(DisplaySystem &display) {
     uint16_t width, height;
 
     display.getTextBounds(itemTitle.c_str(), &width, &height);
-    uint16_t screenWidth = display.width();
-    uint16_t screenHeight = display.height();
+    // uint16_t screenWidth = display.width();
+    // uint16_t screenHeight = display.height();
 
     // display.setRotation(0);
     //  display.drawSingleLineOfText(itemTitle.c_str(), (screenWidth / 2) - (width / 2),
@@ -172,9 +171,9 @@ void MainMenuScreen::render(DisplaySystem &display) {
     /*
         display.drawXBitmap(display.width() - BOOK_WIDTH - 1, screenHeight / 2 - BOOK_HEIGHT / 2,
                             BOOK_BITS, BOOK_WIDTH, BOOK_HEIGHT, display.fg);
-    * /
 
-        /*
+
+
             display.getTextBounds("Read", &width, &height);
 
             display.drawSingleLineOfText("Read", screenWidth / 2 - width / 2, screenHeight - 30 -
