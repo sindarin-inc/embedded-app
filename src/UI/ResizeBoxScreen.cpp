@@ -2,7 +2,7 @@
 
 #include "sindarin-debug.h"
 
-#define BOX_OFFSET_ADJUST_AMOUNT 4
+#define BOX_OFFSET_ADJUST_AMOUNT 10
 
 // We will want a more intuitive way to do this in the final system,
 // but since it's so dependent on what the PageTurner ends up being,

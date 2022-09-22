@@ -2,7 +2,7 @@
 
 #include "sindarin-debug.h"
 
-#define OFFSET_ADJUST_AMOUNT 3
+#define OFFSET_ADJUST_AMOUNT 5
 
 OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore &prefs,
                                        Power &power)
