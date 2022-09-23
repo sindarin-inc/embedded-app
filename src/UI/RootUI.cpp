@@ -517,7 +517,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
         setCurrentScreen(*settingsMenu);
     }));
 
-    inDemo = prefs_.demoMode.get().value();
+    int inDemo = prefs_.demoMode.get().value();
 
     if (inDemo) {
         auto demoScreen = new DemoScreen(*display, prefs_, this->power_);

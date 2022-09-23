@@ -269,8 +269,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 
     // If the saved prefs have a backlight of zero, turn on the lights anyways
+    // Default to 10% max (which is 50% of the way through the lighting setting)
     if (prefs.backlight.get().value() == 0) {
-        prefs.backlight.set(20);
+        prefs.backlight.set(10);
     }
     SetBacklight(prefs.backlight.get().value());
 
