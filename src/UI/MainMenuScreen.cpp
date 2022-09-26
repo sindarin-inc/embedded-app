@@ -192,7 +192,7 @@ void MainMenuScreen::render(DisplaySystem &display) {
                 10,
                 display.height() / 3 +
                     (i % NUM_LINES_PER_MENU_PAGE) * (4 + display.getTextHeight()) + 2,
-                display.getTextHeight() - 3, display.getTextHeight() - 3, 3, display.fg);
+                display.getTextHeight() - 4, display.getTextHeight() - 4, 3, display.fg);
         }
     }
 

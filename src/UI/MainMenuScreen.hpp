@@ -51,8 +51,6 @@ public:
 
     void render(DisplaySystem &display) override;
 
-    void setFirstLoad() { firstLoad_ = true; }
-
 protected:
     void processCommand(RemoteCommand command) override;
 

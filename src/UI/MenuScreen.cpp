@@ -10,7 +10,7 @@
 
 void MenuScreen::drawArrowsAndSelections(DisplaySystem &display) {
 
-    display.setFont(display.style.getFontFamily().readableFont);
+    display.setFont(display.style.getFontFamily().settingsFont);
     // Upper left arrow for Settings
     display.drawLine(display.xAbsolute(xOffsetForArrows), display.yAbsolute(yOffsetForArrows),
                      display.xAbsolute(xOffsetForArrows + arrowWidth),
@@ -124,7 +124,8 @@ void MenuScreen::render(DisplaySystem &display) {
     // ghosting.
     if (firstLoad_) {
         drawArrowsAndSelections(display);
-        for (int i = currMenuPage_ * NUM_LINES_PER_MENU_PAGE;
+        int i;
+        for (i = currMenuPage_ * NUM_LINES_PER_MENU_PAGE;
              i < currMenuPage_ * NUM_LINES_PER_MENU_PAGE + NUM_LINES_PER_MENU_PAGE &&
              i < numMenuItems_;
              i++) {
@@ -132,6 +133,13 @@ void MenuScreen::render(DisplaySystem &display) {
                                          (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight() +
                                              50);
         }
+
+        int oldTextHeight = display.getTextHeight();
+        display.setFont(display.style.getFontFamily().readableFont);
+        display.drawSingleLineOfText(extraTextBelowMenu_.c_str(), 30,
+                                     (1 + NUM_LINES_PER_MENU_PAGE) * oldTextHeight + 50);
+
+        display.setFont(display.style.getFontFamily().settingsFont);
 
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
     }
@@ -155,8 +163,8 @@ void MenuScreen::render(DisplaySystem &display) {
     }
     (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver()->setVcom(newVcom);
 #endif
-
-    for (int i = currMenuPage_ * NUM_LINES_PER_MENU_PAGE;
+    int i;
+    for (i = currMenuPage_ * NUM_LINES_PER_MENU_PAGE;
          i < currMenuPage_ * NUM_LINES_PER_MENU_PAGE + NUM_LINES_PER_MENU_PAGE && i < numMenuItems_;
          i++) {
         display.drawSingleLineOfText(getItemTitleAt(i), 30,
@@ -165,9 +173,16 @@ void MenuScreen::render(DisplaySystem &display) {
         if (i == currSelection_) {
             display.fillRoundRect(
                 2 + 20, (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight() + 2 + 50,
-                display.getTextHeight() - 3, display.getTextHeight() - 3, 3, display.fg);
+                display.getTextHeight() - 4, display.getTextHeight() - 4, 3, display.fg);
         }
     }
+
+    int oldTextHeight = display.getTextHeight();
+    display.setFont(display.style.getFontFamily().readableFont);
+    display.drawSingleLineOfText(extraTextBelowMenu_.c_str(), 30,
+                                 (1 + NUM_LINES_PER_MENU_PAGE) * oldTextHeight + 50);
+
+    display.setFont(display.style.getFontFamily().settingsFont);
     drawArrowsAndSelections(display);
     display.updateDisplay(DisplaySystem::UpdateType::FAST);
 

@@ -55,6 +55,10 @@ public:
 
     void processCommand(RemoteCommand command) override;
 
+    void setFirstLoad() { firstLoad_ = true; }
+
+    void setExtraText(std::string extra) { extraTextBelowMenu_ = std::move(extra); }
+
 protected:
     void drawArrowsAndSelections(DisplaySystem &display);
     int numMenuItems_ = 0;
@@ -72,7 +76,9 @@ protected:
     std::string upperLeftText_ = "Back";
     std::string lowerRightText_ = "Select";
 
-    int NUM_LINES_PER_MENU_PAGE = 10;
+    std::string extraTextBelowMenu_ = "";
+
+    int NUM_LINES_PER_MENU_PAGE = 7;
 
     Power &power_;
 };

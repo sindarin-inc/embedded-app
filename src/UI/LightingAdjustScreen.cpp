@@ -67,7 +67,7 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
     // up arrow
     uint16_t arrowWidth = 36, arrowHeight = 7;
     x = (display.width() - arrowWidth) / 2;
-    y = 0;
+    y = 10;
     display.drawLine(x, y, x + arrowWidth / 2, y - arrowHeight, display.fg);
     display.drawLine(x + arrowWidth / 2, y - arrowHeight, x + arrowWidth, y, display.fg);
 

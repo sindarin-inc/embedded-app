@@ -244,54 +244,148 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
     }));
 #endif // DISABLE_WIFI
 
-    // Settings menu
+    // Settings menus
     auto settingsMenu = new MenuScreen(this->power_);
+    auto debugMenu = new MenuScreen(this->power_);
 
-    settingsMenu->addMenuItem(MenuItem("Adjust Offset", [this, settingsMenu, display]() {
+    // For items we don't want to throw away yet, but this isn't hooked up anywhere
+    auto oldMenu = new MenuScreen(this->power_);
+
+    debugMenu->backCallback = [this, settingsMenu]() {
+        this->display_->clearDisplay();
+        settingsMenu->setFirstLoad();
+        setCurrentScreen(*settingsMenu);
+    };
+
+    settingsMenu->addMenuItem(MenuItem("Reading Font Size", [this, settingsMenu]() {
+        auto fontMenu = new MenuScreen(this->power_);
+
+        fontMenu->setExtraText("Reading font size");
+
+        fontMenu->addMenuItem(MenuItem("Small", [this, fontMenu]() {
+            this->display_->style.setFontFamily(this->display_->style.tahomaRegular);
+            this->display_->clearDisplay();
+            prefs_.font.set(PREFS_TAHOMA_REGULAR);
+            fontMenu->needsRerender = true;
+        }));
+        fontMenu->addMenuItem(MenuItem("Large", [this, fontMenu]() {
+            this->display_->style.setFontFamily(this->display_->style.tahomaLarge);
+            this->display_->clearDisplay();
+            prefs_.font.set(PREFS_TAHOMA_LARGE);
+            fontMenu->needsRerender = true;
+        }));
+        setCurrentScreen(*fontMenu);
+        fontMenu->backCallback = [this, fontMenu, settingsMenu]() {
+            settingsMenu->setFirstLoad();
+            setCurrentScreen(*settingsMenu);
+            delete fontMenu;
+        };
+    }));
+
+    settingsMenu->addMenuItem(MenuItem("Lighting", [this, settingsMenu]() {
+        auto lightingAdjustScreen = new LightingAdjustScreen(this->prefs_);
+        this->display_->clearDisplay();
+        setCurrentScreen(*lightingAdjustScreen);
+        lightingAdjustScreen->backCallback = [this, lightingAdjustScreen, settingsMenu]() {
+            settingsMenu->setFirstLoad();
+            setCurrentScreen(*settingsMenu);
+            delete lightingAdjustScreen;
+        };
+    }));
+
+    settingsMenu->addMenuItem(MenuItem("Set Line Spacing", [this, settingsMenu, display]() {
+        auto lineSpacingScreen = new LineSpacingScreen(*display, prefs_);
+        this->setCurrentScreen(*lineSpacingScreen);
+        lineSpacingScreen->backCallback = [this, lineSpacingScreen, settingsMenu]() {
+            settingsMenu->setFirstLoad();
+            setCurrentScreen(*settingsMenu);
+            delete lineSpacingScreen;
+        };
+    }));
+
+    settingsMenu->addMenuItem(MenuItem("Move Text Box", [this, settingsMenu, display]() {
         log_d("Loading adjust offset");
         auto offsetAdjust = new OffsetAdjustScreen(*display, prefs_, this->power_);
         this->setCurrentScreen(*offsetAdjust);
         log_d("setting up callback");
         offsetAdjust->backCallback = [this, offsetAdjust, settingsMenu]() {
+            settingsMenu->setFirstLoad();
             setCurrentScreen(*settingsMenu);
             delete offsetAdjust;
         };
         log_d("set up callback");
     }));
 
-    settingsMenu->addMenuItem(MenuItem("Resize Box", [this, settingsMenu, display]() {
+    settingsMenu->addMenuItem(MenuItem("Resize Text Box", [this, settingsMenu, display]() {
         log_d("Loading resize box");
         auto resizeBox = new ResizeBoxScreen(*display, prefs_, this->power_);
         this->setCurrentScreen(*resizeBox);
         log_d("setting up callback");
         resizeBox->backCallback = [this, resizeBox, settingsMenu]() {
+            settingsMenu->setFirstLoad();
             setCurrentScreen(*settingsMenu);
             delete resizeBox;
         };
         log_d("set up callback");
     }));
 
-    settingsMenu->addMenuItem(MenuItem("Set Lighting", [this, settingsMenu]() {
-        auto lightingAdjustScreen = new LightingAdjustScreen(this->prefs_);
-        this->display_->clearDisplay();
-        setCurrentScreen(*lightingAdjustScreen);
-        lightingAdjustScreen->backCallback = [this, lightingAdjustScreen, settingsMenu]() {
-            setCurrentScreen(*settingsMenu);
-            delete lightingAdjustScreen;
+    settingsMenu->addMenuItem(MenuItem("Debug", [this, debugMenu, display]() {
+        log_d("Loading Debug Menu");
+        debugMenu->setFirstLoad();
+        this->setCurrentScreen(*debugMenu);
+    }));
+
+#ifdef GITHASH
+    std::string buildString = "Build " + std::string(GITHASH);
+#else
+    std::string buildString = "No Build Info";
+#endif
+
+    debugMenu->addMenuItem(MenuItem("Font Type", [this, debugMenu]() {
+        auto fontMenu = new MenuScreen(this->power_);
+
+        fontMenu->addMenuItem(MenuItem("Lucida 1px space", [this, fontMenu]() {
+            this->display_->style.setFontFamily(this->display_->style.lucidaSkinny);
+            this->display_->clearDisplay();
+            prefs_.font.set(PREFS_LUCIDA_SKINNY);
+            fontMenu->needsRerender = true;
+        }));
+        fontMenu->addMenuItem(MenuItem("Lucida 2px space", [this, fontMenu]() {
+            this->display_->style.setFontFamily(this->display_->style.lucidaFat);
+            this->display_->clearDisplay();
+            prefs_.font.set(PREFS_LUCIDA_FAT);
+            fontMenu->needsRerender = true;
+        }));
+        fontMenu->addMenuItem(MenuItem("Lucida original", [this, fontMenu]() {
+            this->display_->style.setFontFamily(this->display_->style.lucidaRegular);
+            this->display_->clearDisplay();
+            prefs_.font.set(PREFS_DEFAULT_FONT);
+            fontMenu->needsRerender = true;
+        }));
+
+        fontMenu->addMenuItem(MenuItem("Tahoma 5pt", [this, fontMenu]() {
+            this->display_->style.setFontFamily(this->display_->style.tahomaRegular);
+            this->display_->clearDisplay();
+            prefs_.font.set(PREFS_TAHOMA_REGULAR);
+            fontMenu->needsRerender = true;
+        }));
+
+        fontMenu->addMenuItem(MenuItem("Tahoma 6pt", [this, fontMenu]() {
+            this->display_->style.setFontFamily(this->display_->style.tahomaLarge);
+            this->display_->clearDisplay();
+            prefs_.font.set(PREFS_TAHOMA_LARGE);
+            fontMenu->needsRerender = true;
+        }));
+        setCurrentScreen(*fontMenu);
+        fontMenu->backCallback = [this, fontMenu, debugMenu]() {
+            debugMenu->setFirstLoad();
+            setCurrentScreen(*debugMenu);
+            delete fontMenu;
         };
     }));
 
-    settingsMenu->addMenuItem(MenuItem("Turn on Calibration Mode", [this, display]() {
-        log_d("Entering calibration");
-        prefs_.demoMode.set(1);
-        display->drawSingleLineOfText("Calibration mode on! Resetting...", 0, 0);
-        display->updateDisplay();
-        delay(2000);
-        esp_restart();
-    }));
-
 #if EINKET013TT1
-    settingsMenu->addMenuItem(MenuItem("Set Vcom", [this, display, settingsMenu]() {
+    debugMenu->addMenuItem(MenuItem("Set Vcom", [this, display, debugMenu]() {
         auto vcomMenu = new MenuScreen(this->power_);
         auto *driver = (static_cast<DisplayEinkET013TT1 *>(display))->getDriver();
         vcomMenu->addMenuItem(MenuItem("0V", [this, vcomMenu, driver]() {
@@ -330,98 +424,127 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
             vcomMenu->needsRerender = true;
         }));
         setCurrentScreen(*vcomMenu);
-        vcomMenu->backCallback = [this, vcomMenu, settingsMenu]() {
-            setCurrentScreen(*settingsMenu);
+        vcomMenu->backCallback = [this, vcomMenu, debugMenu]() {
+            debugMenu->setFirstLoad();
+            setCurrentScreen(*debugMenu);
             delete vcomMenu;
         };
     }));
 #endif
 
 #if EINKET013TT1
-    settingsMenu->addMenuItem(MenuItem("Set Vcom Precise", [this, display, settingsMenu]() {
+    debugMenu->addMenuItem(MenuItem("Set Vcom Precise", [this, display, debugMenu]() {
         auto vcomPreciseScreen = new VcomAdjustScreen(*display, this->prefs_, this->power_);
         this->display_->clearDisplay();
         setCurrentScreen(*vcomPreciseScreen);
-        vcomPreciseScreen->backCallback = [this, vcomPreciseScreen, settingsMenu]() {
-            setCurrentScreen(*settingsMenu);
+        vcomPreciseScreen->backCallback = [this, vcomPreciseScreen, debugMenu]() {
+            debugMenu->setFirstLoad();
+            setCurrentScreen(*debugMenu);
             delete vcomPreciseScreen;
         };
     }));
 #endif
 
-    settingsMenu->addMenuItem(MenuItem("Set Font", [this, settingsMenu]() {
-        auto fontMenu = new MenuScreen(this->power_);
-
-        fontMenu->addMenuItem(MenuItem("Lucida 1px space", [this, fontMenu]() {
-            this->display_->style.setFontFamily(this->display_->style.lucidaSkinny);
-            this->display_->clearDisplay();
-            prefs_.font.set(PREFS_LUCIDA_SKINNY);
-            fontMenu->needsRerender = true;
-        }));
-        fontMenu->addMenuItem(MenuItem("Lucida 2px space", [this, fontMenu]() {
-            this->display_->style.setFontFamily(this->display_->style.lucidaFat);
-            this->display_->clearDisplay();
-            prefs_.font.set(PREFS_LUCIDA_FAT);
-            fontMenu->needsRerender = true;
-        }));
-        fontMenu->addMenuItem(MenuItem("Lucida original", [this, fontMenu]() {
-            this->display_->style.setFontFamily(this->display_->style.lucidaRegular);
-            this->display_->clearDisplay();
-            prefs_.font.set(PREFS_DEFAULT_FONT);
-            fontMenu->needsRerender = true;
-        }));
-
-        fontMenu->addMenuItem(MenuItem("Tahoma 5pt", [this, fontMenu]() {
-            this->display_->style.setFontFamily(this->display_->style.tahomaRegular);
-            this->display_->clearDisplay();
-            prefs_.font.set(PREFS_TAHOMA_REGULAR);
-            fontMenu->needsRerender = true;
-        }));
-
-        fontMenu->addMenuItem(MenuItem("Tahoma 6pt", [this, fontMenu]() {
-            this->display_->style.setFontFamily(this->display_->style.tahomaLarge);
-            this->display_->clearDisplay();
-            prefs_.font.set(PREFS_TAHOMA_LARGE);
-            fontMenu->needsRerender = true;
-        }));
-        setCurrentScreen(*fontMenu);
-        fontMenu->backCallback = [this, fontMenu, settingsMenu]() {
-            setCurrentScreen(*settingsMenu);
-            delete fontMenu;
+    debugMenu->addMenuItem(MenuItem("Statistics", [this, debugMenu, display]() {
+        auto statsScreen = new StatsScreen(*display, prefs_);
+        this->setCurrentScreen(*statsScreen);
+        statsScreen->backCallback = [this, statsScreen, debugMenu]() {
+            debugMenu->setFirstLoad();
+            setCurrentScreen(*debugMenu);
+            delete statsScreen;
         };
     }));
 
-    settingsMenu->addMenuItem(MenuItem("Set Line Spacing", [this, settingsMenu, display]() {
-        auto lineSpacingScreen = new LineSpacingScreen(*display, prefs_);
-        this->setCurrentScreen(*lineSpacingScreen);
-        lineSpacingScreen->backCallback = [this, lineSpacingScreen, settingsMenu]() {
-            setCurrentScreen(*settingsMenu);
-            delete lineSpacingScreen;
-        };
+    debugMenu->addMenuItem(MenuItem("Reset Preferences", [this, display]() {
+        prefs_.clear();
+        log_w("Preferences cleared. Rebooting...");
+
+        display->drawSingleLineOfText(
+            "Preferences cleared! Resetting...",
+            display->xAbsolute(display->xAbsoluteCenter() -
+                               display->getTextWidth("Preferences cleared! Resetting...") / 2),
+            display->yAbsolute(display->yAbsoluteCenter() - display->getTextHeight() / 2));
+        display->updateDisplay();
+        delay(2000);
+        esp_restart();
     }));
 
-    settingsMenu->addMenuItem(MenuItem("Calibration Screen", [this, settingsMenu]() {
-        auto calibrationScreen = new CalibrationScreen();
-        this->display_->clearDisplay();
-        this->setCurrentScreen(*calibrationScreen);
-        calibrationScreen->backCallback = [this, calibrationScreen, settingsMenu]() {
-            setCurrentScreen(*settingsMenu);
-            delete calibrationScreen;
-        };
+    debugMenu->addMenuItem(MenuItem("Reset Statistics", [this, display]() {
+        prefs_.wordCount.set(0);
+        prefs_.totalReadingTimeSeconds.set(0);
+        display->drawSingleLineOfText(
+            "Statistics reset.",
+            display->xAbsolute(display->xAbsoluteCenter() -
+                               display->getTextWidth("Statistics reset.") / 2),
+            display->yAbsolute(display->yAbsoluteCenter() - display->getTextHeight() / 2));
+        display->updateDisplay();
     }));
 
-    settingsMenu->addMenuItem(MenuItem("Optics Test", [this, settingsMenu]() {
+#if USE_TURN_TOUCH_REMOTE
+    debugMenu->addMenuItem(MenuItem("Unpair TurnTouch", [this, display]() {
+        prefs_.pairedTurnTouchAddress.remove();
+        log_w("Unpaired TurnTouch. Rebooting...");
+        display->drawSingleLineOfText(
+            "Unpaired TurnTouch! Resetting...",
+            display->xAbsoluteCenter() -
+                display->getTextWidth("Unpaired TurnTouch! Resetting...") / 2,
+            display->yAbsolute(display->yAbsoluteCenter() - display->getTextHeight() / 2));
+        display->updateDisplay();
+        delay(2000);
+        esp_restart();
+    }));
+#endif
+
+    debugMenu->addMenuItem(
+        MenuItem("Factory Defaults", [this]() { this->restoreFactoryDefaults(); }));
+
+    debugMenu->addMenuItem(MenuItem("Optics Test", [this, debugMenu]() {
         auto opticsTestScreen = new CalibrationScreen();
         opticsTestScreen->setOpticsTest();
         this->display_->clearDisplay();
         this->setCurrentScreen(*opticsTestScreen);
-        opticsTestScreen->backCallback = [this, opticsTestScreen, settingsMenu]() {
-            setCurrentScreen(*settingsMenu);
+        opticsTestScreen->backCallback = [this, opticsTestScreen, debugMenu]() {
+            debugMenu->setFirstLoad();
+            setCurrentScreen(*debugMenu);
             delete opticsTestScreen;
         };
     }));
 
-    settingsMenu->addMenuItem(MenuItem("Deep sleep", [display]() {
+    debugMenu->addMenuItem(MenuItem("Turn on Onboarding Mode", [this, display]() {
+        log_d("Entering calibration");
+        prefs_.demoMode.set(1);
+        display->drawSingleLineOfText(
+            "Onboarding mode on! Resetting...",
+            display->xAbsolute(display->xAbsoluteCenter() -
+                               display->getTextWidth("Onboarding mode on! Resetting...") / 2),
+            display->yAbsolute(
+                display->yAbsolute(display->yAbsoluteCenter() - display->getTextHeight() / 2)));
+        display->updateDisplay();
+        delay(2000);
+        esp_restart();
+    }));
+
+    debugMenu->addMenuItem(MenuItem("Onboarding Screens", [this, debugMenu, display]() {
+        auto demoScreen = new DemoScreen(*display, prefs_, this->power_);
+        this->setCurrentScreen(*demoScreen);
+        demoScreen->backCallback = [this, demoScreen, debugMenu]() {
+            debugMenu->setFirstLoad();
+            setCurrentScreen(*debugMenu);
+            delete demoScreen;
+        };
+    }));
+
+    oldMenu->addMenuItem(MenuItem("Calibration Screen Run Through", [this, oldMenu]() {
+        auto calibrationScreen = new CalibrationScreen();
+        this->display_->clearDisplay();
+        this->setCurrentScreen(*calibrationScreen);
+        calibrationScreen->backCallback = [this, calibrationScreen, oldMenu]() {
+            setCurrentScreen(*oldMenu);
+            delete calibrationScreen;
+        };
+    }));
+
+    oldMenu->addMenuItem(MenuItem("Deep sleep", [display]() {
         log_w("Deep sleeping. Goodnight.");
 
         display->drawSingleLineOfText("Deep sleeping. Goodnight.", 0, 0);
@@ -430,81 +553,25 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
         esp_deep_sleep_start();
     }));
 
-    settingsMenu->addMenuItem(MenuItem("Reset Prefs", [this, display]() {
-        prefs_.clear();
-        log_w("Preferences cleared. Rebooting...");
-
-        display->drawSingleLineOfText("Preferences cleared! Resetting...", 0, 0);
-        display->updateDisplay();
-        delay(2000);
-        esp_restart();
-    }));
-
-    settingsMenu->addMenuItem(
-        MenuItem("Factory Defaults", [this]() { this->restoreFactoryDefaults(); }));
-    settingsMenu->addMenuItem(MenuItem("Loading Test", [this, settingsMenu]() {
+    oldMenu->addMenuItem(MenuItem("Loading Test", [this, oldMenu]() {
         auto loadingScreen = new LoadingScreen();
         setCurrentScreen(*loadingScreen);
-        loadingScreen->backCallback = [this, loadingScreen, settingsMenu]() {
-            setCurrentScreen(*settingsMenu);
+        loadingScreen->backCallback = [this, loadingScreen, oldMenu]() {
+            setCurrentScreen(*oldMenu);
             delete loadingScreen;
         };
     }));
 
-    settingsMenu->addMenuItem(MenuItem("Demo Screen", [this, settingsMenu, display]() {
-        auto demoScreen = new DemoScreen(*display, prefs_, this->power_);
-        this->setCurrentScreen(*demoScreen);
-        demoScreen->backCallback = [this, demoScreen, settingsMenu]() {
-            setCurrentScreen(*settingsMenu);
-            delete demoScreen;
-        };
-    }));
-
-    settingsMenu->addMenuItem(MenuItem("Statistics", [this, settingsMenu, display]() {
-        auto statsScreen = new StatsScreen(*display, prefs_);
-        this->setCurrentScreen(*statsScreen);
-        statsScreen->backCallback = [this, statsScreen, settingsMenu]() {
-            setCurrentScreen(*settingsMenu);
-            delete statsScreen;
-        };
-    }));
-
-    settingsMenu->addMenuItem(MenuItem("Reset Statistics", [this, display]() {
-        prefs_.wordCount.set(0);
-        prefs_.totalReadingTimeSeconds.set(0);
-        display->drawSingleLineOfText("Statistics reset.", 0, 0);
-        display->updateDisplay();
-    }));
-
-    settingsMenu->addMenuItem(MenuItem("Test Bitmap Screen", [this, settingsMenu]() {
+    oldMenu->addMenuItem(MenuItem("Test Bitmap Screen", [this, oldMenu]() {
         auto bitmapScreen = new BitmapScreen(LOGO_BITS, LOGO_WIDTH, LOGO_HEIGHT);
         setCurrentScreen(*bitmapScreen);
-        bitmapScreen->backCallback = [this, bitmapScreen, settingsMenu]() {
-            setCurrentScreen(*settingsMenu);
+        bitmapScreen->backCallback = [this, bitmapScreen, oldMenu]() {
+            setCurrentScreen(*oldMenu);
             delete bitmapScreen;
         };
     }));
 
-    settingsMenu->addMenuItem(MenuItem("Build Info", [display]() {
-#ifdef GITHASH
-        std::string buildString = "Build " + std::string(GITHASH);
-#else
-        std::string buildString = "No Build Info";
-#endif
-        display->drawSingleLineOfText(buildString, 0, 0);
-        display->updateDisplay();
-    }));
-
-#if USE_TURN_TOUCH_REMOTE
-    settingsMenu->addMenuItem(MenuItem("Unpair TurnTouch", [this, display]() {
-        prefs_.pairedTurnTouchAddress.remove();
-        log_w("Unpaired TurnTouch. Rebooting...");
-        display->drawSingleLineOfText("Unpaired TurnTouch! Resetting...", 0, 0);
-        display->updateDisplay();
-        delay(2000);
-        esp_restart();
-    }));
-#endif
+    debugMenu->setExtraText(buildString);
 
     settingsMenu->backCallback = [this, mainMenu]() {
         this->display_->clearDisplay();
@@ -601,7 +668,11 @@ void RootUI::loop(DisplaySystem &display, RemoteCommand command) {
 void RootUI::restoreFactoryDefaults() {
     nvs_flash_erase();
     log_w("NVS cleared. Rebooting...");
-    display_->drawSingleLineOfText("NVS cleared! Resetting...", 0, 0);
+    display_->drawSingleLineOfText(
+        "NVS cleared! Resetting...",
+        display_->xAbsolute(display_->xAbsoluteCenter() -
+                            display_->getTextWidth("NVS cleared! Resetting...") / 2),
+        display_->yAbsolute(display_->yAbsoluteCenter() - display_->getTextHeight() / 2));
     display_->updateDisplay();
     delay(2000);
     esp_restart();
