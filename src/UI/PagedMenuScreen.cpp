@@ -187,7 +187,7 @@ void PagedMenuScreen::render(DisplaySystem &display) {
 }
 */
 
-void PagedMenuScreen::nextSelection() {
+void PagedMenuScreen::nextSelection(bool skipLast) {
     currSelection_ = (currSelection_ + 1) % numMenuItems_;
     if (currSelection_ == numMenuItems_ - 2) {
         currSelection_ = 0;
@@ -195,7 +195,7 @@ void PagedMenuScreen::nextSelection() {
     needsRerender = true;
 }
 
-void PagedMenuScreen::prevSelection() {
+void PagedMenuScreen::prevSelection(bool skipLast) {
     currSelection_ = (currSelection_ + numMenuItems_ - 1) % numMenuItems_;
     if (currSelection_ == numMenuItems_ - 1) {
         // If there are 0 readables, this breaks the menu

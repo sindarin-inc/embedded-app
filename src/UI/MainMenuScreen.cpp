@@ -124,7 +124,7 @@ void MainMenuScreen::render(DisplaySystem &display) {
     if (firstLoad_) {
         for (int i = currMenuPage_ * NUM_LINES_PER_MENU_PAGE;
              i < currMenuPage_ * NUM_LINES_PER_MENU_PAGE + NUM_LINES_PER_MENU_PAGE &&
-             i < numMenuItems_;
+             i < numMenuItems_ - 1;
              i++) {
             std::string itemTitle = getItemTitleAt(i);
             // If we still don't fit, shrink the string until we do.
@@ -168,7 +168,8 @@ void MainMenuScreen::render(DisplaySystem &display) {
 #endif
 
     for (int i = currMenuPage_ * NUM_LINES_PER_MENU_PAGE;
-         i < currMenuPage_ * NUM_LINES_PER_MENU_PAGE + NUM_LINES_PER_MENU_PAGE && i < numMenuItems_;
+         i < currMenuPage_ * NUM_LINES_PER_MENU_PAGE + NUM_LINES_PER_MENU_PAGE &&
+         i < numMenuItems_ - 1;
          i++) {
         std::string itemTitle = getItemTitleAt(i);
         // If we still don't fit, shrink the string until we do.
@@ -358,12 +359,12 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::PREV:
 
-        prevSelection();
+        prevSelection(true);
         needsRerender = true;
         break;
 
     case RemoteCommand::NEXT:
-        nextSelection();
+        nextSelection(true);
         needsRerender = true;
 
         break;
@@ -415,6 +416,7 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
 
         // Settings are always the last item
         // REWORK THIS!
+
         oldCurr = currSelection_;
         currSelection_ = numMenuItems_ - 1;
 

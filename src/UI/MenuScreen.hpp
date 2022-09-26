@@ -42,8 +42,10 @@ public:
 
     // Returns 1 if the selection was updated, 0 otherwise
     // Helps client to know if it needs to refresh (at beginning or end of menu)
-    virtual void nextSelection();
-    virtual void prevSelection();
+    // The optional argument is if we want to skip over the last element in the menu
+    // Mostly this is for the main menu and settings menu until those are rewitten.
+    virtual void nextSelection(bool skipLast = false);
+    virtual void prevSelection(bool skipLast = false);
 
     // Includes the name of the item and it's number preceding it for easy display
     // Offset by two spaces

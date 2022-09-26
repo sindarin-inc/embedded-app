@@ -61,9 +61,12 @@ auto MenuScreen::getCurrSelection() -> int { return currSelection_; }
 
 auto MenuScreen::getCurrItem() -> MenuItem { return menuItems_[currSelection_]; }
 
-void MenuScreen::nextSelection() {
+void MenuScreen::nextSelection(bool skipLast) {
     int oldCurMenuPage = currMenuPage_;
     currSelection_ = (currSelection_ + 1) % numMenuItems_;
+    if (skipLast && (currSelection_ == numMenuItems_ - 1)) {
+        currSelection_ = 0;
+    }
     currMenuPage_ = currSelection_ / NUM_LINES_PER_MENU_PAGE;
     // This makes sure we do a full refresh when the page changes
     if (oldCurMenuPage != currMenuPage_) {
@@ -73,10 +76,13 @@ void MenuScreen::nextSelection() {
     }
 }
 
-void MenuScreen::prevSelection() {
+void MenuScreen::prevSelection(bool skipLast) {
     int oldCurMenuPage = currMenuPage_;
     // Wrap back around to the last item
     currSelection_ = (currSelection_ + numMenuItems_ - 1) % numMenuItems_;
+    if (skipLast && (currSelection_ == numMenuItems_ - 1)) {
+        currSelection_--;
+    }
     currMenuPage_ = currSelection_ / NUM_LINES_PER_MENU_PAGE;
     // This makes sure we do a full refresh when the page changes
     if (oldCurMenuPage != currMenuPage_) {
