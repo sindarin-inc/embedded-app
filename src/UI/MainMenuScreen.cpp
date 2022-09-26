@@ -6,6 +6,8 @@
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
 
+#define MAX_WIDTH 150
+
 // We should decide if we want to do this #if as !SIMULATOR or as EINKET013TT1
 #if !SIMULATOR
 #include "Displays/DisplayEinkET013TT1.hpp"
@@ -124,7 +126,20 @@ void MainMenuScreen::render(DisplaySystem &display) {
              i < currMenuPage_ * NUM_LINES_PER_MENU_PAGE + NUM_LINES_PER_MENU_PAGE &&
              i < numMenuItems_;
              i++) {
-            display.drawSingleLineOfText(getItemTitleAt(i), display.width() / 4,
+            std::string itemTitle = getItemTitleAt(i);
+            // If we still don't fit, shrink the string until we do.
+            while (display.getTextWidth(itemTitle.c_str()) > MAX_WIDTH) {
+                log_d("Item title %s still too long at smallest font size; truncating...",
+                      itemTitle.c_str());
+                if (itemTitle.length() > 4) {
+                    itemTitle = itemTitle.substr(0, itemTitle.length() - 4) + "...";
+                } else {
+                    // Practially, this shouldn't ever happen, but I'm doing
+                    // the bounds check here just in case we do hit it some day.
+                    itemTitle = "too big!";
+                }
+            }
+            display.drawSingleLineOfText(itemTitle, 25,
                                          display.height() / 3 + (i % NUM_LINES_PER_MENU_PAGE) *
                                                                     (4 + display.getTextHeight()));
         }
@@ -155,13 +170,26 @@ void MainMenuScreen::render(DisplaySystem &display) {
     for (int i = currMenuPage_ * NUM_LINES_PER_MENU_PAGE;
          i < currMenuPage_ * NUM_LINES_PER_MENU_PAGE + NUM_LINES_PER_MENU_PAGE && i < numMenuItems_;
          i++) {
-        display.drawSingleLineOfText(getItemTitleAt(i), display.width() / 4,
+        std::string itemTitle = getItemTitleAt(i);
+        // If we still don't fit, shrink the string until we do.
+        while (display.getTextWidth(itemTitle.c_str()) > MAX_WIDTH) {
+            log_d("Item title %s still too long at smallest font size; truncating...",
+                  itemTitle.c_str());
+            if (itemTitle.length() > 4) {
+                itemTitle = itemTitle.substr(0, itemTitle.length() - 4) + "...";
+            } else {
+                // Practially, this shouldn't ever happen, but I'm doing
+                // the bounds check here just in case we do hit it some day.
+                itemTitle = "too big!";
+            }
+        }
+        display.drawSingleLineOfText(itemTitle, 25,
                                      display.height() / 3 + (i % NUM_LINES_PER_MENU_PAGE) *
                                                                 (4 + display.getTextHeight()));
 
         if (i == currSelection_) {
             display.fillRoundRect(
-                display.width() / 4 - 15,
+                10,
                 display.height() / 3 +
                     (i % NUM_LINES_PER_MENU_PAGE) * (4 + display.getTextHeight()) + 2,
                 display.getTextHeight() - 3, display.getTextHeight() - 3, 3, display.fg);
