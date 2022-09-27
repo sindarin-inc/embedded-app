@@ -45,7 +45,7 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
     // Cursor is from the baseline of the text I think
     y += Lightbulb_height + display.getTextHeight() + spacing;
     uint16_t textWidth, textHeight;
-    auto message1 = "Press left and right";
+    auto message1 = "Press up and down";
     display.getTextBounds(message1, &textWidth, &textHeight);
     display.setCursor((display.width() - textWidth) / 2, y);
     display.println(message1);
@@ -56,20 +56,21 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
     display.setCursor((display.width() - textWidth) / 2, y);
     display.println(message2);
 
-    display.fillRect((display.width() - textWidth) / 2 - 30, y + 10, textWidth + 60, 2, display.fg);
+    // display.fillRect((display.width() - textWidth) / 2 - 30, y + 10, textWidth + 60, 2,
+    // display.fg);
 
     // display.setCursor(backlightPercent * 3 / 2 * (textWidth + 20) / 100, y + 30);
 
-    display.fillCircle(backlightPercent * 3 / 2 * (textWidth + 20) / 100 + 20, y + 20, 5,
-                       display.fg);
+    // display.fillCircle(backlightPercent * 3 / 2 * (textWidth + 20) / 100 + 20, y + 20, 5,
+    //                    display.fg);
     // Not drawing for some reason hmm
     // display.println(StringFormat("%d%%", backlightPercent).c_str());
     // up arrow
-    uint16_t arrowWidth = 10, arrowHeight = 5;
-    x = (display.width() - arrowWidth) / 2;
-    y = 10;
-    display.drawLine(x, y, x + arrowWidth / 2, y - arrowHeight, display.fg);
-    display.drawLine(x + arrowWidth / 2, y - arrowHeight, x + arrowWidth, y, display.fg);
+    uint16_t arrowWidth = 5, arrowHeight = 10;
+    x = display.width() - arrowWidth;
+    y = display.height() / 2;
+    display.drawLine(x, y, x - arrowWidth, y - arrowHeight / 2, display.fg);
+    display.drawLine(x, y, x - arrowWidth, y + arrowHeight / 2, display.fg);
 
     display.updateDisplay(firstLoad ? DisplaySystem::UpdateType::FULL
                                     : DisplaySystem::UpdateType::FAST);
@@ -80,14 +81,14 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
 
 void LightingAdjustScreen::processCommand(RemoteCommand command) {
     switch (command) {
-    case RemoteCommand::NEXT:
+    case RemoteCommand::CHANNEL_MINUS:
         break;
-    case RemoteCommand::PREV:
+    case RemoteCommand::CHANNEL_PLUS:
         if (backCallback != nullptr) {
             backCallback();
         }
         break;
-    case RemoteCommand::CHANNEL_PLUS: {
+    case RemoteCommand::PREV: {
         auto backlight = prefs_.backlight.get().value();
         backlight = std::min(backlight + LIGHTING_STEP_INCREMENT, MAX_LIGHTING_VALUE);
         SetBacklight(backlight);
@@ -95,7 +96,7 @@ void LightingAdjustScreen::processCommand(RemoteCommand command) {
         needsRerender = true;
         break;
     }
-    case RemoteCommand::CHANNEL_MINUS: {
+    case RemoteCommand::NEXT: {
         auto backlight = prefs_.backlight.get().value();
         backlight = std::max(backlight - LIGHTING_STEP_INCREMENT, MIN_LIGHTING_VALUE);
         SetBacklight(backlight);
