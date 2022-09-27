@@ -59,11 +59,11 @@ void DemoScreen::render(DisplaySystem &display) {
 
     // Alternate left and right on for setup.
     if (currentScreen_ % 2 == 1) {
-        SetRightBackLight(true /*false*/, backlight);
+        SetRightBackLight(false, backlight);
         SetLeftBackLight(true, backlight);
     } else {
         SetRightBackLight(true, backlight);
-        SetLeftBackLight(true /*false*/, backlight);
+        SetLeftBackLight(false, backlight);
     }
 
     // Turn on both backlights for last case
