@@ -33,7 +33,7 @@ void ReadableSeekScreen::render(DisplaySystem &display) {
     display.fillRect(x, y, progressWidth, barHeight, display.fg);
 
     x += barWidth + spacing;
-    display.setCursor(x, y + display.getTextHeight() - 2);
+    display.setCursor(x, y + display.getTextHeight() - 6);
     display.println(percentStr.c_str());
 
     // Cursor is from the baseline of the text I think
@@ -55,6 +55,14 @@ void ReadableSeekScreen::render(DisplaySystem &display) {
     display.getTextBounds(message3, &textWidth, &textHeight);
     display.setCursor((display.width() - textWidth) / 2, y);
     display.println(message3);
+
+    if (seekAndYouWillFind_) {
+        y += display.getTextHeight() + 10;
+        auto message3 = "Seek and you will find!";
+        display.getTextBounds(message3, &textWidth, &textHeight);
+        display.setCursor((display.width() - textWidth) / 2, y);
+        display.println(message3);
+    }
 
     // up arrow
     uint16_t arrowWidth = 10, arrowHeight = 5;
@@ -114,21 +122,27 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
         prefs_.readablePlace.set(readable_.id.c_str(), readable_.place);
         needsRerender = true;
         break;
-    } break;
+    }
     case RemoteCommand::PREV: {
+        seekAndYouWillFind_ = false;
         if (backCallback != nullptr) {
             backCallback();
         }
         break;
     }
     case RemoteCommand::NEXT: {
+        seekAndYouWillFind_ = true;
+        needsRerender = true;
+        firstLoad = true;
         break;
     }
-    case RemoteCommand::BACK:
+    case RemoteCommand::BACK: {
+        seekAndYouWillFind_ = false;
         if (backCallback != nullptr) {
             backCallback();
         }
         break;
+    }
     default:
         break;
     }
