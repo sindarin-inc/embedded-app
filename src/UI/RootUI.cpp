@@ -13,6 +13,7 @@
 #include "Renderers/Renderer.hpp"
 #include "UI/CalibrationScreen.hpp"
 #include "UI/DemoScreen.hpp"
+#include "UI/FirmwareUpdateScreen.hpp"
 #include "UI/LightingAdjustScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/LoadingScreen.hpp"
@@ -507,6 +508,15 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
 #endif
         display->drawSingleLineOfText(buildString, 0, 0);
         display->updateDisplay();
+    }));
+
+    settingsMenu->addMenuItem(MenuItem("Firmware Update", [this, settingsMenu, display]() {
+        auto firmwareUpdateScreen = new FirmwareUpdateScreen(*display, prefs_, this->power_);
+        this->setCurrentScreen(*firmwareUpdateScreen);
+        firmwareUpdateScreen->backCallback = [this, firmwareUpdateScreen, settingsMenu]() {
+            setCurrentScreen(*settingsMenu);
+            delete firmwareUpdateScreen;
+        };
     }));
 
 #if USE_TURN_TOUCH_REMOTE

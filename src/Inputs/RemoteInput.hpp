@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <utility>
+#include <stdint.h>
 
 #define PT_NONE 0xFF00
 #define PT_N_PRESS 0xFE00
