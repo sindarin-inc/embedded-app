@@ -178,8 +178,8 @@ void MenuScreen::render(DisplaySystem &display) {
 
         if (i == currSelection_) {
             display.fillRoundRect(
-                2 + 20, (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight() + 2 + 50,
-                display.getTextHeight() - 4, display.getTextHeight() - 4, 3, display.fg);
+                3 + 20, (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight() + 4 + 50,
+                display.getTextHeight() - 7, display.getTextHeight() - 7, 2, display.fg);
         }
     }
 
