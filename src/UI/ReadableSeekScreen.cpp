@@ -57,7 +57,7 @@ void ReadableSeekScreen::render(DisplaySystem &display) {
     display.println(message3);
 
     // up arrow
-    uint16_t arrowWidth = 36, arrowHeight = 7;
+    uint16_t arrowWidth = 10, arrowHeight = 5;
     x = (display.width() - arrowWidth) / 2;
     y = 10;
     display.drawLine(x, y, x + arrowWidth / 2, y - arrowHeight, display.fg);

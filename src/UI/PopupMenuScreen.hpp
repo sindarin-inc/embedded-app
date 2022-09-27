@@ -53,6 +53,10 @@ protected:
 
     ReadableSeekScreen readableSeekScreen_;
     std::function<void(void)> leftButtonCallback_;
+
+    int arrowWidth = 5;
+    int arrowHeight = 10;
+    int arrowTextSpacing = 5;
 };
 
 #endif

@@ -65,7 +65,7 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
     // Not drawing for some reason hmm
     // display.println(StringFormat("%d%%", backlightPercent).c_str());
     // up arrow
-    uint16_t arrowWidth = 36, arrowHeight = 7;
+    uint16_t arrowWidth = 10, arrowHeight = 5;
     x = (display.width() - arrowWidth) / 2;
     y = 10;
     display.drawLine(x, y, x + arrowWidth / 2, y - arrowHeight, display.fg);
