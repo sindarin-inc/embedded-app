@@ -34,6 +34,8 @@ protected:
 
     EinkET013TT1 driver_;
     bool fullRefreshNext_ = false;
+    uint16_t numPartials_ = 0;
+    unsigned long firstPartialTime_ = 0;
 };
 
 #endif

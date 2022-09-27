@@ -415,7 +415,7 @@ auto Renderer::renderPage(unsigned long placeInFile, bool withBookmark) -> unsig
                               display_.width() + 7, 30, display_.bg);
     }
 
-    display_.updateDisplay();
+    display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 
     SetCpuSpeedMhz(CPU_FREQ_MHZ_LOW);
 

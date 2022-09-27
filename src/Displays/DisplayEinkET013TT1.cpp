@@ -111,13 +111,29 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
         }
         break;
     case FULL:
+        firstPartialTime_ = 0;
+        numPartials_ = 0;
         driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
         break;
     case PARTIAL:
+        if (((numPartials_ > 2) && (millis() - firstPartialTime_ < 5000)) || (numPartials_ > 10)) {
+            fullRefreshNext_ = true;
+        }
         if (!fullRefreshNext_) {
-            driver_.update(PARTIAL_REFRESH_WAVEFORM_REGULAR, gfxCanvas_.getBuffer());
+            if (firstPartialTime_ == 0) {
+                firstPartialTime_ = millis();
+            }
+            numPartials_++;
+
+            if (getInversion()) {
+                driver_.update(PARTIAL_REFRESH_WAVEFORM_INVERTED, gfxCanvas_.getBuffer());
+            } else {
+                driver_.update(PARTIAL_REFRESH_WAVEFORM_REGULAR, gfxCanvas_.getBuffer());
+            }
         } else {
             driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
+            firstPartialTime_ = 0;
+            numPartials_ = 0;
         }
         break;
     case FAST:
@@ -125,6 +141,8 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
             driver_.update(EINK_10_13C_WAVEFORM_AU4, gfxCanvas_.getBuffer());
         } else {
             driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
+            firstPartialTime_ = 0;
+            numPartials_ = 0;
         }
         break;
     }
