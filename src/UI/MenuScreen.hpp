@@ -69,8 +69,8 @@ protected:
     int currMenuPage_ = 0;
     bool firstLoad_ = true;
 
-    int xOffsetForArrows = 25;
-    int yOffsetForArrows = 40;
+    int xOffsetForArrows = 45;
+    int yOffsetForArrows = 45;
     int arrowWidth = 5;
     int arrowHeight = 10;
     int arrowTextSpacing = 5;
