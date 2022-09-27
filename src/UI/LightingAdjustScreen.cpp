@@ -56,6 +56,13 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
     display.setCursor((display.width() - textWidth) / 2, y);
     display.println(message2);
 
+    if (lightUpMyLife) {
+        y += display.getTextHeight() + 10;
+        auto message2 = "You light up our lives!";
+        display.getTextBounds(message2, &textWidth, &textHeight);
+        display.setCursor((display.width() - textWidth) / 2, y);
+        display.println(message2);
+    }
     // display.fillRect((display.width() - textWidth) / 2 - 30, y + 10, textWidth + 60, 2,
     // display.fg);
 
@@ -82,8 +89,12 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
 void LightingAdjustScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
+        lightUpMyLife = true;
+        firstLoad = true;
+        needsRerender = true;
         break;
     case RemoteCommand::CHANNEL_PLUS:
+        lightUpMyLife = false;
         if (backCallback != nullptr) {
             backCallback();
         }
@@ -105,6 +116,7 @@ void LightingAdjustScreen::processCommand(RemoteCommand command) {
         break;
     }
     case RemoteCommand::BACK:
+        lightUpMyLife = false;
         if (backCallback != nullptr) {
             backCallback();
         }

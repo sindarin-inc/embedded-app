@@ -13,5 +13,6 @@ public:
     bool firstLoad = true;
 
 protected:
+    bool lightUpMyLife = false;
     PreferencesStore &prefs_;
 };
