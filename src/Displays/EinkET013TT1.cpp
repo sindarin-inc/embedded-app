@@ -310,17 +310,38 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     auto leftTemp = readTemperature(ScreenSide::Left);
     auto rightPumpStatus = readPumpStatus(ScreenSide::Right);
     auto rightTemp = readTemperature(ScreenSide::Right);
-    if (!leftPumpStatus.bits.vcpok || !rightPumpStatus.bits.vcpok) {
-        log_e("Pump not ready! Left: LVDS=%d VCPOK=%d temp=%dºC Right: LVDS=%d VCPOK=%d temp=%dºC",
+
+    // Set the error flag if charge pumps aren't ready (VCPOK=0) or the screen is detecting a low
+    // voltage condition (LVDS=1)
+    if (leftPumpStatus.bits.unused != 0 || rightPumpStatus.bits.unused != 0) {
+        log_e("Garbage data in pump status (MISO line pulled high?) Left: LVDS=%d VCPOK=%d "
+              "temp=%dºC (0x%02X) Right: LVDS=%d VCPOK=%d temp=%dºC (0x%02X)",
               leftPumpStatus.bits.lvds, leftPumpStatus.bits.vcpok, leftTemp,
-              rightPumpStatus.bits.lvds, rightPumpStatus.bits.vcpok, rightTemp);
+              rightPumpStatus.bits.lvds, leftPumpStatus.value, rightPumpStatus.bits.vcpok,
+              rightTemp, rightPumpStatus.value);
+        error_ = true;
+    } else if (!leftPumpStatus.bits.vcpok || !rightPumpStatus.bits.vcpok) {
+        log_e("Pump not ready! Left: LVDS=%d VCPOK=%d temp=%dºC (0x%02X) Right: LVDS=%d VCPOK=%d "
+              "temp=%dºC (0x%02X)",
+              leftPumpStatus.bits.lvds, leftPumpStatus.bits.vcpok, leftTemp,
+              rightPumpStatus.bits.lvds, leftPumpStatus.value, rightPumpStatus.bits.vcpok,
+              rightTemp, rightPumpStatus.value);
+        error_ = true;
+    } else if (leftPumpStatus.bits.lvds || rightPumpStatus.bits.lvds) {
+        log_e("Low voltage detected! Left: LVDS=%d VCPOK=%d temp=%dºC (0x%02X) Right: LVDS=%d "
+              "VCPOK=%d "
+              "temp=%dºC (0x%02X)",
+              leftPumpStatus.bits.lvds, leftPumpStatus.bits.vcpok, leftTemp, leftPumpStatus.value,
+              rightPumpStatus.bits.lvds, rightPumpStatus.bits.vcpok, rightTemp,
+              rightPumpStatus.value);
         error_ = true;
     } else {
-        log_d("Left: LVDS=%d VCPOK=%d temp=%dºC Right: LVDS=%d VCPOK=%d temp=%dºC",
-              leftPumpStatus.bits.lvds, leftPumpStatus.bits.vcpok, leftTemp,
-              rightPumpStatus.bits.lvds, rightPumpStatus.bits.vcpok, rightTemp);
+        log_d(
+            "Left: LVDS=%d VCPOK=%d temp=%dºC (0x%02X) Right: LVDS=%d VCPOK=%d temp=%dºC (0x%02X)",
+            leftPumpStatus.bits.lvds, leftPumpStatus.bits.vcpok, leftTemp, leftPumpStatus.value,
+            rightPumpStatus.bits.lvds, rightPumpStatus.bits.vcpok, rightTemp,
+            rightPumpStatus.value);
     }
-
     ESP_ERROR_CHECK(spi_device_acquire_bus(spiHigh_, portMAX_DELAY));
 
     PROFILE_START(sendFrames);

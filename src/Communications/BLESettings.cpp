@@ -34,6 +34,29 @@ void BLESettings::writeDeviceSerialToCharacteristic(BLECharacteristic *character
     characteristic->notify();
 }
 
+void BLESettings::blinkLedAfterConnect(BLECharacteristic *characteristic, const std::string &key) {
+    for (int i = 0; i < 10; i++) {
+#if !SIMULATOR
+        // Flash all the LEDs
+        digitalWrite(RED_LED, LED_ON);
+        vTaskDelay(200 / portTICK_PERIOD_MS);
+        digitalWrite(RED_LED, LED_OFF);
+        digitalWrite(GREEN_LED, LED_ON);
+        vTaskDelay(200 / portTICK_PERIOD_MS);
+        digitalWrite(GREEN_LED, LED_OFF);
+#ifdef BLUE_LED
+        digitalWrite(BLUE_LED, LED_ON);
+        vTaskDelay(200 / portTICK_PERIOD_MS);
+        digitalWrite(BLUE_LED, LED_OFF);
+#endif
+#endif
+    }
+
+    std::string value = key + "=1";
+    characteristic->setValue(value);
+    characteristic->notify();
+}
+
 void BLESettings::writeWifiSSIDtoCharacteristic(BLECharacteristic *characteristic,
                                                 std::string key) {
     wifi_ap_record_t info;

@@ -113,20 +113,63 @@ void RadioTask(void *parameter) {
 }
 #endif
 
-#if SIMULATOR
+#if !SIMULATOR
+TaskHandle_t powerTaskHandle = nullptr;
+
+#if !DISABLE_POWER_MANAGEMENT
+#if GILPICO_SINDARIN
+esp_pm_config_esp32_t pmConfig;
+#else
+esp_pm_config_esp32s3_t pmConfig;
+#endif
+#endif
+
+void PowerTask(void *parameter) {
+    for (;;) {
+        // Run the power loop first so that we don't show a 0% battery reading
+        power.loop();
+
+        xTaskNotifyWait(0, 0, nullptr, 30000 / portTICK_PERIOD_MS);
+
+#if !DISABLE_POWER_MANAGEMENT
+        if (USBConnected() && pmConfig.light_sleep_enable == true) {
+            // USB is connected so disable light sleep
+            pmConfig.light_sleep_enable = false;
+            auto err = esp_pm_configure(&pmConfig);
+            if (err != ESP_OK) {
+                log_e("Failed to disable light sleep with err %s", esp_err_to_name(err));
+            } else {
+                log_d("Disabled light sleep");
+            }
+        } else if (!USBConnected() && pmConfig.light_sleep_enable == false) {
+            // USB is disconnected so enable light sleep
+            pmConfig.light_sleep_enable = true;
+            auto err = esp_pm_configure(&pmConfig);
+            if (err != ESP_OK) {
+                log_e("Failed to enable light sleep with err %s", esp_err_to_name(err));
+            } else {
+                log_d("Enabled light sleep");
+            }
+        }
+#endif
+    }
+    vTaskDelete(nullptr);
+}
+
+#else // SIMULATOR
+
 void simStatsTask(int intervalMs) {
     for (;;) {
         power.loop();
         std::this_thread::sleep_for(std::chrono::milliseconds(intervalMs));
     }
 }
-#endif
+
+#endif // !SIMULATOR
 
 void StatsTask(void *parameter) {
 #if !SIMULATOR
     for (;;) {
-        // Run the power loop first so that we don't show a 0% battery reading
-        power.loop();
         // Spit out data on locks every 30s
         vTaskDelay(30000 / portTICK_PERIOD_MS);
 #if !DISABLE_POWER_MANAGEMENT
@@ -401,15 +444,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 
 #if !DISABLE_POWER_MANAGEMENT
-#if GILPICO_SINDARIN
-    esp_pm_config_esp32_t pmConfig = {
-#else
-    esp_pm_config_esp32s3_t pmConfig = {
-#endif
-        .max_freq_mhz = CPU_FREQ_MHZ_HIGH,
-        .min_freq_mhz = CPU_FREQ_MHZ_LOW,
-        .light_sleep_enable = true,
-    };
+    pmConfig.max_freq_mhz = CPU_FREQ_MHZ_HIGH;
+    pmConfig.min_freq_mhz = CPU_FREQ_MHZ_LOW;
+    pmConfig.light_sleep_enable = !USBConnected();
     if (esp_pm_configure(&pmConfig) != ESP_OK) {
         bootErrors.push_back({.type = BootError::Type::PowerManagement});
     }
@@ -420,6 +457,11 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         bootErrors.push_back({.type = BootError::Type::LowPowerOscillator});
     }
 
+#ifdef USB_CONNECTED_PIN
+    attachInterrupt(
+        digitalPinToInterrupt(USB_CONNECTED_PIN),
+        []() { xTaskNotify(powerTaskHandle, 0, eNoAction); }, CHANGE);
+#endif
 #endif
 
     auto readables = new std::vector<Readable>();
@@ -451,6 +493,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     xTaskCreatePinnedToCore(RadioTask, "Radio", 10000, nullptr, 1, nullptr, 0);
     xTaskCreatePinnedToCore(UITask, "UI", 10000, nullptr, 10, &uiTaskHandle, 1);
     xTaskCreatePinnedToCore(StatsTask, "Stats", 5000, nullptr, 0, nullptr, 1);
+    xTaskCreatePinnedToCore(PowerTask, "Power", 5000, nullptr, 0, &powerTaskHandle, 1);
 #else
     simPowerThread = new std::thread(simStatsTask, 5000);
 #endif

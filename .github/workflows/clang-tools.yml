@@ -19,14 +19,14 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install colorama click platformio
-      
+
       - name: Add Clang Tidy deb repo
         uses: myci-actions/add-deb-repo@10
         with:
           repo: deb http://apt.llvm.org/focal/ llvm-toolchain-focal-14 main
           repo-name: clang-tidy
           keys-asc: https://apt.llvm.org/llvm-snapshot.gpg.key
-          
+
       - name: Install clang-tidy-14
         run: sudo apt-get update && sudo apt install -y clang-tidy-14
 
@@ -40,8 +40,9 @@ jobs:
           clangFormatVersion: 14
           inplace: True
 
-      - uses: EndBug/add-and-commit@v4
+      - uses: EndBug/add-and-commit@v9
         with:
+          add: "src"
           author_name: Clang Robot
           author_email: robot@example.com
           message: "Committing clang-format/clang-tidy changes"

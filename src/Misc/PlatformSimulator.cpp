@@ -15,4 +15,6 @@ void SetBacklight(int percent) { log_d("Setting backlight to %d%%", percent); }
 
 auto GetRunTimeMs() -> uint32_t { return millis(); }
 
+auto USBConnected() -> bool { return true; }
+
 #endif

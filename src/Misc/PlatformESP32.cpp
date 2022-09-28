@@ -15,17 +15,23 @@
 #include "Misc/ULP.hpp"
 #endif
 
-#define UPPER_DIVIDER 442
-#define LOWER_DIVIDER 160
-#define DEFAULT_VREF 1100 // Default referance voltage in mv
 #define BACKLIGHT_PWM_CHANNEL 0
 
-void InitializePlatform() {
-    pinMode(BAT_VOLTAGE_LEFT, ANALOG);
-    analogSetPinAttenuation(BAT_VOLTAGE_LEFT, ADC_6db);
+esp_adc_cal_characteristics_t adcCalCharacteristics;
 
-    pinMode(BAT_VOLTAGE_RIGHT, ANALOG);
-    analogSetPinAttenuation(BAT_VOLTAGE_RIGHT, ADC_6db);
+void InitializePlatform() {
+    auto adcCalValue = esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_2_5, ADC_WIDTH_BIT_12,
+                                                DEFAULT_VREF, &adcCalCharacteristics);
+    if (adcCalValue != ESP_ADC_CAL_VAL_EFUSE_TP_FIT) {
+        // Generally, we expect the Two Point calibration to be used.
+        // It's unclear if we'll ever hit this warning but putting it in to be safe.
+        log_w("Using ADC calibration type: %d", (int)adcCalValue);
+    }
+    adc1_config_width(ADC_WIDTH_BIT_12);
+    // Attenuation of 2.5db gets us up to a max of 1250mV
+    // Using our 442k/160k divider, that's 4.7V max
+    adc1_config_channel_atten(BATT_CHANNEL_LEFT, ADC_ATTEN_DB_2_5);
+    adc1_config_channel_atten(BATT_CHANNEL_RIGHT, ADC_ATTEN_DB_2_5);
 
     digitalWrite(RED_LED, LED_OFF);
     digitalWrite(GREEN_LED, LED_OFF);
@@ -101,42 +107,25 @@ void InitializePlatform() {
     UlpStart();
 #endif
 #endif // EINKET013TT1
+
+#ifdef USB_CONNECTED_PIN
+    pinMode(USB_CONNECTED_PIN, INPUT);
+#endif
 }
 
 // Forked from TinyPico's GetBatteryVoltage() method:
 // https://github.com/tinypico/tinypico-arduino/blob/master/TinyPICO-Helper/src/TinyPICO.cpp#L207
 auto GetBatteryVoltageLeft() -> float {
-    uint32_t raw, mv;
-    esp_adc_cal_characteristics_t chars;
-
-    // only check voltage every 1 second
-
-    // grab latest voltage
-    analogRead(BAT_VOLTAGE_LEFT);          // Just to get the ADC setup
-    raw = adc1_get_raw(BATT_CHANNEL_LEFT); // Read of raw ADC value
-
-    // Get ADC calibration values
-    esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_6db, ADC_WIDTH_BIT_12, DEFAULT_VREF, &chars);
-
-    // Convert to calibrated mv then volts
-    mv = esp_adc_cal_raw_to_voltage(raw, &chars) * (LOWER_DIVIDER + UPPER_DIVIDER) / LOWER_DIVIDER;
+    uint32_t raw = adc1_get_raw(BATT_CHANNEL_LEFT);
+    uint32_t millivolts = esp_adc_cal_raw_to_voltage(raw, &adcCalCharacteristics);
+    auto mv = (float)(UPPER_DIVIDER + LOWER_DIVIDER) / LOWER_DIVIDER * millivolts;
     return (float)mv / 1000.0;
 }
 
 auto GetBatteryVoltageRight() -> float {
-    uint32_t raw, mv;
-    esp_adc_cal_characteristics_t chars;
-
-    // grab latest voltage
-    analogRead(BAT_VOLTAGE_RIGHT);          // Just to get the ADC setup
-    raw = adc1_get_raw(BATT_CHANNEL_RIGHT); // Read of raw ADC value
-
-    // Get ADC calibration values
-    esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_6db, ADC_WIDTH_BIT_12, DEFAULT_VREF, &chars);
-
-    // Convert to calibrated mv then volts
-    mv = esp_adc_cal_raw_to_voltage(raw, &chars) * (LOWER_DIVIDER + UPPER_DIVIDER) / LOWER_DIVIDER;
-
+    uint32_t raw = adc1_get_raw(BATT_CHANNEL_RIGHT);
+    uint32_t millivolts = esp_adc_cal_raw_to_voltage(raw, &adcCalCharacteristics);
+    auto mv = (float)(UPPER_DIVIDER + LOWER_DIVIDER) / LOWER_DIVIDER * millivolts;
     return (float)mv / 1000.0;
 }
 
@@ -187,5 +176,14 @@ void SetLeftBackLight(bool on, int percent) {
 }
 
 auto GetRunTimeMs() -> uint32_t { return FreeRTOS::getTimeSinceStart(); }
+
+auto USBConnected() -> bool {
+#ifdef USB_CONNECTED_PIN
+    return digitalRead(USB_CONNECTED_PIN);
+#else
+    // No way to know if USB is connected on old boards. But it's probably not.
+    return false;
+#endif
+}
 
 #endif

@@ -27,6 +27,7 @@ protected:
     void writeDeviceSerialToCharacteristic(BLECharacteristic *characteristic,
                                            const std::string &key);
     void writeWifiSSIDtoCharacteristic(BLECharacteristic *characteristic, std::string key);
+    void blinkLedAfterConnect(BLECharacteristic *characteristic, const std::string &key);
 
     class CharacteristicCallbacks : public BLECharacteristicCallbacks {
     public:
@@ -48,6 +49,8 @@ protected:
                     this->enclosed->writeWifiSSIDtoCharacteristic(characteristic, value);
                 } else if (value == "device-serial") {
                     this->enclosed->writeDeviceSerialToCharacteristic(characteristic, value);
+                } else if (value == "blink-led") {
+                    this->enclosed->blinkLedAfterConnect(characteristic, value);
                 } else {
                     log_w("GATT client asking to read unknown setting: %s", value.c_str());
                 }

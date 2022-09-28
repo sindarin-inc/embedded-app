@@ -53,8 +53,6 @@ auto DisplayEinkET013TT1::setup() -> bool {
         log_d("Caught a Waveform Error %d", retVal);
     }
 
-    log_i("Display ready!");
-
     return !driver_.errored();
 }
 

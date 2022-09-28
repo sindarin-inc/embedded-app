@@ -17,3 +17,5 @@ void SetRightBackLight(bool on, int percent);
 void SetLeftBackLight(bool on, int percent);
 
 auto GetRunTimeMs() -> uint32_t;
+
+auto USBConnected() -> bool;
