@@ -22,19 +22,14 @@
 
 class FirmwareUpdateScreen : public Screen {
 public:
-    FirmwareUpdateScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power);
+    FirmwareUpdateScreen(DisplaySystem &display);
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
 
 protected:
     DisplaySystem &display_;
-    Renderer renderer_;
-    PreferencesStore &prefs_;
-    Power &power_;
     FirmwareDownload firmwareDownload_;
-
-    unsigned int currentScreen_ = 0;
 };
 
 #endif

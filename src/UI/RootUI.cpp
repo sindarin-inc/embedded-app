@@ -511,7 +511,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
     }));
 
     settingsMenu->addMenuItem(MenuItem("Firmware Update", [this, settingsMenu, display]() {
-        auto firmwareUpdateScreen = new FirmwareUpdateScreen(*display, prefs_, this->power_);
+        auto firmwareUpdateScreen = new FirmwareUpdateScreen(*display);
         this->setCurrentScreen(*firmwareUpdateScreen);
         firmwareUpdateScreen->backCallback = [this, firmwareUpdateScreen, settingsMenu]() {
             setCurrentScreen(*settingsMenu);
