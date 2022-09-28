@@ -486,8 +486,8 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
         log_w("Unpaired TurnTouch. Rebooting...");
         display->drawSingleLineOfText(
             "Unpaired TurnTouch! Resetting...",
-            display->xAbsoluteCenter() -
-                display->getTextWidth("Unpaired TurnTouch! Resetting...") / 2,
+            display->xAbsolute(display->xAbsoluteCenter() -
+                               display->getTextWidth("Unpaired TurnTouch! Resetting...") / 2),
             display->yAbsolute(display->yAbsoluteCenter() - display->getTextHeight() / 2));
         display->updateDisplay();
         delay(2000);
@@ -532,6 +532,30 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
             setCurrentScreen(*debugMenu);
             delete demoScreen;
         };
+    }));
+
+    debugMenu->addMenuItem(MenuItem("Battery and Temperature", [this, debugMenu, display]() {
+        uint16_t width = 0, height = 0;
+        display->setFont(display->style.getFontFamily().readableFont);
+        auto batteryStatus = this->power_.getBatteryLifeString();
+        uint16_t leftTemp;
+#if EINKET013TT1
+        auto *driver = ((DisplayEinkET013TT1 *)display)->getDriver();
+        // TODO: Add UI for right screen temp also
+        leftTemp = driver->readTemperature(ScreenSide::Left);
+#else
+    leftTemp = 99;
+#endif
+        batteryStatus += StringFormat(" %dC", leftTemp);
+
+        width = display->getTextWidth(batteryStatus.c_str());
+        height = display->getTextHeight(batteryStatus.c_str());
+
+        display->drawSingleLineOfText(batteryStatus.c_str(),
+                                      display->xAbsolute(display->xAbsoluteCenter() - width / 2),
+                                      display->yAbsolute(display->yAbsoluteCenter() - height / 2));
+
+        display->updateDisplay();
     }));
 
     oldMenu->addMenuItem(MenuItem("Calibration Screen Run Through", [this, oldMenu]() {
