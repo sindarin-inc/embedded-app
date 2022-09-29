@@ -7,6 +7,7 @@
 #include "Communications/WiFi.hpp"
 #include "Contents/Readable.hpp"
 #include "Inputs/RemoteInput.hpp"
+#include "Misc/MenuStyle.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
@@ -48,7 +49,9 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
 
     display_ = display;
 
-    auto mainMenu = new MainMenuScreen(this->power_);
+    MenuStyle styleFamilies;
+
+    auto mainMenu = new MainMenuScreen(this->power_, styleFamilies.mainMenu);
 
     SIZE_OF(*mainMenu);
 
@@ -167,7 +170,8 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
         }
 
         log_i("Pocket /get request succeeded");
-        auto pocketMenu = new MenuScreen(this->power_);
+
+        auto pocketMenu = new MenuScreen(this->power_, mainMenu->getMyStyle());
 
         for (JsonPair keyValue : list) {
             JsonObject article = keyValue.value().as<JsonObject>();
@@ -245,11 +249,11 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
 #endif // DISABLE_WIFI
 
     // Settings menus
-    auto settingsMenu = new MenuScreen(this->power_);
-    auto debugMenu = new MenuScreen(this->power_);
+    auto settingsMenu = new MenuScreen(this->power_, styleFamilies.settingsMenu);
+    auto debugMenu = new MenuScreen(this->power_, styleFamilies.settingsMenu);
 
     // For items we don't want to throw away yet, but this isn't hooked up anywhere
-    auto oldMenu = new MenuScreen(this->power_);
+    auto oldMenu = new MenuScreen(this->power_, styleFamilies.settingsMenu);
 
     debugMenu->backCallback = [this, settingsMenu]() {
         this->display_->clearDisplay();
@@ -258,10 +262,8 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
     };
 
     settingsMenu->addMenuItem(MenuItem("Reading Font Size", [this, settingsMenu]() {
-        auto fontMenu = new MenuScreen(this->power_);
-
-        fontMenu->setExtraText("Reading font size");
-
+        auto fontMenu = new MenuScreen(this->power_, settingsMenu->getMyStyle());
+        fontMenu->setExtraText("Example font size");
         fontMenu->addMenuItem(MenuItem("Small", [this, fontMenu]() {
             this->display_->style.setFontFamily(this->display_->style.tahomaRegular);
             this->display_->clearDisplay();
@@ -342,7 +344,9 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
 #endif
 
     debugMenu->addMenuItem(MenuItem("Font Type", [this, debugMenu]() {
-        auto fontMenu = new MenuScreen(this->power_);
+        MenuStyle styleFamilies;
+        auto fontMenu = new MenuScreen(this->power_, debugMenu->getMyStyle());
+        fontMenu->setExtraText("Example font type");
 
         fontMenu->addMenuItem(MenuItem("Lucida 1px space", [this, fontMenu]() {
             this->display_->style.setFontFamily(this->display_->style.lucidaSkinny);
@@ -386,7 +390,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
 
 #if EINKET013TT1
     debugMenu->addMenuItem(MenuItem("Set Vcom", [this, display, debugMenu]() {
-        auto vcomMenu = new MenuScreen(this->power_);
+        auto vcomMenu = new MenuScreen(this->power_, debugMenu->getMyStyle());
         auto *driver = (static_cast<DisplayEinkET013TT1 *>(display))->getDriver();
         vcomMenu->addMenuItem(MenuItem("0V", [this, vcomMenu, driver]() {
             driver->setVcom(0);

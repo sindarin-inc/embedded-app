@@ -2,48 +2,120 @@
 
 #include <utility>
 
+#include "Misc/MenuStyle.hpp"
 #include "Misc/Style.hpp"
+
+#define MAX_WIDTH 150
 
 #if EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
 #endif
 
+#if EINKET013TT1
+void MenuScreen::saveAndUpdateVCOM(DisplaySystem &display) {
+    oldVcom_ = (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver()->getVcom();
+    int newVcom = 0;
+    if (display.getInversion()) {
+        newVcom = oldVcom_ - 2000;
+    } else {
+        newVcom = oldVcom_ + 2000;
+    }
+    (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver()->setVcom(newVcom);
+}
+
+void MenuScreen::revertVCOM(DisplaySystem &display) {
+    (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver()->setVcom(oldVcom_);
+}
+#endif
+
+void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool withLastItem) {
+    display.setFont(myStyle_.itemFont);
+    int iteratorEnd = (withLastItem) ? numMenuItems_ : numMenuItems_ - 1;
+    for (int i = currMenuPage_ * myStyle_.numberOfItemsPerPage;
+         (i < (currMenuPage_ * myStyle_.numberOfItemsPerPage + myStyle_.numberOfItemsPerPage)) &&
+         (i < iteratorEnd);
+         i++) {
+        std::string itemTitle = getItemTitleAt(i);
+        // If we still don't fit, shrink the string until we do.
+        while (display.getTextWidth(itemTitle.c_str()) > MAX_WIDTH) {
+            log_d("Item title %s still too long at smallest font size; truncating...",
+                  itemTitle.c_str());
+            if (itemTitle.length() > 4) {
+                itemTitle = itemTitle.substr(0, itemTitle.length() - 4) + "...";
+            } else {
+                // Practially, this shouldn't ever happen, but I'm doing
+                // the bounds check here just in case we do hit it some day.
+                itemTitle = "too big!";
+            }
+        }
+        display.drawSingleLineOfText(
+            itemTitle, myStyle_.xOffsetForList,
+            myStyle_.yOffsetForList + (i % myStyle_.numberOfItemsPerPage) *
+                                          (display.getTextHeight() / 5 + display.getTextHeight()));
+
+        // xoffset for main menu is 12, for settings menu is 23
+        // yoffset for main menu is some crazy thing
+        // for settings menu some other crazy thing
+        if ((i == currSelection_) && (withBullet)) {
+            display.fillRoundRect(myStyle_.xOffsetForList - display.getTextHeight() / 4 - 2,
+                                  myStyle_.yOffsetForList +
+                                      (i % myStyle_.numberOfItemsPerPage) *
+                                          (display.getTextHeight() / 5 + display.getTextHeight()) +
+                                      3,
+                                  display.getTextHeight() - 7, display.getTextHeight() - 7,
+                                  display.getTextHeight() / 5, display.fg);
+        }
+    }
+
+    int oldTextHeight = display.getTextHeight();
+    display.setFont(display.style.getFontFamily().readableFont);
+    display.drawSingleLineOfText(extraTextBelowMenu_.c_str(), myStyle_.xOffsetForList + 10,
+                                 (1 + myStyle_.numberOfItemsPerPage) * oldTextHeight + 50);
+}
+
 void MenuScreen::drawArrowsAndSelections(DisplaySystem &display) {
 
-    display.setFont(display.style.getFontFamily().settingsFont);
+    display.setFont(myStyle_.navigationFont);
     // Upper left arrow for Settings
-    display.drawLine(display.xAbsolute(xOffsetForArrows), display.yAbsolute(yOffsetForArrows),
-                     display.xAbsolute(xOffsetForArrows + arrowWidth),
-                     display.yAbsolute(yOffsetForArrows - arrowHeight / 2), display.fg);
-    display.drawLine(display.xAbsolute(xOffsetForArrows), display.yAbsolute(yOffsetForArrows),
-                     display.xAbsolute(xOffsetForArrows + arrowWidth),
-                     display.yAbsolute(yOffsetForArrows + arrowHeight / 2), display.fg);
+    display.drawLine(
+        display.xAbsolute(myStyle_.xOffsetForArrows), display.yAbsolute(myStyle_.yOffsetForArrows),
+        display.xAbsolute(myStyle_.xOffsetForArrows + myStyle_.arrowWidth),
+        display.yAbsolute(myStyle_.yOffsetForArrows - myStyle_.arrowHeight / 2), display.fg);
+    display.drawLine(
+        display.xAbsolute(myStyle_.xOffsetForArrows), display.yAbsolute(myStyle_.yOffsetForArrows),
+        display.xAbsolute(myStyle_.xOffsetForArrows + myStyle_.arrowWidth),
+        display.yAbsolute(myStyle_.yOffsetForArrows + myStyle_.arrowHeight / 2), display.fg);
 
     // Lower right arrow for "Read" or flip between "Books and Articles"
-    display.drawLine(
-        display.xAbsolute(display.xAbsoluteMax() - xOffsetForArrows),
-        display.yAbsolute(display.yAbsoluteMax() - yOffsetForArrows),
-        display.xAbsolute(display.xAbsoluteMax() - (xOffsetForArrows + arrowWidth)),
-        display.yAbsolute(display.yAbsoluteMax() - (yOffsetForArrows - arrowHeight / 2)),
-        display.fg);
-    display.drawLine(
-        display.xAbsolute(display.xAbsoluteMax() - xOffsetForArrows),
-        display.yAbsolute(display.yAbsoluteMax() - yOffsetForArrows),
-        display.xAbsolute(display.yAbsoluteMax() - (xOffsetForArrows + arrowWidth)),
-        display.yAbsolute(display.yAbsoluteMax() - (yOffsetForArrows + arrowHeight / 2)),
-        display.fg);
+    display.drawLine(display.xAbsolute(display.xAbsoluteMax() - myStyle_.xOffsetForArrows),
+                     display.yAbsolute(display.yAbsoluteMax() - myStyle_.yOffsetForArrows),
+                     display.xAbsolute(display.xAbsoluteMax() -
+                                       (myStyle_.xOffsetForArrows + myStyle_.arrowWidth)),
+                     display.yAbsolute(display.yAbsoluteMax() -
+                                       (myStyle_.yOffsetForArrows - myStyle_.arrowHeight / 2)),
+                     display.fg);
+    display.drawLine(display.xAbsolute(display.xAbsoluteMax() - myStyle_.xOffsetForArrows),
+                     display.yAbsolute(display.yAbsoluteMax() - myStyle_.yOffsetForArrows),
+                     display.xAbsolute(display.yAbsoluteMax() -
+                                       (myStyle_.xOffsetForArrows + myStyle_.arrowWidth)),
+                     display.yAbsolute(display.yAbsoluteMax() -
+                                       (myStyle_.yOffsetForArrows + myStyle_.arrowHeight / 2)),
+                     display.fg);
 
     display.drawSingleLineOfText(
-        upperLeftText_.c_str(), display.xAbsolute(xOffsetForArrows + arrowWidth + arrowTextSpacing),
-        display.yAbsolute(yOffsetForArrows - display.getTextHeight() / 2));
+        upperLeftText_.c_str(),
+        display.xAbsolute(myStyle_.xOffsetForArrows + myStyle_.arrowWidth +
+                          myStyle_.arrowTextSpacing),
+        display.yAbsolute(myStyle_.yOffsetForArrows - display.getTextHeight() / 2));
 
     display.drawSingleLineOfText(
         lowerRightText_.c_str(),
         display.xAbsolute(display.xAbsoluteMax() -
-                          (xOffsetForArrows + arrowWidth + arrowTextSpacing +
+                          (myStyle_.xOffsetForArrows + myStyle_.arrowWidth +
+                           myStyle_.arrowTextSpacing +
                            display.getTextWidth(lowerRightText_.c_str()))),
         display.yAbsolute(display.yAbsoluteMax() -
-                          (yOffsetForArrows + display.getTextHeight() / 2)));
+                          (myStyle_.yOffsetForArrows + display.getTextHeight() / 2)));
 }
 
 void MenuScreen::addMenuItem(const MenuItem &newItem) {
@@ -67,7 +139,7 @@ void MenuScreen::nextSelection(bool skipLast) {
     if (skipLast && (currSelection_ == numMenuItems_ - 1)) {
         currSelection_ = 0;
     }
-    currMenuPage_ = currSelection_ / NUM_LINES_PER_MENU_PAGE;
+    currMenuPage_ = currSelection_ / myStyle_.numberOfItemsPerPage;
     // This makes sure we do a full refresh when the page changes
     if (oldCurMenuPage != currMenuPage_) {
         log_d("Page changed, refreshing");
@@ -83,7 +155,7 @@ void MenuScreen::prevSelection(bool skipLast) {
     if (skipLast && (currSelection_ == numMenuItems_ - 1)) {
         currSelection_--;
     }
-    currMenuPage_ = currSelection_ / NUM_LINES_PER_MENU_PAGE;
+    currMenuPage_ = currSelection_ / myStyle_.numberOfItemsPerPage;
     // This makes sure we do a full refresh when the page changes
     if (oldCurMenuPage != currMenuPage_) {
         firstLoad_ = true;
@@ -123,30 +195,31 @@ void MenuScreen::render(DisplaySystem &display) {
     // with long names)
     // std::string totalToDisplay = menuString + std::string("\n\n") + batLife;
 
-    display.setFont(display.style.getFontFamily().settingsFont);
+    drawArrowsAndSelections(display);
 
     // On the first load, we want to only render the items in the menu because we are going
     // to do a partial refresh with the selector button at a lower/higher vcom to reduce
     // ghosting.
     if (firstLoad_) {
-        drawArrowsAndSelections(display);
-        int i;
-        for (i = currMenuPage_ * NUM_LINES_PER_MENU_PAGE;
-             i < currMenuPage_ * NUM_LINES_PER_MENU_PAGE + NUM_LINES_PER_MENU_PAGE &&
-             i < numMenuItems_;
-             i++) {
-            display.drawSingleLineOfText(getItemTitleAt(i), 30,
-                                         (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight() +
-                                             50);
-        }
+        drawMenuItems(display, false);
+        /*
+         int i;
+         for (i = currMenuPage_ * myStyle_.numberOfItemsPerPage;
+              i < currMenuPage_ * myStyle_.numberOfItemsPerPage + myStyle_.numberOfItemsPerPage &&
+              i < numMenuItems_;
+              i++) {
+             display.drawSingleLineOfText(getItemTitleAt(i), 30,
+                                          (i % myStyle_.numberOfItemsPerPage) *
+         display.getTextHeight() + 50);
+         }
 
-        int oldTextHeight = display.getTextHeight();
-        display.setFont(display.style.getFontFamily().readableFont);
-        display.drawSingleLineOfText(extraTextBelowMenu_.c_str(), 30,
-                                     (1 + NUM_LINES_PER_MENU_PAGE) * oldTextHeight + 50);
+         int oldTextHeight = display.getTextHeight();
+         display.setFont(display.style.getFontFamily().readableFont);
+         display.drawSingleLineOfText(extraTextBelowMenu_.c_str(), 30,
+                                      (1 + myStyle_.numberOfItemsPerPage) * oldTextHeight + 50);
 
-        display.setFont(display.style.getFontFamily().settingsFont);
-
+         display.setFont(display.style.getFontFamily().settingsFont);
+ */
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
     }
     // Starting the process of doing this better eventually. Mimicking the lighting screen.
@@ -159,42 +232,42 @@ void MenuScreen::render(DisplaySystem &display) {
     // TODO: This is a hack. We should be able to do this in a single pass??
     //
     // change the vcom to reduce ghosting
-#if EINKET013TT1
-    int oldVcom = (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver()->getVcom();
-    int newVcom = 0;
-    if (display.getInversion()) {
-        newVcom = oldVcom - 2000;
-    } else {
-        newVcom = oldVcom + 2000;
-    }
-    (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver()->setVcom(newVcom);
-#endif
-    int i;
-    for (i = currMenuPage_ * NUM_LINES_PER_MENU_PAGE;
-         i < currMenuPage_ * NUM_LINES_PER_MENU_PAGE + NUM_LINES_PER_MENU_PAGE && i < numMenuItems_;
-         i++) {
-        display.drawSingleLineOfText(getItemTitleAt(i), 30,
-                                     (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight() + 50);
 
-        if (i == currSelection_) {
-            display.fillRoundRect(
-                3 + 20, (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight() + 4 + 50,
-                display.getTextHeight() - 7, display.getTextHeight() - 7, 2, display.fg);
+    /*
+        int i;
+        for (i = currMenuPage_ * myStyle_.numberOfItemsPerPage;
+             i < currMenuPage_ * myStyle_.numberOfItemsPerPage + myStyle_.numberOfItemsPerPage && i
+       < numMenuItems_; i++) { display.drawSingleLineOfText(getItemTitleAt(i), 30, (i %
+       myStyle_.numberOfItemsPerPage) * display.getTextHeight() + 50);
+
+            if (i == currSelection_) {
+                display.fillRoundRect(
+                    3 + 20, (i % myStyle_.numberOfItemsPerPage) * display.getTextHeight() + 4 + 50,
+                    display.getTextHeight() - 7, display.getTextHeight() - 7, 2, display.fg);
+            }
         }
-    }
+        */
 
-    int oldTextHeight = display.getTextHeight();
-    display.setFont(display.style.getFontFamily().readableFont);
-    display.drawSingleLineOfText(extraTextBelowMenu_.c_str(), 30,
-                                 (1 + NUM_LINES_PER_MENU_PAGE) * oldTextHeight + 50);
+#if EINKET013TT1
+    saveAndUpdateVCOM(display);
+#endif
 
-    display.setFont(display.style.getFontFamily().settingsFont);
+    drawMenuItems(display, true);
+    /*
+        int oldTextHeight = display.getTextHeight();
+        display.setFont(display.style.getFontFamily().readableFont);
+        display.drawSingleLineOfText(extraTextBelowMenu_.c_str(), 30,
+                                     (1 + myStyle_.numberOfItemsPerPage) * oldTextHeight + 50);
+
+        display.setFont(display.style.getFontFamily().settingsFont);
+      */
     drawArrowsAndSelections(display);
     display.updateDisplay(DisplaySystem::UpdateType::FAST);
 
 #if EINKET013TT1
-    (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver()->setVcom(oldVcom);
+    revertVCOM(display);
 #endif
+
     firstLoad_ = false;
     needsRerender = false;
 }

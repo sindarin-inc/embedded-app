@@ -14,6 +14,8 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
+    display.setFont(display.style.getFontFamily().readableFont);
+
     newPlace_ = renderer_.renderPage(readable_.place, inBookmark_);
     log_d("%lu is the new place in the text", newPlace_);
 

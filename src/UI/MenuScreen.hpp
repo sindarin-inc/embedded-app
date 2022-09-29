@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "Inputs/RemoteInput.hpp"
+#include "Misc/MenuStyle.hpp"
 #include "Misc/Power.hpp"
 #include "Renderers/Renderer.hpp"
 #include "UI/Screen.hpp"
@@ -26,6 +27,10 @@ public:
 class MenuScreen : public Screen {
 
 public:
+    MenuScreen(Power &power, MenuStyleFamily myStyle) : power_(power), myStyle_(myStyle) {
+        numMenuItems_ = 0;
+    };
+
     MenuScreen(Power &power) : power_(power) { numMenuItems_ = 0; };
 
     void addMenuItem(const MenuItem &newItem);
@@ -61,6 +66,15 @@ public:
 
     void setExtraText(std::string extra) { extraTextBelowMenu_ = std::move(extra); }
 
+    void drawMenuItems(DisplaySystem &display, bool withBullet, bool withLastItem = true);
+
+    MenuStyleFamily getMyStyle() { return myStyle_; }
+
+#if EINKET013TT1
+    void saveAndUpdateVCOM(DisplaySystem &display);
+    void revertVCOM(DisplaySystem &display);
+#endif
+
 protected:
     void drawArrowsAndSelections(DisplaySystem &display);
     int numMenuItems_ = 0;
@@ -68,21 +82,17 @@ protected:
     int currSelection_ = 0;
     int currMenuPage_ = 0;
     bool firstLoad_ = true;
-
-    int xOffsetForArrows = 45;
-    int yOffsetForArrows = 45;
-    int arrowWidth = 5;
-    int arrowHeight = 10;
-    int arrowTextSpacing = 5;
+#if EINKET013TT1
+    int oldVcom_ = 0;
+#endif
 
     std::string upperLeftText_ = "Back";
     std::string lowerRightText_ = "Select";
 
     std::string extraTextBelowMenu_ = "";
 
-    int NUM_LINES_PER_MENU_PAGE = 7;
-
     Power &power_;
+    MenuStyleFamily myStyle_;
 };
 
 #endif

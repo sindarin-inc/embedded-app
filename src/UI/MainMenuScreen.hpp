@@ -1,18 +1,21 @@
 #ifndef MAIN_MENU_SCREEN_H
 #define MAIN_MENU_SCREEN_H
 
+#include "Misc/MenuStyle.hpp"
 #include "Misc/Power.hpp"
 #include "Renderers/Renderer.hpp"
 #include "UI/MenuScreen.hpp"
 #include "sindarin-debug.h"
+
 class MainMenuScreen : public MenuScreen {
 
 public:
-    MainMenuScreen(Power &power) : MenuScreen(power) {
+    MainMenuScreen(Power &power, MenuStyleFamily myStyle) : MenuScreen(power, myStyle) {
+#ifdef SWAP_ARTICLES_BOOKS
         numArticleItems_ = 1;
         MenuItem dummy("DUMMY", []() {});
         articleItems_.push_back(dummy);
-
+#endif
         upperLeftText_ = "Settings";
         lowerRightText_ = "Read";
     };
@@ -22,8 +25,7 @@ public:
 protected:
     void processCommand(RemoteCommand command) override;
 
-    void drawMenuItems(DisplaySystem &display, bool withBullet);
-
+#ifdef SWAP_ARTICLES_BOOKS
     // The menu items for long-form books come from the parent class. Since the Main Menu
     // essentially keeps two lists, we need a second set of items for the articles.
     // There is likely a more elegant way to do this.
@@ -38,7 +40,9 @@ protected:
     int currBookPage_ = 0;
 
     bool inBooksMode_ = true;
+
     bool beforeFirstLoad_ = true;
+#endif
 };
 
 #endif // MAIN_MENU_SCREEN_H
