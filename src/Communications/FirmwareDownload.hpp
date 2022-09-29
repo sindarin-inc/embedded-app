@@ -2,24 +2,32 @@
 #ifndef FirmwareDownload_H
 #define FirmwareDownload_H
 #include <HTTPClient.h>
-#include <cstdint>
+#include <stdint.h>
+#include <Update.h>
 
-#define FIRMWARE_BLOCK_SIZE 1024
-#define FIRMWARE_URL "http://replace.this.url/firmware.bin"
+#define FIRMWARE_BLOCK_SIZE 16384
+#define FIRMWARE_URL "http://bitfixer.com/tmp/firmware.bin"
 
 class FirmwareDownload {
 public:
-    FirmwareDownload() {}
+    FirmwareDownload()
+    : _buffer(NULL)   
+    , _bytesInBuffer(0)
+    , _totalSize(0)
+    , _totalBytesRead(0) {}
 
-    void getFirmware();
-    auto updateFirmware(int &percentProgress) -> bool;
+    void GetFirmware();
+    bool UpdateFirmware(int& percentProgress, bool& error);
 
 private:
-    HTTPClient httpClient_;
-    uint8_t buffer_[FIRMWARE_BLOCK_SIZE];
-    int _bytesInBuffer{0};
-    int _totalSize{0};
-    int _totalBytesRead{0};
+
+    bool writeBuffer();
+
+    HTTPClient _httpClient;
+    uint8_t* _buffer;
+    int _bytesInBuffer;
+    int _totalSize;
+    int _totalBytesRead;
 };
 
 #endif

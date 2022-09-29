@@ -3,46 +3,94 @@
 #include <cstdio>
 #include <string>
 
-void FirmwareDownload::getFirmware() {
+void FirmwareDownload::GetFirmware() {
 
     log_i("about to download: %s", FIRMWARE_URL);
-    if (!httpClient_.begin(FIRMWARE_URL)) {
+    if (!_httpClient.begin(FIRMWARE_URL)) {
         log_e("HTTPClient::begin failed");
     }
 
-    httpClient_.setTimeout(30000);
-    httpClient_.GET();
+    _httpClient.setTimeout(30000);
+    _httpClient.GET();
 
-    _totalSize = httpClient_.getSize();
+    _totalSize = _httpClient.getSize();
     log_i("request started, total size %d", _totalSize);
+
+    if (_totalSize > 0)
+    {
+        Update.begin(_totalSize, U_FLASH);
+    }
 }
 
-auto FirmwareDownload::updateFirmware(int &percentProgress) -> bool {
+bool FirmwareDownload::writeBuffer() {
+    int written = Update.write(_buffer, _bytesInBuffer);
+    bool success = true;
+    if (written != _bytesInBuffer)
+    {
+        log_e("FirmwareDownload::writeBuffer - expected %d wrote %d", _bytesInBuffer, written);
+        success = false;
+    }
 
+    _bytesInBuffer = 0;
+    return success;
+}
+
+bool FirmwareDownload::UpdateFirmware(int& percentProgress, bool& error) {
+    
     // check available bytes
-    if (_totalBytesRead == _totalSize) {
-        // TODO: write last block to alternate boot partition
-        log_i("done. read %d", _totalBytesRead);
+    if (_totalBytesRead == _totalSize)
+    {
+        _httpClient.end();
+        // write last block to alternate boot partition
+        if (_bytesInBuffer > 0)
+        {
+            error = !writeBuffer();
+        }
+
+        delete _buffer;
+        _buffer = NULL;
+
+        log_i("Firmware download done. read %d bytes. Finalizing...", _totalBytesRead);
+        if (!error && Update.end())
+        {
+            log_i("update complete.");
+            log_i("swapping boot partition");
+            ESP.restart();
+        }
+        else
+        {
+            log_e("update failed to finalize.");
+        }
 
         // mark alternate boot partition as the primary and reboot
         return true;
     }
 
-    auto *stream = httpClient_.getStreamPtr();
+    auto *stream = _httpClient.getStreamPtr();
 
     if (stream) {
         int available = stream->available();
-        if (available > 0) {
-            int bytesRemaining = FIRMWARE_BLOCK_SIZE - _bytesInBuffer;
-            int bytesRead = stream->readBytes(&buffer_[_bytesInBuffer], bytesRemaining);
+        if (available > 0)
+        {
+            if (_buffer == NULL)
+            {
+                _buffer = new uint8_t[FIRMWARE_BLOCK_SIZE];
+            }
+
+            int bytesRemainingInBlock = FIRMWARE_BLOCK_SIZE - _bytesInBuffer;
+            int bytesToRead = bytesRemainingInBlock;
+            if (available < bytesToRead)
+            {
+                bytesToRead = available;
+            }
+            int bytesRead = stream->readBytes(&_buffer[_bytesInBuffer], bytesToRead);
             _bytesInBuffer += bytesRead;
             _totalBytesRead += bytesRead;
         }
 
         if (_bytesInBuffer == FIRMWARE_BLOCK_SIZE) {
             // have one full block of firmware bytes, write to alternate boot partition
-            log_i("read full block! %d", _totalBytesRead);
-            _bytesInBuffer = 0;
+            error = !writeBuffer();
         }
     }
 

@@ -16,7 +16,7 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
     std::string message = "No Wifi";
     if (NetworkConnected()) {
         message = "Updating: 00%";
-        firmwareDownload_.getFirmware();
+        firmwareDownload_.GetFirmware();
     } else {
         return;
     }
@@ -29,9 +29,19 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
     int lastPercentage = 0;
     while (!done) {
         int percentProgress;
-        done = firmwareDownload_.updateFirmware(percentProgress);
+        bool error = false;
+        done = firmwareDownload_.UpdateFirmware(percentProgress, error);
 
-        if (percentProgress - lastPercentage >= 10) {
+        if (error)
+        {
+            std::string errMessage = "Error updating firmware.";
+            display.setFont(&TAHOMA_REGULAR_FONT10PT7B);
+            display.drawSingleLineOfText(errMessage, 0, 0);
+            display.updateDisplay();
+            done = true;
+        }
+        else if (percentProgress - lastPercentage >= 5)
+        {
             lastPercentage = percentProgress;
             char formattedString[32];
             sprintf(formattedString, "%02d %%", percentProgress);
