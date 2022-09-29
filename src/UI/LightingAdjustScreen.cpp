@@ -63,15 +63,7 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
         display.setCursor((display.width() - textWidth) / 2, y);
         display.println(message2);
     }
-    // display.fillRect((display.width() - textWidth) / 2 - 30, y + 10, textWidth + 60, 2,
-    // display.fg);
 
-    // display.setCursor(backlightPercent * 3 / 2 * (textWidth + 20) / 100, y + 30);
-
-    // display.fillCircle(backlightPercent * 3 / 2 * (textWidth + 20) / 100 + 20, y + 20, 5,
-    //                    display.fg);
-    // Not drawing for some reason hmm
-    // display.println(StringFormat("%d%%", backlightPercent).c_str());
     // up arrow
     uint16_t arrowWidth = 5, arrowHeight = 10;
     x = display.width() - arrowWidth;

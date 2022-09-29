@@ -113,7 +113,7 @@ void DemoScreen::processCommand(RemoteCommand command) {
         SetRightBackLight(true, backlight);
         SetLeftBackLight(true, backlight);
 #endif
-        // When we're done with the calibration screen, turn it off.
+        // When we're done with the onboarding screen, turn this mode off.
         prefs_.demoMode.set(0);
         backCallback();
     }

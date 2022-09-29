@@ -87,6 +87,9 @@ const EinkET013TT1Waveform BC_EINK_31_35C_WAVEFORM_PARTIAL = {
 //
 // Assume VCOM for inverted to be ~-1500 and VCOM for regular to be ~-4000.
 //
+// I'd like to keep the below lines commented as a reminder that we may
+// need to do more frames if people complain about ghosting.
+//
 const EinkET013TT1Waveform BC_INVERTED_EXPERIMENTAL_WAVEFORM_PARTIAL = {
     "BC EXPERIMENTAL INVERTED (PARTIAL)",
     10,
@@ -101,7 +104,7 @@ const EinkET013TT1Waveform BC_INVERTED_EXPERIMENTAL_WAVEFORM_PARTIAL = {
         Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
         Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
         //  Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
-        // Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
+        //  Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
         //  Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
         Frame{bb : NOCHG, bw : NOCHG, wb : NOCHG, ww : NOCHG},
     },

@@ -7,6 +7,11 @@
 #define LOGO_L_HEIGHT 80
 #define LOGO_L_WIDTH 34
 
+//
+// This is mostly deprecated as we don't show a splash screen
+// anymore, but we may revisit this someday.
+//
+
 class LogoScreen : public BitmapScreen {
 public:
     LogoScreen() : BitmapScreen(LOGO2_BITS, LOGO2_WIDTH, LOGO2_HEIGHT) {}
@@ -14,12 +19,6 @@ public:
 
     void render(DisplaySystem &display) override {
         display.fillScreen(display.bg);
-        /* #2 */
-        /*
-                display.drawXBitmap((display.width() - width_) / 2, (display.height() - height_) /
-           2, bitmap_, width_, height_, display.fg);
-        */
-        /* #4 */
 
         display.fillCircle(display.width() / 2, display.height() / 2, LOGO_O_RADIUS, display.fg);
 
@@ -27,74 +26,8 @@ public:
                          display.height() / 2 - LOGO_O_RADIUS * 1.6 / 2 + 1, LOGO_O_RADIUS * 1.6,
                          LOGO_O_RADIUS * 1.6, display.bg);
 
-        /* #1 */
-        /*
-                display.fillRect(display.width() / 2 - LOGO_O_RADIUS * 5 / 2,
-                                 display.height() / 2 - LOGO_O_RADIUS * 5 / 2, LOGO_O_RADIUS * 5,
-                                 LOGO_O_RADIUS * 5, display.fg);
-
-                display.fillCircle(display.width() / 2, display.height() / 2, LOGO_O_RADIUS,
-           display.bg);
-        */
         display.updateDisplay();
 
         needsRerender = false;
     }
 };
-
-/*
-        // Regular S
-
-        display.fillCircle(display.width() / 2 - LOGO_O_RADIUS * 2 - LOGO_CHARACTER_SPACING,
-                           display.height() / 2 + LOGO_L_HEIGHT / 2 - LOGO_O_RADIUS,
-   LOGO_O_RADIUS, display.fg); display.fillRect(display.width() / 2 - LOGO_O_RADIUS * 2 -
-   LOGO_CHARACTER_SPACING, display.height() / 2 + LOGO_L_HEIGHT / 2 - LOGO_O_RADIUS * 2,
-                         LOGO_O_RADIUS + 1, LOGO_O_RADIUS, display.fg);
-
-        display.fillRect(display.width() / 2 - LOGO_O_RADIUS * 3 - LOGO_CHARACTER_SPACING,
-                         display.height() / 2 + LOGO_L_HEIGHT / 2 - LOGO_O_RADIUS,
-                         LOGO_O_RADIUS + 1, LOGO_O_RADIUS + 1, display.fg);
-
-        // O
-        display.fillCircle(display.width() / 2,
-                           display.height() / 2 + LOGO_L_HEIGHT / 2 - LOGO_O_RADIUS,
-   LOGO_O_RADIUS, display.fg);
-
-        // L
-
-        display.fillRect(display.width() / 2 + LOGO_O_RADIUS + LOGO_CHARACTER_SPACING,
-                         display.height() / 2 - LOGO_L_HEIGHT / 2, LOGO_L_WIDTH,
-   LOGO_L_HEIGHT, display.fg);
-
-        display.updateDisplay();
-
-        needsRerender = false;
-    }*/
-
-// Elongated S
-/*
-        display.fillCircle(display.width() / 2 - LOGO_O_RADIUS * 2 - LOGO_CHARACTER_SPACING,
-                           display.height() / 2 + LOGO_L_HEIGHT / 2 - LOGO_O_RADIUS,
-   LOGO_O_RADIUS, display.fg);
-
-        display.fillCircle(display.width() / 2 - LOGO_O_RADIUS * 2 - LOGO_CHARACTER_SPACING,
-                           display.height() / 2 + LOGO_L_HEIGHT / 2 - LOGO_O_RADIUS -
-                               ((LOGO_L_HEIGHT - LOGO_O_RADIUS * 2) / 2),
-                           LOGO_O_RADIUS, display.fg);
-        display.fillRect(display.width() / 2 - LOGO_O_RADIUS * 2 - LOGO_CHARACTER_SPACING,
-                         display.height() / 2 + LOGO_L_HEIGHT / 2 - LOGO_O_RADIUS * 2 -
-                             ((LOGO_L_HEIGHT - LOGO_O_RADIUS * 2) / 2),
-                         LOGO_O_RADIUS + 1,
-                         LOGO_O_RADIUS + ((LOGO_L_HEIGHT - LOGO_O_RADIUS * 2) / 2),
-   display.fg);
-
-        display.fillRect(display.width() / 2 - LOGO_O_RADIUS * 3 - LOGO_CHARACTER_SPACING,
-                         display.height() / 2 + LOGO_L_HEIGHT / 2 - LOGO_O_RADIUS -
-                             ((LOGO_L_HEIGHT - LOGO_O_RADIUS * 2) / 2),
-                         LOGO_O_RADIUS + 1,
-                         LOGO_O_RADIUS + 1 + ((LOGO_L_HEIGHT - LOGO_O_RADIUS * 2) / 2),
-   display.fg);
-                         */
-// display.fillRect();
-//    display.drawXBitmap((display.width() - width_) / 2, (display.height() - height_) / 2,
-//                        bitmap_, width_, height_, display.fg);

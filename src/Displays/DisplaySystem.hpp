@@ -164,6 +164,7 @@ public:
     inline auto xAbsolute(int x) -> int { return x - boundingBox_.x; }
     inline auto yAbsolute(int y) -> int { return y - boundingBox_.y; }
 
+    // Should these be in the subclasses instead?
     auto xAbsoluteCenter() -> int { return 128; }
     auto yAbsoluteCenter() -> int { return 128; }
 

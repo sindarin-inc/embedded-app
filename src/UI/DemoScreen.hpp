@@ -13,6 +13,11 @@
 #define DEMO_SCREEN_4 "Focus right eye"
 #define DEMO_SCREEN_5 "Let's read!"
 
+//
+// This class handles the Onboarding mode (or first time on), so Demo mode
+// isn't quite the right name, but probably close enough?
+//
+
 class DemoScreen : public Screen {
 public:
     DemoScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power);
