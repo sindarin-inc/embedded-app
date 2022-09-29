@@ -1,6 +1,7 @@
 #include "FirmwareDownload.hpp"
-#include <string>
+
 #include <stdio.h>
+#include <string>
 
 void FirmwareDownload::GetFirmware() {
 
@@ -16,11 +17,10 @@ void FirmwareDownload::GetFirmware() {
     log_i("request started, total size %d", _totalSize);
 }
 
-bool FirmwareDownload::UpdateFirmware(int& percentProgress) {
-    
+bool FirmwareDownload::UpdateFirmware(int &percentProgress) {
+
     // check available bytes
-    if (_totalBytesRead == _totalSize)
-    {
+    if (_totalBytesRead == _totalSize) {
         // TODO: write last block to alternate boot partition
         log_i("done. read %d", _totalBytesRead);
 
@@ -28,26 +28,24 @@ bool FirmwareDownload::UpdateFirmware(int& percentProgress) {
         return true;
     }
 
-    WiFiClient* stream = _httpClient.getStreamPtr();
-    if (stream)
-    {
+    auto *stream = _httpClient.getStreamPtr();
+
+    if (stream) {
         int available = stream->available();
-        if (available > 0)
-        {
+        if (available > 0) {
             int bytesRemaining = FIRMWARE_BLOCK_SIZE - _bytesInBuffer;
             int bytesRead = stream->readBytes(&_buffer[_bytesInBuffer], bytesRemaining);
             _bytesInBuffer += bytesRead;
             _totalBytesRead += bytesRead;
         }
 
-        if (_bytesInBuffer == FIRMWARE_BLOCK_SIZE)
-        {
+        if (_bytesInBuffer == FIRMWARE_BLOCK_SIZE) {
             // have one full block of firmware bytes, write to alternate boot partition
             log_i("read full block! %d", _totalBytesRead);
             _bytesInBuffer = 0;
         }
     }
 
-    percentProgress = (int)((float)_totalBytesRead  * 100.0 / (float)_totalSize);
+    percentProgress = (int)((float)_totalBytesRead * 100.0 / (float)_totalSize);
     return false;
 }

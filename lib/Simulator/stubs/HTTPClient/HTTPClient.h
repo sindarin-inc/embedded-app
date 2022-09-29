@@ -91,14 +91,23 @@ public:
     ~HTTPClient();
 
     bool begin(String url);
+
+    bool connected();
+
     void end(void);
     void useHTTP10(bool usehttp10 = true) {}
     void setTimeout(uint16_t timeout) {}
+    int GET();
     int POST(uint8_t *payload, size_t size);
     void addHeader(const String &name, const String &value, bool first = false,
                    bool replace = true);
     int getSize(void);
+
     StringStream &getStream(void);
+    StringStream *getStreamPtr(void);
+
+    String errorToString(int error);
+
     String getString();
 
 protected:
@@ -108,7 +117,7 @@ protected:
     std::string path_;
 
     StringStream *stream_ = nullptr;
-    String *string_ = nullptr;
+    std::string string_;
 
     int size_ = -1;
 };
