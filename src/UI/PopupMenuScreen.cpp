@@ -44,29 +44,13 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     }
 
     log_d("PopupMenuScreen render");
-    /*
-        lightingAdjustScreen_.needsRerender = true;
-        this->setCurrentScreen(lightingAdjustScreen_);
-        return;
-    */
+
     // Blank out screen
     display.fillScreen(display.bg);
     // Draw menu surroundings
     log_d("RENDERING Popup menu bitmap %d %d %d %d", display.width(), display.height(),
           POPUP_MENU_BLANK_WIDTH, POPUP_MENU_BLANK_HEIGHT);
 
-    // display.drawXBitmap((int16_t)((display.width() - POPUP2_MENU_BLANK_WIDTH) / 2),
-    //                   (int16_t)((display.height() - POPUP2_MENU_BLANK_HEIGHT) / 2),
-    //                  popup2MenuBlankBits, POPUP2_MENU_BLANK_WIDTH, POPUP2_MENU_BLANK_HEIGHT,
-    //                 display.fg);
-
-    // Middle circle
-    uint16_t midX = display.width() / 2;
-    uint16_t midY = display.height() / 2;
-    /* display.fillCircle(midX, midY, POPUP_MENU_RADIUS, display.fg);
-     display.fillRect(midX - POPUP_MENU_RADIUS * 1.6 / 2, midY - POPUP_MENU_RADIUS * 1.6 / 2,
-                      POPUP_MENU_RADIUS * 1.6, POPUP_MENU_RADIUS * 1.6, display.bg);
- */
     display.setFont(display.style.getFontFamily().popupFont);
 
     // Now draw!
@@ -85,14 +69,10 @@ void PopupMenuScreen::render(DisplaySystem &display) {
 
     display.setFont(display.style.getFontFamily().popupFont);
     display.getTextBounds(batteryStatus.c_str(), &textWidth, &textHeight);
-    // display.getTextBounds("Text", &textWidth, &textHeight);
 
     // Similar to the above, magic numbers are just to make it look nice
     display.drawSingleLineOfText(batteryStatus.c_str(), (screenWidth / 2) - (textWidth / 2),
                                  (screenHeight / 2) + (textHeight / 2) - 9 - heightOffset);
-
-    // display.drawSingleLineOfText("Text", (screenWidth / 2) - (textWidth / 2),
-    //                              screenHeight / 2 - textHeight / 2);
 
     size_t place = renderer_.getCurrentPlace();
     size_t lengthOfFile = renderer_.size();
@@ -196,6 +176,9 @@ void PopupMenuScreen::processCommand(RemoteCommand command) {
 #if EINKET013TT1
         // Since inversion changes the vcom, we need to save this setting to prefs after
         // the flip.
+        // With the new partial refresh mode, we don't change the vcom for inverted anymore
+        // but we may revisit this so I propose leaving this code intact even though it's
+        // an idempotent operation.
         prefs_.vcom.set(driver->getVcom());
 #endif
         needsRerender = true;

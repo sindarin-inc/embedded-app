@@ -29,8 +29,6 @@ public:
             lightingAdjustScreen_.firstLoad = true;
             this->setCurrentScreen(lightingAdjustScreen_);
         };
-
-        //        leftButtonCallback_();
     };
 
     void drawBattery(DisplaySystem &display, int x, int y, int percentage);
