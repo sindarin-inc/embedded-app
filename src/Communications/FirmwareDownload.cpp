@@ -83,9 +83,7 @@ auto FirmwareDownload::updateFirmware(int &percentProgress, bool &error) -> bool
             // have one full block of firmware bytes, write to alternate boot partition
             error = !writeBuffer();
         }
-    }
-    else
-    {
+    } else {
         // error getting stream pointer, firmware update failed (bad URL, bad connection)
         log_e("Firmware Update: failed to open connection to %s", FIRMWARE_URL);
         error = true;

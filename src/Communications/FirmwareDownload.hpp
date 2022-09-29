@@ -9,7 +9,7 @@
 
 class FirmwareDownload {
 public:
-    FirmwareDownload() {}
+    FirmwareDownload() = default;
 
     void getFirmware();
     auto updateFirmware(int &percentProgress, bool &error) -> bool;

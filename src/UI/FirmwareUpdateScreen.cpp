@@ -50,12 +50,10 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
     needsRerender = false;
 }
 
-void FirmwareUpdateScreen::drawMessage(std::string& message) {
+void FirmwareUpdateScreen::drawMessage(std::string &message) {
     display_.setFont(&TAHOMA_REGULAR_FONT10PT7B);
     display_.drawSingleLineOfText(message, 0, 0);
     display_.updateDisplay();
 }
 
-void FirmwareUpdateScreen::processCommand(RemoteCommand command) {
-    backCallback();
-}
+void FirmwareUpdateScreen::processCommand(RemoteCommand command) { backCallback(); }

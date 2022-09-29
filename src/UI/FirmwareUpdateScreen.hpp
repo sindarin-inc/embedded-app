@@ -1,10 +1,11 @@
 #ifndef FIRMWARE_UPDATE_SCREEN_HPP
 #define FIRMWARE_UPDATE_SCREEN_HPP
 
+#include <string>
+
 #include "Communications/FirmwareDownload.hpp"
 #include "Communications/WiFi.hpp"
 #include "UI/Screen.hpp"
-#include <string>
 
 class FirmwareUpdateScreen : public Screen {
 public:
@@ -14,7 +15,7 @@ public:
     void processCommand(RemoteCommand command) override;
 
 protected:
-    void drawMessage(std::string& message);
+    void drawMessage(std::string &message);
 
     DisplaySystem &display_;
     FirmwareDownload firmwareDownload_;
