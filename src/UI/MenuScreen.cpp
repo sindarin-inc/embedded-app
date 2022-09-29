@@ -189,12 +189,6 @@ void MenuScreen::render(DisplaySystem &display) {
     }
     log_i("Menuscreen render (selected = %s)", getCurrItem().title.c_str());
 
-    auto batLife = power_.getBatteryLifeString();
-    // TODO: Just rendering one gigantic screen limits our layout options here.
-    // For example, it would be nice to have menu items take up multiple lines (e.g. Pocket articles
-    // with long names)
-    // std::string totalToDisplay = menuString + std::string("\n\n") + batLife;
-
     drawArrowsAndSelections(display);
 
     // On the first load, we want to only render the items in the menu because we are going
@@ -202,65 +196,14 @@ void MenuScreen::render(DisplaySystem &display) {
     // ghosting.
     if (firstLoad_) {
         drawMenuItems(display, false);
-        /*
-         int i;
-         for (i = currMenuPage_ * myStyle_.numberOfItemsPerPage;
-              i < currMenuPage_ * myStyle_.numberOfItemsPerPage + myStyle_.numberOfItemsPerPage &&
-              i < numMenuItems_;
-              i++) {
-             display.drawSingleLineOfText(getItemTitleAt(i), 30,
-                                          (i % myStyle_.numberOfItemsPerPage) *
-         display.getTextHeight() + 50);
-         }
-
-         int oldTextHeight = display.getTextHeight();
-         display.setFont(display.style.getFontFamily().readableFont);
-         display.drawSingleLineOfText(extraTextBelowMenu_.c_str(), 30,
-                                      (1 + myStyle_.numberOfItemsPerPage) * oldTextHeight + 50);
-
-         display.setFont(display.style.getFontFamily().settingsFont);
- */
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
     }
-    // Starting the process of doing this better eventually. Mimicking the lighting screen.
-    // (But without the fast).
-    // display.updateDisplay(firstLoad_ ? DisplaySystem::UpdateType::FULL
-    //                                 : DisplaySystem::UpdateType::FAST);
-
-    //
-    // Duplicates the code above but only on the first load
-    // TODO: This is a hack. We should be able to do this in a single pass??
-    //
-    // change the vcom to reduce ghosting
-
-    /*
-        int i;
-        for (i = currMenuPage_ * myStyle_.numberOfItemsPerPage;
-             i < currMenuPage_ * myStyle_.numberOfItemsPerPage + myStyle_.numberOfItemsPerPage && i
-       < numMenuItems_; i++) { display.drawSingleLineOfText(getItemTitleAt(i), 30, (i %
-       myStyle_.numberOfItemsPerPage) * display.getTextHeight() + 50);
-
-            if (i == currSelection_) {
-                display.fillRoundRect(
-                    3 + 20, (i % myStyle_.numberOfItemsPerPage) * display.getTextHeight() + 4 + 50,
-                    display.getTextHeight() - 7, display.getTextHeight() - 7, 2, display.fg);
-            }
-        }
-        */
 
 #if EINKET013TT1
     saveAndUpdateVCOM(display);
 #endif
 
     drawMenuItems(display, true);
-    /*
-        int oldTextHeight = display.getTextHeight();
-        display.setFont(display.style.getFontFamily().readableFont);
-        display.drawSingleLineOfText(extraTextBelowMenu_.c_str(), 30,
-                                     (1 + myStyle_.numberOfItemsPerPage) * oldTextHeight + 50);
-
-        display.setFont(display.style.getFontFamily().settingsFont);
-      */
     drawArrowsAndSelections(display);
     display.updateDisplay(DisplaySystem::UpdateType::FAST);
 

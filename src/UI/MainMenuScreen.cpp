@@ -46,7 +46,6 @@ void MainMenuScreen::render(DisplaySystem &display) {
 #endif
 
     drawMenuItems(display, true, false);
-
     drawArrowsAndSelections(display);
     display.updateDisplay(DisplaySystem::UpdateType::FAST);
 
