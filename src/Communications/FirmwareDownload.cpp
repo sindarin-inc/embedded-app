@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <string>
+#include <Update.h>
 
 void FirmwareDownload::getFirmware() {
 
