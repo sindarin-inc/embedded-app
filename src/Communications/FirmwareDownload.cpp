@@ -1,8 +1,8 @@
 #include "FirmwareDownload.hpp"
 
+#include <Update.h>
 #include <cstdio>
 #include <string>
-#include <Update.h>
 
 void FirmwareDownload::getFirmware() {
 
@@ -14,40 +14,40 @@ void FirmwareDownload::getFirmware() {
     httpClient_.setTimeout(30000);
     httpClient_.GET();
 
-    _totalSize = httpClient_.getSize();
-    log_i("request started, total size %d", _totalSize);
+    totalSize_ = httpClient_.getSize();
+    log_i("request started, total size %d", totalSize_);
 
-    if (_totalSize > 0) {
-        Update.begin(_totalSize, U_FLASH);
+    if (totalSize_ > 0) {
+        Update.begin(totalSize_, U_FLASH);
     }
 }
 
 auto FirmwareDownload::writeBuffer() -> bool {
-    int written = Update.write(buffer_, _bytesInBuffer);
+    int written = Update.write(buffer_, bytesInBuffer_);
     bool success = true;
-    if (written != _bytesInBuffer) {
-        log_e("FirmwareDownload::writeBuffer - expected %d wrote %d", _bytesInBuffer, written);
+    if (written != bytesInBuffer_) {
+        log_e("FirmwareDownload::writeBuffer - expected %d wrote %d", bytesInBuffer_, written);
         success = false;
     }
 
-    _bytesInBuffer = 0;
+    bytesInBuffer_ = 0;
     return success;
 }
 
 auto FirmwareDownload::updateFirmware(int &percentProgress, bool &error) -> bool {
 
     // check available bytes
-    if (_totalBytesRead == _totalSize) {
+    if (totalBytesRead_ == totalSize_) {
         httpClient_.end();
         // write last block to alternate boot partition
-        if (_bytesInBuffer > 0) {
+        if (bytesInBuffer_ > 0) {
             error = !writeBuffer();
         }
 
         delete buffer_;
         buffer_ = nullptr;
 
-        log_i("Firmware download done. read %d bytes. Finalizing...", _totalBytesRead);
+        log_i("Firmware download done. read %d bytes. Finalizing...", totalBytesRead_);
         if (!error && Update.end()) {
             log_i("update complete.");
             log_i("swapping boot partition");
@@ -69,22 +69,22 @@ auto FirmwareDownload::updateFirmware(int &percentProgress, bool &error) -> bool
                 buffer_ = new uint8_t[FIRMWARE_BLOCK_SIZE];
             }
 
-            int bytesRemainingInBlock = FIRMWARE_BLOCK_SIZE - _bytesInBuffer;
+            int bytesRemainingInBlock = FIRMWARE_BLOCK_SIZE - bytesInBuffer_;
             int bytesToRead = bytesRemainingInBlock;
             if (available < bytesToRead) {
                 bytesToRead = available;
             }
-            int bytesRead = stream->readBytes(&buffer_[_bytesInBuffer], bytesToRead);
-            _bytesInBuffer += bytesRead;
-            _totalBytesRead += bytesRead;
+            int bytesRead = stream->readBytes(&buffer_[bytesInBuffer_], bytesToRead);
+            bytesInBuffer_ += bytesRead;
+            totalBytesRead_ += bytesRead;
         }
 
-        if (_bytesInBuffer == FIRMWARE_BLOCK_SIZE) {
+        if (bytesInBuffer_ == FIRMWARE_BLOCK_SIZE) {
             // have one full block of firmware bytes, write to alternate boot partition
             error = !writeBuffer();
         }
     }
 
-    percentProgress = (int)((float)_totalBytesRead * 100.0 / (float)_totalSize);
+    percentProgress = (int)((float)totalBytesRead_ * 100.0 / (float)totalSize_);
     return false;
 }
