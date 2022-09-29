@@ -68,7 +68,7 @@ public:
 
     void drawMenuItems(DisplaySystem &display, bool withBullet, bool withLastItem = true);
 
-    MenuStyleFamily getMyStyle() { return myStyle_; }
+    auto getMyStyle() -> MenuStyleFamily { return myStyle_; }
 
 #if EINKET013TT1
     void saveAndUpdateVCOM(DisplaySystem &display);

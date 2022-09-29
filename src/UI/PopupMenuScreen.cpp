@@ -91,47 +91,47 @@ void PopupMenuScreen::render(DisplaySystem &display) {
 
     display.getTextBounds(bottomStr.c_str(), &textWidth, &textHeight);
     display.drawSingleLineOfText(bottomStr, (screenWidth / 2) - (textWidth / 2),
-                                 display.height() - yDirOffset - arrowWidth - arrowTextSpacing -
+                                 display.height() - yDirOffset - arrowWidth_ - arrowTextSpacing_ -
                                      textHeight);
 
     // Left Arrow
-    display.drawLine(0, screenHeight / 2, arrowWidth, screenHeight / 2 + arrowHeight / 2,
+    display.drawLine(0, screenHeight / 2, arrowWidth_, screenHeight / 2 + arrowHeight_ / 2,
                      display.fg);
-    display.drawLine(0, screenHeight / 2, arrowWidth, screenHeight / 2 - arrowHeight / 2,
+    display.drawLine(0, screenHeight / 2, arrowWidth_, screenHeight / 2 - arrowHeight_ / 2,
                      display.fg);
 
     // Down Arrow
     display.drawLine(display.width() / 2, display.height() - yDirOffset,
-                     display.width() / 2 - arrowHeight / 2,
-                     display.height() - yDirOffset - arrowWidth, display.fg);
+                     display.width() / 2 - arrowHeight_ / 2,
+                     display.height() - yDirOffset - arrowWidth_, display.fg);
     display.drawLine(display.width() / 2, display.height() - yDirOffset,
-                     display.width() / 2 + arrowHeight / 2,
-                     display.height() - yDirOffset - arrowWidth, display.fg);
+                     display.width() / 2 + arrowHeight_ / 2,
+                     display.height() - yDirOffset - arrowWidth_, display.fg);
 
     auto topStr = "Text";
     display.getTextBounds(topStr, &textWidth, &textHeight);
     display.drawSingleLineOfText(topStr, (screenWidth / 2) - (textWidth / 2),
-                                 yDirOffset + arrowWidth + arrowTextSpacing);
+                                 yDirOffset + arrowWidth_ + arrowTextSpacing_);
 
     // Top Arrow
-    display.drawLine(display.width() / 2, yDirOffset, display.width() / 2 - arrowHeight / 2,
-                     yDirOffset + arrowWidth, display.fg);
-    display.drawLine(display.width() / 2, yDirOffset, display.width() / 2 + arrowHeight / 2,
-                     yDirOffset + arrowWidth, display.fg);
+    display.drawLine(display.width() / 2, yDirOffset, display.width() / 2 - arrowHeight_ / 2,
+                     yDirOffset + arrowWidth_, display.fg);
+    display.drawLine(display.width() / 2, yDirOffset, display.width() / 2 + arrowHeight_ / 2,
+                     yDirOffset + arrowWidth_, display.fg);
 
     display.getTextBounds(leftButtonTitle_.c_str(), &textWidth, &textHeight);
-    display.drawSingleLineOfText(leftButtonTitle_.c_str(), arrowWidth + arrowTextSpacing,
+    display.drawSingleLineOfText(leftButtonTitle_.c_str(), arrowWidth_ + arrowTextSpacing_,
                                  (screenHeight / 2) - textHeight / 2 - 1);
 
-    display.drawLine(display.width(), screenHeight / 2, display.width() - arrowWidth,
-                     screenHeight / 2 + arrowHeight / 2, display.fg);
-    display.drawLine(display.width(), screenHeight / 2, display.width() - arrowWidth,
-                     screenHeight / 2 - arrowHeight / 2, display.fg);
+    display.drawLine(display.width(), screenHeight / 2, display.width() - arrowWidth_,
+                     screenHeight / 2 + arrowHeight_ / 2, display.fg);
+    display.drawLine(display.width(), screenHeight / 2, display.width() - arrowWidth_,
+                     screenHeight / 2 - arrowHeight_ / 2, display.fg);
 
     auto rightStr = "Invert";
     display.getTextBounds(rightStr, &textWidth, &textHeight);
     display.drawSingleLineOfText(rightStr,
-                                 (display.width() - arrowWidth - arrowTextSpacing - textWidth),
+                                 (display.width() - arrowWidth_ - arrowTextSpacing_ - textWidth),
                                  (screenHeight / 2) - textHeight / 2 - 3);
 
     display.updateDisplay();

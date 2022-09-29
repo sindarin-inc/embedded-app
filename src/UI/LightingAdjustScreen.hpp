@@ -14,6 +14,6 @@ public:
 
 protected:
     // Easter eggs are cool.
-    bool lightUpMyLife = false;
+    bool lightUpMyLife_ = false;
     PreferencesStore &prefs_;
 };

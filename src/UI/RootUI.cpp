@@ -331,7 +331,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
         log_d("set up callback");
     }));
 
-    settingsMenu->addMenuItem(MenuItem("Debug", [this, debugMenu, display]() {
+    settingsMenu->addMenuItem(MenuItem("Debug", [this, debugMenu]() {
         log_d("Loading Debug Menu");
         debugMenu->setFirstLoad();
         this->setCurrentScreen(*debugMenu);
@@ -538,7 +538,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
         };
     }));
 
-    debugMenu->addMenuItem(MenuItem("Battery and Temperature", [this, debugMenu, display]() {
+    debugMenu->addMenuItem(MenuItem("Battery and Temperature", [this, display]() {
         uint16_t width = 0, height = 0;
         display->setFont(display->style.getFontFamily().readableFont);
         auto batteryStatus = this->power_.getBatteryLifeString();
