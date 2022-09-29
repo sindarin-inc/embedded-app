@@ -84,6 +84,12 @@ auto FirmwareDownload::updateFirmware(int &percentProgress, bool &error) -> bool
             error = !writeBuffer();
         }
     }
+    else
+    {
+        // error getting stream pointer, firmware update failed (bad URL, bad connection)
+        log_e("Firmware Update: failed to open connection to %s", FIRMWARE_URL);
+        error = true;
+    }
 
     percentProgress = (int)((float)totalBytesRead_ * 100.0 / (float)totalSize_);
     return false;

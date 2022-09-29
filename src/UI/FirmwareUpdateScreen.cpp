@@ -13,17 +13,17 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
         return;
     }
 
-    std::string message = "No Wifi";
+    // first check if wifi is connected
+    std::string message = "No Wifi Connection";
     if (NetworkConnected()) {
         message = "Updating: 00%";
         firmwareDownload_.getFirmware();
     } else {
+        drawMessage(message);
         return;
     }
 
-    display.setFont(&TAHOMA_REGULAR_FONT10PT7B);
-    display.drawSingleLineOfText(message, 0, 0);
-    display.updateDisplay();
+    drawMessage(message);
 
     bool done = false;
     int lastPercentage = 0;
@@ -34,9 +34,7 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
 
         if (error) {
             std::string errMessage = "Error updating firmware.";
-            display.setFont(&TAHOMA_REGULAR_FONT10PT7B);
-            display.drawSingleLineOfText(errMessage, 0, 0);
-            display.updateDisplay();
+            drawMessage(errMessage);
             done = true;
         } else if (percentProgress - lastPercentage >= 5) {
             lastPercentage = percentProgress;
@@ -44,9 +42,7 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
             sprintf(formattedString, "%02d %%", percentProgress);
             std::string updateMessage = "Updating: ";
             updateMessage += formattedString;
-            display.setFont(&TAHOMA_REGULAR_FONT10PT7B);
-            display.drawSingleLineOfText(updateMessage, 0, 0);
-            display.updateDisplay();
+            drawMessage(updateMessage);
         }
     }
 
@@ -54,27 +50,12 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
     needsRerender = false;
 }
 
+void FirmwareUpdateScreen::drawMessage(std::string& message) {
+    display_.setFont(&TAHOMA_REGULAR_FONT10PT7B);
+    display_.drawSingleLineOfText(message, 0, 0);
+    display_.updateDisplay();
+}
+
 void FirmwareUpdateScreen::processCommand(RemoteCommand command) {
-    // Note that this gets called even when there isn't a button press
-    // if the screen is set from RootUI as the first screen to be shown.
-    // That's why the increment is in the case statement instead of
-    // below.
-    //
-    // Eventually, we'll add more logic to do the right thing based on
-    // the messages, but for now, any button press is fine.
-    log_i("firmware update command!");
-    switch (command) {
-    case RemoteCommand::BACK: {
-        backCallback();
-        break;
-    }
-    case RemoteCommand::ENTER: {
-        backCallback();
-        break;
-    }
-    default: {
-        backCallback();
-        break;
-    }
-    }
+    backCallback();
 }
