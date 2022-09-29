@@ -1,12 +1,11 @@
 #include "UI/FirmwareUpdateScreen.hpp"
-#include "Communications/WiFi.hpp"
-#include "Communications/FirmwareDownload.hpp"
 
+#include "Communications/FirmwareDownload.hpp"
+#include "Communications/WiFi.hpp"
 #include "UI/Fonts/Tahoma10pt7b.h"
 #include "sindarin-debug.h"
 
-FirmwareUpdateScreen::FirmwareUpdateScreen(DisplaySystem &display)
-    : display_(display){}
+FirmwareUpdateScreen::FirmwareUpdateScreen(DisplaySystem &display) : display_(display) {}
 
 void FirmwareUpdateScreen::render(DisplaySystem &display) {
 
@@ -17,7 +16,7 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
     std::string message = "No Wifi";
     if (NetworkConnected()) {
         message = "Updating: 00%";
-        firmwareDownload_.GetFirmware();
+        firmwareDownload_.getFirmware();
     } else {
         return;
     }
@@ -28,13 +27,11 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
 
     bool done = false;
     int lastPercentage = 0;
-    while (!done)
-    {
+    while (!done) {
         int percentProgress;
-        done = firmwareDownload_.UpdateFirmware(percentProgress);
+        done = firmwareDownload_.updateFirmware(percentProgress);
 
-        if (percentProgress - lastPercentage >= 10)
-        {
+        if (percentProgress - lastPercentage >= 10) {
             lastPercentage = percentProgress;
             char formattedString[32];
             sprintf(formattedString, "%02d %%", percentProgress);
@@ -60,20 +57,17 @@ void FirmwareUpdateScreen::processCommand(RemoteCommand command) {
     // the messages, but for now, any button press is fine.
     log_i("firmware update command!");
     switch (command) {
-        case RemoteCommand::BACK:
-        {
-            backCallback();
-            break;
-        }
-        case RemoteCommand::ENTER:
-        {
-            backCallback();
-            break;
-        }
-        default:
-        {
-            backCallback();
-            break;
-        }
+    case RemoteCommand::BACK: {
+        backCallback();
+        break;
+    }
+    case RemoteCommand::ENTER: {
+        backCallback();
+        break;
+    }
+    default: {
+        backCallback();
+        break;
+    }
     }
 }

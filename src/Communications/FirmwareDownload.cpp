@@ -1,23 +1,23 @@
 #include "FirmwareDownload.hpp"
 
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 
-void FirmwareDownload::GetFirmware() {
+void FirmwareDownload::getFirmware() {
 
     log_i("about to download: %s", FIRMWARE_URL);
-    if (!_httpClient.begin(FIRMWARE_URL)) {
+    if (!httpClient_.begin(FIRMWARE_URL)) {
         log_e("HTTPClient::begin failed");
     }
 
-    _httpClient.setTimeout(30000);
-    _httpClient.GET();
+    httpClient_.setTimeout(30000);
+    httpClient_.GET();
 
-    _totalSize = _httpClient.getSize();
+    _totalSize = httpClient_.getSize();
     log_i("request started, total size %d", _totalSize);
 }
 
-bool FirmwareDownload::UpdateFirmware(int &percentProgress) {
+auto FirmwareDownload::updateFirmware(int &percentProgress) -> bool {
 
     // check available bytes
     if (_totalBytesRead == _totalSize) {
@@ -28,13 +28,13 @@ bool FirmwareDownload::UpdateFirmware(int &percentProgress) {
         return true;
     }
 
-    auto *stream = _httpClient.getStreamPtr();
+    auto *stream = httpClient_.getStreamPtr();
 
     if (stream) {
         int available = stream->available();
         if (available > 0) {
             int bytesRemaining = FIRMWARE_BLOCK_SIZE - _bytesInBuffer;
-            int bytesRead = stream->readBytes(&_buffer[_bytesInBuffer], bytesRemaining);
+            int bytesRead = stream->readBytes(&buffer_[_bytesInBuffer], bytesRemaining);
             _bytesInBuffer += bytesRead;
             _totalBytesRead += bytesRead;
         }

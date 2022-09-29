@@ -1,9 +1,9 @@
 #ifndef FIRMWARE_UPDATE_SCREEN_HPP
 #define FIRMWARE_UPDATE_SCREEN_HPP
 
-#include "UI/Screen.hpp"
-#include "Communications/WiFi.hpp"
 #include "Communications/FirmwareDownload.hpp"
+#include "Communications/WiFi.hpp"
+#include "UI/Screen.hpp"
 
 class FirmwareUpdateScreen : public Screen {
 public:
