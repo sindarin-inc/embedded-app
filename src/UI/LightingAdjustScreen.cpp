@@ -58,7 +58,7 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
 
     if (lightUpMyLife_) {
         y += display.getTextHeight() + 10;
-        auto message2 = "You light up our lives!";
+        auto message2 = "Let there be light!";
         display.getTextBounds(message2, &textWidth, &textHeight);
         display.setCursor((display.width() - textWidth) / 2, y);
         display.println(message2);
