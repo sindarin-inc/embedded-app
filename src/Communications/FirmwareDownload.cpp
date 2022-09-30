@@ -14,22 +14,20 @@ auto FirmwareDownload::getFirmware() -> bool {
     }
 
     httpClient_.setTimeout(30000);
-    if (httpClient_.GET() != 200)
-    {
+    if (httpClient_.GET() != 200) {
         log_e("could not download %s", FIRMWARE_MD5_URL);
         return false;
     }
 
-    int md5_size = httpClient_.getSize();
-    if (md5_size < 32 || md5_size > 33)
-    {
-        log_e("bad md5 size, %d should be 32", md5_size);
+    int md5Size = httpClient_.getSize();
+    if (md5Size < 32 || md5Size > 33) {
+        log_e("bad md5 size, %d should be 32", md5Size);
         return false;
     }
 
     String md5string = httpClient_.getString();
-    memset(md5, 0, 33);
-    strncpy(md5, md5string.c_str(), 32);
+    memset(md5_, 0, 33);
+    strncpy(md5_, md5string.c_str(), 32);
     httpClient_.end();
 #endif
 
@@ -49,9 +47,8 @@ auto FirmwareDownload::getFirmware() -> bool {
     if (totalSize_ > 0) {
         Update.begin(totalSize_, U_FLASH);
 #ifdef FIRMWARE_CHECK_MD5
-        log_i("setting expected md5: %s", md5);
-        if (!Update.setMD5(md5))
-        {
+        log_i("setting expected md5: %s", md5_);
+        if (!Update.setMD5(md5_)) {
             log_e("error setting md5");
             return false;
         }

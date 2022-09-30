@@ -24,7 +24,7 @@ private:
     int bytesInBuffer_{0};
     int totalSize_{0};
     int totalBytesRead_{0};
-    char md5[33];
+    char md5_[33];
 };
 
 #endif
