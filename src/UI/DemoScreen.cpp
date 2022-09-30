@@ -19,6 +19,8 @@ void DemoScreen::render(DisplaySystem &display) {
 
     std::string message = messages_[currentScreen_];
 
+    display.setFont(&TAHOMA_REGULAR_FONT6PT7B);
+
     switch (currentScreen_) {
     case 0:
         display.setFont(&TAHOMA_REGULAR_FONT10PT7B);
@@ -38,6 +40,10 @@ void DemoScreen::render(DisplaySystem &display) {
     }
     if (currentScreen_ > 1) {
         display.setFont(&TAHOMA_REGULAR_FONT8PT7B);
+
+        if (currentScreen_ > 4) {
+            display.setFont(&TAHOMA_REGULAR_FONT5PT7B);
+        }
 
         // This Y coordinate is just a guess
         display.drawSingleLineOfText(
