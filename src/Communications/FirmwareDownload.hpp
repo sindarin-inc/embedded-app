@@ -6,12 +6,14 @@
 
 #define FIRMWARE_BLOCK_SIZE 16384
 #define FIRMWARE_URL "http://change.this.url/firmware.bin"
+#define FIRMWARE_MD5_URL "http://change.this.url/firmware.md5"
+#define FIRMWARE_CHECK_MD5 1
 
 class FirmwareDownload {
 public:
     FirmwareDownload() = default;
 
-    void getFirmware();
+    auto getFirmware() -> bool;
     auto updateFirmware(int &percentProgress, bool &error) -> bool;
 
 private:
@@ -22,6 +24,7 @@ private:
     int bytesInBuffer_{0};
     int totalSize_{0};
     int totalBytesRead_{0};
+    char md5[33];
 };
 
 #endif

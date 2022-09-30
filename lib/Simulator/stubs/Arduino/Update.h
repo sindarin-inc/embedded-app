@@ -11,6 +11,10 @@ public:
     int write(uint8_t* buffer, int size) {
         return size;
     }
+    bool setMD5(const char* md5) {
+        return true;
+    }
+
     bool end() {
         return true;
     }

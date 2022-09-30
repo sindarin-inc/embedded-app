@@ -17,7 +17,12 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
     std::string message = "No Wifi Connection";
     if (NetworkConnected()) {
         message = "Updating: 00%";
-        firmwareDownload_.getFirmware();
+        if (!firmwareDownload_.getFirmware())
+        {
+            message = "Error updating firmware.";
+            drawMessage(message);
+            return;
+        }
     } else {
         drawMessage(message);
         return;

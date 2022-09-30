@@ -4,22 +4,61 @@
 #include <cstdio>
 #include <string>
 
-void FirmwareDownload::getFirmware() {
+auto FirmwareDownload::getFirmware() -> bool {
 
-    log_i("about to download: %s", FIRMWARE_URL);
+#ifdef FIRMWARE_CHECK_MD5
+    // first download md5 file
+    if (!httpClient_.begin(FIRMWARE_MD5_URL)) {
+        log_e("HTTPClient::begin failed for %s", FIRMWARE_MD5_URL);
+        return false;
+    }
+
+    httpClient_.setTimeout(30000);
+    if (httpClient_.GET() != 200)
+    {
+        log_e("could not download %s", FIRMWARE_MD5_URL);
+        return false;
+    }
+
+    int md5_size = httpClient_.getSize();
+    if (md5_size < 32 || md5_size > 33)
+    {
+        log_e("bad md5 size, %d should be 32", md5_size);
+        return false;
+    }
+
+    String md5string = httpClient_.getString();
+    memset(md5, 0, 33);
+    strncpy(md5, md5string.c_str(), 32);
+    httpClient_.end();
+#endif
+
     if (!httpClient_.begin(FIRMWARE_URL)) {
         log_e("HTTPClient::begin failed");
     }
 
     httpClient_.setTimeout(30000);
-    httpClient_.GET();
+    if (httpClient_.GET() != 200) {
+        log_e("failed to download %s", FIRMWARE_URL);
+        return false;
+    }
 
     totalSize_ = httpClient_.getSize();
     log_i("request started, total size %d", totalSize_);
 
     if (totalSize_ > 0) {
         Update.begin(totalSize_, U_FLASH);
+#ifdef FIRMWARE_CHECK_MD5
+        log_i("setting expected md5: %s", md5);
+        if (!Update.setMD5(md5))
+        {
+            log_e("error setting md5");
+            return false;
+        }
+#endif
     }
+
+    return true;
 }
 
 auto FirmwareDownload::writeBuffer() -> bool {
@@ -54,6 +93,7 @@ auto FirmwareDownload::updateFirmware(int &percentProgress, bool &error) -> bool
             ESP.restart();
         } else {
             log_e("update failed to finalize.");
+            error = true;
         }
 
         // mark alternate boot partition as the primary and reboot
