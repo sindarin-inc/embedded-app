@@ -94,9 +94,7 @@ protected:
     unsigned long previousPlace_ = 0;
     unsigned long nextPlace_ = 0;
 
-#ifdef BEN_ICON_HACKING
     bool shownIcons_ = false;
-#endif
 
     uint32_t currentPageWordCount_ = 0;
 

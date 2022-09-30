@@ -123,6 +123,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     display.drawSingleLineOfText(leftButtonTitle_.c_str(), arrowWidth_ + arrowTextSpacing_,
                                  (screenHeight / 2) - textHeight / 2 - 1);
 
+    // Right Arrow
     display.drawLine(display.width(), screenHeight / 2, display.width() - arrowWidth_,
                      screenHeight / 2 + arrowHeight_ / 2, display.fg);
     display.drawLine(display.width(), screenHeight / 2, display.width() - arrowWidth_,

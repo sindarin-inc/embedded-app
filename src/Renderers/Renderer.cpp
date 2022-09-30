@@ -3,6 +3,8 @@
 #include <utility>
 
 #include "Misc/Platform.hpp"
+#include "UI/Bitmaps/BenIconHacking.hpp"
+#include "UI/Fonts/Tahoma4pt7b.h"
 #include "config.h"
 #include "sindarin-debug.h"
 
@@ -370,19 +372,73 @@ auto Renderer::renderPage(unsigned long placeInFile, bool withBookmark) -> unsig
         }
     }
 
-// To enable this stuff, #include "UI/Bitmaps/BenIconHacking.hpp"
-#ifdef BEN_ICON_HACKING
     // Show the home screen and gear icon on the first page you read as a reminder. Then drop them
     // after that.
     if (!shownIcons_) {
-        display_.drawXBitmap(-25, display_.height() / 2 - HOME2_HEIGHT / 2, HOME2_BITS, HOME2_WIDTH,
-                             HOME2_HEIGHT, display_.fg);
+        uint16_t textWidth, textHeight;
+        int screenWidth = display_.width();
+        int screenHeight = display_.height();
+        int arrowWidth = 8;
+        int arrowHeight = 4;
 
-        display_.drawXBitmap(display_.width() + 1, display_.height() / 2 - READ_GEAR_HEIGHT / 2,
-                             READ_GEAR_BITS, READ_GEAR_WIDTH, READ_GEAR_HEIGHT, display_.fg);
+        display_.setRotation(1);
+        // Use a gear for the bottom icon.
+        display_.drawXBitmap(screenWidth + 2 + display_.getTextHeight() - 2,
+                             screenHeight / 2 - READ_GEAR_HEIGHT / 2, READ_GEAR_BITS,
+                             READ_GEAR_WIDTH, READ_GEAR_HEIGHT, display_.fg);
+
+        display_.setRotation(0);
+        // Use a mini bookmark for top icon.
+        /* display_.fillRect(screenWidth / 2 - 5, display_.yAbsolute(0), 11,
+                           (display_.yAbsoluteMax() - screenHeight) / 2 - 9, display_.fg);
+
+         display_.fillRect(screenWidth / 2 - 4, display_.yAbsolute(0), 9,
+                           (display_.yAbsoluteMax() - screenHeight) / 2 - 14, display_.bg);
+         display_.fillTriangle(
+             screenWidth / 2 - 5,
+             display_.yAbsolute((display_.yAbsoluteMax() - screenHeight) / 2 - 9), screenWidth / 2,
+             display_.yAbsolute((display_.yAbsoluteMax() - screenHeight) / 2 - 12),
+             screenWidth / 2 + 5,
+             display_.yAbsolute((display_.yAbsoluteMax() - screenHeight) / 2 - 9), display_.bg);
+         */
+        // Down Arrow
+        /*
+        display_.drawLine(screenWidth / 2, screenHeight + arrowHeight,
+                          screenWidth / 2 - arrowWidth / 2, screenHeight, display_.fg);
+        display_.drawLine(screenWidth / 2, screenHeight + arrowHeight,
+                          screenWidth / 2 + arrowWidth / 2, screenHeight, display_.fg);
+                          */
+
+        // Left Arrow
+        display_.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 - arrowWidth / 2,
+                          display_.fg);
+        display_.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 + arrowWidth / 2,
+                          display_.fg);
+
+        /*
+                auto topStr = "Bookmark";
+                display_.getTextBounds(topStr, &textWidth, &textHeight);
+                display_.drawSingleLineOfText(topStr, (screenWidth / 2) - (textWidth / 2),
+                                              -textHeight - arrowHeight - 4);
+*/
+        display_.drawLine(screenWidth / 2, -arrowHeight - 3, screenWidth / 2 - arrowWidth / 2, -3,
+                          display_.fg);
+        display_.drawLine(screenWidth / 2, -arrowHeight - 3, screenWidth / 2 + arrowWidth / 2, -3,
+                          display_.fg);
+
+        display_.drawLine(screenWidth / 2 - arrowWidth / 2, -3, screenWidth / 2 - arrowWidth / 2,
+                          display_.yAbsolute(0), display_.fg);
+        display_.drawLine(screenWidth / 2 + arrowWidth / 2, -3, screenWidth / 2 + arrowWidth / 2,
+                          display_.yAbsolute(0), display_.fg);
+
+        // Right Arrow
+        display_.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
+                          screenHeight / 2 + arrowWidth / 2, display_.fg);
+        display_.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
+                          screenHeight / 2 - arrowWidth / 2, display_.fg);
         shownIcons_ = true;
+        display_.setFont(display_.style.getFontFamily().readableFont);
     }
-#endif
 
     // Future work -- turn this on once we have the PageTurner working.
     // Then link up with filesystem and cloud to save off bookmarks.
