@@ -383,31 +383,13 @@ auto Renderer::renderPage(unsigned long placeInFile, bool withBookmark) -> unsig
 
         display_.setRotation(1);
         // Use a gear for the bottom icon.
+        // The math here is weird because of rotation but this gives us a gear with
+        // the top of it looking like a down arrow to match the rest!
         display_.drawXBitmap(screenWidth + 2 + display_.getTextHeight() - 2,
                              screenHeight / 2 - READ_GEAR_HEIGHT / 2, READ_GEAR_BITS,
                              READ_GEAR_WIDTH, READ_GEAR_HEIGHT, display_.fg);
 
         display_.setRotation(0);
-        // Use a mini bookmark for top icon.
-        /* display_.fillRect(screenWidth / 2 - 5, display_.yAbsolute(0), 11,
-                           (display_.yAbsoluteMax() - screenHeight) / 2 - 9, display_.fg);
-
-         display_.fillRect(screenWidth / 2 - 4, display_.yAbsolute(0), 9,
-                           (display_.yAbsoluteMax() - screenHeight) / 2 - 14, display_.bg);
-         display_.fillTriangle(
-             screenWidth / 2 - 5,
-             display_.yAbsolute((display_.yAbsoluteMax() - screenHeight) / 2 - 9), screenWidth / 2,
-             display_.yAbsolute((display_.yAbsoluteMax() - screenHeight) / 2 - 12),
-             screenWidth / 2 + 5,
-             display_.yAbsolute((display_.yAbsoluteMax() - screenHeight) / 2 - 9), display_.bg);
-         */
-        // Down Arrow
-        /*
-        display_.drawLine(screenWidth / 2, screenHeight + arrowHeight,
-                          screenWidth / 2 - arrowWidth / 2, screenHeight, display_.fg);
-        display_.drawLine(screenWidth / 2, screenHeight + arrowHeight,
-                          screenWidth / 2 + arrowWidth / 2, screenHeight, display_.fg);
-                          */
 
         // Left Arrow
         display_.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 - arrowWidth / 2,
@@ -415,12 +397,7 @@ auto Renderer::renderPage(unsigned long placeInFile, bool withBookmark) -> unsig
         display_.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 + arrowWidth / 2,
                           display_.fg);
 
-        /*
-                auto topStr = "Bookmark";
-                display_.getTextBounds(topStr, &textWidth, &textHeight);
-                display_.drawSingleLineOfText(topStr, (screenWidth / 2) - (textWidth / 2),
-                                              -textHeight - arrowHeight - 4);
-*/
+        // Up arrow - looks like a bookmark to indicate that's what you can do.
         display_.drawLine(screenWidth / 2, -arrowHeight - 3, screenWidth / 2 - arrowWidth / 2, -3,
                           display_.fg);
         display_.drawLine(screenWidth / 2, -arrowHeight - 3, screenWidth / 2 + arrowWidth / 2, -3,
