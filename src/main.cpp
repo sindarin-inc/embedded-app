@@ -323,7 +323,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 
     switch (prefs.font.get().value()) {
-    case PREFS_DEFAULT_FONT:
+    case PREFS_LUCIDA_REGULAR:
         myDisplay.style.setFontFamily(myDisplay.style.lucidaRegular);
         break;
     case PREFS_LUCIDA_SKINNY:

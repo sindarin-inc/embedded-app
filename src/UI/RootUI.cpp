@@ -363,7 +363,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
         fontMenu->addMenuItem(MenuItem("Lucida original", [this, fontMenu]() {
             this->display_->style.setFontFamily(this->display_->style.lucidaRegular);
             this->display_->clearDisplay();
-            prefs_.font.set(PREFS_DEFAULT_FONT);
+            prefs_.font.set(PREFS_LUCIDA_REGULAR);
             fontMenu->needsRerender = true;
         }));
 

@@ -385,7 +385,7 @@ auto Renderer::renderPage(unsigned long placeInFile, bool withBookmark) -> unsig
         // Use a gear for the bottom icon.
         // The math here is weird because of rotation but this gives us a gear with
         // the top of it looking like a down arrow to match the rest!
-        display_.drawXBitmap(screenWidth + 2 + display_.getTextHeight() - 2,
+        display_.drawXBitmap(screenWidth + 2 + display_.getTextHeight() + 2,
                              screenHeight / 2 - READ_GEAR_HEIGHT / 2, READ_GEAR_BITS,
                              READ_GEAR_WIDTH, READ_GEAR_HEIGHT, display_.fg);
 
