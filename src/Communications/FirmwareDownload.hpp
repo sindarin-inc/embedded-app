@@ -8,6 +8,7 @@
 #define FIRMWARE_URL "http://change.this.url/firmware.bin"
 #define FIRMWARE_MD5_URL "http://change.this.url/firmware.md5"
 #define FIRMWARE_CHECK_MD5 1
+#define FIRMWARE_MD5_SIZE 32
 
 class FirmwareDownload {
 public:

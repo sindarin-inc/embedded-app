@@ -13,6 +13,10 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
         return;
     }
 
+    // don't need additional rendering after update completes
+    // or an error occurs
+    needsRerender = false;
+
     // first check if wifi is connected
     std::string message = "No Wifi Connection";
     if (NetworkConnected()) {
@@ -51,7 +55,6 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
     }
 
     log_i("done firmware update.");
-    needsRerender = false;
 }
 
 void FirmwareUpdateScreen::drawMessage(std::string &message) {

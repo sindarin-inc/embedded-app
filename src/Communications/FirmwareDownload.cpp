@@ -20,19 +20,20 @@ auto FirmwareDownload::getFirmware() -> bool {
     }
 
     int md5Size = httpClient_.getSize();
-    if (md5Size < 32 || md5Size > 33) {
+    if (md5Size < FIRMWARE_MD5_SIZE || md5Size > FIRMWARE_MD5_SIZE+1) {
         log_e("bad md5 size, %d should be 32", md5Size);
         return false;
     }
 
     String md5string = httpClient_.getString();
-    memset(md5_, 0, 33);
-    strncpy(md5_, md5string.c_str(), 32);
+    strncpy(md5_, md5string.c_str(), FIRMWARE_MD5_SIZE);
+    md5_[FIRMWARE_MD5_SIZE] = 0;
     httpClient_.end();
 #endif
 
     if (!httpClient_.begin(FIRMWARE_URL)) {
         log_e("HTTPClient::begin failed");
+        return false;
     }
 
     httpClient_.setTimeout(30000);
@@ -85,6 +86,7 @@ auto FirmwareDownload::updateFirmware(int &percentProgress, bool &error) -> bool
 
         log_i("Firmware download done. read %d bytes. Finalizing...", totalBytesRead_);
         if (!error && Update.end()) {
+            // mark alternate boot partition as the primary and reboot
             log_i("update complete.");
             log_i("swapping boot partition");
             ESP.restart();
@@ -93,7 +95,6 @@ auto FirmwareDownload::updateFirmware(int &percentProgress, bool &error) -> bool
             error = true;
         }
 
-        // mark alternate boot partition as the primary and reboot
         return true;
     }
 
