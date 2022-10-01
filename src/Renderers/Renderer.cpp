@@ -385,7 +385,7 @@ auto Renderer::renderPage(unsigned long placeInFile, bool withBookmark) -> unsig
         // Use a gear for the bottom icon.
         // The math here is weird because of rotation but this gives us a gear with
         // the top of it looking like a down arrow to match the rest!
-        display_.drawXBitmap(screenWidth + 2 + display_.getTextHeight() + 2,
+        display_.drawXBitmap(screenWidth + 2 + display_.getTextHeight(),
                              screenHeight / 2 - READ_GEAR_HEIGHT / 2, readGearBits, READ_GEAR_WIDTH,
                              READ_GEAR_HEIGHT, display_.fg);
 
@@ -421,9 +421,10 @@ auto Renderer::renderPage(unsigned long placeInFile, bool withBookmark) -> unsig
     // Then link up with filesystem and cloud to save off bookmarks.
     if (withBookmark) {
         log_d("Drawing bookmark!");
-        display_.fillRect(display_.width() + 1, -20, 13, 55, display_.fg);
-        display_.fillTriangle(display_.width() + 1, 35, display_.width() + 13, 35,
-                              display_.width() + 7, 30, display_.bg);
+        display_.fillRect(display_.width() + 1, display_.yAbsolute(0), 13, 55, display_.fg);
+        display_.fillTriangle(display_.width() + 1, display_.yAbsolute(55), display_.width() + 13,
+                              display_.yAbsolute(55), display_.width() + 7, display_.yAbsolute(50),
+                              display_.bg);
     }
 
     display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL);

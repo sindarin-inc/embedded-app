@@ -79,6 +79,8 @@ public:
                                   uint16_t *renderedHeight);
     void setSizeOfTextToken(unsigned long placeInTokenBuffer);
 
+    void setShownIcons(bool shownIcons) { shownIcons_ = shownIcons; }
+
 protected:
     DisplaySystem &display_;
     RendererStream *stream_ = nullptr;

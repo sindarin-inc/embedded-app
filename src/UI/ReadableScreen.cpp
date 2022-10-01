@@ -67,14 +67,11 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         break;
 
     case RemoteCommand::NEXT:
-        // setCurrentScreen(popup_.lightingAdjustScreen_);
         setCurrentScreen(popup_);
         break;
     case RemoteCommand::PREV:
-        back();
-        // inBookmark_ = !inBookmark_;
-        //  NEed to make this partial refresh
-        // needsRerender = true;
+        inBookmark_ = !inBookmark_;
+        needsRerender = true;
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::ENTER:
