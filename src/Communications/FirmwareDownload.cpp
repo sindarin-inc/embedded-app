@@ -20,7 +20,7 @@ auto FirmwareDownload::getFirmware() -> bool {
     }
 
     int md5Size = httpClient_.getSize();
-    if (md5Size < FIRMWARE_MD5_SIZE || md5Size > FIRMWARE_MD5_SIZE+1) {
+    if (md5Size < FIRMWARE_MD5_SIZE || md5Size > FIRMWARE_MD5_SIZE + 1) {
         log_e("bad md5 size, %d should be 32", md5Size);
         return false;
     }
