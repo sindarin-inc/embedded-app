@@ -62,7 +62,7 @@ void ReadableScreen::updateBookmarkStatus() {
                   bookmark.firstPlace, bookmark.lastPlace);
             // A decent heuristic for now. If the midpoint of the bookmark is within
             // the current page range, then apply the change.
-            u_int32_t averagePlace =
+            uint32_t averagePlace =
                 (bookmark.lastPlace - bookmark.firstPlace) / 2 + bookmark.firstPlace;
             if ((averagePlace >= readable_.place) && (averagePlace <= newPlace_)) {
                 if (bookmark.status == BOOKMARK_ON) {
