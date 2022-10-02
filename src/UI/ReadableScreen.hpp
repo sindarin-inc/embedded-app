@@ -12,8 +12,8 @@
 enum BookmarkStatus { BOOKMARK_OFF = 0, BOOKMARK_ON = 1 };
 
 struct Bookmark {
-    uint16_t firstPlace;
-    uint16_t lastPlace;
+    uint32_t firstPlace;
+    uint32_t lastPlace;
     BookmarkStatus status;
 };
 

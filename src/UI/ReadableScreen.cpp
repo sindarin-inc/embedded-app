@@ -58,12 +58,13 @@ void ReadableScreen::updateBookmarkStatus() {
     } else {
         Bookmark bookmark;
         while (readOneBookmark(bookmarkFile, bookmark)) {
-            log_d("Found a bookmark with the following vals %d %d %d", bookmark.status,
+            log_d("Found a bookmark with the following vals %d %u %u", bookmark.status,
                   bookmark.firstPlace, bookmark.lastPlace);
-            // A decent heuristic for now. If the midpoint of the current page is within
-            // a bookmark range, then apply the change.
-            u_int32_t averagePlace = (newPlace_ - readable_.place) / 2 + readable_.place;
-            if ((averagePlace >= bookmark.firstPlace) && (averagePlace <= bookmark.lastPlace)) {
+            // A decent heuristic for now. If the midpoint of the bookmark is within
+            // the current page range, then apply the change.
+            u_int32_t averagePlace =
+                (bookmark.lastPlace - bookmark.firstPlace) / 2 + bookmark.firstPlace;
+            if ((averagePlace >= readable_.place) && (averagePlace <= newPlace_)) {
                 if (bookmark.status == BOOKMARK_ON) {
                     inBookmark_ = true;
                 } else {
