@@ -7,7 +7,7 @@
 
 // Simply reads from the bookmark file for this Readable and returns whether it was
 // a turn on or turn off bookmark.
-int ReadableScreen::readOneBookmark(File &file, Bookmark &bookmark) {
+auto ReadableScreen::readOneBookmark(File &file, Bookmark &bookmark) -> int {
     // The first character in the line is a + or -, read that first
     if (!file.available()) {
         return 0;
