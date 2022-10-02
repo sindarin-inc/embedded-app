@@ -12,9 +12,9 @@
 class ReadableScreen : public ContainerScreen {
 public:
     ReadableScreen(RendererStream *stream, DisplaySystem &display, Readable &readable,
-                   PreferencesStore &prefs, Power &power)
+                   PreferencesStore &prefs, Power &power, File bookmarkFile)
         : renderer_(display), readable_(readable), prefs_(prefs),
-          popup_(power, renderer_, prefs_, readable_) {
+          popup_(power, renderer_, prefs_, readable_), bookmarkFile_(std::move(bookmarkFile)) {
         currentScreen_ = this;
         renderer_.setStream(stream);
         popup_.backCallback = [this]() { this->setCurrentScreen(*this); };
@@ -29,12 +29,17 @@ public:
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
 
+    void writeOutBookmarkUpdate();
+    void updateBookmarkStatus();
+
 protected:
     Renderer renderer_;
     Readable &readable_;
     PreferencesStore &prefs_;
 
     PopupMenuScreen popup_;
+
+    File bookmarkFile_;
 
     bool inBookmark_ = false;
 

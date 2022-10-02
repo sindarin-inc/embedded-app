@@ -5,6 +5,15 @@
 #include "Misc/Platform.hpp"
 #include "sindarin-debug.h"
 
+void ReadableScreen::updateBookmarkStatus() { inBookmark_ = false; }
+
+void ReadableScreen::writeOutBookmarkUpdate() {
+    std::string plusOrMinus = inBookmark_ ? "+ " : "- ";
+    plusOrMinus += std::to_string(readable_.place) + " " + std::to_string(newPlace_) + "\n";
+    bookmarkFile_.write((const uint8_t *)plusOrMinus.c_str(), plusOrMinus.length());
+    bookmarkFile_.flush();
+}
+
 void ReadableScreen::render(DisplaySystem &display) {
     if (currentScreen_ != this) {
         currentScreen_->render(display);
@@ -56,6 +65,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::CHANNEL_MINUS:
         readable_.place = renderer_.getPreviousPlace();
         prefs_.readablePlace.set(readable_.id.c_str(), readable_.place);
+        updateBookmarkStatus();
         needsRerender = true;
         break;
     case RemoteCommand::CHANNEL_PLUS:
@@ -63,6 +73,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         readable_.placePrev = readable_.place;
         readable_.place = newPlace_;
         prefs_.readablePlace.set(readable_.id.c_str(), readable_.place);
+        updateBookmarkStatus();
         needsRerender = true;
         break;
 
@@ -71,6 +82,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::PREV:
         inBookmark_ = !inBookmark_;
+        writeOutBookmarkUpdate();
         needsRerender = true;
         break;
     case RemoteCommand::BACK:

@@ -62,9 +62,16 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
 #endif
         // TODO: Would be better to not allocate / delete these all the time
         auto stream = fileSystem.newRendererStream(readable->path.c_str());
+        std::string bookmarkPath = "/logs/";
+        bookmarkPath += readable->id;
+        bookmarkPath += "-bookmark.txt";
+        File bookmarkFile = fileSystem.open(bookmarkPath.c_str(), FILE_APPEND);
+        if (!bookmarkFile) {
+            log_e("Failed to open bookmark file: %s is the filename", bookmarkPath.c_str());
+        }
         this->prefs_.lastReadableId.set(readable->id);
-        auto *readableScreen =
-            new ReadableScreen(stream, *display, *readable, this->prefs_, this->power_);
+        auto *readableScreen = new ReadableScreen(stream, *display, *readable, this->prefs_,
+                                                  this->power_, bookmarkFile);
         if (readable->id.rfind("pkt-", 0) == 0) {
             readableScreen->setLeftPopupButton("Delete", [readable, &fileSystem]() {
                 log_i("Deleting Pocket readable %s", readable->path.c_str());
