@@ -9,12 +9,21 @@
 #include "UI/Screen.hpp"
 #include "config.h"
 
+enum BookmarkStatus { BOOKMARK_OFF = 0, BOOKMARK_ON = 1 };
+
+struct Bookmark {
+    uint16_t firstPlace;
+    uint16_t lastPlace;
+    BookmarkStatus status;
+};
+
 class ReadableScreen : public ContainerScreen {
 public:
     ReadableScreen(RendererStream *stream, DisplaySystem &display, Readable &readable,
-                   PreferencesStore &prefs, Power &power, File bookmarkFile)
+                   PreferencesStore &prefs, Power &power, FileSystem &bookmarkFileSystem)
+
         : renderer_(display), readable_(readable), prefs_(prefs),
-          popup_(power, renderer_, prefs_, readable_), bookmarkFile_(std::move(bookmarkFile)) {
+          popup_(power, renderer_, prefs_, readable_), bookmarkFileSystem_(bookmarkFileSystem) {
         currentScreen_ = this;
         renderer_.setStream(stream);
         popup_.backCallback = [this]() { this->setCurrentScreen(*this); };
@@ -31,6 +40,7 @@ public:
 
     void writeOutBookmarkUpdate();
     void updateBookmarkStatus();
+    int readOneBookmark(File &file, Bookmark &bookmark);
 
 protected:
     Renderer renderer_;
@@ -39,7 +49,7 @@ protected:
 
     PopupMenuScreen popup_;
 
-    File bookmarkFile_;
+    FileSystem &bookmarkFileSystem_;
 
     bool inBookmark_ = false;
 
