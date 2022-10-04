@@ -56,7 +56,7 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     display.getTextBounds(nextTitle.c_str(), &width, &height);
 
     display.setFont(display.style.getFontFamily().readableFont);
-    display.setRotation(0);
+
     display.getTextBounds("Settings", &width, &height);
 
     display.drawSingleLineOfText("Settings", screenWidth / 2 - width / 2, 28);
@@ -65,7 +65,6 @@ void PagedMenuScreen::render(DisplaySystem &display) {
 
     display.drawSingleLineOfText("Read", screenWidth / 2 - width / 2, screenHeight - 30 - height);
 
-    display.setRotation(0);
     display.updateDisplay();
 
     needsRerender = false;

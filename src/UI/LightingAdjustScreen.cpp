@@ -39,8 +39,6 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
 
     x += barWidth + spacing;
     display.setCursor(x, y + (Lightbulb_height + percentHeight) / 2);
-    // Not drawing for some reason hmm
-    // display.println(StringFormat("%d%%", backlightPercent).c_str());
 
     // Cursor is from the baseline of the text I think
     y += Lightbulb_height + display.getTextHeight() + spacing;

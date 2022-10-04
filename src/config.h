@@ -47,7 +47,7 @@
 // #define DISABLE_IMPROV
 
 #ifndef ENABLE_POCKET
-#define ENABLE_POCKET 1
+#define ENABLE_POCKET 0
 #endif
 
 #ifdef WROVER_KIT
