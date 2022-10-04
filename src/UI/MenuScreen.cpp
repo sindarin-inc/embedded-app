@@ -168,13 +168,7 @@ void MenuScreen::prevSelection(bool skipLast) {
 auto MenuScreen::getItemTitleAt(int index) -> std::string {
     std::string all;
     assert(index < numMenuItems_);
-    // Add the indicator for where we are in the menu based on the current selection
-    if (index == currSelection_) {
-        all = " ";
-    } else {
-        all = " ";
-    }
-    all = all + " " + menuItems_[index].title;
+    all = "  " + menuItems_[index].title;
     return all;
 }
 

@@ -6,8 +6,7 @@
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
 
-// We should decide if we want to do this #if as !SIMULATOR or as EINKET013TT1
-#if !SIMULATOR
+#if EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
 #endif
 

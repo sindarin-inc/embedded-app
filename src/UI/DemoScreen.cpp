@@ -65,17 +65,17 @@ void DemoScreen::render(DisplaySystem &display) {
 
     // Alternate left and right on for setup.
     if (currentScreen_ % 2 == 1) {
-        SetRightBackLight(false, backlight);
-        SetLeftBackLight(true, backlight);
+        SetRightBackLight(0);
+        SetLeftBackLight(backlight);
     } else {
-        SetRightBackLight(true, backlight);
-        SetLeftBackLight(false, backlight);
+        SetRightBackLight(backlight);
+        SetLeftBackLight(0);
     }
 
     // Turn on both backlights for last case
     if (currentScreen_ == 4) {
-        SetRightBackLight(true, backlight);
-        SetLeftBackLight(true, backlight);
+        SetRightBackLight(backlight);
+        SetLeftBackLight(backlight);
     }
 #endif
     needsRerender = false;
@@ -116,8 +116,8 @@ void DemoScreen::processCommand(RemoteCommand command) {
     if (currentScreen_ >= NUM_DEMO_SCREENS) {
 #if !SIMULATOR
         auto backlight = prefs_.backlight.get().value();
-        SetRightBackLight(true, backlight);
-        SetLeftBackLight(true, backlight);
+        SetRightBackLight(backlight);
+        SetLeftBackLight(backlight);
 #endif
         // When we're done with the onboarding screen, turn this mode off.
         prefs_.demoMode.set(0);

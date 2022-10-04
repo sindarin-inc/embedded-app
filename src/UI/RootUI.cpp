@@ -115,7 +115,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
     SHOW_HEAP();
 
     // Set up pocket article menu
-#if 0
+#if ENABLE_POCKET
     mainMenu->addMenuItem(MenuItem("Pocket Articles", [this, mainMenu, display, &fileSystem,
                                                        createReadableScreen]() {
         if (!NetworkConnected()) {
