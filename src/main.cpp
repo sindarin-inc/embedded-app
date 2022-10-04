@@ -82,8 +82,8 @@ OTA ota;
 #include "Storage/PosixFileSystem.hpp"
 PosixFileSystem fileSystem;
 #else
-#include "Storage/SpiffsFileSystem.hpp"
-SpiffsFileSystem fileSystem;
+#include "Storage/LittleFSFileSystem.hpp"
+LittleFSFileSystem fileSystem;
 #endif
 
 Power power(fileSystem, prefs);
