@@ -96,5 +96,4 @@ jobs:
           echo "All that is gold does not glitter" > data/ipsum.txt
 
       - name: PlatformIO run
-        run: |
-          pio run -t buildfs
+        run: pio run -t buildfs
