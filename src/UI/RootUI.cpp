@@ -538,7 +538,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
         };
     }));
 
-    debugMenu->addMenuItem(MenuItem("Battery and Temperature", [this, display]() {
+    debugMenu->addMenuItem(MenuItem("Battery and Temperature", [this, display, debugMenu]() {
         uint16_t width = 0, height = 0;
         display->setFont(display->style.getFontFamily().readableFont);
         auto batteryStatus = this->power_.getBatteryLifeString();
@@ -560,6 +560,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
                                       display->yAbsolute(display->yAbsoluteCenter() - height / 2));
 
         display->updateDisplay();
+        debugMenu->setFirstLoad();
     }));
 
     oldMenu->addMenuItem(MenuItem("Calibration Screen Run Through", [this, oldMenu]() {
