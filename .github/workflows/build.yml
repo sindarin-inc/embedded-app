@@ -96,7 +96,5 @@ jobs:
           echo "All that is gold does not glitter" > data/ipsum.txt
 
       - name: PlatformIO run
-        # For some reason platform-espressif32 only auto-installs tool-mklittlefs during uploadfs, not buildfs
         run: |
-          pio run -t uploadfs || true
           pio run -t buildfs
