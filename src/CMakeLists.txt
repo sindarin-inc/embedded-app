@@ -47,3 +47,4 @@ idf_component_register(
 )
 
 target_compile_options(${COMPONENT_TARGET} PUBLIC ${compile_options})
+target_link_libraries(${COMPONENT_LIB} PUBLIC git_version)
