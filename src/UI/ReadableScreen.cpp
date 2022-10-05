@@ -3,6 +3,7 @@
 #include <utility>
 
 #include "Misc/Platform.hpp"
+#include "UI/Bitmaps/BenIconHacking.hpp"
 #include "sindarin-debug.h"
 
 // Simply reads from the bookmark file for this Readable and returns whether it was
@@ -48,50 +49,54 @@ auto ReadableScreen::readOneBookmark(File &file, Bookmark &bookmark) -> int {
 // pages, but I think that's fine for now.
 //
 void ReadableScreen::updateBookmarkStatus() {
-    std::string bookmarkPath = "/logs/";
+    std::string bookmarkPath = "/bookmarks/";
     bookmarkPath += readable_.id;
     bookmarkPath += "-bookmark.txt";
-    log_d("Attemping to open file from updateBookmarkStatus %s", bookmarkPath.c_str());
-    File bookmarkFile = bookmarkFileSystem_.open(bookmarkPath.c_str(), FILE_READ, false);
+
+    // create log directory in filesystem if it doesn't exist
+    if (!fileSystem_.createDir("/bookmarks")) {
+        log_e("could not create /bookmarks directory");
+        return;
+    }
+
+    File bookmarkFile = fileSystem_.open(bookmarkPath.c_str(), FILE_READ, false);
     if (!bookmarkFile) {
         log_e("Failed to open bookmark file: %s is the filename", bookmarkPath.c_str());
-    } else {
-        Bookmark bookmark;
-        while (readOneBookmark(bookmarkFile, bookmark)) {
-            log_d("Found a bookmark with the following vals %d %u %u", bookmark.status,
-                  bookmark.firstPlace, bookmark.lastPlace);
-            // A decent heuristic for now. If the midpoint of the bookmark is within
-            // the current page range, then apply the change.
-            uint32_t averagePlace =
-                (bookmark.lastPlace - bookmark.firstPlace) / 2 + bookmark.firstPlace;
-            if ((averagePlace >= readable_.place) && (averagePlace <= newPlace_)) {
-                if (bookmark.status == BOOKMARK_ON) {
-                    inBookmark_ = true;
-                } else {
-                    inBookmark_ = false;
-                }
+        return;
+    }
+    Bookmark bookmark;
+    while (readOneBookmark(bookmarkFile, bookmark)) {
+        // A decent heuristic for now. If the midpoint of the bookmark is within
+        // the current page range, then turn the bookmark on for this page.
+        uint32_t averagePlace =
+            (bookmark.lastPlace - bookmark.firstPlace) / 2 + bookmark.firstPlace;
+        if ((averagePlace >= readable_.place) && (averagePlace <= newPlace_)) {
+            if (bookmark.status == BOOKMARK_ON) {
+                inBookmark_ = true;
+            } else {
+                inBookmark_ = false;
             }
         }
-        bookmarkFile.close();
     }
+    bookmarkFile.close();
 }
 
 void ReadableScreen::writeOutBookmarkUpdate() {
-    std::string bookmarkPath = "/logs/";
+    std::string bookmarkPath = "/bookmarks/";
     bookmarkPath += readable_.id;
     bookmarkPath += "-bookmark.txt";
-    log_d("Attemping to open file from writeOutBookmarkUpdate %s", bookmarkPath.c_str());
-    File bookmarkFile = bookmarkFileSystem_.open(bookmarkPath.c_str(), FILE_APPEND, true);
-    log_d("Got the open done");
+    File bookmarkFile = fileSystem_.open(bookmarkPath.c_str(), FILE_APPEND, true);
+
     if (!bookmarkFile) {
         log_e("Failed to open bookmark file: %s is the filename", bookmarkPath.c_str());
-    } else {
-        std::string plusOrMinus = inBookmark_ ? "+ " : "- ";
-        plusOrMinus += std::to_string(readable_.place) + " " + std::to_string(newPlace_) + "\n";
-        bookmarkFile.write((const uint8_t *)plusOrMinus.c_str(), plusOrMinus.length());
-        bookmarkFile.flush();
-        bookmarkFile.close();
+        return;
     }
+
+    std::string plusOrMinus = inBookmark_ ? "+ " : "- ";
+    plusOrMinus += std::to_string(readable_.place) + " " + std::to_string(newPlace_) + "\n";
+    bookmarkFile.write((const uint8_t *)plusOrMinus.c_str(), plusOrMinus.length());
+    bookmarkFile.flush();
+    bookmarkFile.close();
 }
 
 void ReadableScreen::render(DisplaySystem &display) {
@@ -105,18 +110,66 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     display.setFont(display.style.getFontFamily().readableFont);
 
-    bool oldInBookmark = inBookmark_;
     newPlace_ = renderer_.renderPage(readable_.place, inBookmark_);
+    // Future work
+    // Sync this to cloud and use on mobile.
     updateBookmarkStatus();
-    // This is clunky for now in that a page that you go back to that has had a bookmark added
-    // previously will have to render twice. This is because for now we need to know the next
-    // place in the file to know if we are in a bookmark or not.
-    // It'd be a little better to draw the bookmark in this file, perhaps as AU4. But that's
-    // out of scope for now.
-    if (oldInBookmark != inBookmark_) {
-        newPlace_ = renderer_.renderPage(readable_.place, inBookmark_);
+
+    if (inBookmark_) {
+        log_d("Drawing bookmark!");
+        display.fillRect(display.width() + 1, display.yAbsolute(0), 13, 55, display.fg);
+        display.fillTriangle(display.width() + 1, display.yAbsolute(55), display.width() + 13,
+                             display.yAbsolute(55), display.width() + 7, display.yAbsolute(50),
+                             display.bg);
     }
+
+    // Show the home screen and gear icon on the first page you read as a reminder. Then drop them
+    // after that.
+    if (!shownIcons_) {
+        uint16_t textWidth, textHeight;
+        int screenWidth = display.width();
+        int screenHeight = display.height();
+        int arrowWidth = 8;
+        int arrowHeight = 4;
+
+        display.setRotation(1);
+        // Use a gear for the bottom icon.
+        // The math here is weird because of rotation but this gives us a gear with
+        // the top of it looking like a down arrow to match the rest!
+        display.drawXBitmap(screenWidth + 2 + display.getTextHeight(),
+                            screenHeight / 2 - READ_GEAR_HEIGHT / 2, readGearBits, READ_GEAR_WIDTH,
+                            READ_GEAR_HEIGHT, display.fg);
+
+        display.setRotation(0);
+
+        // Left Arrow
+        display.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 - arrowWidth / 2,
+                         display.fg);
+        display.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 + arrowWidth / 2,
+                         display.fg);
+
+        // Up arrow - looks like a bookmark to indicate that's what you can do.
+        display.drawLine(screenWidth / 2, -arrowHeight - 3, screenWidth / 2 - arrowWidth / 2, -3,
+                         display.fg);
+        display.drawLine(screenWidth / 2, -arrowHeight - 3, screenWidth / 2 + arrowWidth / 2, -3,
+                         display.fg);
+
+        display.drawLine(screenWidth / 2 - arrowWidth / 2, -3, screenWidth / 2 - arrowWidth / 2,
+                         display.yAbsolute(0), display.fg);
+        display.drawLine(screenWidth / 2 + arrowWidth / 2, -3, screenWidth / 2 + arrowWidth / 2,
+                         display.yAbsolute(0), display.fg);
+
+        // Right Arrow
+        display.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
+                         screenHeight / 2 + arrowWidth / 2, display.fg);
+        display.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
+                         screenHeight / 2 - arrowWidth / 2, display.fg);
+        shownIcons_ = true;
+    }
+
     log_d("%lu is the new place in the text", newPlace_);
+
+    display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 
     uint32_t wc = prefs_.wordCount.get().value();
     wc = wc + renderer_.getCurrentPageWordCount();

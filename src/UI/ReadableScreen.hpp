@@ -20,10 +20,10 @@ struct Bookmark {
 class ReadableScreen : public ContainerScreen {
 public:
     ReadableScreen(RendererStream *stream, DisplaySystem &display, Readable &readable,
-                   PreferencesStore &prefs, Power &power, FileSystem &bookmarkFileSystem)
+                   PreferencesStore &prefs, Power &power, FileSystem &fileSystem)
 
         : renderer_(display), readable_(readable), prefs_(prefs),
-          popup_(power, renderer_, prefs_, readable_), bookmarkFileSystem_(bookmarkFileSystem) {
+          popup_(power, renderer_, prefs_, readable_), fileSystem_(fileSystem) {
         currentScreen_ = this;
         renderer_.setStream(stream);
         popup_.backCallback = [this]() { this->setCurrentScreen(*this); };
@@ -49,11 +49,13 @@ protected:
 
     PopupMenuScreen popup_;
 
-    FileSystem &bookmarkFileSystem_;
+    FileSystem &fileSystem_;
 
     bool inBookmark_ = false;
 
     unsigned long newPlace_ = 0;
+
+    bool shownIcons_ = false;
 
 private:
     void incrementReadingTime();

@@ -3,7 +3,6 @@
 #include <utility>
 
 #include "Misc/Platform.hpp"
-#include "UI/Bitmaps/BenIconHacking.hpp"
 #include "UI/Fonts/Tahoma4pt7b.h"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -349,6 +348,8 @@ auto Renderer::renderPage(unsigned long placeInFile, bool withBookmark) -> unsig
 
     int newLineAdjust = 0;
 
+    display_.setFont(display_.style.getFontFamily().readableFont);
+
     // A first attempt to get the the text to look better with newlines as sole
     // characters on the line with a smaller height than a full line.
     // The logic is that we split each line into 10 "decilines" and then
@@ -371,63 +372,6 @@ auto Renderer::renderPage(unsigned long placeInFile, bool withBookmark) -> unsig
                         FULL_DECI_LINE_HEIGHT);
         }
     }
-
-    // Show the home screen and gear icon on the first page you read as a reminder. Then drop them
-    // after that.
-    if (!shownIcons_) {
-        uint16_t textWidth, textHeight;
-        int screenWidth = display_.width();
-        int screenHeight = display_.height();
-        int arrowWidth = 8;
-        int arrowHeight = 4;
-
-        display_.setRotation(1);
-        // Use a gear for the bottom icon.
-        // The math here is weird because of rotation but this gives us a gear with
-        // the top of it looking like a down arrow to match the rest!
-        display_.drawXBitmap(screenWidth + 2 + display_.getTextHeight(),
-                             screenHeight / 2 - READ_GEAR_HEIGHT / 2, readGearBits, READ_GEAR_WIDTH,
-                             READ_GEAR_HEIGHT, display_.fg);
-
-        display_.setRotation(0);
-
-        // Left Arrow
-        display_.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 - arrowWidth / 2,
-                          display_.fg);
-        display_.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 + arrowWidth / 2,
-                          display_.fg);
-
-        // Up arrow - looks like a bookmark to indicate that's what you can do.
-        display_.drawLine(screenWidth / 2, -arrowHeight - 3, screenWidth / 2 - arrowWidth / 2, -3,
-                          display_.fg);
-        display_.drawLine(screenWidth / 2, -arrowHeight - 3, screenWidth / 2 + arrowWidth / 2, -3,
-                          display_.fg);
-
-        display_.drawLine(screenWidth / 2 - arrowWidth / 2, -3, screenWidth / 2 - arrowWidth / 2,
-                          display_.yAbsolute(0), display_.fg);
-        display_.drawLine(screenWidth / 2 + arrowWidth / 2, -3, screenWidth / 2 + arrowWidth / 2,
-                          display_.yAbsolute(0), display_.fg);
-
-        // Right Arrow
-        display_.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
-                          screenHeight / 2 + arrowWidth / 2, display_.fg);
-        display_.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
-                          screenHeight / 2 - arrowWidth / 2, display_.fg);
-        shownIcons_ = true;
-        display_.setFont(display_.style.getFontFamily().readableFont);
-    }
-
-    // Future work -- turn this on once we have the PageTurner working.
-    // Then link up with filesystem and cloud to save off bookmarks.
-    if (withBookmark) {
-        log_d("Drawing bookmark!");
-        display_.fillRect(display_.width() + 1, display_.yAbsolute(0), 13, 55, display_.fg);
-        display_.fillTriangle(display_.width() + 1, display_.yAbsolute(55), display_.width() + 13,
-                              display_.yAbsolute(55), display_.width() + 7, display_.yAbsolute(50),
-                              display_.bg);
-    }
-
-    display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 
     SetCpuSpeedMhz(CPU_FREQ_MHZ_LOW);
 

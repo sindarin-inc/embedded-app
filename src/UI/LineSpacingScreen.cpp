@@ -16,7 +16,6 @@ LineSpacingScreen::LineSpacingScreen(DisplaySystem &display, PreferencesStore &p
     }
     auto stream = new StdStringStream(message);
     renderer_.setStream(stream);
-    renderer_.setShownIcons(true);
 }
 
 void LineSpacingScreen::render(DisplaySystem &display) {
@@ -25,6 +24,7 @@ void LineSpacingScreen::render(DisplaySystem &display) {
     }
 
     this->renderer_.renderPage(0);
+    display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 
     needsRerender = false;
 }

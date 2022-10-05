@@ -79,8 +79,6 @@ public:
                                   uint16_t *renderedHeight);
     void setSizeOfTextToken(unsigned long placeInTokenBuffer);
 
-    void setShownIcons(bool shownIcons) { shownIcons_ = shownIcons; }
-
 protected:
     DisplaySystem &display_;
     RendererStream *stream_ = nullptr;
@@ -95,8 +93,6 @@ protected:
     unsigned long currentPlace_ = 0;
     unsigned long previousPlace_ = 0;
     unsigned long nextPlace_ = 0;
-
-    bool shownIcons_ = false;
 
     uint32_t currentPageWordCount_ = 0;
 

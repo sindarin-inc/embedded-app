@@ -18,7 +18,6 @@ ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs
     }
     auto stream = new StdStringStream(message);
     renderer_.setStream(stream);
-    renderer_.setShownIcons(true);
 }
 
 void ResizeBoxScreen::render(DisplaySystem &display) {
@@ -27,6 +26,7 @@ void ResizeBoxScreen::render(DisplaySystem &display) {
     }
 
     this->renderer_.renderPage(0);
+    display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 
     needsRerender = false;
 }
