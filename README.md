@@ -190,12 +190,49 @@ openocd -f board/esp32s3-builtin.cfg
 And then open a separate terminal and connect to the debugger from GDB. Make sure you used the IDF `source export.sh` command to set up your environment variables.
 
 ```bash
-xtensa-esp32s3-elf-gdb -x gdbinit build/embedded-app.elf
+xtensa-esp32s3-elf-gdb -x scripts/gdbinit build/embedded-app.elf
 ```
 
 A _very_ useful GDB command is `catch throw` which sets a breakpoint at any C++ exceptions. You might also try `break filename.cpp:55` to set a breakpoint at a file and line number. Then use `continue` (or `c`) to continue execution until the breakpoint is hit. [Here's a handy GDB cheat sheet](https://users.ece.utexas.edu/~adnan/gdb-refcard.pdf).
 
 TODO: It would be really nice to get this running in VSCode.
+
+## Hooking up OpenOCD to VSCode
+
+It's possible to use connect to OpenOCD from inside VSCode. You'll need to add a block like this to your `launch.json` file:
+
+```json
+{
+    "name": "OpenOCD Attach",
+    "type": "cppdbg",
+    "request": "launch",
+    "program": "${workspaceFolder}/build/embedded-app.elf",
+    "MIMode": "gdb",
+    // NOTE: This might change as the toolchain changes
+    "miDebuggerPath": "${env:HOME}/.espressif/tools/xtensa-esp32s3-elf/esp-2021r2-patch3-8.4.0/xtensa-esp32s3-elf/bin/xtensa-esp32s3-elf-gdb",
+    "miDebuggerArgs": "${workspaceFolder}/build/embedded-app.elf",
+
+    // This disables adding a breakpoint on `main` though it seems VSCode likes to add it anyways sometimes
+    "stopAtEntry": false,
+
+    // Same commands from the scripts/gdbinit file
+    "setupCommands": [
+        {"text": "target extended-remote :3333"},
+        {"text": "set remote hardware-watchpoint-limit 2"},
+        {"text": "mon reset halt"},
+        {"text": "flushregs"},
+        {"text": "thb app_main"},
+    ],
+    "cwd": "${cwd}",
+
+    // Uncomment to enable logging the GDB commands sent
+    // "logging": {
+    //   "engineLogging": true
+    // },
+}
+```
+
+Run the `openocd -f board/esp32s3-builtin.cfg` command in the terminal, as above, then hit the "Run -> Start Debugging" button in VSCode. You should see the debugger connect and stop at the `app_main` function.
 
 ## Flashing the device serial number at the factory
 
