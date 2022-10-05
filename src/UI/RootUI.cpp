@@ -341,7 +341,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
 #ifdef GITHASH
     std::string buildString = "Build " + std::string(GITHASH);
 #else
-    std::string buildString = "No Build Info";
+    std::string buildString = "Build " + std::string(kGitHash);
 #endif
 
     debugMenu->addMenuItem(MenuItem("Font Type", [this, debugMenu]() {
@@ -482,12 +482,6 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
             display->xAbsolute(display->xAbsoluteCenter() -
                                display->getTextWidth("Statistics reset.") / 2),
             display->yAbsolute(display->yAbsoluteCenter() - display->getTextHeight() / 2));
-        display->updateDisplay();
-    }));
-
-    debugMenu->addMenuItem(MenuItem("Build Info", [display]() {
-        std::string buildString = "Build " + std::string(kGitHash);
-        display->drawSingleLineOfText(buildString, 0, 0);
         display->updateDisplay();
     }));
 
