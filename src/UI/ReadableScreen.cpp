@@ -8,10 +8,10 @@
 
 // Simply reads from the bookmark file for this Readable and returns whether it was
 // a turn on or turn off bookmark.
-auto ReadableScreen::readOneBookmark(File &file, Bookmark &bookmark) -> int {
+auto ReadableScreen::readOneBookmark(File &file, Bookmark &bookmark) -> bool {
     // The first character in the line is a + or -, read that first
     if (!file.available()) {
-        return 0;
+        return false;
     }
 
     char firstChar = file.read();
@@ -21,13 +21,13 @@ auto ReadableScreen::readOneBookmark(File &file, Bookmark &bookmark) -> int {
         bookmark.status = BOOKMARK_OFF;
     } else {
         // Got an unexpected character
-        return 0;
+        return false;
     }
 
     // Next will be a space.
     char secondChar = file.read();
     if (secondChar != ' ') {
-        return 0;
+        return false;
     }
 
     String firstThing = file.readStringUntil(' ');
@@ -35,7 +35,7 @@ auto ReadableScreen::readOneBookmark(File &file, Bookmark &bookmark) -> int {
 
     String secondThing = file.readStringUntil('\n');
     bookmark.lastPlace = secondThing.toInt();
-    return 1;
+    return true;
 }
 
 // Once we have a real database, this will all be replaced.

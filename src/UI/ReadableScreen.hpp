@@ -40,7 +40,7 @@ public:
 
     void writeOutBookmarkUpdate();
     void updateBookmarkStatus();
-    auto readOneBookmark(File &file, Bookmark &bookmark) -> int;
+    auto readOneBookmark(File &file, Bookmark &bookmark) -> bool;
 
 protected:
     Renderer renderer_;
