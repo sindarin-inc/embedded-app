@@ -53,11 +53,7 @@ void ReadableScreen::updateBookmarkStatus() {
     bookmarkPath += readable_.id;
     bookmarkPath += "-bookmark.txt";
 
-    // create log directory in filesystem if it doesn't exist
-    if (!fileSystem_.createDir("/bookmarks")) {
-        log_e("could not create /bookmarks directory");
-        return;
-    }
+    inBookmark_ = false;
 
     File bookmarkFile = fileSystem_.open(bookmarkPath.c_str(), FILE_READ, false);
     if (!bookmarkFile) {
@@ -85,6 +81,13 @@ void ReadableScreen::writeOutBookmarkUpdate() {
     std::string bookmarkPath = "/bookmarks/";
     bookmarkPath += readable_.id;
     bookmarkPath += "-bookmark.txt";
+
+    // create log directory in filesystem if it doesn't exist
+    if (!fileSystem_.createDir("/bookmarks")) {
+        log_e("could not create /bookmarks directory");
+        return;
+    }
+
     File bookmarkFile = fileSystem_.open(bookmarkPath.c_str(), FILE_APPEND, true);
 
     if (!bookmarkFile) {
@@ -110,7 +113,7 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     display.setFont(display.style.getFontFamily().readableFont);
 
-    newPlace_ = renderer_.renderPage(readable_.place, inBookmark_);
+    newPlace_ = renderer_.renderPage(readable_.place);
     // Future work
     // Sync this to cloud and use on mobile.
     updateBookmarkStatus();
@@ -208,17 +211,12 @@ void ReadableScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::CHANNEL_MINUS:
         readable_.place = renderer_.getPreviousPlace();
         prefs_.readablePlace.set(readable_.id.c_str(), readable_.place);
-        // The render command will check to see if this needs to be flipped.
-        inBookmark_ = false;
         needsRerender = true;
         break;
     case RemoteCommand::CHANNEL_PLUS:
-
         readable_.placePrev = readable_.place;
         readable_.place = newPlace_;
         prefs_.readablePlace.set(readable_.id.c_str(), readable_.place);
-        // The render command will check to see if this needs to be flipped.
-        inBookmark_ = false;
         needsRerender = true;
         break;
 

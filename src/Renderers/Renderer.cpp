@@ -333,7 +333,7 @@ void Renderer::loaded() {
 
 // Show the (already loaded into buffer) current page
 // and load the next page into the next buffer so we have it.
-auto Renderer::renderPage(unsigned long placeInFile, bool withBookmark) -> unsigned long {
+auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
     SetCpuSpeedMhz(CPU_FREQ_MHZ_HIGH);
 
 #ifdef RENDERER_DEBUG
