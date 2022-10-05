@@ -36,6 +36,8 @@ protected:
 
     PopupMenuScreen popup_;
 
+    bool inBookmark_ = false;
+
     unsigned long newPlace_ = 0;
 
 private:

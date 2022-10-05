@@ -2,9 +2,121 @@
 
 #include <utility>
 
+#include "Misc/MenuStyle.hpp"
 #include "Misc/Style.hpp"
 
-#define NUM_LINES_PER_MENU_PAGE 12
+#define MAX_WIDTH 150
+
+#if EINKET013TT1
+#include "Displays/DisplayEinkET013TT1.hpp"
+#endif
+
+#if EINKET013TT1
+void MenuScreen::saveAndUpdateVCOM(DisplaySystem &display) {
+    oldVcom_ = (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver()->getVcom();
+    int newVcom = 0;
+    if (display.getInversion()) {
+        newVcom = oldVcom_ - 2000;
+    } else {
+        newVcom = oldVcom_ + 2000;
+    }
+    (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver()->setVcom(newVcom);
+}
+
+void MenuScreen::revertVCOM(DisplaySystem &display) {
+    (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver()->setVcom(oldVcom_);
+}
+#endif
+
+void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool withLastItem) {
+    display.setFont(myStyle_.itemFont);
+    int iteratorEnd = (withLastItem) ? numMenuItems_ : numMenuItems_ - 1;
+    for (int i = currMenuPage_ * myStyle_.numberOfItemsPerPage;
+         (i < (currMenuPage_ * myStyle_.numberOfItemsPerPage + myStyle_.numberOfItemsPerPage)) &&
+         (i < iteratorEnd);
+         i++) {
+        std::string itemTitle = getItemTitleAt(i);
+        // If we still don't fit, shrink the string until we do.
+        while (display.getTextWidth(itemTitle.c_str()) > MAX_WIDTH) {
+            log_d("Item title %s still too long at smallest font size; truncating...",
+                  itemTitle.c_str());
+            if (itemTitle.length() > 4) {
+                itemTitle = itemTitle.substr(0, itemTitle.length() - 4) + "...";
+            } else {
+                // Practially, this shouldn't ever happen, but I'm doing
+                // the bounds check here just in case we do hit it some day.
+                itemTitle = "too big!";
+            }
+        }
+        display.drawSingleLineOfText(
+            itemTitle, myStyle_.xOffsetForList,
+            myStyle_.yOffsetForList + (i % myStyle_.numberOfItemsPerPage) *
+                                          (display.getTextHeight() / 5 + display.getTextHeight()));
+
+        // xoffset for main menu is 12, for settings menu is 23
+        // yoffset for main menu is some crazy thing
+        // for settings menu some other crazy thing
+        if ((i == currSelection_) && (withBullet)) {
+            display.fillRoundRect(myStyle_.xOffsetForList - display.getTextHeight() / 4 - 2,
+                                  myStyle_.yOffsetForList +
+                                      (i % myStyle_.numberOfItemsPerPage) *
+                                          (display.getTextHeight() / 5 + display.getTextHeight()) +
+                                      3,
+                                  display.getTextHeight() - 7, display.getTextHeight() - 7,
+                                  display.getTextHeight() / 5, display.fg);
+        }
+    }
+
+    int oldTextHeight = display.getTextHeight();
+    display.setFont(display.style.getFontFamily().readableFont);
+    display.drawSingleLineOfText(extraTextBelowMenu_.c_str(), myStyle_.xOffsetForList + 10,
+                                 (1 + myStyle_.numberOfItemsPerPage) * oldTextHeight + 50);
+}
+
+void MenuScreen::drawArrowsAndSelections(DisplaySystem &display) {
+
+    display.setFont(myStyle_.navigationFont);
+    // Upper left arrow for Settings
+    display.drawLine(
+        display.xAbsolute(myStyle_.xOffsetForArrows), display.yAbsolute(myStyle_.yOffsetForArrows),
+        display.xAbsolute(myStyle_.xOffsetForArrows + myStyle_.arrowWidth),
+        display.yAbsolute(myStyle_.yOffsetForArrows - myStyle_.arrowHeight / 2), display.fg);
+    display.drawLine(
+        display.xAbsolute(myStyle_.xOffsetForArrows), display.yAbsolute(myStyle_.yOffsetForArrows),
+        display.xAbsolute(myStyle_.xOffsetForArrows + myStyle_.arrowWidth),
+        display.yAbsolute(myStyle_.yOffsetForArrows + myStyle_.arrowHeight / 2), display.fg);
+
+    // Lower right arrow for "Read" or flip between "Books and Articles"
+    display.drawLine(display.xAbsolute(display.xAbsoluteMax() - myStyle_.xOffsetForArrows),
+                     display.yAbsolute(display.yAbsoluteMax() - myStyle_.yOffsetForArrows),
+                     display.xAbsolute(display.xAbsoluteMax() -
+                                       (myStyle_.xOffsetForArrows + myStyle_.arrowWidth)),
+                     display.yAbsolute(display.yAbsoluteMax() -
+                                       (myStyle_.yOffsetForArrows - myStyle_.arrowHeight / 2)),
+                     display.fg);
+    display.drawLine(display.xAbsolute(display.xAbsoluteMax() - myStyle_.xOffsetForArrows),
+                     display.yAbsolute(display.yAbsoluteMax() - myStyle_.yOffsetForArrows),
+                     display.xAbsolute(display.yAbsoluteMax() -
+                                       (myStyle_.xOffsetForArrows + myStyle_.arrowWidth)),
+                     display.yAbsolute(display.yAbsoluteMax() -
+                                       (myStyle_.yOffsetForArrows + myStyle_.arrowHeight / 2)),
+                     display.fg);
+
+    display.drawSingleLineOfText(
+        upperLeftText_.c_str(),
+        display.xAbsolute(myStyle_.xOffsetForArrows + myStyle_.arrowWidth +
+                          myStyle_.arrowTextSpacing),
+        display.yAbsolute(myStyle_.yOffsetForArrows - display.getTextHeight() / 2));
+
+    display.drawSingleLineOfText(
+        lowerRightText_.c_str(),
+        display.xAbsolute(display.xAbsoluteMax() -
+                          (myStyle_.xOffsetForArrows + myStyle_.arrowWidth +
+                           myStyle_.arrowTextSpacing +
+                           display.getTextWidth(lowerRightText_.c_str()))),
+        display.yAbsolute(display.yAbsoluteMax() -
+                          (myStyle_.yOffsetForArrows + display.getTextHeight() / 2)));
+}
 
 void MenuScreen::addMenuItem(const MenuItem &newItem) {
     menuItems_.push_back(newItem);
@@ -21,17 +133,34 @@ auto MenuScreen::getCurrSelection() -> int { return currSelection_; }
 
 auto MenuScreen::getCurrItem() -> MenuItem { return menuItems_[currSelection_]; }
 
-// Returns 1 if the selection was updated, 0 otherwise
-void MenuScreen::nextSelection() {
+void MenuScreen::nextSelection(bool skipLast) {
+    int oldCurMenuPage = currMenuPage_;
     currSelection_ = (currSelection_ + 1) % numMenuItems_;
-    curMenuPage_ = currSelection_ / NUM_LINES_PER_MENU_PAGE;
+    if (skipLast && (currSelection_ == numMenuItems_ - 1)) {
+        currSelection_ = 0;
+    }
+    currMenuPage_ = currSelection_ / myStyle_.numberOfItemsPerPage;
+    // This makes sure we do a full refresh when the page changes
+    if (oldCurMenuPage != currMenuPage_) {
+        log_d("Page changed, refreshing");
+        firstLoad_ = true;
+        needsRerender = true;
+    }
 }
 
-// Returns 1 if the selection was updated, 0 otherwise
-void MenuScreen::prevSelection() {
+void MenuScreen::prevSelection(bool skipLast) {
+    int oldCurMenuPage = currMenuPage_;
     // Wrap back around to the last item
     currSelection_ = (currSelection_ + numMenuItems_ - 1) % numMenuItems_;
-    curMenuPage_ = currSelection_ / NUM_LINES_PER_MENU_PAGE;
+    if (skipLast && (currSelection_ == numMenuItems_ - 1)) {
+        currSelection_--;
+    }
+    currMenuPage_ = currSelection_ / myStyle_.numberOfItemsPerPage;
+    // This makes sure we do a full refresh when the page changes
+    if (oldCurMenuPage != currMenuPage_) {
+        firstLoad_ = true;
+        needsRerender = true;
+    }
 }
 
 // Includes the name of the item and it's number preceding it for easy display
@@ -39,13 +168,7 @@ void MenuScreen::prevSelection() {
 auto MenuScreen::getItemTitleAt(int index) -> std::string {
     std::string all;
     assert(index < numMenuItems_);
-    // Add the indicator for where we are in the menu based on the current selection
-    if (index == currSelection_) {
-        all = " ->";
-    } else {
-        all = "   ";
-    }
-    all = all + " " + menuItems_[index].title;
+    all = "  " + menuItems_[index].title;
     return all;
 }
 
@@ -60,25 +183,28 @@ void MenuScreen::render(DisplaySystem &display) {
     }
     log_i("Menuscreen render (selected = %s)", getCurrItem().title.c_str());
 
-    auto batLife = power_.getBatteryLifeString();
-    // TODO: Just rendering one gigantic screen limits our layout options here.
-    // For example, it would be nice to have menu items take up multiple lines (e.g. Pocket articles
-    // with long names)
-    // std::string totalToDisplay = menuString + std::string("\n\n") + batLife;
+    drawArrowsAndSelections(display);
 
-    display.setFont(display.style.getFontFamily().settingsFont);
-
-    for (int i = curMenuPage_ * NUM_LINES_PER_MENU_PAGE;
-         i < curMenuPage_ * NUM_LINES_PER_MENU_PAGE + NUM_LINES_PER_MENU_PAGE && i < numMenuItems_;
-         i++) {
-        display.drawSingleLineOfText(getItemTitleAt(i), 0,
-                                     (i % NUM_LINES_PER_MENU_PAGE) * display.getTextHeight());
+    // On the first load, we want to only render the items in the menu because we are going
+    // to do a partial refresh with the selector button at a lower/higher vcom to reduce
+    // ghosting.
+    if (firstLoad_) {
+        drawMenuItems(display, false);
+        display.updateDisplay(DisplaySystem::UpdateType::FULL);
     }
 
-    // Starting the process of doing this better eventually. Mimicking the lighting screen.
-    // (But without the fast).
-    display.updateDisplay(firstLoad_ ? DisplaySystem::UpdateType::FULL
-                                     : DisplaySystem::UpdateType::FULL);
+#if EINKET013TT1
+    saveAndUpdateVCOM(display);
+#endif
+
+    drawMenuItems(display, true);
+    drawArrowsAndSelections(display);
+    display.updateDisplay(DisplaySystem::UpdateType::FAST);
+
+#if EINKET013TT1
+    revertVCOM(display);
+#endif
+
     firstLoad_ = false;
     needsRerender = false;
 }
@@ -102,6 +228,7 @@ void MenuScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::BACK:
     case RemoteCommand::CHANNEL_MINUS:
         if (backCallback != nullptr) {
+            firstLoad_ = true;
             backCallback();
         }
         break;

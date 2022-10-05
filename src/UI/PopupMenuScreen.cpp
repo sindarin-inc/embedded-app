@@ -14,6 +14,8 @@
 #define BATTERY_WIDTH 24
 #define BATTERY_HEIGHT 9
 
+#define POPUP_MENU_RADIUS 40
+
 // draw a battery with upper left at x, y and percentage full 'percentage' (out of 100)
 void PopupMenuScreen::drawBattery(DisplaySystem &display, int x, int y, int percentage) {
     // We have 20 lines to represent so every 5% is 1 line.
@@ -42,15 +44,12 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     }
 
     log_d("PopupMenuScreen render");
+
     // Blank out screen
     display.fillScreen(display.bg);
     // Draw menu surroundings
     log_d("RENDERING Popup menu bitmap %d %d %d %d", display.width(), display.height(),
           POPUP_MENU_BLANK_WIDTH, POPUP_MENU_BLANK_HEIGHT);
-    display.drawXBitmap((int16_t)((display.width() - POPUP_MENU_BLANK_WIDTH) / 2),
-                        (int16_t)((display.height() - POPUP_MENU_BLANK_HEIGHT) / 2),
-                        popupMenuBlankBits, POPUP_MENU_BLANK_WIDTH, POPUP_MENU_BLANK_HEIGHT,
-                        display.fg);
 
     display.setFont(display.style.getFontFamily().popupFont);
 
@@ -64,7 +63,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     uint16_t heightOffset = display.getTextHeight();
 
     // These magic numbers are just based on trying to make it look right
-    drawBattery(display, (screenWidth / 2) - 12, (screenHeight / 2) - 1, (int)batteryPercentage);
+    drawBattery(display, (screenWidth / 2) - 12, (screenHeight / 2) - 3, (int)batteryPercentage);
 
     display.getTextBounds(batteryStatus.c_str(), &textWidth, &textHeight);
 
@@ -81,30 +80,60 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     float placeInTextPercentage = (float)place / (float)lengthOfFile * 100;
     std::string placeString = StringFormat("%.1f%%", placeInTextPercentage);
 
+    // We want to square the items if we can.
+    int yDirOffset = display.height() / 2 - display.width() / 2;
+    if (yDirOffset < 0) {
+        yDirOffset = 0;
+    }
+
     std::string bottomStr =
         std::string("Seek ") + std::string("(") + placeString + std::string(")");
 
     display.getTextBounds(bottomStr.c_str(), &textWidth, &textHeight);
     display.drawSingleLineOfText(bottomStr, (screenWidth / 2) - (textWidth / 2),
-                                 (screenHeight / 2) + (textHeight / 2) +
-                                     POPUP_MENU_BLANK_HEIGHT / 3 - heightOffset);
+                                 display.height() - yDirOffset - arrowWidth_ - arrowTextSpacing_ -
+                                     textHeight);
+
+    // Left Arrow
+    display.drawLine(0, screenHeight / 2, arrowWidth_, screenHeight / 2 + arrowHeight_ / 2,
+                     display.fg);
+    display.drawLine(0, screenHeight / 2, arrowWidth_, screenHeight / 2 - arrowHeight_ / 2,
+                     display.fg);
+
+    // Down Arrow
+    display.drawLine(display.width() / 2, display.height() - yDirOffset,
+                     display.width() / 2 - arrowHeight_ / 2,
+                     display.height() - yDirOffset - arrowWidth_, display.fg);
+    display.drawLine(display.width() / 2, display.height() - yDirOffset,
+                     display.width() / 2 + arrowHeight_ / 2,
+                     display.height() - yDirOffset - arrowWidth_, display.fg);
 
     auto topStr = "Text";
     display.getTextBounds(topStr, &textWidth, &textHeight);
     display.drawSingleLineOfText(topStr, (screenWidth / 2) - (textWidth / 2),
-                                 screenHeight / 2 - POPUP_MENU_BLANK_HEIGHT / 3 - heightOffset);
+                                 yDirOffset + arrowWidth_ + arrowTextSpacing_);
+
+    // Top Arrow
+    display.drawLine(display.width() / 2, yDirOffset, display.width() / 2 - arrowHeight_ / 2,
+                     yDirOffset + arrowWidth_, display.fg);
+    display.drawLine(display.width() / 2, yDirOffset, display.width() / 2 + arrowHeight_ / 2,
+                     yDirOffset + arrowWidth_, display.fg);
 
     display.getTextBounds(leftButtonTitle_.c_str(), &textWidth, &textHeight);
-    display.drawSingleLineOfText(leftButtonTitle_.c_str(),
-                                 (display.width() - POPUP_MENU_BLANK_WIDTH) / 2 - textWidth / 2,
-                                 (screenHeight / 2) - heightOffset + 1);
+    display.drawSingleLineOfText(leftButtonTitle_.c_str(), arrowWidth_ + arrowTextSpacing_,
+                                 (screenHeight / 2) - textHeight / 2 - 1);
+
+    // Right Arrow
+    display.drawLine(display.width(), screenHeight / 2, display.width() - arrowWidth_,
+                     screenHeight / 2 + arrowHeight_ / 2, display.fg);
+    display.drawLine(display.width(), screenHeight / 2, display.width() - arrowWidth_,
+                     screenHeight / 2 - arrowHeight_ / 2, display.fg);
 
     auto rightStr = "Invert";
     display.getTextBounds(rightStr, &textWidth, &textHeight);
-    display.drawSingleLineOfText(
-        rightStr,
-        (display.width() - ((display.width() - POPUP_MENU_BLANK_WIDTH) / 2) - textWidth / 2),
-        (screenHeight / 2) - heightOffset + 1);
+    display.drawSingleLineOfText(rightStr,
+                                 (display.width() - arrowWidth_ - arrowTextSpacing_ - textWidth),
+                                 (screenHeight / 2) - textHeight / 2 - 3);
 
     display.updateDisplay();
     display.setFont(display.style.getFontFamily().readableFont);
@@ -125,13 +154,6 @@ void PopupMenuScreen::processCommand(RemoteCommand command) {
         needsRerender = true;
     };
 
-#if EINKET013TT1
-    // Since inversion changes the vcom, we need to save this setting to prefs after
-    // the flip.
-    auto einkDisplay = (static_cast<DisplayEinkET013TT1 *>(this->renderer_.getDisplay()));
-    auto *driver = einkDisplay->getDriver();
-#endif
-
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
         if (leftButtonCallback_) {
@@ -145,11 +167,6 @@ void PopupMenuScreen::processCommand(RemoteCommand command) {
         // the blacks are really gone.
         this->renderer_.getDisplay()->clearDisplay();
         prefs_.invertSetting.set(this->renderer_.getDisplay()->getInversion());
-#if EINKET013TT1
-        // Since inversion changes the vcom, we need to save this setting to prefs after
-        // the flip.
-        prefs_.vcom.set(driver->getVcom());
-#endif
         needsRerender = true;
         break;
     case RemoteCommand::PREV:

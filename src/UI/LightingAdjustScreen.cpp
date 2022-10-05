@@ -39,8 +39,6 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
 
     x += barWidth + spacing;
     display.setCursor(x, y + (Lightbulb_height + percentHeight) / 2);
-    // Not drawing for some reason hmm
-    display.println(StringFormat("%d%%", backlightPercent).c_str());
 
     // Cursor is from the baseline of the text I think
     y += Lightbulb_height + display.getTextHeight() + spacing;
@@ -56,12 +54,20 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
     display.setCursor((display.width() - textWidth) / 2, y);
     display.println(message2);
 
-    // Right arrow
-    uint16_t arrowWidth = 7, arrowHeight = 36;
-    x = display.width();
-    y = (display.height() - arrowHeight) / 2;
-    display.drawLine(x, y, x + arrowWidth, y + arrowHeight / 2, display.fg);
-    display.drawLine(x + arrowWidth, y + arrowHeight / 2, x, y + arrowHeight, display.fg);
+    if (lightUpMyLife_) {
+        y += display.getTextHeight() + 10;
+        auto message2 = "Let there be light!";
+        display.getTextBounds(message2, &textWidth, &textHeight);
+        display.setCursor((display.width() - textWidth) / 2, y);
+        display.println(message2);
+    }
+
+    // up arrow
+    uint16_t arrowWidth = 5, arrowHeight = 10;
+    x = display.width() - arrowWidth;
+    y = display.height() / 2;
+    display.drawLine(x, y, x - arrowWidth, y - arrowHeight / 2, display.fg);
+    display.drawLine(x, y, x - arrowWidth, y + arrowHeight / 2, display.fg);
 
     display.updateDisplay(firstLoad ? DisplaySystem::UpdateType::FULL
                                     : DisplaySystem::UpdateType::FAST);
@@ -73,8 +79,12 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
 void LightingAdjustScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
+        lightUpMyLife_ = true;
+        firstLoad = true;
+        needsRerender = true;
         break;
     case RemoteCommand::CHANNEL_PLUS:
+        lightUpMyLife_ = false;
         if (backCallback != nullptr) {
             backCallback();
         }
@@ -96,6 +106,7 @@ void LightingAdjustScreen::processCommand(RemoteCommand command) {
         break;
     }
     case RemoteCommand::BACK:
+        lightUpMyLife_ = false;
         if (backCallback != nullptr) {
             backCallback();
         }

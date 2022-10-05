@@ -13,5 +13,7 @@ public:
     bool firstLoad = true;
 
 protected:
+    // Easter eggs are cool.
+    bool lightUpMyLife_ = false;
     PreferencesStore &prefs_;
 };

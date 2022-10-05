@@ -13,7 +13,10 @@ void ReadableScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
     }
-    newPlace_ = renderer_.renderPage(readable_.place);
+
+    display.setFont(display.style.getFontFamily().readableFont);
+
+    newPlace_ = renderer_.renderPage(readable_.place, inBookmark_);
     log_d("%lu is the new place in the text", newPlace_);
 
     uint32_t wc = prefs_.wordCount.get().value();
@@ -56,18 +59,22 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         needsRerender = true;
         break;
     case RemoteCommand::CHANNEL_PLUS:
+
         readable_.placePrev = readable_.place;
         readable_.place = newPlace_;
         prefs_.readablePlace.set(readable_.id.c_str(), readable_.place);
         needsRerender = true;
         break;
-    case RemoteCommand::PREV:
-        back();
-        break;
+
     case RemoteCommand::NEXT:
         setCurrentScreen(popup_);
         break;
+    case RemoteCommand::PREV:
+        inBookmark_ = !inBookmark_;
+        needsRerender = true;
+        break;
     case RemoteCommand::BACK:
+    case RemoteCommand::ENTER:
         back();
         break;
     case RemoteCommand::NOP_BUTTON:

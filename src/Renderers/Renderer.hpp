@@ -70,7 +70,7 @@ public:
     // Render a page of text with the current place
     // returns the next place for reading so the calling function can
     // track place.
-    auto renderPage(unsigned long placeInFile) -> unsigned long;
+    auto renderPage(unsigned long placeInFile, bool withBookmark = false) -> unsigned long;
 
     auto getCurrentPageWordCount() -> uint32_t { return currentPageWordCount_; }
 
@@ -78,6 +78,8 @@ public:
     void tokenRenderedWidthHeight(unsigned long placeInTokenBuffer, uint16_t *renderedWidth,
                                   uint16_t *renderedHeight);
     void setSizeOfTextToken(unsigned long placeInTokenBuffer);
+
+    void setShownIcons(bool shownIcons) { shownIcons_ = shownIcons; }
 
 protected:
     DisplaySystem &display_;
@@ -93,6 +95,9 @@ protected:
     unsigned long currentPlace_ = 0;
     unsigned long previousPlace_ = 0;
     unsigned long nextPlace_ = 0;
+
+    bool shownIcons_ = false;
+
     uint32_t currentPageWordCount_ = 0;
 
     auto loadCurrIntoBuffer() -> unsigned long;

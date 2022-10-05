@@ -3,7 +3,7 @@ FILE(GLOB_RECURSE app_sources ${CMAKE_SOURCE_DIR}/src/*.*)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(components improv arduino ArduinoJson Adafruit-GFX-Library spiffs esp-nimble-cpp)
+set(components improv arduino ArduinoJson Adafruit-GFX-Library esp_littlefs esp-nimble-cpp)
 
 set(compile_options
     -includeconfig.h
@@ -47,3 +47,4 @@ idf_component_register(
 )
 
 target_compile_options(${COMPONENT_TARGET} PUBLIC ${compile_options})
+target_link_libraries(${COMPONENT_LIB} PUBLIC git_version)

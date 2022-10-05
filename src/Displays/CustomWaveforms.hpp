@@ -85,9 +85,14 @@ const EinkET013TT1Waveform BC_EINK_31_35C_WAVEFORM_PARTIAL = {
 // something visually similar to 2, 2, 4 in regular mode. This
 // probably should have some more experimentation to it.
 //
+// Assume VCOM for inverted to be ~-1500 and VCOM for regular to be ~-4000.
+//
+// I'd like to keep the below lines commented as a reminder that we may
+// need to do more frames if people complain about ghosting.
+//
 const EinkET013TT1Waveform BC_INVERTED_EXPERIMENTAL_WAVEFORM_PARTIAL = {
     "BC EXPERIMENTAL INVERTED (PARTIAL)",
-    13,
+    10,
     std::array<Frame, MAX_FRAMES_PER_WAVEFORM>{
         Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : NOCHG},
         Frame{bb : BLACK, bw : WHITE, wb : BLACK, ww : NOCHG},
@@ -98,16 +103,16 @@ const EinkET013TT1Waveform BC_INVERTED_EXPERIMENTAL_WAVEFORM_PARTIAL = {
         Frame{bb : NOCHG, bw : WHITE, wb : BLACK, ww : WHITE},
         Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
         Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
-        Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
-        Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
-        Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
+        //  Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
+        //  Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
+        //  Frame{bb : NOCHG, bw : WHITE, wb : NOCHG, ww : WHITE},
         Frame{bb : NOCHG, bw : NOCHG, wb : NOCHG, ww : NOCHG},
     },
 };
 
 const EinkET013TT1Waveform BC_REGULAR_EXPERIMENTAL_WAVEFORM_PARTIAL = {
     "BC EXPERIMENTAL REGULAR (PARTIAL)",
-    14,
+    11,
     std::array<Frame, MAX_FRAMES_PER_WAVEFORM>{
         Frame{bb : NOCHG, bw : WHITE, wb : BLACK, ww : WHITE},
         Frame{bb : NOCHG, bw : WHITE, wb : BLACK, ww : WHITE},
@@ -119,9 +124,9 @@ const EinkET013TT1Waveform BC_REGULAR_EXPERIMENTAL_WAVEFORM_PARTIAL = {
         Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
         Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
         Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
-        Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
-        Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
-        Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
+        // Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
+        // Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
+        // Frame{bb : BLACK, bw : NOCHG, wb : BLACK, ww : NOCHG},
         Frame{bb : NOCHG, bw : NOCHG, wb : NOCHG, ww : NOCHG},
     },
 };

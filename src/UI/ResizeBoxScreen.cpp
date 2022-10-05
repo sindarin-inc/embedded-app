@@ -2,7 +2,7 @@
 
 #include "sindarin-debug.h"
 
-#define BOX_OFFSET_ADJUST_AMOUNT 4
+#define BOX_OFFSET_ADJUST_AMOUNT 10
 
 // We will want a more intuitive way to do this in the final system,
 // but since it's so dependent on what the PageTurner ends up being,
@@ -12,13 +12,13 @@ ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs
 
     std::string message;
     for (int i = 0; i < 15; i++) {
-        message +=
-            "Press up arrow to increase vertical dimension, down arrow to decrease vertical "
-            "dimension, left arrow to increase horizontal dimension, right arrow to decrease "
-            "horizontal dimension. Press and hold left arrow when finished. Message repeats.\n\n";
+        message += "Press up to increase vertical dimension, down to decrease vertical "
+                   "dimension, left to increase horizontal dimension, right to decrease "
+                   "horizontal dimension. Press center button when finished. Message repeats.\n\n";
     }
     auto stream = new StdStringStream(message);
     renderer_.setStream(stream);
+    renderer_.setShownIcons(true);
 }
 
 void ResizeBoxScreen::render(DisplaySystem &display) {

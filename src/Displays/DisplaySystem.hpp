@@ -48,7 +48,7 @@ public:
 
     virtual auto setup() -> bool;
 
-    DisplayRect defaultBoundingBox = {0, 0, 255, 255};
+    DisplayRect defaultBoundingBox = {42, 30, 255 - 42 * 2, 255 - 30 * 2};
 
     Style style;
 
@@ -93,6 +93,18 @@ public:
     void drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) {
         gfxClass_->drawCircle(xOffset(x0), yOffset(y0), r, color);
     }
+
+    void fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) {
+        gfxClass_->fillCircle(xOffset(x0), yOffset(y0), r, color);
+    }
+
+    void fillRoundRect(int16_t x0, int16_t y0, int16_t w, int16_t h, int16_t radius,
+                       uint16_t color) {
+        gfxClass_->fillRoundRect(xOffset(x0), yOffset(y0), w, h, radius, color);
+    }
+
+    void setRotation(uint8_t r) { gfxClass_->setRotation(r); }
+
     void setCursor(int16_t x, int16_t y) { gfxClass_->setCursor(xOffset(x), yOffset(y)); }
     template <typename T>
     auto println(T in) -> size_t {
@@ -147,6 +159,17 @@ public:
 
     // TODO: Just use `textcolor` and `textbgcolor` for these?
     uint16_t bg = 0, fg = 0;
+
+    // When we want to ignore the configured offsets
+    inline auto xAbsolute(int x) -> int { return x - boundingBox_.x; }
+    inline auto yAbsolute(int y) -> int { return y - boundingBox_.y; }
+
+    // Should these be in the subclasses instead?
+    auto xAbsoluteCenter() -> int { return 128; }
+    auto yAbsoluteCenter() -> int { return 128; }
+
+    auto xAbsoluteMax() -> int { return 255; }
+    auto yAbsoluteMax() -> int { return 255; }
 
 protected:
     // Must be set in the constructor of subclasses

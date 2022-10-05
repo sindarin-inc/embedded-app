@@ -2,7 +2,7 @@
 
 #include "sindarin-debug.h"
 
-#define OFFSET_ADJUST_AMOUNT 3
+#define OFFSET_ADJUST_AMOUNT 5
 
 OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore &prefs,
                                        Power &power)
@@ -12,10 +12,11 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
     // This needs to be pretty big for smaller fonts
     for (int i = 0; i < 30; i++) {
         message += "Press arrows to move box around to your liking. Then "
-                   "long-press the left button when done! Message repeats.\n\n";
+                   "press the center button when done! Message repeats.\n\n";
     }
     auto stream = new StdStringStream(message);
     renderer_.setStream(stream);
+    renderer_.setShownIcons(true);
 }
 
 void OffsetAdjustScreen::render(DisplaySystem &display) {

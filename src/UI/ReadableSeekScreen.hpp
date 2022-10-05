@@ -18,4 +18,6 @@ protected:
     PreferencesStore &prefs_;
     Readable &readable_;
     Renderer &renderer_;
+
+    bool seekAndYouWillFind_ = false;
 };

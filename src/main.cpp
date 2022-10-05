@@ -82,8 +82,8 @@ OTA ota;
 #include "Storage/PosixFileSystem.hpp"
 PosixFileSystem fileSystem;
 #else
-#include "Storage/SpiffsFileSystem.hpp"
-SpiffsFileSystem fileSystem;
+#include "Storage/LittleFSFileSystem.hpp"
+LittleFSFileSystem fileSystem;
 #endif
 
 Power power(fileSystem, prefs);
@@ -312,8 +312,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 
     // If the saved prefs have a backlight of zero, turn on the lights anyways
+    // Default to 10% max (which is 50% of the way through the lighting setting)
     if (prefs.backlight.get().value() == 0) {
-        prefs.backlight.set(20);
+        prefs.backlight.set(10);
     }
     SetBacklight(prefs.backlight.get().value());
 
@@ -322,7 +323,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 
     switch (prefs.font.get().value()) {
-    case PREFS_DEFAULT_FONT:
+    case PREFS_LUCIDA_REGULAR:
         myDisplay.style.setFontFamily(myDisplay.style.lucidaRegular);
         break;
     case PREFS_LUCIDA_SKINNY:
