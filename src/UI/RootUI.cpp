@@ -6,6 +6,7 @@
 #include "Communications/HtmlCleaner.hpp"
 #include "Communications/WiFi.hpp"
 #include "Contents/Readable.hpp"
+#include "GitVersion.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/MenuStyle.hpp"
 #include "Misc/Platform.hpp"
@@ -481,6 +482,12 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
             display->xAbsolute(display->xAbsoluteCenter() -
                                display->getTextWidth("Statistics reset.") / 2),
             display->yAbsolute(display->yAbsoluteCenter() - display->getTextHeight() / 2));
+        display->updateDisplay();
+    }));
+
+    debugMenu->addMenuItem(MenuItem("Build Info", [display]() {
+        std::string buildString = "Build " + std::string(kGitHash);
+        display->drawSingleLineOfText(buildString, 0, 0);
         display->updateDisplay();
     }));
 
