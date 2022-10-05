@@ -26,7 +26,7 @@ auto SpiffsFileSystem::begin() -> bool {
 #endif
 
     // Launch SPIFFS file system
-    if (!SPIFFS.begin(false, "/spiffs", 255)) {
+    if (!SPIFFS.begin(false, "/spiffs", 255, "data")) {
         log_e("An Error has occurred while mounting SPIFFS");
         return false;
     }

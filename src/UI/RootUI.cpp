@@ -6,6 +6,7 @@
 #include "Communications/HtmlCleaner.hpp"
 #include "Communications/WiFi.hpp"
 #include "Contents/Readable.hpp"
+#include "GitVersion.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/MenuStyle.hpp"
 #include "Misc/Platform.hpp"
@@ -340,7 +341,7 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
 #ifdef GITHASH
     std::string buildString = "Build " + std::string(GITHASH);
 #else
-    std::string buildString = "No Build Info";
+    std::string buildString = "Build " + std::string(kGitHash);
 #endif
 
     debugMenu->addMenuItem(MenuItem("Font Type", [this, debugMenu]() {
