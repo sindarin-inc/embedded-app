@@ -40,7 +40,14 @@ auto LittleFSFileSystem::listDir(const std::string &path, FileList &files) const
 }
 
 auto LittleFSFileSystem::createDir(const std::string &path, bool allowExists) -> bool {
-    // LittleFS does not really have directories
+    if (!LittleFS.mkdir(path.c_str())) {
+        if (errno == EEXIST && allowExists) {
+            // Silently pass
+        } else {
+            log_e("Failed to create dir %s", path.c_str());
+            return false;
+        }
+    }
     return true;
 }
 
