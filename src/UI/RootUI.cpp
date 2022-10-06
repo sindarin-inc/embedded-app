@@ -1,5 +1,6 @@
 #include "RootUI.hpp"
 
+#include <filesystem>
 #include <nvs_flash.h>
 
 #include "Bitmaps/Logo.hpp"
