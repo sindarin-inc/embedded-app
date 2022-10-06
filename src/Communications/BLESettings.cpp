@@ -4,6 +4,7 @@
 
 #include <utility>
 
+#include "Misc/StringUtil.hpp"
 #include "sindarin-debug.h"
 
 #define SETTINGS_CHARACTERISTIC_UUID "611f68af-5ffe-4944-9b8f-ef6773326268"
@@ -24,11 +25,12 @@ void BLESettings::writeDeviceSerialToCharacteristic(BLECharacteristic *character
     uint8_t serialNumber[8] = {0};
     ESP_ERROR_CHECK(esp_efuse_read_field_blob(ESP_EFUSE_USER_DATA_SERIAL_NUMBER, &serialNumber,
                                               sizeof(serialNumber) * 8));
-    log_i("Read efuse serial number, sending over ble: %02x%02x%02x%02x%02x%02x%02x%02x",
-          serialNumber[0], serialNumber[1], serialNumber[2], serialNumber[3], serialNumber[4],
-          serialNumber[5], serialNumber[6], serialNumber[7]);
+    auto serialNumberHexString = StringFormat(
+        "%02x%02x%02x%02x%02x%02x%02x%02x", serialNumber[0], serialNumber[1], serialNumber[2],
+        serialNumber[3], serialNumber[4], serialNumber[5], serialNumber[6], serialNumber[7]);
+    log_i("Read efuse serial number, sending over ble: %s", serialNumberHexString.c_str());
 
-    std::string value = key + "=" + std::string((char *)serialNumber, sizeof(serialNumber));
+    std::string value = key + "=" + serialNumberHexString;
 
     characteristic->setValue(value);
     characteristic->notify();
