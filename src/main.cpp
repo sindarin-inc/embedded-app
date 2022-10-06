@@ -213,6 +213,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     initArduino();
 #endif
 
+    log_i("SN: %s", GetSerialNumber().c_str());
+
     std::vector<BootError> bootErrors;
 
 #if BOARD_HAS_PSRAM

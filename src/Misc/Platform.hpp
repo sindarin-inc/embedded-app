@@ -19,3 +19,5 @@ void SetLeftBackLight(int percent);
 auto GetRunTimeMs() -> uint32_t;
 
 auto USBConnected() -> bool;
+
+auto GetSerialNumber() -> std::string;

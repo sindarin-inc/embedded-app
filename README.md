@@ -240,13 +240,13 @@ Since every individual device has its own unique serial number that can't be cha
 
 ```bash
 echo -n -e \\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08 > serial_number.bin
-espefuse.py --debug --port /dev/cu.usbmodem31144101 --chip esp32s3 burn_block_data --offset 8 BLOCK_USR_DATA serial_number.bin
+espefuse.py --debug --port /dev/cu.usbmodem* --chip esp32s3 burn_block_data --offset 8 BLOCK_USR_DATA serial_number.bin
 ```
 
 Verify the serial number was fused:
 
 ```bash
-espefuse.py --port /dev/cu.usbmodem31144101 --chip esp32s3 dump
+espefuse.py --port /dev/cu.usbmodem* --chip esp32s3 dump
 ```
 
 If you change the fuses custom table in `EFusesCustomTable.csv`, you'll need to update the `EFusesCustomTable.c` definitions:
@@ -255,11 +255,10 @@ If you change the fuses custom table in `EFusesCustomTable.csv`, you'll need to 
 idf.py efuse-custom-table
 ```
 
-Note that when you run the above command, the resulting `include/EFusesCustomTable.h` does not have the correct includes. You must add them manually:
+Note that when you run the above command, the resulting `include/EFusesCustomTable.h` does not have the correct includes. You must add them manually to that file:
 
 ```c
-// clang-format off
 #include <esp_efuse.h>
-#include "Storage/include/EFusesCustomTable.h"
-// clang-format on
 ```
+
+This is [fixed](https://github.com/espressif/esp-idf/blob/master/components/efuse/efuse_table_gen.py#L277) in the pre-release version of ESP-IDF 5.0.

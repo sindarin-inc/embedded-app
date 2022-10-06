@@ -4,10 +4,13 @@
 #include <driver/ledc.h>
 #include <driver/uart.h>
 #include <esp_adc_cal.h>
+#include <esp_err.h>
 #include <soc/rtc.h>
 
+#include "Misc/StringUtil.hpp"
 #include "Platform.hpp"
 #include "RTOS.h"
+#include "Storage/include/EFusesCustomTable.h"
 #include "config.h"
 #include "sindarin-debug.h"
 
@@ -180,6 +183,17 @@ auto USBConnected() -> bool {
     // No way to know if USB is connected on old boards. But it's probably not.
     return false;
 #endif
+}
+
+auto GetSerialNumber() -> std::string {
+    // Probably should read at boot to make logs more useful
+    uint8_t serialNumber[8] = {0};
+    ESP_ERROR_CHECK(esp_efuse_read_field_blob(ESP_EFUSE_USER_DATA_SERIAL_NUMBER, &serialNumber,
+                                              sizeof(serialNumber) * 8));
+    auto serialNumberHexString = StringFormat(
+        "%02x%02x%02x%02x%02x%02x%02x%02x", serialNumber[0], serialNumber[1], serialNumber[2],
+        serialNumber[3], serialNumber[4], serialNumber[5], serialNumber[6], serialNumber[7]);
+    return serialNumberHexString;
 }
 
 #endif

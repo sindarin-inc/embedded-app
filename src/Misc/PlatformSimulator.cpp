@@ -1,5 +1,7 @@
 #if SIMULATOR
 
+#include <string>
+
 #include "Platform.hpp"
 #include "sindarin-debug.h"
 
@@ -16,5 +18,7 @@ void SetBacklight(int percent) { log_d("Setting backlight to %d%%", percent); }
 auto GetRunTimeMs() -> uint32_t { return millis(); }
 
 auto USBConnected() -> bool { return true; }
+
+auto GetSerialNumber() -> std::string { return "SIMULATOR"; }
 
 #endif
