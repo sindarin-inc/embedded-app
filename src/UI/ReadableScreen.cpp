@@ -129,7 +129,6 @@ void ReadableScreen::render(DisplaySystem &display) {
     // Show the home screen and gear icon on the first page you read as a reminder. Then drop them
     // after that.
     if (!shownIcons_) {
-        uint16_t textWidth, textHeight;
         int screenWidth = display.width();
         int screenHeight = display.height();
         int arrowWidth = 8;

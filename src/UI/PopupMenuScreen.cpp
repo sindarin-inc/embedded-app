@@ -47,9 +47,6 @@ void PopupMenuScreen::render(DisplaySystem &display) {
 
     // Blank out screen
     display.fillScreen(display.bg);
-    // Draw menu surroundings
-    log_d("RENDERING Popup menu bitmap %d %d %d %d", display.width(), display.height(),
-          POPUP_MENU_BLANK_WIDTH, POPUP_MENU_BLANK_HEIGHT);
 
     display.setFont(display.style.getFontFamily().popupFont);
 
