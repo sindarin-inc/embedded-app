@@ -32,7 +32,7 @@ public:
     virtual int peek() override { return 0; }
     virtual void flush() override{};
     // Print methods
-    virtual size_t write(uint8_t c) {
+    virtual size_t write(uint8_t c) override {
         // string += (char)c;
         return 1;
     };

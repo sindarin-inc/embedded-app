@@ -72,7 +72,7 @@ int HTTPClient::GET() {
         // string_ = new String(res->body.c_str());
         string_ = res->body;
         stream_ = new StringStream(res->body);
-        log_d("Got response %d %d", res->body.size(), stream_->size());
+        log_d("Got response %zu %zu", res->body.size(), stream_->size());
         size_ = res->body.length();
     } else {
         log_e("Bad response object");
