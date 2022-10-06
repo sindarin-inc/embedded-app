@@ -34,7 +34,7 @@ public:
         mainMenu.arrowWidth = 5;
         mainMenu.arrowHeight = 10;
         mainMenu.arrowTextSpacing = 5;
-        mainMenu.xOffsetForList = 12;
+        mainMenu.xOffsetForList = 15;
         mainMenu.yOffsetForList = 60;
         mainMenu.numberOfItemsPerPage = 5;
 
@@ -46,7 +46,7 @@ public:
         settingsMenu.arrowWidth = 5;
         settingsMenu.arrowHeight = 10;
         settingsMenu.arrowTextSpacing = 5;
-        settingsMenu.xOffsetForList = 10;
+        settingsMenu.xOffsetForList = 20;
         settingsMenu.yOffsetForList = 40;
         settingsMenu.numberOfItemsPerPage = 7;
 

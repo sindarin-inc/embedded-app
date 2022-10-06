@@ -44,7 +44,7 @@ flags = [
     "-DUSE_BLE_SERVER_IMPROV=0",
     "-DDISABLE_WIFI=1",
     "-DENABLE_OTA=0",
-    "-DENABLE_POCKET=1",
+    "-DENABLE_POCKET=0",
     "-DEINKET013TT1=0",
     "-lSDL2_image",
     "-lpthread",

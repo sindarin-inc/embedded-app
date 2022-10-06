@@ -340,9 +340,9 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
     }));
 
 #ifdef GITHASH
-    std::string buildString = "Build " + std::string(GITHASH);
+    std::string buildString = "Build: " + std::string(GITHASH);
 #else
-    std::string buildString = "Build " + std::string(kGitHash);
+    std::string buildString = "Build: " + std::string(kGitHash);
 #endif
 
     debugMenu->addMenuItem(MenuItem("Font Type", [this, debugMenu]() {
@@ -713,6 +713,15 @@ void RootUI::loop(DisplaySystem &display, RemoteCommand command) {
 }
 
 void RootUI::restoreFactoryDefaults() {
+#if SIMULATOR
+    // Remove the preferences file simprefs.ini
+    std::filesystem::remove("simprefs.ini");
+    display_->drawSingleLineOfText(
+        "simprefs.ini deleted! Resetting...",
+        display_->xAbsolute(display_->xAbsoluteCenter() -
+                            display_->getTextWidth("simprefs.ini deleted! Resetting...") / 2),
+        display_->yAbsolute(display_->yAbsoluteCenter() - display_->getTextHeight() / 2));
+#else
     nvs_flash_erase();
     log_w("NVS cleared. Rebooting...");
     display_->drawSingleLineOfText(
@@ -720,6 +729,8 @@ void RootUI::restoreFactoryDefaults() {
         display_->xAbsolute(display_->xAbsoluteCenter() -
                             display_->getTextWidth("NVS cleared! Resetting...") / 2),
         display_->yAbsolute(display_->yAbsoluteCenter() - display_->getTextHeight() / 2));
+#endif
+
     display_->updateDisplay();
     delay(2000);
     esp_restart();
