@@ -117,7 +117,6 @@ void ReadableScreen::render(DisplaySystem &display) {
         auto now = millis();
         if (now - timer_ > nextInterval_) {
             needsRerender = true;
-            display.clearDisplay();
             timer_ = now;
         }
     }
