@@ -57,6 +57,14 @@ protected:
 
     bool shownIcons_ = false;
 
+    bool speedReadMode_ = true;
+    // Must reset this to 0 on each page turn.
+    unsigned int speedLinesToSkip_ = 0;
+    unsigned long timer_ = 0;
+    unsigned long nextInterval_ = 0;
+    // How many ms we should take to read the page
+    unsigned long pageSpeed = 20000;
+
 private:
     void incrementReadingTime();
     uint32_t readingStartTime_;

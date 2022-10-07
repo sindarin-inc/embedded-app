@@ -86,6 +86,8 @@ public:
 
     auto getTotalLengthOfLines() -> unsigned int;
 
+    auto getNumRenderedLines() -> unsigned int { return numLinesInBuffer_; }
+
 protected:
     DisplaySystem &display_;
     RendererStream *stream_ = nullptr;

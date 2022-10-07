@@ -107,13 +107,40 @@ void ReadableScreen::render(DisplaySystem &display) {
         currentScreen_->render(display);
         return;
     }
+
+    if (speedReadMode_) {
+        auto now = millis();
+        if (now - timer_ > nextInterval_) {
+            needsRerender = true;
+            display.clearDisplay();
+            timer_ = now;
+        }
+    }
+
     if (!needsRerender) {
         return;
     }
 
     display.setFont(display.style.getFontFamily().readableFont);
 
-    newPlace_ = renderer_.renderPage(readable_.place);
+    if (!speedReadMode_) {
+        newPlace_ = renderer_.renderPage(readable_.place);
+    } else {
+        if (speedLinesToSkip_ > renderer_.getNumRenderedLines()) {
+            // time to turn the page
+            readable_.placePrev = readable_.place;
+            readable_.place = newPlace_;
+            prefs_.readablePlace.set(readable_.id.c_str(), readable_.place);
+            speedLinesToSkip_ = 0;
+            // This will cause the next render call to set the needsRerender flag
+            nextInterval_ = 0;
+        } else {
+            newPlace_ = renderer_.renderPage(readable_.place, speedLinesToSkip_);
+            nextInterval_ = pageSpeed * renderer_.getLengthOfLine(speedLinesToSkip_) /
+                            renderer_.getTotalLengthOfLines();
+            speedLinesToSkip_++;
+        }
+    }
     // Future work
     // Sync this to cloud and use on mobile.
     updateBookmarkStatus();
@@ -126,8 +153,8 @@ void ReadableScreen::render(DisplaySystem &display) {
                              display.bg);
     }
 
-    // Show the home screen and gear icon on the first page you read as a reminder. Then drop them
-    // after that.
+    // Show the home screen and gear icon on the first page you read as a reminder. Then drop
+    // them after that.
     if (!shownIcons_) {
         int screenWidth = display.width();
         int screenHeight = display.height();
