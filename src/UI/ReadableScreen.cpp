@@ -280,7 +280,11 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::ENTER:
-        back();
+        if (speedReadMode_) {
+            speedReadMode_ = false;
+        } else {
+            back();
+        }
         break;
     case RemoteCommand::NOP_BUTTON:
         needsRerender = true;
