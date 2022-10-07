@@ -6,7 +6,7 @@
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Screen.hpp"
 
-#define NUM_DEMO_SCREENS 5
+#define NUM_DEMO_SCREENS 7
 #define DEMO_SCREEN_1 "Hello!"
 #define DEMO_SCREEN_2 "Let's read together"
 #define DEMO_SCREEN_3 "Focus left eye"
