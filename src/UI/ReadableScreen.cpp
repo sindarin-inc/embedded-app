@@ -253,6 +253,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             } else {
                 pageSpeed_ = SLOWEST_PAGE_SPEED;
             }
+            log_d("Slowing down: New Page Speed is %lu", pageSpeed_);
         }
         break;
     case RemoteCommand::CHANNEL_PLUS:
@@ -267,6 +268,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             } else {
                 pageSpeed_ = 1;
             }
+            log_d("Speeding up: New Page Speed is %lu", pageSpeed_);
         }
         break;
 
