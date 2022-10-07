@@ -195,10 +195,14 @@ void UITask(void *parameter) {
             // If there's nothing in the queue, sleep the thread until we're told to wake up
             // (probably because there's something in the queue)
             // For speed reading, we want to be able to wake up regularly to check intervals
-            xTaskNotifyWait(0, 0, nullptr, pdMS_TO_TICKS(50) /*portMAX_DELAY*/);
+            if (prefs.speed.get().value() == 0) {
+                xTaskNotifyWait(0, 0, nullptr, portMAX_DELAY);
+            } else {
+                xTaskNotifyWait(0, 0, nullptr, pdMS_TO_TICKS(50));
+            }
         }
         if (xQueueReceive(remoteQueue, &command, 0) != pdTRUE) {
-            // log_w("Checking the remoteQueue but nothing was there");
+            log_w("Checking the remoteQueue but nothing was there");
             command = RemoteCommand::NONE;
         }
     }

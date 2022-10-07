@@ -452,6 +452,40 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
     }));
 #endif
 
+    debugMenu->addMenuItem(MenuItem("Set Speed Read", [this, display, debugMenu]() {
+        auto speedMenu = new MenuScreen(this->power_, debugMenu->getMyStyle());
+        auto *driver = (static_cast<DisplayEinkET013TT1 *>(display))->getDriver();
+        speedMenu->addMenuItem(MenuItem("0s (Off)", [this, speedMenu, driver]() {
+            prefs_.speed.set(0);
+            driver->setVcom(prefs_.vcom.get().value());
+            speedMenu->setExtraText("Speed read mode off");
+            speedMenu->needsRerender = true;
+        }));
+        speedMenu->addMenuItem(MenuItem("10s (On)", [this, speedMenu, driver]() {
+            prefs_.speed.set(10000);
+            driver->setVcom(-3000);
+            speedMenu->setExtraText("Speed read mode on");
+            speedMenu->needsRerender = true;
+        }));
+        speedMenu->addMenuItem(MenuItem("20s (On)", [this, speedMenu, driver]() {
+            driver->setVcom(-3000);
+            prefs_.speed.set(20000);
+            speedMenu->setExtraText("Speed read mode on");
+            speedMenu->needsRerender = true;
+        }));
+        if (prefs_.speed.get() == 0) {
+            speedMenu->setExtraText("Speed read mode off");
+        } else {
+            speedMenu->setExtraText("Speed read mode on");
+        }
+        setCurrentScreen(*speedMenu);
+        speedMenu->backCallback = [this, speedMenu, debugMenu]() {
+            debugMenu->setFirstLoad();
+            setCurrentScreen(*debugMenu);
+            delete speedMenu;
+        };
+    }));
+
     debugMenu->addMenuItem(MenuItem("Statistics", [this, debugMenu, display]() {
         auto statsScreen = new StatsScreen(*display, prefs_);
         this->setCurrentScreen(*statsScreen);
