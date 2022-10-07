@@ -63,7 +63,7 @@ protected:
     unsigned long timer_ = 0;
     unsigned long nextInterval_ = 0;
     // How many ms we should take to read the page
-    unsigned long pageSpeed = 20000;
+    unsigned long pageSpeed_ = 20000;
 
 private:
     void incrementReadingTime();

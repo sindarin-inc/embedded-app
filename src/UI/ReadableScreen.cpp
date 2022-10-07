@@ -6,6 +6,11 @@
 #include "UI/Bitmaps/BenIconHacking.hpp"
 #include "sindarin-debug.h"
 
+// Two minutes per page currently
+#define SLOWEST_PAGE_SPEED 120000
+// Change speed of speed reading in increments of 2 seconds
+#define PAGE_SPEED_INCREMENT 2000
+
 // Simply reads from the bookmark file for this Readable and returns whether it was
 // a turn on or turn off bookmark.
 auto ReadableScreen::readOneBookmark(File &file, Bookmark &bookmark) -> bool {
@@ -136,7 +141,7 @@ void ReadableScreen::render(DisplaySystem &display) {
             nextInterval_ = 0;
         } else {
             newPlace_ = renderer_.renderPage(readable_.place, speedLinesToSkip_);
-            nextInterval_ = pageSpeed * renderer_.getLengthOfLine(speedLinesToSkip_) /
+            nextInterval_ = pageSpeed_ * renderer_.getLengthOfLine(speedLinesToSkip_) /
                             renderer_.getTotalLengthOfLines();
             speedLinesToSkip_++;
         }
@@ -198,7 +203,11 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     log_d("%lu is the new place in the text", newPlace_);
 
-    display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+    if (speedReadMode_ && (speedLinesToSkip_ > 0)) {
+        display.updateDisplay(DisplaySystem::UpdateType::FAST);
+    } else {
+        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+    }
 
     uint32_t wc = prefs_.wordCount.get().value();
     wc = wc + renderer_.getCurrentPageWordCount();
@@ -235,15 +244,31 @@ void ReadableScreen::processCommand(RemoteCommand command) {
 
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
-        readable_.place = renderer_.getPreviousPlace();
-        prefs_.readablePlace.set(readable_.id.c_str(), readable_.place);
-        needsRerender = true;
+        if (!speedReadMode_) {
+            readable_.place = renderer_.getPreviousPlace();
+            prefs_.readablePlace.set(readable_.id.c_str(), readable_.place);
+            needsRerender = true;
+        } else {
+            if (pageSpeed_ < SLOWEST_PAGE_SPEED - PAGE_SPEED_INCREMENT) {
+                pageSpeed_ += PAGE_SPEED_INCREMENT;
+            } else {
+                pageSpeed_ = SLOWEST_PAGE_SPEED;
+            }
+        }
         break;
     case RemoteCommand::CHANNEL_PLUS:
-        readable_.placePrev = readable_.place;
-        readable_.place = newPlace_;
-        prefs_.readablePlace.set(readable_.id.c_str(), readable_.place);
-        needsRerender = true;
+        if (!speedReadMode_) {
+            readable_.placePrev = readable_.place;
+            readable_.place = newPlace_;
+            prefs_.readablePlace.set(readable_.id.c_str(), readable_.place);
+            needsRerender = true;
+        } else {
+            if (pageSpeed_ > PAGE_SPEED_INCREMENT) {
+                pageSpeed_ -= PAGE_SPEED_INCREMENT;
+            } else {
+                pageSpeed_ = 1;
+            }
+        }
         break;
 
     case RemoteCommand::NEXT:
