@@ -203,7 +203,7 @@ void ReadableScreen::render(DisplaySystem &display) {
     log_d("%lu is the new place in the text", newPlace_);
 
     if (speedReadMode_ && (speedLinesToSkip_ > 0)) {
-        display.updateDisplay(DisplaySystem::UpdateType::FAST);
+        display.updateDisplay(DisplaySystem::UpdateType::EINK_PARTIAL);
     } else {
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     }

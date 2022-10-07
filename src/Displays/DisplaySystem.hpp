@@ -58,6 +58,7 @@ public:
         FULL,
         PARTIAL,
         FAST,
+        EINK_PARTIAL,
     };
     virtual void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED) = 0;
 
