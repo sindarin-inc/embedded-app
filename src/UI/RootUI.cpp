@@ -488,13 +488,13 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
     }));
 
 #if USE_TURN_TOUCH_REMOTE
-    debugMenu->addMenuItem(MenuItem("Unpair TurnTouch", [this, display]() {
+    debugMenu->addMenuItem(MenuItem("Unpair PageTurner", [this, display]() {
         prefs_.pairedTurnTouchAddress.remove();
-        log_w("Unpaired TurnTouch. Rebooting...");
+        log_w("Unpaired PageTurner. Rebooting...");
         display->drawSingleLineOfText(
-            "Unpaired TurnTouch! Resetting...",
+            "Unpaired PageTurner! Resetting...",
             display->xAbsolute(display->xAbsoluteCenter() -
-                               display->getTextWidth("Unpaired TurnTouch! Resetting...") / 2),
+                               display->getTextWidth("Unpaired PageTurner! Resetting...") / 2),
             display->yAbsolute(display->yAbsoluteCenter() - display->getTextHeight() / 2));
         display->updateDisplay();
         delay(2000);
