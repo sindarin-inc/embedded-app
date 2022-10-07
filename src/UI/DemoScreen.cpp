@@ -304,7 +304,7 @@ void DemoScreen::render(DisplaySystem &display) {
     }
 
     // Turn on both backlights for last case
-    if (currentScreen_ == 4) {
+    if (currentScreen_ >= 4) {
         SetRightBackLight(backlight);
         SetLeftBackLight(backlight);
     }
