@@ -158,46 +158,44 @@ void goBackNumPages(SDL_Window *window, SDL_Renderer *renderer, int numPages) {
 auto mainLoop() -> bool {
     SDL_Event e;
     RemoteCommand remoteCode = RemoteCommand::NONE;
-    while (SDL_PollEvent(&e)) {
-        if (e.type == SDL_QUIT) {
-            return false;
-        } else if (e.type == SDL_KEYDOWN) {
-            switch (e.key.keysym.sym) {
-            case SDLK_UP:
-                remoteCode = RemoteCommand::PREV;
-                break;
-            case SDLK_DOWN:
-                remoteCode = RemoteCommand::NEXT;
-                break;
-            case SDLK_LEFT:
-                remoteCode = RemoteCommand::CHANNEL_MINUS;
-                break;
-            case SDLK_RIGHT:
-                remoteCode = RemoteCommand::CHANNEL_PLUS;
-                break;
-            case SDLK_ESCAPE:
-                remoteCode = RemoteCommand::BACK;
-                break;
-            case SDLK_RETURN:
-                remoteCode = RemoteCommand::ENTER;
-                break;
-            case 'p':
-                saveScreenshotPng("./screenshot.png", window, renderer);
-                break;
-            case 'u':
-                runBackwardsUnitTest(window, renderer);
-                break;
-            case 'b':
-                goBackNumPages(window, renderer, 50);
-                break;
-            }
 
-            if (remoteCode != RemoteCommand::NONE) {
-                UIInnerLoop(remoteCode);
-                needsRedraw = true;
-            }
+    SDL_WaitEventTimeout(&e, 25);
+    if (e.type == SDL_QUIT) {
+        return false;
+    } else if (e.type == SDL_KEYDOWN) {
+        switch (e.key.keysym.sym) {
+        case SDLK_UP:
+            remoteCode = RemoteCommand::PREV;
+            break;
+        case SDLK_DOWN:
+            remoteCode = RemoteCommand::NEXT;
+            break;
+        case SDLK_LEFT:
+            remoteCode = RemoteCommand::CHANNEL_MINUS;
+            break;
+        case SDLK_RIGHT:
+            remoteCode = RemoteCommand::CHANNEL_PLUS;
+            break;
+        case SDLK_ESCAPE:
+            remoteCode = RemoteCommand::BACK;
+            break;
+        case SDLK_RETURN:
+            remoteCode = RemoteCommand::ENTER;
+            break;
+        case 'p':
+            saveScreenshotPng("./screenshot.png", window, renderer);
+            break;
+        case 'u':
+            runBackwardsUnitTest(window, renderer);
+            break;
+        case 'b':
+            goBackNumPages(window, renderer, 50);
+            break;
         }
     }
+
+    UIInnerLoop(remoteCode);
+    needsRedraw = true;
 
 #if SIMULATOR_BLE
     if (ttCommand != RemoteCommand::NONE) {
