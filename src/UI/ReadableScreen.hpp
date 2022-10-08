@@ -26,6 +26,7 @@ public:
           popup_(power, renderer_, prefs_, readable_), fileSystem_(fileSystem) {
         currentScreen_ = this;
         renderer_.setStream(stream);
+        pageSpeed_ = prefs_.speed.get().value();
         popup_.backCallback = [this]() { this->setCurrentScreen(*this); };
     }
 
@@ -57,15 +58,10 @@ protected:
 
     bool shownIcons_ = false;
 
-    bool speedReadMode_ = true;
     // Must reset this to 0 on each page turn.
     unsigned int speedLinesToSkip_ = 0;
     unsigned long timer_ = 0;
     unsigned long nextInterval_ = 0;
     // How many ms we should take to read the page
-    unsigned long pageSpeed_ = 20000;
-
-private:
-    void incrementReadingTime();
-    uint32_t readingStartTime_;
+    unsigned int pageSpeed_ = 10000;
 };

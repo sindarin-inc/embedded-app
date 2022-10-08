@@ -22,6 +22,7 @@ const EinkET013TT1Waveform FULL_BIG_ORIGINAL_WAVEFORM = EINK_10_13C_WAVEFORM_FUL
 const EinkET013TT1Waveform PANEL_CLEAR_WAVEFORM = EINK_31_35C_WAVEFORM_CLEAR;
 const EinkET013TT1Waveform FULL_REFRESH_WAVEFORM_REGULAR = BC_REGULAR_31_35C_WAVEFORM_FULL;
 const EinkET013TT1Waveform FULL_REFRESH_WAVEFORM_INVERTED = BC_INVERTED_31_35C_WAVEFORM_FULL;
+const EinkET013TT1Waveform PARTIAL_REFRESH_ORIGINAL = EINK_10_13C_WAVEFORM_PARTIAL;
 const EinkET013TT1Waveform PARTIAL_REFRESH_WAVEFORM_REGULAR =
     BC_REGULAR_EXPERIMENTAL_WAVEFORM_PARTIAL;
 const EinkET013TT1Waveform PARTIAL_REFRESH_WAVEFORM_INVERTED =
@@ -127,6 +128,15 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
             } else {
                 driver_.update(PARTIAL_REFRESH_WAVEFORM_REGULAR, gfxCanvas_.getBuffer());
             }
+        } else {
+            driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
+            firstPartialTime_ = 0;
+            numPartials_ = 0;
+        }
+        break;
+    case EINK_PARTIAL:
+        if (!fullRefreshNext_) {
+            driver_.update(PARTIAL_REFRESH_ORIGINAL, gfxCanvas_.getBuffer());
         } else {
             driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
             firstPartialTime_ = 0;

@@ -113,7 +113,11 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
+<<<<<<< HEAD
     if (speedReadMode_) {
+=======
+    if (pageSpeed_ != 0) {
+>>>>>>> bb745f24875aad70044c3e9542d100a423791fa0
         auto now = millis();
         if (now - timer_ > nextInterval_) {
             needsRerender = true;
@@ -127,7 +131,11 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     display.setFont(display.style.getFontFamily().readableFont);
 
+<<<<<<< HEAD
     if (!speedReadMode_) {
+=======
+    if (pageSpeed_ == 0) {
+>>>>>>> bb745f24875aad70044c3e9542d100a423791fa0
         newPlace_ = renderer_.renderPage(readable_.place);
     } else {
         if (speedLinesToSkip_ > renderer_.getNumRenderedLines()) {
@@ -202,8 +210,13 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     log_d("%lu is the new place in the text", newPlace_);
 
+<<<<<<< HEAD
     if (speedReadMode_ && (speedLinesToSkip_ > 0)) {
         display.updateDisplay(DisplaySystem::UpdateType::FAST);
+=======
+    if ((pageSpeed_ != 0) && (speedLinesToSkip_ > 0)) {
+        display.updateDisplay(DisplaySystem::UpdateType::EINK_PARTIAL);
+>>>>>>> bb745f24875aad70044c3e9542d100a423791fa0
     } else {
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     }
@@ -243,7 +256,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
 
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
-        if (!speedReadMode_) {
+        if (pageSpeed_ == 0) {
             readable_.place = renderer_.getPreviousPlace();
             prefs_.readablePlace.set(readable_.id.c_str(), readable_.place);
             needsRerender = true;
@@ -253,10 +266,11 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             } else {
                 pageSpeed_ = SLOWEST_PAGE_SPEED;
             }
+            log_d("Slowing down: New Page Speed is %u", pageSpeed_);
         }
         break;
     case RemoteCommand::CHANNEL_PLUS:
-        if (!speedReadMode_) {
+        if (pageSpeed_ == 0) {
             readable_.placePrev = readable_.place;
             readable_.place = newPlace_;
             prefs_.readablePlace.set(readable_.id.c_str(), readable_.place);
@@ -267,6 +281,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             } else {
                 pageSpeed_ = 1;
             }
+            log_d("Speeding up: New Page Speed is %u", pageSpeed_);
         }
         break;
 
@@ -280,8 +295,9 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::ENTER:
-        if (speedReadMode_) {
-            speedReadMode_ = false;
+        if (pageSpeed_ != 0) {
+            pageSpeed_ = 0;
+            prefs_.speed.set(0);
         } else {
             back();
         }

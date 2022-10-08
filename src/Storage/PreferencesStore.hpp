@@ -154,7 +154,7 @@ public:
           rectH(this->prefs_, "rectH"), lineSpacing(this->prefs_, "line-space"),
           demoMode(this->prefs_, "demo"), wordCount(this->prefs_, "word-count"),
           totalReadingTimeSeconds(this->prefs_, "tot-rd-time"),
-          bootCount(this->prefs_, "boot-count"){};
+          bootCount(this->prefs_, "boot-count"), speed(this->prefs_, "speed"){};
 
     auto begin() -> bool;
     void clear() {
@@ -190,6 +190,7 @@ public:
     PrefsItem<uint32_t> wordCount;
     PrefsItem<uint32_t> totalReadingTimeSeconds;
     PrefsItem<uint32_t> bootCount;
+    PrefsItem<uint32_t> speed;
 
 protected:
     Preferences prefs_;
