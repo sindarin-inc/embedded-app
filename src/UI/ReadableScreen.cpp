@@ -113,11 +113,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
-<<<<<<< HEAD
-    if (speedReadMode_) {
-=======
     if (pageSpeed_ != 0) {
->>>>>>> bb745f24875aad70044c3e9542d100a423791fa0
         auto now = millis();
         if (now - timer_ > nextInterval_) {
             needsRerender = true;
@@ -131,11 +127,7 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     display.setFont(display.style.getFontFamily().readableFont);
 
-<<<<<<< HEAD
-    if (!speedReadMode_) {
-=======
     if (pageSpeed_ == 0) {
->>>>>>> bb745f24875aad70044c3e9542d100a423791fa0
         newPlace_ = renderer_.renderPage(readable_.place);
     } else {
         if (speedLinesToSkip_ > renderer_.getNumRenderedLines()) {
@@ -210,13 +202,8 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     log_d("%lu is the new place in the text", newPlace_);
 
-<<<<<<< HEAD
-    if (speedReadMode_ && (speedLinesToSkip_ > 0)) {
-        display.updateDisplay(DisplaySystem::UpdateType::FAST);
-=======
     if ((pageSpeed_ != 0) && (speedLinesToSkip_ > 0)) {
         display.updateDisplay(DisplaySystem::UpdateType::EINK_PARTIAL);
->>>>>>> bb745f24875aad70044c3e9542d100a423791fa0
     } else {
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     }

@@ -64,4 +64,8 @@ protected:
     unsigned long nextInterval_ = 0;
     // How many ms we should take to read the page
     unsigned int pageSpeed_ = 10000;
+
+private:
+    void incrementReadingTime();
+    uint32_t readingStartTime_;
 };
