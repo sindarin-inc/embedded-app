@@ -12,6 +12,18 @@
 DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power)
     : display_(display), renderer_(display), prefs_(prefs), power_(power) {}
 
+void DemoScreen::drawSolLogo(DisplaySystem &display, int x, int y, int height, bool solid) {
+    display.fillRoundRect(x, y, 4 * height / 5, height, height / 2, display.fg);
+    display.fillRect(x + 4 * height / 5 - height / 2, y, height / 2 + 2, height / 3, display.fg);
+    display.fillRect(x, y + height - height / 2, height / 2 + 2, height / 2, display.fg);
+
+    if (!solid) {
+        display.fillRoundRect(3, 3, display.width() - 6, display.height() - 6, 50, display.bg);
+        display.fillRect(display.width() - 54, 3, 51, 51, display.bg);
+        display.fillRect(3, display.height() - 54, 51, 51, display.bg);
+    }
+}
+
 void DemoScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
@@ -47,6 +59,8 @@ void DemoScreen::render(DisplaySystem &display) {
         }
 
         if (currentScreen_ > 3) {
+            // drawSolLogo(display, 2, 2, 50 /*display.height() - 4*/, true);
+
             display.fillRoundRect(2, 2, display.width() - 4, display.height() - 4, 50, display.fg);
             display.fillRect(display.width() - 54, 2, 52, 52, display.fg);
             display.fillRect(2, display.height() - 54, 52, 52, display.fg);
