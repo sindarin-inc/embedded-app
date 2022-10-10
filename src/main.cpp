@@ -252,18 +252,20 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     InitializePlatform();
 
 #if !SIMULATOR
-    // Flash all the LEDs
-    digitalWrite(RED_LED, LED_ON);
-    vTaskDelay(200 / portTICK_PERIOD_MS);
-    digitalWrite(RED_LED, LED_OFF);
-    digitalWrite(GREEN_LED, LED_ON);
-    vTaskDelay(200 / portTICK_PERIOD_MS);
-    digitalWrite(GREEN_LED, LED_OFF);
+    if (esp_reset_reason() == ESP_RST_POWERON) {
+        // Flash all the LEDs
+        digitalWrite(RED_LED, LED_ON);
+        vTaskDelay(200 / portTICK_PERIOD_MS);
+        digitalWrite(RED_LED, LED_OFF);
+        digitalWrite(GREEN_LED, LED_ON);
+        vTaskDelay(200 / portTICK_PERIOD_MS);
+        digitalWrite(GREEN_LED, LED_OFF);
 #ifdef BLUE_LED
-    digitalWrite(BLUE_LED, LED_ON);
-    vTaskDelay(200 / portTICK_PERIOD_MS);
-    digitalWrite(BLUE_LED, LED_OFF);
+        digitalWrite(BLUE_LED, LED_ON);
+        vTaskDelay(200 / portTICK_PERIOD_MS);
+        digitalWrite(BLUE_LED, LED_OFF);
 #endif
+    }
 #endif
 
 #if USE_LTR329
