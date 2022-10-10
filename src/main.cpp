@@ -213,7 +213,10 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     initArduino();
 #endif
 
-    log_i("SN: %s", GetSerialNumber().c_str());
+#if !SIMULATOR
+    // Configure log level for all Sindarin logs
+    esp_log_level_set("Sindarin", ESP_LOG_DEBUG);
+#endif
 
     std::vector<BootError> bootErrors;
 
@@ -225,31 +228,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-#if !SIMULATOR
-    esp_log_level_set("Sindarin", ESP_LOG_DEBUG);
-    // Arduino breaks the UART with sleep. So we manually initialize the UART using IDF functions.
-    // There's unfortunately no way currently to customize the source clock in Arduino:
-    // https://github.com/espressif/arduino-esp32/blob/548412952ba58e299ad83d932cea417a2490fd78/cores/esp32/esp32-hal-uart.c#L163
-    uart_config_t uartConfig;
-    uartConfig.baud_rate = 115200;
-    uartConfig.data_bits = UART_DATA_8_BITS;
-    uartConfig.parity = UART_PARITY_DISABLE;
-    uartConfig.stop_bits = UART_STOP_BITS_1;
-    uartConfig.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
-    uartConfig.rx_flow_ctrl_thresh = 0;
-#if GILPICO_SINDARIN
-    // This is the part Arduino gets wrong. The ref tick clock is stable even amidst light sleep.
-    uartConfig.source_clk = UART_SCLK_REF_TICK;
-#else
-    // But on the ESP32-S3, since the UART is built into the chip, we use XTAL I guess.
-    uartConfig.source_clk = UART_SCLK_XTAL;
-#endif
-    ESP_ERROR_CHECK(uart_driver_install(0, 256, 0, 20, nullptr, 0));
-    ESP_ERROR_CHECK(uart_param_config(0, &uartConfig));
-    ESP_ERROR_CHECK(uart_set_pin(0, 1, 3, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
-#endif
-
     InitializePlatform();
+
+    log_i("SN: %s", GetSerialNumber().c_str());
 
 #if !SIMULATOR
     if (esp_reset_reason() == ESP_RST_POWERON) {
