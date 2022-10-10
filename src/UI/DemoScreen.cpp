@@ -51,15 +51,16 @@ void DemoScreen::render(DisplaySystem &display) {
             display.fillRect(display.width() - 54, 2, 52, 52, display.fg);
             display.fillRect(2, display.height() - 54, 52, 52, display.fg);
 
-            display.fillRoundRect(4, 4, display.width() - 8, display.height() - 8, 50, display.bg);
-            display.fillRect(display.width() - 56, 4, 52, 52, display.bg);
-            display.fillRect(4, display.height() - 56, 52, 52, display.bg);
+            display.fillRoundRect(3, 3, display.width() - 6, display.height() - 6, 50, display.bg);
+            display.fillRect(display.width() - 54, 3, 51, 51, display.bg);
+            display.fillRect(3, display.height() - 54, 51, 51, display.bg);
         }
 
         if (currentScreen_ > 4) {
             switch (currentScreen_) {
             case 5:
                 message = "Five thousand years ago";
+                message = "What reading does for our minds.";
                 display.drawSingleLineOfText(
                     message.c_str(),
                     display.xAbsolute(display.xAbsoluteCenter() -
@@ -88,6 +89,14 @@ void DemoScreen::render(DisplaySystem &display) {
                 //                  display.fg);
                 //  display.fillRect(26, 26, display.width() - 51, display.height() - 51,
                 //  display.bg);
+
+                message = "Five thousand years ago,";
+                display.drawSingleLineOfText(
+                    message.c_str(),
+                    display.xAbsolute(display.xAbsoluteCenter() -
+                                      display.getTextWidth(message.c_str()) / 2),
+                    display.yAbsolute(display.yAbsoluteCenter() - 2 * display.getTextHeight() -
+                                      40));
 
                 message = "these words would have";
                 display.drawSingleLineOfText(
@@ -137,6 +146,13 @@ void DemoScreen::render(DisplaySystem &display) {
                 //                 display.fg);
                 // display.fillRect(26, 26, display.width() - 51, display.height() - 51,
                 // display.bg);
+                message = "Five thousand years ago,";
+                display.drawSingleLineOfText(
+                    message.c_str(),
+                    display.xAbsolute(display.xAbsoluteCenter() -
+                                      display.getTextWidth(message.c_str()) / 2),
+                    display.yAbsolute(display.yAbsoluteCenter() - 2 * display.getTextHeight() -
+                                      40));
 
                 message = "these words would have";
                 display.drawSingleLineOfText(
@@ -187,6 +203,14 @@ void DemoScreen::render(DisplaySystem &display) {
                 //  display.fillRect(26, 26, display.width() - 51, display.height() - 51,
                 //  display.bg);
 
+                message = "Five thousand years ago,";
+                display.drawSingleLineOfText(
+                    message.c_str(),
+                    display.xAbsolute(display.xAbsoluteCenter() -
+                                      display.getTextWidth(message.c_str()) / 2),
+                    display.yAbsolute(display.yAbsoluteCenter() - 2 * display.getTextHeight() -
+                                      40));
+
                 message = "these words would have";
                 display.drawSingleLineOfText(
                     message.c_str(),
@@ -235,6 +259,14 @@ void DemoScreen::render(DisplaySystem &display) {
                                  display.fg);
                 //  display.fillRect(26, 26, display.width() - 51, display.height() - 51,
                 //  display.bg);
+
+                message = "Five thousand years ago,";
+                display.drawSingleLineOfText(
+                    message.c_str(),
+                    display.xAbsolute(display.xAbsoluteCenter() -
+                                      display.getTextWidth(message.c_str()) / 2),
+                    display.yAbsolute(display.yAbsoluteCenter() - 2 * display.getTextHeight() -
+                                      40));
 
                 message = "these words would have";
                 display.drawSingleLineOfText(
