@@ -43,7 +43,7 @@ public:
     auto readOneBookmark(File &file, Bookmark &bookmark) -> bool;
 
     //! Can be used to skip the display.update() call on the first render.
-    bool skipFirstDisplayUpdate_ = false;
+    bool skipFirstDisplayUpdate = false;
 
 protected:
     Renderer renderer_;

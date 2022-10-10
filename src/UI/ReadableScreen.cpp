@@ -172,9 +172,9 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     log_d("%lu is the new place in the text", newPlace_);
 
-    if (skipFirstDisplayUpdate_) {
+    if (skipFirstDisplayUpdate) {
         // This needs to happen after we run `renderPage` once so we know where the next page begins
-        skipFirstDisplayUpdate_ = false;
+        skipFirstDisplayUpdate = false;
         // Throw away the first render, since it's just the old page that should already be on the
         // screen
         display.fillScreen(display.bg);
