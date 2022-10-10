@@ -1,6 +1,7 @@
 #include "UI/DemoScreen.hpp"
 
 #include "Misc/Platform.hpp"
+#include "UI/Bitmaps/stone.hpp"
 #include "UI/Fonts/Tahoma10pt7b.h"
 #include "UI/Fonts/Tahoma5pt7b.h"
 #include "UI/Fonts/Tahoma6pt7b.h"
@@ -113,13 +114,22 @@ void DemoScreen::render(DisplaySystem &display) {
         if (currentScreen_ > 4) {
             switch (currentScreen_) {
             case 5:
+                display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - paper_width / 2),
+                                    10, paper_bits, paper_width, paper_height, display.fg);
                 message = "Five thousand years ago";
-                message = "What reading does for our minds.";
                 display.drawSingleLineOfText(
                     message.c_str(),
                     display.xAbsolute(display.xAbsoluteCenter() -
                                       display.getTextWidth(message.c_str()) / 2),
                     display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2));
+
+                message = "paper!";
+                display.drawSingleLineOfText(
+                    message.c_str(),
+                    display.xAbsolute(display.xAbsoluteCenter() -
+                                      display.getTextWidth(message.c_str()) / 2),
+                    display.yAbsolute(65));
+                message = "";
                 break;
             case 6:
 
