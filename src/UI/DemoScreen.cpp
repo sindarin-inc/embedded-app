@@ -12,10 +12,48 @@
 DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power)
     : display_(display), renderer_(display), prefs_(prefs), power_(power) {}
 
-void DemoScreen::drawSolLogo(DisplaySystem &display, int x, int y, int height, bool solid) {
-    display.fillRoundRect(x, y, 4 * height / 5, height, height / 2, display.fg);
-    display.fillRect(x + 4 * height / 5 - height / 2, y, height / 2 + 2, height / 3, display.fg);
-    display.fillRect(x, y + height - height / 2, height / 2 + 2, height / 2, display.fg);
+//
+// for the size parameter, each 1 is 10 pixels in o radius (e.g., 1 is 10 raidus, 2 is 20 radius,
+// etc).
+//
+
+void DemoScreen::drawSolLogo(DisplaySystem &display, int x, int y, int size, bool solid) {
+
+    int diameter = size * 10;
+    int letterDelta = size;
+
+    if (size == 1) {
+        letterDelta++;
+    } else {
+        letterDelta--;
+    }
+
+    int radius = diameter / 2;
+
+    // draw o (the S is 90% the width, hence subtracting out size)
+    int oX = x + diameter + letterDelta - size;
+    int oY = y;
+    // the Circle draw commands take the center point so we add the radius to the above
+    // calculated values since everything else wants upper left.
+    if (solid) {
+        display.fillCircle(oX + radius, oY + radius, radius, display.fg);
+    } else {
+        display.drawCircle(oX + radius, oY + radius, radius, display.fg);
+    }
+
+    // draw l
+    int lX = oX + diameter + letterDelta;
+    int lY = y - diameter * 2 / 10;
+    if (solid) {
+        display.fillRect(lX, lY, diameter * 6 / 10, diameter * 12 / 10 + 1, display.fg);
+    } else {
+        display.drawRect(lX, lY, diameter * 6 / 10, diameter * 12 / 10 + 1, display.fg);
+    }
+
+    // draw s
+    display.fillRoundRect(x, y, 9 * diameter / 10, diameter, diameter / 2, display.fg);
+    display.fillRect(x + 4 * diameter / 10, y, 5 * diameter / 10, diameter / 2, display.fg);
+    display.fillRect(x, y + 6 * diameter / 10, diameter / 2, 4 * diameter / 10, display.fg);
 
     if (!solid) {
         display.fillRoundRect(3, 3, display.width() - 6, display.height() - 6, 50, display.bg);
@@ -61,7 +99,7 @@ void DemoScreen::render(DisplaySystem &display) {
         }
 
         if (currentScreen_ > 3) {
-            // drawSolLogo(display, 2, 2, 50 /*display.height() - 4*/, true);
+            // drawSolLogo(display, 2, 2, 4 /*display.height() - 4*/, true);
 
             display.fillRoundRect(2, 2, display.width() - 4, display.height() - 4, 50, display.fg);
             display.fillRect(display.width() - 54, 2, 52, 52, display.fg);
