@@ -313,11 +313,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         myDisplay.getDriver()->setVcom(prefs.vcom.get().value());
     }
 
-    if (prefs.backlight.get().value() == 0) {
-        prefs.backlight.set(10);
-    }
-    SetBacklight(prefs.backlight.get().value());
-
 #elif WROVER_KIT
     myDisplay.begin();
 #endif
