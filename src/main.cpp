@@ -313,8 +313,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         myDisplay.getDriver()->setVcom(prefs.vcom.get().value());
     }
 
-    // If the saved prefs have a backlight of zero, turn on the lights anyways
-    // Default to 10% max (which is 50% of the way through the lighting setting)
     if (prefs.backlight.get().value() == 0) {
         prefs.backlight.set(10);
     }
@@ -323,6 +321,13 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #elif WROVER_KIT
     myDisplay.begin();
 #endif
+
+    // If the saved prefs have a backlight of zero, turn on the lights anyways
+    // Default to 10% max (which is 50% of the way through the lighting setting)
+    if (prefs.backlight.get().value() == 0) {
+        prefs.backlight.set(10);
+    }
+    SetBacklight(prefs.backlight.get().value());
 
     switch (prefs.font.get().value()) {
     case PREFS_LUCIDA_REGULAR:
