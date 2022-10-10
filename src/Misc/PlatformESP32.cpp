@@ -92,6 +92,12 @@ void InitializePlatform() {
     pinMode(DISPLAY_POWER, OUTPUT);
 #endif
 #if LEDC_BACKLIGHT
+    // This allows LEDC to work in light sleep on ESP32-S3
+    esp_err_t err = esp_sleep_pd_config(ESP_PD_DOMAIN_RTC8M, ESP_PD_OPTION_ON);
+    if (err != ESP_OK) {
+        log_e("Error configuring esp_sleep_pd_config: %s", esp_err_to_name(err));
+    }
+
     // Backlight configs
     ledc_timer_config_t ledcTimer = {
         .speed_mode = LEDC_LOW_SPEED_MODE,
@@ -100,7 +106,10 @@ void InitializePlatform() {
         .freq_hz = 1000,
         .clk_cfg = LEDC_USE_RTC8M_CLK //
     };
-    ledc_timer_config(&ledcTimer);
+    err = ledc_timer_config(&ledcTimer);
+    if (err != ESP_OK) {
+        log_e("Error configuring LEDC timer: %s", esp_err_to_name(err));
+    }
 
     ledc_channel_config_t ledcLChannel = {
         .gpio_num = BACKLIGHT_LEFT,
@@ -122,11 +131,16 @@ void InitializePlatform() {
         .hpoint = 0 //
     };
 
-    ledc_channel_config(&ledcLChannel);
-    ledc_channel_config(&ledcRChannel);
+    err = ledc_channel_config(&ledcLChannel);
+    if (ledc_channel_config(&ledcLChannel) != ESP_OK) {
+        log_e("Error configuring left LEDC: %s", esp_err_to_name(err));
+    }
 
-    // This allows LEDC to work in light sleep on ESP32-S3
-    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC8M, ESP_PD_OPTION_ON);
+    err = ledc_channel_config(&ledcRChannel);
+    if (err != ESP_OK) {
+        log_e("Error configuring right LEDC: %s", esp_err_to_name(err));
+    }
+
 #endif
 #if ULP_BACKLIGHT
     UlpStart();
