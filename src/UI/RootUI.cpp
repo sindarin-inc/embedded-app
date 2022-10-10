@@ -649,6 +649,10 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
 #endif
             this->setCurrentScreen(*readableScreen);
             log_i("Resuming readable from last session: %s", (*it).name.c_str());
+            // The page should already be on the screen from the last session, so don't load it
+            // again
+            readableScreen->skipFirstDisplayUpdate_ = true;
+
         } else {
             // Assume this readable has gone away
             prefs_.lastReadableId.remove();

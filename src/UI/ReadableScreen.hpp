@@ -42,6 +42,9 @@ public:
     void updateBookmarkStatus();
     auto readOneBookmark(File &file, Bookmark &bookmark) -> bool;
 
+    //! Can be used to skip the display.update() call on the first render.
+    bool skipFirstDisplayUpdate_ = false;
+
 protected:
     Renderer renderer_;
     Readable &readable_;

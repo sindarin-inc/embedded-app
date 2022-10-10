@@ -114,6 +114,7 @@ void ReadableScreen::render(DisplaySystem &display) {
     display.setFont(display.style.getFontFamily().readableFont);
 
     newPlace_ = renderer_.renderPage(readable_.place);
+
     // Future work
     // Sync this to cloud and use on mobile.
     updateBookmarkStatus();
@@ -171,11 +172,15 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     log_d("%lu is the new place in the text", newPlace_);
 
-    display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-
-    uint32_t wc = prefs_.wordCount.get().value();
-    wc = wc + renderer_.getCurrentPageWordCount();
-    prefs_.wordCount.set(wc);
+    if (skipFirstDisplayUpdate_) {
+        // This needs to happen after we run `renderPage` once so we know where the next page begins
+        skipFirstDisplayUpdate_ = false;
+        // Throw away the first render, since it's just the old page that should already be on the
+        // screen
+        display.fillScreen(display.bg);
+    } else {
+        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+    }
 
     // remember the time this page was rendered
     readingStartTime_ = GetRunTimeMs();
@@ -212,13 +217,19 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         prefs_.readablePlace.set(readable_.id.c_str(), readable_.place);
         needsRerender = true;
         break;
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::CHANNEL_PLUS: {
+        // TODO: This isn't quite right since words will also get counted when going forward again
+        // after going back
+        uint32_t wc = prefs_.wordCount.get().value();
+        wc = wc + renderer_.getCurrentPageWordCount();
+        prefs_.wordCount.set(wc);
+
         readable_.placePrev = readable_.place;
         readable_.place = newPlace_;
         prefs_.readablePlace.set(readable_.id.c_str(), readable_.place);
         needsRerender = true;
         break;
-
+    }
     case RemoteCommand::NEXT:
         setCurrentScreen(popup_);
         break;
