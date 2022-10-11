@@ -1,10 +1,13 @@
 #if SIMULATOR
 
+#include <string>
+
+#if !defined(EMSCRIPTEN)
+
 #include <iomanip>
 #include <iostream>
 #include <openssl/evp.h>
 #include <sstream>
-#include <string>
 
 #include "sindarin-debug.h"
 
@@ -45,4 +48,17 @@ auto calculateStringHash(std::string input) -> std::string {
     return hash;
 }
 
-#endif
+#else
+
+// For WASM/Emscripten these are all stubbed for now
+bool computeHash(const std::string &unhashed, std::string &hashed) {
+    return true;
+}
+
+auto calculateStringHash(std::string input) -> std::string {
+    return "";
+}
+
+#endif // !defined(EMSCRIPTEN)
+
+#endif // SIMULATOR
