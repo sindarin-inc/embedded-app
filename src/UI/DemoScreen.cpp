@@ -101,7 +101,7 @@ void DemoScreen::render(DisplaySystem &display) {
         }
 
         if (currentScreen_ > 3) {
-            drawSolLogo(display, 2, 2, 3 /*display.height() - 4*/, false);
+            drawSolLogo(display, 50, 120, 3 /*display.height() - 4*/, true);
             /*
                         display.fillRoundRect(2, 2, display.width() - 4, display.height() - 4, 50,
                display.fg); display.fillRect(display.width() - 54, 2, 52, 52, display.fg);
@@ -116,9 +116,13 @@ void DemoScreen::render(DisplaySystem &display) {
         if (currentScreen_ > 4) {
             switch (currentScreen_) {
             case 5:
-                display.drawXBitmap(
+                /*display.drawXBitmap(
                     display.xAbsolute(display.xAbsoluteCenter() - papyrus_width / 2), 10,
-                    papyrus_bits, papyrus_width, papyrus_height, display.fg);
+                    papyrus_bits, papyrus_width, papyrus_height, display.fg);*/
+
+                display.drawXBitmap(
+                    display.xAbsolute(display.xAbsoluteCenter() - lightbulb_width / 2), 10,
+                    lightbulb_bits, lightbulb_width, lightbulb_height, display.fg);
                 message = "";
                 // message = "Five thousand years ago";
                 display.drawSingleLineOfText(
