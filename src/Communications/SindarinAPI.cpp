@@ -132,7 +132,8 @@ auto SindarinAPI::downloadReadable(Readable &readable, LocalStore &localStore) -
         // TODO: This is kinda weird to get the filesystem from localstore
         auto file = localStore.fileSystem.open(localPath, "w");
 
-        // W25Q512JV* chips have a page size of 256 bytes so that seems like a good value to use here.
+        // W25Q512JV* chips have a page size of 256 bytes so that seems like a good value to use
+        // here.
         uint8_t buff[256] = {0};
 
         auto *stream = httpClient.getStreamPtr();

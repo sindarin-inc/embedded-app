@@ -25,7 +25,8 @@ void StatsScreen::render(DisplaySystem &display) {
     char formattedString[32];
     if (hoursRead > 0) {
         // NOLINTNEXTLINE(cert-err33-c) -- this is a safe, fixed length, format string
-        snprintf(formattedString, sizeof(formattedString), "%02d:%02d:%02d", hoursRead, minutesRead, secondsRead);
+        snprintf(formattedString, sizeof(formattedString), "%02d:%02d:%02d", hoursRead, minutesRead,
+                 secondsRead);
         timeMessage += formattedString;
     } else {
         // NOLINTNEXTLINE(cert-err33-c) -- this is a safe, fixed length, format string

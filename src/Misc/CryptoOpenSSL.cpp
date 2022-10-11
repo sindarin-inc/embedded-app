@@ -51,13 +51,9 @@ auto CalculateStringHash(const std::string &input) -> std::string {
 #else
 
 // For WASM/Emscripten these are all stubbed for now
-auto ComputeHash(const std::string &unhashed, std::string &hashed) -> bool {
-    return true;
-}
+auto ComputeHash(const std::string &unhashed, std::string &hashed) -> bool { return true; }
 
-auto CalculateStringHash(const std::string &input) -> std::string {
-    return "";
-}
+auto CalculateStringHash(const std::string &input) -> std::string { return ""; }
 
 #endif // !defined(EMSCRIPTEN)
 

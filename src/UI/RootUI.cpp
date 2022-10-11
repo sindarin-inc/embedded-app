@@ -267,29 +267,28 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         setCurrentScreen(*settingsMenu);
     };
 
-    settingsMenu->addMenuItem(MenuItem(
-        "Sync content", [this, &localStore, display]() {
-            if (!prefs_.cloudToken.get().has_value()) {
-                log_w("No Sindarin API token found");
-                display->drawSingleLineOfText("No Sindarin API token found", 0, 0);
-                display->updateDisplay();
-                delay(2000);
-                needsRerender = true;
-                return;
-            }
-
-            // TODO: Progress UI for this!
-            display->drawSingleLineOfText("Loading content from API...", 0, 0);
-            display->updateDisplay();
-            if (localStore.syncFromRemote()) {
-                display->drawSingleLineOfText("Success!", 0, 0);
-            } else {
-                display->drawSingleLineOfText("Failed :(", 0, 0);
-            }
+    settingsMenu->addMenuItem(MenuItem("Sync content", [this, &localStore, display]() {
+        if (!prefs_.cloudToken.get().has_value()) {
+            log_w("No Sindarin API token found");
+            display->drawSingleLineOfText("No Sindarin API token found", 0, 0);
             display->updateDisplay();
             delay(2000);
             needsRerender = true;
-        }));
+            return;
+        }
+
+        // TODO: Progress UI for this!
+        display->drawSingleLineOfText("Loading content from API...", 0, 0);
+        display->updateDisplay();
+        if (localStore.syncFromRemote()) {
+            display->drawSingleLineOfText("Success!", 0, 0);
+        } else {
+            display->drawSingleLineOfText("Failed :(", 0, 0);
+        }
+        display->updateDisplay();
+        delay(2000);
+        needsRerender = true;
+    }));
 
     settingsMenu->addMenuItem(MenuItem("Reading Font Size", [this, settingsMenu]() {
         auto fontMenu = new MenuScreen(this->power_, settingsMenu->getMyStyle());
