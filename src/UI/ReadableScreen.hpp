@@ -19,7 +19,7 @@ struct Bookmark {
 
 class ReadableScreen : public ContainerScreen {
 public:
-    ReadableScreen(RendererStream *stream, DisplaySystem &display, Readable readable,
+    ReadableScreen(RendererStream *stream, DisplaySystem &display, const Readable &readable,
                    PreferencesStore &prefs, Power &power, FileSystem &fileSystem)
 
         : renderer_(display), readable_(readable), prefs_(prefs),

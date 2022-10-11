@@ -8,7 +8,7 @@
 
 auto LocalStore::begin() -> bool {
     log_d("Loading readables.json");
-    File readablesFile = fileSystem_.open("/readables.json");
+    File readablesFile = fileSystem.open("/readables.json");
     if (!readablesFile) {
         log_w("Failed to open readables.json");
         return true;
@@ -36,7 +36,7 @@ auto LocalStore::begin() -> bool {
         if (!readable.fromJson(v.as<JsonObject>())) {
             log_e("Failed to parse Readable");
             continue;
-        } else if (fileSystem_.exists(readable.localFilePath())) {
+        } else if (fileSystem.exists(readable.localFilePath())) {
             log_d("Found local readable %s (%s)", readable.title.c_str(),
                   readable.localFilePath().c_str());
             readables_.push_back(readable);
@@ -50,7 +50,7 @@ auto LocalStore::begin() -> bool {
 
 auto LocalStore::hasReadable(Readable &readable) -> bool {
     for (auto &r : readables_) {
-        if (r.id == readable.id && fileSystem_.exists(r.files[0].name)) {
+        if (r.id == readable.id && fileSystem.exists(r.files[0].name)) {
             return true;
         }
     }
@@ -89,7 +89,7 @@ auto LocalStore::calculateReadablesSha() -> std::string {
         allShas += sha;
     }
 
-    auto shaOfShas = calculateStringHash(allShas);
+    auto shaOfShas = CalculateStringHash(allShas);
 
     log_d("SHA of SHA strings: %s", shaOfShas.c_str());
 
@@ -176,7 +176,7 @@ auto LocalStore::save() -> bool {
     }
 
     // Write doc to disk
-    File file = fileSystem_.open("/readables.json", FILE_WRITE);
+    File file = fileSystem.open("/readables.json", FILE_WRITE);
     if (!file) {
         log_e("Failed to open file for writing");
         return false;

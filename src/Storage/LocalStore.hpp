@@ -9,7 +9,8 @@
 //! Interface for local storage of structured data
 class LocalStore {
 public:
-    LocalStore(FileSystem &fileSystem, PreferencesStore &prefs) : fileSystem_(fileSystem), prefs_(prefs){};
+    LocalStore(FileSystem &fileSystem, PreferencesStore &prefs)
+        : fileSystem(fileSystem), prefs_(prefs){};
 
     auto begin() -> bool;
 
@@ -24,7 +25,7 @@ public:
 
     auto save() -> bool;
 
-    FileSystem &fileSystem_;
+    FileSystem &fileSystem;
 
 private:
     std::vector<Readable> readables_;

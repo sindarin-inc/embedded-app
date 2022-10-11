@@ -1,6 +1,7 @@
 #include "ReadableFile.hpp"
 
-bool convertToJson(const ReadableFile &src, JsonVariant dst) {
+// NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
+auto convertToJson(const ReadableFile &src, JsonVariant dst) -> bool {
     dst["id"] = src.id;
     dst["name"] = src.name;
     dst["size"] = src.size;

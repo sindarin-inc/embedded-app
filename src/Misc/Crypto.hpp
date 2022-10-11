@@ -1,3 +1,3 @@
 #include <string>
 
-auto calculateStringHash(std::string input) -> std::string;
+auto CalculateStringHash(const std::string &input) -> std::string;

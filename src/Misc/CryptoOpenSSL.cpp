@@ -11,7 +11,7 @@
 
 #include "sindarin-debug.h"
 
-bool computeHash(const std::string &unhashed, std::string &hashed) {
+auto ComputeHash(const std::string &unhashed, std::string &hashed) -> bool {
     bool success = false;
 
     EVP_MD_CTX *context = EVP_MD_CTX_new();
@@ -40,9 +40,9 @@ bool computeHash(const std::string &unhashed, std::string &hashed) {
     return success;
 }
 
-auto calculateStringHash(std::string input) -> std::string {
+auto CalculateStringHash(const std::string &input) -> std::string {
     std::string hash;
-    if (!computeHash(input, hash)) {
+    if (!ComputeHash(input, hash)) {
         log_e("Failed to compute hash");
     }
     return hash;
@@ -51,11 +51,11 @@ auto calculateStringHash(std::string input) -> std::string {
 #else
 
 // For WASM/Emscripten these are all stubbed for now
-bool computeHash(const std::string &unhashed, std::string &hashed) {
+auto ComputeHash(const std::string &unhashed, std::string &hashed) -> bool {
     return true;
 }
 
-auto calculateStringHash(std::string input) -> std::string {
+auto CalculateStringHash(std::string input) -> std::string {
     return "";
 }
 

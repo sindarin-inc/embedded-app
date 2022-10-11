@@ -12,9 +12,9 @@ public:
 
     void setAccessToken(std::string accessToken);
 
-    auto beginClient(HTTPClient &httpClient, String urlPath) -> bool;
+    auto beginClient(HTTPClient &httpClient, const String &urlPath) -> bool;
 
-    auto checkSync(std::string readablesSha, bool *synced) -> int;
+    auto checkSync(const std::string &readablesSha, bool *synced) -> int;
 
     // Get list of readables from the server
     auto getReadablesUsersAll(std::vector<UserReadable> *userReadables) -> int;

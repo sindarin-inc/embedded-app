@@ -20,10 +20,10 @@ public:
     void render(DisplaySystem &display) override {
         display.fillScreen(display.bg);
 
-        display.fillCircle(display.width() / 2, display.height() / 2, LOGO_O_RADIUS, display.fg);
+        display.fillCircle(display.width() / 2.0, display.height() / 2, LOGO_O_RADIUS, display.fg);
 
-        display.fillRect(display.width() / 2 - LOGO_O_RADIUS * 1.6 / 2 + 1,
-                         display.height() / 2 - LOGO_O_RADIUS * 1.6 / 2 + 1, LOGO_O_RADIUS * 1.6,
+        display.fillRect(display.width() / 2.0 - LOGO_O_RADIUS * 1.6 / 2 + 1,
+                         display.height() / 2.0 - LOGO_O_RADIUS * 1.6 / 2 + 1, LOGO_O_RADIUS * 1.6,
                          LOGO_O_RADIUS * 1.6, display.bg);
 
         display.updateDisplay();

@@ -21,6 +21,7 @@ void DemoScreen::render(DisplaySystem &display) {
 
     display.setFont(&TAHOMA_REGULAR_FONT6PT7B);
 
+    // NOLINTBEGIN(bugprone-branch-clone) - keeping these duplicative for symmetry
     switch (currentScreen_) {
     case 0:
         display.setFont(&TAHOMA_REGULAR_FONT10PT7B);
@@ -38,6 +39,7 @@ void DemoScreen::render(DisplaySystem &display) {
         display.setFont(&TAHOMA_REGULAR_FONT8PT7B);
         break;
     }
+    // NOLINTEND(bugprone-branch-clone)
     if (currentScreen_ > 1) {
         display.setFont(&TAHOMA_REGULAR_FONT8PT7B);
 
@@ -91,24 +93,14 @@ void DemoScreen::processCommand(RemoteCommand command) {
     // the messages, but for now, any button press is fine.
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
-        currentScreen_++;
-        needsRerender = true;
-        break;
     case RemoteCommand::CHANNEL_PLUS:
-        currentScreen_++;
-        needsRerender = true;
-        break;
     case RemoteCommand::PREV:
-        currentScreen_++;
-        needsRerender = true;
-        break;
     case RemoteCommand::NEXT:
         currentScreen_++;
         needsRerender = true;
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::ENTER:
-        break;
     default:
         break;
     }

@@ -117,7 +117,10 @@ public:
             : PrefsItemBase<T>(prefs), suffix_(suffix) {}
 
         void makeKey(char *key, const char *prefix) {
-            snprintf(key, MAX_KEY_LENGTH + 1, "%s%s", prefix, this->suffix_);
+            auto size = snprintf(key, MAX_KEY_LENGTH + 1, "%s%s", prefix, this->suffix_);
+            if (size > MAX_KEY_LENGTH + 1) {
+                log_e("Key too long: %s%s", prefix, this->suffix_);
+            }
         }
 
         auto get(const char *prefix) -> T {

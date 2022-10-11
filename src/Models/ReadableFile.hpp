@@ -5,6 +5,9 @@
 
 class ReadableFile : public JsonSerializable {
 public:
+    ReadableFile() = default;
+    ~ReadableFile() override = default;
+
     int id;
     std::string name;
     int size;
@@ -32,4 +35,5 @@ public:
     }
 };
 
-bool convertToJson(const ReadableFile &src, JsonVariant dst);
+// NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
+auto convertToJson(const ReadableFile &src, JsonVariant dst) -> bool;

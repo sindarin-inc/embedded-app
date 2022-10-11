@@ -8,17 +8,18 @@
 
 // bytesToHex
 // https://stackoverflow.com/a/3386294
-std::string bytesToHex(const uint8_t *data, size_t size) {
+auto BytesToHex(const uint8_t *data, size_t size) -> std::string {
     std::string result;
     for (size_t i = 0; i < size; ++i) {
         char buf[3];
+        // NOLINTNEXTLINE(cert-err33-c) -- this is a safe format string
         snprintf(buf, sizeof(buf), "%02x", data[i]);
         result += buf;
     }
     return result;
 }
 
-auto calculateFileHash(FileSystem fileSystem, const char *path) -> std::string {
+auto CalculateFileHash(const FileSystem &fileSystem, const char *path) -> std::string {
     File file = fileSystem.open(path);
     if (!file) {
         log_e("Failed to open file: %s is the filename", path);
@@ -47,7 +48,7 @@ auto calculateFileHash(FileSystem fileSystem, const char *path) -> std::string {
     if (mbedtls_md_finish(&ctx, output)) {
         log_e("Failed to mbedtls_md_finish");
     }
-    auto hashString = bytesToHex(output, sizeof(output));
+    auto hashString = BytesToHex(output, sizeof(output));
     log_d("File hash: %s", hashString.c_str());
 
     mbedtls_md_free(&ctx);
@@ -56,7 +57,7 @@ auto calculateFileHash(FileSystem fileSystem, const char *path) -> std::string {
     return hashString;
 }
 
-auto calculateStringHash(std::string input) -> std::string {
+auto CalculateStringHash(const std::string &input) -> std::string {
     mbedtls_md_context_t ctx;
     mbedtls_md_init(&ctx);
     mbedtls_md_type_t mdType = MBEDTLS_MD_SHA256;
@@ -73,7 +74,7 @@ auto calculateStringHash(std::string input) -> std::string {
     if (mbedtls_md_finish(&ctx, output)) {
         log_e("Failed to mbedtls_md_finish");
     }
-    auto hashString = bytesToHex(output, sizeof(output));
+    auto hashString = BytesToHex(output, sizeof(output));
     log_d("File hash: %s", hashString.c_str());
 
     mbedtls_md_free(&ctx);

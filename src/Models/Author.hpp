@@ -6,6 +6,9 @@
 
 class Author : public JsonSerializable {
 public:
+    Author() = default;
+    ~Author() override = default;
+
     int id;
     std::string name;
     std::string description;
@@ -21,4 +24,5 @@ public:
     }
 };
 
-bool convertToJson(const Author &src, JsonVariant dst);
+// NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
+auto convertToJson(const Author &src, JsonVariant dst) -> bool;

@@ -24,4 +24,4 @@ using SpiRamJsonDocument = BasicJsonDocument<SpiRamAllocator>;
 
 #endif
 
-std::string DumpJson(const JsonVariant &v);
+auto DumpJson(const JsonVariant &v) -> std::string;

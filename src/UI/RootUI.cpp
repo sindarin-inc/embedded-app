@@ -61,7 +61,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto readables = localStore.readables();
 
     auto createReadableScreen = [this, display, mainMenu,
-                                 &fileSystem](Readable readable) -> ReadableScreen * {
+                                 &fileSystem](const Readable &readable) -> ReadableScreen * {
 #if !DISABLE_WIFI
         DisconnectWifi();
 #endif
@@ -268,7 +268,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     };
 
     settingsMenu->addMenuItem(MenuItem(
-        "Sync content", [this, settingsMenu, &localStore, display]() {
+        "Sync content", [this, &localStore, display]() {
             if (!prefs_.cloudToken.get().has_value()) {
                 log_w("No Sindarin API token found");
                 display->drawSingleLineOfText("No Sindarin API token found", 0, 0);

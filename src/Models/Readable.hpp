@@ -11,6 +11,9 @@
 
 class Readable : JsonSerializable {
 public:
+    Readable() = default;
+    ~Readable() override = default;
+
     std::string id;
     std::string title;
     std::string dateCreated;
@@ -24,11 +27,9 @@ public:
     // Local state
     uint32_t place{0}, placePrev{0};
 
-    Readable() = default;
-
-    auto file() const -> const ReadableFile & { return files[0]; }
-    auto localFilePath() const -> std::string { return "/" + file().name; }
-    auto remoteUrl() const -> std::string { return file().file; }
+    [[nodiscard]] auto file() const -> const ReadableFile & { return files[0]; }
+    [[nodiscard]] auto localFilePath() const -> std::string { return "/" + file().name; }
+    [[nodiscard]] auto remoteUrl() const -> std::string { return file().file; }
 
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("id") || !j.containsKey("title") || !j.containsKey("date_created") ||
@@ -56,4 +57,5 @@ public:
     }
 };
 
-bool convertToJson(const Readable &src, JsonVariant dst);
+// NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
+auto convertToJson(const Readable &src, JsonVariant dst) -> bool;

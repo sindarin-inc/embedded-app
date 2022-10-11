@@ -4,6 +4,8 @@
 #include <stdexcept>
 #include <string>
 
+#include "sindarin-debug.h"
+
 // C++20 has std::format which could replace this
 // From https://stackoverflow.com/a/26221725
 // Or we could copy in the `fmt` library which is the same thing
@@ -19,11 +21,15 @@ auto StringFormat(const char *format, ARGS... args) -> std::string {
     // This raises a warning about `format` not being a literal.
     int sizeS = std::snprintf(nullptr, 0, format, args...) + 1;
     if (sizeS <= 0) {
-        abort();
+        log_e("Failed to generate formatted string");
+        return "";
     }
     auto size = static_cast<size_t>(sizeS);
     auto buf = std::make_unique<char[]>(size);
-    std::snprintf(buf.get(), size, format, args...);
+    auto sizeF = std::snprintf(buf.get(), size, format, args...);
+    if (sizeS != sizeF) {
+        log_e("Formatted string was a different size");
+    }
     // We don't want the '\0' inside
     return {buf.get(), buf.get() + size - 1};
 }

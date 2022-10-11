@@ -19,7 +19,7 @@ auto SindarinAPI::getInstance() -> SindarinAPI * {
     return instance;
 }
 
-auto SindarinAPI::beginClient(HTTPClient &httpClient, String urlPath) -> bool {
+auto SindarinAPI::beginClient(HTTPClient &httpClient, const String &urlPath) -> bool {
     if (!httpClient.begin(String(SINDARIN_SERVER_URL) + urlPath)) {
         // TODO: When can this happen?
         log_e("HTTPClient::begin failed");
@@ -34,7 +34,7 @@ auto SindarinAPI::beginClient(HTTPClient &httpClient, String urlPath) -> bool {
 
 void SindarinAPI::setAccessToken(std::string token) { accessToken_ = std::move(token); }
 
-auto SindarinAPI::checkSync(std::string readablesSha, bool *synced) -> int {
+auto SindarinAPI::checkSync(const std::string &readablesSha, bool *synced) -> int {
     HTTPClient httpClient;
     if (!beginClient(httpClient, String("/sync/all/?sha=") + String(readablesSha.c_str()))) {
         return -1;
@@ -130,7 +130,7 @@ auto SindarinAPI::downloadReadable(Readable &readable, LocalStore &localStore) -
         }
 
         // TODO: This is kinda weird to get the filesystem from localstore
-        auto file = localStore.fileSystem_.open(localPath, "w");
+        auto file = localStore.fileSystem.open(localPath, "w");
 
         // W25Q512JV* chips have a page size of 256 bytes so that seems like a good value to use here.
         uint8_t buff[256] = {0};

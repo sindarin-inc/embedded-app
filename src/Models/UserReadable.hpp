@@ -7,6 +7,7 @@
 class UserReadable : JsonSerializable {
 public:
     UserReadable() = default;
+    ~UserReadable() override = default;
 
     int id;
     Readable readable;
@@ -23,4 +24,5 @@ public:
     operator std::string() const { return std::to_string(id); }
 };
 
-bool convertToJson(const UserReadable &src, JsonVariant dst);
+// NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
+auto convertToJson(const UserReadable &src, JsonVariant dst) -> bool;

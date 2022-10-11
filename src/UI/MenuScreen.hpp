@@ -17,7 +17,7 @@ public:
     MenuItem() = default;
     MenuItem(std::string title) : title(std::move(title)){};
     MenuItem(std::string title, std::function<void()> callback)
-        : title(std::move(title)), callback(std::move(std::move(callback))){};
+        : title(std::move(title)), callback(std::move(callback)){};
 
     std::string title;
     // Called when this menu item is selected

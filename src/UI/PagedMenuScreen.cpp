@@ -117,19 +117,13 @@ void PagedMenuScreen::processCommand(RemoteCommand command) {
         break;
 
     case RemoteCommand::NEXT:
-        if (getCurrItem().callback != nullptr) {
-            getCurrItem().callback();
-        }
-        break;
-
     case RemoteCommand::ENTER:
-
         if (getCurrItem().callback != nullptr) {
             getCurrItem().callback();
         }
         break;
-    case RemoteCommand::CHANNEL_PLUS:
 
+    case RemoteCommand::CHANNEL_PLUS:
         nextSelection();
         needsRerender = true;
 
