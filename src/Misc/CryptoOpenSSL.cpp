@@ -55,7 +55,7 @@ auto ComputeHash(const std::string &unhashed, std::string &hashed) -> bool {
     return true;
 }
 
-auto CalculateStringHash(std::string input) -> std::string {
+auto CalculateStringHash(const std::string &input) -> std::string {
     return "";
 }
 
