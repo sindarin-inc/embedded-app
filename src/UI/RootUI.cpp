@@ -346,6 +346,21 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
     std::string buildString = "Build: " + std::string(kGitHash);
 #endif
 
+#if USE_TURN_TOUCH_REMOTE
+    debugMenu->addMenuItem(MenuItem("Unpair TurnTouch", [this, display]() {
+        prefs_.pairedTurnTouchAddress.remove();
+        log_w("Unpaired TurnTouch. Rebooting...");
+        display->drawSingleLineOfText(
+            "Unpaired TurnTouch! Resetting...",
+            display->xAbsolute(display->xAbsoluteCenter() -
+                               display->getTextWidth("Unpaired TurnTouch! Resetting...") / 2),
+            display->yAbsolute(display->yAbsoluteCenter() - display->getTextHeight() / 2));
+        display->updateDisplay();
+        delay(2000);
+        esp_restart();
+    }));
+#endif
+
     debugMenu->addMenuItem(MenuItem("Font Type", [this, debugMenu]() {
         MenuStyle styleFamilies;
         auto fontMenu = new MenuScreen(this->power_, debugMenu->getMyStyle());
@@ -486,21 +501,6 @@ void RootUI::setup(DisplaySystem *display, std::vector<Readable> &readables,
             display->yAbsolute(display->yAbsoluteCenter() - display->getTextHeight() / 2));
         display->updateDisplay();
     }));
-
-#if USE_TURN_TOUCH_REMOTE
-    debugMenu->addMenuItem(MenuItem("Unpair TurnTouch", [this, display]() {
-        prefs_.pairedTurnTouchAddress.remove();
-        log_w("Unpaired TurnTouch. Rebooting...");
-        display->drawSingleLineOfText(
-            "Unpaired TurnTouch! Resetting...",
-            display->xAbsolute(display->xAbsoluteCenter() -
-                               display->getTextWidth("Unpaired TurnTouch! Resetting...") / 2),
-            display->yAbsolute(display->yAbsoluteCenter() - display->getTextHeight() / 2));
-        display->updateDisplay();
-        delay(2000);
-        esp_restart();
-    }));
-#endif
 
     debugMenu->addMenuItem(
         MenuItem("Factory Defaults", [this]() { this->restoreFactoryDefaults(); }));
