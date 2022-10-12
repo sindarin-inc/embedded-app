@@ -70,7 +70,10 @@ auto LocalStore::calculateReadablesSha() -> std::string {
 
     std::vector<std::string> shas;
     for (auto &readable : readables_) {
-        shas.push_back(readable.files[0].shaHash);
+        // Skip local-only readables for the SHA calculation
+        if (!readable.localOnly) {
+            shas.push_back(readable.files[0].shaHash);
+        }
     }
 
     // Sort all SHA strings alphabetically

@@ -9,7 +9,7 @@ public:
     Author() = default;
     ~Author() override = default;
 
-    int id;
+    std::string id;
     std::string name;
     std::string description;
 
@@ -17,7 +17,7 @@ public:
         if (!j.containsKey("id") || !j.containsKey("name") || !j.containsKey("description")) {
             return false;
         }
-        id = j["id"];
+        id = j["id"].as<std::string>();
         name = j["name"].as<std::string>();
         description = j["description"].as<std::string>();
         return true;

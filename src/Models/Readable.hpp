@@ -24,6 +24,8 @@ public:
     // TODO: source
     // TODO: categories
 
+    //! Set to true if this is a readable side-loaded onto the device (that doesn't come from the server)
+    bool localOnly = false;
     // Local state
     uint32_t place{0}, placePrev{0};
 
@@ -33,7 +35,7 @@ public:
 
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("id") || !j.containsKey("title") || !j.containsKey("date_created") ||
-            !j.containsKey("date_modified") || !j.containsKey("date_published") ||
+            !j.containsKey("date_modified") ||
             !j.containsKey("authors") || !j.containsKey("files")) {
             log_w("Failed to parse Readable %s", DumpJson(j).c_str());
             return false;
@@ -43,6 +45,7 @@ public:
         dateCreated = j["date_created"].as<std::string>();
         dateModified = j["date_modified"].as<std::string>();
         datePublished = j["date_published"].as<std::string>();
+        localOnly = j["local_only"].as<bool>();
         authors.clear();
         for (const auto &author : j["authors"].as<JsonArray>()) {
             authors.emplace_back();

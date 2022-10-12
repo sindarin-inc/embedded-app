@@ -9,7 +9,7 @@ public:
     UserReadable() = default;
     ~UserReadable() override = default;
 
-    int id;
+    std::string id;
     Readable readable;
 
     auto fromJson(const JsonObject &j) -> bool override {
@@ -17,11 +17,11 @@ public:
             log_w("Failed to parse UserReadable with JSON %s", DumpJson(j).c_str());
             return false;
         }
-        id = j["id"];
+        id = j["id"].as<std::string>();
         return readable.fromJson(j["readable"]);
     }
 
-    operator std::string() const { return std::to_string(id); }
+    operator std::string() const { return id; }
 };
 
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
