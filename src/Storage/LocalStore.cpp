@@ -14,7 +14,9 @@ auto LocalStore::begin() -> bool {
         return true;
     }
 
-    auto *doc = new SpiRamJsonDocument(readablesFile.size() * 2);
+    // Grab a minimum amount of ram, even if the readables file is empty
+    auto docSize = std::max(100, (int)readablesFile.size() * 2);
+    auto *doc = new SpiRamJsonDocument(docSize);
 
     auto error = deserializeJson(*doc, readablesFile);
     readablesFile.close();
