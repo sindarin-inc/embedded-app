@@ -10,7 +10,7 @@ auto convertToJson(const Author &src, JsonVariant dst) -> bool {
 
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
 void convertFromJson(JsonVariantConst src, Author &dst) {
-    dst.id = std::to_string(src["id"].as<int>());
+    dst.id = src["id"].as<std::string>();
     dst.name = src["name"].as<std::string>();
     dst.description = src["description"].as<std::string>();
 }
