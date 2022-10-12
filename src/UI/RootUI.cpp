@@ -192,7 +192,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
                 if (!fileSystem.createDir("/pocket")) {
                     log_e("Unable to create Pocket dir");
-                    pocketMenu->showTemporaryMessage(*display, "FS error createDir", 0, false);
+                    pocketMenu->showTemporaryMessage(*display, "FS error createDir");
                     return;
                 }
                 auto id = StringFormat("pkt-%s", (*response)["resolved_id"].as<const char *>());
