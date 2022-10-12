@@ -103,7 +103,7 @@ void DemoScreen::render(DisplaySystem &display) {
         }
 
         if (currentScreen_ > 3) {
-            drawSolLogo(display, 50, 120, 3 /*display.height() - 4*/, true);
+            // drawSolLogo(display, 50, 120, 3 /*display.height() - 4*/, true);
             /*
                         display.fillRoundRect(2, 2, display.width() - 4, display.height() - 4, 50,
                display.fg); display.fillRect(display.width() - 54, 2, 52, 52, display.fg);
@@ -118,22 +118,102 @@ void DemoScreen::render(DisplaySystem &display) {
         if (currentScreen_ > 4) {
             switch (currentScreen_) {
             case 5:
+                /* display.drawXBitmap(
+                    display.xAbsolute(display.xAbsoluteCenter() - papyrus2_width / 2), 10,
+                    papyrus2_bits, papyrus2_width, papyrus2_height, display.fg);
+                */
+
+                /*display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - paper_width /
+                   2), 10, paper_bits, paper_width, paper_height, display.fg);*/
+                /*
+                                display.drawXBitmap(
+                                    display.xAbsolute(display.xAbsoluteCenter() - hi_hand_width /
+                   2), 10, hi_hand_bits, hi_hand_width, hi_hand_height, display.fg);
+                                display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+                                delay(750);
+
+                                display.drawXBitmap(
+                                    display.xAbsolute(display.xAbsoluteCenter() - hi_hand_width /
+                   2), 10, hi_hand_bits, hi_hand_width, hi_hand_height, display.fg);
+
+                                display.drawXBitmap(
+                                    display.xAbsolute(display.xAbsoluteCenter() - hi_blocks_width /
+                   2), 75, hi_blocks_bits, hi_blocks_width, hi_blocks_height, display.fg);
+                                display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+                                delay(750);
+
+                                display.drawXBitmap(
+                                    display.xAbsolute(display.xAbsoluteCenter() - hi_hand_width /
+                   2), 10, hi_hand_bits, hi_hand_width, hi_hand_height, display.fg);
+
+                                display.drawXBitmap(
+                                    display.xAbsolute(display.xAbsoluteCenter() - hi_blocks_width /
+                   2), 75, hi_blocks_bits, hi_blocks_width, hi_blocks_height, display.fg);
+
+                                display.drawXBitmap(
+                                    display.xAbsolute(display.xAbsoluteCenter() - hi_pixel3_width /
+                   2), 130, hi_pixel1_bits, hi_pixel1_width, hi_pixel1_height, display.fg);
+                                display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+                                delay(250);
+
+                                display.drawXBitmap(
+                                    display.xAbsolute(display.xAbsoluteCenter() - hi_hand_width /
+                   2), 10, hi_hand_bits, hi_hand_width, hi_hand_height, display.fg);
+
+                                display.drawXBitmap(
+                                    display.xAbsolute(display.xAbsoluteCenter() - hi_blocks_width /
+                   2), 75, hi_blocks_bits, hi_blocks_width, hi_blocks_height, display.fg);
+
+                                display.drawXBitmap(
+                                    display.xAbsolute(display.xAbsoluteCenter() - hi_pixel3_width /
+                   2), 130, hi_pixel1_bits, hi_pixel1_width, hi_pixel1_height, display.fg);
+                                display.drawXBitmap(
+                                    display.xAbsolute(display.xAbsoluteCenter() - hi_pixel3_width /
+                   2), 130, hi_pixel3_bits, hi_pixel3_width, hi_pixel3_height, display.fg);*/
                 /*display.drawXBitmap(
-                    display.xAbsolute(display.xAbsoluteCenter() - papyrus_width / 2), 10,
-                    papyrus_bits, papyrus_width, papyrus_height, display.fg);*/
-
-                display.drawXBitmap(
                     display.xAbsolute(display.xAbsoluteCenter() - lightbulb_width / 2), 10,
-                    lightbulb_bits, lightbulb_width, lightbulb_height, display.fg);
-                message = "";
-                // message = "Five thousand years ago";
-                display.drawSingleLineOfText(
-                    message.c_str(),
-                    display.xAbsolute(display.xAbsoluteCenter() -
-                                      display.getTextWidth(message.c_str()) / 2),
-                    display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2));
+                    lightbulb_bits, lightbulb_width, lightbulb_height, display.fg);*/
 
-                // message = "paper!";
+                /*display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - spark_width /
+                   2), 10, spark_bits, spark_width, spark_height, display.fg);*/
+
+                /*display.drawXBitmap(
+                    display.xAbsolute(display.xAbsoluteCenter() - thought_width / 2), 10,
+                    thought_bits, thought_width, thought_height, display.fg);*/
+
+                /*
+                                display.drawCircle(display.xAbsoluteCenter() - thought_width / 2 -
+                   7, 129, 3, display.fg); display.drawCircle(display.xAbsoluteCenter() -
+                   thought_width / 2 + 2, 125 - 2, 4, display.fg);
+                                display.drawCircle(display.xAbsoluteCenter() - thought_width / 2 +
+                   10, 125 - 11, 5, display.fg);
+
+                                display.drawRoundRect(display.xAbsoluteCenter() - thought_width / 2
+                   + 12, 125 - 14 - 7 - 3 - 41, 65, 50, 12, display.fg); message = "ponder.";
+                                display.drawSingleLineOfText(
+                                    message.c_str(),
+                                    display.xAbsolute(display.xAbsoluteCenter() -
+                                                      display.getTextWidth(message.c_str()) / 2 +
+                   59), display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 -
+                   3)); message = "to"; display.drawSingleLineOfText( message.c_str(),
+                                    display.xAbsolute(display.xAbsoluteCenter() -
+                                                      display.getTextWidth(message.c_str()) / 2 +
+                   59), display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 -
+                   3 - display.getTextHeight()));
+
+                                message = "pause";
+                                display.drawSingleLineOfText(
+                                    message.c_str(),
+                                    display.xAbsolute(display.xAbsoluteCenter() -
+                                                      display.getTextWidth(message.c_str()) / 2 +
+                   59), display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 -
+                   3 - display.getTextHeight() * 2));
+                                                      */
+
+                display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - phone_width / 2),
+                                    10, phone_bits, phone_width, phone_height, display.fg);
+
+                message = "";
                 display.drawSingleLineOfText(
                     message.c_str(),
                     display.xAbsolute(display.xAbsoluteCenter() -
