@@ -24,7 +24,8 @@ public:
     // TODO: source
     // TODO: categories
 
-    //! Set to true if this is a readable side-loaded onto the device (that doesn't come from the server)
+    //! Set to true if this is a readable side-loaded onto the device (that doesn't come from the
+    //! server)
     bool localOnly = false;
     // Local state
     uint32_t place{0}, placePrev{0};
@@ -35,8 +36,8 @@ public:
 
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("id") || !j.containsKey("title") || !j.containsKey("date_created") ||
-            !j.containsKey("date_modified") ||
-            !j.containsKey("authors") || !j.containsKey("files")) {
+            !j.containsKey("date_modified") || !j.containsKey("authors") ||
+            !j.containsKey("files")) {
             log_w("Failed to parse Readable %s", DumpJson(j).c_str());
             return false;
         }
