@@ -514,7 +514,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 #endif
 
-    debugMenu->addMenuItem(MenuItem("Factory Defaults", [this, debugMenu, display]() {
+    debugMenu->addMenuItem(MenuItem("Factory Defaults", [debugMenu, display]() {
 #if SIMULATOR
         // Remove the preferences file simprefs.ini
         std::filesystem::remove("simprefs.ini");

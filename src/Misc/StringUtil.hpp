@@ -24,7 +24,7 @@ auto StringFormat(const char *format, ARGS... args) -> std::string {
         log_e("Failed to generate formatted string");
         return "";
     }
-    auto size = static_cast<size_t>(sizeS + 1);
+    auto size = sizeS + 1;
     auto buf = std::make_unique<char[]>(size);
     auto sizeF = std::snprintf(buf.get(), size, format, args...);
     if (sizeS != sizeF) {

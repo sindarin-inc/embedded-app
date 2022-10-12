@@ -70,8 +70,8 @@ public:
 
     auto getMyStyle() -> MenuStyleFamily { return myStyle_; }
 
-    void showTemporaryMessage(DisplaySystem &display, std::string message, int duration = 2000,
-                              bool rerenderAfter = true);
+    void showTemporaryMessage(DisplaySystem &display, const std::string &message,
+                              int duration = 2000, bool rerenderAfter = true);
 
 #if EINKET013TT1
     void saveAndUpdateVCOM(DisplaySystem &display);

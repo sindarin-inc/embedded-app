@@ -177,8 +177,8 @@ auto MenuScreen::getItemAt(int index) -> MenuItem {
     return menuItems_[index];
 }
 
-void MenuScreen::showTemporaryMessage(DisplaySystem &display, std::string message, int duration,
-                                      bool rerenderAfter) {
+void MenuScreen::showTemporaryMessage(DisplaySystem &display, const std::string &message,
+                                      int duration, bool rerenderAfter) {
     display.drawSingleLineOfText(
         message,
         display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message.c_str()) / 2),
