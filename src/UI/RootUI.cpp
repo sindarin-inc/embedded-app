@@ -62,20 +62,18 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto createReadableScreen = [this, display, mainMenu,
                                  &fileSystem](const Readable &readable) -> ReadableScreen * {
-#if !DISABLE_WIFI
-        DisconnectWifi();
-#endif
         // TODO: Would be better to not allocate / delete these all the time
         auto stream = fileSystem.newRendererStream(readable.localFilePath().c_str());
         this->prefs_.lastReadableId.set(readable.id);
         auto *readableScreen =
             new ReadableScreen(stream, *display, readable, this->prefs_, this->power_, fileSystem);
 #if ENABLE_POCKET
-        if (readable->id.rfind("pkt-", 0) == 0) {
+        if (readable.id.rfind("pkt-", 0) == 0) {
             readableScreen->setLeftPopupButton("Delete", [readable, &fileSystem]() {
-                log_i("Deleting Pocket readable %s", readable->path.c_str());
-                if (!fileSystem.remove(readable->localFilePath().c_str())) {
-                    log_e("Failed to delete Pocket readable %s", readable->path.c_str());
+                auto path = readable.localFilePath().c_str();
+                log_i("Deleting Pocket readable %s", path);
+                if (!fileSystem.remove(path)) {
+                    log_e("Failed to delete Pocket readable %s", path);
                 }
                 log_d("Rebooting to reload readables");
                 // TODO: Dynamically reload readables instead of rebooting
@@ -87,9 +85,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // to make the whites really white and the blacks really black.
         display->clearDisplay();
         readableScreen->backCallback = [this, display, stream, readableScreen, mainMenu]() {
-#if !DISABLE_WIFI
-            ConnectWiFiIfCredentialsExist();
-#endif
             // When leaving a readable to go back to the main menu, do a full clear
             // of the display.
             display->clearDisplay();
@@ -126,27 +121,22 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                                        createReadableScreen]() {
         if (!NetworkConnected()) {
             log_w("Tried to load Pocket articles but WiFi not connected");
-            display->drawSingleLineOfText("WiFi Disconnected", 0, 0);
-            display->updateDisplay();
-            delay(2000);
-            needsRerender = true;
+            mainMenu->showTemporaryMessage(*display, "WiFi Disconnected");
             return;
         }
 
         if (!prefs_.pocketApiToken.get().has_value()) {
             log_w("No Pocket API token found");
-            display->drawSingleLineOfText("No Pocket API token found", 0, 0);
-            display->updateDisplay();
-            delay(2000);
-            needsRerender = true;
+            mainMenu->showTemporaryMessage(*display, "No Pocket API token found");
             return;
         }
 
         log_i("Loading Pocket articles");
+
         // TODO(John): I wanted to make a loading indicator for this but then realized I'll
         // need to add threading / tasks since the HTTP code is synchronous right now.
-        display->drawSingleLineOfText("Downloading...", 0, 0);
-        display->updateDisplay();
+        mainMenu->showTemporaryMessage(*display, "Downloading...", 0, false);
+
         PocketAPI *pocket = PocketAPI::getInstance();
         pocket->setAccessToken(prefs_.pocketApiToken.get().value());
 
@@ -157,20 +147,14 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         int code = pocket->get(&response);
         if (code != 200) {
             log_e("Pocket HTTP error: %d", code);
-            display->drawSingleLineOfText(StringFormat("HTTP error: %d", code), 0, 0);
-            display->updateDisplay();
-            delay(2000);
-            setCurrentScreen(*mainMenu);
+            mainMenu->showTemporaryMessage(*display, StringFormat("HTTP error: %d", code));
             return;
         }
 
         JsonObject list = (*response)["list"].as<JsonObject>();
         if (list.size() <= 0) {
             log_w("No Pocket articles found");
-            display->drawSingleLineOfText("No articles found", 0, 0);
-            display->updateDisplay();
-            delay(2000);
-            setCurrentScreen(*mainMenu);
+            mainMenu->showTemporaryMessage(*display, "No articles found");
             delete response;
             return;
         }
@@ -187,22 +171,19 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             pocketMenu->addMenuItem(MenuItem(title, [this, pocketMenu, title, url, pocket, display,
                                                      &fileSystem, createReadableScreen]() {
                 log_d("Loading article %s (%s)", title, url);
-                display->drawSingleLineOfText("Downloading...", 0, 0);
-                display->updateDisplay();
+                pocketMenu->showTemporaryMessage(*display, StringFormat("Downloading '%s'", title),
+                                                 0, false);
                 SpiRamJsonDocument *response;
                 auto code = pocket->text(url, &response);
                 if (code != 200) {
                     if (code == -1) {
                         log_e("Pocket HTTP Error: %d (Article too long?)", code);
-                        display->drawSingleLineOfText("Error: Too long", 0, 0);
-                        display->updateDisplay();
+                        pocketMenu->showTemporaryMessage(*display, "Error: Too long", 0, false);
                     } else {
                         log_e("Pocket HTTP Error: %d", code);
-                        display->drawSingleLineOfText(StringFormat("Pocket Error: %d", code), 0, 0);
-                        display->updateDisplay();
+                        pocketMenu->showTemporaryMessage(
+                            *display, StringFormat("Pocket Error: %d", code), 0, false);
                     }
-                    delay(2000);
-                    setCurrentScreen(*pocketMenu);
                     return;
                 }
                 const char *text = (*response)["article"].as<const char *>();
@@ -211,10 +192,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
                 if (!fileSystem.createDir("/pocket")) {
                     log_e("Unable to create Pocket dir");
-                    display->drawSingleLineOfText(StringFormat("FS error createDir"), 0, 0);
-                    display->updateDisplay();
-                    delay(2000);
-                    setCurrentScreen(*pocketMenu);
+                    pocketMenu->showTemporaryMessage(*display, "FS error createDir", 0, false);
                     return;
                 }
                 auto id = StringFormat("pkt-%s", (*response)["resolved_id"].as<const char *>());
@@ -252,7 +230,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             delete response;
         };
     }));
-#endif // DISABLE_WIFI
+#endif // ENABLE_POCKET
 
     // Settings menus
     auto settingsMenu = new MenuScreen(this->power_, styleFamilies.settingsMenu);
@@ -267,28 +245,54 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         setCurrentScreen(*settingsMenu);
     };
 
-    settingsMenu->addMenuItem(MenuItem("Sync content", [this, &localStore, display]() {
-        if (!prefs_.cloudToken.get().has_value()) {
-            log_w("No Sindarin API token found");
-            display->drawSingleLineOfText("No Sindarin API token found", 0, 0);
-            display->updateDisplay();
-            delay(2000);
-            needsRerender = true;
-            return;
-        }
+    settingsMenu->addMenuItem(
+        MenuItem("Sync content", [this, settingsMenu, &localStore, display]() {
+            // TODO: This seems like a general thing we will want to do sometimes: Attempt to
+            // connect to WiFi, and handle errors or success in a lambda
+            if (!HasWiFiCredentials()) {
+                log_w("No WiFi credentials found during content sync");
+                settingsMenu->showTemporaryMessage(*display, "No WiFi credentials found");
+                return;
+            }
 
-        // TODO: Progress UI for this!
-        display->drawSingleLineOfText("Loading content from API...", 0, 0);
-        display->updateDisplay();
-        if (localStore.syncFromRemote()) {
-            display->drawSingleLineOfText("Success!", 0, 0);
-        } else {
-            display->drawSingleLineOfText("Failed :(", 0, 0);
-        }
-        display->updateDisplay();
-        delay(2000);
-        needsRerender = true;
-    }));
+            if (!prefs_.cloudToken.get().has_value()) {
+                log_w("No Sindarin API token found");
+                settingsMenu->showTemporaryMessage(*display, "No Sindarin API token found");
+                return;
+            }
+
+            if (!NetworkConnected()) {
+                settingsMenu->showTemporaryMessage(*display, "Connecting WiFi...", 0, false);
+
+                ConnectWiFiIfCredentialsExist();
+                for (int i = 0; i < 50; i++) {
+                    if (NetworkConnected()) {
+                        break;
+                    }
+                    delay(200);
+                }
+
+                if (!NetworkConnected()) {
+                    DisconnectWifi();
+                    settingsMenu->showTemporaryMessage(*display, "Unable to connect to WiFi");
+                    return;
+                }
+            }
+
+            // TODO: Progress UI for this!
+            settingsMenu->showTemporaryMessage(*display, "Loading content...", 0, false);
+
+            std::string message;
+            if (localStore.syncFromRemote()) {
+                message = "Success!";
+            } else {
+                message = "Failed :(";
+            }
+
+            DisconnectWifi();
+
+            settingsMenu->showTemporaryMessage(*display, message);
+        }));
 
     settingsMenu->addMenuItem(MenuItem("Reading Font Size", [this, settingsMenu]() {
         auto fontMenu = new MenuScreen(this->power_, settingsMenu->getMyStyle());
@@ -488,48 +492,40 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
     }));
 
-    debugMenu->addMenuItem(MenuItem("Reset Preferences", [this, display]() {
+    debugMenu->addMenuItem(MenuItem("Reset Preferences", [this, debugMenu, display]() {
         prefs_.clear();
         log_w("Preferences cleared. Rebooting...");
-
-        display->drawSingleLineOfText(
-            "Preferences cleared! Resetting...",
-            display->xAbsolute(display->xAbsoluteCenter() -
-                               display->getTextWidth("Preferences cleared! Resetting...") / 2),
-            display->yAbsolute(display->yAbsoluteCenter() - display->getTextHeight() / 2));
-        display->updateDisplay();
-        delay(2000);
+        debugMenu->showTemporaryMessage(*display, "Preferences cleared. Rebooting...", 2000, false);
         esp_restart();
     }));
 
-    debugMenu->addMenuItem(MenuItem("Reset Statistics", [this, display]() {
+    debugMenu->addMenuItem(MenuItem("Reset Statistics", [this, debugMenu, display]() {
         prefs_.wordCount.set(0);
         prefs_.totalReadingTimeSeconds.set(0);
-        display->drawSingleLineOfText(
-            "Statistics reset.",
-            display->xAbsolute(display->xAbsoluteCenter() -
-                               display->getTextWidth("Statistics reset.") / 2),
-            display->yAbsolute(display->yAbsoluteCenter() - display->getTextHeight() / 2));
-        display->updateDisplay();
+        debugMenu->showTemporaryMessage(*display, "Statistics reset.");
     }));
 
 #if USE_TURN_TOUCH_REMOTE
-    debugMenu->addMenuItem(MenuItem("Unpair PageTurner", [this, display]() {
+    debugMenu->addMenuItem(MenuItem("Unpair PageTurner", [this, debugMenu, display]() {
         prefs_.pairedTurnTouchAddress.remove();
         log_w("Unpaired PageTurner. Rebooting...");
-        display->drawSingleLineOfText(
-            "Unpaired PageTurner! Resetting...",
-            display->xAbsolute(display->xAbsoluteCenter() -
-                               display->getTextWidth("Unpaired PageTurner! Resetting...") / 2),
-            display->yAbsolute(display->yAbsoluteCenter() - display->getTextHeight() / 2));
-        display->updateDisplay();
-        delay(2000);
+        debugMenu->showTemporaryMessage(*display, "Unpaired PageTurner! Resetting...", 2000, false);
         esp_restart();
     }));
 #endif
 
-    debugMenu->addMenuItem(
-        MenuItem("Factory Defaults", [this]() { this->restoreFactoryDefaults(); }));
+    debugMenu->addMenuItem(MenuItem("Factory Defaults", [this, debugMenu, display]() {
+#if SIMULATOR
+        // Remove the preferences file simprefs.ini
+        std::filesystem::remove("simprefs.ini");
+        debugMenu->showTemporaryMessage(*display, "simprefs.ini deleted! Resetting...");
+#else
+        nvs_flash_erase();
+        log_w("NVS cleared. Rebooting...");
+        debugMenu->showTemporaryMessage(*display, "NVS cleared! Resetting...");
+#endif
+        esp_restart();
+    }));
 
     debugMenu->addMenuItem(MenuItem("Optics Test", [this, debugMenu]() {
         auto opticsTestScreen = new CalibrationScreen();
@@ -543,17 +539,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
     }));
 
-    debugMenu->addMenuItem(MenuItem("Turn on Onboarding Mode", [this, display]() {
+    debugMenu->addMenuItem(MenuItem("Turn on Onboarding Mode", [this, debugMenu, display]() {
         log_d("Entering calibration");
         prefs_.demoMode.set(1);
-        display->drawSingleLineOfText(
-            "Onboarding mode on! Resetting...",
-            display->xAbsolute(display->xAbsoluteCenter() -
-                               display->getTextWidth("Onboarding mode on! Resetting...") / 2),
-            display->yAbsolute(
-                display->yAbsolute(display->yAbsoluteCenter() - display->getTextHeight() / 2)));
-        display->updateDisplay();
-        delay(2000);
+
+        debugMenu->showTemporaryMessage(*display, "Onboarding mode on! Resetting...", 2000, false);
         esp_restart();
     }));
 
@@ -611,12 +601,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
     }));
 
-    oldMenu->addMenuItem(MenuItem("Deep sleep", [display]() {
+    oldMenu->addMenuItem(MenuItem("Deep sleep", [display, oldMenu]() {
         log_w("Deep sleeping. Goodnight.");
-
-        display->drawSingleLineOfText("Deep sleeping. Goodnight.", 0, 0);
-        display->updateDisplay();
-        delay(2000);
+        oldMenu->showTemporaryMessage(*display, "Deep sleeping. Goodnight.", 2000, false);
         esp_deep_sleep_start();
     }));
 
@@ -719,13 +706,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     SHOW_HEAP();
 }
 
-void RootUI::processCommand(RemoteCommand command) {
-    if (command == FACTORY_DEFAULTS) {
-        restoreFactoryDefaults();
-    }
-    ContainerScreen::processCommand(command);
-}
-
 void RootUI::loop(DisplaySystem &display, RemoteCommand command) {
     if (this->power_.getDepleted()) {
         // Force render immediately as we are about to shut off
@@ -738,28 +718,4 @@ void RootUI::loop(DisplaySystem &display, RemoteCommand command) {
         esp_deep_sleep_start();
     }
     Screen::loop(display, command);
-}
-
-void RootUI::restoreFactoryDefaults() {
-#if SIMULATOR
-    // Remove the preferences file simprefs.ini
-    std::filesystem::remove("simprefs.ini");
-    display_->drawSingleLineOfText(
-        "simprefs.ini deleted! Resetting...",
-        display_->xAbsolute(display_->xAbsoluteCenter() -
-                            display_->getTextWidth("simprefs.ini deleted! Resetting...") / 2),
-        display_->yAbsolute(display_->yAbsoluteCenter() - display_->getTextHeight() / 2));
-#else
-    nvs_flash_erase();
-    log_w("NVS cleared. Rebooting...");
-    display_->drawSingleLineOfText(
-        "NVS cleared! Resetting...",
-        display_->xAbsolute(display_->xAbsoluteCenter() -
-                            display_->getTextWidth("NVS cleared! Resetting...") / 2),
-        display_->yAbsolute(display_->yAbsoluteCenter() - display_->getTextHeight() / 2));
-#endif
-
-    display_->updateDisplay();
-    delay(2000);
-    esp_restart();
 }

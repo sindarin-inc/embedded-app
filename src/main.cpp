@@ -103,7 +103,7 @@ void RadioTask(void *parameter) {
         ttRemoteInput.connect();
 #endif
 
-#if USE_BLE_SERVER_REMOTE && !DISABLE_WIFI
+#if USE_BLE_SERVER_REMOTE
         bleWifi->loop();
 #endif
 
@@ -419,17 +419,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     if (!bleManager->startAdvertisingIfNecessary()) {
         bootErrors.push_back({.type = BootError::Type::BLEManagerAdvertising});
     }
-#endif
-
-#if !DISABLE_WIFI
-    if (!ConnectWiFiIfCredentialsExist()) {
-        bootErrors.push_back({.type = BootError::Type::WiFi});
-    }
-
-#if ENABLE_OTA
-    // Disabling for now since WiFi coexistance is not working
-    // ota.setup();
-#endif
 #endif
 
 #if !DISABLE_POWER_MANAGEMENT
