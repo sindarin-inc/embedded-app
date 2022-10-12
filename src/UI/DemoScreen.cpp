@@ -1,6 +1,7 @@
 #include "UI/DemoScreen.hpp"
 
 #include "Misc/Platform.hpp"
+#include "UI/Bitmaps/Logo.hpp"
 #include "UI/Bitmaps/stone.hpp"
 #include "UI/Fonts/Tahoma10pt7b.h"
 #include "UI/Fonts/Tahoma5pt7b.h"
@@ -178,7 +179,6 @@ void DemoScreen::render(DisplaySystem &display) {
                 /*display.drawXBitmap(
                     display.xAbsolute(display.xAbsoluteCenter() - thought_width / 2), 10,
                     thought_bits, thought_width, thought_height, display.fg);*/
-
                 /*
                                 display.drawCircle(display.xAbsoluteCenter() - thought_width / 2 -
                    7, 129, 3, display.fg); display.drawCircle(display.xAbsoluteCenter() -
@@ -206,10 +206,13 @@ void DemoScreen::render(DisplaySystem &display) {
                                                       display.getTextWidth(message.c_str()) / 2 +
                    59), display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 -
                    3 - display.getTextHeight() * 2));
-                                                      */
+                */
+                /* display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - phone_width /
+                   2), 10, phone_bits, phone_width, phone_height, display.fg);*/
 
-                display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - phone_width / 2),
-                                    10, phone_bits, phone_width, phone_height, display.fg);
+                display.drawXBitmap(
+                    display.xAbsolute(display.xAbsoluteCenter() - franklin_width / 2), 10,
+                    franklin_bits, franklin_width, franklin_height, display.fg);
 
                 message = "";
                 display.drawSingleLineOfText(
