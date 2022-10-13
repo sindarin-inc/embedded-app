@@ -8,7 +8,7 @@ auto LittleFSFileSystem::begin() -> bool {
     SHOW_HEAP();
 
     // Launch LITTLEFS file system
-    if (!LittleFS.begin(false, "/littlefs", 255, "data")) {
+    if (!LittleFS.begin(true, "/littlefs", 255, "data")) {
         log_e("An Error has occurred while mounting LittleFS");
         return false;
     }
