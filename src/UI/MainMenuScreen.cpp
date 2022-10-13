@@ -74,7 +74,7 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
 
     // Long press down on the TT should count as enter since we don't have the
     // 5th button
-    // case RemoteCommand::ENTER:
+    case RemoteCommand::ENTER:
     case RemoteCommand::CHANNEL_PLUS:
     case RemoteCommand::STOP:
 

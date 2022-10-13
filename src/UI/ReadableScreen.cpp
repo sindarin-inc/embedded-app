@@ -151,21 +151,29 @@ void ReadableScreen::render(DisplaySystem &display) {
                          display.fg);
 
         // Up arrow - looks like a bookmark to indicate that's what you can do.
-        display.drawLine(screenWidth / 2, -arrowHeight - 3, screenWidth / 2 - arrowWidth / 2, -3,
+        display.drawXBitmap(screenWidth / 2 - HOME2_WIDTH / 2, -HOME2_HEIGHT - 3, HOME2_BITS,
+                            HOME2_WIDTH, HOME2_HEIGHT, display.fg);
+
+        display.setRotation(1);
+        // Right side show bookmark icon.
+        display.drawLine(screenWidth / 2, -arrowHeight - 1, screenWidth / 2 - arrowWidth / 2, -1,
                          display.fg);
-        display.drawLine(screenWidth / 2, -arrowHeight - 3, screenWidth / 2 + arrowWidth / 2, -3,
+        display.drawLine(screenWidth / 2, -arrowHeight - 1, screenWidth / 2 + arrowWidth / 2, -1,
                          display.fg);
 
-        display.drawLine(screenWidth / 2 - arrowWidth / 2, -3, screenWidth / 2 - arrowWidth / 2,
+        display.drawLine(screenWidth / 2 - arrowWidth / 2, -1, screenWidth / 2 - arrowWidth / 2,
                          display.yAbsolute(0), display.fg);
-        display.drawLine(screenWidth / 2 + arrowWidth / 2, -3, screenWidth / 2 + arrowWidth / 2,
+        display.drawLine(screenWidth / 2 + arrowWidth / 2, -1, screenWidth / 2 + arrowWidth / 2,
                          display.yAbsolute(0), display.fg);
 
+        display.setRotation(0);
         // Right Arrow
+        /*
         display.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
                          screenHeight / 2 + arrowWidth / 2, display.fg);
         display.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
                          screenHeight / 2 - arrowWidth / 2, display.fg);
+                         */
         shownIcons_ = true;
     }
 
@@ -212,7 +220,8 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         prefs_.readablePlace.set(readable_.id.c_str(), readable_.place);
         needsRerender = true;
         break;
-    case RemoteCommand::CHANNEL_PLUS:
+
+    case RemoteCommand::ENTER:
         readable_.placePrev = readable_.place;
         readable_.place = newPlace_;
         prefs_.readablePlace.set(readable_.id.c_str(), readable_.place);
@@ -222,13 +231,14 @@ void ReadableScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::NEXT:
         setCurrentScreen(popup_);
         break;
-    case RemoteCommand::PREV:
+    case RemoteCommand::CHANNEL_PLUS:
+
         inBookmark_ = !inBookmark_;
         writeOutBookmarkUpdate();
         needsRerender = true;
         break;
     case RemoteCommand::BACK:
-    case RemoteCommand::ENTER:
+    case RemoteCommand::PREV:
         back();
         break;
     case RemoteCommand::NOP_BUTTON:
