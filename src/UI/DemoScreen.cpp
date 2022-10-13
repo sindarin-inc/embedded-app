@@ -43,7 +43,7 @@ void DemoScreen::drawSolLogo(DisplaySystem &display, int x, int y, int size, boo
     }
 
     // draw l
-    int lX = oX + diameter + letterDelta;
+    int lX = oX + diameter + letterDelta + 1;
     int lY = y - diameter * 2 / 10;
     if (solid) {
         display.fillRect(lX, lY, diameter * 6 / 10, diameter * 12 / 10 + 1, display.fg);
@@ -57,9 +57,12 @@ void DemoScreen::drawSolLogo(DisplaySystem &display, int x, int y, int size, boo
     display.fillRect(x, y + 6 * diameter / 10, diameter / 2, 4 * diameter / 10, display.fg);
 
     if (!solid) {
-        display.fillRoundRect(3, 3, display.width() - 6, display.height() - 6, 50, display.bg);
-        display.fillRect(display.width() - 54, 3, 51, 51, display.bg);
-        display.fillRect(3, display.height() - 54, 51, 51, display.bg);
+        display.fillRoundRect(x + 1, y + 1, 9 * diameter / 10 - 2, diameter - 2, diameter / 2,
+                              display.bg);
+        display.fillRect(x + 4 * diameter / 10 + 1, y + 1, 5 * diameter / 10 - 2, diameter / 2 - 2,
+                         display.bg);
+        display.fillRect(x + 1, y + 6 * diameter / 10 + 1, diameter / 2 - 2, 4 * diameter / 10 - 2,
+                         display.bg);
     }
 }
 
@@ -100,30 +103,33 @@ void DemoScreen::render(DisplaySystem &display) {
         }
 
         if (currentScreen_ > 3) {
-            // drawSolLogo(display, 2, 2, 4 /*display.height() - 4*/, true);
+            drawSolLogo(display, 2, 2, 3 /*display.height() - 4*/, false);
+            /*
+                        display.fillRoundRect(2, 2, display.width() - 4, display.height() - 4, 50,
+               display.fg); display.fillRect(display.width() - 54, 2, 52, 52, display.fg);
+                        display.fillRect(2, display.height() - 54, 52, 52, display.fg);
 
-            display.fillRoundRect(2, 2, display.width() - 4, display.height() - 4, 50, display.fg);
-            display.fillRect(display.width() - 54, 2, 52, 52, display.fg);
-            display.fillRect(2, display.height() - 54, 52, 52, display.fg);
-
-            display.fillRoundRect(3, 3, display.width() - 6, display.height() - 6, 50, display.bg);
-            display.fillRect(display.width() - 54, 3, 51, 51, display.bg);
-            display.fillRect(3, display.height() - 54, 51, 51, display.bg);
+                        display.fillRoundRect(3, 3, display.width() - 6, display.height() - 6, 50,
+               display.bg); display.fillRect(display.width() - 54, 3, 51, 51, display.bg);
+                        display.fillRect(3, display.height() - 54, 51, 51, display.bg);
+             */
         }
 
         if (currentScreen_ > 4) {
             switch (currentScreen_) {
             case 5:
-                display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - paper_width / 2),
-                                    10, paper_bits, paper_width, paper_height, display.fg);
-                message = "Five thousand years ago";
+                display.drawXBitmap(
+                    display.xAbsolute(display.xAbsoluteCenter() - papyrus_width / 2), 10,
+                    papyrus_bits, papyrus_width, papyrus_height, display.fg);
+                message = "";
+                // message = "Five thousand years ago";
                 display.drawSingleLineOfText(
                     message.c_str(),
                     display.xAbsolute(display.xAbsoluteCenter() -
                                       display.getTextWidth(message.c_str()) / 2),
                     display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2));
 
-                message = "paper!";
+                // message = "paper!";
                 display.drawSingleLineOfText(
                     message.c_str(),
                     display.xAbsolute(display.xAbsoluteCenter() -
