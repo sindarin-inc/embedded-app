@@ -447,6 +447,8 @@ void DemoScreen::render(DisplaySystem &display) {
                     display.xAbsolute(display.xAbsoluteCenter() - hi_pixel3_width / 2) - 45, 130,
                     hi_pixel3_bits, hi_pixel3_width, hi_pixel3_height, display.fg);
                 message = "";
+                display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+                dontRefresh = true;
                 display.clearDisplay();
                 break;
             case 11:
@@ -591,7 +593,7 @@ void DemoScreen::render(DisplaySystem &display) {
 
                 display.drawCircle(display.xAbsoluteCenter() - thought_width / 2 + 2, 125 - 2, 4,
                                    display.fg);
-                display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+                display.updateDisplay(DisplaySystem::UpdateType::FAST);
                 delay(500);
 
                 message = DEMO_SCREEN_16;
@@ -616,7 +618,7 @@ void DemoScreen::render(DisplaySystem &display) {
                 display.drawCircle(display.xAbsoluteCenter() - thought_width / 2 + 10, 125 - 11, 5,
                                    display.fg);
 
-                display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+                display.updateDisplay(DisplaySystem::UpdateType::FAST);
                 delay(500);
 
                 message = DEMO_SCREEN_16;
