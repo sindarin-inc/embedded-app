@@ -376,21 +376,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     std::string buildString = "Build: " + std::string(kGitHash);
 #endif
 
-#if USE_TURN_TOUCH_REMOTE
-    debugMenu->addMenuItem(MenuItem("Unpair TurnTouch", [this, display]() {
-        prefs_.pairedTurnTouchAddress.remove();
-        log_w("Unpaired TurnTouch. Rebooting...");
-        display->drawSingleLineOfText(
-            "Unpaired TurnTouch! Resetting...",
-            display->xAbsolute(display->xAbsoluteCenter() -
-                               display->getTextWidth("Unpaired TurnTouch! Resetting...") / 2),
-            display->yAbsolute(display->yAbsoluteCenter() - display->getTextHeight() / 2));
-        display->updateDisplay();
-        delay(2000);
-        esp_restart();
-    }));
-#endif
-
     debugMenu->addMenuItem(MenuItem("Font Type", [this, debugMenu]() {
         MenuStyle styleFamilies;
         auto fontMenu = new MenuScreen(this->power_, debugMenu->getMyStyle());
