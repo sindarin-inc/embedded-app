@@ -95,6 +95,7 @@ public:
     }
 
     void fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) {
+        log_d("%d %d", xOffset(x0), yOffset(y0));
         gfxClass_->fillCircle(xOffset(x0), yOffset(y0), r, color);
     }
 
