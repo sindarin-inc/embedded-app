@@ -266,6 +266,7 @@ void DemoScreen::render(DisplaySystem &display) {
                 display.updateDisplay(DisplaySystem::UpdateType::FAST);
                 dontRefresh = true;
                 message = "";
+                display.clearDisplay();
 
                 break;
             case 6:
@@ -303,6 +304,7 @@ void DemoScreen::render(DisplaySystem &display) {
                     display.xAbsolute(display.xAbsoluteCenter() - papyrus2_width / 2), 90,
                     papyrus2_bits, papyrus2_width, papyrus2_height, display.fg);
                 message = "";
+                display.clearDisplay();
 
                 break;
             case 8:
@@ -445,7 +447,7 @@ void DemoScreen::render(DisplaySystem &display) {
                     display.xAbsolute(display.xAbsoluteCenter() - hi_pixel3_width / 2) - 45, 130,
                     hi_pixel3_bits, hi_pixel3_width, hi_pixel3_height, display.fg);
                 message = "";
-
+                display.clearDisplay();
                 break;
             case 11:
 
@@ -527,6 +529,7 @@ void DemoScreen::render(DisplaySystem &display) {
                     display.yAbsolute(display.yAbsoluteCenter() -
                                       display.getTextHeight(message.c_str()) / 2));
                 message = "";
+                display.clearDisplay();
 
                 break;
             case 15:
@@ -665,6 +668,7 @@ void DemoScreen::render(DisplaySystem &display) {
 
                 display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
                 dontRefresh = true;
+                display.clearDisplay();
                 message = "";
 
                 break;
@@ -826,7 +830,7 @@ void DemoScreen::render(DisplaySystem &display) {
                 dontRefresh = true;
 
                 message = "";
-
+                display.clearDisplay();
                 break;
             case 18:
 
