@@ -77,6 +77,7 @@ void DemoScreen::render(DisplaySystem &display) {
 
     display.setFont(&TAHOMA_REGULAR_FONT6PT7B);
 
+    // NOLINTBEGIN(bugprone-branch-clone) - keeping these duplicative for symmetry
     switch (currentScreen_) {
     case 0:
         display.setFont(&TAHOMA_REGULAR_FONT10PT7B);
@@ -91,6 +92,7 @@ void DemoScreen::render(DisplaySystem &display) {
         display.setFont(&TAHOMA_REGULAR_FONT8PT7B);
         break;
     }
+    // NOLINTEND(bugprone-branch-clone)
     if (currentScreen_ > 1) {
         display.setFont(&TAHOMA_REGULAR_FONT8PT7B);
 
@@ -264,6 +266,7 @@ void DemoScreen::render(DisplaySystem &display) {
                 display.updateDisplay(DisplaySystem::UpdateType::FAST);
                 dontRefresh = true;
                 message = "";
+                display.clearDisplay();
 
                 break;
             case 6:
@@ -301,6 +304,7 @@ void DemoScreen::render(DisplaySystem &display) {
                     display.xAbsolute(display.xAbsoluteCenter() - papyrus2_width / 2), 90,
                     papyrus2_bits, papyrus2_width, papyrus2_height, display.fg);
                 message = "";
+                display.clearDisplay();
 
                 break;
             case 8:
@@ -443,7 +447,9 @@ void DemoScreen::render(DisplaySystem &display) {
                     display.xAbsolute(display.xAbsoluteCenter() - hi_pixel3_width / 2) - 45, 130,
                     hi_pixel3_bits, hi_pixel3_width, hi_pixel3_height, display.fg);
                 message = "";
-
+                display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+                dontRefresh = true;
+                display.clearDisplay();
                 break;
             case 11:
 
@@ -525,6 +531,7 @@ void DemoScreen::render(DisplaySystem &display) {
                     display.yAbsolute(display.yAbsoluteCenter() -
                                       display.getTextHeight(message.c_str()) / 2));
                 message = "";
+                display.clearDisplay();
 
                 break;
             case 15:
@@ -586,7 +593,7 @@ void DemoScreen::render(DisplaySystem &display) {
 
                 display.drawCircle(display.xAbsoluteCenter() - thought_width / 2 + 2, 125 - 2, 4,
                                    display.fg);
-                display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+                display.updateDisplay(DisplaySystem::UpdateType::FAST);
                 delay(500);
 
                 message = DEMO_SCREEN_16;
@@ -611,7 +618,7 @@ void DemoScreen::render(DisplaySystem &display) {
                 display.drawCircle(display.xAbsoluteCenter() - thought_width / 2 + 10, 125 - 11, 5,
                                    display.fg);
 
-                display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+                display.updateDisplay(DisplaySystem::UpdateType::FAST);
                 delay(500);
 
                 message = DEMO_SCREEN_16;
@@ -663,6 +670,7 @@ void DemoScreen::render(DisplaySystem &display) {
 
                 display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
                 dontRefresh = true;
+                display.clearDisplay();
                 message = "";
 
                 break;
@@ -824,7 +832,7 @@ void DemoScreen::render(DisplaySystem &display) {
                 dontRefresh = true;
 
                 message = "";
-
+                display.clearDisplay();
                 break;
             case 18:
 
@@ -1223,24 +1231,14 @@ void DemoScreen::processCommand(RemoteCommand command) {
     // the messages, but for now, any button press is fine.
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
-        currentScreen_++;
-        needsRerender = true;
-        break;
     case RemoteCommand::CHANNEL_PLUS:
-        currentScreen_++;
-        needsRerender = true;
-        break;
     case RemoteCommand::PREV:
-        currentScreen_++;
-        needsRerender = true;
-        break;
     case RemoteCommand::NEXT:
         currentScreen_++;
         needsRerender = true;
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::ENTER:
-        break;
     default:
         break;
     }

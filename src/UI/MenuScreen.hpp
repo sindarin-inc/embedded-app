@@ -17,7 +17,7 @@ public:
     MenuItem() = default;
     MenuItem(std::string title) : title(std::move(title)){};
     MenuItem(std::string title, std::function<void()> callback)
-        : title(std::move(title)), callback(std::move(std::move(callback))){};
+        : title(std::move(title)), callback(std::move(callback)){};
 
     std::string title;
     // Called when this menu item is selected
@@ -69,6 +69,9 @@ public:
     void drawMenuItems(DisplaySystem &display, bool withBullet, bool withLastItem = true);
 
     auto getMyStyle() -> MenuStyleFamily { return myStyle_; }
+
+    void showTemporaryMessage(DisplaySystem &display, const std::string &message,
+                              int duration = 2000, bool rerenderAfter = true);
 
 #if EINKET013TT1
     void saveAndUpdateVCOM(DisplaySystem &display);

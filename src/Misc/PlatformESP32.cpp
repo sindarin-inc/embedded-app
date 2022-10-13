@@ -23,6 +23,28 @@
 esp_adc_cal_characteristics_t adcCalCharacteristics;
 
 void InitializePlatform() {
+    // Arduino breaks the UART with sleep. So we manually initialize the UART using IDF functions.
+    // There's unfortunately no way currently to customize the source clock in Arduino:
+    // https://github.com/espressif/arduino-esp32/blob/548412952ba58e299ad83d932cea417a2490fd78/cores/esp32/esp32-hal-uart.c#L163
+    // NOTE: This _might_ not be necessary when using the USB/JTAG peripheral on the ESP32-S3, but
+    // it probably can't hurt.
+    uart_config_t uartConfig;
+    uartConfig.baud_rate = 115200;
+    uartConfig.data_bits = UART_DATA_8_BITS;
+    uartConfig.parity = UART_PARITY_DISABLE;
+    uartConfig.stop_bits = UART_STOP_BITS_1;
+    uartConfig.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
+    uartConfig.rx_flow_ctrl_thresh = 0;
+#if GILPICO_SINDARIN
+    // This is the part Arduino gets wrong. The ref tick clock is stable even amidst light sleep
+    uartConfig.source_clk = UART_SCLK_REF_TICK;
+#else
+    // But on the ESP32-S3, since the UART is built into the chip, we use XTAL I guess.
+    uartConfig.source_clk = UART_SCLK_XTAL;
+#endif
+    ESP_ERROR_CHECK(uart_driver_install(0, 256, 0, 20, nullptr, 0));
+    ESP_ERROR_CHECK(uart_param_config(0, &uartConfig));
+
     auto adcCalValue = esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_2_5, ADC_WIDTH_BIT_12,
                                                 DEFAULT_VREF, &adcCalCharacteristics);
     if (adcCalValue != ESP_ADC_CAL_VAL_EFUSE_TP_FIT) {
@@ -70,6 +92,12 @@ void InitializePlatform() {
     pinMode(DISPLAY_POWER, OUTPUT);
 #endif
 #if LEDC_BACKLIGHT
+    // This allows LEDC to work in light sleep on ESP32-S3
+    esp_err_t err = esp_sleep_pd_config(ESP_PD_DOMAIN_RTC8M, ESP_PD_OPTION_ON);
+    if (err != ESP_OK) {
+        log_e("Error configuring esp_sleep_pd_config: %s", esp_err_to_name(err));
+    }
+
     // Backlight configs
     ledc_timer_config_t ledcTimer = {
         .speed_mode = LEDC_LOW_SPEED_MODE,
@@ -78,7 +106,10 @@ void InitializePlatform() {
         .freq_hz = 1000,
         .clk_cfg = LEDC_USE_RTC8M_CLK //
     };
-    ledc_timer_config(&ledcTimer);
+    err = ledc_timer_config(&ledcTimer);
+    if (err != ESP_OK) {
+        log_e("Error configuring LEDC timer: %s", esp_err_to_name(err));
+    }
 
     ledc_channel_config_t ledcLChannel = {
         .gpio_num = BACKLIGHT_LEFT,
@@ -100,11 +131,16 @@ void InitializePlatform() {
         .hpoint = 0 //
     };
 
-    ledc_channel_config(&ledcLChannel);
-    ledc_channel_config(&ledcRChannel);
+    err = ledc_channel_config(&ledcLChannel);
+    if (ledc_channel_config(&ledcLChannel) != ESP_OK) {
+        log_e("Error configuring left LEDC: %s", esp_err_to_name(err));
+    }
 
-    // This allows LEDC to work in light sleep on ESP32-S3
-    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC8M, ESP_PD_OPTION_ON);
+    err = ledc_channel_config(&ledcRChannel);
+    if (err != ESP_OK) {
+        log_e("Error configuring right LEDC: %s", esp_err_to_name(err));
+    }
+
 #endif
 #if ULP_BACKLIGHT
     UlpStart();

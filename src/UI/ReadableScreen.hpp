@@ -1,7 +1,7 @@
 #include <utility>
 
-#include "Contents/Readable.hpp"
 #include "Misc/Power.hpp"
+#include "Models/Readable.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/ContainerScreen.hpp"
@@ -19,7 +19,7 @@ struct Bookmark {
 
 class ReadableScreen : public ContainerScreen {
 public:
-    ReadableScreen(RendererStream *stream, DisplaySystem &display, Readable &readable,
+    ReadableScreen(RendererStream *stream, DisplaySystem &display, const Readable &readable,
                    PreferencesStore &prefs, Power &power, FileSystem &fileSystem)
 
         : renderer_(display), readable_(readable), prefs_(prefs),
@@ -44,7 +44,7 @@ public:
 
 protected:
     Renderer renderer_;
-    Readable &readable_;
+    Readable readable_;
     PreferencesStore &prefs_;
 
     PopupMenuScreen popup_;

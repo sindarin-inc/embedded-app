@@ -4,7 +4,7 @@
 
 #include <utility>
 
-#include "Contents/Json.hpp"
+#include "Models/Json.hpp"
 #include "UrlEncode.hpp"
 #include "sindarin-debug.h"
 

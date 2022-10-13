@@ -4,8 +4,8 @@
 #endif
 
 #include "Communications/OTA.hpp"
+#include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
-#include "Contents/Readable.hpp"
 #include "Displays/AllDisplays.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/BootError.hpp"
@@ -13,6 +13,8 @@
 #include "Misc/Power.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
+#include "Models/Readable.hpp"
+#include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/RootUI.hpp"
 #include "config.h"
@@ -86,6 +88,8 @@ PosixFileSystem fileSystem;
 LittleFSFileSystem fileSystem;
 #endif
 
+LocalStore localStore(fileSystem, prefs);
+
 Power power(fileSystem, prefs);
 RootUI rootUi(prefs, power);
 
@@ -99,7 +103,7 @@ void RadioTask(void *parameter) {
         ttRemoteInput.connect();
 #endif
 
-#if USE_BLE_SERVER_REMOTE && !DISABLE_WIFI
+#if USE_BLE_SERVER_REMOTE
         bleWifi->loop();
 #endif
 
@@ -213,7 +217,10 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     initArduino();
 #endif
 
-    log_i("SN: %s", GetSerialNumber().c_str());
+#if !SIMULATOR
+    // Configure log level for all Sindarin logs
+    esp_log_level_set("Sindarin", ESP_LOG_DEBUG);
+#endif
 
     std::vector<BootError> bootErrors;
 
@@ -225,45 +232,25 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-#if !SIMULATOR
-    esp_log_level_set("Sindarin", ESP_LOG_DEBUG);
-    // Arduino breaks the UART with sleep. So we manually initialize the UART using IDF functions.
-    // There's unfortunately no way currently to customize the source clock in Arduino:
-    // https://github.com/espressif/arduino-esp32/blob/548412952ba58e299ad83d932cea417a2490fd78/cores/esp32/esp32-hal-uart.c#L163
-    uart_config_t uartConfig;
-    uartConfig.baud_rate = 115200;
-    uartConfig.data_bits = UART_DATA_8_BITS;
-    uartConfig.parity = UART_PARITY_DISABLE;
-    uartConfig.stop_bits = UART_STOP_BITS_1;
-    uartConfig.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
-    uartConfig.rx_flow_ctrl_thresh = 0;
-#if GILPICO_SINDARIN
-    // This is the part Arduino gets wrong. The ref tick clock is stable even amidst light sleep.
-    uartConfig.source_clk = UART_SCLK_REF_TICK;
-#else
-    // But on the ESP32-S3, since the UART is built into the chip, we use XTAL I guess.
-    uartConfig.source_clk = UART_SCLK_XTAL;
-#endif
-    ESP_ERROR_CHECK(uart_driver_install(0, 256, 0, 20, nullptr, 0));
-    ESP_ERROR_CHECK(uart_param_config(0, &uartConfig));
-    ESP_ERROR_CHECK(uart_set_pin(0, 1, 3, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
-#endif
-
     InitializePlatform();
 
+    log_i("SN: %s", GetSerialNumber().c_str());
+
 #if !SIMULATOR
-    // Flash all the LEDs
-    digitalWrite(RED_LED, LED_ON);
-    vTaskDelay(200 / portTICK_PERIOD_MS);
-    digitalWrite(RED_LED, LED_OFF);
-    digitalWrite(GREEN_LED, LED_ON);
-    vTaskDelay(200 / portTICK_PERIOD_MS);
-    digitalWrite(GREEN_LED, LED_OFF);
+    if (esp_reset_reason() == ESP_RST_POWERON) {
+        // Flash all the LEDs
+        digitalWrite(RED_LED, LED_ON);
+        vTaskDelay(200 / portTICK_PERIOD_MS);
+        digitalWrite(RED_LED, LED_OFF);
+        digitalWrite(GREEN_LED, LED_ON);
+        vTaskDelay(200 / portTICK_PERIOD_MS);
+        digitalWrite(GREEN_LED, LED_OFF);
 #ifdef BLUE_LED
-    digitalWrite(BLUE_LED, LED_ON);
-    vTaskDelay(200 / portTICK_PERIOD_MS);
-    digitalWrite(BLUE_LED, LED_OFF);
+        digitalWrite(BLUE_LED, LED_ON);
+        vTaskDelay(200 / portTICK_PERIOD_MS);
+        digitalWrite(BLUE_LED, LED_OFF);
 #endif
+    }
 #endif
 
 #if USE_LTR329
@@ -313,16 +300,16 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         myDisplay.getDriver()->setVcom(prefs.vcom.get().value());
     }
 
+#elif WROVER_KIT
+    myDisplay.begin();
+#endif
+
     // If the saved prefs have a backlight of zero, turn on the lights anyways
     // Default to 10% max (which is 50% of the way through the lighting setting)
     if (prefs.backlight.get().value() == 0) {
         prefs.backlight.set(10);
     }
     SetBacklight(prefs.backlight.get().value());
-
-#elif WROVER_KIT
-    myDisplay.begin();
-#endif
 
     switch (prefs.font.get().value()) {
     case PREFS_LUCIDA_REGULAR:
@@ -434,17 +421,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-#if !DISABLE_WIFI
-    if (!ConnectWiFiIfCredentialsExist()) {
-        bootErrors.push_back({.type = BootError::Type::WiFi});
-    }
-
-#if ENABLE_OTA
-    // Disabling for now since WiFi coexistance is not working
-    // ota.setup();
-#endif
-#endif
-
 #if !DISABLE_POWER_MANAGEMENT
     pmConfig.max_freq_mhz = CPU_FREQ_MHZ_HIGH;
     pmConfig.min_freq_mhz = CPU_FREQ_MHZ_LOW;
@@ -466,18 +442,20 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 #endif
 
-    auto readables = new std::vector<Readable>();
     if (!fileSystem.begin()) {
         bootErrors.push_back({.type = BootError::Type::FileSystem});
     }
-    fileSystem.getReadables(readables);
-    fileSystem.getDownloadedPocketReadables(readables);
+
+    if (!localStore.begin()) {
+        bootErrors.push_back({.type = BootError::Type::LocalStore});
+    }
+    auto readables = localStore.readables();
 
     SHOW_HEAP();
 
     power.setup();
 
-    rootUi.setup(&myDisplay, *readables, fileSystem);
+    rootUi.setup(&myDisplay, localStore, fileSystem);
 
     SHOW_HEAP();
 

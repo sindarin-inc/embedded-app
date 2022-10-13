@@ -177,6 +177,21 @@ auto MenuScreen::getItemAt(int index) -> MenuItem {
     return menuItems_[index];
 }
 
+void MenuScreen::showTemporaryMessage(DisplaySystem &display, const std::string &message,
+                                      int duration, bool rerenderAfter) {
+    display.drawSingleLineOfText(
+        message,
+        display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message.c_str()) / 2),
+        display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2));
+    display.updateDisplay();
+    delay(duration);
+    if (rerenderAfter) {
+        this->needsRerender = true;
+        this->setFirstLoad();
+        this->render(display);
+    }
+}
+
 void MenuScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;

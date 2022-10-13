@@ -24,12 +24,15 @@ void DisplaySDLSimulator::updateDisplay(DisplaySystem::UpdateType updateType) {
         for (int y = 0; y < gfxCanvas_.height(); y++) {
             auto pixel = gfxCanvas_.getPixel(x, y);
             uint8_t color = pixel ? 0xFF : 0x00;
+            uint16_t brightnessOffset = 3 * (21 - lighting_);
             if (color == 0xFF) {
                 // Offwhite
-                SDL_SetRenderDrawColor(renderer, 248, 240, 227, 0xFF);
+                SDL_SetRenderDrawColor(renderer, 248 - brightnessOffset, 240 - brightnessOffset,
+                                       227 - brightnessOffset, 0xFF);
             } else {
                 // Offblack
-                SDL_SetRenderDrawColor(renderer, 40, 40, 40, 0xFF);
+                SDL_SetRenderDrawColor(renderer, 40 + brightnessOffset, 40 + brightnessOffset,
+                                       40 + brightnessOffset, 0xFF);
             }
             SDL_RenderDrawPoint(renderer, x, y);
         }

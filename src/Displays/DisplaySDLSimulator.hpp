@@ -14,6 +14,9 @@ public:
     bool setup() override;
     void updateDisplay(DisplaySystem::UpdateType updateType) override;
 
+    void setLighting(unsigned int newLighting) { lighting_ = newLighting; }
+
 protected:
     GFXcanvas1 gfxCanvas_;
+    unsigned int lighting_ = 21;
 };

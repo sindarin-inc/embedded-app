@@ -24,10 +24,13 @@ void StatsScreen::render(DisplaySystem &display) {
     std::string timeMessage = "Time Read: ";
     char formattedString[32];
     if (hoursRead > 0) {
-        sprintf(formattedString, "%02d:%02d:%02d", hoursRead, minutesRead, secondsRead);
+        // NOLINTNEXTLINE(cert-err33-c) -- this is a safe, fixed length, format string
+        snprintf(formattedString, sizeof(formattedString), "%02d:%02d:%02d", hoursRead, minutesRead,
+                 secondsRead);
         timeMessage += formattedString;
     } else {
-        sprintf(formattedString, "%02d:%02d", minutesRead, secondsRead);
+        // NOLINTNEXTLINE(cert-err33-c) -- this is a safe, fixed length, format string
+        snprintf(formattedString, sizeof(formattedString), "%02d:%02d", minutesRead, secondsRead);
         timeMessage += formattedString;
     }
 

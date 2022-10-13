@@ -89,6 +89,7 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
     switch (updateType) {
     case UNSPECIFIED:
         if (getPartialRefresh()) {
+            // NOLINTBEGIN(bugprone-branch-clone) - keeping these duplicative for symmetry
             if (getInversion()) {
                 if (!fullRefreshNext_) {
                     driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
@@ -102,6 +103,7 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
                     driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
                 }
             }
+            // NOLINTEND(bugprone-branch-clone)
         } else {
             driver_.setBorder(bg == 0x00 ? BORDER_SETTING_BLACK : BORDER_SETTING_WHITE);
             driver_.update(FULL_REFRESH_WAVEFORM_REGULAR, gfxCanvas_.getBuffer());

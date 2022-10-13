@@ -47,7 +47,8 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
         } else if (percentProgress - lastPercentage >= 5) {
             lastPercentage = percentProgress;
             char formattedString[32];
-            sprintf(formattedString, "%02d %%", percentProgress);
+            // NOLINTNEXTLINE(cert-err33-c) -- this is a safe, fixed length, format string
+            snprintf(formattedString, sizeof(formattedString), "%02d %%", percentProgress);
             std::string updateMessage = "Updating: ";
             updateMessage += formattedString;
             drawMessage(updateMessage);

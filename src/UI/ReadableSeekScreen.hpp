@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Contents/Readable.hpp"
+#include "Models/Readable.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Screen.hpp"
