@@ -6,33 +6,48 @@
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Screen.hpp"
 
-#define NUM_DEMO_SCREENS 7
-#define DEMO_SCREEN_1 "Hello!"
-#define DEMO_SCREEN_2 "Let's read together"
+#define NUM_DEMO_SCREENS 21
+#define DEMO_SCREEN_1 ""
+#define DEMO_SCREEN_2 ""
 #define DEMO_SCREEN_3 "Focus left eye"
 #define DEMO_SCREEN_4 "Focus right eye"
-#define DEMO_SCREEN_5 "Sol Manifesto"
-#define DEMO_SCREEN_6                                                                              \
-    "Five thousand years ago, these words\n             would have been carved in stone."
-#define DEMO_SCREEN_7                                                                              \
-    "A couple thousand later, you'd be\n           unraveling a scroll of yellowed papyrus."
-#define DEMO_SCREEN_8 "Jump forward a bit from there -- paper!"
-#define DEMO_SCREEN_9 "Handwritten words. Then typeset ones.\n                         Then pixels."
-#define DEMO_SCREEN_10 "The way we read is always changing."
-#define DEMO_SCREEN_11                                                                             \
-    "Each leap forward solving different\n              problems and sparking new possibilities."
-#define DEMO_SCREEN_12 "But one thing hasn't changed\n          across all these centuries:"
-#define DEMO_SCREEN_13 "What reading does for our minds."
-#define DEMO_SCREEN_14 "Whisking us away into other realms."
-#define DEMO_SCREEN_15 "Making us laugh or cry\n          or pause to ponder."
-#define DEMO_SCREEN_16 "Illuminating new thoughts,\n              concepts, and ideas."
-#define DEMO_SCREEN_17                                                                             \
-    "In this era of constant beeps, \n            alerts and updates,\n           what will the "  \
-    "next evolution of reading "                                                                   \
-    "look like?"
-#define DEMO_SCREEN_18                                                                             \
-    "Simply lean back, open your eyes\n                 and let words light the way."
-
+#define DEMO_SCREEN_5 "Five thousand years ago"
+#define DEMO_SCREEN_6 "these words would have"
+#define DEMO_SCREEN_6a "been carved in stone."
+#define DEMO_SCREEN_7 "A couple thousand later"
+#define DEMO_SCREEN_8 "you'd be unraveling a"
+#define DEMO_SCREEN_8a "scroll of yellowed papyrus."
+#define DEMO_SCREEN_9 "Jump forward a bit from there--"
+#define DEMO_SCREEN_10 "paper!"
+#define DEMO_SCREEN_11 "handwritten words"
+#define DEMO_SCREEN_11a "then typset ones"
+#define DEMO_SCREEN_11b "then pixels."
+#define DEMO_SCREEN_12 "The way we read is always changing"
+#define DEMO_SCREEN_13 "Each leap forward solving"
+#define DEMO_SCREEN_13a "different problems and"
+#define DEMO_SCREEN_13b "sparking new possibilities."
+#define DEMO_SCREEN_14 "But one thing hasn't changed"
+#define DEMO_SCREEN_14a "across all these centuries:"
+#define DEMO_SCREEN_14b "What reading does for our minds."
+#define DEMO_SCREEN_15 "Whisking us away into other realms."
+#define DEMO_SCREEN_16 "Making us laugh"
+#define DEMO_SCREEN_16a "or cry"
+#define DEMO_SCREEN_16b "or"
+#define DEMO_SCREEN_16c "pause"
+#define DEMO_SCREEN_16d "to"
+#define DEMO_SCREEN_16e "ponder."
+#define DEMO_SCREEN_17 "Illuminating new"
+#define DEMO_SCREEN_17a "thoughts, concepts, and"
+#define DEMO_SCREEN_17b "ideas."
+#define DEMO_SCREEN_18 "In this era of constant"
+#define DEMO_SCREEN_18a "beeps"
+#define DEMO_SCREEN_18b "alerts"
+#define DEMO_SCREEN_18c "and updates"
+#define DEMO_SCREEN_19 "what will the next evolution"
+#define DEMO_SCREEN_19a "of reading look like?"
+#define DEMO_SCREEN_20 "Simply lean back,"
+#define DEMO_SCREEN_20a "open your eyes,"
+#define DEMO_SCREEN_20b "and let words light the way."
 //
 // This class handles the Onboarding mode (or first time on), so Demo mode
 // isn't quite the right name, but probably close enough?
