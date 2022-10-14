@@ -567,6 +567,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         this->setCurrentScreen(*demoScreen);
         demoScreen->backCallback = [this, demoScreen, debugMenu]() {
             debugMenu->setFirstLoad();
+            debugMenu->needsRerender = true;
             setCurrentScreen(*debugMenu);
             delete demoScreen;
         };
