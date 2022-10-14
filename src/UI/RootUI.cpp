@@ -15,6 +15,7 @@
 #include "Models/Readable.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/LocalStore.hpp"
+#include "UI/AlignmentScreen.hpp"
 #include "UI/CalibrationScreen.hpp"
 #include "UI/DemoScreen.hpp"
 #include "UI/FirmwareUpdateScreen.hpp"
@@ -570,6 +571,17 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             display->clearDisplay();
             setCurrentScreen(*debugMenu);
             delete demoScreen;
+        };
+    }));
+
+    debugMenu->addMenuItem(MenuItem("Alignment Setup", [this, debugMenu, display]() {
+        auto alignmentScreen = new AlignmentScreen(*display, prefs_);
+        this->setCurrentScreen(*alignmentScreen);
+        alignmentScreen->backCallback = [this, alignmentScreen, debugMenu, display]() {
+            debugMenu->setFirstLoad();
+            display->clearDisplay();
+            setCurrentScreen(*debugMenu);
+            delete alignmentScreen;
         };
     }));
 
