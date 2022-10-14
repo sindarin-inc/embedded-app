@@ -151,7 +151,7 @@ void ReadableScreen::render(DisplaySystem &display) {
                          display.fg);
 
         // Up arrow - looks like a bookmark to indicate that's what you can do.
-        display.drawXBitmap(screenWidth / 2 - HOME2_WIDTH / 2, -HOME2_HEIGHT - 3, HOME2_BITS,
+        display.drawXBitmap(screenWidth / 2 - HOME2_WIDTH / 2, -HOME2_HEIGHT - 3, homE2Bits,
                             HOME2_WIDTH, HOME2_HEIGHT, display.fg);
 
         display.setRotation(1);
