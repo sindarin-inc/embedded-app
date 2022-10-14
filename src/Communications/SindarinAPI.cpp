@@ -2,10 +2,12 @@
 
 #include <utility>
 
+#include "GitVersion.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
 #include "Models/UserReadable.hpp"
 #include "UrlEncode.hpp"
+#include "Version.hpp"
 #include "sindarin-debug.h"
 
 #define SINDARIN_SERVER_URL "https://sol-cloud.fly.dev"
@@ -25,6 +27,7 @@ auto SindarinAPI::beginClient(HTTPClient &httpClient, const String &urlPath) -> 
         log_e("HTTPClient::begin failed");
         return false;
     }
+    httpClient.setUserAgent("Sindarin/" + String(kVersionString) + " (" + String(kGitHash) + ")");
     httpClient.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
     httpClient.addHeader("Content-Type", "application/json");
     httpClient.addHeader("Authorization", "Tolkien " + String(accessToken_.c_str()));
@@ -34,9 +37,11 @@ auto SindarinAPI::beginClient(HTTPClient &httpClient, const String &urlPath) -> 
 
 void SindarinAPI::setAccessToken(std::string token) { accessToken_ = std::move(token); }
 
-auto SindarinAPI::checkSync(const std::string &readablesSha, bool *synced) -> int {
+auto SindarinAPI::checkSync(const std::string &readablesSha, CheckSyncResponse *resp) -> int {
     HTTPClient httpClient;
-    if (!beginClient(httpClient, String("/sync/all/?sha=") + String(readablesSha.c_str()))) {
+    auto params = StringFormat("/sync/all/?sha=%s&build=%s&git_hash=%s", readablesSha.c_str(),
+                               kVersionString, kGitHash);
+    if (!beginClient(httpClient, String(params.c_str()))) {
         return -1;
     }
 
@@ -44,10 +49,10 @@ auto SindarinAPI::checkSync(const std::string &readablesSha, bool *synced) -> in
 
     if (httpCode == HTTP_CODE_OK) {
         log_i("Client is in sync");
-        *synced = true;
+        resp->synced = true;
     } else if (httpCode == 419) {
         log_i("Client is out of date");
-        *synced = false;
+        resp->synced = false;
     } else {
         log_e("GET /sync/all failed");
         httpClient.end();
@@ -55,10 +60,11 @@ auto SindarinAPI::checkSync(const std::string &readablesSha, bool *synced) -> in
     }
 
     auto string = httpClient.getString();
-    auto *resp = new SpiRamJsonDocument(string.length());
-    ArduinoJson::deserializeJson(*resp, string);
-    auto message = (*resp)["message"].as<std::string>();
-    log_d("Message: %s", message.c_str());
+    auto *respJson = new SpiRamJsonDocument(string.length());
+    ArduinoJson::deserializeJson(*respJson, string);
+    resp->message = (*respJson)["message"].as<std::string>();
+    resp->firmware.fromJson((*respJson)["firmware"]);
+    log_d("Message: %s, Firmware: %s", resp->message.c_str(), resp->firmware.url.c_str());
 
     httpClient.end();
     return httpCode;
@@ -145,6 +151,8 @@ auto SindarinAPI::downloadReadable(Readable &readable, LocalStore &localStore) -
             if (len > 0) {
                 len -= c;
             }
+            // Let other tasks do stuff.
+            vPortYield();
         }
         file.close();
         log_d("File successfully downloaded.");

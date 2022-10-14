@@ -1,5 +1,5 @@
 # Based on https://jonathanhamberg.com/post/cmake-embedding-git-hash/
-set(git_hash_files_dir ${PROJECT_SOURCE_DIR}/src)
+set(git_hash_files_dir ${CMAKE_SOURCE_DIR}/src)
 
 if (NOT DEFINED post_configure_dir)
     set(post_configure_dir ${CMAKE_BINARY_DIR}/generated)
@@ -73,7 +73,7 @@ function(CheckGitSetup)
         -Dgit_hash_files_dir=${git_hash_files_dir}
         -Dpost_configure_file=${post_configure_dir}
         -DGIT_HASH_CACHE=${GIT_HASH_CACHE}
-        -P ${PROJECT_SOURCE_DIR}/scripts/CheckGit.cmake
+        -P ${CMAKE_SOURCE_DIR}/scripts/CheckGit.cmake
         BYPRODUCTS ${post_configure_file}
         )
 

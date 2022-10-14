@@ -16,7 +16,7 @@ public:
 
     // Convenience methods
     auto hasReadable(Readable &readable) -> bool;
-    auto readables() -> std::vector<Readable> { return readables_; };
+    auto readables() -> std::vector<Readable> & { return readables_; };
     void addReadable(Readable &readable);
 
     auto calculateReadablesSha() -> std::string;

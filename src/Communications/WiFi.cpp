@@ -43,6 +43,9 @@ auto ConnectWiFiIfCredentialsExist() -> bool {
     //     return false;
     // }
 
+    // We have to have wifi sleep enabled otherwise Bluetooth can't work
+    esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
+
     wifi_config_t conf;
     if (!GetWiFiCredentials(&conf)) {
         log_d("No WiFi credentials found");
