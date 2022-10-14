@@ -9,7 +9,9 @@
 
 class FirmwareUpdateScreen : public Screen {
 public:
-    FirmwareUpdateScreen(DisplaySystem &display);
+    FirmwareUpdateScreen(DisplaySystem &display, std::string url, std::string md5,
+                         std::string version)
+        : display_(display), firmwareDownload_(url, md5), version_(version){};
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
@@ -19,6 +21,7 @@ protected:
 
     DisplaySystem &display_;
     FirmwareDownload firmwareDownload_;
+    std::string version_;
 };
 
 #endif

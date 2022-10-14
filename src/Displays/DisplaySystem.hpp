@@ -137,6 +137,8 @@ public:
 
     auto getFont() -> const GFXfont *;
     void drawSingleLineOfText(const std::string &line, int x, int y);
+    void drawSingleLineOfCenteredText(const std::string &line);
+
     void drawText(const std::string &newText, int x, int y, int width, int height)
         __attribute__((deprecated));
     void getTextBounds(const char *buffer, uint16_t *w, uint16_t *h);

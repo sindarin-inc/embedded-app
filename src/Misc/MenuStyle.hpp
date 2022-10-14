@@ -48,7 +48,7 @@ public:
         settingsMenu.arrowTextSpacing = 5;
         settingsMenu.xOffsetForList = 20;
         settingsMenu.yOffsetForList = 40;
-        settingsMenu.numberOfItemsPerPage = 7;
+        settingsMenu.numberOfItemsPerPage = 8;
 
         currentMenu = mainMenu;
     }

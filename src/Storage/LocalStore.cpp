@@ -112,9 +112,10 @@ auto LocalStore::syncFromRemote() -> bool {
     }
     SindarinAPI::getInstance()->setAccessToken(token.value());
 
-    bool synced;
-    SindarinAPI::getInstance()->checkSync(readablesSha, &synced);
-    if (synced) {
+    CheckSyncResponse checkSyncResponse;
+    SindarinAPI::getInstance()->checkSync(readablesSha, &checkSyncResponse);
+    // TODO: We should bail if this fails to connect to the server
+    if (checkSyncResponse.synced) {
         return true;
     }
 
@@ -147,8 +148,8 @@ auto LocalStore::syncFromRemote() -> bool {
 
     // Update the SHA and try again
     readablesSha = this->calculateReadablesSha();
-    SindarinAPI::getInstance()->checkSync(readablesSha, &synced);
-    if (!synced) {
+    SindarinAPI::getInstance()->checkSync(readablesSha, &checkSyncResponse);
+    if (!checkSyncResponse.synced) {
         log_w("After running sync, local readables are still out of sync");
     }
 

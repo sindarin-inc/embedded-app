@@ -5,6 +5,7 @@
 
 #include "Bitmaps/Logo.hpp"
 #include "Communications/HtmlCleaner.hpp"
+#include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
 #include "GitVersion.hpp"
 #include "Inputs/RemoteInput.hpp"
@@ -29,6 +30,7 @@
 #include "UI/ReadableScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
 #include "UI/StatsScreen.hpp"
+#include "Version.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
 
@@ -114,6 +116,34 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
     }
     SHOW_HEAP();
+
+    auto connectWiFi = [this, display](MenuScreen *menu) -> bool {
+        if (!HasWiFiCredentials()) {
+            log_w("No WiFi credentials found");
+            menu->showTemporaryMessage(*display, "No WiFi credentials found");
+            return false;
+        }
+
+        if (!NetworkConnected()) {
+            menu->showTemporaryMessage(*display, "Connecting WiFi...", 0, false);
+
+            ConnectWiFiIfCredentialsExist();
+            for (int i = 0; i < 50; i++) {
+                if (NetworkConnected()) {
+                    break;
+                }
+                delay(200);
+            }
+
+            if (!NetworkConnected()) {
+                DisconnectWifi();
+                menu->showTemporaryMessage(*display, "Unable to connect to WiFi");
+                return false;
+            }
+        }
+
+        return true;
+    };
 
     // Set up pocket article menu
 #if ENABLE_POCKET
@@ -246,37 +276,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     };
 
     settingsMenu->addMenuItem(
-        MenuItem("Sync content", [this, settingsMenu, &localStore, display]() {
-            // TODO: This seems like a general thing we will want to do sometimes: Attempt to
-            // connect to WiFi, and handle errors or success in a lambda
-            if (!HasWiFiCredentials()) {
-                log_w("No WiFi credentials found during content sync");
-                settingsMenu->showTemporaryMessage(*display, "No WiFi credentials found");
-                return;
-            }
-
+        MenuItem("Sync content", [this, settingsMenu, &localStore, display, connectWiFi]() {
             if (!prefs_.cloudToken.get().has_value()) {
                 log_w("No Sindarin API token found");
                 settingsMenu->showTemporaryMessage(*display, "No Sindarin API token found");
                 return;
             }
 
-            if (!NetworkConnected()) {
-                settingsMenu->showTemporaryMessage(*display, "Connecting WiFi...", 0, false);
-
-                ConnectWiFiIfCredentialsExist();
-                for (int i = 0; i < 50; i++) {
-                    if (NetworkConnected()) {
-                        break;
-                    }
-                    delay(200);
-                }
-
-                if (!NetworkConnected()) {
-                    DisconnectWifi();
-                    settingsMenu->showTemporaryMessage(*display, "Unable to connect to WiFi");
-                    return;
-                }
+            if (!connectWiFi(settingsMenu)) {
+                return;
             }
 
             // TODO: Progress UI for this!
@@ -292,6 +300,38 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             DisconnectWifi();
 
             settingsMenu->showTemporaryMessage(*display, message);
+        }));
+
+    settingsMenu->addMenuItem(
+        MenuItem("Check for Update", [this, settingsMenu, &localStore, display, connectWiFi]() {
+            if (!connectWiFi(settingsMenu)) {
+                return;
+            }
+
+            settingsMenu->showTemporaryMessage(*display, "Checking for update", 0, false);
+
+            SindarinAPI::getInstance()->setAccessToken(prefs_.cloudToken.get().value());
+
+            CheckSyncResponse response;
+            // Skip calculating the readable shas for now, the firmware info is sent either way
+            // TODO: Cache all the stuff from /sync/all so we don't have to make this call again
+            SindarinAPI::getInstance()->checkSync("", &response);
+
+            if (response.firmware.url.empty()) {
+                settingsMenu->showTemporaryMessage(*display, "No update available");
+                return;
+            }
+
+            settingsMenu->showTemporaryMessage(*display, "Downloading update!", 0, false);
+
+            auto firmwareUpdateScreen = new FirmwareUpdateScreen(
+                *display, response.firmware.url, response.firmware.md5, response.firmware.version);
+            this->setCurrentScreen(*firmwareUpdateScreen);
+            firmwareUpdateScreen->backCallback = [this, firmwareUpdateScreen, settingsMenu]() {
+                settingsMenu->setFirstLoad();
+                setCurrentScreen(*settingsMenu);
+                delete firmwareUpdateScreen;
+            };
         }));
 
     settingsMenu->addMenuItem(MenuItem("Reading Font Size", [this, settingsMenu]() {
@@ -371,9 +411,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 
 #ifdef GITHASH
-    std::string buildString = "Build: " + std::string(GITHASH);
+    std::string buildString = StringFormat("Build: %s (%s)", kVersionString, GITHASH);
 #else
-    std::string buildString = "Build: " + std::string(kGitHash);
+    std::string buildString = StringFormat("Build: %s (%s)", kVersionString, kGitHash);
 #endif
 
     debugMenu->addMenuItem(MenuItem("Font Type", [this, debugMenu]() {
@@ -554,15 +594,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             debugMenu->setFirstLoad();
             setCurrentScreen(*debugMenu);
             delete demoScreen;
-        };
-    }));
-
-    debugMenu->addMenuItem(MenuItem("Firmware Update", [this, settingsMenu, display]() {
-        auto firmwareUpdateScreen = new FirmwareUpdateScreen(*display);
-        this->setCurrentScreen(*firmwareUpdateScreen);
-        firmwareUpdateScreen->backCallback = [this, firmwareUpdateScreen, settingsMenu]() {
-            setCurrentScreen(*settingsMenu);
-            delete firmwareUpdateScreen;
         };
     }));
 

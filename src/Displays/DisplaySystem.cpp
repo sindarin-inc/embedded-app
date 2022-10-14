@@ -182,6 +182,12 @@ void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y) 
     gfxClass_->printf("%s", line.c_str());
 }
 
+void DisplaySystem::drawSingleLineOfCenteredText(const std::string &line) {
+    this->drawSingleLineOfText(
+        line, this->xAbsolute(this->xAbsoluteCenter() - this->getTextWidth(line.c_str()) / 2),
+        this->yAbsolute(this->yAbsoluteCenter() - this->getTextHeight() / 2));
+}
+
 // y is the y coordinate of the top of the first line
 // MOSTLY DEPRECATED -- use drawSingleLineOfText instead.
 // The display class shouldn't be in charge rendering multiple lines because
