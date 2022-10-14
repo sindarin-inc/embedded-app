@@ -1,5 +1,9 @@
 #include "UI/DemoScreen.hpp"
 
+#if !SIMULATOR
+#include <freertos/queue.h>
+#endif
+
 #include "Misc/Platform.hpp"
 #include "UI/Bitmaps/Logo.hpp"
 #include "UI/Bitmaps/stone.hpp"
@@ -10,6 +14,11 @@
 #include "UI/Fonts/Tahoma8pt7b.h"
 #include "UI/Fonts/Tahoma9pt7b.h"
 #include "sindarin-debug.h"
+
+#if !SIMULATOR
+extern QueueHandle_t remoteQueue;
+extern TaskHandle_t uiTaskHandle;
+#endif
 
 DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power)
     : display_(display), renderer_(display), prefs_(prefs), power_(power) {}
@@ -555,7 +564,7 @@ void DemoScreen::render(DisplaySystem &display) {
         display.drawCircle(display.xAbsoluteCenter() - thought_width / 2 - 7, 129, 3, display.fg);
 
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-        delay(500);
+        delay(100);
 
         message = DEMO_SCREEN_16;
         display.drawSingleLineOfText(message.c_str(),
@@ -576,7 +585,7 @@ void DemoScreen::render(DisplaySystem &display) {
         display.drawCircle(display.xAbsoluteCenter() - thought_width / 2 + 2, 125 - 2, 4,
                            display.fg);
         display.updateDisplay(DisplaySystem::UpdateType::FAST);
-        delay(500);
+        delay(100);
 
         message = DEMO_SCREEN_16;
         display.drawSingleLineOfText(message.c_str(),
@@ -600,7 +609,7 @@ void DemoScreen::render(DisplaySystem &display) {
                            display.fg);
 
         display.updateDisplay(DisplaySystem::UpdateType::FAST);
-        delay(500);
+        delay(100);
 
         message = DEMO_SCREEN_16;
         display.drawSingleLineOfText(message.c_str(),
@@ -1160,7 +1169,12 @@ void DemoScreen::render(DisplaySystem &display) {
     needsRerender = false;
 
     if (currentScreen_ == 3) {
-        processCommand(RemoteCommand::NEXT);
+#if !SIMULATOR
+        RemoteCommand toSend = RemoteCommand::NEXT;
+        xQueueSend(remoteQueue, (void *)&(toSend), (TickType_t)0);
+        // Notify the UI thread that we have a new command
+        xTaskNotify(uiTaskHandle, 0, eNoAction);
+#endif
     }
 }
 

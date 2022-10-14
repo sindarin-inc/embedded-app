@@ -565,9 +565,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     debugMenu->addMenuItem(MenuItem("Onboarding Screens", [this, debugMenu, display]() {
         auto demoScreen = new DemoScreen(*display, prefs_, this->power_);
         this->setCurrentScreen(*demoScreen);
-        demoScreen->backCallback = [this, demoScreen, debugMenu]() {
+        demoScreen->backCallback = [this, demoScreen, debugMenu, display]() {
             debugMenu->setFirstLoad();
-            debugMenu->needsRerender = true;
+            display->clearDisplay();
             setCurrentScreen(*debugMenu);
             delete demoScreen;
         };
@@ -658,7 +658,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     if (inDemo) {
         auto demoScreen = new DemoScreen(*display, prefs_, this->power_);
-        demoScreen->backCallback = [this, demoScreen, mainMenu]() {
+        demoScreen->backCallback = [this, demoScreen, mainMenu, display]() {
+            display->clearDisplay();
             setCurrentScreen(*mainMenu);
             delete demoScreen;
         };
