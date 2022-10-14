@@ -611,15 +611,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
     }));
 
-    debugMenu->addMenuItem(MenuItem("Firmware Update", [this, settingsMenu, display]() {
-        auto firmwareUpdateScreen = new FirmwareUpdateScreen(*display);
-        this->setCurrentScreen(*firmwareUpdateScreen);
-        firmwareUpdateScreen->backCallback = [this, firmwareUpdateScreen, settingsMenu]() {
-            setCurrentScreen(*settingsMenu);
-            delete firmwareUpdateScreen;
-        };
-    }));
-
     debugMenu->addMenuItem(MenuItem("Battery and Temperature", [this, display, debugMenu]() {
         uint16_t width = 0, height = 0;
         display->setFont(display->style.getFontFamily().readableFont);
