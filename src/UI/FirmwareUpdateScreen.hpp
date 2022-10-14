@@ -2,6 +2,7 @@
 #define FIRMWARE_UPDATE_SCREEN_HPP
 
 #include <string>
+#include <utility>
 
 #include "Communications/FirmwareDownload.hpp"
 #include "Communications/WiFi.hpp"
@@ -9,9 +10,9 @@
 
 class FirmwareUpdateScreen : public Screen {
 public:
-    FirmwareUpdateScreen(DisplaySystem &display, std::string url, std::string md5,
+    FirmwareUpdateScreen(DisplaySystem &display, const std::string &url, const std::string &md5,
                          std::string version)
-        : display_(display), firmwareDownload_(url, md5), version_(version){};
+        : display_(display), firmwareDownload_(url, md5), version_(std::move(version)){};
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;

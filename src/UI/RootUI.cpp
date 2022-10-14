@@ -117,7 +117,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
     SHOW_HEAP();
 
-    auto connectWiFi = [this, display](MenuScreen *menu) -> bool {
+    auto connectWiFi = [display](MenuScreen *menu) -> bool {
         if (!HasWiFiCredentials()) {
             log_w("No WiFi credentials found");
             menu->showTemporaryMessage(*display, "No WiFi credentials found");
@@ -303,7 +303,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }));
 
     settingsMenu->addMenuItem(
-        MenuItem("Check for Update", [this, settingsMenu, &localStore, display, connectWiFi]() {
+        MenuItem("Check for Update", [this, settingsMenu, display, connectWiFi]() {
             if (!connectWiFi(settingsMenu)) {
                 return;
             }

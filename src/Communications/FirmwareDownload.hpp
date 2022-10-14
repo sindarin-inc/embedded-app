@@ -3,6 +3,7 @@
 #define FirmwareDownload_H
 #include <HTTPClient.h>
 #include <cstdint>
+#include <utility>
 
 #define FIRMWARE_BLOCK_SIZE 4096
 #define FIRMWARE_CHECK_MD5 1
@@ -10,7 +11,8 @@
 
 class FirmwareDownload {
 public:
-    FirmwareDownload(std::string url, std::string md5) : url_(url), md5_(md5){};
+    FirmwareDownload(std::string url, std::string md5)
+        : url_(std::move(url)), md5_(std::move(md5)){};
 
     auto getFirmware() -> bool;
     auto updateFirmware(int &percentProgress, bool &error) -> bool;
