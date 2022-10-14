@@ -115,6 +115,7 @@ public:
     void useHTTP10(bool usehttp10 = true) {}
     void setTimeout(uint16_t timeout) {}
 
+    void setUserAgent(const String &userAgent){};
     void setFollowRedirects(followRedirects_t follow){};
 
     int GET();

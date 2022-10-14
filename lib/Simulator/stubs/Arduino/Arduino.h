@@ -26,6 +26,8 @@ void esp_deep_sleep_start();
 
 void esp_restart();
 
+void vPortYield();
+
 void digitalWrite(int, int);
 
 #define HIGH 1

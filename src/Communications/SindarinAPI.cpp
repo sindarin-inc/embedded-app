@@ -2,7 +2,7 @@
 
 #include <utility>
 
-#include "GitVersion.cpp.in"
+#include "GitVersion.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
 #include "Models/UserReadable.hpp"
