@@ -27,7 +27,6 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs, Power &p
 // for the size parameter, each 1 is 10 pixels in o radius (e.g., 1 is 10 raidus, 2 is 20 radius,
 // etc).
 //
-
 void DemoScreen::drawSolLogo(DisplaySystem &display, int x, int y, int size, bool solid) {
 
     int diameter = size * 10;
@@ -138,9 +137,7 @@ void DemoScreen::render(DisplaySystem &display) {
 
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         delay(2000);
-        /* break;
 
-     case 5:*/
         message = DEMO_SCREEN_6;
         display.drawSingleLineOfText(message.c_str(),
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -257,8 +254,6 @@ void DemoScreen::render(DisplaySystem &display) {
 
         display.clearDisplay();
         delay(750);
-        /*break;
-    case 6:*/
 
         message = DEMO_SCREEN_7;
         display.drawSingleLineOfText(message.c_str(),
@@ -269,9 +264,6 @@ void DemoScreen::render(DisplaySystem &display) {
 
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         delay(1500);
-        /*
-                        break;
-                    case 7:*/
 
         message = DEMO_SCREEN_8;
         display.drawSingleLineOfText(message.c_str(),
@@ -293,10 +285,6 @@ void DemoScreen::render(DisplaySystem &display) {
 
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
         delay(3000);
-        /*display.clearDisplay();
-
-        break;
-    case 8:*/
 
         message = DEMO_SCREEN_9;
         display.drawSingleLineOfText(message.c_str(),
@@ -307,9 +295,6 @@ void DemoScreen::render(DisplaySystem &display) {
 
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         delay(1500);
-        /*
-                        break;
-                    case 9:*/
 
         message = DEMO_SCREEN_10;
         display.drawSingleLineOfText(message.c_str(),
@@ -324,9 +309,6 @@ void DemoScreen::render(DisplaySystem &display) {
 
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         delay(1500);
-        /*
-                        break;
-                    case 10:*/
 
         message = DEMO_SCREEN_11;
 
@@ -364,41 +346,7 @@ void DemoScreen::render(DisplaySystem &display) {
                             hi_blocks_bits, hi_blocks_width, hi_blocks_height, display.fg);
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         delay(1500);
-        /* message = DEMO_SCREEN_11;
-         display.drawSingleLineOfText(
-             message.c_str(),
-             display.xAbsolute(display.xAbsoluteCenter() -
-                               display.getTextWidth(message.c_str()) / 2 + 35),
-             display.yAbsolute(58 + hi_hand_height / 2 -
-                               display.getTextHeight(message.c_str()) / 2));
-         message = DEMO_SCREEN_11a;
-         display.drawSingleLineOfText(
-             message.c_str(),
-             display.xAbsolute(display.xAbsoluteCenter() -
-                               display.getTextWidth(message.c_str()) / 2 + 35),
-             display.yAbsolute(display.yAbsoluteCenter() -
-                               display.getTextHeight(message.c_str()) / 2));
-         message = DEMO_SCREEN_11b;
-         display.drawSingleLineOfText(
-             message.c_str(),
-             display.xAbsolute(display.xAbsoluteCenter() -
-                               display.getTextWidth(message.c_str()) / 2 + 35),
-             display.yAbsolute(display.yAbsoluteCenter() + 45));
 
-         display.drawXBitmap(
-             display.xAbsolute(display.xAbsoluteCenter() - hi_hand_width / 2) - 45, 30,
-             hi_hand_bits, hi_hand_width, hi_hand_height, display.fg);
-
-         display.drawXBitmap(
-             display.xAbsolute(display.xAbsoluteCenter() - hi_blocks_width / 2) - 45,
-             display.yAbsolute(display.yAbsoluteCenter() - hi_blocks_height / 2),
-             hi_blocks_bits, hi_blocks_width, hi_blocks_height, display.fg);
-
-         display.drawXBitmap(
-             display.xAbsolute(display.xAbsoluteCenter() - hi_pixel3_width / 2) - 45, 130,
-             hi_pixel1_bits, hi_pixel1_width, hi_pixel1_height, display.fg);
-         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-         delay(500);*/
         message = DEMO_SCREEN_11;
         display.drawSingleLineOfText(message.c_str(),
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -434,10 +382,7 @@ void DemoScreen::render(DisplaySystem &display) {
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 
         display.clearDisplay();
-        /*
-        break;
-    case 11:
-*/
+
         delay(1500);
         message = DEMO_SCREEN_12;
         display.drawSingleLineOfText(message.c_str(),
@@ -448,9 +393,7 @@ void DemoScreen::render(DisplaySystem &display) {
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 
         delay(1500);
-        /*
-                        break;
-                    case 12:*/
+
         message = DEMO_SCREEN_13;
         display.drawSingleLineOfText(
             message.c_str(), display.xAbsolute(display.xAbsoluteCenter() - 65),
@@ -476,10 +419,7 @@ void DemoScreen::render(DisplaySystem &display) {
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 
         delay(4000);
-        /*
-        break;
-    case 13:
-*/
+
         message = DEMO_SCREEN_14;
         display.drawSingleLineOfText(message.c_str(),
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -508,10 +448,6 @@ void DemoScreen::render(DisplaySystem &display) {
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 
         delay(4000);
-        /*
-        break;
-    case 14:
-        */
 
         message = DEMO_SCREEN_15;
         display.drawSingleLineOfText(message.c_str(),
@@ -525,10 +461,7 @@ void DemoScreen::render(DisplaySystem &display) {
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 
         delay(2000);
-        /*
-                        break;
-                    case 15:
-        */
+
         message = DEMO_SCREEN_16;
         display.drawSingleLineOfText(message.c_str(),
                                      display.xAbsolute(display.xAbsoluteCenter() - 65),
@@ -662,10 +595,6 @@ void DemoScreen::render(DisplaySystem &display) {
         display.clearDisplay();
         delay(2500);
 
-        /*
-                        break;
-                    case 16:
-        */
         message = DEMO_SCREEN_17;
         display.drawSingleLineOfText(message.c_str(),
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -713,10 +642,6 @@ void DemoScreen::render(DisplaySystem &display) {
 
         delay(1500);
 
-        /*
-        break;
-    case 17:
-*/
         message = DEMO_SCREEN_18;
         display.drawSingleLineOfText(message.c_str(),
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -810,10 +735,7 @@ void DemoScreen::render(DisplaySystem &display) {
 
         delay(1500);
         display.clearDisplay();
-        /*
-        break;
-    case 18:
-*/
+
         message = DEMO_SCREEN_19;
         display.drawSingleLineOfText(message.c_str(),
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -849,10 +771,7 @@ void DemoScreen::render(DisplaySystem &display) {
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 
         delay(2250);
-        /*
-        break;
-    case 19:
-*/
+
         message = DEMO_SCREEN_20;
         display.drawSingleLineOfText(message.c_str(),
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -879,283 +798,10 @@ void DemoScreen::render(DisplaySystem &display) {
 
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         delay(5000);
-        /*
-                        break;
-                    case 20:*/
 
         drawSolLogo(display, 47, 87, 3, true);
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         delay(3000);
-
-        /*
-         */
-
-        /**/
-        /*
-         */
-        /**/
-
-        /**/
-
-        /*display.drawXBitmap(
-            display.xAbsolute(display.xAbsoluteCenter() - thought_width / 2), 10,
-            thought_bits, thought_width, thought_height, display.fg);*/
-        /*
-
-        */
-        /* display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - phone_width /
-           2), 10, phone_bits, phone_width, phone_height, display.fg);*/
-        /*
-
-
-
-                        display.drawSingleLineOfText(
-                            message.c_str(),
-                            display.xAbsolute(display.xAbsoluteCenter() -
-                                              display.getTextWidth(message.c_str()) / 2),
-                            display.yAbsolute(65));
-
-                        break;
-                    case 6:
-
-                        display.drawCircle(display.width() / 2, 120, 25, display.fg);
-                        display.drawRect(display.width() / 2 - 25, 120, 51, 50, display.fg);
-                        display.fillRect(display.width() / 2 - 24, 120, 49, 49, display.bg);
-
-                        display.drawLine(display.width() / 2 - 8, 120, display.width() / 2 +
-           12, 120, display.fg);
-
-                        display.drawLine(display.width() / 2 - 12, 128, display.width() / 2
-           + 12, 128, display.fg);
-
-                        // display.drawLine(display.width() / 2 - 12, 135, display.width() /
-           2 + 12, 135,
-                        //                  display.fg);
-
-                        // display.drawLine(display.width() / 2 - 12, 142, display.width() /
-           2 + 12, 142,
-                        //                  display.fg);
-
-                        // display.drawLine(display.width() / 2 - 12, 149, display.width() /
-           2 + 8, 149,
-                        //                  display.fg);
-                        //  display.fillRect(26, 26, display.width() - 51, display.height()
-           - 51,
-                        //  display.bg);
-
-                        message = "Five thousand years ago,";
-                        display.drawSingleLineOfText(
-                            message.c_str(),
-                            display.xAbsolute(display.xAbsoluteCenter() -
-                                              display.getTextWidth(message.c_str()) / 2),
-                            display.yAbsolute(display.yAbsoluteCenter() - 2 *
-           display.getTextHeight() - 40));
-
-                        message = "these words would have";
-                        display.drawSingleLineOfText(
-                            message.c_str(),
-                            display.xAbsolute(display.xAbsoluteCenter() -
-                                              display.getTextWidth(message.c_str()) / 2),
-                            display.yAbsolute(display.yAbsoluteCenter() -
-           display.getTextHeight() - 40));
-
-                        message = "been etched in stone.";
-
-                        display.drawSingleLineOfText(
-                            message.c_str(),
-                            display.xAbsolute(display.xAbsoluteCenter() -
-                                              display.getTextWidth(message.c_str()) / 2),
-                            display.yAbsolute(display.yAbsoluteCenter() - 40));
-
-                        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-                        delay(200);
-
-                        display.fillRoundRect(2, 2, display.width() - 4, display.height() -
-           4, 50, display.fg); display.fillRect(display.width() - 54, 2, 52, 52,
-           display.fg); display.fillRect(2, display.height() - 54, 52, 52, display.fg);
-
-                        display.fillRoundRect(4, 4, display.width() - 8, display.height() -
-           8, 50, display.bg); display.fillRect(display.width() - 56, 4, 52, 52,
-           display.bg); display.fillRect(4, display.height() - 56, 52, 52, display.bg);
-
-                        display.drawCircle(display.width() / 2, 120, 25, display.fg);
-                        display.drawRect(display.width() / 2 - 25, 120, 51, 50, display.fg);
-                        display.fillRect(display.width() / 2 - 24, 120, 49, 49, display.bg);
-
-                        display.drawLine(display.width() / 2 - 8, 120, display.width() / 2 +
-           12, 120, display.fg);
-
-                        display.drawLine(display.width() / 2 - 12, 128, display.width() / 2
-           + 12, 128, display.fg);
-
-                        display.drawLine(display.width() / 2 - 12, 135, display.width() / 2
-           + 12, 135, display.fg);
-
-                        // display.drawLine(display.width() / 2 - 12, 142, display.width() /
-           2 + 12, 142,
-                        //                  display.fg);
-
-                        // display.drawLine(display.width() / 2 - 12, 149, display.width() /
-           2 + 8, 149,
-                        //                 display.fg);
-                        // display.fillRect(26, 26, display.width() - 51, display.height() -
-           51,
-                        // display.bg);
-                        message = "Five thousand years ago,";
-                        display.drawSingleLineOfText(
-                            message.c_str(),
-                            display.xAbsolute(display.xAbsoluteCenter() -
-                                              display.getTextWidth(message.c_str()) / 2),
-                            display.yAbsolute(display.yAbsoluteCenter() - 2 *
-           display.getTextHeight() - 40));
-
-                        message = "these words would have";
-                        display.drawSingleLineOfText(
-                            message.c_str(),
-                            display.xAbsolute(display.xAbsoluteCenter() -
-                                              display.getTextWidth(message.c_str()) / 2),
-                            display.yAbsolute(display.yAbsoluteCenter() -
-           display.getTextHeight() - 40));
-
-                        message = "been etched in stone.";
-
-                        display.drawSingleLineOfText(
-                            message.c_str(),
-                            display.xAbsolute(display.xAbsoluteCenter() -
-                                              display.getTextWidth(message.c_str()) / 2),
-                            display.yAbsolute(display.yAbsoluteCenter() - 40));
-
-
-                        display.updateDisplay(DisplaySystem::UpdateType::FAST);
-                        delay(750);
-
-                        display.fillRoundRect(2, 2, display.width() - 4, display.height() -
-           4, 50, display.fg); display.fillRect(display.width() - 54, 2, 52, 52,
-           display.fg); display.fillRect(2, display.height() - 54, 52, 52, display.fg);
-
-                        display.fillRoundRect(4, 4, display.width() - 8, display.height() -
-           8, 50, display.bg); display.fillRect(display.width() - 56, 4, 52, 52,
-           display.bg); display.fillRect(4, display.height() - 56, 52, 52, display.bg);
-                        display.drawCircle(display.width() / 2, 120, 25, display.fg);
-                        display.drawRect(display.width() / 2 - 25, 120, 51, 50, display.fg);
-                        display.fillRect(display.width() / 2 - 24, 120, 49, 49, display.bg);
-
-                        display.drawLine(display.width() / 2 - 8, 120, display.width() / 2 +
-           12, 120, display.fg);
-
-                        display.drawLine(display.width() / 2 - 12, 128, display.width() / 2
-           + 12, 128, display.fg);
-
-                        display.drawLine(display.width() / 2 - 12, 135, display.width() / 2
-           + 12, 135, display.fg);
-
-                        display.drawLine(display.width() / 2 - 12, 142, display.width() / 2
-           + 12, 142, display.fg);
-
-                        // display.drawLine(display.width() / 2 - 12, 149, display.width() /
-           2 + 8, 149,
-                        //                  display.fg);
-                        //  display.fillRect(26, 26, display.width() - 51, display.height()
-           - 51,
-                        //  display.bg);
-
-                        message = "Five thousand years ago,";
-                        display.drawSingleLineOfText(
-                            message.c_str(),
-                            display.xAbsolute(display.xAbsoluteCenter() -
-                                              display.getTextWidth(message.c_str()) / 2),
-                            display.yAbsolute(display.yAbsoluteCenter() - 2 *
-           display.getTextHeight() - 40));
-
-                        message = "these words would have";
-                        display.drawSingleLineOfText(
-                            message.c_str(),
-                            display.xAbsolute(display.xAbsoluteCenter() -
-                                              display.getTextWidth(message.c_str()) / 2),
-                            display.yAbsolute(display.yAbsoluteCenter() -
-           display.getTextHeight() - 40));
-
-                        message = "been etched in stone.";
-
-                        display.drawSingleLineOfText(
-                            message.c_str(),
-                            display.xAbsolute(display.xAbsoluteCenter() -
-                                              display.getTextWidth(message.c_str()) / 2),
-                            display.yAbsolute(display.yAbsoluteCenter() - 40));
-
-
-                        display.updateDisplay(DisplaySystem::UpdateType::FAST);
-                        delay(750);
-
-                        display.fillRoundRect(2, 2, display.width() - 4, display.height() -
-           4, 50, display.fg); display.fillRect(display.width() - 54, 2, 52, 52,
-           display.fg); display.fillRect(2, display.height() - 54, 52, 52, display.fg);
-
-                        display.fillRoundRect(4, 4, display.width() - 8, display.height() -
-           8, 50, display.bg); display.fillRect(display.width() - 56, 4, 52, 52,
-           display.bg); display.fillRect(4, display.height() - 56, 52, 52, display.bg);
-                        display.drawCircle(display.width() / 2, 120, 25, display.fg);
-                        display.drawRect(display.width() / 2 - 25, 120, 51, 50, display.fg);
-                        display.fillRect(display.width() / 2 - 24, 120, 49, 49, display.bg);
-
-                        display.drawLine(display.width() / 2 - 8, 120, display.width() / 2 +
-           12, 120, display.fg);
-
-                        display.drawLine(display.width() / 2 - 12, 128, display.width() / 2
-           + 12, 128, display.fg);
-
-                        display.drawLine(display.width() / 2 - 12, 135, display.width() / 2
-           + 12, 135, display.fg);
-
-                        display.drawLine(display.width() / 2 - 12, 142, display.width() / 2
-           + 12, 142, display.fg);
-
-                        display.drawLine(display.width() / 2 - 12, 149, display.width() / 2
-           + 8, 149, display.fg);
-                        //  display.fillRect(26, 26, display.width() - 51, display.height()
-           - 51,
-                        //  display.bg);
-
-                        message = "Five thousand years ago,";
-                        display.drawSingleLineOfText(
-                            message.c_str(),
-                            display.xAbsolute(display.xAbsoluteCenter() -
-                                              display.getTextWidth(message.c_str()) / 2),
-                            display.yAbsolute(display.yAbsoluteCenter() - 2 *
-           display.getTextHeight() - 40));
-
-                        message = "these words would have";
-                        display.drawSingleLineOfText(
-                            message.c_str(),
-                            display.xAbsolute(display.xAbsoluteCenter() -
-                                              display.getTextWidth(message.c_str()) / 2),
-                            display.yAbsolute(display.yAbsoluteCenter() -
-           display.getTextHeight() - 40));
-
-                        message = "been etched in stone.";
-
-                        display.drawSingleLineOfText(
-                            message.c_str(),
-                            display.xAbsolute(display.xAbsoluteCenter() -
-                                              display.getTextWidth(message.c_str()) / 2),
-                            display.yAbsolute(display.yAbsoluteCenter() - 40));
-
-
-                        display.updateDisplay(DisplaySystem::UpdateType::FAST);
-
-                        break;
-
-                    case 7:
-
-                        break;
-
-                    case 8:
-
-                        break;
-
-                    case 9:
-
-                        break;*/
     } else {
         // This Y coordinate is just a guess
         display.drawSingleLineOfText(
