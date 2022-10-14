@@ -180,7 +180,7 @@ auto MenuScreen::getItemAt(int index) -> MenuItem {
 void MenuScreen::showTemporaryMessage(DisplaySystem &display, const std::string &message,
                                       int duration, bool rerenderAfter) {
     display.drawSingleLineOfCenteredText(message);
-    display.updateDisplay();
+    display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     delay(duration);
     if (rerenderAfter) {
         this->needsRerender = true;

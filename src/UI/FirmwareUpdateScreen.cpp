@@ -46,6 +46,12 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
             std::string errMessage = "Error updating firmware.";
             drawMessage(errMessage);
             done = true;
+        } else if (done) {
+            std::string errMessage = "Done! Rebooting...";
+            drawMessage(errMessage);
+            log_i("Rebooting in 2s to pick up new firmware");
+            delay(2000);
+            esp_restart();
         } else if (percentProgress - lastPercentage >= 5) {
             lastPercentage = percentProgress;
             char formattedString[32];
@@ -53,6 +59,7 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
             snprintf(formattedString, sizeof(formattedString), "%02d %%", percentProgress);
             std::string updateMessage = "Updating: ";
             updateMessage += formattedString;
+            log_i("Updating firmware: %02d%%", percentProgress);
             drawMessage(updateMessage);
         }
 

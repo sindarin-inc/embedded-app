@@ -59,11 +59,9 @@ auto FirmwareDownload::updateFirmware(int &percentProgress, bool &error) -> bool
         log_i("Firmware download done. read %d bytes. Finalizing...", totalBytesRead_);
         if (!error && Update.end()) {
             // mark alternate boot partition as the primary and reboot
-            log_i("update complete.");
-            log_i("swapping boot partition");
-            ESP.restart();
+            log_i("Update complete. Boot partition swapped.");
         } else {
-            log_e("update failed to finalize.");
+            log_e("Update failed to finalize.");
             error = true;
         }
 
