@@ -846,8 +846,6 @@ void DemoScreen::processCommand(RemoteCommand command) {
         break;
     }
 
-    log_d("Current screen %d", currentScreen_);
-
     if (currentScreen_ >= NUM_DEMO_SCREENS) {
 #if !SIMULATOR
         auto backlight = prefs_.backlight.get().value();
@@ -856,7 +854,6 @@ void DemoScreen::processCommand(RemoteCommand command) {
 #endif
         // When we're done with the onboarding screen, turn this mode off.
         prefs_.demoMode.set(0);
-        log_d("Calling back callback");
         backCallback();
     }
 }

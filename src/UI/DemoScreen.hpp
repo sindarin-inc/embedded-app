@@ -62,11 +62,8 @@ public:
     void drawSolLogo(DisplaySystem &display, int x, int y, int height, bool solid);
 
 protected:
-    std::array<std::string, NUM_DEMO_SCREENS> messages_ = {
-        DEMO_SCREEN_1,  DEMO_SCREEN_2,  DEMO_SCREEN_3,  DEMO_SCREEN_4 /*,  DEMO_SCREEN_5,
-        DEMO_SCREEN_6,  DEMO_SCREEN_7,  DEMO_SCREEN_8,  DEMO_SCREEN_9,  DEMO_SCREEN_10,
-        DEMO_SCREEN_11, DEMO_SCREEN_12, DEMO_SCREEN_13, DEMO_SCREEN_14, DEMO_SCREEN_15,
-        DEMO_SCREEN_16, DEMO_SCREEN_17, DEMO_SCREEN_18*/};
+    std::array<std::string, NUM_DEMO_SCREENS> messages_ = {DEMO_SCREEN_1, DEMO_SCREEN_2,
+                                                           DEMO_SCREEN_3, DEMO_SCREEN_4};
     DisplaySystem &display_;
     Renderer renderer_;
     PreferencesStore &prefs_;
