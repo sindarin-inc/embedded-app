@@ -103,8 +103,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     };
 
     auto currentReadable = prefs_.lastReadableId.get();
-    for (Readable &r : localStore.readables()) {
+    for (Readable &r : readables) {
         r.place = prefs_.readablePlace.get(r.id.c_str());
+        log_d("Found place for %s = %d", r.id.c_str(), r.place);
         mainMenu->addMenuItem(MenuItem(r.title, [this, r, createReadableScreen]() {
             auto readableScreen = createReadableScreen(r);
             this->setCurrentScreen(*readableScreen);
@@ -662,7 +663,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             log_i("Setting Readable Screen on boot in %.0f ms", esp_timer_get_time() / 1000.0f);
 #endif
             this->setCurrentScreen(*readableScreen);
-            log_i("Resuming readable from last session: %s", (*it).title.c_str());
+            log_i("Resuming readable %s at place %d", (*it).title.c_str(), (*it).place);
         } else {
             // Assume this readable has gone away
             prefs_.lastReadableId.remove();
