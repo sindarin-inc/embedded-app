@@ -160,7 +160,7 @@ void DemoScreen::render(DisplaySystem &display) {
         display.drawRect(display.width() / 2 - 25, 100, 51, 50, display.fg);
         display.fillRect(display.width() / 2 - 24, 100, 49, 49, display.bg);
 
-        display.drawLine(display.width() / 2 - 8, 100, display.width() / 2 + 12, 100, display.fg);
+        display.drawLine(display.width() / 2 - 8, 101, display.width() / 2 + 12, 101, display.fg);
 
         display.drawLine(display.width() / 2 - 12, 108, display.width() / 2 + 12, 108, display.fg);
 
@@ -186,7 +186,7 @@ void DemoScreen::render(DisplaySystem &display) {
         display.drawRect(display.width() / 2 - 25, 100, 51, 50, display.fg);
         display.fillRect(display.width() / 2 - 24, 100, 49, 49, display.bg);
 
-        display.drawLine(display.width() / 2 - 8, 100, display.width() / 2 + 12, 100, display.fg);
+        display.drawLine(display.width() / 2 - 8, 101, display.width() / 2 + 12, 101, display.fg);
 
         display.drawLine(display.width() / 2 - 12, 108, display.width() / 2 + 12, 108, display.fg);
 
@@ -214,7 +214,7 @@ void DemoScreen::render(DisplaySystem &display) {
         display.drawRect(display.width() / 2 - 25, 100, 51, 50, display.fg);
         display.fillRect(display.width() / 2 - 24, 100, 49, 49, display.bg);
 
-        display.drawLine(display.width() / 2 - 8, 100, display.width() / 2 + 12, 100, display.fg);
+        display.drawLine(display.width() / 2 - 8, 101, display.width() / 2 + 12, 101, display.fg);
 
         display.drawLine(display.width() / 2 - 12, 108, display.width() / 2 + 12, 108, display.fg);
 
@@ -244,7 +244,7 @@ void DemoScreen::render(DisplaySystem &display) {
         display.drawRect(display.width() / 2 - 25, 100, 51, 50, display.fg);
         display.fillRect(display.width() / 2 - 24, 100, 49, 49, display.bg);
 
-        display.drawLine(display.width() / 2 - 8, 100, display.width() / 2 + 12, 100, display.fg);
+        display.drawLine(display.width() / 2 - 8, 101, display.width() / 2 + 12, 101, display.fg);
 
         display.drawLine(display.width() / 2 - 12, 108, display.width() / 2 + 12, 108, display.fg);
 
