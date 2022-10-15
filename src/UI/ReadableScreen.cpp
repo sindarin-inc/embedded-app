@@ -102,6 +102,55 @@ void ReadableScreen::writeOutBookmarkUpdate() {
     bookmarkFile.close();
 }
 
+void ReadableScreen::renderIcons(DisplaySystem &display) {
+    int screenWidth = display.width();
+    int screenHeight = display.height();
+    int arrowWidth = 8;
+    int arrowHeight = 4;
+
+    display.setRotation(1);
+    // Use a gear for the bottom icon.
+    // The math here is weird because of rotation but this gives us a gear with
+    // the top of it looking like a down arrow to match the rest!
+    display.drawXBitmap(screenWidth + 2 + display.getTextHeight(),
+                        screenHeight / 2 - READ_GEAR_HEIGHT / 2, readGearBits, READ_GEAR_WIDTH,
+                        READ_GEAR_HEIGHT, display.fg);
+
+    display.setRotation(0);
+
+    // Left Arrow
+    display.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 - arrowWidth / 2,
+                     display.fg);
+    display.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 + arrowWidth / 2,
+                     display.fg);
+
+    // Up arrow - looks like a bookmark to indicate that's what you can do.
+    display.drawXBitmap(screenWidth / 2 - HOME2_WIDTH / 2, -HOME2_HEIGHT - 3, HOME2_BITS,
+                        HOME2_WIDTH, HOME2_HEIGHT, display.fg);
+
+    display.setRotation(1);
+    // Right side show bookmark icon.
+    display.drawLine(screenWidth / 2, -arrowHeight - 1, screenWidth / 2 - arrowWidth / 2, -1,
+                     display.fg);
+    display.drawLine(screenWidth / 2, -arrowHeight - 1, screenWidth / 2 + arrowWidth / 2, -1,
+                     display.fg);
+
+    display.drawLine(screenWidth / 2 - arrowWidth / 2, -1, screenWidth / 2 - arrowWidth / 2,
+                     display.yAbsolute(0), display.fg);
+    display.drawLine(screenWidth / 2 + arrowWidth / 2, -1, screenWidth / 2 + arrowWidth / 2,
+                     display.yAbsolute(0), display.fg);
+
+    display.setRotation(0);
+
+    // Right Arrow
+    /*
+    display.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
+                     screenHeight / 2 + arrowWidth / 2, display.fg);
+    display.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
+                     screenHeight / 2 - arrowWidth / 2, display.fg);
+                     */
+}
+
 void ReadableScreen::render(DisplaySystem &display) {
     if (currentScreen_ != this) {
         currentScreen_->render(display);
@@ -112,6 +161,18 @@ void ReadableScreen::render(DisplaySystem &display) {
     }
 
     display.setFont(display.style.getFontFamily().readableFont);
+
+    // If it's the first read of the book, show the help screen.
+    // Then ignore the next press of the button
+    if (prefs_.firstRead.get().value() == 0) {
+        prefs_.firstRead.set(1);
+        ignoreNextPress_ = true;
+        firstTimeRenderer_.renderPage(0);
+        renderIcons(display);
+        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+        needsRerender = false;
+        return;
+    }
 
     newPlace_ = renderer_.renderPage(readable_.place);
     // Future work
@@ -129,51 +190,7 @@ void ReadableScreen::render(DisplaySystem &display) {
     // Show the home screen and gear icon on the first page you read as a reminder. Then drop them
     // after that.
     if (!shownIcons_) {
-        int screenWidth = display.width();
-        int screenHeight = display.height();
-        int arrowWidth = 8;
-        int arrowHeight = 4;
-
-        display.setRotation(1);
-        // Use a gear for the bottom icon.
-        // The math here is weird because of rotation but this gives us a gear with
-        // the top of it looking like a down arrow to match the rest!
-        display.drawXBitmap(screenWidth + 2 + display.getTextHeight(),
-                            screenHeight / 2 - READ_GEAR_HEIGHT / 2, readGearBits, READ_GEAR_WIDTH,
-                            READ_GEAR_HEIGHT, display.fg);
-
-        display.setRotation(0);
-
-        // Left Arrow
-        display.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 - arrowWidth / 2,
-                         display.fg);
-        display.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 + arrowWidth / 2,
-                         display.fg);
-
-        // Up arrow - looks like a bookmark to indicate that's what you can do.
-        display.drawXBitmap(screenWidth / 2 - HOME2_WIDTH / 2, -HOME2_HEIGHT - 3, HOME2_BITS,
-                            HOME2_WIDTH, HOME2_HEIGHT, display.fg);
-
-        display.setRotation(1);
-        // Right side show bookmark icon.
-        display.drawLine(screenWidth / 2, -arrowHeight - 1, screenWidth / 2 - arrowWidth / 2, -1,
-                         display.fg);
-        display.drawLine(screenWidth / 2, -arrowHeight - 1, screenWidth / 2 + arrowWidth / 2, -1,
-                         display.fg);
-
-        display.drawLine(screenWidth / 2 - arrowWidth / 2, -1, screenWidth / 2 - arrowWidth / 2,
-                         display.yAbsolute(0), display.fg);
-        display.drawLine(screenWidth / 2 + arrowWidth / 2, -1, screenWidth / 2 + arrowWidth / 2,
-                         display.yAbsolute(0), display.fg);
-
-        display.setRotation(0);
-        // Right Arrow
-        /*
-        display.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
-                         screenHeight / 2 + arrowWidth / 2, display.fg);
-        display.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
-                         screenHeight / 2 - arrowWidth / 2, display.fg);
-                         */
+        renderIcons(display);
         shownIcons_ = true;
     }
 
@@ -204,6 +221,12 @@ void ReadableScreen::incrementReadingTime() {
 void ReadableScreen::processCommand(RemoteCommand command) {
     if (currentScreen_ != this) {
         currentScreen_->processCommand(command);
+        return;
+    }
+
+    if (ignoreNextPress_) {
+        ignoreNextPress_ = false;
+        needsRerender = true;
         return;
     }
 
