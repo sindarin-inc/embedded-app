@@ -8,6 +8,9 @@ auto LittleFSFileSystem::begin() -> bool {
     SHOW_HEAP();
 
     // Launch LITTLEFS file system
+    // TODO: I've seen an issue but haven't debugged it where formatOnFail doesn't then begin the
+    // filesystem afterwards so it takes a reboot before the FS can be used.
+
     if (!LittleFS.begin(true, "/littlefs", 255, "data")) {
         log_e("An Error has occurred while mounting LittleFS");
         return false;
