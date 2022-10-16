@@ -2,9 +2,16 @@
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 
+#include "Models/Firmware.hpp"
 #include "Models/Json.hpp"
 #include "Models/UserReadable.hpp"
 #include "Storage/LocalStore.hpp"
+
+struct CheckSyncResponse {
+    bool synced;
+    std::string message;
+    Firmware firmware;
+};
 
 class SindarinAPI {
 public:
@@ -14,7 +21,7 @@ public:
 
     auto beginClient(HTTPClient &httpClient, const String &urlPath) -> bool;
 
-    auto checkSync(const std::string &readablesSha, bool *synced) -> int;
+    auto checkSync(const std::string &readablesSha, CheckSyncResponse *resp) -> int;
 
     // Get list of readables from the server
     auto getReadablesUsersAll(std::vector<UserReadable> *userReadables) -> int;

@@ -16,7 +16,7 @@ def to_id(original_id):
     if len(out_id) <= max_id_length:
         return out_id
 
-    chars_to_strip = ("a", "e", "i", "o", "u", "-", "_")
+    chars_to_strip = ("a", "e", "i", "o", "u", "-", "_", " ")
     out_id = "".join([l for l in original_id if l not in chars_to_strip])
 
     if len(out_id) <= max_id_length:
@@ -61,13 +61,13 @@ def generate_readables(path):
                 "date_modified": now,
                 "authors": [
                     {
-                        "id": id,
+                        "id": to_id(author),
                         "name": author,
                     }
                 ],
                 "files": [
                     {
-                        "id": id,
+                        "id": to_id(id),
                         "name": file.name,
                         "size": os.path.getsize(file),
                         "filetype": "txt",

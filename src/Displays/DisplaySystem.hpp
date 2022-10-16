@@ -95,7 +95,6 @@ public:
     }
 
     void fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color) {
-        log_d("%d %d", xOffset(x0), yOffset(y0));
         gfxClass_->fillCircle(xOffset(x0), yOffset(y0), r, color);
     }
 
@@ -143,6 +142,8 @@ public:
 
     auto getFont() -> const GFXfont *;
     void drawSingleLineOfText(const std::string &line, int x, int y);
+    void drawSingleLineOfCenteredText(const std::string &line);
+
     void drawText(const std::string &newText, int x, int y, int width, int height)
         __attribute__((deprecated));
     void getTextBounds(const char *buffer, uint16_t *w, uint16_t *h);

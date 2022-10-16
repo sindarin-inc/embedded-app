@@ -18,6 +18,8 @@
 extern void UIInnerLoop(RemoteCommand command); // NOLINT(readability-identifier-naming)
 extern "C" void app_main(void);                 // NOLINT(readability-identifier-naming)
 
+const char *kGitHash = "SIMULATOR";
+
 #define SCALE 2
 #define WIDTH 256
 #define HEIGHT 256
