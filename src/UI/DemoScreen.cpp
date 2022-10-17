@@ -8,6 +8,7 @@
 #include "UI/Bitmaps/Logo.hpp"
 #include "UI/Bitmaps/stone.hpp"
 #include "UI/Fonts/Tahoma10pt7b.h"
+#include "UI/Fonts/Tahoma20pt7b.h"
 #include "UI/Fonts/Tahoma5pt7b.h"
 #include "UI/Fonts/Tahoma6pt7b.h"
 #include "UI/Fonts/Tahoma7pt7b.h"
@@ -38,35 +39,46 @@ void DemoScreen::drawSolLogo(DisplaySystem &display, int x, int y, int size, boo
         letterDelta--;
     }
 
-    int radius = diameter / 2;
+#if 0
+        // Respectfully request to keep this in the code for now until we are SURE
+        // we don't want these shapes anymore.
+        //
+        int radius = diameter / 2;
+        // draw o (the S is 90% the width, hence subtracting out size)
+        int oX = x + diameter + letterDelta - size;
+        int oY = y;
+        // the Circle draw commands take the center point so we add the radius to the above
+        // calculated values since everything else wants upper left.
+        if (solid) {
+            display.fillCircle(oX + radius, oY + radius, radius, display.fg);
+        } else {
+            display.drawCircle(oX + radius, oY + radius, radius, display.fg);
+        }
 
-    // draw o (the S is 90% the width, hence subtracting out size)
-    int oX = x + diameter + letterDelta - size;
-    int oY = y;
-    // the Circle draw commands take the center point so we add the radius to the above
-    // calculated values since everything else wants upper left.
-    if (solid) {
-        display.fillCircle(oX + radius, oY + radius, radius, display.fg);
-    } else {
-        display.drawCircle(oX + radius, oY + radius, radius, display.fg);
-    }
+        // draw l
+        int lX = oX + diameter + letterDelta + 1;
+        int lY = y - diameter * 2 / 10;
+        if (solid) {
+            display.fillRect(lX, lY, diameter * 6 / 10, diameter * 12 / 10 + 1, display.fg);
+        } else {
+            display.drawRect(lX, lY, diameter * 6 / 10, diameter * 12 / 10 + 1, display.fg);
+        }
+#endif
 
-    // draw l
-    int lX = oX + diameter + letterDelta + 1;
-    int lY = y - diameter * 2 / 10;
-    if (solid) {
-        display.fillRect(lX, lY, diameter * 6 / 10, diameter * 12 / 10 + 1, display.fg);
-    } else {
-        display.drawRect(lX, lY, diameter * 6 / 10, diameter * 12 / 10 + 1, display.fg);
-    }
-
+    display.setFont(&Tahoma20pt7b);
+    std::string message = "Sol";
+    display.drawSingleLineOfText(
+        message.c_str(),
+        display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message.c_str()) / 2) +
+            18,
+        display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight(message.c_str()) + 4));
     // draw s
-    display.fillRoundRect(x, y, 9 * diameter / 10, diameter, diameter / 2, display.fg);
+    display.fillRoundRect(x, y, 9 * diameter / 10, diameter, diameter / 3, display.fg);
     display.fillRect(x + 4 * diameter / 10, y, 5 * diameter / 10, diameter / 2, display.fg);
     display.fillRect(x, y + 6 * diameter / 10, diameter / 2, 4 * diameter / 10, display.fg);
 
     if (!solid) {
-        display.fillRoundRect(x + 1, y + 1, 9 * diameter / 10 - 2, diameter - 2, diameter / 2,
+        display.fillRoundRect(x + 1, y + 1, 9 * diameter / 10 - 2, diameter - 2, diameter / 3,
                               display.bg);
         display.fillRect(x + 4 * diameter / 10 + 1, y + 1, 5 * diameter / 10 - 2, diameter / 2 - 2,
                          display.bg);
