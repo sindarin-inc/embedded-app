@@ -65,7 +65,7 @@ void DemoScreen::drawSolLogo(DisplaySystem &display, int x, int y, int size, boo
         }
 #endif
 
-    display.setFont(&Tahoma20pt7b);
+    display.setFont(&TAHOMA20PT7B);
     std::string message = "Sol";
     display.drawSingleLineOfText(
         message.c_str(),
