@@ -293,7 +293,7 @@ void DemoScreen::render(DisplaySystem &display) {
                                                        display.getTextHeight(message.c_str()) / 2) -
                                          3 * display.getTextHeight(message.c_str()));
         display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - papyrus2_width / 2), 90,
-                            papyrus2_bits, papyrus2_width, papyrus2_height, display.fg);
+                            papyrus2Bits, papyrus2_width, papyrus2_height, display.fg);
 
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
         delay(3000);
@@ -317,7 +317,7 @@ void DemoScreen::render(DisplaySystem &display) {
                                          6);
         display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - paper_width / 2),
                             display.yAbsolute(display.yAbsoluteCenter() - paper_height / 2),
-                            paper_bits, paper_width, paper_height, display.fg);
+                            paperBits, paper_width, paper_height, display.fg);
 
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         delay(1500);
@@ -332,7 +332,7 @@ void DemoScreen::render(DisplaySystem &display) {
                                                        display.getTextHeight(message.c_str()) / 2));
 
         display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - hi_hand_width / 2) - 45,
-                            30, hi_hand_bits, hi_hand_width, hi_hand_height, display.fg);
+                            30, hiHandBits, hi_hand_width, hi_hand_height, display.fg);
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
         delay(1500);
         message = DEMO_SCREEN_11;
@@ -351,11 +351,11 @@ void DemoScreen::render(DisplaySystem &display) {
                                                        display.getTextHeight(message.c_str()) / 2));
 
         display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - hi_hand_width / 2) - 45,
-                            30, hi_hand_bits, hi_hand_width, hi_hand_height, display.fg);
+                            30, hiHandBits, hi_hand_width, hi_hand_height, display.fg);
 
         display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - hi_blocks_width / 2) - 45,
                             display.yAbsolute(display.yAbsoluteCenter() - hi_blocks_height / 2),
-                            hi_blocks_bits, hi_blocks_width, hi_blocks_height, display.fg);
+                            hiBlocksBits, hi_blocks_width, hi_blocks_height, display.fg);
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         delay(1500);
 
@@ -380,16 +380,16 @@ void DemoScreen::render(DisplaySystem &display) {
                                                        35),
                                      display.yAbsolute(display.yAbsoluteCenter() + 45));
         display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - hi_hand_width / 2) - 45,
-                            30, hi_hand_bits, hi_hand_width, hi_hand_height, display.fg);
+                            30, hiHandBits, hi_hand_width, hi_hand_height, display.fg);
 
         display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - hi_blocks_width / 2) - 45,
                             display.yAbsolute(display.yAbsoluteCenter() - hi_blocks_height / 2),
-                            hi_blocks_bits, hi_blocks_width, hi_blocks_height, display.fg);
+                            hiBlocksBits, hi_blocks_width, hi_blocks_height, display.fg);
 
         display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - hi_pixel3_width / 2) - 45,
-                            130, hi_pixel1_bits, hi_pixel1_width, hi_pixel1_height, display.fg);
+                            130, hiPixel1Bits, hi_pixel1_width, hi_pixel1_height, display.fg);
         display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - hi_pixel3_width / 2) - 45,
-                            130, hi_pixel3_bits, hi_pixel3_width, hi_pixel3_height, display.fg);
+                            130, hiPixel3Bits, hi_pixel3_width, hi_pixel3_height, display.fg);
 
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 
@@ -426,7 +426,7 @@ void DemoScreen::render(DisplaySystem &display) {
                               display.getTextHeight(message.c_str()) / 2 +
                               1.5 * display.getTextHeight(message.c_str())));
         display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - spark_width / 2) + 55, 45,
-                            spark_bits, spark_width, spark_height, display.fg);
+                            sparkBits, spark_width, spark_height, display.fg);
 
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 
@@ -648,7 +648,7 @@ void DemoScreen::render(DisplaySystem &display) {
                                          2,
                                      display.yAbsolute(display.yAbsoluteCenter() + 10));
         display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - lightbulb_width / 2), 90,
-                            lightbulb_bits, lightbulb_width, lightbulb_height, display.fg);
+                            lightbulbBits, lightbulb_width, lightbulb_height, display.fg);
 
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 
@@ -779,7 +779,7 @@ void DemoScreen::render(DisplaySystem &display) {
                                                        display.getTextHeight() / 2 -
                                                        3.5 * display.getTextHeight()));
         display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - franklin_width / 2), 80,
-                            franklin_bits, franklin_width, franklin_height, display.fg);
+                            franklinBits, franklin_width, franklin_height, display.fg);
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 
         delay(2250);
