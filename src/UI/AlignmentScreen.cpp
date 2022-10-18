@@ -18,13 +18,13 @@ void AlignmentScreen::render(DisplaySystem &display) {
     if (currentScreen_ == 1) {
         SetRightBackLight(0);
         SetLeftBackLight(backlight);
-    } else {
+    } else if (currentScreen_ == 0) {
         SetRightBackLight(backlight);
         SetLeftBackLight(0);
     }
-
     // Turn on both backlights for last case
-    if (currentScreen_ >= 2) {
+    else /*( currentScreen_ >= 2) */
+    {
         SetRightBackLight(backlight);
         SetLeftBackLight(backlight);
     }
