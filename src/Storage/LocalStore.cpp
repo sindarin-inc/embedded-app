@@ -57,6 +57,7 @@ auto LocalStore::begin() -> bool {
         }
     }
 
+    delete doc;
     return true;
 }
 
@@ -138,6 +139,7 @@ auto LocalStore::syncFromRemote() -> bool {
         return false;
     }
     if (checkSyncResponse.synced) {
+        log_i("Client is in sync");
         return true;
     }
 
@@ -216,6 +218,7 @@ auto LocalStore::save() -> bool {
     }
 
     serializeJsonPretty(*doc, file);
+    delete doc;
     file.close();
 
     return true;

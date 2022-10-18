@@ -80,6 +80,7 @@ auto SindarinAPI::getReadablesUsersAll(std::vector<UserReadable> *userReadables)
         // auto previous = (*resp)["previous"].as<std::string>();
 
         JsonArray userReadablesJson = (*resp)["results"].as<JsonArray>();
+        delete resp;
 
         for (JsonObject userReadableJson : userReadablesJson) {
             UserReadable userReadable;
