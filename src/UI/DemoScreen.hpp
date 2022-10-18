@@ -14,7 +14,7 @@
 #define DEMO_SCREEN_5 "Five thousand years ago"
 #define DEMO_SCREEN_6 "these words would have"
 #define DEMO_SCREEN_6a "been carved in stone."
-#define DEMO_SCREEN_7 "A millenium or so later"
+#define DEMO_SCREEN_7 "A millennium or so later"
 #define DEMO_SCREEN_8 "you'd be unraveling a"
 #define DEMO_SCREEN_8a "scroll of yellowed papyrus."
 #define DEMO_SCREEN_9 "Jump forward a bit from there:"
