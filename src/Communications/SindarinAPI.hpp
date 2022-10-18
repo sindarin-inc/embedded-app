@@ -2,16 +2,11 @@
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 
+#include "Models/CheckSyncResponse.hpp"
 #include "Models/Firmware.hpp"
 #include "Models/Json.hpp"
 #include "Models/UserReadable.hpp"
 #include "Storage/LocalStore.hpp"
-
-struct CheckSyncResponse {
-    bool synced;
-    std::string message;
-    Firmware firmware;
-};
 
 class SindarinAPI {
 public:

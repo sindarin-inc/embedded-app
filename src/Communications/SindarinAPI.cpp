@@ -47,25 +47,13 @@ auto SindarinAPI::checkSync(const std::string &readablesSha, CheckSyncResponse *
     }
 
     int httpCode = httpClient.GET();
-
-    if (httpCode == HTTP_CODE_OK) {
-        log_i("Client is in sync");
-        resp->synced = true;
-    } else if (httpCode == 419) {
-        log_i("Client is out of date");
-        resp->synced = false;
-    } else {
-        log_e("GET /sync/all failed");
-        httpClient.end();
-        return httpCode;
-    }
-
     auto string = httpClient.getString();
     auto *respJson = new SpiRamJsonDocument(string.length());
     ArduinoJson::deserializeJson(*respJson, string);
-    resp->message = (*respJson)["message"].as<std::string>();
-    resp->firmware.fromJson((*respJson)["firmware"]);
-    log_d("Message: %s, Firmware: %s", resp->message.c_str(), resp->firmware.url.c_str());
+    resp->fromJson(respJson->as<JsonObject>());
+    log_d("Synced: %d Message: %s, Firmware: %s", resp->synced, resp->message.c_str(),
+          resp->firmware.url.c_str());
+    delete respJson;
 
     httpClient.end();
     return httpCode;
