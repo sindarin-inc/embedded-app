@@ -11,13 +11,13 @@ auto LocalStore::begin() -> bool {
     File readablesFile = fileSystem.open("/readables.json");
     if (!readablesFile) {
         log_w("Failed to open readables.json");
+        // Fail positively since it's ok to not have any when you first use the glasses
         return true;
     }
 
     // Grab a minimum amount of ram, even if the readables file is empty
     auto docSize = std::max(100, (int)readablesFile.size() * 2);
     auto *doc = new SpiRamJsonDocument(docSize);
-
     auto error = deserializeJson(*doc, readablesFile);
     readablesFile.close();
 
@@ -38,12 +38,22 @@ auto LocalStore::begin() -> bool {
         if (!readable.fromJson(v.as<JsonObject>())) {
             log_e("Failed to parse Readable");
             continue;
-        } else if (fileSystem.exists(readable.localFilePath())) {
+        } else if (!fileSystem.exists(readable.localFilePath())) {
+            log_w("Couldn't find readable with path %s", readable.localFilePath().c_str());
+            continue;
+        } else {
+            auto file = fileSystem.open(readable.localFilePath());
+            // If the filesize is wrong, ignore it so we redownload it
+            auto fileSize = file.size();
+            file.close();
+            if (fileSize != readable.file().size) {
+                log_w("File size mismatch for %s (%d on disk vs %d in local store), ignoring",
+                      readable.localFilePath().c_str(), fileSize, readable.file().size);
+                continue;
+            }
             log_d("Found local readable %s (%s)", readable.title.c_str(),
                   readable.localFilePath().c_str());
             readables_.push_back(readable);
-        } else {
-            log_w("Couldn't find readable with path %s", readable.localFilePath().c_str());
         }
     }
 
@@ -52,8 +62,17 @@ auto LocalStore::begin() -> bool {
 
 auto LocalStore::hasReadable(Readable &readable) -> bool {
     for (auto &r : readables_) {
-        if (r.id == readable.id && fileSystem.exists(r.files[0].name)) {
-            return true;
+        if (r.id == readable.id && fileSystem.exists(r.localFilePath())) {
+            auto file = fileSystem.open(r.localFilePath());
+            auto fileSize = file.size();
+            file.close();
+            if (fileSize != readable.file().size) {
+                log_w("File size mismatch for %s (%d on disk vs %d in local store), ignoring",
+                      readable.localFilePath().c_str(), fileSize, readable.file().size);
+                return false;
+            } else {
+                return true;
+            }
         }
     }
     return false;
@@ -113,15 +132,22 @@ auto LocalStore::syncFromRemote() -> bool {
     SindarinAPI::getInstance()->setAccessToken(token.value());
 
     CheckSyncResponse checkSyncResponse;
-    SindarinAPI::getInstance()->checkSync(readablesSha, &checkSyncResponse);
-    // TODO: We should bail if this fails to connect to the server
+    auto httpCode = SindarinAPI::getInstance()->checkSync(readablesSha, &checkSyncResponse);
+    if (httpCode != 419 && httpCode != HTTP_CODE_OK) {
+        log_e("Failed to check sync (HTTP %d)", httpCode);
+        return false;
+    }
     if (checkSyncResponse.synced) {
         return true;
     }
 
     log_i("Not synced, downloading readables");
     std::vector<UserReadable> userReadables;
-    SindarinAPI::getInstance()->getReadablesUsersAll(&userReadables);
+    httpCode = SindarinAPI::getInstance()->getReadablesUsersAll(&userReadables);
+    if (httpCode != HTTP_CODE_OK) {
+        log_e("Failed to get readables (HTTP %d)", httpCode);
+        return false;
+    }
 
     // If out of sync, download any new readables.
 
@@ -149,18 +175,19 @@ auto LocalStore::syncFromRemote() -> bool {
     // Update the SHA and try again
     readablesSha = this->calculateReadablesSha();
     SindarinAPI::getInstance()->checkSync(readablesSha, &checkSyncResponse);
-    if (!checkSyncResponse.synced) {
-        log_w("After running sync, local readables are still out of sync");
-    }
 
     if (!this->save()) {
         log_e("Failed to save readables.json");
     }
 
     // TODO: Force reload of rootUI instead of rebooting
-    esp_restart();
+    if (checkSyncResponse.synced) {
+        log_i("Synced, rebooting");
+        esp_restart();
+    }
 
-    return true;
+    log_w("After running sync, local readables are still out of sync");
+    return false;
 }
 
 auto LocalStore::save() -> bool {

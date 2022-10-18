@@ -2,6 +2,7 @@
 
 #include <utility>
 
+#include "FileDownload.hpp"
 #include "GitVersion.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
@@ -120,48 +121,38 @@ auto SindarinAPI::downloadReadable(Readable &readable, LocalStore &localStore) -
     httpClient.setTimeout(30000);
 
     auto localPath = readable.localFilePath();
+    unsigned long downloadStart = millis();
 
     log_d("Downloading readable from %s to %s", remoteUrl.c_str(), localPath.c_str());
     int httpCode = httpClient.GET();
-    // HTTP header has been send and Server response header has been handled
+    // HTTP header has been sent and Server response header has been handled
     // file found at server
-    if (httpCode == HTTP_CODE_OK) {
+    if (httpCode != HTTP_CODE_OK) {
+        log_e("[HTTP] GET... failed, error: %s\n", httpClient.errorToString(httpCode).c_str());
+    } else {
         // Get length of document (is -1 when Server sends no Content-Length header)
         int len = httpClient.getSize();
         if (len != readable.file().size) {
             log_w("Readable Content-Length is %d but expected size was %d", len,
                   readable.file().size);
+            len = readable.file().size;
         } else {
             log_d("Readable length is %d", len);
         }
 
         // TODO: This is kinda weird to get the filesystem from localstore
-        auto file = localStore.fileSystem.open(localPath, "w");
+        auto success =
+            DownloadFile(httpClient, localStore.fileSystem, localPath.c_str(), len,
+                         [downloadStart](int bytesWritten, float percentage) {
+                             log_d("Downloaded %.1f%% (%.1f KB/s)", percentage,
+                                   bytesWritten / 1024.0f / ((millis() - downloadStart) / 1000.0f));
+                         });
 
-        // W25Q512JV* chips have a page size of 256 bytes so that seems like a good value to use
-        // here.
-        uint8_t buff[256] = {0};
-
-        auto *stream = httpClient.getStreamPtr();
-
-        // Read all data from server
-        while (stream->available() && (len > 0 || len == -1)) {
-            int c = stream->readBytes(buff, sizeof(buff));
-            file.write(buff, c);
-            if (len > 0) {
-                len -= c;
-            }
-            // Let other tasks do stuff.
-            vPortYield();
+        if (success) {
+            localStore.addReadable(readable);
+            log_d("File successfully downloaded.");
         }
-        file.close();
-        log_d("File successfully downloaded.");
-
-        localStore.addReadable(readable);
-    } else {
-        log_d("[HTTP] GET... failed, error: %s\n", httpClient.errorToString(httpCode).c_str());
     }
-
     httpClient.end();
     return httpCode;
 }

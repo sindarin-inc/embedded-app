@@ -24,7 +24,7 @@ auto LittleFSFileSystem::open(const std::string &path, const char *mode, const b
     // Note(john): The version of framework-arduinoespressif32
     // (https://github.com/marcovannoord/arduino-esp32.git#idf-release/v4.0) has a slightly
     // different API here.
-    return LittleFS.open(path.c_str(), mode);
+    return LittleFS.open(path.c_str(), mode, create);
 }
 
 auto LittleFSFileSystem::exists(const std::string &path) const -> bool {
