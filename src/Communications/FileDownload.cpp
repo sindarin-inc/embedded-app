@@ -21,7 +21,8 @@ auto DownloadFile(HTTPClient &httpClient, FileSystem &fileSystem, const char *pa
     int lastPercentage = 0;
     int bytesWritten = 0;
     while (stream->connected() && (len > 0 || len == -1)) {
-        if (stream->available() == 0) {
+        auto available = stream->available();
+        if (available == 0) {
             // TODO: In the future it will be good to use a HTTP library that allows us to do
             // some kind of select or block exactly until data is available
             // TODO: We're still sometimes getting a watchdog timer issue on Core 0
@@ -32,7 +33,8 @@ auto DownloadFile(HTTPClient &httpClient, FileSystem &fileSystem, const char *pa
         // TODO: Does readBytes ever sleep? I think maybe it doesn't
         // https://github.com/espressif/arduino-esp32/blob/d8f98450fc1f1e1646077260a22287df6332580a/cores/esp32/Stream.cpp#L285
         // That's weird for a http client, at least on a high priority task.
-        int c = stream->readBytes(buff, bufferSize);
+        int c = stream->readBytes(buff, std::min(available, bufferSize));
+        // log_d("Reading %d bytes (%d available)", std::min(available, bufferSize), available);
 
         auto written = writeBytes(buff, c);
         if (written != c) {
