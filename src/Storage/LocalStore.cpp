@@ -47,7 +47,7 @@ auto LocalStore::begin() -> bool {
             auto fileSize = file.size();
             file.close();
             if (fileSize != readable.file().size) {
-                log_w("File size mismatch for %s (%d on disk vs %d in local store), ignoring",
+                log_w("File size mismatch for %s (%zu on disk vs %d in local store), ignoring",
                       readable.localFilePath().c_str(), fileSize, readable.file().size);
                 continue;
             }
@@ -67,7 +67,7 @@ auto LocalStore::hasReadable(Readable &readable) -> bool {
             auto fileSize = file.size();
             file.close();
             if (fileSize != readable.file().size) {
-                log_w("File size mismatch for %s (%d on disk vs %d in local store), ignoring",
+                log_w("File size mismatch for %s (%zu on disk vs %d in local store), ignoring",
                       readable.localFilePath().c_str(), fileSize, readable.file().size);
                 return false;
             } else {

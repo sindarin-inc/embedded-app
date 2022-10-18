@@ -1,10 +1,12 @@
 #include "FileDownload.hpp"
 
+#include <utility>
+
 #include "sindarin-debug.h"
 
 auto DownloadFile(HTTPClient &httpClient, FileSystem &fileSystem, const char *path, int length,
-                  std::function<size_t(const uint8_t *buf, size_t size)> writeBytes,
-                  std::function<void(int bytesWritten, float percentage)> progressCallback)
+                  const std::function<size_t(const uint8_t *buf, size_t size)> &writeBytes,
+                  const std::function<void(int bytesWritten, float percentage)> &progressCallback)
     -> bool {
     // W25Q512JV* chips have a page size of 256 bytes so that seems like a good value to use
     // here.
@@ -82,7 +84,8 @@ auto DownloadFile(HTTPClient &httpClient, FileSystem &fileSystem, const char *pa
 
     DownloadFile(
         httpClient, fileSystem, path, length,
-        [&](const uint8_t *buf, size_t size) { return file.write(buf, size); }, progressCallback);
+        [&](const uint8_t *buf, size_t size) { return file.write(buf, size); },
+        std::move(progressCallback));
 
     file.close();
 
