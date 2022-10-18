@@ -165,12 +165,24 @@ void ReadableScreen::render(DisplaySystem &display) {
     // If it's the first read of the book, show the help screen.
     // Then ignore the next press of the button
     if (prefs_.firstRead.get().value() == 0) {
+
+        std::string message =
+            "Welcome to reading with Sol! This is a one page tutorial on what each button does "
+            "while reading.\n\n\nUp: Main Menu\n\nDown: Reading Settings\n\nLeft: Previous "
+            "Page\n\nRight: Bookmark Page\n\nCenter: Next Page\n\n\n"
+
+            "That's it! Press any button... ";
+
+        auto streamFirstTime = new StdStringStream(message);
+        firstTimeRenderer_.setStream(streamFirstTime);
+
         prefs_.firstRead.set(1);
         ignoreNextPress_ = true;
         firstTimeRenderer_.renderPage(0);
         renderIcons(display);
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         needsRerender = false;
+        delete streamFirstTime;
         return;
     }
 

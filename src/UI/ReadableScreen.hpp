@@ -25,17 +25,7 @@ public:
         : renderer_(display), firstTimeRenderer_(display), readable_(readable), prefs_(prefs),
           popup_(power, renderer_, prefs_, readable_), fileSystem_(fileSystem) {
         currentScreen_ = this;
-
-        std::string message =
-            "Welcome to reading with Sol! This is a one page tutorial on what each button does "
-            "while reading.\n\n\nUp: Main Menu\n\nDown: Reading Settings\n\nLeft: Previous "
-            "Page\n\nRight: Bookmark Page\n\nCenter: Next Page\n\n\n"
-
-            "That's it! Press any button... ";
-
-        auto streamFirstTime = new StdStringStream(message);
         renderer_.setStream(stream);
-        firstTimeRenderer_.setStream(streamFirstTime);
         popup_.backCallback = [this]() { this->setCurrentScreen(*this); };
     }
 
