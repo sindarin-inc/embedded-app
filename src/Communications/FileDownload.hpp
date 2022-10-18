@@ -10,4 +10,5 @@ auto DownloadFile(HTTPClient &httpClient, FileSystem &fileSystem, const char *pa
     -> bool;
 
 auto DownloadFile(HTTPClient &httpClient, FileSystem &fileSystem, const char *path, int length,
-                  std::function<void(int bytesWritten, float percentage)> progressCallback) -> bool;
+                  const std::function<void(int bytesWritten, float percentage)> &progressCallback)
+    -> bool;

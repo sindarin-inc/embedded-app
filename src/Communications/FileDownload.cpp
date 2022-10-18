@@ -68,7 +68,7 @@ auto DownloadFile(HTTPClient &httpClient, FileSystem &fileSystem, const char *pa
 }
 
 auto DownloadFile(HTTPClient &httpClient, FileSystem &fileSystem, const char *path, int length,
-                  std::function<void(int bytesWritten, float percentage)> progressCallback)
+                  const std::function<void(int bytesWritten, float percentage)> &progressCallback)
     -> bool {
     // TODO: Support resuming?
     if (fileSystem.exists(path)) {
@@ -84,8 +84,7 @@ auto DownloadFile(HTTPClient &httpClient, FileSystem &fileSystem, const char *pa
 
     DownloadFile(
         httpClient, fileSystem, path, length,
-        [&](const uint8_t *buf, size_t size) { return file.write(buf, size); },
-        std::move(progressCallback));
+        [&](const uint8_t *buf, size_t size) { return file.write(buf, size); }, progressCallback);
 
     file.close();
 
