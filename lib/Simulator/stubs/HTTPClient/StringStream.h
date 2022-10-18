@@ -17,6 +17,7 @@ public:
 
     // Stream methods
 
+    auto connected() -> bool { return true; }
     auto available() -> int override { return stream_.peek() != EOF; }
     auto read() -> int override { return stream_.get(); };
     // auto seek(uint32_t pos) -> bool override {

@@ -23,7 +23,7 @@ auto DownloadFile(HTTPClient &httpClient, FileSystem &fileSystem, const char *pa
             // TODO: In the future it will be good to use a HTTP library that allows us to do
             // some kind of select or block exactly until data is available
             // TODO: We're still sometimes getting a watchdog timer issue on Core 0
-            vTaskDelay(100 / portTICK_PERIOD_MS);
+            delay(100);
             continue;
         }
 
@@ -34,7 +34,7 @@ auto DownloadFile(HTTPClient &httpClient, FileSystem &fileSystem, const char *pa
 
         auto written = writeBytes(buff, c);
         if (written != c) {
-            log_w("Failed to write to file, wrote %d but expected %d", written, c);
+            log_w("Failed to write to file, wrote %zu but expected %d", written, c);
             break;
         }
         bytesWritten += written;
