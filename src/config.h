@@ -36,7 +36,7 @@
 // #define DISABLE_SPIRAM
 
 #ifndef ENABLE_OTA
-#define ENABLE_OTA 1
+#define ENABLE_OTA 0
 #define HOSTNAME "sindarin"
 #endif
 
