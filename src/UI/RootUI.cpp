@@ -278,7 +278,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     };
 
     settingsMenu->addMenuItem(
-        MenuItem("Sync content", [this, settingsMenu, &localStore, display, connectWiFi]() {
+        MenuItem("Sync Content", [this, settingsMenu, &localStore, display, connectWiFi]() {
             if (!prefs_.cloudToken.get().has_value()) {
                 log_w("No Sindarin API token found");
                 settingsMenu->showTemporaryMessage(*display, "No Sindarin API token found");
