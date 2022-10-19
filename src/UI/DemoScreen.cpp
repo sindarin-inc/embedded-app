@@ -849,11 +849,11 @@ void DemoScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::CHANNEL_PLUS:
     case RemoteCommand::PREV:
     case RemoteCommand::NEXT:
+    case RemoteCommand::BACK:
+    case RemoteCommand::ENTER:
         currentScreen_++;
         needsRerender = true;
         break;
-    case RemoteCommand::BACK:
-    case RemoteCommand::ENTER:
     default:
         break;
     }
