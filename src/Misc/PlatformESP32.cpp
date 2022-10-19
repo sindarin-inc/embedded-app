@@ -42,8 +42,8 @@ void InitializePlatform() {
     // But on the ESP32-S3, since the UART is built into the chip, we use XTAL I guess.
     uartConfig.source_clk = UART_SCLK_XTAL;
 #endif
-    ESP_ERROR_CHECK(uart_driver_install(0, 256, 0, 20, nullptr, 0));
-    ESP_ERROR_CHECK(uart_param_config(0, &uartConfig));
+    // ESP_ERROR_CHECK(uart_driver_install(0, 256, 0, 20, nullptr, 0));
+    // ESP_ERROR_CHECK(uart_param_config(0, &uartConfig));
 
     auto adcCalValue = esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_2_5, ADC_WIDTH_BIT_12,
                                                 DEFAULT_VREF, &adcCalCharacteristics);

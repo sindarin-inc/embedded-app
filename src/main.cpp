@@ -18,6 +18,7 @@
 #include "Storage/PreferencesStore.hpp"
 #include "UI/RootUI.hpp"
 #include "config.h"
+#include "iperf/iperf_example_main.hpp"
 #include "sindarin-debug.h"
 
 #if !DISABLE_POWER_MANAGEMENT
@@ -104,7 +105,7 @@ void RadioTask(void *parameter) {
 #endif
 
 #if USE_BLE_SERVER_REMOTE
-        bleWifi->loop();
+        // bleWifi->loop();
 #endif
 
 #if ENABLE_OTA
@@ -445,6 +446,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     if (!fileSystem.begin()) {
         bootErrors.push_back({.type = BootError::Type::FileSystem});
     }
+    fileSystem.remove("/hyperion-cantos.txt");
 
     if (!localStore.begin()) {
         bootErrors.push_back({.type = BootError::Type::LocalStore});
@@ -477,4 +479,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #else
     simPowerThread = new std::thread(simStatsTask, 5000);
 #endif
+
+    // WiFi.begin("johnboiles", "stuffandthings");
+    start_iperf();
 }

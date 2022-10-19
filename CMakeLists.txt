@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 3.5)
 
 set(SUPPORTED_TARGETS esp32 esp32s3)
-list(APPEND EXTRA_COMPONENT_DIRS src)
+# list(APPEND EXTRA_COMPONENT_DIRS src)
+set(EXTRA_COMPONENT_DIRS $ENV{IDF_PATH}/examples/system/console/advanced/components
+                         $ENV{IDF_PATH}/examples/common_components/iperf
+                         src)
+
 
 # $IDF_TARGET appears to be set if CMake has ever been run before (presumably from IDF's proect.cmake)
 # The IDF_TARGET environment variable may be set otherwise.
