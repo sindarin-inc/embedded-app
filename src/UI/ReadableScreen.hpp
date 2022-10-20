@@ -32,6 +32,7 @@ public:
         // Not the prettiest of fixes, but passing the readable by reference
         // seems to not work with some of the const requirements by the lamdas.
         readable_.place = prefs_.readablePlace.get(readable_.id.c_str());
+        log_d("Found place for %s = %d", readable_.id.c_str(), readable_.place);
         popup_.backCallback = [this]() { this->setCurrentScreen(*this); };
     }
 

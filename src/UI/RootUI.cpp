@@ -107,8 +107,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto currentReadable = prefs_.lastReadableId.get();
     for (Readable &r : readables) {
-        r.place = prefs_.readablePlace.get(r.id.c_str());
-        log_d("Found place for %s = %d", r.id.c_str(), r.place);
         mainMenu->addMenuItem(MenuItem(r.title, [this, r, createReadableScreen]() {
             auto readableScreen = createReadableScreen(r);
             this->setCurrentScreen(*readableScreen);
