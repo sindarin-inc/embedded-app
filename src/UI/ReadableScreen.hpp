@@ -26,6 +26,12 @@ public:
           popup_(power, renderer_, prefs_, readable_), fileSystem_(fileSystem) {
         currentScreen_ = this;
         renderer_.setStream(stream);
+        // Since we copy in the readable from RootUI and RootUI only creates
+        // the readable at the initial MainMenu creation, the place of that
+        // readable may be stale. Hence we must re-load it from the prefs.
+        // Not the prettiest of fixes, but passing the readable by reference
+        // seems to not work with some of the const requirements by the lamdas.
+        readable_.place = prefs_.readablePlace.get(readable_.id.c_str());
         popup_.backCallback = [this]() { this->setCurrentScreen(*this); };
     }
 
@@ -47,6 +53,9 @@ public:
 protected:
     Renderer renderer_;
     Renderer firstTimeRenderer_;
+    // Note that this is a copy of the readable from RootUI.
+    // So when we change the place in this readable's state,
+    // it doesn't persist past when this screen is closed.
     Readable readable_;
     PreferencesStore &prefs_;
 
