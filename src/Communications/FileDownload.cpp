@@ -49,8 +49,8 @@ auto DownloadFile(HTTPClient &httpClient, FileSystem &fileSystem, const char *pa
         float percentProgress = (float)bytesWritten / length * 100.0f;
         // log_d("Downloaded %d%% %d %d", percentProgress, file.size(), len);
         auto now = millis();
-        // Report every 10s OR every 5% progress, whichever comes first
-        if (now - time > 10000 || (percentProgress - lastPercentage) > 5) {
+        // Report every 5-20s OR every 5% progress, whichever comes first
+        if ((now - time > 5000) && (now - time > 20000 || (percentProgress - lastPercentage) > 5)) {
             progressCallback(bytesWritten, percentProgress);
             time = now;
             lastPercentage = percentProgress;

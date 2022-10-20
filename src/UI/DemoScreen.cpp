@@ -3,6 +3,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 
+#include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
 #include "UI/Bitmaps/Logo.hpp"
 #include "UI/Bitmaps/stone.hpp"
@@ -15,8 +16,7 @@
 #include "UI/Fonts/Tahoma9pt7b.h"
 #include "sindarin-debug.h"
 
-extern QueueHandle_t remoteQueue;
-extern TaskHandle_t uiTaskHandle;
+extern void UIInnerLoop(RemoteCommand command);
 
 DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power)
     : display_(display), renderer_(display), prefs_(prefs), power_(power) {}
@@ -823,9 +823,7 @@ void DemoScreen::render(DisplaySystem &display) {
 
     if (currentScreen_ == 3) {
         RemoteCommand toSend = RemoteCommand::NEXT;
-        xQueueSend(remoteQueue, (void *)&(toSend), (TickType_t)0);
-        // Notify the UI thread that we have a new command
-        xTaskNotify(uiTaskHandle, 0, eNoAction);
+        dispatch_get_ui_queue()->dispatch([toSend]() { UIInnerLoop(toSend); });
     }
 }
 

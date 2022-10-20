@@ -276,32 +276,44 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         setCurrentScreen(*settingsMenu);
     };
 
-    settingsMenu->addMenuItem(
-        MenuItem("Sync Content", [this, settingsMenu, &localStore, display, connectWiFi]() {
-            if (!prefs_.cloudToken.get().has_value()) {
-                log_w("No Sindarin API token found");
-                settingsMenu->showTemporaryMessage(*display, "No Sindarin API token found");
-                return;
-            }
+    settingsMenu->addMenuItem(MenuItem("Sync Content", [this, settingsMenu, &localStore, display,
+                                                        connectWiFi]() {
+        if (!prefs_.cloudToken.get().has_value()) {
+            log_w("No Sindarin API token found");
+            settingsMenu->showTemporaryMessage(*display, "No Sindarin API token found");
+            return;
+        }
 
-            if (!connectWiFi(settingsMenu)) {
-                return;
-            }
+        if (!connectWiFi(settingsMenu)) {
+            return;
+        }
 
-            // TODO: Progress UI for this!
-            settingsMenu->showTemporaryMessage(*display, "Loading content...", 0, false);
+        // TODO: Progress UI for this!
+        settingsMenu->showTemporaryMessage(*display, "Loading content...", 0, false);
 
-            std::string message;
-            if (localStore.syncFromRemote()) {
-                message = "Success!";
-            } else {
-                message = "Failed :(";
-            }
-
-            DisconnectWifi();
-
-            settingsMenu->showTemporaryMessage(*display, message);
-        }));
+        localStore.syncFromRemote(
+            [settingsMenu, display](std::string message, int percentage) {
+                // Do UI stuff back on core 1
+                dispatch_get_ui_queue()->dispatch([settingsMenu, display, message, percentage]() {
+                    settingsMenu->showTemporaryMessage(
+                        *display, StringFormat("%s %d%%", message.c_str(), percentage), 0, false);
+                });
+            },
+            [settingsMenu, display](bool success) {
+                dispatch_get_ui_queue()->dispatch([settingsMenu, display, success]() {
+                    std::string message;
+                    if (success) {
+                        log_i("Sync succeeded");
+                        message = "Success!";
+                    } else {
+                        log_e("Sync failed");
+                        message = "Failed :(";
+                    }
+                    DisconnectWifi();
+                    settingsMenu->showTemporaryMessage(*display, message);
+                });
+            });
+    }));
 
     settingsMenu->addMenuItem(
         MenuItem("Check for Update", [this, settingsMenu, display, connectWiFi]() {
@@ -712,9 +724,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
     }
 
-    // This still has to be this way rather than else if because the currentReadable.has_value()
-    // Could return true but if we don't find that readable, no screen will be set. I asssume
-    // this would happen if the FS is updated underneath us to remove that readable.
+    // This still has to be this way rather than else if because the
+    // currentReadable.has_value() Could return true but if we don't find that readable, no
+    // screen will be set. I asssume this would happen if the FS is updated underneath us to
+    // remove that readable.
     if (this->currentScreen_ == nullptr) {
         // If we've already connected to an input device, go straight
         // to the main menu. We will clean this up a bit moving forward

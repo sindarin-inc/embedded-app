@@ -84,6 +84,15 @@ void LocalStore::addReadable(Readable &readable) {
     return;
 }
 
+void LocalStore::removeReadable(const Readable &readable) {
+    for (auto it = readables_.begin(); it != readables_.end(); ++it) {
+        if (it->id == readable.id) {
+            readables_.erase(it);
+            return;
+        }
+    }
+}
+
 auto LocalStore::calculateReadablesSha() -> std::string {
     if (readables_.size() == 0) {
         log_w("No readables");
@@ -121,75 +130,117 @@ auto LocalStore::calculateReadablesSha() -> std::string {
     return shaOfShas;
 }
 
-auto LocalStore::syncFromRemote() -> bool {
-    auto readablesSha = this->calculateReadablesSha();
+void LocalStore::syncFromRemote(
+    const std::function<void(std::string message, int percentage)> &progressCallback,
+    const std::function<void(bool success)> &doneCallback) {
 
     // Grab the token here from prefs if set
     auto token = prefs_.cloudToken.get();
     if (!token.has_value()) {
         log_e("No access token set");
-        return false;
+        doneCallback(false);
     }
     SindarinAPI::getInstance()->setAccessToken(token.value());
 
-    CheckSyncResponse checkSyncResponse;
-    auto httpCode = SindarinAPI::getInstance()->checkSync(readablesSha, &checkSyncResponse);
-    if (httpCode != 419 && httpCode != HTTP_CODE_OK) {
-        log_e("Failed to check sync (HTTP %d)", httpCode);
-        return false;
-    }
-    if (checkSyncResponse.synced) {
-        log_i("Client is in sync");
-        return true;
-    }
+    // Run this work on a separate thread, since it's long running
+    auto queue = dispatch_get_core0_background_queue();
+    queue->dispatch([this, progressCallback, doneCallback] {
+        auto readablesSha = this->calculateReadablesSha();
 
-    log_i("Not synced, downloading readables");
-    std::vector<UserReadable> userReadables;
-    httpCode = SindarinAPI::getInstance()->getReadablesUsersAll(&userReadables);
-    if (httpCode != HTTP_CODE_OK) {
-        log_e("Failed to get readables (HTTP %d)", httpCode);
-        return false;
-    }
-
-    // If out of sync, download any new readables.
-
-    // Now look through all the readables here, and download any that we don't have
-    // already
-    for (auto userReadable : userReadables) {
-        log_i("User readable %s (%s)", userReadable.readable.title.c_str(),
-              userReadable.readable.file().shaHash.c_str());
-        if (this->hasReadable(userReadable.readable)) {
-            log_i("Already have %s", userReadable.readable.title.c_str());
-            continue;
+        progressCallback("Checking Sync", 0);
+        CheckSyncResponse checkSyncResponse;
+        auto httpCode = SindarinAPI::getInstance()->checkSync(readablesSha, &checkSyncResponse);
+        if (httpCode != HTTP_CODE_OK) {
+            log_e("Failed to check sync (HTTP %d)", httpCode);
+            doneCallback(false);
+            return;
+        }
+        if (checkSyncResponse.synced) {
+            log_i("Client is in sync");
+            doneCallback(true);
+            return;
         }
 
-        log_i("Downloading %s (file=%s, url=%s)", userReadable.readable.title.c_str(),
-              userReadable.readable.localFilePath().c_str(),
-              userReadable.readable.remoteUrl().c_str());
+        progressCallback("Loading list", 1);
+        log_i("Not synced, downloading readables");
+        std::vector<UserReadable> userReadables;
+        httpCode = SindarinAPI::getInstance()->getReadablesUsersAll(&userReadables);
+        if (httpCode != HTTP_CODE_OK) {
+            log_e("Failed to get readables (HTTP %d)", httpCode);
+            doneCallback(false);
+            return;
+        }
 
-        // TODO: Is it weird for local store to call sindarin api and sindarin api to call local
-        // store? Probably
-        SindarinAPI::getInstance()->downloadReadable(userReadable.readable, *this);
-    }
+        // If out of sync, download any new readables.
 
-    // TODO: Delete local readables that are no longer on the server
+        std::vector<Readable> readablesToDownload;
 
-    // Update the SHA and try again
-    readablesSha = this->calculateReadablesSha();
-    SindarinAPI::getInstance()->checkSync(readablesSha, &checkSyncResponse);
+        // Now look through all the readables here, and download any that we don't have
+        // already
+        for (auto userReadable : userReadables) {
+            log_i("User readable %s (%s)", userReadable.readable.title.c_str(),
+                  userReadable.readable.file().shaHash.c_str());
+            if (this->hasReadable(userReadable.readable)) {
+                log_i("Already have %s", userReadable.readable.title.c_str());
+                continue;
+            }
 
-    if (!this->save()) {
-        log_e("Failed to save readables.json");
-    }
+            readablesToDownload.push_back(userReadable.readable);
+        }
 
-    // TODO: Force reload of rootUI instead of rebooting
-    if (checkSyncResponse.synced) {
-        log_i("Synced, rebooting");
-        esp_restart();
-    }
+        // TODO: Probably these should be set operations
+        std::vector<Readable> readablesToDelete;
+        for (auto &readable : readables_) {
+            if (!readable.localOnly && std::find_if(userReadables.begin(), userReadables.end(),
+                                                    [&readable](const UserReadable &userReadable) {
+                                                        return userReadable.readable.id ==
+                                                               readable.id;
+                                                    }) == userReadables.end()) {
+                log_i("Will delete %s", readable.title.c_str());
+                readablesToDelete.push_back(readable);
+            }
+        }
 
-    log_w("After running sync, local readables are still out of sync");
-    return false;
+        for (auto readable : readablesToDownload) {
+            log_i("Downloading %s (file=%s, url=%s)", readable.title.c_str(),
+                  readable.localFilePath().c_str(), readable.remoteUrl().c_str());
+
+            // TODO: Is it weird for local store to call sindarin api and sindarin api to call local
+            // store? Probably
+            auto success = SindarinAPI::getInstance()->downloadReadable(
+                readable, this->fileSystem, [progressCallback, readable](int percentage) {
+                    progressCallback(StringFormat("Download %s", readable.title.c_str()),
+                                     percentage);
+                });
+            if (success) {
+                addReadable(readable);
+                log_d("File successfully downloaded.");
+            }
+        }
+
+        for (auto readable : readablesToDelete) {
+            log_i("Deleting %s", readable.title.c_str());
+            this->fileSystem.remove(readable.localFilePath());
+            this->removeReadable(readable);
+        }
+
+        // Update the SHA and try again
+        readablesSha = this->calculateReadablesSha();
+        SindarinAPI::getInstance()->checkSync(readablesSha, &checkSyncResponse);
+
+        if (!this->save()) {
+            log_e("Failed to save readables.json");
+        }
+
+        // TODO: Force reload of rootUI instead of rebooting
+        if (checkSyncResponse.synced) {
+            log_i("Synced, rebooting");
+            esp_restart();
+        }
+
+        log_w("After running sync, local readables are still out of sync");
+        doneCallback(false);
+    });
 }
 
 auto LocalStore::save() -> bool {

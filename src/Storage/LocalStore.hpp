@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include "Misc/Dispatch.hpp"
 #include "Models/Readable.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
@@ -18,10 +19,13 @@ public:
     auto hasReadable(Readable &readable) -> bool;
     auto readables() -> std::vector<Readable> & { return readables_; };
     void addReadable(Readable &readable);
+    void removeReadable(const Readable &readable);
 
     auto calculateReadablesSha() -> std::string;
 
-    auto syncFromRemote() -> bool;
+    void
+    syncFromRemote(const std::function<void(std::string message, int percentage)> &progressCallback,
+                   const std::function<void(bool success)> &doneCallback);
 
     auto save() -> bool;
 

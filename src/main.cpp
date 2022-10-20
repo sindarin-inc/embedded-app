@@ -170,26 +170,7 @@ void StatsTask(void *parameter) {
     vTaskDelete(nullptr);
 }
 
-TaskHandle_t uiTaskHandle = nullptr;
-
-void UITask(void *parameter) {
-    RemoteCommand command = RemoteCommand::NONE;
-    for (;;) {
-        rootUi.loop(myDisplay, command);
-
-        // Peek if there's anything remaining in the queue
-        if (xQueuePeek(remoteQueue, &command, 0) != pdTRUE) {
-            // If there's nothing in the queue, sleep the thread until we're told to wake up
-            // (probably because there's something in the queue)
-            xTaskNotifyWait(0, 0, nullptr, portMAX_DELAY);
-        }
-        if (xQueueReceive(remoteQueue, &command, 0) != pdTRUE) {
-            log_w("Checking the remoteQueue but nothing was there");
-            command = RemoteCommand::NONE;
-        }
-    }
-    vTaskDelete(nullptr);
-}
+void UIInnerLoop(RemoteCommand command) { rootUi.loop(myDisplay, command); }
 
 #if CONFIG_AUTOSTART_ARDUINO
 void loop() { vTaskDelay(portMAX_DELAY); };
@@ -349,9 +330,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
 #if USE_TURN_TOUCH_REMOTE || USE_BLE_SERVER_REMOTE
     auto remoteCallback = [](RemoteCommand command) {
-        xQueueSend(remoteQueue, (void *)&command, (TickType_t)0);
-        // Notify the UI thread that we have a new command
-        xTaskNotify(uiTaskHandle, 0, eNoAction);
+        dispatch_get_ui_queue()->dispatch([command]() { UIInnerLoop(command); });
     };
 #endif
 
@@ -425,6 +404,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     if (!fileSystem.begin()) {
         bootErrors.push_back({.type = BootError::Type::FileSystem});
     }
+    fileSystem.remove("/hyperion-cantos.txt");
 
     if (!localStore.begin()) {
         bootErrors.push_back({.type = BootError::Type::LocalStore});
@@ -450,7 +430,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     remoteQueue = xQueueCreate(10, sizeof(RemoteCommand));
     xTaskCreatePinnedToCore(RadioTask, "Radio", 10000, nullptr, 1, nullptr, 0);
-    xTaskCreatePinnedToCore(UITask, "UI", 10000, nullptr, 7, &uiTaskHandle, 1);
     xTaskCreatePinnedToCore(StatsTask, "Stats", 5000, nullptr, 0, nullptr, 1);
     xTaskCreatePinnedToCore(PowerTask, "Power", 5000, nullptr, 0, &powerTaskHandle, 1);
+
+    // Render the first thing
+    dispatch_get_ui_queue()->dispatch([]() { UIInnerLoop(RemoteCommand::NONE); });
 }

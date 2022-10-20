@@ -99,12 +99,16 @@ auto SindarinAPI::getReadablesUsersAll(std::vector<UserReadable> *userReadables)
     return httpCode;
 }
 
-auto SindarinAPI::downloadReadable(Readable &readable, LocalStore &localStore) -> int {
+auto SindarinAPI::downloadReadable(Readable &readable, FileSystem &fileSystem,
+                                   const std::function<void(int percentage)> &progressCallback)
+    -> bool {
     HTTPClient httpClient;
+    bool success = false;
+
     auto remoteUrl = readable.remoteUrl();
     if (!httpClient.begin(remoteUrl.c_str())) {
         log_e("HTTPClient::begin failed for URL %s", remoteUrl.c_str());
-        return -1;
+        return false;
     }
     httpClient.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
     httpClient.setTimeout(30000);
@@ -130,18 +134,14 @@ auto SindarinAPI::downloadReadable(Readable &readable, LocalStore &localStore) -
         }
 
         // TODO: This is kinda weird to get the filesystem from localstore
-        auto success =
-            DownloadFile(httpClient, localStore.fileSystem, localPath.c_str(), len,
-                         [downloadStart](int bytesWritten, float percentage) {
+        success =
+            DownloadFile(httpClient, fileSystem, localPath.c_str(), len,
+                         [downloadStart, progressCallback](int bytesWritten, float percentage) {
                              log_d("Downloaded %.1f%% (%.1f KB/s)", percentage,
                                    bytesWritten / 1024.0f / ((millis() - downloadStart) / 1000.0f));
+                             progressCallback(percentage);
                          });
-
-        if (success) {
-            localStore.addReadable(readable);
-            log_d("File successfully downloaded.");
-        }
     }
     httpClient.end();
-    return httpCode;
+    return success;
 }

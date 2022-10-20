@@ -6,7 +6,7 @@
 #include "Models/Firmware.hpp"
 #include "Models/Json.hpp"
 #include "Models/UserReadable.hpp"
-#include "Storage/LocalStore.hpp"
+#include "Storage/FileSystem.hpp"
 
 class SindarinAPI {
 public:
@@ -21,7 +21,8 @@ public:
     // Get list of readables from the server
     auto getReadablesUsersAll(std::vector<UserReadable> *userReadables) -> int;
 
-    auto downloadReadable(Readable &readable, LocalStore &localStore) -> int;
+    auto downloadReadable(Readable &readable, FileSystem &fileSystem,
+                          const std::function<void(int percentage)> &progressCallback) -> bool;
 
 protected:
     static SindarinAPI *instance;
