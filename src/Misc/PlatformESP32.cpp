@@ -69,8 +69,7 @@ void InitializePlatform() {
 #ifdef SYS_ON
     // For now, we'll never have the MCU keep itself on. This should be similar to the behavior of
     // the RevX boards -- when the temples are closed, power will be cut off.
-    digitalWrite(SYS_ON, LOW);
-    pinMode(SYS_ON, OUTPUT);
+    pinMode(SYS_ON, INPUT_PULLDOWN);
 #endif
 #if USE_I2C
     // Initialize I2C port 0
