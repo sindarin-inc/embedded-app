@@ -404,7 +404,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     if (!fileSystem.begin()) {
         bootErrors.push_back({.type = BootError::Type::FileSystem});
     }
-    fileSystem.remove("/hyperion-cantos.txt");
 
     if (!localStore.begin()) {
         bootErrors.push_back({.type = BootError::Type::LocalStore});
