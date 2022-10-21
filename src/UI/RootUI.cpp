@@ -292,15 +292,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         settingsMenu->showTemporaryMessage(*display, "Loading content...", 0, false);
 
         localStore.syncFromRemote(
-            [settingsMenu, display](std::string message, int percentage) {
+            [settingsMenu, display](const std::string &message, int percentage) {
                 // Do UI stuff back on core 1
-                dispatch_get_ui_queue()->dispatch([settingsMenu, display, message, percentage]() {
+                DispatchGetUiQueue()->dispatch([settingsMenu, display, message, percentage]() {
                     settingsMenu->showTemporaryMessage(
                         *display, StringFormat("%s %d%%", message.c_str(), percentage), 0, false);
                 });
             },
             [settingsMenu, display](bool success) {
-                dispatch_get_ui_queue()->dispatch([settingsMenu, display, success]() {
+                DispatchGetUiQueue()->dispatch([settingsMenu, display, success]() {
                     std::string message;
                     if (success) {
                         log_i("Sync succeeded");

@@ -330,7 +330,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
 #if USE_TURN_TOUCH_REMOTE || USE_BLE_SERVER_REMOTE
     auto remoteCallback = [](RemoteCommand command) {
-        dispatch_get_ui_queue()->dispatch([command]() { UIInnerLoop(command); });
+        DispatchGetUiQueue()->dispatch([command]() { UIInnerLoop(command); });
     };
 #endif
 
@@ -434,5 +434,5 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     xTaskCreatePinnedToCore(PowerTask, "Power", 5000, nullptr, 0, &powerTaskHandle, 1);
 
     // Render the first thing
-    dispatch_get_ui_queue()->dispatch([]() { UIInnerLoop(RemoteCommand::NONE); });
+    DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::NONE); });
 }

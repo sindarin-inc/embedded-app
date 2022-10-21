@@ -823,7 +823,7 @@ void DemoScreen::render(DisplaySystem &display) {
 
     if (currentScreen_ == 3) {
         RemoteCommand toSend = RemoteCommand::NEXT;
-        dispatch_get_ui_queue()->dispatch([toSend]() { UIInnerLoop(toSend); });
+        DispatchGetUiQueue()->dispatch([toSend]() { UIInnerLoop(toSend); });
     }
 }
 

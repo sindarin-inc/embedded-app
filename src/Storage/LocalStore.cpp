@@ -143,7 +143,7 @@ void LocalStore::syncFromRemote(
     SindarinAPI::getInstance()->setAccessToken(token.value());
 
     // Run this work on a separate thread, since it's long running
-    auto queue = dispatch_get_core0_background_queue();
+    auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this, progressCallback, doneCallback] {
         auto readablesSha = this->calculateReadablesSha();
 
@@ -218,7 +218,7 @@ void LocalStore::syncFromRemote(
             }
         }
 
-        for (auto readable : readablesToDelete) {
+        for (const auto &readable : readablesToDelete) {
             log_i("Deleting %s", readable.title.c_str());
             this->fileSystem.remove(readable.localFilePath());
             this->removeReadable(readable);
