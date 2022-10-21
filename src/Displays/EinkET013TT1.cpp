@@ -416,6 +416,7 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
             // Perhaps this means latch everything into place?
             writeRegister(MYSTERY_SETTING_1, 0x10);
         }
+        taskYIELD();
 
         // Send clear packet
         writeRegister(WRITE_GATE_SOURCE_DATA, CLEAR_PACKET, sizeof(CLEAR_PACKET));
