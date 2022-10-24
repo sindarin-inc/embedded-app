@@ -1,5 +1,7 @@
 #include "Dispatch.hpp"
 
+#include <assert.h>
+
 // Definitions for dispatch event flags
 #define DISPATCH_WAKE_EVT (0x1)
 #define DISPATCH_EXIT_EVT (0x2)
