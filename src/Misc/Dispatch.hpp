@@ -4,6 +4,7 @@
 #include <freertos/task.h>
 #include <functional>
 #include <queue>
+#include <string>
 #include <vector>
 
 // Based on

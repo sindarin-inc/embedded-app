@@ -5,13 +5,13 @@
 #include <SDL2/SDL_image.h>
 #include <cstring>
 #include <freertos/FreeRTOS.h>
-#include <freertos/queue.h>
 #include <freertos/task.h>
 #include <iostream>
 #include <signal.h>
 #include <thread>
 #include <unistd.h>
 
+#include "Misc/Dispatch.hpp"
 #include "sindarin-debug.h"
 
 #if SIMULATOR_BLE
@@ -19,9 +19,7 @@
 #endif
 #include "Inputs/RemoteInput.hpp"
 
-extern TaskHandle_t uiTaskHandle;
-extern QueueHandle_t remoteQueue;
-
+extern void UIInnerLoop(RemoteCommand command);
 extern "C" void app_main(void); // NOLINT(readability-identifier-naming)
 
 const char *kGitHash = "SIMULATOR";
@@ -125,8 +123,7 @@ RemoteCommand ttCommand;
 #endif
 
 void sendCodeAndRender(RemoteCommand command, SDL_Renderer *renderer) {
-    xQueueSendFromISR(remoteQueue, (void *)&command, NULL);
-    xTaskNotifyFromISR(uiTaskHandle, 0, eNoAction, NULL);
+    DispatchGetUiQueue()->dispatch([command]() { UIInnerLoop(command); });
 
     // Wait for the UI thread to do the rendering to be rendered
     // TODO: This should be a lock or something
@@ -210,8 +207,7 @@ auto mainLoop() -> bool {
             }
 
             if (remoteCode != RemoteCommand::NONE) {
-                xQueueSendFromISR(remoteQueue, (void *)&remoteCode, NULL);
-                xTaskNotifyFromISR(uiTaskHandle, 0, eNoAction, NULL);
+                DispatchGetUiQueue()->dispatch([remoteCode]() { UIInnerLoop(remoteCode); });
             }
         }
     }
@@ -219,8 +215,7 @@ auto mainLoop() -> bool {
 #if SIMULATOR_BLE
     if (ttCommand != RemoteCommand::NONE) {
         remoteCode = ttCommand;
-        xQueueSendFromISR(remoteQueue, (void *)&remoteCode, NULL);
-        xTaskNotifyFromISR(uiTaskHandle, 0, eNoAction, NULL);
+        DispatchGetUiQueue()->dispatch([remoteCode]() { UIInnerLoop(remoteCode); });
         ttCommand = RemoteCommand::NONE;
     }
 #endif
