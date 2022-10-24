@@ -1,6 +1,6 @@
 #include "Dispatch.hpp"
 
-#include <assert.h>
+#include <cassert>
 
 // Definitions for dispatch event flags
 #define DISPATCH_WAKE_EVT (0x1)
