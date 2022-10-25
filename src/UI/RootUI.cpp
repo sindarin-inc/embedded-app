@@ -121,7 +121,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto connectWiFi = [display](MenuScreen *menu) -> bool {
         if (!HasWiFiCredentials()) {
             log_w("No WiFi credentials found");
-            menu->showTemporaryMessage(*display, "No WiFi credentials found");
+            menu->showTemporaryMessage(*display, "Go to Settings > WiFi Setup in the Sol app.");
             return false;
         }
 
@@ -280,7 +280,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                                         connectWiFi]() {
         if (!prefs_.cloudToken.get().has_value()) {
             log_w("No Sindarin API token found");
-            settingsMenu->showTemporaryMessage(*display, "No Sindarin API token found");
+            settingsMenu->showTemporaryMessage(*display,
+                                               "Go to Settings > Pair Glasses in the Sol app.");
             return;
         }
 
