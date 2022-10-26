@@ -80,11 +80,11 @@ auto ConnectWifi(int timeoutMs) -> bool {
         }
         if (!NetworkConnected()) {
             DisconnectWifi();
-            return WifiConnectState::UNABLE_TO_CONNECT;
+            return false;
         }
     }
 
-    return WifiConnectState::CONNECTED;
+    return true;
 }
 
 #else
