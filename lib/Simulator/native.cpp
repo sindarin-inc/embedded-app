@@ -123,7 +123,7 @@ RemoteCommand ttCommand;
 #endif
 
 void sendCodeAndRender(RemoteCommand command, SDL_Renderer *renderer) {
-    DispatchGetUiQueue()->dispatch([command]() { UIInnerLoop(command); });
+    DispatchGetUiQueue()->dispatchFromISR([command]() { UIInnerLoop(command); });
 
     // Wait for the UI thread to do the rendering to be rendered
     // TODO: This should be a lock or something
@@ -207,7 +207,7 @@ auto mainLoop() -> bool {
             }
 
             if (remoteCode != RemoteCommand::NONE) {
-                DispatchGetUiQueue()->dispatch([remoteCode]() { UIInnerLoop(remoteCode); });
+                DispatchGetUiQueue()->dispatchFromISR([remoteCode]() { UIInnerLoop(remoteCode); });
             }
         }
     }
@@ -215,7 +215,7 @@ auto mainLoop() -> bool {
 #if SIMULATOR_BLE
     if (ttCommand != RemoteCommand::NONE) {
         remoteCode = ttCommand;
-        DispatchGetUiQueue()->dispatch([remoteCode]() { UIInnerLoop(remoteCode); });
+        DispatchGetUiQueue()->dispatchFromISR([remoteCode]() { UIInnerLoop(remoteCode); });
         ttCommand = RemoteCommand::NONE;
     }
 #endif

@@ -17,6 +17,10 @@ struct FreertosThreadT {
 
 class DispatchQueue {
     typedef std::function<void(void)> fp_t;
+    struct WorkItem {
+        fp_t op;
+        bool quit;
+    };
 
 public:
     DispatchQueue(std::string name, size_t threadCnt = 1, size_t threadStack = 1024,
@@ -25,8 +29,10 @@ public:
 
     // dispatch and copy
     void dispatch(const fp_t &op);
+    void dispatchFromISR(const fp_t &op);
     // dispatch and move
     void dispatch(fp_t &&op);
+    void dispatchFromISR(fp_t &&op);
 
     // Deleted operations
     DispatchQueue(const DispatchQueue &rhs) = delete;
@@ -37,17 +43,13 @@ public:
 private:
     std::string name_;
 
-    // FreeRTOS uses semaphore handles for mutexes
-    SemaphoreHandle_t mutex_;
-
     // Vector of FreeRTOS Threads
     std::vector<FreertosThreadT> threads_;
 
-    // FreeRTOS event flags - like condition variable, used for waking queue threads
+    // FreeRTOS event flags - used for waiting for thread deletion
     EventGroupHandle_t notifyFlags_;
 
-    // TODO(john): Should this be a FreeRTOS queue?
-    std::queue<fp_t> q_;
+    QueueHandle_t q_;
     bool quit_ = false;
 
     void dispatchThreadHandler();
