@@ -79,7 +79,7 @@ auto LocalStore::hasReadable(Readable &readable) -> bool {
     return false;
 }
 
-void LocalStore::addReadable(Readable &readable) {
+void LocalStore::addReadable(const Readable &readable) {
     readables_.emplace_back(readable);
     return;
 }
@@ -131,43 +131,47 @@ auto LocalStore::calculateReadablesSha() -> std::string {
 }
 
 void LocalStore::syncFromRemote(
-    const std::function<void(std::string message, int percentage)> &progressCallback,
-    const std::function<void(bool success)> &doneCallback) {
+    const std::function<void(ContentSyncState state)> &progressCallback) {
 
     // Grab the token here from prefs if set
     auto token = prefs_.cloudToken.get();
     if (!token.has_value()) {
         log_e("No access token set");
-        doneCallback(false);
+        progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                          .message = "No access token set"});
+        return;
     }
     SindarinAPI::getInstance()->setAccessToken(token.value());
+    progressCallback(ContentSyncState{.state = ContentSyncState::State::CheckingSync});
 
     // Run this work on a separate thread, since it's long running
     auto queue = DispatchGetCore0BackgroundQueue();
-    queue->dispatch([this, progressCallback, doneCallback] {
+    queue->dispatch([this, progressCallback] {
         auto readablesSha = this->calculateReadablesSha();
 
-        progressCallback("Checking Sync", 0);
         CheckSyncResponse checkSyncResponse;
         auto httpCode = SindarinAPI::getInstance()->checkSync(readablesSha, &checkSyncResponse);
         if (httpCode != HTTP_CODE_OK) {
             log_e("Failed to check sync (HTTP %d)", httpCode);
-            doneCallback(false);
+            progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                              .message = "Failed to check sync"});
             return;
         }
         if (checkSyncResponse.synced) {
             log_i("Client is in sync");
-            doneCallback(true);
+            progressCallback(ContentSyncState{.state = ContentSyncState::State::Synced});
             return;
         }
 
-        progressCallback("Loading list", 1);
+        progressCallback(ContentSyncState{.state = ContentSyncState::State::LoadingTasks});
+
         log_i("Not synced, downloading readables");
         std::vector<UserReadable> userReadables;
         httpCode = SindarinAPI::getInstance()->getReadablesUsersAll(&userReadables);
         if (httpCode != HTTP_CODE_OK) {
             log_e("Failed to get readables (HTTP %d)", httpCode);
-            doneCallback(false);
+            progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                              .message = "Failed to load list"});
             return;
         }
 
@@ -201,16 +205,47 @@ void LocalStore::syncFromRemote(
             }
         }
 
+        ContentSyncState syncState = {.state = ContentSyncState::State::Syncing};
+        syncState.tasks.reserve(readablesToDownload.size());
+
+        for (auto readable : readablesToDelete) {
+            syncState.tasks.push_back(ContentSyncState::Task{
+                .message = "Delete: " + readable.title,
+                .percentage = 0,
+            });
+        }
+
         for (auto readable : readablesToDownload) {
+            syncState.tasks.push_back(ContentSyncState::Task{
+                .message = "Get: " + readable.title,
+                .percentage = 0,
+            });
+        }
+
+        progressCallback(syncState);
+
+        for (int i = 0; i < readablesToDelete.size(); i++) {
+            const auto &readable = readablesToDelete[i];
+            log_i("Deleting %s", readable.title.c_str());
+            this->fileSystem.remove(readable.localFilePath());
+            this->removeReadable(readable);
+            syncState.tasks[i].percentage = 100;
+        }
+
+        progressCallback(syncState);
+
+        for (int i = 0; i < readablesToDownload.size(); i++) {
+            // Index into the progress tasks vector
+            auto tasksIndex = readablesToDelete.size() + i;
+            const auto &readable = readablesToDownload[i];
             log_i("Downloading %s (file=%s, url=%s)", readable.title.c_str(),
                   readable.localFilePath().c_str(), readable.remoteUrl().c_str());
 
-            // TODO: Is it weird for local store to call sindarin api and sindarin api to call local
-            // store? Probably
             auto success = SindarinAPI::getInstance()->downloadReadable(
-                readable, this->fileSystem, [progressCallback, readable](int percentage) {
-                    progressCallback(StringFormat("Download %s", readable.title.c_str()),
-                                     percentage);
+                readable, this->fileSystem,
+                [progressCallback, &syncState, tasksIndex](int percentage) {
+                    syncState.tasks[tasksIndex].percentage = percentage;
+                    progressCallback(syncState);
                 });
             if (success) {
                 addReadable(readable);
@@ -218,11 +253,10 @@ void LocalStore::syncFromRemote(
             }
         }
 
-        for (const auto &readable : readablesToDelete) {
-            log_i("Deleting %s", readable.title.c_str());
-            this->fileSystem.remove(readable.localFilePath());
-            this->removeReadable(readable);
-        }
+        progressCallback(syncState);
+
+        // Artificially delay so the user has the satisfaction of seeing the list done
+        delay(1000);
 
         // Update the SHA and try again
         readablesSha = this->calculateReadablesSha();
@@ -236,10 +270,14 @@ void LocalStore::syncFromRemote(
         if (checkSyncResponse.synced) {
             log_i("Synced, rebooting");
             esp_restart();
+            // Only for the sim
+            progressCallback(ContentSyncState{.state = ContentSyncState::State::Synced});
+        } else {
+            log_w("After running sync, local readables are still out of sync");
+            // TODO: this isn't 100% right
+            progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                              .message = "Not in sync"});
         }
-
-        log_w("After running sync, local readables are still out of sync");
-        doneCallback(false);
     });
 }
 

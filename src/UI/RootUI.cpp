@@ -19,6 +19,7 @@
 #include "Storage/LocalStore.hpp"
 #include "UI/AlignmentScreen.hpp"
 #include "UI/CalibrationScreen.hpp"
+#include "UI/ContentSyncScreen.hpp"
 #include "UI/DemoScreen.hpp"
 #include "UI/FirmwareUpdateScreen.hpp"
 #include "UI/LightingAdjustScreen.hpp"
@@ -107,44 +108,31 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     };
 
     auto currentReadable = prefs_.lastReadableId.get();
-    for (Readable &r : readables) {
-        mainMenu->addMenuItem(MenuItem(r.title, [this, r, createReadableScreen]() {
-            auto readableScreen = createReadableScreen(r);
-            this->setCurrentScreen(*readableScreen);
+    // If there are no readables, show the Sync Content item
+    if (readables.size() == 0) {
+        mainMenu->addMenuItem(MenuItem("Sync Content", [this, display, &localStore, mainMenu]() {
+            auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
+            this->setCurrentScreen(*contentSyncScreen);
+            contentSyncScreen->backCallback = [this, contentSyncScreen, mainMenu, display]() {
+                mainMenu->setFirstLoad();
+                setCurrentScreen(*mainMenu);
+                mainMenu->render(*display);
+                delete contentSyncScreen;
+            };
+            contentSyncScreen->begin();
         }));
-        if (currentReadable.has_value() && currentReadable.value() == r.id) {
-            mainMenu->setCurrSelection(mainMenu->getNumItems() - 1);
+    } else {
+        for (Readable &r : readables) {
+            mainMenu->addMenuItem(MenuItem(r.title, [this, r, createReadableScreen]() {
+                auto readableScreen = createReadableScreen(r);
+                this->setCurrentScreen(*readableScreen);
+            }));
+            if (currentReadable.has_value() && currentReadable.value() == r.id) {
+                mainMenu->setCurrSelection(mainMenu->getNumItems() - 1);
+            }
         }
     }
     SHOW_HEAP();
-
-    auto connectWiFi = [display](MenuScreen *menu) -> bool {
-        if (!HasWiFiCredentials()) {
-            log_w("No WiFi credentials found");
-            menu->showTemporaryMessage(*display, "Go to Settings > WiFi Setup in the Sol app.");
-            return false;
-        }
-
-        if (!NetworkConnected()) {
-            menu->showTemporaryMessage(*display, "Connecting WiFi...", 0, false);
-
-            ConnectWiFiIfCredentialsExist();
-            for (int i = 0; i < 50; i++) {
-                if (NetworkConnected()) {
-                    break;
-                }
-                delay(200);
-            }
-
-            if (!NetworkConnected()) {
-                DisconnectWifi();
-                menu->showTemporaryMessage(*display, "Unable to connect to WiFi");
-                return false;
-            }
-        }
-
-        return true;
-    };
 
     // Set up pocket article menu
 #if ENABLE_POCKET
@@ -276,77 +264,60 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         setCurrentScreen(*settingsMenu);
     };
 
-    settingsMenu->addMenuItem(MenuItem("Sync Content", [this, settingsMenu, &localStore, display,
-                                                        connectWiFi]() {
-        if (!prefs_.cloudToken.get().has_value()) {
-            log_w("No Sindarin API token found");
-            settingsMenu->showTemporaryMessage(*display,
-                                               "Go to Settings > Pair Glasses in the Sol app.");
-            return;
-        }
-
-        if (!connectWiFi(settingsMenu)) {
-            return;
-        }
-
-        // TODO: Progress UI for this!
-        settingsMenu->showTemporaryMessage(*display, "Loading content...", 0, false);
-
-        localStore.syncFromRemote(
-            [settingsMenu, display](const std::string &message, int percentage) {
-                // Do UI stuff back on core 1
-                DispatchGetUiQueue()->dispatch([settingsMenu, display, message, percentage]() {
-                    settingsMenu->showTemporaryMessage(
-                        *display, StringFormat("%s %d%%", message.c_str(), percentage), 0, false);
-                });
-            },
-            [settingsMenu, display](bool success) {
-                DispatchGetUiQueue()->dispatch([settingsMenu, display, success]() {
-                    std::string message;
-                    if (success) {
-                        log_i("Sync succeeded");
-                        message = "Success!";
-                    } else {
-                        log_e("Sync failed");
-                        message = "Failed :(";
-                    }
-                    DisconnectWifi();
-                    settingsMenu->showTemporaryMessage(*display, message);
-                });
-            });
-    }));
-
     settingsMenu->addMenuItem(
-        MenuItem("Check for Update", [this, settingsMenu, display, connectWiFi]() {
-            if (!connectWiFi(settingsMenu)) {
-                return;
-            }
-
-            settingsMenu->showTemporaryMessage(*display, "Checking for update", 0, false);
-
-            SindarinAPI::getInstance()->setAccessToken(prefs_.cloudToken.get().value());
-
-            CheckSyncResponse response;
-            // Skip calculating the readable shas for now, the firmware info is sent either way
-            // TODO: Cache all the stuff from /sync/all so we don't have to make this call again
-            SindarinAPI::getInstance()->checkSync("", &response);
-
-            if (response.firmware.url.empty()) {
-                settingsMenu->showTemporaryMessage(*display, "No update available");
-                return;
-            }
-
-            settingsMenu->showTemporaryMessage(*display, "Downloading update!", 0, false);
-
-            auto firmwareUpdateScreen = new FirmwareUpdateScreen(
-                *display, response.firmware.url, response.firmware.md5, response.firmware.version);
-            this->setCurrentScreen(*firmwareUpdateScreen);
-            firmwareUpdateScreen->backCallback = [this, firmwareUpdateScreen, settingsMenu]() {
+        MenuItem("Sync Content", [this, display, &localStore, settingsMenu]() {
+            auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
+            this->setCurrentScreen(*contentSyncScreen);
+            contentSyncScreen->backCallback = [this, contentSyncScreen, settingsMenu, display]() {
                 settingsMenu->setFirstLoad();
                 setCurrentScreen(*settingsMenu);
-                delete firmwareUpdateScreen;
+                settingsMenu->render(*display);
+                delete contentSyncScreen;
             };
+            contentSyncScreen->begin();
         }));
+
+    settingsMenu->addMenuItem(MenuItem("Check for Update", [this, settingsMenu, display]() {
+        if (!HasWiFiCredentials()) {
+            log_w("No WiFi credentials found");
+            settingsMenu->showTemporaryMessage(*display, "No WiFi credentials found");
+            return;
+        }
+
+        settingsMenu->showTemporaryMessage(*display, "Connecting WiFi...", 0, false);
+        auto wifiResult = ConnectWifi();
+
+        if (!wifiResult) {
+            DisconnectWifi();
+            settingsMenu->showTemporaryMessage(*display, "Unable to connect to WiFi");
+            return;
+        }
+
+        settingsMenu->showTemporaryMessage(*display, "Checking for update", 0, false);
+
+        SindarinAPI::getInstance()->setAccessToken(prefs_.cloudToken.get().value());
+
+        CheckSyncResponse response;
+        // Skip calculating the readable shas for now, the firmware info is sent either way
+        // TODO: Cache all the stuff from /sync/all so we don't have to make this call again
+        SindarinAPI::getInstance()->checkSync("", &response);
+
+        if (response.firmware.url.empty()) {
+            settingsMenu->showTemporaryMessage(*display, "No update available");
+            return;
+        }
+
+        settingsMenu->showTemporaryMessage(*display, "Downloading update!", 0, false);
+
+        auto firmwareUpdateScreen = new FirmwareUpdateScreen(
+            *display, response.firmware.url, response.firmware.md5, response.firmware.version);
+        this->setCurrentScreen(*firmwareUpdateScreen);
+        firmwareUpdateScreen->backCallback = [this, firmwareUpdateScreen, settingsMenu]() {
+            settingsMenu->setFirstLoad();
+            setCurrentScreen(*settingsMenu);
+            delete firmwareUpdateScreen;
+        };
+    }));
 
     settingsMenu->addMenuItem(MenuItem("Reading Font Size", [this, settingsMenu]() {
         auto fontMenu = new MenuScreen(this->power_, settingsMenu->getMyStyle());

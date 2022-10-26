@@ -70,6 +70,23 @@ void DisconnectWifi() {
 
 auto NetworkConnected() -> bool { return WiFi.isConnected(); }
 
+auto ConnectWifi(int timeoutMs) -> bool {
+    auto startTime = millis();
+    if (!NetworkConnected()) {
+        ConnectWiFiIfCredentialsExist();
+        // TODO: Would be nice to make this not a polling loop
+        while (!NetworkConnected() && (millis() - startTime) < timeoutMs) {
+            delay(200);
+        }
+        if (!NetworkConnected()) {
+            DisconnectWifi();
+            return WifiConnectState::UNABLE_TO_CONNECT;
+        }
+    }
+
+    return WifiConnectState::CONNECTED;
+}
+
 #else
 
 auto GetWiFiCredentials(wifi_config_t *conf) -> bool {
@@ -88,5 +105,11 @@ auto ConnectWiFiIfCredentialsExist() -> bool {
 void DisconnectWifi() { log_i("Pretending to disconnect WiFi"); }
 
 auto NetworkConnected() -> bool { return true; }
+
+auto ConnectWifi(int timeoutMs) -> bool {
+    // Pretend to connect to WiFi
+    delay(1000);
+    return true;
+}
 
 #endif

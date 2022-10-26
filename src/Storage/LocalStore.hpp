@@ -7,6 +7,26 @@
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
 
+struct ContentSyncState {
+    enum State {
+        Idle,
+        ConnectingWifi,
+        CheckingSync,
+        LoadingTasks,
+        Syncing,
+        Synced,
+        Failure,
+    } state = Idle;
+
+    struct Task {
+        std::string message;
+        int percentage;
+    };
+
+    std::vector<Task> tasks;
+    std::string message;
+};
+
 //! Interface for local storage of structured data
 class LocalStore {
 public:
@@ -18,14 +38,12 @@ public:
     // Convenience methods
     auto hasReadable(Readable &readable) -> bool;
     auto readables() -> std::vector<Readable> & { return readables_; };
-    void addReadable(Readable &readable);
+    void addReadable(const Readable &readable);
     void removeReadable(const Readable &readable);
 
     auto calculateReadablesSha() -> std::string;
 
-    void
-    syncFromRemote(const std::function<void(std::string message, int percentage)> &progressCallback,
-                   const std::function<void(bool success)> &doneCallback);
+    void syncFromRemote(const std::function<void(ContentSyncState state)> &progressCallback);
 
     auto save() -> bool;
 

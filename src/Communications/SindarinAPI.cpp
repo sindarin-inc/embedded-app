@@ -99,7 +99,7 @@ auto SindarinAPI::getReadablesUsersAll(std::vector<UserReadable> *userReadables)
     return httpCode;
 }
 
-auto SindarinAPI::downloadReadable(Readable &readable, FileSystem &fileSystem,
+auto SindarinAPI::downloadReadable(const Readable &readable, FileSystem &fileSystem,
                                    const std::function<void(int percentage)> &progressCallback)
     -> bool {
     HTTPClient httpClient;

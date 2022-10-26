@@ -59,6 +59,9 @@ auto DownloadFile(HTTPClient &httpClient, FileSystem &fileSystem, const char *pa
         vPortYield();
     }
 
+    float percentProgress = (float)bytesWritten / length * 100.0f;
+    progressCallback(bytesWritten, percentProgress);
+
     if (length != bytesWritten) {
         // TODO: What's the best API to get errors from the stream?
         log_e("Wrote fewer bytes than expected, expected %d bytes but got %d bytes", length,
