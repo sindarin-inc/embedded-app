@@ -128,6 +128,9 @@ extern unsigned long ulPortGetRunTime( void );
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS() /* no-op */
 #define portGET_RUN_TIME_COUNTER_VALUE()         ulPortGetRunTime()
 
+extern void vApplicationSleep(TickType_t xExpectedIdleTime);
+#define portSUPPRESS_TICKS_AND_SLEEP(idleTime) vApplicationSleep(idleTime)
+
 #ifdef __cplusplus
 }
 #endif

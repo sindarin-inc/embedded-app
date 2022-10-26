@@ -43,7 +43,7 @@
 #define configUSE_TICK_HOOK 1
 #define configUSE_DAEMON_TASK_STARTUP_HOOK 1
 #define configTICK_RATE_HZ                                                                         \
-    (100) /* In this non-real time simulated environment the tick frequency has to be at least a   \
+    (1000) /* In this non-real time simulated environment the tick frequency has to be at least a  \
               multiple of the Win32 tick frequency, and therefore very slow. */
 #define configMINIMAL_STACK_SIZE                                                                   \
     ((unsigned short)PTHREAD_STACK_MIN) /* The stack size being passed is equal to the minimum     \
@@ -53,6 +53,7 @@
 #define configUSE_TRACE_FACILITY 1
 #define configUSE_16_BIT_TICKS 0
 #define configIDLE_SHOULD_YIELD 1
+#define configUSE_TICKLESS_IDLE 1
 #define configUSE_MUTEXES 1
 #define configCHECK_FOR_STACK_OVERFLOW 0
 #define configUSE_RECURSIVE_MUTEXES 1

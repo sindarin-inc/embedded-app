@@ -66,9 +66,13 @@ void vApplicationIdleHook(void) {
      * because it is the responsibility of the idle task to clean up memory
      * allocated by the kernel to any task that has since deleted itself. */
 
-    usleep(15000);
+    // TODO: Implement a simulation of the idle watchdog timer
 }
 /*-----------------------------------------------------------*/
+
+void vApplicationSleep(TickType_t xExpectedIdleTime) {
+    usleep(1000000 * xExpectedIdleTime / configTICK_RATE_HZ);
+}
 
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName) {
     (void)pcTaskName;
