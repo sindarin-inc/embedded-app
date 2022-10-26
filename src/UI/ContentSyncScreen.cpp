@@ -67,10 +67,8 @@ void ContentSyncScreen::render(DisplaySystem &display) {
     }
     // Full partial for state change otherwise AU4
     if (lastState_.state != state_.state) {
-        log_d("partial");
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     } else {
-        log_d("fast");
         display.updateDisplay(DisplaySystem::UpdateType::FAST);
     }
 }
