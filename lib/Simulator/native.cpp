@@ -11,6 +11,7 @@
 #include <thread>
 #include <unistd.h>
 
+#include "Displays/FakeEinkET013TT1.hpp"
 #include "Misc/Dispatch.hpp"
 #include "sindarin-debug.h"
 
@@ -25,8 +26,9 @@ extern "C" void app_main(void); // NOLINT(readability-identifier-naming)
 const char *kGitHash = "SIMULATOR";
 
 #define SCALE 2
-#define WIDTH 256
-#define HEIGHT 256
+#define MAX_LIGHTING_VALUE 21
+
+int LightingSetting;
 
 SDL_Window *window;
 SDL_Renderer *renderer;
@@ -39,13 +41,35 @@ SDL_Surface *arrow;
 SDL_Texture *arrowTexture;
 Uint8 arrowOpacity = 0;
 double arrowRotation = 0;
+bool updateDone = false;
+
+float lerp(float a, float b, float t) { return a + t * (b - a); }
+
+void SimDrawScreen() {
+    SDL_SetRenderTarget(renderer, deviceScreen);
+    for (int x = 0; x < EinkET013TT1_PIXEL_WIDTH; x++) {
+        for (int y = 0; y < EinkET013TT1_PIXEL_HEIGHT; y++) {
+            uint8_t color = ParticlePositions[x + y * EinkET013TT1_PIXEL_WIDTH];
+            float colorF = color / 255.0;
+            uint16_t brightnessOffset = 3 * (MAX_LIGHTING_VALUE - LightingSetting);
+            SDL_SetRenderDrawColor(
+                renderer, lerp(40 + brightnessOffset, 248 - brightnessOffset, colorF),
+                lerp(40 + brightnessOffset, 240 - brightnessOffset, colorF),
+                lerp(40 + brightnessOffset, 227 - brightnessOffset, colorF), 0xFF);
+            SDL_RenderDrawPoint(renderer, x, y);
+        }
+    }
+    SDLNeedsRedraw = true;
+};
+
+void SimScreenUpdateDone() { updateDone = true; }
 
 bool isPngEqual(std::string filepath1, std::string filepath2) {
     SDL_Surface *saveSurface1 = IMG_Load(filepath1.c_str());
     SDL_Surface *saveSurface2 = IMG_Load(filepath2.c_str());
 
-    for (int w = 0; w < WIDTH; w++) {
-        for (int h = 0; h < HEIGHT; h++) {
+    for (int w = 0; w < EinkET013TT1_PIXEL_WIDTH; w++) {
+        for (int h = 0; h < EinkET013TT1_PIXEL_HEIGHT; h++) {
             Uint8 r1, g1, b1, r2, g2, b2;
             Uint32 *pixels1, *pixels2;
             pixels1 = (Uint32 *)saveSurface1->pixels;
@@ -67,14 +91,15 @@ bool isPngEqual(std::string filepath1, std::string filepath2) {
 
 bool saveScreenshotPng(std::string filepath, SDL_Window *window, SDL_Renderer *renderer) {
     // 4 bytes per pixel
-    auto pitch = WIDTH * 4;
+    auto pitch = EinkET013TT1_PIXEL_WIDTH * 4;
 
-    SDL_Surface *saveSurface = SDL_CreateRGBSurface(0, WIDTH, HEIGHT, 32, 0, 0, 0, 0);
+    SDL_Surface *saveSurface = SDL_CreateRGBSurface(0, EinkET013TT1_PIXEL_WIDTH,
+                                                    EinkET013TT1_PIXEL_HEIGHT, 32, 0, 0, 0, 0);
     if (saveSurface == NULL) {
         std::cerr << "SDL_CreateRGBSurface error: " << SDL_GetError() << "\n";
         return false;
     }
-    SDL_Rect rect = {.x = 0, .y = 0, .w = WIDTH, .h = HEIGHT};
+    SDL_Rect rect = {.x = 0, .y = 0, .w = EinkET013TT1_PIXEL_WIDTH, .h = EinkET013TT1_PIXEL_HEIGHT};
     SDL_SetRenderTarget(renderer, deviceScreen);
     if (SDL_RenderReadPixels(renderer, &rect, 0, saveSurface->pixels, pitch) != 0) {
         std::cerr << "SDL_RenderReadPixels error: " << SDL_GetError() << "\n";
@@ -108,9 +133,10 @@ void drawOverlay(RemoteCommand command) {
     if (arrowOpacity > 0) {
         arrowOpacity = std::max(arrowOpacity - 10, 0);
         // The left arrow default position
-        SDL_Rect left = {.x = 5, .y = (HEIGHT - arrow->h) / 2, .w = arrow->w, .h = arrow->h};
+        SDL_Rect left = {
+            .x = 5, .y = (EinkET013TT1_PIXEL_HEIGHT - arrow->h) / 2, .w = arrow->w, .h = arrow->h};
         // The center of the screen, relative to left arrow coordinates
-        SDL_Point center = {.x = WIDTH / 2 - left.x, .y = arrow->h / 2};
+        SDL_Point center = {.x = EinkET013TT1_PIXEL_WIDTH / 2 - left.x, .y = arrow->h / 2};
         SDL_SetTextureAlphaMod(arrowTexture, arrowOpacity);
         SDL_RenderCopyEx(renderer, arrowTexture, NULL, &left, arrowRotation, &center,
                          SDL_FLIP_NONE);
@@ -123,11 +149,12 @@ RemoteCommand ttCommand;
 #endif
 
 void sendCodeAndRender(RemoteCommand command, SDL_Renderer *renderer) {
+    updateDone = false;
     DispatchGetUiQueue()->dispatchFromISR([command]() { UIInnerLoop(command); });
 
     // Wait for the UI thread to do the rendering to be rendered
     // TODO: This should be a lock or something
-    while (!SDLNeedsRedraw) {
+    while (!updateDone) {
         usleep(10000);
     }
 
@@ -140,6 +167,9 @@ void sendCodeAndRender(RemoteCommand command, SDL_Renderer *renderer) {
 
 // Only press 'u' when you are on a page in a readable.
 void runBackwardsUnitTest(SDL_Window *window, SDL_Renderer *renderer) {
+    // Max out particle movement for the test (ignore e-ink artifacts)
+    EinkET013TT1::particleMovement = 255;
+    EinkET013TT1::skipDelay = true;
     for (int i = 0; i < 500; i++) {
         saveScreenshotPng("current.png", window, renderer);
         sendCodeAndRender(RemoteCommand::ENTER, renderer);
@@ -157,6 +187,8 @@ void runBackwardsUnitTest(SDL_Window *window, SDL_Renderer *renderer) {
         }
     }
     std::cerr << "unit test passed\n";
+    EinkET013TT1::particleMovement = PARTICLE_MOVEMENT_DEFAULT;
+    EinkET013TT1::skipDelay = false;
 }
 
 void goBackNumPages(SDL_Window *window, SDL_Renderer *renderer, int numPages) {
@@ -249,14 +281,15 @@ auto main(int argc, char *argv[]) -> int {
         return 1;
     }
 
-    SDL_CreateWindowAndRenderer(WIDTH * SCALE, WIDTH * SCALE, 0, &window, &renderer);
+    SDL_CreateWindowAndRenderer(EinkET013TT1_PIXEL_WIDTH * SCALE, EinkET013TT1_PIXEL_WIDTH * SCALE,
+                                0, &window, &renderer);
     if (renderer == NULL) {
         fprintf(stderr, "Could not create renderer: %s\n", SDL_GetError());
         return 1;
     }
 
     deviceScreen = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
-                                     WIDTH, HEIGHT);
+                                     EinkET013TT1_PIXEL_WIDTH, EinkET013TT1_PIXEL_HEIGHT);
     SDL_RenderSetScale(renderer, SCALE, SCALE);
 
     IMG_Init(IMG_INIT_PNG);

@@ -2,11 +2,10 @@
 
 #include <string>
 
-#include "Displays/DisplaySDLSimulator.hpp"
 #include "Platform.hpp"
 #include "sindarin-debug.h"
 
-extern DisplaySDLSimulator myDisplay;
+extern int LightingSetting;
 
 void InitializePlatform() {}
 
@@ -17,7 +16,7 @@ auto GetBatteryVoltageRight() -> float { return 0; }
 void SetCpuSpeedMhz(int speedMhz) {}
 
 void SetBacklight(int percent) {
-    myDisplay.setLighting(percent);
+    LightingSetting = percent;
     log_d("Setting backlight to %d%%", percent);
 }
 
@@ -26,7 +25,7 @@ void SetRightBackLight(int percent) {
 }
 
 void SetLeftBackLight(int percent) {
-    myDisplay.setLighting(percent);
+    LightingSetting = percent;
     log_d("Setting left backlight to %d%%", percent);
 }
 

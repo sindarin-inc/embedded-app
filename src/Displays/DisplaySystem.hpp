@@ -6,11 +6,6 @@
 // class to automatically use arbirary displays and optics systems
 // without having to rewrite the Rendering code.
 //
-// When deriving from this class, add the new class header to
-// the file "AllDisplays.hpp" so clients of these classes only
-// need to include a single header to get all the different display
-// options.
-//
 
 #ifndef DISPLAY_SYSTEM_H
 #define DISPLAY_SYSTEM_H

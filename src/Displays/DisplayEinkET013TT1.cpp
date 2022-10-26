@@ -40,13 +40,13 @@ auto DisplayEinkET013TT1::setup() -> bool {
 
     log_d("Checking Waveforms");
 
-    uint8_t retVal = driver_.checkWaveform(FULL_BIG_ORIGINAL_WAVEFORM);
+    uint8_t retVal = FULL_BIG_ORIGINAL_WAVEFORM.check();
 
     if (retVal != WAVEFORM_OK) {
         log_d("Caught a Waveform Error %d", retVal);
     }
 
-    retVal = driver_.checkWaveform(PARTIAL_REFRESH_WAVEFORM_REGULAR);
+    retVal = PARTIAL_REFRESH_WAVEFORM_REGULAR.check();
 
     if (retVal != WAVEFORM_OK) {
         log_d("Caught a Waveform Error %d", retVal);

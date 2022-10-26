@@ -10,7 +10,6 @@
 #include "Communications/OTA.hpp"
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
-#include "Displays/AllDisplays.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/BootError.hpp"
 #include "Misc/Platform.hpp"
@@ -29,11 +28,8 @@
 #endif
 
 #if EINKET013TT1
+#include "Displays/DisplayEinkET013TT1.hpp"
 DisplayEinkET013TT1 myDisplay(DISPLAY_CS_LEFT, DISPLAY_CS_RIGHT, DISPLAY_RST);
-#endif
-
-#if SIMULATOR
-DisplaySDLSimulator myDisplay;
 #endif
 
 #if WROVER_KIT

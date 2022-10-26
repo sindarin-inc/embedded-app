@@ -2,7 +2,11 @@
 #define DISPLAY_EINK_154IN_H
 
 #include "DisplaySystem.hpp"
+#if SIMULATOR
+#include "Displays/FakeEinkET013TT1.hpp"
+#else
 #include "Displays/EinkET013TT1.hpp"
+#endif
 #include "sindarin-debug.h"
 
 #define EinkET013TT1_X_PIXELS 256
