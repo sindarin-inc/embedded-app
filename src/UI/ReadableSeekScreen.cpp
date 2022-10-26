@@ -147,7 +147,7 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
             break;
         case 10:
             seekGranularity_ = 20;
-        defualt:
+        default:
             break;
         }
         needsRerender = true;
