@@ -7,8 +7,8 @@
 #include "sindarin-debug.h"
 
 uint8_t ParticlePositions[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT];
-extern void SimDrawScreen();
 extern void SimScreenUpdateDone();
+extern bool SDLNeedsRedraw;
 
 int EinkET013TT1::particleMovement = PARTICLE_MOVEMENT_DEFAULT;
 bool EinkET013TT1::skipDelay = false;
@@ -32,7 +32,7 @@ auto EinkET013TT1::getPixel(const uint8_t *buffer, int x, int y) -> uint8_t {
 }
 
 void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer) {
-    log_d("Updating dispay with waveform \"%s\"", waveform.name);
+    log_d("Updating display with waveform \"%s\"", waveform.name);
 
     // For each frame in the waveform
     for (int frameIndex = 0; frameIndex < waveform.frameCount; frameIndex++) {
@@ -60,7 +60,7 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
                 ParticlePositions[y * EinkET013TT1_PIXEL_WIDTH + x] = position;
             }
         }
-        SimDrawScreen();
+        SDLNeedsRedraw = true;
 
         // This doesn't account for processing time above, but probably real CPUs are fast
         // enough it doesn't matter

@@ -222,7 +222,7 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     auto *gateSelectHigh = (uint16_t *)&(scanLine[42]);
     auto *gateBlockHigh = (uint32_t *)&(scanLine[44]);
 
-    log_d("Updating dispay with waveform \"%s\"", waveform.name);
+    log_d("Updating display with waveform \"%s\"", waveform.name);
 
     powerOn();
 

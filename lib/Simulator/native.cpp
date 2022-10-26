@@ -59,7 +59,6 @@ void SimDrawScreen() {
             SDL_RenderDrawPoint(renderer, x, y);
         }
     }
-    SDLNeedsRedraw = true;
 };
 
 void SimScreenUpdateDone() { updateDone = true; }
@@ -160,6 +159,7 @@ void sendCodeAndRender(RemoteCommand command, SDL_Renderer *renderer) {
 
     SDL_SetRenderTarget(renderer, NULL);
     SDL_RenderCopy(renderer, deviceScreen, NULL, NULL);
+    SimDrawScreen();
     SDL_RenderPresent(renderer);
 
     SDLNeedsRedraw = false;
@@ -255,6 +255,7 @@ auto mainLoop() -> bool {
     if (SDLNeedsRedraw || arrowOpacity > 0) {
         SDL_SetRenderTarget(renderer, NULL);
         SDL_RenderCopy(renderer, deviceScreen, NULL, NULL);
+        SimDrawScreen();
         drawOverlay(remoteCode);
         SDL_RenderPresent(renderer);
         SDLNeedsRedraw = false;
