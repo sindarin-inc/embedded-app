@@ -36,7 +36,7 @@ void ContentSyncScreen::render(DisplaySystem &display) {
         y = (display.height() - groupHeight) / 2;
 
         // Draw list of tasks
-        for (auto task : state_.tasks) {
+        for (const auto &task : state_.tasks) {
             uint16_t textWidth = display.getTextWidth(task.message.c_str());
             uint16_t bulletRadius = textHeight / 3;
             uint16_t bulletY = y + (textHeight - bulletRadius * 2) / 2 + bulletRadius;
@@ -77,7 +77,7 @@ void ContentSyncScreen::render(DisplaySystem &display) {
 
 void ContentSyncScreen::processCommand(RemoteCommand command){};
 
-void ContentSyncScreen::fail(std::string message) {
+void ContentSyncScreen::fail(const std::string &message) {
     log_w("Content sync failed: %s", message.c_str());
     state_.state = ContentSyncState::Failure;
     state_.message = message;

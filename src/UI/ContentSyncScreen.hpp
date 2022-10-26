@@ -21,5 +21,5 @@ protected:
     ContentSyncState lastState_;
     ContentSyncState state_;
 
-    void fail(std::string message);
+    void fail(const std::string &message);
 };

@@ -208,14 +208,14 @@ void LocalStore::syncFromRemote(
         ContentSyncState syncState = {.state = ContentSyncState::State::Syncing};
         syncState.tasks.reserve(readablesToDownload.size());
 
-        for (auto readable : readablesToDelete) {
+        for (const auto &readable : readablesToDelete) {
             syncState.tasks.push_back(ContentSyncState::Task{
                 .message = "Delete: " + readable.title,
                 .percentage = 0,
             });
         }
 
-        for (auto readable : readablesToDownload) {
+        for (const auto &readable : readablesToDownload) {
             syncState.tasks.push_back(ContentSyncState::Task{
                 .message = "Get: " + readable.title,
                 .percentage = 0,
