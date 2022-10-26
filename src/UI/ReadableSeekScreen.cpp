@@ -9,8 +9,9 @@ void ReadableSeekScreen::render(DisplaySystem &display) {
     }
 
     auto place = prefs_.readablePlace.get(readable_.id.c_str());
-    auto progress = 100 * place / renderer_.size();
-    auto percentStr = StringFormat("%d%%", progress);
+    auto progress = 100 * (float)place / (float)renderer_.size();
+
+    auto percentStr = StringFormat("%.1f%%", progress);
 
     int16_t spacing = 8;
     int16_t barHeight = 10;
@@ -56,13 +57,12 @@ void ReadableSeekScreen::render(DisplaySystem &display) {
     display.setCursor((display.width() - textWidth) / 2, y);
     display.println(message3);
 
-    if (seekAndYouWillFind_) {
-        y += display.getTextHeight() + 10;
-        auto message3 = "Seek and you will find!";
-        display.getTextBounds(message3, &textWidth, &textHeight);
-        display.setCursor((display.width() - textWidth) / 2, y);
-        display.println(message3);
-    }
+    y += display.getTextHeight() + 10;
+    std::string message4 = "Seek granularity: ";
+    message4 += StringFormat("%.1f%%", (float)(100 / (float)seekGranularity_));
+    display.getTextBounds(message4.c_str(), &textWidth, &textHeight);
+    display.setCursor((display.width() - textWidth) / 2, y);
+    display.println(message4.c_str());
 
     // up arrow
     uint16_t arrowWidth = 10, arrowHeight = 5;
@@ -70,6 +70,11 @@ void ReadableSeekScreen::render(DisplaySystem &display) {
     y = 10;
     display.drawLine(x, y, x + arrowWidth / 2, y - arrowHeight, display.fg);
     display.drawLine(x + arrowWidth / 2, y - arrowHeight, x + arrowWidth, y, display.fg);
+
+    // Down Arrow
+    y = display.height() - 10;
+    display.drawLine(x, y - arrowHeight, x + arrowWidth / 2, y, display.fg);
+    display.drawLine(x + arrowWidth / 2, y, x + arrowWidth, y - arrowHeight, display.fg);
 
     display.updateDisplay(firstLoad ? DisplaySystem::UpdateType::FULL
                                     : DisplaySystem::UpdateType::FAST);
@@ -89,8 +94,8 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
         size_t lengthOfFile = renderer_.size();
 
         // Subtract 5% to the file
-        if (readable_.place >= lengthOfFile / 20) {
-            readable_.place = readable_.place - lengthOfFile / 20;
+        if (readable_.place >= lengthOfFile / seekGranularity_) {
+            readable_.place = readable_.place - lengthOfFile / seekGranularity_;
         } else {
             readable_.place = 0;
         }
@@ -109,7 +114,7 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
         size_t lengthOfFile = renderer_.size();
 
         // Add 5% to the file
-        readable_.place = readable_.place + lengthOfFile / 20;
+        readable_.place = readable_.place + lengthOfFile / seekGranularity_;
 
         log_d("Setting place from %d to %d", readable_.placePrev, readable_.place);
 
@@ -124,20 +129,32 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
         break;
     }
     case RemoteCommand::PREV: {
-        seekAndYouWillFind_ = false;
         if (backCallback != nullptr) {
             backCallback();
         }
         break;
     }
     case RemoteCommand::NEXT: {
-        seekAndYouWillFind_ = true;
+        switch (seekGranularity_) {
+        case 20:
+            seekGranularity_ = 100;
+            break;
+        case 100:
+            seekGranularity_ = 1000;
+            break;
+        case 1000:
+            seekGranularity_ = 10;
+            break;
+        case 10:
+            seekGranularity_ = 20;
+        defualt:
+            break;
+        }
         needsRerender = true;
         firstLoad = true;
         break;
     }
     case RemoteCommand::BACK: {
-        seekAndYouWillFind_ = false;
         if (backCallback != nullptr) {
             backCallback();
         }
