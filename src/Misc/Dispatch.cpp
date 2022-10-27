@@ -2,6 +2,8 @@
 
 #include <cassert>
 
+#include "Misc/StringUtil.hpp"
+
 // Definitions for dispatch event flags
 #define DISPATCH_EXIT_EVT (0x2)
 
@@ -39,7 +41,7 @@ DispatchQueue::DispatchQueue(std::string name, size_t threadCnt, size_t threadSt
     // Dispatch thread setup
     for (size_t i = 0; i < threads_.size(); i++) {
         // Define the name
-        threads_[i].name = std::string("D:" + std::to_string(i));
+        threads_[i].name = StringFormat("D:%s%d", name_.c_str(), i);
 
         // Create the thread
         BaseType_t status = xTaskCreatePinnedToCore(
@@ -55,9 +57,7 @@ DispatchQueue::~DispatchQueue() {
     quit_ = true;
 
     // We will join each thread to confirm exiting
-    for (auto &thread : threads_) {
-        eTaskState state;
-
+    for (int i = 0; i < threads_.size(); i++) {
         // Queue one quit signal for each thread
         auto quit = new WorkItem{.op = nullptr, .quit = true};
         xQueueSend(q_, (void *)&quit, portMAX_DELAY);
@@ -115,14 +115,14 @@ static DispatchQueue *uiQueue = nullptr;
 
 auto DispatchGetCore0BackgroundQueue() -> DispatchQueue * {
     if (core0BackgroundQueue == nullptr) {
-        core0BackgroundQueue = new DispatchQueue("Core0 Background Queue", 1, 10000, 0, 0);
+        core0BackgroundQueue = new DispatchQueue("Core0BG", 1, 10000, 0, 0);
     }
     return core0BackgroundQueue;
 }
 
 auto DispatchGetUiQueue() -> DispatchQueue * {
     if (uiQueue == nullptr) {
-        uiQueue = new DispatchQueue("UI Queue", 1, 10000, 10, 1);
+        uiQueue = new DispatchQueue("UI", 1, 10000, 10, 1);
     }
     return uiQueue;
 }

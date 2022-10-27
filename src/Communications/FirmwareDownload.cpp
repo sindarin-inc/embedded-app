@@ -5,6 +5,7 @@
 #include <string>
 
 #include "Communications/FileDownload.hpp"
+#include "Communications/WiFi.hpp"
 #include "GitVersion.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/StringUtil.hpp"
@@ -17,12 +18,10 @@ void FirmwareDownloader::downloadFirmware(
     // Grab the token here from prefs if set
     auto token = prefs_.cloudToken.get();
     if (!token.has_value()) {
-        log_e("No access token set");
-        progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
-                                               .message = "No access token set"});
-        return;
+        log_w("No access token set for FirmwareDownloader");
+    } else {
+        SindarinAPI::getInstance()->setAccessToken(token.value());
     }
-    SindarinAPI::getInstance()->setAccessToken(token.value());
 
     progressCallback(
         FirmwareDownloadState{.state = FirmwareDownloadState::State::CheckingForLatest});
@@ -45,7 +44,6 @@ void FirmwareDownloader::downloadFirmware(
             return;
         }
 
-        Update.setMD5(response.firmware.md5.c_str());
         versionString = response.firmware.version;
 
         // Now start downloading the firmware
@@ -71,40 +69,65 @@ void FirmwareDownloader::downloadFirmware(
         // HTTP header has been sent and Server response header has been handled
         // file found at server
         if (httpCode != HTTP_CODE_OK) {
-            log_e("[HTTP] GET... failed, error: %s\n", httpClient.errorToString(httpCode).c_str());
+            log_e("HTTP GET failed, error: %s\n", httpClient.errorToString(httpCode).c_str());
+            httpClient.end();
             progressCallback(
                 FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
                                       .message = StringFormat("Download failed (%d)", httpCode)});
             return;
         }
 
+        auto length = httpClient.getSize();
+
+        if (!Update.begin(length, U_FLASH)) {
+            auto error = Update.getError();
+            log_e("Failed to Update.begin (err=%d length=%d)", error, length);
+            httpClient.end();
+            progressCallback(FirmwareDownloadState{
+                .state = FirmwareDownloadState::State::Failure,
+                .message = StringFormat("Failed to begin update (%d)", error)});
+            return;
+        }
+        Update.setMD5(response.firmware.md5.c_str());
+
         auto success = DownloadFile(
-            httpClient, 0,
-            [&httpClient](const uint8_t *buf, size_t size) {
-                if (!Update.isRunning()) {
-                    // Get the size from the Content-Size header
-                    if (!Update.begin(httpClient.getSize(), U_FLASH)) {
-                        log_e("Failed to Update.begin (%d)", Update.getError());
-                    }
-                }
-                return Update.write((uint8_t *)buf, size);
-            },
+            httpClient, length,
+            [](const uint8_t *buf, size_t size) { return Update.write((uint8_t *)buf, size); },
             [progressCallback](int bytesWritten, float percentage) {
                 progressCallback(
                     FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloading,
                                           .downloadPercentage = (int)percentage});
             });
 
+        httpClient.end();
+
         if (!success) {
             log_e("Failed to download firmware");
-            progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
-                                                   .message = "Failed to download udpate"});
+            if (!NetworkConnected()) {
+                progressCallback(
+                    FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
+                                          .message = "Failed: WiFi disconnected!"});
+            } else {
+                progressCallback(
+                    FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
+                                          .message = "Failed to download update"});
+            }
+            Update.abort();
             return;
         }
 
-        progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloaded,
-                                               .downloadPercentage = 100});
+        progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Installing});
+
+        // Swap out the firmware
+        if (!Update.end()) {
+            auto error = Update.getError();
+            log_e("Failed to Update.end() (%d)", error);
+            progressCallback(FirmwareDownloadState{
+                .state = FirmwareDownloadState::State::Failure,
+                .message = StringFormat("Failed to finalize update (%d)", error)});
+            return;
+        }
+
+        progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Installed});
     });
 }
-
-auto FirmwareDownloader::swapFirmware() -> bool { return Update.end(); }

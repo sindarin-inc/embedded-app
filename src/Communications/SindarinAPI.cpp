@@ -31,7 +31,9 @@ auto SindarinAPI::beginClient(HTTPClient &httpClient, const String &urlPath) -> 
     httpClient.setUserAgent("Sindarin/" + String(kVersionString) + " (" + String(kGitHash) + ")");
     httpClient.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
     httpClient.addHeader("Content-Type", "application/json");
-    httpClient.addHeader("Authorization", "Tolkien " + String(accessToken_.c_str()));
+    if (!accessToken_.empty()) {
+        httpClient.addHeader("Authorization", "Tolkien " + String(accessToken_.c_str()));
+    }
     httpClient.setTimeout(30000);
     return true;
 }

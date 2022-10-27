@@ -116,6 +116,7 @@ void BLEImprov::doneConnecting() {
 //     }
 // }
 
+// TODO: Would be good to make this event driven
 void BLEImprov::loop() {
     if (this->state_ == STATE_WAITING) {
         if (WiFi.isConnected()) {

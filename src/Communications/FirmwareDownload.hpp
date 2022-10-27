@@ -17,7 +17,8 @@ struct FirmwareDownloadState {
         ConnectingWifi,
         CheckingForLatest,
         Downloading,
-        Downloaded,
+        Installing,
+        Installed,
         Failure,
         AlreadyUpToDate,
     } state = Idle;
@@ -31,7 +32,6 @@ public:
     FirmwareDownloader(PreferencesStore &prefs) : prefs_(prefs){};
 
     void downloadFirmware(const std::function<void(FirmwareDownloadState state)> &progressCallback);
-    auto swapFirmware() -> bool;
 
     std::string versionString;
 

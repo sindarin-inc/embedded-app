@@ -29,10 +29,11 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
     case FirmwareDownloadState::CheckingForLatest:
     case FirmwareDownloadState::AlreadyUpToDate:
     case FirmwareDownloadState::Downloading:
-    case FirmwareDownloadState::Downloaded: {
+    case FirmwareDownloadState::Installing:
+    case FirmwareDownloadState::Installed: {
         // Calculate group height
         const uint16_t spacing = 2;
-        const uint16_t lineCount = 4;
+        const uint16_t lineCount = 5;
         uint16_t textHeight = display.getFont()->yAdvance;
         uint16_t groupHeight = textHeight * lineCount + spacing * (lineCount - 1);
 
@@ -87,7 +88,10 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
                 .c_str(),
             downloadPercentage, true);
 
-        drawBulletLine("Rebooting...", state_.state == FirmwareDownloadState::Downloaded ? 100 : 0,
+        drawBulletLine("Installing", state_.state > FirmwareDownloadState::Installing ? 100 : 0,
+                       false);
+
+        drawBulletLine("Rebooting...", state_.state == FirmwareDownloadState::Installed ? 100 : 0,
                        false);
         break;
     }
@@ -131,11 +135,6 @@ void FirmwareUpdateScreen::begin() {
     }
 
     firmwareDownloader_.downloadFirmware([this](const FirmwareDownloadState &state) {
-        if (state.state == FirmwareDownloadState::Failure ||
-            state.state == FirmwareDownloadState::Downloaded ||
-            state.state == FirmwareDownloadState::AlreadyUpToDate) {
-            DisconnectWifi();
-        }
         DispatchGetUiQueue()->dispatch([this, state]() {
             log_d("Updating from state %d to %d (%d%%)", state_.state, state.state,
                   state.downloadPercentage);
@@ -143,13 +142,18 @@ void FirmwareUpdateScreen::begin() {
             this->render(this->display_);
 
             if (state.state == FirmwareDownloadState::Failure ||
+                state.state == FirmwareDownloadState::Installing ||
+                state.state == FirmwareDownloadState::AlreadyUpToDate) {
+                DisconnectWifi();
+            }
+
+            if (state.state == FirmwareDownloadState::Failure ||
                 state.state == FirmwareDownloadState::AlreadyUpToDate) {
                 vTaskDelay(3000 / portTICK_PERIOD_MS);
                 backCallback();
-            } else if (state.state == FirmwareDownloadState::Downloaded) {
+            } else if (state.state == FirmwareDownloadState::Installed) {
                 vTaskDelay(3000 / portTICK_PERIOD_MS);
                 log_i("Rebooting after successful firmware update");
-                firmwareDownloader_.swapFirmware();
                 esp_restart();
                 // Only for the sim
                 backCallback();

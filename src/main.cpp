@@ -97,7 +97,10 @@ QueueHandle_t remoteQueue = nullptr;
 void RadioTask(void *parameter) {
     for (;;) {
 #if USE_TURN_TOUCH_REMOTE
-        ttRemoteInput.connect();
+        // Skip scanning while WiFi is connected to avoid kicking off the WiFi connection
+        if (!NetworkConnected()) {
+            ttRemoteInput.connect();
+        }
 #endif
 
 #if USE_BLE_SERVER_REMOTE
