@@ -17,6 +17,10 @@ public:
     }
     bool setMD5(const char *md5) { return true; }
     uint8_t getError() { return 0; }
+    void abort() {
+        size_ = 0;
+        totalSize_ = 0;
+    }
 
     bool end() { return size_ == totalSize_; }
     bool isRunning() { return size_ > 0; }
