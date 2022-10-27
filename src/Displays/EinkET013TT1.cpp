@@ -348,6 +348,8 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
         waitForTimer();
         waitForNotBusy();
         writeRegister(MYSTERY_SETTING_1, 0x10);
+
+        taskYIELD();
     }
 
     PROFILE_END(sendFrames);
