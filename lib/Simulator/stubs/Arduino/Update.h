@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include "sindarin-debug.h"
+
 #define U_FLASH 0
 
 class update {
@@ -22,7 +24,15 @@ public:
         totalSize_ = 0;
     }
 
-    bool end() { return size_ == totalSize_; }
+    bool end() {
+        bool success = size_ == totalSize_;
+        if (!success) {
+            log_e("Update.end failed with size_=%d totalSize_=%d", size_, totalSize_);
+        }
+        size_ = 0;
+        totalSize_ = 0;
+        return success;
+    }
     bool isRunning() { return size_ > 0; }
 
 protected:
