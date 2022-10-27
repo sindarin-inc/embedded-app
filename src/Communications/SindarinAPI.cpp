@@ -110,6 +110,7 @@ auto SindarinAPI::downloadReadable(const Readable &readable, FileSystem &fileSys
         log_e("HTTPClient::begin failed for URL %s", remoteUrl.c_str());
         return false;
     }
+    httpClient.setUserAgent("Sindarin/" + String(kVersionString) + " (" + String(kGitHash) + ")");
     httpClient.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
     httpClient.setTimeout(30000);
 

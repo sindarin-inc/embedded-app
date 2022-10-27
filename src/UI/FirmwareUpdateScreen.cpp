@@ -149,6 +149,7 @@ void FirmwareUpdateScreen::begin() {
             } else if (state.state == FirmwareDownloadState::Downloaded) {
                 vTaskDelay(3000 / portTICK_PERIOD_MS);
                 log_i("Rebooting after successful firmware update");
+                firmwareDownloader_.swapFirmware();
                 esp_restart();
                 // Only for the sim
                 backCallback();

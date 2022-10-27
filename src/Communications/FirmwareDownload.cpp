@@ -5,6 +5,7 @@
 #include <string>
 
 #include "Communications/FileDownload.hpp"
+#include "GitVersion.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Version.hpp"
@@ -60,6 +61,8 @@ void FirmwareDownloader::downloadFirmware(
             return;
         }
 
+        httpClient.setUserAgent("Sindarin/" + String(kVersionString) + " (" + String(kGitHash) +
+                                ")");
         httpClient.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
         httpClient.setTimeout(30000);
 
