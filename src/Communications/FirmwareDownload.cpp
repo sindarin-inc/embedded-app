@@ -4,99 +4,104 @@
 #include <cstdio>
 #include <string>
 
-auto FirmwareDownload::getFirmware() -> bool {
-    if (!httpClient_.begin(String(url_.c_str()))) {
-        log_e("HTTPClient::begin failed");
-        return false;
+#include "Communications/FileDownload.hpp"
+#include "Misc/Dispatch.hpp"
+#include "Misc/StringUtil.hpp"
+#include "Version.hpp"
+#include "sindarin-debug.h"
+
+void FirmwareDownloader::downloadFirmware(
+    const std::function<void(FirmwareDownloadState state)> &progressCallback) {
+
+    // Grab the token here from prefs if set
+    auto token = prefs_.cloudToken.get();
+    if (!token.has_value()) {
+        log_e("No access token set");
+        progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
+                                               .message = "No access token set"});
+        return;
     }
+    SindarinAPI::getInstance()->setAccessToken(token.value());
 
-    httpClient_.setTimeout(30000);
-    if (httpClient_.GET() != 200) {
-        log_e("failed to download %s", url_.c_str());
-        return false;
-    }
+    progressCallback(
+        FirmwareDownloadState{.state = FirmwareDownloadState::State::CheckingForLatest});
 
-    totalSize_ = httpClient_.getSize();
-    log_i("request started, total size %d", totalSize_);
-
-    if (totalSize_ > 0) {
-        Update.begin(totalSize_, U_FLASH);
-        log_i("setting expected md5: %s", md5_.c_str());
-        if (!Update.setMD5(md5_.c_str())) {
-            log_e("error setting md5");
-            return false;
+    auto queue = DispatchGetCore0BackgroundQueue();
+    queue->dispatch([this, progressCallback] {
+        // Skip calculating the readable shas for now, the firmware info is sent either way
+        CheckSyncResponse response;
+        auto httpCode = SindarinAPI::getInstance()->checkSync("", &response);
+        if (httpCode != HTTP_CODE_OK) {
+            log_e("Failed to check sync (HTTP %d)", httpCode);
+            progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
+                                                   .message = "Failed to check for update"});
+            return;
         }
-    }
+        if (response.firmware.url.empty()) {
+            versionString = kVersionString;
+            progressCallback(
+                FirmwareDownloadState{.state = FirmwareDownloadState::State::AlreadyUpToDate});
+            return;
+        }
 
-    return true;
+        Update.setMD5(response.firmware.md5.c_str());
+        versionString = response.firmware.version;
+
+        // Now start downloading the firmware
+        progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloading,
+                                               .downloadPercentage = 0});
+
+        // TODO(john): Would probably be good to centralize our HTTPClient creation
+        HTTPClient httpClient;
+        if (!httpClient.begin(response.firmware.url.c_str())) {
+            log_e("HTTPClient::begin failed for URL %s", response.firmware.url.c_str());
+            progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
+                                                   .message = "Failed to begin download"});
+            return;
+        }
+
+        httpClient.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
+        httpClient.setTimeout(30000);
+
+        log_d("Downloading firmware from %s", response.firmware.url.c_str());
+        httpCode = httpClient.GET();
+        // HTTP header has been sent and Server response header has been handled
+        // file found at server
+        if (httpCode != HTTP_CODE_OK) {
+            log_e("[HTTP] GET... failed, error: %s\n", httpClient.errorToString(httpCode).c_str());
+            progressCallback(
+                FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
+                                      .message = StringFormat("Download failed (%d)", httpCode)});
+            return;
+        }
+
+        auto success = DownloadFile(
+            httpClient, 0,
+            [&httpClient](const uint8_t *buf, size_t size) {
+                if (!Update.isRunning()) {
+                    // Get the size from the Content-Size header
+                    if (!Update.begin(httpClient.getSize(), U_FLASH)) {
+                        log_e("Failed to Update.begin (%d)", Update.getError());
+                    }
+                }
+                return Update.write((uint8_t *)buf, size);
+            },
+            [progressCallback](int bytesWritten, float percentage) {
+                progressCallback(
+                    FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloading,
+                                          .downloadPercentage = (int)percentage});
+            });
+
+        if (!success) {
+            log_e("Failed to download firmware");
+            progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
+                                                   .message = "Failed to download udpate"});
+            return;
+        }
+
+        progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloaded,
+                                               .downloadPercentage = 100});
+    });
 }
 
-auto FirmwareDownload::writeBuffer() -> bool {
-    int written = Update.write(buffer_, bytesInBuffer_);
-    bool success = true;
-    if (written != bytesInBuffer_) {
-        log_e("FirmwareDownload::writeBuffer - expected %d wrote %d", bytesInBuffer_, written);
-        success = false;
-    }
-
-    bytesInBuffer_ = 0;
-    return success;
-}
-
-auto FirmwareDownload::updateFirmware(int &percentProgress, bool &error) -> bool {
-
-    // check available bytes
-    if (totalBytesRead_ == totalSize_) {
-        httpClient_.end();
-        // write last block to alternate boot partition
-        if (bytesInBuffer_ > 0) {
-            error = !writeBuffer();
-        }
-
-        delete buffer_;
-        buffer_ = nullptr;
-
-        log_i("Firmware download done. read %d bytes. Finalizing...", totalBytesRead_);
-        if (!error && Update.end()) {
-            // mark alternate boot partition as the primary and reboot
-            log_i("Update complete. Boot partition swapped.");
-        } else {
-            log_e("Update failed to finalize.");
-            error = true;
-        }
-
-        return true;
-    }
-
-    auto *stream = httpClient_.getStreamPtr();
-
-    if (stream) {
-        int available = stream->available();
-        if (available > 0) {
-            if (buffer_ == nullptr) {
-                buffer_ = new uint8_t[FIRMWARE_BLOCK_SIZE];
-            }
-
-            int bytesRemainingInBlock = FIRMWARE_BLOCK_SIZE - bytesInBuffer_;
-            int bytesToRead = bytesRemainingInBlock;
-            if (available < bytesToRead) {
-                bytesToRead = available;
-            }
-            int bytesRead = stream->readBytes(&buffer_[bytesInBuffer_], bytesToRead);
-            bytesInBuffer_ += bytesRead;
-            totalBytesRead_ += bytesRead;
-        }
-
-        if (bytesInBuffer_ == FIRMWARE_BLOCK_SIZE) {
-            // have one full block of firmware bytes, write to alternate boot partition
-            error = !writeBuffer();
-        }
-    } else {
-        // error getting stream pointer, firmware update failed (bad URL, bad connection)
-        log_e("Firmware Update: failed to open connection to %s", url_.c_str());
-        error = true;
-    }
-
-    percentProgress = (int)((float)totalBytesRead_ * 100.0 / (float)totalSize_);
-    return false;
-}
+auto FirmwareDownloader::swapFirmware() -> bool { return Update.end(); }

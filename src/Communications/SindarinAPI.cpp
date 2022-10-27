@@ -114,7 +114,6 @@ auto SindarinAPI::downloadReadable(const Readable &readable, FileSystem &fileSys
     httpClient.setTimeout(30000);
 
     auto localPath = readable.localFilePath();
-    unsigned long downloadStart = millis();
 
     log_d("Downloading readable from %s to %s", remoteUrl.c_str(), localPath.c_str());
     int httpCode = httpClient.GET();
@@ -133,14 +132,10 @@ auto SindarinAPI::downloadReadable(const Readable &readable, FileSystem &fileSys
             log_d("Readable length is %d", len);
         }
 
-        // TODO: This is kinda weird to get the filesystem from localstore
-        success =
-            DownloadFile(httpClient, fileSystem, localPath.c_str(), len,
-                         [downloadStart, progressCallback](int bytesWritten, float percentage) {
-                             log_d("Downloaded %.1f%% (%.1f KB/s)", percentage,
-                                   bytesWritten / 1024.0f / ((millis() - downloadStart) / 1000.0f));
-                             progressCallback(percentage);
-                         });
+        success = DownloadFile(httpClient, fileSystem, localPath.c_str(), len,
+                               [progressCallback](int bytesWritten, float percentage) {
+                                   progressCallback(percentage);
+                               });
     }
     httpClient.end();
     return success;

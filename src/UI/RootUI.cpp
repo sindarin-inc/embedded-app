@@ -277,46 +277,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             contentSyncScreen->begin();
         }));
 
-    settingsMenu->addMenuItem(MenuItem("Check for Update", [this, settingsMenu, display]() {
-        if (!HasWiFiCredentials()) {
-            log_w("No WiFi credentials found");
-            settingsMenu->showTemporaryMessage(*display, "No WiFi credentials found");
-            return;
-        }
-
-        settingsMenu->showTemporaryMessage(*display, "Connecting WiFi...", 0, false);
-        auto wifiResult = ConnectWifi();
-
-        if (!wifiResult) {
-            DisconnectWifi();
-            settingsMenu->showTemporaryMessage(*display, "Unable to connect to WiFi");
-            return;
-        }
-
-        settingsMenu->showTemporaryMessage(*display, "Checking for update", 0, false);
-
-        SindarinAPI::getInstance()->setAccessToken(prefs_.cloudToken.get().value());
-
-        CheckSyncResponse response;
-        // Skip calculating the readable shas for now, the firmware info is sent either way
-        // TODO: Cache all the stuff from /sync/all so we don't have to make this call again
-        SindarinAPI::getInstance()->checkSync("", &response);
-
-        if (response.firmware.url.empty()) {
-            settingsMenu->showTemporaryMessage(*display, "No update available");
-            return;
-        }
-
-        settingsMenu->showTemporaryMessage(*display, "Downloading update!", 0, false);
-
-        auto firmwareUpdateScreen = new FirmwareUpdateScreen(
-            *display, response.firmware.url, response.firmware.md5, response.firmware.version);
+    settingsMenu->addMenuItem(MenuItem("Firmware Update", [this, settingsMenu, display]() {
+        auto firmwareUpdateScreen = new FirmwareUpdateScreen(*display, this->prefs_);
         this->setCurrentScreen(*firmwareUpdateScreen);
-        firmwareUpdateScreen->backCallback = [this, firmwareUpdateScreen, settingsMenu]() {
+        firmwareUpdateScreen->backCallback = [this, firmwareUpdateScreen, settingsMenu, display]() {
             settingsMenu->setFirstLoad();
             setCurrentScreen(*settingsMenu);
+            settingsMenu->render(*display);
             delete firmwareUpdateScreen;
         };
+        firmwareUpdateScreen->begin();
     }));
 
     settingsMenu->addMenuItem(MenuItem("Reading Font Size", [this, settingsMenu]() {

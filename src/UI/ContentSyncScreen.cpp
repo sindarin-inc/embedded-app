@@ -3,6 +3,10 @@
 #include "Communications/WiFi.hpp"
 
 void ContentSyncScreen::render(DisplaySystem &display) {
+    if (!needsRerender) {
+        return;
+    }
+
     uint16_t x = 0;
     uint16_t y = 0;
 
@@ -71,6 +75,8 @@ void ContentSyncScreen::render(DisplaySystem &display) {
     } else {
         display.updateDisplay(DisplaySystem::UpdateType::FAST);
     }
+
+    needsRerender = false;
 }
 
 void ContentSyncScreen::processCommand(RemoteCommand command){};
@@ -79,8 +85,9 @@ void ContentSyncScreen::fail(const std::string &message) {
     log_w("Content sync failed: %s", message.c_str());
     state_.state = ContentSyncState::Failure;
     state_.message = message;
+    needsRerender = true;
     render(display_);
-    vTaskDelay(2000 / portTICK_PERIOD_MS);
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
     DisconnectWifi();
     backCallback();
 }
@@ -114,7 +121,7 @@ void ContentSyncScreen::begin() {
             this->render(this->display_);
             if (state.state == ContentSyncState::Failure ||
                 state.state == ContentSyncState::Synced) {
-                delay(2000);
+                delay(5000);
                 backCallback();
             }
         });

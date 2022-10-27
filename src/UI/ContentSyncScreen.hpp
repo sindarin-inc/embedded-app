@@ -12,7 +12,6 @@ public:
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
     void begin();
-    void updateState(const ContentSyncState &state) { lastState_ = state_, state_ = state; }
 
 protected:
     DisplaySystem &display_;
@@ -22,4 +21,9 @@ protected:
     ContentSyncState state_;
 
     void fail(const std::string &message);
+    void updateState(const ContentSyncState &state) {
+        lastState_ = state_;
+        state_ = state;
+        needsRerender = true;
+    }
 };

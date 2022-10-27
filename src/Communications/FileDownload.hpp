@@ -4,7 +4,7 @@
 
 #include "Storage/FileSystem.hpp"
 
-auto DownloadFile(HTTPClient &httpClient, FileSystem &fileSystem, const char *path, int length,
+auto DownloadFile(HTTPClient &httpClient, int length,
                   const std::function<size_t(const uint8_t *buf, size_t size)> &writeBytes,
                   const std::function<void(int bytesWritten, float percentage)> &progressCallback)
     -> bool;

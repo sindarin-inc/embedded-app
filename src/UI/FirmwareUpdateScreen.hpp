@@ -1,5 +1,4 @@
-#ifndef FIRMWARE_UPDATE_SCREEN_HPP
-#define FIRMWARE_UPDATE_SCREEN_HPP
+#pragma once
 
 #include <string>
 #include <utility>
@@ -10,19 +9,30 @@
 
 class FirmwareUpdateScreen : public Screen {
 public:
-    FirmwareUpdateScreen(DisplaySystem &display, const std::string &url, const std::string &md5,
-                         std::string version)
-        : display_(display), firmwareDownload_(url, md5), version_(std::move(version)){};
+    FirmwareUpdateScreen(DisplaySystem &display, PreferencesStore &prefs)
+        : display_(display), prefs_(prefs), firmwareDownloader_(prefs){};
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
+    void begin();
 
 protected:
-    void drawMessage(std::string &message);
-
     DisplaySystem &display_;
-    FirmwareDownload firmwareDownload_;
-    std::string version_;
-};
+    PreferencesStore &prefs_;
+    FirmwareDownloader firmwareDownloader_;
+    bool needsFullUpdate_ = true;
 
-#endif
+    FirmwareDownloadState state_;
+
+    void fail(const std::string &message);
+    void updateState(const FirmwareDownloadState &state) {
+        // After `CheckingForLatest` we will change the list significantly
+        // Also if we fail, we do a full-screen takeover
+        if (state_.state == FirmwareDownloadState::CheckingForLatest ||
+            state.state == FirmwareDownloadState::Failure) {
+            needsFullUpdate_ = true;
+        }
+        state_ = state;
+        needsRerender = true;
+    }
+};

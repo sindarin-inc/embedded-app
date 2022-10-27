@@ -2,76 +2,157 @@
 
 #include "Communications/FirmwareDownload.hpp"
 #include "Communications/WiFi.hpp"
+#include "Misc/Dispatch.hpp"
 #include "UI/Fonts/Tahoma10pt7b.h"
 #include "sindarin-debug.h"
 
 void FirmwareUpdateScreen::render(DisplaySystem &display) {
-
     if (!needsRerender) {
         return;
     }
 
-    // don't need additional rendering after update completes
-    // or an error occurs
-    needsRerender = false;
+    uint16_t x = 0;
+    uint16_t y = 0;
 
-    // first check if wifi is connected
-    std::string message = "No Wifi Connection";
-    if (NetworkConnected()) {
-        message = "Updating: 00%";
-        if (!firmwareDownload_.getFirmware()) {
-            message = "Error updating firmware.";
-            drawMessage(message);
-            return;
+    // Re-render based on state
+    switch (state_.state) {
+    case FirmwareDownloadState::Idle: {
+        // Shouldn't get here
+        log_w("FirmwareUpdateScreen::render() called in Idle state");
+        return;
+    }
+    case FirmwareDownloadState::Failure: {
+        display.drawSingleLineOfCenteredText(state_.message);
+        break;
+    }
+    case FirmwareDownloadState::ConnectingWifi:
+    case FirmwareDownloadState::CheckingForLatest:
+    case FirmwareDownloadState::AlreadyUpToDate:
+    case FirmwareDownloadState::Downloading:
+    case FirmwareDownloadState::Downloaded: {
+        // Calculate group height
+        const uint16_t spacing = 2;
+        const uint16_t lineCount = 4;
+        uint16_t textHeight = display.getFont()->yAdvance;
+        uint16_t groupHeight = textHeight * lineCount + spacing * (lineCount - 1);
+
+        y = (display.height() - groupHeight) / 2;
+
+        auto drawBulletLine = [&display, textHeight, &x, &y](const char *message, int percentage,
+                                                             bool drawLine) {
+            uint16_t textWidth = display.getTextWidth(message);
+            uint16_t bulletRadius = textHeight / 3;
+            uint16_t bulletY = y + (textHeight - bulletRadius * 2) / 2 + bulletRadius;
+            if (percentage < 100) {
+                display.drawCircle(x + bulletRadius, bulletY, bulletRadius, display.fg);
+            } else {
+                display.fillCircle(x + bulletRadius, bulletY, bulletRadius, display.fg);
+            }
+            auto textX = x + bulletRadius * 2 + 5;
+            display.drawSingleLineOfText(message, textX, y);
+            y += display.getFont()->yAdvance;
+            if (drawLine && percentage > 0) {
+                display.drawLine(textX, y, textX + (textWidth * percentage / 100), y, display.fg);
+            }
+            y += spacing;
+        };
+
+        drawBulletLine("Connecting WiFi",
+                       state_.state > FirmwareDownloadState::ConnectingWifi ? 100 : 0, false);
+
+        drawBulletLine("Checking for Update",
+                       state_.state > FirmwareDownloadState::CheckingForLatest ? 100 : 0, false);
+
+        // We don't know the rest of the list until this step is done, bail out
+        if (state_.state <= FirmwareDownloadState::CheckingForLatest) {
+            break;
         }
+
+        if (state_.state == FirmwareDownloadState::AlreadyUpToDate) {
+            drawBulletLine(
+                StringFormat("Already up to date! (%s)", firmwareDownloader_.versionString.c_str())
+                    .c_str(),
+                100, false);
+            break;
+        }
+
+        auto downloadPercentage =
+            state_.state < FirmwareDownloadState::Downloading ? 0 : state_.downloadPercentage;
+        if (state_.state > FirmwareDownloadState::Downloading) {
+            downloadPercentage = 100;
+        }
+
+        drawBulletLine(
+            StringFormat("Downloading Update %s", firmwareDownloader_.versionString.c_str())
+                .c_str(),
+            downloadPercentage, true);
+
+        drawBulletLine("Rebooting...", state_.state == FirmwareDownloadState::Downloaded ? 100 : 0,
+                       false);
+        break;
+    }
+    }
+    // Full partial for state change otherwise AU4
+    if (needsFullUpdate_) {
+        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+        needsFullUpdate_ = false;
     } else {
-        drawMessage(message);
+        display.updateDisplay(DisplaySystem::UpdateType::FAST);
+    }
+
+    needsRerender = false;
+}
+
+void FirmwareUpdateScreen::processCommand(RemoteCommand command) {}
+
+void FirmwareUpdateScreen::fail(const std::string &message) {
+    log_w("Firmware update failed: %s", message.c_str());
+    state_.state = FirmwareDownloadState::Failure;
+    state_.message = message;
+    needsRerender = true;
+    render(display_);
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
+    DisconnectWifi();
+    backCallback();
+}
+
+void FirmwareUpdateScreen::begin() {
+    if (!HasWiFiCredentials()) {
+        fail("Go to Settings > WiFi Setup in the Sol app.");
         return;
     }
 
-    drawMessage(message);
+    state_.state = FirmwareDownloadState::ConnectingWifi;
+    render(display_);
 
-    bool done = false;
-    int lastPercentage = 0;
-    while (!done) {
-        int percentProgress;
-        bool error = false;
-        done = firmwareDownload_.updateFirmware(percentProgress, error);
-
-        // Let other tasks do stuff. Particularly important while we have this on the UI thread
-        // TODO: Don't do this on the UI thread
-        vPortYield();
-
-        if (error) {
-            std::string errMessage = "Error updating firmware.";
-            drawMessage(errMessage);
-            done = true;
-        } else if (done) {
-            std::string errMessage = "Done! Rebooting...";
-            drawMessage(errMessage);
-            log_i("Rebooting in 2s to pick up new firmware");
-            delay(2000);
-            esp_restart();
-        } else if (percentProgress - lastPercentage >= 5) {
-            lastPercentage = percentProgress;
-            char formattedString[32];
-            // NOLINTNEXTLINE(cert-err33-c) -- this is a safe, fixed length, format string
-            snprintf(formattedString, sizeof(formattedString), "%02d %%", percentProgress);
-            std::string updateMessage = "Updating: ";
-            updateMessage += formattedString;
-            log_i("Updating firmware: %02d%%", percentProgress);
-            drawMessage(updateMessage);
-        }
-
-        vPortYield();
+    if (!ConnectWifi()) {
+        fail("Failed to connect to WiFi.");
+        return;
     }
 
-    log_i("done firmware update.");
-}
+    firmwareDownloader_.downloadFirmware([this](const FirmwareDownloadState &state) {
+        if (state.state == FirmwareDownloadState::Failure ||
+            state.state == FirmwareDownloadState::Downloaded ||
+            state.state == FirmwareDownloadState::AlreadyUpToDate) {
+            DisconnectWifi();
+        }
+        DispatchGetUiQueue()->dispatch([this, state]() {
+            log_d("Updating from state %d to %d (%d%%)", state_.state, state.state,
+                  state.downloadPercentage);
+            updateState(state);
+            this->render(this->display_);
 
-void FirmwareUpdateScreen::drawMessage(std::string &message) {
-    display_.drawSingleLineOfCenteredText(message);
-    display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+            if (state.state == FirmwareDownloadState::Failure ||
+                state.state == FirmwareDownloadState::AlreadyUpToDate) {
+                vTaskDelay(3000 / portTICK_PERIOD_MS);
+                backCallback();
+            } else if (state.state == FirmwareDownloadState::Downloaded) {
+                vTaskDelay(3000 / portTICK_PERIOD_MS);
+                log_i("Rebooting after successful firmware update");
+                esp_restart();
+                // Only for the sim
+                backCallback();
+            }
+        });
+    });
 }
-
-void FirmwareUpdateScreen::processCommand(RemoteCommand command) { backCallback(); }

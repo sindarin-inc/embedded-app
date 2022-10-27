@@ -4,7 +4,7 @@
 
 #include "sindarin-debug.h"
 
-auto DownloadFile(HTTPClient &httpClient, FileSystem &fileSystem, const char *path, int length,
+auto DownloadFile(HTTPClient &httpClient, int length,
                   const std::function<size_t(const uint8_t *buf, size_t size)> &writeBytes,
                   const std::function<void(int bytesWritten, float percentage)> &progressCallback)
     -> bool {
@@ -14,9 +14,11 @@ auto DownloadFile(HTTPClient &httpClient, FileSystem &fileSystem, const char *pa
     uint8_t buff[bufferSize];
 
     auto *stream = httpClient.getStreamPtr();
-    unsigned long time = millis();
+    auto time = millis();
+    auto downloadStart = time;
 
     // Read all data from server
+    length = length > 0 ? length : httpClient.getSize();
     int len = length;
     int lastPercentage = 0;
     int bytesWritten = 0;
@@ -47,10 +49,11 @@ auto DownloadFile(HTTPClient &httpClient, FileSystem &fileSystem, const char *pa
         }
 
         float percentProgress = (float)bytesWritten / length * 100.0f;
-        // log_d("Downloaded %d%% %d %d", percentProgress, file.size(), len);
         auto now = millis();
         // Report every 5-20s OR every 5% progress, whichever comes first
         if ((now - time > 5000) && (now - time > 20000 || (percentProgress - lastPercentage) > 5)) {
+            log_d("Downloaded %.1f%% (%.1f KB/s)", percentProgress,
+                  bytesWritten / 1024.0f / ((millis() - downloadStart) / 1000.0f));
             progressCallback(bytesWritten, percentProgress);
             time = now;
             lastPercentage = percentProgress;
@@ -88,8 +91,8 @@ auto DownloadFile(HTTPClient &httpClient, FileSystem &fileSystem, const char *pa
     }
 
     DownloadFile(
-        httpClient, fileSystem, path, length,
-        [&](const uint8_t *buf, size_t size) { return file.write(buf, size); }, progressCallback);
+        httpClient, length, [&](const uint8_t *buf, size_t size) { return file.write(buf, size); },
+        progressCallback);
 
     file.close();
 
