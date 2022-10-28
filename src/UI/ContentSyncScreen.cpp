@@ -2,6 +2,10 @@
 
 #include "Communications/WiFi.hpp"
 
+#if EINKET013TT1
+#include "Displays/DisplayEinkET013TT1.hpp"
+#endif
+
 void ContentSyncScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
@@ -73,7 +77,20 @@ void ContentSyncScreen::render(DisplaySystem &display) {
     if (lastState_.state != state_.state) {
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     } else {
+#if EINKET013TT1
+        int oldVcom = (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver()->getVcom();
+        int newVcom = 0;
+        if (display.getInversion()) {
+            newVcom = oldVcom - 2000;
+        } else {
+            newVcom = oldVcom + 2000;
+        }
+        (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver()->setVcom(newVcom);
+#endif
         display.updateDisplay(DisplaySystem::UpdateType::FAST);
+#if EINKET013TT1
+        (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver()->setVcom(oldVcom);
+#endif
     }
 
     needsRerender = false;
