@@ -252,22 +252,19 @@ void ReadableScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
         readable_.place = renderer_.getPreviousPlace();
-        prefs_.readablePlace.set(readable_.uuid.c_str(), readable_.place);
+        prefs_.readablePlace.set(readable_.placemarkUuid.c_str(), readable_.place);
         needsRerender = true;
         break;
-
     case RemoteCommand::ENTER:
         readable_.placePrev = readable_.place;
         readable_.place = newPlace_;
-        prefs_.readablePlace.set(readable_.uuid.c_str(), readable_.place);
+        prefs_.readablePlace.set(readable_.placemarkUuid.c_str(), readable_.place);
         needsRerender = true;
         break;
-
     case RemoteCommand::NEXT:
         setCurrentScreen(popup_);
         break;
     case RemoteCommand::CHANNEL_PLUS:
-
         inBookmark_ = !inBookmark_;
         writeOutBookmarkUpdate();
         needsRerender = true;

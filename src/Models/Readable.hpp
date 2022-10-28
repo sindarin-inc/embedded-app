@@ -9,12 +9,15 @@
 #include "Models/JsonSerializable.hpp"
 #include "Models/ReadableFile.hpp"
 
+#define TRUNCATE_READABLE_UUID_FOR_PLACEMARK_BYTES 8
+
 class Readable : JsonSerializable {
 public:
     Readable() = default;
     ~Readable() override = default;
 
     std::string uuid;
+    std::string placemarkUuid;
     std::string title;
     std::string dateCreated;
     std::string dateModified;
@@ -42,6 +45,8 @@ public:
             return false;
         }
         uuid = j["uuid"].as<std::string>();
+        placemarkUuid = j["uuid"].as<std::string>();
+        placemarkUuid.resize(TRUNCATE_READABLE_UUID_FOR_PLACEMARK_BYTES);
         title = j["title"].as<std::string>();
         dateCreated = j["date_created"].as<std::string>();
         dateModified = j["date_modified"].as<std::string>();

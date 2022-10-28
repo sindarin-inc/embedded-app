@@ -31,8 +31,8 @@ public:
         // readable may be stale. Hence we must re-load it from the prefs.
         // Not the prettiest of fixes, but passing the readable by reference
         // seems to not work with some of the const requirements by the lamdas.
-        readable_.place = prefs_.readablePlace.get(readable_.uuid.c_str());
-        log_d("Found place for %s = %d", readable_.uuid.c_str(), readable_.place);
+        readable_.place = prefs_.readablePlace.get(readable_.placemarkUuid.c_str());
+        log_d("Found place for %s = %d", readable_.placemarkUuid.c_str(), readable_.place);
         popup_.backCallback = [this]() { this->setCurrentScreen(*this); };
     }
 
