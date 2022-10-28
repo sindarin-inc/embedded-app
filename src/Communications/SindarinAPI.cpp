@@ -51,8 +51,14 @@ auto SindarinAPI::checkSync(const std::string &readablesSha, CheckSyncResponse *
 
     int httpCode = httpClient.GET();
     auto string = httpClient.getString();
-    auto *respJson = new SpiRamJsonDocument(string.length());
-    ArduinoJson::deserializeJson(*respJson, string);
+    auto *respJson = new SpiRamJsonDocument(string.length() * 2);
+    auto error = ArduinoJson::deserializeJson(*respJson, string);
+    if (error.code() != DeserializationError::Ok) {
+        log_e("Failed to deserialize sync response: %s", error.c_str());
+        delete respJson;
+        httpClient.end();
+        return 0;
+    }
     resp->fromJson(respJson->as<JsonObject>());
     log_d("Synced: %d Message: %s, Firmware: %s", resp->synced, resp->message.c_str(),
           resp->firmware.url.c_str());
@@ -74,7 +80,14 @@ auto SindarinAPI::getUserReadables(std::vector<UserReadable> *userReadables) -> 
         // The document seems to need more length than the JSON string itself, so to be safe we just
         // double the storage. We have plenty of SPIRAM anyways.
         auto *resp = new SpiRamJsonDocument(string.length() * 2);
-        ArduinoJson::deserializeJson(*resp, string);
+        auto error = ArduinoJson::deserializeJson(*resp, string);
+        if (error.code() != DeserializationError::Ok) {
+            log_e("Failed to deserialize user readables: %s", error.c_str());
+            delete resp;
+            httpClient.end();
+            return 0;
+        }
+
         log_d("%s", string.c_str());
 
         // TODO: Handle pagination
@@ -86,12 +99,11 @@ auto SindarinAPI::getUserReadables(std::vector<UserReadable> *userReadables) -> 
         delete resp;
 
         for (JsonObject userReadableJson : userReadablesJson) {
-            UserReadable userReadable;
-            if (!userReadable.fromJson(userReadableJson)) {
+            userReadables->emplace_back();
+            if (!userReadables->back().fromJson(userReadableJson)) {
                 log_e("Failed to parse UserReadable");
                 continue;
             }
-            userReadables->push_back(userReadable);
         }
 
         log_i("GET /user/readables/ succeeded");

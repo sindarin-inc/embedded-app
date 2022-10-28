@@ -23,6 +23,7 @@ auto LocalStore::begin() -> bool {
 
     if (error.code() != DeserializationError::Ok) {
         log_e("Failed to deserialize readables file: %s", error.c_str());
+        delete doc;
         return false;
     }
 
