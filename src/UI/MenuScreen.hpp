@@ -73,11 +73,6 @@ public:
     void showTemporaryMessage(DisplaySystem &display, const std::string &message,
                               int duration = 2000, bool rerenderAfter = true);
 
-#if EINKET013TT1
-    void saveAndUpdateVCOM(DisplaySystem &display);
-    void revertVCOM(DisplaySystem &display);
-#endif
-
 protected:
     void drawArrowsAndSelections(DisplaySystem &display);
     int numMenuItems_ = 0;

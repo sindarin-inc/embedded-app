@@ -7,27 +7,6 @@
 
 #define MAX_WIDTH 150
 
-#if EINKET013TT1
-#include "Displays/DisplayEinkET013TT1.hpp"
-#endif
-
-#if EINKET013TT1
-void MenuScreen::saveAndUpdateVCOM(DisplaySystem &display) {
-    oldVcom_ = (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver()->getVcom();
-    int newVcom = 0;
-    if (display.getInversion()) {
-        newVcom = oldVcom_ - 2000;
-    } else {
-        newVcom = oldVcom_ + 2000;
-    }
-    (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver()->setVcom(newVcom);
-}
-
-void MenuScreen::revertVCOM(DisplaySystem &display) {
-    (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver()->setVcom(oldVcom_);
-}
-#endif
-
 void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool withLastItem) {
     display.setFont(myStyle_.itemFont);
     int iteratorEnd = (withLastItem) ? numMenuItems_ : numMenuItems_ - 1;
@@ -205,17 +184,9 @@ void MenuScreen::render(DisplaySystem &display) {
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
     }
 
-#if EINKET013TT1
-    saveAndUpdateVCOM(display);
-#endif
-
     drawMenuItems(display, true);
     drawArrowsAndSelections(display);
-    display.updateDisplay(DisplaySystem::UpdateType::FAST);
-
-#if EINKET013TT1
-    revertVCOM(display);
-#endif
+    display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
 
     firstLoad_ = false;
     needsRerender = false;

@@ -53,6 +53,7 @@ public:
         FULL,
         PARTIAL,
         FAST,
+        FAST_WITH_VCOM_NUDGE,
     };
     virtual void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED) = 0;
 

@@ -40,17 +40,9 @@ void MainMenuScreen::render(DisplaySystem &display) {
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
     }
 
-#if EINKET013TT1
-    saveAndUpdateVCOM(display);
-#endif
-
     drawMenuItems(display, true, false);
     drawArrowsAndSelections(display);
-    display.updateDisplay(DisplaySystem::UpdateType::FAST);
-
-#if EINKET013TT1
-    revertVCOM(display);
-#endif
+    display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
 
     needsRerender = false;
     firstLoad_ = false;
