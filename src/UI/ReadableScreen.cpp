@@ -108,15 +108,13 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
     int arrowWidth = 8;
     int arrowHeight = 4;
 
-    display.setRotation(1);
     // Use a gear for the bottom icon.
-    // The math here is weird because of rotation but this gives us a gear with
-    // the top of it looking like a down arrow to match the rest!
-    display.drawXBitmap(screenWidth + 2 + display.getTextHeight(),
-                        screenHeight / 2 - READ_GEAR_HEIGHT / 2, readGearBits, READ_GEAR_WIDTH,
-                        READ_GEAR_HEIGHT, display.fg);
-
-    display.setRotation(0);
+    // the Y calcuation is a bit of a hack, but at least it takes into acccount line spacing
+    // differences. This is one place that will benefit from more descriptive getTextHeight
+    // methods.
+    display.drawXBitmap(screenWidth / 2 - READ_GEAR_WIDTH / 2,
+                        screenHeight + display.getTextHeight() / 2 + 3, readGearBits,
+                        READ_GEAR_WIDTH, READ_GEAR_HEIGHT, display.fg);
 
     // Left Arrow
     display.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 - arrowWidth / 2,
