@@ -45,6 +45,8 @@ void InitializePlatform() {
     ESP_ERROR_CHECK(uart_driver_install(0, 256, 0, 20, nullptr, 0));
     ESP_ERROR_CHECK(uart_param_config(0, &uartConfig));
 
+    // Attenuation of 2.5db gets us up to a max of 1250mV
+    // Using our 442k/160k divider, that's 4.7V max
     auto adcCalValue = esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_2_5, ADC_WIDTH_BIT_12,
                                                 DEFAULT_VREF, &adcCalCharacteristics);
     if (adcCalValue != ESP_ADC_CAL_VAL_EFUSE_TP_FIT) {
@@ -52,11 +54,15 @@ void InitializePlatform() {
         // It's unclear if we'll ever hit this warning but putting it in to be safe.
         log_w("Using ADC calibration type: %d", (int)adcCalValue);
     }
-    adc1_config_width(ADC_WIDTH_BIT_12);
-    // Attenuation of 2.5db gets us up to a max of 1250mV
-    // Using our 442k/160k divider, that's 4.7V max
-    adc1_config_channel_atten(BATT_CHANNEL_LEFT, ADC_ATTEN_DB_2_5);
-    adc1_config_channel_atten(BATT_CHANNEL_RIGHT, ADC_ATTEN_DB_2_5);
+    if (adc1_config_width(adcCalCharacteristics.bit_width) != ESP_OK) {
+        log_e("Failed to configure ADC width");
+    }
+    if (adc1_config_channel_atten(BATT_CHANNEL_LEFT, adcCalCharacteristics.atten) != ESP_OK) {
+        log_e("Failed to configure ADC1 channel %d", BATT_CHANNEL_LEFT);
+    }
+    if (adc1_config_channel_atten(BATT_CHANNEL_RIGHT, adcCalCharacteristics.atten) != ESP_OK) {
+        log_e("Failed to configure ADC1 channel %d", BATT_CHANNEL_RIGHT);
+    }
 
     digitalWrite(RED_LED, LED_OFF);
     digitalWrite(GREEN_LED, LED_OFF);
