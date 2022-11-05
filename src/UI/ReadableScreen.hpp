@@ -1,3 +1,5 @@
+#include <freertos/FreeRTOS.h>
+#include <freertos/timers.h>
 #include <utility>
 
 #include "Misc/Power.hpp"
@@ -23,7 +25,7 @@ public:
                    PreferencesStore &prefs, Power &power, FileSystem &fileSystem)
 
         : renderer_(display), firstTimeRenderer_(display), readable_(readable), prefs_(prefs),
-          popup_(power, renderer_, prefs_, readable_), fileSystem_(fileSystem) {
+          popup_(power, renderer_, prefs_, readable_), fileSystem_(fileSystem), display_(display) {
         currentScreen_ = this;
         renderer_.setStream(stream);
         // Since we copy in the readable from RootUI and RootUI only creates
@@ -44,7 +46,7 @@ public:
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
-
+    void AutoPilotTimer(TimerHandle_t timer);
     void writeOutBookmarkUpdate();
     void updateBookmarkStatus();
     auto readOneBookmark(File &file, Bookmark &bookmark) -> bool;
@@ -70,6 +72,8 @@ protected:
     unsigned long newPlace_ = 0;
 
     bool shownIcons_ = false;
+
+    DisplaySystem &display_;
 
 private:
     void incrementReadingTime();
