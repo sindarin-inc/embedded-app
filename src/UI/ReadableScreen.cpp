@@ -6,6 +6,23 @@
 #include "UI/Bitmaps/BenIconHacking.hpp"
 #include "sindarin-debug.h"
 
+// This Bounce implementation is pulled from bounce.cpp
+// This allows you to use a class method as a c function pointer
+template <class T, class METHOD, METHOD M, class... PARAMS>
+static auto bounceAP(void *priv, PARAMS... params)
+    -> decltype(((*reinterpret_cast<T *>(priv)).*M)(params...)) {
+    return ((*reinterpret_cast<T *>(priv)).*M)(params...);
+}
+
+// Convenience macro to simplify bounce statement usage
+#define BOUNCE_AP(c, m) bounceAP<c, decltype(&c::m), &c::m>
+
+// Resonsible for handling notifiying the renderer when the renderer needs to do another line
+void ReadableScreen::AutoPilotTimer(TimerHandle_t timer) {
+    needsRerender = true;
+    render(display_);
+}
+
 // Simply reads from the bookmark file for this Readable and returns whether it was
 // a turn on or turn off bookmark.
 auto ReadableScreen::readOneBookmark(File &file, Bookmark &bookmark) -> bool {
@@ -214,6 +231,17 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     // remember the time this page was rendered
     readingStartTime_ = GetRunTimeMs();
+
+    log_d("Setting timer task to wake up in 3 seconds and do this render again");
+    uint32_t nextAutoPilotDuration = 3000;
+
+    TimerHandle_t xTimer = xTimerCreate(
+        "AutoPilot", pdMS_TO_TICKS(nextAutoPilotDuration), pdTRUE, this,
+        reinterpret_cast<void (*)(TimerHandle_t)>(BOUNCE_AP(ReadableScreen, AutoPilotTimer)));
+
+    if (xTimer == nullptr) {
+        log_e("Failed to create timer");
+    }
 
     needsRerender = false;
 }
