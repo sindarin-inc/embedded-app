@@ -1,5 +1,3 @@
-#include <freertos/FreeRTOS.h>
-#include <freertos/timers.h>
 #include <utility>
 
 #include "Misc/Power.hpp"
@@ -28,6 +26,7 @@ public:
           popup_(power, renderer_, prefs_, readable_), fileSystem_(fileSystem), display_(display) {
         currentScreen_ = this;
         renderer_.setStream(stream);
+        pageSpeed_ = prefs_.autoPilotSpeed.get().value();
         // Since we copy in the readable from RootUI and RootUI only creates
         // the readable at the initial MainMenu creation, the place of that
         // readable may be stale. Hence we must re-load it from the prefs.
@@ -46,7 +45,6 @@ public:
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
-    void AutoPilotTimer(TimerHandle_t timer);
     void writeOutBookmarkUpdate();
     void updateBookmarkStatus();
     auto readOneBookmark(File &file, Bookmark &bookmark) -> bool;
@@ -68,12 +66,24 @@ protected:
 
     bool inBookmark_ = false;
     bool ignoreNextPress_ = false;
+    bool timerStarted_ = false;
 
     unsigned long newPlace_ = 0;
 
+    int numTimers_ = 0;
+
     bool shownIcons_ = false;
+    bool autoPilotMode_ = true;
+
+    uint32_t waitPeriod_ = 500;
 
     DisplaySystem &display_;
+
+    // Must reset this to 0 on each page turn.
+    unsigned int speedLinesToSkip_ = 0;
+    unsigned long nextInterval_ = 0;
+    // How many ms we should take to read the page
+    unsigned int pageSpeed_ = 10000;
 
 private:
     void incrementReadingTime();

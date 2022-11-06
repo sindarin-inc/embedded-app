@@ -39,6 +39,8 @@ enum RemoteCommand : int {
     BACK = 0xE,
     FACTORY_DEFAULTS = 0xFF,
 
+    ANIMATION = 0xF,
+
     NONE = -1,
 };
 

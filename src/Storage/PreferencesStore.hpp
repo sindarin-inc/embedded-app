@@ -159,7 +159,8 @@ public:
           lineSpacing(this->prefs_, "line-space"), demoMode(this->prefs_, "demo"),
           wordCount(this->prefs_, "word-count"),
           totalReadingTimeSeconds(this->prefs_, "tot-rd-time"),
-          bootCount(this->prefs_, "boot-count"), firstRead(this->prefs_, "first-read"){};
+          bootCount(this->prefs_, "boot-count"), firstRead(this->prefs_, "first-read"),
+          autoPilotSpeed(this->prefs_, "auto-speed"){};
 
     auto begin() -> bool;
     void clear() {
@@ -198,6 +199,7 @@ public:
     PrefsItem<uint32_t> totalReadingTimeSeconds;
     PrefsItem<uint32_t> bootCount;
     PrefsItem<uint32_t> firstRead;
+    PrefsItem<uint32_t> autoPilotSpeed;
 
 protected:
     Preferences prefs_;

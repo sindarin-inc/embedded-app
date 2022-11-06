@@ -1,27 +1,20 @@
 #include "UI/ReadableScreen.hpp"
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
+#include <freertos/timers.h>
 #include <utility>
 
 #include "Misc/Platform.hpp"
 #include "UI/Bitmaps/BenIconHacking.hpp"
 #include "sindarin-debug.h"
 
-// This Bounce implementation is pulled from bounce.cpp
-// This allows you to use a class method as a c function pointer
-template <class T, class METHOD, METHOD M, class... PARAMS>
-static auto bounceAP(void *priv, PARAMS... params)
-    -> decltype(((*reinterpret_cast<T *>(priv)).*M)(params...)) {
-    return ((*reinterpret_cast<T *>(priv)).*M)(params...);
-}
+// Two minutes per page currently
+#define SLOWEST_PAGE_SPEED 120000
+// Change speed of speed reading in increments of 2 seconds
+#define PAGE_SPEED_INCREMENT 2000
 
-// Convenience macro to simplify bounce statement usage
-#define BOUNCE_AP(c, m) bounceAP<c, decltype(&c::m), &c::m>
-
-// Resonsible for handling notifiying the renderer when the renderer needs to do another line
-void ReadableScreen::AutoPilotTimer(TimerHandle_t timer) {
-    needsRerender = true;
-    render(display_);
-}
+extern TimerHandle_t xTimer_;
 
 // Simply reads from the bookmark file for this Readable and returns whether it was
 // a turn on or turn off bookmark.
@@ -171,6 +164,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         currentScreen_->render(display);
         return;
     }
+
     if (!needsRerender) {
         return;
     }
@@ -201,7 +195,34 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
-    newPlace_ = renderer_.renderPage(readable_.place);
+    if (pageSpeed_ == 0) {
+        newPlace_ = renderer_.renderPage(readable_.place);
+    } else {
+        if (speedLinesToSkip_ > renderer_.getNumRenderedLines()) {
+            // time to turn the page
+            readable_.placePrev = readable_.place;
+            readable_.place = newPlace_;
+            prefs_.readablePlace.set(readable_.placemarkUuid.c_str(), readable_.place);
+            speedLinesToSkip_ = 0;
+        } else {
+            speedLinesToSkip_++;
+        }
+        newPlace_ = renderer_.renderPage(readable_.place, speedLinesToSkip_);
+        if (renderer_.getLengthOfLine(speedLinesToSkip_) != 0) {
+            nextInterval_ = pageSpeed_ * renderer_.getLengthOfLine(speedLinesToSkip_) /
+                            renderer_.getTotalLengthOfLines();
+        }
+
+        // Give the user extra time for the first line.
+        if (speedLinesToSkip_ == 1) {
+            nextInterval_ *= 2;
+        }
+
+        log_d("Setting next interval: %d", nextInterval_);
+
+        needsRerender = true;
+    }
+
     // Future work
     // Sync this to cloud and use on mobile.
     updateBookmarkStatus();
@@ -223,7 +244,11 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     log_d("%lu is the new place in the text", newPlace_);
 
-    display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+    if ((pageSpeed_ != 0) && (speedLinesToSkip_ > 0)) {
+        display.updateDisplay(DisplaySystem::UpdateType::FAST_ORIGINAL_AU4);
+    } else {
+        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+    }
 
     uint32_t wc = prefs_.wordCount.get().value();
     wc = wc + renderer_.getCurrentPageWordCount();
@@ -232,18 +257,13 @@ void ReadableScreen::render(DisplaySystem &display) {
     // remember the time this page was rendered
     readingStartTime_ = GetRunTimeMs();
 
-    log_d("Setting timer task to wake up in 3 seconds and do this render again");
-    uint32_t nextAutoPilotDuration = 3000;
-
-    TimerHandle_t xTimer = xTimerCreate(
-        "AutoPilot", pdMS_TO_TICKS(nextAutoPilotDuration), pdTRUE, this,
-        reinterpret_cast<void (*)(TimerHandle_t)>(BOUNCE_AP(ReadableScreen, AutoPilotTimer)));
-
-    if (xTimer == nullptr) {
-        log_e("Failed to create timer");
+    if (pageSpeed_ == 0) {
+        needsRerender = false;
+    } else {
+        // Must stop the timer because ChangePeriod starts it.
+        xTimerStop(xTimer_, 0);
+        xTimerChangePeriod(xTimer_, pdMS_TO_TICKS(nextInterval_), 0);
     }
-
-    needsRerender = false;
 }
 
 void ReadableScreen::incrementReadingTime() {
@@ -277,29 +297,68 @@ void ReadableScreen::processCommand(RemoteCommand command) {
 
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
-        readable_.place = renderer_.getPreviousPlace();
-        prefs_.readablePlace.set(readable_.placemarkUuid.c_str(), readable_.place);
-        needsRerender = true;
+        if (pageSpeed_ == 0) {
+            readable_.place = renderer_.getPreviousPlace();
+            prefs_.readablePlace.set(readable_.placemarkUuid.c_str(), readable_.place);
+            needsRerender = true;
+        } else {
+            if (pageSpeed_ < SLOWEST_PAGE_SPEED - PAGE_SPEED_INCREMENT) {
+                pageSpeed_ += PAGE_SPEED_INCREMENT;
+            } else {
+                pageSpeed_ = SLOWEST_PAGE_SPEED;
+            }
+            prefs_.autoPilotSpeed.set(pageSpeed_);
+            log_d("Slowing down: New Page Speed is %u", pageSpeed_);
+            needsRerender = false;
+        }
         break;
     case RemoteCommand::ENTER:
-        readable_.placePrev = readable_.place;
-        readable_.place = newPlace_;
-        prefs_.readablePlace.set(readable_.placemarkUuid.c_str(), readable_.place);
-        needsRerender = true;
+        if (pageSpeed_ == 0) {
+            readable_.placePrev = readable_.place;
+            readable_.place = newPlace_;
+            prefs_.readablePlace.set(readable_.placemarkUuid.c_str(), readable_.place);
+            needsRerender = true;
+        } else {
+            if (pageSpeed_ > PAGE_SPEED_INCREMENT) {
+                pageSpeed_ -= PAGE_SPEED_INCREMENT;
+            } else {
+                pageSpeed_ = 1;
+            }
+            log_d("Speeding up: New Page Speed is %u", pageSpeed_);
+            prefs_.autoPilotSpeed.set(pageSpeed_);
+            needsRerender = false;
+        }
+
         break;
     case RemoteCommand::NEXT:
+        if (pageSpeed_ != 0) {
+            xTimerStop(xTimer_, 0);
+        }
         setCurrentScreen(popup_);
         break;
     case RemoteCommand::CHANNEL_PLUS:
-        inBookmark_ = !inBookmark_;
-        writeOutBookmarkUpdate();
+        if (pageSpeed_ != 0) {
+            pageSpeed_ = 0;
+            prefs_.autoPilotSpeed.set(0);
+            log_d("Stopping timer and turning off AutoPilot");
+            xTimerStop(xTimer_, 0);
+        } else {
+            inBookmark_ = !inBookmark_;
+            writeOutBookmarkUpdate();
+        }
         needsRerender = true;
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::PREV:
+        if (pageSpeed_ != 0) {
+            xTimerStop(xTimer_, 0);
+        }
         back();
         break;
     case RemoteCommand::NOP_BUTTON:
+        needsRerender = true;
+        break;
+    case RemoteCommand::ANIMATION:
         needsRerender = true;
         break;
     default:

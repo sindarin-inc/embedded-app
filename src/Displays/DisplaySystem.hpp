@@ -54,6 +54,8 @@ public:
         PARTIAL,
         FAST,
         FAST_WITH_VCOM_NUDGE,
+        FAST_ORIGINAL_AU4,
+        EINK_PARTIAL,
     };
     virtual void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED) = 0;
 

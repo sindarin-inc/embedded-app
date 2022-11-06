@@ -340,7 +340,7 @@ void Renderer::loaded() {
 
 // Show the (already loaded into buffer) current page
 // and load the next page into the next buffer so we have it.
-auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
+auto Renderer::renderPage(unsigned long placeInFile, int numSkipLines) -> unsigned long {
     SetCpuSpeedMhz(CPU_FREQ_MHZ_HIGH);
 
 #ifdef RENDERER_DEBUG
@@ -371,12 +371,15 @@ auto Renderer::renderPage(unsigned long placeInFile) -> unsigned long {
         if (lineBufferArray_[j][0] == '\n') {
             newLineAdjust++;
         } else {
-            display_.drawSingleLineOfText(
-                lineBufferArray_[j].data(), 0,
-                j * (display_.getTextHeight()) -
-                    display_.getTextHeight() *
-                        (FULL_DECI_LINE_HEIGHT - NEWLINE_ONLY_DECI_LINE_HEIGHT) * newLineAdjust /
-                        FULL_DECI_LINE_HEIGHT);
+            // Only draw the lines if it's not skipped from the caller.
+            if (j >= numSkipLines) {
+                display_.drawSingleLineOfText(
+                    lineBufferArray_[j].data(), 0,
+                    j * (display_.getTextHeight()) -
+                        display_.getTextHeight() *
+                            (FULL_DECI_LINE_HEIGHT - NEWLINE_ONLY_DECI_LINE_HEIGHT) *
+                            newLineAdjust / FULL_DECI_LINE_HEIGHT);
+            }
         }
     }
 
@@ -602,6 +605,20 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     return returnValue;
 }
 
+// Get the length of the line at place in the lineBufferArray
+//
+auto Renderer::getLengthOfLine(unsigned int index) -> unsigned int {
+    return lineBufferLengthsArray_[index];
+}
+
+auto Renderer::getTotalLengthOfLines() -> unsigned int {
+    int totalLengthsOfLines = 0;
+    for (int i = 0; i < numLinesInBuffer_; i++) {
+        totalLengthsOfLines += lineBufferLengthsArray_[i];
+    }
+    return totalLengthsOfLines;
+}
+
 // returns the new place of the stream
 auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsigned long {
     unsigned int plcInBuffer = 0;
@@ -647,6 +664,7 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
                     lineBufferArray_[numLinesInBuffer_].data());
 
         lineBufferArray_[numLinesInBuffer_][strlen(singleLine.data())] = '\0';
+        lineBufferLengthsArray_[numLinesInBuffer_] = strlen(singleLine.data());
 
         plcInBuffer += strlen(singleLine.data());
 

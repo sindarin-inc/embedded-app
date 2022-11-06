@@ -215,6 +215,9 @@ void MenuScreen::processCommand(RemoteCommand command) {
             backCallback();
         }
         break;
+    case RemoteCommand::ANIMATION:
+        needsRerender = false;
+        break;
     default:
         break;
     }

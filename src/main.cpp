@@ -6,6 +6,7 @@
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
+#include <freertos/timers.h>
 
 #include "Communications/OTA.hpp"
 #include "Communications/SindarinAPI.hpp"
@@ -171,6 +172,13 @@ void StatsTask(void *parameter) {
 
 void UIInnerLoop(RemoteCommand command) { rootUi.loop(myDisplay, command); }
 
+TimerHandle_t xTimer_ = nullptr;
+
+// Resonsible for handling notifiying the renderer when the renderer needs to do another line
+void AutoPilotTimer(TimerHandle_t timer) {
+    log_d("Got triggered");
+    UIInnerLoop(RemoteCommand::ANIMATION);
+}
 #if CONFIG_AUTOSTART_ARDUINO
 void loop() { vTaskDelay(portMAX_DELAY); };
 void setup() {
@@ -430,6 +438,19 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     xTaskCreatePinnedToCore(RadioTask, "Radio", 10000, nullptr, 1, nullptr, 0);
     xTaskCreatePinnedToCore(StatsTask, "Stats", 5000, nullptr, 0, nullptr, 1);
     xTaskCreatePinnedToCore(PowerTask, "Power", 5000, nullptr, 0, &powerTaskHandle, 1);
+
+    uint32_t nextAutoPilotDuration = 2000;
+    log_d("Setting timer task to wake up in %d seconds and do this render again",
+          nextAutoPilotDuration / 1000);
+
+    if (!xTimer_) {
+        xTimer_ = xTimerCreate("AutoPilotTimer", pdMS_TO_TICKS(nextAutoPilotDuration), pdFALSE,
+                               nullptr, AutoPilotTimer);
+    }
+
+    if (xTimer_ == nullptr) {
+        log_e("Failed to create timer");
+    }
 
     // Render the first thing
     DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::NONE); });
