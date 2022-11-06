@@ -416,6 +416,54 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
     }));
 
+    debugMenu->addMenuItem(MenuItem("Set Speed Read", [this, display, debugMenu]() {
+        auto speedMenu = new MenuScreen(this->power_, debugMenu->getMyStyle());
+#if EINKET013TT1
+        auto *driver = (static_cast<DisplayEinkET013TT1 *>(display))->getDriver();
+        speedMenu->addMenuItem(MenuItem("0s (Off)", [this, speedMenu, driver]() {
+            driver->setVcom(prefs_.vcom.get().value());
+#else
+        speedMenu->addMenuItem(MenuItem("0s (Off)", [this, speedMenu]() {
+#endif
+            prefs_.autoPilotSpeed.set(0);
+            speedMenu->setExtraText("Speed read mode off");
+            speedMenu->needsRerender = true;
+        }));
+#if EINKET013TT1
+        speedMenu->addMenuItem(MenuItem("3s (On)", [this, speedMenu, driver]() {
+            driver->setVcom(-3000);
+#else
+        speedMenu->addMenuItem(MenuItem("3s (On)", [this, speedMenu]() {
+
+#endif
+            prefs_.autoPilotSpeed.set(3000);
+            speedMenu->setExtraText("Speed read mode on");
+            speedMenu->needsRerender = true;
+        }));
+#if EINKET013TT1
+        speedMenu->addMenuItem(MenuItem("20s (On)", [this, speedMenu, driver]() {
+            driver->setVcom(-3000);
+#else
+        speedMenu->addMenuItem(MenuItem("20s (On)", [this, speedMenu]() {
+
+#endif
+            prefs_.autoPilotSpeed.set(20000);
+            speedMenu->setExtraText("Speed read mode on");
+            speedMenu->needsRerender = true;
+        }));
+        if (prefs_.autoPilotSpeed.get() == 0) {
+            speedMenu->setExtraText("Speed read mode off");
+        } else {
+            speedMenu->setExtraText("Speed read mode on");
+        }
+        setCurrentScreen(*speedMenu);
+        speedMenu->backCallback = [this, speedMenu, debugMenu]() {
+            debugMenu->setFirstLoad();
+            setCurrentScreen(*debugMenu);
+            delete speedMenu;
+        };
+    }));
+
 #if EINKET013TT1
     debugMenu->addMenuItem(MenuItem("Set Vcom", [this, display, debugMenu]() {
         auto vcomMenu = new MenuScreen(this->power_, debugMenu->getMyStyle());

@@ -179,6 +179,9 @@ void PopupMenuScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::NOP_BUTTON:
         needsRerender = true;
         break;
+    case RemoteCommand::ANIMATION:
+        needsRerender = false;
+        break;
     default:
         break;
     }

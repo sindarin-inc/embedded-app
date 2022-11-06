@@ -23,6 +23,10 @@ void MainMenuScreen::render(DisplaySystem &display) {
     }
 #endif
 
+    if (!needsRerender) {
+        return;
+    }
+
     // In case someone changed the selection out from underneath us.
     int oldMenuPage = currMenuPage_;
     currMenuPage_ = currSelection_ / myStyle_.numberOfItemsPerPage;
@@ -127,6 +131,9 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
             fn();
         }
 
+        break;
+    case RemoteCommand::ANIMATION:
+        needsRerender = false;
         break;
     default:
         break;
