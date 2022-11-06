@@ -14,7 +14,7 @@
 // Change speed of speed reading in increments of 2 seconds
 #define PAGE_SPEED_INCREMENT 2000
 
-extern TimerHandle_t xTimer_;
+extern TimerHandle_t xTimer;
 
 // Simply reads from the bookmark file for this Readable and returns whether it was
 // a turn on or turn off bookmark.
@@ -261,8 +261,8 @@ void ReadableScreen::render(DisplaySystem &display) {
         needsRerender = false;
     } else {
         // Must stop the timer because ChangePeriod starts it.
-        xTimerStop(xTimer_, 0);
-        xTimerChangePeriod(xTimer_, pdMS_TO_TICKS(nextInterval_), 0);
+        xTimerStop(xTimer, 0);
+        xTimerChangePeriod(xTimer, pdMS_TO_TICKS(nextInterval_), 0);
     }
 }
 
@@ -332,7 +332,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::NEXT:
         if (pageSpeed_ != 0) {
-            xTimerStop(xTimer_, 0);
+            xTimerStop(xTimer, 0);
         }
         setCurrentScreen(popup_);
         break;
@@ -341,7 +341,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             pageSpeed_ = 0;
             prefs_.autoPilotSpeed.set(0);
             log_d("Stopping timer and turning off AutoPilot");
-            xTimerStop(xTimer_, 0);
+            xTimerStop(xTimer, 0);
         } else {
             inBookmark_ = !inBookmark_;
             writeOutBookmarkUpdate();
@@ -351,7 +351,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::BACK:
     case RemoteCommand::PREV:
         if (pageSpeed_ != 0) {
-            xTimerStop(xTimer_, 0);
+            xTimerStop(xTimer, 0);
         }
         back();
         break;
