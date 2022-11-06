@@ -218,7 +218,7 @@ void ReadableScreen::render(DisplaySystem &display) {
             nextInterval_ *= 2;
         }
 
-        log_d("Setting next interval: %d", nextInterval_);
+        log_d("Setting next interval: %lu", nextInterval_);
 
         needsRerender = true;
     }
