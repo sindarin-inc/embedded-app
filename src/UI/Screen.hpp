@@ -16,10 +16,14 @@ public:
     virtual void processCommand(RemoteCommand command) = 0;
 
     virtual void loop(DisplaySystem &display, RemoteCommand command) {
+        log_d("Starting screen loop");
         if (command != RemoteCommand::NONE) {
             processCommand(command);
         }
+        log_d("Finished processCommand");
         render(display);
+
+        log_d("Finished render");
     }
 
     std::function<void()> backCallback;
