@@ -160,16 +160,21 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
 }
 
 void ReadableScreen::render(DisplaySystem &display) {
+    log_d("pre pre a");
     if (currentScreen_ != this) {
         currentScreen_->render(display);
         return;
     }
-
+    log_d("pre a");
     if (!needsRerender) {
         return;
     }
 
+    log_d("got here a");
+
     display.setFont(display.style.getFontFamily().readableFont);
+
+    log_d("got here b");
 
     // If it's the first read of the book, show the help screen.
     // Then ignore the next press of the button
@@ -194,7 +199,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         delete streamFirstTime;
         return;
     }
-
+    log_d("got here c");
     if (pageSpeed_ == 0) {
         newPlace_ = renderer_.renderPage(readable_.place);
     } else {
@@ -223,6 +228,8 @@ void ReadableScreen::render(DisplaySystem &display) {
         needsRerender = true;
     }
 
+    log_d("got here d");
+
     // Future work
     // Sync this to cloud and use on mobile.
     updateBookmarkStatus();
@@ -234,6 +241,8 @@ void ReadableScreen::render(DisplaySystem &display) {
                              display.yAbsolute(55), display.width() + 7, display.yAbsolute(50),
                              display.bg);
     }
+
+    log_d("got here e");
 
     // Show the home screen and gear icon on the first page you read as a reminder. Then drop them
     // after that.
@@ -359,6 +368,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         needsRerender = true;
         break;
     case RemoteCommand::ANIMATION:
+        log_d("Caught an animation call back");
         needsRerender = true;
         break;
     default:

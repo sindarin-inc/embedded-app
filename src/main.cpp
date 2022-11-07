@@ -177,7 +177,7 @@ TimerHandle_t xTimer = nullptr;
 // Resonsible for handling notifiying the renderer when the renderer needs to do another line
 void AutoPilotTimer(TimerHandle_t timer) {
     log_d("Got triggered");
-    UIInnerLoop(RemoteCommand::ANIMATION);
+    DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::ANIMATION); });
 }
 #if CONFIG_AUTOSTART_ARDUINO
 void loop() { vTaskDelay(portMAX_DELAY); };
