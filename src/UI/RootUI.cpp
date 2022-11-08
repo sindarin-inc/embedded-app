@@ -33,6 +33,7 @@
 #include "UI/ReadableScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
 #include "UI/StatsScreen.hpp"
+#include "UI/VoltageLogUploadScreen.hpp"
 #include "Version.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -588,6 +589,19 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         display->updateDisplay();
         debugMenu->setFirstLoad();
     }));
+
+    debugMenu->addMenuItem(
+        MenuItem("Upload Voltage Log", [this, display, &fileSystem, debugMenu]() {
+            auto voltageLogScreen = new VoltageLogUploadScreen(*display, this->prefs_, fileSystem);
+            this->setCurrentScreen(*voltageLogScreen);
+            (*voltageLogScreen).backCallback = [this, voltageLogScreen, debugMenu, display]() {
+                debugMenu->setFirstLoad();
+                setCurrentScreen(*debugMenu);
+                debugMenu->render(*display);
+                delete voltageLogScreen;
+            };
+            (*voltageLogScreen).begin();
+        }));
 
     oldMenu->addMenuItem(MenuItem("Calibration Screen Run Through", [this, oldMenu]() {
         auto calibrationScreen = new CalibrationScreen();

@@ -4,6 +4,7 @@
 
 #include "FileDownload.hpp"
 #include "GitVersion.hpp"
+#include "Misc/Power.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
 #include "Models/UserReadable.hpp"
@@ -155,4 +156,51 @@ auto SindarinAPI::downloadReadable(const Readable &readable, FileSystem &fileSys
     }
     httpClient.end();
     return success;
+}
+
+auto SindarinAPI::uploadAndResetVoltageLog(FileSystem &fileSystem) -> int {
+    HTTPClient httpClient;
+
+    auto localPath = Power::volatageLogPath();
+    if (!fileSystem.exists(localPath)) {
+        log_w("Voltage log file %s does not exist", localPath);
+        return false;
+    }
+    auto file = fileSystem.open(localPath, "r");
+
+    if (!beginClient(httpClient, "/user/voltagelogs/")) {
+        file.close();
+        return -1;
+    }
+
+    auto requestJson = std::make_unique<SpiRamJsonDocument>(file.size() * 2);
+    (*requestJson)["voltage_log"] = file.readString();
+
+    if ((*requestJson).overflowed()) {
+        log_e("Failed to create JSON for voltage log upload");
+        file.close();
+        httpClient.end();
+        return -1;
+    }
+
+    // This can be pretty big, so easiest to just dump it to a file then use the File's Stream to
+    // send. Also HTTPClient has an easy stream uploader that works with File Streams.
+    // TODO: It would be better to use a stream in SPIRAM directly instead of dumping to a file to
+    // avoid unnecessary flash writes.
+    auto jsonFilePath = "/logs/voltagelog.json";
+    File jsonFile = fileSystem.open(jsonFilePath, "rw", true);
+    serializeJson(*requestJson, jsonFile);
+
+    // Reset the file back to its start so that we can reuse it for sending
+    jsonFile.flush();
+    jsonFile.seek(0);
+
+    auto httpCode = httpClient.sendRequest("POST", &jsonFile, jsonFile.size());
+
+    httpClient.end();
+    jsonFile.close();
+
+    fileSystem.remove(jsonFilePath);
+
+    return httpCode;
 }
