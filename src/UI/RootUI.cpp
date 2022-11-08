@@ -34,6 +34,7 @@
 #include "UI/ResizeBoxScreen.hpp"
 #include "UI/StatsScreen.hpp"
 #include "UI/VoltageLogUploadScreen.hpp"
+#include "UI/CrashReportScreen.hpp"
 #include "Version.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -485,6 +486,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             debugMenu->setFirstLoad();
             setCurrentScreen(*debugMenu);
             delete statsScreen;
+        };
+    }));
+
+    debugMenu->addMenuItem(MenuItem("Send Crash Report", [this, debugMenu, display]() {
+        auto crashReportScreen = new CrashReportScreen(*display, prefs_);
+        this->setCurrentScreen(*crashReportScreen);
+        crashReportScreen->backCallback = [this, crashReportScreen, debugMenu]() {
+            debugMenu->setFirstLoad();
+            setCurrentScreen(*debugMenu);
+            delete crashReportScreen;
         };
     }));
 
