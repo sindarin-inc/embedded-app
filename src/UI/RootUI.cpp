@@ -497,6 +497,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             setCurrentScreen(*debugMenu);
             delete crashReportScreen;
         };
+        crashReportScreen->begin();
     }));
 
     debugMenu->addMenuItem(MenuItem("Reset Preferences", [this, debugMenu, display]() {

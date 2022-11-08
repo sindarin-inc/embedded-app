@@ -16,6 +16,7 @@
 void CrashUploader::uploadCrash(
     const std::function<void(CrashUploadState state)> &progressCallback) {
 
+    /*
     // Grab the token here from prefs if set
     auto token = prefs_.cloudToken.get();
     if (!token.has_value()) {
@@ -23,13 +24,14 @@ void CrashUploader::uploadCrash(
     } else {
         SindarinAPI::getInstance()->setAccessToken(token.value());
     }
+    */
 
     // checking, can remove this
     //progressCallback(
     //    FirmwareDownloadState{.state = FirmwareDownloadState::State::CheckingForLatest});
 
     progressCallback(
-        CrashUploadState{.state = CrashUploadState::State::Uploading});
+        CrashUploadState{.state = CrashUploadState::State::CheckingForCrashReport});
 
     auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this, progressCallback] {

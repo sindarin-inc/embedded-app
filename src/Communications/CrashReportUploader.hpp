@@ -14,6 +14,8 @@
 struct CrashUploadState {
     enum State {
         Idle,
+        ConnectingWifi,
+        CheckingForCrashReport,
         Uploading,
         Done,
         Failure,

@@ -1,25 +1,36 @@
-#ifndef CRASH_REPORT_SCREEN_HPP
-#define CRASH_REPORT_SCREEN_HPP
+#pragma once
 
-#include "Renderers/Renderer.hpp"
-#include "Storage/PreferencesStore.hpp"
+#include <string>
+#include <utility>
+
+#include "Communications/CrashReportUploader.hpp"
+#include "Communications/WiFi.hpp"
 #include "UI/Screen.hpp"
-
-#define CRASH_REPORT_URL http://192.168.0.178:8080/crash
 
 class CrashReportScreen : public Screen {
 public:
-    CrashReportScreen(DisplaySystem &display, PreferencesStore &prefs);
+    CrashReportScreen(DisplaySystem &display, PreferencesStore &prefs)
+        : display_(display), prefs_(prefs), crashReportUploader_(prefs){};
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
+    void begin();
 
 protected:
     DisplaySystem &display_;
     PreferencesStore &prefs_;
+    CrashUploader crashReportUploader_;
+    bool needsFullUpdate_ = true;
 
-    void drawMessage(std::string &message);
+    CrashUploadState state_;
 
+    void fail(const std::string &message);
+    void updateState(const CrashUploadState &state) {
+        if (state_.state == CrashUploadState::NoCrashReport ||
+            state.state == CrashUploadState::Failure) {
+            needsFullUpdate_ = true;
+        }
+        state_ = state;
+        needsRerender = true;
+    }
 };
-
-#endif
