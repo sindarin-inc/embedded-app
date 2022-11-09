@@ -52,6 +52,31 @@ void CrashUploader::uploadCrash(
             return;
         }
 
+        log_i("about to upload the dump");
+        std::string url = "https://sol-cloud.fly.dev/coredumps/";
+        HTTPClient httpClient;
+        if (!httpClient.begin(url.c_str())) {
+            log_i("http failed for %s", url.c_str());
+            progressCallback(CrashUploadState{.state = CrashUploadState::State::Failure,
+            .message = "Failed to begin upload"});
+            return;
+        }
+        
+        log_i("begin succeeded");
+
+        httpClient.addHeader("Content-Type", "multipart/form-data; boundary=5917222019993707403743335079");
+        httpClient.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
+        httpClient.setTimeout(30000);
+        
+        log_i("uploading firmware to %s", url.c_str());
+
+        char test[4096];
+        sprintf(test, "--5917222019993707403743335079--\r\nContent-Disposition: form-data; name=\"file\"; filename=\"testdump\"\r\nContent-Type: application/octet-stream\r\n\r\n12345689\r\n--5917222019993707403743335079--\r\n");
+        
+        log_i("sending: %s", test);
+        int httpCode = httpClient.POST((uint8_t*)test, strlen(test));
+        log_i("response: %d", httpCode);
+
         /*
         // TODO(john): Would probably be good to centralize our HTTPClient creation
         HTTPClient httpClient;
