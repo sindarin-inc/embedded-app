@@ -30,6 +30,7 @@ void CrashUploader::uploadCrash(
     //progressCallback(
     //    FirmwareDownloadState{.state = FirmwareDownloadState::State::CheckingForLatest});
 
+    // begin by checking if crash report exists
     progressCallback(
         CrashUploadState{.state = CrashUploadState::State::CheckingForCrashReport});
 
@@ -46,6 +47,7 @@ void CrashUploader::uploadCrash(
         size_t out_addr, out_size;
         if (esp_core_dump_image_get(&out_addr, &out_size) != ESP_OK) {
             // error finding the core dump
+            log_i("no crash report found.");
             progressCallback(CrashUploadState{.state = CrashUploadState::State::NoCrashReport});
             return;
         }

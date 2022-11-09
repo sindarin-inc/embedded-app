@@ -26,7 +26,7 @@ protected:
 
     void fail(const std::string &message);
     void updateState(const CrashUploadState &state) {
-        if (state_.state == CrashUploadState::NoCrashReport ||
+        if (state_.state == CrashUploadState::CheckingForCrashReport ||
             state.state == CrashUploadState::Failure) {
             needsFullUpdate_ = true;
         }

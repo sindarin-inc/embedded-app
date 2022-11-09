@@ -26,6 +26,8 @@ void CrashReportScreen::render(DisplaySystem &display) {
         break;
     }
     case CrashUploadState::ConnectingWifi:
+    case CrashUploadState::CheckingForCrashReport:
+    case CrashUploadState::NoCrashReport:
     case CrashUploadState::Uploading:
     case CrashUploadState::Done: {
         // Calculate group height
@@ -65,6 +67,15 @@ void CrashReportScreen::render(DisplaySystem &display) {
         if (state_.state <= CrashUploadState::CheckingForCrashReport) {
             break;
         }
+
+        log_i("render after checking");
+        if (state_.state == CrashUploadState::NoCrashReport) {
+            drawBulletLine(
+                StringFormat("No crash report found.").c_str(),
+                100, false);
+            break;
+        }
+
 
         /*
         auto downloadPercentage =
