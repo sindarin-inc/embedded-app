@@ -16,15 +16,15 @@ protected:
 public:
     PosixFileImpl(const char *path, const char *mode) : file_() {
         strncpy(path_, path, sizeof(path_));
-        std::fstream::openmode openMode = 0;
+        std::ios::openmode openMode = 0;
         std::string modeStr(mode);
         if (modeStr.find(FILE_READ) != std::string::npos) {
-            openMode |= std::fstream::in;
+            openMode |= std::ios::in;
         }
         if (modeStr.find(FILE_WRITE) != std::string::npos) {
-            openMode |= std::fstream::out | std::fstream::trunc;
+            openMode |= std::ios::out | std::fstream::trunc;
         } else if (modeStr.find(FILE_APPEND) != std::string::npos) {
-            openMode |= std::fstream::app;
+            openMode |= std::ios::app;
         }
         log_d("Opening file %s with mode 0x%X", path_, openMode);
         file_.open(path_, openMode);
