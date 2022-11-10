@@ -129,6 +129,9 @@ int HTTPClient::sendRequest(const char *type, Stream *stream, size_t size) {
         contentType_.c_str());
     if (res) {
         string_ = res->body;
+
+        log_i("recv: %s", string_.c_str());
+
         stream_ = new StringStream(res->body);
         size_ = res->body.length();
     } else {

@@ -64,6 +64,7 @@ void CrashUploader::uploadCrash(
         
         log_i("begin succeeded");
 
+        // this header doesn't seem to work..
         httpClient.addHeader("Content-Type", "multipart/form-data; boundary=5917222019993707403743335079");
         httpClient.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
         httpClient.setTimeout(30000);

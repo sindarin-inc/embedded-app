@@ -146,6 +146,8 @@ protected:
 
     httplib::Headers headers_;
 
+    std::string contentType_ = "application/x-www-form-urlencoded";
+
     int size_ = -1;
 };
 
