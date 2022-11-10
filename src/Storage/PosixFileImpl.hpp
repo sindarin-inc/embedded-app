@@ -16,7 +16,7 @@ protected:
 public:
     PosixFileImpl(const char *path, const char *mode) : file_() {
         strncpy(path_, path, sizeof(path_));
-        std::ios::openmode openMode(0);
+        std::ios::openmode openMode = std::ios::openmode();
         std::string modeStr(mode);
         if (modeStr.find(FILE_READ) != std::string::npos) {
             openMode |= std::ios::in;
