@@ -11,12 +11,12 @@
 
 DisplaySystem::DisplaySystem() = default;
 
-TimerHandle_t DisplaySystem::animationTimer_ = nullptr;
+TimerHandle_t DisplaySystem::animationTimer = nullptr;
 
 extern void UIInnerLoop(RemoteCommand command);
 
 // Resonsible for handling notifiying the renderer when the renderer needs to do another line
-void DisplaySystem::AnimationTimer(TimerHandle_t timer) {
+void DisplaySystem::animationTimer(TimerHandle_t timer) {
     DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::ANIMATION); });
 }
 
@@ -37,11 +37,11 @@ auto DisplaySystem::setup() -> bool {
     log_d("Creating timer task to wake up in %d seconds, but not starting timer",
           initialAnimationDuration / 1000);
 
-    DisplaySystem::animationTimer_ =
+    DisplaySystem::animationTimer =
         xTimerCreate("AnimationTimer", pdMS_TO_TICKS(initialAnimationDuration), pdFALSE, nullptr,
-                     DisplaySystem::AnimationTimer);
+                     DisplaySystem::animationTimer);
 
-    if (DisplaySystem::animationTimer_ == nullptr) {
+    if (DisplaySystem::animationTimer == nullptr) {
         log_e("Failed to create timer");
     }
 

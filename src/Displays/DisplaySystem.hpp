@@ -45,12 +45,12 @@ public:
 
     virtual auto setup() -> bool;
 
-    static void AnimationTimer(TimerHandle_t timer);
+    static void animationTimer(TimerHandle_t timer);
 
-    static TimerHandle_t animationTimer_;
+    static TimerHandle_t animationTimer;
 
     // Right now we are limited to one animation timer.
-    static auto getAnimationTimer() -> TimerHandle_t { return animationTimer_; }
+    static auto getAnimationTimer() -> TimerHandle_t { return animationTimer; }
 
     DisplayRect defaultBoundingBox = {42, 30, 255 - 42 * 2, 255 - 30 * 2};
 
