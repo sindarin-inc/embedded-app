@@ -45,7 +45,7 @@ public:
 
     virtual auto setup() -> bool;
 
-    static void animationTimer(TimerHandle_t timer);
+    static void animationTimerCallback(TimerHandle_t timer);
 
     static TimerHandle_t animationTimer;
 
