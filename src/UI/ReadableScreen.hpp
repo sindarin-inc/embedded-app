@@ -33,6 +33,10 @@ public:
         // Not the prettiest of fixes, but passing the readable by reference
         // seems to not work with some of the const requirements by the lamdas.
         readable_.place = prefs_.readablePlace.get(readable_.placemarkUuid.c_str());
+        // for the animation bits since we may end up coming back to this constructor after being
+        // interrupted.
+        newPlace_ = readable_.place;
+
         log_d("Found place for %s = %d", readable_.placemarkUuid.c_str(), readable_.place);
         popup_.backCallback = [this]() { this->setCurrentScreen(*this); };
     }
