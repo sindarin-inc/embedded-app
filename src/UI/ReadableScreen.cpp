@@ -163,6 +163,7 @@ void ReadableScreen::turnPage() {
     readable_.placePrev = readable_.place;
     readable_.place = newPlace_;
     prefs_.readablePlace.set(readable_.placemarkUuid.c_str(), readable_.place);
+    speedLinesToSkip_ = 0;
 }
 
 void ReadableScreen::render(DisplaySystem &display) {
@@ -204,17 +205,22 @@ void ReadableScreen::render(DisplaySystem &display) {
     if (pageSpeed_ == 0) {
         newPlace_ = renderer_.renderPage(readable_.place);
     } else {
-        if (speedLinesToSkip_ > renderer_.getNumRenderedLines()) {
+        if (speedLinesToSkip_ >= renderer_.getNumRenderedLines()) {
             // time to turn the page
             turnPage();
-            speedLinesToSkip_ = 0;
         } else {
             speedLinesToSkip_++;
         }
         newPlace_ = renderer_.renderPage(readable_.place, speedLinesToSkip_);
-        if (renderer_.getLengthOfLine(speedLinesToSkip_) != 0) {
+        if (renderer_.getLengthOfLine(speedLinesToSkip_) != 1) {
             nextInterval_ = pageSpeed_ * renderer_.getLengthOfLine(speedLinesToSkip_) /
                             renderer_.getTotalLengthOfLines();
+        } else {
+            // If the line is blank, we want to skip it.
+            while (renderer_.getLengthOfLine(speedLinesToSkip_) == 1) {
+                speedLinesToSkip_++;
+            }
+            nextInterval_ = 1;
         }
 
         // Give the user extra time for the first line.
