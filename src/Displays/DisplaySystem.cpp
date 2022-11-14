@@ -1,11 +1,24 @@
 #include "DisplaySystem.hpp"
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/timers.h>
 #include <utility>
 
+#include "Inputs/RemoteInput.hpp"
+#include "Misc/Dispatch.hpp"
 #include "Misc/StringUtil.hpp"
 #include "sindarin-debug.h"
 
 DisplaySystem::DisplaySystem() = default;
+
+TimerHandle_t DisplaySystem::animationTimer_ = nullptr;
+
+extern void UIInnerLoop(RemoteCommand command);
+
+// Resonsible for handling notifiying the renderer when the renderer needs to do another line
+void DisplaySystem::AnimationTimer(TimerHandle_t timer) {
+    DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::ANIMATION); });
+}
 
 auto DisplaySystem::setup() -> bool {
     // Default to original font
@@ -19,6 +32,18 @@ auto DisplaySystem::setup() -> bool {
 #endif
 
     gfxClass_->setTextWrap(false);
+
+    uint32_t initialAnimationDuration = 2000;
+    log_d("Creating timer task to wake up in %d seconds, but not starting timer",
+          initialAnimationDuration / 1000);
+
+    DisplaySystem::animationTimer_ =
+        xTimerCreate("AnimationTimer", pdMS_TO_TICKS(initialAnimationDuration), pdFALSE, nullptr,
+                     DisplaySystem::AnimationTimer);
+
+    if (DisplaySystem::animationTimer_ == nullptr) {
+        log_e("Failed to create timer");
+    }
 
     return true;
 }

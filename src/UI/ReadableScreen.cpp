@@ -14,8 +14,6 @@
 // Change speed of speed reading in increments of 2 seconds
 #define PAGE_SPEED_INCREMENT 2000
 
-extern TimerHandle_t xTimer;
-
 // Simply reads from the bookmark file for this Readable and returns whether it was
 // a turn on or turn off bookmark.
 auto ReadableScreen::readOneBookmark(File &file, Bookmark &bookmark) -> bool {
@@ -159,22 +157,25 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
                      */
 }
 
+// Since this happens in a couple of places (animation as well as button press),
+// we have a helper method to do the work.
+void ReadableScreen::turnPage() {
+    readable_.placePrev = readable_.place;
+    readable_.place = newPlace_;
+    prefs_.readablePlace.set(readable_.placemarkUuid.c_str(), readable_.place);
+}
+
 void ReadableScreen::render(DisplaySystem &display) {
-    log_d("pre pre a");
     if (currentScreen_ != this) {
         currentScreen_->render(display);
         return;
     }
-    log_d("pre a");
+
     if (!needsRerender) {
         return;
     }
 
-    log_d("got here a");
-
     display.setFont(display.style.getFontFamily().readableFont);
-
-    log_d("got here b");
 
     // If it's the first read of the book, show the help screen.
     // Then ignore the next press of the button
@@ -199,15 +200,13 @@ void ReadableScreen::render(DisplaySystem &display) {
         delete streamFirstTime;
         return;
     }
-    log_d("got here c");
+
     if (pageSpeed_ == 0) {
         newPlace_ = renderer_.renderPage(readable_.place);
     } else {
         if (speedLinesToSkip_ > renderer_.getNumRenderedLines()) {
             // time to turn the page
-            readable_.placePrev = readable_.place;
-            readable_.place = newPlace_;
-            prefs_.readablePlace.set(readable_.placemarkUuid.c_str(), readable_.place);
+            turnPage();
             speedLinesToSkip_ = 0;
         } else {
             speedLinesToSkip_++;
@@ -228,8 +227,6 @@ void ReadableScreen::render(DisplaySystem &display) {
         needsRerender = true;
     }
 
-    log_d("got here d");
-
     // Future work
     // Sync this to cloud and use on mobile.
     updateBookmarkStatus();
@@ -242,8 +239,6 @@ void ReadableScreen::render(DisplaySystem &display) {
                              display.bg);
     }
 
-    log_d("got here e");
-
     // Show the home screen and gear icon on the first page you read as a reminder. Then drop them
     // after that.
     if (!shownIcons_) {
@@ -254,7 +249,7 @@ void ReadableScreen::render(DisplaySystem &display) {
     log_d("%lu is the new place in the text", newPlace_);
 
     if ((pageSpeed_ != 0) && (speedLinesToSkip_ > 0)) {
-        display.updateDisplay(DisplaySystem::UpdateType::EINK_PARTIAL);
+        display.updateDisplay(DisplaySystem::UpdateType::FAST_ORIGINAL_AU4);
     } else {
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     }
@@ -270,8 +265,11 @@ void ReadableScreen::render(DisplaySystem &display) {
         needsRerender = false;
     } else {
         // Must stop the timer because ChangePeriod starts it.
-        xTimerStop(xTimer, 0);
-        xTimerChangePeriod(xTimer, pdMS_TO_TICKS(nextInterval_), 0);
+        xTimerStop(DisplaySystem::getAnimationTimer(), 0);
+        if (nextInterval_ == 0) {
+            nextInterval_ = 1;
+        }
+        xTimerChangePeriod(DisplaySystem::getAnimationTimer(), pdMS_TO_TICKS(nextInterval_), 0);
     }
 }
 
@@ -323,11 +321,24 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::ENTER:
         if (pageSpeed_ == 0) {
-            readable_.placePrev = readable_.place;
-            readable_.place = newPlace_;
-            prefs_.readablePlace.set(readable_.placemarkUuid.c_str(), readable_.place);
+            turnPage();
             needsRerender = true;
         } else {
+            pageSpeed_ = 0;
+            prefs_.autoPilotSpeed.set(0);
+            log_d("Stopping timer and turning off AutoPilot");
+            xTimerStop(DisplaySystem::getAnimationTimer(), 0);
+        }
+
+        break;
+    case RemoteCommand::NEXT:
+        if (pageSpeed_ != 0) {
+            xTimerStop(DisplaySystem::getAnimationTimer(), 0);
+        }
+        setCurrentScreen(popup_);
+        break;
+    case RemoteCommand::CHANNEL_PLUS:
+        if (pageSpeed_ != 0) {
             if (pageSpeed_ > PAGE_SPEED_INCREMENT) {
                 pageSpeed_ -= PAGE_SPEED_INCREMENT;
             } else {
@@ -336,21 +347,6 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             log_d("Speeding up: New Page Speed is %u", pageSpeed_);
             prefs_.autoPilotSpeed.set(pageSpeed_);
             needsRerender = false;
-        }
-
-        break;
-    case RemoteCommand::NEXT:
-        if (pageSpeed_ != 0) {
-            xTimerStop(xTimer, 0);
-        }
-        setCurrentScreen(popup_);
-        break;
-    case RemoteCommand::CHANNEL_PLUS:
-        if (pageSpeed_ != 0) {
-            pageSpeed_ = 0;
-            prefs_.autoPilotSpeed.set(0);
-            log_d("Stopping timer and turning off AutoPilot");
-            xTimerStop(xTimer, 0);
         } else {
             inBookmark_ = !inBookmark_;
             writeOutBookmarkUpdate();
@@ -360,7 +356,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::BACK:
     case RemoteCommand::PREV:
         if (pageSpeed_ != 0) {
-            xTimerStop(xTimer, 0);
+            xTimerStop(DisplaySystem::getAnimationTimer(), 0);
         }
         back();
         break;

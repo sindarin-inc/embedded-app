@@ -417,7 +417,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
     }));
 
-    debugMenu->addMenuItem(MenuItem("Set Auto Pilot", [this, display, debugMenu]() {
+    debugMenu->addMenuItem(MenuItem("Set Autopilot", [this, display, debugMenu]() {
         auto speedMenu = new MenuScreen(this->power_, debugMenu->getMyStyle());
 #if EINKET013TT1
         auto *driver = (static_cast<DisplayEinkET013TT1 *>(display))->getDriver();
@@ -427,7 +427,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         speedMenu->addMenuItem(MenuItem("0s (Off)", [this, speedMenu]() {
 #endif
             prefs_.autoPilotSpeed.set(0);
-            speedMenu->setExtraText("Auto Pilot off");
+            speedMenu->setExtraText("Autopilot off");
             speedMenu->needsRerender = true;
         }));
 #if EINKET013TT1
@@ -438,7 +438,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
 #endif
             prefs_.autoPilotSpeed.set(3000);
-            speedMenu->setExtraText("Auto Pilot on");
+            speedMenu->setExtraText("Autopilot on");
             speedMenu->needsRerender = true;
         }));
 #if EINKET013TT1
@@ -449,13 +449,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
 #endif
             prefs_.autoPilotSpeed.set(20000);
-            speedMenu->setExtraText("Auto Pilot on");
+            speedMenu->setExtraText("Autopilot on");
             speedMenu->needsRerender = true;
         }));
         if (prefs_.autoPilotSpeed.get() == 0) {
-            speedMenu->setExtraText("Auto Pilot off");
+            speedMenu->setExtraText("Autopilot off");
         } else {
-            speedMenu->setExtraText("Auto Pilot on");
+            speedMenu->setExtraText("Autopilot on");
         }
         setCurrentScreen(*speedMenu);
         speedMenu->backCallback = [this, speedMenu, debugMenu]() {

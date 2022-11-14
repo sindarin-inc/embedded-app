@@ -12,6 +12,8 @@
 
 #include <Adafruit_GFX.h>
 #include <array>
+#include <freertos/FreeRTOS.h>
+#include <freertos/timers.h>
 #include <string>
 
 #include "Misc/StringUtil.hpp"
@@ -43,6 +45,13 @@ public:
 
     virtual auto setup() -> bool;
 
+    static void AnimationTimer(TimerHandle_t timer);
+
+    static TimerHandle_t animationTimer_;
+
+    // Right now we are limited to one animation timer.
+    static auto getAnimationTimer() -> TimerHandle_t { return animationTimer_; }
+
     DisplayRect defaultBoundingBox = {42, 30, 255 - 42 * 2, 255 - 30 * 2};
 
     Style style;
@@ -55,7 +64,7 @@ public:
         FAST,
         FAST_WITH_VCOM_NUDGE,
         FAST_ORIGINAL_AU4,
-        EINK_PARTIAL,
+        ORIGINAL_PARTIAL,
     };
     virtual void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED) = 0;
 
