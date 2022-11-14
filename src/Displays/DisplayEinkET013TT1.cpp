@@ -159,7 +159,7 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
             numPartials_ = 0;
         }
         break;
-    case EINK_PARTIAL:
+    case ORIGINAL_PARTIAL:
         if (!fullRefreshNext_) {
             driver_.update(PARTIAL_REFRESH_ORIGINAL, gfxCanvas_.getBuffer());
         } else {

@@ -87,5 +87,6 @@ protected:
 
 private:
     void incrementReadingTime();
+    void turnPage();
     uint32_t readingStartTime_;
 };
