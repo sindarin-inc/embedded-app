@@ -16,7 +16,7 @@ TimerHandle_t DisplaySystem::animationTimer = nullptr;
 extern void UIInnerLoop(RemoteCommand command);
 
 // Resonsible for handling notifiying the renderer when the renderer needs to do another line
-void DisplaySystem::animationTimer(TimerHandle_t timer) {
+void DisplaySystem::animationTimerCallback(TimerHandle_t timer) {
     DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::ANIMATION); });
 }
 
@@ -39,7 +39,7 @@ auto DisplaySystem::setup() -> bool {
 
     DisplaySystem::animationTimer =
         xTimerCreate("AnimationTimer", pdMS_TO_TICKS(initialAnimationDuration), pdFALSE, nullptr,
-                     DisplaySystem::animationTimer);
+                     DisplaySystem::animationTimerCallback);
 
     if (DisplaySystem::animationTimer == nullptr) {
         log_e("Failed to create timer");
