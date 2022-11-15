@@ -9,8 +9,8 @@
 
 class CrashReportScreen : public Screen {
 public:
-    CrashReportScreen(DisplaySystem &display, PreferencesStore &prefs)
-        : display_(display), prefs_(prefs), crashReportUploader_(prefs){};
+    CrashReportScreen(DisplaySystem &display, PreferencesStore &prefs, FileSystem &fileSystem)
+        : display_(display), prefs_(prefs), crashReportUploader_(prefs, fileSystem){};
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;

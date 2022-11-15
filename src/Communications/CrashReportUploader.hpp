@@ -28,7 +28,10 @@ struct CrashUploadState {
 
 class CrashUploader {
 public:
-    CrashUploader(PreferencesStore &prefs) : prefs_(prefs){};
+    CrashUploader(PreferencesStore &prefs, FileSystem &fileSystem) 
+    : prefs_(prefs)
+    , fileSystem_(fileSystem)
+    {};
 
     void uploadCrash(const std::function<void(CrashUploadState state)> &progressCallback);
 
@@ -36,4 +39,5 @@ public:
 
 protected:
     PreferencesStore &prefs_;
+    FileSystem &fileSystem_;
 };
