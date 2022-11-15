@@ -34,8 +34,8 @@ auto DisplaySystem::setup() -> bool {
     gfxClass_->setTextWrap(false);
 
     uint32_t initialAnimationDuration = 2000;
-    log_d("Creating timer task to wake up in %d seconds, but not starting timer",
-          initialAnimationDuration / 1000);
+    log_d("Creating timer task to wake up in %.1f seconds, but not starting timer",
+          initialAnimationDuration / 1000.0);
 
     DisplaySystem::animationTimer =
         xTimerCreate("AnimationTimer", pdMS_TO_TICKS(initialAnimationDuration), pdFALSE, nullptr,

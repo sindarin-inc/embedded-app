@@ -49,9 +49,6 @@ public:
 
     static TimerHandle_t animationTimer;
 
-    // Right now we are limited to one animation timer.
-    static auto getAnimationTimer() -> TimerHandle_t { return animationTimer; }
-
     DisplayRect defaultBoundingBox = {42, 30, 255 - 42 * 2, 255 - 30 * 2};
 
     Style style;

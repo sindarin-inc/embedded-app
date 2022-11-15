@@ -215,6 +215,9 @@ void ReadableScreen::render(DisplaySystem &display) {
         if (renderer_.getLengthOfLine(speedLinesToSkip_) != 1) {
             nextInterval_ = pageSpeed_ * renderer_.getLengthOfLine(speedLinesToSkip_) /
                             renderer_.getTotalLengthOfLines();
+            if (nextInterval_ == 0) {
+                nextInterval_ = 1;
+            }
         } else {
             // If the line is blank, we want to skip it.
             while (renderer_.getLengthOfLine(speedLinesToSkip_) == 1) {
@@ -271,11 +274,8 @@ void ReadableScreen::render(DisplaySystem &display) {
         needsRerender = false;
     } else {
         // Must stop the timer because ChangePeriod starts it.
-        xTimerStop(DisplaySystem::getAnimationTimer(), 0);
-        if (nextInterval_ == 0) {
-            nextInterval_ = 1;
-        }
-        xTimerChangePeriod(DisplaySystem::getAnimationTimer(), pdMS_TO_TICKS(nextInterval_), 0);
+        xTimerStop(DisplaySystem::animationTimer, 0);
+        xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
     }
 }
 
@@ -315,11 +315,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             prefs_.readablePlace.set(readable_.placemarkUuid.c_str(), readable_.place);
             needsRerender = true;
         } else {
-            if (pageSpeed_ < SLOWEST_PAGE_SPEED - PAGE_SPEED_INCREMENT) {
-                pageSpeed_ += PAGE_SPEED_INCREMENT;
-            } else {
-                pageSpeed_ = SLOWEST_PAGE_SPEED;
-            }
+            pageSpeed_ = std::min(pageSpeed_ + PAGE_SPEED_INCREMENT, SLOWEST_PAGE_SPEED);
             prefs_.autoPilotSpeed.set(pageSpeed_);
             log_d("Slowing down: New Page Speed is %u", pageSpeed_);
             needsRerender = false;
@@ -333,23 +329,19 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             pageSpeed_ = 0;
             prefs_.autoPilotSpeed.set(0);
             log_d("Stopping timer and turning off AutoPilot");
-            xTimerStop(DisplaySystem::getAnimationTimer(), 0);
+            xTimerStop(DisplaySystem::animationTimer, 0);
         }
 
         break;
     case RemoteCommand::NEXT:
         if (pageSpeed_ != 0) {
-            xTimerStop(DisplaySystem::getAnimationTimer(), 0);
+            xTimerStop(DisplaySystem::animationTimer, 0);
         }
         setCurrentScreen(popup_);
         break;
     case RemoteCommand::CHANNEL_PLUS:
         if (pageSpeed_ != 0) {
-            if (pageSpeed_ > PAGE_SPEED_INCREMENT) {
-                pageSpeed_ -= PAGE_SPEED_INCREMENT;
-            } else {
-                pageSpeed_ = 1;
-            }
+            pageSpeed_ = std::max(pageSpeed_ - PAGE_SPEED_INCREMENT, 1);
             log_d("Speeding up: New Page Speed is %u", pageSpeed_);
             prefs_.autoPilotSpeed.set(pageSpeed_);
             needsRerender = false;
@@ -362,7 +354,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::BACK:
     case RemoteCommand::PREV:
         if (pageSpeed_ != 0) {
-            xTimerStop(DisplaySystem::getAnimationTimer(), 0);
+            xTimerStop(DisplaySystem::animationTimer, 0);
         }
         back();
         break;
@@ -370,7 +362,6 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         needsRerender = true;
         break;
     case RemoteCommand::ANIMATION:
-        log_d("Caught an animation call back");
         needsRerender = true;
         break;
     default:

@@ -6,7 +6,6 @@
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
-#include <freertos/timers.h>
 
 #include "Communications/OTA.hpp"
 #include "Communications/SindarinAPI.hpp"
