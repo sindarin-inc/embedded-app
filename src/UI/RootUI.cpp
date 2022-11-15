@@ -489,22 +489,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
     }));
 
-    /*
-    debugMenu->addMenuItem(
-        MenuItem("Upload Voltage Log", [this, display, &fileSystem, debugMenu]() {
-            auto voltageLogScreen = new VoltageLogUploadScreen(*display, this->prefs_, fileSystem);
-            this->setCurrentScreen(*voltageLogScreen);
-            (*voltageLogScreen).backCallback = [this, voltageLogScreen, debugMenu, display]() {
-                debugMenu->setFirstLoad();
-                setCurrentScreen(*debugMenu);
-                debugMenu->render(*display);
-                delete voltageLogScreen;
-            };
-            (*voltageLogScreen).begin();
-        }));
-    */
-
-
     debugMenu->addMenuItem(MenuItem("Send Crash Report", [this, debugMenu, display, &fileSystem]() {
         auto crashReportScreen = new CrashReportScreen(*display, prefs_, fileSystem);
         this->setCurrentScreen(*crashReportScreen);

@@ -76,30 +76,8 @@ void CrashReportScreen::render(DisplaySystem &display) {
             break;
         }
 
-
-        /*
-        auto downloadPercentage =
-            state_.state < FirmwareDownloadState::Downloading ? 0 : state_.downloadPercentage;
-        if (state_.state > FirmwareDownloadState::Downloading) {
-            downloadPercentage = 100;
-        }
-
-        drawBulletLine(
-            StringFormat("Downloading Update %s", firmwareDownloader_.versionString.c_str())
-                .c_str(),
-            downloadPercentage, true);
-        */
-
         drawBulletLine(
             "Uploading", state_.state > CrashUploadState::Uploading ? 100 : 0, false);
-
-        /*
-        drawBulletLine("Installing", state_.state > FirmwareDownloadState::Installing ? 100 : 0,
-                       false);
-
-        drawBulletLine("Rebooting...", state_.state == FirmwareDownloadState::Installed ? 100 : 0,
-                       false);
-                       */
         break;
     }
     }
@@ -140,8 +118,6 @@ void CrashReportScreen::begin() {
         fail("Failed to connect to WiFi.");
         return;
     }
-
-    log_i("I'm here!");
 
     crashReportUploader_.uploadCrash([this](const CrashUploadState &state) {
         DispatchGetUiQueue()->dispatch([this, state]() {
