@@ -96,7 +96,6 @@ int HTTPClient::POST(uint8_t *payload, size_t size) {
         //     log_d("  %s: %s", it->first.c_str(), it->second.c_str());
         // }
     });
-<<<<<<< HEAD
     auto res =
         client_->Post(path_.c_str(), headers_, (const char *)payload, size, contentType_.c_str());
     if (res) {
@@ -128,10 +127,6 @@ int HTTPClient::sendRequest(const char *type, Stream *stream, size_t size) {
             return sink.write(bytes, readSize);
         },
         contentType_.c_str());
-=======
-    auto res = client_->Post(path_.c_str(), (const char *)payload, size,
-                             "application/x-www-form-urlencoded");
->>>>>>> 1a01484 (revert httpclient changes)
     if (res) {
         string_ = res->body;
         stream_ = new StringStream(res->body);
@@ -205,7 +200,6 @@ String HTTPClient::getString(void) { return String(string_.c_str()); }
  * @param first
  */
 void HTTPClient::addHeader(const String &name, const String &value, bool first, bool replace) {
-<<<<<<< HEAD
     if (replace) {
         headers_.erase(name.c_str());
     }
@@ -214,8 +208,4 @@ void HTTPClient::addHeader(const String &name, const String &value, bool first, 
     if (name == "Content-Type") {
         contentType_ = value.c_str();
     }
-=======
-    // TODO: This may only allow setting a single header
-    client_->set_default_headers({{name.c_str(), value.c_str()}});
->>>>>>> 1a01484 (revert httpclient changes)
 }
