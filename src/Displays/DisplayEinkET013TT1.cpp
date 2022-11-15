@@ -152,7 +152,15 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
         break;
     case FAST_ORIGINAL_AU4:
         if (!fullRefreshNext_) {
-            driver_.update(AU4_ORIGINAL, gfxCanvas_.getBuffer());
+            int oldVcom = getDriver()->getVcom();
+            if (getInversion()) {
+                getDriver()->setVcom(oldVcom - 2000);
+                driver_.update(AU4_ORIGINAL, gfxCanvas_.getBuffer());
+            } else {
+                getDriver()->setVcom(oldVcom + 2000);
+                driver_.update(AU4_ORIGINAL, gfxCanvas_.getBuffer());
+            }
+            getDriver()->setVcom(oldVcom);
         } else {
             driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
             firstPartialTime_ = 0;
