@@ -136,7 +136,7 @@ void Power::logVoltages(float lVoltage, float rVoltage) {
     std::string logString =
         StringFormat("%d,%d,%.2f,%.2f", bootCount, runTimeMs, lVoltage, rVoltage);
 
-    std::string path = "/logs/voltagelog.txt";
+    std::string path = Power::volatageLogPath();
     File file = fileSystem_.open(path.c_str(), FILE_APPEND);
     file.write((const uint8_t *)logString.c_str(), logString.length());
     file.write('\n');

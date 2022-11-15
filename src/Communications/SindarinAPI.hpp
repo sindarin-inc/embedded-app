@@ -24,6 +24,8 @@ public:
     auto downloadReadable(const Readable &readable, FileSystem &fileSystem,
                           const std::function<void(int percentage)> &progressCallback) -> bool;
 
+    auto uploadAndResetVoltageLog(FileSystem &fileSystem) -> int;
+
 protected:
     static SindarinAPI *instance;
     std::string accessToken_;

@@ -120,6 +120,9 @@ public:
 
     int GET();
     int POST(uint8_t *payload, size_t size);
+    int POST(String payload);
+    int sendRequest(const char *type, Stream *stream, size_t size);
+
     void addHeader(const String &name, const String &value, bool first = false,
                    bool replace = true);
     int getSize(void);
@@ -139,6 +142,9 @@ protected:
 
     StringStream *stream_ = nullptr;
     std::string string_;
+    std::string contentType_;
+
+    httplib::Headers headers_;
 
     int size_ = -1;
 };

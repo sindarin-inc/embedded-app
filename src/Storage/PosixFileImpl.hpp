@@ -10,23 +10,27 @@ extern "C" {
 class PosixFileImpl : public fs::FileImpl {
 protected:
     std::fstream file_;
-    const char *mode_;
     char path_[200];
     size_t pos_ = 0;
 
 public:
-    PosixFileImpl(const char *path, const char *mode) : file_(), mode_(mode) {
+    PosixFileImpl(const char *path, const char *mode) : file_() {
         strncpy(path_, path, sizeof(path_));
+        std::ios::openmode openMode = std::ios::openmode();
+        std::string modeStr(mode);
+        if (modeStr.find(FILE_READ) != std::string::npos) {
+            openMode |= std::ios::in;
+        }
+        if (modeStr.find(FILE_WRITE) != std::string::npos) {
+            openMode |= std::ios::out | std::fstream::trunc;
+        } else if (modeStr.find(FILE_APPEND) != std::string::npos) {
+            openMode |= std::ios::app;
+        }
+        log_d("Opening file %s with mode 0x%X", path_, openMode);
+        file_.open(path_, openMode);
     };
     ~PosixFileImpl() override = default;
     size_t write(const uint8_t *buf, size_t size) override {
-        if (!file_.is_open()) {
-            if (strcmp(mode_, FILE_APPEND) == 0) {
-                file_.open(path_, std::fstream::app);
-            } else {
-                file_.open(path_, std::fstream::out);
-            }
-        }
         file_.write((const char *)buf, size);
         if (!file_.good()) {
             log_e("Problem writing to file %s: %s", path_, strerror(errno));
@@ -34,9 +38,6 @@ public:
         return size;
     };
     size_t read(uint8_t *buf, size_t size) override {
-        if (!file_.is_open()) {
-            file_.open(path_, std::fstream::in);
-        }
         file_.read((char *)buf, size);
         auto numRead = file_.gcount();
         pos_ += numRead;
@@ -44,9 +45,6 @@ public:
     };
     void flush() override { file_.flush(); }
     bool seek(uint32_t pos, SeekMode mode) override {
-        if (!file_.is_open()) {
-            file_.open(path_, std::fstream::in);
-        }
         file_.seekg(pos);
         pos_ = pos;
         return file_.good();

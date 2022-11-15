@@ -21,6 +21,10 @@ protected:
     BLECharacteristic *settingsCharacteristic_;
     void writeDeviceSerialToCharacteristic(BLECharacteristic *characteristic,
                                            const std::string &key);
+    void writePageTurnerBuildToCharacteristic(BLECharacteristic *characteristic,
+                                              const std::string &key);
+    void writePageTurnerBatteryToCharacteristic(BLECharacteristic *characteristic,
+                                                const std::string &key);
     void writeWifiSSIDtoCharacteristic(BLECharacteristic *characteristic, std::string key);
     void blinkLedAfterConnect(BLECharacteristic *characteristic, const std::string &key);
 
@@ -44,6 +48,10 @@ protected:
                     this->enclosed->writeWifiSSIDtoCharacteristic(characteristic, value);
                 } else if (value == "device-serial") {
                     this->enclosed->writeDeviceSerialToCharacteristic(characteristic, value);
+                } else if (value == "page-turner-build") {
+                    this->enclosed->writePageTurnerBuildToCharacteristic(characteristic, value);
+                } else if (value == "page-turner-battery") {
+                    this->enclosed->writePageTurnerBatteryToCharacteristic(characteristic, value);
                 } else if (value == "blink-led") {
                     this->enclosed->blinkLedAfterConnect(characteristic, value);
                 } else {

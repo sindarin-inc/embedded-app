@@ -306,6 +306,13 @@ auto Renderer::getLineOfTextForRendering(unsigned int placeInTokenBuffer, LineBu
         bufferPlace--;
     }
 
+    // This handles the case where a single token is longer than the width of a line
+    // Eventually, we'll break it up, but for now, we'll just let it run over the length
+    // of the line as the break-up text is much more complicated.
+    if (bufferPlace == placeInTokenBuffer) {
+        bufferPlace++;
+    }
+
     for (int i = placeInTokenBuffer; i < bufferPlace; i++) {
         if (currTokenBuffer_[i].token != TOKEN_EOF) {
             // Skip over a space if it's the first token in the line.

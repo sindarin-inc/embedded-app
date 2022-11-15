@@ -33,6 +33,7 @@
 #include "UI/ReadableScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
 #include "UI/StatsScreen.hpp"
+#include "UI/VoltageLogUploadScreen.hpp"
 #include "Version.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -416,38 +417,20 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
     }));
 
-    debugMenu->addMenuItem(MenuItem("Set Autopilot", [this, display, debugMenu]() {
+    debugMenu->addMenuItem(MenuItem("Set Autopilot", [this, debugMenu]() {
         auto speedMenu = new MenuScreen(this->power_, debugMenu->getMyStyle());
-#if EINKET013TT1
-        auto *driver = (static_cast<DisplayEinkET013TT1 *>(display))->getDriver();
-        speedMenu->addMenuItem(MenuItem("0s (Off)", [this, speedMenu, driver]() {
-            driver->setVcom(prefs_.vcom.get().value());
-#else
-        speedMenu->addMenuItem(MenuItem("0s (Off)", [this, speedMenu]() {
-#endif
+        speedMenu->addMenuItem(MenuItem("None (Off)", [this, speedMenu]() {
             prefs_.autoPilotSpeed.set(0);
             speedMenu->setExtraText("Autopilot off");
             speedMenu->needsRerender = true;
         }));
-#if EINKET013TT1
-        speedMenu->addMenuItem(MenuItem("3s (On)", [this, speedMenu, driver]() {
-            driver->setVcom(-3000);
-#else
-        speedMenu->addMenuItem(MenuItem("3s (On)", [this, speedMenu]() {
-
-#endif
-            prefs_.autoPilotSpeed.set(3000);
+        speedMenu->addMenuItem(MenuItem("Fast (On)", [this, speedMenu]() {
+            prefs_.autoPilotSpeed.set(5000);
             speedMenu->setExtraText("Autopilot on");
             speedMenu->needsRerender = true;
         }));
-#if EINKET013TT1
-        speedMenu->addMenuItem(MenuItem("20s (On)", [this, speedMenu, driver]() {
-            driver->setVcom(-3000);
-#else
-        speedMenu->addMenuItem(MenuItem("20s (On)", [this, speedMenu]() {
-
-#endif
-            prefs_.autoPilotSpeed.set(20000);
+        speedMenu->addMenuItem(MenuItem("Slow (On)", [this, speedMenu]() {
+            prefs_.autoPilotSpeed.set(10000);
             speedMenu->setExtraText("Autopilot on");
             speedMenu->needsRerender = true;
         }));
@@ -612,7 +595,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
     }));
 
-    debugMenu->addMenuItem(MenuItem("Battery and Temperature", [this, display, debugMenu]() {
+    debugMenu->addMenuItem(MenuItem("Batteries and Temperature", [this, display, debugMenu]() {
         uint16_t width = 0, height = 0;
         display->setFont(display->style.getFontFamily().readableFont);
         auto batteryStatus = this->power_.getBatteryLifeString();
@@ -633,9 +616,32 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                       display->xAbsolute(display->xAbsoluteCenter() - width / 2),
                                       display->yAbsolute(display->yAbsoluteCenter() - height / 2));
 
+        auto ptBatteryPct = this->prefs_.lastPageTurnerBattery.get().value_or(0);
+        auto ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or("Unknown build");
+        auto ptBatteryStatus =
+            StringFormat("Page Turner: %d%% (%s)", ptBatteryPct, ptBuild.c_str());
+        width = display->getTextWidth(ptBatteryStatus.c_str());
+        height = display->getTextHeight(ptBatteryStatus.c_str());
+        display->drawSingleLineOfText(ptBatteryStatus.c_str(),
+                                      display->xAbsolute(display->xAbsoluteCenter() - width / 2),
+                                      display->yAbsolute(display->yAbsoluteCenter() + height / 2));
+
         display->updateDisplay();
         debugMenu->setFirstLoad();
     }));
+
+    debugMenu->addMenuItem(
+        MenuItem("Upload Voltage Log", [this, display, &fileSystem, debugMenu]() {
+            auto voltageLogScreen = new VoltageLogUploadScreen(*display, this->prefs_, fileSystem);
+            this->setCurrentScreen(*voltageLogScreen);
+            (*voltageLogScreen).backCallback = [this, voltageLogScreen, debugMenu, display]() {
+                debugMenu->setFirstLoad();
+                setCurrentScreen(*debugMenu);
+                debugMenu->render(*display);
+                delete voltageLogScreen;
+            };
+            (*voltageLogScreen).begin();
+        }));
 
     oldMenu->addMenuItem(MenuItem("Calibration Screen Run Through", [this, oldMenu]() {
         auto calibrationScreen = new CalibrationScreen();

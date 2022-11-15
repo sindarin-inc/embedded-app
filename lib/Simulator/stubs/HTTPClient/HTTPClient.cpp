@@ -66,10 +66,8 @@ int HTTPClient::GET() {
         //     log_d("  %s: %s", it->first.c_str(), it->second.c_str());
         // }
     });
-    auto res = client_->Get(path_.c_str());
+    auto res = client_->Get(path_.c_str(), headers_);
     if (res) {
-        // Warning: for a certain size string this fails
-        // string_ = new String(res->body.c_str());
         string_ = res->body;
         stream_ = new StringStream(res->body);
         log_d("Got response %zu %zu", res->body.size(), stream_->size());
@@ -98,10 +96,38 @@ int HTTPClient::POST(uint8_t *payload, size_t size) {
         //     log_d("  %s: %s", it->first.c_str(), it->second.c_str());
         // }
     });
-    auto res = client_->Post(path_.c_str(), (const char *)payload, size,
-                             "application/x-www-form-urlencoded");
+    auto res =
+        client_->Post(path_.c_str(), headers_, (const char *)payload, size, contentType_.c_str());
     if (res) {
-        // string_ = new String(res->body.c_str());
+        string_ = res->body;
+        stream_ = new StringStream(res->body);
+        size_ = res->body.length();
+    } else {
+        log_e("Bad response object");
+        return 0;
+    }
+
+    return res->status;
+}
+
+int HTTPClient::POST(String payload) { return POST((uint8_t *)payload.c_str(), payload.length()); }
+
+int HTTPClient::sendRequest(const char *type, Stream *stream, size_t size) {
+    log_d("Making %s request to %s%s", type, host_.c_str(), path_.c_str());
+    client_->set_follow_location(true);
+    client_->set_logger([](const httplib::Request &req, const httplib::Response &res) {
+        log_d("%s %s: %d", req.method.c_str(), req.path.c_str(), res.status);
+    });
+
+    auto res = client_->Post(
+        path_.c_str(), headers_, size,
+        [stream](size_t offset, size_t length, httplib::DataSink &sink) -> bool {
+            char bytes[1024];
+            auto readSize = stream->readBytes(bytes, sizeof(bytes));
+            return sink.write(bytes, readSize);
+        },
+        contentType_.c_str());
+    if (res) {
         string_ = res->body;
         stream_ = new StringStream(res->body);
         size_ = res->body.length();
@@ -174,6 +200,12 @@ String HTTPClient::getString(void) { return String(string_.c_str()); }
  * @param first
  */
 void HTTPClient::addHeader(const String &name, const String &value, bool first, bool replace) {
-    // TODO: This may only allow setting a single header
-    client_->set_default_headers({{name.c_str(), value.c_str()}});
+    if (replace) {
+        headers_.erase(name.c_str());
+    }
+    headers_.insert(std::pair<std::string, std::string>(name.c_str(), value.c_str()));
+    // Some of the APIs need the content type, so if we ever get it in a header, let's record it
+    if (name == "Content-Type") {
+        contentType_ = value.c_str();
+    }
 }

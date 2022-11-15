@@ -20,7 +20,7 @@ VSCode provides a nice platformio IDE. Download VSCode and get the PlatformIO ID
 
 You can use the "Upload and Monitor" project tasks under PlatformIO Icon (left bar) -> Project Tasks -> sol3dev -> General -> Upload and Monitor
 
-Note: You'll probably get a boot loop after uploading because of the flash memory size detected as 0. You'll need to apply [my IDF patch](https://github.com/espressif/esp-idf/pull/9381) to fix flashes > 512mbit in the bootloader. Find `spi_flash_chip_generic.c` (probably in `~/.platformio/packages/framework-espidf/components/spi_flash/spi_flash_chip_generic.c`) and apply my change from that PR. You'll also very likely need to apply the changes from [this commit](https://github.com/espressif/esp-idf/commit/04959af6354ba28b5559f39ccb339b49521dc114) (this will no longer be necessary once PlatformIO updates to IDF 4.4.2).
+Note: You'll probably get a boot loop after uploading because of the flash memory size detected as 0. You'll need to apply [my IDF patch](https://github.com/espressif/esp-idf/pull/9381) to fix flashes > 512mbit in the bootloader. Find `spi_flash_chip_generic.c` (probably in `~/.platformio/packages/framework-espidf/components/spi_flash/spi_flash_chip_generic.c`) and apply my change from that PR. You'll also very likely need to apply the changes from [this commit](https://github.com/espressif/esp-idf/commit/04959af6354ba28b5559f39ccb339b49521dc114) (this will no longer be necessary once these fixes are mainlined into IDF and included in PlatformIO's IDF).
 
 ## Add Readables to SPIFFS
 
