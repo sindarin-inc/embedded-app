@@ -417,7 +417,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
     }));
 
-    debugMenu->addMenuItem(MenuItem("Set Autopilot", [this, display, debugMenu]() {
+    debugMenu->addMenuItem(MenuItem("Set Autopilot", [this, debugMenu]() {
         auto speedMenu = new MenuScreen(this->power_, debugMenu->getMyStyle());
         speedMenu->addMenuItem(MenuItem("None (Off)", [this, speedMenu]() {
             prefs_.autoPilotSpeed.set(0);
