@@ -8,7 +8,7 @@ void MultiPartData::addKeyValue(const std::string& key, const std::string& value
 void MultiPartData::addKeyValue(const std::string& key, uint8_t* value, int len, bool isFile) {
     char temp[1024];
     if (!keyWritten_) {
-        tempFile_ = fileSystem_.open(fileName_, "rw", true);
+        tempFile_ = fileSystem_.open(fileName_, FILE_WRITE, true);
         keyWritten_ = true;
 
         // write first boundary marker if this is the first key
@@ -50,12 +50,11 @@ int MultiPartData::sendPost() {
     httpClient_->setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
     httpClient_->setTimeout(30000);
 
-    // rewind the file
     tempFile_.flush();
-    tempFile_.seek(0);
-
+    tempFile_.close();
+    tempFile_ = fileSystem_.open(fileName_, FILE_READ);
     int code = httpClient_->sendRequest("POST", &tempFile_, tempFile_.size());
-
+    
     // close and delete the temp file
     tempFile_.close();
     fileSystem_.remove(fileName_);

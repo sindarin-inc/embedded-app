@@ -60,7 +60,7 @@ void CrashUploader::uploadCrash(
 
         mpData.addKeyValue("git_version", kGitHash);
         // todo: get real string for hw version
-        mpData.addKeyValue("hw_version", GetSerialNumber());
+        //mpData.addKeyValue("hw_version", "something");
 
         int httpCode = mpData.sendPost();
         log_i("http response: %d", httpCode);
