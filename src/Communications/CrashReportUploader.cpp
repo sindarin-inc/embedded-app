@@ -6,6 +6,7 @@
 #include "Communications/FileDownload.hpp"
 #include "Communications/WiFi.hpp"
 #include "Communications/MultiPartData.hpp"
+#include "Communications/SindarinAPI.hpp"
 #include "GitVersion.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/StringUtil.hpp"
@@ -26,6 +27,14 @@ void CrashUploader::uploadCrash(
     auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this, progressCallback] {
 
+        // Grab the token here from prefs if set
+        auto token = prefs_.cloudToken.get();
+        if (!token.has_value()) {
+            log_w("No access token set for CrashUploader");
+        } else {
+            SindarinAPI::getInstance()->setAccessToken(token.value());
+        }
+
         // check for existence of core dump
         log_i("checking core dump");
         size_t out_addr, out_size;
@@ -37,15 +46,6 @@ void CrashUploader::uploadCrash(
         }
 
         log_i("about to upload the dump");
-        std::string url = "https://sol-cloud.fly.dev/coredumps/";
-        HTTPClient httpClient;
-        if (!httpClient.begin(url.c_str())) {
-            log_i("http failed for %s", url.c_str());
-            progressCallback(CrashUploadState{.state = CrashUploadState::State::Failure,
-            .message = "Failed to begin upload"});
-            return;
-        }
-
         MultiPartData mpData(fileSystem_);
         mpData.startFile("file");
 
@@ -68,15 +68,13 @@ void CrashUploader::uploadCrash(
             currAddr += bytesToRead;
         }
         mpData.endFile();
-
-
         mpData.addKeyValue("git_version", kGitHash);
         // todo: get real string for hw version
         //mpData.addKeyValue("hw_version", "something");
+        mpData.endMultiPartData();
 
-        int httpCode = mpData.sendPost(&httpClient);
+        int httpCode = SindarinAPI::getInstance()->uploadCrashReport(mpData.getFile(), mpData.getContentType());
         log_i("http response: %d", httpCode);
-        httpClient.end();
 
         if (httpCode == 201) {
             progressCallback(CrashUploadState{.state = CrashUploadState::State::Done});

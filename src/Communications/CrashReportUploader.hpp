@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <utility>
 #include "Storage/FileSystem.hpp"
+#include "Storage/PreferencesStore.hpp"
 
 struct CrashUploadState {
     enum State {
@@ -22,12 +23,14 @@ struct CrashUploadState {
 
 class CrashUploader {
 public:
-    CrashUploader(FileSystem &fileSystem) 
+    CrashUploader(FileSystem &fileSystem, PreferencesStore &prefs) 
     : fileSystem_(fileSystem)
+    , prefs_(prefs)
     {};
 
     void uploadCrash(const std::function<void(CrashUploadState state)> &progressCallback);
 
 protected:
     FileSystem &fileSystem_;
+    PreferencesStore &prefs_;
 };

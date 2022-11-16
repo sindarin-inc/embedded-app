@@ -15,6 +15,7 @@ public:
     void setAccessToken(std::string accessToken);
 
     auto beginClient(HTTPClient &httpClient, const String &urlPath) -> bool;
+    auto beginClient(HTTPClient &httpClient, const String &urlPath, const String &contentType) -> bool;
 
     auto checkSync(const std::string &readablesSha, CheckSyncResponse *resp) -> int;
 
@@ -26,6 +27,8 @@ public:
 
     auto uploadAndResetVoltageLog(FileSystem &fileSystem) -> int;
 
+    auto uploadCrashReport(File crashFile, const String &contentType) -> int;
+    
 protected:
     static SindarinAPI *instance;
     std::string accessToken_;

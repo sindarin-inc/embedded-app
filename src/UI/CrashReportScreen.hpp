@@ -3,14 +3,15 @@
 #include <string>
 #include <utility>
 
+#include "Storage/PreferencesStore.hpp"
 #include "Communications/CrashReportUploader.hpp"
 #include "Communications/WiFi.hpp"
 #include "UI/Screen.hpp"
 
 class CrashReportScreen : public Screen {
 public:
-    CrashReportScreen(DisplaySystem &display, FileSystem &fileSystem)
-        : display_(display), crashReportUploader_(fileSystem){};
+    CrashReportScreen(DisplaySystem &display, PreferencesStore &prefs, FileSystem &fileSystem)
+        : display_(display), prefs_(prefs), crashReportUploader_(fileSystem, prefs){};
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
@@ -18,6 +19,7 @@ public:
 
 protected:
     DisplaySystem &display_;
+    PreferencesStore &prefs_;
     CrashUploader crashReportUploader_;
     bool needsFullUpdate_ = true;
 

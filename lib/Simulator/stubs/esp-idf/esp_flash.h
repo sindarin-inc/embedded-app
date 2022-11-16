@@ -1,6 +1,7 @@
 #pragma once
 
 #include <esp_err.h>
+#include <stdint.h>
 
 /** @brief Read data from the SPI flash chip
  *

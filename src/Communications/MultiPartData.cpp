@@ -6,36 +6,33 @@ void MultiPartData::addKeyValue(const std::string& key, const std::string& value
 }
 
 void MultiPartData::startKeyWrite() {
-    char temp[128];
     if (!keyWritten_) {
         tempFile_ = fileSystem_.open(fileName_, FILE_WRITE, true);
         keyWritten_ = true;
 
         // write first boundary marker if this is the first key
-        snprintf(temp, sizeof(temp), "--%s--", boundary_.c_str());
-        tempFile_.write((uint8_t*)temp, strlen(temp));
+        snprintf(tmp_, sizeof(tmp_), "--%s--", boundary_.c_str());
+        tempFile_.write((uint8_t*)tmp_, strlen(tmp_));
     }
 }
 
 void MultiPartData::writeHeader(const std::string& key, bool isFile) {
     // write form header
-    char temp[1024];
-    snprintf(temp, sizeof(temp), "\r\nContent-Disposition: form-data; name=\"%s\"", key.c_str());
-    tempFile_.write((uint8_t*)temp, strlen(temp));
+    snprintf(tmp_, sizeof(tmp_), "\r\nContent-Disposition: form-data; name=\"%s\"", key.c_str());
+    tempFile_.write((uint8_t*)tmp_, strlen(tmp_));
     if (isFile) {
         // TODO: better filename
-        snprintf(temp, sizeof(temp), "; filename=\"temp\"\r\n");
+        snprintf(tmp_, sizeof(tmp_), "; filename=\"temp\"\r\n");
     } else {
-        snprintf(temp, sizeof(temp), "\r\n\r\n");
+        snprintf(tmp_, sizeof(tmp_), "\r\n\r\n");
     }
     
-    tempFile_.write((uint8_t*)temp, strlen(temp));
+    tempFile_.write((uint8_t*)tmp_, strlen(tmp_));
 }
 
 void MultiPartData::writeFooter() {
-    char temp[128];
-    snprintf(temp, sizeof(temp), "\r\n--%s", boundary_.c_str());
-    tempFile_.write((uint8_t*)temp, strlen(temp));
+    snprintf(tmp_, sizeof(tmp_), "\r\n--%s", boundary_.c_str());
+    tempFile_.write((uint8_t*)tmp_, strlen(tmp_));
 }
 
 void MultiPartData::addKeyValue(const std::string& key, uint8_t* value, int len, bool isFile) {
@@ -49,9 +46,8 @@ void MultiPartData::startFile(const std::string& key) {
     startKeyWrite();
     writeHeader(key, true);
 
-    char temp[256];
-    snprintf(temp, sizeof(temp), "Content-Type: application/octet-stream\r\n\r\n");
-    tempFile_.write((uint8_t*)temp, strlen(temp));
+    snprintf(tmp_, sizeof(tmp_), "Content-Type: application/octet-stream\r\n\r\n");
+    tempFile_.write((uint8_t*)tmp_, strlen(tmp_));
 }
 
 void MultiPartData::writeFileChunk(uint8_t* chunk, int len) {
@@ -62,20 +58,18 @@ void MultiPartData::endFile() {
     writeFooter();
 }
 
-int MultiPartData::sendPost(HTTPClient* httpClient) {
-    
-    char tmp[64];
-    snprintf(tmp, sizeof(tmp), "--\r\n");
-    tempFile_.write((uint8_t*)tmp, strlen(tmp));
+String MultiPartData::getContentType() {
+    snprintf(tmp_, sizeof(tmp_), "multipart/form-data; boundary=%s", boundary_.c_str());
+    return tmp_;
+}
 
-    snprintf(tmp, sizeof(tmp), "multipart/form-data; boundary=%s", boundary_.c_str());
-    httpClient->addHeader("Content-Type", tmp);
-    httpClient->setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
-    httpClient->setTimeout(30000);
-
+void MultiPartData::endMultiPartData() {
+    snprintf(tmp_, sizeof(tmp_), "--\r\n");
+    tempFile_.write((uint8_t*)tmp_, strlen(tmp_));
     tempFile_.close();
-    tempFile_ = fileSystem_.open(fileName_, FILE_READ);
-    int code = httpClient->sendRequest("POST", &tempFile_, tempFile_.size());
+}
 
-    return code;
+File MultiPartData::getFile() {
+    tempFile_ = fileSystem_.open(fileName_, FILE_READ);
+    return tempFile_;
 }

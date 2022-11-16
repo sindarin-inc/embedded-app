@@ -22,7 +22,11 @@ public:
     void startFile(const std::string& key);
     void writeFileChunk(uint8_t* chunk, int len);
     void endFile();
-    int sendPost(HTTPClient* httpClient);
+    void endMultiPartData();
+
+    String getContentType();
+    File getFile();
+
     
 private:
 
@@ -31,6 +35,7 @@ private:
     std::string fileName_ = "/temp.coredump";
     bool keyWritten_;
     File tempFile_;
+    char tmp_[1024];
 
     void startKeyWrite();
     void writeHeader(const std::string& key, bool isFile);
