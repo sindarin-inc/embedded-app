@@ -124,29 +124,39 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
                         screenHeight + display.getTextHeight() / 2 + 3, readGearBits,
                         READ_GEAR_WIDTH, READ_GEAR_HEIGHT, display.fg);
 
-    // Left Arrow
-    display.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 - arrowWidth / 2,
-                     display.fg);
-    display.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 + arrowWidth / 2,
-                     display.fg);
+    if (pageSpeed_ == 0) {
+        // Left Arrow
+        display.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 - arrowWidth / 2,
+                         display.fg);
+        display.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 + arrowWidth / 2,
+                         display.fg);
+    } else {
+        display.drawXBitmap(-auto_minus_width - 8, screenHeight / 2 - auto_minus_height / 2 - 5,
+                            auto_minus_bits, auto_minus_width, auto_minus_height, display.fg);
+    }
 
     // Up arrow - looks like a bookmark to indicate that's what you can do.
     display.drawXBitmap(screenWidth / 2 - HOME2_WIDTH / 2, -HOME2_HEIGHT - 3, homE2Bits,
                         HOME2_WIDTH, HOME2_HEIGHT, display.fg);
 
-    display.setRotation(1);
-    // Right side show bookmark icon.
-    display.drawLine(screenWidth / 2, -arrowHeight - 1, screenWidth / 2 - arrowWidth / 2, -1,
-                     display.fg);
-    display.drawLine(screenWidth / 2, -arrowHeight - 1, screenWidth / 2 + arrowWidth / 2, -1,
-                     display.fg);
+    if (pageSpeed_ == 0) {
+        display.setRotation(1);
+        // Right side show bookmark icon.
+        display.drawLine(screenWidth / 2, -arrowHeight - 1, screenWidth / 2 - arrowWidth / 2, -1,
+                         display.fg);
+        display.drawLine(screenWidth / 2, -arrowHeight - 1, screenWidth / 2 + arrowWidth / 2, -1,
+                         display.fg);
 
-    display.drawLine(screenWidth / 2 - arrowWidth / 2, -1, screenWidth / 2 - arrowWidth / 2,
-                     display.yAbsolute(0), display.fg);
-    display.drawLine(screenWidth / 2 + arrowWidth / 2, -1, screenWidth / 2 + arrowWidth / 2,
-                     display.yAbsolute(0), display.fg);
+        display.drawLine(screenWidth / 2 - arrowWidth / 2, -1, screenWidth / 2 - arrowWidth / 2,
+                         display.yAbsolute(0), display.fg);
+        display.drawLine(screenWidth / 2 + arrowWidth / 2, -1, screenWidth / 2 + arrowWidth / 2,
+                         display.yAbsolute(0), display.fg);
 
-    display.setRotation(0);
+        display.setRotation(0);
+    } else {
+        display.drawXBitmap(screenWidth + 2, screenHeight / 2 - auto_plus_height / 2,
+                            auto_plus_bits, auto_plus_width, auto_plus_height, display.fg);
+    }
 
     // Right Arrow
     /*
@@ -193,6 +203,27 @@ void ReadableScreen::render(DisplaySystem &display) {
         firstTimeRenderer_.setStream(streamFirstTime);
 
         prefs_.firstRead.set(1);
+        ignoreNextPress_ = true;
+        firstTimeRenderer_.renderPage(0);
+        renderIcons(display);
+        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+        needsRerender = false;
+        delete streamFirstTime;
+        return;
+    }
+
+    if (prefs_.firstAutopilotRead.get().value() == 0) {
+        std::string message = "Welcome to the beta of Autopilot mode! Here is what each button does"
+                              "while in autopilot mode.\n\n\nUp: Main Menu\n\nDown: Reading "
+                              "Settings\n\nLeft: Slow Down "
+                              "Page\n\nRight: Speed Up\n\nCenter: Turn off autopilot mode\n\n\n"
+
+                              "Press any button to start reading... ";
+
+        auto streamFirstTime = new StdStringStream(message);
+        firstTimeRenderer_.setStream(streamFirstTime);
+
+        prefs_.firstAutopilotRead.set(1);
         ignoreNextPress_ = true;
         firstTimeRenderer_.renderPage(0);
         renderIcons(display);
@@ -388,7 +419,9 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         needsRerender = true;
         break;
     case RemoteCommand::ANIMATION:
-        needsRerender = true;
+        if (!ignoreNextPress_) {
+            needsRerender = true;
+        }
         break;
     default:
         break;

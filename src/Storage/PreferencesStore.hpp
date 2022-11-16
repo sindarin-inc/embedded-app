@@ -160,7 +160,8 @@ public:
           wordCount(this->prefs_, "word-count"),
           totalReadingTimeSeconds(this->prefs_, "tot-rd-time"),
           bootCount(this->prefs_, "boot-count"), firstRead(this->prefs_, "first-read"),
-          autoPilotSpeed(this->prefs_, "auto-speed"){};
+          autoPilotSpeed(this->prefs_, "auto-speed"),
+          firstAutopilotRead(this->prefs_, "fst-auto-rd"){};
 
     auto begin() -> bool;
     void clear() {
@@ -200,6 +201,7 @@ public:
     PrefsItem<uint32_t> bootCount;
     PrefsItem<uint32_t> firstRead;
     PrefsItem<uint32_t> autoPilotSpeed;
+    PrefsItem<uint32_t> firstAutopilotRead;
 
 protected:
     Preferences prefs_;
