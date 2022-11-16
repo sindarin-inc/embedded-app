@@ -36,14 +36,6 @@ void CrashUploader::uploadCrash(
             return;
         }
 
-        log_i("reading core dump");
-        uint8_t* crashBuffer = new uint8_t[out_size];
-        if (esp_flash_read(NULL, crashBuffer, (uint32_t)out_addr, (uint32_t)out_size) != ESP_OK) {
-            log_e("could not read crash report from flash");
-            progressCallback(CrashUploadState{.state = CrashUploadState::State::Failure});
-            return;
-        }
-
         log_i("about to upload the dump");
         std::string url = "https://sol-cloud.fly.dev/coredumps/";
         HTTPClient httpClient;
@@ -54,16 +46,37 @@ void CrashUploader::uploadCrash(
             return;
         }
 
-        MultiPartData mpData(&httpClient, fileSystem_);
-        mpData.addKeyValue("file", crashBuffer, out_size, true);
-        delete crashBuffer;
+        MultiPartData mpData(fileSystem_);
+        mpData.startFile("file");
+
+        uint8_t chunkBuffer[1024];
+        int bytesRemaining = out_size;
+        uint32_t currAddr = (uint32_t)out_addr;
+        while (bytesRemaining > 0) {
+            // read chunk
+            int bytesToRead = bytesRemaining >= 1024 ? 1024 : bytesRemaining;
+            if (esp_flash_read(NULL, chunkBuffer, currAddr, bytesToRead) != ESP_OK) {
+                log_e("could not read crash report from flash");
+                progressCallback(CrashUploadState{.state = CrashUploadState::State::Failure});
+                return;
+            }
+
+            mpData.writeFileChunk(chunkBuffer, bytesToRead);
+
+            // updates
+            bytesRemaining -= bytesToRead;
+            currAddr += bytesToRead;
+        }
+        mpData.endFile();
+
 
         mpData.addKeyValue("git_version", kGitHash);
         // todo: get real string for hw version
         //mpData.addKeyValue("hw_version", "something");
 
-        int httpCode = mpData.sendPost();
+        int httpCode = mpData.sendPost(&httpClient);
         log_i("http response: %d", httpCode);
+        httpClient.end();
 
         if (httpCode == 201) {
             progressCallback(CrashUploadState{.state = CrashUploadState::State::Done});
@@ -71,6 +84,6 @@ void CrashUploader::uploadCrash(
         }
 
         log_e("could not send crash report, http code %d", httpCode);
-        progressCallback(CrashUploadState{.state = CrashUploadState::State::Failure});
+        progressCallback(CrashUploadState{.state = CrashUploadState::State::Failure, .message = "upload failed, code " + httpCode});
     });
 }

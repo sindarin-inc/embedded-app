@@ -1,6 +1,6 @@
 #pragma once
 
-#include <esp_shared.h>
+#include <esp_err.h>
 
 /**
  * @brief  Retrieves address and size of coredump data in flash.

@@ -490,7 +490,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 
     debugMenu->addMenuItem(MenuItem("Send Crash Report", [this, debugMenu, display, &fileSystem]() {
-        auto crashReportScreen = new CrashReportScreen(*display, prefs_, fileSystem);
+        auto crashReportScreen = new CrashReportScreen(*display, fileSystem);
         this->setCurrentScreen(*crashReportScreen);
         crashReportScreen->backCallback = [this, crashReportScreen, debugMenu]() {
             debugMenu->setFirstLoad();

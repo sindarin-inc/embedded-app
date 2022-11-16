@@ -9,8 +9,8 @@
 
 class CrashReportScreen : public Screen {
 public:
-    CrashReportScreen(DisplaySystem &display, PreferencesStore &prefs, FileSystem &fileSystem)
-        : display_(display), prefs_(prefs), crashReportUploader_(prefs, fileSystem){};
+    CrashReportScreen(DisplaySystem &display, FileSystem &fileSystem)
+        : display_(display), crashReportUploader_(fileSystem){};
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
@@ -18,7 +18,6 @@ public:
 
 protected:
     DisplaySystem &display_;
-    PreferencesStore &prefs_;
     CrashUploader crashReportUploader_;
     bool needsFullUpdate_ = true;
 

@@ -18,7 +18,7 @@ void CrashReportScreen::render(DisplaySystem &display) {
     switch (state_.state) {
     case CrashUploadState::Idle: {
         // Shouldn't get here
-        log_w("FirmwareUpdateScreen::render() called in Idle state");
+        log_w("CrashUploadScreen::render() called in Idle state");
         return;
     }
     case CrashUploadState::Failure: {
@@ -68,7 +68,6 @@ void CrashReportScreen::render(DisplaySystem &display) {
             break;
         }
 
-        log_i("render after checking");
         if (state_.state == CrashUploadState::NoCrashReport) {
             drawBulletLine(
                 StringFormat("No crash report found.").c_str(),
@@ -138,7 +137,7 @@ void CrashReportScreen::begin() {
                 backCallback();
             } else if (state.state == CrashUploadState::Done) {
                 vTaskDelay(3000 / portTICK_PERIOD_MS);
-                log_i("Rebooting after successful firmware update");
+                log_i("Finished uploading core dump");
                 // Only for the sim
                 backCallback();
             }
