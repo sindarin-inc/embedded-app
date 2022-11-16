@@ -192,12 +192,12 @@ void ReadableScreen::render(DisplaySystem &display) {
     // Then ignore the next press of the button
     if (prefs_.firstRead.get().value() == 0) {
 
+        // We need to make sure this goes onto the second page because of a bug in the renderer.
         std::string message =
             "Welcome to reading with Sol! This is a one page tutorial on what each button does "
             "while reading.\n\n\nUp: Main Menu\n\nDown: Reading Settings\n\nLeft: Previous "
-            "Page\n\nRight: Bookmark Page\n\nCenter: Next Page\n\n\n"
-
-            "That's it! Press any button... ";
+            "Page\n\nRight: Bookmark Page\n\nCenter: Next Page\n\n\nThat's it! Press any button... "
+            "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
 
         auto streamFirstTime = new StdStringStream(message);
         firstTimeRenderer_.setStream(streamFirstTime);
@@ -213,12 +213,13 @@ void ReadableScreen::render(DisplaySystem &display) {
     }
 
     if (prefs_.firstAutopilotRead.get().value() == 0) {
-        std::string message = "Welcome to the beta of Autopilot mode! Here is what each button does"
-                              "while in autopilot mode.\n\n\nUp: Main Menu\n\nDown: Reading "
-                              "Settings\n\nLeft: Slow Down "
-                              "Page\n\nRight: Speed Up\n\nCenter: Turn off autopilot mode\n\n\n"
-
-                              "Press any button to start reading... ";
+        // We need to make sure this goes onto the second page because of a bug in the renderer.
+        std::string message =
+            "Welcome to the beta of Autopilot mode! Here is what each button does "
+            "while in autopilot mode.\n\n\nUp: Main Menu\n\nDown: Reading "
+            "Settings\n\nLeft: Slow Down "
+            "Page\n\nRight: Speed Up\n\nCenter: Turn off autopilot mode\n\n\nPress any button to "
+            "start reading... \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
 
         auto streamFirstTime = new StdStringStream(message);
         firstTimeRenderer_.setStream(streamFirstTime);

@@ -600,7 +600,7 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     loadAndTokenizePage(place);
 
 #ifdef RENDERER_DEBUG
-    log_d("RETURNING THE FOLLOWING PLACE! %d", returnValue);
+    log_d("Returning the following place! %d", returnValue);
 #endif
     return returnValue;
 }
