@@ -211,23 +211,26 @@ void ReadableScreen::render(DisplaySystem &display) {
         } else {
             speedLinesToSkip_++;
         }
+
         newPlace_ = renderer_.renderPage(readable_.place, speedLinesToSkip_);
-        if (renderer_.getLengthOfLine(speedLinesToSkip_) != 1) {
+
+        // If the line is blank, we want to skip it. Also, skip multiple newlines in a row.
+        while ((renderer_.getLengthOfLine(speedLinesToSkip_) == 1) &&
+               speedLinesToSkip_ < renderer_.getNumRenderedLines()) {
+            speedLinesToSkip_++;
+        }
+
+        // Only if we didn't end on a newline. Othwerise wait for next render to turn page.
+        if (speedLinesToSkip_ != renderer_.getNumRenderedLines()) {
             nextInterval_ = pageSpeed_ * renderer_.getLengthOfLine(speedLinesToSkip_) /
                             renderer_.getTotalLengthOfLines();
             if (nextInterval_ == 0) {
                 nextInterval_ = 1;
             }
-        } else {
-            // If the line is blank, we want to skip it.
-            while (renderer_.getLengthOfLine(speedLinesToSkip_) == 1) {
-                speedLinesToSkip_++;
-            }
-            nextInterval_ = 1;
         }
 
         // Give the user extra time for the first line.
-        if (speedLinesToSkip_ == 1) {
+        if (speedLinesToSkip_ == 0) {
             nextInterval_ *= 2;
         }
 
