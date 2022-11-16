@@ -120,8 +120,6 @@ void CrashReportScreen::begin() {
 
     crashReportUploader_.uploadCrash([this](const CrashUploadState &state) {
         DispatchGetUiQueue()->dispatch([this, state]() {
-            //log_d("Updating from state %d to %d (%d%%)", state_.state, state.state,
-                  //state.downloadPercentage);
             log_d("Updating from state %d to %d", state_.state, state.state);
             updateState(state);
             this->render(this->display_);
@@ -132,13 +130,9 @@ void CrashReportScreen::begin() {
             }
 
             if (state.state == CrashUploadState::Failure ||
-                state.state == CrashUploadState::NoCrashReport) {
+                state.state == CrashUploadState::NoCrashReport ||
+                state.state == CrashUploadState::Done) {
                 vTaskDelay(3000 / portTICK_PERIOD_MS);
-                backCallback();
-            } else if (state.state == CrashUploadState::Done) {
-                vTaskDelay(3000 / portTICK_PERIOD_MS);
-                log_i("Finished uploading core dump");
-                // Only for the sim
                 backCallback();
             }
         });
