@@ -121,7 +121,7 @@
 // Sol3
 #define DISPLAY_CS_LEFT 21
 #define DISPLAY_CS_RIGHT 11
-#define SYS_ON 46
+#define SYS_ON 5
 #endif
 #ifndef DISPLAY_RST
 #define DISPLAY_RST 9
