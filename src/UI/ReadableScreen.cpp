@@ -132,7 +132,7 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
                          display.fg);
     } else {
         display.drawXBitmap(-auto_minus_width - 8, screenHeight / 2 - auto_minus_height / 2 - 5,
-                            auto_minus_bits, auto_minus_width, auto_minus_height, display.fg);
+                            autoMinusBits, auto_minus_width, auto_minus_height, display.fg);
     }
 
     // Up arrow - looks like a bookmark to indicate that's what you can do.
@@ -154,8 +154,8 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
 
         display.setRotation(0);
     } else {
-        display.drawXBitmap(screenWidth + 2, screenHeight / 2 - auto_plus_height / 2,
-                            auto_plus_bits, auto_plus_width, auto_plus_height, display.fg);
+        display.drawXBitmap(screenWidth + 2, screenHeight / 2 - auto_plus_height / 2, autoPlusBits,
+                            auto_plus_width, auto_plus_height, display.fg);
     }
 
     // Right Arrow
@@ -295,17 +295,17 @@ void ReadableScreen::render(DisplaySystem &display) {
         (showAutopilotPlus_)) {
         int screenWidth = display.width();
         int screenHeight = display.height();
-        display.drawXBitmap(screenWidth + 2, 0, auto_pilot_bits, auto_pilot_width,
-                            auto_pilot_height, display.fg);
+        display.drawXBitmap(screenWidth + 2, 0, autoPilotBits, auto_pilot_width, auto_pilot_height,
+                            display.fg);
 
         if (showAutopilotMinus_) {
-            display.drawXBitmap(screenWidth + 2 + auto_pilot_width + 1, 0, auto_minus_bits,
+            display.drawXBitmap(screenWidth + 2 + auto_pilot_width + 1, 0, autoMinusBits,
                                 auto_minus_width, auto_minus_height, display.fg);
             showAutopilotMinus_ = false;
         }
 
         if (showAutopilotPlus_) {
-            display.drawXBitmap(screenWidth + 2 + auto_pilot_width + 1, 0, auto_plus_bits,
+            display.drawXBitmap(screenWidth + 2 + auto_pilot_width + 1, 0, autoPlusBits,
                                 auto_plus_width, auto_plus_height, display.fg);
             showAutopilotPlus_ = false;
         }
