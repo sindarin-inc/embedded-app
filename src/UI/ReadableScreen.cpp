@@ -221,7 +221,7 @@ void ReadableScreen::render(DisplaySystem &display) {
             "Page\n\nRight: Speed Up\n\nCenter: Turn off autopilot mode\n\n\nPress any button to "
             "start reading... \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
 
-        auto streamFirstTime = new StdStringStream(message);
+        auto streamFirstTime = std::make_unique<StdStringStream>(message);
         firstTimeRenderer_.setStream(streamFirstTime);
 
         prefs_.firstAutopilotRead.set(1);
