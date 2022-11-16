@@ -258,6 +258,27 @@ void ReadableScreen::render(DisplaySystem &display) {
         shownIcons_ = true;
     }
 
+    // Only show the autopilot icon on page turns -- let it fade out with the rest of the text
+    if (((pageSpeed_ != 0) && (speedLinesToSkip_ == 0)) || (showAutopilotMinus_) ||
+        (showAutopilotPlus_)) {
+        int screenWidth = display.width();
+        int screenHeight = display.height();
+        display.drawXBitmap(screenWidth + 2, 0, auto_pilot_bits, auto_pilot_width,
+                            auto_pilot_height, display.fg);
+
+        if (showAutopilotMinus_) {
+            display.drawXBitmap(screenWidth + 2 + auto_pilot_width + 1, 0, auto_minus_bits,
+                                auto_minus_width, auto_minus_height, display.fg);
+            showAutopilotMinus_ = false;
+        }
+
+        if (showAutopilotPlus_) {
+            display.drawXBitmap(screenWidth + 2 + auto_pilot_width + 1, 0, auto_plus_bits,
+                                auto_plus_width, auto_plus_height, display.fg);
+            showAutopilotPlus_ = false;
+        }
+    }
+
     log_d("%lu is the new place in the text", newPlace_);
 
     if ((pageSpeed_ != 0) && (speedLinesToSkip_ > 0)) {
@@ -321,6 +342,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             pageSpeed_ = std::min(pageSpeed_ + PAGE_SPEED_INCREMENT, SLOWEST_PAGE_SPEED);
             prefs_.autoPilotSpeed.set(pageSpeed_);
             log_d("Slowing down: New Page Speed is %u", pageSpeed_);
+            showAutopilotMinus_ = true;
             needsRerender = false;
         }
         break;
@@ -347,6 +369,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             pageSpeed_ = std::max(pageSpeed_ - PAGE_SPEED_INCREMENT, 1);
             log_d("Speeding up: New Page Speed is %u", pageSpeed_);
             prefs_.autoPilotSpeed.set(pageSpeed_);
+            showAutopilotPlus_ = true;
             needsRerender = false;
         } else {
             inBookmark_ = !inBookmark_;

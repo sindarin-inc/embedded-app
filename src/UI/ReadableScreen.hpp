@@ -83,6 +83,9 @@ protected:
     // How many ms we should take to read the page
     int pageSpeed_ = 10000;
 
+    bool showAutopilotPlus_ = false;
+    bool showAutopilotMinus_ = false;
+
 private:
     void incrementReadingTime();
     void turnPage();
