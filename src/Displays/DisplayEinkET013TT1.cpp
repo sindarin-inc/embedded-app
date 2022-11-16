@@ -117,7 +117,8 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
         driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
         break;
     case PARTIAL:
-        if (((numPartials_ > 2) && (millis() - firstPartialTime_ < 5000)) || (numPartials_ > 10)) {
+        if (((numPartials_ > 2) && (millis() - firstPartialTime_ < 5000)) || (numPartials_ > 10) ||
+            (au4Count_ > 50)) {
             fullRefreshNext_ = true;
         }
         if (!fullRefreshNext_) {
@@ -135,6 +136,7 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
             driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
             firstPartialTime_ = 0;
             numPartials_ = 0;
+            au4Count_ = 0;
         }
         break;
     case FAST:
@@ -161,6 +163,7 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
                 driver_.update(AU4_ORIGINAL, gfxCanvas_.getBuffer());
             }
             getDriver()->setVcom(oldVcom);
+            au4Count_++;
         } else {
             driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
             firstPartialTime_ = 0;
