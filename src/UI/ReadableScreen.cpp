@@ -420,9 +420,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         needsRerender = true;
         break;
     case RemoteCommand::ANIMATION:
-        if (!ignoreNextPress_) {
-            needsRerender = true;
-        }
+        needsRerender = true;
         break;
     default:
         break;
