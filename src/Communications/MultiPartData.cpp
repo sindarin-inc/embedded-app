@@ -20,6 +20,7 @@ void MultiPartData::addKeyValue(const std::string& key, uint8_t* value, int len,
     sprintf(temp, "\r\nContent-Disposition: form-data; name=\"%s\"", key.c_str());
     tempFile_.write((uint8_t*)temp, strlen(temp));
     if (isFile) {
+        // TODO: better filename
         sprintf(temp, "; filename=\"temp\"\r\n");
     } else {
         sprintf(temp, "\r\n\r\n");
@@ -54,7 +55,7 @@ int MultiPartData::sendPost() {
     tempFile_.close();
     tempFile_ = fileSystem_.open(fileName_, FILE_READ);
     int code = httpClient_->sendRequest("POST", &tempFile_, tempFile_.size());
-    
+
     // close and delete the temp file
     tempFile_.close();
     fileSystem_.remove(fileName_);
