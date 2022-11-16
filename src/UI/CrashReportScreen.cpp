@@ -60,7 +60,7 @@ void CrashReportScreen::render(DisplaySystem &display) {
         drawBulletLine("Connecting WiFi",
                        state_.state > CrashUploadState::ConnectingWifi ? 100 : 0, false);
 
-        drawBulletLine("Checking for Update",
+        drawBulletLine("Checking for Crash Report",
                        state_.state > CrashUploadState::CheckingForCrashReport ? 100 : 0, false);
 
         // We don't know the rest of the list until this step is done, bail out
