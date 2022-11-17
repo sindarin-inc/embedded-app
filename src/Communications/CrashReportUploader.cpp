@@ -1,32 +1,29 @@
 #include "CrashReportUploader.hpp"
 
 #include <cstdio>
+#include <esp_core_dump.h>
+#include <esp_flash.h>
 #include <string>
 
 #include "Communications/FileDownload.hpp"
-#include "Communications/WiFi.hpp"
 #include "Communications/MultiPartData.hpp"
 #include "Communications/SindarinAPI.hpp"
+#include "Communications/WiFi.hpp"
 #include "GitVersion.hpp"
 #include "Misc/Dispatch.hpp"
+#include "Misc/Platform.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Version.hpp"
 #include "sindarin-debug.h"
-#include "Misc/Platform.hpp"
-
-#include <esp_core_dump.h>
-#include <esp_flash.h>
 
 void CrashUploader::uploadCrash(
     const std::function<void(CrashUploadState state)> &progressCallback) {
 
     // begin by checking if crash report exists
-    progressCallback(
-        CrashUploadState{.state = CrashUploadState::State::CheckingForCrashReport});
+    progressCallback(CrashUploadState{.state = CrashUploadState::State::CheckingForCrashReport});
 
     auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this, progressCallback] {
-
         // Grab the token here from prefs if set
         auto token = prefs_.cloudToken.get();
         if (!token.has_value()) {
@@ -70,10 +67,11 @@ void CrashUploader::uploadCrash(
         mpData.endFile();
         mpData.addKeyValue("git_version", kGitHash);
         // todo: get real string for hw version
-        //mpData.addKeyValue("hw_version", "something");
+        // mpData.addKeyValue("hw_version", "something");
         mpData.endMultiPartData();
 
-        int httpCode = SindarinAPI::getInstance()->uploadCrashReport(mpData.getFile(), mpData.getContentType());
+        int httpCode = SindarinAPI::getInstance()->uploadCrashReport(mpData.getFile(),
+                                                                     mpData.getContentType());
         log_i("http response: %d", httpCode);
 
         if (httpCode == 201) {
@@ -82,6 +80,9 @@ void CrashUploader::uploadCrash(
         }
 
         log_e("could not send crash report, http code %d", httpCode);
-        progressCallback(CrashUploadState{.state = CrashUploadState::State::Failure, .message = "upload failed, code " + httpCode});
+        char errMsg[64];
+        snprintf(errMsg, sizeof(errMsg), "upload failed, code %d", httpCode);
+        progressCallback(
+            CrashUploadState{.state = CrashUploadState::State::Failure, .message = errMsg});
     });
 }
