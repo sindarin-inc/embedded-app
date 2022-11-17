@@ -28,7 +28,8 @@ auto SindarinAPI::beginClient(HTTPClient &httpClient, const String &urlPath) -> 
     return beginClient(httpClient, urlPath, "application/json");
 }
 
-auto SindarinAPI::beginClient(HTTPClient &httpClient, const String &urlPath, const String &contentType) -> bool {
+auto SindarinAPI::beginClient(HTTPClient &httpClient, const String &urlPath,
+                              const String &contentType) -> bool {
     if (!httpClient.begin(String(SINDARIN_SERVER_URL) + urlPath)) {
         // TODO: When can this happen?
         log_e("HTTPClient::begin failed");

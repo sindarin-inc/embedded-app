@@ -34,8 +34,8 @@ void CrashUploader::uploadCrash(
 
         // check for existence of core dump
         log_i("checking core dump");
-        size_t out_addr, out_size;
-        if (esp_core_dump_image_get(&out_addr, &out_size) != ESP_OK) {
+        size_t outAddr, outSize;
+        if (esp_core_dump_image_get(&outAddr, &outSize) != ESP_OK) {
             // error finding the core dump
             log_i("no crash report found.");
             progressCallback(CrashUploadState{.state = CrashUploadState::State::NoCrashReport});
@@ -47,12 +47,12 @@ void CrashUploader::uploadCrash(
         mpData.startFile("file");
 
         uint8_t chunkBuffer[1024];
-        int bytesRemaining = out_size;
-        uint32_t currAddr = (uint32_t)out_addr;
+        int bytesRemaining = outSize;
+        auto currAddr = (uint32_t)outAddr;
         while (bytesRemaining > 0) {
             // read chunk
             int bytesToRead = bytesRemaining >= 1024 ? 1024 : bytesRemaining;
-            if (esp_flash_read(NULL, chunkBuffer, currAddr, bytesToRead) != ESP_OK) {
+            if (esp_flash_read(nullptr, chunkBuffer, currAddr, bytesToRead) != ESP_OK) {
                 log_e("could not read crash report from flash");
                 progressCallback(CrashUploadState{.state = CrashUploadState::State::Failure});
                 return;

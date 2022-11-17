@@ -3,9 +3,9 @@
 #include <string>
 #include <utility>
 
-#include "Storage/PreferencesStore.hpp"
 #include "Communications/CrashReportUploader.hpp"
 #include "Communications/WiFi.hpp"
+#include "Storage/PreferencesStore.hpp"
 #include "UI/Screen.hpp"
 
 class CrashReportScreen : public Screen {

@@ -57,8 +57,8 @@ void CrashReportScreen::render(DisplaySystem &display) {
             y += spacing;
         };
 
-        drawBulletLine("Connecting WiFi",
-                       state_.state > CrashUploadState::ConnectingWifi ? 100 : 0, false);
+        drawBulletLine("Connecting WiFi", state_.state > CrashUploadState::ConnectingWifi ? 100 : 0,
+                       false);
 
         drawBulletLine("Checking for Crash Report",
                        state_.state > CrashUploadState::CheckingForCrashReport ? 100 : 0, false);
@@ -69,14 +69,11 @@ void CrashReportScreen::render(DisplaySystem &display) {
         }
 
         if (state_.state == CrashUploadState::NoCrashReport) {
-            drawBulletLine(
-                StringFormat("No crash report found.").c_str(),
-                100, false);
+            drawBulletLine(StringFormat("No crash report found.").c_str(), 100, false);
             break;
         }
 
-        drawBulletLine(
-            "Uploading", state_.state > CrashUploadState::Uploading ? 100 : 0, false);
+        drawBulletLine("Uploading", state_.state > CrashUploadState::Uploading ? 100 : 0, false);
         break;
     }
     }
