@@ -300,14 +300,14 @@ void ReadableScreen::render(DisplaySystem &display) {
                             display.fg);
 
         if (showAutopilotMinus_) {
-            display.drawXBitmap(screenWidth + 2 + auto_pilot_width + 1, 0, autoMinusBits,
-                                auto_minus_width, auto_minus_height, display.fg);
+            display.drawXBitmap(screenWidth + 2, screenHeight / 2 - auto_minus_height / 2,
+                                autoMinusBits, auto_minus_width, auto_minus_height, display.fg);
             showAutopilotMinus_ = false;
         }
 
         if (showAutopilotPlus_) {
-            display.drawXBitmap(screenWidth + 2 + auto_pilot_width + 1, 0, autoPlusBits,
-                                auto_plus_width, auto_plus_height, display.fg);
+            display.drawXBitmap(screenWidth + 2, screenHeight / 2 - auto_plus_height / 2,
+                                autoPlusBits, auto_plus_width, auto_plus_height, display.fg);
             showAutopilotPlus_ = false;
         }
     }
