@@ -1559,6 +1559,10 @@ CONFIG_NIMBLE_CPP_LOG_LEVEL=0
 # end of ESP-NimBLE-CPP configuration
 
 #
+# Sqlite3
+#
+
+#
 # LittleFS
 #
 CONFIG_LITTLEFS_MAX_PARTITIONS=3

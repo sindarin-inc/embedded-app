@@ -1,12 +1,116 @@
 #include "LocalStore.hpp"
 
+#include <esp_timer.h>
+#include <sqlite3.h>
+
 #include "Communications/SindarinAPI.hpp"
 #include "Misc/Crypto.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
 #include "sindarin-debug.h"
 
+const char *data = "Callback function called";
+static int callback(void *data, int argc, char **argv, char **azColName) {
+    int i;
+    log_d("%s: ", (const char *)data);
+    for (i = 0; i < argc; i++) {
+        log_d("%s = %s", azColName[i], argv[i] ? argv[i] : "NULL");
+    }
+    return 0;
+}
+
+int openDb(const char *filename, sqlite3 **db) {
+    int rc = sqlite3_open(filename, db);
+    if (rc) {
+        printf("Can't open database: %s\n", sqlite3_errmsg(*db));
+        return rc;
+    } else {
+        printf("Opened database successfully\n");
+    }
+    return rc;
+}
+
+char *zErrMsg = 0;
+int db_exec(sqlite3 *db, const char *sql) {
+    log_d("%s", sql);
+    int64_t start = esp_timer_get_time();
+    int rc = sqlite3_exec(db, sql, callback, (void *)data, &zErrMsg);
+    if (rc != SQLITE_OK) {
+        log_e("SQL error: %s", zErrMsg);
+        sqlite3_free(zErrMsg);
+    } else {
+        log_i("Operation done successfully");
+    }
+    log_i("Time taken: %lld", esp_timer_get_time() - start);
+    return rc;
+}
+
+int64_t esp_timer_get_time(void) { return 0; }
+
 auto LocalStore::begin() -> bool {
+    sqlite3 *db2;
+    log_d("starting sqlite3");
+    sqlite3_initialize();
+
+    // Open database 1
+    if (openDb("./data/localstore.db", &db2)) {
+        log_w("failure opening db");
+    }
+
+    /*
+    CREATE TABLE public.readables (
+        id bigint NOT NULL,
+        title character varying(2048) NOT NULL,
+        content text NOT NULL,
+        date_created timestamp with time zone NOT NULL,
+        date_modified timestamp with time zone NOT NULL,
+        date_published timestamp with time zone,
+        source character varying(1024),
+        uuid uuid NOT NULL
+    );
+    */
+
+    int rc;
+    // rc = db_exec(db2, "CREATE TABLE readables ("
+    //                       "id bigint NOT NULL,"
+    //                       "title character(2048) NOT NULL) ");
+    // // content text NOT NULL,
+    // // date_created timestamp with time zone NOT NULL,
+    // // date_modified timestamp with time zone NOT NULL,
+    // // date_published timestamp with time zone,
+    // // source character varying(1024),
+    // // uuid uuid NOT NULL
+    // if (rc != SQLITE_OK) {
+    //     log_w("failure executing query");
+    //     sqlite3_close(db2);
+    // }
+
+    // INSERT INTO table_name (column1, column2, column3, ...)
+    rc = db_exec(db2, "INSERT INTO readables (id, title) VALUES ('1', 'test')");
+    if (rc != SQLITE_OK) {
+        log_w("failure executing query");
+        sqlite3_close(db2);
+    }
+    rc = db_exec(db2, "INSERT INTO readables (id, title) VALUES ('2', 'test2')");
+    if (rc != SQLITE_OK) {
+        log_w("failure executing query");
+        sqlite3_close(db2);
+    }
+
+    // id bigint NOT NULL,
+    //         PersonID int,
+    //         LastName varchar(255), FirstName varchar(255), Address varchar(255), City
+    //         varchar(255));
+    // ")
+
+    rc = db_exec(db2, "Select * from readables where title = 'test2'");
+    if (rc != SQLITE_OK) {
+        log_w("failure executing query");
+        sqlite3_close(db2);
+    }
+
+    sqlite3_close(db2);
+
     log_d("Loading readables.json");
     File readablesFile = fileSystem.open("/readables.json");
     if (!readablesFile) {
