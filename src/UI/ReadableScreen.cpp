@@ -221,7 +221,7 @@ void ReadableScreen::render(DisplaySystem &display) {
             "Page\n\nRight: Speed Up\n\nCenter: Turn off autopilot mode\n\n\nPress any button to "
             "start reading... \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
 
-        auto streamFirstTime = std::make_unique<StdStringStream>(message);
+        auto streamFirstTime = new StdStringStream(message);
         firstTimeRenderer_.setStream(streamFirstTime);
 
         prefs_.firstAutopilotRead.set(1);
@@ -290,7 +290,8 @@ void ReadableScreen::render(DisplaySystem &display) {
         shownIcons_ = true;
     }
 
-    // Only show the autopilot icon on page turns or if speed was changed -- let it fade out with the rest of the text
+    // Only show the autopilot icon on page turns or if speed was changed -- let it fade out with
+    // the rest of the text
     if (((pageSpeed_ != 0) && (speedLinesToSkip_ == 0)) || (showAutopilotMinus_) ||
         (showAutopilotPlus_)) {
         int screenWidth = display.width();
