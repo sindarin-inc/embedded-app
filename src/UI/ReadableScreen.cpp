@@ -212,7 +212,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
-    if (prefs_.firstAutopilotRead.get().value() == 0) {
+    if ((prefs_.firstAutopilotRead.get().value() == 0) && (pageSpeed_ != 0)) {
         // We need to make sure this goes onto the second page because of a bug in the renderer.
         std::string message =
             "Welcome to the beta of Autopilot mode! Here is what each button does "
