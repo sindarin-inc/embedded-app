@@ -81,7 +81,11 @@ def clang_options(idedata):
             "-DFLAG_ATTR(x)=",
             "-DIDF_DEPRECATED(REASON)=__attribute__((deprecated(REASON)))",
             "-D__block=",
+            # Since we're entirely blocking this header file, any code that uses its defines
+            # must have those defines explicitly included below.
             "-D_XTENSA_CORE_CONFIGURATION_H",
+            "-DXCHAL_NUM_INTLEVELS=6",
+            "-DXCHAL_HAVE_NMI=1",
             "-DXCHAL_HAVE_INTERRUPTS=0",
             "-DXCHAL_HAVE_MAC16=0",
             "-DSSIZE_MAX=INT_MAX",
