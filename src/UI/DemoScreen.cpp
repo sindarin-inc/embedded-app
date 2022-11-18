@@ -745,8 +745,8 @@ void DemoScreen::render(DisplaySystem &display) {
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         delay(5000);
         display.drawXBitmap(display.width() / 2 - sol_logo_width / 2,
-                            display.height() / 2 - sol_logo_height / 2, sol_logo_bits,
-                            sol_logo_width, sol_logo_height, display.fg);
+                            display.height() / 2 - sol_logo_height / 2, solLogoBits, sol_logo_width,
+                            sol_logo_height, display.fg);
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         delay(3000);
     } else {
