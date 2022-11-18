@@ -59,7 +59,6 @@ public:
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
-    void drawSolLogo(DisplaySystem &display, int x, int y, int height, bool solid);
 
 protected:
     std::array<std::string, NUM_DEMO_SCREENS> messages_ = {DEMO_SCREEN_1, DEMO_SCREEN_2,
