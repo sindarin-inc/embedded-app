@@ -17,6 +17,7 @@
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
 #include "Models/Readable.hpp"
+#include "Storage/CrashReportWriter.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/RootUI.hpp"
@@ -405,8 +406,18 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 #endif
 
+    // set current boot id
+    auto bootCount = prefs.bootCount.get().value();
+    bootCount++;
+    prefs.bootCount.set(bootCount);
+
     if (!fileSystem.begin()) {
         bootErrors.push_back({.type = BootError::Type::FileSystem});
+    } else {
+        // file system started
+        // attempt to write any core dumps to disk for later upload
+        CrashReportWriter crashReportWriter(fileSystem, bootCount - 1);
+        crashReportWriter.writeCrashReportIfExists();
     }
 
     if (!localStore.begin()) {
@@ -425,11 +436,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     SetCpuSpeedMhz(CPU_FREQ_MHZ_LOW);
 
     BlinkBootErrors(bootErrors);
-
-    // set current boot id
-    auto bootCount = prefs.bootCount.get().value();
-    bootCount++;
-    prefs.bootCount.set(bootCount);
 
     remoteQueue = xQueueCreate(10, sizeof(RemoteCommand));
     xTaskCreatePinnedToCore(RadioTask, "Radio", 10000, nullptr, 1, nullptr, 0);
