@@ -100,6 +100,8 @@ void RadioTask(void *parameter) {
         // Skip scanning while WiFi is connected to avoid kicking off the WiFi connection
         if (!NetworkConnected()) {
             ttRemoteInput.connect();
+        } else {
+            log_d("Skipping Turn Touch scan while WiFi is connected");
         }
 #endif
 
@@ -352,6 +354,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #if USE_BLE_SERVER_SETTINGS
     bleSettings = new BLESettings(&prefs);
     bleSettings->configureCharacteristics(sindarinService);
+#if USE_TURN_TOUCH_REMOTE
+    bleSettings->attachTTRemoteInput(&ttRemoteInput);
+#endif
 #endif
 
     if (!bleSindarinService.start()) {

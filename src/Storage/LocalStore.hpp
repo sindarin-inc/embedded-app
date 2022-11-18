@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "Misc/Dispatch.hpp"
+#include "Models/Placemark.hpp"
 #include "Models/Readable.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
@@ -42,6 +43,9 @@ public:
     void removeReadable(const Readable &readable);
 
     auto calculateReadablesSha() -> std::string;
+    auto readablePlacemarksChanged() -> std::vector<std::string>;
+    void mergePlacemarksFromServer(const std::vector<Placemark> &placemarks);
+    void resetReadablePlacemarkChanged();
 
     void syncFromRemote(const std::function<void(ContentSyncState state)> &progressCallback);
 

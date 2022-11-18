@@ -146,6 +146,7 @@ void PopupMenuScreen::processCommand(RemoteCommand command) {
     auto back = [this]() {
         if (backCallback != nullptr) {
             needsRerender = true;
+            this->renderer_.getDisplay()->clearDisplay();
             backCallback();
         }
         needsRerender = true;
@@ -178,6 +179,9 @@ void PopupMenuScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::NOP_BUTTON:
         needsRerender = true;
+        break;
+    case RemoteCommand::ANIMATION:
+        needsRerender = false;
         break;
     default:
         break;

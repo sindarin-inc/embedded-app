@@ -26,6 +26,8 @@ const EinkET013TT1Waveform PARTIAL_REFRESH_WAVEFORM_REGULAR =
     BC_REGULAR_EXPERIMENTAL_WAVEFORM_PARTIAL;
 const EinkET013TT1Waveform PARTIAL_REFRESH_WAVEFORM_INVERTED =
     BC_INVERTED_EXPERIMENTAL_WAVEFORM_PARTIAL;
+const EinkET013TT1Waveform PARTIAL_REFRESH_ORIGINAL = EINK_10_13C_WAVEFORM_PARTIAL;
+const EinkET013TT1Waveform AU4_ORIGINAL = EINK_10_13C_WAVEFORM_AU4;
 
 auto DisplayEinkET013TT1::setup() -> bool {
     DisplaySystem::setup();
@@ -115,7 +117,8 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
         driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
         break;
     case PARTIAL:
-        if (((numPartials_ > 2) && (millis() - firstPartialTime_ < 5000)) || (numPartials_ > 10)) {
+        if (((numPartials_ > 2) && (millis() - firstPartialTime_ < 5000)) || (numPartials_ > 10) ||
+            (au4Count_ > 50)) {
             fullRefreshNext_ = true;
         }
         if (!fullRefreshNext_) {
@@ -133,6 +136,7 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
             driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
             firstPartialTime_ = 0;
             numPartials_ = 0;
+            au4Count_ = 0;
         }
         break;
     case FAST:
@@ -142,6 +146,33 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
             } else {
                 driver_.update(BC_REGULAR_EINK_10_13C_WAVEFORM_AU4, gfxCanvas_.getBuffer());
             }
+        } else {
+            driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
+            firstPartialTime_ = 0;
+            numPartials_ = 0;
+        }
+        break;
+    case FAST_ORIGINAL_AU4:
+        if (!fullRefreshNext_) {
+            int oldVcom = getDriver()->getVcom();
+            if (getInversion()) {
+                getDriver()->setVcom(oldVcom - 2000);
+                driver_.update(AU4_ORIGINAL, gfxCanvas_.getBuffer());
+            } else {
+                getDriver()->setVcom(oldVcom + 2000);
+                driver_.update(AU4_ORIGINAL, gfxCanvas_.getBuffer());
+            }
+            getDriver()->setVcom(oldVcom);
+            au4Count_++;
+        } else {
+            driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
+            firstPartialTime_ = 0;
+            numPartials_ = 0;
+        }
+        break;
+    case ORIGINAL_PARTIAL:
+        if (!fullRefreshNext_) {
+            driver_.update(PARTIAL_REFRESH_ORIGINAL, gfxCanvas_.getBuffer());
         } else {
             driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
             firstPartialTime_ = 0;

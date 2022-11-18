@@ -131,6 +131,66 @@ auto LocalStore::calculateReadablesSha() -> std::string {
     return shaOfShas;
 }
 
+auto LocalStore::readablePlacemarksChanged() -> std::vector<std::string> {
+    std::vector<std::string> placemarks;
+    for (auto &readable : readables_) {
+        if (!readable.localOnly) {
+            bool changed = prefs_.readablePlaceChanged.get(readable.placemarkUuid.c_str());
+            if (changed) {
+                uint32_t place = prefs_.readablePlace.get(readable.placemarkUuid.c_str());
+                log_i("Placemark on readable %s has changed to %d", readable.uuid.c_str(), place);
+                placemarks.push_back(
+                    StringFormat("&placemark_%s=%d", readable.uuid.c_str(), place));
+            }
+        }
+    }
+
+    return placemarks;
+}
+
+void LocalStore::mergePlacemarksFromServer(const std::vector<Placemark> &placemarks) {
+    for (auto &placemark : placemarks) {
+        const auto readable = std::find_if(readables_.begin(), readables_.end(),
+                                           [&placemark](const Readable &readable) {
+                                               return placemark.readableUuid == readable.uuid;
+                                           });
+
+        if (readable == readables_.end()) {
+            log_e("Could not find readable with UUID %s", placemark.readableUuid.c_str());
+            return;
+        }
+
+        uint32_t onDevicePlace = prefs_.readablePlace.get(readable->placemarkUuid.c_str());
+        bool changed = prefs_.readablePlaceChanged.get(readable->placemarkUuid.c_str());
+
+        if (placemark.placemark == onDevicePlace) {
+            // If the placemark on the server is the same as the one on the device, don't change it
+        } else if (placemark.placemark > onDevicePlace && !changed) {
+            log_i("Updating placemark for \"%s\" from device value of %d to server "
+                  "value of %d",
+                  readable->title.c_str(), onDevicePlace, placemark.placemark);
+            prefs_.readablePlace.set(readable->placemarkUuid.c_str(), placemark.placemark);
+        } else if (placemark.placemark != 0) {
+            log_i("Not updating placemark for \"%s\" from device value of %d to server "
+                  "value of %d. Changed: %d",
+                  readable->title.c_str(), onDevicePlace, placemark.placemark, changed);
+        }
+    }
+
+    this->resetReadablePlacemarkChanged();
+}
+
+void LocalStore::resetReadablePlacemarkChanged() {
+    for (auto &readable : readables_) {
+        if (!readable.localOnly &&
+            prefs_.readablePlaceChanged.get(readable.placemarkUuid.c_str())) {
+            log_d("Resetting placemark changed for \"%s\" (synced to server)",
+                  readable.title.c_str());
+            prefs_.readablePlaceChanged.set(readable.placemarkUuid.c_str(), false);
+        }
+    }
+}
+
 void LocalStore::syncFromRemote(
     const std::function<void(ContentSyncState state)> &progressCallback) {
 
@@ -149,9 +209,10 @@ void LocalStore::syncFromRemote(
     auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this, progressCallback] {
         auto readablesSha = this->calculateReadablesSha();
-
+        auto placemarks = this->readablePlacemarksChanged();
         CheckSyncResponse checkSyncResponse;
-        auto httpCode = SindarinAPI::getInstance()->checkSync(readablesSha, &checkSyncResponse);
+        auto httpCode =
+            SindarinAPI::getInstance()->checkSync(readablesSha, placemarks, &checkSyncResponse);
         if (httpCode != HTTP_CODE_OK) {
             log_e("Failed to check sync (HTTP %d)", httpCode);
             progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
@@ -159,6 +220,7 @@ void LocalStore::syncFromRemote(
             return;
         }
         if (checkSyncResponse.synced) {
+            this->mergePlacemarksFromServer(checkSyncResponse.placemarks);
             log_i("Client is in sync");
             progressCallback(ContentSyncState{.state = ContentSyncState::State::Synced});
             return;
@@ -261,11 +323,13 @@ void LocalStore::syncFromRemote(
 
         // Update the SHA and try again
         readablesSha = this->calculateReadablesSha();
-        SindarinAPI::getInstance()->checkSync(readablesSha, &checkSyncResponse);
+        SindarinAPI::getInstance()->checkSync(readablesSha, placemarks, &checkSyncResponse);
 
         if (!this->save()) {
             log_e("Failed to save readables.json");
         }
+
+        this->mergePlacemarksFromServer(checkSyncResponse.placemarks);
 
         // TODO: Force reload of rootUI instead of rebooting
         if (checkSyncResponse.synced) {

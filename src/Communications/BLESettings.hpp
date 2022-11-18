@@ -6,6 +6,7 @@
 #include "BLEAbstractions.hpp"
 #include "Communications/BLEManager.hpp"
 #include "Communications/PocketAPI.hpp"
+#include "Inputs/TTRemoteInput.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "esp_wifi.h"
 #include "sindarin-debug.h"
@@ -15,16 +16,19 @@ class BLESettings : BLECharacteristicProvider {
 public:
     BLESettings(PreferencesStore *prefs);
     void configureCharacteristics(BLEService *service) override;
+    void attachTTRemoteInput(TTRemoteInput *ttRemoteInput);
 
 protected:
     PreferencesStore *prefs_;
     BLECharacteristic *settingsCharacteristic_;
+    TTRemoteInput *ttRemoteInput_;
     void writeDeviceSerialToCharacteristic(BLECharacteristic *characteristic,
                                            const std::string &key);
     void writePageTurnerBuildToCharacteristic(BLECharacteristic *characteristic,
                                               const std::string &key);
     void writePageTurnerBatteryToCharacteristic(BLECharacteristic *characteristic,
                                                 const std::string &key);
+    void disconnectPageTurnerForSeconds(const int seconds);
     void writeWifiSSIDtoCharacteristic(BLECharacteristic *characteristic, std::string key);
     void blinkLedAfterConnect(BLECharacteristic *characteristic, const std::string &key);
 
@@ -67,6 +71,8 @@ protected:
                     this->enclosed->prefs_->pocketApiToken.set(settingValue);
                 } else if (settingKey == "cloud-token") {
                     this->enclosed->prefs_->cloudToken.set(settingValue);
+                } else if (settingKey == "disconnect-pt-sec") {
+                    this->enclosed->disconnectPageTurnerForSeconds(std::stoi(settingValue));
                 } else {
                     log_w("GATT client asking to write unknown setting: %s=%s", settingKey.c_str(),
                           settingValue.c_str());

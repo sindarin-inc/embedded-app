@@ -418,6 +418,36 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
     }));
 
+    debugMenu->addMenuItem(MenuItem("Set Autopilot", [this, debugMenu]() {
+        auto speedMenu = new MenuScreen(this->power_, debugMenu->getMyStyle());
+        speedMenu->addMenuItem(MenuItem("None (Off)", [this, speedMenu]() {
+            prefs_.autoPilotSpeed.set(0);
+            speedMenu->setExtraText("Autopilot off");
+            speedMenu->needsRerender = true;
+        }));
+        speedMenu->addMenuItem(MenuItem("Fast (On)", [this, speedMenu]() {
+            prefs_.autoPilotSpeed.set(5000);
+            speedMenu->setExtraText("Autopilot on");
+            speedMenu->needsRerender = true;
+        }));
+        speedMenu->addMenuItem(MenuItem("Slow (On)", [this, speedMenu]() {
+            prefs_.autoPilotSpeed.set(10000);
+            speedMenu->setExtraText("Autopilot on");
+            speedMenu->needsRerender = true;
+        }));
+        if (prefs_.autoPilotSpeed.get() == 0) {
+            speedMenu->setExtraText("Autopilot off");
+        } else {
+            speedMenu->setExtraText("Autopilot on");
+        }
+        setCurrentScreen(*speedMenu);
+        speedMenu->backCallback = [this, speedMenu, debugMenu]() {
+            debugMenu->setFirstLoad();
+            setCurrentScreen(*debugMenu);
+            delete speedMenu;
+        };
+    }));
+
 #if EINKET013TT1
     debugMenu->addMenuItem(MenuItem("Set Vcom", [this, display, debugMenu]() {
         auto vcomMenu = new MenuScreen(this->power_, debugMenu->getMyStyle());

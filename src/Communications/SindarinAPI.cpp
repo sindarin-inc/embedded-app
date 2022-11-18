@@ -47,15 +47,25 @@ auto SindarinAPI::beginClient(HTTPClient &httpClient, const String &urlPath,
 
 void SindarinAPI::setAccessToken(std::string token) { accessToken_ = std::move(token); }
 
-auto SindarinAPI::checkSync(const std::string &readablesSha, CheckSyncResponse *resp) -> int {
+auto SindarinAPI::checkSync(const std::string &readablesSha,
+                            const std::vector<std::string> &placemarks, CheckSyncResponse *resp)
+    -> int {
     HTTPClient httpClient;
-    auto params = StringFormat("/sync/all/?sha=%s&build=%s&git_hash=%s", readablesSha.c_str(),
-                               kVersionString, kGitHash);
-    if (!beginClient(httpClient, String(params.c_str()))) {
+
+    if (!beginClient(httpClient, "/sync/all/")) {
         return -1;
     }
 
-    int httpCode = httpClient.GET();
+    httpClient.addHeader("Content-Type", "application/x-www-form-urlencoded");
+    auto body =
+        StringFormat("sha=%s&build=%s&git_hash=%s", readablesSha.c_str(), kVersionString, kGitHash);
+    for (auto &placemark : placemarks) {
+        body += placemark.c_str();
+    }
+
+    std::byte request[body.length()];
+    memcpy(request, body.c_str(), body.length());
+    int httpCode = httpClient.POST((uint8_t *)request, sizeof(request));
     auto string = httpClient.getString();
     auto *respJson = new SpiRamJsonDocument(string.length() * 2);
     auto error = ArduinoJson::deserializeJson(*respJson, string);

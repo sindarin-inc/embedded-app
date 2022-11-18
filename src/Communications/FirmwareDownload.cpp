@@ -28,9 +28,10 @@ void FirmwareDownloader::downloadFirmware(
 
     auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this, progressCallback] {
-        // Skip calculating the readable shas for now, the firmware info is sent either way
+        // Skip calculating the readable shas and changed placemarks for now, the firmware info is
+        // sent either way
         CheckSyncResponse response;
-        auto httpCode = SindarinAPI::getInstance()->checkSync("", &response);
+        auto httpCode = SindarinAPI::getInstance()->checkSync("", {}, &response);
         if (httpCode != HTTP_CODE_OK) {
             log_e("Failed to check sync (HTTP %d)", httpCode);
             progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,

@@ -239,7 +239,7 @@ auto GetSerialNumber() -> std::string {
         }
     }
 
-    return std::string((const char *)serialNumber, sizeof(serialNumber));
+    return {(const char *)serialNumber, sizeof(serialNumber)};
 }
 
 #endif

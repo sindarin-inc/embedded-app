@@ -15,6 +15,8 @@ auto DecodeTurntouch(uint16_t processed) -> RemoteCommand {
         return BACK;
     case TT_E_PRESS:
         return CHANNEL_PLUS;
+    case TT_E_HOLD:
+        return PLAY;
     case TT_MULTI_N_S:
         return SETUP;
     case TT_MULTI_E_W:
@@ -27,7 +29,6 @@ auto DecodeTurntouch(uint16_t processed) -> RemoteCommand {
     case TT_S_DOUBLE:
     case TT_W_DOUBLE:
     case TT_E_DOUBLE:
-    case TT_E_HOLD:
     default:
         return NONE;
     }

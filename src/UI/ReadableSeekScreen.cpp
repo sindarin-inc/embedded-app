@@ -104,6 +104,7 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
 
         renderer_.setCurrentPlace(readable_.place);
         prefs_.readablePlace.set(readable_.placemarkUuid.c_str(), readable_.place);
+        prefs_.readablePlaceChanged.set(readable_.placemarkUuid.c_str(), true);
         needsRerender = true;
         break;
     }
@@ -125,6 +126,7 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
 
         renderer_.setCurrentPlace(readable_.place);
         prefs_.readablePlace.set(readable_.placemarkUuid.c_str(), readable_.place);
+        prefs_.readablePlaceChanged.set(readable_.placemarkUuid.c_str(), true);
         needsRerender = true;
         break;
     }

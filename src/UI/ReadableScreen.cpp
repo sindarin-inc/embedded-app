@@ -1,10 +1,18 @@
 #include "UI/ReadableScreen.hpp"
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
+#include <freertos/timers.h>
 #include <utility>
 
 #include "Misc/Platform.hpp"
 #include "UI/Bitmaps/BenIconHacking.hpp"
 #include "sindarin-debug.h"
+
+// Two minutes per page currently
+#define SLOWEST_PAGE_SPEED 120000
+// Change speed of speed reading in increments of 2 seconds
+#define PAGE_SPEED_INCREMENT 2000
 
 // Simply reads from the bookmark file for this Readable and returns whether it was
 // a turn on or turn off bookmark.
@@ -116,29 +124,39 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
                         screenHeight + display.getTextHeight() / 2 + 3, readGearBits,
                         READ_GEAR_WIDTH, READ_GEAR_HEIGHT, display.fg);
 
-    // Left Arrow
-    display.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 - arrowWidth / 2,
-                     display.fg);
-    display.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 + arrowWidth / 2,
-                     display.fg);
+    if (pageSpeed_ == 0) {
+        // Left Arrow
+        display.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 - arrowWidth / 2,
+                         display.fg);
+        display.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 + arrowWidth / 2,
+                         display.fg);
+    } else {
+        display.drawXBitmap(-auto_minus_width - 8, screenHeight / 2 - auto_minus_height / 2 - 5,
+                            autoMinusBits, auto_minus_width, auto_minus_height, display.fg);
+    }
 
     // Up arrow - looks like a bookmark to indicate that's what you can do.
     display.drawXBitmap(screenWidth / 2 - HOME2_WIDTH / 2, -HOME2_HEIGHT - 3, homE2Bits,
                         HOME2_WIDTH, HOME2_HEIGHT, display.fg);
 
-    display.setRotation(1);
-    // Right side show bookmark icon.
-    display.drawLine(screenWidth / 2, -arrowHeight - 1, screenWidth / 2 - arrowWidth / 2, -1,
-                     display.fg);
-    display.drawLine(screenWidth / 2, -arrowHeight - 1, screenWidth / 2 + arrowWidth / 2, -1,
-                     display.fg);
+    if (pageSpeed_ == 0) {
+        display.setRotation(1);
+        // Right side show bookmark icon.
+        display.drawLine(screenWidth / 2, -arrowHeight - 1, screenWidth / 2 - arrowWidth / 2, -1,
+                         display.fg);
+        display.drawLine(screenWidth / 2, -arrowHeight - 1, screenWidth / 2 + arrowWidth / 2, -1,
+                         display.fg);
 
-    display.drawLine(screenWidth / 2 - arrowWidth / 2, -1, screenWidth / 2 - arrowWidth / 2,
-                     display.yAbsolute(0), display.fg);
-    display.drawLine(screenWidth / 2 + arrowWidth / 2, -1, screenWidth / 2 + arrowWidth / 2,
-                     display.yAbsolute(0), display.fg);
+        display.drawLine(screenWidth / 2 - arrowWidth / 2, -1, screenWidth / 2 - arrowWidth / 2,
+                         display.yAbsolute(0), display.fg);
+        display.drawLine(screenWidth / 2 + arrowWidth / 2, -1, screenWidth / 2 + arrowWidth / 2,
+                         display.yAbsolute(0), display.fg);
 
-    display.setRotation(0);
+        display.setRotation(0);
+    } else {
+        display.drawXBitmap(screenWidth + 2, screenHeight / 2 - auto_plus_height / 2, autoPlusBits,
+                            auto_plus_width, auto_plus_height, display.fg);
+    }
 
     // Right Arrow
     /*
@@ -149,11 +167,22 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
                      */
 }
 
+// Since this happens in a couple of places (animation as well as button press),
+// we have a helper method to do the work.
+void ReadableScreen::turnPage() {
+    readable_.placePrev = readable_.place;
+    readable_.place = newPlace_;
+    prefs_.readablePlace.set(readable_.placemarkUuid.c_str(), readable_.place);
+    prefs_.readablePlaceChanged.set(readable_.placemarkUuid.c_str(), true);
+    speedLinesToSkip_ = 0;
+}
+
 void ReadableScreen::render(DisplaySystem &display) {
     if (currentScreen_ != this) {
         currentScreen_->render(display);
         return;
     }
+
     if (!needsRerender) {
         return;
     }
@@ -164,12 +193,12 @@ void ReadableScreen::render(DisplaySystem &display) {
     // Then ignore the next press of the button
     if (prefs_.firstRead.get().value() == 0) {
 
+        // We need to make sure this goes onto the second page because of a bug in the renderer.
         std::string message =
             "Welcome to reading with Sol! This is a one page tutorial on what each button does "
             "while reading.\n\n\nUp: Main Menu\n\nDown: Reading Settings\n\nLeft: Previous "
-            "Page\n\nRight: Bookmark Page\n\nCenter: Next Page\n\n\n"
-
-            "That's it! Press any button... ";
+            "Page\n\nRight: Bookmark Page\n\nCenter: Next Page\n\n\nThat's it! Press any button... "
+            "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
 
         auto streamFirstTime = new StdStringStream(message);
         firstTimeRenderer_.setStream(streamFirstTime);
@@ -184,7 +213,65 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
-    newPlace_ = renderer_.renderPage(readable_.place);
+    if ((prefs_.firstAutopilotRead.get().value() == 0) && (pageSpeed_ != 0)) {
+        // We need to make sure this goes onto the second page because of a bug in the renderer.
+        std::string message =
+            "Welcome to the beta of Autopilot mode! Here is what each button does "
+            "while in autopilot mode.\n\n\nUp: Main Menu\n\nDown: Reading "
+            "Settings\n\nLeft: Slow Down "
+            "Page\n\nRight: Speed Up\n\nCenter: Turn off autopilot mode\n\n\nPress any button to "
+            "start reading... \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
+
+        auto streamFirstTime = new StdStringStream(message);
+        firstTimeRenderer_.setStream(streamFirstTime);
+
+        prefs_.firstAutopilotRead.set(1);
+        ignoreNextPress_ = true;
+        firstTimeRenderer_.renderPage(0);
+        renderIcons(display);
+        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+        needsRerender = false;
+        delete streamFirstTime;
+        return;
+    }
+
+    if (pageSpeed_ == 0) {
+        newPlace_ = renderer_.renderPage(readable_.place);
+    } else {
+        if (speedLinesToSkip_ >= renderer_.getNumRenderedLines()) {
+            // time to turn the page
+            turnPage();
+        } else {
+            speedLinesToSkip_++;
+        }
+
+        newPlace_ = renderer_.renderPage(readable_.place, speedLinesToSkip_);
+
+        // If the line is blank, we want to skip it. Also, skip multiple newlines in a row.
+        while ((renderer_.getLengthOfLine(speedLinesToSkip_) == 1) &&
+               speedLinesToSkip_ < renderer_.getNumRenderedLines()) {
+            speedLinesToSkip_++;
+        }
+
+        // Only if we didn't end on a newline. Othwerise wait for next render to turn page.
+        if (speedLinesToSkip_ != renderer_.getNumRenderedLines()) {
+            nextInterval_ = pageSpeed_ * renderer_.getLengthOfLine(speedLinesToSkip_) /
+                            renderer_.getTotalLengthOfLines();
+            if (nextInterval_ == 0) {
+                nextInterval_ = 1;
+            }
+        }
+
+        // Give the user extra time for the first line.
+        if (speedLinesToSkip_ == 0) {
+            nextInterval_ *= 2;
+        }
+
+        log_d("Setting next interval: %lu", nextInterval_);
+
+        needsRerender = true;
+    }
+
     // Future work
     // Sync this to cloud and use on mobile.
     updateBookmarkStatus();
@@ -204,9 +291,35 @@ void ReadableScreen::render(DisplaySystem &display) {
         shownIcons_ = true;
     }
 
+    // Only show the autopilot icon on page turns or if speed was changed -- let it fade out with
+    // the rest of the text
+    if (((pageSpeed_ != 0) && (speedLinesToSkip_ == 0)) || (showAutopilotMinus_) ||
+        (showAutopilotPlus_)) {
+        int screenWidth = display.width();
+        int screenHeight = display.height();
+        display.drawXBitmap(screenWidth + 2, 0, autoPilotBits, auto_pilot_width, auto_pilot_height,
+                            display.fg);
+
+        if (showAutopilotMinus_) {
+            display.drawXBitmap(screenWidth + 2, screenHeight / 2 - auto_minus_height / 2,
+                                autoMinusBits, auto_minus_width, auto_minus_height, display.fg);
+            showAutopilotMinus_ = false;
+        }
+
+        if (showAutopilotPlus_) {
+            display.drawXBitmap(screenWidth + 2, screenHeight / 2 - auto_plus_height / 2,
+                                autoPlusBits, auto_plus_width, auto_plus_height, display.fg);
+            showAutopilotPlus_ = false;
+        }
+    }
+
     log_d("%lu is the new place in the text", newPlace_);
 
-    display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+    if ((pageSpeed_ != 0) && (speedLinesToSkip_ > 0)) {
+        display.updateDisplay(DisplaySystem::UpdateType::FAST_ORIGINAL_AU4);
+    } else {
+        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+    }
 
     uint32_t wc = prefs_.wordCount.get().value();
     wc = wc + renderer_.getCurrentPageWordCount();
@@ -215,7 +328,13 @@ void ReadableScreen::render(DisplaySystem &display) {
     // remember the time this page was rendered
     readingStartTime_ = GetRunTimeMs();
 
-    needsRerender = false;
+    if (pageSpeed_ == 0) {
+        needsRerender = false;
+    } else {
+        // Must stop the timer because ChangePeriod starts it.
+        xTimerStop(DisplaySystem::animationTimer, 0);
+        xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
+    }
 }
 
 void ReadableScreen::incrementReadingTime() {
@@ -249,29 +368,63 @@ void ReadableScreen::processCommand(RemoteCommand command) {
 
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
-        readable_.place = renderer_.getPreviousPlace();
-        prefs_.readablePlace.set(readable_.placemarkUuid.c_str(), readable_.place);
-        needsRerender = true;
+        if (pageSpeed_ == 0) {
+            readable_.place = renderer_.getPreviousPlace();
+            prefs_.readablePlace.set(readable_.placemarkUuid.c_str(), readable_.place);
+            prefs_.readablePlaceChanged.set(readable_.placemarkUuid.c_str(), true);
+            needsRerender = true;
+        } else {
+            pageSpeed_ = std::min(pageSpeed_ + PAGE_SPEED_INCREMENT, SLOWEST_PAGE_SPEED);
+            prefs_.autoPilotSpeed.set(pageSpeed_);
+            log_d("Slowing down: New Page Speed is %u", pageSpeed_);
+            showAutopilotMinus_ = true;
+            needsRerender = false;
+        }
         break;
+    case RemoteCommand::PLAY: // To allow the PT to long press east to change page without an enter
+                              // button
     case RemoteCommand::ENTER:
-        readable_.placePrev = readable_.place;
-        readable_.place = newPlace_;
-        prefs_.readablePlace.set(readable_.placemarkUuid.c_str(), readable_.place);
-        needsRerender = true;
+        if (pageSpeed_ == 0) {
+            turnPage();
+            needsRerender = true;
+        } else {
+            pageSpeed_ = 0;
+            prefs_.autoPilotSpeed.set(0);
+            log_d("Stopping timer and turning off AutoPilot");
+            xTimerStop(DisplaySystem::animationTimer, 0);
+        }
+
         break;
     case RemoteCommand::NEXT:
+        if (pageSpeed_ != 0) {
+            xTimerStop(DisplaySystem::animationTimer, 0);
+        }
         setCurrentScreen(popup_);
         break;
     case RemoteCommand::CHANNEL_PLUS:
-        inBookmark_ = !inBookmark_;
-        writeOutBookmarkUpdate();
+        if (pageSpeed_ != 0) {
+            pageSpeed_ = std::max(pageSpeed_ - PAGE_SPEED_INCREMENT, 1);
+            log_d("Speeding up: New Page Speed is %u", pageSpeed_);
+            prefs_.autoPilotSpeed.set(pageSpeed_);
+            showAutopilotPlus_ = true;
+            needsRerender = false;
+        } else {
+            inBookmark_ = !inBookmark_;
+            writeOutBookmarkUpdate();
+        }
         needsRerender = true;
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::PREV:
+        if (pageSpeed_ != 0) {
+            xTimerStop(DisplaySystem::animationTimer, 0);
+        }
         back();
         break;
     case RemoteCommand::NOP_BUTTON:
+        needsRerender = true;
+        break;
+    case RemoteCommand::ANIMATION:
         needsRerender = true;
         break;
     default:

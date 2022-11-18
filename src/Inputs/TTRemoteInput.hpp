@@ -17,6 +17,7 @@ public:
 
     // Connect to the TurnTouch. Can be safely called even if the TurnTouch is already connected.
     void connect();
+    void disconnectTemporarily(int seconds);
 
 protected:
     enum State {
@@ -32,6 +33,7 @@ protected:
     State state_ = SCANNING;
     BLEAdvertisedDevice *turntouchDevice_ = nullptr;
     long lastScanMs_ = 0;
+    long keepDisconnectedUntilMs_ = 0;
     BLEClient *client_ = nullptr;
 
     auto connectToDevice(BLEAdvertisedDevice *device) -> bool;

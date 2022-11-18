@@ -70,7 +70,10 @@ public:
     // Render a page of text with the current place
     // returns the next place for reading so the calling function can
     // track place.
-    auto renderPage(unsigned long placeInFile) -> unsigned long;
+    //
+    // numSkipLines allows us to not render the first X lines of the page
+    // for the speed reading functionality.
+    auto renderPage(unsigned long placeInFile, int numSkipLines = 0) -> unsigned long;
 
     auto getCurrentPageWordCount() -> uint32_t { return currentPageWordCount_; }
 
@@ -78,6 +81,12 @@ public:
     void tokenRenderedWidthHeight(unsigned long placeInTokenBuffer, uint16_t *renderedWidth,
                                   uint16_t *renderedHeight);
     void setSizeOfTextToken(unsigned long placeInTokenBuffer);
+
+    auto getLengthOfLine(unsigned int index) -> unsigned int;
+
+    auto getTotalLengthOfLines() -> unsigned int;
+
+    auto getNumRenderedLines() -> unsigned int { return numLinesInBuffer_; }
 
 protected:
     DisplaySystem &display_;
@@ -116,6 +125,7 @@ protected:
     unsigned int numCurrTokens_ = 0;
 
     LineBufferArray lineBufferArray_{};
+    unsigned int lineBufferLengthsArray_[MAX_LINES_PER_PAGE] = {0};
     unsigned int numLinesInBuffer_ = 0;
 
     // This keeps just the tokens for the current page being rendered
