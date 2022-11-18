@@ -233,9 +233,9 @@ auto GetSerialNumber() -> std::string {
                                               sizeof(serialNumber) * 8));
 
     // sanitize unset bytes in serial number field
-    for (int i = 0; i < 14; i++) {
-        if (serialNumber[i] == 0) {
-            serialNumber[i] = '0';
+    for (unsigned char &i : serialNumber) {
+        if (i == 0) {
+            i = '0';
         }
     }
 
