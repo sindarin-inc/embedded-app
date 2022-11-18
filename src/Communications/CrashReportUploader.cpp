@@ -66,8 +66,8 @@ void CrashUploader::uploadCrash(
         }
         mpData.endFile();
         mpData.addKeyValue("git_version", kGitHash);
-        // todo: get real string for hw version
-        // mpData.addKeyValue("hw_version", "something");
+        mpData.addKeyValue("serial_number", GetSerialNumber());
+        mpData.addKeyValue("fw_version", kVersionString);
         mpData.endMultiPartData();
 
         int httpCode = SindarinAPI::getInstance()->uploadCrashReport(mpData.getFile(),

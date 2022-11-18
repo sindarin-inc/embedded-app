@@ -41,6 +41,7 @@ void MultiPartData::addKeyValue(const std::string &key, uint8_t *value, int len,
     writeHeader(key, isFile);
     // now write the actual data
     tempFile_.write(value, len);
+    writeFooter();
 }
 
 void MultiPartData::startFile(const std::string &key) {

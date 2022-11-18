@@ -232,6 +232,13 @@ auto GetSerialNumber() -> std::string {
     ESP_ERROR_CHECK(esp_efuse_read_field_blob(ESP_EFUSE_USER_DATA_SERIAL_NUMBER, &serialNumber,
                                               sizeof(serialNumber) * 8));
 
+    // sanitize unset bytes in serial number field
+    for (int i = 0; i < 14; i++) {
+        if (serialNumber[i] == 0) {
+            serialNumber[i] = '0';
+        }
+    }
+
     return std::string((const char *)serialNumber, sizeof(serialNumber));
 }
 
