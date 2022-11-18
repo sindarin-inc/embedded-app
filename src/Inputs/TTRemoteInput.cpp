@@ -149,10 +149,10 @@ void TTRemoteInput::scanForDevice() {
     // scanInterval and is rotated to the next of 3 channels with each interval. So if there is
     // RF interference on that channel you might not see the device even if you have the
     // scanWindow equal to the scanInterval in order to do continuous scanning.
-    scan->setInterval(1349);
-    scan->setWindow(449);
+    scan->setInterval(40);
+    scan->setWindow(30);
     scan->setActiveScan(true);
-    scan->start(3, nullptr, false);
+    scan->start((RESCAN_INTERVAL_MS - RESCAN_GAP_MS) / 1000, nullptr, false);
     lastScanMs_ = millis();
     digitalWrite(RED_LED, LED_OFF);
 }
@@ -184,7 +184,7 @@ void TTRemoteInput::buttonNotificationCallback(BLERemoteCharacteristic *remoteCh
 void TTRemoteInput::connect() {
     if (state_ == SCANNING && !BLEDevice::getScan()->isScanning() &&
         (keepDisconnectedUntilMs_ == 0 || millis() >= keepDisconnectedUntilMs_) &&
-        (lastScanMs_ == 0 || millis() > (lastScanMs_ + RESCAN_INTERVAL_MS))) {
+        (lastScanMs_ == 0 || millis() > (lastScanMs_ + RESCAN_INTERVAL_MS + RESCAN_GAP_MS))) {
         lastScanMs_ = millis();
         scanForDevice();
     }

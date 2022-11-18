@@ -9,7 +9,8 @@
 #include "TurnTouch.hpp"
 #include "sindarin-debug.h"
 
-#define RESCAN_INTERVAL_MS 5000
+#define RESCAN_INTERVAL_MS 3000
+#define RESCAN_GAP_MS 100
 
 class TTRemoteInput : public RemoteInput {
 public:
