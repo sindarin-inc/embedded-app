@@ -14,48 +14,48 @@ using namespace sqlite_orm;
 
 // Disable formatting so we can see the table structure more easily
 /* clang-format off */
-auto storage = make_storage(
+auto storage = MakeStorage(
 #if SIMULATOR
     "./data/db.sqlite",
 #else
     "/littlefs/db.sqlite",
 #endif
-    make_table("readables",
-        make_column("uuid", &Readable::uuid, primary_key()),
-        make_column("title", &Readable::title),
-        make_column("date_created", &Readable::dateCreated),
-        make_column("date_modified", &Readable::dateModified),
-        make_column("date_published", &Readable::datePublished)
+    MakeTable("readables",
+        MakeColumn("uuid", &Readable::uuid, PrimaryKey()),
+        MakeColumn("title", &Readable::title),
+        MakeColumn("date_created", &Readable::dateCreated),
+        MakeColumn("date_modified", &Readable::dateModified),
+        MakeColumn("date_published", &Readable::datePublished)
     ),
-    make_table("files",
-        make_column("uuid", &ReadableFile::uuid, primary_key()),
-        make_column("name", &ReadableFile::name),
-        make_column("size", &ReadableFile::size),
-        make_column("file_type", &ReadableFile::filetype),
-        make_column("uploaded_at", &ReadableFile::uploadedAt),
-        make_column("sha_hash", &ReadableFile::shaHash),
-        make_column("file", &ReadableFile::file),
-        make_column("readable_uuid", &ReadableFile::readableUuid),
-        foreign_key(&ReadableFile::readableUuid).references(&Readable::uuid)
+    MakeTable("files",
+        MakeColumn("uuid", &ReadableFile::uuid, PrimaryKey()),
+        MakeColumn("name", &ReadableFile::name),
+        MakeColumn("size", &ReadableFile::size),
+        MakeColumn("file_type", &ReadableFile::filetype),
+        MakeColumn("uploaded_at", &ReadableFile::uploadedAt),
+        MakeColumn("sha_hash", &ReadableFile::shaHash),
+        MakeColumn("file", &ReadableFile::file),
+        MakeColumn("readable_uuid", &ReadableFile::readableUuid),
+        ForeignKey(&ReadableFile::readableUuid).references(&Readable::uuid)
     ),
-    make_table("authors",
-        make_column("uuid", &Author::uuid, primary_key()),
-        make_column("name", &Author::name),
-        make_column("description", &Author::description)
+    MakeTable("authors",
+        MakeColumn("uuid", &Author::uuid, PrimaryKey()),
+        MakeColumn("name", &Author::name),
+        MakeColumn("description", &Author::description)
     ),
-    make_table("readable_authors",
-        make_column("id", &ReadableAuthor::id, primary_key()),
-        make_column("readable_uuid", &ReadableAuthor::readableUuid),
-        make_column("author_uuid", &ReadableAuthor::authorUuid),
-        foreign_key(&ReadableAuthor::readableUuid).references(&Readable::uuid),
-        foreign_key(&ReadableAuthor::authorUuid).references(&Author::uuid)
+    MakeTable("readable_authors",
+        MakeColumn("id", &ReadableAuthor::id, PrimaryKey()),
+        MakeColumn("readable_uuid", &ReadableAuthor::readableUuid),
+        MakeColumn("author_uuid", &ReadableAuthor::authorUuid),
+        ForeignKey(&ReadableAuthor::readableUuid).references(&Readable::uuid),
+        ForeignKey(&ReadableAuthor::authorUuid).references(&Author::uuid)
     )
 );
 /* clang-format on */
 
 auto LocalStore::begin() -> bool {
-    sqlite3_initialize();
-    storage.sync_schema();
+    Sqlite3Initialize();
+    storage.syncSchema();
 
     if (fileSystem.exists("/readables.json")) {
         log_d("Running migration from JSON to SQLite");
@@ -121,21 +121,21 @@ auto LocalStore::begin() -> bool {
         log_i("Finished migrating readables.json to SQLite");
     }
 
-    readables_ = storage.get_all<Readable>();
+    readables_ = storage.getAll<Readable>();
     log_d("Found %d readables in sqlite", readables_.size());
     for (auto &readable : readables_) {
         // TODO: Could possibly do this more efficiently with a JOIN
-        auto readableAuthors = storage.get_all<ReadableAuthor>(
-            where(c(&ReadableAuthor::readableUuid) == readable.uuid));
+        auto readableAuthors = storage.getAll<ReadableAuthor>(
+            Where(C(&ReadableAuthor::readableUuid) == readable.uuid));
         for (auto &readableAuthor : readableAuthors) {
             auto author =
-                storage.get_all<Author>(where(c(&Author::uuid) == readableAuthor.authorUuid));
+                storage.getAll<Author>(Where(C(&Author::uuid) == readableAuthor.authorUuid));
             readable.authors.push_back(author[0]);
         }
 
         // Files
         auto files =
-            storage.get_all<ReadableFile>(where(c(&ReadableFile::readableUuid) == readable.uuid));
+            storage.getAll<ReadableFile>(Where(C(&ReadableFile::readableUuid) == readable.uuid));
         for (auto &file : files) {
             readable.files.push_back(file);
         }
@@ -196,9 +196,9 @@ void LocalStore::removeReadable(const Readable &readable) {
             break;
         }
     }
-    storage.remove_all<Readable>(where(c(&Readable::uuid) == readable.uuid));
-    storage.remove_all<ReadableFile>(where(c(&ReadableFile::readableUuid) == readable.uuid));
-    storage.remove_all<ReadableAuthor>(where(c(&ReadableAuthor::readableUuid) == readable.uuid));
+    storage.removeAll<Readable>(Where(C(&Readable::uuid) == readable.uuid));
+    storage.removeAll<ReadableFile>(Where(C(&ReadableFile::readableUuid) == readable.uuid));
+    storage.removeAll<ReadableAuthor>(Where(C(&ReadableAuthor::readableUuid) == readable.uuid));
     // TODO: Clean up authors that don't have readables?
 }
 
