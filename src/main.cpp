@@ -409,6 +409,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         bootErrors.push_back({.type = BootError::Type::FileSystem});
     }
 
+    log_d("Starting local store");
     if (!localStore.begin()) {
         bootErrors.push_back({.type = BootError::Type::LocalStore});
     }

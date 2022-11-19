@@ -4,6 +4,14 @@
 
 #include "Models/JsonSerializable.hpp"
 
+// Used to create a many-to-many relationship between Author and Readable
+struct ReadableAuthor {
+    // To make it easy to do idempotent operations the ID is of format [readable_uuid]-[author_uuid]
+    std::string id;
+    std::string readableUuid;
+    std::string authorUuid;
+};
+
 class Author : public JsonSerializable {
 public:
     Author() = default;

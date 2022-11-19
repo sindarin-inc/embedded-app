@@ -17,6 +17,8 @@ public:
     //! URL to download the file
     std::string file;
 
+    std::string readableUuid;
+
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("uuid") || !j.containsKey("name") || !j.containsKey("size") ||
             !j.containsKey("filetype") || !j.containsKey("uploaded_at") ||

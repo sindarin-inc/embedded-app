@@ -2,6 +2,7 @@
 
 #include <esp_timer.h>
 #include <sqlite3.h>
+#include <sqlite_orm.h>
 
 #include "Communications/SindarinAPI.hpp"
 #include "Misc/Crypto.hpp"
@@ -9,160 +10,147 @@
 #include "Models/Json.hpp"
 #include "sindarin-debug.h"
 
-const char *data = "Callback function called";
-static int callback(void *data, int argc, char **argv, char **azColName) {
-    int i;
-    log_d("%s: ", (const char *)data);
-    for (i = 0; i < argc; i++) {
-        log_d("%s = %s", azColName[i], argv[i] ? argv[i] : "NULL");
-    }
-    return 0;
-}
+using namespace sqlite_orm;
 
-int openDb(const char *filename, sqlite3 **db) {
-    int rc = sqlite3_open(filename, db);
-    if (rc) {
-        printf("Can't open database: %s\n", sqlite3_errmsg(*db));
-        return rc;
-    } else {
-        printf("Opened database successfully\n");
-    }
-    return rc;
-}
-
-char *zErrMsg = 0;
-int db_exec(sqlite3 *db, const char *sql) {
-    log_d("%s", sql);
-    int64_t start = esp_timer_get_time();
-    int rc = sqlite3_exec(db, sql, callback, (void *)data, &zErrMsg);
-    if (rc != SQLITE_OK) {
-        log_e("SQL error: %s", zErrMsg);
-        sqlite3_free(zErrMsg);
-    } else {
-        log_i("Operation done successfully");
-    }
-    log_i("Time taken: %lld", esp_timer_get_time() - start);
-    return rc;
-}
-
-int64_t esp_timer_get_time(void) { return 0; }
+// Disable formatting so we can see the table structure more easily
+/* clang-format off */
+auto storage = make_storage(
+#if SIMULATOR
+    "./data/db.sqlite",
+#else
+    "/littlefs/db.sqlite",
+#endif
+    make_table("readables",
+        make_column("uuid", &Readable::uuid, primary_key()),
+        make_column("title", &Readable::title),
+        make_column("date_created", &Readable::dateCreated),
+        make_column("date_modified", &Readable::dateModified),
+        make_column("date_published", &Readable::datePublished)
+    ),
+    make_table("files",
+        make_column("uuid", &ReadableFile::uuid, primary_key()),
+        make_column("name", &ReadableFile::name),
+        make_column("size", &ReadableFile::size),
+        make_column("file_type", &ReadableFile::filetype),
+        make_column("uploaded_at", &ReadableFile::uploadedAt),
+        make_column("sha_hash", &ReadableFile::shaHash),
+        make_column("file", &ReadableFile::file),
+        make_column("readable_uuid", &ReadableFile::readableUuid),
+        foreign_key(&ReadableFile::readableUuid).references(&Readable::uuid)
+    ),
+    make_table("authors",
+        make_column("uuid", &Author::uuid, primary_key()),
+        make_column("name", &Author::name),
+        make_column("description", &Author::description)
+    ),
+    make_table("readable_authors",
+        make_column("id", &ReadableAuthor::id, primary_key()),
+        make_column("readable_uuid", &ReadableAuthor::readableUuid),
+        make_column("author_uuid", &ReadableAuthor::authorUuid),
+        foreign_key(&ReadableAuthor::readableUuid).references(&Readable::uuid),
+        foreign_key(&ReadableAuthor::authorUuid).references(&Author::uuid)
+    )
+);
+/* clang-format on */
 
 auto LocalStore::begin() -> bool {
-    sqlite3 *db2;
-    log_d("starting sqlite3");
     sqlite3_initialize();
+    storage.sync_schema();
 
-    // Open database 1
-    if (openDb("./data/localstore.db", &db2)) {
-        log_w("failure opening db");
-    }
+    if (fileSystem.exists("/readables.json")) {
+        log_d("Running migration from JSON to SQLite");
+        log_d("Loading readables.json");
+        File readablesFile = fileSystem.open("/readables.json");
+        if (!readablesFile) {
+            log_e("Failed to open readables.json even though it exists. Deleting it.");
+            fileSystem.remove("/readables.json");
+            return false;
+        }
 
-    /*
-    CREATE TABLE public.readables (
-        id bigint NOT NULL,
-        title character varying(2048) NOT NULL,
-        content text NOT NULL,
-        date_created timestamp with time zone NOT NULL,
-        date_modified timestamp with time zone NOT NULL,
-        date_published timestamp with time zone,
-        source character varying(1024),
-        uuid uuid NOT NULL
-    );
-    */
+        // Grab a minimum amount of ram, even if the readables file is empty
+        auto docSize = std::max(100, (int)readablesFile.size() * 2);
+        auto doc = std::make_unique<SpiRamJsonDocument>(docSize);
+        auto error = deserializeJson(*doc, readablesFile);
+        readablesFile.close();
 
-    int rc;
-    // rc = db_exec(db2, "CREATE TABLE readables ("
-    //                       "id bigint NOT NULL,"
-    //                       "title character(2048) NOT NULL) ");
-    // // content text NOT NULL,
-    // // date_created timestamp with time zone NOT NULL,
-    // // date_modified timestamp with time zone NOT NULL,
-    // // date_published timestamp with time zone,
-    // // source character varying(1024),
-    // // uuid uuid NOT NULL
-    // if (rc != SQLITE_OK) {
-    //     log_w("failure executing query");
-    //     sqlite3_close(db2);
-    // }
+        // At this point let's just delete the file. If something goes wrong with the migration
+        // it's better to require a resync then to get into a boot loop.
+        log_d("Deleting readables.json");
+        fileSystem.remove("/readables.json");
 
-    // INSERT INTO table_name (column1, column2, column3, ...)
-    rc = db_exec(db2, "INSERT INTO readables (id, title) VALUES ('1', 'test')");
-    if (rc != SQLITE_OK) {
-        log_w("failure executing query");
-        sqlite3_close(db2);
-    }
-    rc = db_exec(db2, "INSERT INTO readables (id, title) VALUES ('2', 'test2')");
-    if (rc != SQLITE_OK) {
-        log_w("failure executing query");
-        sqlite3_close(db2);
-    }
+        if (error.code() != DeserializationError::Ok) {
+            log_e("Failed to deserialize readables file: %s", error.c_str());
+            return false;
+        }
 
-    // id bigint NOT NULL,
-    //         PersonID int,
-    //         LastName varchar(255), FirstName varchar(255), Address varchar(255), City
-    //         varchar(255));
-    // ")
+        auto readablesJson = (*doc)["readables"].as<JsonArray>();
+        if (readablesJson.size() == 0) {
+            log_w("No readables found in readables.json");
+            return true;
+        }
+        std::vector<Readable> readables;
+        readables.reserve(readablesJson.size());
 
-    rc = db_exec(db2, "Select * from readables where title = 'test2'");
-    if (rc != SQLITE_OK) {
-        log_w("failure executing query");
-        sqlite3_close(db2);
-    }
-
-    sqlite3_close(db2);
-
-    log_d("Loading readables.json");
-    File readablesFile = fileSystem.open("/readables.json");
-    if (!readablesFile) {
-        log_w("Failed to open readables.json");
-        // Fail positively since it's ok to not have any when you first use the glasses
-        return true;
-    }
-
-    // Grab a minimum amount of ram, even if the readables file is empty
-    auto docSize = std::max(100, (int)readablesFile.size() * 2);
-    auto *doc = new SpiRamJsonDocument(docSize);
-    auto error = deserializeJson(*doc, readablesFile);
-    readablesFile.close();
-
-    if (error.code() != DeserializationError::Ok) {
-        log_e("Failed to deserialize readables file: %s", error.c_str());
-        delete doc;
-        return false;
-    }
-
-    auto readablesJson = (*doc)["readables"].as<JsonArray>();
-    if (readablesJson.size() == 0) {
-        log_w("No readables found in readables.json");
-        return true;
-    }
-    readables_.reserve(readablesJson.size());
-
-    for (JsonVariant v : readablesJson) {
-        Readable readable;
-        if (!readable.fromJson(v.as<JsonObject>())) {
-            log_e("Failed to parse Readable");
-            continue;
-        } else if (!fileSystem.exists(readable.localFilePath())) {
-            log_w("Couldn't find readable with path %s", readable.localFilePath().c_str());
-            continue;
-        } else {
-            auto file = fileSystem.open(readable.localFilePath());
-            // If the filesize is wrong, ignore it so we redownload it
-            auto fileSize = file.size();
-            file.close();
-            if (fileSize != readable.file().size) {
-                log_w("File size mismatch for %s (%zu on disk vs %d in local store), ignoring",
-                      readable.localFilePath().c_str(), fileSize, readable.file().size);
+        for (JsonVariant v : readablesJson) {
+            Readable readable;
+            if (!readable.fromJson(v.as<JsonObject>())) {
+                log_e("Failed to parse Readable");
                 continue;
+            } else if (!fileSystem.exists(readable.localFilePath())) {
+                log_w("Couldn't find readable with path %s", readable.localFilePath().c_str());
+                continue;
+            } else {
+                auto file = fileSystem.open(readable.localFilePath());
+                // If the filesize is wrong, ignore it so we redownload it
+                auto fileSize = file.size();
+                file.close();
+                if (fileSize != readable.file().size) {
+                    log_w("File size mismatch for %s (%zu on disk vs %d in local store), ignoring",
+                          readable.localFilePath().c_str(), fileSize, readable.file().size);
+                    continue;
+                }
+                log_d("Found local readable %s (%s)", readable.title.c_str(),
+                      readable.localFilePath().c_str());
+                readables.push_back(readable);
             }
-            log_d("Found local readable %s (%s)", readable.title.c_str(),
-                  readable.localFilePath().c_str());
-            readables_.push_back(readable);
+        }
+
+        for (const Readable &readable : readables) {
+            addReadable(readable);
+        }
+        log_i("Finished migrating readables.json to SQLite");
+    }
+
+    readables_ = storage.get_all<Readable>();
+    log_d("Found %d readables in sqlite", readables_.size());
+    for (auto &readable : readables_) {
+        // TODO: Could possibly do this more efficiently with a JOIN
+        auto readableAuthors = storage.get_all<ReadableAuthor>(
+            where(c(&ReadableAuthor::readableUuid) == readable.uuid));
+        for (auto &readableAuthor : readableAuthors) {
+            auto author =
+                storage.get_all<Author>(where(c(&Author::uuid) == readableAuthor.authorUuid));
+            readable.authors.push_back(author[0]);
+        }
+
+        // Files
+        auto files =
+            storage.get_all<ReadableFile>(where(c(&ReadableFile::readableUuid) == readable.uuid));
+        for (auto &file : files) {
+            readable.files.push_back(file);
         }
     }
 
-    delete doc;
+    for (auto &readable : readables_) {
+        log_d("Got Readable: %s", readable.title.c_str());
+        for (auto &author : readable.authors) {
+            log_d("- Author %s", author.name.c_str());
+        }
+        for (auto &file : readable.files) {
+            log_d("- File %s", file.name.c_str());
+        }
+    }
+
     return true;
 }
 
@@ -186,6 +174,18 @@ auto LocalStore::hasReadable(Readable &readable) -> bool {
 
 void LocalStore::addReadable(const Readable &readable) {
     readables_.emplace_back(readable);
+    storage.replace(readable);
+    for (const auto &author : readable.authors) {
+        storage.replace(author);
+        ReadableAuthor readableAuthor{readable.uuid + "-" + author.uuid, readable.uuid,
+                                      author.uuid};
+        storage.replace(readableAuthor);
+    }
+    for (auto &file : readable.files) {
+        ReadableFile fileCopy = file;
+        fileCopy.readableUuid = readable.uuid;
+        storage.replace(fileCopy);
+    }
     return;
 }
 
@@ -193,9 +193,13 @@ void LocalStore::removeReadable(const Readable &readable) {
     for (auto it = readables_.begin(); it != readables_.end(); ++it) {
         if (it->uuid == readable.uuid) {
             readables_.erase(it);
-            return;
+            break;
         }
     }
+    storage.remove_all<Readable>(where(c(&Readable::uuid) == readable.uuid));
+    storage.remove_all<ReadableFile>(where(c(&ReadableFile::readableUuid) == readable.uuid));
+    storage.remove_all<ReadableAuthor>(where(c(&ReadableAuthor::readableUuid) == readable.uuid));
+    // TODO: Clean up authors that don't have readables?
 }
 
 auto LocalStore::calculateReadablesSha() -> std::string {
@@ -450,34 +454,4 @@ void LocalStore::syncFromRemote(
     });
 }
 
-auto LocalStore::save() -> bool {
-    // 2048 is probably a safe-ish upper bound per readable. I'm seeing about half that in my
-    // testing so far
-    auto *doc = new SpiRamJsonDocument(2048 * std::max(1, (int)readables_.size()));
-
-    // Create a key named readables of type array
-    JsonArray readablesJson = doc->createNestedArray("readables");
-
-    log_d("Saving %zu readables in readables.json", readables_.size());
-    for (const auto &readable : readables_) {
-        readablesJson.add(readable);
-    }
-
-    if (doc->overflowed()) {
-        log_e("Out of space in SpiRamJsonDocument for readables.json");
-        return false;
-    }
-
-    // Write doc to disk
-    File file = fileSystem.open("/readables.json", FILE_WRITE);
-    if (!file) {
-        log_e("Failed to open file for writing");
-        return false;
-    }
-
-    serializeJsonPretty(*doc, file);
-    delete doc;
-    file.close();
-
-    return true;
-};
+auto LocalStore::save() -> bool { return true; };
