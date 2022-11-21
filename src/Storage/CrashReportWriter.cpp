@@ -9,7 +9,7 @@
 #include "Misc/Platform.hpp"
 #include "Version.hpp"
 
-bool CrashReportWriter::writeCrashReportIfExists() {
+auto CrashReportWriter::writeCrashReportIfExists() -> bool {
     // first check if a core dump is present
     size_t outAddr, outSize;
     if (esp_core_dump_image_get(&outAddr, &outSize) != ESP_OK) {

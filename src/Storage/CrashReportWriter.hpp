@@ -6,9 +6,9 @@ class CrashReportWriter {
 public:
     CrashReportWriter(FileSystem &fileSystem, int bootNum)
         : fileSystem_(fileSystem), bootNum_(bootNum) {}
-    ~CrashReportWriter() {}
+    ~CrashReportWriter() = default;
 
-    bool writeCrashReportIfExists();
+    auto writeCrashReportIfExists() -> bool;
 
 private:
     FileSystem &fileSystem_;

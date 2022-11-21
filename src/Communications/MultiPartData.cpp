@@ -2,18 +2,18 @@
 
 #include <cstring>
 
-std::string MultiPartData::boundary_ = "SIND12345";
+std::string MultiPartData::boundary = "SIND12345";
 
-bool MultiPartData::addKeyValue(const std::string &key, const std::string &value) {
+auto MultiPartData::addKeyValue(const std::string &key, const std::string &value) -> bool {
     return addKeyValue(key, (uint8_t *)value.c_str(), value.length(), false);
 }
 
-bool MultiPartData::startKeyWrite() {
+auto MultiPartData::startKeyWrite() -> bool {
     if (!keyWritten_) {
         keyWritten_ = true;
         tempFile_ = fileSystem_.open(fileName_, FILE_WRITE, true);
         // write first boundary marker if this is the first key
-        snprintf(tmp_, sizeof(tmp_), "--%s--", boundary_.c_str());
+        snprintf(tmp_, sizeof(tmp_), "--%s--", boundary.c_str());
         if (tempFile_.write((uint8_t *)tmp_, strlen(tmp_)) != strlen(tmp_)) {
             return false;
         }
@@ -22,7 +22,7 @@ bool MultiPartData::startKeyWrite() {
     return true;
 }
 
-bool MultiPartData::writeHeader(const std::string &key, bool isFile) {
+auto MultiPartData::writeHeader(const std::string &key, bool isFile) -> bool {
     // write form header
     snprintf(tmp_, sizeof(tmp_), "\r\nContent-Disposition: form-data; name=\"%s\"", key.c_str());
     if (tempFile_.write((uint8_t *)tmp_, strlen(tmp_)) != strlen(tmp_)) {
@@ -41,8 +41,8 @@ bool MultiPartData::writeHeader(const std::string &key, bool isFile) {
     return true;
 }
 
-bool MultiPartData::writeFooter() {
-    snprintf(tmp_, sizeof(tmp_), "\r\n--%s", boundary_.c_str());
+auto MultiPartData::writeFooter() -> bool {
+    snprintf(tmp_, sizeof(tmp_), "\r\n--%s", boundary.c_str());
     if (tempFile_.write((uint8_t *)tmp_, strlen(tmp_)) != strlen(tmp_)) {
         return false;
     }
@@ -50,7 +50,8 @@ bool MultiPartData::writeFooter() {
     return true;
 }
 
-bool MultiPartData::addKeyValue(const std::string &key, uint8_t *value, int len, bool isFile) {
+auto MultiPartData::addKeyValue(const std::string &key, uint8_t *value, int len, bool isFile)
+    -> bool {
     if (!startKeyWrite()) {
         return false;
     }
@@ -70,7 +71,7 @@ bool MultiPartData::addKeyValue(const std::string &key, uint8_t *value, int len,
     return true;
 }
 
-bool MultiPartData::startFile(const std::string &key) {
+auto MultiPartData::startFile(const std::string &key) -> bool {
     if (!startKeyWrite()) {
         return false;
     }
@@ -87,7 +88,7 @@ bool MultiPartData::startFile(const std::string &key) {
     return true;
 }
 
-bool MultiPartData::writeFileChunk(uint8_t *chunk, int len) {
+auto MultiPartData::writeFileChunk(uint8_t *chunk, int len) -> bool {
     log_i("trying to write %d bytes", len);
     if (tempFile_.write(chunk, len) != len) {
         log_i("write failed!");
@@ -98,7 +99,7 @@ bool MultiPartData::writeFileChunk(uint8_t *chunk, int len) {
     return true;
 }
 
-bool MultiPartData::endFile() {
+auto MultiPartData::endFile() -> bool {
     if (!writeFooter()) {
         return false;
     }
@@ -108,11 +109,11 @@ bool MultiPartData::endFile() {
 
 auto MultiPartData::getContentType() -> String {
     char tmp[64];
-    snprintf(tmp, sizeof(tmp), "multipart/form-data; boundary=%s", boundary_.c_str());
+    snprintf(tmp, sizeof(tmp), "multipart/form-data; boundary=%s", boundary.c_str());
     return tmp;
 }
 
-bool MultiPartData::endMultiPartData() {
+auto MultiPartData::endMultiPartData() -> bool {
     log_i("end multipart data!");
 
     snprintf(tmp_, sizeof(tmp_), "--\r\n");

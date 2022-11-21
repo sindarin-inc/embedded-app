@@ -41,10 +41,10 @@ void CrashUploader::uploadCrash(
             return;
         }
 
-        for (int i = 0; i < coreDumpFiles.size(); i++) {
-            log_i("uploading %s", coreDumpFiles[i].c_str());
+        for (auto &coreDumpFile : coreDumpFiles) {
+            log_i("uploading %s", coreDumpFile.c_str());
 
-            File cdFile = fileSystem_.open("/coredumps/" + coreDumpFiles[i], FILE_READ);
+            File cdFile = fileSystem_.open("/coredumps/" + coreDumpFile, FILE_READ);
             int httpCode = SindarinAPI::getInstance()->uploadCrashReport(
                 cdFile, MultiPartData::getContentType());
             log_i("http response: %d", httpCode);
@@ -52,10 +52,10 @@ void CrashUploader::uploadCrash(
             if (httpCode == 201) {
                 // remove this core dump file
                 cdFile.close();
-                log_i("deleting %s", coreDumpFiles[i].c_str());
-                fileSystem_.remove("/coredumps/" + coreDumpFiles[i]);
+                log_i("deleting %s", coreDumpFile.c_str());
+                fileSystem_.remove("/coredumps/" + coreDumpFile);
             } else {
-                log_e("could not send crash report %s, http code %d", coreDumpFiles[i].c_str(),
+                log_e("could not send crash report %s, http code %d", coreDumpFile.c_str(),
                       httpCode);
                 char errMsg[64];
                 snprintf(errMsg, sizeof(errMsg), "upload failed, code %d", httpCode);

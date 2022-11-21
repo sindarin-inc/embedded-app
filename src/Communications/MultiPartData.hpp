@@ -2,35 +2,36 @@
 
 #include <map>
 #include <string>
+#include <utility>
 
 #include "HTTPClient.h"
 #include "Storage/FileSystem.hpp"
 
 class MultiPartData {
 public:
-    MultiPartData(FileSystem &fileSystem, const std::string &fileName)
-        : fileSystem_(fileSystem), fileName_(fileName) {}
+    MultiPartData(FileSystem &fileSystem, std::string fileName)
+        : fileSystem_(fileSystem), fileName_(std::move(fileName)) {}
     ~MultiPartData() { tempFile_.close(); }
 
-    bool addKeyValue(const std::string &key, const std::string &value);
-    bool addKeyValue(const std::string &key, uint8_t *value, int len, bool isFile);
-    bool startFile(const std::string &key);
-    bool writeFileChunk(uint8_t *chunk, int len);
-    bool endFile();
-    bool endMultiPartData();
+    auto addKeyValue(const std::string &key, const std::string &value) -> bool;
+    auto addKeyValue(const std::string &key, uint8_t *value, int len, bool isFile) -> bool;
+    auto startFile(const std::string &key) -> bool;
+    auto writeFileChunk(uint8_t *chunk, int len) -> bool;
+    auto endFile() -> bool;
+    auto endMultiPartData() -> bool;
 
     static auto getContentType() -> String;
     auto getFile() -> File;
 
 private:
     FileSystem &fileSystem_;
-    static std::string boundary_;
+    static std::string boundary;
     std::string fileName_;
     bool keyWritten_{false};
     File tempFile_;
     char tmp_[1024];
 
-    bool startKeyWrite();
-    bool writeHeader(const std::string &key, bool isFile);
-    bool writeFooter();
+    auto startKeyWrite() -> bool;
+    auto writeHeader(const std::string &key, bool isFile) -> bool;
+    auto writeFooter() -> bool;
 };
