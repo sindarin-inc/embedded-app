@@ -2,6 +2,8 @@
 
 #include <cstring>
 
+std::string MultiPartData::boundary_ = "SIND12345";
+
 bool MultiPartData::addKeyValue(const std::string &key, const std::string &value) {
     return addKeyValue(key, (uint8_t *)value.c_str(), value.length(), false);
 }
@@ -104,7 +106,11 @@ bool MultiPartData::endFile() {
     return true;
 }
 
-auto MultiPartData::getContentType() -> String { return "multipart/form-data; boundary=SIND12345"; }
+auto MultiPartData::getContentType() -> String {
+    char tmp[64];
+    snprintf(tmp, sizeof(tmp), "multipart/form-data; boundary=%s", boundary_.c_str());
+    return tmp;
+}
 
 bool MultiPartData::endMultiPartData() {
     log_i("end multipart data!");

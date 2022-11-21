@@ -24,7 +24,7 @@ public:
 
 private:
     FileSystem &fileSystem_;
-    std::string boundary_ = "SIND12345";
+    static std::string boundary_;
     std::string fileName_;
     bool keyWritten_{false};
     File tempFile_;
