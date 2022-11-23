@@ -48,10 +48,10 @@ void CrashUploader::uploadCrash(
             int httpCode = SindarinAPI::getInstance()->uploadCrashReport(
                 cdFile, MultiPartData::getContentType());
             log_i("http response: %d", httpCode);
+            cdFile.close();
 
             if (httpCode == 201) {
                 // remove this core dump file
-                cdFile.close();
                 log_i("deleting %s", coreDumpFile.c_str());
                 fileSystem_.remove("/coredumps/" + coreDumpFile);
             } else {
