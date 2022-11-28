@@ -203,12 +203,15 @@ auto SindarinAPI::uploadAndResetVoltageLog(FileSystem &fileSystem) -> int {
     // TODO: It would be better to use a stream in SPIRAM directly instead of dumping to a file to
     // avoid unnecessary flash writes.
     auto jsonFilePath = "/logs/voltagelog.json";
-    File jsonFile = fileSystem.open(jsonFilePath, "rw", true);
+    File jsonFile = fileSystem.open(jsonFilePath, FILE_WRITE, true);
     serializeJson(*requestJson, jsonFile);
 
     // Reset the file back to its start so that we can reuse it for sending
-    jsonFile.flush();
-    jsonFile.seek(0);
+    // NOTE: You can't use a 'rw' mode file safely with Arduino. The code only seems to check a
+    // single character of the mode.
+    // https://github.com/espressif/arduino-esp32/blob/d8f98450fc1f1e1646077260a22287df6332580a/libraries/FS/src/vfs_api.cpp#L62
+    jsonFile.close();
+    jsonFile = fileSystem.open(jsonFilePath);
 
     auto httpCode = httpClient.sendRequest("POST", &jsonFile, jsonFile.size());
 
