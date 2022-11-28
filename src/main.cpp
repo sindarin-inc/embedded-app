@@ -165,7 +165,9 @@ void StatsTask(void *parameter) {
         // Spit out data on locks every 30s
         vTaskDelay(30000 / portTICK_PERIOD_MS);
 #if !SIMULATOR && !DISABLE_POWER_MANAGEMENT
-        esp_pm_dump_locks(stdout);
+        if (USBConnected()) {
+            esp_pm_dump_locks(stdout);
+        }
 #endif
     }
     vTaskDelete(nullptr);
@@ -433,7 +435,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     remoteQueue = xQueueCreate(10, sizeof(RemoteCommand));
     xTaskCreatePinnedToCore(RadioTask, "Radio", 10000, nullptr, 1, nullptr, 0);
-    xTaskCreatePinnedToCore(StatsTask, "Stats", 5000, nullptr, 0, nullptr, 1);
+    // xTaskCreatePinnedToCore(StatsTask, "Stats", 5000, nullptr, 0, nullptr, 1);
     xTaskCreatePinnedToCore(PowerTask, "Power", 5000, nullptr, 0, &powerTaskHandle, 1);
 
     // Render the first thing
