@@ -19,6 +19,7 @@ public:
     // Connect to the TurnTouch. Can be safely called even if the TurnTouch is already connected.
     void connect();
     void disconnectTemporarily(int seconds);
+    auto connected() -> bool { return state_ == CONNECTED; }
 
 protected:
     enum State {

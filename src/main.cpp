@@ -100,7 +100,7 @@ void RadioTask(void *parameter) {
         // Skip scanning while WiFi is connected to avoid kicking off the WiFi connection
         if (!NetworkConnected()) {
             ttRemoteInput.connect();
-        } else {
+        } else if (!ttRemoteInput.connected()) {
             log_d("Skipping Turn Touch scan while WiFi is connected");
         }
 #endif
