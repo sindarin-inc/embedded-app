@@ -57,4 +57,6 @@ private:
 
 auto DispatchGetCore0BackgroundQueue() -> DispatchQueue *;
 
+auto DispatchGetCore1BackgroundQueue() -> DispatchQueue *;
+
 auto DispatchGetUiQueue() -> DispatchQueue *;

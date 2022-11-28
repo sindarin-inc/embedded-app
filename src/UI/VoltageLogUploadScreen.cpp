@@ -98,7 +98,7 @@ void VoltageLogUploadScreen::begin() {
     state_.state = VoltageLogUploadState::ConnectingWifi;
     render(display_);
 
-    DispatchGetCore0BackgroundQueue()->dispatch([this]() {
+    DispatchGetCore1BackgroundQueue()->dispatch([this]() {
         if (!ConnectWifi()) {
             DispatchGetUiQueue()->dispatch([this]() { fail("Failed to connect to WiFi."); });
             return;

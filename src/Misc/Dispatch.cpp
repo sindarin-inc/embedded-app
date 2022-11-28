@@ -111,6 +111,7 @@ void DispatchQueue::dispatchThreadHandler() {
 }
 
 static DispatchQueue *core0BackgroundQueue = nullptr;
+static DispatchQueue *core1BackgroundQueue = nullptr;
 static DispatchQueue *uiQueue = nullptr;
 
 auto DispatchGetCore0BackgroundQueue() -> DispatchQueue * {
@@ -118,6 +119,13 @@ auto DispatchGetCore0BackgroundQueue() -> DispatchQueue * {
         core0BackgroundQueue = new DispatchQueue("Core0BG", 1, 10000, 0, 0);
     }
     return core0BackgroundQueue;
+}
+
+auto DispatchGetCore1BackgroundQueue() -> DispatchQueue * {
+    if (core1BackgroundQueue == nullptr) {
+        core1BackgroundQueue = new DispatchQueue("Core1BG", 1, 10000, 0, 1);
+    }
+    return core1BackgroundQueue;
 }
 
 auto DispatchGetUiQueue() -> DispatchQueue * {
