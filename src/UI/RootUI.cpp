@@ -365,6 +365,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         this->setCurrentScreen(*debugMenu);
     }));
 
+    std::string snString = StringFormat("SN: %s", GetSerialNumber().c_str());
+    settingsMenu->setExtraText(snString);
+
 #ifdef GITHASH
     std::string buildString = StringFormat("Build: %s (%s)", kVersionString, GITHASH);
 #else
