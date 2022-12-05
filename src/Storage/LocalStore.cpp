@@ -94,6 +94,14 @@ void LocalStore::removeReadable(const Readable &readable) {
     }
 }
 
+auto LocalStore::readablesSince() -> std::string {
+    return prefs_.lastReadablesSince.get().value_or("");
+}
+
+auto LocalStore::articlesSince() -> std::string {
+    return prefs_.lastArticlesSince.get().value_or("");
+}
+
 auto LocalStore::calculateReadablesSha() -> std::string {
     if (readables_.size() == 0) {
         log_w("No readables");
@@ -213,10 +221,14 @@ void LocalStore::syncFromRemote(
     auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this, progressCallback] {
         auto readablesSha = this->calculateReadablesSha();
+        auto readablesSince = this->readablesSince();
+        auto articlesSince = this->articlesSince();
         auto placemarks = this->readablePlacemarksChanged();
         CheckSyncResponse checkSyncResponse;
         CheckSyncRequest request = CheckSyncRequest{
             .readablesSha = readablesSha,
+            .readablesSince = readablesSince,
+            .articlesSince = articlesSince,
             .placemarks = placemarks,
             .ptBattery = this->prefs_.lastPageTurnerBattery.get().value_or(0),
             .ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or(""),
@@ -333,7 +345,11 @@ void LocalStore::syncFromRemote(
 
         // Update the SHA and try again
         readablesSha = this->calculateReadablesSha();
-        request.readablesSha = readablesSha,
+        readablesSince = this->readablesSince();
+        articlesSince = this->articlesSince();
+        request.readablesSha = readablesSha;
+        request.readablesSince = readablesSince;
+        request.articlesSince = articlesSince;
         SindarinAPI::getInstance()->checkSync(request, &checkSyncResponse);
 
         if (!this->save()) {

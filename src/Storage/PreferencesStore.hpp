@@ -154,7 +154,9 @@ public:
 #endif
           pocketApiToken(this->prefs_, "pocket-token"), cloudToken(this->prefs_, "cloud-token"),
           lastReadableId(this->prefs_, "rui-readable"),
-          lastPageTurnerBuild(this->prefs_, "pt-build"), readablePlace(this->prefs_, "-p"),
+          lastPageTurnerBuild(this->prefs_, "pt-build"),
+          lastArticlesSince(this->prefs_, "articles-since"),
+          lastReadablesSince(this->prefs_, "readables-since"), readablePlace(this->prefs_, "-p"),
           readablePlaceChanged(this->prefs_, "-pc"),
           lastPageTurnerBattery(this->prefs_, "pt-battery"), invertSetting(this->prefs_, "invert"),
           vcom(this->prefs_, "vcom"), backlight(this->prefs_, "backlight"),
@@ -188,6 +190,8 @@ public:
     PrefsItem<std::string> cloudToken;
     PrefsItem<std::string> lastReadableId;
     PrefsItem<std::string> lastPageTurnerBuild;
+    PrefsItem<std::string> lastArticlesSince;
+    PrefsItem<std::string> lastReadablesSince;
     KeyedPrefsItem<uint32_t> readablePlace;
     KeyedPrefsItem<bool> readablePlaceChanged;
     PrefsItem<int> lastPageTurnerBattery;

@@ -56,9 +56,11 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
     }
 
     httpClient.addHeader("Content-Type", "application/x-www-form-urlencoded");
-    auto body = StringFormat("sha=%s&build=%s&git_hash=%s&sn=%s&pt_battery=%d&pt_build=%s",
-                             req.readablesSha.c_str(), kVersionString, kGitHash,
-                             GetSerialNumber().c_str(), req.ptBattery, req.ptBuild.c_str());
+    auto body = StringFormat("sha=%s&build=%s&articles_since=%s&readables_since=%s&git_hash=%s&sn=%"
+                             "s&pt_battery=%d&pt_build=%s",
+                             req.readablesSha.c_str(), kVersionString, req.articlesSince.c_str(),
+                             req.readablesSince.c_str(), kGitHash, GetSerialNumber().c_str(),
+                             req.ptBattery, req.ptBuild.c_str());
     for (auto &placemark : req.placemarks) {
         body += placemark.c_str();
     }

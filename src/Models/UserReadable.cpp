@@ -3,6 +3,7 @@
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
 auto convertToJson(const UserReadable &src, JsonVariant dst) -> bool {
     dst["uuid"] = src.uuid;
+    dst["placemark"] = src.placemark;
     dst["readable"] = src.readable;
 
     return true;

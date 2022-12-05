@@ -10,6 +10,7 @@ public:
     ~UserReadable() override = default;
 
     std::string uuid;
+    uint32_t placemark;
     Readable readable;
 
     auto fromJson(const JsonObject &j) -> bool override {
@@ -18,6 +19,7 @@ public:
             return false;
         }
         uuid = j["uuid"].as<std::string>();
+        placemark = j["placemark"].as<uint32_t>();
         return readable.fromJson(j["readable"]);
     }
 

@@ -41,6 +41,8 @@ public:
     auto readables() -> std::vector<Readable> & { return readables_; };
     void addReadable(const Readable &readable);
     void removeReadable(const Readable &readable);
+    auto readablesSince() -> std::string;
+    auto articlesSince() -> std::string;
 
     auto calculateReadablesSha() -> std::string;
     auto readablePlacemarksChanged() -> std::vector<std::string>;
