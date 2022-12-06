@@ -102,3 +102,60 @@ void ZipFile::listFiles() {
         rc = zip_.gotoNextFile();
     }
 }
+
+void ZipFile::extractCurrentFile(const char *outFname) {
+
+    uint8_t buf[1024];
+    bool done = false;
+
+    File fp = fileSystem_.open(outFname, "w", true);
+    zip_.openCurrentFile();
+
+    while (!done) {
+        int bytesRead = zip_.readCurrentFile(buf, sizeof(buf));
+        fp.write(buf, bytesRead);
+
+        done = true;
+        if (bytesRead < sizeof(buf)) {
+            done = true;
+        }
+    }
+
+    zip_.closeCurrentFile();
+    fp.close();
+}
+
+void ZipFile::extractAllToDirectory(const char *dirname) {
+    // extract everything in the zip file to specified directory
+
+    zip_.gotoFirstFile();
+    int rc = UNZ_OK;
+    unz_file_info fi;
+    char szName[256];
+    char fullDir[512];
+
+    if (!fileSystem_.exists(dirname)) {
+        fileSystem_.createDir(dirname);
+    }
+
+    while (rc == UNZ_OK) {
+        rc = zip_.getFileInfo(&fi, szName, sizeof(szName), NULL, 0, NULL, 0);
+        if (rc == UNZ_OK) {
+            log_i("%s - %ld / %ld", szName, fi.compressed_size, fi.uncompressed_size);
+            int nameLen = strlen(szName);
+            if (nameLen > 0) {
+                snprintf(fullDir, sizeof(fullDir), "%s/%s", dirname, szName);
+                if (szName[nameLen - 1] == '/') {
+                    if (!fileSystem_.exists(fullDir)) {
+                        log_i("creating %s", fullDir);
+                        fileSystem_.createDir(fullDir);
+                    }
+                } else {
+                    // try to extract this file
+                    extractCurrentFile(fullDir);
+                }
+            }
+        }
+        rc = zip_.gotoNextFile();
+    }
+}

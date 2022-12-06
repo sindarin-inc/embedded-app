@@ -15,6 +15,9 @@ public:
     bool open();
     void close();
     void listFiles();
+    void extractAllToDirectory(const char *dirname);
+
+    void extractCurrentFile(const char *outFname);
 
     // static callbacks for unzipLIB library
     static void *zipOpen(const char *filename, int32_t *size);
