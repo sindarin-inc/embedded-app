@@ -15,7 +15,7 @@
 #define Hastings20x40_3
 
 // Uncomment to disable power management when debugging on the rev1 dev board
-// #define DISABLE_POWER_MANAGEMENT 1
+#define DISABLE_POWER_MANAGEMENT 1
 
 // Currently using the App (BLE Server in firmware) is incompatible with
 // Turn Touch (BLE client in firmware). Enable one of these options or the

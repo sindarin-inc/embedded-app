@@ -9,7 +9,6 @@
 #include "Storage/FileSystem.hpp"
 
 struct CheckSyncRequest {
-    std::string readablesSha;
     std::string readablesSince;
     std::string articlesSince;
     std::vector<std::string> placemarks;

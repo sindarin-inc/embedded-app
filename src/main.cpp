@@ -425,7 +425,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     if (!localStore.begin()) {
         bootErrors.push_back({.type = BootError::Type::LocalStore});
     }
-    auto readables = localStore.readables();
 
     SHOW_HEAP();
 

@@ -6,9 +6,20 @@
 #include "Models/Json.hpp"
 #include "sindarin-debug.h"
 
+#define READABLES_PATH "/readables.json"
+#define ARTICLES_PATH "/articles.json"
+
 auto LocalStore::begin() -> bool {
+    auto loadedReadables = loadReadablesFromFile(readables_, READABLES_PATH);
+    auto loadedArticles = loadReadablesFromFile(articles_, ARTICLES_PATH);
+
+    return loadedReadables && loadedArticles;
+}
+
+auto LocalStore::loadReadablesFromFile(std::vector<Readable> &readables, const std::string path)
+    -> bool {
     log_d("Loading readables.json");
-    File readablesFile = fileSystem.open("/readables.json");
+    File readablesFile = fileSystem.open(READABLES_PATH);
     if (!readablesFile) {
         log_w("Failed to open readables.json");
         // Fail positively since it's ok to not have any when you first use the glasses
@@ -29,10 +40,10 @@ auto LocalStore::begin() -> bool {
 
     auto readablesJson = (*doc)["readables"].as<JsonArray>();
     if (readablesJson.size() == 0) {
-        log_w("No readables found in readables.json");
+        log_w("No readables found in %s", path);
         return true;
     }
-    readables_.reserve(readablesJson.size());
+    readables.reserve(readablesJson.size());
 
     for (JsonVariant v : readablesJson) {
         Readable readable;
@@ -54,7 +65,7 @@ auto LocalStore::begin() -> bool {
             }
             log_d("Found local readable %s (%s)", readable.title.c_str(),
                   readable.localFilePath().c_str());
-            readables_.push_back(readable);
+            readables.push_back(readable);
         }
     }
 
@@ -62,8 +73,8 @@ auto LocalStore::begin() -> bool {
     return true;
 }
 
-auto LocalStore::hasReadable(Readable &readable) -> bool {
-    for (auto &r : readables_) {
+auto LocalStore::hasReadable(const std::vector<Readable> &readables, Readable &readable) -> bool {
+    for (auto &r : readables) {
         if (r.uuid == readable.uuid && fileSystem.exists(r.localFilePath())) {
             auto file = fileSystem.open(r.localFilePath());
             auto fileSize = file.size();
@@ -80,15 +91,15 @@ auto LocalStore::hasReadable(Readable &readable) -> bool {
     return false;
 }
 
-void LocalStore::addReadable(const Readable &readable) {
-    readables_.emplace_back(readable);
+void LocalStore::addReadable(std::vector<Readable> &readables, const Readable &readable) {
+    readables.emplace_back(readable);
     return;
 }
 
-void LocalStore::removeReadable(const Readable &readable) {
-    for (auto it = readables_.begin(); it != readables_.end(); ++it) {
+void LocalStore::removeReadable(std::vector<Readable> &readables, const Readable &readable) {
+    for (auto it = readables.begin(); it != readables.end(); ++it) {
         if (it->uuid == readable.uuid) {
-            readables_.erase(it);
+            readables.erase(it);
             return;
         }
     }
@@ -226,7 +237,6 @@ void LocalStore::syncFromRemote(
         auto placemarks = this->readablePlacemarksChanged();
         CheckSyncResponse checkSyncResponse;
         CheckSyncRequest request = CheckSyncRequest{
-            .readablesSha = readablesSha,
             .readablesSince = readablesSince,
             .articlesSince = articlesSince,
             .placemarks = placemarks,
@@ -234,6 +244,8 @@ void LocalStore::syncFromRemote(
             .ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or(""),
         };
 
+        std::vector<UserReadable> userReadables;
+        std::vector<UserReadable> userArticles;
         auto httpCode = SindarinAPI::getInstance()->checkSync(request, &checkSyncResponse);
         if (httpCode != HTTP_CODE_OK) {
             log_e("Failed to check sync (HTTP %d)", httpCode);
@@ -250,26 +262,29 @@ void LocalStore::syncFromRemote(
 
         progressCallback(ContentSyncState{.state = ContentSyncState::State::LoadingTasks});
 
-        log_i("Not synced, downloading readables");
-        std::vector<UserReadable> userReadables;
-        httpCode = SindarinAPI::getInstance()->getUserReadables(&userReadables);
-        if (httpCode != HTTP_CODE_OK) {
-            log_e("Failed to get readables (HTTP %d)", httpCode);
-            progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
-                                              .message = "Failed to load list"});
-            return;
-        }
+        // Store since date values for next sync
+        this->prefs_.readablesSince.set(checkSyncResponse.readablesSince);
+        this->prefs_.articlesSince.set(checkSyncResponse.articlesSince);
+
+        // log_i("Not synced, downloading readables");
+        // std::vector<UserReadable> userReadables;
+        // httpCode = SindarinAPI::getInstance()->getUserReadables(&userReadables);
+        // if (httpCode != HTTP_CODE_OK) {
+        //     log_e("Failed to get readables (HTTP %d)", httpCode);
+        //     progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+        //                                       .message = "Failed to load list"});
+        //     return;
+        // }
 
         // If out of sync, download any new readables.
-
         std::vector<Readable> readablesToDownload;
 
         // Now look through all the readables here, and download any that we don't have
         // already
-        for (auto userReadable : userReadables) {
+        for (auto &userReadable : checkSyncResponse.userReadables) {
             log_i("User readable %s (%s)", userReadable.readable.title.c_str(),
                   userReadable.readable.file().shaHash.c_str());
-            if (this->hasReadable(userReadable.readable)) {
+            if (this->hasReadable(readables_, userReadable.readable)) {
                 log_i("Already have %s", userReadable.readable.title.c_str());
                 continue;
             }
@@ -313,7 +328,7 @@ void LocalStore::syncFromRemote(
             const auto &readable = readablesToDelete[i];
             log_i("Deleting %s", readable.title.c_str());
             this->fileSystem.remove(readable.localFilePath());
-            this->removeReadable(readable);
+            this->removeReadable(readables_, readable);
             syncState.tasks[i].percentage = 100;
         }
 
@@ -333,7 +348,7 @@ void LocalStore::syncFromRemote(
                     progressCallback(syncState);
                 });
             if (success) {
-                addReadable(readable);
+                addReadable(readables_, readable);
                 log_d("File successfully downloaded.");
             }
         }
@@ -343,17 +358,18 @@ void LocalStore::syncFromRemote(
         // Artificially delay so the user has the satisfaction of seeing the list done
         delay(1000);
 
-        // Update the SHA and try again
-        readablesSha = this->calculateReadablesSha();
+        // Update the since dates and try again
         readablesSince = this->readablesSince();
         articlesSince = this->articlesSince();
-        request.readablesSha = readablesSha;
         request.readablesSince = readablesSince;
         request.articlesSince = articlesSince;
         SindarinAPI::getInstance()->checkSync(request, &checkSyncResponse);
 
-        if (!this->save()) {
-            log_e("Failed to save readables.json");
+        if (!this->saveReadables(readables_, READABLES_PATH)) {
+            log_e("Failed to save %s", std::string(READABLES_PATH));
+        }
+        if (!this->saveReadables(articles_, ARTICLES_PATH)) {
+            log_e("Failed to save %s", std::string(READABLES_PATH));
         }
 
         this->mergePlacemarksFromServer(checkSyncResponse.placemarks);
@@ -373,26 +389,27 @@ void LocalStore::syncFromRemote(
     });
 }
 
-auto LocalStore::save() -> bool {
+auto LocalStore::saveReadables(const std::vector<Readable> &readables, const std::string path)
+    -> bool {
     // 2048 is probably a safe-ish upper bound per readable. I'm seeing about half that in my
     // testing so far
-    auto *doc = new SpiRamJsonDocument(2048 * std::max(1, (int)readables_.size()));
+    auto *doc = new SpiRamJsonDocument(2048 * std::max(1, (int)readables.size()));
 
     // Create a key named readables of type array
     JsonArray readablesJson = doc->createNestedArray("readables");
 
-    log_d("Saving %zu readables in readables.json", readables_.size());
-    for (const auto &readable : readables_) {
+    log_d("Saving %zu readables in %s", readables.size(), path);
+    for (const auto &readable : readables) {
         readablesJson.add(readable);
     }
 
     if (doc->overflowed()) {
-        log_e("Out of space in SpiRamJsonDocument for readables.json");
+        log_e("Out of space in SpiRamJsonDocument for %s", path);
         return false;
     }
 
     // Write doc to disk
-    File file = fileSystem.open("/readables.json", FILE_WRITE);
+    File file = fileSystem.open(path, FILE_WRITE);
     if (!file) {
         log_e("Failed to open file for writing");
         return false;

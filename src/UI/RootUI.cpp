@@ -66,6 +66,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     SIZE_OF(*mainMenu);
 
     auto readables = localStore.readables();
+    auto articles = localStore.articles();
 
     auto createReadableScreen = [this, display, mainMenu,
                                  &fileSystem](const Readable &readable) -> ReadableScreen * {
@@ -110,8 +111,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     };
 
     auto currentReadable = prefs_.lastReadableId.get();
-    // If there are no readables, show the Sync Content item
-    if (readables.size() == 0) {
+    // If there are no book and no articles, show the Sync Content item
+    if (readables.size() == 0 && articles.size() == 0) {
         mainMenu->addMenuItem(MenuItem("Sync Content", [this, display, &localStore, mainMenu]() {
             auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
             this->setCurrentScreen(*contentSyncScreen);
@@ -123,18 +124,45 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             };
             contentSyncScreen->begin();
         }));
-    } else {
-        for (Readable &r : readables) {
-            mainMenu->addMenuItem(MenuItem(r.title, [this, r, createReadableScreen]() {
-                auto readableScreen = createReadableScreen(r);
-                this->setCurrentScreen(*readableScreen);
-            }));
-            if (currentReadable.has_value() && currentReadable.value() == r.uuid) {
-                mainMenu->setCurrSelection(mainMenu->getNumItems() - 1);
-            }
+    }
+    for (Readable &r : readables) {
+        mainMenu->addMenuItem(MenuItem(r.title, [this, r, createReadableScreen]() {
+            auto readableScreen = createReadableScreen(r);
+            this->setCurrentScreen(*readableScreen);
+        }));
+        if (currentReadable.has_value() && currentReadable.value() == r.uuid) {
+            mainMenu->setCurrSelection(mainMenu->getNumItems() - 1);
         }
     }
     SHOW_HEAP();
+
+    // Setup articles menu, soon to be its own "tab"
+    mainMenu->addMenuItem(MenuItem("Pocket Articles", [this, mainMenu, articles, display,
+                                                       &fileSystem, createReadableScreen]() {
+        log_i("Loading Pocket articles");
+
+        auto pocketMenu = new MenuScreen(this->power_, mainMenu->getMyStyle());
+
+        for (Readable &r : articles) {
+            pocketMenu->addMenuItem(
+                MenuItem(r.title, [this, pocketMenu, r, &fileSystem, createReadableScreen]() {
+                    auto readableScreen = createReadableScreen(r);
+                    setCurrentScreen(*readableScreen);
+
+                    readableScreen->backCallback = [this, readableScreen, pocketMenu]() {
+                        setCurrentScreen(*pocketMenu);
+                        delete readableScreen;
+                    };
+                }));
+        }
+        display->clearDisplay();
+        setCurrentScreen(*pocketMenu);
+        pocketMenu->backCallback = [this, mainMenu, pocketMenu, display]() {
+            display->clearDisplay();
+            setCurrentScreen(*mainMenu);
+            delete pocketMenu;
+        };
+    }));
 
     // Set up pocket article menu
 #if ENABLE_POCKET

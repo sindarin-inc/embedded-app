@@ -19,9 +19,11 @@ public:
     std::string uuid;
     std::string placemarkUuid;
     std::string title;
+    std::string url;
     std::string dateCreated;
     std::string dateModified;
     std::string datePublished;
+    bool isArticle = false;
     std::vector<Author> authors;
     std::vector<ReadableFile> files;
     // TODO: source
