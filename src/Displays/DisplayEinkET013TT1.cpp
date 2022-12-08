@@ -182,14 +182,20 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
     case FAST_WITH_VCOM_NUDGE:
         if (!fullRefreshNext_) {
             int oldVcom = getDriver()->getVcom();
+            getDriver()->setHackMode(true);
+            getDriver()->setHackModeValues(105, 151);
             if (getInversion()) {
                 getDriver()->setVcom(oldVcom - 2000);
-                driver_.update(BC_INVERTED_EINK_10_13C_WAVEFORM_AU4, gfxCanvas_.getBuffer());
+                // driver_.update(BC_INVERTED_EINK_10_13C_WAVEFORM_AU4, gfxCanvas_.getBuffer());
+                driver_.update(PARTIAL_REFRESH_WAVEFORM_INVERTED, gfxCanvas_.getBuffer());
+
             } else {
                 getDriver()->setVcom(oldVcom + 2000);
-                driver_.update(BC_REGULAR_EINK_10_13C_WAVEFORM_AU4, gfxCanvas_.getBuffer());
+                // driver_.update(BC_REGULAR_EINK_10_13C_WAVEFORM_AU4, gfxCanvas_.getBuffer());
+                driver_.update(PARTIAL_REFRESH_WAVEFORM_REGULAR, gfxCanvas_.getBuffer());
             }
             getDriver()->setVcom(oldVcom);
+            getDriver()->setHackMode(false);
         } else {
             driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
             firstPartialTime_ = 0;

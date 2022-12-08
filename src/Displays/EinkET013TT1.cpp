@@ -224,7 +224,13 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
 
     log_d("Updating display with waveform \"%s\"", waveform.name);
 
-    powerOn();
+    if (!hackMode || !poweredOn) {
+        powerOn();
+    }
+
+    if (hackMode) {
+        // poweredOn = true;
+    }
 
 #if !DISABLE_POWER_MANAGEMENT
     ESP_ERROR_CHECK(esp_pm_lock_acquire(freqLock_));
@@ -294,7 +300,8 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
         }
 
         // For each horizontal half-line
-        for (int gate = 0; gate < EinkET013TT1_GATE_COUNT; gate++) {
+        for (int gate = (hackMode ? hackModeMin : 0);
+             gate < (hackMode ? hackModeMax : EinkET013TT1_GATE_COUNT); gate++) {
             // Pick the correct gate based on the index
             uint8_t gs = gate & 0x0F;
             uint8_t gb = gate >> 4;
@@ -359,7 +366,9 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     esp_pm_lock_release(freqLock_);
 #endif
 
-    powerOff();
+    if (!hackMode) {
+        powerOff();
+    }
 
     float timeNs = PROFILE_CALCULATE_NS(sendFrames);
     int totalScanlines = (EinkET013TT1_GATE_COUNT + 1) * waveform.frameCount;

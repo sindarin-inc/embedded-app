@@ -92,7 +92,18 @@ public:
 
     auto errored() -> bool { return error_; }
 
+    auto setHackMode(bool newMode) -> void { hackMode = newMode; }
+    auto setHackModeValues(u_int32_t min, u_int32_t max) -> void {
+        hackModeMin = min;
+        hackModeMax = max;
+    }
+
 protected:
+    bool hackMode = false;
+    bool poweredOn = false;
+    u_int32_t hackModeMin = 0;
+    u_int32_t hackModeMax = 512;
+
     inline void setCS(bool value, ScreenSide screen);
     void powerOn();
     void powerOff();
