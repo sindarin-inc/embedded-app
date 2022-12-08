@@ -34,7 +34,6 @@ auto DisplayEinkET013TT1::setup() -> bool {
 
     log_d("Initializing EPD driver");
     driver_.init();
-    log_d("Clearing display");
 
     setFullWindow();
 

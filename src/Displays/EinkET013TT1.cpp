@@ -83,28 +83,23 @@ static uint8_t const BORDER_TEMPLATE[4] = {0x00, 0x00, 0x00, 0x0C};
 static uint8_t const BORDER_NONE[4] = {0x00, 0x00, 0x00, 0x03};
 
 void EinkET013TT1::init() {
-    log_d("Initializing EinkET013TT1");
+    log_d("Initializing EinkET013TT1 with config csLeft_=%d csRight_=%d rst_=%d mosi=%d miso=%d "
+          "clk=%d",
+          csLeft_, csRight_, rst_, DISPLAY_MOSI, DISPLAY_MISO, DISPLAY_CLK);
     pinMode(csLeft_, OUTPUT);
     pinMode(csRight_, OUTPUT);
     pinMode(rst_, OUTPUT);
     // The eink-provided driver only kept OEI low always, so we have it optional here
 #ifdef DISPLAY_OEI
+    log_w("Using DISPLAY_OEI pin %d", DISPLAY_OEI);
     pinMode(DISPLAY_OEI, OUTPUT);
 #endif
 #ifdef DISPLAY_BUSY
+    log_w("Using DISPLAY_BUSY pin %d", DISPLAY_BUSY);
     pinMode(DISPLAY_BUSY, INPUT);
 #endif
 
     setCS(HIGH, ScreenSide::Both);
-
-    digitalWrite(rst_, LOW);
-    delay(5);
-#ifdef DISPLAY_OEI
-    digitalWrite(DISPLAY_OEI, LOW);
-#endif
-    delay(5);
-    digitalWrite(rst_, HIGH);
-    delay(5);
 
     // Initialize the SPI bus
     // TODO(john): It's maybe a little weird that some pins come in via config.h and some come in
@@ -113,8 +108,10 @@ void EinkET013TT1::init() {
         .mosi_io_num = DISPLAY_MOSI,
         .miso_io_num = DISPLAY_MISO,
         .sclk_io_num = DISPLAY_CLK,
+        // These must be unset or the SPI driver will try to use them
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
+        .flags = SPICOMMON_BUSFLAG_MASTER,
     };
     // TODO: Why don't we have any available DMA channels? Maybe they are used by Flash and RAM?
     ESP_ERROR_CHECK(spi_bus_initialize(DISPLAY_SPI, &buscfg, SPI_DMA_DISABLED));
@@ -126,9 +123,10 @@ void EinkET013TT1::init() {
         // 20MHz though experimentally 30MHz seems to be fine (but doesnt seem to have much benefit)
         // at 20Mhz it should take 20us to send a 50 byte scanline (50*8*(1/20000000))
         .clock_speed_hz = 20 * 1000 * 1000, // Clock out at 20 MHz
-        // TODO: The SPI driver _should_ handle the CS pin automatically, but this isn't working for
-        // some reason
-        // .spics_io_num = cs_,
+        // Because we have two SPI devices we might drive at the same time, we're controlling the CS
+        // pins manually
+        // TODO: Investigate setting the CS pins automatically via `pre_cb` and `post_cb`
+        .spics_io_num = -1,
         .queue_size = 5,
     };
 
