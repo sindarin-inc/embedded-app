@@ -26,6 +26,12 @@ typedef enum {
     MMC5603_REG_PRODUCT_ID = 0x39,
 } mmc5603_reg_t;
 
+struct Xyz8bit {
+    int8_t x;
+    int8_t y;
+    int8_t z;
+};
+
 class Mmc5603 {
 public:
     Mmc5603(int i2cNum) : i2cNum_(i2cNum) {}
@@ -34,6 +40,11 @@ public:
 
     auto readX() -> float;
     auto readX20Bit() -> float;
+
+    // Only read the most significant byte on each axis
+    auto readXYZ8Bit(Xyz8bit &out) -> bool;
+    // Only read the most significant byte on X and Z axes
+    auto readXZ8Bit(Xyz8bit &out) -> bool;
 
 private:
     int i2cNum_;

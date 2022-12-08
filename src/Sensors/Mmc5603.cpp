@@ -3,6 +3,8 @@
 #include <driver/i2c.h>
 #include <esp_log.h>
 
+#include "sindarin-debug.h"
+
 #define I2C_MASTER_TIMEOUT_MS 1000
 #define MMC5603_SENSOR_ADDR 0x30
 
@@ -134,4 +136,60 @@ auto Mmc5603::readX() -> float {
     // and divide by the range -30G - +30G (32768 / 30) to get the float value.
     xValue = ((float)xInt - 32768.0) / 1092.267f;
     return xValue;
+}
+
+auto Mmc5603::readXYZ8Bit(Xyz8bit &out) -> bool {
+    mmc5603_ctrl_0_value ctrl0Value;
+    ctrl0Value.autoSrEn = 1;
+    ctrl0Value.takeMeasM = 1;
+    esp_err_t err;
+    err = registerWriteByte(MMC5603_REG_CTRL_0, ctrl0Value.raw);
+    if (err != ESP_OK) {
+        log_e("Failed to write to MMC5603_REG_CTRL_0 (error: %s)", esp_err_to_name(err));
+        return false;
+    }
+    err = registerReadByte(MMC5603_REG_XOUT_0, (uint8_t *)&(out.x));
+    if (err != ESP_OK) {
+        log_e("Failed to read from MMC5603_REG_XOUT_0 (error: %s)", esp_err_to_name(err));
+        return false;
+    }
+    out.x -= 128;
+    err = registerReadByte(MMC5603_REG_YOUT_0, (uint8_t *)&(out.y));
+    if (err != ESP_OK) {
+        log_e("Failed to read from MMC5603_REG_YOUT_0 (error: %s)", esp_err_to_name(err));
+        return false;
+    }
+    out.y -= 128;
+    err = registerReadByte(MMC5603_REG_ZOUT_0, (uint8_t *)&(out.z));
+    if (err != ESP_OK) {
+        log_e("Failed to read from MMC5603_REG_ZOUT_0 (error: %s)", esp_err_to_name(err));
+        return false;
+    }
+    out.z -= 128;
+    return true;
+}
+
+auto Mmc5603::readXZ8Bit(Xyz8bit &out) -> bool {
+    mmc5603_ctrl_0_value ctrl0Value;
+    ctrl0Value.autoSrEn = 1;
+    ctrl0Value.takeMeasM = 1;
+    esp_err_t err;
+    err = registerWriteByte(MMC5603_REG_CTRL_0, ctrl0Value.raw);
+    if (err != ESP_OK) {
+        log_e("Failed to write to MMC5603_REG_CTRL_0 (error: %s)", esp_err_to_name(err));
+        return false;
+    }
+    err = registerReadByte(MMC5603_REG_XOUT_0, (uint8_t *)&(out.x));
+    if (err != ESP_OK) {
+        log_e("Failed to read from MMC5603_REG_XOUT_0 (error: %s)", esp_err_to_name(err));
+        return false;
+    }
+    out.x -= 128;
+    err = registerReadByte(MMC5603_REG_ZOUT_0, (uint8_t *)&(out.z));
+    if (err != ESP_OK) {
+        log_e("Failed to read from MMC5603_REG_ZOUT_0 (error: %s)", esp_err_to_name(err));
+        return false;
+    }
+    out.z -= 128;
+    return true;
 }
