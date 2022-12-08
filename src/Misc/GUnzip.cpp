@@ -1,7 +1,9 @@
 #include "GUnzip.hpp"
-
-#include <Arduino.h>
+//#include <Arduino.h>
+#include <memory>
 #include <stdio.h>
+
+#include "last.h"
 
 /* Possible inflate modes between inflate() calls */
 typedef enum {
@@ -59,7 +61,11 @@ typedef struct _inflate_state {
     unsigned char FAR *window; /* allocated sliding window, if needed */
         /* bit accumulator */} inflate_state;
 
-        void GUnzip::open(const char *fname) {
+        void GUnzip::open() {
+
+            auto buffer = std::make_unique<uint8_t[]>(32768 + 7168);
+            inflateBuf_ = buffer.get();
+
             int err = Z_OK;
 
             zstr_.zalloc = (alloc_func)0;
@@ -73,32 +79,31 @@ typedef struct _inflate_state {
             zstr_.next_in = Z_NULL;
 
             err = inflateInit2(&zstr_, 16 + MAX_WBITS);
+            // err = inflateInit2_(NULL, 0, 0, 0);
+            // err = inflateDummy();
 
+            /*
             if (err == Z_OK) {
                 printf("zlib init ok\n");
             } else {
                 printf("zlib error: %d\n", err);
             }
+            */
         }
 
         int GUnzip::decompress(uint8_t *input, int input_size, uint8_t *output, int output_size,
                                int &input_read, int &output_avail) {
 
-            log_i("dec input %d output %d", input_size, output_size);
             zstr_.next_in = input;
             zstr_.avail_in = input_size;
             zstr_.next_out = output;
             zstr_.avail_out = output_size;
-
-            log_i("begin total in %d out %d", zstr_.total_in, zstr_.total_out);
 
             int in_before = zstr_.total_in;
             int out_before = zstr_.total_out;
 
             int err = Z_OK;
             err = inflate(&zstr_, Z_SYNC_FLUSH);
-
-            log_i("after err: %d total in %d out %d", err, zstr_.total_in, zstr_.total_out);
 
             input_read = zstr_.total_in - in_before;
             output_avail = zstr_.total_out - out_before;
@@ -107,6 +112,7 @@ typedef struct _inflate_state {
 
         void GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFileName,
                                     const std::string &outputFileName) {
+
             File in = fileSystem.open(inputFileName);
             File out = fileSystem.open(outputFileName, "w", true);
 
@@ -129,7 +135,6 @@ typedef struct _inflate_state {
                     }
 
                     int readBytes = in.readBytes((char *)inBuf, 1024);
-                    log_i("read %d bytes", readBytes);
                     if (readBytes == 0) {
                         log_i("done reading!");
                         done = true;
@@ -146,14 +151,11 @@ typedef struct _inflate_state {
 
                 int err = decompress(&inBuf[input_index], input_avail, outBuf, 1024, input_read,
                                      output_avail);
-                log_i("dec: %d", output_avail);
 
                 // write block
                 if (output_avail > 0) {
                     out.write(outBuf, output_avail);
                 }
-
-                log_i("done writing %d", output_avail);
 
                 // continue reading until no more output available
                 while (output_avail == 1024) {
@@ -169,11 +171,75 @@ typedef struct _inflate_state {
                 // increment input
                 input_index += input_read;
                 input_avail -= input_read;
-
-                log_i("index %d avail %d", input_index, input_avail);
             }
 
             log_i("done, closing.");
             in.close();
             out.close();
+        }
+
+        void GUnzip::decompressMemory() {
+            uint8_t *fileptr = (uint8_t *)___data_last_txt_gz;
+            int filelen = ___data_last_txt_gz_len;
+            int curr_file_byte = 0;
+
+            bool done = false;
+            uint8_t inBuf[1024];
+            uint8_t outBuf[1024];
+            int input_avail = 0;
+            int input_index = 0;
+            int input_read = 0;
+            int output_avail = 0;
+            int block = 0;
+            bool last = false;
+            while (!done) {
+
+                if (input_avail == 0) {
+
+                    if (last) {
+                        done = true;
+                        continue;
+                    }
+
+                    // int readBytes = in.readBytes((char *)inBuf, 1024);
+
+                    int bytes_to_read = 1024;
+                    if ((filelen - curr_file_byte) < 1024) {
+                        bytes_to_read = filelen - curr_file_byte;
+                    }
+
+                    memcpy(inBuf, fileptr, bytes_to_read);
+                    fileptr += bytes_to_read;
+                    curr_file_byte += bytes_to_read;
+                    int readBytes = bytes_to_read;
+
+                    if (readBytes == 0) {
+                        log_i("done reading!");
+                        done = true;
+                        continue;
+                    }
+
+                    if (readBytes < 1024) {
+                        last = true;
+                    }
+
+                    input_avail = readBytes;
+                    input_index = 0;
+                }
+
+                int err = decompress(&inBuf[input_index], input_avail, outBuf, 1024, input_read,
+                                     output_avail);
+
+                // continue reading until no more output available
+                while (output_avail == 1024) {
+                    int ir = 0;
+                    err = decompress(inBuf, 0, outBuf, 1024, ir, output_avail);
+                }
+
+                // increment input
+                input_index += input_read;
+                input_avail -= input_read;
+            }
+
+            log_i("done, closing.");
         }

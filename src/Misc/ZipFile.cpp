@@ -41,7 +41,16 @@ int32_t ZipFile::zipRead(void *p, uint8_t *buffer, int32_t length) {
         return -1;
     }
 
-    int r = fp->readBytes((char *)buffer, length);
+    int r = 0;
+    for (int j = 0; j < length; j++) {
+        int rr = fp->read(&buffer[j], 1);
+        if (rr < 1) {
+            break;
+        }
+
+        r += rr;
+    }
+
     return r;
 }
 
@@ -56,6 +65,24 @@ int32_t ZipFile::zipSeek(void *p, int32_t position, int iType) {
         return -1;
     }
 
+    log_i("seek: %d", position);
+    int32_t dest = 0;
+    if (iType == SEEK_SET) {
+        dest = position;
+    } else if (iType == SEEK_END) {
+        dest = position + pzf->iSize;
+    } else { // SEEK_CUR
+        long l = fp->position();
+        dest = l + position;
+    }
+    log_i("dest: %d", dest);
+
+    bool res = fp->seek(dest);
+
+    log_i("res: %d", res);
+    return res;
+
+    /*
     if (iType == SEEK_SET) {
         return fp->seek(position);
     } else if (iType == SEEK_END) {
@@ -64,6 +91,7 @@ int32_t ZipFile::zipSeek(void *p, int32_t position, int iType) {
         long l = fp->position();
         return fp->seek(l + position);
     }
+    */
 }
 
 bool ZipFile::open() {
@@ -74,7 +102,7 @@ bool ZipFile::open() {
         return true;
     }
 
-    log_i("failed to unzip %s", fileName_.c_str());
+    log_i("failed to unzip %s, err %d", fileName_.c_str(), rc);
     return false;
 }
 
