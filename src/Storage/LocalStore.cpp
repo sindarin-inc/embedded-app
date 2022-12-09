@@ -1,5 +1,6 @@
 #include "LocalStore.hpp"
 
+#include "Communications/HtmlCleaner.hpp"
 #include "Communications/SindarinAPI.hpp"
 #include "Misc/Crypto.hpp"
 #include "Misc/StringUtil.hpp"
@@ -18,7 +19,7 @@ auto LocalStore::begin() -> bool {
 
 auto LocalStore::loadReadablesFromFile(std::vector<Readable> &readables, const std::string &path)
     -> bool {
-    log_d("Loading readables.json");
+    log_d("Loading %s", path.c_str());
     File readablesFile = fileSystem.open(path);
     if (!readablesFile) {
         log_w("Failed to open %s", path.c_str());
@@ -335,7 +336,8 @@ void LocalStore::syncFromRemote(
                 continue;
             }
 
-            addReadable(articles_, userReadable.readable);
+            this->saveArticleFile(userReadable.readable);
+            this->addReadable(articles_, userReadable.readable);
         }
         this->resetReadablesPlacemarkChanged(articles_);
 
@@ -369,6 +371,21 @@ void LocalStore::syncFromRemote(
                                               .message = "Not in sync"});
         }
     });
+}
+
+void LocalStore::saveArticleFile(const Readable &readable) {
+    log_i("Storing article %s", readable.title.c_str());
+
+    auto path = StringFormat("/articles/%s.txt", readable.uuid.c_str());
+    File file = fileSystem.open(path.c_str(), FILE_WRITE);
+    const char *title = readable.title.c_str();
+    file.write((const uint8_t *)title, strlen(title));
+    file.write('\n');
+
+    StripHtml(readable.content, file);
+
+    file.flush();
+    file.close();
 }
 
 auto LocalStore::saveReadables(const std::vector<Readable> &readables, const std::string &path)

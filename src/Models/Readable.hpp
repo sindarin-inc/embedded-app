@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "Misc/StringUtil.hpp"
 #include "Models/Author.hpp"
 #include "Models/Json.hpp"
 #include "Models/JsonSerializable.hpp"
@@ -19,6 +20,7 @@ public:
     std::string uuid;
     std::string shortenedUuid;
     std::string title;
+    std::string content;
     std::string url;
     std::string dateCreated;
     std::string dateModified;
@@ -35,13 +37,18 @@ public:
     uint32_t place{0}, placePrev{0};
 
     [[nodiscard]] auto file() const -> const ReadableFile & { return files[0]; }
-    [[nodiscard]] auto localFilePath() const -> std::string { return "/" + file().name; }
+    [[nodiscard]] auto localFilePath() const -> std::string {
+        if (files.size()) {
+            return StringFormat("/%s", file().name.c_str());
+        } else {
+            return StringFormat("/articles/%s.txt", uuid.c_str());
+        }
+    }
     [[nodiscard]] auto remoteUrl() const -> std::string { return file().file; }
 
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("uuid") || !j.containsKey("title") || !j.containsKey("date_created") ||
-            !j.containsKey("date_modified") || !j.containsKey("authors") ||
-            !j.containsKey("files")) {
+            !j.containsKey("date_modified") || !j.containsKey("authors")) {
             log_w("Failed to parse Readable %s", DumpJson(j).c_str());
             return false;
         }
@@ -59,9 +66,14 @@ public:
             authors.back().fromJson(author);
         }
         files.clear();
-        for (const auto &file : j["files"].as<JsonArray>()) {
-            files.emplace_back();
-            files.back().fromJson(file);
+        if (j.containsKey("files")) {
+            for (const auto &file : j["files"].as<JsonArray>()) {
+                files.emplace_back();
+                files.back().fromJson(file);
+            }
+        }
+        if (j.containsKey("content")) {
+            content = j["content"].as<std::string>();
         }
         return true;
     }
