@@ -21,3 +21,5 @@ auto GetRunTimeMs() -> uint32_t;
 auto USBConnected() -> bool;
 
 auto GetSerialNumber() -> std::string;
+
+auto GetHardwareRevision() -> uint8_t;
