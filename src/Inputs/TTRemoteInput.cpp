@@ -130,6 +130,17 @@ void TTRemoteInput::disconnectTemporarily(int seconds) {
     }
     state_ = SCANNING;
     keepDisconnectedUntilMs_ = millis() + seconds * 1000;
+
+    std::string dfuString = "DFU-";
+    if (prefs_.lastPageTurnerBuild.get().has_value()) {
+        std::string build = prefs_.lastPageTurnerBuild.get().value();
+        if (build.find("DFU-") == std::string::npos) {
+            dfuString += build;
+        } else {
+            dfuString = build;
+        }
+    }
+    prefs_.lastPageTurnerBuild.set(dfuString);
 }
 
 void TTRemoteInput::scanForDevice() {
