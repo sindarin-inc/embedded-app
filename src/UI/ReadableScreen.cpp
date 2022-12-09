@@ -172,8 +172,8 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
 void ReadableScreen::turnPage() {
     readable_.placePrev = readable_.place;
     readable_.place = newPlace_;
-    prefs_.readablePlace.set(readable_.placemarkUuid.c_str(), readable_.place);
-    prefs_.readablePlaceChanged.set(readable_.placemarkUuid.c_str(), true);
+    prefs_.readablePlace.set(readable_.shortenedUuid.c_str(), readable_.place);
+    prefs_.readablePlaceChanged.set(readable_.shortenedUuid.c_str(), true);
     speedLinesToSkip_ = 0;
 }
 
@@ -370,8 +370,8 @@ void ReadableScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::CHANNEL_MINUS:
         if (pageSpeed_ == 0) {
             readable_.place = renderer_.getPreviousPlace();
-            prefs_.readablePlace.set(readable_.placemarkUuid.c_str(), readable_.place);
-            prefs_.readablePlaceChanged.set(readable_.placemarkUuid.c_str(), true);
+            prefs_.readablePlace.set(readable_.shortenedUuid.c_str(), readable_.place);
+            prefs_.readablePlaceChanged.set(readable_.shortenedUuid.c_str(), true);
             needsRerender = true;
         } else {
             pageSpeed_ = std::min(pageSpeed_ + PAGE_SPEED_INCREMENT, SLOWEST_PAGE_SPEED);

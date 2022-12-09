@@ -11,7 +11,8 @@
 struct CheckSyncRequest {
     std::string readablesSince;
     std::string articlesSince;
-    std::vector<std::string> placemarks;
+    std::vector<std::string> readablePlacemarks;
+    std::vector<std::string> articlePlacemarks;
     int ptBattery;
     std::string ptBuild;
 };

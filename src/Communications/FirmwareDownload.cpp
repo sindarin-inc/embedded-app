@@ -34,7 +34,8 @@ void FirmwareDownloader::downloadFirmware(
         CheckSyncRequest request = CheckSyncRequest{
             .readablesSince = "-1",
             .articlesSince = "-1",
-            .placemarks = {},
+            .readablePlacemarks = {},
+            .articlePlacemarks = {},
             .ptBattery = prefs_.lastPageTurnerBattery.get().value_or(0),
             .ptBuild = prefs_.lastPageTurnerBuild.get().value_or(""),
         };

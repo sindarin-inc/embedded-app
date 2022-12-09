@@ -61,7 +61,10 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
                      "s&pt_battery=%d&pt_build=%s",
                      kVersionString, req.articlesSince.c_str(), req.readablesSince.c_str(),
                      kGitHash, GetSerialNumber().c_str(), req.ptBattery, req.ptBuild.c_str());
-    for (auto &placemark : req.placemarks) {
+    for (auto &placemark : req.readablePlacemarks) {
+        body += placemark.c_str();
+    }
+    for (auto &placemark : req.articlePlacemarks) {
         body += placemark.c_str();
     }
 

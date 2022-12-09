@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "Misc/Dispatch.hpp"
-#include "Models/Placemark.hpp"
 #include "Models/Readable.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
@@ -47,9 +46,11 @@ public:
     auto readablesSince() -> std::string;
     auto articlesSince() -> std::string;
 
-    auto readablePlacemarksChanged() -> std::vector<std::string>;
-    void mergePlacemarksFromServer(const std::vector<Placemark> &placemarks);
-    void resetReadablePlacemarkChanged();
+    auto changedReadablePlacemarkQueryParams(const std::vector<Readable> &readables)
+        -> std::vector<std::string>;
+    auto comparePlacemark(const std::vector<Readable> &readables, const Readable &readable,
+                          const uint32_t placemark) -> bool;
+    void resetReadablePlacemarkChanged(const std::vector<Readable> &readables);
 
     void syncFromRemote(const std::function<void(ContentSyncState state)> &progressCallback);
 

@@ -113,62 +113,55 @@ auto LocalStore::articlesSince() -> std::string {
     return prefs_.lastArticlesSince.get().value_or("");
 }
 
-auto LocalStore::readablePlacemarksChanged() -> std::vector<std::string> {
+auto LocalStore::changedReadablePlacemarkQueryParams(const std::vector<Readable> &readables)
+    -> std::vector<std::string> {
     std::vector<std::string> placemarks;
-    for (auto &readable : readables_) {
-        if (!readable.localOnly) {
-            bool changed = prefs_.readablePlaceChanged.get(readable.placemarkUuid.c_str());
-            if (changed) {
-                uint32_t place = prefs_.readablePlace.get(readable.placemarkUuid.c_str());
-                log_i("Placemark on readable %s has changed to %d", readable.uuid.c_str(), place);
-                placemarks.push_back(
-                    StringFormat("&placemark_%s=%d", readable.uuid.c_str(), place));
-            }
+    for (auto &readable : readables) {
+        if (readable.localOnly) {
+            continue;
+        }
+        bool changed = prefs_.readablePlaceChanged.get(readable.shortenedUuid.c_str());
+        if (changed) {
+            uint32_t place = prefs_.readablePlace.get(readable.shortenedUuid.c_str());
+            log_i("Placemark on readable %s has changed to %d", readable.uuid.c_str(), place);
+            std::string readableGroup =
+                std::addressof(readables) == std::addressof(articles_) ? "articles" : "readables";
+            placemarks.push_back(StringFormat("&%s_placemark_%s=%d", readableGroup.c_str(),
+                                              readable.uuid.c_str(), place));
         }
     }
 
     return placemarks;
 }
+auto LocalStore::comparePlacemark(const std::vector<Readable> &readables, const Readable &readable,
+                                  const uint32_t placemark) -> bool {
+    uint32_t onDevicePlace = prefs_.readablePlace.get(readable.shortenedUuid.c_str());
+    bool changed = prefs_.readablePlaceChanged.get(readable.shortenedUuid.c_str());
 
-void LocalStore::mergePlacemarksFromServer(const std::vector<Placemark> &placemarks) {
-    for (auto &placemark : placemarks) {
-        const auto readable = std::find_if(readables_.begin(), readables_.end(),
-                                           [&placemark](const Readable &readable) {
-                                               return placemark.readableUuid == readable.uuid;
-                                           });
-
-        if (readable == readables_.end()) {
-            log_e("Could not find readable with UUID %s", placemark.readableUuid.c_str());
-            return;
-        }
-
-        uint32_t onDevicePlace = prefs_.readablePlace.get(readable->placemarkUuid.c_str());
-        bool changed = prefs_.readablePlaceChanged.get(readable->placemarkUuid.c_str());
-
-        if (placemark.placemark == onDevicePlace) {
-            // If the placemark on the server is the same as the one on the device, don't change it
-        } else if (placemark.placemark > onDevicePlace && !changed) {
-            log_i("Updating placemark for \"%s\" from device value of %d to server "
-                  "value of %d",
-                  readable->title.c_str(), onDevicePlace, placemark.placemark);
-            prefs_.readablePlace.set(readable->placemarkUuid.c_str(), placemark.placemark);
-        } else if (placemark.placemark != 0) {
-            log_i("Not updating placemark for \"%s\" from device value of %d to server "
-                  "value of %d. Changed: %d",
-                  readable->title.c_str(), onDevicePlace, placemark.placemark, changed);
-        }
+    if (placemark == onDevicePlace) {
+        // If the placemark on the server is the same as the one on the device, don't change it
+    } else if (placemark > onDevicePlace && !changed) {
+        log_i("Updating placemark for \"%s\" from device value of %d to server "
+              "value of %d",
+              readable.title.c_str(), onDevicePlace, placemark);
+        prefs_.readablePlace.set(readable.shortenedUuid.c_str(), placemark);
+    } else if (placemark != 0) {
+        log_i("Not updating placemark for \"%s\" from device value of %d to server "
+              "value of %d. Changed: %d",
+              readable.title.c_str(), onDevicePlace, placemark, changed);
     }
 
-    this->resetReadablePlacemarkChanged();
+    this->resetReadablePlacemarkChanged(readables);
+    return false;
 }
 
-void LocalStore::resetReadablePlacemarkChanged() {
-    for (auto &readable : readables_) {
-        if (!readable.localOnly &&
-            prefs_.readablePlaceChanged.get(readable.placemarkUuid.c_str())) {
+void LocalStore::resetReadablePlacemarkChanged(const std::vector<Readable> &readables) {
+    for (auto &readable : readables) {
+        bool changed = prefs_.readablePlaceChanged.get(readable.shortenedUuid.c_str());
+        if (!readable.localOnly && changed) {
             log_d("Resetting placemark changed for \"%s\" (synced to server)",
                   readable.title.c_str());
-            prefs_.readablePlaceChanged.set(readable.placemarkUuid.c_str(), false);
+            prefs_.readablePlaceChanged.set(readable.shortenedUuid.c_str(), 0);
         }
     }
 }
@@ -196,12 +189,14 @@ void LocalStore::syncFromRemote(
     queue->dispatch([this, progressCallback] {
         auto readablesSince = this->readablesSince();
         auto articlesSince = this->articlesSince();
-        auto placemarks = this->readablePlacemarksChanged();
+        auto readablePlacemarks = this->changedReadablePlacemarkQueryParams(readables_);
+        auto articlePlacemarks = this->changedReadablePlacemarkQueryParams(articles_);
         CheckSyncResponse checkSyncResponse;
         CheckSyncRequest request = CheckSyncRequest{
             .readablesSince = readablesSince,
             .articlesSince = articlesSince,
-            .placemarks = placemarks,
+            .readablePlacemarks = readablePlacemarks,
+            .articlePlacemarks = articlePlacemarks,
             .ptBattery = this->prefs_.lastPageTurnerBattery.get().value_or(0),
             .ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or(""),
         };
@@ -216,7 +211,6 @@ void LocalStore::syncFromRemote(
             return;
         }
         if (checkSyncResponse.synced) {
-            this->mergePlacemarksFromServer(checkSyncResponse.placemarks);
             log_i("Client is in sync");
             progressCallback(ContentSyncState{.state = ContentSyncState::State::Synced});
             return;
@@ -248,6 +242,11 @@ void LocalStore::syncFromRemote(
                   userReadable.readable.file().shaHash.c_str());
             if (this->hasReadable(readables_, userReadable.readable)) {
                 log_i("Already have %s", userReadable.readable.title.c_str());
+                continue;
+            }
+            if (this->comparePlacemark(readables_, userReadable.readable, userReadable.placemark)) {
+                log_i("Placemark for %s is already up to date",
+                      userReadable.readable.title.c_str());
                 continue;
             }
 
@@ -317,6 +316,23 @@ void LocalStore::syncFromRemote(
 
         progressCallback(syncState);
 
+        // Save the articles that are new
+        for (auto &userReadable : checkSyncResponse.userArticles) {
+            log_i("User article %s (%s)", userReadable.readable.title.c_str(),
+                  userReadable.readable.file().shaHash.c_str());
+            if (this->hasReadable(articles_, userReadable.readable)) {
+                log_i("Already have %s", userReadable.readable.title.c_str());
+                continue;
+            }
+            if (this->comparePlacemark(articles_, userReadable.readable, userReadable.placemark)) {
+                log_i("Placemark for %s is already up to date",
+                      userReadable.readable.title.c_str());
+                continue;
+            }
+
+            addReadable(articles_, userReadable.readable);
+        }
+
         // Artificially delay so the user has the satisfaction of seeing the list done
         delay(1000);
 
@@ -333,8 +349,6 @@ void LocalStore::syncFromRemote(
         if (!this->saveReadables(articles_, ARTICLES_PATH)) {
             log_e("Failed to save %s", READABLES_PATH);
         }
-
-        this->mergePlacemarksFromServer(checkSyncResponse.placemarks);
 
         // TODO: Force reload of rootUI instead of rebooting
         if (checkSyncResponse.synced) {

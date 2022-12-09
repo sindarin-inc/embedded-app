@@ -2,7 +2,6 @@
 
 #include "Models/Firmware.hpp"
 #include "Models/JsonSerializable.hpp"
-#include "Models/Placemark.hpp"
 #include "Models/UserReadable.hpp"
 
 class CheckSyncResponse : JsonSerializable {
@@ -13,7 +12,6 @@ public:
     bool synced;
     std::string message;
     Firmware firmware;
-    std::vector<Placemark> placemarks;
     std::vector<UserReadable> userReadables;
     std::vector<UserReadable> userArticles;
     std::string readablesSince;
@@ -25,11 +23,6 @@ public:
         readablesSince = j["readablesSince"].as<std::string>();
         articlesSince = j["articlesSince"].as<std::string>();
         firmware.fromJson(j["firmware"]);
-        placemarks.clear();
-        for (const auto &placemark : j["placemarks"].as<JsonArray>()) {
-            placemarks.emplace_back();
-            placemarks.back().fromJson(placemark);
-        }
         userReadables.clear();
         for (const auto &userReadable : j["readables"].as<JsonArray>()) {
             userReadables.emplace_back();

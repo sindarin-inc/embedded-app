@@ -8,7 +8,7 @@ void ReadableSeekScreen::render(DisplaySystem &display) {
         return;
     }
 
-    auto place = prefs_.readablePlace.get(readable_.placemarkUuid.c_str());
+    auto place = prefs_.readablePlace.get(readable_.shortenedUuid.c_str());
     auto progress = 100 * (float)place / (float)renderer_.size();
 
     auto percentStr = StringFormat("%.1f%%", progress);
@@ -103,8 +103,8 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
         log_d("Setting place from %d to %d", readable_.placePrev, readable_.place);
 
         renderer_.setCurrentPlace(readable_.place);
-        prefs_.readablePlace.set(readable_.placemarkUuid.c_str(), readable_.place);
-        prefs_.readablePlaceChanged.set(readable_.placemarkUuid.c_str(), true);
+        prefs_.readablePlace.set(readable_.shortenedUuid.c_str(), readable_.place);
+        prefs_.readablePlaceChanged.set(readable_.shortenedUuid.c_str(), true);
         needsRerender = true;
         break;
     }
@@ -125,8 +125,8 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
         }
 
         renderer_.setCurrentPlace(readable_.place);
-        prefs_.readablePlace.set(readable_.placemarkUuid.c_str(), readable_.place);
-        prefs_.readablePlaceChanged.set(readable_.placemarkUuid.c_str(), true);
+        prefs_.readablePlace.set(readable_.shortenedUuid.c_str(), readable_.place);
+        prefs_.readablePlaceChanged.set(readable_.shortenedUuid.c_str(), true);
         needsRerender = true;
         break;
     }
