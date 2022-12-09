@@ -13,11 +13,6 @@ jobs:
     strategy:
       matrix:
         pioenv:
-          - gilpico-idf
-          - gilpico-frankenoscillator
-          - glasses-idf
-          - rev7-vanilla
-          - esp-wrover-kit-idf
           - sol3dev
           - simulator
           # - simulator-wasm
@@ -49,7 +44,7 @@ jobs:
 
       - name: Upload binary firmwares
         uses: actions/upload-artifact@v2
-        if: matrix.pioenv == 'gilpico-frankenoscillator'
+        if: matrix.pioenv == 'sol3dev'
         with:
           name: ${{ matrix.pioenv }}-binaries-${{ github.sha }}
           path: |

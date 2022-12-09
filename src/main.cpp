@@ -33,11 +33,6 @@
 DisplayEinkET013TT1 myDisplay(DISPLAY_CS_LEFT, DISPLAY_CS_RIGHT, DISPLAY_RST);
 #endif
 
-#if WROVER_KIT
-#include "Displays/DisplayWroverLcd.hpp"
-DisplayWroverLcd myDisplay;
-#endif
-
 PreferencesStore prefs;
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS
@@ -122,11 +117,7 @@ void RadioTask(void *parameter) {
 TaskHandle_t powerTaskHandle = nullptr;
 
 #if !DISABLE_POWER_MANAGEMENT
-#if GILPICO_SINDARIN
-esp_pm_config_esp32_t pmConfig;
-#else
 esp_pm_config_esp32s3_t pmConfig;
-#endif
 #endif
 
 void PowerTask(void *parameter) {
@@ -264,9 +255,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     if (prefs.vcom.get().value() != 0) {
         myDisplay.getDriver()->setVcom(prefs.vcom.get().value());
     }
-
-#elif WROVER_KIT
-    myDisplay.begin();
 #endif
 
     // If the saved prefs have a backlight of zero, turn on the lights anyways
