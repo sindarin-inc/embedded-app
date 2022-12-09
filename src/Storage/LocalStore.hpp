@@ -48,9 +48,9 @@ public:
 
     auto changedReadablePlacemarkQueryParams(const std::vector<Readable> &readables)
         -> std::vector<std::string>;
-    auto comparePlacemark(const std::vector<Readable> &readables, const Readable &readable,
-                          const uint32_t placemark) -> bool;
-    void resetReadablePlacemarkChanged(const std::vector<Readable> &readables);
+    auto processReadablePlacemarksFromServer(const Readable &readable, const uint32_t placemark)
+        -> bool;
+    void resetReadablesPlacemarkChanged(const std::vector<Readable> &readables);
 
     void syncFromRemote(const std::function<void(ContentSyncState state)> &progressCallback);
 

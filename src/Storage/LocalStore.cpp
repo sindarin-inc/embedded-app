@@ -133,29 +133,33 @@ auto LocalStore::changedReadablePlacemarkQueryParams(const std::vector<Readable>
 
     return placemarks;
 }
-auto LocalStore::comparePlacemark(const std::vector<Readable> &readables, const Readable &readable,
-                                  const uint32_t placemark) -> bool {
+auto LocalStore::processReadablePlacemarksFromServer(const Readable &readable,
+                                                     const uint32_t placemark) -> bool {
     uint32_t onDevicePlace = prefs_.readablePlace.get(readable.shortenedUuid.c_str());
     bool changed = prefs_.readablePlaceChanged.get(readable.shortenedUuid.c_str());
 
     if (placemark == onDevicePlace) {
         // If the placemark on the server is the same as the one on the device, don't change it
+        return false;
     } else if (placemark > onDevicePlace && !changed) {
+        // Placemark on server is further than on the device, so update to the server value
         log_i("Updating placemark for \"%s\" from device value of %d to server "
               "value of %d",
               readable.title.c_str(), onDevicePlace, placemark);
         prefs_.readablePlace.set(readable.shortenedUuid.c_str(), placemark);
+        return true;
     } else if (placemark != 0) {
+        // Placemark on server is less than on the device, so don't update to the server value
         log_i("Not updating placemark for \"%s\" from device value of %d to server "
               "value of %d. Changed: %d",
               readable.title.c_str(), onDevicePlace, placemark, changed);
+        return false;
     }
 
-    this->resetReadablePlacemarkChanged(readables);
     return false;
 }
 
-void LocalStore::resetReadablePlacemarkChanged(const std::vector<Readable> &readables) {
+void LocalStore::resetReadablesPlacemarkChanged(const std::vector<Readable> &readables) {
     for (auto &readable : readables) {
         bool changed = prefs_.readablePlaceChanged.get(readable.shortenedUuid.c_str());
         if (!readable.localOnly && changed) {
@@ -240,18 +244,19 @@ void LocalStore::syncFromRemote(
         for (auto &userReadable : checkSyncResponse.userReadables) {
             log_i("User readable %s (%s)", userReadable.readable.title.c_str(),
                   userReadable.readable.file().shaHash.c_str());
+            if (this->processReadablePlacemarksFromServer(userReadable.readable,
+                                                          userReadable.placemark)) {
+                log_i("Placemark for %s updated to %d", userReadable.readable.title.c_str(),
+                      userReadable.placemark);
+            }
             if (this->hasReadable(readables_, userReadable.readable)) {
                 log_i("Already have %s", userReadable.readable.title.c_str());
-                continue;
-            }
-            if (this->comparePlacemark(readables_, userReadable.readable, userReadable.placemark)) {
-                log_i("Placemark for %s is already up to date",
-                      userReadable.readable.title.c_str());
                 continue;
             }
 
             readablesToDownload.push_back(userReadable.readable);
         }
+        this->resetReadablesPlacemarkChanged(readables_);
 
         // TODO: Probably these should be set operations
         std::vector<Readable> readablesToDelete;
@@ -320,18 +325,19 @@ void LocalStore::syncFromRemote(
         for (auto &userReadable : checkSyncResponse.userArticles) {
             log_i("User article %s (%s)", userReadable.readable.title.c_str(),
                   userReadable.readable.file().shaHash.c_str());
+            if (this->processReadablePlacemarksFromServer(userReadable.readable,
+                                                          userReadable.placemark)) {
+                log_i("Placemark for %s updated to %d", userReadable.readable.title.c_str(),
+                      userReadable.placemark);
+            }
             if (this->hasReadable(articles_, userReadable.readable)) {
                 log_i("Already have %s", userReadable.readable.title.c_str());
-                continue;
-            }
-            if (this->comparePlacemark(articles_, userReadable.readable, userReadable.placemark)) {
-                log_i("Placemark for %s is already up to date",
-                      userReadable.readable.title.c_str());
                 continue;
             }
 
             addReadable(articles_, userReadable.readable);
         }
+        this->resetReadablesPlacemarkChanged(articles_);
 
         // Artificially delay so the user has the satisfaction of seeing the list done
         delay(1000);

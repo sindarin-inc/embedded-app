@@ -23,7 +23,6 @@ public:
     std::string dateCreated;
     std::string dateModified;
     std::string datePublished;
-    bool isArticle = false;
     std::vector<Author> authors;
     std::vector<ReadableFile> files;
     // TODO: source
