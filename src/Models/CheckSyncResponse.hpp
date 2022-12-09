@@ -29,9 +29,11 @@ public:
             userReadables.back().fromJson(userReadable);
         }
         userArticles.clear();
-        for (const auto &userArticle : j["articles"].as<JsonArray>()) {
-            userArticles.emplace_back();
-            userArticles.back().fromJson(userArticle);
+        if (j.containsKey("articles")) {
+            for (const auto &userArticle : j["articles"].as<JsonArray>()) {
+                userArticles.emplace_back();
+                userArticles.back().fromJson(userArticle);
+            }
         }
         return true;
     }

@@ -174,6 +174,9 @@ void LocalStore::resetReadablesPlacemarkChanged(const std::vector<Readable> &rea
 void LocalStore::syncFromRemote(
     const std::function<void(ContentSyncState state)> &progressCallback) {
 
+    // Uncomment below line to set your access token for local development
+    // prefs._cloudToken.set("");
+
     // Grab the token here from prefs if set
     auto token = prefs_.cloudToken.get();
     if (!token.has_value()) {
@@ -184,7 +187,7 @@ void LocalStore::syncFromRemote(
     }
 
     // Uncomment below line to steal your access token for local development
-    // log_w("Access token: %s", token.value().c_str());
+    log_w("Access token: %s", token.value().c_str());
 
     SindarinAPI::getInstance()->setAccessToken(token.value());
     progressCallback(ContentSyncState{.state = ContentSyncState::State::CheckingSync});
@@ -192,6 +195,10 @@ void LocalStore::syncFromRemote(
     // Run this work on a separate thread, since it's long running
     auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this, progressCallback] {
+        // Uncomment below to force a full sync
+        // this->prefs_.lastReadablesSince.set("");
+        // this->prefs_.lastArticlesSince.set("");
+
         auto readablesSince = this->readablesSince();
         auto articlesSince = this->articlesSince();
         auto readablePlacemarks = this->changedReadablePlacemarkQueryParams(readables_);
@@ -222,10 +229,6 @@ void LocalStore::syncFromRemote(
         }
 
         progressCallback(ContentSyncState{.state = ContentSyncState::State::LoadingTasks});
-
-        // Store since date values for next sync
-        this->prefs_.lastReadablesSince.set(checkSyncResponse.readablesSince);
-        this->prefs_.lastArticlesSince.set(checkSyncResponse.articlesSince);
 
         // log_i("Not synced, downloading readables");
         // std::vector<UserReadable> userReadables;
@@ -340,6 +343,10 @@ void LocalStore::syncFromRemote(
             this->addReadable(articles_, userReadable.readable);
         }
         this->resetReadablesPlacemarkChanged(articles_);
+
+        // Store since date values for next sync
+        this->prefs_.lastReadablesSince.set(checkSyncResponse.readablesSince);
+        this->prefs_.lastArticlesSince.set(checkSyncResponse.articlesSince);
 
         // Artificially delay so the user has the satisfaction of seeing the list done
         delay(1000);
