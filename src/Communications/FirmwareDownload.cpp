@@ -32,7 +32,6 @@ void FirmwareDownloader::downloadFirmware(
         // sent either way
         CheckSyncResponse response;
         CheckSyncRequest request = CheckSyncRequest{
-            .readablesSha = "",
             .readablesSince = "-1",
             .articlesSince = "-1",
             .placemarks = {},

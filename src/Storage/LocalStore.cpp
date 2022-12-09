@@ -10,18 +10,18 @@
 #define ARTICLES_PATH "/articles.json"
 
 auto LocalStore::begin() -> bool {
-    auto loadedReadables = loadReadablesFromFile(readables_, READABLES_PATH);
-    auto loadedArticles = loadReadablesFromFile(articles_, ARTICLES_PATH);
+    auto loadedReadables = loadReadablesFromFile(readables_, std::string(READABLES_PATH));
+    auto loadedArticles = loadReadablesFromFile(articles_, std::string(ARTICLES_PATH));
 
     return loadedReadables && loadedArticles;
 }
 
-auto LocalStore::loadReadablesFromFile(std::vector<Readable> &readables, const std::string path)
+auto LocalStore::loadReadablesFromFile(std::vector<Readable> &readables, const std::string &path)
     -> bool {
     log_d("Loading readables.json");
-    File readablesFile = fileSystem.open(READABLES_PATH);
+    File readablesFile = fileSystem.open(path);
     if (!readablesFile) {
-        log_w("Failed to open readables.json");
+        log_w("Failed to open %s", path.c_str());
         // Fail positively since it's ok to not have any when you first use the glasses
         return true;
     }
@@ -40,7 +40,7 @@ auto LocalStore::loadReadablesFromFile(std::vector<Readable> &readables, const s
 
     auto readablesJson = (*doc)["readables"].as<JsonArray>();
     if (readablesJson.size() == 0) {
-        log_w("No readables found in %s", path);
+        log_w("No readables found in %s", path.c_str());
         return true;
     }
     readables.reserve(readablesJson.size());
@@ -111,43 +111,6 @@ auto LocalStore::readablesSince() -> std::string {
 
 auto LocalStore::articlesSince() -> std::string {
     return prefs_.lastArticlesSince.get().value_or("");
-}
-
-auto LocalStore::calculateReadablesSha() -> std::string {
-    if (readables_.size() == 0) {
-        log_w("No readables");
-        return "";
-    }
-
-    std::vector<std::string> shas;
-    for (auto &readable : readables_) {
-        // Skip local-only readables for the SHA calculation
-        if (!readable.localOnly) {
-            shas.push_back(readable.files[0].shaHash);
-        }
-    }
-
-    // Sort all SHA strings alphabetically
-    std::sort(shas.begin(), shas.end());
-
-    log_d("SHA strings:");
-    for (auto &sha : shas) {
-        log_d("%s", sha.c_str());
-    }
-
-    // Join all SHA strings together
-    // C++20 Version
-    // std::string shasOfShas = std::accumulate(shas.begin(), shas.end(), std::string(""));
-    std::string allShas;
-    for (auto &sha : shas) {
-        allShas += sha;
-    }
-
-    auto shaOfShas = CalculateStringHash(allShas);
-
-    log_d("SHA of SHA strings: %s", shaOfShas.c_str());
-
-    return shaOfShas;
 }
 
 auto LocalStore::readablePlacemarksChanged() -> std::vector<std::string> {
@@ -231,7 +194,6 @@ void LocalStore::syncFromRemote(
     // Run this work on a separate thread, since it's long running
     auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this, progressCallback] {
-        auto readablesSha = this->calculateReadablesSha();
         auto readablesSince = this->readablesSince();
         auto articlesSince = this->articlesSince();
         auto placemarks = this->readablePlacemarksChanged();
@@ -263,8 +225,8 @@ void LocalStore::syncFromRemote(
         progressCallback(ContentSyncState{.state = ContentSyncState::State::LoadingTasks});
 
         // Store since date values for next sync
-        this->prefs_.readablesSince.set(checkSyncResponse.readablesSince);
-        this->prefs_.articlesSince.set(checkSyncResponse.articlesSince);
+        this->prefs_.lastReadablesSince.set(checkSyncResponse.readablesSince);
+        this->prefs_.lastArticlesSince.set(checkSyncResponse.articlesSince);
 
         // log_i("Not synced, downloading readables");
         // std::vector<UserReadable> userReadables;
@@ -366,10 +328,10 @@ void LocalStore::syncFromRemote(
         SindarinAPI::getInstance()->checkSync(request, &checkSyncResponse);
 
         if (!this->saveReadables(readables_, READABLES_PATH)) {
-            log_e("Failed to save %s", std::string(READABLES_PATH));
+            log_e("Failed to save %s", READABLES_PATH);
         }
         if (!this->saveReadables(articles_, ARTICLES_PATH)) {
-            log_e("Failed to save %s", std::string(READABLES_PATH));
+            log_e("Failed to save %s", READABLES_PATH);
         }
 
         this->mergePlacemarksFromServer(checkSyncResponse.placemarks);
@@ -389,7 +351,7 @@ void LocalStore::syncFromRemote(
     });
 }
 
-auto LocalStore::saveReadables(const std::vector<Readable> &readables, const std::string path)
+auto LocalStore::saveReadables(const std::vector<Readable> &readables, const std::string &path)
     -> bool {
     // 2048 is probably a safe-ish upper bound per readable. I'm seeing about half that in my
     // testing so far
@@ -398,13 +360,13 @@ auto LocalStore::saveReadables(const std::vector<Readable> &readables, const std
     // Create a key named readables of type array
     JsonArray readablesJson = doc->createNestedArray("readables");
 
-    log_d("Saving %zu readables in %s", readables.size(), path);
+    log_d("Saving %zu readables in %s", readables.size(), path.c_str());
     for (const auto &readable : readables) {
         readablesJson.add(readable);
     }
 
     if (doc->overflowed()) {
-        log_e("Out of space in SpiRamJsonDocument for %s", path);
+        log_e("Out of space in SpiRamJsonDocument for %s", path.c_str());
         return false;
     }
 

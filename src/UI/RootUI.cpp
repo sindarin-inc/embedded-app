@@ -143,7 +143,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         auto pocketMenu = new MenuScreen(this->power_, mainMenu->getMyStyle());
 
-        for (Readable &r : articles) {
+        for (const Readable &r : articles) {
             pocketMenu->addMenuItem(
                 MenuItem(r.title, [this, pocketMenu, r, &fileSystem, createReadableScreen]() {
                     auto readableScreen = createReadableScreen(r);

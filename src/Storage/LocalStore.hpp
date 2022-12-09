@@ -36,6 +36,7 @@ public:
         : fileSystem(fileSystem), prefs_(prefs){};
 
     auto begin() -> bool;
+    auto loadReadablesFromFile(std::vector<Readable> &readables, const std::string &path) -> bool;
 
     // Convenience methods
     auto hasReadable(const std::vector<Readable> &readables, Readable &readable) -> bool;
@@ -46,14 +47,13 @@ public:
     auto readablesSince() -> std::string;
     auto articlesSince() -> std::string;
 
-    auto calculateReadablesSha() -> std::string;
     auto readablePlacemarksChanged() -> std::vector<std::string>;
     void mergePlacemarksFromServer(const std::vector<Placemark> &placemarks);
     void resetReadablePlacemarkChanged();
 
     void syncFromRemote(const std::function<void(ContentSyncState state)> &progressCallback);
 
-    auto save() -> bool;
+    auto saveReadables(const std::vector<Readable> &readables, const std::string &path) -> bool;
 
     FileSystem &fileSystem;
 
