@@ -144,7 +144,7 @@ void TTRemoteInput::disconnectTemporarily(int seconds) {
 }
 
 void TTRemoteInput::scanForDevice() {
-    digitalWrite(RED_LED, LED_ON);
+    digitalWrite(BLUE_LED, LED_ON);
 
     // Run a scan for 1 second
     auto address = this->prefs_.pairedTurnTouchAddress.get();
@@ -165,7 +165,7 @@ void TTRemoteInput::scanForDevice() {
     scan->setActiveScan(true);
     scan->start((int)(RESCAN_INTERVAL_MS / 1000), nullptr, false);
     lastScanMs_ = millis();
-    digitalWrite(RED_LED, LED_OFF);
+    digitalWrite(BLUE_LED, LED_OFF);
 }
 
 void TTRemoteInput::buttonNotificationCallback(BLERemoteCharacteristic *remoteCharacteristic,
