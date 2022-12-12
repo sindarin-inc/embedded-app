@@ -274,7 +274,7 @@ auto GetHardwareRevision() -> uint8_t {
         return HARDWARE_REVSION_LATEST;
     }
 
-    // Serial number starts with SOL01 where the `01` is the hardware revision. Thur those two ascii
+    // Serial number starts with SOL01 where the `01` is the hardware revision. Turn those two ascii
     // bytes into an int.
     rev = (serialNumber[3] - '0') * 10 + (serialNumber[4] - '0');
     log_d("Hardware revision: %d", rev.value());
