@@ -2,6 +2,10 @@
 
 #include <cstdint>
 
+// Note: This abstraction exists as an abstraction layer between the specific hardware and the rest
+// of the firmware. It exists to make running on the simulator and other processors simpler by
+// unifying some of the platform-specific code.
+
 void InitializePlatform();
 
 auto GetBatteryVoltageLeft() -> float;
@@ -10,11 +14,13 @@ auto GetBatteryVoltageRight() -> float;
 
 void SetCpuSpeedMhz(int speedMhz);
 
-void SetBacklight(int percent);
+void SetLeftScreenLight(int dutyCycle);
 
-void SetRightBackLight(int percent);
+void SetLeftScreenLightFade(int dutyCycle, int fadeMs);
 
-void SetLeftBackLight(int percent);
+void SetRightScreenLight(int dutyCycle);
+
+void SetRightScreenLightFade(int dutyCycle, int fadeMs);
 
 auto GetRunTimeMs() -> uint32_t;
 

@@ -50,7 +50,8 @@
 
 #define LAST_READABLE_ID "rui-readable"
 
-void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &fileSystem) {
+void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &fileSystem,
+                   LightingController &lightingController) {
     SHOW_HEAP();
 
     display_ = display;
@@ -64,13 +65,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto readables = localStore.readables();
     auto articles = localStore.articles();
 
-    auto createReadableScreen = [this, display, mainMenu,
-                                 &fileSystem](const Readable &readable) -> ReadableScreen * {
+    auto createReadableScreen = [this, display, mainMenu, &fileSystem, &lightingController](
+                                    const Readable &readable) -> ReadableScreen * {
         // TODO: Would be better to not allocate / delete these all the time
         auto stream = fileSystem.newRendererStream(readable.localFilePath().c_str());
         this->prefs_.lastReadableId.set(readable.uuid);
-        auto *readableScreen =
-            new ReadableScreen(stream, *display, readable, this->prefs_, this->power_, fileSystem);
+        auto *readableScreen = new ReadableScreen(stream, *display, readable, this->prefs_,
+                                                  this->power_, fileSystem, lightingController);
 
         // When switching to a readable from a menu, we should clear the display
         // to make the whites really white and the blacks really black.
@@ -211,8 +212,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
     }));
 
-    settingsMenu->addMenuItem(MenuItem("Lighting", [this, settingsMenu]() {
-        auto lightingAdjustScreen = new LightingAdjustScreen(this->prefs_);
+    settingsMenu->addMenuItem(MenuItem("Lighting", [this, settingsMenu, &lightingController]() {
+        auto lightingAdjustScreen = new LightingAdjustScreen(this->prefs_, lightingController);
         this->display_->clearDisplay();
         setCurrentScreen(*lightingAdjustScreen);
         lightingAdjustScreen->backCallback = [this, lightingAdjustScreen, settingsMenu]() {
@@ -499,27 +500,29 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         esp_restart();
     }));
 
-    debugMenu->addMenuItem(MenuItem("Onboarding Screens", [this, debugMenu, display]() {
-        auto demoScreen = new DemoScreen(*display, prefs_, this->power_);
-        this->setCurrentScreen(*demoScreen);
-        demoScreen->backCallback = [this, demoScreen, debugMenu, display]() {
-            debugMenu->setFirstLoad();
-            display->clearDisplay();
-            setCurrentScreen(*debugMenu);
-            delete demoScreen;
-        };
-    }));
+    debugMenu->addMenuItem(
+        MenuItem("Onboarding Screens", [this, debugMenu, display, &lightingController]() {
+            auto demoScreen = new DemoScreen(*display, prefs_, this->power_, lightingController);
+            this->setCurrentScreen(*demoScreen);
+            demoScreen->backCallback = [this, demoScreen, debugMenu, display]() {
+                debugMenu->setFirstLoad();
+                display->clearDisplay();
+                setCurrentScreen(*debugMenu);
+                delete demoScreen;
+            };
+        }));
 
-    debugMenu->addMenuItem(MenuItem("Alignment Setup", [this, debugMenu, display]() {
-        auto alignmentScreen = new AlignmentScreen(*display, prefs_);
-        this->setCurrentScreen(*alignmentScreen);
-        alignmentScreen->backCallback = [this, alignmentScreen, debugMenu, display]() {
-            debugMenu->setFirstLoad();
-            display->clearDisplay();
-            setCurrentScreen(*debugMenu);
-            delete alignmentScreen;
-        };
-    }));
+    debugMenu->addMenuItem(
+        MenuItem("Alignment Setup", [this, debugMenu, display, &lightingController]() {
+            auto alignmentScreen = new AlignmentScreen(*display, prefs_, lightingController);
+            this->setCurrentScreen(*alignmentScreen);
+            alignmentScreen->backCallback = [this, alignmentScreen, debugMenu, display]() {
+                debugMenu->setFirstLoad();
+                display->clearDisplay();
+                setCurrentScreen(*debugMenu);
+                delete alignmentScreen;
+            };
+        }));
 
     debugMenu->addMenuItem(MenuItem("Batteries and Temperature", [this, display, debugMenu]() {
         uint16_t width = 0, height = 0;
@@ -619,7 +622,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     int inDemo = prefs_.demoMode.get().value();
 
     if (inDemo) {
-        auto demoScreen = new DemoScreen(*display, prefs_, this->power_);
+        auto demoScreen = new DemoScreen(*display, prefs_, this->power_, lightingController);
         demoScreen->backCallback = [this, demoScreen, mainMenu, display]() {
             display->clearDisplay();
             setCurrentScreen(*mainMenu);

@@ -5,18 +5,14 @@
 #include "UI/Bitmaps/Lightbulb.hpp"
 #include "UI/Fonts/LucidaGrande5pt7b.h"
 
-#define MIN_LIGHTING_VALUE 1
-#define MAX_LIGHTING_VALUE 21
-#define LIGHTING_STEP_INCREMENT 2
+#define LIGHTING_STEP_INCREMENT 10
 
 void LightingAdjustScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
     }
 
-    auto backlightAbsolute = prefs_.backlight.get().value();
-    auto backlightPercent =
-        (backlightAbsolute - MIN_LIGHTING_VALUE) * 100 / (MAX_LIGHTING_VALUE - MIN_LIGHTING_VALUE);
+    auto lightingPercent = lightingController_.getCurrentSetting();
 
     uint16_t percentWidth, percentHeight;
     // Just pick a number for measurement. We don't want the UI moving when the number changes
@@ -33,7 +29,7 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
 
     x += Lightbulb_width + spacing;
     display.drawRect(x, y, barWidth, Lightbulb_height, display.fg);
-    int16_t progressHeight = backlightPercent * Lightbulb_height / 100;
+    int16_t progressHeight = lightingPercent * Lightbulb_height / 100;
     display.fillRect(x, y + Lightbulb_height - progressHeight, barWidth, progressHeight,
                      display.fg);
 
@@ -90,18 +86,16 @@ void LightingAdjustScreen::processCommand(RemoteCommand command) {
         }
         break;
     case RemoteCommand::PREV: {
-        auto backlight = prefs_.backlight.get().value();
-        backlight = std::min(backlight + LIGHTING_STEP_INCREMENT, MAX_LIGHTING_VALUE);
-        SetBacklight(backlight);
-        prefs_.backlight.set(backlight);
+        auto setting =
+            std::min(lightingController_.getCurrentSetting() + LIGHTING_STEP_INCREMENT, 100);
+        lightingController_.setOverrideValue(setting);
         needsRerender = true;
         break;
     }
     case RemoteCommand::NEXT: {
-        auto backlight = prefs_.backlight.get().value();
-        backlight = std::max(backlight - LIGHTING_STEP_INCREMENT, MIN_LIGHTING_VALUE);
-        SetBacklight(backlight);
-        prefs_.backlight.set(backlight);
+        auto setting =
+            std::max(lightingController_.getCurrentSetting() - LIGHTING_STEP_INCREMENT, 0);
+        lightingController_.setOverrideValue(setting);
         needsRerender = true;
         break;
     }

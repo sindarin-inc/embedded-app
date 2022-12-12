@@ -146,6 +146,11 @@ void InitializePlatform() {
         log_e("Error configuring right LEDC: %s", esp_err_to_name(err));
     }
 
+    err = ledc_fade_func_install(0);
+    if (err != ESP_OK) {
+        log_e("Error installing LEDC fade function: %s", esp_err_to_name(err));
+        return;
+    }
 #endif
 #endif // EINKET013TT1
 
@@ -182,30 +187,69 @@ void SetCpuSpeedMhz(int speedMhz) {
 #endif
 }
 
-void SetBacklight(int percent) {
-    auto dutyCycle = percent * 255 / 100;
-    log_d("Setting backlight to %d%% (%d)", percent, dutyCycle);
+void SetLeftScreenLight(int dutyCycle) {
+    esp_err_t err;
 #if LEDC_BACKLIGHT
-    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, dutyCycle);
-    ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
-    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, dutyCycle);
-    ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
+    err = ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, dutyCycle);
+    if (err != ESP_OK) {
+        log_e("Error setting duty ch0: %s", esp_err_to_name(err));
+        return;
+    }
+    err = ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+    if (err != ESP_OK) {
+        log_e("Error updating duty: %s", esp_err_to_name(err));
+        return;
+    }
 #endif
 }
 
-void SetRightBackLight(int percent) {
+void SetLeftScreenLightFade(int dutyCycle, int fadeMs) {
+    esp_err_t err;
 #if LEDC_BACKLIGHT
-    auto dutyCycle = percent * 255 / 100;
-    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, dutyCycle);
-    ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
+    err = ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, dutyCycle);
+    if (err != ESP_OK) {
+        log_e("Error setting duty ch0: %s", esp_err_to_name(err));
+        return;
+    }
+    err = ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+    if (err != ESP_OK) {
+        log_e("Error updating duty: %s", esp_err_to_name(err));
+        return;
+    }
 #endif
 }
 
-void SetLeftBackLight(int percent) {
+void SetRightScreenLight(int dutyCycle) {
+    esp_err_t err;
 #if LEDC_BACKLIGHT
-    auto dutyCycle = percent * 255 / 100;
-    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, dutyCycle);
-    ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+    err = ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, dutyCycle);
+    if (err != ESP_OK) {
+        log_e("Error setting duty ch1: %s", esp_err_to_name(err));
+        return;
+    }
+    err = ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
+    if (err != ESP_OK) {
+        log_e("Error updating duty: %s", esp_err_to_name(err));
+        return;
+    }
+#endif
+}
+
+void SetRightScreenLightFade(int dutyCycle, int fadeMs) {
+    esp_err_t err;
+#if LEDC_BACKLIGHT
+    // Set the LED to the target brightness
+    err = ledc_set_fade_with_time(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, dutyCycle, fadeMs);
+    if (err != ESP_OK) {
+        log_e("Error setting fade with time: %s", esp_err_to_name(err));
+        return;
+    }
+    // Start the LED fading process
+    err = ledc_fade_start(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, LEDC_FADE_NO_WAIT);
+    if (err != ESP_OK) {
+        log_e("Error starting fade: %s", esp_err_to_name(err));
+        return;
+    }
 #endif
 }
 

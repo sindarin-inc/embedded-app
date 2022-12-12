@@ -19,8 +19,10 @@
 
 extern void UIInnerLoop(RemoteCommand command);
 
-DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power)
-    : display_(display), renderer_(display), prefs_(prefs), power_(power) {}
+DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power,
+                       LightingController &lightingController)
+    : display_(display), renderer_(display), prefs_(prefs), power_(power),
+      lightingController_(lightingController) {}
 
 void DemoScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
@@ -31,21 +33,16 @@ void DemoScreen::render(DisplaySystem &display) {
 
     display.setFont(&TAHOMA_REGULAR_FONT6PT7B);
 
-    auto backlight = prefs_.backlight.get().value();
-
     // Alternate left and right on for setup.
     if (currentScreen_ == 1) {
-        SetRightBackLight(0);
-        SetLeftBackLight(backlight);
+        lightingController_.setScreenMask(LightingController::Screens::LEFT);
     } else {
-        SetRightBackLight(backlight);
-        SetLeftBackLight(0);
+        lightingController_.setScreenMask(LightingController::Screens::RIGHT);
     }
 
-    // Turn on both backlights for last case
+    // Turn on both screen lights for last case
     if (currentScreen_ >= 2) {
-        SetRightBackLight(backlight);
-        SetLeftBackLight(backlight);
+        lightingController_.setScreenMask(LightingController::Screens::BOTH);
     }
     // Don't need to set it after that as they are on.
 
@@ -790,9 +787,7 @@ void DemoScreen::processCommand(RemoteCommand command) {
     }
 
     if (currentScreen_ >= NUM_DEMO_SCREENS) {
-        auto backlight = prefs_.backlight.get().value();
-        SetRightBackLight(backlight);
-        SetLeftBackLight(backlight);
+        lightingController_.setScreenMask(LightingController::Screens::BOTH);
         // When we're done with the onboarding screen, turn this mode off.
         prefs_.demoMode.set(0);
         backCallback();

@@ -1,7 +1,9 @@
+#pragma once
+
 #include <cinttypes>
 #include <esp_err.h>
 
-typedef enum {
+enum ltr329als01_reg_t {
     // ALS operation mode control SW reset (R/W)
     LTR329ALS01_REG_ALS_CONTR = 0x80,
     // ALS measurement rate in active mode (R/W)
@@ -32,9 +34,9 @@ typedef enum {
     LTR329ALS01_REG_ALS_THRES_LOW_1 = 0x9A,
     // ALS interrupt persist setting (R/W)
     LTR329ALS01_REG_INTERRUPT_PERSIST = 0x9E,
-} ltr329als01_reg_t;
+};
 
-typedef struct {
+struct ltr329als01_status_value {
     union {
         uint8_t raw;
         struct {
@@ -61,15 +63,14 @@ typedef struct {
     };
 
     auto isValid() -> bool { return alsDataStatus == 1 && alsDataValid == 0; }
+};
 
-} ltr329als01_status_value;
-
-typedef struct {
+struct ltr329als01_als_data_value {
     union {
         uint8_t raw[2];
         uint16_t value;
     };
-} ltr329als01_als_data_value;
+};
 
 class Ltr329Als {
 public:
@@ -81,10 +82,22 @@ public:
     auto enable() -> bool;
     auto disable() -> bool;
 
-    auto readStatus() -> ltr329als01_status_value;
+    auto readStatus(ltr329als01_status_value &out) -> bool;
 
-    auto readChannel0() -> ltr329als01_als_data_value;
-    auto readChannel1() -> ltr329als01_als_data_value;
+    // From the datasheet:
+    //   The ALS_DATA registers should be read as a group, with the lower address read back first
+    //   (i.e. read 0x88 first, then read 0x89). These two registers should also be read before
+    //   reading channel-0 data (from registers 0x8A, 0x8B). When the I2C read operation starts, all
+    //   four ALS data registers are locked until the I2C read operation of register 0x8B is
+    //   completed.
+    // The datasheet isn't especially direct about the differences in these two registers, but there
+    // is one graph that shows that the channel 1 register handles higher wavelengths and the
+    // channel 0 register handles lower wavelengths.
+    // At 48x gain (110)
+    //  69 /  59 John's bedroom with the light on
+    // 603 / 493 Outdoor light on an overcast day
+    // 700 / 500 Our office on a sunny day
+    auto readData(uint16_t &channel1, uint16_t &channel0) -> bool;
 
 private:
     int i2cNum_;

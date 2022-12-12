@@ -3,6 +3,7 @@
 #include "Misc/Power.hpp"
 #include "Models/Readable.hpp"
 #include "Renderers/RendererStream.hpp"
+#include "Sensors/LightingController.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/ContainerScreen.hpp"
 #include "UI/PopupMenuScreen.hpp"
@@ -20,10 +21,12 @@ struct Bookmark {
 class ReadableScreen : public ContainerScreen {
 public:
     ReadableScreen(RendererStream *stream, DisplaySystem &display, const Readable &readable,
-                   PreferencesStore &prefs, Power &power, FileSystem &fileSystem)
+                   PreferencesStore &prefs, Power &power, FileSystem &fileSystem,
+                   LightingController &lightingController)
 
         : renderer_(display), firstTimeRenderer_(display), readable_(readable), prefs_(prefs),
-          popup_(power, renderer_, prefs_, readable_), fileSystem_(fileSystem), display_(display) {
+          popup_(power, renderer_, prefs_, readable_, lightingController), fileSystem_(fileSystem),
+          display_(display) {
         currentScreen_ = this;
         renderer_.setStream(stream);
         pageSpeed_ = prefs_.autoPilotSpeed.get().value();

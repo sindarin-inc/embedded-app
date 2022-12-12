@@ -6,6 +6,7 @@
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Power.hpp"
 #include "Models/Readable.hpp"
+#include "Sensors/LightingController.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
@@ -15,7 +16,8 @@ class RootUI : public ContainerScreen {
 public:
     RootUI(PreferencesStore &prefs, Power &power) noexcept : prefs_(prefs), power_(power) {}
 
-    void setup(DisplaySystem *display, LocalStore &localStore, FileSystem &fileSystem);
+    void setup(DisplaySystem *display, LocalStore &localStore, FileSystem &fileSystem,
+               LightingController &lightingController);
     void loop(DisplaySystem &display, RemoteCommand command) override;
 
 protected:

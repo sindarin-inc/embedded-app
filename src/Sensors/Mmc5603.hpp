@@ -1,7 +1,7 @@
 #include <cinttypes>
 #include <esp_err.h>
 
-typedef enum {
+enum mmc5603_reg_t {
     MMC5603_REG_XOUT_0 = 0x00,
     MMC5603_REG_XOUT_1 = 0x01,
     MMC5603_REG_YOUT_0 = 0x02,
@@ -24,7 +24,7 @@ typedef enum {
     MMC5603_REG_ST_Y = 0x28,
     MMC5603_REG_ST_Z = 0x29,
     MMC5603_REG_PRODUCT_ID = 0x39,
-} mmc5603_reg_t;
+};
 
 struct Xyz8bit {
     int8_t x;

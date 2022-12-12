@@ -159,9 +159,8 @@ public:
           lastReadablesSince(this->prefs_, "readables-since"), readablePlace(this->prefs_, "-p"),
           readablePlaceChanged(this->prefs_, "-pc"), articleArchivedChanged(this->prefs_, "-ar"),
           lastPageTurnerBattery(this->prefs_, "pt-battery"), invertSetting(this->prefs_, "invert"),
-          vcom(this->prefs_, "vcom"), backlight(this->prefs_, "backlight"),
-          font(this->prefs_, "font"), rectX(this->prefs_, "rectX"), rectY(this->prefs_, "rectY"),
-          rectW(this->prefs_, "rectW"), rectH(this->prefs_, "rectH"),
+          vcom(this->prefs_, "vcom"), font(this->prefs_, "font"), rectX(this->prefs_, "rectX"),
+          rectY(this->prefs_, "rectY"), rectW(this->prefs_, "rectW"), rectH(this->prefs_, "rectH"),
           lineSpacing(this->prefs_, "line-space"), demoMode(this->prefs_, "demo"),
           wordCount(this->prefs_, "word-count"),
           totalReadingTimeSeconds(this->prefs_, "tot-rd-time"),
@@ -198,7 +197,6 @@ public:
     PrefsItem<int> lastPageTurnerBattery;
     PrefsItem<int> invertSetting;
     PrefsItem<int> vcom;
-    PrefsItem<int> backlight;
     PrefsItem<int> font;
     PrefsItem<int> rectX;
     PrefsItem<int> rectY;

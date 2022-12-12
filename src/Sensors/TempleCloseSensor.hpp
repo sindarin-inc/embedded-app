@@ -1,5 +1,3 @@
-#include <freertos/FreeRTOS.h>
-#include <freertos/timers.h>
 #include <functional>
 #include <utility>
 
@@ -15,6 +13,8 @@ public:
     auto checkProductId() -> bool;
 
     void setCallback(std::function<void(bool opened)> callback) { callback_ = std::move(callback); }
+
+    auto getOpened() -> bool { return opened_; }
 
 protected:
     Mmc5603 magSensor_;

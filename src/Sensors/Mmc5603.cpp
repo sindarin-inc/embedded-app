@@ -8,7 +8,7 @@
 #define I2C_MASTER_TIMEOUT_MS 1000
 #define MMC5603_SENSOR_ADDR 0x30
 
-typedef struct {
+struct mmc5603_status_value {
     union {
         uint8_t raw;
         struct {
@@ -35,9 +35,9 @@ typedef struct {
             uint8_t measTDone : 1;
         };
     };
-} mmc5603_status_value;
+};
 
-typedef struct {
+struct mmc5603_ctrl_0_value {
     union {
         uint8_t raw;
         struct {
@@ -75,7 +75,7 @@ typedef struct {
             uint8_t cmmFreqEn : 1;
         };
     };
-} mmc5603_ctrl_0_value;
+};
 
 auto Mmc5603::registerReadByte(mmc5603_reg_t regAddr, uint8_t *data) -> esp_err_t {
     return i2c_master_write_read_device(i2cNum_, MMC5603_SENSOR_ADDR, (uint8_t *)&regAddr, 1, data,

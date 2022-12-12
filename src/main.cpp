@@ -61,8 +61,8 @@ TTRemoteInput ttRemoteInput(prefs);
 #endif
 
 #if USE_LTR329
-#include "Sensors/Ltr329Als.hpp"
-Ltr329Als lightSensor(0);
+#include "Sensors/LightingController.hpp"
+LightingController lightingController;
 #endif
 
 #if USE_MMC5603
@@ -117,6 +117,10 @@ void RadioTask(void *parameter) {
         templeCloseSensor.checkTemple();
 #endif
         vTaskDelay(1000 / portTICK_PERIOD_MS);
+#if USE_LTR329
+        // This happens after the delay, so that the first check can run with a faster fade.
+        lightingController.checkAmbientLight();
+#endif
     }
     vTaskDelete(nullptr);
 }
@@ -217,15 +221,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 
 #if USE_LTR329
-    auto partId = lightSensor.readPartId();
-    auto manufacturerId = lightSensor.readManufacturerId();
-    if (partId != 0xA0 || manufacturerId != 0x05) {
-        log_e("LTR329 ambient light sensor not found (partId: 0x%02X, manufacturerId: 0x%02X)",
-              partId, manufacturerId);
+    if (!lightingController.checkSensorAvailable()) {
         bootErrors.push_back({.type = BootError::Type::AmbientLight});
-    } else {
-        log_i("LTR329 ambient light sensor found (partId: 0x%02X, manufacturerId: 0x%02X)", partId,
-              manufacturerId);
     }
 #endif
 
@@ -235,9 +232,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     } else {
         templeCloseSensor.setCallback([](bool open) {
             if (open) {
-                SetBacklight(prefs.backlight.get().value());
+                lightingController.enableLighting();
             } else {
-                SetBacklight(0);
+                lightingController.disableLighting();
             }
         });
     }
@@ -267,13 +264,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         myDisplay.getDriver()->setVcom(prefs.vcom.get().value());
     }
 #endif
-
-    // If the saved prefs have a backlight of zero, turn on the lights anyways
-    // Default to 10% max (which is 50% of the way through the lighting setting)
-    if (prefs.backlight.get().value() == 0) {
-        prefs.backlight.set(10);
-    }
-    SetBacklight(prefs.backlight.get().value());
 
     switch (prefs.font.get().value()) {
     case PREFS_LUCIDA_REGULAR:
@@ -429,7 +419,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     power.setup();
 
-    rootUi.setup(&myDisplay, localStore, fileSystem);
+    rootUi.setup(&myDisplay, localStore, fileSystem, lightingController);
 
     SHOW_HEAP();
 
@@ -441,6 +431,14 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     xTaskCreatePinnedToCore(RadioTask, "Radio", 10000, nullptr, 1, nullptr, 0);
     // xTaskCreatePinnedToCore(StatsTask, "Stats", 5000, nullptr, 0, nullptr, 1);
     xTaskCreatePinnedToCore(PowerTask, "Power", 5000, nullptr, 0, &powerTaskHandle, 1);
+
+    // Immediately after rendering the first thing do a quick fade-in on the lighting
+#if USE_LTR329
+    DispatchGetUiQueue()->dispatch([]() {
+        lightingController.begin();
+        lightingController.checkAmbientLight(300, 500);
+    });
+#endif
 
     // Render the first thing
     DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::NONE); });

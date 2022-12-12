@@ -3,29 +3,25 @@
 #include "Misc/Platform.hpp"
 #include "sindarin-debug.h"
 
-AlignmentScreen::AlignmentScreen(DisplaySystem &display, PreferencesStore &prefs)
-    : display_(display), prefs_(prefs) {}
+AlignmentScreen::AlignmentScreen(DisplaySystem &display, PreferencesStore &prefs,
+                                 LightingController &lightingController)
+    : display_(display), prefs_(prefs), lightingController_(lightingController) {}
 
 void AlignmentScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
     }
 
-    auto backlight = prefs_.backlight.get().value();
-
     // Alternate left and right on for setup.
     if (currentScreen_ == 1) {
-        SetRightBackLight(0);
-        SetLeftBackLight(backlight);
+        lightingController_.setScreenMask(LightingController::Screens::LEFT);
     } else if (currentScreen_ == 0) {
-        SetRightBackLight(backlight);
-        SetLeftBackLight(0);
+        lightingController_.setScreenMask(LightingController::Screens::RIGHT);
     }
-    // Turn on both backlights for last case
+    // Turn on both screen lights for last case
     else /*( currentScreen_ >= 2) */
     {
-        SetRightBackLight(backlight);
-        SetLeftBackLight(backlight);
+        lightingController_.setScreenMask(LightingController::Screens::BOTH);
     }
     // Don't need to set it after that as they are on.
 
@@ -57,9 +53,7 @@ void AlignmentScreen::processCommand(RemoteCommand command) {
     }
 
     if (currentScreen_ >= 2) {
-        auto backlight = prefs_.backlight.get().value();
-        SetRightBackLight(backlight);
-        SetLeftBackLight(backlight);
+        lightingController_.setScreenMask(LightingController::Screens::BOTH);
         backCallback();
     }
 }

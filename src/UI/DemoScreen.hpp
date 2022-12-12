@@ -3,6 +3,7 @@
 
 #include "Misc/Power.hpp"
 #include "Renderers/Renderer.hpp"
+#include "Sensors/LightingController.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Screen.hpp"
 
@@ -55,7 +56,8 @@
 
 class DemoScreen : public Screen {
 public:
-    DemoScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power);
+    DemoScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power,
+               LightingController &lightingController);
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
@@ -67,6 +69,7 @@ protected:
     Renderer renderer_;
     PreferencesStore &prefs_;
     Power &power_;
+    LightingController &lightingController_;
 
     unsigned int currentScreen_ = 0;
 };

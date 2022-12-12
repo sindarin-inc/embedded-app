@@ -6,6 +6,7 @@
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Power.hpp"
 #include "Renderers/Renderer.hpp"
+#include "Sensors/LightingController.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/ContainerScreen.hpp"
 #include "UI/LightingAdjustScreen.hpp"
@@ -15,9 +16,11 @@
 class PopupMenuScreen : public ContainerScreen {
 
 public:
-    PopupMenuScreen(Power &power, Renderer &renderer, PreferencesStore &prefs, Readable &readable)
+    PopupMenuScreen(Power &power, Renderer &renderer, PreferencesStore &prefs, Readable &readable,
+                    LightingController &lightingController)
         : prefs_(prefs), power_(power), renderer_(renderer), leftButtonTitle_("Lighting"),
-          lightingAdjustScreen_(prefs), readableSeekScreen_(prefs, readable, renderer_) {
+          lightingAdjustScreen_(prefs, lightingController),
+          readableSeekScreen_(prefs, readable, renderer_) {
         currentScreen_ = this;
 
         lightingAdjustScreen_.backCallback = [this]() {
