@@ -8,11 +8,11 @@ extern "C" {
 #ifndef ZLIB_INTERNAL
 #define ZLIB_INTERNAL
 #endif
-#include "inftrees.h"
+#include "Misc/unzipLIB/inftrees.h"
 }
 
 extern "C" {
-#include "inflate.h"
+#include "Misc/unzipLIB/inflate.h"
 }
 
 bool GUnzip::init() {

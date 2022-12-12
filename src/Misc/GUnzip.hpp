@@ -2,8 +2,8 @@
 
 #include <stdint.h>
 
+#include "Misc/unzipLIB/zlib.h"
 #include "Storage/FileSystem.hpp"
-#include "zlib.h"
 
 class GUnzip {
 public:

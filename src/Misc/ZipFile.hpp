@@ -1,9 +1,9 @@
 #pragma once
 
+#include <Misc/unzipLIB/unzipLIB.h>
 #include <map>
 #include <stdint.h>
 #include <string>
-#include <unzipLIB.h>
 
 #include "Storage/FileSystem.hpp"
 
@@ -16,8 +16,6 @@ public:
     void close();
     void listFiles();
     void extractAllToDirectory(const char *dirname);
-
-    void extractCurrentFile(const char *outFname);
 
     // static callbacks for unzipLIB library
     static void *zipOpen(const char *filename, int32_t *size);
@@ -32,4 +30,6 @@ protected:
     File fp_;
 
     static std::map<std::string, ZipFile *> zipRegistry;
+
+    void extractCurrentFile(const char *outFname);
 };
