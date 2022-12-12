@@ -1,8 +1,8 @@
 #include "GUnzip.hpp"
 
 #include <Arduino.h>
+#include <cstdio>
 #include <memory>
-#include <stdio.h>
 
 extern "C" {
 #ifndef ZLIB_INTERNAL
@@ -15,21 +15,21 @@ extern "C" {
 #include "Misc/unzipLIB/inflate.h"
 }
 
-bool GUnzip::init() {
+auto GUnzip::init() -> bool {
 
     inflateBuf_ = std::make_unique<uint8_t[]>(32768 + 7168);
 
     int err = Z_OK;
 
-    zstr_.zalloc = (alloc_func)0;
-    zstr_.zfree = (free_func)0;
-    zstr_.opaque = (voidpf)0;
+    zstr_.zalloc = (alloc_func) nullptr;
+    zstr_.zfree = (free_func) nullptr;
+    zstr_.opaque = (voidpf) nullptr;
     zstr_.state = (struct internal_state *)&inflateBuf_[32768];
-    inflate_state *st = (inflate_state *)zstr_.state;
+    InflateState *st = (InflateState *)zstr_.state;
     st->window = inflateBuf_.get();
 
-    zstr_.avail_in = 0;
-    zstr_.next_in = Z_NULL;
+    zstr_.availIn = 0;
+    zstr_.nextIn = Z_NULL;
 
     err = inflateInit2(&zstr_, 16 + MAX_WBITS);
 
@@ -42,27 +42,27 @@ bool GUnzip::init() {
     }
 }
 
-int GUnzip::decompress(uint8_t *input, int input_size, uint8_t *output, int output_size,
-                       int &input_read, int &output_avail) {
+auto GUnzip::decompress(uint8_t *input, int inputSize, uint8_t *output, int outputSize,
+                        int &inputRead, int &outputAvail) -> int {
 
-    zstr_.next_in = input;
-    zstr_.avail_in = input_size;
-    zstr_.next_out = output;
-    zstr_.avail_out = output_size;
+    zstr_.nextIn = input;
+    zstr_.availIn = inputSize;
+    zstr_.nextOut = output;
+    zstr_.availOut = outputSize;
 
-    int in_before = zstr_.total_in;
-    int out_before = zstr_.total_out;
+    int inBefore = zstr_.totalIn;
+    int outBefore = zstr_.totalOut;
 
     int err = Z_OK;
-    err = inflate(&zstr_, Z_SYNC_FLUSH);
+    err = Inflate(&zstr_, Z_SYNC_FLUSH);
 
-    input_read = zstr_.total_in - in_before;
-    output_avail = zstr_.total_out - out_before;
+    inputRead = zstr_.totalIn - inBefore;
+    outputAvail = zstr_.totalOut - outBefore;
     return err;
 }
 
-bool GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFileName,
-                            const std::string &outputFileName) {
+auto GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFileName,
+                            const std::string &outputFileName) -> bool {
 
     File in = fileSystem.open(inputFileName);
     File out = fileSystem.open(outputFileName, "w", true);
@@ -76,15 +76,15 @@ bool GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFile
     bool done = false;
     uint8_t inBuf[1024];
     uint8_t outBuf[1024];
-    int input_avail = 0;
-    int input_index = 0;
-    int input_read = 0;
-    int output_avail = 0;
+    int inputAvail = 0;
+    int inputIndex = 0;
+    int inputRead = 0;
+    int outputAvail = 0;
     int block = 0;
     bool last = false;
     while (!done) {
 
-        if (input_avail == 0) {
+        if (inputAvail == 0) {
 
             if (last) {
                 done = true;
@@ -102,32 +102,31 @@ bool GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFile
                 last = true;
             }
 
-            input_avail = readBytes;
-            input_index = 0;
+            inputAvail = readBytes;
+            inputIndex = 0;
         }
 
-        int err =
-            decompress(&inBuf[input_index], input_avail, outBuf, 1024, input_read, output_avail);
+        int err = decompress(&inBuf[inputIndex], inputAvail, outBuf, 1024, inputRead, outputAvail);
 
         // write block
-        if (output_avail > 0) {
-            out.write(outBuf, output_avail);
+        if (outputAvail > 0) {
+            out.write(outBuf, outputAvail);
         }
 
         // continue reading until no more output available
-        while (output_avail == 1024) {
+        while (outputAvail == 1024) {
             int ir = 0;
-            err = decompress(inBuf, 0, outBuf, 1024, ir, output_avail);
+            err = decompress(inBuf, 0, outBuf, 1024, ir, outputAvail);
 
             // write block
-            if (output_avail > 0) {
-                out.write(outBuf, output_avail);
+            if (outputAvail > 0) {
+                out.write(outBuf, outputAvail);
             }
         }
 
         // increment input
-        input_index += input_read;
-        input_avail -= input_read;
+        inputIndex += inputRead;
+        inputAvail -= inputRead;
     }
 
     log_i("done, closing.");
@@ -137,7 +136,7 @@ bool GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFile
     return true;
 }
 
-bool GUnzip::decompressMemory(uint8_t *input, int input_size) {
+auto GUnzip::decompressMemory(uint8_t *input, int inputSize) -> bool {
 
     if (!inflateBuf_) {
         if (!init()) {
@@ -146,36 +145,36 @@ bool GUnzip::decompressMemory(uint8_t *input, int input_size) {
     }
 
     uint8_t *fileptr = input;
-    int filelen = input_size;
-    int curr_file_byte = 0;
+    int filelen = inputSize;
+    int currFileByte = 0;
 
     bool done = false;
     uint8_t inBuf[1024];
     uint8_t outBuf[1024];
-    int input_avail = 0;
-    int input_index = 0;
-    int input_read = 0;
-    int output_avail = 0;
+    int inputAvail = 0;
+    int inputIndex = 0;
+    int inputRead = 0;
+    int outputAvail = 0;
     int block = 0;
     bool last = false;
     while (!done) {
 
-        if (input_avail == 0) {
+        if (inputAvail == 0) {
 
             if (last) {
                 done = true;
                 continue;
             }
 
-            int bytes_to_read = 1024;
-            if ((filelen - curr_file_byte) < 1024) {
-                bytes_to_read = filelen - curr_file_byte;
+            int bytesToRead = 1024;
+            if ((filelen - currFileByte) < 1024) {
+                bytesToRead = filelen - currFileByte;
             }
 
-            memcpy(inBuf, fileptr, bytes_to_read);
-            fileptr += bytes_to_read;
-            curr_file_byte += bytes_to_read;
-            int readBytes = bytes_to_read;
+            memcpy(inBuf, fileptr, bytesToRead);
+            fileptr += bytesToRead;
+            currFileByte += bytesToRead;
+            int readBytes = bytesToRead;
 
             if (readBytes == 0) {
                 log_i("done reading!");
@@ -187,22 +186,21 @@ bool GUnzip::decompressMemory(uint8_t *input, int input_size) {
                 last = true;
             }
 
-            input_avail = readBytes;
-            input_index = 0;
+            inputAvail = readBytes;
+            inputIndex = 0;
         }
 
-        int err =
-            decompress(&inBuf[input_index], input_avail, outBuf, 1024, input_read, output_avail);
+        int err = decompress(&inBuf[inputIndex], inputAvail, outBuf, 1024, inputRead, outputAvail);
 
         // continue reading until no more output available
-        while (output_avail == 1024) {
+        while (outputAvail == 1024) {
             int ir = 0;
-            err = decompress(inBuf, 0, outBuf, 1024, ir, output_avail);
+            err = decompress(inBuf, 0, outBuf, 1024, ir, outputAvail);
         }
 
         // increment input
-        input_index += input_read;
-        input_avail -= input_read;
+        inputIndex += inputRead;
+        inputAvail -= inputRead;
     }
 
     log_i("done, closing.");

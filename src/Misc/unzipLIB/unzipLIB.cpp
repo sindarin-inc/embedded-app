@@ -16,94 +16,79 @@
 // limitations under the License.
 //===========================================================================
 #include "unzipLIB.h"
+
 #include <memory>
 
-int UNZIP::openZIP(uint8_t *pData, int iDataSize)
-{
+auto UNZIP::openZIP(uint8_t *pData, int iDataSize) -> int {
     // mhill added allocation for buffer
     auto buffer = std::make_unique<uint8_t[]>(32768 + 7168);
-    _zip.ucFlate = buffer.get();
+    zip_.ucFlate = buffer.get();
 
-    _zip.zHandle = unzOpen(NULL, pData, iDataSize, &_zip, NULL, NULL, NULL, NULL);
-    if (_zip.zHandle == NULL) {
-//       printf("Error opening file: %s\n", argv[1]);
-       return -1;
+    zip_.zHandle = UnzOpen(nullptr, pData, iDataSize, &zip_, nullptr, nullptr, nullptr, nullptr);
+    if (zip_.zHandle == nullptr) {
+        //       printf("Error opening file: %s\n", argv[1]);
+        return -1;
     }
     return 0;
 } /* open() */
 
-int UNZIP::openZIP(const char *szFilename, ZIP_OPEN_CALLBACK *pfnOpen, ZIP_CLOSE_CALLBACK *pfnClose, ZIP_READ_CALLBACK *pfnRead, ZIP_SEEK_CALLBACK *pfnSeek)
-{
-    _zip.zHandle = unzOpen(szFilename, NULL, 0, &_zip, pfnOpen, pfnRead, pfnSeek, pfnClose);
-    if (_zip.zHandle == NULL) {
-//       printf("Error opening file: %s\n", argv[1]);
-       return -1;
+auto UNZIP::openZIP(const char *szFilename, ZIP_OPEN_CALLBACK *pfnOpen,
+                    ZIP_CLOSE_CALLBACK *pfnClose, ZIP_READ_CALLBACK *pfnRead,
+                    ZIP_SEEK_CALLBACK *pfnSeek) -> int {
+    zip_.zHandle = UnzOpen(szFilename, nullptr, 0, &zip_, pfnOpen, pfnRead, pfnSeek, pfnClose);
+    if (zip_.zHandle == nullptr) {
+        //       printf("Error opening file: %s\n", argv[1]);
+        return -1;
     }
     return 0;
 } /* open() */
 
-int UNZIP::closeZIP()
-{
-    _zip.iLastError = unzClose((unzFile)_zip.zHandle);
-    return _zip.iLastError;
+auto UNZIP::closeZIP() -> int {
+    zip_.iLastError = UnzClose((unzFile)zip_.zHandle);
+    return zip_.iLastError;
 } /* closeZIP() */
 
-int UNZIP::openCurrentFile()
-{
-    _zip.iLastError = unzOpenCurrentFile((unzFile)_zip.zHandle);
-    return _zip.iLastError;
+auto UNZIP::openCurrentFile() -> int {
+    zip_.iLastError = UnzOpenCurrentFile((unzFile)zip_.zHandle);
+    return zip_.iLastError;
 } /* openCurrentFile() */
 
-int UNZIP::closeCurrentFile()
-{
-    _zip.iLastError = unzCloseCurrentFile((unzFile)_zip.zHandle);
-    return _zip.iLastError;
+auto UNZIP::closeCurrentFile() -> int {
+    zip_.iLastError = UnzCloseCurrentFile((unzFile)zip_.zHandle);
+    return zip_.iLastError;
 } /* closeCurrentFile() */
 
-int UNZIP::readCurrentFile(uint8_t *buffer, int iLength)
-{
-    return unzReadCurrentFile((unzFile)_zip.zHandle, buffer, iLength);
+auto UNZIP::readCurrentFile(uint8_t *buffer, int iLength) -> int {
+    return UnzReadCurrentFile((unzFile)zip_.zHandle, buffer, iLength);
 } /* readCurrentFile() */
-int UNZIP::getCurrentFilePos()
-{
-    return (int)unztell((unzFile)_zip.zHandle);
+auto UNZIP::getCurrentFilePos() -> int {
+    return (int)Unztell((unzFile)zip_.zHandle);
 } /* getCurrentFilePos() */
 
-int UNZIP::gotoFirstFile()
-{
-    return unzGoToFirstFile((unzFile)_zip.zHandle);
+auto UNZIP::gotoFirstFile() -> int {
+    return UnzGoToFirstFile((unzFile)zip_.zHandle);
 } /* gotoFirstFile() */
-int UNZIP::gotoNextFile()
-{
-    _zip.iLastError = unzGoToNextFile((unzFile)_zip.zHandle);
-    return _zip.iLastError;
+auto UNZIP::gotoNextFile() -> int {
+    zip_.iLastError = UnzGoToNextFile((unzFile)zip_.zHandle);
+    return zip_.iLastError;
 } /* gotoNextFile() */
-int UNZIP::locateFile(const char *szFilename)
-{
-    _zip.iLastError = unzLocateFile((unzFile)_zip.zHandle, szFilename, 2);
-    return _zip.iLastError;
+auto UNZIP::locateFile(const char *szFilename) -> int {
+    zip_.iLastError = UnzLocateFile((unzFile)zip_.zHandle, szFilename, 2);
+    return zip_.iLastError;
 } /* locateFile() */
 
-int UNZIP::getFileInfo(unz_file_info *pFileInfo, char *szFileName, int iFileNameBufferSize, void *extraField, int iExtraFieldBufferSize, char *szComment, int iCommentBufferSize) // get info about the current file
+auto UNZIP::getFileInfo(unz_file_info *pFileInfo, char *szFileName, int iFileNameBufferSize,
+                        void *extraField, int iExtraFieldBufferSize, char *szComment,
+                        int iCommentBufferSize) -> int // get info about the current file
 
 {
-    return unzGetCurrentFileInfo((unzFile)_zip.zHandle,
-                            pFileInfo,
-                            szFileName,
-                            iFileNameBufferSize,
-                            extraField,
-                            iExtraFieldBufferSize,
-                            szComment,
-                            iCommentBufferSize);
+    return UnzGetCurrentFileInfo((unzFile)zip_.zHandle, pFileInfo, szFileName, iFileNameBufferSize,
+                                 extraField, iExtraFieldBufferSize, szComment, iCommentBufferSize);
 } /* getFileInfo() */
 
-int UNZIP::getLastError()
-{
-    return _zip.iLastError;
-} /* getLastError() */
+auto UNZIP::getLastError() -> int { return zip_.iLastError; } /* getLastError() */
 
-int UNZIP::getGlobalComment(char *destBuffer, int iBufferSize)
-{
-    _zip.iLastError =  unzGetGlobalComment((unzFile)_zip.zHandle, destBuffer, iBufferSize);
-    return _zip.iLastError;
+auto UNZIP::getGlobalComment(char *destBuffer, int iBufferSize) -> int {
+    zip_.iLastError = UnzGetGlobalComment((unzFile)zip_.zHandle, destBuffer, iBufferSize);
+    return zip_.iLastError;
 } /* getComment() */

@@ -11,12 +11,12 @@
 //===========================================================================
 
 #ifndef __UNZIPLIB__
-#define __UNZIPLIB__
-#if defined( PICO_BUILD ) || defined( __MACH__ ) || defined( __LINUX__ ) || defined( __MCUXPRESSO )
-#include <stdio.h>
+#define UNZIPLIB_
+#if defined(PICO_BUILD) || defined(__MACH__) || defined(__LINUX__) || defined(__MCUXPRESSO)
 #include <stdint.h>
-#include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #define memcpy_P memcpy
 #define PROGMEM
 #else
@@ -27,7 +27,7 @@
 // Written by Larry Bank
 // Copyright (c) 2021 BitBank Software, Inc.
 // bitbank@pobox.com
-// 
+//
 // An embedded-friendly unzip library
 // which needs only 41K of RAM
 //
@@ -37,25 +37,27 @@
 //
 // The UNZIP class wraps portable C code which does the actual work
 //
-class UNZIP
-{
-  public:
-    int openZIP(uint8_t *pData, int iDataSize);
-    int openZIP(const char *szFilename, ZIP_OPEN_CALLBACK *pfnOpen, ZIP_CLOSE_CALLBACK *pfnClose, ZIP_READ_CALLBACK *pfnRead, ZIP_SEEK_CALLBACK *pfnSeek);
-    int closeZIP();
-    int openCurrentFile();
-    int closeCurrentFile();
-    int readCurrentFile(uint8_t *buffer, int iLength);
-    int getCurrentFilePos();
-    int gotoFirstFile();
-    int gotoNextFile();
-    int locateFile(const char *szFilename);
-    int getFileInfo(unz_file_info *pFileInfo, char *szFileName, int iFilenameBufferSize, void *extraField, int iExtraFieldBufferSize, char *szComment, int iCommentBufferSize); // get info about the current file
-    int getLastError();
-    int getGlobalComment(char *destBuffer, int iBufferSize);
+class UNZIP {
+public:
+    auto openZIP(uint8_t *pData, int iDataSize) -> int;
+    auto openZIP(const char *szFilename, ZIP_OPEN_CALLBACK *pfnOpen, ZIP_CLOSE_CALLBACK *pfnClose,
+                 ZIP_READ_CALLBACK *pfnRead, ZIP_SEEK_CALLBACK *pfnSeek) -> int;
+    auto closeZIP() -> int;
+    auto openCurrentFile() -> int;
+    auto closeCurrentFile() -> int;
+    auto readCurrentFile(uint8_t *buffer, int iLength) -> int;
+    auto getCurrentFilePos() -> int;
+    auto gotoFirstFile() -> int;
+    auto gotoNextFile() -> int;
+    auto locateFile(const char *szFilename) -> int;
+    auto getFileInfo(unz_file_info *pFileInfo, char *szFileName, int iFilenameBufferSize,
+                     void *extraField, int iExtraFieldBufferSize, char *szComment,
+                     int iCommentBufferSize) -> int; // get info about the current file
+    auto getLastError() -> int;
+    auto getGlobalComment(char *destBuffer, int iBufferSize) -> int;
 
-  private:
-    ZIPFILE _zip;
+private:
+    ZIPFILE zip_;
 }; // UNZIP class
 // Add C interface here
 #endif // __cplusplus

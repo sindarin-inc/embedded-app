@@ -1,8 +1,8 @@
 #pragma once
 
 #include <Misc/unzipLIB/unzipLIB.h>
+#include <cstdint>
 #include <map>
-#include <stdint.h>
 #include <string>
 
 #include "Storage/FileSystem.hpp"
@@ -10,18 +10,18 @@
 class ZipFile {
 public:
     ZipFile(FileSystem &fs, const char *filename) : fileSystem_(fs), fileName_(filename) {}
-    ~ZipFile() {}
+    ~ZipFile() = default;
 
-    bool open();
+    auto open() -> bool;
     void close();
     void listFiles();
     void extractAllToDirectory(const char *dirname);
 
     // static callbacks for unzipLIB library
-    static void *zipOpen(const char *filename, int32_t *size);
+    static auto zipOpen(const char *filename, int32_t *size) -> void *;
     static void zipClose(void *p);
-    static int32_t zipRead(void *p, uint8_t *buffer, int32_t length);
-    static int32_t zipSeek(void *p, int32_t position, int iType);
+    static auto zipRead(void *p, uint8_t *buffer, int32_t length) -> int32_t;
+    static auto zipSeek(void *p, int32_t position, int iType) -> int32_t;
 
 protected:
     FileSystem &fileSystem_;
