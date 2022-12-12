@@ -14,10 +14,6 @@
 #include "config.h"
 #include "sindarin-debug.h"
 
-#if ULP_BACKLIGHT
-#include "Misc/ULP.hpp"
-#endif
-
 #define BACKLIGHT_PWM_CHANNEL 0
 #define HARDWARE_REVSION_LATEST 2
 
@@ -36,13 +32,8 @@ void InitializePlatform() {
     uartConfig.stop_bits = UART_STOP_BITS_1;
     uartConfig.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
     uartConfig.rx_flow_ctrl_thresh = 0;
-#if GILPICO_SINDARIN
-    // This is the part Arduino gets wrong. The ref tick clock is stable even amidst light sleep
-    uartConfig.source_clk = UART_SCLK_REF_TICK;
-#else
-    // But on the ESP32-S3, since the UART is built into the chip, we use XTAL I guess.
+    // On the ESP32-S3, since the UART is built into the chip, we use XTAL I guess.
     uartConfig.source_clk = UART_SCLK_XTAL;
-#endif
     ESP_ERROR_CHECK(uart_driver_install(0, 256, 0, 20, nullptr, 0));
     ESP_ERROR_CHECK(uart_param_config(0, &uartConfig));
 
@@ -156,9 +147,6 @@ void InitializePlatform() {
     }
 
 #endif
-#if ULP_BACKLIGHT
-    UlpStart();
-#endif
 #endif // EINKET013TT1
 
 #ifdef USB_CONNECTED_PIN
@@ -202,9 +190,6 @@ void SetBacklight(int percent) {
     ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
     ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, dutyCycle);
     ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
-#endif
-#if ULP_BACKLIGHT
-    UlpSetBrightness(dutyCycle);
 #endif
 }
 

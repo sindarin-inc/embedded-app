@@ -17,28 +17,13 @@ set(compile_options
     -DCORE_DEBUG_LEVEL=ARDUHAL_LOG_LEVEL_DEBUG
     -DCONFIG_ARDUHAL_LOG_COLORS
     -Wno-missing-field-initializers
+    -DLEDC_BACKLIGHT=1
+    -DUSE_LTR329=1
+    -DUSE_MMC5603=1
+    -DINTERNAL_SPIFFS_FLASH=1
+    -DDISABLE_LOW_VOLTAGE_HALT=1
+    -DLED_INVERT=1
 )
-
-if(NOT IDF_TARGET MATCHES "esp32s3")
-    list(APPEND components HULP)
-    list(APPEND compile_options
-        # Gilpico boards (ESP32-PICO-D4)
-        -DGILPICO_SINDARIN=1
-        -DULP_BACKLIGHT=1
-        -DLEDC_BACKLIGHT=0
-        -DDISPLAY_RST=27
-    )
-else()
-    list(APPEND compile_options
-        # Sol3 boards (ESP32-S3)
-        -DLEDC_BACKLIGHT=1
-        -DUSE_LTR329=1
-        -DUSE_MMC5603=1
-        -DINTERNAL_SPIFFS_FLASH=1
-        -DDISABLE_LOW_VOLTAGE_HALT=1
-        -DLED_INVERT=1
-    )
-endif()
 
 idf_component_register(
     SRCS ${app_sources}
