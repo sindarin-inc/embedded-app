@@ -17,8 +17,7 @@ extern "C" {
 
 bool GUnzip::init() {
 
-    auto buffer = std::make_unique<uint8_t[]>(32768 + 7168);
-    inflateBuf_ = buffer.get();
+    inflateBuf_ = std::make_unique<uint8_t[]>(32768 + 7168);
 
     int err = Z_OK;
 
@@ -27,7 +26,7 @@ bool GUnzip::init() {
     zstr_.opaque = (voidpf)0;
     zstr_.state = (struct internal_state *)&inflateBuf_[32768];
     inflate_state *st = (inflate_state *)zstr_.state;
-    st->window = inflateBuf_;
+    st->window = inflateBuf_.get();
 
     zstr_.avail_in = 0;
     zstr_.next_in = Z_NULL;
