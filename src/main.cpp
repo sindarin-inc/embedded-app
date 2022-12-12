@@ -66,8 +66,11 @@ Ltr329Als lightSensor(0);
 #endif
 
 #if USE_MMC5603
-#include "Sensors/Mmc5603.hpp"
-Mmc5603 magSensor(0);
+#include "Sensors/TempleCloseSensor.hpp"
+TempleCloseSensor templeCloseSensor;
+#if !DISABLE_POWER_MANAGEMENT
+esp_pm_lock_handle_t maglock;
+#endif
 #endif
 
 #if ENABLE_OTA
@@ -109,6 +112,10 @@ void RadioTask(void *parameter) {
         ota.loop();
 #endif
 
+// Put this with other periodic tasks so they all execute on the same wakeup
+#if USE_MMC5603
+        templeCloseSensor.checkTemple();
+#endif
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
     vTaskDelete(nullptr);
@@ -223,12 +230,16 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 
 #if USE_MMC5603
-    auto mmcProductId = magSensor.readProductId();
-    if (mmcProductId != 0x10) {
-        log_e("MMC5603 magnetometer not found (productId: 0x%02X)", mmcProductId);
+    if (!templeCloseSensor.checkProductId()) {
         bootErrors.push_back({.type = BootError::Type::Magnetometer});
     } else {
-        log_i("MMC5603 magnetometer found (productId: 0x%02X)", mmcProductId);
+        templeCloseSensor.setCallback([](bool open) {
+            if (open) {
+                SetBacklight(prefs.backlight.get().value());
+            } else {
+                SetBacklight(0);
+            }
+        });
     }
 #endif
 

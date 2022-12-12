@@ -4,6 +4,8 @@
 #include <driver/i2c.h>
 #include <esp_log.h>
 
+#include "sindarin-debug.h"
+
 #define I2C_MASTER_TIMEOUT_MS 1000
 #define LTR329ALS01_SENSOR_ADDR 0x29
 
@@ -64,17 +66,25 @@ auto Ltr329Als::readManufacturerId() -> uint8_t {
     return manufacturerId;
 }
 
-void Ltr329Als::enable() {
+auto Ltr329Als::enable() -> bool {
+    log_d("Starting Ltr329Als");
     // Turn on
     ltr329als01_als_contr_value control;
     control.raw = 0;
     control.alsMode = 1;
     // control.sw_reset = 1;
-    ESP_ERROR_CHECK(registerWriteByte(LTR329ALS01_REG_ALS_CONTR, control.raw));
+    esp_err_t err;
+    err = registerWriteByte(LTR329ALS01_REG_ALS_CONTR, control.raw);
+    if (err != ESP_OK) {
+        ESP_LOGE("LTR329ALS", "Failed to write control register (%s)", esp_err_to_name(err));
+        return false;
+    }
+    return true;
 }
 
-void Disable() {
+auto Ltr329Als::disable() -> bool {
     // TODO: Turn off
+    return true;
 }
 
 auto Ltr329Als::readStatus() -> ltr329als01_status_value {

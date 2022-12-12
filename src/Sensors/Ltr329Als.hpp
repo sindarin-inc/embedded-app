@@ -78,8 +78,8 @@ public:
     auto readPartId() -> uint8_t;
     auto readManufacturerId() -> uint8_t;
 
-    void enable();
-    void disable();
+    auto enable() -> bool;
+    auto disable() -> bool;
 
     auto readStatus() -> ltr329als01_status_value;
 
