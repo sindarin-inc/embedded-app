@@ -19,6 +19,7 @@
 #endif
 
 #define BACKLIGHT_PWM_CHANNEL 0
+#define HARDWARE_REVSION_LATEST 2
 
 esp_adc_cal_characteristics_t adcCalCharacteristics;
 
@@ -72,10 +73,18 @@ void InitializePlatform() {
     digitalWrite(BLUE_LED, LED_OFF);
     pinMode(BLUE_LED, OUTPUT);
 #endif
-#ifdef SYS_ON
+
+#if USE_SYS_ON
+    auto hardwareRevision = GetHardwareRevision();
+    uint8_t sysOnPin;
+    if (hardwareRevision == 1) {
+        sysOnPin = 5;
+    } else {
+        sysOnPin = 46;
+    }
     // For now, we'll never have the MCU keep itself on. This should be similar to the behavior of
     // the RevX boards -- when the temples are closed, power will be cut off.
-    pinMode(SYS_ON, INPUT_PULLDOWN);
+    pinMode(sysOnPin, INPUT_PULLDOWN);
 #endif
 #if USE_I2C
     // Initialize I2C port 0
@@ -227,7 +236,6 @@ auto USBConnected() -> bool {
 }
 
 auto GetSerialNumber() -> std::string {
-    // Probably should read at boot to make logs more useful
     uint8_t serialNumber[14] = {0};
     ESP_ERROR_CHECK(esp_efuse_read_field_blob(ESP_EFUSE_USER_DATA_SERIAL_NUMBER, &serialNumber,
                                               sizeof(serialNumber) * 8));
@@ -240,6 +248,37 @@ auto GetSerialNumber() -> std::string {
     }
 
     return {(const char *)serialNumber, sizeof(serialNumber)};
+}
+
+auto GetHardwareRevision() -> uint8_t {
+    // Cache the value
+    static std::optional<uint8_t> rev;
+    if (rev.has_value()) {
+        return rev.value();
+    }
+
+    uint8_t serialNumber[14] = {0};
+    ESP_ERROR_CHECK(esp_efuse_read_field_blob(ESP_EFUSE_USER_DATA_SERIAL_NUMBER, &serialNumber,
+                                              sizeof(serialNumber) * 8));
+
+    // If these bytes are null, assume it's the latest hardware version
+    if (serialNumber[3] == 0 || serialNumber[4] == 0) {
+        log_d("Unset SN (null), assuming latest hardware revision");
+        return HARDWARE_REVSION_LATEST;
+    }
+
+    // Check that the first two bytes are in ascii numeric range
+    if (serialNumber[3] < '0' || serialNumber[3] > '9' || serialNumber[4] < '0' ||
+        serialNumber[4] > '9') {
+        log_e("Invalid SN (out of ascii ranges), assuming latest hardware revision");
+        return HARDWARE_REVSION_LATEST;
+    }
+
+    // Serial number starts with SOL01 where the `01` is the hardware revision. Turn those two ascii
+    // bytes into an int.
+    rev = (serialNumber[3] - '0') * 10 + (serialNumber[4] - '0');
+    log_d("Hardware revision: %d", rev.value());
+    return rev.value();
 }
 
 #endif
