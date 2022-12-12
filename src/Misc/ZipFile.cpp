@@ -41,6 +41,11 @@ int32_t ZipFile::zipRead(void *p, uint8_t *buffer, int32_t length) {
         return -1;
     }
 
+    // reading one byte at a time from the open zip file
+    // somehow, reading the full length results in read() returning
+    // 0 on the first read.
+    // This is a workaround, would be great to fix whatever the
+    // underlying issue is
     int r = 0;
     for (int j = 0; j < length; j++) {
         int rr = fp->read(&buffer[j], 1);
@@ -65,7 +70,6 @@ int32_t ZipFile::zipSeek(void *p, int32_t position, int iType) {
         return -1;
     }
 
-    log_i("seek: %d", position);
     int32_t dest = 0;
     if (iType == SEEK_SET) {
         dest = position;
@@ -75,23 +79,8 @@ int32_t ZipFile::zipSeek(void *p, int32_t position, int iType) {
         long l = fp->position();
         dest = l + position;
     }
-    log_i("dest: %d", dest);
-
     bool res = fp->seek(dest);
-
-    log_i("res: %d", res);
     return res;
-
-    /*
-    if (iType == SEEK_SET) {
-        return fp->seek(position);
-    } else if (iType == SEEK_END) {
-        return fp->seek(position + pzf->iSize);
-    } else { // SEEK_CUR
-        long l = fp->position();
-        return fp->seek(l + position);
-    }
-    */
 }
 
 bool ZipFile::open() {
