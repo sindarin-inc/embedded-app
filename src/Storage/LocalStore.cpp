@@ -196,7 +196,7 @@ void LocalStore::syncFromRemote(
     auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this, progressCallback] {
         // Uncomment below to force a full sync
-        // this->prefs_.lastReadablesSince.set("");
+        this->prefs_.lastReadablesSince.set("");
         this->prefs_.lastArticlesSince.set("");
 
         auto readablesSince = this->readablesSince();

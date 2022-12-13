@@ -76,9 +76,13 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
     std::byte request[body.length()];
     memcpy(request, body.c_str(), body.length());
     int httpCode = httpClient.POST((uint8_t *)request, sizeof(request));
-    auto string = httpClient.getString();
-    auto *respJson = new SpiRamJsonDocument(string.length() * 2);
-    auto error = ArduinoJson::deserializeJson(*respJson, string);
+    log_d("Sync response http size: %d", httpClient.getSize());
+    auto *streamPtr = httpClient.getStreamPtr();
+    if (!streamPtr) {
+        log_e("Failed to get stream pointer for response.");
+    }
+    auto *respJson = new SpiRamJsonDocument(httpClient.getSize() * 2);
+    auto error = ArduinoJson::deserializeJson(*respJson, *streamPtr);
     if (error.code() != DeserializationError::Ok) {
         log_e("Failed to deserialize sync response: %s", error.c_str());
         delete respJson;
