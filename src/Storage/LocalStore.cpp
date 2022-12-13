@@ -19,7 +19,7 @@ auto LocalStore::begin() -> bool {
 
 auto LocalStore::loadReadablesFromFile(std::vector<Readable> &readables, const std::string &path)
     -> bool {
-    log_d("Loading %s", path.c_str());
+    log_d("Loading %s from %s", readablesGroup(readables).c_str(), path.c_str());
     File readablesFile = fileSystem.open(path);
     if (!readablesFile) {
         log_w("Failed to open %s", path.c_str());
@@ -28,8 +28,9 @@ auto LocalStore::loadReadablesFromFile(std::vector<Readable> &readables, const s
     }
 
     // Grab a minimum amount of ram, even if the readables file is empty
-    auto docSize = std::max(100, (int)readablesFile.size() * 2);
+    auto docSize = (int)readablesFile.size() * 2;
     auto *doc = new SpiRamJsonDocument(docSize);
+    readablesFile.seek(0);
     auto error = deserializeJson(*doc, readablesFile);
     readablesFile.close();
 
@@ -55,11 +56,17 @@ auto LocalStore::loadReadablesFromFile(std::vector<Readable> &readables, const s
             log_w("Couldn't find readable with path %s", readable.localFilePath().c_str());
             continue;
         } else {
+            log_d("Opening readable %s (%s)", readable.title.c_str(),
+                  readable.localFilePath().c_str());
             auto file = fileSystem.open(readable.localFilePath());
+            if (!file) {
+                log_w("Failed to open readable %s", readable.localFilePath().c_str());
+                continue;
+            }
             // If the filesize is wrong, ignore it so we redownload it
             auto fileSize = file.size();
             file.close();
-            if (fileSize != readable.file().size) {
+            if (readable.files.size() && fileSize != readable.file().size) {
                 log_w("File size mismatch for %s (%zu on disk vs %d in local store), ignoring",
                       readable.localFilePath().c_str(), fileSize, readable.file().size);
                 continue;
@@ -70,8 +77,13 @@ auto LocalStore::loadReadablesFromFile(std::vector<Readable> &readables, const s
         }
     }
 
+    log_d("Loaded %d readables from %s", readables.size(), path.c_str());
     delete doc;
     return true;
+}
+
+auto LocalStore::readablesGroup(std::vector<Readable> &readables) -> std::string {
+    return std::addressof(readables) == std::addressof(articles_) ? "articles" : "readables";
 }
 
 auto LocalStore::hasReadable(const std::vector<Readable> &readables, Readable &readable) -> bool {
@@ -117,6 +129,8 @@ auto LocalStore::articlesSince() -> std::string {
 auto LocalStore::changedReadablePlacemarkQueryParams(const std::vector<Readable> &readables)
     -> std::vector<std::string> {
     std::vector<std::string> placemarks;
+    std::string readablesGroup =
+        this->readablesGroup(const_cast<std::vector<Readable> &>(readables));
     for (auto &readable : readables) {
         if (readable.localOnly) {
             continue;
@@ -125,10 +139,8 @@ auto LocalStore::changedReadablePlacemarkQueryParams(const std::vector<Readable>
         if (changed) {
             uint32_t place = prefs_.readablePlace.get(readable.shortenedUuid.c_str());
             log_i("Placemark on readable %s has changed to %d", readable.uuid.c_str(), place);
-            std::string readableGroup =
-                std::addressof(readables) == std::addressof(articles_) ? "articles" : "readables";
-            placemarks.push_back(StringFormat("&%s_placemark_%s=%d", readableGroup.c_str(),
-                                              readable.uuid.c_str(), place));
+            placemarks.push_back(
+                StringFormat("&%s_placemark_%s=%d", readablesGroup, readable.uuid.c_str(), place));
         }
     }
 
@@ -213,8 +225,6 @@ void LocalStore::syncFromRemote(
             .ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or(""),
         };
 
-        std::vector<UserReadable> userReadables;
-        std::vector<UserReadable> userArticles;
         auto httpCode = SindarinAPI::getInstance()->checkSync(request, &checkSyncResponse);
         if (httpCode != HTTP_CODE_OK) {
             log_e("Failed to check sync (HTTP %d)", httpCode);
@@ -230,16 +240,6 @@ void LocalStore::syncFromRemote(
 
         progressCallback(ContentSyncState{.state = ContentSyncState::State::LoadingTasks});
 
-        // log_i("Not synced, downloading readables");
-        // std::vector<UserReadable> userReadables;
-        // httpCode = SindarinAPI::getInstance()->getUserReadables(&userReadables);
-        // if (httpCode != HTTP_CODE_OK) {
-        //     log_e("Failed to get readables (HTTP %d)", httpCode);
-        //     progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
-        //                                       .message = "Failed to load list"});
-        //     return;
-        // }
-
         // If out of sync, download any new readables.
         std::vector<Readable> readablesToDownload;
 
@@ -254,7 +254,7 @@ void LocalStore::syncFromRemote(
                       userReadable.placemark);
             }
             if (this->hasReadable(readables_, userReadable.readable)) {
-                log_d("Already have %s", userReadable.readable.title.c_str());
+                log_w("Already have %s", userReadable.readable.title.c_str());
                 continue;
             }
 
@@ -265,12 +265,13 @@ void LocalStore::syncFromRemote(
         // TODO: Probably these should be set operations
         std::vector<Readable> readablesToDelete;
         for (auto &readable : readables_) {
-            if (!readable.localOnly && std::find_if(userReadables.begin(), userReadables.end(),
+            if (!readable.localOnly && std::find_if(checkSyncResponse.userReadables.begin(),
+                                                    checkSyncResponse.userReadables.end(),
                                                     [&readable](const UserReadable &userReadable) {
                                                         return userReadable.readable.uuid ==
                                                                readable.uuid;
-                                                    }) == userReadables.end()) {
-                log_i("Will delete %s", readable.title.c_str());
+                                                    }) == checkSyncResponse.userReadables.end()) {
+                log_w("Will delete %s", readable.title.c_str());
                 readablesToDelete.push_back(readable);
             }
         }
@@ -335,7 +336,8 @@ void LocalStore::syncFromRemote(
                       userReadable.placemark);
             }
             if (this->hasReadable(articles_, userReadable.readable)) {
-                log_d("Already have %s", userReadable.readable.title.c_str());
+                // Should never get here as articlesSince should hide these articles
+                log_w("Already have %s", userReadable.readable.title.c_str());
                 continue;
             }
 
@@ -383,10 +385,11 @@ void LocalStore::syncFromRemote(
 }
 
 void LocalStore::saveArticleFile(const Readable &readable) {
-    log_i("Storing article %s", readable.title.c_str());
+    log_i("Storing article %s: %s", readable.title.c_str(), readable.localFilePath().c_str());
 
-    File file = fileSystem.open(readable.localFilePath(), FILE_WRITE);
+    File file = fileSystem.open(readable.localFilePath(), FILE_WRITE, true);
     const char *title = readable.title.c_str();
+    size_t docSize = file.size();
     file.write((const uint8_t *)title, strlen(title));
     file.write('\n');
 
@@ -394,6 +397,9 @@ void LocalStore::saveArticleFile(const Readable &readable) {
 
     file.flush();
     file.close();
+
+    log_d("Finished storing article %s, size %zu/%zu", readable.title.c_str(), docSize,
+          readable.content.size());
 }
 
 auto LocalStore::saveReadables(const std::vector<Readable> &readables, const std::string &path)
@@ -416,7 +422,7 @@ auto LocalStore::saveReadables(const std::vector<Readable> &readables, const std
     }
 
     // Write doc to disk
-    File file = fileSystem.open(path, FILE_WRITE);
+    File file = fileSystem.open(path, FILE_WRITE, true);
     if (!file) {
         log_e("Failed to open file for writing");
         return false;

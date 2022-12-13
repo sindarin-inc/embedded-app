@@ -80,6 +80,8 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
     auto *streamPtr = httpClient.getStreamPtr();
     if (!streamPtr) {
         log_e("Failed to get stream pointer for response.");
+        httpClient.end();
+        return 0;
     }
     auto *respJson = new SpiRamJsonDocument(httpClient.getSize() * 2);
     auto error = ArduinoJson::deserializeJson(*respJson, *streamPtr);
