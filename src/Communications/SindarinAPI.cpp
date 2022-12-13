@@ -56,7 +56,7 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
     }
 
     httpClient.addHeader("Content-Type", "application/x-www-form-urlencoded");
-    auto body = StringFormat("build=%s&&git_hash=%s&sn=%"
+    auto body = StringFormat("skip_content=false&build=%s&&git_hash=%s&sn=%"
                              "s&pt_battery=%d&pt_build=%s",
                              kVersionString, kGitHash, GetSerialNumber().c_str(), req.ptBattery,
                              req.ptBuild.c_str());

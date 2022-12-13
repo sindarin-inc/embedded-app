@@ -197,7 +197,7 @@ void LocalStore::syncFromRemote(
     queue->dispatch([this, progressCallback] {
         // Uncomment below to force a full sync
         // this->prefs_.lastReadablesSince.set("");
-        // this->prefs_.lastArticlesSince.set("");
+        this->prefs_.lastArticlesSince.set("");
 
         auto readablesSince = this->readablesSince();
         auto articlesSince = this->articlesSince();
@@ -246,7 +246,7 @@ void LocalStore::syncFromRemote(
         // Now look through all the readables here, and download any that we don't have
         // already
         for (auto &userReadable : checkSyncResponse.userReadables) {
-            log_i("User readable %s (%s)", userReadable.readable.title.c_str(),
+            log_d("User readable %s (%s)", userReadable.readable.title.c_str(),
                   userReadable.readable.file().shaHash.c_str());
             if (this->processReadablePlacemarksFromServer(userReadable.readable,
                                                           userReadable.placemark)) {
@@ -254,7 +254,7 @@ void LocalStore::syncFromRemote(
                       userReadable.placemark);
             }
             if (this->hasReadable(readables_, userReadable.readable)) {
-                log_i("Already have %s", userReadable.readable.title.c_str());
+                log_d("Already have %s", userReadable.readable.title.c_str());
                 continue;
             }
 
@@ -327,15 +327,15 @@ void LocalStore::syncFromRemote(
 
         // Save the articles that are new
         for (auto &userReadable : checkSyncResponse.userArticles) {
-            log_i("User article %s (%s)", userReadable.readable.title.c_str(),
-                  userReadable.readable.file().shaHash.c_str());
+            log_d("Fetched user article: %s (%zu)", userReadable.readable.title.c_str(),
+                  userReadable.readable.content.size());
             if (this->processReadablePlacemarksFromServer(userReadable.readable,
                                                           userReadable.placemark)) {
                 log_i("Placemark for %s updated to %d", userReadable.readable.title.c_str(),
                       userReadable.placemark);
             }
             if (this->hasReadable(articles_, userReadable.readable)) {
-                log_i("Already have %s", userReadable.readable.title.c_str());
+                log_d("Already have %s", userReadable.readable.title.c_str());
                 continue;
             }
 
@@ -345,8 +345,10 @@ void LocalStore::syncFromRemote(
         this->resetReadablesPlacemarkChanged(articles_);
 
         // Store since date values for next sync
-        this->prefs_.lastReadablesSince.set(checkSyncResponse.readablesSince);
-        this->prefs_.lastArticlesSince.set(checkSyncResponse.articlesSince);
+        log_i("Setting lastReadablesSince to %s and lastArticlesSince to %s",
+              checkSyncResponse.readablesSince.c_str(), checkSyncResponse.articlesSince.c_str());
+        this->prefs_.lastReadablesSince.set(checkSyncResponse.readablesSince.c_str());
+        this->prefs_.lastArticlesSince.set(checkSyncResponse.articlesSince.c_str());
 
         // Artificially delay so the user has the satisfaction of seeing the list done
         delay(1000);
@@ -383,8 +385,7 @@ void LocalStore::syncFromRemote(
 void LocalStore::saveArticleFile(const Readable &readable) {
     log_i("Storing article %s", readable.title.c_str());
 
-    auto path = StringFormat("/articles/%s.txt", readable.uuid.c_str());
-    File file = fileSystem.open(path.c_str(), FILE_WRITE);
+    File file = fileSystem.open(readable.localFilePath(), FILE_WRITE);
     const char *title = readable.title.c_str();
     file.write((const uint8_t *)title, strlen(title));
     file.write('\n');
