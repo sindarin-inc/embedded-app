@@ -286,17 +286,19 @@ void LocalStore::syncFromRemote(
 
         // TODO: Probably these should be set operations
         std::vector<Readable> readablesToDelete;
-        for (auto &readable : readables_) {
-            if (!readable.localOnly && std::find_if(checkSyncResponse.userReadables.begin(),
-                                                    checkSyncResponse.userReadables.end(),
-                                                    [&readable](const UserReadable &userReadable) {
-                                                        return userReadable.readable.uuid ==
-                                                               readable.uuid;
-                                                    }) == checkSyncResponse.userReadables.end()) {
-                log_w("Will delete %s", readable.title.c_str());
-                readablesToDelete.push_back(readable);
-            }
-        }
+        // for (auto &readable : readables_) {
+        //     if (!readable.localOnly && std::find_if(checkSyncResponse.userReadables.begin(),
+        //                                             checkSyncResponse.userReadables.end(),
+        //                                             [&readable](const UserReadable &userReadable)
+        //                                             {
+        //                                                 return userReadable.readable.uuid ==
+        //                                                        readable.uuid;
+        //                                             }) == checkSyncResponse.userReadables.end())
+        //                                             {
+        //         log_w("Will delete %s", readable.title.c_str());
+        //         readablesToDelete.push_back(readable);
+        //     }
+        // }
 
         ContentSyncState syncState = {.state = ContentSyncState::State::Syncing};
         syncState.tasks.reserve(readablesToDownload.size());
