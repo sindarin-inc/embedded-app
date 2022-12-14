@@ -38,8 +38,8 @@ public:
     auto loadReadablesFromFile(std::vector<Readable> &readables, const std::string &path) -> bool;
 
     // Convenience methods
-    auto readablesGroup(std::vector<Readable> &readables) -> std::string;
-    auto hasReadable(const std::vector<Readable> &readables, Readable &readable) -> bool;
+    auto readablesGroup(const std::vector<Readable> &readables) -> std::string;
+    auto hasReadable(const std::vector<Readable> &readables, const Readable &readable) -> bool;
     auto readables() -> std::vector<Readable> & { return readables_; };
     auto articles() -> std::vector<Readable> & { return articles_; };
     void addReadable(std::vector<Readable> &readables, const Readable &readable);
@@ -49,12 +49,15 @@ public:
 
     auto changedReadablePlacemarkQueryParams(const std::vector<Readable> &readables)
         -> std::vector<std::string>;
+    auto changedArticlesArchivedQueryParams(const std::vector<Readable> &articles)
+        -> std::vector<std::string>;
     auto processReadablePlacemarksFromServer(const Readable &readable, const uint32_t placemark)
         -> bool;
     void resetReadablesPlacemarkChanged(const std::vector<Readable> &readables);
 
     void syncFromRemote(const std::function<void(ContentSyncState state)> &progressCallback);
     void saveArticleFile(const Readable &readable);
+    void clearArticleFile();
     auto saveReadables(const std::vector<Readable> &readables, const std::string &path) -> bool;
 
     FileSystem &fileSystem;

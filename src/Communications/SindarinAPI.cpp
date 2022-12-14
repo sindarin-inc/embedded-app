@@ -72,6 +72,9 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
     for (auto &placemark : req.articlePlacemarks) {
         body += placemark.c_str();
     }
+    for (auto &article : req.articlesArchived) {
+        body += article.c_str();
+    }
 
     std::byte request[body.length()];
     memcpy(request, body.c_str(), body.length());

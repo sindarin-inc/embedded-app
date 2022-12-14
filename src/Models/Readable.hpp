@@ -52,7 +52,7 @@ public:
             log_w("Failed to parse Readable %s", DumpJson(j).c_str());
             return false;
         }
-        log_d("Parsing Readable %s", DumpJson(j).c_str());
+        // log_d("Parsing Readable %s", DumpJson(j).c_str());
         uuid = j["uuid"].as<std::string>();
         shortenedUuid = j["uuid"].as<std::string>();
         shortenedUuid.resize(TRUNCATE_READABLE_UUID_FOR_PLACEMARK_BYTES);

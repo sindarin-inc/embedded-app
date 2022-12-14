@@ -170,6 +170,7 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
 // Since this happens in a couple of places (animation as well as button press),
 // we have a helper method to do the work.
 void ReadableScreen::turnPage() {
+
     readable_.placePrev = readable_.place;
     readable_.place = newPlace_;
     prefs_.readablePlace.set(readable_.shortenedUuid.c_str(), readable_.place);
@@ -382,7 +383,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         }
         break;
     case RemoteCommand::PLAY: // To allow the PT to long press east to change page without an enter
-                              // button
+                              // button, and undoing the bookmark first
     case RemoteCommand::ENTER:
         if (pageSpeed_ == 0) {
             turnPage();

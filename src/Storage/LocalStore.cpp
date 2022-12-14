@@ -56,8 +56,6 @@ auto LocalStore::loadReadablesFromFile(std::vector<Readable> &readables, const s
             log_w("Couldn't find readable with path %s", readable.localFilePath().c_str());
             continue;
         } else {
-            log_d("Opening readable %s (%s)", readable.title.c_str(),
-                  readable.localFilePath().c_str());
             auto file = fileSystem.open(readable.localFilePath());
             if (!file) {
                 log_w("Failed to open readable %s", readable.localFilePath().c_str());
@@ -71,8 +69,6 @@ auto LocalStore::loadReadablesFromFile(std::vector<Readable> &readables, const s
                       readable.localFilePath().c_str(), fileSize, readable.file().size);
                 continue;
             }
-            log_d("Found local readable %s (%s)", readable.title.c_str(),
-                  readable.localFilePath().c_str());
             readables.push_back(readable);
         }
     }
@@ -82,21 +78,27 @@ auto LocalStore::loadReadablesFromFile(std::vector<Readable> &readables, const s
     return true;
 }
 
-auto LocalStore::readablesGroup(std::vector<Readable> &readables) -> std::string {
-    return std::addressof(readables) == std::addressof(articles_) ? "articles" : "readables";
+auto LocalStore::readablesGroup(const std::vector<Readable> &readables) -> std::string {
+    return &readables == &articles_ ? "articles" : "readables";
 }
 
-auto LocalStore::hasReadable(const std::vector<Readable> &readables, Readable &readable) -> bool {
-    for (auto &r : readables) {
-        if (r.uuid == readable.uuid && fileSystem.exists(r.localFilePath())) {
-            auto file = fileSystem.open(r.localFilePath());
+auto LocalStore::hasReadable(const std::vector<Readable> &readables, const Readable &readable)
+    -> bool {
+    for (auto r = readables.begin(); r != readables.end(); ++r) {
+        if (r->uuid == readable.uuid && fileSystem.exists(r->localFilePath())) {
+            auto file = fileSystem.open(r->localFilePath());
             auto fileSize = file.size();
             file.close();
-            if (fileSize != readable.file().size) {
-                log_w("File size mismatch for %s (%zu on disk vs %d in local store), ignoring",
-                      readable.localFilePath().c_str(), fileSize, readable.file().size);
-                return false;
-            } else {
+
+            if (&readables == &readables_) {
+                if (fileSize != readable.file().size) {
+                    log_w("File size mismatch for %s (%zu on disk vs %d in local store), ignoring",
+                          readable.localFilePath().c_str(), fileSize, readable.file().size);
+                    return false;
+                } else {
+                    return true;
+                }
+            } else if (&readables == &articles_) {
                 return true;
             }
         }
@@ -129,8 +131,7 @@ auto LocalStore::articlesSince() -> std::string {
 auto LocalStore::changedReadablePlacemarkQueryParams(const std::vector<Readable> &readables)
     -> std::vector<std::string> {
     std::vector<std::string> placemarks;
-    std::string readablesGroup =
-        this->readablesGroup(const_cast<std::vector<Readable> &>(readables));
+    std::string group = this->readablesGroup(const_cast<std::vector<Readable> &>(readables));
     for (auto &readable : readables) {
         if (readable.localOnly) {
             continue;
@@ -138,14 +139,33 @@ auto LocalStore::changedReadablePlacemarkQueryParams(const std::vector<Readable>
         bool changed = prefs_.readablePlaceChanged.get(readable.shortenedUuid.c_str());
         if (changed) {
             uint32_t place = prefs_.readablePlace.get(readable.shortenedUuid.c_str());
-            log_i("Placemark on readable %s has changed to %d", readable.uuid.c_str(), place);
+            log_i("Placemark on readable %s %s has changed to %d", readable.title.c_str(),
+                  readable.uuid.c_str(), place);
             placemarks.push_back(
-                StringFormat("&%s_placemark_%s=%d", readablesGroup, readable.uuid.c_str(), place));
+                StringFormat("&%s_placemark_%s=%d", group.c_str(), readable.uuid.c_str(), place));
         }
     }
 
     return placemarks;
 }
+
+auto LocalStore::changedArticlesArchivedQueryParams(const std::vector<Readable> &articles)
+    -> std::vector<std::string> {
+    std::vector<std::string> archived;
+    for (auto &article : articles) {
+        if (article.localOnly) {
+            continue;
+        }
+        bool changed = prefs_.articleArchivedChanged.get(article.shortenedUuid.c_str());
+        if (changed) {
+            log_i("Archived article %s %s", article.title.c_str(), article.uuid.c_str());
+            archived.push_back(StringFormat("&article_archived_%s=1", article.uuid.c_str()));
+        }
+    }
+
+    return archived;
+}
+
 auto LocalStore::processReadablePlacemarksFromServer(const Readable &readable,
                                                      const uint32_t placemark) -> bool {
     uint32_t onDevicePlace = prefs_.readablePlace.get(readable.shortenedUuid.c_str());
@@ -208,19 +228,21 @@ void LocalStore::syncFromRemote(
     auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this, progressCallback] {
         // Uncomment below to force a full sync
-        this->prefs_.lastReadablesSince.set("");
-        this->prefs_.lastArticlesSince.set("");
+        // this->prefs_.lastReadablesSince.set("");
+        // this->prefs_.lastArticlesSince.set("");
 
         auto readablesSince = this->readablesSince();
         auto articlesSince = this->articlesSince();
         auto readablePlacemarks = this->changedReadablePlacemarkQueryParams(readables_);
         auto articlePlacemarks = this->changedReadablePlacemarkQueryParams(articles_);
+        auto articlesArchived = this->changedArticlesArchivedQueryParams(articles_);
         CheckSyncResponse checkSyncResponse;
         CheckSyncRequest request = CheckSyncRequest{
             .readablesSince = readablesSince,
             .articlesSince = articlesSince,
             .readablePlacemarks = readablePlacemarks,
             .articlePlacemarks = articlePlacemarks,
+            .articlesArchived = articlesArchived,
             .ptBattery = this->prefs_.lastPageTurnerBattery.get().value_or(0),
             .ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or(""),
         };
@@ -292,6 +314,12 @@ void LocalStore::syncFromRemote(
                 .percentage = 0,
             });
         }
+        if (checkSyncResponse.userArticles.size() > 0) {
+            syncState.tasks.push_back(ContentSyncState::Task{
+                .message = "Get: Articles from Pocket",
+                .percentage = 0,
+            });
+        }
 
         progressCallback(syncState);
 
@@ -327,7 +355,11 @@ void LocalStore::syncFromRemote(
         progressCallback(syncState);
 
         // Save the articles that are new
-        for (auto &userReadable : checkSyncResponse.userArticles) {
+        auto tasksIndex = readablesToDownload.size() + readablesToDelete.size();
+        syncState.tasks[tasksIndex].percentage = 0;
+        for (int i = 0; i < checkSyncResponse.userArticles.size(); i++) {
+            auto &userReadable = checkSyncResponse.userArticles[i];
+
             log_d("Fetched user article: %s (%zu)", userReadable.readable.title.c_str(),
                   userReadable.readable.content.size());
             if (this->processReadablePlacemarksFromServer(userReadable.readable,
@@ -343,8 +375,14 @@ void LocalStore::syncFromRemote(
 
             this->saveArticleFile(userReadable.readable);
             this->addReadable(articles_, userReadable.readable);
+
+            syncState.tasks[tasksIndex].percentage =
+                (float(i) / checkSyncResponse.userArticles.size()) * 100;
+            progressCallback(syncState);
         }
         this->resetReadablesPlacemarkChanged(articles_);
+
+        progressCallback(syncState);
 
         // Store since date values for next sync
         log_i("Setting lastReadablesSince to %s and lastArticlesSince to %s",
@@ -400,6 +438,16 @@ void LocalStore::saveArticleFile(const Readable &readable) {
 
     log_d("Finished storing article %s, size %zu/%zu", readable.title.c_str(), docSize,
           readable.content.size());
+}
+
+void LocalStore::clearArticleFile() {
+    log_i("Clearing %s", ARTICLES_PATH);
+    bool removed = fileSystem.remove(ARTICLES_PATH);
+    if (!removed) {
+        log_e("Failed to remove %s", ARTICLES_PATH);
+    }
+
+    prefs_.lastArticlesSince.set("");
 }
 
 auto LocalStore::saveReadables(const std::vector<Readable> &readables, const std::string &path)

@@ -138,32 +138,33 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     // Setup articles menu, soon to be its own "tab"
     if (articles.size()) {
-        mainMenu->addMenuItem(MenuItem(
-            "Pocket Articles", [this, mainMenu, articles, display, createReadableScreen]() {
-                log_i("Loading %zu Pocket articles", articles.size());
+        mainMenu->addMenuItem(MenuItem("Pocket Articles", [this, mainMenu, articles, display,
+                                                           createReadableScreen]() {
+            log_i("Loading %zu Pocket articles", articles.size());
 
-                auto pocketMenu = new MenuScreen(this->power_, mainMenu->getMyStyle());
+            auto pocketMenu = new MenuScreen(this->power_, mainMenu->getMyStyle());
 
-                for (const Readable &r : articles) {
-                    pocketMenu->addMenuItem(
-                        MenuItem(r.title, [this, pocketMenu, r, createReadableScreen]() {
-                            auto readableScreen = createReadableScreen(r);
-                            setCurrentScreen(*readableScreen);
-
-                            readableScreen->backCallback = [this, readableScreen, pocketMenu]() {
-                                setCurrentScreen(*pocketMenu);
-                                delete readableScreen;
-                            };
-                        }));
-                }
-                display->clearDisplay();
-                setCurrentScreen(*pocketMenu);
-                pocketMenu->backCallback = [this, mainMenu, pocketMenu, display]() {
+            for (const Readable &r : articles) {
+                pocketMenu->addMenuItem(MenuItem(r.title, [this, display, pocketMenu, r,
+                                                           createReadableScreen]() {
                     display->clearDisplay();
-                    setCurrentScreen(*mainMenu);
-                    delete pocketMenu;
-                };
-            }));
+                    auto readableScreen = createReadableScreen(r);
+                    setCurrentScreen(*readableScreen);
+                    readableScreen->backCallback = [this, display, readableScreen, pocketMenu]() {
+                        display->clearDisplay();
+                        setCurrentScreen(*pocketMenu);
+                        delete readableScreen;
+                    };
+                }));
+            }
+            display->clearDisplay();
+            setCurrentScreen(*pocketMenu);
+            pocketMenu->backCallback = [this, mainMenu, pocketMenu, display]() {
+                display->clearDisplay();
+                setCurrentScreen(*mainMenu);
+                delete pocketMenu;
+            };
+        }));
     }
 
     // Set up pocket article menu
@@ -574,6 +575,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         prefs_.wordCount.set(0);
         prefs_.totalReadingTimeSeconds.set(0);
         debugMenu->showTemporaryMessage(*display, "Statistics reset.");
+    }));
+
+    debugMenu->addMenuItem(MenuItem("Clear Articles", [this, debugMenu, display, &localStore]() {
+        localStore.clearArticleFile();
+        debugMenu->showTemporaryMessage(*display, "Articles reset.");
     }));
 
 #if USE_TURN_TOUCH_REMOTE
