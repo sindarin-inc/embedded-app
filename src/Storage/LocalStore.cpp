@@ -448,6 +448,9 @@ void LocalStore::clearArticleFile() {
     }
 
     prefs_.lastArticlesSince.set("");
+
+    log_i("Resetting to guarantee articles are removed");
+    esp_restart();
 }
 
 auto LocalStore::saveReadables(const std::vector<Readable> &readables, const std::string &path)
