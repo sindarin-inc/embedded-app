@@ -179,13 +179,13 @@ void StatsTask(void *parameter) {
 // check this against the key last_good_boot. If there are more boots than
 // a specified threshold since the last good one, try to roll back to a previous firmware version
 
-uint32_t bootLoopCheck() {
+auto BootLoopCheck() -> uint32_t {
     // increment boot number
     nvs_handle_t bootNvsHandle;
     uint32_t currBoot = 0;
     uint32_t bootLoopThreshold = 10;
-    esp_err_t nvs_err = nvs_open("boot-info", NVS_READWRITE, &bootNvsHandle);
-    if (nvs_err != ESP_OK) {
+    esp_err_t nvsErr = nvs_open("boot-info", NVS_READWRITE, &bootNvsHandle);
+    if (nvsErr != ESP_OK) {
         log_e("could not open boot-info in nvs");
         return 0;
     }
@@ -193,8 +193,8 @@ uint32_t bootLoopCheck() {
     log_i("opened boot-info nvs ok!");
 
     // read existing boot count
-    nvs_err = nvs_get_u32(bootNvsHandle, "curr_boot", &currBoot);
-    if (nvs_err != ESP_OK) {
+    nvsErr = nvs_get_u32(bootNvsHandle, "curr_boot", &currBoot);
+    if (nvsErr != ESP_OK) {
         currBoot = 0;
     }
 
@@ -209,8 +209,8 @@ uint32_t bootLoopCheck() {
 
     // now read last good boot number
     uint32_t lastGoodBoot = 0;
-    nvs_err = nvs_get_u32(bootNvsHandle, "last_good_boot", &lastGoodBoot);
-    if (nvs_err != ESP_OK) {
+    nvsErr = nvs_get_u32(bootNvsHandle, "last_good_boot", &lastGoodBoot);
+    if (nvsErr != ESP_OK) {
         log_e("error reading last good boot");
         nvs_close(bootNvsHandle);
         return currBoot;
@@ -236,14 +236,14 @@ uint32_t bootLoopCheck() {
     log_i("rollback and reset.");
 
     // set this boot as 'good' so rolled back version doesn't also try to roll back!
-    nvs_err = nvs_set_u32(bootNvsHandle, "last_good_boot", currBoot);
-    if (nvs_err != ESP_OK) {
+    nvsErr = nvs_set_u32(bootNvsHandle, "last_good_boot", currBoot);
+    if (nvsErr != ESP_OK) {
         log_e("error setting last good boot to %d", currBoot);
         nvs_close(bootNvsHandle);
         return currBoot;
     }
 
-    const esp_partition_t *partition = esp_ota_get_next_update_partition(NULL);
+    const esp_partition_t *partition = esp_ota_get_next_update_partition(nullptr);
     if (partition) {
         if (esp_ota_set_boot_partition(partition) == ESP_OK) {
             // reboot to other partition
@@ -255,18 +255,18 @@ uint32_t bootLoopCheck() {
     return currBoot;
 }
 
-void setLastGoodBoot(uint32_t lastGood) {
+void SetLastGoodBoot(uint32_t lastGood) {
     nvs_handle_t bootNvsHandle;
-    esp_err_t nvs_err = nvs_open("boot-info", NVS_READWRITE, &bootNvsHandle);
-    if (nvs_err != ESP_OK) {
+    esp_err_t nvsErr = nvs_open("boot-info", NVS_READWRITE, &bootNvsHandle);
+    if (nvsErr != ESP_OK) {
         log_e("could not open boot-info in nvs");
         return;
     }
 
     // mark this boot as good
     log_i("marking %d as last good boot", lastGood);
-    nvs_err = nvs_set_u32(bootNvsHandle, "last_good_boot", lastGood);
-    if (nvs_err != ESP_OK) {
+    nvsErr = nvs_set_u32(bootNvsHandle, "last_good_boot", lastGood);
+    if (nvsErr != ESP_OK) {
         log_e("could not set %d as last good boot", lastGood);
     }
 
@@ -287,7 +287,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // Configure log level for all Sindarin logs
     esp_log_level_set("Sindarin", ESP_LOG_DEBUG);
 #endif
-    uint32_t bootCount = bootLoopCheck();
+    uint32_t bootCount = BootLoopCheck();
     std::vector<BootError> bootErrors;
 
 #if BOARD_HAS_PSRAM
@@ -535,7 +535,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     SetCpuSpeedMhz(CPU_FREQ_MHZ_LOW);
 
-    setLastGoodBoot(bootCount);
+    SetLastGoodBoot(bootCount);
     BlinkBootErrors(bootErrors);
 
     remoteQueue = xQueueCreate(10, sizeof(RemoteCommand));
