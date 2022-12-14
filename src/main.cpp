@@ -22,6 +22,8 @@
 #include "Storage/PreferencesStore.hpp"
 #include "UI/RootUI.hpp"
 #include "config.h"
+#include "esp_ota_ops.h"
+#include "nvs.h"
 #include "sindarin-debug.h"
 
 #if !DISABLE_POWER_MANAGEMENT
@@ -172,6 +174,105 @@ void StatsTask(void *parameter) {
     vTaskDelete(nullptr);
 }
 
+// check if we are in a boot loop state
+// this happens by incrementing a key (curr_boot) on each startup.
+// check this against the key last_good_boot. If there are more boots than
+// a specified threshold since the last good one, try to roll back to a previous firmware version
+
+uint32_t bootLoopCheck() {
+    // increment boot number
+    nvs_handle_t bootNvsHandle;
+    uint32_t currBoot = 0;
+    uint32_t bootLoopThreshold = 10;
+    esp_err_t nvs_err = nvs_open("boot-info", NVS_READWRITE, &bootNvsHandle);
+    if (nvs_err != ESP_OK) {
+        log_e("could not open boot-info in nvs");
+        return 0;
+    }
+
+    log_i("opened boot-info nvs ok!");
+
+    // read existing boot count
+    nvs_err = nvs_get_u32(bootNvsHandle, "curr_boot", &currBoot);
+    if (nvs_err != ESP_OK) {
+        currBoot = 0;
+    }
+
+    // increment current boot number
+    currBoot++;
+    log_i("setting curr boot to %d", currBoot);
+    if (nvs_set_u32(bootNvsHandle, "curr_boot", currBoot) != ESP_OK) {
+        log_e("error setting curr boot to %d", currBoot);
+        nvs_close(bootNvsHandle);
+        return currBoot;
+    }
+
+    // now read last good boot number
+    uint32_t lastGoodBoot = 0;
+    nvs_err = nvs_get_u32(bootNvsHandle, "last_good_boot", &lastGoodBoot);
+    if (nvs_err != ESP_OK) {
+        log_e("error reading last good boot");
+        nvs_close(bootNvsHandle);
+        return currBoot;
+    }
+
+    if (currBoot <= lastGoodBoot) {
+        log_e("error, last good boot %d > curr boot %d", lastGoodBoot, currBoot);
+        nvs_close(bootNvsHandle);
+        return currBoot;
+    }
+
+    uint32_t bootsSinceGood = currBoot - lastGoodBoot;
+    log_i("curr boot %d last good %d since good %d, thresh %d", currBoot, lastGoodBoot,
+          bootsSinceGood, bootLoopThreshold);
+    // check if it has been a while since last good boot
+
+    if (bootsSinceGood <= bootLoopThreshold) {
+        nvs_close(bootNvsHandle);
+        return currBoot;
+    }
+    // has been at least bootLoopThreshold boots since last good one
+    // considering this a boot loop, try to fall back to previous firmware.
+    log_i("rollback and reset.");
+
+    // set this boot as 'good' so rolled back version doesn't also try to roll back!
+    nvs_err = nvs_set_u32(bootNvsHandle, "last_good_boot", currBoot);
+    if (nvs_err != ESP_OK) {
+        log_e("error setting last good boot to %d", currBoot);
+        nvs_close(bootNvsHandle);
+        return currBoot;
+    }
+
+    const esp_partition_t *partition = esp_ota_get_next_update_partition(NULL);
+    if (partition) {
+        if (esp_ota_set_boot_partition(partition) == ESP_OK) {
+            // reboot to other partition
+            esp_restart();
+        }
+    }
+
+    nvs_close(bootNvsHandle);
+    return currBoot;
+}
+
+void setLastGoodBoot(uint32_t lastGood) {
+    nvs_handle_t bootNvsHandle;
+    esp_err_t nvs_err = nvs_open("boot-info", NVS_READWRITE, &bootNvsHandle);
+    if (nvs_err != ESP_OK) {
+        log_e("could not open boot-info in nvs");
+        return;
+    }
+
+    // mark this boot as good
+    log_i("marking %d as last good boot", lastGood);
+    nvs_err = nvs_set_u32(bootNvsHandle, "last_good_boot", lastGood);
+    if (nvs_err != ESP_OK) {
+        log_e("could not set %d as last good boot", lastGood);
+    }
+
+    nvs_close(bootNvsHandle);
+}
+
 void UIInnerLoop(RemoteCommand command) { rootUi.loop(myDisplay, command); }
 
 #if CONFIG_AUTOSTART_ARDUINO
@@ -186,7 +287,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // Configure log level for all Sindarin logs
     esp_log_level_set("Sindarin", ESP_LOG_DEBUG);
 #endif
-
+    uint32_t bootCount = bootLoopCheck();
     std::vector<BootError> bootErrors;
 
 #if BOARD_HAS_PSRAM
@@ -408,8 +509,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 
     // set current boot id
-    auto bootCount = prefs.bootCount.get().value();
-    bootCount++;
     prefs.bootCount.set(bootCount);
 
     if (!fileSystem.begin()) {
@@ -436,6 +535,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     SetCpuSpeedMhz(CPU_FREQ_MHZ_LOW);
 
+    setLastGoodBoot(bootCount);
     BlinkBootErrors(bootErrors);
 
     remoteQueue = xQueueCreate(10, sizeof(RemoteCommand));
