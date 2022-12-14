@@ -20,8 +20,16 @@ public:
     auto fromJson(const JsonObject &j) -> bool override {
         synced = j["synced"].as<bool>();
         message = j["message"].as<std::string>();
-        readablesSince = j["readables_since"].as<std::string>();
-        articlesSince = j["articles_since"].as<std::string>();
+        if (j.containsKey("readables_since")) {
+            readablesSince = j["readables_since"].as<std::string>();
+        } else {
+            readablesSince = "";
+        }
+        if (j.containsKey("articles_since")) {
+            articlesSince = j["articles_since"].as<std::string>();
+        } else {
+            articlesSince = "";
+        }
         firmware.fromJson(j["firmware"]);
         userReadables.clear();
         for (const auto &userReadable : j["readables"].as<JsonArray>()) {

@@ -285,7 +285,9 @@ void LocalStore::syncFromRemote(
         this->resetReadablesPlacemarkChanged(readables_);
 
         // TODO: Probably these should be set operations
-        std::vector<Readable> readablesToDelete;
+        log_d("Readables to download: %d", readablesToDownload.size());
+        std::vector<Readable> readablesToDelete = {};
+        readablesToDelete.clear();
         // for (auto &readable : readables_) {
         //     if (!readable.localOnly && std::find_if(checkSyncResponse.userReadables.begin(),
         //                                             checkSyncResponse.userReadables.end(),
@@ -299,6 +301,7 @@ void LocalStore::syncFromRemote(
         //         readablesToDelete.push_back(readable);
         //     }
         // }
+        log_d("Readables to delete: %d", readablesToDelete.size());
 
         ContentSyncState syncState = {.state = ContentSyncState::State::Syncing};
         syncState.tasks.reserve(readablesToDownload.size());
@@ -357,40 +360,46 @@ void LocalStore::syncFromRemote(
         progressCallback(syncState);
 
         // Save the articles that are new
-        auto tasksIndex = readablesToDownload.size() + readablesToDelete.size();
-        syncState.tasks[tasksIndex].percentage = 0;
-        for (int i = 0; i < checkSyncResponse.userArticles.size(); i++) {
-            auto &userReadable = checkSyncResponse.userArticles[i];
+        if (checkSyncResponse.userArticles.size() > 0) {
+            auto tasksIndex = readablesToDownload.size() + readablesToDelete.size();
+            syncState.tasks[tasksIndex].percentage = 0;
+            for (int i = 0; i < checkSyncResponse.userArticles.size(); i++) {
+                auto &userReadable = checkSyncResponse.userArticles[i];
 
-            log_d("Fetched user article: %s (%zu)", userReadable.readable.title.c_str(),
-                  userReadable.readable.content.size());
-            if (this->processReadablePlacemarksFromServer(userReadable.readable,
-                                                          userReadable.placemark)) {
-                log_i("Placemark for %s updated to %d", userReadable.readable.title.c_str(),
-                      userReadable.placemark);
+                log_d("Fetched user article: %s (%zu)", userReadable.readable.title.c_str(),
+                      userReadable.readable.content.size());
+                if (this->processReadablePlacemarksFromServer(userReadable.readable,
+                                                              userReadable.placemark)) {
+                    log_i("Placemark for %s updated to %d", userReadable.readable.title.c_str(),
+                          userReadable.placemark);
+                }
+                if (this->hasReadable(articles_, userReadable.readable)) {
+                    // Should never get here as articlesSince should hide these articles
+                    log_w("Already have %s", userReadable.readable.title.c_str());
+                    continue;
+                }
+
+                this->saveArticleFile(userReadable.readable);
+                this->addReadable(articles_, userReadable.readable);
+
+                syncState.tasks[tasksIndex].percentage =
+                    (float(i) / checkSyncResponse.userArticles.size()) * 100;
+                progressCallback(syncState);
             }
-            if (this->hasReadable(articles_, userReadable.readable)) {
-                // Should never get here as articlesSince should hide these articles
-                log_w("Already have %s", userReadable.readable.title.c_str());
-                continue;
-            }
-
-            this->saveArticleFile(userReadable.readable);
-            this->addReadable(articles_, userReadable.readable);
-
-            syncState.tasks[tasksIndex].percentage =
-                (float(i) / checkSyncResponse.userArticles.size()) * 100;
-            progressCallback(syncState);
+            this->resetReadablesPlacemarkChanged(articles_);
         }
-        this->resetReadablesPlacemarkChanged(articles_);
 
         progressCallback(syncState);
 
         // Store since date values for next sync
         log_i("Setting lastReadablesSince to %s and lastArticlesSince to %s",
               checkSyncResponse.readablesSince.c_str(), checkSyncResponse.articlesSince.c_str());
-        this->prefs_.lastReadablesSince.set(checkSyncResponse.readablesSince.c_str());
-        this->prefs_.lastArticlesSince.set(checkSyncResponse.articlesSince.c_str());
+        if (checkSyncResponse.readablesSince != "") {
+            this->prefs_.lastReadablesSince.set(checkSyncResponse.readablesSince.c_str());
+        }
+        if (checkSyncResponse.articlesSince != "") {
+            this->prefs_.lastArticlesSince.set(checkSyncResponse.articlesSince.c_str());
+        }
 
         // Artificially delay so the user has the satisfaction of seeing the list done
         delay(1000);
