@@ -16,6 +16,7 @@ struct ContentSyncState {
         LoadingTasks,
         Syncing,
         Synced,
+        AlreadySynced,
         Failure,
     } state = Idle;
 

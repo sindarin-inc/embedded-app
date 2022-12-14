@@ -64,6 +64,10 @@ void ContentSyncScreen::render(DisplaySystem &display) {
         display.drawSingleLineOfCenteredText("Done! Restarting...");
         break;
     }
+    case ContentSyncState::AlreadySynced: {
+        display.drawSingleLineOfCenteredText("No new books or articles.");
+        break;
+    }
     case ContentSyncState::Failure: {
         display.drawSingleLineOfCenteredText(state_.message);
         break;

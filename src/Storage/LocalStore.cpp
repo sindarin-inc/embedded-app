@@ -256,7 +256,7 @@ void LocalStore::syncFromRemote(
         }
         if (checkSyncResponse.synced) {
             log_i("Client is in sync");
-            progressCallback(ContentSyncState{.state = ContentSyncState::State::Synced});
+            progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
             return;
         }
 
@@ -360,34 +360,31 @@ void LocalStore::syncFromRemote(
         progressCallback(syncState);
 
         // Save the articles that are new
-        if (checkSyncResponse.userArticles.size() > 0) {
-            auto tasksIndex = readablesToDownload.size() + readablesToDelete.size();
-            syncState.tasks[tasksIndex].percentage = 0;
-            for (int i = 0; i < checkSyncResponse.userArticles.size(); i++) {
-                auto &userReadable = checkSyncResponse.userArticles[i];
+        auto tasksIndex = readablesToDownload.size() + readablesToDelete.size();
+        for (int i = 0; i < checkSyncResponse.userArticles.size(); i++) {
+            auto &userReadable = checkSyncResponse.userArticles[i];
 
-                log_d("Fetched user article: %s (%zu)", userReadable.readable.title.c_str(),
-                      userReadable.readable.content.size());
-                if (this->processReadablePlacemarksFromServer(userReadable.readable,
-                                                              userReadable.placemark)) {
-                    log_i("Placemark for %s updated to %d", userReadable.readable.title.c_str(),
-                          userReadable.placemark);
-                }
-                if (this->hasReadable(articles_, userReadable.readable)) {
-                    // Should never get here as articlesSince should hide these articles
-                    log_w("Already have %s", userReadable.readable.title.c_str());
-                    continue;
-                }
-
-                this->saveArticleFile(userReadable.readable);
-                this->addReadable(articles_, userReadable.readable);
-
-                syncState.tasks[tasksIndex].percentage =
-                    (float(i) / checkSyncResponse.userArticles.size()) * 100;
-                progressCallback(syncState);
+            log_d("Fetched user article: %s (%zu)", userReadable.readable.title.c_str(),
+                  userReadable.readable.content.size());
+            if (this->processReadablePlacemarksFromServer(userReadable.readable,
+                                                          userReadable.placemark)) {
+                log_i("Placemark for %s updated to %d", userReadable.readable.title.c_str(),
+                      userReadable.placemark);
             }
-            this->resetReadablesPlacemarkChanged(articles_);
+            if (this->hasReadable(articles_, userReadable.readable)) {
+                // Should never get here as articlesSince should hide these articles
+                log_w("Already have %s", userReadable.readable.title.c_str());
+                continue;
+            }
+
+            this->saveArticleFile(userReadable.readable);
+            this->addReadable(articles_, userReadable.readable);
+
+            syncState.tasks[tasksIndex].percentage =
+                (float(i) / checkSyncResponse.userArticles.size()) * 100;
+            progressCallback(syncState);
         }
+        this->resetReadablesPlacemarkChanged(articles_);
 
         progressCallback(syncState);
 
