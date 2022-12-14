@@ -124,7 +124,8 @@ void ContentSyncScreen::begin() {
             this->updateState(state);
             this->render(this->display_);
             if (state.state == ContentSyncState::Failure ||
-                state.state == ContentSyncState::Synced) {
+                state.state == ContentSyncState::Synced ||
+                state.state == ContentSyncState::AlreadySynced) {
                 delay(5000);
                 backCallback();
             }

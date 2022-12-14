@@ -448,7 +448,7 @@ void LocalStore::saveArticleFile(const Readable &readable) {
           readable.content.size());
 }
 
-void LocalStore::clearArticleFile() {
+void LocalStore::clearArticlesFile() {
     log_i("Clearing %s", ARTICLES_PATH);
     bool removed = fileSystem.remove(ARTICLES_PATH);
     if (!removed) {
@@ -458,6 +458,19 @@ void LocalStore::clearArticleFile() {
     prefs_.lastArticlesSince.set("");
 
     log_i("Resetting to guarantee articles are removed");
+    esp_restart();
+}
+
+void LocalStore::clearReadablesFile() {
+    log_i("Clearing %s", READABLES_PATH);
+    bool removed = fileSystem.remove(READABLES_PATH);
+    if (!removed) {
+        log_e("Failed to remove %s", READABLES_PATH);
+    }
+
+    prefs_.lastReadablesSince.set("");
+
+    log_i("Resetting to guarantee readables are removed");
     esp_restart();
 }
 

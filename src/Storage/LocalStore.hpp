@@ -58,7 +58,8 @@ public:
 
     void syncFromRemote(const std::function<void(ContentSyncState state)> &progressCallback);
     void saveArticleFile(const Readable &readable);
-    void clearArticleFile();
+    void clearArticlesFile();
+    void clearReadablesFile();
     auto saveReadables(const std::vector<Readable> &readables, const std::string &path) -> bool;
 
     FileSystem &fileSystem;

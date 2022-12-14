@@ -577,8 +577,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         debugMenu->showTemporaryMessage(*display, "Statistics reset.");
     }));
 
+    debugMenu->addMenuItem(MenuItem("Clear Readables", [this, debugMenu, display, &localStore]() {
+        localStore.clearReadablesFile();
+        debugMenu->showTemporaryMessage(*display, "Readables reset.");
+    }));
+
     debugMenu->addMenuItem(MenuItem("Clear Articles", [this, debugMenu, display, &localStore]() {
-        localStore.clearArticleFile();
+        localStore.clearArticlesFile();
         debugMenu->showTemporaryMessage(*display, "Articles reset.");
     }));
 
