@@ -260,6 +260,12 @@ void LocalStore::syncFromRemote(
             return;
         }
 
+        // Clear the readablesSince cache since it will be set at the end of a successful run.
+        // If we fail, then the next content sync will not have a cutoff date
+        if (checkSyncResponse.readablesSince != "") {
+            this->prefs_.lastReadablesSince.set("");
+        }
+
         progressCallback(ContentSyncState{.state = ContentSyncState::State::LoadingTasks});
 
         // If out of sync, download any new readables.
@@ -358,6 +364,12 @@ void LocalStore::syncFromRemote(
         }
 
         progressCallback(syncState);
+
+        // Clear the articlesSince cache since it will be set at the end of a successful run.
+        // If we fail, then the next content sync will not have a cutoff date
+        if (checkSyncResponse.articlesSince != "") {
+            this->prefs_.lastArticlesSince.set("");
+        }
 
         // Save the articles that are new
         auto tasksIndex = readablesToDownload.size() + readablesToDelete.size();
