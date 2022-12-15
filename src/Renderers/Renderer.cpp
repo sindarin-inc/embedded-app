@@ -98,7 +98,7 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
     unsigned int plcInTokenBuffer = 0;
     unsigned int curPrevNewLine = 0;
 
-    numCurrTokens_ = 1;
+    numCurrTokens_ = 0;
 
     charTokenBuffer_[plcInBuffer] = '\0';
 
