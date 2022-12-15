@@ -231,7 +231,7 @@ void LocalStore::syncFromRemote(
         // Uncomment below to force a full sync
         // this->prefs_.lastReadablesSince.set("");
         // this->prefs_.lastArticlesSince.set("");
-        bool failedDownload = false;
+        bool failedReadableDownload = false;
         auto readablesSince = this->readablesSince();
         auto articlesSince = this->articlesSince();
         auto readablePlacemarks = this->changedReadablePlacemarkQueryParams(readables_);
@@ -367,7 +367,7 @@ void LocalStore::syncFromRemote(
                     log_w("Failed to download file. Retrying...");
                     if (t == NUMBER_OF_READABLE_DOWNLOAD_TRIES - 1) {
                         log_e("Failed to download file.");
-                        failedDownload = true;
+                        failedReadableDownload = true;
                     }
                 }
             }
@@ -413,7 +413,7 @@ void LocalStore::syncFromRemote(
         // Store since date values for next sync
         log_i("Setting lastReadablesSince to %s and lastArticlesSince to %s",
               checkSyncResponse.readablesSince.c_str(), checkSyncResponse.articlesSince.c_str());
-        if (checkSyncResponse.readablesSince != "" && !failedDownload) {
+        if (checkSyncResponse.readablesSince != "" && !failedReadableDownload) {
             this->prefs_.lastReadablesSince.set(checkSyncResponse.readablesSince.c_str());
         }
         if (checkSyncResponse.articlesSince != "") {
