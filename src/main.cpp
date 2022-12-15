@@ -21,6 +21,7 @@
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/RootUI.hpp"
+#include "Update.h"
 #include "config.h"
 #include "esp_ota_ops.h"
 #include "nvs.h"
@@ -179,6 +180,21 @@ void StatsTask(void *parameter) {
 // check this against the key last_good_boot. If there are more boots than
 // a specified threshold since the last good one, try to roll back to a previous firmware version
 
+static bool partitionIsBootable(const esp_partition_t *partition) {
+    uint8_t buf[ENCRYPTED_BLOCK_SIZE];
+    if (!partition) {
+        return false;
+    }
+    if (!ESP.partitionRead(partition, 0, (uint32_t *)buf, ENCRYPTED_BLOCK_SIZE)) {
+        return false;
+    }
+
+    if (buf[0] != ESP_IMAGE_HEADER_MAGIC) {
+        return false;
+    }
+    return true;
+}
+
 auto BootLoopCheck() -> uint32_t {
     // increment boot number
     nvs_handle_t bootNvsHandle;
@@ -244,11 +260,15 @@ auto BootLoopCheck() -> uint32_t {
     }
 
     const esp_partition_t *partition = esp_ota_get_next_update_partition(nullptr);
-    if (partition) {
+    if (partition && partitionIsBootable(partition)) {
         if (esp_ota_set_boot_partition(partition) == ESP_OK) {
             // reboot to other partition
             esp_restart();
+        } else {
+            log_e("error: cannot roll back, cannot set boot partition");
         }
+    } else {
+        log_e("error: cannot roll back, partition is not bootable.");
     }
 
     nvs_close(bootNvsHandle);
