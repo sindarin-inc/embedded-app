@@ -9,6 +9,7 @@
 
 #define READABLES_PATH "/readables.json"
 #define ARTICLES_PATH "/articles.json"
+#define NUMBER_OF_READABLE_DOWNLOAD_TRIES 3
 
 auto LocalStore::begin() -> bool {
     auto loadedReadables = loadReadablesFromFile(readables_, std::string(READABLES_PATH));
@@ -351,15 +352,20 @@ void LocalStore::syncFromRemote(
             log_i("Downloading %s (file=%s, url=%s)", readable.title.c_str(),
                   readable.localFilePath().c_str(), readable.remoteUrl().c_str());
 
-            auto success = SindarinAPI::getInstance()->downloadReadable(
-                readable, this->fileSystem,
-                [progressCallback, &syncState, tasksIndex](int percentage) {
-                    syncState.tasks[tasksIndex].percentage = percentage;
-                    progressCallback(syncState);
-                });
-            if (success) {
-                addReadable(readables_, readable);
-                log_d("File successfully downloaded.");
+            for (int t = 0; t < NUMBER_OF_READABLE_DOWNLOAD_TRIES; t++) {
+                auto success = SindarinAPI::getInstance()->downloadReadable(
+                    readable, this->fileSystem,
+                    [progressCallback, &syncState, tasksIndex](int percentage) {
+                        syncState.tasks[tasksIndex].percentage = percentage;
+                        progressCallback(syncState);
+                    });
+                if (success) {
+                    addReadable(readables_, readable);
+                    log_d("File successfully downloaded.");
+                    break;
+                } else {
+                    log_w("Failed to download file. Retrying...");
+                }
             }
         }
 
