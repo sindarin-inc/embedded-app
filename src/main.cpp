@@ -180,7 +180,7 @@ void StatsTask(void *parameter) {
 // check this against the key last_good_boot. If there are more boots than
 // a specified threshold since the last good one, try to roll back to a previous firmware version
 
-static bool partitionIsBootable(const esp_partition_t *partition) {
+static auto partitionIsBootable(const esp_partition_t *partition) -> bool {
     uint8_t buf[ENCRYPTED_BLOCK_SIZE];
     if (!partition) {
         return false;
