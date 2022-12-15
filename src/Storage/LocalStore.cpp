@@ -470,7 +470,7 @@ void LocalStore::saveArticleFile(const Readable &readable) {
           readable.content.size());
 }
 
-void LocalStore::clearArticlesFile() {
+void LocalStore::clearArticlesFile(bool restart) {
     log_i("Clearing %s", ARTICLES_PATH);
     bool removed = fileSystem.remove(ARTICLES_PATH);
     if (!removed) {
@@ -480,10 +480,13 @@ void LocalStore::clearArticlesFile() {
     prefs_.lastArticlesSince.set("");
 
     log_i("Resetting to guarantee articles are removed");
-    esp_restart();
+
+    if (restart) {
+        esp_restart();
+    }
 }
 
-void LocalStore::clearReadablesFile() {
+void LocalStore::clearReadablesFile(bool restart) {
     log_i("Clearing %s", READABLES_PATH);
     bool removed = fileSystem.remove(READABLES_PATH);
     if (!removed) {
@@ -493,7 +496,9 @@ void LocalStore::clearReadablesFile() {
     prefs_.lastReadablesSince.set("");
 
     log_i("Resetting to guarantee readables are removed");
-    esp_restart();
+    if (restart) {
+        esp_restart();
+    }
 }
 
 auto LocalStore::saveReadables(const std::vector<Readable> &readables, const std::string &path)

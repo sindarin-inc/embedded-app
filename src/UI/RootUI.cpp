@@ -596,14 +596,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 #endif
 
-    debugMenu->addMenuItem(MenuItem("Factory Defaults", [debugMenu, display]() {
+    debugMenu->addMenuItem(MenuItem("Factory Defaults", [debugMenu, display, &localStore]() {
 #if SIMULATOR
         // Remove the preferences file simprefs.ini
         std::filesystem::remove("simprefs.ini");
         debugMenu->showTemporaryMessage(*display, "simprefs.ini deleted! Resetting...");
 #else
         nvs_flash_erase();
-        log_w("NVS cleared. Rebooting...");
+        localStore.clearArticlesFile(false);
+        localStore.clearReadablesFile(false);
+        log_w("NVS and FS cleared. Rebooting...");
         debugMenu->showTemporaryMessage(*display, "NVS cleared! Resetting...");
 #endif
         esp_restart();

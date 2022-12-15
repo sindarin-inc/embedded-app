@@ -17,8 +17,6 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
         std::string itemTitle = getItemTitleAt(i);
         // If we still don't fit, shrink the string until we do.
         while (display.getTextWidth(itemTitle.c_str()) > MAX_WIDTH) {
-            log_d("Item title %s still too long at smallest font size; truncating...",
-                  itemTitle.c_str());
             if (itemTitle.length() > 4) {
                 itemTitle = itemTitle.substr(0, itemTitle.length() - 4) + "...";
             } else {
