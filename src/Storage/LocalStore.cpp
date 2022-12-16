@@ -9,7 +9,7 @@
 
 #define READABLES_PATH "/readables.json"
 #define ARTICLES_PATH "/articles.json"
-#define NUMBER_OF_READABLE_DOWNLOAD_TRIES 3
+enum { NUMBER_OF_READABLE_DOWNLOAD_TRIES = 3 };
 
 auto LocalStore::begin() -> bool {
     auto loadedReadables = loadReadablesFromFile(readables_, std::string(READABLES_PATH));
@@ -74,7 +74,7 @@ auto LocalStore::loadReadablesFromFile(std::vector<Readable> &readables, const s
         }
     }
 
-    log_d("Loaded %d readables from %s", readables.size(), path.c_str());
+    log_d("Loaded %zu readables from %s", readables.size(), path.c_str());
     delete doc;
     return true;
 }
@@ -292,7 +292,7 @@ void LocalStore::syncFromRemote(
         this->resetReadablesPlacemarkChanged(readables_);
 
         // TODO: Probably these should be set operations
-        log_d("Readables to download: %d", readablesToDownload.size());
+        log_d("Readables to download: %zu", readablesToDownload.size());
         std::vector<Readable> readablesToDelete = {};
         readablesToDelete.clear();
         // for (auto &readable : readables_) {
@@ -308,7 +308,7 @@ void LocalStore::syncFromRemote(
         //         readablesToDelete.push_back(readable);
         //     }
         // }
-        log_d("Readables to delete: %d", readablesToDelete.size());
+        log_d("Readables to delete: %zu", readablesToDelete.size());
 
         ContentSyncState syncState = {.state = ContentSyncState::State::Syncing};
         syncState.tasks.reserve(readablesToDownload.size());
