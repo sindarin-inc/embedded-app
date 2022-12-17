@@ -8,6 +8,7 @@
 #include "Misc/Power.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
+#include "Models/UserArticle.hpp"
 #include "Models/UserReadable.hpp"
 #include "UrlEncode.hpp"
 #include "Version.hpp"

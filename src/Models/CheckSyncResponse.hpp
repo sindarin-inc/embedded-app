@@ -2,6 +2,7 @@
 
 #include "Models/Firmware.hpp"
 #include "Models/JsonSerializable.hpp"
+#include "Models/UserArticle.hpp"
 #include "Models/UserReadable.hpp"
 
 class CheckSyncResponse : JsonSerializable {
@@ -13,7 +14,7 @@ public:
     std::string message;
     Firmware firmware;
     std::vector<UserReadable> userReadables;
-    std::vector<UserReadable> userArticles;
+    std::vector<UserArticle> userArticles;
     std::string readablesSince;
     std::string articlesSince;
 

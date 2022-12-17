@@ -197,9 +197,20 @@ void LocalStore::resetReadablesPlacemarkChanged(const std::vector<Readable> &rea
     for (auto &readable : readables) {
         bool changed = prefs_.readablePlaceChanged.get(readable.shortenedUuid.c_str());
         if (!readable.localOnly && changed) {
-            log_d("Resetting placemark changed for \"%s\" (synced to server)",
+            log_d("Resetting placemark changed for \"%s\" (now synced to server)",
                   readable.title.c_str());
             prefs_.readablePlaceChanged.set(readable.shortenedUuid.c_str(), 0);
+        }
+    }
+}
+
+void LocalStore::resetArticlesArchivedChanged(const std::vector<Readable> &readables) {
+    for (auto &readable : readables) {
+        bool changed = prefs_.articleArchivedChanged.get(readable.shortenedUuid.c_str());
+        if (!readable.localOnly && changed) {
+            log_d("Resetting article archive changed for \"%s\" (now synced to server)",
+                  readable.title.c_str());
+            prefs_.articleArchivedChanged.set(readable.shortenedUuid.c_str(), 0);
         }
     }
 }
@@ -407,6 +418,7 @@ void LocalStore::syncFromRemote(
             progressCallback(syncState);
         }
         this->resetReadablesPlacemarkChanged(articles_);
+        this->resetArticlesArchivedChanged(articles_);
 
         progressCallback(syncState);
 
@@ -454,8 +466,18 @@ void LocalStore::syncFromRemote(
 
 void LocalStore::saveArticleFile(const Readable &readable) {
     log_i("Storing article %s: %s", readable.title.c_str(), readable.localFilePath().c_str());
+    // create log directory in filesystem if it doesn't exist
+    if (!fileSystem.createDir("/articles")) {
+        log_e("Could not create /articles directory");
+        return;
+    }
 
     File file = fileSystem.open(readable.localFilePath(), FILE_WRITE, true);
+    if (!file) {
+        log_e("Failed to open %s", readable.localFilePath().c_str());
+        return;
+    }
+
     const char *title = readable.title.c_str();
     size_t docSize = file.size();
     file.write((const uint8_t *)title, strlen(title));

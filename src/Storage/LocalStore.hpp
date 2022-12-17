@@ -55,6 +55,7 @@ public:
     auto processReadablePlacemarksFromServer(const Readable &readable, const uint32_t placemark)
         -> bool;
     void resetReadablesPlacemarkChanged(const std::vector<Readable> &readables);
+    void resetArticlesArchivedChanged(const std::vector<Readable> &readables);
 
     void syncFromRemote(const std::function<void(ContentSyncState state)> &progressCallback);
     void saveArticleFile(const Readable &readable);
