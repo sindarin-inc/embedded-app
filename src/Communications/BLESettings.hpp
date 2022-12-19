@@ -5,7 +5,6 @@
 
 #include "BLEAbstractions.hpp"
 #include "Communications/BLEManager.hpp"
-#include "Communications/PocketAPI.hpp"
 #include "Inputs/TTRemoteInput.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "esp_wifi.h"
