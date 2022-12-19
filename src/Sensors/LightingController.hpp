@@ -8,7 +8,7 @@
 
 class LightingController {
 public:
-    LightingController() : lightSensor_(0), overrideDutyCycle_(-1) {}
+    LightingController() : lightSensor_(0) {}
 
     // Simple diagnostic test to check if the ambient light sensor is reporting the correct part id
     // and manufacturer id
@@ -47,7 +47,7 @@ protected:
     MovingAverage<int, 5> movingAverage_;
 
     int currentDutyCycle_ = 0;
-    int overrideDutyCycle_;
+    int overrideDutyCycle_{-1};
     bool lightsOut_;
 
     void setCurrentDutyCycle(int dutyCycle, int fadeMs);

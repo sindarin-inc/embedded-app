@@ -19,7 +19,7 @@ public:
         count_ = std::min(count_ + 1, N);
     }
 
-    T average() const { return sum_ / count_; }
+    [[nodiscard]] auto average() const -> T { return sum_ / count_; }
 
 private:
     std::array<T, N> data_;

@@ -9,7 +9,7 @@
 #define I2C_MASTER_TIMEOUT_MS 1000
 #define LTR329ALS01_SENSOR_ADDR 0x29
 
-struct ltr329als01_als_contr_value {
+struct Ltr329als01AlsContrValue {
     // 000 Gain 1x (1 lux to 64k lux) (default)
     // 001 Gain 2x (0.5 lux to 32k lux)
     // 010 Gain 4x (0.25 lux to 16k lux)
@@ -77,9 +77,9 @@ auto Ltr329Als::readManufacturerId() -> uint8_t {
 auto Ltr329Als::enable() -> bool {
     log_d("Starting Ltr329Als");
     // Turn on
-    ltr329als01_als_contr_value control;
+    Ltr329als01AlsContrValue control;
     control.alsMode = 1;
-    control.alsGain = ltr329als01_als_contr_value::ALSGain48;
+    control.alsGain = Ltr329als01AlsContrValue::ALSGain48;
     esp_err_t err;
     err = registerWriteByte(LTR329ALS01_REG_ALS_CONTR, control.raw);
     if (err != ESP_OK) {
@@ -90,7 +90,7 @@ auto Ltr329Als::enable() -> bool {
 }
 
 auto Ltr329Als::disable() -> bool {
-    ltr329als01_als_contr_value control;
+    Ltr329als01AlsContrValue control;
     control.alsMode = 0;
     esp_err_t err;
     err = registerWriteByte(LTR329ALS01_REG_ALS_CONTR, control.raw);
@@ -101,7 +101,7 @@ auto Ltr329Als::disable() -> bool {
     return true;
 }
 
-auto Ltr329Als::readStatus(ltr329als01_status_value &out) -> bool {
+auto Ltr329Als::readStatus(Ltr329als01StatusValue &out) -> bool {
     ESP_ERROR_CHECK(registerReadByte(LTR329ALS01_REG_ALS_STATUS, &(out.raw)));
     esp_err_t err;
     err = registerReadByte(LTR329ALS01_REG_ALS_STATUS, &(out.raw));
@@ -116,7 +116,7 @@ auto Ltr329Als::readData(uint16_t &channel1, uint16_t &channel0) -> bool {
     esp_err_t err;
     channel1 = 0;
     channel0 = 0;
-    ltr329als01_als_data_value out;
+    Ltr329als01AlsDataValue out;
     err = registerReadByte(LTR329ALS01_REG_ALS_DATA_CH1_0, out.raw);
     if (err != ESP_OK) {
         ESP_LOGE("LTR329ALS", "Failed to read channel 1 register 0 (%s)", esp_err_to_name(err));

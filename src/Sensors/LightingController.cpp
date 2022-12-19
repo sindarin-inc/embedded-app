@@ -80,7 +80,7 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
         // Note(john): 0 is a valid value here, so we're possibly doing some extra work here when in
         // total darkness, but the alternative is to _always_ do extra work so I think this is
         // better
-        ltr329als01_status_value status;
+        Ltr329als01StatusValue status;
         auto startTime = millis();
         while (true) {
             if (!lightSensor_.readStatus(status)) {

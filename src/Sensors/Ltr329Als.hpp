@@ -36,7 +36,7 @@ enum ltr329als01_reg_t {
     LTR329ALS01_REG_INTERRUPT_PERSIST = 0x9E,
 };
 
-struct ltr329als01_status_value {
+struct Ltr329als01StatusValue {
     union {
         uint8_t raw;
         struct {
@@ -65,7 +65,7 @@ struct ltr329als01_status_value {
     auto isValid() -> bool { return alsDataStatus == 1 && alsDataValid == 0; }
 };
 
-struct ltr329als01_als_data_value {
+struct Ltr329als01AlsDataValue {
     union {
         uint8_t raw[2];
         uint16_t value;
@@ -82,7 +82,7 @@ public:
     auto enable() -> bool;
     auto disable() -> bool;
 
-    auto readStatus(ltr329als01_status_value &out) -> bool;
+    auto readStatus(Ltr329als01StatusValue &out) -> bool;
 
     // From the datasheet:
     //   The ALS_DATA registers should be read as a group, with the lower address read back first
