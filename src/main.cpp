@@ -60,10 +60,8 @@ BLEImprov *bleWifi;
 TTRemoteInput ttRemoteInput(prefs);
 #endif
 
-#if USE_LTR329
 #include "Sensors/LightingController.hpp"
 LightingController lightingController;
-#endif
 
 #if USE_MMC5603
 #include "Sensors/TempleCloseSensor.hpp"
@@ -117,12 +115,10 @@ void RadioTask(void *parameter) {
         templeCloseSensor.checkTemple();
 #endif
         vTaskDelay(1000 / portTICK_PERIOD_MS);
-#if USE_LTR329
         // This happens after the delay, so that the first check can run with a faster fade.
         // TODO(john): Since LEDC doesn't work with the serial monitor connected, this is really
         // noisy in the logs
         lightingController.checkAmbientLight();
-#endif
     }
     vTaskDelete(nullptr);
 }
@@ -222,11 +218,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
     }
 
-#if USE_LTR329
     if (!lightingController.checkSensorAvailable()) {
         bootErrors.push_back({.type = BootError::Type::AmbientLight});
     }
-#endif
 
 #if USE_MMC5603
     if (!templeCloseSensor.checkProductId()) {
@@ -440,12 +434,10 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     xTaskCreatePinnedToCore(PowerTask, "Power", 5000, nullptr, 0, &powerTaskHandle, 1);
 
     // Begin fade-in on the lighting before rendering the UI
-#if USE_LTR329
     DispatchGetUiQueue()->dispatch([]() {
         lightingController.begin();
         lightingController.checkAmbientLight(300, 500);
     });
-#endif
 
     // Render the first thing
     DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::NONE); });

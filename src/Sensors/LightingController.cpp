@@ -1,6 +1,7 @@
 #include "LightingController.hpp"
 
-#include <driver/ledc.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 #include "Misc/Platform.hpp"
 #include "sindarin-debug.h"
