@@ -14,8 +14,8 @@
 #include "Version.hpp"
 #include "sindarin-debug.h"
 
-// #define SINDARIN_SERVER_URL "https://sol-cloud.fly.dev"
-#define SINDARIN_SERVER_URL "https://sol-staging.fly.dev"
+#define SINDARIN_SERVER_URL "https://sol-cloud.fly.dev"
+// #define SINDARIN_SERVER_URL "https://sol-staging.fly.dev"
 
 SindarinAPI *SindarinAPI::instance = nullptr;
 
