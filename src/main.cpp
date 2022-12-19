@@ -439,7 +439,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // xTaskCreatePinnedToCore(StatsTask, "Stats", 5000, nullptr, 0, nullptr, 1);
     xTaskCreatePinnedToCore(PowerTask, "Power", 5000, nullptr, 0, &powerTaskHandle, 1);
 
-    // Immediately after rendering the first thing do a quick fade-in on the lighting
+    // Begin fade-in on the lighting before rendering the UI
 #if USE_LTR329
     DispatchGetUiQueue()->dispatch([]() {
         lightingController.begin();
