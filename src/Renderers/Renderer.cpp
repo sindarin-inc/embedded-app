@@ -649,7 +649,8 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
 
     numLinesInBuffer_ = 0;
 
-    while (deciLinesInBuffer <= maxDeciLines) {
+    while ((deciLinesInBuffer <= maxDeciLines) &&
+           (currTokenBuffer_[currToken].token != TOKEN_EOF)) {
         // Don't start pages with newlines.
         if (nextToken == 0) {
             while (currTokenBuffer_[currToken].token == TOKEN_NEWLINE) {
