@@ -44,7 +44,7 @@ protected:
     Ltr329Als lightSensor_;
     // Adjusting the number of samples here will change the responsiveness of the ambient light
     // adjustments
-    MovingAverage<int, 8> movingAverage_;
+    MovingAverage<int, 5> movingAverage_;
 
     int currentDutyCycle_ = 0;
     int overrideDutyCycle_;

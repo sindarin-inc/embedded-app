@@ -119,6 +119,8 @@ void RadioTask(void *parameter) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);
 #if USE_LTR329
         // This happens after the delay, so that the first check can run with a faster fade.
+        // TODO(john): Since LEDC doesn't work with the serial monitor connected, this is really
+        // noisy in the logs
         lightingController.checkAmbientLight();
 #endif
     }

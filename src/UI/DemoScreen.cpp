@@ -36,7 +36,7 @@ void DemoScreen::render(DisplaySystem &display) {
     // Alternate left and right on for setup.
     if (currentScreen_ == 1) {
         lightingController_.setScreenMask(LightingController::Screens::LEFT);
-    } else {
+    } else if (currentScreen_ == 0) {
         lightingController_.setScreenMask(LightingController::Screens::RIGHT);
     }
 

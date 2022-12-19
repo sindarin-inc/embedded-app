@@ -56,6 +56,7 @@ void LightingController::setOverrideValuePercent(int percent) {
 }
 
 void LightingController::setScreenMask(Screens screens, int fadeMs) {
+    log_d("Setting screens mask to %x", screens);
     screens_ = screens;
     setCurrentDutyCycle(currentDutyCycle_, fadeMs);
 };
@@ -94,16 +95,17 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
     movingAverage_.add(std::min(channel1, uint16_t(1000)));
     auto average = movingAverage_.average();
     currentDutyCycle_ = std::clamp(average / 25, 2, 255);
-    log_d("Light sensor ch1: %d ch0: %d average: %d setting: %d", channel1, channel0, average,
-          currentDutyCycle_);
+    // log_d("Light sensor ch1: %d ch0: %d average: %d setting: %d", channel1, channel0, average,
+    // currentDutyCycle_);
     setCurrentDutyCycle(currentDutyCycle_, fadeMs);
 }
 
 void LightingController::setCurrentDutyCycle(int dutyCycle, int fadeMs) {
-    log_d("Setting backlight to %d/255 (fadeMs=%d)", dutyCycle, fadeMs);
+    int leftDutyCycle = (screens_ & LEFT) ? dutyCycle : 0;
+    int rightDutyCycle = (screens_ & RIGHT) ? dutyCycle : 0;
+    log_d("Setting screen light to l=%d/255 r=%d/255 (fadeMs=%d) screens_=%x", leftDutyCycle,
+          rightDutyCycle, fadeMs, screens_);
 
-    auto leftDutyCycle = (screens_ | LEFT) ? dutyCycle : 0;
-    auto rightDutyCycle = (screens_ | RIGHT) ? dutyCycle : 0;
     if (fadeMs > 0) {
         SetLeftScreenLightFade(leftDutyCycle, fadeMs);
         SetRightScreenLightFade(rightDutyCycle, fadeMs);
