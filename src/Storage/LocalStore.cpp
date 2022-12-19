@@ -31,7 +31,6 @@ auto LocalStore::loadReadablesFromFile(std::vector<Readable> &readables, const s
     // Grab a minimum amount of ram, even if the readables file is empty
     auto docSize = (int)readablesFile.size() * 2;
     auto *doc = new SpiRamJsonDocument(docSize);
-    readablesFile.seek(0);
     auto error = deserializeJson(*doc, readablesFile);
     readablesFile.close();
 

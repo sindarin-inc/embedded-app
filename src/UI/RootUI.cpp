@@ -39,10 +39,6 @@
 #include "config.h"
 #include "sindarin-debug.h"
 
-#if ENABLE_POCKET
-#include "Communications/PocketAPI.hpp"
-#endif
-
 #if USE_TURN_TOUCH_REMOTE
 #include "Inputs/TTRemoteInput.hpp"
 #endif
@@ -75,20 +71,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         this->prefs_.lastReadableId.set(readable.uuid);
         auto *readableScreen =
             new ReadableScreen(stream, *display, readable, this->prefs_, this->power_, fileSystem);
-#if ENABLE_POCKET
-        if (readable.id.rfind("pkt-", 0) == 0) {
-            readableScreen->setLeftPopupButton("Delete", [readable, &fileSystem]() {
-                auto path = readable.localFilePath().c_str();
-                log_i("Deleting Pocket readable %s", path);
-                if (!fileSystem.remove(path)) {
-                    log_e("Failed to delete Pocket readable %s", path);
-                }
-                log_d("Rebooting to reload readables");
-                // TODO: Dynamically reload readables instead of rebooting
-                esp_restart();
-            });
-        }
-#endif
+
         // When switching to a readable from a menu, we should clear the display
         // to make the whites really white and the blacks really black.
         display->clearDisplay();
@@ -166,123 +149,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             };
         }));
     }
-
-    // Set up pocket article menu
-#if ENABLE_POCKET
-    mainMenu->addMenuItem(MenuItem("Pocket Articles", [this, mainMenu, display, &fileSystem,
-                                                       createReadableScreen]() {
-        if (!NetworkConnected()) {
-            log_w("Tried to load Pocket articles but WiFi not connected");
-            mainMenu->showTemporaryMessage(*display, "WiFi Disconnected");
-            return;
-        }
-
-        if (!prefs_.pocketApiToken.get().has_value()) {
-            log_w("No Pocket API token found");
-            mainMenu->showTemporaryMessage(*display, "No Pocket API token found");
-            return;
-        }
-
-        log_i("Loading Pocket articles");
-
-        // TODO(John): I wanted to make a loading indicator for this but then realized I'll
-        // need to add threading / tasks since the HTTP code is synchronous right now.
-        mainMenu->showTemporaryMessage(*display, "Downloading...", 0, false);
-
-        PocketAPI *pocket = PocketAPI::getInstance();
-        pocket->setAccessToken(prefs_.pocketApiToken.get().value());
-
-        // Since we're reading this directly out of this from the closures, this needs to exist
-        // until the closures no longer exist. That or we need to copy some strings.
-        SpiRamJsonDocument *response;
-
-        int code = pocket->get(&response);
-        if (code != 200) {
-            log_e("Pocket HTTP error: %d", code);
-            mainMenu->showTemporaryMessage(*display, StringFormat("HTTP error: %d", code));
-            return;
-        }
-
-        JsonObject list = (*response)["list"].as<JsonObject>();
-        if (list.size() <= 0) {
-            log_w("No Pocket articles found");
-            mainMenu->showTemporaryMessage(*display, "No articles found");
-            delete response;
-            return;
-        }
-
-        log_i("Pocket /get request succeeded");
-
-        auto pocketMenu = new MenuScreen(this->power_, mainMenu->getMyStyle());
-
-        for (JsonPair keyValue : list) {
-            JsonObject article = keyValue.value().as<JsonObject>();
-            const char *url = article["resolved_url"].as<const char *>();
-            log_i("Got Pocket url %s", url);
-            const char *title = article["resolved_title"].as<const char *>();
-            pocketMenu->addMenuItem(MenuItem(title, [this, pocketMenu, title, url, pocket, display,
-                                                     &fileSystem, createReadableScreen]() {
-                log_d("Loading article %s (%s)", title, url);
-                pocketMenu->showTemporaryMessage(*display, StringFormat("Downloading '%s'", title),
-                                                 0, false);
-                SpiRamJsonDocument *response;
-                auto code = pocket->text(url, &response);
-                if (code != 200) {
-                    if (code == -1) {
-                        log_e("Pocket HTTP Error: %d (Article too long?)", code);
-                        pocketMenu->showTemporaryMessage(*display, "Error: Too long", 0, false);
-                    } else {
-                        log_e("Pocket HTTP Error: %d", code);
-                        pocketMenu->showTemporaryMessage(
-                            *display, StringFormat("Pocket Error: %d", code), 0, false);
-                    }
-                    return;
-                }
-                const char *text = (*response)["article"].as<const char *>();
-                log_i("Pocket text succeeded for %s", url);
-                std::string str = text;
-
-                if (!fileSystem.createDir("/pocket")) {
-                    log_e("Unable to create Pocket dir");
-                    pocketMenu->showTemporaryMessage(*display, "FS error createDir");
-                    return;
-                }
-                auto id = StringFormat("pkt-%s", (*response)["resolved_id"].as<const char *>());
-                auto path = StringFormat("/pocket/%s.txt", id.c_str());
-                File file = fileSystem.open(path.c_str(), FILE_WRITE);
-                const char *title = (*response)["title"].as<const char *>();
-                file.write((const uint8_t *)title, strlen(title));
-                file.write('\n');
-
-                StripHtml(str, file);
-
-                file.flush();
-                file.close();
-
-                auto readable = new Readable(id.c_str(), title, path.c_str());
-
-                auto readableScreen = createReadableScreen(readable);
-                setCurrentScreen(*readableScreen);
-
-                readableScreen->backCallback = [this, readableScreen, pocketMenu, response,
-                                                readable]() {
-                    setCurrentScreen(*pocketMenu);
-                    delete readableScreen;
-                    delete response;
-                    delete readable;
-                };
-            }));
-        }
-        display->clearDisplay();
-        setCurrentScreen(*pocketMenu);
-        pocketMenu->backCallback = [this, mainMenu, pocketMenu, response, display]() {
-            display->clearDisplay();
-            setCurrentScreen(*mainMenu);
-            delete pocketMenu;
-            delete response;
-        };
-    }));
-#endif // ENABLE_POCKET
 
     // Settings menus
     auto settingsMenu = new MenuScreen(this->power_, styleFamilies.settingsMenu);
@@ -577,15 +443,17 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         debugMenu->showTemporaryMessage(*display, "Statistics reset.");
     }));
 
-    debugMenu->addMenuItem(MenuItem("Clear Readables", [debugMenu, display, &localStore]() {
-        localStore.clearReadablesFile();
-        debugMenu->showTemporaryMessage(*display, "Readables reset.");
-    }));
+    debugMenu->addMenuItem(
+        MenuItem("Clear Readables and Restart", [debugMenu, display, &localStore]() {
+            localStore.clearReadablesFile();
+            debugMenu->showTemporaryMessage(*display, "Readables reset.");
+        }));
 
-    debugMenu->addMenuItem(MenuItem("Clear Articles", [debugMenu, display, &localStore]() {
-        localStore.clearArticlesFile();
-        debugMenu->showTemporaryMessage(*display, "Articles reset.");
-    }));
+    debugMenu->addMenuItem(
+        MenuItem("Clear Articles and Restart", [debugMenu, display, &localStore]() {
+            localStore.clearArticlesFile();
+            debugMenu->showTemporaryMessage(*display, "Articles reset.");
+        }));
 
 #if USE_TURN_TOUCH_REMOTE
     debugMenu->addMenuItem(MenuItem("Unpair PageTurner", [this, debugMenu, display]() {

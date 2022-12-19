@@ -72,6 +72,8 @@ public:
             files.back().fromJson(file);
         }
         content = j["content"].as<std::string>();
+        // Instead of reading content, write it to disk immediately
+
         return true;
     }
 };

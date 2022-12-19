@@ -46,10 +46,6 @@
 // Disable Improve BLE WiFi provisioning service
 // #define DISABLE_IMPROV
 
-#ifndef ENABLE_POCKET
-#define ENABLE_POCKET 0
-#endif
-
 #define RED_LED 7
 #define GREEN_LED 6
 #define BLUE_LED 18
