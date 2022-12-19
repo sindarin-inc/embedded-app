@@ -103,9 +103,8 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
 void LightingController::setCurrentDutyCycle(int dutyCycle, int fadeMs) {
     int leftDutyCycle = (screens_ & LEFT) ? dutyCycle : 0;
     int rightDutyCycle = (screens_ & RIGHT) ? dutyCycle : 0;
-    log_d("Setting screen light to l=%d/255 r=%d/255 (fadeMs=%d) screens_=%x", leftDutyCycle,
-          rightDutyCycle, fadeMs, screens_);
-
+    // log_d("Setting screen light to l=%d/255 r=%d/255 (fadeMs=%d) screens_=%x", leftDutyCycle,
+    //       rightDutyCycle, fadeMs, screens_);
     if (fadeMs > 0) {
         // NOTE(john): This will crash if either of these are 0 and idf.py monitor is connected.
         // This is because the LEDC driver uses the 32kHz clock and the 32kHz clock doesn't work
