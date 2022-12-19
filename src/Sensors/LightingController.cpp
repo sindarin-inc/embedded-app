@@ -70,7 +70,11 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
     }
 
     uint16_t channel1, channel0;
-    lightSensor_.readData(channel1, channel0);
+    if (!lightSensor_.readData(channel1, channel0)) {
+        // Failed to read data, so just give up and return (will be logged from the Ltr329Als
+        // driver)
+        return;
+    }
     if (channel1 == 0) {
         // If it's zero, check that the data is actually valid and wait for valid data if needed
         // Note(john): 0 is a valid value here, so we're possibly doing some extra work here when in
@@ -79,7 +83,11 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
         ltr329als01_status_value status;
         auto startTime = millis();
         while (true) {
-            lightSensor_.readStatus(status);
+            if (!lightSensor_.readStatus(status)) {
+                // Failed to read status, so just give up and return (will be logged from the
+                // Ltr329Als driver)
+                return;
+            }
             if (status.alsDataStatus == 1 && status.alsDataValid == 0) {
                 break;
             }
