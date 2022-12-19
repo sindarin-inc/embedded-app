@@ -28,7 +28,8 @@ auto DownloadFile(HTTPClient &httpClient, int length,
             // TODO: In the future it will be good to use a HTTP library that allows us to do
             // some kind of select or block exactly until data is available
             // TODO: We're still sometimes getting a watchdog timer issue on Core 0
-            delay(100);
+            log_d("Waiting for data...");
+            delay(1000);
             continue;
         }
 
@@ -82,6 +83,7 @@ auto DownloadFile(HTTPClient &httpClient, FileSystem &fileSystem, const char *pa
     if (fileSystem.exists(path)) {
         log_w("File %s already exists, deleting", path);
         fileSystem.remove(path);
+        log_d("Deleted %s", path);
     }
 
     auto file = fileSystem.open(path, FILE_WRITE, true);

@@ -71,8 +71,8 @@ public:
             files.emplace_back();
             files.back().fromJson(file);
         }
+        // TODO: Instead of reading content, write it to disk immediately
         content = j["content"].as<std::string>();
-        // Instead of reading content, write it to disk immediately
 
         return true;
     }

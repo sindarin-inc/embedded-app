@@ -11,6 +11,7 @@ public:
 
     std::string uuid;
     uint32_t placemark;
+    bool isArchived;
     Readable readable;
 
     auto fromJson(const JsonObject &j) -> bool override {
@@ -20,6 +21,7 @@ public:
         }
         uuid = j["uuid"].as<std::string>();
         placemark = j["placemark"].as<uint32_t>();
+        isArchived = j["is_archived"].as<bool>();
         return readable.fromJson(j["readable"]);
     }
 

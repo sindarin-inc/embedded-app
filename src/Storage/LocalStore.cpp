@@ -236,7 +236,7 @@ void LocalStore::syncFromRemote(
     progressCallback(ContentSyncState{.state = ContentSyncState::State::CheckingSync});
 
     // Run this work on a separate thread, since it's long running
-    auto queue = DispatchGetCore0BackgroundQueue();
+    auto queue = DispatchGetCore1BackgroundQueue();
     queue->dispatch([this, progressCallback] {
         // Uncomment below to force a full sync
         // this->prefs_.lastReadablesSince.set("");
@@ -280,7 +280,8 @@ void LocalStore::syncFromRemote(
         progressCallback(ContentSyncState{.state = ContentSyncState::State::LoadingTasks});
 
         // If out of sync, download any new readables.
-        std::vector<Readable> readablesToDownload;
+        std::vector<Readable> readablesToDownload = {};
+        std::vector<Readable> readablesToDelete = {};
 
         // Now look through all the readables here, and download any that we don't have
         // already
@@ -291,6 +292,13 @@ void LocalStore::syncFromRemote(
                                                           userReadable.placemark)) {
                 log_i("Placemark for %s updated to %d", userReadable.readable.title.c_str(),
                       userReadable.placemark);
+            }
+            if (userReadable.isArchived) {
+                log_w("Readable %s is archived, will delete", userReadable.readable.title.c_str());
+                // TODO: Store these articles in an accessible archive instead of just deleting them
+                // and ignoring
+                readablesToDelete.push_back(userReadable.readable);
+                continue;
             }
             if (this->hasReadable(readables_, userReadable.readable)) {
                 log_w("Already have %s", userReadable.readable.title.c_str());
@@ -303,21 +311,6 @@ void LocalStore::syncFromRemote(
 
         // TODO: Probably these should be set operations
         log_d("Readables to download: %zu", readablesToDownload.size());
-        std::vector<Readable> readablesToDelete = {};
-        readablesToDelete.clear();
-        // for (auto &readable : readables_) {
-        //     if (!readable.localOnly && std::find_if(checkSyncResponse.userReadables.begin(),
-        //                                             checkSyncResponse.userReadables.end(),
-        //                                             [&readable](const UserReadable &userReadable)
-        //                                             {
-        //                                                 return userReadable.readable.uuid ==
-        //                                                        readable.uuid;
-        //                                             }) == checkSyncResponse.userReadables.end())
-        //                                             {
-        //         log_w("Will delete %s", readable.title.c_str());
-        //         readablesToDelete.push_back(readable);
-        //     }
-        // }
         log_d("Readables to delete: %zu", readablesToDelete.size());
 
         ContentSyncState syncState = {.state = ContentSyncState::State::Syncing};
@@ -402,6 +395,12 @@ void LocalStore::syncFromRemote(
                                                           userReadable.placemark)) {
                 log_i("Placemark for %s updated to %d", userReadable.readable.title.c_str(),
                       userReadable.placemark);
+            }
+            if (userReadable.isArchived) {
+                log_i("Readable %s is archived", userReadable.readable.title.c_str());
+                // TODO: Store these articles in an accessible archive instead of just deleting them
+                // and ignoring
+                continue;
             }
             if (this->hasReadable(articles_, userReadable.readable)) {
                 // Should never get here as articlesSince should hide these articles
