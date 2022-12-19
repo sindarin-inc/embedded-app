@@ -8,7 +8,7 @@
 
 class LightingController {
 public:
-    LightingController() : lightSensor_(0), overrideValue_(-1) {}
+    LightingController() : lightSensor_(0), overrideDutyCycle_(-1) {}
 
     // Simple diagnostic test to check if the ambient light sensor is reporting the correct part id
     // and manufacturer id
@@ -25,7 +25,8 @@ public:
 
     // Disable updates and keeps a specific lighting setting (for when the user adjusts the setting
     // manually)
-    void setOverrideValue(int percent);
+    void setOverrideValuePercent(int percent);
+    auto getCurrentPercent() -> int { return currentDutyCycle_ * 100 / 255; }
 
     // Allow lighting only one of the screens, or both
     enum Screens {
@@ -39,19 +40,18 @@ public:
     // accordingly
     void checkAmbientLight(int fadeMs = 1000, int timeoutMs = 500);
 
-    auto getCurrentSetting() -> int { return currentSetting_; }
-
 protected:
     Ltr329Als lightSensor_;
     // Adjusting the number of samples here will change the responsiveness of the ambient light
     // adjustments
     MovingAverage<int, 8> movingAverage_;
 
-    int currentSetting_ = 0;
-    int overrideValue_;
+    int currentDutyCycle_ = 0;
+    int overrideDutyCycle_;
     bool lightsOut_;
 
-    void setLighting(int percent, int fadeMs);
+    void setCurrentDutyCycle(int dutyCycle, int fadeMs);
+    auto getCurrentDutyCycle() -> int { return currentDutyCycle_; }
 
     Screens screens_ = BOTH;
 };

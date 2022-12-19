@@ -12,7 +12,7 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
         return;
     }
 
-    auto lightingPercent = lightingController_.getCurrentSetting();
+    auto lightingPercent = lightingController_.getCurrentPercent();
 
     uint16_t percentWidth, percentHeight;
     // Just pick a number for measurement. We don't want the UI moving when the number changes
@@ -87,15 +87,15 @@ void LightingAdjustScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::PREV: {
         auto setting =
-            std::min(lightingController_.getCurrentSetting() + LIGHTING_STEP_INCREMENT, 100);
-        lightingController_.setOverrideValue(setting);
+            std::min(lightingController_.getCurrentPercent() + LIGHTING_STEP_INCREMENT, 100);
+        lightingController_.setOverrideValuePercent(setting);
         needsRerender = true;
         break;
     }
     case RemoteCommand::NEXT: {
         auto setting =
-            std::max(lightingController_.getCurrentSetting() - LIGHTING_STEP_INCREMENT, 0);
-        lightingController_.setOverrideValue(setting);
+            std::max(lightingController_.getCurrentPercent() - LIGHTING_STEP_INCREMENT, 0);
+        lightingController_.setOverrideValuePercent(setting);
         needsRerender = true;
         break;
     }

@@ -29,8 +29,8 @@ void LightingController::begin() {
 void LightingController::disableLighting() {
     lightsOut_ = true;
     lightSensor_.disable();
-    currentSetting_ = 0;
-    setLighting(currentSetting_, 200);
+    currentDutyCycle_ = 0;
+    setCurrentDutyCycle(currentDutyCycle_, 200);
 }
 
 void LightingController::enableLighting() {
@@ -38,33 +38,33 @@ void LightingController::enableLighting() {
         return;
     }
     lightsOut_ = false;
-    if (overrideValue_ != -1) {
-        currentSetting_ = overrideValue_;
-        setLighting(currentSetting_, 200);
+    if (overrideDutyCycle_ != -1) {
+        currentDutyCycle_ = overrideDutyCycle_;
+        setCurrentDutyCycle(currentDutyCycle_, 200);
         return;
     } else {
         lightSensor_.enable();
     }
 }
 
-void LightingController::setOverrideValue(int percent) {
-    overrideValue_ = percent;
+void LightingController::setOverrideValuePercent(int percent) {
+    auto dutyCycle = percent * 255 / 100;
+    overrideDutyCycle_ = dutyCycle;
     lightSensor_.disable();
-    currentSetting_ = percent;
-    setLighting(currentSetting_, 100);
+    currentDutyCycle_ = dutyCycle;
+    setCurrentDutyCycle(currentDutyCycle_, 100);
 }
 
 void LightingController::setScreenMask(Screens screens, int fadeMs) {
-    bool needsUpdate = screens_ != screens;
     screens_ = screens;
-    setLighting(currentSetting_, fadeMs);
+    setCurrentDutyCycle(currentDutyCycle_, fadeMs);
 };
 
 void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
     if (lightsOut_) {
         return;
     }
-    if (overrideValue_ != -1) {
+    if (overrideDutyCycle_ != -1) {
         return;
     }
 
@@ -90,77 +90,25 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
         };
         lightSensor_.readData(channel1, channel0);
     }
-
+    // Clamp to a max value of 1000 to avoid the moving average getting too large
     movingAverage_.add(std::min(channel1, uint16_t(1000)));
     auto average = movingAverage_.average();
-    currentSetting_ = std::clamp(average / 10, 2, 100);
+    currentDutyCycle_ = std::clamp(average / 25, 2, 255);
     log_d("Light sensor ch1: %d ch0: %d average: %d setting: %d", channel1, channel0, average,
-          currentSetting_);
-    setLighting(currentSetting_, fadeMs);
+          currentDutyCycle_);
+    setCurrentDutyCycle(currentDutyCycle_, fadeMs);
 }
 
-void LightingController::setLighting(int percent, int fadeMs) {
-    currentSetting_ = percent;
-    auto dutyCycle = percent * 255 / 100;
-    log_d("Setting backlight to %d%% (%d) (fadeMs=%d)", percent, dutyCycle, fadeMs);
+void LightingController::setCurrentDutyCycle(int dutyCycle, int fadeMs) {
+    log_d("Setting backlight to %d/255 (fadeMs=%d)", dutyCycle, fadeMs);
 
-    int leftDuty = 0;
-    int rightDuty = 0;
-    if (screens_ | LEFT) {
-        leftDuty = dutyCycle;
-    }
-    if (screens_ | RIGHT) {
-        rightDuty = dutyCycle;
-    }
-
-    esp_err_t err;
-#if LEDC_BACKLIGHT
+    auto leftDutyCycle = (screens_ | LEFT) ? dutyCycle : 0;
+    auto rightDutyCycle = (screens_ | RIGHT) ? dutyCycle : 0;
     if (fadeMs > 0) {
-        // Set the LED to the target brightness
-        err = ledc_set_fade_with_time(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, leftDuty, fadeMs);
-        if (err != ESP_OK) {
-            log_e("Error setting fade with time: %s", esp_err_to_name(err));
-            return;
-        }
-        // Start the LED fading process
-        err = ledc_fade_start(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, LEDC_FADE_NO_WAIT);
-        if (err != ESP_OK) {
-            log_e("Error starting fade: %s", esp_err_to_name(err));
-            return;
-        }
-        // Set the LED to the target brightness
-        err = ledc_set_fade_with_time(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, rightDuty, fadeMs);
-        if (err != ESP_OK) {
-            log_e("Error setting fade with time: %s", esp_err_to_name(err));
-            return;
-        }
-        // Start the LED fading process
-        err = ledc_fade_start(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, LEDC_FADE_NO_WAIT);
-        if (err != ESP_OK) {
-            log_e("Error starting fade: %s", esp_err_to_name(err));
-            return;
-        }
+        SetLeftScreenLightFade(leftDutyCycle, fadeMs);
+        SetRightScreenLightFade(rightDutyCycle, fadeMs);
     } else {
-        err = ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, leftDuty);
-        if (err != ESP_OK) {
-            log_e("Error setting duty: %s", esp_err_to_name(err));
-            return;
-        }
-        err = ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
-        if (err != ESP_OK) {
-            log_e("Error updating duty ch0: %s", esp_err_to_name(err));
-            return;
-        }
-        err = ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, rightDuty);
-        if (err != ESP_OK) {
-            log_e("Error setting duty ch1: %s", esp_err_to_name(err));
-            return;
-        }
-        err = ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
-        if (err != ESP_OK) {
-            log_e("Error updating duty: %s", esp_err_to_name(err));
-            return;
-        }
+        SetLeftScreenLight(leftDutyCycle);
+        SetRightScreenLight(rightDutyCycle);
     }
-#endif
 }

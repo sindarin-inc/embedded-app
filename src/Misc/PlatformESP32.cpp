@@ -206,14 +206,16 @@ void SetLeftScreenLight(int dutyCycle) {
 void SetLeftScreenLightFade(int dutyCycle, int fadeMs) {
     esp_err_t err;
 #if LEDC_BACKLIGHT
-    err = ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, dutyCycle);
+    // Set the LED to the target brightness
+    err = ledc_set_fade_with_time(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, dutyCycle, fadeMs);
     if (err != ESP_OK) {
-        log_e("Error setting duty ch0: %s", esp_err_to_name(err));
+        log_e("Error setting fade with time: %s", esp_err_to_name(err));
         return;
     }
-    err = ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+    // Start the LED fading process
+    err = ledc_fade_start(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, LEDC_FADE_NO_WAIT);
     if (err != ESP_OK) {
-        log_e("Error updating duty: %s", esp_err_to_name(err));
+        log_e("Error starting fade: %s", esp_err_to_name(err));
         return;
     }
 #endif
