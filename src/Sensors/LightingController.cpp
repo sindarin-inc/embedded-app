@@ -107,6 +107,15 @@ void LightingController::setCurrentDutyCycle(int dutyCycle, int fadeMs) {
           rightDutyCycle, fadeMs, screens_);
 
     if (fadeMs > 0) {
+        // NOTE(john): This will crash if either of these are 0 and idf.py monitor is connected.
+        // This is because the LEDC driver uses the 32kHz clock and the 32kHz clock doesn't work
+        // with the serial monitor (for some unknown reason). The normal check that prevents crashes
+        // for LEDC is checking for dutyCycle <= maxDutyCycle, and when the configuration fails,
+        // maxDutyCycle is 0. So 0 uniquely gets through this check, and later causes a crash on a
+        // divide by zero.
+        // See
+        // https://github.com/espressif/esp-idf/blob/0df3279999bc3a14a37a4ced4150ab1d4c894733/components/driver/ledc.c#L1017
+        // https://github.com/espressif/esp-idf/blob/0df3279999bc3a14a37a4ced4150ab1d4c894733/components/driver/ledc.c#L782
         SetLeftScreenLightFade(leftDutyCycle, fadeMs);
         SetRightScreenLightFade(rightDutyCycle, fadeMs);
     } else {
