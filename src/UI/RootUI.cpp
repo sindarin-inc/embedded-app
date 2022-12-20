@@ -23,6 +23,7 @@
 #include "UI/CrashReportScreen.hpp"
 #include "UI/DemoScreen.hpp"
 #include "UI/FirmwareUpdateScreen.hpp"
+#include "UI/LayoutTestScreen.hpp"
 #include "UI/LightingAdjustScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/LoadingScreen.hpp"
@@ -163,6 +164,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         settingsMenu->setFirstLoad();
         setCurrentScreen(*settingsMenu);
     };
+
+    settingsMenu->addMenuItem(MenuItem("Layout Example", [this, settingsMenu, display]() {
+        auto layoutTestScreen = new LayoutTestScreen(*display);
+        setCurrentScreen(*layoutTestScreen);
+        layoutTestScreen->backCallback = [this, layoutTestScreen, settingsMenu]() {
+            settingsMenu->setFirstLoad();
+            setCurrentScreen(*settingsMenu);
+            delete layoutTestScreen;
+        };
+    }));
 
     settingsMenu->addMenuItem(
         MenuItem("Sync Content", [this, display, &localStore, settingsMenu]() {
