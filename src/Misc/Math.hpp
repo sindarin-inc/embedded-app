@@ -15,5 +15,9 @@ template <typename T>
 auto MapRange(T x, T inMin, T inMax, T outMin, T outMax) -> T {
     T range = inMax - inMin;
     T t = (x - inMin) * (outMax - outMin) / range;
-    return std::clamp(outMin + t, outMin, outMax);
+    if (outMin < outMax) {
+        return std::clamp(outMin + t, outMin, outMax);
+    } else {
+        return std::clamp(outMin + t, outMax, outMin);
+    }
 }

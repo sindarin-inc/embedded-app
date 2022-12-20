@@ -7,9 +7,6 @@
 #include "Misc/Platform.hpp"
 #include "sindarin-debug.h"
 
-#define MIN_LIGHTING_DUTY_CYCLE 5
-#define MAX_LIGHTING_DUTY_CYCLE 60
-
 auto LightingController::checkSensorAvailable() -> bool {
     auto partId = lightSensor_.readPartId();
     auto manufacturerId = lightSensor_.readManufacturerId();

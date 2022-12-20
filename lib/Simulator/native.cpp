@@ -13,6 +13,8 @@
 
 #include "Displays/FakeEinkET013TT1.hpp"
 #include "Misc/Dispatch.hpp"
+#include "Misc/Math.hpp"
+#include "Sensors/LightingController.hpp"
 #include "sindarin-debug.h"
 
 #if SIMULATOR_BLE
@@ -26,7 +28,6 @@ extern "C" void app_main(void); // NOLINT(readability-identifier-naming)
 const char *kGitHash = "SIMULATOR";
 
 #define SCALE 2
-#define MAX_LIGHTING_VALUE 21
 
 int LightingSetting;
 
@@ -51,7 +52,8 @@ void SimDrawScreen() {
         for (int y = 0; y < EinkET013TT1_PIXEL_HEIGHT; y++) {
             uint8_t color = ParticlePositions[x + y * EinkET013TT1_PIXEL_WIDTH];
             float colorF = color / 255.0;
-            uint16_t brightnessOffset = 3 * (MAX_LIGHTING_VALUE - LightingSetting);
+            uint16_t brightnessOffset =
+                MapRange(LightingSetting, MIN_LIGHTING_DUTY_CYCLE, MAX_LIGHTING_DUTY_CYCLE, 60, 0);
             SDL_SetRenderDrawColor(
                 renderer, lerp(40 + brightnessOffset, 248 - brightnessOffset, colorF),
                 lerp(40 + brightnessOffset, 240 - brightnessOffset, colorF),
