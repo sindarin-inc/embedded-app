@@ -3,8 +3,12 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
+#include "Misc/Math.hpp"
 #include "Misc/Platform.hpp"
 #include "sindarin-debug.h"
+
+#define MIN_LIGHTING_DUTY_CYCLE 5
+#define MAX_LIGHTING_DUTY_CYCLE 60
 
 auto LightingController::checkSensorAvailable() -> bool {
     auto partId = lightSensor_.readPartId();
@@ -49,11 +53,15 @@ void LightingController::enableLighting() {
 }
 
 void LightingController::setOverrideValuePercent(int percent) {
-    auto dutyCycle = percent * 255 / 100;
+    auto dutyCycle = MapRange(percent, 0, 100, MIN_LIGHTING_DUTY_CYCLE, MAX_LIGHTING_DUTY_CYCLE);
     overrideDutyCycle_ = dutyCycle;
     lightSensor_.disable();
     currentDutyCycle_ = dutyCycle;
     setCurrentDutyCycle(currentDutyCycle_, 100);
+}
+
+auto LightingController::getCurrentPercent() -> int {
+    return MapRange(currentDutyCycle_, MIN_LIGHTING_DUTY_CYCLE, MAX_LIGHTING_DUTY_CYCLE, 0, 100);
 }
 
 void LightingController::setScreenMask(Screens screens, int fadeMs) {
@@ -104,8 +112,8 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
     movingAverage_.add(std::min(channel1, uint16_t(1000)));
     auto average = movingAverage_.average();
 
-    // Linear interpolate from range 0-1000 to 5-60
-    currentDutyCycle_ = std::clamp(average * 55 / 1000 + 5, 5, 60);
+    currentDutyCycle_ =
+        MapRange(average, 0, 1000, MIN_LIGHTING_DUTY_CYCLE, MAX_LIGHTING_DUTY_CYCLE);
     // log_d("Light sensor ch1: %d ch0: %d average: %d setting: %d", channel1, channel0, average,
     // currentDutyCycle_);
     setCurrentDutyCycle(currentDutyCycle_, fadeMs);

@@ -26,7 +26,7 @@ public:
     // Disable updates and keeps a specific lighting setting (for when the user adjusts the setting
     // manually)
     void setOverrideValuePercent(int percent);
-    auto getCurrentPercent() -> int { return currentDutyCycle_ * 100 / 255; }
+    auto getCurrentPercent() -> int;
 
     // Allow lighting only one of the screens, or both
     enum Screens {
