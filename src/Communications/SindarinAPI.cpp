@@ -87,7 +87,7 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
         httpClient.end();
         return 0;
     }
-    auto *respJson = new SpiRamJsonDocument(httpClient.getSize() * 2);
+    auto *respJson = new SpiRamJsonDocument(1024 + httpClient.getSize() * 3);
     auto error = ArduinoJson::deserializeJson(*respJson, *streamPtr);
     if (error.code() != DeserializationError::Ok) {
         log_e("Failed to deserialize sync response: %s", error.c_str());
