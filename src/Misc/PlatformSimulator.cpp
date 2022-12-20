@@ -17,20 +17,20 @@ void SetCpuSpeedMhz(int speedMhz) {}
 
 void SetLeftScreenLight(int dutyCycle) {
     LightingSetting = dutyCycle;
-    log_d("Setting screen light to dutyCycle=%d", dutyCycle);
+    // log_d("Setting screen light to dutyCycle=%d", dutyCycle);
 }
 
 void SetLeftScreenLightFade(int dutyCycle, int fadeMs) {
     LightingSetting = dutyCycle;
-    log_d("Fading screen light to dutyCycle=%d", dutyCycle);
+    // log_d("Fading screen light to dutyCycle=%d", dutyCycle);
 }
 
 void SetRightScreenLight(int dutyCycle) {
-    log_d("Setting right screen light to dutyCycle=%d (but ignoring b/c Simulator)", dutyCycle);
+    // log_d("Setting right screen light to dutyCycle=%d (but ignoring b/c Simulator)", dutyCycle);
 }
 
 void SetRightScreenLightFade(int dutyCycle, int fadeMs) {
-    log_d("Fading right screen light to dutyCycle=%d (but ignoring b/c Simulator)", dutyCycle);
+    // log_d("Fading right screen light to dutyCycle=%d (but ignoring b/c Simulator)", dutyCycle);
 }
 
 auto GetRunTimeMs() -> uint32_t { return millis(); }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 // Note: This abstraction exists as an abstraction layer between the specific hardware and the rest
 // of the firmware. It exists to make running on the simulator and other processors simpler by
