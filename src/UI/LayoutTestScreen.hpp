@@ -5,7 +5,7 @@
 // A view that draws a line of text
 class TextView : public View {
 public:
-    TextView(DisplaySystem &display, std::string text) : text_(std::move(text)), View(display) {}
+    TextView(DisplaySystem &display, std::string text) : View(display), text_(std::move(text)) {}
 
     virtual auto layout(Size size) -> Size override {
         uint16_t w, h;
@@ -26,7 +26,7 @@ protected:
 class IconView : public View {
 public:
     IconView(DisplaySystem &display, unsigned char *iconBits, int width, int height)
-        : iconBits_(iconBits), width_(width), height_(height), View(display) {}
+        : View(display), iconBits_(iconBits), width_(width), height_(height) {}
 
     virtual auto layout(Size size) -> Size override { return {width_, height_}; }
 
@@ -45,9 +45,8 @@ protected:
 class ExampleView : public View {
 public:
     ExampleView(DisplaySystem &display)
-        : iconView_(display, lightbulbBits, Lightbulb_width, Lightbulb_height),
-          topView_(display, "First row of text"), bottomView_(display, "Second row"),
-          View(display) {}
+        : View(display), iconView_(display, lightbulbBits, Lightbulb_width, Lightbulb_height),
+          topView_(display, "First row of text"), bottomView_(display, "Second row") {}
 
     virtual auto layout(Size size) -> Size override {
         // inset all around by 2px
@@ -105,7 +104,7 @@ protected:
 // * Merge it all into View?
 class LayoutTestScreen : public Screen {
 public:
-    LayoutTestScreen(DisplaySystem &display) : view(display), Screen() {}
+    LayoutTestScreen(DisplaySystem &display) : Screen(), view(display) {}
 
     void processCommand(RemoteCommand command) override;
     void render(DisplaySystem &display) override;
