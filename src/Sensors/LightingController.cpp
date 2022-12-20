@@ -103,7 +103,9 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
     // Clamp to a max value of 1000 to avoid the moving average getting too large
     movingAverage_.add(std::min(channel1, uint16_t(1000)));
     auto average = movingAverage_.average();
-    currentDutyCycle_ = std::clamp(average / 25, 2, 255);
+
+    // Linear interpolate from range 0-1000 to 5-60
+    currentDutyCycle_ = std::clamp(average * 55 / 1000 + 5, 5, 60);
     // log_d("Light sensor ch1: %d ch0: %d average: %d setting: %d", channel1, channel0, average,
     // currentDutyCycle_);
     setCurrentDutyCycle(currentDutyCycle_, fadeMs);

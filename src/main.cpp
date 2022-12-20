@@ -220,6 +220,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     if (!lightingController.checkSensorAvailable()) {
         bootErrors.push_back({.type = BootError::Type::AmbientLight});
+    } else {
+        lightingController.begin();
     }
 
 #if USE_MMC5603
@@ -434,10 +436,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     xTaskCreatePinnedToCore(PowerTask, "Power", 5000, nullptr, 0, &powerTaskHandle, 1);
 
     // Begin fade-in on the lighting before rendering the UI
-    DispatchGetUiQueue()->dispatch([]() {
-        lightingController.begin();
-        lightingController.checkAmbientLight(300, 500);
-    });
+    DispatchGetUiQueue()->dispatch([]() { lightingController.checkAmbientLight(300, 500); });
 
     // Render the first thing
     DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::NONE); });
