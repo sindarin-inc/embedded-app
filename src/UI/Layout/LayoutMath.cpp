@@ -31,7 +31,7 @@ auto AlignSizeInRect(const Size &size, const Rect &rect, int options) -> Rect {
         p.y = rect.origin.y + rect.size.height - size.height;
     }
 
-    return {p.x, p.y, size.width, size.height};
+    return {{p.x, p.y}, {size.width, size.height}};
 }
 
 auto SizeThatFitsForView(const View &view, Size size, int options) -> Size {
@@ -94,7 +94,11 @@ auto SizeThatFitsForView(const View &view, Size size, int options) -> Size {
 
 auto FrameForView(const View &view, Size size, Rect inRect, int options) -> Rect {
     size = SizeThatFitsForView(view, size, options);
-    if (inRect.size.width == 0) inRect.size.width = size.width;
-    if (inRect.size.height == 0) inRect.size.height = size.height;
+    if (inRect.size.width == 0) {
+        inRect.size.width = size.width;
+    }
+    if (inRect.size.height == 0) {
+        inRect.size.height = size.height;
+    }
     return AlignSizeInRect(size, inRect, options);
 }

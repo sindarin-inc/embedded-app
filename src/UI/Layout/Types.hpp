@@ -3,15 +3,15 @@
 struct Point {
     int x;
     int y;
-    static Point zero() { return {0, 0}; }
+    static auto zero() -> Point { return {0, 0}; }
 };
 
 struct Size {
     int width;
     int height;
-    static Size zero() { return {0, 0}; }
+    static auto zero() -> Size { return {0, 0}; }
     // Overload == operator
-    bool operator==(const Size &other) const {
+    auto operator==(const Size &other) const -> bool {
         return width == other.width && height == other.height;
     }
 };
@@ -19,7 +19,7 @@ struct Size {
 struct Rect {
     Point origin;
     Size size;
-    static Rect zero() { return {{0, 0}, {0, 0}}; }
+    static auto zero() -> Rect { return {{0, 0}, {0, 0}}; }
 };
 
 enum LayoutOptions {

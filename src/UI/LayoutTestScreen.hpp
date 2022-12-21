@@ -7,13 +7,13 @@ class TextView : public View {
 public:
     TextView(DisplaySystem &display, std::string text) : View(display), text_(std::move(text)) {}
 
-    virtual auto layout(Size size) -> Size override {
+    auto layout(Size size) -> Size override {
         uint16_t w, h;
         display_.getTextBounds(text_.c_str(), &w, &h);
         return {w, h};
     }
 
-    virtual void draw() override {
+    void draw() override {
         layoutIfNeeded();
         display_.drawSingleLineOfText(text_, frame().origin.x, frame().origin.y);
     }
@@ -28,9 +28,9 @@ public:
     IconView(DisplaySystem &display, unsigned char *iconBits, int width, int height)
         : View(display), iconBits_(iconBits), width_(width), height_(height) {}
 
-    virtual auto layout(Size size) -> Size override { return {width_, height_}; }
+    auto layout(Size size) -> Size override { return {width_, height_}; }
 
-    virtual void draw() override {
+    void draw() override {
         display_.drawXBitmap(frame_.origin.x, frame_.origin.y, iconBits_, width_, height_,
                              display_.fg);
     }
@@ -48,7 +48,7 @@ public:
         : View(display), iconView_(display, lightbulbBits, Lightbulb_width, Lightbulb_height),
           topView_(display, "First row of text"), bottomView_(display, "Second row") {}
 
-    virtual auto layout(Size size) -> Size override {
+    auto layout(Size size) -> Size override {
         // inset all around by 2px
         int x = 2;
         int y = 2;
@@ -82,7 +82,7 @@ public:
         return {size.width, y};
     };
 
-    virtual void draw() override {
+    void draw() override {
         layoutIfNeeded();
         // TODO: We probably need a way to pass through the global coordinate system so that more
         // deeply nested views get drawn in the right place

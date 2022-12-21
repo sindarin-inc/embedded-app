@@ -9,7 +9,7 @@ class View;
 // * Encapsulates the complexity of figuring out when a layout is needed
 class LayoutContext {
 public:
-    LayoutContext(View &view) : view_(view), needsLayout_(true), needsSizing_(true) {}
+    LayoutContext(View &view) : view_(view) {}
     void setNeedsLayout() {
         needsLayout_ = true;
         needsSizing_ = true;
@@ -31,8 +31,8 @@ protected:
     View &view_;
 
     bool sizing_;
-    bool needsLayout_;
-    bool needsSizing_;
+    bool needsLayout_{true};
+    bool needsSizing_{true};
     Size cachedSize_;
     Size cachedLayoutSize_;
 };
@@ -43,7 +43,7 @@ public:
     View(DisplaySystem &display) : display_(display), frame_(Rect::zero()), layoutContext_(*this) {}
 
     // Getter and setter for the frame
-    const Rect &frame() const { return frame_; }
+    [[nodiscard]] auto frame() const -> const Rect & { return frame_; }
     void setFrame(const Rect &frame) { frame_ = frame; }
 
     // View subclasses should implement this method to layout any elements and return their
@@ -56,7 +56,7 @@ public:
     // Set flags indicating layout is needed
     void setNeedsLayout() { layoutContext_.setNeedsLayout(); }
     void layoutIfNeeded() { layoutContext_.layoutIfNeeded(frame_.size, false); }
-    auto sizeThatFits(const Size &size) const -> Size {
+    [[nodiscard]] auto sizeThatFits(const Size &size) const -> Size {
         // Dangerous cast to non-const LayoutContext because we are guaranteeing that when
         // sizing==true we are not going to modify anything
         return const_cast<LayoutContext &>(layoutContext_).layoutIfNeeded(size, true);
