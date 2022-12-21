@@ -29,6 +29,7 @@ const char *kGitHash = "SIMULATOR";
 
 #define SCALE 2
 
+// Will be set by PlatformSimulator.cpp SetLeftScreenLight() and SetRightScreenLight()
 int LightingSetting;
 
 SDL_Window *window;

@@ -33,8 +33,8 @@ auto Ltr329Als::readStatus(Ltr329als01StatusValue &out) -> bool {
 }
 
 auto Ltr329Als::readData(uint16_t &channel1, uint16_t &channel0) -> bool {
-    channel1 = 500;
-    channel0 = 500;
+    channel1 = 1000;
+    channel0 = 1000;
     return true;
 }
 
