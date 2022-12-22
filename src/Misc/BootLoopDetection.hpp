@@ -1,6 +1,8 @@
 #pragma once
 
 #include <stdint.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/timers.h>
 
-uint32_t BootLoopCheck();
-void SetLastGoodBoot(uint32_t lastGood);
+void BootLoopCheck();
+void SetGoodBoot(TimerHandle_t timer);

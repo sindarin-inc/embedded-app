@@ -1,19 +1,19 @@
 #include "BootLoopDetection.hpp"
+#include <Arduino.h>
 
 #if SIMULATOR
 
-uint32_t BootLoopCheck() {
-    return 1;
-}
-
-void SetLastGoodBoot(uint32_t lastGood) {
-}
+void BootLoopCheck() {}
+void SetGoodBoot(TimerHandle_t timer) {}
 
 #else
 
+#include "esp_system.h"
 #include "esp_ota_ops.h"
 #include "nvs.h"
 #include "Update.h"
+
+#define PANIC_BOOT_THRESHOLD 10
 
 // check if we are in a boot loop state
 // this happens by incrementing a key (curr_boot) on each startup.
@@ -35,69 +35,10 @@ bool partitionIsBootable(const esp_partition_t *partition) {
     return true;
 }
 
-uint32_t BootLoopCheck() {
-    // increment boot number
-    nvs_handle_t bootNvsHandle;
-    uint32_t currBoot = 0;
-    uint32_t bootLoopThreshold = 10;
-    esp_err_t nvsErr = nvs_open("boot-info", NVS_READWRITE, &bootNvsHandle);
-    if (nvsErr != ESP_OK) {
-        log_e("could not open boot-info in nvs");
-        return 0;
-    }
-
-    log_i("opened boot-info nvs ok!");
-
-    // read existing boot count
-    nvsErr = nvs_get_u32(bootNvsHandle, "curr_boot", &currBoot);
-    if (nvsErr != ESP_OK) {
-        currBoot = 0;
-    }
-
-    // increment current boot number
-    currBoot++;
-    log_i("setting curr boot to %d", currBoot);
-    if (nvs_set_u32(bootNvsHandle, "curr_boot", currBoot) != ESP_OK) {
-        log_e("error setting curr boot to %d", currBoot);
-        nvs_close(bootNvsHandle);
-        return currBoot;
-    }
-
-    // now read last good boot number
-    uint32_t lastGoodBoot = 0;
-    nvsErr = nvs_get_u32(bootNvsHandle, "last_good_boot", &lastGoodBoot);
-    if (nvsErr != ESP_OK) {
-        log_e("error reading last good boot");
-        nvs_close(bootNvsHandle);
-        return currBoot;
-    }
-
-    if (currBoot <= lastGoodBoot) {
-        log_e("error, last good boot %d > curr boot %d", lastGoodBoot, currBoot);
-        nvs_close(bootNvsHandle);
-        return currBoot;
-    }
-
-    uint32_t bootsSinceGood = currBoot - lastGoodBoot;
-    log_i("curr boot %d last good %d since good %d, thresh %d", currBoot, lastGoodBoot,
-          bootsSinceGood, bootLoopThreshold);
-    // check if it has been a while since last good boot
-
-    if (bootsSinceGood <= bootLoopThreshold) {
-        nvs_close(bootNvsHandle);
-        return currBoot;
-    }
+void rollback() {
     // has been at least bootLoopThreshold boots since last good one
     // considering this a boot loop, try to fall back to previous firmware.
     log_i("rollback and reset.");
-
-    // set this boot as 'good' so rolled back version doesn't also try to roll back!
-    nvsErr = nvs_set_u32(bootNvsHandle, "last_good_boot", currBoot);
-    if (nvsErr != ESP_OK) {
-        log_e("error setting last good boot to %d", currBoot);
-        nvs_close(bootNvsHandle);
-        return currBoot;
-    }
 
     const esp_partition_t *partition = esp_ota_get_next_update_partition(nullptr);
     if (partition && partitionIsBootable(partition)) {
@@ -110,12 +51,57 @@ uint32_t BootLoopCheck() {
     } else {
         log_e("error: cannot roll back, partition is not bootable.");
     }
-
-    nvs_close(bootNvsHandle);
-    return currBoot;
 }
 
-void SetLastGoodBoot(uint32_t lastGood) {
+
+void BootLoopCheck() {
+    // check reason for reboot
+    if (esp_reset_reason() != ESP_RST_PANIC) {
+        // not restarted because of panic, do not need to continue boot loop check
+        return;
+    }
+
+    log_i("opened boot-info nvs ok!");
+
+    // increment boot number
+    nvs_handle_t bootNvsHandle;
+    uint32_t currBoot = 0;
+    esp_err_t nvsErr = nvs_open("boot-info", NVS_READWRITE, &bootNvsHandle);
+    if (nvsErr != ESP_OK) {
+        log_e("could not open boot-info in nvs");
+        return;
+    }
+
+    // read existing boot count
+    nvsErr = nvs_get_u32(bootNvsHandle, "panic-boot-count", &currBoot);
+    if (nvsErr != ESP_OK) {
+        currBoot = 0;
+    }
+
+    // increment current boot number
+    currBoot++;
+
+    // check if this should trigger a rollback
+    if (currBoot >= PANIC_BOOT_THRESHOLD) {
+        // enough panic boots have happened, attempt a rollback
+        rollback();
+    }
+
+    // record new boot count
+    nvsErr = nvs_set_u32(bootNvsHandle, "panic-boot-count", currBoot);
+    if (nvsErr != ESP_OK) {
+        log_e("could not increment panic boot count to %d", currBoot);
+    }
+
+    nvs_close(bootNvsHandle);
+    return;
+}
+
+// timed function which resets panic-boot-count back to 0
+void SetGoodBoot(TimerHandle_t timer) {
+    log_i("resetting panic-boot-count");
+
+    // open boot info partition
     nvs_handle_t bootNvsHandle;
     esp_err_t nvsErr = nvs_open("boot-info", NVS_READWRITE, &bootNvsHandle);
     if (nvsErr != ESP_OK) {
@@ -123,11 +109,11 @@ void SetLastGoodBoot(uint32_t lastGood) {
         return;
     }
 
-    // mark this boot as good
-    log_i("marking %d as last good boot", lastGood);
-    nvsErr = nvs_set_u32(bootNvsHandle, "last_good_boot", lastGood);
+    // reset number of boots since a 'good' boot to 0
+    uint32_t goodBoot = 0;
+    nvsErr = nvs_set_u32(bootNvsHandle, "panic-boot-count", goodBoot);
     if (nvsErr != ESP_OK) {
-        log_e("could not set %d as last good boot", lastGood);
+        log_e("could not reset boots since good to 0");
     }
 
     nvs_close(bootNvsHandle);

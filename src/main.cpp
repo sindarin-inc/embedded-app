@@ -24,6 +24,7 @@
 #include "config.h"
 #include "sindarin-debug.h"
 #include "Misc/BootLoopDetection.hpp"
+#include <freertos/timers.h>
 
 #if !DISABLE_POWER_MANAGEMENT
 #include <esp_pm.h>
@@ -129,6 +130,7 @@ esp_pm_config_esp32s3_t pmConfig;
 #endif
 
 void PowerTask(void *parameter) {
+
     for (;;) {
         // Run the power loop first so that we don't show a 0% battery reading
         power.loop();
@@ -173,8 +175,6 @@ void StatsTask(void *parameter) {
     vTaskDelete(nullptr);
 }
 
-
-
 void UIInnerLoop(RemoteCommand command) { rootUi.loop(myDisplay, command); }
 
 #if CONFIG_AUTOSTART_ARDUINO
@@ -189,7 +189,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // Configure log level for all Sindarin logs
     esp_log_level_set("Sindarin", ESP_LOG_DEBUG);
 #endif
-    uint32_t bootCount = BootLoopCheck();
+    BootLoopCheck();
     std::vector<BootError> bootErrors;
 
 #if BOARD_HAS_PSRAM
@@ -411,6 +411,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 
     // set current boot id
+    auto bootCount = prefs.bootCount.get().value();
+    bootCount++;
     prefs.bootCount.set(bootCount);
 
     if (!fileSystem.begin()) {
@@ -437,7 +439,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     SetCpuSpeedMhz(CPU_FREQ_MHZ_LOW);
 
-    SetLastGoodBoot(bootCount);
     BlinkBootErrors(bootErrors);
 
     remoteQueue = xQueueCreate(10, sizeof(RemoteCommand));
@@ -447,4 +448,12 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     // Render the first thing
     DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::NONE); });
+
+    TimerHandle_t bootLoopTimer = xTimerCreate("GoodBootTimer", pdMS_TO_TICKS(10000), pdFALSE, nullptr, SetGoodBoot);
+    if (bootLoopTimer == NULL) {
+        log_i("could not create boot loop timer");
+    }
+
+    xTimerStart(bootLoopTimer, 0);
+
 }
