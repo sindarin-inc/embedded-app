@@ -118,7 +118,7 @@ void SetGoodBoot(TimerHandle_t timer) {
     nvs_close(bootNvsHandle);
 }
 
-void BootLoopTimer() {
+void GoodBootTimer() {
     // check reason for reboot
     if (esp_reset_reason() != ESP_RST_PANIC) {
         // not restarted because of panic, do not need to launch good boot timer
