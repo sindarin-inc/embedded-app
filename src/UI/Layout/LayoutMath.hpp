@@ -13,3 +13,5 @@ class View;
 auto SizeThatFitsForView(const View &view, Size size, int options) -> Size;
 
 auto FrameForView(const View &view, Size size, Rect inFrame, int options) -> Rect;
+
+auto OffsetFrame(const Rect &frame, const Point &offset) -> Rect;

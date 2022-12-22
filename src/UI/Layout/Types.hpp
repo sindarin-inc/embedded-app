@@ -14,6 +14,9 @@ struct Size {
     auto operator==(const Size &other) const -> bool {
         return width == other.width && height == other.height;
     }
+    auto operator!=(const Size &other) const -> bool {
+        return width != other.width || height != other.height;
+    }
 };
 
 struct Rect {

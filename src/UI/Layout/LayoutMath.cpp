@@ -15,8 +15,6 @@ auto AlignSizeInRect(const Size &size, const Rect &rect, int options) -> Rect {
 
     if ((options & LayoutOptionsAlignCenterHorizontal) != 0) {
         p.x += PointToCenterX(size, rect.size).x;
-        log_d("Horizontal align for size=%d,%d in rect=%d,%d,%d,%d is p.x=%d", size.width,
-              size.height, rect.origin.x, rect.origin.y, rect.size.width, rect.size.height, p.x);
     }
 
     if ((options & LayoutOptionsAlignCenterVertical) != 0) {
@@ -101,4 +99,8 @@ auto FrameForView(const View &view, Size size, Rect inRect, int options) -> Rect
         inRect.size.height = size.height;
     }
     return AlignSizeInRect(size, inRect, options);
+}
+
+auto OffsetFrame(const Rect &frame, const Point &offset) -> Rect {
+    return {{frame.origin.x + offset.x, frame.origin.y + offset.y}, frame.size};
 }
