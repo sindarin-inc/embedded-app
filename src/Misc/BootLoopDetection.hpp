@@ -5,4 +5,4 @@
 #include <freertos/timers.h>
 
 void BootLoopCheck();
-void SetGoodBoot(TimerHandle_t timer);
+void GoodBootTimer();

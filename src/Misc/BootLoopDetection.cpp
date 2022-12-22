@@ -4,7 +4,7 @@
 #if SIMULATOR
 
 void BootLoopCheck() {}
-void SetGoodBoot(TimerHandle_t timer) {}
+void GoodBootTimer() {}
 
 #else
 
@@ -52,7 +52,6 @@ void rollback() {
         log_e("error: cannot roll back, partition is not bootable.");
     }
 }
-
 
 void BootLoopCheck() {
     // check reason for reboot
@@ -117,6 +116,21 @@ void SetGoodBoot(TimerHandle_t timer) {
     }
 
     nvs_close(bootNvsHandle);
+}
+
+void BootLoopTimer() {
+    // check reason for reboot
+    if (esp_reset_reason() != ESP_RST_PANIC) {
+        // not restarted because of panic, do not need to launch good boot timer
+        return;
+    }
+
+    TimerHandle_t bootLoopTimer = xTimerCreate("GoodBootTimer", pdMS_TO_TICKS(10000), pdFALSE, nullptr, SetGoodBoot);
+    if (bootLoopTimer == NULL) {
+        log_i("could not create boot loop timer");
+    }
+
+    xTimerStart(bootLoopTimer, 0);
 }
 
 #endif

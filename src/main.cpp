@@ -449,11 +449,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // Render the first thing
     DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::NONE); });
 
-    TimerHandle_t bootLoopTimer = xTimerCreate("GoodBootTimer", pdMS_TO_TICKS(10000), pdFALSE, nullptr, SetGoodBoot);
-    if (bootLoopTimer == NULL) {
-        log_i("could not create boot loop timer");
-    }
-
-    xTimerStart(bootLoopTimer, 0);
+    GoodBootTimer();
 
 }
