@@ -274,6 +274,33 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     std::string buildString = StringFormat("Build: %s (%s)", kVersionString, kGitHash);
 #endif
 
+    debugMenu->addMenuItem(MenuItem("File System Browser", [this, debugMenu, &fileSystem]() {
+        MenuStyle styleFamilies;
+        auto fsMenu = new MenuScreen(this->power_, debugMenu->getMyStyle());
+        fsMenu->setExtraText("ls of /");
+
+        FileList localFiles;
+        fileSystem.listDir("/", localFiles);
+        for (const std::string &str : localFiles) {
+            log_d("Next File is %s", str.c_str());
+            fsMenu->addMenuItem(MenuItem(str.c_str(), [this, fsMenu, &fileSystem, str]() {
+                File toSerialOutput = fileSystem.open(StringFormat("/%s", str.c_str()));
+                while (toSerialOutput.available()) {
+                    log_d("%c", toSerialOutput.read());
+                }
+                this->display_->clearDisplay();
+                fsMenu->setExtraText(StringFormat("output %s to serial", str.c_str()));
+                fsMenu->needsRerender = true;
+            }));
+        }
+        setCurrentScreen(*fsMenu);
+        fsMenu->backCallback = [this, fsMenu, debugMenu]() {
+            debugMenu->setFirstLoad();
+            setCurrentScreen(*debugMenu);
+            delete fsMenu;
+        };
+    }));
+
     debugMenu->addMenuItem(MenuItem("Font Type", [this, debugMenu]() {
         MenuStyle styleFamilies;
         auto fontMenu = new MenuScreen(this->power_, debugMenu->getMyStyle());
