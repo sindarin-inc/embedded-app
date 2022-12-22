@@ -1,4 +1,5 @@
 #include "BootLoopDetection.hpp"
+
 #include <Arduino.h>
 
 #if SIMULATOR
@@ -8,10 +9,10 @@ void GoodBootTimer() {}
 
 #else
 
-#include "esp_system.h"
-#include "esp_ota_ops.h"
-#include "nvs.h"
 #include "Update.h"
+#include "esp_ota_ops.h"
+#include "esp_system.h"
+#include "nvs.h"
 
 #define PANIC_BOOT_THRESHOLD 10
 
@@ -20,7 +21,7 @@ void GoodBootTimer() {}
 // check this against the key last_good_boot. If there are more boots than
 // a specified threshold since the last good one, try to roll back to a previous firmware version
 
-bool partitionIsBootable(const esp_partition_t *partition) {
+auto PartitionIsBootable(const esp_partition_t *partition) -> bool {
     uint8_t buf[ENCRYPTED_BLOCK_SIZE];
     if (!partition) {
         return false;
@@ -35,13 +36,13 @@ bool partitionIsBootable(const esp_partition_t *partition) {
     return true;
 }
 
-void rollback() {
+void Rollback() {
     // has been at least bootLoopThreshold boots since last good one
     // considering this a boot loop, try to fall back to previous firmware.
     log_i("rollback and reset.");
 
     const esp_partition_t *partition = esp_ota_get_next_update_partition(nullptr);
-    if (partition && partitionIsBootable(partition)) {
+    if (partition && PartitionIsBootable(partition)) {
         if (esp_ota_set_boot_partition(partition) == ESP_OK) {
             // reboot to other partition
             esp_restart();
@@ -83,7 +84,7 @@ void BootLoopCheck() {
     // check if this should trigger a rollback
     if (currBoot >= PANIC_BOOT_THRESHOLD) {
         // enough panic boots have happened, attempt a rollback
-        rollback();
+        Rollback();
     }
 
     // record new boot count
@@ -125,8 +126,9 @@ void GoodBootTimer() {
         return;
     }
 
-    TimerHandle_t bootLoopTimer = xTimerCreate("GoodBootTimer", pdMS_TO_TICKS(10000), pdFALSE, nullptr, SetGoodBoot);
-    if (bootLoopTimer == NULL) {
+    TimerHandle_t bootLoopTimer =
+        xTimerCreate("GoodBootTimer", pdMS_TO_TICKS(10000), pdFALSE, nullptr, SetGoodBoot);
+    if (bootLoopTimer == nullptr) {
         log_i("could not create boot loop timer");
     }
 

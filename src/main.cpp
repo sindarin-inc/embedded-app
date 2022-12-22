@@ -6,12 +6,14 @@
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
+#include <freertos/timers.h>
 
 #include "Communications/OTA.hpp"
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/BootError.hpp"
+#include "Misc/BootLoopDetection.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/Power.hpp"
 #include "Misc/StringUtil.hpp"
@@ -23,8 +25,6 @@
 #include "UI/RootUI.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
-#include "Misc/BootLoopDetection.hpp"
-#include <freertos/timers.h>
 
 #if !DISABLE_POWER_MANAGEMENT
 #include <esp_pm.h>
@@ -450,5 +450,4 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::NONE); });
 
     GoodBootTimer();
-
 }
