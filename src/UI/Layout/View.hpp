@@ -1,20 +1,25 @@
 #pragma once
 
+#include <map>
+#include <unordered_set>
+
 #include "LayoutMath.hpp"
 #include "Types.hpp"
+#include "sindarin-debug.h"
 
 class View;
+class SublayoutContext;
+class LayoutContext;
+
+typedef std::function<Size(LayoutContext &, Size)> LayoutLambda;
 
 // The Layout object:
 // * Encapsulates the complexity of figuring out when a layout is needed
 class LayoutContext {
 public:
-    LayoutContext(View &view) : view_(view), frame_(Rect::zero()) {}
-    void setNeedsLayout() {
-        needsLayout_ = true;
-        needsSizing_ = true;
-        cachedSize_ = Size::zero();
-    }
+    LayoutContext(const LayoutLambda &layout) : layout_(std::move(layout)), frame_(Rect::zero()) {}
+    // Convenience method that creates the layout lambda automatically from the view's layout method
+    LayoutContext(View &view);
 
     // Getter and setter for the frame
     [[nodiscard]] auto frame() const -> const Rect & { return frame_; }
@@ -30,13 +35,24 @@ public:
     // SizeToFit* options) as well as a rect in which to draw the view. When using the Align*
     // options, the view's size will be positioned inside inRect in order to determine the view's
     // frame.
-    auto setViewSizeInRect(View &view, const Size &size, const Rect &inRect,
-                           int options = LayoutOptionsNone) -> Rect;
+    virtual auto setViewSizeInRect(View &view, const Size &size, const Rect &inRect,
+                                   int options = LayoutOptionsNone) -> Rect;
 
     // This is a convenience method that calls setViewSizeInRect with size=frame.size. This is often
     // used when using the SizeToFit* options to allow the view to determine its own
     // size within the provided rect
     auto setViewFrame(View &view, const Rect &frame, int options = LayoutOptionsNone) -> Rect;
+
+    // auto setSublayoutSizeInRect(const Size &size, const Rect &inRect, int options,
+    //                             const LayoutLambda &layout) -> Rect;
+
+    auto setSublayoutFrame(const Rect &frame, int options, const LayoutLambda &layout) -> Rect;
+
+    void setNeedsLayout() {
+        needsLayout_ = true;
+        needsSizing_ = true;
+        cachedSize_ = Size::zero();
+    }
 
     // This runs the layout if necessary, or returns the cached size if layout is not
     // necessary
@@ -46,7 +62,8 @@ protected:
     // Backreference to the View so that we can call its `layout` method. An alternate
     // implementation could be to have the layout implementation stored in a lambda on the
     // LayoutContext
-    View &view_;
+    LayoutLambda layout_;
+
     // TODO: Can we combine frame_ and cachedSize_?
     // TODO: I'm still on the fence: should frame_ belong to the view or the LayoutContext?
     Rect frame_;
@@ -56,6 +73,25 @@ protected:
     bool needsSizing_{true};
     Size cachedSize_;
     Size cachedLayoutSize_;
+
+    std::map<const LayoutLambda *, std::unique_ptr<SublayoutContext>> sublayouts_;
+};
+
+class SublayoutContext : public LayoutContext {
+public:
+    SublayoutContext(const LayoutLambda &layout) : LayoutContext(layout) {}
+
+    // Overridden to keep track of all the views that are positioned
+    auto setViewSizeInRect(View &view, const Size &size, const Rect &inRect,
+                           int options = LayoutOptionsNone) -> Rect override {
+        sublayoutViews_.insert(&view);
+        return LayoutContext::setViewSizeInRect(view, size, inRect, options);
+    }
+
+    void adjustViewFramesForOffset(const Point &offset);
+
+protected:
+    std::unordered_set<View *> sublayoutViews_;
 };
 
 class View {

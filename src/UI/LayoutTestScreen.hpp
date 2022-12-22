@@ -117,12 +117,12 @@ public:
     ExampleView(DisplaySystem &display)
         : EinkView(display), iconView_(display, lightbulbBits, Lightbulb_width, Lightbulb_height),
           topView_(display, "First row of text"), bottomView_(display, "Second row"),
-          tripleBoxView_(display,
-                         {std::make_shared<BoxView>(display),
-                          std::make_shared<HBox>(display,
-                                                 (std::vector<std::shared_ptr<EinkView>>){
-                                                     std::make_shared<BoxView>(display),
-                                                     std::make_shared<BoxView>(display)})}),
+          nestedTextView_(std::make_shared<TextView>(display, "HI")),
+          tripleBoxView_(display, {std::make_shared<BoxView>(display),
+                                   std::make_shared<HBox>(
+                                       display,
+                                       (std::vector<std::shared_ptr<EinkView>>){
+                                           std::make_shared<BoxView>(display), nestedTextView_})}),
           bottomBoxView_(display,
                          {std::make_shared<BoxView>(display), std::make_shared<BoxView>(display),
                           std::make_shared<TextView>(display, "HIII")}),
@@ -130,7 +130,10 @@ public:
                                          std::make_shared<TextView>(display, "me,"),
                                          std::make_shared<TextView>(display, "hi"),
                                          std::make_shared<TextView>(display, "i'm"),
-                                         std::make_shared<TextView>(display, "the")}) {}
+                                         std::make_shared<TextView>(display, "the")}),
+          box1_(display), box2_(display) {
+        log_d("Boxes %p %p", &box1_, &box2_);
+    }
 
     auto layout(Size size) -> Size override {
         log_d("ExampleView layout size %d %d", size.width, size.height);
@@ -167,6 +170,27 @@ public:
         auto tripleBoxRect = layoutContext_.setViewFrame(tripleBoxView_, {{x, y}, {textWidth, 10}});
 
         y += tripleBoxRect.size.height + 2;
+        // Create a sublayout with horizontal elements
+        auto sublayoutRect = layoutContext_.setSublayoutFrame(
+            {{x, y}, {textWidth, 10}}, LayoutOptionsSizeToFit,
+            [this](LayoutContext &context, Size size) {
+                log_d("Sublayout lambda size = %d %d", size.width, size.height);
+                int x = 0;
+                int y = 0;
+
+                auto box1Rect = context.setViewFrame(box1_, {{x, y}, {10, 10}});
+                y += box1Rect.size.height + 2;
+
+                auto box2Rect = context.setViewSizeInRect(
+                    box2_, {10, 10}, {{x, y}, {size.width - x, 10}}, LayoutOptionsAlignRight);
+                y += box2Rect.size.height;
+
+                log_d("Sublayout lambda out size = %d %d", size.width, y);
+
+                return Size{size.width, y};
+            });
+
+        y += sublayoutRect.size.height + 2;
         auto bottomBoxRect = layoutContext_.setViewFrame(bottomBoxView_, {{x, y}, {textWidth, 15}});
 
         y += bottomBoxRect.size.height + 2;
@@ -188,15 +212,23 @@ public:
         tripleBoxView_.drawInParent(*this);
         bottomBoxView_.drawInParent(*this);
         evenSpacedWordsView_.drawInParent(*this);
+        box1_.drawInParent(*this);
+        box2_.drawInParent(*this);
     }
 
 protected:
     IconView iconView_;
     TextView topView_;
     TextView bottomView_;
+    std::shared_ptr<TextView> nestedTextView_;
     HBox tripleBoxView_;
     HBox bottomBoxView_;
     HBox evenSpacedWordsView_;
+
+    BoxView box1_;
+    BoxView box2_;
+    // BoxView box3_;
+    // TextView text1_;
 };
 
 // TODO: How to combine Screen and View? Is it:
