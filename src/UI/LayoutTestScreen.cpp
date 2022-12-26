@@ -5,7 +5,9 @@ void LayoutTestScreen::render(DisplaySystem &display) {
         return;
     }
 
-    view.drawInRect({{0, 0}, {display.width(), display.height()}});
+    view.setFrame({{0, 0}, {display.width(), display.height()}});
+    view.layoutIfNeeded();
+    view.draw();
 
     display.updateDisplay(firstLoad ? DisplaySystem::UpdateType::FULL
                                     : DisplaySystem::UpdateType::FAST);

@@ -102,7 +102,8 @@
         "stream_buffer.h": "c",
         "event_groups.h": "c",
         "console.h": "c",
-        "queue": "cpp"
+        "queue": "cpp",
+        "coroutine": "cpp"
     },
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "xaver.clang-format",

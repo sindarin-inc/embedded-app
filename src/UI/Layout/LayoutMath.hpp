@@ -8,10 +8,11 @@ auto PointToCenterY(const Size &size, const Size &inSize) -> Point;
 
 auto AlignSizeInRect(const Size &size, const Rect &rect, int options) -> Rect;
 
-class View;
+class LayoutContext;
 
-auto SizeThatFitsForView(const View &view, Size size, int options) -> Size;
+auto SizeThatFitsForLayout(const LayoutContext &layoutContext, Size size, int options) -> Size;
 
-auto FrameForView(const View &view, Size size, Rect inFrame, int options) -> Rect;
+auto FrameForLayout(const LayoutContext &layoutContext, Size size, Rect inFrame, int options)
+    -> Rect;
 
 auto OffsetFrame(const Rect &frame, const Point &offset) -> Rect;

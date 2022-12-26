@@ -32,12 +32,14 @@ auto AlignSizeInRect(const Size &size, const Rect &rect, int options) -> Rect {
     return {{p.x, p.y}, {size.width, size.height}};
 }
 
-auto SizeThatFitsForView(const View &view, Size size, int options) -> Size {
+auto SizeThatFitsForLayout(const LayoutContext &layoutContext, Size size, int options) -> Size {
     Size originalSize = size;
     bool sizeToFit = ((options & LayoutOptionsSizeToFitHorizontal) != 0) ||
                      ((options & LayoutOptionsSizeToFitVertical) != 0);
     if (sizeToFit) {
-        Size sizeThatFits = view.sizeThatFits(size);
+        // Dangerous cast to non-const LayoutContext because we are guaranteeing that when
+        // sizing==true we are not going to modify anything
+        Size sizeThatFits = const_cast<LayoutContext &>(layoutContext).layoutIfNeeded(size, true);
 
         // If size that fits returns a larger width, then we'll need to constrain it.
         if (((options & LayoutOptionsConstrainWidth) != 0) && sizeThatFits.width > size.width) {
@@ -90,8 +92,9 @@ auto SizeThatFitsForView(const View &view, Size size, int options) -> Size {
     return size;
 }
 
-auto FrameForView(const View &view, Size size, Rect inRect, int options) -> Rect {
-    size = SizeThatFitsForView(view, size, options);
+auto FrameForLayout(const LayoutContext &layoutContext, Size size, Rect inRect, int options)
+    -> Rect {
+    size = SizeThatFitsForLayout(layoutContext, size, options);
     if (inRect.size.width == 0) {
         inRect.size.width = size.width;
     }
