@@ -2,6 +2,7 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <unordered_set>
 #include <utility>
 
@@ -18,6 +19,7 @@ typedef std::function<Size(LayoutContext &, Size)> LayoutLambda;
 // The Layout object:
 // * Encapsulates the complexity of figuring out when a layout is needed
 // * Caches the size of a layout and determines when cache should be invalidated
+// * Holds onto any sublayouts defined in the layout lambda
 // * Provides helper methods for laying out sublayouts and views
 class LayoutContext {
 public:
