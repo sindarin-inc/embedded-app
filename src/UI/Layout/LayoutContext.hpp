@@ -1,7 +1,9 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <unordered_set>
+#include <utility>
 
 #include "LayoutMath.hpp"
 #include "Types.hpp"
@@ -19,7 +21,7 @@ typedef std::function<Size(LayoutContext &, Size)> LayoutLambda;
 // * Provides helper methods for laying out sublayouts and views
 class LayoutContext {
 public:
-    LayoutContext(const LayoutLambda &layout) : layout_(std::move(layout)), frame_(Rect::zero()) {}
+    LayoutContext(LayoutLambda layout) : layout_(std::move(layout)), frame_(Rect::zero()) {}
     // Convenience method that creates the layout lambda automatically from the view's layout method
     LayoutContext(View &view);
 
@@ -75,7 +77,6 @@ public:
     // This runs the layout if necessary, or returns the cached size if layout is not
     // necessary
     auto layoutIfNeeded(const Size &size, bool sizing) -> Size;
-    bool sizing_;
 
 protected:
     auto setLayoutSizeInRect(LayoutContext &layoutContext, const Size &size, const Rect &inRect,
@@ -90,6 +91,7 @@ protected:
 
     Rect frame_;
 
+    bool sizing_;
     bool needsLayout_{true};
     bool needsSizing_{true};
     // TODO: Test that caching is working

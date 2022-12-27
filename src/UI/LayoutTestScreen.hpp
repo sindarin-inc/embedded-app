@@ -19,6 +19,7 @@ class TextView : public EinkView {
 public:
     TextView(DisplaySystem &display, std::string text)
         : EinkView(display), text_(std::move(text)) {}
+    ~TextView() override = default;
 
     auto layout(LayoutContext &context, Size size) -> Size override {
         uint16_t w, h;
@@ -42,6 +43,7 @@ class IconView : public EinkView {
 public:
     IconView(DisplaySystem &display, unsigned char *iconBits, int width, int height)
         : EinkView(display), iconBits_(iconBits), width_(width), height_(height) {}
+    ~IconView() override = default;
 
     auto layout(LayoutContext &context, Size size) -> Size override { return {width_, height_}; }
 
@@ -60,7 +62,7 @@ protected:
 class BoxView : public EinkView {
 public:
     BoxView(DisplaySystem &display) : EinkView(display) {}
-    ~BoxView() { log_d("BoxView destroyed"); };
+    ~BoxView() override = default;
 
     auto layout(LayoutContext &context, Size size) -> Size override { return size; }
 
@@ -77,7 +79,7 @@ public:
 class CrazyBoxView : public EinkView {
 public:
     CrazyBoxView(DisplaySystem &display) : EinkView(display) {}
-    ~CrazyBoxView() { log_d("BoxView destroyed"); };
+    ~CrazyBoxView() override = default;
 
     auto layout(LayoutContext &context, Size size) -> Size override { return {300, 300}; }
 
@@ -96,7 +98,8 @@ public:
 class HBox : public EinkView {
 public:
     HBox(DisplaySystem &display, std::vector<std::shared_ptr<EinkView>> views, int spacing = 2)
-        : EinkView(display), views_(views), spacing_(spacing) {}
+        : EinkView(display), views_(std::move(views)), spacing_(spacing) {}
+    ~HBox() override = default;
 
     auto layout(LayoutContext &context, Size size) -> Size override {
         log_d("HBox layout size %d %d", size.width, size.height);
@@ -154,6 +157,7 @@ public:
           box1_(display), box2_(display), text1_(display, "Left"), crazyBoxView_(display) {
         log_d("Boxes %p %p", &box1_, &box2_);
     }
+    ~ExampleView() override = default;
 
     auto layout(LayoutContext &context, Size size) -> Size override {
         log_d("ExampleView layout size %d %d", size.width, size.height);
@@ -198,8 +202,6 @@ public:
                 y += tripleBoxRect.size.height + 2;
 
                 // Create a sublayout with some horizontal elements
-                log_d("_layoutContext.sizing_ = %d, context.sizing_ = %d", context.sizing_,
-                      context.sizing_);
                 auto sublayoutRect = context.setSublayoutFrame(
                     {{x, y}, {textWidth, 10}}, LayoutOptionsSizeToFit,
                     [this](LayoutContext &context, Size size) -> Size {

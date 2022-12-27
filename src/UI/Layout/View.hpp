@@ -9,6 +9,7 @@ class View {
 public:
     // Constructor
     View() : layoutContext_(*this) {}
+    virtual ~View() = default;
 
     // Getter and setter for the frame
     void setFrame(const Rect &frame) { layoutContext_.setFrame(frame); }

@@ -27,11 +27,11 @@ struct Rect {
     Size size;
     static auto zero() -> Rect { return {{0, 0}, {0, 0}}; }
 
-    auto inset(int amount) const -> Rect {
+    [[nodiscard]] auto inset(int amount) const -> Rect {
         return {{origin.x + amount, origin.y + amount},
                 {size.width - amount * 2, size.height - amount * 2}};
     }
-    auto offset(const Point &offset) const -> Rect {
+    [[nodiscard]] auto offset(const Point &offset) const -> Rect {
         return {{origin.x + offset.x, origin.y + offset.y}, size};
     }
     auto operator==(const Rect &other) const -> bool {
