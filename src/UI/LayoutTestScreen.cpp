@@ -6,7 +6,6 @@ void LayoutTestScreen::render(DisplaySystem &display) {
     }
 
     view.setFrame({{0, 0}, {display.width(), display.height()}});
-    view.layoutIfNeeded();
     view.draw();
 
     display.updateDisplay(firstLoad ? DisplaySystem::UpdateType::FULL
@@ -17,6 +16,11 @@ void LayoutTestScreen::render(DisplaySystem &display) {
 
 void LayoutTestScreen::processCommand(RemoteCommand command) {
     switch (command) {
+    case RemoteCommand::CHANNEL_MINUS:
+        if (backCallback != nullptr) {
+            backCallback();
+        }
+        break;
     case RemoteCommand::CHANNEL_PLUS:
         if (backCallback != nullptr) {
             backCallback();

@@ -4,13 +4,16 @@ struct Point {
     int x;
     int y;
     static auto zero() -> Point { return {0, 0}; }
+
+    auto operator==(const Point &other) const -> bool { return x == other.x && y == other.y; }
+    auto operator!=(const Point &other) const -> bool { return x != other.x || y != other.y; }
 };
 
 struct Size {
     int width;
     int height;
     static auto zero() -> Size { return {0, 0}; }
-    // Overload == operator
+
     auto operator==(const Size &other) const -> bool {
         return width == other.width && height == other.height;
     }
@@ -23,12 +26,27 @@ struct Rect {
     Point origin;
     Size size;
     static auto zero() -> Rect { return {{0, 0}, {0, 0}}; }
+
+    auto inset(int amount) const -> Rect {
+        return {{origin.x + amount, origin.y + amount},
+                {size.width - amount * 2, size.height - amount * 2}};
+    }
+    auto offset(const Point &offset) const -> Rect {
+        return {{origin.x + offset.x, origin.y + offset.y}, size};
+    }
+    auto operator==(const Rect &other) const -> bool {
+        return origin == other.origin && size == other.size;
+    }
+    auto operator!=(const Rect &other) const -> bool {
+        return origin != other.origin || size != other.size;
+    }
 };
 
 enum LayoutOptions {
     LayoutOptionsNone = 0,
 
-    // SIZING
+    // `SizeToFit` options: Allow view to size to its desired size based on its content
+
     //! Size the view to fit vertically
     LayoutOptionsSizeToFitVertical = 1 << 0,
     //! Size the view to fit horizontally
@@ -36,52 +54,50 @@ enum LayoutOptions {
     //! Size the view to fit both horizontally and vertically
     LayoutOptionsSizeToFit = LayoutOptionsSizeToFitVertical | LayoutOptionsSizeToFitHorizontal,
 
-    /*!
-     Constrain width to the passed in frame.
-     */
+    // `Constrain` options: Constrain view's desired size to the passed-in size
+
+    // Constrain sizeThatFit's width to the passed in frame
     LayoutOptionsConstrainWidth = 1 << 2,
-    //! Constrain sizeThatFit's height to the passed in frame
+    // Constrain sizeThatFit's height to the passed in frame
     LayoutOptionsConstrainHeight = 1 << 3,
-    //! Constrain sizeThatFit's height and width
+    // Constrain sizeThatFit's height and width
     LayoutOptionsConstrainSize = LayoutOptionsConstrainWidth | LayoutOptionsConstrainHeight,
-
-    /*!
-     Constrain sizeThatFits to the size specified but maintain the original aspect ratio.
-
-     This is useful for an image view that may need to be constrained to a max size, but still
-     maintain its aspect ratio.
-     */
+    // Constrain sizeThatFits to the size specified but maintain the original aspect ratio.
     LayoutOptionsConstrainSizeMaintainAspectRatio = 1 << 4,
 
-    //! Whether the height specified is the default. Using this option will use the specified
-    //! height when sizeThatFits: returns a 0 height.
-    LayoutOptionsDefaultHeight = 1 << 5,
-    //! Whether the width specified is the default. Using this option will use the specified
-    //! width when sizeThatFits: returns a 0 width.
-    LayoutOptionsDefaultWidth = 1 << 6,
-    /*!
-     Whether the size specified is the default. Using this option will use the specified width
-     and/or height when sizeThatFits: returns a 0 width and/or height, respectively.
+    // `Default` options: provide default values for the size if the view returns a 0 size
 
-     This is useful for an image view that has to load its data and may initially return 0 for
-     sizeThatFits.
-     */
+    // Whether the height specified is the default. Using this option will use the specified
+    // height when the layout method returns a 0 height.
+    LayoutOptionsDefaultHeight = 1 << 5,
+    // Whether the width specified is the default. Using this option will use the specified
+    // width when the layout method returns a 0 width.
+    LayoutOptionsDefaultWidth = 1 << 6,
+    // Whether the size specified is the default. Using this option will use the specified width
+    // and/or height when sizeThatFits: returns a 0 width and/or height, respectively.
+    // This is useful for views that load their content asynchronously and may initially not know
+    // their size.
     LayoutOptionsDefaultSize = LayoutOptionsDefaultHeight | LayoutOptionsDefaultWidth,
 
-    // ALIGNMENT
-    //! After sizing, center vertically in the passed in rect
+    // `Align` options: Align the view within the passed-in rect
+
+    // Center size vertically in the passed in rect
     LayoutOptionsAlignCenterVertical = 1 << 10,
-    //! After sizing, center horizontally in the passed in rect
+    // Center size horizontally in the passed in rect
     LayoutOptionsAlignCenterHorizontal = 1 << 11,
-    //! After sizing, center vertically and horizontally in the passed in rect
+    // Center size vertically and horizontally in the passed in rect
     LayoutOptionsAlignCenter =
         LayoutOptionsAlignCenterVertical | LayoutOptionsAlignCenterHorizontal,
-    //! After sizing, aligns the view with the right of the passed in rect
+    // Align size with the right of the passed in rect
     LayoutOptionsAlignRight = 1 << 12,
-    //! After sizing, aligns the view with the bottom of the passed in rect
+    // Align size with the bottom of the passed in rect
     LayoutOptionsAlignBottom = 1 << 13,
-    // These are the default behavior of the coordinate system so don't need to be flags, but
-    // putting them here for completeness
+    // Align size with the left of the passed in rect
+    // NOTE: This option is the default behavior of the coordinate system so don't need to be set,
+    // but is included for completeness
     LayoutOptionsAlignLeft = 0,
+    // Align size with the top of the passed in rect
+    // NOTE: This option is the default behavior of the coordinate system so don't need to be set,
+    // but is included for completeness
     LayoutOptionsAlignTop = 0,
 };

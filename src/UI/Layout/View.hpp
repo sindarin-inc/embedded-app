@@ -11,7 +11,6 @@ public:
     View() : layoutContext_(*this) {}
 
     // Getter and setter for the frame
-    // [[nodiscard]] auto globalFrame() const -> Rect { return layoutContext_.globalFrame(); }
     void setFrame(const Rect &frame) { layoutContext_.setFrame(frame); }
 
     // Virtual method for drawing the contents of the view inside a provided rect. Typically not
@@ -24,14 +23,11 @@ public:
     void setNeedsLayout() { layoutContext_.setNeedsLayout(); }
 
     // Should be called sometime before drawing
-    void layoutIfNeeded() {
-        layoutContext_.layoutIfNeeded(layoutContext_.globalFrame().size, false);
-    }
+    void layoutIfNeeded() { layoutContext_.layoutIfNeeded(layoutContext_.frame().size, false); }
 
 private:
     // View subclasses should implement this method to layout any elements and return their
     // desired size. This will be called by LayoutContext and should not be called directly.
-    // TODO: Is there some friend class magic we can do here?
     virtual auto layout(LayoutContext &context, Size size) -> Size = 0;
 
     LayoutContext layoutContext_;

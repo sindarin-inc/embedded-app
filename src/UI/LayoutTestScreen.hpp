@@ -73,6 +73,26 @@ public:
     }
 };
 
+// A box view that wants to be wayy bigger than it should be
+class CrazyBoxView : public EinkView {
+public:
+    CrazyBoxView(DisplaySystem &display) : EinkView(display) {}
+    ~CrazyBoxView() { log_d("BoxView destroyed"); };
+
+    auto layout(LayoutContext &context, Size size) -> Size override { return {300, 300}; }
+
+    void drawInRect(Rect rect) override {
+        log_d("Draw CrazyBoxView in rect %d %d %d %d", rect.origin.x, rect.origin.y,
+              rect.size.width, rect.size.height);
+        layoutIfNeeded();
+        display_.drawRect(rect.origin.x, rect.origin.y, rect.size.width, rect.size.height,
+                          display_.fg);
+        auto insetRect = rect.inset(2);
+        display_.drawRect(insetRect.origin.x, insetRect.origin.y, insetRect.size.width,
+                          insetRect.size.height, display_.fg);
+    }
+};
+
 class HBox : public EinkView {
 public:
     HBox(DisplaySystem &display, std::vector<std::shared_ptr<EinkView>> views, int spacing = 2)
@@ -131,7 +151,7 @@ public:
                                          std::make_shared<TextView>(display, "hi"),
                                          std::make_shared<TextView>(display, "i'm"),
                                          std::make_shared<TextView>(display, "the")}),
-          box1_(display), box2_(display), text1_(display, "Left") {
+          box1_(display), box2_(display), text1_(display, "Left"), crazyBoxView_(display) {
         log_d("Boxes %p %p", &box1_, &box2_);
     }
 
@@ -212,7 +232,12 @@ public:
                 y += bottomBoxRect.size.height + 2;
                 auto evenSpacedWordsRect =
                     context.setViewFrame(evenSpacedWordsView_, {{x, y}, {textWidth, 15}});
-                y += evenSpacedWordsRect.size.height;
+                y += evenSpacedWordsRect.size.height + 2;
+
+                auto crazyBoxRect = context.setViewSizeInRect(
+                    crazyBoxView_, {size.width - 40, 15}, {{x, y}, {size.width, 15}},
+                    LayoutOptionsSizeToFit | LayoutOptionsConstrainSize | LayoutOptionsAlignRight);
+                y += crazyBoxRect.size.height;
 
                 return {size.width, y};
             });
@@ -224,10 +249,7 @@ public:
         log_d("Draw ExampleView in rect %d %d %d %d", rect.origin.x, rect.origin.y, rect.size.width,
               rect.size.height);
         layoutIfNeeded();
-        //  TODO: We probably need a way to pass through the global coordinate system
-        //  so that more deeply nested views get drawn in the right place
         iconView_.draw();
-        // This doesn't work for nesting with sublayouts
         topView_.draw();
         bottomView_.draw();
         tripleBoxView_.draw();
@@ -236,6 +258,7 @@ public:
         box1_.draw();
         box2_.draw();
         text1_.draw();
+        crazyBoxView_.draw();
     }
 
 protected:
@@ -251,6 +274,7 @@ protected:
     BoxView box2_;
     // BoxView box3_;
     TextView text1_;
+    CrazyBoxView crazyBoxView_;
 };
 
 // TODO: How to combine Screen and View? Is it:

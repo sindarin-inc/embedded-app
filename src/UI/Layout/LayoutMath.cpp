@@ -1,24 +1,16 @@
 #include "LayoutMath.hpp"
 
-#include "View.hpp"
-
-auto PointToCenterX(const Size &size, const Size &inSize) -> Point {
-    return {(inSize.width - size.width) / 2, 0};
-}
-
-auto PointToCenterY(const Size &size, const Size &inSize) -> Point {
-    return {0, (inSize.height - size.height) / 2};
-}
+#include "LayoutContext.hpp"
 
 auto AlignSizeInRect(const Size &size, const Rect &rect, int options) -> Rect {
     Point p = rect.origin;
 
     if ((options & LayoutOptionsAlignCenterHorizontal) != 0) {
-        p.x += PointToCenterX(size, rect.size).x;
+        p.x += (rect.size.width - size.width) / 2;
     }
 
     if ((options & LayoutOptionsAlignCenterVertical) != 0) {
-        p.y += PointToCenterY(size, rect.size).y;
+        p.y += (rect.size.height - size.height) / 2;
     }
 
     if ((options & LayoutOptionsAlignRight) != 0) {
@@ -102,8 +94,4 @@ auto FrameForLayout(const LayoutContext &layoutContext, Size size, Rect inRect, 
         inRect.size.height = size.height;
     }
     return AlignSizeInRect(size, inRect, options);
-}
-
-auto OffsetFrame(const Rect &frame, const Point &offset) -> Rect {
-    return {{frame.origin.x + offset.x, frame.origin.y + offset.y}, frame.size};
 }

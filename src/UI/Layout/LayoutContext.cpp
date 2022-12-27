@@ -20,11 +20,14 @@ auto LayoutContext::setLayoutSizeInRect(LayoutContext &layoutContext, const Size
     auto frame = FrameForLayout(layoutContext, size, inRect, options);
     log_d("Calculated frame for layoutContext %p: %d %d %d %d", &layoutContext, frame.origin.x,
           frame.origin.y, frame.size.width, frame.size.height);
-    // if (!sizing_) {
-    log_d("Setting for layout %p: %d %d %d %d", &layoutContext, frame.origin.x, frame.origin.y,
-          frame.size.width, frame.size.height);
-    layoutContext.setFrame(frame);
-    // }
+    if (!sizing_) {
+        log_d("Setting for layout %p: %d %d %d %d", &layoutContext, frame.origin.x, frame.origin.y,
+              frame.size.width, frame.size.height);
+        layoutContext.setFrame(frame);
+        // TODO: I'm not 100% convinced this should be necessary, but experimentally it is. More
+        // tracing is needed
+        layoutContext.layoutIfNeeded(frame.size, false);
+    }
     return frame;
 }
 
@@ -59,8 +62,8 @@ auto LayoutContext::setSublayoutSizeInRect(const Size &size, const Rect &inRect,
 
     // TODO: How do you invalidate sublayout layouts since there's not the normal view-subview
     // relationship?
-
-    sublayoutContext->sizing_ = sizing_;
+    // sublayoutContext->sizing_ = sizing_;
+    // sublayoutContext->needsLayout_ = needsLayout_;
 
     Rect frame = setLayoutSizeInRect(*sublayoutContext, size, inRect, options);
 
@@ -94,16 +97,3 @@ auto LayoutContext::layoutIfNeeded(const Size &size, bool sizing) -> Size {
     sizing_ = false;
     return layoutSize;
 }
-
-// Big open questions:
-// * In our use case, does sizing separately from laying out have value?
-
-// * At what point do we store the frame in the local coordinate space? What point do we do the
-// global?
-//    I think this could be at draw time (what i had previously), at frame calculation time (what I
-//    sorta tried to do for sublayouts but needed everywhere), or at frame reading time (what i'm
-//    doing now)
-
-// * How do you invalidate sublayout layouts since there's not the normal view-subview relationship?
-
-// * Is caching working? Is it even worth it?

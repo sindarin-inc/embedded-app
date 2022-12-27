@@ -23,22 +23,26 @@ public:
     // Convenience method that creates the layout lambda automatically from the view's layout method
     LayoutContext(View &view);
 
-    // Getter for the frame in the global coordinate space
+    // Getter for the frame in the global coordinate space. This is determined by walking back
+    // through each parent and getting the origin of each layout all the way back to the root (which
+    // has no parent)
     [[nodiscard]] auto globalFrame() const -> Rect {
         Point offset = {0, 0};
         if (parentLayout_.has_value()) {
             offset = parentLayout_.value()->globalFrame().origin;
         }
-        return OffsetFrame(frame_, offset);
+        return frame_.offset(offset);
     }
+
+    // Getter for the frame in the local coordinate space. This is the frame that was set in the
+    // parent layout's coordinate system
+    [[nodiscard]] auto frame() const -> Rect { return frame_; }
 
     // Sets the frame in local coordinate space
     void setFrame(const Rect &frame) {
         // If we're changing the size, we'll need to trigger a re-layout
-        // TODO: Do we need this?
-        // TODO: Force a relayout on subviews too? Does that need to happen via the layout block?
         if (frame_.size != frame.size) {
-            setNeedsLayout();
+            needsLayout_ = true;
         }
         frame_ = frame;
     }
@@ -84,12 +88,11 @@ protected:
     // LayoutContext
     LayoutLambda layout_;
 
-    // TODO: Can we combine frame_ and cachedSize_?
-    // TODO: I'm still on the fence: should frame_ belong to the view or the LayoutContext?
     Rect frame_;
 
     bool needsLayout_{true};
     bool needsSizing_{true};
+    // TODO: Test that caching is working
     Size cachedSize_;
     Size cachedLayoutSize_;
 
