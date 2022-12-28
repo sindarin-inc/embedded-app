@@ -43,10 +43,6 @@ public:
     // accordingly
     void checkAmbientLight(int fadeMs = 1000, int timeoutMs = 500);
 
-    void disableLightSensor() { lightSensor_.disable(); }
-
-    void enableLightSensor() { lightSensor_.enable(); }
-
 protected:
     Ltr329Als lightSensor_;
     // Adjusting the number of samples here will change the responsiveness of the ambient light

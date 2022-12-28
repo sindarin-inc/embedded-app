@@ -100,14 +100,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         mainMenu->addMenuItem(
             MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
                 auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
-                lightingController.disableLightSensor();
+                lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
                 this->setCurrentScreen(*contentSyncScreen);
-                contentSyncScreen->backCallback = [this, contentSyncScreen, mainMenu, display,
-                                                   &lightingController]() {
+                contentSyncScreen->backCallback = [this, contentSyncScreen, mainMenu, display]() {
                     mainMenu->setFirstLoad();
                     setCurrentScreen(*mainMenu);
                     mainMenu->render(*display);
-                    lightingController.enableLightSensor();
                     delete contentSyncScreen;
                 };
                 contentSyncScreen->begin();
@@ -169,9 +167,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     };
 
     settingsMenu->addMenuItem(
-        MenuItem("Sync Content", [this, display, &localStore, settingsMenu]() {
+        MenuItem("Sync Content", [this, display, &localStore, settingsMenu, &lightingController]() {
             auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
             this->setCurrentScreen(*contentSyncScreen);
+            lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
             contentSyncScreen->backCallback = [this, contentSyncScreen, settingsMenu, display]() {
                 settingsMenu->setFirstLoad();
                 setCurrentScreen(*settingsMenu);
