@@ -1,81 +1,15 @@
 #include <memory>
 #include <vector>
 
-#include "Displays/DisplaySystem.hpp"
 #include "UI/Bitmaps/Lightbulb.hpp"
+#include "UI/Components/BoxView.hpp"
+#include "UI/Components/IconView.hpp"
+#include "UI/Components/SingleLineTextView.hpp"
+#include "UI/Components/StackView.hpp"
 #include "UI/Layout/View.hpp"
 #include "UI/Screen.hpp"
 
-class EinkView : public View {
-public:
-    EinkView(DisplaySystem &display) : View(), display_(display) {}
-
-protected:
-    DisplaySystem &display_;
-};
-
-// A view that draws a line of text
-class TextView : public EinkView {
-public:
-    TextView(DisplaySystem &display, std::string text)
-        : EinkView(display), text_(std::move(text)) {}
-    ~TextView() override = default;
-
-    auto layout(LayoutContext &context, Size size) -> Size override {
-        uint16_t w, h;
-        display_.getTextBounds(text_.c_str(), &w, &h);
-        return {w, display_.getFont()->yAdvance};
-    }
-
-    void drawInRect(Rect rect) override {
-        log_d("Draw TextView in rect %d %d %d %d", rect.origin.x, rect.origin.y, rect.size.width,
-              rect.size.height);
-        layoutIfNeeded();
-        display_.drawSingleLineOfText(text_, rect.origin.x, rect.origin.y);
-    }
-
-protected:
-    std::string text_;
-};
-
-// A view that draws an icon
-class IconView : public EinkView {
-public:
-    IconView(DisplaySystem &display, unsigned char *iconBits, int width, int height)
-        : EinkView(display), iconBits_(iconBits), width_(width), height_(height) {}
-    ~IconView() override = default;
-
-    auto layout(LayoutContext &context, Size size) -> Size override { return {width_, height_}; }
-
-    void drawInRect(Rect rect) override {
-        layoutIfNeeded();
-        display_.drawXBitmap(rect.origin.x, rect.origin.y, iconBits_, width_, height_, display_.fg);
-    }
-
-protected:
-    unsigned char *iconBits_;
-    int width_;
-    int height_;
-};
-
-// Absurdly simple view that just draws a box
-class BoxView : public EinkView {
-public:
-    BoxView(DisplaySystem &display) : EinkView(display) {}
-    ~BoxView() override = default;
-
-    auto layout(LayoutContext &context, Size size) -> Size override { return size; }
-
-    void drawInRect(Rect rect) override {
-        log_d("Draw BoxView in rect %d %d %d %d", rect.origin.x, rect.origin.y, rect.size.width,
-              rect.size.height);
-        layoutIfNeeded();
-        display_.drawRect(rect.origin.x, rect.origin.y, rect.size.width, rect.size.height,
-                          display_.fg);
-    }
-};
-
-// A box view that wants to be wayy bigger than it should be
+// A box view that wants to be wayy bigger than it should be just to test constraining contnet size
 class CrazyBoxView : public EinkView {
 public:
     CrazyBoxView(DisplaySystem &display) : EinkView(display) {}
@@ -84,9 +18,6 @@ public:
     auto layout(LayoutContext &context, Size size) -> Size override { return {300, 300}; }
 
     void drawInRect(Rect rect) override {
-        log_d("Draw CrazyBoxView in rect %d %d %d %d", rect.origin.x, rect.origin.y,
-              rect.size.width, rect.size.height);
-        layoutIfNeeded();
         display_.drawRect(rect.origin.x, rect.origin.y, rect.size.width, rect.size.height,
                           display_.fg);
         auto insetRect = rect.inset(2);
@@ -95,72 +26,30 @@ public:
     }
 };
 
-class HBox : public EinkView {
-public:
-    HBox(DisplaySystem &display, std::vector<std::shared_ptr<EinkView>> views, int spacing = 2)
-        : EinkView(display), views_(std::move(views)), spacing_(spacing) {}
-    ~HBox() override = default;
-
-    auto layout(LayoutContext &context, Size size) -> Size override {
-        log_d("HBox layout size %d %d", size.width, size.height);
-
-        // Assume equal sizes for now
-        int viewCount = views_.size();
-        int boxWidth = (size.width - (viewCount - 1) * spacing_) / viewCount;
-        int x = 0;
-        int y = 0;
-
-        for (auto &view : views_) {
-            log_d("HBox setting view frame %d %d %d %d", x, y, boxWidth, size.height);
-            context.setViewFrame(*view, {{x, y}, {boxWidth, size.height}},
-                                 LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
-            x += boxWidth + spacing_;
-        }
-
-        return size;
-    }
-
-    void drawInRect(Rect rect) override {
-        log_d("Draw HBox in rect %d %d %d %d", rect.origin.x, rect.origin.y, rect.size.width,
-              rect.size.height);
-        layoutIfNeeded();
-        for (auto &view : views_) {
-            (*view).draw();
-        }
-    }
-
-protected:
-    std::vector<std::shared_ptr<EinkView>> views_;
-    int spacing_;
-};
-
 // Example of a more complex view that combines other views in a layout
 class ExampleView : public EinkView {
 public:
     ExampleView(DisplaySystem &display)
         : EinkView(display), iconView_(display, lightbulbBits, Lightbulb_width, Lightbulb_height),
           topView_(display, "First row of text"), bottomView_(display, "Second row"),
-          nestedTextView_(std::make_shared<TextView>(display, "HI")),
+          nestedTextView_(std::make_shared<SingleLineTextView>(display, "HI")),
           tripleBoxView_(display, {std::make_shared<BoxView>(display),
-                                   std::make_shared<HBox>(
+                                   std::make_shared<StackView>(
                                        display,
                                        (std::vector<std::shared_ptr<EinkView>>){
                                            std::make_shared<BoxView>(display), nestedTextView_})}),
           bottomBoxView_(display,
                          {std::make_shared<BoxView>(display), std::make_shared<BoxView>(display),
-                          std::make_shared<TextView>(display, "HIII")}),
-          evenSpacedWordsView_(display, {std::make_shared<TextView>(display, "its"),
-                                         std::make_shared<TextView>(display, "me,"),
-                                         std::make_shared<TextView>(display, "hi"),
-                                         std::make_shared<TextView>(display, "i'm"),
-                                         std::make_shared<TextView>(display, "the")}),
-          box1_(display), box2_(display), text1_(display, "Left"), crazyBoxView_(display) {
-        log_d("Boxes %p %p", &box1_, &box2_);
-    }
+                          std::make_shared<SingleLineTextView>(display, "HIII")}),
+          evenSpacedWordsView_(display, {std::make_shared<SingleLineTextView>(display, "its"),
+                                         std::make_shared<SingleLineTextView>(display, "me,"),
+                                         std::make_shared<SingleLineTextView>(display, "hi"),
+                                         std::make_shared<SingleLineTextView>(display, "i'm"),
+                                         std::make_shared<SingleLineTextView>(display, "the")}),
+          box1_(display), box2_(display), text1_(display, "Left"), crazyBoxView_(display) {}
     ~ExampleView() override = default;
 
     auto layout(LayoutContext &context, Size size) -> Size override {
-        log_d("ExampleView layout size %d %d", size.width, size.height);
         // inset all around by 2px
         int x = 2;
         int y = 2;
@@ -179,7 +68,6 @@ public:
             {{x, 0}, {size.width - x, size.height}},
             LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
             [this](LayoutContext &context, Size size) -> Size {
-                log_d("Outer sublayout lambda size = %d %d", size.width, size.height);
                 int x = 0;
                 int y = 0;
 
@@ -205,7 +93,6 @@ public:
                 auto sublayoutRect = context.setSublayoutFrame(
                     {{x, y}, {textWidth, 10}}, LayoutOptionsSizeToFit,
                     [this](LayoutContext &context, Size size) -> Size {
-                        log_d("Inner sublayout lambda size = %d %d", size.width, size.height);
                         int x = 0;
                         int y = 0;
 
@@ -222,8 +109,6 @@ public:
                                                                   LayoutOptionsAlignRight);
                         y += box2Rect.size.height;
 
-                        log_d("Sublayout lambda out size = %d %d", size.width, y);
-
                         return Size{size.width, y};
                     });
 
@@ -236,9 +121,9 @@ public:
                     context.setViewFrame(evenSpacedWordsView_, {{x, y}, {textWidth, 15}});
                 y += evenSpacedWordsRect.size.height + 2;
 
-                auto crazyBoxRect = context.setViewSizeInRect(
-                    crazyBoxView_, {size.width - 40, 15}, {{x, y}, {size.width, 15}},
-                    LayoutOptionsSizeToFit | LayoutOptionsConstrainSize | LayoutOptionsAlignRight);
+                auto crazyBoxRect =
+                    context.setViewSizeInRect(crazyBoxView_, {size.width - 40, 15},
+                                              {{x, y}, {size.width, 15}}, LayoutOptionsAlignRight);
                 y += crazyBoxRect.size.height;
 
                 return {size.width, y};
@@ -248,9 +133,6 @@ public:
     };
 
     void drawInRect(Rect rect) override {
-        log_d("Draw ExampleView in rect %d %d %d %d", rect.origin.x, rect.origin.y, rect.size.width,
-              rect.size.height);
-        layoutIfNeeded();
         iconView_.draw();
         topView_.draw();
         bottomView_.draw();
@@ -265,23 +147,19 @@ public:
 
 protected:
     IconView iconView_;
-    TextView topView_;
-    TextView bottomView_;
-    std::shared_ptr<TextView> nestedTextView_;
-    HBox tripleBoxView_;
-    HBox bottomBoxView_;
-    HBox evenSpacedWordsView_;
+    SingleLineTextView topView_;
+    SingleLineTextView bottomView_;
+    std::shared_ptr<SingleLineTextView> nestedTextView_;
+    StackView tripleBoxView_;
+    StackView bottomBoxView_;
+    StackView evenSpacedWordsView_;
 
     BoxView box1_;
     BoxView box2_;
-    // BoxView box3_;
-    TextView text1_;
+    SingleLineTextView text1_;
     CrazyBoxView crazyBoxView_;
 };
 
-// TODO: How to combine Screen and View? Is it:
-// * Multiple inheritance?
-// * Merge it all into View?
 class LayoutTestScreen : public Screen {
 public:
     LayoutTestScreen(DisplaySystem &display) : Screen(), view(display) {}

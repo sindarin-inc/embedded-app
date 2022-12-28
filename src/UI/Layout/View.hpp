@@ -3,7 +3,6 @@
 #include "LayoutContext.hpp"
 #include "LayoutMath.hpp"
 #include "Types.hpp"
-#include "sindarin-debug.h"
 
 class View {
 public:
@@ -15,12 +14,17 @@ public:
     void setFrame(const Rect &frame) { layoutContext_.setFrame(frame); }
 
     // Virtual method for drawing the contents of the view inside a provided rect. Typically not
-    // called directly.
+    // called directly. Use `draw()` instead.
     virtual void drawInRect(Rect rect) = 0;
 
-    void draw() { drawInRect(layoutContext_.globalFrame()); }
+    // Draw the view in its current screen-coordinate frame
+    void draw() {
+        layoutIfNeeded();
+        drawInRect(layoutContext_.screenFrame());
+    }
 
-    // Set flags indicating layout is needed
+    // Set flags indicating layout is needed. Call this when a view's content changes enough that
+    // the sizing may change
     void setNeedsLayout() { layoutContext_.setNeedsLayout(); }
 
     // Should be called sometime before drawing

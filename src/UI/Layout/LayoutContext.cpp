@@ -1,7 +1,7 @@
 #include "LayoutContext.hpp"
 
+#include "Misc/StringUtil.hpp"
 #include "View.hpp"
-#include "sindarin-debug.h"
 
 LayoutContext::LayoutContext(View &view)
     : layout_([this, &view](LayoutContext &layoutContext, Size size) {
@@ -11,29 +11,14 @@ LayoutContext::LayoutContext(View &view)
 
 auto LayoutContext::setLayoutSizeInRect(LayoutContext &layoutContext, const Size &size,
                                         const Rect &inRect, int options) -> Rect {
-    log_d("setLayoutSizeInRect: this=%p size %d %d inRect %d %d %d %d sizing %d", this, size.width,
-          size.height, inRect.origin.x, inRect.origin.y, inRect.size.width, inRect.size.height,
-          sizing_);
-
     layoutContext.parentLayout_ = this;
 
     auto frame = FrameForLayout(layoutContext, size, inRect, options);
-    log_d("Calculated frame for layoutContext %p: %d %d %d %d", &layoutContext, frame.origin.x,
-          frame.origin.y, frame.size.width, frame.size.height);
+
     if (!sizing_) {
-        log_d("Setting for layout %p: %d %d %d %d", &layoutContext, frame.origin.x, frame.origin.y,
-              frame.size.width, frame.size.height);
         layoutContext.setFrame(frame);
-        // TODO: I'm not 100% convinced this should be necessary, but experimentally it is. More
-        // tracing is needed
-        layoutContext.layoutIfNeeded(frame.size, false);
     }
     return frame;
-}
-
-auto LayoutContext::setLayoutFrame(LayoutContext &layoutContext, const Rect &frame, int options)
-    -> Rect {
-    return setLayoutSizeInRect(layoutContext, frame.size, frame, options);
 }
 
 auto LayoutContext::setViewSizeInRect(View &view, const Size &size, const Rect &inRect, int options)
@@ -41,42 +26,23 @@ auto LayoutContext::setViewSizeInRect(View &view, const Size &size, const Rect &
     return setLayoutSizeInRect(view.layoutContext_, size, inRect, options);
 }
 
-auto LayoutContext::setViewFrame(View &view, const Rect &frame, int options) -> Rect {
-    return setViewSizeInRect(view, frame.size, frame, options);
-}
-
-// Sublayouts of sublayouts
-
 auto LayoutContext::setSublayoutSizeInRect(const Size &size, const Rect &inRect, int options,
                                            const LayoutLambda &layout) -> Rect {
-    log_d("setSublayoutSizeInRect: this=%p size %d %d inRect %d %d %d %d sizing %d", this,
-          size.width, size.height, inRect.origin.x, inRect.origin.y, inRect.size.width,
-          inRect.size.height, sizing_);
     // Create a new layout context for this sublayout if one doesn't exist already
     auto it = sublayouts_.find(&layout);
     if (it == sublayouts_.end()) {
         sublayouts_.emplace(&layout, std::make_unique<LayoutContext>(layout));
-        log_d("Creating new sublayout context for %p", &layout);
     }
     auto sublayoutContext = sublayouts_[&layout].get();
 
-    // TODO: How do you invalidate sublayout layouts since there's not the normal view-subview
-    // relationship?
-    // sublayoutContext->sizing_ = sizing_;
-    // sublayoutContext->needsLayout_ = needsLayout_;
-
     Rect frame = setLayoutSizeInRect(*sublayoutContext, size, inRect, options);
-
-    log_d("Calculated frame for sublayout %p: %d %d %d %d inrect %d %d %d %d", &layout,
-          frame.origin.x, frame.origin.y, frame.size.width, frame.size.height, inRect.origin.x,
-          inRect.origin.y, inRect.size.width, inRect.size.height);
+    // Since there's no `draw` method for a sublayout (which is where we'd normally call
+    // `layoutIfNeeded`), we go ahead and run the real layout here if we're not sizing.
+    if (!sizing_) {
+        (*sublayoutContext).layoutIfNeeded(frame.size, false);
+    }
 
     return frame;
-}
-
-auto LayoutContext::setSublayoutFrame(const Rect &frame, int options, const LayoutLambda &layout)
-    -> Rect {
-    return setSublayoutSizeInRect(frame.size, frame, options, layout);
 }
 
 auto LayoutContext::layoutIfNeeded(const Size &size, bool sizing) -> Size {
@@ -89,11 +55,9 @@ auto LayoutContext::layoutIfNeeded(const Size &size, bool sizing) -> Size {
     auto layoutSize = layout_(*this, size);
     cachedLayoutSize_ = layoutSize;
     if (!sizing_) {
-        log_d("Setting layout to false for %p", this);
         needsLayout_ = false;
     }
     needsSizing_ = false;
-    log_d("Done layout for %p: %d %d", this, layoutSize.width, layoutSize.height);
     sizing_ = false;
     return layoutSize;
 }
