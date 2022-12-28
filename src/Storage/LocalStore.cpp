@@ -236,7 +236,7 @@ void LocalStore::syncFromRemote(
     progressCallback(ContentSyncState{.state = ContentSyncState::State::CheckingSync});
 
     // Run this work on a separate thread, since it's long running
-    auto queue = DispatchGetCore1BackgroundQueue();
+    auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this, progressCallback] {
         // Uncomment below to force a full sync
         // this->prefs_.lastReadablesSince.set("");

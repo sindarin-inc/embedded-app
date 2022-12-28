@@ -97,17 +97,21 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto currentReadable = prefs_.lastReadableId.get();
     // If there are no book and no articles, show the Sync Content item
     if (readables.size() == 0 && articles.size() == 0) {
-        mainMenu->addMenuItem(MenuItem("Sync Content", [this, display, &localStore, mainMenu]() {
-            auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
-            this->setCurrentScreen(*contentSyncScreen);
-            contentSyncScreen->backCallback = [this, contentSyncScreen, mainMenu, display]() {
-                mainMenu->setFirstLoad();
-                setCurrentScreen(*mainMenu);
-                mainMenu->render(*display);
-                delete contentSyncScreen;
-            };
-            contentSyncScreen->begin();
-        }));
+        mainMenu->addMenuItem(
+            MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
+                auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
+                lightingController.disableLightSensor();
+                this->setCurrentScreen(*contentSyncScreen);
+                contentSyncScreen->backCallback = [this, contentSyncScreen, mainMenu, display,
+                                                   &lightingController]() {
+                    mainMenu->setFirstLoad();
+                    setCurrentScreen(*mainMenu);
+                    mainMenu->render(*display);
+                    lightingController.enableLightSensor();
+                    delete contentSyncScreen;
+                };
+                contentSyncScreen->begin();
+            }));
     }
     for (Readable &r : readables) {
         mainMenu->addMenuItem(MenuItem(r.title, [this, r, createReadableScreen]() {
