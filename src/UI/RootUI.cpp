@@ -165,15 +165,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         setCurrentScreen(*settingsMenu);
     };
 
-    settingsMenu->addMenuItem(MenuItem("Layout Example", [this, settingsMenu, display]() {
-        auto layoutTestScreen = new LayoutTestScreen(*display);
-        setCurrentScreen(*layoutTestScreen);
-        layoutTestScreen->backCallback = [this, layoutTestScreen, settingsMenu]() {
-            settingsMenu->setFirstLoad();
-            setCurrentScreen(*settingsMenu);
-            delete layoutTestScreen;
-        };
-    }));
+    // settingsMenu->addMenuItem(MenuItem("Layout Example", [this, settingsMenu, display]() {
+    //     auto layoutTestScreen = new LayoutTestScreen(*display);
+    //     setCurrentScreen(*layoutTestScreen);
+    //     layoutTestScreen->backCallback = [this, layoutTestScreen, settingsMenu]() {
+    //         settingsMenu->setFirstLoad();
+    //         setCurrentScreen(*settingsMenu);
+    //         delete layoutTestScreen;
+    //     };
+    // }));
 
     settingsMenu->addMenuItem(
         MenuItem("Sync Content", [this, display, &localStore, settingsMenu]() {

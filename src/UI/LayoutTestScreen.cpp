@@ -21,11 +21,6 @@ void LayoutTestScreen::processCommand(RemoteCommand command) {
             backCallback();
         }
         break;
-    case RemoteCommand::CHANNEL_PLUS:
-        if (backCallback != nullptr) {
-            backCallback();
-        }
-        break;
     default:
         break;
     }

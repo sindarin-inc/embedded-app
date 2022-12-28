@@ -4,8 +4,8 @@
 
 LightingAdjustScreen::LightingAdjustScreen(DisplaySystem &display, PreferencesStore &prefs,
                                            LightingController &lightingController)
-    : Screen(), prefs_(prefs), lightingController_(lightingController),
-      view_(display, lightingController) {}
+    : Screen(), view_(display, lightingController), prefs_(prefs),
+      lightingController_(lightingController) {}
 
 void LightingAdjustScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
@@ -14,7 +14,7 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
 
     // TODO: Unify needsRerender and setNeedsLayout?
     view_.setNeedsLayout();
-    view_.setFrame({0, 0, display.width(), display.height()});
+    view_.setFrame({{0, 0}, {display.width(), display.height()}});
     view_.draw();
 
     display.updateDisplay(firstLoad ? DisplaySystem::UpdateType::FULL

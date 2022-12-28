@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -103,7 +104,7 @@ protected:
     LayoutLambda layout_;
 
     // The frame of the layout in the parent layout's coordinate space
-    Rect frame_{0, 0, 0, 0};
+    Rect frame_{{0, 0}, {0, 0}};
 
     // Whether this layout is currently sizing (doesn't change frames) or whether it's running for
     // real

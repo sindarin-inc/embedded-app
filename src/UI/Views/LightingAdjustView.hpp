@@ -28,19 +28,19 @@ public:
 
         // Sublayout for centering all the main content in the view
         auto mainRect = context.setSublayoutFrame(
-            {0, 0, size.width, size.height}, LayoutOptionsSizeToFit | LayoutOptionsAlignCenter,
+            {{0, 0}, {size.width, size.height}}, LayoutOptionsSizeToFit | LayoutOptionsAlignCenter,
             [this, spacing](LayoutContext &context, Size size) -> Size {
                 // Sublayout for horizontally centering the lightbulb and bar
                 auto bulbAndBarRect = context.setSublayoutFrame(
-                    {0, 0, size.width, size.height},
+                    {{0, 0}, {size.width, size.height}},
                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal,
                     [this, spacing](LayoutContext &context, Size size) -> Size {
                         int x = 0, y = 0;
-                        auto lightbulbRect = context.setViewFrame(lightbulbView_, {x, y, 0, 0},
+                        auto lightbulbRect = context.setViewFrame(lightbulbView_, {{x, y}, {0, 0}},
                                                                   LayoutOptionsSizeToFit);
                         x += lightbulbRect.size.width + spacing;
 
-                        Rect barRectFrame = {x, y, 10, lightbulbRect.size.height};
+                        Rect barRectFrame = {{x, y}, {10, lightbulbRect.size.height}};
 
                         auto barRect = context.setViewFrame(barView_, barRectFrame);
 
@@ -48,23 +48,22 @@ public:
                         int fillHeight = (lightingPercent * barRect.size.height) / 100;
                         int fillTop = barRect.origin.y + barRect.size.height - fillHeight;
 
-                        auto fillView =
-                            context.setViewFrame(fillView_, {x, fillTop, 10, fillHeight});
+                        context.setViewFrame(fillView_, {{x, fillTop}, {10, fillHeight}});
 
                         y += lightbulbRect.size.height;
                         return {barRect.right(), y};
                     });
 
-                int x = 0, y = 0;
+                int y = 0;
                 y += bulbAndBarRect.size.height + spacing;
 
                 auto firstLineRect =
-                    context.setViewFrame(firstLine_, {0, y, size.width, 0},
+                    context.setViewFrame(firstLine_, {{0, y}, {size.width, 0}},
                                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
                 y += firstLineRect.size.height;
 
                 auto secondLineRect =
-                    context.setViewFrame(secondLine_, {0, y, size.width, 0},
+                    context.setViewFrame(secondLine_, {{0, y}, {size.width, 0}},
                                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
                 y += secondLineRect.size.height;
 
@@ -74,11 +73,11 @@ public:
 
         // Vertically center the main content above and then shove the easter egg below it
         // When the easter egg is hidden, the content will be centered vertically.
-        context.setViewFrame(thirdLine_, {0, y, size.width, 0},
+        context.setViewFrame(thirdLine_, {{0, y}, {size.width, 0}},
                              LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
 
         // Put the arrow on the right
-        context.setViewFrame(arrowView_, {0, 0, size.width, size.height},
+        context.setViewFrame(arrowView_, {{0, 0}, {size.width, size.height}},
                              LayoutOptionsAlignRight | LayoutOptionsAlignCenterVertical |
                                  LayoutOptionsSizeToFit);
 
@@ -101,6 +100,8 @@ public:
     bool showThirdLine;
 
 protected:
+    LightingController &lightingController_;
+
     IconView lightbulbView_;
     BoxView barView_;
     BoxView fillView_;
@@ -111,6 +112,4 @@ protected:
     SingleLineTextView thirdLine_;
 
     ArrowView arrowView_;
-
-    LightingController &lightingController_;
 };
