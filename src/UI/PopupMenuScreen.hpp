@@ -16,10 +16,11 @@
 class PopupMenuScreen : public ContainerScreen {
 
 public:
-    PopupMenuScreen(Power &power, Renderer &renderer, PreferencesStore &prefs, Readable &readable,
+    PopupMenuScreen(DisplaySystem &display, Power &power, Renderer &renderer,
+                    PreferencesStore &prefs, Readable &readable,
                     LightingController &lightingController)
         : prefs_(prefs), power_(power), renderer_(renderer), leftButtonTitle_("Lighting"),
-          lightingAdjustScreen_(prefs, lightingController),
+          lightingAdjustScreen_(display, prefs, lightingController),
           readableSeekScreen_(prefs, readable, renderer_) {
         currentScreen_ = this;
 

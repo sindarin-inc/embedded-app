@@ -34,6 +34,9 @@ struct Rect {
     [[nodiscard]] auto offset(const Point &offset) const -> Rect {
         return {{origin.x + offset.x, origin.y + offset.y}, size};
     }
+    [[nodiscard]] auto right() const -> int { return origin.x + size.width; }
+    [[nodiscard]] auto bottom() const -> int { return origin.y + size.height; }
+
     auto operator==(const Rect &other) const -> bool {
         return origin == other.origin && size == other.size;
     }

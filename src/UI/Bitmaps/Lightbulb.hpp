@@ -1,3 +1,5 @@
+#pragma once
+
 #define Lightbulb_width 42
 #define Lightbulb_height 60
 static unsigned char lightbulbBits[] = {

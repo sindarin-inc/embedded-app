@@ -9,7 +9,6 @@
 
 #include "LayoutMath.hpp"
 #include "Types.hpp"
-#include "sindarin-debug.h"
 
 class View;
 class LayoutContext;
@@ -104,7 +103,7 @@ protected:
     LayoutLambda layout_;
 
     // The frame of the layout in the parent layout's coordinate space
-    Rect frame_;
+    Rect frame_{0, 0, 0, 0};
 
     // Whether this layout is currently sizing (doesn't change frames) or whether it's running for
     // real

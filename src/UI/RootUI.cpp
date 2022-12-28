@@ -223,16 +223,18 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
     }));
 
-    settingsMenu->addMenuItem(MenuItem("Lighting", [this, settingsMenu, &lightingController]() {
-        auto lightingAdjustScreen = new LightingAdjustScreen(this->prefs_, lightingController);
-        this->display_->clearDisplay();
-        setCurrentScreen(*lightingAdjustScreen);
-        lightingAdjustScreen->backCallback = [this, lightingAdjustScreen, settingsMenu]() {
-            settingsMenu->setFirstLoad();
-            setCurrentScreen(*settingsMenu);
-            delete lightingAdjustScreen;
-        };
-    }));
+    settingsMenu->addMenuItem(
+        MenuItem("Lighting", [this, display, settingsMenu, &lightingController]() {
+            auto lightingAdjustScreen =
+                new LightingAdjustScreen(*display, this->prefs_, lightingController);
+            this->display_->clearDisplay();
+            setCurrentScreen(*lightingAdjustScreen);
+            lightingAdjustScreen->backCallback = [this, lightingAdjustScreen, settingsMenu]() {
+                settingsMenu->setFirstLoad();
+                setCurrentScreen(*settingsMenu);
+                delete lightingAdjustScreen;
+            };
+        }));
 
     settingsMenu->addMenuItem(MenuItem("Set Line Spacing", [this, settingsMenu, display]() {
         auto lineSpacingScreen = new LineSpacingScreen(*display, prefs_);

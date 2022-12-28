@@ -25,8 +25,8 @@ public:
                    LightingController &lightingController)
 
         : renderer_(display), firstTimeRenderer_(display), readable_(readable), prefs_(prefs),
-          popup_(power, renderer_, prefs_, readable_, lightingController), fileSystem_(fileSystem),
-          display_(display) {
+          popup_(display, power, renderer_, prefs_, readable_, lightingController),
+          fileSystem_(fileSystem), display_(display) {
         currentScreen_ = this;
         renderer_.setStream(stream);
         pageSpeed_ = prefs_.autoPilotSpeed.get().value();
