@@ -283,9 +283,7 @@ void DisplaySystem::drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], in
     if (getPartialRefresh()) {
         setPartialWindow(x, y, w, h);
     }
-    log_d("Drawing bitmap at %d %d", xOffset(x), yOffset(y));
     gfxClass_->drawXBitmap(xOffset(x), yOffset(y), bitmap, w, h, color);
-    log_d("Bitmap drawn");
 }
 
 void DisplaySystem::clearScreen() {

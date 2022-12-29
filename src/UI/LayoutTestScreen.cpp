@@ -99,7 +99,9 @@ void LayoutTestScreen::render(DisplaySystem &display) {
     }
 
     setFrame({{0, 0}, {display.width(), display.height()}});
+    PROFILE_START(LayoutTestScreenLayoutAndDraw);
     draw();
+    PROFILE_END_LOG_US(LayoutTestScreenLayoutAndDraw);
 
     display.updateDisplay(firstLoad ? DisplaySystem::UpdateType::FULL
                                     : DisplaySystem::UpdateType::FAST);
