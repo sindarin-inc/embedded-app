@@ -47,7 +47,7 @@ auto SizeThatFitsForLayout(const LayoutContext &layoutContext, Size size, int op
         // maintain the aspect ratio from sizeThatFits
         if (((options & LayoutOptionsConstrainSizeMaintainAspectRatio) != 0) &&
             (sizeThatFits.height > size.height || sizeThatFits.width > size.width)) {
-            float aspectRatio = sizeThatFits.width / sizeThatFits.height;
+            float aspectRatio = float(sizeThatFits.width) / float(sizeThatFits.height);
             // If we're going to constrain by width
             if (sizeThatFits.width / size.width > sizeThatFits.height / size.height) {
                 sizeThatFits.width = size.width;
