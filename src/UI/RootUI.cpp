@@ -286,7 +286,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             fsMenu->addMenuItem(MenuItem(str.c_str(), [this, fsMenu, &fileSystem, str]() {
                 File toSerialOutput = fileSystem.open(StringFormat("/%s", str.c_str()));
                 while (toSerialOutput.available()) {
-                    log_d("%c", toSerialOutput.read());
+                    printf("%c", toSerialOutput.read());
                 }
                 this->display_->clearDisplay();
                 fsMenu->setExtraText(StringFormat("output %s to serial", str.c_str()));
