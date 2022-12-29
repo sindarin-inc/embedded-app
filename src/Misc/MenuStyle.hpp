@@ -61,6 +61,7 @@ public:
     MenuStyleFamily currentMenu;
     MenuStyleFamily mainMenu;
     MenuStyleFamily settingsMenu;
+    MenuStyleFamily archiveMenu;
 
 protected:
 };

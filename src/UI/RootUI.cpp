@@ -18,6 +18,7 @@
 #include "Renderers/Renderer.hpp"
 #include "Storage/LocalStore.hpp"
 #include "UI/AlignmentScreen.hpp"
+#include "UI/ArchiveMenuScreen.hpp"
 #include "UI/CalibrationScreen.hpp"
 #include "UI/ContentSyncScreen.hpp"
 #include "UI/CrashReportScreen.hpp"
@@ -82,8 +83,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             // of the display.
             display->clearDisplay();
             prefs_.lastReadableId.remove();
-            mainMenu->setFirstLoad();
-            setCurrentScreen(*mainMenu);
 
             // TODO: Probably not the most kosher practice to delete the `ReadableScreen` from
             // _inside_ ReadableScreen.backCallback. I suppose we could either mark these for

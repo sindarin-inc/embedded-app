@@ -87,18 +87,16 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
         httpClient.end();
         return 0;
     }
-    auto *respJson = new SpiRamJsonDocument(1024 + httpClient.getSize() * 3);
+    auto respJson = std::make_unique<SpiRamJsonDocument>(1024 + httpClient.getSize() * 3);
     auto error = ArduinoJson::deserializeJson(*respJson, *streamPtr);
     if (error.code() != DeserializationError::Ok) {
         log_e("Failed to deserialize sync response: %s", error.c_str());
-        delete respJson;
         httpClient.end();
         return 0;
     }
     resp->fromJson(respJson->as<JsonObject>());
     log_d("Synced: %d Message: %s, Firmware: %s", resp->synced, resp->message.c_str(),
           resp->firmware.url.c_str());
-    delete respJson;
 
     httpClient.end();
     return httpCode;
@@ -115,11 +113,10 @@ auto SindarinAPI::getUserReadables(std::vector<UserReadable> *userReadables) -> 
         auto string = httpClient.getString();
         // The document seems to need more length than the JSON string itself, so to be safe we just
         // double the storage. We have plenty of SPIRAM anyways.
-        auto *resp = new SpiRamJsonDocument(string.length() * 2);
+        auto resp = std::make_unique<SpiRamJsonDocument>(string.length() * 2);
         auto error = ArduinoJson::deserializeJson(*resp, string);
         if (error.code() != DeserializationError::Ok) {
             log_e("Failed to deserialize user readables: %s", error.c_str());
-            delete resp;
             httpClient.end();
             return 0;
         }
@@ -132,7 +129,6 @@ auto SindarinAPI::getUserReadables(std::vector<UserReadable> *userReadables) -> 
         // auto previous = (*resp)["previous"].as<std::string>();
 
         JsonArray userReadablesJson = (*resp)["results"].as<JsonArray>();
-        delete resp;
 
         for (JsonObject userReadableJson : userReadablesJson) {
             userReadables->emplace_back();

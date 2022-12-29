@@ -170,13 +170,18 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
 // Since this happens in a couple of places (animation as well as button press),
 // we have a helper method to do the work.
 void ReadableScreen::turnPage() {
-
-    readable_.placePrev = readable_.place;
-    readable_.place = newPlace_;
-    prefs_.readablePlace.set(readable_.shortenedUuid.c_str(), readable_.place);
-    prefs_.readablePlaceChanged.set(readable_.shortenedUuid.c_str(), true);
-    speedLinesToSkip_ = 0;
+    if (atEnd_ || true) {
+        setCurrentScreen(archiveMenu_);
+    } else {
+        readable_.placePrev = readable_.place;
+        readable_.place = newPlace_;
+        prefs_.readablePlace.set(readable_.shortenedUuid.c_str(), readable_.place);
+        prefs_.readablePlaceChanged.set(readable_.shortenedUuid.c_str(), true);
+        speedLinesToSkip_ = 0;
+    }
 }
+
+auto ReadableScreen::checkAtEnd() -> bool { return (newPlace_ == 0); }
 
 void ReadableScreen::render(DisplaySystem &display) {
     if (currentScreen_ != this) {
@@ -238,6 +243,7 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     if (pageSpeed_ == 0) {
         newPlace_ = renderer_.renderPage(readable_.place);
+        atEnd_ = checkAtEnd();
     } else {
         if (speedLinesToSkip_ >= renderer_.getNumRenderedLines()) {
             // time to turn the page
@@ -247,6 +253,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         }
 
         newPlace_ = renderer_.renderPage(readable_.place, speedLinesToSkip_);
+        atEnd_ = checkAtEnd();
 
         // If the line is blank, we want to skip it. Also, skip multiple newlines in a row.
         while ((renderer_.getLengthOfLine(speedLinesToSkip_) == 1) &&
@@ -314,7 +321,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         }
     }
 
-    log_d("%lu is the new place in the text", newPlace_);
+    log_d("%lu is the new place in the text %s", newPlace_, atEnd_ ? "(at end)" : "");
 
     if ((pageSpeed_ != 0) && (speedLinesToSkip_ > 0)) {
         display.updateDisplay(DisplaySystem::UpdateType::FAST_ORIGINAL_AU4);

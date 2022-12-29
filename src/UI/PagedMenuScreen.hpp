@@ -16,10 +16,7 @@ public:
 
     void render(DisplaySystem &display) override;
 
-    void setBidirectional() { isBidirectional_ = true; }
-
 protected:
-    bool isBidirectional_ = false;
     void processCommand(RemoteCommand command) override;
 };
 

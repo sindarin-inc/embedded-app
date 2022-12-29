@@ -107,6 +107,16 @@ Then run: `brew install sdl2_image`
 
 You can then confirm you have version 2.0.5 with `brew info sdl2_image`
 
+### To use WiFi, extract your Sol cloud access token
+
+Add the line:
+
+```
+cloud-token=<TOKEN>
+```
+
+to `simprefs.ini` with the access token from the monitor when syncing content on a non-simulator dev board or glasses.
+
 ## Erasing / Resetting Non-Volatile Storage (NVS)
 
 You can erase NVS/Preferences from the command line using esptool. You can either erase the entire internal flash with:

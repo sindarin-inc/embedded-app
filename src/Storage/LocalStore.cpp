@@ -22,7 +22,7 @@ auto LocalStore::loadReadablesFromFile(std::vector<Readable> &readables, const s
     -> bool {
     log_d("Loading %s from %s", readablesGroup(readables).c_str(), path.c_str());
     File readablesFile = fileSystem.open(path);
-    if (!readablesFile) {
+    if (!readablesFile || (int)readablesFile.size() == 0) {
         log_w("Failed to open %s", path.c_str());
         // Fail positively since it's ok to not have any when you first use the glasses
         return true;
@@ -30,13 +30,12 @@ auto LocalStore::loadReadablesFromFile(std::vector<Readable> &readables, const s
 
     // Grab a minimum amount of ram, even if the readables file is empty
     auto docSize = (int)readablesFile.size() * 2;
-    auto *doc = new SpiRamJsonDocument(docSize);
+    auto doc = std::make_unique<SpiRamJsonDocument>(docSize);
     auto error = deserializeJson(*doc, readablesFile);
     readablesFile.close();
 
     if (error.code() != DeserializationError::Ok) {
         log_e("Failed to deserialize readables file: %s", error.c_str());
-        delete doc;
         return false;
     }
 
@@ -74,7 +73,6 @@ auto LocalStore::loadReadablesFromFile(std::vector<Readable> &readables, const s
     }
 
     log_d("Loaded %zu readables from %s", readables.size(), path.c_str());
-    delete doc;
     return true;
 }
 
@@ -412,7 +410,7 @@ void LocalStore::syncFromRemote(
             this->addReadable(articles_, userReadable.readable);
 
             syncState.tasks[tasksIndex].percentage =
-                (float(i) / checkSyncResponse.userArticles.size()) * 100;
+                (float(i + 1) / checkSyncResponse.userArticles.size()) * 100;
             progressCallback(syncState);
         }
         this->resetReadablesPlacemarkChanged(articles_);
@@ -477,13 +475,13 @@ void LocalStore::saveArticleFile(const Readable &readable) {
     }
 
     const char *title = readable.title.c_str();
-    size_t docSize = file.size();
     file.write((const uint8_t *)title, strlen(title));
     file.write('\n');
 
     StripHtml(readable.content, file);
 
     file.flush();
+    size_t docSize = file.size();
     file.close();
 
     log_d("Finished storing article %s, size %zu/%zu", readable.title.c_str(), docSize,
@@ -525,7 +523,7 @@ auto LocalStore::saveReadables(const std::vector<Readable> &readables, const std
     -> bool {
     // 2048 is probably a safe-ish upper bound per readable. I'm seeing about half that in my
     // testing so far
-    auto *doc = new SpiRamJsonDocument(2048 * std::max(1, (int)readables.size()));
+    auto doc = std::make_unique<SpiRamJsonDocument>(2048 * std::max(1, (int)readables.size()));
 
     // Create a key named readables of type array
     JsonArray readablesJson = doc->createNestedArray("readables");
@@ -548,7 +546,6 @@ auto LocalStore::saveReadables(const std::vector<Readable> &readables, const std
     }
 
     serializeJsonPretty(*doc, file);
-    delete doc;
     file.close();
 
     return true;
