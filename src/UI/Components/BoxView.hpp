@@ -13,8 +13,6 @@ public:
     auto layout(LayoutContext &context, Size size) -> Size override { return size; }
 
     void drawInRect(Rect rect) override {
-        log_d("Draw BoxView in %d %d %d %d", rect.origin.x, rect.origin.y, rect.size.width,
-              rect.size.height);
         if (fillColor.has_value()) {
             display_.fillRect(rect.origin.x, rect.origin.y, rect.size.width, rect.size.height,
                               fillColor.value());
