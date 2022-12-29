@@ -34,6 +34,7 @@ DisplayEinkET013TT1 myDisplay(DISPLAY_CS_LEFT, DISPLAY_CS_RIGHT, DISPLAY_RST);
 #endif
 
 PreferencesStore prefs;
+bool inCesMode = false;
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS
 #include "Communications/BLESindarinService.hpp"
@@ -310,6 +311,11 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     myDisplay.setLineSpacing(prefs.lineSpacing.get().value());
 
     SIZE_OF(myDisplay);
+
+    if (prefs.cesMode.get().value()) {
+        inCesMode = true;
+        log_d("in CES mode");
+    }
 
 #if USE_BLE
     BLEDevice::init("Sindarin");

@@ -10,6 +10,9 @@
 #include "UI/Screen.hpp"
 #include "config.h"
 
+// set in main.cpp
+extern bool inCesMode;
+
 enum BookmarkStatus { BOOKMARK_OFF = 0, BOOKMARK_ON = 1 };
 
 struct Bookmark {
@@ -35,7 +38,11 @@ public:
         // readable may be stale. Hence we must re-load it from the prefs.
         // Not the prettiest of fixes, but passing the readable by reference
         // seems to not work with some of the const requirements by the lamdas.
-        readable_.place = prefs_.readablePlace.get(readable_.shortenedUuid.c_str());
+        if (!inCesMode) {
+            readable_.place = prefs_.readablePlace.get(readable_.shortenedUuid.c_str());
+        } else {
+            readable_.place = 0;
+        }
         // for the animation bits since we may end up coming back to this constructor after being
         // interrupted.
         newPlace_ = readable_.place;
@@ -93,4 +100,5 @@ private:
     void incrementReadingTime();
     void turnPage();
     uint32_t readingStartTime_;
+    int numUps_ = 0;
 };

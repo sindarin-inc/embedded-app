@@ -19,6 +19,7 @@
 #include "Storage/LocalStore.hpp"
 #include "UI/AlignmentScreen.hpp"
 #include "UI/CalibrationScreen.hpp"
+#include "UI/CesScreen.hpp"
 #include "UI/ContentSyncScreen.hpp"
 #include "UI/CrashReportScreen.hpp"
 #include "UI/DemoScreen.hpp"
@@ -49,6 +50,9 @@
 #endif
 
 #define LAST_READABLE_ID "rui-readable"
+
+// Set in main.cpp
+extern bool inCesMode;
 
 void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &fileSystem,
                    LightingController &lightingController) {
@@ -273,6 +277,14 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 #else
     std::string buildString = StringFormat("Build: %s (%s)", kVersionString, kGitHash);
 #endif
+
+    debugMenu->addMenuItem(MenuItem("Turn on CES Mode", [this, debugMenu, display]() {
+        log_d("CES On!");
+        prefs_.cesMode.set(1);
+
+        debugMenu->showTemporaryMessage(*display, "CES mode on! Resetting...", 2000, false);
+        esp_restart();
+    }));
 
     debugMenu->addMenuItem(MenuItem("Font Type", [this, debugMenu]() {
         MenuStyle styleFamilies;
@@ -629,6 +641,28 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             delete demoScreen;
         };
         this->setCurrentScreen(*demoScreen);
+    } else if (inCesMode) {
+        auto cesScreen = new CesScreen(*display, prefs_, this->power_, lightingController);
+        // reset prefs for of The Last Question readable
+        log_d("Starting CES mode readable load");
+        auto it =
+            std::find_if(readables.begin(), readables.end(), [&currentReadable](const Readable &x) {
+                return (x.title.compare("The Last Question") == 0);
+            });
+        if (it == readables.end()) {
+            log_e("Could not find readable: %s", "The Last Question");
+        } else {
+            log_d("Found readable: %s", (*it).title.c_str());
+        }
+        auto readableScreen = createReadableScreen(*it);
+        cesScreen->backCallback = [this, cesScreen, mainMenu, display, readableScreen]() {
+            display->clearDisplay();
+            this->display_->setFont(this->display_->style.getFontFamily().readableFont);
+            log_i("Setting Readable Screen after focus in CES mode");
+            this->setCurrentScreen(*readableScreen);
+            delete cesScreen;
+        };
+        this->setCurrentScreen(*cesScreen);
     } else if (currentReadable.has_value()) {
         // Check if we left-off on a readable and if so, reload that readable by default
         log_d("Attempting to find readable: %s", currentReadable.value().c_str());
