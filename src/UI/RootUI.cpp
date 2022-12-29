@@ -645,17 +645,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto cesScreen = new CesScreen(*display, prefs_, this->power_, lightingController);
         // reset prefs for of The Last Question readable
         log_d("Starting CES mode readable load");
-        auto it =
-            std::find_if(readables.begin(), readables.end(), [&currentReadable](const Readable &x) {
-                return (x.title.compare("The Last Question") == 0);
-            });
+        auto it = std::find_if(readables.begin(), readables.end(), [](const Readable &x) {
+            return (x.title.compare("The Last Question") == 0);
+        });
         if (it == readables.end()) {
             log_e("Could not find readable: %s", "The Last Question");
         } else {
             log_d("Found readable: %s", (*it).title.c_str());
         }
         auto readableScreen = createReadableScreen(*it);
-        cesScreen->backCallback = [this, cesScreen, mainMenu, display, readableScreen]() {
+        cesScreen->backCallback = [this, cesScreen, display, readableScreen]() {
             display->clearDisplay();
             this->display_->setFont(this->display_->style.getFontFamily().readableFont);
             log_i("Setting Readable Screen after focus in CES mode");
