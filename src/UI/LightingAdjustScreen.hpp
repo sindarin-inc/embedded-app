@@ -26,7 +26,7 @@ public:
 protected:
     PreferencesStore &prefs_;
     LightingController &lightingController_;
-    bool showThirdLine;
+    bool showThirdLine_;
 
     // Subviews
     IconView lightbulbView_;

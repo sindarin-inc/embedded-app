@@ -81,7 +81,7 @@ void LightingAdjustScreen::drawInRect(Rect rect) {
     firstLine_.draw();
     secondLine_.draw();
     // Easter eggs are cool.
-    if (showThirdLine) {
+    if (showThirdLine_) {
         thirdLine_.draw();
     }
     arrowView_.draw();
@@ -107,12 +107,12 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
 void LightingAdjustScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
-        showThirdLine = true;
+        showThirdLine_ = true;
         firstLoad = true;
         needsRerender = true;
         break;
     case RemoteCommand::CHANNEL_PLUS:
-        showThirdLine = false;
+        showThirdLine_ = false;
         if (backCallback != nullptr) {
             backCallback();
         }
@@ -132,7 +132,7 @@ void LightingAdjustScreen::processCommand(RemoteCommand command) {
         break;
     }
     case RemoteCommand::BACK:
-        showThirdLine = false;
+        showThirdLine_ = false;
         if (backCallback != nullptr) {
             backCallback();
         }
