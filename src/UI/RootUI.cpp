@@ -281,9 +281,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     debugMenu->addMenuItem(MenuItem("Turn on CES Mode", [this, debugMenu, display]() {
         log_d("CES On!");
         prefs_.cesMode.set(1);
-
         debugMenu->showTemporaryMessage(*display, "CES mode on! Resetting...", 2000, false);
         esp_restart();
+    }));
 
     debugMenu->addMenuItem(MenuItem("File System Browser", [this, debugMenu, &fileSystem]() {
         MenuStyle styleFamilies;
