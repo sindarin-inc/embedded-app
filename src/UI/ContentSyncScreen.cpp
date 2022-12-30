@@ -120,7 +120,8 @@ void ContentSyncScreen::begin() {
     }
 
     localStore_.syncFromRemote([this](const ContentSyncState &state) {
-        if (state.state == ContentSyncState::Failure || state.state == ContentSyncState::Synced) {
+        if (state.state == ContentSyncState::Failure || state.state == ContentSyncState::Synced ||
+            state.state == ContentSyncState::AlreadySynced) {
             DisconnectWifi();
         }
         // Do UI stuff back on core 1

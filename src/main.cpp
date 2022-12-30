@@ -90,15 +90,17 @@ LocalStore localStore(fileSystem, prefs);
 Power power(fileSystem, prefs);
 RootUI rootUi(prefs, power);
 
+bool templesClosed = false;
+
 // Resonsible for handling connecting / reconnecting to remotes
 void RadioTask(void *parameter) {
     for (;;) {
 #if USE_TURN_TOUCH_REMOTE
         // Skip scanning while WiFi is connected to avoid kicking off the WiFi connection
-        if (!NetworkConnected()) {
+        if (!NetworkConnected() && !templesClosed) {
             ttRemoteInput.connect();
         } else if (!ttRemoteInput.connected()) {
-            log_d("Skipping Turn Touch scan while WiFi is connected");
+            // log_d("Skipping Turn Touch scan while WiFi is connected");
         }
 #endif
 
@@ -232,23 +234,28 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         templeCloseSensor.setCallback([](bool open) {
             if (open) {
                 lightingController.enableLighting();
+                templesClosed = false;
             } else {
                 lightingController.disableLighting();
+                templesClosed = true;
+                // Will be turned off after content sync
+                ForcePowerOn();
             }
         });
         templeCloseSensor.setLongCloseCallback([]() {
             DispatchGetUiQueue()->dispatch([]() {
-                log_d("LONG CLOSE.. RUN CONTENT SYNC");
-                // Debug LED
+                // TODO: Also pause turn touch scanning
+                log_d("Temples closed for a while, running content sync");
+                // Debug LED so we know what's happening
                 digitalWrite(BLUE_LED, LED_ON);
                 auto contentSyncScreen = new ContentSyncScreen(myDisplay, localStore, prefs);
-                lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
                 contentSyncScreen->backCallback = []() {
                     // In case only the right temple is closed and we're stuck on, reload the UI in
                     // case we open the temple again
-                    rootUi.needsRerender = true;
+                    rootUi.getCurrentScreen()->needsRerender = true;
                     rootUi.render(myDisplay);
-                    log_d("Content sync done, turning off");
+                    log_i("Content sync done, turning off");
+                    digitalWrite(BLUE_LED, LED_OFF);
                     AllowPowerOff();
                 };
                 contentSyncScreen->begin();

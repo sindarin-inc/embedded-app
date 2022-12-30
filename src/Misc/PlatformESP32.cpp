@@ -334,6 +334,17 @@ void ForcePowerOn() {
     digitalWrite(sysOnPin, HIGH);
 }
 
-void AllowPowerOff() { pinMode(sysOnPin, INPUT_PULLDOWN); }
+void AllowPowerOff() {
+    // We haven't been particuarly scientific, but experimentally using INPUT_PULLDOWN seems to work
+    // the best. I don't understand why. You'd think either an open drain or driving to 0 would be
+    // more effective at turning off the mostfet.
+    pinMode(sysOnPin, INPUT_PULLDOWN);
+
+    // pinMode(sysOnPin, OUTPUT_OPEN_DRAIN);
+    // digitalWrite(sysOnPin, LOW);
+
+    // pinMode(sysOnPin, OUTPUT);
+    // digitalWrite(sysOnPin, LOW);
+}
 
 #endif
