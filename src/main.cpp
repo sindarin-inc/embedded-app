@@ -12,6 +12,7 @@
 #include "Communications/WiFi.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/BootError.hpp"
+#include "Misc/BootLoopDetection.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/Power.hpp"
 #include "Misc/StringUtil.hpp"
@@ -130,6 +131,7 @@ esp_pm_config_esp32s3_t pmConfig;
 #endif
 
 void PowerTask(void *parameter) {
+
     for (;;) {
         // Run the power loop first so that we don't show a 0% battery reading
         power.loop();
@@ -188,7 +190,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // Configure log level for all Sindarin logs
     esp_log_level_set("Sindarin", ESP_LOG_DEBUG);
 #endif
-
+    BootLoopCheck();
     std::vector<BootError> bootErrors;
 
 #if BOARD_HAS_PSRAM
@@ -440,4 +442,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     // Render the first thing
     DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::NONE); });
+
+    GoodBootTimer();
 }
