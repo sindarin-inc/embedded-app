@@ -98,17 +98,19 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto currentReadable = prefs_.lastReadableId.get();
     // If there are no book and no articles, show the Sync Content item
     if (readables.size() == 0 && articles.size() == 0) {
-        mainMenu->addMenuItem(MenuItem("Sync Content", [this, display, &localStore, mainMenu]() {
-            auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
-            this->setCurrentScreen(*contentSyncScreen);
-            contentSyncScreen->backCallback = [this, contentSyncScreen, mainMenu, display]() {
-                mainMenu->setFirstLoad();
-                setCurrentScreen(*mainMenu);
-                mainMenu->render(*display);
-                delete contentSyncScreen;
-            };
-            contentSyncScreen->begin();
-        }));
+        mainMenu->addMenuItem(
+            MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
+                auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
+                lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
+                this->setCurrentScreen(*contentSyncScreen);
+                contentSyncScreen->backCallback = [this, contentSyncScreen, mainMenu, display]() {
+                    mainMenu->setFirstLoad();
+                    setCurrentScreen(*mainMenu);
+                    mainMenu->render(*display);
+                    delete contentSyncScreen;
+                };
+                contentSyncScreen->begin();
+            }));
     }
     for (Readable &r : readables) {
         mainMenu->addMenuItem(MenuItem(r.title, [this, r, createReadableScreen]() {
@@ -166,9 +168,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     };
 
     settingsMenu->addMenuItem(
-        MenuItem("Sync Content", [this, display, &localStore, settingsMenu]() {
+        MenuItem("Sync Content", [this, display, &localStore, settingsMenu, &lightingController]() {
             auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
             this->setCurrentScreen(*contentSyncScreen);
+            lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
             contentSyncScreen->backCallback = [this, contentSyncScreen, settingsMenu, display]() {
                 settingsMenu->setFirstLoad();
                 setCurrentScreen(*settingsMenu);
@@ -281,6 +284,32 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         debugMenu->showTemporaryMessage(*display, "CES mode on! Resetting...", 2000, false);
         esp_restart();
+
+    debugMenu->addMenuItem(MenuItem("File System Browser", [this, debugMenu, &fileSystem]() {
+        MenuStyle styleFamilies;
+        auto fsMenu = new MenuScreen(this->power_, debugMenu->getMyStyle());
+        fsMenu->setExtraText("ls of /");
+
+        FileList localFiles;
+        fileSystem.listDir("/", localFiles);
+        for (const std::string &str : localFiles) {
+            log_d("Next File is %s", str.c_str());
+            fsMenu->addMenuItem(MenuItem(str.c_str(), [this, fsMenu, &fileSystem, str]() {
+                File toSerialOutput = fileSystem.open(StringFormat("/%s", str.c_str()));
+                while (toSerialOutput.available()) {
+                    printf("%c", toSerialOutput.read());
+                }
+                this->display_->clearDisplay();
+                fsMenu->setExtraText(StringFormat("output %s to serial", str.c_str()));
+                fsMenu->needsRerender = true;
+            }));
+        }
+        setCurrentScreen(*fsMenu);
+        fsMenu->backCallback = [this, fsMenu, debugMenu]() {
+            debugMenu->setFirstLoad();
+            setCurrentScreen(*debugMenu);
+            delete fsMenu;
+        };
     }));
 
     debugMenu->addMenuItem(MenuItem("Font Type", [this, debugMenu]() {
