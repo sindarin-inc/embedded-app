@@ -65,7 +65,7 @@ void TempleCloseSensor::checkTemple() {
             }
 
             auto onTimer = [](TimerHandle_t timer) {
-                TempleCloseSensor *templeCloseSensor =
+                auto *templeCloseSensor =
                     static_cast<TempleCloseSensor *>(pvTimerGetTimerID(timer));
                 templeCloseSensor->resetLongCloseTimer();
                 templeCloseSensor->longCloseCallback_();
