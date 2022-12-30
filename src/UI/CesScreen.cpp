@@ -1,20 +1,7 @@
 #include "UI/CesScreen.hpp"
 
-#include <freertos/FreeRTOS.h>
-#include <freertos/queue.h>
-
-#include "Misc/Dispatch.hpp"
-#include "Misc/Platform.hpp"
-#include "UI/Bitmaps/BenIconHacking.hpp"
-#include "UI/Bitmaps/Logo.hpp"
-#include "UI/Bitmaps/stone.hpp"
-#include "UI/Fonts/Tahoma10pt7b.h"
-#include "UI/Fonts/Tahoma20pt7b.h"
 #include "UI/Fonts/Tahoma5pt7b.h"
 #include "UI/Fonts/Tahoma6pt7b.h"
-#include "UI/Fonts/Tahoma7pt7b.h"
-#include "UI/Fonts/Tahoma8pt7b.h"
-#include "UI/Fonts/Tahoma9pt7b.h"
 #include "sindarin-debug.h"
 
 extern void UIInnerLoop(RemoteCommand command);
@@ -44,7 +31,6 @@ void CesScreen::render(DisplaySystem &display) {
     if (currentScreen_ >= 2) {
         lightingController_.setScreenMask(LightingController::Screens::BOTH);
     }
-    // Don't need to set it after that as they are on.
 
     // NOLINTBEGIN(bugprone-branch-clone) - keeping these duplicative for symmetry
     switch (currentScreen_) {
@@ -91,9 +77,6 @@ void CesScreen::processCommand(RemoteCommand command) {
     }
 
     if (currentScreen_ >= NUM_CES_SCREENS) {
-        lightingController_.setScreenMask(LightingController::Screens::BOTH);
-        // When we're done with the onboarding screen, turn this mode off.
-        prefs_.demoMode.set(0);
         backCallback();
     }
 }
