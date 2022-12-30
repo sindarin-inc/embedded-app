@@ -46,6 +46,9 @@ public:
         }
     }
 
+    auto size() -> int { return views_.size(); }
+    auto viewAtIndex(int index) -> std::shared_ptr<EinkView> & { return views_[index]; }
+
 protected:
     std::vector<std::shared_ptr<EinkView>> views_;
     int spacing_;

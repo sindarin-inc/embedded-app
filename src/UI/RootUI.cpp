@@ -83,6 +83,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             // of the display.
             display->clearDisplay();
             prefs_.lastReadableId.remove();
+            mainMenu->setFirstLoad();
+            setCurrentScreen(*mainMenu);
 
             // TODO: Probably not the most kosher practice to delete the `ReadableScreen` from
             // _inside_ ReadableScreen.backCallback. I suppose we could either mark these for
