@@ -21,6 +21,7 @@
 #include "Storage/CrashReportWriter.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "UI/ContentSyncScreen.hpp"
 #include "UI/RootUI.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -235,7 +236,24 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 lightingController.disableLighting();
             }
         });
-        templeCloseSensor.setLongCloseCallback([]() { log_d("LONG CLOSE.. RUN CONTENT SYNC"); });
+        templeCloseSensor.setLongCloseCallback([]() {
+            DispatchGetUiQueue()->dispatch([]() {
+                log_d("LONG CLOSE.. RUN CONTENT SYNC");
+                // Debug LED
+                digitalWrite(BLUE_LED, LED_ON);
+                auto contentSyncScreen = new ContentSyncScreen(myDisplay, localStore, prefs);
+                lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
+                contentSyncScreen->backCallback = []() {
+                    // In case only the right temple is closed and we're stuck on, reload the UI in
+                    // case we open the temple again
+                    rootUi.needsRerender = true;
+                    rootUi.render(myDisplay);
+                    log_d("Content sync done, turning off");
+                    AllowPowerOff();
+                };
+                contentSyncScreen->begin();
+            });
+        });
     }
 #endif
 
@@ -441,7 +459,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     xTaskCreatePinnedToCore(PowerTask, "Power", 5000, nullptr, 0, &powerTaskHandle, 1);
 
     // Begin fade-in on the lighting before rendering the UI
-    DispatchGetUiQueue()->dispatch([]() { lightingController.checkAmbientLight(300, 500); });
+    DispatchGetUiQueue()->dispatch([]() { lightingController.checkAmbientLight(300, 100); });
 
     // Render the first thing
     DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::NONE); });

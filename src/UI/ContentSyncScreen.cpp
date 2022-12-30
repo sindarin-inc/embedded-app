@@ -93,7 +93,11 @@ void ContentSyncScreen::fail(const std::string &message) {
     render(display_);
     vTaskDelay(5000 / portTICK_PERIOD_MS);
     DisconnectWifi();
-    backCallback();
+    if (backCallback) {
+        backCallback();
+    } else {
+        log_w("No back callback set for ContentSyncScreen");
+    }
 }
 
 void ContentSyncScreen::begin() {

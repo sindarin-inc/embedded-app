@@ -41,7 +41,7 @@ public:
 
     // This should happen periodically to check the ambient light and adjust the screen lighting
     // accordingly
-    void checkAmbientLight(int fadeMs = 1000, int timeoutMs = 500);
+    void checkAmbientLight(int fadeMs = 1000, int timeoutMs = 100);
 
 protected:
     Ltr329Als lightSensor_;

@@ -32,10 +32,13 @@ void TempleCloseSensor::checkTemple() {
     //       success);
     // Experimentally I've seen the following ranges:
     // -17º (closed) to 104º (open) (midpoint = 43.5º)
-    // -150º (closed) to -73º (open) (midpoint = -112º).
+    // -150º (closed) to -73º (open) (midpoint = -112º)
+    // -197 (closed) to -86 (open) (midpoint = -141.5º) - SOL01224400004
     // Handle either magnet polarity:
     if (angle < -45) {
         angle += 180;
+    } else if (angle > 135) {
+        angle -= 180;
     }
     // Define an angle, above which we will declare the temple as open and below which we will
     // declare it as closed. This value was discovered experimentally.
@@ -69,7 +72,7 @@ void TempleCloseSensor::checkTemple() {
             };
 
             longCloseTimer_ =
-                xTimerCreate("LongCloseTimer", pdMS_TO_TICKS(60000), pdFALSE, this, onTimer);
+                xTimerCreate("LongCloseTimer", pdMS_TO_TICKS(15000), pdFALSE, this, onTimer);
             xTimerStart(longCloseTimer_, 0);
         }
     }

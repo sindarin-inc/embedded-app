@@ -19,6 +19,7 @@
 
 esp_adc_cal_characteristics_t adcCalCharacteristics;
 bool ledcFailed = false;
+uint8_t sysOnPin;
 
 void InitializePlatform() {
     // Arduino breaks the UART with sleep. So we manually initialize the UART using IDF functions.
@@ -68,7 +69,6 @@ void InitializePlatform() {
 
 #if USE_SYS_ON
     auto hardwareRevision = GetHardwareRevision();
-    uint8_t sysOnPin;
     if (hardwareRevision == 1) {
         sysOnPin = 5;
     } else {
@@ -76,7 +76,7 @@ void InitializePlatform() {
     }
     // For now, we'll never have the MCU keep itself on. This should be similar to the behavior of
     // the RevX boards -- when the temples are closed, power will be cut off.
-    pinMode(sysOnPin, INPUT_PULLDOWN);
+    AllowPowerOff();
 #endif
 #if USE_I2C
     // Initialize I2C port 0
@@ -328,5 +328,12 @@ auto GetHardwareRevision() -> uint8_t {
     log_d("Hardware revision: %d", rev.value());
     return rev.value();
 }
+
+void ForcePowerOn() {
+    pinMode(sysOnPin, OUTPUT);
+    digitalWrite(sysOnPin, HIGH);
+}
+
+void AllowPowerOff() { pinMode(sysOnPin, INPUT_PULLDOWN); }
 
 #endif
