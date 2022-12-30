@@ -13,6 +13,13 @@ auto TempleCloseSensor::checkProductId() -> bool {
     }
 }
 
+void TempleCloseSensor::resetLongCloseTimer() {
+    if (longCloseTimer_) {
+        xTimerDelete(longCloseTimer_, 0);
+        longCloseTimer_ = nullptr;
+    }
+}
+
 void TempleCloseSensor::checkTemple() {
     Xyz8bit magReading;
     auto success = magSensor_.readXZ8Bit(magReading);
@@ -39,11 +46,31 @@ void TempleCloseSensor::checkTemple() {
         if (callback_) {
             callback_(true);
         }
+        resetLongCloseTimer();
     } else if (angle < templeMidpointAngle && opened_ == true) {
         log_i("Temple is closed");
         opened_ = false;
         if (callback_) {
             callback_(false);
+        }
+
+        if (longCloseCallback_) {
+            // Start a timer to fire after 60s of being closed
+            if (longCloseTimer_) {
+                log_w("Somehow tried to create a new longCloseTimer_ while one was already active")
+                    resetLongCloseTimer();
+            }
+
+            auto onTimer = [](TimerHandle_t timer) {
+                TempleCloseSensor *templeCloseSensor =
+                    static_cast<TempleCloseSensor *>(pvTimerGetTimerID(timer));
+                templeCloseSensor->resetLongCloseTimer();
+                templeCloseSensor->longCloseCallback_();
+            };
+
+            longCloseTimer_ =
+                xTimerCreate("LongCloseTimer", pdMS_TO_TICKS(60000), pdFALSE, this, onTimer);
+            xTimerStart(longCloseTimer_, 0);
         }
     }
 }

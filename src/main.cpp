@@ -235,6 +235,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 lightingController.disableLighting();
             }
         });
+        templeCloseSensor.setLongCloseCallback([]() { log_d("LONG CLOSE.. RUN CONTENT SYNC"); });
     }
 #endif
 
