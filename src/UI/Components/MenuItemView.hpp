@@ -5,14 +5,16 @@
 #include "EinkView.hpp"
 #include "UI/Components/RoundRectView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
+#include "UI/MenuScreen.hpp"
 
 // Absurdly simple view that just draws a box
-class MenuItemView : public EinkView {
+class MenuItemView : public EinkView, public MenuItem {
 public:
-    MenuItemView(DisplaySystem &display, std::string text)
+    MenuItemView(DisplaySystem &display, std::string text, std::function<void()> callback = {})
         : EinkView(display), selected_(false), textView_(display, std::move(text)),
-          indicator_(display, 4) {}
+          indicator_(display, 4), callback(std::move(callback)) {}
     ~MenuItemView() override = default;
+    std::function<void()> callback;
 
     auto layout(LayoutContext &context, Size size) -> Size override {
         int x = 0;
@@ -21,9 +23,9 @@ public:
 
         auto indicatorRect = context.setViewFrame(indicator_, {x, y, indicatorWidth, size.height},
                                                   LayoutOptionsSizeToFit);
+        auto indicatorWidthPlus = indicatorRect.size.width + 8;
         auto textRect = context.setViewFrame(
-            textView_,
-            {indicatorRect.size.width, y, size.width - indicatorRect.size.width, size.height},
+            textView_, {indicatorWidthPlus, y, size.width - indicatorWidthPlus, size.height},
             LayoutOptionsSizeToFit);
 
         y += std::max(textRect.size.height, indicatorRect.size.height) + 2;

@@ -171,6 +171,17 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
 // we have a helper method to do the work.
 void ReadableScreen::turnPage() {
     if (atEnd_ || true) {
+        archiveMenu_.addMenuItem(MenuItem("Archive and Main Menu", [this]() {
+            this->prefs_.articleArchivedChanged.set(readable_.shortenedUuid.c_str(), true);
+            if (this->backCallback != nullptr) {
+                this->backCallback();
+            }
+        }));
+        archiveMenu_.addMenuItem(MenuItem("Main Menu", [this]() {
+            if (this->backCallback != nullptr) {
+                this->backCallback();
+            }
+        }));
         setCurrentScreen(archiveMenu_);
     } else {
         readable_.placePrev = readable_.place;

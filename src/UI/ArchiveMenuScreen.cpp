@@ -27,6 +27,14 @@ void ArchiveMenuScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
     }
+    menuItemViews_.clear();
+    for (auto &view : menuItems_) {
+        auto menuItem = std::make_shared<MenuItemView>(display, view.title, view.callback);
+        menuItemViews_.push_back(menuItem);
+    }
+    StackView temp(display, menuItemViews_, 18, true);
+    menuView_ = std::move(temp);
+    needsRerender = true;
 
     setFrame({{0, 0}, {display.width(), display.height()}});
     PROFILE_START(ArchiveMenuScreenLayoutAndDraw);
@@ -38,10 +46,15 @@ void ArchiveMenuScreen::render(DisplaySystem &display) {
     firstLoad = false;
     needsRerender = true;
 
-    std::shared_ptr<EinkView> view = menuView_.viewAtIndex(0);
+    std::shared_ptr<EinkView> view = menuItemViews_[getCurrSelection()];
     std::shared_ptr<MenuItemView> selectedMenuItem = std::dynamic_pointer_cast<MenuItemView>(view);
-    if (selectedMenuItem) {
-        selectedMenuItem->setSelected(true);
+    for (auto &view : menuItemViews_) {
+        std::shared_ptr<MenuItemView> menuItem = std::dynamic_pointer_cast<MenuItemView>(view);
+        if (menuItem && menuItem == selectedMenuItem) {
+            menuItem->setSelected(true);
+        } else {
+            menuItem->setSelected(false);
+        }
     }
 
     // Redraw with a different vcom setting for the menu item bullet
