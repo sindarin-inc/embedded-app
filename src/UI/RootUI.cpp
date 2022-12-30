@@ -51,9 +51,6 @@
 
 #define LAST_READABLE_ID "rui-readable"
 
-// Set in main.cpp
-extern bool inCesMode;
-
 void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &fileSystem,
                    LightingController &lightingController) {
     SHOW_HEAP();
@@ -641,7 +638,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             delete demoScreen;
         };
         this->setCurrentScreen(*demoScreen);
-    } else if (inCesMode) {
+    } else if (prefs_.cesMode.get().value()) {
         auto cesScreen = new CesScreen(*display, prefs_, this->power_, lightingController);
         // reset prefs for of The Last Question readable
         log_d("Starting CES mode readable load");

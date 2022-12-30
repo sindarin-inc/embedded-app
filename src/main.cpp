@@ -34,7 +34,6 @@ DisplayEinkET013TT1 myDisplay(DISPLAY_CS_LEFT, DISPLAY_CS_RIGHT, DISPLAY_RST);
 #endif
 
 PreferencesStore prefs;
-bool inCesMode = false;
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS
 #include "Communications/BLESindarinService.hpp"
@@ -313,8 +312,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     SIZE_OF(myDisplay);
 
     if (prefs.cesMode.get().value()) {
-        inCesMode = true;
-        log_d("in CES mode");
+        // In CES mode, we want to turn on the lights to full brightness
+        lightingController.setOverrideValuePercent(100);
     }
 
 #if USE_BLE

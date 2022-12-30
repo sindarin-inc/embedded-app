@@ -9,9 +9,6 @@
 #include "UI/Bitmaps/BenIconHacking.hpp"
 #include "sindarin-debug.h"
 
-// Set in main.cpp
-extern bool inCesMode;
-
 // Two minutes per page currently
 #define SLOWEST_PAGE_SPEED 120000
 // Change speed of speed reading in increments of 2 seconds
@@ -123,7 +120,7 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
     // the Y calcuation is a bit of a hack, but at least it takes into acccount line spacing
     // differences. This is one place that will benefit from more descriptive getTextHeight
     // methods.
-    if (!inCesMode) {
+    if (!prefs_.cesMode.get().value()) {
         display.drawXBitmap(screenWidth / 2 - READ_GEAR_WIDTH / 2,
                             screenHeight + display.getTextHeight() / 2 + 3, readGearBits,
                             READ_GEAR_WIDTH, READ_GEAR_HEIGHT, display.fg);
@@ -140,7 +137,7 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
                             autoMinusBits, auto_minus_width, auto_minus_height, display.fg);
     }
 
-    if (!inCesMode) {
+    if (!prefs_.cesMode.get().value()) {
         // Up arrow - looks like a bookmark to indicate that's what you can do.
         display.drawXBitmap(screenWidth / 2 - HOME2_WIDTH / 2, -HOME2_HEIGHT - 3, homE2Bits,
                             HOME2_WIDTH, HOME2_HEIGHT, display.fg);
@@ -166,7 +163,7 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
     }
 
     // Right Arrow
-    if (inCesMode) {
+    if (prefs_.cesMode.get().value()) {
         display.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
                          screenHeight / 2 + arrowWidth / 2, display.fg);
         display.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
@@ -405,7 +402,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         numUps_ = 0;
         break;
     case RemoteCommand::NEXT:
-        if (!inCesMode) {
+        if (!prefs_.cesMode.get().value()) {
             if (pageSpeed_ != 0) {
                 xTimerStop(DisplaySystem::animationTimer, 0);
             }
@@ -414,7 +411,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         numUps_ = 0;
         break;
     case RemoteCommand::CHANNEL_PLUS:
-        if (!inCesMode) {
+        if (!prefs_.cesMode.get().value()) {
             if (pageSpeed_ != 0) {
                 pageSpeed_ = std::max(pageSpeed_ - PAGE_SPEED_INCREMENT, 1);
                 log_d("Speeding up: New Page Speed is %u", pageSpeed_);
@@ -426,22 +423,15 @@ void ReadableScreen::processCommand(RemoteCommand command) {
                 writeOutBookmarkUpdate();
             }
         } else {
-            if (pageSpeed_ == 0) {
-                turnPage();
-                needsRerender = true;
-            } else {
-                pageSpeed_ = 0;
-                prefs_.autoPilotSpeed.set(0);
-                log_d("Stopping timer and turning off AutoPilot");
-                xTimerStop(DisplaySystem::animationTimer, 0);
-            }
+            turnPage();
+            needsRerender = true;
         }
         needsRerender = true;
         numUps_ = 0;
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::PREV:
-        if (!inCesMode) {
+        if (!prefs_.cesMode.get().value()) {
             if (pageSpeed_ != 0) {
                 xTimerStop(DisplaySystem::animationTimer, 0);
             }
@@ -450,7 +440,6 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             numUps_++;
             if (numUps_ > 3) {
                 numUps_ = 0;
-                inCesMode = false;
                 prefs_.cesMode.set(0);
                 back();
             }

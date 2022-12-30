@@ -10,9 +10,6 @@
 #include "UI/Screen.hpp"
 #include "config.h"
 
-// set in main.cpp
-extern bool inCesMode;
-
 enum BookmarkStatus { BOOKMARK_OFF = 0, BOOKMARK_ON = 1 };
 
 struct Bookmark {
@@ -38,7 +35,7 @@ public:
         // readable may be stale. Hence we must re-load it from the prefs.
         // Not the prettiest of fixes, but passing the readable by reference
         // seems to not work with some of the const requirements by the lamdas.
-        if (!inCesMode) {
+        if (!prefs_.cesMode.get().value()) {
             readable_.place = prefs_.readablePlace.get(readable_.shortenedUuid.c_str());
         } else {
             readable_.place = 0;

@@ -7,9 +7,6 @@
 #include "Misc/Platform.hpp"
 #include "sindarin-debug.h"
 
-// Set in main.cpp
-extern bool inCesMode;
-
 auto LightingController::checkSensorAvailable() -> bool {
     auto partId = lightSensor_.readPartId();
     auto manufacturerId = lightSensor_.readManufacturerId();
@@ -29,11 +26,6 @@ void LightingController::begin() {
     // code over there because the LEDC driver is configured globally and we'll probably also want
     // to configure the RGB LEDs with LEDC eventually
     lightSensor_.enable();
-
-    if (inCesMode) {
-        // In CES mode, we want to turn on the lights to full brightness
-        setOverrideValuePercent(100);
-    }
 }
 
 void LightingController::disableLighting() {
