@@ -6,9 +6,8 @@ LightingAdjustScreen::LightingAdjustScreen(DisplaySystem &display, PreferencesSt
                                            LightingController &lightingController)
     : Screen(), EinkView(display), prefs_(prefs), lightingController_(lightingController),
       lightbulbView_(display, lightbulbBits, Lightbulb_width, Lightbulb_height), barView_(display),
-      fillView_(display), firstLine_(display, "Press up and down"),
-      secondLine_(display, "to adjust brightness"), thirdLine_(display, "Let there be light!"),
-      arrowView_(display) {
+      fillView_(display), thirdLine_(display, "Let there be light!"),
+      fourthLines_(display, "Press up and down to adjust brightness"), arrowView_(display) {
     fillView_.fillColor = display_.fg;
 }
 
@@ -47,16 +46,13 @@ auto LightingAdjustScreen::layout(LayoutContext &context, Size size) -> Size {
             int y = 0;
             y += bulbAndBarRect.size.height + spacing;
 
-            auto firstLineRect =
-                context.setViewFrame(firstLine_, {{0, y}, {size.width, 0}},
-                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
-            y += firstLineRect.size.height;
+            // Arbitrary
+            fourthLines_.setMaxWidth(91);
+            auto fourthLineRect =
+                context.setViewFrame(fourthLines_, {{0, y}, {size.width, 0}},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
 
-            auto secondLineRect =
-                context.setViewFrame(secondLine_, {{0, y}, {size.width, 0}},
-                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
-            y += secondLineRect.size.height;
-
+            y += fourthLineRect.size.height;
             return {size.width, y};
         });
     y = mainRect.bottom() + 10;
@@ -78,12 +74,11 @@ void LightingAdjustScreen::drawInRect(Rect rect) {
     lightbulbView_.draw();
     barView_.draw();
     fillView_.draw();
-    firstLine_.draw();
-    secondLine_.draw();
-    // Easter eggs are cool.
+    //  Easter eggs are cool.
     if (showThirdLine_) {
         thirdLine_.draw();
     }
+    fourthLines_.draw();
     arrowView_.draw();
 }
 
