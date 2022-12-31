@@ -55,6 +55,7 @@ auto LightingAdjustScreen::layout(LayoutContext &context, Size size) -> Size {
             y += fourthLineRect.size.height;
             return {size.width, y};
         });
+
     y = mainRect.bottom() + 10;
 
     // Vertically center the main content above and then shove the easter egg below it

@@ -18,6 +18,7 @@
 #define HARDWARE_REVSION_LATEST 2
 
 esp_adc_cal_characteristics_t adcCalCharacteristics;
+bool ledcFailed = false;
 
 void InitializePlatform() {
     // Arduino breaks the UART with sleep. So we manually initialize the UART using IDF functions.
@@ -114,6 +115,7 @@ void InitializePlatform() {
     err = ledc_timer_config(&ledcTimer);
     if (err != ESP_OK) {
         log_e("Error configuring LEDC timer: %s", esp_err_to_name(err));
+        ledcFailed = true;
     }
 
     ledc_channel_config_t ledcLChannel = {
@@ -139,16 +141,19 @@ void InitializePlatform() {
     err = ledc_channel_config(&ledcLChannel);
     if (ledc_channel_config(&ledcLChannel) != ESP_OK) {
         log_e("Error configuring left LEDC: %s", esp_err_to_name(err));
+        ledcFailed = true;
     }
 
     err = ledc_channel_config(&ledcRChannel);
     if (err != ESP_OK) {
         log_e("Error configuring right LEDC: %s", esp_err_to_name(err));
+        ledcFailed = true;
     }
 
     err = ledc_fade_func_install(0);
     if (err != ESP_OK) {
         log_e("Error installing LEDC fade function: %s", esp_err_to_name(err));
+        ledcFailed = true;
         return;
     }
 #endif
@@ -188,6 +193,9 @@ void SetCpuSpeedMhz(int speedMhz) {
 }
 
 void SetLeftScreenLight(int dutyCycle) {
+    if (ledcFailed) {
+        return;
+    }
     esp_err_t err;
 #if LEDC_BACKLIGHT
     err = ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, dutyCycle);
@@ -204,6 +212,9 @@ void SetLeftScreenLight(int dutyCycle) {
 }
 
 void SetLeftScreenLightFade(int dutyCycle, int fadeMs) {
+    if (ledcFailed) {
+        return;
+    }
     esp_err_t err;
 #if LEDC_BACKLIGHT
     // Set the LED to the target brightness
@@ -222,6 +233,9 @@ void SetLeftScreenLightFade(int dutyCycle, int fadeMs) {
 }
 
 void SetRightScreenLight(int dutyCycle) {
+    if (ledcFailed) {
+        return;
+    }
     esp_err_t err;
 #if LEDC_BACKLIGHT
     err = ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, dutyCycle);
@@ -238,6 +252,9 @@ void SetRightScreenLight(int dutyCycle) {
 }
 
 void SetRightScreenLightFade(int dutyCycle, int fadeMs) {
+    if (ledcFailed) {
+        return;
+    }
     esp_err_t err;
 #if LEDC_BACKLIGHT
     // Set the LED to the target brightness

@@ -33,10 +33,10 @@ protected:
     IconView lightbulbView_;
     BoxView barView_;
     BoxView fillView_;
+
     SingleLineTextView thirdLine_;
     // TODO; These first two lines could be one view once we have MultiLineTextView
     // BC: Almost done!
     MultiLineTextView fourthLines_;
-
     ArrowView arrowView_;
 };

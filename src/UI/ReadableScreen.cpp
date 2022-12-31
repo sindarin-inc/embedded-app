@@ -120,9 +120,11 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
     // the Y calcuation is a bit of a hack, but at least it takes into acccount line spacing
     // differences. This is one place that will benefit from more descriptive getTextHeight
     // methods.
-    display.drawXBitmap(screenWidth / 2 - READ_GEAR_WIDTH / 2,
-                        screenHeight + display.getTextHeight() / 2 + 3, readGearBits,
-                        READ_GEAR_WIDTH, READ_GEAR_HEIGHT, display.fg);
+    if (!prefs_.cesMode.get().value()) {
+        display.drawXBitmap(screenWidth / 2 - READ_GEAR_WIDTH / 2,
+                            screenHeight + display.getTextHeight() / 2 + 3, readGearBits,
+                            READ_GEAR_WIDTH, READ_GEAR_HEIGHT, display.fg);
+    }
 
     if (pageSpeed_ == 0) {
         // Left Arrow
@@ -135,36 +137,38 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
                             autoMinusBits, auto_minus_width, auto_minus_height, display.fg);
     }
 
-    // Up arrow - looks like a bookmark to indicate that's what you can do.
-    display.drawXBitmap(screenWidth / 2 - HOME2_WIDTH / 2, -HOME2_HEIGHT - 3, homE2Bits,
-                        HOME2_WIDTH, HOME2_HEIGHT, display.fg);
+    if (!prefs_.cesMode.get().value()) {
+        // Up arrow - looks like a bookmark to indicate that's what you can do.
+        display.drawXBitmap(screenWidth / 2 - HOME2_WIDTH / 2, -HOME2_HEIGHT - 3, homE2Bits,
+                            HOME2_WIDTH, HOME2_HEIGHT, display.fg);
 
-    if (pageSpeed_ == 0) {
-        display.setRotation(1);
-        // Right side show bookmark icon.
-        display.drawLine(screenWidth / 2, -arrowHeight - 1, screenWidth / 2 - arrowWidth / 2, -1,
-                         display.fg);
-        display.drawLine(screenWidth / 2, -arrowHeight - 1, screenWidth / 2 + arrowWidth / 2, -1,
-                         display.fg);
+        if (pageSpeed_ == 0) {
+            display.setRotation(1);
+            // Right side show bookmark icon.
+            display.drawLine(screenWidth / 2, -arrowHeight - 1, screenWidth / 2 - arrowWidth / 2,
+                             -1, display.fg);
+            display.drawLine(screenWidth / 2, -arrowHeight - 1, screenWidth / 2 + arrowWidth / 2,
+                             -1, display.fg);
 
-        display.drawLine(screenWidth / 2 - arrowWidth / 2, -1, screenWidth / 2 - arrowWidth / 2,
-                         display.yAbsolute(0), display.fg);
-        display.drawLine(screenWidth / 2 + arrowWidth / 2, -1, screenWidth / 2 + arrowWidth / 2,
-                         display.yAbsolute(0), display.fg);
+            display.drawLine(screenWidth / 2 - arrowWidth / 2, -1, screenWidth / 2 - arrowWidth / 2,
+                             display.yAbsolute(0), display.fg);
+            display.drawLine(screenWidth / 2 + arrowWidth / 2, -1, screenWidth / 2 + arrowWidth / 2,
+                             display.yAbsolute(0), display.fg);
 
-        display.setRotation(0);
-    } else {
-        display.drawXBitmap(screenWidth + 2, screenHeight / 2 - auto_plus_height / 2, autoPlusBits,
-                            auto_plus_width, auto_plus_height, display.fg);
+            display.setRotation(0);
+        } else {
+            display.drawXBitmap(screenWidth + 2, screenHeight / 2 - auto_plus_height / 2,
+                                autoPlusBits, auto_plus_width, auto_plus_height, display.fg);
+        }
     }
 
     // Right Arrow
-    /*
-    display.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
-                     screenHeight / 2 + arrowWidth / 2, display.fg);
-    display.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
-                     screenHeight / 2 - arrowWidth / 2, display.fg);
-                     */
+    if (prefs_.cesMode.get().value()) {
+        display.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
+                         screenHeight / 2 + arrowWidth / 2, display.fg);
+        display.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
+                         screenHeight / 2 - arrowWidth / 2, display.fg);
+    }
 }
 
 // Since this happens in a couple of places (animation as well as button press),
@@ -381,6 +385,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             showAutopilotMinus_ = true;
             needsRerender = false;
         }
+        numUps_ = 0;
         break;
     case RemoteCommand::PLAY: // To allow the PT to long press east to change page without an enter
                               // button, and undoing the bookmark first
@@ -394,33 +399,51 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             log_d("Stopping timer and turning off AutoPilot");
             xTimerStop(DisplaySystem::animationTimer, 0);
         }
-
+        numUps_ = 0;
         break;
     case RemoteCommand::NEXT:
-        if (pageSpeed_ != 0) {
-            xTimerStop(DisplaySystem::animationTimer, 0);
+        if (!prefs_.cesMode.get().value()) {
+            if (pageSpeed_ != 0) {
+                xTimerStop(DisplaySystem::animationTimer, 0);
+            }
+            setCurrentScreen(popup_);
         }
-        setCurrentScreen(popup_);
+        numUps_ = 0;
         break;
     case RemoteCommand::CHANNEL_PLUS:
-        if (pageSpeed_ != 0) {
-            pageSpeed_ = std::max(pageSpeed_ - PAGE_SPEED_INCREMENT, 1);
-            log_d("Speeding up: New Page Speed is %u", pageSpeed_);
-            prefs_.autoPilotSpeed.set(pageSpeed_);
-            showAutopilotPlus_ = true;
-            needsRerender = false;
+        if (!prefs_.cesMode.get().value()) {
+            if (pageSpeed_ != 0) {
+                pageSpeed_ = std::max(pageSpeed_ - PAGE_SPEED_INCREMENT, 1);
+                log_d("Speeding up: New Page Speed is %u", pageSpeed_);
+                prefs_.autoPilotSpeed.set(pageSpeed_);
+                showAutopilotPlus_ = true;
+                needsRerender = false;
+            } else {
+                inBookmark_ = !inBookmark_;
+                writeOutBookmarkUpdate();
+            }
         } else {
-            inBookmark_ = !inBookmark_;
-            writeOutBookmarkUpdate();
+            turnPage();
+            needsRerender = true;
         }
         needsRerender = true;
+        numUps_ = 0;
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::PREV:
-        if (pageSpeed_ != 0) {
-            xTimerStop(DisplaySystem::animationTimer, 0);
+        if (!prefs_.cesMode.get().value()) {
+            if (pageSpeed_ != 0) {
+                xTimerStop(DisplaySystem::animationTimer, 0);
+            }
+            back();
+        } else {
+            numUps_++;
+            if (numUps_ > 3) {
+                numUps_ = 0;
+                prefs_.cesMode.set(0);
+                back();
+            }
         }
-        back();
         break;
     case RemoteCommand::NOP_BUTTON:
         needsRerender = true;
