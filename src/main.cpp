@@ -313,6 +313,11 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     SIZE_OF(myDisplay);
 
+    if (prefs.cesMode.get().value()) {
+        // In CES mode, we want to turn on the lights to full brightness
+        lightingController.setOverrideValuePercent(100);
+    }
+
 #if USE_BLE
     BLEDevice::init("Sindarin");
     auto bleStatus = esp_bt_controller_get_status();

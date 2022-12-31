@@ -26,7 +26,7 @@ public:
                    LightingController &lightingController)
 
         : renderer_(display), firstTimeRenderer_(display), readable_(readable), prefs_(prefs),
-          popup_(display, power, renderer_, prefs_, readable_, lightingController),
+          popup_(display, display, power, renderer_, prefs_, readable_, lightingController),
           archiveMenu_(power, readable_, prefs_, display), fileSystem_(fileSystem),
           display_(display) {
         currentScreen_ = this;
@@ -37,7 +37,11 @@ public:
         // readable may be stale. Hence we must re-load it from the prefs.
         // Not the prettiest of fixes, but passing the readable by reference
         // seems to not work with some of the const requirements by the lamdas.
-        readable_.place = prefs_.readablePlace.get(readable_.shortenedUuid.c_str());
+        if (!prefs_.cesMode.get().value()) {
+            readable_.place = prefs_.readablePlace.get(readable_.shortenedUuid.c_str());
+        } else {
+            readable_.place = 0;
+        }
         // for the animation bits since we may end up coming back to this constructor after being
         // interrupted.
         newPlace_ = readable_.place;
@@ -102,4 +106,5 @@ private:
     void turnPage();
     auto checkAtEnd() -> bool;
     uint32_t readingStartTime_;
+    int numUps_ = 0;
 };
