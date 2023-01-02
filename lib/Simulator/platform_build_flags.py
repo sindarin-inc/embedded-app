@@ -22,11 +22,18 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 libs_dir = pathlib.Path(f"{script_dir}/stubs").resolve()
 libs = [
     "Arduino",
-    "Adafruit_GFX",
     "esp-idf",
     "freertos-posix",
 ]
 lib_includes = "\n".join([f"-I{libs_dir}/{lib}" for lib in libs])
+
+components_dir = pathlib.Path(f"{script_dir}/../../components").resolve()
+component_libs = [
+    "Adafruit-GFX-Library",
+    "ArduinoJson",
+]
+
+lib_includes += "\n" + "\n".join([f"-I{components_dir}/{lib}" for lib in component_libs])
 
 # Build the big flags list
 flags = [
