@@ -42,8 +42,12 @@ jobs:
           path: catch-results.xml
           reporter: java-junit
 
+      - name: Find test-images
+        run: |
+          find . -iname "*.png"
+
       - uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: test-images
-          path: test/CatchTests/Images/TestRun
+          path: test/CatchTests/Images/TestRun/*.png
