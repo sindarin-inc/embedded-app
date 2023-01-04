@@ -1,5 +1,7 @@
 #include "RootUI.hpp"
 
+#include <esp_sleep.h>
+#include <esp_system.h>
 #include <esp_timer.h>
 #include <filesystem>
 #include <nvs_flash.h>

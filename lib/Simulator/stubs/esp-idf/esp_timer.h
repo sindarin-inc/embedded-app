@@ -1,4 +1,11 @@
+#include <chrono>
 #include <cstdint>
 
-// TODO: We could do something with this when we need to
-int64_t esp_timer_get_time(void) { return 0; }
+// Comes from the Arduino stub library and is set in initArduino()
+extern std::chrono::system_clock::time_point ArduinoStartTime;
+
+int64_t esp_timer_get_time(void) {
+    auto duration = std::chrono::system_clock::now() - ArduinoStartTime;
+    auto durationUs = std::chrono::duration_cast<std::chrono::microseconds>(duration);
+    return durationUs.count();
+}

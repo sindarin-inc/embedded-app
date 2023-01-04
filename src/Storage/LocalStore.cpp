@@ -1,5 +1,7 @@
 #include "LocalStore.hpp"
 
+#include <esp_system.h>
+
 #include "Communications/HtmlCleaner.hpp"
 #include "Communications/SindarinAPI.hpp"
 #include "Misc/Crypto.hpp"

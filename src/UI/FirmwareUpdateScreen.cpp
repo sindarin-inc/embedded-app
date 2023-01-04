@@ -1,5 +1,7 @@
 #include "UI/FirmwareUpdateScreen.hpp"
 
+#include <esp_system.h>
+
 #include "Communications/FirmwareDownload.hpp"
 #include "Communications/WiFi.hpp"
 #include "Misc/Dispatch.hpp"
