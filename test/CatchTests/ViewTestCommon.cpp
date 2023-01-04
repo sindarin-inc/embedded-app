@@ -2,6 +2,7 @@
 
 #include <catch_amalgamated.hpp>
 #include <cstring>
+#include <filesystem>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <iostream>
@@ -82,8 +83,6 @@ auto GetDirectory() -> std::string {
     size_t pos = path.find_last_of("/\\");
     std::string dir = path.substr(0, pos + 1);
 
-    std::cout << "Directory: " << dir << std::endl;
-
     return dir;
 }
 
@@ -95,10 +94,6 @@ auto AssertViewUnchanged(std::string key) -> ViewTestResult {
         .acceptedImagePath = directory + acceptedPathPrefix + key + ".png",
         .renderedImagePath = directory + testRunPrefix + key + ".png",
     };
-
-    // Render out the FakeEinkET013TT1ParticlePositions to a png
-    stbi_write_png(result.renderedImagePath.c_str(), EinkET013TT1_PIXEL_WIDTH,
-                   EinkET013TT1_PIXEL_HEIGHT, 1, FakeEinkET013TT1ParticlePositions, 0);
 
     // Load up the known-good png from the key
     int width, height, channels;
@@ -131,9 +126,23 @@ auto AssertViewUnchanged(std::string key) -> ViewTestResult {
     }
 
     if (!result.passed) {
+        // Create the TestRun directory if needed
+        std::filesystem::create_directory(directory + testRunPrefix);
+
+        // Render out the FakeEinkET013TT1ParticlePositions to a png
+        if (!stbi_write_png(result.renderedImagePath.c_str(), EinkET013TT1_PIXEL_WIDTH,
+                            EinkET013TT1_PIXEL_HEIGHT, 1, FakeEinkET013TT1ParticlePositions, 0)) {
+            std::cerr << "Unable to save rendered image to " << result.renderedImagePath
+                      << std::endl;
+        }
+
+        // Render out the diff image to a png
         result.diffImagePath = directory + testRunPrefix + key + "_diff.png";
-        stbi_write_png(result.diffImagePath.c_str(), EinkET013TT1_PIXEL_WIDTH,
-                       EinkET013TT1_PIXEL_HEIGHT, 1, diffData, 0);
+        if (!stbi_write_png(result.diffImagePath.c_str(), EinkET013TT1_PIXEL_WIDTH,
+                            EinkET013TT1_PIXEL_HEIGHT, 1, diffData, 0)) {
+            std::cerr << "Unable to save diff image to " << result.diffImagePath << std::endl;
+        }
+
         UNSCOPED_INFO("Images do not match:");
         UNSCOPED_INFO("  Accepted (old): " << result.acceptedImagePath.c_str());
         UNSCOPED_INFO("  Rendered (new): " << result.renderedImagePath.c_str());
