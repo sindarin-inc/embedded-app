@@ -80,7 +80,7 @@ auto GetDirectory() -> std::string {
     // Extract the directory by finding the last '/' character and
     // removing everything after it
     size_t pos = path.find_last_of("/\\");
-    std::string dir = path.substr(0, pos);
+    std::string dir = path.substr(0, pos + 1);
 
     std::cout << "Directory: " << dir << std::endl;
 
@@ -111,6 +111,7 @@ auto AssertViewUnchanged(std::string key) -> ViewTestResult {
         UNSCOPED_INFO("This is expected when testing the first time.");
         UNSCOPED_INFO("Run the following command to create an accepted test image:");
         UNSCOPED_INFO("  cp " << result.renderedImagePath << " \\\n  " << result.acceptedImagePath);
+        REQUIRE(data != nullptr);
         return result;
     };
 
