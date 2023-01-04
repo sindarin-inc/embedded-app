@@ -22,9 +22,9 @@ extern "C" void app_main(void); // NOLINT(readability-identifier-naming)
 std::shared_ptr<std::thread> SchedulerThread;
 const char *kGitHash = "SIMULATOR";
 
-std::string pathPrefix = "./test/ViewTest/Images/";
-std::string testRunPrefix = pathPrefix + "TestRun/";
-std::string acceptedPathPrefix = pathPrefix + "Accepted/";
+std::string directory;
+std::string testRunPrefix = "Images/TestRun/";
+std::string acceptedPathPrefix = "Images/Accepted/";
 
 void appMainTask(void *parameters) {
     app_main();
@@ -73,12 +73,27 @@ void SendRemoteCommand(RemoteCommand command) {
     DispatchGetUiQueue()->dispatchFromISR([command]() { UIInnerLoop(command); });
 }
 
+auto GetDirectory() -> std::string {
+    // gets the current source file path
+    std::string path = __FILE__;
+
+    // Extract the directory by finding the last '/' character and
+    // removing everything after it
+    size_t pos = path.find_last_of("/\\");
+    std::string dir = path.substr(0, pos);
+
+    std::cout << "Directory: " << dir << std::endl;
+
+    return dir;
+}
+
 // TODO: How do we use the test name also for the key
 auto AssertViewUnchanged(std::string key) -> ViewTestResult {
+    auto directory = GetDirectory();
     ViewTestResult result = {
         .passed = false,
-        .acceptedImagePath = acceptedPathPrefix + key + ".png",
-        .renderedImagePath = testRunPrefix + key + ".png",
+        .acceptedImagePath = directory + acceptedPathPrefix + key + ".png",
+        .renderedImagePath = directory + testRunPrefix + key + ".png",
     };
 
     // Render out the FakeEinkET013TT1ParticlePositions to a png
@@ -115,7 +130,7 @@ auto AssertViewUnchanged(std::string key) -> ViewTestResult {
     }
 
     if (!result.passed) {
-        result.diffImagePath = testRunPrefix + key + "_diff.png";
+        result.diffImagePath = directory + testRunPrefix + key + "_diff.png";
         stbi_write_png(result.diffImagePath.c_str(), EinkET013TT1_PIXEL_WIDTH,
                        EinkET013TT1_PIXEL_HEIGHT, 1, diffData, 0);
         UNSCOPED_INFO("Images do not match:");
@@ -129,6 +144,9 @@ auto AssertViewUnchanged(std::string key) -> ViewTestResult {
         UNSCOPED_INFO("  Accept this change: ");
         UNSCOPED_INFO("    cp " << result.renderedImagePath.c_str() << " \\\n    "
                                 << result.acceptedImagePath.c_str());
+    } else {
+        // Delete generated image files for passing tests
+        remove(result.renderedImagePath.c_str());
     }
 
     stbi_image_free(data);
