@@ -9,9 +9,35 @@ auto ArchiveMenuScreen::layout(LayoutContext &context, Size size) -> Size {
             int x = 0;
             int y = 0;
 
+            // Assume equal sizes for now
+            int viewCount = views_.size();
+            int dimension = vertical_ ? size.height : size.width;
+
+            Size boxSize;
+            if (vertical_) {
+                int boxHeight = (dimension - (viewCount - 1) * spacing_) / viewCount;
+                boxSize = {size.width, boxHeight};
+            } else {
+                int boxWidth = (dimension - (viewCount - 1) * spacing_) / viewCount;
+                boxSize = {boxWidth, size.height};
+            }
+            int x = 0;
+            int y = 0;
+
+            for (auto &view : views_) {
+                context.setViewFrame(*view, {{x, y}, boxSize},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenter |
+                                         LayoutOptionsDefaultSize);
+                if (vertical_) {
+                    y += boxSize.height + spacing_;
+                } else {
+                    x += boxSize.width + spacing_;
+                }
+            }
+
+            return size;
             auto menuRect = context.setViewFrame(this->menuView_, {{x, y}, {size.width, 15}},
-                                                 LayoutOptionsSizeToFit | LayoutOptionsAlignLeft |
-                                                     LayoutOptionsAlignCenterVertical);
+                                                 LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
             y += menuRect.size.height + 2;
 
