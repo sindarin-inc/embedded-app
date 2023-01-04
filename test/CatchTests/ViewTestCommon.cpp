@@ -44,6 +44,8 @@ void StartFreeRtos(bool runAppMain) {
     // Skip waveform processing. Technically not a FreeRTOS thing but this is a convenient spot to
     // do it
     FakeEinkET013TT1SkipWaveform = true;
+    // If we're not running the full app, we can just call render directly and don't need to signal
+    FakeEinkET013TT1SkipSignalling = !runAppMain;
 
     // Start the FreeRTOS scheduler
     SchedulerThread = std::make_unique<std::thread>([runAppMain]() {
@@ -95,6 +97,15 @@ auto AssertViewUnchanged(std::string key) -> ViewTestResult {
         .renderedImagePath = directory + testRunPrefix + key + ".png",
     };
 
+    // Create the TestRun directory if needed
+    std::filesystem::create_directory(directory + testRunPrefix);
+
+    // Render out the FakeEinkET013TT1ParticlePositions to a png
+    if (!stbi_write_png(result.renderedImagePath.c_str(), EinkET013TT1_PIXEL_WIDTH,
+                        EinkET013TT1_PIXEL_HEIGHT, 1, FakeEinkET013TT1ParticlePositions, 0)) {
+        std::cerr << "Unable to save rendered image to " << result.renderedImagePath << std::endl;
+    }
+
     // Load up the known-good png from the key
     int width, height, channels;
     unsigned char *data =
@@ -126,16 +137,6 @@ auto AssertViewUnchanged(std::string key) -> ViewTestResult {
     }
 
     if (!result.passed) {
-        // Create the TestRun directory if needed
-        std::filesystem::create_directory(directory + testRunPrefix);
-
-        // Render out the FakeEinkET013TT1ParticlePositions to a png
-        if (!stbi_write_png(result.renderedImagePath.c_str(), EinkET013TT1_PIXEL_WIDTH,
-                            EinkET013TT1_PIXEL_HEIGHT, 1, FakeEinkET013TT1ParticlePositions, 0)) {
-            std::cerr << "Unable to save rendered image to " << result.renderedImagePath
-                      << std::endl;
-        }
-
         // Render out the diff image to a png
         result.diffImagePath = directory + testRunPrefix + key + "_diff.png";
         if (!stbi_write_png(result.diffImagePath.c_str(), EinkET013TT1_PIXEL_WIDTH,
@@ -162,4 +163,11 @@ auto AssertViewUnchanged(std::string key) -> ViewTestResult {
     stbi_image_free(data);
     CHECK(result.passed);
     return result;
+}
+
+std::shared_ptr<DisplayEinkET013TT1> createDisplay() {
+    auto display = std::make_shared<DisplayEinkET013TT1>(0, 0, 0);
+    (*display).setup();
+    (*display).invertDisplay(false);
+    return display;
 }

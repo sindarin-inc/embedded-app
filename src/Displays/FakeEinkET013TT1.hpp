@@ -29,6 +29,7 @@ enum BorderSetting {
 extern uint8_t
     FakeEinkET013TT1ParticlePositions[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT];
 extern bool FakeEinkET013TT1SkipWaveform;
+extern bool FakeEinkET013TT1SkipSignalling;
 extern QueueHandle_t FakeEinkET013TT1RenderQueue;
 extern QueueHandle_t FakeEinkET013TT1DoneWaveformQueue;
 

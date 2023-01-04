@@ -9,6 +9,7 @@
 uint8_t FakeEinkET013TT1ParticlePositions[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT];
 // Skip waveform processing and just set things as black and white
 bool FakeEinkET013TT1SkipWaveform = false;
+bool FakeEinkET013TT1SkipSignalling = false;
 QueueHandle_t FakeEinkET013TT1RenderQueue = nullptr;
 QueueHandle_t FakeEinkET013TT1DoneWaveformQueue = nullptr;
 
@@ -16,9 +17,14 @@ QueueHandle_t FakeEinkET013TT1DoneWaveformQueue = nullptr;
 int FakeEinkET013TT1ParticleMovement = PARTICLE_MOVEMENT_DEFAULT;
 
 void EinkET013TT1::init() {
-    log_d("Initialized EinkET013TT1");
-    FakeEinkET013TT1RenderQueue = xQueueCreate(1, sizeof(uint8_t));
-    FakeEinkET013TT1DoneWaveformQueue = xQueueCreate(1, sizeof(uint8_t));
+    if (FakeEinkET013TT1RenderQueue == nullptr) {
+        FakeEinkET013TT1RenderQueue = xQueueCreate(1, sizeof(uint8_t));
+    }
+    xQueueReset(FakeEinkET013TT1RenderQueue);
+    if (FakeEinkET013TT1DoneWaveformQueue == nullptr) {
+        FakeEinkET013TT1DoneWaveformQueue = xQueueCreate(1, sizeof(uint8_t));
+    }
+    xQueueReset(FakeEinkET013TT1DoneWaveformQueue);
 }
 
 void EinkET013TT1::setVcom(int mV) {}
@@ -38,10 +44,9 @@ auto EinkET013TT1::getPixel(const uint8_t *buffer, int x, int y) -> uint8_t {
 }
 
 void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer) {
-    // Skip waveform processing and just move the pixel all the way one way or another
-    log_d("Updating display with waveform \"%s\"", waveform.name);
-
     if (FakeEinkET013TT1SkipWaveform) {
+        // Skip waveform processing and just move the pixel all the way one way or another
+        log_d("Skipping waveform processing (would have used \"%s\")", waveform.name);
         for (int x = 0; x < EinkET013TT1_PIXEL_WIDTH; x++) {
             for (int y = 0; y < EinkET013TT1_PIXEL_HEIGHT; y++) {
                 auto pixel = getPixel(buffer, x, y);
@@ -50,8 +55,11 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
         }
         // Signal that we've drawn something
         uint8_t in = 1;
-        xQueueSend(FakeEinkET013TT1RenderQueue, &in, portMAX_DELAY);
+        if (!FakeEinkET013TT1SkipSignalling) {
+            xQueueSend(FakeEinkET013TT1RenderQueue, &in, portMAX_DELAY);
+        }
     } else {
+        log_d("Updating display with waveform \"%s\"", waveform.name);
         // For each frame in the waveform
         for (int frameIndex = 0; frameIndex < waveform.frameCount; frameIndex++) {
             auto frame = waveform.frames[frameIndex];
@@ -80,7 +88,9 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
                 }
             }
             uint8_t in = 1;
-            xQueueSend(FakeEinkET013TT1RenderQueue, &in, portMAX_DELAY);
+            if (!FakeEinkET013TT1SkipSignalling) {
+                xQueueSend(FakeEinkET013TT1RenderQueue, &in, portMAX_DELAY);
+            }
 
             // This doesn't account for processing time above, but probably real CPUs are fast
             // enough it doesn't matter?
@@ -92,7 +102,9 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     }
 
     uint8_t in = 1;
-    xQueueSend(FakeEinkET013TT1DoneWaveformQueue, &in, 0);
+    if (!FakeEinkET013TT1SkipSignalling) {
+        xQueueSend(FakeEinkET013TT1DoneWaveformQueue, &in, 0);
+    }
 }
 
 auto EinkET013TT1::readTemperature(ScreenSide screen) -> int16_t { return 24; }

@@ -28,6 +28,7 @@
 
 /* Standard includes. */
 #include <stdlib.h>
+#include <pthread.h>
 
 /* Defining MPU_WRAPPERS_INCLUDED_FROM_API_FILE prevents task.h from redefining
  * all the API functions to use the MPU wrappers.  That should only be done when
@@ -597,6 +598,9 @@
 
             /* Empty the command queue. */
             prvProcessReceivedCommands();
+
+            // Check if the pthread wants to cancel
+            pthread_testcancel();
         }
     }
 /*-----------------------------------------------------------*/

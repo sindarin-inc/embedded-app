@@ -1,5 +1,7 @@
+#include <memory>
 #include <string>
 
+#include "Displays/DisplayEinkET013TT1.hpp"
 #include "Inputs/RemoteInput.hpp"
 
 void StartFreeRtos(bool runAppMain = true);
@@ -19,3 +21,5 @@ struct ViewTestResult {
 };
 
 auto AssertViewUnchanged(std::string key) -> ViewTestResult;
+
+std::shared_ptr<DisplayEinkET013TT1> createDisplay();
