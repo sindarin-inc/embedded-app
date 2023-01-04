@@ -13,11 +13,13 @@
 
 #include "Displays/FakeEinkET013TT1.hpp"
 #include "Misc/Dispatch.hpp"
+#include "Storage/PreferencesStore.hpp"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+extern PreferencesStore prefs;
 extern void UIInnerLoop(RemoteCommand command);
 extern "C" void app_main(void); // NOLINT(readability-identifier-naming)
 std::shared_ptr<std::thread> SchedulerThread;
@@ -46,6 +48,16 @@ void StartFreeRtos(bool runAppMain) {
     FakeEinkET013TT1SkipWaveform = true;
     // If we're not running the full app, we can just call render directly and don't need to signal
     FakeEinkET013TT1SkipSignalling = !runAppMain;
+
+    // TODO: Really mock prefs
+    prefs.begin();
+    prefs.invertSetting.set(0);
+    prefs.font.set(PREFS_TAHOMA_REGULAR);
+    prefs.lineSpacing.set(0);
+    prefs.rectX.set(42);
+    prefs.rectY.set(30);
+    prefs.rectW.set(255 - 42 * 2);
+    prefs.rectH.set(255 - 30 * 2);
 
     // Start the FreeRTOS scheduler
     SchedulerThread = std::make_unique<std::thread>([runAppMain]() {
@@ -167,6 +179,9 @@ auto AssertViewUnchanged(std::string key) -> ViewTestResult {
 
 std::shared_ptr<DisplayEinkET013TT1> createDisplay() {
     auto display = std::make_shared<DisplayEinkET013TT1>(0, 0, 0);
+    (*display).style.setFontFamily((*display).style.tahomaRegular);
+    (*display).setBoundingBox((*display).defaultBoundingBox);
+    (*display).setLineSpacing(0);
     (*display).setup();
     (*display).invertDisplay(false);
     return display;

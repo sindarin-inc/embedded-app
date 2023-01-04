@@ -1,5 +1,6 @@
 #include <catch_amalgamated.hpp>
 
+#include "UI/LayoutTestScreen.hpp"
 #include "UI/PowerDepletedScreen.hpp"
 #include "ViewTestCommon.hpp"
 
@@ -25,16 +26,24 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
     StopFreeRtos();
 }
 
-TEST_CASE("Test the power depleted screen by itself") {
+TEST_CASE("Test some views independently") {
     // Don't spin up the whole app (runAppMain = false)
     StartFreeRtos(false);
 
     // Just create and render a PowerDepletedScreen
     auto display = createDisplay();
-    PowerDepletedScreen screen;
-    screen.render(*display);
 
-    AssertViewUnchanged("PowerDepletedScreen");
+    SECTION("Test PowerDepletedScreen") {
+        PowerDepletedScreen screen;
+        screen.render(*display);
+        AssertViewUnchanged("PowerDepletedScreen");
+    }
+
+    SECTION("Test LayoutTestView") {
+        LayoutTestScreen screen(*display);
+        screen.render(*display);
+        AssertViewUnchanged("LayoutTestScreen");
+    }
 
     StopFreeRtos();
 }
