@@ -5,13 +5,23 @@ import pathlib
 import subprocess
 import sys
 import shutil
-
+import sys
 
 parser = argparse.ArgumentParser(description="Generate build flags for simulator.")
 parser.add_argument(
     "--wasm",
     action="store_true",
     help="set flags for a web assembly build",
+)
+parser.add_argument(
+    "--sdl",
+    action="store_true",
+    help="set flags to include SDL",
+)
+parser.add_argument(
+    "--openssl",
+    action="store_true",
+    help="set flags to include OpenSSL",
 )
 args = parser.parse_args()
 
@@ -51,9 +61,7 @@ flags = [
     "-DUSE_BLE_SERVER_SETTINGS=0",
     "-DUSE_BLE_SERVER_IMPROV=0",
     "-DENABLE_OTA=0",
-    "-DENABLE_POCKET=0",
     "-DEINKET013TT1=1",
-    "-lSDL2_image",
     "-lpthread",
     "-Isrc",
     lib_includes,
@@ -64,7 +72,8 @@ if args.wasm:
         "-sUSE_SDL=2",
         "-sUSE_SDL_IMAGE=2",
     ]
-else:
+
+if args.sdl:
     # Native builds need to know how to find SDL2 and may need to set the correct architecture
     # Find SDL2
     try:
@@ -96,12 +105,14 @@ else:
         .strip()
     )
     flags += [
+        "-lSDL2_image",
         arch_flag,
         sdl_flags,
         f"-I{prefix}/include",
         "--debug",
     ]
 
+if args.openssl:
     # Ubuntu defaults
     openssl_flags = "-I/usr/include/openssl"
 
