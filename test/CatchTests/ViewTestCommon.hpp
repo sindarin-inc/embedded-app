@@ -10,7 +10,7 @@ void StopFreeRtos();
 
 void SendRemoteCommand(RemoteCommand command);
 
-void WaitForDraw();
+void WaitForDraw(long timeoutSeconds = 10);
 
 // TODO: This struct is probably overkill
 struct ViewTestResult {

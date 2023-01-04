@@ -75,12 +75,21 @@ void StopFreeRtos() {
     (*SchedulerThread).join();
 }
 
-// TODO: Add timeout
-void WaitForDraw() {
+void WaitForDraw(long timeoutSeconds) {
+    struct timespec startTime;
+    clock_gettime(CLOCK_MONOTONIC, &startTime);
+
+    long elapsedTime = 0;
     uint8_t out;
     while (FakeEinkET013TT1RenderQueue == nullptr ||
            xQueueReceiveFromISR(FakeEinkET013TT1RenderQueue, &out, nullptr) == pdFALSE) {
+        if (elapsedTime > timeoutSeconds) {
+            FAIL("Timed out waiting for draw");
+        }
         usleep(1000);
+        struct timespec endTime;
+        clock_gettime(CLOCK_MONOTONIC, &endTime); // get current time
+        elapsedTime = endTime.tv_sec - startTime.tv_sec;
     }
 }
 

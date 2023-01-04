@@ -39,7 +39,7 @@ TEST_CASE("Test some views independently") {
         AssertViewUnchanged("PowerDepletedScreen");
     }
 
-    SECTION("Test LayoutTestView") {
+    SECTION("Test LayoutTestScreen") {
         LayoutTestScreen screen(*display);
         screen.render(*display);
         AssertViewUnchanged("LayoutTestScreen");
