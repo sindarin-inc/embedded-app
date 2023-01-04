@@ -43,6 +43,7 @@ jobs:
           reporter: java-junit
 
       - name: Find test-images
+        if: failure()
         run: |
           find . -iname "*.png"
 
