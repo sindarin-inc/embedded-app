@@ -42,7 +42,6 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     log_d("Updating display with waveform \"%s\"", waveform.name);
 
     if (FakeEinkET013TT1SkipWaveform) {
-        // Grab the drawing lock
         for (int x = 0; x < EinkET013TT1_PIXEL_WIDTH; x++) {
             for (int y = 0; y < EinkET013TT1_PIXEL_HEIGHT; y++) {
                 auto pixel = getPixel(buffer, x, y);

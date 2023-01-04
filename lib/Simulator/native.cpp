@@ -242,7 +242,7 @@ auto mainLoop() -> bool {
     }
 #endif
 
-    // Check if there's something to draw and raw it
+    // Check if there's something to draw and draw it
     uint8_t out;
     if (FakeEinkET013TT1RenderQueue != nullptr &&
         xQueueReceiveFromISR(FakeEinkET013TT1RenderQueue, &out, nullptr) == pdTRUE) {

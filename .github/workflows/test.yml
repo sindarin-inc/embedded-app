@@ -8,12 +8,12 @@ on:
 
 jobs:
   catch2:
-    name: "Catch2"
+    name: "Build and Run Catch2"
     runs-on: ubuntu-latest
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: "recursive"
 
@@ -38,7 +38,7 @@ jobs:
         # run this step even if previous step failed
         if: success() || failure()
         with:
-          name: Catch2 Tests
+          name: Catch2 Test Results
           path: catch-results.xml
           reporter: java-junit
 
