@@ -206,7 +206,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         firmwareUpdateScreen->begin();
     }));
 
-    settingsMenu->addMenuItem(MenuItem("Reading Font Size", [this, settingsMenu]() {
+    settingsMenu->addMenuItem(MenuItem("Reading Fonst Size", [this, settingsMenu]() {
         auto fontMenu = new MenuScreen(this->power_, settingsMenu->getMyStyle());
         fontMenu->setExtraText("Example font size");
         fontMenu->addMenuItem(MenuItem("Small", [this, fontMenu]() {

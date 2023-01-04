@@ -9,4 +9,6 @@ TEST_CASE("Test MapRange") {
     // Support for flipped ranges
     REQUIRE(MapRange(5, 0, 25, 100, 50) == 90);
     REQUIRE(MapRange(5, 0, 25, -100, -50) == -90);
+    // Obviously wrong
+    REQUIRE(MapRange(5, 0, 25, -100, -50) == -91);
 }
