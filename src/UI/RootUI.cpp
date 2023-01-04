@@ -121,11 +121,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // piece. But if it doesn't, then we can add it here by doing a wifi connect,
     // sync content, delete content, repeat.
     if (prefs_.emcMode.get().value() == 1) {
-        mainMenu->addMenuItem(MenuItem(
-            "Mode 1 On", [this, display, &localStore, mainMenu, &lightingController]() {}));
+        mainMenu->addMenuItem(MenuItem("Mode 1 On", []() {}));
         mainMenu->addMenuItem(
-            MenuItem("Mode 2 (reading)", [this, display, &localStore, mainMenu, &lightingController,
-                                          readables, createReadableScreen]() {
+            MenuItem("Mode 2 (reading)", [this, display, readables, createReadableScreen]() {
                 log_d("Starting EMC mode readable reading turn page every 30 seconds");
                 auto it = std::find_if(readables.begin(), readables.end(), [](const Readable &x) {
                     return (x.title.compare("The Last Question") == 0);
