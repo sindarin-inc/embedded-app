@@ -340,6 +340,14 @@ void ReadableScreen::render(DisplaySystem &display) {
         xTimerStop(DisplaySystem::animationTimer, 0);
         xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
     }
+
+    if (prefs_.emcMode.get().value() == 1) {
+        // Must stop the timer because ChangePeriod starts it.
+        xTimerStop(DisplaySystem::animationTimer, 0);
+        // Change page every 1 second -- will up this after testing.
+        xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(1000), 0);
+        turnPage();
+    }
 }
 
 void ReadableScreen::incrementReadingTime() {

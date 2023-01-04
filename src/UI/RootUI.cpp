@@ -113,6 +113,35 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 contentSyncScreen->begin();
             }));
     }
+
+    // All we need to do at this level is to have a mode where the glasses have full LED on
+    // and a mode where a page turns every 30 seconds.
+    //
+    // Currently, the wifi plan is to have the espressive FCC test mode take care of that
+    // piece. But if it doesn't, then we can add it here by doing a wifi connect,
+    // sync content, delete content, repeat.
+    if (prefs_.emcMode.get().value() == 1) {
+        mainMenu->addMenuItem(MenuItem(
+            "Mode 1 On", [this, display, &localStore, mainMenu, &lightingController]() {}));
+        mainMenu->addMenuItem(
+            MenuItem("Mode 2 (reading)", [this, display, &localStore, mainMenu, &lightingController,
+                                          readables, createReadableScreen]() {
+                log_d("Starting EMC mode readable reading turn page every 30 seconds");
+                auto it = std::find_if(readables.begin(), readables.end(), [](const Readable &x) {
+                    return (x.title.compare("The Last Question") == 0);
+                });
+                if (it == readables.end()) {
+                    log_e("Could not find readable: %s", "The Last Question");
+                } else {
+                    log_d("Found readable: %s", (*it).title.c_str());
+                }
+                auto readableScreen = createReadableScreen(*it);
+                display->clearDisplay();
+                this->display_->setFont(this->display_->style.getFontFamily().readableFont);
+                this->setCurrentScreen(*readableScreen);
+            }));
+    }
+
     for (Readable &r : readables) {
         mainMenu->addMenuItem(MenuItem(r.title, [this, r, createReadableScreen]() {
             auto readableScreen = createReadableScreen(r);
@@ -295,6 +324,20 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         log_d("CES On!");
         prefs_.cesMode.set(1);
         debugMenu->showTemporaryMessage(*display, "CES mode on! Resetting...", 2000, false);
+        esp_restart();
+    }));
+
+    debugMenu->addMenuItem(MenuItem("Turn on EMC Mode", [this, debugMenu, display]() {
+        log_d("EMC On!");
+        prefs_.emcMode.set(1);
+        debugMenu->showTemporaryMessage(*display, "EMC mode on! Resetting...", 2000, false);
+        esp_restart();
+    }));
+
+    debugMenu->addMenuItem(MenuItem("Turn off EMC Mode", [this, debugMenu, display]() {
+        log_d("EMC Off!");
+        prefs_.emcMode.set(0);
+        debugMenu->showTemporaryMessage(*display, "EMC mode off! Resetting...", 2000, false);
         esp_restart();
     }));
 
@@ -522,11 +565,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         std::filesystem::remove("simprefs.ini");
         debugMenu->showTemporaryMessage(*display, "simprefs.ini deleted! Resetting...");
 #else
-        nvs_flash_erase();
-        localStore.clearArticlesFile(false);
-        localStore.clearReadablesFile(false);
-        log_w("NVS and FS cleared. Rebooting...");
-        debugMenu->showTemporaryMessage(*display, "NVS cleared! Resetting...");
+            nvs_flash_erase();
+            localStore.clearArticlesFile(false);
+            localStore.clearReadablesFile(false);
+            log_w("NVS and FS cleared. Rebooting...");
+            debugMenu->showTemporaryMessage(*display, "NVS cleared! Resetting...");
 #endif
         esp_restart();
     }));
@@ -585,7 +628,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // TODO: Add UI for right screen temp also
         leftTemp = driver->readTemperature(ScreenSide::Left);
 #else
-        leftTemp = 99;
+            leftTemp = 99;
 #endif
         batteryStatus += StringFormat(" %dC", leftTemp);
 
