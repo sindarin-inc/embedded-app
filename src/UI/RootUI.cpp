@@ -565,11 +565,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         std::filesystem::remove("simprefs.ini");
         debugMenu->showTemporaryMessage(*display, "simprefs.ini deleted! Resetting...");
 #else
-            nvs_flash_erase();
-            localStore.clearArticlesFile(false);
-            localStore.clearReadablesFile(false);
-            log_w("NVS and FS cleared. Rebooting...");
-            debugMenu->showTemporaryMessage(*display, "NVS cleared! Resetting...");
+        nvs_flash_erase();
+        localStore.clearArticlesFile(false);
+        localStore.clearReadablesFile(false);
+        log_w("NVS and FS cleared. Rebooting...");
+        debugMenu->showTemporaryMessage(*display, "NVS cleared! Resetting...");
 #endif
         esp_restart();
     }));
@@ -628,7 +628,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // TODO: Add UI for right screen temp also
         leftTemp = driver->readTemperature(ScreenSide::Left);
 #else
-            leftTemp = 99;
+        leftTemp = 99;
 #endif
         batteryStatus += StringFormat(" %dC", leftTemp);
 
