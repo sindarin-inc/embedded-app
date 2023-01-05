@@ -19,14 +19,18 @@ public:
         int y = 0;
         int indicatorWidth = 5;
 
-        auto indicatorRect = context.setViewFrame(indicator_, {x, y, indicatorWidth, size.height});
-        auto indicatorWidthPlus = indicatorRect.size.width + 8;
+        auto indicatorWidthPlus = indicatorWidth + 8;
+        auto indicatorHeightPadding = 4;
         auto textRect = context.setViewFrame(
             textView_, {indicatorWidthPlus, y, size.width - indicatorWidthPlus, size.height},
-            LayoutOptionsSizeToFitVertical);
+            LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
+        auto indicatorRect =
+            context.setViewFrame(indicator_, {x, y - indicatorHeightPadding, indicatorWidth,
+                                              textRect.size.height + 2 * indicatorHeightPadding});
 
-        y += std::max(textRect.size.height, indicatorRect.size.height) + 2;
-
+        y += textRect.size.height;
+        log_i("MenuItemView layout: %d x %d (%d vs %d)", size.width, y, textRect.size.height,
+              indicatorRect.size.height);
         return {size.width, y};
     }
 

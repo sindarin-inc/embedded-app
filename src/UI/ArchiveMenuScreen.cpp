@@ -1,6 +1,6 @@
 #include "ArchiveMenuScreen.hpp"
 
-#define SPACING 18
+#define SPACING 10
 
 auto ArchiveMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     int inset = 2;
@@ -13,15 +13,15 @@ auto ArchiveMenuScreen::layout(LayoutContext &context, Size size) -> Size {
             int viewCount = menuItemViews_.size();
             int boxHeight = (size.height - (viewCount - 1) * SPACING) / viewCount;
             Size boxSize = {size.width, boxHeight};
+            log_i("viewCount: %d %d", viewCount, boxHeight);
 
             for (auto &view : menuItemViews_) {
-                context.setViewFrame(*view, {{x, y}, boxSize},
-                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenter |
-                                         LayoutOptionsDefaultSize);
-                y += boxSize.height + SPACING;
+                auto viewFrame = context.setViewFrame(
+                    *view, {{x, y}, boxSize}, LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+                y += viewFrame.size.height + SPACING;
             }
 
-            return size;
+            return {size.width, y};
         });
 
     return {size.width, insetRect.size.height + 2 * inset};
