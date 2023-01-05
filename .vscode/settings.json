@@ -118,4 +118,10 @@
         "**/build/**": true,
         "build": true,
     },
+    "cSpell.words": [
+        "Eink",
+        "Sublayout",
+        "vcom",
+        "VCOM"
+    ],
 }

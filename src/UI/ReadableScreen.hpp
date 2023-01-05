@@ -26,7 +26,7 @@ public:
                    LightingController &lightingController)
 
         : renderer_(display), firstTimeRenderer_(display), readable_(readable), prefs_(prefs),
-          popup_(display, display, power, renderer_, prefs_, readable_, lightingController),
+          popup_(display, power, renderer_, prefs_, readable_, lightingController),
           archiveMenu_(power, readable_, prefs_, display), fileSystem_(fileSystem),
           display_(display) {
         currentScreen_ = this;

@@ -1,5 +1,7 @@
 #include "ArchiveMenuScreen.hpp"
 
+#define SPACING 18
+
 auto ArchiveMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     int inset = 2;
     auto insetRect = context.setSublayoutFrame(
@@ -8,59 +10,39 @@ auto ArchiveMenuScreen::layout(LayoutContext &context, Size size) -> Size {
         [this](LayoutContext &context, Size size) -> Size {
             int x = 0;
             int y = 0;
+            int viewCount = menuItemViews_.size();
+            int boxHeight = (size.height - (viewCount - 1) * SPACING) / viewCount;
+            Size boxSize = {size.width, boxHeight};
 
-            // Assume equal sizes for now
-            int viewCount = views_.size();
-            int dimension = vertical_ ? size.height : size.width;
-
-            Size boxSize;
-            if (vertical_) {
-                int boxHeight = (dimension - (viewCount - 1) * spacing_) / viewCount;
-                boxSize = {size.width, boxHeight};
-            } else {
-                int boxWidth = (dimension - (viewCount - 1) * spacing_) / viewCount;
-                boxSize = {boxWidth, size.height};
-            }
-            int x = 0;
-            int y = 0;
-
-            for (auto &view : views_) {
+            for (auto &view : menuItemViews_) {
                 context.setViewFrame(*view, {{x, y}, boxSize},
                                      LayoutOptionsSizeToFit | LayoutOptionsAlignCenter |
                                          LayoutOptionsDefaultSize);
-                if (vertical_) {
-                    y += boxSize.height + spacing_;
-                } else {
-                    x += boxSize.width + spacing_;
-                }
+                y += boxSize.height + SPACING;
             }
 
             return size;
-            auto menuRect = context.setViewFrame(this->menuView_, {{x, y}, {size.width, 15}},
-                                                 LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
-
-            y += menuRect.size.height + 2;
-
-            return {size.width, y};
         });
 
-    return {size.width, insetRect.size.height};
+    return {size.width, insetRect.size.height + 2 * inset};
 };
 
-void ArchiveMenuScreen::drawInRect(Rect rect) { menuView_.draw(); }
+void ArchiveMenuScreen::drawInRect(Rect rect) {
+    for (auto &view : menuItemViews_) {
+        (*view).draw();
+    }
+}
 
 void ArchiveMenuScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
     }
+
     menuItemViews_.clear();
-    for (auto &view : menuItems_) {
-        auto menuItem = std::make_shared<MenuItemView>(display, view.title, view.callback);
-        menuItemViews_.push_back(menuItem);
+    for (auto &menuItem : menuItems_) {
+        auto menuItemView = std::make_shared<MenuItemView>(display, menuItem);
+        menuItemViews_.push_back(menuItemView);
     }
-    StackView temp(display, menuItemViews_, 18, true);
-    menuView_ = std::move(temp);
-    needsRerender = true;
 
     setFrame({{0, 0}, {display.width(), display.height()}});
     PROFILE_START(ArchiveMenuScreenLayoutAndDraw);
@@ -72,14 +54,12 @@ void ArchiveMenuScreen::render(DisplaySystem &display) {
     firstLoad = false;
     needsRerender = true;
 
-    std::shared_ptr<EinkView> view = menuItemViews_[getCurrSelection()];
-    std::shared_ptr<MenuItemView> selectedMenuItem = std::dynamic_pointer_cast<MenuItemView>(view);
-    for (auto &view : menuItemViews_) {
-        std::shared_ptr<MenuItemView> menuItem = std::dynamic_pointer_cast<MenuItemView>(view);
-        if (menuItem && menuItem == selectedMenuItem) {
-            menuItem->setSelected(true);
+    std::shared_ptr<MenuItemView> selectedMenuItemView = menuItemViews_[getCurrSelection()];
+    for (auto &menuItemView : menuItemViews_) {
+        if (menuItemView && menuItemView == selectedMenuItemView) {
+            menuItemView->setSelected(true);
         } else {
-            menuItem->setSelected(false);
+            menuItemView->setSelected(false);
         }
     }
 

@@ -22,7 +22,7 @@ class ArchiveMenuScreen : public MenuScreen, public EinkView {
 public:
     ArchiveMenuScreen(Power &power, Readable &readable, PreferencesStore &prefs,
                       DisplaySystem &display)
-        : MenuScreen(power), EinkView(display), menuView_(display, {}, 8, true) {}
+        : MenuScreen(power), EinkView(display) {}
 
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
@@ -32,6 +32,5 @@ public:
     bool firstLoad = true;
 
 protected:
-    StackView menuView_;
-    std::vector<std::shared_ptr<EinkView>> menuItemViews_;
+    std::vector<std::shared_ptr<MenuItemView>> menuItemViews_;
 };

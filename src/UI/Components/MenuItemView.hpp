@@ -9,12 +9,10 @@
 
 class MenuItemView : public EinkView {
 public:
-    MenuItemView(DisplaySystem &display, std::string text, MenuItem &menuItem,
-                 std::function<void()> callback = {})
-        : EinkView(display), selected_(false), textView_(display, std::move(text)),
-          indicator_(display, 4), menuItem_(menuItem), callback(std::move(callback)) {}
+    MenuItemView(DisplaySystem &display, MenuItem &menuItem)
+        : EinkView(display), textView_(display, std::move(menuItem.title)), indicator_(display, 4),
+          menuItem_(menuItem) {}
     ~MenuItemView() override = default;
-    std::function<void()> callback;
 
     auto layout(LayoutContext &context, Size size) -> Size override {
         int x = 0;
@@ -51,6 +49,6 @@ public:
 protected:
     SingleLineTextView textView_;
     BoxView indicator_;
-    MenuItem *menuItem_;
-    bool selected_ = false;
+    MenuItem &menuItem_;
+    bool selected_;
 };
