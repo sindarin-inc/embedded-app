@@ -45,6 +45,7 @@ public:
     }
 
     void setSelected(bool selected) {
+        log_i("MenuItemView setSelected: %d", selected);
         selected_ = selected;
 
         setNeedsLayout();

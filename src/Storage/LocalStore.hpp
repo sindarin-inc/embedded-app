@@ -50,12 +50,12 @@ public:
 
     auto changedReadablePlacemarkQueryParams(const std::vector<Readable> &readables)
         -> std::vector<std::string>;
-    auto changedArticlesArchivedQueryParams(const std::vector<Readable> &articles)
+    auto changedReadablesArchivedQueryParams(const std::vector<Readable> &readables)
         -> std::vector<std::string>;
     auto processReadablePlacemarksFromServer(const Readable &readable, const uint32_t placemark)
         -> bool;
     void resetReadablesPlacemarkChanged(const std::vector<Readable> &readables);
-    void resetArticlesArchivedChanged(const std::vector<Readable> &readables);
+    void resetReadablesArchivedChanged(const std::vector<Readable> &readables);
 
     void syncFromRemote(const std::function<void(ContentSyncState state)> &progressCallback);
     void saveArticleFile(const Readable &readable);

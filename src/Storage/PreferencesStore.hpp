@@ -157,7 +157,7 @@ public:
           lastPageTurnerBuild(this->prefs_, "pt-build"),
           lastArticlesSince(this->prefs_, "articles-since"),
           lastReadablesSince(this->prefs_, "readables-since"), readablePlace(this->prefs_, "-p"),
-          readablePlaceChanged(this->prefs_, "-pc"), articleArchivedChanged(this->prefs_, "-ar"),
+          readablePlaceChanged(this->prefs_, "-pc"), readableArchivedChanged(this->prefs_, "-ar"),
           lastPageTurnerBattery(this->prefs_, "pt-battery"), invertSetting(this->prefs_, "invert"),
           vcom(this->prefs_, "vcom"), font(this->prefs_, "font"), rectX(this->prefs_, "rectX"),
           rectY(this->prefs_, "rectY"), rectW(this->prefs_, "rectW"), rectH(this->prefs_, "rectH"),
@@ -192,7 +192,7 @@ public:
     PrefsItem<std::string> lastReadablesSince;
     KeyedPrefsItem<uint32_t> readablePlace;
     KeyedPrefsItem<int> readablePlaceChanged;
-    KeyedPrefsItem<int> articleArchivedChanged;
+    KeyedPrefsItem<int> readableArchivedChanged;
     PrefsItem<int> lastPageTurnerBattery;
     PrefsItem<int> invertSetting;
     PrefsItem<int> vcom;

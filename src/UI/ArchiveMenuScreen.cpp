@@ -6,14 +6,14 @@ auto ArchiveMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     int inset = 2;
     auto insetRect = context.setSublayoutFrame(
         {{inset, inset}, {size.width - inset, size.height - inset}},
-        LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
+        LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical,
         [this](LayoutContext &context, Size size) -> Size {
             int x = 0;
             int y = 0;
             int viewCount = menuItemViews_.size();
             int boxHeight = (size.height - (viewCount - 1) * SPACING) / viewCount;
             Size boxSize = {size.width, boxHeight};
-            log_i("viewCount: %d %d", viewCount, boxHeight);
+            log_i("Archive menu layout: %d views, %dpx height", viewCount, boxHeight);
 
             for (auto &view : menuItemViews_) {
                 auto viewFrame = context.setViewFrame(
@@ -38,10 +38,12 @@ void ArchiveMenuScreen::render(DisplaySystem &display) {
         return;
     }
 
-    menuItemViews_.clear();
-    for (auto &menuItem : menuItems_) {
-        auto menuItemView = std::make_shared<MenuItemView>(display, menuItem);
-        menuItemViews_.push_back(menuItemView);
+    if (firstLoad) {
+        menuItemViews_.clear();
+        for (auto &menuItem : menuItems_) {
+            auto menuItemView = std::make_shared<MenuItemView>(display, menuItem);
+            menuItemViews_.push_back(menuItemView);
+        }
     }
 
     setFrame({{0, 0}, {display.width(), display.height()}});
@@ -51,8 +53,6 @@ void ArchiveMenuScreen::render(DisplaySystem &display) {
 
     display.updateDisplay(firstLoad ? DisplaySystem::UpdateType::FULL
                                     : DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
-    firstLoad = false;
-    needsRerender = true;
 
     std::shared_ptr<MenuItemView> selectedMenuItemView = menuItemViews_[getCurrSelection()];
     for (auto &menuItemView : menuItemViews_) {
@@ -67,4 +67,7 @@ void ArchiveMenuScreen::render(DisplaySystem &display) {
     draw();
 
     display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
+
+    firstLoad = false;
+    needsRerender = false;
 }
