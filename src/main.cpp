@@ -89,8 +89,6 @@ LocalStore localStore(fileSystem, prefs);
 Power power(fileSystem, prefs);
 RootUI rootUi(prefs, power);
 
-QueueHandle_t remoteQueue = nullptr;
-
 // Resonsible for handling connecting / reconnecting to remotes
 void RadioTask(void *parameter) {
     for (;;) {
@@ -437,7 +435,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     BlinkBootErrors(bootErrors);
 
-    remoteQueue = xQueueCreate(10, sizeof(RemoteCommand));
     xTaskCreatePinnedToCore(RadioTask, "Radio", 10000, nullptr, 1, nullptr, 0);
     // xTaskCreatePinnedToCore(StatsTask, "Stats", 5000, nullptr, 0, nullptr, 1);
     xTaskCreatePinnedToCore(PowerTask, "Power", 5000, nullptr, 0, &powerTaskHandle, 1);

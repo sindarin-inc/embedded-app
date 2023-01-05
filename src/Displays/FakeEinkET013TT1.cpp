@@ -6,14 +6,26 @@
 
 #include "sindarin-debug.h"
 
-uint8_t ParticlePositions[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT];
-extern void SimScreenUpdateDone();
-extern bool SDLNeedsRedraw;
+uint8_t FakeEinkET013TT1ParticlePositions[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT];
+// Skip waveform processing and just set things as black and white
+bool FakeEinkET013TT1SkipWaveform = false;
+bool FakeEinkET013TT1SkipSignalling = false;
+QueueHandle_t FakeEinkET013TT1RenderQueue = nullptr;
+QueueHandle_t FakeEinkET013TT1DoneWaveformQueue = nullptr;
 
-int EinkET013TT1::particleMovement = PARTICLE_MOVEMENT_DEFAULT;
-bool EinkET013TT1::skipDelay = false;
+// How much each e-ink particle will move each frame it is charged
+int FakeEinkET013TT1ParticleMovement = PARTICLE_MOVEMENT_DEFAULT;
 
-void EinkET013TT1::init() { log_d("Initialized EinkET013TT1"); }
+void EinkET013TT1::init() {
+    if (FakeEinkET013TT1RenderQueue == nullptr) {
+        FakeEinkET013TT1RenderQueue = xQueueCreate(1, sizeof(uint8_t));
+    }
+    xQueueReset(FakeEinkET013TT1RenderQueue);
+    if (FakeEinkET013TT1DoneWaveformQueue == nullptr) {
+        FakeEinkET013TT1DoneWaveformQueue = xQueueCreate(1, sizeof(uint8_t));
+    }
+    xQueueReset(FakeEinkET013TT1DoneWaveformQueue);
+}
 
 void EinkET013TT1::setVcom(int mV) {}
 
@@ -32,47 +44,67 @@ auto EinkET013TT1::getPixel(const uint8_t *buffer, int x, int y) -> uint8_t {
 }
 
 void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer) {
-    log_d("Updating display with waveform \"%s\"", waveform.name);
-
-    // For each frame in the waveform
-    for (int frameIndex = 0; frameIndex < waveform.frameCount; frameIndex++) {
-        auto frame = waveform.frames[frameIndex];
-
-        // For each pixel, calculate the correct way to move it for the waveform
+    if (FakeEinkET013TT1SkipWaveform) {
+        // Skip waveform processing and just move the pixel all the way one way or another
+        log_d("Skipping waveform processing (would have used \"%s\")", waveform.name);
         for (int x = 0; x < EinkET013TT1_PIXEL_WIDTH; x++) {
             for (int y = 0; y < EinkET013TT1_PIXEL_HEIGHT; y++) {
                 auto pixel = getPixel(buffer, x, y);
-                auto previousPixel = getPixel(previousBuffer_, x, y);
-                auto setting = frame.getSetting(previousPixel, pixel);
-                auto position = ParticlePositions[y * EinkET013TT1_PIXEL_WIDTH + x];
-                // TODO: We could probably get math-y here and simulate the movement of the
-                // particles with physics. For now we're just estimating.
-                switch (setting) {
-                case WHITE:
-                    position = std::min(position + particleMovement, 255);
-                    break;
-                case BLACK:
-                    position = std::max(position - particleMovement, 0);
-                    break;
-                case NOCHG:
-                    break;
-                }
-                ParticlePositions[y * EinkET013TT1_PIXEL_WIDTH + x] = position;
+                FakeEinkET013TT1ParticlePositions[y * EinkET013TT1_PIXEL_WIDTH + x] = pixel * 255;
             }
         }
-        SDLNeedsRedraw = true;
+        // Signal that we've drawn something
+        uint8_t in = 1;
+        if (!FakeEinkET013TT1SkipSignalling) {
+            xQueueSend(FakeEinkET013TT1RenderQueue, &in, portMAX_DELAY);
+        }
+    } else {
+        log_d("Updating display with waveform \"%s\"", waveform.name);
+        // For each frame in the waveform
+        for (int frameIndex = 0; frameIndex < waveform.frameCount; frameIndex++) {
+            auto frame = waveform.frames[frameIndex];
 
-        // This doesn't account for processing time above, but probably real CPUs are fast
-        // enough it doesn't matter
-        if (!skipDelay) {
+            // For each pixel, calculate the correct way to move it for the waveform
+            for (int x = 0; x < EinkET013TT1_PIXEL_WIDTH; x++) {
+                for (int y = 0; y < EinkET013TT1_PIXEL_HEIGHT; y++) {
+                    auto pixel = getPixel(buffer, x, y);
+                    auto previousPixel = getPixel(previousBuffer_, x, y);
+                    auto setting = frame.getSetting(previousPixel, pixel);
+                    auto position =
+                        FakeEinkET013TT1ParticlePositions[y * EinkET013TT1_PIXEL_WIDTH + x];
+                    // TODO: We could probably get math-y here and simulate the movement of the
+                    // particles with physics. For now we're just estimating.
+                    switch (setting) {
+                    case WHITE:
+                        position = std::min(position + FakeEinkET013TT1ParticleMovement, 255);
+                        break;
+                    case BLACK:
+                        position = std::max(position - FakeEinkET013TT1ParticleMovement, 0);
+                        break;
+                    case NOCHG:
+                        break;
+                    }
+                    FakeEinkET013TT1ParticlePositions[y * EinkET013TT1_PIXEL_WIDTH + x] = position;
+                }
+            }
+            uint8_t in = 1;
+            if (!FakeEinkET013TT1SkipSignalling) {
+                xQueueSend(FakeEinkET013TT1RenderQueue, &in, portMAX_DELAY);
+            }
+
+            // This doesn't account for processing time above, but probably real CPUs are fast
+            // enough it doesn't matter?
             delay(1000 / framerate_);
         }
+
+        // Move new buffer to be previous buffer
+        memcpy(previousBuffer_, buffer, sizeof(previousBuffer_));
     }
 
-    // Move new buffer to be previous buffer
-    memcpy(previousBuffer_, buffer, sizeof(previousBuffer_));
-
-    SimScreenUpdateDone();
+    uint8_t in = 1;
+    if (!FakeEinkET013TT1SkipSignalling) {
+        xQueueSend(FakeEinkET013TT1DoneWaveformQueue, &in, 0);
+    }
 }
 
 auto EinkET013TT1::readTemperature(ScreenSide screen) -> int16_t { return 24; }

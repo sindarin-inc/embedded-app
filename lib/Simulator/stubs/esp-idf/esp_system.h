@@ -21,4 +21,6 @@ typedef enum {
  * @brief  Get reason of last reset
  * @return See description of esp_reset_reason_t for explanation of each value.
  */
-esp_reset_reason_t esp_reset_reason(void) { return ESP_RST_POWERON; };
+esp_reset_reason_t esp_reset_reason(void);
+
+void esp_restart();

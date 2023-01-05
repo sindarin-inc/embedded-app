@@ -5,7 +5,7 @@
 #include "Platform.hpp"
 #include "sindarin-debug.h"
 
-extern int LightingSetting;
+int LightingSetting;
 
 void InitializePlatform() {}
 

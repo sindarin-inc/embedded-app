@@ -279,7 +279,10 @@ def main():
 
     files = []
     for path in git_ls_files(["*.cpp"]):
-        if path.startswith("lib/Simulator"):
+        if path.startswith("lib"):
+            continue
+        # Skipping tests for now
+        if path.startswith("test/CatchTest"):
             continue
         files.append(os.path.relpath(path, os.getcwd()))
 

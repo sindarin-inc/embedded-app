@@ -3,6 +3,8 @@
 
 #include <array>
 #include <cstdint>
+#include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
 #include <string>
 
 #include "EinkWaveform.hpp"
@@ -24,7 +26,12 @@ enum BorderSetting {
     BORDER_SETTING_NONE = 2,
 };
 
-extern uint8_t ParticlePositions[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT];
+extern uint8_t
+    FakeEinkET013TT1ParticlePositions[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT];
+extern bool FakeEinkET013TT1SkipWaveform;
+extern bool FakeEinkET013TT1SkipSignalling;
+extern QueueHandle_t FakeEinkET013TT1RenderQueue;
+extern QueueHandle_t FakeEinkET013TT1DoneWaveformQueue;
 
 // Driver for dual Eink 1.3" 256x256 displays
 class EinkET013TT1 {
@@ -54,11 +61,6 @@ public:
     auto readTemperature(ScreenSide screen) -> int16_t;
 
     auto errored() -> bool { return false; }
-
-    // How much the particle will move each frame it is charged
-    static int particleMovement;
-    // Whether to skip the framerate delay
-    static bool skipDelay;
 
 protected:
     uint8_t previousBuffer_[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT / 8];

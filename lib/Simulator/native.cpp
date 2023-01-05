@@ -30,28 +30,25 @@ const char *kGitHash = "SIMULATOR";
 #define SCALE 2
 
 // Will be set by PlatformSimulator.cpp SetLeftScreenLight() and SetRightScreenLight()
-int LightingSetting;
+extern int LightingSetting;
 
 SDL_Window *window;
 SDL_Renderer *renderer;
 // Texture on which to draw the UI from the firmware
 SDL_Texture *deviceScreen;
-bool SDLNeedsRedraw = true;
 
 // Variables related to drawing the overlay
 SDL_Surface *arrow;
 SDL_Texture *arrowTexture;
 Uint8 arrowOpacity = 0;
 double arrowRotation = 0;
-bool updateDone = false;
 
 float lerp(float a, float b, float t) { return a + t * (b - a); }
 
 void SimDrawScreen() {
-    SDL_SetRenderTarget(renderer, deviceScreen);
     for (int x = 0; x < EinkET013TT1_PIXEL_WIDTH; x++) {
         for (int y = 0; y < EinkET013TT1_PIXEL_HEIGHT; y++) {
-            uint8_t color = ParticlePositions[x + y * EinkET013TT1_PIXEL_WIDTH];
+            uint8_t color = FakeEinkET013TT1ParticlePositions[x + y * EinkET013TT1_PIXEL_WIDTH];
             float colorF = color / 255.0;
             uint16_t brightnessOffset =
                 MapRange(LightingSetting, MIN_LIGHTING_DUTY_CYCLE, MAX_LIGHTING_DUTY_CYCLE, 60, 0);
@@ -63,8 +60,6 @@ void SimDrawScreen() {
         }
     }
 };
-
-void SimScreenUpdateDone() { updateDone = true; }
 
 bool isPngEqual(std::string filepath1, std::string filepath2) {
     SDL_Surface *saveSurface1 = IMG_Load(filepath1.c_str());
@@ -151,12 +146,11 @@ RemoteCommand ttCommand;
 #endif
 
 void sendCodeAndRender(RemoteCommand command, SDL_Renderer *renderer) {
-    updateDone = false;
     DispatchGetUiQueue()->dispatchFromISR([command]() { UIInnerLoop(command); });
 
     // Wait for the UI thread to do the rendering to be rendered
-    // TODO: This should be a lock or something
-    while (!updateDone) {
+    uint8_t out;
+    while (xQueueReceiveFromISR(FakeEinkET013TT1DoneWaveformQueue, &out, nullptr) == pdFALSE) {
         usleep(10000);
     }
 
@@ -164,15 +158,10 @@ void sendCodeAndRender(RemoteCommand command, SDL_Renderer *renderer) {
     SDL_RenderCopy(renderer, deviceScreen, NULL, NULL);
     SimDrawScreen();
     SDL_RenderPresent(renderer);
-
-    SDLNeedsRedraw = false;
 }
 
 // Only press 'u' when you are on a page in a readable.
 void runBackwardsUnitTest(SDL_Window *window, SDL_Renderer *renderer) {
-    // Max out particle movement for the test (ignore e-ink artifacts)
-    EinkET013TT1::particleMovement = 255;
-    EinkET013TT1::skipDelay = true;
     for (int i = 0; i < 500; i++) {
         saveScreenshotPng("current.png", window, renderer);
         sendCodeAndRender(RemoteCommand::ENTER, renderer);
@@ -190,8 +179,6 @@ void runBackwardsUnitTest(SDL_Window *window, SDL_Renderer *renderer) {
         }
     }
     std::cerr << "unit test passed\n";
-    EinkET013TT1::particleMovement = PARTICLE_MOVEMENT_DEFAULT;
-    EinkET013TT1::skipDelay = false;
 }
 
 void goBackNumPages(SDL_Window *window, SDL_Renderer *renderer, int numPages) {
@@ -255,13 +242,14 @@ auto mainLoop() -> bool {
     }
 #endif
 
-    if (SDLNeedsRedraw || arrowOpacity > 0) {
+    // Check if there's something to draw and draw it
+    uint8_t out;
+    if (FakeEinkET013TT1RenderQueue != nullptr &&
+        xQueueReceiveFromISR(FakeEinkET013TT1RenderQueue, &out, nullptr) == pdTRUE) {
         SDL_SetRenderTarget(renderer, NULL);
         SDL_RenderCopy(renderer, deviceScreen, NULL, NULL);
         SimDrawScreen();
-        drawOverlay(remoteCode);
         SDL_RenderPresent(renderer);
-        SDLNeedsRedraw = false;
     }
 
     return true;

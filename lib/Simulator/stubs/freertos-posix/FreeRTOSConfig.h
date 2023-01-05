@@ -63,7 +63,10 @@
 #define configUSE_ALTERNATIVE_API 0
 #define configUSE_QUEUE_SETS 1
 #define configUSE_TASK_NOTIFICATIONS 1
-#define configSUPPORT_STATIC_ALLOCATION 1
+// There seems to be an issue when using static allocation where tasks can't always get torn down
+// when you start the scheduler multiple times. It stops executing in a weird spot:
+// https://github.com/sindarin-inc/embedded-app/blob/d35b6fe6dd7bdb5a78310a880dc8fd53bab52128/lib/Simulator/stubs/freertos-posix/freertos/list.h#L370
+#define configSUPPORT_STATIC_ALLOCATION 0
 
 /* Software timer related configuration options.  The maximum possible task
  * priority is configMAX_PRIORITIES - 1.  The priority of the timer task is
