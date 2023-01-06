@@ -16,7 +16,7 @@ public:
 
     void setCallback(std::function<void(bool opened)> callback) { callback_ = std::move(callback); }
 
-    // Callback fired after 60s of being closed
+    // Callback fired after 15s of being closed
     void setLongCloseCallback(std::function<void()> callback) {
         longCloseCallback_ = std::move(callback);
     }
