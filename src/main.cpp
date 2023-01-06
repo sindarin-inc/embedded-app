@@ -316,6 +316,11 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         lightingController.setOverrideValuePercent(100);
     }
 
+    // For all the EMC modes, we'll keep the lights at 100%
+    if (prefs.emcMode.get().value()) {
+        lightingController.setOverrideValuePercent(100);
+    }
+
 #if USE_BLE
     BLEDevice::init("Sindarin");
     auto bleStatus = esp_bt_controller_get_status();
