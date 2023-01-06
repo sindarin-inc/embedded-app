@@ -133,37 +133,40 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     // Setup articles menu, soon to be its own "tab"
     if (articles.size()) {
-        mainMenu->addMenuItem(MenuItem("Pocket Articles", [this, mainMenu, articles, display,
-                                                           createReadableScreen]() {
-            log_i("Loading %zu Pocket articles", articles.size());
+        mainMenu->addMenuItem(MenuItem(
+            "Pocket Articles", [this, mainMenu, articles, display, createReadableScreen]() {
+                log_i("Loading %zu Pocket articles", articles.size());
 
-            auto pocketMenu = new MenuScreen(this->power_, mainMenu->getMyStyle());
+                auto pocketMenu = new MenuScreen(this->power_, mainMenu->getMyStyle());
 
-            for (const Readable &r : articles) {
-                bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
-                auto title = archived ? "Archived: " + r.title : r.title;
+                for (const Readable &r : articles) {
+                    bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
+                    auto title = archived ? "Archived: " + r.title : r.title;
 
-                pocketMenu->addMenuItem(MenuItem(title, [this, display, pocketMenu, r,
-                                                         createReadableScreen]() {
-                    display->clearDisplay();
-                    auto readableScreen = createReadableScreen(r);
-                    setCurrentScreen(*readableScreen);
-                    readableScreen->backCallback = [this, display, readableScreen, pocketMenu]() {
-                        display->clearDisplay();
-                        setCurrentScreen(*pocketMenu);
-                        pocketMenu->render(*display);
-                        delete readableScreen;
-                    };
-                }));
-            }
-            display->clearDisplay();
-            setCurrentScreen(*pocketMenu);
-            pocketMenu->backCallback = [this, mainMenu, pocketMenu, display]() {
+                    pocketMenu->addMenuItem(
+                        MenuItem(title, [this, display, pocketMenu, r, createReadableScreen]() {
+                            display->clearDisplay();
+                            auto readableScreen = createReadableScreen(r);
+                            setCurrentScreen(*readableScreen);
+                            readableScreen->backCallback = [this, r, display, readableScreen,
+                                                            pocketMenu]() {
+                                display->clearDisplay();
+                                setCurrentScreen(*pocketMenu);
+                                pocketMenu->changeItemTitleAt(pocketMenu->getCurrSelection(),
+                                                              "Archived: " + r.title);
+                                pocketMenu->render(*display);
+                                delete readableScreen;
+                            };
+                        }));
+                }
                 display->clearDisplay();
-                setCurrentScreen(*mainMenu);
-                delete pocketMenu;
-            };
-        }));
+                setCurrentScreen(*pocketMenu);
+                pocketMenu->backCallback = [this, mainMenu, pocketMenu, display]() {
+                    display->clearDisplay();
+                    setCurrentScreen(*mainMenu);
+                    delete pocketMenu;
+                };
+            }));
     }
 
     // Settings menus

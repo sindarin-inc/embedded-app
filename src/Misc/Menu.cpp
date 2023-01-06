@@ -64,6 +64,10 @@ auto Menu::getItemTitleAt(int index) -> std::string {
     all = "  " + menuItems_[index].title;
     return all;
 }
+void Menu::changeItemTitleAt(int index, std::string title) {
+    assert(index < numMenuItems_);
+    menuItems_[index].title = title;
+}
 
 auto Menu::getItemAt(int index) -> MenuItem {
     assert(index < numMenuItems_);

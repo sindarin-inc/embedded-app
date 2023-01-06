@@ -54,6 +54,7 @@ public:
     // Includes the name of the item and it's number preceding it for easy display
     // Offset by two spaces
     auto getItemTitleAt(int index) -> std::string;
+    void changeItemTitleAt(int index, std::string title);
 
     auto getItemAt(int index) -> MenuItem;
 
