@@ -174,7 +174,7 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
 // Since this happens in a couple of places (animation as well as button press),
 // we have a helper method to do the work.
 void ReadableScreen::turnPage() {
-    if (atEnd_ || true) {
+    if (atEnd_) {
         archiveMenu_.addMenuItem(MenuItem("Archive and Main Menu", [this]() {
             this->prefs_.readableArchivedChanged.set(readable_.shortenedUuid.c_str(), true);
             if (this->backCallback != nullptr) {
