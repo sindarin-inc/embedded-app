@@ -25,6 +25,9 @@ public:
     }
 
     void feed() {
+        if (timer_ == nullptr) {
+            return;
+        }
         // Reset the timer.
         xTimerReset(timer_, portMAX_DELAY);
     }

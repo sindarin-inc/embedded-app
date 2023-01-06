@@ -235,12 +235,14 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         lightingController.begin();
     }
 
+#if !SIMULATOR
     inactivityTimer.start([]() {
         log_d("Inactive! Allow power off.");
         AllowPowerOff();
         vTaskDelay(5000 / portTICK_PERIOD_MS);
         esp_deep_sleep_start();
     });
+#endif
 
 #if USE_MMC5603
     if (!templeCloseSensor.checkProductId()) {
