@@ -320,9 +320,7 @@ void LocalStore::syncFromRemote(
         this->resetReadablesArchivedChanged(readables_);
 
         // Look through all the articles, deleting archived ones and downloading new ones
-        for (int i = 0; i < checkSyncResponse.userArticles.size(); i++) {
-            auto &userReadable = checkSyncResponse.userArticles[i];
-
+        for (auto &userReadable : checkSyncResponse.userArticles) {
             log_d("Fetched user article: %s (%zu)", userReadable.readable.title.c_str(),
                   userReadable.readable.content.size());
             if (this->processReadablePlacemarksFromServer(userReadable.readable,
