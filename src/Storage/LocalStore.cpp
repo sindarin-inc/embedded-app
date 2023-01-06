@@ -4,6 +4,7 @@
 
 #include "Communications/HtmlCleaner.hpp"
 #include "Communications/SindarinAPI.hpp"
+#include "Communications/WiFi.hpp"
 #include "Misc/Crypto.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
@@ -219,6 +220,19 @@ void LocalStore::resetArticlesArchivedChanged(const std::vector<Readable> &reada
 void LocalStore::syncFromRemote(
     const std::function<void(ContentSyncState state)> &progressCallback) {
 
+    if (!HasWiFiCredentials()) {
+        progressCallback(
+            ContentSyncState{.state = ContentSyncState::State::Failure,
+                             .message = "Go to Settings > WiFi Setup in the Sol app."});
+        return;
+    }
+
+    if (!ConnectWifi()) {
+        progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                          .message = "Failed to connect to WiFi."});
+        return;
+    }
+
     // Uncomment below line to set your access token for local development
     // prefs._cloudToken.set("");
 
@@ -226,13 +240,16 @@ void LocalStore::syncFromRemote(
     auto token = prefs_.cloudToken.get();
     if (!token.has_value()) {
         log_e("No access token set");
-        progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
-                                          .message = "No access token set"});
+        // TODO: Not great separation-of-concerns to have user-facing strings here for typical
+        // failure modes
+        progressCallback(
+            ContentSyncState{.state = ContentSyncState::State::Failure,
+                             .message = "Go to Settings > Pair Glasses in the Sol app."});
         return;
     }
 
     // Uncomment below line to steal your access token for local development
-    log_w("Access token: %s", token.value().c_str());
+    // log_w("Access token: %s", token.value().c_str());
 
     SindarinAPI::getInstance()->setAccessToken(token.value());
     progressCallback(ContentSyncState{.state = ContentSyncState::State::CheckingSync});
@@ -451,9 +468,7 @@ void LocalStore::syncFromRemote(
 
         // TODO: Force reload of rootUI instead of rebooting
         if (checkSyncResponse.synced) {
-            log_i("Synced, rebooting");
-            esp_restart();
-            // Only for the sim
+            log_i("Glasses are synced!");
             progressCallback(ContentSyncState{.state = ContentSyncState::State::Synced});
         } else {
             log_w("After running sync, local readables are still out of sync");

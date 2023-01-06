@@ -114,11 +114,6 @@ void ContentSyncScreen::begin() {
     state_.state = ContentSyncState::ConnectingWifi;
     render(display_);
 
-    if (!ConnectWifi()) {
-        fail("Failed to connect to WiFi");
-        return;
-    }
-
     localStore_.syncFromRemote([this](const ContentSyncState &state) {
         if (state.state == ContentSyncState::Failure || state.state == ContentSyncState::Synced ||
             state.state == ContentSyncState::AlreadySynced) {
@@ -128,6 +123,12 @@ void ContentSyncScreen::begin() {
         DispatchGetUiQueue()->dispatch([this, state]() {
             this->updateState(state);
             this->render(this->display_);
+#if !SIMULATOR
+            if (state.state == ContentSyncState::Synced) {
+                log_d("Content sync done, rebooting");
+                esp_restart();
+            }
+#endif
             if (state.state == ContentSyncState::Failure ||
                 state.state == ContentSyncState::Synced ||
                 state.state == ContentSyncState::AlreadySynced) {

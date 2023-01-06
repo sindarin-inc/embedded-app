@@ -13,6 +13,7 @@
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/BootError.hpp"
 #include "Misc/BootLoopDetection.hpp"
+#include "Misc/InactivityTimer.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/Power.hpp"
 #include "Misc/StringUtil.hpp"
@@ -68,10 +69,13 @@ LightingController lightingController;
 #if USE_MMC5603
 #include "Sensors/TempleCloseSensor.hpp"
 TempleCloseSensor templeCloseSensor;
+bool runningContentSync;
 #if !DISABLE_POWER_MANAGEMENT
 esp_pm_lock_handle_t maglock;
 #endif
 #endif
+
+InactivityTimer inactivityTimer;
 
 #if ENABLE_OTA
 OTA ota;
@@ -177,7 +181,10 @@ void StatsTask(void *parameter) {
     vTaskDelete(nullptr);
 }
 
-void UIInnerLoop(RemoteCommand command) { rootUi.loop(myDisplay, command); }
+void UIInnerLoop(RemoteCommand command) {
+    inactivityTimer.feed();
+    rootUi.loop(myDisplay, command);
+}
 
 #if CONFIG_AUTOSTART_ARDUINO
 void loop() { vTaskDelay(portMAX_DELAY); };
@@ -227,6 +234,13 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         lightingController.begin();
     }
 
+    inactivityTimer.start([]() {
+        log_d("Inactive! Allow power off.");
+        AllowPowerOff();
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        esp_deep_sleep_start();
+    });
+
 #if USE_MMC5603
     if (!templeCloseSensor.checkProductId()) {
         bootErrors.push_back({.type = BootError::Type::Magnetometer});
@@ -235,6 +249,10 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             if (open) {
                 lightingController.enableLighting();
                 templesClosed = false;
+                if (runningContentSync) {
+                    // Effectively cancel the content sync by disconnecting WiFi
+                    DisconnectWifi();
+                }
             } else {
                 lightingController.disableLighting();
                 templesClosed = true;
@@ -248,17 +266,26 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 log_d("Temples closed for a while, running content sync");
                 // Debug LED so we know what's happening
                 digitalWrite(BLUE_LED, LED_ON);
-                auto contentSyncScreen = new ContentSyncScreen(myDisplay, localStore, prefs);
-                contentSyncScreen->backCallback = []() {
-                    // In case only the right temple is closed and we're stuck on, reload the UI in
-                    // case we open the temple again
-                    rootUi.getCurrentScreen()->needsRerender = true;
-                    rootUi.render(myDisplay);
-                    log_i("Content sync done, turning off");
-                    digitalWrite(BLUE_LED, LED_OFF);
-                    AllowPowerOff();
-                };
-                contentSyncScreen->begin();
+                runningContentSync = true;
+                localStore.syncFromRemote([](const ContentSyncState &state) {
+                    if (state.state == ContentSyncState::Failure ||
+                        state.state == ContentSyncState::Synced ||
+                        state.state == ContentSyncState::AlreadySynced) {
+                        if (state.state == ContentSyncState::Failure) {
+                            log_i("Content sync failed with error: %s", state.message.c_str());
+                        } else if (state.state == ContentSyncState::Synced) {
+                            log_i("Content sync successful");
+                        } else if (state.state == ContentSyncState::AlreadySynced) {
+                            log_i("Content sync already synced");
+                        }
+                        digitalWrite(BLUE_LED, LED_OFF);
+                        // Only if the temples are still closed, allow power off
+                        if (templesClosed) {
+                            AllowPowerOff();
+                        }
+                        runningContentSync = false;
+                    }
+                });
             });
         });
     }
