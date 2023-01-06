@@ -265,7 +265,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         });
         templeCloseSensor.setLongCloseCallback([]() {
             DispatchGetUiQueue()->dispatch([]() {
-                // TODO: Also pause turn touch scanning
                 log_d("Temples closed for a while, running content sync");
                 // Debug LED so we know what's happening
                 digitalWrite(BLUE_LED, LED_ON);
