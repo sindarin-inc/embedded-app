@@ -117,7 +117,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // All we need to do at this level is to have a mode where the glasses have full LED on
     // and a mode where a page turns every 30 seconds.
     //
-    // Currently, the wifi plan is to have the espressive FCC test mode take care of that
+    // Currently, the wifi plan is to have the Espressif FCC test mode take care of that
     // piece. But if it doesn't, then we can add it here by doing a wifi connect,
     // sync content, delete content, repeat.
     if (prefs_.emcMode.get().value() == 1) {
