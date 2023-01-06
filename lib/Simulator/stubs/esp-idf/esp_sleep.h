@@ -1,3 +1,3 @@
 #pragma once
 
-void esp_deep_sleep_start(){};
+void esp_deep_sleep_start();

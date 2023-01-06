@@ -3,6 +3,7 @@
 #include <esp_err.h>
 #endif
 
+#include <esp_sleep.h>
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
