@@ -20,7 +20,7 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
             if (itemTitle.length() > 4) {
                 itemTitle = itemTitle.substr(0, itemTitle.length() - 4) + "...";
             } else {
-                // Practially, this shouldn't ever happen, but I'm doing
+                // Practically, this shouldn't ever happen, but I'm doing
                 // the bounds check here just in case we do hit it some day.
                 itemTitle = "too big!";
             }
@@ -95,65 +95,6 @@ void MenuScreen::drawArrowsAndSelections(DisplaySystem &display) {
                           (myStyle_.yOffsetForArrows + display.getTextHeight() / 2)));
 }
 
-void MenuScreen::addMenuItem(const MenuItem &newItem) {
-    menuItems_.push_back(newItem);
-    numMenuItems_++;
-}
-
-void MenuScreen::resetMenuItems() { numMenuItems_ = 0; }
-
-auto MenuScreen::getNumItems() -> int { return numMenuItems_; }
-
-void MenuScreen::setCurrSelection(int newSelection) { currSelection_ = newSelection; }
-
-auto MenuScreen::getCurrSelection() -> int { return currSelection_; }
-
-auto MenuScreen::getCurrItem() -> MenuItem { return menuItems_[currSelection_]; }
-
-void MenuScreen::nextSelection(bool skipLast) {
-    int oldCurMenuPage = currMenuPage_;
-    currSelection_ = (currSelection_ + 1) % numMenuItems_;
-    if (skipLast && (currSelection_ == numMenuItems_ - 1)) {
-        currSelection_ = 0;
-    }
-    currMenuPage_ = currSelection_ / myStyle_.numberOfItemsPerPage;
-    // This makes sure we do a full refresh when the page changes
-    if (oldCurMenuPage != currMenuPage_) {
-        log_d("Page changed, refreshing");
-        firstLoad_ = true;
-        needsRerender = true;
-    }
-}
-
-void MenuScreen::prevSelection(bool skipLast) {
-    int oldCurMenuPage = currMenuPage_;
-    // Wrap back around to the last item
-    currSelection_ = (currSelection_ + numMenuItems_ - 1) % numMenuItems_;
-    if (skipLast && (currSelection_ == numMenuItems_ - 1)) {
-        currSelection_--;
-    }
-    currMenuPage_ = currSelection_ / myStyle_.numberOfItemsPerPage;
-    // This makes sure we do a full refresh when the page changes
-    if (oldCurMenuPage != currMenuPage_) {
-        firstLoad_ = true;
-        needsRerender = true;
-    }
-}
-
-// Includes the name of the item and it's number preceding it for easy display
-// Offset by two spaces
-auto MenuScreen::getItemTitleAt(int index) -> std::string {
-    std::string all;
-    assert(index < numMenuItems_);
-    all = "  " + menuItems_[index].title;
-    return all;
-}
-
-auto MenuScreen::getItemAt(int index) -> MenuItem {
-    assert(index < numMenuItems_);
-    return menuItems_[index];
-}
-
 void MenuScreen::showTemporaryMessage(DisplaySystem &display, const std::string &message,
                                       int duration, bool rerenderAfter) {
     display.drawSingleLineOfCenteredText(message);
@@ -193,11 +134,15 @@ void MenuScreen::render(DisplaySystem &display) {
 void MenuScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::PREV:
-        prevSelection();
+        if (prevSelection()) {
+            firstLoad_ = true;
+        }
         needsRerender = true;
         break;
     case RemoteCommand::NEXT:
-        nextSelection();
+        if (nextSelection()) {
+            firstLoad_ = true;
+        }
         needsRerender = true;
         break;
     case RemoteCommand::ENTER:

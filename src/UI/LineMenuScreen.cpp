@@ -1,8 +1,8 @@
-#include "ArchiveMenuScreen.hpp"
+#include "LineMenuScreen.hpp"
 
 #define SPACING 10
 
-auto ArchiveMenuScreen::layout(LayoutContext &context, Size size) -> Size {
+auto LineMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     int inset = 2;
     auto insetRect = context.setSublayoutFrame(
         {{inset, inset}, {size.width - inset, size.height - inset}},
@@ -27,18 +27,18 @@ auto ArchiveMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     return {size.width, insetRect.size.height + 2 * inset};
 };
 
-void ArchiveMenuScreen::drawInRect(Rect rect) {
+void LineMenuScreen::drawInRect(Rect rect) {
     for (auto &view : menuItemViews_) {
         (*view).draw();
     }
 }
 
-void ArchiveMenuScreen::render(DisplaySystem &display) {
+void LineMenuScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
     }
 
-    if (firstLoad) {
+    if (firstLoad_) {
         menuItemViews_.clear();
         for (auto &menuItem : menuItems_) {
             auto menuItemView = std::make_shared<MenuItemView>(display, menuItem);
@@ -47,12 +47,12 @@ void ArchiveMenuScreen::render(DisplaySystem &display) {
     }
 
     setFrame({{0, 0}, {display.width(), display.height()}});
-    PROFILE_START(ArchiveMenuScreenLayoutAndDraw);
+    PROFILE_START(LineMenuScreenLayoutAndDraw);
     draw();
-    PROFILE_END_LOG_US(ArchiveMenuScreenLayoutAndDraw);
+    PROFILE_END_LOG_US(LineMenuScreenLayoutAndDraw);
 
-    display.updateDisplay(firstLoad ? DisplaySystem::UpdateType::FULL
-                                    : DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
+    display.updateDisplay(firstLoad_ ? DisplaySystem::UpdateType::FULL
+                                     : DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
 
     std::shared_ptr<MenuItemView> selectedMenuItemView = menuItemViews_[getCurrSelection()];
     for (auto &menuItemView : menuItemViews_) {
@@ -68,6 +68,41 @@ void ArchiveMenuScreen::render(DisplaySystem &display) {
 
     display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
 
-    firstLoad = false;
+    firstLoad_ = false;
     needsRerender = false;
+}
+
+void LineMenuScreen::processCommand(RemoteCommand command) {
+    switch (command) {
+    case RemoteCommand::PREV:
+        if (prevSelection()) {
+            firstLoad_ = true;
+        }
+        needsRerender = true;
+        break;
+    case RemoteCommand::NEXT:
+        if (nextSelection()) {
+            firstLoad_ = true;
+        }
+        needsRerender = true;
+        break;
+    case RemoteCommand::ENTER:
+    case RemoteCommand::CHANNEL_PLUS:
+        if (getCurrItem().callback != nullptr) {
+            getCurrItem().callback();
+        }
+        break;
+    case RemoteCommand::BACK:
+    case RemoteCommand::CHANNEL_MINUS:
+        if (backCallback != nullptr) {
+            firstLoad_ = true;
+            backCallback();
+        }
+        break;
+    case RemoteCommand::ANIMATION:
+        needsRerender = false;
+        break;
+    default:
+        break;
+    }
 }

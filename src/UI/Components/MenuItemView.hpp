@@ -35,7 +35,7 @@ public:
     }
 
     void drawInRect(Rect rect) override {
-
+        log_i("Drawing menu item: %s %d", menuItem_.title.c_str(), selected_);
         if (selected_) {
             indicator_.fillColor = display_.fg;
             indicator_.draw();

@@ -5,8 +5,8 @@
 #include "Renderers/RendererStream.hpp"
 #include "Sensors/LightingController.hpp"
 #include "Storage/PreferencesStore.hpp"
-#include "UI/ArchiveMenuScreen.hpp"
 #include "UI/ContainerScreen.hpp"
+#include "UI/LineMenuScreen.hpp"
 #include "UI/PopupMenuScreen.hpp"
 #include "UI/Screen.hpp"
 #include "config.h"
@@ -78,7 +78,7 @@ protected:
 
     PopupMenuScreen popup_;
 
-    ArchiveMenuScreen archiveMenu_;
+    LineMenuScreen archiveMenu_;
 
     FileSystem &fileSystem_;
 

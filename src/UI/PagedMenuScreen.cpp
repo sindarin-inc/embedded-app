@@ -70,21 +70,23 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     needsRerender = false;
 }
 
-void PagedMenuScreen::nextSelection(bool skipLast) {
+auto PagedMenuScreen::nextSelection(bool skipLast) -> bool {
     currSelection_ = (currSelection_ + 1) % numMenuItems_;
     if (currSelection_ == numMenuItems_ - 2) {
         currSelection_ = 0;
     }
     needsRerender = true;
+    return false;
 }
 
-void PagedMenuScreen::prevSelection(bool skipLast) {
+auto PagedMenuScreen::prevSelection(bool skipLast) -> bool {
     currSelection_ = (currSelection_ + numMenuItems_ - 1) % numMenuItems_;
     if (currSelection_ == numMenuItems_ - 1) {
         // If there are 0 readables, this breaks the menu
         currSelection_ = numMenuItems_ - 3;
     }
     needsRerender = true;
+    return false;
 }
 
 //

@@ -20,7 +20,6 @@
 #include "Renderers/Renderer.hpp"
 #include "Storage/LocalStore.hpp"
 #include "UI/AlignmentScreen.hpp"
-#include "UI/ArchiveMenuScreen.hpp"
 #include "UI/CalibrationScreen.hpp"
 #include "UI/CesScreen.hpp"
 #include "UI/ContentSyncScreen.hpp"
@@ -29,6 +28,7 @@
 #include "UI/FirmwareUpdateScreen.hpp"
 #include "UI/LayoutTestScreen.hpp"
 #include "UI/LightingAdjustScreen.hpp"
+#include "UI/LineMenuScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/LoadingScreen.hpp"
 #include "UI/LogoScreen.hpp"
@@ -117,10 +117,14 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }));
     }
     for (Readable &r : readables) {
-        mainMenu->addMenuItem(MenuItem(r.title, [this, r, createReadableScreen]() {
+        bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
+        auto title = archived ? "Archived: " + r.title : r.title;
+
+        mainMenu->addMenuItem(MenuItem(title, [this, r, createReadableScreen]() {
             auto readableScreen = createReadableScreen(r);
             this->setCurrentScreen(*readableScreen);
         }));
+
         if (currentReadable.has_value() && currentReadable.value() == r.uuid) {
             mainMenu->setCurrSelection(mainMenu->getNumItems() - 1);
         }
@@ -136,14 +140,18 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             auto pocketMenu = new MenuScreen(this->power_, mainMenu->getMyStyle());
 
             for (const Readable &r : articles) {
-                pocketMenu->addMenuItem(MenuItem(r.title, [this, display, pocketMenu, r,
-                                                           createReadableScreen]() {
+                bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
+                auto title = archived ? "Archived: " + r.title : r.title;
+
+                pocketMenu->addMenuItem(MenuItem(title, [this, display, pocketMenu, r,
+                                                         createReadableScreen]() {
                     display->clearDisplay();
                     auto readableScreen = createReadableScreen(r);
                     setCurrentScreen(*readableScreen);
                     readableScreen->backCallback = [this, display, readableScreen, pocketMenu]() {
                         display->clearDisplay();
                         setCurrentScreen(*pocketMenu);
+                        pocketMenu->render(*display);
                         delete readableScreen;
                     };
                 }));

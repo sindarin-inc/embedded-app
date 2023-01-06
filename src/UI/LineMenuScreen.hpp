@@ -3,6 +3,8 @@
 #include <memory>
 #include <vector>
 
+#include "Misc/Menu.hpp"
+#include "Misc/MenuStyle.hpp"
 #include "Models/Readable.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Bitmaps/Lightbulb.hpp"
@@ -17,20 +19,28 @@
 #include "UI/Screen.hpp"
 #include "sindarin-debug.h"
 
-// Example of a more complex view that combines other views in a layout
-class ArchiveMenuScreen : public MenuScreen, public EinkView {
+class LineMenuScreen : public Screen, public Menu, public EinkView {
 public:
-    ArchiveMenuScreen(Power &power, Readable &readable, PreferencesStore &prefs,
-                      DisplaySystem &display)
-        : MenuScreen(power), EinkView(display) {}
+    LineMenuScreen(Power &power, Readable &readable, PreferencesStore &prefs,
+                   DisplaySystem &display, MenuStyleFamily menuStyle)
+        : power_(power), Menu(), EinkView(display) {
+        numMenuItems_ = 0;
+    }
+    LineMenuScreen(Power &power, Readable &readable, PreferencesStore &prefs,
+                   DisplaySystem &display)
+        : power_(power), Menu(), EinkView(display) {
+        numMenuItems_ = 0;
+    }
 
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
 
     void render(DisplaySystem &display) override;
 
-    bool firstLoad = true;
+    void processCommand(RemoteCommand command) override;
 
 protected:
     std::vector<std::shared_ptr<MenuItemView>> menuItemViews_;
+    Power &power_;
+    bool firstLoad_ = true;
 };

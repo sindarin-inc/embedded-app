@@ -11,8 +11,8 @@ class PagedMenuScreen : public MenuScreen {
 public:
     PagedMenuScreen(Power &power) : MenuScreen(power){};
 
-    void nextSelection(bool skipLast = false) override;
-    void prevSelection(bool skipLast = false) override;
+    auto nextSelection(bool skipLast = false) -> bool override;
+    auto prevSelection(bool skipLast = false) -> bool override;
 
     void render(DisplaySystem &display) override;
 
