@@ -8,8 +8,10 @@
 
 #include "PosixFileImpl.hpp"
 
+char PosixFileSystemPrefix[64] = "./data";
+
 void createPath(char *output, size_t outputSize, const std::string &path) {
-    strncpy(output, ".", outputSize);
+    strncpy(output, PosixFileSystemPrefix, outputSize);
     strncat(output, path.c_str(), outputSize - 1);
 }
 
@@ -18,21 +20,21 @@ bool PosixFileSystem::begin() { return true; }
 auto PosixFileSystem::open(const std::string &path, const char *mode, const bool create) const
     -> File {
     char prefixedPath[200];
-    createPath(prefixedPath, sizeof(prefixedPath), std::string("/data") + path);
+    createPath(prefixedPath, sizeof(prefixedPath), path);
     auto file = File(std::make_shared<PosixFileImpl>(prefixedPath, mode));
     return file;
 }
 
 bool PosixFileSystem::exists(const std::string &path) const {
     char prefixedPath[200];
-    createPath(prefixedPath, sizeof(prefixedPath), std::string("/data") + path);
+    createPath(prefixedPath, sizeof(prefixedPath), path);
     struct stat buffer;
     return (stat(prefixedPath, &buffer) == 0);
 }
 
 auto PosixFileSystem::listDir(const std::string &path, FileList &files) const -> int {
     char prefixedPath[200];
-    createPath(prefixedPath, sizeof(prefixedPath), std::string("/data") + path);
+    createPath(prefixedPath, sizeof(prefixedPath), path);
     DIR *dp = opendir(prefixedPath);
     if (dp != NULL) {
         struct dirent *ep;
@@ -50,7 +52,7 @@ auto PosixFileSystem::listDir(const std::string &path, FileList &files) const ->
 
 auto PosixFileSystem::createDir(const std::string &path, bool allowExists) -> bool {
     char prefixedPath[200];
-    createPath(prefixedPath, sizeof(prefixedPath), std::string("/data") + path);
+    createPath(prefixedPath, sizeof(prefixedPath), path);
     if (mkdir(prefixedPath, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
         if (errno == EEXIST && allowExists) {
             // Silently pass
@@ -64,7 +66,7 @@ auto PosixFileSystem::createDir(const std::string &path, bool allowExists) -> bo
 
 auto PosixFileSystem::remove(const std::string &path) -> bool {
     char prefixedPath[200];
-    createPath(prefixedPath, sizeof(prefixedPath), std::string("/data") + path);
+    createPath(prefixedPath, sizeof(prefixedPath), path);
 
     return (::remove(prefixedPath));
 };
