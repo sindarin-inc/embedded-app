@@ -16,7 +16,7 @@
 class MenuScreen : public Screen, public Menu {
 
 public:
-    MenuScreen(Power &power, MenuStyleFamily myStyle) : power_(power), Menu(myStyle) {
+    MenuScreen(Power &power, MenuStyleFamily myStyle) : Menu(myStyle), power_(power) {
         numMenuItems_ = 0;
     };
 

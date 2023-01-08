@@ -23,12 +23,12 @@ class LineMenuScreen : public Screen, public Menu, public EinkView {
 public:
     LineMenuScreen(Power &power, Readable &readable, PreferencesStore &prefs,
                    DisplaySystem &display, MenuStyleFamily menuStyle)
-        : power_(power), Menu(), EinkView(display) {
+        : Menu(), EinkView(display), power_(power) {
         numMenuItems_ = 0;
     }
     LineMenuScreen(Power &power, Readable &readable, PreferencesStore &prefs,
                    DisplaySystem &display)
-        : power_(power), Menu(), EinkView(display) {
+        : Menu(), EinkView(display), power_(power) {
         numMenuItems_ = 0;
     }
 
