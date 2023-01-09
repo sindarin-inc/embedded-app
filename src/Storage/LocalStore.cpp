@@ -217,7 +217,7 @@ void LocalStore::resetReadablesArchivedChanged(const std::vector<Readable> &read
         if (!readable.localOnly && changed) {
             log_d("Resetting article archive changed for \"%s\" (now synced to server)",
                   readable.title.c_str());
-            prefs_.readableArchivedChanged.set(readable.shortenedUuid.c_str(), 0);
+            prefs_.readableArchivedChanged.remove(readable.shortenedUuid.c_str());
         }
     }
 }

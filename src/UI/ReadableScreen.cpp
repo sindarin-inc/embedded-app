@@ -176,12 +176,14 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
 void ReadableScreen::turnPage() {
     if (atEnd_) {
         archiveMenu_.addMenuItem(MenuItem("Archive and Main Menu", [this]() {
+            log_i("Archiving: %s", readable_.title.c_str());
             this->prefs_.readableArchivedChanged.set(readable_.shortenedUuid.c_str(), true);
             if (this->backCallback != nullptr) {
                 this->backCallback();
             }
         }));
         archiveMenu_.addMenuItem(MenuItem("Main Menu", [this]() {
+            log_i("Not archiving: %s", readable_.title.c_str());
             if (this->backCallback != nullptr) {
                 this->backCallback();
             }
@@ -472,8 +474,6 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         }
         break;
     case RemoteCommand::NOP_BUTTON:
-        needsRerender = true;
-        break;
     case RemoteCommand::ANIMATION:
         needsRerender = true;
         break;

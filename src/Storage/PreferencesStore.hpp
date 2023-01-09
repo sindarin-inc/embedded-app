@@ -143,6 +143,12 @@ public:
             this->writeToStorage(key, value);
         }
 
+        void remove(const char *prefix) {
+            char key[MAX_KEY_LENGTH + 1];
+            this->makeKey(key, prefix);
+            this->deleteFromStorage(key);
+        }
+
     protected:
         const char *suffix_;
     };
@@ -192,8 +198,8 @@ public:
     PrefsItem<std::string> lastArticlesSince;
     PrefsItem<std::string> lastReadablesSince;
     KeyedPrefsItem<uint32_t> readablePlace;
-    KeyedPrefsItem<int> readablePlaceChanged;
-    KeyedPrefsItem<int> readableArchivedChanged;
+    KeyedPrefsItem<bool> readablePlaceChanged;
+    KeyedPrefsItem<bool> readableArchivedChanged;
     PrefsItem<int> lastPageTurnerBattery;
     PrefsItem<int> invertSetting;
     PrefsItem<int> vcom;
