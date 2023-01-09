@@ -13,7 +13,8 @@ auto LineMenuScreen::layout(LayoutContext &context, Size size) -> Size {
             int viewCount = menuItemViews_.size();
             int boxHeight = (size.height - (viewCount - 1) * spacing) / viewCount;
             Size boxSize = {size.width, boxHeight};
-            log_i("Archive menu layout: %d views, %dpx height", viewCount, boxHeight);
+            log_i("Archive menu layout: %d views * %dpx height (%dpx width)", viewCount, boxHeight,
+                  size.width);
 
             for (auto &view : menuItemViews_) {
                 auto viewFrame = context.setViewFrame(
@@ -98,6 +99,7 @@ void LineMenuScreen::processCommand(RemoteCommand command) {
             firstLoad_ = true;
             backCallback();
         }
+        needsRerender = true;
         break;
     case RemoteCommand::ANIMATION:
         needsRerender = false;

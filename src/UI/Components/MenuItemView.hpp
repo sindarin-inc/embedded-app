@@ -36,17 +36,21 @@ public:
 
     void drawInRect(Rect rect) override {
         log_d("Drawing menu item: %s %d", menuItem_.title.c_str(), selected_);
+
         if (selected_) {
             indicator_.fillColor = display_.fg;
-            indicator_.draw();
+            indicator_.strokeColor.reset();
+        } else {
+            indicator_.fillColor.reset();
+            indicator_.strokeColor.reset();
         }
 
+        indicator_.draw();
         textView_.draw();
     }
 
     void setSelected(bool selected) {
         selected_ = selected;
-
         setNeedsLayout();
     }
 
@@ -54,5 +58,5 @@ protected:
     SingleLineTextView textView_;
     BoxView indicator_;
     MenuItem &menuItem_;
-    bool selected_;
+    bool selected_ = false;
 };

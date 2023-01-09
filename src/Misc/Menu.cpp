@@ -10,7 +10,12 @@ void Menu::addMenuItem(const MenuItem &newItem) {
     numMenuItems_++;
 }
 
-void Menu::resetMenuItems() { numMenuItems_ = 0; }
+void Menu::resetMenuItems() {
+    menuItems_.clear();
+    numMenuItems_ = 0;
+    currSelection_ = 0;
+    currMenuPage_ = 0;
+}
 
 auto Menu::getNumItems() -> int { return numMenuItems_; }
 

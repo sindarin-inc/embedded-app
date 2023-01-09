@@ -176,6 +176,7 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
 void ReadableScreen::turnPage() {
     if (atEnd_) {
         bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
+        archiveMenu_.resetMenuItems();
         archiveMenu_.addMenuItem(MenuItem("Archive and Main Menu", [this]() {
             log_i("Archiving: %s", readable_.title.c_str());
             this->prefs_.readableArchivedChanged.set(readable_.shortenedUuid.c_str(), true);
@@ -198,6 +199,7 @@ void ReadableScreen::turnPage() {
                 this->backCallback();
             }
         }));
+        archiveMenu_.setNeedsLayout();
         setCurrentScreen(archiveMenu_);
     } else {
         readable_.placePrev = readable_.place;
