@@ -147,9 +147,19 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
         auto title = archived ? "Archived: " + r.title : r.title;
 
-        mainMenu->addMenuItem(MenuItem(title, [this, r, createReadableScreen]() {
+        mainMenu->addMenuItem(MenuItem(title, [this, r, createReadableScreen, display, mainMenu]() {
             auto readableScreen = createReadableScreen(r);
             this->setCurrentScreen(*readableScreen);
+            readableScreen->backCallback = [this, r, display, readableScreen, mainMenu]() {
+                display->clearDisplay();
+                setCurrentScreen(*mainMenu);
+                bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
+                auto title = archived ? "Archived: " + r.title : r.title;
+                mainMenu->changeItemTitleAt(mainMenu->getCurrSelection(), title);
+                mainMenu->setFirstLoad();
+                mainMenu->render(*display);
+                delete readableScreen;
+            };
         }));
 
         if (currentReadable.has_value() && currentReadable.value() == r.uuid) {
