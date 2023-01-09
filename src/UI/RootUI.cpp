@@ -182,6 +182,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                         bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
                         auto title = archived ? "Archived: " + r.title : r.title;
                         pocketMenu->changeItemTitleAt(pocketMenu->getCurrSelection(), title);
+                        pocketMenu->setFirstLoad();
                         pocketMenu->render(*display);
                         delete readableScreen;
                     };
@@ -191,6 +192,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             setCurrentScreen(*pocketMenu);
             pocketMenu->backCallback = [this, mainMenu, pocketMenu, display]() {
                 display->clearDisplay();
+                mainMenu->setFirstLoad();
                 setCurrentScreen(*mainMenu);
                 delete pocketMenu;
             };
