@@ -316,8 +316,11 @@ void LocalStore::syncFromRemote(
         // Now look through all the readables here, and download any that we don't have
         // already
         for (auto &userReadable : checkSyncResponse.userReadables) {
-            log_d("User readable %s (%s)", userReadable.readable.title.c_str(),
-                  userReadable.readable.file().shaHash.c_str());
+            uint32_t onDevicePlace =
+                prefs_.readablePlace.get(userReadable.readable.shortenedUuid.c_str());
+            log_d("Fetched user readable %s (%s bytes, placemark from %d to %d)",
+                  userReadable.readable.title.c_str(), userReadable.readable.file().shaHash.c_str(),
+                  onDevicePlace, userReadable.placemark);
             if (this->processReadablePlacemarksFromServer(userReadable.readable,
                                                           userReadable.placemark)) {
                 log_i("Placemark for %s updated to %d", userReadable.readable.title.c_str(),
@@ -331,7 +334,7 @@ void LocalStore::syncFromRemote(
                 continue;
             }
             if (this->hasReadable(readables_, userReadable.readable)) {
-                log_w("Already have %s", userReadable.readable.title.c_str());
+                log_w("Already have readable %s", userReadable.readable.title.c_str());
                 continue;
             }
 
@@ -342,8 +345,11 @@ void LocalStore::syncFromRemote(
 
         // Look through all the articles, deleting archived ones and downloading new ones
         for (auto &userReadable : checkSyncResponse.userArticles) {
-            log_d("Fetched user article: %s (%zu)", userReadable.readable.title.c_str(),
-                  userReadable.readable.content.size());
+            uint32_t onDevicePlace =
+                prefs_.readablePlace.get(userReadable.readable.shortenedUuid.c_str());
+            log_d("Fetched user article: %s (%zu bytes, placemark from %d to %d)",
+                  userReadable.readable.title.c_str(), userReadable.readable.content.size(),
+                  onDevicePlace, userReadable.placemark);
             if (this->processReadablePlacemarksFromServer(userReadable.readable,
                                                           userReadable.placemark)) {
                 log_i("Placemark for %s updated to %d", userReadable.readable.title.c_str(),
@@ -358,7 +364,7 @@ void LocalStore::syncFromRemote(
             }
             if (this->hasReadable(articles_, userReadable.readable)) {
                 // Should never get here as articlesSince should hide these articles
-                log_w("Already have %s", userReadable.readable.title.c_str());
+                log_w("Already have article %s", userReadable.readable.title.c_str());
                 continue;
             }
 
