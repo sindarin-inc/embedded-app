@@ -426,13 +426,10 @@ void LocalStore::syncFromRemote(
         auto tasksIndex = readablesToDownload.size() + readablesToDelete.size();
         if (articlesToDelete.size() > 0) {
             tasksIndex += 1;
-            syncState.tasks[tasksIndex].percentage = 0;
-            progressCallback(syncState);
 
             for (int i = 0; i < articlesToDelete.size(); i++) {
                 syncState.tasks[tasksIndex].percentage =
                     (float(i + 1) / articlesToDelete.size()) * 100;
-                progressCallback(syncState);
 
                 const auto &readable = articlesToDelete[i];
                 log_i("Deleting %s", readable.title.c_str());
