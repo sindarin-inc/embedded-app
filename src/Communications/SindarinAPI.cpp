@@ -73,6 +73,9 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
     for (auto &placemark : req.articlePlacemarks) {
         body += placemark.c_str();
     }
+    for (auto &readable : req.readablesArchived) {
+        body += readable.c_str();
+    }
     for (auto &article : req.articlesArchived) {
         body += article.c_str();
     }

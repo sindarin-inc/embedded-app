@@ -166,7 +166,8 @@ auto LocalStore::changedReadablesArchivedQueryParams(const std::vector<Readable>
 
         bool changed = prefs_.readableArchivedChanged.get(readable.shortenedUuid.c_str());
         if (changed) {
-            log_i("Archived readable %s %s", readable.title.c_str(), readable.uuid.c_str());
+            log_i("Archived %s %s %s", modelType.c_str(), readable.title.c_str(),
+                  readable.uuid.c_str());
             archived.push_back(
                 StringFormat("&%s_archive_%s=1", modelType.c_str(), readable.uuid.c_str()));
         }
@@ -279,6 +280,7 @@ void LocalStore::syncFromRemote(
             .articlesSince = articlesSince,
             .readablePlacemarks = readablePlacemarks,
             .articlePlacemarks = articlePlacemarks,
+            .readablesArchived = readablesArchived,
             .articlesArchived = articlesArchived,
             .ptBattery = this->prefs_.lastPageTurnerBattery.get().value_or(0),
             .ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or(""),

@@ -13,6 +13,7 @@ struct CheckSyncRequest {
     std::string articlesSince;
     std::vector<std::string> readablePlacemarks;
     std::vector<std::string> articlePlacemarks;
+    std::vector<std::string> readablesArchived;
     std::vector<std::string> articlesArchived;
     int ptBattery;
     std::string ptBuild;
