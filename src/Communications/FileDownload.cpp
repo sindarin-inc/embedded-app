@@ -104,9 +104,18 @@ auto DownloadFile(HTTPClient &httpClient, FileSystem &fileSystem, const char *pa
     file.close();
 
     if (length != fileSize) {
+        file = fileSystem.open(path);
+        char headBuffer[100];
+        auto head = file.readBytes(headBuffer, 100);
+        file.seek(file.size() - 100);
+        char tailBuffer[100];
+        auto tail = file.readBytes(tailBuffer, 100);
+        file.close();
         // TODO: What's the best API to get errors from the stream?
         log_e("Downloaded file is shorter than expected, expected %d bytes but got %zu bytes",
               length, fileSize);
+        log_d("Head of file: %s / %zu", headBuffer, head);
+        log_d("Tail of file: %s / %zu", tailBuffer, tail);
         return false;
     } else {
         return true;

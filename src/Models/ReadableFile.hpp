@@ -30,7 +30,7 @@ public:
         filetype = j["filetype"].as<std::string>();
         uploadedAt = j["uploaded_at"].as<std::string>();
         shaHash = j["sha_hash"].as<std::string>();
-        file = j["file"].as<std::string>();
+        file = j["file_proxied"].as<std::string>();
         return true;
     }
 };
