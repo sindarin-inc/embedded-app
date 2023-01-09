@@ -2,15 +2,10 @@
 #define MENU_SYSTEM_H
 
 #include <string>
-#include <utility>
 #include <vector>
 
-#include "Inputs/RemoteInput.hpp"
 #include "Misc/Menu.hpp"
 #include "Misc/MenuStyle.hpp"
-#include "Misc/Power.hpp"
-#include "Renderers/Renderer.hpp"
-#include "UI/Screen.hpp"
 #include "sindarin-debug.h"
 
 class MenuItem {

@@ -29,13 +29,13 @@ public:
                          {indicatorWidth, textRect.size.height + 2 * indicatorHeightPadding}});
 
         y += textRect.size.height;
-        log_i("MenuItemView layout: %d x %d (%d vs %d)", size.width, y, textRect.size.height,
+        log_d("MenuItemView layout: %d x %d (%d vs %d)", size.width, y, textRect.size.height,
               indicatorRect.size.height);
         return {size.width, y};
     }
 
     void drawInRect(Rect rect) override {
-        log_i("Drawing menu item: %s %d", menuItem_.title.c_str(), selected_);
+        log_d("Drawing menu item: %s %d", menuItem_.title.c_str(), selected_);
         if (selected_) {
             indicator_.fillColor = display_.fg;
             indicator_.draw();

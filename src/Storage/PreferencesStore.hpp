@@ -166,7 +166,8 @@ public:
           totalReadingTimeSeconds(this->prefs_, "tot-rd-time"),
           bootCount(this->prefs_, "boot-count"), firstRead(this->prefs_, "first-read"),
           autoPilotSpeed(this->prefs_, "auto-speed"),
-          firstAutopilotRead(this->prefs_, "fst-auto-rd"), cesMode(this->prefs_, "ces"){};
+          firstAutopilotRead(this->prefs_, "fst-auto-rd"), cesMode(this->prefs_, "ces"),
+          emcMode(this->prefs_, "emc"){};
     auto begin() -> bool;
     void clear() {
         // Save and re-set the Turn Touch
@@ -210,6 +211,7 @@ public:
     PrefsItem<uint32_t> autoPilotSpeed;
     PrefsItem<uint32_t> firstAutopilotRead;
     PrefsItem<int> cesMode;
+    PrefsItem<int> emcMode;
 
 protected:
     Preferences prefs_;

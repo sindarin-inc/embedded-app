@@ -1,5 +1,4 @@
-#ifndef MENU_SCREEN_H
-#define MENU_SCREEN_H
+#pragma once
 
 #include <string>
 #include <utility>
@@ -46,5 +45,3 @@ protected:
 
     Power &power_;
 };
-
-#endif
