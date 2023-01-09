@@ -207,7 +207,7 @@ void LocalStore::resetReadablesPlacemarkChanged(const std::vector<Readable> &rea
         if (!readable.localOnly && changed) {
             log_d("Resetting placemark changed for \"%s\" (now synced to server)",
                   readable.title.c_str());
-            prefs_.readablePlaceChanged.set(readable.shortenedUuid.c_str(), 0);
+            prefs_.readablePlaceChanged.set(readable.shortenedUuid.c_str(), false);
         }
     }
 }
