@@ -93,7 +93,11 @@ void ContentSyncScreen::fail(const std::string &message) {
     render(display_);
     vTaskDelay(5000 / portTICK_PERIOD_MS);
     DisconnectWifi();
-    backCallback();
+    if (backCallback) {
+        backCallback();
+    } else {
+        log_w("No back callback set for ContentSyncScreen");
+    }
 }
 
 void ContentSyncScreen::begin() {
@@ -110,19 +114,21 @@ void ContentSyncScreen::begin() {
     state_.state = ContentSyncState::ConnectingWifi;
     render(display_);
 
-    if (!ConnectWifi()) {
-        fail("Failed to connect to WiFi");
-        return;
-    }
-
     localStore_.syncFromRemote([this](const ContentSyncState &state) {
-        if (state.state == ContentSyncState::Failure || state.state == ContentSyncState::Synced) {
+        if (state.state == ContentSyncState::Failure || state.state == ContentSyncState::Synced ||
+            state.state == ContentSyncState::AlreadySynced) {
             DisconnectWifi();
         }
         // Do UI stuff back on core 1
         DispatchGetUiQueue()->dispatch([this, state]() {
             this->updateState(state);
             this->render(this->display_);
+#if !SIMULATOR
+            if (state.state == ContentSyncState::Synced) {
+                log_d("Content sync done, rebooting");
+                esp_restart();
+            }
+#endif
             if (state.state == ContentSyncState::Failure ||
                 state.state == ContentSyncState::Synced ||
                 state.state == ContentSyncState::AlreadySynced) {

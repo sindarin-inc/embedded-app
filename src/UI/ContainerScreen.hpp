@@ -11,6 +11,7 @@ public:
     void setCurrentScreen(Screen &screen);
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
+    auto getCurrentScreen() -> Screen * { return currentScreen_; }
 
 protected:
     Screen *currentScreen_;

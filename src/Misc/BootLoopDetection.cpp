@@ -59,7 +59,7 @@ void Rollback() {
 auto GetPanicBootCount(nvs_handle_t handle, uint32_t *bootCount) -> bool {
     esp_err_t nvsErr = nvs_get_u32(handle, "panic-boot-count", bootCount);
     if (nvsErr != ESP_OK) {
-        log_e("could not set panic-boot-count to %d", *bootCount);
+        log_e("could not get panic-boot-count");
         return false;
     }
 

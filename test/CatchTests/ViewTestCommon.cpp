@@ -24,6 +24,7 @@ extern void UIInnerLoop(RemoteCommand command);
 extern "C" void app_main(void); // NOLINT(readability-identifier-naming)
 std::shared_ptr<std::thread> SchedulerThread;
 const char *kGitHash = "SIMULATOR";
+extern char PosixFileSystemPrefix[64];
 
 std::string directory;
 std::string testRunPrefix = "Images/TestRun/";
@@ -58,6 +59,9 @@ void StartFreeRtos(bool runAppMain) {
     prefs.rectY.set(30);
     prefs.rectW.set(255 - 42 * 2);
     prefs.rectH.set(255 - 30 * 2);
+    prefs.firstRead.set(0);
+    prefs.lastReadableId.remove();
+    prefs.readablePlace.set("93d56842", 0);
 
     // Start the FreeRTOS scheduler
     SchedulerThread = std::make_unique<std::thread>([runAppMain]() {
@@ -66,6 +70,7 @@ void StartFreeRtos(bool runAppMain) {
             // FreeRTOS-timed stuff like vTaskDelay
             xTaskCreate(appMainTask, "app_main", 10000, NULL, 1, NULL);
         }
+        std::cerr << "Starting FreeRTOS scheduler" << std::endl;
         vTaskStartScheduler();
     });
 }
@@ -73,6 +78,7 @@ void StartFreeRtos(bool runAppMain) {
 void StopFreeRtos() {
     vTaskEndScheduler();
     (*SchedulerThread).join();
+    std::cerr << "Stopped FreeRTOS scheduler" << std::endl;
 }
 
 void WaitForDraw(long timeoutSeconds) {
@@ -138,7 +144,7 @@ auto AssertViewUnchanged(std::string key) -> ViewTestResult {
         UNSCOPED_INFO("This is expected when testing the first time.");
         UNSCOPED_INFO("Run the following command to create an accepted test image:");
         UNSCOPED_INFO("  cp " << result.renderedImagePath << " \\\n  " << result.acceptedImagePath);
-        REQUIRE(data != nullptr);
+        CHECK(data != nullptr);
         return result;
     };
 
@@ -194,4 +200,16 @@ std::shared_ptr<DisplayEinkET013TT1> createDisplay() {
     (*display).setup();
     (*display).invertDisplay(false);
     return display;
+}
+
+void SetupFileSystemMock(const std::string &directory) {
+    auto path = GetDirectory() + directory;
+    std::cerr << "Setting filesystem prefix to " << path << std::endl;
+    strncpy(PosixFileSystemPrefix, path.c_str(), sizeof(PosixFileSystemPrefix) - 1);
+
+    // Clear bookmarks & logs directories
+    auto bookmarks = path + std::string("/bookmarks");
+    std::filesystem::remove_all(bookmarks);
+    auto logs = path + std::string("/logs");
+    std::filesystem::remove_all(logs);
 }

@@ -23,3 +23,5 @@ struct ViewTestResult {
 auto AssertViewUnchanged(std::string key) -> ViewTestResult;
 
 std::shared_ptr<DisplayEinkET013TT1> createDisplay();
+
+void SetupFileSystemMock(const std::string &directory);

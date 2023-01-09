@@ -3,6 +3,7 @@
 #include <esp_err.h>
 #endif
 
+#include <esp_sleep.h>
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
@@ -13,6 +14,7 @@
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/BootError.hpp"
 #include "Misc/BootLoopDetection.hpp"
+#include "Misc/InactivityTimer.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/Power.hpp"
 #include "Misc/StringUtil.hpp"
@@ -21,6 +23,7 @@
 #include "Storage/CrashReportWriter.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "UI/ContentSyncScreen.hpp"
 #include "UI/RootUI.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -67,10 +70,13 @@ LightingController lightingController;
 #if USE_MMC5603
 #include "Sensors/TempleCloseSensor.hpp"
 TempleCloseSensor templeCloseSensor;
+bool runningContentSync;
 #if !DISABLE_POWER_MANAGEMENT
 esp_pm_lock_handle_t maglock;
 #endif
 #endif
+
+InactivityTimer inactivityTimer;
 
 #if ENABLE_OTA
 OTA ota;
@@ -89,15 +95,17 @@ LocalStore localStore(fileSystem, prefs);
 Power power(fileSystem, prefs);
 RootUI rootUi(prefs, power);
 
+bool templesClosed = false;
+
 // Resonsible for handling connecting / reconnecting to remotes
 void RadioTask(void *parameter) {
     for (;;) {
 #if USE_TURN_TOUCH_REMOTE
         // Skip scanning while WiFi is connected to avoid kicking off the WiFi connection
-        if (!NetworkConnected()) {
+        if (!NetworkConnected() && !templesClosed) {
             ttRemoteInput.connect();
         } else if (!ttRemoteInput.connected()) {
-            log_d("Skipping Turn Touch scan while WiFi is connected");
+            // log_d("Skipping Turn Touch scan while WiFi is connected");
         }
 #endif
 
@@ -174,7 +182,10 @@ void StatsTask(void *parameter) {
     vTaskDelete(nullptr);
 }
 
-void UIInnerLoop(RemoteCommand command) { rootUi.loop(myDisplay, command); }
+void UIInnerLoop(RemoteCommand command) {
+    inactivityTimer.feed();
+    rootUi.loop(myDisplay, command);
+}
 
 #if CONFIG_AUTOSTART_ARDUINO
 void loop() { vTaskDelay(portMAX_DELAY); };
@@ -224,6 +235,15 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         lightingController.begin();
     }
 
+#if !SIMULATOR
+    inactivityTimer.start([]() {
+        log_d("Inactive! Allow power off.");
+        AllowPowerOff();
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        esp_deep_sleep_start();
+    });
+#endif
+
 #if USE_MMC5603
     if (!templeCloseSensor.checkProductId()) {
         bootErrors.push_back({.type = BootError::Type::Magnetometer});
@@ -231,9 +251,44 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         templeCloseSensor.setCallback([](bool open) {
             if (open) {
                 lightingController.enableLighting();
+                templesClosed = false;
+                if (runningContentSync) {
+                    // Effectively cancel the content sync by disconnecting WiFi
+                    DisconnectWifi();
+                }
             } else {
                 lightingController.disableLighting();
+                templesClosed = true;
+                // Will be turned off after content sync
+                ForcePowerOn();
             }
+        });
+        templeCloseSensor.setLongCloseCallback([]() {
+            DispatchGetUiQueue()->dispatch([]() {
+                log_d("Temples closed for a while, running content sync");
+                // Debug LED so we know what's happening
+                digitalWrite(BLUE_LED, LED_ON);
+                runningContentSync = true;
+                localStore.syncFromRemote([](const ContentSyncState &state) {
+                    if (state.state == ContentSyncState::Failure ||
+                        state.state == ContentSyncState::Synced ||
+                        state.state == ContentSyncState::AlreadySynced) {
+                        if (state.state == ContentSyncState::Failure) {
+                            log_i("Content sync failed with error: %s", state.message.c_str());
+                        } else if (state.state == ContentSyncState::Synced) {
+                            log_i("Content sync successful");
+                        } else if (state.state == ContentSyncState::AlreadySynced) {
+                            log_i("Content sync already synced");
+                        }
+                        digitalWrite(BLUE_LED, LED_OFF);
+                        // Only if the temples are still closed, allow power off
+                        if (templesClosed) {
+                            AllowPowerOff();
+                        }
+                        runningContentSync = false;
+                    }
+                });
+            });
         });
     }
 #endif
@@ -445,7 +500,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     xTaskCreatePinnedToCore(PowerTask, "Power", 5000, nullptr, 0, &powerTaskHandle, 1);
 
     // Begin fade-in on the lighting before rendering the UI
-    DispatchGetUiQueue()->dispatch([]() { lightingController.checkAmbientLight(300, 500); });
+    DispatchGetUiQueue()->dispatch([]() { lightingController.checkAmbientLight(300, 100); });
 
     // Render the first thing
     DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::NONE); });

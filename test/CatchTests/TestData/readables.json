@@ -1,0 +1,27 @@
+{
+    "readables": [
+        {
+            "authors": [
+                {
+                    "id": "asimovi",
+                    "uuid": "1942d6fa5c2746bdb113f69577d8cb6e",
+                    "name": "Isaac Asimov"
+                }
+            ],
+            "date_created": "2023-01-08T11:29:48PST",
+            "date_modified": "2023-01-08T11:29:48PST",
+            "files": [
+                {
+                    "uuid": "aa1d7ee8c3c345dd9f51a1575856d49c",
+                    "filetype": "txt",
+                    "name": "last-question.txt",
+                    "sha_hash": "903f6068ba98797d135f96dec91314d710f222c3e6cad2c98d76c4f399f2845a",
+                    "size": 25924,
+                    "uploaded_at": "2023-01-08T11:29:48PST"
+                }
+            ],
+            "uuid": "93d5684250ea405f997540a9625fc585",
+            "title": "The Last Question"
+        }
+    ]
+}

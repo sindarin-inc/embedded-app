@@ -41,4 +41,8 @@ auto GetSerialNumber() -> std::string { return "SIMULATOR"; }
 
 auto GetHardwareRevision() -> uint8_t { return 0; }
 
+void ForcePowerOn() {}
+
+void AllowPowerOff() {}
+
 #endif
