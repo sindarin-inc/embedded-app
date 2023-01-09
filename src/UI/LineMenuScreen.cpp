@@ -1,24 +1,24 @@
 #include "LineMenuScreen.hpp"
 
-#define SPACING 10
-
 auto LineMenuScreen::layout(LayoutContext &context, Size size) -> Size {
-    int inset = 2;
+    const auto inset = 2;
+    const auto spacing = 10;
+
     auto insetRect = context.setSublayoutFrame(
-        {{inset, inset}, {size.width - inset, size.height - inset}},
+        {{inset, inset}, {size.width - 2 * inset, size.height - 2 * inset}},
         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical,
         [this](LayoutContext &context, Size size) -> Size {
             int x = 0;
             int y = 0;
             int viewCount = menuItemViews_.size();
-            int boxHeight = (size.height - (viewCount - 1) * SPACING) / viewCount;
+            int boxHeight = (size.height - (viewCount - 1) * spacing) / viewCount;
             Size boxSize = {size.width, boxHeight};
             log_i("Archive menu layout: %d views, %dpx height", viewCount, boxHeight);
 
             for (auto &view : menuItemViews_) {
                 auto viewFrame = context.setViewFrame(
                     *view, {{x, y}, boxSize}, LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
-                y += viewFrame.size.height + SPACING;
+                y += viewFrame.size.height + spacing;
             }
 
             return {size.width, y};

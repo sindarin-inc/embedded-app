@@ -39,7 +39,7 @@ public:
     auto loadReadablesFromFile(std::vector<Readable> &readables, const std::string &path) -> bool;
 
     // Convenience methods
-    auto readablesGroup(const std::vector<Readable> &readables) -> std::string;
+    auto readablesModelType(const std::vector<Readable> &readables) -> std::string;
     auto hasReadable(const std::vector<Readable> &readables, const Readable &readable) -> bool;
     auto readables() -> std::vector<Readable> & { return readables_; };
     auto articles() -> std::vector<Readable> & { return articles_; };

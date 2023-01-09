@@ -22,7 +22,7 @@ auto LocalStore::begin() -> bool {
 
 auto LocalStore::loadReadablesFromFile(std::vector<Readable> &readables, const std::string &path)
     -> bool {
-    log_d("Loading %ss from %s", readablesGroup(readables).c_str(), path.c_str());
+    log_d("Loading %ss from %s", readablesModelType(readables).c_str(), path.c_str());
     File readablesFile = fileSystem.open(path);
     if (!readablesFile || (int)readablesFile.size() == 0) {
         log_w("Failed to open %s", path.c_str());
@@ -78,7 +78,7 @@ auto LocalStore::loadReadablesFromFile(std::vector<Readable> &readables, const s
     return true;
 }
 
-auto LocalStore::readablesGroup(const std::vector<Readable> &readables) -> std::string {
+auto LocalStore::readablesModelType(const std::vector<Readable> &readables) -> std::string {
     return &readables == &articles_ ? "article" : "readable";
 }
 
@@ -131,7 +131,8 @@ auto LocalStore::articlesSince() -> std::string {
 auto LocalStore::changedReadablePlacemarkQueryParams(const std::vector<Readable> &readables)
     -> std::vector<std::string> {
     std::vector<std::string> placemarks;
-    std::string group = this->readablesGroup(const_cast<std::vector<Readable> &>(readables));
+    std::string modelType =
+        this->readablesModelType(const_cast<std::vector<Readable> &>(readables));
 
     for (auto &readable : readables) {
         if (readable.localOnly) {
@@ -143,8 +144,8 @@ auto LocalStore::changedReadablePlacemarkQueryParams(const std::vector<Readable>
             uint32_t place = prefs_.readablePlace.get(readable.shortenedUuid.c_str());
             log_i("Placemark on readable %s %s has changed to %d", readable.title.c_str(),
                   readable.uuid.c_str(), place);
-            placemarks.push_back(
-                StringFormat("&%s_placemark_%s=%d", group.c_str(), readable.uuid.c_str(), place));
+            placemarks.push_back(StringFormat("&%s_placemark_%s=%d", modelType.c_str(),
+                                              readable.uuid.c_str(), place));
         }
     }
 
@@ -154,7 +155,8 @@ auto LocalStore::changedReadablePlacemarkQueryParams(const std::vector<Readable>
 auto LocalStore::changedReadablesArchivedQueryParams(const std::vector<Readable> &readables)
     -> std::vector<std::string> {
     std::vector<std::string> archived;
-    std::string group = this->readablesGroup(const_cast<std::vector<Readable> &>(readables));
+    std::string modelType =
+        this->readablesModelType(const_cast<std::vector<Readable> &>(readables));
 
     for (auto &readable : readables) {
         if (readable.localOnly) {
@@ -165,7 +167,7 @@ auto LocalStore::changedReadablesArchivedQueryParams(const std::vector<Readable>
         if (changed) {
             log_i("Archived readable %s %s", readable.title.c_str(), readable.uuid.c_str());
             archived.push_back(
-                StringFormat("&%s_archive_%s=1", group.c_str(), readable.uuid.c_str()));
+                StringFormat("&%s_archive_%s=1", modelType.c_str(), readable.uuid.c_str()));
         }
     }
 
