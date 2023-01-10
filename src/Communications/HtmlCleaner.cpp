@@ -135,3 +135,11 @@ void StripHtml(const std::string &str, Stream &outStream) {
 
     StripHtml(inStream, outStream);
 }
+
+void StripHtml(const std::basic_string<char, std::char_traits<char>, SpiramAllocator<char>> &str,
+               Stream &outStream) {
+    std::stringstream inStream;
+    inStream << str;
+
+    StripHtml(inStream, outStream);
+}

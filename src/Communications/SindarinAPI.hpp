@@ -1,7 +1,8 @@
 #pragma once
 #include <ArduinoJson.h>
-#include <HTTPClient.h>
+#include <esp_http_client.h>
 
+#include "Communications/HttpClient.hpp"
 #include "Models/CheckSyncResponse.hpp"
 #include "Models/Firmware.hpp"
 #include "Models/Json.hpp"
@@ -17,22 +18,16 @@ struct CheckSyncRequest {
     std::vector<std::string> articlesArchived;
     int ptBattery;
     std::string ptBuild;
+    bool skipContent;
 };
 
 class SindarinAPI {
 public:
     static auto getInstance() -> SindarinAPI *;
 
-    void setAccessToken(std::string accessToken);
-
-    auto beginClient(HTTPClient &httpClient, const String &urlPath) -> bool;
-    auto beginClient(HTTPClient &httpClient, const String &urlPath, const String &contentType)
-        -> bool;
+    void setAccessToken(const std::string &accessToken);
 
     auto checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp) -> int;
-
-    // Get list of readables from the server
-    auto getUserReadables(std::vector<UserReadable> *userReadables) -> int;
 
     auto downloadReadable(const Readable &readable, FileSystem &fileSystem,
                           const std::function<void(int percentage)> &progressCallback) -> bool;
@@ -44,4 +39,6 @@ public:
 protected:
     static SindarinAPI *instance;
     std::string accessToken_;
+
+    void setAuth(HttpClient &client);
 };

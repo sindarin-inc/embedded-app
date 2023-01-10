@@ -620,13 +620,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     systemSettingsMenu->addMenuItem(
         MenuItem("Clear Books and Restart", [systemSettingsMenu, display, &localStore]() {
-            localStore.clearReadablesFile();
+            localStore.deleteReadables();
             systemSettingsMenu->showTemporaryMessage(*display, "Readables reset.");
         }));
 
     systemSettingsMenu->addMenuItem(
         MenuItem("Clear Articles and Restart", [systemSettingsMenu, display, &localStore]() {
-            localStore.clearArticlesFile();
+            localStore.deleteArticles();
             systemSettingsMenu->showTemporaryMessage(*display, "Articles reset.");
         }));
 
@@ -638,8 +638,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         systemSettingsMenu->showTemporaryMessage(*display, "simprefs.ini deleted! Resetting...");
 #else
         nvs_flash_erase();
-        localStore.clearArticlesFile(false);
-        localStore.clearReadablesFile(false);
+        localStore.deleteArticles(false);
+        localStore.deleteReadables(false);
         log_w("NVS and FS cleared. Rebooting...");
         systemSettingsMenu->showTemporaryMessage(*display, "NVS cleared! Resetting...");
 #endif
@@ -789,173 +789,292 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 #if EINKET013TT1
     debugSettingsMenu->addMenuItem(
         MenuItem("Set Vcom Precise", [this, display, debugSettingsMenu]() {
-            auto vcomPreciseScreen = new VcomAdjustScreen(*display, this->prefs_, this->power_);
-            this->display_->clearDisplay();
-            setCurrentScreen(*vcomPreciseScreen);
-            vcomPreciseScreen->backCallback = [this, vcomPreciseScreen, debugSettingsMenu]() {
+        auto vcomPreciseScreen = new VcomAdjustScreen(*display, this->prefs_, this->power_);
+        this->display_->clearDisplay();
+        setCurrentScreen(*vcomPreciseScreen);
+        vcomPreciseScreen->backCallback =
+            [this, vcomPreciseScreen, debugSettingsMenu]() {
                 debugSettingsMenu->setFirstLoad();
                 setCurrentScreen(*debugSettingsMenu);
                 delete vcomPreciseScreen;
-            };
-        }));
 #endif
 
-    debugSettingsMenu->addMenuItem(MenuItem("Upload Voltage Log", [this, display, &fileSystem,
-                                                                   debugSettingsMenu]() {
-        auto voltageLogScreen = new VoltageLogUploadScreen(*display, this->prefs_, fileSystem);
-        this->setCurrentScreen(*voltageLogScreen);
-        (*voltageLogScreen).backCallback = [this, voltageLogScreen, debugSettingsMenu, display]() {
-            debugSettingsMenu->setFirstLoad();
-            setCurrentScreen(*debugSettingsMenu);
-            debugSettingsMenu->render(*display);
-            delete voltageLogScreen;
-        };
-        (*voltageLogScreen).begin();
-    }));
+                debugMenu->addMenuItem(MenuItem("Statistics", [this, debugMenu, display]() {
+                    auto statsScreen = new StatsScreen(*display, prefs_);
+                    this->setCurrentScreen(*statsScreen);
+                    statsScreen->backCallback = [this, statsScreen, debugMenu]() {
+                        debugMenu->setFirstLoad();
+                        setCurrentScreen(*debugMenu);
+                        delete statsScreen;
+                    };
+                }));
 
-    oldMenu->addMenuItem(MenuItem("Calibration Screen Run Through", [this, oldMenu]() {
-        auto calibrationScreen = new CalibrationScreen();
-        this->display_->clearDisplay();
-        this->setCurrentScreen(*calibrationScreen);
-        calibrationScreen->backCallback = [this, calibrationScreen, oldMenu]() {
-            setCurrentScreen(*oldMenu);
-            delete calibrationScreen;
-        };
-    }));
+                debugMenu->addMenuItem(
+                    MenuItem("Send Crash Report", [this, debugMenu, display, &fileSystem]() {
+                        auto crashReportScreen =
+                            new CrashReportScreen(*display, this->prefs_, fileSystem);
+                        this->setCurrentScreen(*crashReportScreen);
+                        crashReportScreen->backCallback = [this, crashReportScreen, debugMenu]() {
+                            debugMenu->setFirstLoad();
+                            setCurrentScreen(*debugMenu);
+                            delete crashReportScreen;
+                        };
+                        crashReportScreen->begin();
+                    }));
 
-    oldMenu->addMenuItem(MenuItem("Deep sleep", [display, oldMenu]() {
-        log_w("Deep sleeping. Goodnight.");
-        oldMenu->showTemporaryMessage(*display, "Deep sleeping. Goodnight.", 2000, false);
-        esp_deep_sleep_start();
-    }));
+                debugMenu->addMenuItem(MenuItem("Reset Preferences", [this, debugMenu, display]() {
+                    prefs_.clear();
+                    log_w("Preferences cleared. Rebooting...");
+                    debugMenu->showTemporaryMessage(*display, "Preferences cleared. Rebooting...",
+                                                    2000, false);
+                    esp_restart();
+                }));
 
-    oldMenu->addMenuItem(MenuItem("Loading Test", [this, oldMenu]() {
-        auto loadingScreen = new LoadingScreen();
-        setCurrentScreen(*loadingScreen);
-        loadingScreen->backCallback = [this, loadingScreen, oldMenu]() {
-            setCurrentScreen(*oldMenu);
-            delete loadingScreen;
-        };
-    }));
+                debugMenu->addMenuItem(MenuItem("Reset Statistics", [this, debugMenu, display]() {
+                    prefs_.wordCount.set(0);
+                    prefs_.totalReadingTimeSeconds.set(0);
+                    debugMenu->showTemporaryMessage(*display, "Statistics reset.");
+                }));
 
-    oldMenu->addMenuItem(MenuItem("Test Bitmap Screen", [this, oldMenu]() {
-        auto bitmapScreen = new BitmapScreen(LOGO_BITS, LOGO_WIDTH, LOGO_HEIGHT);
-        setCurrentScreen(*bitmapScreen);
-        bitmapScreen->backCallback = [this, bitmapScreen, oldMenu]() {
-            setCurrentScreen(*oldMenu);
-            delete bitmapScreen;
-        };
-    }));
+                debugMenu->addMenuItem(
+                    MenuItem("Clear Readables and Restart", [debugMenu, display, &localStore]() {
+                        localStore.deleteReadables(true);
+                        debugMenu->showTemporaryMessage(*display, "Readables reset.");
+                    }));
 
-    debugSettingsMenu->setExtraText(buildString);
+                debugMenu->addMenuItem(
+                    MenuItem("Clear Articles and Restart", [debugMenu, display, &localStore]() {
+                        localStore.deleteArticles(true);
+                        debugMenu->showTemporaryMessage(*display, "Articles reset.");
+                    }));
 
-    // Shouldn't matter anymore.
-    settingsMenu->backCallback = [this, mainMenu]() {
-        this->display_->clearDisplay();
-        mainMenu->setFirstLoad();
-        setCurrentScreen(*mainMenu);
-    };
+#if USE_TURN_TOUCH_REMOTE
+                debugMenu->addMenuItem(MenuItem("Unpair PageTurner", [this, debugMenu, display]() {
+                    prefs_.pairedTurnTouchAddress.remove();
+                    log_w("Unpaired PageTurner. Rebooting...");
+                    debugMenu->showTemporaryMessage(*display, "Unpaired PageTurner! Resetting...",
+                                                    2000, false);
+                    esp_restart();
+                }));
+#endif
 
-    mainMenu->addSubMenuScreen(settingsMenu);
+                debugMenu->addMenuItem(MenuItem("Factory Defaults", [debugMenu, display,
+                                                                     &localStore]() {
+#if SIMULATOR
+                    // Remove the preferences file simprefs.ini
+                    std::filesystem::remove("simprefs.ini");
+                    debugMenu->showTemporaryMessage(*display, "simprefs.ini deleted! Resetting...");
+#else
+        nvs_flash_erase();
+        localStore.deleteReadables(false);
+        localStore.deleteArticles(false);
 
-    int inDemo = prefs_.demoMode.get().value();
+        log_w("NVS and FS cleared. Rebooting...");
+        debugMenu->showTemporaryMessage(*display, "NVS cleared! Resetting...");
+#endif
+                    esp_restart();
+                }));
 
-    if (inDemo) {
-        auto demoScreen = new DemoScreen(*display, prefs_, this->power_, lightingController);
-        demoScreen->backCallback = [this, demoScreen, mainMenu, display]() {
-            display->clearDisplay();
-            setCurrentScreen(*mainMenu);
-            delete demoScreen;
-        };
-        this->setCurrentScreen(*demoScreen);
-    } else if (prefs_.cesMode.get().value()) {
-        auto cesScreen = new CesScreen(*display, prefs_, this->power_, lightingController);
-        // reset prefs for of The Last Question readable
-        log_d("Starting CES mode readable load");
-        auto it = std::find_if(readables.begin(), readables.end(), [](const Readable &x) {
-            return (x.title.compare("The Last Question") == 0);
-        });
-        if (it == readables.end()) {
-            log_e("Could not find readable: %s", "The Last Question");
-        } else {
-            log_d("Found readable: %s", (*it).title.c_str());
+                debugMenu->addMenuItem(MenuItem("Optics Test", [this, debugMenu]() {
+                    auto opticsTestScreen = new CalibrationScreen();
+                    opticsTestScreen->setOpticsTest();
+                    this->display_->clearDisplay();
+                    this->setCurrentScreen(*opticsTestScreen);
+                    opticsTestScreen->backCallback = [this, opticsTestScreen, debugMenu]() {
+                        debugMenu->setFirstLoad();
+                        setCurrentScreen(*debugMenu);
+                        delete opticsTestScreen;
+                    };
+                }));
+
+                debugMenu->addMenuItem(
+                    MenuItem("Turn on Onboarding Mode", [this, debugMenu, display]() {
+                        log_d("Entering calibration");
+                        prefs_.demoMode.set(1);
+
+                        debugMenu->showTemporaryMessage(
+                            *display, "Onboarding mode on! Resetting...", 2000, false);
+                        esp_restart();
+                    }));
+
+                debugMenu->addMenuItem(MenuItem(
+                    "Onboarding Screens", [this, debugMenu, display, &lightingController]() {
+                        auto demoScreen =
+                            new DemoScreen(*display, prefs_, this->power_, lightingController);
+                        this->setCurrentScreen(*demoScreen);
+                        demoScreen->backCallback = [this, demoScreen, debugMenu, display]() {
+                            debugMenu->setFirstLoad();
+                            display->clearDisplay();
+                            setCurrentScreen(*debugMenu);
+                            delete demoScreen;
+>>>>>>> 1836ca82 (Cleaning up deletion of articles/readables and adding show heap commands to show OOM errors on sync.)
+                        };
+                    }));
+#endif
+
+                debugSettingsMenu->addMenuItem(MenuItem(
+                    "Upload Voltage Log", [this, display, &fileSystem, debugSettingsMenu]() {
+                        auto voltageLogScreen =
+                            new VoltageLogUploadScreen(*display, this->prefs_, fileSystem);
+                        this->setCurrentScreen(*voltageLogScreen);
+                        (*voltageLogScreen).backCallback = [this, voltageLogScreen,
+                                                            debugSettingsMenu, display]() {
+                            debugSettingsMenu->setFirstLoad();
+                            setCurrentScreen(*debugSettingsMenu);
+                            debugSettingsMenu->render(*display);
+                            delete voltageLogScreen;
+                        };
+                        (*voltageLogScreen).begin();
+                    }));
+
+                oldMenu->addMenuItem(MenuItem("Calibration Screen Run Through", [this, oldMenu]() {
+                    auto calibrationScreen = new CalibrationScreen();
+                    this->display_->clearDisplay();
+                    this->setCurrentScreen(*calibrationScreen);
+                    calibrationScreen->backCallback = [this, calibrationScreen, oldMenu]() {
+                        setCurrentScreen(*oldMenu);
+                        delete calibrationScreen;
+                    };
+                }));
+
+                oldMenu->addMenuItem(MenuItem("Deep sleep", [display, oldMenu]() {
+                    log_w("Deep sleeping. Goodnight.");
+                    oldMenu->showTemporaryMessage(*display, "Deep sleeping. Goodnight.", 2000,
+                                                  false);
+                    esp_deep_sleep_start();
+                }));
+
+                oldMenu->addMenuItem(MenuItem("Loading Test", [this, oldMenu]() {
+                    auto loadingScreen = new LoadingScreen();
+                    setCurrentScreen(*loadingScreen);
+                    loadingScreen->backCallback = [this, loadingScreen, oldMenu]() {
+                        setCurrentScreen(*oldMenu);
+                        delete loadingScreen;
+                    };
+                }));
+
+                oldMenu->addMenuItem(MenuItem("Test Bitmap Screen", [this, oldMenu]() {
+                    auto bitmapScreen = new BitmapScreen(LOGO_BITS, LOGO_WIDTH, LOGO_HEIGHT);
+                    setCurrentScreen(*bitmapScreen);
+                    bitmapScreen->backCallback = [this, bitmapScreen, oldMenu]() {
+                        setCurrentScreen(*oldMenu);
+                        delete bitmapScreen;
+                    };
+                }));
+
+                debugSettingsMenu->setExtraText(buildString);
+
+                // Shouldn't matter anymore.
+                settingsMenu->backCallback = [this, mainMenu]() {
+                    this->display_->clearDisplay();
+                    mainMenu->setFirstLoad();
+                    setCurrentScreen(*mainMenu);
+                };
+
+                mainMenu->addSubMenuScreen(settingsMenu);
+
+                int inDemo = prefs_.demoMode.get().value();
+
+                if (inDemo) {
+                    auto demoScreen =
+                        new DemoScreen(*display, prefs_, this->power_, lightingController);
+                    demoScreen->backCallback = [this, demoScreen, mainMenu, display]() {
+                        display->clearDisplay();
+                        setCurrentScreen(*mainMenu);
+                        delete demoScreen;
+                    };
+                    this->setCurrentScreen(*demoScreen);
+                } else if (prefs_.cesMode.get().value()) {
+                    auto cesScreen =
+                        new CesScreen(*display, prefs_, this->power_, lightingController);
+                    // reset prefs for of The Last Question readable
+                    log_d("Starting CES mode readable load");
+                    auto it =
+                        std::find_if(readables.begin(), readables.end(), [](const Readable &x) {
+                            return (x.title.compare("The Last Question") == 0);
+                        });
+                    if (it == readables.end()) {
+                        log_e("Could not find readable: %s", "The Last Question");
+                    } else {
+                        log_d("Found readable: %s", (*it).title.c_str());
+                    }
+                    auto readableScreen = createReadableScreen(*it);
+                    cesScreen->backCallback = [this, cesScreen, display, readableScreen]() {
+                        display->clearDisplay();
+                        this->display_->setFont(this->display_->style.getFontFamily().readableFont);
+                        log_i("Setting Readable Screen after focus in CES mode");
+                        this->setCurrentScreen(*readableScreen);
+                        delete cesScreen;
+                    };
+                    this->setCurrentScreen(*cesScreen);
+                } else if (currentReadable.has_value()) {
+                    // Check if we left-off on a readable and if so, reload that readable by default
+                    log_d("Attempting to find readable: %s", currentReadable.value().c_str());
+                    // If we previously had a readable loaded, show that same readable by default
+
+                    auto it = std::find_if(readables.begin(), readables.end(),
+                                           [&currentReadable](const Readable &x) {
+                                               return currentReadable == x.uuid;
+                                           });
+                    if (it != readables.end()) {
+                        auto readableScreen = createReadableScreen(*it);
+                        this->display_->setFont(this->display_->style.getFontFamily().readableFont);
+                        log_i("Setting Readable Screen on boot in %.0f ms",
+                              esp_timer_get_time() / 1000.0f);
+                        this->setCurrentScreen(*readableScreen);
+                        log_i("Resuming readable %s at place %d", (*it).title.c_str(), (*it).place);
+                    } else {
+                        // Assume this readable has gone away (or changed from id to uuid)
+                        prefs_.lastReadableId.remove();
+                    }
+                }
+
+                // This still has to be this way rather than else if because the
+                // currentReadable.has_value() Could return true but if we don't find that readable,
+                // no screen will be set. I asssume this would happen if the FS is updated
+                // underneath us to remove that readable.
+                if (this->currentScreen_ == nullptr) {
+                    // If we've already connected to an input device, go straight
+                    // to the main menu. We will clean this up a bit moving forward
+                    // but for now it makes it clear when it's connected and when it
+                    // hasn't on boot.
+
+                    // By default, if we don't already have a different first screen ready, show the
+                    // calibration
+                    // screen
+
+                    log_i("Setting Menu Screen on boot in %.0f ms", esp_timer_get_time() / 1000.0f);
+                    setCurrentScreen(*mainMenu);
+
+                    /*
+                    auto calibrationScreen = new LogoScreen();
+                    calibrationScreen->backCallback = [this, calibrationScreen, display, mainMenu]()
+                    { display->clearScreen(); delay(100);
+
+                        setCurrentScreen(*mainMenu);
+                        delete calibrationScreen;
+                    };
+                    setCurrentScreen(*calibrationScreen);
+                    */
+                }
+
+                // If we are in demo mode, overright whatever the current screen would have been
+                // with the demo code and set the back callback to mainMenu.
+
+                SHOW_HEAP();
+            }
+
+        void
+        RootUI::loop(DisplaySystem & display, RemoteCommand command) {
+            if (this->power_.getDepleted()) {
+                // Force render immediately as we are about to shut off
+                auto powerDepletedScreen = new PowerDepletedScreen();
+                setCurrentScreen(*powerDepletedScreen);
+                this->render(display);
+                // Wait 5 seconds to be able to see the message
+                delay(5000);
+                // Unless wake sources are defined, nothing can wake us up. Goodnight.
+                esp_deep_sleep_start();
+            }
+            Screen::loop(display, command);
         }
-        auto readableScreen = createReadableScreen(*it);
-        cesScreen->backCallback = [this, cesScreen, display, readableScreen]() {
-            display->clearDisplay();
-            this->display_->setFont(this->display_->style.getFontFamily().readableFont);
-            log_i("Setting Readable Screen after focus in CES mode");
-            this->setCurrentScreen(*readableScreen);
-            delete cesScreen;
-        };
-        this->setCurrentScreen(*cesScreen);
-    } else if (currentReadable.has_value()) {
-        // Check if we left-off on a readable and if so, reload that readable by default
-        log_d("Attempting to find readable: %s", currentReadable.value().c_str());
-        // If we previously had a readable loaded, show that same readable by default
-
-        auto it =
-            std::find_if(readables.begin(), readables.end(), [&currentReadable](const Readable &x) {
-                return currentReadable == x.uuid;
-            });
-        if (it != readables.end()) {
-            auto readableScreen = createReadableScreen(*it);
-            this->display_->setFont(this->display_->style.getFontFamily().readableFont);
-            log_i("Setting Readable Screen on boot in %.0f ms", esp_timer_get_time() / 1000.0f);
-            this->setCurrentScreen(*readableScreen);
-            log_i("Resuming readable %s at place %d", (*it).title.c_str(), (*it).place);
-        } else {
-            // Assume this readable has gone away (or changed from id to uuid)
-            prefs_.lastReadableId.remove();
-        }
-    }
-
-    // This still has to be this way rather than else if because the
-    // currentReadable.has_value() Could return true but if we don't find that readable, no
-    // screen will be set. I asssume this would happen if the FS is updated underneath us to
-    // remove that readable.
-    if (this->currentScreen_ == nullptr) {
-        // If we've already connected to an input device, go straight
-        // to the main menu. We will clean this up a bit moving forward
-        // but for now it makes it clear when it's connected and when it
-        // hasn't on boot.
-
-        // By default, if we don't already have a different first screen ready, show the
-        // calibration
-        // screen
-
-        log_i("Setting Menu Screen on boot in %.0f ms", esp_timer_get_time() / 1000.0f);
-        setCurrentScreen(*mainMenu);
-
-        /*
-        auto calibrationScreen = new LogoScreen();
-        calibrationScreen->backCallback = [this, calibrationScreen, display, mainMenu]() {
-            display->clearScreen();
-            delay(100);
-
-            setCurrentScreen(*mainMenu);
-            delete calibrationScreen;
-        };
-        setCurrentScreen(*calibrationScreen);
-        */
-    }
-
-    // If we are in demo mode, overright whatever the current screen would have been
-    // with the demo code and set the back callback to mainMenu.
-
-    SHOW_HEAP();
-}
-
-void RootUI::loop(DisplaySystem &display, RemoteCommand command) {
-    if (this->power_.getDepleted()) {
-        // Force render immediately as we are about to shut off
-        auto powerDepletedScreen = new PowerDepletedScreen();
-        setCurrentScreen(*powerDepletedScreen);
-        this->render(display);
-        // Wait 5 seconds to be able to see the message
-        delay(5000);
-        // Unless wake sources are defined, nothing can wake us up. Goodnight.
-        esp_deep_sleep_start();
-    }
-    Screen::loop(display, command);
-}

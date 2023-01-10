@@ -5,6 +5,7 @@
 #include <string>
 
 #include "Communications/FileDownload.hpp"
+#include "Communications/HttpClient.hpp"
 #include "Communications/WiFi.hpp"
 #include "GitVersion.hpp"
 #include "Misc/Dispatch.hpp"
@@ -30,6 +31,7 @@ void FirmwareDownloader::downloadFirmware(
     queue->dispatch([this, progressCallback] {
         // Skip calculating the readable shas and changed placemarks for now, the firmware info is
         // sent either way
+        // TODO: we really need a way to get the latest firmware without calling /sync/all
         CheckSyncResponse response;
         CheckSyncRequest request = CheckSyncRequest{
             .readablesSince = "-1",
@@ -38,9 +40,10 @@ void FirmwareDownloader::downloadFirmware(
             .articlePlacemarks = {},
             .ptBattery = prefs_.lastPageTurnerBattery.get().value_or(0),
             .ptBuild = prefs_.lastPageTurnerBuild.get().value_or(""),
+            .skipContent = true,
         };
         auto httpCode = SindarinAPI::getInstance()->checkSync(request, &response);
-        if (httpCode != HTTP_CODE_OK) {
+        if (httpCode != 200) {
             log_e("Failed to check sync (HTTP %d)", httpCode);
             progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
                                                    .message = "Failed to check for update"});
@@ -55,60 +58,41 @@ void FirmwareDownloader::downloadFirmware(
 
         versionString = response.firmware.version;
 
-        // Now start downloading the firmware
         progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloading,
                                                .downloadPercentage = 0});
 
-        // TODO(john): Would probably be good to centralize our HTTPClient creation
-        HTTPClient httpClient;
-        if (!httpClient.begin(response.firmware.url.c_str())) {
-            log_e("HTTPClient::begin failed for URL %s", response.firmware.url.c_str());
-            progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
-                                                   .message = "Failed to begin download"});
-            return;
-        }
-
-        httpClient.setUserAgent("Sindarin/" + String(kVersionString) + " (" + String(kGitHash) +
-                                ")");
-        httpClient.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
-        httpClient.setTimeout(30000);
-
         log_d("Downloading firmware from %s", response.firmware.url.c_str());
-        httpCode = httpClient.GET();
-        // HTTP header has been sent and Server response header has been handled
-        // file found at server
-        if (httpCode != HTTP_CODE_OK) {
-            log_e("HTTP GET failed, error: %s\n", httpClient.errorToString(httpCode).c_str());
-            httpClient.end();
-            progressCallback(
-                FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
-                                      .message = StringFormat("Download failed (%d)", httpCode)});
-            return;
-        }
-
-        auto length = httpClient.getSize();
-
-        if (!Update.begin(length, U_FLASH)) {
-            auto error = Update.getError();
-            log_e("Failed to Update.begin (err=%d length=%d)", error, length);
-            httpClient.end();
-            progressCallback(FirmwareDownloadState{
-                .state = FirmwareDownloadState::State::Failure,
-                .message = StringFormat("Failed to begin update (%d)", error)});
-            return;
-        }
-        Update.setMD5(response.firmware.md5.c_str());
-
         auto success = DownloadFile(
-            httpClient, length,
+            response.firmware.url.c_str(), 0,
+            [&response, &progressCallback](int httpCode, int contentLength) -> bool {
+                HttpClient client(response.firmware.url.c_str());
+                if (httpCode != 200) {
+                    log_e("HTTP GET failed, error: %d\n", httpCode);
+                    progressCallback(FirmwareDownloadState{
+                        .state = FirmwareDownloadState::State::Failure,
+                        .message = StringFormat("Download failed (%d)", httpCode)});
+                    return false;
+                }
+
+                if (!Update.begin(contentLength, U_FLASH)) {
+                    auto error = Update.getError();
+                    log_e("Failed to Update.begin (err=%d contentLength=%d)", error, contentLength);
+                    progressCallback(FirmwareDownloadState{
+                        .state = FirmwareDownloadState::State::Failure,
+                        .message = StringFormat("Failed to begin update (%d)", error)});
+                    return false;
+                }
+
+                Update.setMD5(response.firmware.md5.c_str());
+
+                return true;
+            },
             [](const uint8_t *buf, size_t size) { return Update.write((uint8_t *)buf, size); },
             [progressCallback](int bytesWritten, float percentage) {
                 progressCallback(
                     FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloading,
                                           .downloadPercentage = (int)percentage});
             });
-
-        httpClient.end();
 
         if (!success) {
             log_e("Failed to download firmware");

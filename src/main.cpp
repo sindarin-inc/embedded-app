@@ -1,6 +1,7 @@
 #if !SIMULATOR
 #include <driver/uart.h>
 #include <esp_err.h>
+#include <esp_log.h>
 #endif
 
 #include <esp_sleep.h>

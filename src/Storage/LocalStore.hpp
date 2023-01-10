@@ -29,6 +29,8 @@ struct ContentSyncState {
     std::string message;
 };
 
+typedef std::vector<Readable, SpiramAllocator<Readable>> ReadablesVector;
+
 //! Interface for local storage of structured data
 class LocalStore {
 public:
@@ -36,38 +38,39 @@ public:
         : fileSystem(fileSystem), prefs_(prefs){};
 
     auto begin() -> bool;
-    auto loadReadablesFromFile(std::vector<Readable> &readables, const std::string &path) -> bool;
+    auto loadReadablesFromFile(ReadablesVector &readables, const std::string &path) -> bool;
 
     // Convenience methods
-    auto readablesModelType(const std::vector<Readable> &readables) -> std::string;
-    auto hasReadable(const std::vector<Readable> &readables, const Readable &readable) -> bool;
-    auto readables() -> std::vector<Readable> & { return readables_; };
-    auto articles() -> std::vector<Readable> & { return articles_; };
-    void addReadable(std::vector<Readable> &readables, const Readable &readable);
-    void removeReadable(std::vector<Readable> &readables, const Readable &readable);
+    auto readablesModelType(const ReadablesVector &readables) -> std::string;
+    auto hasReadable(const ReadablesVector &readables, const Readable &readable) -> bool;
+    auto readables() -> ReadablesVector & { return readables_; };
+    auto articles() -> ReadablesVector & { return articles_; };
+    void addReadable(ReadablesVector &readables, const Readable &readable);
+    void removeReadable(ReadablesVector &readables, const Readable &readable);
     auto readablesSince() -> std::string;
     auto articlesSince() -> std::string;
 
-    auto changedReadablePlacemarkQueryParams(const std::vector<Readable> &readables)
+    auto changedReadablePlacemarkQueryParams(const ReadablesVector &readables)
         -> std::vector<std::string>;
-    auto changedReadablesArchivedQueryParams(const std::vector<Readable> &readables)
+    auto changedReadablesArchivedQueryParams(const ReadablesVector &readables)
         -> std::vector<std::string>;
     auto processReadablePlacemarksFromServer(const Readable &readable, const uint32_t placemark)
         -> bool;
-    void resetReadablesPlacemarkChanged(const std::vector<Readable> &readables);
-    void resetReadablesArchivedChanged(const std::vector<Readable> &readables);
+    void resetReadablesPlacemarkChanged(const ReadablesVector &readables);
+    void resetReadablesArchivedChanged(const ReadablesVector &readables);
 
     void syncFromRemote(const std::function<void(ContentSyncState state)> &progressCallback);
     auto saveArticleFile(const Readable &readable) -> bool;
-    void clearArticlesFile(bool restart = true);
-    void clearReadablesFile(bool restart = true);
-    auto saveReadables(const std::vector<Readable> &readables, const std::string &path) -> bool;
+    void deleteReadables(bool restart = true);
+    void deleteArticles(bool restart = true);
+    void deleteReadableFiles(const ReadablesVector &readables, bool restart);
+    auto saveReadables(const ReadablesVector &readables, const std::string &path) -> bool;
 
     FileSystem &fileSystem;
 
 private:
-    std::vector<Readable> readables_;
-    std::vector<Readable> articles_;
+    ReadablesVector readables_;
+    ReadablesVector articles_;
 
     PreferencesStore &prefs_;
 };

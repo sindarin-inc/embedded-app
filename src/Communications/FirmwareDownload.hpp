@@ -1,6 +1,5 @@
 #pragma once
 
-#include <HTTPClient.h>
 #include <cstdint>
 #include <utility>
 

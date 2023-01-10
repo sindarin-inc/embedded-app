@@ -1,5 +1,6 @@
 #include <string>
 
+#include "Misc/SpiramAllocator.hpp"
 #include "Models/Firmware.hpp"
 #include "Models/JsonSerializable.hpp"
 #include "Models/UserArticle.hpp"
@@ -13,8 +14,8 @@ public:
     bool synced;
     std::string message;
     Firmware firmware;
-    std::vector<UserReadable> userReadables;
-    std::vector<UserArticle> userArticles;
+    std::vector<UserReadable, SpiramAllocator<UserReadable>> userReadables;
+    std::vector<UserArticle, SpiramAllocator<UserReadable>> userArticles;
     std::string readablesSince;
     std::string articlesSince;
 

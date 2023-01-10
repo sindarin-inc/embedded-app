@@ -1,0 +1,65 @@
+#include "HttpClient.hpp"
+
+#include <esp_crt_bundle.h>
+#include <iostream>
+#include <string>
+
+#include "sindarin-debug.h"
+
+HttpClient::HttpClient(const char *url, const char *contentType, esp_http_client_method_t method) {
+    url_ = strdup(url);
+    esp_http_client_config_t config{
+        .url = url_,
+        .method = method,
+        .timeout_ms = 30000,
+        .crt_bundle_attach = esp_crt_bundle_attach,
+    };
+    client_ = esp_http_client_init(&config);
+    if (client_ == nullptr) {
+        log_e("Failed esp_http_client_init");
+        return;
+    }
+
+    if (method != HTTP_METHOD_GET) {
+        esp_err_t err = esp_http_client_set_header(client_, "Content-Type", contentType);
+        if (err != ESP_OK) {
+            log_e("Failed esp_http_client_set_header with %s", esp_err_to_name(err));
+        }
+    }
+}
+
+HttpClient::~HttpClient() {
+    esp_http_client_close(client_);
+    esp_http_client_cleanup(client_);
+    free(url_);
+}
+
+auto HttpClient::setHeader(const char *key, const char *value) -> esp_err_t {
+    return esp_http_client_set_header(client_, key, value);
+}
+
+auto HttpClient::open(int contentLength) -> esp_err_t {
+    return esp_http_client_open(client_, contentLength);
+}
+
+auto HttpClient::write(const char *body, int length) -> int {
+    return esp_http_client_write(client_, body, length);
+}
+
+auto HttpClient::makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> {
+    return std::make_shared<HttpOstream<4096>>(client_);
+}
+
+auto HttpClient::getContentLength() -> int { return esp_http_client_fetch_headers(client_); }
+
+auto HttpClient::getStatusCode() -> int { return esp_http_client_get_status_code(client_); }
+
+auto HttpClient::read(char *buffer, int length) -> int {
+    return esp_http_client_read(client_, buffer, length);
+}
+
+auto HttpClient::close() -> esp_err_t { return esp_http_client_close(client_); }
+
+auto HttpClient::makeReadStream() -> std::shared_ptr<HttpIstream<4096>> {
+    return std::make_shared<HttpIstream<4096>>(client_);
+}

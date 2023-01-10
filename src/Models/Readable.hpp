@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "Misc/SpiramAllocator.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Models/Author.hpp"
 #include "Models/Json.hpp"
@@ -20,7 +21,7 @@ public:
     std::string uuid;
     std::string shortenedUuid;
     std::string title;
-    std::string content;
+    std::basic_string<char, std::char_traits<char>, SpiramAllocator<char>> content;
     std::string url;
     std::string dateCreated;
     std::string dateModified;
@@ -44,7 +45,7 @@ public:
             return StringFormat("/articles/%s.txt", uuid.c_str());
         }
     }
-    [[nodiscard]] auto remoteUrl() const -> std::string { return file().file; }
+    [[nodiscard]] auto remoteUrl() const -> std::string { return file().fileProxied; }
     [[nodiscard]] auto isArticle() const -> bool {
         if (files.size()) {
             return false;

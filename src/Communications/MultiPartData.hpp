@@ -4,7 +4,6 @@
 #include <string>
 #include <utility>
 
-#include "HTTPClient.h"
 #include "Storage/FileSystem.hpp"
 
 class MultiPartData {
