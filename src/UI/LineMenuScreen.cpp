@@ -47,6 +47,7 @@ void LineMenuScreen::render(DisplaySystem &display) {
         }
     }
 
+    setNeedsLayout();
     setFrame({{0, 0}, {display.width(), display.height()}});
     PROFILE_START(LineMenuScreenLayoutAndDraw);
     draw();
