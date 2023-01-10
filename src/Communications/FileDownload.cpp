@@ -22,22 +22,33 @@ auto DownloadFile(HTTPClient &httpClient, int length,
     int len = length;
     int lastPercentage = 0;
     int bytesWritten = 0;
-    while (stream->connected() && (len > 0 || len == -1)) {
+    int waitFailures = 0;
+    while ((len > 0 || len == -1)) {
         auto available = stream->available();
         if (available == 0) {
             // TODO: In the future it will be good to use a HTTP library that allows us to do
             // some kind of select or block exactly until data is available
             // TODO: We're still sometimes getting a watchdog timer issue on Core 0
             log_d("Waiting for data...");
+            waitFailures += 1;
+            if (waitFailures > 5) {
+                log_e("Data download timeout, moving on to next readable download...");
+                break;
+            }
             delay(1000);
             continue;
+        } else {
+            // Reset waitFailures since we only care if they are consecutive. It's possible to have
+            // a single wait failure and recover
+            waitFailures = 0;
         }
 
         // TODO: Does readBytes ever sleep? I think maybe it doesn't
         // https://github.com/espressif/arduino-esp32/blob/d8f98450fc1f1e1646077260a22287df6332580a/cores/esp32/Stream.cpp#L285
         // That's weird for a http client, at least on a high priority task.
         int c = stream->readBytes(buff, std::min(available, bufferSize));
-        // log_d("Reading %d bytes (%d available)", std::min(available, bufferSize), available);
+        // log_d("Reading %d bytes (%d available, %d buffer size, %d len)",
+        //       std::min(available, bufferSize), available, bufferSize, len);
 
         auto written = writeBytes(buff, c);
         if (written != c) {
@@ -104,18 +115,9 @@ auto DownloadFile(HTTPClient &httpClient, FileSystem &fileSystem, const char *pa
     file.close();
 
     if (length != fileSize) {
-        file = fileSystem.open(path);
-        char headBuffer[100];
-        auto head = file.readBytes(headBuffer, 100);
-        file.seek(file.size() - 100);
-        char tailBuffer[100];
-        auto tail = file.readBytes(tailBuffer, 100);
-        file.close();
         // TODO: What's the best API to get errors from the stream?
         log_e("Downloaded file is shorter than expected, expected %d bytes but got %zu bytes",
               length, fileSize);
-        log_d("Head of file: %s / %zu", headBuffer, head);
-        log_d("Tail of file: %s / %zu", tailBuffer, tail);
         return false;
     } else {
         return true;
