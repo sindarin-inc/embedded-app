@@ -152,47 +152,20 @@ auto SindarinAPI::getUserReadables(std::vector<UserReadable> *userReadables) -> 
 auto SindarinAPI::downloadReadable(const Readable &readable, FileSystem &fileSystem,
                                    const std::function<void(int percentage)> &progressCallback)
     -> bool {
-    HTTPClient httpClient;
     bool success = false;
-
-    auto remoteUrl = readable.remoteUrl();
+    // auto remoteUrl = readable.remoteUrl();
+    auto remoteUrl = readable.file().fileProxied;
     auto localPath = readable.localFilePath();
+    auto fileSize = readable.file().size;
 
     success = DownloadFile(
-        remoteUrl.c_str(), fileSystem, localPath.c_str(), readable.file().size,
+        remoteUrl.c_str(), fileSystem, localPath.c_str(), fileSize,
         [progressCallback](int bytesWritten, float percentage) { progressCallback(percentage); });
 
-    // if (!httpClient.begin(remoteUrl.c_str())) {
-    //     log_e("HTTPClient::begin failed for URL %s", remoteUrl.c_str());
-    //     return false;
-    // }
     // httpClient.setUserAgent("Sindarin/" + String(kVersionString) + " (" + String(kGitHash) +
     // ")"); httpClient.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
     // httpClient.setTimeout(30000);
 
-    // log_d("Downloading readable from %s to %s", remoteUrl.c_str(), localPath.c_str());
-    // int httpCode = httpClient.GET();
-    // // HTTP header has been sent and Server response header has been handled
-    // // file found at server
-    // if (httpCode != HTTP_CODE_OK) {
-    //     log_e("[HTTP] GET... failed, error: %s\n", httpClient.errorToString(httpCode).c_str());
-    // } else {
-    //     // Get length of document (is -1 when Server sends no Content-Length header)
-    //     int len = httpClient.getSize();
-    //     if (len != readable.file().size) {
-    //         log_w("Readable Content-Length is %d but expected size was %d", len,
-    //               readable.file().size);
-    //         len = readable.file().size;
-    //     } else {
-    //         log_d("Readable length is %d", len);
-    //     }
-
-    //     success = DownloadFile(httpClient, fileSystem, localPath.c_str(), len,
-    //                            [progressCallback](int bytesWritten, float percentage) {
-    //                                progressCallback(percentage);
-    //                            });
-    // }
-    // httpClient.end();
     return success;
 }
 

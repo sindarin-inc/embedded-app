@@ -16,6 +16,7 @@ public:
     std::string shaHash;
     //! URL to download the file
     std::string file;
+    std::string fileProxied;
 
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("uuid") || !j.containsKey("name") || !j.containsKey("size") ||
@@ -31,6 +32,7 @@ public:
         uploadedAt = j["uploaded_at"].as<std::string>();
         shaHash = j["sha_hash"].as<std::string>();
         file = j["file"].as<std::string>();
+        fileProxied = j["file_proxied"].as<std::string>();
         return true;
     }
 };
