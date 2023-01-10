@@ -15,7 +15,7 @@ auto DownloadFile(const char *url, int length,
     -> bool {
     // W25Q512JV* chips have a page size of 256 bytes so that seems like a good value to use
     // here.
-    constexpr int bufferSize = 256;
+    constexpr int bufferSize = 4096;
     char buff[bufferSize];
 
     esp_http_client_config_t config = {
@@ -151,6 +151,9 @@ auto DownloadFile(const char *url, int length,
     // progressCallback(bytesWritten, percentProgress);
 }
 
+bool allocdBuffer = false;
+uint8_t *big_buffer = NULL;
+
 auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int length,
                   const std::function<void(int bytesWritten, float percentage)> &progressCallback)
     -> bool {
@@ -167,10 +170,25 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
         return false;
     }
 
+    if (!allocdBuffer) {
+        big_buffer = (uint8_t *)malloc(4000000);
+        allocdBuffer = true;
+    }
+
+    int big_size = 0;
+
     DownloadFile(
-        url, length, [&](const uint8_t *buf, size_t size) { return file.write(buf, size); },
+        url, length,
+        [&](const uint8_t *buf, size_t size) {
+            strncpy((char *)(big_buffer + big_size), (char *)buf, size);
+            big_size += size;
+            return size;
+        },
         progressCallback);
 
+    file.write(big_buffer, big_size);
+    //    free(big_buffer);
+    //    big_buffer = NULL;
     file.close();
 
     // The file must be re-opened to check its size
