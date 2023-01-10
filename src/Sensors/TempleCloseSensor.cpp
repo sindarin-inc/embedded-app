@@ -60,8 +60,8 @@ void TempleCloseSensor::checkTemple() {
         if (longCloseCallback_) {
             // Start a timer to fire after 60s of being closed
             if (longCloseTimer_) {
-                log_w("Somehow tried to create a new longCloseTimer_ while one was already active")
-                    resetLongCloseTimer();
+                log_w("Somehow tried to create a new longCloseTimer_ while one was already active");
+                resetLongCloseTimer();
             }
 
             auto onTimer = [](TimerHandle_t timer) {
