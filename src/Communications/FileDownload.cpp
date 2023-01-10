@@ -6,7 +6,7 @@
 #include <utility>
 
 #include "sindarin-debug.h"
-static const char *TAG = "FileDownload";
+static const char *tag = "FileDownload";
 
 // TODO: Headers
 auto DownloadFile(const char *url, int length,
@@ -38,41 +38,41 @@ auto DownloadFile(const char *url, int length,
 
     esp_err_t err;
     if ((err = esp_http_client_open(client, 0)) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to open HTTP connection: %s", esp_err_to_name(err));
+        ESP_LOGE(tag, "Failed to open HTTP connection: %s", esp_err_to_name(err));
         return false;
     }
 
-    int content_length = esp_http_client_fetch_headers(client);
+    int contentLength = esp_http_client_fetch_headers(client);
 
     auto statusCode = esp_http_client_get_status_code(client);
     if (statusCode != 200) {
         log_w("Status code was %d", statusCode);
     }
 
-    int total_read_len = 0, read_len;
+    int totalReadLen = 0, readLen;
     int lastPercentage = 0;
 
-    while (total_read_len < content_length) {
-        read_len = esp_http_client_read(client, buff, bufferSize);
-        if (read_len <= 0) {
-            ESP_LOGE(TAG, "Error read data");
+    while (totalReadLen < contentLength) {
+        readLen = esp_http_client_read(client, buff, bufferSize);
+        if (readLen <= 0) {
+            ESP_LOGE(tag, "Error read data");
         }
 
-        auto written = writeBytes((uint8_t *)buff, (size_t)read_len);
-        if (written != read_len) {
-            log_w("Failed to write to file, wrote %zu but expected %d", written, read_len);
+        auto written = writeBytes((uint8_t *)buff, (size_t)readLen);
+        if (written != readLen) {
+            log_w("Failed to write to file, wrote %zu but expected %d", written, readLen);
             break;
         }
 
-        total_read_len += read_len;
+        totalReadLen += readLen;
 
-        float percentProgress = (float)total_read_len / length * 100.0f;
+        float percentProgress = (float)totalReadLen / length * 100.0f;
         auto now = millis();
         // Report every 5-20s OR every 5% progress, whichever comes first
         if ((now - time > 5000) && (now - time > 20000 || (percentProgress - lastPercentage) > 5)) {
             log_d("Downloaded %.1f%% (%.1f KB/s)", percentProgress,
-                  total_read_len / 1024.0f / ((millis() - downloadStart) / 1000.0f));
-            progressCallback(total_read_len, percentProgress);
+                  totalReadLen / 1024.0f / ((millis() - downloadStart) / 1000.0f));
+            progressCallback(totalReadLen, percentProgress);
             time = now;
             lastPercentage = percentProgress;
         }
@@ -80,21 +80,21 @@ auto DownloadFile(const char *url, int length,
 
     int64_t end = esp_timer_get_time();
     int64_t duration = end - downloadStart;
-    float bps = total_read_len / (duration / 1000000.0f);
+    float bps = totalReadLen / (duration / 1000000.0f);
 
-    ESP_LOGI(TAG, "DownloadFile complete %d in %" PRId64 "us (%f Bps %f KB/s, %f kbps)",
-             total_read_len, duration, bps, bps / 1000, 8 * bps / 1000);
+    ESP_LOGI(tag, "DownloadFile complete %d in %" PRId64 "us (%f Bps %f KB/s, %f kbps)",
+             totalReadLen, duration, bps, bps / 1000, 8 * bps / 1000);
 
-    float percentProgress = (float)total_read_len / length * 100.0f;
-    progressCallback(total_read_len, percentProgress);
+    float percentProgress = (float)totalReadLen / length * 100.0f;
+    progressCallback(totalReadLen, percentProgress);
 
     esp_http_client_close(client);
     esp_http_client_cleanup(client);
 
-    if (length != total_read_len) {
+    if (length != totalReadLen) {
         // TODO: What's the best API to get errors from the stream?
         log_e("Wrote fewer bytes than expected, expected %d bytes but got %d bytes", length,
-              total_read_len);
+              totalReadLen);
         return false;
     } else {
         return true;
@@ -152,7 +152,7 @@ auto DownloadFile(const char *url, int length,
 }
 
 bool allocdBuffer = false;
-uint8_t *big_buffer = NULL;
+uint8_t *bigBuffer = nullptr;
 
 auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int length,
                   const std::function<void(int bytesWritten, float percentage)> &progressCallback)
@@ -171,22 +171,22 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
     }
 
     if (!allocdBuffer) {
-        big_buffer = (uint8_t *)malloc(4000000);
+        bigBuffer = (uint8_t *)malloc(4000000);
         allocdBuffer = true;
     }
 
-    int big_size = 0;
+    int bigSize = 0;
 
     DownloadFile(
         url, length,
-        [&](const uint8_t *buf, size_t size) {
-            strncpy((char *)(big_buffer + big_size), (char *)buf, size);
-            big_size += size;
+        [bigSize](const uint8_t *buf, size_t size) {
+            strncpy((char *)(bigBuffer + bigSize), (char *)buf, size);
+            bigSize += size;
             return size;
         },
         progressCallback);
 
-    file.write(big_buffer, big_size);
+    file.write(bigBuffer, bigSize);
     //    free(big_buffer);
     //    big_buffer = NULL;
     file.close();
