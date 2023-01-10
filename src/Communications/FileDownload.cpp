@@ -1,82 +1,157 @@
 #include "FileDownload.hpp"
 
+#include <esp_crt_bundle.h>
+#include <esp_http_client.h>
+#include <esp_log.h>
 #include <utility>
 
 #include "sindarin-debug.h"
+static const char *TAG = "FileDownload";
 
-auto DownloadFile(HTTPClient &httpClient, int length,
+// TODO: Headers
+auto DownloadFile(const char *url, int length,
                   const std::function<size_t(const uint8_t *buf, size_t size)> &writeBytes,
                   const std::function<void(int bytesWritten, float percentage)> &progressCallback)
     -> bool {
     // W25Q512JV* chips have a page size of 256 bytes so that seems like a good value to use
     // here.
     constexpr int bufferSize = 256;
-    uint8_t buff[bufferSize];
+    char buff[bufferSize];
 
-    auto *stream = httpClient.getStreamPtr();
-    auto time = millis();
+    esp_http_client_config_t config = {
+        // .url = "http://httpbin.org/get",
+        // .url =
+        // "http://api.sindarin.com/proxy/?url=https%3A%2F%2Fnyc3.digitaloceanspaces.com%2Fsol-cloud%2Fuploads%2Fold-testament.txt%3FX-Amz-Algorithm%3DAWS4-HMAC-SHA256%26X-Amz-Credential%3DDO00Q9MT7TLXHYDWUFQW%2F20230110%2Fnyc3%2Fs3%2Faws4_request%26X-Amz-Date%3D20230110T002724Z%26X-Amz-Expires%3D3600%26X-Amz-SignedHeaders%3Dhost%26X-Amz-Signature%3D6c1b45842537fcb95a539f13faeec7dd582400cadd5b4cd14030668d60a1d5a7"
+        // .url = "https://nyc3.digitaloceanspaces.com/sol-cloud/uploads/"
+        //        "old-testament.txt?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential="
+        //        "DO00Q9MT7TLXHYDWUFQW%2F20230110%2Fnyc3%2Fs3%2Faws4_request&X-Amz-Date="
+        //        "20230110T002724Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature="
+        //        "6c1b45842537fcb95a539f13faeec7dd582400cadd5b4cd14030668d60a1d5a7",
+        .url = url,
+        .crt_bundle_attach = esp_crt_bundle_attach
+
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+
+    auto time = esp_timer_get_time();
     auto downloadStart = time;
 
-    // Read all data from server
-    length = length > 0 ? length : httpClient.getSize();
-    int len = length;
+    esp_err_t err;
+    if ((err = esp_http_client_open(client, 0)) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to open HTTP connection: %s", esp_err_to_name(err));
+        return false;
+    }
+
+    int content_length = esp_http_client_fetch_headers(client);
+
+    auto statusCode = esp_http_client_get_status_code(client);
+    if (statusCode != 200) {
+        log_w("Status code was %d", statusCode);
+    }
+
+    int total_read_len = 0, read_len;
     int lastPercentage = 0;
-    int bytesWritten = 0;
-    while (stream->connected() && (len > 0 || len == -1)) {
-        auto available = stream->available();
-        if (available == 0) {
-            // TODO: In the future it will be good to use a HTTP library that allows us to do
-            // some kind of select or block exactly until data is available
-            // TODO: We're still sometimes getting a watchdog timer issue on Core 0
-            log_d("Waiting for data...");
-            delay(1000);
-            continue;
+
+    while (total_read_len < content_length) {
+        read_len = esp_http_client_read(client, buff, bufferSize);
+        if (read_len <= 0) {
+            ESP_LOGE(TAG, "Error read data");
         }
 
-        // TODO: Does readBytes ever sleep? I think maybe it doesn't
-        // https://github.com/espressif/arduino-esp32/blob/d8f98450fc1f1e1646077260a22287df6332580a/cores/esp32/Stream.cpp#L285
-        // That's weird for a http client, at least on a high priority task.
-        int c = stream->readBytes(buff, std::min(available, bufferSize));
-        // log_d("Reading %d bytes (%d available)", std::min(available, bufferSize), available);
-
-        auto written = writeBytes(buff, c);
-        if (written != c) {
-            log_w("Failed to write to file, wrote %zu but expected %d", written, c);
+        auto written = writeBytes((uint8_t *)buff, (size_t)read_len);
+        if (written != read_len) {
+            log_w("Failed to write to file, wrote %zu but expected %d", written, read_len);
             break;
         }
-        bytesWritten += written;
-        if (len > 0) {
-            len -= c;
-        }
 
-        float percentProgress = (float)bytesWritten / length * 100.0f;
+        total_read_len += read_len;
+
+        float percentProgress = (float)total_read_len / length * 100.0f;
         auto now = millis();
         // Report every 5-20s OR every 5% progress, whichever comes first
         if ((now - time > 5000) && (now - time > 20000 || (percentProgress - lastPercentage) > 5)) {
             log_d("Downloaded %.1f%% (%.1f KB/s)", percentProgress,
-                  bytesWritten / 1024.0f / ((millis() - downloadStart) / 1000.0f));
-            progressCallback(bytesWritten, percentProgress);
+                  total_read_len / 1024.0f / ((millis() - downloadStart) / 1000.0f));
+            progressCallback(total_read_len, percentProgress);
             time = now;
             lastPercentage = percentProgress;
         }
-
-        vPortYield();
     }
 
-    float percentProgress = (float)bytesWritten / length * 100.0f;
-    progressCallback(bytesWritten, percentProgress);
+    int64_t end = esp_timer_get_time();
+    int64_t duration = end - downloadStart;
+    float bps = total_read_len / (duration / 1000000.0f);
 
-    if (length != bytesWritten) {
+    ESP_LOGI(TAG, "DownloadFile complete %d in %" PRId64 "us (%f Bps %f KB/s, %f kbps)",
+             total_read_len, duration, bps, bps / 1000, 8 * bps / 1000);
+
+    float percentProgress = (float)total_read_len / length * 100.0f;
+    progressCallback(total_read_len, percentProgress);
+
+    esp_http_client_close(client);
+    esp_http_client_cleanup(client);
+
+    if (length != total_read_len) {
         // TODO: What's the best API to get errors from the stream?
         log_e("Wrote fewer bytes than expected, expected %d bytes but got %d bytes", length,
-              bytesWritten);
+              total_read_len);
         return false;
     } else {
         return true;
     }
+    // // Read all data from server
+    // length = length > 0 ? length : httpClient.getSize();
+    // int len = length;
+    // int lastPercentage = 0;
+    // int bytesWritten = 0;
+    // while (stream->connected() && (len > 0 || len == -1)) {
+    //     auto available = stream->available();
+    //     if (available == 0) {
+    //         // TODO: In the future it will be good to use a HTTP library that allows us to do
+    //         // some kind of select or block exactly until data is available
+    //         // TODO: We're still sometimes getting a watchdog timer issue on Core 0
+    //         log_d("Waiting for data...");
+    //         delay(1000);
+    //         continue;
+    //     }
+
+    //     // TODO: Does readBytes ever sleep? I think maybe it doesn't
+    //     //
+    //     https://github.com/espressif/arduino-esp32/blob/d8f98450fc1f1e1646077260a22287df6332580a/cores/esp32/Stream.cpp#L285
+    //     // That's weird for a http client, at least on a high priority task.
+    //     int c = stream->readBytes(buff, std::min(available, bufferSize));
+    //     // log_d("Reading %d bytes (%d available)", std::min(available, bufferSize), available);
+
+    //     auto written = writeBytes(buff, c);
+    //     if (written != c) {
+    //         log_w("Failed to write to file, wrote %zu but expected %d", written, c);
+    //         break;
+    //     }
+    //     bytesWritten += written;
+    //     if (len > 0) {
+    //         len -= c;
+    //     }
+
+    //     float percentProgress = (float)bytesWritten / length * 100.0f;
+    //     auto now = millis();
+    //     // Report every 5-20s OR every 5% progress, whichever comes first
+    //     if ((now - time > 5000) && (now - time > 20000 || (percentProgress - lastPercentage) >
+    //     5)) {
+    //         log_d("Downloaded %.1f%% (%.1f KB/s)", percentProgress,
+    //               bytesWritten / 1024.0f / ((millis() - downloadStart) / 1000.0f));
+    //         progressCallback(bytesWritten, percentProgress);
+    //         time = now;
+    //         lastPercentage = percentProgress;
+    //     }
+
+    //     vPortYield();
+    // }
+
+    // float percentProgress = (float)bytesWritten / length * 100.0f;
+    // progressCallback(bytesWritten, percentProgress);
 }
 
-auto DownloadFile(HTTPClient &httpClient, FileSystem &fileSystem, const char *path, int length,
+auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int length,
                   const std::function<void(int bytesWritten, float percentage)> &progressCallback)
     -> bool {
     // TODO: Support resuming?
@@ -93,7 +168,7 @@ auto DownloadFile(HTTPClient &httpClient, FileSystem &fileSystem, const char *pa
     }
 
     DownloadFile(
-        httpClient, length, [&](const uint8_t *buf, size_t size) { return file.write(buf, size); },
+        url, length, [&](const uint8_t *buf, size_t size) { return file.write(buf, size); },
         progressCallback);
 
     file.close();

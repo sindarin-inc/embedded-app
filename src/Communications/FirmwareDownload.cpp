@@ -100,7 +100,7 @@ void FirmwareDownloader::downloadFirmware(
         Update.setMD5(response.firmware.md5.c_str());
 
         auto success = DownloadFile(
-            httpClient, length,
+            response.firmware.url.c_str(), length,
             [](const uint8_t *buf, size_t size) { return Update.write((uint8_t *)buf, size); },
             [progressCallback](int bytesWritten, float percentage) {
                 progressCallback(
