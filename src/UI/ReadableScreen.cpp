@@ -476,7 +476,40 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             if (pageSpeed_ != 0) {
                 xTimerStop(DisplaySystem::animationTimer, 0);
             }
-            back();
+            if (readable_.isArticle()) {
+                bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
+                archiveMenu_.resetMenuItems();
+
+                archiveMenu_.addMenuItem(MenuItem("Main Menu", [this]() {
+                    log_i("Not archiving: %s", readable_.title.c_str());
+                    if (this->backCallback != nullptr) {
+                        this->backCallback();
+                    }
+                }));
+                if (archived) {
+                    archiveMenu_.addMenuItem(MenuItem("Undo Archive", [this]() {
+                        log_i("Un-Archiving: %s", readable_.title.c_str());
+                        this->prefs_.readableArchivedChanged.remove(
+                            readable_.shortenedUuid.c_str());
+                        if (this->backCallback != nullptr) {
+                            this->backCallback();
+                        }
+                    }));
+                } else {
+                    archiveMenu_.addMenuItem(MenuItem("Archive and Main Menu", [this]() {
+                        log_i("Archiving: %s", readable_.title.c_str());
+                        this->prefs_.readableArchivedChanged.set(readable_.shortenedUuid.c_str(),
+                                                                 true);
+                        if (this->backCallback != nullptr) {
+                            this->backCallback();
+                        }
+                    }));
+                }
+                archiveMenu_.setNeedsLayout();
+                setCurrentScreen(archiveMenu_);
+            } else {
+                back();
+            }
         } else {
             numUps_++;
             if (numUps_ > 3) {

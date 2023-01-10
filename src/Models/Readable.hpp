@@ -45,6 +45,13 @@ public:
         }
     }
     [[nodiscard]] auto remoteUrl() const -> std::string { return file().file; }
+    [[nodiscard]] auto isArticle() const -> bool {
+        if (files.size()) {
+            return false;
+        } else {
+            return true;
+        }
+    }
 
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("uuid") || !j.containsKey("title") || !j.containsKey("date_created") ||
