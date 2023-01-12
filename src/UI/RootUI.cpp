@@ -372,11 +372,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         fsMenu->setExtraText("ls of /");
 
         FileList localFiles;
-        fileSystem.listDir("/", localFiles);
+        fileSystem.listDir("/articles", localFiles);
         for (const std::string &str : localFiles) {
             log_d("Next File is %s", str.c_str());
             fsMenu->addMenuItem(MenuItem(str.c_str(), [this, fsMenu, &fileSystem, str]() {
-                File toSerialOutput = fileSystem.open(StringFormat("/%s", str.c_str()));
+                File toSerialOutput = fileSystem.open(StringFormat("/articles/%s", str.c_str()));
                 while (toSerialOutput.available()) {
                     printf("%c", toSerialOutput.read());
                 }
@@ -565,13 +565,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     debugMenu->addMenuItem(
         MenuItem("Clear Readables and Restart", [debugMenu, display, &localStore]() {
-            localStore.clearReadablesFile();
+            localStore.deleteReadables(true);
             debugMenu->showTemporaryMessage(*display, "Readables reset.");
         }));
 
     debugMenu->addMenuItem(
         MenuItem("Clear Articles and Restart", [debugMenu, display, &localStore]() {
-            localStore.clearArticlesFile();
+            localStore.deleteArticles(true);
             debugMenu->showTemporaryMessage(*display, "Articles reset.");
         }));
 
@@ -591,8 +591,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         debugMenu->showTemporaryMessage(*display, "simprefs.ini deleted! Resetting...");
 #else
         nvs_flash_erase();
-        localStore.clearArticlesFile(false);
-        localStore.clearReadablesFile(false);
+        localStore.deleteReadables(false);
+        localStore.deleteArticles(false);
+
         log_w("NVS and FS cleared. Rebooting...");
         debugMenu->showTemporaryMessage(*display, "NVS cleared! Resetting...");
 #endif
