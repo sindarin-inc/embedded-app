@@ -46,6 +46,7 @@ auto LittleFSFileSystem::createDir(const std::string &path, bool allowExists) ->
     if (!LittleFS.mkdir(path.c_str())) {
         if (errno == EEXIST && allowExists) {
             // Silently pass
+            log_d("Directory %s already exists", path.c_str());
         } else {
             log_e("Failed to create dir %s", path.c_str());
             return false;

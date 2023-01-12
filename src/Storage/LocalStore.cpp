@@ -15,8 +15,8 @@
 enum { NUMBER_OF_READABLE_DOWNLOAD_TRIES = 3 };
 
 auto LocalStore::begin() -> bool {
-    auto loadedReadables = loadReadablesFromFile(readables_, std::string(READABLES_PATH));
-    auto loadedArticles = loadReadablesFromFile(articles_, std::string(ARTICLES_PATH));
+    auto loadedReadables = loadReadablesFromFile(readables_, READABLES_PATH);
+    auto loadedArticles = loadReadablesFromFile(articles_, ARTICLES_PATH);
 
     return loadedReadables && loadedArticles;
 }
@@ -85,9 +85,15 @@ auto LocalStore::readablesModelType(const std::vector<Readable> &readables) -> s
 
 auto LocalStore::hasReadable(const std::vector<Readable> &readables, const Readable &readable)
     -> bool {
+    std::string modelType =
+        this->readablesModelType(const_cast<std::vector<Readable> &>(readables));
     for (auto r = readables.begin(); r != readables.end(); ++r) {
         if (r->uuid == readable.uuid && fileSystem.exists(r->localFilePath())) {
             auto file = fileSystem.open(r->localFilePath());
+            if (!file) {
+                log_w("Checking for %s, but failed to open file: %s %s", modelType.c_str(),
+                      r->localFilePath().c_str(), r->uuid.c_str());
+            }
             auto fileSize = file.size();
             file.close();
 
@@ -286,7 +292,10 @@ void LocalStore::syncFromRemote(
             .ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or(""),
         };
 
+        SHOW_HEAP();
         auto httpCode = SindarinAPI::getInstance()->checkSync(request, &checkSyncResponse);
+        SHOW_HEAP();
+
         if (httpCode != HTTP_CODE_OK) {
             log_e("Failed to check sync (HTTP %d)", httpCode);
             progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
@@ -318,6 +327,8 @@ void LocalStore::syncFromRemote(
         for (auto &userReadable : checkSyncResponse.userReadables) {
             log_d("User readable %s (%s)", userReadable.readable.title.c_str(),
                   userReadable.readable.file().shaHash.c_str());
+            SHOW_HEAP();
+
             if (this->processReadablePlacemarksFromServer(userReadable.readable,
                                                           userReadable.placemark)) {
                 log_i("Placemark for %s updated to %d", userReadable.readable.title.c_str(),
@@ -331,7 +342,8 @@ void LocalStore::syncFromRemote(
                 continue;
             }
             if (this->hasReadable(readables_, userReadable.readable)) {
-                log_w("Already have %s", userReadable.readable.title.c_str());
+                log_w("Already have \"%s\" %s", userReadable.readable.title.c_str(),
+                      userReadable.readable.uuid.c_str());
                 continue;
             }
 
@@ -344,24 +356,30 @@ void LocalStore::syncFromRemote(
         for (auto &userReadable : checkSyncResponse.userArticles) {
             log_d("Fetched user article: %s (%zu)", userReadable.readable.title.c_str(),
                   userReadable.readable.content.size());
+            SHOW_HEAP();
+
             if (this->processReadablePlacemarksFromServer(userReadable.readable,
                                                           userReadable.placemark)) {
                 log_i("Placemark for %s updated to %d", userReadable.readable.title.c_str(),
                       userReadable.placemark);
             }
+            SHOW_HEAP();
             if (userReadable.isArchived) {
-                log_i("Article %s is archived", userReadable.readable.title.c_str());
+                log_i("Article \"%s\" is archived", userReadable.readable.title.c_str());
                 // TODO: Store these articles in an accessible archive instead of just deleting them
                 // and ignoring
                 articlesToDelete.push_back(userReadable.readable);
                 continue;
             }
+            SHOW_HEAP();
             if (this->hasReadable(articles_, userReadable.readable)) {
                 // Should never get here as articlesSince should hide these articles
-                log_w("Already have %s", userReadable.readable.title.c_str());
+                log_w("Already have \"%s\" %s", userReadable.readable.title.c_str(),
+                      userReadable.readable.uuid.c_str());
                 continue;
             }
 
+            SHOW_HEAP();
             articlesToSave.push_back(userReadable.readable);
         }
         this->resetReadablesPlacemarkChanged(articles_);
@@ -418,6 +436,7 @@ void LocalStore::syncFromRemote(
             const auto &readable = readablesToDownload[i];
             log_i("Downloading %s (file=%s, url=%s)", readable.title.c_str(),
                   readable.localFilePath().c_str(), readable.remoteUrl().c_str());
+            SHOW_HEAP();
 
             for (int t = 0; t < NUMBER_OF_READABLE_DOWNLOAD_TRIES; t++) {
                 auto success = SindarinAPI::getInstance()->downloadReadable(
@@ -466,26 +485,38 @@ void LocalStore::syncFromRemote(
         }
 
         // Save the articles that are new
+        auto saveSucceeded = true;
         for (int i = 0; i < articlesToSave.size(); i++) {
             syncState.tasks[tasksIndex].percentage = (float(i + 1) / articlesToSave.size()) * 100;
             progressCallback(syncState);
+            SHOW_HEAP();
 
             auto &readable = articlesToSave[i];
 
-            this->saveArticleFile(readable);
+            auto success = this->saveArticleFile(readable);
+            if (!success) {
+                saveSucceeded = success;
+                log_e("Failed to save article: %s", readable.title.c_str());
+                continue;
+            }
             this->addReadable(articles_, readable);
         }
 
         progressCallback(syncState);
 
         // Store since date values for next sync
-        log_i("Setting lastReadablesSince to %s and lastArticlesSince to %s",
-              checkSyncResponse.readablesSince.c_str(), checkSyncResponse.articlesSince.c_str());
-        if (checkSyncResponse.readablesSince != "" && !failedReadableDownload) {
-            this->prefs_.lastReadablesSince.set(checkSyncResponse.readablesSince.c_str());
-        }
-        if (checkSyncResponse.articlesSince != "") {
-            this->prefs_.lastArticlesSince.set(checkSyncResponse.articlesSince.c_str());
+        if (saveSucceeded) {
+            log_i("Setting lastReadablesSince to %s and lastArticlesSince to %s",
+                  checkSyncResponse.readablesSince.c_str(),
+                  checkSyncResponse.articlesSince.c_str());
+            if (checkSyncResponse.readablesSince != "" && !failedReadableDownload) {
+                this->prefs_.lastReadablesSince.set(checkSyncResponse.readablesSince.c_str());
+            }
+            if (checkSyncResponse.articlesSince != "") {
+                this->prefs_.lastArticlesSince.set(checkSyncResponse.articlesSince.c_str());
+            }
+        } else {
+            log_w("Save did not succeed on every article. Not updating since dates.");
         }
 
         // Artificially delay so the user has the satisfaction of seeing the list done
@@ -518,19 +549,27 @@ void LocalStore::syncFromRemote(
     });
 }
 
-void LocalStore::saveArticleFile(const Readable &readable) {
+auto LocalStore::saveArticleFile(const Readable &readable) -> bool {
     log_i("Storing article %s: %s", readable.title.c_str(), readable.localFilePath().c_str());
+
     // create log directory in filesystem if it doesn't exist
+    log_d("Creating directory /articles");
     if (!fileSystem.createDir("/articles")) {
         log_e("Could not create /articles directory");
-        return;
+        return false;
     }
 
+    // Sleep for 2 seconds
+    delay(2000);
+
+    log_d("Opening file for writing...");
+    SHOW_HEAP();
     File file = fileSystem.open(readable.localFilePath(), FILE_WRITE, true);
     if (!file) {
         log_e("Failed to open %s", readable.localFilePath().c_str());
-        return;
+        return false;
     }
+    SHOW_HEAP();
 
     const char *title = readable.title.c_str();
     file.write((const uint8_t *)title, strlen(title));
@@ -544,34 +583,48 @@ void LocalStore::saveArticleFile(const Readable &readable) {
 
     log_d("Finished storing article %s, size %zu/%zu", readable.title.c_str(), docSize,
           readable.content.size());
+
+    return true;
 }
 
-void LocalStore::clearArticlesFile(bool restart) {
-    log_i("Clearing %s", ARTICLES_PATH);
-    bool removed = fileSystem.remove(ARTICLES_PATH);
+void LocalStore::deleteReadables(bool restart) {
+    deleteReadableFiles(readables_, restart);
+    readables_.clear();
+}
+
+void LocalStore::deleteArticles(bool restart) {
+    deleteReadableFiles(articles_, restart);
+    articles_.clear();
+}
+
+void LocalStore::deleteReadableFiles(const std::vector<Readable> &readables, bool restart) {
+    std::string modelType = readablesModelType(const_cast<std::vector<Readable> &>(readables));
+    std::string path = modelType == "readable" ? READABLES_PATH : ARTICLES_PATH;
+    log_i("Clearing %s", path.c_str());
+    bool removed = fileSystem.remove(path);
     if (!removed) {
-        log_e("Failed to remove %s", ARTICLES_PATH);
+        log_e("Failed to remove %s", path.c_str());
     }
 
     prefs_.lastArticlesSince.set("");
 
-    log_i("Resetting to guarantee articles are removed");
-
-    if (restart) {
-        esp_restart();
-    }
-}
-
-void LocalStore::clearReadablesFile(bool restart) {
-    log_i("Clearing %s", READABLES_PATH);
-    bool removed = fileSystem.remove(READABLES_PATH);
-    if (!removed) {
-        log_e("Failed to remove %s", READABLES_PATH);
+    FileList localFiles;
+    fileSystem.listDir("/articles", localFiles);
+    for (const std::string &str : localFiles) {
+        log_i("Removing %s", str.c_str());
+        fileSystem.remove(StringFormat("/articles/%s", str.c_str()));
     }
 
-    prefs_.lastReadablesSince.set("");
+    fileSystem.remove("/articles");
 
-    log_i("Resetting to guarantee readables are removed");
+    for (const Readable &readable : readables) {
+        log_i("Removing %s \"%s\" (%s)", modelType.c_str(), readable.title.c_str(),
+              readable.localFilePath().c_str());
+        fileSystem.remove(readable.localFilePath());
+    }
+
+    log_i("Resetting to guarantee %s are removed", modelType.c_str());
+
     if (restart) {
         esp_restart();
     }
