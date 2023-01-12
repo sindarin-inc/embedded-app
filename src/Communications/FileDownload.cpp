@@ -179,7 +179,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
 
     DownloadFile(
         url, length,
-        [bigSize](const uint8_t *buf, size_t size) {
+        [&bigSize](const uint8_t *buf, size_t size) {
             strncpy((char *)(bigBuffer + bigSize), (char *)buf, size);
             bigSize += size;
             return size;
