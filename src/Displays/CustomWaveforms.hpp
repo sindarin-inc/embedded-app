@@ -18,9 +18,8 @@ const EinkET013TT1Waveform BC_GRAYSCALE_INITIAL_AU4 = {
 
 const EinkET013TT1Waveform BC_GRAYSCALE_FIRST_AU4 = {
     "Eink 10-13C (GRAYSCALE AU4)",
-    3,
+    2,
     std::array<Frame, MAX_FRAMES_PER_WAVEFORM>{
-        Frame{.bb = BLACK, .bw = WHITE, .wb = BLACK, .ww = WHITE},
         Frame{.bb = BLACK, .bw = WHITE, .wb = BLACK, .ww = WHITE},
         Frame{.bb = NOCHG, .bw = NOCHG, .wb = NOCHG, .ww = NOCHG},
     },
@@ -28,9 +27,8 @@ const EinkET013TT1Waveform BC_GRAYSCALE_FIRST_AU4 = {
 
 const EinkET013TT1Waveform BC_GRAYSCALE_AU4 = {
     "Eink 10-13C (GRAYSCALE AU4)",
-    3,
+    2,
     std::array<Frame, MAX_FRAMES_PER_WAVEFORM>{
-        Frame{.bb = BLACK, .bw = NOCHG, .wb = BLACK, .ww = NOCHG},
         Frame{.bb = BLACK, .bw = NOCHG, .wb = BLACK, .ww = NOCHG},
         Frame{.bb = NOCHG, .bw = NOCHG, .wb = NOCHG, .ww = NOCHG},
     },
