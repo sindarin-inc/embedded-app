@@ -4,6 +4,7 @@
 #include <esp_log.h>
 #endif
 
+#include <esp_bt.h>
 #include <esp_sleep.h>
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
@@ -509,4 +510,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::NONE); });
 
     GoodBootTimer();
+
+    auto bleTxPower = esp_ble_tx_power_get(ESP_BLE_PWR_TYPE_DEFAULT);
+    log_i("BLE POWER IS %d", bleTxPower);
 }
