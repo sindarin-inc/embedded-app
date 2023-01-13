@@ -353,35 +353,36 @@ void LocalStore::syncFromRemote(
         this->resetReadablesArchivedChanged(readables_);
 
         // Look through all the articles, deleting archived ones and downloading new ones
-        for (auto &userReadable : checkSyncResponse.userArticles) {
-            log_d("Fetched user article: %s (%zu)", userReadable.readable.title.c_str(),
-                  userReadable.readable.content.size());
-            SHOW_HEAP();
+        // for (auto &userReadable : checkSyncResponse.userArticles) {
+        //     log_d("Fetched user article: %s (%zu)", userReadable.readable.title.c_str(),
+        //           userReadable.readable.content.size());
+        //     SHOW_HEAP();
 
-            if (this->processReadablePlacemarksFromServer(userReadable.readable,
-                                                          userReadable.placemark)) {
-                log_i("Placemark for %s updated to %d", userReadable.readable.title.c_str(),
-                      userReadable.placemark);
-            }
-            SHOW_HEAP();
-            if (userReadable.isArchived) {
-                log_i("Article \"%s\" is archived", userReadable.readable.title.c_str());
-                // TODO: Store these articles in an accessible archive instead of just deleting them
-                // and ignoring
-                articlesToDelete.push_back(userReadable.readable);
-                continue;
-            }
-            SHOW_HEAP();
-            if (this->hasReadable(articles_, userReadable.readable)) {
-                // Should never get here as articlesSince should hide these articles
-                log_w("Already have \"%s\" %s", userReadable.readable.title.c_str(),
-                      userReadable.readable.uuid.c_str());
-                continue;
-            }
+        //     if (this->processReadablePlacemarksFromServer(userReadable.readable,
+        //                                                   userReadable.placemark)) {
+        //         log_i("Placemark for %s updated to %d", userReadable.readable.title.c_str(),
+        //               userReadable.placemark);
+        //     }
+        //     SHOW_HEAP();
+        //     if (userReadable.isArchived) {
+        //         log_i("Article \"%s\" is archived", userReadable.readable.title.c_str());
+        //         // TODO: Store these articles in an accessible archive instead of just deleting
+        //         them
+        //         // and ignoring
+        //         articlesToDelete.push_back(userReadable.readable);
+        //         continue;
+        //     }
+        //     SHOW_HEAP();
+        //     if (this->hasReadable(articles_, userReadable.readable)) {
+        //         // Should never get here as articlesSince should hide these articles
+        //         log_w("Already have \"%s\" %s", userReadable.readable.title.c_str(),
+        //               userReadable.readable.uuid.c_str());
+        //         continue;
+        //     }
 
-            SHOW_HEAP();
-            articlesToSave.push_back(userReadable.readable);
-        }
+        //     SHOW_HEAP();
+        //     articlesToSave.push_back(userReadable.readable);
+        // }
         this->resetReadablesPlacemarkChanged(articles_);
         this->resetReadablesArchivedChanged(articles_);
 

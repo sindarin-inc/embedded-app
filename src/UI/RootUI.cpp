@@ -1,9 +1,12 @@
 #include "RootUI.hpp"
 
+#include <esp_nimble_hci.h>
 #include <esp_sleep.h>
 #include <esp_system.h>
 #include <esp_timer.h>
 #include <filesystem>
+#include <nimble/nimble_port.h>
+#include <nimble/nimble_port_freertos.h>
 #include <nvs_flash.h>
 
 #include "Bitmaps/Logo.hpp"
@@ -12,6 +15,7 @@
 #include "Communications/WiFi.hpp"
 #include "GitVersion.hpp"
 #include "Inputs/RemoteInput.hpp"
+#include "Misc/InactivityTimer.hpp"
 #include "Misc/MenuStyle.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/StringUtil.hpp"
@@ -52,6 +56,8 @@
 #include "Displays/DisplayEinkET013TT1.hpp"
 #include "UI/VcomAdjustScreen.hpp"
 #endif
+
+extern bool bleDisabled;
 
 #define LAST_READABLE_ID "rui-readable"
 
@@ -140,6 +146,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 display->clearDisplay();
                 this->display_->setFont(this->display_->style.getFontFamily().readableFont);
                 this->setCurrentScreen(*readableScreen);
+                log_i("Killing BT and pausing inactivity timer");
+                esp_bt_controller_disable();
+                esp_bt_controller_deinit();
+                nimble_port_stop();
+                nimble_port_deinit();
+                InactivityTimer::getInstance()->pause();
+                bleDisabled = true;
             }));
     }
 

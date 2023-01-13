@@ -97,13 +97,14 @@ Power power(fileSystem, prefs);
 RootUI rootUi(prefs, power);
 
 bool templesClosed = false;
+bool bleDisabled = false;
 
 // Resonsible for handling connecting / reconnecting to remotes
 void RadioTask(void *parameter) {
     for (;;) {
 #if USE_TURN_TOUCH_REMOTE
         // Skip scanning while WiFi is connected to avoid kicking off the WiFi connection
-        if (!NetworkConnected() && !templesClosed) {
+        if (!NetworkConnected() && !templesClosed && !bleDisabled) {
             ttRemoteInput.connect();
         } else if (!ttRemoteInput.connected()) {
             // log_d("Skipping Turn Touch scan while WiFi is connected");
@@ -262,7 +263,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 lightingController.disableLighting();
                 templesClosed = true;
                 // Will be turned off after content sync
-                ForcePowerOn();
+                // ForcePowerOn();
             }
         });
         templeCloseSensor.setLongCloseCallback([]() {

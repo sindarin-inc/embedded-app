@@ -23,6 +23,8 @@ void MainMenuScreen::render(DisplaySystem &display) {
     }
 #endif
 
+    log_i("MainMenuscreen render (selected = %s)", getCurrItem().title.c_str());
+
     if (!needsRerender) {
         return;
     }

@@ -76,7 +76,7 @@ void InitializePlatform() {
     }
     // The MCU will keep itself on until the digital magnetometer detects the temples are closed, or
     // there are 5 mins of inactivity
-    ForcePowerOn();
+    AllowPowerOff();
 #endif
 #if USE_I2C
     // Initialize I2C port 0

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <functional>
 #include <utility>
 
@@ -6,14 +8,15 @@
 
 class InactivityTimer {
 public:
-    InactivityTimer() : callback_(nullptr) {}
-
+    InactivityTimer();
     ~InactivityTimer() {
         if (timer_ != nullptr) {
             xTimerDelete(timer_, portMAX_DELAY);
             timer_ = nullptr;
         }
     }
+
+    static auto getInstance() -> InactivityTimer *;
 
     void start(std::function<void()> callback, int inactivityTimeoutMs = 5 * 60 * 1000) {
         callback_ = std::move(callback);
@@ -22,6 +25,14 @@ public:
         timer_ = xTimerCreate("InactivityTimer", pdMS_TO_TICKS(inactivityTimeoutMs), pdFALSE,
                               reinterpret_cast<void *>(this), &InactivityTimer::timerCallback);
         xTimerStart(timer_, portMAX_DELAY);
+    }
+
+    void pause() {
+        if (timer_ == nullptr) {
+            return;
+        }
+        // Stop the timer.
+        xTimerStop(timer_, portMAX_DELAY);
     }
 
     void feed() {
