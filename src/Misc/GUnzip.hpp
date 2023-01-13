@@ -1,8 +1,8 @@
 #pragma once
 
 #include <stdint.h>
+#include <zlib.h>
 
-#include "Misc/unzipLIB/zlib.h"
 #include "Storage/FileSystem.hpp"
 
 class GUnzip {
