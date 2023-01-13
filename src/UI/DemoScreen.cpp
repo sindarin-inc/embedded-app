@@ -34,12 +34,12 @@ void DemoScreen::render(DisplaySystem &display) {
                         display.height() / 2 - sol_gr1_height / 2, sol_gr1_bits, sol_gr1_width,
                         sol_gr1_height, display.fg);
     display.updateDisplay(DisplaySystem::UpdateType::FULL);
-
-    display.drawXBitmap(display.width() / 2 - sol_gr1_width / 2,
-                        display.height() / 2 - sol_gr1_height / 2, sol_gr1_bits, sol_gr1_width,
-                        sol_gr1_height, display.fg);
-    display.updateDisplay(DisplaySystem::UpdateType::GRAYSCALE_INITIAL);
-
+    /*
+        display.drawXBitmap(display.width() / 2 - sol_gr1_width / 2,
+                            display.height() / 2 - sol_gr1_height / 2, sol_gr1_bits, sol_gr1_width,
+                            sol_gr1_height, display.fg);
+        display.updateDisplay(DisplaySystem::UpdateType::GRAYSCALE_INITIAL);
+    */
     display.drawXBitmap(display.width() / 2 - sol_gr1_width / 2,
                         display.height() / 2 - sol_gr1_height / 2, sol_gr1_bits, sol_gr1_width,
                         sol_gr1_height, display.fg);
