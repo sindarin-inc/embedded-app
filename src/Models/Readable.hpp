@@ -44,7 +44,7 @@ public:
             return StringFormat("/articles/%s.txt", uuid.c_str());
         }
     }
-    [[nodiscard]] auto remoteUrl() const -> std::string { return file().file; }
+    [[nodiscard]] auto remoteUrl() const -> std::string { return file().fileProxied; }
 
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("uuid") || !j.containsKey("title") || !j.containsKey("date_created") ||

@@ -58,7 +58,7 @@ public:
     void resetReadablesArchivedChanged(const std::vector<Readable> &readables);
 
     void syncFromRemote(const std::function<void(ContentSyncState state)> &progressCallback);
-    void saveArticleFile(const Readable &readable);
+    auto saveArticleFile(const Readable &readable) -> bool;
     void clearArticlesFile(bool restart = true);
     void clearReadablesFile(bool restart = true);
     auto saveReadables(const std::vector<Readable> &readables, const std::string &path) -> bool;

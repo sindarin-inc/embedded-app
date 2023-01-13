@@ -267,7 +267,9 @@ void LocalStore::syncFromRemote(
         // Uncomment below to force a full sync
         // this->prefs_.lastReadablesSince.set("");
         // this->prefs_.lastArticlesSince.set("");
+
         bool failedReadableDownload = false;
+        bool failedArticleDownload = false;
         auto readablesSince = this->readablesSince();
         auto articlesSince = this->articlesSince();
         auto readablePlacemarks = this->changedReadablePlacemarkQueryParams(readables_);
@@ -286,6 +288,7 @@ void LocalStore::syncFromRemote(
             .ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or(""),
         };
 
+        SHOW_HEAP();
         auto httpCode = SindarinAPI::getInstance()->checkSync(request, &checkSyncResponse);
         if (httpCode != HTTP_CODE_OK) {
             log_e("Failed to check sync (HTTP %d)", httpCode);
@@ -298,6 +301,7 @@ void LocalStore::syncFromRemote(
             progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
             return;
         }
+        SHOW_HEAP();
 
         // Clear the readablesSince cache since it will be set at the end of a successful run.
         // If we fail, then the next content sync will not have a cutoff date
@@ -340,6 +344,7 @@ void LocalStore::syncFromRemote(
 
             readablesToDownload.push_back(userReadable.readable);
         }
+        SHOW_HEAP();
         this->resetReadablesPlacemarkChanged(readables_);
         this->resetReadablesArchivedChanged(readables_);
 
@@ -372,6 +377,7 @@ void LocalStore::syncFromRemote(
         }
         this->resetReadablesPlacemarkChanged(articles_);
         this->resetReadablesArchivedChanged(articles_);
+        SHOW_HEAP();
 
         // TODO: Probably these should be set operations
         log_d("Readables to download: %zu", readablesToDownload.size());
@@ -426,6 +432,7 @@ void LocalStore::syncFromRemote(
                   readable.localFilePath().c_str(), readable.remoteUrl().c_str());
 
             for (int t = 0; t < NUMBER_OF_READABLE_DOWNLOAD_TRIES; t++) {
+                SHOW_HEAP();
                 auto success = SindarinAPI::getInstance()->downloadReadable(
                     readable, this->fileSystem,
                     [progressCallback, &syncState, tasksIndex](int percentage) {
@@ -447,6 +454,7 @@ void LocalStore::syncFromRemote(
         }
 
         progressCallback(syncState);
+        SHOW_HEAP();
 
         auto tasksIndex = readablesToDownload.size() + readablesToDelete.size();
         if (articlesToDelete.size() > 0) {
@@ -464,6 +472,7 @@ void LocalStore::syncFromRemote(
         }
 
         progressCallback(syncState);
+        SHOW_HEAP();
 
         // Clear the articlesSince cache since it will be set at the end of a successful run.
         // If we fail, then the next content sync will not have a cutoff date
@@ -475,14 +484,21 @@ void LocalStore::syncFromRemote(
         for (int i = 0; i < articlesToSave.size(); i++) {
             syncState.tasks[tasksIndex].percentage = (float(i + 1) / articlesToSave.size()) * 100;
             progressCallback(syncState);
+            SHOW_HEAP();
 
             auto &readable = articlesToSave[i];
 
-            this->saveArticleFile(readable);
+            auto success = this->saveArticleFile(readable);
+            if (!success) {
+                log_e("Failed to save article file.");
+                failedArticleDownload = true;
+                continue;
+            }
             this->addReadable(articles_, readable);
         }
 
         progressCallback(syncState);
+        SHOW_HEAP();
 
         // Store since date values for next sync
         log_i("Setting lastReadablesSince to %s and lastArticlesSince to %s",
@@ -490,7 +506,7 @@ void LocalStore::syncFromRemote(
         if (checkSyncResponse.readablesSince != "" && !failedReadableDownload) {
             this->prefs_.lastReadablesSince.set(checkSyncResponse.readablesSince.c_str());
         }
-        if (checkSyncResponse.articlesSince != "") {
+        if (checkSyncResponse.articlesSince != "" && !failedArticleDownload) {
             this->prefs_.lastArticlesSince.set(checkSyncResponse.articlesSince.c_str());
         }
 
@@ -504,13 +520,17 @@ void LocalStore::syncFromRemote(
         request.articlesSince = articlesSince;
         SindarinAPI::getInstance()->checkSync(request, &checkSyncResponse);
 
+        SHOW_HEAP();
         if (!this->saveReadables(readables_, READABLES_PATH)) {
             log_e("Failed to save %s", READABLES_PATH);
+            failedReadableDownload = true;
         }
         if (!this->saveReadables(articles_, ARTICLES_PATH)) {
             log_e("Failed to save %s", READABLES_PATH);
+            failedArticleDownload = true;
         }
 
+        SHOW_HEAP();
         // TODO: Force reload of rootUI instead of rebooting
         if (checkSyncResponse.synced) {
             log_i("Glasses are synced!");
@@ -524,18 +544,18 @@ void LocalStore::syncFromRemote(
     });
 }
 
-void LocalStore::saveArticleFile(const Readable &readable) {
+auto LocalStore::saveArticleFile(const Readable &readable) -> bool {
     log_i("Storing article %s: %s", readable.title.c_str(), readable.localFilePath().c_str());
     // create log directory in filesystem if it doesn't exist
     if (!fileSystem.createDir("/articles")) {
         log_e("Could not create /articles directory");
-        return;
+        return false;
     }
 
     File file = fileSystem.open(readable.localFilePath(), FILE_WRITE, true);
     if (!file) {
         log_e("Failed to open %s", readable.localFilePath().c_str());
-        return;
+        return false;
     }
 
     const char *title = readable.title.c_str();
@@ -550,6 +570,7 @@ void LocalStore::saveArticleFile(const Readable &readable) {
 
     log_d("Finished storing article %s, size %zu/%zu", readable.title.c_str(), docSize,
           readable.content.size());
+    return true;
 }
 
 void LocalStore::clearArticlesFile(bool restart) {
