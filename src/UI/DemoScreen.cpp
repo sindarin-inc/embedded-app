@@ -28,6 +28,44 @@ void DemoScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
     }
+    display.clearDisplay();
+
+    display.drawXBitmap(display.width() / 2 - sol_gr1_width / 2,
+                        display.height() / 2 - sol_gr1_height / 2, sol_gr1_bits, sol_gr1_width,
+                        sol_gr1_height, display.fg);
+    display.updateDisplay(DisplaySystem::UpdateType::FULL);
+
+    display.drawXBitmap(display.width() / 2 - sol_gr1_width / 2,
+                        display.height() / 2 - sol_gr1_height / 2, sol_gr1_bits, sol_gr1_width,
+                        sol_gr1_height, display.fg);
+    display.updateDisplay(DisplaySystem::UpdateType::GRAYSCALE_INITIAL);
+
+    display.drawXBitmap(display.width() / 2 - sol_gr1_width / 2,
+                        display.height() / 2 - sol_gr1_height / 2, sol_gr1_bits, sol_gr1_width,
+                        sol_gr1_height, display.fg);
+    display.updateDisplay(DisplaySystem::UpdateType::GRAYSCALE_AU4);
+
+    display.drawXBitmap(display.width() / 2 - sol_gr2_width / 2,
+                        display.height() / 2 - sol_gr2_height / 2, sol_gr2_bits, sol_gr2_width,
+                        sol_gr2_height, display.fg);
+    display.updateDisplay(DisplaySystem::UpdateType::GRAYSCALE_AU4);
+
+    display.drawXBitmap(display.width() / 2 - sol_gr3_width / 2,
+                        display.height() / 2 - sol_gr3_height / 2, sol_gr3_bits, sol_gr3_width,
+                        sol_gr3_height, display.fg);
+    display.updateDisplay(DisplaySystem::UpdateType::GRAYSCALE_AU4);
+
+    display.drawXBitmap(display.width() / 2 - sol_gr4_width / 2,
+                        display.height() / 2 - sol_gr4_height / 2, sol_gr4_bits, sol_gr4_width,
+                        sol_gr4_height, display.fg);
+    display.updateDisplay(DisplaySystem::UpdateType::GRAYSCALE_AU4);
+
+    display.drawXBitmap(display.width() / 2 - sol_logo_width / 2,
+                        display.height() / 2 - sol_logo_height / 2, solLogoBits, sol_logo_width,
+                        sol_logo_height, display.fg);
+    display.updateDisplay(DisplaySystem::UpdateType::GRAYSCALE_AU4);
+
+    return;
 
     std::string message = messages_[currentScreen_];
 

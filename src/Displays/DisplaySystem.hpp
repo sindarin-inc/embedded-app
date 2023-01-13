@@ -61,6 +61,9 @@ public:
         FAST,
         FAST_WITH_VCOM_NUDGE,
         FAST_ORIGINAL_AU4,
+        GRAYSCALE_INITIAL,
+        GRAYSCALE_FIRST,
+        GRAYSCALE_AU4,
         ORIGINAL_PARTIAL,
     };
     virtual void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED) = 0;

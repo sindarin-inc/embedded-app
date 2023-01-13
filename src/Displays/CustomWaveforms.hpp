@@ -2,6 +2,42 @@
 
 #include "Displays/EinkWaveform.hpp"
 
+// to be used to reset the display and a buffer that is all the pixels
+// including grayscale ones
+const EinkET013TT1Waveform BC_GRAYSCALE_INITIAL_AU4 = {
+    "Eink 10-13C (GRAYSCALE AU4)",
+    5,
+    std::array<Frame, MAX_FRAMES_PER_WAVEFORM>{
+        Frame{.bb = WHITE, .bw = BLACK, .wb = NOCHG, .ww = NOCHG},
+        Frame{.bb = WHITE, .bw = BLACK, .wb = NOCHG, .ww = BLACK},
+        Frame{.bb = WHITE, .bw = BLACK, .wb = NOCHG, .ww = BLACK},
+        Frame{.bb = WHITE, .bw = WHITE, .wb = NOCHG, .ww = BLACK},
+        Frame{.bb = NOCHG, .bw = WHITE, .wb = WHITE, .ww = BLACK},
+    },
+};
+
+const EinkET013TT1Waveform BC_GRAYSCALE_FIRST_AU4 = {
+    "Eink 10-13C (GRAYSCALE AU4)",
+    4,
+    std::array<Frame, MAX_FRAMES_PER_WAVEFORM>{
+        Frame{.bb = BLACK, .bw = WHITE, .wb = BLACK, .ww = WHITE},
+        Frame{.bb = BLACK, .bw = WHITE, .wb = BLACK, .ww = WHITE},
+        Frame{.bb = BLACK, .bw = WHITE, .wb = BLACK, .ww = WHITE},
+        Frame{.bb = NOCHG, .bw = NOCHG, .wb = NOCHG, .ww = NOCHG},
+    },
+};
+
+const EinkET013TT1Waveform BC_GRAYSCALE_AU4 = {
+    "Eink 10-13C (GRAYSCALE AU4)",
+    4,
+    std::array<Frame, MAX_FRAMES_PER_WAVEFORM>{
+        Frame{.bb = BLACK, .bw = NOCHG, .wb = BLACK, .ww = NOCHG},
+        Frame{.bb = BLACK, .bw = NOCHG, .wb = BLACK, .ww = NOCHG},
+        Frame{.bb = BLACK, .bw = NOCHG, .wb = BLACK, .ww = NOCHG},
+        Frame{.bb = NOCHG, .bw = NOCHG, .wb = NOCHG, .ww = NOCHG},
+    },
+};
+
 // Pushes black a little more at the end to reduce ghosting
 const EinkET013TT1Waveform BC_REGULAR_EINK_10_13C_WAVEFORM_AU4 = {
     "Eink 10-13C (AU4)",

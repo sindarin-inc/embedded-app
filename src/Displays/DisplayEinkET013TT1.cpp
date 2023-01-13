@@ -195,6 +195,15 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
             numPartials_ = 0;
         }
         break;
+    case GRAYSCALE_INITIAL:
+        driver_.update(BC_GRAYSCALE_INITIAL_AU4, gfxCanvas_.getBuffer());
+        break;
+    case GRAYSCALE_FIRST:
+        driver_.update(BC_GRAYSCALE_FIRST_AU4, gfxCanvas_.getBuffer());
+        break;
+    case GRAYSCALE_AU4:
+        driver_.update(BC_GRAYSCALE_AU4, gfxCanvas_.getBuffer());
+        break;
     }
 
     // Clear buffer afterwards
