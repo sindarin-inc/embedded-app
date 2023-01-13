@@ -3,12 +3,12 @@
 // static map needed here to interface with C api
 std::map<std::string, ZipFile *> ZipFile::zipRegistry;
 
-void *ZipFile::zipOpen(const char *filename, int32_t *size) {
+auto ZipFile::zipOpen(const char *filename, int32_t *size) -> void * {
     // get ZipFile instance
     ZipFile *iZF = ZipFile::zipRegistry[filename];
     if (!iZF) {
         *size = 0;
-        return NULL;
+        return nullptr;
     }
 
     iZF->fp_ = iZF->fileSystem_.open(filename, FILE_READ);
@@ -18,8 +18,8 @@ void *ZipFile::zipOpen(const char *filename, int32_t *size) {
 }
 
 void ZipFile::zipClose(void *p) {
-    ZIPFILE *pzf = (ZIPFILE *)p;
-    ZipFile *iZF = (ZipFile *)pzf->fHandle;
+    auto *pzf = (ZIPFILE *)p;
+    auto *iZF = (ZipFile *)pzf->fHandle;
     if (!iZF) {
         return;
     }
@@ -29,9 +29,9 @@ void ZipFile::zipClose(void *p) {
     }
 }
 
-int32_t ZipFile::zipRead(void *p, uint8_t *buffer, int32_t length) {
-    ZIPFILE *pzf = (ZIPFILE *)p;
-    ZipFile *iZF = (ZipFile *)pzf->fHandle;
+auto ZipFile::zipRead(void *p, uint8_t *buffer, int32_t length) -> int32_t {
+    auto *pzf = (ZIPFILE *)p;
+    auto *iZF = (ZipFile *)pzf->fHandle;
     if (!iZF) {
         return -1;
     }
@@ -59,9 +59,9 @@ int32_t ZipFile::zipRead(void *p, uint8_t *buffer, int32_t length) {
     return r;
 }
 
-int32_t ZipFile::zipSeek(void *p, int32_t position, int iType) {
-    ZIPFILE *pzf = (ZIPFILE *)p;
-    ZipFile *iZF = (ZipFile *)pzf->fHandle;
+auto ZipFile::zipSeek(void *p, int32_t position, int iType) -> int32_t {
+    auto *pzf = (ZIPFILE *)p;
+    auto *iZF = (ZipFile *)pzf->fHandle;
     if (!iZF) {
         return -1;
     }
@@ -83,7 +83,7 @@ int32_t ZipFile::zipSeek(void *p, int32_t position, int iType) {
     return res;
 }
 
-bool ZipFile::open() {
+auto ZipFile::open() -> bool {
     ZipFile::zipRegistry[fileName_] = this;
     int rc = zip_.openZIP(fileName_.c_str(), zipOpen, zipClose, zipRead, zipSeek);
     if (rc == UNZ_OK) {
@@ -112,7 +112,8 @@ void ZipFile::listFiles() {
     zip_.gotoFirstFile();
     rc = UNZ_OK;
     while (rc == UNZ_OK) { // Display all files contained in the archive
-        rc = zip_.getFileInfo(&fi, szName, sizeof(szName), NULL, 0, szComment, sizeof(szComment));
+        rc =
+            zip_.getFileInfo(&fi, szName, sizeof(szName), nullptr, 0, szComment, sizeof(szComment));
         if (rc == UNZ_OK) {
             log_i("%s - %ld / %ld", szName, fi.compressed_size, fi.uncompressed_size);
         }
@@ -156,7 +157,7 @@ void ZipFile::extractAllToDirectory(const char *dirname) {
     }
 
     while (rc == UNZ_OK) {
-        rc = zip_.getFileInfo(&fi, szName, sizeof(szName), NULL, 0, NULL, 0);
+        rc = zip_.getFileInfo(&fi, szName, sizeof(szName), nullptr, 0, nullptr, 0);
         if (rc == UNZ_OK) {
             log_i("%s - %ld / %ld", szName, fi.compressed_size, fi.uncompressed_size);
             int nameLen = strlen(szName);
