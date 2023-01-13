@@ -80,7 +80,6 @@ auto GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFile
     int inputIndex = 0;
     int inputRead = 0;
     int outputAvail = 0;
-    int block = 0;
     bool last = false;
     while (!done) {
 
@@ -107,6 +106,9 @@ auto GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFile
         }
 
         int err = decompress(&inBuf[inputIndex], inputAvail, outBuf, 1024, inputRead, outputAvail);
+        if (err != Z_OK) {
+            log_e("Error decompressing %d", err);
+        }
 
         // write block
         if (outputAvail > 0) {
@@ -155,7 +157,6 @@ auto GUnzip::decompressMemory(uint8_t *input, int inputSize) -> bool {
     int inputIndex = 0;
     int inputRead = 0;
     int outputAvail = 0;
-    int block = 0;
     bool last = false;
     while (!done) {
 
@@ -191,6 +192,9 @@ auto GUnzip::decompressMemory(uint8_t *input, int inputSize) -> bool {
         }
 
         int err = decompress(&inBuf[inputIndex], inputAvail, outBuf, 1024, inputRead, outputAvail);
+        if (err != Z_OK) {
+            log_e("Error decompressing %d", err);
+        }
 
         // continue reading until no more output available
         while (outputAvail == 1024) {
