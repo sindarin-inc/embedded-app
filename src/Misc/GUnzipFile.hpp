@@ -13,7 +13,10 @@ public:
     , outSize_(0)
     , outIndex_(0)
     , lastInput_(false)
-    , outputBufferWasFull_(false) {
+    , outputBufferWasFull_(false)
+    , peekVal_(0)
+    , peek_(false)
+    {
         readSize();
     }
 
@@ -53,6 +56,8 @@ protected:
     int outIndex_;
     bool outputBufferWasFull_;
     bool lastInput_;
+    uint8_t peekVal_;
+    bool peek_;
 
     size_t readSize();
 };

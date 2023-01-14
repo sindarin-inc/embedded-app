@@ -17,7 +17,9 @@ extern "C" {
 
 auto GUnzip::init() -> bool {
 
-    inflateBuf_ = std::make_unique<uint8_t[]>(32768 + 7168);
+    if (!inflateBuf_) {
+        inflateBuf_ = std::make_unique<uint8_t[]>(32768 + 7168);
+    }
 
     int err = Z_OK;
 
