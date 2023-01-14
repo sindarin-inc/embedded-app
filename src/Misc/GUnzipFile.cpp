@@ -29,36 +29,23 @@ int GUnzipFile::peek() {
 }
 void GUnzipFile::flush() {}
 size_t GUnzipFile::read(uint8_t *buf, size_t size) {
-    // todo: read from uncompressed buffer. Keep decompressing until
+    // read from uncompressed buffer. Keep decompressing until
     // enough bytes have been read.
-    // temp
-    memset(buf, 0, size);
-    //log_i("GUNzip file read %d\n", size);
-
     int bytesCopied = 0;
     while (size - bytesCopied > 0) {
-        //log_i("gunzip bc %d\n", bytesCopied);
         // first check if we have any uncompressed bytes available
         if (outSize_ > 0) {
-            //log_i("out size %d\n", outSize_);
             // copy as many bytes as possible
             int bytesToCopy = size - bytesCopied;
             if (bytesToCopy > outSize_) {
                 bytesToCopy = outSize_;
             }
 
-            //log_i("copying %d\n", bytesToCopy);
-
             memcpy(&buf[bytesCopied], &outBuf_[outIndex_], bytesToCopy);
-
-            //log_i("output now: ****\n%s\n*****\n", buf);
 
             outSize_ -= bytesToCopy;
             outIndex_ += bytesToCopy;
-
             bytesCopied += bytesToCopy;
-
-            //log_i("outsize now %d\n", outSize_);
 
             if (outSize_ > 0) {
                 continue;
@@ -70,13 +57,8 @@ size_t GUnzipFile::read(uint8_t *buf, size_t size) {
                 outputBufferWasFull_ = false;
 
                 int inputRead = 0;
-
-                memset(outBuf_, 0, 1024);
-
                 int err = gunzip_.decompress(inBuf_, 0, outBuf_, 1024, inputRead, outSize_);
-                //log_i("flush got %d\n", outSize_);
-                //log_i("output buffer now: ***%s***\n", outBuf_);
-
+                
                 if (outSize_ == 1024) {
                     outputBufferWasFull_ = true;
                 }
@@ -94,7 +76,6 @@ size_t GUnzipFile::read(uint8_t *buf, size_t size) {
         if (inSize_ == 0) {
             if (lastInput_) {
                 // nothing more to read, done
-                log_i("last input\n");
                 return bytesCopied;
             }
 
@@ -106,7 +87,6 @@ size_t GUnzipFile::read(uint8_t *buf, size_t size) {
             }
 
             if (bytesRead == 0) {
-                log_i("read 0\n");
                 return bytesCopied;
             }
 
@@ -116,12 +96,9 @@ size_t GUnzipFile::read(uint8_t *buf, size_t size) {
 
         // some data available to decompress
         int inputRead = 0;
-        //log_i("dec %d %d outsize %d\n", inIndex_, inSize_, outSize_);
         int err = gunzip_.decompress(&inBuf_[inIndex_], inSize_, outBuf_, 1024, inputRead, outSize_);
-        //log_i("dec result: %d bytes\n", outSize_);
-
+        
         if (err != Z_OK && err != Z_STREAM_END) {
-            log_i("tried to decompress %d bytes index %d\n", inSize_, inIndex_);
             log_e("GUNzipFile: Error decompressing %d", err);
             return 0;
         }
@@ -132,7 +109,6 @@ size_t GUnzipFile::read(uint8_t *buf, size_t size) {
 
         inSize_ -= inputRead;
         inIndex_ += inputRead;
-
         outIndex_ = 0;
     }
 

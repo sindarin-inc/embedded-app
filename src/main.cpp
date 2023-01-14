@@ -29,6 +29,9 @@
 #include "config.h"
 #include "sindarin-debug.h"
 
+// TEST
+#include "Misc/GUnzipFile.hpp"
+
 #if !DISABLE_POWER_MANAGEMENT
 #include <esp_pm.h>
 #endif
@@ -481,18 +484,56 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 
     // GUNZIP TEST BEGIN
+    File uf = fileSystem.open("/two-towers.txt", "r", false);
+    File cf = fileSystem.open("/tt.gz", "r", false);
+    GUnzipFile gf = GUnzipFile(cf);
+
+    log_i("size: unc %d gz %d\n", uf.size(), gf.size());
+
+    char test_u[1025];
+    char test_c[1025];
+
+    int bytes = 0;
+    while (1) {
+        memset(test_u, 0, 1025);
+        memset(test_c, 0, 1025);
+        int ures = uf.read((uint8_t*)test_u, 1024);
+        int cres = gf.read((uint8_t*)test_c, 1024);
+
+        if (ures != cres) {
+            log_i("mismatch at %d: %d %d\n", bytes, ures, cres);
+            break;
+        }
+
+        //log_i("checking %d, read %d\n", bytes, ures);
+        if (memcmp(test_u, test_c, ures) != 0) {
+            log_i("mem mismatch at %d\n", bytes);
+            log_i("UNC read: ****\n%s\n*****", test_u);
+            log_i("GZ read: ****\n%s\n*****", test_c);
+            break;
+        }
+
+        bytes += ures;
+
+        if (ures != 1024) {
+            log_i("done: %d\n", bytes);
+            break;
+        }
+    }
 
     /*
-    File uf = fileSystem.open("/two-towers.txt", "r", false);
+    uf.readBytes(test_u, 128);
+    log_i("UNC read: ****\n%s\n*****", test);
 
-    char test[1024];
+    File cf = fileSystem.open("/tt.gz", "r", false);
+    GUnzipFile gf = GUnzipFile(cf);
     memset(test, 0, 1024);
-
-    uf.readBytes(test, 128);
-    log_i("UNC read: %s\n", test);
-    */
-    // GUNZIP TEST END
-
+    
+    gf.read((uint8_t*)test, 128);
+    log_i("GZ read: ****\n%s\n*****", test);
+     */
+     
+     // GUNZIP TEST END
 
 
     if (!localStore.begin()) {
