@@ -9,13 +9,9 @@ size_t GUnzipFile::write(const uint8_t *buf, size_t size) {
     return 0;
 }
 int GUnzipFile::available() {
-    // todo: return available bytes.
-    // this is size - position
-    return 0;
+    return size() - position();
 }
 int GUnzipFile::read() {
-    // todo: return next byte in decompressed buffer
-    // and advance position by one.
     uint8_t byte;
     size_t retval = read(&byte, 1);
     if (retval != 1) {
@@ -25,7 +21,15 @@ int GUnzipFile::read() {
 }
 int GUnzipFile::peek() {
     // todo: return next byte in decompressed buffer
-    return 0;
+    if (peek_) {
+        return peekVal_;
+    }
+
+    peekVal_ = read();
+    peek_ = true;
+    position_--;
+
+    return peekVal_;
 }
 void GUnzipFile::flush() {}
 size_t GUnzipFile::read(uint8_t *buf, size_t size) {
@@ -33,6 +37,20 @@ size_t GUnzipFile::read(uint8_t *buf, size_t size) {
     // enough bytes have been read.
     int bytesCopied = 0;
     while (size - bytesCopied > 0) {
+
+        // use peek value first if present
+        if (peek_) {
+            if (buf) {
+                buf[bytesCopied] = peekVal_;
+            }
+            bytesCopied++;
+            position_++;
+            peek_ = false;
+            peekVal_ = 0;
+
+            continue;
+        }
+
         // first check if we have any uncompressed bytes available
         if (outSize_ > 0) {
             // copy as many bytes as possible
@@ -41,11 +59,14 @@ size_t GUnzipFile::read(uint8_t *buf, size_t size) {
                 bytesToCopy = outSize_;
             }
 
-            memcpy(&buf[bytesCopied], &outBuf_[outIndex_], bytesToCopy);
+            if (buf) {
+                memcpy(&buf[bytesCopied], &outBuf_[outIndex_], bytesToCopy);
+            }
 
             outSize_ -= bytesToCopy;
             outIndex_ += bytesToCopy;
             bytesCopied += bytesToCopy;
+            position_ += bytesToCopy;
 
             if (outSize_ > 0) {
                 continue;
@@ -119,8 +140,40 @@ bool GUnzipFile::seek(uint32_t pos, SeekMode mode) {
     // todo: for backwards seeks, go back to beginning and decompress from
     // there.
     // for forwards seeks, decompress until desired location is reached.
+    size_t newPosition = 0;
+    if (mode == SeekSet) {
+        newPosition = pos;
+    } else if (mode == SeekCur) {
+        newPosition = position_ + pos;
+    } else if (mode == SeekEnd) {
+        // not supported yet (pos is uint32_t? arg needs to be negative?)
+        newPosition = position_;
+    }
 
-    return false;
+    if (newPosition > position_) {
+        int offset = newPosition - position_;
+        read(NULL, offset);
+        position_ = newPosition;
+    } else if (newPosition < position_) {
+        // need to start over from beginning of the file
+        // and decompress to new position
+        // TODO: implement table of seek indices for faster seeking
+
+        // seek file back to beginning
+        compressedFile_.seek(0, SeekSet);
+        inSize_ = 0;
+        inIndex_ = 0;
+        outSize_ = 0;
+        outIndex_ = 0;
+        gunzip_.init();
+
+        // decompress enough to get to the new position
+        read(NULL, newPosition);
+
+        position_ = newPosition;
+    }
+
+    return true;
 }
 size_t GUnzipFile::position() const { return position_; }
 
