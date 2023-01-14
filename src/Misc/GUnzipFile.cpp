@@ -20,7 +20,7 @@ int GUnzipFile::read() {
     return byte;
 }
 int GUnzipFile::peek() {
-    // todo: return next byte in decompressed buffer
+    // return next byte in file without advancing position
     if (peek_) {
         return peekVal_;
     }
@@ -31,7 +31,9 @@ int GUnzipFile::peek() {
 
     return peekVal_;
 }
-void GUnzipFile::flush() {}
+void GUnzipFile::flush() { 
+    // N/A, readonly file
+}
 size_t GUnzipFile::read(uint8_t *buf, size_t size) {
     // read from uncompressed buffer. Keep decompressing until
     // enough bytes have been read.
