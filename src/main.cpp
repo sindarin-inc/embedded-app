@@ -479,6 +479,21 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         }
     }
 
+    // GUNZIP TEST BEGIN
+
+    /*
+    File uf = fileSystem.open("/two-towers.txt", "r", false);
+
+    char test[1024];
+    memset(test, 0, 1024);
+
+    uf.readBytes(test, 128);
+    log_i("UNC read: %s\n", test);
+    */
+    // GUNZIP TEST END
+
+
+
     if (!localStore.begin()) {
         bootErrors.push_back({.type = BootError::Type::LocalStore});
     }
