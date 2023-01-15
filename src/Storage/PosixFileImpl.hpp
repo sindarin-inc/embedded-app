@@ -66,6 +66,7 @@ public:
         file_.close();
     };
     const char *name() const override { return ""; };
+    const char *path() const override { return ""; };
     time_t getLastWrite() override { return 0; };
     boolean isDirectory(void) override { return false; };
     fs::FileImplPtr openNextFile(const char *mode) override { return nullptr; };

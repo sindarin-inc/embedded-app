@@ -138,7 +138,7 @@ bool GUnzipFile::seek(uint32_t pos, SeekMode mode) {
 }
 size_t GUnzipFile::position() const { return position_; }
 
-size_t GUnzipFile::readSize() {
+void GUnzipFile::readSize() {
     // get compressed file length
     size_t gzLen = compressedFile_.size();
 
@@ -164,6 +164,7 @@ size_t GUnzipFile::size() const {
 void GUnzipFile::close() { compressedFile_.close(); }
 
 const char *GUnzipFile::name() const { return compressedFile_.name(); }
+const char *GUnzipFile::path() const { return ""; }
 time_t GUnzipFile::getLastWrite() { return compressedFile_.getLastWrite(); }
 boolean GUnzipFile::isDirectory(void) { return compressedFile_.isDirectory(); }
 fs::FileImplPtr GUnzipFile::openNextFile(const char *mode) { return nullptr; }

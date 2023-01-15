@@ -27,6 +27,7 @@ public:
     size_t size() const override;
     void close() override;
     const char *name() const override;
+    const char *path() const override;
     time_t getLastWrite() override;
     boolean isDirectory(void) override;
     fs::FileImplPtr openNextFile(const char *mode) override;
@@ -46,8 +47,8 @@ protected:
     uint8_t outBuf_[1024];
     int outSize_;
     int outIndex_;
-    bool outputBufferWasFull_;
     bool lastInput_;
+    bool outputBufferWasFull_;
 
-    size_t readSize();
+    void readSize();
 };
