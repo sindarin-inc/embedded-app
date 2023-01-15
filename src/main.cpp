@@ -29,9 +29,6 @@
 #include "config.h"
 #include "sindarin-debug.h"
 
-// TEST
-#include "Misc/GUnzipFile.hpp"
-
 #if !DISABLE_POWER_MANAGEMENT
 #include <esp_pm.h>
 #endif
