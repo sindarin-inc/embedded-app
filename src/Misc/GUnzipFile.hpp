@@ -1,9 +1,10 @@
 #pragma once
 
 #include "FS.h"
+#include "FSImpl.h"
 #include "Misc/GUnzip.hpp"
 
-class GUnzipFile {
+class GUnzipFile : public fs::FileImpl {
 public:
     GUnzipFile(File compressedFile) 
     : compressedFile_(compressedFile)
@@ -14,34 +15,25 @@ public:
     , outIndex_(0)
     , lastInput_(false)
     , outputBufferWasFull_(false)
-    , peekVal_(0)
-    , peek_(false)
     {
         readSize();
     }
 
-    size_t write(uint8_t);
-    size_t write(const uint8_t *buf, size_t size);
-    int available();
-    int read();
-    int peek();
-    void flush();
-    size_t read(uint8_t *buf, size_t size);
-    // size_t readBytes(char *buffer, size_t length) { return read((uint8_t *)buffer, length); }
+    size_t write(const uint8_t *buf, size_t size) override;
+    size_t read(uint8_t *buf, size_t size) override;
+    void flush() override;
+    bool seek(uint32_t pos, SeekMode mode) override;
+    size_t position() const override;
+    size_t size() const override;
+    void close() override;
+    const char *name() const override;
+    time_t getLastWrite() override;
+    boolean isDirectory(void) override;
+    fs::FileImplPtr openNextFile(const char *mode) override;
+    void rewindDirectory(void) override;
+    operator bool() override;
 
-    bool seek(uint32_t pos, SeekMode mode);
-    // bool seek(uint32_t pos) { return seek(pos, SeekSet); }
-    size_t position() const;
-    size_t size() const;
-    void close();
-    operator bool() const;
-    time_t getLastWrite();
-    const char *path() const;
-    const char *name() const;
-
-    boolean isDirectory(void);
-    File openNextFile(const char *mode = FILE_READ);
-    void rewindDirectory(void);
+    static auto OpenGzFile(File compressedFile) -> File;
 
 protected:
     File compressedFile_;
@@ -56,8 +48,6 @@ protected:
     int outIndex_;
     bool outputBufferWasFull_;
     bool lastInput_;
-    uint8_t peekVal_;
-    bool peek_;
 
     size_t readSize();
 };
