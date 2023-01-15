@@ -1,10 +1,10 @@
 #ifndef MENU_SYSTEM_H
 #define MENU_SYSTEM_H
 
+#include <functional>
 #include <string>
 #include <utility>
 #include <vector>
-#include <functional>
 
 #include "Misc/Menu.hpp"
 #include "Misc/MenuStyle.hpp"

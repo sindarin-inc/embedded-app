@@ -1,11 +1,11 @@
 #include "GUnzipFile.hpp"
 
-size_t GUnzipFile::write(const uint8_t *buf, size_t size) {
+auto GUnzipFile::write(const uint8_t *buf, size_t size) -> size_t {
     // N/A, this is a readonly file
     return 0;
 }
 
-size_t GUnzipFile::read(uint8_t *buf, size_t size) {
+auto GUnzipFile::read(uint8_t *buf, size_t size) -> size_t {
     // read from uncompressed buffer. Keep decompressing until
     // enough bytes have been read.
     int bytesCopied = 0;
@@ -38,14 +38,14 @@ size_t GUnzipFile::read(uint8_t *buf, size_t size) {
 
                 int inputRead = 0;
                 int err = gunzip_.decompress(inBuf_, 0, outBuf_, 1024, inputRead, outSize_);
-                
+
                 if (outSize_ == 1024) {
                     outputBufferWasFull_ = true;
                 }
 
                 outIndex_ = 0;
             }
-            
+
             // keep going until we have copied enough bytes
             continue;
         }
@@ -60,7 +60,7 @@ size_t GUnzipFile::read(uint8_t *buf, size_t size) {
             }
 
             // try to read more input data
-            int bytesRead = compressedFile_.readBytes((char*)inBuf_, 1024);
+            int bytesRead = compressedFile_.readBytes((char *)inBuf_, 1024);
             if (bytesRead < 1024) {
                 // done reading
                 lastInput_ = true;
@@ -76,8 +76,9 @@ size_t GUnzipFile::read(uint8_t *buf, size_t size) {
 
         // some data available to decompress
         int inputRead = 0;
-        int err = gunzip_.decompress(&inBuf_[inIndex_], inSize_, outBuf_, 1024, inputRead, outSize_);
-        
+        int err =
+            gunzip_.decompress(&inBuf_[inIndex_], inSize_, outBuf_, 1024, inputRead, outSize_);
+
         if (err != Z_OK && err != Z_STREAM_END) {
             log_e("GUNzipFile: Error decompressing %d", err);
             return 0;
@@ -95,11 +96,11 @@ size_t GUnzipFile::read(uint8_t *buf, size_t size) {
     return bytesCopied;
 }
 
-void GUnzipFile::flush() { 
+void GUnzipFile::flush() {
     // N/A, readonly file
 }
 
-bool GUnzipFile::seek(uint32_t pos, SeekMode mode) {
+auto GUnzipFile::seek(uint32_t pos, SeekMode mode) -> bool {
     size_t newPosition = 0;
     if (mode == SeekSet) {
         newPosition = pos;
@@ -113,7 +114,7 @@ bool GUnzipFile::seek(uint32_t pos, SeekMode mode) {
     if (newPosition > position_) {
         // for forwards seeks, decompress until desired location is reached.
         int offset = newPosition - position_;
-        read(NULL, offset);
+        read(nullptr, offset);
         position_ = newPosition;
     } else if (newPosition < position_) {
         // need to start over from beginning of the file
@@ -129,14 +130,14 @@ bool GUnzipFile::seek(uint32_t pos, SeekMode mode) {
         gunzip_.init();
 
         // decompress enough to get to the new position
-        read(NULL, newPosition);
+        read(nullptr, newPosition);
 
         position_ = newPosition;
     }
 
     return true;
 }
-size_t GUnzipFile::position() const { return position_; }
+auto GUnzipFile::position() const -> size_t { return position_; }
 
 void GUnzipFile::readSize() {
     // get compressed file length
@@ -148,27 +149,26 @@ void GUnzipFile::readSize() {
 
     // read uncompressed file length
     uint8_t sizeBytes[4];
-    compressedFile_.readBytes((char*)sizeBytes, 4);
+    compressedFile_.readBytes((char *)sizeBytes, 4);
 
     // rewind file
     compressedFile_.seek(0, SeekSet);
 
     // move bytes (size is little endian)
-    uncompressedSize_ = (sizeBytes[3] << 24) + (sizeBytes[2] << 16) + (sizeBytes[1] << 8) + sizeBytes[0];
+    uncompressedSize_ =
+        (sizeBytes[3] << 24) + (sizeBytes[2] << 16) + (sizeBytes[1] << 8) + sizeBytes[0];
 }
 
-size_t GUnzipFile::size() const {
-    return uncompressedSize_;
-}
+auto GUnzipFile::size() const -> size_t { return uncompressedSize_; }
 
 void GUnzipFile::close() { compressedFile_.close(); }
 
-const char *GUnzipFile::name() const { return compressedFile_.name(); }
-const char *GUnzipFile::path() const { return compressedFile_.path(); }
-time_t GUnzipFile::getLastWrite() { return compressedFile_.getLastWrite(); }
-boolean GUnzipFile::isDirectory(void) { return compressedFile_.isDirectory(); }
-fs::FileImplPtr GUnzipFile::openNextFile(const char *mode) { return nullptr; }
-void GUnzipFile::rewindDirectory(void) {}
+auto GUnzipFile::name() const -> const char * { return compressedFile_.name(); }
+auto GUnzipFile::path() const -> const char * { return compressedFile_.path(); }
+auto GUnzipFile::getLastWrite() -> time_t { return compressedFile_.getLastWrite(); }
+auto GUnzipFile::isDirectory() -> boolean { return compressedFile_.isDirectory(); }
+auto GUnzipFile::openNextFile(const char *mode) -> fs::FileImplPtr { return nullptr; }
+void GUnzipFile::rewindDirectory() {}
 GUnzipFile::operator bool() {
     if (compressedFile_) {
         return true;
@@ -176,7 +176,7 @@ GUnzipFile::operator bool() {
     return false;
 }
 
-auto GUnzipFile::OpenGzFile(File compressedFile) -> File {
+auto GUnzipFile::openGzFile(const File &compressedFile) -> File {
     auto file = File(std::make_shared<GUnzipFile>(compressedFile));
     return file;
 }
