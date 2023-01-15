@@ -1,58 +1,15 @@
 #include "GUnzipFile.hpp"
 
-size_t GUnzipFile::write(uint8_t) {
-    // N/A, this is a readonly file
-    return 0;
-}
 size_t GUnzipFile::write(const uint8_t *buf, size_t size) {
     // N/A, this is a readonly file
     return 0;
 }
-int GUnzipFile::available() {
-    return size() - position();
-}
-int GUnzipFile::read() {
-    uint8_t byte;
-    size_t retval = read(&byte, 1);
-    if (retval != 1) {
-        return -1;
-    }
-    return byte;
-}
-int GUnzipFile::peek() {
-    // return next byte in file without advancing position
-    if (peek_) {
-        return peekVal_;
-    }
 
-    peekVal_ = read();
-    peek_ = true;
-    position_--;
-
-    return peekVal_;
-}
-void GUnzipFile::flush() { 
-    // N/A, readonly file
-}
 size_t GUnzipFile::read(uint8_t *buf, size_t size) {
     // read from uncompressed buffer. Keep decompressing until
     // enough bytes have been read.
     int bytesCopied = 0;
     while (size - bytesCopied > 0) {
-
-        // use peek value first if present
-        if (peek_) {
-            if (buf) {
-                buf[bytesCopied] = peekVal_;
-            }
-            bytesCopied++;
-            position_++;
-            peek_ = false;
-            peekVal_ = 0;
-
-            continue;
-        }
-
         // first check if we have any uncompressed bytes available
         if (outSize_ > 0) {
             // copy as many bytes as possible
@@ -138,10 +95,11 @@ size_t GUnzipFile::read(uint8_t *buf, size_t size) {
     return bytesCopied;
 }
 
+void GUnzipFile::flush() { 
+    // N/A, readonly file
+}
+
 bool GUnzipFile::seek(uint32_t pos, SeekMode mode) {
-    // todo: for backwards seeks, go back to beginning and decompress from
-    // there.
-    // for forwards seeks, decompress until desired location is reached.
     size_t newPosition = 0;
     if (mode == SeekSet) {
         newPosition = pos;
@@ -153,6 +111,7 @@ bool GUnzipFile::seek(uint32_t pos, SeekMode mode) {
     }
 
     if (newPosition > position_) {
+        // for forwards seeks, decompress until desired location is reached.
         int offset = newPosition - position_;
         read(NULL, offset);
         position_ = newPosition;
@@ -203,16 +162,20 @@ size_t GUnzipFile::size() const {
 }
 
 void GUnzipFile::close() { compressedFile_.close(); }
-GUnzipFile::operator bool() const {
+
+const char *GUnzipFile::name() const { return compressedFile_.name(); }
+time_t GUnzipFile::getLastWrite() { return compressedFile_.getLastWrite(); }
+boolean GUnzipFile::isDirectory(void) { return compressedFile_.isDirectory(); }
+fs::FileImplPtr GUnzipFile::openNextFile(const char *mode) { return nullptr; }
+void GUnzipFile::rewindDirectory(void) {}
+GUnzipFile::operator bool() {
     if (compressedFile_) {
         return true;
     }
     return false;
 }
-time_t GUnzipFile::getLastWrite() { return compressedFile_.getLastWrite(); }
-//const char *GUnzipFile::path() const { return compressedFile_.path(); }
-const char *GUnzipFile::name() const { return compressedFile_.name(); }
 
-boolean GUnzipFile::isDirectory(void) { return compressedFile_.isDirectory(); }
-File GUnzipFile::openNextFile(const char *mode) { return compressedFile_.openNextFile(mode); }
-void GUnzipFile::rewindDirectory(void) { return compressedFile_.rewindDirectory(); }
+auto GUnzipFile::OpenGzFile(File compressedFile) -> File {
+    auto file = File(std::make_shared<GUnzipFile>(compressedFile));
+    return file;
+}
