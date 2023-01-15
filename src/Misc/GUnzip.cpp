@@ -75,14 +75,6 @@ auto GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFile
     File in = fileSystem.open(inputFileName);
     File out = fileSystem.open(outputFileName, "w", true);
 
-    /*
-    if (!inflateBuf_) {
-        if (!init()) {
-            return false;
-        }
-    }
-    */
-
     bool done = false;
     uint8_t inBuf[1024];
     uint8_t outBuf[1024];
@@ -149,14 +141,6 @@ auto GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFile
 }
 
 auto GUnzip::decompressMemory(uint8_t *input, int inputSize) -> bool {
-
-    /*
-    if (!inflateBuf_) {
-        if (!init()) {
-            return false;
-        }
-    }
-    */
 
     uint8_t *fileptr = input;
     int filelen = inputSize;
