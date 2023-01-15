@@ -152,6 +152,15 @@ const char* File::name() const
     return _p->name();
 }
 
+const char* File::path() const
+{
+    if (!*this) {
+        return nullptr;
+    }
+
+    return _p->path();
+}
+
 //to implement
 boolean File::isDirectory(void)
 {
