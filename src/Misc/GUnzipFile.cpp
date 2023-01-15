@@ -164,7 +164,7 @@ size_t GUnzipFile::size() const {
 void GUnzipFile::close() { compressedFile_.close(); }
 
 const char *GUnzipFile::name() const { return compressedFile_.name(); }
-const char *GUnzipFile::path() const { return ""; }
+const char *GUnzipFile::path() const { return compressedFile_.path(); }
 time_t GUnzipFile::getLastWrite() { return compressedFile_.getLastWrite(); }
 boolean GUnzipFile::isDirectory(void) { return compressedFile_.isDirectory(); }
 fs::FileImplPtr GUnzipFile::openNextFile(const char *mode) { return nullptr; }
