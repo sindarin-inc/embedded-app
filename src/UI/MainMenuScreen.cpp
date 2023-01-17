@@ -34,18 +34,18 @@ void MainMenuScreen::render(DisplaySystem &display) {
         firstLoad_ = true;
     }
 
-    drawArrowsAndSelections(display);
+    // drawArrowsAndSelections(display);
 
     // On the first load, we want to only render the items in the menu because we are going
     // to do a partial refresh with the selector button at a lower/higher vcom to reduce
     // ghosting.
     if (firstLoad_) {
-        drawMenuItems(display, false, false);
+        drawMenuItems(display, false);
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
     }
 
-    drawMenuItems(display, true, false);
-    drawArrowsAndSelections(display);
+    drawMenuItems(display, true);
+    // drawArrowsAndSelections(display);
     display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
 
     needsRerender = false;
@@ -57,14 +57,14 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
 
     switch (command) {
     case RemoteCommand::PREV:
-        if (prevSelection(true)) {
+        if (prevSelection()) {
             firstLoad_ = true;
         }
         needsRerender = true;
         break;
 
     case RemoteCommand::NEXT:
-        if (nextSelection(true)) {
+        if (nextSelection()) {
             firstLoad_ = true;
         }
         needsRerender = true;
@@ -74,13 +74,16 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
     // Long press down on the TT should count as enter since we don't have the
     // 5th button
     case RemoteCommand::ENTER:
-    case RemoteCommand::CHANNEL_PLUS:
     case RemoteCommand::STOP:
-
         if (getCurrItem().callback != nullptr) {
             getCurrItem().callback();
         }
         break;
+
+    case RemoteCommand::CHANNEL_PLUS:
+        // This will switch between the menus
+        break;
+
 #ifdef SWAP_ARTICLES_BOOKS
     case RemoteCommand::CHANNEL_MINUS:
 
@@ -124,16 +127,16 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
         // Eventually this will be a
         // container screen to remove this awkward interaction
         //
-        oldCurr = currSelection_;
-        currSelection_ = numMenuItems_ - 1;
+        // oldCurr = currSelection_;
+        // currSelection_ = numMenuItems_ - 1;
 
-        if (getCurrItem().callback != nullptr) {
-            auto fn = getCurrItem().callback;
-            // Make sure we return to the right place.
-            currSelection_ = oldCurr;
-            fn();
-        }
-
+        // if (getCurrItem().callback != nullptr) {
+        //     auto fn = getCurrItem().callback;
+        // Make sure we return to the right place.
+        //    currSelection_ = oldCurr;
+        //    fn();
+        //}
+        // This will switch between the menus
         break;
     case RemoteCommand::ANIMATION:
         needsRerender = false;

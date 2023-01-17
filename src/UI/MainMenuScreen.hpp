@@ -16,8 +16,8 @@ public:
         MenuItem dummy("DUMMY", []() {});
         articleItems_.push_back(dummy);
 #endif
-        upperLeftText_ = "Settings";
-        lowerRightText_ = "Read";
+        upperLeftText_ = "--";
+        lowerRightText_ = "--";
     };
 
     void render(DisplaySystem &display) override;

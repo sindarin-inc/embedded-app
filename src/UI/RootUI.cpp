@@ -143,35 +143,128 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }));
     }
 
-    for (Readable &r : readables) {
-        bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
-        auto title = archived ? "Archived: " + r.title : r.title;
+    ReadableScreen *psalmsProverbs = NULL;
+    ReadableScreen *newTestament = NULL;
+    ReadableScreen *oldTestament = NULL;
 
-        mainMenu->addMenuItem(MenuItem(title, [this, r, createReadableScreen, display, mainMenu]() {
-            auto readableScreen = createReadableScreen(r);
-            this->setCurrentScreen(*readableScreen);
-            readableScreen->backCallback = [this, r, display, readableScreen, mainMenu]() {
-                display->clearDisplay();
-                setCurrentScreen(*mainMenu);
+    // Bible hack (to show off if we wanted to have different "apps" that had different behavior.
+    // For now, it's just the same as a regular book.)
+    auto it = std::find_if(readables.begin(), readables.end(), [](const Readable &x) {
+        return (x.title.compare("Psalms and Proverbs") == 0);
+    });
+    if (it == readables.end()) {
+        log_d("Could not find readable: %s", "Psalms and Proverbs");
+    } else {
+        psalmsProverbs = createReadableScreen(*it);
+        log_d("Found readable: %s", (*it).title.c_str());
+    }
+
+    it = std::find_if(readables.begin(), readables.end(),
+                      [](const Readable &x) { return (x.title.compare("New Testament") == 0); });
+    if (it == readables.end()) {
+        log_d("Could not find readable: %s", "New Testament");
+    } else {
+        newTestament = createReadableScreen(*it);
+        log_d("Found readable: %s", (*it).title.c_str());
+    }
+
+    it = std::find_if(readables.begin(), readables.end(),
+                      [](const Readable &x) { return (x.title.compare("Old Testament") == 0); });
+    if (it == readables.end()) {
+        log_d("Could not find readable: %s", "Old Testament");
+    } else {
+        oldTestament = createReadableScreen(*it);
+        log_d("Found readable: %s", (*it).title.c_str());
+    }
+
+    if (oldTestament || newTestament || psalmsProverbs) {
+
+        mainMenu->addMenuItem(MenuItem("Bible", [this, mainMenu, readables, display,
+                                                 createReadableScreen, currentReadable]() {
+            auto bibleMenu = new MenuScreen(this->power_, mainMenu->getMyStyle());
+
+            for (const Readable &r : readables) {
                 bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
                 auto title = archived ? "Archived: " + r.title : r.title;
-                mainMenu->changeItemTitleAt(mainMenu->getCurrSelection(), title);
+                if ((r.title.compare("Psalms and Proverbs") == 0) ||
+                    (r.title.compare("New Testament") == 0) ||
+                    (r.title.compare("Old Testament") == 0)) {
+                    bibleMenu->addMenuItem(
+                        MenuItem(title, [this, r, createReadableScreen, display, bibleMenu]() {
+                            auto readableScreen = createReadableScreen(r);
+                            this->setCurrentScreen(*readableScreen);
+                            readableScreen->backCallback = [this, r, display, readableScreen,
+                                                            bibleMenu]() {
+                                display->clearDisplay();
+                                setCurrentScreen(*bibleMenu);
+                                bool archived =
+                                    prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
+                                auto title = archived ? "Archived: " + r.title : r.title;
+                                bibleMenu->changeItemTitleAt(bibleMenu->getCurrSelection(), title);
+                                bibleMenu->setFirstLoad();
+                                bibleMenu->render(*display);
+                                delete readableScreen;
+                            };
+                        }));
+                }
+            }
+
+            display->clearDisplay();
+            setCurrentScreen(*bibleMenu);
+            bibleMenu->backCallback = [this, mainMenu, bibleMenu, display]() {
+                display->clearDisplay();
                 mainMenu->setFirstLoad();
-                mainMenu->render(*display);
-                delete readableScreen;
+                setCurrentScreen(*mainMenu);
+                delete bibleMenu;
             };
         }));
-
-        if (currentReadable.has_value() && currentReadable.value() == r.uuid) {
-            mainMenu->setCurrSelection(mainMenu->getNumItems() - 1);
-        }
     }
+
+    mainMenu->addMenuItem(MenuItem("Books", [this, mainMenu, readables, display,
+                                             createReadableScreen, currentReadable]() {
+        auto booksMenu = new MenuScreen(this->power_, mainMenu->getMyStyle());
+
+        for (const Readable &r : readables) {
+            bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
+            auto title = archived ? "Archived: " + r.title : r.title;
+            // Bible books go in their own menu / app
+            if ((r.title.compare("Psalms and Proverbs") != 0) &&
+                (r.title.compare("New Testament") != 0) &&
+                (r.title.compare("Old Testament") != 0)) {
+                booksMenu->addMenuItem(MenuItem(title, [this, r, createReadableScreen, display,
+                                                        booksMenu]() {
+                    auto readableScreen = createReadableScreen(r);
+                    this->setCurrentScreen(*readableScreen);
+                    readableScreen->backCallback = [this, r, display, readableScreen, booksMenu]() {
+                        display->clearDisplay();
+                        setCurrentScreen(*booksMenu);
+                        bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
+                        auto title = archived ? "Archived: " + r.title : r.title;
+                        booksMenu->changeItemTitleAt(booksMenu->getCurrSelection(), title);
+                        booksMenu->setFirstLoad();
+                        booksMenu->render(*display);
+                        delete readableScreen;
+                    };
+                }));
+            }
+        }
+
+        display->clearDisplay();
+        setCurrentScreen(*booksMenu);
+        booksMenu->backCallback = [this, mainMenu, booksMenu, display]() {
+            display->clearDisplay();
+            mainMenu->setFirstLoad();
+            setCurrentScreen(*mainMenu);
+            delete booksMenu;
+        };
+    }));
+
     SHOW_HEAP();
 
     // Setup articles menu, soon to be its own "tab"
     if (articles.size()) {
-        mainMenu->addMenuItem(MenuItem("Pocket Articles", [this, mainMenu, articles, display,
-                                                           createReadableScreen]() {
+        mainMenu->addMenuItem(MenuItem("Articles", [this, mainMenu, articles, display,
+                                                    createReadableScreen]() {
             log_i("Loading %zu Pocket articles", articles.size());
 
             auto pocketMenu = new MenuScreen(this->power_, mainMenu->getMyStyle());
@@ -590,11 +683,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         std::filesystem::remove("simprefs.ini");
         debugMenu->showTemporaryMessage(*display, "simprefs.ini deleted! Resetting...");
 #else
-        nvs_flash_erase();
-        localStore.clearArticlesFile(false);
-        localStore.clearReadablesFile(false);
-        log_w("NVS and FS cleared. Rebooting...");
-        debugMenu->showTemporaryMessage(*display, "NVS cleared! Resetting...");
+            nvs_flash_erase();
+            localStore.clearArticlesFile(false);
+            localStore.clearReadablesFile(false);
+            log_w("NVS and FS cleared. Rebooting...");
+            debugMenu->showTemporaryMessage(*display, "NVS cleared! Resetting...");
 #endif
         esp_restart();
     }));
@@ -653,7 +746,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // TODO: Add UI for right screen temp also
         leftTemp = driver->readTemperature(ScreenSide::Left);
 #else
-        leftTemp = 99;
+            leftTemp = 99;
 #endif
         batteryStatus += StringFormat(" %dC", leftTemp);
 
