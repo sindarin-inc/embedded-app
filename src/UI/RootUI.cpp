@@ -63,7 +63,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     MenuStyle styleFamilies;
 
-    auto mainMenu = new MainMenuScreen(this->power_, styleFamilies.mainMenu);
+    auto mainMenu = new MainMenuScreen(this->power_, *display_, styleFamilies.mainMenu);
 
     SIZE_OF(*mainMenu);
 

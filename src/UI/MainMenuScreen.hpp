@@ -4,13 +4,20 @@
 #include "Misc/MenuStyle.hpp"
 #include "Misc/Power.hpp"
 #include "Renderers/Renderer.hpp"
+#include "UI/Components/BoxView.hpp"
+#include "UI/Components/EinkView.hpp"
+#include "UI/Components/IconView.hpp"
+#include "UI/Components/MenuItemView.hpp"
+#include "UI/Components/SingleLineTextView.hpp"
+#include "UI/Components/StackView.hpp"
+#include "UI/Layout/View.hpp"
 #include "UI/MenuScreen.hpp"
 #include "sindarin-debug.h"
 
-class MainMenuScreen : public MenuScreen {
-
+class MainMenuScreen : public MenuScreen, public EinkView {
 public:
-    MainMenuScreen(Power &power, MenuStyleFamily myStyle) : MenuScreen(power, myStyle) {
+    MainMenuScreen(Power &power, DisplaySystem &display, MenuStyleFamily myStyle)
+        : MenuScreen(power, myStyle), EinkView(display) {
 #ifdef SWAP_ARTICLES_BOOKS
         numArticleItems_ = 1;
         MenuItem dummy("DUMMY", []() {});
@@ -20,10 +27,22 @@ public:
         lowerRightText_ = "--";
     };
 
+    auto layout(LayoutContext &context, Size size) -> Size override;
+    void drawInRect(Rect rect) override;
+
     void render(DisplaySystem &display) override;
 
 protected:
     void processCommand(RemoteCommand command) override;
+
+    std::vector<std::shared_ptr<SingleLineTextView>> topBarViews_;
+    std::shared_ptr<BoxView> topBarSelectionView_;
+
+    std::shared_ptr<IconView> batteryIconView_;
+    std::shared_ptr<SingleLineTextView> batteryTextView_;
+    std::shared_ptr<SingleLineTextView> clockView_;
+
+    int currentSelection_ = 0;
 
 #ifdef SWAP_ARTICLES_BOOKS
     // The menu items for long-form books come from the parent class. Since the Main Menu

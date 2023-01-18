@@ -5,10 +5,61 @@
 
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
+#include "UI/Bitmaps/BenIconHacking.hpp"
 
 #if EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
 #endif
+
+auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
+    const auto inset = 3;
+    const auto spacing = 5;
+
+    auto insetRect = context.setSublayoutFrame(
+        {{inset, inset}, {size.width - 2 * inset, /*size.height*/ 20 - 2 * inset}},
+        LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignCenterHorizontal,
+        [this](LayoutContext &context, Size size) -> Size {
+            int x = 0;
+            int y = 0;
+            int viewCount = topBarViews_.size();
+            // int boxHeight = (size.height - (viewCount - 1) * spacing) / viewCount;
+            int boxWidth = (size.width - (viewCount - 1) * spacing) / viewCount;
+            Size boxSize = {boxWidth, size.height};
+
+            log_d("boxSize: %d, %d", boxSize.width, boxSize.height);
+            int place = 0;
+
+            for (auto &view : topBarViews_) {
+                auto viewFrame = context.setViewFrame(*view, {{x, y}, boxSize},
+                                                      LayoutOptionsSizeToFit |
+                                                          LayoutOptionsAlignCenterHorizontal |
+                                                          LayoutOptionsAlignCenterVertical);
+                if (place == currentSelection_) {
+                    context.setViewFrame(*topBarSelectionView_, {{x, y}, boxSize},
+                                         LayoutOptionsSizeToFit |
+                                             LayoutOptionsAlignCenterHorizontal |
+                                             LayoutOptionsAlignCenterVertical);
+                }
+                x += boxWidth + spacing;
+                place++;
+            };
+
+            return {x, size.height};
+        });
+
+    context.setViewFrame(*batteryIconView_, {{0, size.height}, {20, 20}},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignRight |
+                             LayoutOptionsAlignBottom);
+    return {size.width, insetRect.size.height + 2 * inset};
+};
+
+void MainMenuScreen::drawInRect(Rect rect) {
+    for (auto &view : topBarViews_) {
+        (*view).draw();
+    }
+    topBarSelectionView_->draw();
+    batteryIconView_->draw();
+}
 
 // This largely mirrors the superclass implementation, but with enough
 // changes that we need to do our own thing here.
@@ -36,15 +87,32 @@ void MainMenuScreen::render(DisplaySystem &display) {
 
     // drawArrowsAndSelections(display);
 
+    setNeedsLayout();
+    // Givnig the top bar a fixed height of 20 pixels and the entire width of the display.
+    setFrame({{0, 0}, {display.width(), display.height()}});
+
     // On the first load, we want to only render the items in the menu because we are going
     // to do a partial refresh with the selector button at a lower/higher vcom to reduce
     // ghosting.
     if (firstLoad_) {
+
+        topBarViews_.clear();
+        topBarSelectionView_ = std::make_shared<BoxView>(display, 3);
+        batteryIconView_ = std::make_shared<IconView>(display, bolt_bits, bolt_width, bolt_height);
+        std::vector<std::string> topBarItems = {"Books", "Articles", "Bible", "Settings"};
+        for (int i = 0; i < 4; i++) {
+            auto topBarView = std::make_shared<SingleLineTextView>(display, topBarItems[i]);
+            topBarViews_.push_back(topBarView);
+        }
+
         drawMenuItems(display, false);
-        display.updateDisplay(DisplaySystem::UpdateType::FULL);
+        draw();
+        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     }
 
     drawMenuItems(display, true);
+    draw();
+
     // drawArrowsAndSelections(display);
     display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
 
@@ -81,6 +149,10 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
         break;
 
     case RemoteCommand::CHANNEL_PLUS:
+        currentSelection_++;
+        currentSelection_ = currentSelection_ % topBarViews_.size();
+        firstLoad_ = true;
+        needsRerender = true;
         // This will switch between the menus
         break;
 
@@ -122,6 +194,10 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
 
     case RemoteCommand::BACK:
     case RemoteCommand::CHANNEL_MINUS:
+        currentSelection_--;
+        currentSelection_ = currentSelection_ % topBarViews_.size();
+        firstLoad_ = true;
+        needsRerender = true;
         //
         // Settings are always the last item
         // Eventually this will be a
