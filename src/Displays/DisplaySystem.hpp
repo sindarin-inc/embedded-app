@@ -49,7 +49,12 @@ public:
 
     static TimerHandle_t animationTimer;
 
-    DisplayRect defaultBoundingBox = {42, 30, 255 - 42 * 2, 255 - 30 * 2};
+    int32_t defaultXPadding = 25;
+    int32_t defaultYPadding = 5;
+
+    DisplayRect defaultBoundingBox = {defaultXPadding, defaultYPadding,
+                                      255 - (uint32_t)defaultXPadding * 2,
+                                      255 - (uint32_t)defaultYPadding * 2};
 
     Style style;
 

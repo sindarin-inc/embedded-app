@@ -11,11 +11,16 @@
 #include "Displays/DisplayEinkET013TT1.hpp"
 #endif
 
+void MainMenuScreen::addSubMenuScreen(const MenuScreen &newSubScreen) {
+    subMenus_.push_back(newSubScreen);
+    numSubMenus_++;
+}
+
 auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto inset = 3;
     const auto spacing = 5;
 
-    auto insetRect = context.setSublayoutFrame(
+    auto insetRectTop = context.setSublayoutFrame(
         {{inset, inset}, {size.width - 2 * inset, /*size.height*/ 20 - 2 * inset}},
         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignCenterHorizontal,
         [this](LayoutContext &context, Size size) -> Size {
@@ -47,10 +52,33 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
             return {x, size.height};
         });
 
-    context.setViewFrame(*batteryIconView_, {{0, size.height}, {20, 20}},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignRight |
-                             LayoutOptionsAlignBottom);
-    return {size.width, insetRect.size.height + 2 * inset};
+    context.setViewFrame(
+        *clockView_, {{inset, size.height - 20}, {size.width - 2 * inset, 20 - 2 * inset}},
+        LayoutOptionsSizeToFit | LayoutOptionsAlignLeft | LayoutOptionsAlignBottom);
+
+    auto insetRectBottomRight = context.setSublayoutFrame(
+        {{inset - spacing * 2, size.height - 20},
+         {size.width - 2 * inset, /*size.height*/ 20 - 2 * inset}},
+        LayoutOptionsSizeToFit | LayoutOptionsAlignBottom | LayoutOptionsAlignRight,
+        [this](LayoutContext &context, Size size) -> Size {
+            int x = 0;
+            int y = 0;
+
+            context.setViewFrame(*batteryIconView_, {{x, size.height - 20}, {size.width, 20}},
+                                 LayoutOptionsSizeToFit | LayoutOptionsAlignRight |
+                                     LayoutOptionsAlignBottom);
+
+            x += 21;
+            context.setViewFrame(*batteryTextView_, {{x, size.height - 20}, {size.width, 20}},
+                                 LayoutOptionsSizeToFit | LayoutOptionsAlignRight |
+                                     LayoutOptionsAlignBottom);
+
+            return {x, size.height};
+        });
+
+    log_d("size height is %d", size.height);
+
+    return {size.width, insetRectTop.size.height + 2 * inset};
 };
 
 void MainMenuScreen::drawInRect(Rect rect) {
@@ -59,6 +87,8 @@ void MainMenuScreen::drawInRect(Rect rect) {
     }
     topBarSelectionView_->draw();
     batteryIconView_->draw();
+    batteryTextView_->draw();
+    clockView_->draw();
 }
 
 // This largely mirrors the superclass implementation, but with enough
@@ -99,18 +129,24 @@ void MainMenuScreen::render(DisplaySystem &display) {
         topBarViews_.clear();
         topBarSelectionView_ = std::make_shared<BoxView>(display, 3);
         batteryIconView_ = std::make_shared<IconView>(display, bolt_bits, bolt_width, bolt_height);
+        batteryTextView_ =
+            std::make_shared<SingleLineTextView>(display, power_.getBatteryPercentageOnlyString());
+        clockView_ = std::make_shared<SingleLineTextView>(display, "3:33pm");
         std::vector<std::string> topBarItems = {"Books", "Articles", "Bible", "Settings"};
-        for (int i = 0; i < 4; i++) {
+        if (subMenus_.size() == 3) {
+            topBarItems = {"Books", "Articles", "Settings"};
+        }
+        for (int i = 0; i < subMenus_.size(); i++) {
             auto topBarView = std::make_shared<SingleLineTextView>(display, topBarItems[i]);
             topBarViews_.push_back(topBarView);
         }
 
-        drawMenuItems(display, false);
+        subMenus_[currentSelection_].drawMenuItems(display, false);
         draw();
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     }
 
-    drawMenuItems(display, true);
+    subMenus_[currentSelection_].drawMenuItems(display, true);
     draw();
 
     // drawArrowsAndSelections(display);
@@ -125,27 +161,20 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
 
     switch (command) {
     case RemoteCommand::PREV:
-        if (prevSelection()) {
-            firstLoad_ = true;
-        }
+        subMenus_[currentSelection_].processCommand(command);
         needsRerender = true;
         break;
 
     case RemoteCommand::NEXT:
-        if (nextSelection()) {
-            firstLoad_ = true;
-        }
+        subMenus_[currentSelection_].processCommand(command);
         needsRerender = true;
-
         break;
 
     // Long press down on the TT should count as enter since we don't have the
     // 5th button
     case RemoteCommand::ENTER:
     case RemoteCommand::STOP:
-        if (getCurrItem().callback != nullptr) {
-            getCurrItem().callback();
-        }
+        subMenus_[currentSelection_].processCommand(command);
         break;
 
     case RemoteCommand::CHANNEL_PLUS:

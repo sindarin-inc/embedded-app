@@ -177,129 +177,137 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         log_d("Found readable: %s", (*it).title.c_str());
     }
 
-    if (oldTestament || newTestament || psalmsProverbs) {
+    // mainMenu->addMenuItem(MenuItem("Books", [this, mainMenu, readables, display,
+    //                                          createReadableScreen, currentReadable]() {
+    auto booksMenu = new MenuScreen(this->power_, mainMenu->getMyStyle());
 
-        mainMenu->addMenuItem(MenuItem("Bible", [this, mainMenu, readables, display,
-                                                 createReadableScreen, currentReadable]() {
-            auto bibleMenu = new MenuScreen(this->power_, mainMenu->getMyStyle());
-
-            for (const Readable &r : readables) {
-                bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
-                auto title = archived ? "Archived: " + r.title : r.title;
-                if ((r.title.compare("Psalms and Proverbs") == 0) ||
-                    (r.title.compare("New Testament") == 0) ||
-                    (r.title.compare("Old Testament") == 0)) {
-                    bibleMenu->addMenuItem(
-                        MenuItem(title, [this, r, createReadableScreen, display, bibleMenu]() {
-                            auto readableScreen = createReadableScreen(r);
-                            this->setCurrentScreen(*readableScreen);
-                            readableScreen->backCallback = [this, r, display, readableScreen,
-                                                            bibleMenu]() {
-                                display->clearDisplay();
-                                setCurrentScreen(*bibleMenu);
-                                bool archived =
-                                    prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
-                                auto title = archived ? "Archived: " + r.title : r.title;
-                                bibleMenu->changeItemTitleAt(bibleMenu->getCurrSelection(), title);
-                                bibleMenu->setFirstLoad();
-                                bibleMenu->render(*display);
-                                delete readableScreen;
-                            };
-                        }));
-                }
-            }
-
-            display->clearDisplay();
-            setCurrentScreen(*bibleMenu);
-            bibleMenu->backCallback = [this, mainMenu, bibleMenu, display]() {
-                display->clearDisplay();
-                mainMenu->setFirstLoad();
-                setCurrentScreen(*mainMenu);
-                delete bibleMenu;
-            };
-        }));
-    }
-
-    mainMenu->addMenuItem(MenuItem("Books", [this, mainMenu, readables, display,
-                                             createReadableScreen, currentReadable]() {
-        auto booksMenu = new MenuScreen(this->power_, mainMenu->getMyStyle());
-
-        for (const Readable &r : readables) {
-            bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
-            auto title = archived ? "Archived: " + r.title : r.title;
-            // Bible books go in their own menu / app
-            if ((r.title.compare("Psalms and Proverbs") != 0) &&
-                (r.title.compare("New Testament") != 0) &&
-                (r.title.compare("Old Testament") != 0)) {
-                booksMenu->addMenuItem(MenuItem(title, [this, r, createReadableScreen, display,
-                                                        booksMenu]() {
+    for (const Readable &r : readables) {
+        bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
+        auto title = archived ? "Archived: " + r.title : r.title;
+        // Bible books go in their own menu / app
+        if ((r.title.compare("Psalms and Proverbs") != 0) &&
+            (r.title.compare("New Testament") != 0) && (r.title.compare("Old Testament") != 0)) {
+            booksMenu->addMenuItem(
+                MenuItem(title, [this, r, createReadableScreen, display, mainMenu, booksMenu]() {
                     auto readableScreen = createReadableScreen(r);
                     this->setCurrentScreen(*readableScreen);
-                    readableScreen->backCallback = [this, r, display, readableScreen, booksMenu]() {
+                    readableScreen->backCallback = [this, r, display, readableScreen, mainMenu,
+                                                    booksMenu]() {
                         display->clearDisplay();
-                        setCurrentScreen(*booksMenu);
+                        setCurrentScreen(*mainMenu);
+                        /*
                         bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
                         auto title = archived ? "Archived: " + r.title : r.title;
                         booksMenu->changeItemTitleAt(booksMenu->getCurrSelection(), title);
                         booksMenu->setFirstLoad();
                         booksMenu->render(*display);
+                        */
                         delete readableScreen;
                     };
                 }));
-            }
         }
+    }
 
+    booksMenu->backCallback = [this, mainMenu, booksMenu, display]() {
         display->clearDisplay();
-        setCurrentScreen(*booksMenu);
-        booksMenu->backCallback = [this, mainMenu, booksMenu, display]() {
-            display->clearDisplay();
-            mainMenu->setFirstLoad();
-            setCurrentScreen(*mainMenu);
-            delete booksMenu;
-        };
-    }));
+        mainMenu->setFirstLoad();
+        setCurrentScreen(*mainMenu);
+        delete booksMenu;
+    };
+
+    mainMenu->addSubMenuScreen(*booksMenu);
+    // }));
 
     SHOW_HEAP();
 
     // Setup articles menu, soon to be its own "tab"
-    if (articles.size()) {
-        mainMenu->addMenuItem(MenuItem("Articles", [this, mainMenu, articles, display,
-                                                    createReadableScreen]() {
-            log_i("Loading %zu Pocket articles", articles.size());
+    // if (articles.size()) {
+    //     mainMenu->addMenuItem(MenuItem("Articles", [this, mainMenu, articles, display,
+    //                                                 createReadableScreen]() {
+    log_i("Loading %zu Pocket articles", articles.size());
 
-            auto pocketMenu = new MenuScreen(this->power_, mainMenu->getMyStyle());
+    auto pocketMenu = new MenuScreen(this->power_, mainMenu->getMyStyle());
 
-            for (const Readable &r : articles) {
-                bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
-                auto title = archived ? "Archived: " + r.title : r.title;
+    if (articles.size() == 0) {
+        pocketMenu->addMenuItem(MenuItem("Pocket some articles!", []() {}));
+    }
 
-                pocketMenu->addMenuItem(MenuItem(title, [this, display, pocketMenu, r,
-                                                         createReadableScreen]() {
-                    display->clearDisplay();
-                    auto readableScreen = createReadableScreen(r);
-                    setCurrentScreen(*readableScreen);
-                    readableScreen->backCallback = [this, r, display, readableScreen,
-                                                    pocketMenu]() {
-                        display->clearDisplay();
-                        setCurrentScreen(*pocketMenu);
-                        bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
-                        auto title = archived ? "Archived: " + r.title : r.title;
-                        pocketMenu->changeItemTitleAt(pocketMenu->getCurrSelection(), title);
-                        pocketMenu->setFirstLoad();
-                        pocketMenu->render(*display);
-                        delete readableScreen;
-                    };
-                }));
-            }
-            display->clearDisplay();
-            setCurrentScreen(*pocketMenu);
-            pocketMenu->backCallback = [this, mainMenu, pocketMenu, display]() {
+    for (const Readable &r : articles) {
+        bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
+        auto title = archived ? "Archived: " + r.title : r.title;
+
+        pocketMenu->addMenuItem(
+            MenuItem(title, [this, display, pocketMenu, mainMenu, r, createReadableScreen]() {
                 display->clearDisplay();
-                mainMenu->setFirstLoad();
-                setCurrentScreen(*mainMenu);
-                delete pocketMenu;
-            };
-        }));
+                auto readableScreen = createReadableScreen(r);
+                setCurrentScreen(*readableScreen);
+                readableScreen->backCallback = [this, r, display, readableScreen, mainMenu,
+                                                pocketMenu]() {
+                    display->clearDisplay();
+                    setCurrentScreen(*mainMenu);
+                    /*
+                    bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
+                    auto title = archived ? "Archived: " + r.title : r.title;
+                    pocketMenu->changeItemTitleAt(pocketMenu->getCurrSelection(), title);
+                    pocketMenu->setFirstLoad();
+                    pocketMenu->render(*display);
+                    */
+                    delete readableScreen;
+                };
+            }));
+    }
+
+    pocketMenu->backCallback = [this, mainMenu, pocketMenu, display]() {
+        display->clearDisplay();
+        mainMenu->setFirstLoad();
+        setCurrentScreen(*mainMenu);
+        delete pocketMenu;
+    };
+    //   }));
+    //}
+
+    mainMenu->addSubMenuScreen(*pocketMenu);
+
+    if (oldTestament || newTestament || psalmsProverbs) {
+
+        // mainMenu->addMenuItem(MenuItem("Bible", [this, mainMenu, readables, display,
+        //                                          createReadableScreen, currentReadable]() {
+        auto bibleMenu = new MenuScreen(this->power_, mainMenu->getMyStyle());
+
+        for (const Readable &r : readables) {
+            bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
+            auto title = archived ? "Archived: " + r.title : r.title;
+            if ((r.title.compare("Psalms and Proverbs") == 0) ||
+                (r.title.compare("New Testament") == 0) ||
+                (r.title.compare("Old Testament") == 0)) {
+                bibleMenu->addMenuItem(MenuItem(
+                    title, [this, r, createReadableScreen, display, mainMenu, bibleMenu]() {
+                        auto readableScreen = createReadableScreen(r);
+                        this->setCurrentScreen(*readableScreen);
+                        readableScreen->backCallback = [this, r, display, readableScreen, mainMenu,
+                                                        bibleMenu]() {
+                            display->clearDisplay();
+                            setCurrentScreen(*mainMenu);
+                            /*bool archived =
+                            prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str()); auto title
+                            = archived ? "Archived: " + r.title : r.title;
+                            bibleMenu->changeItemTitleAt(bibleMenu->getCurrSelection(), title);
+                            bibleMenu->setFirstLoad();
+                            bibleMenu->render(*display);*/
+                            delete readableScreen;
+                        };
+                    }));
+            }
+        }
+
+        bibleMenu->backCallback = [this, mainMenu, bibleMenu, display]() {
+            display->clearDisplay();
+            mainMenu->setFirstLoad();
+            setCurrentScreen(*mainMenu);
+            delete bibleMenu;
+        };
+        // }));
+        mainMenu->addSubMenuScreen(*bibleMenu);
     }
 
     // Settings menus
@@ -826,10 +834,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         setCurrentScreen(*mainMenu);
     };
 
-    mainMenu->addMenuItem(MenuItem("Settings", [this, settingsMenu]() {
-        this->display_->clearDisplay();
-        setCurrentScreen(*settingsMenu);
-    }));
+    mainMenu->addSubMenuScreen(*settingsMenu);
+
+    // mainMenu->addMenuItem(MenuItem("Settings", [this, settingsMenu]() {
+    //     this->display_->clearDisplay();
+    //     setCurrentScreen(*settingsMenu);
+    // }));
 
     int inDemo = prefs_.demoMode.get().value();
 
