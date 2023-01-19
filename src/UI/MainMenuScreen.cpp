@@ -68,7 +68,7 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
                                  LayoutOptionsSizeToFit | LayoutOptionsAlignRight |
                                      LayoutOptionsAlignBottom);
 
-            x += 21;
+            x += 24;
             context.setViewFrame(*batteryTextView_, {{x, size.height - 20}, {size.width, 20}},
                                  LayoutOptionsSizeToFit | LayoutOptionsAlignRight |
                                      LayoutOptionsAlignBottom);
