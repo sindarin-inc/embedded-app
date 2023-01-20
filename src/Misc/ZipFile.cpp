@@ -1,5 +1,7 @@
 #include "ZipFile.hpp"
 
+#include "Misc/StringUtil.hpp"
+
 // static map needed here to interface with C api
 std::map<std::string, ZipFile *> ZipFile::zipRegistry;
 
@@ -106,8 +108,12 @@ void ZipFile::listFiles() {
     char szName[256];
     unz_file_info fi;
     int rc = zip_.getGlobalComment(szComment, sizeof(szComment));
-    log_i("Global comment:");
-    log_i("%s", szComment);
+    if (rc != UNZ_OK) {
+        log_i("no zip comment");
+    } else {
+        log_i("Global comment:");
+        log_i("%s", szComment);
+    }
     log_i("Files in this archive:");
     zip_.gotoFirstFile();
     rc = UNZ_OK;
@@ -162,7 +168,7 @@ void ZipFile::extractAllToDirectory(const char *dirname) {
             log_i("%s - %ld / %ld", szName, fi.compressed_size, fi.uncompressed_size);
             int nameLen = strlen(szName);
             if (nameLen > 0) {
-                snprintf(fullDir, sizeof(fullDir), "%s/%s", dirname, szName);
+                SafeSnprintf(fullDir, sizeof(fullDir), "%s/%s", dirname, szName);
                 if (szName[nameLen - 1] == '/') {
                     if (!fileSystem_.exists(fullDir)) {
                         log_i("creating %s", fullDir);

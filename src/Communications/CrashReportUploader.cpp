@@ -58,7 +58,7 @@ void CrashUploader::uploadCrash(
                 log_e("could not send crash report %s, http code %d", coreDumpFile.c_str(),
                       httpCode);
                 char errMsg[64];
-                SafeSprintf(errMsg, "upload failed, code %d", httpCode);
+                SafeSnprintf(errMsg, sizeof(errMsg), "upload failed, code %d", httpCode);
                 progressCallback(
                     CrashUploadState{.state = CrashUploadState::State::Failure, .message = errMsg});
                 return;

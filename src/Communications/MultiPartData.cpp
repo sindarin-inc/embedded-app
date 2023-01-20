@@ -15,7 +15,7 @@ auto MultiPartData::startKeyWrite() -> bool {
         keyWritten_ = true;
         tempFile_ = fileSystem_.open(fileName_, FILE_WRITE, true);
         // write first boundary marker if this is the first key
-        if (!SafeSprintf(tmp_, "--%s--", boundary.c_str())) {
+        if (!SafeSnprintf(tmp_, sizeof(tmp_), "--%s--", boundary.c_str())) {
             return false;
         }
 
@@ -29,18 +29,19 @@ auto MultiPartData::startKeyWrite() -> bool {
 
 auto MultiPartData::writeHeader(const std::string &key, bool isFile) -> bool {
     // write form header
-    if (!SafeSprintf(tmp_, "\r\nContent-Disposition: form-data; name=\"%s\"", key.c_str())) {
+    if (!SafeSnprintf(tmp_, sizeof(tmp_), "\r\nContent-Disposition: form-data; name=\"%s\"",
+                      key.c_str())) {
         return false;
     }
     if (tempFile_.write((uint8_t *)tmp_, strlen(tmp_)) != strlen(tmp_)) {
         return false;
     }
     if (isFile) {
-        if (!SafeSprintf(tmp_, "; filename=\"%s\"\r\n", fileName_.c_str())) {
+        if (!SafeSnprintf(tmp_, sizeof(tmp_), "; filename=\"%s\"\r\n", fileName_.c_str())) {
             return false;
         }
     } else {
-        if (!SafeSprintf(tmp_, "\r\n\r\n")) {
+        if (!SafeSnprintf(tmp_, sizeof(tmp_), "\r\n\r\n")) {
             return false;
         }
     }
@@ -53,7 +54,7 @@ auto MultiPartData::writeHeader(const std::string &key, bool isFile) -> bool {
 }
 
 auto MultiPartData::writeFooter() -> bool {
-    if (!SafeSprintf(tmp_, "\r\n--%s", boundary.c_str())) {
+    if (!SafeSnprintf(tmp_, sizeof(tmp_), "\r\n--%s", boundary.c_str())) {
         return false;
     }
     if (tempFile_.write((uint8_t *)tmp_, strlen(tmp_)) != strlen(tmp_)) {
@@ -93,7 +94,7 @@ auto MultiPartData::startFile(const std::string &key) -> bool {
         return false;
     }
 
-    if (!SafeSprintf(tmp_, "Content-Type: application/octet-stream\r\n\r\n")) {
+    if (!SafeSnprintf(tmp_, sizeof(tmp_), "Content-Type: application/octet-stream\r\n\r\n")) {
         return false;
     }
     if (tempFile_.write((uint8_t *)tmp_, strlen(tmp_)) != strlen(tmp_)) {
@@ -124,14 +125,14 @@ auto MultiPartData::endFile() -> bool {
 
 auto MultiPartData::getContentType() -> String {
     char tmp[64];
-    SafeSprintf(tmp, "multipart/form-data; boundary=%s", boundary.c_str());
+    SafeSnprintf(tmp, sizeof(tmp), "multipart/form-data; boundary=%s", boundary.c_str());
     return tmp;
 }
 
 auto MultiPartData::endMultiPartData() -> bool {
     log_i("end multipart data!");
 
-    if (!SafeSprintf(tmp_, "--\r\n")) {
+    if (!SafeSnprintf(tmp_, sizeof(tmp_), "--\r\n")) {
         return false;
     }
     if (tempFile_.write((uint8_t *)tmp_, strlen(tmp_)) != strlen(tmp_)) {

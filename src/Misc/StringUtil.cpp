@@ -29,11 +29,11 @@ auto BytesToHex(const uint8_t *data, size_t size) -> std::string {
     return result;
 }
 
-auto SafeSprintf(char *str, const char *format, ...) -> bool {
-    int result;
+auto SafeSnprintf(char *str, size_t size, const char *format, ...) // NOLINT(cert-dcl50-cpp)
+    -> bool {
     va_list args;
     va_start(args, format);
-    int res = vsnprintf(str, sizeof(str), format, args);
+    int res = vsnprintf(str, size, format, args);
     va_end(args);
 
     // check if entire string was written

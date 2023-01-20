@@ -197,7 +197,7 @@ auto GUnzip::decompressMemory(uint8_t *input, int inputSize) -> bool {
         }
 
         int err = decompress(&inBuf[inputIndex], inputAvail, outBuf, 1024, inputRead, outputAvail);
-        if (err != Z_OK) {
+        if (err != Z_OK && err != Z_STREAM_END) {
             log_e("Error decompressing %d", err);
         }
 
@@ -205,6 +205,10 @@ auto GUnzip::decompressMemory(uint8_t *input, int inputSize) -> bool {
         while (outputAvail == 1024) {
             int ir = 0;
             err = decompress(inBuf, 0, outBuf, 1024, ir, outputAvail);
+            if (err != Z_OK && err != Z_STREAM_END) {
+                log_e("error decompressing: %d", err);
+                return false;
+            }
         }
 
         // increment input
