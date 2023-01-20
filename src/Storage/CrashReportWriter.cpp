@@ -32,7 +32,9 @@ auto CrashReportWriter::writeCrashReportIfExists() -> bool {
 
     log_i("core dump found for boot %d", bootNum_);
     uint8_t tmp[1024];
-    snprintf((char *)tmp, sizeof(tmp), "/coredumps/%d.coredump", bootNum_);
+    if (!SafeSprintf((char *)tmp, "/coredumps/%d.coredump", bootNum_)) {
+        return false;
+    }
 
     log_i("saving core dump to file %s", tmp);
     MultiPartData mpData(fileSystem_, (char *)tmp);

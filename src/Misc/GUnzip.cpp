@@ -106,8 +106,9 @@ auto GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFile
         }
 
         int err = decompress(&inBuf[inputIndex], inputAvail, outBuf, 1024, inputRead, outputAvail);
-        if (err != Z_OK) {
+        if (err != Z_OK && err != Z_STREAM_END) {
             log_e("Error decompressing %d", err);
+            return false;
         }
 
         // write block
@@ -119,6 +120,10 @@ auto GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFile
         while (outputAvail == 1024) {
             int ir = 0;
             err = decompress(inBuf, 0, outBuf, 1024, ir, outputAvail);
+            if (err != Z_OK && err != Z_STREAM_END) {
+                log_e("Error decompressing %d", err);
+                return false;
+            }
 
             // write block
             if (outputAvail > 0) {

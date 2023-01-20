@@ -35,4 +35,6 @@ auto StringFormat(const char *format, ARGS... args) -> std::string {
     return {buf.get(), buf.get() + size - 1};
 }
 
+auto SafeSprintf(char *str, const char *format, ...) -> bool;
+
 #pragma clang diagnostic pop
