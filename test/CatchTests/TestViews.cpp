@@ -92,13 +92,12 @@ TEST_CASE("Test some views independently") {
         AssertViewUnchanged("PowerDepletedScreen");
     }
 
-    /* With the main menu refactor, this test hangs and does not complete.
-        SECTION("Test LayoutTestScreen") {
-            LayoutTestScreen screen(*display);
-            screen.render(*display);
-            AssertViewUnchanged("LayoutTestScreen");
-        }
-    */
+    /* With the main menu refactor, this test hangs and does not complete. */
+    SECTION("Test LayoutTestScreen") {
+        LayoutTestScreen screen(*display);
+        screen.render(*display);
+        AssertViewUnchanged("LayoutTestScreen");
+    }
 
     StopFreeRtos();
 }

@@ -47,7 +47,7 @@ auto LayoutTestScreen::layout(LayoutContext &context, Size size) -> Size {
                     int y = 0;
 
                     // Text with a box around it
-                    auto text1Rect = context.setViewFrame(text1_, {{x + 4, y + 2}, {0, 0}},
+                    auto text1Rect = context.setViewFrame(text1_, {{x + 4, y + 2}, {20, 20}},
                                                           LayoutOptionsSizeToFit);
 
                     auto box1Rect = context.setViewFrame(
@@ -76,7 +76,6 @@ auto LayoutTestScreen::layout(LayoutContext &context, Size size) -> Size {
 
             return {size.width, y};
         });
-
     return {size.width, std::max(rightColumnRect.size.height, iconRect.size.height)};
 };
 

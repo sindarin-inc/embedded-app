@@ -356,13 +356,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto oldMenu = new MenuScreen(this->power_, styleFamilies.settingsMenu);
 
     // settingsMenu->addMenuItem(MenuItem("Layout Example", [this, settingsMenu, display]() {
-    //     auto layoutTestScreen = new LayoutTestScreen(*display);
-    //     setCurrentScreen(*layoutTestScreen);
-    //     layoutTestScreen->backCallback = [this, layoutTestScreen, settingsMenu]() {
-    //         settingsMenu->setFirstLoad();
-    //         setCurrentScreen(*settingsMenu);
-    //         delete layoutTestScreen;
-    //     };
+    //    auto layoutTestScreen = new LayoutTestScreen(*display);
+    //    setCurrentScreen(*layoutTestScreen);
+    //    layoutTestScreen->backCallback = [this, layoutTestScreen, settingsMenu]() {
+    //       settingsMenu->setFirstLoad();
+    //        setCurrentScreen(*settingsMenu);
+    //        delete layoutTestScreen;
+    //    };
     // }));
 
     settingsMenu->addMenuItem(
