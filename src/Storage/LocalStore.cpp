@@ -112,9 +112,9 @@ void LocalStore::addReadable(std::vector<Readable> &readables, const Readable &r
     return;
 }
 
-void LocalStore::removeReadable(std::vector<Readable> &readables, const std::string &readable) {
+void LocalStore::removeReadable(std::vector<Readable> &readables, const Readable &readable) {
     for (auto it = readables.begin(); it != readables.end(); ++it) {
-        if (readable.compare(it->localFilePath()) == 0) {
+        if (it->uuid == readable.uuid) {
             readables.erase(it);
             return;
         }
@@ -304,17 +304,15 @@ void LocalStore::syncFromRemote(
         if (checkSyncResponse.readablesSince != "") {
             this->prefs_.lastReadablesSince.set("");
         }
-        SHOW_HEAP();
+
         progressCallback(ContentSyncState{.state = ContentSyncState::State::LoadingTasks});
 
-        SHOW_HEAP();
         // If out of sync, download any new readables.
         std::vector<Readable> readablesToDownload = {};
         std::vector<Readable> readablesToDelete = {};
-        std::vector<std::string> articlesToDelete = {};
+        std::vector<Readable> articlesToDelete = {};
         std::vector<Readable> articlesToSave = {};
 
-        SHOW_HEAP();
         // Now look through all the readables here, and download any that we don't have
         // already
         for (auto &userReadable : checkSyncResponse.userReadables) {
@@ -344,8 +342,6 @@ void LocalStore::syncFromRemote(
 
         // Look through all the articles, deleting archived ones and downloading new ones
         for (auto &userReadable : checkSyncResponse.userArticles) {
-
-            SHOW_HEAP();
             log_d("Fetched user article: %s (%zu)", userReadable.readable.title.c_str(),
                   userReadable.readable.content.size());
             if (this->processReadablePlacemarksFromServer(userReadable.readable,
@@ -357,7 +353,7 @@ void LocalStore::syncFromRemote(
                 log_i("Article %s is archived", userReadable.readable.title.c_str());
                 // TODO: Store these articles in an accessible archive instead of just deleting them
                 // and ignoring
-                articlesToDelete.push_back(userReadable.readable.localFilePath());
+                articlesToDelete.push_back(userReadable.readable);
                 continue;
             }
             if (this->hasReadable(articles_, userReadable.readable)) {
@@ -386,8 +382,6 @@ void LocalStore::syncFromRemote(
         }
 
         for (const auto &readable : readablesToDownload) {
-
-            SHOW_HEAP();
             syncState.tasks.push_back(ContentSyncState::Task{
                 .message = "Get: " + readable.title,
                 .percentage = 0,
@@ -412,7 +406,7 @@ void LocalStore::syncFromRemote(
             const auto &readable = readablesToDelete[i];
             log_i("Deleting %s", readable.title.c_str());
             this->fileSystem.remove(readable.localFilePath());
-            this->removeReadable(readables_, readable.localFilePath());
+            this->removeReadable(readables_, readable);
             syncState.tasks[i].percentage = 100;
         }
 
@@ -456,24 +450,21 @@ void LocalStore::syncFromRemote(
                 syncState.tasks[tasksIndex].percentage =
                     (float(i + 1) / articlesToDelete.size()) * 100;
 
-                const std::string readable = articlesToDelete[i];
-                log_i("Deleting %s", readable.c_str());
-                this->fileSystem.remove(readable);
+                const auto &readable = articlesToDelete[i];
+                log_i("Deleting %s", readable.title.c_str());
+                this->fileSystem.remove(readable.localFilePath());
                 this->removeReadable(articles_, readable);
             }
         }
 
         progressCallback(syncState);
 
-        SHOW_HEAP();
         // Clear the articlesSince cache since it will be set at the end of a successful run.
         // If we fail, then the next content sync will not have a cutoff date
         if (checkSyncResponse.articlesSince != "") {
             this->prefs_.lastArticlesSince.set("");
         }
 
-        SHOW_HEAP();
-        log_i("right before saving articles");
         // Save the articles that are new
         for (int i = 0; i < articlesToSave.size(); i++) {
             syncState.tasks[tasksIndex].percentage = (float(i + 1) / articlesToSave.size()) * 100;
@@ -482,8 +473,6 @@ void LocalStore::syncFromRemote(
             auto &readable = articlesToSave[i];
 
             this->saveArticleFile(readable);
-            SHOW_HEAP();
-
             this->addReadable(articles_, readable);
         }
 
