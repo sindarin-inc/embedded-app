@@ -173,6 +173,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 contentSyncScreen->backCallback = [this, contentSyncScreen, mainMenu, display]() {
                     mainMenu->setFirstLoad();
                     setCurrentScreen(*mainMenu);
+                    mainMenu->render(*display);
                     delete contentSyncScreen;
                 };
                 contentSyncScreen->begin();
@@ -224,6 +225,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 contentSyncScreen->backCallback = [this, contentSyncScreen, mainMenu, display]() {
                     mainMenu->setFirstLoad();
                     setCurrentScreen(*mainMenu);
+                    mainMenu->render(*display);
                     delete contentSyncScreen;
                 };
                 contentSyncScreen->begin();
@@ -371,6 +373,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             contentSyncScreen->backCallback = [this, contentSyncScreen, mainMenu, display]() {
                 mainMenu->setFirstLoad();
                 setCurrentScreen(*mainMenu);
+                mainMenu->render(*display);
                 delete contentSyncScreen;
             };
             contentSyncScreen->begin();
@@ -516,6 +519,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                                   display]() {
                 systemSettingsMenu->setFirstLoad();
                 setCurrentScreen(*systemSettingsMenu);
+                systemSettingsMenu->render(*display);
                 delete firmwareUpdateScreen;
             };
             firmwareUpdateScreen->begin();
@@ -803,6 +807,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         (*voltageLogScreen).backCallback = [this, voltageLogScreen, debugSettingsMenu, display]() {
             debugSettingsMenu->setFirstLoad();
             setCurrentScreen(*debugSettingsMenu);
+            debugSettingsMenu->render(*display);
             delete voltageLogScreen;
         };
         (*voltageLogScreen).begin();
