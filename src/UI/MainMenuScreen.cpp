@@ -237,11 +237,6 @@ void MainMenuScreen::render(DisplaySystem &display) {
 void MainMenuScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::PREV:
-        subMenus_[currentSelection_]->processCommand(command);
-        firstLoad_ = subMenus_[currentSelection_]->getFirstLoad();
-        needsRerender = true;
-        break;
-
     case RemoteCommand::NEXT:
         subMenus_[currentSelection_]->processCommand(command);
         firstLoad_ = subMenus_[currentSelection_]->getFirstLoad();

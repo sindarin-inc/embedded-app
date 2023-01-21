@@ -126,9 +126,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }));
     }
 
-    ReadableScreen *psalmsProverbs = NULL;
-    ReadableScreen *newTestament = NULL;
-    ReadableScreen *oldTestament = NULL;
+    ReadableScreen *psalmsProverbs = nullptr;
+    ReadableScreen *newTestament = nullptr;
+    ReadableScreen *oldTestament = nullptr;
 
     // Bible hack (to show off if we wanted to have different "apps" that had different behavior.
     // For now, it's just the same as a regular book.)
@@ -186,18 +186,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // Bible books go in their own menu / app
         if ((r.title.compare("Psalms and Proverbs") != 0) &&
             (r.title.compare("New Testament") != 0) && (r.title.compare("Old Testament") != 0)) {
-            booksMenu->addMenuItem(
-                MenuItem(title, r.authors[0].name,
-                         [this, r, createReadableScreen, display, mainMenu, booksMenu]() {
-                             auto readableScreen = createReadableScreen(r);
-                             this->setCurrentScreen(*readableScreen);
-                             readableScreen->backCallback = [this, r, display, readableScreen,
-                                                             mainMenu, booksMenu]() {
-                                 display->clearDisplay();
-                                 setCurrentScreen(*mainMenu);
-                                 delete readableScreen;
-                             };
-                         }));
+            booksMenu->addMenuItem(MenuItem(
+                title, r.authors[0].name, [this, r, createReadableScreen, display, mainMenu]() {
+                    auto readableScreen = createReadableScreen(r);
+                    this->setCurrentScreen(*readableScreen);
+                    readableScreen->backCallback = [this, r, display, readableScreen, mainMenu]() {
+                        display->clearDisplay();
+                        setCurrentScreen(*mainMenu);
+                        delete readableScreen;
+                    };
+                }));
         }
     }
 
@@ -274,17 +272,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             if ((r.title.compare("Psalms and Proverbs") == 0) ||
                 (r.title.compare("New Testament") == 0) ||
                 (r.title.compare("Old Testament") == 0)) {
-                bibleMenu->addMenuItem(MenuItem(
-                    title, [this, r, createReadableScreen, display, mainMenu, bibleMenu]() {
-                        auto readableScreen = createReadableScreen(r);
-                        this->setCurrentScreen(*readableScreen);
-                        readableScreen->backCallback = [this, r, display, readableScreen, mainMenu,
-                                                        bibleMenu]() {
-                            display->clearDisplay();
-                            setCurrentScreen(*mainMenu);
-                            delete readableScreen;
-                        };
-                    }));
+                bibleMenu->addMenuItem(MenuItem(title, [this, r, createReadableScreen, display,
+                                                        mainMenu]() {
+                    auto readableScreen = createReadableScreen(r);
+                    this->setCurrentScreen(*readableScreen);
+                    readableScreen->backCallback = [this, r, display, readableScreen, mainMenu]() {
+                        display->clearDisplay();
+                        setCurrentScreen(*mainMenu);
+                        delete readableScreen;
+                    };
+                }));
             }
         }
 
