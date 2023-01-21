@@ -157,7 +157,7 @@ void MainMenuScreen::render(DisplaySystem &display) {
 
         topBarViews_.clear();
         topBarSelectionView_ = std::make_shared<BoxView>(display, 3);
-        batteryIconView_ = std::make_shared<IconView>(display, bolt_bits, bolt_width, bolt_height);
+        batteryIconView_ = std::make_shared<IconView>(display, boltBits, bolt_width, bolt_height);
         batteryTextView_ =
             std::make_shared<SingleLineTextView>(display, power_.getBatteryPercentageOnlyString());
 
@@ -167,9 +167,8 @@ void MainMenuScreen::render(DisplaySystem &display) {
         log_i("Menuscreen render (selected = %s)",
               subMenus_[currentSelection_]->getMenuName().c_str());
 
-        for (int i = 0; i < subMenus_.size(); i++) {
-            auto topBarView =
-                std::make_shared<SingleLineTextView>(display, subMenus_[i]->getMenuName());
+        for (auto &subMenu : subMenus_) {
+            auto topBarView = std::make_shared<SingleLineTextView>(display, subMenu->getMenuName());
             topBarViews_.push_back(topBarView);
         }
 
