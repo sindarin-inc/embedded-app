@@ -17,15 +17,7 @@
 class MainMenuScreen : public MenuScreen, public EinkView {
 public:
     MainMenuScreen(Power &power, DisplaySystem &display, MenuStyleFamily myStyle)
-        : MenuScreen(power, myStyle), EinkView(display) {
-#ifdef SWAP_ARTICLES_BOOKS
-        numArticleItems_ = 1;
-        MenuItem dummy("DUMMY", []() {});
-        articleItems_.push_back(dummy);
-#endif
-        upperLeftText_ = "--";
-        lowerRightText_ = "--";
-    };
+        : MenuScreen(power, myStyle), EinkView(display){};
 
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
@@ -47,28 +39,11 @@ protected:
 
     std::shared_ptr<IconView> batteryIconView_;
     std::shared_ptr<SingleLineTextView> batteryTextView_;
-    std::shared_ptr<SingleLineTextView> clockView_;
+
+    // For later :)
+    // std::shared_ptr<SingleLineTextView> clockView_;
 
     int currentSelection_ = 0;
-
-#ifdef SWAP_ARTICLES_BOOKS
-    // The menu items for long-form books come from the parent class. Since the Main Menu
-    // essentially keeps two lists, we need a second set of items for the articles.
-    // There is likely a more elegant way to do this.
-    int numArticleItems_ = 0;
-    std::vector<MenuItem> articleItems_;
-    int currArticleSelection_ = 0;
-    int currArticlePage_ = 0;
-
-    int numBookItems_ = 0;
-    std::vector<MenuItem> bookItems_;
-    int currBookSelection_ = 0;
-    int currBookPage_ = 0;
-
-    bool inBooksMode_ = true;
-
-    bool beforeFirstLoad_ = true;
-#endif
 };
 
 #endif // MAIN_MENU_SCREEN_H

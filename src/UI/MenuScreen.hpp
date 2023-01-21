@@ -45,7 +45,7 @@ protected:
     void drawArrowsAndSelections(DisplaySystem &display);
     bool firstLoad_ = true;
 
-    std::string upperLeftText_ = "Main Screen";
+    std::string upperLeftText_ = "Main Menu";
     std::string lowerRightText_ = "Select";
 
     std::string extraTextBelowMenu_ = "";

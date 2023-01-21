@@ -162,7 +162,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto booksMenu = new MenuScreen(this->power_, mainMenu->getMyStyle(), "Books");
 
-    // If there are no book and no articles, show the Sync Content item
+    // If there are no books, show the Sync Content item in the books tab.
     if (readables.size() == 0) {
         booksMenu->addMenuItem(
             MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
@@ -212,14 +212,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     SHOW_HEAP();
 
-    // Setup articles menu, soon to be its own "tab"
-    // if (articles.size()) {
-    //     mainMenu->addMenuItem(MenuItem("Articles", [this, mainMenu, articles, display,
-    //                                                 createReadableScreen]() {
     log_i("Loading %zu Pocket articles", articles.size());
 
     auto pocketMenu = new MenuScreen(this->power_, mainMenu->getMyStyle(), "Articles");
 
+    // If there are no articles, show the Sync Content item in the articles tab.
     if (articles.size() == 0) {
         pocketMenu->addMenuItem(
             MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
@@ -392,7 +389,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 
     settingsMenu->addMenuItem(MenuItem("System", [this, systemSettingsMenu]() {
-        log_d("Loading Reading Settings Menu");
+        log_d("Loading System Settings Menu");
         systemSettingsMenu->setFirstLoad();
         this->setCurrentScreen(*systemSettingsMenu);
     }));
@@ -643,11 +640,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         std::filesystem::remove("simprefs.ini");
         systemSettingsMenu->showTemporaryMessage(*display, "simprefs.ini deleted! Resetting...");
 #else
-            nvs_flash_erase();
-            localStore.clearArticlesFile(false);
-            localStore.clearReadablesFile(false);
-            log_w("NVS and FS cleared. Rebooting...");
-            debugMenu->showTemporaryMessage(*display, "NVS cleared! Resetting...");
+        nvs_flash_erase();
+        localStore.clearArticlesFile(false);
+        localStore.clearReadablesFile(false);
+        log_w("NVS and FS cleared. Rebooting...");
+        debugMenu->showTemporaryMessage(*display, "NVS cleared! Resetting...");
 #endif
         esp_restart();
     }));
@@ -863,11 +860,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     };
 
     mainMenu->addSubMenuScreen(settingsMenu);
-
-    // mainMenu->addMenuItem(MenuItem("Settings", [this, settingsMenu]() {
-    //     this->display_->clearDisplay();
-    //     setCurrentScreen(*settingsMenu);
-    // }));
 
     int inDemo = prefs_.demoMode.get().value();
 

@@ -20,13 +20,12 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto spacing = 5;
 
     auto insetRectTop = context.setSublayoutFrame(
-        {{inset, inset}, {size.width - 2 * inset, /*size.height*/ 20 - 2 * inset}},
+        {{inset, inset}, {size.width - 2 * inset, 20 - 2 * inset}},
         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignCenterHorizontal,
         [this](LayoutContext &context, Size size) -> Size {
             int x = 0;
             int y = 0;
             int viewCount = topBarViews_.size();
-            // int boxHeight = (size.height - (viewCount - 1) * spacing) / viewCount;
             int boxWidth = (size.width - (viewCount - 1) * spacing) / viewCount;
             Size boxSize = {boxWidth, size.height};
 
@@ -95,13 +94,13 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
             return {size.width, y};
         });
 
-    context.setViewFrame(
-        *clockView_, {{inset, size.height - 20}, {size.width - 2 * inset, 20 - 2 * inset}},
-        LayoutOptionsSizeToFit | LayoutOptionsAlignLeft | LayoutOptionsAlignBottom);
+    // Later :)
+    // context.setViewFrame(
+    //    *clockView_, {{inset, size.height - 20}, {size.width - 2 * inset, 20 - 2 * inset}},
+    //    LayoutOptionsSizeToFit | LayoutOptionsAlignLeft | LayoutOptionsAlignBottom);
 
     auto insetRectBottomRight = context.setSublayoutFrame(
-        {{inset - spacing * 2, size.height - 20},
-         {size.width - 2 * inset, /*size.height*/ 20 - 2 * inset}},
+        {{inset - spacing * 2, size.height - 20}, {size.width - 2 * inset, 20 - 2 * inset}},
         LayoutOptionsSizeToFit | LayoutOptionsAlignBottom | LayoutOptionsAlignRight,
         [this](LayoutContext &context, Size size) -> Size {
             int x = 0;
@@ -149,16 +148,6 @@ void MainMenuScreen::drawInRect(Rect rect) {
 // This largely mirrors the superclass implementation, but with enough
 // changes that we need to do our own thing here.
 void MainMenuScreen::render(DisplaySystem &display) {
-#ifdef SWAP_ARTICLES_BOOKS
-    if (beforeFirstLoad_) {
-        numBookItems_ = numMenuItems_;
-        bookItems_ = menuItems_;
-        currBookSelection_ = currSelection_;
-        currBookPage_ = currMenuPage_;
-        beforeFirstLoad_ = false;
-    }
-#endif
-
     if (!needsRerender) {
         return;
     }
@@ -177,7 +166,9 @@ void MainMenuScreen::render(DisplaySystem &display) {
         batteryIconView_ = std::make_shared<IconView>(display, bolt_bits, bolt_width, bolt_height);
         batteryTextView_ =
             std::make_shared<SingleLineTextView>(display, power_.getBatteryPercentageOnlyString());
-        clockView_ = std::make_shared<SingleLineTextView>(display, "3:33pm");
+
+        // For later :)
+        // clockView_ = std::make_shared<SingleLineTextView>(display, "3:33pm");
 
         log_i("Menuscreen render (selected = %s)",
               subMenus_[currentSelection_]->getMenuName().c_str());
@@ -280,63 +271,12 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
         // This will switch between the menus
         break;
 
-#ifdef SWAP_ARTICLES_BOOKS
-    case RemoteCommand::CHANNEL_MINUS:
-
-        // If we are going from Books to Articles in the menu, save off the current
-        // place for the books, and swap in the place for the articles.
-        // Otherwise, vice versa.
-        // Going to keep this logic in here and commented out
-        // in case we want to flip between books and articles
-        // in the future.
-        if (inBooksMode_) {
-            numBookItems_ = numMenuItems_;
-            bookItems_ = menuItems_;
-            currBookSelection_ = currSelection_;
-            currBookPage_ = currMenuPage_;
-
-            numMenuItems_ = numArticleItems_;
-            menuItems_ = articleItems_;
-            currSelection_ = currArticleSelection_;
-            currMenuPage_ = currArticlePage_;
-        } else {
-            numArticleItems_ = numMenuItems_;
-            articleItems_ = menuItems_;
-            currArticleSelection_ = currSelection_;
-            currArticlePage_ = currMenuPage_;
-
-            numMenuItems_ = numBookItems_;
-            menuItems_ = bookItems_;
-            currSelection_ = currBookSelection_;
-            currMenuPage_ = currBookPage_;
-        }
-        inBooksMode_ = !inBooksMode_;
-        firstLoad_ = true;
-
-        break;
-#endif
-
     case RemoteCommand::BACK:
     case RemoteCommand::CHANNEL_MINUS:
         currentSelection_--;
         currentSelection_ = currentSelection_ % topBarViews_.size();
         firstLoad_ = true;
         needsRerender = true;
-        //
-        // Settings are always the last item
-        // Eventually this will be a
-        // container screen to remove this awkward interaction
-        //
-        // oldCurr = currSelection_;
-        // currSelection_ = numMenuItems_ - 1;
-
-        // if (getCurrItem().callback != nullptr) {
-        //     auto fn = getCurrItem().callback;
-        // Make sure we return to the right place.
-        //    currSelection_ = oldCurr;
-        //    fn();
-        //}
-        // This will switch between the menus
         break;
     case RemoteCommand::ANIMATION:
         needsRerender = false;
