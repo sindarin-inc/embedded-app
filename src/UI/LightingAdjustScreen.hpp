@@ -2,7 +2,6 @@
 
 #include "Sensors/LightingController.hpp"
 #include "Storage/PreferencesStore.hpp"
-#include "UI/Bitmaps/Lightbulb.hpp"
 #include "UI/Components/ArrowView.hpp"
 #include "UI/Components/BoxView.hpp"
 #include "UI/Components/EinkView.hpp"

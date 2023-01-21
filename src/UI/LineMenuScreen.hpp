@@ -7,7 +7,6 @@
 #include "Misc/MenuStyle.hpp"
 #include "Models/Readable.hpp"
 #include "Storage/PreferencesStore.hpp"
-#include "UI/Bitmaps/Lightbulb.hpp"
 #include "UI/Components/BoxView.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/IconView.hpp"

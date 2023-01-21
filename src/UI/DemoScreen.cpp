@@ -5,8 +5,8 @@
 
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
-#include "UI/Bitmaps/BenIconHacking.hpp"
 #include "UI/Bitmaps/Logo.hpp"
+#include "UI/Bitmaps/Sol_Logo.hpp"
 #include "UI/Bitmaps/stone.hpp"
 #include "UI/Fonts/Tahoma10pt7b.h"
 #include "UI/Fonts/Tahoma20pt7b.h"

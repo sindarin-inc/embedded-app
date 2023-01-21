@@ -5,7 +5,7 @@
 
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
-#include "UI/Bitmaps/BenIconHacking.hpp"
+#include "UI/Bitmaps/Battery_Bolt.hpp"
 
 #if EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
