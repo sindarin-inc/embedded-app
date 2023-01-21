@@ -117,7 +117,7 @@ void VoltageLogUploadScreen::begin() {
         }
 
         log_d("Deleting voltage log");
-        fileSystem_.remove(Power::volatageLogPath());
+        fileSystem_.remove(Power::voltageLogPath());
 
         DispatchGetUiQueue()->dispatch([this]() {
             log_i("Voltage log upload complete");

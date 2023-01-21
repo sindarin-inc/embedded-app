@@ -7,6 +7,9 @@
 #include "Misc/StringUtil.hpp"
 #include "sindarin-debug.h"
 
+// Currently 1MB
+#define MAX_VOLTAGE_LOG_SIZE 1000000
+
 void Power::setup() {}
 
 void Power::loop() {
@@ -150,10 +153,16 @@ void Power::logVoltages(float lVoltage, float rVoltage) {
     std::string logString =
         StringFormat("%d,%d,%.2f,%.2f", bootCount, runTimeMs, lVoltage, rVoltage);
 
-    std::string path = Power::volatageLogPath();
+    std::string path = Power::voltageLogPath();
     File file = fileSystem_.open(path.c_str(), FILE_APPEND);
-    file.write((const uint8_t *)logString.c_str(), logString.length());
-    file.write('\n');
-    file.flush();
-    file.close();
+    if (file.size() < MAX_VOLTAGE_LOG_SIZE) {
+        file.write((const uint8_t *)logString.c_str(), logString.length());
+        file.write('\n');
+        file.flush();
+        file.close();
+    } else {
+        log_e("Voltage log file is too large. Deleting.");
+        file.close();
+        fileSystem_.remove(path.c_str());
+    }
 }

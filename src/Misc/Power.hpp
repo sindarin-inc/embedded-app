@@ -31,7 +31,7 @@ public:
 
     auto getDepleted() -> bool;
 
-    static auto volatageLogPath() -> const char * { return "/logs/voltagelog.txt"; }
+    static auto voltageLogPath() -> const char * { return "/logs/voltagelog.txt"; }
 
 protected:
     auto average(const std::array<float, BATTERY_MEASUREMENTS_COUNT> &array, int count) -> float;

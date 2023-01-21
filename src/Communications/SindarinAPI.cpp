@@ -195,7 +195,7 @@ auto SindarinAPI::downloadReadable(const Readable &readable, FileSystem &fileSys
 auto SindarinAPI::uploadAndResetVoltageLog(FileSystem &fileSystem) -> int {
     HTTPClient httpClient;
 
-    auto localPath = Power::volatageLogPath();
+    auto localPath = Power::voltageLogPath();
     if (!fileSystem.exists(localPath)) {
         log_w("Voltage log file %s does not exist", localPath);
         return false;
