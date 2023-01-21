@@ -196,8 +196,8 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
                     newToken.height = display_.getTextHeight("--");
                     newToken.place = plcInBuffer - 1;
                     newToken.streamPlace = placeInFile + plcInBuffer - 1;
-                    currTokenBuffer_[plcInTokenBuffer] = newToken;
-                    currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
+                    currTokenBuffer_[plcInTokenBuffer - 1] = newToken;
+                    currTokenBuffer_[plcInTokenBuffer] = eofToken;
                     // Specifically don't increment the token buffer
                     // because the previous hyphen already did that
                     break;
