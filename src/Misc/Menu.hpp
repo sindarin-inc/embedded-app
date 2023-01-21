@@ -12,10 +12,15 @@ class MenuItem {
 public:
     MenuItem() = default;
     MenuItem(std::string title) : title(std::move(title)){};
+    MenuItem(std::string title, std::string subtitle)
+        : title(std::move(title)), subtitle(subtitle){};
     MenuItem(std::string title, std::function<void()> callback)
         : title(std::move(title)), callback(std::move(callback)){};
+    MenuItem(std::string title, std::string subtitle, std::function<void()> callback)
+        : title(std::move(title)), subtitle(subtitle), callback(std::move(callback)) {}
 
     std::string title;
+    std::string subtitle;
     // Called when this menu item is selected
     std::function<void()> callback;
 };

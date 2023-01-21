@@ -44,7 +44,7 @@ public:
     auto readables() -> std::vector<Readable> & { return readables_; };
     auto articles() -> std::vector<Readable> & { return articles_; };
     void addReadable(std::vector<Readable> &readables, const Readable &readable);
-    void removeReadable(std::vector<Readable> &readables, const Readable &readable);
+    void removeReadable(std::vector<Readable> &readables, const std::string &readable);
     auto readablesSince() -> std::string;
     auto articlesSince() -> std::string;
 

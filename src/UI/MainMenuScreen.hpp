@@ -32,13 +32,15 @@ public:
 
     void render(DisplaySystem &display) override;
 
-    void addSubMenuScreen(const MenuScreen &newSubScreen);
+    void addSubMenuScreen(MenuScreen *newSubScreen);
 
 protected:
     void processCommand(RemoteCommand command) override;
 
-    std::vector<MenuScreen> subMenus_;
-    int numSubMenus_ = 0;
+    std::vector<MenuScreen *> subMenus_;
+
+    std::vector<std::shared_ptr<MenuItemView>> menuItemViews_;
+    std::vector<std::shared_ptr<BoxView>> menuPageViews_;
 
     std::vector<std::shared_ptr<SingleLineTextView>> topBarViews_;
     std::shared_ptr<BoxView> topBarSelectionView_;

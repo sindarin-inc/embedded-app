@@ -36,19 +36,19 @@ public:
         mainMenu.arrowTextSpacing = 5;
         mainMenu.xOffsetForList = 15;
         mainMenu.yOffsetForList = 60;
-        mainMenu.numberOfItemsPerPage = 5;
+        mainMenu.numberOfItemsPerPage = 4;
 
         settingsMenu.itemFont = &TAHOMA_REGULAR_FONT5PT7B;
         settingsMenu.navigationFont = &TAHOMA_REGULAR_FONT5PT7B;
 
-        settingsMenu.xOffsetForArrows = 45;
-        settingsMenu.yOffsetForArrows = 45;
+        settingsMenu.xOffsetForArrows = 25;
+        settingsMenu.yOffsetForArrows = 15;
         settingsMenu.arrowWidth = 5;
         settingsMenu.arrowHeight = 10;
         settingsMenu.arrowTextSpacing = 5;
-        settingsMenu.xOffsetForList = 20;
-        settingsMenu.yOffsetForList = 40;
-        settingsMenu.numberOfItemsPerPage = 8;
+        settingsMenu.xOffsetForList = 30;
+        settingsMenu.yOffsetForList = 25;
+        settingsMenu.numberOfItemsPerPage = 11;
 
         currentMenu = mainMenu;
     }

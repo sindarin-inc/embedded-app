@@ -15,7 +15,8 @@
 class MenuScreen : public Screen, public Menu {
 
 public:
-    MenuScreen(Power &power, MenuStyleFamily myStyle) : Menu(myStyle), power_(power) {
+    MenuScreen(Power &power, MenuStyleFamily myStyle, std::string menuName = "Default")
+        : Menu(myStyle), power_(power), menuName_(menuName) {
         numMenuItems_ = 0;
     };
 
@@ -34,14 +35,22 @@ public:
     void showTemporaryMessage(DisplaySystem &display, const std::string &message,
                               int duration = 2000, bool rerenderAfter = true);
 
+    void populateMenuItems(std::vector<MenuItem> &menuItems);
+
+    auto getMenuName() -> std::string { return menuName_; }
+
+    auto getFirstLoad() -> bool { return firstLoad_; }
+
 protected:
     void drawArrowsAndSelections(DisplaySystem &display);
     bool firstLoad_ = true;
 
-    std::string upperLeftText_ = "Back";
+    std::string upperLeftText_ = "Main Screen";
     std::string lowerRightText_ = "Select";
 
     std::string extraTextBelowMenu_ = "";
+
+    std::string menuName_ = "Default";
 
     Power &power_;
 };

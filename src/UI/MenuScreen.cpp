@@ -7,6 +7,15 @@
 
 #define MAX_WIDTH 150
 
+void MenuScreen::populateMenuItems(std::vector<MenuItem> &menuItems) {
+    for (int i = currMenuPage_ * myStyle_.numberOfItemsPerPage;
+         (i < (currMenuPage_ * myStyle_.numberOfItemsPerPage + myStyle_.numberOfItemsPerPage)) &&
+         (i < numMenuItems_);
+         i++) {
+        menuItems.push_back(menuItems_[i]);
+    }
+}
+
 void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool withLastItem) {
     display.setFont(myStyle_.itemFont);
     int iteratorEnd = (withLastItem) ? numMenuItems_ : numMenuItems_ - 1;
@@ -47,7 +56,8 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
     int oldTextHeight = display.getTextHeight();
     display.setFont(display.style.getFontFamily().readableFont);
     display.drawSingleLineOfText(extraTextBelowMenu_.c_str(), myStyle_.xOffsetForList + 10,
-                                 (1 + myStyle_.numberOfItemsPerPage) * oldTextHeight + 50);
+                                 myStyle_.yOffsetForList +
+                                     (1 + myStyle_.numberOfItemsPerPage) * oldTextHeight + 20);
 }
 
 void MenuScreen::drawArrowsAndSelections(DisplaySystem &display) {
@@ -136,12 +146,16 @@ void MenuScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::PREV:
         if (prevSelection()) {
             firstLoad_ = true;
+        } else {
+            firstLoad_ = false;
         }
         needsRerender = true;
         break;
     case RemoteCommand::NEXT:
         if (nextSelection()) {
             firstLoad_ = true;
+        } else {
+            firstLoad_ = false;
         }
         needsRerender = true;
         break;

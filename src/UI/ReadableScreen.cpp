@@ -222,6 +222,8 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
+    prefs_.lastReadableId.set(readable_.uuid);
+
     display.setFont(display.style.getFontFamily().readableFont);
 
     // If it's the first read of the book, show the help screen.
@@ -471,6 +473,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::PREV:
+        prefs_.lastReadableId.remove();
         if (!prefs_.cesMode.get().value()) {
             if (pageSpeed_ != 0) {
                 xTimerStop(DisplaySystem::animationTimer, 0);
