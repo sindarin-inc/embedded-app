@@ -16,7 +16,7 @@ class MenuScreen : public Screen, public Menu {
 
 public:
     MenuScreen(Power &power, MenuStyleFamily myStyle, std::string menuName = "Default")
-        : Menu(myStyle), power_(power), menuName_(menuName) {
+        : Menu(myStyle), menuName_(menuName), power_(power) {
         numMenuItems_ = 0;
     };
 

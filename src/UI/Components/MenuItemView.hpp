@@ -41,14 +41,14 @@ public:
                                       {size.width - indicatorWidthPlus - 15, size.height}},
                                      LayoutOptionsSizeToFitVertical |
                                          LayoutOptionsAlignCenterVertical | LayoutOptionsAlignLeft);
-            auto indicatorRect = context.setViewFrame(
-                indicator_, {{x, y + indicatorHeightPadding + 2},
-                             {indicatorWidth, textRect.size.height + subtextRect.size.height +
-                                                  2 * indicatorHeightPadding}});
+            context.setViewFrame(indicator_,
+                                 {{x, y + indicatorHeightPadding + 2},
+                                  {indicatorWidth, textRect.size.height + subtextRect.size.height +
+                                                       2 * indicatorHeightPadding}});
             subtextRectHeight = subtextRect.size.height;
 
         } else {
-            auto indicatorRect = context.setViewFrame(
+            context.setViewFrame(
                 indicator_, {{x, y - indicatorHeightPadding},
                              {indicatorWidth, textRect.size.height + 2 * indicatorHeightPadding}});
         }

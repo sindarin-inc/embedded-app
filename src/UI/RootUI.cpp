@@ -644,7 +644,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         localStore.clearArticlesFile(false);
         localStore.clearReadablesFile(false);
         log_w("NVS and FS cleared. Rebooting...");
-        debugMenu->showTemporaryMessage(*display, "NVS cleared! Resetting...");
+        systemSettingsMenu->showTemporaryMessage(*display, "NVS cleared! Resetting...");
 #endif
         esp_restart();
     }));

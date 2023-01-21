@@ -32,10 +32,9 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
             int place = 0;
 
             for (auto &view : topBarViews_) {
-                auto viewFrame = context.setViewFrame(*view, {{x, y}, boxSize},
-                                                      LayoutOptionsSizeToFit |
-                                                          LayoutOptionsAlignCenterHorizontal |
-                                                          LayoutOptionsAlignCenterVertical);
+                context.setViewFrame(*view, {{x, y}, boxSize},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal |
+                                         LayoutOptionsAlignCenterVertical);
                 if (place == currentSelection_) {
                     context.setViewFrame(*topBarSelectionView_, {{x, y}, boxSize},
                                          LayoutOptionsSizeToFit |
@@ -52,7 +51,7 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto mainInset = 2;
     const auto mainSpacing = 10;
 
-    auto insetRect = context.setSublayoutFrame(
+    context.setSublayoutFrame(
         // The -20 is to leave room for the paging circles at the right hand side of the view
         {{mainInset, mainInset}, {size.width - 2 * mainInset - 20, size.height - 2 * mainInset}},
         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical,
@@ -73,17 +72,13 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
             return {size.width, y};
         });
 
-    auto insetPagingRect = context.setSublayoutFrame(
+    context.setSublayoutFrame(
         // The -5 is to leave room for the paging circles at the right hand side of the view
         {{size.width - mainInset - 5, mainInset}, {10, size.height - 2 * mainInset}},
         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical | LayoutOptionsAlignRight,
         [this](LayoutContext &context, Size size) -> Size {
             int x = 0;
             int y = 0;
-            int numPages = subMenus_[currentSelection_]->getNumItems() /
-                               subMenus_[currentSelection_]->getMyStyle().numberOfItemsPerPage +
-                           1;
-
             Size boxSize = {5, 5};
             for (auto &view : menuPageViews_) {
                 auto viewFrame = context.setViewFrame(
@@ -99,12 +94,11 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     //    *clockView_, {{inset, size.height - 20}, {size.width - 2 * inset, 20 - 2 * inset}},
     //    LayoutOptionsSizeToFit | LayoutOptionsAlignLeft | LayoutOptionsAlignBottom);
 
-    auto insetRectBottomRight = context.setSublayoutFrame(
+    context.setSublayoutFrame(
         {{inset - spacing * 2, size.height - 20}, {size.width - 2 * inset, 20 - 2 * inset}},
         LayoutOptionsSizeToFit | LayoutOptionsAlignBottom | LayoutOptionsAlignRight,
         [this](LayoutContext &context, Size size) -> Size {
             int x = 0;
-            int y = 0;
 
             context.setViewFrame(*batteryIconView_, {{x, size.height - 20}, {size.width, 20}},
                                  LayoutOptionsSizeToFit | LayoutOptionsAlignRight |
@@ -241,8 +235,6 @@ void MainMenuScreen::render(DisplaySystem &display) {
 }
 
 void MainMenuScreen::processCommand(RemoteCommand command) {
-    int oldCurr = 0;
-
     switch (command) {
     case RemoteCommand::PREV:
         subMenus_[currentSelection_]->processCommand(command);
