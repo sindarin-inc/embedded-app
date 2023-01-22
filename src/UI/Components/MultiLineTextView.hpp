@@ -11,7 +11,7 @@ class TextSplitter {
 public:
     TextSplitter(DisplaySystem &display, int width) : display_(display), width_(width) {}
 
-    std::vector<std::string> split(const std::string &text) {
+    auto split(const std::string &text) -> std::vector<std::string> {
         std::vector<std::string> lines;
         std::string line;
         std::string word;
