@@ -94,8 +94,19 @@ public:
         const GFXfont *oldFont = display_.getFont();
         display_.setFont(font_);
         if (splitLines_.size() > maxLines_) {
-            splitLines_[maxLines_ - 1] =
-                splitLines_[maxLines_ - 1].substr(0, splitLines_[maxLines_ - 1].size() - 4) + "...";
+            int i = 1;
+            while ((splitLines_[maxLines_ - 1][splitLines_[maxLines_ - 1].size() - i] != ' ') &&
+                   (splitLines_[maxLines_ - 1][splitLines_[maxLines_ - 1].size() - i] != '\t') &&
+                   (splitLines_[maxLines_ - 1][splitLines_[maxLines_ - 1].size() - i] != '-')) {
+                i++;
+            }
+            if (i < splitLines_.size() - 1) {
+                splitLines_[maxLines_ - 1] =
+                    splitLines_[maxLines_ - 1].substr(0, splitLines_[maxLines_ - 1].size() - i) +
+                    "...";
+            } else {
+                log_i("Didn't find a good delimeter for the ... addition");
+            }
         }
         for (int i = 0; i < maxLines_ && i < splitLines_.size(); i++) {
 
