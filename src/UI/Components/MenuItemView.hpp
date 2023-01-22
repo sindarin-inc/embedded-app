@@ -5,6 +5,7 @@
 #include "EinkView.hpp"
 #include "Misc/Style.hpp"
 #include "UI/Components/BoxView.hpp"
+#include "UI/Components/MultiLineTextView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
 #include "UI/MenuScreen.hpp"
 
@@ -12,13 +13,15 @@ class MenuItemView : public EinkView {
 public:
     // Always use the smallest font for subtitles
     MenuItemView(DisplaySystem &display, MenuItem &menuItem,
-                 const GFXfont *font = &TAHOMA_REGULAR_FONT5PT7B)
-        : EinkView(display), textView_(display, std::move(menuItem.title), font),
+                 const GFXfont *font = &TAHOMA_REGULAR_FONT5PT7B, bool multiLine = false)
+        : EinkView(display), textView_(display, menuItem.title, font),
           subtextView_(display, menuItem.subtitle, &TAHOMA_REGULAR_FONT5PT7B, true),
+          textMultiView_(display, menuItem.title, 2, 0, font), multiLine_(multiLine),
           indicator_(display, 4), menuItem_(menuItem) {
         if (!menuItem.subtitle.empty()) {
             hasSubtext_ = true;
         }
+        log_i("initializing menu item view with title: %s", menuItem.title.c_str());
     }
     ~MenuItemView() override = default;
 
@@ -29,9 +32,20 @@ public:
 
         auto indicatorWidthPlus = indicatorWidth + 8;
         auto indicatorHeightPadding = 3;
-        auto textRect = context.setViewFrame(
-            textView_, {{indicatorWidthPlus, y}, {size.width - indicatorWidthPlus, size.height}},
-            LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
+
+        Rect textRect;
+
+        if (multiLine_) {
+            textRect = context.setViewFrame(
+                textMultiView_,
+                {{indicatorWidthPlus, y}, {size.width - indicatorWidthPlus, size.height}},
+                LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
+        } else {
+            textRect = context.setViewFrame(
+                textView_,
+                {{indicatorWidthPlus, y}, {size.width - indicatorWidthPlus, size.height}},
+                LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
+        }
 
         int subtextRectHeight = 0;
         if (hasSubtext_) {
@@ -66,7 +80,11 @@ public:
         }
 
         indicator_.draw();
-        textView_.draw();
+        if (multiLine_) {
+            textMultiView_.draw();
+        } else {
+            textView_.draw();
+        }
         if (hasSubtext_) {
             subtextView_.draw();
         }
@@ -80,6 +98,8 @@ public:
 protected:
     SingleLineTextView textView_;
     SingleLineTextView subtextView_;
+    MultiLineTextView textMultiView_;
+    bool multiLine_ = false;
     BoxView indicator_;
     MenuItem &menuItem_;
     bool selected_ = false;

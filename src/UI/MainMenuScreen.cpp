@@ -185,7 +185,9 @@ void MainMenuScreen::render(DisplaySystem &display) {
                 ((subMenus_[currentSelection_]->getMenuName().compare("Books") == 0) ||
                  (subMenus_[currentSelection_]->getMenuName().compare("Bible") == 0))
                     ? myStyle_.itemFont
-                    : myStyle_.navigationFont);
+                    : myStyle_.navigationFont,
+                (subMenus_[currentSelection_]->getMenuName().compare("Articles") == 0) ? true
+                                                                                       : false);
             menuItemViews_.push_back(menuItemView);
         }
 
