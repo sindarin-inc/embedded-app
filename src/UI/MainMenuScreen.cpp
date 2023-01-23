@@ -261,7 +261,7 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
 
     case RemoteCommand::BACK:
     case RemoteCommand::CHANNEL_MINUS:
-        currentSelection_ = currentSelection_ + topBaryViews.size() - 1;
+        currentSelection_ = currentSelection_ + topBarViews.size() - 1;
         currentSelection_ = currentSelection_ % topBarViews_.size();
         firstLoad_ = true;
         needsRerender = true;
