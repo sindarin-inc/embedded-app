@@ -147,7 +147,7 @@ void MainMenuScreen::render(DisplaySystem &display) {
     }
 
     setNeedsLayout();
-    // Givnig the top bar a fixed height of 20 pixels and the entire width of the display.
+
     setFrame({{0, 0}, {display.width(), display.height()}});
 
     // On the first load, we want to only render the items in the menu because we are going
@@ -228,7 +228,6 @@ void MainMenuScreen::render(DisplaySystem &display) {
 
     draw();
 
-    // drawArrowsAndSelections(display);
     display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
 
     needsRerender = false;
@@ -243,24 +242,22 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
         firstLoad_ = subMenus_[currentSelection_]->getFirstLoad();
         needsRerender = true;
         break;
-
     // Long press down on the TT should count as enter since we don't have the
     // 5th button
     case RemoteCommand::ENTER:
     case RemoteCommand::STOP:
         subMenus_[currentSelection_]->processCommand(command);
         break;
-
     case RemoteCommand::CHANNEL_PLUS:
+        // This will switch between the menus
         currentSelection_++;
         currentSelection_ = currentSelection_ % topBarViews_.size();
         firstLoad_ = true;
         needsRerender = true;
-        // This will switch between the menus
         break;
-
     case RemoteCommand::BACK:
     case RemoteCommand::CHANNEL_MINUS:
+        // This will switch between the menus
         currentSelection_ = currentSelection_ + topBarViews_.size() - 1;
         currentSelection_ = currentSelection_ % topBarViews_.size();
         firstLoad_ = true;
