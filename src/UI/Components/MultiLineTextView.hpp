@@ -1,54 +1,12 @@
 #pragma once
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
 #include "EinkView.hpp"
 #include "Misc/Style.hpp"
 #include "SingleLineTextView.hpp"
-
-class TextSplitter {
-public:
-    TextSplitter(DisplaySystem &display, int width) : display_(display), width_(width) {}
-
-    auto split(const std::string &text) -> std::vector<std::string> {
-        std::vector<std::string> lines;
-        std::string line;
-        std::string word;
-        for (char c : text) {
-            if (c == ' ' || c == '\n' || c == '\t' || c == '\r' || c == '-') {
-                if (display_.getTextWidth(line.c_str()) + display_.getTextWidth(word.c_str()) >
-                    width_) {
-                    lines.push_back(line);
-                    line = "";
-                }
-                line += word + c;
-                word = "";
-            } else {
-                word += c;
-            }
-        }
-
-        // Account for the last word
-        if (!word.empty()) {
-            if (display_.getTextWidth(line.c_str()) + display_.getTextWidth(word.c_str()) >
-                width_) {
-                lines.push_back(line);
-                line = "";
-            }
-            line += word;
-        }
-
-        if (!line.empty()) {
-            lines.push_back(line);
-        }
-        return lines;
-    }
-
-private:
-    DisplaySystem &display_;
-    int width_;
-};
 
 // A view that draws multiple lines of text
 class MultiLineTextView : public EinkView {
@@ -65,9 +23,41 @@ public:
     }
     ~MultiLineTextView() override = default;
 
+    auto splitMultiLine(DisplaySystem &display, int width, const std::string &text)
+        -> std::vector<std::string> {
+        std::vector<std::string> lines;
+        std::string line;
+        std::string word;
+        for (char c : text) {
+            if (c == ' ' || c == '\n' || c == '\t' || c == '\r' || c == '-') {
+                if (display.getTextWidth(line.c_str()) + display.getTextWidth(word.c_str()) >
+                    width) {
+                    lines.push_back(line);
+                    line = "";
+                }
+                line += word + c;
+                word = "";
+            } else {
+                word += c;
+            }
+        }
+
+        // Account for the last word
+        if (!word.empty()) {
+            if (display.getTextWidth(line.c_str()) + display.getTextWidth(word.c_str()) > width) {
+                lines.push_back(line);
+                line = "";
+            }
+            line += word;
+        }
+
+        if (!line.empty()) {
+            lines.push_back(line);
+        }
+        return lines;
+    }
     auto layout(LayoutContext &context, Size size) -> Size override {
         uint16_t w, h;
-        TextSplitter splitter(display_, size.width);
 
         // Leave the display font the way we found it.
         // Probably not ideal, but for now it'll have to do.
@@ -75,17 +65,13 @@ public:
         display_.setFont(font_);
         display_.getTextBounds(text_.c_str(), &w, &h);
 
-        splitLines_ = splitter.split(text_);
-        int i;
+        splitLines_ = splitMultiLine(display_, size.width, text_);
 
-        for (i = 0; i < maxLines_ && i < splitLines_.size(); i++) {
-            context.setViewFrame(*new SingleLineTextView(display_, splitLines_[i], font_),
-                                 {{0, i * (display_.getFont()->yAdvance + spacingOffset_)}, size},
-                                 LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
-        }
+        int lineCount = std::min((size_t)maxLines_, splitLines_.size());
+        int height = lineCount * display_.getFont()->yAdvance + (lineCount - 1) * spacingOffset_;
 
         display_.setFont(oldFont);
-        return {size.width, i * (display_.getFont()->yAdvance + spacingOffset_) - spacingOffset_};
+        return {size.width, height};
     }
 
     void drawInRect(Rect rect) override {
@@ -109,10 +95,11 @@ public:
             }
         }
         for (int i = 0; i < maxLines_ && i < splitLines_.size(); i++) {
-
-            display_.drawSingleLineOfText(splitLines_[i], rect.origin.x,
-                                          rect.origin.y +
-                                              i * (display_.getFont()->yAdvance + spacingOffset_));
+            // The plus 1 in the y is because we know what drawSingleLineOfText will do. It's
+            // not ideal, but it works.
+            display_.drawSingleLineOfText(
+                splitLines_[i], rect.origin.x,
+                rect.origin.y + i * (display_.getFont()->yAdvance + spacingOffset_) - 1);
         }
         display_.setFont(oldFont);
     }

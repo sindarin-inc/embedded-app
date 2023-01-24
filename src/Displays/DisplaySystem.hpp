@@ -51,10 +51,12 @@ public:
 
     int32_t defaultXPadding = 25;
     int32_t defaultYPadding = 5;
+    int32_t defaultScreenWidth = 255;
+    int32_t defaultScreenHeight = 255;
 
     DisplayRect defaultBoundingBox = {defaultXPadding, defaultYPadding,
-                                      255 - (uint32_t)defaultXPadding * 2,
-                                      255 - (uint32_t)defaultYPadding * 2};
+                                      defaultScreenWidth - (uint32_t)defaultXPadding * 2,
+                                      defaultScreenHeight - (uint32_t)defaultYPadding * 2};
 
     Style style;
 

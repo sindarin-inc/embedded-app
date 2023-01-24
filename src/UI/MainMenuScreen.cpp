@@ -5,7 +5,7 @@
 
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
-#include "UI/Bitmaps/Battery_Bolt.hpp"
+
 
 #if EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
@@ -33,13 +33,10 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
 
             for (auto &view : topBarViews_) {
                 context.setViewFrame(*view, {{x, y}, boxSize},
-                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal |
-                                         LayoutOptionsAlignCenterVertical);
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
                 if (place == currentSelection_) {
-                    context.setViewFrame(*topBarSelectionView_, {{x, y}, boxSize},
-                                         LayoutOptionsSizeToFit |
-                                             LayoutOptionsAlignCenterHorizontal |
-                                             LayoutOptionsAlignCenterVertical);
+                    context.setViewFrame(topBarSelectionView_, {{x, y}, boxSize},
+                                         LayoutOptionsAlignCenter);
                 }
                 x += boxWidth + spacing;
                 place++;
@@ -100,7 +97,7 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
         [this](LayoutContext &context, Size size) -> Size {
             int x = 0;
 
-            context.setViewFrame(*batteryIconView_, {{x, size.height - 20}, {size.width, 20}},
+            context.setViewFrame(batteryIconView_, {{x, size.height - 20}, {size.width, 20}},
                                  LayoutOptionsSizeToFit | LayoutOptionsAlignRight |
                                      LayoutOptionsAlignBottom);
 
@@ -112,11 +109,10 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
             return {x, size.height};
         });
 
-    return {size.width, insetRectTop.size.height + 2 * inset};
+    return size;
 };
 
 void MainMenuScreen::drawInRect(Rect rect) {
-
     for (auto &view : topBarViews_) {
         (*view).draw();
     }
@@ -131,8 +127,8 @@ void MainMenuScreen::drawInRect(Rect rect) {
         }
     }
 
-    topBarSelectionView_->draw();
-    batteryIconView_->draw();
+    topBarSelectionView_.draw();
+    batteryIconView_.draw();
     batteryTextView_->draw();
 
     // For later :)
@@ -156,8 +152,6 @@ void MainMenuScreen::render(DisplaySystem &display) {
     if (firstLoad_) {
 
         topBarViews_.clear();
-        topBarSelectionView_ = std::make_shared<BoxView>(display, 3);
-        batteryIconView_ = std::make_shared<IconView>(display, boltBits, bolt_width, bolt_height);
         batteryTextView_ =
             std::make_shared<SingleLineTextView>(display, power_.getBatteryPercentageOnlyString());
 

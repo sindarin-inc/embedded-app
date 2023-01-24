@@ -4,6 +4,7 @@
 #include "Misc/MenuStyle.hpp"
 #include "Misc/Power.hpp"
 #include "Renderers/Renderer.hpp"
+#include "UI/Bitmaps/Battery_Bolt.hpp"
 #include "UI/Components/BoxView.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/IconView.hpp"
@@ -17,7 +18,8 @@
 class MainMenuScreen : public MenuScreen, public EinkView {
 public:
     MainMenuScreen(Power &power, DisplaySystem &display, MenuStyleFamily myStyle)
-        : MenuScreen(power, myStyle), EinkView(display){};
+        : MenuScreen(power, myStyle), EinkView(display), topBarSelectionView_(display, 3),
+          batteryIconView_(display, boltBits, bolt_width, bolt_height){};
 
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
@@ -33,12 +35,11 @@ protected:
 
     std::vector<std::shared_ptr<MenuItemView>> menuItemViews_;
     std::vector<std::shared_ptr<BoxView>> menuPageViews_;
-
     std::vector<std::shared_ptr<SingleLineTextView>> topBarViews_;
-    std::shared_ptr<BoxView> topBarSelectionView_;
-
-    std::shared_ptr<IconView> batteryIconView_;
     std::shared_ptr<SingleLineTextView> batteryTextView_;
+
+    BoxView topBarSelectionView_;
+    IconView batteryIconView_;
 
     // For later :)
     // std::shared_ptr<SingleLineTextView> clockView_;
