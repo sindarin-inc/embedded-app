@@ -91,21 +91,17 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     //    LayoutOptionsSizeToFit | LayoutOptionsAlignLeft | LayoutOptionsAlignBottom);
 
     context.setSublayoutFrame(
-        {{inset - spacing * 2, size.height - 20}, {size.width - 2 * inset, 20 - 2 * inset}},
-        LayoutOptionsSizeToFit | LayoutOptionsAlignBottom | LayoutOptionsAlignRight,
+        {{0, 0}, size}, LayoutOptionsSizeToFit | LayoutOptionsAlignBottom | LayoutOptionsAlignRight,
         [this](LayoutContext &context, Size size) -> Size {
             int x = 0;
-
-            context.setViewFrame(batteryIconView_, {{x, size.height - 20}, {size.width, 20}},
-                                 LayoutOptionsSizeToFit | LayoutOptionsAlignRight |
-                                     LayoutOptionsAlignBottom);
-
-            x += 24;
-            context.setViewFrame(*batteryTextView_, {{x, size.height - 20}, {size.width, 20}},
-                                 LayoutOptionsSizeToFit | LayoutOptionsAlignRight |
-                                     LayoutOptionsAlignBottom);
-
-            return {x, size.height};
+            int y = 0;
+            auto iconRect = context.setViewFrame(
+                batteryIconView_, {{x, y}, {size.width, size.height}}, LayoutOptionsSizeToFit);
+            x += iconRect.size.width + 10;
+            auto textRect = context.setViewFrame(
+                *batteryTextView_, {{x, y}, {size.width, size.height}}, LayoutOptionsSizeToFit);
+            x += textRect.size.width;
+            return {x, std::max(iconRect.size.height, textRect.size.height)};
         });
 
     return size;
