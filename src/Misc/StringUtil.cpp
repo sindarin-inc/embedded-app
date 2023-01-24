@@ -37,7 +37,7 @@ auto SafeSnprintf(char *str, size_t size, const char *format, ...) // NOLINT(cer
     va_end(args);
 
     // check if entire string was written
-    if (res >= 0 && res < sizeof(str)) {
+    if (res >= 0 && res < size) {
         return true;
     }
 
