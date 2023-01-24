@@ -128,6 +128,11 @@ protected:
     // global-coordinatine-space frame for this layout
     std::optional<LayoutContext *> parentLayout_;
 
+    // Layouts are counted by the order of their invocation.
+    // WARNING: Sublayouts should always get called and get called in the same order inside layout
+    // lambdas.
+    int sublayoutIndex_ = 0;
+
     // Collection of inline sublayouts. Only used when the layout lambda creates a sublayout.
-    std::map<const LayoutLambda *, std::unique_ptr<LayoutContext>> sublayouts_;
+    std::map<int, std::shared_ptr<LayoutContext>> sublayouts_;
 };

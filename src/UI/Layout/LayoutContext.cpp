@@ -29,11 +29,13 @@ auto LayoutContext::setViewSizeInRect(View &view, const Size &size, const Rect &
 auto LayoutContext::setSublayoutSizeInRect(const Size &size, const Rect &inRect, int options,
                                            const LayoutLambda &layout) -> Rect {
     // Create a new layout context for this sublayout if one doesn't exist already
-    auto it = sublayouts_.find(&layout);
+    auto it = sublayouts_.find(sublayoutIndex_);
     if (it == sublayouts_.end()) {
-        sublayouts_.emplace(&layout, std::make_unique<LayoutContext>(layout));
+        sublayouts_.emplace(sublayoutIndex_, std::make_shared<LayoutContext>(layout));
     }
-    auto sublayoutContext = sublayouts_[&layout].get();
+    auto sublayoutContext = sublayouts_[sublayoutIndex_].get();
+
+    sublayoutIndex_++;
 
     Rect frame = setLayoutSizeInRect(*sublayoutContext, size, inRect, options);
     // Since there's no `draw` method for a sublayout (which is where we'd normally call
@@ -52,6 +54,7 @@ auto LayoutContext::layoutIfNeeded(const Size &size, bool sizing) -> Size {
 
     sizing_ = sizing;
     cachedSize_ = size;
+    sublayoutIndex_ = 0;
     auto layoutSize = layout_(*this, size);
     cachedLayoutSize_ = layoutSize;
     if (!sizing_) {
