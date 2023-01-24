@@ -6,7 +6,6 @@
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
 
-
 #if EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
 #endif
