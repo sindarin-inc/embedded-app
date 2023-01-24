@@ -81,7 +81,7 @@ void StopFreeRtos() {
     std::cerr << "Stopped FreeRTOS scheduler" << std::endl;
 }
 
-void WaitForDraw(long timeoutSeconds) {
+auto WaitForDraw(long timeoutSeconds) -> bool {
     struct timespec startTime;
     clock_gettime(CLOCK_MONOTONIC, &startTime);
 
@@ -90,13 +90,15 @@ void WaitForDraw(long timeoutSeconds) {
     while (FakeEinkET013TT1RenderQueue == nullptr ||
            xQueueReceiveFromISR(FakeEinkET013TT1RenderQueue, &out, nullptr) == pdFALSE) {
         if (elapsedTime > timeoutSeconds) {
-            FAIL("Timed out waiting for draw");
+            UNSCOPED_INFO("Timed out waiting for draw");
+            return false;
         }
         usleep(1000);
         struct timespec endTime;
         clock_gettime(CLOCK_MONOTONIC, &endTime); // get current time
         elapsedTime = endTime.tv_sec - startTime.tv_sec;
     }
+    return true;
 }
 
 void SendRemoteCommand(RemoteCommand command) {

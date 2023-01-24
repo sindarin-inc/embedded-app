@@ -10,8 +10,8 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
     SetupFileSystemMock("TestData");
 
     // First screen renders twice once with a full refresh and once with a AU4
-    WaitForDraw();
-    WaitForDraw();
+    WAIT_FOR_DRAW();
+    WAIT_FOR_DRAW();
 
     ASSERT_VIEW_UNCHANGED("FirstScreen");
 
@@ -21,57 +21,57 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
     SECTION("Render a bunch of views") {
         // Send a remote command for left (for Settings)
         SendRemoteCommand(CHANNEL_MINUS);
-        WaitForDraw();
-        WaitForDraw();
+        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW();
 
         ASSERT_VIEW_UNCHANGED("Settings");
 
         // Go back to the main screen
         SendRemoteCommand(CHANNEL_PLUS);
-        WaitForDraw();
-        WaitForDraw();
+        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW();
 
         // Render a bunch of readable pages
         SendRemoteCommand(ENTER);
-        WaitForDraw();
+        WAIT_FOR_DRAW();
 
         ASSERT_VIEW_UNCHANGED("ReadableIntro");
 
         SendRemoteCommand(ENTER);
-        WaitForDraw();
+        WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("LastQuestion1");
 
         SendRemoteCommand(CHANNEL_PLUS);
-        WaitForDraw();
+        WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("LastQuestion1Bookmarked");
 
         SendRemoteCommand(ENTER);
-        WaitForDraw();
+        WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("LastQuestion2");
 
         SendRemoteCommand(ENTER);
-        WaitForDraw();
+        WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("LastQuestion3");
 
         SendRemoteCommand(ENTER);
-        WaitForDraw();
+        WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("LastQuestion4");
 
         SendRemoteCommand(ENTER);
-        WaitForDraw();
+        WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("LastQuestion5");
 
         SendRemoteCommand(ENTER);
-        WaitForDraw();
+        WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("LastQuestion6");
 
         SendRemoteCommand(ENTER);
-        WaitForDraw();
+        WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("LastQuestion7");
 
         // Render the popup menu
         SendRemoteCommand(NEXT);
-        WaitForDraw();
+        WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("PopupMenu");
     }
 
@@ -79,9 +79,6 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
 }
 
 TEST_CASE("Test some views independently") {
-    // Don't spin up the whole app (runAppMain = false)
-    StartFreeRtos(false);
-
     // Just create and render a PowerDepletedScreen
     auto display = createDisplay();
 
@@ -97,6 +94,4 @@ TEST_CASE("Test some views independently") {
         screen.render(*display);
         ASSERT_VIEW_UNCHANGED("LayoutTestScreen");
     }
-
-    StopFreeRtos();
 }
