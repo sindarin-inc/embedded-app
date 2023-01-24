@@ -268,6 +268,7 @@ void LocalStore::syncFromRemote(
         // this->prefs_.lastReadablesSince.set("");
         // this->prefs_.lastArticlesSince.set("");
         bool failedReadableDownload = false;
+        bool failedArticleDownload = false;
         auto readablesSince = this->readablesSince();
         auto articlesSince = this->articlesSince();
         auto readablePlacemarks = this->changedReadablePlacemarkQueryParams(readables_);
@@ -370,6 +371,7 @@ void LocalStore::syncFromRemote(
         // TODO: Probably these should be set operations
         log_d("Readables to download: %zu", readablesToDownload.size());
         log_d("Readables to delete: %zu", readablesToDelete.size());
+        log_d("Articles to delete: %zu", articlesToDelete.size());
 
         ContentSyncState syncState = {.state = ContentSyncState::State::Syncing};
         syncState.tasks.reserve(readablesToDownload.size());
@@ -444,8 +446,6 @@ void LocalStore::syncFromRemote(
 
         auto tasksIndex = readablesToDownload.size() + readablesToDelete.size();
         if (articlesToDelete.size() > 0) {
-            tasksIndex += 1;
-
             for (int i = 0; i < articlesToDelete.size(); i++) {
                 syncState.tasks[tasksIndex].percentage =
                     (float(i + 1) / articlesToDelete.size()) * 100;
@@ -455,6 +455,9 @@ void LocalStore::syncFromRemote(
                 this->fileSystem.remove(readable.localFilePath());
                 this->removeReadable(articles_, readable);
             }
+
+            // All article deletions take a single task line item
+            tasksIndex += 1;
         }
 
         progressCallback(syncState);
@@ -466,44 +469,73 @@ void LocalStore::syncFromRemote(
         }
 
         // Save the articles that are new
-        for (int i = 0; i < articlesToSave.size(); i++) {
-            syncState.tasks[tasksIndex].percentage = (float(i + 1) / articlesToSave.size()) * 100;
-            progressCallback(syncState);
+        if (articlesToSave.size() > 0) {
+            for (int i = 0; i < articlesToSave.size(); i++) {
+                syncState.tasks[tasksIndex].percentage =
+                    (float(i + 1) / articlesToSave.size()) * 100;
+                progressCallback(syncState);
 
-            auto &readable = articlesToSave[i];
+                auto &readable = articlesToSave[i];
 
-            this->saveArticleFile(readable);
-            this->addReadable(articles_, readable);
+                if (this->saveArticleFile(readable)) {
+                    this->addReadable(articles_, readable);
+                } else {
+                    failedArticleDownload = true;
+                    log_e("Failed to save article \"%s\" %s", readable.title.c_str(),
+                          readable.uuid.c_str());
+                }
+            }
+            tasksIndex += 1;
         }
 
         progressCallback(syncState);
 
+        // Store the metadata for both readables and articles
+        if (!this->saveReadables(readables_, READABLES_PATH)) {
+            log_e("Failed to save %s", READABLES_PATH);
+            failedReadableDownload = true;
+        }
+        if (!this->saveReadables(articles_, ARTICLES_PATH)) {
+            log_e("Failed to save %s", ARTICLES_PATH);
+            failedArticleDownload = true;
+        }
+
         // Store since date values for next sync
-        log_i("Setting lastReadablesSince to %s and lastArticlesSince to %s",
-              checkSyncResponse.readablesSince.c_str(), checkSyncResponse.articlesSince.c_str());
+        if (failedArticleDownload || failedReadableDownload) {
+            log_w("Not setting lastReadablesSince to %s and lastArticlesSince to %s due to failed "
+                  "download",
+                  checkSyncResponse.readablesSince.c_str(),
+                  checkSyncResponse.articlesSince.c_str());
+        } else {
+            log_i("Setting lastReadablesSince to %s and lastArticlesSince to %s",
+                  checkSyncResponse.readablesSince.c_str(),
+                  checkSyncResponse.articlesSince.c_str());
+        }
         if (checkSyncResponse.readablesSince != "" && !failedReadableDownload) {
             this->prefs_.lastReadablesSince.set(checkSyncResponse.readablesSince.c_str());
         }
-        if (checkSyncResponse.articlesSince != "") {
+        if (checkSyncResponse.articlesSince != "" && !failedArticleDownload) {
             this->prefs_.lastArticlesSince.set(checkSyncResponse.articlesSince.c_str());
         }
-
-        // Artificially delay so the user has the satisfaction of seeing the list done
-        delay(1000);
 
         // Update the since dates and try again
         readablesSince = this->readablesSince();
         articlesSince = this->articlesSince();
-        request.readablesSince = readablesSince;
-        request.articlesSince = articlesSince;
-        SindarinAPI::getInstance()->checkSync(request, &checkSyncResponse);
+        request = CheckSyncRequest{
+            .readablesSince = readablesSince,
+            .articlesSince = articlesSince,
+            .readablePlacemarks = {},
+            .articlePlacemarks = {},
+            .readablesArchived = {},
+            .articlesArchived = {},
+            .ptBattery = this->prefs_.lastPageTurnerBattery.get().value_or(0),
+            .ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or(""),
+        };
 
-        if (!this->saveReadables(readables_, READABLES_PATH)) {
-            log_e("Failed to save %s", READABLES_PATH);
-        }
-        if (!this->saveReadables(articles_, ARTICLES_PATH)) {
-            log_e("Failed to save %s", READABLES_PATH);
-        }
+        // Artificially delay so the user has the satisfaction of seeing the list done
+        delay(1000);
+
+        SindarinAPI::getInstance()->checkSync(request, &checkSyncResponse);
 
         // TODO: Force reload of rootUI instead of rebooting
         if (checkSyncResponse.synced) {
@@ -518,18 +550,18 @@ void LocalStore::syncFromRemote(
     });
 }
 
-void LocalStore::saveArticleFile(const Readable &readable) {
+auto LocalStore::saveArticleFile(const Readable &readable) -> bool {
     log_i("Storing article %s: %s", readable.title.c_str(), readable.localFilePath().c_str());
     // create log directory in filesystem if it doesn't exist
     if (!fileSystem.createDir("/articles")) {
         log_e("Could not create /articles directory");
-        return;
+        return false;
     }
 
     File file = fileSystem.open(readable.localFilePath(), FILE_WRITE, true);
     if (!file) {
         log_e("Failed to open %s", readable.localFilePath().c_str());
-        return;
+        return false;
     }
 
     const char *title = readable.title.c_str();
@@ -544,6 +576,7 @@ void LocalStore::saveArticleFile(const Readable &readable) {
 
     log_d("Finished storing article %s, size %zu/%zu", readable.title.c_str(), docSize,
           readable.content.size());
+    return true;
 }
 
 void LocalStore::clearArticlesFile(bool restart) {
