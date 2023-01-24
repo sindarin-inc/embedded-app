@@ -85,7 +85,7 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
     SHOW_HEAP();
 
     if (error.code() != DeserializationError::Ok) {
-        log_e("Failed to deserialize sync response: %s", error.c_str());
+        log_e("Failed to deserialize sync response: %s (length=%d)", error.c_str(), contentLength);
         return 0;
     }
 

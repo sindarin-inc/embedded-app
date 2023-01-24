@@ -1,5 +1,6 @@
 #include "FileDownload.hpp"
 
+#include <esp_timer.h>
 #include <utility>
 
 #include "Communications/HttpClient.hpp"

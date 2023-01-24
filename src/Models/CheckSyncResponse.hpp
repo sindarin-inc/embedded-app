@@ -15,7 +15,7 @@ public:
     std::string message;
     Firmware firmware;
     std::vector<UserReadable, SpiramAllocator<UserReadable>> userReadables;
-    std::vector<UserArticle, SpiramAllocator<UserReadable>> userArticles;
+    std::vector<UserArticle, SpiramAllocator<UserArticle>> userArticles;
     std::string readablesSince;
     std::string articlesSince;
 
