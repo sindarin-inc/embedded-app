@@ -34,8 +34,7 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
                 context.setViewFrame(*view, {{x, y}, boxSize},
                                      LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
                 if (place == currentSelection_) {
-                    context.setViewFrame(topBarSelectionView_, {{x, y}, boxSize},
-                                         LayoutOptionsAlignCenter);
+                    context.setViewFrame(topBarSelectionView_, {{x, y}, boxSize});
                 }
                 x += boxWidth + spacing;
                 place++;
@@ -50,7 +49,7 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     context.setSublayoutFrame(
         // The -20 is to leave room for the paging circles at the right hand side of the view
         {{mainInset, mainInset}, {size.width - 2 * mainInset - 20, size.height - 2 * mainInset}},
-        LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical,
+        LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
         [this](LayoutContext &context, Size size) -> Size {
             int x = 0;
             int y = 0;
