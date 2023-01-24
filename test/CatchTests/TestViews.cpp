@@ -24,18 +24,17 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         WaitForDraw();
         WaitForDraw();
 
-        /* This test fails as it doesn't seem to pick up the CHANNEL_MINUS call -- the image is the
-         * main menu image -- need to investigate */
-        // AssertViewUnchanged("Settings");
+        AssertViewUnchanged("Settings");
 
         // Go back to the main screen
-        SendRemoteCommand(CHANNEL_MINUS);
+        SendRemoteCommand(CHANNEL_PLUS);
+        WaitForDraw();
         WaitForDraw();
 
         // Render a bunch of readable pages
         SendRemoteCommand(ENTER);
         WaitForDraw();
-        WaitForDraw();
+
         AssertViewUnchanged("ReadableIntro");
 
         SendRemoteCommand(ENTER);
