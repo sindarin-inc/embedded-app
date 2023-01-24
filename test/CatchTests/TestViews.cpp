@@ -13,7 +13,7 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
     WaitForDraw();
     WaitForDraw();
 
-    AssertViewUnchanged("FirstScreen");
+    ASSERT_VIEW_UNCHANGED("FirstScreen");
 
     // TODO: Currently there's a problem with starting and stopping the scheduler that makes the
     // tests lock up with multiple SECTIONs, otherwise we should split up indivitual test flows into
@@ -24,7 +24,7 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         WaitForDraw();
         WaitForDraw();
 
-        AssertViewUnchanged("Settings");
+        ASSERT_VIEW_UNCHANGED("Settings");
 
         // Go back to the main screen
         SendRemoteCommand(CHANNEL_PLUS);
@@ -35,44 +35,44 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         SendRemoteCommand(ENTER);
         WaitForDraw();
 
-        AssertViewUnchanged("ReadableIntro");
+        ASSERT_VIEW_UNCHANGED("ReadableIntro");
 
         SendRemoteCommand(ENTER);
         WaitForDraw();
-        AssertViewUnchanged("LastQuestion1");
+        ASSERT_VIEW_UNCHANGED("LastQuestion1");
 
         SendRemoteCommand(CHANNEL_PLUS);
         WaitForDraw();
-        AssertViewUnchanged("LastQuestion1Bookmarked");
+        ASSERT_VIEW_UNCHANGED("LastQuestion1Bookmarked");
 
         SendRemoteCommand(ENTER);
         WaitForDraw();
-        AssertViewUnchanged("LastQuestion2");
+        ASSERT_VIEW_UNCHANGED("LastQuestion2");
 
         SendRemoteCommand(ENTER);
         WaitForDraw();
-        AssertViewUnchanged("LastQuestion3");
+        ASSERT_VIEW_UNCHANGED("LastQuestion3");
 
         SendRemoteCommand(ENTER);
         WaitForDraw();
-        AssertViewUnchanged("LastQuestion4");
+        ASSERT_VIEW_UNCHANGED("LastQuestion4");
 
         SendRemoteCommand(ENTER);
         WaitForDraw();
-        AssertViewUnchanged("LastQuestion5");
+        ASSERT_VIEW_UNCHANGED("LastQuestion5");
 
         SendRemoteCommand(ENTER);
         WaitForDraw();
-        AssertViewUnchanged("LastQuestion6");
+        ASSERT_VIEW_UNCHANGED("LastQuestion6");
 
         SendRemoteCommand(ENTER);
         WaitForDraw();
-        AssertViewUnchanged("LastQuestion7");
+        ASSERT_VIEW_UNCHANGED("LastQuestion7");
 
         // Render the popup menu
         SendRemoteCommand(NEXT);
         WaitForDraw();
-        AssertViewUnchanged("PopupMenu");
+        ASSERT_VIEW_UNCHANGED("PopupMenu");
     }
 
     StopFreeRtos();
@@ -88,14 +88,14 @@ TEST_CASE("Test some views independently") {
     SECTION("Test PowerDepletedScreen") {
         PowerDepletedScreen screen;
         screen.render(*display);
-        AssertViewUnchanged("PowerDepletedScreen");
+        ASSERT_VIEW_UNCHANGED("PowerDepletedScreen");
     }
 
     /* With the main menu refactor, this test hangs and does not complete. */
     SECTION("Test LayoutTestScreen") {
         LayoutTestScreen screen(*display);
         screen.render(*display);
-        AssertViewUnchanged("LayoutTestScreen");
+        ASSERT_VIEW_UNCHANGED("LayoutTestScreen");
     }
 
     StopFreeRtos();

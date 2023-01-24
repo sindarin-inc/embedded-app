@@ -20,7 +20,9 @@ struct ViewTestResult {
     std::string diffImagePath;
 };
 
-auto AssertViewUnchanged(std::string key) -> ViewTestResult;
+auto CheckViewUnchanged(std::string key) -> ViewTestResult;
+
+#define ASSERT_VIEW_UNCHANGED(key) CHECK(CheckViewUnchanged(key).passed)
 
 std::shared_ptr<DisplayEinkET013TT1> createDisplay();
 

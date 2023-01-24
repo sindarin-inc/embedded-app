@@ -116,7 +116,7 @@ auto GetDirectory() -> std::string {
 }
 
 // TODO: How do we use the test name also for the key
-auto AssertViewUnchanged(std::string key) -> ViewTestResult {
+auto CheckViewUnchanged(std::string key) -> ViewTestResult {
     auto directory = GetDirectory();
     ViewTestResult result = {
         .passed = false,
@@ -188,7 +188,6 @@ auto AssertViewUnchanged(std::string key) -> ViewTestResult {
     }
 
     stbi_image_free(data);
-    CHECK(result.passed);
     return result;
 }
 
