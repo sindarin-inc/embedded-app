@@ -30,13 +30,14 @@ public:
         // (which, honestly, we should probably never give a text view, right?)
         // we need to do this math and shrink the string until it fits.
         //
-        while (w > size.width) {
+        while (w > size.width && size.width > 0) {
             if (text_.length() > 4) {
                 text_ = text_.substr(0, text_.length() - 4) + "...";
             } else {
                 // Practically, this shouldn't ever happen, but I'm doing
                 // the bounds check here just in case we do hit it some day.
                 text_ = "too big!";
+                break;
             }
             display_.getTextBounds(text_.c_str(), &w, &h);
         }
