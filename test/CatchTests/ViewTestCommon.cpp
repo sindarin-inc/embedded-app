@@ -87,13 +87,15 @@ auto WaitForDraw(long timeoutSeconds) -> bool {
 
     long elapsedTime = 0;
     uint8_t out;
+    useconds_t sleep = 1000;
     while (FakeEinkET013TT1RenderQueue == nullptr ||
            xQueueReceiveFromISR(FakeEinkET013TT1RenderQueue, &out, nullptr) == pdFALSE) {
         if (elapsedTime > timeoutSeconds) {
-            UNSCOPED_INFO("Timed out waiting for draw");
+            UNSCOPED_INFO("Timed out waiting for draw " << FakeEinkET013TT1RenderQueue);
             return false;
         }
-        usleep(1000);
+        usleep(sleep);
+        sleep = std::min(sleep * 2, (useconds_t)200000);
         struct timespec endTime;
         clock_gettime(CLOCK_MONOTONIC, &endTime); // get current time
         elapsedTime = endTime.tv_sec - startTime.tv_sec;
