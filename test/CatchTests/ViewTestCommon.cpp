@@ -15,10 +15,13 @@
 #include "Misc/Dispatch.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "sindarin-debug.h"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#pragma clang diagnostic pop
 
 extern PreferencesStore prefs;
 extern void UIInnerLoop(RemoteCommand command);

@@ -76,7 +76,10 @@ String::String(int value, unsigned char base) {
     init();
     char buf[2 + 8 * sizeof(int)];
     if (base == 10) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
         sprintf(buf, "%d", value);
+#pragma clang diagnostic pop
     } else {
         // itoa(value, buf, base);
     }
@@ -94,7 +97,10 @@ String::String(long value, unsigned char base) {
     init();
     char buf[2 + 8 * sizeof(long)];
     if (base==10) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
         sprintf(buf, "%ld", value);
+#pragma clang diagnostic pop
     } else {
         ltoa(value, buf, base);
     }
@@ -355,13 +361,19 @@ unsigned char String::concat(char c) {
 
 unsigned char String::concat(unsigned char num) {
     char buf[1 + 3 * sizeof(unsigned char)];
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     sprintf(buf, "%d", num);
+#pragma clang diagnostic pop
     return concat(buf, strlen(buf));
 }
 
 unsigned char String::concat(int num) {
     char buf[2 + 3 * sizeof(int)];
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     sprintf(buf, "%d", num);
+#pragma clang diagnostic pop
     return concat(buf, strlen(buf));
 }
 
@@ -373,7 +385,10 @@ unsigned char String::concat(unsigned int num) {
 
 unsigned char String::concat(long num) {
     char buf[2 + 3 * sizeof(long)];
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     sprintf(buf, "%ld", num);
+#pragma clang diagnostic pop
     return concat(buf, strlen(buf));
 }
 

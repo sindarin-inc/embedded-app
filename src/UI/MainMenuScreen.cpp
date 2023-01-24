@@ -18,7 +18,7 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto inset = 3;
     const auto spacing = 5;
 
-    auto insetRectTop = context.setSublayoutFrame(
+    context.setSublayoutFrame(
         {{inset, inset}, {size.width - 2 * inset, 20 - 2 * inset}},
         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignCenterHorizontal,
         [this](LayoutContext &context, Size size) -> Size {
