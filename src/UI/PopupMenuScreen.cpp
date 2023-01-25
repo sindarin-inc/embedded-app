@@ -130,7 +130,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     if (yDirOffset < 0) {
         yDirOffset = 0;
     }
-    int narrowToCenter = 30;
+    int narrowToCenter = 20;
 
     std::string bottomStr =
         std::string("Seek ") + std::string("(") + placeString + std::string(")");
