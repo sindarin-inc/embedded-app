@@ -14,6 +14,17 @@
 #define ARTICLES_PATH "/articles.json"
 enum { NUMBER_OF_READABLE_DOWNLOAD_TRIES = 3 };
 
+std::string to_string(ReadablesModelType type) {
+    switch (type) {
+    case ReadablesModelType::Article:
+        return "article";
+    case ReadablesModelType::Readable:
+        return "readable";
+    default:
+        return "unknown";
+    }
+}
+
 auto LocalStore::begin() -> bool {
     auto loadedReadables = loadReadablesFromFile(readables_, READABLES_PATH);
     auto loadedArticles = loadReadablesFromFile(articles_, ARTICLES_PATH);
@@ -23,7 +34,7 @@ auto LocalStore::begin() -> bool {
 
 auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::string &path)
     -> bool {
-    log_d("Loading %ss from %s", readablesModelType(readables).c_str(), path.c_str());
+    log_d("Loading %ss from %s", to_string(readablesModelType(readables)).c_str(), path.c_str());
     File readablesFile = fileSystem.open(path);
     if (!readablesFile || (int)readablesFile.size() == 0) {
         log_w("Failed to open %s", path.c_str());
@@ -79,18 +90,18 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
     return true;
 }
 
-auto LocalStore::readablesModelType(const ReadablesVector &readables) -> std::string {
-    return &readables == &articles_ ? "article" : "readable";
+auto LocalStore::readablesModelType(const ReadablesVector &readables) -> ReadablesModelType {
+    return &readables == &articles_ ? ReadablesModelType::Article : ReadablesModelType::Readable;
 }
 
 auto LocalStore::hasReadable(const ReadablesVector &readables, const Readable &readable) -> bool {
-    std::string modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
+    auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
     for (auto r = readables.begin(); r != readables.end(); ++r) {
         if (r->uuid == readable.uuid && fileSystem.exists(r->localFilePath())) {
             auto file = fileSystem.open(r->localFilePath());
             if (!file) {
-                log_w("Checking for %s, but failed to open file: %s %s", modelType.c_str(),
-                      r->localFilePath().c_str(), r->uuid.c_str());
+                log_w("Checking for %s, but failed to open file: %s %s",
+                      to_string(modelType).c_str(), r->localFilePath().c_str(), r->uuid.c_str());
             }
             auto fileSize = file.size();
             file.close();
@@ -136,7 +147,7 @@ auto LocalStore::articlesSince() -> std::string {
 auto LocalStore::changedReadablePlacemarkQueryParams(const ReadablesVector &readables)
     -> std::vector<std::string> {
     std::vector<std::string> placemarks;
-    std::string modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
+    auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
 
     for (auto &readable : readables) {
         if (readable.localOnly) {
@@ -148,7 +159,7 @@ auto LocalStore::changedReadablePlacemarkQueryParams(const ReadablesVector &read
             uint32_t place = prefs_.readablePlace.get(readable.shortenedUuid.c_str());
             log_i("Placemark on readable %s %s has changed to %d", readable.title.c_str(),
                   readable.uuid.c_str(), place);
-            placemarks.push_back(StringFormat("&%s_placemark_%s=%d", modelType.c_str(),
+            placemarks.push_back(StringFormat("&%s_placemark_%s=%d", to_string(modelType).c_str(),
                                               readable.uuid.c_str(), place));
         }
     }
@@ -159,7 +170,7 @@ auto LocalStore::changedReadablePlacemarkQueryParams(const ReadablesVector &read
 auto LocalStore::changedReadablesArchivedQueryParams(const ReadablesVector &readables)
     -> std::vector<std::string> {
     std::vector<std::string> archived;
-    std::string modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
+    auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
 
     for (auto &readable : readables) {
         if (readable.localOnly) {
@@ -168,10 +179,10 @@ auto LocalStore::changedReadablesArchivedQueryParams(const ReadablesVector &read
 
         bool changed = prefs_.readableArchivedChanged.get(readable.shortenedUuid.c_str());
         if (changed) {
-            log_i("Archived %s %s %s", modelType.c_str(), readable.title.c_str(),
+            log_i("Archived %s %s %s", to_string(modelType).c_str(), readable.title.c_str(),
                   readable.uuid.c_str());
-            archived.push_back(
-                StringFormat("&%s_archive_%s=1", modelType.c_str(), readable.uuid.c_str()));
+            archived.push_back(StringFormat("&%s_archive_%s=1", to_string(modelType).c_str(),
+                                            readable.uuid.c_str()));
         }
     }
 
@@ -614,32 +625,27 @@ void LocalStore::deleteArticles(bool restart) {
 }
 
 void LocalStore::deleteReadableFiles(const ReadablesVector &readables, bool restart) {
-    std::string modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
-    std::string path = modelType == "readable" ? READABLES_PATH : ARTICLES_PATH;
+    auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
+    std::string path = modelType == ReadablesModelType::Readable ? READABLES_PATH : ARTICLES_PATH;
     log_i("Clearing %s", path.c_str());
     bool removed = fileSystem.remove(path);
     if (!removed) {
         log_e("Failed to remove %s", path.c_str());
     }
 
-    prefs_.lastArticlesSince.set("");
-
-    FileList localFiles;
-    fileSystem.listDir("/articles", localFiles);
-    for (const std::string &str : localFiles) {
-        log_i("Removing %s", str.c_str());
-        fileSystem.remove(StringFormat("/articles/%s", str.c_str()));
+    if (modelType == ReadablesModelType::Article) {
+        prefs_.lastArticlesSince.set("");
+    } else if (modelType == ReadablesModelType::Readable) {
+        prefs_.lastReadablesSince.set("");
     }
 
-    fileSystem.remove("/articles");
-
     for (const Readable &readable : readables) {
-        log_i("Removing %s \"%s\" (%s)", modelType.c_str(), readable.title.c_str(),
+        log_i("Removing %s \"%s\" (%s)", to_string(modelType).c_str(), readable.title.c_str(),
               readable.localFilePath().c_str());
         fileSystem.remove(readable.localFilePath());
     }
 
-    log_i("Resetting to guarantee %s are removed", modelType.c_str());
+    log_i("Resetting to guarantee %s are removed", to_string(modelType).c_str());
 
     if (restart) {
         esp_restart();

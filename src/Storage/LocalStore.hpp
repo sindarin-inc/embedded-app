@@ -29,6 +29,8 @@ struct ContentSyncState {
     std::string message;
 };
 
+enum class ReadablesModelType { Article, Readable };
+
 typedef std::vector<Readable, SpiramAllocator<Readable>> ReadablesVector;
 
 //! Interface for local storage of structured data
@@ -41,7 +43,7 @@ public:
     auto loadReadablesFromFile(ReadablesVector &readables, const std::string &path) -> bool;
 
     // Convenience methods
-    auto readablesModelType(const ReadablesVector &readables) -> std::string;
+    auto readablesModelType(const ReadablesVector &readables) -> ReadablesModelType;
     auto hasReadable(const ReadablesVector &readables, const Readable &readable) -> bool;
     auto readables() -> ReadablesVector & { return readables_; };
     auto articles() -> ReadablesVector & { return articles_; };
