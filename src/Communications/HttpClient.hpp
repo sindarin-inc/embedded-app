@@ -37,5 +37,6 @@ public:
 
 private:
     char *url_;
+    std::string userAgent_;
     esp_http_client_handle_t client_;
 };

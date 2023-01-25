@@ -4,12 +4,18 @@
 #include <iostream>
 #include <string>
 
+#include "GitVersion.hpp"
+#include "Misc/StringUtil.hpp"
+#include "Version.hpp"
 #include "sindarin-debug.h"
 
 HttpClient::HttpClient(const char *url, const char *contentType, esp_http_client_method_t method) {
     url_ = strdup(url);
+    userAgent_ = StringFormat("SolReader/%s (%s)", kVersionString, kGitHash);
+
     esp_http_client_config_t config{
         .url = url_,
+        .user_agent = userAgent_.c_str(),
         .method = method,
         .timeout_ms = 30000,
         .crt_bundle_attach = esp_crt_bundle_attach,
