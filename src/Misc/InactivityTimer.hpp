@@ -15,7 +15,7 @@ public:
         }
     }
 
-    void start(std::function<void()> callback, int inactivityTimeoutMs = 5 * 60 * 1000) {
+    void start(std::function<void()> callback, int inactivityTimeoutMs = 15 * 60 * 1000) {
         callback_ = std::move(callback);
 
         // Create the timer and start it.
