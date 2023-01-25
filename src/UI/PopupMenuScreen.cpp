@@ -34,6 +34,50 @@ void PopupMenuScreen::drawBattery(DisplaySystem &display, int x, int y, int perc
     }
 }
 
+auto PopupMenuScreen::layout(LayoutContext &context, Size size) -> Size {
+    const auto inset = 3;
+    const auto spacing = 5;
+
+    const auto mainInset = 2;
+    const auto mainSpacing = 10;
+
+    // Later :)
+    // context.setViewFrame(*clockView_, {{0, 0}, size},
+    //                     LayoutOptionsSizeToFit | LayoutOptionsAlignLeft |
+    //                         LayoutOptionsAlignBottom);
+
+    context.setViewFrame(*placeInReadableView_, {{0, 0}, size},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenter |
+                             LayoutOptionsAlignBottom);
+
+    context.setSublayoutFrame(
+        {{0, 0}, size}, LayoutOptionsSizeToFit | LayoutOptionsAlignBottom | LayoutOptionsAlignRight,
+        [this](LayoutContext &context, Size size) -> Size {
+            int x = 0;
+            int y = 0;
+            auto iconRect = context.setViewFrame(
+                batteryIconView_, {{x, y}, {size.width, size.height}}, LayoutOptionsSizeToFit);
+            x += iconRect.size.width + 3;
+            auto textRect = context.setViewFrame(
+                *batteryTextView_, {{x, y}, {size.width, size.height}}, LayoutOptionsSizeToFit);
+            x += textRect.size.width;
+            return {x, std::max(iconRect.size.height, textRect.size.height)};
+        });
+
+    return size;
+};
+
+void PopupMenuScreen::drawInRect(Rect rect) {
+    log_i("Drawing 1");
+    batteryIconView_.draw();
+    log_i("Drawing 1");
+    batteryTextView_->draw();
+    log_i("Drawing 1");
+    placeInReadableView_->draw();
+    // For later :)
+    // clockView_->draw();
+}
+
 void PopupMenuScreen::render(DisplaySystem &display) {
     if (currentScreen_ != this) {
         currentScreen_->render(display);
@@ -43,12 +87,34 @@ void PopupMenuScreen::render(DisplaySystem &display) {
         return;
     }
 
-    log_d("PopupMenuScreen render");
-
     // Blank out screen
     display.fillScreen(display.bg);
 
+    log_d("PopupMenuScreen render");
+
+    batteryTextView_ =
+        std::make_shared<SingleLineTextView>(display, power_.getBatteryPercentageOnlyString());
+
+    // Later :)
+    // clockView_ = std::make_shared<SingleLineTextView>(display, "3:33pm");
+
+    size_t place = renderer_.getCurrentPlace();
+    size_t lengthOfFile = renderer_.size();
+
+    float placeInTextPercentage = (float)place / (float)lengthOfFile * 100;
+    std::string placeString = StringFormat("%.1f%%", placeInTextPercentage);
+
+    std::string placeStringForBottom =
+        std::to_string(place / 1000) + " / " + std::to_string(lengthOfFile / 1000);
+
+    placeInReadableView_ = std::make_shared<SingleLineTextView>(display, placeStringForBottom);
+
+    setNeedsLayout();
+
+    setFrame({{0, 0}, {display.width(), display.height()}});
+
     display.setFont(display.style.getFontFamily().popupFont);
+    draw();
 
     // Now draw!
     uint16_t textWidth = 0, textHeight = 0;
@@ -59,29 +125,12 @@ void PopupMenuScreen::render(DisplaySystem &display) {
 
     uint16_t heightOffset = display.getTextHeight();
 
-    // These magic numbers are just based on trying to make it look right
-    drawBattery(display, (screenWidth / 2) - 12, (screenHeight / 2) - 3, (int)batteryPercentage);
-
-    display.getTextBounds(batteryStatus.c_str(), &textWidth, &textHeight);
-
-    display.setFont(display.style.getFontFamily().popupFont);
-    display.getTextBounds(batteryStatus.c_str(), &textWidth, &textHeight);
-
-    // Similar to the above, magic numbers are just to make it look nice
-    display.drawSingleLineOfText(batteryStatus.c_str(), (screenWidth / 2) - (textWidth / 2),
-                                 (screenHeight / 2) + (textHeight / 2) - 9 - heightOffset);
-
-    size_t place = renderer_.getCurrentPlace();
-    size_t lengthOfFile = renderer_.size();
-
-    float placeInTextPercentage = (float)place / (float)lengthOfFile * 100;
-    std::string placeString = StringFormat("%.1f%%", placeInTextPercentage);
-
     // We want to square the items if we can.
     int yDirOffset = display.height() / 2 - display.width() / 2;
     if (yDirOffset < 0) {
         yDirOffset = 0;
     }
+    int narrowToCenter = 30;
 
     std::string bottomStr =
         std::string("Seek ") + std::string("(") + placeString + std::string(")");
@@ -89,48 +138,53 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     display.getTextBounds(bottomStr.c_str(), &textWidth, &textHeight);
     display.drawSingleLineOfText(bottomStr, (screenWidth / 2) - (textWidth / 2),
                                  display.height() - yDirOffset - arrowWidth_ - arrowTextSpacing_ -
-                                     textHeight);
+                                     narrowToCenter - textHeight);
 
     // Left Arrow
-    display.drawLine(0, screenHeight / 2, arrowWidth_, screenHeight / 2 + arrowHeight_ / 2,
-                     display.fg);
-    display.drawLine(0, screenHeight / 2, arrowWidth_, screenHeight / 2 - arrowHeight_ / 2,
-                     display.fg);
+    display.drawLine(narrowToCenter, screenHeight / 2, arrowWidth_ + narrowToCenter,
+                     screenHeight / 2 + arrowHeight_ / 2, display.fg);
+    display.drawLine(narrowToCenter, screenHeight / 2, arrowWidth_ + narrowToCenter,
+                     screenHeight / 2 - arrowHeight_ / 2, display.fg);
 
     // Down Arrow
-    display.drawLine(display.width() / 2, display.height() - yDirOffset,
+    display.drawLine(display.width() / 2, display.height() - yDirOffset - narrowToCenter,
                      display.width() / 2 - arrowHeight_ / 2,
-                     display.height() - yDirOffset - arrowWidth_, display.fg);
-    display.drawLine(display.width() / 2, display.height() - yDirOffset,
+                     display.height() - yDirOffset - arrowWidth_ - narrowToCenter, display.fg);
+    display.drawLine(display.width() / 2, display.height() - yDirOffset - narrowToCenter,
                      display.width() / 2 + arrowHeight_ / 2,
-                     display.height() - yDirOffset - arrowWidth_, display.fg);
+                     display.height() - yDirOffset - arrowWidth_ - narrowToCenter, display.fg);
 
     auto topStr = "Text";
     display.getTextBounds(topStr, &textWidth, &textHeight);
     display.drawSingleLineOfText(topStr, (screenWidth / 2) - (textWidth / 2),
-                                 yDirOffset + arrowWidth_ + arrowTextSpacing_);
+                                 yDirOffset + arrowWidth_ + arrowTextSpacing_ + narrowToCenter);
 
     // Top Arrow
-    display.drawLine(display.width() / 2, yDirOffset, display.width() / 2 - arrowHeight_ / 2,
-                     yDirOffset + arrowWidth_, display.fg);
-    display.drawLine(display.width() / 2, yDirOffset, display.width() / 2 + arrowHeight_ / 2,
-                     yDirOffset + arrowWidth_, display.fg);
+    display.drawLine(display.width() / 2, yDirOffset + narrowToCenter,
+                     display.width() / 2 - arrowHeight_ / 2,
+                     yDirOffset + arrowWidth_ + narrowToCenter, display.fg);
+    display.drawLine(display.width() / 2, yDirOffset + narrowToCenter,
+                     display.width() / 2 + arrowHeight_ / 2,
+                     yDirOffset + arrowWidth_ + narrowToCenter, display.fg);
 
     display.getTextBounds(leftButtonTitle_.c_str(), &textWidth, &textHeight);
-    display.drawSingleLineOfText(leftButtonTitle_.c_str(), arrowWidth_ + arrowTextSpacing_,
+    display.drawSingleLineOfText(leftButtonTitle_.c_str(),
+                                 arrowWidth_ + arrowTextSpacing_ + narrowToCenter,
                                  (screenHeight / 2) - textHeight / 2 - 1);
 
     // Right Arrow
-    display.drawLine(display.width(), screenHeight / 2, display.width() - arrowWidth_,
+    display.drawLine(display.width() - narrowToCenter, screenHeight / 2,
+                     display.width() - arrowWidth_ - narrowToCenter,
                      screenHeight / 2 + arrowHeight_ / 2, display.fg);
-    display.drawLine(display.width(), screenHeight / 2, display.width() - arrowWidth_,
+    display.drawLine(display.width() - narrowToCenter, screenHeight / 2,
+                     display.width() - arrowWidth_ - narrowToCenter,
                      screenHeight / 2 - arrowHeight_ / 2, display.fg);
 
-    auto rightStr = "Invert";
+    auto rightStr = "Dark Mode";
     display.getTextBounds(rightStr, &textWidth, &textHeight);
-    display.drawSingleLineOfText(rightStr,
-                                 (display.width() - arrowWidth_ - arrowTextSpacing_ - textWidth),
-                                 (screenHeight / 2) - textHeight / 2 - 3);
+    display.drawSingleLineOfText(
+        rightStr, (display.width() - arrowWidth_ - arrowTextSpacing_ - textWidth - narrowToCenter),
+        (screenHeight / 2) - textHeight / 2 - 2);
 
     display.updateDisplay();
     display.setFont(display.style.getFontFamily().readableFont);
