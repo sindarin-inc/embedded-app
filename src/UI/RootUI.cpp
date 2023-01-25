@@ -580,7 +580,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
             systemSettingsMenu->showTemporaryMessage(*display, "Onboarding mode on! Resetting...",
                                                      2000, false);
-            prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
+            prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage(true));
             esp_restart();
         }));
 
@@ -590,7 +590,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             prefs_.cesMode.set(1);
             systemSettingsMenu->showTemporaryMessage(*display, "CES mode on! Resetting...", 2000,
                                                      false);
-            prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
+            prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage(true));
             esp_restart();
         }));
 
@@ -617,7 +617,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             log_w("Preferences cleared. Rebooting...");
             systemSettingsMenu->showTemporaryMessage(*display, "Preferences cleared. Rebooting...",
                                                      2000, false);
-            prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
+            prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage(true));
             esp_restart();
         }));
 
@@ -646,7 +646,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         log_w("NVS and FS cleared. Rebooting...");
         systemSettingsMenu->showTemporaryMessage(*display, "NVS cleared! Resetting...");
 #endif
-        prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
+        prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage(true));
         esp_restart();
     }));
 
@@ -657,7 +657,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             log_w("Unpaired PageTurner. Rebooting...");
             debugSettingsMenu->showTemporaryMessage(*display, "Unpaired PageTurner! Resetting...",
                                                     2000, false);
-            prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
+            prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage(true));
             esp_restart();
         }));
 #endif
@@ -719,7 +719,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         log_d("EMC On!");
         prefs_.emcMode.set(1);
         debugSettingsMenu->showTemporaryMessage(*display, "EMC mode on! Resetting...", 2000, false);
-        prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
+        prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage(true));
         esp_restart();
     }));
 
@@ -729,7 +729,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             prefs_.emcMode.set(0);
             debugSettingsMenu->showTemporaryMessage(*display, "EMC mode off! Resetting...", 2000,
                                                     false);
-            prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
+            prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage(true));
             esp_restart();
         }));
 

@@ -147,8 +147,8 @@ void MainMenuScreen::render(DisplaySystem &display) {
 
         topBarViews_.clear();
 
-        batteryTextView_ =
-            std::make_shared<SingleLineTextView>(display, power_.getBatteryPercentageOnlyString());
+        batteryTextView_ = std::make_shared<SingleLineTextView>(
+            display, power_.getBatteryPercentageOnlyString(true));
 
         // For later :)
         // clockView_ = std::make_shared<SingleLineTextView>(display, "3:33pm");

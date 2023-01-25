@@ -22,10 +22,10 @@ public:
     void loop();
 
     auto getBatteryLifeString() -> std::string;
-    auto getBatteryPercentageOnlyString() -> std::string;
+    auto getBatteryPercentageOnlyString(bool writePrefs = false) -> std::string;
     auto getLeftBatteryVoltage() -> float;
     auto getRightBatteryVoltage() -> float;
-    auto getBatteryPercentage() -> float;
+    auto getBatteryPercentage(bool writePrefs = false) -> float;
 
     void logVoltages(float lVoltage, float rVoltage);
 

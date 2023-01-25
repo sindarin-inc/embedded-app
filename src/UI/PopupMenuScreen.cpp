@@ -113,7 +113,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     // Now draw!
     uint16_t textWidth = 0, textHeight = 0;
     auto batteryPercentage = this->power_.getBatteryPercentage();
-    auto batteryStatus = this->power_.getBatteryPercentageOnlyString();
+    auto batteryStatus = this->power_.getBatteryPercentageOnlyString(true);
     uint16_t screenWidth = display.width();
     uint16_t screenHeight = display.height();
 
