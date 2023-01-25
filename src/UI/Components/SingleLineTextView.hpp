@@ -8,14 +8,20 @@ class SingleLineTextView : public EinkView {
 public:
     SingleLineTextView(DisplaySystem &display, std::string text,
                        const GFXfont *font = &TAHOMA_REGULAR_FONT5PT7B, bool allCaps = false)
-        : EinkView(display), text_(std::move(text)), font_(font) {
-        if (allCaps) {
-            std::string subCopy = text_;
-            std::transform(subCopy.begin(), subCopy.end(), subCopy.begin(), ::toupper);
-            text_ = std::move(subCopy);
-        }
+        : EinkView(display), font_(font) {
+        setText(text, allCaps);
     }
     ~SingleLineTextView() override = default;
+
+    void setText(std::string text, bool allCaps = false) {
+        if (allCaps) {
+            std::string subCopy = text;
+            std::transform(subCopy.begin(), subCopy.end(), subCopy.begin(), ::toupper);
+            text = std::move(subCopy);
+        }
+        text_ = std::move(text);
+        setNeedsLayout();
+    }
 
     auto layout(LayoutContext &context, Size size) -> Size override {
         uint16_t w, h;

@@ -46,7 +46,7 @@ auto PopupMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     //                     LayoutOptionsSizeToFit | LayoutOptionsAlignLeft |
     //                         LayoutOptionsAlignBottom);
 
-    context.setViewFrame(*placeInReadableView_, {{0, 0}, size},
+    context.setViewFrame(placeInReadableView_, {{0, 0}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenter |
                              LayoutOptionsAlignBottom);
 
@@ -73,7 +73,7 @@ void PopupMenuScreen::drawInRect(Rect rect) {
     log_i("Drawing 1");
     batteryTextView_->draw();
     log_i("Drawing 1");
-    placeInReadableView_->draw();
+    placeInReadableView_.draw();
     // For later :)
     // clockView_->draw();
 }
@@ -107,7 +107,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     std::string placeStringForBottom =
         std::to_string(place / 1000) + " / " + std::to_string(lengthOfFile / 1000);
 
-    placeInReadableView_ = std::make_shared<SingleLineTextView>(display, placeStringForBottom);
+    placeInReadableView_.setText(placeStringForBottom);
 
     setNeedsLayout();
 

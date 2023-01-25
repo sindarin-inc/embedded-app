@@ -30,7 +30,8 @@ public:
         : EinkView(display), prefs_(prefs), power_(power), renderer_(renderer), readable_(readable),
           leftButtonTitle_("Brightness"), lightingAdjustScreen_(display, prefs, lightingController),
           readableSeekScreen_(prefs, readable, renderer_),
-          batteryIconView_(display, boltBits, bolt_width, bolt_height) {
+          batteryIconView_(display, boltBits, bolt_width, bolt_height),
+          placeInReadableView_(display, "") {
         currentScreen_ = this;
 
         lightingAdjustScreen_.backCallback = [this]() {
@@ -74,7 +75,7 @@ protected:
 
     IconView batteryIconView_;
 
-    std::shared_ptr<SingleLineTextView> placeInReadableView_;
+    SingleLineTextView placeInReadableView_;
 
     // For later :)
     // std::shared_ptr<SingleLineTextView> clockView_;
