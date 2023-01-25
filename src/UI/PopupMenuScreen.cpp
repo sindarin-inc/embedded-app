@@ -59,7 +59,7 @@ auto PopupMenuScreen::layout(LayoutContext &context, Size size) -> Size {
                 batteryIconView_, {{x, y}, {size.width, size.height}}, LayoutOptionsSizeToFit);
             x += iconRect.size.width + 3;
             auto textRect = context.setViewFrame(
-                *batteryTextView_, {{x, y}, {size.width, size.height}}, LayoutOptionsSizeToFit);
+                batteryTextView_, {{x, y}, {size.width, size.height}}, LayoutOptionsSizeToFit);
             x += textRect.size.width;
             return {x, std::max(iconRect.size.height, textRect.size.height)};
         });
@@ -68,11 +68,8 @@ auto PopupMenuScreen::layout(LayoutContext &context, Size size) -> Size {
 };
 
 void PopupMenuScreen::drawInRect(Rect rect) {
-    log_i("Drawing 1");
     batteryIconView_.draw();
-    log_i("Drawing 1");
-    batteryTextView_->draw();
-    log_i("Drawing 1");
+    batteryTextView_.draw();
     placeInReadableView_.draw();
     // For later :)
     // clockView_->draw();
@@ -92,8 +89,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
 
     log_d("PopupMenuScreen render");
 
-    batteryTextView_ =
-        std::make_shared<SingleLineTextView>(display, power_.getBatteryPercentageOnlyString());
+    batteryTextView_.setText(power_.getBatteryPercentageOnlyString());
 
     // Later :)
     // clockView_ = std::make_shared<SingleLineTextView>(display, "3:33pm");
@@ -103,9 +99,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
 
     float placeInTextPercentage = (float)place / (float)lengthOfFile * 100;
     std::string placeString = StringFormat("%.1f%%", placeInTextPercentage);
-
-    std::string placeStringForBottom =
-        std::to_string(place / 1000) + " / " + std::to_string(lengthOfFile / 1000);
+    std::string placeStringForBottom = StringFormat("%d / %d", place / 1000, lengthOfFile / 1000);
 
     placeInReadableView_.setText(placeStringForBottom);
 

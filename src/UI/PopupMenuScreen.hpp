@@ -29,7 +29,7 @@ public:
                     LightingController &lightingController)
         : EinkView(display), prefs_(prefs), power_(power), renderer_(renderer), readable_(readable),
           leftButtonTitle_("Brightness"), lightingAdjustScreen_(display, prefs, lightingController),
-          readableSeekScreen_(prefs, readable, renderer_),
+          readableSeekScreen_(prefs, readable, renderer_), batteryTextView_(display, ""),
           batteryIconView_(display, boltBits, bolt_width, bolt_height),
           placeInReadableView_(display, "") {
         currentScreen_ = this;
@@ -71,7 +71,7 @@ protected:
     ReadableSeekScreen readableSeekScreen_;
     std::function<void(void)> leftButtonCallback_;
 
-    std::shared_ptr<SingleLineTextView> batteryTextView_;
+    SingleLineTextView batteryTextView_;
 
     IconView batteryIconView_;
 
