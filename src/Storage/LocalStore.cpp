@@ -14,7 +14,7 @@
 #define ARTICLES_PATH "/articles.json"
 enum { NUMBER_OF_READABLE_DOWNLOAD_TRIES = 3 };
 
-std::string to_string(ReadablesModelType type) {
+auto ToString(ReadablesModelType type) -> std::string {
     switch (type) {
     case ReadablesModelType::Article:
         return "article";
@@ -34,7 +34,7 @@ auto LocalStore::begin() -> bool {
 
 auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::string &path)
     -> bool {
-    log_d("Loading %ss from %s", to_string(readablesModelType(readables)).c_str(), path.c_str());
+    log_d("Loading %ss from %s", ToString(readablesModelType(readables)).c_str(), path.c_str());
     File readablesFile = fileSystem.open(path);
     if (!readablesFile || (int)readablesFile.size() == 0) {
         log_w("Failed to open %s", path.c_str());
@@ -101,7 +101,7 @@ auto LocalStore::hasReadable(const ReadablesVector &readables, const Readable &r
             auto file = fileSystem.open(r->localFilePath());
             if (!file) {
                 log_w("Checking for %s, but failed to open file: %s %s",
-                      to_string(modelType).c_str(), r->localFilePath().c_str(), r->uuid.c_str());
+                      ToString(modelType).c_str(), r->localFilePath().c_str(), r->uuid.c_str());
             }
             auto fileSize = file.size();
             file.close();
@@ -159,7 +159,7 @@ auto LocalStore::changedReadablePlacemarkQueryParams(const ReadablesVector &read
             uint32_t place = prefs_.readablePlace.get(readable.shortenedUuid.c_str());
             log_i("Placemark on readable %s %s has changed to %d", readable.title.c_str(),
                   readable.uuid.c_str(), place);
-            placemarks.push_back(StringFormat("&%s_placemark_%s=%d", to_string(modelType).c_str(),
+            placemarks.push_back(StringFormat("&%s_placemark_%s=%d", ToString(modelType).c_str(),
                                               readable.uuid.c_str(), place));
         }
     }
@@ -179,9 +179,9 @@ auto LocalStore::changedReadablesArchivedQueryParams(const ReadablesVector &read
 
         bool changed = prefs_.readableArchivedChanged.get(readable.shortenedUuid.c_str());
         if (changed) {
-            log_i("Archived %s %s %s", to_string(modelType).c_str(), readable.title.c_str(),
+            log_i("Archived %s %s %s", ToString(modelType).c_str(), readable.title.c_str(),
                   readable.uuid.c_str());
-            archived.push_back(StringFormat("&%s_archive_%s=1", to_string(modelType).c_str(),
+            archived.push_back(StringFormat("&%s_archive_%s=1", ToString(modelType).c_str(),
                                             readable.uuid.c_str()));
         }
     }
@@ -640,12 +640,12 @@ void LocalStore::deleteReadableFiles(const ReadablesVector &readables, bool rest
     }
 
     for (const Readable &readable : readables) {
-        log_i("Removing %s \"%s\" (%s)", to_string(modelType).c_str(), readable.title.c_str(),
+        log_i("Removing %s \"%s\" (%s)", ToString(modelType).c_str(), readable.title.c_str(),
               readable.localFilePath().c_str());
         fileSystem.remove(readable.localFilePath());
     }
 
-    log_i("Resetting to guarantee %s are removed", to_string(modelType).c_str());
+    log_i("Resetting to guarantee %s are removed", ToString(modelType).c_str());
 
     if (restart) {
         esp_restart();
