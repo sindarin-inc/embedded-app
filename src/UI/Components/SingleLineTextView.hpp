@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "EinkView.hpp"
 #include "Misc/Style.hpp"
 
@@ -9,7 +11,7 @@ public:
     SingleLineTextView(DisplaySystem &display, std::string text,
                        const GFXfont *font = &TAHOMA_REGULAR_FONT5PT7B, bool allCaps = false)
         : EinkView(display), font_(font) {
-        setText(text, allCaps);
+        setText(std::move(text), allCaps);
     }
     ~SingleLineTextView() override = default;
 
