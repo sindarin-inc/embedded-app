@@ -796,6 +796,25 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     debugSettingsMenu->addMenuItem(MenuItem("Set WiFi Power", [this, display, debugSettingsMenu]() {
         auto wifiPowerMenu = new MenuScreen(this->power_, debugSettingsMenu->getMyStyle());
 
+        auto powerToString = [](wifi_power_t power) -> std::string {
+            switch (power) {
+            case WIFI_POWER_19_5dBm:
+                return "Max (19.5dBm)";
+            case WIFI_POWER_17dBm:
+                return "High (17dBm)";
+            case WIFI_POWER_11dBm:
+                return "Medium (11dBm)";
+            case WIFI_POWER_5dBm:
+                return "Low (5dBm)";
+            case WIFI_POWER_MINUS_1dBm:
+                return "Min (-1dBm)";
+            default:
+                return "Unknown";
+            }
+        };
+
+        wifiPowerMenu->setExtraText(powerToString(GetWiFiPower()));
+
         auto confirmMessage = [this, wifiPowerMenu, display](wifi_power_t power) {
             this->prefs_.wifiPower.set(power);
             wifiPowerMenu->showTemporaryMessage(*display, "Power set", 200, false);
