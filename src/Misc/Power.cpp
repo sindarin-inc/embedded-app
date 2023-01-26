@@ -112,13 +112,13 @@ auto Power::getBatteryLifeString() -> std::string {
     return batteryOutput;
 }
 
-auto Power::getBatteryPercentageOnlyString(bool writePrefs) -> std::string {
-    float batteryAverage = getBatteryPercentage(writePrefs);
+auto Power::getBatteryPercentageOnlyString() -> std::string {
+    float batteryAverage = getBatteryPercentage();
     std::string averageOutput = StringFormat("%.0f%%", batteryAverage);
     return averageOutput;
 }
 
-auto Power::getBatteryPercentage(bool writePrefs) -> float {
+auto Power::getBatteryPercentage() -> float {
     float voltageLevelLeft = this->getLeftBatteryVoltage();
     float batteryFractionLeft =
         (voltageLevelLeft - BATTERY_MIN_VOLTAGE) / (BATTERY_MAX_VOLTAGE - BATTERY_MIN_VOLTAGE);
@@ -137,10 +137,6 @@ auto Power::getBatteryPercentage(bool writePrefs) -> float {
             // If the battery has just been turned on, use the last known value.
             batteryAverage = (float)prefs_.lastBatteryReport.get().value();
         }
-    }
-
-    if (writePrefs) {
-        prefs_.lastBatteryReport.set((int)batteryAverage);
     }
 
     return batteryAverage;
