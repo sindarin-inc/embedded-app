@@ -67,7 +67,7 @@ void ReadableScreen::updateBookmarkStatus() {
 
     File bookmarkFile = fileSystem_.open(bookmarkPath.c_str(), FILE_READ, false);
     if (!bookmarkFile) {
-        log_i("Failed to open bookmark file: %s is the filename", bookmarkPath.c_str());
+        log_i("Failed to open bookmark file: %s", bookmarkPath.c_str());
         return;
     }
     Bookmark bookmark;
@@ -101,7 +101,7 @@ void ReadableScreen::writeOutBookmarkUpdate() {
     File bookmarkFile = fileSystem_.open(bookmarkPath.c_str(), FILE_APPEND, true);
 
     if (!bookmarkFile) {
-        log_i("Failed to open bookmark file: %s is the filename", bookmarkPath.c_str());
+        log_i("Failed to open bookmark file: %s", bookmarkPath.c_str());
         return;
     }
 
