@@ -9,7 +9,6 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 
-#include "Communications/OTA.hpp"
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
 #include "Inputs/RemoteInput.hpp"
@@ -81,10 +80,6 @@ esp_pm_lock_handle_t maglock;
 
 InactivityTimer inactivityTimer;
 
-#if ENABLE_OTA
-OTA ota;
-#endif
-
 #if SIMULATOR
 #include "Storage/PosixFileSystem.hpp"
 PosixFileSystem fileSystem;
@@ -114,10 +109,6 @@ void RadioTask(void *parameter) {
 
 #if USE_BLE_SERVER_REMOTE
         bleWifi->loop();
-#endif
-
-#if ENABLE_OTA
-        ota.loop();
 #endif
 
 // Put this with other periodic tasks so they all execute on the same wakeup

@@ -2,8 +2,6 @@
 
 #include "BLEImprov.hpp"
 
-#include <ArduinoOTA.h>
-
 #include "Communications/WiFi.hpp"
 #include "config.h"
 #include "esp_wifi.h"
@@ -131,9 +129,6 @@ void BLEImprov::loop() {
         log_d("Attempting connection to: %s Password: %s (WiFi status = %d)", command.ssid.c_str(),
               command.password.c_str(), WiFi.status());
         ConnectWiFi(command.ssid, command.password);
-        // TODO: Remove ArduinoOTA
-        ArduinoOTA.setHostname(HOSTNAME);
-        ArduinoOTA.begin();
         this->setState(STATE_CONNECTING);
         return;
     } else if (this->state_ == STATE_CONNECTING) {
