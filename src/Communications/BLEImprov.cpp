@@ -93,8 +93,6 @@ void BLEImprov::setError(improv::Error error, bool notify) {
 void BLEImprov::doneConnecting() {
     this->setState(STATE_CONNECTED);
     log_i("Connected, IP address: %s", WiFi.localIP().toString().c_str());
-    // Immediately disconnect to save battery
-    DisconnectWifi();
     SHOW_HEAP();
 }
 
