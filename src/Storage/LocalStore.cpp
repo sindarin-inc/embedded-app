@@ -362,8 +362,8 @@ void LocalStore::syncFromRemote(
 
         // Look through all the articles, deleting archived ones and downloading new ones
         for (auto &userReadable : checkSyncResponse.userArticles) {
-            log_d("Fetched user article: %s (%d)", userReadable.readable.title.c_str(),
-                  userReadable.readable.content.size());
+            log_d("Fetched user article: %s (%zu)", userReadable.readable.title.c_str(),
+                  (size_t)userReadable.readable.content.size());
             SHOW_HEAP();
 
             if (this->processReadablePlacemarksFromServer(userReadable.readable,
@@ -608,8 +608,8 @@ auto LocalStore::saveArticleFile(const Readable &readable) -> bool {
     size_t docSize = file.size();
     file.close();
 
-    log_d("Finished storing article %s, size %zu/%d", readable.title.c_str(), docSize,
-          readable.content.size());
+    log_d("Finished storing article %s, size %zu/%zu", readable.title.c_str(), docSize,
+          (size_t)readable.content.size());
 
     return true;
 }
