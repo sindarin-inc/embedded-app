@@ -4,18 +4,23 @@
 #include <utility>
 
 #include "Communications/HttpClient.hpp"
+#include "Misc/GUnzipFile.hpp"
 #include "sindarin-debug.h"
 
 auto DownloadFile(const char *url, int length,
                   const std::function<bool(int httpCode, int contentLength)> &openedConnection,
                   const std::function<size_t(HttpClient &client, int index)> &readWrite,
-                  const std::function<void(int bytesWritten, float percentage)> &progressCallback)
-    -> bool {
+                  const std::function<void(int bytesWritten, float percentage)> &progressCallback,
+                  bool gzip) -> bool {
     HttpClient client(url);
 
     auto time = esp_timer_get_time();
     auto downloadStart = time;
 
+    if (gzip) {
+        client.setHeader("Accept-Encoding", "gzip");
+        // TODO: check server headers to verify we got gzip
+    }
     client.open();
 
     esp_err_t err;
@@ -76,7 +81,7 @@ auto DownloadFile(const char *url, int length,
 
     client.close();
 
-    if (length != totalReadLen) {
+    if (length != totalReadLen && !gzip) {
         log_e("Wrote fewer bytes than expected, expected %d bytes but got %d bytes", length,
               totalReadLen);
         return false;
@@ -87,8 +92,8 @@ auto DownloadFile(const char *url, int length,
 auto DownloadFile(const char *url, int length,
                   const std::function<bool(int httpCode, int contentLength)> &openedConnection,
                   const std::function<size_t(const uint8_t *buf, size_t size)> &writeBytes,
-                  const std::function<void(int bytesWritten, float percentage)> &progressCallback)
-    -> bool {
+                  const std::function<void(int bytesWritten, float percentage)> &progressCallback,
+                  bool gzip) -> bool {
 
     // W25Q512JV* chips have a page size of 256 bytes so we should only use a multiple of that
     constexpr int bufferSize = 4096;
@@ -106,24 +111,29 @@ auto DownloadFile(const char *url, int length,
 
             return readLen;
         },
-        progressCallback);
+        progressCallback, gzip);
 }
 
 auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int length,
-                  const std::function<void(int bytesWritten, float percentage)> &progressCallback)
-    -> bool {
+                  const std::function<void(int bytesWritten, float percentage)> &progressCallback,
+                  bool gzip) -> bool {
+    SHOW_HEAP();
+
+    std::string fullPath(path);
+    if (gzip) {
+        fullPath.append(".gz");
+    }
+
     // TODO: Support resuming?
-    if (fileSystem.exists(path)) {
+    if (fileSystem.exists(fullPath.c_str())) {
         log_w("File %s already exists, deleting", path);
         fileSystem.remove(path);
         log_d("Deleted %s", path);
     }
 
-    SHOW_HEAP();
-
-    auto file = fileSystem.open(path, FILE_WRITE, true);
+    auto file = fileSystem.open(fullPath.c_str(), FILE_WRITE, true);
     if (!file) {
-        log_e("Failed to open file %s for writing", path);
+        log_e("Failed to open file %s for writing", fullPath.c_str());
         return false;
     }
 
@@ -149,7 +159,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
             constexpr int bufferSize = 16384;
             return client.read((char *)(fileBuffer + index), bufferSize);
         },
-        progressCallback);
+        progressCallback, gzip);
 
     auto time = esp_timer_get_time();
     auto downloadStart = time;
@@ -166,9 +176,17 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
     heap_caps_free(fileBuffer);
 
     // The file must be re-opened to check its size
-    file = fileSystem.open(path);
-    auto fileSize = file.size();
-    file.close();
+    size_t fileSize = 0;
+    if (gzip) {
+        file = fileSystem.open(fullPath.c_str());
+        File gzFile = GUnzipFile::openGzFile(file);
+        fileSize = gzFile.size();
+        gzFile.close();
+    } else {
+        file = fileSystem.open(fullPath.c_str());
+        fileSize = file.size();
+        file.close();
+    }
 
     if (length != fileSize) {
         // TODO: What's the best API to get errors from the stream?

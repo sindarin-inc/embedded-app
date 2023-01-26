@@ -104,8 +104,8 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
 }
 
 auto SindarinAPI::downloadReadable(const Readable &readable, FileSystem &fileSystem,
-                                   const std::function<void(int percentage)> &progressCallback)
-    -> bool {
+                                   const std::function<void(int percentage)> &progressCallback,
+                                   bool gzip) -> bool {
     bool success = false;
     // auto remoteUrl = readable.remoteUrl();
     auto remoteUrl = readable.file().fileProxied;
@@ -114,7 +114,8 @@ auto SindarinAPI::downloadReadable(const Readable &readable, FileSystem &fileSys
 
     success = DownloadFile(
         remoteUrl.c_str(), fileSystem, localPath.c_str(), fileSize,
-        [progressCallback](int bytesWritten, float percentage) { progressCallback(percentage); });
+        [progressCallback](int bytesWritten, float percentage) { progressCallback(percentage); },
+        gzip);
 
     return success;
 }

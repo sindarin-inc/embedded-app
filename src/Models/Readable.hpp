@@ -45,6 +45,13 @@ public:
             return StringFormat("/articles/%s.txt", uuid.c_str());
         }
     }
+    [[nodiscard]] auto compressedLocalFilePath() const -> std::string {
+        if (files.size()) {
+            return StringFormat("/%s.gz", file().name.c_str());
+        } else {
+            return StringFormat("/articles/%s.txt.gz", uuid.c_str());
+        }
+    }
     [[nodiscard]] auto remoteUrl() const -> std::string { return file().fileProxied; }
     [[nodiscard]] auto isArticle() const -> bool {
         if (files.size()) {

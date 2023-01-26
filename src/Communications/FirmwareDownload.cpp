@@ -92,7 +92,8 @@ void FirmwareDownloader::downloadFirmware(
                 progressCallback(
                     FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloading,
                                           .downloadPercentage = (int)percentage});
-            });
+            },
+            false);
 
         if (!success) {
             log_e("Failed to download firmware");

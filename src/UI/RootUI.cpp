@@ -74,6 +74,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                     const Readable &readable) -> ReadableScreen * {
         // TODO: Would be better to not allocate / delete these all the time
         auto stream = fileSystem.newRendererStream(readable.localFilePath().c_str());
+        if (!stream) {
+            stream = fileSystem.newGzipRendererStream(readable.compressedLocalFilePath().c_str());
+        }
         auto *readableScreen = new ReadableScreen(stream, *display, readable, this->prefs_,
                                                   this->power_, fileSystem, lightingController);
 
