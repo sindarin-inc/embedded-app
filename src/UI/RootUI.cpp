@@ -793,6 +793,65 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 #endif
 
+    debugSettingsMenu->addMenuItem(MenuItem("Set WiFi Power", [this, display, debugSettingsMenu]() {
+        auto wifiPowerMenu = new MenuScreen(this->power_, debugSettingsMenu->getMyStyle());
+
+        auto confirmMessage = [this, wifiPowerMenu, display](wifi_power_t power) {
+            this->prefs_.wifiPower.set(power);
+            wifiPowerMenu->showTemporaryMessage(*display, "Power set", 200, false);
+            wifiPowerMenu->backCallback();
+        };
+
+        wifiPowerMenu->addMenuItem(MenuItem("Max (19.5dBm)", [confirmMessage]() {
+            SetWiFiPower(WIFI_POWER_19_5dBm);
+            confirmMessage(WIFI_POWER_19_5dBm);
+        }));
+        wifiPowerMenu->addMenuItem(MenuItem("High (17dBm)", [confirmMessage]() {
+            SetWiFiPower(WIFI_POWER_17dBm);
+            confirmMessage(WIFI_POWER_17dBm);
+        }));
+        wifiPowerMenu->addMenuItem(MenuItem("Medium (11dBm)", [confirmMessage]() {
+            SetWiFiPower(WIFI_POWER_11dBm);
+            confirmMessage(WIFI_POWER_11dBm);
+        }));
+        wifiPowerMenu->addMenuItem(MenuItem("Low (5dBm)", [confirmMessage]() {
+            SetWiFiPower(WIFI_POWER_5dBm);
+            confirmMessage(WIFI_POWER_5dBm);
+        }));
+        wifiPowerMenu->addMenuItem(MenuItem("Min (-1dBm)", [confirmMessage]() {
+            SetWiFiPower(WIFI_POWER_MINUS_1dBm);
+            confirmMessage(WIFI_POWER_MINUS_1dBm);
+        }));
+
+        int menuIndex = 0;
+        switch (GetWiFiPower()) {
+        case WIFI_POWER_17dBm:
+            menuIndex = 1;
+            break;
+        case WIFI_POWER_11dBm:
+            menuIndex = 2;
+            break;
+        case WIFI_POWER_5dBm:
+            menuIndex = 3;
+            break;
+        case WIFI_POWER_MINUS_1dBm:
+            menuIndex = 4;
+            break;
+        case WIFI_POWER_19_5dBm:
+        default:
+            menuIndex = 0;
+            break;
+        }
+        wifiPowerMenu->setCurrSelection(menuIndex);
+
+        setCurrentScreen(*wifiPowerMenu);
+        wifiPowerMenu->backCallback = [this, wifiPowerMenu, debugSettingsMenu]() {
+            debugSettingsMenu->setFirstLoad();
+            setCurrentScreen(*debugSettingsMenu);
+            delete wifiPowerMenu;
+        };
+    }));
+
 #if EINKET013TT1
     debugSettingsMenu->addMenuItem(
         MenuItem("Set Vcom Precise", [this, display, debugSettingsMenu]() {

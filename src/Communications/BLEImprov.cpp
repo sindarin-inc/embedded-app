@@ -4,6 +4,7 @@
 
 #include <ArduinoOTA.h>
 
+#include "Communications/WiFi.hpp"
 #include "config.h"
 #include "esp_wifi.h"
 #include "sindarin-debug.h"
@@ -94,6 +95,8 @@ void BLEImprov::setError(improv::Error error, bool notify) {
 void BLEImprov::doneConnecting() {
     this->setState(STATE_CONNECTED);
     log_i("Connected, IP address: %s", WiFi.localIP().toString().c_str());
+    // Immediately disconnect to save battery
+    DisconnectWifi();
     SHOW_HEAP();
 }
 
@@ -127,8 +130,8 @@ void BLEImprov::loop() {
         improv::ImprovCommand command = this->lastCommand_;
         log_d("Attempting connection to: %s Password: %s (WiFi status = %d)", command.ssid.c_str(),
               command.password.c_str(), WiFi.status());
-        WiFi.setHostname(HOSTNAME);
-        WiFi.begin(command.ssid.c_str(), command.password.c_str());
+        ConnectWiFi(command.ssid, command.password);
+        // TODO: Remove ArduinoOTA
         ArduinoOTA.setHostname(HOSTNAME);
         ArduinoOTA.begin();
         this->setState(STATE_CONNECTING);
