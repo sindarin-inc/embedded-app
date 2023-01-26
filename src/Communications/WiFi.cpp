@@ -7,7 +7,7 @@
 
 // TODO: We probably have enough state around here to merit a class. Maybe we do that when we
 // move off of Arduino WiFi and onto esp-idf's C WiFi APIs.
-wifi_power_t WiFiPower = WIFI_POWER_19_5dBm;
+wifi_power_t wiFiPower = WIFI_POWER_19_5dBm;
 
 auto GetWiFiCredentials(wifi_config_t *conf) -> bool {
     // Needs to be called before we can get the WiFi config
@@ -34,7 +34,7 @@ auto HasWiFiCredentials() -> bool {
     return GetWiFiCredentials(&conf);
 }
 
-void ConnectWiFi(std::string ssid, std::string password) {
+void ConnectWiFi(const std::string &ssid, const std::string &password) {
     // We have to have wifi sleep enabled otherwise Bluetooth can't work
     esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
 
@@ -55,7 +55,7 @@ void ConnectWiFi(std::string ssid, std::string password) {
         WiFi.begin(ssid.c_str(), password.c_str());
     }
     log_d("WiFi TX Power was %d", WiFi.getTxPower());
-    WiFi.setTxPower(WiFiPower);
+    WiFi.setTxPower(wiFiPower);
     log_d("WiFi TX Power is now %d", WiFi.getTxPower());
     WiFi.setAutoReconnect(true);
 }
@@ -95,6 +95,6 @@ auto ConnectWifi(int timeoutMs) -> bool {
     return true;
 }
 
-void SetWiFiPower(wifi_power_t power) { WiFiPower = power; }
+void SetWiFiPower(wifi_power_t power) { wiFiPower = power; }
 
-auto GetWiFiPower() -> wifi_power_t { return WiFiPower; }
+auto GetWiFiPower() -> wifi_power_t { return wiFiPower; }

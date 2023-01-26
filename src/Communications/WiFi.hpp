@@ -7,7 +7,7 @@ auto GetWiFiCredentials(wifi_config_t *conf) -> bool;
 
 auto HasWiFiCredentials() -> bool;
 
-void ConnectWiFi(std::string ssid = "", std::string password = "");
+void ConnectWiFi(const std::string &ssid = "", const std::string &password = "");
 
 auto ConnectWiFiIfCredentialsExist() -> bool;
 
