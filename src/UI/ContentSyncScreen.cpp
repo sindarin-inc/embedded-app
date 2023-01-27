@@ -40,6 +40,10 @@ void ContentSyncScreen::render(DisplaySystem &display) {
             lineCount = state_.tasks.size();
         }
 
+        if (lineCount == 0) {
+            lineCount = 1;
+        }
+
         uint16_t groupHeight = textHeight * lineCount + spacing * (lineCount - 1);
 
         y = (display.height() - groupHeight) / 2;
