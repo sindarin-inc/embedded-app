@@ -571,7 +571,7 @@ void LocalStore::syncFromRemote(
             log_w("After running sync, local readables are still out of sync");
             // TODO: this isn't 100% right
             progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
-                                              .message = "Not in sync"});
+                                              .message = "Not in sync...restarting"});
         }
     });
 }

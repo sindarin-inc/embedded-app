@@ -110,8 +110,11 @@ void ContentSyncScreen::fail(const std::string &message) {
     state_.message = message;
     needsRerender = true;
     render(display_);
-    vTaskDelay(5000 / portTICK_PERIOD_MS);
+    vTaskDelay(3000 / portTICK_PERIOD_MS);
     DisconnectWifi();
+#if !SIMULATOR
+    esp_restart();
+#endif
     if (backCallback) {
         backCallback();
     } else {
