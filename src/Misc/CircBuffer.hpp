@@ -10,7 +10,6 @@ public:
     }
 
     void push(uint8_t *input, int size);
-    // void pop(uint8_t *output, int size);
     void copyFrom(int pos, uint8_t *output, int size);
     void clear();
 

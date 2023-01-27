@@ -35,31 +35,6 @@ void CircBuffer::push(uint8_t *input, int size) {
     }
 }
 
-/*
-void CircBuffer::pop(uint8_t *output, int size) {
-    if (size > size_) {
-        // error
-        return;
-    }
-
-    int bytesCopied = 0;
-    while (bytesCopied < size) {
-        int bytesToCopy = size - bytesCopied;
-        if (startPos_ + bytesToCopy > capacity_) {
-            bytesToCopy = capacity_ - startPos_;
-        }
-
-        memcpy(&output[bytesCopied], &buf_[startPos_], bytesToCopy);
-        size_ -= bytesToCopy;
-        bytesCopied += bytesToCopy;
-        startPos_ += bytesToCopy;
-        if (startPos_ >= capacity_) {
-            startPos_ -= capacity_;
-        }
-    }
-}
-*/
-
 void CircBuffer::copyFrom(int pos, uint8_t *output, int size) {
     if (pos + size > size_) {
         // error
