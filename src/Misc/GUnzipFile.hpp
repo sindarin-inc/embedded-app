@@ -4,12 +4,16 @@
 
 #include "FS.h"
 #include "FSImpl.h"
+#include "Misc/CircBuffer.hpp"
 #include "Misc/GUnzip.hpp"
+
+#define LOOKBACK_SIZE 32768
 
 class GUnzipFile : public fs::FileImpl {
 public:
     GUnzipFile(File compressedFile)
-        : compressedFile_(std::move(std::move(compressedFile)))
+        : compressedFile_(std::move(std::move(compressedFile))), lookBackBuffer_(LOOKBACK_SIZE),
+          lookBackBytes_(0)
 
     {
         readSize();
@@ -45,6 +49,8 @@ protected:
     int outIndex_{0};
     bool lastInput_{false};
     bool outputBufferWasFull_{false};
+    CircBuffer lookBackBuffer_;
+    int lookBackBytes_;
 
     void readSize();
 };

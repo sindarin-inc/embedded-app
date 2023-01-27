@@ -10,7 +10,26 @@ auto GUnzipFile::read(uint8_t *buf, size_t size) -> size_t {
     // enough bytes have been read.
     int bytesCopied = 0;
     while (size - bytesCopied > 0) {
-        // first check if we have any uncompressed bytes available
+        // first check if we are reading from the lookback buffer
+        if (lookBackBytes_ > 0) {
+            int bytesToCopy = size - bytesCopied;
+            if (bytesToCopy > lookBackBytes_) {
+                bytesToCopy = lookBackBytes_;
+            }
+
+            if (buf) {
+                lookBackBuffer_.copyFrom(lookBackBuffer_.size() - lookBackBytes_, &buf[bytesCopied],
+                                         bytesToCopy);
+            }
+
+            lookBackBytes_ -= bytesToCopy;
+            bytesCopied += bytesToCopy;
+            position_ += bytesToCopy;
+
+            continue;
+        }
+
+        // next check if we have any uncompressed bytes available
         if (outSize_ > 0) {
             // copy as many bytes as possible
             int bytesToCopy = size - bytesCopied;
@@ -21,6 +40,9 @@ auto GUnzipFile::read(uint8_t *buf, size_t size) -> size_t {
             if (buf) {
                 memcpy(&buf[bytesCopied], &outBuf_[outIndex_], bytesToCopy);
             }
+
+            // copy bytes into circular buffer
+            lookBackBuffer_.push(&outBuf_[outIndex_], bytesToCopy);
 
             outSize_ -= bytesToCopy;
             outIndex_ += bytesToCopy;
@@ -121,16 +143,25 @@ auto GUnzipFile::seek(uint32_t pos, SeekMode mode) -> bool {
         // and decompress to new position
         // TODO: implement table of seek indices for faster seeking
 
-        // seek file back to beginning
-        compressedFile_.seek(0, SeekSet);
-        inSize_ = 0;
-        inIndex_ = 0;
-        outSize_ = 0;
-        outIndex_ = 0;
-        gunzip_.init();
+        // see if lookback buffer has enough bytes to seek back
+        int offset = position_ - newPosition;
+        if (lookBackBytes_ + offset <= lookBackBuffer_.size()) {
+            // able to seek within the lookback buffer
+            lookBackBytes_ += offset;
+        } else {
+            // seek file back to beginning
+            lookBackBuffer_.clear();
+            lookBackBytes_ = 0;
+            compressedFile_.seek(0, SeekSet);
+            inSize_ = 0;
+            inIndex_ = 0;
+            outSize_ = 0;
+            outIndex_ = 0;
+            gunzip_.init();
 
-        // decompress enough to get to the new position
-        read(nullptr, newPosition);
+            // decompress enough to get to the new position
+            read(nullptr, newPosition);
+        }
 
         position_ = newPosition;
     }
