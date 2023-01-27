@@ -4,7 +4,6 @@
 #include "sindarin-debug.h"
 
 void ToggleCompressedReadablesScreen::render(DisplaySystem &display) {
-    log_i("compressed readables RENDER");
     if (!needsRerender) {
         return;
     }
