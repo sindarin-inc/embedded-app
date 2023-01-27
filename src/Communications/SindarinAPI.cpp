@@ -112,9 +112,8 @@ auto SindarinAPI::downloadReadable(const Readable &readable, FileSystem &fileSys
     auto localPath = readable.localFilePath();
     auto fileSize = readable.file().size;
 
-    success = DownloadFile(
-        remoteUrl.c_str(), fileSystem, localPath.c_str(), fileSize,
-        [progressCallback](int bytesWritten, float percentage) { progressCallback(percentage); });
+    success = DownloadFile(remoteUrl.c_str(), fileSystem, localPath.c_str(), fileSize,
+                           [progressCallback](float percentage) { progressCallback(percentage); });
 
     return success;
 }

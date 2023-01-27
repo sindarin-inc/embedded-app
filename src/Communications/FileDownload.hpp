@@ -16,5 +16,4 @@ auto DownloadFile(const char *url, int length,
     -> bool;
 
 auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int length,
-                  const std::function<void(int bytesWritten, float percentage)> &progressCallback)
-    -> bool;
+                  const std::function<void(float percentage)> &progressCallback) -> bool;

@@ -110,8 +110,7 @@ auto DownloadFile(const char *url, int length,
 }
 
 auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int length,
-                  const std::function<void(int bytesWritten, float percentage)> &progressCallback)
-    -> bool {
+                  const std::function<void(float percentage)> &progressCallback) -> bool {
     // TODO: Support resuming?
     if (fileSystem.exists(path)) {
         log_w("File %s already exists, deleting", path);
@@ -134,6 +133,13 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
     uint8_t *fileBuffer;
     int fileLength;
 
+    // Because file writes tend to be twice the time the http download takes right now, adjust the
+    // progress accordingly
+
+    auto fileProgress = [progressCallback](int bytesWritten, float percentage) {
+        progressCallback(percentage / 3);
+    };
+
     DownloadFile(
         url, length,
         [&fileBuffer, &fileLength](int httpCode, int contentLength) -> bool {
@@ -149,12 +155,23 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
             constexpr int bufferSize = 16384;
             return client.read((char *)(fileBuffer + index), bufferSize);
         },
-        progressCallback);
+        fileProgress);
 
     auto time = esp_timer_get_time();
     auto downloadStart = time;
 
-    file.write(fileBuffer, fileLength);
+    int written = 0;
+    while (written < fileLength) {
+        // Every ~ 6s at ~40-44KB/S
+        auto bytesWrittenToFile = file.write(fileBuffer, std::min(fileLength - written, 262144));
+        if (bytesWrittenToFile <= 0) {
+            log_w("Failed to write to file");
+            break;
+        }
+        written += bytesWrittenToFile;
+        progressCallback(66.6 * written / fileLength + 33.4);
+    }
+
     file.close();
 
     int64_t end = esp_timer_get_time();
