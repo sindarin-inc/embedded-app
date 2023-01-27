@@ -39,6 +39,7 @@
 #include "UI/ReadableScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
 #include "UI/StatsScreen.hpp"
+#include "UI/ToggleCompressedReadablesScreen.hpp"
 #include "UI/VoltageLogUploadScreen.hpp"
 #include "Version.hpp"
 #include "config.h"
@@ -900,6 +901,21 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
         (*voltageLogScreen).begin();
     }));
+
+    debugSettingsMenu->addMenuItem(
+        MenuItem("Toggle Gzip Readables", [this, display, debugSettingsMenu]() {
+            auto toggleCompressedReadablesScreen =
+                new ToggleCompressedReadablesScreen(*display, this->prefs_);
+            this->setCurrentScreen(*toggleCompressedReadablesScreen);
+            (*toggleCompressedReadablesScreen).backCallback =
+                [this, toggleCompressedReadablesScreen, debugSettingsMenu, display]() {
+                    debugSettingsMenu->setFirstLoad();
+                    setCurrentScreen(*debugSettingsMenu);
+                    debugSettingsMenu->render(*display);
+                    delete toggleCompressedReadablesScreen;
+                };
+            (*toggleCompressedReadablesScreen).begin();
+        }));
 
     oldMenu->addMenuItem(MenuItem("Calibration Screen Run Through", [this, oldMenu]() {
         auto calibrationScreen = new CalibrationScreen();

@@ -14,8 +14,6 @@
 #define READABLES_PATH "/readables.json"
 #define ARTICLES_PATH "/articles.json"
 
-#define USE_GZ_READABLES false
-
 enum { NUMBER_OF_READABLE_DOWNLOAD_TRIES = 3 };
 
 auto ToString(ReadablesModelType type) -> std::string {
@@ -90,6 +88,7 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
                 if (!file) {
                     log_w("failed to open GUnzipFile for %s",
                           readable.compressedLocalFilePath().c_str());
+                    continue;
                 }
             }
             // If the filesize is wrong, ignore it so we redownload it
@@ -505,7 +504,7 @@ void LocalStore::syncFromRemote(
                         syncState.tasks[tasksIndex].percentage = percentage;
                         progressCallback(syncState);
                     },
-                    USE_GZ_READABLES);
+                    prefs_.gzipReadables.get().value_or(false));
                 if (success) {
                     addReadable(readables_, readable);
                     log_d("File successfully downloaded.");

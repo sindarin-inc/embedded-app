@@ -174,7 +174,7 @@ public:
           autoPilotSpeed(this->prefs_, "auto-speed"),
           firstAutopilotRead(this->prefs_, "fst-auto-rd"), cesMode(this->prefs_, "ces"),
           emcMode(this->prefs_, "emc"), lastBatteryReport(this->prefs_, "last-batt"),
-          wifiPower(this->prefs_, "wifi-power"){};
+          wifiPower(this->prefs_, "wifi-power"), gzipReadables(this->prefs_, "gzip-readables"){};
     auto begin() -> bool;
     void clear() {
         // Save and re-set the Turn Touch
@@ -221,6 +221,7 @@ public:
     PrefsItem<int> emcMode;
     PrefsItem<int> lastBatteryReport;
     PrefsItem<int> wifiPower;
+    PrefsItem<bool> gzipReadables;
 
 protected:
     Preferences prefs_;
