@@ -37,7 +37,7 @@ void ContentSyncScreen::render(DisplaySystem &display) {
         if (state_.state <= ContentSyncState::LoadingTasks) {
             lineCount = 3;
         } else {
-            lineCount = state_.tasks.size() + 1;
+            lineCount = state_.tasks.size();
         }
 
         uint16_t groupHeight = textHeight * lineCount + spacing * (lineCount - 1);
