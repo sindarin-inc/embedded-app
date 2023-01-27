@@ -32,7 +32,17 @@ void ContentSyncScreen::render(DisplaySystem &display) {
         // things to sync (e.g., 6+ books).
         const uint16_t spacing = 2;
         uint16_t textHeight = display.getFont()->yAdvance;
-        y = 20;
+        uint16_t lineCount;
+
+        if (state_.state <= ContentSyncState::LoadingTasks) {
+            lineCount = 3;
+        } else {
+            lineCount = state_.tasks.size() + 1;
+        }
+
+        uint16_t groupHeight = textHeight * lineCount + spacing * (lineCount - 1);
+
+        y = (display.height() - groupHeight) / 2;
 
         auto drawBulletLine = [&display, textHeight, &x, &y](const char *message, int percentage,
                                                              bool drawLine) {
@@ -53,20 +63,18 @@ void ContentSyncScreen::render(DisplaySystem &display) {
             y += spacing;
         };
 
-        drawBulletLine("Connecting WiFi", state_.state > ContentSyncState::ConnectingWifi ? 100 : 0,
-                       false);
+        if (state_.state <= ContentSyncState::LoadingTasks) {
 
-        drawBulletLine("Checking for update",
-                       state_.state > ContentSyncState::CheckingSync ? 100 : 0, false);
+            drawBulletLine("Connecting WiFi",
+                           state_.state > ContentSyncState::ConnectingWifi ? 100 : 0, false);
 
-        // We don't know the rest of the list until this step is done, bail out
-        if (state_.state <= ContentSyncState::CheckingSync) {
-            break;
-        }
+            drawBulletLine("Checking for update",
+                           state_.state > ContentSyncState::CheckingSync ? 100 : 0, false);
 
-        if (state_.state >= ContentSyncState::LoadingTasks) {
             drawBulletLine("Loading tasks...",
                            state_.state > ContentSyncState::LoadingTasks ? 100 : 0, false);
+
+            break;
         }
 
         for (const auto &task : state_.tasks) {
