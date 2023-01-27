@@ -103,7 +103,7 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         needsFullUpdate_ = false;
     } else {
-        display.updateDisplay(DisplaySystem::UpdateType::FAST);
+        display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
     }
 
     needsRerender = false;

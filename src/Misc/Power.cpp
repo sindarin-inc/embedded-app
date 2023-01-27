@@ -128,6 +128,17 @@ auto Power::getBatteryPercentage() -> float {
     batteryFractionLeft = std::clamp(batteryFractionLeft, 0.0f, 1.0f);
     batteryFractionRight = std::clamp(batteryFractionRight, 0.0f, 1.0f);
     float batteryAverage = (batteryFractionLeft + batteryFractionRight) / 2.0 * 100;
+
+    if ((int)batteryAverage == 0) {
+        if (prefs_.lastBatteryReport.get().value() == 0) {
+            // Very first time booting ever after prefs cleared.
+            batteryAverage = 90.0;
+        } else {
+            // If the battery has just been turned on, use the last known value.
+            batteryAverage = (float)prefs_.lastBatteryReport.get().value();
+        }
+    }
+
     return batteryAverage;
 }
 

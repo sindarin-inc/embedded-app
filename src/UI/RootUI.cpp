@@ -583,6 +583,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
             systemSettingsMenu->showTemporaryMessage(*display, "Onboarding mode on! Resetting...",
                                                      2000, false);
+            prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
             esp_restart();
         }));
 
@@ -592,6 +593,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             prefs_.cesMode.set(1);
             systemSettingsMenu->showTemporaryMessage(*display, "CES mode on! Resetting...", 2000,
                                                      false);
+            prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
             esp_restart();
         }));
 
@@ -618,6 +620,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             log_w("Preferences cleared. Rebooting...");
             systemSettingsMenu->showTemporaryMessage(*display, "Preferences cleared. Rebooting...",
                                                      2000, false);
+            prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
             esp_restart();
         }));
 
@@ -633,7 +636,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             systemSettingsMenu->showTemporaryMessage(*display, "Articles reset.");
         }));
 
-    systemSettingsMenu->addMenuItem(MenuItem("Factory Defaults", [systemSettingsMenu, display,
+    systemSettingsMenu->addMenuItem(MenuItem("Factory Defaults", [this, systemSettingsMenu, display,
                                                                   &localStore]() {
 #if SIMULATOR
         // Remove the preferences file simprefs.ini
@@ -646,6 +649,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         log_w("NVS and FS cleared. Rebooting...");
         systemSettingsMenu->showTemporaryMessage(*display, "NVS cleared! Resetting...");
 #endif
+        prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
         esp_restart();
     }));
 
@@ -656,6 +660,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             log_w("Unpaired PageTurner. Rebooting...");
             debugSettingsMenu->showTemporaryMessage(*display, "Unpaired PageTurner! Resetting...",
                                                     2000, false);
+            prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
             esp_restart();
         }));
 #endif
@@ -717,6 +722,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         log_d("EMC On!");
         prefs_.emcMode.set(1);
         debugSettingsMenu->showTemporaryMessage(*display, "EMC mode on! Resetting...", 2000, false);
+        prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
         esp_restart();
     }));
 
@@ -726,6 +732,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             prefs_.emcMode.set(0);
             debugSettingsMenu->showTemporaryMessage(*display, "EMC mode off! Resetting...", 2000,
                                                     false);
+            prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
             esp_restart();
         }));
 
@@ -788,6 +795,84 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
     }));
 #endif
+
+    debugSettingsMenu->addMenuItem(MenuItem("Set WiFi Power", [this, display, debugSettingsMenu]() {
+        auto wifiPowerMenu = new MenuScreen(this->power_, debugSettingsMenu->getMyStyle());
+
+        auto powerToString = [](wifi_power_t power) -> std::string {
+            switch (power) {
+            case WIFI_POWER_19_5dBm:
+                return "Max (19.5dBm)";
+            case WIFI_POWER_17dBm:
+                return "High (17dBm)";
+            case WIFI_POWER_11dBm:
+                return "Medium (11dBm)";
+            case WIFI_POWER_5dBm:
+                return "Low (5dBm)";
+            case WIFI_POWER_MINUS_1dBm:
+                return "Min (-1dBm)";
+            default:
+                return "Unknown";
+            }
+        };
+
+        wifiPowerMenu->setExtraText(powerToString(GetWiFiPower()));
+
+        auto confirmMessage = [this, wifiPowerMenu, display](wifi_power_t power) {
+            this->prefs_.wifiPower.set(power);
+            wifiPowerMenu->showTemporaryMessage(*display, "Power set", 200, false);
+            wifiPowerMenu->backCallback();
+        };
+
+        wifiPowerMenu->addMenuItem(MenuItem("Max (19.5dBm)", [confirmMessage]() {
+            SetWiFiPower(WIFI_POWER_19_5dBm);
+            confirmMessage(WIFI_POWER_19_5dBm);
+        }));
+        wifiPowerMenu->addMenuItem(MenuItem("High (17dBm)", [confirmMessage]() {
+            SetWiFiPower(WIFI_POWER_17dBm);
+            confirmMessage(WIFI_POWER_17dBm);
+        }));
+        wifiPowerMenu->addMenuItem(MenuItem("Medium (11dBm)", [confirmMessage]() {
+            SetWiFiPower(WIFI_POWER_11dBm);
+            confirmMessage(WIFI_POWER_11dBm);
+        }));
+        wifiPowerMenu->addMenuItem(MenuItem("Low (5dBm)", [confirmMessage]() {
+            SetWiFiPower(WIFI_POWER_5dBm);
+            confirmMessage(WIFI_POWER_5dBm);
+        }));
+        wifiPowerMenu->addMenuItem(MenuItem("Min (-1dBm)", [confirmMessage]() {
+            SetWiFiPower(WIFI_POWER_MINUS_1dBm);
+            confirmMessage(WIFI_POWER_MINUS_1dBm);
+        }));
+
+        int menuIndex = 0;
+        switch (GetWiFiPower()) {
+        case WIFI_POWER_17dBm:
+            menuIndex = 1;
+            break;
+        case WIFI_POWER_11dBm:
+            menuIndex = 2;
+            break;
+        case WIFI_POWER_5dBm:
+            menuIndex = 3;
+            break;
+        case WIFI_POWER_MINUS_1dBm:
+            menuIndex = 4;
+            break;
+        case WIFI_POWER_19_5dBm:
+        default:
+            menuIndex = 0;
+            break;
+        }
+        wifiPowerMenu->setCurrSelection(menuIndex);
+
+        setCurrentScreen(*wifiPowerMenu);
+        wifiPowerMenu->backCallback = [this, wifiPowerMenu, debugSettingsMenu]() {
+            debugSettingsMenu->setFirstLoad();
+            setCurrentScreen(*debugSettingsMenu);
+            delete wifiPowerMenu;
+        };
+    }));
 
 #if EINKET013TT1
     debugSettingsMenu->addMenuItem(

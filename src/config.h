@@ -38,10 +38,7 @@
 
 // #define DISABLE_SPIRAM
 
-#ifndef ENABLE_OTA
-#define ENABLE_OTA 0
-#define HOSTNAME "sindarin"
-#endif
+#define HOSTNAME "solreader"
 
 // Disable Improve BLE WiFi provisioning service
 // #define DISABLE_IMPROV

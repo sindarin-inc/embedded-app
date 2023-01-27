@@ -9,7 +9,6 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 
-#include "Communications/OTA.hpp"
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
 #include "Inputs/RemoteInput.hpp"
@@ -28,6 +27,8 @@
 #include "UI/RootUI.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
+
+#define ENABLE_CONTENT_SYNC_ON_CLOSE 0
 
 #if !DISABLE_POWER_MANAGEMENT
 #include <esp_pm.h>
@@ -79,10 +80,6 @@ esp_pm_lock_handle_t maglock;
 
 InactivityTimer inactivityTimer;
 
-#if ENABLE_OTA
-OTA ota;
-#endif
-
 #if SIMULATOR
 #include "Storage/PosixFileSystem.hpp"
 PosixFileSystem fileSystem;
@@ -112,10 +109,6 @@ void RadioTask(void *parameter) {
 
 #if USE_BLE_SERVER_REMOTE
         bleWifi->loop();
-#endif
-
-#if ENABLE_OTA
-        ota.loop();
 #endif
 
 // Put this with other periodic tasks so they all execute on the same wakeup
@@ -261,10 +254,12 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 lightingController.disableLighting();
                 templesClosed = true;
                 // Will be turned off after content sync
-                ForcePowerOn();
+                prefs.lastBatteryReport.set((int)power.getBatteryPercentage());
+                AllowPowerOff();
             }
         });
         templeCloseSensor.setLongCloseCallback([]() {
+#if ENABLE_CONTENT_SYNC_ON_CLOSE
             DispatchGetUiQueue()->dispatch([]() {
                 log_d("Temples closed for a while, running content sync");
                 // Debug LED so we know what's happening
@@ -290,10 +285,10 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                     }
                 });
             });
+#endif
         });
     }
 #endif
-
     if (!prefs.begin()) {
         bootErrors.push_back({.type = BootError::Type::Preferences});
     }
@@ -434,6 +429,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
+    SetWiFiPower((wifi_power_t)prefs.wifiPower.get().value_or(WIFI_POWER_17dBm));
+
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
     if (!bleManager->startAdvertisingIfNecessary()) {
         bootErrors.push_back({.type = BootError::Type::BLEManagerAdvertising});
@@ -448,8 +445,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         bootErrors.push_back({.type = BootError::Type::PowerManagement});
     }
     // There may be a magic incantation that keeps USB running through light sleep,
-    // but I haven't found it yet. I've tried every power domain in esp_sleep_pd_config but it
-    // didn't help
+    // but I haven't found it yet. I've tried every power domain in esp_sleep_pd_config but
+    // it didn't help
     if (rtc_clk_slow_freq_get() != RTC_SLOW_FREQ_32K_XTAL) {
         bootErrors.push_back({.type = BootError::Type::LowPowerOscillator});
     }
@@ -469,9 +466,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     if (!fileSystem.begin()) {
         bootErrors.push_back({.type = BootError::Type::FileSystem});
     } else {
-        // This is a hack for now for debugging crashes while connected to the serial monitor --
-        // don't save (and thus delete crashes) when connected to USB. This means the boot count
-        // will be wrong once this is saved, but that's probably ok
+        // This is a hack for now for debugging crashes while connected to the serial
+        // monitor -- don't save (and thus delete crashes) when connected to USB. This means
+        // the boot count will be wrong once this is saved, but that's probably ok
         if (!USBConnected()) {
             // file system started
             // attempt to write any core dumps to disk for later upload

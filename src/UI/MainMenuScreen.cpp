@@ -96,7 +96,7 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
             int y = 0;
             auto iconRect = context.setViewFrame(
                 batteryIconView_, {{x, y}, {size.width, size.height}}, LayoutOptionsSizeToFit);
-            x += iconRect.size.width + 10;
+            x += iconRect.size.width + 3;
             auto textRect = context.setViewFrame(
                 *batteryTextView_, {{x, y}, {size.width, size.height}}, LayoutOptionsSizeToFit);
             x += textRect.size.width;
@@ -146,6 +146,7 @@ void MainMenuScreen::render(DisplaySystem &display) {
     if (firstLoad_) {
 
         topBarViews_.clear();
+
         batteryTextView_ =
             std::make_shared<SingleLineTextView>(display, power_.getBatteryPercentageOnlyString());
 

@@ -173,7 +173,8 @@ public:
           bootCount(this->prefs_, "boot-count"), firstRead(this->prefs_, "first-read"),
           autoPilotSpeed(this->prefs_, "auto-speed"),
           firstAutopilotRead(this->prefs_, "fst-auto-rd"), cesMode(this->prefs_, "ces"),
-          emcMode(this->prefs_, "emc"){};
+          emcMode(this->prefs_, "emc"), lastBatteryReport(this->prefs_, "last-batt"),
+          wifiPower(this->prefs_, "wifi-power"){};
     auto begin() -> bool;
     void clear() {
         // Save and re-set the Turn Touch
@@ -218,6 +219,8 @@ public:
     PrefsItem<uint32_t> firstAutopilotRead;
     PrefsItem<int> cesMode;
     PrefsItem<int> emcMode;
+    PrefsItem<int> lastBatteryReport;
+    PrefsItem<int> wifiPower;
 
 protected:
     Preferences prefs_;

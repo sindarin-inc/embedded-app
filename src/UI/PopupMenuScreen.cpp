@@ -35,12 +35,6 @@ void PopupMenuScreen::drawBattery(DisplaySystem &display, int x, int y, int perc
 }
 
 auto PopupMenuScreen::layout(LayoutContext &context, Size size) -> Size {
-    const auto inset = 3;
-    const auto spacing = 5;
-
-    const auto mainInset = 2;
-    const auto mainSpacing = 10;
-
     // Later :)
     // context.setViewFrame(*clockView_, {{0, 0}, size},
     //                     LayoutOptionsSizeToFit | LayoutOptionsAlignLeft |
@@ -112,12 +106,9 @@ void PopupMenuScreen::render(DisplaySystem &display) {
 
     // Now draw!
     uint16_t textWidth = 0, textHeight = 0;
-    auto batteryPercentage = this->power_.getBatteryPercentage();
     auto batteryStatus = this->power_.getBatteryPercentageOnlyString();
     uint16_t screenWidth = display.width();
     uint16_t screenHeight = display.height();
-
-    uint16_t heightOffset = display.getTextHeight();
 
     // We want to square the items if we can.
     int yDirOffset = display.height() / 2 - display.width() / 2;
