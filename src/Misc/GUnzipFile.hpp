@@ -12,8 +12,7 @@
 class GUnzipFile : public fs::FileImpl {
 public:
     GUnzipFile(File compressedFile)
-        : compressedFile_(std::move(std::move(compressedFile))), lookBackBuffer_(LOOKBACK_SIZE),
-          lookBackBytes_(0)
+        : compressedFile_(std::move(std::move(compressedFile))), lookBackBuffer_(LOOKBACK_SIZE)
 
     {
         readSize();
@@ -50,7 +49,7 @@ protected:
     bool lastInput_{false};
     bool outputBufferWasFull_{false};
     CircBuffer lookBackBuffer_;
-    int lookBackBytes_;
+    int lookBackBytes_{0};
 
     void readSize();
 };

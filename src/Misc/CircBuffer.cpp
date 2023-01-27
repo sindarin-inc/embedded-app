@@ -1,6 +1,6 @@
 #include "CircBuffer.hpp"
 
-#include <string.h>
+#include <cstring>
 
 void CircBuffer::push(uint8_t *input, int size) {
     if (size_ + size > capacity_) {
