@@ -624,7 +624,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     systemSettingsMenu->addMenuItem(
         MenuItem("Clear Books and Restart", [systemSettingsMenu, display, &localStore]() {
             localStore.deleteReadables();
-            systemSettingsMenu->showTemporaryMessage(*display, "Readables reset.");
+            systemSettingsMenu->showTemporaryMessage(*display, "Books reset.");
         }));
 
     systemSettingsMenu->addMenuItem(
