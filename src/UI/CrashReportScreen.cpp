@@ -122,13 +122,9 @@ void CrashReportScreen::begin() {
             this->render(this->display_);
 
             if (state.state == CrashUploadState::Failure ||
-                state.state == CrashUploadState::NoCrashReport) {
-                DisconnectWifi();
-            }
-
-            if (state.state == CrashUploadState::Failure ||
                 state.state == CrashUploadState::NoCrashReport ||
                 state.state == CrashUploadState::Done) {
+                DisconnectWifi();
                 vTaskDelay(3000 / portTICK_PERIOD_MS);
                 backCallback();
             }

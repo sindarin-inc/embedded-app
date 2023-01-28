@@ -167,33 +167,39 @@ auto SindarinAPI::uploadAndResetVoltageLog(FileSystem &fileSystem) -> int {
               writeLength, serializedLength);
     }
 
+    heap_caps_free(serialized);
+
     client.fetchHeaders();
     int httpCode = client.getStatusCode();
 
     log_d("Voltage log upload http code: %d", httpCode);
 
-    heap_caps_free(serialized);
-
     return httpCode;
 }
 
-auto SindarinAPI::uploadCrashReport(File crashFile, const String &contentType) -> int {
-    HttpClient client(SINDARIN_SERVER_URL "/coredumps/", "multipart", HTTP_METHOD_POST);
+auto SindarinAPI::uploadCrashReport(File &crashFile, const String &contentType) -> int {
+    HttpClient client(SINDARIN_SERVER_URL "/coredumps/", contentType.c_str(), HTTP_METHOD_POST);
     setAuth(client);
 
-    client.open(crashFile.size());
-    auto writeStream = client.makeWriteStream();
+    int writeSize = crashFile.size();
+    client.open(writeSize);
 
     size_t bufferSize = 4096;
     char *buffer = (char *)heap_caps_malloc(bufferSize, MALLOC_CAP_SPIRAM);
 
-    while (crashFile.available() > 0) {
+    // NOTE: crashFile.available() never goes down but it seems like it should
+    int bytesWritten = 0;
+    while (bytesWritten < writeSize) {
         auto bytesRead = crashFile.readBytes(buffer, bufferSize);
-        client.write(buffer, bytesRead);
+        bytesWritten += client.write(buffer, bytesRead);
     }
+
+    heap_caps_free(buffer);
 
     client.fetchHeaders();
     int httpCode = client.getStatusCode();
+
+    log_d("uploadCrashReport http code %d", httpCode);
 
     return httpCode;
 }

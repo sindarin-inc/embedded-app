@@ -525,17 +525,18 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             firmwareUpdateScreen->begin();
         }));
 
-    systemSettingsMenu->addMenuItem(
-        MenuItem("Send Crash Report", [this, systemSettingsMenu, display, &fileSystem]() {
-            auto crashReportScreen = new CrashReportScreen(*display, this->prefs_, fileSystem);
-            this->setCurrentScreen(*crashReportScreen);
-            crashReportScreen->backCallback = [this, crashReportScreen, systemSettingsMenu]() {
-                systemSettingsMenu->setFirstLoad();
-                setCurrentScreen(*systemSettingsMenu);
-                delete crashReportScreen;
-            };
-            crashReportScreen->begin();
-        }));
+    systemSettingsMenu->addMenuItem(MenuItem("Send Crash Report", [this, systemSettingsMenu,
+                                                                   display, &fileSystem]() {
+        auto crashReportScreen = new CrashReportScreen(*display, this->prefs_, fileSystem);
+        this->setCurrentScreen(*crashReportScreen);
+        crashReportScreen->backCallback = [this, display, crashReportScreen, systemSettingsMenu]() {
+            systemSettingsMenu->setFirstLoad();
+            setCurrentScreen(*systemSettingsMenu);
+            systemSettingsMenu->render(*display);
+            delete crashReportScreen;
+        };
+        crashReportScreen->begin();
+    }));
 
     systemSettingsMenu->addMenuItem(MenuItem("Batteries and Temperature", [this, display,
                                                                            systemSettingsMenu]() {
