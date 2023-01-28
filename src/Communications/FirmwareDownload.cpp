@@ -91,7 +91,7 @@ void FirmwareDownloader::downloadFirmware(
             [progressCallback](int bytesWritten, float percentage) {
                 progressCallback(
                     FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloading,
-                                          .downloadPercentage = (int)percentage});
+                                          .downloadPercentage = static_cast<int>(percentage)});
             });
 
         if (!success) {
