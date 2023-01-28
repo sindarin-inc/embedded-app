@@ -163,7 +163,8 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
     int written = 0;
     while (written < fileLength) {
         // Every ~ 6s at ~40-44KB/S
-        auto bytesWrittenToFile = file.write(fileBuffer, std::min(fileLength - written, 262144));
+        auto bytesWrittenToFile =
+            file.write(fileBuffer + written, std::min(fileLength - written, 262144));
         if (bytesWrittenToFile <= 0) {
             log_w("Failed to write to file");
             break;
