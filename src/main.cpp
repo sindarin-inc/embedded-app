@@ -95,6 +95,14 @@ RootUI rootUi(prefs, power);
 
 bool templesClosed = false;
 
+// TODO: This should live in a power class or something
+void SoftReboot() {
+#if USE_TURN_TOUCH_REMOTE
+    ttRemoteInput.disconnect();
+#endif
+    esp_restart();
+}
+
 // Resonsible for handling connecting / reconnecting to remotes
 void RadioTask(void *parameter) {
     for (;;) {

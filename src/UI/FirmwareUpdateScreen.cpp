@@ -8,6 +8,8 @@
 #include "UI/Fonts/Tahoma10pt7b.h"
 #include "sindarin-debug.h"
 
+extern void SoftReboot();
+
 void FirmwareUpdateScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
@@ -156,7 +158,7 @@ void FirmwareUpdateScreen::begin() {
             } else if (state.state == FirmwareDownloadState::Installed) {
                 vTaskDelay(3000 / portTICK_PERIOD_MS);
                 log_i("Rebooting after successful firmware update");
-                esp_restart();
+                SoftReboot();
                 // Only for the sim
                 backCallback();
             }

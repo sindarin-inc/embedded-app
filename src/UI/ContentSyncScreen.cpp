@@ -2,6 +2,8 @@
 
 #include "Communications/WiFi.hpp"
 
+extern void SoftReboot();
+
 void ContentSyncScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
         return;
@@ -124,9 +126,7 @@ void ContentSyncScreen::fail(const std::string &message) {
     render(display_);
     vTaskDelay(3000 / portTICK_PERIOD_MS);
     DisconnectWifi();
-#if !SIMULATOR
-    esp_restart();
-#endif
+    SoftReboot();
     if (backCallback) {
         backCallback();
     } else {
@@ -160,7 +160,7 @@ void ContentSyncScreen::begin() {
 #if !SIMULATOR
             if (state.state == ContentSyncState::Synced) {
                 log_d("Content sync done, rebooting");
-                esp_restart();
+                SoftReboot();
             }
 #endif
             if (state.state == ContentSyncState::Failure ||

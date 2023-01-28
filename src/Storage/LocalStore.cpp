@@ -14,6 +14,8 @@
 #define ARTICLES_PATH "/articles.json"
 enum { NUMBER_OF_READABLE_DOWNLOAD_TRIES = 3 };
 
+extern void SoftReboot();
+
 auto ToString(ReadablesModelType type) -> std::string {
     switch (type) {
     case ReadablesModelType::Article:
@@ -673,7 +675,7 @@ void LocalStore::deleteReadableFiles(const ReadablesVector &readables, bool rest
     log_i("Resetting to guarantee %s are removed", ToString(modelType).c_str());
 
     if (restart) {
-        esp_restart();
+        SoftReboot();
     }
 }
 

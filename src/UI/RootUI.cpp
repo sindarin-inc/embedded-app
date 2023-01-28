@@ -55,6 +55,8 @@
 
 #define LAST_READABLE_ID "rui-readable"
 
+extern void SoftReboot();
+
 void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &fileSystem,
                    LightingController &lightingController) {
     SHOW_HEAP();
@@ -582,7 +584,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             systemSettingsMenu->showTemporaryMessage(*display, "Onboarding mode on! Resetting...",
                                                      2000, false);
             prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
-            esp_restart();
+            SoftReboot();
         }));
 
     systemSettingsMenu->addMenuItem(
@@ -592,7 +594,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             systemSettingsMenu->showTemporaryMessage(*display, "CES mode on! Resetting...", 2000,
                                                      false);
             prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
-            esp_restart();
+            SoftReboot();
         }));
 
     systemSettingsMenu->addMenuItem(MenuItem("Statistics", [this, systemSettingsMenu, display]() {
@@ -619,7 +621,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             systemSettingsMenu->showTemporaryMessage(*display, "Preferences cleared. Rebooting...",
                                                      2000, false);
             prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
-            esp_restart();
+            SoftReboot();
         }));
 
     systemSettingsMenu->addMenuItem(
@@ -648,7 +650,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         systemSettingsMenu->showTemporaryMessage(*display, "NVS cleared! Resetting...");
 #endif
         prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
-        esp_restart();
+        SoftReboot();
     }));
 
 #if USE_TURN_TOUCH_REMOTE
@@ -659,7 +661,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             debugSettingsMenu->showTemporaryMessage(*display, "Unpaired PageTurner! Resetting...",
                                                     2000, false);
             prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
-            esp_restart();
+            SoftReboot();
         }));
 #endif
 
@@ -721,7 +723,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         prefs_.emcMode.set(1);
         debugSettingsMenu->showTemporaryMessage(*display, "EMC mode on! Resetting...", 2000, false);
         prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
-        esp_restart();
+        SoftReboot();
     }));
 
     debugSettingsMenu->addMenuItem(
@@ -731,7 +733,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             debugSettingsMenu->showTemporaryMessage(*display, "EMC mode off! Resetting...", 2000,
                                                     false);
             prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
-            esp_restart();
+            SoftReboot();
         }));
 
     debugSettingsMenu->addMenuItem(

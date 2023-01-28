@@ -18,6 +18,8 @@ void GoodBootTimer() {}
 #define PANIC_BOOT_THRESHOLD 10
 #define GOOD_BOOT_THRESHOLD_MS 60000
 
+extern void SoftReboot();
+
 // check if we are in a boot loop state
 // this happens by incrementing a key (curr_boot) on each startup.
 // check this against the key last_good_boot. If there are more boots than
@@ -47,7 +49,7 @@ void Rollback() {
     if (partition && PartitionIsBootable(partition)) {
         if (esp_ota_set_boot_partition(partition) == ESP_OK) {
             // reboot to other partition
-            esp_restart();
+            SoftReboot();
         } else {
             log_e("error: cannot roll back, cannot set boot partition");
         }

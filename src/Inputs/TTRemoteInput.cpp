@@ -124,11 +124,15 @@ void TTRemoteInput::connectTask(void *params) {
     vTaskDelete(nullptr);
 }
 
-void TTRemoteInput::disconnectTemporarily(int seconds) {
+void TTRemoteInput::disconnect() {
     if (client_ != nullptr) {
         client_->disconnect();
     }
     state_ = SCANNING;
+}
+
+void TTRemoteInput::disconnectTemporarily(int seconds) {
+    disconnect();
     keepDisconnectedUntilMs_ = millis() + seconds * 1000;
 
     std::string dfuString = "DFU-";
