@@ -73,7 +73,7 @@ void CrashReportScreen::render(DisplaySystem &display) {
             break;
         }
 
-        drawBulletLine("Uploading", state_.state > CrashUploadState::Uploading ? 100 : 0, false);
+        drawBulletLine("Uploading", state_.uploadPercentage, true);
         break;
     }
     }
