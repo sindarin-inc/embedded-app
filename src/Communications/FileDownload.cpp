@@ -55,7 +55,7 @@ auto DownloadFile(const char *url, int length,
         float percentProgress = (float)totalReadLen / length * 100.0f;
         auto now = esp_timer_get_time();
         // Report every 3-20s OR every 5% progress, whichever comes first
-        if ((now - time > 3000000) &&
+        if ((now - time > 5000000) &&
             (now - time > 20000000 || (percentProgress - lastPercentage) > 5)) {
             log_d("Downloaded %.1f%% (%.1f KB/s)", percentProgress,
                   totalReadLen / 1024.0f / ((esp_timer_get_time() - downloadStart) / 1000000.0f));
