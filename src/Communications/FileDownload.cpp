@@ -24,7 +24,7 @@ auto DownloadFile(const char *url, int length,
         return false;
     }
 
-    auto contentLength = client.getContentLength();
+    auto contentLength = client.fetchHeaders();
     if (length == 0) {
         length = contentLength;
     }

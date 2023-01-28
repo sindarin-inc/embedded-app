@@ -73,7 +73,7 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
         return 0;
     }
 
-    int contentLength = client.getContentLength();
+    int contentLength = client.fetchHeaders();
     int httpCode = client.getStatusCode();
     auto stream = client.makeReadStream();
 
@@ -150,6 +150,8 @@ auto SindarinAPI::uploadAndResetVoltageLog(FileSystem &fileSystem) -> int {
         log_e("HttpClient failed to write fully (writeLength=%d, serializedLength=%zu)",
               writeLength, serializedLength);
     }
+
+    client.fetchHeaders();
     int httpCode = client.getStatusCode();
 
     return httpCode;
@@ -170,6 +172,7 @@ auto SindarinAPI::uploadCrashReport(File crashFile, const String &contentType) -
         client.write(buffer, bytesRead);
     }
 
+    client.fetchHeaders();
     int httpCode = client.getStatusCode();
 
     return httpCode;
