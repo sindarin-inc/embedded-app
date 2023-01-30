@@ -37,8 +37,10 @@ auto LittleFSFileSystem::listDir(const std::string &path, FileList &files) const
     File file = root.openNextFile();
     while (file) {
         files.push_back(file.name());
+        file.close();
         file = root.openNextFile();
     }
+    root.close();
     return 0;
 }
 

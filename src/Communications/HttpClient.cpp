@@ -56,7 +56,7 @@ auto HttpClient::makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> {
     return std::make_shared<HttpOstream<4096>>(client_);
 }
 
-auto HttpClient::getContentLength() -> int { return esp_http_client_fetch_headers(client_); }
+auto HttpClient::fetchHeaders() -> int { return esp_http_client_fetch_headers(client_); }
 
 auto HttpClient::getStatusCode() -> int { return esp_http_client_get_status_code(client_); }
 

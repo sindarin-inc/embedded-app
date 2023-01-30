@@ -41,6 +41,7 @@ void CrashUploader::uploadCrash(
             return;
         }
 
+        int i = 0;
         for (auto &coreDumpFile : coreDumpFiles) {
             log_i("uploading %s", coreDumpFile.c_str());
 
@@ -54,15 +55,18 @@ void CrashUploader::uploadCrash(
                 // remove this core dump file
                 log_i("deleting %s", coreDumpFile.c_str());
                 fileSystem_.remove("/coredumps/" + coreDumpFile);
+                progressCallback(
+                    CrashUploadState{.state = CrashUploadState::State::Uploading,
+                                     .uploadPercentage = i * 100 / (int)coreDumpFiles.size()});
             } else {
                 log_e("could not send crash report %s, http code %d", coreDumpFile.c_str(),
                       httpCode);
-                char errMsg[64];
-                SafeSnprintf(errMsg, sizeof(errMsg), "upload failed, code %d", httpCode);
-                progressCallback(
-                    CrashUploadState{.state = CrashUploadState::State::Failure, .message = errMsg});
+                auto error = StringFormat("upload failed, code %d", httpCode);
+                progressCallback(CrashUploadState{.state = CrashUploadState::State::Failure,
+                                                  .message = std::move(error)});
                 return;
             }
+            i++;
         }
 
         progressCallback(CrashUploadState{.state = CrashUploadState::State::Done});

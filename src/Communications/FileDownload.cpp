@@ -29,7 +29,7 @@ auto DownloadFile(const char *url, int length,
         return false;
     }
 
-    auto contentLength = client.getContentLength();
+    auto contentLength = client.fetchHeaders();
     if (length == 0) {
         length = contentLength;
     }
@@ -58,11 +58,12 @@ auto DownloadFile(const char *url, int length,
         totalReadLen += readLen;
 
         float percentProgress = (float)totalReadLen / length * 100.0f;
-        auto now = millis();
+        auto now = esp_timer_get_time();
         // Report every 5-20s OR every 5% progress, whichever comes first
-        if ((now - time > 5000) && (now - time > 20000 || (percentProgress - lastPercentage) > 5)) {
+        if ((now - time > 5000000) &&
+            (now - time > 20000000 || (percentProgress - lastPercentage) > 5)) {
             log_d("Downloaded %.1f%% (%.1f KB/s)", percentProgress,
-                  totalReadLen / 1024.0f / ((millis() - downloadStart) / 1000.0f));
+                  totalReadLen / 1024.0f / ((esp_timer_get_time() - downloadStart) / 1000000.0f));
             progressCallback(totalReadLen, percentProgress);
             time = now;
             lastPercentage = percentProgress;
@@ -174,7 +175,8 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
     int written = 0;
     while (written < fileLength) {
         // Every ~ 6s at ~40-44KB/S
-        auto bytesWrittenToFile = file.write(fileBuffer, std::min(fileLength - written, 262144));
+        auto bytesWrittenToFile =
+            file.write(fileBuffer + written, std::min(fileLength - written, 262144));
         if (bytesWrittenToFile <= 0) {
             log_w("Failed to write to file");
             break;

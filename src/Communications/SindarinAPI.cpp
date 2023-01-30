@@ -73,7 +73,7 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
         return 0;
     }
 
-    int contentLength = client.getContentLength();
+    int contentLength = client.fetchHeaders();
     int httpCode = client.getStatusCode();
     auto stream = client.makeReadStream();
 
@@ -125,53 +125,82 @@ auto SindarinAPI::uploadAndResetVoltageLog(FileSystem &fileSystem) -> int {
         log_w("Voltage log file %s does not exist", localPath);
         return false;
     }
-    auto file = fileSystem.open(localPath, "r");
-
-    HttpClient client(SINDARIN_SERVER_URL "/user/voltagelogs/", "application/json",
-                      HTTP_METHOD_POST);
+    auto file = fileSystem.open(localPath, FILE_READ);
 
     auto requestJson = std::make_unique<SpiRamJsonDocument>(file.size() * 2);
     (*requestJson)["voltage_log"] = file.readString();
+    file.close();
 
     if ((*requestJson).overflowed()) {
         log_e("Failed to create JSON for voltage log upload");
-        file.close();
         return -1;
     }
 
-    // We need to know the content-length ahead of time so we need to write to a buffer
-    size_t serializedMaxSize = (*requestJson).memoryUsage();
-    char *serialized = (char *)heap_caps_malloc((*requestJson).memoryUsage(), MALLOC_CAP_SPIRAM);
+    // `memoryUsage()` isn't quite the right amount and we can't know for sure how big the
+    // serialized data will be until we actually serialize it. We probably only need 20% more or so
+    // but we have plenty of SPIRAM so let's just double it.
+    size_t serializedMaxSize = (*requestJson).memoryUsage() * 2;
+    char *serialized = (char *)heap_caps_malloc(serializedMaxSize, MALLOC_CAP_SPIRAM);
 
     // Write to SPIRAM
+    // TODO: I can't find a good way to verify that the whole thing was written. Maybe would be
+    // better for this to be a stream so we could check if we attempted to write but ran out of
+    // space.
     size_t serializedLength = serializeJson(*requestJson, serialized, serializedMaxSize);
+    if (serializedLength == serializedMaxSize) {
+        log_e("serializedLength is the same as the max size, probably ran out of space");
+    }
+
+    HttpClient client(SINDARIN_SERVER_URL "/user/voltagelogs/", "application/json",
+                      HTTP_METHOD_POST);
+    setAuth(client);
+
+    auto err = client.open(serializedLength);
+    if (err != ESP_OK) {
+        log_e("HttpClient failed to open: %d", err);
+        heap_caps_free(serialized);
+        return -1;
+    }
 
     int writeLength = client.write(serialized, serializedLength);
     if (writeLength != serializedLength) {
         log_e("HttpClient failed to write fully (writeLength=%d, serializedLength=%zu)",
               writeLength, serializedLength);
     }
+
+    heap_caps_free(serialized);
+
+    client.fetchHeaders();
     int httpCode = client.getStatusCode();
+
+    log_d("Voltage log upload http code: %d", httpCode);
 
     return httpCode;
 }
 
-auto SindarinAPI::uploadCrashReport(File crashFile, const String &contentType) -> int {
-    HttpClient client(SINDARIN_SERVER_URL "/coredumps/", "multipart", HTTP_METHOD_POST);
+auto SindarinAPI::uploadCrashReport(File &crashFile, const String &contentType) -> int {
+    HttpClient client(SINDARIN_SERVER_URL "/coredumps/", contentType.c_str(), HTTP_METHOD_POST);
     setAuth(client);
 
-    client.open(crashFile.size());
-    auto writeStream = client.makeWriteStream();
+    int writeSize = crashFile.size();
+    client.open(writeSize);
 
     size_t bufferSize = 4096;
     char *buffer = (char *)heap_caps_malloc(bufferSize, MALLOC_CAP_SPIRAM);
 
-    while (crashFile.available() > 0) {
+    // NOTE: crashFile.available() never goes down but it seems like it should
+    int bytesWritten = 0;
+    while (bytesWritten < writeSize) {
         auto bytesRead = crashFile.readBytes(buffer, bufferSize);
-        client.write(buffer, bytesRead);
+        bytesWritten += client.write(buffer, bytesRead);
     }
 
+    heap_caps_free(buffer);
+
+    client.fetchHeaders();
     int httpCode = client.getStatusCode();
+
+    log_d("uploadCrashReport http code %d", httpCode);
 
     return httpCode;
 }

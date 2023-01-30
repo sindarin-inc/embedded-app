@@ -35,7 +35,7 @@ public:
 
     auto uploadAndResetVoltageLog(FileSystem &fileSystem) -> int;
 
-    auto uploadCrashReport(File crashFile, const String &contentType) -> int;
+    auto uploadCrashReport(File &crashFile, const String &contentType) -> int;
 
 protected:
     static SindarinAPI *instance;

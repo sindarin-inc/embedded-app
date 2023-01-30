@@ -25,7 +25,7 @@ public:
 
     auto makeWriteStream() -> std::shared_ptr<HttpOstream<4096>>;
 
-    auto getContentLength() -> int;
+    auto fetchHeaders() -> int;
 
     auto getStatusCode() -> int;
 
