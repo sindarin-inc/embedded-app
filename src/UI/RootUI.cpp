@@ -534,7 +534,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         MenuItem(crashMenuName, [this, systemSettingsMenu, display, &fileSystem]() {
         auto crashReportScreen = new CrashReportScreen(*display, this->prefs_, fileSystem);
         this->setCurrentScreen(*crashReportScreen);
-        crashReportScreen->backCallback = [this, crashReportScreen, systemSettingsMenu]() {
+        crashReportScreen->backCallback = [this, display, crashReportScreen, systemSettingsMenu]() {
             systemSettingsMenu->setFirstLoad();
             setCurrentScreen(*systemSettingsMenu);
             systemSettingsMenu->render(*display);
