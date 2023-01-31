@@ -530,18 +530,23 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     std::string crashMenuName = StringFormat("Send Crash Report (%d)", coreDumpFiles.size());
 
-    systemSettingsMenu->addMenuItem(MenuItem(crashMenuName, [this, systemSettingsMenu, display,
-                                                             &fileSystem]() {
-        auto crashReportScreen = new CrashReportScreen(*display, this->prefs_, fileSystem);
-        this->setCurrentScreen(*crashReportScreen);
-        crashReportScreen->backCallback = [this, display, crashReportScreen, systemSettingsMenu]() {
-            systemSettingsMenu->setFirstLoad();
-            setCurrentScreen(*systemSettingsMenu);
-            systemSettingsMenu->render(*display);
-            delete crashReportScreen;
-        };
-        crashReportScreen->begin();
-    }));
+    systemSettingsMenu->addMenuItem(
+        MenuItem(crashMenuName, [this, systemSettingsMenu, display, &fileSystem]() {
+            auto crashReportScreen = new CrashReportScreen(*display, this->prefs_, fileSystem);
+            this->setCurrentScreen(*crashReportScreen);
+            crashReportScreen->backCallback = [this, display, crashReportScreen, systemSettingsMenu,
+                                               &fileSystem]() {
+                systemSettingsMenu->setFirstLoad();
+                FileList coreDumpFiles;
+                fileSystem.listDir("/coredumps", coreDumpFiles);
+                systemSettingsMenu->updateCurrItemTitle(
+                    StringFormat("Send Crash Report (%d)", coreDumpFiles.size()));
+                setCurrentScreen(*systemSettingsMenu);
+                systemSettingsMenu->render(*display);
+                delete crashReportScreen;
+            };
+            crashReportScreen->begin();
+        }));
 
     systemSettingsMenu->addMenuItem(MenuItem("Batteries and Temperature", [this, display,
                                                                            systemSettingsMenu]() {

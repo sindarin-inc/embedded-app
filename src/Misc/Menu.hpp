@@ -46,6 +46,8 @@ public:
 
     auto getCurrItem() -> MenuItem;
 
+    auto updateCurrItemTitle(std::string newTitle) -> bool;
+
     // Returns 1 if the selection was updated, 0 otherwise
     // Helps client to know if it needs to refresh (at beginning or end of menu)
     // The optional argument is if we want to skip over the last element in the menu
