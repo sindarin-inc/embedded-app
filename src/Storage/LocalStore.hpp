@@ -56,9 +56,13 @@ public:
         -> std::vector<std::string>;
     auto changedReadablesArchivedQueryParams(const ReadablesVector &readables)
         -> std::vector<std::string>;
+    auto changedReadablesBookmarksJson(const ReadablesVector &readables) -> std::string;
     auto processReadablePlacemarksFromServer(const Readable &readable, const uint32_t placemark)
         -> bool;
+    auto processReadableBookmarksFromServer(const Readable &readable,
+                                            const std::string bookmarkRange) -> bool;
     void resetReadablesPlacemarkChanged(const ReadablesVector &readables);
+    void resetReadablesArchivedChanged(const ReadablesVector &readables);
     void resetReadablesArchivedChanged(const ReadablesVector &readables);
 
     void syncFromRemote(const std::function<void(ContentSyncState state)> &progressCallback);

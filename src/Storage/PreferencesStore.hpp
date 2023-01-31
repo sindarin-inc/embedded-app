@@ -201,6 +201,7 @@ public:
     KeyedPrefsItem<uint32_t> readablePlace;
     KeyedPrefsItem<bool> readablePlaceChanged;
     KeyedPrefsItem<bool> readableArchivedChanged;
+    KeyedPrefsItem<bool> readableBookmarksChanged;
     PrefsItem<int> lastPageTurnerBattery;
     PrefsItem<int> invertSetting;
     PrefsItem<int> vcom;

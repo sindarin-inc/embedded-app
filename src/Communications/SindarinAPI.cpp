@@ -103,6 +103,9 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
     return httpCode;
 }
 
+auto SindarinAPI::syncBookmarks(const std::string readablesBookmarkedJson,
+                                const std::string articlesBookmarkedJson) {}
+
 auto SindarinAPI::downloadReadable(const Readable &readable, FileSystem &fileSystem,
                                    const std::function<void(int percentage)> &progressCallback)
     -> bool {

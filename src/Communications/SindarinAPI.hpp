@@ -16,6 +16,8 @@ struct CheckSyncRequest {
     std::vector<std::string> articlePlacemarks;
     std::vector<std::string> readablesArchived;
     std::vector<std::string> articlesArchived;
+    std::vector<std::string> readablesBookmarked;
+    std::vector<std::string> articlesBookmarked;
     int ptBattery;
     std::string ptBuild;
     bool skipContent;

@@ -189,6 +189,37 @@ auto LocalStore::changedReadablesArchivedQueryParams(const ReadablesVector &read
     return archived;
 }
 
+auto LocalStore::changedReadablesBookmarksJson(const ReadablesVector &readables) -> std::string {
+    auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
+    auto doc = std::make_unique<SpiRamJsonDocument>(2048 * std::max(1, (int)readables.size()));
+    // Create a key named readables of type array
+    JsonArray bookmarksJsonArray = doc->createNestedArray("bookmarks");
+
+    for (auto &readable : readables) {
+        if (readable.localOnly) {
+            continue;
+        }
+
+        bool changed = prefs_.readableBookmarksChanged.get(readable.shortenedUuid.c_str());
+        if (changed) {
+            log_i("Bookmarks changed on %s %s %s", modelType.c_str(), readable.title.c_str(),
+                  readable.uuid.c_str());
+
+            bookmarksJsonArray.add(readable);
+
+            if (doc->overflowed()) {
+                log_e("Out of space in SpiRamJsonDocument for %s", path.c_str());
+                return;
+            }
+        }
+    }
+
+    std::string bookmarksJson;
+    serializeJson(*doc, bookmarksJson);
+
+    return bookmarksJson;
+}
+
 auto LocalStore::processReadablePlacemarksFromServer(const Readable &readable,
                                                      const uint32_t placemark) -> bool {
     uint32_t onDevicePlace = prefs_.readablePlace.get(readable.shortenedUuid.c_str());
@@ -406,6 +437,39 @@ void LocalStore::syncFromRemote(
         log_d("Readables to delete: %zu", readablesToDelete.size());
         log_d("Articles to delete: %zu", articlesToDelete.size());
 
+        // syncState is used to track the progress of the sync
+        ContentSyncState syncState = {.state = ContentSyncState::State::Syncing};
+        syncState.tasks.reserve(readablesToDownload.size() + readablesToDelete.size() +
+                                articlesToDelete.size() + articlesToSave.size());
+
+        // Sync bookmarks before we download any new readables
+        auto readablesBookmarked = this->changedReadablesBookmarksJson(readables_);
+        auto articlesBookmarked = this->changedReadablesBookmarksJson(articles_);
+        if (readablesBookmarked.size() > 0 || articlesBookmarked.size() > 0) {
+            log_i("Syncing bookmarks");
+            syncState.tasks.push_back(ContentSyncState::Task{
+                .message = "Storing bookmarks",
+                .percentage = 0,
+            });
+
+            progressCallback(syncState);
+            auto success =
+                SindarinAPI::getInstance()->syncBookmarks(readablesBookmarked, articlesBookmarked);
+            if (success) {
+                log_i("Bookmarks synced");
+                this->resetReadablesBookmarkedChanged(readables_);
+                this->resetReadablesBookmarkedChanged(articles_);
+            } else {
+                log_e("Failed to sync bookmarks");
+                progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                                  .message = "Failed to sync bookmarks"});
+                delay(1000);
+            }
+
+            syncState.tasks[0].percentage = 100;
+            progressCallback(syncState);
+        }
+
         if (readablesToDownload.size() == 0 && readablesToDelete.size() == 0 &&
             articlesToDelete.size() == 0 && articlesToSave.size() == 0) {
             log_i("No new content to download");
@@ -420,9 +484,6 @@ void LocalStore::syncFromRemote(
                   "successful run");
             this->prefs_.lastReadablesSince.set("");
         }
-
-        ContentSyncState syncState = {.state = ContentSyncState::State::Syncing};
-        syncState.tasks.reserve(readablesToDownload.size());
 
         for (const auto &readable : readablesToDelete) {
             syncState.tasks.push_back(ContentSyncState::Task{

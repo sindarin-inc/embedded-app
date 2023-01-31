@@ -7,6 +7,7 @@
 #include "Misc/SpiramAllocator.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Models/Author.hpp"
+#include "Models/Bookmark.hpp"
 #include "Models/Json.hpp"
 #include "Models/JsonSerializable.hpp"
 #include "Models/ReadableFile.hpp"
@@ -28,6 +29,7 @@ public:
     std::string datePublished;
     std::vector<Author> authors;
     std::vector<ReadableFile> files;
+    std::vector<Bookmark> bookmarks;
     // TODO: source
     // TODO: categories
 
@@ -73,6 +75,11 @@ public:
         for (const auto &author : j["authors"].as<JsonArray>()) {
             authors.emplace_back();
             authors.back().fromJson(author);
+        }
+        bookmarks.clear();
+        for (const auto &bookmark : j["bookmarks"].as<JsonArray>()) {
+            bookmarks.emplace_back();
+            bookmarks.back().fromJson(bookmark);
         }
         files.clear();
         for (const auto &file : j["files"].as<JsonArray>()) {
