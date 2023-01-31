@@ -44,7 +44,7 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
     setAuth(client);
 
     auto body = StringFormat("build=%s&git_hash=%s&sn=%"
-                             "s&pt_battery=%d&pt_build=%s&skip_content=%d",
+                             "s&pt_battery=%d&pt_build=%s&skip_content=%s",
                              kVersionString, kGitHash, GetSerialNumber().c_str(), req.ptBattery,
                              req.ptBuild.c_str(), req.skipContent ? "true" : "false");
     if (req.readablesSince.length() > 0) {
