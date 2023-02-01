@@ -3,35 +3,25 @@
 #include <cstring>
 
 void CircBuffer::push(uint8_t *input, int size) {
-    if (size_ + size > capacity_) {
+    if ((size_ + size) > capacity_) {
         int diff = size_ + size - capacity_;
-        startPos_ += diff;
+
+        // remove data from beginning of buffer
         size_ -= diff;
-        if (startPos_ >= capacity_) {
-            startPos_ -= capacity_;
-        }
+        startPos_ = (startPos_ + diff) % capacity_;
     }
 
-    int insertPoint = startPos_ + size_;
-    if (insertPoint >= capacity_) {
-        insertPoint -= capacity_;
-    }
+    int insertPoint = (startPos_ + size_) % capacity_;
 
     int bytesCopied = 0;
     while (bytesCopied < size) {
-        int bytesToCopy = size - bytesCopied;
-        if (insertPoint + bytesToCopy > capacity_) {
-            bytesToCopy = capacity_ - insertPoint;
-        }
+        int bytesToCopy = std::min(size - bytesCopied, capacity_ - insertPoint);
 
         // copy data
         memcpy(&buf_[insertPoint], &input[bytesCopied], bytesToCopy);
         size_ += bytesToCopy;
         bytesCopied += bytesToCopy;
-        insertPoint += bytesToCopy;
-        if (insertPoint >= capacity_) {
-            insertPoint -= capacity_;
-        }
+        insertPoint = (insertPoint + bytesToCopy) % capacity_;
     }
 }
 
@@ -41,24 +31,14 @@ void CircBuffer::copyFrom(int pos, uint8_t *output, int size) {
         return;
     }
 
-    int copyPoint = startPos_ + pos;
-    if (copyPoint >= capacity_) {
-        copyPoint -= capacity_;
-    }
+    int copyPoint = (startPos_ + pos) % capacity_;
 
     int bytesCopied = 0;
     while (bytesCopied < size) {
-        int bytesToCopy = size - bytesCopied;
-        if (copyPoint + bytesToCopy > capacity_) {
-            bytesToCopy = capacity_ - copyPoint;
-        }
-
+        int bytesToCopy = std::min(size - bytesCopied, capacity_ - copyPoint);
         memcpy(&output[bytesCopied], &buf_[copyPoint], bytesToCopy);
         bytesCopied += bytesToCopy;
-        copyPoint += bytesToCopy;
-        if (copyPoint >= capacity_) {
-            copyPoint -= capacity_;
-        }
+        copyPoint = (copyPoint + bytesToCopy) % capacity_;
     }
 }
 
