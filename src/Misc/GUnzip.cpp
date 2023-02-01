@@ -18,7 +18,6 @@ extern "C" {
 #define ZLIB_WINDOW_SIZE 32768
 #define ZLIB_INFLATE_STATE_SIZE 7168
 
-
 auto GUnzip::init() -> bool {
 
     if (!inflateBuf_) {
