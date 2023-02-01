@@ -529,8 +529,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             firmwareUpdateScreen->begin();
         }));
 
-    systemSettingsMenu->addMenuItem(MenuItem("Send Crash Report", [this, systemSettingsMenu,
-                                                                   display, &fileSystem]() {
+    FileList coreDumpFiles;
+    fileSystem.listDir("/coredumps", coreDumpFiles);
+
+    std::string crashMenuName = StringFormat("Send Crash Report (%d)", coreDumpFiles.size());
+
+    systemSettingsMenu->addMenuItem(MenuItem(crashMenuName, [this, systemSettingsMenu, display,
+                                                             &fileSystem]() {
         auto crashReportScreen = new CrashReportScreen(*display, this->prefs_, fileSystem);
         this->setCurrentScreen(*crashReportScreen);
         crashReportScreen->backCallback = [this, display, crashReportScreen, systemSettingsMenu]() {
@@ -553,7 +558,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // TODO: Add UI for right screen temp also
         leftTemp = driver->readTemperature(ScreenSide::Left);
 #else
-            leftTemp = 99;
+        leftTemp = 99;
 #endif
         batteryStatus += StringFormat(" %dC", leftTemp);
 
