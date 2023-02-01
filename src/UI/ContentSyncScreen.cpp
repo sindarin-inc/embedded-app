@@ -1,6 +1,10 @@
 #include "ContentSyncScreen.hpp"
 
 #include "Communications/WiFi.hpp"
+#include "Misc/InactivityTimer.hpp"
+
+// TODO(john): Note-to-self: Externs are janky. Do better.
+extern InactivityTimer inactivityTimer;
 
 void ContentSyncScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
@@ -149,6 +153,8 @@ void ContentSyncScreen::begin() {
     render(display_);
 
     localStore_.syncFromRemote([this](const ContentSyncState &state) {
+        inactivityTimer.feed();
+
         if (state.state == ContentSyncState::Failure || state.state == ContentSyncState::Synced ||
             state.state == ContentSyncState::AlreadySynced) {
             DisconnectWifi();

@@ -148,6 +148,7 @@ void PowerTask(void *parameter) {
             } else {
                 log_d("Disabled light sleep");
             }
+            inactivityTimer.pause();
         } else if (!USBConnected() && pmConfig.light_sleep_enable == false) {
             // USB is disconnected so enable light sleep
             pmConfig.light_sleep_enable = true;
@@ -157,6 +158,7 @@ void PowerTask(void *parameter) {
             } else {
                 log_d("Enabled light sleep");
             }
+            inactivityTimer.resume();
         }
 #endif
     }

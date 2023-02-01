@@ -28,8 +28,21 @@ public:
         if (timer_ == nullptr) {
             return;
         }
-        // Reset the timer.
         xTimerReset(timer_, portMAX_DELAY);
+    }
+
+    void pause() {
+        if (timer_ == nullptr) {
+            return;
+        }
+        xTimerStop(timer_, portMAX_DELAY);
+    }
+
+    void resume() {
+        if (timer_ == nullptr) {
+            return;
+        }
+        xTimerStart(timer_, portMAX_DELAY);
     }
 
 private:
