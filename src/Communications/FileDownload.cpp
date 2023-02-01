@@ -82,9 +82,11 @@ auto DownloadFile(const char *url, int length,
 
     client.close();
 
-    if (length != totalReadLen && !gzip) {
+    // verify we received enough bytes according to the content length header
+    // rather than the length passed in, this works for compressed or uncompressed files
+    if (contentLength != totalReadLen) {
         log_e("Wrote fewer bytes than expected, expected %d bytes but got %d bytes", length,
-              totalReadLen);
+            totalReadLen);
         return false;
     }
     return true;
