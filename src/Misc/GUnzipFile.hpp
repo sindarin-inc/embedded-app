@@ -47,7 +47,6 @@ protected:
     int outSize_{0};
     int outIndex_{0};
     bool lastInput_{false};
-    bool outputBufferWasFull_{false};
     CircBuffer lookBackBuffer_;
     int lookBackBytes_{0};
 

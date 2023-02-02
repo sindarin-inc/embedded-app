@@ -53,19 +53,16 @@ auto GUnzipFile::read(uint8_t *buf, size_t size) -> size_t {
             }
 
             // output buffer empty now
-            // if output buffer was full before, decompress again to flush internal buffer
-            if (outputBufferWasFull_) {
-                outputBufferWasFull_ = false;
-
-                int inputRead = 0;
-                int err = gunzip_.decompress(inBuf_, 0, outBuf_, 1024, inputRead, outSize_);
-
-                if (outSize_ == 1024) {
-                    outputBufferWasFull_ = true;
-                }
-
-                outIndex_ = 0;
+            // try to flush more output data. If we get Z_BUF_ERROR, it means the input is exhausted
+            // and we will have to provide more input data to proceed.
+            int inputRead = 0;
+            int err = gunzip_.decompress(inBuf_, 0, outBuf_, 1024, inputRead, outSize_);
+            if (err == Z_BUF_ERROR) {
+                // no more output to flush
+                outSize_ = 0;
             }
+
+            outIndex_ = 0;
 
             // keep going until we have copied enough bytes
             continue;
@@ -103,10 +100,6 @@ auto GUnzipFile::read(uint8_t *buf, size_t size) -> size_t {
         if (err != Z_OK && err != Z_STREAM_END) {
             log_e("GUNzipFile: Error decompressing %d", err);
             return 0;
-        }
-
-        if (outSize_ == 1024) {
-            outputBufferWasFull_ = true;
         }
 
         inSize_ -= inputRead;
