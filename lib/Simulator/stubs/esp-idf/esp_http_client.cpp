@@ -83,6 +83,7 @@ protected:
     bool requestMade_ = false;
 
     auto makeRequest() -> httplib::Result {
+        client->set_decompress(false);
         if (config.method == HTTP_METHOD_POST) {
             return client->Post(path.c_str(), headers, writeBody, contentType.c_str());
         } else { // config.method == HTTP_METHOD_GET
