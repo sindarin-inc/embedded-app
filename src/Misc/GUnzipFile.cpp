@@ -1,4 +1,5 @@
 #include "GUnzipFile.hpp"
+
 #include <algorithm>
 
 auto GUnzipFile::write(const uint8_t *buf, size_t size) -> size_t {
