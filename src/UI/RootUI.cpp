@@ -921,7 +921,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             gzipReadablesMenu->setExtraText(
                 gzipSettingToString(this->prefs_.gzipReadables.get().value_or(false)));
 
-            auto confirmMessage = [this, gzipReadablesMenu, display]() {
+            auto confirmMessage = [gzipReadablesMenu, display]() {
                 gzipReadablesMenu->showTemporaryMessage(*display, "Compression Set", 200, false);
                 gzipReadablesMenu->backCallback();
             };
