@@ -1,5 +1,6 @@
 #include "CircBuffer.hpp"
 
+#include <Arduino.h>
 #include <cstring>
 
 void CircBuffer::push(uint8_t *input, int size) {
@@ -28,6 +29,8 @@ void CircBuffer::push(uint8_t *input, int size) {
 void CircBuffer::copyFrom(int pos, uint8_t *output, int size) {
     if (pos + size > size_) {
         // error
+        log_e("CircBuffer error: tried to copy %d bytes from pos %d buffer of size %d", size, pos,
+              size_);
         return;
     }
 
