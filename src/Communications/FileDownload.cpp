@@ -7,7 +7,7 @@
 #include "Misc/GUnzipFile.hpp"
 #include "sindarin-debug.h"
 
-auto DownloadFile(const char *url, int length,
+auto DownloadFile(const char *url,
                   const std::function<bool(int httpCode, int contentLength)> &openedConnection,
                   const std::function<size_t(HttpClient &client, int index)> &readWrite,
                   const std::function<void(int bytesWritten, float percentage)> &progressCallback,
@@ -30,11 +30,10 @@ auto DownloadFile(const char *url, int length,
     }
 
     auto contentLength = client.fetchHeaders();
-    if (length == 0) {
-        length = contentLength;
-    }
-    if (contentLength != length) {
-        log_w("Content length was %d but expected %d", contentLength, length);
+    if (contentLength <= 0) {
+        // if we somehow don't have a content length header, consider it an error for now
+        log_e("Server did not return a content length for %s", url);
+        return false;
     }
 
     auto httpCode = client.getStatusCode();
@@ -57,7 +56,7 @@ auto DownloadFile(const char *url, int length,
 
         totalReadLen += readLen;
 
-        float percentProgress = (float)totalReadLen / length * 100.0f;
+        float percentProgress = (float)totalReadLen / contentLength * 100.0f;
         auto now = esp_timer_get_time();
         // Report every 5-20s OR every 5% progress, whichever comes first
         if ((now - time > 5000000) &&
@@ -77,7 +76,7 @@ auto DownloadFile(const char *url, int length,
     log_i("DownloadFile complete %d in %" PRId64 "us (%f Bps %f KB/s, %f kbps)", totalReadLen,
           duration, bps, bps / 1000, 8 * bps / 1000);
 
-    float percentProgress = (float)totalReadLen / length * 100.0f;
+    float percentProgress = (float)totalReadLen / contentLength * 100.0f;
     progressCallback(totalReadLen, percentProgress);
 
     client.close();
@@ -85,14 +84,14 @@ auto DownloadFile(const char *url, int length,
     // verify we received enough bytes according to the content length header
     // rather than the length passed in, this works for compressed or uncompressed files
     if (contentLength != totalReadLen) {
-        log_e("Wrote fewer bytes than expected, expected %d bytes but got %d bytes", length,
+        log_e("Wrote fewer bytes than expected, expected %d bytes but got %d bytes", contentLength,
               totalReadLen);
         return false;
     }
     return true;
 }
 
-auto DownloadFile(const char *url, int length,
+auto DownloadFile(const char *url,
                   const std::function<bool(int httpCode, int contentLength)> &openedConnection,
                   const std::function<size_t(const uint8_t *buf, size_t size)> &writeBytes,
                   const std::function<void(int bytesWritten, float percentage)> &progressCallback,
@@ -103,7 +102,7 @@ auto DownloadFile(const char *url, int length,
     auto *buffer = (uint8_t *)heap_caps_malloc(bufferSize, MALLOC_CAP_SPIRAM);
 
     return DownloadFile(
-        url, length, openedConnection,
+        url, openedConnection,
         [buffer, writeBytes](HttpClient &client, int index) {
             int readLen = client.read((char *)buffer, bufferSize);
 
@@ -155,7 +154,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
     };
 
     DownloadFile(
-        url, length,
+        url,
         [&fileBuffer, &fileLength](int httpCode, int contentLength) -> bool {
             fileLength = contentLength;
             fileBuffer = (uint8_t *)heap_caps_malloc(contentLength, MALLOC_CAP_SPIRAM);
