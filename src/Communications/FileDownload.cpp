@@ -133,17 +133,11 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
         log_d("Deleted %s", path);
     }
 
-    auto file = fileSystem.open(fullPath.c_str(), FILE_WRITE, true);
-    if (!file) {
-        log_e("Failed to open file %s for writing", fullPath.c_str());
-        return false;
-    }
-
     // Load the whole file into SPIRAM for fast network operations then write to disk
     // TODO: We could probably improve overall speed, while minimizing WiFi connected time by
     // writing to disk as we go from another core or writing to disk from a lower priority task. But
     // that will be harder to make
-    uint8_t *fileBuffer;
+    uint8_t *fileBuffer = nullptr;
     int fileLength;
 
     // Because file writes tend to be twice the time the http download takes right now, adjust the
@@ -153,7 +147,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
         progressCallback(percentage / 3);
     };
 
-    DownloadFile(
+    auto success = DownloadFile(
         url,
         [&fileBuffer, &fileLength](int httpCode, int contentLength) -> bool {
             fileLength = contentLength;
@@ -172,6 +166,17 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
 
     auto time = esp_timer_get_time();
     auto downloadStart = time;
+
+    if (!success) {
+        log_e("Failed to download file");
+        return false;
+    }
+
+    auto file = fileSystem.open(fullPath.c_str(), FILE_WRITE, true);
+    if (!file) {
+        log_e("Failed to open file %s for writing", fullPath.c_str());
+        return false;
+    }
 
     int written = 0;
     while (written < fileLength) {
