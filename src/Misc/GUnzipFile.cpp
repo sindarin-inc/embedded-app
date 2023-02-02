@@ -1,7 +1,10 @@
 #include "GUnzipFile.hpp"
+#include <algorithm>
 
 auto GUnzipFile::write(const uint8_t *buf, size_t size) -> size_t {
     // N/A, this is a readonly file
+    log_w("write() called on readonly gzip file!");
+    assert(false);
     return 0;
 }
 
@@ -12,10 +15,8 @@ auto GUnzipFile::read(uint8_t *buf, size_t size) -> size_t {
     while (size - bytesCopied > 0) {
         // first check if we are reading from the lookback buffer
         if (lookBackBytes_ > 0) {
-            int bytesToCopy = size - bytesCopied;
-            if (bytesToCopy > lookBackBytes_) {
-                bytesToCopy = lookBackBytes_;
-            }
+
+            int bytesToCopy = std::min((int)size - bytesCopied, lookBackBytes_);
 
             if (buf) {
                 lookBackBuffer_.copyFrom(lookBackBuffer_.size() - lookBackBytes_, &buf[bytesCopied],
@@ -32,10 +33,7 @@ auto GUnzipFile::read(uint8_t *buf, size_t size) -> size_t {
         // next check if we have any uncompressed bytes available
         if (outSize_ > 0) {
             // copy as many bytes as possible
-            int bytesToCopy = size - bytesCopied;
-            if (bytesToCopy > outSize_) {
-                bytesToCopy = outSize_;
-            }
+            int bytesToCopy = std::min((int)size - bytesCopied, outSize_);
 
             if (buf) {
                 memcpy(&buf[bytesCopied], &outBuf_[outIndex_], bytesToCopy);

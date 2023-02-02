@@ -140,7 +140,6 @@ auto LocalStore::hasReadable(const ReadablesVector &readables, const Readable &r
                 } else {
                     return true;
                 }
-                return true;
             } else if (&readables == &articles_) {
                 return true;
             }
