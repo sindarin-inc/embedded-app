@@ -39,7 +39,6 @@
 #include "UI/ReadableScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
 #include "UI/StatsScreen.hpp"
-#include "UI/ToggleCompressedReadablesScreen.hpp"
 #include "UI/VoltageLogUploadScreen.hpp"
 #include "Version.hpp"
 #include "config.h"
