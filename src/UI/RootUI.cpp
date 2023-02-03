@@ -538,7 +538,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             auto crashReportScreen = new CrashReportScreen(*display, this->prefs_, fileSystem);
             this->setCurrentScreen(*crashReportScreen);
             crashReportScreen->backCallback = [this, display, crashReportScreen, systemSettingsMenu,
-                                               &fileSystem, countCoreDumps]() {
+                                               countCoreDumps]() {
                 systemSettingsMenu->setFirstLoad();
                 systemSettingsMenu->updateCurrItemTitle(
                     StringFormat("Send Crash Report (%d)", countCoreDumps()));
