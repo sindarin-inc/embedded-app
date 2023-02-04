@@ -14,7 +14,7 @@ auto FileSystem::newRendererStream(const char *path) -> RendererStream * {
         log_e("Failed to open file: %s", path);
         return nullptr;
     }
-    return new ContainerStream<File>(file);
+    return new FileStream(file);
 }
 
 auto FileSystem::newGzipRendererStream(const char *path) -> RendererStream * {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "FS.h"
 #include <cinttypes>
 #include <cstddef>
 #include <fstream>
@@ -49,6 +50,34 @@ public:
 
 protected:
     T contained_;
+};
+
+class FileStream : public RendererStream {
+public:
+    FileStream(File contained) : contained_(contained) {}
+
+    auto available() -> int override { return contained_.available(); }
+    auto readBytes(uint8_t* buf, int size) -> int { 
+        int maxBufSize = 128;
+        int bytesRead = 0;
+        while (bytesRead < size) {
+            int bytesToRead = std::min(size - bytesRead, maxBufSize);
+            int r = contained_.read(&buf[bytesRead], bytesToRead);
+            
+            bytesRead += r;
+            if (r != bytesToRead) {
+                return bytesRead;
+            }
+        }
+        return size;
+    }
+    auto read() -> int override { return contained_.read(); };
+    auto seek(uint32_t pos) -> bool override { return contained_.seek(pos); };
+    auto position() -> size_t override { return contained_.position(); }
+    auto size() -> size_t override { return contained_.size(); }
+
+protected:
+    File contained_;
 };
 
 class StdStringStream : public RendererStream {
