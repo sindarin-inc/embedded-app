@@ -95,7 +95,6 @@ auto GUnzipStream::read() -> int {
 }
 
 auto GUnzipStream::seek(uint32_t pos) -> bool {
-    log_i("GS seek to %d", pos);
     size_t newPosition = pos;
     if (newPosition > position_) {
         // for forwards seeks, decompress until desired location is reached.
@@ -122,7 +121,6 @@ auto GUnzipStream::seek(uint32_t pos) -> bool {
 }
 
 auto GUnzipStream::position() -> size_t {
-    log_i("position %d", position_);
     return position_;
 }
 
@@ -144,8 +142,6 @@ void GUnzipStream::readSize() {
     // move bytes (size is little endian)
     uncompressedSize_ =
         (sizeBytes[3] << 24) + (sizeBytes[2] << 16) + (sizeBytes[1] << 8) + sizeBytes[0];
-
-    log_i("uncompressed size: %d", uncompressedSize_);
 }
 
 auto GUnzipStream::size() -> size_t {

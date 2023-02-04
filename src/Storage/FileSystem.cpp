@@ -5,6 +5,8 @@
 #include "Misc/LookBackStream.hpp"
 #include "sindarin-debug.h"
 
+#define LOOKBACK_BUFFER_SIZE 32768
+
 auto FileSystem::newRendererStream(const char *path) -> RendererStream * {
     log_d("Attempting to open: %s", path);
     auto file = open(path);
@@ -23,11 +25,6 @@ auto FileSystem::newGzipRendererStream(const char *path) -> RendererStream * {
         return nullptr;
     }
 
-    //File gunzipFile = GUnzipFile::openGzFile(file);
-    //return new ContainerStream<File>(gunzipFile);
-
     RendererStream* gs = new GUnzipStream(file);
-    RendererStream* lgs = new LookBackStream(gs, 32768);
-
-    return lgs;
+    return new LookBackStream(gs, LOOKBACK_BUFFER_SIZE);
 }

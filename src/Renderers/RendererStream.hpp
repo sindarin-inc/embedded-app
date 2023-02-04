@@ -9,6 +9,7 @@
 #include <utility>
 
 #include <stdint.h>
+#include "sindarin-debug.h"
 
 class RendererStream {
 public:
@@ -16,8 +17,17 @@ public:
 
     virtual auto available() -> int = 0;
     virtual auto readBytes(uint8_t* buf, int size) -> int {
-        // bad implementation, replace
-        return 0;
+        int ch = 0;
+        for (int i = 0; i < size; i++) {
+            ch = read();
+            if (ch < 0) {
+                return i;
+            }
+
+            buf[i] = ch;
+        }
+
+        return size;
     };
     virtual auto read() -> int = 0;
     virtual auto seek(uint32_t pos) -> bool = 0;

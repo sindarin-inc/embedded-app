@@ -2,7 +2,7 @@
 #include "sindarin-debug.h"
 
 auto LookBackStream::available() -> int {
-    return stream_->available();
+    return size() - position();
 }
 
 auto LookBackStream::readBytes(uint8_t* buf, int size) -> int {
@@ -105,8 +105,8 @@ auto LookBackStream::seek(uint32_t pos) -> bool {
             lookBackBytes_ = 0;
 
             // try to seek the full capacity of the buffer before the target position,
-            // so the lookback buffer can fill up again
-            int seekPos = std::min((int)pos - lookBackBuffer_.capacity(), 0);
+            // so the lookback buffer can fill up again.
+            int seekPos = std::max((int)pos - lookBackBuffer_.capacity(), 0);
             stream_->seek(seekPos);
             position_ = stream_->position();
 

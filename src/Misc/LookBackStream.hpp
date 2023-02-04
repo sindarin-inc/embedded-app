@@ -9,7 +9,12 @@ public:
     , lookBackBuffer_(lookBackSize) 
     , lookBackBytes_(0)
     , position_(0) {}
-    ~LookBackStream() {}
+    
+    ~LookBackStream() {
+        if (stream_) {
+            delete stream_;
+        }
+    }
 
     auto available() -> int;
     auto readBytes(uint8_t* buf, int size) -> int;
