@@ -163,6 +163,23 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         log_d("Found readable: %s", (*it).title.c_str());
     }
 
+    bool hasLastQuestion = false;
+    it = std::find_if(readables.begin(), readables.end(), [](const Readable &x) {
+        return (x.title.compare("The Last Question") == 0);
+    });
+    if (it == readables.end()) {
+        log_d("Could not find readable: %s, not enabling CES or EMC modes", "The Last Question");
+    } else {
+        hasLastQuestion = true;
+    }
+
+    // If somehow these were set but we don't have the right readable, unset them.
+    if ((!hasLastQuestion) &&
+        ((prefs_.cesMode.get().value() == 1) || prefs_.emcMode.get().value() == 1)) {
+        prefs_.cesMode.set(0);
+        prefs_.emcMode.set(0);
+    }
+
     auto booksMenu = new MenuScreen(this->power_, mainMenu->getMyStyle(), "Books");
 
     // If there are no books, show the Sync Content item in the books tab.
@@ -599,15 +616,17 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             esp_restart();
         }));
 
-    systemSettingsMenu->addMenuItem(
-        MenuItem("Turn on CES Mode", [this, systemSettingsMenu, display]() {
-            log_d("CES On!");
-            prefs_.cesMode.set(true);
-            systemSettingsMenu->showTemporaryMessage(*display, "CES mode on! Resetting...", 2000,
-                                                     false);
-            prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
-            esp_restart();
-        }));
+    if (hasLastQuestion) {
+        systemSettingsMenu->addMenuItem(
+            MenuItem("Turn on CES Mode", [this, systemSettingsMenu, display]() {
+                log_d("CES On!");
+                prefs_.cesMode.set(true);
+                systemSettingsMenu->showTemporaryMessage(*display, "CES mode on! Resetting...",
+                                                         2000, false);
+                prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
+                esp_restart();
+            }));
+    }
 
     systemSettingsMenu->addMenuItem(MenuItem("Statistics", [this, systemSettingsMenu, display]() {
         auto statsScreen = new StatsScreen(*display, prefs_);
@@ -729,24 +748,27 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
     }));
 
-    debugSettingsMenu->addMenuItem(MenuItem("Turn on EMC Mode", [this, debugSettingsMenu,
-                                                                 display]() {
-        log_d("EMC On!");
-        prefs_.emcMode.set(true);
-        debugSettingsMenu->showTemporaryMessage(*display, "EMC mode on! Resetting...", 2000, false);
-        prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
-        esp_restart();
-    }));
+    if (hasLastQuestion) {
+        debugSettingsMenu->addMenuItem(
+            MenuItem("Turn on EMC Mode", [this, debugSettingsMenu, display]() {
+                log_d("EMC On!");
+                prefs_.emcMode.set(true);
+                debugSettingsMenu->showTemporaryMessage(*display, "EMC mode on! Resetting...", 2000,
+                                                        false);
+                prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
+                esp_restart();
+            }));
 
-    debugSettingsMenu->addMenuItem(
-        MenuItem("Turn off EMC Mode", [this, debugSettingsMenu, display]() {
-            log_d("EMC Off!");
-            prefs_.emcMode.set(false);
-            debugSettingsMenu->showTemporaryMessage(*display, "EMC mode off! Resetting...", 2000,
-                                                    false);
-            prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
-            esp_restart();
-        }));
+        debugSettingsMenu->addMenuItem(
+            MenuItem("Turn off EMC Mode", [this, debugSettingsMenu, display]() {
+                log_d("EMC Off!");
+                prefs_.emcMode.set(false);
+                debugSettingsMenu->showTemporaryMessage(*display, "EMC mode off! Resetting...",
+                                                        2000, false);
+                prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
+                esp_restart();
+            }));
+    }
 
     debugSettingsMenu->addMenuItem(
         MenuItem("Alignment Setup", [this, debugSettingsMenu, display, &lightingController]() {
