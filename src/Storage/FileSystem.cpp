@@ -1,9 +1,11 @@
 #include "FileSystem.hpp"
 
 #include "Misc/GUnzipFile.hpp"
+#include "Misc/GUnzipStream.hpp"
+#include "Misc/LookBackStream.hpp"
 #include "sindarin-debug.h"
 
-auto FileSystem::newRendererStream(const char *path) -> ContainerStream<File> * {
+auto FileSystem::newRendererStream(const char *path) -> RendererStream * {
     log_d("Attempting to open: %s", path);
     auto file = open(path);
     if (!file) {
@@ -13,7 +15,7 @@ auto FileSystem::newRendererStream(const char *path) -> ContainerStream<File> * 
     return new ContainerStream<File>(file);
 }
 
-auto FileSystem::newGzipRendererStream(const char *path) -> ContainerStream<File> * {
+auto FileSystem::newGzipRendererStream(const char *path) -> RendererStream * {
     log_d("Attempting to open: %s", path);
     auto file = open(path);
     if (!file) {
@@ -21,7 +23,11 @@ auto FileSystem::newGzipRendererStream(const char *path) -> ContainerStream<File
         return nullptr;
     }
 
-    File gunzipFile = GUnzipFile::openGzFile(file);
+    //File gunzipFile = GUnzipFile::openGzFile(file);
+    //return new ContainerStream<File>(gunzipFile);
 
-    return new ContainerStream<File>(gunzipFile);
+    RendererStream* gs = new GUnzipStream(file);
+    RendererStream* lgs = new LookBackStream(gs, 32768);
+
+    return lgs;
 }

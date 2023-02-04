@@ -9,6 +9,8 @@
 #include "Models/UserReadable.hpp"
 #include "Storage/FileSystem.hpp"
 
+#include <functional>
+
 struct CheckSyncRequest {
     std::string readablesSince;
     std::string articlesSince;

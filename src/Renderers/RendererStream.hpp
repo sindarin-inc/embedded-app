@@ -8,11 +8,17 @@
 #include <string>
 #include <utility>
 
+#include <stdint.h>
+
 class RendererStream {
 public:
     virtual ~RendererStream() = default;
 
     virtual auto available() -> int = 0;
+    virtual auto readBytes(uint8_t* buf, int size) -> int {
+        // bad implementation, replace
+        return 0;
+    };
     virtual auto read() -> int = 0;
     virtual auto seek(uint32_t pos) -> bool = 0;
     virtual auto position() -> size_t = 0;

@@ -2,6 +2,7 @@
 
 #include "Communications/HttpClient.hpp"
 #include "Storage/FileSystem.hpp"
+#include <functional>
 
 auto DownloadFile(const char *url,
                   const std::function<bool(int httpCode, int contentLength)> &openedConnection,

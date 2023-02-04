@@ -5,6 +5,7 @@
 
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include <functional>
 
 struct CrashUploadState {
     enum State {
