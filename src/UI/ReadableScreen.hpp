@@ -31,13 +31,13 @@ public:
           display_(display) {
         currentScreen_ = this;
         renderer_.setStream(stream);
-        pageSpeed_ = prefs_.autoPilotSpeed.get().value();
+        pageSpeed_ = prefs_.autoPilotSpeed.get().value_or(0);
         // Since we copy in the readable from RootUI and RootUI only creates
         // the readable at the initial MainMenu creation, the place of that
         // readable may be stale. Hence we must re-load it from the prefs.
         // Not the prettiest of fixes, but passing the readable by reference
         // seems to not work with some of the const requirements by the lamdas.
-        if (!prefs_.cesMode.get().value()) {
+        if (!prefs_.cesMode.get().value_or(false)) {
             readable_.place = prefs_.readablePlace.get(readable_.shortenedUuid.c_str());
         } else {
             readable_.place = 0;

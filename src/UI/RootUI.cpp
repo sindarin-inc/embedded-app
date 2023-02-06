@@ -109,7 +109,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // Currently, the wifi plan is to have the Espressif FCC test mode take care of that
     // piece. But if it doesn't, then we can add it here by doing a wifi connect,
     // sync content, delete content, repeat.
-    if (prefs_.emcMode.get().value() == 1) {
+    if (prefs_.emcMode.get().value_or(false)) {
         mainMenu->addMenuItem(MenuItem("Mode 1 On", []() {}));
         mainMenu->addMenuItem(
             MenuItem("Mode 2 (reading)", [this, display, readables, createReadableScreen]() {
@@ -591,7 +591,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     systemSettingsMenu->addMenuItem(
         MenuItem("Turn on Onboarding Mode", [this, systemSettingsMenu, display]() {
             log_d("Entering calibration");
-            prefs_.demoMode.set(1);
+            prefs_.demoMode.set(true);
 
             systemSettingsMenu->showTemporaryMessage(*display, "Onboarding mode on! Resetting...",
                                                      2000, false);
@@ -602,7 +602,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     systemSettingsMenu->addMenuItem(
         MenuItem("Turn on CES Mode", [this, systemSettingsMenu, display]() {
             log_d("CES On!");
-            prefs_.cesMode.set(1);
+            prefs_.cesMode.set(true);
             systemSettingsMenu->showTemporaryMessage(*display, "CES mode on! Resetting...", 2000,
                                                      false);
             prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
@@ -732,7 +732,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     debugSettingsMenu->addMenuItem(MenuItem("Turn on EMC Mode", [this, debugSettingsMenu,
                                                                  display]() {
         log_d("EMC On!");
-        prefs_.emcMode.set(1);
+        prefs_.emcMode.set(true);
         debugSettingsMenu->showTemporaryMessage(*display, "EMC mode on! Resetting...", 2000, false);
         prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
         esp_restart();
@@ -741,7 +741,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     debugSettingsMenu->addMenuItem(
         MenuItem("Turn off EMC Mode", [this, debugSettingsMenu, display]() {
             log_d("EMC Off!");
-            prefs_.emcMode.set(0);
+            prefs_.emcMode.set(false);
             debugSettingsMenu->showTemporaryMessage(*display, "EMC mode off! Resetting...", 2000,
                                                     false);
             prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
@@ -1003,7 +1003,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     mainMenu->addSubMenuScreen(settingsMenu);
 
-    int inDemo = prefs_.demoMode.get().value();
+    bool inDemo = prefs_.demoMode.get().value_or(false);
 
     if (inDemo) {
         auto demoScreen = new DemoScreen(*display, prefs_, this->power_, lightingController);
@@ -1013,7 +1013,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             delete demoScreen;
         };
         this->setCurrentScreen(*demoScreen);
-    } else if (prefs_.cesMode.get().value()) {
+    } else if (prefs_.cesMode.get().value_or(false)) {
         auto cesScreen = new CesScreen(*display, prefs_, this->power_, lightingController);
         // reset prefs for of The Last Question readable
         log_d("Starting CES mode readable load");

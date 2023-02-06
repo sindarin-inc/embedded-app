@@ -48,7 +48,7 @@ void BLESettings::writePageTurnerBuildToCharacteristic(BLECharacteristic *charac
 void BLESettings::writePageTurnerBatteryToCharacteristic(BLECharacteristic *characteristic,
                                                          const std::string &key) {
     std::string value =
-        StringFormat("%s=%d", key.c_str(), this->prefs_->lastPageTurnerBattery.get().value());
+        StringFormat("%s=%d", key.c_str(), this->prefs_->lastPageTurnerBattery.get().value_or(0));
     log_i("GATT client reading page turner battery: %s", value.c_str());
     characteristic->setValue(value);
     characteristic->notify();

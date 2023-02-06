@@ -303,7 +303,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // happens in this method. Clunky, for sure. But when
     // we better understand vcom and don't need to have such fine-tuned
     // settings for dark mode and vcom, we can probably clean it up then.
-    myDisplay.invertDisplay(prefs.invertSetting.get().value());
+    myDisplay.invertDisplay(prefs.invertSetting.get().value_or(false));
 
 #if EINKET013TT1
 #ifdef DISPLAY_POWER
@@ -311,12 +311,13 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     digitalWrite(DISPLAY_POWER, HIGH);
 #endif
     // If the saved prefs indicated a vcom, set it here.
-    if (prefs.vcom.get().value() != 0) {
-        myDisplay.getDriver()->setVcom(prefs.vcom.get().value());
+    auto vcomSetting = prefs.vcom.get();
+    if (vcomSetting.has_value()) {
+        myDisplay.getDriver()->setVcom(vcomSetting.value());
     }
 #endif
 
-    switch (prefs.font.get().value()) {
+    switch (prefs.font.get().value_or(PREFS_TAHOMA_REGULAR)) {
     case PREFS_LUCIDA_REGULAR:
         myDisplay.style.setFontFamily(myDisplay.style.lucidaRegular);
         break;
@@ -339,38 +340,25 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 
     DisplayRect initialRect;
-    initialRect.x = prefs.rectX.get().value();
-    initialRect.y = prefs.rectY.get().value();
-    initialRect.width = prefs.rectW.get().value();
-    initialRect.height = prefs.rectH.get().value();
+    initialRect.x = prefs.rectX.get().value_or(myDisplay.defaultBoundingBox.x);
+    initialRect.y = prefs.rectY.get().value_or(myDisplay.defaultBoundingBox.y);
+    initialRect.width = prefs.rectW.get().value_or(myDisplay.defaultBoundingBox.width);
+    initialRect.height = prefs.rectH.get().value_or(myDisplay.defaultBoundingBox.height);
 
-    // If prefs have never been set before set them.
-    if ((initialRect.width == 0) && (initialRect.height == 0) && (initialRect.x == 0) &&
-        (initialRect.y == 0)) {
-        initialRect.x = myDisplay.defaultBoundingBox.x;
-        initialRect.y = myDisplay.defaultBoundingBox.y;
-        initialRect.width = myDisplay.defaultBoundingBox.width;
-        initialRect.height = myDisplay.defaultBoundingBox.height;
-        prefs.rectX.set(initialRect.x);
-        prefs.rectY.set(initialRect.y);
-        prefs.rectW.set(initialRect.width);
-        prefs.rectH.set(initialRect.height);
-    }
-
-    log_d("Setting bounding box %d %d %d %d", initialRect.x, initialRect.y, initialRect.width,
+    log_d("Initial bounding box is %d %d %d %d", initialRect.x, initialRect.y, initialRect.width,
           initialRect.height);
     myDisplay.setBoundingBox(initialRect);
-    myDisplay.setLineSpacing(prefs.lineSpacing.get().value());
+    myDisplay.setLineSpacing(prefs.lineSpacing.get().value_or(0));
 
     SIZE_OF(myDisplay);
 
-    if (prefs.cesMode.get().value()) {
+    if (prefs.cesMode.get().value_or(false)) {
         // In CES mode, we want to turn on the lights to full brightness
         lightingController.setOverrideValuePercent(100);
     }
 
     // For all the EMC modes, we'll keep the lights at 100%
-    if (prefs.emcMode.get().value()) {
+    if (prefs.emcMode.get().value_or(false)) {
         lightingController.setOverrideValuePercent(100);
     }
 
@@ -461,7 +449,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 
     // set current boot id
-    auto bootCount = prefs.bootCount.get().value();
+    auto bootCount = prefs.bootCount.get().value_or(0);
     bootCount++;
     prefs.bootCount.set(bootCount);
 

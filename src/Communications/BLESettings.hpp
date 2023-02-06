@@ -66,9 +66,7 @@ protected:
                 log_i("GATT client writing setting: %s=%s", settingKey.c_str(),
                       settingValue.c_str());
 
-                if (settingKey == "pocket-token") {
-                    this->enclosed->prefs_->pocketApiToken.set(settingValue);
-                } else if (settingKey == "cloud-token") {
+                if (settingKey == "cloud-token") {
                     log_w("Setting cloud access token to %s", settingValue.c_str());
                     this->enclosed->prefs_->cloudToken.set(settingValue);
                 } else if (settingKey == "disconnect-pt-sec") {

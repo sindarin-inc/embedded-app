@@ -789,7 +789,7 @@ void DemoScreen::processCommand(RemoteCommand command) {
     if (currentScreen_ >= NUM_DEMO_SCREENS) {
         lightingController_.setScreenMask(LightingController::Screens::BOTH);
         // When we're done with the onboarding screen, turn this mode off.
-        prefs_.demoMode.set(0);
+        prefs_.demoMode.set(false);
         backCallback();
     }
 }
