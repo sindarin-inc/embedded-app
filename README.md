@@ -13,7 +13,7 @@ git submodule update --init --recursive
 The primary way to build the firmware itself is with Espressif's official esp-idf toolchain. We use a [fork of esp-idf](http://github.com/sindarin-inc/esp-idf) that has some patches included. In some other directory (not in this repo), run:
 
 ```sh
-git clone -b sindarin/v4.4.3 --recursive git@github.com:sindarin-inc/esp-idf.git
+git clone -b sindarin/v4.4.4 --recursive git@github.com:sindarin-inc/esp-idf.git
 cd esp-idf
 ./install.sh esp32s3
 ```
@@ -28,7 +28,7 @@ idf.py build flash monitor
 
 This will build the latest firmware, flash it to the device, and open a serial monitor. You can also use `idf.py menuconfig` to configure the build if you need to change build options.
 
-See also the official [esp-idf installation instructions](https://docs.espressif.com/projects/esp-idf/en/v4.4.3/esp32s3/get-started/index.html) for more details
+See also the official [esp-idf installation instructions](https://docs.espressif.com/projects/esp-idf/en/v4.4.4/esp32s3/get-started/index.html) for more details
 
 ## Install recommended tools
 
