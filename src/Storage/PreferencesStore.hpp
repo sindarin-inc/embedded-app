@@ -167,7 +167,7 @@ public:
             if constexpr (std::is_same_v<T, int> || std::is_same_v<T, bool> ||
                           std::is_same_v<T, uint32_t>) {
                 int32_t value = 0;
-                esp_err_t err = nvs_get_i32(this->prefs.nvsHandle, key, &value);
+                nvs_get_i32(this->prefs.nvsHandle, key, &value);
                 // Fail silently if the key doesn't exist
                 return value;
             } else {
