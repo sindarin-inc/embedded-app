@@ -1,6 +1,8 @@
 #include "nvs.h"
 
 #include <inicpp.h>
+#include <optional>
+#include <string>
 
 #include "sindarin-debug.h"
 
