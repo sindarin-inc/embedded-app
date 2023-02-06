@@ -1,10 +1,8 @@
 #include "GUnzipStream.hpp"
 
-auto GUnzipStream::available() -> int {
-    return uncompressedSize_ - position_;
-}
+auto GUnzipStream::available() -> int { return uncompressedSize_ - position_; }
 
-auto GUnzipStream::readBytes(uint8_t* buf, int size) -> int {
+auto GUnzipStream::readBytes(uint8_t *buf, int size) -> int {
     // read from uncompressed buffer. Keep decompressing until
     // enough bytes have been read.
     int bytesCopied = 0;
@@ -70,7 +68,7 @@ auto GUnzipStream::readBytes(uint8_t* buf, int size) -> int {
         int inputRead = 0;
         int err =
             gunzip_.decompress(&inBuf_[inIndex_], inSize_, outBuf_, 1024, inputRead, outSize_);
-        
+
         if (err != Z_OK && err != Z_STREAM_END) {
             log_e("GUNzipFile: Error decompressing %d", err);
             return 0;
@@ -120,9 +118,7 @@ auto GUnzipStream::seek(uint32_t pos) -> bool {
     return true;
 }
 
-auto GUnzipStream::position() -> size_t {
-    return position_;
-}
+auto GUnzipStream::position() -> size_t { return position_; }
 
 void GUnzipStream::readSize() {
     // get compressed file length
@@ -144,6 +140,4 @@ void GUnzipStream::readSize() {
         (sizeBytes[3] << 24) + (sizeBytes[2] << 16) + (sizeBytes[1] << 8) + sizeBytes[0];
 }
 
-auto GUnzipStream::size() -> size_t {
-    return uncompressedSize_;
-}
+auto GUnzipStream::size() -> size_t { return uncompressedSize_; }

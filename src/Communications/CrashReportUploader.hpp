@@ -1,11 +1,11 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <utility>
 
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
-#include <functional>
 
 struct CrashUploadState {
     enum State {

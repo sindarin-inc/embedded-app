@@ -1,15 +1,15 @@
 #pragma once
 
-#include "FS.h"
 #include <cinttypes>
 #include <cstddef>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <utility>
 
-#include <stdint.h>
+#include "FS.h"
 #include "sindarin-debug.h"
 
 class RendererStream {
@@ -17,7 +17,7 @@ public:
     virtual ~RendererStream() = default;
 
     virtual auto available() -> int = 0;
-    virtual auto readBytes(uint8_t* buf, int size) -> int {
+    virtual auto readBytes(uint8_t *buf, int size) -> int {
         int ch = 0;
         for (int i = 0; i < size; i++) {
             ch = read();
@@ -54,16 +54,16 @@ protected:
 
 class FileStream : public RendererStream {
 public:
-    FileStream(File contained) : contained_(contained) {}
+    FileStream(File contained) : contained_(std::move(std::move(contained))) {}
 
     auto available() -> int override { return contained_.available(); }
-    auto readBytes(uint8_t* buf, int size) -> int { 
+    auto readBytes(uint8_t *buf, int size) -> int override {
         int maxBufSize = 128;
         int bytesRead = 0;
         while (bytesRead < size) {
             int bytesToRead = std::min(size - bytesRead, maxBufSize);
             int r = contained_.read(&buf[bytesRead], bytesToRead);
-            
+
             bytesRead += r;
             if (r != bytesToRead) {
                 return bytesRead;

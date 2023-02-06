@@ -113,9 +113,9 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
     // Needs to be minus one for the corner case of all spaces or newlines
     // and need room for EOF character.
     // read max possible chars into buffer for efficient reading
-    
+
     int bytesToRead = std::min(stream_->available(), MAX_CHARS_PER_PAGE - 1);
-    int bytesRead = stream_->readBytes((uint8_t*)pageReadBuffer_.data(), bytesToRead);
+    int bytesRead = stream_->readBytes((uint8_t *)pageReadBuffer_.data(), bytesToRead);
     int bytesTokenized = 0;
     while (bytesTokenized < bytesRead && plcInBuffer < MAX_CHARS_PER_PAGE - 1) {
         auto curChar = pageReadBuffer_[bytesTokenized++];

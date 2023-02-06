@@ -1,11 +1,10 @@
 #include "LookBackStream.hpp"
+
 #include "sindarin-debug.h"
 
-auto LookBackStream::available() -> int {
-    return size() - position();
-}
+auto LookBackStream::available() -> int { return size() - position(); }
 
-auto LookBackStream::readBytes(uint8_t* buf, int size) -> int {
+auto LookBackStream::readBytes(uint8_t *buf, int size) -> int {
     int bytesCopied = 0;
     while (bytesCopied < size) {
         // first check if we are reading from the lookback buffer
@@ -31,7 +30,7 @@ auto LookBackStream::readBytes(uint8_t* buf, int size) -> int {
 
         // push result into lookback buffer
         lookBackBuffer_.push(&buf[bytesCopied], bytesRead);
-        
+
         bytesCopied += bytesRead;
         position_ += bytesRead;
 
@@ -120,7 +119,7 @@ auto LookBackStream::seek(uint32_t pos) -> bool {
         uint8_t buf[1024];
         int bytesCopied = 0;
         while (bytesCopied < bytesToReadForward) {
-            int bytesToCopy = std::min(bytesToReadForward-bytesCopied, 1024);
+            int bytesToCopy = std::min(bytesToReadForward - bytesCopied, 1024);
             int bytesRead = readBytes(buf, bytesToCopy);
             bytesCopied += bytesRead;
             if (bytesRead != bytesToCopy) {
@@ -133,10 +132,6 @@ auto LookBackStream::seek(uint32_t pos) -> bool {
     return true;
 }
 
-auto LookBackStream::position() -> size_t {
-    return position_;
-}
+auto LookBackStream::position() -> size_t { return position_; }
 
-auto LookBackStream::size() -> size_t {
-    return stream_->size();
-}
+auto LookBackStream::size() -> size_t { return stream_->size(); }

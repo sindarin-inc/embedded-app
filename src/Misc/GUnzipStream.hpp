@@ -1,28 +1,28 @@
 #pragma once
 
-#include "sindarin-debug.h"
+#include <utility>
+
 #include "FS.h"
-#include "Renderers/RendererStream.hpp"
 #include "Misc/GUnzip.hpp"
+#include "Renderers/RendererStream.hpp"
+#include "sindarin-debug.h"
 
 class GUnzipStream : public RendererStream {
 public:
-    GUnzipStream(File gzFile) : position_(0), uncompressedSize_(0), gzFile_(gzFile) {
-        readSize();
-    };
-    ~GUnzipStream() {};
+    GUnzipStream(File gzFile) : gzFile_(std::move(std::move(gzFile))) { readSize(); };
+    ~GUnzipStream() override = default;
+    ;
 
-    auto available() -> int;
-    auto readBytes(uint8_t* buf, int size) -> int;
-    auto read() -> int;
-    auto seek(uint32_t pos) -> bool;
-    auto position() -> size_t;
-    auto size() -> size_t;
+    auto available() -> int override;
+    auto readBytes(uint8_t *buf, int size) -> int override;
+    auto read() -> int override;
+    auto seek(uint32_t pos) -> bool override;
+    auto position() -> size_t override;
+    auto size() -> size_t override;
 
 private:
-
-    size_t position_;
-    uint32_t uncompressedSize_;
+    size_t position_{0};
+    uint32_t uncompressedSize_{0};
     File gzFile_;
     GUnzip gunzip_;
     uint8_t inBuf_[1024];
