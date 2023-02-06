@@ -175,9 +175,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     // If somehow these were set but we don't have the right readable, unset them.
     if ((!hasLastQuestion) &&
-        ((prefs_.cesMode.get().value() == 1) || prefs_.emcMode.get().value() == 1)) {
-        prefs_.cesMode.set(0);
-        prefs_.emcMode.set(0);
+        (prefs_.cesMode.get().value_or(false) || prefs_.emcMode.get().value_or(false))) {
+        prefs_.cesMode.set(false);
+        prefs_.emcMode.set(false);
     }
 
     auto booksMenu = new MenuScreen(this->power_, mainMenu->getMyStyle(), "Books");
