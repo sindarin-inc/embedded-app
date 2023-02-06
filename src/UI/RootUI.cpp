@@ -762,7 +762,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         debugSettingsMenu->addMenuItem(
             MenuItem("Turn off EMC Mode", [this, debugSettingsMenu, display]() {
                 log_d("EMC Off!");
-                prefs_.emcMode.set(false);
+                prefs_.emcMode.remove();
                 debugSettingsMenu->showTemporaryMessage(*display, "EMC mode off! Resetting...",
                                                         2000, false);
                 prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
