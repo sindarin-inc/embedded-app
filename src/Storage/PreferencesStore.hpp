@@ -213,7 +213,7 @@ public:
 
     auto begin() -> bool {
         if (started_) {
-            return false;
+            return true;
         }
         esp_err_t err = nvs_open("sindarin-app", NVS_READWRITE, &nvsHandle);
         if (err) {

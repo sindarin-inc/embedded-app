@@ -230,7 +230,7 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     // If it's the first read of the book, show the help screen.
     // Then ignore the next press of the button
-    if (prefs_.firstRead.get().value_or(false)) {
+    if (!prefs_.firstRead.get().value_or(false)) {
 
         // We need to make sure this goes onto the second page because of a bug in the renderer.
         std::string message =
