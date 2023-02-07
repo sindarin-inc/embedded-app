@@ -1,6 +1,5 @@
 #include "FileSystem.hpp"
 
-#include "Misc/GUnzipFile.hpp"
 #include "Misc/GUnzipStream.hpp"
 #include "Misc/LookBackStream.hpp"
 #include "sindarin-debug.h"
@@ -14,7 +13,7 @@ auto FileSystem::newRendererStream(const char *path) -> RendererStream * {
         log_e("Failed to open file: %s", path);
         return nullptr;
     }
-    return new FileStream(file);
+    return new ContainerStream<File>(file);
 }
 
 auto FileSystem::newGzipRendererStream(const char *path) -> RendererStream * {

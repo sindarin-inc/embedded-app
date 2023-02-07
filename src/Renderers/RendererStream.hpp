@@ -18,6 +18,9 @@ public:
 
     virtual auto available() -> int = 0;
     virtual auto readBytes(uint8_t *buf, int size) -> int {
+        // implementation of byte-by-byte read for a block,
+        // only used if RendererStream subclass does not override this
+        // currently only compressed streams use and override this method
         int ch = 0;
         for (int i = 0; i < size; i++) {
             ch = read();
@@ -52,34 +55,6 @@ protected:
     T contained_;
 };
 
-class FileStream : public RendererStream {
-public:
-    FileStream(File contained) : contained_(std::move(std::move(contained))) {}
-
-    auto available() -> int override { return contained_.available(); }
-    auto readBytes(uint8_t *buf, int size) -> int override {
-        int maxBufSize = 128;
-        int bytesRead = 0;
-        while (bytesRead < size) {
-            int bytesToRead = std::min(size - bytesRead, maxBufSize);
-            int r = contained_.read(&buf[bytesRead], bytesToRead);
-
-            bytesRead += r;
-            if (r != bytesToRead) {
-                return bytesRead;
-            }
-        }
-        return size;
-    }
-    auto read() -> int override { return contained_.read(); };
-    auto seek(uint32_t pos) -> bool override { return contained_.seek(pos); };
-    auto position() -> size_t override { return contained_.position(); }
-    auto size() -> size_t override { return contained_.size(); }
-
-protected:
-    File contained_;
-};
-
 class StdStringStream : public RendererStream {
 public:
     StdStringStream(std::stringstream &stream) : stream_(std::move(stream)) {}
@@ -87,7 +62,7 @@ public:
 
     void setSize(size_t size) { size_ = size; }
 
-    auto available() -> int override { return stream_.peek() != EOF; }
+    auto available() -> int override { return size() - position(); }
     auto read() -> int override { return stream_.get(); };
     auto seek(uint32_t pos) -> bool override {
         stream_.seekg(pos);

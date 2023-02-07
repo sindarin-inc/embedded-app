@@ -5,7 +5,6 @@
 
 #include "Models/Readable.hpp"
 #include "Renderers/RendererStream.hpp"
-//#include "Misc/GUnzipStream.hpp"
 
 typedef std::vector<std::string> FileList;
 
