@@ -131,7 +131,7 @@ public:
             uint64_t addressValue;
             esp_err_t err = nvs_get_u64(prefs.nvsHandle, this->key_, &addressValue);
             if (err != ESP_OK) {
-                log_e("nvs_get_i64 fail: %s %s", this->key_, esp_err_to_name(err));
+                // Fail silently if the key doesn't exist
                 return;
             }
             this->value_ = BLEAddress(addressValue);
