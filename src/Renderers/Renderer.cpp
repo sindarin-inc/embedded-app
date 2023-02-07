@@ -112,13 +112,8 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
 
     // Needs to be minus one for the corner case of all spaces or newlines
     // and need room for EOF character.
-    // read max possible chars into buffer for efficient reading
-
-    int bytesToRead = std::min(stream_->available(), MAX_CHARS_PER_PAGE - 1);
-    int bytesRead = stream_->readBytes((uint8_t *)pageReadBuffer_.data(), bytesToRead);
-    int bytesTokenized = 0;
-    while (bytesTokenized < bytesRead && plcInBuffer < MAX_CHARS_PER_PAGE - 1) {
-        auto curChar = pageReadBuffer_[bytesTokenized++];
+    while (stream_->available() && plcInBuffer < MAX_CHARS_PER_PAGE - 1) {
+        auto curChar = stream_->read();
         RendererToken newToken = {TOKEN_EOF,      plcInBuffer, placeInFile + plcInBuffer,
                                   curPrevNewLine, 0,           0};
         RendererToken prevToken;
@@ -250,7 +245,6 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
         }
         plcInBuffer++;
     }
-
     // Ended on a text token, so we move forward one before setting the EOF
     // token.
     if (currTokenBuffer_[plcInTokenBuffer].token != TOKEN_EOF) {
