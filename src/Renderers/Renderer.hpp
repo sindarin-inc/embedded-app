@@ -119,7 +119,6 @@ protected:
 
     // Character buffers for the current page
     PageBuffer charTokenBuffer_{};
-    PageBuffer pageReadBuffer_{};
 
     // This keeps all the tokens for the max amount of read from the stream
     PageTokenBuffer currTokenBuffer_{};
