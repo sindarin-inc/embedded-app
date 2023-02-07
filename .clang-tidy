@@ -45,6 +45,7 @@ Checks: >-
   -bugprone-easily-swappable-parameters,
   -modernize-avoid-c-arrays,
   -bugprone-narrowing-conversions,
+  -modernize-macro-to-enum,
 AnalyzeTemporaryDtors: false
 FormatStyle: file
 UseColor: true

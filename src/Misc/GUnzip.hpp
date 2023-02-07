@@ -15,11 +15,12 @@ public:
 
     auto decompressMemory(uint8_t *input, int inputSize) -> bool;
 
+    auto decompress(uint8_t *input, int inputSize, uint8_t *output, int outputSize, int &inputRead,
+                    int &outputAvail) -> int;
+
+    auto init() -> bool;
+
 protected:
     z_stream zstr_;
     std::unique_ptr<uint8_t[]> inflateBuf_;
-
-    auto init() -> bool;
-    auto decompress(uint8_t *input, int inputSize, uint8_t *output, int outputSize, int &inputRead,
-                    int &outputAvail) -> int;
 };

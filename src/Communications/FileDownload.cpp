@@ -4,32 +4,36 @@
 #include <utility>
 
 #include "Communications/HttpClient.hpp"
+#include "Misc/GUnzipFile.hpp"
 #include "sindarin-debug.h"
 
-auto DownloadFile(const char *url, int length,
+auto DownloadFile(const char *url,
                   const std::function<bool(int httpCode, int contentLength)> &openedConnection,
                   const std::function<size_t(HttpClient &client, int index)> &readWrite,
-                  const std::function<void(int bytesWritten, float percentage)> &progressCallback)
-    -> bool {
+                  const std::function<void(int bytesWritten, float percentage)> &progressCallback,
+                  bool gzip) -> bool {
     HttpClient client(url);
 
     auto time = esp_timer_get_time();
     auto downloadStart = time;
 
+    if (gzip) {
+        client.setHeader("Accept-Encoding", "gzip");
+        // TODO: check server headers to verify we got gzip
+    }
     client.open();
 
-    esp_err_t err;
-    if ((err = client.open()) != ESP_OK) {
+    esp_err_t err = client.open();
+    if (err != ESP_OK) {
         log_e("Failed to open HTTP connection: %s", esp_err_to_name(err));
         return false;
     }
 
     auto contentLength = client.fetchHeaders();
-    if (length == 0) {
-        length = contentLength;
-    }
-    if (contentLength != length) {
-        log_w("Content length was %d but expected %d", contentLength, length);
+    if (contentLength <= 0) {
+        // if we somehow don't have a content length header, consider it an error for now
+        log_e("Server did not return a content length for %s", url);
+        return false;
     }
 
     auto httpCode = client.getStatusCode();
@@ -52,7 +56,7 @@ auto DownloadFile(const char *url, int length,
 
         totalReadLen += readLen;
 
-        float percentProgress = (float)totalReadLen / length * 100.0f;
+        float percentProgress = (float)totalReadLen / contentLength * 100.0f;
         auto now = esp_timer_get_time();
         // Report every 5-20s OR every 5% progress, whichever comes first
         if ((now - time > 5000000) &&
@@ -72,31 +76,33 @@ auto DownloadFile(const char *url, int length,
     log_i("DownloadFile complete %d in %" PRId64 "us (%f Bps %f KB/s, %f kbps)", totalReadLen,
           duration, bps, bps / 1000, 8 * bps / 1000);
 
-    float percentProgress = (float)totalReadLen / length * 100.0f;
+    float percentProgress = (float)totalReadLen / contentLength * 100.0f;
     progressCallback(totalReadLen, percentProgress);
 
     client.close();
 
-    if (length != totalReadLen) {
-        log_e("Wrote fewer bytes than expected, expected %d bytes but got %d bytes", length,
+    // verify we received enough bytes according to the content length header
+    // rather than the length passed in, this works for compressed or uncompressed files
+    if (contentLength != totalReadLen) {
+        log_e("Wrote fewer bytes than expected, expected %d bytes but got %d bytes", contentLength,
               totalReadLen);
         return false;
     }
     return true;
 }
 
-auto DownloadFile(const char *url, int length,
+auto DownloadFile(const char *url,
                   const std::function<bool(int httpCode, int contentLength)> &openedConnection,
                   const std::function<size_t(const uint8_t *buf, size_t size)> &writeBytes,
-                  const std::function<void(int bytesWritten, float percentage)> &progressCallback)
-    -> bool {
+                  const std::function<void(int bytesWritten, float percentage)> &progressCallback,
+                  bool gzip) -> bool {
 
     // W25Q512JV* chips have a page size of 256 bytes so we should only use a multiple of that
     constexpr int bufferSize = 4096;
     auto *buffer = (uint8_t *)heap_caps_malloc(bufferSize, MALLOC_CAP_SPIRAM);
 
     return DownloadFile(
-        url, length, openedConnection,
+        url, openedConnection,
         [buffer, writeBytes](HttpClient &client, int index) {
             int readLen = client.read((char *)buffer, bufferSize);
 
@@ -107,31 +113,31 @@ auto DownloadFile(const char *url, int length,
 
             return readLen;
         },
-        progressCallback);
+        progressCallback, gzip);
 }
 
 auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int length,
-                  const std::function<void(float percentage)> &progressCallback) -> bool {
-    // TODO: Support resuming?
-    if (fileSystem.exists(path)) {
-        log_w("File %s already exists, deleting", path);
-        fileSystem.remove(path);
-        log_d("Deleted %s", path);
+                  const std::function<void(float percentage)> &progressCallback, bool gzip)
+    -> bool {
+
+    std::string fullPath(path);
+    if (gzip) {
+        fullPath.append(".gz");
     }
 
     SHOW_HEAP();
-
-    auto file = fileSystem.open(path, FILE_WRITE, true);
-    if (!file) {
-        log_e("Failed to open file %s for writing", path);
-        return false;
+    // TODO: Support resuming?
+    if (fileSystem.exists(fullPath.c_str())) {
+        log_w("File %s already exists, deleting", path);
+        fileSystem.remove(path);
+        log_d("Deleted %s", path);
     }
 
     // Load the whole file into SPIRAM for fast network operations then write to disk
     // TODO: We could probably improve overall speed, while minimizing WiFi connected time by
     // writing to disk as we go from another core or writing to disk from a lower priority task. But
     // that will be harder to make
-    uint8_t *fileBuffer;
+    uint8_t *fileBuffer = nullptr;
     int fileLength;
 
     // Because file writes tend to be twice the time the http download takes right now, adjust the
@@ -141,8 +147,8 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
         progressCallback(percentage / 3);
     };
 
-    DownloadFile(
-        url, length,
+    auto success = DownloadFile(
+        url,
         [&fileBuffer, &fileLength](int httpCode, int contentLength) -> bool {
             fileLength = contentLength;
             fileBuffer = (uint8_t *)heap_caps_malloc(contentLength, MALLOC_CAP_SPIRAM);
@@ -156,10 +162,21 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
             constexpr int bufferSize = 16384;
             return client.read((char *)(fileBuffer + index), bufferSize);
         },
-        fileProgress);
+        fileProgress, gzip);
 
     auto time = esp_timer_get_time();
     auto downloadStart = time;
+
+    if (!success) {
+        log_e("Failed to download file");
+        return false;
+    }
+
+    auto file = fileSystem.open(fullPath.c_str(), FILE_WRITE, true);
+    if (!file) {
+        log_e("Failed to open file %s for writing", fullPath.c_str());
+        return false;
+    }
 
     int written = 0;
     while (written < fileLength) {
@@ -185,9 +202,17 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
     heap_caps_free(fileBuffer);
 
     // The file must be re-opened to check its size
-    file = fileSystem.open(path);
-    auto fileSize = file.size();
-    file.close();
+    size_t fileSize = 0;
+    if (gzip) {
+        file = fileSystem.open(fullPath.c_str());
+        File gzFile = GUnzipFile::openGzFile(file);
+        fileSize = gzFile.size();
+        gzFile.close();
+    } else {
+        file = fileSystem.open(fullPath.c_str());
+        fileSize = file.size();
+        file.close();
+    }
 
     if (length != fileSize) {
         // TODO: What's the best API to get errors from the stream?

@@ -1,6 +1,7 @@
 #ifndef MENU_SYSTEM_H
 #define MENU_SYSTEM_H
 
+#include <functional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -45,6 +46,8 @@ public:
     auto getCurrSelection() -> int;
 
     auto getCurrItem() -> MenuItem;
+
+    auto updateCurrItemTitle(std::string newTitle) -> bool;
 
     // Returns 1 if the selection was updated, 0 otherwise
     // Helps client to know if it needs to refresh (at beginning or end of menu)

@@ -15,16 +15,24 @@ extern "C" {
 #include <inflate.h>
 }
 
+#define ZLIB_WINDOW_SIZE 32768
+#define ZLIB_INFLATE_STATE_SIZE 7168
+
 auto GUnzip::init() -> bool {
 
-    inflateBuf_ = std::make_unique<uint8_t[]>(32768 + 7168);
+    if (!inflateBuf_) {
+        // allocate enough memory for zlib's sliding window of uncompressed data
+        // plus the size of its inflate_state struct.
+        inflateBuf_ = std::make_unique<uint8_t[]>(ZLIB_WINDOW_SIZE + ZLIB_INFLATE_STATE_SIZE);
+    }
 
     int err = Z_OK;
 
     zstr_.zalloc = (alloc_func) nullptr;
     zstr_.zfree = (free_func) nullptr;
     zstr_.opaque = (voidpf) nullptr;
-    zstr_.state = (struct internal_state *)&inflateBuf_[32768];
+    // put inflate_state pointer at the end of the window region
+    zstr_.state = (struct internal_state *)&inflateBuf_[ZLIB_WINDOW_SIZE];
     auto *st = (inflate_state *)zstr_.state;
     st->window = inflateBuf_.get();
 
@@ -44,6 +52,12 @@ auto GUnzip::init() -> bool {
 
 auto GUnzip::decompress(uint8_t *input, int inputSize, uint8_t *output, int outputSize,
                         int &inputRead, int &outputAvail) -> int {
+
+    if (!inflateBuf_) {
+        if (!init()) {
+            return false;
+        }
+    }
 
     zstr_.next_in = input;
     zstr_.avail_in = inputSize;
@@ -66,12 +80,6 @@ auto GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFile
 
     File in = fileSystem.open(inputFileName);
     File out = fileSystem.open(outputFileName, "w", true);
-
-    if (!inflateBuf_) {
-        if (!init()) {
-            return false;
-        }
-    }
 
     bool done = false;
     uint8_t inBuf[1024];
@@ -144,12 +152,6 @@ auto GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFile
 }
 
 auto GUnzip::decompressMemory(uint8_t *input, int inputSize) -> bool {
-
-    if (!inflateBuf_) {
-        if (!init()) {
-            return false;
-        }
-    }
 
     uint8_t *fileptr = input;
     int filelen = inputSize;

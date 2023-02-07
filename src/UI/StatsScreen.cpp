@@ -11,8 +11,8 @@ void StatsScreen::render(DisplaySystem &display) {
         return;
     }
 
-    auto wordCount = prefs_.wordCount.get().value();
-    auto totalReadingTimeSeconds = prefs_.totalReadingTimeSeconds.get().value();
+    auto wordCount = prefs_.wordCount.get().value_or(0);
+    auto totalReadingTimeSeconds = prefs_.totalReadingTimeSeconds.get().value_or(0);
 
     // get time components
     auto secondsRead = totalReadingTimeSeconds % 60;

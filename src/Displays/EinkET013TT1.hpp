@@ -47,10 +47,12 @@ enum Register {
     READ_SENSOR_REGISTER = 0x0F,
 };
 
-#define OSC_250KHZ (0 << 5)
-#define OSC_500KHZ (1 << 5)
-#define OSC_1MHZ (2 << 5)
-#define OSC_2MHZ (3 << 5)
+enum OSC_FREQ {
+    OSC_250KHZ = (0 << 5),
+    OSC_500KHZ = (1 << 5),
+    OSC_1MHZ = (2 << 5),
+    OSC_2MHZ = (3 << 5)
+};
 
 #define OSC_SELECT OSC_2MHZ
 #define VCOM_DEFAULT (-4000)

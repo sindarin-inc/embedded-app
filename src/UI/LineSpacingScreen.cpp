@@ -7,7 +7,7 @@
 
 LineSpacingScreen::LineSpacingScreen(DisplaySystem &display, PreferencesStore &prefs)
     : display_(display), renderer_(display), prefs_(prefs),
-      lineSpacing_(prefs.lineSpacing.get().value()) {
+      lineSpacing_(prefs.lineSpacing.get().value_or(0)) {
 
     std::string message;
     for (int i = 0; i < 200; i++) {

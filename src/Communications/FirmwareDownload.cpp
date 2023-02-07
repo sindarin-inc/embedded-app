@@ -63,7 +63,7 @@ void FirmwareDownloader::downloadFirmware(
 
         log_d("Downloading firmware from %s", response.firmware.url.c_str());
         auto success = DownloadFile(
-            response.firmware.url.c_str(), 0,
+            response.firmware.url.c_str(),
             [&response, &progressCallback](int httpCode, int contentLength) -> bool {
                 HttpClient client(response.firmware.url.c_str());
                 if (httpCode != 200) {
@@ -92,7 +92,8 @@ void FirmwareDownloader::downloadFirmware(
                 progressCallback(
                     FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloading,
                                           .downloadPercentage = static_cast<int>(percentage)});
-            });
+            },
+            false);
 
         if (!success) {
             log_e("Failed to download firmware");

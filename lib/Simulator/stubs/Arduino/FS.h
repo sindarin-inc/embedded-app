@@ -62,6 +62,7 @@ public:
     operator bool() const;
     time_t getLastWrite();
     const char *name() const;
+    const char *path() const;
 
     boolean isDirectory(void);
     File openNextFile(const char *mode = FILE_READ);

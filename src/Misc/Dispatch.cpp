@@ -36,6 +36,7 @@ DispatchQueue::DispatchQueue(std::string name, size_t threadCnt, size_t threadSt
     // Create the Queue
     // TODO: Not the best that we're passing pointers here, since then heap space is
     // alloc'd/dealloc'd all the time
+    // NOLINTNEXTLINE(bugprone-sizeof-expression) - I promise I really want the size of the pointer!
     q_ = xQueueCreate(QUEUE_SIZE, sizeof(WorkItem *));
 
     // Dispatch thread setup

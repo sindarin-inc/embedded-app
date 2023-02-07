@@ -6,12 +6,14 @@
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
 #include "Misc/Crypto.hpp"
+#include "Misc/GUnzipFile.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
 #include "sindarin-debug.h"
 
 #define READABLES_PATH "/readables.json"
 #define ARTICLES_PATH "/articles.json"
+
 enum { NUMBER_OF_READABLE_DOWNLOAD_TRIES = 3 };
 
 auto ToString(ReadablesModelType type) -> std::string {
@@ -65,18 +67,34 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
         if (!readable.fromJson(v.as<JsonObject>())) {
             log_e("Failed to parse Readable");
             continue;
-        } else if (!fileSystem.exists(readable.localFilePath())) {
+        } else if (!fileSystem.exists(readable.localFilePath()) &&
+                   !fileSystem.exists(readable.compressedLocalFilePath())) {
             log_w("Couldn't find readable with path %s", readable.localFilePath().c_str());
             continue;
         } else {
             auto file = fileSystem.open(readable.localFilePath());
             if (!file) {
                 log_w("Failed to open readable %s", readable.localFilePath().c_str());
-                continue;
+
+                // try compressed file
+                auto cf = fileSystem.open(readable.compressedLocalFilePath());
+                if (!cf) {
+                    log_w("Failed to open compressed readable %s",
+                          readable.compressedLocalFilePath().c_str());
+                    continue;
+                }
+
+                file = GUnzipFile::openGzFile(cf);
+                if (!file) {
+                    log_w("failed to open GUnzipFile for %s",
+                          readable.compressedLocalFilePath().c_str());
+                    continue;
+                }
             }
             // If the filesize is wrong, ignore it so we redownload it
             auto fileSize = file.size();
             file.close();
+
             if (readable.files.size() && fileSize != readable.file().size) {
                 log_w("File size mismatch for %s (%zu on disk vs %d in local store), ignoring",
                       readable.localFilePath().c_str(), fileSize, readable.file().size);
@@ -102,6 +120,14 @@ auto LocalStore::hasReadable(const ReadablesVector &readables, const Readable &r
             if (!file) {
                 log_w("Checking for %s, but failed to open file: %s %s",
                       ToString(modelType).c_str(), r->localFilePath().c_str(), r->uuid.c_str());
+
+                auto cf = fileSystem.open(r->compressedLocalFilePath());
+                if (!cf) {
+                    log_w("failed to open compressed file %s",
+                          r->compressedLocalFilePath().c_str());
+                }
+
+                file = GUnzipFile::openGzFile(cf);
             }
             auto fileSize = file.size();
             file.close();
@@ -537,7 +563,8 @@ void LocalStore::syncFromRemote(
                     [progressCallback, &syncState, tasksIndex](int percentage) {
                         syncState.tasks[tasksIndex].percentage = percentage;
                         progressCallback(syncState);
-                    });
+                    },
+                    prefs_.gzipReadables.get().value_or(false));
                 if (success) {
                     addReadable(readables_, readable);
                     log_d("File successfully downloaded.");
@@ -729,6 +756,10 @@ void LocalStore::deleteReadableFiles(const ReadablesVector &readables, bool rest
         log_i("Removing %s \"%s\" (%s)", ToString(modelType).c_str(), readable.title.c_str(),
               readable.localFilePath().c_str());
         fileSystem.remove(readable.localFilePath());
+
+        log_i("Removing %s \"%s\" (%s)", ToString(modelType).c_str(), readable.title.c_str(),
+              readable.compressedLocalFilePath().c_str());
+        fileSystem.remove(readable.compressedLocalFilePath());
     }
 
     log_i("Resetting to guarantee %s are removed", ToString(modelType).c_str());

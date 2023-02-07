@@ -16,6 +16,7 @@ class FileSystem {
 public:
     // Note: Allocates the ContainerStream on the heap, make sure to `delete` it somewhere.
     auto newRendererStream(const char *path) -> ContainerStream<File> *;
+    auto newGzipRendererStream(const char *path) -> ContainerStream<File> *;
 
     // Underlying methods to init and read data
     virtual auto begin() -> bool { return true; };

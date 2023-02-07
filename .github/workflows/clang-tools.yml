@@ -25,15 +25,15 @@ jobs:
       - name: Add Clang Tidy deb repo
         uses: myci-actions/add-deb-repo@10
         with:
-          repo: deb http://apt.llvm.org/focal/ llvm-toolchain-focal-14 main
+          repo: deb http://apt.llvm.org/focal/ llvm-toolchain-focal-15 main
           repo-name: clang-tidy
           keys-asc: https://apt.llvm.org/llvm-snapshot.gpg.key
 
-      - name: Install clang-tidy-14
-        run: sudo apt-get update && sudo apt install -y clang-tidy-14
+      - name: Install clang-tidy-15
+        run: sudo apt-get update && sudo apt install -y clang-tidy-15
 
       - name: Run clang-tidy
-        run: ./scripts/clang-tidy -w --fix --clang-tidy-path=/usr/bin/clang-tidy-14 --clang-apply-replacements-path=/usr/bin/clang-apply-replacements-14
+        run: ./scripts/clang-tidy -w --fix --clang-tidy-path=/usr/bin/clang-tidy-15 --clang-apply-replacements-path=/usr/bin/clang-apply-replacements-15
 
       - uses: DoozyX/clang-format-lint-action@v0.14
         with:

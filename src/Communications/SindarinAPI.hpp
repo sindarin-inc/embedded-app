@@ -32,7 +32,8 @@ public:
     auto checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp) -> int;
 
     auto downloadReadable(const Readable &readable, FileSystem &fileSystem,
-                          const std::function<void(int percentage)> &progressCallback) -> bool;
+                          const std::function<void(int percentage)> &progressCallback, bool gzip)
+        -> bool;
 
     auto uploadAndResetVoltageLog(FileSystem &fileSystem) -> int;
 

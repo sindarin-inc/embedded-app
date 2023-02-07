@@ -25,6 +25,14 @@ auto Menu::getCurrSelection() -> int { return currSelection_; }
 
 auto Menu::getCurrItem() -> MenuItem { return menuItems_[currSelection_]; }
 
+auto Menu::updateCurrItemTitle(std::string newTitle) -> bool {
+    if (menuItems_[currSelection_].title != newTitle) {
+        menuItems_[currSelection_].title = std::move(newTitle);
+        return true;
+    }
+    return false;
+}
+
 auto Menu::nextSelection(bool skipLast) -> bool {
     bool needsRefresh = false;
 

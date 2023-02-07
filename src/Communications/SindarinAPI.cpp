@@ -43,10 +43,10 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
                       HTTP_METHOD_POST);
     setAuth(client);
 
-    auto body = StringFormat("skip_content=false&build=%s&git_hash=%s&sn=%"
-                             "s&pt_battery=%d&pt_build=%s&skip_content=%d",
+    auto body = StringFormat("build=%s&git_hash=%s&sn=%"
+                             "s&pt_battery=%d&pt_build=%s&skip_content=%s",
                              kVersionString, kGitHash, GetSerialNumber().c_str(), req.ptBattery,
-                             req.ptBuild.c_str(), req.skipContent);
+                             req.ptBuild.c_str(), req.skipContent ? "true" : "false");
     if (req.readablesSince.length() > 0) {
         body += StringFormat("&readables_since=%s", req.readablesSince.c_str());
     }
@@ -107,16 +107,17 @@ auto SindarinAPI::syncBookmarks(const std::string readablesBookmarkedJson,
                                 const std::string articlesBookmarkedJson) {}
 
 auto SindarinAPI::downloadReadable(const Readable &readable, FileSystem &fileSystem,
-                                   const std::function<void(int percentage)> &progressCallback)
-    -> bool {
+                                   const std::function<void(int percentage)> &progressCallback,
+                                   bool gzip) -> bool {
     bool success = false;
     // auto remoteUrl = readable.remoteUrl();
     auto remoteUrl = readable.file().fileProxied;
     auto localPath = readable.localFilePath();
     auto fileSize = readable.file().size;
 
-    success = DownloadFile(remoteUrl.c_str(), fileSystem, localPath.c_str(), fileSize,
-                           [progressCallback](float percentage) { progressCallback(percentage); });
+    success = DownloadFile(
+        remoteUrl.c_str(), fileSystem, localPath.c_str(), fileSize,
+        [progressCallback](float percentage) { progressCallback(percentage); }, gzip);
 
     return success;
 }

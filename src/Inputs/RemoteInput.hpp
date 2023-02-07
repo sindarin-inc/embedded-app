@@ -5,20 +5,22 @@
 #include <functional>
 #include <utility>
 
-#define PT_NONE 0xFF00
-#define PT_N_PRESS 0xFE00
-#define PT_N_HOLD 0xFEFF
-#define PT_E_PRESS 0xFD00
-#define PT_E_HOLD 0xFDFF
-#define PT_W_PRESS 0xFB00
-#define PT_W_HOLD 0xFBFF
-#define PT_S_PRESS 0xF700
-#define PT_S_HOLD 0xF7FF
-#define PT_C_PRESS 0xEF00
-#define PT_C_HOLD 0xEFFF
-#define PT_MULTI_N_S 0xFAFF
-#define PT_MULTI_E_W 0xF5FF
-#define PT_MULTI_N_E_W 0xF8FF
+enum {
+    PT_NONE = 0xFF00,
+    PT_N_PRESS = 0xFE00,
+    PT_N_HOLD = 0xFEFF,
+    PT_E_PRESS = 0xFD00,
+    PT_E_HOLD = 0xFDFF,
+    PT_W_PRESS = 0xFB00,
+    PT_W_HOLD = 0xFBFF,
+    PT_S_PRESS = 0xF700,
+    PT_S_HOLD = 0xF7FF,
+    PT_C_PRESS = 0xEF00,
+    PT_C_HOLD = 0xEFFF,
+    PT_MULTI_N_S = 0xFAFF,
+    PT_MULTI_E_W = 0xF5FF,
+    PT_MULTI_N_E_W = 0xF8FF
+};
 
 enum RemoteCommand : int {
     VOL_DOWN = 0x0,

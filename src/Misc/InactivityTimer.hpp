@@ -15,7 +15,7 @@ public:
         }
     }
 
-    void start(std::function<void()> callback, int inactivityTimeoutMs = 15 * 60 * 1000) {
+    void start(std::function<void()> callback, int inactivityTimeoutMs = 10 * 60 * 1000) {
         callback_ = std::move(callback);
 
         // Create the timer and start it.
@@ -28,8 +28,21 @@ public:
         if (timer_ == nullptr) {
             return;
         }
-        // Reset the timer.
         xTimerReset(timer_, portMAX_DELAY);
+    }
+
+    void pause() {
+        if (timer_ == nullptr) {
+            return;
+        }
+        xTimerStop(timer_, portMAX_DELAY);
+    }
+
+    void resume() {
+        if (timer_ == nullptr) {
+            return;
+        }
+        xTimerStart(timer_, portMAX_DELAY);
     }
 
 private:
