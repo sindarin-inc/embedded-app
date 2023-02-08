@@ -24,5 +24,6 @@ auto FileSystem::newGzipRendererStream(const char *path) -> RendererStream * {
         return nullptr;
     }
 
-    return new LookBackStream(std::unique_ptr<RendererStream>(new GUnzipStream(file)), LOOKBACK_BUFFER_SIZE);
+    return new LookBackStream(std::unique_ptr<RendererStream>(new GUnzipStream(file)),
+                              LOOKBACK_BUFFER_SIZE);
 }

@@ -206,8 +206,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // Bible books go in their own menu / app
         if ((r.title.compare("Psalms and Proverbs") != 0) &&
             (r.title.compare("New Testament") != 0) && (r.title.compare("Old Testament") != 0)) {
-            booksMenu->addMenuItem(MenuItem(
-                title, r.authors[0].name, [this, r, createReadableScreen]() {
+            booksMenu->addMenuItem(
+                MenuItem(title, r.authors[0].name, [this, r, createReadableScreen]() {
                     auto readableScreen = createReadableScreen(r);
                     this->setCurrentScreen(*readableScreen);
                 }));
