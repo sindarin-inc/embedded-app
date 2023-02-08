@@ -115,25 +115,30 @@ auto LocalStore::readablesModelType(const ReadablesVector &readables) -> Readabl
 auto LocalStore::hasReadable(const ReadablesVector &readables, const Readable &readable) -> bool {
     auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
     for (auto r = readables.begin(); r != readables.end(); ++r) {
-        if (r->uuid == readable.uuid && fileSystem.exists(r->localFilePath())) {
+        if (r->uuid == readable.uuid && 
+        (fileSystem.exists(r->localFilePath()) || fileSystem.exists(r->compressedLocalFilePath()))) {
+            int fileSize = -1;
             auto file = fileSystem.open(r->localFilePath());
-            if (!file) {
+            if (file) {
+                fileSize = file.size();
+                file.close();
+            } else {
                 log_w("Checking for %s, but failed to open file: %s %s",
                       ToString(modelType).c_str(), r->localFilePath().c_str(), r->uuid.c_str());
 
                 auto cf = fileSystem.open(r->compressedLocalFilePath());
-                if (!cf) {
+                if (cf) {
+                    file = GUnzipFile::openGzFile(cf);
+                    fileSize = file.size();
+                    file.close();
+                } else {
                     log_w("failed to open compressed file %s",
                           r->compressedLocalFilePath().c_str());
                 }
-
-                file = GUnzipFile::openGzFile(cf);
             }
-            auto fileSize = file.size();
-            file.close();
 
             if (&readables == &readables_) {
-                if (fileSize != readable.file().size) {
+                if (fileSize >= 0 && fileSize != readable.file().size) {
                     log_w("File size mismatch for %s (%zu on disk vs %d in local store), ignoring",
                           readable.localFilePath().c_str(), fileSize, readable.file().size);
                     return false;
@@ -482,6 +487,7 @@ void LocalStore::syncFromRemote(
             const auto &readable = readablesToDelete[i];
             log_i("Deleting %s", readable.title.c_str());
             this->fileSystem.remove(readable.localFilePath());
+            this->fileSystem.remove(readable.compressedLocalFilePath());
             this->removeReadable(readables_, readable);
             syncState.tasks[i].percentage = 100;
         }
@@ -529,6 +535,7 @@ void LocalStore::syncFromRemote(
                 const auto &readable = articlesToDelete[i];
                 log_i("Deleting %s", readable.title.c_str());
                 this->fileSystem.remove(readable.localFilePath());
+                this->fileSystem.remove(readable.compressedLocalFilePath());
                 this->removeReadable(articles_, readable);
             }
 
