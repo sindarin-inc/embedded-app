@@ -201,15 +201,15 @@ public:
           lastPageTurnerBuild(*this, "pt-build"), lastArticlesSince(*this, "articles-since"),
           lastReadablesSince(*this, "readables-since"), readablePlace(*this, "-p"),
           readablePlaceChanged(*this, "-pc"), readableArchivedChanged(*this, "-ar"),
-          lastPageTurnerBattery(*this, "pt-battery"), invertSetting(*this, "invert"),
-          vcom(*this, "vcom"), font(*this, "font"), rectX(*this, "rectX"), rectY(*this, "rectY"),
-          rectW(*this, "rectW"), rectH(*this, "rectH"), lineSpacing(*this, "line-space"),
-          demoMode(*this, "demo"), wordCount(*this, "word-count"),
-          totalReadingTimeSeconds(*this, "tot-rd-time"), bootCount(*this, "boot-count"),
-          firstRead(*this, "first-read"), autoPilotSpeed(*this, "auto-speed"),
-          firstAutopilotRead(*this, "fst-auto-rd"), cesMode(*this, "ces"), emcMode(*this, "emc"),
-          lastBatteryReport(*this, "last-batt"), wifiPower(*this, "wifi-power"),
-          gzipReadables(*this, "gzip-readables"){};
+          readableBookmarksChanged(*this, "-bm"), lastPageTurnerBattery(*this, "pt-battery"),
+          invertSetting(*this, "invert"), vcom(*this, "vcom"), font(*this, "font"),
+          rectX(*this, "rectX"), rectY(*this, "rectY"), rectW(*this, "rectW"),
+          rectH(*this, "rectH"), lineSpacing(*this, "line-space"), demoMode(*this, "demo"),
+          wordCount(*this, "word-count"), totalReadingTimeSeconds(*this, "tot-rd-time"),
+          bootCount(*this, "boot-count"), firstRead(*this, "first-read"),
+          autoPilotSpeed(*this, "auto-speed"), firstAutopilotRead(*this, "fst-auto-rd"),
+          cesMode(*this, "ces"), emcMode(*this, "emc"), lastBatteryReport(*this, "last-batt"),
+          wifiPower(*this, "wifi-power"), gzipReadables(*this, "gzip-readables"){};
 
     auto begin() -> bool {
         if (started_) {

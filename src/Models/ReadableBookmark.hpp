@@ -1,19 +1,27 @@
 #pragma once
 
+#include <FS.h>
 #include <string>
 
 #include "Models/JsonSerializable.hpp"
 
-class Bookmark : public JsonSerializable {
+enum BookmarkStatus { BOOKMARK_OFF = 0, BOOKMARK_ON = 1 };
+
+struct Bookmark {
+    uint32_t firstPlace;
+    uint32_t lastPlace;
+    BookmarkStatus status;
+};
+
+class ReadableBookmark : public JsonSerializable {
 public:
-    Bookmark() = default;
-    ~Bookmark() override = default;
+    ReadableBookmark() = default;
+    ~ReadableBookmark() override = default;
 
     std::string uuid;
-    int starting_position;
-    int ending_position;
+    uint32_t starting_position;
+    uint32_t ending_position;
     std::string readable;
-    std::string userReadable;
 
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("uuid") || !j.containsKey("name") || !j.containsKey("description")) {
@@ -24,11 +32,11 @@ public:
         starting_position = j["starting_position"].as<int>();
         ending_position = j["ending_position"].as<int>();
         readable = j["readable"].as<std::string>();
-        userReadable = j["userReadable"].as<std::string>();
 
         return true;
     }
 };
 
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
-auto convertToJson(const Bookmark &src, JsonVariant dst) -> bool;
+auto convertToJson(const ReadableBookmark &src, JsonVariant dst) -> bool;
+auto readOneBookmark(File &file, Bookmark &bookmark) -> bool;

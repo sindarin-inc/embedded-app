@@ -1,6 +1,7 @@
 #include "LocalStore.hpp"
 
 #include <esp_system.h>
+#include <unordered_map>
 
 #include "Communications/HtmlCleaner.hpp"
 #include "Communications/SindarinAPI.hpp"
@@ -9,6 +10,7 @@
 #include "Misc/GUnzipFile.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
+#include "Models/ReadableBookmark.hpp"
 #include "sindarin-debug.h"
 
 #define READABLES_PATH "/readables.json"
@@ -215,27 +217,57 @@ auto LocalStore::changedReadablesArchivedQueryParams(const ReadablesVector &read
     return archived;
 }
 
-auto LocalStore::changedReadablesBookmarksJson(const ReadablesVector &readables) -> std::string {
-    auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
-    auto doc = std::make_unique<SpiRamJsonDocument>(2048 * std::max(1, (int)readables.size()));
-    // Create a key named readables of type array
-    JsonArray bookmarksJsonArray = doc->createNestedArray("bookmarks");
+auto LocalStore::changedReadablesBookmarksJson() -> std::string {
+    auto doc = std::make_unique<SpiRamJsonDocument>(
+        2048 * std::max(1, (int)readables_.size() + (int)articles_.size()));
+    JsonArray bookmarksJsonArray = doc->to<JsonArray>();
 
-    for (auto &readable : readables) {
-        if (readable.localOnly) {
-            continue;
-        }
+    for (auto &readables : {readables_, articles_}) {
+        for (auto &readable : readables) {
+            if (readable.localOnly) {
+                continue;
+            }
 
-        bool changed = prefs_.readableBookmarksChanged.get(readable.shortenedUuid.c_str());
-        if (changed) {
-            log_i("Bookmarks changed on %s %s %s", modelType.c_str(), readable.title.c_str(),
-                  readable.uuid.c_str());
+            bool changed = prefs_.readableBookmarksChanged.get(readable.shortenedUuid.c_str());
+            if (changed) {
+                auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
+                log_i("Bookmarks changed on %s %s %s", ToString(modelType).c_str(),
+                      readable.title.c_str(), readable.uuid.c_str());
+                std::string bookmarkPath =
+                    StringFormat("/bookmarks/%s-bookmark.txt", readable.uuid.c_str());
+                File bookmarkFile = fileSystem.open(bookmarkPath.c_str(), FILE_READ, false);
+                if (!bookmarkFile) {
+                    log_i("Failed to open bookmark file: %s", bookmarkPath.c_str());
+                    continue;
+                }
 
-            bookmarksJsonArray.add(readable);
+                // Store bookmarks in a hash table
+                std::unordered_map<int, int> bookmarks;
+                Bookmark bookmark;
+                while (readOneBookmark(bookmarkFile, bookmark)) {
+                    if (bookmark.status == BOOKMARK_ON &&
+                        bookmark.firstPlace > bookmark.lastPlace) {
+                        bookmarks[bookmark.firstPlace] = bookmark.lastPlace;
+                    } else if (bookmark.status == BOOKMARK_OFF) {
+                        bookmarks.erase(bookmark.firstPlace);
+                    }
+                }
 
-            if (doc->overflowed()) {
-                log_e("Out of space in SpiRamJsonDocument for %s", path.c_str());
-                return;
+                // Close the input file
+                bookmarkFile.close();
+
+                // Add bookmarks to the JSON array
+                for (const auto &[starting_position, ending_position] : bookmarks) {
+                    JsonObject bookmark = bookmarksJsonArray.createNestedObject();
+                    bookmark["starting_position"] = starting_position;
+                    bookmark["ending_position"] = ending_position;
+                    bookmark["readable"] = readable.uuid.c_str();
+                }
+
+                if (doc->overflowed()) {
+                    log_e("Out of space in SpiRamJsonDocument for %s", bookmarkPath.c_str());
+                    return "";
+                }
             }
         }
     }
@@ -290,6 +322,17 @@ void LocalStore::resetReadablesArchivedChanged(const ReadablesVector &readables)
             log_d("Resetting article archive changed for \"%s\" (now synced to server)",
                   readable.title.c_str());
             prefs_.readableArchivedChanged.remove(readable.shortenedUuid.c_str());
+        }
+    }
+}
+
+void LocalStore::resetReadablesBookmarksChanged(const ReadablesVector &readables) {
+    for (auto &readable : readables) {
+        bool changed = prefs_.readableBookmarksChanged.get(readable.shortenedUuid.c_str());
+        if (!readable.localOnly && changed) {
+            log_d("Resetting bookmarks changed for \"%s\" (now synced to server)",
+                  readable.title.c_str());
+            prefs_.readableBookmarksChanged.remove(readable.shortenedUuid.c_str());
         }
     }
 }
@@ -469,9 +512,8 @@ void LocalStore::syncFromRemote(
                                 articlesToDelete.size() + articlesToSave.size());
 
         // Sync bookmarks before we download any new readables
-        auto readablesBookmarked = this->changedReadablesBookmarksJson(readables_);
-        auto articlesBookmarked = this->changedReadablesBookmarksJson(articles_);
-        if (readablesBookmarked.size() > 0 || articlesBookmarked.size() > 0) {
+        auto readablesBookmarked = this->changedReadablesBookmarksJson();
+        if (readablesBookmarked.size() > 0) {
             log_i("Syncing bookmarks");
             syncState.tasks.push_back(ContentSyncState::Task{
                 .message = "Storing bookmarks",
@@ -479,12 +521,11 @@ void LocalStore::syncFromRemote(
             });
 
             progressCallback(syncState);
-            auto success =
-                SindarinAPI::getInstance()->syncBookmarks(readablesBookmarked, articlesBookmarked);
+            auto success = SindarinAPI::getInstance()->syncBookmarks(readablesBookmarked);
             if (success) {
                 log_i("Bookmarks synced");
-                this->resetReadablesBookmarkedChanged(readables_);
-                this->resetReadablesBookmarkedChanged(articles_);
+                this->resetReadablesBookmarksChanged(readables_);
+                this->resetReadablesBookmarksChanged(articles_);
             } else {
                 log_e("Failed to sync bookmarks");
                 progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,

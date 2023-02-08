@@ -7,9 +7,9 @@
 #include "Misc/SpiramAllocator.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Models/Author.hpp"
-#include "Models/Bookmark.hpp"
 #include "Models/Json.hpp"
 #include "Models/JsonSerializable.hpp"
+#include "Models/ReadableBookmark.hpp"
 #include "Models/ReadableFile.hpp"
 
 #define TRUNCATE_READABLE_UUID_FOR_PLACEMARK_BYTES 8
@@ -29,7 +29,7 @@ public:
     std::string datePublished;
     std::vector<Author> authors;
     std::vector<ReadableFile> files;
-    std::vector<Bookmark> bookmarks;
+    std::vector<ReadableBookmark> bookmarks;
     // TODO: source
     // TODO: categories
 

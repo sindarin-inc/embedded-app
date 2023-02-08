@@ -16,38 +16,6 @@
 // Change speed of speed reading in increments of 2 seconds
 #define PAGE_SPEED_INCREMENT 2000
 
-// Simply reads from the bookmark file for this Readable and returns whether it was
-// a turn on or turn off bookmark.
-auto ReadableScreen::readOneBookmark(File &file, Bookmark &bookmark) -> bool {
-    // The first character in the line is a + or -, read that first
-    if (!file.available()) {
-        return false;
-    }
-
-    char firstChar = file.read();
-    if (firstChar == '+') {
-        bookmark.status = BOOKMARK_ON;
-    } else if (firstChar == '-') {
-        bookmark.status = BOOKMARK_OFF;
-    } else {
-        // Got an unexpected character
-        return false;
-    }
-
-    // Next will be a space.
-    char secondChar = file.read();
-    if (secondChar != ' ') {
-        return false;
-    }
-
-    String firstThing = file.readStringUntil(' ');
-    bookmark.firstPlace = firstThing.toInt();
-
-    String secondThing = file.readStringUntil('\n');
-    bookmark.lastPlace = secondThing.toInt();
-    return true;
-}
-
 // Once we have a real database, this will all be replaced.
 // For now, since we assume that there won't be TOO many bookmarks, we simply
 // start from the first bookmark action (on or off) that the user did and replay
@@ -59,17 +27,14 @@ auto ReadableScreen::readOneBookmark(File &file, Bookmark &bookmark) -> bool {
 // pages, but I think that's fine for now.
 //
 void ReadableScreen::updateBookmarkStatus() {
-    std::string bookmarkPath = "/bookmarks/";
-    bookmarkPath += readable_.uuid;
-    bookmarkPath += "-bookmark.txt";
-
     inBookmark_ = false;
-
+    std::string bookmarkPath = StringFormat("/bookmarks/%s-bookmark.txt", readable_.uuid.c_str());
     File bookmarkFile = fileSystem_.open(bookmarkPath.c_str(), FILE_READ, false);
     if (!bookmarkFile) {
         log_i("Failed to open bookmark file: %s", bookmarkPath.c_str());
         return;
     }
+
     Bookmark bookmark;
     while (readOneBookmark(bookmarkFile, bookmark)) {
         // A decent heuristic for now. If the midpoint of the bookmark is within
@@ -110,6 +75,8 @@ void ReadableScreen::writeOutBookmarkUpdate() {
     bookmarkFile.write((const uint8_t *)plusOrMinus.c_str(), plusOrMinus.length());
     bookmarkFile.flush();
     bookmarkFile.close();
+
+    prefs_.readableBookmarksChanged.set(readable_.shortenedUuid.c_str(), true);
 }
 
 void ReadableScreen::renderIcons(DisplaySystem &display) {

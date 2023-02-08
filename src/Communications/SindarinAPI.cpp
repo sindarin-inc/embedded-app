@@ -103,8 +103,48 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
     return httpCode;
 }
 
-auto SindarinAPI::syncBookmarks(const std::string readablesBookmarkedJson,
-                                const std::string articlesBookmarkedJson) {}
+auto SindarinAPI::syncBookmarks(const std::string bookmarksJson) -> int {
+    CheckSyncResponse resp;
+    HttpClient client(SINDARIN_SERVER_URL "/user/bookmarks/", "application/json", HTTP_METHOD_POST);
+    setAuth(client);
+
+    client.open(bookmarksJson.length());
+    int writeLength = client.write(bookmarksJson.c_str(), bookmarksJson.length());
+    if (writeLength < bookmarksJson.length()) {
+        log_e("HttpClient failed to write (writeLength=%d)", writeLength);
+        return 0;
+    }
+
+    int contentLength = client.fetchHeaders();
+    int httpCode = client.getStatusCode();
+    auto stream = client.makeReadStream();
+
+    SHOW_HEAP();
+
+    auto respJson = std::make_unique<SpiRamJsonDocument>(1024 + contentLength * 3);
+    auto error = ArduinoJson::deserializeJson(*respJson, *stream);
+
+    SHOW_HEAP();
+
+    if (error.code() != DeserializationError::Ok) {
+        log_e("Failed to deserialize sync bookmarks response: %s (length=%d)", error.c_str(),
+              contentLength);
+        return 0;
+    }
+
+    SHOW_HEAP();
+
+    resp.fromJson(respJson->as<JsonObject>());
+
+    SHOW_HEAP();
+
+    log_d("Synced bookmarks: %d Message: %s, Firmware: %s", resp.synced, resp.message.c_str(),
+          resp.firmware.url.c_str());
+
+    SHOW_HEAP();
+
+    return httpCode;
+}
 
 auto SindarinAPI::downloadReadable(const Readable &readable, FileSystem &fileSystem,
                                    const std::function<void(int percentage)> &progressCallback,
