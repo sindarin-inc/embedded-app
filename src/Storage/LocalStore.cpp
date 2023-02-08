@@ -111,12 +111,8 @@ auto LocalStore::readablesModelType(const ReadablesVector &readables) -> Readabl
 auto LocalStore::hasReadable(const ReadablesVector &readables, const Readable &readable) -> bool {
     auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
     for (auto r = readables.begin(); r != readables.end(); ++r) {
-<<<<<<< HEAD
-        if (r->uuid == readable.uuid && fileSystem.exists(r->localFilePath())) {
-=======
         if (r->uuid == readable.uuid && (fileSystem.exists(r->localFilePath()) ||
                                          fileSystem.exists(r->compressedLocalFilePath()))) {
->>>>>>> ef53c05e8e46d66d405a434bb22e86c4b40f21a2
             int fileSize = -1;
             auto file = fileSystem.open(r->localFilePath());
             if (file) {
@@ -128,19 +124,12 @@ auto LocalStore::hasReadable(const ReadablesVector &readables, const Readable &r
 
                 auto cf = fileSystem.open(r->compressedLocalFilePath());
                 if (cf) {
-                    file = GUnzipFile::openGzFile(cf);
-                    fileSize = file.size();
-                    file.close();
+                    GUnzipStream gs(cf);
+                    fileSize = gs.size();
                 } else {
                     log_w("failed to open compressed file %s",
                           r->compressedLocalFilePath().c_str());
                 }
-<<<<<<< HEAD
-
-                GUnzipStream gs(cf);
-                fileSize = gs.size();
-=======
->>>>>>> ef53c05e8e46d66d405a434bb22e86c4b40f21a2
             }
 
             if (&readables == &readables_) {
