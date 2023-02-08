@@ -4,14 +4,10 @@
 
 class LookBackStream : public RendererStream {
 public:
-    LookBackStream(RendererStream *stream, int lookBackSize)
-        : stream_(stream), lookBackBuffer_(lookBackSize) {}
+    LookBackStream(std::unique_ptr<RendererStream> stream, int lookBackSize)
+        : stream_(std::move(stream)), lookBackBuffer_(lookBackSize) {}
 
-    ~LookBackStream() override {
-        if (stream_) {
-            delete stream_;
-        }
-    }
+    ~LookBackStream() {}
 
     auto available() -> int override;
     auto readBytes(uint8_t *buf, int size) -> int override;
@@ -21,7 +17,7 @@ public:
     auto size() -> size_t override;
 
 private:
-    RendererStream *stream_;
+    std::unique_ptr<RendererStream> stream_;
     CircBuffer lookBackBuffer_;
     int lookBackBytes_{0};
     int position_{0};
