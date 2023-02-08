@@ -115,8 +115,8 @@ auto LocalStore::readablesModelType(const ReadablesVector &readables) -> Readabl
 auto LocalStore::hasReadable(const ReadablesVector &readables, const Readable &readable) -> bool {
     auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
     for (auto r = readables.begin(); r != readables.end(); ++r) {
-        if (r->uuid == readable.uuid && 
-        (fileSystem.exists(r->localFilePath()) || fileSystem.exists(r->compressedLocalFilePath()))) {
+        if (r->uuid == readable.uuid && (fileSystem.exists(r->localFilePath()) ||
+                                         fileSystem.exists(r->compressedLocalFilePath()))) {
             int fileSize = -1;
             auto file = fileSystem.open(r->localFilePath());
             if (file) {
