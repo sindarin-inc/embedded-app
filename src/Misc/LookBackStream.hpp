@@ -7,8 +7,6 @@ public:
     LookBackStream(std::unique_ptr<RendererStream> stream, int lookBackSize)
         : stream_(std::move(stream)), lookBackBuffer_(lookBackSize) {}
 
-    ~LookBackStream() {}
-
     auto available() -> int override;
     auto readBytes(uint8_t *buf, int size) -> int override;
     auto read() -> int override;

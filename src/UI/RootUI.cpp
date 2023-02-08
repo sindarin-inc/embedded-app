@@ -207,7 +207,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         if ((r.title.compare("Psalms and Proverbs") != 0) &&
             (r.title.compare("New Testament") != 0) && (r.title.compare("Old Testament") != 0)) {
             booksMenu->addMenuItem(MenuItem(
-                title, r.authors[0].name, [this, r, createReadableScreen, display, mainMenu]() {
+                title, r.authors[0].name, [this, r, createReadableScreen]() {
                     auto readableScreen = createReadableScreen(r);
                     this->setCurrentScreen(*readableScreen);
                 }));

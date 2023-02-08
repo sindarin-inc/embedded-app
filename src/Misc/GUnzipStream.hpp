@@ -10,7 +10,7 @@
 class GUnzipStream : public RendererStream {
 public:
     GUnzipStream(File gzFile) : gzFile_(std::move(gzFile)) { readSize(); }
-    ~GUnzipStream() { gzFile_.close(); };
+    ~GUnzipStream() override { gzFile_.close(); };
 
     auto available() -> int override;
     auto readBytes(uint8_t *buf, int size) -> int override;
