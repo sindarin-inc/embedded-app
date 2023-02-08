@@ -23,8 +23,8 @@ auto DownloadFile(const char *url,
     }
     client.open();
 
-    esp_err_t err;
-    if ((err = client.open()) != ESP_OK) {
+    esp_err_t err = client.open();
+    if (err != ESP_OK) {
         log_e("Failed to open HTTP connection: %s", esp_err_to_name(err));
         return false;
     }

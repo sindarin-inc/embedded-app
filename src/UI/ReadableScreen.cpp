@@ -122,7 +122,7 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
     // the Y calcuation is a bit of a hack, but at least it takes into acccount line spacing
     // differences. This is one place that will benefit from more descriptive getTextHeight
     // methods.
-    if (!prefs_.cesMode.get().value()) {
+    if (!prefs_.cesMode.get().value_or(false)) {
         display.drawXBitmap(screenWidth / 2 - READ_GEAR_WIDTH / 2,
                             screenHeight + display.getTextHeight() / 2 + 3, readGearBits,
                             READ_GEAR_WIDTH, READ_GEAR_HEIGHT, display.fg);
@@ -139,7 +139,7 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
                             autoMinusBits, auto_minus_width, auto_minus_height, display.fg);
     }
 
-    if (!prefs_.cesMode.get().value()) {
+    if (!prefs_.cesMode.get().value_or(false)) {
         // Up arrow - looks like a bookmark to indicate that's what you can do.
         display.drawXBitmap(screenWidth / 2 - HOME2_WIDTH / 2, -HOME2_HEIGHT - 3, home2bits,
                             HOME2_WIDTH, HOME2_HEIGHT, display.fg);
@@ -165,7 +165,7 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
     }
 
     // Right Arrow
-    if (prefs_.cesMode.get().value()) {
+    if (prefs_.cesMode.get().value_or(false)) {
         display.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
                          screenHeight / 2 + arrowWidth / 2, display.fg);
         display.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
@@ -230,7 +230,7 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     // If it's the first read of the book, show the help screen.
     // Then ignore the next press of the button
-    if (prefs_.firstRead.get().value() == 0) {
+    if (!prefs_.firstRead.get().value_or(false)) {
 
         // We need to make sure this goes onto the second page because of a bug in the renderer.
         std::string message =
@@ -242,7 +242,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         auto streamFirstTime = new StdStringStream(message);
         firstTimeRenderer_.setStream(streamFirstTime);
 
-        prefs_.firstRead.set(1);
+        prefs_.firstRead.set(true);
         ignoreNextPress_ = true;
         firstTimeRenderer_.renderPage(0);
         renderIcons(display);
@@ -252,7 +252,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
-    if ((prefs_.firstAutopilotRead.get().value() == 0) && (pageSpeed_ != 0)) {
+    if (!prefs_.firstAutopilotRead.get().value_or(false) && (pageSpeed_ != 0)) {
         // We need to make sure this goes onto the second page because of a bug in the renderer.
         std::string message =
             "Welcome to the beta of Autopilot mode! Here is what each button does "
@@ -264,7 +264,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         auto streamFirstTime = new StdStringStream(message);
         firstTimeRenderer_.setStream(streamFirstTime);
 
-        prefs_.firstAutopilotRead.set(1);
+        prefs_.firstAutopilotRead.set(true);
         ignoreNextPress_ = true;
         firstTimeRenderer_.renderPage(0);
         renderIcons(display);
@@ -362,7 +362,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     }
 
-    uint32_t wc = prefs_.wordCount.get().value();
+    uint32_t wc = prefs_.wordCount.get().value_or(0);
     wc = wc + renderer_.getCurrentPageWordCount();
     prefs_.wordCount.set(wc);
 
@@ -377,7 +377,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
     }
 
-    if (prefs_.emcMode.get().value() == 1) {
+    if (prefs_.emcMode.get().value_or(false)) {
         // Must stop the timer because ChangePeriod starts it.
         xTimerStop(DisplaySystem::animationTimer, 0);
         // Change page every 30 seconds
@@ -391,7 +391,7 @@ void ReadableScreen::incrementReadingTime() {
     auto endMillis = GetRunTimeMs();
     auto thisPageReadingTimeSeconds =
         (endMillis > readingStartTime_) ? (endMillis - readingStartTime_) / 1000 : 0;
-    auto totalReadingTimeSeconds = prefs_.totalReadingTimeSeconds.get().value();
+    auto totalReadingTimeSeconds = prefs_.totalReadingTimeSeconds.get().value_or(0);
     totalReadingTimeSeconds += thisPageReadingTimeSeconds;
     prefs_.totalReadingTimeSeconds.set(totalReadingTimeSeconds);
 }
@@ -446,7 +446,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         numUps_ = 0;
         break;
     case RemoteCommand::NEXT:
-        if (!prefs_.cesMode.get().value()) {
+        if (!prefs_.cesMode.get().value_or(false)) {
             if (pageSpeed_ != 0) {
                 xTimerStop(DisplaySystem::animationTimer, 0);
             }
@@ -455,7 +455,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         numUps_ = 0;
         break;
     case RemoteCommand::CHANNEL_PLUS:
-        if (!prefs_.cesMode.get().value()) {
+        if (!prefs_.cesMode.get().value_or(false)) {
             if (pageSpeed_ != 0) {
                 pageSpeed_ = std::max(pageSpeed_ - PAGE_SPEED_INCREMENT, 1);
                 log_d("Speeding up: New Page Speed is %u", pageSpeed_);
@@ -476,7 +476,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::BACK:
     case RemoteCommand::PREV:
         prefs_.lastReadableId.remove();
-        if (!prefs_.cesMode.get().value()) {
+        if (!prefs_.cesMode.get().value_or(false)) {
             if (pageSpeed_ != 0) {
                 xTimerStop(DisplaySystem::animationTimer, 0);
             }
@@ -511,7 +511,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             numUps_++;
             if (numUps_ > 3) {
                 numUps_ = 0;
-                prefs_.cesMode.set(0);
+                prefs_.cesMode.set(false);
                 back();
             }
         }

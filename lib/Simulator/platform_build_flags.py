@@ -34,6 +34,7 @@ libs = [
     "Arduino",
     "esp-idf",
     "freertos-posix",
+    "nvs_flash",
 ]
 lib_includes = "\n".join([f"-I{libs_dir}/{lib}" for lib in libs])
 

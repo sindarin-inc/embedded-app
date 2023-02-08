@@ -130,13 +130,7 @@ auto Power::getBatteryPercentage() -> float {
     float batteryAverage = (batteryFractionLeft + batteryFractionRight) / 2.0 * 100;
 
     if ((int)batteryAverage == 0) {
-        if (prefs_.lastBatteryReport.get().value() == 0) {
-            // Very first time booting ever after prefs cleared.
-            batteryAverage = 90.0;
-        } else {
-            // If the battery has just been turned on, use the last known value.
-            batteryAverage = (float)prefs_.lastBatteryReport.get().value();
-        }
+        batteryAverage = prefs_.lastBatteryReport.get().value_or(90.0);
     }
 
     return batteryAverage;
@@ -158,7 +152,7 @@ void Power::logVoltages(float lVoltage, float rVoltage) {
     }
 
     // get current boot count
-    auto bootCount = prefs_.bootCount.get().value();
+    auto bootCount = prefs_.bootCount.get().value_or(0);
 
     auto runTimeMs = GetRunTimeMs();
     std::string logString =
