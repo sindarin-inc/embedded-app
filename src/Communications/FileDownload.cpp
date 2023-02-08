@@ -4,7 +4,7 @@
 #include <utility>
 
 #include "Communications/HttpClient.hpp"
-#include "Misc/GUnzipFile.hpp"
+#include "Misc/GUnzipStream.hpp"
 #include "sindarin-debug.h"
 
 auto DownloadFile(const char *url,
@@ -205,9 +205,8 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
     size_t fileSize = 0;
     if (gzip) {
         file = fileSystem.open(fullPath.c_str());
-        File gzFile = GUnzipFile::openGzFile(file);
-        fileSize = gzFile.size();
-        gzFile.close();
+        GUnzipStream gzStream(file);
+        fileSize = gzStream.size();
     } else {
         file = fileSystem.open(fullPath.c_str());
         fileSize = file.size();
