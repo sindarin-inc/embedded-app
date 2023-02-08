@@ -193,11 +193,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 title, r.authors[0].name, [this, r, createReadableScreen, display, mainMenu]() {
                     auto readableScreen = createReadableScreen(r);
                     this->setCurrentScreen(*readableScreen);
-                    readableScreen->backCallback = [this, r, display, readableScreen, mainMenu]() {
-                        display->clearDisplay();
-                        setCurrentScreen(*mainMenu);
-                        delete readableScreen;
-                    };
                 }));
         }
     }
