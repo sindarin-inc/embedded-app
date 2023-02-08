@@ -24,8 +24,5 @@ auto FileSystem::newGzipRendererStream(const char *path) -> RendererStream * {
         return nullptr;
     }
 
-    // RendererStream *gs = new GUnzipStream(file);
-    // std::unique_ptr<RendererStream> gs(new GUnzipStream(file));
-    std::unique_ptr<RendererStream> gs = std::make_unique<GUnzipStream>(file);
-    return new LookBackStream(gs, LOOKBACK_BUFFER_SIZE);
+    return new LookBackStream(std::unique_ptr<RendererStream>(new GUnzipStream(file)), LOOKBACK_BUFFER_SIZE);
 }

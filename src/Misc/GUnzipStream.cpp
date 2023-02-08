@@ -27,8 +27,10 @@ auto GUnzipStream::readBytes(uint8_t *buf, int size) -> int {
             // output buffer empty now
             // try to flush more output data. If we get Z_BUF_ERROR, it means the input is exhausted
             // and we will have to provide more input data to proceed.
+            // at this point we are only attempting to flush remaining output data,
+            // and no new input data is provided to zlib.
             int inputRead = 0;
-            int err = gunzip_.decompress(inBuf_, 0, outBuf_, 1024, inputRead, outSize_);
+            int err = gunzip_.decompress(nullptr, 0, outBuf_, 1024, inputRead, outSize_);
             if (err == Z_BUF_ERROR) {
                 // no more output to flush
                 outSize_ = 0;
@@ -64,7 +66,7 @@ auto GUnzipStream::readBytes(uint8_t *buf, int size) -> int {
             inIndex_ = 0;
         }
 
-        // some data available to decompress
+        // passing compressed data in inBuf_ to zlib, output (if any) will be copied to outBuf_
         int inputRead = 0;
         int err =
             gunzip_.decompress(&inBuf_[inIndex_], inSize_, outBuf_, 1024, inputRead, outSize_);
