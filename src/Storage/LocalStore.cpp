@@ -91,7 +91,7 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
                 fileSize = gzStream.size();
             }
 
-            if (readable.files.size() && fileSize != readable.file().size) {
+            if (fileSize >= 0 && readable.files.size() && fileSize != readable.file().size) {
                 log_w("File size mismatch for %s (%zu on disk vs %d in local store), ignoring",
                       readable.localFilePath().c_str(), fileSize, readable.file().size);
                 continue;
