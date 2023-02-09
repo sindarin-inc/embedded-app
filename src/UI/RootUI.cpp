@@ -545,16 +545,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             firmwareUpdateScreen->begin();
         }));
 
-    const int MAX_COREDUMPS = 21;
+    const int maxCoredumps = 21;
     auto countCoreDumps = [&fileSystem]() -> int {
         FileList coreDumpFiles;
-        fileSystem.listDir("/coredumps", coreDumpFiles, MAX_COREDUMPS);
+        fileSystem.listDir("/coredumps", coreDumpFiles, maxCoredumps);
         return coreDumpFiles.size();
     };
 
     std::string crashMenuName;
     int count = countCoreDumps();
-    if (count == MAX_COREDUMPS) {
+    if (count == maxCoredumps) {
         crashMenuName = StringFormat("Send Crash Report (> %d)", count - 1);
     } else {
         crashMenuName = StringFormat("Send Crash Report (%d)", count);
@@ -568,7 +568,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                                countCoreDumps]() {
                 systemSettingsMenu->setFirstLoad();
                 int count = countCoreDumps();
-                if (count == MAX_COREDUMPS) {
+                if (count == maxCoredumps) {
                     systemSettingsMenu->updateCurrItemTitle(
                         StringFormat("Send Crash Report (> %d)", count - 1));
                 } else {
