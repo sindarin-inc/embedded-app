@@ -2,7 +2,7 @@
 
 auto GUnzipStream::available() -> int { return uncompressedSize_ - position_; }
 
-int GUnzipStream::safeReadGzInput() {
+auto GUnzipStream::safeReadGzInput() -> int {
     // read input from gz file
     // this is a workaround for LittleFS seeming to not read properly
     // if chunk sizes are >= 128, but only for some files
@@ -12,8 +12,8 @@ int GUnzipStream::safeReadGzInput() {
     int bytesRead = 0;
     int blockSize = 128;
     while (bytesRead < bytesTotal) {
-        int bytesToRead = std::min(blockSize, bytesTotal-bytesRead);
-        int r = gzFile_.readBytes((char*)&inBuf_[bytesRead], bytesToRead);
+        int bytesToRead = std::min(blockSize, bytesTotal - bytesRead);
+        int r = gzFile_.readBytes((char *)&inBuf_[bytesRead], bytesToRead);
         bytesRead += r;
         if (bytesToRead != r) {
             break;
