@@ -33,4 +33,5 @@ private:
     bool lastInput_{false};
 
     void readSize();
+    int safeReadGzInput();
 };
