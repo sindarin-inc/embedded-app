@@ -15,7 +15,7 @@ int GUnzipStream::safeReadGzInput() {
         int bytesToRead = std::min(blockSize, bytesTotal-bytesRead);
         int r = gzFile_.readBytes((char*)&inBuf_[bytesRead], bytesToRead);
         bytesRead += r;
-        if (bytesRead != r) {
+        if (bytesToRead != r) {
             break;
         }
     }
