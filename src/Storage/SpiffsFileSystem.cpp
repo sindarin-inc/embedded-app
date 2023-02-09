@@ -47,12 +47,17 @@ auto SpiffsFileSystem::exists(const std::string &path) const -> bool {
     return SPIFFS.exists(path.c_str());
 }
 
-auto SpiffsFileSystem::listDir(const std::string &path, FileList &files) const -> int {
+auto SpiffsFileSystem::listDir(const std::string &path, FileList &files, int limit) const -> int {
     File root = SPIFFS.open(path.c_str());
     File file = root.openNextFile();
+    int counted = 0;
     while (file) {
         files.push_back(file.name());
         file = root.openNextFile();
+        counted++;
+        if (limit > 0 && counted >= limit) {
+            break;
+        }
     }
     return 0;
 }

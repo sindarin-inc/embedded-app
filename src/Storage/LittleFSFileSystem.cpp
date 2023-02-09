@@ -32,13 +32,18 @@ auto LittleFSFileSystem::exists(const std::string &path) const -> bool {
     return LittleFS.exists(path.c_str());
 }
 
-auto LittleFSFileSystem::listDir(const std::string &path, FileList &files) const -> int {
+auto LittleFSFileSystem::listDir(const std::string &path, FileList &files, int limit) const -> int {
+    int counted = 0;
     File root = LittleFS.open(path.c_str());
     File file = root.openNextFile();
     while (file) {
         files.push_back(file.name());
         file.close();
         file = root.openNextFile();
+        counted++;
+        if (limit > 0 && counted >= limit) {
+            break;
+        }
     }
     root.close();
     return 0;

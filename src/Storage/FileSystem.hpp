@@ -32,7 +32,7 @@ public:
         assert(0);
         return false;
     };
-    virtual auto listDir(const std::string &path, FileList &files) const -> int {
+    virtual auto listDir(const std::string &path, FileList &files, int limit = 0) const -> int {
         log_e("Abstract");
         assert(0);
         return 0;
