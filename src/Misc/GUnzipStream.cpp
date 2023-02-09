@@ -2,27 +2,6 @@
 
 auto GUnzipStream::available() -> int { return uncompressedSize_ - position_; }
 
-auto GUnzipStream::safeReadGzInput() -> int {
-    // read input from gz file
-    // this is a workaround for LittleFS seeming to not read properly
-    // if chunk sizes are >= 128, but only for some files
-    // TODO: actually fix the LittleFS issue that (sometimes) won't read larger blocks!
-
-    int bytesTotal = 1024;
-    int bytesRead = 0;
-    int blockSize = 128;
-    while (bytesRead < bytesTotal) {
-        int bytesToRead = std::min(blockSize, bytesTotal - bytesRead);
-        int r = gzFile_.readBytes((char *)&inBuf_[bytesRead], bytesToRead);
-        bytesRead += r;
-        if (bytesToRead != r) {
-            break;
-        }
-    }
-
-    return bytesRead;
-}
-
 auto GUnzipStream::readBytes(uint8_t *buf, int size) -> int {
     // read from uncompressed buffer. Keep decompressing until
     // enough bytes have been read.
@@ -51,7 +30,7 @@ auto GUnzipStream::readBytes(uint8_t *buf, int size) -> int {
             // at this point we are only attempting to flush remaining output data,
             // and no new input data is provided to zlib.
             int inputRead = 0;
-            int err = gunzip_.decompress(nullptr, 0, outBuf_, 1024, inputRead, outSize_);
+            int err = gunzip_.decompress(nullptr, 0, outBuf_, GZ_BUFFER_SIZE, inputRead, outSize_);
             if (err == Z_BUF_ERROR) {
                 // no more output to flush
                 outSize_ = 0;
@@ -73,9 +52,9 @@ auto GUnzipStream::readBytes(uint8_t *buf, int size) -> int {
             }
 
             // try to read more input data
-            int bytesRead = safeReadGzInput();
+            int bytesRead = gzFile_.readBytes((char*)inBuf_, GZ_BUFFER_SIZE);
 
-            if (bytesRead < 1024) {
+            if (bytesRead < GZ_BUFFER_SIZE) {
                 // done reading
                 lastInput_ = true;
             }
@@ -91,7 +70,7 @@ auto GUnzipStream::readBytes(uint8_t *buf, int size) -> int {
         // passing compressed data in inBuf_ to zlib, output (if any) will be copied to outBuf_
         int inputRead = 0;
         int err =
-            gunzip_.decompress(&inBuf_[inIndex_], inSize_, outBuf_, 1024, inputRead, outSize_);
+            gunzip_.decompress(&inBuf_[inIndex_], inSize_, outBuf_, GZ_BUFFER_SIZE, inputRead, outSize_);
 
         if (err != Z_OK && err != Z_STREAM_END) {
             log_e("GUNzipFile: Error decompressing %d", err);
