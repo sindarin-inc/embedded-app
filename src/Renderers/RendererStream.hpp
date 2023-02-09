@@ -2,17 +2,37 @@
 
 #include <cinttypes>
 #include <cstddef>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <utility>
 
+#include "FS.h"
+#include "sindarin-debug.h"
+
 class RendererStream {
 public:
     virtual ~RendererStream() = default;
 
     virtual auto available() -> int = 0;
+    virtual auto readBytes(uint8_t *buf, int size) -> int {
+        // implementation of byte-by-byte read for a block,
+        // only used if RendererStream subclass does not override this
+        // currently only compressed streams use and override this method
+        int ch = 0;
+        for (int i = 0; i < size; i++) {
+            ch = read();
+            if (ch < 0) {
+                return i;
+            }
+
+            buf[i] = ch;
+        }
+
+        return size;
+    };
     virtual auto read() -> int = 0;
     virtual auto seek(uint32_t pos) -> bool = 0;
     virtual auto position() -> size_t = 0;
@@ -42,7 +62,7 @@ public:
 
     void setSize(size_t size) { size_ = size; }
 
-    auto available() -> int override { return stream_.peek() != EOF; }
+    auto available() -> int override { return size() - position(); }
     auto read() -> int override { return stream_.get(); };
     auto seek(uint32_t pos) -> bool override {
         stream_.seekg(pos);

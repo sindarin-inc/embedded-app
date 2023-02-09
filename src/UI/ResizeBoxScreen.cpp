@@ -16,7 +16,7 @@ ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs
                    "dimension, left to increase horizontal dimension, right to decrease "
                    "horizontal dimension. Press center button when finished. Message repeats.\n\n";
     }
-    auto stream = new StdStringStream(message);
+    auto stream = std::make_shared<StdStringStream>(message);
     renderer_.setStream(stream);
 }
 

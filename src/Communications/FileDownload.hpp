@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include "Communications/HttpClient.hpp"
 #include "Storage/FileSystem.hpp"
 

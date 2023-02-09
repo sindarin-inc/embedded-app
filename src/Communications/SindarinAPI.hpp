@@ -1,6 +1,7 @@
 #pragma once
 #include <ArduinoJson.h>
 #include <esp_http_client.h>
+#include <functional>
 
 #include "Communications/HttpClient.hpp"
 #include "Models/CheckSyncResponse.hpp"

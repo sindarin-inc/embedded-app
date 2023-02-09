@@ -53,11 +53,11 @@ auto main() -> int {
 
     for (int i = 0; i < numWaveforms; i++) {
         auto ret = EpdWfInit(waveforms[i]);
+        auto name = waveformNames[i];
         if (ret == 0) {
-            std::cerr << "Failed to initialize waveform";
+            std::cerr << "Failed to initialize waveform \"" << name << "\"" << std::endl;
             return 1;
         }
-        auto name = waveformNames[i];
         // log_d("Processing waveform \"%s\"", name);
 
         for (int j = 0; j < wfInfo.header->temperatureCount; ++j) {

@@ -32,15 +32,20 @@ bool PosixFileSystem::exists(const std::string &path) const {
     return (stat(prefixedPath, &buffer) == 0);
 }
 
-auto PosixFileSystem::listDir(const std::string &path, FileList &files) const -> int {
+auto PosixFileSystem::listDir(const std::string &path, FileList &files, int limit) const -> int {
     char prefixedPath[200];
     createPath(prefixedPath, sizeof(prefixedPath), path);
     DIR *dp = opendir(prefixedPath);
     if (dp != NULL) {
         struct dirent *ep;
+        int counted = 0;
         while ((ep = readdir(dp))) {
             if (ep->d_type != DT_DIR) {
                 files.push_back(ep->d_name);
+                counted++;
+            }
+            if (limit > 0 && counted >= limit) {
+                break;
             }
         }
         return closedir(dp);

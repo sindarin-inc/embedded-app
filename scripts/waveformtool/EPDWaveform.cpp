@@ -1,5 +1,7 @@
 #include "EPDWaveform.hpp"
 
+#include <iostream>
+
 WaveformInfo wfInfo;
 
 static auto getCheckSum(const uint8_t *data, uint32_t len) -> uint16_t {
@@ -44,6 +46,8 @@ auto EpdWfInit(const uint8_t *data) -> uint32_t {
 
     checkSum = getCheckSum(data, wfInfo.header->dataSize);
     if (checkSum != wfInfo.header->checkSum) {
+        std::cout << "CheckSum error. Calculated: " << std::hex << checkSum
+                  << " Expected: " << wfInfo.header->checkSum << std::endl;
         return 0;
     }
 

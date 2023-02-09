@@ -96,7 +96,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             // deletion on the next loop by adding them to a vector, OR we could rearrange things
             // so that the `backCallback` is copied by the parent screen, and then executed there.
             delete readableScreen;
-            delete stream;
         };
         return readableScreen;
     };
@@ -206,15 +205,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // Bible books go in their own menu / app
         if ((r.title.compare("Psalms and Proverbs") != 0) &&
             (r.title.compare("New Testament") != 0) && (r.title.compare("Old Testament") != 0)) {
-            booksMenu->addMenuItem(MenuItem(
-                title, r.authors[0].name, [this, r, createReadableScreen, display, mainMenu]() {
+            booksMenu->addMenuItem(
+                MenuItem(title, r.authors[0].name, [this, r, createReadableScreen]() {
                     auto readableScreen = createReadableScreen(r);
                     this->setCurrentScreen(*readableScreen);
-                    readableScreen->backCallback = [this, r, display, readableScreen, mainMenu]() {
-                        display->clearDisplay();
-                        setCurrentScreen(*mainMenu);
-                        delete readableScreen;
-                    };
                 }));
         }
     }
@@ -545,13 +539,20 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             firmwareUpdateScreen->begin();
         }));
 
+    const int maxCoredumps = 21;
     auto countCoreDumps = [&fileSystem]() -> int {
         FileList coreDumpFiles;
-        fileSystem.listDir("/coredumps", coreDumpFiles);
+        fileSystem.listDir("/coredumps", coreDumpFiles, maxCoredumps);
         return coreDumpFiles.size();
     };
 
-    std::string crashMenuName = StringFormat("Send Crash Report (%d)", countCoreDumps());
+    std::string crashMenuName;
+    int count = countCoreDumps();
+    if (count == maxCoredumps) {
+        crashMenuName = StringFormat("Send Crash Report (> %d)", count - 1);
+    } else {
+        crashMenuName = StringFormat("Send Crash Report (%d)", count);
+    }
 
     systemSettingsMenu->addMenuItem(
         MenuItem(crashMenuName, [this, systemSettingsMenu, display, &fileSystem, countCoreDumps]() {
@@ -560,8 +561,14 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             crashReportScreen->backCallback = [this, display, crashReportScreen, systemSettingsMenu,
                                                countCoreDumps]() {
                 systemSettingsMenu->setFirstLoad();
-                systemSettingsMenu->updateCurrItemTitle(
-                    StringFormat("Send Crash Report (%d)", countCoreDumps()));
+                int count = countCoreDumps();
+                if (count == maxCoredumps) {
+                    systemSettingsMenu->updateCurrItemTitle(
+                        StringFormat("Send Crash Report (> %d)", count - 1));
+                } else {
+                    systemSettingsMenu->updateCurrItemTitle(
+                        StringFormat("Send Crash Report (%d)", count));
+                }
                 setCurrentScreen(*systemSettingsMenu);
                 systemSettingsMenu->render(*display);
                 delete crashReportScreen;
@@ -665,6 +672,19 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         MenuItem("Clear Articles and Restart", [systemSettingsMenu, display, &localStore]() {
             localStore.deleteArticles();
             systemSettingsMenu->showTemporaryMessage(*display, "Articles reset.");
+        }));
+
+    systemSettingsMenu->addMenuItem(
+        MenuItem("Clear Crash Reports and Restart", [systemSettingsMenu, display, &fileSystem]() {
+            FileList coreDumpFiles;
+            fileSystem.listDir("/coredumps", coreDumpFiles);
+            for (auto &file : coreDumpFiles) {
+                log_i("Removing %s", file.c_str());
+                fileSystem.remove(StringFormat("%s%s", "/coredumps/", file.c_str()).c_str());
+            }
+            systemSettingsMenu->showTemporaryMessage(*display, "Crash Reports reset.");
+            delay(1500);
+            esp_restart();
         }));
 
     systemSettingsMenu->addMenuItem(MenuItem("Factory Defaults", [this, systemSettingsMenu, display,

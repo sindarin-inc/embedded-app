@@ -12,6 +12,7 @@ public:
     void clear();
 
     auto size() -> int { return size_; }
+    auto capacity() -> int { return capacity_; }
 
 private:
     std::unique_ptr<uint8_t[]> buf_;

@@ -14,16 +14,16 @@
 
 class ReadableScreen : public ContainerScreen {
 public:
-    ReadableScreen(RendererStream *stream, DisplaySystem &display, const Readable &readable,
-                   PreferencesStore &prefs, Power &power, FileSystem &fileSystem,
-                   LightingController &lightingController)
+    ReadableScreen(std::shared_ptr<RendererStream> stream, DisplaySystem &display,
+                   const Readable &readable, PreferencesStore &prefs, Power &power,
+                   FileSystem &fileSystem, LightingController &lightingController)
 
         : renderer_(display), firstTimeRenderer_(display), readable_(readable), prefs_(prefs),
           popup_(display, power, renderer_, prefs_, readable_, lightingController),
           archiveMenu_(power, readable_, prefs_, display), fileSystem_(fileSystem),
           display_(display) {
         currentScreen_ = this;
-        renderer_.setStream(stream);
+        renderer_.setStream(std::move(stream));
         pageSpeed_ = prefs_.autoPilotSpeed.get().value_or(0);
         // Since we copy in the readable from RootUI and RootUI only creates
         // the readable at the initial MainMenu creation, the place of that

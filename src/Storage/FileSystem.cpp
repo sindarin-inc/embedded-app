@@ -1,19 +1,22 @@
 #include "FileSystem.hpp"
 
-#include "Misc/GUnzipFile.hpp"
+#include "Misc/GUnzipStream.hpp"
+#include "Misc/LookBackStream.hpp"
 #include "sindarin-debug.h"
 
-auto FileSystem::newRendererStream(const char *path) -> ContainerStream<File> * {
+#define LOOKBACK_BUFFER_SIZE 32768
+
+auto FileSystem::newRendererStream(const char *path) -> std::shared_ptr<RendererStream> {
     log_d("Attempting to open: %s", path);
     auto file = open(path);
     if (!file) {
         log_e("Failed to open file: %s", path);
         return nullptr;
     }
-    return new ContainerStream<File>(file);
+    return std::make_shared<ContainerStream<File>>(file);
 }
 
-auto FileSystem::newGzipRendererStream(const char *path) -> ContainerStream<File> * {
+auto FileSystem::newGzipRendererStream(const char *path) -> std::shared_ptr<RendererStream> {
     log_d("Attempting to open: %s", path);
     auto file = open(path);
     if (!file) {
@@ -21,7 +24,6 @@ auto FileSystem::newGzipRendererStream(const char *path) -> ContainerStream<File
         return nullptr;
     }
 
-    File gunzipFile = GUnzipFile::openGzFile(file);
-
-    return new ContainerStream<File>(gunzipFile);
+    return std::make_shared<LookBackStream>(std::make_unique<GUnzipStream>(file),
+                                            LOOKBACK_BUFFER_SIZE);
 }
