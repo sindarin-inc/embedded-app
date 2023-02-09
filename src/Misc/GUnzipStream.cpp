@@ -158,7 +158,7 @@ void GUnzipStream::readSize() {
     gzFile_.readBytes((char *)sizeBytes, 4);
 
     // rewind file
-    bool r = gzFile_.seek(0, SeekSet);
+    gzFile_.seek(0, SeekSet);
 
     // move bytes (size is little endian)
     uncompressedSize_ =
