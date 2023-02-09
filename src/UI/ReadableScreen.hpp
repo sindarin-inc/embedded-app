@@ -21,9 +21,9 @@ struct Bookmark {
 
 class ReadableScreen : public ContainerScreen {
 public:
-    ReadableScreen(RendererStream *stream, DisplaySystem &display, const Readable &readable,
-                   PreferencesStore &prefs, Power &power, FileSystem &fileSystem,
-                   LightingController &lightingController)
+    ReadableScreen(std::shared_ptr<RendererStream> stream, DisplaySystem &display,
+                   const Readable &readable, PreferencesStore &prefs, Power &power,
+                   FileSystem &fileSystem, LightingController &lightingController)
 
         : renderer_(display), firstTimeRenderer_(display), readable_(readable), prefs_(prefs),
           popup_(display, power, renderer_, prefs_, readable_, lightingController),

@@ -15,8 +15,8 @@ typedef std::vector<std::string> FileList;
 class FileSystem {
 public:
     // Note: Allocates the ContainerStream on the heap, make sure to `delete` it somewhere.
-    auto newRendererStream(const char *path) -> RendererStream *;
-    auto newGzipRendererStream(const char *path) -> RendererStream *;
+    auto newRendererStream(const char *path) -> std::shared_ptr<RendererStream>;
+    auto newGzipRendererStream(const char *path) -> std::shared_ptr<RendererStream>;
 
     // Underlying methods to init and read data
     virtual auto begin() -> bool { return true; };

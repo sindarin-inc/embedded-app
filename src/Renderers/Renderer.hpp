@@ -56,7 +56,7 @@ class Renderer {
 public:
     Renderer(DisplaySystem &display);
 
-    void setStream(RendererStream *stream) { stream_ = stream; }
+    void setStream(std::shared_ptr<RendererStream> stream) { stream_ = stream; }
     void setVerticalCenter(bool verticalCenter) { verticalCenter_ = verticalCenter; }
     void setHorizontalCenter(bool horizontalCenter) { horizontalCenter_ = horizontalCenter; }
 
@@ -90,7 +90,7 @@ public:
 
 protected:
     DisplaySystem &display_;
-    RendererStream *stream_ = nullptr;
+    std::shared_ptr<RendererStream> stream_;
 
     // Allows you to center the text horizontally and vertically if you'd like
     bool verticalCenter_ = false;

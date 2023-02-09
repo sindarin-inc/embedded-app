@@ -96,7 +96,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             // deletion on the next loop by adding them to a vector, OR we could rearrange things
             // so that the `backCallback` is copied by the parent screen, and then executed there.
             delete readableScreen;
-            delete stream;
         };
         return readableScreen;
     };

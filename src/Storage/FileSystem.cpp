@@ -6,17 +6,17 @@
 
 #define LOOKBACK_BUFFER_SIZE 32768
 
-auto FileSystem::newRendererStream(const char *path) -> RendererStream * {
+auto FileSystem::newRendererStream(const char *path) -> std::shared_ptr<RendererStream> {
     log_d("Attempting to open: %s", path);
     auto file = open(path);
     if (!file) {
         log_e("Failed to open file: %s", path);
         return nullptr;
     }
-    return new ContainerStream<File>(file);
+    return std::make_shared<ContainerStream<File>>(file);
 }
 
-auto FileSystem::newGzipRendererStream(const char *path) -> RendererStream * {
+auto FileSystem::newGzipRendererStream(const char *path) -> std::shared_ptr<RendererStream> {
     log_d("Attempting to open: %s", path);
     auto file = open(path);
     if (!file) {
@@ -24,6 +24,6 @@ auto FileSystem::newGzipRendererStream(const char *path) -> RendererStream * {
         return nullptr;
     }
 
-    return new LookBackStream(std::unique_ptr<RendererStream>(new GUnzipStream(file)),
-                              LOOKBACK_BUFFER_SIZE);
+    return std::make_shared<LookBackStream>(std::make_unique<GUnzipStream>(file),
+                                            LOOKBACK_BUFFER_SIZE);
 }

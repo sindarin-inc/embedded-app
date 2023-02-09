@@ -1,5 +1,7 @@
 #include "UI/OffsetAdjustScreen.hpp"
 
+#include <memory>
+
 #include "sindarin-debug.h"
 
 #define OFFSET_ADJUST_AMOUNT 5
@@ -14,7 +16,7 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
         message += "Press arrows to move box around to your liking. Then "
                    "press the center button when done! Message repeats.\n\n";
     }
-    auto stream = new StdStringStream(message);
+    auto stream = std::make_shared<StdStringStream>(message);
     renderer_.setStream(stream);
 }
 
