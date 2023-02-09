@@ -1,6 +1,8 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
+#include <utility>
+
 #include "Displays/DisplaySystem.hpp"
 #include "Renderers/RendererStream.hpp"
 
@@ -56,7 +58,7 @@ class Renderer {
 public:
     Renderer(DisplaySystem &display);
 
-    void setStream(std::shared_ptr<RendererStream> stream) { stream_ = stream; }
+    void setStream(std::shared_ptr<RendererStream> stream) { stream_ = std::move(stream); }
     void setVerticalCenter(bool verticalCenter) { verticalCenter_ = verticalCenter; }
     void setHorizontalCenter(bool horizontalCenter) { horizontalCenter_ = horizontalCenter; }
 

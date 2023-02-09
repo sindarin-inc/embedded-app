@@ -30,7 +30,7 @@ public:
           archiveMenu_(power, readable_, prefs_, display), fileSystem_(fileSystem),
           display_(display) {
         currentScreen_ = this;
-        renderer_.setStream(stream);
+        renderer_.setStream(std::move(stream));
         pageSpeed_ = prefs_.autoPilotSpeed.get().value_or(0);
         // Since we copy in the readable from RootUI and RootUI only creates
         // the readable at the initial MainMenu creation, the place of that
