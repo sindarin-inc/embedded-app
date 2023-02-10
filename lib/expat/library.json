@@ -1,0 +1,39 @@
+{
+    "name": "expat",
+    "version": "1.0.0",
+    "authors":
+    [
+      {
+        "name": "John Smith",
+        "email": "me@john-smith.com",
+        "url": "https://www.john-smith/contact"
+      }
+    ],
+    "license": "MIT",
+    "homepage": "https://www.helloworld.org/",
+    "frameworks": "*",
+    "platforms": "*",
+    "build": {
+        "libArchive": true,
+		"flags": [
+            "-DHAVE_EXPAT_CONFIG_H",
+            "-Wno-implicit-fallthrough",
+            "-Iport/include",
+            "-Ilibexpat/expat/lib"
+		],
+        "srcFilter": [
+            "-<*>",
+            "+<libexpat/expat/lib/xmlparse.c>",
+            "+<libexpat/expat/lib/xmlrole.c>",
+            "+<libexpat/expat/lib/xmltok.c>",
+            "+<libexpat/expat/lib/xmltok_impl.c>",
+            "+<libexpat/expat/lib/xmltok_ns.c>"
+        ]
+    },
+
+    "export": {
+        "include": [
+            "libexpat/expat/lib"
+        ]
+    }
+}
