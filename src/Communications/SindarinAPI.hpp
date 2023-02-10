@@ -24,7 +24,7 @@ struct CheckSyncRequest {
 
 class SindarinAPI {
 public:
-    static auto getInstance() -> SindarinAPI *;
+    static auto getInstance() -> std::shared_ptr<SindarinAPI>;
 
     void setAccessToken(const std::string &accessToken);
 
@@ -39,7 +39,7 @@ public:
     auto uploadCrashReport(File &crashFile, const String &contentType) -> int;
 
 protected:
-    static SindarinAPI *instance;
+    static std::shared_ptr<SindarinAPI> instance;
     std::string accessToken_;
 
     void setAuth(HttpClient &client);

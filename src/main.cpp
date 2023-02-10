@@ -53,12 +53,12 @@ BLERemoteInput bleRemoteInput;
 
 #if USE_BLE_SERVER_SETTINGS
 #include "Communications/BLESettings.hpp"
-BLESettings *bleSettings;
+BLESettings bleSettings(&prefs);
 #endif
 
 #if USE_BLE_SERVER_IMPROV
 #include "Communications/BLEImprov.hpp"
-BLEImprov *bleWifi;
+BLEImprov bleWifi;
 #endif
 
 #if USE_TURN_TOUCH_REMOTE
@@ -108,7 +108,7 @@ void RadioTask(void *parameter) {
 #endif
 
 #if USE_BLE_SERVER_REMOTE
-        bleWifi->loop();
+        bleWifi.loop();
 #endif
 
 // Put this with other periodic tasks so they all execute on the same wakeup
@@ -381,7 +381,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
-    BLEManager *bleManager = BLEManager::getInstance();
+    auto bleManager = BLEManager::getInstance();
 #endif
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS
@@ -393,10 +393,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 
 #if USE_BLE_SERVER_SETTINGS
-    bleSettings = new BLESettings(&prefs);
-    bleSettings->configureCharacteristics(sindarinService);
+    bleSettings.configureCharacteristics(sindarinService);
 #if USE_TURN_TOUCH_REMOTE
-    bleSettings->attachTTRemoteInput(&ttRemoteInput);
+    bleSettings.attachTTRemoteInput(&ttRemoteInput);
 #endif
 #endif
 
@@ -412,9 +411,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // also use the Sindarin mobile app as-is after provisioning is done. If we
     // want to merge these in the future, it will be as simple as using
     // ble_wifi->configureCharacteristics(sindarinService)
-    bleWifi = new BLEImprov();
-    bleWifi->configureService(bleManager->server());
-    if (!bleWifi->start()) {
+    bleWifi.configureService(bleManager->server());
+    if (!bleWifi.start()) {
         bootErrors.push_back({.type = BootError::Type::BLEWifi});
     }
 #endif

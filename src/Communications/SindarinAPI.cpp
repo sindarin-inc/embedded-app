@@ -17,11 +17,11 @@
 #define SINDARIN_SERVER_URL "https://api.sindarin.com"
 // #define SINDARIN_SERVER_URL "https://staging.sindarin.com"
 
-SindarinAPI *SindarinAPI::instance = nullptr;
+std::shared_ptr<SindarinAPI> SindarinAPI::instance = nullptr;
 
-auto SindarinAPI::getInstance() -> SindarinAPI * {
+auto SindarinAPI::getInstance() -> std::shared_ptr<SindarinAPI> {
     if (instance == nullptr) {
-        instance = new SindarinAPI();
+        instance = std::make_shared<SindarinAPI>();
     }
     return instance;
 }

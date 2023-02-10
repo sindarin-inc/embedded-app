@@ -4,11 +4,11 @@
 
 #include "config.h"
 
-BLEManager *BLEManager::instance = nullptr;
+std::shared_ptr<BLEManager> BLEManager::instance = nullptr;
 
-auto BLEManager::getInstance() -> BLEManager * {
+auto BLEManager::getInstance() -> std::shared_ptr<BLEManager> {
     if (instance == nullptr) {
-        instance = new BLEManager();
+        instance = std::make_shared<BLEManager>();
     }
     return instance;
 }

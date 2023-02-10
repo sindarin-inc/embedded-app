@@ -39,7 +39,7 @@ protected:
     long keepDisconnectedUntilMs_ = 0;
     BLEClient *client_ = nullptr;
 
-    auto connectToDevice(std::shared_ptr<BLEAdvertisedDevice> device) -> bool;
+    auto connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &device) -> bool;
     static void connectTask(void *params);
     void scanForDevice();
 
