@@ -52,7 +52,7 @@ auto GUnzipStream::readBytes(uint8_t *buf, int size) -> int {
             }
 
             // try to read more input data
-            int bytesRead = gzFile_.readBytes((char*)inBuf_, GZ_BUFFER_SIZE);
+            int bytesRead = gzFile_.readBytes((char *)inBuf_, GZ_BUFFER_SIZE);
 
             if (bytesRead < GZ_BUFFER_SIZE) {
                 // done reading
@@ -69,8 +69,8 @@ auto GUnzipStream::readBytes(uint8_t *buf, int size) -> int {
 
         // passing compressed data in inBuf_ to zlib, output (if any) will be copied to outBuf_
         int inputRead = 0;
-        int err =
-            gunzip_.decompress(&inBuf_[inIndex_], inSize_, outBuf_, GZ_BUFFER_SIZE, inputRead, outSize_);
+        int err = gunzip_.decompress(&inBuf_[inIndex_], inSize_, outBuf_, GZ_BUFFER_SIZE, inputRead,
+                                     outSize_);
 
         if (err != Z_OK && err != Z_STREAM_END) {
             log_e("GUNzipFile: Error decompressing %d", err);
