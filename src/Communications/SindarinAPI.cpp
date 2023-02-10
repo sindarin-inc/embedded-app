@@ -14,8 +14,8 @@
 #include "Version.hpp"
 #include "sindarin-debug.h"
 
-#define SINDARIN_SERVER_URL "https://api.sindarin.com"
-// #define SINDARIN_SERVER_URL "https://staging.sindarin.com"
+// #define SINDARIN_SERVER_URL "https://api.sindarin.com"
+#define SINDARIN_SERVER_URL "https://staging.sindarin.com"
 
 SindarinAPI *SindarinAPI::instance = nullptr;
 

@@ -242,11 +242,14 @@ auto LocalStore::changedReadablesBookmarksJson() -> std::string {
                 }
 
                 // Store bookmarks in a hash table
-                std::unordered_map<int, int> bookmarks;
+                std::unordered_map<uint32_t, uint32_t> bookmarks;
                 Bookmark bookmark;
                 while (readOneBookmark(bookmarkFile, bookmark)) {
+                    log_d("Bookmark: %d %d %d", bookmark.firstPlace, bookmark.lastPlace,
+                          bookmark.status);
+
                     if (bookmark.status == BOOKMARK_ON &&
-                        bookmark.firstPlace > bookmark.lastPlace) {
+                        bookmark.firstPlace < bookmark.lastPlace) {
                         bookmarks[bookmark.firstPlace] = bookmark.lastPlace;
                     } else if (bookmark.status == BOOKMARK_OFF) {
                         bookmarks.erase(bookmark.firstPlace);
@@ -255,13 +258,13 @@ auto LocalStore::changedReadablesBookmarksJson() -> std::string {
 
                 // Close the input file
                 bookmarkFile.close();
-
+                log_d("Bookmarks size: %d bytes", bookmarks.size());
                 // Add bookmarks to the JSON array
                 for (const auto &[starting_position, ending_position] : bookmarks) {
                     JsonObject bookmark = bookmarksJsonArray.createNestedObject();
                     bookmark["starting_position"] = starting_position;
                     bookmark["ending_position"] = ending_position;
-                    bookmark["readable"] = readable.uuid.c_str();
+                    bookmark["readable"] = readable.uuid;
                 }
 
                 if (doc->overflowed()) {
@@ -274,6 +277,7 @@ auto LocalStore::changedReadablesBookmarksJson() -> std::string {
 
     std::string bookmarksJson;
     serializeJson(*doc, bookmarksJson);
+    log_d("Bookmarks JSON: %s", bookmarksJson.c_str());
 
     return bookmarksJson;
 }
@@ -510,6 +514,7 @@ void LocalStore::syncFromRemote(
         ContentSyncState syncState = {.state = ContentSyncState::State::Syncing};
         syncState.tasks.reserve(readablesToDownload.size() + readablesToDelete.size() +
                                 articlesToDelete.size() + articlesToSave.size());
+        auto tasksIndex = 0;
 
         // Sync bookmarks before we download any new readables
         auto readablesBookmarked = this->changedReadablesBookmarksJson();
@@ -533,7 +538,8 @@ void LocalStore::syncFromRemote(
                 delay(1000);
             }
 
-            syncState.tasks[0].percentage = 100;
+            syncState.tasks[tasksIndex].percentage = 100;
+            tasksIndex += 1;
             progressCallback(syncState);
         }
 
@@ -586,14 +592,14 @@ void LocalStore::syncFromRemote(
             this->fileSystem.remove(readable.localFilePath());
             this->fileSystem.remove(readable.compressedLocalFilePath());
             this->removeReadable(readables_, readable);
-            syncState.tasks[i].percentage = 100;
+            syncState.tasks[tasksIndex].percentage = 100;
+            tasksIndex += 1;
         }
 
         progressCallback(syncState);
 
         for (int i = 0; i < readablesToDownload.size(); i++) {
             // Index into the progress tasks vector
-            auto tasksIndex = readablesToDelete.size() + i;
             const auto &readable = readablesToDownload[i];
             log_i("Downloading %s (file=%s, url=%s)", readable.title.c_str(),
                   readable.localFilePath().c_str(), readable.remoteUrl().c_str());
@@ -619,11 +625,12 @@ void LocalStore::syncFromRemote(
                     }
                 }
             }
+
+            tasksIndex += 1;
         }
 
         progressCallback(syncState);
 
-        auto tasksIndex = readablesToDownload.size() + readablesToDelete.size();
         if (articlesToDelete.size() > 0) {
             for (int i = 0; i < articlesToDelete.size(); i++) {
                 syncState.tasks[tasksIndex].percentage =
