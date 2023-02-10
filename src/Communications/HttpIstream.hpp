@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <esp_http_client.h>
 #include <istream>
 #include <streambuf>
@@ -8,7 +9,8 @@ template <std::size_t BUFFER_SIZE = BUFSIZ>
 class HttpStreambuf : public std::streambuf {
 public:
     HttpStreambuf(esp_http_client_handle_t client) : client_(client) {
-        buffer_ = (char *)heap_caps_malloc(BUFFER_SIZE, MALLOC_CAP_SPIRAM);
+        buffer_ =
+            (char *)heap_caps_malloc(std::max((int)BUFFER_SIZE, (int)BUFSIZ), MALLOC_CAP_SPIRAM);
         setg(buffer_, buffer_, buffer_);
     }
 
