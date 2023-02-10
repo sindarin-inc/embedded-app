@@ -8,6 +8,10 @@
 #include "sindarin-debug.h"
 
 #define GZ_BUFFER_SIZE 128
+// LittleFS seems to have an issue where reads of > 128 bytes sometimes fail.
+// This equates to a difference between using read() and fread(), and can be seen in
+// vfs_api.cpp read() function.
+// Avoiding this issue here by keeping input/output buffers to 128 bytes
 
 class GUnzipStream : public RendererStream {
 public:
