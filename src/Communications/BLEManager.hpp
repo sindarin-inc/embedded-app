@@ -3,19 +3,20 @@
 #define BLEManager_H
 
 #include <NimBLEDevice.h>
+#include <memory>
 
 #include "sindarin-debug.h"
 
 class BLEManager {
 public:
-    static auto getInstance() -> BLEManager *;
+    BLEManager();
+    static auto getInstance() -> std::shared_ptr<BLEManager>;
     auto startAdvertisingIfNecessary() -> bool;
     auto server() -> BLEServer *;
 
 protected:
-    static BLEManager *instance;
+    static std::shared_ptr<BLEManager> instance;
     BLEServer *server_ = nullptr;
-    BLEManager();
 
     class ServerCallbacks : public BLEServerCallbacks {
     public:

@@ -15,8 +15,6 @@
 #define WIFI_SCANNING_MAX_AP_RECORDS 20
 
 void BLEImprov::configureCharacteristics(BLEService *service) {
-    auto *characteristicCallbacks = new CharacteristicCallbacks(this);
-
     BLECharacteristic *capabilitiesCharacteristic =
         service->createCharacteristic(BLEUUID(improv::CAPABILITIES_UUID), NIMBLE_PROPERTY::READ);
     int supportsIdentify = 0;
@@ -36,7 +34,7 @@ void BLEImprov::configureCharacteristics(BLEService *service) {
 
     BLECharacteristic *rpcCommandCharacteristic =
         service->createCharacteristic(BLEUUID(improv::RPC_COMMAND_UUID), NIMBLE_PROPERTY::WRITE);
-    rpcCommandCharacteristic->setCallbacks(characteristicCallbacks);
+    rpcCommandCharacteristic->setCallbacks(&characteristicCallbacks_);
 
     BLECharacteristic *rpcResultCharacteristic = service->createCharacteristic(
         BLEUUID(improv::RPC_RESULT_UUID), NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
