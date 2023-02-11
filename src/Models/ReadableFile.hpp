@@ -20,14 +20,18 @@ public:
 
     auto fromJson(const JsonObject &j) -> bool override {
 
-        /*
         if (!j.containsKey("uuid") || !j.containsKey("name") || !j.containsKey("size") ||
             !j.containsKey("filetype") || !j.containsKey("uploaded_at") ||
             !j.containsKey("sha_hash")) {
-            log_w("Failed to parse ReadableFile with JSON %s", DumpJson(j).c_str());
-            return false;
+
+            // missing some fields, but this might be an article
+            // TODO: add field to specify articles?
+            if (!j.containsKey("file") || !j.containsKey("size")) {
+                // failed to parse
+                log_w("Failed to parse ReadableFile with JSON %s", DumpJson(j).c_str());
+                return false;
+            }
         }
-        */
 
         uuid = j["uuid"].as<std::string>();
         name = j["name"].as<std::string>();
