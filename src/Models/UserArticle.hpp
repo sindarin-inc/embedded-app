@@ -22,7 +22,11 @@ public:
         uuid = j["uuid"].as<std::string>();
         placemark = j["placemark"].as<uint32_t>();
         isArchived = j["is_archived"].as<bool>();
-        return readable.fromJson(j["readable"]);
+        bool result = readable.fromJson(j["readable"]);
+        if (result) {
+            readable.article = true;
+        }
+        return result;
     }
 
     operator std::string() const { return uuid; }

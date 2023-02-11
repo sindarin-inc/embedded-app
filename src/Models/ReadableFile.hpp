@@ -19,12 +19,18 @@ public:
     std::string fileProxied;
 
     auto fromJson(const JsonObject &j) -> bool override {
+        /*
+        if (!j.containsKey("file"))
+
+
         if (!j.containsKey("uuid") || !j.containsKey("name") || !j.containsKey("size") ||
             !j.containsKey("filetype") || !j.containsKey("uploaded_at") ||
             !j.containsKey("sha_hash")) {
             log_w("Failed to parse ReadableFile with JSON %s", DumpJson(j).c_str());
             return false;
         }
+        */
+
         uuid = j["uuid"].as<std::string>();
         name = j["name"].as<std::string>();
         size = j["size"];
@@ -32,7 +38,12 @@ public:
         uploadedAt = j["uploaded_at"].as<std::string>();
         shaHash = j["sha_hash"].as<std::string>();
         file = j["file"].as<std::string>();
-        fileProxied = j["file_proxied"].as<std::string>();
+
+        if (j.containsKey("file_proxied")) {
+            fileProxied = j["file_proxied"].as<std::string>();
+        } else {
+            fileProxied = file;
+        }
         return true;
     }
 };

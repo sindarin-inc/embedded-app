@@ -38,9 +38,11 @@ public:
 
     auto uploadCrashReport(File &crashFile, const String &contentType) -> int;
 
+    void setAuth(HttpClient &client);
+
 protected:
     static SindarinAPI *instance;
     std::string accessToken_;
 
-    void setAuth(HttpClient &client);
+    //void setAuth(HttpClient &client);
 };

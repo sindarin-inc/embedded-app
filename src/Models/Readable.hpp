@@ -28,6 +28,7 @@ public:
     std::string datePublished;
     std::vector<Author> authors;
     std::vector<ReadableFile> files;
+    bool article = false;
     // TODO: source
     // TODO: categories
 
@@ -39,14 +40,14 @@ public:
 
     [[nodiscard]] auto file() const -> const ReadableFile & { return files[0]; }
     [[nodiscard]] auto localFilePath() const -> std::string {
-        if (files.size()) {
+        if (!isArticle()) {
             return StringFormat("/%s", file().name.c_str());
         } else {
             return StringFormat("/articles/%s.txt", uuid.c_str());
         }
     }
     [[nodiscard]] auto compressedLocalFilePath() const -> std::string {
-        if (files.size()) {
+        if (!isArticle()) {
             return StringFormat("/%s.gz", file().name.c_str());
         } else {
             return StringFormat("/articles/%s.txt.gz", uuid.c_str());
@@ -54,11 +55,7 @@ public:
     }
     [[nodiscard]] auto remoteUrl() const -> std::string { return file().fileProxied; }
     [[nodiscard]] auto isArticle() const -> bool {
-        if (files.size()) {
-            return false;
-        } else {
-            return true;
-        }
+        return article;
     }
 
     auto fromJson(const JsonObject &j) -> bool override {
@@ -72,6 +69,7 @@ public:
         shortenedUuid = j["uuid"].as<std::string>();
         shortenedUuid.resize(TRUNCATE_READABLE_UUID_FOR_PLACEMARK_BYTES);
         title = j["title"].as<std::string>();
+        log_i("PARSING readable name %s", title.c_str());
         dateCreated = j["date_created"].as<std::string>();
         dateModified = j["date_modified"].as<std::string>();
         datePublished = j["date_published"].as<std::string>();
@@ -83,11 +81,14 @@ public:
         }
         files.clear();
         for (const auto &file : j["files"].as<JsonArray>()) {
+            log_i("file parsing! file is %s size %d", file["file"].as<std::string>().c_str(), file["size"].as<int>());
+
             files.emplace_back();
             files.back().fromJson(file);
         }
         // TODO: Instead of reading content, write it to disk immediately
         content = j["content"].as<std::string>();
+        article = j["article"].as<bool>(); 
 
         return true;
     }
