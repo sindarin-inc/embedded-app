@@ -8,7 +8,7 @@
 #include "sindarin-debug.h"
 
 // For deep logging when changing this file
-//#define RENDERER_DEBUG
+// #define RENDERER_DEBUG
 
 // This is the number of SUB-lines we want to split a line into
 // for the purpose of being able to render bare newlines as less

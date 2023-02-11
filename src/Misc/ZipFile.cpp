@@ -14,6 +14,11 @@ auto ZipFile::zipOpen(const char *filename, int32_t *size) -> void * {
     }
 
     iZF->fp_ = iZF->fileSystem_.open(filename, FILE_READ);
+    if (!iZF->fp_) {
+        log_e("ZipFile Couldn't open file %s", filename);
+        return nullptr;
+    }
+
     *size = iZF->fp_.size();
 
     return iZF;
@@ -125,6 +130,35 @@ void ZipFile::listFiles() {
         }
         rc = zip_.gotoNextFile();
     }
+}
+
+int32_t ZipFile::openFile(const char *pathInZip) {
+    auto err = zip_.locateFile(pathInZip);
+    if (err != UNZ_OK) {
+        log_e("Couldn't find %s in zip", pathInZip);
+        return err;
+    }
+
+    err = zip_.openCurrentFile();
+    if (err != UNZ_OK) {
+        log_e("Couldn't open %s in zip", pathInZip);
+    }
+    return err;
+}
+
+int32_t ZipFile::closeFile() {
+    auto err = zip_.closeCurrentFile();
+    if (err != UNZ_OK) {
+        log_e("Couldn't close file in zip");
+    }
+    return err;
+}
+
+int ZipFile::readFromFile(uint8_t *buf, size_t size) { return zip_.readCurrentFile(buf, size); }
+
+int ZipFile::getFileInfo(unz_file_info *fi, char *szName, size_t nameBufSize, char *szComment,
+                         size_t commentBufSize) {
+    return zip_.getFileInfo(fi, szName, nameBufSize, nullptr, 0, szComment, commentBufSize);
 }
 
 void ZipFile::extractCurrentFile(const char *outFname) {

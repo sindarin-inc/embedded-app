@@ -10,8 +10,10 @@
 #include "Communications/HtmlCleaner.hpp"
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
+#include "EPub/EPubFile.hpp"
 #include "GitVersion.hpp"
 #include "Inputs/RemoteInput.hpp"
+#include "Misc/LookBackStream.hpp"
 #include "Misc/MenuStyle.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/StringUtil.hpp"
@@ -73,9 +75,21 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto createReadableScreen = [this, display, mainMenu, &fileSystem, &lightingController](
                                     const Readable &readable) -> ReadableScreen * {
         // TODO: Would be better to not allocate / delete these all the time
-        auto stream = fileSystem.newRendererStream(readable.localFilePath().c_str());
-        if (!stream) {
-            stream = fileSystem.newGzipRendererStream(readable.compressedLocalFilePath().c_str());
+
+        std::shared_ptr<RendererStream> stream;
+        if (readable.file().filetype == "epub") {
+            log_i("Opening %s as epub", readable.localFilePath().c_str());
+            auto epubFile =
+                std::make_unique<EPubFile>(fileSystem, readable.localFilePath().c_str());
+            epubFile->open();
+            stream = std::make_shared<LookBackStream>(
+                std::make_unique<HtmlCleaner>(std::move(epubFile)), LOOKBACK_BUFFER_SIZE);
+        } else {
+            stream = fileSystem.newRendererStream(readable.localFilePath().c_str());
+            if (!stream) {
+                stream =
+                    fileSystem.newGzipRendererStream(readable.compressedLocalFilePath().c_str());
+            }
         }
         auto *readableScreen = new ReadableScreen(stream, *display, readable, this->prefs_,
                                                   this->power_, fileSystem, lightingController);
