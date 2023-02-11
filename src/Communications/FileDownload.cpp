@@ -3,8 +3,8 @@
 #include <esp_timer.h>
 #include <utility>
 
-#include "Communications/SindarinAPI.hpp"
 #include "Communications/HttpClient.hpp"
+#include "Communications/SindarinAPI.hpp"
 #include "Misc/GUnzipStream.hpp"
 #include "sindarin-debug.h"
 
@@ -14,10 +14,9 @@ auto DownloadFile(const char *url,
                   const std::function<void(int bytesWritten, float percentage)> &progressCallback,
                   bool gzip) -> bool {
 
-    log_i("Trying to download: %s", url);
     HttpClient client(url);
 
-    SindarinAPI* api = SindarinAPI::getInstance();
+    std::shared_ptr<SindarinAPI> api = SindarinAPI::getInstance();
     if (api) {
         log_i("API SET AUTH");
         api->setAuth(client);
@@ -29,7 +28,7 @@ auto DownloadFile(const char *url,
     if (gzip) {
         client.setHeader("Accept-Encoding", "gzip");
         // TODO: check server headers to verify we got gzip
-    }   
+    }
     client.open();
 
     esp_err_t err = client.open();
@@ -39,7 +38,6 @@ auto DownloadFile(const char *url,
     }
 
     auto contentLength = client.fetchHeaders();
-    log_i("content length for %s was %d", url, contentLength);
     if (contentLength <= 0) {
         // if we somehow don't have a content length header, consider it an error for now
         log_e("Server did not return a content length for %s", url);
@@ -223,16 +221,12 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
         file.close();
     }
 
-    // TEMP! remove file size check
-    /*
     if (length != fileSize) {
         // TODO: What's the best API to get errors from the stream?
         log_e("Downloaded file is shorter than expected, expected %d bytes but got %zu bytes",
               length, fileSize);
         return false;
-    } else {
-        return true;
     }
-    */
-   return true;
+
+    return true;
 }

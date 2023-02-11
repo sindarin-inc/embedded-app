@@ -54,9 +54,7 @@ public:
         }
     }
     [[nodiscard]] auto remoteUrl() const -> std::string { return file().fileProxied; }
-    [[nodiscard]] auto isArticle() const -> bool {
-        return article;
-    }
+    [[nodiscard]] auto isArticle() const -> bool { return article; }
 
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("uuid") || !j.containsKey("title") || !j.containsKey("date_created") ||
@@ -69,7 +67,6 @@ public:
         shortenedUuid = j["uuid"].as<std::string>();
         shortenedUuid.resize(TRUNCATE_READABLE_UUID_FOR_PLACEMARK_BYTES);
         title = j["title"].as<std::string>();
-        log_i("PARSING readable name %s", title.c_str());
         dateCreated = j["date_created"].as<std::string>();
         dateModified = j["date_modified"].as<std::string>();
         datePublished = j["date_published"].as<std::string>();
@@ -81,14 +78,12 @@ public:
         }
         files.clear();
         for (const auto &file : j["files"].as<JsonArray>()) {
-            log_i("file parsing! file is %s size %d", file["file"].as<std::string>().c_str(), file["size"].as<int>());
-
             files.emplace_back();
             files.back().fromJson(file);
         }
         // TODO: Instead of reading content, write it to disk immediately
         content = j["content"].as<std::string>();
-        article = j["article"].as<bool>(); 
+        article = j["article"].as<bool>();
 
         return true;
     }

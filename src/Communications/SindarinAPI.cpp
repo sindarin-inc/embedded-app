@@ -106,17 +106,12 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
 auto SindarinAPI::downloadReadable(const Readable &readable, FileSystem &fileSystem,
                                    const std::function<void(int percentage)> &progressCallback,
                                    bool gzip) -> bool {
-    log_i("dr!");
     bool success = false;
 
-    log_i("num files %d", readable.files.size());
     // auto remoteUrl = readable.remoteUrl();
     auto remoteUrl = readable.file().fileProxied;
-    log_i("dr1");
     auto localPath = readable.localFilePath();
     auto fileSize = readable.file().size;
-
-    log_i("in downloadReadable!");
 
     success = DownloadFile(
         remoteUrl.c_str(), fileSystem, localPath.c_str(), fileSize,

@@ -68,10 +68,8 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
         if (!readable.fromJson(v.as<JsonObject>())) {
             log_e("Failed to parse Readable");
             continue;
-        }
-        
-        if (!fileSystem.exists(readable.localFilePath()) &&
-            !fileSystem.exists(readable.compressedLocalFilePath())) {
+        } else if (!fileSystem.exists(readable.localFilePath()) &&
+                   !fileSystem.exists(readable.compressedLocalFilePath())) {
             log_w("Couldn't find readable with path %s", readable.localFilePath().c_str());
             continue;
         } else {
@@ -318,17 +316,16 @@ void LocalStore::syncFromRemote(
         auto readablesArchived = this->changedReadablesArchivedQueryParams(readables_);
         auto articlesArchived = this->changedReadablesArchivedQueryParams(articles_);
         CheckSyncResponse checkSyncResponse;
-        CheckSyncRequest request = CheckSyncRequest{
-            .readablesSince = readablesSince,
-            .articlesSince = articlesSince,
-            .readablePlacemarks = readablePlacemarks,
-            .articlePlacemarks = articlePlacemarks,
-            .readablesArchived = readablesArchived,
-            .articlesArchived = articlesArchived,
-            .ptBattery = this->prefs_.lastPageTurnerBattery.get().value_or(0),
-            .ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or(""),
-            .skipContent = true
-        };
+        CheckSyncRequest request =
+            CheckSyncRequest{.readablesSince = readablesSince,
+                             .articlesSince = articlesSince,
+                             .readablePlacemarks = readablePlacemarks,
+                             .articlePlacemarks = articlePlacemarks,
+                             .readablesArchived = readablesArchived,
+                             .articlesArchived = articlesArchived,
+                             .ptBattery = this->prefs_.lastPageTurnerBattery.get().value_or(0),
+                             .ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or(""),
+                             .skipContent = true};
 
         SHOW_HEAP();
         auto httpCode = SindarinAPI::getInstance()->checkSync(request, &checkSyncResponse);
@@ -560,24 +557,19 @@ void LocalStore::syncFromRemote(
                 log_e("Could not create /articles directory");
             }
 
+            float pctPerArticle = 100.0 / articlesToSave.size();
             for (int i = 0; i < articlesToSave.size(); i++) {
-                syncState.tasks[tasksIndex].percentage =
-                    (float(i + 1) / articlesToSave.size()) * 100;
-                progressCallback(syncState);
-
+                float currPercentage = (float)i * pctPerArticle;
                 auto &readable = articlesToSave[i];
-                log_i("readable uuid: %s file count %d", readable.uuid.c_str(), readable.files.size());
-                log_i("*** about to save title %s to %s", readable.title.c_str(), readable.localFilePath().c_str());
-                //log_i("about to download: %s", readable.file().file.c_str());
-
-                log_i("here!");
-
                 for (int t = 0; t < NUMBER_OF_READABLE_DOWNLOAD_TRIES; t++) {
                     auto success = SindarinAPI::getInstance()->downloadReadable(
                         readable, this->fileSystem,
-                        [progressCallback, &syncState, tasksIndex](int percentage) {
-                            //syncState.tasks[tasksIndex].percentage = percentage;
-                            //progressCallback(syncState);
+                        [progressCallback, &syncState, tasksIndex, currPercentage,
+                         pctPerArticle](int percentage) {
+                            float pctThisReadable = (float)percentage * pctPerArticle / 100.0;
+                            syncState.tasks[tasksIndex].percentage =
+                                currPercentage + pctThisReadable;
+                            progressCallback(syncState);
                         },
                         prefs_.gzipReadables.get().value_or(false));
                     if (success) {
@@ -592,15 +584,6 @@ void LocalStore::syncFromRemote(
                         }
                     }
                 }
-                /*
-                if (this->saveArticleFile(readable)) {
-                    this->addReadable(articles_, readable);
-                } else {
-                    failedArticleDownload = true;
-                    log_e("Failed to save article \"%s\" %s", readable.title.c_str(),
-                          readable.uuid.c_str());
-                }
-                */
             }
             tasksIndex += 1;
         }

@@ -19,10 +19,8 @@ public:
     std::string fileProxied;
 
     auto fromJson(const JsonObject &j) -> bool override {
+
         /*
-        if (!j.containsKey("file"))
-
-
         if (!j.containsKey("uuid") || !j.containsKey("name") || !j.containsKey("size") ||
             !j.containsKey("filetype") || !j.containsKey("uploaded_at") ||
             !j.containsKey("sha_hash")) {

@@ -43,6 +43,4 @@ public:
 protected:
     static std::shared_ptr<SindarinAPI> instance;
     std::string accessToken_;
-
-    //void setAuth(HttpClient &client);
 };
