@@ -7,6 +7,12 @@
 #include "Renderers/RendererStream.hpp"
 #include "sindarin-debug.h"
 
+#define GZ_BUFFER_SIZE 128
+// LittleFS seems to have an issue where reads of > 128 bytes sometimes fail.
+// This equates to a difference between using read() and fread(), and can be seen in
+// vfs_api.cpp read() function.
+// Avoiding this issue here by keeping input/output buffers to 128 bytes
+
 class GUnzipStream : public RendererStream {
 public:
     GUnzipStream(File gzFile) : gzFile_(std::move(gzFile)) { readSize(); }
@@ -24,10 +30,10 @@ private:
     uint32_t uncompressedSize_{0};
     File gzFile_;
     GUnzip gunzip_;
-    uint8_t inBuf_[1024];
+    uint8_t inBuf_[GZ_BUFFER_SIZE];
     int inSize_{0};
     int inIndex_{0};
-    uint8_t outBuf_[1024];
+    uint8_t outBuf_[GZ_BUFFER_SIZE];
     int outSize_{0};
     int outIndex_{0};
     bool lastInput_{false};

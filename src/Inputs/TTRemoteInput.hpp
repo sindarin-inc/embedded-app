@@ -2,6 +2,7 @@
 #define TTRemoteInput_H
 
 #include <NimBLEDevice.h>
+#include <memory>
 
 #include "Communications/BLEManager.hpp"
 #include "RemoteInput.hpp"
@@ -33,12 +34,12 @@ protected:
 
     PreferencesStore &prefs_;
     State state_ = SCANNING;
-    BLEAdvertisedDevice *turntouchDevice_ = nullptr;
+    std::shared_ptr<BLEAdvertisedDevice> turntouchDevice_;
     long lastScanMs_ = 0;
     long keepDisconnectedUntilMs_ = 0;
     BLEClient *client_ = nullptr;
 
-    auto connectToDevice(BLEAdvertisedDevice *device) -> bool;
+    auto connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &device) -> bool;
     static void connectTask(void *params);
     void scanForDevice();
 
@@ -66,10 +67,8 @@ protected:
                      advertisedDevice->isAdvertisingService(BLEUUID(TURNTOUCH_BUTTON_SVC_ID)))) {
                     enclosed->state_ = CONNECTING;
                     BLEDevice::getScan()->stop();
-                    if (enclosed->turntouchDevice_ != nullptr) {
-                        delete enclosed->turntouchDevice_;
-                    }
-                    enclosed->turntouchDevice_ = new BLEAdvertisedDevice(*advertisedDevice);
+                    enclosed->turntouchDevice_ =
+                        std::make_shared<BLEAdvertisedDevice>(*advertisedDevice);
                     log_i("%s TurnTouch device found; queueing for connect...",
                           address.has_value() ? "Paired" : "New");
                     // Fire off a high-ish priority temporary task to connect the TT
@@ -94,10 +93,7 @@ protected:
         void onDisconnect(BLEClient *client) override {
             log_w("BLE TurnTouch client disconnected!");
             enclosed->state_ = SCANNING;
-            if (enclosed->turntouchDevice_ != nullptr) {
-                delete enclosed->turntouchDevice_;
-                enclosed->turntouchDevice_ = nullptr;
-            }
+            enclosed->turntouchDevice_ = nullptr;
         }
     };
 };

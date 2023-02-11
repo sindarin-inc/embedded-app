@@ -34,8 +34,7 @@ enum BorderSetting {
 enum Register {
     PUMP_STATUS = 0x00,
     CHANNEL_SETTING = 0x01,
-    // Not included in the datasheet
-    MYSTERY_SETTING_1 = 0x03,
+    DRIVER_LATCH_RESET_PULSE_GENERATE = 0x03,
     PUMP_SETTING_1 = 0x04,
     PUMP_SETTING_2 = 0x05,
     OSC_POWER_SETTING = 0x07,

@@ -337,15 +337,14 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
             waitForTimer();
             startTimer(timerDelayNs_);
             waitForNotBusy();
-            // Perhaps this means latch everything into place?
-            writeRegister(MYSTERY_SETTING_1, 0x10);
+            writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10);
         }
 
         // Send clear packet
         writeRegister(WRITE_GATE_SOURCE_DATA, CLEAR_PACKET, sizeof(CLEAR_PACKET));
         waitForTimer();
         waitForNotBusy();
-        writeRegister(MYSTERY_SETTING_1, 0x10);
+        writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10);
 
         taskYIELD();
     }
@@ -491,7 +490,7 @@ void EinkET013TT1::powerOn() {
     delay(30);
 
     // This is not in the datasheet and its function is a mystery
-    writeRegister(MYSTERY_SETTING_1, 0x10);
+    writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10);
 
     spi_device_release_bus(spiHigh_);
 }

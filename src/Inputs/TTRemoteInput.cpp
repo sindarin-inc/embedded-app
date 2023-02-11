@@ -10,7 +10,7 @@
 
 using namespace std::placeholders;
 
-auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice *device) -> bool {
+auto TTRemoteInput::connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &device) -> bool {
     if (client_ == nullptr) {
         log_d("Creating Turn Touch client");
         client_ = BLEDevice::createClient();
@@ -20,7 +20,7 @@ auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice *device) -> bool {
     BLEAddress address = device->getAddress();
     log_d("Attempting to connect to TurnTouch at address: %s", address.toString().c_str());
 
-    if (!client_->connect(device)) {
+    if (!client_->connect(device.get())) {
         log_e("Failed to connect to TurnTouch");
         return false;
     }
