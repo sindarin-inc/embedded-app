@@ -20,15 +20,17 @@ public:
 
     auto fromJson(const JsonObject &j) -> bool override {
 
-        if (!j.containsKey("uuid") || !j.containsKey("name") || !j.containsKey("size") ||
-            !j.containsKey("filetype") || !j.containsKey("uploaded_at") ||
-            !j.containsKey("sha_hash")) {
-
-            // missing some fields, but this might be an article
-            // TODO: add field to specify articles?
+        bool isArticle = j["is_article"].as<bool>();
+        if (isArticle) {
             if (!j.containsKey("file") || !j.containsKey("size")) {
-                // failed to parse
-                log_w("Failed to parse ReadableFile with JSON %s", DumpJson(j).c_str());
+                log_w("Failed to parse article ReadableFile %s", DumpJson(j).c_str());
+                return false;
+            }
+        } else {
+            if (!j.containsKey("uuid") || !j.containsKey("name") || !j.containsKey("size") ||
+                !j.containsKey("filetype") || !j.containsKey("uploaded_at") ||
+                !j.containsKey("sha_hash")) {
+                log_w("Failed to parse ReadableFile %s", DumpJson(j).c_str());
                 return false;
             }
         }

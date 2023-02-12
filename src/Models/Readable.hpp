@@ -62,10 +62,8 @@ public:
         if (!j.containsKey("uuid") || !j.containsKey("title") || !j.containsKey("date_created") ||
             !j.containsKey("date_modified") || !j.containsKey("authors")) {
 
-            if (isArticle() && (!j.containsKey("file") || !j.containsKey("size"))) {
-                log_w("Failed to parse Readable %s", DumpJson(j).c_str());
-                return false;
-            }
+            log_w("Failed to parse Readable %s", DumpJson(j).c_str());
+            return false;
         }
         // log_d("Parsing Readable %s", DumpJson(j).c_str());
         uuid = j["uuid"].as<std::string>();
@@ -81,14 +79,17 @@ public:
             authors.emplace_back();
             authors.back().fromJson(author);
         }
+
+        readableType = j["readable_type"].as<std::string>();
         files.clear();
         for (const auto &file : j["files"].as<JsonArray>()) {
+            // files handled differently for articles, record if it is an article
+            file["is_article"] = isArticle();
             files.emplace_back();
             files.back().fromJson(file);
         }
         // TODO: Instead of reading content, write it to disk immediately
         content = j["content"].as<std::string>();
-        readableType = j["readable_type"].as<std::string>();
 
         return true;
     }
