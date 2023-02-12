@@ -15,7 +15,7 @@ auto convertToJson(const Readable &src, JsonVariant dst) -> bool {
     for (const auto &file : src.files) {
         filesJson.add(file);
     }
-    dst["article"] = src.article;
+    dst["readable_type"] = src.readableType;
 
     return true;
 }

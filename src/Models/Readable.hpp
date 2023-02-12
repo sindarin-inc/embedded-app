@@ -28,7 +28,7 @@ public:
     std::string datePublished;
     std::vector<Author> authors;
     std::vector<ReadableFile> files;
-    bool article = false;
+    std::string readableType;
     // TODO: source
     // TODO: categories
 
@@ -54,13 +54,18 @@ public:
         }
     }
     [[nodiscard]] auto remoteUrl() const -> std::string { return file().fileProxied; }
-    [[nodiscard]] auto isArticle() const -> bool { return article; }
+    [[nodiscard]] auto isArticle() const -> bool {
+        return readableType.compare("pocket_article") == 0;
+    }
 
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("uuid") || !j.containsKey("title") || !j.containsKey("date_created") ||
             !j.containsKey("date_modified") || !j.containsKey("authors")) {
-            log_w("Failed to parse Readable %s", DumpJson(j).c_str());
-            return false;
+
+            if (isArticle() && (!j.containsKey("file") || !j.containsKey("size"))) {
+                log_w("Failed to parse Readable %s", DumpJson(j).c_str());
+                return false;
+            }
         }
         // log_d("Parsing Readable %s", DumpJson(j).c_str());
         uuid = j["uuid"].as<std::string>();
@@ -83,7 +88,7 @@ public:
         }
         // TODO: Instead of reading content, write it to disk immediately
         content = j["content"].as<std::string>();
-        article = j["article"].as<bool>();
+        readableType = j["readable_type"].as<std::string>();
 
         return true;
     }
