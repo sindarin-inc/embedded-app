@@ -18,7 +18,6 @@ auto DownloadFile(const char *url,
 
     std::shared_ptr<SindarinAPI> api = SindarinAPI::getInstance();
     if (api) {
-        log_i("API SET AUTH");
         api->setAuth(client);
     }
 
