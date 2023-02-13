@@ -261,7 +261,7 @@ auto LocalStore::changedReadablesBookmarksJson() -> std::string {
 
                 // Close the input file
                 bookmarkFile.close();
-                log_d("Bookmarks size: %d bytes", bookmarks.size());
+                log_d("Bookmarks size: %lu bytes", bookmarks.size());
                 // Add bookmarks to the JSON array
                 for (const auto &[starting_position, ending_position] : bookmarks) {
                     JsonObject bookmark = bookmarksJsonArray.createNestedObject();

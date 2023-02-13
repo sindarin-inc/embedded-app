@@ -8,7 +8,6 @@
 #include "Misc/Power.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
-#include "Models/UserArticle.hpp"
 #include "Models/UserReadable.hpp"
 #include "UrlEncode.hpp"
 #include "Version.hpp"
@@ -104,7 +103,7 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
 }
 
 auto SindarinAPI::syncBookmarks(const std::string &bookmarksJson) -> int {
-    CheckSyncResponse resp;
+    SyncBookmarksResponse resp;
     HttpClient client(SINDARIN_SERVER_URL "/user/bookmarks/", "application/json", HTTP_METHOD_POST);
     setAuth(client);
 
@@ -138,8 +137,7 @@ auto SindarinAPI::syncBookmarks(const std::string &bookmarksJson) -> int {
 
     SHOW_HEAP();
 
-    log_d("Synced bookmarks: %d Message: %s, Firmware: %s", resp.synced, resp.message.c_str(),
-          resp.firmware.url.c_str());
+    log_d("Synced bookmarks: %lu Status: %d", resp.readableBookmarks.size(), httpCode);
 
     SHOW_HEAP();
 

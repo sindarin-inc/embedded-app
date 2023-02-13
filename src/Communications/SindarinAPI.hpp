@@ -7,6 +7,7 @@
 #include "Models/CheckSyncResponse.hpp"
 #include "Models/Firmware.hpp"
 #include "Models/Json.hpp"
+#include "Models/SyncBookmarksResponse.hpp"
 #include "Models/UserReadable.hpp"
 #include "Storage/FileSystem.hpp"
 

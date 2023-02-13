@@ -3,7 +3,6 @@
 #include "Misc/SpiramAllocator.hpp"
 #include "Models/Firmware.hpp"
 #include "Models/JsonSerializable.hpp"
-#include "Models/UserArticle.hpp"
 #include "Models/UserReadable.hpp"
 
 class CheckSyncResponse : JsonSerializable {
@@ -15,7 +14,7 @@ public:
     std::string message;
     Firmware firmware;
     std::vector<UserReadable, SpiramAllocator<UserReadable>> userReadables;
-    std::vector<UserArticle, SpiramAllocator<UserArticle>> userArticles;
+    std::vector<UserReadable, SpiramAllocator<UserReadable>> userArticles;
     std::string readablesSince;
     std::string articlesSince;
 
