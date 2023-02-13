@@ -19,8 +19,8 @@ public:
     ~ReadableBookmark() override = default;
 
     std::string uuid;
-    uint32_t starting_position;
-    uint32_t ending_position;
+    uint32_t startingPosition;
+    uint32_t endingPosition;
     std::string readable;
 
     auto fromJson(const JsonObject &j) -> bool override {
@@ -29,8 +29,8 @@ public:
         }
 
         uuid = j["uuid"].as<std::string>();
-        starting_position = j["starting_position"].as<int>();
-        ending_position = j["ending_position"].as<int>();
+        startingPosition = j["starting_position"].as<int>();
+        endingPosition = j["ending_position"].as<int>();
         readable = j["readable"].as<std::string>();
 
         return true;
@@ -39,4 +39,4 @@ public:
 
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
 auto convertToJson(const ReadableBookmark &src, JsonVariant dst) -> bool;
-auto readOneBookmark(File &file, Bookmark &bookmark) -> bool;
+auto ReadOneBookmark(File &file, Bookmark &bookmark) -> bool;

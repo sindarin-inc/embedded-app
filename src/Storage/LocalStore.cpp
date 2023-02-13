@@ -245,7 +245,7 @@ auto LocalStore::changedReadablesBookmarksJson() -> std::string {
                 std::unordered_map<uint32_t, uint32_t> bookmarks;
                 std::unordered_map<uint32_t, uint32_t> bookmarksToDelete;
                 Bookmark bookmark;
-                while (readOneBookmark(bookmarkFile, bookmark)) {
+                while (ReadOneBookmark(bookmarkFile, bookmark)) {
                     log_d("Bookmark: %d %d %d", bookmark.firstPlace, bookmark.lastPlace,
                           bookmark.status);
 
@@ -598,8 +598,7 @@ void LocalStore::syncFromRemote(
 
         progressCallback(syncState);
 
-        for (int i = 0; i < readablesToDelete.size(); i++) {
-            const auto &readable = readablesToDelete[i];
+        for (auto &readable : readablesToDelete) {
             log_i("Deleting %s", readable.title.c_str());
             this->fileSystem.remove(readable.localFilePath());
             this->fileSystem.remove(readable.compressedLocalFilePath());
@@ -610,9 +609,8 @@ void LocalStore::syncFromRemote(
 
         progressCallback(syncState);
 
-        for (int i = 0; i < readablesToDownload.size(); i++) {
+        for (auto &readable : readablesToDownload) {
             // Index into the progress tasks vector
-            const auto &readable = readablesToDownload[i];
             log_i("Downloading %s (file=%s, url=%s)", readable.title.c_str(),
                   readable.localFilePath().c_str(), readable.remoteUrl().c_str());
             SHOW_HEAP();

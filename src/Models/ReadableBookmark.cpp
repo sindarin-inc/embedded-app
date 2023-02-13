@@ -2,7 +2,7 @@
 
 // Simply reads from the bookmark file for this Readable and returns whether it was
 // a turn on or turn off bookmark.
-auto readOneBookmark(File &file, Bookmark &bookmark) -> bool {
+auto ReadOneBookmark(File &file, Bookmark &bookmark) -> bool {
     // The first character in the line is a + or -, read that first
     if (!file.available()) {
         return false;
@@ -35,8 +35,8 @@ auto readOneBookmark(File &file, Bookmark &bookmark) -> bool {
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
 auto convertToJson(const ReadableBookmark &src, JsonVariant dst) -> bool {
     dst["uuid"] = src.uuid;
-    dst["starting_position"] = src.starting_position;
-    dst["ending_position"] = src.ending_position;
+    dst["starting_position"] = src.startingPosition;
+    dst["ending_position"] = src.endingPosition;
     dst["readable"] = src.readable;
 
     return true;
@@ -45,7 +45,7 @@ auto convertToJson(const ReadableBookmark &src, JsonVariant dst) -> bool {
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
 void convertFromJson(JsonVariantConst src, ReadableBookmark &dst) {
     dst.uuid = src["uuid"].as<std::string>();
-    dst.starting_position = src["starting_position"].as<int>();
-    dst.ending_position = src["ending_position"].as<int>();
+    dst.startingPosition = src["starting_position"].as<int>();
+    dst.endingPosition = src["ending_position"].as<int>();
     dst.readable = src["readable"].as<std::string>();
 }

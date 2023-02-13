@@ -31,7 +31,7 @@ public:
     void setAccessToken(const std::string &accessToken);
 
     auto checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp) -> int;
-    auto syncBookmarks(const std::string bookmarksJson) -> int;
+    auto syncBookmarks(const std::string &bookmarksJson) -> int;
     auto downloadReadable(const Readable &readable, FileSystem &fileSystem,
                           const std::function<void(int percentage)> &progressCallback, bool gzip)
         -> bool;

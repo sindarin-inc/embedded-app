@@ -103,7 +103,7 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
     return httpCode;
 }
 
-auto SindarinAPI::syncBookmarks(const std::string bookmarksJson) -> int {
+auto SindarinAPI::syncBookmarks(const std::string &bookmarksJson) -> int {
     CheckSyncResponse resp;
     HttpClient client(SINDARIN_SERVER_URL "/user/bookmarks/", "application/json", HTTP_METHOD_POST);
     setAuth(client);
