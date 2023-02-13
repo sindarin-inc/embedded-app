@@ -52,8 +52,9 @@ auto GUnzipStream::readBytes(uint8_t *buf, int size) -> int {
             }
 
             // try to read more input data
-            int bytesRead = gzFile_.readBytes((char *)inBuf_, 1024);
-            if (bytesRead < 1024) {
+            int bytesRead = gzFile_.readBytes((char *)inBuf_, GZ_BUFFER_SIZE);
+
+            if (bytesRead < GZ_BUFFER_SIZE) {
                 // done reading
                 lastInput_ = true;
             }

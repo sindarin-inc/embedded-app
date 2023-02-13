@@ -137,10 +137,6 @@ auto SindarinAPI::syncBookmarks(const std::string &bookmarksJson) -> int {
 
     SHOW_HEAP();
 
-    log_d("Synced bookmarks: %lu Status: %d", resp.readableBookmarks.size(), httpCode);
-
-    SHOW_HEAP();
-
     return httpCode;
 }
 
