@@ -17,11 +17,12 @@ public:
     //! URL to download the file
     std::string file;
     std::string fileProxied;
+    std::string readableType;
 
     auto fromJson(const JsonObject &j) -> bool override {
 
-        bool isArticle = j["is_article"].as<bool>();
-        if (isArticle) {
+        readableType = j["readable_type"].as<std::string>();
+        if (readableType.compare("pocket_article") == 0) {
             if (!j.containsKey("file") || !j.containsKey("size")) {
                 log_w("Failed to parse article ReadableFile %s", DumpJson(j).c_str());
                 return false;

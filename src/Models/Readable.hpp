@@ -84,7 +84,7 @@ public:
         files.clear();
         for (const auto &file : j["files"].as<JsonArray>()) {
             // files handled differently for articles, record if it is an article
-            file["is_article"] = isArticle();
+            file["readable_type"] = readableType;
             files.emplace_back();
             files.back().fromJson(file);
         }
