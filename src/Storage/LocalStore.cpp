@@ -243,6 +243,7 @@ auto LocalStore::changedReadablesBookmarksJson() -> std::string {
 
                 // Store bookmarks in a hash table
                 std::unordered_map<uint32_t, uint32_t> bookmarks;
+                std::unordered_map<uint32_t, uint32_t> bookmarksToDelete;
                 Bookmark bookmark;
                 while (readOneBookmark(bookmarkFile, bookmark)) {
                     log_d("Bookmark: %d %d %d", bookmark.firstPlace, bookmark.lastPlace,
@@ -251,8 +252,10 @@ auto LocalStore::changedReadablesBookmarksJson() -> std::string {
                     if (bookmark.status == BOOKMARK_ON &&
                         bookmark.firstPlace < bookmark.lastPlace) {
                         bookmarks[bookmark.firstPlace] = bookmark.lastPlace;
+                        bookmarksToDelete.erase(bookmark.firstPlace);
                     } else if (bookmark.status == BOOKMARK_OFF) {
                         bookmarks.erase(bookmark.firstPlace);
+                        bookmarksToDelete[bookmark.firstPlace] = bookmark.lastPlace;
                     }
                 }
 
@@ -264,6 +267,15 @@ auto LocalStore::changedReadablesBookmarksJson() -> std::string {
                     JsonObject bookmark = bookmarksJsonArray.createNestedObject();
                     bookmark["starting_position"] = starting_position;
                     bookmark["ending_position"] = ending_position;
+                    bookmark["readable"] = readable.uuid;
+                }
+
+                // Add bookmarks to delete to the JSON array
+                for (const auto &[starting_position, ending_position] : bookmarksToDelete) {
+                    JsonObject bookmark = bookmarksJsonArray.createNestedObject();
+                    bookmark["starting_position"] = starting_position;
+                    bookmark["ending_position"] = ending_position;
+                    bookmark["status"] = 0;
                     bookmark["readable"] = readable.uuid;
                 }
 
