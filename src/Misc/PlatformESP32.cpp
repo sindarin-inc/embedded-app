@@ -166,8 +166,7 @@ void InitializePlatform() {
 #ifdef USB_CONNECTED_PIN
     pinMode(USB_CONNECTED_PIN, INPUT);
 #endif
-    SetClockTime(16, 50);
-    clockTimeLastUpdateMs = millis();
+    SetClockTime(17, 16);
 }
 
 // Forked from TinyPico's GetBatteryVoltage() method:
@@ -369,6 +368,7 @@ void GetClockTime(uint8_t &hours, uint8_t &minutes) {
 void SetClockTime(uint8_t hours, uint8_t minutes) {
     clockTimeHours = hours;
     clockTimeMinutes = minutes;
+    clockTimeLastUpdateMs = millis();
 }
 
 #endif
