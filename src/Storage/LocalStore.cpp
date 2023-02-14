@@ -258,10 +258,8 @@ auto LocalStore::changedReadablesBookmarksJson() -> std::string {
                         bookmarksToDelete[bookmark.firstPlace] = bookmark.lastPlace;
                     }
                 }
-
-                // Close the input file
                 bookmarkFile.close();
-                log_d("Bookmarks size: %lu bytes", bookmarks.size());
+
                 // Add bookmarks to the JSON array
                 for (const auto &[starting_position, ending_position] : bookmarks) {
                     JsonObject bookmark = bookmarksJsonArray.createNestedObject();
