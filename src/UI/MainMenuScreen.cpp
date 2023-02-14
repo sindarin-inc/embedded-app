@@ -84,10 +84,10 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
             return {size.width, y};
         });
 
-    // Later :)
-    // context.setViewFrame(
-    //    *clockView_, {{inset, size.height - 20}, {size.width - 2 * inset, 20 - 2 * inset}},
-    //    LayoutOptionsSizeToFit | LayoutOptionsAlignLeft | LayoutOptionsAlignBottom);
+    // Now!
+    context.setViewFrame(*clockView_, {{0, 0}, size},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft |
+                             LayoutOptionsAlignBottom);
 
     context.setSublayoutFrame(
         {{0, 0}, size}, LayoutOptionsSizeToFit | LayoutOptionsAlignBottom | LayoutOptionsAlignRight,
@@ -125,8 +125,8 @@ void MainMenuScreen::drawInRect(Rect rect) {
     batteryIconView_.draw();
     batteryTextView_->draw();
 
-    // For later :)
-    // clockView_->draw();
+    // Now! :)
+    clockView_->draw();
 }
 
 // This largely mirrors the superclass implementation, but with enough
@@ -150,8 +150,19 @@ void MainMenuScreen::render(DisplaySystem &display) {
         batteryTextView_ =
             std::make_shared<SingleLineTextView>(display, power_.getBatteryPercentageOnlyString());
 
-        // For later :)
-        // clockView_ = std::make_shared<SingleLineTextView>(display, "3:33pm");
+        // Now :)
+        uint8_t hours;
+        uint8_t minutes;
+        GetClockTime(hours, minutes);
+        if (hours == 0) {
+            hours = 12;
+        }
+        if (hours > 12) {
+            hours -= 12;
+        }
+        std::string theTime = StringFormat("%d:%02d", hours, minutes);
+
+        clockView_ = std::make_shared<SingleLineTextView>(display, theTime.c_str());
 
         log_i("Menuscreen render (selected = %s)",
               subMenus_[currentSelection_]->getMenuName().c_str());

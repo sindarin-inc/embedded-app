@@ -234,7 +234,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #if !SIMULATOR
     inactivityTimer.start([]() {
         log_d("Inactive! Allow power off.");
-        AllowPowerOff();
+        // AllowPowerOff();
         vTaskDelay(5000 / portTICK_PERIOD_MS);
         esp_deep_sleep_start();
     });
@@ -257,7 +257,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 templesClosed = true;
                 // Will be turned off after content sync
                 prefs.lastBatteryReport.set((int)power.getBatteryPercentage());
-                AllowPowerOff();
+                //  AllowPowerOff();
             }
         });
         templeCloseSensor.setLongCloseCallback([]() {

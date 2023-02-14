@@ -2,6 +2,7 @@
 #define MAIN_MENU_SCREEN_H
 
 #include "Misc/MenuStyle.hpp"
+#include "Misc/Platform.hpp"
 #include "Misc/Power.hpp"
 #include "Renderers/Renderer.hpp"
 #include "UI/Bitmaps/Battery_Bolt.hpp"
@@ -41,8 +42,8 @@ protected:
     BoxView topBarSelectionView_;
     IconView batteryIconView_;
 
-    // For later :)
-    // std::shared_ptr<SingleLineTextView> clockView_;
+    // Now! :)
+    std::shared_ptr<SingleLineTextView> clockView_;
 
     int currentSelection_ = 0;
 };

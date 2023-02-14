@@ -21,6 +21,10 @@ esp_adc_cal_characteristics_t adcCalCharacteristics;
 bool ledcFailed = false;
 uint8_t sysOnPin;
 
+uint8_t clockTimeHours;
+uint8_t clockTimeMinutes;
+uint32_t clockTimeLastUpdateMs;
+
 void InitializePlatform() {
     // Arduino breaks the UART with sleep. So we manually initialize the UART using IDF functions.
     // There's unfortunately no way currently to customize the source clock in Arduino:
@@ -162,6 +166,8 @@ void InitializePlatform() {
 #ifdef USB_CONNECTED_PIN
     pinMode(USB_CONNECTED_PIN, INPUT);
 #endif
+    SetClockTime(0, 0);
+    clockTimeLastUpdateMs = millis();
 }
 
 // Forked from TinyPico's GetBatteryVoltage() method:
@@ -345,6 +351,21 @@ void AllowPowerOff() {
 
     // pinMode(sysOnPin, OUTPUT);
     // digitalWrite(sysOnPin, LOW);
+}
+
+void GetClockTime(uint8_t &hours, uint8_t &minutes) {
+    uint32_t now = millis();
+    uint32_t elapsed = now - clockTimeLastUpdateMs;
+    clockTimeHours += elapsed / 3600000;
+    clockTimeMinutes += (elapsed % 3600000) / 60000;
+    hours = clockTimeHours;
+    minutes = clockTimeMinutes;
+    clockTimeLastUpdateMs = now;
+}
+
+void SetClockTime(uint8_t hours, uint8_t minutes) {
+    clockTimeHours = hours;
+    clockTimeMinutes = minutes;
 }
 
 #endif
