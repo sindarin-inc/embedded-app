@@ -235,8 +235,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     inactivityTimer.start([]() {
         log_d("Inactive! Allow power off.");
         // AllowPowerOff();
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
-        esp_deep_sleep_start();
+        // vTaskDelay(5000 / portTICK_PERIOD_MS);
+        // esp_deep_sleep_start();
     });
 #endif
 
