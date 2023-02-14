@@ -359,6 +359,10 @@ void GetClockTime(uint8_t &hours, uint8_t &minutes) {
     hours = clockTimeHours + elapsed / 3600000;
     minutes = clockTimeMinutes + (elapsed % 3600000) / 60000;
     minutes = minutes % 60;
+    // Capture the wraparound to the next hour
+    if (minutes < clockTimeMinutes) {
+        hours++;
+    }
     hours = hours % 24;
 }
 
