@@ -166,7 +166,7 @@ void InitializePlatform() {
 #ifdef USB_CONNECTED_PIN
     pinMode(USB_CONNECTED_PIN, INPUT);
 #endif
-    SetClockTime(0, 0);
+    SetClockTime(16, 50);
     clockTimeLastUpdateMs = millis();
 }
 
@@ -356,11 +356,10 @@ void AllowPowerOff() {
 void GetClockTime(uint8_t &hours, uint8_t &minutes) {
     uint32_t now = millis();
     uint32_t elapsed = now - clockTimeLastUpdateMs;
-    clockTimeHours += elapsed / 3600000;
-    clockTimeMinutes += (elapsed % 3600000) / 60000;
-    hours = clockTimeHours;
-    minutes = clockTimeMinutes;
-    clockTimeLastUpdateMs = now;
+    hours = clockTimeHours + elapsed / 3600000;
+    minutes = clockTimeMinutes + (elapsed % 3600000) / 60000;
+    minutes = minutes % 60;
+    hours = hours % 24;
 }
 
 void SetClockTime(uint8_t hours, uint8_t minutes) {
