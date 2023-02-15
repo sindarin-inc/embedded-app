@@ -34,7 +34,9 @@ auto ReadOneBookmark(File &file, Bookmark &bookmark) -> bool {
 
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
 auto convertToJson(const ReadableBookmark &src, JsonVariant dst) -> bool {
-    dst["uuid"] = src.uuid;
+    if (src.uuid.length() > 0) {
+        dst["uuid"] = src.uuid;
+    }
     dst["starting_position"] = src.startingPosition;
     dst["ending_position"] = src.endingPosition;
     dst["readable"] = src.readable;

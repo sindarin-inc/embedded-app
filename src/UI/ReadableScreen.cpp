@@ -28,10 +28,9 @@
 //
 void ReadableScreen::updateBookmarkStatus() {
     inBookmark_ = false;
-    std::string bookmarkPath = StringFormat("/bookmarks/%s-bookmark.txt", readable_.uuid.c_str());
-    File bookmarkFile = fileSystem_.open(bookmarkPath.c_str(), FILE_READ, false);
+    File bookmarkFile = fileSystem_.open(readable_.bookmarkFilePath().c_str(), FILE_READ, false);
     if (!bookmarkFile) {
-        log_i("Failed to open bookmark file: %s", bookmarkPath.c_str());
+        log_i("Failed to open bookmark file: %s", readable_.bookmarkFilePath().c_str());
         return;
     }
 
@@ -53,20 +52,16 @@ void ReadableScreen::updateBookmarkStatus() {
 }
 
 void ReadableScreen::writeOutBookmarkUpdate() {
-    std::string bookmarkPath = "/bookmarks/";
-    bookmarkPath += readable_.uuid;
-    bookmarkPath += "-bookmark.txt";
-
     // create log directory in filesystem if it doesn't exist
     if (!fileSystem_.createDir("/bookmarks")) {
         log_e("could not create /bookmarks directory");
         return;
     }
 
-    File bookmarkFile = fileSystem_.open(bookmarkPath.c_str(), FILE_APPEND, true);
+    File bookmarkFile = fileSystem_.open(readable_.bookmarkFilePath().c_str(), FILE_APPEND, true);
 
     if (!bookmarkFile) {
-        log_i("Failed to open bookmark file: %s", bookmarkPath.c_str());
+        log_i("Failed to open bookmark file: %s", readable_.bookmarkFilePath().c_str());
         return;
     }
 

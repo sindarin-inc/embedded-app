@@ -47,6 +47,9 @@ public:
             return StringFormat("/articles/%s.txt", uuid.c_str());
         }
     }
+    [[nodiscard]] auto bookmarkFilePath() const -> std::string {
+        return StringFormat("/bookmarks/%s-bookmark.txt", uuid.c_str());
+    }
     [[nodiscard]] auto compressedLocalFilePath() const -> std::string {
         if (files.size()) {
             return StringFormat("/%s.gz", file().name.c_str());

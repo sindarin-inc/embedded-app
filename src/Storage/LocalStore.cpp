@@ -287,7 +287,6 @@ auto LocalStore::changedReadablesBookmarksJson() -> std::string {
 
     std::string bookmarksJson;
     serializeJson(*doc, bookmarksJson);
-    log_d("Bookmarks JSON: %s", bookmarksJson.c_str());
 
     return bookmarksJson;
 }
@@ -402,6 +401,7 @@ void LocalStore::syncFromRemote(
         auto articlePlacemarks = this->changedReadablePlacemarkQueryParams(articles_);
         auto readablesArchived = this->changedReadablesArchivedQueryParams(readables_);
         auto articlesArchived = this->changedReadablesArchivedQueryParams(articles_);
+        auto readablesBookmarked = this->changedReadablesBookmarksJson();
         CheckSyncResponse checkSyncResponse;
         CheckSyncRequest request = CheckSyncRequest{
             .readablesSince = readablesSince,
@@ -523,11 +523,11 @@ void LocalStore::syncFromRemote(
         // syncState is used to track the progress of the sync
         ContentSyncState syncState = {.state = ContentSyncState::State::Syncing};
         syncState.tasks.reserve(readablesToDownload.size() + readablesToDelete.size() +
-                                articlesToDelete.size() + articlesToSave.size());
+                                articlesToDelete.size() + articlesToSave.size() +
+                                (readablesBookmarked.size() > 0 ? 1 : 0));
         auto tasksIndex = 0;
 
         // Sync bookmarks before we download any new readables
-        auto readablesBookmarked = this->changedReadablesBookmarksJson();
         if (readablesBookmarked.size() > 0) {
             log_i("Syncing bookmarks");
             syncState.tasks.push_back(ContentSyncState::Task{
