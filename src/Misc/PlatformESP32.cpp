@@ -5,8 +5,11 @@
 #include <driver/uart.h>
 #include <esp_adc_cal.h>
 #include <esp_err.h>
+#include <esp_log.h>
+#include <esp_sntp.h>
 #include <soc/rtc.h>
 
+#include "Communications/WiFi.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Platform.hpp"
 #include "RTOS.h"
@@ -353,6 +356,37 @@ void AllowPowerOff() {
 }
 
 void GetClockTime(uint8_t &hours, uint8_t &minutes) {
+    if (!ConnectWifi()) {
+        log_i("Failed to connect wifi");
+        hours = 12;
+        minutes = 21;
+        return;
+    }
+    // Configure the SNTP client
+    sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    sntp_setservername(0, "time.google.com");
+    sntp_init();
+
+    // Wait for the SNTP client to get the time
+    time_t now = 0;
+    struct tm timeinfo {};
+    while (timeinfo.tm_year < (2021 - 1900)) {
+        log_i("Waiting for system time to be set...");
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        time(&now);
+        localtime_r(&now, &timeinfo);
+    }
+
+    minutes = timeinfo.tm_min;
+    hours = timeinfo.tm_hour;
+    // Print the time as a string
+    char strftime_buf[64];
+    strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
+    log_i("The current date/time is: %s", strftime_buf);
+}
+
+#if 0
+void GetClockTime(uint8_t &hours, uint8_t &minutes) {
     uint32_t now = millis();
     uint32_t elapsed = now - clockTimeLastUpdateMs;
     hours = clockTimeHours + elapsed / 3600000;
@@ -364,6 +398,7 @@ void GetClockTime(uint8_t &hours, uint8_t &minutes) {
     }
     hours = hours % 24;
 }
+#endif
 
 void SetClockTime(uint8_t hours, uint8_t minutes) {
     clockTimeHours = hours;
