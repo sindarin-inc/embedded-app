@@ -396,8 +396,15 @@ void SetClockTimeFromInternet() {
         localtime_r(&now, &timeinfo);
     }
 
-    clockTimeMinutes = timeinfo.tm_min;
+    // Make the clock a little fast to account for the time it takes to get the time
+    clockTimeMinutes = (timeinfo.tm_min + 1) % 60;
     clockTimeHours = timeinfo.tm_hour;
+
+    // If our addition to the minute rolls over the hour, update the hour
+    if (clockTimeMinutes == 0) {
+        clockTimeHours = (clockTimeHours + 1) % 24;
+    }
+
     // Adjust to PT from UTC
     clockTimeHours += 16;
     clockTimeLastUpdateMs = millis();
@@ -406,6 +413,8 @@ void SetClockTimeFromInternet() {
     char strftime_buf[64];
     strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
     log_i("The current date/time is: %s", strftime_buf);
+
+    DisconnectWifi();
 }
 
 #endif
