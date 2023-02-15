@@ -169,7 +169,7 @@ void InitializePlatform() {
 #ifdef USB_CONNECTED_PIN
     pinMode(USB_CONNECTED_PIN, INPUT);
 #endif
-    SetClockTime(8, 18);
+    SetClockTimeFromInternet();
 }
 
 // Forked from TinyPico's GetBatteryVoltage() method:
@@ -356,10 +356,29 @@ void AllowPowerOff() {
 }
 
 void GetClockTime(uint8_t &hours, uint8_t &minutes) {
+    uint32_t now = millis();
+    uint32_t elapsed = now - clockTimeLastUpdateMs;
+    hours = clockTimeHours + elapsed / 3600000;
+    minutes = clockTimeMinutes + (elapsed % 3600000) / 60000;
+    minutes = minutes % 60;
+    // Capture the wraparound to the next hour
+    if (minutes < clockTimeMinutes) {
+        hours++;
+    }
+    hours = hours % 24;
+}
+
+void SetClockTime(uint8_t hours, uint8_t minutes) {
+    clockTimeHours = hours;
+    clockTimeMinutes = minutes;
+    clockTimeLastUpdateMs = millis();
+}
+
+void SetClockTimeFromInternet() {
     if (!ConnectWifi()) {
         log_i("Failed to connect wifi");
-        hours = 12;
-        minutes = 21;
+        clockTimeHours = 12;
+        clockTimeMinutes = 21;
         return;
     }
     // Configure the SNTP client
@@ -377,33 +396,16 @@ void GetClockTime(uint8_t &hours, uint8_t &minutes) {
         localtime_r(&now, &timeinfo);
     }
 
-    minutes = timeinfo.tm_min;
-    hours = timeinfo.tm_hour;
+    clockTimeMinutes = timeinfo.tm_min;
+    clockTimeHours = timeinfo.tm_hour;
+    // Adjust to PT from UTC
+    clockTimeHours += 16;
+    clockTimeLastUpdateMs = millis();
+
     // Print the time as a string
     char strftime_buf[64];
     strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
     log_i("The current date/time is: %s", strftime_buf);
-}
-
-#if 0
-void GetClockTime(uint8_t &hours, uint8_t &minutes) {
-    uint32_t now = millis();
-    uint32_t elapsed = now - clockTimeLastUpdateMs;
-    hours = clockTimeHours + elapsed / 3600000;
-    minutes = clockTimeMinutes + (elapsed % 3600000) / 60000;
-    minutes = minutes % 60;
-    // Capture the wraparound to the next hour
-    if (minutes < clockTimeMinutes) {
-        hours++;
-    }
-    hours = hours % 24;
-}
-#endif
-
-void SetClockTime(uint8_t hours, uint8_t minutes) {
-    clockTimeHours = hours;
-    clockTimeMinutes = minutes;
-    clockTimeLastUpdateMs = millis();
 }
 
 #endif

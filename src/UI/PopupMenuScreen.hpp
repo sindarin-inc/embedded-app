@@ -4,6 +4,7 @@
 #include <utility>
 
 #include "Inputs/RemoteInput.hpp"
+#include "Misc/Platform.hpp"
 #include "Misc/Power.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Sensors/LightingController.hpp"
@@ -78,7 +79,7 @@ protected:
     SingleLineTextView placeInReadableView_;
 
     // For later :)
-    // std::shared_ptr<SingleLineTextView> clockView_;
+    std::shared_ptr<SingleLineTextView> clockView_;
 
     int arrowWidth_ = 5;
     int arrowHeight_ = 10;
