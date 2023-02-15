@@ -28,7 +28,7 @@
 #include "config.h"
 #include "sindarin-debug.h"
 
-#define ENABLE_CONTENT_SYNC_ON_CLOSE 0
+#define ENABLE_CONTENT_SYNC_ON_CLOSE 1
 
 #if !DISABLE_POWER_MANAGEMENT
 #include <esp_pm.h>
@@ -265,27 +265,51 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             DispatchGetUiQueue()->dispatch([]() {
                 log_d("Temples closed for a while, running content sync");
                 // Debug LED so we know what's happening
-                digitalWrite(BLUE_LED, LED_ON);
-                runningContentSync = true;
-                localStore.syncFromRemote([](const ContentSyncState &state) {
-                    if (state.state == ContentSyncState::Failure ||
-                        state.state == ContentSyncState::Synced ||
-                        state.state == ContentSyncState::AlreadySynced) {
-                        if (state.state == ContentSyncState::Failure) {
-                            log_i("Content sync failed with error: %s", state.message.c_str());
-                        } else if (state.state == ContentSyncState::Synced) {
-                            log_i("Content sync successful");
-                        } else if (state.state == ContentSyncState::AlreadySynced) {
-                            log_i("Content sync already synced");
+                while (templesClosed) {
+                    digitalWrite(BLUE_LED, LED_ON);
+                    runningContentSync = true;
+                    localStore.syncFromRemote([](const ContentSyncState &state) {
+                        if (state.state == ContentSyncState::Failure ||
+                            state.state == ContentSyncState::Synced ||
+                            state.state == ContentSyncState::AlreadySynced) {
+                            if (state.state == ContentSyncState::Failure) {
+                                log_i("Content sync failed with error: %s", state.message.c_str());
+                            } else if (state.state == ContentSyncState::Synced) {
+                                log_i("Content sync successful");
+                            } else if (state.state == ContentSyncState::AlreadySynced) {
+                                log_i("Content sync already synced");
+                            }
+                            digitalWrite(BLUE_LED, LED_OFF);
+                            // Only if the temples are still closed, allow power off
+                            if (templesClosed) {
+                                // AllowPowerOff();
+                            }
+                            runningContentSync = false;
                         }
-                        digitalWrite(BLUE_LED, LED_OFF);
-                        // Only if the temples are still closed, allow power off
-                        if (templesClosed) {
-                            AllowPowerOff();
+                    });
+                    // Figure out when we should next wake up to sync again (if we're still closed)
+                    // Right now we'll just do 6am and 8pm each day
+                    uint8_t hours, minutes;
+                    GetClockTime(hours, minutes);
+                    uint32_t secondsToWait = 0;
+                    const int hourOneToSync = 6;
+                    const int hourTwoToSync = 20;
+                    if ((hours < hourOneToSync) || (hours >= hourTwoToSync)) {
+                        if (hours < hourOneToSync) {
+                            secondsToWait =
+                                (hourOneToSync - 1 - hours) * 3600 + (60 - minutes) * 60;
+                        } else {
+                            secondsToWait =
+                                (23 - hours) * 3600 + (60 - minutes) * 60 + hourOneToSync * 3600;
                         }
-                        runningContentSync = false;
                     }
-                });
+                    if (hours >= hourOneToSync && hours < hourTwoToSync) {
+                        secondsToWait = (hourTwoToSync - 1 - hours) * 3600 + (60 - minutes) * 60;
+                    }
+                    log_i("Waiting %d hours and %d minutes for next content sync",
+                          secondsToWait / 3600, (secondsToWait % 3600) / 60);
+                    xTaskNotifyWait(0, 0, nullptr, secondsToWait * 1000 / portTICK_PERIOD_MS);
+                }
             });
 #endif
         });
