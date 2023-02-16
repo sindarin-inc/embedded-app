@@ -15,6 +15,7 @@
 #include "RTOS.h"
 #include "Storage/include/EFusesCustomTable.h"
 #include "config.h"
+#include "rtc_wake_stub_example.h"
 #include "sindarin-debug.h"
 
 #define BACKLIGHT_PWM_CHANNEL 0
@@ -374,6 +375,12 @@ void AllowPowerOff() {
     // the best. I don't understand why. You'd think either an open drain or driving to 0 would be
     // more effective at turning off the mostfet.
     pinMode(sysOnPin, INPUT_PULLDOWN);
+    log_i("Setting deep sleep stub");
+    // esp_set_deep_sleep_wake_stub(&wake_stub_example);
+    log_i("Setting wakeup timer for deep sleep to 10s");
+    esp_sleep_enable_timer_wakeup(10000000);
+    log_i("Going to sleep -- good night!");
+    esp_deep_sleep_start();
 
     // pinMode(sysOnPin, OUTPUT_OPEN_DRAIN);
     // digitalWrite(sysOnPin, LOW);

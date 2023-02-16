@@ -208,6 +208,42 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     InitializePlatform();
 
+    templeCloseSensor.checkTemple();
+
+    if (!templeCloseSensor.getOpened()) {
+        uint8_t hours, minutes;
+        GetClockTime(hours, minutes);
+        if ((hours == 6 || hours == 20) && (minutes == 0)) {
+            digitalWrite(BLUE_LED, LED_ON);
+            runningContentSync = true;
+            localStore.syncFromRemote([](const ContentSyncState &state) {
+                if (state.state == ContentSyncState::Failure ||
+                    state.state == ContentSyncState::Synced ||
+                    state.state == ContentSyncState::AlreadySynced) {
+                    if (state.state == ContentSyncState::Failure) {
+                        log_i("Content sync failed with error: %s", state.message.c_str());
+                    } else if (state.state == ContentSyncState::Synced) {
+                        log_i("Content sync successful");
+                    } else if (state.state == ContentSyncState::AlreadySynced) {
+                        log_i("Content sync already synced");
+                    }
+                    digitalWrite(BLUE_LED, LED_OFF);
+                    runningContentSync = false;
+                    // DisconnectWifi();
+                }
+            });
+        }
+        log_i("Temple closed, going to sleep for 5s");
+        esp_sleep_enable_timer_wakeup(5000000);
+
+        // Print status.
+        // ESP_RTC_LOGI("wake stub: going to deep sleep");
+        log_i("Back to sleep");
+        // Set stub entry, then going to deep sleep again.
+        // esp_set_deep_sleep_wake_stub(&wake_stub_example);
+        esp_deep_sleep_start();
+    }
+
     log_i("SN: %s", GetSerialNumber().c_str());
 
     if (esp_reset_reason() == ESP_RST_POWERON) {

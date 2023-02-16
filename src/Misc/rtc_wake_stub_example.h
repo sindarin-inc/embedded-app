@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-void wake_stub_example(void);
+void esp_wake_deep_sleep(void);
 
 #ifdef __cplusplus
 }
