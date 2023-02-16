@@ -16,13 +16,12 @@ private:
     const char *path_;
     ZipFile &zipFile_;
 
-    static void XMLCALL StartElementHandler(void *userData, const char *name, const char **attrs) {
+    static void XMLCALL startElementHandler(void *userData, const char *name, const char **attrs) {
         // TODO: There might be some variation here in structure
         if (strcmp(name, "rootfile") == 0) {
             for (int i = 0; attrs[i]; i += 2) {
                 if (strcmp(attrs[i], "full-path") == 0) {
-                    std::vector<std::string> *rootfilePaths =
-                        static_cast<std::vector<std::string> *>(userData);
+                    auto *rootfilePaths = static_cast<std::vector<std::string> *>(userData);
                     rootfilePaths->push_back(attrs[i + 1]);
                     break;
                 }
@@ -30,8 +29,8 @@ private:
         }
     }
 
-    static void XMLCALL EndElementHandler(void * /*userData*/, const char * /*name*/) {}
+    static void XMLCALL endElementHandler(void * /*userData*/, const char * /*name*/) {}
 
-    static void XMLCALL CharacterDataHandler(void * /*userData*/, const char * /*s*/, int /*len*/) {
+    static void XMLCALL characterDataHandler(void * /*userData*/, const char * /*s*/, int /*len*/) {
     }
 };

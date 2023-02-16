@@ -3,8 +3,8 @@
 void EPubMetaFile::parse() {
     XML_Parser parser = XML_ParserCreate(nullptr);
     XML_SetUserData(parser, &rootfilePaths);
-    XML_SetElementHandler(parser, StartElementHandler, EndElementHandler);
-    XML_SetCharacterDataHandler(parser, CharacterDataHandler);
+    XML_SetElementHandler(parser, startElementHandler, endElementHandler);
+    XML_SetCharacterDataHandler(parser, characterDataHandler);
 
     if (zipFile_.openFile(path_) != UNZ_OK) {
         log_e("Failed to open ePub manifest %s", path_);

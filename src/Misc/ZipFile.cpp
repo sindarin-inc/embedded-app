@@ -132,7 +132,7 @@ void ZipFile::listFiles() {
     }
 }
 
-int32_t ZipFile::openFile(const char *pathInZip) {
+auto ZipFile::openFile(const char *pathInZip) -> int32_t {
     auto err = zip_.locateFile(pathInZip);
     if (err != UNZ_OK) {
         log_e("Couldn't find %s in zip", pathInZip);
@@ -146,7 +146,7 @@ int32_t ZipFile::openFile(const char *pathInZip) {
     return err;
 }
 
-int32_t ZipFile::closeFile() {
+auto ZipFile::closeFile() -> int32_t {
     auto err = zip_.closeCurrentFile();
     if (err != UNZ_OK) {
         log_e("Couldn't close file in zip");
@@ -154,10 +154,12 @@ int32_t ZipFile::closeFile() {
     return err;
 }
 
-int ZipFile::readFromFile(uint8_t *buf, size_t size) { return zip_.readCurrentFile(buf, size); }
+auto ZipFile::readFromFile(uint8_t *buf, size_t size) -> int {
+    return zip_.readCurrentFile(buf, size);
+}
 
-int ZipFile::getFileInfo(unz_file_info *fi, char *szName, size_t nameBufSize, char *szComment,
-                         size_t commentBufSize) {
+auto ZipFile::getFileInfo(unz_file_info *fi, char *szName, size_t nameBufSize, char *szComment,
+                          size_t commentBufSize) -> int {
     return zip_.getFileInfo(fi, szName, nameBufSize, nullptr, 0, szComment, commentBufSize);
 }
 

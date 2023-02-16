@@ -170,7 +170,7 @@ void StripHtml(const std::basic_string<char, std::char_traits<char>, SpiramAlloc
 }
 
 // TODO: There has got to be a better way
-std::size_t bytesAvailable(const std::stringstream &s) {
+auto BytesAvailable(const std::stringstream &s) -> std::size_t {
     std::streambuf *buf = s.rdbuf();
     std::streampos pos = buf->pubseekoff(0, std::ios_base::cur, std::ios_base::in);
     std::streampos end = buf->pubseekoff(0, std::ios_base::end, std::ios_base::in);
@@ -180,7 +180,7 @@ std::size_t bytesAvailable(const std::stringstream &s) {
 
 auto HtmlCleaner::read() -> int {
     // Read from the source stream until we get a character
-    while (bytesAvailable(outStream_) <= 0 && stream_->available()) {
+    while (BytesAvailable(outStream_) <= 0 && stream_->available()) {
         const char x = stream_->read();
         AddChar(state_, element_, x, [this](const std::string &x) { outStream_ << x; });
     }

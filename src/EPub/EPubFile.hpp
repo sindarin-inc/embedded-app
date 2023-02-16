@@ -5,7 +5,7 @@
 class EPubFile : public RendererStream {
 public:
     EPubFile(FileSystem &fs, const char *filename) : epubZipFile_(fs, filename) {}
-    ~EPubFile() { close(); };
+    ~EPubFile() override { close(); };
 
     auto open() -> bool;
     void close();

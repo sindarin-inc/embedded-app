@@ -10,9 +10,9 @@ public:
     struct ManifestItem {
         std::string href;
         std::string id;
-        std::string media_type;
+        std::string mediaType;
         int uncompressedSize; // Must be loaded seprately
-        std::string fullPath() const { return "OEBPS/" + href; }
+        [[nodiscard]] auto fullPath() const -> std::string { return "OEBPS/" + href; }
     };
 
     std::string title;
@@ -20,21 +20,21 @@ public:
     std::vector<ManifestItem> manifest;
 
     // Don't love that these state things are here
-    bool parsing_title_ = false;
-    bool parsing_creator_ = false;
-    bool parsing_manifest_ = false;
+    bool parsingTitle = false;
+    bool parsingCreator = false;
+    bool parsingManifest = false;
 };
 
 class EPubOpf {
 public:
     EPubOpf(ZipFile &zipFile, const char *path) : path_(path), zipFile_(zipFile) {}
 
-    EPubData parse() {
+    auto parse() -> EPubData {
         EPubData data;
         XML_Parser parser = XML_ParserCreate(nullptr);
         XML_SetUserData(parser, &data);
-        XML_SetElementHandler(parser, StartElementHandler, EndElementHandler);
-        XML_SetCharacterDataHandler(parser, CharacterDataHandler);
+        XML_SetElementHandler(parser, startElementHandler, endElementHandler);
+        XML_SetCharacterDataHandler(parser, characterDataHandler);
 
         if (zipFile_.openFile(path_) != UNZ_OK) {
             log_e("Failed to open ePub manifest %s", path_);
@@ -64,15 +64,15 @@ protected:
     const char *path_;
     ZipFile &zipFile_;
 
-    static void XMLCALL StartElementHandler(void *userData, const char *name, const char **attrs) {
-        EPubData *data = static_cast<EPubData *>(userData);
+    static void XMLCALL startElementHandler(void *userData, const char *name, const char **attrs) {
+        auto *data = static_cast<EPubData *>(userData);
         if (strcmp(name, "dc:title") == 0) {
-            data->parsing_title_ = true;
+            data->parsingTitle = true;
         } else if (strcmp(name, "dc:creator") == 0) {
-            data->parsing_creator_ = true;
+            data->parsingCreator = true;
         } else if (strcmp(name, "manifest") == 0) {
-            data->parsing_manifest_ = true;
-        } else if (data->parsing_manifest_ && strcmp(name, "item") == 0) {
+            data->parsingManifest = true;
+        } else if (data->parsingManifest && strcmp(name, "item") == 0) {
             EPubData::ManifestItem item;
             for (int i = 0; attrs[i]; i += 2) {
                 if (strcmp(attrs[i], "href") == 0) {
@@ -80,29 +80,29 @@ protected:
                 } else if (strcmp(attrs[i], "id") == 0) {
                     item.id = attrs[i + 1];
                 } else if (strcmp(attrs[i], "media-type") == 0) {
-                    item.media_type = attrs[i + 1];
+                    item.mediaType = attrs[i + 1];
                 }
             }
             data->manifest.push_back(item);
         }
     }
 
-    static void XMLCALL EndElementHandler(void *userData, const char *name) {
-        EPubData *data = static_cast<EPubData *>(userData);
+    static void XMLCALL endElementHandler(void *userData, const char *name) {
+        auto *data = static_cast<EPubData *>(userData);
         if (strcmp(name, "dc:title") == 0) {
-            data->parsing_title_ = false;
+            data->parsingTitle = false;
         } else if (strcmp(name, "dc:creator") == 0) {
-            data->parsing_creator_ = false;
+            data->parsingCreator = false;
         } else if (strcmp(name, "manifest") == 0) {
-            data->parsing_manifest_ = false;
+            data->parsingManifest = false;
         }
     }
 
-    static void XMLCALL CharacterDataHandler(void *userData, const char *s, int len) {
-        EPubData *data = static_cast<EPubData *>(userData);
-        if (data->parsing_title_) {
+    static void XMLCALL characterDataHandler(void *userData, const char *s, int len) {
+        auto *data = static_cast<EPubData *>(userData);
+        if (data->parsingTitle) {
             data->title.append(s, len);
-        } else if (data->parsing_creator_) {
+        } else if (data->parsingCreator) {
             data->creator.append(s, len);
         }
     }

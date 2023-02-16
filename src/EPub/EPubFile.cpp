@@ -27,8 +27,8 @@ auto EPubFile::open() -> bool {
 
     // To stream out data, build a list of each manifest file of type application/xhtml+xml
     xhtmlItems_.clear();
-    for (auto item : data.manifest) {
-        if (item.media_type == "application/xhtml+xml") {
+    for (const auto &item : data.manifest) {
+        if (item.mediaType == "application/xhtml+xml") {
             xhtmlItems_.push_back(item);
         }
     }
