@@ -58,9 +58,9 @@ public:
 
 private:
     std::unique_ptr<RendererStream> stream_;
-    StripHtmlState state_;
+    StripHtmlState state_{HTML_TEXT};
     std::string element_;
     std::stringstream outStream_;
 
-    int position_;
+    int position_{0};
 };
