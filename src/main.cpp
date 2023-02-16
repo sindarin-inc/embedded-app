@@ -282,9 +282,10 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                             digitalWrite(BLUE_LED, LED_OFF);
                             // Only if the temples are still closed, allow power off
                             if (templesClosed) {
-                                // AllowPowerOff();
+                                AllowPowerOff();
                             }
                             runningContentSync = false;
+                            // DisconnectWifi();
                         }
                     });
                     // Figure out when we should next wake up to sync again (if we're still closed)
@@ -292,7 +293,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                     uint8_t hours, minutes;
                     GetClockTime(hours, minutes);
                     uint32_t secondsToWait = 0;
-                    const int hourOneToSync = 6;
+                    const int hourOneToSync = 12;
                     const int hourTwoToSync = 20;
                     if ((hours < hourOneToSync) || (hours >= hourTwoToSync)) {
                         if (hours < hourOneToSync) {
