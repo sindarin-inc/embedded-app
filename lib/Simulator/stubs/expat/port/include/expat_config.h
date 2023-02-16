@@ -106,7 +106,7 @@
 
 #if defined(__APPLE__)
 #define HAVE_ARC4RANDOM_BUF
-#else
+#else // Assume linux
 #define _GNU_SOURCE 1
 #include <sys/types.h>
 #include <unistd.h>
