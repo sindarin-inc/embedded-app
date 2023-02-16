@@ -29,8 +29,7 @@ private:
         }
     }
 
-    static void XMLCALL endElementHandler(void * /*userData*/, const char * /*name*/) {}
+    static void XMLCALL endElementHandler(void *userData, const char *name) {}
 
-    static void XMLCALL characterDataHandler(void * /*userData*/, const char * /*s*/, int /*len*/) {
-    }
+    static void XMLCALL characterDataHandler(void *userData, const char *s, int len) {}
 };

@@ -13,8 +13,8 @@ public:
         EPubData data;
         XML_Parser parser = XML_ParserCreate(nullptr);
         XML_SetUserData(parser, &data);
-        XML_SetElementHandler(parser, StartElementHandler, EndElementHandler);
-        XML_SetCharacterDataHandler(parser, CharacterDataHandler);
+        XML_SetElementHandler(parser, startElementHandler, endElementHandler);
+        XML_SetCharacterDataHandler(parser, characterDataHandler);
 
         if (zipFile_.openFile(path_) != UNZ_OK) {
             log_e("Failed to open ePub manifest %s", path_);
@@ -44,7 +44,7 @@ protected:
     const char *path_;
     ZipFile &zipFile_;
 
-    static void XMLCALL StartElementHandler(void *userData, const char *name, const char **attrs) {
+    static void XMLCALL startElementHandler(void *userData, const char *name, const char **attrs) {
         EPubData *data = static_cast<EPubData *>(userData);
         if (strcmp(name, "dc:title") == 0) {
             data->parsing_title_ = true;
@@ -67,7 +67,7 @@ protected:
         }
     }
 
-    static void XMLCALL EndElementHandler(void *userData, const char *name) {
+    static void XMLCALL endElementHandler(void *userData, const char *name) {
         EPubData *data = static_cast<EPubData *>(userData);
         if (strcmp(name, "dc:title") == 0) {
             data->parsing_title_ = false;
@@ -78,7 +78,7 @@ protected:
         }
     }
 
-    static void XMLCALL CharacterDataHandler(void *userData, const char *s, int len) {
+    static void XMLCALL characterDataHandler(void *userData, const char *s, int len) {
         EPubData *data = static_cast<EPubData *>(userData);
         if (data->parsing_title_) {
             data->title.append(s, len);
