@@ -221,6 +221,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     int morningNews = prefs.morningNewspaperTime.get().value_or(0);
     int eveningNews = prefs.eveningNewspaperTime.get().value_or(0);
 
+    log_i("Morning News: %d, Evening News: %d", morningNews, eveningNews);
+
     if ((morningNews != 0) || (eveningNews != 0)) {
         templeCloseSensor.checkTemple();
         if (!templeCloseSensor.getOpened()) {
