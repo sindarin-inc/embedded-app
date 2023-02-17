@@ -281,6 +281,7 @@ void LocalStore::syncFromRemote(
 
     // Uncomment below line to set your access token for local development
     // prefs._cloudToken.set("");
+
     // Grab the token here from prefs if set
     auto token = prefs_.cloudToken.get();
     if (!token.has_value()) {
