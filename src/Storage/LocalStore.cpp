@@ -218,10 +218,11 @@ auto LocalStore::changedReadablesArchivedQueryParams(const ReadablesVector &read
     return archived;
 }
 
-auto LocalStore::changedReadablesBookmarksJson() -> std::string {
+auto LocalStore::changedReadablesBookmarksJson() -> std::pair<char *, int> {
     auto doc = std::make_unique<SpiRamJsonDocument>(
         2048 * std::max(1, (int)readables_.size() + (int)articles_.size()));
     JsonArray bookmarksJsonArray = doc->to<JsonArray>();
+    int changedCount = 0;
 
     for (auto &readables : {readables_, articles_}) {
         for (auto &readable : readables) {
@@ -241,6 +242,7 @@ auto LocalStore::changedReadablesBookmarksJson() -> std::string {
                     log_i("Failed to open bookmark file: %s", bookmarkPath.c_str());
                     continue;
                 }
+                changedCount += 1;
 
                 // Store bookmarks in a hash table
                 std::unordered_map<uint32_t, uint32_t> bookmarks;
@@ -280,16 +282,21 @@ auto LocalStore::changedReadablesBookmarksJson() -> std::string {
 
                 if (doc->overflowed()) {
                     log_e("Out of space in SpiRamJsonDocument for %s", bookmarkPath.c_str());
-                    return "";
+                    return std::make_pair(nullptr, 0);
                 }
             }
         }
     }
 
-    std::string bookmarksJson;
-    serializeJson(*doc, bookmarksJson);
+    if (!changedCount) {
+        return std::make_pair(nullptr, 0);
+    }
 
-    return bookmarksJson;
+    size_t serializedMaxSize = (*doc).memoryUsage() * 2;
+    char *bookmarksJson = (char *)heap_caps_malloc(serializedMaxSize, MALLOC_CAP_SPIRAM);
+    serializeJson(*doc, bookmarksJson, serializedMaxSize);
+
+    return std::make_pair(bookmarksJson, serializedMaxSize);
 }
 
 auto LocalStore::processReadablePlacemarksFromServer(const Readable &readable,
@@ -402,7 +409,7 @@ void LocalStore::syncFromRemote(
         auto articlePlacemarks = this->changedReadablePlacemarkQueryParams(articles_);
         auto readablesArchived = this->changedReadablesArchivedQueryParams(readables_);
         auto articlesArchived = this->changedReadablesArchivedQueryParams(articles_);
-        auto readablesBookmarked = this->changedReadablesBookmarksJson();
+        auto [readablesBookmarked, readablesBookmarkedSize] = this->changedReadablesBookmarksJson();
         CheckSyncResponse checkSyncResponse;
         CheckSyncRequest request =
             CheckSyncRequest{.readablesSince = readablesSince,
@@ -524,10 +531,10 @@ void LocalStore::syncFromRemote(
         ContentSyncState syncState = {.state = ContentSyncState::State::Syncing};
         syncState.tasks.reserve(readablesToDownload.size() + readablesToDelete.size() +
                                 articlesToDelete.size() + articlesToSave.size() +
-                                (readablesBookmarked.size() > 0 ? 1 : 0));
+                                (readablesBookmarkedSize > 0 ? 1 : 0));
         auto tasksIndex = 0;
 
-        if (readablesBookmarked.size() == 0 && readablesToDownload.size() == 0 &&
+        if (readablesBookmarkedSize == 0 && readablesToDownload.size() == 0 &&
             readablesToDelete.size() == 0 && articlesToDelete.size() == 0 &&
             articlesToSave.size() == 0) {
             log_i("No new content to download");
@@ -535,7 +542,7 @@ void LocalStore::syncFromRemote(
             return;
         }
 
-        if (readablesBookmarked.size() > 0) {
+        if (readablesBookmarkedSize > 0) {
             syncState.tasks.push_back(ContentSyncState::Task{
                 .message = "Storing bookmarks",
                 .percentage = 0,
@@ -579,9 +586,10 @@ void LocalStore::syncFromRemote(
         progressCallback(syncState);
 
         // Sync bookmarks before we download any new readables
-        if (readablesBookmarked.size() > 0) {
+        if (readablesBookmarkedSize > 0) {
             log_i("Syncing bookmarks");
-            auto success = SindarinAPI::getInstance()->syncBookmarks(readablesBookmarked);
+            auto success = SindarinAPI::getInstance()->syncBookmarks(readablesBookmarked,
+                                                                     readablesBookmarkedSize);
             if (success) {
                 log_i("Bookmarks synced");
                 this->resetReadablesBookmarksChanged(readables_);

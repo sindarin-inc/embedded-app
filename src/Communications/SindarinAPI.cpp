@@ -102,14 +102,14 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
     return httpCode;
 }
 
-auto SindarinAPI::syncBookmarks(const std::string &bookmarksJson) -> int {
+auto SindarinAPI::syncBookmarks(const char *bookmarksJson, const int bookmarksSize) -> int {
     SyncBookmarksResponse resp;
     HttpClient client(SINDARIN_SERVER_URL "/user/bookmarks/", "application/json", HTTP_METHOD_POST);
     setAuth(client);
 
-    client.open(bookmarksJson.length());
-    int writeLength = client.write(bookmarksJson.c_str(), bookmarksJson.length());
-    if (writeLength < bookmarksJson.length()) {
+    client.open(bookmarksSize);
+    int writeLength = client.write(bookmarksJson, bookmarksSize);
+    if (writeLength < bookmarksSize) {
         log_e("HttpClient failed to write (writeLength=%d)", writeLength);
         return 0;
     }

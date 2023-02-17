@@ -56,7 +56,7 @@ public:
         -> std::vector<std::string>;
     auto changedReadablesArchivedQueryParams(const ReadablesVector &readables)
         -> std::vector<std::string>;
-    auto changedReadablesBookmarksJson() -> std::string;
+    auto changedReadablesBookmarksJson() -> std::pair<char *, int>;
     auto processReadablePlacemarksFromServer(const Readable &readable, const uint32_t placemark)
         -> bool;
     auto processReadableBookmarksFromServer(const Readable &readable,
