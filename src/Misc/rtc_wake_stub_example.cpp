@@ -263,7 +263,7 @@ static RTC_IRAM_ATTR uint32_t wakeup_cause;
 
 // wake up stub function stored in RTC memory
 extern "C" void RTC_IRAM_ATTR esp_wake_deep_sleep /*wake_stub_example*/ (void) {
-
+    esp_default_wake_deep_sleep();
     // First thing -- if the temple is opened, don't do anything else
     // and just boot.
     /*

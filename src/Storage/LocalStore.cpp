@@ -280,18 +280,6 @@ void LocalStore::syncFromRemote(
         return;
     }
 
-    SetClockTimeFromInternet();
-
-    // Not the best, but for some reason Setting the clock messes up the connection for
-    // later.
-    DisconnectWifi();
-
-    if (!ConnectWifi()) {
-        progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
-                                          .message = "Failed to connect to WiFi."});
-        return;
-    }
-
     // Uncomment below line to set your access token for local development
     // prefs._cloudToken.set("");
 

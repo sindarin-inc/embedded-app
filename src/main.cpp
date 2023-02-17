@@ -212,30 +212,32 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     int morningNews = prefs.morningNewspaperTime.get().value_or(0);
     int eveningNews = prefs.eveningNewspaperTime.get().value_or(0);
 
-    if ((morningNews != 0) || (eveningNews != 0)) {
+    if ((1) /*(morningNews != 0) || (eveningNews != 0)*/) {
         templeCloseSensor.checkTemple();
-        if (!templeCloseSensor.getOpened()) {
+        if (1 /*!templeCloseSensor.getOpened()*/) {
             uint8_t hours, minutes;
             GetClockTime(hours, minutes);
             if ((hours == morningNews || hours == eveningNews) && (minutes == 0)) {
-                digitalWrite(BLUE_LED, LED_ON);
-                runningContentSync = true;
-                localStore.syncFromRemote([](const ContentSyncState &state) {
-                    if (state.state == ContentSyncState::Failure ||
-                        state.state == ContentSyncState::Synced ||
-                        state.state == ContentSyncState::AlreadySynced) {
-                        if (state.state == ContentSyncState::Failure) {
-                            log_i("Content sync failed with error: %s", state.message.c_str());
-                        } else if (state.state == ContentSyncState::Synced) {
-                            log_i("Content sync successful");
-                        } else if (state.state == ContentSyncState::AlreadySynced) {
-                            log_i("Content sync already synced");
-                        }
-                        digitalWrite(BLUE_LED, LED_OFF);
-                        runningContentSync = false;
-                        DisconnectWifi();
-                    }
-                });
+                /*
+                 digitalWrite(BLUE_LED, LED_ON);
+                 runningContentSync = true;
+                 localStore.syncFromRemote([](const ContentSyncState &state) {
+                     if (state.state == ContentSyncState::Failure ||
+                         state.state == ContentSyncState::Synced ||
+                         state.state == ContentSyncState::AlreadySynced) {
+                         if (state.state == ContentSyncState::Failure) {
+                             log_i("Content sync failed with error: %s", state.message.c_str());
+                         } else if (state.state == ContentSyncState::Synced) {
+                             log_i("Content sync successful");
+                         } else if (state.state == ContentSyncState::AlreadySynced) {
+                             log_i("Content sync already synced");
+                         }
+                         digitalWrite(BLUE_LED, LED_OFF);
+                         runningContentSync = false;
+                         DisconnectWifi();
+                     }
+                 });
+                 */
             }
             log_i("Temple closed, going to sleep for 5s");
             esp_sleep_enable_timer_wakeup(5000000);
@@ -296,7 +298,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 templesClosed = true;
                 // Will be turned off after content sync
                 prefs.lastBatteryReport.set((int)power.getBatteryPercentage());
-                AllowPowerOff();
+                // AllowPowerOff();
             }
         });
         templeCloseSensor.setLongCloseCallback([]() {
@@ -304,7 +306,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             DispatchGetUiQueue()->dispatch([]() {
                 log_d("Temples closed for a while, running content sync");
                 // Debug LED so we know what's happening
-                while (templesClosed) {
+                if (templesClosed) {
                     digitalWrite(BLUE_LED, LED_ON);
                     runningContentSync = true;
                     localStore.syncFromRemote([](const ContentSyncState &state) {
