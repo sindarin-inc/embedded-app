@@ -173,34 +173,6 @@ void InitializePlatform() {
 #ifdef USB_CONNECTED_PIN
     pinMode(USB_CONNECTED_PIN, INPUT);
 #endif
-
-    // Check to see if the RTC memory has been cleared
-    // if so, set the clock from the internet
-    // Otherwise, boot as normal
-    /*
-        // Initialize RTC memory
-        esp_err_t ret = rtc_mem_write(0, &esp_sleep_get_wakeup_time(), sizeof(uint64_t));
-        if (ret != ESP_OK) {
-            log_e("Error writing RTC memory: %d", ret);
-            return;
-        }
-
-        // Check if RTC clock has been reset
-        uint64_t wakeup_time;
-        ret = rtc_mem_read(0, &wakeup_time, sizeof(uint64_t));
-        if (ret != ESP_OK) {
-            log_e("Error reading RTC memory: %d", ret);
-            return;
-        }
-*/
-
-    uint8_t hours, minutes;
-    GetClockTime(hours, minutes);
-    // If 12:00 UMT, set the clock from the internet
-    // Probably should be a better way to do this...
-    if (hours == 16 && minutes == 0) {
-        SetClockTimeFromInternet();
-    }
 }
 
 // Forked from TinyPico's GetBatteryVoltage() method:
@@ -411,6 +383,7 @@ void GetClockTime(uint8_t &hours, uint8_t &minutes) {
         break;
     case 0:
     default:
+        timeZoneString = "UTC";
         break;
     }
     time(&now);

@@ -7,6 +7,7 @@
 #include "Communications/WiFi.hpp"
 #include "Misc/Crypto.hpp"
 #include "Misc/GUnzipStream.hpp"
+#include "Misc/Platform.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
 #include "sindarin-debug.h"
@@ -281,6 +282,11 @@ void LocalStore::syncFromRemote(
 
     // Uncomment below line to set your access token for local development
     // prefs._cloudToken.set("");
+
+    // Set the clock from the internet on each content sync -- mostly precautionary
+    // adds ~15 seconds to the sync time. As we move to always syncing in the background
+    // this shouldn't matter too much.
+    SetClockTimeFromInternet();
 
     // Grab the token here from prefs if set
     auto token = prefs_.cloudToken.get();
