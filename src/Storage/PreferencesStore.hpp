@@ -210,7 +210,7 @@ public:
           firstAutopilotRead(*this, "fst-auto-rd"), cesMode(*this, "ces"), emcMode(*this, "emc"),
           lastBatteryReport(*this, "last-batt"), wifiPower(*this, "wifi-power"),
           gzipReadables(*this, "gzip-readables"), morningNewspaperTime(*this, "morning-news"),
-          eveningNewspaperTime(*this, "evening-news"){};
+          eveningNewspaperTime(*this, "evening-news"), solTimeZone(*this, "time-zone"){};
 
     auto begin() -> bool {
         if (started_) {
@@ -278,6 +278,7 @@ public:
     PrefsItem<bool> gzipReadables;
     PrefsItem<int> morningNewspaperTime;
     PrefsItem<int> eveningNewspaperTime;
+    PrefsItem<int> solTimeZone;
 
 protected:
     bool started_;

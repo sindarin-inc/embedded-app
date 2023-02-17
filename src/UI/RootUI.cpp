@@ -334,6 +334,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // Firmware Update
     // Send Crash Report
     // Batteries and Temperature
+    // Set Time Zone
     // Turn on Onboarding Mode
     // Turn on CES Mode
     // Statistics
@@ -793,6 +794,82 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         display->updateDisplay();
         systemSettingsMenu->setFirstLoad();
     }));
+
+    systemSettingsMenu->addMenuItem(
+        MenuItem("Set Time Zone", [this, display, systemSettingsMenu]() {
+            auto timeZoneMenu = new MenuScreen(this->power_, systemSettingsMenu->getMyStyle());
+
+            auto timeZoneToString = [](int solTimeZone) -> std::string {
+                switch (solTimeZone) {
+                case -8:
+                    return "Pacific Time";
+                case -7:
+                    return "Mountain Time";
+                case -6:
+                    return "Central Time";
+                case -5:
+                    return "Eastern Time";
+                case 0:
+                    return "UTC - Not Set";
+                default:
+                    return "Unknown";
+                }
+            };
+
+            timeZoneMenu->setExtraText(timeZoneToString(prefs_.solTimeZone.get().value_or(0)));
+
+            auto confirmMessage = [this, timeZoneMenu, display](int solTimeZone) {
+                this->prefs_.solTimeZone.set(solTimeZone);
+                timeZoneMenu->showTemporaryMessage(*display, "Time Zone Set", 200, false);
+                timeZoneMenu->backCallback();
+            };
+
+            timeZoneMenu->addMenuItem(MenuItem("Pacific Time", [this, confirmMessage]() {
+                this->prefs_.solTimeZone.set(-8);
+                confirmMessage(-8);
+            }));
+            timeZoneMenu->addMenuItem(MenuItem("Mountain Time", [this, confirmMessage]() {
+                this->prefs_.solTimeZone.set(-7);
+                confirmMessage(-7);
+            }));
+            timeZoneMenu->addMenuItem(MenuItem("Central Time", [this, confirmMessage]() {
+                this->prefs_.solTimeZone.set(-6);
+                confirmMessage(-6);
+            }));
+            timeZoneMenu->addMenuItem(MenuItem("Eastern Time", [this, confirmMessage]() {
+                this->prefs_.solTimeZone.set(-5);
+                confirmMessage(-5);
+            }));
+
+            int menuIndex = 0;
+            switch (prefs_.solTimeZone.get().value_or(0)) {
+            case -8:
+                menuIndex = 0;
+                break;
+            case -7:
+                menuIndex = 1;
+                break;
+            case -6:
+                menuIndex = 2;
+                break;
+            case -5:
+                menuIndex = 3;
+                break;
+            case 0:
+            default:
+                menuIndex = 0;
+                break;
+            }
+
+            timeZoneMenu->setCurrSelection(menuIndex);
+
+            setCurrentScreen(*timeZoneMenu);
+            timeZoneMenu->backCallback = [this, timeZoneMenu, systemSettingsMenu]() {
+                systemSettingsMenu->setFirstLoad();
+                setCurrentScreen(*systemSettingsMenu);
+                delete timeZoneMenu;
+            };
+        }));
 
     systemSettingsMenu->addMenuItem(
         MenuItem("Turn on Onboarding Mode", [this, systemSettingsMenu, display]() {

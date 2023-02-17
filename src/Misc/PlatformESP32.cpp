@@ -13,10 +13,13 @@
 #include "Misc/StringUtil.hpp"
 #include "Platform.hpp"
 #include "RTOS.h"
+#include "Storage/PreferencesStore.hpp"
 #include "Storage/include/EFusesCustomTable.h"
 #include "config.h"
 #include "rtc_wake_stub_example.h"
 #include "sindarin-debug.h"
+
+extern PreferencesStore prefs;
 
 #define BACKLIGHT_PWM_CHANNEL 0
 #define HARDWARE_REVSION_LATEST 2
@@ -390,23 +393,29 @@ void AllowPowerOff() {
 }
 
 void GetClockTime(uint8_t &hours, uint8_t &minutes) {
-    /*
-    uint32_t now = millis();
-    uint32_t elapsed = now - clockTimeLastUpdateMs;
-    hours = clockTimeHours + elapsed / 3600000;
-    minutes = clockTimeMinutes + (elapsed % 3600000) / 60000;
-    minutes = minutes % 60;
-    // Capture the wraparound to the next hour
-    if (minutes < clockTimeMinutes) {
-        hours++;
-    }
-    hours = hours % 24;
-    */
     time_t now;
     struct tm timeinfo;
-
+    std::string timeZoneString;
+    switch (prefs.solTimeZone.get().value_or(0)) {
+    case -8:
+        timeZoneString = "PST8PDT";
+        break;
+    case -7:
+        timeZoneString = "MST7MDT";
+        break;
+    case -6:
+        timeZoneString = "CST6CDT";
+        break;
+    case -5:
+        timeZoneString = "EST5EDT";
+        break;
+    case 0:
+    default:
+        break;
+    }
     time(&now);
-    setenv("TZ", "PST8PDT", 1);
+
+    setenv("TZ", timeZoneString.c_str(), 1);
     tzset();
 
     localtime_r(&now, &timeinfo);
