@@ -4,6 +4,7 @@
 #include <utility>
 
 #include "Communications/HttpClient.hpp"
+#include "Communications/SindarinAPI.hpp"
 #include "Misc/GUnzipStream.hpp"
 #include "sindarin-debug.h"
 
@@ -12,7 +13,13 @@ auto DownloadFile(const char *url,
                   const std::function<size_t(HttpClient &client, int index)> &readWrite,
                   const std::function<void(int bytesWritten, float percentage)> &progressCallback,
                   bool gzip) -> bool {
+
     HttpClient client(url);
+
+    std::shared_ptr<SindarinAPI> api = SindarinAPI::getInstance();
+    if (api) {
+        api->setAuth(client);
+    }
 
     auto time = esp_timer_get_time();
     auto downloadStart = time;
@@ -218,7 +225,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
         log_e("Downloaded file is shorter than expected, expected %d bytes but got %zu bytes",
               length, fileSize);
         return false;
-    } else {
-        return true;
     }
+
+    return true;
 }

@@ -66,6 +66,7 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
 
     for (JsonVariant v : readablesJson) {
         Readable readable;
+
         if (!readable.fromJson(v.as<JsonObject>())) {
             log_e("Failed to parse Readable");
             continue;
@@ -403,16 +404,16 @@ void LocalStore::syncFromRemote(
         auto articlesArchived = this->changedReadablesArchivedQueryParams(articles_);
         auto readablesBookmarked = this->changedReadablesBookmarksJson();
         CheckSyncResponse checkSyncResponse;
-        CheckSyncRequest request = CheckSyncRequest{
-            .readablesSince = readablesSince,
-            .articlesSince = articlesSince,
-            .readablePlacemarks = readablePlacemarks,
-            .articlePlacemarks = articlePlacemarks,
-            .readablesArchived = readablesArchived,
-            .articlesArchived = articlesArchived,
-            .ptBattery = this->prefs_.lastPageTurnerBattery.get().value_or(0),
-            .ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or(""),
-        };
+        CheckSyncRequest request =
+            CheckSyncRequest{.readablesSince = readablesSince,
+                             .articlesSince = articlesSince,
+                             .readablePlacemarks = readablePlacemarks,
+                             .articlePlacemarks = articlePlacemarks,
+                             .readablesArchived = readablesArchived,
+                             .articlesArchived = articlesArchived,
+                             .ptBattery = this->prefs_.lastPageTurnerBattery.get().value_or(0),
+                             .ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or(""),
+                             .skipContent = true};
 
         SHOW_HEAP();
         auto httpCode = SindarinAPI::getInstance()->checkSync(request, &checkSyncResponse);
@@ -508,7 +509,6 @@ void LocalStore::syncFromRemote(
                       userReadable.readable.uuid.c_str());
                 continue;
             }
-
             articlesToSave.push_back(userReadable.readable);
         }
         this->resetReadablesPlacemarkChanged(articles_);
@@ -669,19 +669,39 @@ void LocalStore::syncFromRemote(
 
         // Save the articles that are new
         if (articlesToSave.size() > 0) {
+
+            // create log directory in filesystem if it doesn't exist
+            log_d("Creating directory /articles");
+            if (!fileSystem.createDir("/articles")) {
+                log_e("Could not create /articles directory");
+            }
+
+            float pctPerArticle = 100.0 / articlesToSave.size();
             for (int i = 0; i < articlesToSave.size(); i++) {
-                syncState.tasks[tasksIndex].percentage =
-                    (float(i + 1) / articlesToSave.size()) * 100;
-                progressCallback(syncState);
-
+                float currPercentage = (float)i * pctPerArticle;
                 auto &readable = articlesToSave[i];
-
-                if (this->saveArticleFile(readable)) {
-                    this->addReadable(articles_, readable);
-                } else {
-                    failedArticleDownload = true;
-                    log_e("Failed to save article \"%s\" %s", readable.title.c_str(),
-                          readable.uuid.c_str());
+                for (int t = 0; t < NUMBER_OF_READABLE_DOWNLOAD_TRIES; t++) {
+                    auto success = SindarinAPI::getInstance()->downloadReadable(
+                        readable, this->fileSystem,
+                        [progressCallback, &syncState, tasksIndex, currPercentage,
+                         pctPerArticle](int percentage) {
+                            float pctThisReadable = (float)percentage * pctPerArticle / 100.0;
+                            syncState.tasks[tasksIndex].percentage =
+                                currPercentage + pctThisReadable;
+                            progressCallback(syncState);
+                        },
+                        prefs_.gzipReadables.get().value_or(false));
+                    if (success) {
+                        this->addReadable(articles_, readable);
+                        log_d("File successfully downloaded.");
+                        break;
+                    } else {
+                        log_w("Failed to download file. Retrying...");
+                        if (t == NUMBER_OF_READABLE_DOWNLOAD_TRIES - 1) {
+                            log_e("Failed to download file.");
+                            failedArticleDownload = true;
+                        }
+                    }
                 }
             }
             tasksIndex += 1;

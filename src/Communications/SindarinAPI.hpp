@@ -41,9 +41,9 @@ public:
 
     auto uploadCrashReport(File &crashFile, const String &contentType) -> int;
 
+    void setAuth(HttpClient &client);
+
 protected:
     static std::shared_ptr<SindarinAPI> instance;
     std::string accessToken_;
-
-    void setAuth(HttpClient &client);
 };
