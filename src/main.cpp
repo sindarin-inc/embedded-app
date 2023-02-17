@@ -228,7 +228,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         if (!templeCloseSensor.getOpened()) {
             uint8_t hours, minutes;
             solClock.GetClockTime(hours, minutes);
-            if ((hours == morningNews || hours == eveningNews) && (minutes == 0)) {
+            log_i("Temple is closed, current time: %d:%d", hours, minutes);
+            if (((hours && (hours == morningNews)) || (hours && (hours == eveningNews))) &&
+                (minutes == 0)) {
                 digitalWrite(BLUE_LED, LED_ON);
                 runningContentSync = true;
                 localStore.syncFromRemote([](const ContentSyncState &state) {
@@ -245,14 +247,20 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                         digitalWrite(BLUE_LED, LED_OFF);
                         runningContentSync = false;
                         DisconnectWifi();
+                        log_i("going to sleep for 5s after content sync");
+                        esp_sleep_enable_timer_wakeup(5000000);
+
+                        log_i("Back to sleep after content sync");
+                        esp_deep_sleep_start();
                     }
                 });
-            }
-            log_i("Temple closed, going to sleep for 5s");
-            esp_sleep_enable_timer_wakeup(5000000);
+            } else {
+                log_i("Temple closed, going to sleep for 5s");
+                esp_sleep_enable_timer_wakeup(5000000);
 
-            log_i("Back to sleep");
-            esp_deep_sleep_start();
+                log_i("Back to sleep");
+                esp_deep_sleep_start();
+            }
         }
     }
 #endif
