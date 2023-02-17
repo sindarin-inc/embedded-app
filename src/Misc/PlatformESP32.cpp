@@ -5,10 +5,8 @@
 #include <driver/uart.h>
 #include <esp_adc_cal.h>
 #include <esp_err.h>
-#include <esp_log.h>
 #include <soc/rtc.h>
 
-#include "Communications/WiFi.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Platform.hpp"
 #include "RTOS.h"

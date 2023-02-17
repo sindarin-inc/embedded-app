@@ -1,6 +1,5 @@
 #if SIMULATOR
 
-#include <ctime>
 #include <string>
 
 #include "Platform.hpp"

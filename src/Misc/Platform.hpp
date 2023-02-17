@@ -34,4 +34,3 @@ auto GetHardwareRevision() -> uint8_t;
 void ForcePowerOn();
 
 void AllowPowerOff();
-

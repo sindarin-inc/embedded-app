@@ -85,7 +85,6 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
             return {size.width, y};
         });
 
-    // Now!
     context.setViewFrame(*clockView_, {{0, 0}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignLeft |
                              LayoutOptionsAlignBottom);
@@ -125,8 +124,6 @@ void MainMenuScreen::drawInRect(Rect rect) {
     topBarSelectionView_.draw();
     batteryIconView_.draw();
     batteryTextView_->draw();
-
-    // Now! :)
     clockView_->draw();
 }
 
@@ -151,7 +148,6 @@ void MainMenuScreen::render(DisplaySystem &display) {
         batteryTextView_ =
             std::make_shared<SingleLineTextView>(display, power_.getBatteryPercentageOnlyString());
 
-        // Now :)
         uint8_t hours;
         uint8_t minutes;
         SolClock theClock = SolClock::getInstance();
