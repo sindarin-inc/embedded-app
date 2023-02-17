@@ -211,6 +211,11 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 
     InitializePlatform();
+
+    if (!prefs.begin()) {
+        bootErrors.push_back({.type = BootError::Type::Preferences});
+    }
+
 #if USE_MMC5603
 #if !SIMULATOR
     int morningNews = prefs.morningNewspaperTime.get().value_or(0);
@@ -336,9 +341,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         });
     }
 #endif
-    if (!prefs.begin()) {
-        bootErrors.push_back({.type = BootError::Type::Preferences});
-    }
 
     SHOW_HEAP();
 
