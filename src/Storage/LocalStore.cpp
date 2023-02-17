@@ -247,7 +247,7 @@ auto LocalStore::changedReadablesBookmarksJson() -> std::pair<char *, int> {
                 // Store bookmarks in a hash table
                 std::unordered_map<uint32_t, uint32_t> bookmarks;
                 std::unordered_map<uint32_t, uint32_t> bookmarksToDelete;
-                Bookmark bookmark;
+                LocalBookmark bookmark;
                 while (ReadOneBookmark(bookmarkFile, bookmark)) {
                     log_d("Bookmark: %d %d %d", bookmark.firstPlace, bookmark.lastPlace,
                           bookmark.status);

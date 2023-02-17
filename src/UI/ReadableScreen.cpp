@@ -34,7 +34,7 @@ void ReadableScreen::updateBookmarkStatus() {
         return;
     }
 
-    Bookmark bookmark;
+    LocalBookmark bookmark;
     while (ReadOneBookmark(bookmarkFile, bookmark)) {
         // A decent heuristic for now. If the midpoint of the bookmark is within
         // the current page range, then turn the bookmark on for this page.

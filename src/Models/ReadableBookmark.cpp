@@ -2,7 +2,7 @@
 
 // Simply reads from the bookmark file for this Readable and returns whether it was
 // a turn on or turn off bookmark.
-auto ReadOneBookmark(File &file, Bookmark &bookmark) -> bool {
+auto ReadOneBookmark(File &file, LocalBookmark &bookmark) -> bool {
     // The first character in the line is a + or -, read that first
     if (!file.available()) {
         return false;
