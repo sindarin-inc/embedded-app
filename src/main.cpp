@@ -207,7 +207,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 
     InitializePlatform();
-
+#if USE_MMC5603
+#if !SIMULATOR
     templeCloseSensor.checkTemple();
 
     if (!templeCloseSensor.getOpened()) {
@@ -243,6 +244,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         // esp_set_deep_sleep_wake_stub(&wake_stub_example);
         esp_deep_sleep_start();
     }
+#endif
+#endif
 
     log_i("SN: %s", GetSerialNumber().c_str());
 

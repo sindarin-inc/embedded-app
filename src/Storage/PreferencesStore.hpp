@@ -209,7 +209,8 @@ public:
           firstRead(*this, "first-read"), autoPilotSpeed(*this, "auto-speed"),
           firstAutopilotRead(*this, "fst-auto-rd"), cesMode(*this, "ces"), emcMode(*this, "emc"),
           lastBatteryReport(*this, "last-batt"), wifiPower(*this, "wifi-power"),
-          gzipReadables(*this, "gzip-readables"){};
+          gzipReadables(*this, "gzip-readables"), morningNewspaperTime(*this, "morning-news"),
+          eveningNewspaperTime(*this, "evening-news"){};
 
     auto begin() -> bool {
         if (started_) {
@@ -275,6 +276,8 @@ public:
     PrefsItem<int> lastBatteryReport;
     PrefsItem<int> wifiPower;
     PrefsItem<bool> gzipReadables;
+    PrefsItem<int> morningNewspaperTime;
+    PrefsItem<int> eveningNewspaperTime;
 
 protected:
     bool started_;

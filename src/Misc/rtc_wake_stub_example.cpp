@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
-
+#if !SIMULATOR
 #include "rtc_wake_stub_example.h"
 
 #include <driver/i2c.h>
@@ -342,3 +342,5 @@ extern "C" void RTC_IRAM_ATTR esp_wake_deep_sleep /*wake_stub_example*/ (void) {
     // esp_set_deep_sleep_wake_stub(&wake_stub_example);
     esp_deep_sleep_start();
 }
+
+#endif
