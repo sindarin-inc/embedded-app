@@ -346,16 +346,22 @@ void ForcePowerOn() {
 }
 
 void AllowPowerOff() {
+
+    // If we have syncing to do for newspaper drop, deep sleep only (waking up regularly to check)
+    // Otherwise, just turn off the ESP32
+    if ((prefs.morningNewspaperTime.get().value_or(0) != 0) ||
+        (prefs.eveningNewspaperTime.get().value_or(0) != 0)) {
+        log_i("Setting wakeup timer for deep sleep to 5s");
+        esp_sleep_enable_timer_wakeup(5000000);
+        log_i("Going to sleep -- good night!");
+        esp_deep_sleep_start();
+        return;
+    }
+
     // We haven't been particuarly scientific, but experimentally using INPUT_PULLDOWN seems to work
     // the best. I don't understand why. You'd think either an open drain or driving to 0 would be
     // more effective at turning off the mostfet.
     pinMode(sysOnPin, INPUT_PULLDOWN);
-    log_i("Setting deep sleep stub");
-    // esp_set_deep_sleep_wake_stub(&wake_stub_example);
-    log_i("Setting wakeup timer for deep sleep to 10s");
-    esp_sleep_enable_timer_wakeup(10000000);
-    log_i("Going to sleep -- good night!");
-    esp_deep_sleep_start();
 
     // pinMode(sysOnPin, OUTPUT_OPEN_DRAIN);
     // digitalWrite(sysOnPin, LOW);

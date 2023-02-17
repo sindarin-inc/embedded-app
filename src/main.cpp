@@ -209,40 +209,40 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     InitializePlatform();
 #if USE_MMC5603
 #if !SIMULATOR
-    templeCloseSensor.checkTemple();
+    int morningNews = prefs.morningNewspaperTime.get().value_or(0);
+    int eveningNews = prefs.eveningNewspaperTime.get().value_or(0);
 
-    if (!templeCloseSensor.getOpened()) {
-        uint8_t hours, minutes;
-        GetClockTime(hours, minutes);
-        if ((hours == 6 || hours == 20) && (minutes == 0)) {
-            digitalWrite(BLUE_LED, LED_ON);
-            runningContentSync = true;
-            localStore.syncFromRemote([](const ContentSyncState &state) {
-                if (state.state == ContentSyncState::Failure ||
-                    state.state == ContentSyncState::Synced ||
-                    state.state == ContentSyncState::AlreadySynced) {
-                    if (state.state == ContentSyncState::Failure) {
-                        log_i("Content sync failed with error: %s", state.message.c_str());
-                    } else if (state.state == ContentSyncState::Synced) {
-                        log_i("Content sync successful");
-                    } else if (state.state == ContentSyncState::AlreadySynced) {
-                        log_i("Content sync already synced");
+    if ((morningNews != 0) || (eveningNews != 0)) {
+        templeCloseSensor.checkTemple();
+        if (!templeCloseSensor.getOpened()) {
+            uint8_t hours, minutes;
+            GetClockTime(hours, minutes);
+            if ((hours == morningNews || hours == eveningNews) && (minutes == 0)) {
+                digitalWrite(BLUE_LED, LED_ON);
+                runningContentSync = true;
+                localStore.syncFromRemote([](const ContentSyncState &state) {
+                    if (state.state == ContentSyncState::Failure ||
+                        state.state == ContentSyncState::Synced ||
+                        state.state == ContentSyncState::AlreadySynced) {
+                        if (state.state == ContentSyncState::Failure) {
+                            log_i("Content sync failed with error: %s", state.message.c_str());
+                        } else if (state.state == ContentSyncState::Synced) {
+                            log_i("Content sync successful");
+                        } else if (state.state == ContentSyncState::AlreadySynced) {
+                            log_i("Content sync already synced");
+                        }
+                        digitalWrite(BLUE_LED, LED_OFF);
+                        runningContentSync = false;
+                        DisconnectWifi();
                     }
-                    digitalWrite(BLUE_LED, LED_OFF);
-                    runningContentSync = false;
-                    // DisconnectWifi();
-                }
-            });
-        }
-        log_i("Temple closed, going to sleep for 5s");
-        esp_sleep_enable_timer_wakeup(5000000);
+                });
+            }
+            log_i("Temple closed, going to sleep for 5s");
+            esp_sleep_enable_timer_wakeup(5000000);
 
-        // Print status.
-        // ESP_RTC_LOGI("wake stub: going to deep sleep");
-        log_i("Back to sleep");
-        // Set stub entry, then going to deep sleep again.
-        // esp_set_deep_sleep_wake_stub(&wake_stub_example);
-        esp_deep_sleep_start();
+            log_i("Back to sleep");
+            esp_deep_sleep_start();
+        }
     }
 #endif
 #endif
@@ -273,7 +273,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #if !SIMULATOR
     inactivityTimer.start([]() {
         log_d("Inactive! Allow power off.");
-        // AllowPowerOff();
+        AllowPowerOff();
         // vTaskDelay(5000 / portTICK_PERIOD_MS);
         // esp_deep_sleep_start();
     });
@@ -296,7 +296,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 templesClosed = true;
                 // Will be turned off after content sync
                 prefs.lastBatteryReport.set((int)power.getBatteryPercentage());
-                //  AllowPowerOff();
+                AllowPowerOff();
             }
         });
         templeCloseSensor.setLongCloseCallback([]() {
@@ -324,31 +324,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                                 AllowPowerOff();
                             }
                             runningContentSync = false;
-                            // DisconnectWifi();
+                            DisconnectWifi();
                         }
                     });
-                    // Figure out when we should next wake up to sync again (if we're still closed)
-                    // Right now we'll just do 6am and 8pm each day
-                    uint8_t hours, minutes;
-                    GetClockTime(hours, minutes);
-                    uint32_t secondsToWait = 0;
-                    const int hourOneToSync = 12;
-                    const int hourTwoToSync = 20;
-                    if ((hours < hourOneToSync) || (hours >= hourTwoToSync)) {
-                        if (hours < hourOneToSync) {
-                            secondsToWait =
-                                (hourOneToSync - 1 - hours) * 3600 + (60 - minutes) * 60;
-                        } else {
-                            secondsToWait =
-                                (23 - hours) * 3600 + (60 - minutes) * 60 + hourOneToSync * 3600;
-                        }
-                    }
-                    if (hours >= hourOneToSync && hours < hourTwoToSync) {
-                        secondsToWait = (hourTwoToSync - 1 - hours) * 3600 + (60 - minutes) * 60;
-                    }
-                    log_i("Waiting %d hours and %d minutes for next content sync",
-                          secondsToWait / 3600, (secondsToWait % 3600) / 60);
-                    xTaskNotifyWait(0, 0, nullptr, secondsToWait * 1000 / portTICK_PERIOD_MS);
                 }
             });
 #endif
