@@ -108,9 +108,12 @@ auto SindarinAPI::downloadReadable(const Readable &readable, FileSystem &fileSys
                                    bool gzip) -> bool {
     bool success = false;
     // auto remoteUrl = readable.remoteUrl();
-    auto remoteUrl = readable.file().fileProxied;
+    auto file = readable.file();
+    auto remoteUrl = file.fileProxied;
     auto localPath = readable.localFilePath();
-    auto fileSize = readable.file().size;
+    auto fileSize = file.size;
+
+    gzip = gzip && file.filetype != "epub";
 
     success = DownloadFile(
         remoteUrl.c_str(), fileSystem, localPath.c_str(), fileSize,
