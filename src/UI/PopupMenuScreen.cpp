@@ -4,6 +4,7 @@
 #include <string>
 
 #include "Bitmaps/Popup_Menu_Blank.hpp"
+#include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
 
@@ -85,7 +86,8 @@ void PopupMenuScreen::render(DisplaySystem &display) {
 
     uint8_t hours;
     uint8_t minutes;
-    GetClockTime(hours, minutes);
+    SolClock theClock = SolClock::getInstance();
+    theClock.GetClockTime(hours, minutes);
     if (hours == 0) {
         hours = 12;
     }

@@ -3,6 +3,7 @@
 #include <Adafruit_GFX.h>
 #include <string>
 
+#include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
 
@@ -153,7 +154,8 @@ void MainMenuScreen::render(DisplaySystem &display) {
         // Now :)
         uint8_t hours;
         uint8_t minutes;
-        GetClockTime(hours, minutes);
+        SolClock theClock = SolClock::getInstance();
+        theClock.GetClockTime(hours, minutes);
         if (hours == 0) {
             hours = 12;
         }

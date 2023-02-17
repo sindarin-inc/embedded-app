@@ -14,6 +14,7 @@
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/MenuStyle.hpp"
 #include "Misc/Platform.hpp"
+#include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
 #include "Models/Readable.hpp"
@@ -825,7 +826,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 log_e("Couldn't connect to wifi, not setting clock");
             } else {
                 log_i("Setting time from internet");
-                SetClockTimeFromInternet();
+                SolClock theClock = SolClock::getInstance();
+                theClock.SetClockTimeFromInternet();
                 DisconnectWifi();
             }
             timeZoneMenu->backCallback();

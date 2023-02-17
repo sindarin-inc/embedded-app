@@ -17,6 +17,8 @@
 #include "Misc/InactivityTimer.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/Power.hpp"
+#include "Misc/PowerManager.hpp"
+#include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
 #include "Models/Readable.hpp"
@@ -92,6 +94,8 @@ LocalStore localStore(fileSystem, prefs);
 
 Power power(fileSystem, prefs);
 RootUI rootUi(prefs, power);
+SolClock solClock(prefs);
+PowerManager powerManager(prefs);
 
 bool templesClosed = false;
 
@@ -212,32 +216,30 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     int morningNews = prefs.morningNewspaperTime.get().value_or(0);
     int eveningNews = prefs.eveningNewspaperTime.get().value_or(0);
 
-    if ((1) /*(morningNews != 0) || (eveningNews != 0)*/) {
+    if ((morningNews != 0) || (eveningNews != 0)) {
         templeCloseSensor.checkTemple();
-        if (1 /*!templeCloseSensor.getOpened()*/) {
+        if (!templeCloseSensor.getOpened()) {
             uint8_t hours, minutes;
-            GetClockTime(hours, minutes);
+            solClock.GetClockTime(hours, minutes);
             if ((hours == morningNews || hours == eveningNews) && (minutes == 0)) {
-                /*
-                 digitalWrite(BLUE_LED, LED_ON);
-                 runningContentSync = true;
-                 localStore.syncFromRemote([](const ContentSyncState &state) {
-                     if (state.state == ContentSyncState::Failure ||
-                         state.state == ContentSyncState::Synced ||
-                         state.state == ContentSyncState::AlreadySynced) {
-                         if (state.state == ContentSyncState::Failure) {
-                             log_i("Content sync failed with error: %s", state.message.c_str());
-                         } else if (state.state == ContentSyncState::Synced) {
-                             log_i("Content sync successful");
-                         } else if (state.state == ContentSyncState::AlreadySynced) {
-                             log_i("Content sync already synced");
-                         }
-                         digitalWrite(BLUE_LED, LED_OFF);
-                         runningContentSync = false;
-                         DisconnectWifi();
-                     }
-                 });
-                 */
+                digitalWrite(BLUE_LED, LED_ON);
+                runningContentSync = true;
+                localStore.syncFromRemote([](const ContentSyncState &state) {
+                    if (state.state == ContentSyncState::Failure ||
+                        state.state == ContentSyncState::Synced ||
+                        state.state == ContentSyncState::AlreadySynced) {
+                        if (state.state == ContentSyncState::Failure) {
+                            log_i("Content sync failed with error: %s", state.message.c_str());
+                        } else if (state.state == ContentSyncState::Synced) {
+                            log_i("Content sync successful");
+                        } else if (state.state == ContentSyncState::AlreadySynced) {
+                            log_i("Content sync already synced");
+                        }
+                        digitalWrite(BLUE_LED, LED_OFF);
+                        runningContentSync = false;
+                        DisconnectWifi();
+                    }
+                });
             }
             log_i("Temple closed, going to sleep for 5s");
             esp_sleep_enable_timer_wakeup(5000000);
@@ -275,7 +277,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #if !SIMULATOR
     inactivityTimer.start([]() {
         log_d("Inactive! Allow power off.");
-        AllowPowerOff();
+        PowerManager::getInstance().PowerOff();
         // vTaskDelay(5000 / portTICK_PERIOD_MS);
         // esp_deep_sleep_start();
     });
@@ -298,7 +300,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 templesClosed = true;
                 // Will be turned off after content sync
                 prefs.lastBatteryReport.set((int)power.getBatteryPercentage());
-                // AllowPowerOff();
             }
         });
         templeCloseSensor.setLongCloseCallback([]() {
@@ -323,7 +324,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                             digitalWrite(BLUE_LED, LED_OFF);
                             // Only if the temples are still closed, allow power off
                             if (templesClosed) {
-                                AllowPowerOff();
+                                PowerManager::getInstance().PowerOff();
                             }
                             runningContentSync = false;
                             DisconnectWifi();

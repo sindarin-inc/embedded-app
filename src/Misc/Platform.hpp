@@ -35,8 +35,3 @@ void ForcePowerOn();
 
 void AllowPowerOff();
 
-void GetClockTime(uint8_t &hours, uint8_t &minutes);
-
-void SetClockTime(uint8_t hours, uint8_t minutes);
-
-void SetClockTimeFromInternet();

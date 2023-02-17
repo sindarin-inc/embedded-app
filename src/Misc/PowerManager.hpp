@@ -1,3 +1,19 @@
+#include "Storage/PreferencesStore.hpp"
+
+class PowerManager {
+public:
+    static auto getInstance() -> PowerManager &;
+
+    PowerManager(PreferencesStore &prefs) : prefs_(prefs) {}
+
+    void PowerOff();
+
+protected:
+    PreferencesStore &prefs_;
+};
+
+/*
+
 #if !SIMULATOR
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
@@ -81,3 +97,5 @@ private:
 };
 
 #endif
+
+*/

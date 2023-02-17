@@ -46,15 +46,4 @@ void ForcePowerOn() {}
 
 void AllowPowerOff() {}
 
-void GetClockTime(uint8_t &hours, uint8_t &minutes) {
-    time_t now = time(0);
-    tm *local = localtime(&now);
-    hours = local->tm_hour;
-    minutes = local->tm_min;
-}
-
-void SetClockTime(uint8_t hours, uint8_t minutes) {}
-
-void SetClockTimeFromInternet() {}
-
 #endif

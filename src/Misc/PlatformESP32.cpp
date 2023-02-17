@@ -6,20 +6,15 @@
 #include <esp_adc_cal.h>
 #include <esp_err.h>
 #include <esp_log.h>
-#include <esp_sntp.h>
 #include <soc/rtc.h>
 
 #include "Communications/WiFi.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Platform.hpp"
 #include "RTOS.h"
-#include "Storage/PreferencesStore.hpp"
 #include "Storage/include/EFusesCustomTable.h"
 #include "config.h"
-#include "rtc_wake_stub_example.h"
 #include "sindarin-debug.h"
-
-extern PreferencesStore prefs;
 
 #define BACKLIGHT_PWM_CHANNEL 0
 #define HARDWARE_REVSION_LATEST 2
@@ -27,10 +22,6 @@ extern PreferencesStore prefs;
 esp_adc_cal_characteristics_t adcCalCharacteristics;
 bool ledcFailed = false;
 uint8_t sysOnPin;
-
-uint8_t clockTimeHours;
-uint8_t clockTimeMinutes;
-uint32_t clockTimeLastUpdateMs;
 
 void InitializePlatform() {
     // Arduino breaks the UART with sleep. So we manually initialize the UART using IDF functions.
@@ -346,23 +337,6 @@ void ForcePowerOn() {
 }
 
 void AllowPowerOff() {
-    log_i("Starting power off sequence");
-    // If we have syncing to do for newspaper drop, deep sleep only (waking up regularly to check)
-    // Otherwise, just turn off the ESP32
-
-    log_i("Prefs for morning and evening are %d %d", prefs.morningNewspaperTime.get().value_or(0),
-          prefs.eveningNewspaperTime.get().value_or(0));
-
-    if ((1) /*(prefs.morningNewspaperTime.get().value_or(0) != 0) ||
-        (prefs.eveningNewspaperTime.get().value_or(0) != 0)*/) {
-        log_i("Setting wakeup timer for deep sleep to 5s");
-        esp_sleep_enable_timer_wakeup(5000000);
-        log_i("Going to sleep -- good night!");
-        esp_deep_sleep_start();
-        return;
-    }
-
-    log_i("Setting pin to high");
     // We haven't been particuarly scientific, but experimentally using INPUT_PULLDOWN seems to work
     // the best. I don't understand why. You'd think either an open drain or driving to 0 would be
     // more effective at turning off the mostfet.
@@ -373,88 +347,6 @@ void AllowPowerOff() {
 
     // pinMode(sysOnPin, OUTPUT);
     // digitalWrite(sysOnPin, LOW);
-}
-
-void GetClockTime(uint8_t &hours, uint8_t &minutes) {
-    time_t now;
-    struct tm timeinfo;
-    std::string timeZoneString;
-    switch (prefs.solTimeZone.get().value_or(0)) {
-    case -8:
-        timeZoneString = "PST8PDT";
-        break;
-    case -7:
-        timeZoneString = "MST7MDT";
-        break;
-    case -6:
-        timeZoneString = "CST6CDT";
-        break;
-    case -5:
-        timeZoneString = "EST5EDT";
-        break;
-    case 0:
-    default:
-        timeZoneString = "UTC";
-        break;
-    }
-    time(&now);
-
-    setenv("TZ", timeZoneString.c_str(), 1);
-    tzset();
-
-    localtime_r(&now, &timeinfo);
-
-    hours = timeinfo.tm_hour;
-    minutes = timeinfo.tm_min;
-}
-
-void SetClockTime(uint8_t hours, uint8_t minutes) {
-    clockTimeHours = hours;
-    clockTimeMinutes = minutes;
-    clockTimeLastUpdateMs = millis();
-}
-
-void SetClockTimeFromInternet() {
-    if (!ConnectWifi()) {
-        log_i("Failed to connect wifi");
-        clockTimeHours = 12;
-        clockTimeMinutes = 21;
-        return;
-    }
-    // Configure the SNTP client
-    sntp_setoperatingmode(SNTP_OPMODE_POLL);
-    sntp_setservername(0, "time.google.com");
-    sntp_init();
-
-    // Wait for the SNTP client to get the time
-    time_t now = 0;
-    struct tm timeinfo {};
-    while (timeinfo.tm_year < (2021 - 1900)) {
-        log_i("Waiting for system time to be set...");
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        time(&now);
-        localtime_r(&now, &timeinfo);
-    }
-
-    // Make the clock a little fast to account for the time it takes to get the time
-    clockTimeMinutes = (timeinfo.tm_min + 1) % 60;
-    clockTimeHours = timeinfo.tm_hour;
-
-    // If our addition to the minute rolls over the hour, update the hour
-    if (clockTimeMinutes == 0) {
-        clockTimeHours = (clockTimeHours + 1) % 24;
-    }
-
-    // Adjust to PT from UTC
-    clockTimeHours += 16;
-    clockTimeLastUpdateMs = millis();
-
-    // Print the time as a string
-    char strftime_buf[64];
-    strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
-    log_i("The current date/time is: %s", strftime_buf);
-
-    DisconnectWifi();
 }
 
 #endif
