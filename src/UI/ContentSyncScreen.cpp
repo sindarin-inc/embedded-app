@@ -109,7 +109,8 @@ void ContentSyncScreen::render(DisplaySystem &display) {
     }
     }
     // Full partial for state change otherwise AU4
-    if ((lastState_.state != state_.state) || (state_.state == ContentSyncState::AlreadySynced)) {
+    if ((lastState_.state != state_.state) || (state_.state == ContentSyncState::AlreadySynced) ||
+        (lastState_.tasks.size() != state_.tasks.size())) {
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     } else {
         display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);

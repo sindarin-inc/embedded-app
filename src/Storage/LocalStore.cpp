@@ -527,37 +527,19 @@ void LocalStore::syncFromRemote(
                                 (readablesBookmarked.size() > 0 ? 1 : 0));
         auto tasksIndex = 0;
 
-        // Sync bookmarks before we download any new readables
+        if (readablesBookmarked.size() == 0 && readablesToDownload.size() == 0 &&
+            readablesToDelete.size() == 0 && articlesToDelete.size() == 0 &&
+            articlesToSave.size() == 0) {
+            log_i("No new content to download");
+            progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
+            return;
+        }
+
         if (readablesBookmarked.size() > 0) {
-            log_i("Syncing bookmarks");
             syncState.tasks.push_back(ContentSyncState::Task{
                 .message = "Storing bookmarks",
                 .percentage = 0,
             });
-
-            progressCallback(syncState);
-            auto success = SindarinAPI::getInstance()->syncBookmarks(readablesBookmarked);
-            if (success) {
-                log_i("Bookmarks synced");
-                this->resetReadablesBookmarksChanged(readables_);
-                this->resetReadablesBookmarksChanged(articles_);
-            } else {
-                log_e("Failed to sync bookmarks");
-                progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
-                                                  .message = "Failed to sync bookmarks"});
-                delay(1000);
-            }
-
-            syncState.tasks[tasksIndex].percentage = 100;
-            tasksIndex += 1;
-            progressCallback(syncState);
-        }
-
-        if (readablesToDownload.size() == 0 && readablesToDelete.size() == 0 &&
-            articlesToDelete.size() == 0 && articlesToSave.size() == 0) {
-            log_i("No new content to download");
-            progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
-            return;
         }
 
         // Clear the readablesSince cache since it will be set at the end of a successful run.
@@ -595,6 +577,26 @@ void LocalStore::syncFromRemote(
         }
 
         progressCallback(syncState);
+
+        // Sync bookmarks before we download any new readables
+        if (readablesBookmarked.size() > 0) {
+            log_i("Syncing bookmarks");
+            auto success = SindarinAPI::getInstance()->syncBookmarks(readablesBookmarked);
+            if (success) {
+                log_i("Bookmarks synced");
+                this->resetReadablesBookmarksChanged(readables_);
+                this->resetReadablesBookmarksChanged(articles_);
+            } else {
+                log_e("Failed to sync bookmarks");
+                progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                                  .message = "Failed to sync bookmarks"});
+                delay(1000);
+            }
+
+            syncState.tasks[tasksIndex].percentage = 100;
+            tasksIndex += 1;
+            progressCallback(syncState);
+        }
 
         for (auto &readable : readablesToDelete) {
             log_i("Deleting %s", readable.title.c_str());
