@@ -6,7 +6,7 @@ public:
 
     PowerManager(PreferencesStore &prefs) : prefs_(prefs) {}
 
-    void PowerOff();
+    void powerOff();
 
 protected:
     PreferencesStore &prefs_;

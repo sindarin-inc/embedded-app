@@ -9,9 +9,9 @@ public:
 
     SolClock(PreferencesStore &prefs) : prefs_(prefs) {}
 
-    void GetClockTime(uint8_t &hours, uint8_t &minutes);
+    void getClockTime(uint8_t &hours, uint8_t &minutes);
 
-    void SetClockTimeFromInternet();
+    void setClockTimeFromInternet();
 
 protected:
     PreferencesStore &prefs_;

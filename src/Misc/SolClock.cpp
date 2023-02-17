@@ -11,7 +11,7 @@ extern SolClock solClock;
 
 auto SolClock::getInstance() -> SolClock & { return solClock; }
 
-void SolClock::GetClockTime(uint8_t &hours, uint8_t &minutes) {
+void SolClock::getClockTime(uint8_t &hours, uint8_t &minutes) {
 #if SIMULATOR
     time_t now = time(0);
     tm *local = localtime(&now);
@@ -51,7 +51,7 @@ void SolClock::GetClockTime(uint8_t &hours, uint8_t &minutes) {
 #endif
 }
 
-void SolClock::SetClockTimeFromInternet() {
+void SolClock::setClockTimeFromInternet() {
 #if !SIMULATOR
     if (!ConnectWifi()) {
         log_i("Failed to connect wifi");
@@ -73,9 +73,9 @@ void SolClock::SetClockTimeFromInternet() {
     }
 
     // Print the time as a string
-    char strftime_buf[64];
-    strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
-    log_i("The current date/time is: %s", strftime_buf);
+    char strftimeBuf[64];
+    strftime(strftimeBuf, sizeof(strftimeBuf), "%c", &timeinfo);
+    log_i("The current date/time is: %s", strftimeBuf);
 
     DisconnectWifi();
 #endif

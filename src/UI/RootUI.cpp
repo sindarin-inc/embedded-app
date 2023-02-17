@@ -827,7 +827,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             } else {
                 log_i("Setting time from internet");
                 SolClock theClock = SolClock::getInstance();
-                theClock.SetClockTimeFromInternet();
+                theClock.setClockTimeFromInternet();
                 DisconnectWifi();
             }
             timeZoneMenu->backCallback();
