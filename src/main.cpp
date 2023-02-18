@@ -238,7 +238,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         templeCloseSensor.checkTemple();
         if (!templeCloseSensor.getOpened() || prefs.inactivityTimer.get().value_or(false)) {
             uint8_t hours, minutes;
-            solClock.GetClockTime(hours, minutes);
+            solClock.getClockTime(hours, minutes);
             log_i("Temple is closed or glasses inactive, current time: %d:%d", hours, minutes);
             if (((hours && (hours == morningNews)) || (hours && (hours == eveningNews))) &&
                 (minutes == 0)) {
@@ -304,7 +304,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     inactivityTimer.start([]() {
         log_d("Inactive! Allow power off.");
         prefs.inactivityTimer.set(true);
-        PowerManager::getInstance().PowerOff();
+        PowerManager::getInstance().powerOff();
     });
 #endif
 
@@ -349,7 +349,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                             digitalWrite(BLUE_LED, LED_OFF);
                             // Only if the temples are still closed, allow power off
                             if (templesClosed) {
-                                PowerManager::getInstance().PowerOff();
+                                PowerManager::getInstance().powerOff();
                             }
                             runningContentSync = false;
                             DisconnectWifi();

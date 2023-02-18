@@ -11,7 +11,7 @@ extern PowerManager powerManager;
 
 auto PowerManager::getInstance() -> PowerManager & { return powerManager; }
 
-void PowerManager::PowerOff() {
+void PowerManager::powerOff() {
     log_i("Starting power off sequence");
     // If we have syncing to do for newspaper drop, deep sleep only (waking up regularly to check)
     // Otherwise, just turn off the ESP32

@@ -87,7 +87,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     uint8_t hours;
     uint8_t minutes;
     SolClock theClock = SolClock::getInstance();
-    theClock.GetClockTime(hours, minutes);
+    theClock.getClockTime(hours, minutes);
     if (hours == 0) {
         hours = 12;
     }
