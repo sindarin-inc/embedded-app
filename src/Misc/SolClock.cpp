@@ -9,14 +9,23 @@
 
 extern SolClock solClock;
 
+bool useSimulatorTestTime = false;
+int simulatorTestHours = 0;
+int simulatorTestMinutes = 0;
+
 auto SolClock::getInstance() -> SolClock & { return solClock; }
 
 void SolClock::GetClockTime(uint8_t &hours, uint8_t &minutes) {
 #if SIMULATOR
-    time_t now = time(0);
-    tm *local = localtime(&now);
-    hours = local->tm_hour;
-    minutes = local->tm_min;
+    if (!useSimulatorTestTime) {
+        time_t now = time(0);
+        tm *local = localtime(&now);
+        hours = local->tm_hour;
+        minutes = local->tm_min;
+    } else {
+        hours = simulatorTestHours;
+        minutes = simulatorTestMinutes;
+    }
 #else
     time_t now;
     struct tm timeinfo;

@@ -23,6 +23,10 @@
 #include <stb_image.h>
 #pragma clang diagnostic pop
 
+extern bool useSimulatorTestTime;
+extern int simulatorTestHours;
+extern int simulatorTestMinutes;
+
 extern PreferencesStore prefs;
 extern void UIInnerLoop(RemoteCommand command);
 extern "C" void app_main(void); // NOLINT(readability-identifier-naming)
@@ -35,6 +39,9 @@ std::string testRunPrefix = "Images/TestRun/";
 std::string acceptedPathPrefix = "Images/Accepted/";
 
 void appMainTask(void *parameters) {
+    useSimulatorTestTime = true;
+    simulatorTestHours = 12;
+    simulatorTestMinutes = 21;
     app_main();
     vTaskDelete(NULL);
 }
