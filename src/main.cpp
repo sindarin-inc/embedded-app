@@ -260,7 +260,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                         DisconnectWifi();
                         log_i("going to sleep for 5s after content sync");
                         esp_sleep_enable_timer_wakeup(5000000);
-
+                        ForcePowerOn();
                         log_i("Back to sleep after content sync");
                         esp_deep_sleep_start();
                     }
@@ -268,7 +268,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             } else {
                 log_i("Temple closed, going to sleep for 5s");
                 esp_sleep_enable_timer_wakeup(5000000);
-
+                ForcePowerOn();
                 log_i("Back to sleep");
                 esp_deep_sleep_start();
             }

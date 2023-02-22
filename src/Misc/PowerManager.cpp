@@ -24,6 +24,9 @@ void PowerManager::powerOff() {
         log_i("Setting wakeup timer for deep sleep to 5s");
         esp_sleep_enable_timer_wakeup(5000000);
         log_i("Going to sleep -- good night!");
+        // If we don't tell the system to keep the power on, it'll turn off the ESP32 entirely
+        // when the temple is closed. This is a problem because we need to be able to wake up.
+        ForcePowerOn();
         esp_deep_sleep_start();
         return;
     }
