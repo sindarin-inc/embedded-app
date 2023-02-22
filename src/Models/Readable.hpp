@@ -60,7 +60,7 @@ public:
     }
     [[nodiscard]] auto remoteUrl() const -> std::string { return file().fileProxied; }
     [[nodiscard]] auto isArticle() const -> bool {
-        return readableType.compare("pocket_article") == 0;
+        return readableType.compare("pocket_article") == 0 || files.size() == 0;
     }
 
     auto fromJson(const JsonObject &j) -> bool override {

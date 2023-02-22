@@ -294,9 +294,9 @@ auto LocalStore::changedReadablesBookmarksJson() -> std::pair<char *, int> {
 
     size_t serializedMaxSize = (*doc).memoryUsage() * 2;
     char *bookmarksJson = (char *)heap_caps_malloc(serializedMaxSize, MALLOC_CAP_SPIRAM);
-    serializeJson(*doc, bookmarksJson, serializedMaxSize);
+    size_t serializedLength = serializeJson(*doc, bookmarksJson, serializedMaxSize);
 
-    return std::make_pair(bookmarksJson, serializedMaxSize);
+    return std::make_pair(bookmarksJson, serializedLength);
 }
 
 auto LocalStore::processReadablePlacemarksFromServer(const Readable &readable,
@@ -410,6 +410,7 @@ void LocalStore::syncFromRemote(
         auto readablesArchived = this->changedReadablesArchivedQueryParams(readables_);
         auto articlesArchived = this->changedReadablesArchivedQueryParams(articles_);
         auto [readablesBookmarked, readablesBookmarkedSize] = this->changedReadablesBookmarksJson();
+        log_i("Bookmarked readables (%d bytes)", readablesBookmarkedSize);
         CheckSyncResponse checkSyncResponse;
         CheckSyncRequest request =
             CheckSyncRequest{.readablesSince = readablesSince,
