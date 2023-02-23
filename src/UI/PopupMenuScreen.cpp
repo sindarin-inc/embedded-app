@@ -92,6 +92,13 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     std::string theTime = StringFormat("%d:%02d", hours, minutes);
     clockView_.setText(theTime.c_str());
 
+    if (hours == 0) {
+        hours = 12;
+    }
+    if (hours > 12) {
+        hours -= 12;
+    }
+
     size_t place = renderer_.getCurrentPlace();
     size_t lengthOfFile = renderer_.size();
 
