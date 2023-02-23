@@ -287,7 +287,7 @@ public:
     PrefsItem<int> morningNewspaperTime;
     PrefsItem<int> eveningNewspaperTime;
     PrefsItem<int> solTimeZone;
-    PrefsItem<int> sleepReason;
+    PrefsItem<SLEEP_REASON> sleepReason;
 
 protected:
     bool started_;

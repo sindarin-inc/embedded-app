@@ -228,7 +228,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         log_i("Inactivity timer caused this reboot, checking if temple is closed");
         templeCloseSensor.checkTemple();
         if (!templeCloseSensor.getOpened()) {
-            log_i("Inactivity timer being reset because the temple is closed");
+            log_i("Changing sleep reason because the temple is now closed");
             prefs.sleepReason.set(SLEEP_REASON_TEMPLES_CLOSED);
         }
     }
