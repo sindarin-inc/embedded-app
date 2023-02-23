@@ -27,13 +27,22 @@ public:
     virtual operator bool() = 0;
 };
 
-class SFile {
+class SStream {
 public:
+    SStream() {}
+    ~SStream() {}
+
+    virtual int available() = 0; 
+};
+
+class SFile : public SStream {
+public:
+    SFile() : _p(nullptr) {}
     SFile(std::shared_ptr<SFileImpl> p) : _p(p) {}
 
     size_t write(uint8_t c);
     size_t write(const uint8_t *buf, size_t size);
-    int available();
+    int available() override;
     int read();
     int peek();
     void flush();
@@ -45,7 +54,7 @@ public:
     size_t position() const;
     size_t size() const;
     void close();
-    operator bool() const;
+    operator bool();
     //time_t getLastWrite();
     const char *name() const;
     const char *path() const;

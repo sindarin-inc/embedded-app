@@ -5,6 +5,7 @@
 
 #include "Models/Readable.hpp"
 #include "Renderers/RendererStream.hpp"
+#include "Misc/SFile.hpp"
 
 typedef std::vector<std::string> FileList;
 
@@ -22,10 +23,16 @@ public:
     virtual auto begin() -> bool { return true; };
 
     virtual auto open(const std::string &path, const char *mode = FILE_READ,
-                      const bool create = false) const -> File {
+                      const bool create = false) const -> SFile {
         log_e("Abstract");
         assert(0);
-        return {};
+        return SFile();
+    };
+    virtual auto sopen(const std::string &path, const char *mode = FILE_READ,
+                      const bool create = false) const -> SFile {
+        log_e("Abstract");
+        assert(0);
+        return SFile();
     };
     [[nodiscard]] virtual auto exists(const std::string &path) const -> bool {
         log_e("Abstract");
