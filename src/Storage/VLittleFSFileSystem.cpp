@@ -35,7 +35,9 @@ auto VLittleFSFileSystem::sopen(const std::string &path, const char *mode, const
     //return LittleFS.open(path.c_str(), mode, create);
     //return new SFile(path.c_str());
 
-    std::shared_ptr<VFSFile> f = std::make_shared<VFSFile>(path.c_str());
+    //std::shared_ptr<VFSFile> f = std::make_shared<VFSFile>(path.c_str());
+    std::shared_ptr<SFileImpl> f(new VFSFile(path.c_str()));
+    //SFile file(std::dynamic_pointer_cast<SFileImpl, VFSFile>(f));
     SFile file(f);
 
     return file;
