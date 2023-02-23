@@ -657,7 +657,17 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
                 currToken++;
             }
         }
-        nextToken = getLineOfTextForRendering(currToken, singleLine);
+
+        // If the last page is all new lines, we need to not crash.
+        // Put a single space witn newline in the buffer so something renders, and continue.
+        if (currTokenBuffer_[currToken].token == TOKEN_EOF) {
+            singleLine[0] = ' ';
+            singleLine[1] = '\n';
+            singleLine[2] = '\0';
+            nextToken = currToken;
+        } else {
+            nextToken = getLineOfTextForRendering(currToken, singleLine);
+        }
 
         std::copy_n(singleLine.data(), strlen(singleLine.data()), &buffer[plcInBuffer]);
 
