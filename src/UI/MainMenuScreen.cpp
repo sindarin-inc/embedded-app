@@ -151,14 +151,8 @@ void MainMenuScreen::render(DisplaySystem &display) {
         uint8_t minutes;
         SolClock theClock = SolClock::getInstance();
         theClock.getClockTime(hours, minutes);
-        if (hours == 0) {
-            hours = 12;
-        }
-        if (hours > 12) {
-            hours -= 12;
-        }
-        std::string theTime = StringFormat("%d:%02d", hours, minutes);
 
+        std::string theTime = StringFormat("%d:%02d", hours, minutes);
         clockView_.setText(theTime.c_str());
 
         log_i("Menuscreen render (selected = %s)",

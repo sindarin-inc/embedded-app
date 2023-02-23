@@ -36,7 +36,7 @@ void PopupMenuScreen::drawBattery(DisplaySystem &display, int x, int y, int perc
 }
 
 auto PopupMenuScreen::layout(LayoutContext &context, Size size) -> Size {
-    context.setViewFrame(*clockView_, {{0, 0}, size},
+    context.setViewFrame(clockView_, {{0, 0}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignLeft |
                              LayoutOptionsAlignBottom);
 
@@ -65,7 +65,7 @@ void PopupMenuScreen::drawInRect(Rect rect) {
     batteryIconView_.draw();
     batteryTextView_.draw();
     placeInReadableView_.draw();
-    clockView_->draw();
+    clockView_.draw();
 }
 
 void PopupMenuScreen::render(DisplaySystem &display) {
@@ -88,14 +88,9 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     uint8_t minutes;
     SolClock theClock = SolClock::getInstance();
     theClock.getClockTime(hours, minutes);
-    if (hours == 0) {
-        hours = 12;
-    }
-    if (hours > 12) {
-        hours -= 12;
-    }
+
     std::string theTime = StringFormat("%d:%02d", hours, minutes);
-    clockView_ = std::make_shared<SingleLineTextView>(display, theTime.c_str());
+    clockView_.setText(theTime.c_str());
 
     size_t place = renderer_.getCurrentPlace();
     size_t lengthOfFile = renderer_.size();

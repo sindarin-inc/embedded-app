@@ -58,6 +58,12 @@ void SolClock::getClockTime(uint8_t &hours, uint8_t &minutes) {
     hours = timeinfo.tm_hour;
     minutes = timeinfo.tm_min;
 #endif
+    if (hours == 0) {
+        hours = 12;
+    }
+    if (hours > 12) {
+        hours -= 12;
+    }
 }
 
 void SolClock::setClockTimeFromInternet() {
