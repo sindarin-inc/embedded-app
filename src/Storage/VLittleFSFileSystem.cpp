@@ -1,7 +1,20 @@
 #include "VLittleFSFileSystem.hpp"
+
+#if SIMULATOR
+#include <stdio.h>
+#include <sys/stat.h>
+#else
 #include <esp_littlefs.h>
 #include <esp_vfs.h>
+#endif
 #include "sindarin-debug.h"
+
+char VFileSystemPrefix[64] = "./data";
+
+void sCreatePath(char *output, size_t outputSize, const std::string &path) {
+    strncpy(output, VFileSystemPrefix, outputSize);
+    strncat(output, path.c_str(), outputSize - 1);
+}
 
 auto VLittleFSFileSystem::begin() -> bool {
     /*
@@ -20,10 +33,12 @@ auto VLittleFSFileSystem::begin() -> bool {
     */
 
    // register littlefs filesystem
+#if !SIMULATOR
     esp_vfs_littlefs_conf_t config = {
         .base_path = "/littlefs", .partition_label = "data", .format_if_mount_failed = true
     };
     esp_err_t err = esp_vfs_littlefs_register(&config);
+#endif
     return true;
 }
 
@@ -39,7 +54,6 @@ auto VLittleFSFileSystem::sopen(const std::string &path, const char *mode, const
     std::shared_ptr<SFileImpl> f(new VFSFile(path.c_str()));
     //SFile file(std::dynamic_pointer_cast<SFileImpl, VFSFile>(f));
     SFile file(f);
-
     return file;
 }
 
@@ -47,7 +61,10 @@ auto VLittleFSFileSystem::exists(const std::string &path) const -> bool {
     //return LittleFS.exists(path.c_str());
 
     // TODO: check for existence
-    return true;
+    char prefixedPath[200];
+    sCreatePath(prefixedPath, sizeof(prefixedPath), path);
+    struct stat buffer;
+    return (stat(prefixedPath, &buffer) == 0);
 }
 
 auto VLittleFSFileSystem::listDir(const std::string &path, FileList &files, int limit) const -> int {
@@ -89,5 +106,8 @@ auto VLittleFSFileSystem::remove(const std::string &path) -> bool {
 }
 
 void VLittleFSFileSystem::close() {
+#if !SIMULATOR
     esp_vfs_littlefs_unregister("data");
+#endif
+
 }
