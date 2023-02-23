@@ -22,3 +22,6 @@
 [submodule "components/unzipLIB"]
 	path = components/unzipLIB
 	url = git@github.com:sindarin-inc/unzipLIB.git
+[submodule "lib/expat/libexpat"]
+	path = lib/Simulator/stubs/expat/libexpat
+	url = git@github.com:libexpat/libexpat.git

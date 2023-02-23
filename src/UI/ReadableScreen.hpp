@@ -2,6 +2,7 @@
 
 #include "Misc/Power.hpp"
 #include "Models/Readable.hpp"
+#include "Models/ReadableBookmark.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "Sensors/LightingController.hpp"
 #include "Storage/PreferencesStore.hpp"
@@ -10,14 +11,6 @@
 #include "UI/PopupMenuScreen.hpp"
 #include "UI/Screen.hpp"
 #include "config.h"
-
-enum BookmarkStatus { BOOKMARK_OFF = 0, BOOKMARK_ON = 1 };
-
-struct Bookmark {
-    uint32_t firstPlace;
-    uint32_t lastPlace;
-    BookmarkStatus status;
-};
 
 class ReadableScreen : public ContainerScreen {
 public:
@@ -63,7 +56,6 @@ public:
     void processCommand(RemoteCommand command) override;
     void writeOutBookmarkUpdate();
     void updateBookmarkStatus();
-    auto readOneBookmark(File &file, Bookmark &bookmark) -> bool;
 
     void renderIcons(DisplaySystem &display);
 

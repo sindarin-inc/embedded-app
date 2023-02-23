@@ -17,6 +17,13 @@ public:
     void listFiles();
     void extractAllToDirectory(const char *dirname);
 
+    // APIs for interacting with individual files
+    auto openFile(const char *pathInZip) -> int32_t;
+    auto readFromFile(uint8_t *buf, size_t size) -> int;
+    auto getFileInfo(unz_file_info *fi, char *szName, size_t nameBufSize, char *szComment,
+                     size_t commentBufSize) -> int;
+    auto closeFile() -> int32_t;
+
     // static callbacks for unzipLIB library
     static auto zipOpen(const char *filename, int32_t *size) -> void *;
     static void zipClose(void *p);

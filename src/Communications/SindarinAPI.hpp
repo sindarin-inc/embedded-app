@@ -7,6 +7,7 @@
 #include "Models/CheckSyncResponse.hpp"
 #include "Models/Firmware.hpp"
 #include "Models/Json.hpp"
+#include "Models/SyncBookmarksResponse.hpp"
 #include "Models/UserReadable.hpp"
 #include "Storage/FileSystem.hpp"
 
@@ -17,6 +18,8 @@ struct CheckSyncRequest {
     std::vector<std::string> articlePlacemarks;
     std::vector<std::string> readablesArchived;
     std::vector<std::string> articlesArchived;
+    std::vector<std::string> readablesBookmarked;
+    std::vector<std::string> articlesBookmarked;
     int ptBattery;
     std::string ptBuild;
     bool skipContent;
@@ -29,7 +32,7 @@ public:
     void setAccessToken(const std::string &accessToken);
 
     auto checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp) -> int;
-
+    auto syncBookmarks(const char *bookmarksJson, const int bookmarksSize) -> int;
     auto downloadReadable(const Readable &readable, FileSystem &fileSystem,
                           const std::function<void(int percentage)> &progressCallback, bool gzip)
         -> bool;
@@ -38,9 +41,9 @@ public:
 
     auto uploadCrashReport(File &crashFile, const String &contentType) -> int;
 
+    void setAuth(HttpClient &client);
+
 protected:
     static std::shared_ptr<SindarinAPI> instance;
     std::string accessToken_;
-
-    void setAuth(HttpClient &client);
 };

@@ -1,6 +1,7 @@
 #include "LocalStore.hpp"
 
 #include <esp_system.h>
+#include <unordered_map>
 
 #include "Communications/HtmlCleaner.hpp"
 #include "Communications/SindarinAPI.hpp"
@@ -9,6 +10,7 @@
 #include "Misc/GUnzipStream.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
+#include "Models/ReadableBookmark.hpp"
 #include "sindarin-debug.h"
 
 #define READABLES_PATH "/readables.json"
@@ -64,6 +66,7 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
 
     for (JsonVariant v : readablesJson) {
         Readable readable;
+
         if (!readable.fromJson(v.as<JsonObject>())) {
             log_e("Failed to parse Readable");
             continue;
@@ -215,6 +218,87 @@ auto LocalStore::changedReadablesArchivedQueryParams(const ReadablesVector &read
     return archived;
 }
 
+auto LocalStore::changedReadablesBookmarksJson() -> std::pair<char *, int> {
+    auto doc = std::make_unique<SpiRamJsonDocument>(
+        2048 * std::max(1, (int)readables_.size() + (int)articles_.size()));
+    JsonArray bookmarksJsonArray = doc->to<JsonArray>();
+    int changedCount = 0;
+
+    for (auto &readables : {readables_, articles_}) {
+        for (auto &readable : readables) {
+            if (readable.localOnly) {
+                continue;
+            }
+
+            bool changed = prefs_.readableBookmarksChanged.get(readable.shortenedUuid.c_str());
+            if (changed) {
+                auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
+                log_i("Bookmarks changed on %s %s %s", ToString(modelType).c_str(),
+                      readable.title.c_str(), readable.uuid.c_str());
+                std::string bookmarkPath =
+                    StringFormat("/bookmarks/%s-bookmark.txt", readable.uuid.c_str());
+                File bookmarkFile = fileSystem.open(bookmarkPath.c_str(), FILE_READ, false);
+                if (!bookmarkFile) {
+                    log_i("Failed to open bookmark file: %s", bookmarkPath.c_str());
+                    continue;
+                }
+                changedCount += 1;
+
+                // Store bookmarks in a hash table
+                std::unordered_map<uint32_t, uint32_t> bookmarks;
+                std::unordered_map<uint32_t, uint32_t> bookmarksToDelete;
+                LocalBookmark bookmark;
+                while (ReadOneBookmark(bookmarkFile, bookmark)) {
+                    log_d("Bookmark: %d %d %d", bookmark.firstPlace, bookmark.lastPlace,
+                          bookmark.status);
+
+                    if (bookmark.status == BOOKMARK_ON &&
+                        bookmark.firstPlace < bookmark.lastPlace) {
+                        bookmarks[bookmark.firstPlace] = bookmark.lastPlace;
+                        bookmarksToDelete.erase(bookmark.firstPlace);
+                    } else if (bookmark.status == BOOKMARK_OFF) {
+                        bookmarks.erase(bookmark.firstPlace);
+                        bookmarksToDelete[bookmark.firstPlace] = bookmark.lastPlace;
+                    }
+                }
+                bookmarkFile.close();
+
+                // Add bookmarks to the JSON array
+                for (const auto &[starting_position, ending_position] : bookmarks) {
+                    JsonObject bookmark = bookmarksJsonArray.createNestedObject();
+                    bookmark["starting_position"] = starting_position;
+                    bookmark["ending_position"] = ending_position;
+                    bookmark["readable"] = readable.uuid;
+                }
+
+                // Add bookmarks to delete to the JSON array
+                for (const auto &[starting_position, ending_position] : bookmarksToDelete) {
+                    JsonObject bookmark = bookmarksJsonArray.createNestedObject();
+                    bookmark["starting_position"] = starting_position;
+                    bookmark["ending_position"] = ending_position;
+                    bookmark["status"] = 0;
+                    bookmark["readable"] = readable.uuid;
+                }
+
+                if (doc->overflowed()) {
+                    log_e("Out of space in SpiRamJsonDocument for %s", bookmarkPath.c_str());
+                    return std::make_pair(nullptr, 0);
+                }
+            }
+        }
+    }
+
+    if (!changedCount) {
+        return std::make_pair(nullptr, 0);
+    }
+
+    size_t serializedMaxSize = (*doc).memoryUsage() * 2;
+    char *bookmarksJson = (char *)heap_caps_malloc(serializedMaxSize, MALLOC_CAP_SPIRAM);
+    size_t serializedLength = serializeJson(*doc, bookmarksJson, serializedMaxSize);
+
+    return std::make_pair(bookmarksJson, serializedLength);
+}
+
 auto LocalStore::processReadablePlacemarksFromServer(const Readable &readable,
                                                      const uint32_t placemark) -> bool {
     uint32_t onDevicePlace = prefs_.readablePlace.get(readable.shortenedUuid.c_str());
@@ -259,6 +343,17 @@ void LocalStore::resetReadablesArchivedChanged(const ReadablesVector &readables)
             log_d("Resetting article archive changed for \"%s\" (now synced to server)",
                   readable.title.c_str());
             prefs_.readableArchivedChanged.remove(readable.shortenedUuid.c_str());
+        }
+    }
+}
+
+void LocalStore::resetReadablesBookmarksChanged(const ReadablesVector &readables) {
+    for (auto &readable : readables) {
+        bool changed = prefs_.readableBookmarksChanged.get(readable.shortenedUuid.c_str());
+        if (!readable.localOnly && changed) {
+            log_d("Resetting bookmarks changed for \"%s\" (now synced to server)",
+                  readable.title.c_str());
+            prefs_.readableBookmarksChanged.remove(readable.shortenedUuid.c_str());
         }
     }
 }
@@ -314,17 +409,19 @@ void LocalStore::syncFromRemote(
         auto articlePlacemarks = this->changedReadablePlacemarkQueryParams(articles_);
         auto readablesArchived = this->changedReadablesArchivedQueryParams(readables_);
         auto articlesArchived = this->changedReadablesArchivedQueryParams(articles_);
+        auto [readablesBookmarked, readablesBookmarkedSize] = this->changedReadablesBookmarksJson();
+        log_i("Bookmarked readables (%d bytes)", readablesBookmarkedSize);
         CheckSyncResponse checkSyncResponse;
-        CheckSyncRequest request = CheckSyncRequest{
-            .readablesSince = readablesSince,
-            .articlesSince = articlesSince,
-            .readablePlacemarks = readablePlacemarks,
-            .articlePlacemarks = articlePlacemarks,
-            .readablesArchived = readablesArchived,
-            .articlesArchived = articlesArchived,
-            .ptBattery = this->prefs_.lastPageTurnerBattery.get().value_or(0),
-            .ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or(""),
-        };
+        CheckSyncRequest request =
+            CheckSyncRequest{.readablesSince = readablesSince,
+                             .articlesSince = articlesSince,
+                             .readablePlacemarks = readablePlacemarks,
+                             .articlePlacemarks = articlePlacemarks,
+                             .readablesArchived = readablesArchived,
+                             .articlesArchived = articlesArchived,
+                             .ptBattery = this->prefs_.lastPageTurnerBattery.get().value_or(0),
+                             .ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or(""),
+                             .skipContent = true};
 
         SHOW_HEAP();
         auto httpCode = SindarinAPI::getInstance()->checkSync(request, &checkSyncResponse);
@@ -420,7 +517,6 @@ void LocalStore::syncFromRemote(
                       userReadable.readable.uuid.c_str());
                 continue;
             }
-
             articlesToSave.push_back(userReadable.readable);
         }
         this->resetReadablesPlacemarkChanged(articles_);
@@ -432,11 +528,26 @@ void LocalStore::syncFromRemote(
         log_d("Readables to delete: %zu", readablesToDelete.size());
         log_d("Articles to delete: %zu", articlesToDelete.size());
 
-        if (readablesToDownload.size() == 0 && readablesToDelete.size() == 0 &&
-            articlesToDelete.size() == 0 && articlesToSave.size() == 0) {
+        // syncState is used to track the progress of the sync
+        ContentSyncState syncState = {.state = ContentSyncState::State::Syncing};
+        syncState.tasks.reserve(readablesToDownload.size() + readablesToDelete.size() +
+                                articlesToDelete.size() + articlesToSave.size() +
+                                (readablesBookmarkedSize > 0 ? 1 : 0));
+        auto tasksIndex = 0;
+
+        if (readablesBookmarkedSize == 0 && readablesToDownload.size() == 0 &&
+            readablesToDelete.size() == 0 && articlesToDelete.size() == 0 &&
+            articlesToSave.size() == 0) {
             log_i("No new content to download");
             progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
             return;
+        }
+
+        if (readablesBookmarkedSize > 0) {
+            syncState.tasks.push_back(ContentSyncState::Task{
+                .message = "Storing bookmarks",
+                .percentage = 0,
+            });
         }
 
         // Clear the readablesSince cache since it will be set at the end of a successful run.
@@ -446,9 +557,6 @@ void LocalStore::syncFromRemote(
                   "successful run");
             this->prefs_.lastReadablesSince.set("");
         }
-
-        ContentSyncState syncState = {.state = ContentSyncState::State::Syncing};
-        syncState.tasks.reserve(readablesToDownload.size());
 
         for (const auto &readable : readablesToDelete) {
             syncState.tasks.push_back(ContentSyncState::Task{
@@ -478,21 +586,40 @@ void LocalStore::syncFromRemote(
 
         progressCallback(syncState);
 
-        for (int i = 0; i < readablesToDelete.size(); i++) {
-            const auto &readable = readablesToDelete[i];
+        // Sync bookmarks before we download any new readables
+        if (readablesBookmarkedSize > 0) {
+            log_i("Syncing bookmarks");
+            auto success = SindarinAPI::getInstance()->syncBookmarks(readablesBookmarked,
+                                                                     readablesBookmarkedSize);
+            if (success) {
+                log_i("Bookmarks synced");
+                this->resetReadablesBookmarksChanged(readables_);
+                this->resetReadablesBookmarksChanged(articles_);
+            } else {
+                log_e("Failed to sync bookmarks");
+                progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                                  .message = "Failed to sync bookmarks"});
+                delay(1000);
+            }
+
+            syncState.tasks[tasksIndex].percentage = 100;
+            tasksIndex += 1;
+            progressCallback(syncState);
+        }
+
+        for (auto &readable : readablesToDelete) {
             log_i("Deleting %s", readable.title.c_str());
             this->fileSystem.remove(readable.localFilePath());
             this->fileSystem.remove(readable.compressedLocalFilePath());
             this->removeReadable(readables_, readable);
-            syncState.tasks[i].percentage = 100;
+            syncState.tasks[tasksIndex].percentage = 100;
+            tasksIndex += 1;
         }
 
         progressCallback(syncState);
 
-        for (int i = 0; i < readablesToDownload.size(); i++) {
+        for (auto &readable : readablesToDownload) {
             // Index into the progress tasks vector
-            auto tasksIndex = readablesToDelete.size() + i;
-            const auto &readable = readablesToDownload[i];
             log_i("Downloading %s (file=%s, url=%s)", readable.title.c_str(),
                   readable.localFilePath().c_str(), readable.remoteUrl().c_str());
             SHOW_HEAP();
@@ -517,11 +644,12 @@ void LocalStore::syncFromRemote(
                     }
                 }
             }
+
+            tasksIndex += 1;
         }
 
         progressCallback(syncState);
 
-        auto tasksIndex = readablesToDownload.size() + readablesToDelete.size();
         if (articlesToDelete.size() > 0) {
             for (int i = 0; i < articlesToDelete.size(); i++) {
                 syncState.tasks[tasksIndex].percentage =
@@ -550,19 +678,39 @@ void LocalStore::syncFromRemote(
 
         // Save the articles that are new
         if (articlesToSave.size() > 0) {
+
+            // create log directory in filesystem if it doesn't exist
+            log_d("Creating directory /articles");
+            if (!fileSystem.createDir("/articles")) {
+                log_e("Could not create /articles directory");
+            }
+
+            float pctPerArticle = 100.0 / articlesToSave.size();
             for (int i = 0; i < articlesToSave.size(); i++) {
-                syncState.tasks[tasksIndex].percentage =
-                    (float(i + 1) / articlesToSave.size()) * 100;
-                progressCallback(syncState);
-
+                float currPercentage = (float)i * pctPerArticle;
                 auto &readable = articlesToSave[i];
-
-                if (this->saveArticleFile(readable)) {
-                    this->addReadable(articles_, readable);
-                } else {
-                    failedArticleDownload = true;
-                    log_e("Failed to save article \"%s\" %s", readable.title.c_str(),
-                          readable.uuid.c_str());
+                for (int t = 0; t < NUMBER_OF_READABLE_DOWNLOAD_TRIES; t++) {
+                    auto success = SindarinAPI::getInstance()->downloadReadable(
+                        readable, this->fileSystem,
+                        [progressCallback, &syncState, tasksIndex, currPercentage,
+                         pctPerArticle](int percentage) {
+                            float pctThisReadable = (float)percentage * pctPerArticle / 100.0;
+                            syncState.tasks[tasksIndex].percentage =
+                                currPercentage + pctThisReadable;
+                            progressCallback(syncState);
+                        },
+                        prefs_.gzipReadables.get().value_or(false));
+                    if (success) {
+                        this->addReadable(articles_, readable);
+                        log_d("File successfully downloaded.");
+                        break;
+                    } else {
+                        log_w("Failed to download file. Retrying...");
+                        if (t == NUMBER_OF_READABLE_DOWNLOAD_TRIES - 1) {
+                            log_e("Failed to download file.");
+                            failedArticleDownload = true;
+                        }
+                    }
                 }
             }
             tasksIndex += 1;

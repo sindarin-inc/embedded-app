@@ -16,7 +16,7 @@ class RendererStream {
 public:
     virtual ~RendererStream() = default;
 
-    virtual auto available() -> int = 0;
+    virtual auto available() -> int { return size() - position(); };
     virtual auto readBytes(uint8_t *buf, int size) -> int {
         // implementation of byte-by-byte read for a block,
         // only used if RendererStream subclass does not override this

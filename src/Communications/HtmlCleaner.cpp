@@ -7,28 +7,37 @@
 
 // NOLINTNEXTLINE(cert-err58-cpp)
 std::map<std::string, std::string> elementMap = {
-    {"&nbsp;", " "},     //
-    {"&lt;", "<"},       //
-    {"&gt;", ">"},       //
-    {"&amp;", "&"},      //
-    {"&quot;", "\""},    //
-    {"&apos;", "'"},     //
-    {"&mdash;", "--"},   //
-    {"&ndash;", "-"},    //
-    {"&ensp;", " "},     //
-    {"&emsp;", "  "},    //
-    {"&ldquo;", "\""},   //
-    {"&rdquo;", "\""},   //
-    {"&lsquo;", "'"},    //
-    {"&rsquo;", "'"},    //
-    {"&hellip;", "..."}, //
-    {"&aring;", "A"},    //
-    {"&cent;", "¢"},     //
-    {"&pound;", "£"},    //
-    {"&yen;", "¥"},      //
-    {"&euro;", "€"},     //
-    {"&copy;", "©"},     //
-    {"&reg;", "®"}       //
+    /* clang-format off */
+    {"&nbsp;", " "},
+    {"&lt;", "<"},
+    {"&gt;", ">"},
+    {"&amp;", "&"},
+    {"&quot;", "\""},
+    {"&apos;", "'"},
+    {"&mdash;", "--"},
+    {"&ndash;", "-"},
+    {"&ensp;", " "},
+    {"&emsp;", "  "},
+    {"&ldquo;", "\""},
+    {"&rdquo;", "\""},
+    {"&lsquo;", "'"},
+    {"&rsquo;", "'"},
+    {"&hellip;", "..."},
+    {"&aring;", "A"},
+    {"&cent;", "¢"},
+    {"&pound;", "£"},
+    {"&yen;", "¥"},
+    {"&euro;", "€"},
+    {"&copy;", "©"},
+    {"&reg;", "®"},
+    // TODO: Do Unicode for real
+    {"\xE2\x80\x9C", "\""}, // Open Quotes “
+    {"\xE2\x80\x9D", "\""}, // Close Quotes ”
+    {"\xE2\x80\x99", "'"},  // Apostrophe ’
+    {"\xE2\x80\x94", "-"},  // —
+    {"\xE2\x80\xA6", "..."}, // …
+    {"\xE2\x80\x98", "'"}   // ‘
+    /* clang-format: on */
 };
 
 auto ElementFromString(std::string &str) -> std::string {
@@ -36,16 +45,20 @@ auto ElementFromString(std::string &str) -> std::string {
     if (search != elementMap.end()) {
         return search->second;
     } else {
-        log_w("HTML Element %s not translated", str.c_str());
+        log_w("Element %s not translated", str.c_str());
         return " ";
     }
 }
 
-enum StripHtmlState {
-    HTML_TEXT,
-    HTML_TAG,
-    HTML_ELEMENT,
-};
+auto UTF8ElementFromString(std::string &str) -> std::string {
+    auto search = elementMap.find(str);
+    if (search != elementMap.end()) {
+        return search->second;
+    } else {
+        log_w("Element %s not translated", str.c_str());
+        return " ";
+    }
+}
 
 void AddChar(StripHtmlState &state, std::string &element, const char x,
              const std::function<void(std::string)> &writeString) {
@@ -60,8 +73,14 @@ void AddChar(StripHtmlState &state, std::string &element, const char x,
             writeString(ElementFromString(element));
             state = HTML_TEXT;
         } else if (x == ' ') {
-            // Weird space in there, maybe this wasn't an element
-            writeString(element);
+            // Weird space in there, maybe this wasn't an element writeString(element);
+            state = HTML_TEXT;
+        }
+        return;
+    } else if (state == UTF8_ELEMENT) {
+        element.push_back(x);
+        if (element.length() == 3) {
+            writeString(ElementFromString(element));
             state = HTML_TEXT;
         }
         return;
@@ -77,6 +96,12 @@ void AddChar(StripHtmlState &state, std::string &element, const char x,
         state = HTML_ELEMENT;
         return;
     }
+    if (x == '\xE2') {
+        element = "\xE2";
+        state = UTF8_ELEMENT;
+        return;
+    }
+
     writeString(std::string(1, x));
 }
 
@@ -143,3 +168,23 @@ void StripHtml(const std::basic_string<char, std::char_traits<char>, SpiramAlloc
 
     StripHtml(inStream, outStream);
 }
+
+// TODO: There has got to be a better way
+auto BytesAvailable(const std::stringstream &s) -> std::size_t {
+    std::streambuf *buf = s.rdbuf();
+    std::streampos pos = buf->pubseekoff(0, std::ios_base::cur, std::ios_base::in);
+    std::streampos end = buf->pubseekoff(0, std::ios_base::end, std::ios_base::in);
+    buf->pubseekpos(pos, std::ios_base::in);
+    return end - pos;
+}
+
+auto HtmlCleaner::read() -> int {
+    // Read from the source stream until we get a character
+    while (BytesAvailable(outStream_) <= 0 && stream_->available()) {
+        const char x = stream_->read();
+        AddChar(state_, element_, x, [this](const std::string &x) { outStream_ << x; });
+    }
+
+    position_ += 1;
+    return outStream_.get();
+};

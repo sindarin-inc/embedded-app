@@ -18,6 +18,8 @@ cd esp-idf
 ./install.sh esp32s3
 ```
 
+If you get errors about `cmake` you might need to install `cmake` first (`brew install cmake` on macOS / `sudo apt install cmake` on Ubuntu).
+
 Now from the root of this repo, you can run (replace `/YOUR/PATH/TO` with the path where you put `esp-idf`):
 
 ```bash

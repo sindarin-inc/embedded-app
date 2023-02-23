@@ -3,7 +3,7 @@ FILE(GLOB_RECURSE app_sources ${CMAKE_SOURCE_DIR}/src/*.*)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(components improv arduino ArduinoJson Adafruit-GFX-Library esp_littlefs esp-nimble-cpp espcoredump app_update unzipLIB)
+set(components improv arduino ArduinoJson Adafruit-GFX-Library esp_littlefs esp-nimble-cpp espcoredump app_update unzipLIB expat)
 
 set(compile_options
     -includeconfig.h

@@ -9,6 +9,7 @@ auto convertToJson(const ReadableFile &src, JsonVariant dst) -> bool {
     dst["uploaded_at"] = src.uploadedAt;
     dst["sha_hash"] = src.shaHash;
     dst["file"] = src.file;
+    dst["readable_type"] = src.readableType;
 
     return true;
 }

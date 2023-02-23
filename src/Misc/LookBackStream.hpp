@@ -2,6 +2,8 @@
 #include "Misc/CircBuffer.hpp"
 #include "Renderers/RendererStream.hpp"
 
+#define LOOKBACK_BUFFER_SIZE 32768
+
 class LookBackStream : public RendererStream {
 public:
     LookBackStream(std::unique_ptr<RendererStream> stream, int lookBackSize)
