@@ -101,6 +101,17 @@ public:
         // TODO: Instead of reading content, write it to disk immediately
         content = j["content"].as<std::string>();
 
+        // Temporary migration for stored pocket articles that don't have a readable_type
+        // This can probably be removed in a few weeks ~mid-march 2023
+        if (readableType == "null") {
+            if (files.size() == 0) {
+                readableType = "pocket_article";
+            } else {
+                readableType = "book";
+            }
+            log_d("Migrating readable_type for %s to %s", uuid.c_str(), readableType.c_str());
+        }
+
         return true;
     }
 };
