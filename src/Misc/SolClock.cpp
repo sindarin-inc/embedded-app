@@ -6,6 +6,7 @@
 #endif
 
 #include "../Communications/WiFi.hpp"
+#include "../Misc/StringUtil.hpp"
 
 extern SolClock solClock;
 
@@ -14,6 +15,20 @@ int simulatorTestHours = 0;
 int simulatorTestMinutes = 0;
 
 auto SolClock::getInstance() -> SolClock & { return solClock; }
+
+auto SolClock::getTimeString() -> std::string {
+    uint8_t hours, minutes;
+
+    getClockTime(hours, minutes);
+
+    if (hours == 0) {
+        hours = 12;
+    }
+    if (hours > 12) {
+        hours -= 12;
+    }
+    return StringFormat("%d:%02d", hours, minutes);
+}
 
 void SolClock::getClockTime(uint8_t &hours, uint8_t &minutes) {
 #if SIMULATOR

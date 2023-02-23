@@ -84,20 +84,8 @@ void PopupMenuScreen::render(DisplaySystem &display) {
 
     batteryTextView_.setText(power_.getBatteryPercentageOnlyString());
 
-    uint8_t hours;
-    uint8_t minutes;
     SolClock theClock = SolClock::getInstance();
-    theClock.getClockTime(hours, minutes);
-
-    std::string theTime = StringFormat("%d:%02d", hours, minutes);
-    clockView_.setText(theTime.c_str());
-
-    if (hours == 0) {
-        hours = 12;
-    }
-    if (hours > 12) {
-        hours -= 12;
-    }
+    clockView_.setText(theClock.getTimeString());
 
     size_t place = renderer_.getCurrentPlace();
     size_t lengthOfFile = renderer_.size();
