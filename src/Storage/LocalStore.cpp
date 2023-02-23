@@ -12,6 +12,7 @@
 #include "Models/Json.hpp"
 #include "Models/ReadableBookmark.hpp"
 #include "sindarin-debug.h"
+#include "Storage/VLittleFSFileSystem.hpp"
 
 #define READABLES_PATH "/readables.json"
 #define ARTICLES_PATH "/articles.json"
@@ -39,7 +40,7 @@ auto LocalStore::begin() -> bool {
 auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::string &path)
     -> bool {
     log_d("Loading %ss from %s", ToString(readablesModelType(readables)).c_str(), path.c_str());
-    File readablesFile = fileSystem.open(path);
+    SFile readablesFile = fileSystem.sopen(path);
     if (!readablesFile || (int)readablesFile.size() == 0) {
         log_w("Failed to open %s", path.c_str());
         // Fail positively since it's ok to not have any when you first use the glasses
@@ -798,7 +799,7 @@ auto LocalStore::saveReadables(const ReadablesVector &readables, const std::stri
     }
 
     // Write doc to disk
-    File file = fileSystem.open(path, FILE_WRITE, true);
+    SFile file = fileSystem.open(path, FILE_WRITE, true);
     if (!file) {
         log_e("Failed to open file for writing");
         return false;

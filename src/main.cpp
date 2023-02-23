@@ -84,7 +84,8 @@ InactivityTimer inactivityTimer;
 
 #if SIMULATOR
 #include "Storage/PosixFileSystem.hpp"
-PosixFileSystem fileSystem;
+//PosixFileSystem fileSystem;
+VLittleFSFileSystem fileSystem;
 #else
 #include "Storage/LittleFSFileSystem.hpp"
 LittleFSFileSystem fileSystem;
@@ -532,7 +533,19 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     log_i("begin filesystem ***");
     lfs.begin();
-    SFile f = lfs.sopen("/littlefs/last-question.txt", "r", false);
+
+    FileList fl;
+    int ll = lfs.listDir("/", fl);
+
+    log_i("list dir:");
+    for (int i = 0; i < fl.size(); i++) {
+        log_i("%d: %s", i, fl[i].c_str());
+    }
+
+    bool exists = lfs.exists("/last-question.txt");
+    log_i("exists: %d", exists);
+
+    SFile f = lfs.sopen("/last-question.txt", "r", false);
 
     char tmp[65];
     f.readBytes(tmp, 64);

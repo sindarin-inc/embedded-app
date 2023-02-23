@@ -66,6 +66,13 @@ void SFile::rewindDirectory(void) {
     _p->rewindDirectory();
 }
 
+SFile::operator bool() {
+    if (!_p) {
+        return false;
+    }
+
+    return *_p;
+}
 
 // VFSFile
 size_t VFSFile::write(uint8_t) {

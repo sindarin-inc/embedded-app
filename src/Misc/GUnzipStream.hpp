@@ -3,6 +3,7 @@
 #include <utility>
 
 #include "FS.h"
+#include "Misc/SFile.hpp"
 #include "Misc/GUnzip.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "sindarin-debug.h"
@@ -15,7 +16,7 @@
 
 class GUnzipStream : public RendererStream {
 public:
-    GUnzipStream(File gzFile) : gzFile_(std::move(gzFile)) { readSize(); }
+    GUnzipStream(SFile gzFile) : gzFile_(std::move(gzFile)) { readSize(); }
     ~GUnzipStream() override { gzFile_.close(); };
 
     auto available() -> int override;
@@ -28,7 +29,7 @@ public:
 private:
     size_t position_{0};
     uint32_t uncompressedSize_{0};
-    File gzFile_;
+    SFile gzFile_;
     GUnzip gunzip_;
     uint8_t inBuf_[GZ_BUFFER_SIZE];
     int inSize_{0};

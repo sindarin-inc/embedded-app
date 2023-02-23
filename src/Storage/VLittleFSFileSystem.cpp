@@ -1,5 +1,6 @@
 #include "VLittleFSFileSystem.hpp"
 
+#include <dirent.h>
 #if SIMULATOR
 #include <stdio.h>
 #include <sys/stat.h>
@@ -9,7 +10,11 @@
 #endif
 #include "sindarin-debug.h"
 
+#if SIMULATOR
 char VFileSystemPrefix[64] = "./data";
+#else
+char VFileSystemPrefix[64] = "/littlefs";
+#endif
 
 void sCreatePath(char *output, size_t outputSize, const std::string &path) {
     strncpy(output, VFileSystemPrefix, outputSize);
@@ -17,21 +22,6 @@ void sCreatePath(char *output, size_t outputSize, const std::string &path) {
 }
 
 auto VLittleFSFileSystem::begin() -> bool {
-    /*
-    SHOW_HEAP();
-
-    // Launch LITTLEFS file system
-    // TODO: I've seen an issue but haven't debugged it where formatOnFail doesn't then begin the
-    // filesystem afterwards so it takes a reboot before the FS can be used.
-
-    if (!LittleFS.begin(true, "/littlefs", 255, "data")) {
-        log_e("An Error has occurred while mounting LittleFS");
-        return false;
-    }
-
-    SHOW_HEAP();
-    */
-
    // register littlefs filesystem
 #if !SIMULATOR
     esp_vfs_littlefs_conf_t config = {
@@ -42,25 +32,23 @@ auto VLittleFSFileSystem::begin() -> bool {
     return true;
 }
 
+auto VLittleFSFileSystem::open(const std::string &path, const char *mode, const bool create) const
+    -> SFile {
+    return sopen(path, mode, create);
+}
+
 auto VLittleFSFileSystem::sopen(const std::string &path, const char *mode, const bool create) const
     -> SFile {
     // Note(john): The version of framework-arduinoespressif32
     // (https://github.com/marcovannoord/arduino-esp32.git#idf-release/v4.0) has a slightly
     // different API here.
-    //return LittleFS.open(path.c_str(), mode, create);
-    //return new SFile(path.c_str());
-
-    //std::shared_ptr<VFSFile> f = std::make_shared<VFSFile>(path.c_str());
-    std::shared_ptr<SFileImpl> f(new VFSFile(path.c_str()));
-    //SFile file(std::dynamic_pointer_cast<SFileImpl, VFSFile>(f));
-    SFile file(f);
+    char prefixedPath[200];
+    sCreatePath(prefixedPath, sizeof(prefixedPath), path);
+    auto file = SFile(std::make_shared<VFSFile>(prefixedPath));
     return file;
 }
 
 auto VLittleFSFileSystem::exists(const std::string &path) const -> bool {
-    //return LittleFS.exists(path.c_str());
-
-    // TODO: check for existence
     char prefixedPath[200];
     sCreatePath(prefixedPath, sizeof(prefixedPath), path);
     struct stat buffer;
@@ -68,41 +56,49 @@ auto VLittleFSFileSystem::exists(const std::string &path) const -> bool {
 }
 
 auto VLittleFSFileSystem::listDir(const std::string &path, FileList &files, int limit) const -> int {
-    /*
-    int counted = 0;
-    File root = LittleFS.open(path.c_str());
-    File file = root.openNextFile();
-    while (file) {
-        files.push_back(file.name());
-        file.close();
-        file = root.openNextFile();
-        counted++;
-        if (limit > 0 && counted >= limit) {
-            break;
+    char prefixedPath[200];
+    sCreatePath(prefixedPath, sizeof(prefixedPath), path);
+    log_i("path: %s", prefixedPath);
+    DIR *dp = opendir(prefixedPath);
+    if (dp != NULL) {
+        struct dirent *ep;
+        int counted = 0;
+        while ((ep = readdir(dp))) {
+            if (ep->d_type != DT_DIR) {
+                files.push_back(ep->d_name);
+                counted++;
+            }
+            if (limit > 0 && counted >= limit) {
+                break;
+            }
         }
+        return closedir(dp);
+    } else {
+        perror("Couldn't open the directory");
+        return -1;
     }
-    root.close();
-    */
     return 0;
 }
 
 auto VLittleFSFileSystem::createDir(const std::string &path, bool allowExists) -> bool {
-    /*
-    if (!LittleFS.mkdir(path.c_str())) {
+    char prefixedPath[200];
+    sCreatePath(prefixedPath, sizeof(prefixedPath), path);
+    if (mkdir(prefixedPath, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
         if (errno == EEXIST && allowExists) {
-            log_d("Directory %s already exists", path.c_str());
+            // Silently pass
         } else {
             log_e("Failed to create dir %s", path.c_str());
             return false;
         }
     }
-    */
     return true;
 }
 
 auto VLittleFSFileSystem::remove(const std::string &path) -> bool {
-    //return LittleFS.remove(path.c_str());
-    return false;
+    char prefixedPath[200];
+    sCreatePath(prefixedPath, sizeof(prefixedPath), path);
+
+    return (::remove(prefixedPath));
 }
 
 void VLittleFSFileSystem::close() {

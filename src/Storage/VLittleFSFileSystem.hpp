@@ -8,6 +8,8 @@ public:
     VLittleFSFileSystem() noexcept : FileSystem(){};
 
     auto begin() -> bool override;
+    auto open(const std::string &path, const char *mode = FILE_READ,
+              const bool create = false) const -> SFile;
     auto sopen(const std::string &path, const char *mode = FILE_READ,
               const bool create = false) const -> SFile;
     [[nodiscard]] auto exists(const std::string &path) const -> bool override;
