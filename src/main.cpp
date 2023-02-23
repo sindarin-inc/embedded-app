@@ -233,10 +233,10 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         }
     }
 
-    if ((prefs.sleepResaon.get().value_or(SLEEP_REASON_NONE) == SLEEP_REASON_INACTIVITY) ||
+    if ((prefs.sleepReason.get().value_or(SLEEP_REASON_NONE) == SLEEP_REASON_INACTIVITY) ||
         (morningNews != 0) || (eveningNews != 0)) {
         templeCloseSensor.checkTemple();
-        if (!templeCloseSensor.getOpened() || prefs.sleepResaon.get().value_or(SLEEP_REASON_NONE)) {
+        if (!templeCloseSensor.getOpened() || prefs.sleepReason.get().value_or(SLEEP_REASON_NONE)) {
             uint8_t hours, minutes;
             solClock.getClockTime(hours, minutes);
             log_i("Temple is closed or glasses inactive, current time: %d:%d", hours, minutes);
