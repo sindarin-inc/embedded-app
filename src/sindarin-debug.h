@@ -38,9 +38,9 @@ extern "C" {
 #endif
 
 #define SHOW_HEAP()                                                                                \
-    log_d("Free heap: %dk/%dk Free PSRAM: %zuk/%zuk", ESP.getFreeHeap() / 1000,                    \
+    log_d("Free heap: %dk/%dk Free PSRAM: %zuk/%zuk %s:%d ", ESP.getFreeHeap() / 1000,             \
           ESP.getHeapSize() / 1000, heap_caps_get_free_size(MALLOC_CAP_8BIT) / 1000,               \
-          heap_caps_get_total_size(MALLOC_CAP_8BIT) / 1000)
+          heap_caps_get_total_size(MALLOC_CAP_8BIT) / 1000, __FILE__, __LINE__)
 
 // NOTE: based on the uint32_t, this cannot profile anything longer than 17.89569707
 #define PROFILE_START(identifier)                                                                  \

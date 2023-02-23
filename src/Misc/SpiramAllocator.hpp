@@ -29,3 +29,5 @@ template <typename T, typename U>
 auto operator!=(const SpiramAllocator<T> &, const SpiramAllocator<U> &) -> bool {
     return false;
 }
+
+typedef std::basic_string<char, std::char_traits<char>, SpiramAllocator<char>> SpiramString;

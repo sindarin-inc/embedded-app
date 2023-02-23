@@ -3,6 +3,7 @@
 #include <FS.h>
 #include <string>
 
+#include "Misc/SpiramAllocator.hpp"
 #include "Models/JsonSerializable.hpp"
 
 enum BookmarkStatus { BOOKMARK_OFF = 0, BOOKMARK_ON = 1 };
@@ -21,7 +22,7 @@ public:
     std::string uuid;
     uint32_t startingPosition;
     uint32_t endingPosition;
-    std::string readable;
+    SpiramString readable;
 
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("uuid") || !j.containsKey("name") || !j.containsKey("description")) {

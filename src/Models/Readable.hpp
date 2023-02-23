@@ -20,17 +20,17 @@ public:
     ~Readable() override = default;
 
     std::string uuid;
-    std::string shortenedUuid;
+    SpiramString shortenedUuid;
     std::string title;
-    std::basic_string<char, std::char_traits<char>, SpiramAllocator<char>> content;
-    std::string url;
-    std::string dateCreated;
-    std::string dateModified;
-    std::string datePublished;
+    SpiramString content;
+    SpiramString url;
+    SpiramString dateCreated;
+    SpiramString dateModified;
+    SpiramString datePublished;
     std::vector<Author> authors;
     std::vector<ReadableFile> files;
     std::vector<ReadableBookmark> bookmarks;
-    std::string readableType;
+    SpiramString readableType;
     // TODO: source
     // TODO: categories
 
@@ -58,7 +58,7 @@ public:
             return StringFormat("/articles/%s.txt.gz", uuid.c_str());
         }
     }
-    [[nodiscard]] auto remoteUrl() const -> std::string { return file().fileProxied; }
+    [[nodiscard]] auto remoteUrl() const -> SpiramString { return file().fileProxied; }
     [[nodiscard]] auto isArticle() const -> bool {
         return readableType.compare("pocket_article") == 0 ||
                readableType.compare("email_article") == 0;

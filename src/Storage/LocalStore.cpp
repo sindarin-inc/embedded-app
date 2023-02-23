@@ -560,14 +560,14 @@ void LocalStore::syncFromRemote(
 
         for (const auto &readable : readablesToDelete) {
             syncState.tasks.push_back(ContentSyncState::Task{
-                .message = "Delete: " + readable.title,
+                .message = StringFormat("Delete: %s", readable.title.c_str()),
                 .percentage = 0,
             });
         }
 
         for (const auto &readable : readablesToDownload) {
             syncState.tasks.push_back(ContentSyncState::Task{
-                .message = "Get: " + readable.title,
+                .message = StringFormat("Get: %s", readable.title.c_str()),
                 .percentage = 0,
             });
         }
