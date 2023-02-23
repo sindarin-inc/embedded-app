@@ -216,8 +216,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         bootErrors.push_back({.type = BootError::Type::Preferences});
     }
 
-#if USE_MMC5603
-#if !SIMULATOR
+#if USE_MMC5603 & !SIMULATOR
     int morningNews = prefs.morningNewspaperTime.get().value_or(0);
     int eveningNews = prefs.eveningNewspaperTime.get().value_or(0);
 
@@ -225,18 +224,19 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     // We are waking up after the inactivty timeout, so we need to check if the temple is closed
     // and if so, reset it.
-    if (prefs.inactivityTimer.get().value_or(false)) {
+    if (prefs.sleepReason.get().value_or(SLEEP_REASON_NONE) == SLEEP_REASON_INACTIVITY) {
         log_i("Inactivity timer caused this reboot, checking if temple is closed");
         templeCloseSensor.checkTemple();
         if (!templeCloseSensor.getOpened()) {
             log_i("Inactivity timer being reset because the temple is closed");
-            prefs.inactivityTimer.set(false);
+            prefs.sleepReason.set(SLEEP_REASON_TEMPLES_CLOSED);
         }
     }
 
-    if (prefs.inactivityTimer.get().value_or(false) || (morningNews != 0) || (eveningNews != 0)) {
+    if ((prefs.sleepResaon.get().value_or(SLEEP_REASON_NONE) == SLEEP_REASON_INACTIVITY) ||
+        (morningNews != 0) || (eveningNews != 0)) {
         templeCloseSensor.checkTemple();
-        if (!templeCloseSensor.getOpened() || prefs.inactivityTimer.get().value_or(false)) {
+        if (!templeCloseSensor.getOpened() || prefs.sleepResaon.get().value_or(SLEEP_REASON_NONE)) {
             uint8_t hours, minutes;
             solClock.getClockTime(hours, minutes);
             log_i("Temple is closed or glasses inactive, current time: %d:%d", hours, minutes);
@@ -258,23 +258,16 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                         digitalWrite(BLUE_LED, LED_OFF);
                         runningContentSync = false;
                         DisconnectWifi();
-                        log_i("going to sleep for 5s after content sync");
-                        esp_sleep_enable_timer_wakeup(5000000);
-                        ForcePowerOn();
-                        log_i("Back to sleep after content sync");
-                        esp_deep_sleep_start();
+                        log_i("Going to sleep after content sync");
+                        PowerManager::getInstance().powerOff();
                     }
                 });
             } else {
-                log_i("Temple closed, going to sleep for 5s");
-                esp_sleep_enable_timer_wakeup(5000000);
-                ForcePowerOn();
-                log_i("Back to sleep");
-                esp_deep_sleep_start();
+                log_i("Temple closed, going to sleep");
+                PowerManager::getInstance().powerOff();
             }
         }
     }
-#endif
 #endif
 
     log_i("SN: %s", GetSerialNumber().c_str());
@@ -303,7 +296,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #if !SIMULATOR
     inactivityTimer.start([]() {
         log_d("Inactive! Allow power off.");
-        prefs.inactivityTimer.set(true);
+        prefs.sleepReason.set(SLEEP_REASON_INACTIVITY);
         PowerManager::getInstance().powerOff();
     });
 #endif
@@ -349,6 +342,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                             digitalWrite(BLUE_LED, LED_OFF);
                             // Only if the temples are still closed, allow power off
                             if (templesClosed) {
+                                prefs.sleepReason.set(SLEEP_REASON_TEMPLES_CLOSED);
                                 PowerManager::getInstance().powerOff();
                             }
                             runningContentSync = false;
@@ -357,6 +351,13 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                     });
                 }
             });
+#else
+            // Just precautinoary in case we turn off ENABLE_CONTENT_SYNC_ON_CLOSE in the future
+            // We should still power down if the temples are closed for a while!
+            if (templesClosed) {
+                prefs.sleepReason.set(SLEEP_REASON_TEMPLES_CLOSED);
+                PowerManager::getInstance().powerOff();
+            }
 #endif
         });
     }

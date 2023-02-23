@@ -85,7 +85,7 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
             return {size.width, y};
         });
 
-    context.setViewFrame(*clockView_, {{0, 0}, size},
+    context.setViewFrame(clockView_, {{0, 0}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignLeft |
                              LayoutOptionsAlignBottom);
 
@@ -98,7 +98,7 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
                 batteryIconView_, {{x, y}, {size.width, size.height}}, LayoutOptionsSizeToFit);
             x += iconRect.size.width + 3;
             auto textRect = context.setViewFrame(
-                *batteryTextView_, {{x, y}, {size.width, size.height}}, LayoutOptionsSizeToFit);
+                batteryTextView_, {{x, y}, {size.width, size.height}}, LayoutOptionsSizeToFit);
             x += textRect.size.width;
             return {x, std::max(iconRect.size.height, textRect.size.height)};
         });
@@ -123,8 +123,8 @@ void MainMenuScreen::drawInRect(Rect rect) {
 
     topBarSelectionView_.draw();
     batteryIconView_.draw();
-    batteryTextView_->draw();
-    clockView_->draw();
+    batteryTextView_.draw();
+    clockView_.draw();
 }
 
 // This largely mirrors the superclass implementation, but with enough
@@ -145,8 +145,7 @@ void MainMenuScreen::render(DisplaySystem &display) {
 
         topBarViews_.clear();
 
-        batteryTextView_ =
-            std::make_shared<SingleLineTextView>(display, power_.getBatteryPercentageOnlyString());
+        batteryTextView_.setText(power_.getBatteryPercentageOnlyString());
 
         uint8_t hours;
         uint8_t minutes;
@@ -160,7 +159,7 @@ void MainMenuScreen::render(DisplaySystem &display) {
         }
         std::string theTime = StringFormat("%d:%02d", hours, minutes);
 
-        clockView_ = std::make_shared<SingleLineTextView>(display, theTime.c_str());
+        clockView_.setText(theTime.c_str());
 
         log_i("Menuscreen render (selected = %s)",
               subMenus_[currentSelection_]->getMenuName().c_str());

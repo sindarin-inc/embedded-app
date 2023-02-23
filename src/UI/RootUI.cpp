@@ -554,7 +554,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
 
         morningNewspaperMenu->addMenuItem(MenuItem("No Thanks", [this, confirmMessage]() {
-            this->prefs_.morningNewspaperTime.set(0);
+            this->prefs_.morningNewspaperTime.remove();
             confirmMessage(0);
         }));
         morningNewspaperMenu->addMenuItem(MenuItem("5am", [this, confirmMessage]() {
@@ -644,7 +644,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
 
         eveningNewspaperMenu->addMenuItem(MenuItem("No Thanks", [this, confirmMessage]() {
-            this->prefs_.eveningNewspaperTime.set(0);
+            this->prefs_.eveningNewspaperTime.remove();
             confirmMessage(0);
         }));
         eveningNewspaperMenu->addMenuItem(MenuItem("6pm", [this, confirmMessage]() {

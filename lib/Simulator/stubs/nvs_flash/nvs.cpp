@@ -60,7 +60,7 @@ esp_err_t nvs_get_i32(nvs_handle_t handle, const char *key, int32_t *out_value) 
         *out_value = opt.value();
         return ESP_OK;
     } else {
-        return ESP_ERR_NVS_NOT_FOUND;
+        return (esp_err_t)ESP_ERR_NVS_NOT_FOUND;
     }
 }
 
@@ -81,7 +81,7 @@ esp_err_t nvs_get_str(nvs_handle_t handle, const char *key, char *out_value, siz
         *length = strlen(string);
         return ESP_OK;
     } else {
-        return ESP_ERR_NVS_NOT_FOUND;
+        return (esp_err_t)ESP_ERR_NVS_NOT_FOUND;
     }
 }
 

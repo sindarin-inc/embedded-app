@@ -1,7 +1,25 @@
 #pragma once
 
-#define ESP_OK 0 /*!< esp_err_t value indicating success (no error) */
-
-typedef int esp_err_t;
+typedef enum {
+    ESP_OK,
+    ESP_FAIL,
+    ESP_ERR_NO_MEM,
+    ESP_ERR_INVALID_ARG,
+    ESP_ERR_INVALID_STATE,
+    ESP_ERR_INVALID_SIZE,
+    ESP_ERR_NOT_FOUND,
+    ESP_ERR_NOT_SUPPORTED,
+    ESP_ERR_TIMEOUT,
+    ESP_ERR_INVALID_RESPONSE,
+    ESP_ERR_INVALID_CRC,
+    ESP_ERR_INVALID_VERSION,
+    ESP_ERR_INVALID_MAC,
+    ESP_ERR_NOT_FINISHED,
+    ESP_ERR_WIFI_BASE,
+    ESP_ERR_MESH_BASE,
+    ESP_ERR_FLASH_BASE,
+    ESP_ERR_HW_CRYPTO_BASE,
+    ESP_ERR_MEMPROT_BASE,
+} esp_err_t;
 
 const char *esp_err_to_name(esp_err_t code);

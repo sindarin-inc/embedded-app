@@ -1,11 +1,11 @@
 #include "SolClock.hpp"
 
-#include "../Communications/WiFi.hpp"
-
 #if !SIMULATOR
 #include <esp_log.h>
 #include <esp_sntp.h>
 #endif
+
+#include "../Communications/WiFi.hpp"
 
 extern SolClock solClock;
 
@@ -87,5 +87,7 @@ void SolClock::setClockTimeFromInternet() {
     log_i("The current date/time is: %s", strftimeBuf);
 
     DisconnectWifi();
+#else
+    log_i("Not setting clock time from internet in simulator");
 #endif
 }
