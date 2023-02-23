@@ -527,6 +527,24 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     bootCount++;
     prefs.bootCount.set(bootCount);
 
+    // TEST
+    VLittleFSFileSystem lfs;
+
+    log_i("begin filesystem ***");
+    lfs.begin();
+    SFile f = lfs.sopen("/littlefs/last-question.txt", "r", false);
+
+    char tmp[65];
+    f.readBytes(tmp, 64);
+    tmp[64] = 0;
+
+    log_i("** read: %s", tmp);
+
+    log_i("end filesysem ***");
+
+    //delete f;
+    lfs.close();
+
     if (!fileSystem.begin()) {
         bootErrors.push_back({.type = BootError::Type::FileSystem});
     } else {

@@ -58,7 +58,7 @@ protected:
     std::shared_ptr<SFileImpl> _p;
 };
 
-class VFSFile : SFileImpl {
+class VFSFile : public SFileImpl {
 public:
     VFSFile(const char* fname) {
         log_i("opening %s", fname);
@@ -70,29 +70,20 @@ public:
             log_i("not opened");
         }
     }
-    ~SFile() {}
+    ~VFSFile() {}
 
     size_t write(uint8_t);
     size_t write(const uint8_t *buf, size_t size);
     int available();
-    //int read();
-    int peek();
     void flush();
     size_t read(uint8_t *buf, size_t size);
-    size_t readBytes(char *buffer, size_t length);
+    //size_t readBytes(char *buffer, size_t length);
 
     bool seek(uint32_t pos, SSeekMode mode);
-    bool seek(uint32_t pos) { return seek(pos, SSeekSet); }
     size_t position() const;
     size_t size() const;
     void close();
-    operator bool() const {
-        if (fp_) {
-            return true;
-        }
-
-        return false;
-    }
+    operator bool();
     //time_t getLastWrite();
     const char *name() const;
     const char *path() const;

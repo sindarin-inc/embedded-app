@@ -4,57 +4,66 @@
 // SFile
 
 size_t SFile::write(uint8_t c) {
-    
+    return 0;
 }
 size_t SFile::write(const uint8_t *buf, size_t size) {
     return _p->write(buf, size);
 }
 int SFile::available() {
-    return _p->available();
+    return size() - position();
 }
 int SFile::read() {
+    uint8_t c;
+    size_t r = _p->read(&c, 1);
+    if (r == -1) {
+        return -1;
+    }
 
+    return c;
 }
 int SFile::peek() {
-
+    size_t curPos = _p->position();
+    int result = read();
+    _p->seek(curPos, SSeekSet);
+    return result;
 }
 void SFile::flush() {
-
+    _p->flush();
 }
 size_t SFile::read(uint8_t *buf, size_t size) {
-
+    return _p->read(buf, size);
 }
 size_t SFile::readBytes(char *buffer, size_t length) {
-    
+    return _p->read((uint8_t*)buffer, length);
 }
 
 bool SFile::seek(uint32_t pos, SSeekMode mode) {
-
+    return _p->seek(pos, mode);
 }
-bool SFile::seek(uint32_t pos) { return seek(pos, SSeekSet); }
-size_t SFile::position() const {
 
+size_t SFile::position() const {
+    return _p->position();
 }
 size_t SFile::size() const {
-
+    return _p->size();
 }
 void SFile::close() {
-
+    _p->close();
 }
 //time_t getLastWrite() {}
 const char *SFile::name() const {
-
+    return _p->name();
 }
 const char *SFile::path() const {
-
+    return _p->path();
 }
 
 boolean SFile::isDirectory(void) {
-
+    return _p->isDirectory();
 }
 //File openNextFile(const char *mode = FILE_READ) {}
 void SFile::rewindDirectory(void) {
-
+    _p->rewindDirectory();
 }
 
 
@@ -69,27 +78,6 @@ size_t VFSFile::write(const uint8_t *buf, size_t size) {
 
 int VFSFile::available() {
     return size() - position();
-}
-
-int VFSFile::read() {
-    uint8_t c;
-    size_t r = read(&c, 1);
-    if (r == -1) {
-        return -1;
-    }
-
-    return c;
-}
-
-int VFSFile::peek() {
-    if (!fp_) {
-        return -1;
-    }
-
-    size_t curPos = position();
-    int result = read();
-    seek(curPos, SSeekSet);
-    return result;
 }
 
 void VFSFile::flush() {
@@ -110,9 +98,6 @@ size_t VFSFile::read(uint8_t *buf, size_t size) {
     size_t ff = fread(buf, 1, size, fp_);
     log_i("Sfile fread %d", ff);
     return ff;
-}
-size_t VFSFile::readBytes(char *buffer, size_t length) {
-    return read((uint8_t *)buffer, length);
 }
 
 bool VFSFile::seek(uint32_t pos, SSeekMode mode) {
@@ -159,6 +144,14 @@ const char *VFSFile::path() const {
 }
 
 bool VFSFile::isDirectory(void) {
+    return false;
+}
+
+VFSFile::operator bool() {
+    if (fp_) {
+        return true;
+    }
+
     return false;
 }
 
