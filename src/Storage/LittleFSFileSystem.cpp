@@ -1,4 +1,4 @@
-#include "VLittleFSFileSystem.hpp"
+#include "LittleFSFileSystem.hpp"
 
 #include <dirent.h>
 #include <esp_littlefs.h>
@@ -7,7 +7,7 @@
 
 const char* partitionLabel = "data";
 
-bool VLittleFSFileSystem::format()
+bool LittleFSFileSystem::format()
 {
     log_i("formatting littlefs..");
     disableCore0WDT();
@@ -20,7 +20,7 @@ bool VLittleFSFileSystem::format()
     return true;
 }
 
-auto VLittleFSFileSystem::begin() -> bool {
+auto LittleFSFileSystem::begin() -> bool {
     // register littlefs filesystem
     esp_vfs_littlefs_conf_t config = {
         .base_path = prefix_.c_str(), .partition_label = partitionLabel, .format_if_mount_failed = false
@@ -39,6 +39,6 @@ auto VLittleFSFileSystem::begin() -> bool {
     return true;
 }
 
-void VLittleFSFileSystem::close() override {
-    esp_vfs_littlefs_unregister("data");
+void LittleFSFileSystem::close() {
+    esp_vfs_littlefs_unregister(partitionLabel);
 }

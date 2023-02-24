@@ -2,9 +2,9 @@
 
 #include "Storage/PosixFileSystem.hpp"
 
-class VLittleFSFileSystem : public PosixFileSystem {
+class LittleFSFileSystem : public PosixFileSystem {
 public:
-    VLittleFSFileSystem() {
+    LittleFSFileSystem() {
         setPrefix("/littlefs");
     }
 
