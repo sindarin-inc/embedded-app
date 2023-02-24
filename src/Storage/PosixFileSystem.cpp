@@ -3,6 +3,7 @@
 #include <dirent.h>
 #include <stdio.h>
 #include <sys/stat.h>
+
 #include "sindarin-debug.h"
 
 void PosixFileSystem::createPath(char *output, size_t outputSize, const std::string &path) const {
@@ -10,9 +11,7 @@ void PosixFileSystem::createPath(char *output, size_t outputSize, const std::str
     strncat(output, path.c_str(), outputSize - 1);
 }
 
-auto PosixFileSystem::begin() -> bool {
-    return true;
-}
+auto PosixFileSystem::begin() -> bool { return true; }
 
 auto PosixFileSystem::open(const std::string &path, const char *mode, const bool create) const
     -> SFile {

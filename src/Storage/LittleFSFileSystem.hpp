@@ -4,12 +4,11 @@
 
 class LittleFSFileSystem : public PosixFileSystem {
 public:
-    LittleFSFileSystem() {
-        setPrefix("/littlefs");
-    }
+    LittleFSFileSystem() { setPrefix("/littlefs"); }
 
     auto begin() -> bool override;
     void close() override;
+
 protected:
     bool format();
 };
