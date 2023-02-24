@@ -16,18 +16,45 @@ char VFileSystemPrefix[64] = "./data";
 char VFileSystemPrefix[64] = "/littlefs";
 #endif
 
+const char* partitionLabel = "data";
+
 void sCreatePath(char *output, size_t outputSize, const std::string &path) {
     strncpy(output, VFileSystemPrefix, outputSize);
     strncat(output, path.c_str(), outputSize - 1);
+}
+
+bool VLittleFSFileSystem::format()
+{
+#if !SIMULATOR
+    log_i("formatting littlefs..");
+    disableCore0WDT();
+    esp_err_t err = esp_littlefs_format(partitionLabel);
+    enableCore0WDT();
+    if (err) {
+        log_e("Formatting LittleFS failed! Error: %d", err);
+        return false;
+    }
+#endif
+    return true;
 }
 
 auto VLittleFSFileSystem::begin() -> bool {
 #if !SIMULATOR
     // register littlefs filesystem
     esp_vfs_littlefs_conf_t config = {
-        .base_path = "/littlefs", .partition_label = "data", .format_if_mount_failed = true
+        .base_path = "/littlefs", .partition_label = partitionLabel, .format_if_mount_failed = false
     };
     esp_err_t err = esp_vfs_littlefs_register(&config);
+    if(err == ESP_FAIL ) {
+        if (format()) {
+            err = esp_vfs_littlefs_register(&config);
+        }
+    }
+
+    if(err != ESP_OK){
+        log_e("Mounting LittleFS failed! Error: %d", err);
+        return false;
+    }
 #endif
     return true;
 }

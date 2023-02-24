@@ -16,4 +16,7 @@ public:
     auto remove(const std::string &path) -> bool override;
 
     void close();
+protected:
+
+    bool format();
 };
