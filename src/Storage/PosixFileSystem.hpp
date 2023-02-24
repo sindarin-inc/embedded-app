@@ -4,7 +4,7 @@
 
 class PosixFileSystem : public FileSystem {
 public:
-    PosixFileSystem() noexcept : FileSystem(), prefix_("./data"){};
+    PosixFileSystem() noexcept : FileSystem() {};
 
     auto begin() -> bool override;
     auto open(const std::string &path, const char *mode = FILE_READ,
@@ -14,9 +14,7 @@ public:
     auto createDir(const std::string &path, bool allowExists = true) -> bool override;
     auto remove(const std::string &path) -> bool override;
     virtual void close();
-    void setPrefix(const std::string &prefix) { prefix_ = prefix; }
-
+    void setPrefix(const std::string &prefix);
 protected:
-    std::string prefix_;
     void createPath(char *output, size_t outputSize, const std::string &path) const;
 };
