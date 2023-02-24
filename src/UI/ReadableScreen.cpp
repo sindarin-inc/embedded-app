@@ -16,41 +16,6 @@
 // Change speed of speed reading in increments of 2 seconds
 #define PAGE_SPEED_INCREMENT 2000
 
-<<<<<<< HEAD
-=======
-// Simply reads from the bookmark file for this Readable and returns whether it was
-// a turn on or turn off bookmark.
-auto ReadableScreen::readOneBookmark(SFile &file, Bookmark &bookmark) -> bool {
-    // The first character in the line is a + or -, read that first
-    if (!file.available()) {
-        return false;
-    }
-
-    char firstChar = file.read();
-    if (firstChar == '+') {
-        bookmark.status = BOOKMARK_ON;
-    } else if (firstChar == '-') {
-        bookmark.status = BOOKMARK_OFF;
-    } else {
-        // Got an unexpected character
-        return false;
-    }
-
-    // Next will be a space.
-    char secondChar = file.read();
-    if (secondChar != ' ') {
-        return false;
-    }
-
-    std::string firstThing = file.readStringUntil(' ');
-    bookmark.firstPlace = std::stoi(firstThing);
-
-    std::string secondThing = file.readStringUntil('\n');
-    bookmark.lastPlace = std::stoi(secondThing);
-    return true;
-}
-
->>>>>>> 3f016f7 (WIP new file object mostly working)
 // Once we have a real database, this will all be replaced.
 // For now, since we assume that there won't be TOO many bookmarks, we simply
 // start from the first bookmark action (on or off) that the user did and replay
@@ -63,12 +28,7 @@ auto ReadableScreen::readOneBookmark(SFile &file, Bookmark &bookmark) -> bool {
 //
 void ReadableScreen::updateBookmarkStatus() {
     inBookmark_ = false;
-<<<<<<< HEAD
-    File bookmarkFile = fileSystem_.open(readable_.bookmarkFilePath().c_str(), FILE_READ, false);
-=======
-
-    SFile bookmarkFile = fileSystem_.open(bookmarkPath.c_str(), FILE_READ, false);
->>>>>>> 3f016f7 (WIP new file object mostly working)
+    SFile bookmarkFile = fileSystem_.open(readable_.bookmarkFilePath().c_str(), FILE_READ, false);
     if (!bookmarkFile) {
         log_i("Failed to open bookmark file: %s", readable_.bookmarkFilePath().c_str());
         return;
@@ -98,11 +58,7 @@ void ReadableScreen::writeOutBookmarkUpdate() {
         return;
     }
 
-<<<<<<< HEAD
-    File bookmarkFile = fileSystem_.open(readable_.bookmarkFilePath().c_str(), FILE_APPEND, true);
-=======
-    SFile bookmarkFile = fileSystem_.open(bookmarkPath.c_str(), FILE_APPEND, true);
->>>>>>> 3f016f7 (WIP new file object mostly working)
+    SFile bookmarkFile = fileSystem_.open(readable_.bookmarkFilePath().c_str(), FILE_APPEND, true);
 
     if (!bookmarkFile) {
         log_i("Failed to open bookmark file: %s", readable_.bookmarkFilePath().c_str());

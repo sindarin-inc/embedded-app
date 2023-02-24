@@ -1,6 +1,6 @@
 #pragma once
 
-#include <FS.h>
+#include <Storage/SFile.hpp>
 #include <string>
 
 #include "Misc/SpiramAllocator.hpp"
@@ -40,4 +40,4 @@ public:
 
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
 auto convertToJson(const ReadableBookmark &src, JsonVariant dst) -> bool;
-auto ReadOneBookmark(File &file, LocalBookmark &bookmark) -> bool;
+auto ReadOneBookmark(SFile &file, LocalBookmark &bookmark) -> bool;
