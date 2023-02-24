@@ -848,11 +848,11 @@ auto LocalStore::readableFilePathForReading(const Readable &readable) const -> s
         }
         // Previously we also stored books in the root directory
         if (readable.files.size() > 0) {
-            path = StringFormat("/%s.txt.gz", readable.file().name.c_str());
+            path = StringFormat("/%s.gz", readable.file().name.c_str());
             if (fileSystem.exists(path)) {
                 return path;
             }
-            path = StringFormat("/%s.txt", readable.file().name.c_str());
+            path = StringFormat("/%s", readable.file().name.c_str());
             if (fileSystem.exists(path)) {
                 return path;
             }
@@ -919,10 +919,10 @@ void LocalStore::readableFilePurge(const Readable &readable) {
     fileSystem.remove(path);
 
     if (readable.files.size() > 0) {
-        path = StringFormat("/%s.txt.gz", readable.file().name.c_str());
+        path = StringFormat("/%s.gz", readable.file().name.c_str());
         fileSystem.remove(path);
 
-        path = StringFormat("/%s.txt", readable.file().name.c_str());
+        path = StringFormat("/%s", readable.file().name.c_str());
         fileSystem.remove(path);
     }
 
