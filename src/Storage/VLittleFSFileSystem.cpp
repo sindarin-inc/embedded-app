@@ -44,7 +44,7 @@ auto VLittleFSFileSystem::sopen(const std::string &path, const char *mode, const
     // different API here.
     char prefixedPath[200];
     sCreatePath(prefixedPath, sizeof(prefixedPath), path);
-    auto file = SFile(std::make_shared<VFSFile>(prefixedPath));
+    auto file = SFile(std::make_shared<VFSFile>(prefixedPath, mode, create));
     return file;
 }
 

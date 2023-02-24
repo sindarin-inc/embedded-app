@@ -3,8 +3,12 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <memory>
+#include <string>
 #include "sindarin-debug.h"
 
+#define FILE_READ "r"
+#define FILE_WRITE "w"
+#define FILE_APPEND "a"
 enum SSeekMode { SSeekSet = 0, SSeekCur = 1, SSeekEnd = 2 };
 
 class SFileImpl
@@ -32,7 +36,33 @@ public:
     SStream() {}
     ~SStream() {}
 
-    virtual int available() = 0; 
+    virtual size_t write(uint8_t c) = 0;
+    size_t write(const char *str)
+    {
+        if(str == NULL) {
+            return 0;
+        }
+        return write((const uint8_t *) str, strlen(str));
+    }
+
+    virtual size_t write(const uint8_t *buf, size_t size) = 0;
+
+    virtual int available() = 0;
+    virtual int read() = 0;
+
+    virtual std::string readString() { return ""; }
+    std::string readStringUntil(char terminator) {
+        std::string res = "";
+        int value;
+        while(true){
+            value = read();
+            if(value <= 0 || value == terminator) {
+                return res;
+            }
+            res += (char)value;
+        }
+        return res;
+    }
 };
 
 class SFile : public SStream {
@@ -69,12 +99,28 @@ protected:
 
 class VFSFile : public SFileImpl {
 public:
-    VFSFile(const char* fname) {
+    VFSFile(const char* fname, const char *mode, const bool create) {
         log_i("opening %s", fname);
-        fp_ = fopen(fname, "rb");
+
+        std::string modeStr(mode);
+        std::string openMode = "";
+        bool read = false;
+        if (modeStr.find(FILE_READ) != std::string::npos) {
+            openMode = "rb";
+            read = true;
+        } else if (modeStr.find(FILE_WRITE) != std::string::npos) {
+            openMode = "wb";
+        } else if (modeStr.find(FILE_APPEND) != std::string::npos) {
+            openMode = "ab+";
+        }
+        log_d("Opening file %s with mode string %s", fname, openMode.c_str());
+        fp_ = fopen(fname, openMode.c_str());
 
         if (fp_) {
             log_i("opened");
+            if (read) {
+                getFileSize();
+            }
         } else {
             log_i("not opened");
         }

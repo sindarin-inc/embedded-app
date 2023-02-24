@@ -1024,7 +1024,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             for (const std::string &str : localFiles) {
                 log_d("Next File is %s", str.c_str());
                 fsMenu->addMenuItem(MenuItem(str.c_str(), [this, fsMenu, &fileSystem, str]() {
-                    File toSerialOutput = fileSystem.open(StringFormat("/%s", str.c_str()));
+                    SFile toSerialOutput = fileSystem.open(StringFormat("/%s", str.c_str()));
                     while (toSerialOutput.available()) {
                         printf("%c", toSerialOutput.read());
                     }

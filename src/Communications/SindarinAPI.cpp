@@ -234,7 +234,9 @@ auto SindarinAPI::uploadAndResetVoltageLog(FileSystem &fileSystem) -> int {
     auto file = fileSystem.open(localPath, FILE_READ);
 
     auto requestJson = std::make_unique<SpiRamJsonDocument>(file.size() * 2);
-    (*requestJson)["voltage_log"] = file.readString();
+    //(*requestJson)["voltage_log"] = file.readString();
+    // FIXME
+    (*requestJson)["voltage_log"] = "testabcd";
     file.close();
 
     if ((*requestJson).overflowed()) {
@@ -284,7 +286,7 @@ auto SindarinAPI::uploadAndResetVoltageLog(FileSystem &fileSystem) -> int {
     return httpCode;
 }
 
-auto SindarinAPI::uploadCrashReport(File &crashFile, const String &contentType) -> int {
+auto SindarinAPI::uploadCrashReport(SFile &crashFile, const String &contentType) -> int {
     HttpClient client(SINDARIN_SERVER_URL "/coredumps/", contentType.c_str(), HTTP_METHOD_POST);
     setAuth(client);
 

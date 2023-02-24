@@ -17,6 +17,7 @@ void createPath(char *output, size_t outputSize, const std::string &path) {
 
 bool PosixFileSystem::begin() { return true; }
 
+/*
 auto PosixFileSystem::open(const std::string &path, const char *mode, const bool create) const
     -> File {
     char prefixedPath[200];
@@ -24,6 +25,7 @@ auto PosixFileSystem::open(const std::string &path, const char *mode, const bool
     auto file = File(std::make_shared<PosixFileImpl>(prefixedPath, mode));
     return file;
 }
+*/
 
 bool PosixFileSystem::exists(const std::string &path) const {
     char prefixedPath[200];
