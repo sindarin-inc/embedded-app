@@ -6,8 +6,10 @@
 
 #include "sindarin-debug.h"
 
+char PosixFileSystemPrefix[64] = "./data";
+
 void PosixFileSystem::createPath(char *output, size_t outputSize, const std::string &path) const {
-    strncpy(output, prefix_.c_str(), outputSize);
+    strncpy(output, PosixFileSystemPrefix, outputSize);
     strncat(output, path.c_str(), outputSize - 1);
 }
 
@@ -73,3 +75,7 @@ auto PosixFileSystem::remove(const std::string &path) -> bool {
 }
 
 void PosixFileSystem::close() {}
+
+void setPrefix(const std::string &prefix) {
+    strncpy(PosixFileSystemPrefix, prefix.c_str(), sizeof(PosixFileSystemPrefix) - 1);
+}
