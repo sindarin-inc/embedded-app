@@ -133,9 +133,6 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
     -> bool {
 
     std::string fullPath(path);
-    if (gzip) {
-        fullPath.append(".gz");
-    }
 
     SHOW_HEAP();
     // TODO: Support resuming?

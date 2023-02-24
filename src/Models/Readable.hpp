@@ -41,22 +41,9 @@ public:
     uint32_t place{0}, placePrev{0};
 
     [[nodiscard]] auto file() const -> const ReadableFile & { return files[0]; }
-    [[nodiscard]] auto localFilePath() const -> std::string {
-        if (!isArticle()) {
-            return StringFormat("/%s", file().name.c_str());
-        } else {
-            return StringFormat("/articles/%s.txt", uuid.c_str());
-        }
-    }
+
     [[nodiscard]] auto bookmarkFilePath() const -> std::string {
         return StringFormat("/bookmarks/%s-bookmark.txt", uuid.c_str());
-    }
-    [[nodiscard]] auto compressedLocalFilePath() const -> std::string {
-        if (!isArticle()) {
-            return StringFormat("/%s.gz", file().name.c_str());
-        } else {
-            return StringFormat("/articles/%s.txt.gz", uuid.c_str());
-        }
     }
     [[nodiscard]] auto remoteUrl() const -> SpiramString { return file().fileProxied; }
     [[nodiscard]] auto isArticle() const -> bool {

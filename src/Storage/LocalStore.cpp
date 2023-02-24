@@ -70,37 +70,20 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
         if (!readable.fromJson(v.as<JsonObject>())) {
             log_e("Failed to parse Readable");
             continue;
-        } else if (!fileSystem.exists(readable.localFilePath()) &&
-                   !fileSystem.exists(readable.compressedLocalFilePath())) {
-            log_w("Couldn't find readable with path %s", readable.localFilePath().c_str());
-            continue;
-        } else {
-            int fileSize = -1;
-            auto file = fileSystem.open(readable.localFilePath());
-            if (file) {
-                fileSize = file.size();
-                file.close();
-            } else {
-                log_w("Failed to open readable %s", readable.localFilePath().c_str());
-                // try opening the compressed file
-                auto cf = fileSystem.open(readable.compressedLocalFilePath());
-                if (!cf) {
-                    log_w("Failed to open compressed readable %s",
-                          readable.compressedLocalFilePath().c_str());
-                    continue;
-                }
-
-                GUnzipStream gzStream(cf);
-                fileSize = gzStream.size();
-            }
-
-            if (fileSize >= 0 && readable.files.size() && fileSize != readable.file().size) {
-                log_w("File size mismatch for %s (%d on disk vs %d in local store), ignoring",
-                      readable.localFilePath().c_str(), fileSize, readable.file().size);
-                continue;
-            }
-            readables.push_back(readable);
         }
+        auto path = readableFilePathForReading(readable);
+        if (path.empty()) {
+            log_w("Couldn't find readable with path %s", path.c_str());
+            continue;
+        }
+        int fileSize = readableGetUncompressedSize(readable);
+
+        if (fileSize >= 0 && readable.files.size() && fileSize != readable.file().size) {
+            log_w("File size mismatch for %s (%d on disk vs %d in local store), ignoring",
+                  path.c_str(), fileSize, readable.file().size);
+            continue;
+        }
+        readables.push_back(readable);
     }
 
     log_d("Loaded %zu readables from %s", readables.size(), path.c_str());
@@ -112,40 +95,27 @@ auto LocalStore::readablesModelType(const ReadablesVector &readables) -> Readabl
 }
 
 auto LocalStore::hasReadable(const ReadablesVector &readables, const Readable &readable) -> bool {
-    auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
     for (auto r = readables.begin(); r != readables.end(); ++r) {
-        if (r->uuid == readable.uuid && (fileSystem.exists(r->localFilePath()) ||
-                                         fileSystem.exists(r->compressedLocalFilePath()))) {
-            int fileSize = -1;
-            auto file = fileSystem.open(r->localFilePath());
-            if (file) {
-                fileSize = file.size();
-                file.close();
-            } else {
-                log_w("Checking for %s, but failed to open file: %s %s",
-                      ToString(modelType).c_str(), r->localFilePath().c_str(), r->uuid.c_str());
+        auto path = readableFilePathForReading(*r);
+        if (r->uuid == readable.uuid && !path.empty()) {
+            int fileSize = readableGetUncompressedSize(readable);
 
-                auto cf = fileSystem.open(r->compressedLocalFilePath());
-                if (cf) {
-                    GUnzipStream gs(cf);
-                    fileSize = gs.size();
-                } else {
-                    log_w("failed to open compressed file %s",
-                          r->compressedLocalFilePath().c_str());
-                }
+            if (fileSize <= 0) {
+                log_w("Couldn't get file size for %s", path.c_str());
+                return false;
             }
 
-            if (&readables == &readables_) {
+            // If we have a file object, check that the size matches
+            if ((*r).files.size() > 0) {
                 if (fileSize >= 0 && fileSize != readable.file().size) {
                     log_w("File size mismatch for %s (%d on disk vs %d in local store), ignoring",
-                          readable.localFilePath().c_str(), fileSize, readable.file().size);
+                          path.c_str(), fileSize, readable.file().size);
                     return false;
                 } else {
                     return true;
                 }
-            } else if (&readables == &articles_) {
-                return true;
             }
+            return true;
         }
     }
     return false;
@@ -609,8 +579,7 @@ void LocalStore::syncFromRemote(
 
         for (auto &readable : readablesToDelete) {
             log_i("Deleting %s", readable.title.c_str());
-            this->fileSystem.remove(readable.localFilePath());
-            this->fileSystem.remove(readable.compressedLocalFilePath());
+            readableFilePurge(readable);
             this->removeReadable(readables_, readable);
             syncState.tasks[tasksIndex].percentage = 100;
             tasksIndex += 1;
@@ -620,18 +589,19 @@ void LocalStore::syncFromRemote(
 
         for (auto &readable : readablesToDownload) {
             // Index into the progress tasks vector
-            log_i("Downloading %s (file=%s, url=%s)", readable.title.c_str(),
-                  readable.localFilePath().c_str(), readable.remoteUrl().c_str());
+
+            auto path = readableFilePathForWriting(readable);
+            log_i("Downloading %s (file=%s, url=%s)", readable.title.c_str(), path.c_str(),
+                  readable.remoteUrl().c_str());
             SHOW_HEAP();
 
             for (int t = 0; t < NUMBER_OF_READABLE_DOWNLOAD_TRIES; t++) {
                 auto success = SindarinAPI::getInstance()->downloadReadable(
-                    readable, this->fileSystem,
+                    readable, this->fileSystem, path,
                     [progressCallback, &syncState, tasksIndex](int percentage) {
                         syncState.tasks[tasksIndex].percentage = percentage;
                         progressCallback(syncState);
-                    },
-                    prefs_.gzipReadables.get().value_or(false));
+                    });
                 if (success) {
                     addReadable(readables_, readable);
                     log_d("File successfully downloaded.");
@@ -657,8 +627,7 @@ void LocalStore::syncFromRemote(
 
                 const auto &readable = articlesToDelete[i];
                 log_i("Deleting %s", readable.title.c_str());
-                this->fileSystem.remove(readable.localFilePath());
-                this->fileSystem.remove(readable.compressedLocalFilePath());
+                readableFilePurge(readable);
                 this->removeReadable(articles_, readable);
             }
 
@@ -678,28 +647,21 @@ void LocalStore::syncFromRemote(
 
         // Save the articles that are new
         if (articlesToSave.size() > 0) {
-
-            // create log directory in filesystem if it doesn't exist
-            log_d("Creating directory /articles");
-            if (!fileSystem.createDir("/articles")) {
-                log_e("Could not create /articles directory");
-            }
-
             float pctPerArticle = 100.0 / articlesToSave.size();
             for (int i = 0; i < articlesToSave.size(); i++) {
                 float currPercentage = (float)i * pctPerArticle;
                 auto &readable = articlesToSave[i];
                 for (int t = 0; t < NUMBER_OF_READABLE_DOWNLOAD_TRIES; t++) {
+                    auto path = readableFilePathForWriting(readable);
                     auto success = SindarinAPI::getInstance()->downloadReadable(
-                        readable, this->fileSystem,
+                        readable, this->fileSystem, path,
                         [progressCallback, &syncState, tasksIndex, currPercentage,
                          pctPerArticle](int percentage) {
                             float pctThisReadable = (float)percentage * pctPerArticle / 100.0;
                             syncState.tasks[tasksIndex].percentage =
                                 currPercentage + pctThisReadable;
                             progressCallback(syncState);
-                        },
-                        prefs_.gzipReadables.get().value_or(false));
+                        });
                     if (success) {
                         this->addReadable(articles_, readable);
                         log_d("File successfully downloaded.");
@@ -778,44 +740,6 @@ void LocalStore::syncFromRemote(
     });
 }
 
-auto LocalStore::saveArticleFile(const Readable &readable) -> bool {
-    log_i("Storing article %s: %s", readable.title.c_str(), readable.localFilePath().c_str());
-
-    // create log directory in filesystem if it doesn't exist
-    log_d("Creating directory /articles");
-    if (!fileSystem.createDir("/articles")) {
-        log_e("Could not create /articles directory");
-        return false;
-    }
-
-    // Sleep for 2 seconds
-    delay(2000);
-
-    log_d("Opening file for writing...");
-    SHOW_HEAP();
-    File file = fileSystem.open(readable.localFilePath(), FILE_WRITE, true);
-    if (!file) {
-        log_e("Failed to open %s", readable.localFilePath().c_str());
-        return false;
-    }
-    SHOW_HEAP();
-
-    const char *title = readable.title.c_str();
-    file.write((const uint8_t *)title, strlen(title));
-    file.write('\n');
-
-    StripHtml(readable.content, file);
-
-    file.flush();
-    size_t docSize = file.size();
-    file.close();
-
-    log_d("Finished storing article %s, size %zu/%zu", readable.title.c_str(), docSize,
-          (size_t)readable.content.size());
-
-    return true;
-}
-
 void LocalStore::deleteReadables(bool restart) {
     deleteReadableFiles(readables_, restart);
     readables_.clear();
@@ -842,13 +766,8 @@ void LocalStore::deleteReadableFiles(const ReadablesVector &readables, bool rest
     }
 
     for (const Readable &readable : readables) {
-        log_i("Removing %s \"%s\" (%s)", ToString(modelType).c_str(), readable.title.c_str(),
-              readable.localFilePath().c_str());
-        fileSystem.remove(readable.localFilePath());
-
-        log_i("Removing %s \"%s\" (%s)", ToString(modelType).c_str(), readable.title.c_str(),
-              readable.compressedLocalFilePath().c_str());
-        fileSystem.remove(readable.compressedLocalFilePath());
+        log_i("Removing %s \"%s\"", ToString(modelType).c_str(), readable.title.c_str());
+        readableFilePurge(readable);
     }
 
     log_i("Resetting to guarantee %s are removed", ToString(modelType).c_str());
@@ -888,3 +807,128 @@ auto LocalStore::saveReadables(const ReadablesVector &readables, const std::stri
 
     return true;
 };
+
+auto LocalStore::readableFilePathForWriting(const Readable &readable) const -> std::string {
+    return StringFormat("/%s/%s.txt.gz", readable.readableType.c_str(), readable.uuid.c_str());
+}
+
+auto LocalStore::readableFilePathForReading(const Readable &readable) const -> std::string {
+    // We look for the readable file in the following order:
+    // We first try the most modern path style:
+    // /[readableType]/[uuid].txt.gz
+    // /[readableType]/[uuid].txt
+
+    // Then if it's a book we try:
+    // /[readableType]/[uuid].epub
+    // /[file().name].txt.gz
+    // /[file().name].txt
+
+    // Then if it's not a book we will search:
+    // /articles/[uuid].txt.gz
+    // /articles/[uuid].txt
+
+    auto type = readable.readableType;
+    auto &uuid = readable.uuid;
+
+    std::string path;
+
+    path = StringFormat("/%s/%s.txt.gz", type.c_str(), uuid.c_str());
+    if (fileSystem.exists(path)) {
+        return path;
+    }
+    path = StringFormat("/%s/%s.txt", type.c_str(), uuid.c_str());
+    if (fileSystem.exists(path)) {
+        return path;
+    }
+
+    if (type == "book") {
+        path = StringFormat("/%s/%s.epub", type.c_str(), uuid.c_str());
+        if (fileSystem.exists(path)) {
+            return path;
+        }
+        // Previously we also stored books in the root directory
+        if (readable.files.size() > 0) {
+            path = StringFormat("/%s.txt.gz", readable.file().name.c_str());
+            if (fileSystem.exists(path)) {
+                return path;
+            }
+            path = StringFormat("/%s.txt", readable.file().name.c_str());
+            if (fileSystem.exists(path)) {
+                return path;
+            }
+        }
+    } else {
+        path = StringFormat("/articles/%s.txt.gz", uuid.c_str());
+        if (fileSystem.exists(path)) {
+            return path;
+        }
+        path = StringFormat("/articles/%s.txt", uuid.c_str());
+        if (fileSystem.exists(path)) {
+            return path;
+        }
+    }
+    log_w("Unable to find readable file for %s (%s)", readable.title.c_str(), uuid.c_str());
+    return "";
+}
+
+auto LocalStore::readableGetUncompressedSize(const Readable &readable) const -> int {
+    auto path = readableFilePathForReading(readable);
+    if (path.empty()) {
+        return -1;
+    }
+    auto file = fileSystem.open(path);
+    if (!file) {
+        log_w("Failed to open readable file to check size %s", path.c_str());
+        return -1;
+    }
+
+    int fileSize = -1;
+    // If the path has a .gz suffix interpret it as a GZip file
+    if (path.substr(path.length() - 3) == ".gz") {
+        GUnzipStream gzStream(file);
+        fileSize = gzStream.size();
+    } else {
+        fileSize = file.size();
+    }
+    file.close();
+
+    return fileSize;
+}
+
+void LocalStore::readableFilePurge(const Readable &readable) {
+    // Purge all possible readble file paths:
+    // /[readableType]/[uuid].txt.gz
+    // /[readableType]/[uuid].txt
+    // /[readableType]/[uuid].epub
+    // /[file().name].txt.gz
+    // /[file().name].txt
+    // /articles/[uuid].txt.gz
+    // /articles/[uuid].txt
+
+    auto type = readable.readableType;
+    auto &uuid = readable.uuid;
+
+    std::string path;
+    path = StringFormat("/%s/%s.txt.gz", type.c_str(), uuid.c_str());
+    fileSystem.remove(path);
+
+    path = StringFormat("/%s/%s.txt", type.c_str(), uuid.c_str());
+    fileSystem.remove(path);
+
+    path = StringFormat("/%s/%s.epub", type.c_str(), uuid.c_str());
+    fileSystem.remove(path);
+
+    if (readable.files.size() > 0) {
+        path = StringFormat("/%s.txt.gz", readable.file().name.c_str());
+        fileSystem.remove(path);
+
+        path = StringFormat("/%s.txt", readable.file().name.c_str());
+        fileSystem.remove(path);
+    }
+
+    path = StringFormat("/articles/%s.txt.gz", uuid.c_str());
+    fileSystem.remove(path);
+
+    path = StringFormat("/articles/%s.txt", uuid.c_str());
+    fileSystem.remove(path);
+}

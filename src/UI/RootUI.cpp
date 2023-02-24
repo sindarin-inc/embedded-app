@@ -73,24 +73,24 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto readables = localStore.readables();
     auto articles = localStore.articles();
 
-    auto createReadableScreen = [this, display, mainMenu, &fileSystem, &lightingController](
-                                    const Readable &readable) -> ReadableScreen * {
+    auto createReadableScreen = [this, display, mainMenu, &fileSystem, &lightingController,
+                                 localStore](const Readable &readable) -> ReadableScreen * {
         // TODO: Would be better to not allocate / delete these all the time
 
         std::shared_ptr<RendererStream> stream;
-        if (readable.file().filetype == "epub") {
-            log_i("Opening %s as epub", readable.localFilePath().c_str());
-            auto epubFile =
-                std::make_unique<EPubFile>(fileSystem, readable.localFilePath().c_str());
+        auto path = localStore.readableFilePathForReading(readable);
+
+        if (path.substr(path.length() - 4) == ".epub") {
+            log_i("Opening %s as epub", path.c_str());
+            auto epubFile = std::make_unique<EPubFile>(fileSystem, path.c_str());
             epubFile->open();
             stream = std::make_shared<LookBackStream>(
                 std::make_unique<HtmlCleaner>(std::move(epubFile)), LOOKBACK_BUFFER_SIZE);
+        } else if (path.substr(path.length() - 7) == ".txt.gz") {
+            log_i("Opening %s as gzip", path.c_str());
+            stream = fileSystem.newGzipRendererStream(path.c_str());
         } else {
-            stream = fileSystem.newRendererStream(readable.localFilePath().c_str());
-            if (!stream) {
-                stream =
-                    fileSystem.newGzipRendererStream(readable.compressedLocalFilePath().c_str());
-            }
+            stream = fileSystem.newRendererStream(path.c_str());
         }
         auto *readableScreen = new ReadableScreen(stream, *display, readable, this->prefs_,
                                                   this->power_, fileSystem, lightingController);
@@ -1240,51 +1240,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
         (*voltageLogScreen).begin();
     }));
-
-    debugSettingsMenu->addMenuItem(
-        MenuItem("Set Gzip Readables", [this, display, debugSettingsMenu]() {
-            auto gzipReadablesMenu = new MenuScreen(this->power_, debugSettingsMenu->getMyStyle());
-
-            auto gzipSettingToString = [](bool compression) -> std::string {
-                if (compression) {
-                    return "Compression is ON";
-                }
-                return "Compression is OFF";
-            };
-
-            gzipReadablesMenu->setExtraText(
-                gzipSettingToString(this->prefs_.gzipReadables.get().value_or(false)));
-
-            auto confirmMessage = [gzipReadablesMenu, display]() {
-                gzipReadablesMenu->showTemporaryMessage(*display, "Compression Set", 200, false);
-                gzipReadablesMenu->backCallback();
-            };
-
-            gzipReadablesMenu->addMenuItem(MenuItem("Compression: Off", [confirmMessage, this]() {
-                this->prefs_.gzipReadables.set(false);
-                confirmMessage();
-            }));
-            gzipReadablesMenu->addMenuItem(MenuItem("Compression: On", [confirmMessage, this]() {
-                this->prefs_.gzipReadables.set(true);
-                confirmMessage();
-            }));
-
-            int menuIndex = 0;
-            if (prefs_.gzipReadables.get().value_or(false)) {
-                menuIndex = 1;
-            } else {
-                menuIndex = 0;
-            }
-
-            gzipReadablesMenu->setCurrSelection(menuIndex);
-
-            setCurrentScreen(*gzipReadablesMenu);
-            gzipReadablesMenu->backCallback = [this, gzipReadablesMenu, debugSettingsMenu]() {
-                debugSettingsMenu->setFirstLoad();
-                setCurrentScreen(*debugSettingsMenu);
-                delete gzipReadablesMenu;
-            };
-        }));
 
     oldMenu->addMenuItem(MenuItem("Calibration Screen Run Through", [this, oldMenu]() {
         auto calibrationScreen = new CalibrationScreen();
