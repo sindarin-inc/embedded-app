@@ -1,10 +1,9 @@
 #include "SFile.hpp"
+
 #include "sindarin-debug.h"
 
 // SFile
-size_t SFile::write(uint8_t c) {
-    return write(&c, 1);
-}
+size_t SFile::write(uint8_t c) { return write(&c, 1); }
 
 size_t SFile::write(const uint8_t *buf, size_t size) {
     if (!*this) {
@@ -55,9 +54,7 @@ size_t SFile::read(uint8_t *buf, size_t size) {
 
     return _p->read(buf, size);
 }
-size_t SFile::readBytes(char *buffer, size_t length) {
-    return read((uint8_t*)buffer, length);
-}
+size_t SFile::readBytes(char *buffer, size_t length) { return read((uint8_t *)buffer, length); }
 
 bool SFile::seek(uint32_t pos, SSeekMode mode) {
     if (!*this) {
@@ -88,9 +85,7 @@ void SFile::close() {
     }
 }
 
-SFile::operator bool() const {
-    return _p != nullptr && *_p != false;
-}
+SFile::operator bool() const { return _p != nullptr && *_p != false; }
 
 // VFSFile
 size_t VFSFile::write(const uint8_t *buf, size_t size) {
@@ -144,7 +139,7 @@ size_t VFSFile::position() const {
     if (!*this) {
         return 0;
     }
-    
+
     return ftell(fp_);
 }
 

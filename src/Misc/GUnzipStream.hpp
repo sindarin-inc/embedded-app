@@ -2,9 +2,9 @@
 
 #include <utility>
 
-#include "Storage/SFile.hpp"
 #include "Misc/GUnzip.hpp"
 #include "Renderers/RendererStream.hpp"
+#include "Storage/SFile.hpp"
 #include "sindarin-debug.h"
 
 #define GZ_BUFFER_SIZE 128

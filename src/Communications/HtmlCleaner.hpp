@@ -5,9 +5,9 @@
 #include <sstream>
 #include <string>
 
-#include "Storage/SFile.hpp"
 #include "Misc/SpiramAllocator.hpp"
 #include "Renderers/RendererStream.hpp"
+#include "Storage/SFile.hpp"
 
 enum StripHtmlState {
     HTML_TEXT,

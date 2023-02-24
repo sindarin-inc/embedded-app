@@ -1,9 +1,10 @@
 #pragma once
 
-#include <stdio.h>
-#include <stdint.h>
 #include <memory>
+#include <stdint.h>
+#include <stdio.h>
 #include <string>
+
 #include "sindarin-debug.h"
 
 #define FILE_READ "r"
@@ -11,12 +12,11 @@
 #define FILE_APPEND "a"
 enum SSeekMode { SSeekSet = 0, SSeekCur = 1, SSeekEnd = 2 };
 
-class SFileImpl
-{
+class SFileImpl {
 public:
-    virtual ~SFileImpl() { }
+    virtual ~SFileImpl() {}
     virtual size_t write(const uint8_t *buf, size_t size) = 0;
-    virtual size_t read(uint8_t* buf, size_t size) = 0;
+    virtual size_t read(uint8_t *buf, size_t size) = 0;
     virtual void flush() = 0;
     virtual bool seek(uint32_t pos, SSeekMode mode) = 0;
     virtual size_t position() const = 0;
@@ -31,12 +31,11 @@ public:
     ~SStream() {}
 
     virtual size_t write(uint8_t c) = 0;
-    size_t write(const char *str)
-    {
-        if(str == NULL) {
+    size_t write(const char *str) {
+        if (str == NULL) {
             return 0;
         }
-        return write((const uint8_t *) str, strlen(str));
+        return write((const uint8_t *)str, strlen(str));
     }
 
     virtual size_t write(const uint8_t *buf, size_t size) = 0;
@@ -45,8 +44,8 @@ public:
     virtual std::string readString() {
         std::string ret;
         int c = read();
-        while(c >= 0) {
-            ret += (char) c;
+        while (c >= 0) {
+            ret += (char)c;
             c = read();
         }
         return ret;
@@ -54,9 +53,9 @@ public:
     std::string readStringUntil(char terminator) {
         std::string res = "";
         int value;
-        while(true){
+        while (true) {
             value = read();
-            if(value <= 0 || value == terminator) {
+            if (value <= 0 || value == terminator) {
                 return res;
             }
             res += (char)value;
@@ -92,7 +91,7 @@ protected:
 
 class VFSFile : public SFileImpl {
 public:
-    VFSFile(const char* fname, const char *mode, const bool create) {
+    VFSFile(const char *fname, const char *mode, const bool create) {
         std::string modeStr(mode);
         std::string openMode = "";
         bool read = false;
@@ -121,16 +120,15 @@ public:
     int available();
     void flush();
     size_t read(uint8_t *buf, size_t size);
-    
+
     bool seek(uint32_t pos, SSeekMode mode);
     size_t position() const;
     size_t size() const;
     void close();
     operator bool() const;
-    
-protected:
 
-    FILE* fp_{nullptr};
+protected:
+    FILE *fp_{nullptr};
     size_t fSize_{0};
 
     void getFileSize();
