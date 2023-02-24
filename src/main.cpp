@@ -88,7 +88,7 @@ InactivityTimer inactivityTimer;
 VLittleFSFileSystem fileSystem;
 #else
 #include "Storage/LittleFSFileSystem.hpp"
-LittleFSFileSystem fileSystem;
+VLittleFSFileSystem fileSystem;
 #endif
 
 LocalStore localStore(fileSystem, prefs);
@@ -529,6 +529,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     prefs.bootCount.set(bootCount);
 
     // TEST
+    /*
     VLittleFSFileSystem lfs;
 
     log_i("begin filesystem ***");
@@ -557,6 +558,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     //delete f;
     lfs.close();
+    */
 
     if (!fileSystem.begin()) {
         bootErrors.push_back({.type = BootError::Type::FileSystem});
