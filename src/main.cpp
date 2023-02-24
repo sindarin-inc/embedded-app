@@ -538,7 +538,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     bool exists = lfs.exists("/last-question.txt");
     log_i("exists: %d", exists);
 
-    SFile f = lfs.sopen("/last-question.txt", "r", false);
+    SFile f = lfs.open("/last-question.txt", "r", false);
 
     char tmp[65];
     f.readBytes(tmp, 64);
