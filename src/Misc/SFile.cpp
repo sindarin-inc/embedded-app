@@ -58,14 +58,6 @@ const char *SFile::path() const {
     return _p->path();
 }
 
-boolean SFile::isDirectory(void) {
-    return _p->isDirectory();
-}
-//File openNextFile(const char *mode = FILE_READ) {}
-void SFile::rewindDirectory(void) {
-    _p->rewindDirectory();
-}
-
 SFile::operator bool() {
     if (!_p) {
         return false;
@@ -150,16 +142,12 @@ void VFSFile::close() {
     fclose(fp_);
     fp_ = NULL;
 }
-//time_t getLastWrite(){}
+
 const char *VFSFile::name() const {
     return nullptr;
 }
 const char *VFSFile::path() const {
     return nullptr;
-}
-
-bool VFSFile::isDirectory(void) {
-    return false;
 }
 
 VFSFile::operator bool() {
@@ -169,11 +157,3 @@ VFSFile::operator bool() {
 
     return false;
 }
-
-/*
-SFile VFSFile::openNextFile(const char *mode = "r") {
-
-}
-*/
-
-void VFSFile::rewindDirectory(void){}
