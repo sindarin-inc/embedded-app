@@ -4,7 +4,7 @@
 #include <string>
 #include <utility>
 
-#include "Misc/SFile.hpp"
+#include "Storage/SFile.hpp"
 #include "Storage/FileSystem.hpp"
 
 class MultiPartData {

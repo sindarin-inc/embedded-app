@@ -3,7 +3,7 @@
 #include <utility>
 
 #include "FS.h"
-#include "Misc/SFile.hpp"
+#include "Storage/SFile.hpp"
 #include "Misc/GUnzip.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "sindarin-debug.h"
