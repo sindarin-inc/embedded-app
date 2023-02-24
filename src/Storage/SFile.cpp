@@ -60,10 +60,6 @@ SFile::operator bool() {
 }
 
 // VFSFile
-size_t VFSFile::write(uint8_t c) {
-    return write(&c, 1);
-}
-
 size_t VFSFile::write(const uint8_t *buf, size_t size) {
     if (!fp_) {
         log_i("no file pointer!");

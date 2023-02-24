@@ -30,7 +30,9 @@ public:
     SStream() {}
     ~SStream() {}
 
-    virtual size_t write(uint8_t c) = 0;
+    virtual size_t write(uint8_t c) {
+        return write(&c, 1);
+    }
     size_t write(const char *str)
     {
         if(str == NULL) {
@@ -40,11 +42,17 @@ public:
     }
 
     virtual size_t write(const uint8_t *buf, size_t size) = 0;
-
     virtual int available() = 0;
     virtual int read() = 0;
-
-    virtual std::string readString() { return ""; }
+    virtual std::string readString() {
+        std::string ret;
+        int c = read();
+        while(c >= 0) {
+            ret += (char) c;
+            c = read();
+        }
+        return ret;
+    }
     std::string readStringUntil(char terminator) {
         std::string res = "";
         int value;
@@ -87,8 +95,6 @@ protected:
 class VFSFile : public SFileImpl {
 public:
     VFSFile(const char* fname, const char *mode, const bool create) {
-        log_i("opening %s", fname);
-
         std::string modeStr(mode);
         std::string openMode = "";
         bool read = false;
@@ -104,17 +110,15 @@ public:
         fp_ = fopen(fname, openMode.c_str());
 
         if (fp_) {
-            log_i("opened");
             if (read) {
                 getFileSize();
             }
         } else {
-            log_i("not opened");
+            log_e("Failed to open file: %s", fname);
         }
     }
     ~VFSFile() {}
 
-    size_t write(uint8_t);
     size_t write(const uint8_t *buf, size_t size);
     int available();
     void flush();
