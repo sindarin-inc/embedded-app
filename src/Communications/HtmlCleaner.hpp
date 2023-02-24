@@ -5,6 +5,7 @@
 #include <sstream>
 #include <string>
 
+#include "Misc/SFile.hpp"
 #include "Misc/SpiramAllocator.hpp"
 #include "Renderers/RendererStream.hpp"
 
@@ -18,11 +19,11 @@ enum StripHtmlState {
 // TODO: A Stream<->std::stringstream adapter class could simplify this
 void StripHtml(std::stringstream &inStream, std::stringstream &outStream);
 void StripHtml(const std::string &str, std::stringstream &outStream);
-void StripHtml(Stream &inStream, std::stringstream &outStream);
-void StripHtml(std::stringstream &inStream, Stream &outStream);
-void StripHtml(const std::string &str, Stream &outStream);
+void StripHtml(SStream &inStream, std::stringstream &outStream);
+void StripHtml(std::stringstream &inStream, SStream &outStream);
+void StripHtml(const std::string &str, SStream &outStream);
 void StripHtml(const std::basic_string<char, std::char_traits<char>, SpiramAllocator<char>> &str,
-               Stream &outStream);
+               SStream &outStream);
 
 class HtmlCleaner : public RendererStream {
 public:

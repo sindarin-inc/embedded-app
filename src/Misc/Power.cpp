@@ -159,7 +159,7 @@ void Power::logVoltages(float lVoltage, float rVoltage) {
         StringFormat("%d,%d,%.2f,%.2f", bootCount, runTimeMs, lVoltage, rVoltage);
 
     std::string path = Power::voltageLogPath();
-    File file = fileSystem_.open(path.c_str(), FILE_APPEND);
+    SFile file = fileSystem_.open(path.c_str(), FILE_APPEND);
     if (file.size() < MAX_VOLTAGE_LOG_SIZE) {
         file.write((const uint8_t *)logString.c_str(), logString.length());
         file.write('\n');

@@ -43,7 +43,7 @@ auto ZipFile::zipRead(void *p, uint8_t *buffer, int32_t length) -> int32_t {
         return -1;
     }
 
-    File *fp = &(iZF->fp_);
+    SFile *fp = &(iZF->fp_);
     if (!fp) {
         return -1;
     }
@@ -72,7 +72,7 @@ auto ZipFile::zipSeek(void *p, int32_t position, int iType) -> int32_t {
     if (!iZF) {
         return -1;
     }
-    File *fp = &(iZF->fp_);
+    SFile *fp = &(iZF->fp_);
     if (!fp) {
         return -1;
     }
@@ -168,7 +168,7 @@ void ZipFile::extractCurrentFile(const char *outFname) {
     uint8_t buf[1024];
     bool done = false;
 
-    File fp = fileSystem_.open(outFname, "w", true);
+    SFile fp = fileSystem_.open(outFname, "w", true);
     zip_.openCurrentFile();
 
     while (!done) {

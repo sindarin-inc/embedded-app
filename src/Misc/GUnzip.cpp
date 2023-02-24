@@ -78,8 +78,8 @@ auto GUnzip::decompress(uint8_t *input, int inputSize, uint8_t *output, int outp
 auto GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFileName,
                             const std::string &outputFileName) -> bool {
 
-    File in = fileSystem.open(inputFileName);
-    File out = fileSystem.open(outputFileName, "w", true);
+    SFile in = fileSystem.open(inputFileName);
+    SFile out = fileSystem.open(outputFileName, "w", true);
 
     bool done = false;
     uint8_t inBuf[1024];

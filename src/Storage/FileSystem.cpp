@@ -11,7 +11,7 @@ auto FileSystem::newRendererStream(const char *path) -> std::shared_ptr<Renderer
         log_e("Failed to open file: %s", path);
         return nullptr;
     }
-    return std::make_shared<ContainerStream<File>>(file);
+    return std::make_shared<ContainerStream<SFile>>(file);
 }
 
 auto FileSystem::newGzipRendererStream(const char *path) -> std::shared_ptr<RendererStream> {

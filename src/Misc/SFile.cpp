@@ -4,7 +4,7 @@
 // SFile
 
 size_t SFile::write(uint8_t c) {
-    return 0;
+    return _p->write(&c, 1);
 }
 size_t SFile::write(const uint8_t *buf, size_t size) {
     return _p->write(buf, size);
@@ -75,12 +75,19 @@ SFile::operator bool() {
 }
 
 // VFSFile
-size_t VFSFile::write(uint8_t) {
-    return 0;
+size_t VFSFile::write(uint8_t c) {
+    //log_i("vfs write %X", c);
+    return write(&c, 1);
 }
 
 size_t VFSFile::write(const uint8_t *buf, size_t size) {
-    return 0;
+    //log_i("vfs write size %d", size);
+    if (!fp_) {
+        log_i("no file pointer!");
+        return 0;
+    }
+
+    return fwrite(buf, 1, size, fp_);
 }
 
 int VFSFile::available() {
@@ -96,15 +103,12 @@ void VFSFile::flush() {
 }
 
 size_t VFSFile::read(uint8_t *buf, size_t size) {
-    log_i("SFile read %d", size);
     if (!fp_) {
         log_i("no file pointer");
         return -1;
     }
 
-    size_t ff = fread(buf, 1, size, fp_);
-    log_i("Sfile fread %d", ff);
-    return ff;
+    return fread(buf, 1, size, fp_);
 }
 
 bool VFSFile::seek(uint32_t pos, SSeekMode mode) {
@@ -129,9 +133,12 @@ size_t VFSFile::position() const {
 }
 
 void VFSFile::getFileSize() {
+    log_i("VFS get file size");
     size_t curPos = position();
     seek((uint32_t)0, SSeekEnd);
     fSize_ = position();
+
+    log_i("size is %d", fSize_);
     seek(curPos, SSeekSet);
 }
 
@@ -139,6 +146,7 @@ size_t VFSFile::size() const {
     return fSize_;
 }
 void VFSFile::close() {
+    log_i("closing file!!");
     fclose(fp_);
     fp_ = NULL;
 }

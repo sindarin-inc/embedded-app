@@ -4,6 +4,7 @@
 #include <string>
 #include <utility>
 
+#include "Misc/SFile.hpp"
 #include "Storage/FileSystem.hpp"
 
 class MultiPartData {
@@ -20,14 +21,14 @@ public:
     auto endMultiPartData() -> bool;
 
     static auto getContentType() -> String;
-    auto getFile() -> File;
+    auto getFile() -> SFile;
 
 private:
     FileSystem &fileSystem_;
     static std::string boundary;
     std::string fileName_;
     bool keyWritten_{false};
-    File tempFile_;
+    SFile tempFile_;
     char tmp_[1024];
 
     auto startKeyWrite() -> bool;

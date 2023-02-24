@@ -143,7 +143,7 @@ auto MultiPartData::endMultiPartData() -> bool {
     return true;
 }
 
-auto MultiPartData::getFile() -> File {
+auto MultiPartData::getFile() -> SFile {
     tempFile_ = fileSystem_.open(fileName_, FILE_READ);
     return tempFile_;
 }
