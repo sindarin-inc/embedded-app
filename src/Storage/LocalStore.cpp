@@ -237,7 +237,7 @@ auto LocalStore::changedReadablesBookmarksJson() -> std::pair<char *, int> {
                       readable.title.c_str(), readable.uuid.c_str());
                 std::string bookmarkPath =
                     StringFormat("/bookmarks/%s-bookmark.txt", readable.uuid.c_str());
-                File bookmarkFile = fileSystem.open(bookmarkPath.c_str(), FILE_READ, false);
+                SFile bookmarkFile = fileSystem.open(bookmarkPath.c_str(), FILE_READ, false);
                 if (!bookmarkFile) {
                     log_i("Failed to open bookmark file: %s", bookmarkPath.c_str());
                     continue;
