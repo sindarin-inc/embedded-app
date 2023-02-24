@@ -22,7 +22,7 @@ public:
     virtual size_t position() const = 0;
     virtual size_t size() const = 0;
     virtual void close() = 0;
-    virtual operator bool() = 0;
+    virtual operator bool() const = 0;
 };
 
 class SStream {
@@ -30,9 +30,7 @@ public:
     SStream() {}
     ~SStream() {}
 
-    virtual size_t write(uint8_t c) {
-        return write(&c, 1);
-    }
+    virtual size_t write(uint8_t c) = 0;
     size_t write(const char *str)
     {
         if(str == NULL) {
@@ -86,7 +84,7 @@ public:
     size_t position() const;
     size_t size() const;
     void close();
-    operator bool();
+    operator bool() const;
 
 protected:
     std::shared_ptr<SFileImpl> _p;
@@ -128,7 +126,7 @@ public:
     size_t position() const;
     size_t size() const;
     void close();
-    operator bool();
+    operator bool() const;
     
 protected:
 
