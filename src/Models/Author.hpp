@@ -11,7 +11,7 @@ public:
     ~Author() override = default;
 
     std::string uuid;
-    std::string name;
+    SpiramString name;
     SpiramString description;
 
     auto fromJson(const JsonObject &j) -> bool override {

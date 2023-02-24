@@ -23,8 +23,7 @@ public:
     auto fromJson(const JsonObject &j) -> bool override {
 
         readableType = j["readable_type"].as<std::string>();
-        if (readableType.compare("pocket_article") == 0 ||
-            readableType.compare("email_article") == 0) {
+        if (readableType == "pocket_article" || readableType == "email_article") {
             if (!j.containsKey("file") || !j.containsKey("size")) {
                 log_w("Failed to parse article ReadableFile %s", DumpJson(j).c_str());
                 return false;

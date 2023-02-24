@@ -216,15 +216,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     for (const Readable &r : readables) {
         bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
-        auto title = archived ? "Archived: " + r.title : r.title;
+        auto title = StringFormat("%s%s", archived ? "Archived: " : "", r.title.c_str());
         // Bible books go in their own menu / app
-        if ((r.title.compare("Psalms and Proverbs") != 0) &&
-            (r.title.compare("New Testament") != 0) && (r.title.compare("Old Testament") != 0)) {
-            booksMenu->addMenuItem(
-                MenuItem(title, r.authors[0].name, [this, r, createReadableScreen]() {
-                    auto readableScreen = createReadableScreen(r);
-                    this->setCurrentScreen(*readableScreen);
-                }));
+        if (r.title != "Psalms and Proverbs" && r.title != "New Testament" &&
+            r.title != "Old Testament") {
+            booksMenu->addMenuItem(MenuItem(StringFormat("%s", title.c_str()),
+                                            StringFormat("%s", r.authors[0].name.c_str()),
+                                            [this, r, createReadableScreen]() {
+                                                auto readableScreen = createReadableScreen(r);
+                                                this->setCurrentScreen(*readableScreen);
+                                            }));
         }
     }
 
@@ -263,24 +264,24 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     for (const Readable &r : articles) {
         bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
-        auto title = archived ? "Archived: " + r.title : r.title;
+        auto title = StringFormat("%s%s", archived ? "Archived: " : "", r.title.c_str());
 
-        pocketMenu->addMenuItem(
-            MenuItem(title, [this, display, pocketMenu, mainMenu, r, createReadableScreen]() {
+        pocketMenu->addMenuItem(MenuItem(title, [this, display, pocketMenu, mainMenu, r,
+                                                 createReadableScreen]() {
+            display->clearDisplay();
+            auto readableScreen = createReadableScreen(r);
+            setCurrentScreen(*readableScreen);
+            readableScreen->backCallback = [this, r, display, readableScreen, mainMenu,
+                                            pocketMenu]() {
                 display->clearDisplay();
-                auto readableScreen = createReadableScreen(r);
-                setCurrentScreen(*readableScreen);
-                readableScreen->backCallback = [this, r, display, readableScreen, mainMenu,
-                                                pocketMenu]() {
-                    display->clearDisplay();
-                    bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
-                    auto title = archived ? "Archived: " + r.title : r.title;
-                    pocketMenu->changeItemTitleAt(pocketMenu->getCurrSelection(), title);
-                    mainMenu->setFirstLoad();
-                    setCurrentScreen(*mainMenu);
-                    delete readableScreen;
-                };
-            }));
+                bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
+                auto title = StringFormat("%s%s", archived ? "Archived: " : "", r.title.c_str());
+                pocketMenu->changeItemTitleAt(pocketMenu->getCurrSelection(), title);
+                mainMenu->setFirstLoad();
+                setCurrentScreen(*mainMenu);
+                delete readableScreen;
+            };
+        }));
     }
 
     pocketMenu->backCallback = [this, mainMenu, pocketMenu, display]() {
@@ -297,10 +298,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         for (const Readable &r : readables) {
             bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
-            auto title = archived ? "Archived: " + r.title : r.title;
-            if ((r.title.compare("Psalms and Proverbs") == 0) ||
-                (r.title.compare("New Testament") == 0) ||
-                (r.title.compare("Old Testament") == 0)) {
+            auto title = StringFormat("%s%s", archived ? "Archived: " : "", r.title.c_str());
+            if (r.title == "Psalms and Proverbs" || r.title == "New Testament" ||
+                r.title == "Old Testament") {
                 bibleMenu->addMenuItem(MenuItem(title, [this, r, createReadableScreen, display,
                                                         mainMenu]() {
                     auto readableScreen = createReadableScreen(r);

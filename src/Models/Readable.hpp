@@ -21,7 +21,7 @@ public:
 
     std::string uuid;
     SpiramString shortenedUuid;
-    std::string title;
+    SpiramString title;
     SpiramString content;
     SpiramString url;
     SpiramString dateCreated;
@@ -60,8 +60,7 @@ public:
     }
     [[nodiscard]] auto remoteUrl() const -> SpiramString { return file().fileProxied; }
     [[nodiscard]] auto isArticle() const -> bool {
-        return readableType.compare("pocket_article") == 0 ||
-               readableType.compare("email_article") == 0;
+        return readableType == "pocket_article" || readableType == "email_article";
     }
 
     auto fromJson(const JsonObject &j) -> bool override {
