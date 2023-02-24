@@ -1,5 +1,8 @@
 #pragma once
 
+#include <esp_err.h>
+#include <inttypes.h>
+
 /**
  * @brief Reset reasons
  */
@@ -22,5 +25,7 @@ typedef enum {
  * @return See description of esp_reset_reason_t for explanation of each value.
  */
 esp_reset_reason_t esp_reset_reason(void);
+
+esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us);
 
 void esp_restart();

@@ -17,6 +17,8 @@
 #include "Misc/InactivityTimer.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/Power.hpp"
+#include "Misc/PowerManager.hpp"
+#include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
 #include "Models/Readable.hpp"
@@ -28,7 +30,7 @@
 #include "config.h"
 #include "sindarin-debug.h"
 
-#define ENABLE_CONTENT_SYNC_ON_CLOSE 0
+#define ENABLE_CONTENT_SYNC_ON_CLOSE 1
 
 #if !DISABLE_POWER_MANAGEMENT
 #include <esp_pm.h>
@@ -92,6 +94,8 @@ LocalStore localStore(fileSystem, prefs);
 
 Power power(fileSystem, prefs);
 RootUI rootUi(prefs, power);
+SolClock solClock(prefs);
+PowerManager powerManager(prefs);
 
 bool templesClosed = false;
 
@@ -208,6 +212,65 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     InitializePlatform();
 
+    if (!prefs.begin()) {
+        bootErrors.push_back({.type = BootError::Type::Preferences});
+    }
+
+#if USE_MMC5603 & !SIMULATOR
+    int morningNews = prefs.morningNewspaperTime.get().value_or(0);
+    int eveningNews = prefs.eveningNewspaperTime.get().value_or(0);
+
+    log_i("Morning News: %d, Evening News: %d", morningNews, eveningNews);
+
+    // We are waking up after the inactivty timeout, so we need to check if the temple is closed
+    // and if so, reset it.
+    if (prefs.sleepReason.get().value_or(SLEEP_REASON_NONE) == SLEEP_REASON_INACTIVITY) {
+        log_i("Inactivity timer caused this reboot, checking if temple is closed");
+        templeCloseSensor.checkTemple();
+        if (!templeCloseSensor.getOpened()) {
+            log_i("Changing sleep reason because the temple is now closed");
+            prefs.sleepReason.set(SLEEP_REASON_TEMPLES_CLOSED);
+        }
+    }
+
+    if ((prefs.sleepReason.get().value_or(SLEEP_REASON_NONE) == SLEEP_REASON_INACTIVITY) ||
+        (morningNews != 0) || (eveningNews != 0)) {
+        templeCloseSensor.checkTemple();
+        if (!templeCloseSensor.getOpened() ||
+            (prefs.sleepReason.get().value_or(SLEEP_REASON_NONE) == SLEEP_REASON_INACTIVITY)) {
+            uint8_t hours, minutes;
+            solClock.getClockTime(hours, minutes);
+            log_i("Temple is closed or glasses inactive, current time: %d:%d", hours, minutes);
+            if (((hours && (hours == morningNews)) || (hours && (hours == eveningNews))) &&
+                (minutes == 0)) {
+                digitalWrite(BLUE_LED, LED_ON);
+                runningContentSync = true;
+                localStore.syncFromRemote([](const ContentSyncState &state) {
+                    if (state.state == ContentSyncState::Failure ||
+                        state.state == ContentSyncState::Synced ||
+                        state.state == ContentSyncState::AlreadySynced) {
+                        if (state.state == ContentSyncState::Failure) {
+                            log_i("Content sync failed with error: %s", state.message.c_str());
+                        } else if (state.state == ContentSyncState::Synced) {
+                            log_i("Content sync successful");
+                        } else if (state.state == ContentSyncState::AlreadySynced) {
+                            log_i("Content sync already synced");
+                        }
+                        digitalWrite(BLUE_LED, LED_OFF);
+                        runningContentSync = false;
+                        DisconnectWifi();
+                        log_i("Going to sleep after content sync");
+                        PowerManager::getInstance().powerOff();
+                    }
+                });
+            } else {
+                log_i("Temple closed, going to sleep");
+                PowerManager::getInstance().powerOff();
+            }
+        }
+    }
+#endif
+
     log_i("SN: %s", GetSerialNumber().c_str());
 
     if (esp_reset_reason() == ESP_RST_POWERON) {
@@ -234,9 +297,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #if !SIMULATOR
     inactivityTimer.start([]() {
         log_d("Inactive! Allow power off.");
-        AllowPowerOff();
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
-        esp_deep_sleep_start();
+        prefs.sleepReason.set(SLEEP_REASON_INACTIVITY);
+        PowerManager::getInstance().powerOff();
     });
 #endif
 
@@ -257,7 +319,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 templesClosed = true;
                 // Will be turned off after content sync
                 prefs.lastBatteryReport.set((int)power.getBatteryPercentage());
-                AllowPowerOff();
             }
         });
         templeCloseSensor.setLongCloseCallback([]() {
@@ -265,35 +326,43 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             DispatchGetUiQueue()->dispatch([]() {
                 log_d("Temples closed for a while, running content sync");
                 // Debug LED so we know what's happening
-                digitalWrite(BLUE_LED, LED_ON);
-                runningContentSync = true;
-                localStore.syncFromRemote([](const ContentSyncState &state) {
-                    if (state.state == ContentSyncState::Failure ||
-                        state.state == ContentSyncState::Synced ||
-                        state.state == ContentSyncState::AlreadySynced) {
-                        if (state.state == ContentSyncState::Failure) {
-                            log_i("Content sync failed with error: %s", state.message.c_str());
-                        } else if (state.state == ContentSyncState::Synced) {
-                            log_i("Content sync successful");
-                        } else if (state.state == ContentSyncState::AlreadySynced) {
-                            log_i("Content sync already synced");
+                if (templesClosed) {
+                    digitalWrite(BLUE_LED, LED_ON);
+                    runningContentSync = true;
+                    localStore.syncFromRemote([](const ContentSyncState &state) {
+                        if (state.state == ContentSyncState::Failure ||
+                            state.state == ContentSyncState::Synced ||
+                            state.state == ContentSyncState::AlreadySynced) {
+                            if (state.state == ContentSyncState::Failure) {
+                                log_i("Content sync failed with error: %s", state.message.c_str());
+                            } else if (state.state == ContentSyncState::Synced) {
+                                log_i("Content sync successful");
+                            } else if (state.state == ContentSyncState::AlreadySynced) {
+                                log_i("Content sync already synced");
+                            }
+                            digitalWrite(BLUE_LED, LED_OFF);
+                            // Only if the temples are still closed, allow power off
+                            if (templesClosed) {
+                                prefs.sleepReason.set(SLEEP_REASON_TEMPLES_CLOSED);
+                                PowerManager::getInstance().powerOff();
+                            }
+                            runningContentSync = false;
+                            DisconnectWifi();
                         }
-                        digitalWrite(BLUE_LED, LED_OFF);
-                        // Only if the temples are still closed, allow power off
-                        if (templesClosed) {
-                            AllowPowerOff();
-                        }
-                        runningContentSync = false;
-                    }
-                });
+                    });
+                }
             });
+#else
+            // Just precautinoary in case we turn off ENABLE_CONTENT_SYNC_ON_CLOSE in the future
+            // We should still power down if the temples are closed for a while!
+            if (templesClosed) {
+                prefs.sleepReason.set(SLEEP_REASON_TEMPLES_CLOSED);
+                PowerManager::getInstance().powerOff();
+            }
 #endif
         });
     }
 #endif
-    if (!prefs.begin()) {
-        bootErrors.push_back({.type = BootError::Type::Preferences});
-    }
 
     SHOW_HEAP();
 

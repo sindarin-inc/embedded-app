@@ -31,7 +31,7 @@ public:
           leftButtonTitle_("Brightness"), lightingAdjustScreen_(display, prefs, lightingController),
           readableSeekScreen_(prefs, readable, renderer_), batteryTextView_(display, ""),
           batteryIconView_(display, boltBits, bolt_width, bolt_height),
-          placeInReadableView_(display, "") {
+          placeInReadableView_(display, ""), clockView_(display, "") {
         currentScreen_ = this;
 
         lightingAdjustScreen_.backCallback = [this]() {
@@ -77,8 +77,7 @@ protected:
 
     SingleLineTextView placeInReadableView_;
 
-    // For later :)
-    // std::shared_ptr<SingleLineTextView> clockView_;
+    SingleLineTextView clockView_;
 
     int arrowWidth_ = 5;
     int arrowHeight_ = 10;

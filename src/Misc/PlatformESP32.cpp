@@ -332,6 +332,8 @@ auto GetHardwareRevision() -> uint8_t {
 void ForcePowerOn() {
     pinMode(sysOnPin, OUTPUT);
     digitalWrite(sysOnPin, HIGH);
+    gpio_hold_en((gpio_num_t)sysOnPin);
+    gpio_deep_sleep_hold_en();
 }
 
 void AllowPowerOff() {

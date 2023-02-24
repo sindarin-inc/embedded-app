@@ -16,6 +16,7 @@
 #include "Misc/LookBackStream.hpp"
 #include "Misc/MenuStyle.hpp"
 #include "Misc/Platform.hpp"
+#include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
 #include "Models/Readable.hpp"
@@ -335,6 +336,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // Move Text Box
     // Resize Text Box
     // Set Autopilot
+    // Morning Newspaper
+    // Evening Newspaper
     auto readingSettingsMenu = new MenuScreen(this->power_, styleFamilies.settingsMenu);
 
     readingSettingsMenu->backCallback = [this, mainMenu]() {
@@ -346,6 +349,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // Firmware Update
     // Send Crash Report
     // Batteries and Temperature
+    // Set Time Zone
     // Turn on Onboarding Mode
     // Turn on CES Mode
     // Statistics
@@ -530,6 +534,186 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
     }));
 
+    readingSettingsMenu->addMenuItem(MenuItem("Morning Newspaper", [this, display,
+                                                                    readingSettingsMenu]() {
+        auto morningNewspaperMenu = new MenuScreen(this->power_, readingSettingsMenu->getMyStyle());
+
+        auto timeToString = [](int time) -> std::string {
+            switch (time) {
+            case 5:
+                return "5am";
+            case 6:
+                return "6am";
+            case 7:
+                return "7am";
+            case 8:
+                return "8am";
+            case 9:
+                return "9am";
+            case 0:
+                return "Not set";
+            default:
+                return "Unknown";
+            }
+        };
+
+        morningNewspaperMenu->setExtraText(
+            timeToString(prefs_.morningNewspaperTime.get().value_or(0)));
+
+        auto confirmMessage = [this, morningNewspaperMenu, display](int time) {
+            this->prefs_.morningNewspaperTime.set(time);
+            morningNewspaperMenu->showTemporaryMessage(*display, "Morning Newspaper Set", 200,
+                                                       false);
+            morningNewspaperMenu->backCallback();
+        };
+
+        morningNewspaperMenu->addMenuItem(MenuItem("No Thanks", [this, confirmMessage]() {
+            this->prefs_.morningNewspaperTime.remove();
+            confirmMessage(0);
+        }));
+        morningNewspaperMenu->addMenuItem(MenuItem("5am", [this, confirmMessage]() {
+            this->prefs_.morningNewspaperTime.set(5);
+            confirmMessage(5);
+        }));
+        morningNewspaperMenu->addMenuItem(MenuItem("6am", [this, confirmMessage]() {
+            this->prefs_.morningNewspaperTime.set(6);
+            confirmMessage(6);
+        }));
+        morningNewspaperMenu->addMenuItem(MenuItem("7am", [this, confirmMessage]() {
+            this->prefs_.morningNewspaperTime.set(7);
+            confirmMessage(7);
+        }));
+        morningNewspaperMenu->addMenuItem(MenuItem("8am", [this, confirmMessage]() {
+            this->prefs_.morningNewspaperTime.set(8);
+            confirmMessage(8);
+        }));
+        morningNewspaperMenu->addMenuItem(MenuItem("9am", [this, confirmMessage]() {
+            this->prefs_.morningNewspaperTime.set(9);
+            confirmMessage(9);
+        }));
+
+        int menuIndex = 0;
+        switch (prefs_.morningNewspaperTime.get().value_or(0)) {
+        case 5:
+            menuIndex = 1;
+            break;
+        case 6:
+            menuIndex = 2;
+            break;
+        case 7:
+            menuIndex = 3;
+            break;
+        case 8:
+            menuIndex = 4;
+            break;
+        case 9:
+            menuIndex = 5;
+            break;
+        case 0:
+        default:
+            menuIndex = 0;
+            break;
+        }
+        morningNewspaperMenu->setCurrSelection(menuIndex);
+
+        setCurrentScreen(*morningNewspaperMenu);
+        morningNewspaperMenu->backCallback = [this, morningNewspaperMenu, readingSettingsMenu]() {
+            readingSettingsMenu->setFirstLoad();
+            setCurrentScreen(*readingSettingsMenu);
+            delete morningNewspaperMenu;
+        };
+    }));
+
+    readingSettingsMenu->addMenuItem(MenuItem("Evening Newspaper", [this, display,
+                                                                    readingSettingsMenu]() {
+        auto eveningNewspaperMenu = new MenuScreen(this->power_, readingSettingsMenu->getMyStyle());
+
+        auto timeToString = [](int time) -> std::string {
+            switch (time) {
+            case 18:
+                return "6pm";
+            case 19:
+                return "7pm";
+            case 20:
+                return "8pm";
+            case 21:
+                return "9pm";
+            case 22:
+                return "10pm";
+            case 0:
+                return "Not set";
+            default:
+                return "Unknown";
+            }
+        };
+
+        eveningNewspaperMenu->setExtraText(
+            timeToString(prefs_.eveningNewspaperTime.get().value_or(0)));
+
+        auto confirmMessage = [this, eveningNewspaperMenu, display](int time) {
+            this->prefs_.eveningNewspaperTime.set(time);
+            eveningNewspaperMenu->showTemporaryMessage(*display, "Evening Newspaper Set", 200,
+                                                       false);
+            eveningNewspaperMenu->backCallback();
+        };
+
+        eveningNewspaperMenu->addMenuItem(MenuItem("No Thanks", [this, confirmMessage]() {
+            this->prefs_.eveningNewspaperTime.remove();
+            confirmMessage(0);
+        }));
+        eveningNewspaperMenu->addMenuItem(MenuItem("6pm", [this, confirmMessage]() {
+            this->prefs_.eveningNewspaperTime.set(18);
+            confirmMessage(18);
+        }));
+        eveningNewspaperMenu->addMenuItem(MenuItem("7pm", [this, confirmMessage]() {
+            this->prefs_.eveningNewspaperTime.set(19);
+            confirmMessage(19);
+        }));
+        eveningNewspaperMenu->addMenuItem(MenuItem("8pm", [this, confirmMessage]() {
+            this->prefs_.eveningNewspaperTime.set(20);
+            confirmMessage(20);
+        }));
+        eveningNewspaperMenu->addMenuItem(MenuItem("9pm", [this, confirmMessage]() {
+            this->prefs_.eveningNewspaperTime.set(21);
+            confirmMessage(21);
+        }));
+        eveningNewspaperMenu->addMenuItem(MenuItem("10pm", [this, confirmMessage]() {
+            this->prefs_.eveningNewspaperTime.set(22);
+            confirmMessage(22);
+        }));
+
+        int menuIndex = 0;
+        switch (prefs_.eveningNewspaperTime.get().value_or(0)) {
+        case 18:
+            menuIndex = 1;
+            break;
+        case 19:
+            menuIndex = 2;
+            break;
+        case 20:
+            menuIndex = 3;
+            break;
+        case 21:
+            menuIndex = 4;
+            break;
+        case 22:
+            menuIndex = 5;
+            break;
+        case 0:
+        default:
+            menuIndex = 0;
+            break;
+        }
+        eveningNewspaperMenu->setCurrSelection(menuIndex);
+
+        setCurrentScreen(*eveningNewspaperMenu);
+        eveningNewspaperMenu->backCallback = [this, eveningNewspaperMenu, readingSettingsMenu]() {
+            readingSettingsMenu->setFirstLoad();
+            setCurrentScreen(*readingSettingsMenu);
+            delete eveningNewspaperMenu;
+        };
+    }));
+
     std::string snString = StringFormat("SN: %s", GetSerialNumber().c_str());
     systemSettingsMenu->setExtraText(snString);
 
@@ -624,6 +808,90 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         display->updateDisplay();
         systemSettingsMenu->setFirstLoad();
+    }));
+
+    systemSettingsMenu->addMenuItem(MenuItem("Set Time Zone", [this, display,
+                                                               systemSettingsMenu]() {
+        auto timeZoneMenu = new MenuScreen(this->power_, systemSettingsMenu->getMyStyle());
+
+        auto timeZoneToString = [](int solTimeZone) -> std::string {
+            switch (solTimeZone) {
+            case -8:
+                return "Pacific Time";
+            case -7:
+                return "Mountain Time";
+            case -6:
+                return "Central Time";
+            case -5:
+                return "Eastern Time";
+            case 0:
+                return "UTC - Not Set";
+            default:
+                return "Unknown";
+            }
+        };
+
+        timeZoneMenu->setExtraText(timeZoneToString(prefs_.solTimeZone.get().value_or(0)));
+
+        auto confirmMessage = [this, timeZoneMenu, display](int solTimeZone) {
+            this->prefs_.solTimeZone.set(solTimeZone);
+            timeZoneMenu->showTemporaryMessage(*display, "Setting Clock & Time Zone", 200, false);
+            if (!ConnectWifi()) {
+                log_e("Couldn't connect to wifi, not setting clock");
+            } else {
+                log_i("Setting time from internet");
+                SolClock theClock = SolClock::getInstance();
+                theClock.setClockTimeFromInternet();
+                DisconnectWifi();
+            }
+            timeZoneMenu->backCallback();
+        };
+
+        timeZoneMenu->addMenuItem(MenuItem("Pacific Time", [this, confirmMessage]() {
+            this->prefs_.solTimeZone.set(-8);
+            confirmMessage(-8);
+        }));
+        timeZoneMenu->addMenuItem(MenuItem("Mountain Time", [this, confirmMessage]() {
+            this->prefs_.solTimeZone.set(-7);
+            confirmMessage(-7);
+        }));
+        timeZoneMenu->addMenuItem(MenuItem("Central Time", [this, confirmMessage]() {
+            this->prefs_.solTimeZone.set(-6);
+            confirmMessage(-6);
+        }));
+        timeZoneMenu->addMenuItem(MenuItem("Eastern Time", [this, confirmMessage]() {
+            this->prefs_.solTimeZone.set(-5);
+            confirmMessage(-5);
+        }));
+
+        int menuIndex = 0;
+        switch (prefs_.solTimeZone.get().value_or(0)) {
+        case -8:
+            menuIndex = 0;
+            break;
+        case -7:
+            menuIndex = 1;
+            break;
+        case -6:
+            menuIndex = 2;
+            break;
+        case -5:
+            menuIndex = 3;
+            break;
+        case 0:
+        default:
+            menuIndex = 0;
+            break;
+        }
+
+        timeZoneMenu->setCurrSelection(menuIndex);
+
+        setCurrentScreen(*timeZoneMenu);
+        timeZoneMenu->backCallback = [this, timeZoneMenu, systemSettingsMenu]() {
+            systemSettingsMenu->setFirstLoad();
+            setCurrentScreen(*systemSettingsMenu);
+            delete timeZoneMenu;
+        };
     }));
 
     systemSettingsMenu->addMenuItem(

@@ -3,6 +3,7 @@
 #include <Adafruit_GFX.h>
 #include <string>
 
+#include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
 
@@ -84,10 +85,9 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
             return {size.width, y};
         });
 
-    // Later :)
-    // context.setViewFrame(
-    //    *clockView_, {{inset, size.height - 20}, {size.width - 2 * inset, 20 - 2 * inset}},
-    //    LayoutOptionsSizeToFit | LayoutOptionsAlignLeft | LayoutOptionsAlignBottom);
+    context.setViewFrame(clockView_, {{0, 0}, size},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft |
+                             LayoutOptionsAlignBottom);
 
     context.setSublayoutFrame(
         {{0, 0}, size}, LayoutOptionsSizeToFit | LayoutOptionsAlignBottom | LayoutOptionsAlignRight,
@@ -98,7 +98,7 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
                 batteryIconView_, {{x, y}, {size.width, size.height}}, LayoutOptionsSizeToFit);
             x += iconRect.size.width + 3;
             auto textRect = context.setViewFrame(
-                *batteryTextView_, {{x, y}, {size.width, size.height}}, LayoutOptionsSizeToFit);
+                batteryTextView_, {{x, y}, {size.width, size.height}}, LayoutOptionsSizeToFit);
             x += textRect.size.width;
             return {x, std::max(iconRect.size.height, textRect.size.height)};
         });
@@ -123,10 +123,8 @@ void MainMenuScreen::drawInRect(Rect rect) {
 
     topBarSelectionView_.draw();
     batteryIconView_.draw();
-    batteryTextView_->draw();
-
-    // For later :)
-    // clockView_->draw();
+    batteryTextView_.draw();
+    clockView_.draw();
 }
 
 // This largely mirrors the superclass implementation, but with enough
@@ -147,11 +145,10 @@ void MainMenuScreen::render(DisplaySystem &display) {
 
         topBarViews_.clear();
 
-        batteryTextView_ =
-            std::make_shared<SingleLineTextView>(display, power_.getBatteryPercentageOnlyString());
+        batteryTextView_.setText(power_.getBatteryPercentageOnlyString());
 
-        // For later :)
-        // clockView_ = std::make_shared<SingleLineTextView>(display, "3:33pm");
+        SolClock theClock = SolClock::getInstance();
+        clockView_.setText(theClock.getTimeString());
 
         log_i("Menuscreen render (selected = %s)",
               subMenus_[currentSelection_]->getMenuName().c_str());

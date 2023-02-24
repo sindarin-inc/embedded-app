@@ -4,6 +4,7 @@
 #include <string>
 
 #include "Bitmaps/Popup_Menu_Blank.hpp"
+#include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
 
@@ -35,10 +36,9 @@ void PopupMenuScreen::drawBattery(DisplaySystem &display, int x, int y, int perc
 }
 
 auto PopupMenuScreen::layout(LayoutContext &context, Size size) -> Size {
-    // Later :)
-    // context.setViewFrame(*clockView_, {{0, 0}, size},
-    //                     LayoutOptionsSizeToFit | LayoutOptionsAlignLeft |
-    //                         LayoutOptionsAlignBottom);
+    context.setViewFrame(clockView_, {{0, 0}, size},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft |
+                             LayoutOptionsAlignBottom);
 
     context.setViewFrame(placeInReadableView_, {{0, 0}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenter |
@@ -65,8 +65,7 @@ void PopupMenuScreen::drawInRect(Rect rect) {
     batteryIconView_.draw();
     batteryTextView_.draw();
     placeInReadableView_.draw();
-    // For later :)
-    // clockView_->draw();
+    clockView_.draw();
 }
 
 void PopupMenuScreen::render(DisplaySystem &display) {
@@ -85,8 +84,8 @@ void PopupMenuScreen::render(DisplaySystem &display) {
 
     batteryTextView_.setText(power_.getBatteryPercentageOnlyString());
 
-    // Later :)
-    // clockView_ = std::make_shared<SingleLineTextView>(display, "3:33pm");
+    SolClock theClock = SolClock::getInstance();
+    clockView_.setText(theClock.getTimeString());
 
     size_t place = renderer_.getCurrentPlace();
     size_t lengthOfFile = renderer_.size();

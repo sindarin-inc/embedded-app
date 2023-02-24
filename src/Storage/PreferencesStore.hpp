@@ -21,6 +21,12 @@ enum FONT_CHOICES {
     PREFS_TAHOMA_LARGE = 4,
 };
 
+enum SLEEP_REASON {
+    SLEEP_REASON_NONE = 0,
+    SLEEP_REASON_INACTIVITY = 1,
+    SLEEP_REASON_TEMPLES_CLOSED = 2,
+};
+
 class PreferencesStore {
 public:
     template <typename T>
@@ -209,7 +215,9 @@ public:
           bootCount(*this, "boot-count"), firstRead(*this, "first-read"),
           autoPilotSpeed(*this, "auto-speed"), firstAutopilotRead(*this, "fst-auto-rd"),
           cesMode(*this, "ces"), emcMode(*this, "emc"), lastBatteryReport(*this, "last-batt"),
-          wifiPower(*this, "wifi-power"), gzipReadables(*this, "gzip-readables"){};
+          wifiPower(*this, "wifi-power"), gzipReadables(*this, "gzip-readables"),
+          morningNewspaperTime(*this, "morning-news"), eveningNewspaperTime(*this, "evening-news"),
+          solTimeZone(*this, "time-zone"), sleepReason(*this, "sleep-reason"){};
 
     auto begin() -> bool {
         if (started_) {
@@ -276,6 +284,10 @@ public:
     PrefsItem<int> lastBatteryReport;
     PrefsItem<int> wifiPower;
     PrefsItem<bool> gzipReadables;
+    PrefsItem<int> morningNewspaperTime;
+    PrefsItem<int> eveningNewspaperTime;
+    PrefsItem<int> solTimeZone;
+    PrefsItem<int> sleepReason;
 
 protected:
     bool started_;

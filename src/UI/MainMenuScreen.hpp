@@ -18,8 +18,9 @@
 class MainMenuScreen : public MenuScreen, public EinkView {
 public:
     MainMenuScreen(Power &power, DisplaySystem &display, MenuStyleFamily myStyle)
-        : MenuScreen(power, myStyle), EinkView(display), topBarSelectionView_(display, 3),
-          batteryIconView_(display, boltBits, bolt_width, bolt_height){};
+        : MenuScreen(power, myStyle), EinkView(display), batteryTextView_(display, ""),
+          topBarSelectionView_(display, 3),
+          batteryIconView_(display, boltBits, bolt_width, bolt_height), clockView_(display, ""){};
 
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
@@ -36,13 +37,10 @@ protected:
     std::vector<std::shared_ptr<MenuItemView>> menuItemViews_;
     std::vector<std::shared_ptr<BoxView>> menuPageViews_;
     std::vector<std::shared_ptr<SingleLineTextView>> topBarViews_;
-    std::shared_ptr<SingleLineTextView> batteryTextView_;
-
+    SingleLineTextView batteryTextView_;
     BoxView topBarSelectionView_;
     IconView batteryIconView_;
-
-    // For later :)
-    // std::shared_ptr<SingleLineTextView> clockView_;
+    SingleLineTextView clockView_;
 
     int currentSelection_ = 0;
 };
