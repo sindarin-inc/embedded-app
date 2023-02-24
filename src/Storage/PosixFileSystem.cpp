@@ -32,7 +32,6 @@ auto PosixFileSystem::exists(const std::string &path) const -> bool {
 auto PosixFileSystem::listDir(const std::string &path, FileList &files, int limit) const -> int {
     char prefixedPath[200];
     createPath(prefixedPath, sizeof(prefixedPath), path);
-    log_i("path: %s", prefixedPath);
     DIR *dp = opendir(prefixedPath);
     if (dp != NULL) {
         struct dirent *ep;
@@ -51,7 +50,6 @@ auto PosixFileSystem::listDir(const std::string &path, FileList &files, int limi
         perror("Couldn't open the directory");
         return -1;
     }
-    return 0;
 }
 
 auto PosixFileSystem::createDir(const std::string &path, bool allowExists) -> bool {
