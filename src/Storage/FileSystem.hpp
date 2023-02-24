@@ -1,11 +1,10 @@
 #pragma once
 
-#include <FS.h>
 #include <vector>
 
 #include "Models/Readable.hpp"
 #include "Renderers/RendererStream.hpp"
-#include "Misc/SFile.hpp"
+#include "Storage/SFile.hpp"
 
 typedef std::vector<std::string> FileList;
 

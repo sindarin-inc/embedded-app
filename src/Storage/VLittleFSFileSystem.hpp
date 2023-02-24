@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Storage/FileSystem.hpp"
-#include "Misc/SFile.hpp"
+#include "Storage/SFile.hpp"
 
 class VLittleFSFileSystem : public FileSystem {
 public:
