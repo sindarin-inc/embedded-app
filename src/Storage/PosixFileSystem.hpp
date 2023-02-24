@@ -15,6 +15,7 @@ public:
     auto remove(const std::string &path) -> bool override;
     virtual void close();
     void setPrefix(const std::string &prefix);
+    const char* getPrefix();
 protected:
     void createPath(char *output, size_t outputSize, const std::string &path) const;
 };
