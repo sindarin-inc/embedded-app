@@ -40,7 +40,7 @@ auto LocalStore::begin() -> bool {
 auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::string &path)
     -> bool {
     log_d("Loading %ss from %s", ToString(readablesModelType(readables)).c_str(), path.c_str());
-    SFile readablesFile = fileSystem.sopen(path);
+    SFile readablesFile = fileSystem.open(path);
     if (!readablesFile || (int)readablesFile.size() == 0) {
         log_w("Failed to open %s", path.c_str());
         // Fail positively since it's ok to not have any when you first use the glasses

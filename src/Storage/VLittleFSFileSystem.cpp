@@ -34,14 +34,6 @@ auto VLittleFSFileSystem::begin() -> bool {
 
 auto VLittleFSFileSystem::open(const std::string &path, const char *mode, const bool create) const
     -> SFile {
-    return sopen(path, mode, create);
-}
-
-auto VLittleFSFileSystem::sopen(const std::string &path, const char *mode, const bool create) const
-    -> SFile {
-    // Note(john): The version of framework-arduinoespressif32
-    // (https://github.com/marcovannoord/arduino-esp32.git#idf-release/v4.0) has a slightly
-    // different API here.
     char prefixedPath[200];
     sCreatePath(prefixedPath, sizeof(prefixedPath), path);
     auto file = SFile(std::make_shared<VFSFile>(prefixedPath, mode, create));

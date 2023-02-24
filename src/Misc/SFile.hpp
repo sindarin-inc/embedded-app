@@ -22,11 +22,9 @@ public:
     virtual size_t position() const = 0;
     virtual size_t size() const = 0;
     virtual void close() = 0;
-    //virtual time_t getLastWrite() = 0;
     virtual const char* name() const = 0;
     virtual const char* path() const = 0;
     virtual boolean isDirectory(void) = 0;
-    //virtual FileImplPtr openNextFile(const char* mode) = 0;
     virtual void rewindDirectory(void) = 0;
     virtual operator bool() = 0;
 };
@@ -85,12 +83,10 @@ public:
     size_t size() const;
     void close();
     operator bool();
-    //time_t getLastWrite();
     const char *name() const;
     const char *path() const;
 
     boolean isDirectory(void);
-    //File openNextFile(const char *mode = FILE_READ);
     void rewindDirectory(void);
 
 protected:
@@ -132,8 +128,7 @@ public:
     int available();
     void flush();
     size_t read(uint8_t *buf, size_t size);
-    //size_t readBytes(char *buffer, size_t length);
-
+    
     bool seek(uint32_t pos, SSeekMode mode);
     size_t position() const;
     size_t size() const;
@@ -144,7 +139,6 @@ public:
     const char *path() const;
 
     bool isDirectory(void);
-    //SFile openNextFile(const char *mode = "r");
     void rewindDirectory(void);
 protected:
 

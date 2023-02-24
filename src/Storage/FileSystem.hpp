@@ -28,12 +28,6 @@ public:
         assert(0);
         return SFile();
     };
-    virtual auto sopen(const std::string &path, const char *mode = FILE_READ,
-                      const bool create = false) const -> SFile {
-        log_e("Abstract");
-        assert(0);
-        return SFile();
-    };
     [[nodiscard]] virtual auto exists(const std::string &path) const -> bool {
         log_e("Abstract");
         assert(0);
