@@ -76,6 +76,10 @@ auto PosixFileSystem::remove(const std::string &path) -> bool {
 
 void PosixFileSystem::close() {}
 
-void setPrefix(const std::string &prefix) {
+void PosixFileSystem::setPrefix(const std::string &prefix) {
     strncpy(PosixFileSystemPrefix, prefix.c_str(), sizeof(PosixFileSystemPrefix) - 1);
+}
+
+const char* PosixFileSystem::getPrefix() {
+    return PosixFileSystemPrefix;
 }
