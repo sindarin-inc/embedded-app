@@ -42,10 +42,11 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
                       HTTP_METHOD_POST);
     setAuth(client);
 
-    auto body = StringFormat("build=%s&git_hash=%s&sn=%"
-                             "s&pt_battery=%d&pt_build=%s&skip_content=%s",
-                             kVersionString, kGitHash, GetSerialNumber().c_str(), req.ptBattery,
-                             req.ptBuild.c_str(), req.skipContent ? "true" : "false");
+    auto body =
+        StringFormat("build=%s&git_hash=%s&sn=%"
+                     "s&pt_battery=%d&pt_build=%s&skip_content=%s&sleep_reason=%d",
+                     kVersionString, kGitHash, GetSerialNumber().c_str(), req.ptBattery,
+                     req.ptBuild.c_str(), req.skipContent ? "true" : "false", req.sleepReason);
     if (req.readablesSince.length() > 0) {
         body += StringFormat("&readables_since=%s", req.readablesSince.c_str());
     }

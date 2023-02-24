@@ -409,6 +409,7 @@ void LocalStore::syncFromRemote(
         auto articlePlacemarks = this->changedReadablePlacemarkQueryParams(articles_);
         auto readablesArchived = this->changedReadablesArchivedQueryParams(readables_);
         auto articlesArchived = this->changedReadablesArchivedQueryParams(articles_);
+        auto sleepReason = this->prefs_.sleepReason.get().value_or(SLEEP_REASON_NONE);
         auto [readablesBookmarked, readablesBookmarkedSize] = this->changedReadablesBookmarksJson();
         log_i("Bookmarked readables (%d bytes)", readablesBookmarkedSize);
         CheckSyncResponse checkSyncResponse;
@@ -419,6 +420,7 @@ void LocalStore::syncFromRemote(
                              .articlePlacemarks = articlePlacemarks,
                              .readablesArchived = readablesArchived,
                              .articlesArchived = articlesArchived,
+                             .sleepReason = sleepReason,
                              .ptBattery = this->prefs_.lastPageTurnerBattery.get().value_or(0),
                              .ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or(""),
                              .skipContent = true};
