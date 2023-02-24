@@ -561,7 +561,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             timeToString(prefs_.morningNewspaperTime.get().value_or(0)));
 
         auto confirmMessage = [this, morningNewspaperMenu, display](int time) {
-            this->prefs_.morningNewspaperTime.set(time);
+            if (time != 0) {
+                this->prefs_.morningNewspaperTime.set(time);
+            }
             morningNewspaperMenu->showTemporaryMessage(*display, "Morning Newspaper Set", 200,
                                                        false);
             morningNewspaperMenu->backCallback();
@@ -651,7 +653,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             timeToString(prefs_.eveningNewspaperTime.get().value_or(0)));
 
         auto confirmMessage = [this, eveningNewspaperMenu, display](int time) {
-            this->prefs_.eveningNewspaperTime.set(time);
+            if (time != 0) {
+                this->prefs_.eveningNewspaperTime.set(time);
+            }
             eveningNewspaperMenu->showTemporaryMessage(*display, "Evening Newspaper Set", 200,
                                                        false);
             eveningNewspaperMenu->backCallback();

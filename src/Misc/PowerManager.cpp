@@ -13,9 +13,9 @@ void PowerManager::powerOff() {
     log_i("Starting power off sequence");
     // If we have syncing to do for newspaper drop, deep sleep only (waking up regularly to check)
     // Otherwise, just turn off the ESP32
-    log_i("Prefs for morning and evening are %d %d (0 means not set)",
-          prefs_.morningNewspaperTime.get().value_or(0),
-          prefs_.eveningNewspaperTime.get().value_or(0));
+    log_i("Has value for morning and evening are %d %d (0 means not set)",
+          prefs_.morningNewspaperTime.get().has_value(),
+          prefs_.eveningNewspaperTime.get().has_value());
 
     if ((prefs_.morningNewspaperTime.get().has_value()) ||
         (prefs_.eveningNewspaperTime.get().has_value())) {

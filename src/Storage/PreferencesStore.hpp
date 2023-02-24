@@ -119,7 +119,10 @@ public:
             this->writeToStorage(this->key_, value);
         }
 
-        void remove() { this->deleteFromStorage(this->key_); }
+        void remove() {
+            this->deleteFromStorage(this->key_);
+            this->value_.reset();
+        }
 
     protected:
         bool loaded_ = false;
