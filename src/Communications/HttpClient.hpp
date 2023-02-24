@@ -35,6 +35,8 @@ public:
 
     auto makeReadStream() -> std::shared_ptr<HttpIstream<4096>>;
 
+    bool connected;
+
 private:
     char *url_;
     std::string userAgent_;
