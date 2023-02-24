@@ -80,6 +80,4 @@ void PosixFileSystem::setPrefix(const std::string &prefix) {
     strncpy(PosixFileSystemPrefix, prefix.c_str(), sizeof(PosixFileSystemPrefix) - 1);
 }
 
-const char* PosixFileSystem::getPrefix() {
-    return PosixFileSystemPrefix;
-}
+const char *PosixFileSystem::getPrefix() { return PosixFileSystemPrefix; }
