@@ -1,22 +1,15 @@
 #pragma once
 
-#include "Storage/FileSystem.hpp"
-#include "Storage/SFile.hpp"
+#include "Storage/PosixFileSystem.hpp"
 
-class VLittleFSFileSystem : public FileSystem {
+class VLittleFSFileSystem : public PosixFileSystem {
 public:
-    VLittleFSFileSystem() noexcept : FileSystem(){};
+    VLittleFSFileSystem() {
+        setPrefix("/littlefs");
+    }
 
     auto begin() -> bool override;
-    auto open(const std::string &path, const char *mode = FILE_READ,
-              const bool create = false) const -> SFile;
-    [[nodiscard]] auto exists(const std::string &path) const -> bool override;
-    auto listDir(const std::string &path, FileList &files, int limit = 0) const -> int override;
-    auto createDir(const std::string &path, bool allowExists = true) -> bool override;
-    auto remove(const std::string &path) -> bool override;
-
-    void close();
+    void close() override;
 protected:
-
     bool format();
 };

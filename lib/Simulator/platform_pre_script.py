@@ -10,6 +10,7 @@ def remove_non_simulator_files(node):
     """
     ignore = [
         "ExternalSPIFlash.cpp",
+        "VLittleFSFileSystem.cpp",
         "Adafruit_SPITFT.cpp",
         "Adafruit_GrayOLED.cpp",
         "Ltr329Als.cpp",

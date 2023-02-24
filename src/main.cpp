@@ -84,10 +84,9 @@ InactivityTimer inactivityTimer;
 
 #if SIMULATOR
 #include "Storage/PosixFileSystem.hpp"
-//PosixFileSystem fileSystem;
-VLittleFSFileSystem fileSystem;
+PosixFileSystem fileSystem;
 #else
-#include "Storage/LittleFSFileSystem.hpp"
+#include "Storage/VLittleFSFileSystem.hpp"
 VLittleFSFileSystem fileSystem;
 #endif
 
