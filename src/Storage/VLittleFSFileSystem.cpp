@@ -22,8 +22,8 @@ void sCreatePath(char *output, size_t outputSize, const std::string &path) {
 }
 
 auto VLittleFSFileSystem::begin() -> bool {
-   // register littlefs filesystem
 #if !SIMULATOR
+    // register littlefs filesystem
     esp_vfs_littlefs_conf_t config = {
         .base_path = "/littlefs", .partition_label = "data", .format_if_mount_failed = true
     };

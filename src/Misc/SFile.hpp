@@ -22,10 +22,6 @@ public:
     virtual size_t position() const = 0;
     virtual size_t size() const = 0;
     virtual void close() = 0;
-    virtual const char* name() const = 0;
-    virtual const char* path() const = 0;
-    //virtual boolean isDirectory(void) = 0;
-    //virtual void rewindDirectory(void) = 0;
     virtual operator bool() = 0;
 };
 
@@ -83,8 +79,6 @@ public:
     size_t size() const;
     void close();
     operator bool();
-    const char *name() const;
-    const char *path() const;
 
 protected:
     std::shared_ptr<SFileImpl> _p;
@@ -131,12 +125,7 @@ public:
     size_t size() const;
     void close();
     operator bool();
-    //time_t getLastWrite();
-    const char *name() const;
-    const char *path() const;
-
-    //bool isDirectory(void);
-    //void rewindDirectory(void);
+    
 protected:
 
     FILE* fp_{nullptr};

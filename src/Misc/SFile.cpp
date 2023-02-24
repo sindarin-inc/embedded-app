@@ -50,13 +50,6 @@ size_t SFile::size() const {
 void SFile::close() {
     _p->close();
 }
-//time_t getLastWrite() {}
-const char *SFile::name() const {
-    return _p->name();
-}
-const char *SFile::path() const {
-    return _p->path();
-}
 
 SFile::operator bool() {
     if (!_p) {
@@ -68,12 +61,10 @@ SFile::operator bool() {
 
 // VFSFile
 size_t VFSFile::write(uint8_t c) {
-    //log_i("vfs write %X", c);
     return write(&c, 1);
 }
 
 size_t VFSFile::write(const uint8_t *buf, size_t size) {
-    //log_i("vfs write size %d", size);
     if (!fp_) {
         log_i("no file pointer!");
         return 0;
@@ -141,13 +132,6 @@ void VFSFile::close() {
     log_i("closing file!!");
     fclose(fp_);
     fp_ = NULL;
-}
-
-const char *VFSFile::name() const {
-    return nullptr;
-}
-const char *VFSFile::path() const {
-    return nullptr;
 }
 
 VFSFile::operator bool() {
