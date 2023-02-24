@@ -44,11 +44,9 @@ auto ReadableScreen::readOneBookmark(SFile &file, Bookmark &bookmark) -> bool {
 
     std::string firstThing = file.readStringUntil(' ');
     bookmark.firstPlace = std::stoi(firstThing);
-    //bookmark.firstPlace = firstThing.toInt();
 
     std::string secondThing = file.readStringUntil('\n');
     bookmark.lastPlace = std::stoi(secondThing);
-    //bookmark.lastPlace = secondThing.toInt();
     return true;
 }
 

@@ -1,5 +1,4 @@
 #include "HtmlCleaner.hpp"
-#include "Storage/SFile.hpp"
 
 #include <functional>
 #include <map>
