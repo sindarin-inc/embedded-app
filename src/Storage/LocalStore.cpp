@@ -12,7 +12,6 @@
 #include "Models/Json.hpp"
 #include "Models/ReadableBookmark.hpp"
 #include "sindarin-debug.h"
-#include "Storage/VLittleFSFileSystem.hpp"
 
 #define READABLES_PATH "/readables.json"
 #define ARTICLES_PATH "/articles.json"

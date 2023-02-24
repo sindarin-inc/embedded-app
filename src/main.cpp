@@ -86,8 +86,8 @@ InactivityTimer inactivityTimer;
 #include "Storage/PosixFileSystem.hpp"
 PosixFileSystem fileSystem;
 #else
-#include "Storage/VLittleFSFileSystem.hpp"
-VLittleFSFileSystem fileSystem;
+#include "Storage/LittleFSFileSystem.hpp"
+LittleFSFileSystem fileSystem;
 #endif
 
 LocalStore localStore(fileSystem, prefs);
@@ -519,38 +519,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     auto bootCount = prefs.bootCount.get().value_or(0);
     bootCount++;
     prefs.bootCount.set(bootCount);
-
-    // TEST
-    /*
-    VLittleFSFileSystem lfs;
-
-    log_i("begin filesystem ***");
-    lfs.begin();
-
-    FileList fl;
-    int ll = lfs.listDir("/", fl);
-
-    log_i("list dir:");
-    for (int i = 0; i < fl.size(); i++) {
-        log_i("%d: %s", i, fl[i].c_str());
-    }
-
-    bool exists = lfs.exists("/last-question.txt");
-    log_i("exists: %d", exists);
-
-    SFile f = lfs.open("/last-question.txt", "r", false);
-
-    char tmp[65];
-    f.readBytes(tmp, 64);
-    tmp[64] = 0;
-
-    log_i("** read: %s", tmp);
-
-    log_i("end filesysem ***");
-
-    //delete f;
-    lfs.close();
-    */
 
     if (!fileSystem.begin()) {
         bootErrors.push_back({.type = BootError::Type::FileSystem});
