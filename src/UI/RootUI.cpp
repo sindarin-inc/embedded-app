@@ -149,9 +149,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     // Bible hack (to show off if we wanted to have different "apps" that had different behavior.
     // For now, it's just the same as a regular book.)
-    auto it = std::find_if(readables.begin(), readables.end(), [](const Readable &x) {
-        return (x.title.compare("Psalms and Proverbs") == 0);
-    });
+    auto it = std::find_if(readables.begin(), readables.end(),
+                           [](const Readable &x) { return (x.title == "Psalms and Proverbs"); });
     if (it == readables.end()) {
         log_d("Could not find readable: %s", "Psalms and Proverbs");
     } else {
@@ -218,15 +217,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
         auto title = StringFormat("%s%s", archived ? "Archived: " : "", r.title.c_str());
         // Bible books go in their own menu / app
-        if (r.title != "Psalms and Proverbs" && r.title != "New Testament" &&
-            r.title != "Old Testament") {
-            booksMenu->addMenuItem(MenuItem(StringFormat("%s", title.c_str()),
-                                            StringFormat("%s", r.authors[0].name.c_str()),
-                                            [this, r, createReadableScreen]() {
-                                                auto readableScreen = createReadableScreen(r);
-                                                this->setCurrentScreen(*readableScreen);
-                                            }));
+        if (r.title == "Psalms and Proverbs" || r.title == "New Testament" ||
+            r.title == "Old Testament") {
+            continue;
         }
+        booksMenu->addMenuItem(MenuItem(StringFormat("%s", title.c_str()),
+                                        StringFormat("%s", r.authors[0].name.c_str()),
+                                        [this, r, createReadableScreen]() {
+                                            auto readableScreen = createReadableScreen(r);
+                                            this->setCurrentScreen(*readableScreen);
+                                        }));
     }
 
     booksMenu->backCallback = [this, mainMenu, booksMenu, display]() {
