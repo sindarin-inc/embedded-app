@@ -33,7 +33,7 @@ public:
 
     auto checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp) -> int;
     auto syncBookmarks(const char *bookmarksJson, const int bookmarksSize) -> int;
-    auto downloadReadable(const Readable &readable, FileSystem &fileSystem, std::string path,
+    auto downloadReadable(const Readable &readable, FileSystem &fileSystem, const std::string &path,
                           const std::function<void(int percentage)> &progressCallback) -> bool;
 
     auto uploadAndResetVoltageLog(FileSystem &fileSystem) -> int;

@@ -95,9 +95,9 @@ auto LocalStore::readablesModelType(const ReadablesVector &readables) -> Readabl
 }
 
 auto LocalStore::hasReadable(const ReadablesVector &readables, const Readable &readable) -> bool {
-    for (auto r = readables.begin(); r != readables.end(); ++r) {
-        auto path = readableFilePathForReading(*r);
-        if (r->uuid == readable.uuid && !path.empty()) {
+    for (const auto &r : readables) {
+        auto path = readableFilePathForReading(r);
+        if (r.uuid == readable.uuid && !path.empty()) {
             int fileSize = readableGetUncompressedSize(readable);
 
             if (fileSize <= 0) {
@@ -106,7 +106,7 @@ auto LocalStore::hasReadable(const ReadablesVector &readables, const Readable &r
             }
 
             // If we have a file object, check that the size matches
-            if ((*r).files.size() > 0) {
+            if (r.files.size() > 0) {
                 if (fileSize >= 0 && fileSize != readable.file().size) {
                     log_w("File size mismatch for %s (%d on disk vs %d in local store), ignoring",
                           path.c_str(), fileSize, readable.file().size);

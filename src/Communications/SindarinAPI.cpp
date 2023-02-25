@@ -141,7 +141,7 @@ auto SindarinAPI::syncBookmarks(const char *bookmarksJson, const int bookmarksSi
 }
 
 auto SindarinAPI::downloadReadable(const Readable &readable, FileSystem &fileSystem,
-                                   std::string path,
+                                   const std::string &path,
                                    const std::function<void(int percentage)> &progressCallback)
     -> bool {
     bool success = false;
