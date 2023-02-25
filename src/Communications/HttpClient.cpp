@@ -29,15 +29,9 @@ HttpClient::HttpClient(const char *url, const char *contentType, esp_http_client
                 log_d("HTTP_EVENT_ON_CONNECTED");
                 thisPtr->connected = true;
                 break;
-            case HTTP_EVENT_HEADER_SENT:
-                // log_d("HTTP_EVENT_HEADER_SENT");
-                break;
+            case HTTP_EVENT_HEADERS_SENT:
             case HTTP_EVENT_ON_HEADER:
-                // log_d("HTTP_EVENT_ON_HEADER");
-                break;
             case HTTP_EVENT_ON_DATA:
-                // Super noisy
-                // log_d("HTTP_EVENT_ON_DATA, len=%d", event->data_len);
                 break;
             case HTTP_EVENT_ON_FINISH:
                 log_d("HTTP_EVENT_ON_FINISH");
