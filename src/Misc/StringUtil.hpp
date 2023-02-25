@@ -37,4 +37,6 @@ auto StringFormat(const char *format, ARGS... args) -> std::string {
 
 auto SafeSnprintf(char *str, size_t size, const char *format, ...) -> bool;
 
+auto HasSuffix(std::string const &str, std::string const &suffix) -> bool;
+
 #pragma clang diagnostic pop

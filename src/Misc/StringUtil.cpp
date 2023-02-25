@@ -44,3 +44,8 @@ auto SafeSnprintf(char *str, size_t size, const char *format, ...) // NOLINT(cer
     // unable to write entire string
     return false;
 }
+
+auto HasSuffix(std::string const &str, std::string const &suffix) -> bool {
+    return str.size() >= suffix.size() &&
+           str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
+}

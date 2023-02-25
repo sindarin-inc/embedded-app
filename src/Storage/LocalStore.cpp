@@ -884,7 +884,7 @@ auto LocalStore::readableGetUncompressedSize(const Readable &readable) const -> 
 
     int fileSize = -1;
     // If the path has a .gz suffix interpret it as a GZip file
-    if (path.substr(path.length() - 3) == ".gz") {
+    if (HasSuffix(path, ".gz")) {
         GUnzipStream gzStream(file);
         fileSize = gzStream.size();
     } else {

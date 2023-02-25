@@ -153,9 +153,7 @@ auto SindarinAPI::downloadReadable(const Readable &readable, FileSystem &fileSys
     // Create the directory if necessary
     // Grab the dir from the path
     auto dir = path.substr(0, path.find_last_of('/'));
-    log_d("Directory: %s for path %s", dir.c_str(), path.c_str());
     if (!fileSystem.exists(dir)) {
-        // create log directory in filesystem if it doesn't exist
         log_d("Creating directory %s", dir.c_str());
         if (!fileSystem.createDir(dir)) {
             log_e("Could not create %s directory", dir.c_str());
@@ -163,7 +161,7 @@ auto SindarinAPI::downloadReadable(const Readable &readable, FileSystem &fileSys
         }
     }
 
-    bool gzip = path.substr(path.length() - 3) == ".gz";
+    bool gzip = HasSuffix(path, ".gz");
     success = DownloadFile(
         remoteUrl.c_str(), fileSystem, path.c_str(), fileSize,
         [progressCallback](float percentage) { progressCallback(percentage); }, gzip);
