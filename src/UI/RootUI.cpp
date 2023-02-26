@@ -74,7 +74,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto articles = localStore.articles();
 
     auto createReadableScreen = [this, display, mainMenu, &fileSystem, &lightingController,
-                                 localStore](const Readable &readable) -> ReadableScreen * {
+                                 &localStore](const Readable &readable) -> ReadableScreen * {
         // TODO: Would be better to not allocate / delete these all the time
 
         std::shared_ptr<RendererStream> stream;
