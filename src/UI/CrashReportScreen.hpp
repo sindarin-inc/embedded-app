@@ -4,7 +4,7 @@
 #include <utility>
 
 #include "Communications/CrashReportUploader.hpp"
-#include "Communications/WiFi.hpp"
+#include "Communications/SindarinWiFi.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Screen.hpp"
 
