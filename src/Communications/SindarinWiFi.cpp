@@ -51,7 +51,7 @@ CSindarinWiFi::CSindarinWiFi() {
 
     \brief  Get the current Wifi credentials
     \param  pConf - Return value - Pointer to the config to return into
-    \return bool - true = success
+    \return bool - true=success
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
@@ -286,7 +286,7 @@ auto CSindarinWiFi::connected() -> bool { return wiFiEsp.isConnected(); }
 
     \brief  Get the station interface IP address
     \param  N/A
-    \return IPAddress = 0 if not cennected
+    \return IPAddress=0 if not cennected
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
@@ -325,7 +325,7 @@ auto CSindarinWiFi::getMode() -> wifi_mode_t { return wiFiEsp.getMode(); }
 
     \brief  Set a new mode
     \param  wifi_mode_t - mode to set
-    \return bool - true= mode set
+    \return bool - true=mode set
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
