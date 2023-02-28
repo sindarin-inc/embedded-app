@@ -86,11 +86,11 @@ static char _default_hostname[32] = {
 typedef struct WifiespEventCbTList {
     static wifi_event_id_t currentId;
     wifi_event_id_t id;
-    wifiesp_event_cb_t cb;
+    wifiesp_event_cb_t cb{nullptr};
     wifiesp_event_func_cb_t fcb;
-    wifiesp_event_cb_sys_t scb;
+    wifiesp_event_cb_sys_t scb{nullptr};
     wifiesp_event_id_t event{WIFIESP_EVENT_WIFI_READY};
-    WifiespEventCbTList() : id(currentId++), cb(nullptr), fcb(nullptr), scb(nullptr) {}
+    WifiespEventCbTList() : id(currentId++), fcb(nullptr) {}
 } wifiesp_event_cb_tList_t;
 
 // Callback ID - init to 1
@@ -1247,7 +1247,7 @@ auto CWiFiESP::eventCallback(wifiesp_event_t *event) -> esp_err_t {
     //    _smartConfigDone = true;
     //}
 
-    for (auto entry : _eventCBList) {
+    for (const auto &entry : _eventCBList) {
         if (entry.cb || entry.fcb || entry.scb) {
             if (entry.event == (wifiesp_event_id_t)event->eventId ||
                 entry.event == WIFIESP_EVENT_MAX) {
@@ -1796,14 +1796,14 @@ auto CWiFiESP::wifiStrncpy(char *dst, const char *src, size_t dstLen) -> size_t 
     if (!dst || !src || !dstLen) {
         return 0;
     }
-    size_t src_len = strlen(src);
-    if (src_len >= dstLen) {
-        src_len = dstLen;
+    size_t srcLen = strlen(src);
+    if (srcLen >= dstLen) {
+        srcLen = dstLen;
     } else {
-        src_len += 1;
+        srcLen += 1;
     }
     strcpy(dst, src);
-    return src_len;
+    return srcLen;
 }
 
 //______________________________________________________________________________
