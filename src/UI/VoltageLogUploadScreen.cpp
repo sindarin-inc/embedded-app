@@ -1,7 +1,7 @@
 #include "VoltageLogUploadScreen.hpp"
 
 #include "Communications/SindarinAPI.hpp"
-#include "Communications/SindarinWiFi.hpp"
+#include "Communications/WiFi.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/Power.hpp"
 #include "UI/Fonts/Tahoma10pt7b.h"
@@ -78,7 +78,7 @@ void VoltageLogUploadScreen::fail(const std::string &message) {
     updateState(state_);
     render(display_);
     vTaskDelay(5000 / portTICK_PERIOD_MS);
-    sindarinWiFi.disconnectWiFi();
+    DisconnectWifi();
     backCallback();
 }
 
@@ -90,7 +90,7 @@ void VoltageLogUploadScreen::begin() {
     }
     SindarinAPI::getInstance()->setAccessToken(token.value());
 
-    if (!sindarinWiFi.hasWiFiCredentials()) {
+    if (!HasWiFiCredentials()) {
         fail("Go to Settings > WiFi Setup in the Sol app.");
         return;
     }
@@ -99,7 +99,7 @@ void VoltageLogUploadScreen::begin() {
     render(display_);
 
     DispatchGetCore1BackgroundQueue()->dispatch([this]() {
-        if (!sindarinWiFi.connectWiFiWithTimeout()) {
+        if (!ConnectWifi()) {
             DispatchGetUiQueue()->dispatch([this]() { fail("Failed to connect to WiFi."); });
             return;
         }
@@ -125,7 +125,7 @@ void VoltageLogUploadScreen::begin() {
             updateState(state_);
             render(display_);
             vTaskDelay(2000 / portTICK_PERIOD_MS);
-            sindarinWiFi.disconnectWiFi();
+            DisconnectWifi();
             backCallback();
         });
 

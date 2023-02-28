@@ -7,7 +7,7 @@
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/StringUtil.hpp"
-#include "SindarinWiFi.hpp"
+#include "WiFi.hpp"
 #include "sindarin-debug.h"
 
 #define SETTINGS_CHARACTERISTIC_UUID "611f68af-5ffe-4944-9b8f-ef6773326268"
@@ -87,10 +87,10 @@ void BLESettings::writeWifiSSIDtoCharacteristic(BLECharacteristic *characteristi
     queue->dispatch([key, characteristic] {
         // Check if wifi is already connected, and if so, don't disconnect at the end of this
         // function
-        bool wifiConnected = sindarinWiFi.connected();
+        bool wifiConnected = NetworkConnected();
         wifi_config_t conf;
 
-        if (sindarinWiFi.getWiFiCredentials(&conf) && strlen((const char *)conf.sta.ssid) > 0) {
+        if (GetWiFiCredentials(&conf) && strlen((const char *)conf.sta.ssid) > 0) {
             std::string value = StringFormat("%s=%s", key.c_str(), (const char *)conf.sta.ssid);
             characteristic->setValue(value);
 
@@ -107,7 +107,7 @@ void BLESettings::writeWifiSSIDtoCharacteristic(BLECharacteristic *characteristi
 
         // Turn wifi back off if we weren't already using it
         if (!wifiConnected) {
-            sindarinWiFi.disconnectWiFi();
+            DisconnectWifi();
         }
     });
 }

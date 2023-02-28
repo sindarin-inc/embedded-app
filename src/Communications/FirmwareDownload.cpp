@@ -6,7 +6,7 @@
 
 #include "Communications/FileDownload.hpp"
 #include "Communications/HttpClient.hpp"
-#include "Communications/SindarinWiFi.hpp"
+#include "Communications/WiFi.hpp"
 #include "GitVersion.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/StringUtil.hpp"
@@ -97,7 +97,7 @@ void FirmwareDownloader::downloadFirmware(
 
         if (!success) {
             log_e("Failed to download firmware");
-            if (!sindarinWiFi.connected()) {
+            if (!NetworkConnected()) {
                 progressCallback(
                     FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
                                           .message = "Failed: WiFi disconnected!"});

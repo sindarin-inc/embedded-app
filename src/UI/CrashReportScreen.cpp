@@ -1,7 +1,7 @@
 #include "UI/CrashReportScreen.hpp"
 
 #include "Communications/CrashReportUploader.hpp"
-#include "Communications/SindarinWiFi.hpp"
+#include "Communications/WiFi.hpp"
 #include "Misc/Dispatch.hpp"
 #include "UI/Fonts/Tahoma10pt7b.h"
 #include "sindarin-debug.h"
@@ -97,12 +97,12 @@ void CrashReportScreen::fail(const std::string &message) {
     needsRerender = true;
     render(display_);
     vTaskDelay(5000 / portTICK_PERIOD_MS);
-    sindarinWiFi.disconnectWiFi();
+    DisconnectWifi();
     backCallback();
 }
 
 void CrashReportScreen::begin() {
-    if (!sindarinWiFi.hasWiFiCredentials()) {
+    if (!HasWiFiCredentials()) {
         fail("Go to Settings > WiFi Setup in the Sol app.");
         return;
     }
@@ -110,7 +110,7 @@ void CrashReportScreen::begin() {
     state_.state = CrashUploadState::ConnectingWifi;
     render(display_);
 
-    if (!sindarinWiFi.connectWiFiWithTimeout()) {
+    if (!ConnectWifi()) {
         fail("Failed to connect to WiFi.");
         return;
     }
@@ -124,7 +124,7 @@ void CrashReportScreen::begin() {
             if (state.state == CrashUploadState::Failure ||
                 state.state == CrashUploadState::NoCrashReport ||
                 state.state == CrashUploadState::Done) {
-                sindarinWiFi.disconnectWiFi();
+                DisconnectWifi();
                 vTaskDelay(3000 / portTICK_PERIOD_MS);
                 backCallback();
             }

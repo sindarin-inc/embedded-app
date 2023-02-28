@@ -2,6 +2,7 @@
 #define BLEImprov_H
 
 #include <NimBLEDevice.h>
+#include <WiFi.h>
 #include <improv.h>
 
 #include "Communications/BLEAbstractions.hpp"
