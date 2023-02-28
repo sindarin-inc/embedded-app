@@ -5,7 +5,7 @@
 #include <esp_sntp.h>
 #endif
 
-#include "../Communications/WiFi.hpp"
+#include "../Communications/SindarinWiFi.hpp"
 #include "../Misc/StringUtil.hpp"
 
 extern SolClock solClock;
@@ -77,7 +77,8 @@ void SolClock::getClockTime(uint8_t &hours, uint8_t &minutes) {
 
 void SolClock::setClockTimeFromInternet() {
 #if !SIMULATOR
-    if (!ConnectWifi()) {
+    sindarinWiFi.connectWiFi();
+    if (!sindarinWiFi.connected()) {
         log_i("Failed to connect wifi");
         return;
     }
@@ -101,7 +102,7 @@ void SolClock::setClockTimeFromInternet() {
     strftime(strftimeBuf, sizeof(strftimeBuf), "%c", &timeinfo);
     log_i("The current date/time is: %s", strftimeBuf);
 
-    DisconnectWifi();
+    sindarinWiFi.disconnectWiFi();
 #else
     log_i("Not setting clock time from internet in simulator");
 #endif

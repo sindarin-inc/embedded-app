@@ -10,7 +10,7 @@
 #include <freertos/queue.h>
 
 #include "Communications/SindarinAPI.hpp"
-#include "Communications/WiFi.hpp"
+#include "Communications/SindarinWiFi.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/BootError.hpp"
 #include "Misc/BootLoopDetection.hpp"
@@ -104,7 +104,7 @@ void RadioTask(void *parameter) {
     for (;;) {
 #if USE_TURN_TOUCH_REMOTE
         // Skip scanning while WiFi is connected to avoid kicking off the WiFi connection
-        if (!NetworkConnected() && !templesClosed) {
+        if (!sindarinWiFi.connected() && !templesClosed) {
             ttRemoteInput.connect();
         } else if (!ttRemoteInput.connected()) {
             // log_d("Skipping Turn Touch scan while WiFi is connected");
@@ -258,7 +258,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                         }
                         digitalWrite(BLUE_LED, LED_OFF);
                         runningContentSync = false;
-                        DisconnectWifi();
+                        sindarinWiFi.disconnectWiFi();
                         log_i("Going to sleep after content sync");
                         PowerManager::getInstance().powerOff();
                     }
@@ -312,7 +312,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 templesClosed = false;
                 if (runningContentSync) {
                     // Effectively cancel the content sync by disconnecting WiFi
-                    DisconnectWifi();
+                    sindarinWiFi.disconnectWiFi();
                 }
             } else {
                 lightingController.disableLighting();
@@ -347,7 +347,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                                 PowerManager::getInstance().powerOff();
                             }
                             runningContentSync = false;
-                            DisconnectWifi();
+                            sindarinWiFi.disconnectWiFi();
                         }
                     });
                 }
@@ -486,7 +486,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-    SetWiFiPower((wifi_power_t)prefs.wifiPower.get().value_or(WIFI_POWER_17dBm));
+    sindarinWiFi.setWiFiPower((wifi_power_t)prefs.wifiPower.get().value_or(WIFI_POWER_17dBm));
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
     if (!bleManager->startAdvertisingIfNecessary()) {

@@ -1,6 +1,6 @@
 #include "ContentSyncScreen.hpp"
 
-#include "Communications/WiFi.hpp"
+#include "Communications/SindarinWiFi.hpp"
 #include "Misc/InactivityTimer.hpp"
 
 // TODO(john): Note-to-self: Externs are janky. Do better.
@@ -128,7 +128,7 @@ void ContentSyncScreen::fail(const std::string &message) {
     needsRerender = true;
     render(display_);
     vTaskDelay(3000 / portTICK_PERIOD_MS);
-    DisconnectWifi();
+    sindarinWiFi.disconnectWiFi();
 #if !SIMULATOR
     esp_restart();
 #endif
@@ -145,7 +145,7 @@ void ContentSyncScreen::begin() {
         return;
     }
 
-    if (!HasWiFiCredentials()) {
+    if (!sindarinWiFi.hasWiFiCredentials()) {
         fail("Go to Settings > WiFi Setup in the Sol app.");
         return;
     }
@@ -158,7 +158,7 @@ void ContentSyncScreen::begin() {
 
         if (state.state == ContentSyncState::Failure || state.state == ContentSyncState::Synced ||
             state.state == ContentSyncState::AlreadySynced) {
-            DisconnectWifi();
+            sindarinWiFi.disconnectWiFi();
         }
         // Do UI stuff back on core 1
         DispatchGetUiQueue()->dispatch([this, state]() {

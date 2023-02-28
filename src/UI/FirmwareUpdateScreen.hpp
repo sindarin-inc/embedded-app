@@ -4,7 +4,7 @@
 #include <utility>
 
 #include "Communications/FirmwareDownload.hpp"
-#include "Communications/WiFi.hpp"
+#include "Communications/SindarinWiFi.hpp"
 #include "UI/Screen.hpp"
 
 class FirmwareUpdateScreen : public Screen {

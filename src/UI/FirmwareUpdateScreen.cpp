@@ -3,7 +3,7 @@
 #include <esp_system.h>
 
 #include "Communications/FirmwareDownload.hpp"
-#include "Communications/WiFi.hpp"
+#include "Communications/SindarinWiFi.hpp"
 #include "Misc/Dispatch.hpp"
 #include "UI/Fonts/Tahoma10pt7b.h"
 #include "sindarin-debug.h"
@@ -118,12 +118,12 @@ void FirmwareUpdateScreen::fail(const std::string &message) {
     needsRerender = true;
     render(display_);
     vTaskDelay(5000 / portTICK_PERIOD_MS);
-    DisconnectWifi();
+    sindarinWiFi.disconnectWiFi();
     backCallback();
 }
 
 void FirmwareUpdateScreen::begin() {
-    if (!HasWiFiCredentials()) {
+    if (!sindarinWiFi.hasWiFiCredentials()) {
         fail("Go to Settings > WiFi Setup in the Sol app.");
         return;
     }
@@ -131,7 +131,7 @@ void FirmwareUpdateScreen::begin() {
     state_.state = FirmwareDownloadState::ConnectingWifi;
     render(display_);
 
-    if (!ConnectWifi()) {
+    if (!sindarinWiFi.connectWiFiWithTimeout()) {
         fail("Failed to connect to WiFi.");
         return;
     }
@@ -146,7 +146,7 @@ void FirmwareUpdateScreen::begin() {
             if (state.state == FirmwareDownloadState::Failure ||
                 state.state == FirmwareDownloadState::Installing ||
                 state.state == FirmwareDownloadState::AlreadyUpToDate) {
-                DisconnectWifi();
+                sindarinWiFi.disconnectWiFi();
             }
 
             if (state.state == FirmwareDownloadState::Failure ||
