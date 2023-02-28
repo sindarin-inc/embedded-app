@@ -5,7 +5,7 @@
 #include "Communications/FirmwareDownload.hpp"
 #include "Communications/WiFi.hpp"
 #include "Misc/Dispatch.hpp"
-#include "UI/Fonts/Tahoma10pt7b.h"
+#include "UI/Fonts/Font.h"
 #include "sindarin-debug.h"
 
 void FirmwareUpdateScreen::render(DisplaySystem &display) {
@@ -36,7 +36,7 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
         // Calculate group height
         const uint16_t spacing = 2;
         const uint16_t lineCount = 5;
-        uint16_t textHeight = display.getFont()->yAdvance;
+        uint16_t textHeight = display.getFont()->yAdvance();
         uint16_t groupHeight = textHeight * lineCount + spacing * (lineCount - 1);
 
         y = (display.height() - groupHeight) / 2;
@@ -53,7 +53,7 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
             }
             auto textX = x + bulletRadius * 2 + 5;
             display.drawSingleLineOfText(message, textX, y);
-            y += display.getFont()->yAdvance;
+            y += display.getFont()->yAdvance();
             if (drawLine && percentage > 0) {
                 display.drawLine(textX, y, textX + (textWidth * percentage / 100), y, display.fg);
             }

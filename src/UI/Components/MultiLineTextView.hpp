@@ -7,12 +7,14 @@
 #include "EinkView.hpp"
 #include "Misc/Style.hpp"
 #include "SingleLineTextView.hpp"
+#include "UI/Fonts/Fonts.h"
 
 // A view that draws multiple lines of text
 class MultiLineTextView : public EinkView {
 public:
     MultiLineTextView(DisplaySystem &display, std::string text, int maxLines, int spacingOffset = 0,
-                      const GFXfont *font = &TAHOMA_REGULAR_FONT5PT7B, bool allCaps = false)
+                      const Font *font = (Font *)&FONT_TAHOMA_REGULAR_FONT5PT7B,
+                      bool allCaps = false)
         : EinkView(display), text_(std::move(text)), maxLines_(maxLines),
           spacingOffset_(spacingOffset), font_(font) {
         if (allCaps) {
@@ -61,14 +63,14 @@ public:
 
         // Leave the display font the way we found it.
         // Probably not ideal, but for now it'll have to do.
-        const GFXfont *oldFont = display_.getFont();
+        const Font *oldFont = display_.getFont();
         display_.setFont(font_);
         display_.getTextBounds(text_.c_str(), &w, &h);
 
         splitLines_ = splitMultiLine(display_, size.width, text_);
 
         int lineCount = std::min((size_t)maxLines_, splitLines_.size());
-        int height = lineCount * display_.getFont()->yAdvance + (lineCount - 1) * spacingOffset_;
+        int height = lineCount * display_.getFont()->yAdvance() + (lineCount - 1) * spacingOffset_;
 
         display_.setFont(oldFont);
         return {size.width, height};
@@ -77,7 +79,7 @@ public:
     void drawInRect(Rect rect) override {
         // Leave the display font the way we found it.
         // Probably not ideal, but for now it'll have to do.
-        const GFXfont *oldFont = display_.getFont();
+        const Font *oldFont = display_.getFont();
         display_.setFont(font_);
         if (splitLines_.size() > maxLines_) {
             int i = 1;
@@ -99,7 +101,7 @@ public:
             // not ideal, but it works.
             display_.drawSingleLineOfText(
                 splitLines_[i], rect.origin.x,
-                rect.origin.y + i * (display_.getFont()->yAdvance + spacingOffset_) - 1);
+                rect.origin.y + i * (display_.getFont()->yAdvance() + spacingOffset_) - 1);
         }
         display_.setFont(oldFont);
     }
@@ -109,5 +111,5 @@ protected:
     int maxLines_;
     int spacingOffset_;
     std::vector<std::string> splitLines_;
-    const GFXfont *font_;
+    const Font *font_;
 };

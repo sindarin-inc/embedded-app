@@ -23,7 +23,7 @@ void VcomAdjustScreen::render(DisplaySystem &display) {
         return;
     }
 
-    display.setFont(&LUCIDA_GRANDE10PT7B);
+    display.setFont((Font *)&FONT_LUCIDA_GRANDE10PT7B);
 
     auto vcomStr = StringFormat("%dmV", vCom);
 
@@ -38,7 +38,7 @@ void VcomAdjustScreen::render(DisplaySystem &display) {
 
     display.updateDisplay();
 
-    display.setFont(&LUCIDA_GRANDE5PT7B);
+    display.setFont((Font *)&FONT_LUCIDA_GRANDE5PT7B);
     needsRerender = false;
 }
 

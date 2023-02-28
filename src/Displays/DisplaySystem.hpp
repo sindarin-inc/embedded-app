@@ -18,6 +18,7 @@
 
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
+#include "UI/Fonts/Font.h"
 
 // This isn't the best -- we may want to make this dynamically
 // allocated instead in the object?
@@ -88,9 +89,11 @@ public:
         gfxClass_->fillTriangle(xOffset(x0), yOffset(y0), xOffset(x1), yOffset(y1), xOffset(x2),
                                 yOffset(y2), color);
     }
-    void setFont(const GFXfont *f) {
+    void setFont(const Font *f) {
         font_ = f;
-        gfxClass_->setFont(f);
+        if (font_->is_a(FontType::GFX)) {
+            gfxClass_->setFont(((GFont *)font_)->get());
+        }
     }
     void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
         gfxClass_->fillRect(xOffset(x), yOffset(y), w, h, color);
@@ -151,7 +154,7 @@ public:
 
     // MARK: - Text rendering code
 
-    auto getFont() -> const GFXfont *;
+    auto getFont() -> const Font *;
     void drawSingleLineOfText(const std::string &line, int x, int y);
     void drawSingleLineOfCenteredText(const std::string &line);
 
@@ -192,7 +195,7 @@ public:
 protected:
     // Must be set in the constructor of subclasses
     Adafruit_GFX *gfxClass_ = nullptr;
-    const GFXfont *font_ = nullptr;
+    const Font *font_ = nullptr;
 
     inline auto xOffset(int16_t value) -> int16_t { return value + boundingBox_.x; }
     inline auto yOffset(int16_t value) -> int16_t { return value + boundingBox_.y; }

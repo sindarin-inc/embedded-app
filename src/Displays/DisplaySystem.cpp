@@ -148,7 +148,7 @@ auto DisplaySystem::setBoundingBox(DisplayRect newBox) -> DisplayRect {
     return boundingBox_;
 }
 
-auto DisplaySystem::getFont() -> const GFXfont * { return font_; }
+auto DisplaySystem::getFont() -> const Font * { return font_; }
 
 // Takes the member variable string_to_draw and splits it
 // based on the \n characater and populates the String* lines;
@@ -194,17 +194,22 @@ void DisplaySystem::splitStringToLines(const std::string &stringToSplit,
 // and return whether the text was wrapped or not.
 // But that's for another day.
 void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y) {
-    gfxClass_->setTextColor(fg);
-    // We are allowing the this method to take an the upper left corner of the text
-    // as an argument. But the setCursor method takes the lower left corner of text
-    // to be drawn (or rather, that's how printf does it). So we need to adjust the
-    // y value by the height of the font. getTextHeight includes lineSpacing_ so
-    // we subtract that out.
-    // The magic number (3) is a hack for now to handle the bottom of the display.
-    // Need to investigate why the text is getting cut off when the y dimension is
-    // all the way at the bottom. This hasn't impacted the top.
-    gfxClass_->setCursor(xOffset(x), yOffset(y + getTextHeight() - lineSpacing_ - 3));
-    gfxClass_->printf("%s", line.c_str());
+    if (font_->is_a(FontType::GFX)) {
+
+        gfxClass_->setTextColor(fg);
+        // We are allowing the this method to take an the upper left corner of the text
+        // as an argument. But the setCursor method takes the lower left corner of text
+        // to be drawn (or rather, that's how printf does it). So we need to adjust the
+        // y value by the height of the font. getTextHeight includes lineSpacing_ so
+        // we subtract that out.
+        // The magic number (3) is a hack for now to handle the bottom of the display.
+        // Need to investigate why the text is getting cut off when the y dimension is
+        // all the way at the bottom. This hasn't impacted the top.
+        gfxClass_->setCursor(xOffset(x), yOffset(y + getTextHeight() - lineSpacing_ - 3));
+        gfxClass_->printf("%s", line.c_str());
+    } else {
+        // TODO: IBMFFont integration
+    }
 }
 
 void DisplaySystem::drawSingleLineOfCenteredText(const std::string &line) {
@@ -237,40 +242,68 @@ void DisplaySystem::drawText(const std::string &newText, int x, int y, int width
 
     splitStringToLines(newText, lines, numLines);
 
-    // We want to have only 1 pixel length difference between the rows of
-    // text to squeeze as much in there as we can
-    // ascent = u8g2Fonts->getAscent();
-    // descent = u8g2Fonts->getDescent();
+    if (font_->is_a(FontType::GFX)) {
 
-    gfxClass_->setTextColor(fg);
+        // We want to have only 1 pixel length difference between the rows of
+        // text to squeeze as much in there as we can
+        // ascent = u8g2Fonts->getAscent();
+        // descent = u8g2Fonts->getDescent();
 
-    // We start at i+1 in the since setting the cursor puts where the lower left of the text
-    // will be, not upper left.
-    for (int i = 0; i < numLines; i++) {
-        // Don't know if it starts the line from the baseline or from the top -- TO LEARN: HACK
-        setCursor(xOffset(x), yOffset(y + (i + 1) * (lineHeight)));
-        gfxClass_->printf("%s\n", lines[i].c_str());
+        gfxClass_->setTextColor(fg);
+
+        // We start at i+1 in the since setting the cursor puts where the lower left of the text
+        // will be, not upper left.
+        for (int i = 0; i < numLines; i++) {
+            // Don't know if it starts the line from the baseline or from the top -- TO LEARN: HACK
+            setCursor(xOffset(x), yOffset(y + (i + 1) * (lineHeight)));
+            gfxClass_->printf("%s\n", lines[i].c_str());
+        }
+    } else {
+        for (int i = 0; i < numLines; i++) {
+            // Don't know if it starts the line from the baseline or from the top -- TO LEARN: HACK
+            setCursor(xOffset(x), yOffset(y + (i + 1) * (lineHeight)));
+            // gfxClass_->printf("%s\n", lines[i].c_str());
+            // TODO: IBMFFont integration
+        }
     }
 }
 
 void DisplaySystem::getTextBounds(const char *buffer, uint16_t *w, uint16_t *h) {
-    int16_t x, y;
-    gfxClass_->getTextBounds(buffer, 0, 0, &x, &y, w, h);
+    if (font_->is_a(FontType::GFX)) {
+        int16_t x, y;
+        gfxClass_->getTextBounds(buffer, 0, 0, &x, &y, w, h);
+    } else {
+        *w = 10;
+        *h = 10;
+        // TODO: IBMFFont integration
+    }
 }
 
-auto DisplaySystem::getTextHeight() -> int { return font_->yAdvance + lineSpacing_; }
+auto DisplaySystem::getTextHeight() -> int { return font_->yAdvance() + lineSpacing_; }
 
 auto DisplaySystem::getTextHeight(const char *buffer) -> int {
-    int16_t x, y;
-    uint16_t w, h;
-    gfxClass_->getTextBounds(buffer, 0, 0, &x, &y, &w, &h);
+    uint16_t h;
+    if (font_->is_a(FontType::GFX)) {
+        int16_t x, y;
+        uint16_t w;
+        gfxClass_->getTextBounds(buffer, 0, 0, &x, &y, &w, &h);
+    } else {
+        // TODO: IBMFFont integration
+        h = 10;
+    }
     return h;
 }
 
 auto DisplaySystem::getTextWidth(const char *buffer) -> int {
-    int16_t x, y;
-    uint16_t w, h;
-    gfxClass_->getTextBounds(buffer, 0, 0, &x, &y, &w, &h);
+    uint16_t w;
+    if (font_->is_a(FontType::GFX)) {
+        int16_t x, y;
+        uint16_t h;
+        gfxClass_->getTextBounds(buffer, 0, 0, &x, &y, &w, &h);
+    } else {
+        // TODO: IBMFFont integration
+        w = 10;
+    }
     return w;
 }
 

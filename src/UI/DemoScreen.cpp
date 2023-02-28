@@ -8,13 +8,7 @@
 #include "UI/Bitmaps/Logo.hpp"
 #include "UI/Bitmaps/Sol_Logo.hpp"
 #include "UI/Bitmaps/stone.hpp"
-#include "UI/Fonts/Tahoma10pt7b.h"
-#include "UI/Fonts/Tahoma20pt7b.h"
-#include "UI/Fonts/Tahoma5pt7b.h"
-#include "UI/Fonts/Tahoma6pt7b.h"
-#include "UI/Fonts/Tahoma7pt7b.h"
-#include "UI/Fonts/Tahoma8pt7b.h"
-#include "UI/Fonts/Tahoma9pt7b.h"
+#include "UI/Fonts/Fonts.h"
 #include "sindarin-debug.h"
 
 extern void UIInnerLoop(RemoteCommand command);
@@ -31,7 +25,7 @@ void DemoScreen::render(DisplaySystem &display) {
 
     std::string message = messages_[currentScreen_];
 
-    display.setFont(&TAHOMA_REGULAR_FONT6PT7B);
+    display.setFont((Font *)&FONT_TAHOMA_REGULAR_FONT6PT7B);
 
     // Alternate left and right on for setup.
     if (currentScreen_ == 1) {
@@ -50,11 +44,11 @@ void DemoScreen::render(DisplaySystem &display) {
     switch (currentScreen_) {
     case 0:
     case 1:
-        display.setFont(&TAHOMA_REGULAR_FONT8PT7B);
+        display.setFont((Font *)&FONT_TAHOMA_REGULAR_FONT8PT7B);
         break;
     case 2:
     case 3:
-        display.setFont(&TAHOMA_REGULAR_FONT5PT7B);
+        display.setFont((Font *)&FONT_TAHOMA_REGULAR_FONT5PT7B);
         break;
     }
     // NOLINTEND(bugprone-branch-clone)

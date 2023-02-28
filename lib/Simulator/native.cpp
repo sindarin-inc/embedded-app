@@ -285,11 +285,11 @@ auto main(int argc, char *argv[]) -> int {
     SDL_RenderSetScale(renderer, SCALE, SCALE);
 
     IMG_Init(IMG_INIT_PNG);
-    arrow = IMG_Load("lib/Simulator/assets/arrow.png");
-    if (arrow == NULL) {
-        fprintf(stderr, "Could not find arrow asset: %s\n", SDL_GetError());
-        return 1;
-    }
+    // arrow = IMG_Load("lib/Simulator/assets/arrow.png");
+    // if (arrow == NULL) {
+    //     fprintf(stderr, "Could not find arrow asset: %s\n", SDL_GetError());
+    //     return 1;
+    // }
     arrowTexture = SDL_CreateTextureFromSurface(renderer, arrow);
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
