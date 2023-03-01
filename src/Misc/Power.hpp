@@ -1,6 +1,7 @@
 #pragma once
 
 #define BATTERY_MEASUREMENT_PERIOD_SECONDS 5
+#define BATTERY_LOGGING_PERIOD_SECONDS 60
 #define BATTERY_MEASUREMENTS_COUNT 10
 #define BATTERY_DISCONNECT_THRESHOLD 2.5F
 // Battery hard cutoff is at 3V so let's shut off a little before that
@@ -14,6 +15,8 @@
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
 
+// TODO: Perhaps we should rename this class to `Battery` since it only handles the battery part of
+// the Power system
 class Power {
 public:
     Power(FileSystem &fs, PreferencesStore &prefs) : fileSystem_(fs), prefs_(prefs) {}
@@ -39,6 +42,7 @@ protected:
     FileSystem &fileSystem_;
     PreferencesStore &prefs_;
     unsigned long lastMeasurementTime_ = 0;
+    unsigned long lastLoggingTime_ = 0;
     bool depleted_;
     int leftIndex_;
     int rightIndex_;
