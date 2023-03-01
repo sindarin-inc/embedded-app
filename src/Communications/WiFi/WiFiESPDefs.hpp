@@ -21,8 +21,8 @@
 #include <esp_wifi.h>
 #include <functional>
 #include <stdint.h>
+#include <string>
 
-#include "IPAddress.h"
 #include "esp_smartconfig.h"
 #include "wifi_provisioning/manager.h"
 
@@ -166,3 +166,9 @@ static const int WIFIESP_EVENTSTATUSBIT_WIFI_SCANNING = BIT11;
 static const int WIFIESP_EVENTSTATUSBIT_WIFI_SCAN_DONE = BIT12;
 static const int WIFIESP_EVENTSTATUSBIT_WIFI_DNS_IDLE = BIT13;
 static const int WIFIESP_EVENTSTATUSBIT_WIFI_DNS_DONE = BIT14;
+
+// create our own ip address type
+typedef esp_ip4_addr_t wifiesp_ip4address;
+
+// Const zero ip address
+const wifiesp_ip4address IPADDRESS_NONE = {.addr = 0};

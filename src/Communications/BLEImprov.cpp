@@ -90,7 +90,7 @@ void BLEImprov::setError(improv::Error error, bool notify) {
 
 void BLEImprov::doneConnecting() {
     this->setState(STATE_CONNECTED);
-    log_i("Connected, IP address: %s", sindarinWiFi.getLocalIp().toString().c_str());
+    log_i("Connected, IP address: %s", sindarinWiFi.getLocalIpStr().c_str());
     SHOW_HEAP();
 }
 
@@ -130,7 +130,7 @@ void BLEImprov::loop() {
     } else if (this->state_ == STATE_CONNECTING) {
         uint32_t now = millis();
         if (sindarinWiFi.getStatus() == WIFIESP_STATUS_CONNECTED) {
-            std::string ip = sindarinWiFi.getLocalIp().toString().c_str();
+            std::string ip = sindarinWiFi.getLocalIpStr();
             std::vector<uint8_t> response = improv::build_rpc_response(improv::WIFI_SETTINGS, {ip});
             log_d("Reporting RPC result to client");
             this->rpcResultCharacteristic_->setValue(response.data(), response.size());

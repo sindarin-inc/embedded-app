@@ -20,9 +20,8 @@
 //-----------------------------------------------------------------------------
 #include <esp_wifi.h>
 #include <functional>
+#include <string>
 
-#include "IPAddress.h"
-#include "IPv6Address.h"
 #include "WiFiESPDefs.hpp"
 #include "esp_err.h"
 #include "esp_event.h"
@@ -57,13 +56,13 @@ public:
     void scanDelete();
     // Scan Information
     auto getScanInfoByIndex(int i) -> void *;
-    auto getNetworkInfo(uint8_t networkItem, String &ssid, uint8_t &encryptionType, int32_t &rssi,
-                        uint8_t *&bssid, int32_t &channel) -> bool;
-    auto ssid(uint8_t networkItem) -> String;
+    auto getNetworkInfo(uint8_t networkItem, std::string &ssid, uint8_t &encryptionType,
+                        int32_t &rssi, uint8_t *&bssid, int32_t &channel) -> bool;
+    auto ssid(uint8_t networkItem) -> std::string;
     auto encryptionType(uint8_t networkItem) -> wifi_auth_mode_t;
     auto rssi(uint8_t networkItem) -> int32_t;
     auto bssid(uint8_t networkItem) -> uint8_t *;
-    auto bssiDstr(uint8_t networkItem) -> String;
+    auto bssiDstr(uint8_t networkItem) -> std::string;
     auto scanChannel(uint8_t networkItem) -> int32_t;
 
     // Sleep
@@ -78,7 +77,7 @@ public:
     // Hostname
     auto getHostname() -> const char *;
     auto setHostname(const char *hostname) -> bool;
-    auto hostname(const String &aHostname) -> bool { return setHostname(aHostname.c_str()); }
+    auto hostname(const std::string &aHostname) -> bool { return setHostname(aHostname.c_str()); }
 
     // Start Wifi
     auto begin(const char *wpa2Ssid, wifiesp_wpa2_auth_method_t method,
@@ -101,7 +100,7 @@ public:
     auto reconnect() -> bool;
     auto disconnect(bool wifioff = false, bool eraseap = false) -> bool;
     auto isConnected() -> bool;
-    auto localIP() -> IPAddress;
+    auto localIP() -> wifiesp_ip4address;
 
     // STA Status
     static void setStatus(wifiesp_status_t status);
@@ -158,12 +157,13 @@ protected:
     void addEspInterfaceNetif(esp_interface_t interface, esp_netif_t *espNetif);
     auto getEspInterfaceNetif(esp_interface_t interface) -> esp_netif_t *;
     auto setEspInterfaceHostname(esp_interface_t interface, const char *hostname) -> esp_err_t;
-    auto setEspInterfaceIp(esp_interface_t interface, IPAddress localIp = IPAddress(),
-                           const IPAddress &gateway = IPAddress(), IPAddress subnet = IPAddress())
-        -> esp_err_t;
-    auto setEspInterfaceDns(esp_interface_t interface, const IPAddress &mainDns = IPAddress(),
-                            const IPAddress &backupDns = IPAddress(),
-                            const IPAddress &fallbackDns = IPAddress()) -> esp_err_t;
+    auto setEspInterfaceIp(esp_interface_t interface, wifiesp_ip4address localIp = IPADDRESS_NONE,
+                           const wifiesp_ip4address &gateway = IPADDRESS_NONE,
+                           wifiesp_ip4address subnet = IPADDRESS_NONE) -> esp_err_t;
+    auto setEspInterfaceDns(esp_interface_t interface,
+                            const wifiesp_ip4address &mainDns = IPADDRESS_NONE,
+                            const wifiesp_ip4address &backupDns = IPADDRESS_NONE,
+                            const wifiesp_ip4address &fallbackDns = IPADDRESS_NONE) -> esp_err_t;
     static auto getEspNetifHostname() -> const char *;
     static void setEspNetifHostname(const char *name);
 

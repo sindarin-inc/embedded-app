@@ -27,12 +27,10 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
-#include <cstring>
 #include <functional>
+#include <string>
 #include <vector>
 // Base Wifi
-#include "IPAddress.h"
-#include "IPv6Address.h"
 #include "dhcpserver/dhcpserver_options.h"
 #include "esp_smartconfig.h"
 #include "esp_wifi.h"
@@ -390,7 +388,7 @@ auto CWiFiESP::getScanInfoByIndex(int i) -> void * {
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-auto CWiFiESP::getNetworkInfo(uint8_t i, String &ssid, uint8_t &encType, int32_t &rssi,
+auto CWiFiESP::getNetworkInfo(uint8_t i, std::string &ssid, uint8_t &encType, int32_t &rssi,
                               uint8_t *&bssid, int32_t &channel) -> bool {
     auto *it = reinterpret_cast<wifi_ap_record_t *>(getScanInfoByIndex(i));
     if (!it) {
@@ -411,11 +409,11 @@ auto CWiFiESP::getNetworkInfo(uint8_t i, String &ssid, uint8_t &encType, int32_t
 
     \brief  Return the SSID discovered during the network scan.
     \param  i specify from which network item want to get the information
-    \return String - ssid string of the specified item on the networks scanned list
+    \return string - ssid string of the specified item on the networks scanned list
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-auto CWiFiESP::ssid(uint8_t i) -> String {
+auto CWiFiESP::ssid(uint8_t i) -> std::string {
     auto *it = reinterpret_cast<wifi_ap_record_t *>(getScanInfoByIndex(i));
     if (!it) {
         return {};
@@ -487,11 +485,11 @@ auto CWiFiESP::bssid(uint8_t i) -> uint8_t * {
 
     \brief  return MAC / BSSID of scanned wifi
     \param  i specify from which network item want to get the information
-    \return String MAC / BSSID of scanned wifi
+    \return string MAC / BSSID of scanned wifi
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-auto CWiFiESP::bssiDstr(uint8_t i) -> String {
+auto CWiFiESP::bssiDstr(uint8_t i) -> std::string {
     char mac[18] = {0};
     auto *it = reinterpret_cast<wifi_ap_record_t *>(getScanInfoByIndex(i));
     if (!it) {
@@ -975,16 +973,16 @@ auto CWiFiESP::isConnected() -> bool { return (status() == WIFIESP_STATUS_CONNEC
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-auto CWiFiESP::localIP() -> IPAddress {
+auto CWiFiESP::localIP() -> wifiesp_ip4address {
     if (getMode() == WIFI_MODE_NULL) {
-        return {};
+        return IPADDRESS_NONE;
     }
     esp_netif_ip_info_t ip;
     if (esp_netif_get_ip_info(getEspInterfaceNetif(ESP_IF_WIFI_STA), &ip) != ESP_OK) {
         log_e("Netif Get IP Failed!");
-        return {};
+        return IPADDRESS_NONE;
     }
-    return {ip.ip.addr};
+    return (wifiesp_ip4address)ip.ip;
 }
 
 //______________________________________________________________________________
@@ -1644,14 +1642,15 @@ auto CWiFiESP::setEspInterfaceHostname(esp_interface_t interface, const char *ho
     return ESP_FAIL;
 }
 
-auto CWiFiESP::setEspInterfaceIp(esp_interface_t interface, IPAddress localIp,
-                                 const IPAddress &gateway, IPAddress subnet) -> esp_err_t {
+auto CWiFiESP::setEspInterfaceIp(esp_interface_t interface, wifiesp_ip4address localIp,
+                                 const wifiesp_ip4address &gateway, wifiesp_ip4address subnet)
+    -> esp_err_t {
     esp_netif_t *espNetif = _netIfs[interface];
     esp_netif_dhcp_status_t status = ESP_NETIF_DHCP_INIT;
     esp_netif_ip_info_t info;
-    info.ip.addr = static_cast<uint32_t>(localIp);
-    info.gw.addr = static_cast<uint32_t>(gateway);
-    info.netmask.addr = static_cast<uint32_t>(subnet);
+    info.ip = localIp;
+    info.gw = gateway;
+    info.netmask = subnet;
 
     log_v("Configuring %s static IP: " IPSTR ", MASK: " IPSTR ", GW: " IPSTR,
           interface == ESP_IF_WIFI_STA  ? "Station"
@@ -1702,11 +1701,11 @@ auto CWiFiESP::setEspInterfaceIp(esp_interface_t interface, IPAddress localIp,
 
         dhcps_lease_t lease;
         lease.enable = true;
-        auto dhcpIpaddr = static_cast<uint32_t>(localIp);
+        auto dhcpIpaddr = static_cast<uint32_t>(localIp.addr);
         // prevents DHCP lease range to overflow subnet/24 range
         // there will be 11 addresses for DHCP to lease
-        auto leaseStart = (uint8_t)(~subnet[3] - 12);
-        if ((localIp[3]) < leaseStart) {
+        auto leaseStart = (uint8_t)(~esp_ip4_addr_get_byte(&subnet, 3) - 12);
+        if ((esp_ip4_addr_get_byte(&localIp, 3)) < leaseStart) {
             lease.start_ip.addr = dhcpIpaddr + (1 << 24);
             lease.end_ip.addr = dhcpIpaddr + (11 << 24);
         } else {
@@ -1715,8 +1714,9 @@ auto CWiFiESP::setEspInterfaceIp(esp_interface_t interface, IPAddress localIp,
             lease.start_ip.addr = dhcpIpaddr + (1 << 24);
             lease.end_ip.addr = dhcpIpaddr + (11 << 24);
         }
-        log_v("DHCP Server Range: %s to %s", IPAddress(lease.start_ip.addr).toString().c_str(),
-              IPAddress(lease.end_ip.addr).toString().c_str());
+        // RCOOK REPAIR
+        // log_v("DHCP Server Range: %s to %s", IPAddress(lease.start_ip.addr).toString().c_str(),
+        //       IPAddress(lease.end_ip.addr).toString().c_str());
         err = tcpip_adapter_dhcps_option((tcpip_adapter_dhcp_option_mode_t)TCPIP_ADAPTER_OP_SET,
                                          (tcpip_adapter_dhcp_option_id_t)REQUESTED_IP_ADDRESS,
                                          (void *)&lease, sizeof(dhcps_lease_t));
@@ -1734,26 +1734,26 @@ auto CWiFiESP::setEspInterfaceIp(esp_interface_t interface, IPAddress localIp,
     return err;
 }
 
-auto CWiFiESP::setEspInterfaceDns(esp_interface_t interface, const IPAddress &mainDns,
-                                  const IPAddress &backupDns, const IPAddress &fallbackDns)
-    -> esp_err_t {
+auto CWiFiESP::setEspInterfaceDns(esp_interface_t interface, const wifiesp_ip4address &mainDns,
+                                  const wifiesp_ip4address &backupDns,
+                                  const wifiesp_ip4address &fallbackDns) -> esp_err_t {
     esp_netif_t *espNetif = _netIfs[interface];
     esp_netif_dns_info_t dns;
     dns.ip.type = ESP_IPADDR_TYPE_V4;
-    dns.ip.u_addr.ip4.addr = static_cast<uint32_t>(mainDns);
+    dns.ip.u_addr.ip4 = mainDns;
     if (dns.ip.u_addr.ip4.addr &&
         esp_netif_set_dns_info(espNetif, ESP_NETIF_DNS_MAIN, &dns) != ESP_OK) {
         log_e("Set Main DNS Failed!");
         return ESP_FAIL;
     }
     if (interface != ESP_IF_WIFI_AP) {
-        dns.ip.u_addr.ip4.addr = static_cast<uint32_t>(backupDns);
+        dns.ip.u_addr.ip4 = backupDns;
         if (dns.ip.u_addr.ip4.addr &&
             esp_netif_set_dns_info(espNetif, ESP_NETIF_DNS_BACKUP, &dns) != ESP_OK) {
             log_e("Set Backup DNS Failed!");
             return ESP_FAIL;
         }
-        dns.ip.u_addr.ip4.addr = static_cast<uint32_t>(fallbackDns);
+        dns.ip.u_addr.ip4.addr = fallbackDns.addr;
         if (dns.ip.u_addr.ip4.addr &&
             esp_netif_set_dns_info(espNetif, ESP_NETIF_DNS_FALLBACK, &dns) != ESP_OK) {
             log_e("Set Fallback DNS Failed!");

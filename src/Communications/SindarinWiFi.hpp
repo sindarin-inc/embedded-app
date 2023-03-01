@@ -19,9 +19,9 @@
 // Includes
 //-----------------------------------------------------------------------------
 #include <esp_wifi.h>
+#include <string>
 
 #include "Communications/WiFi/WiFiESP.hpp"
-#include "IPAddress.h"
 
 //-----------------------------------------------------------------------------
 // Defines
@@ -49,7 +49,7 @@ public:
     // Scanning
     auto scanNetworks(bool asyncScan) -> int16_t;
     auto scanComplete() -> int16_t;
-    auto getSsid(uint8_t i) -> String;
+    auto getSsid(uint8_t i) -> std::string;
     auto getRssi(uint8_t i) -> int32_t;
     auto getEncryptionType(uint8_t i) -> wifi_auth_mode_t;
 
@@ -64,7 +64,8 @@ public:
     void setWiFiPower(wifi_power_t power) { wiFiPower_ = power; }
     auto getWiFiPower() -> wifi_power_t { return wiFiPower_; }
 
-    auto getLocalIp() -> IPAddress;
+    auto getLocalIp() -> wifiesp_ip4address;
+    auto getLocalIpStr() -> std::string;
 
     auto getStatus() -> wifiesp_status_t;
 

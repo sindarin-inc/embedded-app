@@ -18,7 +18,7 @@
 //-----------------------------------------------------------------------------
 #include "Communications/SindarinWiFi.hpp" // Class Header
 
-#include <cstring>
+#include <string>
 
 #include "config.h"
 #include "sindarin-debug.h"
@@ -65,12 +65,14 @@ auto CSindarinWiFi::getWiFiCredentials(wifi_config_t *conf) -> bool {
     if (esp_wifi_get_config(WIFI_IF_STA, conf) != ESP_OK) {
         log_e("Failed to get WiFi config");
         return false;
-    }
-    if (strlen((const char *)conf->sta.ssid) == 0) {
-        return false;
-    }
-    if (strlen((const char *)conf->sta.password) == 0) {
-        log_w("Zero length WiFi password");
+    } else {
+        // We got the config - now check it
+        if (strlen((const char *)conf->sta.ssid) == 0) {
+            return false;
+        }
+        if (strlen((const char *)conf->sta.password) == 0) {
+            log_w("Zero length WiFi password");
+        }
     }
     return true;
 }
@@ -126,11 +128,11 @@ auto CSindarinWiFi::scanComplete() -> int16_t { return wiFiEsp.scanComplete(); }
 
     \brief  Get the SSID for a scanned network at provided offset
     \param  i - offset for scanned network
-    \return String - the SSID
+    \return string - the SSID
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-auto CSindarinWiFi::getSsid(uint8_t i) -> String { return wiFiEsp.ssid(i); }
+auto CSindarinWiFi::getSsid(uint8_t i) -> std::string { return wiFiEsp.ssid(i); }
 
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
@@ -230,13 +232,13 @@ auto CSindarinWiFi::connectWiFiIfCredentialsExist() -> bool {
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
 auto CSindarinWiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
-    auto startTime = millis();
+    auto startTime = xTaskGetTickCount();
     if (!connected()) {
         if (connectWiFiIfCredentialsExist()) {
             // Only wait if we had credentials
             // TODO: Would be nice to make this not a polling loop
-            while (!connected() && (millis() - startTime) < timeoutMs) {
-                delay(200);
+            while (!connected() && (xTaskGetTickCount() - startTime) < timeoutMs) {
+                vTaskDelay(200);
             }
         }
         if (!connected()) {
@@ -290,7 +292,25 @@ auto CSindarinWiFi::connected() -> bool { return wiFiEsp.isConnected(); }
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-auto CSindarinWiFi::getLocalIp() -> IPAddress { return wiFiEsp.localIP(); }
+auto CSindarinWiFi::getLocalIp() -> wifiesp_ip4address { return wiFiEsp.localIP(); }
+
+//______________________________________________________________________________
+//------------------------------------------------------------------------------
+/*!
+    \fn     GetLocalIPStr
+
+    \brief  Get the station interface IP address as a string
+    \param  N/A
+    \return IPAddress = 0 if not cennected
+*/
+//______________________________________________________________________________
+//------------------------------------------------------------------------------
+auto CSindarinWiFi::getLocalIpStr() -> std::string {
+    esp_ip4_addr_t ip = (esp_ip4_addr_t)getLocalIp();
+    char ipstr[16];
+    sprintf(ipstr, IPSTR, IP2STR(&ip));
+    return ipstr;
+}
 
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
