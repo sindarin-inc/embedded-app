@@ -18,7 +18,7 @@
 //-----------------------------------------------------------------------------
 // Includes
 //-----------------------------------------------------------------------------
-#include <cstring>
+#include <string>
 
 #include "Communications/SindarinWiFi.hpp" // Class Header
 #include "config.h"
@@ -108,11 +108,11 @@ auto CSindarinWiFi::ScanComplete() -> int16_t { return 1; }
 
     \brief  Get the SSID for a scanned network at provided offset
     \param  i - offset for scanned network
-    \return String - the SSID
+    \return string - the SSID
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-auto CSindarinWiFi::GetSSID(uint8_t i) -> String { return "ssid"; }
+auto CSindarinWiFi::GetSSID(uint8_t i) -> std::string { return "ssid"; }
 
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
@@ -228,7 +228,7 @@ auto CSindarinWiFi::Connected() -> bool { return true; }
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-auto CSindarinWiFi::GetLocalIP() -> IPAddress { return INADDR_NONE; }
+auto CSindarinWiFi::GetLocalIP() -> wifiesp_ip4address { return IPADDRESS_NONE; }
 
 //______________________________________________________________________________
 //------------------------------------------------------------------------------

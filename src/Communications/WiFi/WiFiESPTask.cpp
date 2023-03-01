@@ -31,8 +31,6 @@
 #include <functional>
 #include <vector>
 // Base Wifi
-#include "IPAddress.h"
-#include "IPv6Address.h"
 #include "esp_smartconfig.h"
 #include "esp_wifi.h"
 #include "wifi_provisioning/manager.h"
