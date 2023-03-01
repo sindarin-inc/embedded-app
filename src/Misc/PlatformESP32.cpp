@@ -337,6 +337,9 @@ void ForcePowerOn() {
 }
 
 void AllowPowerOff() {
+    gpio_deep_sleep_hold_dis();
+    gpio_hold_dis((gpio_num_t)sysOnPin);
+
     // We haven't been particuarly scientific, but experimentally using INPUT_PULLDOWN seems to work
     // the best. I don't understand why. You'd think either an open drain or driving to 0 would be
     // more effective at turning off the mostfet.
