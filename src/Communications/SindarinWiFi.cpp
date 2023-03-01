@@ -306,7 +306,7 @@ auto CSindarinWiFi::getLocalIp() -> wifiesp_ip4address { return wiFiEsp.localIP(
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
 auto CSindarinWiFi::getLocalIpStr() -> std::string {
-    esp_ip4_addr_t ip = (esp_ip4_addr_t)getLocalIp();
+    auto ip = (esp_ip4_addr_t)getLocalIp();
     char ipstr[16];
     sprintf(ipstr, IPSTR, IP2STR(&ip));
     return ipstr;
