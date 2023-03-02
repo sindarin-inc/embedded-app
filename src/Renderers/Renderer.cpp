@@ -3,7 +3,6 @@
 #include <utility>
 
 #include "Misc/Platform.hpp"
-#include "UI/Fonts/Tahoma4pt7b.h"
 #include "config.h"
 #include "sindarin-debug.h"
 

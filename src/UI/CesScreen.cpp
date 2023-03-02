@@ -1,7 +1,5 @@
 #include "UI/CesScreen.hpp"
 
-#include "UI/Fonts/Tahoma5pt7b.h"
-#include "UI/Fonts/Tahoma6pt7b.h"
 #include "sindarin-debug.h"
 
 extern void UIInnerLoop(RemoteCommand command);

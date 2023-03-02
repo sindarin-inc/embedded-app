@@ -1,6 +1,5 @@
 #include "UI/StatsScreen.hpp"
 
-#include "UI/Fonts/Tahoma8pt7b.h"
 #include "sindarin-debug.h"
 
 StatsScreen::StatsScreen(DisplaySystem &display, PreferencesStore &prefs)

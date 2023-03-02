@@ -4,7 +4,6 @@
 #include "Communications/WiFi.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/Power.hpp"
-#include "UI/Fonts/Tahoma10pt7b.h"
 #include "sindarin-debug.h"
 
 void VoltageLogUploadScreen::render(DisplaySystem &display) {

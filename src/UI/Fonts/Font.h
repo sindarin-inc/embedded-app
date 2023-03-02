@@ -25,15 +25,3 @@ public:
     inline GFXfont const *get() const { return font; }
     inline int yAdvance() const { return font->yAdvance; }
 };
-
-class IBMFFont;
-
-class IFont : Font {
-public:
-    IBMFFont *font;
-
-    IFont(IBMFFont &ibmf_font) : Font(FontType::IBMF), font(&ibmf_font) {}
-
-    inline IBMFFont *get() const { return font; }
-    inline int yAdvance() const { return 10; } // TODO: Adjust with the IBMFFont...
-};
