@@ -56,7 +56,10 @@ public:
         void deleteFromStorage(const char *key) {
             esp_err_t err = nvs_erase_key(prefs.nvsHandle, key);
             if (err) {
-                log_e("nvs_erase_key fail: %s %s", key, esp_err_to_name(err));
+                // Fail silently if the key doesn't exist
+                if (err != ESP_ERR_NVS_NOT_FOUND) {
+                    log_e("nvs_erase_key fail: %s %s", key, esp_err_to_name(err));
+                }
                 return;
             }
             prefs.commit();
