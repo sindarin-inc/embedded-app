@@ -2,7 +2,8 @@
 
 #include <vector>
 
-SemVerComparison SemVerCompareVersions(const std::string &version1, const std::string &version2) {
+auto SemVerCompareVersions(const std::string &version1, const std::string &version2)
+    -> SemVerComparison {
     // If either version is empty, it is considered invalid
     if (version1.empty() || version2.empty()) {
         return SemVerComparison::Invalid;
@@ -19,8 +20,12 @@ SemVerComparison SemVerCompareVersions(const std::string &version1, const std::s
     while (pos1 < version1.size() || pos2 < version2.size()) {
         size_t end1 = version1.find_first_of('.', pos1);
         size_t end2 = version2.find_first_of('.', pos2);
-        if (end1 == std::string::npos) end1 = version1.size();
-        if (end2 == std::string::npos) end2 = version2.size();
+        if (end1 == std::string::npos) {
+            end1 = version1.size();
+        }
+        if (end2 == std::string::npos) {
+            end2 = version2.size();
+        }
         parts1.push_back(std::stoi(version1.substr(pos1, end1 - pos1)));
         parts2.push_back(std::stoi(version2.substr(pos2, end2 - pos2)));
         pos1 = end1 + 1;

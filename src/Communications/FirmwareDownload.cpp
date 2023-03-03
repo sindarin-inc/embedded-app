@@ -61,7 +61,7 @@ void FirmwareDownloader::downloadFirmware(
         std::string failMessage = "";
         auto success = DownloadFile(
             response.latestGlassesFirmware.url.c_str(),
-            [&response, &progressCallback, &failMessage](int httpCode, int contentLength) -> bool {
+            [&response, &failMessage](int httpCode, int contentLength) -> bool {
                 if (httpCode != 200) {
                     log_e("HTTP GET to %s failed, error: %d",
                           response.latestGlassesFirmware.url.c_str(), httpCode);
