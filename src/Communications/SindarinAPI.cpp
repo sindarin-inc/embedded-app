@@ -78,7 +78,15 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
     }
 
     int contentLength = client.fetchHeaders();
+    if (contentLength <= 0) {
+        log_e("Failed to fetch headers");
+        return 0;
+    }
     int httpCode = client.getStatusCode();
+    if (httpCode != 200) {
+        log_e("Failed to check sync: %d", httpCode);
+        return httpCode;
+    }
     auto stream = client.makeReadStream();
 
     SHOW_HEAP();

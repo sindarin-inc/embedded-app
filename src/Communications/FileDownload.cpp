@@ -50,6 +50,10 @@ auto DownloadFile(const char *url,
     }
 
     if (!openedConnection(httpCode, contentLength)) {
+        // Get the body anyways, for debugging, since it might contain an error message
+        char buffer[256];
+        client.read(buffer, sizeof(buffer));
+        log_w("Body: %s", buffer);
         return false;
     }
 
