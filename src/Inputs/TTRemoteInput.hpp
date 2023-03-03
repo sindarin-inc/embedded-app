@@ -15,7 +15,8 @@
 
 class TTRemoteInput : public RemoteInput {
 public:
-    TTRemoteInput(PreferencesStore &prefs) noexcept : prefs_(prefs){};
+    TTRemoteInput(PreferencesStore &prefs) noexcept
+        : prefs_(prefs), advertisedDeviceCallbacks_(this), clientCallbacks_(this){};
 
     // Connect to the TurnTouch. Can be safely called even if the TurnTouch is already connected.
     void connect();
@@ -39,7 +40,7 @@ protected:
     long keepDisconnectedUntilMs_ = 0;
     BLEClient *client_ = nullptr;
 
-    auto connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &device) -> bool;
+    auto connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> device) -> bool;
     static void connectTask(void *params);
     void scanForDevice();
 
@@ -79,6 +80,8 @@ protected:
         }
     };
 
+    AdvertisedDeviceCallbacks advertisedDeviceCallbacks_;
+
     class ClientCallbacks : public BLEClientCallbacks {
     public:
         TTRemoteInput *enclosed;
@@ -96,6 +99,8 @@ protected:
             enclosed->turntouchDevice_ = nullptr;
         }
     };
+
+    ClientCallbacks clientCallbacks_;
 };
 
 #endif

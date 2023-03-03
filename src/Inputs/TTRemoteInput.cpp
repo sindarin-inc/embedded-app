@@ -10,11 +10,11 @@
 
 using namespace std::placeholders;
 
-auto TTRemoteInput::connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &device) -> bool {
+auto TTRemoteInput::connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> device) -> bool {
     if (client_ == nullptr) {
         log_d("Creating Turn Touch client");
         client_ = BLEDevice::createClient();
-        client_->setClientCallbacks(new ClientCallbacks(this));
+        client_->setClientCallbacks(&clientCallbacks_);
     }
 
     BLEAddress address = device->getAddress();
@@ -155,7 +155,7 @@ void TTRemoteInput::scanForDevice() {
         log_d("Scanning for any available TurnTouch...");
     }
     BLEScan *scan = BLEDevice::getScan();
-    scan->setAdvertisedDeviceCallbacks(new AdvertisedDeviceCallbacks(this));
+    scan->setAdvertisedDeviceCallbacks(&advertisedDeviceCallbacks_);
     // See: https://electronics.stackexchange.com/a/359158/16459
     // Only one advertising channel is being looked at during each
     // scanInterval and is rotated to the next of 3 channels with each interval. So if there is
