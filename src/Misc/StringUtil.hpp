@@ -39,6 +39,6 @@ auto SafeSnprintf(char *str, size_t size, const char *format, ...) -> bool;
 
 auto HasSuffix(std::string const &str, std::string const &suffix) -> bool;
 
-bool HasPrefix(const char *pre, const char *str);
+auto HasPrefix(const char *pre, const char *str) -> bool;
 
 #pragma clang diagnostic pop
