@@ -80,7 +80,7 @@ protected:
                                 tThis->client_->disconnect();
                                 tThis->state_ = SCANNING;
                             }
-                            vTaskDelete(NULL);
+                            vTaskDelete(nullptr);
                         },
                         "TTConnect", 5000, this->enclosed, 2, nullptr, 0);
                 }
