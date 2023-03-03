@@ -40,6 +40,7 @@ void FirmwareDownloader::downloadFirmware(
                                                    .message = "Failed to check for update"});
             return;
         }
+
         versionString = kVersionString;
         log_d("Existing version: %s, server version: %s", versionString.c_str(),
               response.latestGlassesFirmware.version.c_str());
@@ -56,28 +57,30 @@ void FirmwareDownloader::downloadFirmware(
                                                .downloadPercentage = 0});
 
         log_d("Downloading firmware from %s", response.latestGlassesFirmware.url.c_str());
+        std::string failMessage = "";
         auto success = DownloadFile(
             response.latestGlassesFirmware.url.c_str(),
-            [&response, &progressCallback](int httpCode, int contentLength) -> bool {
+            [&response, &progressCallback, &failMessage](int httpCode, int contentLength) -> bool {
                 if (httpCode != 200) {
                     log_e("HTTP GET to %s failed, error: %d",
                           response.latestGlassesFirmware.url.c_str(), httpCode);
-                    progressCallback(FirmwareDownloadState{
-                        .state = FirmwareDownloadState::State::Failure,
-                        .message = StringFormat("Download failed (%d)", httpCode)});
+                    failMessage = StringFormat("Download failed (%d)", httpCode);
                     return false;
                 }
 
                 if (!Update.begin(contentLength, U_FLASH)) {
                     auto error = Update.getError();
                     log_e("Failed to Update.begin (err=%d contentLength=%d)", error, contentLength);
-                    progressCallback(FirmwareDownloadState{
-                        .state = FirmwareDownloadState::State::Failure,
-                        .message = StringFormat("Failed to begin update (%d)", error)});
+                    failMessage = StringFormat("Failed to begin update (%d)", error);
                     return false;
                 }
 
-                Update.setMD5(response.latestGlassesFirmware.md5.c_str());
+                if (!Update.setMD5(response.latestGlassesFirmware.md5.c_str())) {
+                    auto error = Update.getError();
+                    log_e("Failed to Update.setMD5 (err=%d)", error);
+                    failMessage = StringFormat("Failed to begin update (%d)", error);
+                    return false;
+                }
 
                 return true;
             },
@@ -96,9 +99,8 @@ void FirmwareDownloader::downloadFirmware(
                     FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
                                           .message = "Failed: WiFi disconnected!"});
             } else {
-                progressCallback(
-                    FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
-                                          .message = "Failed to download update"});
+                progressCallback(FirmwareDownloadState{
+                    .state = FirmwareDownloadState::State::Failure, .message = failMessage});
             }
             Update.abort();
             return;
