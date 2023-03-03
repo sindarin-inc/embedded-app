@@ -24,9 +24,7 @@ public:
         url = j["url"].as<std::string>();
         md5 = j["md5"].as<std::string>();
         // /sync/all uses 'md5' and /firmware uses 'md5_hash'
-        if (md5.empty()) {
-            md5 = j["md5_hash"].as<std::string>();
-        }
+        md5 = j["md5"] | j["md5_hash"].as<std::string>();
         releaseNotes = j["release_notes"].as<std::string>();
         return true;
     }
