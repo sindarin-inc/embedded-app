@@ -38,7 +38,7 @@ void LineMenuScreen::render(DisplaySystem &display) {
     }
 
     if (menuItemViews_.size() <= 0) {
-        log_w("No views to draw in LineMenuScreen")
+        log_w("No views to draw in LineMenuScreen");
     }
 
     setNeedsLayout();
