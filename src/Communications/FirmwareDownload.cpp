@@ -32,42 +32,33 @@ void FirmwareDownloader::downloadFirmware(
         // Skip calculating the readable shas and changed placemarks for now, the firmware info is
         // sent either way
         // TODO: we really need a way to get the latest firmware without calling /sync/all
-        CheckSyncResponse response;
-        CheckSyncRequest request = CheckSyncRequest{
-            .readablesSince = "-1",
-            .articlesSince = "-1",
-            .readablePlacemarks = {},
-            .articlePlacemarks = {},
-            .ptBattery = prefs_.lastPageTurnerBattery.get().value_or(0),
-            .ptBuild = prefs_.lastPageTurnerBuild.get().value_or(""),
-            .skipContent = true,
-        };
-        auto httpCode = SindarinAPI::getInstance()->checkSync(request, &response);
+        FirmwareResponse response;
+        auto httpCode = SindarinAPI::getInstance()->checkFirmware(&response);
         if (httpCode != 200) {
-            log_e("Failed to check sync (HTTP %d)", httpCode);
+            log_e("Failed to get firmware (HTTP %d)", httpCode);
             progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
                                                    .message = "Failed to check for update"});
             return;
         }
-        if (response.firmware.url.empty()) {
+        if (response.latestGlassesFirmware.url.empty()) {
             versionString = kVersionString;
             progressCallback(
                 FirmwareDownloadState{.state = FirmwareDownloadState::State::AlreadyUpToDate});
             return;
         }
 
-        versionString = response.firmware.version;
+        versionString = response.latestGlassesFirmware.version;
 
         progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloading,
                                                .downloadPercentage = 0});
 
-        log_d("Downloading firmware from %s", response.firmware.url.c_str());
+        log_d("Downloading firmware from %s", response.latestGlassesFirmware.url.c_str());
         auto success = DownloadFile(
-            response.firmware.url.c_str(),
+            response.latestGlassesFirmware.url.c_str(),
             [&response, &progressCallback](int httpCode, int contentLength) -> bool {
-                HttpClient client(response.firmware.url.c_str());
                 if (httpCode != 200) {
-                    log_e("HTTP GET failed, error: %d\n", httpCode);
+                    log_e("HTTP GET to %s failed, error: %d",
+                          response.latestGlassesFirmware.url.c_str(), httpCode);
                     progressCallback(FirmwareDownloadState{
                         .state = FirmwareDownloadState::State::Failure,
                         .message = StringFormat("Download failed (%d)", httpCode)});
@@ -83,7 +74,7 @@ void FirmwareDownloader::downloadFirmware(
                     return false;
                 }
 
-                Update.setMD5(response.firmware.md5.c_str());
+                Update.setMD5(response.latestGlassesFirmware.md5.c_str());
 
                 return true;
             },
