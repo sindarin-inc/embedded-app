@@ -138,7 +138,7 @@ public:
                             // std::cout << std::hex << +data << ' ';
                             count = 0;
                         }
-                        if (data & (0x80U >> count)) rowp[col >> 3] |= (0x80U >> (col & 7));
+                        if (data & (0x80U >> count)) rowp[col >> 3] &= ~(0x80U >> (col & 7));
                         count++;
                     }
                 }
