@@ -41,7 +41,6 @@ protected:
     BLEClient *client_ = nullptr;
 
     auto connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &device) -> bool;
-    static void connectTask(void *params);
     void scanForDevice();
 
     class AdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
@@ -73,8 +72,17 @@ protected:
                     log_i("%s TurnTouch device found; queueing for connect...",
                           address.has_value() ? "Paired" : "New");
                     // Fire off a high-ish priority temporary task to connect the TT
-                    xTaskCreatePinnedToCore(this->enclosed->connectTask, "TTConnect", 10000,
-                                            this->enclosed, 2, nullptr, 0);
+                    xTaskCreatePinnedToCore(
+                        [](void *params) {
+                            auto *tThis = (TTRemoteInput *)params;
+                            if (tThis->connectToDevice(tThis->turntouchDevice_)) {
+                            } else {
+                                tThis->client_->disconnect();
+                                tThis->state_ = SCANNING;
+                            }
+                            vTaskDelete(NULL);
+                        },
+                        "TTConnect", 5000, this->enclosed, 2, nullptr, 0);
                 }
             }
         }

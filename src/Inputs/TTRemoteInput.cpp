@@ -104,24 +104,14 @@ auto TTRemoteInput::connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &
 
     log_i("Connected to TurnTouch %s", address.toString().c_str());
 
-    return true;
-}
-
-void TTRemoteInput::connectTask(void *params) {
-    auto *tThis = (TTRemoteInput *)params;
-    if (tThis->connectToDevice(tThis->turntouchDevice_)) {
-        // Output a metric log on the very first TT connection
-        static bool sFirstConnection = true;
-        if (sFirstConnection) {
-            log_i("First TT connection in %.0f ms", esp_timer_get_time() / 1000.0f);
-            sFirstConnection = false;
-        }
-    } else {
-        tThis->client_->disconnect();
-        tThis->state_ = SCANNING;
+    // Output a metric log on the very first TT connection
+    static bool sFirstConnection = true;
+    if (sFirstConnection) {
+        log_i("First TT connection in %.0f ms", esp_timer_get_time() / 1000.0f);
+        sFirstConnection = false;
     }
 
-    vTaskDelete(nullptr);
+    return true;
 }
 
 void TTRemoteInput::disconnectTemporarily(int seconds) {
