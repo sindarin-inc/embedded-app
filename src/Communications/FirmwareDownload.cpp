@@ -9,6 +9,7 @@
 #include "Communications/WiFi.hpp"
 #include "GitVersion.hpp"
 #include "Misc/Dispatch.hpp"
+#include "Misc/SemVer.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Version.hpp"
 #include "sindarin-debug.h"
@@ -44,8 +45,8 @@ void FirmwareDownloader::downloadFirmware(
         versionString = kVersionString;
         log_d("Existing version: %s, server version: %s", versionString.c_str(),
               response.latestGlassesFirmware.version.c_str());
-        // TODO: Do we only want to update if it's newer?
-        if (response.latestGlassesFirmware.version == versionString) {
+        if (SemVerCompareVersions(response.latestGlassesFirmware.version, versionString) !=
+            SemVerComparison::GreaterThan) {
             progressCallback(
                 FirmwareDownloadState{.state = FirmwareDownloadState::State::AlreadyUpToDate});
             return;
