@@ -25,6 +25,10 @@ auto SindarinAPI::getInstance() -> std::shared_ptr<SindarinAPI> {
     return instance;
 }
 
+auto SindarinAPI::isSindarinUrl(const char *url) -> bool {
+    return HasPrefix(url, SINDARIN_SERVER_URL);
+}
+
 void SindarinAPI::setAuth(HttpClient &client) {
     if (!accessToken_.empty()) {
         esp_err_t err = client.setHeader("Authorization",

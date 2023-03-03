@@ -16,9 +16,11 @@ auto DownloadFile(const char *url,
 
     HttpClient client(url);
 
-    std::shared_ptr<SindarinAPI> api = SindarinAPI::getInstance();
-    if (api) {
-        api->setAuth(client);
+    if (SindarinAPI::isSindarinUrl(url)) {
+        std::shared_ptr<SindarinAPI> api = SindarinAPI::getInstance();
+        if (api) {
+            api->setAuth(client);
+        }
     }
 
     auto time = esp_timer_get_time();
@@ -28,7 +30,6 @@ auto DownloadFile(const char *url,
         client.setHeader("Accept-Encoding", "gzip");
         // TODO: check server headers to verify we got gzip
     }
-    client.open();
 
     esp_err_t err = client.open();
     if (err != ESP_OK) {

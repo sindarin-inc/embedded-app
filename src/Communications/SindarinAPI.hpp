@@ -30,6 +30,7 @@ struct CheckSyncRequest {
 class SindarinAPI {
 public:
     static auto getInstance() -> std::shared_ptr<SindarinAPI>;
+    static auto isSindarinUrl(const char *url) -> bool;
 
     void setAccessToken(const std::string &accessToken);
 

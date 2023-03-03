@@ -49,3 +49,5 @@ auto HasSuffix(std::string const &str, std::string const &suffix) -> bool {
     return str.size() >= suffix.size() &&
            str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
+
+bool HasPrefix(const char *pre, const char *str) { return strncmp(pre, str, strlen(pre)) == 0; }
