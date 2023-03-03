@@ -49,7 +49,7 @@ void DemoScreen::render(DisplaySystem &display) {
         break;
     case 2:
     case 3:
-        display.setFont((Font *)(&FONT_EC_REGULAR_75BPI12PT));
+        display.setFont((Font *)(&FONT_EC_REGULAR_75BPI14PT));
         // display.setFont((Font *)&FONT_TAHOMA_REGULAR_FONT5PT7B);
         break;
     }

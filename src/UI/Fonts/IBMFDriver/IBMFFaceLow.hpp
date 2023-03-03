@@ -285,7 +285,7 @@ public:
             if (glyphBitmap != nullptr) {
                 RLEExtractor rle;
 
-                Pos outPos = Pos(atPos.x + offsets.x, atPos.y + offsets.y);
+                Pos outPos = Pos(atPos.x + offsets.x, atPos.y - glyphInfo->verticalOffset);
                 RLEBitmapPtr accentBitmap = (accentCode != 0xFF) ? &bitmaps[accentIdx] : nullptr;
                 if (accentBitmap != nullptr) {
                     rle.retrieveBitmap(*accentBitmap, appGlyph.bitmap, outPos,
@@ -297,7 +297,7 @@ public:
                     offsets.x = addedLeft;
                 }
 
-                outPos = Pos(atPos.x + offsets.x, atPos.y + offsets.y);
+                outPos = Pos(atPos.x + offsets.x, atPos.y - glyphInfo->verticalOffset);
                 rle.retrieveBitmap(*glyphBitmap, appGlyph.bitmap, outPos, glyphInfo->rleMetrics);
             }
         }
