@@ -7,7 +7,7 @@
 
 auto DownloadFile(const char *url,
                   const std::function<bool(int httpCode, int contentLength)> &openedConnection,
-                  const std::function<size_t(HttpClient &client)> &readWrite,
+                  const std::function<size_t(HttpClient &client, int index)> &readWrite,
                   const std::function<void(int bytesWritten, float percentage)> &progressCallback,
                   bool gzip) -> bool;
 
