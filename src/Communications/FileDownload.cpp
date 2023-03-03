@@ -19,6 +19,7 @@ auto DownloadFile(const char *url,
     if (SindarinAPI::isSindarinUrl(url)) {
         std::shared_ptr<SindarinAPI> api = SindarinAPI::getInstance();
         if (api) {
+            log_d("Attaching Sindarin auth to HTTP request to %s", url);
             api->setAuth(client);
         }
     }
@@ -38,15 +39,17 @@ auto DownloadFile(const char *url,
     }
 
     auto contentLength = client.fetchHeaders();
-    if (contentLength <= 0) {
-        // if we somehow don't have a content length header, consider it an error for now
-        log_e("Server did not return a content length for %s", url);
-        return false;
-    }
 
     auto httpCode = client.getStatusCode();
     if (httpCode != 200) {
         log_w("Status code was %d", httpCode);
+        return false;
+    }
+
+    if (contentLength <= 0) {
+        // if we somehow don't have a content length header, consider it an error for now
+        log_e("Server did not return a content length for %s", url);
+        return false;
     }
 
     if (!openedConnection(httpCode, contentLength)) {
