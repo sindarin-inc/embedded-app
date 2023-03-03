@@ -41,7 +41,10 @@ void FirmwareDownloader::downloadFirmware(
             return;
         }
         versionString = kVersionString;
-        if (response.latestGlassesFirmware.url == versionString) {
+        log_d("Existing version: %s, server version: %s", versionString.c_str(),
+              response.latestGlassesFirmware.version.c_str());
+        // TODO: Do we only want to update if it's newer?
+        if (response.latestGlassesFirmware.version == versionString) {
             progressCallback(
                 FirmwareDownloadState{.state = FirmwareDownloadState::State::AlreadyUpToDate});
             return;
