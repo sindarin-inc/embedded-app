@@ -152,8 +152,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
                      yDirOffset + arrowWidth_ + narrowToCenter, display.fg);
 
     display.getTextBounds(leftButtonTitle_.c_str(), &textWidth, &textHeight);
-    display.drawSingleLineOfText(leftButtonTitle_.c_str(),
-                                 arrowWidth_ + arrowTextSpacing_ + narrowToCenter,
+    display.drawSingleLineOfText(leftButtonTitle_, arrowWidth_ + arrowTextSpacing_ + narrowToCenter,
                                  (screenHeight / 2) - textHeight / 2 - 1);
 
     // Right Arrow

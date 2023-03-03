@@ -89,10 +89,10 @@ public:
         gfxClass_->fillTriangle(xOffset(x0), yOffset(y0), xOffset(x1), yOffset(y1), xOffset(x2),
                                 yOffset(y2), color);
     }
-    void setFont(const Font *f) {
+    void setFont(Font *f) {
         font_ = f;
-        if (font_->is_a(FontType::GFX)) {
-            gfxClass_->setFont(((GFont *)font_)->get());
+        if (font_->isA(FontType::GFX)) {
+            gfxClass_->setFont(static_cast<GFont *>(font_)->get());
         }
     }
     void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
@@ -154,12 +154,9 @@ public:
 
     // MARK: - Text rendering code
 
-    auto getFont() -> const Font *;
+    auto getFont() -> Font *;
     void drawSingleLineOfText(const std::string &line, int x, int y);
     void drawSingleLineOfCenteredText(const std::string &line);
-
-    void drawText(const std::string &newText, int x, int y, int width, int height)
-        __attribute__((deprecated));
     void getTextBounds(const char *buffer, uint16_t *w, uint16_t *h);
     auto getTextHeight() -> int;
     auto getTextHeight(const char *buffer) -> int;
@@ -195,7 +192,10 @@ public:
 protected:
     // Must be set in the constructor of subclasses
     Adafruit_GFX *gfxClass_ = nullptr;
-    const Font *font_ = nullptr;
+    Font *font_ = nullptr;
+    uint8_t *canvasBuffer_;
+    uint16_t canvasWidth_;
+    uint16_t canvasHeight_;
 
     inline auto xOffset(int16_t value) -> int16_t { return value + boundingBox_.x; }
     inline auto yOffset(int16_t value) -> int16_t { return value + boundingBox_.y; }

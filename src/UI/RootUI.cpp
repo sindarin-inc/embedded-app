@@ -796,7 +796,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         width = display->getTextWidth(batteryStatus.c_str());
         height = display->getTextHeight(batteryStatus.c_str());
 
-        display->drawSingleLineOfText(batteryStatus.c_str(),
+        display->drawSingleLineOfText(batteryStatus,
                                       display->xAbsolute(display->xAbsoluteCenter() - width / 2),
                                       display->yAbsolute(display->yAbsoluteCenter() - height / 2));
 
@@ -806,7 +806,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             StringFormat("Page Turner: %d%% (%s)", ptBatteryPct, ptBuild.c_str());
         width = display->getTextWidth(ptBatteryStatus.c_str());
         height = display->getTextHeight(ptBatteryStatus.c_str());
-        display->drawSingleLineOfText(ptBatteryStatus.c_str(),
+        display->drawSingleLineOfText(ptBatteryStatus,
                                       display->xAbsolute(display->xAbsoluteCenter() - width / 2),
                                       display->yAbsolute(display->yAbsoluteCenter() + height / 2));
 

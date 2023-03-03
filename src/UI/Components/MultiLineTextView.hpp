@@ -13,7 +13,7 @@
 class MultiLineTextView : public EinkView {
 public:
     MultiLineTextView(DisplaySystem &display, std::string text, int maxLines, int spacingOffset = 0,
-                      const Font *font = (Font *)&FONT_TAHOMA_REGULAR_FONT5PT7B,
+                      Font *font = (Font *)&FONT_TAHOMA_REGULAR_FONT5PT7B,
                       bool allCaps = false)
         : EinkView(display), text_(std::move(text)), maxLines_(maxLines),
           spacingOffset_(spacingOffset), font_(font) {
@@ -63,7 +63,7 @@ public:
 
         // Leave the display font the way we found it.
         // Probably not ideal, but for now it'll have to do.
-        const Font *oldFont = display_.getFont();
+        Font *oldFont = display_.getFont();
         display_.setFont(font_);
         display_.getTextBounds(text_.c_str(), &w, &h);
 
@@ -79,7 +79,7 @@ public:
     void drawInRect(Rect rect) override {
         // Leave the display font the way we found it.
         // Probably not ideal, but for now it'll have to do.
-        const Font *oldFont = display_.getFont();
+        Font *oldFont = display_.getFont();
         display_.setFont(font_);
         if (splitLines_.size() > maxLines_) {
             int i = 1;
@@ -111,5 +111,5 @@ protected:
     int maxLines_;
     int spacingOffset_;
     std::vector<std::string> splitLines_;
-    const Font *font_;
+    Font *font_;
 };

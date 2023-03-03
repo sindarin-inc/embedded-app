@@ -7,7 +7,27 @@
 //#include <esp_log.h>
 #include "sindarin-debug.h"
 
+#if 0
+#include <cstdarg>
+#include <cstdio>
+
+extern char * formatStr(const std::string &format, ...);
+
+#define log_i(format, ...) std::cout << "INFO: " << formatStr(format, ##__VA_ARGS__) << std::endl;
+#define log_w(format, ...)                                                                         \
+    std::cout << "WARNING: " << formatStr(format, ##__VA_ARGS__) << std::endl;
+#define log_e(format, ...) std::cout << "ERROR: " << formatStr(format, ##__VA_ARGS__) << std::endl;
+#define log_d(format, ...) std::cout << "DEBUG: " << formatStr(format, ##__VA_ARGS__) << std::endl;
+#endif
+
 namespace IBMFDefs {
+
+#define LOGI(format, ...) log_i(format, ##__VA_ARGS__)
+#define LOGW(format, ...) log_w(format, ##__VA_ARGS__)
+#define LOGE(format, ...) log_e(format, ##__VA_ARGS__)
+#define LOGD(format, ...) log_d(format, ##__VA_ARGS__)
+
+#define DEBUG_IBMF 1
 
 #ifdef DEBUG_IBMF
 const constexpr int DEBUG = DEBUG_IBMF;
@@ -15,24 +35,30 @@ const constexpr int DEBUG = DEBUG_IBMF;
 const constexpr int DEBUG = 0;
 #endif
 
+#if DEBUG_IBMF
+#include <fstream>
+#include <iostream>
+#endif
+
 const constexpr uint8_t IBMF_VERSION = 4;
-const constexpr uint8_t MAX_GLYPH_COUNT = 254; // Index Value 0xFE and 0xFF are reserved
+const constexpr uint8_t MAX_GLYPH_COUNT = 175; // Index Value 0xFE and 0xFF are reserved
+const constexpr uint8_t MAX_FACE_COUNT = 10;
 
 enum class PixelResolution : uint8_t { ONE_BIT, EIGHT_BITS };
 
 constexpr PixelResolution resolution = PixelResolution::ONE_BIT;
 
 struct Dim {
-    uint8_t width;
-    uint8_t height;
-    Dim(uint8_t w, uint8_t h) : width(w), height(h) {}
+    int16_t width;
+    int16_t height;
+    Dim(uint16_t w, uint16_t h) : width(w), height(h) {}
     Dim() {}
 };
 
 struct Pos {
-    int8_t x;
-    int8_t y;
-    Pos(int8_t xpos, int8_t ypos) : x(xpos), y(ypos) {}
+    int16_t x;
+    int16_t y;
+    Pos(int16_t xpos, int16_t ypos) : x(xpos), y(ypos) {}
     Pos() {}
 };
 
@@ -66,29 +92,29 @@ typedef int16_t FIX16;
 
 struct Preamble {
     char marker[4];
-    uint8_t face_count;
+    uint8_t faceCount;
     struct {
         uint8_t version : 5;
-        uint8_t char_set : 3;
+        uint8_t charSet : 3;
     } bits;
 };
 typedef Preamble *PreamblePtr;
 
 struct FaceHeader {
-    uint8_t point_size;
-    uint8_t line_height;
+    uint8_t pointSize;
+    uint8_t lineHeight;
     uint16_t dpi;
-    FIX16 x_height;
-    FIX16 em_size;
-    FIX16 slant_correction;
-    uint8_t descender_height;
-    uint8_t space_size;
-    uint16_t glyph_count;
-    uint16_t lig_kern_step_count;
-    uint16_t first_code;
-    uint16_t last_code;
-    uint8_t kern_count;
-    uint8_t max_hight;
+    FIX16 xHeight;
+    FIX16 emHeight;
+    FIX16 slantCorrection;
+    uint8_t descenderHeight;
+    uint8_t spaceSize;
+    uint16_t glyphCount;
+    uint16_t ligKernStepCount;
+    uint16_t firstCode;
+    uint16_t lastCode;
+    uint8_t kernCount;
+    uint8_t maxHight;
 };
 typedef FaceHeader *FaceHeaderPtr;
 
@@ -99,32 +125,32 @@ typedef FaceHeader *FaceHeaderPtr;
 //
 // - first byte: skip byte, indicates that this is the final program step if the byte
 //                          is 128 or more, otherwise the next step is obtained by
-//                          skipping this number of intervening steps [next_step_relative].
+//                          skipping this number of intervening steps [nextStepRelative].
 // - second byte: next char, if next character follows the current character, then
 //                           perform the operation and stop, otherwise continue.
 // - third byte: op byte, indicates a ligature step if less than 128, a kern step otherwise.
 // - fourth byte: remainder.
 //
-// In a kern step [is_a_kern == true], an additional space equal to kern located at
-// [(displ_high << 8) + displ_low] in the kern array is inserted between the current
-// character and [next_char]. This amount is often negative, so that the characters
+// In a kern step [isAKern == true], an additional space equal to kern located at
+// [(displHigh << 8) + displLow] in the kern array is inserted between the current
+// character and [nextChar]. This amount is often negative, so that the characters
 // are brought closer together by kerning; but it might be positive.
 //
-// There are eight kinds of ligature steps [is_a_kern == false], having op byte codes
-// [a_op b_op c_op] where 0 ≤ a_op ≤ b_op + c_op and 0 ≤ b_op, c_op ≤ 1.
+// There are eight kinds of ligature steps [isAKern == false], having op byte codes
+// [aOp bOp cOp] where 0 ≤ aOp ≤ bOp + cOp and 0 ≤ bOp, cOp ≤ 1.
 //
-// The character whose code is [replacement_char] is inserted between the current
-// character and [next_char]; then the current character is deleted if b_op = 0, and
-// [next_char] is deleted if c_op = 0; then we pass over a_op characters to reach the next
+// The character whose code is [replacementChar] is inserted between the current
+// character and [nextChar]; then the current character is deleted if bOp = 0, and
+// [nextChar] is deleted if cOp = 0; then we pass over aOp characters to reach the next
 // current character (which may have a ligature/kerning program of its own).
 //
 // If the very first instruction of a character’s lig kern program has [whole > 128],
-// the program actually begins in location [(displ_high << 8) + displ_low]. This feature
+// the program actually begins in location [(displHigh << 8) + displLow]. This feature
 // allows access to large lig kern arrays, because the first instruction must otherwise
 // appear in a location ≤ 255.
 //
 // Any instruction with [whole > 128] in the lig kern array must have
-// [(displ_high << 8) + displ_low] < the size of the array. If such an instruction is
+// [(displHigh << 8) + displLow] < the size of the array. If such an instruction is
 // encountered during normal program execution, it denotes an unconditional halt; no
 // ligature or kerning command is performed.
 //
@@ -132,12 +158,12 @@ typedef FaceHeader *FaceHeaderPtr;
 //  of a TeX generated document)
 //
 // If the very first instruction of the lig kern array has [whole == 0xFF], the
-// [next_char] byte is the so-called right boundary character of this font; the value
-// of [next_char] need not lie between char codes boundaries.
+// [nextChar] byte is the so-called right boundary character of this font; the value
+// of [nextChar] need not lie between char codes boundaries.
 //
 // If the very last instruction of the lig kern array has [whole == 0xFF], there is
 // a special ligature/kerning program for a left boundary character, beginning at location
-// [(displ_high << 8) + displ_low] . The interpretation is that TEX puts implicit boundary
+// [(displHigh << 8) + displLow] . The interpretation is that TEX puts implicit boundary
 // characters before and after each consecutive string of characters from the same font.
 // These implicit characters do not appear in the output, but they can affect ligatures
 // and kerning.
@@ -146,53 +172,53 @@ typedef FaceHeader *FaceHeaderPtr;
 union SkipByte {
     uint8_t whole : 8;
     struct {
-        uint8_t next_step_relative : 7;
+        uint8_t nextStepRelative : 7;
         bool stop : 1;
     } s;
 };
 
 union OpCodeByte {
     struct {
-        bool c_op : 1;
-        bool b_op : 1;
-        uint8_t a_op : 5;
-        bool is_a_kern : 1;
+        bool cOp : 1;
+        bool bOp : 1;
+        uint8_t aOp : 5;
+        bool isAKern : 1;
     } op;
     struct {
-        uint8_t displ_high : 7;
-        bool is_a_kern : 1;
+        uint8_t displHigh : 7;
+        bool isAKern : 1;
     } d;
 };
 
 union RemainderByte {
-    uint8_t replacement_char : 8;
-    uint8_t displ_low : 8; // Ligature: replacement char code, kern: displacement
+    uint8_t replacementChar : 8;
+    uint8_t displLow : 8; // Ligature: replacement char code, kern: displacement
 };
 
 struct LigKernStep {
     SkipByte skip;
-    uint8_t next_char;
-    OpCodeByte op_code;
+    uint8_t nextChar;
+    OpCodeByte opCode;
     RemainderByte remainder;
 };
 typedef LigKernStep *LigKernStepPtr;
 
 struct RLEMetrics {
-    uint8_t dyn_f : 4;
-    uint8_t first_is_black : 1;
+    uint8_t dynF : 4;
+    uint8_t firstIsBlack : 1;
     uint8_t filler : 3;
 };
 
 struct GlyphInfo {
-    uint8_t char_code;
-    uint8_t bitmap_width;
-    uint8_t bitmap_height;
-    int8_t horizontal_offset;
-    int8_t vertical_offset;
-    uint8_t lig_kern_pgm_index; // = 255 if none
-    uint16_t packet_length;
+    uint8_t charCode;
+    uint8_t bitmapWidth;
+    uint8_t bitmapHeight;
+    int8_t horizontalOffset;
+    int8_t verticalOffset;
+    uint8_t ligKernPgmIndex; // = 255 if none
+    uint16_t packetLength;
     FIX16 advance;
-    RLEMetrics rle_metrics;
+    RLEMetrics rleMetrics;
 };
 typedef GlyphInfo *GlyphInfoPtr;
 
@@ -201,27 +227,27 @@ typedef GlyphInfo *GlyphInfoPtr;
 struct GlyphMetrics {
     int16_t xoff, yoff;
     int16_t advance;
-    int16_t line_height;
-    int16_t ligature_and_kern_pgm_index;
+    int16_t lineHeight;
+    int16_t ligatureAndKernPgmIndex;
     void clear() {
         xoff = yoff = 0;
-        advance = line_height = 0;
-        ligature_and_kern_pgm_index = 255;
+        advance = lineHeight = 0;
+        ligatureAndKernPgmIndex = 255;
     }
 };
 
 struct Glyph {
     GlyphMetrics metrics;
     Bitmap bitmap;
-    uint8_t point_size;
+    uint8_t pointSize;
     void clear() {
         metrics.clear();
         bitmap.clear();
-        point_size = 0;
+        pointSize = 0;
     }
 };
 
-const constexpr uint16_t set2_translation_latin_1[] = {
+const constexpr uint16_t set2TranslationLatin1[] = {
     /* 0xA1 */ 0xFF20, // ¡
     /* 0xA2 */ 0xFF98, // ¢
     /* 0xA3 */ 0xFF8B, // £
@@ -319,7 +345,7 @@ const constexpr uint16_t set2_translation_latin_1[] = {
     /* 0xFF */ 0x0479  // ÿ
 };
 
-const constexpr uint16_t set2_translation_latin_A[] = {
+const constexpr uint16_t set2TranslationLatinA[] = {
     /* 0x100 */ 0x0941, // Ā
     /* 0x101 */ 0x0961, // ā
     /* 0x102 */ 0x0841, // Ă

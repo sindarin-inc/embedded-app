@@ -55,7 +55,7 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
 
     int oldTextHeight = display.getTextHeight();
     display.setFont(display.style.getFontFamily().readableFont);
-    display.drawSingleLineOfText(extraTextBelowMenu_.c_str(), myStyle_.xOffsetForList + 10,
+    display.drawSingleLineOfText(extraTextBelowMenu_, myStyle_.xOffsetForList + 10,
                                  myStyle_.yOffsetForList +
                                      (1 + myStyle_.numberOfItemsPerPage) * oldTextHeight + 20);
 }

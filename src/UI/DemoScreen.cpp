@@ -24,8 +24,8 @@ void DemoScreen::render(DisplaySystem &display) {
     }
 
     std::string message = messages_[currentScreen_];
-
-    display.setFont((Font *)&FONT_TAHOMA_REGULAR_FONT6PT7B);
+    display.setFont((Font *)(&FONT_EC_REGULAR_75BPI14PT));
+    // display.setFont((Font *)&FONT_TAHOMA_REGULAR_FONT6PT7B);
 
     // Alternate left and right on for setup.
     if (currentScreen_ == 1) {
@@ -44,11 +44,13 @@ void DemoScreen::render(DisplaySystem &display) {
     switch (currentScreen_) {
     case 0:
     case 1:
-        display.setFont((Font *)&FONT_TAHOMA_REGULAR_FONT8PT7B);
+        display.setFont((Font *)(&FONT_EC_REGULAR_75BPI14PT));
+        // display.setFont((Font *)&FONT_TAHOMA_REGULAR_FONT8PT7B);
         break;
     case 2:
     case 3:
-        display.setFont((Font *)&FONT_TAHOMA_REGULAR_FONT5PT7B);
+        display.setFont((Font *)(&FONT_EC_REGULAR_75BPI12PT));
+        // display.setFont((Font *)&FONT_TAHOMA_REGULAR_FONT5PT7B);
         break;
     }
     // NOLINTEND(bugprone-branch-clone)
@@ -76,14 +78,14 @@ void DemoScreen::render(DisplaySystem &display) {
         delay(2000);
 
         message = DEMO_SCREEN_6;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
                                                        display.getTextHeight(message.c_str()) / 2) -
                                          7 * display.getTextHeight(message.c_str()));
         message = DEMO_SCREEN_6a;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
@@ -102,14 +104,14 @@ void DemoScreen::render(DisplaySystem &display) {
         delay(250);
 
         message = DEMO_SCREEN_6;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
                                                        display.getTextHeight(message.c_str()) / 2) -
                                          7 * display.getTextHeight(message.c_str()));
         message = DEMO_SCREEN_6a;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
@@ -130,14 +132,14 @@ void DemoScreen::render(DisplaySystem &display) {
         delay(750);
 
         message = DEMO_SCREEN_6;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
                                                        display.getTextHeight(message.c_str()) / 2) -
                                          7 * display.getTextHeight(message.c_str()));
         message = DEMO_SCREEN_6a;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
@@ -160,14 +162,14 @@ void DemoScreen::render(DisplaySystem &display) {
         delay(750);
 
         message = DEMO_SCREEN_6;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
                                                        display.getTextHeight(message.c_str()) / 2) -
                                          7 * display.getTextHeight(message.c_str()));
         message = DEMO_SCREEN_6a;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
@@ -193,7 +195,7 @@ void DemoScreen::render(DisplaySystem &display) {
         delay(750);
 
         message = DEMO_SCREEN_7;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
@@ -203,7 +205,7 @@ void DemoScreen::render(DisplaySystem &display) {
         delay(1500);
 
         message = DEMO_SCREEN_8;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
@@ -211,7 +213,7 @@ void DemoScreen::render(DisplaySystem &display) {
                                          4.5 * display.getTextHeight(message.c_str()));
 
         message = DEMO_SCREEN_8a;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
@@ -224,7 +226,7 @@ void DemoScreen::render(DisplaySystem &display) {
         delay(3000);
 
         message = DEMO_SCREEN_9;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
@@ -234,7 +236,7 @@ void DemoScreen::render(DisplaySystem &display) {
         delay(1500);
 
         message = DEMO_SCREEN_10;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
@@ -249,7 +251,7 @@ void DemoScreen::render(DisplaySystem &display) {
 
         message = DEMO_SCREEN_11;
 
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2 +
                                                        35),
@@ -261,14 +263,14 @@ void DemoScreen::render(DisplaySystem &display) {
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
         delay(1500);
         message = DEMO_SCREEN_11;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2 +
                                                        35),
                                      display.yAbsolute(58 + hi_hand_height / 2 -
                                                        display.getTextHeight(message.c_str()) / 2));
         message = DEMO_SCREEN_11a;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2 +
                                                        35),
@@ -285,21 +287,21 @@ void DemoScreen::render(DisplaySystem &display) {
         delay(1500);
 
         message = DEMO_SCREEN_11;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2 +
                                                        35),
                                      display.yAbsolute(58 + hi_hand_height / 2 -
                                                        display.getTextHeight(message.c_str()) / 2));
         message = DEMO_SCREEN_11a;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2 +
                                                        35),
                                      display.yAbsolute(display.yAbsoluteCenter() -
                                                        display.getTextHeight(message.c_str()) / 2));
         message = DEMO_SCREEN_11b;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2 +
                                                        35),
@@ -322,7 +324,7 @@ void DemoScreen::render(DisplaySystem &display) {
 
         delay(1500);
         message = DEMO_SCREEN_12;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
@@ -339,8 +341,7 @@ void DemoScreen::render(DisplaySystem &display) {
                               3 * display.getTextHeight(message.c_str()) / 2));
 
         message = DEMO_SCREEN_13a;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() - 65),
+        display.drawSingleLineOfText(message, display.xAbsolute(display.xAbsoluteCenter() - 65),
                                      display.yAbsolute(display.yAbsoluteCenter() -
                                                        display.getTextHeight(message.c_str()) / 2 -
                                                        0 * display.getTextHeight(message.c_str())));
@@ -358,7 +359,7 @@ void DemoScreen::render(DisplaySystem &display) {
         delay(4000);
 
         message = DEMO_SCREEN_14;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
@@ -366,7 +367,7 @@ void DemoScreen::render(DisplaySystem &display) {
                                                        3 * display.getTextHeight(message.c_str())));
 
         message = DEMO_SCREEN_14a;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
@@ -387,7 +388,7 @@ void DemoScreen::render(DisplaySystem &display) {
         delay(4000);
 
         message = DEMO_SCREEN_15;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
@@ -400,35 +401,29 @@ void DemoScreen::render(DisplaySystem &display) {
         delay(2000);
 
         message = DEMO_SCREEN_16;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() - 65),
+        display.drawSingleLineOfText(message, display.xAbsolute(display.xAbsoluteCenter() - 65),
                                      display.yAbsolute(display.yAbsoluteCenter() - 30));
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
         delay(1000);
 
         message = DEMO_SCREEN_16;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() - 65),
+        display.drawSingleLineOfText(message, display.xAbsolute(display.xAbsoluteCenter() - 65),
                                      display.yAbsolute(display.yAbsoluteCenter() - 30));
         message = DEMO_SCREEN_16a;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() - 35),
+        display.drawSingleLineOfText(message, display.xAbsolute(display.xAbsoluteCenter() - 35),
                                      display.yAbsolute(display.yAbsoluteCenter()));
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         delay(1000);
 
         message = DEMO_SCREEN_16;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() - 65),
+        display.drawSingleLineOfText(message, display.xAbsolute(display.xAbsoluteCenter() - 65),
                                      display.yAbsolute(display.yAbsoluteCenter() - 30));
         message = DEMO_SCREEN_16a;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() - 35),
+        display.drawSingleLineOfText(message, display.xAbsolute(display.xAbsoluteCenter() - 35),
                                      display.yAbsolute(display.yAbsoluteCenter()));
 
         message = DEMO_SCREEN_16b;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter()) - 10,
+        display.drawSingleLineOfText(message, display.xAbsolute(display.xAbsoluteCenter()) - 10,
                                      display.yAbsolute(display.yAbsoluteCenter() + 25));
 
         display.drawCircle(display.xAbsoluteCenter() - thought_width / 2 - 7, 129, 3, display.fg);
@@ -437,17 +432,14 @@ void DemoScreen::render(DisplaySystem &display) {
         delay(100);
 
         message = DEMO_SCREEN_16;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() - 65),
+        display.drawSingleLineOfText(message, display.xAbsolute(display.xAbsoluteCenter() - 65),
                                      display.yAbsolute(display.yAbsoluteCenter() - 30));
         message = DEMO_SCREEN_16a;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() - 35),
+        display.drawSingleLineOfText(message, display.xAbsolute(display.xAbsoluteCenter() - 35),
                                      display.yAbsolute(display.yAbsoluteCenter()));
 
         message = DEMO_SCREEN_16b;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter()) - 10,
+        display.drawSingleLineOfText(message, display.xAbsolute(display.xAbsoluteCenter()) - 10,
                                      display.yAbsolute(display.yAbsoluteCenter() + 25));
 
         display.drawCircle(display.xAbsoluteCenter() - thought_width / 2 - 7, 129, 3, display.fg);
@@ -458,17 +450,14 @@ void DemoScreen::render(DisplaySystem &display) {
         delay(100);
 
         message = DEMO_SCREEN_16;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() - 65),
+        display.drawSingleLineOfText(message, display.xAbsolute(display.xAbsoluteCenter() - 65),
                                      display.yAbsolute(display.yAbsoluteCenter() - 30));
         message = DEMO_SCREEN_16a;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() - 35),
+        display.drawSingleLineOfText(message, display.xAbsolute(display.xAbsoluteCenter() - 35),
                                      display.yAbsolute(display.yAbsoluteCenter()));
 
         message = DEMO_SCREEN_16b;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter()) - 10,
+        display.drawSingleLineOfText(message, display.xAbsolute(display.xAbsoluteCenter()) - 10,
                                      display.yAbsolute(display.yAbsoluteCenter() + 25));
 
         display.drawCircle(display.xAbsoluteCenter() - thought_width / 2 - 7, 129, 3, display.fg);
@@ -482,17 +471,14 @@ void DemoScreen::render(DisplaySystem &display) {
         delay(100);
 
         message = DEMO_SCREEN_16;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() - 65),
+        display.drawSingleLineOfText(message, display.xAbsolute(display.xAbsoluteCenter() - 65),
                                      display.yAbsolute(display.yAbsoluteCenter() - 30));
         message = DEMO_SCREEN_16a;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() - 35),
+        display.drawSingleLineOfText(message, display.xAbsolute(display.xAbsoluteCenter() - 35),
                                      display.yAbsolute(display.yAbsoluteCenter()));
 
         message = DEMO_SCREEN_16b;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter()) - 10,
+        display.drawSingleLineOfText(message, display.xAbsolute(display.xAbsoluteCenter()) - 10,
                                      display.yAbsolute(display.yAbsoluteCenter() + 25));
 
         display.drawCircle(display.xAbsoluteCenter() - thought_width / 2 - 7, 129, 3, display.fg);
@@ -533,7 +519,7 @@ void DemoScreen::render(DisplaySystem &display) {
         delay(2500);
 
         message = DEMO_SCREEN_17;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
@@ -551,7 +537,7 @@ void DemoScreen::render(DisplaySystem &display) {
         delay(1500);
 
         message = DEMO_SCREEN_17;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
@@ -567,7 +553,7 @@ void DemoScreen::render(DisplaySystem &display) {
                               7 * display.getTextHeight(message.c_str()) / 2));
         message = DEMO_SCREEN_17b;
 
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2) +
                                          2,
@@ -580,7 +566,7 @@ void DemoScreen::render(DisplaySystem &display) {
         delay(1500);
 
         message = DEMO_SCREEN_18;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
@@ -590,14 +576,14 @@ void DemoScreen::render(DisplaySystem &display) {
         delay(750);
 
         message = DEMO_SCREEN_18;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
                                                        display.getTextHeight(message.c_str()) / 2 -
                                                        8 * display.getTextHeight(message.c_str())));
         message = DEMO_SCREEN_18a;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2) +
                                          30,
@@ -609,14 +595,14 @@ void DemoScreen::render(DisplaySystem &display) {
         delay(500);
 
         message = DEMO_SCREEN_18;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
                                                        display.getTextHeight(message.c_str()) / 2 -
                                                        8 * display.getTextHeight(message.c_str())));
         message = DEMO_SCREEN_18a;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2) +
                                          30,
@@ -625,7 +611,7 @@ void DemoScreen::render(DisplaySystem &display) {
                                                        2 * display.getTextHeight(message.c_str())));
 
         message = DEMO_SCREEN_18b;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2) -
                                          30,
@@ -637,14 +623,14 @@ void DemoScreen::render(DisplaySystem &display) {
         delay(500);
 
         message = DEMO_SCREEN_18;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
                                                        display.getTextHeight(message.c_str()) / 2 -
                                                        8 * display.getTextHeight(message.c_str())));
         message = DEMO_SCREEN_18a;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2) +
                                          30,
@@ -653,7 +639,7 @@ void DemoScreen::render(DisplaySystem &display) {
                                                        2 * display.getTextHeight(message.c_str())));
 
         message = DEMO_SCREEN_18b;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2) -
                                          30,
@@ -662,7 +648,7 @@ void DemoScreen::render(DisplaySystem &display) {
                                                        1 * display.getTextHeight(message.c_str())));
 
         message = DEMO_SCREEN_18c;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
@@ -674,14 +660,14 @@ void DemoScreen::render(DisplaySystem &display) {
         display.clearDisplay();
 
         message = DEMO_SCREEN_19;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
                                                        display.getTextHeight() / 2 -
                                                        5 * display.getTextHeight()));
         message = DEMO_SCREEN_19a;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
@@ -690,14 +676,14 @@ void DemoScreen::render(DisplaySystem &display) {
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         delay(2000);
         message = DEMO_SCREEN_19;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
                                                        display.getTextHeight() / 2 -
                                                        5 * display.getTextHeight()));
         message = DEMO_SCREEN_19a;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
@@ -710,7 +696,7 @@ void DemoScreen::render(DisplaySystem &display) {
         delay(2250);
 
         message = DEMO_SCREEN_20;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
@@ -719,14 +705,14 @@ void DemoScreen::render(DisplaySystem &display) {
 
         message = DEMO_SCREEN_20a;
 
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
                                                        display.getTextHeight() / 2 -
                                                        0 * display.getTextHeight()));
         message = DEMO_SCREEN_20b;
-        display.drawSingleLineOfText(message.c_str(),
+        display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -

@@ -5,10 +5,10 @@
 #include "UI/Fonts/Fonts.h"
 
 struct FontFamily {
-    const Font *settingsFont;
-    const Font *mainMenuFont;
-    const Font *popupFont;
-    const Font *readableFont;
+    Font *settingsFont;
+    Font *mainMenuFont;
+    Font *popupFont;
+    Font *readableFont;
 };
 
 class Style {

@@ -5,8 +5,8 @@
 #include "UI/Fonts/Fonts.h"
 
 struct MenuStyleFamily {
-    const Font *itemFont;
-    const Font *navigationFont;
+    Font *itemFont;
+    Font *navigationFont;
 
     int xOffsetForArrows;
     int yOffsetForArrows;

@@ -43,7 +43,7 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     uint16_t screenHeight = display.height();
 
     display.setRotation(0);
-    display.drawSingleLineOfText(itemTitle.c_str(), (screenWidth / 2) - (width / 2),
+    display.drawSingleLineOfText(itemTitle, (screenWidth / 2) - (width / 2),
                                  (screenHeight / 2) - (display.getTextHeight()) / 2);
 
     auto prevTitle = getItemAt((currSelection_ > 0) ? ((currSelection_ - 1) % numMenuItems_)

@@ -6,6 +6,8 @@
 
 #include "IBMFDefs.hpp"
 #include "IBMFFaceLow.hpp"
+#include "sindarin-debug.h"
+
 using namespace IBMFDefs;
 
 /**
@@ -37,11 +39,11 @@ public:
     IBMFFontLow() : initialized(false) {}
     ~IBMFFontLow() {}
 
-    inline uint8_t getCharSet() const { return preamble->bits.char_set; }
+    inline uint8_t getCharSet() const { return preamble->bits.charSet; }
     inline bool isInitialized() const { return initialized; }
 
     inline IBMFFaceLowPtr getFace(int idx) const {
-        return (isInitialized() && (idx < preamble->face_count)) ? &faces[idx] : nullptr;
+        return (isInitialized() && (idx < preamble->faceCount)) ? &faces[idx] : nullptr;
     }
 
     bool load(const MemoryPtr fontData, uint32_t length) {
@@ -51,24 +53,37 @@ public:
         preamble = (Preamble *)data;
         data += sizeof(Preamble);
 
-        if (strncmp("IBMF", preamble->marker, 4) != 0) return false;
-        if (preamble->bits.version != IBMF_VERSION) return false;
+        LOGI("IBMFFont: Loading font at location 0x%p of length %d", fontData, length);
 
-        uint32_t *bin_face_offsets = (uint32_t *)data;
-        data += 4 * preamble->face_count;
-
-        uint32_t *bin_face_end_offsets = new uint32_t[preamble->face_count];
-        for (int i = 0; i < preamble->face_count; i++) {
-            bin_face_end_offsets[i] =
-                (i < (preamble->face_count - 1)) ? bin_face_offsets[i + 1] : length;
+        if (strncmp("IBMF", preamble->marker, 4) != 0) {
+            log_e("IBMFFont: Preamble in error: IBMF marker absent!!");
+            return false;
+        }
+        if (preamble->bits.version != IBMF_VERSION) {
+            LOGE("IBMFFont: Font is of a wrong version. Expected V4, got V%d",
+                 preamble->bits.version);
+            return false;
         }
 
-        faces = new IBMFFaceLow[preamble->face_count];
-        for (int i = 0; i < preamble->face_count; i++) {
-            if (!faces[i].load(fontData + bin_face_offsets[i], fontData + bin_face_end_offsets[i]))
+        if (preamble->faceCount >= 10) {
+            LOGE("Too many faces in the font. Limit is set to %d in IBMFDefs.h", MAX_FACE_COUNT);
+            return false;
+        }
+        uint32_t *binFaceOffsets = (uint32_t *)data;
+
+        uint32_t binFaceLengths[MAX_FACE_COUNT];
+        for (int i = 0; i < preamble->faceCount; i++) {
+            binFaceLengths[i] = ((i < (preamble->faceCount - 1)) ? binFaceOffsets[i + 1] : length) -
+                                binFaceOffsets[i];
+        }
+
+        faces = new IBMFFaceLow[preamble->faceCount];
+        for (int i = 0; i < preamble->faceCount; i++) {
+            if (!faces[i].load(fontData + binFaceOffsets[i], binFaceLengths[i])) {
+                LOGE("IBMFFont: Unable to load face %d", i);
                 return false;
+            }
         }
-
         initialized = true;
         return true;
     }
