@@ -40,8 +40,8 @@ void FirmwareDownloader::downloadFirmware(
                                                    .message = "Failed to check for update"});
             return;
         }
-        if (response.latestGlassesFirmware.url.empty()) {
-            versionString = kVersionString;
+        versionString = kVersionString;
+        if (response.latestGlassesFirmware.url == versionString) {
             progressCallback(
                 FirmwareDownloadState{.state = FirmwareDownloadState::State::AlreadyUpToDate});
             return;
