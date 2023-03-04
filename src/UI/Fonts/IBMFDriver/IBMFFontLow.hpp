@@ -6,7 +6,6 @@
 
 #include "IBMFDefs.hpp"
 #include "IBMFFaceLow.hpp"
-#include "sindarin-debug.h"
 
 using namespace IBMFDefs;
 
@@ -25,7 +24,7 @@ private:
 
     bool initialized;
     PreamblePtr preamble;
-    IBMFFaceLow *faces;
+    IBMFFaceLow faces[MAX_FACE_COUNT];
 
 public:
     IBMFFontLow(MemoryPtr fontData, uint32_t length) {
@@ -39,10 +38,10 @@ public:
     IBMFFontLow() : initialized(false) {}
     ~IBMFFontLow() {}
 
-    inline uint8_t getCharSet() const { return preamble->bits.charSet; }
+    inline uint8_t getCharSet() const { return (isInitialized()) ? preamble->bits.charSet : 0; }
     inline bool isInitialized() const { return initialized; }
 
-    inline IBMFFaceLowPtr getFace(int idx) const {
+    inline const IBMFFaceLowPtr getFace(int idx) {
         return (isInitialized() && (idx < preamble->faceCount)) ? &faces[idx] : nullptr;
     }
 
@@ -77,9 +76,8 @@ public:
                                 binFaceOffsets[i];
         }
 
-        faces = new IBMFFaceLow[preamble->faceCount];
         for (int i = 0; i < preamble->faceCount; i++) {
-            if (!faces[i].load(fontData + binFaceOffsets[i], binFaceLengths[i])) {
+            if (!faces[i].load(fontData + binFaceOffsets[i], binFaceLengths[i], getCharSet())) {
                 LOGE("IBMFFont: Unable to load face %d", i);
                 return false;
             }

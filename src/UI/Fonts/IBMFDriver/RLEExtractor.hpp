@@ -10,19 +10,22 @@ using namespace IBMFDefs;
 
 class RLEExtractor {
 private:
-    MemoryPtr memoryPtr, memoryEnd;
+    static constexpr char const *TAG = "RLEExtractor";
+    MemoryPtr fromPixelsPtr, fromPixelsEnd;
 
     uint32_t repeatCount;
 
     uint8_t nybbleFlipper = 0xf0U;
     uint8_t nybbleByte;
 
+    PixelResolution resolution;
+
     const uint8_t PK_REPEAT_COUNT = 14;
     const uint8_t PK_REPEAT_ONCE = 15;
 
     bool getnext8(uint8_t &val) {
-        if (memoryPtr >= memoryEnd) return false;
-        val = *memoryPtr++;
+        if (fromPixelsPtr >= fromPixelsEnd) return false;
+        val = *fromPixelsPtr++;
         return true;
     }
 
@@ -111,25 +114,50 @@ private:
         return true;
     }
 
+    inline void copyOneRowEightBits(MemoryPtr fromLine, MemoryPtr toLine, int16_t fromCol, int size) const {
+        memcpy(toLine + fromCol, fromLine + fromCol, size);
+    }
+
+    void copyOneRowOneBit(MemoryPtr fromLine, MemoryPtr toLine, int16_t fromCol, int size) const {
+        uint8_t mask = 0x80 >> (fromCol & 7);
+        for (int col = fromCol; col < fromCol + size; col++) {
+            if constexpr (BLACK_ONE_BIT) {
+                toLine[col >> 3] |= (fromLine[col >> 3] & mask);
+            }
+            else {
+                toLine[col >> 3] &= fromLine[col >> 3] | ~mask;
+            }
+            mask >>= 1;
+            if (mask == 0) mask = 0x80;
+        }
+    }
 public:
+    RLEExtractor(PixelResolution resolution) : resolution(resolution) {}
+
     bool retrieveBitmap(const RLEBitmap &fromBitmap, Bitmap &toBitmap, const Pos atOffset,
                         const RLEMetrics rleMetrics) {
         // point on the glyphs' bitmap definition
-        memoryPtr = fromBitmap.pixels;
-        memoryEnd = memoryPtr + fromBitmap.length;
-        uint8_t *rowp;
+        fromPixelsPtr = fromBitmap.pixels;
+        fromPixelsEnd = fromPixelsPtr + fromBitmap.length;
+        MemoryPtr toRowPtr;
+
+        if ((atOffset.x < 0) || (atOffset.y < 0) ||
+            ((atOffset.y + fromBitmap.dim.height) > toBitmap.dim.height) ||
+            ((atOffset.x + fromBitmap.dim.width) > toBitmap.dim.width))
+            return false;
 
         if (resolution == PixelResolution::ONE_BIT) {
-            uint32_t rowSize = (toBitmap.dim.width + 7) >> 3;
-            rowp = toBitmap.pixels + (atOffset.y * rowSize);
+            uint32_t toRowSize = (toBitmap.dim.width + 7) >> 3;
+            toRowPtr = toBitmap.pixels + (atOffset.y * toRowSize);
 
             if (rleMetrics.dynF == 14) { // is a non-compressed RLE?
                 uint32_t count = 8;
                 uint8_t data;
 
-                for (uint32_t row = 0; row < fromBitmap.dim.height; row++, rowp += rowSize) {
-                    for (uint32_t col = atOffset.x; col < fromBitmap.dim.width + atOffset.x;
-                         col++) {
+                for (uint32_t fromRow = 0; fromRow < fromBitmap.dim.height;
+                     fromRow++, toRowPtr += toRowSize) {
+                    for (uint32_t toCol = atOffset.x; toCol < fromBitmap.dim.width + atOffset.x;
+                         toCol++) {
                         if (count >= 8) {
                             if (!getnext8(data)) {
                                 std::cerr << "Not enough bitmap data!" << std::endl;
@@ -138,7 +166,14 @@ public:
                             // std::cout << std::hex << +data << ' ';
                             count = 0;
                         }
-                        if (data & (0x80U >> count)) rowp[col >> 3] &= ~(0x80U >> (col & 7));
+                        if (data & (0x80U >> count)) {
+                            if constexpr (BLACK_ONE_BIT) {
+                                toRowPtr[toCol >> 3] |= (0x80U >> (toCol & 7));
+
+                            } else {
+                                toRowPtr[toCol >> 3] &= ~(0x80U >> (toCol & 7));
+                            }
+                        }
                         count++;
                     }
                 }
@@ -149,11 +184,13 @@ public:
                 repeatCount = 0;
                 nybbleFlipper = 0xf0U;
 
-                bool black = !(rleMetrics.firstIsBlack == 1);
+                // the variable will be reversed at first execution of the inner loop
+                bool black = !rleMetrics.firstIsBlack;
 
-                for (uint32_t row = 0; row < fromBitmap.dim.height; row++, rowp += rowSize) {
-                    for (uint32_t col = atOffset.x; col < fromBitmap.dim.width + atOffset.x;
-                         col++) {
+                for (uint32_t fromRow = 0; fromRow < fromBitmap.dim.height;
+                     fromRow++, toRowPtr += toRowSize) {
+                    for (uint32_t toCol = atOffset.x; toCol < fromBitmap.dim.width + atOffset.x;
+                         toCol++) {
                         if (count == 0) {
                             if (!getPackedNumber(count, rleMetrics)) {
                                 return false;
@@ -166,16 +203,22 @@ public:
                             //   std::cout << '(' << count << ')' << ' ';
                             // }
                         }
-                        if (black) rowp[col >> 3] |= (0x80U >> (col & 0x07));
+                        if (black) {
+                            if constexpr (BLACK_ONE_BIT) {
+                                toRowPtr[toCol >> 3] |= (0x80U >> (toCol & 0x07));
+                            } else {
+                                toRowPtr[toCol >> 3] &= ~(0x80U >> (toCol & 0x07));
+                            }
+                        }
                         count--;
                     }
 
                     // if (repeatCount != 0) std::cout << "Repeat count: " << repeatCount <<
                     // std::endl;
-                    while ((row < fromBitmap.dim.height) && (repeatCount-- > 0)) {
-                        memcpy(rowp + rowSize, rowp, rowSize);
-                        row++;
-                        rowp += rowSize;
+                    while ((fromRow < fromBitmap.dim.height) && (repeatCount-- > 0)) {
+                        copyOneRowOneBit(toRowPtr, toRowPtr + toRowSize, atOffset.x, fromBitmap.dim.width);
+                        fromRow++;
+                        toRowPtr += toRowSize;
                     }
 
                     repeatCount = 0;
@@ -183,8 +226,8 @@ public:
                 // std::cout << std::endl;
             }
         } else {
-            uint32_t rowSize = toBitmap.dim.width;
-            rowp = toBitmap.pixels + (atOffset.y * rowSize);
+            uint32_t toRowSize = toBitmap.dim.width;
+            toRowPtr = toBitmap.pixels + (atOffset.y * toRowSize);
 
             repeatCount = 0;
             nybbleFlipper = 0xf0U;
@@ -193,9 +236,10 @@ public:
                 uint32_t count = 8;
                 uint8_t data;
 
-                for (uint32_t row = 0; row < (fromBitmap.dim.height); row++, rowp += rowSize) {
-                    for (uint32_t col = atOffset.x; col < (fromBitmap.dim.width + atOffset.x);
-                         col++) {
+                for (uint32_t fromRow = 0; fromRow < (fromBitmap.dim.height);
+                     fromRow++, toRowPtr += toRowSize) {
+                    for (uint32_t toCol = atOffset.x; toCol < (fromBitmap.dim.width + atOffset.x);
+                         toCol++) {
                         if (count >= 8) {
                             if (!getnext8(data)) {
                                 std::cerr << "Not enough bitmap data!" << std::endl;
@@ -204,7 +248,9 @@ public:
                             // std::cout << std::hex << +data << ' ';
                             count = 0;
                         }
-                        rowp[col] = (data & (0x80U >> count)) ? 0xFF : 0;
+                        if ((data & (0x80U >> count)) != 0) {
+                            toRowPtr[toCol] = BLACK_EIGHT_BITS;
+                        }
                         count++;
                     }
                 }
@@ -217,9 +263,10 @@ public:
 
                 bool black = !(rleMetrics.firstIsBlack == 1);
 
-                for (uint32_t row = 0; row < (fromBitmap.dim.height); row++, rowp += rowSize) {
-                    for (uint32_t col = atOffset.x; col < (fromBitmap.dim.width + atOffset.x);
-                         col++) {
+                for (uint32_t fromRow = 0; fromRow < (fromBitmap.dim.height);
+                     fromRow++, toRowPtr += toRowSize) {
+                    for (uint32_t toCol = atOffset.x; toCol < (fromBitmap.dim.width + atOffset.x);
+                         toCol++) {
                         if (count == 0) {
                             if (!getPackedNumber(count, rleMetrics)) {
                                 return false;
@@ -232,16 +279,16 @@ public:
                             //   std::cout << '(' << count << ')' << ' ';
                             // }
                         }
-                        if (black) rowp[col] = 0xFF;
+                        if (black) toRowPtr[toCol] = BLACK_EIGHT_BITS;
                         count--;
                     }
 
                     // if (repeatCount != 0) std::cout << "Repeat count: " << repeatCount <<
                     // std::endl;
-                    while ((row < toBitmap.dim.height) && (repeatCount-- > 0)) {
-                        memcpy(rowp + rowSize, rowp, rowSize);
-                        row++;
-                        rowp += rowSize;
+                    while ((fromRow < toBitmap.dim.height) && (repeatCount-- > 0)) {
+                        copyOneRowEightBits(toRowPtr, toRowPtr + toRowSize, atOffset.x, fromBitmap.dim.width);
+                        fromRow++;
+                        toRowPtr += toRowSize;
                     }
 
                     repeatCount = 0;
@@ -251,7 +298,4 @@ public:
         }
         return true;
     }
-
-public:
-    RLEExtractor() {}
 };

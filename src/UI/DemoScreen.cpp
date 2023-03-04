@@ -24,8 +24,8 @@ void DemoScreen::render(DisplaySystem &display) {
     }
 
     std::string message = messages_[currentScreen_];
-    display.setFont((Font *)(&FONT_EC_REGULAR_75BPI14PT));
-    // display.setFont((Font *)&FONT_TAHOMA_REGULAR_FONT6PT7B);
+    // display.setFont((Font *)(&FONT_EC_REGULAR_75BPI14PT));
+    display.setFont((Font *)&FONT_TAHOMA_REGULAR_FONT6PT7B);
 
     // Alternate left and right on for setup.
     if (currentScreen_ == 1) {

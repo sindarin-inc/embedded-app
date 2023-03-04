@@ -8,6 +8,8 @@
 
 class IBMFFont : public Font {
 private:
+    static constexpr char const *TAG = "IBMFFont";
+
     IBMFFontLow *font;
     IBMFFaceLow *face;
 
@@ -31,6 +33,16 @@ public:
 
     inline bool isInitialized() const { return (face != nullptr) && face->isInitialized(); }
 
+    inline const IBMFFaceLow * getFace() { return face; }
+
+    inline void setResolution(PixelResolution res) {
+        if (face != nullptr) face->setResolution(res);
+    }
+
+    inline PixelResolution getResolution() const {
+        return (face != nullptr) ? face->getResolution() : default_resolution;
+    }
+
     inline int yAdvance() const {
         // max-hight is the maximum hight in pixels of all the glyph from the baseline
         // descender-height is the negative number of pixels below the baseline
@@ -49,7 +61,11 @@ public:
                 //      pos.y);
                 if (face->getGlyph(chr, glyph, true, false, atPos)) {
                     atPos.x += glyph.metrics.advance;
-                    face->showBitmap(canvas);
+                    // face->showBitmap(canvas);
+
+                    // Glyph glyph2;
+                    // face->getGlyph(chr, glyph2, true);
+                    // face->showGlyph2(glyph2, chr);
                 } else {
                     LOGW("Unable to retrieve glyph for char %d(%c)", chr, chr);
                 }
@@ -105,7 +121,7 @@ public:
                     // LOGD("advance value: %d", glyph.metrics.advance);
                     width += glyph.metrics.advance;
                 } else {
-                    LOGW("Unable to retrive glyph for char %d(%c)", chr, chr);
+                    LOGW("Unable to retrieve glyph for char %d(%c)", chr, chr);
                 }
             }
         }
@@ -123,7 +139,7 @@ public:
                     if (height > glyph.metrics.yoff)
                         height = glyph.metrics.yoff; // yoff is negative
                 } else {
-                    LOGW("Unable to retrive glyph for char %d(%c)", chr, chr);
+                    LOGW("Unable to retrieve glyph for char %d(%c)", chr, chr);
                 }
             }
         }
