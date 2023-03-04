@@ -19,7 +19,7 @@ TEST_CASE("Test GZip stream handling") {
     // Grab the very start of the file
     stream->readBytes(buffer, bufferLen);
     REQUIRE(stream->position() == bufferLen);
-    log_d("Got buffer: \n%s", buffer);
+    // log_d("Got buffer: \n%s", buffer);
     REQUIRE(strcmp((char *)buffer, "Old Testament\n\nGenesis (50 Chapters)\n\n\nGENESIS 1 In the "
                                    "beginning, God created the heavens and the ") == 0);
 
