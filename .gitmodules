@@ -4,9 +4,6 @@
 [submodule "components/Adafruit-GFX-Library"]
 	path = components/Adafruit-GFX-Library
 	url = https://github.com/sindarin-inc/Adafruit-GFX-Library.git
-[submodule "components/Adafruit_BusIO"]
-	path = components/Adafruit_BusIO
-	url = https://github.com/adafruit/Adafruit_BusIO.git
 [submodule "components/ArduinoJson"]
 	path = components/ArduinoJson
 	url = https://github.com/bblanchon/ArduinoJson.git
