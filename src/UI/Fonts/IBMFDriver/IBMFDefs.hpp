@@ -20,6 +20,51 @@ extern char * formatStr(const std::string &format, ...);
 #define log_d(format, ...) std::cout << "DEBUG: " << formatStr(format, ##__VA_ARGS__) << std::endl;
 #endif
 
+// The following definitions are used by all parts of the driver.
+//
+// The IBMF font files have the current format:
+//
+//  Offset 0:
+//  +--------------------+
+//  |                    |  Preamble
+//  |                    |
+//  +--------------------+
+//  |                    |  FaceHeader offset vector One 32 bit offset for each face
+//  |                    |
+//  +--------------------+
+//  |                    |  Pixel sizes (one byte per face pt size present padded to be even)
+//  |                    |  (not used by this driver)
+//  +--------------------+
+//
+//  +--------------------+                       <------------+
+//  |                    |  FaceHeader                        |
+//  |                    |                                    |
+//  |                    |                                    |
+//  +--------------------+                <--+                |
+//  |                    |  GlyphInfo        |                |
+//  |                    |                   |                |
+//  |                    |                   |   Repeat for   |
+//  +--------------------+                   |>  each glyph   |
+//  |                    |  Glyph Pixels     |   part of the  |
+//  |                    |                   |   face         |  Repeat for
+//  |                    |                   |                |> each face
+//  +--------------------+                <--+                |  part of the
+//             .                                              |  font
+//             .                                              |
+//             .                                              |
+//  +--------------------+                                    |
+//  |                    | LigKerSteps                        |
+//  |                    |                                    |
+//  |                    |                                    |
+//  +--------------------+                                    |
+//  |                    | Kerns                              |
+//  |                    |                                    |
+//  +--------------------+                       <------------+
+//             .
+//             .
+//             .
+//
+
 namespace IBMFDefs {
 
 #define LOGI(format, ...) log_i(format, ##__VA_ARGS__)
@@ -42,9 +87,12 @@ const constexpr int DEBUG = 0;
 
 // The followings have to be adjusted depending on the screen
 // software/hardware/firmware' pixels polarity/color/shading/gray-scale
+// At least, one of BLACK... or WHITE... must be 0. If not, some changes are
+// required in the code.
 
 const constexpr uint8_t BLACK_ONE_BIT = 0;
 const constexpr uint8_t WHITE_ONE_BIT = 1;
+
 const constexpr uint8_t BLACK_EIGHT_BITS = 0;
 const constexpr uint8_t WHITE_EIGHT_BITS = 0xFF;
 
@@ -59,8 +107,12 @@ const constexpr uint8_t IBMF_VERSION = 4;
 const constexpr uint8_t MAX_GLYPH_COUNT = 175; // Index Value 0xFE and 0xFF are reserved
 const constexpr uint8_t MAX_FACE_COUNT = 10;
 
+// Sets being supported
+
 const constexpr uint8_t LATIN_CHARACTER_SET = 0;
 const constexpr uint8_t UTF16_TABLE_SET = 1;
+
+// Latin Character Set constants
 
 const constexpr uint16_t NO_GLYPH_CODE = 0x7FF;
 const constexpr uint16_t ACCENT_MASK = 0xF000;
@@ -88,6 +140,11 @@ struct Pos {
 };
 
 typedef uint8_t *MemoryPtr;
+
+// RLE (Run Length Encoded) Bitmap. To get something to show, they have
+// to be processed through the RLEExtractor class.
+// Dim contains the expected width and height once the bitmap has been
+// decompressed. The length is the pixels array size in bytes.
 
 struct RLEBitmap {
     MemoryPtr pixels;

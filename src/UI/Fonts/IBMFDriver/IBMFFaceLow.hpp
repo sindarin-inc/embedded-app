@@ -340,11 +340,12 @@ public:
             if (glyphBitmap != nullptr) {
                 RLEExtractor rle(resolution);
 
-                Pos outPos = Pos(atPos.x + offsets.x,
-                                 atPos.y - (initBitmap ? offsets.y : glyphInfo->verticalOffset));
-
                 if (accentIsPresent) {
                     RLEBitmapPtr accentBitmap = &bitmaps[accentIdx];
+                    Pos outPos =
+                        Pos(atPos.x + offsets.x,
+                            atPos.y - (initBitmap ? offsets.y : glyphInfo->verticalOffset));
+
                     rle.retrieveBitmap(*accentBitmap, appGlyph.bitmap, outPos,
                                        accentInfo->rleMetrics);
 
@@ -354,17 +355,18 @@ public:
                     offsets.x = addedLeft;
                 }
 
-                outPos = Pos(atPos.x + offsets.x,
+                Pos outPos = Pos(atPos.x + offsets.x,
                              atPos.y - (initBitmap ? offsets.y : glyphInfo->verticalOffset));
                 rle.retrieveBitmap(*glyphBitmap, appGlyph.bitmap, outPos, glyphInfo->rleMetrics);
             }
         }
 
-        appGlyph.metrics.xoff = -(glyphInfo->horizontalOffset + offsets.x);
-        appGlyph.metrics.yoff = -(glyphInfo->verticalOffset + offsets.y);
-        appGlyph.metrics.advance = (glyphInfo->advance + 32) >> 6;
-        appGlyph.metrics.ligatureAndKernPgmIndex = glyphInfo->ligKernPgmIndex;
-        appGlyph.metrics.lineHeight = faceHeader->lineHeight;
+        appGlyph.metrics =
+            GlyphMetrics{.xoff = (int16_t)(-(offsets.x + glyphInfo->horizontalOffset)),
+                         .yoff = (int16_t)(-(offsets.y + glyphInfo->verticalOffset)),
+                         .advance = (int16_t)((glyphInfo->advance + 32) >> 6),
+                         .lineHeight = faceHeader->lineHeight,
+                         .ligatureAndKernPgmIndex = glyphInfo->ligKernPgmIndex};
 
         // showGlyph(appGlyph, glyphCode & 0xFF);
         return true;

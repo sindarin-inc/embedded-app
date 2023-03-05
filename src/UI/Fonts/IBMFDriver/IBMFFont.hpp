@@ -132,16 +132,17 @@ public:
     int getTextHeight(const std::string &buffer) {
         int height = 0;
         if (isInitialized()) {
-            for (auto chr : buffer) {
-                IBMFDefs::Glyph glyph;
-                if (face->getGlyph(chr, glyph, false)) {
-                    // LOGD("yoff value: %d", glyph.metrics.yoff);
-                    if (height > glyph.metrics.yoff)
-                        height = glyph.metrics.yoff; // yoff is negative
-                } else {
-                    LOGW("Unable to retrieve glyph for char %d(%c)", chr, chr);
-                }
-            }
+            // for (auto chr : buffer) {
+            //     IBMFDefs::Glyph glyph;
+            //     if (face->getGlyph(chr, glyph, false)) {
+            //         // LOGD("yoff value: %d", glyph.metrics.yoff);
+            //         if (height > glyph.metrics.yoff)
+            //             height = glyph.metrics.yoff; // yoff is negative
+            //     } else {
+            //         LOGW("Unable to retrieve glyph for char %d(%c)", chr, chr);
+            //     }
+            // }
+            height = -face->getEmHeight();
         }
         LOGD("IBMFFont: TextHeight: %d", -height);
         return -height;
