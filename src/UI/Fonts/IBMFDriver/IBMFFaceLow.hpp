@@ -362,7 +362,7 @@ public:
 
         appGlyph.metrics.xoff = -(glyphInfo->horizontalOffset + offsets.x);
         appGlyph.metrics.yoff = -(glyphInfo->verticalOffset + offsets.y);
-        appGlyph.metrics.advance = glyphInfo->advance >> 6;
+        appGlyph.metrics.advance = (glyphInfo->advance + 32) >> 6;
         appGlyph.metrics.ligatureAndKernPgmIndex = glyphInfo->ligKernPgmIndex;
         appGlyph.metrics.lineHeight = faceHeader->lineHeight;
 
