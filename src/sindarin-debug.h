@@ -21,6 +21,8 @@ extern "C" {
 #include <esp32/clk.h>
 }
 
+#include "esp_log.h"
+
 // For IDF builds, use the ESP_LOGD macros since they work with power management.
 #ifdef IDF_LOG
 #undef log_v

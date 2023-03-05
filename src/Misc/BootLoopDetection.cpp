@@ -7,8 +7,7 @@ void GoodBootTimer() {}
 
 #else
 
-#include <Arduino.h>
-#include <Update.h>
+#include "sindarin-debug.h"
 #include <esp_ota_ops.h>
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>

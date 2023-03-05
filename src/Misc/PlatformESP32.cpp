@@ -10,6 +10,7 @@
 #include "Misc/StringUtil.hpp"
 #include "Platform.hpp"
 #include "RTOS.h"
+#include "gpio.h"
 #include "Storage/include/EFusesCustomTable.h"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -20,6 +21,18 @@
 esp_adc_cal_characteristics_t adcCalCharacteristics;
 bool ledcFailed = false;
 uint8_t sysOnPin;
+
+void pinMode(int pin, int mode) {
+    gpio_set_direction(pin, mode);
+}
+
+void digitalWrite(int pin, int level) {
+    gpio_set_level(pin, level);
+}
+
+void delay(int ms) {
+    vTaskDelay(ms * portTICK_PERIOD_MS);
+}
 
 void InitializePlatform() {
     // Arduino breaks the UART with sleep. So we manually initialize the UART using IDF functions.

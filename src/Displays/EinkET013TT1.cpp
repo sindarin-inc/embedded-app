@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <esp_err.h>
+#include "Misc/Platform.hpp"
 
 #include "sindarin-debug.h"
 

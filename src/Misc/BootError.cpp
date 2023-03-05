@@ -1,6 +1,7 @@
 #include "BootError.hpp"
 
-#include <Arduino.h>
+#include "Misc/Platform.hpp"
+#include "sindarin-debug.h"
 #include <vector>
 
 #include "config.h"
