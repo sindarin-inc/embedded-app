@@ -22,6 +22,7 @@
 #include <functional>
 #include <string>
 
+#include "Misc/Platform.hpp"
 #include "WiFiESPDefs.hpp"
 #include "esp_err.h"
 #include "esp_event.h"

@@ -1,5 +1,6 @@
 #include "SFile.hpp"
 
+#include <cstring>
 #include "sindarin-debug.h"
 
 // SFile

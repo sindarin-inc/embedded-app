@@ -13,6 +13,7 @@
 #define INPUT 0
 #define OUTPUT 1
 
+#define MALLOC_CAP_SPIRAM           (1<<10) ///< Memory must be in SPI RAM
 
 void InitializePlatform();
 
@@ -47,3 +48,5 @@ void pinMode(int pin, int mode);
 void digitalWrite(int pin, int level);
 
 void delay(int ms);
+
+int millis();

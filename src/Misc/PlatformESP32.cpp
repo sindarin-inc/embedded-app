@@ -9,8 +9,6 @@
 
 #include "Misc/StringUtil.hpp"
 #include "Platform.hpp"
-#include "RTOS.h"
-#include "gpio.h"
 #include "Storage/include/EFusesCustomTable.h"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -23,15 +21,20 @@ bool ledcFailed = false;
 uint8_t sysOnPin;
 
 void pinMode(int pin, int mode) {
-    gpio_set_direction(pin, mode);
+    gpio_set_direction((gpio_num_t)pin, (gpio_mode_t)mode);
 }
 
 void digitalWrite(int pin, int level) {
-    gpio_set_level(pin, level);
+    gpio_set_level((gpio_num_t)pin, (uint32_t)level);
 }
 
 void delay(int ms) {
     vTaskDelay(ms * portTICK_PERIOD_MS);
+}
+
+// mhill TODO: implement this
+int millis() {
+    return 0;
 }
 
 void InitializePlatform() {

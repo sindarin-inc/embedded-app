@@ -417,9 +417,14 @@ auto WiFiEspTaskStartNetworkEventTask() -> bool {
     }
 
     if (!_wifiesp_event_task_handle) {
+        // mhill TODO: check on this
+        /*
         xTaskCreateUniversal(wiFiEspTaskEventTask, "wifiesp_events", WIFIESP_TASK_STACKSIZE,
                              nullptr, ESP_TASKD_EVENT_PRIO - 1, &_wifiesp_event_task_handle,
                              WIFIESP_TASK_CORENUMBER);
+        */
+        xTaskCreate(wiFiEspTaskEventTask, "wifiesp_events", WIFIESP_TASK_STACKSIZE,
+                             nullptr, ESP_TASKD_EVENT_PRIO - 1, &_wifiesp_event_task_handle);
         if (!_wifiesp_event_task_handle) {
             log_e("Network Event Task Start Failed!");
             return false;

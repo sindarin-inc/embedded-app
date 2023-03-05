@@ -30,6 +30,7 @@
 #include <functional>
 #include <string>
 #include <vector>
+#include <cstring>
 // Base Wifi
 #include "dhcpserver/dhcpserver_options.h"
 #include "esp_smartconfig.h"

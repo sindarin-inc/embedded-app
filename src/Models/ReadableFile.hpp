@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sindarin-debug.h"
 #include "Misc/SpiramAllocator.hpp"
 #include "Models/Json.hpp"
 #include "Models/JsonSerializable.hpp"

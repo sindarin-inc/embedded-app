@@ -1,6 +1,5 @@
 #include "Power.hpp"
 
-#include <Arduino.h>
 #include <algorithm>
 
 #include "Misc/Platform.hpp"
