@@ -36,13 +36,13 @@
 #include "esp_wifi.h"
 #include "wifi_provisioning/manager.h"
 // ESP Libs
-#include "esp32-hal.h"
+//#include "esp32-hal.h"
 #include "esp_err.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_system.h"
-#include "esp_wpa2.h"
+//#include "esp_wpa2.h"
 #include "nvs_flash.h"
 // RTOS Lib
 #include "freertos/FreeRTOS.h"
