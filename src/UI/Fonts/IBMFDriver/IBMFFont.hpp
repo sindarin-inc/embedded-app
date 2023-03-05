@@ -33,7 +33,7 @@ public:
 
     inline bool isInitialized() const { return (face != nullptr) && face->isInitialized(); }
 
-    inline const IBMFFaceLow * getFace() { return face; }
+    inline const IBMFFaceLow *getFace() { return face; }
 
     inline void setResolution(PixelResolution res) {
         if (face != nullptr) face->setResolution(res);
@@ -86,7 +86,7 @@ public:
                 vsnprintf(buffer, MAX_SIZE, fmt, args);
                 drawSingleLineOfText(canvas, pos, buffer);
             }
-            delete buffer;
+            delete[] buffer;
         }
     }
 

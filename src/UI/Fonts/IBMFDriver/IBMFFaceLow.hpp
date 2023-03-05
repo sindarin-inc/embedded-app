@@ -56,11 +56,9 @@ public:
                 return false;
             }
 
-            bitmaps[i] = RLEBitmap{
-                pixels : memoryPtr,
-                dim : Dim(glyphs[i]->bitmapWidth, glyphs[i]->bitmapHeight),
-                length : glyphs[i]->packetLength
-            };
+            bitmaps[i] = RLEBitmap{.pixels = memoryPtr,
+                                   .dim = Dim(glyphs[i]->bitmapWidth, glyphs[i]->bitmapHeight),
+                                   .length = glyphs[i]->packetLength};
             memoryPtr += glyphs[i]->packetLength;
 
             if (memoryPtr > memoryEnd) {
@@ -224,7 +222,7 @@ public:
                 if (accentIdx == CODED_GRAVE_ACCENT) accentIdx = 0;
                 accentInfo = glyphs[accentIdx];
             }
-        } else if (charSet = UTF16_TABLE_SET) {
+        } else if (charSet == UTF16_TABLE_SET) {
             // Next release of the IBMF file format will have a table to support
             // direct usage of predefined UTF-16 characters. Up to 1022 characters
             // will be possible, unless extended to use more space in memory.
@@ -405,8 +403,7 @@ public:
                     for (col = 0; col < bitmap.dim.width; col++) {
                         if constexpr (BLACK_EIGHT_BITS) {
                             std::cout << ((rowPtr[col] == BLACK_EIGHT_BITS) ? 'X' : ' ');
-                        }
-                        else {
+                        } else {
                             std::cout << ((rowPtr[col] == BLACK_EIGHT_BITS) ? 'X' : ' ');
                         }
                     }
