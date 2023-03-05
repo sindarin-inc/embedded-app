@@ -123,7 +123,7 @@ auto MultiPartData::endFile() -> bool {
     return true;
 }
 
-auto MultiPartData::getContentType() -> String {
+auto MultiPartData::getContentType() -> std::string {
     char tmp[64];
     SafeSnprintf(tmp, sizeof(tmp), "multipart/form-data; boundary=%s", boundary.c_str());
     return tmp;

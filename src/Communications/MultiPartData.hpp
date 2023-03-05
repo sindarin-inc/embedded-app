@@ -19,7 +19,7 @@ public:
     auto endFile() -> bool;
     auto endMultiPartData() -> bool;
 
-    static auto getContentType() -> String;
+    static auto getContentType() -> std::string;
     auto getFile() -> SFile;
 
 private:

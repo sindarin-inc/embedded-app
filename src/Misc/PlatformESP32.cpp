@@ -6,6 +6,8 @@
 #include <esp_adc_cal.h>
 #include <esp_err.h>
 #include <soc/rtc.h>
+#include <esp_sleep.h>
+#include <optional>
 
 #include "Misc/StringUtil.hpp"
 #include "Platform.hpp"
@@ -28,13 +30,17 @@ void digitalWrite(int pin, int level) {
     gpio_set_level((gpio_num_t)pin, (uint32_t)level);
 }
 
+int digitalRead(uint8_t pin) {
+    return gpio_get_level((gpio_num_t)pin);
+}
+
 void delay(int ms) {
     vTaskDelay(ms * portTICK_PERIOD_MS);
 }
 
 // mhill TODO: implement this
 int millis() {
-    return 0;
+    return GetRunTimeMs();
 }
 
 void InitializePlatform() {
@@ -288,7 +294,7 @@ void SetRightScreenLightFade(int dutyCycle, int fadeMs) {
 #endif
 }
 
-auto GetRunTimeMs() -> uint32_t { return FreeRTOS::getTimeSinceStart(); }
+auto GetRunTimeMs() -> uint32_t { return (uint32_t) (xTaskGetTickCount() * portTICK_PERIOD_MS); }
 
 auto USBConnected() -> bool {
 #ifdef USB_CONNECTED_PIN

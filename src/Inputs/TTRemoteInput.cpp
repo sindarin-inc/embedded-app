@@ -4,6 +4,7 @@
 
 #include <functional>
 
+#include "Misc/Platform.hpp"
 #include "Misc/Dispatch.hpp"
 #include "TurnTouch.hpp"
 #include "sindarin-debug.h"

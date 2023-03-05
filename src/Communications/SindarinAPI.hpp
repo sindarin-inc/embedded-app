@@ -43,7 +43,7 @@ public:
 
     auto uploadAndResetVoltageLog(FileSystem &fileSystem) -> int;
 
-    auto uploadCrashReport(SFile &crashFile, const String &contentType) -> int;
+    auto uploadCrashReport(SFile &crashFile, const std::string &contentType) -> int;
 
     void setAuth(HttpClient &client);
 

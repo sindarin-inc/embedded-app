@@ -43,7 +43,7 @@
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_system.h"
-//#include "esp_wpa2.h"
+#include "esp_wpa2.h"
 #include "nvs_flash.h"
 // RTOS Lib
 #include "freertos/FreeRTOS.h"
