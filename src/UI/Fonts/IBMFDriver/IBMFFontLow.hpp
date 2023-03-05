@@ -41,7 +41,7 @@ public:
     inline uint8_t getCharSet() const { return (isInitialized()) ? preamble->bits.charSet : 0; }
     inline bool isInitialized() const { return initialized; }
 
-    inline const IBMFFaceLowPtr getFace(int idx) {
+    inline IBMFFaceLowPtr getFace(int idx) {
         return (isInitialized() && (idx < preamble->faceCount)) ? &faces[idx] : nullptr;
     }
 
