@@ -46,6 +46,21 @@ auto DownloadFile(const char *url,
         return false;
     }
 
+    if (gzip) {
+        char *contentEncoding = nullptr;
+        err = client.getHeader("Content-Encoding", &contentEncoding);
+        if (err == ESP_ERR_NOT_FOUND) {
+            log_e("Requested GZIP but did not get any Content-Encoding header!");
+        } else if (err != ESP_OK) {
+            log_e("Unexpected error getting Content-Encoding header %d %s", err,
+                  esp_err_to_name(err));
+        } else if (contentEncoding == nullptr) {
+            log_e("contentEncoding is null but didn't throw an error");
+        } else if (strcmp(contentEncoding, "gzip") != 0) {
+            log_e("Requested GZIP but instead got Content-Encoding: %s!", contentEncoding);
+        }
+    }
+
     if (contentLength <= 0) {
         // if we somehow don't have a content length header, consider it an error for now
         log_e("Server did not return a content length for %s", url);
