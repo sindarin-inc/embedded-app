@@ -23,6 +23,7 @@ void GoodBootTimer() {}
 // a specified threshold since the last good one, try to roll back to a previous firmware version
 
 auto PartitionIsBootable(const esp_partition_t *partition) -> bool {
+    /*
     uint8_t buf[ENCRYPTED_BLOCK_SIZE];
     if (!partition) {
         return false;
@@ -34,6 +35,9 @@ auto PartitionIsBootable(const esp_partition_t *partition) -> bool {
     if (buf[0] != ESP_IMAGE_HEADER_MAGIC) {
         return false;
     }
+    return true;
+    */
+    // mhill TODO: fix this
     return true;
 }
 

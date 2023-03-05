@@ -3,6 +3,7 @@
 #include "EinkET013TT1.hpp"
 
 #include <algorithm>
+#include <cstring>
 #include <esp_err.h>
 #include "Misc/Platform.hpp"
 
@@ -347,7 +348,8 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
         waitForNotBusy();
         writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10);
 
-        taskYIELD();
+        //taskYIELD();
+        portYIELD();
     }
 
     PROFILE_END(sendFrames);

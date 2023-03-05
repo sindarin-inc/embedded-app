@@ -1,6 +1,6 @@
 #include "GUnzip.hpp"
 
-#include <Arduino.h>
+#include "sindarin-debug.h"
 #include <cstdio>
 #include <memory>
 

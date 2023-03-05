@@ -18,6 +18,7 @@
 //-----------------------------------------------------------------------------
 #include "Communications/SindarinWiFi.hpp" // Class Header
 
+#include <cstring>
 #include <string>
 
 #include "config.h"

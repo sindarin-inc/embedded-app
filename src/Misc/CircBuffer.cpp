@@ -1,6 +1,6 @@
 #include "CircBuffer.hpp"
 
-#include <Arduino.h>
+#include "sindarin-debug.h"
 #include <cstring>
 
 void CircBuffer::push(uint8_t *input, int size) {

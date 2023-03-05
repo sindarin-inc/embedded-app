@@ -3,12 +3,13 @@ FILE(GLOB_RECURSE app_sources ${CMAKE_SOURCE_DIR}/src/*.*)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(components improv ArduinoJson Adafruit-GFX-Library hal esp_http_client wifi_provisioning esp_littlefs esp-nimble-cpp espcoredump app_update unzipLIB expat)
+set(components improv ArduinoJson Adafruit-GFX-Library esp_adc_cal esp_http_client wifi_provisioning esp_littlefs esp-nimble-cpp espcoredump app_update unzipLIB expat)
 
 set(compile_options
     -includeconfig.h
     -Wno-unknown-pragmas
     -DIDF_LOG
+    -DPROGMEM=
     -DUSE_BLE_SERVER_REMOTE=1
     -DUSE_BLE_SERVER_SETTINGS=1
     -DUSE_BLE_SERVER_IMPROV=1
