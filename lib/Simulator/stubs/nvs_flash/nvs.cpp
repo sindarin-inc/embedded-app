@@ -72,13 +72,15 @@ esp_err_t nvs_get_i32(nvs_handle_t handle, const char *key, int32_t *out_value) 
 //     return ESP_OK;
 // }
 
+// NOTE: nvs_get_str's returned length includes the null terminator (it is a buffer length)
 esp_err_t nvs_get_str(nvs_handle_t handle, const char *key, char *out_value, size_t *length) {
     auto string = IniFile[PrefsKey][key].as<const char *>();
     if (strlen(string) > 0) {
         if (out_value != nullptr) {
+            // Include the null terminator character
             strncpy(out_value, string, strlen(string) + 1);
         }
-        *length = strlen(string);
+        *length = strlen(string) + 1;
         return ESP_OK;
     } else {
         return (esp_err_t)ESP_ERR_NVS_NOT_FOUND;
