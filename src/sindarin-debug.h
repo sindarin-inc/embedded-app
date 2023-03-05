@@ -1,8 +1,6 @@
 #ifndef SINDARIN_DEBUG_H
 #define SINDARIN_DEBUG_H
 
-#include <Arduino.h>
-
 #if SIMULATOR
 
 #define SHOW_HEAP()

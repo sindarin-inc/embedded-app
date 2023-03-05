@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Stream.h>
 #include <iostream>
 #include <sstream>
 #include <string>
