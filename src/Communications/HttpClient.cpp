@@ -30,7 +30,11 @@ HttpClient::HttpClient(const char *url, const char *contentType, esp_http_client
                 thisPtr->connected = true;
                 break;
             case HTTP_EVENT_HEADERS_SENT:
+                log_d("HTTP_EVENT_HEADERS_SENT");
+                break;
             case HTTP_EVENT_ON_HEADER:
+                log_d("HTTP_EVENT_ON_HEADER %s %s", event->header_key, event->header_value);
+                break;
             case HTTP_EVENT_ON_DATA:
                 break;
             case HTTP_EVENT_ON_FINISH:
@@ -75,6 +79,8 @@ auto HttpClient::open(int contentLength) -> esp_err_t {
     return esp_http_client_open(client_, contentLength);
 }
 
+// auto HttpClient::perform() -> esp_err_t { return esp_http_client_perform(client_); }
+
 auto HttpClient::write(const char *body, int length) -> int {
     return esp_http_client_write(client_, body, length);
 }
@@ -84,6 +90,9 @@ auto HttpClient::makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> {
 }
 
 auto HttpClient::fetchHeaders() -> int { return esp_http_client_fetch_headers(client_); }
+
+// auto HttpClient::getContentLength() -> int { return esp_http_client_get_content_length(client_);
+// }
 
 auto HttpClient::getStatusCode() -> int { return esp_http_client_get_status_code(client_); }
 

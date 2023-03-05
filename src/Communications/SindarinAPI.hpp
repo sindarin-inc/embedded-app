@@ -6,6 +6,7 @@
 #include "Communications/HttpClient.hpp"
 #include "Models/CheckSyncResponse.hpp"
 #include "Models/Firmware.hpp"
+#include "Models/FirmwareResponse.hpp"
 #include "Models/Json.hpp"
 #include "Models/SyncBookmarksResponse.hpp"
 #include "Models/UserReadable.hpp"
@@ -29,10 +30,13 @@ struct CheckSyncRequest {
 class SindarinAPI {
 public:
     static auto getInstance() -> std::shared_ptr<SindarinAPI>;
+    static auto isSindarinUrl(const char *url) -> bool;
 
     void setAccessToken(const std::string &accessToken);
 
     auto checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp) -> int;
+    auto checkFirmware(FirmwareResponse *resp) -> int;
+
     auto syncBookmarks(const char *bookmarksJson, const int bookmarksSize) -> int;
     auto downloadReadable(const Readable &readable, FileSystem &fileSystem, const std::string &path,
                           const std::function<void(int percentage)> &progressCallback) -> bool;

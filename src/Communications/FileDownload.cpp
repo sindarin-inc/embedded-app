@@ -16,9 +16,12 @@ auto DownloadFile(const char *url,
 
     HttpClient client(url);
 
-    std::shared_ptr<SindarinAPI> api = SindarinAPI::getInstance();
-    if (api) {
-        api->setAuth(client);
+    if (SindarinAPI::isSindarinUrl(url)) {
+        std::shared_ptr<SindarinAPI> api = SindarinAPI::getInstance();
+        if (api) {
+            log_d("Attaching Sindarin auth to HTTP request to %s", url);
+            api->setAuth(client);
+        }
     }
 
     auto time = esp_timer_get_time();
@@ -28,7 +31,6 @@ auto DownloadFile(const char *url,
         client.setHeader("Accept-Encoding", "gzip");
         // TODO: check server headers to verify we got gzip
     }
-    client.open();
 
     esp_err_t err = client.open();
     if (err != ESP_OK) {
@@ -37,18 +39,26 @@ auto DownloadFile(const char *url,
     }
 
     auto contentLength = client.fetchHeaders();
+
+    auto httpCode = client.getStatusCode();
+    if (httpCode != 200) {
+        log_w("Status code was %d", httpCode);
+        return false;
+    }
+
     if (contentLength <= 0) {
         // if we somehow don't have a content length header, consider it an error for now
         log_e("Server did not return a content length for %s", url);
         return false;
     }
 
-    auto httpCode = client.getStatusCode();
-    if (httpCode != 200) {
-        log_w("Status code was %d", httpCode);
-    }
-
     if (!openedConnection(httpCode, contentLength)) {
+        // Get the body anyways, for debugging, since it might contain an error message
+        char buffer[256];
+        auto read = client.read(buffer, sizeof(buffer));
+        if (read > 0) {
+            log_w("Error body: %s", buffer);
+        }
         return false;
     }
 

@@ -56,7 +56,10 @@ public:
         void deleteFromStorage(const char *key) {
             esp_err_t err = nvs_erase_key(prefs.nvsHandle, key);
             if (err) {
-                log_e("nvs_erase_key fail: %s %s", key, esp_err_to_name(err));
+                // Fail silently if the key doesn't exist
+                if (err != ESP_ERR_NVS_NOT_FOUND) {
+                    log_e("nvs_erase_key fail: %s %s", key, esp_err_to_name(err));
+                }
                 return;
             }
             prefs.commit();
@@ -98,7 +101,10 @@ public:
                     log_e("nvs_get_str fail: %s %s", this->key_, esp_err_to_name(err));
                     return;
                 }
-
+                // nvs_get_str's len includes the null terminator (it is a buffer length)
+                // We need to strip back off the null terminator since it was copied into the
+                // string.
+                str.resize(len - 1);
                 this->value_ = str;
             } else {
                 log_e("Unhandled prefs type");

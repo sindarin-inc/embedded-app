@@ -6,19 +6,17 @@ auto LineMenuScreen::layout(LayoutContext &context, Size size) -> Size {
 
     auto insetRect = context.setSublayoutFrame(
         {{inset, inset}, {size.width - 2 * inset, size.height - 2 * inset}},
-        LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical,
+        LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
         [this](LayoutContext &context, Size size) -> Size {
             int x = 0;
             int y = 0;
-            int viewCount = menuItemViews_.size();
-            int boxHeight = (size.height - (viewCount - 1) * spacing) / viewCount;
-            Size boxSize = {size.width, boxHeight};
-            log_i("Archive menu layout: %d views * %dpx height (%dpx width)", viewCount, boxHeight,
-                  size.width);
+            log_i("Archive menu layout: %zu views in size %dpx x %d", menuItemViews_.size(),
+                  size.width, size.height);
 
             for (auto &view : menuItemViews_) {
-                auto viewFrame = context.setViewFrame(
-                    *view, {{x, y}, boxSize}, LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
+                auto viewFrame = context.setViewFrame(*view, {{x, y}, size},
+                                                      LayoutOptionsSizeToFitVertical |
+                                                          LayoutOptionsAlignCenterVertical);
                 y += viewFrame.size.height + spacing;
             }
 
@@ -39,22 +37,19 @@ void LineMenuScreen::render(DisplaySystem &display) {
         return;
     }
 
-    if (firstLoad_) {
-        menuItemViews_.clear();
-        for (auto &menuItem : menuItems_) {
-            auto menuItemView = std::make_shared<MenuItemView>(display, menuItem);
-            menuItemViews_.push_back(menuItemView);
-        }
+    if (menuItemViews_.size() <= 0) {
+        log_w("No views to draw in LineMenuScreen");
     }
 
     setNeedsLayout();
     setFrame({{0, 0}, {display.width(), display.height()}});
-    PROFILE_START(LineMenuScreenLayoutAndDraw);
-    draw();
-    PROFILE_END_LOG_US(LineMenuScreenLayoutAndDraw);
 
-    display.updateDisplay(firstLoad_ ? DisplaySystem::UpdateType::FULL
-                                     : DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
+    if (firstLoad_) {
+        PROFILE_START(LineMenuScreenLayoutAndDraw);
+        draw();
+        PROFILE_END_LOG_US(LineMenuScreenLayoutAndDraw);
+        display.updateDisplay(DisplaySystem::UpdateType::FULL);
+    }
 
     std::shared_ptr<MenuItemView> selectedMenuItemView = menuItemViews_[getCurrSelection()];
     for (auto &menuItemView : menuItemViews_) {

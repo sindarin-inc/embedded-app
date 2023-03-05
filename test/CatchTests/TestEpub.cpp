@@ -49,13 +49,13 @@ TEST_CASE("Stripped ePub") {
     buffer[sizeof(buffer) - 1] = 0;
     stream->readBytes(buffer, bufferLen);
     REQUIRE(stream->position() == bufferLen);
-    log_d("Got buffer: \n%s", buffer);
+    // log_d("Got buffer: \n%s", buffer);
 
     stream->seek(0);
     uint8_t buffer2[1025];
     buffer2[sizeof(buffer2) - 1] = 0;
     stream->readBytes(buffer2, bufferLen);
-    log_d("Got buffer2: \n%s", buffer2);
+    // log_d("Got buffer2: \n%s", buffer2);
 
     REQUIRE(strncmp((char *)buffer, (char *)buffer2, bufferLen) == 0);
 
@@ -64,14 +64,13 @@ TEST_CASE("Stripped ePub") {
     stream->readBytes(buffer, bufferLen / 2);
     stream->readBytes(buffer + bufferLen / 2, bufferLen / 2);
     REQUIRE(stream->position() == 3000 + bufferLen);
-
-    log_d("Got buffer: \n%s", buffer);
+    // log_d("Got buffer: \n%s", buffer);
 
     stream->seek(4000);
     stream->seek(3000);
     stream->readBytes(buffer2, bufferLen / 2);
     stream->readBytes(buffer2 + bufferLen / 2, bufferLen / 2);
-    log_d("Got buffer2: \n%s", buffer2);
+    // log_d("Got buffer2: \n%s", buffer2);
 
     REQUIRE(strncmp((char *)buffer, (char *)buffer2, bufferLen / 2) == 0);
     REQUIRE(strncmp((char *)buffer + bufferLen / 2, (char *)buffer2 + bufferLen / 2,

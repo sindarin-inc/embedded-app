@@ -14,7 +14,7 @@ auto TTRemoteInput::connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &
     if (client_ == nullptr) {
         log_d("Creating Turn Touch client");
         client_ = BLEDevice::createClient();
-        client_->setClientCallbacks(new ClientCallbacks(this));
+        client_->setClientCallbacks(&clientCallbacks_);
     }
 
     BLEAddress address = device->getAddress();
@@ -104,24 +104,14 @@ auto TTRemoteInput::connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &
 
     log_i("Connected to TurnTouch %s", address.toString().c_str());
 
-    return true;
-}
-
-void TTRemoteInput::connectTask(void *params) {
-    auto *tThis = (TTRemoteInput *)params;
-    if (tThis->connectToDevice(tThis->turntouchDevice_)) {
-        // Output a metric log on the very first TT connection
-        static bool sFirstConnection = true;
-        if (sFirstConnection) {
-            log_i("First TT connection in %.0f ms", esp_timer_get_time() / 1000.0f);
-            sFirstConnection = false;
-        }
-    } else {
-        tThis->client_->disconnect();
-        tThis->state_ = SCANNING;
+    // Output a metric log on the very first TT connection
+    static bool sFirstConnection = true;
+    if (sFirstConnection) {
+        log_i("First TT connection in %.0f ms", esp_timer_get_time() / 1000.0f);
+        sFirstConnection = false;
     }
 
-    vTaskDelete(nullptr);
+    return true;
 }
 
 void TTRemoteInput::disconnectTemporarily(int seconds) {
@@ -155,7 +145,7 @@ void TTRemoteInput::scanForDevice() {
         log_d("Scanning for any available TurnTouch...");
     }
     BLEScan *scan = BLEDevice::getScan();
-    scan->setAdvertisedDeviceCallbacks(new AdvertisedDeviceCallbacks(this));
+    scan->setAdvertisedDeviceCallbacks(&advertisedDeviceCallbacks_);
     // See: https://electronics.stackexchange.com/a/359158/16459
     // Only one advertising channel is being looked at during each
     // scanInterval and is rotated to the next of 3 channels with each interval. So if there is

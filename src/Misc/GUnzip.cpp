@@ -42,10 +42,10 @@ auto GUnzip::init() -> bool {
     err = inflateInit2(&zstr_, 16 + MAX_WBITS);
 
     if (err == Z_OK) {
-        log_i("zlib init ok\n");
+        log_i("zlib init ok");
         return true;
     } else {
-        log_i("zlib error: %d\n", err);
+        log_i("zlib error: %d", err);
         return false;
     }
 }

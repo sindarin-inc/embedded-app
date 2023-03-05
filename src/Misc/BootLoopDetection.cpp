@@ -57,9 +57,10 @@ void Rollback() {
 }
 
 auto GetPanicBootCount(nvs_handle_t handle, uint32_t *bootCount) -> bool {
-    esp_err_t nvsErr = nvs_get_u32(handle, "panic-boot-count", bootCount);
-    if (nvsErr != ESP_OK) {
-        log_e("could not get panic-boot-count");
+    esp_err_t err = nvs_get_u32(handle, "panic-count", bootCount);
+    // ESP_ERR_NVS_NOT_FOUND is expected if this has never been set
+    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
+        log_e("Could not get panic-count with error: %s", esp_err_to_name(err));
         return false;
     }
 
@@ -67,9 +68,9 @@ auto GetPanicBootCount(nvs_handle_t handle, uint32_t *bootCount) -> bool {
 }
 
 auto OpenBootInfo(nvs_handle_t *handle) -> bool {
-    esp_err_t nvsErr = nvs_open("boot-info", NVS_READWRITE, handle);
-    if (nvsErr != ESP_OK) {
-        log_e("could not open boot-info in nvs");
+    esp_err_t err = nvs_open("boot-info", NVS_READWRITE, handle);
+    if (err != ESP_OK) {
+        log_e("Could not open boot-info in nvs with error: %s", esp_err_to_name(err));
         return false;
     }
 
@@ -77,9 +78,10 @@ auto OpenBootInfo(nvs_handle_t *handle) -> bool {
 }
 
 auto SetPanicBootCount(nvs_handle_t handle, uint32_t bootCount) -> bool {
-    esp_err_t nvsErr = nvs_set_u32(handle, "panic-boot-count", bootCount);
-    if (nvsErr != ESP_OK) {
-        log_e("could not set panic-boot-count to %d", bootCount);
+    log_i("Setting panic-count to %d", bootCount);
+    esp_err_t err = nvs_set_u32(handle, "panic-count", bootCount);
+    if (err != ESP_OK) {
+        log_e("Could not set panic-count to %d with error: %s ", bootCount, esp_err_to_name(err));
         return false;
     }
 
@@ -105,7 +107,6 @@ auto EraseAppPreferences() -> bool {
 }
 
 void BootLoopCheck() {
-
     // first attempt to open boot-info nvs namespace
     nvs_handle_t bootNvsHandle;
     uint32_t currBoot = 0;
@@ -147,11 +148,12 @@ void BootLoopCheck() {
         release builds: After 5 reboots, clear the lastReadableId pref After 10 reboots Check an NVS
         key for the most recent good firmware, if this current firmware has never been marked good,
         and there is a previous firmware availabe, then Rollback() If this firmware has been marked
-        good in the past, then clear the whole NVS partition. Then re-set the panic-boot-count
+        good in the past, then clear the whole NVS partition. Then re-set the panic-count
         variable. After 15 reboots, kill the whole filesystem
         */
 
         // reset panic boot count to avoid looping again
+
         currBoot = 0;
         SetPanicBootCount(bootNvsHandle, currBoot);
 
@@ -170,9 +172,9 @@ void BootLoopCheck() {
     return;
 }
 
-// timed function which resets panic-boot-count back to 0
+// timed function which resets panic-count back to 0
 void SetGoodBoot(TimerHandle_t timer) {
-    log_i("resetting panic-boot-count");
+    log_i("resetting panic-count");
 
     // open boot info partition
     nvs_handle_t bootNvsHandle;

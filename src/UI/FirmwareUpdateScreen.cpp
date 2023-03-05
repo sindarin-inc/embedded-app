@@ -138,8 +138,13 @@ void FirmwareUpdateScreen::begin() {
 
     firmwareDownloader_.downloadFirmware([this](const FirmwareDownloadState &state) {
         DispatchGetUiQueue()->dispatch([this, state]() {
+            if (state_ == state) {
+                log_d("State unchanged, skipping update");
+                return;
+            }
             log_d("Updating from state %d to %d (%d%%)", state_.state, state.state,
                   state.downloadPercentage);
+            SHOW_HEAP();
             updateState(state);
             this->render(this->display_);
 

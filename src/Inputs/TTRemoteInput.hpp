@@ -15,7 +15,8 @@
 
 class TTRemoteInput : public RemoteInput {
 public:
-    TTRemoteInput(PreferencesStore &prefs) noexcept : prefs_(prefs){};
+    TTRemoteInput(PreferencesStore &prefs) noexcept
+        : prefs_(prefs), advertisedDeviceCallbacks_(this), clientCallbacks_(this){};
 
     // Connect to the TurnTouch. Can be safely called even if the TurnTouch is already connected.
     void connect();
@@ -40,7 +41,6 @@ protected:
     BLEClient *client_ = nullptr;
 
     auto connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &device) -> bool;
-    static void connectTask(void *params);
     void scanForDevice();
 
     class AdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
@@ -72,12 +72,23 @@ protected:
                     log_i("%s TurnTouch device found; queueing for connect...",
                           address.has_value() ? "Paired" : "New");
                     // Fire off a high-ish priority temporary task to connect the TT
-                    xTaskCreatePinnedToCore(this->enclosed->connectTask, "TTConnect", 10000,
-                                            this->enclosed, 2, nullptr, 0);
+                    xTaskCreatePinnedToCore(
+                        [](void *params) {
+                            auto *tThis = (TTRemoteInput *)params;
+                            if (tThis->connectToDevice(tThis->turntouchDevice_)) {
+                            } else {
+                                tThis->client_->disconnect();
+                                tThis->state_ = SCANNING;
+                            }
+                            vTaskDelete(nullptr);
+                        },
+                        "TTConnect", 5000, this->enclosed, 2, nullptr, 0);
                 }
             }
         }
     };
+
+    AdvertisedDeviceCallbacks advertisedDeviceCallbacks_;
 
     class ClientCallbacks : public BLEClientCallbacks {
     public:
@@ -96,6 +107,8 @@ protected:
             enclosed->turntouchDevice_ = nullptr;
         }
     };
+
+    ClientCallbacks clientCallbacks_;
 };
 
 #endif

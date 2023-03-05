@@ -9,6 +9,7 @@
 #include "Communications/WiFi.hpp"
 #include "GitVersion.hpp"
 #include "Misc/Dispatch.hpp"
+#include "Misc/SemVer.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Version.hpp"
 #include "sindarin-debug.h"
@@ -32,58 +33,55 @@ void FirmwareDownloader::downloadFirmware(
         // Skip calculating the readable shas and changed placemarks for now, the firmware info is
         // sent either way
         // TODO: we really need a way to get the latest firmware without calling /sync/all
-        CheckSyncResponse response;
-        CheckSyncRequest request = CheckSyncRequest{
-            .readablesSince = "-1",
-            .articlesSince = "-1",
-            .readablePlacemarks = {},
-            .articlePlacemarks = {},
-            .ptBattery = prefs_.lastPageTurnerBattery.get().value_or(0),
-            .ptBuild = prefs_.lastPageTurnerBuild.get().value_or(""),
-            .skipContent = true,
-        };
-        auto httpCode = SindarinAPI::getInstance()->checkSync(request, &response);
+        FirmwareResponse response;
+        auto httpCode = SindarinAPI::getInstance()->checkFirmware(&response);
         if (httpCode != 200) {
-            log_e("Failed to check sync (HTTP %d)", httpCode);
+            log_e("Failed to get firmware (HTTP %d)", httpCode);
             progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
                                                    .message = "Failed to check for update"});
             return;
         }
-        if (response.firmware.url.empty()) {
-            versionString = kVersionString;
+
+        versionString = kVersionString;
+        log_d("Existing version: %s, server version: %s", versionString.c_str(),
+              response.latestGlassesFirmware.version.c_str());
+        if (SemVerCompareVersions(response.latestGlassesFirmware.version, versionString) !=
+            SemVerComparison::GreaterThan) {
             progressCallback(
                 FirmwareDownloadState{.state = FirmwareDownloadState::State::AlreadyUpToDate});
             return;
         }
 
-        versionString = response.firmware.version;
+        versionString = response.latestGlassesFirmware.version;
 
         progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloading,
                                                .downloadPercentage = 0});
 
-        log_d("Downloading firmware from %s", response.firmware.url.c_str());
+        log_d("Downloading firmware from %s", response.latestGlassesFirmware.url.c_str());
+        std::string failMessage = "";
         auto success = DownloadFile(
-            response.firmware.url.c_str(),
-            [&response, &progressCallback](int httpCode, int contentLength) -> bool {
-                HttpClient client(response.firmware.url.c_str());
+            response.latestGlassesFirmware.url.c_str(),
+            [&response, &failMessage](int httpCode, int contentLength) -> bool {
                 if (httpCode != 200) {
-                    log_e("HTTP GET failed, error: %d\n", httpCode);
-                    progressCallback(FirmwareDownloadState{
-                        .state = FirmwareDownloadState::State::Failure,
-                        .message = StringFormat("Download failed (%d)", httpCode)});
+                    log_e("HTTP GET to %s failed, error: %d",
+                          response.latestGlassesFirmware.url.c_str(), httpCode);
+                    failMessage = StringFormat("Download failed (%d)", httpCode);
                     return false;
                 }
 
                 if (!Update.begin(contentLength, U_FLASH)) {
                     auto error = Update.getError();
                     log_e("Failed to Update.begin (err=%d contentLength=%d)", error, contentLength);
-                    progressCallback(FirmwareDownloadState{
-                        .state = FirmwareDownloadState::State::Failure,
-                        .message = StringFormat("Failed to begin update (%d)", error)});
+                    failMessage = StringFormat("Failed to begin update (%d)", error);
                     return false;
                 }
 
-                Update.setMD5(response.firmware.md5.c_str());
+                if (!Update.setMD5(response.latestGlassesFirmware.md5.c_str())) {
+                    auto error = Update.getError();
+                    log_e("Failed to Update.setMD5 (err=%d)", error);
+                    failMessage = StringFormat("Failed to begin update (%d)", error);
+                    return false;
+                }
 
                 return true;
             },
@@ -102,9 +100,8 @@ void FirmwareDownloader::downloadFirmware(
                     FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
                                           .message = "Failed: WiFi disconnected!"});
             } else {
-                progressCallback(
-                    FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
-                                          .message = "Failed to download update"});
+                progressCallback(FirmwareDownloadState{
+                    .state = FirmwareDownloadState::State::Failure, .message = failMessage});
             }
             Update.abort();
             return;

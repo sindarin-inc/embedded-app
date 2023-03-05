@@ -98,6 +98,7 @@ SolClock solClock(prefs);
 PowerManager powerManager(prefs);
 
 bool templesClosed = false;
+bool bootCompleted = false;
 
 // Resonsible for handling connecting / reconnecting to remotes
 void RadioTask(void *parameter) {
@@ -441,7 +442,13 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
 #if USE_TURN_TOUCH_REMOTE || USE_BLE_SERVER_REMOTE
     auto remoteCallback = [](RemoteCommand command) {
-        DispatchGetUiQueue()->dispatch([command]() { UIInnerLoop(command); });
+        DispatchGetUiQueue()->dispatch([command]() {
+            if (bootCompleted) {
+                UIInnerLoop(command);
+            } else {
+                log_w("Ignoring user input until boot completes");
+            }
+        });
     };
 #endif
 
@@ -561,4 +568,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::NONE); });
 
     GoodBootTimer();
+
+    bootCompleted = true;
 }
