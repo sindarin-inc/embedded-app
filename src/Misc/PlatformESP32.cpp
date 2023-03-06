@@ -7,6 +7,7 @@
 #include <esp_err.h>
 #include <soc/rtc.h>
 #include <esp_sleep.h>
+#include <esp_task_wdt.h>
 #include <optional>
 
 #include "Misc/StringUtil.hpp"
@@ -41,6 +42,26 @@ void delay(int ms) {
 // mhill TODO: implement this
 int millis() {
     return GetRunTimeMs();
+}
+
+uint32_t getHeapSize() {
+    multi_heap_info_t info;
+    heap_caps_get_info(&info, MALLOC_CAP_INTERNAL);
+    return info.total_free_bytes + info.total_allocated_bytes;
+}
+
+void enableCore0WDT(){
+    TaskHandle_t idle_0 = xTaskGetIdleTaskHandleForCPU(0);
+    if(idle_0 == NULL || esp_task_wdt_add(idle_0) != ESP_OK){
+        log_e("Failed to add Core 0 IDLE task to WDT");
+    }
+}
+
+void disableCore0WDT(){
+    TaskHandle_t idle_0 = xTaskGetIdleTaskHandleForCPU(0);
+    if(idle_0 == NULL || esp_task_wdt_delete(idle_0) != ESP_OK){
+        log_e("Failed to remove Core 0 IDLE task from WDT");
+    }
 }
 
 void InitializePlatform() {

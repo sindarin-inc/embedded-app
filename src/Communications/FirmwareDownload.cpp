@@ -14,6 +14,10 @@
 #include "Version.hpp"
 #include "sindarin-debug.h"
 
+// mhill TODO: replace Update class
+void FirmwareDownloader::downloadFirmware(
+    const std::function<void(FirmwareDownloadState state)> &progressCallback) {}
+/*
 void FirmwareDownloader::downloadFirmware(
     const std::function<void(FirmwareDownloadState state)> &progressCallback) {
 
@@ -122,3 +126,4 @@ void FirmwareDownloader::downloadFirmware(
         progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Installed});
     });
 }
+*/

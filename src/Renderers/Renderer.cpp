@@ -1,6 +1,7 @@
 #include "Renderer.hpp"
 
 #include <utility>
+#include <algorithm>
 
 #include "Misc/Platform.hpp"
 #include "UI/Fonts/Tahoma4pt7b.h"

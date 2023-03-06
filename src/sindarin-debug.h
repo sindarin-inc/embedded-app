@@ -22,6 +22,8 @@ extern "C" {
 }
 
 #include "esp_log.h"
+#include "xt_instr_macros.h"
+#include "Misc/Platform.hpp"
 
 // For IDF builds, use the ESP_LOGD macros since they work with power management.
 #ifdef IDF_LOG
@@ -38,8 +40,8 @@ extern "C" {
 #endif
 
 #define SHOW_HEAP()                                                                                \
-    log_d("Free heap: %dk/%dk Free PSRAM: %zuk/%zuk %s:%d ", ESP.getFreeHeap() / 1000,             \
-          ESP.getHeapSize() / 1000, heap_caps_get_free_size(MALLOC_CAP_8BIT) / 1000,               \
+    log_d("Free heap: %dk/%dk Free PSRAM: %zuk/%zuk %s:%d ", heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1000,             \
+          getHeapSize() / 1000, heap_caps_get_free_size(MALLOC_CAP_8BIT) / 1000,               \
           heap_caps_get_total_size(MALLOC_CAP_8BIT) / 1000, __FILE__, __LINE__)
 
 // NOTE: based on the uint32_t, this cannot profile anything longer than 17.89569707

@@ -1,6 +1,7 @@
 #include "TempleCloseSensor.hpp"
 
 #include "sindarin-debug.h"
+#include <math.h>
 
 auto TempleCloseSensor::checkProductId() -> bool {
     auto mmcProductId = magSensor_.readProductId();

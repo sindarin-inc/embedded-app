@@ -22,6 +22,8 @@
 #define ANALOG            0xC0
 
 #define MALLOC_CAP_SPIRAM           (1<<10) ///< Memory must be in SPI RAM
+#define MALLOC_CAP_INTERNAL         (1<<11) ///< Memory must be internal; specifically it should not disappear when flash/spiram cache is switched off
+
 
 void InitializePlatform();
 
@@ -60,3 +62,9 @@ int digitalRead(uint8_t pin);
 void delay(int ms);
 
 int millis();
+
+uint32_t getHeapSize();
+
+void enableCore0WDT();
+
+void disableCore0WDT();

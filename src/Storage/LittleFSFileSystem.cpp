@@ -4,6 +4,7 @@
 #include <esp_littlefs.h>
 #include <esp_vfs.h>
 
+#include "Misc/Platform.hpp"
 #include "sindarin-debug.h"
 
 const char *partitionLabel = "data";
