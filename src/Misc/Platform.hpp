@@ -21,9 +21,19 @@
 #define OUTPUT_OPEN_DRAIN 0x12
 #define ANALOG            0xC0
 
+//Interrupt Modes
+#define RISING    0x01
+#define FALLING   0x02
+#define CHANGE    0x03
+#define ONLOW     0x04
+#define ONHIGH    0x05
+#define ONLOW_WE  0x0C
+#define ONHIGH_WE 0x0D
+
 #define MALLOC_CAP_SPIRAM           (1<<10) ///< Memory must be in SPI RAM
 #define MALLOC_CAP_INTERNAL         (1<<11) ///< Memory must be internal; specifically it should not disappear when flash/spiram cache is switched off
 
+#define digitalPinToInterrupt(p)    (((p)<48)?(p):-1)
 
 void InitializePlatform();
 
