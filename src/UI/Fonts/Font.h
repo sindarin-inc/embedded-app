@@ -9,7 +9,7 @@ private:
     FontType type;
 
 public:
-    inline bool isA(FontType font_type) const { return font_type == type; };
+    inline bool isA(FontType font_type) const { return font_type == type; }
     virtual int yAdvance() const = 0;
 
 protected:

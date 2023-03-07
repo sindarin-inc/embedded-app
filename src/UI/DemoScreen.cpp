@@ -24,7 +24,6 @@ void DemoScreen::render(DisplaySystem &display) {
     }
 
     std::string message = messages_[currentScreen_];
-    // display.setFont((Font *)(&FONT_EC_REGULAR_75BPI14PT));
     display.setFont((Font *)&FONT_TAHOMA_REGULAR_FONT6PT7B);
 
     // Alternate left and right on for setup.
@@ -44,13 +43,11 @@ void DemoScreen::render(DisplaySystem &display) {
     switch (currentScreen_) {
     case 0:
     case 1:
-        display.setFont((Font *)(&FONT_EC_REGULAR_75BPI14PT));
-        // display.setFont((Font *)&FONT_TAHOMA_REGULAR_FONT8PT7B);
+        display.setFont((Font *)&FONT_TAHOMA_REGULAR_FONT8PT7B);
         break;
     case 2:
     case 3:
-        display.setFont((Font *)(&FONT_EC_REGULAR_75BPI14PT));
-        // display.setFont((Font *)&FONT_TAHOMA_REGULAR_FONT5PT7B);
+        display.setFont((Font *)&FONT_TAHOMA_REGULAR_FONT5PT7B);
         break;
     }
     // NOLINTEND(bugprone-branch-clone)

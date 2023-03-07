@@ -5,11 +5,12 @@
 
 //---  ESP_IDF
 //#include <esp_log.h>
-#include "sindarin-debug.h"
 
-#if 0
+#if IBMF_TESTING
+#define PROGMEM
 #include <cstdarg>
 #include <cstdio>
+#include <string>
 
 extern char * formatStr(const std::string &format, ...);
 
@@ -18,13 +19,15 @@ extern char * formatStr(const std::string &format, ...);
     std::cout << "WARNING: " << formatStr(format, ##__VA_ARGS__) << std::endl;
 #define log_e(format, ...) std::cout << "ERROR: " << formatStr(format, ##__VA_ARGS__) << std::endl;
 #define log_d(format, ...) std::cout << "DEBUG: " << formatStr(format, ##__VA_ARGS__) << std::endl;
+#else
+#include "sindarin-debug.h"
 #endif
 
 // The following definitions are used by all parts of the driver.
 //
 // The IBMF font files have the current format:
 //
-//  Offset 0:
+//  At Offset 0:
 //  +--------------------+
 //  |                    |  Preamble
 //  |                    |
@@ -81,8 +84,9 @@ const constexpr int DEBUG = 0;
 #endif
 
 #if DEBUG_IBMF
-#include <fstream>
+//#include <fstream>
 #include <iostream>
+// #include <iomanip>
 #endif
 
 // The followings have to be adjusted depending on the screen
@@ -103,23 +107,15 @@ const constexpr uint8_t WHITE_EIGHT_BITS = 0xFF;
 
 //----
 
-const constexpr uint8_t IBMF_VERSION = 4;
+const constexpr uint8_t IBMF_VERSION = 4;      // Font format version
 const constexpr uint8_t MAX_GLYPH_COUNT = 175; // Index Value 0xFE and 0xFF are reserved
 const constexpr uint8_t MAX_FACE_COUNT = 10;
 
-// Sets being supported
+const constexpr uint8_t NO_LIG_KERN_PGM = 0xFF;
 
-const constexpr uint8_t LATIN_CHARACTER_SET = 0;
-const constexpr uint8_t UTF16_TABLE_SET = 1;
+// Character Sets being supported (the UTF16_TABLE_SET is forecoming)
 
-// Latin Character Set constants
-
-const constexpr uint16_t NO_GLYPH_CODE = 0x7FF;
-const constexpr uint16_t ACCENT_MASK = 0xF000;
-const constexpr uint8_t ACCENT_SHIFTR = 12; // Shift Right
-const constexpr uint16_t CODED_GRAVE_ACCENT = 0x0F;
-const constexpr uint16_t GLYPH_CODE_MASK = 0x7FF;
-const constexpr uint16_t SPACE_CODE = 0x7FE;
+enum CharSet : uint8_t { LATIN_CHARACTER_SET = 0, UTF16_TABLE_SET = 1 };
 
 enum class PixelResolution : uint8_t { ONE_BIT, EIGHT_BITS };
 
@@ -170,31 +166,35 @@ typedef Bitmap *BitmapPtr;
 
 #pragma pack(push, 1)
 
+// FIX16 is a floating point value in fixed point notation, 6 bits of fraction
+
 typedef int16_t FIX16;
+typedef uint16_t GlyphCode;
+typedef uint8_t SmallGlyphCode;
 
 struct Preamble {
-    char marker[4];
+    char marker[4]; // Must be "IBMF"
     uint8_t faceCount;
     struct {
-        uint8_t version : 5;
-        uint8_t charSet : 3;
+        uint8_t version : 5; // Must be IBMF_VERSION
+        CharSet charSet : 3;
     } bits;
 };
 typedef Preamble *PreamblePtr;
 
 struct FaceHeader {
-    uint8_t pointSize;
-    uint8_t lineHeight;
-    uint16_t dpi;
-    FIX16 xHeight;
-    FIX16 emHeight;
-    FIX16 slantCorrection;
+    uint8_t pointSize;     // in points (pt) a point is 1 / 72.27 of an inch
+    uint8_t lineHeight;    // in pixels
+    uint16_t dpi;          // pixels per inches
+    FIX16 xHeight;         // Hight of character 'x' in pixels
+    FIX16 emHeight;        // Hight of character 'M' in pixels
+    FIX16 slantCorrection; //
     uint8_t descenderHeight;
     uint8_t spaceSize;
     uint16_t glyphCount;
     uint16_t ligKernStepCount;
-    uint16_t firstCode;
-    uint16_t lastCode;
+    GlyphCode firstCode;
+    GlyphCode lastCode;
     uint8_t kernCount;
     uint8_t maxHight;
 };
@@ -249,22 +249,74 @@ typedef FaceHeader *FaceHeaderPtr;
 // characters before and after each consecutive string of characters from the same font.
 // These implicit characters do not appear in the output, but they can affect ligatures
 // and kerning.
+// -----
+//
+// Here is the original LigKern table entry format (4 bytes). Byte 1, 3 and 4 have
+// two different meanings as show below (a big-endian format...):
+//
+//           Byte 1                   Byte 2
+// +------------------------+------------------------+
+// |        whole           |                        |
+// +------------------------+       Next Char        +
+// |Stop| nextStepRelative  |                        |
+// +------------------------+------------------------+
+//
+//
+//           Byte 3                   Byte 4 
+// +------------------------+------------------------+
+// |Kern|       | a | b | c |    Replacement Char    |  <- isAKern (Kern in the diagram) is false
+// +------------------------+------------------------+
+// |isKern|Displacement High|    Displacement Low    |  <- isAKern is true
+// +------------------------+------------------------+
+//
+// The following fields are not used/replaced in this application:
+//
+//    - nextStepRelative
+//    - Ops a, b, and c
+//    - whole can be reduced to one GoTo bit
+//
+// ----
+//
+// Here is the optimized version considering larger characters table
+// and that some fields are not being used (BEWARE: a little-endian format):
+//
+//           Byte 2                   Byte 1
+// +------------------------+------------------------+
+// |Stop|               Next Char                    |
+// +------------------------+------------------------+
+//
+//
+//           Byte 4                   Byte 3 
+// +------------------------+------------------------+
+// |Kern|             Replacement Char               |  <- isAKern (Kern in the diagram) is false
+// +------------------------+------------------------+
+// |Kern|GoTo|      Displacement in FIX14            |  <- isAKern is true and GoTo is false => Kerning value
+// +------------------------+------------------------+
+// |Kern|GoTo|          Displacement                 |  <- isAkern and GoTo are true
+// +------------------------+------------------------+
+//
+// Up to 32765 different glyph codes can be managed through this format.
+// Kerning displacements reduced to 14 bits is not a big issue: kernings are
+// usually small numbers. FIX14 and FIX16 are using 6 bits for the fraction. Their
+// remains 8 bits for FIX14 and 10 bits for FIX16, that is more than enough... 
 //
 
+#define ORIGINAL_FORMAT 1
+#if ORIGINAL_FORMAT
 union SkipByte {
     uint8_t whole : 8;
     struct {
-        uint8_t nextStepRelative : 7;
+        uint8_t nextStepRelative : 7; // Not used
         bool stop : 1;
     } s;
 };
 
 union OpCodeByte {
     struct {
-        bool cOp : 1;
-        bool bOp : 1;
-        uint8_t aOp : 5;
-        bool isAKern : 1;
+        bool cOp : 1;       // Not used
+        bool bOp : 1;       // Not used
+        uint8_t aOp : 5;    // Not used
+        bool isAKern : 1;   // True if Kern, False if ligature
     } op;
     struct {
         uint8_t displHigh : 7;
@@ -273,16 +325,44 @@ union OpCodeByte {
 };
 
 union RemainderByte {
-    uint8_t replacementChar : 8;
+    SmallGlyphCode replacementChar : 8;
     uint8_t displLow : 8; // Ligature: replacement char code, kern: displacement
 };
 
 struct LigKernStep {
     SkipByte skip;
-    uint8_t nextChar;
+    SmallGlyphCode nextChar;
     OpCodeByte opCode;
     RemainderByte remainder;
 };
+#else
+struct Nxt {
+    GlyphCode nextGlyphCode:15;
+    bool stop:1;
+};
+union ReplDisp {
+    struct {
+      GlyphCode replGlyphCode : 15;
+      bool isAKern : 1;
+    } repl;
+    struct {
+      FIX14 kerningValue: 14;
+      bool isAGoTo : 1;
+      bool isAKern : 1;
+    } kern;
+    struct {
+      uint16_t displacement : 14;
+      bool isAGoTo : 1;
+      bool isAKern : 1;
+    } goTo;
+};
+
+struct LigKernStep {
+    Nxt a;
+    ReplDisp b;
+};
+#endif
+
 typedef LigKernStep *LigKernStepPtr;
 
 struct RLEMetrics {
@@ -292,7 +372,7 @@ struct RLEMetrics {
 };
 
 struct GlyphInfo {
-    uint8_t charCode;
+    SmallGlyphCode charCode;
     uint8_t bitmapWidth;
     uint8_t bitmapHeight;
     int8_t horizontalOffset;
@@ -308,7 +388,7 @@ typedef GlyphInfo *GlyphInfoPtr;
 
 struct GlyphMetrics {
     int16_t xoff, yoff;
-    int16_t advance;
+    FIX16 advance;
     int16_t lineHeight;
     int16_t ligatureAndKernPgmIndex;
     void clear() {
@@ -329,6 +409,20 @@ struct Glyph {
     }
 };
 
+// Latin Character Set constants
+
+const constexpr GlyphCode NO_GLYPH_CODE = 0x7FF;
+const constexpr uint16_t ACCENT_MASK = 0xF000;
+const constexpr uint8_t ACCENT_SHIFTR = 12; // Shift Right
+const constexpr uint16_t GLYPH_CODE_MASK = 0x7FF;
+
+const constexpr uint16_t CODED_GRAVE_ACCENT = 0x0F; // Special coding in the table below
+const constexpr uint16_t CODED_APOSTROPHE = 0x0E;
+const constexpr GlyphCode GRAVE_ACCENT = 0x00;
+const constexpr GlyphCode APOSTROPHE = 0x27;
+
+const constexpr GlyphCode SPACE_CODE = 0x7FE;
+
 // This table is used in support of the latin character set to identify which character code
 // correspond to which glyph code. A glyph code is an index into the IBMF list of glyphs.
 // The table allows glyphCodes between 0 and 1021 (0x7FD).
@@ -342,7 +436,7 @@ struct Glyph {
 //
 // The index in the table corresponds to UTF16 U+00A1 to U+017F character codes.
 
-const constexpr uint16_t latinTranslationSet[] = {
+const constexpr GlyphCode latinTranslationSet[] = {
     /* 0x0A1 */ 0x0020, // ¡
     /* 0x0A2 */ 0x0098, // ¢
     /* 0x0A3 */ 0x008B, // £
@@ -516,7 +610,7 @@ const constexpr uint16_t latinTranslationSet[] = {
     /* 0x146 */ 0xB06E, // ņ
     /* 0x147 */ 0x704E, // Ň
     /* 0x148 */ 0x706E, // ň
-    /* 0x149 */ 0x706E, // ŉ
+    /* 0x149 */ 0xE06E, // ŉ
     /* 0x14A */ 0x0081, // Ŋ
     /* 0x14B */ 0x0088, // ŋ
     /* 0x14C */ 0x904F, // Ō

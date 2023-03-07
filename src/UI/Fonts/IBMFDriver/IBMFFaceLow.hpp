@@ -33,14 +33,19 @@ public:
 
     ~IBMFFaceLow() {}
 
+    inline static float fromFIX16(FIX16 val) { return (float)val / 64.0; }
+    inline static FIX16 toFIX16(float val) { return (FIX16)(val * 64.0); }
+
+    // ---
+
     bool load(const MemoryPtr dataStart, const int dataLength, uint8_t chSet) {
         memset(glyphs, 0, sizeof(glyphs));
-        charSet = chSet;
 
         MemoryPtr memoryPtr = dataStart;
         MemoryPtr memoryEnd = dataStart + dataLength;
 
         faceHeader = (FaceHeaderPtr)memoryPtr;
+        charSet = chSet;
 
         if (faceHeader->glyphCount >= MAX_GLYPH_COUNT) {
             LOGE("Too many glyphs in face. Maximum is %d in IBMFDefs.h", MAX_GLYPH_COUNT);
@@ -95,14 +100,27 @@ public:
     inline uint16_t getEmHeight() const { return faceHeader->emHeight >> 6; }
     inline uint8_t getMaxHight() const { return faceHeader->maxHight; }
     inline int16_t getDescenderHeight() const { return -(int16_t)faceHeader->descenderHeight; }
-    inline const LigKernStep &getLigKern(uint8_t idx) const { return (*ligKernSteps)[idx]; }
+    inline LigKernStepPtr getLigKernStep(uint16_t idx) const { return &(*ligKernSteps)[idx]; }
     inline FIX16 getKern(uint8_t i) const { return (*kerns)[i]; }
-    inline const GlyphInfo &getGlyphInfo(uint8_t glyphCode) const { return *glyphs[glyphCode]; }
     inline void setResolution(PixelResolution res) { resolution = res; }
-    inline PixelResolution getResolution() { return resolution; }
+    inline PixelResolution getResolution() const { return resolution; }
+
+    inline const GlyphInfo &getGlyphInfo(GlyphCode glyphCode) const { return *glyphs[glyphCode]; }
+
+    inline uint16_t getLigKernPgmIndex(GlyphCode glyphCode) const {
+        LOGD("glyphCode: %d", glyphCode & GLYPH_CODE_MASK);
+        return (glyphCode & GLYPH_CODE_MASK < SPACE_CODE)
+                   ? glyphs[glyphCode & GLYPH_CODE_MASK]->ligKernPgmIndex
+                   : NO_LIG_KERN_PGM;
+    }
 
     /**
-     * @brief Translate latin in an internal glyph code
+     * @brief Translate UTF32 charCode to it's internal représentation
+     *
+     * All supported character sets must use this method to get the internal
+     * glyph code correponding to the character code
+     *
+     * Latin Char Set Translation
      *
      * The class allow for latin1+ characters to be plotted into a bitmap. As the
      * font doesn't contains all accented glyphs, a combination of glyphs must be
@@ -139,87 +157,91 @@ public:
      * @param charcode The UTF16 character code
      * @return The internal representation of a character (glyphCode)
      */
-    uint16_t translateFromLatin(char16_t charcode) const {
-        uint16_t glyphCode;
+    GlyphCode translate(char32_t charcode) const {
+        GlyphCode glyphCode;
 
-        if ((charcode > 0x20) && (charcode < 0x7F)) {
-            glyphCode = charcode; // ASCII codes No accent
-        } else if ((charcode >= 0xA1) && (charcode <= 0x1FF)) {
-            glyphCode = latinTranslationSet[charcode - 0xA1];
-        } else {
-            switch (charcode) {
-            case 0x2013:
-                glyphCode = 0x0015;
-                break; // endash
-            case 0x2014:
-                glyphCode = 0x0016;
-                break;   // emdash
-            case 0x2018: // quote left
-            case 0x02BB: // reverse apostrophe
-                glyphCode = 0x0060;
-                break;
-            case 0x2019: // quote right
-            case 0x02BC: // apostrophe
-                glyphCode = 0x0027;
-                break;
-            case 0x201C:
-                glyphCode = 0x0010;
-                break; // quoted left "
-            case 0x201D:
-                glyphCode = 0x0011;
-                break; // quoted right
-            case 0x02C6:
-                glyphCode = 0x005E;
-                break; // circumflex
-            case 0x02DA:
-                glyphCode = 0x0006;
-                break; // ring
-            case 0x02DC:
-                glyphCode = 0x007E;
-                break; // tilde ~
-            case 0x201A:
-                glyphCode = 0x000D;
-                break; // comma like ,
-            case 0x2032:
-                glyphCode = 0x0027;
-                break; // minute '
-            case 0x2033:
-                glyphCode = 0x0022;
-                break; // second "
-            case 0x2044:
-                glyphCode = 0x002F;
-                break; // fraction /
-            case 0x20AC:
-                glyphCode = 0x00AD;
-                break; // euro
-            default:
-                glyphCode = SPACE_CODE;
+        if (charSet == CharSet::LATIN_CHARACTER_SET) {
+            if ((charcode > 0x20) && (charcode < 0x7F)) {
+                glyphCode = charcode; // ASCII codes No accent
+            } else if ((charcode >= 0xA1) && (charcode <= 0x1FF)) {
+                glyphCode = latinTranslationSet[charcode - 0xA1];
+            } else {
+                switch (charcode) {
+                case 0x2013: // endash
+                    glyphCode = 0x0015;
+                    break;
+                case 0x2014: // emdash
+                    glyphCode = 0x0016;
+                    break;
+                case 0x2018: // quote left
+                case 0x02BB: // reverse apostrophe
+                    glyphCode = 0x0060;
+                    break;
+                case 0x2019: // quote right
+                case 0x02BC: // apostrophe
+                    glyphCode = 0x0027;
+                    break;
+                case 0x201C: // quoted left "
+                    glyphCode = 0x0010;
+                    break;
+                case 0x201D: // quoted right
+                    glyphCode = 0x0011;
+                    break;
+                case 0x02C6: // circumflex
+                    glyphCode = 0x005E;
+                    break;
+                case 0x02DA: // ring
+                    glyphCode = 0x0006;
+                    break;
+                case 0x02DC: // tilde ~
+                    glyphCode = 0x007E;
+                    break;
+                case 0x201A: // comma like ,
+                    glyphCode = 0x000D;
+                    break;
+                case 0x2032: // minute '
+                    glyphCode = 0x0027;
+                    break;
+                case 0x2033: // second "
+                    glyphCode = 0x0022;
+                    break;
+                case 0x2044: // fraction /
+                    glyphCode = 0x002F;
+                    break;
+                case 0x20AC: // euro
+                    glyphCode = 0x00AD;
+                    break;
+                default:
+                    glyphCode = SPACE_CODE;
+                }
             }
+        } else {
+            glyphCode = NO_GLYPH_CODE;
         }
 
         return glyphCode;
     }
 
-    bool getGlyph(char16_t charCode, Glyph &appGlyph, bool loadBitmap, bool initBitmap = true,
+    bool getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool caching = true,
                   Pos atPos = Pos(0, 0)) {
 
-        LOGD("charCode: %d, loadBitmap: %s, initBitmap: %s, pos: [%d, %d]", charCode,
-             loadBitmap ? "YES" : "NO", initBitmap ? "YES" : "NO", atPos.x, atPos.y);
+        LOGD("glyphCode: %04x, loadBitmap: %s, caching: %s, pos: [%d, %d]", glyphCode,
+             loadBitmap ? "YES" : "NO", caching ? "YES" : "NO", atPos.x, atPos.y);
 
-        uint16_t glyphCode;
         bool accentIsPresent = false;
         uint8_t accentIdx = 0;
         GlyphInfoPtr accentInfo = nullptr;
 
-        if (initBitmap) appGlyph.clear();
+        if (caching) appGlyph.clear();
 
-        if (charSet == LATIN_CHARACTER_SET) {
-            glyphCode = translateFromLatin(charCode);
-
+        if (charSet == CharSet::LATIN_CHARACTER_SET) {
             accentIsPresent = (glyphCode & ACCENT_MASK) != 0;
             if (accentIsPresent) {
                 accentIdx = (glyphCode & ACCENT_MASK) >> ACCENT_SHIFTR;
-                if (accentIdx == CODED_GRAVE_ACCENT) accentIdx = 0;
+                if (accentIdx == CODED_GRAVE_ACCENT)
+                    accentIdx = GRAVE_ACCENT;
+                else if (accentIdx == CODED_APOSTROPHE)
+                    accentIdx = APOSTROPHE;
                 accentInfo = glyphs[accentIdx];
             }
         } else if (charSet == UTF16_TABLE_SET) {
@@ -237,14 +259,12 @@ public:
         uint8_t glyphIdx = (glyphCode & GLYPH_CODE_MASK) - faceHeader->firstCode;
         if (((glyphCode & GLYPH_CODE_MASK) == NO_GLYPH_CODE) ||
             ((glyphIdx < faceHeader->glyphCount) && (glyphs[glyphIdx] == nullptr))) {
-            LOGW("No entry for char code %d (0x%x) [glyph code %d (0x%x)]", charCode, charCode,
-                 glyphCode, glyphCode);
             glyphCode = SPACE_CODE;
         }
 
         if (glyphCode == SPACE_CODE) { // send as a space character
             appGlyph.metrics.lineHeight = faceHeader->lineHeight;
-            appGlyph.metrics.advance = faceHeader->spaceSize;
+            appGlyph.metrics.advance = (int16_t)faceHeader->spaceSize << 6;
             appGlyph.pointSize = faceHeader->pointSize;
             return true;
         }
@@ -256,56 +276,67 @@ public:
         if (glyphInfo == nullptr) return false;
 
         Dim dim = Dim(glyphInfo->bitmapWidth, glyphInfo->bitmapHeight);
-        Pos offsets = Pos(0, 0);
-
-        uint8_t addedLeft = 0;
+        Pos glyphOffsets = Pos(0, 0);
+        Pos accentOffsets = Pos(0, 0);
 
         if (accentIsPresent) {
 
-            if (glyphCode == 0x276E) { // Apostrophe n
+            if (glyphCode == 0xE06E) { // Apostrophe n
                 // offsets.x = 0; // already set
-                addedLeft = accentInfo->bitmapWidth + 1 -
-                            (((faceHeader->xHeight >> 6) * faceHeader->slantCorrection) >> 6);
-                dim.width = addedLeft + glyphInfo->bitmapWidth;
+                glyphOffsets.x = accentInfo->bitmapWidth + 1 -
+                                 (((faceHeader->xHeight >> 6) * faceHeader->slantCorrection) >> 6);
+                dim.width = glyphOffsets.x + glyphInfo->bitmapWidth;
             } else {
                 // Horizontal adjustment
-                if (glyphCode == 0x0C41) { // Ą
-                    offsets.x = glyphInfo->bitmapWidth - accentInfo->bitmapWidth;
-                } else if ((glyphCode == 0x0C61) || (glyphCode == 0x0C45)) { // ą or Ę
-                    offsets.x =
+                if (glyphCode == 0xC041) { // Ą
+                    accentOffsets.x = glyphInfo->bitmapWidth - accentInfo->bitmapWidth;
+                } else if ((glyphCode == 0xC061) || (glyphCode == 0xC045)) { // ą or Ę
+                    accentOffsets.x =
                         glyphInfo->bitmapWidth - accentInfo->bitmapWidth -
                         ((((int32_t)glyphInfo->bitmapHeight) * faceHeader->slantCorrection) >> 6);
                 } else {
-                    offsets.x =
+                    accentOffsets.x =
                         ((glyphInfo->bitmapWidth > accentInfo->bitmapWidth)
                              ? ((glyphInfo->bitmapWidth - accentInfo->bitmapWidth) >> 1)
                              : 0) +
                         ((accentInfo->verticalOffset < 5)
-                             ? -(((faceHeader->xHeight >> 6) * faceHeader->slantCorrection) >> 6)
+                             ? -((faceHeader->xHeight * faceHeader->slantCorrection) >> 6)
                              : ((((int32_t)glyphInfo->bitmapHeight) *
                                  faceHeader->slantCorrection) >>
-                                6))
-                        /*- (accentInfo->horizontalOffset - glyphInfo->horizontalOffset)*/;
+                                6));
+                    /*- (accentInfo->horizontalOffset - glyphInfo->horizontalOffset)*/;
                 }
-                if ((offsets.x == 0) && (glyphInfo->bitmapWidth < accentInfo->bitmapWidth)) {
-                    addedLeft = (accentInfo->bitmapWidth - glyphInfo->bitmapWidth) >> 1;
+                if ((accentOffsets.x == 0) && (glyphInfo->bitmapWidth < accentInfo->bitmapWidth)) {
+                    glyphOffsets.x = (accentInfo->bitmapWidth - glyphInfo->bitmapWidth) >> 1;
                     dim.width = accentInfo->bitmapWidth;
                 }
-                if (dim.width < (offsets.x + accentInfo->bitmapWidth)) {
-                    dim.width = offsets.x + accentInfo->bitmapWidth;
+                if (dim.width < (accentOffsets.x + accentInfo->bitmapWidth)) {
+                    dim.width = accentOffsets.x + accentInfo->bitmapWidth;
                 }
             }
 
             // Vertical adjustment
-            if (accentInfo->verticalOffset >= (faceHeader->xHeight >> 6)) {
-                // Accents that are on top of a main glyph
-                dim.height += (accentInfo->verticalOffset - (faceHeader->xHeight >> 6));
-            } else if (accentInfo->verticalOffset < 5) {
-                // Accents below the main glyph (cedilla)
-                int16_t addedHeight = (glyphInfo->bitmapHeight - glyphInfo->verticalOffset) -
-                                      ((-accentInfo->verticalOffset) + accentInfo->bitmapHeight);
-                if (addedHeight < 0) dim.height += -addedHeight;
-                offsets.y = glyphInfo->verticalOffset - accentInfo->verticalOffset;
+            if (caching) {
+                if (accentInfo->verticalOffset >= (faceHeader->xHeight >> 6)) {
+                    // Accents that are on top of a main glyph
+                    glyphOffsets.y = accentInfo->verticalOffset - (faceHeader->xHeight >> 6);
+                    dim.height += glyphOffsets.y;
+                } else if (accentInfo->verticalOffset < 5) {
+                    // Accents below the main glyph (cedilla)
+                    int16_t addedHeightBelow =
+                        (glyphInfo->bitmapHeight - glyphInfo->verticalOffset) -
+                        ((-accentInfo->verticalOffset) + accentInfo->bitmapHeight);
+                    if (addedHeightBelow < 0) dim.height += -addedHeightBelow;
+                    accentOffsets.y = glyphInfo->verticalOffset - accentInfo->verticalOffset;
+                }
+            } else {
+                if (accentInfo->verticalOffset >= (faceHeader->xHeight >> 6)) {
+                    accentOffsets.y = -(accentInfo->verticalOffset - (faceHeader->xHeight >> 6) +
+                                        glyphInfo->verticalOffset);
+                    glyphOffsets.y = -glyphInfo->verticalOffset;
+                } else if (accentInfo->verticalOffset < 5) {
+                    glyphOffsets.y = -glyphInfo->verticalOffset;
+                }
             }
             // else if ((glyphCode == 0x1648) || (glyphCode == 0x1568)) { // Ħ or ħ
             //   offsets.y = (glyphInfo->bitmapHeight * 1) >> 2;
@@ -316,10 +347,12 @@ public:
             //   offsets.y = (glyphInfo->bitmapHeight * 1) >> 1;
             //   offsets.x = (offsets.y * faceHeader->slantCorrection) >> 6;
             // }
+        } else {
+            glyphOffsets.y = -glyphInfo->verticalOffset;
         }
 
         if (loadBitmap) {
-            if (initBitmap) {
+            if (caching) {
                 uint16_t size = (resolution == PixelResolution::ONE_BIT)
                                     ? dim.height * ((dim.width + 7) >> 3)
                                     : dim.height * dim.width;
@@ -340,33 +373,25 @@ public:
             if (glyphBitmap != nullptr) {
                 RLEExtractor rle(resolution);
 
+                Pos outPos = Pos(atPos.x + accentOffsets.x, atPos.y + accentOffsets.y);
                 if (accentIsPresent) {
                     RLEBitmapPtr accentBitmap = &bitmaps[accentIdx];
-                    Pos outPos =
-                        Pos(atPos.x + offsets.x,
-                            atPos.y - (initBitmap ? offsets.y : glyphInfo->verticalOffset));
-
                     rle.retrieveBitmap(*accentBitmap, appGlyph.bitmap, outPos,
                                        accentInfo->rleMetrics);
 
-                    offsets.y = (accentInfo->verticalOffset >= (faceHeader->xHeight >> 6))
-                                    ? (accentInfo->verticalOffset - (faceHeader->xHeight >> 6))
-                                    : 0;
-                    offsets.x = addedLeft;
+                    showBitmap(appGlyph.bitmap);
                 }
 
-                Pos outPos = Pos(atPos.x + offsets.x,
-                             atPos.y - (initBitmap ? offsets.y : glyphInfo->verticalOffset));
+                outPos = Pos(atPos.x + glyphOffsets.x, atPos.y + glyphOffsets.y);
                 rle.retrieveBitmap(*glyphBitmap, appGlyph.bitmap, outPos, glyphInfo->rleMetrics);
             }
         }
 
-        appGlyph.metrics =
-            GlyphMetrics{.xoff = (int16_t)(-(offsets.x + glyphInfo->horizontalOffset)),
-                         .yoff = (int16_t)(-(offsets.y + glyphInfo->verticalOffset)),
-                         .advance = (int16_t)((glyphInfo->advance + 32) >> 6),
-                         .lineHeight = faceHeader->lineHeight,
-                         .ligatureAndKernPgmIndex = glyphInfo->ligKernPgmIndex};
+        appGlyph.metrics = {.xoff = (int16_t) - (glyphOffsets.x + glyphInfo->horizontalOffset),
+                            .yoff = (int16_t) - (glyphOffsets.y + glyphInfo->verticalOffset),
+                            .advance = glyphInfo->advance,
+                            .lineHeight = faceHeader->lineHeight,
+                            .ligatureAndKernPgmIndex = glyphInfo->ligKernPgmIndex};
 
         // showGlyph(appGlyph, glyphCode & 0xFF);
         return true;
@@ -377,7 +402,7 @@ public:
             uint32_t row, col;
             MemoryPtr rowPtr;
 
-            std::cout << '+';
+            std::cout << "   +";
             for (col = 0; col < bitmap.dim.width; col++)
                 std::cout << '-';
             std::cout << '+' << std::endl;
@@ -386,7 +411,7 @@ public:
                 uint32_t rowSize = (bitmap.dim.width + 7) >> 3;
                 for (row = 0, rowPtr = bitmap.pixels; row < bitmap.dim.height;
                      row++, rowPtr += rowSize) {
-                    std::cout << '|';
+                    std::cout << "   |";
                     for (col = 0; col < bitmap.dim.width; col++) {
                         if constexpr (BLACK_ONE_BIT) {
                             std::cout << ((rowPtr[col >> 3] & (0x80 >> (col & 7))) ? 'X' : ' ');
@@ -401,7 +426,7 @@ public:
                 uint32_t rowSize = bitmap.dim.width;
                 for (row = 0, rowPtr = bitmap.pixels; row < bitmap.dim.height;
                      row++, rowPtr += rowSize) {
-                    std::cout << '|';
+                    std::cout << "   |";
                     for (col = 0; col < bitmap.dim.width; col++) {
                         if constexpr (BLACK_EIGHT_BITS) {
                             std::cout << ((rowPtr[col] == BLACK_EIGHT_BITS) ? 'X' : ' ');
@@ -414,7 +439,7 @@ public:
                 }
             }
 
-            std::cout << '+';
+            std::cout << "   +";
             for (col = 0; col < bitmap.dim.width; col++) {
                 std::cout << '-';
             }
@@ -422,7 +447,7 @@ public:
         }
     }
 
-    void showGlyph(const Glyph &glyph, uint16_t glyphCode, char16_t charCode = ' ') const {
+    void showGlyph(const Glyph &glyph, GlyphCode glyphCode, char16_t charCode = ' ') const {
         if constexpr (DEBUG) {
             std::wcout << "Glyph Base Code: 0x" << std::hex << glyphCode << std::dec << "("
                        << charCode << ")" << std::endl
@@ -441,7 +466,7 @@ public:
 
     void showGlyph2(const Glyph &glyph, char16_t charCode) const { showGlyph(glyph, 0, charCode); }
 
-    void showGlyphInfo(uint16_t i, GlyphInfo &g) const {
+    void showGlyphInfo(GlyphCode i, GlyphInfo &g) const {
         if constexpr (DEBUG) {
             std::cout << "  [" << i << "]: "
                       << "charCode : " << +g.charCode << ", width: " << +g.bitmapWidth

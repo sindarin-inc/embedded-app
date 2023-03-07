@@ -31,7 +31,7 @@ public:
 
         initialized = load(fontData, length);
         if (!initialized) {
-            log_e("%s: Font data not recognized!", TAG);
+            LOGE("Font data not recognized!");
         }
     }
 
@@ -52,14 +52,14 @@ public:
         preamble = (Preamble *)data;
         data += sizeof(Preamble);
 
-        LOGI("IBMFFont: Loading font at location 0x%p of length %d", fontData, length);
+        LOGI("Loading font at location 0x%p of length %d", fontData, length);
 
         if (strncmp("IBMF", preamble->marker, 4) != 0) {
-            log_e("IBMFFont: Preamble in error: IBMF marker absent!!");
+            LOGE("Preamble in error: IBMF marker absent!!");
             return false;
         }
         if (preamble->bits.version != IBMF_VERSION) {
-            LOGE("IBMFFont: Font is of a wrong version. Expected V4, got V%d",
+            LOGE("Font is of a wrong version. Expected V4, got V%d",
                  preamble->bits.version);
             return false;
         }
@@ -78,7 +78,7 @@ public:
 
         for (int i = 0; i < preamble->faceCount; i++) {
             if (!faces[i].load(fontData + binFaceOffsets[i], binFaceLengths[i], getCharSet())) {
-                LOGE("IBMFFont: Unable to load face %d", i);
+                LOGE("Unable to load face %d", i);
                 return false;
             }
         }
