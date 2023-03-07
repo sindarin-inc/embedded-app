@@ -78,3 +78,5 @@ uint32_t getHeapSize();
 void enableCore0WDT();
 
 void disableCore0WDT();
+
+void hardwareInit();
