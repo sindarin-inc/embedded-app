@@ -21,6 +21,7 @@
 #include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
+#include "Misc/Interrupt/FunctionalInterrupt.h"
 #include "Models/Readable.hpp"
 #include "Storage/CrashReportWriter.hpp"
 #include "Storage/LocalStore.hpp"
@@ -515,14 +516,11 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         bootErrors.push_back({.type = BootError::Type::LowPowerOscillator});
     }
 
-// mhill TODO: fix interrupt
-/*
-#ifdef USB_CONNECTED_PIN
-    attachInterrupt(
-        digitalPinToInterrupt(USB_CONNECTED_PIN),
-        []() { xTaskNotify(powerTaskHandle, 0, eNoAction); }, CHANGE);
-#endif
-*/
+    #ifdef USB_CONNECTED_PIN
+        attachInterrupt(
+            digitalPinToInterrupt(USB_CONNECTED_PIN),
+            []() { xTaskNotify(powerTaskHandle, 0, eNoAction); }, CHANGE);
+    #endif
 #endif
 
     // set current boot id
