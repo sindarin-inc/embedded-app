@@ -33,6 +33,10 @@
 #define MALLOC_CAP_SPIRAM           (1<<10) ///< Memory must be in SPI RAM
 #define MALLOC_CAP_INTERNAL         (1<<11) ///< Memory must be internal; specifically it should not disappear when flash/spiram cache is switched off
 
+#define ENCRYPTED_BLOCK_SIZE 16
+
+#define U_FLASH 0
+
 #define digitalPinToInterrupt(p)    (((p)<48)?(p):-1)
 
 void InitializePlatform();
