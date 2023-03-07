@@ -382,6 +382,24 @@ static void wiFiEspTaskEventCb(void *arg, esp_event_base_t eventBase, int32_t ev
     }
 }
 
+BaseType_t xTaskCreateUniversal( TaskFunction_t pxTaskCode,
+                        const char * const pcName,
+                        const uint32_t usStackDepth,
+                        void * const pvParameters,
+                        UBaseType_t uxPriority,
+                        TaskHandle_t * const pxCreatedTask,
+                        const BaseType_t xCoreID ){
+#ifndef CONFIG_FREERTOS_UNICORE
+    if(xCoreID >= 0 && xCoreID < 2) {
+        return xTaskCreatePinnedToCore(pxTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pxCreatedTask, xCoreID);
+    } else {
+#endif
+    return xTaskCreate(pxTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pxCreatedTask);
+#ifndef CONFIG_FREERTOS_UNICORE
+    }
+#endif
+}
+
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
 /*!
@@ -417,14 +435,9 @@ auto WiFiEspTaskStartNetworkEventTask() -> bool {
     }
 
     if (!_wifiesp_event_task_handle) {
-        // mhill TODO: check on this
-        /*
         xTaskCreateUniversal(wiFiEspTaskEventTask, "wifiesp_events", WIFIESP_TASK_STACKSIZE,
                              nullptr, ESP_TASKD_EVENT_PRIO - 1, &_wifiesp_event_task_handle,
                              WIFIESP_TASK_CORENUMBER);
-        */
-        xTaskCreate(wiFiEspTaskEventTask, "wifiesp_events", WIFIESP_TASK_STACKSIZE,
-                             nullptr, ESP_TASKD_EVENT_PRIO - 1, &_wifiesp_event_task_handle);
         if (!_wifiesp_event_task_handle) {
             log_e("Network Event Task Start Failed!");
             return false;
