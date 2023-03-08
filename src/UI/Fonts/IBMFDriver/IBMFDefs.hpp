@@ -67,7 +67,31 @@ extern char * formatStr(const std::string &format, ...);
 //             .
 //             .
 //
-
+// The new upcoming format (Version 5) is the following:
+//
+// 
+//  +--------------------+
+//  |                    |  Preamble
+//  |                    |
+//  +--------------------+
+//  |   Unicode Table    |  The table of all  unicode glyphs part of this font
+//  |                    |
+//  |                    |
+//  |                    |
+//  +--------------------+
+//  |     FaceHeaders    |  All face headers are combined in a single table
+//  |                    |
+//  |                    |
+//  |                    |
+//  +--------------------+
+//  |   Glyphs metrics   | All glyphs metrics of all fonts
+//  |                    |
+//  |                    |
+//  |                    |
+//  |                    |
+//  |                    |
+//  +--------------------+
+//
 namespace IBMFDefs {
 
 #define LOGI(format, ...) log_i(format, ##__VA_ARGS__)
@@ -113,9 +137,9 @@ const constexpr uint8_t MAX_FACE_COUNT = 10;
 
 const constexpr uint8_t NO_LIG_KERN_PGM = 0xFF;
 
-// Character Sets being supported (the UTF16_TABLE_SET is forecoming)
+// Character Sets being supported (the UTF32 is forecoming)
 
-enum CharSet : uint8_t { LATIN_CHARACTER_SET = 0, UTF16_TABLE_SET = 1 };
+enum FontFormat : uint8_t { LATIN = 0, UTF32 = 1, UNKNOWN = 7 };
 
 enum class PixelResolution : uint8_t { ONE_BIT, EIGHT_BITS };
 
@@ -169,6 +193,7 @@ typedef Bitmap *BitmapPtr;
 // FIX16 is a floating point value in fixed point notation, 6 bits of fraction
 
 typedef int16_t FIX16;
+typedef int16_t FIX14;
 typedef uint16_t GlyphCode;
 typedef uint8_t SmallGlyphCode;
 
@@ -177,7 +202,7 @@ struct Preamble {
     uint8_t faceCount;
     struct {
         uint8_t version : 5; // Must be IBMF_VERSION
-        CharSet charSet : 3;
+        FontFormat fontFormat : 3;
     } bits;
 };
 typedef Preamble *PreamblePtr;

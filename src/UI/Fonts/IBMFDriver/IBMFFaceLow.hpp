@@ -19,7 +19,7 @@ private:
     static constexpr char const *TAG = "IBMFFaceLow";
 
     bool initialized;
-    uint8_t charSet;
+    FontFormat fontFormat;
     PixelResolution resolution;
 
     FaceHeaderPtr faceHeader;
@@ -29,23 +29,28 @@ private:
     FIX16 (*kerns)[];
 
 public:
-    IBMFFaceLow() : initialized(false), charSet(0), resolution(default_resolution) {}
+    IBMFFaceLow()
+        : initialized(false), fontFormat(FontFormat::UNKNOWN), resolution(default_resolution) {}
 
     ~IBMFFaceLow() {}
 
     inline static float fromFIX16(FIX16 val) { return (float)val / 64.0; }
     inline static FIX16 toFIX16(float val) { return (FIX16)(val * 64.0); }
+    inline static FIX16 toFIX16(FIX14 val) {
+        return (FIX16)(((val & 0x4000) == 0) ? val : (val | 0xC000));
+    }
+    inline static float fromFIX14(FIX14 val) { return (float)toFIX16(val) / 64.0; }
 
     // ---
 
-    bool load(const MemoryPtr dataStart, const int dataLength, uint8_t chSet) {
+    bool load(const MemoryPtr dataStart, const int dataLength, FontFormat fontFmt) {
         memset(glyphs, 0, sizeof(glyphs));
 
         MemoryPtr memoryPtr = dataStart;
         MemoryPtr memoryEnd = dataStart + dataLength;
 
         faceHeader = (FaceHeaderPtr)memoryPtr;
-        charSet = chSet;
+        fontFormat = fontFmt;
 
         if (faceHeader->glyphCount >= MAX_GLYPH_COUNT) {
             LOGE("Too many glyphs in face. Maximum is %d in IBMFDefs.h", MAX_GLYPH_COUNT);
@@ -108,7 +113,7 @@ public:
     inline const GlyphInfo &getGlyphInfo(GlyphCode glyphCode) const { return *glyphs[glyphCode]; }
 
     inline uint16_t getLigKernPgmIndex(GlyphCode glyphCode) const {
-        LOGD("glyphCode: %d", glyphCode & GLYPH_CODE_MASK);
+        // LOGD("glyphCode: %d", glyphCode & GLYPH_CODE_MASK);
         return (glyphCode & GLYPH_CODE_MASK < SPACE_CODE)
                    ? glyphs[glyphCode & GLYPH_CODE_MASK]->ligKernPgmIndex
                    : NO_LIG_KERN_PGM;
@@ -160,7 +165,7 @@ public:
     GlyphCode translate(char32_t charcode) const {
         GlyphCode glyphCode;
 
-        if (charSet == CharSet::LATIN_CHARACTER_SET) {
+        if (fontFormat == FontFormat::LATIN) {
             if ((charcode > 0x20) && (charcode < 0x7F)) {
                 glyphCode = charcode; // ASCII codes No accent
             } else if ((charcode >= 0xA1) && (charcode <= 0x1FF)) {
@@ -225,8 +230,8 @@ public:
     bool getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool caching = true,
                   Pos atPos = Pos(0, 0)) {
 
-        LOGD("glyphCode: %04x, loadBitmap: %s, caching: %s, pos: [%d, %d]", glyphCode,
-             loadBitmap ? "YES" : "NO", caching ? "YES" : "NO", atPos.x, atPos.y);
+        // LOGD("glyphCode: %04x, loadBitmap: %s, caching: %s, pos: [%d, %d]", glyphCode,
+        //      loadBitmap ? "YES" : "NO", caching ? "YES" : "NO", atPos.x, atPos.y);
 
         bool accentIsPresent = false;
         uint8_t accentIdx = 0;
@@ -234,7 +239,7 @@ public:
 
         if (caching) appGlyph.clear();
 
-        if (charSet == CharSet::LATIN_CHARACTER_SET) {
+        if (fontFormat == FontFormat::LATIN) {
             accentIsPresent = (glyphCode & ACCENT_MASK) != 0;
             if (accentIsPresent) {
                 accentIdx = (glyphCode & ACCENT_MASK) >> ACCENT_SHIFTR;
@@ -244,16 +249,16 @@ public:
                     accentIdx = APOSTROPHE;
                 accentInfo = glyphs[accentIdx];
             }
-        } else if (charSet == UTF16_TABLE_SET) {
+        } else if (fontFormat == FontFormat::UTF32) {
             // Next release of the IBMF file format will have a table to support
             // direct usage of predefined UTF-16 characters. Up to 1022 characters
             // will be possible, unless extended to use more space in memory.
             //
-            // It will be known as UTF16_TABLE_SET
-            LOGW("Support for UTF16_TABLE_SET not ready.");
+            // It will be known as UTF32
+            LOGW("Support for UTF32 not ready.");
             return false;
         } else {
-            LOGE("Unknown character set: %d", charSet);
+            LOGE("Unknown character set: %d", fontFormat);
         }
 
         uint8_t glyphIdx = (glyphCode & GLYPH_CODE_MASK) - faceHeader->firstCode;
@@ -351,6 +356,11 @@ public:
             glyphOffsets.y = -glyphInfo->verticalOffset;
         }
 
+        if (!caching) {
+            glyphOffsets.x -= glyphInfo->horizontalOffset;
+            accentOffsets.x -= glyphInfo->horizontalOffset;
+        }
+
         if (loadBitmap) {
             if (caching) {
                 uint16_t size = (resolution == PixelResolution::ONE_BIT)
@@ -387,11 +397,12 @@ public:
             }
         }
 
-        appGlyph.metrics = {.xoff = (int16_t) - (glyphOffsets.x + glyphInfo->horizontalOffset),
-                            .yoff = (int16_t) - (glyphOffsets.y + glyphInfo->verticalOffset),
-                            .advance = glyphInfo->advance,
-                            .lineHeight = faceHeader->lineHeight,
-                            .ligatureAndKernPgmIndex = glyphInfo->ligKernPgmIndex};
+        appGlyph.metrics = {
+            .xoff = (int16_t) - (glyphOffsets.x + ((caching) ? glyphInfo->horizontalOffset : 0)),
+            .yoff = (int16_t) - (glyphOffsets.y + ((caching) ? glyphInfo->verticalOffset : 0)),
+            .advance = glyphInfo->advance,
+            .lineHeight = faceHeader->lineHeight,
+            .ligatureAndKernPgmIndex = glyphInfo->ligKernPgmIndex};
 
         // showGlyph(appGlyph, glyphCode & 0xFF);
         return true;

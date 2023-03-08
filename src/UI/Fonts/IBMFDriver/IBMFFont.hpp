@@ -140,7 +140,7 @@ public:
 
             ligKernUTF8Map(line, [this, &glyph, &atPos](GlyphCode glyphCode, FIX16 kern) {
                 if (this->face->getGlyph(glyphCode, glyph, true, false, atPos)) {
-                    atPos.x += (glyph.metrics.advance + kern) >> 6;
+                    atPos.x += (glyph.metrics.advance + kern + 32) >> 6;
                 } else {
                     LOGW("Unable to retrieve glyph for glyphCode %d", glyphCode);
                 }
@@ -190,9 +190,10 @@ public:
             ligKernUTF8Map(buffer, [this, &width](GlyphCode glyphCode, FIX16 kern) {
                 IBMFDefs::Glyph glyph;
                 if (face->getGlyph(glyphCode, glyph, false)) { // retrieves only the metrics
-                    LOGD("Advance value: %f, yoff value: %d",
-                         IBMFFaceLow::fromFIX16(glyph.metrics.advance), glyph.metrics.yoff);
-                    width += (glyph.metrics.advance + kern) >> 6;
+                    LOGD("Advance value: %f, kern: %f",
+                         IBMFFaceLow::fromFIX16(glyph.metrics.advance),
+                         IBMFFaceLow::fromFIX16(kern));
+                    width += (glyph.metrics.advance + kern + 32) >> 6;
                 } else {
                     LOGW("Unable to retrieve glyph for glyphCode %d", glyphCode);
                 }
@@ -217,7 +218,7 @@ public:
             // }
             height = face->getEmHeight();
         }
-        LOGD("IBMFFont: TextHeight: %d", height);
+        LOGD("TextHeight: %d", height);
         return height;
     }
 };
