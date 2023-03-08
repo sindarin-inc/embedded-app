@@ -9,8 +9,10 @@
 
 #include "sindarin-debug.h"
 
+// esp_clk methods are deprecated in IDF 5+
+// TODO: replace
 extern "C" {
-#include <esp32/clk.h>
+#include "esp_private/esp_clk.h"
 }
 
 static const DRAM_ATTR uint8_t CLEAR_PACKET[48] = {

@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <string>
 
+#include "esp_eth_driver.h"
 #include "esp_smartconfig.h"
 #include "wifi_provisioning/manager.h"
 

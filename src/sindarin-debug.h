@@ -17,8 +17,10 @@
 #define PROFILE_END_LOG_NS(identifier)
 
 #else
+// esp_clk methods are deprecated in IDF 5+
+// TODO: replace
 extern "C" {
-#include <esp32/clk.h>
+#include "esp_private/esp_clk.h"
 }
 
 #include "esp_log.h"
