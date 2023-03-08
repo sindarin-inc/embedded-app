@@ -8,6 +8,7 @@
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
+#include <soc/rtc.h>
 
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/SindarinWiFi.hpp"
@@ -416,7 +417,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     initialRect.width = prefs.rectW.get().value_or(myDisplay.defaultBoundingBox.width);
     initialRect.height = prefs.rectH.get().value_or(myDisplay.defaultBoundingBox.height);
 
-    log_d("Initial bounding box is %d %d %d %d", initialRect.x, initialRect.y, initialRect.width,
+    log_d("Initial bounding box is %ld %ld %ld %ld", initialRect.x, initialRect.y, initialRect.width,
           initialRect.height);
     myDisplay.setBoundingBox(initialRect);
     myDisplay.setLineSpacing(prefs.lineSpacing.get().value_or(0));

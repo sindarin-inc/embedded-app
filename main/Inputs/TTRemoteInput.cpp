@@ -146,6 +146,9 @@ void TTRemoteInput::scanForDevice() {
         log_d("Scanning for any available TurnTouch...");
     }
     BLEScan *scan = BLEDevice::getScan();
+
+    // mhill TODO: update scan api and get this working again
+    /*
     scan->setAdvertisedDeviceCallbacks(&advertisedDeviceCallbacks_);
     // See: https://electronics.stackexchange.com/a/359158/16459
     // Only one advertising channel is being looked at during each
@@ -156,6 +159,7 @@ void TTRemoteInput::scanForDevice() {
     scan->setWindow(30);
     scan->setActiveScan(true);
     scan->start((int)(RESCAN_INTERVAL_MS / 1000), nullptr, false);
+    */
     lastScanMs_ = millis();
     digitalWrite(BLUE_LED, LED_OFF);
 }

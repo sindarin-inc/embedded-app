@@ -155,7 +155,7 @@ bool UpdateClass::begin(size_t size, int command, int ledPin, uint8_t ledOn, con
         size = _partition->size;
     } else if(size > _partition->size){
         _error = UPDATE_ERROR_SIZE;
-        log_e("too large %u > %u", size, _partition->size);
+        log_e("too large %u > %lu", size, _partition->size);
         return false;
     }
 

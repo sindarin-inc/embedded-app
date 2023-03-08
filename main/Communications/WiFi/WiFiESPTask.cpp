@@ -41,6 +41,7 @@
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_system.h"
+#include "esp_mac.h"
 //#include "esp_wpa2.h"
 #include "nvs_flash.h"
 // RTOS Lib
@@ -211,7 +212,7 @@ static void wiFiEspTaskEventCb(void *arg, esp_event_base_t eventBase, int32_t ev
          * */
     } else if (eventBase == WIFI_EVENT && eventId == WIFI_EVENT_SCAN_DONE) {
         auto *event = (wifi_event_sta_scan_done_t *)eventData;
-        log_v("SCAN Done: ID: %u, Status: %u, Results: %u", event->scan_id, event->status,
+        log_v("SCAN Done: ID: %u, Status: %lu, Results: %u", event->scan_id, event->status,
               event->number);
         wifiespEvent.eventId = WIFIESP_EVENT_WIFI_SCAN_DONE;
         memcpy(&wifiespEvent.eventInfo.wifiScanDone, eventData, sizeof(wifi_event_sta_scan_done_t));

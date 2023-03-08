@@ -45,6 +45,10 @@ HttpClient::HttpClient(const char *url, const char *contentType, esp_http_client
                 log_d("HTTP_EVENT_DISCONNECTED");
                 thisPtr->connected = false;
                 break;
+            case HTTP_EVENT_REDIRECT:
+                // should not happen, because disable_auto_redirect in the client is not set
+                log_d("HTTP_EVENT_REDIRECT");
+                break;
             }
             return ESP_OK;
         },

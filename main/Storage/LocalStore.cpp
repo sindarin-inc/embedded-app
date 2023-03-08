@@ -156,7 +156,7 @@ auto LocalStore::changedReadablePlacemarkQueryParams(const ReadablesVector &read
         bool changed = prefs_.readablePlaceChanged.get(readable.shortenedUuid.c_str());
         if (changed) {
             uint32_t place = prefs_.readablePlace.get(readable.shortenedUuid.c_str());
-            log_i("Placemark on readable %s %s has changed to %d", readable.title.c_str(),
+            log_i("Placemark on readable %s %s has changed to %ld", readable.title.c_str(),
                   readable.uuid.c_str(), place);
             placemarks.push_back(StringFormat("&%s_placemark_%s=%d", ToString(modelType).c_str(),
                                               readable.uuid.c_str(), place));
@@ -219,7 +219,7 @@ auto LocalStore::changedReadablesBookmarksJson() -> std::pair<char *, int> {
                 std::unordered_map<uint32_t, uint32_t> bookmarksToDelete;
                 LocalBookmark bookmark;
                 while (ReadOneBookmark(bookmarkFile, bookmark)) {
-                    log_d("Bookmark: %d %d %d", bookmark.firstPlace, bookmark.lastPlace,
+                    log_d("Bookmark: %ld %ld %d", bookmark.firstPlace, bookmark.lastPlace,
                           bookmark.status);
 
                     if (bookmark.status == BOOKMARK_ON &&
@@ -279,15 +279,15 @@ auto LocalStore::processReadablePlacemarksFromServer(const Readable &readable,
         return false;
     } else if (placemark > onDevicePlace && !changed) {
         // Placemark on server is further than on the device, so update to the server value
-        log_i("Updating placemark for \"%s\" from device value of %d to server "
-              "value of %d",
+        log_i("Updating placemark for \"%s\" from device value of %ld to server "
+              "value of %ld",
               readable.title.c_str(), onDevicePlace, placemark);
         prefs_.readablePlace.set(readable.shortenedUuid.c_str(), placemark);
         return true;
     } else if (placemark != 0) {
         // Placemark on server is less than on the device, so don't update to the server value
-        log_i("Not updating placemark for \"%s\" from device value of %d to server "
-              "value of %d. Changed: %d",
+        log_i("Not updating placemark for \"%s\" from device value of %ld to server "
+              "value of %ld. Changed: %d",
               readable.title.c_str(), onDevicePlace, placemark, changed);
         return false;
     }
@@ -428,7 +428,7 @@ void LocalStore::syncFromRemote(
 
             if (this->processReadablePlacemarksFromServer(userReadable.readable,
                                                           userReadable.placemark)) {
-                log_i("Placemark for %s updated to %d", userReadable.readable.title.c_str(),
+                log_i("Placemark for %s updated to %ld", userReadable.readable.title.c_str(),
                       userReadable.placemark);
             }
 
@@ -459,14 +459,14 @@ void LocalStore::syncFromRemote(
 
         // Look through all the articles, deleting archived ones and downloading new ones
         for (auto &userReadable : checkSyncResponse.userArticles) {
-            log_d("Fetched user article: %s (%zu bytes, placemark: %d)",
+            log_d("Fetched user article: %s (%zu bytes, placemark: %ld)",
                   userReadable.readable.title.c_str(), (size_t)userReadable.readable.content.size(),
                   userReadable.placemark);
             SHOW_HEAP();
 
             if (this->processReadablePlacemarksFromServer(userReadable.readable,
                                                           userReadable.placemark)) {
-                log_i("Placemark for %s updated to %d", userReadable.readable.title.c_str(),
+                log_i("Placemark for %s updated to %ld", userReadable.readable.title.c_str(),
                       userReadable.placemark);
             }
 

@@ -42,7 +42,7 @@ extern "C" {
 #endif
 
 #define SHOW_HEAP()                                                                                \
-    log_d("Free heap: %dk/%dk Free PSRAM: %zuk/%zuk %s:%d ", heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1000,             \
+    log_d("Free heap: %dk/%ldk Free PSRAM: %zuk/%zuk %s:%d ", heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1000,             \
           getHeapSize() / 1000, heap_caps_get_free_size(MALLOC_CAP_8BIT) / 1000,               \
           heap_caps_get_total_size(MALLOC_CAP_8BIT) / 1000, __FILE__, __LINE__)
 
@@ -73,12 +73,12 @@ extern "C" {
     CYCLES_TO_NS(profileEnd##identifier - profileStart##identifier)
 
 #define PROFILE_LOG_MS(identifier)                                                                 \
-    log_d("PROFILE_LOG_MS(" #identifier ") %.0fms (%u-%u=%u cycles)",                              \
+    log_d("PROFILE_LOG_MS(" #identifier ") %.0fms (%lu-%lu=%lu cycles)",                           \
           PROFILE_CALCULATE_MS(identifier), profileEnd##identifier, profileStart##identifier,      \
           profileEnd##identifier - profileStart##identifier)
 
 #define PROFILE_LOG_US(identifier)                                                                 \
-    log_d("PROFILE_LOG_US(" #identifier ") %.0fus (%u-%u=%u cycles)",                              \
+    log_d("PROFILE_LOG_US(" #identifier ") %.0fus (%lu-%lu=%lu cycles)",                           \
           PROFILE_CALCULATE_US(identifier), profileEnd##identifier, profileStart##identifier,      \
           profileEnd##identifier - profileStart##identifier)
 
