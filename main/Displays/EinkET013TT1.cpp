@@ -162,7 +162,7 @@ void EinkET013TT1::init() {
 void EinkET013TT1::setVcom(int mV) {
     mV = std::clamp(mV, -5600, 0);
     vcomInMV_ = mV;
-    log_d("Setting VCOM to %d mV (register 0x9 = %d)", vcomInMV_,
+    log_d("Setting VCOM to %ld mV (register 0x9 = %ld)", vcomInMV_,
           ((5600 + vcomInMV_) * 255) / 5600);
 }
 

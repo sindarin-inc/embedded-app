@@ -69,7 +69,7 @@ void BLEImprov::setState(BLEImprovState state) {
         this->setError(improv::ERROR_NONE, false);
         improvState = improv::STATE_PROVISIONED;
     }
-    log_d("Switched improv state to %d (internal state = %d)", improvState, state);
+    log_d("Switched improv state to %d (internal state = %ld)", improvState, state);
     SHOW_HEAP();
 #if !defined(DISABLE_IMPROV)
     this->currentStateCharacteristic_->setValue(improvState);

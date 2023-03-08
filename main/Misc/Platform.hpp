@@ -39,6 +39,8 @@
 
 #define digitalPinToInterrupt(p)    (((p)<48)?(p):-1)
 
+#define ESP_IMAGE_HEADER_MAGIC 0xE9 /*!< The magic word for the esp_image_header_t structure. */
+
 void InitializePlatform();
 
 auto GetBatteryVoltageLeft() -> float;

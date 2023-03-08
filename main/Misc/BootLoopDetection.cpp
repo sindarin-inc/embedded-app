@@ -1,4 +1,5 @@
 #include "BootLoopDetection.hpp"
+#include "Misc/Platform.hpp"
 
 #if SIMULATOR
 
@@ -77,10 +78,10 @@ auto OpenBootInfo(nvs_handle_t *handle) -> bool {
 }
 
 auto SetPanicBootCount(nvs_handle_t handle, uint32_t bootCount) -> bool {
-    log_i("Setting panic-count to %d", bootCount);
+    log_i("Setting panic-count to %ld", bootCount);
     esp_err_t err = nvs_set_u32(handle, "panic-count", bootCount);
     if (err != ESP_OK) {
-        log_e("Could not set panic-count to %d with error: %s ", bootCount, esp_err_to_name(err));
+        log_e("Could not set panic-count to %ld with error: %s ", bootCount, esp_err_to_name(err));
         return false;
     }
 

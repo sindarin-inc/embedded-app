@@ -2,6 +2,7 @@
 
 #include <driver/i2c.h>
 #include <esp_log.h>
+#include <freertos/FreeRTOS.h>
 
 #include "sindarin-debug.h"
 

@@ -4,7 +4,12 @@
 #include <driver/i2c.h>
 #include <driver/ledc.h>
 #include <driver/uart.h>
+
+// esp_adc_cal.h deprecated in IDF 5
+// TODO: replace
 #include <esp_adc_cal.h>
+#include <driver/adc.h>
+
 #include <esp_err.h>
 #include <soc/rtc.h>
 #include <esp_sleep.h>

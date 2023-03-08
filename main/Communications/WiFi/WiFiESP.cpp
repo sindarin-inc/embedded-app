@@ -45,6 +45,7 @@
 #include "esp_system.h"
 #include "esp_wpa2.h"
 #include "nvs_flash.h"
+#include "apps/dhcpserver/dhcpserver.h"
 // RTOS Lib
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
@@ -1718,9 +1719,12 @@ auto CWiFiESP::setEspInterfaceIp(esp_interface_t interface, wifiesp_ip4address l
         // RCOOK REPAIR
         // log_v("DHCP Server Range: %s to %s", IPAddress(lease.start_ip.addr).toString().c_str(),
         //       IPAddress(lease.end_ip.addr).toString().c_str());
-        err = tcpip_adapter_dhcps_option((tcpip_adapter_dhcp_option_mode_t)TCPIP_ADAPTER_OP_SET,
-                                         (tcpip_adapter_dhcp_option_id_t)REQUESTED_IP_ADDRESS,
-                                         (void *)&lease, sizeof(dhcps_lease_t));
+        err = esp_netif_dhcps_option(espNetif, 
+                                     (esp_netif_dhcp_option_mode_t)ESP_NETIF_OP_SET, 
+                                     (esp_netif_dhcp_option_id_t)ESP_NETIF_REQUESTED_IP_ADDRESS, 
+                                     (void*)&lease,
+                                     sizeof(dhcps_lease_t));
+
         if (err) {
             log_e("DHCPS Set Lease Failed! 0x%04x", err);
             return err;
