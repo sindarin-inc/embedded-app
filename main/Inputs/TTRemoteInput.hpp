@@ -101,8 +101,8 @@ protected:
             enclosed->state_ = CONNECTED;
         }
 
-        void onDisconnect(BLEClient *client, int reason) override {
-            log_w("BLE TurnTouch client disconnected! reason %d", reason);
+        void onDisconnect(BLEClient *client) override {
+            log_w("BLE TurnTouch client disconnected!");
             enclosed->state_ = SCANNING;
             enclosed->turntouchDevice_ = nullptr;
         }

@@ -20,7 +20,7 @@ protected:
 
         CharacteristicCallbacks(BLERemoteInput *enclosure) { enclosed = enclosure; }
 
-        void onWrite(BLECharacteristic *characteristic, NimBLEConnInfo& connInfo) override {
+        void onWrite(BLECharacteristic *characteristic) override {
             std::string value = characteristic->getValue();
             uint8_t messageSize = value.length();
             if (messageSize == 1) {

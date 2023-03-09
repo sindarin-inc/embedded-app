@@ -21,8 +21,8 @@ protected:
     class ServerCallbacks : public BLEServerCallbacks {
     public:
         ServerCallbacks() = default;
-        void onConnect(BLEServer *server, NimBLEConnInfo& connInfo) override { log_i("BLE client connected to our server!"); }
-        void onDisconnect(BLEServer *server, NimBLEConnInfo& connInfo, int reason) override {
+        void onConnect(BLEServer *server) override { log_i("BLE client connected to our server!"); }
+        void onDisconnect(BLEServer *server) override {
             log_i("BLE client disconnected from our server!");
         }
     };

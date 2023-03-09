@@ -56,7 +56,7 @@ protected:
 
         CharacteristicCallbacks(BLEImprov *enclosure) { enclosed = enclosure; }
 
-        void onWrite(BLECharacteristic *characteristic, NimBLEConnInfo& connInfo) override {
+        void onWrite(BLECharacteristic *characteristic) override {
             log_d("onWrite for Characteristic %s", characteristic->getUUID().toString().c_str());
             if (characteristic->getUUID().equals(BLEUUID(improv::RPC_COMMAND_UUID))) {
                 std::string value = characteristic->getValue();

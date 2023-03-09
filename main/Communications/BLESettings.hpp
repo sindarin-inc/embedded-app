@@ -36,7 +36,7 @@ protected:
 
         CharacteristicCallbacks(BLESettings *enclosure) { enclosed = enclosure; }
 
-        void onWrite(BLECharacteristic *characteristic, NimBLEConnInfo& connInfo) override {
+        void onWrite(BLECharacteristic *characteristic) override {
             std::string value = characteristic->getValue();
             if (value.length() == 0) {
                 return;
