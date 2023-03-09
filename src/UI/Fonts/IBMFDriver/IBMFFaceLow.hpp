@@ -114,7 +114,7 @@ public:
 
     inline uint16_t getLigKernPgmIndex(GlyphCode glyphCode) const {
         // LOGD("glyphCode: %d", glyphCode & GLYPH_CODE_MASK);
-        return (glyphCode & GLYPH_CODE_MASK < SPACE_CODE)
+        return ((glyphCode & GLYPH_CODE_MASK) < SPACE_CODE)
                    ? glyphs[glyphCode & GLYPH_CODE_MASK]->ligKernPgmIndex
                    : NO_LIG_KERN_PGM;
     }

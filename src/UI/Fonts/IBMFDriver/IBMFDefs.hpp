@@ -12,7 +12,7 @@
 #include <cstdio>
 #include <string>
 
-extern char * formatStr(const std::string &format, ...);
+extern char *formatStr(const std::string &format, ...);
 
 #define log_i(format, ...) std::cout << "INFO: " << formatStr(format, ##__VA_ARGS__) << std::endl;
 #define log_w(format, ...)                                                                         \
@@ -69,7 +69,8 @@ extern char * formatStr(const std::string &format, ...);
 //
 // The new upcoming format (Version 5) is the following:
 //
-// 
+// (To be completed...)
+//
 //  +--------------------+
 //  |                    |  Preamble
 //  |                    |
@@ -99,7 +100,7 @@ namespace IBMFDefs {
 #define LOGE(format, ...) log_e(format, ##__VA_ARGS__)
 #define LOGD(format, ...) log_d(format, ##__VA_ARGS__)
 
-#define DEBUG_IBMF 1
+// #define DEBUG_IBMF 1
 
 #ifdef DEBUG_IBMF
 const constexpr int DEBUG = DEBUG_IBMF;
@@ -287,7 +288,7 @@ typedef FaceHeader *FaceHeaderPtr;
 // +------------------------+------------------------+
 //
 //
-//           Byte 3                   Byte 4 
+//           Byte 3                   Byte 4
 // +------------------------+------------------------+
 // |Kern|       | a | b | c |    Replacement Char    |  <- isAKern (Kern in the diagram) is false
 // +------------------------+------------------------+
@@ -311,11 +312,12 @@ typedef FaceHeader *FaceHeaderPtr;
 // +------------------------+------------------------+
 //
 //
-//           Byte 4                   Byte 3 
+//           Byte 4                   Byte 3
 // +------------------------+------------------------+
 // |Kern|             Replacement Char               |  <- isAKern (Kern in the diagram) is false
 // +------------------------+------------------------+
-// |Kern|GoTo|      Displacement in FIX14            |  <- isAKern is true and GoTo is false => Kerning value
+// |Kern|GoTo|      Displacement in FIX14            |  <- isAKern is true and GoTo is false =>
+// Kerning value
 // +------------------------+------------------------+
 // |Kern|GoTo|          Displacement                 |  <- isAkern and GoTo are true
 // +------------------------+------------------------+
@@ -323,7 +325,7 @@ typedef FaceHeader *FaceHeaderPtr;
 // Up to 32765 different glyph codes can be managed through this format.
 // Kerning displacements reduced to 14 bits is not a big issue: kernings are
 // usually small numbers. FIX14 and FIX16 are using 6 bits for the fraction. Their
-// remains 8 bits for FIX14 and 10 bits for FIX16, that is more than enough... 
+// remains 8 bits for FIX14 and 10 bits for FIX16, that is more than enough...
 //
 
 #define ORIGINAL_FORMAT 1
@@ -338,10 +340,10 @@ union SkipByte {
 
 union OpCodeByte {
     struct {
-        bool cOp : 1;       // Not used
-        bool bOp : 1;       // Not used
-        uint8_t aOp : 5;    // Not used
-        bool isAKern : 1;   // True if Kern, False if ligature
+        bool cOp : 1;     // Not used
+        bool bOp : 1;     // Not used
+        uint8_t aOp : 5;  // Not used
+        bool isAKern : 1; // True if Kern, False if ligature
     } op;
     struct {
         uint8_t displHigh : 7;
@@ -362,23 +364,23 @@ struct LigKernStep {
 };
 #else
 struct Nxt {
-    GlyphCode nextGlyphCode:15;
-    bool stop:1;
+    GlyphCode nextGlyphCode : 15;
+    bool stop : 1;
 };
 union ReplDisp {
     struct {
-      GlyphCode replGlyphCode : 15;
-      bool isAKern : 1;
+        GlyphCode replGlyphCode : 15;
+        bool isAKern : 1;
     } repl;
     struct {
-      FIX14 kerningValue: 14;
-      bool isAGoTo : 1;
-      bool isAKern : 1;
+        FIX14 kerningValue : 14;
+        bool isAGoTo : 1;
+        bool isAKern : 1;
     } kern;
     struct {
-      uint16_t displacement : 14;
-      bool isAGoTo : 1;
-      bool isAKern : 1;
+        uint16_t displacement : 14;
+        bool isAGoTo : 1;
+        bool isAKern : 1;
     } goTo;
 };
 
