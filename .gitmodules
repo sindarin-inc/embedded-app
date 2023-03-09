@@ -1,6 +1,3 @@
-[submodule "components/esp-nimble-cpp"]
-	path = components/esp-nimble-cpp
-	url = https://github.com/h2zero/esp-nimble-cpp
 [submodule "components/Adafruit-GFX-Library"]
 	path = components/Adafruit-GFX-Library
 	url = https://github.com/sindarin-inc/Adafruit-GFX-Library.git
