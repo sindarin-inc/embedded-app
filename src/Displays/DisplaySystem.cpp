@@ -215,7 +215,8 @@ void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y) 
             IBMFDefs::Bitmap canvas;
             canvas.pixels = canvasBuffer_;
             canvas.dim = IBMFDefs::Dim(canvasWidth_, canvasHeight_);
-            static_cast<IBMFFont *>(font_)->drawSingleLineOfText(canvas, Pos(x, y), line);
+            static_cast<IBMFFont *>(font_)->drawSingleLineOfText(
+                canvas, Pos(xOffset(x), yOffset(y + getTextHeight() - lineSpacing_ - 3)), line);
             gfxClass_->endWrite();
         }
     }

@@ -168,19 +168,19 @@ public:
             ligKernUTF8Map(buffer, [this, &dim](GlyphCode glyphCode, FIX16 kern) {
                 IBMFDefs::Glyph glyph;
                 if (face->getGlyph(glyphCode, glyph, false)) { // retrieves only the metrics
-                    LOGD("Advance value: %f, yoff value: %d",
-                         IBMFFaceLow::fromFIX16(glyph.metrics.advance), glyph.metrics.yoff);
+                    // LOGD("Advance value: %f, yoff value: %d",
+                    //      IBMFFaceLow::fromFIX16(glyph.metrics.advance), glyph.metrics.yoff);
                     dim.width += (glyph.metrics.advance + kern) >> 6;
                     dim.height = (dim.height > glyph.metrics.yoff)
                                      ? glyph.metrics.yoff
                                      : dim.height; // yoff is negative...
                 } else {
-                    LOGW("Unable to retrieve glyph for glyphCode %d", glyphCode);
+                    // LOGW("Unable to retrieve glyph for glyphCode %d", glyphCode);
                 }
             });
         }
         dim.height = -dim.height;
-        LOGD("IBMFFont: TextBound: width: %d, height: %d", dim.width, dim.height);
+        // LOGD("IBMFFont: TextBound: width: %d, height: %d", dim.width, dim.height);
         return dim;
     }
 
@@ -190,16 +190,16 @@ public:
             ligKernUTF8Map(buffer, [this, &width](GlyphCode glyphCode, FIX16 kern) {
                 IBMFDefs::Glyph glyph;
                 if (face->getGlyph(glyphCode, glyph, false)) { // retrieves only the metrics
-                    LOGD("Advance value: %f, kern: %f",
-                         IBMFFaceLow::fromFIX16(glyph.metrics.advance),
-                         IBMFFaceLow::fromFIX16(kern));
+                    // LOGD("Advance value: %f, kern: %f",
+                    //     IBMFFaceLow::fromFIX16(glyph.metrics.advance),
+                    //     IBMFFaceLow::fromFIX16(kern));
                     width += (glyph.metrics.advance + kern + 32) >> 6;
                 } else {
-                    LOGW("Unable to retrieve glyph for glyphCode %d", glyphCode);
+                    // LOGW("Unable to retrieve glyph for glyphCode %d", glyphCode);
                 }
             });
         }
-        LOGD("IBMFFont: TextWidth: %d", width);
+        // LOGD("IBMFFont: TextWidth: %d", width);
         return width;
     }
 
@@ -218,7 +218,7 @@ public:
             // }
             height = face->getEmHeight();
         }
-        LOGD("TextHeight: %d", height);
+        // LOGD("TextHeight: %d", height);
         return height;
     }
 };
