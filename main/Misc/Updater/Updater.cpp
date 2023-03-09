@@ -41,7 +41,7 @@ static bool _partitionIsBootable(const esp_partition_t* partition){
     if(!partition){
         return false;
     }
-    if(!esp_partition_read(partition, 0, (uint32_t*)buf, ENCRYPTED_BLOCK_SIZE)) {
+    if(esp_partition_read(partition, 0, (uint32_t*)buf, ENCRYPTED_BLOCK_SIZE)) {
         return false;
     }
 
@@ -55,7 +55,7 @@ bool UpdateClass::_enablePartition(const esp_partition_t* partition){
     if(!partition){
         return false;
     }
-    return esp_partition_write(partition, 0, (uint32_t*) _skipBuffer, ENCRYPTED_BLOCK_SIZE);
+    return !esp_partition_write(partition, 0, (uint32_t*) _skipBuffer, ENCRYPTED_BLOCK_SIZE);
 }
 
 UpdateClass::UpdateClass()
@@ -204,11 +204,11 @@ bool UpdateClass::_writeBuffer(){
     if (!_progress && _progress_callback) {
         _progress_callback(0, _size);
     }
-    if(!esp_partition_erase_range(_partition, _progress, SPI_FLASH_SEC_SIZE)){
+    if(esp_partition_erase_range(_partition, _progress, SPI_FLASH_SEC_SIZE)){
         _abort(UPDATE_ERROR_ERASE);
         return false;
     }
-    if (!esp_partition_write(_partition, _progress + skip, (uint32_t*)_buffer + skip/sizeof(uint32_t), _bufferLen - skip)) {
+    if (esp_partition_write(_partition, _progress + skip, (uint32_t*)_buffer + skip/sizeof(uint32_t), _bufferLen - skip)) {
         _abort(UPDATE_ERROR_WRITE);
         return false;
     }
