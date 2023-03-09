@@ -159,8 +159,8 @@ void InitializePlatform() {
         .scl_pullup_en = GPIO_PULLUP_ENABLE,
     };
     conf.master.clk_speed = I2C_MASTER_FREQ_HZ;
-    i2c_param_config(i2cPort, &conf);
-    i2c_driver_install(i2cPort, conf.mode, 0, 0, 0);
+    i2c_param_config((i2c_port_t)i2cPort, &conf);
+    i2c_driver_install((i2c_port_t)i2cPort, conf.mode, 0, 0, 0);
 #endif
 
 #if EINKET013TT1
