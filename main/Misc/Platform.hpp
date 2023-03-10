@@ -30,11 +30,6 @@
 #define ONLOW_WE 0x0C
 #define ONHIGH_WE 0x0D
 
-#define MALLOC_CAP_SPIRAM (1 << 10) ///< Memory must be in SPI RAM
-#define MALLOC_CAP_INTERNAL                                                                        \
-    (1 << 11) ///< Memory must be internal; specifically it should not disappear when flash/spiram
-              ///< cache is switched off
-
 #define ENCRYPTED_BLOCK_SIZE 16
 
 #define U_FLASH 0
