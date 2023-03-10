@@ -16,13 +16,13 @@
 #include "Misc/BootError.hpp"
 #include "Misc/BootLoopDetection.hpp"
 #include "Misc/InactivityTimer.hpp"
+#include "Misc/Interrupt/FunctionalInterrupt.h"
 #include "Misc/Platform.hpp"
 #include "Misc/Power.hpp"
 #include "Misc/PowerManager.hpp"
 #include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
-#include "Misc/Interrupt/FunctionalInterrupt.h"
 #include "Models/Readable.hpp"
 #include "Storage/CrashReportWriter.hpp"
 #include "Storage/LocalStore.hpp"
@@ -417,8 +417,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     initialRect.width = prefs.rectW.get().value_or(myDisplay.defaultBoundingBox.width);
     initialRect.height = prefs.rectH.get().value_or(myDisplay.defaultBoundingBox.height);
 
-    log_d("Initial bounding box is %" PRIu32 " %" PRIu32 " %" PRIu32 " %" PRIu32 "", initialRect.x, initialRect.y, initialRect.width,
-          initialRect.height);
+    log_d("Initial bounding box is %" PRIu32 " %" PRIu32 " %" PRIu32 " %" PRIu32 "", initialRect.x,
+          initialRect.y, initialRect.width, initialRect.height);
     myDisplay.setBoundingBox(initialRect);
     myDisplay.setLineSpacing(prefs.lineSpacing.get().value_or(0));
 
@@ -517,11 +517,11 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         bootErrors.push_back({.type = BootError::Type::LowPowerOscillator});
     }
 
-    #ifdef USB_CONNECTED_PIN
-        attachInterrupt(
-            digitalPinToInterrupt(USB_CONNECTED_PIN),
-            []() { xTaskNotify(powerTaskHandle, 0, eNoAction); }, CHANGE);
-    #endif
+#ifdef USB_CONNECTED_PIN
+    attachInterrupt(
+        digitalPinToInterrupt(USB_CONNECTED_PIN),
+        []() { xTaskNotify(powerTaskHandle, 0, eNoAction); }, CHANGE);
+#endif
 #endif
 
     // set current boot id

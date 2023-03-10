@@ -24,13 +24,63 @@
 
 #include "Misc/Platform.hpp"
 #include "WiFiESPDefs.hpp"
-
-#if !SIMULATOR
 #include "esp_err.h"
 #include "esp_event.h"
 #include "esp_smartconfig.h"
 #include "wifi_provisioning/manager.h"
-#endif
+
+// Wifi Event Information
+typedef union {
+    wifi_event_sta_scan_done_t wifiScanDone;
+    wifi_event_sta_authmode_change_t wifiStaAuthmodeChange;
+    wifi_event_sta_connected_t wifiStaConnected;
+    wifi_event_sta_disconnected_t wifiStaDisconnected;
+    wifi_event_sta_wps_er_pin_t wpsErPin;
+    wifi_event_sta_wps_fail_reason_t wpsFailReason;
+    wifi_event_ap_probe_req_rx_t wifiApProbereqrecved;
+    wifi_event_ap_staconnected_t wifiApStaconnected;
+    wifi_event_ap_stadisconnected_t wifiApStadisconnected;
+    wifi_event_ftm_report_t wifiFtmReport;
+    ip_event_ap_staipassigned_t wifiApStaipassigned;
+    ip_event_got_ip_t gotIp;
+    ip_event_got_ip6_t gotIp6;
+    smartconfig_event_got_ssid_pswd_t scGotSsidPswd;
+    esp_eth_handle_t ethConnected;
+    wifi_sta_config_t provCredRecv;
+    wifi_prov_sta_fail_reason_t provFailReason;
+} wifiesp_event_info_t;
+
+// Wifi Event Type
+typedef struct {
+    wifiesp_event_id_t eventId;
+    wifiesp_event_info_t eventInfo;
+} wifiesp_event_t;
+
+// Define Event Callback function pointer
+typedef void (*wifiesp_event_cb_t)(wifiesp_event_id_t event);
+typedef std::function<void(wifiesp_event_id_t event, wifiesp_event_info_t info)>
+    wifiesp_event_func_cb_t;
+typedef void (*wifiesp_event_cb_sys_t)(wifiesp_event_t *event);
+
+// Define wifi event id type for the callback list
+typedef size_t wifi_event_id_t;
+
+// Define the Event Status Bits
+static const int WIFIESP_EVENTSTATUSBIT_AP_STARTED = BIT0;
+static const int WIFIESP_EVENTSTATUSBIT_AP_HAS_IP6 = BIT1;
+static const int WIFIESP_EVENTSTATUSBIT_AP_HAS_CLIENT = BIT2;
+static const int WIFIESP_EVENTSTATUSBIT_STA_STARTED = BIT3;
+static const int WIFIESP_EVENTSTATUSBIT_STA_CONNECTED = BIT4;
+static const int WIFIESP_EVENTSTATUSBIT_STA_HAS_IP = BIT5;
+static const int WIFIESP_EVENTSTATUSBIT_STA_HAS_IP6 = BIT6;
+static const int WIFIESP_EVENTSTATUSBIT_ETH_STARTED = BIT7;
+static const int WIFIESP_EVENTSTATUSBIT_ETH_CONNECTED = BIT8;
+static const int WIFIESP_EVENTSTATUSBIT_ETH_HAS_IP = BIT9;
+static const int WIFIESP_EVENTSTATUSBIT_ETH_HAS_IP6 = BIT10;
+static const int WIFIESP_EVENTSTATUSBIT_WIFI_SCANNING = BIT11;
+static const int WIFIESP_EVENTSTATUSBIT_WIFI_SCAN_DONE = BIT12;
+static const int WIFIESP_EVENTSTATUSBIT_WIFI_DNS_IDLE = BIT13;
+static const int WIFIESP_EVENTSTATUSBIT_WIFI_DNS_DONE = BIT14;
 
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
