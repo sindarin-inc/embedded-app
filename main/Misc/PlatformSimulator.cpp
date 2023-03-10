@@ -45,4 +45,6 @@ void ForcePowerOn() {}
 
 void AllowPowerOff() {}
 
+void hardwareInit() {}
+
 #endif

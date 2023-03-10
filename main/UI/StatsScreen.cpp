@@ -25,12 +25,12 @@ void StatsScreen::render(DisplaySystem &display) {
     char formattedString[32];
     if (hoursRead > 0) {
         // NOLINTNEXTLINE(cert-err33-c) -- this is a safe, fixed length, format string
-        snprintf(formattedString, sizeof(formattedString), "%02ld:%02ld:%02ld", hoursRead, minutesRead,
+        snprintf(formattedString, sizeof(formattedString), "%02" PRIu32 ":%02" PRIu32 ":%02" PRIu32 "", hoursRead, minutesRead,
                  secondsRead);
         timeMessage += formattedString;
     } else {
         // NOLINTNEXTLINE(cert-err33-c) -- this is a safe, fixed length, format string
-        snprintf(formattedString, sizeof(formattedString), "%02ld:%02ld", minutesRead, secondsRead);
+        snprintf(formattedString, sizeof(formattedString), "%02" PRIu32 ":%02" PRIu32 "", minutesRead, secondsRead);
         timeMessage += formattedString;
     }
 

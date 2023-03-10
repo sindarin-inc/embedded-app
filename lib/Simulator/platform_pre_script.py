@@ -9,6 +9,7 @@ def remove_non_simulator_files(node):
     `node.get_abspath()` - an absolute path
     """
     ignore = [
+        "SindarinWiFi.cpp",
         "Updater.cpp",
         "interrupt-hal.cpp",
         "ExternalSPIFlash.cpp",

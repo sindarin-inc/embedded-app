@@ -117,6 +117,7 @@ typedef enum {
     WIFIESP_EVENT_MAX
 } wifiesp_event_id_t;
 
+#if !SIMULATOR
 // Wifi Event Information
 typedef union {
     wifi_event_sta_scan_done_t wifiScanDone;
@@ -169,6 +170,7 @@ static const int WIFIESP_EVENTSTATUSBIT_WIFI_SCANNING = BIT11;
 static const int WIFIESP_EVENTSTATUSBIT_WIFI_SCAN_DONE = BIT12;
 static const int WIFIESP_EVENTSTATUSBIT_WIFI_DNS_IDLE = BIT13;
 static const int WIFIESP_EVENTSTATUSBIT_WIFI_DNS_DONE = BIT14;
+#endif
 
 // create our own ip address type
 typedef esp_ip4_addr_t wifiesp_ip4address;

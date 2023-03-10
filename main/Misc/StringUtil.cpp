@@ -1,5 +1,6 @@
 #include "StringUtil.hpp"
 #include <string.h>
+#include <stdarg.h>
 
 auto WordCount(const char *str) -> int {
     int wordCount = 0;

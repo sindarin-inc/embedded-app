@@ -19,16 +19,18 @@
 // Includes
 //-----------------------------------------------------------------------------
 #include <string>
+#include <cstring>
 
 #include "Communications/SindarinWiFi.hpp" // Class Header
 #include "config.h"
 #include "sindarin-debug.h"
+#include "Misc/Platform.hpp"
 
 //-----------------------------------------------------------------------------
 // Object
 //-----------------------------------------------------------------------------
 // Create Object
-CSindarinWiFi SindarinWiFi;
+CSindarinWiFi sindarinWiFi;
 
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
@@ -56,7 +58,7 @@ CSindarinWiFi::CSindarinWiFi() {
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-auto CSindarinWiFi::GetWiFiCredentials(wifi_config_t *conf) -> bool {
+auto CSindarinWiFi::getWiFiCredentials(wifi_config_t *conf) -> bool {
     strncpy((char *)conf->sta.ssid, "ssid", sizeof(conf->sta.ssid));
     strncpy((char *)conf->sta.password, "password", sizeof(conf->sta.password));
     return true;
@@ -73,7 +75,7 @@ auto CSindarinWiFi::GetWiFiCredentials(wifi_config_t *conf) -> bool {
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-auto CSindarinWiFi::HasWiFiCredentials() -> bool { return true; }
+auto CSindarinWiFi::hasWiFiCredentials() -> bool { return true; }
 
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
@@ -86,7 +88,7 @@ auto CSindarinWiFi::HasWiFiCredentials() -> bool { return true; }
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-auto CSindarinWiFi::ScanNetworks(bool asyncScan) -> int16_t { return true; }
+auto CSindarinWiFi::scanNetworks(bool asyncScan) -> int16_t { return true; }
 
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
@@ -99,7 +101,7 @@ auto CSindarinWiFi::ScanNetworks(bool asyncScan) -> int16_t { return true; }
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-auto CSindarinWiFi::ScanComplete() -> int16_t { return 1; }
+auto CSindarinWiFi::scanComplete() -> int16_t { return 1; }
 
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
@@ -112,7 +114,7 @@ auto CSindarinWiFi::ScanComplete() -> int16_t { return 1; }
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-auto CSindarinWiFi::GetSSID(uint8_t i) -> std::string { return "ssid"; }
+auto CSindarinWiFi::getSsid(uint8_t i) -> std::string { return "ssid"; }
 
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
@@ -125,7 +127,7 @@ auto CSindarinWiFi::GetSSID(uint8_t i) -> std::string { return "ssid"; }
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-auto CSindarinWiFi::GetRSSI(uint8_t i) -> int32_t { return 1; }
+auto CSindarinWiFi::getRssi(uint8_t i) -> int32_t { return 1; }
 
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
@@ -138,7 +140,7 @@ auto CSindarinWiFi::GetRSSI(uint8_t i) -> int32_t { return 1; }
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-auto CSindarinWiFi::GetEncryptionType(uint8_t i) -> wifi_auth_mode_t { return WIFI_AUTH_WPA2_PSK; }
+auto CSindarinWiFi::getEncryptionType(uint8_t i) -> wifi_auth_mode_t { return WIFI_AUTH_WPA2_PSK; }
 
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
@@ -152,8 +154,8 @@ auto CSindarinWiFi::GetEncryptionType(uint8_t i) -> wifi_auth_mode_t { return WI
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-void CSindarinWiFi::ConnectWiFi(const std::string &ssid, const std::string &password) {
-    log_i("Pretending to connect WiFi (power %d)", _wiFiPower);
+void CSindarinWiFi::connectWiFi(const std::string &ssid, const std::string &password) {
+    log_i("Pretending to connect WiFi (power %d)", wiFiPower_);
     delay(1000);
     return;
 }
@@ -169,8 +171,8 @@ void CSindarinWiFi::ConnectWiFi(const std::string &ssid, const std::string &pass
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-auto CSindarinWiFi::ConnectWiFiIfCredentialsExist() -> bool {
-    log_i("Pretending to connect WiFi (power %d)", _wiFiPower);
+auto CSindarinWiFi::connectWiFiIfCredentialsExist() -> bool {
+    log_i("Pretending to connect WiFi (power %d)", wiFiPower_);
     delay(1000);
     return true;
 }
@@ -186,8 +188,8 @@ auto CSindarinWiFi::ConnectWiFiIfCredentialsExist() -> bool {
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-auto CSindarinWiFi::ConnectWiFiWithTimeout(int timeoutMs) -> bool {
-    log_i("Pretending to connect WiFi (power %d)", _wiFiPower);
+auto CSindarinWiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
+    log_i("Pretending to connect WiFi (power %d)", wiFiPower_);
     delay(1000);
     return true;
 }
@@ -203,7 +205,7 @@ auto CSindarinWiFi::ConnectWiFiWithTimeout(int timeoutMs) -> bool {
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-void CSindarinWiFi::DisconnectWiFi() { log_i("Pretending to disconnect WiFi"); }
+void CSindarinWiFi::disconnectWiFi() { log_i("Pretending to disconnect WiFi"); }
 
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
@@ -216,7 +218,7 @@ void CSindarinWiFi::DisconnectWiFi() { log_i("Pretending to disconnect WiFi"); }
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-auto CSindarinWiFi::Connected() -> bool { return true; }
+auto CSindarinWiFi::connected() -> bool { return true; }
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
 /*!
@@ -228,7 +230,7 @@ auto CSindarinWiFi::Connected() -> bool { return true; }
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-auto CSindarinWiFi::GetLocalIP() -> wifiesp_ip4address { return IPADDRESS_NONE; }
+auto CSindarinWiFi::getLocalIp() -> wifiesp_ip4address { return IPADDRESS_NONE; }
 
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
@@ -254,7 +256,7 @@ auto CSindarinWiFi::getLocalIpStr() -> std::string { return "00.00.00.00"; }
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-wifiesp_status_t CSindarinWiFi::GetStatus() { return WIFIESP_STATUS_CONNECTED; }
+wifiesp_status_t CSindarinWiFi::getStatus() { return WIFIESP_STATUS_CONNECTED; }
 
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
@@ -267,7 +269,7 @@ wifiesp_status_t CSindarinWiFi::GetStatus() { return WIFIESP_STATUS_CONNECTED; }
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-auto CSindarinWiFi::GetMode() -> wifi_mode_t { return WIFI_MODE_STA; }
+auto CSindarinWiFi::getMode() -> wifi_mode_t { return WIFI_MODE_STA; }
 
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
@@ -280,6 +282,6 @@ auto CSindarinWiFi::GetMode() -> wifi_mode_t { return WIFI_MODE_STA; }
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-bool CSindarinWiFi::SetMode(wifi_mode_t mode) { return true; }
+bool CSindarinWiFi::setMode(wifi_mode_t mode) { return true; }
 
 #endif

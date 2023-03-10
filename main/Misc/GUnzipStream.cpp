@@ -105,7 +105,7 @@ auto GUnzipStream::seek(uint32_t pos) -> bool {
         // need to start over from beginning of the file
         // and decompress to new position
         // seek file back to beginning
-        log_w("GUnzipStream seek from %zu to %ld, reset to start", position_, pos);
+        log_w("GUnzipStream seek from %zu to %" PRIu32 ", reset to start", position_, pos);
         gzFile_.seek(0, SSeekSet);
         inSize_ = 0;
         inIndex_ = 0;

@@ -21,7 +21,10 @@
 #include <esp_wifi.h>
 #include <string>
 
+#include "Communications/WiFi/WiFiESPDefs.hpp"
+#if !SIMULATOR
 #include "Communications/WiFi/WiFiESP.hpp"
+#endif
 
 //-----------------------------------------------------------------------------
 // Defines

@@ -34,7 +34,7 @@ public:
     auto read() -> int override;
     auto seek(uint32_t pos) -> bool override {
         if (pos < position_) {
-            log_w("Seeking backwards in HtmlCleaner from %d to %ld", position_, pos);
+            log_w("Seeking backwards in HtmlCleaner from %d to %" PRIu32, position_, pos);
             position_ = 0;
             outStream_.str(std::string());
             outStream_.clear();

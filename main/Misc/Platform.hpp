@@ -69,6 +69,9 @@ void ForcePowerOn();
 
 void AllowPowerOff();
 
+void hardwareInit();
+
+#if !SIMULATOR
 void pinMode(int pin, int mode);
 
 void digitalWrite(int pin, int level);
@@ -84,5 +87,6 @@ uint32_t getHeapSize();
 void enableCore0WDT();
 
 void disableCore0WDT();
-
-void hardwareInit();
+#else
+#include <Arduino.h>
+#endif

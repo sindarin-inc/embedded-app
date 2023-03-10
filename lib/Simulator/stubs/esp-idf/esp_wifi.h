@@ -59,3 +59,31 @@ typedef union {
     wifi_ap_config_t ap;   /**< configuration of AP */
     wifi_sta_config_t sta; /**< configuration of STA */
 } wifi_config_t;
+
+typedef enum {
+    WIFI_MODE_NULL = 0,  /**< null mode */
+    WIFI_MODE_STA,       /**< WiFi station mode */
+    WIFI_MODE_AP,        /**< WiFi soft-AP mode */
+    WIFI_MODE_APSTA,     /**< WiFi station + soft-AP mode */
+    WIFI_MODE_MAX
+} wifi_mode_t;
+
+typedef enum {
+    WIFI_AUTH_OPEN = 0,         /**< authenticate mode : open */
+    WIFI_AUTH_WEP,              /**< authenticate mode : WEP */
+    WIFI_AUTH_WPA_PSK,          /**< authenticate mode : WPA_PSK */
+    WIFI_AUTH_WPA2_PSK,         /**< authenticate mode : WPA2_PSK */
+    WIFI_AUTH_WPA_WPA2_PSK,     /**< authenticate mode : WPA_WPA2_PSK */
+    WIFI_AUTH_WPA2_ENTERPRISE,  /**< authenticate mode : WPA2_ENTERPRISE */
+    WIFI_AUTH_WPA3_PSK,         /**< authenticate mode : WPA3_PSK */
+    WIFI_AUTH_WPA2_WPA3_PSK,    /**< authenticate mode : WPA2_WPA3_PSK */
+    WIFI_AUTH_WAPI_PSK,         /**< authenticate mode : WAPI_PSK */
+    WIFI_AUTH_OWE,              /**< authenticate mode : OWE */
+    WIFI_AUTH_MAX
+} wifi_auth_mode_t;
+
+struct esp_ip4_addr {
+    uint32_t addr;  /*!< IPv4 address */
+};
+
+typedef struct esp_ip4_addr esp_ip4_addr_t;
