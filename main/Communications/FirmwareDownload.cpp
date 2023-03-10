@@ -1,6 +1,7 @@
 #include "FirmwareDownload.hpp"
 
 #if SIMULATOR
+// simulator using stub arduino Update class
 #include "Update.h"
 #else
 #include "Misc/Updater/Update.h"

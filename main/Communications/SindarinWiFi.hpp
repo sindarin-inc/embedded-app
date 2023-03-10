@@ -22,9 +22,6 @@
 #include <string>
 
 #include "Communications/WiFi/WiFiESPDefs.hpp"
-#if !SIMULATOR
-#include "Communications/WiFi/WiFiESP.hpp"
-#endif
 
 //-----------------------------------------------------------------------------
 // Defines

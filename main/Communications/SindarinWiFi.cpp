@@ -21,6 +21,7 @@
 #include <cstring>
 #include <string>
 
+#include "Communications/WiFi/WiFiESP.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
 

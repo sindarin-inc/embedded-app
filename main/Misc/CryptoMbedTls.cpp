@@ -1,5 +1,3 @@
-#if !SIMULATOR
-
 #include <mbedtls/md.h>
 
 #include "Crypto.hpp"
@@ -69,5 +67,3 @@ auto CalculateStringHash(const std::string &input) -> std::string {
 
     return hashString;
 }
-
-#endif

@@ -1,21 +1,18 @@
-#if !SIMULATOR
-
-#include <nvs_flash.h>
 #include <driver/i2c.h>
 #include <driver/ledc.h>
 #include <driver/uart.h>
+#include <nvs_flash.h>
 
 // esp_adc_cal.h deprecated in IDF 5
 // TODO: replace
-#include <esp_adc_cal.h>
 #include <driver/adc.h>
-
+#include <esp_adc_cal.h>
+#include <esp_bt.h>
 #include <esp_err.h>
-#include <soc/rtc.h>
 #include <esp_sleep.h>
 #include <esp_task_wdt.h>
-#include <esp_bt.h>
 #include <optional>
+#include <soc/rtc.h>
 
 #include "Misc/StringUtil.hpp"
 #include "Platform.hpp"
@@ -30,34 +27,25 @@ esp_adc_cal_characteristics_t adcCalCharacteristics;
 bool ledcFailed = false;
 uint8_t sysOnPin;
 
-void pinMode(int pin, int mode) {
-    gpio_set_direction((gpio_num_t)pin, (gpio_mode_t)mode);
-}
+void pinMode(int pin, int mode) { gpio_set_direction((gpio_num_t)pin, (gpio_mode_t)mode); }
 
-void digitalWrite(int pin, int level) {
-    gpio_set_level((gpio_num_t)pin, (uint32_t)level);
-}
+void digitalWrite(int pin, int level) { gpio_set_level((gpio_num_t)pin, (uint32_t)level); }
 
-int digitalRead(uint8_t pin) {
-    return gpio_get_level((gpio_num_t)pin);
-}
+int digitalRead(uint8_t pin) { return gpio_get_level((gpio_num_t)pin); }
 
-void delay(int ms) {
-    vTaskDelay(ms * portTICK_PERIOD_MS);
-}
+void delay(int ms) { vTaskDelay(ms * portTICK_PERIOD_MS); }
 
-int millis() {
-    return GetRunTimeMs();
-}
+int millis() { return GetRunTimeMs(); }
 
 void hardwareInit() {
     esp_log_level_set("*", (esp_log_level_t)CONFIG_LOG_DEFAULT_LEVEL);
     esp_err_t err = nvs_flash_init();
-    if(err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND){
-        const esp_partition_t* partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        const esp_partition_t *partition =
+            esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);
         if (partition != NULL) {
             err = esp_partition_erase_range(partition, 0, partition->size);
-            if(!err){
+            if (!err) {
                 err = nvs_flash_init();
             } else {
                 log_e("Failed to format the broken NVS partition!");
@@ -66,7 +54,7 @@ void hardwareInit() {
             log_e("Could not find NVS partition");
         }
     }
-    if(err) {
+    if (err) {
         log_e("Failed to initialize NVS! Error: %u", err);
     }
 }
@@ -77,16 +65,16 @@ uint32_t getHeapSize() {
     return info.total_free_bytes + info.total_allocated_bytes;
 }
 
-void enableCore0WDT(){
+void enableCore0WDT() {
     TaskHandle_t idle_0 = xTaskGetIdleTaskHandleForCPU(0);
-    if(idle_0 == NULL || esp_task_wdt_add(idle_0) != ESP_OK){
+    if (idle_0 == NULL || esp_task_wdt_add(idle_0) != ESP_OK) {
         log_e("Failed to add Core 0 IDLE task to WDT");
     }
 }
 
-void disableCore0WDT(){
+void disableCore0WDT() {
     TaskHandle_t idle_0 = xTaskGetIdleTaskHandleForCPU(0);
-    if(idle_0 == NULL || esp_task_wdt_delete(idle_0) != ESP_OK){
+    if (idle_0 == NULL || esp_task_wdt_delete(idle_0) != ESP_OK) {
         log_e("Failed to remove Core 0 IDLE task from WDT");
     }
 }
@@ -342,7 +330,7 @@ void SetRightScreenLightFade(int dutyCycle, int fadeMs) {
 #endif
 }
 
-auto GetRunTimeMs() -> uint32_t { return (uint32_t) (xTaskGetTickCount() * portTICK_PERIOD_MS); }
+auto GetRunTimeMs() -> uint32_t { return (uint32_t)(xTaskGetTickCount() * portTICK_PERIOD_MS); }
 
 auto USBConnected() -> bool {
 #ifdef USB_CONNECTED_PIN
@@ -421,5 +409,3 @@ void AllowPowerOff() {
     // pinMode(sysOnPin, OUTPUT);
     // digitalWrite(sysOnPin, LOW);
 }
-
-#endif
