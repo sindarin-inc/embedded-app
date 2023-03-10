@@ -1,4 +1,5 @@
 #include "BootLoopDetection.hpp"
+
 #include "Misc/Platform.hpp"
 
 #if SIMULATOR
@@ -8,12 +9,13 @@ void GoodBootTimer() {}
 
 #else
 
-#include "sindarin-debug.h"
 #include <esp_ota_ops.h>
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/timers.h>
 #include <nvs.h>
+
+#include "sindarin-debug.h"
 
 #define PANIC_BOOT_THRESHOLD 10
 #define GOOD_BOOT_THRESHOLD_MS 60000
@@ -28,7 +30,7 @@ auto PartitionIsBootable(const esp_partition_t *partition) -> bool {
     if (!partition) {
         return false;
     }
-    if (esp_partition_read(partition, 0, buf, ENCRYPTED_BLOCK_SIZE)) {
+    if (!esp_partition_read(partition, 0, buf, ENCRYPTED_BLOCK_SIZE)) {
         return false;
     }
 
