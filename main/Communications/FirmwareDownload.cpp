@@ -1,7 +1,11 @@
 #include "FirmwareDownload.hpp"
 
-//#include <Update.h>
+#if SIMULATOR
+#include "Update.h"
+#else
 #include "Misc/Updater/Update.h"
+#endif
+
 #include <cstdio>
 #include <string>
 

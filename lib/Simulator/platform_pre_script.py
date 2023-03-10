@@ -9,6 +9,8 @@ def remove_non_simulator_files(node):
     `node.get_abspath()` - an absolute path
     """
     ignore = [
+        "Updater.cpp",
+        "interrupt-hal.cpp",
         "ExternalSPIFlash.cpp",
         "LittleFSFileSystem.cpp",
         "Adafruit_SPITFT.cpp",
@@ -17,12 +19,11 @@ def remove_non_simulator_files(node):
         "Mmc5603.cpp",
         "TempleCloseSensor.cpp",
         "WiFi.cpp",
-        "FunctionalInterrupt.h",
-        "WiFiESP.hpp",
+        "FunctionalInterrupt.cpp",
         "WiFiESP.cpp",
-        "WiFiESPDefs.hpp",
         "WiFiESPDefs.cpp",
-        "WiFiESPTask.cpp"
+        "WiFiESPTask.cpp",
+        "MD5Builder.cpp"
     ]
 
     if node.name in ignore:

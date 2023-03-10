@@ -24,10 +24,13 @@
 
 #include "Misc/Platform.hpp"
 #include "WiFiESPDefs.hpp"
+
+#if !SIMULATOR
 #include "esp_err.h"
 #include "esp_event.h"
 #include "esp_smartconfig.h"
 #include "wifi_provisioning/manager.h"
+#endif
 
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
