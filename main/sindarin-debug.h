@@ -3,6 +3,9 @@
 
 #if SIMULATOR
 
+#include "esp32-hal-log.h"
+#include <assert.h>
+
 #define SHOW_HEAP()
 #define PROFILE_START(identifier)
 #define PROFILE_END(identifier)

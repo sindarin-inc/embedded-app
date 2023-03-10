@@ -50,7 +50,6 @@ lib_includes += "\n" + "\n".join([f"-I{components_dir}/{lib}" for lib in compone
 # Build the big flags list
 flags = [
     "-std=c++17",
-    "-DARDUINO=100",
     "-Dheap_caps_malloc(s,l)='((void *)malloc(s))'",
     "-Dheap_caps_realloc(p,s,l)='((void *)realloc(p,s))'",
     "-Dheap_caps_free(p)='( free(p) )'",
@@ -65,7 +64,8 @@ flags = [
     "-DENABLE_OTA=0",
     "-DEINKET013TT1=1",
     "-lpthread",
-    "-Isrc",
+    "-Imain",
+    "-DPROGMEM=",
     lib_includes,
 ]
 

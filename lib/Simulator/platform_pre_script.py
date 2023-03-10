@@ -17,6 +17,12 @@ def remove_non_simulator_files(node):
         "Mmc5603.cpp",
         "TempleCloseSensor.cpp",
         "WiFi.cpp",
+        "FunctionalInterrupt.h",
+        "WiFiESP.hpp",
+        "WiFiESP.cpp",
+        "WiFiESPDefs.hpp",
+        "WiFiESPDefs.cpp",
+        "WiFiESPTask.cpp"
     ]
 
     if node.name in ignore:

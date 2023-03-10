@@ -3,6 +3,7 @@
 #include <esp_crt_bundle.h>
 #include <iostream>
 #include <string>
+#include <cstring>
 
 #include "GitVersion.hpp"
 #include "Misc/StringUtil.hpp"
