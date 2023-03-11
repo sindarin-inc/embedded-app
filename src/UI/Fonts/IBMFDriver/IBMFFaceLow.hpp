@@ -30,7 +30,7 @@ private:
 
 public:
     IBMFFaceLow()
-        : initialized(false), fontFormat(FontFormat::UNKNOWN), resolution(default_resolution) {}
+        : initialized(false), fontFormat(FontFormat::UNKNOWN), resolution(default_resolution), faceHeader(nullptr) {}
 
     ~IBMFFaceLow() {}
 
@@ -103,7 +103,7 @@ public:
     inline uint8_t getFacePtSize() const { return faceHeader->pointSize; }
     inline uint16_t getLineHeight() const { return faceHeader->lineHeight; }
     inline uint16_t getEmHeight() const { return faceHeader->emHeight >> 6; }
-    inline uint8_t getMaxHight() const { return faceHeader->maxHight; }
+    inline uint8_t getMaxHight() const { return (faceHeader != nullptr) ? faceHeader->maxHight : 0; }
     inline int16_t getDescenderHeight() const { return -(int16_t)faceHeader->descenderHeight; }
     inline LigKernStepPtr getLigKernStep(uint16_t idx) const { return &(*ligKernSteps)[idx]; }
     inline FIX16 getKern(uint8_t i) const { return (*kerns)[i]; }

@@ -6,6 +6,8 @@
 //---  ESP_IDF
 //#include <esp_log.h>
 
+const constexpr bool IBMF_TRACING = true;
+
 #if IBMF_TESTING
 #define PROGMEM
 #include <cstdarg>

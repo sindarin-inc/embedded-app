@@ -38,7 +38,9 @@ public:
     IBMFFontLow() : initialized(false) {}
     ~IBMFFontLow() {}
 
-    inline FontFormat getFontFormat() const { return (isInitialized()) ? preamble->bits.fontFormat : FontFormat::UNKNOWN; }
+    inline FontFormat getFontFormat() const {
+        return (isInitialized()) ? preamble->bits.fontFormat : FontFormat::UNKNOWN;
+    }
     inline bool isInitialized() const { return initialized; }
 
     inline IBMFFaceLowPtr getFace(int idx) {
@@ -52,15 +54,15 @@ public:
         preamble = (Preamble *)data;
         data += sizeof(Preamble);
 
-        LOGI("Loading font at location 0x%p of length %d", fontData, length);
+        if constexpr (IBMF_TRACING)
+            LOGD("Loading font at location 0x%p of length %d", fontData, length);
 
         if (strncmp("IBMF", preamble->marker, 4) != 0) {
             LOGE("Preamble in error: IBMF marker absent!!");
             return false;
         }
         if (preamble->bits.version != IBMF_VERSION) {
-            LOGE("Font is of a wrong version. Expected V4, got V%d",
-                 preamble->bits.version);
+            LOGE("Font is of a wrong version. Expected V4, got V%d", preamble->bits.version);
             return false;
         }
 
@@ -77,7 +79,8 @@ public:
         }
 
         for (int i = 0; i < preamble->faceCount; i++) {
-            if (!faces[i].load(fontData + binFaceOffsets[i], binFaceLengths[i], preamble->bits.fontFormat)) {
+            if (!faces[i].load(fontData + binFaceOffsets[i], binFaceLengths[i],
+                               preamble->bits.fontFormat)) {
                 LOGE("Unable to load face %d", i);
                 return false;
             }

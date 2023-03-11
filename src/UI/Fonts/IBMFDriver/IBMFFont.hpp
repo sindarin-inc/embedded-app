@@ -18,6 +18,8 @@ private:
     // Maximum size of an allocated buffer to do vsnprintf formatting
     const int MAX_SIZE = 100;
 
+    typedef std::function<void(GlyphCode, FIX16)> const &LigKernMappingHandler;
+
     /// @brief Search Ligature and Kerning table
     ///
     /// Using the LigKern program of **glyphCode1**, find the first entry in the
@@ -67,41 +69,6 @@ private:
         return false;
     }
 
-public:
-    IBMFFont(IBMFFontLow &ibmFont, const uint8_t *data, unsigned int length, int index)
-        : Font(FontType::IBMF), font(&ibmFont) {
-        if (!font->isInitialized()) {
-            if (!font->load((MemoryPtr)data, length)) {
-                LOGE("Unable to initialize an IBMFFont!!");
-            }
-        }
-        if (font->isInitialized()) {
-            if ((face = font->getFace(index)) == nullptr) {
-                LOGE("Internal error!!");
-            }
-        }
-    }
-
-    inline bool isInitialized() const { return (face != nullptr) && face->isInitialized(); }
-
-    inline const IBMFFaceLow *getFace() { return face; }
-
-    inline void setResolution(PixelResolution res) {
-        if (face != nullptr) face->setResolution(res);
-    }
-
-    inline PixelResolution getResolution() const {
-        return (face != nullptr) ? face->getResolution() : default_resolution;
-    }
-
-    inline int yAdvance() const {
-        // max-hight is the maximum hight in pixels of all the glyph from the baseline
-        // descender-height is the negative number of pixels below the baseline
-        return isInitialized() ? ((int)face->getMaxHight()) - face->getDescenderHeight() : 0;
-    }
-
-    typedef std::function<void(GlyphCode, FIX16)> const &LigKernMappingHandler;
-
     /// @brief Ligature/Kerning/UTF8 Mapper
     ///
     /// Iterates on each UTF8 character present in **line**, sending to the
@@ -131,8 +98,51 @@ public:
         }
     }
 
+public:
+    IBMFFont(IBMFFontLow &ibmFont, const uint8_t *data, unsigned int length, int index)
+        : Font(FontType::IBMF), font(&ibmFont) {
+        if constexpr (IBMF_TRACING)
+            LOGD("IBMFFont initialisation with data of length %d and face index %d.", length,
+                 index);
+        if (!font->isInitialized()) {
+            if (!font->load((MemoryPtr)data, length)) {
+                LOGE("Unable to initialize an IBMFFont!!");
+            }
+        }
+        if (font->isInitialized()) {
+            if ((face = font->getFace(index)) == nullptr) {
+                LOGE("Internal error!!");
+            }
+        }
+    }
+
+    inline bool isInitialized() const { return (face != nullptr) && face->isInitialized(); }
+
+    inline const IBMFFaceLow *getFace() { return face; }
+
+    inline void setResolution(PixelResolution res) {
+        if constexpr (IBMF_TRACING) LOGD("setResolution()");
+        if (face != nullptr) face->setResolution(res);
+    }
+
+    inline PixelResolution getResolution() const {
+        if constexpr (IBMF_TRACING) LOGD("getResolution()");
+        return (face != nullptr) ? face->getResolution() : default_resolution;
+    }
+
+    inline int yAdvance() const {
+        if constexpr (IBMF_TRACING) {
+            LOGD("yAdvance()");
+            if (!isInitialized()) LOGE("Not initialized!!!");
+        }
+        // max-hight is the maximum hight in pixels of all the glyph from the baseline
+        // descender-height is the negative number of pixels below the baseline
+        return isInitialized() ? ((int)face->getMaxHight()) - face->getDescenderHeight() : 0;
+    }
+
     void drawSingleLineOfText(IBMFDefs::Bitmap &canvas, IBMFDefs::Pos pos,
                               const std::string &line) const {
+        if constexpr (IBMF_TRACING) LOGD("drawSingleLineOfText()");
         if (isInitialized()) {
             IBMFDefs::Pos atPos = pos;
             Glyph glyph;
@@ -149,6 +159,7 @@ public:
     }
 
     void printFormatted(IBMFDefs::Bitmap &canvas, IBMFDefs::Pos pos, char *fmt, ...) const {
+        if constexpr (IBMF_TRACING) LOGD("printFormatted()");
         if (isInitialized()) {
             va_list args;
             va_start(args, fmt);
@@ -163,6 +174,7 @@ public:
     }
 
     IBMFDefs::Dim getTextBounds(const std::string &buffer) {
+        if constexpr (IBMF_TRACING) LOGD("getTextBounds()");
         IBMFDefs::Dim dim = IBMFDefs::Dim(0, 0);
         if (isInitialized()) {
             ligKernUTF8Map(buffer, [this, &dim](GlyphCode glyphCode, FIX16 kern) {
@@ -185,6 +197,7 @@ public:
     }
 
     int getTextWidth(const std::string &buffer) {
+        if constexpr (IBMF_TRACING) LOGD("getTextWidth()");
         int width = 0;
         if (isInitialized()) {
             ligKernUTF8Map(buffer, [this, &width](GlyphCode glyphCode, FIX16 kern) {
@@ -204,6 +217,7 @@ public:
     }
 
     int getTextHeight(const std::string &buffer) {
+        if constexpr (IBMF_TRACING) LOGD("getTextHeight()");
         int height = 0;
         if (isInitialized()) {
             // for (UTF8Iterator chrIter = buffer.begin(); chrIter != buffer.end(); chrIter++) {
