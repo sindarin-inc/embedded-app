@@ -14,6 +14,7 @@
 //------------------------------------------------------------------------------
 
 #pragma once
+#if 0
 
 //-----------------------------------------------------------------------------
 // Includes
@@ -47,3 +48,5 @@ extern "C" auto WiFiEspTaskGetEventStatusBits() -> int;
 
 /// Wait for an Event Status Bit
 extern "C" auto WiFiEspTaskWaitEventStatusBits(int bits, uint32_t timeoutMs) -> int;
+
+#endif

@@ -18,6 +18,8 @@
 //-----------------------------------------------------------------------------
 #include "WiFiESPTask.hpp" // File Header
 
+#if 0
+
 #include "WiFiESP.hpp" // ESP Class
 #include "config.h"
 #include "sdkconfig.h"
@@ -536,3 +538,5 @@ auto WiFiEspTaskWaitEventStatusBits(int bits, uint32_t timeoutMs) -> int {
                                timeoutMs / portTICK_PERIOD_MS) &
            bits; // Wait a maximum of 100ms for either bit to be set.
 }
+
+#endif

@@ -57,7 +57,7 @@ CSindarinWiFi::CSindarinWiFi() {
 //------------------------------------------------------------------------------
 auto CSindarinWiFi::getWiFiCredentials(wifi_config_t *conf) -> bool {
     // Needs to be called before we can get the WiFi config
-    if (!wiFiEsp.enableSTA(true)) {
+    if (esp_wifi_set_config(WIFI_IF_STA, conf) != ESP_OK) {
         log_e("STA enable failed!");
         return false;
     }
@@ -104,9 +104,7 @@ auto CSindarinWiFi::hasWiFiCredentials() -> bool {
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-auto CSindarinWiFi::scanNetworks(bool asyncScan) -> int16_t {
-    return wiFiEsp.scanNetworks(asyncScan);
-}
+auto CSindarinWiFi::scanNetworks(bool asyncScan) -> int16_t { return wiFiEsp.scanNetworks(); }
 
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
@@ -119,7 +117,7 @@ auto CSindarinWiFi::scanNetworks(bool asyncScan) -> int16_t {
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-auto CSindarinWiFi::scanComplete() -> int16_t { return wiFiEsp.scanComplete(); }
+auto CSindarinWiFi::scanComplete() -> int16_t { return wiFiEsp.scanCount(); }
 
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
@@ -323,7 +321,7 @@ auto CSindarinWiFi::getLocalIpStr() -> std::string {
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-auto CSindarinWiFi::getStatus() -> wifiesp_status_t { return wiFiEsp.status(); }
+auto CSindarinWiFi::getStatus() -> wifiesp_status_t { return wiFiEsp.getStatus(); }
 
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
