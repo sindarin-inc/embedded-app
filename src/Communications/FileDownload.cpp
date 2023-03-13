@@ -8,11 +8,11 @@
 #include "Misc/GUnzipStream.hpp"
 #include "sindarin-debug.h"
 
-auto DownloadFile(const char *url,
-                  const std::function<bool(int httpCode, int contentLength)> &openedConnection,
-                  const std::function<size_t(HttpClient &client, int index)> &readWrite,
-                  const std::function<void(int bytesWritten, float percentage)> &progressCallback,
-                  bool gzip) -> bool {
+auto DownloadFile(
+    const char *url, const std::function<bool(int httpCode, int contentLength)> &openedConnection,
+    const std::function<size_t(HttpClient &client, int index, int contentLength)> &readWrite,
+    const std::function<void(int bytesWritten, float percentage)> &progressCallback, bool gzip)
+    -> bool {
 
     HttpClient client(url);
 
@@ -66,7 +66,7 @@ auto DownloadFile(const char *url,
     int lastPercentage = 0;
 
     while (totalReadLen < contentLength) {
-        int readLen = readWrite(client, totalReadLen);
+        int readLen = readWrite(client, totalReadLen, contentLength);
         if (readLen <= 0) {
             log_w("Error read data (readLen == 0)");
             if (!client.connected) {
@@ -125,8 +125,8 @@ auto DownloadFile(const char *url,
 
     return DownloadFile(
         url, openedConnection,
-        [buffer, writeBytes](HttpClient &client, int index) {
-            int readLen = client.read((char *)buffer, bufferSize);
+        [buffer, bufferSize, writeBytes](HttpClient &client, int index, int contentLength) {
+            int readLen = client.read((char *)buffer, std::min(bufferSize, contentLength - index));
 
             auto written = writeBytes(buffer, (size_t)readLen);
             if (written != readLen) {
@@ -177,9 +177,10 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
             }
             return true;
         },
-        [&fileBuffer](HttpClient &client, int index) -> size_t {
+        [&fileBuffer](HttpClient &client, int index, int contentLength) -> size_t {
             constexpr int bufferSize = 16384;
-            return client.read((char *)(fileBuffer + index), bufferSize);
+            return client.read((char *)(fileBuffer + index),
+                               std::min(bufferSize, contentLength - index));
         },
         fileProgress, gzip);
 
