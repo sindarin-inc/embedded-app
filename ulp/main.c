@@ -3,7 +3,7 @@
 #include "ulp_riscv.h"
 #include "ulp_riscv_utils.h"
 #include "ulp_riscv_i2c_ulp_core.h"
-#include "../mag_defs.h"
+#include "mag_defs.h"
 
 volatile int mag_x;
 volatile int mag_z;
