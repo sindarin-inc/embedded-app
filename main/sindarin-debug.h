@@ -76,18 +76,18 @@ extern "C" {
     CYCLES_TO_NS(profileEnd##identifier - profileStart##identifier)
 
 #define PROFILE_LOG_MS(identifier)                                                                 \
-    log_d("PROFILE_LOG_MS(" #identifier ") %.0fms (%lu-%lu=%lu cycles)",                           \
+    log_d("PROFILE_LOG_MS(" #identifier ") %.0fms (%" PRIu32 "-%" PRIu32 "=%" PRIu32 " cycles)",                           \
           PROFILE_CALCULATE_MS(identifier), profileEnd##identifier, profileStart##identifier,      \
           profileEnd##identifier - profileStart##identifier)
 
 #define PROFILE_LOG_US(identifier)                                                                 \
-    log_d("PROFILE_LOG_US(" #identifier ") %.0fus (%lu-%lu=%lu cycles)",                           \
+    log_d("PROFILE_LOG_US(" #identifier ") %.0fus (%" PRIu32 "-%" PRIu32 "=%" PRIu32 " cycles)",                           \
           PROFILE_CALCULATE_US(identifier), profileEnd##identifier, profileStart##identifier,      \
           profileEnd##identifier - profileStart##identifier)
 
 // Logs the result of the profile
 #define PROFILE_LOG_NS(identifier)                                                                 \
-    log_d("PROFILE_LOG_NS(" #identifier ") %.0fns (%u-%u=%u cycles)",                              \
+    log_d("PROFILE_LOG_NS(" #identifier ") %.0fns (%" PRIu32 "-%" PRIu32 "=%" PRIu32 " cycles)",                              \
           PROFILE_CALCULATE_NS(identifier), profileEnd##identifier, profileStart##identifier,      \
           profileEnd##identifier - profileStart##identifier)
 
