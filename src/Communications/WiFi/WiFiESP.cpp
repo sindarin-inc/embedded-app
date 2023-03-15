@@ -287,8 +287,11 @@ auto CWiFiESP::scanNetworks(void) -> int16_t {
     wifi_config.sta.threshold.rssi = DEFAULT_RSSI;
     wifi_config.sta.threshold.authmode = DEFAULT_AUTHMODE;
 
+    // Force STA Mode
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    // Set STA Configuration
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
+    // Start - creates station control block and starts station
     ESP_ERROR_CHECK(esp_wifi_start());
 
     _status = WIFIESP_STATUS_SCAN_INPROGRESS;
