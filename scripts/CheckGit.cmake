@@ -1,5 +1,5 @@
 # Based on https://jonathanhamberg.com/post/cmake-embedding-git-hash/
-set(git_hash_files_dir ${CMAKE_SOURCE_DIR}/main)
+set(git_hash_files_dir ${CMAKE_SOURCE_DIR}/src)
 
 if (NOT DEFINED post_configure_dir)
     set(post_configure_dir ${CMAKE_BINARY_DIR}/generated)
