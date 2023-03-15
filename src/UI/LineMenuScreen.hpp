@@ -22,13 +22,15 @@ class LineMenuScreen : public Screen, public Menu, public EinkView {
 public:
     LineMenuScreen(Power &power, Readable &readable, PreferencesStore &prefs,
                    DisplaySystem &display, MenuStyleFamily menuStyle)
-        : Menu(), EinkView(display), display_(display), power_(power) {
+        : Menu(menuStyle), EinkView(display), display_(display), power_(power) {
         numMenuItems_ = 0;
     }
     LineMenuScreen(Power &power, Readable &readable, PreferencesStore &prefs,
                    DisplaySystem &display)
         : Menu(), EinkView(display), display_(display), power_(power) {
         numMenuItems_ = 0;
+        MenuStyle styleFamilies;
+        myStyle_ = styleFamilies.mainMenu;
     }
 
     auto layout(LayoutContext &context, Size size) -> Size override;
