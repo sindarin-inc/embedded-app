@@ -1,9 +1,3 @@
 #pragma once
 
-class Ulp {
-public:
-    Ulp() {}
-    ~Ulp() {}
-
-    void DeepSleepWithMagWakeup();
-};
+void ulp_deep_sleep_magnetometer_wakeup();

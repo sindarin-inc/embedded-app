@@ -43,7 +43,7 @@ static void init_i2c(void)
     ulp_riscv_i2c_master_init(&i2c_cfg);
 }
 
-void Ulp::DeepSleepWithMagWakeup() {
+void ulp_deep_sleep_magnetometer_wakeup() {
     init_i2c();
     log_i("entering deep sleep, wake up with magnetometer");
 
