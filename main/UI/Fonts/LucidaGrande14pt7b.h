@@ -1,4 +1,4 @@
-const uint8_t LUCIDA_GRANDE14PT7B_BITMAPS[] PROGMEM = {
+const uint8_t LUCIDA_GRANDE14PT7B_BITMAPS[] = {
     0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xC0, 0x1F, 0xF0, 0xEF, 0xDF, 0xBF, 0x7E, 0xFD, 0xFB, 0x80,
     0x03, 0x18, 0x03, 0x18, 0x03, 0x18, 0x03, 0x18, 0x07, 0x38, 0x06, 0x30, 0x7F, 0xFF, 0x7F, 0xFF,
     0x06, 0x30, 0x0C, 0x60, 0x0C, 0x60, 0x0C, 0x60, 0xFF, 0xFE, 0xFF, 0xFE, 0x18, 0xC0, 0x18, 0xC0,
@@ -160,7 +160,7 @@ const uint8_t LUCIDA_GRANDE14PT7B_BITMAPS[] PROGMEM = {
     0x18, 0x61, 0x87, 0x0C, 0x30, 0xC7, 0x38, 0xC0, 0x38, 0x06, 0xFC, 0x0F, 0x9F, 0x3E, 0x07, 0xEC,
     0x03, 0x80};
 
-const GFXglyph LUCIDA_GRANDE14PT7B_GLYPHS[] PROGMEM = {{0, 1, 1, 9, 0, 0},         // 0x20 ' '
+const GFXglyph LUCIDA_GRANDE14PT7B_GLYPHS[] = {{0, 1, 1, 9, 0, 0},         // 0x20 ' '
                                                        {1, 3, 20, 9, 3, -19},      // 0x21 '!'
                                                        {9, 7, 7, 10, 1, -20},      // 0x22 '"'
                                                        {16, 16, 20, 17, 1, -19},   // 0x23 '#'
@@ -256,7 +256,7 @@ const GFXglyph LUCIDA_GRANDE14PT7B_GLYPHS[] PROGMEM = {{0, 1, 1, 9, 0, 0},      
                                                        {2517, 6, 25, 9, 2, -20},   // 0x7D '}'
                                                        {2536, 15, 5, 17, 1, -9}};  // 0x7E '~'
 
-const GFXfont LUCIDA_GRANDE14PT7B PROGMEM = {
+const GFXfont LUCIDA_GRANDE14PT7B = {
     (uint8_t *)LUCIDA_GRANDE14PT7B_BITMAPS, (GFXglyph *)LUCIDA_GRANDE14PT7B_GLYPHS, 0x20, 0x7E, 26};
 
 // Approx. 3218 bytes

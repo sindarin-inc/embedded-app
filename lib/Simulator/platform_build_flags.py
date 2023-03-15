@@ -66,7 +66,6 @@ flags = [
     "-DEINKET013TT1=1",
     "-lpthread",
     "-Imain",
-    "-DPROGMEM=",
     lib_includes,
 ]
 

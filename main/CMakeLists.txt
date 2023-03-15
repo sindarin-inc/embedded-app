@@ -9,7 +9,6 @@ set(compile_options
     -includeconfig.h
     -Wno-unknown-pragmas
     -DIDF_LOG
-    -DPROGMEM=
     -DUSE_BLE_SERVER_REMOTE=1
     -DUSE_BLE_SERVER_SETTINGS=1
     -DUSE_BLE_SERVER_IMPROV=1

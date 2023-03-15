@@ -1,4 +1,4 @@
-const uint8_t TAHOMA_REGULAR_FONT7PT7B_BITMAPS[] PROGMEM = {
+const uint8_t TAHOMA_REGULAR_FONT7PT7B_BITMAPS[] = {
     0x00, 0xFE, 0xC0, 0x99, 0x99, 0x12, 0x12, 0x24, 0x7F, 0x24, 0x24, 0xFE, 0x48, 0x48, 0x48, 0x10,
     0x47, 0xA5, 0x92, 0x47, 0x85, 0x16, 0x57, 0x84, 0x10, 0x70, 0x88, 0x90, 0x89, 0x08, 0xA0, 0x8A,
     0xE7, 0x51, 0x05, 0x10, 0x91, 0x09, 0x11, 0x0E, 0x78, 0x42, 0x21, 0x11, 0x07, 0x24, 0x92, 0x29,
@@ -46,7 +46,7 @@ const uint8_t TAHOMA_REGULAR_FONT7PT7B_BITMAPS[] PROGMEM = {
     0x1F, 0x19, 0x08, 0x42, 0x13, 0x04, 0x21, 0x08, 0x42, 0x0C, 0xFF, 0xFC, 0xC1, 0x08, 0x42, 0x10,
     0x64, 0x21, 0x08, 0x42, 0x60, 0x61, 0x91, 0x89, 0x86};
 
-const GFXglyph TAHOMA_REGULAR_FONT7PT7B_GLYPHS[] PROGMEM = {{0, 1, 1, 4, 0, 0},       // 0x20 ' '
+const GFXglyph TAHOMA_REGULAR_FONT7PT7B_GLYPHS[] = {{0, 1, 1, 4, 0, 0},       // 0x20 ' '
                                                             {1, 1, 10, 4, 1, -9},     // 0x21 '!'
                                                             {3, 4, 4, 6, 1, -10},     // 0x22 '"'
                                                             {5, 8, 10, 10, 1, -9},    // 0x23 '#'
@@ -142,7 +142,7 @@ const GFXglyph TAHOMA_REGULAR_FONT7PT7B_GLYPHS[] PROGMEM = {{0, 1, 1, 4, 0, 0}, 
                                                             {716, 5, 14, 7, 1, -10},  // 0x7D '}'
                                                             {725, 8, 4, 10, 1, -6}};  // 0x7E '~'
 
-const GFXfont TAHOMA_REGULAR_FONT7PT7B PROGMEM = {(uint8_t *)TAHOMA_REGULAR_FONT7PT7B_BITMAPS,
+const GFXfont TAHOMA_REGULAR_FONT7PT7B = {(uint8_t *)TAHOMA_REGULAR_FONT7PT7B_BITMAPS,
                                                   (GFXglyph *)TAHOMA_REGULAR_FONT7PT7B_GLYPHS, 0x20,
                                                   0x7E, 17};
 

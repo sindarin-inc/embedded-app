@@ -1,4 +1,4 @@
-const uint8_t NotoSans_CondensedMedium5pt7bBitmaps[] PROGMEM = {
+const uint8_t NotoSans_CondensedMedium5pt7bBitmaps[] = {
     0x00, 0xF9, 0xB6, 0x80, 0x32, 0xBE, 0xA5, 0x7D, 0x4C, 0x4F, 0xCC, 0x65, 0x5E, 0x40, 0x49, 0x52,
     0xC5, 0xED, 0xA5, 0x4A, 0x96, 0x71, 0x45, 0x18, 0xEA, 0x69, 0x9E, 0xE0, 0x5A, 0xA9, 0x40, 0xA5,
     0x56, 0x80, 0x2F, 0x25, 0x21, 0x3E, 0x42, 0x00, 0x60, 0xC0, 0x80, 0x22, 0x22, 0x44, 0x48, 0x69,
@@ -22,7 +22,7 @@ const uint8_t NotoSans_CondensedMedium5pt7bBitmaps[] PROGMEM = {
     0x00, 0x96, 0x66, 0x69, 0x99, 0x56, 0x66, 0x24, 0xC0, 0xE5, 0x29, 0xC0, 0x69, 0x28, 0x92, 0x4C,
     0xFF, 0xE0, 0xC9, 0x22, 0x92, 0x58, 0xC3};
 
-const GFXglyph NotoSans_CondensedMedium5pt7bGlyphs[] PROGMEM = {{0, 1, 1, 2, 0, 0},     // 0x20 ' '
+const GFXglyph NotoSans_CondensedMedium5pt7bGlyphs[] = {{0, 1, 1, 2, 0, 0},     // 0x20 ' '
                                                                 {1, 1, 8, 3, 1, -7},    // 0x21 '!'
                                                                 {2, 3, 3, 4, 1, -7},    // 0x22 '"'
                                                                 {4, 5, 8, 5, 0, -7},    // 0x23 '#'
@@ -118,7 +118,7 @@ const GFXglyph NotoSans_CondensedMedium5pt7bGlyphs[] PROGMEM = {{0, 1, 1, 2, 0, 
                                                                 {338, 3, 10, 3, 0, -7}, // 0x7D '}'
                                                                 {342, 4, 2, 6, 1, -4}}; // 0x7E '~'
 
-const GFXfont NotoSans_CondensedMedium5pt7b PROGMEM = {
+const GFXfont NotoSans_CondensedMedium5pt7b = {
     (uint8_t *)NotoSans_CondensedMedium5pt7bBitmaps,
     (GFXglyph *)NotoSans_CondensedMedium5pt7bGlyphs, 0x20, 0x7E, 13};
 

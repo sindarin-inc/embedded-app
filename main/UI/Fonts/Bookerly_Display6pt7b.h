@@ -1,4 +1,4 @@
-const uint8_t Bookerly_Display6pt7bBitmaps[] PROGMEM = {
+const uint8_t Bookerly_Display6pt7bBitmaps[] = {
     0x00, 0xFD, 0x80, 0xF4, 0x00, 0x00, 0x09, 0xF9, 0x22, 0x00, 0x02, 0x04, 0x23, 0xAB, 0x4E, 0x38,
     0xF5, 0xAF, 0x88, 0x40, 0xA0, 0xA4, 0xB0, 0xA8, 0xA4, 0x15, 0x0D, 0x25, 0x05, 0x48, 0x24, 0x12,
     0x0C, 0x02, 0x25, 0x92, 0x69, 0x18, 0x47, 0x80, 0xC0, 0x29, 0x49, 0x24, 0x89, 0x10, 0x84, 0x22,
@@ -39,7 +39,7 @@ const uint8_t Bookerly_Display6pt7bBitmaps[] PROGMEM = {
     0x89, 0x80, 0x44, 0xC1, 0x81, 0x43, 0x02, 0x00, 0x10, 0xC0, 0x48, 0xCC, 0x46, 0x64, 0x7B, 0x65,
     0x22, 0xDB, 0x20, 0xFF, 0xF0, 0x42, 0x26, 0x62, 0x26, 0x62, 0x24, 0x94};
 
-const GFXglyph Bookerly_Display6pt7bGlyphs[] PROGMEM = {{0, 1, 1, 2, 0, 0},       // 0x20 ' '
+const GFXglyph Bookerly_Display6pt7bGlyphs[] = {{0, 1, 1, 2, 0, 0},       // 0x20 ' '
                                                         {1, 1, 9, 3, 1, -8},      // 0x21 '!'
                                                         {3, 3, 3, 4, 1, -8},      // 0x22 '"'
                                                         {5, 7, 8, 8, 0, -7},      // 0x23 '#'
@@ -135,7 +135,7 @@ const GFXglyph Bookerly_Display6pt7bGlyphs[] PROGMEM = {{0, 1, 1, 2, 0, 0},     
                                                         {613, 4, 12, 4, 0, -9},   // 0x7D '}'
                                                         {619, 6, 1, 8, 1, -4}};   // 0x7E '~'
 
-const GFXfont Bookerly_Display6pt7b PROGMEM = {(uint8_t *)Bookerly_Display6pt7bBitmaps,
+const GFXfont Bookerly_Display6pt7b = {(uint8_t *)Bookerly_Display6pt7bBitmaps,
                                                (GFXglyph *)Bookerly_Display6pt7bGlyphs, 0x20, 0x7E,
                                                18};
 

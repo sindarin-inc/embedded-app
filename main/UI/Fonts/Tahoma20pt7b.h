@@ -1,4 +1,4 @@
-const uint8_t TAHOMA20PT7B_BITMAPS[] PROGMEM = {
+const uint8_t TAHOMA20PT7B_BITMAPS[] = {
     0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xF7, 0x00, 0x00, 0xFF, 0xFF, 0xF1,
     0xFE, 0x3F, 0xC7, 0xF8, 0xFF, 0x1F, 0xE3, 0xFC, 0x7B, 0x06, 0x60, 0xCC, 0x19, 0x83, 0x00, 0x00,
     0x38, 0x70, 0x00, 0x70, 0xE0, 0x01, 0xC3, 0x80, 0x03, 0x87, 0x00, 0x07, 0x0E, 0x00, 0x0E, 0x1C,
@@ -339,7 +339,7 @@ const uint8_t TAHOMA20PT7B_BITMAPS[] PROGMEM = {
     0x01, 0xDE, 0x3C, 0x07, 0x70, 0x78, 0x39, 0xC1, 0xE0, 0xEE, 0x03, 0xC7, 0xB8, 0x07, 0xFC, 0xE0,
     0x0F, 0xE3, 0x80, 0x0F, 0x00};
 
-const GFXglyph TAHOMA20PT7B_GLYPHS[] PROGMEM = {{0, 1, 1, 12, 0, 0},         // 0x20 ' '
+const GFXglyph TAHOMA20PT7B_GLYPHS[] = {{0, 1, 1, 12, 0, 0},         // 0x20 ' '
                                                 {1, 4, 28, 13, 5, -27},      // 0x21 '!'
                                                 {15, 11, 11, 16, 2, -29},    // 0x22 '"'
                                                 {31, 23, 28, 28, 2, -27},    // 0x23 '#'
@@ -435,7 +435,7 @@ const GFXglyph TAHOMA20PT7B_GLYPHS[] PROGMEM = {{0, 1, 1, 12, 0, 0},         // 
                                                 {5315, 15, 37, 19, 3, -29},  // 0x7D '}'
                                                 {5385, 22, 10, 28, 3, -17}}; // 0x7E '~'
 
-const GFXfont TAHOMA20PT7B PROGMEM = {(uint8_t *)TAHOMA20PT7B_BITMAPS,
+const GFXfont TAHOMA20PT7B = {(uint8_t *)TAHOMA20PT7B_BITMAPS,
                                       (GFXglyph *)TAHOMA20PT7B_GLYPHS, 0x20, 0x7E, 47};
 
 // Approx. 6085 bytes

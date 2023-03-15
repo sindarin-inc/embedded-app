@@ -1,6 +1,6 @@
 #pragma once
 
-const uint8_t LUCIDA_GRANDE5PT7B_BITMAPS[] PROGMEM = {
+const uint8_t LUCIDA_GRANDE5PT7B_BITMAPS[] = {
     0x00, 0xFD, 0xB4, 0x28, 0xAF, 0xCA, 0x2B, 0xF5, 0x14, 0x27, 0xAA, 0x63, 0x33, 0xE2, 0x43, 0x4A,
     0xA2, 0x81, 0x45, 0x52, 0xC2, 0x30, 0x91, 0x23, 0x8A, 0x32, 0x63, 0x3D, 0xE0, 0x6A, 0xAA, 0x40,
     0x95, 0x55, 0x80, 0x25, 0x54, 0xA0, 0x10, 0x20, 0x47, 0xF1, 0x02, 0x04, 0x00, 0x58, 0xF0, 0x80,
@@ -26,7 +26,7 @@ const uint8_t LUCIDA_GRANDE5PT7B_BITMAPS[] PROGMEM = {
     0xAA, 0xAA, 0xAA, 0x44, 0x8A, 0x88, 0x45, 0x44, 0x8A, 0x94, 0xA2, 0x10, 0x88, 0xF1, 0x24, 0x8F,
     0x29, 0x28, 0x92, 0x20, 0xFF, 0x80, 0x89, 0x22, 0x92, 0x80, 0x4D, 0x80};
 
-const GFXglyph LUCIDA_GRANDE5PT7B_GLYPHS[] PROGMEM = {{0, 1, 1, 3, 0, 0},      // 0x20 ' '
+const GFXglyph LUCIDA_GRANDE5PT7B_GLYPHS[] = {{0, 1, 1, 3, 0, 0},      // 0x20 ' '
                                                       {1, 1, 8, 3, 1, -7},     // 0x21 '!'
                                                       {2, 3, 2, 4, 0, -7},     // 0x22 '"'
                                                       {3, 6, 8, 6, 0, -7},     // 0x23 '#'
@@ -122,7 +122,7 @@ const GFXglyph LUCIDA_GRANDE5PT7B_GLYPHS[] PROGMEM = {{0, 1, 1, 3, 0, 0},      /
                                                       {374, 3, 9, 3, 0, -7},   // 0x7D '}'
                                                       {378, 5, 2, 6, 0, -3}};  // 0x7E '~'
 
-const GFXglyph LUCIDA_GRANDE5PT7B_GLYPHS_SKINNY[] PROGMEM = {{0, 1, 1, 2, 0, 0},      // 0x20 ' '
+const GFXglyph LUCIDA_GRANDE5PT7B_GLYPHS_SKINNY[] = {{0, 1, 1, 2, 0, 0},      // 0x20 ' '
                                                              {1, 1, 8, 3, 1, -7},     // 0x21 '!'
                                                              {2, 3, 2, 4, 0, -7},     // 0x22 '"'
                                                              {3, 6, 8, 6, 0, -7},     // 0x23 '#'
@@ -218,7 +218,7 @@ const GFXglyph LUCIDA_GRANDE5PT7B_GLYPHS_SKINNY[] PROGMEM = {{0, 1, 1, 2, 0, 0},
                                                              {374, 3, 9, 3, 0, -7},   // 0x7D '}'
                                                              {378, 5, 2, 6, 0, -3}};  // 0x7E '~'
 
-const GFXglyph LUCIDA_GRANDE5PT7B_GLYPHS_FAT[] PROGMEM = {{0, 1, 1, 3, 0, 0},      // 0x20 ' '
+const GFXglyph LUCIDA_GRANDE5PT7B_GLYPHS_FAT[] = {{0, 1, 1, 3, 0, 0},      // 0x20 ' '
                                                           {1, 1, 8, 3, 1, -7},     // 0x21 '!'
                                                           {2, 3, 2, 4, 0, -7},     // 0x22 '"'
                                                           {3, 6, 8, 6, 0, -7},     // 0x23 '#'
@@ -314,14 +314,14 @@ const GFXglyph LUCIDA_GRANDE5PT7B_GLYPHS_FAT[] PROGMEM = {{0, 1, 1, 3, 0, 0},   
                                                           {374, 3, 9, 3, 0, -7},   // 0x7D '}'
                                                           {378, 5, 2, 6, 0, -3}};  // 0x7E '~'
 
-const GFXfont LUCIDA_GRANDE5PT7B PROGMEM = {(uint8_t *)LUCIDA_GRANDE5PT7B_BITMAPS,
+const GFXfont LUCIDA_GRANDE5PT7B = {(uint8_t *)LUCIDA_GRANDE5PT7B_BITMAPS,
                                             (GFXglyph *)LUCIDA_GRANDE5PT7B_GLYPHS, 0x20, 0x7E, 9};
 
-const GFXfont LUCIDA_GRANDE5PT7B_SKINNY PROGMEM = {(uint8_t *)LUCIDA_GRANDE5PT7B_BITMAPS,
+const GFXfont LUCIDA_GRANDE5PT7B_SKINNY = {(uint8_t *)LUCIDA_GRANDE5PT7B_BITMAPS,
                                                    (GFXglyph *)LUCIDA_GRANDE5PT7B_GLYPHS_SKINNY,
                                                    0x20, 0x7E, 9};
 
-const GFXfont LUCIDA_GRANDE5PT7B_FAT PROGMEM = {(uint8_t *)LUCIDA_GRANDE5PT7B_BITMAPS,
+const GFXfont LUCIDA_GRANDE5PT7B_FAT = {(uint8_t *)LUCIDA_GRANDE5PT7B_BITMAPS,
                                                 (GFXglyph *)LUCIDA_GRANDE5PT7B_GLYPHS_FAT, 0x20,
                                                 0x7E, 9};
 // Approx. 1052 bytes
