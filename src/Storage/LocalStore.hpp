@@ -4,7 +4,9 @@
 #include <vector>
 
 #include "Misc/Dispatch.hpp"
+#include "Models/CheckSyncResponse.hpp"
 #include "Models/Readable.hpp"
+#include "Models/UserReadable.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
 
@@ -32,6 +34,7 @@ struct ContentSyncState {
 enum class ReadablesModelType { Article, Readable };
 
 typedef std::vector<Readable, SpiramAllocator<Readable>> ReadablesVector;
+typedef std::vector<UserReadable, SpiramAllocator<UserReadable>> UserReadablesVector;
 
 //! Interface for local storage of structured data
 class LocalStore {
@@ -66,6 +69,15 @@ public:
     void resetReadablesBookmarksChanged(const ReadablesVector &readables);
 
     void syncFromRemote(const std::function<void(ContentSyncState state)> &progressCallback);
+    auto processReadables(const CheckSyncResponse &checkSyncResponse, ReadablesVector &readables,
+                          UserReadablesVector &userReadables)
+        -> std::pair<ReadablesVector, ReadablesVector>;
+    void processReadableDeletion(ReadablesVector &readablesToDelete, ReadablesVector &readables,
+                                 int &tasksIndex, ContentSyncState &syncState,
+                                 std::function<void(ContentSyncState)> progressCallback);
+    auto processReadableDownload(ReadablesVector &readablesToDownload, ReadablesVector &readables,
+                                 int &tasksIndex, ContentSyncState &syncState,
+                                 std::function<void(ContentSyncState)> progressCallback) -> bool;
     void deleteReadables(bool restart = true);
     void deleteArticles(bool restart = true);
     void deleteReadableFiles(const ReadablesVector &readables, bool restart);

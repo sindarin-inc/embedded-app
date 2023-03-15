@@ -369,348 +369,160 @@ void LocalStore::syncFromRemote(
     auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this, progressCallback] {
         // Uncomment below to force a full sync
-        // this->prefs_.lastReadablesSince.set("");
+        this->prefs_.lastReadablesSince.set("");
         // this->prefs_.lastArticlesSince.set("");
-        bool failedReadableDownload = false;
-        bool failedArticleDownload = false;
-        auto readablesSince = this->readablesSince();
-        auto articlesSince = this->articlesSince();
-        auto readablePlacemarks = this->changedReadablePlacemarkQueryParams(readables_);
-        auto articlePlacemarks = this->changedReadablePlacemarkQueryParams(articles_);
-        auto readablesArchived = this->changedReadablesArchivedQueryParams(readables_);
-        auto articlesArchived = this->changedReadablesArchivedQueryParams(articles_);
-        auto sleepReason = this->prefs_.sleepReason.get().value_or(SLEEP_REASON_NONE);
-        auto [readablesBookmarked, readablesBookmarkedSize] = this->changedReadablesBookmarksJson();
-        log_i("Bookmarked readables (%d bytes)", readablesBookmarkedSize);
-        CheckSyncResponse checkSyncResponse;
-        CheckSyncRequest request =
-            CheckSyncRequest{.readablesSince = readablesSince,
-                             .articlesSince = articlesSince,
-                             .readablePlacemarks = readablePlacemarks,
-                             .articlePlacemarks = articlePlacemarks,
-                             .readablesArchived = readablesArchived,
-                             .articlesArchived = articlesArchived,
-                             .sleepReason = sleepReason,
-                             .ptBattery = this->prefs_.lastPageTurnerBattery.get().value_or(0),
-                             .ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or(""),
-                             .skipContent = true};
+        for (auto &readables : {readables_, articles_}) {
+            auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
+            bool failedDownload = false;
+            auto since = this->readablesSince(readables);
+            auto placemarks = this->changedReadablePlacemarkQueryParams(readables);
+            auto archived = this->changedReadablesArchivedQueryParams(readables);
+            auto sleepReason = this->prefs_.sleepReason.get().value_or(SLEEP_REASON_NONE);
+            auto [readablesBookmarked, readablesBookmarkedSize] =
+                this->changedReadablesBookmarksJson(readables);
+            log_i("Bookmarked (%d bytes)", readablesBookmarkedSize);
 
-        SHOW_HEAP();
-        auto httpCode = SindarinAPI::getInstance()->checkSync(request, &checkSyncResponse);
-        SHOW_HEAP();
+            CheckSyncRequest request =
+                CheckSyncRequest{.since = since,
+                                 .placemarks = placemarks,
+                                 .archived = archived,
+                                 .sleepReason = sleepReason,
+                                 .ptBattery = this->prefs_.lastPageTurnerBattery.get().value_or(0),
+                                 .ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or(""),
+                                 .skipContent = true};
 
-        if (httpCode != 200) {
-            log_e("Failed to check sync (HTTP %d)", httpCode);
-            progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
-                                              .message = "Failed to check sync"});
-            return;
-        }
-        if (checkSyncResponse.synced) {
-            log_i("Client is in sync");
-            progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
-            return;
-        }
+            CheckSyncResponse checkSyncResponse;
 
-        progressCallback(ContentSyncState{.state = ContentSyncState::State::LoadingTasks});
-
-        // If out of sync, download any new readables.
-        ReadablesVector readablesToDownload = {};
-        ReadablesVector readablesToDelete = {};
-        ReadablesVector articlesToDelete = {};
-        ReadablesVector articlesToSave = {};
-
-        // Now look through all the readables here, and download any that we don't have
-        // already
-        for (auto &userReadable : checkSyncResponse.userReadables) {
-            log_d("User readable %s (%s)", userReadable.readable.title.c_str(),
-                  userReadable.readable.file().shaHash.c_str());
+            SHOW_HEAP();
+            auto httpCode = SindarinAPI::getInstance()->checkSync(request, &checkSyncResponse);
             SHOW_HEAP();
 
-            if (this->processReadablePlacemarksFromServer(userReadable.readable,
-                                                          userReadable.placemark)) {
-                log_i("Placemark for %s updated to %d", userReadable.readable.title.c_str(),
-                      userReadable.placemark);
-            }
-
-            auto hasReadable = this->hasReadable(readables_, userReadable.readable);
-            if (userReadable.isArchived) {
-                log_i("Readable \"%s\" is archived, will delete",
-                      userReadable.readable.title.c_str());
-                // TODO: Store these articles in an accessible archive instead of just deleting them
-                // and ignoring
-                if (hasReadable) {
-                    readablesToDelete.push_back(userReadable.readable);
-                } else {
-                    log_i("Already deleted \"%s\" %s", userReadable.readable.title.c_str(),
-                          userReadable.readable.uuid.c_str());
-                }
-                continue;
-            } else if (hasReadable) {
-                // Should never get here as readablesSince should hide these articles
-                log_w("Already have \"%s\" %s", userReadable.readable.title.c_str(),
-                      userReadable.readable.uuid.c_str());
-                continue;
-            }
-
-            readablesToDownload.push_back(userReadable.readable);
-        }
-        this->resetReadablesPlacemarkChanged(readables_);
-        this->resetReadablesArchivedChanged(readables_);
-
-        // Look through all the articles, deleting archived ones and downloading new ones
-        for (auto &userReadable : checkSyncResponse.userArticles) {
-            log_d("Fetched user article: %s (%zu bytes, placemark: %d)",
-                  userReadable.readable.title.c_str(), (size_t)userReadable.readable.content.size(),
-                  userReadable.placemark);
-            SHOW_HEAP();
-
-            if (this->processReadablePlacemarksFromServer(userReadable.readable,
-                                                          userReadable.placemark)) {
-                log_i("Placemark for %s updated to %d", userReadable.readable.title.c_str(),
-                      userReadable.placemark);
-            }
-
-            auto hasReadable = this->hasReadable(articles_, userReadable.readable);
-            if (userReadable.isArchived) {
-                log_i("Article \"%s\" is archived, will delete",
-                      userReadable.readable.title.c_str());
-                // TODO: Store these articles in an accessible archive instead of just deleting them
-                // and ignoring
-                if (hasReadable) {
-                    articlesToDelete.push_back(userReadable.readable);
-                } else {
-                    log_i("Already deleted \"%s\" %s", userReadable.readable.title.c_str(),
-                          userReadable.readable.uuid.c_str());
-                }
-                continue;
-            } else if (hasReadable) {
-                // Should never get here as articlesSince should hide these articles
-                log_w("Already have \"%s\" %s", userReadable.readable.title.c_str(),
-                      userReadable.readable.uuid.c_str());
-                continue;
-            }
-            articlesToSave.push_back(userReadable.readable);
-        }
-        this->resetReadablesPlacemarkChanged(articles_);
-        this->resetReadablesArchivedChanged(articles_);
-
-        // TODO: Probably these should be set operations
-        SHOW_HEAP();
-        log_d("Readables to download: %zu", readablesToDownload.size());
-        log_d("Readables to delete: %zu", readablesToDelete.size());
-        log_d("Articles to delete: %zu", articlesToDelete.size());
-
-        // syncState is used to track the progress of the sync
-        ContentSyncState syncState = {.state = ContentSyncState::State::Syncing};
-        syncState.tasks.reserve(readablesToDownload.size() + readablesToDelete.size() +
-                                articlesToDelete.size() + articlesToSave.size() +
-                                (readablesBookmarkedSize > 0 ? 1 : 0));
-        auto tasksIndex = 0;
-
-        if (readablesBookmarkedSize == 0 && readablesToDownload.size() == 0 &&
-            readablesToDelete.size() == 0 && articlesToDelete.size() == 0 &&
-            articlesToSave.size() == 0) {
-            log_i("No new content to download");
-            progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
-            return;
-        }
-
-        if (readablesBookmarkedSize > 0) {
-            syncState.tasks.push_back(ContentSyncState::Task{
-                .message = "Storing bookmarks",
-                .percentage = 0,
-            });
-        }
-
-        // Clear the readablesSince cache since it will be set at the end of a successful run.
-        // If we fail, then the next content sync will not have a cutoff date
-        if (checkSyncResponse.readablesSince != "") {
-            log_d("Clearing readablesSince cache since it will be set at the end of a "
-                  "successful run");
-            this->prefs_.lastReadablesSince.set("");
-        }
-
-        for (const auto &readable : readablesToDelete) {
-            syncState.tasks.push_back(ContentSyncState::Task{
-                .message = StringFormat("Delete: %s", readable.title.c_str()),
-                .percentage = 0,
-            });
-        }
-
-        for (const auto &readable : readablesToDownload) {
-            syncState.tasks.push_back(ContentSyncState::Task{
-                .message = StringFormat("Get: %s", readable.title.c_str()),
-                .percentage = 0,
-            });
-        }
-        if (articlesToDelete.size() > 0) {
-            syncState.tasks.push_back(ContentSyncState::Task{
-                .message = "Delete: Archived articles",
-                .percentage = 0,
-            });
-        }
-        if (articlesToSave.size() > 0) {
-            syncState.tasks.push_back(ContentSyncState::Task{
-                .message = "Get: Articles from Pocket",
-                .percentage = 0,
-            });
-        }
-
-        progressCallback(syncState);
-
-        // Sync bookmarks before we download any new readables
-        if (readablesBookmarkedSize > 0) {
-            log_i("Syncing bookmarks");
-            auto success = SindarinAPI::getInstance()->syncBookmarks(readablesBookmarked,
-                                                                     readablesBookmarkedSize);
-            if (success) {
-                log_i("Bookmarks synced");
-                this->resetReadablesBookmarksChanged(readables_);
-                this->resetReadablesBookmarksChanged(articles_);
-            } else {
-                log_e("Failed to sync bookmarks");
+            if (httpCode != 200) {
+                log_e("Failed to check sync (HTTP %d)", httpCode);
                 progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
-                                                  .message = "Failed to sync bookmarks"});
-                delay(1000);
+                                                  .message = "Failed to check sync"});
+                return;
+            } else if (checkSyncResponse.synced) {
+                log_i("Client is in sync");
+                progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
+                continue;
             }
 
-            syncState.tasks[tasksIndex].percentage = 100;
-            tasksIndex += 1;
+            progressCallback(ContentSyncState{.state = ContentSyncState::State::LoadingTasks});
+
+            // If out of sync, download any new readables
+            ReadablesVector readablesToDownload = {};
+            ReadablesVector readablesToDelete = {};
+
+            // Look through all the books and articles and download any that we don't have already
+            auto userReadables = modelType == ReadablesModelType::Readable
+                                     ? checkSyncResponse.userBooks
+                                     : checkSyncResponse.userArticles;
+            auto [readablesToDownload, readablesToDelete] =
+                this->processReadables(checkSyncResponse, readables, userReadables);
+
+            // TODO: Probably these should be set operations
+            SHOW_HEAP();
+            log_d("%ss to download: %zu", ToString(modelType).c_str(), readablesToDownload.size());
+            log_d("%ss to delete: %zu", ToString(modelType).c_str(), readablesToDelete.size());
+
+            // Count books articles, and bookmarks to download and delete
+            ContentSyncState syncState = {.state = ContentSyncState::State::Syncing};
+            syncState.tasks.reserve(readablesToDownload.size() + readablesToDelete.size() +
+                                    (readablesBookmarkedSize > 0 ? 1 : 0));
+            auto tasksIndex = 0;
+
+            if (readablesBookmarkedSize == 0 && readablesToDownload.size() == 0 &&
+                readablesToDelete.size() == 0) {
+                log_i("No new content to download");
+                progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
+                return;
+            }
+
+            if (readablesBookmarkedSize > 0) {
+                syncState.tasks.push_back(ContentSyncState::Task{
+                    .message = "Storing bookmarks",
+                    .percentage = 0,
+                });
+            }
+
+            // Clear the readablesSince cache since it will be set at the end of a successful run.
+            // If we fail, then the next content sync will not have a cutoff date
+            auto readablesSince = modelType == ReadablesModelType::Readable
+                                      ? checkSyncResponse.booksSince
+                                      : checkSyncResponse.articlesSince;
+            if (readablesSince != "") {
+                log_d("Clearing readablesSince cache since it will be set at the end of a "
+                      "successful run");
+                if (modelType == ReadablesModelType::Readable) {
+                    this->prefs_.lastReadablesSince.set("");
+                } else {
+                    this->prefs_.lastArticlesSince.set("");
+                }
+            }
+
+            if (modelType == ReadablesModelType::Readable) {
+                for (const auto &readable : readablesToDelete) {
+                    syncState.tasks.push_back(ContentSyncState::Task{
+                        .message = StringFormat("Delete: %s", readable.title.c_str()),
+                        .percentage = 0,
+                    });
+                }
+
+                for (const auto &readable : readablesToDownload) {
+                    syncState.tasks.push_back(ContentSyncState::Task{
+                        .message = StringFormat("Get: %s", readable.title.c_str()),
+                        .percentage = 0,
+                    });
+                }
+            } else {
+                if (readablesToDelete.size() > 0) {
+                    syncState.tasks.push_back(ContentSyncState::Task{
+                        .message = "Delete: Archived articles",
+                        .percentage = 0,
+                    });
+                }
+                if (readablesToDownload.size() > 0) {
+                    syncState.tasks.push_back(ContentSyncState::Task{
+                        .message = "Get: Articles and newsletters",
+                        .percentage = 0,
+                    });
+                }
+            }
+            progressCallback(syncState);
+
+            // Sync bookmarks before we download any new readables
+            if (readablesBookmarkedSize > 0) {
+                log_i("Syncing bookmarks");
+                auto success = SindarinAPI::getInstance()->syncBookmarks(readablesBookmarked,
+                                                                         readablesBookmarkedSize);
+                if (success) {
+                    log_i("Bookmarks synced");
+                    // Clear both sets of readables because without bookmarks we're not re-entering
+                    // this block
+                    this->resetReadablesBookmarksChanged(readables_);
+                    this->resetReadablesBookmarksChanged(articles_);
+                } else {
+                    log_e("Failed to sync bookmarks");
+                    progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                                      .message = "Failed to sync bookmarks"});
+                    delay(1000);
+                }
+
+                syncState.tasks[tasksIndex].percentage = 100;
+                tasksIndex += 1;
+                progressCallback(syncState);
+            }
+
+            processReadableDeletion(readablesToDelete, readables, tasksIndex, syncState,
+                                    progressCallback);
+            bool failedReadableDownload = processReadableDownload(
+                readablesToDownload, readables_, tasksIndex, syncState, progressCallback);
+
             progressCallback(syncState);
         }
 
-        for (auto &readable : readablesToDelete) {
-            log_i("Deleting %s", readable.title.c_str());
-            readableFilePurge(readable);
-            this->removeReadable(readables_, readable);
-            syncState.tasks[tasksIndex].percentage = 100;
-            tasksIndex += 1;
-        }
-
-        progressCallback(syncState);
-
-        for (auto &readable : readablesToDownload) {
-            // Index into the progress tasks vector
-
-            auto path = readableFilePathForWriting(readable);
-            log_i("Downloading %s (file=%s, url=%s)", readable.title.c_str(), path.c_str(),
-                  readable.remoteUrl().c_str());
-            SHOW_HEAP();
-
-            for (int t = 0; t < NUMBER_OF_READABLE_DOWNLOAD_TRIES; t++) {
-                auto success = SindarinAPI::getInstance()->downloadReadable(
-                    readable, this->fileSystem, path,
-                    [progressCallback, &syncState, tasksIndex](int percentage) {
-                        syncState.tasks[tasksIndex].percentage = percentage;
-                        progressCallback(syncState);
-                    });
-                if (success) {
-                    addReadable(readables_, readable);
-                    log_d("File successfully downloaded.");
-                    break;
-                } else {
-                    log_w("Failed to download file. Retrying...");
-                    if (t == NUMBER_OF_READABLE_DOWNLOAD_TRIES - 1) {
-                        log_e("Failed to download file.");
-                        failedReadableDownload = true;
-                    }
-                }
-            }
-
-            tasksIndex += 1;
-        }
-
-        progressCallback(syncState);
-
-        if (articlesToDelete.size() > 0) {
-            for (int i = 0; i < articlesToDelete.size(); i++) {
-                syncState.tasks[tasksIndex].percentage =
-                    (float(i + 1) / articlesToDelete.size()) * 100;
-
-                const auto &readable = articlesToDelete[i];
-                log_i("Deleting %s", readable.title.c_str());
-                readableFilePurge(readable);
-                this->removeReadable(articles_, readable);
-            }
-
-            // All article deletions take a single task line item
-            tasksIndex += 1;
-        }
-
-        progressCallback(syncState);
-
-        // Clear the articlesSince cache since it will be set at the end of a successful run.
-        // If we fail, then the next content sync will not have a cutoff date
-        if (checkSyncResponse.articlesSince != "") {
-            log_d("Clearing articlesSince cache since it will be set at the end of a successful "
-                  "run.");
-            this->prefs_.lastArticlesSince.set("");
-        }
-
-        // Save the articles that are new
-        if (articlesToSave.size() > 0) {
-            float pctPerArticle = 100.0 / articlesToSave.size();
-            for (int i = 0; i < articlesToSave.size(); i++) {
-                float currPercentage = (float)i * pctPerArticle;
-                auto &readable = articlesToSave[i];
-                for (int t = 0; t < NUMBER_OF_READABLE_DOWNLOAD_TRIES; t++) {
-                    auto path = readableFilePathForWriting(readable);
-                    auto success = SindarinAPI::getInstance()->downloadReadable(
-                        readable, this->fileSystem, path,
-                        [progressCallback, &syncState, tasksIndex, currPercentage,
-                         pctPerArticle](int percentage) {
-                            float pctThisReadable = (float)percentage * pctPerArticle / 100.0;
-                            syncState.tasks[tasksIndex].percentage =
-                                currPercentage + pctThisReadable;
-                            progressCallback(syncState);
-                        });
-                    if (success) {
-                        this->addReadable(articles_, readable);
-                        log_d("File successfully downloaded.");
-                        break;
-                    } else {
-                        log_w("Failed to download file. Retrying...");
-                        if (t == NUMBER_OF_READABLE_DOWNLOAD_TRIES - 1) {
-                            log_e("Failed to download file.");
-                            failedArticleDownload = true;
-                        }
-                    }
-                }
-            }
-            tasksIndex += 1;
-        }
-
-        progressCallback(syncState);
-
-        // Store the metadata for both readables and articles
-        if (!this->saveReadables(readables_, READABLES_PATH)) {
-            log_e("Failed to save %s", READABLES_PATH);
-            failedReadableDownload = true;
-        }
-        if (!this->saveReadables(articles_, ARTICLES_PATH)) {
-            log_e("Failed to save %s", ARTICLES_PATH);
-            failedArticleDownload = true;
-        }
-
-        // Store since date values for next sync
-        if (failedArticleDownload || failedReadableDownload) {
-            log_w("Not setting lastReadablesSince to %s and lastArticlesSince to %s due to failed "
-                  "download",
-                  checkSyncResponse.readablesSince.c_str(),
-                  checkSyncResponse.articlesSince.c_str());
-        } else {
-            log_i("Setting lastReadablesSince to %s and lastArticlesSince to %s",
-                  checkSyncResponse.readablesSince.c_str(),
-                  checkSyncResponse.articlesSince.c_str());
-        }
-        if (checkSyncResponse.readablesSince != "" && !failedReadableDownload) {
-            this->prefs_.lastReadablesSince.set(checkSyncResponse.readablesSince.c_str());
-        }
-        if (checkSyncResponse.articlesSince != "" && !failedArticleDownload) {
-            this->prefs_.lastArticlesSince.set(checkSyncResponse.articlesSince.c_str());
-        }
-
-        // Update the since dates and try again
+        // Update the since dates and try once more to sync to ensure we don't miss anything
         readablesSince = this->readablesSince();
         articlesSince = this->articlesSince();
         request = CheckSyncRequest{
@@ -742,6 +554,115 @@ void LocalStore::syncFromRemote(
     });
 }
 
+auto LocalStore::processReadables(const CheckSyncResponse &checkSyncResponse,
+                                  ReadablesVector &readables, UserReadablesVector &userReadables)
+    -> std::pair<ReadablesVector, ReadablesVector> {
+    ReadablesVector readablesToDownload = {};
+    ReadablesVector readablesToDelete = {};
+
+    for (auto &userReadable : userReadables) {
+        log_d("User readable %s (%s)", userReadable.readable.title.c_str(),
+              userReadable.readable.file().shaHash.c_str());
+        SHOW_HEAP();
+
+        if (processReadablePlacemarksFromServer(userReadable.readable, userReadable.placemark)) {
+            log_i("Placemark for %s updated to %d", userReadable.readable.title.c_str(),
+                  userReadable.placemark);
+        }
+
+        auto found = hasReadable(readables, userReadable.readable);
+        if (userReadable.isArchived) {
+            log_i("Readable \"%s\" is archived, will delete", userReadable.readable.title.c_str());
+            // TODO: Store these articles in an accessible archive instead of just deleting them
+            // and ignoring
+            if (found) {
+                readablesToDelete.push_back(userReadable.readable);
+            } else {
+                log_i("Already deleted \"%s\" %s", userReadable.readable.title.c_str(),
+                      userReadable.readable.uuid.c_str());
+            }
+            continue;
+        } else if (found) {
+            // Should never get here as readablesSince should hide these articles
+            log_w("Already have \"%s\" %s", userReadable.readable.title.c_str(),
+                  userReadable.readable.uuid.c_str());
+            continue;
+        }
+        readablesToDownload.push_back(userReadable.readable);
+    }
+    resetReadablesPlacemarkChanged(readables);
+    resetReadablesArchivedChanged(readables);
+
+    return std::make_pair(readablesToDownload, readablesToDelete);
+}
+
+void LocalStore::processReadableDeletion(ReadablesVector &readablesToDelete,
+                                         ReadablesVector &readables, int &tasksIndex,
+                                         SyncState &syncState,
+                                         std::function<void(SyncState)> progressCallback) {
+    for (int i = 0; i < readablesToDelete.size(); i++) {
+
+        syncState.tasks[tasksIndex].percentage = (float(i + 1) / readablesToDelete.size()) * 100;
+
+        log_i("Deleting %s", readablesToDelete[i].title.c_str());
+        readableFilePurge(readablesToDelete[i]);
+        this->removeReadable(readables, readablesToDelete[i]);
+    }
+
+    // All article deletions take a single task line item
+    tasksIndex += 1;
+    progressCallback(syncState);
+}
+
+auto LocalStore::processReadableDownload(ReadablesVector &readablesToDownload,
+                                         ReadablesVector &readables, int &tasksIndex,
+                                         SyncState &syncState,
+                                         std::function<void(SyncState)> progressCallback) -> bool {
+    bool failedDownload = false;
+
+    if (readablesToDownload.size() == 0) {
+        progressCallback(syncState);
+        return true;
+    }
+
+    float pctPerReadable = 100.0 / readablesToDownload.size();
+    for (int i = 0; i < readablesToDownload.size(); i++) {
+        float currPercentage = (float)i * pctPerReadable;
+        auto &readable = readablesToDownload[i];
+        auto path = readableFilePathForWriting(readable);
+        log_i("Downloading %s (file=%s, url=%s)", readable.title.c_str(), path.c_str(),
+              readable.remoteUrl().c_str());
+        SHOW_HEAP();
+
+        for (int t = 0; t < NUMBER_OF_READABLE_DOWNLOAD_TRIES; t++) {
+            auto success = SindarinAPI::getInstance()->downloadReadable(
+                readable, this->fileSystem, path,
+                [progressCallback, &syncState, tasksIndex, currPercentage,
+                 pctPerReadable](int percentage) {
+                    float pctThisReadable = (float)percentage * pctPerReadable / 100.0;
+                    syncState.tasks[tasksIndex].percentage = currPercentage + pctThisReadable;
+                    progressCallback(syncState);
+                });
+            if (success) {
+                addReadable(readables, readable);
+                log_d("File successfully downloaded.");
+                break;
+            } else {
+                log_w("Failed to download file. Retrying...");
+                if (t == NUMBER_OF_READABLE_DOWNLOAD_TRIES - 1) {
+                    log_e("Failed to download file.");
+                    failedDownload = true;
+                }
+            }
+        }
+
+        tasksIndex += 1;
+    }
+
+    progressCallback(syncState);
+
+    return failedDownload;
+}
 void LocalStore::deleteReadables(bool restart) {
     deleteReadableFiles(readables_, restart);
     readables_.clear();
