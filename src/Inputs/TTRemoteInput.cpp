@@ -153,7 +153,7 @@ void TTRemoteInput::scanForDevice() {
     // scanWindow equal to the scanInterval in order to do continuous scanning.
     scan->setInterval(40);
     scan->setWindow(30);
-    scan->setActiveScan(true);
+    // scan->setActiveScan(true);
     scan->start((int)(RESCAN_INTERVAL_MS / 1000), nullptr, false);
     lastScanMs_ = millis();
     digitalWrite(BLUE_LED, LED_OFF);
