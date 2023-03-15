@@ -5,6 +5,7 @@
 #include <esp_adc/adc_cali.h>
 #include <esp_adc/adc_cali_scheme.h>
 #include <esp_adc/adc_oneshot.h>
+#include <ulp_riscv.h>
 #include <esp_bt.h>
 #include <esp_err.h>
 #include <esp_sleep.h>
@@ -40,6 +41,8 @@ auto Millis() -> int { return GetRunTimeMs(); }
 
 void HardwareInit() {
     // release rtc i2c lines
+    ulp_timer_stop();
+    ulp_riscv_halt();
     rtc_gpio_deinit((gpio_num_t)I2C_MASTER_SDA_IO);
     rtc_gpio_deinit((gpio_num_t)I2C_MASTER_SCL_IO);
 

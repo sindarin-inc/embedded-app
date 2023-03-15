@@ -4,10 +4,10 @@
 #include "ulp_riscv.h"
 #include "ulp_riscv_i2c.h"
 #include "../../ulp/mag_defs.h"
+#include <driver/rtc_io.h>
 
 extern const uint8_t ulp_main_bin_start[] asm("_binary_ulp_main_bin_start");
 extern const uint8_t ulp_main_bin_end[]   asm("_binary_ulp_main_bin_end");
-
 
 static void init_ulp_program(void)
 {
@@ -44,6 +44,8 @@ static void init_i2c(void)
 }
 
 void ulp_deep_sleep_magnetometer_wakeup() {
+    rtc_gpio_init((gpio_num_t)I2C_MASTER_SDA_IO);
+    rtc_gpio_init((gpio_num_t)I2C_MASTER_SCL_IO);
     init_i2c();
     log_i("entering deep sleep, wake up with magnetometer");
 
