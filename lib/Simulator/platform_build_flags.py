@@ -65,7 +65,7 @@ flags = [
     "-DENABLE_OTA=0",
     "-DEINKET013TT1=1",
     "-lpthread",
-    "-Imain",
+    "-Isrc",
     lib_includes,
 ]
 
