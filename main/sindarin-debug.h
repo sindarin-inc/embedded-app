@@ -23,11 +23,11 @@
 // esp_clk methods are deprecated in IDF 5+
 // TODO: replace
 extern "C" {
-#include "esp_private/esp_clk.h"
+#include <esp_private/esp_clk.h>
 }
 
-#include "esp_log.h"
-#include "xt_instr_macros.h"
+#include <esp_log.h>
+#include <xt_instr_macros.h>
 #include "Misc/Platform.hpp"
 
 // For IDF builds, use the ESP_LOGD macros since they work with power management.
