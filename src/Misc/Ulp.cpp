@@ -2,9 +2,7 @@
 #include "sindarin-debug.h"
 #include "esp_sleep.h"
 #include "ulp_riscv.h"
-extern "C" {
-    #include "ulp_riscv_i2c.h"
-}
+#include "ulp_riscv_i2c.h"
 #include "../../ulp/mag_defs.h"
 
 extern const uint8_t ulp_main_bin_start[] asm("_binary_ulp_main_bin_start");
@@ -31,42 +29,22 @@ static void init_ulp_program(void)
 
 static void init_i2c(void)
 {
-    /* Configure RTC I2C */
-    printf("Initializing RTC I2C ...\n");
-    /*
-    ulp_riscv_i2c_cfg_t i2c_cfg = ULP_RISCV_I2C_DEFAULT_CONFIG();
-    i2c_cfg.i2c_pin_cfg.sda_io_num = GPIO_NUM_1;
-    i2c_cfg.i2c_pin_cfg.scl_io_num = GPIO_NUM_0;
-
+    ulp_riscv_i2c_cfg_t i2c_cfg;
+    i2c_cfg.i2c_pin_cfg.sda_io_num = I2C_MASTER_SDA_IO;
+    i2c_cfg.i2c_pin_cfg.scl_io_num = I2C_MASTER_SCL_IO;
+    i2c_cfg.i2c_pin_cfg.sda_pullup_en = true;
+    i2c_cfg.i2c_pin_cfg.scl_pullup_en = true;
     i2c_cfg.i2c_timing_cfg.scl_low_period = 5;
     i2c_cfg.i2c_timing_cfg.scl_high_period = 5;
     i2c_cfg.i2c_timing_cfg.sda_duty_period = 2;
-    */
-    ulp_riscv_i2c_cfg_t i2c_cfg;
-   i2c_cfg.i2c_pin_cfg.sda_io_num = GPIO_NUM_1,   \
-        i2c_cfg.i2c_pin_cfg.scl_io_num = GPIO_NUM_0,   \
-        i2c_cfg.i2c_pin_cfg.sda_pullup_en = true,      \
-        i2c_cfg.i2c_pin_cfg.scl_pullup_en = true,      \
-        i2c_cfg.i2c_timing_cfg.scl_low_period = 5,     \
-        i2c_cfg.i2c_timing_cfg.scl_high_period = 5,    \
-        i2c_cfg.i2c_timing_cfg.sda_duty_period = 2,    \
-        i2c_cfg.i2c_timing_cfg.scl_start_period = 3,   \
-        i2c_cfg.i2c_timing_cfg.scl_stop_period = 6,    \
-        i2c_cfg.i2c_timing_cfg.i2c_trans_timeout = 20, \
-
+    i2c_cfg.i2c_timing_cfg.scl_start_period = 3;
+    i2c_cfg.i2c_timing_cfg.scl_stop_period = 6;
+    i2c_cfg.i2c_timing_cfg.i2c_trans_timeout = 20;
     ulp_riscv_i2c_master_init(&i2c_cfg);
 }
 
 void Ulp::DeepSleepWithMagWakeup() {
-    
-
     init_i2c();
-    ulp_riscv_i2c_master_set_slave_addr(MAG_ADDRESS);
-    ulp_riscv_i2c_master_set_slave_reg_addr(MAG_DEVICE_ID_REG);
-
-    uint8_t data_rd;
-    ulp_riscv_i2c_master_read_from_device(&data_rd, 1);
-    log_i("read from i2c: %d\n", data_rd);
     log_i("entering deep sleep, wake up with magnetometer");
 
     init_ulp_program();
