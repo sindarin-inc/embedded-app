@@ -11,32 +11,32 @@ using namespace IBMFDefs;
 class RLEExtractor {
 private:
     static constexpr char const *TAG = "RLEExtractor";
-    MemoryPtr fromPixelsPtr, fromPixelsEnd;
+    MemoryPtr fromPixelsPtr_, fromPixelsEnd_;
 
-    uint32_t repeatCount;
+    uint32_t repeatCount_;
 
-    uint8_t nybbleFlipper = 0xf0U;
-    uint8_t nybbleByte;
+    uint8_t nybbleFlipper_ = 0xf0U;
+    uint8_t nybbleByte_;
 
-    PixelResolution resolution;
+    PixelResolution resolution_;
 
     const uint8_t PK_REPEAT_COUNT = 14;
     const uint8_t PK_REPEAT_ONCE = 15;
 
-    bool getnext8(uint8_t &val) {
-        if (fromPixelsPtr >= fromPixelsEnd) return false;
-        val = *fromPixelsPtr++;
+    auto getnext8(uint8_t &val) -> bool {
+        if (fromPixelsPtr_ >= fromPixelsEnd_) return false;
+        val = *fromPixelsPtr_++;
         return true;
     }
 
-    bool getNybble(uint8_t &nyb) {
-        if (nybbleFlipper == 0xf0U) {
-            if (!getnext8(nybbleByte)) return false;
-            nyb = nybbleByte >> 4;
+    auto getNybble(uint8_t &nyb) -> bool {
+        if (nybbleFlipper_ == 0xf0U) {
+            if (!getnext8(nybbleByte_)) return false;
+            nyb = nybbleByte_ >> 4;
         } else {
-            nyb = (nybbleByte & 0x0f);
+            nyb = (nybbleByte_ & 0x0f);
         }
-        nybbleFlipper ^= 0xffU;
+        nybbleFlipper_ ^= 0xffU;
         return true;
     }
 
@@ -61,17 +61,17 @@ private:
     //   else if i < 14 then
     //     pkPackedNum := (i - dynF - 1) * 16 + get_nyb + dynF + 1
     //   else begin
-    //     if repeatCount != 0 then abort('Extra repeat count!');
+    //     if repeatCount_ != 0 then abort('Extra repeat count!');
     //     if i = 14 then
-    //        repeatCount := pkPackedNum
+    //        repeatCount_ := pkPackedNum
     //     else
-    //        repeatCount := 1;
-    //     send_out(true, repeatCount);
+    //        repeatCount_ := 1;
+    //     send_out(true, repeatCount_);
     //     pkPackedNum := pkPackedNum;
     //   end;
     // end;
 
-    bool getPackedNumber(uint32_t &val, const RLEMetrics &rleMetrics) {
+    auto getPackedNumber(uint32_t &val, const RLEMetrics &rleMetrics) -> bool {
         uint8_t nyb;
         uint32_t i, j;
 
@@ -100,25 +100,25 @@ private:
                 val = ((i - dynF - 1) << 4) + nyb + dynF + 1;
                 break;
             } else {
-                // if (repeatCount != 0) {
+                // if (repeatCount_ != 0) {
                 //   std::cerr << "Spurious repeatCount iteration!" << std::endl;
                 //   return false;
                 // }
                 if (i == PK_REPEAT_COUNT) {
-                    if (!getPackedNumber(repeatCount, rleMetrics)) return false;
+                    if (!getPackedNumber(repeatCount_, rleMetrics)) return false;
                 } else { // i == PK_REPEAT_ONCE
-                    repeatCount = 1;
+                    repeatCount_ = 1;
                 }
             }
         }
         return true;
     }
 
-    inline void copyOneRowEightBits(MemoryPtr fromLine, MemoryPtr toLine, int16_t fromCol, int size) const {
+    inline auto copyOneRowEightBits(MemoryPtr fromLine, MemoryPtr toLine, int16_t fromCol, int size) const -> void {
         memcpy(toLine + fromCol, fromLine + fromCol, size);
     }
 
-    void copyOneRowOneBit(MemoryPtr fromLine, MemoryPtr toLine, int16_t fromCol, int size) const {
+    auto copyOneRowOneBit(MemoryPtr fromLine, MemoryPtr toLine, int16_t fromCol, int size) const -> void {
         uint8_t mask = 0x80 >> (fromCol & 7);
         for (int col = fromCol; col < fromCol + size; col++) {
             if constexpr (BLACK_ONE_BIT) {
@@ -131,14 +131,15 @@ private:
             if (mask == 0) mask = 0x80;
         }
     }
-public:
-    RLEExtractor(PixelResolution resolution) : resolution(resolution) {}
 
-    bool retrieveBitmap(const RLEBitmap &fromBitmap, Bitmap &toBitmap, const Pos atOffset,
-                        const RLEMetrics rleMetrics) {
+public:
+    RLEExtractor(PixelResolution resolution) : resolution_(resolution) {}
+
+    auto retrieveBitmap(const RLEBitmap &fromBitmap, Bitmap &toBitmap, const Pos atOffset,
+                        const RLEMetrics rleMetrics) -> bool {
         // point on the glyphs' bitmap definition
-        fromPixelsPtr = fromBitmap.pixels;
-        fromPixelsEnd = fromPixelsPtr + fromBitmap.length;
+        fromPixelsPtr_ = fromBitmap.pixels;
+        fromPixelsEnd_ = fromPixelsPtr_ + fromBitmap.length;
         MemoryPtr toRowPtr;
 
         if ((atOffset.x < 0) || (atOffset.y < 0) ||
@@ -146,7 +147,7 @@ public:
             ((atOffset.x + fromBitmap.dim.width) > toBitmap.dim.width))
             return false;
 
-        if (resolution == PixelResolution::ONE_BIT) {
+        if (resolution_ == PixelResolution::ONE_BIT) {
             uint32_t toRowSize = (toBitmap.dim.width + 7) >> 3;
             toRowPtr = toBitmap.pixels + (atOffset.y * toRowSize);
 
@@ -181,8 +182,8 @@ public:
             } else {
                 uint32_t count = 0;
 
-                repeatCount = 0;
-                nybbleFlipper = 0xf0U;
+                repeatCount_ = 0;
+                nybbleFlipper_ = 0xf0U;
 
                 // the variable will be reversed at first execution of the inner loop
                 bool black = !rleMetrics.firstIsBlack;
@@ -213,15 +214,15 @@ public:
                         count--;
                     }
 
-                    // if (repeatCount != 0) std::cout << "Repeat count: " << repeatCount <<
+                    // if (repeatCount_ != 0) std::cout << "Repeat count: " << repeatCount_ <<
                     // std::endl;
-                    while ((fromRow < fromBitmap.dim.height) && (repeatCount-- > 0)) {
+                    while ((fromRow < fromBitmap.dim.height) && (repeatCount_-- > 0)) {
                         copyOneRowOneBit(toRowPtr, toRowPtr + toRowSize, atOffset.x, fromBitmap.dim.width);
                         fromRow++;
                         toRowPtr += toRowSize;
                     }
 
-                    repeatCount = 0;
+                    repeatCount_ = 0;
                 }
                 // std::cout << std::endl;
             }
@@ -229,8 +230,8 @@ public:
             uint32_t toRowSize = toBitmap.dim.width;
             toRowPtr = toBitmap.pixels + (atOffset.y * toRowSize);
 
-            repeatCount = 0;
-            nybbleFlipper = 0xf0U;
+            repeatCount_ = 0;
+            nybbleFlipper_ = 0xf0U;
 
             if (rleMetrics.dynF == 14) { // is a bitmap?
                 uint32_t count = 8;
@@ -258,8 +259,8 @@ public:
             } else {
                 uint32_t count = 0;
 
-                repeatCount = 0;
-                nybbleFlipper = 0xf0U;
+                repeatCount_ = 0;
+                nybbleFlipper_ = 0xf0U;
 
                 bool black = !(rleMetrics.firstIsBlack == 1);
 
@@ -283,15 +284,15 @@ public:
                         count--;
                     }
 
-                    // if (repeatCount != 0) std::cout << "Repeat count: " << repeatCount <<
+                    // if (repeatCount_ != 0) std::cout << "Repeat count: " << repeatCount_ <<
                     // std::endl;
-                    while ((fromRow < toBitmap.dim.height) && (repeatCount-- > 0)) {
+                    while ((fromRow < toBitmap.dim.height) && (repeatCount_-- > 0)) {
                         copyOneRowEightBits(toRowPtr, toRowPtr + toRowSize, atOffset.x, fromBitmap.dim.width);
                         fromRow++;
                         toRowPtr += toRowSize;
                     }
 
-                    repeatCount = 0;
+                    repeatCount_ = 0;
                 }
                 // std::cout << std::endl;
             }

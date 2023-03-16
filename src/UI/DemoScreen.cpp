@@ -8,7 +8,7 @@
 #include "UI/Bitmaps/Logo.hpp"
 #include "UI/Bitmaps/Sol_Logo.hpp"
 #include "UI/Bitmaps/stone.hpp"
-#include "UI/Fonts/Fonts.h"
+#include "UI/Fonts/Fonts.hpp"
 #include "sindarin-debug.h"
 
 extern void UIInnerLoop(RemoteCommand command);

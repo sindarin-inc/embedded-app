@@ -2,7 +2,7 @@
 
 #include <cinttypes>
 
-#include "Font.h"
+#include "Font.hpp"
 //---
 #include "GFXFonts/LucidaGrande10pt7b.h"
 #include "GFXFonts/LucidaGrande14pt7b.h"
@@ -38,10 +38,10 @@ const GFont FONT_TAHOMA_REGULAR_FONT20PT7B = GFont(TAHOMA_REGULAR_FONT10PT7B);
 // object is created using the IBMFFontLow class that manage the whole .h file
 // and "faces" are hooked through the IBMFFont class.
 
-// extern IBMFFontLow EC_Regular_75; // Instanciated in Fonts.cpp
+extern IBMFFontLow EC_Regular_75; // Instanciated in Fonts.cpp
 
 // extern IBMFFont FONT_EC_REGULAR_75BPI12PT; // Instanciated in Fonts.cpp
-// extern IBMFFont FONT_EC_REGULAR_75BPI14PT; // Instanciated in Fonts.cpp
+extern IBMFFont FONT_EC_REGULAR_75BPI14PT; // Instanciated in Fonts.cpp
 // extern IBMFFont FONT_EC_REGULAR_75BPI17PT; // Instanciated in Fonts.cpp
 
 /// extern IBMFFontLow ECSans_Regular_75; // Instanciated in Fonts.cpp

@@ -18,7 +18,7 @@
 
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
-#include "UI/Fonts/Font.h"
+#include "UI/Fonts/Font.hpp"
 
 // This isn't the best -- we may want to make this dynamically
 // allocated instead in the object?
@@ -92,7 +92,7 @@ public:
     void setFont(Font *f) {
         font_ = f;
         if (font_->isA(FontType::GFX)) {
-            gfxClass_->setFont(static_cast<GFont *>(font_)->get());
+            gfxClass_->setFont(dynamic_cast<GFont *>(font_)->get());
         }
     }
     void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {

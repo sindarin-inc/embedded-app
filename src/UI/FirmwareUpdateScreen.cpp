@@ -5,7 +5,7 @@
 #include "Communications/FirmwareDownload.hpp"
 #include "Communications/WiFi.hpp"
 #include "Misc/Dispatch.hpp"
-#include "UI/Fonts/Font.h"
+#include "UI/Fonts/Font.hpp"
 #include "sindarin-debug.h"
 
 void FirmwareUpdateScreen::render(DisplaySystem &display) {

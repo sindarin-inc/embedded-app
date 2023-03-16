@@ -7,14 +7,13 @@
 #include "EinkView.hpp"
 #include "Misc/Style.hpp"
 #include "SingleLineTextView.hpp"
-#include "UI/Fonts/Fonts.h"
+#include "UI/Fonts/Fonts.hpp"
 
 // A view that draws multiple lines of text
 class MultiLineTextView : public EinkView {
 public:
     MultiLineTextView(DisplaySystem &display, std::string text, int maxLines, int spacingOffset = 0,
-                      Font *font = (Font *)&FONT_TAHOMA_REGULAR_FONT5PT7B,
-                      bool allCaps = false)
+                      Font *font = (Font *)&FONT_TAHOMA_REGULAR_FONT5PT7B, bool allCaps = false)
         : EinkView(display), text_(std::move(text)), maxLines_(maxLines),
           spacingOffset_(spacingOffset), font_(font) {
         if (allCaps) {

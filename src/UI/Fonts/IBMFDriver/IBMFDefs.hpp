@@ -6,7 +6,7 @@
 //---  ESP_IDF
 //#include <esp_log.h>
 
-const constexpr bool IBMF_TRACING = true;
+const constexpr bool IBMF_TRACING = false;
 
 #if IBMF_TESTING
 #define PROGMEM
@@ -146,7 +146,7 @@ enum FontFormat : uint8_t { LATIN = 0, UTF32 = 1, UNKNOWN = 7 };
 
 enum class PixelResolution : uint8_t { ONE_BIT, EIGHT_BITS };
 
-constexpr PixelResolution default_resolution = PixelResolution::ONE_BIT;
+const constexpr PixelResolution DEFAULT_RESOLUTION = PixelResolution::ONE_BIT;
 
 struct Dim {
     int16_t width;
@@ -198,7 +198,6 @@ typedef Bitmap *BitmapPtr;
 typedef int16_t FIX16;
 typedef int16_t FIX14;
 typedef uint16_t GlyphCode;
-typedef uint8_t SmallGlyphCode;
 
 struct Preamble {
     char marker[4]; // Must be "IBMF"
@@ -223,8 +222,8 @@ struct FaceHeader {
     uint16_t ligKernStepCount;
     GlyphCode firstCode;
     GlyphCode lastCode;
-    uint8_t kernCount;
     uint8_t maxHight;
+    uint8_t filler;
 };
 typedef FaceHeader *FaceHeaderPtr;
 
@@ -330,7 +329,7 @@ typedef FaceHeader *FaceHeaderPtr;
 // remains 8 bits for FIX14 and 10 bits for FIX16, that is more than enough...
 //
 
-#define ORIGINAL_FORMAT 1
+#define ORIGINAL_FORMAT 0
 #if ORIGINAL_FORMAT
 union SkipByte {
     uint8_t whole : 8;
@@ -401,15 +400,15 @@ struct RLEMetrics {
 };
 
 struct GlyphInfo {
-    SmallGlyphCode charCode;
+    GlyphCode charCode;
     uint8_t bitmapWidth;
     uint8_t bitmapHeight;
     int8_t horizontalOffset;
     int8_t verticalOffset;
-    uint8_t ligKernPgmIndex; // = 255 if none
     uint16_t packetLength;
     FIX16 advance;
     RLEMetrics rleMetrics;
+    uint8_t ligKernPgmIndex; // = 255 if none
 };
 typedef GlyphInfo *GlyphInfoPtr;
 

@@ -7,7 +7,7 @@
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/StringUtil.hpp"
-#include "UI/Fonts/Font.h"
+#include "UI/Fonts/Font.hpp"
 #include "UI/Fonts/IBMFDriver/IBMFFont.hpp"
 #include "sindarin-debug.h"
 

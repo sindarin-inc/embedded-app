@@ -2,7 +2,7 @@
 
 #include <Adafruit_GFX.h>
 
-#include "UI/Fonts/Fonts.h"
+#include "UI/Fonts/Fonts.hpp"
 
 struct MenuStyleFamily {
     Font *itemFont;
