@@ -283,6 +283,33 @@ void CSindarinWiFi::wiFiEventHandler(void *arg, esp_event_base_t eventBase, int3
     }
 }
 
+auto CSindarinWiFi::getLocalIp() -> wifiesp_ip4address { 
+    if (getMode() == WIFI_MODE_NULL) {
+        return IPADDRESS_NONE;
+    }
+    esp_netif_ip_info_t ip;
+    if (esp_netif_get_ip_info(_sta_netif, &ip) != ESP_OK) {
+        log_i("Netif Get IP Failed");
+        return IPADDRESS_NONE;
+    }
+    return (wifiesp_ip4address)ip.ip;
+}
+
+auto CSindarinWiFi::getLocalIpStr() -> std::string {
+    esp_ip4_addr_t ip = (esp_ip4_addr_t)getLocalIp();
+    char ipstr[16];
+    sprintf(ipstr, IPSTR, IP2STR(&ip));
+    return ipstr;
+}
+
+auto CSindarinWiFi::getMode() -> wifi_mode_t { 
+    wifi_mode_t mode;
+    if (esp_wifi_get_mode(&mode) != ESP_OK) {
+        log_i("error getMode(): WiFi not started");
+        return WIFI_MODE_NULL;
+    }
+}
+
 void CSindarinWiFi::ipEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId,
                                    void *eventData) {
     CSindarinWiFi *tthis = (CSindarinWiFi *)arg;

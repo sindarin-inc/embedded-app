@@ -43,6 +43,7 @@ protected:
     bool connected_ = false;
     wifi_power_t wiFiPower_ = WIFI_POWER_19_5dBm;
     bool autoReconnect_ = false;
+    esp_netif_t *sta_netif_ = nullptr;
 
     static void wiFiEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId,
                                  void *eventData);
