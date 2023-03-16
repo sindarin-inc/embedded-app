@@ -22,7 +22,7 @@
 #include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
-#include "Misc/Interrupt/FunctionalInterrupt.h"
+#include "FunctionalInterrupt.h"
 #include "Models/Readable.hpp"
 #include "Storage/CrashReportWriter.hpp"
 #include "Storage/LocalStore.hpp"
