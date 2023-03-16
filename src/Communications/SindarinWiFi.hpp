@@ -35,6 +35,9 @@ public:
     void setWiFiPower(wifi_power_t power) { wiFiPower_ = power; }
     auto getWiFiPower() -> wifi_power_t { return wiFiPower_; }
 
+    auto getLocalIp() -> wifiesp_ip4address;
+    auto getLocalIpStr() -> std::string;
+
 protected:
     bool began_ = false;
     bool connected_ = false;

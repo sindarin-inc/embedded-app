@@ -74,6 +74,10 @@ void CSindarinWiFi::disconnectWiFi() { log_i("Pretending to disconnect WiFi"); }
 
 auto CSindarinWiFi::connected() -> bool { return true; }
 
+auto CSindarinWiFi::getLocalIp() -> wifiesp_ip4address { return IPADDRESS_NONE; }
+
+auto CSindarinWiFi::getLocalIpStr() -> std::string { return "00.00.00.00"; }
+
 wifiesp_status_t CSindarinWiFi::getStatus() { return WIFIESP_STATUS_CONNECTED; }
 
 auto CSindarinWiFi::getMode() -> wifi_mode_t { return WIFI_MODE_STA; }
