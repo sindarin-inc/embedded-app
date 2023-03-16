@@ -254,6 +254,18 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
     // Set the EOF place correctly.
     currTokenBuffer_[plcInTokenBuffer].place = plcInBuffer;
     currTokenBuffer_[plcInTokenBuffer].streamPlace = placeInFile + plcInBuffer;
+
+    // we need to set the size of the last token if it wasn't set (e.g., when there is no newline at
+    // the end)
+    if ((plcInTokenBuffer > 0) && (currTokenBuffer_[plcInTokenBuffer - 1].token == TOKEN_TEXT) &&
+        (currTokenBuffer_[plcInTokenBuffer - 1].width == 0)) {
+        setSizeOfTextToken(plcInTokenBuffer - 1);
+        // set the size of that space token
+        // based on this token and the token before the space.
+        if ((plcInTokenBuffer > 2) && currTokenBuffer_[plcInTokenBuffer - 2].token == TOKEN_SPACE) {
+            setSizeOfTextToken(plcInTokenBuffer - 2);
+        }
+    }
 }
 
 // debugging method
