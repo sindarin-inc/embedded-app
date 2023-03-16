@@ -10,6 +10,7 @@
 #include <esp_bt.h>
 #include <esp_err.h>
 #include <esp_sleep.h>
+#include <esp_timer.h>
 #include <esp_task_wdt.h>
 #include <optional>
 #include <soc/rtc.h>
@@ -77,6 +78,10 @@ void disableCore0WDT() {
     if (idle_0 == NULL || esp_task_wdt_delete(idle_0) != ESP_OK) {
         log_e("Failed to remove Core 0 IDLE task from WDT");
     }
+}
+
+int64_t platform_timer_get_time(void) {
+    return esp_timer_get_time();
 }
 
 void InitializePlatform() {

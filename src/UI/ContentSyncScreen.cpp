@@ -2,6 +2,7 @@
 
 #include "Communications/SindarinWiFi.hpp"
 #include "Misc/InactivityTimer.hpp"
+#include "Misc/Platform.hpp"
 
 // TODO(john): Note-to-self: Externs are janky. Do better.
 extern InactivityTimer inactivityTimer;

@@ -4,6 +4,7 @@
 
 #include "Misc/MenuStyle.hpp"
 #include "Misc/Style.hpp"
+#include "Misc/Platform.hpp"
 
 #define MAX_WIDTH 150
 

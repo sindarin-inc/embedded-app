@@ -1,11 +1,11 @@
 #include "FileDownload.hpp"
 
-#include <esp_timer.h>
 #include <utility>
 
 #include "Communications/HttpClient.hpp"
 #include "Communications/SindarinAPI.hpp"
 #include "Misc/GUnzipStream.hpp"
+#include "Misc/Platform.hpp"
 #include "sindarin-debug.h"
 
 auto DownloadFile(const char *url,
@@ -24,7 +24,7 @@ auto DownloadFile(const char *url,
         }
     }
 
-    auto time = esp_timer_get_time();
+    auto time = platform_timer_get_time();
     auto downloadStart = time;
 
     if (gzip) {
@@ -79,19 +79,19 @@ auto DownloadFile(const char *url,
         totalReadLen += readLen;
 
         float percentProgress = (float)totalReadLen / contentLength * 100.0f;
-        auto now = esp_timer_get_time();
+        auto now = platform_timer_get_time();
         // Report every 5-20s OR every 5% progress, whichever comes first
         if ((now - time > 5000000) &&
             (now - time > 20000000 || (percentProgress - lastPercentage) > 5)) {
             log_d("Downloaded %.1f%% (%.1f KB/s)", percentProgress,
-                  totalReadLen / 1024.0f / ((esp_timer_get_time() - downloadStart) / 1000000.0f));
+                  totalReadLen / 1024.0f / ((platform_timer_get_time() - downloadStart) / 1000000.0f));
             progressCallback(totalReadLen, percentProgress);
             time = now;
             lastPercentage = percentProgress;
         }
     }
 
-    int64_t end = esp_timer_get_time();
+    int64_t end = platform_timer_get_time();
     int64_t duration = end - downloadStart;
     float bps = totalReadLen / (duration / 1000000.0f);
 
@@ -183,7 +183,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
         },
         fileProgress, gzip);
 
-    auto time = esp_timer_get_time();
+    auto time = platform_timer_get_time();
     auto downloadStart = time;
 
     if (!success) {
@@ -212,7 +212,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
 
     file.close();
 
-    int64_t end = esp_timer_get_time();
+    int64_t end = platform_timer_get_time();
     int64_t duration = end - downloadStart;
     float bps = fileLength / (duration / 1000000.0f);
     log_i("File write complete %d in %" PRId64 "us (%f Bps %f KB/s, %f kbps)", fileLength, duration,

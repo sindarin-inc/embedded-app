@@ -68,15 +68,20 @@ void AllowPowerOff();
 
 void hardwareInit();
 
+void delay(int ms);
+
+int millis();
+
+void digitalWrite(int pin, int level);
+
+int64_t platform_timer_get_time(void);
+
 #if !SIMULATOR
 void pinMode(int pin, int mode);
-void digitalWrite(int pin, int level);
 int digitalRead(uint8_t pin);
-void delay(int ms);
-int millis();
 uint32_t getHeapSize();
 void enableCore0WDT();
 void disableCore0WDT();
 #else
-#include <Arduino.h>
+
 #endif

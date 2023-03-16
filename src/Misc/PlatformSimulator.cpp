@@ -1,6 +1,8 @@
 #if SIMULATOR
 
 #include <string>
+#include <chrono>
+#include <freertos/FreeRTOS.h>
 
 #include "Platform.hpp"
 #include "sindarin-debug.h"
@@ -45,6 +47,29 @@ void ForcePowerOn() {}
 
 void AllowPowerOff() {}
 
-void hardwareInit() {}
+
+extern "C" void vTaskDelay(const TickType_t xTicksToDelay);
+
+std::chrono::system_clock::time_point SimStartTime;
+
+void hardwareInit() { SimStartTime = std::chrono::system_clock::now(); }
+
+void delay(int delay_ms) { vTaskDelay(delay_ms / portTICK_PERIOD_MS); }
+
+int millis() {
+    auto duration = std::chrono::system_clock::now() - SimStartTime;
+    auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
+    return (int)durationMs.count();
+}
+
+void digitalWrite(int pin, int level) {
+    log_i("digitalWrite: pin %d is level %d", pin, level);
+}
+
+int64_t platform_timer_get_time(void) {
+    auto duration = std::chrono::system_clock::now() - SimStartTime;
+    auto durationUs = std::chrono::duration_cast<std::chrono::microseconds>(duration);
+    return durationUs.count();
+}
 
 #endif

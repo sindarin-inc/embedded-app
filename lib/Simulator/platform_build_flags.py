@@ -57,7 +57,6 @@ flags = [
     "-Dnvs_flash_erase()=' '",
     "-Dtypeof(a)='auto '",
     "-DSIMULATOR=1",
-    "-DARDUINO=100",
     "-DUSE_TURN_TOUCH_REMOTE=0",
     "-DUSE_BLE_SERVER_REMOTE=0",
     "-DUSE_BLE_SERVER_SETTINGS=0",

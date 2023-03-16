@@ -2,10 +2,12 @@
 
 #include "FakeEinkET013TT1.hpp"
 
+#include <stdio.h>
 #include <algorithm>
+#include <cstring>
 
+#include "Misc/Platform.hpp"
 #include "sindarin-debug.h"
-#include <Arduino.h>
 
 uint8_t FakeEinkET013TT1ParticlePositions[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT];
 // Skip waveform processing and just set things as black and white

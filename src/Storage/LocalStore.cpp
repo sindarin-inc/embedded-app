@@ -9,6 +9,7 @@
 #include "Misc/Crypto.hpp"
 #include "Misc/GUnzipStream.hpp"
 #include "Misc/StringUtil.hpp"
+#include "Misc/Platform.hpp"
 #include "Models/Json.hpp"
 #include "Models/ReadableBookmark.hpp"
 #include "sindarin-debug.h"

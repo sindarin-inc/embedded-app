@@ -1,3 +1,4 @@
+/*
 #include "esp_timer.h"
 
 #include <chrono>
@@ -10,3 +11,4 @@ int64_t esp_timer_get_time(void) {
     auto durationUs = std::chrono::duration_cast<std::chrono::microseconds>(duration);
     return durationUs.count();
 }
+*/

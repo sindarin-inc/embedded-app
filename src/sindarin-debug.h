@@ -3,7 +3,8 @@
 
 #if SIMULATOR
 
-#include "esp32-hal-log.h"
+//#include "esp32-hal-log.h"
+#include <stdio.h>
 #include <assert.h>
 
 #define SHOW_HEAP()
@@ -18,6 +19,12 @@
 #define PROFILE_END_LOG_MS(identifier)
 #define PROFILE_END_LOG_US(identifier)
 #define PROFILE_END_LOG_NS(identifier)
+
+#define log_v(format, ...) printf(format, ##__VA_ARGS__);
+#define log_d(format, ...) printf(format, ##__VA_ARGS__);
+#define log_i(format, ...) printf(format, ##__VA_ARGS__);
+#define log_w(format, ...) printf(format, ##__VA_ARGS__);
+#define log_e(format, ...) printf(format, ##__VA_ARGS__);
 
 #else
 // esp_clk methods are deprecated in IDF 5+
