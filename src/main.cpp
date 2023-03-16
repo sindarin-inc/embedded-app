@@ -3,6 +3,7 @@
 #include <esp_err.h>
 #include <esp_log.h>
 #include <soc/rtc.h>
+#include "FunctionalInterrupt.h"
 #endif
 
 #include <esp_sleep.h>
@@ -22,7 +23,6 @@
 #include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
-#include "FunctionalInterrupt.h"
 #include "Models/Readable.hpp"
 #include "Storage/CrashReportWriter.hpp"
 #include "Storage/LocalStore.hpp"
