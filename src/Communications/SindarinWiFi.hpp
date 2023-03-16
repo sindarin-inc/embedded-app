@@ -1,23 +1,5 @@
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-/*!
-    \file       SindarinWiFi.hpp
-
-    \brief      WiFi wrapper for ESP32 Wireless driver Class Definition
-
-    Copyright (c) 2023 Sindarin, Inc. - All Right Reserved
-
-    The code contained in this file is confidential and may only be used
-    under license and/or written consent of Sindarin.
-*/
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-
 #pragma once
 
-//-----------------------------------------------------------------------------
-// Includes
-//-----------------------------------------------------------------------------
 #include <esp_wifi.h>
 #include <functional>
 #include <memory>
@@ -25,24 +7,11 @@
 
 #include "Communications/WiFi/WiFiESP.hpp"
 
-//-----------------------------------------------------------------------------
-// Defines
-//-----------------------------------------------------------------------------
-
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-/*!
-    \class      CSindarinWiFi
-
-    \brief      WiFi wrapper for ESP32 Wireless driver Class
-*/
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
 class CSindarinWiFi {
 
 public:
     /// Default Constructor
-    CSindarinWiFi();
+    CSindarinWiFi() = default;
 
     auto begin() -> esp_err_t;
 
@@ -67,17 +36,11 @@ public:
     auto getWiFiPower() -> wifi_power_t { return wiFiPower_; }
 
 protected:
-    //---------------------------------
-    // Variables
-    //---------------------------------
     bool began_ = false;
     bool connected_ = false;
     wifi_power_t wiFiPower_ = WIFI_POWER_19_5dBm;
     bool autoReconnect_ = false;
 
-    //---------------------------------
-    // Functions
-    //---------------------------------
     static void wiFiEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId,
                                  void *eventData);
     static void ipEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId,

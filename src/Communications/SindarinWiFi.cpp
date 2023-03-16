@@ -1,21 +1,3 @@
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-/*!
-    \file       SindarinWiFi.cpp
-
-    \brief      WiFi wrapper for ESP32 Wireless driver Class Implementation
-
-    Copyright (c) 2023 Sindarin, Inc. - All Right Reserved
-
-    The code contained in this file is confidential and may only be used
-    under license and/or written consent of Sindarin.
-*/
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Includes
-//-----------------------------------------------------------------------------
 #include "Communications/SindarinWiFi.hpp" // Class Header
 
 #include <string>
@@ -23,26 +5,7 @@
 #include "config.h"
 #include "sindarin-debug.h"
 
-//-----------------------------------------------------------------------------
-// Object
-//-----------------------------------------------------------------------------
-// Create Object
 CSindarinWiFi sindarinWiFi;
-
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-/*!
-    \fn     CSindarinWiFi
-
-    \brief  Constructor
-    \param  N/A
-    \return N/A
-*/
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-CSindarinWiFi::CSindarinWiFi() {
-    // Base init variables
-}
 
 auto CSindarinWiFi::begin() -> esp_err_t {
     if (began_) {
@@ -97,17 +60,6 @@ auto CSindarinWiFi::begin() -> esp_err_t {
     return ESP_OK;
 }
 
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-/*!
-    \fn     GetWiFiCredentials
-
-    \brief  Get the current Wifi credentials
-    \param  pConf - Return value - Pointer to the config to return into
-    \return bool - true = success
-*/
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
 auto CSindarinWiFi::getWiFiCredentials(wifi_config_t *conf) -> bool {
     esp_err_t err = begin();
     if (err != ESP_OK) {
@@ -136,17 +88,6 @@ auto CSindarinWiFi::getWiFiCredentials(wifi_config_t *conf) -> bool {
     return true;
 }
 
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-/*!
-    \fn     HasWiFiCredentials
-
-    \brief  Do we have Wifi credentials
-    \param  N/A
-    \return bool - true = have credentials
-*/
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
 auto CSindarinWiFi::hasWiFiCredentials() -> bool {
     wifi_config_t conf;
     return getWiFiCredentials(&conf);
@@ -155,11 +96,6 @@ auto CSindarinWiFi::hasWiFiCredentials() -> bool {
 auto CSindarinWiFi::scanNetworks(
     const std::function<void(wifi_ap_record_t *apRecords, int recordCount)> &completeCB)
     -> esp_err_t {
-
-    // Set WiFi to station mode and disconnect from an AP if it was previously connected
-    // TODO: Do we need this?
-    // sindarinWiFi.setMode(WIFI_MODE_STA);
-    // sindarinWiFi.disconnectWiFi();
 
     esp_err_t err = begin();
     if (err != ESP_OK) {
@@ -212,18 +148,6 @@ auto CSindarinWiFi::scanNetworks(
     return ESP_OK;
 }
 
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-/*!
-    \fn     ConnectWiFi
-
-    \brief  Connect via WiFi
-    \param  ssid - SSID to connect to
-    \param  password - Password for the network
-    \return void
-*/
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
 auto CSindarinWiFi::connectWiFi(const std::string &ssid, const std::string &password) -> esp_err_t {
     // We have to have wifi sleep enabled otherwise Bluetooth can't work
     esp_err_t err = esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
@@ -236,7 +160,9 @@ auto CSindarinWiFi::connectWiFi(const std::string &ssid, const std::string &pass
     // wifi_config_t conf;
     // getWiFiCredentials(&conf);
     // log_i("Found WiFi credentials for %s. Attempting connection", (const char *)conf.sta.ssid);
+    // TODO: Hostname
     // wiFiEsp.setHostname(HOSTNAME);
+
     err = begin();
     if (err != ESP_OK) {
         log_e("begin failed with error %s", esp_err_to_name(err));
@@ -294,23 +220,9 @@ auto CSindarinWiFi::connectWiFi(const std::string &ssid, const std::string &pass
     esp_wifi_get_max_tx_power(&power);
     log_d("WiFi TX Power is now %d", power);
 
-    // TODO: Auto-reconnect?
-    // wiFiEsp.setAutoReconnect(true);
-
     return ESP_OK;
 }
 
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-/*!
-    \fn     ConnectWiFiIfCredentialsExist
-
-    \brief  Connect via WiFi if we have credentials
-    \param  N/A
-    \return bool - true = connected
-*/
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
 auto CSindarinWiFi::connectWiFiIfCredentialsExist() -> bool {
     if (!hasWiFiCredentials()) {
         log_d("No WiFi credentials found");
@@ -320,17 +232,6 @@ auto CSindarinWiFi::connectWiFiIfCredentialsExist() -> bool {
     return true;
 }
 
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-/*!
-    \fn     ConnectWiFiWithTimeout
-
-    \brief  Connect via WiFi with a timeout to stop trying
-    \param  timoutMS - timeout time in milliseconds
-    \return void
-*/
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
 auto CSindarinWiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
     auto startTime = xTaskGetTickCount();
     if (!connected()) {
@@ -350,17 +251,6 @@ auto CSindarinWiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
     return true;
 }
 
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-/*!
-    \fn     DisconnectWiFi
-
-    \brief  Disconnect from WiFi
-    \param  N/A
-    \return void
-*/
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
 void CSindarinWiFi::disconnectWiFi() {
     log_i("Disconnecting WiFi");
     autoReconnect_ = false;
@@ -374,18 +264,6 @@ void CSindarinWiFi::disconnectWiFi() {
         log_i("error setting wifi mode in disconnectWifi(): %d", err);
     }
 }
-
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-/*!
-    \fn     Connected
-
-    \brief  Are we currently connected to network
-    \param  N/A
-    \return bool - true = connected
-*/
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
 
 auto CSindarinWiFi::connected() -> bool { return connected_; }
 
