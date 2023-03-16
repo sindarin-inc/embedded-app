@@ -66,4 +66,19 @@ void digitalWrite(int pin, int level) {
     log_i("digitalWrite: pin %d is level %d", pin, level);
 }
 
+// for logging
+const char *pathToFileName(const char *path) {
+    size_t i = 0;
+    size_t pos = 0;
+    char *p = (char *)path;
+    while (*p) {
+        i++;
+        if (*p == '/' || *p == '\\') {
+            pos = i;
+        }
+        p++;
+    }
+    return path + pos;
+}
+
 #endif
