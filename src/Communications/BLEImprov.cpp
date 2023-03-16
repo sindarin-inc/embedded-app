@@ -94,25 +94,6 @@ void BLEImprov::doneConnecting() {
     SHOW_HEAP();
 }
 
-// This event handler is unused due to `esp_event_handler_register` not able to register a class
-// method
-// void BLEImprov::wifiEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId,
-//                                  void *eventData) {
-//     if (eventBase == WIFI_EVENT && eventId == WIFI_EVENT_SCAN_DONE) {
-//         log_d("WIFI_EVENT_SCAN_DONE");
-//         BLEImprov::setState(STATE_SCAN_COMPLETE);
-//     }
-// }
-
-// static void eventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId, void *eventData)
-// {
-//     log_d("WIFI_EVENT_SCAN_DONE? %d", eventId);
-//     if (eventBase == WIFI_EVENT && eventId == WIFI_EVENT_SCAN_DONE) {
-//         log_d("WIFI_EVENT_SCAN_DONE!");
-//         // BLEImprov::setState(STATE_SCAN_COMPLETE);
-//     }
-// }
-
 // TODO: Would be good to make this event driven
 void BLEImprov::loop() {
     if (this->state_ == STATE_WAITING) {

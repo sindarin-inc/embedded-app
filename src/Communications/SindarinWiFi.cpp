@@ -1,4 +1,4 @@
-#include "Communications/SindarinWiFi.hpp" // Class Header
+#include "Communications/SindarinWiFi.hpp"
 
 #include <string>
 
@@ -28,8 +28,8 @@ auto CSindarinWiFi::begin() -> esp_err_t {
     }
 
     SHOW_HEAP();
-    esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta(); // 1k
-    if (sta_netif == nullptr) {
+    staNetif_ = esp_netif_create_default_wifi_sta(); // 1k
+    if (staNetif_ == nullptr) {
         log_e("esp_netif_create_default_wifi_sta returned NULL") return ESP_ERR_NO_MEM;
     }
 
@@ -60,37 +60,84 @@ auto CSindarinWiFi::begin() -> esp_err_t {
     return ESP_OK;
 }
 
-auto CSindarinWiFi::getWiFiCredentials(wifi_config_t *conf) -> bool {
+auto CSindarinWiFi::end() -> esp_err_t {
+    if (!began_) {
+        return ESP_OK;
+    }
+
+    esp_err_t err = esp_wifi_deinit();
+    if (err != ESP_OK) {
+        log_e("esp_wifi_deinit failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+
+    esp_netif_destroy_default_wifi(staNetif_);
+
+    err = esp_event_handler_instance_unregister(IP_EVENT, ESP_EVENT_ANY_ID, ipEventHandlerInstance);
+    if (err != ESP_OK) {
+        log_e("esp_event_handler_instance_unregister failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+
+    err = esp_event_handler_instance_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID,
+                                                wifiEventHandlerInstance);
+    if (err != ESP_OK) {
+        log_e("esp_event_handler_instance_unregister failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+
+    err = esp_event_loop_delete_default();
+    if (err != ESP_OK) {
+        log_e("esp_event_loop_delete_default failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+
+    err = esp_netif_deinit();
+    // This is not supported by LWIP so it is expected to fail with ESP_ERR_NOT_SUPPORTED.
+    // But we keep it here for completeness since that's what IDF does.
+    // See: https://github.com/espressif/esp-idf/issues/4628#issuecomment-593983526
+    if (err != ESP_OK && err != ESP_ERR_NOT_SUPPORTED) {
+        log_e("esp_netif_deinit failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+
+    began_ = false;
+    return ESP_OK;
+}
+
+auto CSindarinWiFi::getWifiConfig(wifi_config_t *conf) -> esp_err_t {
     esp_err_t err = begin();
     if (err != ESP_OK) {
         log_e("begin failed with error %s", esp_err_to_name(err));
-        return false;
-    }
-
-    // Needs to be called before we can get the WiFi config
-    if (esp_wifi_set_config(WIFI_IF_STA, conf) != ESP_OK) {
-        log_e("STA enable failed!");
-        return false;
+        return err;
     }
 
     if (esp_wifi_get_config(WIFI_IF_STA, conf) != ESP_OK) {
-        log_e("Failed to get WiFi config");
+        log_e("esp_wifi_get_config failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+
+    return ESP_OK;
+}
+
+auto CSindarinWiFi::hasWiFiCredentials(wifi_config_t *conf) -> bool {
+    if (strlen((const char *)conf->sta.ssid) == 0) {
         return false;
-    } else {
-        // We got the config - now check it
-        if (strlen((const char *)conf->sta.ssid) == 0) {
-            return false;
-        }
-        if (strlen((const char *)conf->sta.password) == 0) {
-            log_w("Zero length WiFi password");
-        }
+    }
+    if (strlen((const char *)conf->sta.password) == 0) {
+        log_w("Zero length WiFi password (possibly ok for open networks)");
     }
     return true;
 }
 
 auto CSindarinWiFi::hasWiFiCredentials() -> bool {
     wifi_config_t conf;
-    return getWiFiCredentials(&conf);
+    esp_err_t err = getWifiConfig(&conf);
+    if (err != ESP_OK) {
+        log_e("getWifiConfig failed with error %s", esp_err_to_name(err));
+        return false;
+    }
+    return hasWiFiCredentials(&conf);
 }
 
 auto CSindarinWiFi::scanNetworks(
@@ -156,12 +203,7 @@ auto CSindarinWiFi::connectWiFi(const std::string &ssid, const std::string &pass
         return err;
     }
 
-    // If credentials are available, go ahead and attempt WiFi connection
-    // wifi_config_t conf;
-    // getWiFiCredentials(&conf);
-    // log_i("Found WiFi credentials for %s. Attempting connection", (const char *)conf.sta.ssid);
-    // TODO: Hostname
-    // wiFiEsp.setHostname(HOSTNAME);
+    esp_netif_set_hostname(staNetif_, HOSTNAME);
 
     err = begin();
     if (err != ESP_OK) {
@@ -169,40 +211,38 @@ auto CSindarinWiFi::connectWiFi(const std::string &ssid, const std::string &pass
         return err;
     }
 
-    esp_event_handler_instance_t instance_any_id;
-    esp_event_handler_instance_t instance_got_ip;
     err = esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wiFiEventHandler, this,
-                                              &instance_any_id);
+                                              &wifiEventHandlerInstance);
     if (err != ESP_OK) {
         log_e("esp_event_handler_instance_register failed with error %s", esp_err_to_name(err));
         return err;
     }
 
-    err = esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &ipEventHandler, this,
-                                              &instance_got_ip);
+    err = esp_event_handler_instance_register(IP_EVENT, ESP_EVENT_ANY_ID, &ipEventHandler, this,
+                                              &ipEventHandlerInstance);
     if (err != ESP_OK) {
         log_e("esp_event_handler_instance_register failed with error %s", esp_err_to_name(err));
         return err;
     }
 
-    wifi_config_t wifi_config = {
-        .sta =
-            {
-                // This setting limits auth modes to WPA2 and WPA3. We might want to do something
-                // like this for security reasons.
-                // .threshold.authmode = ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD,
-                .sae_pwe_h2e = WPA3_SAE_PWE_BOTH,
-            },
-    };
-    strncpy((char *)wifi_config.sta.ssid, ssid.c_str(), sizeof(wifi_config.sta.ssid));
-    strncpy((char *)wifi_config.sta.password, password.c_str(), sizeof(wifi_config.sta.password));
+    wifi_config_t wifiConfig = {};
+
+    if (ssid.length() <= 0 || password.length() <= 0) {
+        log_i("No WiFi credentials provided, using stored credentials");
+        getWifiConfig(&wifiConfig);
+    } else {
+        log_i("Using provided WiFi credentials: %s/%s", ssid.c_str(), password.c_str());
+        wifiConfig.sta.sae_pwe_h2e = WPA3_SAE_PWE_BOTH;
+        strncpy((char *)wifiConfig.sta.ssid, ssid.c_str(), sizeof(wifiConfig.sta.ssid));
+        strncpy((char *)wifiConfig.sta.password, password.c_str(), sizeof(wifiConfig.sta.password));
+    }
 
     err = esp_wifi_set_mode(WIFI_MODE_STA);
     if (err != ESP_OK) {
         log_e("esp_wifi_set_mode failed with error %s", esp_err_to_name(err));
         return err;
     }
-    err = esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
+    err = esp_wifi_set_config(WIFI_IF_STA, &wifiConfig);
     if (err != ESP_OK) {
         log_e("esp_wifi_set_config failed with error %s", esp_err_to_name(err));
         return err;
@@ -220,29 +260,35 @@ auto CSindarinWiFi::connectWiFi(const std::string &ssid, const std::string &pass
     esp_wifi_get_max_tx_power(&power);
     log_d("WiFi TX Power is now %d", power);
 
-    return ESP_OK;
-}
-
-auto CSindarinWiFi::connectWiFiIfCredentialsExist() -> bool {
-    if (!hasWiFiCredentials()) {
-        log_d("No WiFi credentials found");
-        return false;
+    err = esp_wifi_connect();
+    if (err != ESP_OK) {
+        log_e("esp_wifi_connect failed with error %s", esp_err_to_name(err));
+        return err;
     }
-    connectWiFi();
-    return true;
+
+    return ESP_OK;
 }
 
 auto CSindarinWiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
     auto startTime = xTaskGetTickCount();
     if (!connected()) {
-        if (connectWiFiIfCredentialsExist()) {
-            // Only wait if we had credentials
-            // TODO: Would be nice to make this not a polling loop
-            while (!connected() && (xTaskGetTickCount() - startTime) < timeoutMs) {
-                vTaskDelay(200);
-            }
+        wifi_config_t wifiConfig = {};
+        getWifiConfig(&wifiConfig);
+        if (!hasWiFiCredentials()) {
+            log_d("No WiFi credentials found");
+            return false;
+        }
+        if (connectWiFi() != ESP_OK) {
+            log_w("connectWiFi failed");
+            return false;
+        }
+        // Only wait if we had credentials
+        // TODO: Would be nice to make this not a polling loop
+        while (!connected() && (xTaskGetTickCount() - startTime) < timeoutMs) {
+            vTaskDelay(200);
         }
         if (!connected()) {
+            log_w("Timed out waiting for WiFi connection");
             disconnectWiFi();
             return false;
         }
@@ -252,20 +298,47 @@ auto CSindarinWiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
 }
 
 void CSindarinWiFi::disconnectWiFi() {
+    SHOW_HEAP();
     log_i("Disconnecting WiFi");
-    autoReconnect_ = false;
-    bool disconnected = esp_wifi_disconnect();
-    if (!disconnected) {
-        log_i("could not disconnect wifi");
+
+    esp_err_t err = esp_wifi_disconnect();
+    if (err != ESP_OK) {
+        log_e("esp_wifi_disconnect failed with %s", esp_err_to_name(err));
+    }
+    err = esp_wifi_set_mode(WIFI_MODE_NULL);
+    if (err != ESP_OK) {
+        log_e("esp_wifi_set_mode failed with %s", esp_err_to_name(err));
+    }
+    err = esp_wifi_stop();
+    if (err != ESP_OK) {
+        log_e("esp_wifi_stop failed with %s", esp_err_to_name(err));
     }
 
-    esp_err_t err = esp_wifi_set_mode(WIFI_MODE_NULL);
-    if (err != ESP_OK) {
-        log_i("error setting wifi mode in disconnectWifi(): %d", err);
-    }
+    SHOW_HEAP();
+
+    end();
+
+    SHOW_HEAP();
 }
 
 auto CSindarinWiFi::connected() -> bool { return connected_; }
+
+auto CSindarinWiFi::getLocalIp() -> esp_ip4_addr_t {
+    esp_netif_ip_info_t ip;
+    esp_err_t err = esp_netif_get_ip_info(staNetif_, &ip);
+    if (err != ESP_OK) {
+        log_e("esp_netif_get_ip_info failed with error %s", esp_err_to_name(err));
+        return esp_ip4_addr{.addr = 0};
+    }
+    return (esp_ip4_addr_t)ip.ip;
+}
+
+auto CSindarinWiFi::getLocalIpStr() -> std::string {
+    esp_ip4_addr_t ip = getLocalIp();
+    char ipstr[16];
+    sprintf(ipstr, IPSTR, IP2STR(&ip));
+    return ipstr;
+}
 
 void CSindarinWiFi::wiFiEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId,
                                      void *eventData) {
@@ -273,40 +346,12 @@ void CSindarinWiFi::wiFiEventHandler(void *arg, esp_event_base_t eventBase, int3
     switch (eventId) {
     case WIFI_EVENT_STA_START:
         log_d("WIFI_EVENT_STA_START");
-        esp_wifi_connect();
         break;
     case WIFI_EVENT_STA_DISCONNECTED:
         log_i("WIFI_EVENT_STA_DISCONNECTED");
         break;
     default:
         log_d("WIFI_EVENT: %d", eventId);
-    }
-}
-
-auto CSindarinWiFi::getLocalIp() -> wifiesp_ip4address { 
-    if (getMode() == WIFI_MODE_NULL) {
-        return IPADDRESS_NONE;
-    }
-    esp_netif_ip_info_t ip;
-    if (esp_netif_get_ip_info(_sta_netif, &ip) != ESP_OK) {
-        log_i("Netif Get IP Failed");
-        return IPADDRESS_NONE;
-    }
-    return (wifiesp_ip4address)ip.ip;
-}
-
-auto CSindarinWiFi::getLocalIpStr() -> std::string {
-    esp_ip4_addr_t ip = (esp_ip4_addr_t)getLocalIp();
-    char ipstr[16];
-    sprintf(ipstr, IPSTR, IP2STR(&ip));
-    return ipstr;
-}
-
-auto CSindarinWiFi::getMode() -> wifi_mode_t { 
-    wifi_mode_t mode;
-    if (esp_wifi_get_mode(&mode) != ESP_OK) {
-        log_i("error getMode(): WiFi not started");
-        return WIFI_MODE_NULL;
     }
 }
 

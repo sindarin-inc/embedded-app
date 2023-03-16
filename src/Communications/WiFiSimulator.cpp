@@ -58,12 +58,6 @@ void CSindarinWiFi::connectWiFi(const std::string &ssid, const std::string &pass
     return;
 }
 
-auto CSindarinWiFi::connectWiFiIfCredentialsExist() -> bool {
-    log_i("Pretending to connect WiFi (power %d)", wiFiPower_);
-    delay(1000);
-    return true;
-}
-
 auto CSindarinWiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
     log_i("Pretending to connect WiFi (power %d)", wiFiPower_);
     delay(1000);
