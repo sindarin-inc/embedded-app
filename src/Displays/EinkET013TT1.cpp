@@ -12,7 +12,7 @@
 // esp_clk methods are deprecated in IDF 5+
 // TODO: replace
 extern "C" {
-#include "esp_private/esp_clk.h"
+#include <esp_private/esp_clk.h>
 }
 
 static const DRAM_ATTR uint8_t CLEAR_PACKET[48] = {
@@ -162,7 +162,7 @@ void EinkET013TT1::init() {
 void EinkET013TT1::setVcom(int mV) {
     mV = std::clamp(mV, -5600, 0);
     vcomInMV_ = mV;
-    log_d("Setting VCOM to %ld mV (register 0x9 = %ld)", vcomInMV_,
+    log_d("Setting VCOM to %" PRIu32 " mV (register 0x9 = %" PRIu32 ")", vcomInMV_,
           ((5600 + vcomInMV_) * 255) / 5600);
 }
 
@@ -350,7 +350,6 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
         waitForNotBusy();
         writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10);
 
-        //taskYIELD();
         portYIELD();
     }
 

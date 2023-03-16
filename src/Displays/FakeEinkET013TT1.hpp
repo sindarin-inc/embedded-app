@@ -6,7 +6,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 #include <string>
-#include "esp32-hal.h"
+#include <esp32-hal.h>
 
 #include "EinkWaveform.hpp"
 
