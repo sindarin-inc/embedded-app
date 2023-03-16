@@ -80,10 +80,6 @@ void disableCore0WDT() {
     }
 }
 
-int64_t platform_timer_get_time(void) {
-    return esp_timer_get_time();
-}
-
 void InitializePlatform() {
     // Arduino breaks the UART with sleep. So we manually initialize the UART using IDF functions.
     // There's unfortunately no way currently to customize the source clock in Arduino:

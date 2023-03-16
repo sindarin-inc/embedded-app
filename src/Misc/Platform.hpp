@@ -74,8 +74,6 @@ int millis();
 
 void digitalWrite(int pin, int level);
 
-int64_t platform_timer_get_time(void);
-
 #if !SIMULATOR
 void pinMode(int pin, int mode);
 int digitalRead(uint8_t pin);

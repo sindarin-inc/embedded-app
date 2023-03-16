@@ -66,10 +66,4 @@ void digitalWrite(int pin, int level) {
     log_i("digitalWrite: pin %d is level %d", pin, level);
 }
 
-int64_t platform_timer_get_time(void) {
-    auto duration = std::chrono::system_clock::now() - SimStartTime;
-    auto durationUs = std::chrono::duration_cast<std::chrono::microseconds>(duration);
-    return durationUs.count();
-}
-
 #endif

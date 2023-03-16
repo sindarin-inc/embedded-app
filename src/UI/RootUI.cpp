@@ -1,6 +1,7 @@
 #include "RootUI.hpp"
 
 #include <esp_sleep.h>
+#include <esp_timer.h>
 #include <esp_system.h>
 #include <filesystem>
 #include <nvs_flash.h>
@@ -1328,9 +1329,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         if (it != readables.end()) {
             auto readableScreen = createReadableScreen(*it);
             this->display_->setFont(this->display_->style.getFontFamily().readableFont);
-            log_i("Setting Readable Screen on boot in %.0f ms", platform_timer_get_time() / 1000.0f);
+            log_i("Setting Readable Screen on boot in %.0f ms", esp_timer_get_time() / 1000.0f);
             this->setCurrentScreen(*readableScreen);
-            log_i("Resuming readable %s at place %ld", (*it).title.c_str(), (*it).place);
+            log_i("Resuming readable %s at place %" PRIu32, (*it).title.c_str(), (*it).place);
         } else {
             // Assume this readable has gone away (or changed from id to uuid)
             prefs_.lastReadableId.remove();
@@ -1351,7 +1352,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // calibration
         // screen
 
-        log_i("Setting Menu Screen on boot in %.0f ms", platform_timer_get_time() / 1000.0f);
+        log_i("Setting Menu Screen on boot in %.0f ms", esp_timer_get_time() / 1000.0f);
         setCurrentScreen(*mainMenu);
 
         /*
