@@ -19,6 +19,8 @@ public:
 
     auto setHeader(const char *key, const char *value) -> esp_err_t;
 
+    auto getHeader(const char *key, char **value) -> esp_err_t;
+
     auto open(int contentLength = 0) -> esp_err_t;
 
     // auto perform() -> esp_err_t;

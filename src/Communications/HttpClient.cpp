@@ -75,6 +75,10 @@ auto HttpClient::setHeader(const char *key, const char *value) -> esp_err_t {
     return esp_http_client_set_header(client_, key, value);
 }
 
+auto HttpClient::getHeader(const char *key, char **value) -> esp_err_t {
+    return esp_http_client_get_header(client_, key, value);
+}
+
 auto HttpClient::open(int contentLength) -> esp_err_t {
     return esp_http_client_open(client_, contentLength);
 }

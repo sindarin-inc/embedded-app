@@ -137,7 +137,6 @@ void TTRemoteInput::disconnectTemporarily(int seconds) {
 void TTRemoteInput::scanForDevice() {
     digitalWrite(BLUE_LED, LED_ON);
 
-    // Run a scan for 1 second
     auto address = this->prefs_.pairedTurnTouchAddress.get();
     if (address.has_value()) {
         log_d("Scanning for paired TurnTouch %s", std::string(address.value()).c_str());
