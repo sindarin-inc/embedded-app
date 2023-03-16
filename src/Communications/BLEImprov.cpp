@@ -122,14 +122,14 @@ void BLEImprov::loop() {
     } else if (this->state_ == STATE_READY_TO_CONNECT) {
         SHOW_HEAP();
         improv::ImprovCommand command = this->lastCommand_;
-        log_d("Attempting connection to: %s Password: %s (WiFi status = %d)", command.ssid.c_str(),
-              command.password.c_str(), sindarinWiFi.getStatus());
+        log_d("Attempting connection to: %s Password: %s (WiFi connnected = %d)",
+              command.ssid.c_str(), command.password.c_str(), sindarinWiFi.connected());
         sindarinWiFi.connectWiFi(command.ssid, command.password);
         this->setState(STATE_CONNECTING);
         return;
     } else if (this->state_ == STATE_CONNECTING) {
         uint32_t now = millis();
-        if (sindarinWiFi.getStatus() == WIFIESP_STATUS_CONNECTED) {
+        if (sindarinWiFi.connected()) {
             std::string ip = sindarinWiFi.getLocalIpStr();
             std::vector<uint8_t> response = improv::build_rpc_response(improv::WIFI_SETTINGS, {ip});
             log_d("Reporting RPC result to client");
@@ -137,7 +137,7 @@ void BLEImprov::loop() {
             this->rpcResultCharacteristic_->notify();
             this->doneConnecting();
         } else if (now - this->lastStateChangeMillis_ > 30000) {
-            log_w("Timed out connecting to WiFi %d", sindarinWiFi.getStatus());
+            log_w("Timed out connecting to WiFi");
             this->setState(STATE_WAITING);
             this->setError(improv::ERROR_UNABLE_TO_CONNECT);
             sindarinWiFi.disconnectWiFi();

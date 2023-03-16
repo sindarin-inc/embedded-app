@@ -56,7 +56,7 @@ public:
         -> esp_err_t;
 
     // Connection
-    void connectWiFi(const std::string &ssid = "", const std::string &password = "");
+    auto connectWiFi(const std::string &ssid = "", const std::string &password = "") -> esp_err_t;
     auto connectWiFiIfCredentialsExist() -> bool;
     auto connectWiFiWithTimeout(int timeoutMs = 20000) -> bool;
     void disconnectWiFi();
@@ -66,22 +66,22 @@ public:
     void setWiFiPower(wifi_power_t power) { wiFiPower_ = power; }
     auto getWiFiPower() -> wifi_power_t { return wiFiPower_; }
 
-    auto getStatus() -> wifiesp_status_t;
-
-    auto getMode() -> wifi_mode_t;
-    // auto setMode(wifi_mode_t mode) -> bool;
-
 protected:
     //---------------------------------
     // Variables
     //---------------------------------
     bool began_ = false;
+    bool connected_ = false;
     wifi_power_t wiFiPower_ = WIFI_POWER_19_5dBm;
     bool autoReconnect_ = false;
 
     //---------------------------------
     // Functions
     //---------------------------------
+    static void wiFiEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId,
+                                 void *eventData);
+    static void ipEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId,
+                               void *eventData);
 };
 
 // Global Object

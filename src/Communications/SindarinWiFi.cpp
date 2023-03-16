@@ -109,6 +109,12 @@ auto CSindarinWiFi::begin() -> esp_err_t {
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
 auto CSindarinWiFi::getWiFiCredentials(wifi_config_t *conf) -> bool {
+    esp_err_t err = begin();
+    if (err != ESP_OK) {
+        log_e("begin failed with error %s", esp_err_to_name(err));
+        return false;
+    }
+
     // Needs to be called before we can get the WiFi config
     if (esp_wifi_set_config(WIFI_IF_STA, conf) != ESP_OK) {
         log_e("STA enable failed!");
@@ -218,22 +224,40 @@ auto CSindarinWiFi::scanNetworks(
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-void CSindarinWiFi::connectWiFi(const std::string &ssid, const std::string &password) {
+auto CSindarinWiFi::connectWiFi(const std::string &ssid, const std::string &password) -> esp_err_t {
     // We have to have wifi sleep enabled otherwise Bluetooth can't work
-    esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
+    esp_err_t err = esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
+    if (err != ESP_OK) {
+        log_e("esp_wifi_set_ps failed with error %s", esp_err_to_name(err));
+        return err;
+    }
 
     // If credentials are available, go ahead and attempt WiFi connection
     // wifi_config_t conf;
     // getWiFiCredentials(&conf);
     // log_i("Found WiFi credentials for %s. Attempting connection", (const char *)conf.sta.ssid);
     // wiFiEsp.setHostname(HOSTNAME);
-    begin();
+    err = begin();
+    if (err != ESP_OK) {
+        log_e("begin failed with error %s", esp_err_to_name(err));
+        return err;
+    }
 
-    // if (ssid.empty()) {
-    //     wiFiEsp.begin();
-    // } else {
-    //     wiFiEsp.begin(ssid.c_str(), password.c_str());
-    // }
+    esp_event_handler_instance_t instance_any_id;
+    esp_event_handler_instance_t instance_got_ip;
+    err = esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wiFiEventHandler, this,
+                                              &instance_any_id);
+    if (err != ESP_OK) {
+        log_e("esp_event_handler_instance_register failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+
+    err = esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &ipEventHandler, this,
+                                              &instance_got_ip);
+    if (err != ESP_OK) {
+        log_e("esp_event_handler_instance_register failed with error %s", esp_err_to_name(err));
+        return err;
+    }
 
     wifi_config_t wifi_config = {
         .sta =
@@ -247,18 +271,33 @@ void CSindarinWiFi::connectWiFi(const std::string &ssid, const std::string &pass
     strncpy((char *)wifi_config.sta.ssid, ssid.c_str(), sizeof(wifi_config.sta.ssid));
     strncpy((char *)wifi_config.sta.password, password.c_str(), sizeof(wifi_config.sta.password));
 
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
-    ESP_ERROR_CHECK(esp_wifi_start());
+    err = esp_wifi_set_mode(WIFI_MODE_STA);
+    if (err != ESP_OK) {
+        log_e("esp_wifi_set_mode failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+    err = esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
+    if (err != ESP_OK) {
+        log_e("esp_wifi_set_config failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+    err = esp_wifi_start();
+    if (err != ESP_OK) {
+        log_e("esp_wifi_start failed with error %s", esp_err_to_name(err));
+        return err;
+    }
 
     int8_t power = 0;
     esp_wifi_get_max_tx_power(&power);
     log_d("WiFi TX Power was %d", power);
-    esp_wifi_set_max_tx_power(power);
+    esp_wifi_set_max_tx_power(wiFiPower_);
     esp_wifi_get_max_tx_power(&power);
     log_d("WiFi TX Power is now %d", power);
 
+    // TODO: Auto-reconnect?
     // wiFiEsp.setAutoReconnect(true);
+
+    return ESP_OK;
 }
 
 //______________________________________________________________________________
@@ -347,54 +386,36 @@ void CSindarinWiFi::disconnectWiFi() {
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-auto CSindarinWiFi::connected() -> bool { 
-    //return wiFiEsp.isConnected(); 
-    // return (getStatus() == WIFIESP_STATUS_CONNECTED
-    
-}
 
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-/*!
-    \fn     GetStatus
+auto CSindarinWiFi::connected() -> bool { return connected_; }
 
-    \brief  Return Connection status
-    \param  N/A
-    \return wifiesp_status_t
-*/
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-auto CSindarinWiFi::getStatus() -> wifiesp_status_t { return wiFiEsp.getStatus(); }
-
-// //______________________________________________________________________________
-// //------------------------------------------------------------------------------
-// /*!
-//     \fn     GetMode
-
-//     \brief  Return Wifi mode
-//     \param  N/A
-//     \return wifi_mode_t
-// */
-// //______________________________________________________________________________
-// //------------------------------------------------------------------------------
-auto CSindarinWiFi::getMode() -> wifi_mode_t { 
-    wifi_mode_t mode;
-    if (esp_wifi_get_mode(&mode) != ESP_OK) {
-        log_i("error getMode(): WiFi not started");
-        return WIFI_MODE_NULL;
+void CSindarinWiFi::wiFiEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId,
+                                     void *eventData) {
+    // CSindarinWiFi *tthis = (CSindarinWiFi *)arg;
+    switch (eventId) {
+    case WIFI_EVENT_STA_START:
+        log_d("WIFI_EVENT_STA_START");
+        esp_wifi_connect();
+        break;
+    case WIFI_EVENT_STA_DISCONNECTED:
+        log_i("WIFI_EVENT_STA_DISCONNECTED");
+        break;
+    default:
+        log_d("WIFI_EVENT: %d", eventId);
     }
-    return mode;
 }
 
-// //______________________________________________________________________________
-// //------------------------------------------------------------------------------
-// /*!
-//     \fn     SetMode
-
-//     \brief  Set a new mode
-//     \param  wifi_mode_t - mode to set
-//     \return bool - true= mode set
-// */
-// //______________________________________________________________________________
-// //------------------------------------------------------------------------------
-// auto CSindarinWiFi::setMode(wifi_mode_t mode) -> bool { return wiFiEsp.mode(mode); }
+void CSindarinWiFi::ipEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId,
+                                   void *eventData) {
+    CSindarinWiFi *tthis = (CSindarinWiFi *)arg;
+    switch (eventId) {
+    case IP_EVENT_STA_GOT_IP: {
+        ip_event_got_ip_t *event = (ip_event_got_ip_t *)eventData;
+        log_i("IP_EVENT_STA_GOT_IP: " IPSTR, IP2STR(&event->ip_info.ip));
+        tthis->connected_ = true;
+        break;
+    }
+    default:
+        log_d("IP_EVENT: %d", eventId);
+    }
+}
