@@ -240,68 +240,6 @@ auto CWiFiESP::enableSTA(bool enable) -> bool {
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
 /*!
-    \fn     scanNetworks
-
-    \brief  Start scan WiFi networks available
-    \param  async run in async mode
-        \param  show_hidden show hidden networks
-    \return int16_t - Number of discovered networks
-*/
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-auto CWiFiESP::scanNetworks(void) -> int16_t {
-
-    // Initialize NVS
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(ret);
-
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
-
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID,
-                                                        &event_handler, NULL, NULL));
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP,
-                                                        &event_handler, NULL, NULL));
-
-    // Initialize default station as network interface instance (esp-netif)
-    esp_netif_t *_sta_netif = esp_netif_create_default_wifi_sta();
-    assert(_sta_netif);
-
-#define DEFAULT_RSSI -127
-#define DEFAULT_AUTHMODE WIFI_AUTH_OPEN
-
-    // Initialize and start WiFi
-    wifi_config_t wifi_config;
-    memset(&wifi_config, 0, sizeof(wifi_config_t));
-    //.ssid = "myssid",
-    //.password = "mypassword",
-    wifi_config.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
-    wifi_config.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
-    wifi_config.sta.threshold.rssi = DEFAULT_RSSI;
-    wifi_config.sta.threshold.authmode = DEFAULT_AUTHMODE;
-
-    // Force STA Mode
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    // Set STA Configuration
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
-    // Start - creates station control block and starts station
-    ESP_ERROR_CHECK(esp_wifi_start());
-
-    _status = WIFIESP_STATUS_SCAN_INPROGRESS;
-
-    return WIFI_SCAN_RUNNING;
-}
-
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-/*!
     \fn     SSID
 
     \brief  Return the SSID discovered during the network scan.

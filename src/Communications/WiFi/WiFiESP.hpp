@@ -59,7 +59,6 @@ public:
     auto enableSTA(bool enable) -> bool;
 
     // Scan
-    auto scanNetworks() -> int16_t;
     // Scan Information
     auto scanCount() -> int16_t { return _ap_count; }
     auto ssid(uint8_t networkItem) -> std::string;

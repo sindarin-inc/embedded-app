@@ -19,6 +19,8 @@
 // Includes
 //-----------------------------------------------------------------------------
 #include <esp_wifi.h>
+#include <functional>
+#include <memory>
 #include <string>
 
 #include "Communications/WiFi/WiFiESP.hpp"
@@ -42,16 +44,16 @@ public:
     /// Default Constructor
     CSindarinWiFi();
 
+    auto begin() -> esp_err_t;
+
     // Credentials
     auto getWiFiCredentials(wifi_config_t *conf) -> bool;
     auto hasWiFiCredentials() -> bool;
 
     // Scanning
-    auto scanNetworks(bool asyncScan) -> int16_t;
-    auto scanComplete() -> int16_t;
-    auto getSsid(uint8_t i) -> std::string;
-    auto getRssi(uint8_t i) -> int32_t;
-    auto getEncryptionType(uint8_t i) -> wifi_auth_mode_t;
+    auto scanNetworks(
+        const std::function<void(wifi_ap_record_t *apRecords, int recordCount)> &completeCB)
+        -> esp_err_t;
 
     // Connection
     void connectWiFi(const std::string &ssid = "", const std::string &password = "");
@@ -69,13 +71,14 @@ public:
 
     auto getStatus() -> wifiesp_status_t;
 
-    auto getMode() -> wifi_mode_t;
-    auto setMode(wifi_mode_t mode) -> bool;
+    // auto getMode() -> wifi_mode_t;
+    // auto setMode(wifi_mode_t mode) -> bool;
 
 protected:
     //---------------------------------
     // Variables
     //---------------------------------
+    bool began_ = false;
     wifi_power_t wiFiPower_ = WIFI_POWER_19_5dBm;
 
     //---------------------------------

@@ -44,6 +44,66 @@ CSindarinWiFi::CSindarinWiFi() {
     // Base init variables
 }
 
+auto CSindarinWiFi::begin() -> esp_err_t {
+    if (began_) {
+        return ESP_OK;
+    }
+
+    SHOW_HEAP();
+
+    esp_err_t err = esp_netif_init(); // ~5k
+    if (err != ESP_OK) {
+        log_e("esp_netif_init failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+    SHOW_HEAP();
+
+    err = esp_event_loop_create_default(); // 4k
+    if (err != ESP_OK) {
+        log_e("esp_event_loop_create_default failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+
+    SHOW_HEAP();
+    esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta(); // 1k
+    if (sta_netif == nullptr) {
+        log_e("esp_netif_create_default_wifi_sta returned NULL") return ESP_ERR_NO_MEM;
+    }
+
+    SHOW_HEAP();
+
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    cfg.static_tx_buf_num = 0;
+    cfg.dynamic_tx_buf_num = 32;
+    cfg.tx_buf_type = 1;
+    cfg.cache_tx_buf_num = 1;
+    cfg.static_rx_buf_num = 4;
+    cfg.dynamic_rx_buf_num = 32;
+    err = esp_wifi_init(&cfg); // 19k SRAM, 23k PSRAM
+    if (err != ESP_OK) {
+        log_e("esp_wifi_init failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+    SHOW_HEAP();
+
+    err = esp_wifi_set_mode(WIFI_MODE_STA); // 0k
+    if (err != ESP_OK) {
+        log_e("esp_wifi_set_mode failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+    SHOW_HEAP();
+
+    err = esp_wifi_start();
+    if (err != ESP_OK) {
+        log_e("esp_wifi_start failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+    SHOW_HEAP();
+
+    began_ = true;
+    return ESP_OK;
+}
+
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
 /*!
@@ -93,71 +153,50 @@ auto CSindarinWiFi::hasWiFiCredentials() -> bool {
     return getWiFiCredentials(&conf);
 }
 
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-/*!
-    \fn     ScanNetworks
+auto CSindarinWiFi::scanNetworks(
+    const std::function<void(wifi_ap_record_t *apRecords, int recordCount)> &completeCB)
+    -> esp_err_t {
 
-    \brief  Scan for available wifi networks
-    \param  asyncScan - perform a asynch scan
-    \return int16_t - number networks found
-*/
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-auto CSindarinWiFi::scanNetworks(bool asyncScan) -> int16_t { return wiFiEsp.scanNetworks(); }
+    // Set WiFi to station mode and disconnect from an AP if it was previously connected
+    // TODO: Do we need this?
+    // sindarinWiFi.setMode(WIFI_MODE_STA);
+    // sindarinWiFi.disconnectWiFi();
 
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-/*!
-    \fn     ScanComplete
+    esp_err_t err = begin();
+    if (err != ESP_OK) {
+        log_e("begin failed with error %s", esp_err_to_name(err));
+        return err;
+    }
 
-    \brief  Called to get the scan in async mode
-    \param  N/A
-    \return int16_t - number networks found or negative = error
-*/
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-auto CSindarinWiFi::scanComplete() -> int16_t { return wiFiEsp.scanCount(); }
+    // TODO: Use a non-blocking scan and send reusults back in realtime
+    // Q: How do we get callbacks when a new network is found
+    err = esp_wifi_scan_start(nullptr, true); // 3k PSRAM
+    if (err != ESP_OK) {
+        log_e("esp_wifi_scan_start failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+    SHOW_HEAP();
 
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-/*!
-    \fn     GetSSID
+    uint16_t apNum = 0;
+    err = esp_wifi_scan_get_ap_num(&apNum); // 0k
+    if (err != ESP_OK) {
+        log_e("esp_wifi_scan_get_ap_num failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+    SHOW_HEAP();
 
-    \brief  Get the SSID for a scanned network at provided offset
-    \param  i - offset for scanned network
-    \return string - the SSID
-*/
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-auto CSindarinWiFi::getSsid(uint8_t i) -> std::string { return wiFiEsp.ssid(i); }
+    auto apRecords =
+        (wifi_ap_record_t *)heap_caps_malloc(sizeof(wifi_ap_record_t) * apNum, MALLOC_CAP_8BIT);
 
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-/*!
-    \fn     GetRSSI
+    err = esp_wifi_scan_get_ap_records(&apNum, apRecords);
+    log_i("Total APs scanned = %u", apNum);
 
-    \brief  Get the RSSI for a scanned network at provided offset
-    \param  i - offset for scanned network
-    \return int32_t - the RSSI
-*/
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-auto CSindarinWiFi::getRssi(uint8_t i) -> int32_t { return wiFiEsp.rssi(i); }
+    completeCB(apRecords, apNum);
 
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-/*!
-    \fn     GetEncryptionType
+    heap_caps_free(apRecords);
+    SHOW_HEAP();
 
-    \brief  Get the Encryption for a scanned network at provided offset
-    \param  i - offset for scanned network
-    \return wifi_auth_mode_t - encryption type
-*/
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-auto CSindarinWiFi::getEncryptionType(uint8_t i) -> wifi_auth_mode_t {
-    return wiFiEsp.encryptionType(i);
+    return ESP_OK;
 }
 
 //______________________________________________________________________________
@@ -176,26 +215,43 @@ void CSindarinWiFi::connectWiFi(const std::string &ssid, const std::string &pass
     // We have to have wifi sleep enabled otherwise Bluetooth can't work
     esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
 
-    // I'm not sure, but it might be that WiFi sleep before connecting to an AP could
-    // be problematic.
-    // if (!WiFiESP.setSleep(true)) {
-    //     log_e("Failed to enable WiFi sleep");
+    // If credentials are available, go ahead and attempt WiFi connection
+    // wifi_config_t conf;
+    // getWiFiCredentials(&conf);
+    // log_i("Found WiFi credentials for %s. Attempting connection", (const char *)conf.sta.ssid);
+    // wiFiEsp.setHostname(HOSTNAME);
+    begin();
+
+    // if (ssid.empty()) {
+    //     wiFiEsp.begin();
+    // } else {
+    //     wiFiEsp.begin(ssid.c_str(), password.c_str());
     // }
 
-    // If credentials are available, go ahead and attempt WiFi connection
-    wifi_config_t conf;
-    getWiFiCredentials(&conf);
-    log_i("Found WiFi credentials for %s. Attempting connection", (const char *)conf.sta.ssid);
-    wiFiEsp.setHostname(HOSTNAME);
-    if (ssid.empty()) {
-        wiFiEsp.begin();
-    } else {
-        wiFiEsp.begin(ssid.c_str(), password.c_str());
-    }
-    log_d("WiFi TX Power was %d", wiFiEsp.getTxPower());
-    wiFiEsp.setTxPower(wiFiPower_);
-    log_d("WiFi TX Power is now %d", wiFiEsp.getTxPower());
-    wiFiEsp.setAutoReconnect(true);
+    wifi_config_t wifi_config = {
+        .sta =
+            {
+                // This setting limits auth modes to WPA2 and WPA3. We might want to do something
+                // like this for security reasons.
+                // .threshold.authmode = ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD,
+                .sae_pwe_h2e = WPA3_SAE_PWE_BOTH,
+            },
+    };
+    strncpy((char *)wifi_config.sta.ssid, ssid.c_str(), sizeof(wifi_config.sta.ssid));
+    strncpy((char *)wifi_config.sta.password, password.c_str(), sizeof(wifi_config.sta.password));
+
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_start());
+
+    int8_t power = 0;
+    esp_wifi_get_max_tx_power(&power);
+    log_d("WiFi TX Power was %d", power);
+    esp_wifi_set_max_tx_power(power);
+    esp_wifi_get_max_tx_power(&power);
+    log_d("WiFi TX Power is now %d", power);
+
+    // wiFiEsp.setAutoReconnect(true);
 }
 
 //______________________________________________________________________________
@@ -323,28 +379,28 @@ auto CSindarinWiFi::getLocalIpStr() -> std::string {
 //------------------------------------------------------------------------------
 auto CSindarinWiFi::getStatus() -> wifiesp_status_t { return wiFiEsp.getStatus(); }
 
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-/*!
-    \fn     GetMode
+// //______________________________________________________________________________
+// //------------------------------------------------------------------------------
+// /*!
+//     \fn     GetMode
 
-    \brief  Return Wifi mode
-    \param  N/A
-    \return wifi_mode_t
-*/
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-auto CSindarinWiFi::getMode() -> wifi_mode_t { return wiFiEsp.getMode(); }
+//     \brief  Return Wifi mode
+//     \param  N/A
+//     \return wifi_mode_t
+// */
+// //______________________________________________________________________________
+// //------------------------------------------------------------------------------
+// auto CSindarinWiFi::getMode() -> wifi_mode_t { return wiFiEsp.getMode(); }
 
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-/*!
-    \fn     SetMode
+// //______________________________________________________________________________
+// //------------------------------------------------------------------------------
+// /*!
+//     \fn     SetMode
 
-    \brief  Set a new mode
-    \param  wifi_mode_t - mode to set
-    \return bool - true= mode set
-*/
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-auto CSindarinWiFi::setMode(wifi_mode_t mode) -> bool { return wiFiEsp.mode(mode); }
+//     \brief  Set a new mode
+//     \param  wifi_mode_t - mode to set
+//     \return bool - true= mode set
+// */
+// //______________________________________________________________________________
+// //------------------------------------------------------------------------------
+// auto CSindarinWiFi::setMode(wifi_mode_t mode) -> bool { return wiFiEsp.mode(mode); }
