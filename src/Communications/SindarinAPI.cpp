@@ -13,8 +13,8 @@
 #include "Version.hpp"
 #include "sindarin-debug.h"
 
-#define SINDARIN_SERVER_URL "https://api.sindarin.com"
-// #define SINDARIN_SERVER_URL "https://staging.sindarin.com"
+// #define SINDARIN_SERVER_URL "https://api.sindarin.com"
+#define SINDARIN_SERVER_URL "https://staging.sindarin.com"
 
 std::shared_ptr<SindarinAPI> SindarinAPI::instance = nullptr;
 
@@ -41,38 +41,15 @@ void SindarinAPI::setAuth(HttpClient &client) {
 
 void SindarinAPI::setAccessToken(const std::string &token) { accessToken_ = token; }
 
-auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp) -> int {
-    HttpClient client(SINDARIN_SERVER_URL "/sync/all/", "application/x-www-form-urlencoded",
-                      HTTP_METHOD_POST);
+auto SindarinAPI::checkSync(const char *body, uint32_t bodyLength, CheckSyncResponse *resp,
+                            std::string modelType) -> int {
+    auto url = StringFormat(SINDARIN_SERVER_URL "/sync/%s/", modelType.c_str());
+    HttpClient client(url.c_str(), "application/json", HTTP_METHOD_POST);
     setAuth(client);
 
-    auto body =
-        StringFormat("build=%s&git_hash=%s&sn=%"
-                     "s&pt_battery=%d&pt_build=%s&skip_content=%s&sleep_reason=%d",
-                     kVersionString, kGitHash, GetSerialNumber().c_str(), req.ptBattery,
-                     req.ptBuild.c_str(), req.skipContent ? "true" : "false", req.sleepReason);
-    if (req.readablesSince.length() > 0) {
-        body += StringFormat("&readables_since=%s", req.readablesSince.c_str());
-    }
-    if (req.articlesSince.length() > 0) {
-        body += StringFormat("&articles_since=%s", req.articlesSince.c_str());
-    }
-    for (auto &placemark : req.readablePlacemarks) {
-        body += placemark.c_str();
-    }
-    for (auto &placemark : req.articlePlacemarks) {
-        body += placemark.c_str();
-    }
-    for (auto &readable : req.readablesArchived) {
-        body += readable.c_str();
-    }
-    for (auto &article : req.articlesArchived) {
-        body += article.c_str();
-    }
-
-    client.open(body.length());
-    int writeLength = client.write(body.c_str(), body.length());
-    if (writeLength < body.length()) {
+    client.open(bodyLength);
+    int writeLength = client.write(body, bodyLength);
+    if (writeLength < bodyLength) {
         log_e("HttpClient failed to write (writeLength=%d)", writeLength);
         return 0;
     }
@@ -110,8 +87,7 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
 
     SHOW_HEAP();
 
-    log_d("Synced: %d Message: %s, Firmware: %s", resp->synced, resp->message.c_str(),
-          resp->firmware.url.c_str());
+    log_d("Synced: %d Message: %s", resp->synced, resp->message.c_str());
 
     SHOW_HEAP();
 

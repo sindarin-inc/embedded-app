@@ -70,7 +70,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     SIZE_OF(*mainMenu);
 
-    auto readables = localStore.readables();
+    auto readables = localStore.books();
     auto articles = localStore.articles();
 
     auto createReadableScreen = [this, display, mainMenu, &fileSystem, &lightingController,

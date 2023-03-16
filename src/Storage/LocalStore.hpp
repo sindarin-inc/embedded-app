@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <vector>
 
+#include "Communications/SindarinAPI.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Models/CheckSyncResponse.hpp"
 #include "Models/Readable.hpp"
@@ -46,20 +47,20 @@ public:
     auto loadReadablesFromFile(ReadablesVector &readables, const std::string &path) -> bool;
 
     // Convenience methods
+    auto books() -> ReadablesVector & { return books_; };
+    auto articles() -> ReadablesVector & { return articles_; };
     auto readablesModelType(const ReadablesVector &readables) -> ReadablesModelType;
     auto hasReadable(const ReadablesVector &readables, const Readable &readable) -> bool;
-    auto readables() -> ReadablesVector & { return readables_; };
-    auto articles() -> ReadablesVector & { return articles_; };
     void addReadable(ReadablesVector &readables, const Readable &readable);
     void removeReadable(ReadablesVector &readables, const Readable &readable);
-    auto readablesSince() -> std::string;
-    auto articlesSince() -> std::string;
+    auto readablesSince(const ReadablesVector &readables) -> std::string;
 
-    auto changedReadablePlacemarkQueryParams(const ReadablesVector &readables)
-        -> std::vector<std::string>;
-    auto changedReadablesArchivedQueryParams(const ReadablesVector &readables)
-        -> std::vector<std::string>;
-    auto changedReadablesBookmarksJson() -> std::pair<char *, int>;
+    void storedReadableUuids(const ReadablesVector &readables, JsonArray &storedUuidsJsonArray);
+    void changedReadablePlacemarkJson(const ReadablesVector &readables,
+                                      JsonArray &placemarksJsonArray);
+    void changedReadablesArchivedJson(const ReadablesVector &readables,
+                                      JsonArray &archivedJsonArray);
+    void changedReadablesBookmarksJson(JsonArray &bookmarksJsonArray);
     auto processReadablePlacemarksFromServer(const Readable &readable, const uint32_t placemark)
         -> bool;
     auto processReadableBookmarksFromServer(const Readable &readable,
@@ -69,14 +70,16 @@ public:
     void resetReadablesBookmarksChanged(const ReadablesVector &readables);
 
     void syncFromRemote(const std::function<void(ContentSyncState state)> &progressCallback);
-    auto processReadables(const CheckSyncResponse &checkSyncResponse, ReadablesVector &readables,
-                          UserReadablesVector &userReadables)
+    auto processReadables(const CheckSyncResponse &checkSyncResponse,
+                          const ReadablesVector &readables, UserReadablesVector &userReadables)
         -> std::pair<ReadablesVector, ReadablesVector>;
-    void processReadableDeletion(ReadablesVector &readablesToDelete, ReadablesVector &readables,
-                                 int &tasksIndex, ContentSyncState &syncState,
+    void processReadableDeletion(const ReadablesVector &readablesToDelete,
+                                 ReadablesVector &readables, int &tasksIndex,
+                                 ContentSyncState &syncState,
                                  std::function<void(ContentSyncState)> progressCallback);
-    auto processReadableDownload(ReadablesVector &readablesToDownload, ReadablesVector &readables,
-                                 int &tasksIndex, ContentSyncState &syncState,
+    auto processReadableDownload(const ReadablesVector &readablesToDownload,
+                                 ReadablesVector &readables, int &tasksIndex,
+                                 ContentSyncState &syncState,
                                  std::function<void(ContentSyncState)> progressCallback) -> bool;
     void deleteReadables(bool restart = true);
     void deleteArticles(bool restart = true);
@@ -93,8 +96,8 @@ public:
     FileSystem &fileSystem;
 
 private:
-    ReadablesVector readables_;
-    ReadablesVector articles_;
-
     PreferencesStore &prefs_;
+
+    ReadablesVector books_;
+    ReadablesVector articles_;
 };

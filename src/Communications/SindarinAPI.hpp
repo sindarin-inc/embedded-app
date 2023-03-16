@@ -8,24 +8,12 @@
 #include "Models/Firmware.hpp"
 #include "Models/FirmwareResponse.hpp"
 #include "Models/Json.hpp"
+#include "Models/ReadableArchive.hpp"
+#include "Models/ReadableBookmark.hpp"
+#include "Models/ReadablePlacemark.hpp"
 #include "Models/SyncBookmarksResponse.hpp"
 #include "Models/UserReadable.hpp"
 #include "Storage/FileSystem.hpp"
-
-struct CheckSyncRequest {
-    std::string readablesSince;
-    std::string articlesSince;
-    std::vector<std::string> readablePlacemarks;
-    std::vector<std::string> articlePlacemarks;
-    std::vector<std::string> readablesArchived;
-    std::vector<std::string> articlesArchived;
-    std::vector<std::string> readablesBookmarked;
-    std::vector<std::string> articlesBookmarked;
-    int sleepReason;
-    int ptBattery;
-    std::string ptBuild;
-    bool skipContent;
-};
 
 class SindarinAPI {
 public:
@@ -34,7 +22,8 @@ public:
 
     void setAccessToken(const std::string &accessToken);
 
-    auto checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp) -> int;
+    auto checkSync(const char *req, size_t bodyLength, CheckSyncResponse *resp,
+                   std::string modelType) -> int;
     auto checkFirmware(FirmwareResponse *resp) -> int;
 
     auto syncBookmarks(const char *bookmarksJson, const int bookmarksSize) -> int;
