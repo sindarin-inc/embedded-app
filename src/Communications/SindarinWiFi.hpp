@@ -66,9 +66,6 @@ public:
     void setWiFiPower(wifi_power_t power) { wiFiPower_ = power; }
     auto getWiFiPower() -> wifi_power_t { return wiFiPower_; }
 
-    auto getLocalIp() -> wifiesp_ip4address;
-    auto getLocalIpStr() -> std::string;
-
     auto getStatus() -> wifiesp_status_t;
 
     auto getMode() -> wifi_mode_t;
