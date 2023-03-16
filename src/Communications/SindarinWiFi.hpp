@@ -71,7 +71,7 @@ public:
 
     auto getStatus() -> wifiesp_status_t;
 
-    // auto getMode() -> wifi_mode_t;
+    auto getMode() -> wifi_mode_t;
     // auto setMode(wifi_mode_t mode) -> bool;
 
 protected:
@@ -80,6 +80,7 @@ protected:
     //---------------------------------
     bool began_ = false;
     wifi_power_t wiFiPower_ = WIFI_POWER_19_5dBm;
+    bool autoReconnect_ = false;
 
     //---------------------------------
     // Functions

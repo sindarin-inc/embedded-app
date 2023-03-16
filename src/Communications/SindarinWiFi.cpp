@@ -324,9 +324,16 @@ auto CSindarinWiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
 //------------------------------------------------------------------------------
 void CSindarinWiFi::disconnectWiFi() {
     log_i("Disconnecting WiFi");
-    wiFiEsp.setAutoReconnect(false);
-    wiFiEsp.disconnect();
-    wiFiEsp.mode(WIFI_MODE_NULL);
+    autoReconnect_ = false;
+    bool disconnected = esp_wifi_disconnect();
+    if (!disconnected) {
+        log_i("could not disconnect wifi");
+    }
+
+    esp_err_t err = esp_wifi_set_mode(WIFI_MODE_NULL);
+    if (err != ESP_OK) {
+        log_i("error setting wifi mode in disconnectWifi(): %d", err);
+    }
 }
 
 //______________________________________________________________________________
@@ -340,7 +347,11 @@ void CSindarinWiFi::disconnectWiFi() {
 */
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
-auto CSindarinWiFi::connected() -> bool { return wiFiEsp.isConnected(); }
+auto CSindarinWiFi::connected() -> bool { 
+    //return wiFiEsp.isConnected(); 
+    // return (getStatus() == WIFIESP_STATUS_CONNECTED
+    
+}
 
 //______________________________________________________________________________
 //------------------------------------------------------------------------------
@@ -397,7 +408,14 @@ auto CSindarinWiFi::getStatus() -> wifiesp_status_t { return wiFiEsp.getStatus()
 // */
 // //______________________________________________________________________________
 // //------------------------------------------------------------------------------
-// auto CSindarinWiFi::getMode() -> wifi_mode_t { return wiFiEsp.getMode(); }
+auto CSindarinWiFi::getMode() -> wifi_mode_t { 
+    wifi_mode_t mode;
+    if (esp_wifi_get_mode(&mode) != ESP_OK) {
+        log_i("error getMode(): WiFi not started");
+        return WIFI_MODE_NULL;
+    }
+    return mode;
+}
 
 // //______________________________________________________________________________
 // //------------------------------------------------------------------------------
