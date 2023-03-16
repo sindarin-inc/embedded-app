@@ -3,7 +3,6 @@
 
 #if SIMULATOR
 
-//#include "esp32-hal-log.h"
 #include <stdio.h>
 #include <assert.h>
 
