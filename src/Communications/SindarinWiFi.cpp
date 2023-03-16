@@ -93,13 +93,6 @@ auto CSindarinWiFi::begin() -> esp_err_t {
     }
     SHOW_HEAP();
 
-    err = esp_wifi_start();
-    if (err != ESP_OK) {
-        log_e("esp_wifi_start failed with error %s", esp_err_to_name(err));
-        return err;
-    }
-    SHOW_HEAP();
-
     began_ = true;
     return ESP_OK;
 }
@@ -168,6 +161,13 @@ auto CSindarinWiFi::scanNetworks(
         return err;
     }
 
+    err = esp_wifi_start();
+    if (err != ESP_OK) {
+        log_e("esp_wifi_start failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+    SHOW_HEAP();
+
     // TODO: Use a non-blocking scan and send reusults back in realtime
     // Q: How do we get callbacks when a new network is found
     err = esp_wifi_scan_start(nullptr, true); // 3k PSRAM
@@ -194,6 +194,13 @@ auto CSindarinWiFi::scanNetworks(
     completeCB(apRecords, apNum);
 
     heap_caps_free(apRecords);
+    SHOW_HEAP();
+
+    err = esp_wifi_stop();
+    if (err != ESP_OK) {
+        log_e("esp_wifi_stop failed with error %s", esp_err_to_name(err));
+        return err;
+    }
     SHOW_HEAP();
 
     return ESP_OK;
