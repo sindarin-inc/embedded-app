@@ -360,8 +360,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     initialRect.width = prefs.rectW.get().value_or(myDisplay.defaultBoundingBox.width);
     initialRect.height = prefs.rectH.get().value_or(myDisplay.defaultBoundingBox.height);
 
-    log_d("Initial bounding box is %" PRIu32 " %" PRIu32 " %" PRIu32 " %" PRIu32 "", initialRect.x, initialRect.y, initialRect.width,
-          initialRect.height);
+    log_d("Initial bounding box is %" PRIu32 " %" PRIu32 " %" PRIu32 " %" PRIu32 "", initialRect.x,
+          initialRect.y, initialRect.width, initialRect.height);
     myDisplay.setBoundingBox(initialRect);
     myDisplay.setLineSpacing(prefs.lineSpacing.get().value_or(0));
 
@@ -487,8 +487,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     rootUi.setup(&myDisplay, localStore, fileSystem, lightingController);
 
     SHOW_HEAP();
-
-    SetCpuSpeedMhz(CPU_FREQ_MHZ_LOW);
 
     BlinkBootErrors(bootErrors);
 

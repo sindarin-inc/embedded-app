@@ -10,8 +10,8 @@
 #include <esp_bt.h>
 #include <esp_err.h>
 #include <esp_sleep.h>
-#include <esp_timer.h>
 #include <esp_task_wdt.h>
+#include <esp_timer.h>
 #include <optional>
 #include <soc/rtc.h>
 
@@ -237,18 +237,6 @@ auto GetBatteryVoltageRight() -> float {
     uint32_t millivolts = esp_adc_cal_raw_to_voltage(raw, &adcCalCharacteristics);
     auto mv = (float)(UPPER_DIVIDER + LOWER_DIVIDER) / LOWER_DIVIDER * millivolts;
     return (float)mv / 1000.0;
-}
-
-void SetCpuSpeedMhz(int speedMhz) {
-    // This is a no-op if we're using automatic power management
-#if DISABLE_POWER_MANAGEMENT
-    if (speedMhz == esp_clk_cpu_freq() / 1000000) {
-        return;
-    }
-    if (setCpuFrequencyMhz(speedMhz) != true) {
-        log_e("Failed to setCpuFrequencyMhz(%d)", speedMhz);
-    }
-#endif
 }
 
 void SetLeftScreenLight(int dutyCycle) {

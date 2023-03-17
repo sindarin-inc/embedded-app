@@ -44,8 +44,6 @@ auto GetBatteryVoltageLeft() -> float;
 
 auto GetBatteryVoltageRight() -> float;
 
-void SetCpuSpeedMhz(int speedMhz);
-
 void SetLeftScreenLight(int dutyCycle);
 
 void SetLeftScreenLightFade(int dutyCycle, int fadeMs);

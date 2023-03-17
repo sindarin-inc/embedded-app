@@ -1,8 +1,8 @@
 #if SIMULATOR
 
-#include <string>
 #include <chrono>
 #include <freertos/FreeRTOS.h>
+#include <string>
 
 #include "Platform.hpp"
 #include "sindarin-debug.h"
@@ -14,8 +14,6 @@ void InitializePlatform() {}
 auto GetBatteryVoltageLeft() -> float { return 0; }
 
 auto GetBatteryVoltageRight() -> float { return 0; }
-
-void SetCpuSpeedMhz(int speedMhz) {}
 
 void SetLeftScreenLight(int dutyCycle) {
     LightingSetting = dutyCycle;
@@ -46,7 +44,6 @@ auto GetHardwareRevision() -> uint8_t { return 0; }
 void ForcePowerOn() {}
 
 void AllowPowerOff() {}
-
 
 extern "C" void vTaskDelay(const TickType_t xTicksToDelay);
 

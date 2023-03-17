@@ -85,8 +85,6 @@ void DisplayEinkET013TT1::invertDisplay(bool newInvert) {
 }
 
 void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
-    SetCpuSpeedMhz(CPU_FREQ_MHZ_HIGH);
-
     switch (updateType) {
     case UNSPECIFIED:
         if (getPartialRefresh()) {
@@ -200,7 +198,6 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
     // Clear buffer afterwards
     fillScreen(bg);
     fullRefreshNext_ = false;
-    SetCpuSpeedMhz(CPU_FREQ_MHZ_LOW);
 }
 
 #endif
