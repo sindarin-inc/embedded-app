@@ -78,9 +78,9 @@ void SolClock::getClockTime(uint8_t &hours, uint8_t &minutes) {
 void SolClock::setClockTimeFromInternet() {
 #if !SIMULATOR
     // Configure the SNTP client
-    esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
-    esp_sntp_setservername(0, "time.google.com");
-    esp_sntp_init();
+    sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    sntp_setservername(0, "time.google.com");
+    sntp_init();
 
     // Wait for the SNTP client to get the time
     time_t now = 0;
@@ -96,7 +96,7 @@ void SolClock::setClockTimeFromInternet() {
         timeoutTries++;
     }
 
-    esp_sntp_stop();
+    sntp_stop();
 
     if (timeoutTries >= maxTimeoutTries) {
         log_e("Timed out trying to set time.");
