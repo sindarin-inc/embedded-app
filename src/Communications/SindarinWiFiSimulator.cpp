@@ -1,3 +1,5 @@
+#if SIMULATOR
+
 #include <string>
 
 #include "Communications/SindarinWiFi.hpp"
@@ -50,3 +52,5 @@ auto SindarinWiFi::connected() -> bool { return connected_; }
 auto SindarinWiFi::getLocalIp() -> esp_ip4_addr_t { return esp_ip4_addr{.addr = 0}; }
 
 auto SindarinWiFi::getLocalIpStr() -> std::string { return "0.0.0.0"; }
+
+#endif
