@@ -23,6 +23,6 @@ protected:
     PreferencesStore &prefs_;
     InactivityTimer inactivityTimer_;
 #if !DISABLE_POWER_MANAGEMENT
-    esp_pm_config_esp32s3_t pmConfig_;
+    esp_pm_config_t pmConfig_;
 #endif
 };
