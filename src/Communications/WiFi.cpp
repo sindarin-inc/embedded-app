@@ -354,13 +354,14 @@ auto WiFi::getLocalIpStr() -> std::string {
 
 void WiFi::wiFiEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId,
                             void *eventData) {
-    // WiFi *tthis = (WiFi *)arg;
+    WiFi *tthis = (WiFi *)arg;
     switch (eventId) {
     case WIFI_EVENT_STA_START:
         log_d("WIFI_EVENT_STA_START");
         break;
     case WIFI_EVENT_STA_DISCONNECTED:
         log_i("WIFI_EVENT_STA_DISCONNECTED");
+        tthis->connected_ = false;
         break;
     default:
         log_d("WIFI_EVENT: %d", eventId);
