@@ -1,7 +1,7 @@
 #include "Communications/WiFi.hpp"
 
-#include <string>
 #include <cstring>
+#include <string>
 
 #include "config.h"
 #include "sindarin-debug.h"

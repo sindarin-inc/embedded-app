@@ -2,8 +2,8 @@
 
 #include <string>
 
-#include "Misc/Platform.hpp"
 #include "Communications/WiFi.hpp"
+#include "Misc/Platform.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
 
