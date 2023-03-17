@@ -3,8 +3,8 @@
 #include <utility>
 
 #include "Misc/MenuStyle.hpp"
-#include "Misc/Style.hpp"
 #include "Misc/Platform.hpp"
+#include "Misc/Style.hpp"
 
 #define MAX_WIDTH 150
 

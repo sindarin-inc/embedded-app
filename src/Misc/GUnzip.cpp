@@ -1,8 +1,9 @@
 #include "GUnzip.hpp"
 
-#include "sindarin-debug.h"
 #include <cstdio>
 #include <memory>
+
+#include "sindarin-debug.h"
 
 extern "C" {
 #ifndef ZLIB_INTERNAL

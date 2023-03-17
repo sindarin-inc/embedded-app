@@ -1,9 +1,9 @@
 #pragma once
 
+#include <cstring>
 #include <nvs.h>
 #include <optional>
 #include <string>
-#include <cstring>
 
 #include "config.h"
 #include "sindarin-debug.h"

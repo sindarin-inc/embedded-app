@@ -1,7 +1,7 @@
 #include "FileDownload.hpp"
 
-#include <utility>
 #include <esp_timer.h>
+#include <utility>
 
 #include "Communications/HttpClient.hpp"
 #include "Communications/SindarinAPI.hpp"

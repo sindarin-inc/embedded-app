@@ -5,8 +5,8 @@
 #include <algorithm>
 #include <cstring>
 #include <esp_err.h>
-#include "Misc/Platform.hpp"
 
+#include "Misc/Platform.hpp"
 #include "sindarin-debug.h"
 
 // esp_clk methods are deprecated in IDF 5+

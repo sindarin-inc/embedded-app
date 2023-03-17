@@ -8,8 +8,8 @@
 #include "Communications/WiFi.hpp"
 #include "Misc/Crypto.hpp"
 #include "Misc/GUnzipStream.hpp"
-#include "Misc/StringUtil.hpp"
 #include "Misc/Platform.hpp"
+#include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
 #include "Models/ReadableBookmark.hpp"
 #include "sindarin-debug.h"
@@ -220,8 +220,8 @@ auto LocalStore::changedReadablesBookmarksJson() -> std::pair<char *, int> {
                 std::unordered_map<uint32_t, uint32_t> bookmarksToDelete;
                 LocalBookmark bookmark;
                 while (ReadOneBookmark(bookmarkFile, bookmark)) {
-                    log_d("Bookmark: %" PRIu32 " %" PRIu32 " %d", bookmark.firstPlace, bookmark.lastPlace,
-                          bookmark.status);
+                    log_d("Bookmark: %" PRIu32 " %" PRIu32 " %d", bookmark.firstPlace,
+                          bookmark.lastPlace, bookmark.status);
 
                     if (bookmark.status == BOOKMARK_ON &&
                         bookmark.firstPlace < bookmark.lastPlace) {

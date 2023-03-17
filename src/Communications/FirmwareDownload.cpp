@@ -1,7 +1,5 @@
 #include "FirmwareDownload.hpp"
 
-#include "Update.h"
-
 #include <cstdio>
 #include <string>
 
@@ -12,6 +10,7 @@
 #include "Misc/Dispatch.hpp"
 #include "Misc/SemVer.hpp"
 #include "Misc/StringUtil.hpp"
+#include "Update.h"
 #include "Version.hpp"
 #include "sindarin-debug.h"
 

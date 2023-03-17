@@ -1,10 +1,10 @@
 #include "BootError.hpp"
 
-#include "Misc/Platform.hpp"
-#include "sindarin-debug.h"
 #include <vector>
 
+#include "Misc/Platform.hpp"
 #include "config.h"
+#include "sindarin-debug.h"
 
 void BlinkBootErrors(const std::vector<BootError> &bootErrors) {
     // Blink out error codes:

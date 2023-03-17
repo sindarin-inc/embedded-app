@@ -1,9 +1,9 @@
 #pragma once
 
-#include "sindarin-debug.h"
 #include "Misc/SpiramAllocator.hpp"
 #include "Models/Json.hpp"
 #include "Models/JsonSerializable.hpp"
+#include "sindarin-debug.h"
 
 class ReadableFile : public JsonSerializable {
 public:
