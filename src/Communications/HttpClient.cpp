@@ -34,6 +34,8 @@ HttpClient::HttpClient(const char *url, const char *contentType, esp_http_client
                 log_d("HTTP_EVENT_HEADERS_SENT");
                 break;
             case HTTP_EVENT_ON_HEADER:
+                thisPtr->responseHeaders_.insert(
+                    std::pair<std::string, std::string>(event->header_key, event->header_value));
                 log_d("HTTP_EVENT_ON_HEADER %s %s", event->header_key, event->header_value);
                 break;
             case HTTP_EVENT_ON_DATA:
@@ -73,6 +75,7 @@ HttpClient::HttpClient(const char *url, const char *contentType, esp_http_client
 HttpClient::~HttpClient() {
     esp_http_client_close(client_);
     esp_http_client_cleanup(client_);
+    responseHeaders_.clear();
     free(url_);
 }
 
@@ -80,8 +83,13 @@ auto HttpClient::setHeader(const char *key, const char *value) -> esp_err_t {
     return esp_http_client_set_header(client_, key, value);
 }
 
-auto HttpClient::getHeader(const char *key, char **value) -> esp_err_t {
-    return esp_http_client_get_header(client_, key, value);
+auto HttpClient::getResponseHeader(const char *key, char **value) -> esp_err_t {
+    auto it = responseHeaders_.find(key);
+    if (it == responseHeaders_.end()) {
+        return ESP_ERR_NOT_FOUND;
+    }
+    *value = const_cast<char *>(it->second.c_str());
+    return ESP_OK;
 }
 
 auto HttpClient::open(int contentLength) -> esp_err_t {

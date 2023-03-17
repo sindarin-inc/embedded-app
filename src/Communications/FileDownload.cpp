@@ -48,7 +48,7 @@ auto DownloadFile(
 
     if (gzip) {
         char *contentEncoding = nullptr;
-        err = client.getHeader("Content-Encoding", &contentEncoding);
+        err = client.getResponseHeader("Content-Encoding", &contentEncoding);
         if (err == ESP_ERR_NOT_FOUND) {
             log_e("Requested GZIP but did not get any Content-Encoding header!");
         } else if (err != ESP_OK) {
@@ -58,6 +58,8 @@ auto DownloadFile(
             log_e("contentEncoding is null but didn't throw an error");
         } else if (strcmp(contentEncoding, "gzip") != 0) {
             log_e("Requested GZIP but instead got Content-Encoding: %s!", contentEncoding);
+        } else {
+            log_d("Got %s content encoding", contentEncoding);
         }
     }
 
