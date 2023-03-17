@@ -41,7 +41,9 @@ private:
     ///
     auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const -> bool {
         uint16_t lkIdx = face_->getLigKernPgmIndex(glyphCode1);
-        if (lkIdx == NO_LIG_KERN_PGM) return false;
+        if (lkIdx == NO_LIG_KERN_PGM) {
+            return false;
+        }
         LigKernStepPtr lk = face_->getLigKernStep(lkIdx);
         if (lk->b.goTo.isAKern && lk->b.goTo.isAGoTo) {
             lkIdx = lk->b.goTo.displacement;
@@ -144,7 +146,9 @@ public:
     inline auto yAdvance() const -> int {
         if constexpr (IBMF_TRACING) {
             LOGD("yAdvance()");
-            if (!isInitialized()) LOGE("Not initialized!!!");
+            if (!isInitialized()) {
+                LOGE("Not initialized!!!");
+            }
         }
         // max-hight is the maximum hight in pixels of all the glyph from the baseline
         // descender-height is the negative number of pixels below the baseline
@@ -245,8 +249,9 @@ public:
             //     IBMFDefs::Glyph glyph;
             //     if (face_->getGlyph(*chrIter, glyph, false)) {
             //         // LOGD("yoff value: %d", glyph.metrics.yoff);
-            //         if (height > glyph.metrics.yoff)
+            //         if (height > glyph.metrics.yoff) {
             //             height = glyph.metrics.yoff; // yoff is negative
+            //         }
             //     } else {
             //         LOGW("Unable to retrieve glyph for char %d(%c)", *chrIter, *chrIter);
             //     }

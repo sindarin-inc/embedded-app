@@ -92,11 +92,15 @@ public:
 
     auto operator==(std::string::iterator rhs) const -> bool { return stringIterator_ == rhs; }
 
-    auto operator==(std::string::const_iterator rhs) const -> bool { return stringIterator_ == rhs; }
+    auto operator==(std::string::const_iterator rhs) const -> bool {
+        return stringIterator_ == rhs;
+    }
 
     auto operator!=(std::string::iterator rhs) const -> bool { return stringIterator_ != rhs; }
 
-    auto operator!=(std::string::const_iterator rhs) const -> bool { return stringIterator_ != rhs; }
+    auto operator!=(std::string::const_iterator rhs) const -> bool {
+        return stringIterator_ != rhs;
+    }
 
     auto operator*() const -> char32_t {
         char32_t chr = 0;

@@ -24,14 +24,18 @@ private:
     const uint8_t PK_REPEAT_ONCE = 15;
 
     auto getnext8(uint8_t &val) -> bool {
-        if (fromPixelsPtr_ >= fromPixelsEnd_) return false;
+        if (fromPixelsPtr_ >= fromPixelsEnd_) {
+            return false;
+        }
         val = *fromPixelsPtr_++;
         return true;
     }
 
     auto getNybble(uint8_t &nyb) -> bool {
         if (nybbleFlipper_ == 0xf0U) {
-            if (!getnext8(nybbleByte_)) return false;
+            if (!getnext8(nybbleByte_)) {
+                return false;
+            }
             nyb = nybbleByte_ >> 4;
         } else {
             nyb = (nybbleByte_ & 0x0f);
@@ -78,16 +82,22 @@ private:
         uint8_t dynF = rleMetrics.dynF;
 
         while (true) {
-            if (!getNybble(nyb)) return false;
+            if (!getNybble(nyb)) {
+                return false;
+            }
             i = nyb;
             if (i == 0) {
                 do {
-                    if (!getNybble(nyb)) return false;
+                    if (!getNybble(nyb)) {
+                        return false;
+                    }
                     i++;
                 } while (nyb == 0);
                 j = nyb;
                 while (i-- > 0) {
-                    if (!getNybble(nyb)) return false;
+                    if (!getNybble(nyb)) {
+                        return false;
+                    }
                     j = (j << 4) + nyb;
                 }
                 val = j - 15 + ((13 - dynF) << 4) + dynF;
@@ -96,7 +106,9 @@ private:
                 val = i;
                 break;
             } else if (i < PK_REPEAT_COUNT) {
-                if (!getNybble(nyb)) return false;
+                if (!getNybble(nyb)) {
+                    return false;
+                }
                 val = ((i - dynF - 1) << 4) + nyb + dynF + 1;
                 break;
             } else {
@@ -114,21 +126,24 @@ private:
         return true;
     }
 
-    inline auto copyOneRowEightBits(MemoryPtr fromLine, MemoryPtr toLine, int16_t fromCol, int size) const -> void {
+    inline auto copyOneRowEightBits(MemoryPtr fromLine, MemoryPtr toLine, int16_t fromCol,
+                                    int size) const -> void {
         memcpy(toLine + fromCol, fromLine + fromCol, size);
     }
 
-    auto copyOneRowOneBit(MemoryPtr fromLine, MemoryPtr toLine, int16_t fromCol, int size) const -> void {
+    auto copyOneRowOneBit(MemoryPtr fromLine, MemoryPtr toLine, int16_t fromCol, int size) const
+        -> void {
         uint8_t mask = 0x80 >> (fromCol & 7);
         for (int col = fromCol; col < fromCol + size; col++) {
             if constexpr (BLACK_ONE_BIT) {
                 toLine[col >> 3] |= (fromLine[col >> 3] & mask);
-            }
-            else {
+            } else {
                 toLine[col >> 3] &= fromLine[col >> 3] | ~mask;
             }
             mask >>= 1;
-            if (mask == 0) mask = 0x80;
+            if (mask == 0) {
+                mask = 0x80;
+            }
         }
     }
 
@@ -144,8 +159,9 @@ public:
 
         if ((atOffset.x < 0) || (atOffset.y < 0) ||
             ((atOffset.y + fromBitmap.dim.height) > toBitmap.dim.height) ||
-            ((atOffset.x + fromBitmap.dim.width) > toBitmap.dim.width))
+            ((atOffset.x + fromBitmap.dim.width) > toBitmap.dim.width)) {
             return false;
+        }
 
         if (resolution_ == PixelResolution::ONE_BIT) {
             uint32_t toRowSize = (toBitmap.dim.width + 7) >> 3;
@@ -214,10 +230,12 @@ public:
                         count--;
                     }
 
-                    // if (repeatCount_ != 0) std::cout << "Repeat count: " << repeatCount_ <<
-                    // std::endl;
+                    // if (repeatCount_ != 0) {
+                    //     std::cout << "Repeat count: " << repeatCount_ << std::endl;
+                    // }
                     while ((fromRow < fromBitmap.dim.height) && (repeatCount_-- > 0)) {
-                        copyOneRowOneBit(toRowPtr, toRowPtr + toRowSize, atOffset.x, fromBitmap.dim.width);
+                        copyOneRowOneBit(toRowPtr, toRowPtr + toRowSize, atOffset.x,
+                                         fromBitmap.dim.width);
                         fromRow++;
                         toRowPtr += toRowSize;
                     }
@@ -280,14 +298,17 @@ public:
                             //   std::cout << '(' << count << ')' << ' ';
                             // }
                         }
-                        if (black) toRowPtr[toCol] = BLACK_EIGHT_BITS;
+                        if (black) {
+                            toRowPtr[toCol] = BLACK_EIGHT_BITS;
+                        }
                         count--;
                     }
 
                     // if (repeatCount_ != 0) std::cout << "Repeat count: " << repeatCount_ <<
                     // std::endl;
                     while ((fromRow < toBitmap.dim.height) && (repeatCount_-- > 0)) {
-                        copyOneRowEightBits(toRowPtr, toRowPtr + toRowSize, atOffset.x, fromBitmap.dim.width);
+                        copyOneRowEightBits(toRowPtr, toRowPtr + toRowSize, atOffset.x,
+                                            fromBitmap.dim.width);
                         fromRow++;
                         toRowPtr += toRowSize;
                     }

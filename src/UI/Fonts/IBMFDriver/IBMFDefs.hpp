@@ -116,22 +116,6 @@ const constexpr int DEBUG = 0;
 // #include <iomanip>
 #endif
 
-// The followings have to be adjusted depending on the screen
-// software/hardware/firmware' pixels polarity/color/shading/gray-scale
-// At least, one of BLACK... or WHITE... must be 0. If not, some changes are
-// required in the code.
-
-const constexpr uint8_t BLACK_ONE_BIT = 0;
-const constexpr uint8_t WHITE_ONE_BIT = 1;
-
-const constexpr uint8_t BLACK_EIGHT_BITS = 0;
-const constexpr uint8_t WHITE_EIGHT_BITS = 0xFF;
-
-// const constexpr uint8_t BLACK_ONE_BIT = 1;
-// const constexpr uint8_t WHITE_ONE_BIT = 0;
-// const constexpr uint8_t BLACK_EIGHT_BITS = 0xFF;
-// const constexpr uint8_t WHITE_EIGHT_BITS = 0x00;
-
 //----
 
 const constexpr uint8_t IBMF_VERSION = 4;      // Font format version
@@ -181,6 +165,28 @@ struct RLEBitmap {
 };
 typedef RLEBitmap *RLEBitmapPtr;
 
+// Uncompressed Bitmap. Depending on the resolution, every pixel will take:
+//
+// - one byte (PixelResolution::EIGHT_BITS)
+// - one bit (PixelResolution::ONE_BIT), every byte containing 8 pixels
+//   with the most significant bit being the pixel on the left of the others.
+//
+// The values used to represent the pixels depen on the following constants.
+// Theyhave to be adjusted depending on the screen software/hardware/firmware'
+// pixels polarity/color/shading/gray-scale. At least, one of BLACK...
+// or WHITE... must be 0. If not, some changes are required in the code.
+
+const constexpr uint8_t BLACK_ONE_BIT = 0;
+const constexpr uint8_t WHITE_ONE_BIT = 1;
+
+const constexpr uint8_t BLACK_EIGHT_BITS = 0;
+const constexpr uint8_t WHITE_EIGHT_BITS = 0xFF;
+
+// const constexpr uint8_t BLACK_ONE_BIT = 1;
+// const constexpr uint8_t WHITE_ONE_BIT = 0;
+// const constexpr uint8_t BLACK_EIGHT_BITS = 0xFF;
+// const constexpr uint8_t WHITE_EIGHT_BITS = 0x00;
+
 struct Bitmap {
     MemoryPtr pixels;
     Dim dim;
@@ -193,7 +199,8 @@ typedef Bitmap *BitmapPtr;
 
 #pragma pack(push, 1)
 
-// FIX16 is a floating point value in fixed point notation, 6 bits of fraction
+// FIX16 is a floating point value in 16 bits fixed point notation, 6 bits of fraction
+// Idem for FIX14, but for 14 bits fixed point notation notation
 
 typedef int16_t FIX16;
 typedef int16_t FIX14;
@@ -328,6 +335,7 @@ typedef FaceHeader *FaceHeaderPtr;
 // usually small numbers. FIX14 and FIX16 are using 6 bits for the fraction. Their
 // remains 8 bits for FIX14 and 10 bits for FIX16, that is more than enough...
 //
+// This is NOW the format in use with this driver and other support apps.
 
 #define ORIGINAL_FORMAT 0
 #if ORIGINAL_FORMAT
@@ -411,6 +419,39 @@ struct GlyphInfo {
     uint8_t ligKernPgmIndex; // = 255 if none
 };
 typedef GlyphInfo *GlyphInfoPtr;
+
+// For FontFormat 1 (FontFormat::UTF32), there is a table that contains
+// corresponding values between Unicode characters and their internal GlyphCode.
+// The GlyphCode is the index in the glyph table for the character.
+//
+// This table is in two parts:
+//
+// - Unicode plane information for the 4 planes supported
+//   by the driver,
+// - The list of bundle of code points that are part of each plane.
+//   A bundle identifies the first codePoint and the number of consecutive codepoints
+//   that are part of the bundle.
+//
+// For more information about the planes, please consult the followint Wikipedia page:
+//
+//     https://en.wikipedia.org/wiki/Plane_(Unicode)
+//
+
+struct Plane {
+    uint16_t codePointBundlesIdx; // Index of the plane in the CodePointBundles table
+    uint16_t entriesCount;        // The number of entries in the CodePointBungles table
+    GlyphCode firstGlyphCode;     // glyphCode corresponding to the first codePoint in the bundles
+};
+
+struct CodePointBundle {
+    char16_t firstCodePoint; // The first UTF16 codePoint of the bundle
+    char16_t
+        endCodePoint; // Codepoint corresponding to the one after the last codePoint of that bundle
+};
+
+typedef Plane Planes[4];
+typedef CodePointBundle (*CodePointBundlesPtr)[];
+typedef Planes *PlanesPtr;
 
 #pragma pack(pop)
 

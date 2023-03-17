@@ -23,6 +23,9 @@ private:
     PixelResolution resolution_;
 
     FaceHeaderPtr faceHeader_;
+    PlanesPtr planes_;
+    CodePointBundlesPtr codePointBundles_;
+
     RLEBitmap bitmaps_[MAX_GLYPH_COUNT];
     GlyphInfoPtr glyphs_[MAX_GLYPH_COUNT];
     LigKernStep (*ligKernSteps_)[];
@@ -30,7 +33,7 @@ private:
 public:
     IBMFFaceLow()
         : initialized_(false), fontFormat_(FontFormat::UNKNOWN), resolution_(DEFAULT_RESOLUTION),
-          faceHeader_(nullptr) {}
+          faceHeader_(nullptr), planes_(nullptr), codePointBundles_(nullptr) {}
 
     ~IBMFFaceLow() {}
 
@@ -98,12 +101,18 @@ public:
     inline auto getMaxHight() const -> uint8_t {
         return (faceHeader_ != nullptr) ? faceHeader_->maxHight : 0;
     }
-    inline auto getDescenderHeight() const -> int16_t { return -(int16_t)faceHeader_->descenderHeight; }
-    inline auto getLigKernStep(uint16_t idx) const -> LigKernStepPtr { return &(*ligKernSteps_)[idx]; }
+    inline auto getDescenderHeight() const -> int16_t {
+        return -(int16_t)faceHeader_->descenderHeight;
+    }
+    inline auto getLigKernStep(uint16_t idx) const -> LigKernStepPtr {
+        return &(*ligKernSteps_)[idx];
+    }
     inline auto setResolution(PixelResolution res) -> void { resolution_ = res; }
     inline auto getResolution() const -> PixelResolution { return resolution_; }
 
-    inline auto getGlyphInfo(GlyphCode glyphCode) const -> const GlyphInfo & { return *glyphs_[glyphCode]; }
+    inline auto getGlyphInfo(GlyphCode glyphCode) const -> const GlyphInfo & {
+        return *glyphs_[glyphCode];
+    }
 
     inline auto getLigKernPgmIndex(GlyphCode glyphCode) const -> uint16_t {
         // LOGD("glyphCode: %d", glyphCode & GLYPH_CODE_MASK);
@@ -152,19 +161,19 @@ public:
      * | U+2044  | fraction /
      * | U+20AC  | euro
      *
-     * @param charcode The UTF16 character code
+     * @param charCode The UTF16 character code
      * @return The internal representation of a character (glyphCode)
      */
-    auto translate(char32_t charcode) const -> GlyphCode {
-        GlyphCode glyphCode;
+    auto translate(char32_t charCode) const -> GlyphCode {
+        GlyphCode glyphCode = SPACE_CODE;
 
         if (fontFormat_ == FontFormat::LATIN) {
-            if ((charcode > 0x20) && (charcode < 0x7F)) {
-                glyphCode = charcode; // ASCII codes No accent
-            } else if ((charcode >= 0xA1) && (charcode <= 0x1FF)) {
-                glyphCode = latinTranslationSet[charcode - 0xA1];
+            if ((charCode > 0x20) && (charCode < 0x7F)) {
+                glyphCode = charCode; // ASCII codes No accent
+            } else if ((charCode >= 0xA1) && (charCode <= 0x1FF)) {
+                glyphCode = latinTranslationSet[charCode - 0xA1];
             } else {
-                switch (charcode) {
+                switch (charCode) {
                 case 0x2013: // endash
                     glyphCode = 0x0015;
                     break;
@@ -209,12 +218,33 @@ public:
                 case 0x20AC: // euro
                     glyphCode = 0x00AD;
                     break;
-                default:
-                    glyphCode = SPACE_CODE;
                 }
             }
-        } else {
-            glyphCode = NO_GLYPH_CODE;
+        } else if (fontFormat_ == FontFormat::UTF32) {
+            uint16_t planeIdx = static_cast<uint16_t>(charCode >> 16);
+
+            if (planeIdx <= 3) {
+                char16_t u16 = static_cast<char16_t>(charCode);
+
+                uint16_t codePointBundleIdx = (*planes_)[planeIdx].codePointBundlesIdx;
+                uint16_t entriesCount = (*planes_)[planeIdx].entriesCount;
+                int gCode = (*planes_)[planeIdx].firstGlyphCode;
+                int i = 0;
+                while (i < entriesCount) {
+                    if (u16 < (*codePointBundles_)[codePointBundleIdx].endCodePoint) {
+                        break;
+                    }
+                    gCode += ((*codePointBundles_)[codePointBundleIdx].endCodePoint -
+                              (*codePointBundles_)[codePointBundleIdx].firstCodePoint);
+                    i++;
+                    codePointBundleIdx++;
+                }
+                if ((i < entriesCount) &&
+                    (u16 >= (*codePointBundles_)[codePointBundleIdx].firstCodePoint)) {
+                    glyphCode =
+                        gCode + u16 - (*codePointBundles_)[codePointBundleIdx].firstCodePoint;
+                }
+            }
         }
 
         return glyphCode;
@@ -230,16 +260,19 @@ public:
         uint8_t accentIdx = 0;
         GlyphInfoPtr accentInfo = nullptr;
 
-        if (caching) appGlyph.clear();
+        if (caching) {
+            appGlyph.clear();
+        }
 
         if (fontFormat_ == FontFormat::LATIN) {
             accentIsPresent = (glyphCode & ACCENT_MASK) != 0;
             if (accentIsPresent) {
                 accentIdx = (glyphCode & ACCENT_MASK) >> ACCENT_SHIFTR;
-                if (accentIdx == CODED_GRAVE_ACCENT)
+                if (accentIdx == CODED_GRAVE_ACCENT) {
                     accentIdx = GRAVE_ACCENT;
-                else if (accentIdx == CODED_APOSTROPHE)
+                } else if (accentIdx == CODED_APOSTROPHE) {
                     accentIdx = APOSTROPHE;
+                }
                 accentInfo = glyphs_[accentIdx];
             }
         } else if (fontFormat_ == FontFormat::UTF32) {
@@ -267,11 +300,15 @@ public:
             return true;
         }
 
-        if (glyphIdx >= faceHeader_->glyphCount) return false;
+        if (glyphIdx >= faceHeader_->glyphCount) {
+            return false;
+        }
 
         GlyphInfoPtr glyphInfo = glyphs_[glyphIdx];
 
-        if (glyphInfo == nullptr) return false;
+        if (glyphInfo == nullptr) {
+            return false;
+        }
 
         Dim dim = Dim(glyphInfo->bitmapWidth, glyphInfo->bitmapHeight);
         Pos glyphOffsets = Pos(0, 0);
@@ -325,7 +362,9 @@ public:
                     int16_t addedHeightBelow =
                         (glyphInfo->bitmapHeight - glyphInfo->verticalOffset) -
                         ((-accentInfo->verticalOffset) + accentInfo->bitmapHeight);
-                    if (addedHeightBelow < 0) dim.height += -addedHeightBelow;
+                    if (addedHeightBelow < 0) {
+                        dim.height += -addedHeightBelow;
+                    }
                     accentOffsets.y = glyphInfo->verticalOffset - accentInfo->verticalOffset;
                 }
             } else {
@@ -469,7 +508,9 @@ public:
         }
     }
 
-    auto showGlyph2(const Glyph &glyph, char16_t charCode) const -> void { showGlyph(glyph, 0, charCode); }
+    auto showGlyph2(const Glyph &glyph, char16_t charCode) const -> void {
+        showGlyph(glyph, 0, charCode);
+    }
 
     auto showGlyphInfo(GlyphCode i, GlyphInfo &g) const -> void {
         if constexpr (DEBUG) {
@@ -484,7 +525,7 @@ public:
         }
     }
 
-    auto showLigKerns() const -> void{
+    auto showLigKerns() const -> void {
         if constexpr (DEBUG) {
             std::cout << std::endl
                       << "----------- Ligature / Kern programs: ----------" << std::endl;
@@ -512,7 +553,7 @@ public:
         }
     }
 
-    auto showFace() const -> void{
+    auto showFace() const -> void {
         if constexpr (DEBUG) {
 
             std::cout << std::endl << "----------- Header: ----------" << std::endl;
