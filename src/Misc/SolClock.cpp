@@ -86,9 +86,9 @@ void SolClock::setClockTimeFromInternet() {
     time_t now = 0;
     struct tm timeinfo {};
     uint16_t timeoutTries = 0;
-    const int MAX_TIMEOUT_TRIES = 10;
+    const int maxTimeoutTries = 10;
 
-    while (timeinfo.tm_year < (2021 - 1900) && timeoutTries < MAX_TIMEOUT_TRIES) {
+    while (timeinfo.tm_year < (2021 - 1900) && timeoutTries < maxTimeoutTries) {
         log_i("Waiting for system time to be set...");
         vTaskDelay(pdMS_TO_TICKS(1000));
         time(&now);
@@ -98,7 +98,7 @@ void SolClock::setClockTimeFromInternet() {
 
     sntp_stop();
 
-    if (timeoutTries >= MAX_TIMEOUT_TRIES) {
+    if (timeoutTries >= maxTimeoutTries) {
         log_e("Timed out trying to set time.");
     }
 
