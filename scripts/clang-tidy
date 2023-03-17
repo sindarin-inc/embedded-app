@@ -103,6 +103,8 @@ def clang_options(idedata):
             "-Dxt_get_interrupt_handler_arg(n)=nullptr",
             "-Dxt_ints_on(mask)=",
             "-Dxt_ints_off(mask)=",
+            # Workaround for https://github.com/espressif/esp-idf/issues/10802
+            "-U__linux__",
         ]
     )
 
