@@ -75,7 +75,7 @@ void BLEImprov::setState(BLEImprovState state) {
     this->currentStateCharacteristic_->setValue(improvState);
     this->currentStateCharacteristic_->notify();
 #endif
-    this->lastStateChangeMillis_ = millis();
+    this->lastStateChangeMillis_ = Millis();
 }
 
 void BLEImprov::setError(improv::Error error, bool notify) {
@@ -109,7 +109,7 @@ void BLEImprov::loop() {
         this->setState(STATE_CONNECTING);
         return;
     } else if (this->state_ == STATE_CONNECTING) {
-        uint32_t now = millis();
+        uint32_t now = Millis();
         if (WiFi::getInstance().connected()) {
             std::string ip = WiFi::getInstance().getLocalIpStr();
             std::vector<uint8_t> response = improv::build_rpc_response(improv::WIFI_SETTINGS, {ip});

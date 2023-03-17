@@ -35,13 +35,13 @@ auto WiFi::scanNetworks(
 auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> esp_err_t {
     log_i("Pretending to connect WiFi (wiFiPower_=%d, ssid=%s, password=%s)", wiFiPower_,
           ssid.c_str(), password.c_str());
-    delay(1000);
+    Delay(1000);
     return ESP_OK;
 }
 
 auto WiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
     log_i("Pretending to connect WiFi (wiFiPower_=%d, timeoutMs=%dms)", wiFiPower_, timeoutMs);
-    delay(1000);
+    Delay(1000);
     return true;
 }
 

@@ -1,10 +1,11 @@
 #pragma once
 
+#include <cstring>
 #include <memory>
 #include <stdint.h>
 #include <stdio.h>
 #include <string>
-#include <cstring>
+#include <utility>
 
 #include "sindarin-debug.h"
 
@@ -15,34 +16,34 @@ enum SSeekMode { SSeekSet = 0, SSeekCur = 1, SSeekEnd = 2 };
 
 class SFileImpl {
 public:
-    virtual ~SFileImpl() {}
-    virtual size_t write(const uint8_t *buf, size_t size) = 0;
-    virtual size_t read(uint8_t *buf, size_t size) = 0;
+    virtual ~SFileImpl() = default;
+    virtual auto write(const uint8_t *buf, size_t size) -> size_t = 0;
+    virtual auto read(uint8_t *buf, size_t size) -> size_t = 0;
     virtual void flush() = 0;
-    virtual bool seek(uint32_t pos, SSeekMode mode) = 0;
-    virtual size_t position() const = 0;
-    virtual size_t size() const = 0;
+    virtual auto seek(uint32_t pos, SSeekMode mode) -> bool = 0;
+    [[nodiscard]] virtual auto position() const -> size_t = 0;
+    [[nodiscard]] virtual auto size() const -> size_t = 0;
     virtual void close() = 0;
     virtual operator bool() const = 0;
 };
 
 class SStream {
 public:
-    SStream() {}
-    ~SStream() {}
+    SStream() = default;
+    ~SStream() = default;
 
-    virtual size_t write(uint8_t c) = 0;
-    size_t write(const char *str) {
-        if (str == NULL) {
+    virtual auto write(uint8_t c) -> size_t = 0;
+    auto write(const char *str) -> size_t {
+        if (str == nullptr) {
             return 0;
         }
         return write((const uint8_t *)str, strlen(str));
     }
 
-    virtual size_t write(const uint8_t *buf, size_t size) = 0;
-    virtual int available() = 0;
-    virtual int read() = 0;
-    virtual std::string readString() {
+    virtual auto write(const uint8_t *buf, size_t size) -> size_t = 0;
+    virtual auto available() -> int = 0;
+    virtual auto read() -> int = 0;
+    virtual auto readString() -> std::string {
         std::string ret;
         int c = read();
         while (c >= 0) {
@@ -51,7 +52,7 @@ public:
         }
         return ret;
     }
-    std::string readStringUntil(char terminator) {
+    auto readStringUntil(char terminator) -> std::string {
         std::string res = "";
         int value;
         while (true) {
@@ -67,27 +68,27 @@ public:
 
 class SFile : public SStream {
 public:
-    SFile() : _p(nullptr) {}
-    SFile(std::shared_ptr<SFileImpl> p) : _p(p) {}
+    SFile() : p_(nullptr) {}
+    SFile(std::shared_ptr<SFileImpl> p) : p_(std::move(std::move(p))) {}
 
-    size_t write(uint8_t c);
-    size_t write(const uint8_t *buf, size_t size);
-    int available() override;
-    int read();
-    int peek();
+    auto write(uint8_t c) -> size_t override;
+    auto write(const uint8_t *buf, size_t size) -> size_t override;
+    auto available() -> int override;
+    auto read() -> int override;
+    auto peek() -> int;
     void flush();
-    size_t read(uint8_t *buf, size_t size);
-    size_t readBytes(char *buffer, size_t length);
+    auto read(uint8_t *buf, size_t size) -> size_t;
+    auto readBytes(char *buffer, size_t length) -> size_t;
 
-    bool seek(uint32_t pos, SSeekMode mode);
-    bool seek(uint32_t pos) { return seek(pos, SSeekSet); }
-    size_t position() const;
-    size_t size() const;
+    auto seek(uint32_t pos, SSeekMode mode) -> bool;
+    auto seek(uint32_t pos) -> bool { return seek(pos, SSeekSet); }
+    [[nodiscard]] auto position() const -> size_t;
+    [[nodiscard]] auto size() const -> size_t;
     void close();
     operator bool() const;
 
 protected:
-    std::shared_ptr<SFileImpl> _p;
+    std::shared_ptr<SFileImpl> p_;
 };
 
 class VFSFile : public SFileImpl {
@@ -96,12 +97,12 @@ public:
         std::string modeStr(mode);
         std::string openMode = "";
         bool read = false;
-        if (modeStr.find(FILE_READ) != std::string::npos) {
+        if (modeStr.find('r') != std::string::npos) {
             openMode = "rb";
             read = true;
-        } else if (modeStr.find(FILE_WRITE) != std::string::npos) {
+        } else if (modeStr.find('w') != std::string::npos) {
             openMode = "wb";
-        } else if (modeStr.find(FILE_APPEND) != std::string::npos) {
+        } else if (modeStr.find('a') != std::string::npos) {
             openMode = "ab+";
         }
         log_d("Opening file %s with mode string %s", fname, openMode.c_str());
@@ -115,18 +116,18 @@ public:
             log_e("Failed to open file: %s", fname);
         }
     }
-    ~VFSFile() {}
+    ~VFSFile() override = default;
 
-    size_t write(const uint8_t *buf, size_t size);
-    int available();
-    void flush();
-    size_t read(uint8_t *buf, size_t size);
+    auto write(const uint8_t *buf, size_t size) -> size_t override;
+    auto available() -> int;
+    void flush() override;
+    auto read(uint8_t *buf, size_t size) -> size_t override;
 
-    bool seek(uint32_t pos, SSeekMode mode);
-    size_t position() const;
-    size_t size() const;
-    void close();
-    operator bool() const;
+    auto seek(uint32_t pos, SSeekMode mode) -> bool override;
+    [[nodiscard]] auto position() const -> size_t override;
+    [[nodiscard]] auto size() const -> size_t override;
+    void close() override;
+    operator bool() const override;
 
 protected:
     FILE *fp_{nullptr};

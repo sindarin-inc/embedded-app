@@ -1,15 +1,15 @@
 #include "PosixFileSystem.hpp"
 
+#include <cstdio>
 #include <dirent.h>
-#include <stdio.h>
 #include <sys/stat.h>
 
 #include "sindarin-debug.h"
 
-char PosixFileSystemPrefix[64] = "./data";
+char posixFileSystemPrefix[64] = "./data";
 
 void PosixFileSystem::createPath(char *output, size_t outputSize, const std::string &path) const {
-    strncpy(output, PosixFileSystemPrefix, outputSize);
+    strncpy(output, posixFileSystemPrefix, outputSize);
     strncat(output, path.c_str(), outputSize - 1);
 }
 
@@ -34,7 +34,7 @@ auto PosixFileSystem::listDir(const std::string &path, FileList &files, int limi
     char prefixedPath[200];
     createPath(prefixedPath, sizeof(prefixedPath), path);
     DIR *dp = opendir(prefixedPath);
-    if (dp != NULL) {
+    if (dp != nullptr) {
         struct dirent *ep;
         int counted = 0;
         while ((ep = readdir(dp))) {
@@ -77,7 +77,7 @@ auto PosixFileSystem::remove(const std::string &path) -> bool {
 void PosixFileSystem::close() {}
 
 void PosixFileSystem::setPrefix(const std::string &prefix) {
-    strncpy(PosixFileSystemPrefix, prefix.c_str(), sizeof(PosixFileSystemPrefix) - 1);
+    strncpy(posixFileSystemPrefix, prefix.c_str(), sizeof(posixFileSystemPrefix) - 1);
 }
 
-const char *PosixFileSystem::getPrefix() { return PosixFileSystemPrefix; }
+auto PosixFileSystem::getPrefix() -> const char * { return posixFileSystemPrefix; }

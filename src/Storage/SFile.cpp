@@ -4,39 +4,39 @@
 #include "sindarin-debug.h"
 
 // SFile
-size_t SFile::write(uint8_t c) { return write(&c, 1); }
+auto SFile::write(uint8_t c) -> size_t { return write(&c, 1); }
 
-size_t SFile::write(const uint8_t *buf, size_t size) {
+auto SFile::write(const uint8_t *buf, size_t size) -> size_t {
     if (!*this) {
         return 0;
     }
-    return _p->write(buf, size);
+    return p_->write(buf, size);
 }
-int SFile::available() {
+auto SFile::available() -> int {
     if (!*this) {
         return false;
     }
 
-    return _p->size() - _p->position();
+    return p_->size() - p_->position();
 }
-int SFile::read() {
+auto SFile::read() -> int {
     if (!*this) {
         return -1;
     }
 
     uint8_t result;
-    if (_p->read(&result, 1) != 1) {
+    if (p_->read(&result, 1) != 1) {
         return -1;
     }
 
     return result;
 }
-int SFile::peek() {
+auto SFile::peek() -> int {
     if (!*this) {
         return -1;
     }
 
-    size_t curPos = _p->position();
+    size_t curPos = p_->position();
     int result = read();
     seek(curPos, SSeekSet);
     return result;
@@ -46,50 +46,52 @@ void SFile::flush() {
         return;
     }
 
-    _p->flush();
+    p_->flush();
 }
-size_t SFile::read(uint8_t *buf, size_t size) {
+auto SFile::read(uint8_t *buf, size_t size) -> size_t {
     if (!*this) {
         return -1;
     }
 
-    return _p->read(buf, size);
+    return p_->read(buf, size);
 }
-size_t SFile::readBytes(char *buffer, size_t length) { return read((uint8_t *)buffer, length); }
+auto SFile::readBytes(char *buffer, size_t length) -> size_t {
+    return read((uint8_t *)buffer, length);
+}
 
-bool SFile::seek(uint32_t pos, SSeekMode mode) {
+auto SFile::seek(uint32_t pos, SSeekMode mode) -> bool {
     if (!*this) {
         return false;
     }
 
-    return _p->seek(pos, mode);
+    return p_->seek(pos, mode);
 }
 
-size_t SFile::position() const {
+auto SFile::position() const -> size_t {
     if (!*this) {
         return 0;
     }
 
-    return _p->position();
+    return p_->position();
 }
-size_t SFile::size() const {
+auto SFile::size() const -> size_t {
     if (!*this) {
         return 0;
     }
 
-    return _p->size();
+    return p_->size();
 }
 void SFile::close() {
-    if (_p) {
-        _p->close();
-        _p = nullptr;
+    if (p_) {
+        p_->close();
+        p_ = nullptr;
     }
 }
 
-SFile::operator bool() const { return _p != nullptr && *_p != false; }
+SFile::operator bool() const { return p_ != nullptr && *p_ != false; }
 
 // VFSFile
-size_t VFSFile::write(const uint8_t *buf, size_t size) {
+auto VFSFile::write(const uint8_t *buf, size_t size) -> size_t {
     if (!*this) {
         return 0;
     }
@@ -97,7 +99,7 @@ size_t VFSFile::write(const uint8_t *buf, size_t size) {
     return fwrite(buf, 1, size, fp_);
 }
 
-int VFSFile::available() {
+auto VFSFile::available() -> int {
     if (!*this) {
         return false;
     }
@@ -112,7 +114,7 @@ void VFSFile::flush() {
     fflush(fp_);
 }
 
-size_t VFSFile::read(uint8_t *buf, size_t size) {
+auto VFSFile::read(uint8_t *buf, size_t size) -> size_t {
     if (!*this) {
         return -1;
     }
@@ -120,7 +122,7 @@ size_t VFSFile::read(uint8_t *buf, size_t size) {
     return fread(buf, 1, size, fp_);
 }
 
-bool VFSFile::seek(uint32_t pos, SSeekMode mode) {
+auto VFSFile::seek(uint32_t pos, SSeekMode mode) -> bool {
     if (!*this) {
         return false;
     }
@@ -136,7 +138,7 @@ bool VFSFile::seek(uint32_t pos, SSeekMode mode) {
     return false;
 }
 
-size_t VFSFile::position() const {
+auto VFSFile::position() const -> size_t {
     if (!*this) {
         return 0;
     }
@@ -151,7 +153,7 @@ void VFSFile::getFileSize() {
     seek(curPos, SSeekSet);
 }
 
-size_t VFSFile::size() const {
+auto VFSFile::size() const -> size_t {
     if (!*this) {
         return 0;
     }

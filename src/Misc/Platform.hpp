@@ -64,20 +64,20 @@ void ForcePowerOn();
 
 void AllowPowerOff();
 
-void hardwareInit();
+void HardwareInit();
 
-void delay(int ms);
+void Delay(int ms);
 
-int millis();
+auto Millis() -> int;
 
-void digitalWrite(int pin, int level);
+void DigitalWrite(int pin, int level);
 
 #if !SIMULATOR
-void pinMode(int pin, int mode);
-int digitalRead(uint8_t pin);
-size_t getHeapSize();
-void enableCore0WDT();
-void disableCore0WDT();
+void PinMode(int pin, int mode);
+auto DigitalRead(uint8_t pin) -> int;
+auto GetHeapSize() -> size_t;
+void EnableCore0Wdt();
+void DisableCore0Wdt();
 #else
 
 #endif

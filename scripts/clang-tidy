@@ -134,6 +134,7 @@ def clang_options(idedata):
             not directory.startswith(f"{root_path}/")
             or directory.startswith(f"{root_path}/.pio/")
             or directory.startswith(f"{root_path}/components/")
+            or directory.startswith(f"{root_path}/managed_components/")
         ):
             cmd.extend(["-isystem", directory])
         else:

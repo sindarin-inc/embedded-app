@@ -9,11 +9,11 @@
 
 const char *partitionLabel = "data";
 
-bool LittleFSFileSystem::format() {
+auto LittleFSFileSystem::format() -> bool {
     log_i("formatting littlefs..");
-    disableCore0WDT();
+    DisableCore0Wdt();
     esp_err_t err = esp_littlefs_format(partitionLabel);
-    enableCore0WDT();
+    EnableCore0Wdt();
     if (err) {
         log_e("Formatting LittleFS failed! Error: %d", err);
         return false;

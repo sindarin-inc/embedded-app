@@ -146,7 +146,7 @@ void loop() { vTaskDelay(portMAX_DELAY); };
 void setup() {
 #else
 extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
-    hardwareInit();
+    HardwareInit();
 #endif
 
 #if !SIMULATOR
@@ -197,7 +197,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             log_i("Temple is closed or glasses inactive, current time: %d:%d", hours, minutes);
             if (((hours && (hours == morningNews)) || (hours && (hours == eveningNews))) &&
                 (minutes == 0)) {
-                digitalWrite(BLUE_LED, LED_ON);
+                DigitalWrite(BLUE_LED, LED_ON);
                 runningContentSync = true;
                 localStore.syncFromRemote([](const ContentSyncState &state) {
                     if (state.state == ContentSyncState::Failure ||
@@ -210,7 +210,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                         } else if (state.state == ContentSyncState::AlreadySynced) {
                             log_i("Content sync already synced");
                         }
-                        digitalWrite(BLUE_LED, LED_OFF);
+                        DigitalWrite(BLUE_LED, LED_OFF);
                         runningContentSync = false;
                         WiFi::getInstance().disconnectWiFi();
                         log_i("Going to sleep after content sync");
@@ -229,16 +229,16 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     if (esp_reset_reason() == ESP_RST_POWERON) {
         // Flash all the LEDs
-        digitalWrite(RED_LED, LED_ON);
+        DigitalWrite(RED_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        digitalWrite(RED_LED, LED_OFF);
-        digitalWrite(GREEN_LED, LED_ON);
+        DigitalWrite(RED_LED, LED_OFF);
+        DigitalWrite(GREEN_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        digitalWrite(GREEN_LED, LED_OFF);
+        DigitalWrite(GREEN_LED, LED_OFF);
 #ifdef BLUE_LED
-        digitalWrite(BLUE_LED, LED_ON);
+        DigitalWrite(BLUE_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        digitalWrite(BLUE_LED, LED_OFF);
+        DigitalWrite(BLUE_LED, LED_OFF);
 #endif
     }
 
@@ -273,7 +273,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 log_d("Temples closed for a while, running content sync");
                 // Debug LED so we know what's happening
                 if (templesClosed) {
-                    digitalWrite(BLUE_LED, LED_ON);
+                    DigitalWrite(BLUE_LED, LED_ON);
                     runningContentSync = true;
                     localStore.syncFromRemote([](const ContentSyncState &state) {
                         if (state.state == ContentSyncState::Failure ||
@@ -286,7 +286,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                             } else if (state.state == ContentSyncState::AlreadySynced) {
                                 log_i("Content sync already synced");
                             }
-                            digitalWrite(BLUE_LED, LED_OFF);
+                            DigitalWrite(BLUE_LED, LED_OFF);
                             // Only if the temples are still closed, allow power off
                             if (templesClosed) {
                                 prefs.sleepReason.set(SLEEP_REASON_TEMPLES_CLOSED);
@@ -323,7 +323,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #if EINKET013TT1
 #ifdef DISPLAY_POWER
     // Turn on power to the screen
-    digitalWrite(DISPLAY_POWER, HIGH);
+    DigitalWrite(DISPLAY_POWER, HIGH);
 #endif
     // If the saved prefs indicated a vcom, set it here.
     auto vcomSetting = prefs.vcom.get();

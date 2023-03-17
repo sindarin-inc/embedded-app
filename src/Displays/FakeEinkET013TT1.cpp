@@ -2,9 +2,9 @@
 
 #include "FakeEinkET013TT1.hpp"
 
-#include <stdio.h>
 #include <algorithm>
 #include <cstring>
+#include <stdio.h>
 
 #include "Misc/Platform.hpp"
 #include "sindarin-debug.h"
@@ -97,7 +97,7 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
 
             // This doesn't account for processing time above, but probably real CPUs are fast
             // enough it doesn't matter?
-            delay(1000 / framerate_);
+            Delay(1000 / framerate_);
         }
 
         // Move new buffer to be previous buffer

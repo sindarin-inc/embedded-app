@@ -90,9 +90,9 @@ void EinkET013TT1::init() {
     log_d("Initializing EinkET013TT1 with config csLeft_=%d csRight_=%d rst_=%d mosi=%d miso=%d "
           "clk=%d",
           csLeft_, csRight_, rst_, DISPLAY_MOSI, DISPLAY_MISO, DISPLAY_CLK);
-    pinMode(csLeft_, OUTPUT);
-    pinMode(csRight_, OUTPUT);
-    pinMode(rst_, OUTPUT);
+    PinMode(csLeft_, OUTPUT);
+    PinMode(csRight_, OUTPUT);
+    PinMode(rst_, OUTPUT);
     // The eink-provided driver only kept OEI low always, so we have it optional here
 #ifdef DISPLAY_OEI
     log_w("Using DISPLAY_OEI pin %d", DISPLAY_OEI);
@@ -194,12 +194,12 @@ void EinkET013TT1::clear(const EinkET013TT1Waveform &waveform) {
 
 inline void EinkET013TT1::setCS(bool value, ScreenSide screen) {
     if (screen == ScreenSide::Left) {
-        digitalWrite(csLeft_, value);
+        DigitalWrite(csLeft_, value);
     } else if (screen == ScreenSide::Right) {
-        digitalWrite(csRight_, value);
+        DigitalWrite(csRight_, value);
     } else if (screen == ScreenSide::Both) {
-        digitalWrite(csLeft_, value);
-        digitalWrite(csRight_, value);
+        DigitalWrite(csLeft_, value);
+        DigitalWrite(csRight_, value);
     }
 }
 
@@ -452,7 +452,7 @@ auto EinkET013TT1::readDeviceIdReg(ScreenSide screen) -> uint8_t {
 
 void EinkET013TT1::powerOn() {
     log_d("Powering on EinkET013TT1");
-    digitalWrite(rst_, HIGH);
+    DigitalWrite(rst_, HIGH);
 
     ESP_ERROR_CHECK(spi_device_acquire_bus(spiHigh_, portMAX_DELAY));
 
@@ -479,19 +479,19 @@ void EinkET013TT1::powerOn() {
     // Fire up the charge pumps
     // Disable everything (probably a no-op)
     writeRegister(PUMP_SETTING_2, 0x00);
-    delay(30);
+    Delay(30);
     // Enable positive charge pump VH (VDH +14V & VGH +19V)
     writeRegister(PUMP_SETTING_2, 0x01);
-    delay(30);
+    Delay(30);
     // Also enable negative charge pump VN (VDL -14V & VGL -19V)
     writeRegister(PUMP_SETTING_2, 0x03);
-    delay(30);
+    Delay(30);
     // Also enable negative charge pump VCL (-5.6V)
     writeRegister(PUMP_SETTING_2, 0x07);
-    delay(60);
+    Delay(60);
     // Also enable (connect) VCOM
     writeRegister(PUMP_SETTING_2, 0x0F);
-    delay(30);
+    Delay(30);
 
     // This is not in the datasheet and its function is a mystery
     writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10);
@@ -502,13 +502,13 @@ void EinkET013TT1::powerOn() {
 void EinkET013TT1::powerOff() {
     // Disable (disconnect) VCOM
     writeRegister(PUMP_SETTING_2, 0x07);
-    delay(30);
+    Delay(30);
     // Also disable negative charge pump VCL (-5.6V)
     writeRegister(PUMP_SETTING_2, 0x03);
-    delay(30);
+    Delay(30);
     // Also disable negative charge pump VN (VDL -14V & VGL -19V)
     writeRegister(PUMP_SETTING_2, 0x01);
-    delay(30);
+    Delay(30);
     // This is not in the datasheet and its function is a mystery
     writeRegister(MYSTERY_SETTING_2, 0x00);
     // Disable internal charge pump for oscillator power
@@ -519,10 +519,10 @@ void EinkET013TT1::powerOff() {
     // Also disable positive charge pump VH (VDH +14V & VGH +19V)
     // All charge pumps are off at this point
     writeRegister(PUMP_SETTING_2, 0x00);
-    delay(30);
+    Delay(30);
     // LVDS OFF, Band-gap circuit OFF, Temperature sensor OFF
     writeRegister(THERMAL_SENSOR_SETTING, 0x00);
-    delay(30);
+    Delay(30);
     // This is not in the datasheet and its function is a mystery
     writeRegister(MYSTERY_SETTING_2, 0x02);
 

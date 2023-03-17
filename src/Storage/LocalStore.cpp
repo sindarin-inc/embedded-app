@@ -572,7 +572,7 @@ void LocalStore::syncFromRemote(
                 log_e("Failed to sync bookmarks");
                 progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
                                                   .message = "Failed to sync bookmarks"});
-                delay(1000);
+                Delay(1000);
             }
 
             syncState.tasks[tasksIndex].percentage = 100;
@@ -726,7 +726,7 @@ void LocalStore::syncFromRemote(
         };
 
         // Artificially delay so the user has the satisfaction of seeing the list done
-        delay(1000);
+        Delay(1000);
 
         SindarinAPI::getInstance()->checkSync(request, &checkSyncResponse);
 

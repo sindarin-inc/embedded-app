@@ -1,8 +1,8 @@
 #include "RootUI.hpp"
 
 #include <esp_sleep.h>
-#include <esp_timer.h>
 #include <esp_system.h>
+#include <esp_timer.h>
 #include <filesystem>
 #include <nvs_flash.h>
 
@@ -970,7 +970,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 fileSystem.remove(StringFormat("%s%s", "/coredumps/", file.c_str()).c_str());
             }
             systemSettingsMenu->showTemporaryMessage(*display, "Crash Reports reset.");
-            delay(1500);
+            Delay(1500);
             esp_restart();
         }));
 
@@ -1359,7 +1359,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto calibrationScreen = new LogoScreen();
         calibrationScreen->backCallback = [this, calibrationScreen, display, mainMenu]() {
             display->clearScreen();
-            delay(100);
+            Delay(100);
 
             setCurrentScreen(*mainMenu);
             delete calibrationScreen;
@@ -1381,7 +1381,7 @@ void RootUI::loop(DisplaySystem &display, RemoteCommand command) {
         setCurrentScreen(*powerDepletedScreen);
         this->render(display);
         // Wait 5 seconds to be able to see the message
-        delay(5000);
+        Delay(5000);
         // Unless wake sources are defined, nothing can wake us up. Goodnight.
         esp_deep_sleep_start();
     }

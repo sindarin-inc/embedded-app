@@ -33,7 +33,7 @@ void SetRightScreenLightFade(int dutyCycle, int fadeMs) {
     // log_d("Fading right screen light to dutyCycle=%d (but ignoring b/c Simulator)", dutyCycle);
 }
 
-auto GetRunTimeMs() -> uint32_t { return millis(); }
+auto GetRunTimeMs() -> uint32_t { return Millis(); }
 
 auto USBConnected() -> bool { return true; }
 
@@ -49,17 +49,17 @@ extern "C" void vTaskDelay(const TickType_t xTicksToDelay);
 
 std::chrono::system_clock::time_point SimStartTime;
 
-void hardwareInit() { SimStartTime = std::chrono::system_clock::now(); }
+void HardwareInit() { SimStartTime = std::chrono::system_clock::now(); }
 
-void delay(int delay_ms) { vTaskDelay(delay_ms / portTICK_PERIOD_MS); }
+void Delay(int delay_ms) { vTaskDelay(delay_ms / portTICK_PERIOD_MS); }
 
-int millis() {
+int Millis() {
     auto duration = std::chrono::system_clock::now() - SimStartTime;
     auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
     return (int)durationMs.count();
 }
 
-void digitalWrite(int pin, int level) {}
+void DigitalWrite(int pin, int level) {}
 
 // for logging
 const char *pathToFileName(const char *path) {

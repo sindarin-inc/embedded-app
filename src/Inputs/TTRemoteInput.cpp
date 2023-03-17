@@ -120,7 +120,7 @@ void TTRemoteInput::disconnectTemporarily(int seconds) {
         client_->disconnect();
     }
     state_ = SCANNING;
-    keepDisconnectedUntilMs_ = millis() + seconds * 1000;
+    keepDisconnectedUntilMs_ = Millis() + seconds * 1000;
 
     std::string dfuString = "DFU-";
     auto ptBuild = prefs_.lastPageTurnerBuild.get();
@@ -136,7 +136,7 @@ void TTRemoteInput::disconnectTemporarily(int seconds) {
 }
 
 void TTRemoteInput::scanForDevice() {
-    digitalWrite(BLUE_LED, LED_ON);
+    DigitalWrite(BLUE_LED, LED_ON);
 
     auto address = this->prefs_.pairedTurnTouchAddress.get();
     if (address.has_value()) {
@@ -157,8 +157,8 @@ void TTRemoteInput::scanForDevice() {
     scan->setActiveScan(true);
     scan->start((int)(RESCAN_INTERVAL_MS / 1000), nullptr, false);
 
-    lastScanMs_ = millis();
-    digitalWrite(BLUE_LED, LED_OFF);
+    lastScanMs_ = Millis();
+    DigitalWrite(BLUE_LED, LED_OFF);
 }
 
 void TTRemoteInput::buttonNotificationCallback(BLERemoteCharacteristic *remoteCharacteristic,
@@ -187,13 +187,13 @@ void TTRemoteInput::buttonNotificationCallback(BLERemoteCharacteristic *remoteCh
 
 void TTRemoteInput::connect() {
     if (state_ == SCANNING && !BLEDevice::getScan()->isScanning() &&
-        (keepDisconnectedUntilMs_ == 0 || millis() >= keepDisconnectedUntilMs_) &&
-        (lastScanMs_ == 0 || millis() > (lastScanMs_ + RESCAN_INTERVAL_MS + RESCAN_GAP_MS))) {
-        lastScanMs_ = millis();
+        (keepDisconnectedUntilMs_ == 0 || Millis() >= keepDisconnectedUntilMs_) &&
+        (lastScanMs_ == 0 || Millis() > (lastScanMs_ + RESCAN_INTERVAL_MS + RESCAN_GAP_MS))) {
+        lastScanMs_ = Millis();
         scanForDevice();
     }
 
-    if (millis() < keepDisconnectedUntilMs_) {
+    if (Millis() < keepDisconnectedUntilMs_) {
         log_d("Waiting to reconnect to TurnTouch until %lu", keepDisconnectedUntilMs_);
     }
 }

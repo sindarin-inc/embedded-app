@@ -25,7 +25,7 @@ public:
                       const bool create = false) const -> SFile {
         log_e("Abstract");
         assert(0);
-        return SFile();
+        return {};
     };
     [[nodiscard]] virtual auto exists(const std::string &path) const -> bool {
         log_e("Abstract");

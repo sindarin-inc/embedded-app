@@ -171,7 +171,7 @@ void ContentSyncScreen::begin() {
             if (state.state == ContentSyncState::Failure ||
                 state.state == ContentSyncState::Synced ||
                 state.state == ContentSyncState::AlreadySynced) {
-                delay(5000);
+                Delay(5000);
                 backCallback();
             }
         });

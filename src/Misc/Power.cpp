@@ -13,7 +13,7 @@
 void Power::setup() {}
 
 void Power::loop() {
-    auto now = millis();
+    auto now = Millis();
 
     if (this->lastMeasurementTime_ == 0 ||
         now > this->lastMeasurementTime_ + BATTERY_MEASUREMENT_PERIOD_SECONDS * 1000) {
@@ -64,15 +64,15 @@ void Power::loop() {
     if (USBConnected()) {
         if (getBatteryPercentage() > 99) {
             // If the battery is fully charged, turn the GREEN LED on.
-            digitalWrite(GREEN_LED, LED_ON);
-            digitalWrite(RED_LED, LED_OFF);
+            DigitalWrite(GREEN_LED, LED_ON);
+            DigitalWrite(RED_LED, LED_OFF);
         } else {
-            digitalWrite(GREEN_LED, LED_OFF);
-            digitalWrite(RED_LED, LED_ON);
+            DigitalWrite(GREEN_LED, LED_OFF);
+            DigitalWrite(RED_LED, LED_ON);
         }
     } else {
-        digitalWrite(GREEN_LED, LED_OFF);
-        digitalWrite(RED_LED, LED_OFF);
+        DigitalWrite(GREEN_LED, LED_OFF);
+        DigitalWrite(RED_LED, LED_OFF);
     }
 }
 

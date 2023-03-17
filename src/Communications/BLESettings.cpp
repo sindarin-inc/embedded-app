@@ -63,16 +63,16 @@ void BLESettings::disconnectPageTurnerForSeconds(const int seconds) {
 void BLESettings::blinkLedAfterConnect(BLECharacteristic *characteristic, const std::string &key) {
     for (int i = 0; i < 10; i++) {
         // Flash all the LEDs
-        digitalWrite(RED_LED, LED_ON);
+        DigitalWrite(RED_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        digitalWrite(RED_LED, LED_OFF);
-        digitalWrite(GREEN_LED, LED_ON);
+        DigitalWrite(RED_LED, LED_OFF);
+        DigitalWrite(GREEN_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        digitalWrite(GREEN_LED, LED_OFF);
+        DigitalWrite(GREEN_LED, LED_OFF);
 #ifdef BLUE_LED
-        digitalWrite(BLUE_LED, LED_ON);
+        DigitalWrite(BLUE_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        digitalWrite(BLUE_LED, LED_OFF);
+        DigitalWrite(BLUE_LED, LED_OFF);
 #endif
     }
 

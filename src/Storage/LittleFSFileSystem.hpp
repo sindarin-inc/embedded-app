@@ -10,5 +10,5 @@ public:
     void close() override;
 
 protected:
-    bool format();
+    auto format() -> bool;
 };

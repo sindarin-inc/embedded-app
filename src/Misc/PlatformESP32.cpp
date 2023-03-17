@@ -28,23 +28,23 @@ esp_adc_cal_characteristics_t adcCalCharacteristics;
 bool ledcFailed = false;
 uint8_t sysOnPin;
 
-void pinMode(int pin, int mode) { gpio_set_direction((gpio_num_t)pin, (gpio_mode_t)mode); }
+void PinMode(int pin, int mode) { gpio_set_direction((gpio_num_t)pin, (gpio_mode_t)mode); }
 
-void digitalWrite(int pin, int level) { gpio_set_level((gpio_num_t)pin, (uint32_t)level); }
+void DigitalWrite(int pin, int level) { gpio_set_level((gpio_num_t)pin, (uint32_t)level); }
 
-int digitalRead(uint8_t pin) { return gpio_get_level((gpio_num_t)pin); }
+auto DigitalRead(uint8_t pin) -> int { return gpio_get_level((gpio_num_t)pin); }
 
-void delay(int ms) { vTaskDelay(ms * portTICK_PERIOD_MS); }
+void Delay(int ms) { vTaskDelay(ms * portTICK_PERIOD_MS); }
 
-int millis() { return GetRunTimeMs(); }
+auto Millis() -> int { return GetRunTimeMs(); }
 
-void hardwareInit() {
+void HardwareInit() {
     esp_log_level_set("*", (esp_log_level_t)CONFIG_LOG_DEFAULT_LEVEL);
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        const esp_partition_t *partition =
-            esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);
-        if (partition != NULL) {
+        const esp_partition_t *partition = esp_partition_find_first(
+            ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, nullptr);
+        if (partition != nullptr) {
             err = esp_partition_erase_range(partition, 0, partition->size);
             if (!err) {
                 err = nvs_flash_init();
@@ -60,22 +60,22 @@ void hardwareInit() {
     }
 }
 
-size_t getHeapSize() {
+auto GetHeapSize() -> size_t {
     multi_heap_info_t info;
     heap_caps_get_info(&info, MALLOC_CAP_INTERNAL);
     return info.total_free_bytes + info.total_allocated_bytes;
 }
 
-void enableCore0WDT() {
-    TaskHandle_t idle_0 = xTaskGetIdleTaskHandleForCPU(0);
-    if (idle_0 == NULL || esp_task_wdt_add(idle_0) != ESP_OK) {
+void EnableCore0Wdt() {
+    TaskHandle_t idle0 = xTaskGetIdleTaskHandleForCPU(0);
+    if (idle0 == nullptr || esp_task_wdt_add(idle0) != ESP_OK) {
         log_e("Failed to add Core 0 IDLE task to WDT");
     }
 }
 
-void disableCore0WDT() {
-    TaskHandle_t idle_0 = xTaskGetIdleTaskHandleForCPU(0);
-    if (idle_0 == NULL || esp_task_wdt_delete(idle_0) != ESP_OK) {
+void DisableCore0Wdt() {
+    TaskHandle_t idle0 = xTaskGetIdleTaskHandleForCPU(0);
+    if (idle0 == nullptr || esp_task_wdt_delete(idle0) != ESP_OK) {
         log_e("Failed to remove Core 0 IDLE task from WDT");
     }
 }
@@ -117,13 +117,13 @@ void InitializePlatform() {
         log_e("Failed to configure ADC1 channel %d", BATT_CHANNEL_RIGHT);
     }
 
-    digitalWrite(RED_LED, LED_OFF);
-    digitalWrite(GREEN_LED, LED_OFF);
-    pinMode(RED_LED, OUTPUT);
-    pinMode(GREEN_LED, OUTPUT);
+    DigitalWrite(RED_LED, LED_OFF);
+    DigitalWrite(GREEN_LED, LED_OFF);
+    PinMode(RED_LED, OUTPUT);
+    PinMode(GREEN_LED, OUTPUT);
 #ifdef BLUE_LED
-    digitalWrite(BLUE_LED, LED_OFF);
-    pinMode(BLUE_LED, OUTPUT);
+    DigitalWrite(BLUE_LED, LED_OFF);
+    PinMode(BLUE_LED, OUTPUT);
 #endif
 
 #if USE_SYS_ON
@@ -219,7 +219,7 @@ void InitializePlatform() {
 #endif // EINKET013TT1
 
 #ifdef USB_CONNECTED_PIN
-    pinMode(USB_CONNECTED_PIN, INPUT);
+    PinMode(USB_CONNECTED_PIN, INPUT);
 #endif
 }
 
@@ -323,7 +323,7 @@ auto GetRunTimeMs() -> uint32_t { return (uint32_t)(xTaskGetTickCount() * portTI
 
 auto USBConnected() -> bool {
 #ifdef USB_CONNECTED_PIN
-    return digitalRead(USB_CONNECTED_PIN);
+    return DigitalRead(USB_CONNECTED_PIN);
 #else
     // No way to know if USB is connected on old boards. But it's probably not.
     return false;
@@ -377,8 +377,8 @@ auto GetHardwareRevision() -> uint8_t {
 }
 
 void ForcePowerOn() {
-    pinMode(sysOnPin, OUTPUT);
-    digitalWrite(sysOnPin, HIGH);
+    PinMode(sysOnPin, OUTPUT);
+    DigitalWrite(sysOnPin, HIGH);
     gpio_hold_en((gpio_num_t)sysOnPin);
     gpio_deep_sleep_hold_en();
 }
@@ -390,11 +390,11 @@ void AllowPowerOff() {
     // We haven't been particuarly scientific, but experimentally using INPUT_PULLDOWN seems to work
     // the best. I don't understand why. You'd think either an open drain or driving to 0 would be
     // more effective at turning off the mostfet.
-    pinMode(sysOnPin, INPUT_PULLDOWN);
+    PinMode(sysOnPin, INPUT_PULLDOWN);
 
     // pinMode(sysOnPin, OUTPUT_OPEN_DRAIN);
-    // digitalWrite(sysOnPin, LOW);
+    // DigitalWrite(sysOnPin, LOW);
 
     // pinMode(sysOnPin, OUTPUT);
-    // digitalWrite(sysOnPin, LOW);
+    // DigitalWrite(sysOnPin, LOW);
 }
