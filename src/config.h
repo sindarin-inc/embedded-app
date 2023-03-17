@@ -89,6 +89,9 @@
 #define DISPLAY_MISO 14
 #define DISPLAY_CLK 13
 
+#define CPU_FREQ_MHZ_HIGH 240
+#define CPU_FREQ_MHZ_LOW 40
+
 #if (USE_LTR329 || USE_MMC5603)
 #define USE_I2C 1
 #else
