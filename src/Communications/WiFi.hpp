@@ -21,10 +21,10 @@ typedef enum {
     WIFI_POWER_MINUS_1dBm = -4 // -1dBm
 } wifi_power_t;
 
-class SindarinWiFi {
+class WiFi {
 
 public:
-    SindarinWiFi() = default;
+    WiFi() = default;
 
     // Credentials
     auto getWifiConfig(wifi_config_t *conf) -> esp_err_t;
@@ -72,4 +72,4 @@ protected:
 };
 
 // Global Object
-extern SindarinWiFi sindarinWiFi;
+extern WiFi wiFi;

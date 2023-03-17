@@ -2,7 +2,7 @@
 
 #include "BLEImprov.hpp"
 
-#include "Communications/SindarinWiFi.hpp"
+#include "Communications/WiFi.hpp"
 #include "config.h"
 #include "esp_wifi.h"
 #include "sindarin-debug.h"
@@ -90,28 +90,28 @@ void BLEImprov::setError(improv::Error error, bool notify) {
 
 void BLEImprov::doneConnecting() {
     this->setState(STATE_CONNECTED);
-    log_i("Connected, IP address: %s", sindarinWiFi.getLocalIpStr().c_str());
+    log_i("Connected, IP address: %s", wiFi.getLocalIpStr().c_str());
     SHOW_HEAP();
 }
 
 // TODO: Would be good to make this event driven
 void BLEImprov::loop() {
     if (this->state_ == STATE_WAITING) {
-        if (sindarinWiFi.connected()) {
+        if (wiFi.connected()) {
             this->doneConnecting();
         }
     } else if (this->state_ == STATE_READY_TO_CONNECT) {
         SHOW_HEAP();
         improv::ImprovCommand command = this->lastCommand_;
         log_d("Attempting connection to: %s Password: %s (WiFi connnected = %d)",
-              command.ssid.c_str(), command.password.c_str(), sindarinWiFi.connected());
-        sindarinWiFi.connectWiFi(command.ssid, command.password);
+              command.ssid.c_str(), command.password.c_str(), wiFi.connected());
+        wiFi.connectWiFi(command.ssid, command.password);
         this->setState(STATE_CONNECTING);
         return;
     } else if (this->state_ == STATE_CONNECTING) {
         uint32_t now = millis();
-        if (sindarinWiFi.connected()) {
-            std::string ip = sindarinWiFi.getLocalIpStr();
+        if (wiFi.connected()) {
+            std::string ip = wiFi.getLocalIpStr();
             std::vector<uint8_t> response = improv::build_rpc_response(improv::WIFI_SETTINGS, {ip});
             log_d("Reporting RPC result to client");
             this->rpcResultCharacteristic_->setValue(response.data(), response.size());
@@ -121,13 +121,13 @@ void BLEImprov::loop() {
             log_w("Timed out connecting to WiFi");
             this->setState(STATE_WAITING);
             this->setError(improv::ERROR_UNABLE_TO_CONNECT);
-            sindarinWiFi.disconnectWiFi();
+            wiFi.disconnectWiFi();
         }
     } else if (this->state_ == STATE_READY_TO_SCAN) {
         this->setState(STATE_SCANNING);
 
         // TODO: Make this send APs in real time to the app
-        int err = sindarinWiFi.scanNetworks([this](wifi_ap_record_t *apRecords, int recordCount) {
+        int err = wiFi.scanNetworks([this](wifi_ap_record_t *apRecords, int recordCount) {
             log_d("Wifi scanning complete: %d APs found.", recordCount);
 
             // Sort records in appRecords by rssi
@@ -180,7 +180,7 @@ void BLEImprov::loop() {
         SHOW_HEAP();
         this->setState(STATE_WAITING);
     } else if (this->state_ == STATE_CONNECTED) {
-        if (!sindarinWiFi.connected()) {
+        if (!wiFi.connected()) {
             this->setState(STATE_WAITING);
         }
     }
