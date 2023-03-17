@@ -165,7 +165,12 @@ void InitializePlatform() {
 #endif
 #if LEDC_BACKLIGHT
     // This allows LEDC to work in light sleep on ESP32-S3
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
+    esp_err_t err = esp_sleep_pd_config(ESP_PD_DOMAIN_RC_FAST, ESP_PD_OPTION_ON);
+#else
     esp_err_t err = esp_sleep_pd_config(ESP_PD_DOMAIN_RTC8M, ESP_PD_OPTION_ON);
+#endif
+
     if (err != ESP_OK) {
         log_e("Error configuring esp_sleep_pd_config: %s", esp_err_to_name(err));
     }
@@ -176,7 +181,11 @@ void InitializePlatform() {
         .duty_resolution = LEDC_TIMER_8_BIT,
         .timer_num = LEDC_TIMER_0,
         .freq_hz = 1000,
-        .clk_cfg = LEDC_USE_RTC8M_CLK //
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
+        .clk_cfg = LEDC_USE_RC_FAST_CLK
+#else
+        .clk_cfg = LEDC_USE_RTC8M_CLK
+#endif
     };
     err = ledc_timer_config(&ledcTimer);
     if (err != ESP_OK) {
