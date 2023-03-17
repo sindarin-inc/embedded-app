@@ -62,9 +62,7 @@ int millis() {
     return (int)durationMs.count();
 }
 
-void digitalWrite(int pin, int level) {
-    log_i("digitalWrite: pin %d is level %d", pin, level);
-}
+void digitalWrite(int pin, int level) {}
 
 // for logging
 const char *pathToFileName(const char *path) {
