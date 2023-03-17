@@ -24,6 +24,8 @@ typedef enum {
 class WiFi {
 
 public:
+    static auto getInstance() -> WiFi &;
+
     WiFi() = default;
 
     // Credentials
@@ -70,6 +72,3 @@ protected:
     static void ipEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId,
                                void *eventData);
 };
-
-// Global Object
-extern WiFi wiFi;

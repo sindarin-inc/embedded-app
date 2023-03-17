@@ -125,7 +125,7 @@ void ContentSyncScreen::fail(const std::string &message) {
     needsRerender = true;
     render(display_);
     vTaskDelay(3000 / portTICK_PERIOD_MS);
-    wiFi.disconnectWiFi();
+    WiFi::getInstance().disconnectWiFi();
 #if !SIMULATOR
     esp_restart();
 #endif
@@ -142,7 +142,7 @@ void ContentSyncScreen::begin() {
         return;
     }
 
-    if (!wiFi.hasWiFiCredentials()) {
+    if (!WiFi::getInstance().hasWiFiCredentials()) {
         fail("Go to Settings > WiFi Setup in the Sol app.");
         return;
     }
@@ -155,7 +155,7 @@ void ContentSyncScreen::begin() {
 
         if (state.state == ContentSyncState::Failure || state.state == ContentSyncState::Synced ||
             state.state == ContentSyncState::AlreadySynced) {
-            wiFi.disconnectWiFi();
+            WiFi::getInstance().disconnectWiFi();
         }
         // Do UI stuff back on core 1
         DispatchGetUiQueue()->dispatch([this, state]() {

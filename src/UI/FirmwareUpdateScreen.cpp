@@ -118,12 +118,12 @@ void FirmwareUpdateScreen::fail(const std::string &message) {
     needsRerender = true;
     render(display_);
     vTaskDelay(5000 / portTICK_PERIOD_MS);
-    wiFi.disconnectWiFi();
+    WiFi::getInstance().disconnectWiFi();
     backCallback();
 }
 
 void FirmwareUpdateScreen::begin() {
-    if (!wiFi.hasWiFiCredentials()) {
+    if (!WiFi::getInstance().hasWiFiCredentials()) {
         fail("Go to Settings > WiFi Setup in the Sol app.");
         return;
     }
@@ -131,7 +131,7 @@ void FirmwareUpdateScreen::begin() {
     state_.state = FirmwareDownloadState::ConnectingWifi;
     render(display_);
 
-    if (!wiFi.connectWiFiWithTimeout()) {
+    if (!WiFi::getInstance().connectWiFiWithTimeout()) {
         fail("Failed to connect to WiFi.");
         return;
     }
@@ -151,7 +151,7 @@ void FirmwareUpdateScreen::begin() {
             if (state.state == FirmwareDownloadState::Failure ||
                 state.state == FirmwareDownloadState::Installing ||
                 state.state == FirmwareDownloadState::AlreadyUpToDate) {
-                wiFi.disconnectWiFi();
+                WiFi::getInstance().disconnectWiFi();
             }
 
             if (state.state == FirmwareDownloadState::Failure ||

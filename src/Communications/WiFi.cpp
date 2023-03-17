@@ -1,10 +1,13 @@
+#include "Communications/WiFi.hpp"
+
 #include <string>
 
-#include "Communications/WiFi.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
 
 WiFi wiFi;
+
+auto WiFi::getInstance() -> WiFi & { return wiFi; }
 
 auto WiFi::begin() -> esp_err_t {
     if (began_) {

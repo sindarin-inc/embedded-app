@@ -95,7 +95,7 @@ void FirmwareDownloader::downloadFirmware(
 
         if (!success) {
             log_e("Failed to download firmware");
-            if (!wiFi.connected()) {
+            if (!WiFi::getInstance().connected()) {
                 progressCallback(
                     FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
                                           .message = "Failed: WiFi disconnected!"});

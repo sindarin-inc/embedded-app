@@ -77,8 +77,8 @@ void SolClock::getClockTime(uint8_t &hours, uint8_t &minutes) {
 
 void SolClock::setClockTimeFromInternet() {
 #if !SIMULATOR
-    wiFi.connectWiFiWithTimeout();
-    if (!wiFi.connected()) {
+    WiFi::getInstance().connectWiFiWithTimeout();
+    if (!WiFi::getInstance().connected()) {
         log_i("Failed to connect wifi");
         return;
     }
@@ -102,7 +102,7 @@ void SolClock::setClockTimeFromInternet() {
     strftime(strftimeBuf, sizeof(strftimeBuf), "%c", &timeinfo);
     log_i("The current date/time is: %s", strftimeBuf);
 
-    wiFi.disconnectWiFi();
+    WiFi::getInstance().disconnectWiFi();
 #else
     log_i("Not setting clock time from internet in simulator");
 #endif
