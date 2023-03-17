@@ -89,11 +89,10 @@ void BLESettings::writeWifiSSIDtoCharacteristic(BLECharacteristic *characteristi
         // function
         bool wifiConnected = sindarinWiFi.connected();
         wifi_config_t conf;
-
-        if (sindarinWiFi.getWiFiCredentials(&conf) && strlen((const char *)conf.sta.ssid) > 0) {
+        esp_err_t err = sindarinWiFi.getWifiConfig(&conf);
+        if (err == ESP_OK && sindarinWiFi.hasWiFiCredentials(&conf)) {
             std::string value = StringFormat("%s=%s", key.c_str(), (const char *)conf.sta.ssid);
             characteristic->setValue(value);
-
             log_i("GATT client reading wifi ssid, initializing wifi, sharing ssid: %s %zu/%zu",
                   value.c_str(), value.length(), sizeof(value.c_str()));
         } else {

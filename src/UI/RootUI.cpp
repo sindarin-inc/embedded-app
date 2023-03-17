@@ -840,7 +840,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto confirmMessage = [this, timeZoneMenu, display](int solTimeZone) {
             this->prefs_.solTimeZone.set(solTimeZone);
             timeZoneMenu->showTemporaryMessage(*display, "Setting Clock & Time Zone", 200, false);
-            sindarinWiFi.connectWiFi();
+            sindarinWiFi.connectWiFiWithTimeout();
             if (!sindarinWiFi.connected()) {
                 log_e("Couldn't connect to wifi, not setting clock");
             } else {

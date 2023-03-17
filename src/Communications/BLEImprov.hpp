@@ -40,7 +40,6 @@ public:
 
 protected:
     uint32_t lastStateChangeMillis_;
-    uint16_t lastAPsent_;
     BLECharacteristic *currentStateCharacteristic_;
     BLECharacteristic *errorStateCharacteristic_;
     BLECharacteristic *rpcResultCharacteristic_;

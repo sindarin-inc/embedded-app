@@ -1,87 +1,75 @@
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-/*!
-    \file       SindarinWiFi.hpp
-
-    \brief      WiFi wrapper for ESP32 Wireless driver Class Definition
-
-    Copyright (c) 2023 Sindarin, Inc. - All Right Reserved
-
-    The code contained in this file is confidential and may only be used
-    under license and/or written consent of Sindarin.
-*/
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-
 #pragma once
 
-//-----------------------------------------------------------------------------
-// Includes
-//-----------------------------------------------------------------------------
+#include <esp_err.h>
 #include <esp_wifi.h>
+#include <functional>
+#include <memory>
 #include <string>
 
-#include "Communications/WiFi/WiFiESPDefs.hpp"
+typedef enum {
+    WIFI_POWER_19_5dBm = 78,   // 19.5dBm
+    WIFI_POWER_19dBm = 76,     // 19dBm
+    WIFI_POWER_18_5dBm = 74,   // 18.5dBm
+    WIFI_POWER_17dBm = 68,     // 17dBm
+    WIFI_POWER_15dBm = 60,     // 15dBm
+    WIFI_POWER_13dBm = 52,     // 13dBm
+    WIFI_POWER_11dBm = 44,     // 11dBm
+    WIFI_POWER_8_5dBm = 34,    // 8.5dBm
+    WIFI_POWER_7dBm = 28,      // 7dBm
+    WIFI_POWER_5dBm = 20,      // 5dBm
+    WIFI_POWER_2dBm = 8,       // 2dBm
+    WIFI_POWER_MINUS_1dBm = -4 // -1dBm
+} wifi_power_t;
 
-//-----------------------------------------------------------------------------
-// Defines
-//-----------------------------------------------------------------------------
-
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-/*!
-    \class      CSindarinWiFi
-
-    \brief      WiFi wrapper for ESP32 Wireless driver Class
-*/
-//______________________________________________________________________________
-//------------------------------------------------------------------------------
-class CSindarinWiFi {
+class SindarinWiFi {
 
 public:
-    /// Default Constructor
-    CSindarinWiFi();
+    SindarinWiFi() = default;
 
     // Credentials
-    auto getWiFiCredentials(wifi_config_t *conf) -> bool;
+    auto getWifiConfig(wifi_config_t *conf) -> esp_err_t;
+    auto hasWiFiCredentials(wifi_config_t *conf) -> bool;
     auto hasWiFiCredentials() -> bool;
 
     // Scanning
-    auto scanNetworks(bool asyncScan) -> int16_t;
-    auto scanComplete() -> int16_t;
-    auto getSsid(uint8_t i) -> std::string;
-    auto getRssi(uint8_t i) -> int32_t;
-    auto getEncryptionType(uint8_t i) -> wifi_auth_mode_t;
+    auto scanNetworks(
+        const std::function<void(wifi_ap_record_t *apRecords, int recordCount)> &completeCB)
+        -> esp_err_t;
 
     // Connection
-    void connectWiFi(const std::string &ssid = "", const std::string &password = "");
-    auto connectWiFiIfCredentialsExist() -> bool;
+    auto connectWiFi(const std::string &ssid = "", const std::string &password = "") -> esp_err_t;
     auto connectWiFiWithTimeout(int timeoutMs = 20000) -> bool;
     void disconnectWiFi();
     auto connected() -> bool;
 
     // Settings
+    /*!
+     * @brief Set the WiFi power level. Must be run before connecting.
+     */
     void setWiFiPower(wifi_power_t power) { wiFiPower_ = power; }
     auto getWiFiPower() -> wifi_power_t { return wiFiPower_; }
 
-    auto getLocalIp() -> wifiesp_ip4address;
+    auto getLocalIp() -> esp_ip4_addr_t;
     auto getLocalIpStr() -> std::string;
 
-    auto getStatus() -> wifiesp_status_t;
-
-    auto getMode() -> wifi_mode_t;
-    auto setMode(wifi_mode_t mode) -> bool;
-
 protected:
-    //---------------------------------
-    // Variables
-    //---------------------------------
+    bool began_ = false;
+    bool connected_ = false;
     wifi_power_t wiFiPower_ = WIFI_POWER_19_5dBm;
+    esp_netif_t *staNetif_;
+    esp_event_handler_instance_t wifiEventHandlerInstance_;
+    esp_event_handler_instance_t ipEventHandlerInstance_;
 
-    //---------------------------------
-    // Functions
-    //---------------------------------
+    // Lifecycle init/deinit
+    auto begin() -> esp_err_t;
+    auto end() -> esp_err_t;
+
+    // Event handlers
+    static void wiFiEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId,
+                                 void *eventData);
+    static void ipEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId,
+                               void *eventData);
 };
 
 // Global Object
-extern CSindarinWiFi sindarinWiFi;
+extern SindarinWiFi sindarinWiFi;
