@@ -22,7 +22,7 @@ auto ToString(ReadablesModelType type) -> std::string {
     case ReadablesModelType::Article:
         return "article";
     case ReadablesModelType::Readable:
-        return "readable";
+        return "book";
     default:
         return "unknown";
     }
@@ -375,14 +375,14 @@ void LocalStore::syncFromRemote(
             this->changedReadablePlacemarkJson(readables, placemarksJsonArray);
             this->changedReadablesArchivedJson(readables, archivesJsonArray);
             this->changedReadablesBookmarksJson(bookmarksJsonArray);
-            request["sleepReason"] = sleepReason;
-            request["ptBattery"] = this->prefs_.lastPageTurnerBattery.get().value_or(0);
-            request["ptBuild"] = this->prefs_.lastPageTurnerBuild.get().value_or("");
-            request["skipContent"] = true;
+            request["sleep_reason"] = sleepReason;
+            request["pt_battery"] = this->prefs_.lastPageTurnerBattery.get().value_or(0);
+            request["pt_build"] = this->prefs_.lastPageTurnerBuild.get().value_or("");
+            request["skip_content"] = true;
             if (modelType == ReadablesModelType::Readable) {
-                request["booksSince"] = since;
+                request["books_since"] = since;
             } else if (modelType == ReadablesModelType::Article) {
-                request["articlesSince"] = since;
+                request["articles_since"] = since;
             }
 
             size_t serializedMaxSize = (*doc).memoryUsage() * 2;
@@ -499,20 +499,21 @@ void LocalStore::syncFromRemote(
             auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
             auto since = this->readablesSince(readables);
             this->storedReadableUuids(readables, storedUuidsJsonArray);
-            request["sleepReason"] = sleepReason;
-            request["ptBattery"] = this->prefs_.lastPageTurnerBattery.get().value_or(0);
-            request["ptBuild"] = this->prefs_.lastPageTurnerBuild.get().value_or("");
-            request["skipContent"] = true;
+            request["sleep_reason"] = sleepReason;
+            request["pt_battery"] = this->prefs_.lastPageTurnerBattery.get().value_or(0);
+            request["pt_build"] = this->prefs_.lastPageTurnerBuild.get().value_or("");
+            request["skip_content"] = true;
             if (modelType == ReadablesModelType::Readable) {
-                request["booksSince"] = since;
+                request["books_since"] = since;
             } else if (modelType == ReadablesModelType::Article) {
-                request["articlesSince"] = since;
+                request["articles_since"] = since;
             }
 
             size_t serializedMaxSize = (*doc).memoryUsage() * 2;
             char *body = (char *)heap_caps_malloc(serializedMaxSize, MALLOC_CAP_SPIRAM);
             size_t serializedLength = serializeJson(*doc, body, serializedMaxSize);
-
+            log_i("Serialized length: %zu", serializedLength);
+            log_i("Body: %s", body);
             SHOW_HEAP();
             SindarinAPI::getInstance()->checkSync(body, serializedLength, &checkSyncResponse,
                                                   ToString(modelType).c_str());

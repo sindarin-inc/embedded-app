@@ -46,7 +46,7 @@ public:
     [[nodiscard]] auto bookmarkFilePath() const -> std::string {
         return StringFormat("/bookmarks/%s-bookmark.txt", uuid.c_str());
     }
-    [[nodiscard]] auto remoteUrl() const -> SpiramString { return file().fileProxied; }
+    [[nodiscard]] auto remoteUrl() const -> SpiramString { return file().file; }
     [[nodiscard]] auto isArticle() const -> bool {
         return readableType == "pocket_article" || readableType == "email_article";
     }

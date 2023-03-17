@@ -10,5 +10,5 @@ auto convertToJson(const ReadableArchive &src, JsonVariant dst) -> bool {
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
 void convertFromJson(JsonVariantConst src, ReadableArchive &dst) {
     dst.uuid = src["uuid"].as<std::string>();
-    dst.isArchived = src["is_archived"].as<std::string>();
+    dst.isArchived = src["is_archived"].as<bool>();
 }
