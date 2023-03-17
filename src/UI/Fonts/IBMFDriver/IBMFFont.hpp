@@ -20,59 +20,6 @@ private:
 
     typedef std::function<void(GlyphCode, FIX16)> const &LigKernMappingHandler;
 
-    /// @brief Search Ligature and Kerning table
-    ///
-    /// Using the LigKern program of **glyphCode1**, find the first entry in the
-    /// program for which **glyphCode2** is the next character. If a ligature is
-    /// found, sets **glyphCode2** with the new code and returns *true*. If a
-    /// kerning entry is found, it sets the kern parameter with the value
-    /// in the table and return *false*. If the LigKern pgm is empty or there
-    /// is no entry for **glyphCode2**, it returns *false*.
-    ///
-    /// Note: character codes have to be translated to internal GlyphCode before
-    /// calling this method.
-    ///
-    /// @param glyphCode1 In. The GlyhCode for which to find a LigKern entry in its program.
-    /// @param glyphCode2 InOut. The GlyphCode that must appear in the program as the next
-    ///                   character in sequence. Will be replaced with the target
-    ///                   ligature GlyphCode if found.
-    /// @param kern Out. When a kerning entry is found in the program, kern will receive the value.
-    /// @return True if a ligature was found, false otherwise.
-    ///
-    auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const -> bool {
-        uint16_t lkIdx = face_->getLigKernPgmIndex(glyphCode1);
-        if (lkIdx == NO_LIG_KERN_PGM) {
-            return false;
-        }
-        LigKernStepPtr lk = face_->getLigKernStep(lkIdx);
-        if (lk->b.goTo.isAKern && lk->b.goTo.isAGoTo) {
-            lkIdx = lk->b.goTo.displacement;
-            lk = face_->getLigKernStep(lkIdx);
-        }
-
-        GlyphCode code = *glyphCode2 & GLYPH_CODE_MASK;
-        bool first = true;
-
-        do {
-            if (!first) {
-                lk++;
-            } else {
-                first = false;
-            }
-
-            if (lk->a.nextGlyphCode == code) {
-                if (lk->b.kern.isAKern) {
-                    *kern = lk->b.kern.kerningValue;
-                    return false; // No other iteration to be done
-                } else {
-                    *glyphCode2 = lk->b.repl.replGlyphCode;
-                    return true;
-                }
-            }
-        } while (!lk->a.stop);
-        return false;
-    }
-
     /// @brief Ligature/Kerning/UTF8 Mapper
     ///
     /// Iterates on each UTF8 character present in **line**, sending to the
@@ -85,19 +32,19 @@ private:
     auto ligKernUTF8Map(const std::string &line, LigKernMappingHandler handler) const -> void {
         if (line.length() != 0) {
             UTF8Iterator iter = line.begin();
-            GlyphCode glyphCode1 = face_->translate(*iter++);
-            GlyphCode glyphCode2 = (iter == line.end()) ? NO_GLYPH_CODE : face_->translate(*iter++);
+            GlyphCode glyphCode1 = font_->translate(*iter++);
+            GlyphCode glyphCode2 = (iter == line.end()) ? NO_GLYPH_CODE : font_->translate(*iter++);
             FIX16 kern;
             while (glyphCode1 != NO_GLYPH_CODE) {
                 kern = (FIX16)0;
                 // Ligature loop
-                while (ligKern(glyphCode1, &glyphCode2, &kern)) {
+                while (face_->ligKern(glyphCode1, &glyphCode2, &kern)) {
                     glyphCode1 = glyphCode2;
-                    glyphCode2 = (iter == line.end()) ? NO_GLYPH_CODE : face_->translate(*iter++);
+                    glyphCode2 = (iter == line.end()) ? NO_GLYPH_CODE : font_->translate(*iter++);
                 }
                 (handler)(glyphCode1, kern);
                 glyphCode1 = glyphCode2;
-                glyphCode2 = (iter == line.end()) ? NO_GLYPH_CODE : face_->translate(*iter++);
+                glyphCode2 = (iter == line.end()) ? NO_GLYPH_CODE : font_->translate(*iter++);
             }
         }
     }

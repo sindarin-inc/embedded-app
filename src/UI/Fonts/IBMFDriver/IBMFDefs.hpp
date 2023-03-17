@@ -8,6 +8,7 @@
 
 const constexpr bool IBMF_TRACING = false;
 
+// The following is used when testing the driver outside of this application
 #if IBMF_TESTING
 #define PROGMEM
 #include <cstdarg>
@@ -25,6 +26,8 @@ extern char *formatStr(const std::string &format, ...);
 #include "sindarin-debug.h"
 #endif
 
+// clang-format off
+//
 // The following definitions are used by all parts of the driver.
 //
 // The IBMF font files have the current format:
@@ -39,6 +42,10 @@ extern char *formatStr(const std::string &format, ...);
 //  +--------------------+
 //  |                    |  Pixel sizes (one byte per face pt size present padded to be even)
 //  |                    |  (not used by this driver)
+//  +--------------------+
+//  |                    |  For FontFormat 1 (FontFormat::UTF32) only: the table that contains corresponding 
+//  |                    |  values between Unicode CodePoints and their internal GlyphCode.
+//  |                    |
 //  +--------------------+
 //
 //  +--------------------+                       <------------+
@@ -61,40 +68,14 @@ extern char *formatStr(const std::string &format, ...);
 //  |                    | LigKerSteps                        |
 //  |                    |                                    |
 //  |                    |                                    |
-//  +--------------------+                                    |
-//  |                    | Kerns                              |
-//  |                    |                                    |
 //  +--------------------+                       <------------+
 //             .
 //             .
 //             .
 //
-// The new upcoming format (Version 5) is the following:
 //
-// (To be completed...)
-//
-//  +--------------------+
-//  |                    |  Preamble
-//  |                    |
-//  +--------------------+
-//  |   Unicode Table    |  The table of all  unicode glyphs part of this font
-//  |                    |
-//  |                    |
-//  |                    |
-//  +--------------------+
-//  |     FaceHeaders    |  All face headers are combined in a single table
-//  |                    |
-//  |                    |
-//  |                    |
-//  +--------------------+
-//  |   Glyphs metrics   | All glyphs metrics of all fonts
-//  |                    |
-//  |                    |
-//  |                    |
-//  |                    |
-//  |                    |
-//  +--------------------+
-//
+// clang-format on
+
 namespace IBMFDefs {
 
 #define LOGI(format, ...) log_i(format, ##__VA_ARGS__)
@@ -210,30 +191,30 @@ struct Preamble {
     char marker[4]; // Must be "IBMF"
     uint8_t faceCount;
     struct {
-        uint8_t version : 5; // Must be IBMF_VERSION
-        FontFormat fontFormat : 3;
+        uint8_t version : 5;       // Must be IBMF_VERSION
+        FontFormat fontFormat : 3; // Can be 0 (LATIN) or 1 (UTF32)
     } bits;
 };
 typedef Preamble *PreamblePtr;
 
 struct FaceHeader {
-    uint8_t pointSize;     // in points (pt) a point is 1 / 72.27 of an inch
-    uint8_t lineHeight;    // in pixels
-    uint16_t dpi;          // pixels per inches
-    FIX16 xHeight;         // Hight of character 'x' in pixels
-    FIX16 emHeight;        // Hight of character 'M' in pixels
-    FIX16 slantCorrection; //
-    uint8_t descenderHeight;
-    uint8_t spaceSize;
-    uint16_t glyphCount;
-    uint16_t ligKernStepCount;
-    GlyphCode firstCode;
-    GlyphCode lastCode;
-    uint8_t maxHight;
-    uint8_t filler;
+    uint8_t pointSize;         // In points (pt) a point is 1 / 72.27 of an inch
+    uint8_t lineHeight;        // In pixels
+    uint16_t dpi;              // Pixels per inches
+    FIX16 xHeight;             // Hight of character 'x' in pixels
+    FIX16 emHeight;            // Hight of character 'M' in pixels
+    FIX16 slantCorrection;     // When an italic face
+    uint8_t descenderHeight;   // The height of the descending below the origin
+    uint8_t spaceSize;         // Size of a space character in pixels
+    uint16_t glyphCount;       // Must be the same for all face
+    uint16_t ligKernStepCount; // Length of the Ligature/Kerning table
+    uint8_t maxHight;          // The maximum hight in pixels of every glyph in the face
+    uint8_t filler;            // To keep the struct to be even
 };
 typedef FaceHeader *FaceHeaderPtr;
 
+// clang-format off
+//
 // The lig kern array contains instructions (struct LibKernStep) in a simple programming
 // language that explains what to do for special letter pairs. The information in squared
 // brackets relate to fields that are part of the LibKernStep struct. Each entry in this
@@ -324,8 +305,7 @@ typedef FaceHeader *FaceHeaderPtr;
 // +------------------------+------------------------+
 // |Kern|             Replacement Char               |  <- isAKern (Kern in the diagram) is false
 // +------------------------+------------------------+
-// |Kern|GoTo|      Displacement in FIX14            |  <- isAKern is true and GoTo is false =>
-// Kerning value
+// |Kern|GoTo|      Displacement in FIX14            |  <- isAKern is true and GoTo is false => Kerning value
 // +------------------------+------------------------+
 // |Kern|GoTo|          Displacement                 |  <- isAkern and GoTo are true
 // +------------------------+------------------------+
@@ -336,6 +316,8 @@ typedef FaceHeader *FaceHeaderPtr;
 // remains 8 bits for FIX14 and 10 bits for FIX16, that is more than enough...
 //
 // This is NOW the format in use with this driver and other support apps.
+//
+// clang-format on
 
 #define ORIGINAL_FORMAT 0
 #if ORIGINAL_FORMAT
@@ -402,26 +384,28 @@ struct LigKernStep {
 typedef LigKernStep *LigKernStepPtr;
 
 struct RLEMetrics {
-    uint8_t dynF : 4;
-    bool firstIsBlack : 1;
-    uint8_t filler : 3;
+    uint8_t dynF : 4;      // Compression factor
+    bool firstIsBlack : 1; // First pixels in compressed format are black
+    uint8_t filler : 3;    // To keep it at byte boundary
 };
 
 struct GlyphInfo {
-    GlyphCode charCode;
-    uint8_t bitmapWidth;
-    uint8_t bitmapHeight;
-    int8_t horizontalOffset;
-    int8_t verticalOffset;
-    uint16_t packetLength;
-    FIX16 advance;
-    RLEMetrics rleMetrics;
-    uint8_t ligKernPgmIndex; // = 255 if none
+    GlyphCode glyphCode;     // glyphCode is an index in the list of glyphs
+    uint8_t bitmapWidth;     // Width of bitmap once decompressed
+    uint8_t bitmapHeight;    // Height of bitmap once decompressed
+    int8_t horizontalOffset; // Horizontal offset from the orign
+    int8_t verticalOffset;   // Vertical offset from the origin
+    uint16_t packetLength;   // Length of the compressed bitmap
+    FIX16 advance;           // Normal advance to the next glyph position in line
+    RLEMetrics rleMetrics;   // RLE Compression information
+    uint8_t ligKernPgmIndex; // = 255 if none, Index in the ligature/kern array
 };
 typedef GlyphInfo *GlyphInfoPtr;
 
+// clang-format off
+// 
 // For FontFormat 1 (FontFormat::UTF32), there is a table that contains
-// corresponding values between Unicode characters and their internal GlyphCode.
+// corresponding values between Unicode CodePoints and their internal GlyphCode.
 // The GlyphCode is the index in the glyph table for the character.
 //
 // This table is in two parts:
@@ -436,6 +420,7 @@ typedef GlyphInfo *GlyphInfoPtr;
 //
 //     https://en.wikipedia.org/wiki/Plane_(Unicode)
 //
+// clang-format on
 
 struct Plane {
     uint16_t codePointBundlesIdx; // Index of the plane in the CodePointBundles table
@@ -456,10 +441,10 @@ typedef Planes *PlanesPtr;
 #pragma pack(pop)
 
 struct GlyphMetrics {
-    int16_t xoff, yoff;
-    FIX16 advance;
-    int16_t lineHeight;
-    int16_t ligatureAndKernPgmIndex;
+    int16_t xoff, yoff;              // Used when the glyph is retrieved for caching
+    FIX16 advance;                   // Normal advance to the next glyph position in line
+    int16_t lineHeight;              // This is the normal line height for all glyphs in the face
+    int16_t ligatureAndKernPgmIndex; // Index of the ligature/kerning pgm for the glyph
     void clear() {
         xoff = yoff = 0;
         advance = lineHeight = 0;
@@ -478,32 +463,34 @@ struct Glyph {
     }
 };
 
-// Latin Character Set constants
+// Used in context of both supported Font Formats.
 
-const constexpr GlyphCode NO_GLYPH_CODE = 0x7FF;
+const constexpr GlyphCode SPACE_CODE = 0x7FFE;
+const constexpr GlyphCode NO_GLYPH_CODE = 0x7FFF;
+
+// Latin Character Set constants (FontFormat 0)
+
+const constexpr uint16_t LATIN_GLYPH_CODE_MASK = 0x7FF;
 const constexpr uint16_t ACCENT_MASK = 0xF000;
 const constexpr uint8_t ACCENT_SHIFTR = 12; // Shift Right
-const constexpr uint16_t GLYPH_CODE_MASK = 0x7FF;
 
 const constexpr uint16_t CODED_GRAVE_ACCENT = 0x0F; // Special coding in the table below
-const constexpr uint16_t CODED_APOSTROPHE = 0x0E;
+const constexpr uint16_t CODED_APOSTROPHE = 0x0E;   // idem
 const constexpr GlyphCode GRAVE_ACCENT = 0x00;
 const constexpr GlyphCode APOSTROPHE = 0x27;
 
-const constexpr GlyphCode SPACE_CODE = 0x7FE;
-
-// This table is used in support of the latin character set to identify which character code
-// correspond to which glyph code. A glyph code is an index into the IBMF list of glyphs.
-// The table allows glyphCodes between 0 and 1021 (0x7FD).
+// This table is used in support of the latin character set to identify which CodePoint
+// correspond to which glyph code. A glyph code is an index into the IBMF list of glyphs,
+// with diacritical information when required. The table allows glyphCodes between 0 and 1021
+// (0x7FD).
 //
-// At positions 12..15, the table contains the accent to be added to the glyph if it's
-// value is not 0. In this table, grave accent is identified as 0xF but in the IBMF format, it has
-// glyphCode 0x000.
+// At bit positions 12..15, the table contains the diacritical symbol to be added to the glyph if
+// it's value is not 0. In this table, grave accent is identified as 0xF but in the IBMF format, it
+// has glyphCode index 0x000. The apostrophe is identified as 0x0E, with glyphCode index of 0x0027;
 //
-// Note: At this moment, there is no glyphCodes that have a value greater than 253. This
-// is a current limitation of the IBMF file format. Could be expanded later.
+// Note: At this moment, there is no glyphCode index that have a value greater than 173.
 //
-// The index in the table corresponds to UTF16 U+00A1 to U+017F character codes.
+// The index in the table corresponds to UTF16 U+00A1 to U+017F CodePoints.
 
 const constexpr GlyphCode latinTranslationSet[] = {
     /* 0x0A1 */ 0x0020, // ¡
