@@ -54,6 +54,12 @@ jobs:
   build-idf:
     name: "idf.py build"
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Tags from here: https://hub.docker.com/r/espressif/idf/tags
+        idf_version:
+          - v5.0.1
+          - latest
 
     steps:
       - name: Checkout repo
@@ -62,9 +68,9 @@ jobs:
           submodules: "recursive"
 
       - name: esp-idf build
-        uses: espressif/esp-idf-ci-action@main
+        uses: espressif/esp-idf-ci-action@v1
         with:
-          esp_idf_version: v5.0.1
+          esp_idf_version: ${{ matrix.idf_version }}
           target: esp32s3
           path: .
 
