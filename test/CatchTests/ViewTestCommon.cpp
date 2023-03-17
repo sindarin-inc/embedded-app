@@ -32,7 +32,7 @@ extern void UIInnerLoop(RemoteCommand command);
 extern "C" void app_main(void); // NOLINT(readability-identifier-naming)
 std::shared_ptr<std::thread> SchedulerThread;
 const char *kGitHash = "SIMULATOR";
-extern char PosixFileSystemPrefix[64];
+extern char posixFileSystemPrefix[64];
 
 std::string directory;
 std::string testRunPrefix = "Images/TestRun/";
@@ -219,7 +219,7 @@ std::shared_ptr<DisplayEinkET013TT1> createDisplay() {
 void SetupFileSystemMock(const std::string &directory) {
     auto path = GetDirectory() + directory;
     log_i("Setting filesystem prefix to %s", path.c_str());
-    strncpy(PosixFileSystemPrefix, path.c_str(), sizeof(PosixFileSystemPrefix) - 1);
+    strncpy(posixFileSystemPrefix, path.c_str(), sizeof(posixFileSystemPrefix) - 1);
 
     // Clear bookmarks & logs directories
     auto bookmarks = path + std::string("/bookmarks");

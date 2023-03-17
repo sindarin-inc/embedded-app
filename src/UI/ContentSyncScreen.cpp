@@ -1,8 +1,8 @@
 #include "ContentSyncScreen.hpp"
 
 #include "Communications/WiFi.hpp"
-#include "Misc/PowerManager.hpp"
 #include "Misc/Platform.hpp"
+#include "Misc/PowerManager.hpp"
 
 void ContentSyncScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
@@ -88,7 +88,7 @@ void ContentSyncScreen::render(DisplaySystem &display) {
         }
 
         if (state_.state == ContentSyncState::AlreadySynced) {
-            drawBulletLine(StringFormat("No new books or articles").c_str(), 100, false);
+            drawBulletLine("No new books or articles", 100, false);
             break;
         }
 

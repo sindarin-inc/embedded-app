@@ -69,7 +69,7 @@ void CrashReportScreen::render(DisplaySystem &display) {
         }
 
         if (state_.state == CrashUploadState::NoCrashReport) {
-            drawBulletLine(StringFormat("No crash report found.").c_str(), 100, false);
+            drawBulletLine("No crash report found.", 100, false);
             break;
         }
 
