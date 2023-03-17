@@ -3,9 +3,7 @@
 #include <driver/uart.h>
 #include <nvs_flash.h>
 
-// esp_adc_cal.h deprecated in IDF 5
-// TODO: replace
-#include <driver/adc.h>
+#include <esp_adc/adc_oneshot.h>
 #include <esp_adc/adc_cali.h>
 #include <esp_adc/adc_cali_scheme.h>
 #include <esp_bt.h>
@@ -26,6 +24,7 @@
 #define HARDWARE_REVSION_LATEST 2
 
 adc_cali_handle_t adc_cal_handle;
+adc_oneshot_unit_handle_t adc_oneshot_handle;
 bool ledcFailed = false;
 uint8_t sysOnPin;
 
@@ -109,6 +108,20 @@ void InitializePlatform() {
     if (adc_cali_create_scheme_curve_fitting(&adc_config, &adc_cal_handle) != ESP_OK) {
         log_e("Failed to create adc curve fitting scheme");
     }
+
+    adc_oneshot_unit_init_cfg_t adc_oneshot_cfg;
+    adc_oneshot_cfg.unit_id = ADC_UNIT_1;
+    adc_oneshot_cfg.clk_src = (adc_oneshot_clk_src_t)0;
+    adc_oneshot_cfg.ulp_mode = ADC_ULP_MODE_DISABLE;
+
+    ESP_ERROR_CHECK(adc_oneshot_new_unit(&adc_oneshot_cfg, &adc_oneshot_handle));
+
+    adc_oneshot_chan_cfg_t adc_chan_cfg;
+    adc_chan_cfg.bitwidth = adc_config.bitwidth;
+    adc_chan_cfg.atten = adc_config.atten;
+
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc_oneshot_handle, BATT_CHANNEL_LEFT, &adc_chan_cfg));
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc_oneshot_handle, BATT_CHANNEL_RIGHT, &adc_chan_cfg));
 
     digitalWrite(RED_LED, LED_OFF);
     digitalWrite(GREEN_LED, LED_OFF);
@@ -219,22 +232,18 @@ void InitializePlatform() {
 // Forked from TinyPico's GetBatteryVoltage() method:
 // https://github.com/tinypico/tinypico-arduino/blob/master/TinyPICO-Helper/src/TinyPICO.cpp#L207
 auto GetBatteryVoltageLeft() -> float {
-    uint32_t raw = adc1_get_raw(BATT_CHANNEL_LEFT);
     int millivolts;
-    if (adc_cali_raw_to_voltage(adc_cal_handle, raw, &millivolts) != ESP_OK) {
-        log_e("error converting left battery raw value %" PRIu32 " to mV", raw);
-        return 0.0;
+    if (adc_oneshot_get_calibrated_result(adc_oneshot_handle, adc_cal_handle, BATT_CHANNEL_LEFT, &millivolts) != ESP_OK) {
+        log_e("error reading left battery voltage");
     }
     auto mv = (float)(UPPER_DIVIDER + LOWER_DIVIDER) / LOWER_DIVIDER * millivolts;
     return (float)mv / 1000.0;
 }
 
 auto GetBatteryVoltageRight() -> float {
-    uint32_t raw = adc1_get_raw(BATT_CHANNEL_RIGHT);
     int millivolts;
-    if (adc_cali_raw_to_voltage(adc_cal_handle, raw, &millivolts) != ESP_OK) {
-        log_e("error converting right battery raw value %" PRIu32 " to mV", raw);
-        return 0.0;
+    if (adc_oneshot_get_calibrated_result(adc_oneshot_handle, adc_cal_handle, BATT_CHANNEL_RIGHT, &millivolts) != ESP_OK) {
+        log_e("error reading left battery voltage");
     }
     auto mv = (float)(UPPER_DIVIDER + LOWER_DIVIDER) / LOWER_DIVIDER * millivolts;
     return (float)mv / 1000.0;
