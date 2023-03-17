@@ -6,8 +6,7 @@
 // esp_adc_cal.h deprecated in IDF 5
 // TODO: replace
 #include <driver/adc.h>
-#include <esp_adc/adc_cali.h>
-#include <esp_adc/adc_cali_scheme.h>
+#include <esp_adc_cal.h>
 #include <esp_bt.h>
 #include <esp_err.h>
 #include <esp_sleep.h>
@@ -25,7 +24,7 @@
 #define BACKLIGHT_PWM_CHANNEL 0
 #define HARDWARE_REVSION_LATEST 2
 
-adc_cali_handle_t adc_cal_handle;
+esp_adc_cal_characteristics_t adcCalCharacteristics;
 bool ledcFailed = false;
 uint8_t sysOnPin;
 
@@ -101,13 +100,21 @@ void InitializePlatform() {
 
     // Attenuation of 2.5db gets us up to a max of 1250mV
     // Using our 442k/160k divider, that's 4.7V max
-    adc_cali_curve_fitting_config_t adc_config;
-    adc_config.unit_id = ADC_UNIT_1;
-    adc_config.atten = ADC_ATTEN_DB_2_5;
-    adc_config.bitwidth = ADC_BITWIDTH_12;
-
-    if (adc_cali_create_scheme_curve_fitting(&adc_config, &adc_cal_handle) != ESP_OK) {
-        log_e("Failed to create adc curve fitting scheme");
+    auto adcCalValue = esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_2_5, ADC_WIDTH_BIT_12,
+                                                DEFAULT_VREF, &adcCalCharacteristics);
+    if (adcCalValue != ESP_ADC_CAL_VAL_EFUSE_TP_FIT) {
+        // Generally, we expect the Two Point calibration to be used.
+        // It's unclear if we'll ever hit this warning but putting it in to be safe.
+        log_w("Using ADC calibration type: %d", (int)adcCalValue);
+    }
+    if (adc1_config_width(adcCalCharacteristics.bit_width) != ESP_OK) {
+        log_e("Failed to configure ADC width");
+    }
+    if (adc1_config_channel_atten(BATT_CHANNEL_LEFT, adcCalCharacteristics.atten) != ESP_OK) {
+        log_e("Failed to configure ADC1 channel %d", BATT_CHANNEL_LEFT);
+    }
+    if (adc1_config_channel_atten(BATT_CHANNEL_RIGHT, adcCalCharacteristics.atten) != ESP_OK) {
+        log_e("Failed to configure ADC1 channel %d", BATT_CHANNEL_RIGHT);
     }
 
     digitalWrite(RED_LED, LED_OFF);
@@ -220,22 +227,14 @@ void InitializePlatform() {
 // https://github.com/tinypico/tinypico-arduino/blob/master/TinyPICO-Helper/src/TinyPICO.cpp#L207
 auto GetBatteryVoltageLeft() -> float {
     uint32_t raw = adc1_get_raw(BATT_CHANNEL_LEFT);
-    int millivolts;
-    if (adc_cali_raw_to_voltage(adc_cal_handle, raw, &millivolts) != ESP_OK) {
-        log_e("error converting left battery raw value %" PRIu32 " to mV", raw);
-        return 0.0;
-    }
+    uint32_t millivolts = esp_adc_cal_raw_to_voltage(raw, &adcCalCharacteristics);
     auto mv = (float)(UPPER_DIVIDER + LOWER_DIVIDER) / LOWER_DIVIDER * millivolts;
     return (float)mv / 1000.0;
 }
 
 auto GetBatteryVoltageRight() -> float {
     uint32_t raw = adc1_get_raw(BATT_CHANNEL_RIGHT);
-    int millivolts;
-    if (adc_cali_raw_to_voltage(adc_cal_handle, raw, &millivolts) != ESP_OK) {
-        log_e("error converting right battery raw value %" PRIu32 " to mV", raw);
-        return 0.0;
-    }
+    uint32_t millivolts = esp_adc_cal_raw_to_voltage(raw, &adcCalCharacteristics);
     auto mv = (float)(UPPER_DIVIDER + LOWER_DIVIDER) / LOWER_DIVIDER * millivolts;
     return (float)mv / 1000.0;
 }
