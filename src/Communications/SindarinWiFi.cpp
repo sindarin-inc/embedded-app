@@ -179,6 +179,10 @@ auto SindarinWiFi::scanNetworks(
         (wifi_ap_record_t *)heap_caps_malloc(sizeof(wifi_ap_record_t) * apNum, MALLOC_CAP_8BIT);
 
     err = esp_wifi_scan_get_ap_records(&apNum, apRecords);
+    if (err != ESP_OK) {
+        log_e("esp_wifi_scan_get_ap_records failed with error %s", esp_err_to_name(err));
+        return err;
+    }
     log_i("Total APs scanned = %u", apNum);
 
     completeCB(apRecords, apNum);
@@ -338,7 +342,11 @@ auto SindarinWiFi::getLocalIp() -> esp_ip4_addr_t {
 auto SindarinWiFi::getLocalIpStr() -> std::string {
     esp_ip4_addr_t ip = getLocalIp();
     char ipstr[16];
-    sprintf(ipstr, IPSTR, IP2STR(&ip));
+    auto size = snprintf(ipstr, sizeof(ipstr), IPSTR, IP2STR(&ip));
+    if (size < 0) {
+        log_e("snprintf failed");
+        return "";
+    }
     return ipstr;
 }
 
