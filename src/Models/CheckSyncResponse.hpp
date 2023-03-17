@@ -17,16 +17,23 @@ public:
     std::vector<UserReadable, SpiramAllocator<UserReadable>> userArticles;
     std::string booksSince;
     std::string articlesSince;
+    std::string nextPageUrl;
+    int totalCount;
 
     auto fromJson(const JsonObject &j) -> bool override {
         synced = j["synced"].as<bool>();
         message = j["message"].as<std::string>();
         userBooks.clear();
         userArticles.clear();
+        if (!j.containsKey("results")) {
+            log_w("Failed to parse CheckSyncResponse %s", DumpJson(j).c_str());
+            return false;
+        }
+        auto results = j["results"].as<JsonObject>();
 
-        if (j.containsKey("books_since")) {
-            booksSince = j["books_since"].as<std::string>();
-            for (const auto &userReadable : j["books"].as<JsonArray>()) {
+        if (results.containsKey("books_since")) {
+            booksSince = results["books_since"].as<std::string>();
+            for (const auto &userReadable : results["books"].as<JsonArray>()) {
                 userBooks.emplace_back();
                 userBooks.back().fromJson(userReadable);
             }
@@ -34,9 +41,9 @@ public:
             booksSince = "";
         }
 
-        if (j.containsKey("articles_since")) {
-            articlesSince = j["articles_since"].as<std::string>();
-            for (const auto &userArticle : j["articles"].as<JsonArray>()) {
+        if (results.containsKey("articles_since")) {
+            articlesSince = results["articles_since"].as<std::string>();
+            for (const auto &userArticle : results["articles"].as<JsonArray>()) {
                 userArticles.emplace_back();
                 userArticles.back().fromJson(userArticle);
             }
@@ -44,6 +51,12 @@ public:
             articlesSince = "";
         }
 
+        if (j.containsKey("next")) {
+            nextPageUrl = j["next"].as<std::string>();
+        }
+        if (j.containsKey("count")) {
+            totalCount = j["count"].as<int>();
+        }
         return true;
     }
 };

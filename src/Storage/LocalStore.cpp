@@ -359,21 +359,23 @@ void LocalStore::syncFromRemote(
         // this->prefs_.lastArticlesSince.set("");
         auto sleepReason = this->prefs_.sleepReason.get().value_or(SLEEP_REASON_NONE);
         CheckSyncResponse checkSyncResponse;
+        int checkSyncSuccesses = 0;
+        int checkSyncFailures = 0;
 
-        std::vector<ReadablesVector> readablesList = {books_, articles_};
+        std::vector<ReadablesVector *> readablesList = {&books_, &articles_};
         for (auto &readables : readablesList) {
             auto doc =
-                std::make_unique<SpiRamJsonDocument>(2048 * std::max(1, (int)readables.size()));
+                std::make_unique<SpiRamJsonDocument>(2048 * std::max(1, (int)(*readables).size()));
             JsonObject request = doc->to<JsonObject>();
             JsonArray bookmarksJsonArray = request.createNestedArray("bookmarks");
             JsonArray placemarksJsonArray = request.createNestedArray("placemarks");
             JsonArray archivesJsonArray = request.createNestedArray("archives");
             JsonArray storedUuidsJsonArray = request.createNestedArray("stored");
-            auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
-            auto since = this->readablesSince(readables);
-            this->storedReadableUuids(readables, storedUuidsJsonArray);
-            this->changedReadablePlacemarkJson(readables, placemarksJsonArray);
-            this->changedReadablesArchivedJson(readables, archivesJsonArray);
+            auto modelType = readablesModelType(const_cast<ReadablesVector &>(*readables));
+            auto since = this->readablesSince(*readables);
+            this->storedReadableUuids(*readables, storedUuidsJsonArray);
+            this->changedReadablePlacemarkJson(*readables, placemarksJsonArray);
+            this->changedReadablesArchivedJson(*readables, archivesJsonArray);
             this->changedReadablesBookmarksJson(bookmarksJsonArray);
             request["sleep_reason"] = sleepReason;
             request["pt_battery"] = this->prefs_.lastPageTurnerBattery.get().value_or(0);
@@ -393,6 +395,8 @@ void LocalStore::syncFromRemote(
             auto httpCode = SindarinAPI::getInstance()->checkSync(
                 body, serializedLength, &checkSyncResponse, ToString(modelType).c_str());
             SHOW_HEAP();
+            log_d("Server has %d %ss, next page: %s", checkSyncResponse.totalCount,
+                  ToString(modelType).c_str(), checkSyncResponse.nextPageUrl.c_str());
 
             if (httpCode != 200) {
                 log_e("Failed to check sync (HTTP %d)", httpCode);
@@ -408,7 +412,7 @@ void LocalStore::syncFromRemote(
                                      ? checkSyncResponse.userBooks
                                      : checkSyncResponse.userArticles;
             auto [readablesToDownload, readablesToDelete] =
-                this->processReadables(checkSyncResponse, readables, userReadables);
+                this->processReadables(checkSyncResponse, *readables, userReadables);
 
             // TODO: Probably these should be set operations
             SHOW_HEAP();
@@ -416,8 +420,13 @@ void LocalStore::syncFromRemote(
             log_d("%ss to delete: %zu", ToString(modelType).c_str(), readablesToDelete.size());
 
             if (checkSyncResponse.synced) {
-                log_i("Client is in sync");
-                progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
+                log_i("%ss are already in sync, no need to download anything",
+                      ToString(modelType).c_str());
+                checkSyncSuccesses += 1;
+                if (checkSyncSuccesses >= 2 || (checkSyncFailures >= 1 && checkSyncFailures == 1)) {
+                    progressCallback(
+                        ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
+                }
                 continue;
             }
 
@@ -429,26 +438,15 @@ void LocalStore::syncFromRemote(
             auto tasksIndex = 0;
 
             if (readablesToDownload.size() == 0 && readablesToDelete.size() == 0) {
-                log_i("No new content to download");
-                progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
-                return;
+                log_i("No new %ss to download", ToString(modelType).c_str());
+                checkSyncSuccesses += 1;
+                if (checkSyncSuccesses >= 2 || (checkSyncFailures >= 1 && checkSyncFailures == 1)) {
+                    progressCallback(
+                        ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
+                    continue;
+                }
+                continue;
             }
-
-            // // Clear the readablesSince cache since it will be set at the end of a successful
-            // run.
-            // // If we fail, then the next content sync will not have a cutoff date
-            // auto readablesSince = modelType == ReadablesModelType::Readable
-            //                           ? checkSyncResponse.booksSince
-            //                           : checkSyncResponse.articlesSince;
-            // if (readablesSince != "") {
-            //     log_d("Clearing readablesSince cache since it will be set at the end of a "
-            //           "successful run");
-            //     if (modelType == ReadablesModelType::Readable) {
-            //         this->prefs_.lastReadablesSince.set("");
-            //     } else {
-            //         this->prefs_.lastArticlesSince.set("");
-            //     }
-            // }
 
             if (modelType == ReadablesModelType::Readable) {
                 for (const auto &readable : readablesToDelete) {
@@ -480,25 +478,21 @@ void LocalStore::syncFromRemote(
             }
             progressCallback(syncState);
 
-            processReadableDeletion(readablesToDelete, readables, tasksIndex, syncState,
+            processReadableDeletion(readablesToDelete, *readables, tasksIndex, syncState,
                                     progressCallback);
-            processReadableDownload(readablesToDownload, readables, tasksIndex, syncState,
+            processReadableDownload(readablesToDownload, *readables, tasksIndex, syncState,
                                     progressCallback);
 
             progressCallback(syncState);
-        }
 
-        // Update the since dates and try once more to sync to ensure we don't miss anything
-        for (const auto &readables : {books_, articles_}) {
-            auto doc =
-                std::make_unique<SpiRamJsonDocument>(2048 * std::max(1, (int)readables.size()));
-            JsonObject request = doc->to<JsonObject>();
-            JsonArray storedUuidsJsonArray = request.createNestedArray("stored");
-            this->storedReadableUuids(readables, storedUuidsJsonArray);
+            // Update the since dates and try once more to sync to ensure we don't miss anything
+            doc.reset(new SpiRamJsonDocument(2048 * std::max(1, (int)readables->size())));
+            request = doc->to<JsonObject>();
+            storedUuidsJsonArray = request.createNestedArray("stored");
+            this->storedReadableUuids(*readables, storedUuidsJsonArray);
 
-            auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
-            auto since = this->readablesSince(readables);
-            this->storedReadableUuids(readables, storedUuidsJsonArray);
+            since = this->readablesSince(*readables);
+            this->storedReadableUuids(*readables, storedUuidsJsonArray);
             request["sleep_reason"] = sleepReason;
             request["pt_battery"] = this->prefs_.lastPageTurnerBattery.get().value_or(0);
             request["pt_build"] = this->prefs_.lastPageTurnerBuild.get().value_or("");
@@ -509,9 +503,9 @@ void LocalStore::syncFromRemote(
                 request["articles_since"] = since;
             }
 
-            size_t serializedMaxSize = (*doc).memoryUsage() * 2;
-            char *body = (char *)heap_caps_malloc(serializedMaxSize, MALLOC_CAP_SPIRAM);
-            size_t serializedLength = serializeJson(*doc, body, serializedMaxSize);
+            serializedMaxSize = (*doc).memoryUsage() * 2;
+            body = (char *)heap_caps_malloc(serializedMaxSize, MALLOC_CAP_SPIRAM);
+            serializedLength = serializeJson(*doc, body, serializedMaxSize);
             log_i("Serialized length: %zu", serializedLength);
             log_i("Body: %s", body);
             SHOW_HEAP();
@@ -520,14 +514,19 @@ void LocalStore::syncFromRemote(
 
             // TODO: Force reload of rootUI instead of rebooting
             if (checkSyncResponse.synced) {
-                log_i("%s are in sync", ToString(modelType).c_str());
-                progressCallback(ContentSyncState{.state = ContentSyncState::State::Synced});
+                log_i("%ss are in sync", ToString(modelType).c_str());
+                checkSyncSuccesses += 1;
+                if (checkSyncSuccesses >= 2) {
+                    progressCallback(ContentSyncState{.state = ContentSyncState::State::Synced});
+                }
             } else {
-                log_w("After running sync, local %s are still out of sync",
+                log_w("After running sync, local %ss are still out of sync",
                       ToString(modelType).c_str());
-                // TODO: this isn't 100% right
-                progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
-                                                  .message = "Not in sync...restarting"});
+                checkSyncFailures += 1;
+                if (checkSyncFailures >= 2) {
+                    progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                                      .message = "Not in sync...restarting"});
+                }
             }
         }
 
@@ -542,8 +541,13 @@ auto LocalStore::processReadables(const CheckSyncResponse &checkSyncResponse,
     -> std::pair<ReadablesVector, ReadablesVector> {
     ReadablesVector readablesToDownload = {};
     ReadablesVector readablesToDelete = {};
+    auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
 
-    for (auto &userReadable : userReadables) {
+    auto serverReadables = modelType == ReadablesModelType::Readable
+                               ? checkSyncResponse.userBooks
+                               : checkSyncResponse.userArticles;
+
+    for (auto &userReadable : serverReadables) {
         log_d("User readable %s (%s)", userReadable.readable.title.c_str(),
               userReadable.readable.file().shaHash.c_str());
         SHOW_HEAP();

@@ -44,6 +44,7 @@ void SindarinAPI::setAccessToken(const std::string &token) { accessToken_ = toke
 auto SindarinAPI::checkSync(const char *body, size_t bodyLength, CheckSyncResponse *resp,
                             std::string modelType) -> int {
     auto url = StringFormat(SINDARIN_SERVER_URL "/sync/%ss/", modelType.c_str());
+    log_d("Checking sync: %s", url.c_str());
     HttpClient client(url.c_str(), "application/json", HTTP_METHOD_POST);
     setAuth(client);
 
