@@ -12,6 +12,8 @@
 
 WiFi wiFi;
 
+auto WiFi::getInstance() -> WiFi & { return wiFi; }
+
 auto WiFi::begin() -> esp_err_t { return ESP_OK; }
 
 auto WiFi::end() -> esp_err_t { return ESP_OK; }
