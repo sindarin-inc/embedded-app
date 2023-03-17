@@ -22,6 +22,7 @@ public:
     std::string uuid;
     SpiramString shortenedUuid;
     SpiramString title;
+    // TODO: Remove
     SpiramString content;
     SpiramString url;
     SpiramString dateCreated;

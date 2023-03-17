@@ -1017,7 +1017,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     debugSettingsMenu->addMenuItem(
         MenuItem("File System Browser", [this, debugSettingsMenu, &fileSystem]() {
-            MenuStyle styleFamilies;
             auto fsMenu = new MenuScreen(this->power_, debugSettingsMenu->getMyStyle());
             fsMenu->setExtraText("ls of /");
 

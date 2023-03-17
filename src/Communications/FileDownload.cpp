@@ -8,17 +8,20 @@
 #include "Misc/GUnzipStream.hpp"
 #include "sindarin-debug.h"
 
-auto DownloadFile(const char *url,
-                  const std::function<bool(int httpCode, int contentLength)> &openedConnection,
-                  const std::function<size_t(HttpClient &client, int index)> &readWrite,
-                  const std::function<void(int bytesWritten, float percentage)> &progressCallback,
-                  bool gzip) -> bool {
+auto DownloadFile(
+    const char *url, const std::function<bool(int httpCode, int contentLength)> &openedConnection,
+    const std::function<size_t(HttpClient &client, int index, int contentLength)> &readWrite,
+    const std::function<void(int bytesWritten, float percentage)> &progressCallback, bool gzip)
+    -> bool {
 
     HttpClient client(url);
 
-    std::shared_ptr<SindarinAPI> api = SindarinAPI::getInstance();
-    if (api) {
-        api->setAuth(client);
+    if (SindarinAPI::isSindarinUrl(url)) {
+        std::shared_ptr<SindarinAPI> api = SindarinAPI::getInstance();
+        if (api) {
+            log_d("Attaching Sindarin auth to HTTP request to %s", url);
+            api->setAuth(client);
+        }
     }
 
     auto time = esp_timer_get_time();
@@ -28,7 +31,6 @@ auto DownloadFile(const char *url,
         client.setHeader("Accept-Encoding", "gzip");
         // TODO: check server headers to verify we got gzip
     }
-    client.open();
 
     esp_err_t err = client.open();
     if (err != ESP_OK) {
@@ -37,18 +39,41 @@ auto DownloadFile(const char *url,
     }
 
     auto contentLength = client.fetchHeaders();
+
+    auto httpCode = client.getStatusCode();
+    if (httpCode != 200) {
+        log_w("Status code was %d", httpCode);
+        return false;
+    }
+
+    if (gzip) {
+        char *contentEncoding = nullptr;
+        err = client.getHeader("Content-Encoding", &contentEncoding);
+        if (err == ESP_ERR_NOT_FOUND) {
+            log_e("Requested GZIP but did not get any Content-Encoding header!");
+        } else if (err != ESP_OK) {
+            log_e("Unexpected error getting Content-Encoding header %d %s", err,
+                  esp_err_to_name(err));
+        } else if (contentEncoding == nullptr) {
+            log_e("contentEncoding is null but didn't throw an error");
+        } else if (strcmp(contentEncoding, "gzip") != 0) {
+            log_e("Requested GZIP but instead got Content-Encoding: %s!", contentEncoding);
+        }
+    }
+
     if (contentLength <= 0) {
         // if we somehow don't have a content length header, consider it an error for now
         log_e("Server did not return a content length for %s", url);
         return false;
     }
 
-    auto httpCode = client.getStatusCode();
-    if (httpCode != 200) {
-        log_w("Status code was %d", httpCode);
-    }
-
     if (!openedConnection(httpCode, contentLength)) {
+        // Get the body anyways, for debugging, since it might contain an error message
+        char buffer[256];
+        auto read = client.read(buffer, sizeof(buffer));
+        if (read > 0) {
+            log_w("Error body: %s", buffer);
+        }
         return false;
     }
 
@@ -56,7 +81,7 @@ auto DownloadFile(const char *url,
     int lastPercentage = 0;
 
     while (totalReadLen < contentLength) {
-        int readLen = readWrite(client, totalReadLen);
+        int readLen = readWrite(client, totalReadLen, contentLength);
         if (readLen <= 0) {
             log_w("Error read data (readLen == 0)");
             if (!client.connected) {
@@ -115,8 +140,8 @@ auto DownloadFile(const char *url,
 
     return DownloadFile(
         url, openedConnection,
-        [buffer, writeBytes](HttpClient &client, int index) {
-            int readLen = client.read((char *)buffer, bufferSize);
+        [buffer, bufferSize, writeBytes](HttpClient &client, int index, int contentLength) {
+            int readLen = client.read((char *)buffer, std::min(bufferSize, contentLength - index));
 
             auto written = writeBytes(buffer, (size_t)readLen);
             if (written != readLen) {
@@ -167,9 +192,10 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
             }
             return true;
         },
-        [&fileBuffer](HttpClient &client, int index) -> size_t {
+        [&fileBuffer](HttpClient &client, int index, int contentLength) -> size_t {
             constexpr int bufferSize = 16384;
-            return client.read((char *)(fileBuffer + index), bufferSize);
+            return client.read((char *)(fileBuffer + index),
+                               std::min(bufferSize, contentLength - index));
         },
         fileProgress, gzip);
 

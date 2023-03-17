@@ -3,11 +3,43 @@
 #include <esp_sleep.h>
 #include <esp_system.h>
 
+#include "Misc/Dispatch.hpp"
 #include "Platform.hpp"
 
 extern PowerManager powerManager;
 
 auto PowerManager::getInstance() -> PowerManager & { return powerManager; }
+
+auto PowerManager::begin() -> esp_err_t {
+#if !SIMULATOR
+    inactivityTimer_.start([this]() {
+        log_d("Inactive! Allow power off.");
+        prefs_.sleepReason.set(SLEEP_REASON_INACTIVITY);
+        powerOff();
+    });
+#endif
+
+    esp_err_t err = ESP_OK;
+#if !DISABLE_POWER_MANAGEMENT
+    pmConfig_.max_freq_mhz = CPU_FREQ_MHZ_HIGH;
+    pmConfig_.min_freq_mhz = CPU_FREQ_MHZ_LOW;
+    pmConfig_.light_sleep_enable = !USBConnected();
+    err = esp_pm_configure(&pmConfig_);
+
+#ifdef USB_CONNECTED_PIN
+    attachInterrupt(
+        digitalPinToInterrupt(USB_CONNECTED_PIN),
+        []() {
+#if !DISABLE_POWER_MANAGEMENT
+            DispatchGetCore1BackgroundQueue()->dispatch(
+                []() { PowerManager::getInstance().updateState(); });
+#endif
+        },
+        CHANGE);
+#endif
+#endif
+    return err;
+}
 
 void PowerManager::powerOff() {
     log_i("Starting power off sequence");
@@ -31,4 +63,30 @@ void PowerManager::powerOff() {
     }
 
     AllowPowerOff();
+}
+
+void PowerManager::updateState() {
+#if !DISABLE_POWER_MANAGEMENT
+    if (USBConnected() && pmConfig_.light_sleep_enable == true) {
+        // USB is connected so disable light sleep
+        pmConfig_.light_sleep_enable = false;
+        auto err = esp_pm_configure(&pmConfig_);
+        if (err != ESP_OK) {
+            log_e("Failed to disable light sleep with err %s", esp_err_to_name(err));
+        } else {
+            log_d("Disabled light sleep");
+        }
+        inactivityTimer_.pause();
+    } else if (!USBConnected() && pmConfig_.light_sleep_enable == false) {
+        // USB is disconnected so enable light sleep
+        pmConfig_.light_sleep_enable = true;
+        auto err = esp_pm_configure(&pmConfig_);
+        if (err != ESP_OK) {
+            log_e("Failed to enable light sleep with err %s", esp_err_to_name(err));
+        } else {
+            log_d("Enabled light sleep");
+        }
+        inactivityTimer_.resume();
+    }
+#endif
 }

@@ -12,7 +12,7 @@
 class MenuItemView : public EinkView {
 public:
     // Always use the smallest font for subtitles
-    MenuItemView(DisplaySystem &display, MenuItem &menuItem,
+    MenuItemView(DisplaySystem &display, const MenuItem &menuItem,
                  const GFXfont *font = &TAHOMA_REGULAR_FONT5PT7B, bool multiLine = false)
         : EinkView(display), textView_(display, menuItem.title, font),
           subtextView_(display, menuItem.subtitle, &TAHOMA_REGULAR_FONT5PT7B, true),
@@ -101,7 +101,7 @@ protected:
     MultiLineTextView textMultiView_;
     bool multiLine_ = false;
     BoxView indicator_;
-    MenuItem &menuItem_;
+    const MenuItem &menuItem_;
     bool selected_ = false;
     bool hasSubtext_ = false;
 };

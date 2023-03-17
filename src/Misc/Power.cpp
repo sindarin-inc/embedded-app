@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <algorithm>
 
+#include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/StringUtil.hpp"
 #include "sindarin-debug.h"
@@ -22,7 +23,11 @@ void Power::loop() {
         this->leftConnected_ = left > BATTERY_DISCONNECT_THRESHOLD;
         this->rightConnected_ = right > BATTERY_DISCONNECT_THRESHOLD;
 
-        logVoltages(left, right);
+        if (now > lastLoggingTime_ + BATTERY_LOGGING_PERIOD_SECONDS * 1000) {
+            DispatchGetCore1BackgroundQueue()->dispatch(
+                [this, left, right]() { logVoltages(left, right); });
+            lastLoggingTime_ = now;
+        }
 
         // Save into the array as a circular buffer of up to BATTERY_MEASUREMENTS_COUNT most recent
         // values, but only if the battery is connected. We don't want to mess up the averages if
@@ -86,13 +91,11 @@ auto Power::average(const std::array<float, BATTERY_MEASUREMENTS_COUNT> &array, 
 
 auto Power::getLeftBatteryVoltage() -> float {
     auto avg = this->average(this->leftMeasurements_, this->leftMeasurementCount_);
-    log_d("Left: %.2fV %d %d", avg, this->leftIndex_, this->leftMeasurementCount_);
     return avg;
 }
 
 auto Power::getRightBatteryVoltage() -> float {
     auto avg = this->average(this->rightMeasurements_, this->rightMeasurementCount_);
-    log_d("Right: %.2fV %d %d", avg, this->rightIndex_, this->rightMeasurementCount_);
     return avg;
 }
 
@@ -157,6 +160,10 @@ void Power::logVoltages(float lVoltage, float rVoltage) {
     auto runTimeMs = GetRunTimeMs();
     std::string logString =
         StringFormat("%d,%d,%.2f,%.2f", bootCount, runTimeMs, lVoltage, rVoltage);
+
+    log_d("Logging voltages:");
+    log_d("Left: %.2fV (%d readings)", lVoltage, this->leftMeasurementCount_);
+    log_d("Right: %.2fV (%d readings)", rVoltage, this->rightMeasurementCount_);
 
     std::string path = Power::voltageLogPath();
     File file = fileSystem_.open(path.c_str(), FILE_APPEND);

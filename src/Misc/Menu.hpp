@@ -35,9 +35,9 @@ public:
 
     Menu() { numMenuItems_ = 0; };
 
-    void addMenuItem(const MenuItem &newItem);
+    virtual void addMenuItem(const MenuItem &newItem);
 
-    void resetMenuItems();
+    virtual void resetMenuItems();
 
     auto getNumItems() -> int;
 

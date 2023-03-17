@@ -25,6 +25,10 @@ auto SindarinAPI::getInstance() -> std::shared_ptr<SindarinAPI> {
     return instance;
 }
 
+auto SindarinAPI::isSindarinUrl(const char *url) -> bool {
+    return HasPrefix(url, SINDARIN_SERVER_URL);
+}
+
 void SindarinAPI::setAuth(HttpClient &client) {
     if (!accessToken_.empty()) {
         esp_err_t err = client.setHeader("Authorization",
@@ -74,7 +78,15 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
     }
 
     int contentLength = client.fetchHeaders();
+    if (contentLength <= 0) {
+        log_e("Failed to fetch headers");
+        return 0;
+    }
     int httpCode = client.getStatusCode();
+    if (httpCode != 200) {
+        log_e("Failed to check sync: %d", httpCode);
+        return httpCode;
+    }
     auto stream = client.makeReadStream();
 
     SHOW_HEAP();
@@ -91,12 +103,55 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
 
     SHOW_HEAP();
 
-    resp->fromJson(respJson->as<JsonObject>());
+    if (!resp->fromJson(respJson->as<JsonObject>())) {
+        log_e("Failed to parse sync response");
+        return 0;
+    }
 
     SHOW_HEAP();
 
     log_d("Synced: %d Message: %s, Firmware: %s", resp->synced, resp->message.c_str(),
           resp->firmware.url.c_str());
+
+    SHOW_HEAP();
+
+    return httpCode;
+}
+
+auto SindarinAPI::checkFirmware(FirmwareResponse *resp) -> int {
+    HttpClient client(SINDARIN_SERVER_URL "/firmware/");
+    setAuth(client);
+
+    client.open(0);
+
+    int contentLength = client.fetchHeaders();
+    if (contentLength <= 0) {
+        log_e("Failed to fetch headers");
+        return 0;
+    }
+    int httpCode = client.getStatusCode();
+    if (httpCode != 200) {
+        log_e("Failed to check sync: %d", httpCode);
+        return httpCode;
+    }
+    auto stream = client.makeReadStream();
+
+    SHOW_HEAP();
+
+    auto respJson = std::make_unique<SpiRamJsonDocument>(1024 + contentLength * 3);
+    auto error = ArduinoJson::deserializeJson(*respJson, *stream);
+
+    SHOW_HEAP();
+
+    if (error.code() != DeserializationError::Ok) {
+        log_e("Failed to deserialize sync response: %s (length=%d)", error.c_str(), contentLength);
+        return 0;
+    }
+
+    if (!resp->fromJson(respJson->as<JsonObject>())) {
+        log_e("Failed to parse firmware response");
+        return 0;
+    }
 
     SHOW_HEAP();
 

@@ -24,6 +24,10 @@ struct FirmwareDownloadState {
 
     int downloadPercentage;
     std::string message;
+
+    auto operator==(const FirmwareDownloadState &other) const -> bool {
+        return state == other.state && downloadPercentage == other.downloadPercentage;
+    }
 };
 
 class FirmwareDownloader {

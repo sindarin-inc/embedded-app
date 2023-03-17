@@ -78,10 +78,12 @@ auto LookBackStream::seek(uint32_t pos) -> bool {
 
         // check how far we need to seek
         if (offset > lookBackBuffer_.capacity()) {
-            // clear buffer, seek forward so we read the entire size of the look back buffer
+            // clear buffer
             lookBackBuffer_.clear();
             lookBackBytes_ = 0;
-            stream_->seek(offset - lookBackBuffer_.capacity());
+            // Seek forward so we fill the entire size of the look back buffer immediately before
+            // the desired position
+            stream_->seek(pos - lookBackBuffer_.capacity());
             position_ = stream_->position();
             offset = lookBackBuffer_.capacity();
         }
@@ -119,7 +121,7 @@ auto LookBackStream::seek(uint32_t pos) -> bool {
         uint8_t buf[1024];
         int bytesCopied = 0;
         while (bytesCopied < bytesToReadForward) {
-            int bytesToCopy = std::min(bytesToReadForward - bytesCopied, 1024);
+            int bytesToCopy = std::min(bytesToReadForward - bytesCopied, (int)sizeof(buf));
             int bytesRead = readBytes(buf, bytesToCopy);
             bytesCopied += bytesRead;
             if (bytesRead != bytesToCopy) {

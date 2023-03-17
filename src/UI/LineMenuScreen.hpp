@@ -22,13 +22,15 @@ class LineMenuScreen : public Screen, public Menu, public EinkView {
 public:
     LineMenuScreen(Power &power, Readable &readable, PreferencesStore &prefs,
                    DisplaySystem &display, MenuStyleFamily menuStyle)
-        : Menu(), EinkView(display), power_(power) {
+        : Menu(menuStyle), EinkView(display), display_(display), power_(power) {
         numMenuItems_ = 0;
     }
     LineMenuScreen(Power &power, Readable &readable, PreferencesStore &prefs,
                    DisplaySystem &display)
-        : Menu(), EinkView(display), power_(power) {
+        : Menu(), EinkView(display), display_(display), power_(power) {
         numMenuItems_ = 0;
+        MenuStyle styleFamilies;
+        myStyle_ = styleFamilies.mainMenu;
     }
 
     auto layout(LayoutContext &context, Size size) -> Size override;
@@ -38,7 +40,20 @@ public:
 
     void processCommand(RemoteCommand command) override;
 
+    void resetMenuItems() override {
+        Menu::resetMenuItems();
+        menuItemViews_.clear();
+        firstLoad_ = true;
+    }
+
+    void addMenuItem(const MenuItem &newItem) override {
+        Menu::addMenuItem(newItem);
+        auto menuItemView = std::make_shared<MenuItemView>(display_, newItem);
+        menuItemViews_.push_back(menuItemView);
+    }
+
 protected:
+    DisplaySystem &display_;
     std::vector<std::shared_ptr<MenuItemView>> menuItemViews_;
     Power &power_;
     bool firstLoad_ = true;
