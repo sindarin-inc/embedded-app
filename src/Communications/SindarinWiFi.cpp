@@ -73,14 +73,15 @@ auto SindarinWiFi::end() -> esp_err_t {
 
     esp_netif_destroy_default_wifi(staNetif_);
 
-    err = esp_event_handler_instance_unregister(IP_EVENT, ESP_EVENT_ANY_ID, ipEventHandlerInstance);
+    err =
+        esp_event_handler_instance_unregister(IP_EVENT, ESP_EVENT_ANY_ID, ipEventHandlerInstance_);
     if (err != ESP_OK) {
         log_e("esp_event_handler_instance_unregister failed with error %s", esp_err_to_name(err));
         return err;
     }
 
     err = esp_event_handler_instance_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID,
-                                                wifiEventHandlerInstance);
+                                                wifiEventHandlerInstance_);
     if (err != ESP_OK) {
         log_e("esp_event_handler_instance_unregister failed with error %s", esp_err_to_name(err));
         return err;
@@ -212,14 +213,14 @@ auto SindarinWiFi::connectWiFi(const std::string &ssid, const std::string &passw
     }
 
     err = esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wiFiEventHandler, this,
-                                              &wifiEventHandlerInstance);
+                                              &wifiEventHandlerInstance_);
     if (err != ESP_OK) {
         log_e("esp_event_handler_instance_register failed with error %s", esp_err_to_name(err));
         return err;
     }
 
     err = esp_event_handler_instance_register(IP_EVENT, ESP_EVENT_ANY_ID, &ipEventHandler, this,
-                                              &ipEventHandlerInstance);
+                                              &ipEventHandlerInstance_);
     if (err != ESP_OK) {
         log_e("esp_event_handler_instance_register failed with error %s", esp_err_to_name(err));
         return err;
@@ -358,10 +359,10 @@ void SindarinWiFi::wiFiEventHandler(void *arg, esp_event_base_t eventBase, int32
 
 void SindarinWiFi::ipEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId,
                                   void *eventData) {
-    SindarinWiFi *tthis = (SindarinWiFi *)arg;
+    auto *tthis = (SindarinWiFi *)arg;
     switch (eventId) {
     case IP_EVENT_STA_GOT_IP: {
-        ip_event_got_ip_t *event = (ip_event_got_ip_t *)eventData;
+        auto *event = (ip_event_got_ip_t *)eventData;
         log_i("IP_EVENT_STA_GOT_IP: " IPSTR, IP2STR(&event->ip_info.ip));
         tthis->connected_ = true;
         break;

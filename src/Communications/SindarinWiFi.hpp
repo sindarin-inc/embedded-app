@@ -57,8 +57,8 @@ protected:
     bool connected_ = false;
     wifi_power_t wiFiPower_ = WIFI_POWER_19_5dBm;
     esp_netif_t *staNetif_;
-    esp_event_handler_instance_t wifiEventHandlerInstance;
-    esp_event_handler_instance_t ipEventHandlerInstance;
+    esp_event_handler_instance_t wifiEventHandlerInstance_;
+    esp_event_handler_instance_t ipEventHandlerInstance_;
 
     // Lifecycle init/deinit
     auto begin() -> esp_err_t;
