@@ -42,12 +42,12 @@ auto SFile::peek() -> int {
     seek(curPos, SSeekSet);
     return result;
 }
-void SFile::flush() {
+auto SFile::flush() -> int {
     if (!*this) {
-        return;
+        return 0;
     }
 
-    p_->flush();
+    return p_->flush();
 }
 auto SFile::read(uint8_t *buf, size_t size) -> size_t {
     if (!*this) {
@@ -82,11 +82,13 @@ auto SFile::size() const -> size_t {
 
     return p_->size();
 }
-void SFile::close() {
+auto SFile::close() -> int {
+    int retval = 0;
     if (p_) {
-        p_->close();
+        retval = p_->close();
         p_ = nullptr;
     }
+    return retval;
 }
 
 SFile::operator bool() const { return p_ != nullptr && *p_ != false; }
@@ -107,12 +109,12 @@ auto VFSFile::available() -> int {
     return size() - position();
 }
 
-void VFSFile::flush() {
+auto VFSFile::flush() -> int {
     if (!*this) {
-        return;
+        return 0;
     }
 
-    fflush(fp_);
+    return fflush(fp_);
 }
 
 auto VFSFile::read(uint8_t *buf, size_t size) -> size_t {
@@ -160,11 +162,13 @@ auto VFSFile::size() const -> size_t {
     }
     return fSize_;
 }
-void VFSFile::close() {
+auto VFSFile::close() -> int {
+    int retval = 0;
     if (fp_) {
-        fclose(fp_);
+        retval = fclose(fp_);
         fp_ = nullptr;
     }
+    return retval;
 }
 
 VFSFile::operator bool() const {

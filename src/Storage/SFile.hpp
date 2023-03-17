@@ -19,11 +19,11 @@ public:
     virtual ~SFileImpl() = default;
     virtual auto write(const uint8_t *buf, size_t size) -> size_t = 0;
     virtual auto read(uint8_t *buf, size_t size) -> size_t = 0;
-    virtual void flush() = 0;
+    virtual auto flush() -> int = 0;
     virtual auto seek(uint32_t pos, SSeekMode mode) -> bool = 0;
     [[nodiscard]] virtual auto position() const -> size_t = 0;
     [[nodiscard]] virtual auto size() const -> size_t = 0;
-    virtual void close() = 0;
+    virtual auto close() -> int = 0;
     virtual operator bool() const = 0;
 };
 
@@ -76,7 +76,7 @@ public:
     auto available() -> int override;
     auto read() -> int override;
     auto peek() -> int;
-    void flush();
+    auto flush() -> int;
     auto read(uint8_t *buf, size_t size) -> size_t;
     auto readBytes(char *buffer, size_t length) -> size_t;
 
@@ -84,7 +84,7 @@ public:
     auto seek(uint32_t pos) -> bool { return seek(pos, SSeekSet); }
     [[nodiscard]] auto position() const -> size_t;
     [[nodiscard]] auto size() const -> size_t;
-    void close();
+    auto close() -> int;
     operator bool() const;
 
 protected:
@@ -120,13 +120,13 @@ public:
 
     auto write(const uint8_t *buf, size_t size) -> size_t override;
     auto available() -> int;
-    void flush() override;
+    auto flush() -> int override;
     auto read(uint8_t *buf, size_t size) -> size_t override;
 
     auto seek(uint32_t pos, SSeekMode mode) -> bool override;
     [[nodiscard]] auto position() const -> size_t override;
     [[nodiscard]] auto size() const -> size_t override;
-    void close() override;
+    auto close() -> int override;
     operator bool() const override;
 
 protected:

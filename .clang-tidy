@@ -68,3 +68,5 @@ CheckOptions:
       key: readability-identifier-naming.TemplateParameterCase,
       value: UPPER_CASE,
     }
+  # Fix spurious `invalid case style for template parameter 'expr-type'` errors
+  - {key: readability-identifier-naming.TypeTemplateParameterIgnoredRegexp, value: expr-type}
