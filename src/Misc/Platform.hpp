@@ -75,7 +75,7 @@ void digitalWrite(int pin, int level);
 #if !SIMULATOR
 void pinMode(int pin, int mode);
 int digitalRead(uint8_t pin);
-uint32_t getHeapSize();
+size_t getHeapSize();
 void enableCore0WDT();
 void disableCore0WDT();
 #else

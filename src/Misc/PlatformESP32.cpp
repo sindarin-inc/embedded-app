@@ -60,7 +60,7 @@ void hardwareInit() {
     }
 }
 
-uint32_t getHeapSize() {
+size_t getHeapSize() {
     multi_heap_info_t info;
     heap_caps_get_info(&info, MALLOC_CAP_INTERNAL);
     return info.total_free_bytes + info.total_allocated_bytes;
