@@ -1,5 +1,6 @@
 #pragma once
 
+#include <esp_err.h>
 #include <esp_wifi.h>
 #include <functional>
 #include <memory>
@@ -20,10 +21,10 @@ typedef enum {
     WIFI_POWER_MINUS_1dBm = -4 // -1dBm
 } wifi_power_t;
 
-class CSindarinWiFi {
+class SindarinWiFi {
 
 public:
-    CSindarinWiFi() = default;
+    SindarinWiFi() = default;
 
     // Credentials
     auto getWifiConfig(wifi_config_t *conf) -> esp_err_t;
@@ -71,4 +72,4 @@ protected:
 };
 
 // Global Object
-extern CSindarinWiFi sindarinWiFi;
+extern SindarinWiFi sindarinWiFi;

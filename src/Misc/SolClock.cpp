@@ -77,7 +77,7 @@ void SolClock::getClockTime(uint8_t &hours, uint8_t &minutes) {
 
 void SolClock::setClockTimeFromInternet() {
 #if !SIMULATOR
-    sindarinWiFi.connectWiFi();
+    sindarinWiFi.connectWiFiWithTimeout();
     if (!sindarinWiFi.connected()) {
         log_i("Failed to connect wifi");
         return;

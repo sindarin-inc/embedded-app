@@ -5,9 +5,9 @@
 #include "config.h"
 #include "sindarin-debug.h"
 
-CSindarinWiFi sindarinWiFi;
+SindarinWiFi sindarinWiFi;
 
-auto CSindarinWiFi::begin() -> esp_err_t {
+auto SindarinWiFi::begin() -> esp_err_t {
     if (began_) {
         return ESP_OK;
     }
@@ -60,7 +60,7 @@ auto CSindarinWiFi::begin() -> esp_err_t {
     return ESP_OK;
 }
 
-auto CSindarinWiFi::end() -> esp_err_t {
+auto SindarinWiFi::end() -> esp_err_t {
     if (!began_) {
         return ESP_OK;
     }
@@ -105,7 +105,7 @@ auto CSindarinWiFi::end() -> esp_err_t {
     return ESP_OK;
 }
 
-auto CSindarinWiFi::getWifiConfig(wifi_config_t *conf) -> esp_err_t {
+auto SindarinWiFi::getWifiConfig(wifi_config_t *conf) -> esp_err_t {
     esp_err_t err = begin();
     if (err != ESP_OK) {
         log_e("begin failed with error %s", esp_err_to_name(err));
@@ -120,7 +120,7 @@ auto CSindarinWiFi::getWifiConfig(wifi_config_t *conf) -> esp_err_t {
     return ESP_OK;
 }
 
-auto CSindarinWiFi::hasWiFiCredentials(wifi_config_t *conf) -> bool {
+auto SindarinWiFi::hasWiFiCredentials(wifi_config_t *conf) -> bool {
     if (strlen((const char *)conf->sta.ssid) == 0) {
         return false;
     }
@@ -130,7 +130,7 @@ auto CSindarinWiFi::hasWiFiCredentials(wifi_config_t *conf) -> bool {
     return true;
 }
 
-auto CSindarinWiFi::hasWiFiCredentials() -> bool {
+auto SindarinWiFi::hasWiFiCredentials() -> bool {
     wifi_config_t conf;
     esp_err_t err = getWifiConfig(&conf);
     if (err != ESP_OK) {
@@ -140,7 +140,7 @@ auto CSindarinWiFi::hasWiFiCredentials() -> bool {
     return hasWiFiCredentials(&conf);
 }
 
-auto CSindarinWiFi::scanNetworks(
+auto SindarinWiFi::scanNetworks(
     const std::function<void(wifi_ap_record_t *apRecords, int recordCount)> &completeCB)
     -> esp_err_t {
 
@@ -195,7 +195,7 @@ auto CSindarinWiFi::scanNetworks(
     return ESP_OK;
 }
 
-auto CSindarinWiFi::connectWiFi(const std::string &ssid, const std::string &password) -> esp_err_t {
+auto SindarinWiFi::connectWiFi(const std::string &ssid, const std::string &password) -> esp_err_t {
     // We have to have wifi sleep enabled otherwise Bluetooth can't work
     esp_err_t err = esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
     if (err != ESP_OK) {
@@ -269,7 +269,7 @@ auto CSindarinWiFi::connectWiFi(const std::string &ssid, const std::string &pass
     return ESP_OK;
 }
 
-auto CSindarinWiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
+auto SindarinWiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
     auto startTime = xTaskGetTickCount();
     if (!connected()) {
         wifi_config_t wifiConfig = {};
@@ -282,8 +282,9 @@ auto CSindarinWiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
             log_w("connectWiFi failed");
             return false;
         }
-        // Only wait if we had credentials
-        // TODO: Would be nice to make this not a polling loop
+        // Wait for a connection
+        // TODO: Would be good to make this not a polling loop so if there's an obvious failure we
+        // could return sooner
         while (!connected() && (xTaskGetTickCount() - startTime) < timeoutMs) {
             vTaskDelay(200);
         }
@@ -297,7 +298,7 @@ auto CSindarinWiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
     return true;
 }
 
-void CSindarinWiFi::disconnectWiFi() {
+void SindarinWiFi::disconnectWiFi() {
     SHOW_HEAP();
     log_i("Disconnecting WiFi");
 
@@ -321,9 +322,9 @@ void CSindarinWiFi::disconnectWiFi() {
     SHOW_HEAP();
 }
 
-auto CSindarinWiFi::connected() -> bool { return connected_; }
+auto SindarinWiFi::connected() -> bool { return connected_; }
 
-auto CSindarinWiFi::getLocalIp() -> esp_ip4_addr_t {
+auto SindarinWiFi::getLocalIp() -> esp_ip4_addr_t {
     esp_netif_ip_info_t ip;
     esp_err_t err = esp_netif_get_ip_info(staNetif_, &ip);
     if (err != ESP_OK) {
@@ -333,16 +334,16 @@ auto CSindarinWiFi::getLocalIp() -> esp_ip4_addr_t {
     return (esp_ip4_addr_t)ip.ip;
 }
 
-auto CSindarinWiFi::getLocalIpStr() -> std::string {
+auto SindarinWiFi::getLocalIpStr() -> std::string {
     esp_ip4_addr_t ip = getLocalIp();
     char ipstr[16];
     sprintf(ipstr, IPSTR, IP2STR(&ip));
     return ipstr;
 }
 
-void CSindarinWiFi::wiFiEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId,
-                                     void *eventData) {
-    // CSindarinWiFi *tthis = (CSindarinWiFi *)arg;
+void SindarinWiFi::wiFiEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId,
+                                    void *eventData) {
+    // SindarinWiFi *tthis = (SindarinWiFi *)arg;
     switch (eventId) {
     case WIFI_EVENT_STA_START:
         log_d("WIFI_EVENT_STA_START");
@@ -355,9 +356,9 @@ void CSindarinWiFi::wiFiEventHandler(void *arg, esp_event_base_t eventBase, int3
     }
 }
 
-void CSindarinWiFi::ipEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId,
-                                   void *eventData) {
-    CSindarinWiFi *tthis = (CSindarinWiFi *)arg;
+void SindarinWiFi::ipEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId,
+                                  void *eventData) {
+    SindarinWiFi *tthis = (SindarinWiFi *)arg;
     switch (eventId) {
     case IP_EVENT_STA_GOT_IP: {
         ip_event_got_ip_t *event = (ip_event_got_ip_t *)eventData;
