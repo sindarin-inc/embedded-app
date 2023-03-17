@@ -9,7 +9,7 @@
 #include "Bitmaps/Logo.hpp"
 #include "Communications/HtmlCleaner.hpp"
 #include "Communications/SindarinAPI.hpp"
-#include "Communications/SindarinWiFi.hpp"
+#include "Communications/WiFi.hpp"
 #include "EPub/EPubFile.hpp"
 #include "GitVersion.hpp"
 #include "Inputs/RemoteInput.hpp"
@@ -840,14 +840,14 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto confirmMessage = [this, timeZoneMenu, display](int solTimeZone) {
             this->prefs_.solTimeZone.set(solTimeZone);
             timeZoneMenu->showTemporaryMessage(*display, "Setting Clock & Time Zone", 200, false);
-            sindarinWiFi.connectWiFiWithTimeout();
-            if (!sindarinWiFi.connected()) {
+            WiFi::getInstance().connectWiFiWithTimeout();
+            if (!WiFi::getInstance().connected()) {
                 log_e("Couldn't connect to wifi, not setting clock");
             } else {
                 log_i("Setting time from internet");
                 SolClock theClock = SolClock::getInstance();
                 theClock.setClockTimeFromInternet();
-                sindarinWiFi.disconnectWiFi();
+                WiFi::getInstance().disconnectWiFi();
             }
             timeZoneMenu->backCallback();
         };
@@ -1156,7 +1156,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }
         };
 
-        wifiPowerMenu->setExtraText(powerToString(sindarinWiFi.getWiFiPower()));
+        wifiPowerMenu->setExtraText(powerToString(WiFi::getInstance().getWiFiPower()));
 
         auto confirmMessage = [this, wifiPowerMenu, display](wifi_power_t power) {
             this->prefs_.wifiPower.set(power);
@@ -1165,28 +1165,28 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
 
         wifiPowerMenu->addMenuItem(MenuItem("Max (19.5dBm)", [confirmMessage]() {
-            sindarinWiFi.setWiFiPower(WIFI_POWER_19_5dBm);
+            WiFi::getInstance().setWiFiPower(WIFI_POWER_19_5dBm);
             confirmMessage(WIFI_POWER_19_5dBm);
         }));
         wifiPowerMenu->addMenuItem(MenuItem("High (17dBm)", [confirmMessage]() {
-            sindarinWiFi.setWiFiPower(WIFI_POWER_17dBm);
+            WiFi::getInstance().setWiFiPower(WIFI_POWER_17dBm);
             confirmMessage(WIFI_POWER_17dBm);
         }));
         wifiPowerMenu->addMenuItem(MenuItem("Medium (11dBm)", [confirmMessage]() {
-            sindarinWiFi.setWiFiPower(WIFI_POWER_11dBm);
+            WiFi::getInstance().setWiFiPower(WIFI_POWER_11dBm);
             confirmMessage(WIFI_POWER_11dBm);
         }));
         wifiPowerMenu->addMenuItem(MenuItem("Low (5dBm)", [confirmMessage]() {
-            sindarinWiFi.setWiFiPower(WIFI_POWER_5dBm);
+            WiFi::getInstance().setWiFiPower(WIFI_POWER_5dBm);
             confirmMessage(WIFI_POWER_5dBm);
         }));
         wifiPowerMenu->addMenuItem(MenuItem("Min (-1dBm)", [confirmMessage]() {
-            sindarinWiFi.setWiFiPower(WIFI_POWER_MINUS_1dBm);
+            WiFi::getInstance().setWiFiPower(WIFI_POWER_MINUS_1dBm);
             confirmMessage(WIFI_POWER_MINUS_1dBm);
         }));
 
         int menuIndex = 0;
-        switch (sindarinWiFi.getWiFiPower()) {
+        switch (WiFi::getInstance().getWiFiPower()) {
         case WIFI_POWER_17dBm:
             menuIndex = 1;
             break;

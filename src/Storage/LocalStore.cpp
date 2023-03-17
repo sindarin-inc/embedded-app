@@ -5,7 +5,7 @@
 
 #include "Communications/HtmlCleaner.hpp"
 #include "Communications/SindarinAPI.hpp"
-#include "Communications/SindarinWiFi.hpp"
+#include "Communications/WiFi.hpp"
 #include "Misc/Crypto.hpp"
 #include "Misc/GUnzipStream.hpp"
 #include "Misc/StringUtil.hpp"
@@ -332,14 +332,14 @@ void LocalStore::resetReadablesBookmarksChanged(const ReadablesVector &readables
 void LocalStore::syncFromRemote(
     const std::function<void(ContentSyncState state)> &progressCallback) {
 
-    if (!sindarinWiFi.hasWiFiCredentials()) {
+    if (!WiFi::getInstance().hasWiFiCredentials()) {
         progressCallback(
             ContentSyncState{.state = ContentSyncState::State::Failure,
                              .message = "Go to Settings > WiFi Setup in the Sol app."});
         return;
     }
 
-    if (!sindarinWiFi.connectWiFiWithTimeout()) {
+    if (!WiFi::getInstance().connectWiFiWithTimeout()) {
         progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
                                           .message = "Failed to connect to WiFi."});
         return;

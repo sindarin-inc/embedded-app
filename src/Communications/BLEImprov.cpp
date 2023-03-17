@@ -2,7 +2,7 @@
 
 #include "BLEImprov.hpp"
 
-#include "Communications/SindarinWiFi.hpp"
+#include "Communications/WiFi.hpp"
 #include "config.h"
 #include "esp_wifi.h"
 #include "sindarin-debug.h"
@@ -90,28 +90,28 @@ void BLEImprov::setError(improv::Error error, bool notify) {
 
 void BLEImprov::doneConnecting() {
     this->setState(STATE_CONNECTED);
-    log_i("Connected, IP address: %s", sindarinWiFi.getLocalIpStr().c_str());
+    log_i("Connected, IP address: %s", WiFi::getInstance().getLocalIpStr().c_str());
     SHOW_HEAP();
 }
 
 // TODO: Would be good to make this event driven
 void BLEImprov::loop() {
     if (this->state_ == STATE_WAITING) {
-        if (sindarinWiFi.connected()) {
+        if (WiFi::getInstance().connected()) {
             this->doneConnecting();
         }
     } else if (this->state_ == STATE_READY_TO_CONNECT) {
         SHOW_HEAP();
         improv::ImprovCommand command = this->lastCommand_;
         log_d("Attempting connection to: %s Password: %s (WiFi connnected = %d)",
-              command.ssid.c_str(), command.password.c_str(), sindarinWiFi.connected());
-        sindarinWiFi.connectWiFi(command.ssid, command.password);
+              command.ssid.c_str(), command.password.c_str(), WiFi::getInstance().connected());
+        WiFi::getInstance().connectWiFi(command.ssid, command.password);
         this->setState(STATE_CONNECTING);
         return;
     } else if (this->state_ == STATE_CONNECTING) {
         uint32_t now = millis();
-        if (sindarinWiFi.connected()) {
-            std::string ip = sindarinWiFi.getLocalIpStr();
+        if (WiFi::getInstance().connected()) {
+            std::string ip = WiFi::getInstance().getLocalIpStr();
             std::vector<uint8_t> response = improv::build_rpc_response(improv::WIFI_SETTINGS, {ip});
             log_d("Reporting RPC result to client");
             this->rpcResultCharacteristic_->setValue(response.data(), response.size());
@@ -121,54 +121,57 @@ void BLEImprov::loop() {
             log_w("Timed out connecting to WiFi");
             this->setState(STATE_WAITING);
             this->setError(improv::ERROR_UNABLE_TO_CONNECT);
-            sindarinWiFi.disconnectWiFi();
+            WiFi::getInstance().disconnectWiFi();
         }
     } else if (this->state_ == STATE_READY_TO_SCAN) {
         this->setState(STATE_SCANNING);
 
         // TODO: Make this send APs in real time to the app
-        int err = sindarinWiFi.scanNetworks([this](wifi_ap_record_t *apRecords, int recordCount) {
-            log_d("Wifi scanning complete: %d APs found.", recordCount);
+        int err =
+            WiFi::getInstance().scanNetworks([this](wifi_ap_record_t *apRecords, int recordCount) {
+                log_d("Wifi scanning complete: %d APs found.", recordCount);
 
-            // Sort records in appRecords by rssi
-            std::sort(apRecords, apRecords + recordCount,
-                      [](const wifi_ap_record_t &a, const wifi_ap_record_t &b) {
-                          return a.rssi > b.rssi;
-                      });
+                // Sort records in appRecords by rssi
+                std::sort(apRecords, apRecords + recordCount,
+                          [](const wifi_ap_record_t &a, const wifi_ap_record_t &b) {
+                              return a.rssi > b.rssi;
+                          });
 
-            std::vector<std::string> ssidList;
-            for (int i = 0; i < recordCount; i++) {
-                auto record = apRecords[i];
+                std::vector<std::string> ssidList;
+                for (int i = 0; i < recordCount; i++) {
+                    auto record = apRecords[i];
 
-                std::string ssid = std::string(reinterpret_cast<const char *>(record.ssid));
-                std::string rssi = std::to_string(record.rssi);
-                std::string auth = std::string(record.authmode == WIFI_AUTH_OPEN ? "NO" : "YES");
-                std::vector<uint8_t> response =
-                    improv::build_rpc_response(improv::GET_WIFI_NETWORKS, {ssid, rssi, auth});
+                    std::string ssid = std::string(reinterpret_cast<const char *>(record.ssid));
+                    std::string rssi = std::to_string(record.rssi);
+                    std::string auth =
+                        std::string(record.authmode == WIFI_AUTH_OPEN ? "NO" : "YES");
+                    std::vector<uint8_t> response =
+                        improv::build_rpc_response(improv::GET_WIFI_NETWORKS, {ssid, rssi, auth});
 
-                // Skip duplicate APs that have the same SSID, probably satellite routers/repeaters
-                if (std::find(ssidList.begin(), ssidList.end(), ssid) == ssidList.end()) {
-                    ssidList.push_back(ssid);
-                } else {
-                    log_d("Skipping duplicate AP scan result: %s %s %s", ssid.c_str(), rssi.c_str(),
-                          auth.c_str());
-                    continue;
+                    // Skip duplicate APs that have the same SSID, probably satellite
+                    // routers/repeaters
+                    if (std::find(ssidList.begin(), ssidList.end(), ssid) == ssidList.end()) {
+                        ssidList.push_back(ssid);
+                    } else {
+                        log_d("Skipping duplicate AP scan result: %s %s %s", ssid.c_str(),
+                              rssi.c_str(), auth.c_str());
+                        continue;
+                    }
+
+                    if (ssid.length() > 0) {
+                        // TODO: This sometimes seems a little lossy and misses some packets
+                        log_d("Sending latest AP scan result to client: %s %s %s", ssid.c_str(),
+                              rssi.c_str(), auth.c_str());
+                        this->rpcResultCharacteristic_->setValue(response.data(), response.size());
+                        this->rpcResultCharacteristic_->notify();
+
+                    } else {
+                        log_d("Skipping empty AP scan result: %s", ssid.c_str());
+                    }
                 }
 
-                if (ssid.length() > 0) {
-                    // TODO: This sometimes seems a little lossy and misses some packets
-                    log_d("Sending latest AP scan result to client: %s %s %s", ssid.c_str(),
-                          rssi.c_str(), auth.c_str());
-                    this->rpcResultCharacteristic_->setValue(response.data(), response.size());
-                    this->rpcResultCharacteristic_->notify();
-
-                } else {
-                    log_d("Skipping empty AP scan result: %s", ssid.c_str());
-                }
-            }
-
-            this->setState(STATE_SCAN_COMPLETE);
-        });
+                this->setState(STATE_SCAN_COMPLETE);
+            });
         if (err != ESP_OK) {
             log_e("Error scanning WiFi networks: %s", esp_err_to_name(err));
             this->setError(improv::ERROR_UNKNOWN);
@@ -180,7 +183,7 @@ void BLEImprov::loop() {
         SHOW_HEAP();
         this->setState(STATE_WAITING);
     } else if (this->state_ == STATE_CONNECTED) {
-        if (!sindarinWiFi.connected()) {
+        if (!WiFi::getInstance().connected()) {
             this->setState(STATE_WAITING);
         }
     }
