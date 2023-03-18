@@ -22,8 +22,8 @@
 #define BACKLIGHT_PWM_CHANNEL 0
 #define HARDWARE_REVSION_LATEST 2
 
-adc_cali_handle_t adc_cal_handle;
-adc_oneshot_unit_handle_t adc_oneshot_handle;
+adc_cali_handle_t adcCalHandle;
+adc_oneshot_unit_handle_t adcOneshotHandle;
 bool ledcFailed = false;
 uint8_t sysOnPin;
 
@@ -99,32 +99,30 @@ void InitializePlatform() {
 
     // Attenuation of 2.5db gets us up to a max of 1250mV
     // Using our 442k/160k divider, that's 4.7V max
-    adc_cali_curve_fitting_config_t adc_config;
-    adc_config.unit_id = ADC_UNIT_1;
-    adc_config.atten = ADC_ATTEN_DB_2_5;
-    adc_config.bitwidth = ADC_BITWIDTH_12;
+    adc_cali_curve_fitting_config_t adcConfig;
+    adcConfig.unit_id = ADC_UNIT_1;
+    adcConfig.atten = ADC_ATTEN_DB_2_5;
+    adcConfig.bitwidth = ADC_BITWIDTH_12;
 
-    if (adc_cali_create_scheme_curve_fitting(&adc_config, &adc_cal_handle) != ESP_OK) {
+    if (adc_cali_create_scheme_curve_fitting(&adcConfig, &adcCalHandle) != ESP_OK) {
         log_e("Failed to create adc curve fitting scheme");
     }
 
-    adc_oneshot_unit_init_cfg_t adc_oneshot_cfg;
-    adc_oneshot_cfg.unit_id = ADC_UNIT_1;
+    adc_oneshot_unit_init_cfg_t adcOneshotCfg;
+    adcOneshotCfg.unit_id = ADC_UNIT_1;
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
     adc_oneshot_cfg.clk_src = (adc_oneshot_clk_src_t)0;
 #endif
-    adc_oneshot_cfg.ulp_mode = ADC_ULP_MODE_DISABLE;
+    adcOneshotCfg.ulp_mode = ADC_ULP_MODE_DISABLE;
 
-    ESP_ERROR_CHECK(adc_oneshot_new_unit(&adc_oneshot_cfg, &adc_oneshot_handle));
+    ESP_ERROR_CHECK(adc_oneshot_new_unit(&adcOneshotCfg, &adcOneshotHandle));
 
-    adc_oneshot_chan_cfg_t adc_chan_cfg;
-    adc_chan_cfg.bitwidth = adc_config.bitwidth;
-    adc_chan_cfg.atten = adc_config.atten;
+    adc_oneshot_chan_cfg_t adcChanCfg;
+    adcChanCfg.bitwidth = adcConfig.bitwidth;
+    adcChanCfg.atten = adcConfig.atten;
 
-    ESP_ERROR_CHECK(
-        adc_oneshot_config_channel(adc_oneshot_handle, BATT_CHANNEL_LEFT, &adc_chan_cfg));
-    ESP_ERROR_CHECK(
-        adc_oneshot_config_channel(adc_oneshot_handle, BATT_CHANNEL_RIGHT, &adc_chan_cfg));
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(adcOneshotHandle, BATT_CHANNEL_LEFT, &adcChanCfg));
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(adcOneshotHandle, BATT_CHANNEL_RIGHT, &adcChanCfg));
 
     DigitalWrite(RED_LED, LED_OFF);
     DigitalWrite(GREEN_LED, LED_OFF);
@@ -245,13 +243,13 @@ void InitializePlatform() {
 // https://github.com/tinypico/tinypico-arduino/blob/master/TinyPICO-Helper/src/TinyPICO.cpp#L207
 auto GetBatteryVoltageLeft() -> float {
     int raw;
-    if (adc_oneshot_read(adc_oneshot_handle, BATT_CHANNEL_LEFT, &raw) != ESP_OK) {
+    if (adc_oneshot_read(adcOneshotHandle, BATT_CHANNEL_LEFT, &raw) != ESP_OK) {
         log_e("error reading raw adc value for left battery");
         return 0.0;
     }
 
     int millivolts;
-    if (adc_cali_raw_to_voltage(adc_cal_handle, raw, &millivolts) != ESP_OK) {
+    if (adc_cali_raw_to_voltage(adcCalHandle, raw, &millivolts) != ESP_OK) {
         log_e("error reading left battery voltage");
         return 0.0;
     }
@@ -261,13 +259,13 @@ auto GetBatteryVoltageLeft() -> float {
 
 auto GetBatteryVoltageRight() -> float {
     int raw;
-    if (adc_oneshot_read(adc_oneshot_handle, BATT_CHANNEL_RIGHT, &raw) != ESP_OK) {
+    if (adc_oneshot_read(adcOneshotHandle, BATT_CHANNEL_RIGHT, &raw) != ESP_OK) {
         log_e("error reading raw adc value for right battery");
         return 0.0;
     }
 
     int millivolts;
-    if (adc_cali_raw_to_voltage(adc_cal_handle, raw, &millivolts) != ESP_OK) {
+    if (adc_cali_raw_to_voltage(adcCalHandle, raw, &millivolts) != ESP_OK) {
         log_e("error reading left battery voltage");
         return 0.0;
     }
