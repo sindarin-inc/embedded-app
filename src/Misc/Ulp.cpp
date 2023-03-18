@@ -1,6 +1,6 @@
 #include "sindarin-debug.h"
 #if SIMULATOR
-void ulp_deep_sleep_magnetometer_wakeup() { log_i("only supported on IDF 5.1+"); }
+void UlpDeepSleepMagnetometerWakeup() { log_i("only supported on IDF 5.1+"); }
 #else
 #include "esp_idf_version.h"
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
@@ -48,7 +48,7 @@ static void init_i2c(void) {
     ulp_riscv_i2c_master_init(&i2c_cfg);
 }
 
-void ulp_deep_sleep_magnetometer_wakeup() {
+void UlpDeepSleepMagnetometerWakeup() {
     rtc_gpio_init((gpio_num_t)I2C_MASTER_SDA_IO);
     rtc_gpio_init((gpio_num_t)I2C_MASTER_SCL_IO);
     init_i2c();
