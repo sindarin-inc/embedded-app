@@ -1,5 +1,10 @@
-#include "esp_idf_version.h"
 #include "sindarin-debug.h"
+#if SIMULATOR
+void ulp_deep_sleep_magnetometer_wakeup() {
+    log_i("only supported on IDF 5.1+");
+}
+#else
+#include "esp_idf_version.h"
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
 #include "Ulp.hpp"
 #include "esp_sleep.h"
@@ -60,4 +65,5 @@ void ulp_deep_sleep_magnetometer_wakeup() {
 void ulp_deep_sleep_magnetometer_wakeup() {
     log_i("only supported on IDF 5.1+");
 }
-#endif
+#endif // IDF5.1
+#endif // sim
