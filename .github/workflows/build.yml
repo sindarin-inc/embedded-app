@@ -58,8 +58,8 @@ jobs:
       matrix:
         # Tags from here: https://hub.docker.com/r/espressif/idf/tags
         idf_version:
-          - v5.0.1
           - latest
+          - v5.0.1
 
     steps:
       - name: Checkout repo
