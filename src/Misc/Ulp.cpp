@@ -1,5 +1,6 @@
 #include "Ulp.hpp"
 
+#include <cstdint>
 #include <driver/rtc_io.h>
 #include <esp_idf_version.h>
 #include <esp_sleep.h>
