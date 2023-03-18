@@ -52,7 +52,7 @@ public:
         }
 
         if (j.containsKey("next")) {
-            nextPageUrl = j["next"].as<std::string>();
+            nextPageUrl = j["next"].isNull() ? std::string() : j["next"].as<std::string>();
         }
         if (j.containsKey("count")) {
             totalCount = j["count"].as<int>();

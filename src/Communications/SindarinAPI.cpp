@@ -45,7 +45,13 @@ auto SindarinAPI::checkSync(const char *body, size_t bodyLength, CheckSyncRespon
                             std::string modelType) -> int {
     auto url = StringFormat(SINDARIN_SERVER_URL "/sync/%ss/", modelType.c_str());
     log_d("Checking sync: %s", url.c_str());
-    HttpClient client(url.c_str(), "application/json", HTTP_METHOD_POST);
+    return checkSync(url, body, bodyLength, resp, modelType);
+}
+
+auto SindarinAPI::checkSync(std::string url, const char *body, size_t bodyLength,
+                            CheckSyncResponse *resp, std::string modelType) -> int {
+    HttpClient client(url.c_str(), "application/json",
+                      bodyLength ? HTTP_METHOD_POST : HTTP_METHOD_GET);
     setAuth(client);
 
     client.open(bodyLength);
@@ -180,7 +186,7 @@ auto SindarinAPI::downloadReadable(const Readable &readable, FileSystem &fileSys
     bool success = false;
     // auto remoteUrl = readable.remoteUrl();
     auto file = readable.file();
-    auto remoteUrl = file.fileProxied;
+    auto remoteUrl = file.file;
     auto fileSize = file.size;
 
     // Create the directory if necessary

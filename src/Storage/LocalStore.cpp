@@ -16,6 +16,7 @@
 #define ARTICLES_PATH "/articles.json"
 
 enum { NUMBER_OF_READABLE_DOWNLOAD_TRIES = 3 };
+enum { MAX_NUMBER_OF_PAGES_TO_BACKFILL = 10 };
 
 auto ToString(ReadablesModelType type) -> std::string {
     switch (type) {
@@ -355,7 +356,7 @@ void LocalStore::syncFromRemote(
     auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this, progressCallback] {
         // Uncomment below to force a full sync
-        this->prefs_.lastReadablesSince.set("");
+        // this->prefs_.lastReadablesSince.set("");
         // this->prefs_.lastArticlesSince.set("");
         auto sleepReason = this->prefs_.sleepReason.get().value_or(SLEEP_REASON_NONE);
         CheckSyncResponse checkSyncResponse;
@@ -370,7 +371,8 @@ void LocalStore::syncFromRemote(
             JsonArray bookmarksJsonArray = request.createNestedArray("bookmarks");
             JsonArray placemarksJsonArray = request.createNestedArray("placemarks");
             JsonArray archivesJsonArray = request.createNestedArray("archives");
-            JsonArray storedUuidsJsonArray = request.createNestedArray("stored");
+            JsonArray storedUuidsJsonArray = request.createNestedArray("stored_uuids");
+            bool failedDownload = false;
             auto modelType = readablesModelType(const_cast<ReadablesVector &>(*readables));
             auto since = this->readablesSince(*readables);
             this->storedReadableUuids(*readables, storedUuidsJsonArray);
@@ -391,104 +393,141 @@ void LocalStore::syncFromRemote(
             char *body = (char *)heap_caps_malloc(serializedMaxSize, MALLOC_CAP_SPIRAM);
             size_t serializedLength = serializeJson(*doc, body, serializedMaxSize);
 
-            SHOW_HEAP();
-            auto httpCode = SindarinAPI::getInstance()->checkSync(
-                body, serializedLength, &checkSyncResponse, ToString(modelType).c_str());
-            SHOW_HEAP();
-            log_d("Server has %d %ss, next page: %s", checkSyncResponse.totalCount,
-                  ToString(modelType).c_str(), checkSyncResponse.nextPageUrl.c_str());
+            auto nextPageLoops = 0;
+            auto nextPageUrl = std::string();
+            while (nextPageUrl.length() || nextPageLoops == 0) {
+                log_d("Getting next page: %s", nextPageUrl.c_str());
+                nextPageLoops += 1;
+                if (nextPageLoops > MAX_NUMBER_OF_PAGES_TO_BACKFILL) {
+                    log_w("Too many pages to backfill, aborting");
+                    break;
+                }
 
-            if (httpCode != 200) {
-                log_e("Failed to check sync (HTTP %d)", httpCode);
-                progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
-                                                  .message = "Failed to check sync"});
-                return;
+                int httpCode = 0;
+                if (nextPageLoops == 1) {
+                    SHOW_HEAP();
+                    httpCode = SindarinAPI::getInstance()->checkSync(
+                        body, serializedLength, &checkSyncResponse, ToString(modelType).c_str());
+                    SHOW_HEAP();
+                } else {
+                    httpCode = SindarinAPI::getInstance()->checkSync(nextPageUrl.c_str(), {}, 0,
+                                                                     &checkSyncResponse,
+                                                                     ToString(modelType).c_str());
+                }
+                log_d("Server has %d %ss, next page: %s", checkSyncResponse.totalCount,
+                      ToString(modelType).c_str(), nextPageUrl.c_str());
+                if (httpCode != 200) {
+                    log_e("Failed to check sync (HTTP %d)", httpCode);
+                    progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                                      .message = "Failed to check sync"});
+                    return;
+                }
+
+                // Look through all the books and articles and download any that we don't have
+                // already We also process readables before checking if we're synced before we need
+                // to reset the local changed flags
+                auto userReadables = modelType == ReadablesModelType::Readable
+                                         ? checkSyncResponse.userBooks
+                                         : checkSyncResponse.userArticles;
+                auto [readablesToDownload, readablesToDelete] =
+                    this->processReadables(checkSyncResponse, *readables, userReadables);
+
+                // TODO: Probably these should be set operations
+                SHOW_HEAP();
+                log_d("%ss to download: %zu", ToString(modelType).c_str(),
+                      readablesToDownload.size());
+                log_d("%ss to delete: %zu", ToString(modelType).c_str(), readablesToDelete.size());
+                nextPageUrl = checkSyncResponse.nextPageUrl;
+
+                if (checkSyncResponse.synced ||
+                    (readablesToDownload.size() == 0 && readablesToDelete.size() == 0)) {
+                    log_i("%ss are already in sync, no need to download anything",
+                          ToString(modelType).c_str());
+                    checkSyncSuccesses += 1;
+                    // if (checkSyncSuccesses >= 2 ||
+                    //     (checkSyncFailures >= 1 && checkSyncSuccesses == 1)) {
+                    //     progressCallback(
+                    //         ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
+                    // }
+                    break;
+                }
+
+                progressCallback(ContentSyncState{.state = ContentSyncState::State::LoadingTasks});
+
+                // Count books/articles to download and delete
+                ContentSyncState syncState = {.state = ContentSyncState::State::Syncing};
+                syncState.tasks.reserve(readablesToDownload.size() + readablesToDelete.size());
+                auto tasksIndex = 0;
+
+                if (modelType == ReadablesModelType::Readable) {
+                    for (const auto &readable : readablesToDelete) {
+                        syncState.tasks.push_back(ContentSyncState::Task{
+                            .message = StringFormat("Delete: %s", readable.title.c_str()),
+                            .percentage = 0,
+                        });
+                    }
+
+                    for (const auto &readable : readablesToDownload) {
+                        syncState.tasks.push_back(ContentSyncState::Task{
+                            .message = StringFormat("Get: %s", readable.title.c_str()),
+                            .percentage = 0,
+                        });
+                    }
+                } else {
+                    if (readablesToDelete.size() > 0) {
+                        syncState.tasks.push_back(ContentSyncState::Task{
+                            .message = "Delete: Archived articles",
+                            .percentage = 0,
+                        });
+                    }
+                    if (readablesToDownload.size() > 0) {
+                        syncState.tasks.push_back(ContentSyncState::Task{
+                            .message = "Get: Articles and newsletters",
+                            .percentage = 0,
+                        });
+                    }
+                }
+                progressCallback(syncState);
+
+                processReadableDeletion(readablesToDelete, *readables, tasksIndex, syncState,
+                                        progressCallback);
+                failedDownload = processReadableDownload(readablesToDownload, *readables,
+                                                         tasksIndex, syncState, progressCallback) ||
+                                 failedDownload;
+
+                progressCallback(syncState);
             }
 
-            // Look through all the books and articles and download any that we don't have already
-            // We also process readables before checking if we're synced before we need to reset the
-            // local changed flags
-            auto userReadables = modelType == ReadablesModelType::Readable
-                                     ? checkSyncResponse.userBooks
-                                     : checkSyncResponse.userArticles;
-            auto [readablesToDownload, readablesToDelete] =
-                this->processReadables(checkSyncResponse, *readables, userReadables);
-
-            // TODO: Probably these should be set operations
-            SHOW_HEAP();
-            log_d("%ss to download: %zu", ToString(modelType).c_str(), readablesToDownload.size());
-            log_d("%ss to delete: %zu", ToString(modelType).c_str(), readablesToDelete.size());
+            // Store since date values for next sync
+            log_i("%sSetting last%sSince to %s/%s", failedDownload ? "Not " : "",
+                  ToString(modelType).c_str(), checkSyncResponse.booksSince.c_str(),
+                  checkSyncResponse.articlesSince.c_str());
+            if (!failedDownload) {
+                if (checkSyncResponse.booksSince != "") {
+                    this->prefs_.lastReadablesSince.set(checkSyncResponse.booksSince.c_str());
+                }
+                if (checkSyncResponse.articlesSince != "") {
+                    this->prefs_.lastArticlesSince.set(checkSyncResponse.articlesSince.c_str());
+                }
+            }
 
             if (checkSyncResponse.synced) {
                 log_i("%ss are already in sync, no need to download anything",
                       ToString(modelType).c_str());
-                checkSyncSuccesses += 1;
-                if (checkSyncSuccesses >= 2 || (checkSyncFailures >= 1 && checkSyncFailures == 1)) {
+                if (checkSyncSuccesses >= 2 ||
+                    (checkSyncFailures >= 1 && checkSyncSuccesses == 1)) {
                     progressCallback(
                         ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
-                }
-                continue;
-            }
-
-            progressCallback(ContentSyncState{.state = ContentSyncState::State::LoadingTasks});
-
-            // Count books/articles to download and delete
-            ContentSyncState syncState = {.state = ContentSyncState::State::Syncing};
-            syncState.tasks.reserve(readablesToDownload.size() + readablesToDelete.size());
-            auto tasksIndex = 0;
-
-            if (readablesToDownload.size() == 0 && readablesToDelete.size() == 0) {
-                log_i("No new %ss to download", ToString(modelType).c_str());
-                checkSyncSuccesses += 1;
-                if (checkSyncSuccesses >= 2 || (checkSyncFailures >= 1 && checkSyncFailures == 1)) {
-                    progressCallback(
-                        ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
+                    break;
+                } else {
                     continue;
                 }
-                continue;
             }
-
-            if (modelType == ReadablesModelType::Readable) {
-                for (const auto &readable : readablesToDelete) {
-                    syncState.tasks.push_back(ContentSyncState::Task{
-                        .message = StringFormat("Delete: %s", readable.title.c_str()),
-                        .percentage = 0,
-                    });
-                }
-
-                for (const auto &readable : readablesToDownload) {
-                    syncState.tasks.push_back(ContentSyncState::Task{
-                        .message = StringFormat("Get: %s", readable.title.c_str()),
-                        .percentage = 0,
-                    });
-                }
-            } else {
-                if (readablesToDelete.size() > 0) {
-                    syncState.tasks.push_back(ContentSyncState::Task{
-                        .message = "Delete: Archived articles",
-                        .percentage = 0,
-                    });
-                }
-                if (readablesToDownload.size() > 0) {
-                    syncState.tasks.push_back(ContentSyncState::Task{
-                        .message = "Get: Articles and newsletters",
-                        .percentage = 0,
-                    });
-                }
-            }
-            progressCallback(syncState);
-
-            processReadableDeletion(readablesToDelete, *readables, tasksIndex, syncState,
-                                    progressCallback);
-            processReadableDownload(readablesToDownload, *readables, tasksIndex, syncState,
-                                    progressCallback);
-
-            progressCallback(syncState);
 
             // Update the since dates and try once more to sync to ensure we don't miss anything
             doc.reset(new SpiRamJsonDocument(2048 * std::max(1, (int)readables->size())));
             request = doc->to<JsonObject>();
-            storedUuidsJsonArray = request.createNestedArray("stored");
+            storedUuidsJsonArray = request.createNestedArray("stored_uuids");
             this->storedReadableUuids(*readables, storedUuidsJsonArray);
 
             since = this->readablesSince(*readables);
