@@ -110,7 +110,9 @@ void InitializePlatform() {
 
     adc_oneshot_unit_init_cfg_t adc_oneshot_cfg;
     adc_oneshot_cfg.unit_id = ADC_UNIT_1;
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
     adc_oneshot_cfg.clk_src = (adc_oneshot_clk_src_t)0;
+#endif
     adc_oneshot_cfg.ulp_mode = ADC_ULP_MODE_DISABLE;
 
     ESP_ERROR_CHECK(adc_oneshot_new_unit(&adc_oneshot_cfg, &adc_oneshot_handle));
@@ -242,20 +244,32 @@ void InitializePlatform() {
 // Forked from TinyPico's GetBatteryVoltage() method:
 // https://github.com/tinypico/tinypico-arduino/blob/master/TinyPICO-Helper/src/TinyPICO.cpp#L207
 auto GetBatteryVoltageLeft() -> float {
+    int raw;
+    if (adc_oneshot_read(adc_oneshot_handle, BATT_CHANNEL_LEFT, &raw) != ESP_OK) {
+        log_e("error reading raw adc value for left battery");
+        return 0.0;
+    }
+
     int millivolts;
-    if (adc_oneshot_get_calibrated_result(adc_oneshot_handle, adc_cal_handle, BATT_CHANNEL_LEFT,
-                                          &millivolts) != ESP_OK) {
+    if (adc_cali_raw_to_voltage(adc_cal_handle, raw, &millivolts) != ESP_OK) {
         log_e("error reading left battery voltage");
+        return 0.0;
     }
     auto mv = (float)(UPPER_DIVIDER + LOWER_DIVIDER) / LOWER_DIVIDER * millivolts;
     return (float)mv / 1000.0;
 }
 
 auto GetBatteryVoltageRight() -> float {
+    int raw;
+    if (adc_oneshot_read(adc_oneshot_handle, BATT_CHANNEL_RIGHT, &raw) != ESP_OK) {
+        log_e("error reading raw adc value for right battery");
+        return 0.0;
+    }
+
     int millivolts;
-    if (adc_oneshot_get_calibrated_result(adc_oneshot_handle, adc_cal_handle, BATT_CHANNEL_RIGHT,
-                                          &millivolts) != ESP_OK) {
+    if (adc_cali_raw_to_voltage(adc_cal_handle, raw, &millivolts) != ESP_OK) {
         log_e("error reading left battery voltage");
+        return 0.0;
     }
     auto mv = (float)(UPPER_DIVIDER + LOWER_DIVIDER) / LOWER_DIVIDER * millivolts;
     return (float)mv / 1000.0;
