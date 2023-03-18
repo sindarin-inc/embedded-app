@@ -498,6 +498,11 @@ void LocalStore::syncFromRemote(
                 progressCallback(syncState);
             }
 
+            if (!this->saveReadables(*readables)) {
+                log_e("Failed to save %s", ToString(modelType).c_str());
+                failedDownload = true;
+            }
+
             // Store since date values for next sync
             log_i("%sSetting last%sSince to %s/%s", failedDownload ? "Not " : "",
                   ToString(modelType).c_str(), checkSyncResponse.booksSince.c_str(),
@@ -588,7 +593,7 @@ auto LocalStore::processReadables(const CheckSyncResponse &checkSyncResponse,
 
     for (auto &userReadable : serverReadables) {
         log_d("User readable %s (%s)", userReadable.readable.title.c_str(),
-              userReadable.readable.file().shaHash.c_str());
+              userReadable.readable.uuid.c_str());
         SHOW_HEAP();
 
         if (processReadablePlacemarksFromServer(userReadable.readable, userReadable.placemark)) {
@@ -731,10 +736,12 @@ void LocalStore::deleteReadableFiles(const ReadablesVector &readables, bool rest
     }
 }
 
-auto LocalStore::saveReadables(const ReadablesVector &readables, const std::string &path) -> bool {
+auto LocalStore::saveReadables(const ReadablesVector &readables) -> bool {
     // 2048 is probably a safe-ish upper bound per readable. I'm seeing about half that in my
     // testing so far
     auto doc = std::make_unique<SpiRamJsonDocument>(2048 * std::max(1, (int)readables.size()));
+    auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
+    std::string path = modelType == ReadablesModelType::Readable ? READABLES_PATH : ARTICLES_PATH;
 
     // Create a key named readables of type array
     JsonArray readablesJson = doc->createNestedArray("readables");

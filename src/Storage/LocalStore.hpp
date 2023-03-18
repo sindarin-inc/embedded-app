@@ -84,7 +84,7 @@ public:
     void deleteReadables(bool restart = true);
     void deleteArticles(bool restart = true);
     void deleteReadableFiles(const ReadablesVector &readables, bool restart);
-    auto saveReadables(const ReadablesVector &readables, const std::string &path) -> bool;
+    auto saveReadables(const ReadablesVector &readables) -> bool;
 
     // Methods for interacting with readable files on disk
     [[nodiscard]] auto readableFilePathForWriting(const Readable &readable) const -> std::string;
