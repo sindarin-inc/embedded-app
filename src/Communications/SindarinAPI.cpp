@@ -186,7 +186,7 @@ auto SindarinAPI::downloadReadable(const Readable &readable, FileSystem &fileSys
     bool success = false;
     // auto remoteUrl = readable.remoteUrl();
     auto file = readable.file();
-    auto remoteUrl = file.file;
+    auto remoteUrl = file.fileProxied;
     auto fileSize = file.size;
 
     // Create the directory if necessary
