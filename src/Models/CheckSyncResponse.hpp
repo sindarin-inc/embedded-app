@@ -21,7 +21,6 @@ public:
     int totalCount;
 
     auto fromJson(const JsonObject &j) -> bool override {
-        synced = j["synced"].as<bool>();
         message = j["message"].as<std::string>();
         userBooks.clear();
         userArticles.clear();
@@ -30,6 +29,7 @@ public:
             return false;
         }
         auto results = j["results"].as<JsonObject>();
+        synced = results["synced"].as<bool>();
 
         if (results.containsKey("books_since")) {
             booksSince = results["books_since"].as<std::string>();
