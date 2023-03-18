@@ -11,7 +11,7 @@
 #include "Communications/HttpOstream.hpp"
 
 struct CaseInsensitive {
-    bool operator()(const std::string &s1, const std::string &s2) const {
+    auto operator()(const std::string &s1, const std::string &s2) const -> bool {
         return std::lexicographical_compare(
             s1.begin(), s1.end(), s2.begin(), s2.end(),
             [](unsigned char c1, unsigned char c2) { return ::tolower(c1) < ::tolower(c2); });
