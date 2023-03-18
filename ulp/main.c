@@ -1,3 +1,5 @@
+#include "esp_idf_version.h"
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
 #include <stdint.h>
 #include <stdbool.h>
 #include "ulp_riscv.h"
@@ -116,3 +118,8 @@ int main(void) {
     mag_reading();
     return 0;
 }
+#else
+int main(void) {
+    return 0;
+}
+#endif

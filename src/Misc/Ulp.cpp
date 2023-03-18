@@ -1,5 +1,7 @@
-#include "Ulp.hpp"
+#include "esp_idf_version.h"
 #include "sindarin-debug.h"
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
+#include "Ulp.hpp"
 #include "esp_sleep.h"
 #include "ulp_riscv.h"
 #include "ulp_riscv_i2c.h"
@@ -54,3 +56,8 @@ void ulp_deep_sleep_magnetometer_wakeup() {
     ESP_ERROR_CHECK(esp_sleep_enable_ulp_wakeup());
     esp_deep_sleep_start();
 }
+#else
+void ulp_deep_sleep_magnetometer_wakeup() {
+    log_i("only supported on IDF 5.1+");
+}
+#endif
