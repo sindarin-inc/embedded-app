@@ -111,7 +111,7 @@ void InitializePlatform() {
     adc_oneshot_unit_init_cfg_t adcOneshotCfg;
     adcOneshotCfg.unit_id = ADC_UNIT_1;
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
-    adc_oneshot_cfg.clk_src = (adc_oneshot_clk_src_t)0;
+    adcOneshotCfg.clk_src = (adc_oneshot_clk_src_t)0;
 #endif
     adcOneshotCfg.ulp_mode = ADC_ULP_MODE_DISABLE;
 
