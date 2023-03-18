@@ -13,7 +13,8 @@ jobs:
     strategy:
       matrix:
         pioenv:
-          - sol3dev
+          # Seems like RISCV ULP compilation is busted in PlatformIO at least for IDF 5.0.1
+          # - sol3dev
           - simulator
           # - simulator-wasm
 
