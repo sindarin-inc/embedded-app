@@ -52,10 +52,7 @@ public:
 
     auto load(const MemoryPtr fontData, uint32_t length) -> bool {
 
-        MemoryPtr data = fontData;
-
-        preamble_ = reinterpret_cast<PreamblePtr>(data);
-        data += sizeof(Preamble);
+        preamble_ = reinterpret_cast<PreamblePtr>(fontData);
 
         if constexpr (IBMF_TRACING) {
             LOGD("Loading font at location 0x%p of length %d", fontData, length);
@@ -80,21 +77,29 @@ public:
             return false;
         }
 
-        uint32_t(*binFaceOffsets)[] = reinterpret_cast<uint32_t(*)[]>(data);
+        // Bypass the header and the faces point size list padded to 32 bits
 
-        data += (sizeof(uint32_t) * preamble_->faceCount) + ((preamble_->faceCount + 1) & 0xFE);
+        MemoryPtr data = fontData + ((sizeof(Preamble) + preamble_->faceCount + 3) & 0xFFFFFFFC);
+
+        // retrieve offsets from the beginning of the file to the face starts
+
+        uint32_t(*binFaceOffsets)[] = reinterpret_cast<uint32_t(*)[]>(data);
+        data += (sizeof(uint32_t) * preamble_->faceCount);
+
+        // If fontFormat is UTF32, retrieve the CodePoint directory
 
         if (preamble_->bits.fontFormat == FontFormat::UTF32) {
             planes_ = reinterpret_cast<PlanesPtr>(data);
             data += sizeof(Planes);
             codePointBundles_ = reinterpret_cast<CodePointBundlesPtr>(data);
-            data += ((planes_[3]->codePointBundlesIdx + planes_[3]->entriesCount) *
+            data += (((*planes_)[3].codePointBundlesIdx + (*planes_)[3].entriesCount) *
                      sizeof(CodePointBundle));
         } else {
             planes_ = nullptr;
             codePointBundles_ = nullptr;
         }
 
+        // Check for discrepancies 
         if ((*binFaceOffsets)[0] != static_cast<uint32_t>(data - fontData)) {
             LOGE("Wrong faces offset in font file, got %08x, expected %08x.", (*binFaceOffsets)[0],
                  static_cast<uint32_t>(data - fontData));
@@ -274,11 +279,11 @@ public:
             std::cout << "----------- Planes -----------" << std::endl;
             for (int i = 0; i < 4; i++) {
                 std::cout << "[" << i
-                          << "] CodePoint Bundle Index: " << planes_[i]->codePointBundlesIdx
-                          << ", Entries Count: " << planes_[i]->entriesCount
-                          << ", First glyph code: " << planes_[i]->firstGlyphCode << std::endl;
+                          << "] CodePoint Bundle Index: " << (*planes_)[i].codePointBundlesIdx
+                          << ", Entries Count: " << (*planes_)[i].entriesCount
+                          << ", First glyph code: " << (*planes_)[i].firstGlyphCode << std::endl;
                 std::cout << "    CodePoint Bundles:" << std::endl;
-                showCodePointBundles(planes_[i]->codePointBundlesIdx, planes_[i]->entriesCount);
+                showCodePointBundles((*planes_)[i].codePointBundlesIdx, (*planes_)[i].entriesCount);
             }
         }
     }

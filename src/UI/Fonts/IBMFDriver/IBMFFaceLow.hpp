@@ -23,9 +23,10 @@ private:
     PixelResolution resolution_;
 
     FaceHeaderPtr faceHeader_;
-    RLEBitmap bitmaps_[MAX_GLYPH_COUNT];
-    GlyphInfoPtr glyphs_[MAX_GLYPH_COUNT];
-    LigKernStep (*ligKernSteps_)[];
+    GlyphsPixelPoolIndexes glyphsPixelPoolIndexes_;
+    GlyphsInfoPtr glyphsInfo_;
+    PixelsPoolPtr pixelsPool_;
+    LigKernStepsPtr ligKernSteps_;
 
 public:
     IBMFFaceLow()
@@ -36,53 +37,41 @@ public:
 
     inline static auto fromFIX16(FIX16 val) -> float { return (float)val / 64.0; }
     inline static auto toFIX16(float val) -> FIX16 { return (FIX16)(val * 64.0); }
-    inline static auto toFIX16(FIX14 val) -> FIX16 {
-        return (FIX16)(((val & 0x4000) == 0) ? val : (val | 0xC000));
-    }
     inline static auto fromFIX14(FIX14 val) -> float { return (float)toFIX16(val) / 64.0; }
 
     // ---
 
     auto load(const MemoryPtr dataStart, const int dataLength, FontFormat fontFmt) -> bool {
-        memset(glyphs_, 0, sizeof(glyphs_));
 
         MemoryPtr memoryPtr = dataStart;
         MemoryPtr memoryEnd = dataStart + dataLength;
 
-        faceHeader_ = (FaceHeaderPtr)memoryPtr;
+        faceHeader_ = reinterpret_cast<FaceHeaderPtr>(memoryPtr);
         fontFormat_ = fontFmt;
 
-        if (faceHeader_->glyphCount >= MAX_GLYPH_COUNT) {
-            LOGE("Too many glyphs in face. Maximum is %d in IBMFDefs.h", MAX_GLYPH_COUNT);
+        uint16_t max_count =
+            (fontFormat_ == FontFormat::LATIN) ? LATIN_MAX_GLYPH_COUNT : UTF32_MAX_GLYPH_COUNT;
+        if (faceHeader_->glyphCount >= max_count) {
+            LOGE("Too many glyphs in face. Maximum is %d in IBMFDefs.h", max_count);
             return false;
         }
+
         memoryPtr += sizeof(FaceHeader);
-        for (int i = 0; i < faceHeader_->glyphCount; i++) {
-            glyphs_[i] = (GlyphInfoPtr)memoryPtr;
-            memoryPtr += sizeof(GlyphInfo);
-            if (memoryPtr > memoryEnd) {
-                LOGE("IBMFFace: End of memory (0x%p, 0x%p, %d) reached reading glyph #%d!!",
-                     dataStart, memoryEnd, dataLength, i);
-                return false;
-            }
+        glyphsPixelPoolIndexes_ = reinterpret_cast<GlyphsPixelPoolIndexes>(memoryPtr);
 
-            bitmaps_[i] = RLEBitmap{.pixels = memoryPtr,
-                                    .dim = Dim(glyphs_[i]->bitmapWidth, glyphs_[i]->bitmapHeight),
-                                    .length = glyphs_[i]->packetLength};
-            memoryPtr += glyphs_[i]->packetLength;
+        memoryPtr += (sizeof(PixelPoolIndex) * faceHeader_->glyphCount);
+        glyphsInfo_ = reinterpret_cast<GlyphsInfoPtr>(memoryPtr);
 
-            if (memoryPtr > memoryEnd) {
-                LOGE("IBMFFace: End of memory (0x%p, 0x%p, %d) reached reading bitmap #%d of "
-                     "length %d!!",
-                     dataStart, memoryEnd, dataLength, i, glyphs_[i]->packetLength);
-                return false;
-            }
-        }
+        memoryPtr += (sizeof(GlyphInfo) * faceHeader_->glyphCount);
+        pixelsPool_ = reinterpret_cast<PixelsPoolPtr>(memoryPtr);
 
-        ligKernSteps_ = (LigKernStep(*)[])memoryPtr;
-        memoryPtr += sizeof(LigKernStep) * faceHeader_->ligKernStepCount;
-        if (memoryPtr > memoryEnd) {
-            LOGE("IBMFFace: End of memory reached reading lig/kern struct!!");
+        memoryPtr += faceHeader_->pixelsPoolSize;
+        ligKernSteps_ = reinterpret_cast<LigKernStepsPtr>(memoryPtr);
+
+        memoryPtr += (sizeof(LigKernStep) * faceHeader_->ligKernStepCount);
+
+        if (memoryPtr != memoryEnd) {
+            LOGE("IBMFFace: Memory synch issue reading lig/kern struct!!");
             return false;
         }
 
@@ -101,14 +90,14 @@ public:
     inline auto getDescenderHeight() const -> int16_t {
         return -(int16_t)faceHeader_->descenderHeight;
     }
-    inline auto getLigKernStep(uint16_t idx) const -> LigKernStepPtr {
+    inline auto getLigKernStep(uint16_t idx) const -> LigKernStep * {
         return &(*ligKernSteps_)[idx];
     }
     inline auto setResolution(PixelResolution res) -> void { resolution_ = res; }
     inline auto getResolution() const -> PixelResolution { return resolution_; }
 
     inline auto getGlyphInfo(GlyphCode glyphCode) const -> const GlyphInfo & {
-        return *glyphs_[glyphCode];
+        return (*glyphsInfo_)[glyphCode];
     }
 
     inline auto getLigKernPgmIndex(GlyphCode glyphCode) const -> uint16_t {
@@ -116,7 +105,7 @@ public:
         if ((fontFormat_ == FontFormat::LATIN) && (glyphCode != SPACE_CODE)) {
             glyphCode &= LATIN_GLYPH_CODE_MASK;
         }
-        return (glyphCode < SPACE_CODE) ? glyphs_[glyphCode]->ligKernPgmIndex : NO_LIG_KERN_PGM;
+        return (glyphCode < SPACE_CODE) ? (*glyphsInfo_)[glyphCode].ligKernPgmIndex : NO_LIG_KERN_PGM;
     }
 
     /// @brief Search Ligature and Kerning table
@@ -143,7 +132,7 @@ public:
         if (lkIdx == NO_LIG_KERN_PGM) {
             return false;
         }
-        LigKernStepPtr lk = getLigKernStep(lkIdx);
+        LigKernStep * lk = getLigKernStep(lkIdx);
         if (lk->b.goTo.isAKern && lk->b.goTo.isAGoTo) {
             lkIdx = lk->b.goTo.displacement;
             lk = getLigKernStep(lkIdx);
@@ -184,7 +173,7 @@ public:
         bool accentIsPresent = false;
         uint16_t accentIdx = 0;
         GlyphCode latinCode;
-        GlyphInfoPtr accentInfo = nullptr;
+        GlyphInfo * accentInfo = nullptr;
 
         if (caching) {
             appGlyph.clear();
@@ -201,12 +190,9 @@ public:
                     } else if (accentIdx == CODED_APOSTROPHE) {
                         accentIdx = APOSTROPHE;
                     }
-                    accentInfo = glyphs_[accentIdx];
+                    accentInfo = &(*glyphsInfo_)[accentIdx];
                 }
                 glyphCode &= LATIN_GLYPH_CODE_MASK;
-                if ((glyphCode < faceHeader_->glyphCount) && (glyphs_[glyphCode] == nullptr)) {
-                    glyphCode = SPACE_CODE;
-                }
             }
         } else if (fontFormat_ == FontFormat::UTF32) {
             //
@@ -226,7 +212,7 @@ public:
             return false;
         }
 
-        GlyphInfoPtr glyphInfo = glyphs_[glyphCode];
+        GlyphInfo * glyphInfo = &(*glyphsInfo_)[glyphCode];
 
         if (glyphInfo == nullptr) {
             return false;
@@ -334,22 +320,28 @@ public:
                 appGlyph.bitmap.dim = dim;
             }
 
-            RLEBitmapPtr glyphBitmap = &bitmaps_[glyphCode];
-            if (glyphBitmap != nullptr) {
-                RLEExtractor rle(resolution_);
+            RLEBitmap glyphBitmap = {
+                .pixels = &(*pixelsPool_)[(*glyphsPixelPoolIndexes_)[glyphCode]],
+                .dim = Dim(glyphInfo->bitmapWidth, glyphInfo->bitmapHeight),
+                .length = glyphInfo->packetLength
+            };
+            RLEExtractor rle(resolution_);
 
-                Pos outPos = Pos(atPos.x + accentOffsets.x, atPos.y + accentOffsets.y);
-                if (accentIsPresent) {
-                    RLEBitmapPtr accentBitmap = &bitmaps_[accentIdx];
-                    rle.retrieveBitmap(*accentBitmap, appGlyph.bitmap, outPos,
-                                       accentInfo->rleMetrics);
+            Pos outPos = Pos(atPos.x + accentOffsets.x, atPos.y + accentOffsets.y);
+            if (accentIsPresent) {
+                RLEBitmap accentBitmap = {
+                    .pixels = &(*pixelsPool_)[(*glyphsPixelPoolIndexes_)[accentIdx]],
+                    .dim = Dim(accentInfo->bitmapWidth, accentInfo->bitmapHeight),
+                    .length = accentInfo->packetLength
+                };
+                rle.retrieveBitmap(accentBitmap, appGlyph.bitmap, outPos,
+                                    accentInfo->rleMetrics);
 
-                    showBitmap(appGlyph.bitmap);
-                }
-
-                outPos = Pos(atPos.x + glyphOffsets.x, atPos.y + glyphOffsets.y);
-                rle.retrieveBitmap(*glyphBitmap, appGlyph.bitmap, outPos, glyphInfo->rleMetrics);
+                showBitmap(appGlyph.bitmap);
             }
+
+            outPos = Pos(atPos.x + glyphOffsets.x, atPos.y + glyphOffsets.y);
+            rle.retrieveBitmap(glyphBitmap, appGlyph.bitmap, outPos, glyphInfo->rleMetrics);
         }
 
         appGlyph.metrics = {
@@ -435,16 +427,16 @@ public:
         showGlyph(glyph, 0, codePoint);
     }
 
-    auto showGlyphInfo(GlyphCode i, GlyphInfo &g) const -> void {
+    auto showGlyphInfo(GlyphCode i, const GlyphInfo &g) const -> void {
         if constexpr (DEBUG) {
             std::cout << "  [" << i << "]: "
-                      << "glyphCode : " << +g.glyphCode << ", width: " << +g.bitmapWidth
                       << ", height: " << +g.bitmapHeight << ", hoffset: " << +g.horizontalOffset
                       << ", voffset: " << +g.verticalOffset << ", pktLen: " << +g.packetLength
                       << ", advance: " << +((float)g.advance / 64.0)
                       << ", dynF: " << +g.rleMetrics.dynF
                       << ", firstIsBlack: " << +g.rleMetrics.firstIsBlack
-                      << ", ligKernPgmIndex: " << +g.ligKernPgmIndex << std::endl;
+                      << ", ligKernPgmIndex: " << +g.ligKernPgmIndex
+                      << ", pixelsPoolIndex: " << +(*glyphsPixelPoolIndexes_)[i] << std::endl;
         }
     }
 
@@ -454,7 +446,7 @@ public:
                       << "----------- Ligature / Kern programs: ----------" << std::endl;
             uint16_t i;
             for (i = 0; i < faceHeader_->ligKernStepCount; i++) {
-                LigKernStepPtr entry = &(*ligKernSteps_)[i];
+                LigKernStep * entry = &(*ligKernSteps_)[i];
                 if (entry->b.goTo.isAKern && entry->b.goTo.isAGoTo) {
                     std::cout << "  [" << i << "]:  "
                               << "Goto: " << entry->b.goTo.displacement;
@@ -489,13 +481,14 @@ public:
                       << ", space size: " << +((float)faceHeader_->spaceSize / 64.0)
                       << ", glyph count: " << +faceHeader_->glyphCount
                       << ", lig kern count: " << +faceHeader_->ligKernStepCount
+                      << ", Pixels Pool Size: " << +faceHeader_->pixelsPoolSize
                       << ", slant corr: " << +faceHeader_->slantCorrection
                       << ", descender height: " << +faceHeader_->descenderHeight << std::endl;
 
             std::cout << std::endl << "----------- Glyphs: ----------" << std::endl;
 
             for (int i = 0; i < faceHeader_->glyphCount; i++) {
-                showGlyphInfo(i, *glyphs_[i]);
+                showGlyphInfo(i, (*glyphsInfo_)[i]);
             }
 
             showLigKerns();

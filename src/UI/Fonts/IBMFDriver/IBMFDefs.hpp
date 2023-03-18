@@ -34,41 +34,45 @@ extern char *formatStr(const std::string &format, ...);
 //
 //  At Offset 0:
 //  +--------------------+
-//  |                    |  Preamble
+//  |                    |  Preamble (6 bytes)
 //  |                    |
 //  +--------------------+
-//  |                    |  FaceHeader offset vector One 32 bit offset for each face
-//  |                    |
+//  |                    |  Pixel sizes (one byte per face pt size present padded to 32 bits
+//  |                    |  from the start) (not used by this driver)
 //  +--------------------+
-//  |                    |  Pixel sizes (one byte per face pt size present padded to be even)
-//  |                    |  (not used by this driver)
+//  |                    |  FaceHeader offset vector 
+//  |                    |  (32 bit offset for each face)
 //  +--------------------+
 //  |                    |  For FontFormat 1 (FontFormat::UTF32) only: the table that contains corresponding 
 //  |                    |  values between Unicode CodePoints and their internal GlyphCode.
-//  |                    |
+//  |                    |  (content already well aligned to 32 bits frontiers)
 //  +--------------------+
 //
-//  +--------------------+                       <------------+
-//  |                    |  FaceHeader                        |
-//  |                    |                                    |
-//  |                    |                                    |
-//  +--------------------+                <--+                |
-//  |                    |  GlyphInfo        |                |
-//  |                    |                   |                |
-//  |                    |                   |   Repeat for   |
-//  +--------------------+                   |>  each glyph   |
-//  |                    |  Glyph Pixels     |   part of the  |
-//  |                    |                   |   face         |  Repeat for
-//  |                    |                   |                |> each face
-//  +--------------------+                <--+                |  part of the
-//             .                                              |  font
-//             .                                              |
-//             .                                              |
-//  +--------------------+                                    |
-//  |                    | LigKerSteps                        |
-//  |                    |                                    |
-//  |                    |                                    |
-//  +--------------------+                       <------------+
+//  +--------------------+               <------------+
+//  |                    |  FaceHeader                |
+//  |                    |  (32 bits aligned)         |
+//  |                    |                            |
+//  +--------------------+                            |
+//  |                    |  Glyphs' pixels indexes    |
+//  |                    |  in the Pixels Pool        |
+//  |                    |  (32bits each)             |
+//  +--------------------+                            |
+//  |                    |  GlyphsInfo                |
+//  |                    |  Array (16 bits aligned)   |
+//  |                    |                            |  Repeat for
+//  +--------------------+                            |> each face
+//  |                    |                            |  part of the
+//  |                    |  Pixels Pool               |  font
+//  |                    |  (No alignement, all bytes)|
+//  |                    |                            |
+//  +--------------------+                            |
+//  |                    |  Filler (32bits padding)   |
+//  +--------------------+                            |
+//  |                    |                            |
+//  |                    |  LigKerSteps               |
+//  |                    |  (2 x 16 bits each step)   |
+//  |                    |                            |
+//  +--------------------+               <------------+
 //             .
 //             .
 //             .
@@ -99,8 +103,7 @@ const constexpr int DEBUG = 0;
 
 //----
 
-const constexpr uint8_t IBMF_VERSION = 4;      // Font format version
-const constexpr uint8_t MAX_GLYPH_COUNT = 175; // Index Value 0xFE and 0xFF are reserved
+const constexpr uint8_t IBMF_VERSION = 4; // Font format version
 const constexpr uint8_t MAX_FACE_COUNT = 10;
 
 const constexpr uint8_t NO_LIG_KERN_PGM = 0xFF;
@@ -108,6 +111,9 @@ const constexpr uint8_t NO_LIG_KERN_PGM = 0xFF;
 // Character Sets being supported (the UTF32 is forecoming)
 
 enum FontFormat : uint8_t { LATIN = 0, UTF32 = 1, UNKNOWN = 7 };
+
+const constexpr uint16_t LATIN_MAX_GLYPH_COUNT = 2046;  // Index Value 0xFE and 0xFF are reserved
+const constexpr uint16_t UTF32_MAX_GLYPH_COUNT = 32765; // Index Value 0xFE and 0xFF are reserved
 
 enum class PixelResolution : uint8_t { ONE_BIT, EIGHT_BITS };
 
@@ -200,7 +206,7 @@ typedef Preamble *PreamblePtr;
 struct FaceHeader {
     uint8_t pointSize;         // In points (pt) a point is 1 / 72.27 of an inch
     uint8_t lineHeight;        // In pixels
-    uint16_t dpi;              // Pixels per inches
+    uint16_t dpi;              // Pixels per inch
     FIX16 xHeight;             // Hight of character 'x' in pixels
     FIX16 emHeight;            // Hight of character 'M' in pixels
     FIX16 slantCorrection;     // When an italic face
@@ -208,10 +214,14 @@ struct FaceHeader {
     uint8_t spaceSize;         // Size of a space character in pixels
     uint16_t glyphCount;       // Must be the same for all face
     uint16_t ligKernStepCount; // Length of the Ligature/Kerning table
+    uint32_t pixelsPoolSize;   // Size of the Pixels Pool
     uint8_t maxHight;          // The maximum hight in pixels of every glyph in the face
-    uint8_t filler;            // To keep the struct to be even
+    uint8_t filler[3];         // To keep the struct to be at a frontier of 32 bits
 };
 typedef FaceHeader *FaceHeaderPtr;
+typedef uint8_t (*PixelsPoolPtr)[];
+typedef uint32_t PixelPoolIndex;
+typedef PixelPoolIndex (*GlyphsPixelPoolIndexes)[];
 
 // clang-format off
 //
@@ -381,7 +391,7 @@ struct LigKernStep {
 };
 #endif
 
-typedef LigKernStep *LigKernStepPtr;
+typedef LigKernStep (*LigKernStepsPtr)[];
 
 struct RLEMetrics {
     uint8_t dynF : 4;      // Compression factor
@@ -390,7 +400,6 @@ struct RLEMetrics {
 };
 
 struct GlyphInfo {
-    GlyphCode glyphCode;     // glyphCode is an index in the list of glyphs
     uint8_t bitmapWidth;     // Width of bitmap once decompressed
     uint8_t bitmapHeight;    // Height of bitmap once decompressed
     int8_t horizontalOffset; // Horizontal offset from the orign
@@ -400,7 +409,7 @@ struct GlyphInfo {
     RLEMetrics rleMetrics;   // RLE Compression information
     uint8_t ligKernPgmIndex; // = 255 if none, Index in the ligature/kern array
 };
-typedef GlyphInfo *GlyphInfoPtr;
+typedef GlyphInfo (*GlyphsInfoPtr)[];
 
 // clang-format off
 // 
@@ -436,7 +445,7 @@ struct CodePointBundle {
 
 typedef Plane Planes[4];
 typedef CodePointBundle (*CodePointBundlesPtr)[];
-typedef Planes *PlanesPtr;
+typedef Plane (*PlanesPtr)[];
 
 #pragma pack(pop)
 
@@ -481,7 +490,7 @@ const constexpr GlyphCode APOSTROPHE = 0x27;
 
 // This table is used in support of the latin character set to identify which CodePoint
 // correspond to which glyph code. A glyph code is an index into the IBMF list of glyphs,
-// with diacritical information when required. The table allows glyphCodes between 0 and 1021
+// with diacritical information when required. The table allows glyphCodes between 0 and 2045
 // (0x7FD).
 //
 // At bit positions 12..15, the table contains the diacritical symbol to be added to the glyph if
