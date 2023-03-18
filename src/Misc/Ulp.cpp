@@ -5,13 +5,15 @@
 #include <esp_idf_version.h>
 #include <esp_sleep.h>
 #include <ulp_riscv.h>
+#if !SIMULATOR && (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0))
 #include <ulp_riscv_i2c.h>
+#endif
 
 #include "../../ulp/MagDefs.h"
 #include "sindarin-debug.h"
 
-extern const uint8_t ulp_main_bin_start[] asm("_binary_ulp_src_bin_start");
-extern const uint8_t ulp_main_bin_end[] asm("_binary_ulp_src_bin_end");
+extern const uint8_t ULP_MAIN_BIN_START[] asm("_binary_ulp_src_bin_start");
+extern const uint8_t ULP_MAIN_BIN_END[] asm("_binary_ulp_src_bin_end");
 
 void UlpDeepSleepMagnetometerWakeup() {
 #if SIMULATOR || (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 1, 0))
@@ -37,7 +39,7 @@ void UlpDeepSleepMagnetometerWakeup() {
     log_i("entering deep sleep, wake up with magnetometer");
 
     esp_err_t err =
-        ulp_riscv_load_binary(ulp_main_bin_start, (ulp_main_bin_end - ulp_main_bin_start));
+        ulp_riscv_load_binary(ULP_MAIN_BIN_START, (ULP_MAIN_BIN_END - ULP_MAIN_BIN_START));
 
     log_e("load binary err %d\n", err);
     ESP_ERROR_CHECK(err);
