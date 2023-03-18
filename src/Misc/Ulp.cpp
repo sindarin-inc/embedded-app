@@ -6,8 +6,8 @@
 #include "../../ulp/mag_defs.h"
 #include <driver/rtc_io.h>
 
-extern const uint8_t ulp_main_bin_start[] asm("_binary_ulp_main_bin_start");
-extern const uint8_t ulp_main_bin_end[]   asm("_binary_ulp_main_bin_end");
+extern const uint8_t ulp_main_bin_start[] asm("_binary_ulp_src_bin_start");
+extern const uint8_t ulp_main_bin_end[]   asm("_binary_ulp_src_bin_end");
 
 static void init_ulp_program(void)
 {
