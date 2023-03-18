@@ -5,7 +5,6 @@
 #include <esp_adc/adc_cali.h>
 #include <esp_adc/adc_cali_scheme.h>
 #include <esp_adc/adc_oneshot.h>
-#include <ulp_riscv.h>
 #include <esp_bt.h>
 #include <esp_err.h>
 #include <esp_sleep.h>
@@ -14,6 +13,7 @@
 #include <nvs_flash.h>
 #include <optional>
 #include <soc/rtc.h>
+#include <ulp_riscv.h>
 
 #include "Misc/StringUtil.hpp"
 #include "Platform.hpp"

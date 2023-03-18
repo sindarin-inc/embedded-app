@@ -1242,10 +1242,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         (*voltageLogScreen).begin();
     }));
 
-    debugSettingsMenu->addMenuItem(MenuItem("Deep Sleep w/Mag Wakeup", [display, debugSettingsMenu]() {
+    debugSettingsMenu->addMenuItem(MenuItem("Deep Sleep w/Mag Wakeup", [display,
+                                                                        debugSettingsMenu]() {
         log_w("Deep sleeping. Goodnight.");
         debugSettingsMenu->showTemporaryMessage(*display, "Deep sleeping. Goodnight.", 2000, false);
-        ulp_deep_sleep_magnetometer_wakeup();
+        UlpDeepSleepMagnetometerWakeup();
     }));
 
     oldMenu->addMenuItem(MenuItem("Calibration Screen Run Through", [this, oldMenu]() {

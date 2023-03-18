@@ -1,25 +1,24 @@
 #include "sindarin-debug.h"
 #if SIMULATOR
-void ulp_deep_sleep_magnetometer_wakeup() {
-    log_i("only supported on IDF 5.1+");
-}
+void ulp_deep_sleep_magnetometer_wakeup() { log_i("only supported on IDF 5.1+"); }
 #else
 #include "esp_idf_version.h"
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
+#include <driver/rtc_io.h>
+
+#include "../../ulp/mag_defs.h"
 #include "Ulp.hpp"
 #include "esp_sleep.h"
 #include "ulp_riscv.h"
 #include "ulp_riscv_i2c.h"
-#include "../../ulp/mag_defs.h"
-#include <driver/rtc_io.h>
 
 extern const uint8_t ulp_main_bin_start[] asm("_binary_ulp_src_bin_start");
-extern const uint8_t ulp_main_bin_end[]   asm("_binary_ulp_src_bin_end");
+extern const uint8_t ulp_main_bin_end[] asm("_binary_ulp_src_bin_end");
 
-static void init_ulp_program(void)
-{
-    esp_err_t err = ulp_riscv_load_binary(ulp_main_bin_start, (ulp_main_bin_end - ulp_main_bin_start));
-    
+static void init_ulp_program(void) {
+    esp_err_t err =
+        ulp_riscv_load_binary(ulp_main_bin_start, (ulp_main_bin_end - ulp_main_bin_start));
+
     log_e("load binary err %d\n", err);
     ESP_ERROR_CHECK(err);
 
@@ -34,8 +33,7 @@ static void init_ulp_program(void)
     ESP_ERROR_CHECK(err);
 }
 
-static void init_i2c(void)
-{
+static void init_i2c(void) {
     ulp_riscv_i2c_cfg_t i2c_cfg;
     i2c_cfg.i2c_pin_cfg.sda_io_num = I2C_MASTER_SDA_IO;
     i2c_cfg.i2c_pin_cfg.scl_io_num = I2C_MASTER_SCL_IO;
@@ -62,8 +60,6 @@ void ulp_deep_sleep_magnetometer_wakeup() {
     esp_deep_sleep_start();
 }
 #else
-void ulp_deep_sleep_magnetometer_wakeup() {
-    log_i("only supported on IDF 5.1+");
-}
+void UlpDeepSleepMagnetometerWakeup() { log_i("only supported on IDF 5.1+"); }
 #endif // IDF5.1
 #endif // sim
