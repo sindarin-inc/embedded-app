@@ -22,6 +22,8 @@
 #endif
 #include "Inputs/RemoteInput.hpp"
 
+#define SIM_LED_DIM 10
+
 extern void UIInnerLoop(RemoteCommand command);
 extern "C" void app_main(void); // NOLINT(readability-identifier-naming)
 
@@ -31,6 +33,8 @@ const char *kGitHash = "SIMULATOR";
 
 // Will be set by PlatformSimulator.cpp SetLeftScreenLight() and SetRightScreenLight()
 extern int LightingSetting;
+extern bool simLeds[3];
+extern bool ledChange;
 
 SDL_Window *window;
 SDL_Renderer *renderer;
@@ -59,6 +63,35 @@ void SimDrawScreen() {
             SDL_RenderDrawPoint(renderer, x, y);
         }
     }
+}
+
+void SimDrawLeds() {
+    // draw simulated leds
+    int ledDim = SIM_LED_DIM;
+    int ledStartY = EinkET013TT1_PIXEL_HEIGHT;
+    int ledStartX = 0;
+    for (int i = 0; i < 3; i++) {
+        bool ledVal = simLeds[i];
+        if (ledVal) {
+            if (i == 0) {
+                SDL_SetRenderDrawColor(renderer, 0xFF, 0, 0, 0xFF);
+            } else if (i == 1) {
+                SDL_SetRenderDrawColor(renderer, 0, 0xFF, 0, 0xFF);
+            } else if (i == 2) {
+                SDL_SetRenderDrawColor(renderer, 0, 0, 0xFF, 0xFF);
+            }
+        } else {
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
+        }
+        for (int x = ledStartX; x < ledStartX + ledDim; x++) {
+            for (int y = ledStartY; y < ledStartY + ledDim; y++) {
+                SDL_RenderDrawPoint(renderer, x, y);
+            }
+        }
+
+        ledStartX += ledDim;
+    }
+    ledChange = false;
 };
 
 bool isPngEqual(std::string filepath1, std::string filepath2) {
@@ -157,6 +190,7 @@ void sendCodeAndRender(RemoteCommand command, SDL_Renderer *renderer) {
     SDL_SetRenderTarget(renderer, NULL);
     SDL_RenderCopy(renderer, deviceScreen, NULL, NULL);
     SimDrawScreen();
+    SimDrawLeds();
     SDL_RenderPresent(renderer);
 }
 
@@ -249,6 +283,11 @@ auto mainLoop() -> bool {
         SDL_SetRenderTarget(renderer, NULL);
         SDL_RenderCopy(renderer, deviceScreen, NULL, NULL);
         SimDrawScreen();
+        SimDrawLeds();
+        SDL_RenderPresent(renderer);
+    } else if (ledChange) {
+        SDL_SetRenderTarget(renderer, NULL);
+        SimDrawLeds();
         SDL_RenderPresent(renderer);
     }
 
@@ -273,7 +312,7 @@ auto main(int argc, char *argv[]) -> int {
         return 1;
     }
 
-    SDL_CreateWindowAndRenderer(EinkET013TT1_PIXEL_WIDTH * SCALE, EinkET013TT1_PIXEL_WIDTH * SCALE,
+    SDL_CreateWindowAndRenderer(EinkET013TT1_PIXEL_WIDTH * SCALE, ((EinkET013TT1_PIXEL_WIDTH+SIM_LED_DIM) * SCALE),
                                 0, &window, &renderer);
     if (renderer == NULL) {
         fprintf(stderr, "Could not create renderer: %s\n", SDL_GetError());
