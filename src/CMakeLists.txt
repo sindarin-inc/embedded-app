@@ -1,4 +1,6 @@
 FILE(GLOB_RECURSE app_sources ${CMAKE_SOURCE_DIR}/src/*.*)
+# Remove the /src/Ulp directory since it's only for ULP things
+list(FILTER app_sources EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/Ulp/*.*")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -33,7 +35,7 @@ idf_component_register(
 
 # ULP setup
 set(ulp_app_name ulp_${COMPONENT_NAME})
-set(ulp_riscv_sources "../ulp/main.c")
+set(ulp_riscv_sources "Ulp/main.c")
 set(ulp_exp_dep_srcs "Misc/Ulp.cpp")
 ulp_embed_binary(${ulp_app_name} "${ulp_riscv_sources}" "${ulp_exp_dep_srcs}")
 

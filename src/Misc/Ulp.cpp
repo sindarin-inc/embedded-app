@@ -9,7 +9,7 @@
 #include <ulp_riscv_i2c.h>
 #endif
 
-#include "../../ulp/MagDefs.h"
+#include "Ulp/MagDefs.h"
 #include "sindarin-debug.h"
 
 extern const uint8_t ULP_MAIN_BIN_START[] asm("_binary_ulp_src_bin_start");
