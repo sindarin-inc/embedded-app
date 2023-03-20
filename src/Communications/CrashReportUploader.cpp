@@ -45,7 +45,7 @@ void CrashUploader::uploadCrash(
         for (auto &coreDumpFile : coreDumpFiles) {
             log_i("uploading %s", coreDumpFile.c_str());
 
-            File cdFile = fileSystem_.open("/coredumps/" + coreDumpFile, FILE_READ);
+            SFile cdFile = fileSystem_.open("/coredumps/" + coreDumpFile, FILE_READ);
             int httpCode = SindarinAPI::getInstance()->uploadCrashReport(
                 cdFile, MultiPartData::getContentType());
             log_i("http response: %d", httpCode);

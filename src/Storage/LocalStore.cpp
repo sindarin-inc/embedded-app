@@ -7,6 +7,7 @@
 #include "Communications/WiFi.hpp"
 #include "Misc/Crypto.hpp"
 #include "Misc/GUnzipStream.hpp"
+#include "Misc/Platform.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
 #include "Models/ReadableBookmark.hpp"
@@ -39,7 +40,7 @@ auto LocalStore::begin() -> bool {
 auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::string &path)
     -> bool {
     log_d("Loading %ss from %s", ToString(readablesModelType(readables)).c_str(), path.c_str());
-    File readablesFile = fileSystem.open(path);
+    SFile readablesFile = fileSystem.open(path);
     if (!readablesFile || (int)readablesFile.size() == 0) {
         log_w("Failed to open %s", path.c_str());
         // Fail positively since it's ok to not have any when you first use the glasses
@@ -212,7 +213,7 @@ void LocalStore::changedReadablesBookmarksJson(JsonArray &bookmarksJsonArray) {
                   readable.title.c_str(), readable.uuid.c_str());
             std::string bookmarkPath =
                 StringFormat("/bookmarks/%s-bookmark.txt", readable.uuid.c_str());
-            File bookmarkFile = fileSystem.open(bookmarkPath.c_str(), FILE_READ, false);
+            SFile bookmarkFile = fileSystem.open(bookmarkPath.c_str(), FILE_READ, false);
             if (!bookmarkFile) {
                 log_i("Failed to open bookmark file: %s", bookmarkPath.c_str());
                 continue;
@@ -223,8 +224,8 @@ void LocalStore::changedReadablesBookmarksJson(JsonArray &bookmarksJsonArray) {
             std::unordered_map<uint32_t, uint32_t> bookmarksToDelete;
             LocalBookmark bookmark;
             while (ReadOneBookmark(bookmarkFile, bookmark)) {
-                log_d("Bookmark: %d %d %d", bookmark.firstPlace, bookmark.lastPlace,
-                      bookmark.status);
+                log_d("Bookmark: %" PRIu32 " %" PRIu32 " %d", bookmark.firstPlace,
+                      bookmark.lastPlace, bookmark.status);
 
                 if (bookmark.status == BOOKMARK_ON && bookmark.firstPlace < bookmark.lastPlace) {
                     bookmarks[bookmark.firstPlace] = bookmark.lastPlace;
@@ -266,15 +267,15 @@ auto LocalStore::processReadablePlacemarksFromServer(const Readable &readable,
         return false;
     } else if (placemark > onDevicePlace && !changed) {
         // Placemark on server is further than on the device, so update to the server value
-        log_i("Updating placemark for \"%s\" from device value of %d to server "
-              "value of %d",
+        log_i("Updating placemark for \"%s\" from device value of %" PRIu32 " to server "
+              "value of %" PRIu32,
               readable.title.c_str(), onDevicePlace, placemark);
         prefs_.readablePlace.set(readable.shortenedUuid.c_str(), placemark);
         return true;
     } else if (placemark != 0) {
         // Placemark on server is less than on the device, so don't update to the server value
-        log_i("Not updating placemark for \"%s\" from device value of %d to server "
-              "value of %d. Changed: %d",
+        log_i("Not updating placemark for \"%s\" from device value of %" PRIu32 " to server "
+              "value of %" PRIu32 ". Changed: %d",
               readable.title.c_str(), onDevicePlace, placemark, changed);
         return false;
     }
@@ -318,14 +319,14 @@ void LocalStore::resetReadablesBookmarksChanged(const ReadablesVector &readables
 void LocalStore::syncFromRemote(
     const std::function<void(ContentSyncState state)> &progressCallback) {
 
-    if (!HasWiFiCredentials()) {
+    if (!WiFi::getInstance().hasWiFiCredentials()) {
         progressCallback(
             ContentSyncState{.state = ContentSyncState::State::Failure,
                              .message = "Go to Settings > WiFi Setup in the Sol app."});
         return;
     }
 
-    if (!ConnectWifi()) {
+    if (!WiFi::getInstance().connectWiFiWithTimeout()) {
         progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
                                           .message = "Failed to connect to WiFi."});
         return;
@@ -581,7 +582,7 @@ void LocalStore::syncFromRemote(
         }
 
         // Artificially delay so the user has the satisfaction of seeing the list done
-        delay(1000);
+        Delay(1000);
 
         if (booksAlreadySynced && articlesAlreadySynced) {
             progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
@@ -775,7 +776,7 @@ auto LocalStore::saveReadables(const ReadablesVector &readables) -> bool {
     }
 
     // Write doc to disk
-    File file = fileSystem.open(path, FILE_WRITE, true);
+    SFile file = fileSystem.open(path, FILE_WRITE, true);
     if (!file) {
         log_e("Failed to open file for writing");
         return false;

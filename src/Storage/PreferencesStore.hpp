@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstring>
 #include <nvs.h>
 #include <optional>
 #include <string>

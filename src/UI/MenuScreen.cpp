@@ -3,6 +3,7 @@
 #include <utility>
 
 #include "Misc/MenuStyle.hpp"
+#include "Misc/Platform.hpp"
 #include "Misc/Style.hpp"
 
 #define MAX_WIDTH 150
@@ -109,7 +110,7 @@ void MenuScreen::showTemporaryMessage(DisplaySystem &display, const std::string 
                                       int duration, bool rerenderAfter) {
     display.drawSingleLineOfCenteredText(message);
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-    delay(duration);
+    Delay(duration);
     if (rerenderAfter) {
         this->needsRerender = true;
         this->setFirstLoad();

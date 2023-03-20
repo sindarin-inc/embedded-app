@@ -19,15 +19,15 @@ public:
     auto endFile() -> bool;
     auto endMultiPartData() -> bool;
 
-    static auto getContentType() -> String;
-    auto getFile() -> File;
+    static auto getContentType() -> std::string;
+    auto getFile() -> SFile;
 
 private:
     FileSystem &fileSystem_;
     static std::string boundary;
     std::string fileName_;
     bool keyWritten_{false};
-    File tempFile_;
+    SFile tempFile_;
     char tmp_[1024];
 
     auto startKeyWrite() -> bool;

@@ -9,7 +9,6 @@
 #include <string>
 #include <utility>
 
-#include "FS.h"
 #include "sindarin-debug.h"
 
 class RendererStream {

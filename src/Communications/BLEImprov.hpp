@@ -2,7 +2,7 @@
 #define BLEImprov_H
 
 #include <NimBLEDevice.h>
-#include <WiFi.h>
+#include <esp_event_base.h>
 #include <improv.h>
 
 #include "Communications/BLEAbstractions.hpp"
@@ -40,7 +40,6 @@ public:
 
 protected:
     uint32_t lastStateChangeMillis_;
-    uint16_t lastAPsent_;
     BLECharacteristic *currentStateCharacteristic_;
     BLECharacteristic *errorStateCharacteristic_;
     BLECharacteristic *rpcResultCharacteristic_;

@@ -1,6 +1,5 @@
 #include "Power.hpp"
 
-#include <Arduino.h>
 #include <algorithm>
 
 #include "Misc/Dispatch.hpp"
@@ -14,7 +13,7 @@
 void Power::setup() {}
 
 void Power::loop() {
-    auto now = millis();
+    auto now = Millis();
 
     if (this->lastMeasurementTime_ == 0 ||
         now > this->lastMeasurementTime_ + BATTERY_MEASUREMENT_PERIOD_SECONDS * 1000) {
@@ -65,15 +64,15 @@ void Power::loop() {
     if (USBConnected()) {
         if (getBatteryPercentage() > 99) {
             // If the battery is fully charged, turn the GREEN LED on.
-            digitalWrite(GREEN_LED, LED_ON);
-            digitalWrite(RED_LED, LED_OFF);
+            DigitalWrite(GREEN_LED, LED_ON);
+            DigitalWrite(RED_LED, LED_OFF);
         } else {
-            digitalWrite(GREEN_LED, LED_OFF);
-            digitalWrite(RED_LED, LED_ON);
+            DigitalWrite(GREEN_LED, LED_OFF);
+            DigitalWrite(RED_LED, LED_ON);
         }
     } else {
-        digitalWrite(GREEN_LED, LED_OFF);
-        digitalWrite(RED_LED, LED_OFF);
+        DigitalWrite(GREEN_LED, LED_OFF);
+        DigitalWrite(RED_LED, LED_OFF);
     }
 }
 
@@ -166,7 +165,7 @@ void Power::logVoltages(float lVoltage, float rVoltage) {
     log_d("Right: %.2fV (%d readings)", rVoltage, this->rightMeasurementCount_);
 
     std::string path = Power::voltageLogPath();
-    File file = fileSystem_.open(path.c_str(), FILE_APPEND);
+    SFile file = fileSystem_.open(path.c_str(), FILE_APPEND);
     if (file.size() < MAX_VOLTAGE_LOG_SIZE) {
         file.write((const uint8_t *)logString.c_str(), logString.length());
         file.write('\n');

@@ -78,11 +78,16 @@ public:
         // }
 
         // log_d("Response headers");
-        // for (auto it = responseHeaders.begin(); it != responseHeaders.end();
-        //      it = responseHeaders.upper_bound(it->first)) {
-        //     std::cout << "  " << it->first << ": " << it->second << std::endl;
-        // }
-
+        for (auto it = responseHeaders.begin(); it != responseHeaders.end();
+             it = responseHeaders.upper_bound(it->first)) {
+            // std::cout << "  " << it->first << ": " << it->second << std::endl;
+            esp_http_client_event_t event;
+            event.user_data = config.user_data;
+            event.event_id = HTTP_EVENT_ON_HEADER;
+            event.header_key = const_cast<char *>(it->first.c_str());
+            event.header_value = const_cast<char *>(it->second.c_str());
+            config.event_handler(&event);
+        }
         log_d("httplib: Got response w/ size=%zu", result->body.length());
 
         // You might think to yourself: "Why not just put a std::stringstream on the class instead
@@ -134,9 +139,9 @@ esp_err_t esp_http_client_set_header(esp_http_client_handle_t client, const char
 
 esp_err_t esp_http_client_get_header(esp_http_client_handle_t client, const char *key,
                                      char **value) {
-    // Grab the header from the responseHeaders std::multimap
-    auto it = client->responseHeaders.find(key);
-    if (it == client->responseHeaders.end()) {
+    // Grab the header from the request headers std::multimap
+    auto it = client->headers.find(key);
+    if (it == client->headers.end()) {
         return ESP_ERR_NOT_FOUND;
     }
 

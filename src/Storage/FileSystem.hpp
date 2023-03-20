@@ -1,10 +1,10 @@
 #pragma once
 
-#include <FS.h>
 #include <vector>
 
 #include "Models/Readable.hpp"
 #include "Renderers/RendererStream.hpp"
+#include "Storage/SFile.hpp"
 
 typedef std::vector<std::string> FileList;
 
@@ -22,7 +22,7 @@ public:
     virtual auto begin() -> bool { return true; };
 
     virtual auto open(const std::string &path, const char *mode = FILE_READ,
-                      const bool create = false) const -> File {
+                      const bool create = false) const -> SFile {
         log_e("Abstract");
         assert(0);
         return {};

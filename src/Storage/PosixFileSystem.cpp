@@ -1,31 +1,29 @@
-#if SIMULATOR
-
 #include "PosixFileSystem.hpp"
 
+#include <cstdio>
 #include <dirent.h>
-#include <memory>
-#include <unistd.h>
+#include <sys/stat.h>
 
-#include "PosixFileImpl.hpp"
+#include "sindarin-debug.h"
 
-char PosixFileSystemPrefix[64] = "./data";
+char posixFileSystemPrefix[64] = "./data";
 
-void createPath(char *output, size_t outputSize, const std::string &path) {
-    strncpy(output, PosixFileSystemPrefix, outputSize);
+void PosixFileSystem::createPath(char *output, size_t outputSize, const std::string &path) const {
+    strncpy(output, posixFileSystemPrefix, outputSize);
     strncat(output, path.c_str(), outputSize - 1);
 }
 
-bool PosixFileSystem::begin() { return true; }
+auto PosixFileSystem::begin() -> bool { return true; }
 
 auto PosixFileSystem::open(const std::string &path, const char *mode, const bool create) const
-    -> File {
+    -> SFile {
     char prefixedPath[200];
     createPath(prefixedPath, sizeof(prefixedPath), path);
-    auto file = File(std::make_shared<PosixFileImpl>(prefixedPath, mode));
+    auto file = SFile(std::make_shared<VFSFile>(prefixedPath, mode, create));
     return file;
 }
 
-bool PosixFileSystem::exists(const std::string &path) const {
+auto PosixFileSystem::exists(const std::string &path) const -> bool {
     char prefixedPath[200];
     createPath(prefixedPath, sizeof(prefixedPath), path);
     struct stat buffer;
@@ -36,7 +34,7 @@ auto PosixFileSystem::listDir(const std::string &path, FileList &files, int limi
     char prefixedPath[200];
     createPath(prefixedPath, sizeof(prefixedPath), path);
     DIR *dp = opendir(prefixedPath);
-    if (dp != NULL) {
+    if (dp != nullptr) {
         struct dirent *ep;
         int counted = 0;
         while ((ep = readdir(dp))) {
@@ -74,6 +72,12 @@ auto PosixFileSystem::remove(const std::string &path) -> bool {
     createPath(prefixedPath, sizeof(prefixedPath), path);
 
     return (::remove(prefixedPath));
-};
+}
 
-#endif
+void PosixFileSystem::close() {}
+
+void PosixFileSystem::setPrefix(const std::string &prefix) {
+    strncpy(posixFileSystemPrefix, prefix.c_str(), sizeof(posixFileSystemPrefix) - 1);
+}
+
+auto PosixFileSystem::getPrefix() -> const char * { return posixFileSystemPrefix; }

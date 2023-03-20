@@ -43,15 +43,16 @@ struct Ltr329als01AlsContrValue {
 };
 
 auto Ltr329Als::registerReadByte(ltr329als01_reg_t regAddr, uint8_t *data) -> esp_err_t {
-    return i2c_master_write_read_device(i2cNum_, LTR329ALS01_SENSOR_ADDR, (uint8_t *)&regAddr, 1,
-                                        data, 1, I2C_MASTER_TIMEOUT_MS / portTICK_RATE_MS);
+    return i2c_master_write_read_device((i2c_port_t)i2cNum_, LTR329ALS01_SENSOR_ADDR,
+                                        (uint8_t *)&regAddr, 1, data, 1,
+                                        I2C_MASTER_TIMEOUT_MS / portTICK_RATE_MS);
 }
 
 auto Ltr329Als::registerWriteByte(ltr329als01_reg_t regAddr, uint8_t data) -> esp_err_t {
     int ret;
     uint8_t writeBuf[2] = {static_cast<uint8_t>(regAddr), data};
-    ret = i2c_master_write_to_device(i2cNum_, LTR329ALS01_SENSOR_ADDR, writeBuf, sizeof(writeBuf),
-                                     I2C_MASTER_TIMEOUT_MS / portTICK_RATE_MS);
+    ret = i2c_master_write_to_device((i2c_port_t)i2cNum_, LTR329ALS01_SENSOR_ADDR, writeBuf,
+                                     sizeof(writeBuf), I2C_MASTER_TIMEOUT_MS / portTICK_RATE_MS);
 
     return ret;
 }

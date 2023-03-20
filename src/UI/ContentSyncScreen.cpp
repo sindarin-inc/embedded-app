@@ -1,6 +1,7 @@
 #include "ContentSyncScreen.hpp"
 
 #include "Communications/WiFi.hpp"
+#include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
 
 void ContentSyncScreen::render(DisplaySystem &display) {
@@ -90,7 +91,7 @@ void ContentSyncScreen::render(DisplaySystem &display) {
         }
 
         if (state_.state == ContentSyncState::AlreadySynced) {
-            drawBulletLine(StringFormat("No new books or articles").c_str(), 100, false);
+            drawBulletLine("No new books or articles", 100, false);
             break;
         }
 
@@ -128,7 +129,7 @@ void ContentSyncScreen::fail(const std::string &message) {
     needsRerender = true;
     render(display_);
     vTaskDelay(3000 / portTICK_PERIOD_MS);
-    DisconnectWifi();
+    WiFi::getInstance().disconnectWiFi();
 #if !SIMULATOR
     esp_restart();
 #endif
@@ -145,7 +146,7 @@ void ContentSyncScreen::begin() {
         return;
     }
 
-    if (!HasWiFiCredentials()) {
+    if (!WiFi::getInstance().hasWiFiCredentials()) {
         fail("Go to Settings > WiFi Setup in the Sol app.");
         return;
     }
@@ -158,7 +159,7 @@ void ContentSyncScreen::begin() {
 
         if (state.state == ContentSyncState::Failure || state.state == ContentSyncState::Synced ||
             state.state == ContentSyncState::AlreadySynced) {
-            DisconnectWifi();
+            WiFi::getInstance().disconnectWiFi();
         }
         // Do UI stuff back on core 1
         DispatchGetUiQueue()->dispatch([this, state]() {
@@ -174,7 +175,7 @@ void ContentSyncScreen::begin() {
                 state.state == ContentSyncState::Synced ||
                 state.state == ContentSyncState::AlreadySynced) {
                 log_d("Content sync done, waiting 5 seconds before going back");
-                delay(5000);
+                Delay(5000);
                 backCallback();
             }
         });

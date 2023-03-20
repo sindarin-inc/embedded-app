@@ -1,5 +1,7 @@
 #include "TempleCloseSensor.hpp"
 
+#include <cmath>
+
 #include "sindarin-debug.h"
 
 auto TempleCloseSensor::checkProductId() -> bool {

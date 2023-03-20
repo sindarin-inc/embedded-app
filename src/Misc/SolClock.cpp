@@ -77,31 +77,46 @@ void SolClock::getClockTime(uint8_t &hours, uint8_t &minutes) {
 
 void SolClock::setClockTimeFromInternet() {
 #if !SIMULATOR
-    if (!ConnectWifi()) {
-        log_i("Failed to connect wifi");
-        return;
-    }
+
     // Configure the SNTP client
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
+    esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    esp_sntp_setservername(0, "time.google.com");
+    esp_sntp_init();
+#else
     sntp_setoperatingmode(SNTP_OPMODE_POLL);
     sntp_setservername(0, "time.google.com");
     sntp_init();
+#endif
 
     // Wait for the SNTP client to get the time
     time_t now = 0;
     struct tm timeinfo {};
-    while (timeinfo.tm_year < (2021 - 1900)) {
+    uint16_t timeoutTries = 0;
+    const int maxTimeoutTries = 10;
+
+    while (timeinfo.tm_year < (2021 - 1900) && timeoutTries < maxTimeoutTries) {
         log_i("Waiting for system time to be set...");
         vTaskDelay(pdMS_TO_TICKS(1000));
         time(&now);
         localtime_r(&now, &timeinfo);
+        timeoutTries++;
+    }
+
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
+    esp_sntp_stop();
+#else
+    sntp_stop();
+#endif
+
+    if (timeoutTries >= maxTimeoutTries) {
+        log_e("Timed out trying to set time.");
     }
 
     // Print the time as a string
     char strftimeBuf[64];
     strftime(strftimeBuf, sizeof(strftimeBuf), "%c", &timeinfo);
     log_i("The current date/time is: %s", strftimeBuf);
-
-    DisconnectWifi();
 #else
     log_i("Not setting clock time from internet in simulator");
 #endif

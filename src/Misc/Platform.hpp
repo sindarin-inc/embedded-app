@@ -7,13 +7,42 @@
 // of the firmware. It exists to make running on the simulator and other processors simpler by
 // unifying some of the platform-specific code.
 
+#define LOW 0
+#define HIGH 1
+
+// GPIO FUNCTIONS
+#define INPUT 0x01
+#define OUTPUT 0x02
+#define PULLUP 0x04
+#define INPUT_PULLUP 0x05
+#define PULLDOWN 0x08
+#define INPUT_PULLDOWN 0x09
+#define OPEN_DRAIN 0x10
+#define OUTPUT_OPEN_DRAIN 0x12
+#define ANALOG 0xC0
+
+// Interrupt Modes
+#define RISING 0x01
+#define FALLING 0x02
+#define CHANGE 0x03
+#define ONLOW 0x04
+#define ONHIGH 0x05
+#define ONLOW_WE 0x0C
+#define ONHIGH_WE 0x0D
+
+#define ENCRYPTED_BLOCK_SIZE 16
+
+#define U_FLASH 0
+
+#define digitalPinToInterrupt(p) (((p) < 48) ? (p) : -1)
+
+#define ESP_IMAGE_HEADER_MAGIC 0xE9 /*!< The magic word for the esp_image_header_t structure. */
+
 void InitializePlatform();
 
 auto GetBatteryVoltageLeft() -> float;
 
 auto GetBatteryVoltageRight() -> float;
-
-void SetCpuSpeedMhz(int speedMhz);
 
 void SetLeftScreenLight(int dutyCycle);
 
@@ -34,3 +63,21 @@ auto GetHardwareRevision() -> uint8_t;
 void ForcePowerOn();
 
 void AllowPowerOff();
+
+void HardwareInit();
+
+void Delay(int ms);
+
+auto Millis() -> int;
+
+void DigitalWrite(int pin, int level);
+
+#if !SIMULATOR
+void PinMode(int pin, int mode);
+auto DigitalRead(uint8_t pin) -> int;
+auto GetHeapSize() -> size_t;
+void EnableCore0Wdt();
+void DisableCore0Wdt();
+#else
+
+#endif

@@ -100,7 +100,7 @@ void PollingLoopTask(void *parameter) {
 
 #if USE_TURN_TOUCH_REMOTE
         // Skip scanning while WiFi is connected to avoid kicking off the WiFi connection
-        if (!NetworkConnected() && !templesClosed) {
+        if (!WiFi::getInstance().connected() && !templesClosed) {
             ttRemoteInput.connect();
         } else if (!ttRemoteInput.connected()) {
             // log_d("Skipping Turn Touch scan while WiFi is connected");
@@ -146,7 +146,7 @@ void loop() { vTaskDelay(portMAX_DELAY); };
 void setup() {
 #else
 extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
-    initArduino();
+    HardwareInit();
 #endif
 
 #if !SIMULATOR
@@ -197,7 +197,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             log_i("Temple is closed or glasses inactive, current time: %d:%d", hours, minutes);
             if (((hours && (hours == morningNews)) || (hours && (hours == eveningNews))) &&
                 (minutes == 0)) {
-                digitalWrite(BLUE_LED, LED_ON);
+                DigitalWrite(BLUE_LED, LED_ON);
                 runningContentSync = true;
                 localStore.syncFromRemote([](const ContentSyncState &state) {
                     if (state.state == ContentSyncState::Failure ||
@@ -210,9 +210,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                         } else if (state.state == ContentSyncState::AlreadySynced) {
                             log_i("Content sync already synced");
                         }
-                        digitalWrite(BLUE_LED, LED_OFF);
+                        DigitalWrite(BLUE_LED, LED_OFF);
                         runningContentSync = false;
-                        DisconnectWifi();
+                        WiFi::getInstance().disconnectWiFi();
                         log_i("Going to sleep after content sync");
                         PowerManager::getInstance().powerOff();
                     }
@@ -229,16 +229,16 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     if (esp_reset_reason() == ESP_RST_POWERON) {
         // Flash all the LEDs
-        digitalWrite(RED_LED, LED_ON);
+        DigitalWrite(RED_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        digitalWrite(RED_LED, LED_OFF);
-        digitalWrite(GREEN_LED, LED_ON);
+        DigitalWrite(RED_LED, LED_OFF);
+        DigitalWrite(GREEN_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        digitalWrite(GREEN_LED, LED_OFF);
+        DigitalWrite(GREEN_LED, LED_OFF);
 #ifdef BLUE_LED
-        digitalWrite(BLUE_LED, LED_ON);
+        DigitalWrite(BLUE_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        digitalWrite(BLUE_LED, LED_OFF);
+        DigitalWrite(BLUE_LED, LED_OFF);
 #endif
     }
 
@@ -258,7 +258,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 templesClosed = false;
                 if (runningContentSync) {
                     // Effectively cancel the content sync by disconnecting WiFi
-                    DisconnectWifi();
+                    WiFi::getInstance().disconnectWiFi();
                 }
             } else {
                 lightingController.disableLighting();
@@ -273,7 +273,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 log_d("Temples closed for a while, running content sync");
                 // Debug LED so we know what's happening
                 if (templesClosed) {
-                    digitalWrite(BLUE_LED, LED_ON);
+                    DigitalWrite(BLUE_LED, LED_ON);
                     runningContentSync = true;
                     localStore.syncFromRemote([](const ContentSyncState &state) {
                         if (state.state == ContentSyncState::Failure ||
@@ -286,14 +286,14 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                             } else if (state.state == ContentSyncState::AlreadySynced) {
                                 log_i("Content sync already synced");
                             }
-                            digitalWrite(BLUE_LED, LED_OFF);
+                            DigitalWrite(BLUE_LED, LED_OFF);
                             // Only if the temples are still closed, allow power off
                             if (templesClosed) {
                                 prefs.sleepReason.set(SLEEP_REASON_TEMPLES_CLOSED);
                                 PowerManager::getInstance().powerOff();
                             }
                             runningContentSync = false;
-                            DisconnectWifi();
+                            WiFi::getInstance().disconnectWiFi();
                         }
                     });
                 }
@@ -323,7 +323,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #if EINKET013TT1
 #ifdef DISPLAY_POWER
     // Turn on power to the screen
-    digitalWrite(DISPLAY_POWER, HIGH);
+    DigitalWrite(DISPLAY_POWER, HIGH);
 #endif
     // If the saved prefs indicated a vcom, set it here.
     auto vcomSetting = prefs.vcom.get();
@@ -360,8 +360,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     initialRect.width = prefs.rectW.get().value_or(myDisplay.defaultBoundingBox.width);
     initialRect.height = prefs.rectH.get().value_or(myDisplay.defaultBoundingBox.height);
 
-    log_d("Initial bounding box is %d %d %d %d", initialRect.x, initialRect.y, initialRect.width,
-          initialRect.height);
+    log_d("Initial bounding box is %" PRIu32 " %" PRIu32 " %" PRIu32 " %" PRIu32 "", initialRect.x,
+          initialRect.y, initialRect.width, initialRect.height);
     myDisplay.setBoundingBox(initialRect);
     myDisplay.setLineSpacing(prefs.lineSpacing.get().value_or(0));
 
@@ -438,7 +438,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-    SetWiFiPower((wifi_power_t)prefs.wifiPower.get().value_or(WIFI_POWER_17dBm));
+    WiFi::getInstance().setWiFiPower(
+        (wifi_power_t)prefs.wifiPower.get().value_or(WIFI_POWER_17dBm));
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
     if (!bleManager->startAdvertisingIfNecessary()) {
@@ -486,8 +487,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     rootUi.setup(&myDisplay, localStore, fileSystem, lightingController);
 
     SHOW_HEAP();
-
-    SetCpuSpeedMhz(CPU_FREQ_MHZ_LOW);
 
     BlinkBootErrors(bootErrors);
 

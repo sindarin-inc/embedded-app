@@ -21,3 +21,6 @@ nextnext.png
 nextprev.png
 test/CatchTests/Images/TestRun
 reports
+managed_components
+# Auto-generated sdkconfig with every single possible setting
+sdkconfig.cmake

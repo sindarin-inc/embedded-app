@@ -105,8 +105,8 @@ auto GUnzipStream::seek(uint32_t pos) -> bool {
         // need to start over from beginning of the file
         // and decompress to new position
         // seek file back to beginning
-        log_w("GUnzipStream seek from %zu to %d, reset to start", position_, pos);
-        gzFile_.seek(0, SeekSet);
+        log_w("GUnzipStream seek from %zu to %" PRIu32 ", reset to start", position_, pos);
+        gzFile_.seek(0, SSeekSet);
         inSize_ = 0;
         inIndex_ = 0;
         outSize_ = 0;
@@ -130,14 +130,14 @@ void GUnzipStream::readSize() {
 
     // uncompressed length is in the last 4 bytes of the gz file
     // seek there
-    gzFile_.seek(gzLen - 4, SeekSet);
+    gzFile_.seek(gzLen - 4, SSeekSet);
 
     // read uncompressed file length
     uint8_t sizeBytes[4];
     gzFile_.readBytes((char *)sizeBytes, 4);
 
     // rewind file
-    gzFile_.seek(0, SeekSet);
+    gzFile_.seek(0, SSeekSet);
 
     // move bytes (size is little endian)
     uncompressedSize_ =

@@ -1,5 +1,9 @@
 #include "PowerManager.hpp"
 
+#if !SIMULATOR
+#include "FunctionalInterrupt.h"
+#endif
+
 #include <esp_sleep.h>
 #include <esp_system.h>
 

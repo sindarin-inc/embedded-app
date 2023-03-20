@@ -1,7 +1,6 @@
 #pragma once
 
 #include <NimBLEDevice.h>
-#include <Preferences.h>
 
 #include "BLEAbstractions.hpp"
 #include "Communications/BLEManager.hpp"

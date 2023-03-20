@@ -1,9 +1,10 @@
 #ifndef SINDARIN_DEBUG_H
 #define SINDARIN_DEBUG_H
 
-#include <Arduino.h>
-
 #if SIMULATOR
+
+#include <assert.h>
+#include <stdio.h>
 
 #define SHOW_HEAP()
 #define PROFILE_START(identifier)
@@ -18,10 +19,52 @@
 #define PROFILE_END_LOG_US(identifier)
 #define PROFILE_END_LOG_NS(identifier)
 
+const char *pathToFileName(const char *path);
+
+#define SIM_LOG_COLOR_BLACK "30"
+#define SIM_LOG_COLOR_RED "31"    // ERROR
+#define SIM_LOG_COLOR_GREEN "32"  // INFO
+#define SIM_LOG_COLOR_YELLOW "33" // WARNING
+#define SIM_LOG_COLOR_BLUE "34"
+#define SIM_LOG_COLOR_MAGENTA "35"
+#define SIM_LOG_COLOR_CYAN "36" // DEBUG
+#define SIM_LOG_COLOR_GRAY "37" // VERBOSE
+#define SIM_LOG_COLOR_WHITE "38"
+
+#define SIM_LOG_COLOR(COLOR) "\033[0;" COLOR "m"
+#define SIM_LOG_BOLD(COLOR) "\033[1;" COLOR "m"
+#define SIM_LOG_RESET_COLOR "\033[0m"
+
+#define SIM_LOG_COLOR_E SIM_LOG_COLOR(SIM_LOG_COLOR_RED)
+#define SIM_LOG_COLOR_W SIM_LOG_COLOR(SIM_LOG_COLOR_YELLOW)
+#define SIM_LOG_COLOR_I SIM_LOG_COLOR(SIM_LOG_COLOR_GREEN)
+#define SIM_LOG_COLOR_D SIM_LOG_COLOR(SIM_LOG_COLOR_CYAN)
+#define SIM_LOG_COLOR_V SIM_LOG_COLOR(SIM_LOG_COLOR_GRAY)
+
+#define log_printf(fmt, ...)                                                                       \
+    fprintf(stdout, fmt, ##__VA_ARGS__);                                                           \
+    fflush(stdout)
+#define SIM_LOG_FORMAT(letter, format)                                                             \
+    SIM_LOG_COLOR_##letter "[" #letter "][%s:%u] %s(): " format SIM_LOG_RESET_COLOR "\r\n",        \
+        pathToFileName(__FILE__), __LINE__, __FUNCTION__
+
+#define log_v(format, ...) log_printf(SIM_LOG_FORMAT(V, format), ##__VA_ARGS__)
+#define log_d(format, ...) log_printf(SIM_LOG_FORMAT(D, format), ##__VA_ARGS__)
+#define log_i(format, ...) log_printf(SIM_LOG_FORMAT(I, format), ##__VA_ARGS__)
+#define log_w(format, ...) log_printf(SIM_LOG_FORMAT(W, format), ##__VA_ARGS__)
+#define log_e(format, ...) log_printf(SIM_LOG_FORMAT(E, format), ##__VA_ARGS__)
+
 #else
+// esp_clk methods are deprecated in IDF 5+
+// TODO: replace
 extern "C" {
-#include <esp32/clk.h>
+#include <esp_private/esp_clk.h>
 }
+
+#include <esp_log.h>
+#include <xt_instr_macros.h>
+
+#include "Misc/Platform.hpp"
 
 // For IDF builds, use the ESP_LOGD macros since they work with power management.
 #ifdef IDF_LOG
@@ -38,8 +81,9 @@ extern "C" {
 #endif
 
 #define SHOW_HEAP()                                                                                \
-    log_d("Free heap: %dk/%dk Free PSRAM: %zuk/%zuk %s:%d ", ESP.getFreeHeap() / 1000,             \
-          ESP.getHeapSize() / 1000, heap_caps_get_free_size(MALLOC_CAP_8BIT) / 1000,               \
+    log_d("Free heap: %zuk/%zuk Free PSRAM: %zuk/%zuk %s:%d ",                                     \
+          heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1000, GetHeapSize() / 1000,               \
+          heap_caps_get_free_size(MALLOC_CAP_8BIT) / 1000,                                         \
           heap_caps_get_total_size(MALLOC_CAP_8BIT) / 1000, __FILE__, __LINE__)
 
 // NOTE: based on the uint32_t, this cannot profile anything longer than 17.89569707
@@ -69,18 +113,18 @@ extern "C" {
     CYCLES_TO_NS(profileEnd##identifier - profileStart##identifier)
 
 #define PROFILE_LOG_MS(identifier)                                                                 \
-    log_d("PROFILE_LOG_MS(" #identifier ") %.0fms (%u-%u=%u cycles)",                              \
+    log_d("PROFILE_LOG_MS(" #identifier ") %.0fms (%" PRIu32 "-%" PRIu32 "=%" PRIu32 " cycles)",   \
           PROFILE_CALCULATE_MS(identifier), profileEnd##identifier, profileStart##identifier,      \
           profileEnd##identifier - profileStart##identifier)
 
 #define PROFILE_LOG_US(identifier)                                                                 \
-    log_d("PROFILE_LOG_US(" #identifier ") %.0fus (%u-%u=%u cycles)",                              \
+    log_d("PROFILE_LOG_US(" #identifier ") %.0fus (%" PRIu32 "-%" PRIu32 "=%" PRIu32 " cycles)",   \
           PROFILE_CALCULATE_US(identifier), profileEnd##identifier, profileStart##identifier,      \
           profileEnd##identifier - profileStart##identifier)
 
 // Logs the result of the profile
 #define PROFILE_LOG_NS(identifier)                                                                 \
-    log_d("PROFILE_LOG_NS(" #identifier ") %.0fns (%u-%u=%u cycles)",                              \
+    log_d("PROFILE_LOG_NS(" #identifier ") %.0fns (%" PRIu32 "-%" PRIu32 "=%" PRIu32 " cycles)",   \
           PROFILE_CALCULATE_NS(identifier), profileEnd##identifier, profileStart##identifier,      \
           profileEnd##identifier - profileStart##identifier)
 
