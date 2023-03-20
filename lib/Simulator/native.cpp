@@ -334,9 +334,11 @@ auto mainLoop() -> bool {
         SimDrawLeds();
         SDL_RenderPresent(renderer);
     } else if (ledChange) {
+        #if SIM_LED_ON
         SDL_SetRenderTarget(renderer, NULL);
         SimDrawLeds();
         SDL_RenderPresent(renderer);
+        #endif
     }
 
     return true;
