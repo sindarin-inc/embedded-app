@@ -75,10 +75,7 @@ void SolClock::getClockTime(uint8_t &hours, uint8_t &minutes) {
 #endif
 }
 
-bool syncedInternetTime = false;
-
 void SolClock::setClockTimeFromInternet() {
-    syncedInternetTime = false;
 
 #if !SIMULATOR
 
@@ -97,19 +94,16 @@ void SolClock::setClockTimeFromInternet() {
     time_t now = 0;
     struct tm timeinfo {};
 
-    // Timeout after 10 seconds from current system millis
-    uint32_t currentSeconds = Millis();
-
     sntp_set_time_sync_notification_cb([](struct timeval *tv) {
         log_i("Time synchronized");
-        syncedInternetTime = true;
+        xEventGroupSetBits((SolClock::getInstance().timeSyncEventGroup_), 1);
     });
 
-    while (!syncedInternetTime && (currentSeconds + 10000 > Millis())) {
-        vTaskDelay(pdMS_TO_TICKS(100));
-    }
+    // Wait for the event
+    EventBits_t bits =
+        xEventGroupWaitBits(timeSyncEventGroup_, 1, true, true, pdMS_TO_TICKS(10000));
 
-    if (!syncedInternetTime) {
+    if (bits == 0) {
         log_e("Failed to sync time");
     } else {
         time(&now);
