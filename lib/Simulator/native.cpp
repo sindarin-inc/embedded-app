@@ -22,7 +22,8 @@
 #endif
 #include "Inputs/RemoteInput.hpp"
 
-#define SIM_LED_DIM 10
+#define SIM_LED_DIM 6
+#define SIM_LED_ROUND 1
 
 extern void UIInnerLoop(RemoteCommand command);
 extern "C" void app_main(void); // NOLINT(readability-identifier-naming)
@@ -65,30 +66,70 @@ void SimDrawScreen() {
     }
 }
 
+void DrawRectLed(int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b) {
+    SDL_Rect rect;
+    rect.x = x;
+    rect.y = y;
+    rect.w = w;
+    rect.h = h;
+
+    SDL_SetRenderDrawColor(renderer, r, g, b, 0xFF);
+    SDL_RenderFillRect(renderer, &rect);
+}
+
+void DrawRoundLed(int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b) {
+    float centerX = (float)x + ((float)w / 2.0);
+    float centerY = (float)y + ((float)h / 2.0);
+    float rad = centerX - (float)x;
+
+    for (int xx = x; xx < x + w; xx++) {
+        for (int yy = y; yy < y + h; yy++) {
+            float dx = (float)xx - centerX;
+            float dy = (float)yy - centerY;
+            float dist = sqrt(dx*dx + dy*dy);
+            if (dist > rad) {
+                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
+            } else {
+                float f = 1.0 - (dist / rad);
+                uint8_t rr = (uint8_t)((float)r * f);
+                uint8_t gg = (uint8_t)((float)g * f);
+                uint8_t bb = (uint8_t)((float)b * f);
+                SDL_SetRenderDrawColor(renderer, rr, gg, bb, 0xFF);
+            }
+            SDL_RenderDrawPoint(renderer, xx, yy);
+        }
+    }
+}
+
 void SimDrawLeds() {
     // draw simulated leds
     int ledDim = SIM_LED_DIM;
     int ledStartY = EinkET013TT1_PIXEL_HEIGHT;
     int ledStartX = 0;
+
+    // clear area
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
+    SDL_Rect rect;
+    rect.x = ledStartX;
+    rect.y = ledStartY;
+    rect.h = ledDim;
+    rect.w = EinkET013TT1_PIXEL_WIDTH;
+
+    SDL_RenderFillRect(renderer, &rect);
+
+    uint8_t color[3];
     for (int i = 0; i < 3; i++) {
         bool ledVal = simLeds[i];
-        if (ledVal) {
-            if (i == 0) {
-                SDL_SetRenderDrawColor(renderer, 0xFF, 0, 0, 0xFF);
-            } else if (i == 1) {
-                SDL_SetRenderDrawColor(renderer, 0, 0xFF, 0, 0xFF);
-            } else if (i == 2) {
-                SDL_SetRenderDrawColor(renderer, 0, 0, 0xFF, 0xFF);
-            }
-        } else {
-            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
-        }
-        for (int x = ledStartX; x < ledStartX + ledDim; x++) {
-            for (int y = ledStartY; y < ledStartY + ledDim; y++) {
-                SDL_RenderDrawPoint(renderer, x, y);
-            }
-        }
+        memset(color, 0, 3);
 
+        if (ledVal) {
+            color[i] = 0xFF;
+        }
+        #if SIM_LED_ROUND
+        DrawRoundLed(ledStartX, ledStartY, ledDim, ledDim, color[0], color[1], color[2]);
+        #else
+        DrawRectLed(ledStartX, ledStartY, ledDim, ledDim, color[0], color[1], color[2]);
+        #endif
         ledStartX += ledDim;
     }
     ledChange = false;
