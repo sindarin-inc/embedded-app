@@ -18,8 +18,6 @@ set(SDKCONFIG "${BUILD_DIR}/sdkconfig.cmake")
 message("Resetting ${SDKCONFIG} and rebuilding using sdkconfig.defaults")
 file(REMOVE ${SDKCONFIG})
 
-# IDF 4.4.1's mbedtls has compiler warnings so don't treat those as errors
-option(MBEDTLS_FATAL_WARNINGS OFF)
 set(REQUIRES src)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
