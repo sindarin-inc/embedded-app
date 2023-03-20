@@ -37,7 +37,8 @@ void UlpDeepSleepMagnetometerWakeup() {
     ulp_riscv_i2c_master_init(&i2c_cfg);
 
     log_i("entering deep sleep, wake up with magnetometer");
-    esp_err_t err = ulp_riscv_load_binary(ULP_MAIN_BIN_START, (ULP_MAIN_BIN_END - ULP_MAIN_BIN_START));
+    esp_err_t err =
+        ulp_riscv_load_binary(ULP_MAIN_BIN_START, (ULP_MAIN_BIN_END - ULP_MAIN_BIN_START));
     if (err != ESP_OK) {
         log_e("load binary err %d", err);
         return;
