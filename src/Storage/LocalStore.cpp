@@ -360,8 +360,11 @@ void LocalStore::syncFromRemote(
         // this->prefs_.lastArticlesSince.set("");
         auto sleepReason = this->prefs_.sleepReason.get().value_or(SLEEP_REASON_NONE);
         CheckSyncResponse checkSyncResponse;
-        int checkSyncSuccesses = 0;
         int checkSyncFailures = 0;
+        bool booksAlreadySynced = false;
+        bool articlesAlreadySynced = false;
+        bool booksNowSynced = false;
+        bool articlesNowSynced = false;
 
         std::vector<ReadablesVector *> readablesList = {&books_, &articles_};
         for (auto &readables : readablesList) {
@@ -393,26 +396,30 @@ void LocalStore::syncFromRemote(
             char *body = (char *)heap_caps_malloc(serializedMaxSize, MALLOC_CAP_SPIRAM);
             size_t serializedLength = serializeJson(*doc, body, serializedMaxSize);
 
-            auto nextPageLoops = 0;
+            auto nextPageCounter = 0;
             auto nextPageUrl = std::string();
-            while (nextPageUrl.length() || nextPageLoops == 0) {
-                log_d("Getting next page: %s", nextPageUrl.c_str());
-                nextPageLoops += 1;
-                if (nextPageLoops > MAX_NUMBER_OF_PAGES_TO_BACKFILL) {
+            while (nextPageUrl.length() || nextPageCounter == 0) {
+                if (nextPageCounter == 0) {
+                    log_d("Fetching first page of %ss", ToString(modelType).c_str());
+                } else {
+                    log_d("Fetching next page (#%d): %s", nextPageCounter + 1, nextPageUrl.c_str());
+                }
+                nextPageCounter += 1;
+                if (nextPageCounter > MAX_NUMBER_OF_PAGES_TO_BACKFILL) {
                     log_w("Too many pages to backfill, aborting");
                     break;
                 }
 
                 int httpCode = 0;
-                if (nextPageLoops == 1) {
+                if (nextPageCounter == 1) {
                     SHOW_HEAP();
                     httpCode = SindarinAPI::getInstance()->checkSync(
                         body, serializedLength, &checkSyncResponse, ToString(modelType).c_str());
                     SHOW_HEAP();
                 } else {
-                    httpCode = SindarinAPI::getInstance()->checkSync(nextPageUrl.c_str(), {}, 0,
-                                                                     &checkSyncResponse,
-                                                                     ToString(modelType).c_str());
+                    httpCode = SindarinAPI::getInstance()->checkSync(
+                        nextPageUrl.c_str(), body, serializedLength, &checkSyncResponse,
+                        ToString(modelType).c_str());
                 }
                 log_d("Server has %d %ss, next page: %s", checkSyncResponse.totalCount,
                       ToString(modelType).c_str(), nextPageUrl.c_str());
@@ -439,23 +446,29 @@ void LocalStore::syncFromRemote(
                 log_d("%ss to delete: %zu", ToString(modelType).c_str(), readablesToDelete.size());
                 nextPageUrl = checkSyncResponse.nextPageUrl;
 
-                if (checkSyncResponse.synced ||
-                    (readablesToDownload.size() == 0 && readablesToDelete.size() == 0)) {
+                if (checkSyncResponse.synced) {
                     log_i("%ss are already in sync, no need to download anything",
                           ToString(modelType).c_str());
-                    checkSyncSuccesses += 1;
-                    // if (checkSyncSuccesses >= 2 ||
-                    //     (checkSyncFailures >= 1 && checkSyncSuccesses == 1)) {
-                    //     progressCallback(
-                    //         ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
-                    // }
+                    if (modelType == ReadablesModelType::Readable) {
+                        booksAlreadySynced = true;
+                    } else if (modelType == ReadablesModelType::Article) {
+                        articlesAlreadySynced = true;
+                    }
                     break;
                 }
 
-                progressCallback(ContentSyncState{.state = ContentSyncState::State::LoadingTasks});
+                ContentSyncState syncState;
+                if (modelType == ReadablesModelType::Readable) {
+                    progressCallback(
+                        ContentSyncState{.state = ContentSyncState::State::SyncingBooks});
+                    syncState = {.state = ContentSyncState::State::Syncing};
+                } else if (modelType == ReadablesModelType::Article) {
+                    progressCallback(
+                        ContentSyncState{.state = ContentSyncState::State::SyncingArticles});
+                    syncState = {.state = ContentSyncState::State::SyncingArticles};
+                }
 
                 // Count books/articles to download and delete
-                ContentSyncState syncState = {.state = ContentSyncState::State::Syncing};
                 syncState.tasks.reserve(readablesToDownload.size() + readablesToDelete.size());
                 auto tasksIndex = 0;
 
@@ -494,7 +507,10 @@ void LocalStore::syncFromRemote(
                 failedDownload = processReadableDownload(readablesToDownload, *readables,
                                                          tasksIndex, syncState, progressCallback) ||
                                  failedDownload;
-
+                if (failedDownload) {
+                    log_d("Failed to process %ss, have %zu %ss", ToString(modelType).c_str(),
+                          readables->size(), ToString(modelType).c_str());
+                }
                 progressCallback(syncState);
             }
 
@@ -507,26 +523,21 @@ void LocalStore::syncFromRemote(
             log_i("%sSetting last%sSince to %s/%s", failedDownload ? "Not " : "",
                   ToString(modelType).c_str(), checkSyncResponse.booksSince.c_str(),
                   checkSyncResponse.articlesSince.c_str());
+            std::string serverSince;
             if (!failedDownload) {
                 if (checkSyncResponse.booksSince != "") {
                     this->prefs_.lastReadablesSince.set(checkSyncResponse.booksSince.c_str());
+                    serverSince = checkSyncResponse.booksSince;
                 }
                 if (checkSyncResponse.articlesSince != "") {
                     this->prefs_.lastArticlesSince.set(checkSyncResponse.articlesSince.c_str());
+                    serverSince = checkSyncResponse.articlesSince;
                 }
             }
 
-            if (checkSyncResponse.synced) {
-                log_i("%ss are already in sync, no need to download anything",
-                      ToString(modelType).c_str());
-                if (checkSyncSuccesses >= 2 ||
-                    (checkSyncFailures >= 1 && checkSyncSuccesses == 1)) {
-                    progressCallback(
-                        ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
-                    break;
-                } else {
-                    continue;
-                }
+            if ((modelType == ReadablesModelType::Readable && booksAlreadySynced) ||
+                (modelType == ReadablesModelType::Article && articlesAlreadySynced)) {
+                continue;
             }
 
             // Update the since dates and try once more to sync to ensure we don't miss anything
@@ -535,16 +546,14 @@ void LocalStore::syncFromRemote(
             storedUuidsJsonArray = request.createNestedArray("stored_uuids");
             this->storedReadableUuids(*readables, storedUuidsJsonArray);
 
-            since = this->readablesSince(*readables);
-            this->storedReadableUuids(*readables, storedUuidsJsonArray);
             request["sleep_reason"] = sleepReason;
             request["pt_battery"] = this->prefs_.lastPageTurnerBattery.get().value_or(0);
             request["pt_build"] = this->prefs_.lastPageTurnerBuild.get().value_or("");
             request["skip_content"] = true;
             if (modelType == ReadablesModelType::Readable) {
-                request["books_since"] = since;
+                request["books_since"] = serverSince;
             } else if (modelType == ReadablesModelType::Article) {
-                request["articles_since"] = since;
+                request["articles_since"] = serverSince;
             }
 
             serializedMaxSize = (*doc).memoryUsage() * 2;
@@ -559,23 +568,32 @@ void LocalStore::syncFromRemote(
             // TODO: Force reload of rootUI instead of rebooting
             if (checkSyncResponse.synced) {
                 log_i("%ss are in sync", ToString(modelType).c_str());
-                checkSyncSuccesses += 1;
-                if (checkSyncSuccesses >= 2) {
-                    progressCallback(ContentSyncState{.state = ContentSyncState::State::Synced});
+                if (modelType == ReadablesModelType::Readable) {
+                    booksNowSynced = true;
+                } else if (modelType == ReadablesModelType::Article) {
+                    articlesNowSynced = true;
                 }
             } else {
                 log_w("After running sync, local %ss are still out of sync",
                       ToString(modelType).c_str());
                 checkSyncFailures += 1;
-                if (checkSyncFailures >= 2) {
-                    progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
-                                                      .message = "Not in sync...restarting"});
-                }
             }
         }
 
         // Artificially delay so the user has the satisfaction of seeing the list done
         delay(1000);
+
+        if (booksAlreadySynced && articlesAlreadySynced) {
+            progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
+        } else if (booksNowSynced || articlesNowSynced) {
+            progressCallback(ContentSyncState{.state = ContentSyncState::State::Synced});
+        } else if (checkSyncFailures > 0) {
+            progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                              .message = "Failed to check sync"});
+        } else {
+            progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced,
+                                              .message = "Already synced"});
+        }
     });
 }
 
@@ -658,7 +676,7 @@ auto LocalStore::processReadableDownload(const ReadablesVector &readablesToDownl
 
     if (readablesToDownload.size() == 0) {
         progressCallback(syncState);
-        return true;
+        return failedDownload;
     }
 
     float pctPerReadable = 100.0 / readablesToDownload.size();
@@ -869,27 +887,21 @@ void LocalStore::readableFilePurge(const Readable &readable) {
     auto type = readable.readableType;
     auto &uuid = readable.uuid;
 
-    std::string path;
-    path = StringFormat("/%s/%s.txt.gz", type.c_str(), uuid.c_str());
-    fileSystem.remove(path);
+    auto removeIfExists = [&](const std::string &path) {
+        if (fileSystem.exists(path)) {
+            fileSystem.remove(path);
+        }
+    };
 
-    path = StringFormat("/%s/%s.txt", type.c_str(), uuid.c_str());
-    fileSystem.remove(path);
-
-    path = StringFormat("/%s/%s.epub", type.c_str(), uuid.c_str());
-    fileSystem.remove(path);
+    removeIfExists(StringFormat("/%s/%s.txt.gz", type.c_str(), uuid.c_str()));
+    removeIfExists(StringFormat("/%s/%s.txt", type.c_str(), uuid.c_str()));
+    removeIfExists(StringFormat("/%s/%s.epub", type.c_str(), uuid.c_str()));
 
     if (readable.files.size() > 0) {
-        path = StringFormat("/%s.gz", readable.file().name.c_str());
-        fileSystem.remove(path);
-
-        path = StringFormat("/%s", readable.file().name.c_str());
-        fileSystem.remove(path);
+        removeIfExists(StringFormat("/%s.gz", readable.file().name.c_str()));
+        removeIfExists(StringFormat("/%s", readable.file().name.c_str()));
     }
 
-    path = StringFormat("/articles/%s.txt.gz", uuid.c_str());
-    fileSystem.remove(path);
-
-    path = StringFormat("/articles/%s.txt", uuid.c_str());
-    fileSystem.remove(path);
+    removeIfExists(StringFormat("/articles/%s.txt.gz", uuid.c_str()));
+    removeIfExists(StringFormat("/articles/%s.txt", uuid.c_str()));
 }

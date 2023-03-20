@@ -24,7 +24,8 @@ void ContentSyncScreen::render(DisplaySystem &display) {
         { break; }
     case ContentSyncState::ConnectingWifi:
     case ContentSyncState::CheckingSync:
-    case ContentSyncState::LoadingTasks:
+    case ContentSyncState::SyncingBooks:
+    case ContentSyncState::SyncingArticles:
     case ContentSyncState::Syncing:
     case ContentSyncState::AlreadySynced:
     case ContentSyncState::Synced: {
@@ -35,8 +36,8 @@ void ContentSyncScreen::render(DisplaySystem &display) {
         uint16_t textHeight = display.getFont()->yAdvance;
         uint16_t lineCount;
 
-        if (state_.state <= ContentSyncState::LoadingTasks) {
-            lineCount = 3;
+        if (state_.state <= ContentSyncState::SyncingArticles) {
+            lineCount = 4;
         } else {
             lineCount = state_.tasks.size();
         }
@@ -68,7 +69,7 @@ void ContentSyncScreen::render(DisplaySystem &display) {
             y += spacing;
         };
 
-        if (state_.state <= ContentSyncState::LoadingTasks) {
+        if (state_.state <= ContentSyncState::SyncingArticles) {
 
             drawBulletLine("Connecting WiFi",
                            state_.state > ContentSyncState::ConnectingWifi ? 100 : 0, false);
@@ -76,12 +77,14 @@ void ContentSyncScreen::render(DisplaySystem &display) {
             drawBulletLine("Checking for update",
                            state_.state > ContentSyncState::CheckingSync ? 100 : 0, false);
 
-            drawBulletLine("Loading tasks...",
-                           state_.state > ContentSyncState::LoadingTasks ? 100 : 0, false);
+            drawBulletLine("Syncing books...",
+                           state_.state > ContentSyncState::SyncingBooks ? 100 : 0, false);
+
+            drawBulletLine("Syncing articles...",
+                           state_.state > ContentSyncState::SyncingArticles ? 100 : 0, false);
 
             break;
         }
-
         for (const auto &task : state_.tasks) {
             drawBulletLine(task.message.c_str(), task.percentage, true);
         }
@@ -170,6 +173,7 @@ void ContentSyncScreen::begin() {
             if (state.state == ContentSyncState::Failure ||
                 state.state == ContentSyncState::Synced ||
                 state.state == ContentSyncState::AlreadySynced) {
+                log_d("Content sync done, waiting 5 seconds before going back");
                 delay(5000);
                 backCallback();
             }
