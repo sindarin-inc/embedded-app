@@ -12,7 +12,9 @@ else()
 endif()
 
 # We put the full sdkconfig in the `build/` directory so that it is obvious it is ephemeral
-set(SDKCONFIG "build/sdkconfig.cmake")
+# Get the cmake build dir
+get_property(BUILD_DIR DIRECTORY PROPERTY BINARY_DIR)
+set(SDKCONFIG "${BUILD_DIR}/sdkconfig.cmake")
 message("Resetting ${SDKCONFIG} and rebuilding using sdkconfig.defaults")
 file(REMOVE ${SDKCONFIG})
 
