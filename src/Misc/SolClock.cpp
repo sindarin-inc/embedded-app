@@ -76,7 +76,6 @@ void SolClock::getClockTime(uint8_t &hours, uint8_t &minutes) {
 }
 
 void SolClock::setClockTimeFromInternet() {
-
 #if !SIMULATOR
 
     // Configure the SNTP client
