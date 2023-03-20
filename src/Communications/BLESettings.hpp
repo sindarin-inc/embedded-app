@@ -13,6 +13,7 @@ class BLESettings : BLECharacteristicProvider {
 
 public:
     BLESettings(PreferencesStore *prefs);
+    BLESettings(BLESettings const &) = delete;
     void configureCharacteristics(BLEService *service) override;
     void attachTTRemoteInput(TTRemoteInput *ttRemoteInput);
 

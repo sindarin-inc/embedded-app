@@ -8,6 +8,7 @@
 class CheckSyncResponse : JsonSerializable {
 public:
     CheckSyncResponse() = default;
+    CheckSyncResponse(const CheckSyncResponse &) = delete;
     ~CheckSyncResponse() override = default;
 
     bool synced;

@@ -9,6 +9,8 @@
 class BLESindarinService : public BLEServiceProvider {
 
 public:
+    BLESindarinService() = default;
+    BLESindarinService(BLESindarinService const &) = delete;
     auto configureService(BLEServer *server) -> BLEService * override;
     auto start() -> bool override;
 };

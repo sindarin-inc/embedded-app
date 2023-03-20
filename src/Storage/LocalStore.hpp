@@ -38,6 +38,7 @@ class LocalStore {
 public:
     LocalStore(FileSystem &fileSystem, PreferencesStore &prefs)
         : fileSystem(fileSystem), prefs_(prefs){};
+    LocalStore(LocalStore const &) = delete;
 
     auto begin() -> bool;
     auto loadReadablesFromFile(ReadablesVector &readables, const std::string &path) -> bool;

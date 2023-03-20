@@ -10,6 +10,7 @@ public:
     static auto getInstance() -> PowerManager &;
 
     PowerManager(PreferencesStore &prefs) : prefs_(prefs) {}
+    PowerManager(PowerManager const &) = delete;
 
     auto begin() -> esp_err_t;
 

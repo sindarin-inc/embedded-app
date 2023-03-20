@@ -20,6 +20,7 @@
 class Power {
 public:
     Power(FileSystem &fs, PreferencesStore &prefs) : fileSystem_(fs), prefs_(prefs) {}
+    Power(Power const &) = delete;
 
     void setup();
     void loop();
