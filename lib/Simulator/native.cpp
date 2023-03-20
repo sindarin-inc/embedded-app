@@ -22,8 +22,13 @@
 #endif
 #include "Inputs/RemoteInput.hpp"
 
-#define SIM_LED_DIM 6
+#define SIM_LED_ON 1
 #define SIM_LED_ROUND 1
+#if SIM_LED_ON
+#define SIM_LED_DIM 6
+#else
+#define SIM_LED_DIM 0
+#endif
 
 extern void UIInnerLoop(RemoteCommand command);
 extern "C" void app_main(void); // NOLINT(readability-identifier-naming)
@@ -102,6 +107,7 @@ void DrawRoundLed(int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b) {
 }
 
 void SimDrawLeds() {
+#if SIM_LED_ON
     // draw simulated leds
     int ledDim = SIM_LED_DIM;
     int ledStartY = EinkET013TT1_PIXEL_HEIGHT;
@@ -133,6 +139,7 @@ void SimDrawLeds() {
         ledStartX += ledDim;
     }
     ledChange = false;
+#endif
 };
 
 bool isPngEqual(std::string filepath1, std::string filepath2) {
