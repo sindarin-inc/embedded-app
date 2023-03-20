@@ -13,7 +13,8 @@ endif()
 
 # We put the full sdkconfig in the `build/` directory so that it is obvious it is ephemeral
 set(SDKCONFIG "build/sdkconfig.cmake")
-message("Using ${SDKCONFIG}")
+message("Resetting ${SDKCONFIG} and rebuilding using sdkconfig.defaults")
+file(REMOVE ${SDKCONFIG})
 
 # IDF 4.4.1's mbedtls has compiler warnings so don't treat those as errors
 option(MBEDTLS_FATAL_WARNINGS OFF)
