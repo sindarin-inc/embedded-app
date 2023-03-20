@@ -846,7 +846,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 log_e("Couldn't connect to wifi, not setting clock");
             } else {
                 log_i("Setting time from internet");
-                SolClock theClock = SolClock::getInstance();
+                SolClock &theClock = SolClock::getInstance();
                 theClock.setClockTimeFromInternet();
                 WiFi::getInstance().disconnectWiFi();
             }

@@ -6,6 +6,8 @@
 class SolClock {
 public:
     static auto getInstance() -> SolClock &;
+    // Delete the copy constructor
+    SolClock(SolClock const &) = delete;
 
     SolClock(PreferencesStore &prefs) : prefs_(prefs) {}
 
