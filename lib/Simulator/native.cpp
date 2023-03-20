@@ -111,12 +111,12 @@ void SimDrawLeds() {
     // draw simulated leds
     int ledDim = SIM_LED_DIM;
     int ledStartY = EinkET013TT1_PIXEL_HEIGHT;
-    int ledStartX = 0;
+    int ledStartX = (EinkET013TT1_PIXEL_WIDTH/2) - (ledDim/2);
 
     // clear area
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
     SDL_Rect rect;
-    rect.x = ledStartX;
+    rect.x = 0;
     rect.y = ledStartY;
     rect.h = ledDim;
     rect.w = EinkET013TT1_PIXEL_WIDTH;
