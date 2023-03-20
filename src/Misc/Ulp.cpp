@@ -37,12 +37,11 @@ void UlpDeepSleepMagnetometerWakeup() {
     ulp_riscv_i2c_master_init(&i2c_cfg);
 
     log_i("entering deep sleep, wake up with magnetometer");
-
-    esp_err_t err =
-        ulp_riscv_load_binary(ULP_MAIN_BIN_START, (ULP_MAIN_BIN_END - ULP_MAIN_BIN_START));
-
-    log_e("load binary err %d\n", err);
-    ESP_ERROR_CHECK(err);
+    esp_err_t err = ulp_riscv_load_binary(ULP_MAIN_BIN_START, (ULP_MAIN_BIN_END - ULP_MAIN_BIN_START));
+    if (err != ESP_OK) {
+        log_e("load binary err %d", err);
+        return;
+    }
 
     /* The first argument is the period index, which is not used by the ULP-RISC-V timer
      * The second argument is the period in microseconds, which gives a wakeup time period of: 40ms
@@ -51,11 +50,17 @@ void UlpDeepSleepMagnetometerWakeup() {
 
     /* Start the program */
     err = ulp_riscv_run();
-    log_e("run binary err %d\n", err);
-    ESP_ERROR_CHECK(err);
+    if (err != ESP_OK) {
+        log_e("run binary err %d", err);
+        return;
+    }
 
     esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
-    ESP_ERROR_CHECK(esp_sleep_enable_ulp_wakeup());
+    err = esp_sleep_enable_ulp_wakeup();
+    if (err != ESP_OK) {
+        log_e("error enabling ulp wakeup from deep sleep %d", err);
+        return;
+    }
     esp_deep_sleep_start();
 #endif
 }
