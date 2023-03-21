@@ -1,3 +1,5 @@
+#pragma once
+
 #include <ctime>
 #include <freertos/FreeRTOS.h>
 #include <freertos/event_groups.h>

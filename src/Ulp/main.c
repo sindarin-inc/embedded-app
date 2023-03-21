@@ -14,6 +14,8 @@ volatile int magZ;
 volatile int magAngle;
 volatile int open;
 
+volatile int wakeupCount;
+
 #define MIDPOINT_ANGLE 70
 #define TABLE_MAG_DIVISOR 8
 
@@ -132,7 +134,23 @@ void magReading() {
     }
 }
 
+void init() {
+    open = 0;
+}
+
 int main(void) {
+    init();
+
+    // check if we have run enough times to wake up the CPU for periodic checks
+    if (wakeupCount <= 0) {
+        // time to wake up the CPU
+        ulp_riscv_wakeup_main_processor();
+        return 0;
+    }
+
+    wakeupCount--;
+
+    // read magnetometer to see if the temple is open
     ulp_riscv_i2c_master_set_slave_addr(MAG_ADDRESS);
     magReading();
     return 0;

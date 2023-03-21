@@ -9,11 +9,37 @@
 #include <ulp_riscv_i2c.h>
 #endif
 
+#include "Misc/Platform.hpp"
 #include "Ulp/MagDefs.h"
 #include "sindarin-debug.h"
 
+#define ULP_TIMED_WAKEUP_INTERVAL_SECONDS 10
+#define ULP_RUN_INTERVAL_MS 1000
+
 extern const uint8_t ULP_MAIN_BIN_START[] asm("_binary_ulp_src_bin_start");
 extern const uint8_t ULP_MAIN_BIN_END[] asm("_binary_ulp_src_bin_end");
+
+extern uint32_t ulp_wakeupCount;
+
+void UlpWakeupCheck(SolClock& clock) {
+#if SIMULATOR || (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 1, 0))
+    log_i("only supported on IDF 5.1+");
+#else
+    esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
+    if (cause == ESP_SLEEP_WAKEUP_ULP) {
+        log_i("CPU woke from ULP");
+
+        // check if temples are open
+        
+
+        uint8_t hours, minutes;
+        clock.getClockTime(hours, minutes);
+        
+        log_i("time is now: %02d:%02d", hours, minutes);
+    }
+
+#endif
+}
 
 void UlpDeepSleepMagnetometerWakeup() {
 #if SIMULATOR || (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 1, 0))
@@ -47,7 +73,10 @@ void UlpDeepSleepMagnetometerWakeup() {
     /* The first argument is the period index, which is not used by the ULP-RISC-V timer
      * The second argument is the period in microseconds, which gives a wakeup time period of: 40ms
      */
-    ulp_set_wakeup_period(0, 1000000);
+    ulp_set_wakeup_period(0, ULP_RUN_INTERVAL_MS * 1000);
+
+    // set the interval to wake up to do periodic checks
+    ulp_wakeupCount = (ULP_TIMED_WAKEUP_INTERVAL_SECONDS * 1000) / ULP_RUN_INTERVAL_MS;
 
     /* Start the program */
     err = ulp_riscv_run();
