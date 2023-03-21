@@ -1,6 +1,7 @@
 #include "LocalStore.hpp"
 
 #include <esp_system.h>
+#include <memory>
 #include <unordered_map>
 
 #include "Communications/HtmlCleaner.hpp"
@@ -542,7 +543,7 @@ void LocalStore::syncFromRemote(
             }
 
             // Update the since dates and try once more to sync to ensure we don't miss anything
-            doc.reset(new SpiRamJsonDocument(2048 * std::max(1, (int)readables->size())));
+            doc = std::make_unique<SpiRamJsonDocument>(2048 * std::max(1, (int)readables->size()));
             request = doc->to<JsonObject>();
             storedUuidsJsonArray = request.createNestedArray("stored_uuids");
             this->storedReadableUuids(*readables, storedUuidsJsonArray);
@@ -650,10 +651,9 @@ auto LocalStore::processReadables(const CheckSyncResponse &checkSyncResponse,
     return std::make_pair(readablesToDownload, readablesToDelete);
 }
 
-void LocalStore::processReadableDeletion(const ReadablesVector &readablesToDelete,
-                                         ReadablesVector &readables, int &tasksIndex,
-                                         ContentSyncState &syncState,
-                                         std::function<void(ContentSyncState)> progressCallback) {
+void LocalStore::processReadableDeletion(
+    const ReadablesVector &readablesToDelete, ReadablesVector &readables, int &tasksIndex,
+    ContentSyncState &syncState, const std::function<void(ContentSyncState)> &progressCallback) {
     for (int i = 0; i < readablesToDelete.size(); i++) {
 
         syncState.tasks[tasksIndex].percentage = (float(i + 1) / readablesToDelete.size()) * 100;
@@ -668,10 +668,9 @@ void LocalStore::processReadableDeletion(const ReadablesVector &readablesToDelet
     progressCallback(syncState);
 }
 
-auto LocalStore::processReadableDownload(const ReadablesVector &readablesToDownload,
-                                         ReadablesVector &readables, int &tasksIndex,
-                                         ContentSyncState &syncState,
-                                         std::function<void(ContentSyncState)> progressCallback)
+auto LocalStore::processReadableDownload(
+    const ReadablesVector &readablesToDownload, ReadablesVector &readables, int &tasksIndex,
+    ContentSyncState &syncState, const std::function<void(ContentSyncState)> &progressCallback)
     -> bool {
     bool failedDownload = false;
 

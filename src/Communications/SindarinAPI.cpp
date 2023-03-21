@@ -42,14 +42,14 @@ void SindarinAPI::setAuth(HttpClient &client) {
 void SindarinAPI::setAccessToken(const std::string &token) { accessToken_ = token; }
 
 auto SindarinAPI::checkSync(const char *body, size_t bodyLength, CheckSyncResponse *resp,
-                            std::string modelType) -> int {
+                            const std::string &modelType) -> int {
     auto url = StringFormat(SINDARIN_SERVER_URL "/sync/%ss/", modelType.c_str());
     log_d("Checking sync: %s", url.c_str());
     return checkSync(url, body, bodyLength, resp, modelType);
 }
 
-auto SindarinAPI::checkSync(std::string url, const char *body, size_t bodyLength,
-                            CheckSyncResponse *resp, std::string modelType) -> int {
+auto SindarinAPI::checkSync(const std::string &url, const char *body, size_t bodyLength,
+                            CheckSyncResponse *resp, const std::string &modelType) -> int {
     HttpClient client(url.c_str(), "application/json",
                       bodyLength ? HTTP_METHOD_POST : HTTP_METHOD_GET);
     setAuth(client);

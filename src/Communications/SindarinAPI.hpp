@@ -23,9 +23,9 @@ public:
     void setAccessToken(const std::string &accessToken);
 
     auto checkSync(const char *req, size_t bodyLength, CheckSyncResponse *resp,
-                   std::string modelType) -> int;
-    auto checkSync(std::string url, const char *body, size_t bodyLength, CheckSyncResponse *resp,
-                   std::string modelType) -> int;
+                   const std::string &modelType) -> int;
+    auto checkSync(const std::string &url, const char *body, size_t bodyLength,
+                   CheckSyncResponse *resp, const std::string &modelType) -> int;
     auto checkFirmware(FirmwareResponse *resp) -> int;
 
     auto syncBookmarks(const char *bookmarksJson, const int bookmarksSize) -> int;

@@ -77,11 +77,12 @@ public:
     void processReadableDeletion(const ReadablesVector &readablesToDelete,
                                  ReadablesVector &readables, int &tasksIndex,
                                  ContentSyncState &syncState,
-                                 std::function<void(ContentSyncState)> progressCallback);
+                                 const std::function<void(ContentSyncState)> &progressCallback);
     auto processReadableDownload(const ReadablesVector &readablesToDownload,
                                  ReadablesVector &readables, int &tasksIndex,
                                  ContentSyncState &syncState,
-                                 std::function<void(ContentSyncState)> progressCallback) -> bool;
+                                 const std::function<void(ContentSyncState)> &progressCallback)
+        -> bool;
     void deleteReadables(bool restart = true);
     void deleteArticles(bool restart = true);
     void deleteReadableFiles(const ReadablesVector &readables, bool restart);
