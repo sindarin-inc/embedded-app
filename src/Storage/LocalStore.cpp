@@ -174,7 +174,7 @@ void LocalStore::changedReadablePlacemarkJson(const ReadablesVector &readables,
                   readable.title.c_str(), readable.uuid.c_str(), place);
             auto placemark = placemarksJsonArray.createNestedObject();
             placemark["uuid"] = readable.uuid;
-            placemark["place"] = place;
+            placemark["position"] = place;
         }
     }
 }
@@ -654,7 +654,9 @@ void LocalStore::processReadableDeletion(
     }
 
     // All article deletions take a single task line item
-    tasksIndex += 1;
+    if (readablesToDelete.size() > 0) {
+        tasksIndex += 1;
+    }
     progressCallback(syncState);
 }
 
@@ -694,6 +696,10 @@ auto LocalStore::processReadableDownload(
             if (success) {
                 addReadable(readables, readable);
                 log_d("File successfully downloaded.");
+                if (!saveReadables(readables)) {
+                    log_e("Failed to save %s", ToString(modelType).c_str());
+                }
+
                 break;
             } else {
                 log_w("Failed to download file. Retrying...");
@@ -704,10 +710,16 @@ auto LocalStore::processReadableDownload(
             }
         }
 
-        tasksIndex += 1;
+        if (modelType == ReadablesModelType::Book) {
+            tasksIndex += 1;
+        }
     }
 
     progressCallback(syncState);
+
+    if (modelType == ReadablesModelType::Article) {
+        tasksIndex += 1;
+    }
 
     return failedDownload;
 }
@@ -887,6 +899,7 @@ void LocalStore::readableFilePurge(const Readable &readable) {
         }
     };
 
+    log_d("Purging readable file %s (%s)", readable.title.c_str(), uuid.c_str());
     removeIfExists(StringFormat("/%s/%s.txt.gz", type.c_str(), uuid.c_str()));
     removeIfExists(StringFormat("/%s/%s.txt", type.c_str(), uuid.c_str()));
     removeIfExists(StringFormat("/%s/%s.epub", type.c_str(), uuid.c_str()));
