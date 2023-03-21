@@ -151,6 +151,9 @@ auto LocalStore::readablesSince(const ReadablesModelType modelType) -> std::stri
 void LocalStore::storedReadableUuids(const ReadablesVector &readables,
                                      JsonArray &storedUuidsJsonArray) {
     for (auto &readable : readables) {
+        if (readable.localOnly) {
+            continue;
+        }
         storedUuidsJsonArray.add(readable.uuid);
     }
 }
