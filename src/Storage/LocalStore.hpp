@@ -81,7 +81,7 @@ public:
     auto processReadableDownload(const ReadablesVector &readablesToDownload,
                                  ReadablesVector &readables, int &tasksIndex,
                                  ContentSyncState &syncState,
-                                 std::function<void(ContentSyncState)> progressCallback,
+                                 const std::function<void(ContentSyncState)> &progressCallback,
                                  ReadablesModelType modelType) -> bool;
     void deleteReadables(bool restart = true);
     void deleteArticles(bool restart = true);

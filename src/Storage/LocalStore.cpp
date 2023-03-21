@@ -656,11 +656,10 @@ void LocalStore::processReadableDeletion(
     progressCallback(syncState);
 }
 
-auto LocalStore::processReadableDownload(const ReadablesVector &readablesToDownload,
-                                         ReadablesVector &readables, int &tasksIndex,
-                                         ContentSyncState &syncState,
-                                         std::function<void(ContentSyncState)> progressCallback,
-                                         ReadablesModelType modelType) -> bool {
+auto LocalStore::processReadableDownload(
+    const ReadablesVector &readablesToDownload, ReadablesVector &readables, int &tasksIndex,
+    ContentSyncState &syncState, const std::function<void(ContentSyncState)> &progressCallback,
+    ReadablesModelType modelType) -> bool {
     bool failedDownload = false;
 
     if (readablesToDownload.size() == 0) {

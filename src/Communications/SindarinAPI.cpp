@@ -42,14 +42,14 @@ void SindarinAPI::setAuth(HttpClient &client) {
 void SindarinAPI::setAccessToken(const std::string &token) { accessToken_ = token; }
 
 auto SindarinAPI::checkSync(std::shared_ptr<SpiRamJsonDocument> doc, CheckSyncResponse *resp,
-                            std::string modelType) -> int {
+                            const std::string &modelType) -> int {
     auto url = StringFormat(SINDARIN_SERVER_URL "/sync/%ss/", modelType.c_str());
     log_d("Checking sync: %s", url.c_str());
-    return checkSync(url, doc, resp, modelType);
+    return checkSync(url, std::move(doc), resp, modelType);
 }
 
-auto SindarinAPI::checkSync(std::string url, std::shared_ptr<SpiRamJsonDocument> doc,
-                            CheckSyncResponse *resp, std::string modelType) -> int {
+auto SindarinAPI::checkSync(const std::string &url, const std::shared_ptr<SpiRamJsonDocument> &doc,
+                            CheckSyncResponse *resp, const std::string &modelType) -> int {
     HttpClient client(url.c_str(), "application/json", HTTP_METHOD_POST);
     setAuth(client);
 
@@ -65,7 +65,7 @@ auto SindarinAPI::checkSync(std::string url, std::shared_ptr<SpiRamJsonDocument>
     client.open(bodyLength);
     int writeLength = client.write(body, bodyLength);
     if (writeLength < bodyLength) {
-        log_w("HttpClient failed to write (writeLength=%zu, bodyLength=%zu)", writeLength,
+        log_w("HttpClient failed to write (writeLength=%d, bodyLength=%zu)", writeLength,
               bodyLength);
         // return 0;
     }

@@ -23,9 +23,9 @@ public:
     void setAccessToken(const std::string &accessToken);
 
     auto checkSync(std::shared_ptr<SpiRamJsonDocument> doc, CheckSyncResponse *resp,
-                   std::string modelType) -> int;
-    auto checkSync(std::string url, std::shared_ptr<SpiRamJsonDocument> doc,
-                   CheckSyncResponse *resp, std::string modelType) -> int;
+                   const std::string &modelType) -> int;
+    auto checkSync(const std::string &url, const std::shared_ptr<SpiRamJsonDocument> &doc,
+                   CheckSyncResponse *resp, const std::string &modelType) -> int;
     auto checkFirmware(FirmwareResponse *resp) -> int;
 
     auto downloadReadable(const Readable &readable, FileSystem &fileSystem, const std::string &path,
