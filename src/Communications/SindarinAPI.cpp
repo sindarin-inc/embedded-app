@@ -41,34 +41,45 @@ void SindarinAPI::setAuth(HttpClient &client) {
 
 void SindarinAPI::setAccessToken(const std::string &token) { accessToken_ = token; }
 
-auto SindarinAPI::checkSync(const char *body, size_t bodyLength, CheckSyncResponse *resp,
-                            const std::string &modelType) -> int {
+auto SindarinAPI::checkSync(std::shared_ptr<SpiRamJsonDocument> doc, CheckSyncResponse *resp,
+                            std::string modelType) -> int {
     auto url = StringFormat(SINDARIN_SERVER_URL "/sync/%ss/", modelType.c_str());
     log_d("Checking sync: %s", url.c_str());
-    return checkSync(url, body, bodyLength, resp, modelType);
+    return checkSync(url, doc, resp, modelType);
 }
 
-auto SindarinAPI::checkSync(const std::string &url, const char *body, size_t bodyLength,
-                            CheckSyncResponse *resp, const std::string &modelType) -> int {
-    HttpClient client(url.c_str(), "application/json",
-                      bodyLength ? HTTP_METHOD_POST : HTTP_METHOD_GET);
+auto SindarinAPI::checkSync(std::string url, std::shared_ptr<SpiRamJsonDocument> doc,
+                            CheckSyncResponse *resp, std::string modelType) -> int {
+    HttpClient client(url.c_str(), "application/json", HTTP_METHOD_POST);
     setAuth(client);
+
+    // auto bodyLength = doc->memoryUsage();
+    // client.open(bodyLength);
+    // auto ostream = client.makeWriteStream();
+    // size_t writeLength = serializeJson(*doc, *ostream);
+
+    size_t serializedMaxSize = (*doc).memoryUsage() * 2;
+    char *body = (char *)heap_caps_malloc(serializedMaxSize, MALLOC_CAP_SPIRAM);
+    size_t bodyLength = serializeJson(*doc, body, serializedMaxSize);
 
     client.open(bodyLength);
     int writeLength = client.write(body, bodyLength);
     if (writeLength < bodyLength) {
-        log_e("HttpClient failed to write (writeLength=%d)", writeLength);
-        return 0;
+        log_w("HttpClient failed to write (writeLength=%zu, bodyLength=%zu)", writeLength,
+              bodyLength);
+        // return 0;
     }
 
     int contentLength = client.fetchHeaders();
     if (contentLength <= 0) {
         log_e("Failed to fetch headers");
+        heap_caps_free(body);
         return 0;
     }
     int httpCode = client.getStatusCode();
     if (httpCode != 200) {
         log_e("Failed to check sync: %d", httpCode);
+        heap_caps_free(body);
         return httpCode;
     }
     auto stream = client.makeReadStream();
@@ -96,6 +107,8 @@ auto SindarinAPI::checkSync(const std::string &url, const char *body, size_t bod
 
     log_d("Synced: %d Message: %s", resp->synced, resp->message.c_str());
 
+    SHOW_HEAP();
+    heap_caps_free(body);
     SHOW_HEAP();
 
     return httpCode;
@@ -135,44 +148,6 @@ auto SindarinAPI::checkFirmware(FirmwareResponse *resp) -> int {
         log_e("Failed to parse firmware response");
         return 0;
     }
-
-    SHOW_HEAP();
-
-    return httpCode;
-}
-
-auto SindarinAPI::syncBookmarks(const char *bookmarksJson, const int bookmarksSize) -> int {
-    SyncBookmarksResponse resp;
-    HttpClient client(SINDARIN_SERVER_URL "/user/bookmarks/", "application/json", HTTP_METHOD_POST);
-    setAuth(client);
-
-    client.open(bookmarksSize);
-    int writeLength = client.write(bookmarksJson, bookmarksSize);
-    if (writeLength < bookmarksSize) {
-        log_e("HttpClient failed to write (writeLength=%d)", writeLength);
-        return 0;
-    }
-
-    int contentLength = client.fetchHeaders();
-    int httpCode = client.getStatusCode();
-    auto stream = client.makeReadStream();
-
-    SHOW_HEAP();
-
-    auto respJson = std::make_unique<SpiRamJsonDocument>(1024 + contentLength * 3);
-    auto error = ArduinoJson::deserializeJson(*respJson, *stream);
-
-    SHOW_HEAP();
-
-    if (error.code() != DeserializationError::Ok) {
-        log_e("Failed to deserialize sync bookmarks response: %s (length=%d)", error.c_str(),
-              contentLength);
-        return 0;
-    }
-
-    SHOW_HEAP();
-
-    resp.fromJson(respJson->as<JsonObject>());
 
     SHOW_HEAP();
 
@@ -253,7 +228,7 @@ auto SindarinAPI::uploadAndResetVoltageLog(FileSystem &fileSystem) -> int {
 
     int writeLength = client.write(serialized, serializedLength);
     if (writeLength != serializedLength) {
-        log_e("HttpClient failed to write fully (writeLength=%d, serializedLength=%zu)",
+        log_w("HttpClient failed to write fully (writeLength=%d, serializedLength=%zu)",
               writeLength, serializedLength);
     }
 

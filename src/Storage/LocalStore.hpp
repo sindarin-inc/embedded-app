@@ -54,7 +54,7 @@ public:
     auto hasReadable(const ReadablesVector &readables, const Readable &readable) -> bool;
     void addReadable(ReadablesVector &readables, const Readable &readable);
     void removeReadable(ReadablesVector &readables, const Readable &readable);
-    auto readablesSince(const ReadablesVector &readables) -> std::string;
+    auto readablesSince(const ReadablesModelType modelType) -> std::string;
 
     void storedReadableUuids(const ReadablesVector &readables, JsonArray &storedUuidsJsonArray);
     void changedReadablePlacemarkJson(const ReadablesVector &readables,
@@ -81,8 +81,8 @@ public:
     auto processReadableDownload(const ReadablesVector &readablesToDownload,
                                  ReadablesVector &readables, int &tasksIndex,
                                  ContentSyncState &syncState,
-                                 const std::function<void(ContentSyncState)> &progressCallback)
-        -> bool;
+                                 std::function<void(ContentSyncState)> progressCallback,
+                                 ReadablesModelType modelType) -> bool;
     void deleteReadables(bool restart = true);
     void deleteArticles(bool restart = true);
     void deleteReadableFiles(const ReadablesVector &readables, bool restart);
