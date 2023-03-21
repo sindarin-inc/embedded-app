@@ -25,7 +25,7 @@ public:
 
     void setAccessToken(const std::string &accessToken);
 
-    auto checkSync(std::shared_ptr<SpiRamJsonDocument> doc, CheckSyncResponse *resp,
+    auto checkSync(const std::shared_ptr<SpiRamJsonDocument> &doc, CheckSyncResponse *resp,
                    const std::string &modelType) -> int;
     auto checkSync(const std::string &url, const std::shared_ptr<SpiRamJsonDocument> &doc,
                    CheckSyncResponse *resp, const std::string &modelType) -> int;

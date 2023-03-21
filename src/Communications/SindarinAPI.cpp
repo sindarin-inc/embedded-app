@@ -41,11 +41,11 @@ void SindarinAPI::setAuth(HttpClient &client) {
 
 void SindarinAPI::setAccessToken(const std::string &token) { accessToken_ = token; }
 
-auto SindarinAPI::checkSync(std::shared_ptr<SpiRamJsonDocument> doc, CheckSyncResponse *resp,
+auto SindarinAPI::checkSync(const std::shared_ptr<SpiRamJsonDocument> &doc, CheckSyncResponse *resp,
                             const std::string &modelType) -> int {
     auto url = StringFormat(SINDARIN_SERVER_URL "/sync/%ss/", modelType.c_str());
     log_d("Checking sync: %s", url.c_str());
-    return checkSync(url, std::move(doc), resp, modelType);
+    return checkSync(url, doc, resp, modelType);
 }
 
 auto SindarinAPI::checkSync(const std::string &url, const std::shared_ptr<SpiRamJsonDocument> &doc,
