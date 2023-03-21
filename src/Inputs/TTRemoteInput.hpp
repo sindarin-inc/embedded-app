@@ -17,6 +17,7 @@ class TTRemoteInput : public RemoteInput {
 public:
     TTRemoteInput(PreferencesStore &prefs) noexcept
         : prefs_(prefs), advertisedDeviceCallbacks_(this), clientCallbacks_(this){};
+    TTRemoteInput(TTRemoteInput const &) = delete;
 
     // Connect to the TurnTouch. Can be safely called even if the TurnTouch is already connected.
     void connect();

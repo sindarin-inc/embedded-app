@@ -1,9 +1,11 @@
 FILE(GLOB_RECURSE app_sources ${CMAKE_SOURCE_DIR}/src/*.*)
+# Remove the /src/Ulp directory since it's only for ULP things
+list(FILTER app_sources EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/Ulp/*.*")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(components astubs expat improv ArduinoJson Adafruit-GFX-Library driver mbedtls vfs lwip efuse esp_hw_support soc esp_eth spi_flash bt nvs_flash esp_system esp_event xtensa wpa_supplicant esp_hw_support freertos heap esp_pm esp_adc esp_http_client wifi_provisioning esp_littlefs esp-nimble-cpp espcoredump app_update unzipLIB)
+set(components ulp astubs expat improv ArduinoJson Adafruit-GFX-Library driver mbedtls vfs lwip efuse esp_hw_support soc esp_eth spi_flash bt nvs_flash esp_system esp_event xtensa wpa_supplicant esp_hw_support freertos heap esp_pm esp_adc esp_http_client wifi_provisioning esp_littlefs esp-nimble-cpp espcoredump app_update unzipLIB)
 
 set(compile_options
     -includeconfig.h
@@ -30,6 +32,12 @@ idf_component_register(
     INCLUDE_DIRS "."
     REQUIRES ${components}
 )
+
+# ULP setup
+set(ulp_app_name ulp_${COMPONENT_NAME})
+set(ulp_riscv_sources "Ulp/main.c")
+set(ulp_exp_dep_srcs "Misc/Ulp.cpp")
+ulp_embed_binary(${ulp_app_name} "${ulp_riscv_sources}" "${ulp_exp_dep_srcs}")
 
 target_compile_options(${COMPONENT_TARGET} PUBLIC ${compile_options})
 target_link_libraries(${COMPONENT_LIB} PUBLIC git_version)

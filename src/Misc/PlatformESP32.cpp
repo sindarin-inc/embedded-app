@@ -1,5 +1,6 @@
 #include <driver/i2c.h>
 #include <driver/ledc.h>
+#include <driver/rtc_io.h>
 #include <driver/uart.h>
 #include <esp_adc/adc_cali.h>
 #include <esp_adc/adc_cali_scheme.h>
@@ -12,6 +13,7 @@
 #include <nvs_flash.h>
 #include <optional>
 #include <soc/rtc.h>
+#include <ulp_riscv.h>
 
 #include "Misc/StringUtil.hpp"
 #include "Platform.hpp"
@@ -38,6 +40,12 @@ void Delay(int ms) { vTaskDelay(ms * portTICK_PERIOD_MS); }
 auto Millis() -> int { return GetRunTimeMs(); }
 
 void HardwareInit() {
+    // release rtc i2c lines
+    ulp_timer_stop();
+    ulp_riscv_halt();
+    rtc_gpio_deinit((gpio_num_t)I2C_MASTER_SDA_IO);
+    rtc_gpio_deinit((gpio_num_t)I2C_MASTER_SCL_IO);
+
     esp_log_level_set("*", (esp_log_level_t)CONFIG_LOG_DEFAULT_LEVEL);
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {

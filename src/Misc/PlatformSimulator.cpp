@@ -8,8 +8,15 @@
 #include "sindarin-debug.h"
 
 int LightingSetting;
+bool ledChange;
+bool simLeds[3];
 
-void InitializePlatform() {}
+void InitializePlatform() {
+    for (int i = 0; i < 3; i++) {
+        simLeds[i] = false;
+    }
+    ledChange = false;
+}
 
 auto GetBatteryVoltageLeft() -> float { return 0; }
 
@@ -59,7 +66,29 @@ int Millis() {
     return (int)durationMs.count();
 }
 
-void DigitalWrite(int pin, int level) {}
+void DigitalWrite(int pin, int level) {
+    if (pin == RED_LED) {
+        if (level == LED_OFF) {
+            simLeds[0] = false;
+        } else {
+            simLeds[0] = true;
+        }
+    } else if (pin == GREEN_LED) {
+        if (level == LED_OFF) {
+            simLeds[1] = false;
+        } else {
+            simLeds[1] = true;
+        }
+    } else if (pin == BLUE_LED) {
+        if (level == LED_OFF) {
+            simLeds[2] = false;
+        } else {
+            simLeds[2] = true;
+        }
+    }
+
+    ledChange = true;
+}
 
 // for logging
 const char *pathToFileName(const char *path) {

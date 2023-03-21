@@ -27,6 +27,7 @@ public:
     static auto getInstance() -> WiFi &;
 
     WiFi() = default;
+    WiFi(WiFi const &) = delete;
 
     // Credentials
     auto getWifiConfig(wifi_config_t *conf) -> esp_err_t;

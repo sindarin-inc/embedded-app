@@ -19,6 +19,7 @@
 #include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
+#include "Misc/Ulp.hpp"
 #include "Models/Readable.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/LocalStore.hpp"
@@ -845,7 +846,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 log_e("Couldn't connect to wifi, not setting clock");
             } else {
                 log_i("Setting time from internet");
-                SolClock theClock = SolClock::getInstance();
+                SolClock &theClock = SolClock::getInstance();
                 theClock.setClockTimeFromInternet();
                 WiFi::getInstance().disconnectWiFi();
             }
@@ -1239,6 +1240,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             delete voltageLogScreen;
         };
         (*voltageLogScreen).begin();
+    }));
+
+    debugSettingsMenu->addMenuItem(MenuItem("Deep Sleep w/Mag Wakeup", [display,
+                                                                        debugSettingsMenu]() {
+        log_w("Deep sleeping. Goodnight.");
+        debugSettingsMenu->showTemporaryMessage(*display, "Deep sleeping. Goodnight.", 2000, false);
+        UlpDeepSleepMagnetometerWakeup();
     }));
 
     oldMenu->addMenuItem(MenuItem("Calibration Screen Run Through", [this, oldMenu]() {

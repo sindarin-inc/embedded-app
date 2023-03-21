@@ -17,6 +17,9 @@
 
 class SindarinAPI {
 public:
+    SindarinAPI() = default;
+    SindarinAPI(SindarinAPI const &) = delete;
+
     static auto getInstance() -> std::shared_ptr<SindarinAPI>;
     static auto isSindarinUrl(const char *url) -> bool;
 

@@ -5,6 +5,7 @@
 class PosixFileSystem : public FileSystem {
 public:
     PosixFileSystem() noexcept : FileSystem(){};
+    PosixFileSystem(PosixFileSystem const &) = delete;
 
     auto begin() -> bool override;
     auto open(const std::string &path, const char *mode = FILE_READ,

@@ -228,6 +228,7 @@ public:
           wifiPower(*this, "wifi-power"), morningNewspaperTime(*this, "morning-news"),
           eveningNewspaperTime(*this, "evening-news"), solTimeZone(*this, "time-zone"),
           sleepReason(*this, "sleep-reason"){};
+    PreferencesStore(PreferencesStore &) = delete;
 
     auto begin() -> bool {
         if (started_) {

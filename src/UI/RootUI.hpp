@@ -15,6 +15,7 @@
 class RootUI : public ContainerScreen {
 public:
     RootUI(PreferencesStore &prefs, Power &power) noexcept : prefs_(prefs), power_(power) {}
+    RootUI(RootUI const &) = delete;
 
     void setup(DisplaySystem *display, LocalStore &localStore, FileSystem &fileSystem,
                LightingController &lightingController);

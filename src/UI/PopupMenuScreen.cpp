@@ -84,7 +84,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
 
     batteryTextView_.setText(power_.getBatteryPercentageOnlyString());
 
-    SolClock theClock = SolClock::getInstance();
+    SolClock &theClock = SolClock::getInstance();
     clockView_.setText(theClock.getTimeString());
 
     size_t place = renderer_.getCurrentPlace();

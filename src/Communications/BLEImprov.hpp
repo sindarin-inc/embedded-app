@@ -30,6 +30,7 @@ class BLEImprov : public BLECharacteristicProvider, public BLEServiceProvider {
 public:
     BLEImprov()
         : BLECharacteristicProvider(), BLEServiceProvider(), characteristicCallbacks_(this){};
+    BLEImprov(BLEImprov const &) = delete;
     void loop();
 
     void configureCharacteristics(BLEService *service) override;

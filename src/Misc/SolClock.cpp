@@ -92,15 +92,21 @@ void SolClock::setClockTimeFromInternet() {
     // Wait for the SNTP client to get the time
     time_t now = 0;
     struct tm timeinfo {};
-    uint16_t timeoutTries = 0;
-    const int maxTimeoutTries = 10;
 
-    while (timeinfo.tm_year < (2021 - 1900) && timeoutTries < maxTimeoutTries) {
-        log_i("Waiting for system time to be set...");
-        vTaskDelay(pdMS_TO_TICKS(1000));
+    sntp_set_time_sync_notification_cb([](struct timeval *tv) {
+        log_i("Time synchronized");
+        xEventGroupSetBits((SolClock::getInstance().timeSyncEventGroup_), 1);
+    });
+
+    // Wait for the event
+    EventBits_t bits =
+        xEventGroupWaitBits(timeSyncEventGroup_, 1, true, true, pdMS_TO_TICKS(10000));
+
+    if (bits == 0) {
+        log_e("Failed to sync time");
+    } else {
         time(&now);
         localtime_r(&now, &timeinfo);
-        timeoutTries++;
     }
 
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
@@ -108,10 +114,6 @@ void SolClock::setClockTimeFromInternet() {
 #else
     sntp_stop();
 #endif
-
-    if (timeoutTries >= maxTimeoutTries) {
-        log_e("Timed out trying to set time.");
-    }
 
     // Print the time as a string
     char strftimeBuf[64];

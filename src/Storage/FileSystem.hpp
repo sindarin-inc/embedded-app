@@ -14,6 +14,8 @@ typedef std::vector<std::string> FileList;
 // duplication potentially.
 class FileSystem {
 public:
+    FileSystem(FileSystem const &) = delete;
+
     // Note: Allocates the ContainerStream on the heap, make sure to `delete` it somewhere.
     auto newRendererStream(const char *path) -> std::shared_ptr<RendererStream>;
     auto newGzipRendererStream(const char *path) -> std::shared_ptr<RendererStream>;
