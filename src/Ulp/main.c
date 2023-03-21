@@ -134,9 +134,7 @@ void magReading() {
     }
 }
 
-void init() {
-    open = 0;
-}
+void init() { open = 0; }
 
 int main(void) {
     init();

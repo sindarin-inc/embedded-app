@@ -2,5 +2,5 @@
 
 #include "Misc/SolClock.hpp"
 
-void UlpWakeupCheck(SolClock& clock);
+void UlpWakeupCheck(SolClock &clock);
 void UlpDeepSleepMagnetometerWakeup();
