@@ -20,6 +20,7 @@ extern const uint8_t ULP_MAIN_BIN_START[] asm("_binary_ulp_src_bin_start");
 extern const uint8_t ULP_MAIN_BIN_END[] asm("_binary_ulp_src_bin_end");
 
 extern uint32_t ulp_wakeupCount;
+extern uint32_t ulp_open;
 
 void UlpWakeupCheck(SolClock& clock) {
 #if SIMULATOR || (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 1, 0))
@@ -29,13 +30,23 @@ void UlpWakeupCheck(SolClock& clock) {
     if (cause == ESP_SLEEP_WAKEUP_ULP) {
         log_i("CPU woke from ULP");
 
-        // check if temples are open
-        
+        if (ulp_open > 0) {
+            // woke because temples are open
+            log_i("ULP detected temple open");
+
+            // continue with regular startup
+            return;
+        }
 
         uint8_t hours, minutes;
         clock.getClockTime(hours, minutes);
-        
         log_i("time is now: %02d:%02d", hours, minutes);
+
+        // do something with the time
+
+        // back to sleep
+        log_i("going back to sleep");
+        UlpDeepSleepMagnetometerWakeup();
     }
 
 #endif

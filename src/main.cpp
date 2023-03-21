@@ -147,15 +147,11 @@ void loop() { vTaskDelay(portMAX_DELAY); };
 void setup() {
 #else
 extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
-
-#if !SIMULATOR
-    UlpWakeupCheck(solClock);
-#endif
-
     HardwareInit();
 #endif
 
 #if !SIMULATOR
+    UlpWakeupCheck(solClock);
     // Configure log level for all Sindarin logs
     esp_log_level_set("Sindarin", ESP_LOG_DEBUG);
 #endif
