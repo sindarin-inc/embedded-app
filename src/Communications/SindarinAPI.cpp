@@ -67,7 +67,7 @@ auto SindarinAPI::checkSync(const std::string &url, const std::shared_ptr<SpiRam
     if (writeLength < bodyLength) {
         log_w("HttpClient failed to write (writeLength=%d, bodyLength=%zu)", writeLength,
               bodyLength);
-        // return 0;
+        return 0;
     }
 
     int contentLength = client.fetchHeaders();

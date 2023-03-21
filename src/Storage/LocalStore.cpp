@@ -14,7 +14,7 @@
 #include "Models/ReadableBookmark.hpp"
 #include "sindarin-debug.h"
 
-#define READABLES_PATH "/readables.json"
+#define BOOKS_PATH "/readables.json"
 #define ARTICLES_PATH "/articles.json"
 
 enum { NUMBER_OF_READABLE_DOWNLOAD_TRIES = 3 };
@@ -24,7 +24,7 @@ auto ToString(ReadablesModelType type) -> std::string {
     switch (type) {
     case ReadablesModelType::Article:
         return "article";
-    case ReadablesModelType::Readable:
+    case ReadablesModelType::Book:
         return "book";
     default:
         return "unknown";
@@ -32,10 +32,10 @@ auto ToString(ReadablesModelType type) -> std::string {
 }
 
 auto LocalStore::begin() -> bool {
-    auto loadedReadables = loadReadablesFromFile(books_, READABLES_PATH);
+    auto loadedBooks = loadReadablesFromFile(books_, BOOKS_PATH);
     auto loadedArticles = loadReadablesFromFile(articles_, ARTICLES_PATH);
 
-    return loadedReadables && loadedArticles;
+    return loadedBooks && loadedArticles;
 }
 
 auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::string &path)
@@ -93,7 +93,7 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
 }
 
 auto LocalStore::readablesModelType(const ReadablesVector &readables) -> ReadablesModelType {
-    return &readables == &articles_ ? ReadablesModelType::Article : ReadablesModelType::Readable;
+    return &readables == &articles_ ? ReadablesModelType::Article : ReadablesModelType::Book;
 }
 
 auto LocalStore::hasReadable(const ReadablesVector &readables, const Readable &readable) -> bool {
@@ -141,8 +141,8 @@ auto LocalStore::readablesSince(const ReadablesModelType modelType) -> std::stri
     switch (modelType) {
     case ReadablesModelType::Article:
         return prefs_.lastArticlesSince.get().value_or("");
-    case ReadablesModelType::Readable:
-        return prefs_.lastReadablesSince.get().value_or("");
+    case ReadablesModelType::Book:
+        return prefs_.lastBooksSince.get().value_or("");
     default:
         return "";
     }
@@ -387,7 +387,7 @@ void LocalStore::syncFromRemote(
             body["pt_battery"] = this->prefs_.lastPageTurnerBattery.get().value_or(0);
             body["pt_build"] = this->prefs_.lastPageTurnerBuild.get().value_or("");
             body["skip_content"] = true;
-            if (modelType == ReadablesModelType::Readable) {
+            if (modelType == ReadablesModelType::Book) {
                 body["books_since"] = since;
             } else if (modelType == ReadablesModelType::Article) {
                 body["articles_since"] = since;
@@ -429,7 +429,7 @@ void LocalStore::syncFromRemote(
                 // Look through all the books and articles and download any that we don't have
                 // already We also process readables before checking if we're synced before we need
                 // to reset the local changed flags
-                auto userReadables = modelType == ReadablesModelType::Readable
+                auto userReadables = modelType == ReadablesModelType::Book
                                          ? checkSyncResponse.userBooks
                                          : checkSyncResponse.userArticles;
                 auto [readablesToDownload, readablesToDelete] =
@@ -443,7 +443,7 @@ void LocalStore::syncFromRemote(
                 nextPageUrl = checkSyncResponse.nextPageUrl;
 
                 ContentSyncState syncState;
-                if (modelType == ReadablesModelType::Readable) {
+                if (modelType == ReadablesModelType::Book) {
                     progressCallback(
                         ContentSyncState{.state = ContentSyncState::State::SyncingBooks});
                     syncState = {.state = ContentSyncState::State::Syncing};
@@ -456,7 +456,7 @@ void LocalStore::syncFromRemote(
                 if (checkSyncResponse.synced) {
                     log_i("%ss are already in sync, no need to download anything",
                           ToString(modelType).c_str());
-                    if (modelType == ReadablesModelType::Readable) {
+                    if (modelType == ReadablesModelType::Book) {
                         booksAlreadySynced = true;
                     } else if (modelType == ReadablesModelType::Article) {
                         articlesAlreadySynced = true;
@@ -469,7 +469,7 @@ void LocalStore::syncFromRemote(
                 syncState.tasks.reserve(readablesToDownload.size() + readablesToDelete.size());
                 auto tasksIndex = 0;
 
-                if (modelType == ReadablesModelType::Readable) {
+                if (modelType == ReadablesModelType::Book) {
                     for (const auto &readable : readablesToDelete) {
                         syncState.tasks.push_back(ContentSyncState::Task{
                             .message = StringFormat("Delete: %s", readable.title.c_str()),
@@ -524,7 +524,7 @@ void LocalStore::syncFromRemote(
             std::string serverSince;
             if (!failedDownload) {
                 if (checkSyncResponse.booksSince != "") {
-                    this->prefs_.lastReadablesSince.set(checkSyncResponse.booksSince.c_str());
+                    this->prefs_.lastBooksSince.set(checkSyncResponse.booksSince.c_str());
                     serverSince = checkSyncResponse.booksSince;
                 }
                 if (checkSyncResponse.articlesSince != "") {
@@ -533,7 +533,7 @@ void LocalStore::syncFromRemote(
                 }
             }
 
-            if ((modelType == ReadablesModelType::Readable && booksAlreadySynced) ||
+            if ((modelType == ReadablesModelType::Book && booksAlreadySynced) ||
                 (modelType == ReadablesModelType::Article && articlesAlreadySynced)) {
                 continue;
             }
@@ -548,7 +548,7 @@ void LocalStore::syncFromRemote(
             body["pt_battery"] = this->prefs_.lastPageTurnerBattery.get().value_or(0);
             body["pt_build"] = this->prefs_.lastPageTurnerBuild.get().value_or("");
             body["skip_content"] = true;
-            if (modelType == ReadablesModelType::Readable) {
+            if (modelType == ReadablesModelType::Book) {
                 body["books_since"] = serverSince;
             } else if (modelType == ReadablesModelType::Article) {
                 body["articles_since"] = serverSince;
@@ -561,7 +561,7 @@ void LocalStore::syncFromRemote(
             // TODO: Force reload of rootUI instead of rebooting
             if (checkSyncResponse.synced) {
                 log_i("%ss are in sync", ToString(modelType).c_str());
-                if (modelType == ReadablesModelType::Readable) {
+                if (modelType == ReadablesModelType::Book) {
                     booksNowSynced = true;
                 } else if (modelType == ReadablesModelType::Article) {
                     articlesNowSynced = true;
@@ -598,9 +598,8 @@ auto LocalStore::processReadables(const CheckSyncResponse &checkSyncResponse,
     ReadablesVector readablesToDelete = {};
     auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
 
-    auto serverReadables = modelType == ReadablesModelType::Readable
-                               ? checkSyncResponse.userBooks
-                               : checkSyncResponse.userArticles;
+    auto serverReadables = modelType == ReadablesModelType::Book ? checkSyncResponse.userBooks
+                                                                 : checkSyncResponse.userArticles;
 
     for (auto &userReadable : serverReadables) {
         log_d("User readable %s (%s)", userReadable.readable.title.c_str(),
@@ -684,7 +683,7 @@ auto LocalStore::processReadableDownload(
                 readable, this->fileSystem, path,
                 [progressCallback, &syncState, tasksIndex, currPercentage, pctPerReadable,
                  modelType](int percentage) {
-                    if (modelType == ReadablesModelType::Readable) {
+                    if (modelType == ReadablesModelType::Book) {
                         syncState.tasks[tasksIndex].percentage = percentage;
                     } else if (modelType == ReadablesModelType::Article) {
                         float pctThisReadable = (float)percentage * pctPerReadable / 100.0;
@@ -724,7 +723,7 @@ void LocalStore::deleteArticles(bool restart) {
 
 void LocalStore::deleteReadableFiles(const ReadablesVector &readables, bool restart) {
     auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
-    std::string path = modelType == ReadablesModelType::Readable ? READABLES_PATH : ARTICLES_PATH;
+    std::string path = modelType == ReadablesModelType::Book ? BOOKS_PATH : ARTICLES_PATH;
     log_i("Clearing %s", path.c_str());
     bool removed = fileSystem.remove(path);
     if (!removed) {
@@ -733,8 +732,8 @@ void LocalStore::deleteReadableFiles(const ReadablesVector &readables, bool rest
 
     if (modelType == ReadablesModelType::Article) {
         prefs_.lastArticlesSince.set("");
-    } else if (modelType == ReadablesModelType::Readable) {
-        prefs_.lastReadablesSince.set("");
+    } else if (modelType == ReadablesModelType::Book) {
+        prefs_.lastBooksSince.set("");
     }
 
     for (const Readable &readable : readables) {
@@ -754,7 +753,7 @@ auto LocalStore::saveReadables(const ReadablesVector &readables) -> bool {
     // testing so far
     auto doc = std::make_unique<SpiRamJsonDocument>(2048 * std::max(1, (int)readables.size()));
     auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
-    std::string path = modelType == ReadablesModelType::Readable ? READABLES_PATH : ARTICLES_PATH;
+    std::string path = modelType == ReadablesModelType::Book ? BOOKS_PATH : ARTICLES_PATH;
 
     // Create a key named readables of type array
     JsonArray readablesJson = doc->createNestedArray("readables");

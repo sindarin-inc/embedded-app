@@ -33,7 +33,7 @@ struct ContentSyncState {
     std::string message;
 };
 
-enum class ReadablesModelType { Article, Readable };
+enum class ReadablesModelType { Article, Book };
 
 typedef std::vector<Readable, SpiramAllocator<Readable>> ReadablesVector;
 typedef std::vector<UserReadable, SpiramAllocator<UserReadable>> UserReadablesVector;

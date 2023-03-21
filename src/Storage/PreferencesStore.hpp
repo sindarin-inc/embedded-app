@@ -215,7 +215,7 @@ public:
 #endif
           cloudToken(*this, "cloud-token"), lastReadableId(*this, "rui-readable"),
           lastPageTurnerBuild(*this, "pt-build"), lastArticlesSince(*this, "articles-since"),
-          lastReadablesSince(*this, "readables-since"), readablePlace(*this, "-p"),
+          lastBooksSince(*this, "readables-since"), readablePlace(*this, "-p"),
           readablePlaceChanged(*this, "-pc"), readableArchivedChanged(*this, "-ar"),
           readableBookmarksChanged(*this, "-bm"), lastPageTurnerBattery(*this, "pt-battery"),
           invertSetting(*this, "invert"), vcom(*this, "vcom"), font(*this, "font"),
@@ -269,7 +269,7 @@ public:
     PrefsItem<std::string> lastReadableId;
     PrefsItem<std::string> lastPageTurnerBuild;
     PrefsItem<std::string> lastArticlesSince;
-    PrefsItem<std::string> lastReadablesSince;
+    PrefsItem<std::string> lastBooksSince;
     KeyedPrefsItem<uint32_t> readablePlace;
     KeyedPrefsItem<bool> readablePlaceChanged;
     KeyedPrefsItem<bool> readableArchivedChanged;
