@@ -35,7 +35,7 @@ idf_component_register(
 
 # ULP setup
 set(ulp_app_name ulp_${COMPONENT_NAME})
-set(ulp_riscv_sources "Ulp/main.c")
+set(ulp_riscv_sources "Ulp/main.c" "Ulp/ulpTableLookup.c")
 set(ulp_exp_dep_srcs "Misc/Ulp.cpp")
 ulp_embed_binary(${ulp_app_name} "${ulp_riscv_sources}" "${ulp_exp_dep_srcs}")
 
