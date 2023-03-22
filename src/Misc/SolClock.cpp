@@ -124,4 +124,4 @@ void SolClock::setClockTimeFromInternet() {
 #endif
 }
 
-time_t SolClock::getEpochTime() { return time(0); }
+auto SolClock::getEpochTime() -> time_t { return time(nullptr); }

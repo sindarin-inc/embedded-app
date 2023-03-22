@@ -19,8 +19,8 @@
 extern const uint8_t ULP_MAIN_BIN_START[] asm("_binary_ulp_src_bin_start");
 extern const uint8_t ULP_MAIN_BIN_END[] asm("_binary_ulp_src_bin_end");
 
-extern uint32_t ulp_wakeupCount; // NOLINT
-extern uint32_t ulp_open;        // NOLINT
+extern uint32_t ulp_wakeupCount;   // NOLINT
+extern uint32_t ulp_open;          // NOLINT
 extern time_t ulp_wakeupEpochTime; // NOLINT
 
 void UlpWakeupCheck(SolClock &clock) {
@@ -44,12 +44,12 @@ void UlpWakeupCheck(SolClock &clock) {
         clock.getClockTime(hours, minutes);
         time_t timeNow = clock.getEpochTime();
         log_i("time is now: %02d:%02d %lld", hours, minutes, clock.getEpochTime());
-        
+
         if (timeNow >= ulp_wakeupEpochTime) {
             // reached the specified wakeup time
             // do timed check here
             // return if it's time to fully wake up
-        
+
             // for now, just go back to sleep for another 2 minutes
             ulp_wakeupEpochTime = timeNow + (2 * 60);
         }
@@ -62,9 +62,7 @@ void UlpWakeupCheck(SolClock &clock) {
 #endif
 }
 
-void UlpDeepSleepMagnetometerWakeup() {
-    UlpDeepSleepMagnetometerWakeupWithWakeTime((time_t)0);
-}
+void UlpDeepSleepMagnetometerWakeup() { UlpDeepSleepMagnetometerWakeupWithWakeTime((time_t)0); }
 
 void UlpDeepSleepMagnetometerWakeupWithWakeTime(time_t wakeTime) {
 #if SIMULATOR || (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 1, 0))

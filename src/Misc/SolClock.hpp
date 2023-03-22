@@ -19,7 +19,7 @@ public:
 
     void setClockTimeFromInternet();
 
-    time_t getEpochTime();
+    auto getEpochTime() -> time_t;
 
 protected:
     EventGroupHandle_t timeSyncEventGroup_;
