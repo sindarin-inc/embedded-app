@@ -10,11 +10,7 @@
 #include "MagDefs.h"
 #include "ulpTableLookup.h"
 
-volatile int magX;
-volatile int magZ;
-volatile int magAngle;
 volatile int open;
-
 volatile int wakeupCount;
 
 void magReading() {
@@ -40,9 +36,6 @@ void magReading() {
     ulp_riscv_i2c_master_set_slave_reg_addr(0x00);
     ulp_riscv_i2c_master_read_from_device(magReadingBytes, 9);
 
-    magX = magReadingBytes[MAG_X_OUT_0];
-    magZ = magReadingBytes[MAG_Z_OUT_0];
-
     // TODO: use this measurement to decide if we should wake up
     uint8_t xReading = magReadingBytes[MAG_X_OUT_0];
     uint8_t zReading = magReadingBytes[MAG_Z_OUT_0];
@@ -50,8 +43,6 @@ void magReading() {
         open = 1;
         // wake up cpu
         ulp_riscv_wakeup_main_processor();
-    } else {
-        open = 0;
     }
 }
 
