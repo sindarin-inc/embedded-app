@@ -1,0 +1,37 @@
+#include <catch_amalgamated.hpp>
+
+#include "Sensors/TempleAngle.hpp"
+
+extern "C" {
+    #include "Ulp/templeLookup.h"
+    #include "Ulp/ulpTableLookup.h"
+}
+
+bool checkFunc(uint8_t x, uint8_t z) {
+
+    int xxx = (x/TABLE_MAG_DIVISOR)*TABLE_MAG_DIVISOR;
+    int zzz = (z/TABLE_MAG_DIVISOR)*TABLE_MAG_DIVISOR;
+
+    int xx = (int)xxx - 128;
+    int zz = (int)zzz - 128;
+
+    return IsTempleOpen(xx, zz);
+}
+
+TEST_CASE("Test Temple Angle Lookup Table") {
+    int errors = 0;
+    for (int x = 0; x < 256; x++) {
+        for (int z = 0; z < 256; z++) {
+            bool t = checkTable(x, z);
+            bool f = checkFunc(x, z);
+
+            if (t != f) {
+                errors++;
+            }
+        }
+    }
+
+    REQUIRE(errors == 0);
+
+    printf("finished, %d errors\n", errors);
+}

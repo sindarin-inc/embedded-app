@@ -1,4 +1,5 @@
 #include "templeLookup.h"
+#include <stdbool.h>
 
 bool checkTable(uint8_t x, uint8_t z) {
     // truncate values
