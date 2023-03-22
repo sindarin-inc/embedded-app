@@ -11,7 +11,7 @@ bool checkTable(uint8_t x, uint8_t z) {
         return false;
     }
 
-    if (testVal >= templeAngleValues[entryIndex] && testVal < templeAngleValues[entryIndex+1]) {
+    if (testVal >= templeAngleValues[entryIndex] && testVal < templeAngleValues[entryIndex + 1]) {
         return true;
     }
     return false;
