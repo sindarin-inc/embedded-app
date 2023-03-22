@@ -1,8 +1,8 @@
 #include "TempleCloseSensor.hpp"
-#include "TempleAngle.hpp"
 
 #include <cmath>
 
+#include "TempleAngle.hpp"
 #include "sindarin-debug.h"
 
 auto TempleCloseSensor::checkProductId() -> bool {

@@ -1,7 +1,8 @@
 #include "TempleAngle.hpp"
-#include <math.h>
 
-bool IsTempleOpen(int8_t x, int8_t z) {
+#include <cmath>
+
+auto IsTempleOpen(int8_t x, int8_t z) -> bool {
     float angle = atan2f(x, z) * 180.0f / M_PI;
     // log_d("Mag: %d %d %d %fº (success=%d)", magReading.x, magReading.y, magReading.z, angle,
     //       success);
