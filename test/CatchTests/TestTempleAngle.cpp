@@ -8,13 +8,8 @@ extern "C" {
 }
 
 bool checkFunc(uint8_t x, uint8_t z) {
-
-    int xxx = (x/TABLE_MAG_DIVISOR)*TABLE_MAG_DIVISOR;
-    int zzz = (z/TABLE_MAG_DIVISOR)*TABLE_MAG_DIVISOR;
-
-    int xx = (int)xxx - 128;
-    int zz = (int)zzz - 128;
-
+    int xx = (int)x - 128;
+    int zz = (int)z - 128;
     return IsTempleOpen(xx, zz);
 }
 
@@ -32,6 +27,4 @@ TEST_CASE("Test Temple Angle Lookup Table") {
     }
 
     REQUIRE(errors == 0);
-
-    printf("finished, %d errors\n", errors);
 }
