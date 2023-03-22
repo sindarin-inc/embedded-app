@@ -12,6 +12,7 @@
 
 volatile int open;
 volatile int wakeupCount;
+volatile time_t wakeupEpochTime;
 
 void magReading() {
     // initiate a reading
@@ -51,14 +52,18 @@ void init() { open = 0; }
 int main(void) {
     init();
 
-    // check if we have run enough times to wake up the CPU for periodic checks
-    if (wakeupCount <= 0) {
-        // time to wake up the CPU
-        ulp_riscv_wakeup_main_processor();
-        return 0;
-    }
+    // if wakeup epoch time is unset, just stay asleep until woken from magnetometer
+    // instead of periodically checking time.
+    if (wakeupEpochTime != 0) {
+        // check if we have run enough times to wake up the CPU for periodic checks
+        if (wakeupCount <= 0) {
+            // time to wake up the CPU
+            ulp_riscv_wakeup_main_processor();
+            return 0;
+        }
 
-    wakeupCount--;
+        wakeupCount--;
+    }
 
     // read magnetometer to see if the temple is open
     ulp_riscv_i2c_master_set_slave_addr(MAG_ADDRESS);

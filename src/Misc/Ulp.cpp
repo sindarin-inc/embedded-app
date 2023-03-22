@@ -21,6 +21,7 @@ extern const uint8_t ULP_MAIN_BIN_END[] asm("_binary_ulp_src_bin_end");
 
 extern uint32_t ulp_wakeupCount; // NOLINT
 extern uint32_t ulp_open;        // NOLINT
+extern time_t ulp_wakeupEpochTime; // NOLINT
 
 void UlpWakeupCheck(SolClock &clock) {
 #if SIMULATOR || (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 1, 0))
@@ -29,6 +30,7 @@ void UlpWakeupCheck(SolClock &clock) {
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
     if (cause == ESP_SLEEP_WAKEUP_ULP) {
         log_i("CPU woke from ULP");
+        log_i("open %" PRIu32 " wake %lld", ulp_open, ulp_wakeupEpochTime);
 
         if (ulp_open > 0) {
             // woke because temples are open
@@ -40,19 +42,31 @@ void UlpWakeupCheck(SolClock &clock) {
 
         uint8_t hours, minutes;
         clock.getClockTime(hours, minutes);
-        log_i("time is now: %02d:%02d", hours, minutes);
-
-        // do something with the time
+        time_t timeNow = clock.getEpochTime();
+        log_i("time is now: %02d:%02d %lld", hours, minutes, clock.getEpochTime());
+        
+        if (timeNow >= ulp_wakeupEpochTime) {
+            // reached the specified wakeup time
+            // do timed check here
+            // return if it's time to fully wake up
+        
+            // for now, just go back to sleep for another 2 minutes
+            ulp_wakeupEpochTime = timeNow + (2 * 60);
+        }
 
         // back to sleep
         log_i("going back to sleep");
-        UlpDeepSleepMagnetometerWakeup();
+        UlpDeepSleepMagnetometerWakeupWithWakeTime(ulp_wakeupEpochTime);
     }
 
 #endif
 }
 
 void UlpDeepSleepMagnetometerWakeup() {
+    UlpDeepSleepMagnetometerWakeupWithWakeTime((time_t)0);
+}
+
+void UlpDeepSleepMagnetometerWakeupWithWakeTime(time_t wakeTime) {
 #if SIMULATOR || (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 1, 0))
     log_i("only supported on IDF 5.1+");
 #else
@@ -88,6 +102,7 @@ void UlpDeepSleepMagnetometerWakeup() {
 
     // set the interval to wake up to do periodic checks
     ulp_wakeupCount = (ULP_TIMED_WAKEUP_INTERVAL_SECONDS * 1000) / ULP_RUN_INTERVAL_MS;
+    ulp_wakeupEpochTime = wakeTime;
 
     /* Start the program */
     err = ulp_riscv_run();

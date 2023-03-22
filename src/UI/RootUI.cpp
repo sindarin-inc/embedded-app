@@ -1246,7 +1246,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                                                         debugSettingsMenu]() {
         log_w("Deep sleeping. Goodnight.");
         debugSettingsMenu->showTemporaryMessage(*display, "Deep sleeping. Goodnight.", 2000, false);
-        UlpDeepSleepMagnetometerWakeup();
+
+        // sleep with wakeup time set to 30 seconds from now
+        time_t wakeTime = SolClock::getInstance().getEpochTime() + 30;
+
+        UlpDeepSleepMagnetometerWakeupWithWakeTime(wakeTime);
     }));
 
     oldMenu->addMenuItem(MenuItem("Calibration Screen Run Through", [this, oldMenu]() {

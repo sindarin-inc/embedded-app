@@ -123,3 +123,5 @@ void SolClock::setClockTimeFromInternet() {
     log_i("Not setting clock time from internet in simulator");
 #endif
 }
+
+time_t SolClock::getEpochTime() { return time(0); }

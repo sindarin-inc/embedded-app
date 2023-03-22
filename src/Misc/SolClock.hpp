@@ -19,6 +19,8 @@ public:
 
     void setClockTimeFromInternet();
 
+    time_t getEpochTime();
+
 protected:
     EventGroupHandle_t timeSyncEventGroup_;
     PreferencesStore &prefs_;
