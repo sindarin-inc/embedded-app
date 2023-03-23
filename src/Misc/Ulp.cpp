@@ -109,12 +109,24 @@ void UlpDeepSleepMagnetometerWakeupWithWakeTime(time_t wakeTime) {
         return;
     }
 
-    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
+    err = esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
+    if (err != ESP_OK) {
+        log_e("error enabling ESP_PD_DOMAIN_RTC_PERIPH power domain %d", err);
+        return;
+    }
     err = esp_sleep_enable_ulp_wakeup();
     if (err != ESP_OK) {
         log_e("error enabling ulp wakeup from deep sleep %d", err);
         return;
     }
+
+    // No idea how this wakeup source gets enabled, but I am suspicious it's something that happens
+    // in automatic power management's light sleep
+    err = esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
+    if (err != ESP_OK) {
+        log_e("error disabling timer wakeup from deep sleep %d", err);
+    }
+
     esp_deep_sleep_start();
 #endif
 }
