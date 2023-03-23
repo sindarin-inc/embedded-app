@@ -118,9 +118,9 @@ void InitializePlatform() {
 
     adc_oneshot_unit_init_cfg_t adcOneshotCfg;
     adcOneshotCfg.unit_id = ADC_UNIT_1;
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
-    adcOneshotCfg.clk_src = (adc_oneshot_clk_src_t)0;
-#endif
+    // #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
+    //     adcOneshotCfg.clk_src = (adc_oneshot_clk_src_t)0;
+    // #endif
     adcOneshotCfg.ulp_mode = ADC_ULP_MODE_DISABLE;
 
     ESP_ERROR_CHECK(adc_oneshot_new_unit(&adcOneshotCfg, &adcOneshotHandle));
@@ -189,11 +189,11 @@ void InitializePlatform() {
         .duty_resolution = LEDC_TIMER_8_BIT,
         .timer_num = LEDC_TIMER_0,
         .freq_hz = 1000,
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
-        .clk_cfg = LEDC_USE_RC_FAST_CLK
-#else
+        // #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
+        //         .clk_cfg = LEDC_USE_RC_FAST_CLK
+        // #else
         .clk_cfg = LEDC_USE_RTC8M_CLK
-#endif
+        // #endif
     };
     err = ledc_timer_config(&ledcTimer);
     if (err != ESP_OK) {
