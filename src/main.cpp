@@ -13,10 +13,10 @@
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
 #include "Inputs/RemoteInput.hpp"
+#include "Misc/Battery.hpp"
 #include "Misc/BootError.hpp"
 #include "Misc/BootLoopDetection.hpp"
 #include "Misc/Platform.hpp"
-#include "Misc/Power.hpp"
 #include "Misc/PowerManager.hpp"
 #include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
@@ -84,10 +84,9 @@ LittleFSFileSystem fileSystem;
 
 LocalStore localStore(fileSystem, prefs);
 
-Power power(fileSystem, prefs);
-RootUI rootUi(prefs, power);
+PowerManager powerManager(fileSystem, prefs);
+RootUI rootUi(prefs, powerManager.battery);
 SolClock solClock(prefs);
-PowerManager powerManager(prefs);
 
 bool templesClosed = false;
 bool bootCompleted = false;
@@ -97,7 +96,7 @@ bool bootCompleted = false;
 void PollingLoopTask(void *parameter) {
     for (;;) {
         // Run the power loop first so that we don't show a 0% battery reading
-        power.loop();
+        powerManager.loop();
 
 #if USE_TURN_TOUCH_REMOTE
         // Skip scanning while WiFi is connected to avoid kicking off the WiFi connection
@@ -266,7 +265,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 lightingController.disableLighting();
                 templesClosed = true;
                 // Will be turned off after content sync
-                prefs.lastBatteryReport.set((int)power.getBatteryPercentage());
+                prefs.lastBatteryReport.set((int)powerManager.battery.getBatteryPercentage());
             }
         });
         templeCloseSensor.setLongCloseCallback([]() {
@@ -483,8 +482,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 
     SHOW_HEAP();
-
-    power.setup();
 
     rootUi.setup(&myDisplay, localStore, fileSystem, lightingController);
 

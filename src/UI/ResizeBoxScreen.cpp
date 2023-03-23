@@ -7,8 +7,8 @@
 // We will want a more intuitive way to do this in the final system,
 // but since it's so dependent on what the PageTurner ends up being,
 // I didn't want to over-engineer it here.
-ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power)
-    : display_(display), renderer_(display), prefs_(prefs), power_(power) {
+ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs)
+    : display_(display), renderer_(display), prefs_(prefs) {
 
     std::string message;
     for (int i = 0; i < 15; i++) {

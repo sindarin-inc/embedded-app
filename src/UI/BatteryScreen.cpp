@@ -14,7 +14,7 @@ void BatteryScreen::render(DisplaySystem &display) {
 
     uint16_t width = 0, height = 0;
     display.setFont(display.style.getFontFamily().readableFont);
-    auto batteryStatus = power_.getBatteryLifeString();
+    auto batteryStatus = battery_.getBatteryLifeString();
     uint16_t leftTemp;
 #if EINKET013TT1
     auto *driver = (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver();
@@ -32,7 +32,7 @@ void BatteryScreen::render(DisplaySystem &display) {
                                  display.xAbsolute(display.xAbsoluteCenter() - width / 2),
                                  display.yAbsolute(display.yAbsoluteCenter() - height / 2 - 2));
 
-    auto ptBatteryPct = prefs_.lastPageTurnerBattery.get().value_or(0);
+    auto ptBatteryPct = PreferencesStore::lastPageTurnerBattery;
     auto ptBuild = prefs_.lastPageTurnerBuild.get().value_or("Unknown build");
     auto ptBatteryStatus = StringFormat("Page Turner: %d%% (%s)", ptBatteryPct, ptBuild.c_str());
     width = display.getTextWidth(ptBatteryStatus.c_str());

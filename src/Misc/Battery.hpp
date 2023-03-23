@@ -15,14 +15,11 @@
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
 
-// TODO: Perhaps we should rename this class to `Battery` since it only handles the battery part of
-// the Power system
-class Power {
+class Battery {
 public:
-    Power(FileSystem &fs, PreferencesStore &prefs) : fileSystem_(fs), prefs_(prefs) {}
-    Power(Power const &) = delete;
+    Battery(FileSystem &fs, PreferencesStore &prefs) : fileSystem_(fs), prefs_(prefs) {}
+    Battery(const Battery &) = delete;
 
-    void setup();
     void loop();
 
     auto getBatteryLifeString() -> std::string;

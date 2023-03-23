@@ -1,7 +1,7 @@
 #ifndef STATS_SCREEN_HPP
 #define STATS_SCREEN_HPP
 
-#include "Misc/Power.hpp"
+#include "Misc/Battery.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Screen.hpp"

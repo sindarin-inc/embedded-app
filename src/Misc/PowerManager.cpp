@@ -15,6 +15,8 @@ extern PowerManager powerManager;
 auto PowerManager::getInstance() -> PowerManager & { return powerManager; }
 
 auto PowerManager::begin() -> esp_err_t {
+    battery.setup();
+
 #if !SIMULATOR
     inactivityTimer_.start([this]() {
         log_d("Inactive! Allow power off.");

@@ -145,7 +145,7 @@ void MainMenuScreen::render(DisplaySystem &display) {
 
         topBarViews_.clear();
 
-        batteryTextView_.setText(power_.getBatteryPercentageOnlyString());
+        batteryTextView_.setText(battery_.getBatteryPercentageOnlyString());
 
         SolClock &theClock = SolClock::getInstance();
         clockView_.setText(theClock.getTimeString());

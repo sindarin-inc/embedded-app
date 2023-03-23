@@ -5,9 +5,9 @@
 #include <vector>
 
 #include "Inputs/RemoteInput.hpp"
+#include "Misc/Battery.hpp"
 #include "Misc/Menu.hpp"
 #include "Misc/MenuStyle.hpp"
-#include "Misc/Power.hpp"
 #include "Renderers/Renderer.hpp"
 #include "UI/Screen.hpp"
 #include "sindarin-debug.h"
@@ -15,12 +15,12 @@
 class MenuScreen : public Screen, public Menu {
 
 public:
-    MenuScreen(Power &power, MenuStyleFamily myStyle, std::string menuName = "Default")
-        : Menu(myStyle), menuName_(std::move(menuName)), power_(power) {
+    MenuScreen(MenuStyleFamily myStyle, std::string menuName = "Default")
+        : Menu(myStyle), menuName_(std::move(menuName)) {
         numMenuItems_ = 0;
     };
 
-    MenuScreen(Power &power) : power_(power) { numMenuItems_ = 0; };
+    MenuScreen() { numMenuItems_ = 0; };
 
     MenuScreen(MenuScreen const &) = delete;
 
@@ -53,6 +53,4 @@ protected:
     std::string extraTextBelowMenu_ = "";
 
     std::string menuName_ = "Default";
-
-    Power &power_;
 };

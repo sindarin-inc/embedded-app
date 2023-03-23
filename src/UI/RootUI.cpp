@@ -68,7 +68,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     MenuStyle styleFamilies;
 
-    auto mainMenu = new MainMenuScreen(this->power_, *display_, styleFamilies.mainMenu);
+    auto mainMenu = new MainMenuScreen(this->battery_, *display_, styleFamilies.mainMenu);
 
     SIZE_OF(*mainMenu);
 
@@ -95,7 +95,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             stream = fileSystem.newRendererStream(path.c_str());
         }
         auto *readableScreen = new ReadableScreen(stream, *display, readable, this->prefs_,
-                                                  this->power_, fileSystem, lightingController);
+                                                  this->battery_, fileSystem, lightingController);
 
         // When switching to a readable from a menu, we should clear the display
         // to make the whites really white and the blacks really black.
@@ -195,7 +195,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         prefs_.emcMode.remove();
     }
 
-    auto booksMenu = new MenuScreen(this->power_, mainMenu->getMyStyle(), "Books");
+    auto booksMenu = new MenuScreen(mainMenu->getMyStyle(), "Books");
 
     // If there are no books, show the Sync Content item in the books tab.
     if (readables.size() == 0) {
@@ -244,7 +244,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     log_i("Loading %zu Pocket articles", articles.size());
 
-    auto pocketMenu = new MenuScreen(this->power_, mainMenu->getMyStyle(), "Articles");
+    auto pocketMenu = new MenuScreen(mainMenu->getMyStyle(), "Articles");
 
     // If there are no articles, show the Sync Content item in the articles tab.
     if (articles.size() == 0) {
@@ -296,7 +296,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     mainMenu->addSubMenuScreen(pocketMenu);
 
     if (oldTestament || newTestament || psalmsProverbs) {
-        auto bibleMenu = new MenuScreen(this->power_, mainMenu->getMyStyle(), "Bible");
+        auto bibleMenu = new MenuScreen(mainMenu->getMyStyle(), "Bible");
 
         for (const Readable &r : readables) {
             bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
@@ -330,7 +330,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // Reading Settings
     // System Settings
     // Debug Settings
-    auto settingsMenu = new MenuScreen(this->power_, styleFamilies.settingsMenu, "Settings");
+    auto settingsMenu = new MenuScreen(styleFamilies.settingsMenu, "Settings");
 
     // Font Size
     // Line Spacing
@@ -340,7 +340,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // Set Autopilot
     // Morning Newspaper
     // Evening Newspaper
-    auto readingSettingsMenu = new MenuScreen(this->power_, styleFamilies.settingsMenu);
+    auto readingSettingsMenu = new MenuScreen(styleFamilies.settingsMenu);
 
     readingSettingsMenu->backCallback = [this, mainMenu]() {
         this->display_->clearDisplay();
@@ -360,7 +360,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // Clear Books and Restart
     // Clear Articles and Restart
     // Factory Defaults
-    auto systemSettingsMenu = new MenuScreen(this->power_, styleFamilies.settingsMenu);
+    auto systemSettingsMenu = new MenuScreen(styleFamilies.settingsMenu);
 
     systemSettingsMenu->backCallback = [this, mainMenu]() {
         this->display_->clearDisplay();
@@ -378,7 +378,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // Set Vcom
     // Set Vcom Precise
     // Upload Voltage Log
-    auto debugSettingsMenu = new MenuScreen(this->power_, styleFamilies.settingsMenu);
+    auto debugSettingsMenu = new MenuScreen(styleFamilies.settingsMenu);
 
     debugSettingsMenu->backCallback = [this, mainMenu]() {
         this->display_->clearDisplay();
@@ -387,7 +387,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     };
 
     // For items we don't want to throw away yet, but this isn't hooked up anywhere
-    auto oldMenu = new MenuScreen(this->power_, styleFamilies.settingsMenu);
+    auto oldMenu = new MenuScreen(styleFamilies.settingsMenu);
 
     // settingsMenu->addMenuItem(MenuItem("Layout Example", [this, settingsMenu, display]() {
     //    auto layoutTestScreen = new LayoutTestScreen(*display);
@@ -432,7 +432,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 
     readingSettingsMenu->addMenuItem(MenuItem("Font Size", [this, readingSettingsMenu]() {
-        auto fontMenu = new MenuScreen(this->power_, readingSettingsMenu->getMyStyle());
+        auto fontMenu = new MenuScreen(readingSettingsMenu->getMyStyle());
         fontMenu->setExtraText("Example font size");
         fontMenu->addMenuItem(MenuItem("Small", [this, fontMenu]() {
             this->display_->style.setFontFamily(this->display_->style.tahomaRegular);
@@ -481,7 +481,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     readingSettingsMenu->addMenuItem(
         MenuItem("Move Text Box", [this, readingSettingsMenu, display]() {
             log_d("Loading adjust offset");
-            auto offsetAdjust = new OffsetAdjustScreen(*display, prefs_, this->power_);
+            auto offsetAdjust = new OffsetAdjustScreen(*display, prefs_);
             this->setCurrentScreen(*offsetAdjust);
             log_d("setting up callback");
             offsetAdjust->backCallback = [this, offsetAdjust, readingSettingsMenu]() {
@@ -495,7 +495,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     readingSettingsMenu->addMenuItem(
         MenuItem("Resize Text Box", [this, readingSettingsMenu, display]() {
             log_d("Loading resize box");
-            auto resizeBox = new ResizeBoxScreen(*display, prefs_, this->power_);
+            auto resizeBox = new ResizeBoxScreen(*display, prefs_);
             this->setCurrentScreen(*resizeBox);
             log_d("setting up callback");
             resizeBox->backCallback = [this, resizeBox, readingSettingsMenu]() {
@@ -507,7 +507,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }));
 
     readingSettingsMenu->addMenuItem(MenuItem("Set Autopilot", [this, readingSettingsMenu]() {
-        auto speedMenu = new MenuScreen(this->power_, readingSettingsMenu->getMyStyle());
+        auto speedMenu = new MenuScreen(readingSettingsMenu->getMyStyle());
         speedMenu->addMenuItem(MenuItem("None (Off)", [this, speedMenu]() {
             prefs_.autoPilotSpeed.set(0);
             speedMenu->setExtraText("Autopilot off");
@@ -538,7 +538,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     readingSettingsMenu->addMenuItem(MenuItem("Morning Newspaper", [this, display,
                                                                     readingSettingsMenu]() {
-        auto morningNewspaperMenu = new MenuScreen(this->power_, readingSettingsMenu->getMyStyle());
+        auto morningNewspaperMenu = new MenuScreen(readingSettingsMenu->getMyStyle());
 
         auto timeToString = [](int time) -> std::string {
             switch (time) {
@@ -630,7 +630,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     readingSettingsMenu->addMenuItem(MenuItem("Evening Newspaper", [this, display,
                                                                     readingSettingsMenu]() {
-        auto eveningNewspaperMenu = new MenuScreen(this->power_, readingSettingsMenu->getMyStyle());
+        auto eveningNewspaperMenu = new MenuScreen(readingSettingsMenu->getMyStyle());
 
         auto timeToString = [](int time) -> std::string {
             switch (time) {
@@ -782,7 +782,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     systemSettingsMenu->addMenuItem(
         MenuItem("Batteries and Temperature", [this, display, systemSettingsMenu]() {
-            auto batteryScreen = new BatteryScreen(*display, prefs_, power_);
+            auto batteryScreen = new BatteryScreen(*display, prefs_, power_.battery);
             this->setCurrentScreen(*batteryScreen);
             batteryScreen->backCallback = [this, batteryScreen, systemSettingsMenu]() {
                 systemSettingsMenu->setFirstLoad();
@@ -793,7 +793,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     systemSettingsMenu->addMenuItem(MenuItem("Set Time Zone", [this, display,
                                                                systemSettingsMenu]() {
-        auto timeZoneMenu = new MenuScreen(this->power_, systemSettingsMenu->getMyStyle());
+        auto timeZoneMenu = new MenuScreen(systemSettingsMenu->getMyStyle());
 
         auto timeZoneToString = [](int solTimeZone) -> std::string {
             switch (solTimeZone) {
@@ -883,7 +883,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
             systemSettingsMenu->showTemporaryMessage(*display, "Onboarding mode on! Resetting...",
                                                      2000, false);
-            prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
+            prefs_.lastBatteryReport.set((int)this->battery_.getBatteryPercentage());
             esp_restart();
         }));
 
@@ -894,7 +894,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 prefs_.cesMode.set(true);
                 systemSettingsMenu->showTemporaryMessage(*display, "CES mode on! Resetting...",
                                                          2000, false);
-                prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
+                prefs_.lastBatteryReport.set((int)this->battery_.getBatteryPercentage());
                 esp_restart();
             }));
     }
@@ -922,7 +922,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             log_w("Preferences cleared. Rebooting...");
             systemSettingsMenu->showTemporaryMessage(*display, "Preferences cleared. Rebooting...",
                                                      2000, false);
-            prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
+            prefs_.lastBatteryReport.set((int)this->battery_.getBatteryPercentage());
             esp_restart();
         }));
 
@@ -964,7 +964,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         log_w("NVS and FS cleared. Rebooting...");
         systemSettingsMenu->showTemporaryMessage(*display, "NVS cleared! Resetting...");
 #endif
-        prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
+        prefs_.lastBatteryReport.set((int)this->battery_.getBatteryPercentage());
         esp_restart();
     }));
 
@@ -975,14 +975,14 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             log_w("Unpaired PageTurner. Rebooting...");
             debugSettingsMenu->showTemporaryMessage(*display, "Unpaired PageTurner! Resetting...",
                                                     2000, false);
-            prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
+            prefs_.lastBatteryReport.set((int)this->battery_.getBatteryPercentage());
             esp_restart();
         }));
 #endif
 
     debugSettingsMenu->addMenuItem(
         MenuItem("Onboarding Screens", [this, debugSettingsMenu, display, &lightingController]() {
-            auto demoScreen = new DemoScreen(*display, prefs_, this->power_, lightingController);
+            auto demoScreen = new DemoScreen(*display, prefs_, lightingController);
             this->setCurrentScreen(*demoScreen);
             demoScreen->backCallback = [this, demoScreen, debugSettingsMenu, display]() {
                 debugSettingsMenu->setFirstLoad();
@@ -994,7 +994,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     debugSettingsMenu->addMenuItem(
         MenuItem("File System Browser", [this, debugSettingsMenu, &fileSystem]() {
-            auto fsMenu = new MenuScreen(this->power_, debugSettingsMenu->getMyStyle());
+            auto fsMenu = new MenuScreen(debugSettingsMenu->getMyStyle());
             fsMenu->setExtraText("ls of /");
 
             FileList localFiles;
@@ -1038,7 +1038,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 prefs_.emcMode.set(true);
                 debugSettingsMenu->showTemporaryMessage(*display, "EMC mode on! Resetting...", 2000,
                                                         false);
-                prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
+                prefs_.lastBatteryReport.set((int)this->battery_.getBatteryPercentage());
                 esp_restart();
             }));
 
@@ -1048,7 +1048,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 prefs_.emcMode.remove();
                 debugSettingsMenu->showTemporaryMessage(*display, "EMC mode off! Resetting...",
                                                         2000, false);
-                prefs_.lastBatteryReport.set((int)this->power_.getBatteryPercentage());
+                prefs_.lastBatteryReport.set((int)this->battery_.getBatteryPercentage());
                 esp_restart();
             }));
     }
@@ -1067,7 +1067,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
 #if EINKET013TT1
     debugSettingsMenu->addMenuItem(MenuItem("Set Vcom", [this, display, debugSettingsMenu]() {
-        auto vcomMenu = new MenuScreen(this->power_, debugSettingsMenu->getMyStyle());
+        auto vcomMenu = new MenuScreen(debugSettingsMenu->getMyStyle());
         auto *driver = (static_cast<DisplayEinkET013TT1 *>(display))->getDriver();
         vcomMenu->addMenuItem(MenuItem("0V", [this, vcomMenu, driver]() {
             driver->setVcom(0);
@@ -1114,7 +1114,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 #endif
 
     debugSettingsMenu->addMenuItem(MenuItem("Set WiFi Power", [this, display, debugSettingsMenu]() {
-        auto wifiPowerMenu = new MenuScreen(this->power_, debugSettingsMenu->getMyStyle());
+        auto wifiPowerMenu = new MenuScreen(debugSettingsMenu->getMyStyle());
 
         auto powerToString = [](wifi_power_t power) -> std::string {
             switch (power) {
@@ -1194,7 +1194,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 #if EINKET013TT1
     debugSettingsMenu->addMenuItem(
         MenuItem("Set Vcom Precise", [this, display, debugSettingsMenu]() {
-            auto vcomPreciseScreen = new VcomAdjustScreen(*display, this->prefs_, this->power_);
+            auto vcomPreciseScreen = new VcomAdjustScreen(*display, this->prefs_);
             this->display_->clearDisplay();
             setCurrentScreen(*vcomPreciseScreen);
             vcomPreciseScreen->backCallback = [this, vcomPreciseScreen, debugSettingsMenu]() {
@@ -1281,7 +1281,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     bool inDemo = prefs_.demoMode.get().value_or(false);
 
     if (inDemo) {
-        auto demoScreen = new DemoScreen(*display, prefs_, this->power_, lightingController);
+        auto demoScreen = new DemoScreen(*display, prefs_, lightingController);
         demoScreen->backCallback = [this, demoScreen, mainMenu, display]() {
             display->clearDisplay();
             setCurrentScreen(*mainMenu);
@@ -1289,7 +1289,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
         this->setCurrentScreen(*demoScreen);
     } else if (prefs_.cesMode.get().value_or(false)) {
-        auto cesScreen = new CesScreen(*display, prefs_, this->power_, lightingController);
+        auto cesScreen = new CesScreen(*display, prefs_, lightingController);
         // reset prefs for of The Last Question readable
         log_d("Starting CES mode readable load");
         auto it = std::find_if(readables.begin(), readables.end(), [](const Readable &x) {
@@ -1367,7 +1367,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 }
 
 void RootUI::loop(DisplaySystem &display, RemoteCommand command) {
-    if (this->power_.getDepleted()) {
+    if (this->battery_.getDepleted()) {
         // Force render immediately as we are about to shut off
         auto powerDepletedScreen = new PowerDepletedScreen();
         setCurrentScreen(*powerDepletedScreen);

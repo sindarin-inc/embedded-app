@@ -1,3 +1,4 @@
+#include "Misc/Battery.hpp"
 #include "Misc/InactivityTimer.hpp"
 #include "Storage/PreferencesStore.hpp"
 
@@ -9,8 +10,9 @@ class PowerManager {
 public:
     static auto getInstance() -> PowerManager &;
 
-    PowerManager(PreferencesStore &prefs) : prefs_(prefs) {}
-    PowerManager(PowerManager const &) = delete;
+    PowerManager(FileSystem &fileSystem, PreferencesStore &prefs)
+        : battery(fileSystem, prefs), prefs_(prefs) {}
+    PowerManager(const PowerManager &) = delete;
 
     auto begin() -> esp_err_t;
 
@@ -19,6 +21,10 @@ public:
     void powerOff();
 
     void feedInactivityTimer() { inactivityTimer_.feed(); }
+
+    void loop() { battery.loop(); }
+
+    Battery battery;
 
 protected:
     PreferencesStore &prefs_;

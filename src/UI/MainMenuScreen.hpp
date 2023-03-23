@@ -1,8 +1,8 @@
 #ifndef MAIN_MENU_SCREEN_H
 #define MAIN_MENU_SCREEN_H
 
+#include "Misc/Battery.hpp"
 #include "Misc/MenuStyle.hpp"
-#include "Misc/Power.hpp"
 #include "Renderers/Renderer.hpp"
 #include "UI/Bitmaps/Battery_Bolt.hpp"
 #include "UI/Components/BoxView.hpp"
@@ -17,10 +17,11 @@
 
 class MainMenuScreen : public MenuScreen, public EinkView {
 public:
-    MainMenuScreen(Power &power, DisplaySystem &display, MenuStyleFamily myStyle)
-        : MenuScreen(power, myStyle), EinkView(display), batteryTextView_(display, ""),
+    MainMenuScreen(Battery &battery, DisplaySystem &display, MenuStyleFamily myStyle)
+        : MenuScreen(myStyle), EinkView(display), batteryTextView_(display, ""),
           topBarSelectionView_(display, 3),
-          batteryIconView_(display, boltBits, bolt_width, bolt_height), clockView_(display, ""){};
+          batteryIconView_(display, boltBits, bolt_width, bolt_height), clockView_(display, ""),
+          battery_(battery){};
     MainMenuScreen(MainMenuScreen const &) = delete;
 
     auto layout(LayoutContext &context, Size size) -> Size override;
@@ -44,6 +45,8 @@ protected:
     SingleLineTextView clockView_;
 
     int currentSelection_ = 0;
+
+    Battery &battery_;
 };
 
 #endif // MAIN_MENU_SCREEN_H
