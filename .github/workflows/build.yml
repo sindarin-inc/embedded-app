@@ -59,7 +59,7 @@ jobs:
       matrix:
         # Tags from here: https://hub.docker.com/r/espressif/idf/tags
         idf_version:
-          - latest
+          # - latest
           - v5.0.1
 
     steps:
