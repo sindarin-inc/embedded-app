@@ -24,7 +24,7 @@ extern uint32_t ulp_open;          // NOLINT
 extern time_t ulp_wakeupEpochTime; // NOLINT
 
 void UlpWakeupCheck(SolClock &clock) {
-#if SIMULATOR || (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 1, 0))
+#if SIMULATOR || (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
     log_i("only supported on IDF 5.1+");
 #else
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
