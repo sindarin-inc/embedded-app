@@ -6,9 +6,7 @@
 #include <esp_idf_version.h>
 #include <esp_sleep.h>
 #include <ulp_riscv.h>
-#if !SIMULATOR && (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0))
-#include "ulp_riscv_i2c.h"
-#endif
+#include <ulp_riscv_i2c.h>
 
 #include "Misc/Platform.hpp"
 #include "Ulp/MagDefs.h"
@@ -25,8 +23,8 @@ extern uint32_t ulp_open;          // NOLINT
 extern time_t ulp_wakeupEpochTime; // NOLINT
 
 void UlpWakeupCheck(SolClock &clock) {
-#if SIMULATOR || (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
-    log_i("only supported on IDF 5.1+");
+#if SIMULATOR
+    log_i("UlpWakeupCheck");
 #else
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
     if (cause == ESP_SLEEP_WAKEUP_ULP) {
@@ -52,7 +50,7 @@ void UlpWakeupCheck(SolClock &clock) {
             // return if it's time to fully wake up
 
             // for now, just go back to sleep for another 2 minutes
-            ulp_wakeupEpochTime = timeNow + (static_cast<long long>(2 *) 60);
+            ulp_wakeupEpochTime = timeNow + (static_cast<long long>(2 * 60));
         }
 
         // back to sleep
@@ -66,8 +64,8 @@ void UlpWakeupCheck(SolClock &clock) {
 void UlpDeepSleepMagnetometerWakeup() { UlpDeepSleepMagnetometerWakeupWithWakeTime((time_t)0); }
 
 void UlpDeepSleepMagnetometerWakeupWithWakeTime(time_t wakeTime) {
-#if SIMULATOR || (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
-    log_i("only supported on IDF 5.0+");
+#if SIMULATOR
+    log_i("UlpDeepSleepMagnetometerWakeupWithWakeTime");
 #else
 
     rtc_gpio_init((gpio_num_t)I2C_MASTER_SDA_IO);
