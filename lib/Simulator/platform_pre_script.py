@@ -22,7 +22,8 @@ def remove_non_simulator_files(node):
         "Mmc5603.cpp",
         "TempleCloseSensor.cpp",
         "WiFi.cpp",
-        "main.c"
+        "main.c",
+        "ulp_riscv_i2c.c"
     ]
 
     if node.name in ignore:
