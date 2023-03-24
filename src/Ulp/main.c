@@ -71,5 +71,32 @@ int main(void) {
     return 0;
 }
 #else
-int main(void) { return 0; }
+
+#include <time.h>
+#include <stdint.h>
+#include <ulp_riscv_utils.h>
+
+volatile int open;
+volatile int wakeupCount;
+volatile time_t wakeupEpochTime;
+
+void init() { open = 0; }
+
+int main(void) { 
+    init();
+
+    // if wakeup epoch time is unset, just stay asleep until woken from magnetometer
+    // instead of periodically checking time.
+    if (wakeupEpochTime != 0) {
+        // check if we have run enough times to wake up the CPU for periodic checks
+        if (wakeupCount <= 0) {
+            // time to wake up the CPU
+            ulp_riscv_wakeup_main_processor();
+            return 0;
+        }
+
+        wakeupCount--;
+    }
+    return 0; 
+}
 #endif
