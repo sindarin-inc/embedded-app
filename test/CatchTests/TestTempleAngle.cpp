@@ -3,8 +3,8 @@
 #include "Sensors/TempleAngle.hpp"
 
 extern "C" {
-    #include "Ulp/templeLookup.h"
-    #include "Ulp/ulpTableLookup.h"
+#include "Ulp/TempleLookup.h"
+#include "Ulp/UlpTableLookup.h"
 }
 
 bool checkFunc(uint8_t x, uint8_t z) {
