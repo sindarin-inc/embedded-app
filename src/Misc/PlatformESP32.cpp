@@ -15,12 +15,12 @@
 #include <soc/rtc.h>
 #include <ulp_riscv.h>
 
-#include "ulp_riscv_i2c.h"
 #include "Misc/StringUtil.hpp"
 #include "Platform.hpp"
 #include "Storage/include/EFusesCustomTable.h"
 #include "config.h"
 #include "sindarin-debug.h"
+#include "ulp_riscv_i2c.h"
 
 #define BACKLIGHT_PWM_CHANNEL 0
 #define HARDWARE_REVSION_LATEST 2
