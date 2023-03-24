@@ -13,7 +13,6 @@
 #include <soc/sens_reg.h>
 
 #include "rtc_i2c_struct.h"
-//#include <hal/i2c_ll.h>
 #include <driver/rtc_io.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>

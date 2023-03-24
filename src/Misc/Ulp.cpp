@@ -6,7 +6,7 @@
 #include <esp_idf_version.h>
 #include <esp_sleep.h>
 #include <ulp_riscv.h>
-#if !SIMULATOR && (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0))
+#if !SIMULATOR
 #include "Misc/ulp_i2c/ulp_riscv_i2c.h"
 #endif
 
@@ -25,8 +25,8 @@ extern uint32_t ulp_open;          // NOLINT
 extern time_t ulp_wakeupEpochTime; // NOLINT
 
 void UlpWakeupCheck(SolClock &clock) {
-#if SIMULATOR || (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
-    log_i("only supported on IDF 5.1+");
+#if SIMULATOR
+    log_i("not supported on simulator.");
 #else
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
     if (cause == ESP_SLEEP_WAKEUP_ULP) {
@@ -66,8 +66,8 @@ void UlpWakeupCheck(SolClock &clock) {
 void UlpDeepSleepMagnetometerWakeup() { UlpDeepSleepMagnetometerWakeupWithWakeTime((time_t)0); }
 
 void UlpDeepSleepMagnetometerWakeupWithWakeTime(time_t wakeTime) {
-#if SIMULATOR || (ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 0, 0))
-    log_i("only supported on IDF 5.0+");
+#if SIMULATOR
+    log_i("not supported on simulator.");
 #else
 
     rtc_gpio_init((gpio_num_t)I2C_MASTER_SDA_IO);
