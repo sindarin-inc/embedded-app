@@ -5,8 +5,8 @@
 #include <esp_idf_version.h>
 #include <esp_sleep.h>
 #include <ulp_riscv.h>
-#if !SIMULATOR && (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0))
-#include <ulp_riscv_i2c.h>
+#if !SIMULATOR && (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0))
+#include "Misc/ulp_i2c/ulp_riscv_i2c.h"
 #endif
 
 #include "Misc/Platform.hpp"
@@ -69,7 +69,6 @@ void UlpDeepSleepMagnetometerWakeupWithWakeTime(time_t wakeTime) {
     log_i("only supported on IDF 5.1+");
 #else
 
-    /*
     rtc_gpio_init((gpio_num_t)I2C_MASTER_SDA_IO);
     rtc_gpio_init((gpio_num_t)I2C_MASTER_SCL_IO);
 
@@ -85,7 +84,6 @@ void UlpDeepSleepMagnetometerWakeupWithWakeTime(time_t wakeTime) {
     i2c_cfg.i2c_timing_cfg.scl_stop_period = 6;
     i2c_cfg.i2c_timing_cfg.i2c_trans_timeout = 20;
     ulp_riscv_i2c_master_init(&i2c_cfg);
-    */
 
     log_i("entering deep sleep, wake up with magnetometer");
     esp_err_t err =

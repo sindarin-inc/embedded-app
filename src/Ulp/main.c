@@ -1,10 +1,10 @@
 #include <esp_idf_version.h>
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
 #include <stdbool.h>
 #include <stdint.h>
 #include <ulp_riscv.h>
-#include <ulp_riscv_i2c_ulp_core.h>
+#include "ulp_riscv_i2c_ulp_core.h"
 #include <ulp_riscv_utils.h>
 
 #include "MagDefs.h"

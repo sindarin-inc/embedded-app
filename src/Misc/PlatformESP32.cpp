@@ -15,6 +15,7 @@
 #include <soc/rtc.h>
 #include <ulp_riscv.h>
 
+#include "Misc/ulp_i2c/ulp_riscv_i2c.h"
 #include "Misc/StringUtil.hpp"
 #include "Platform.hpp"
 #include "Storage/include/EFusesCustomTable.h"
@@ -41,10 +42,14 @@ auto Millis() -> int { return GetRunTimeMs(); }
 
 void HardwareInit() {
     // release rtc i2c lines
+    log_i("deinit rtc gpio");
     ulp_timer_stop();
     ulp_riscv_halt();
+
     rtc_gpio_deinit((gpio_num_t)I2C_MASTER_SDA_IO);
     rtc_gpio_deinit((gpio_num_t)I2C_MASTER_SCL_IO);
+
+    //ulp_riscv_i2c_reset();
 
     esp_log_level_set("*", (esp_log_level_t)CONFIG_LOG_DEFAULT_LEVEL);
     esp_err_t err = nvs_flash_init();
