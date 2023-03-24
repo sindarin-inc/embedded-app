@@ -1,6 +1,6 @@
 #include <stdbool.h>
 
-#include "templeLookup.h"
+#include "TempleLookup.h"
 
 bool checkTable(uint8_t x, uint8_t z) {
     int entryIndex = (x * 2);
