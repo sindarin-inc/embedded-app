@@ -3,32 +3,31 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <hal/i2c_ll.h>
+#include "ulp_riscv_i2c_ulp_core.h"
+#include <ulp_riscv_utils.h>
 #include <soc/rtc_i2c_reg.h>
 #include <soc/rtc_i2c_struct.h>
 #include <soc/rtc_io_reg.h>
 #include <soc/sens_reg.h>
-#include <ulp_riscv_utils.h>
+#include <hal/i2c_ll.h>
 
-#include "ulp_riscv_i2c_ulp_core.h"
-
-#define I2C_CTRL_SLAVE_ADDR_MASK (0xFF << 0)
-#define I2C_CTRL_SLAVE_REG_ADDR_MASK (0xFF << 11)
-#define I2C_CTRL_MASTER_TX_DATA_MASK (0xFF << 19)
+#define I2C_CTRL_SLAVE_ADDR_MASK        (0xFF << 0)
+#define I2C_CTRL_SLAVE_REG_ADDR_MASK    (0xFF << 11)
+#define I2C_CTRL_MASTER_TX_DATA_MASK    (0xFF << 19)
 
 #if CONFIG_IDF_TARGET_ESP32S3
-#define ULP_I2C_CMD_RESTART 0 /*!<I2C restart command */
-#define ULP_I2C_CMD_WRITE 1   /*!<I2C write command */
-#define ULP_I2C_CMD_READ 2    /*!<I2C read command */
-#define ULP_I2C_CMD_STOP 3    /*!<I2C stop command */
-#define ULP_I2C_CMD_END 4     /*!<I2C end command */
+#define ULP_I2C_CMD_RESTART 0                   /*!<I2C restart command */
+#define ULP_I2C_CMD_WRITE   1                   /*!<I2C write command */
+#define ULP_I2C_CMD_READ    2                   /*!<I2C read command */
+#define ULP_I2C_CMD_STOP    3                   /*!<I2C stop command */
+#define ULP_I2C_CMD_END     4                   /*!<I2C end command */
 #else
-#define ULP_I2C_CMD_RESTART I2C_LL_CMD_RESTART /*!<I2C restart command */
-#define ULP_I2C_CMD_WRITE I2C_LL_CMD_WRITE     /*!<I2C write command */
-#define ULP_I2C_CMD_READ I2C_LL_CMD_READ       /*!<I2C read command */
-#define ULP_I2C_CMD_STOP I2C_LL_CMD_STOP       /*!<I2C stop command */
-#define ULP_I2C_CMD_END I2C_LL_CMD_END         /*!<I2C end command */
-#endif                                         // CONFIG_IDF_TARGET_ESP32S3
+#define ULP_I2C_CMD_RESTART I2C_LL_CMD_RESTART  /*!<I2C restart command */
+#define ULP_I2C_CMD_WRITE   I2C_LL_CMD_WRITE    /*!<I2C write command */
+#define ULP_I2C_CMD_READ    I2C_LL_CMD_READ     /*!<I2C read command */
+#define ULP_I2C_CMD_STOP    I2C_LL_CMD_STOP     /*!<I2C stop command */
+#define ULP_I2C_CMD_END     I2C_LL_CMD_END      /*!<I2C end command */
+#endif // CONFIG_IDF_TARGET_ESP32S3
 
 /*
  * The RTC I2C controller follows the I2C command registers to perform read/write operations.
@@ -40,35 +39,37 @@
  * |----------|----------|---------|---------|----------|------------|---------|
  */
 static void ulp_riscv_i2c_format_cmd(uint32_t cmd_idx, uint8_t op_code, uint8_t ack_val,
-                                     uint8_t ack_expected, uint8_t ack_check_en, uint8_t byte_num) {
-    uint32_t reg_addr = RTC_I2C_CMD0_REG + 4 * cmd_idx;
+        uint8_t ack_expected, uint8_t ack_check_en, uint8_t byte_num)
+{
+    uint32_t reg_addr = RTC_I2C_CMD0_REG + 4*cmd_idx;
 
     CLEAR_PERI_REG_MASK(reg_addr, 0xFFFFFFFF);
 
-    WRITE_PERI_REG(
-        reg_addr,
-        (0 << 31) | // CMD Done
+    WRITE_PERI_REG(reg_addr,
+            (0 << 31) |                     // CMD Done
 
-            ((op_code & 0x3) << 11) | // Opcode
+            ((op_code & 0x3) << 11) |       // Opcode
 
-            ((ack_val & 0x1) << 10) | // ACK bit sent by I2C controller during READ.
-                                      // Ignored during RSTART, STOP, END and WRITE cmds.
+            ((ack_val & 0x1) << 10) |       // ACK bit sent by I2C controller during READ.
+                                            // Ignored during RSTART, STOP, END and WRITE cmds.
 
-            ((ack_expected & 0x1) << 9) | // ACK bit expected by I2C controller during WRITE.
-                                          // Ignored during RSTART, STOP, END and READ cmds.
+            ((ack_expected & 0x1) << 9) |   // ACK bit expected by I2C controller during WRITE.
+                                            // Ignored during RSTART, STOP, END and READ cmds.
 
-            ((ack_check_en & 0x1) << 8) | // I2C controller verifies that the ACK bit sent by the
-                                          // slave device matches the ACK expected bit during WRITE.
-                                          // Ignored during RSTART, STOP, END and READ cmds.
-            ((byte_num & 0xFF) << 0)); // Byte Num
+            ((ack_check_en & 0x1) << 8) |   // I2C controller verifies that the ACK bit sent by the slave device matches
+                                            // the ACK expected bit during WRITE.
+                                            // Ignored during RSTART, STOP, END and READ cmds.
+            ((byte_num & 0xFF) << 0));      // Byte Num
 }
 
-void ulp_riscv_i2c_master_set_slave_addr(uint8_t slave_addr) {
+void ulp_riscv_i2c_master_set_slave_addr(uint8_t slave_addr)
+{
     CLEAR_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, I2C_CTRL_SLAVE_ADDR_MASK);
     SET_PERI_REG_BITS(SENS_SAR_I2C_CTRL_REG, 0xFF, slave_addr, 0);
 }
 
-void ulp_riscv_i2c_master_set_slave_reg_addr(uint8_t slave_reg_addr) {
+void ulp_riscv_i2c_master_set_slave_reg_addr(uint8_t slave_reg_addr)
+{
     CLEAR_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, I2C_CTRL_SLAVE_REG_ADDR_MASK);
     SET_PERI_REG_BITS(SENS_SAR_I2C_CTRL_REG, 0xFF, slave_reg_addr, 11);
 }
@@ -77,23 +78,21 @@ void ulp_riscv_i2c_master_set_slave_reg_addr(uint8_t slave_reg_addr) {
  * I2C transactions when master reads one byte of data from the slave device:
  *
  * |--------|--------|---------|--------|--------|--------|--------|---------|--------|--------|--------|--------|
- * | Master | START  | SAD + W |        |  SUB   |        |   SR   | SAD + R |        |        |
- * NACK  |  STOP  |
+ * | Master | START  | SAD + W |        |  SUB   |        |   SR   | SAD + R |        |        |  NACK  |  STOP  |
  * |--------|--------|---------|--------|--------|--------|--------|---------|--------|--------|--------|--------|
- * | Slave  |        |         |  ACK   |        |   ACK  |        |         |   ACK  |  DATA  | | |
+ * | Slave  |        |         |  ACK   |        |   ACK  |        |         |   ACK  |  DATA  |        |        |
  * |--------|--------|---------|--------|--------|--------|--------|---------|--------|--------|--------|--------|
  *
  * I2C transactions when master reads multiple bytes of data from the slave device:
  *
  * |--------|--------|---------|--------|--------|--------|--------|---------|--------|--------|--------|--------|--------|--------|
- * | Master | START  | SAD + W |        |  SUB   |        |   SR   | SAD + R |        |        | ACK
- * |        |   NACK |  STOP  |
+ * | Master | START  | SAD + W |        |  SUB   |        |   SR   | SAD + R |        |        |   ACK  |        |   NACK |  STOP  |
  * |--------|--------|---------|--------|--------|--------|--------|---------|--------|--------|--------|--------|--------|--------|
- * | Slave  |        |         |  ACK   |        |   ACK  |        |         |   ACK  |  DATA  | |
- * DATA  |        |        |
+ * | Slave  |        |         |  ACK   |        |   ACK  |        |         |   ACK  |  DATA  |        |  DATA  |        |        |
  * |--------|--------|---------|--------|--------|--------|--------|---------|--------|--------|--------|--------|--------|--------|
  */
-void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size) {
+void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
+{
     uint32_t i = 0;
     uint32_t cmd_idx = 0;
 
@@ -102,8 +101,7 @@ void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size) {
         return;
     }
 
-    /* By default, RTC I2C controller is hard wired to use CMD2 register onwards for read operations
-     */
+    /* By default, RTC I2C controller is hard wired to use CMD2 register onwards for read operations */
     cmd_idx = 2;
 
     /* Write slave addr */
@@ -138,8 +136,7 @@ void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size) {
 
     for (i = 0; i < size; i++) {
         /* Poll for RTC I2C Rx Data interrupt bit to be set */
-        while (!REG_GET_FIELD(RTC_I2C_INT_ST_REG, RTC_I2C_RX_DATA_INT_ST)) {
-        }
+        while (!REG_GET_FIELD(RTC_I2C_INT_ST_REG, RTC_I2C_RX_DATA_INT_ST)) {  }
 
         /* Read the data
          *
@@ -174,13 +171,13 @@ void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size) {
  * I2C transactions when master writes multiple bytes of data to the slave device:
  *
  * |--------|--------|---------|--------|--------|--------|--------|--------|--------|--------|--------|
- * | Master | START  | SAD + W |        |  SUB   |        |  DATA  |        |  DATA  |        | STOP
- * |
+ * | Master | START  | SAD + W |        |  SUB   |        |  DATA  |        |  DATA  |        |  STOP  |
  * |--------|--------|---------|--------|--------|--------|--------|--------|--------|--------|--------|
- * | Slave  |        |         |  ACK   |        |   ACK  |        |   ACK  |        |   ACK  | |
+ * | Slave  |        |         |  ACK   |        |   ACK  |        |   ACK  |        |   ACK  |        |
  * |--------|--------|---------|--------|--------|--------|--------|--------|--------|--------|--------|
  */
-void ulp_riscv_i2c_master_write_to_device(uint8_t *data_wr, size_t size) {
+void ulp_riscv_i2c_master_write_to_device(uint8_t *data_wr, size_t size)
+{
     uint32_t i = 0;
     uint32_t cmd_idx = 0;
 
@@ -189,8 +186,7 @@ void ulp_riscv_i2c_master_write_to_device(uint8_t *data_wr, size_t size) {
         return;
     }
 
-    /* By default, RTC I2C controller is hard wired to use CMD0 and CMD1 registers for write
-     * operations */
+    /* By default, RTC I2C controller is hard wired to use CMD0 and CMD1 registers for write operations */
     cmd_idx = 0;
 
     /* Write slave addr + reg addr + data */
@@ -217,8 +213,7 @@ void ulp_riscv_i2c_master_write_to_device(uint8_t *data_wr, size_t size) {
         }
 
         /* Poll for RTC I2C Tx Data interrupt bit to be set */
-        while (!REG_GET_FIELD(RTC_I2C_INT_ST_REG, RTC_I2C_TX_DATA_INT_ST)) {
-        }
+        while (!REG_GET_FIELD(RTC_I2C_INT_ST_REG, RTC_I2C_TX_DATA_INT_ST)) {  }
 
         /* Clear the Tx data interrupt bit */
         SET_PERI_REG_MASK(RTC_I2C_INT_CLR_REG, RTC_I2C_TX_DATA_INT_CLR);

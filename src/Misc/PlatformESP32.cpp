@@ -15,8 +15,8 @@
 #include <soc/rtc.h>
 #include <ulp_riscv.h>
 
-#include "Misc/StringUtil.hpp"
 #include "Misc/ulp_i2c/ulp_riscv_i2c.h"
+#include "Misc/StringUtil.hpp"
 #include "Platform.hpp"
 #include "Storage/include/EFusesCustomTable.h"
 #include "config.h"
