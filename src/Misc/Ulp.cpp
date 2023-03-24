@@ -6,7 +6,7 @@
 #include <esp_sleep.h>
 #include <ulp_riscv.h>
 #if !SIMULATOR && (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0))
-#include "Misc/ulp_i2c/ulp_riscv_i2c.h"
+#include "ulp_riscv_i2c.h"
 #endif
 
 #include "Misc/Platform.hpp"
