@@ -487,8 +487,6 @@ typedef struct {
     uint32_t reserved_078[33];
     volatile rtc_i2c_date_reg_t i2c_date;
 } rtc_i2c_dev_t;
-//extern rtc_i2c_dev_t RTC_I2C;
-
 
 #ifndef __cplusplus
 _Static_assert(sizeof(rtc_i2c_dev_t) == 0x100, "Invalid size of rtc_i2c_dev_t structure");

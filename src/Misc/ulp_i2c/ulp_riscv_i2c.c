@@ -18,33 +18,12 @@
 
 static const char *RTCI2C_TAG = "ulp_riscv_i2c";
 
-#define I2C_CTRL_SLAVE_ADDR_MASK        (0xFF << 0)
-#define I2C_CTRL_SLAVE_REG_ADDR_MASK    (0xFF << 11)
-#define I2C_CTRL_MASTER_TX_DATA_MASK    (0xFF << 19)
-
-#if CONFIG_IDF_TARGET_ESP32S3
-#define ULP_I2C_CMD_RESTART 0                   /*!<I2C restart command */
-#define ULP_I2C_CMD_WRITE   1                   /*!<I2C write command */
-#define ULP_I2C_CMD_READ    2                   /*!<I2C read command */
-#define ULP_I2C_CMD_STOP    3                   /*!<I2C stop command */
-#define ULP_I2C_CMD_END     4                   /*!<I2C end command */
-#else
-#define ULP_I2C_CMD_RESTART I2C_LL_CMD_RESTART  /*!<I2C restart command */
-#define ULP_I2C_CMD_WRITE   I2C_LL_CMD_WRITE    /*!<I2C write command */
-#define ULP_I2C_CMD_READ    I2C_LL_CMD_READ     /*!<I2C read command */
-#define ULP_I2C_CMD_STOP    I2C_LL_CMD_STOP     /*!<I2C stop command */
-#define ULP_I2C_CMD_END     I2C_LL_CMD_END      /*!<I2C end command */
-#endif // CONFIG_IDF_TARGET_ESP32S3
-
-
 // address of RTC_I2C control register bank
 // from espressif docs:
 // The addresses in this section are relative to low-power management base address + 0x0C00 provided in Table
 // 4-3 in Chapter 4 System and Memory.
 // Low-Power Management 0x6000_8000 0x6000_8FFF 4
-
 #define RTC_I2C 0x60008C00
-//#define RTC_I2C NULL
 
 /* Use the register structure to access RTC_I2C and RTCIO module registers */
 rtc_i2c_dev_t *i2c_dev = (rtc_i2c_dev_t*)RTC_I2C;
@@ -184,20 +163,6 @@ static esp_err_t i2c_set_timing(const ulp_riscv_i2c_cfg_t *cfg)
 
     return ESP_OK;
 }
-
-/*
-void ulp_riscv_i2c_master_set_slave_addr(uint8_t slave_addr)
-{
-    CLEAR_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, I2C_CTRL_SLAVE_ADDR_MASK);
-    SET_PERI_REG_BITS(SENS_SAR_I2C_CTRL_REG, 0xFF, slave_addr, 0);
-}
-
-void ulp_riscv_i2c_master_set_slave_reg_addr(uint8_t slave_reg_addr)
-{
-    CLEAR_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, I2C_CTRL_SLAVE_REG_ADDR_MASK);
-    SET_PERI_REG_BITS(SENS_SAR_I2C_CTRL_REG, 0xFF, slave_reg_addr, 11);
-}
-*/
 
 void ulp_riscv_i2c_reset() {
     /* Clear any stale config registers */
