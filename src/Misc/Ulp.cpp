@@ -1,5 +1,6 @@
 #include "Ulp.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <driver/rtc_io.h>
 #include <esp_idf_version.h>
@@ -51,7 +52,7 @@ void UlpWakeupCheck(SolClock &clock) {
             // return if it's time to fully wake up
 
             // for now, just go back to sleep for another 2 minutes
-            ulp_wakeupEpochTime = timeNow + (2 * 60);
+            ulp_wakeupEpochTime = timeNow + (static_cast<long long>(2 *) 60);
         }
 
         // back to sleep
@@ -72,18 +73,18 @@ void UlpDeepSleepMagnetometerWakeupWithWakeTime(time_t wakeTime) {
     rtc_gpio_init((gpio_num_t)I2C_MASTER_SDA_IO);
     rtc_gpio_init((gpio_num_t)I2C_MASTER_SCL_IO);
 
-    ulp_riscv_i2c_cfg_t i2c_cfg;
-    i2c_cfg.i2c_pin_cfg.sda_io_num = I2C_MASTER_SDA_IO;
-    i2c_cfg.i2c_pin_cfg.scl_io_num = I2C_MASTER_SCL_IO;
-    i2c_cfg.i2c_pin_cfg.sda_pullup_en = true;
-    i2c_cfg.i2c_pin_cfg.scl_pullup_en = true;
-    i2c_cfg.i2c_timing_cfg.scl_low_period = 5;
-    i2c_cfg.i2c_timing_cfg.scl_high_period = 5;
-    i2c_cfg.i2c_timing_cfg.sda_duty_period = 2;
-    i2c_cfg.i2c_timing_cfg.scl_start_period = 3;
-    i2c_cfg.i2c_timing_cfg.scl_stop_period = 6;
-    i2c_cfg.i2c_timing_cfg.i2c_trans_timeout = 20;
-    ulp_riscv_i2c_master_init(&i2c_cfg);
+    ulp_riscv_i2c_cfg_t i2cCfg;
+    i2cCfg.i2cPinCfg.sdaIoNum = I2C_MASTER_SDA_IO;
+    i2cCfg.i2cPinCfg.sclIoNum = I2C_MASTER_SCL_IO;
+    i2cCfg.i2cPinCfg.sdaPullupEn = true;
+    i2cCfg.i2cPinCfg.sclPullupEn = true;
+    i2cCfg.i2cTimingCfg.sclLowPeriod = 5;
+    i2cCfg.i2cTimingCfg.sclHighPeriod = 5;
+    i2cCfg.i2cTimingCfg.sdaDutyPeriod = 2;
+    i2cCfg.i2cTimingCfg.sclStartPeriod = 3;
+    i2cCfg.i2cTimingCfg.sclStopPeriod = 6;
+    i2cCfg.i2cTimingCfg.i2cTransTimeout = 20;
+    UlpRiscvI2cMasterInit(&i2cCfg);
 
     log_i("entering deep sleep, wake up with magnetometer");
     esp_err_t err =
