@@ -6,7 +6,7 @@
 
 #include "../components/ulp-i2c/src/ulp/ulp_riscv_i2c_ulp_core.h"
 #include "MagDefs.h"
-#include "ulpTableLookup.h"
+#include "UlpTableLookup.h"
 
 volatile int open;
 volatile int wakeupCount;

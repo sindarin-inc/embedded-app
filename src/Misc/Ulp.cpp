@@ -18,9 +18,9 @@
 extern const uint8_t ULP_MAIN_BIN_START[] asm("_binary_ulp_src_bin_start");
 extern const uint8_t ULP_MAIN_BIN_END[] asm("_binary_ulp_src_bin_end");
 
-extern uint32_t ulp_wakeupCount;   // NOLINT
-extern uint32_t ulp_open;          // NOLINT
-extern time_t ulp_wakeupEpochTime; // NOLINT
+extern uint32_t ulp_wakeupCount;   // NOLINT(readability-identifier-naming)
+extern uint32_t ulp_open;          // NOLINT(readability-identifier-naming)
+extern time_t ulp_wakeupEpochTime; // NOLINT(readability-identifier-naming)
 
 void UlpWakeupCheck(SolClock &clock) {
 #if SIMULATOR

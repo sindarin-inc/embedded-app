@@ -2,7 +2,7 @@
 #include <math.h>
 #include <stdio.h>
 
-#include "../src/Sensors/TempleAngle.hpp"
+#include "../../src/Sensors/TempleAngle.hpp"
 
 // generate a table to decide if the temple is open given all possible
 // values of x and z from the magnetometer.

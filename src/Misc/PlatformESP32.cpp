@@ -20,7 +20,6 @@
 #include "Storage/include/EFusesCustomTable.h"
 #include "config.h"
 #include "sindarin-debug.h"
-#include "ulp_riscv_i2c.h"
 
 #define BACKLIGHT_PWM_CHANNEL 0
 #define HARDWARE_REVSION_LATEST 2
@@ -44,7 +43,6 @@ void HardwareInit() {
     // release rtc i2c lines
     ulp_timer_stop();
     ulp_riscv_halt();
-
     rtc_gpio_deinit((gpio_num_t)I2C_MASTER_SDA_IO);
     rtc_gpio_deinit((gpio_num_t)I2C_MASTER_SCL_IO);
 
