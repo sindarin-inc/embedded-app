@@ -13,7 +13,7 @@ git submodule update --init --recursive
 The primary way to build the firmware itself is with Espressif's official esp-idf toolchain. We use a [fork of esp-idf](http://github.com/sindarin-inc/esp-idf) that has some patches included. In some other directory (not in this repo), run:
 
 ```sh
-git clone -b sindarin/idf5-master --recursive git@github.com:sindarin-inc/esp-idf.git
+git clone -b sindarin/v5.0.1 --recursive git@github.com:sindarin-inc/esp-idf.git
 cd esp-idf
 ./install.sh esp32s3
 ```
