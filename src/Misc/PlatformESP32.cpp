@@ -29,9 +29,38 @@ adc_oneshot_unit_handle_t adcOneshotHandle;
 bool ledcFailed = false;
 uint8_t sysOnPin;
 
-void PinMode(int pin, int mode) { gpio_set_direction((gpio_num_t)pin, (gpio_mode_t)mode); }
+bool useRtcGpio(int pin) {
+    if (pin == RED_LED) {
+        return true;
+    }
 
-void DigitalWrite(int pin, int level) { gpio_set_level((gpio_num_t)pin, (uint32_t)level); }
+    return false;
+}
+
+void PinMode(int pin, int mode) { 
+    if (useRtcGpio(pin)) {
+        rtc_gpio_mode_t rtcMode = RTC_GPIO_MODE_INPUT_ONLY;
+        if (mode == OUTPUT) {
+            rtcMode = RTC_GPIO_MODE_OUTPUT_ONLY;
+        }
+        rtc_gpio_init((gpio_num_t)pin);
+        rtc_gpio_set_direction((gpio_num_t)pin, rtcMode);
+        rtc_gpio_pulldown_dis((gpio_num_t)pin);
+        rtc_gpio_pullup_dis((gpio_num_t)pin);
+        rtc_gpio_hold_en((gpio_num_t)pin);
+    }
+
+    gpio_set_direction((gpio_num_t)pin, (gpio_mode_t)mode); 
+}
+
+void DigitalWrite(int pin, int level) { 
+    if (useRtcGpio(pin)) {
+        rtc_gpio_set_level((gpio_num_t)pin, level);
+        return;
+    }
+
+    gpio_set_level((gpio_num_t)pin, (uint32_t)level); 
+}
 
 auto DigitalRead(uint8_t pin) -> int { return gpio_get_level((gpio_num_t)pin); }
 
@@ -132,9 +161,10 @@ void InitializePlatform() {
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adcOneshotHandle, BATT_CHANNEL_LEFT, &adcChanCfg));
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adcOneshotHandle, BATT_CHANNEL_RIGHT, &adcChanCfg));
 
-    DigitalWrite(RED_LED, LED_OFF);
-    DigitalWrite(GREEN_LED, LED_OFF);
     PinMode(RED_LED, OUTPUT);
+    DigitalWrite(RED_LED, LED_OFF);
+    
+    DigitalWrite(GREEN_LED, LED_OFF);
     PinMode(GREEN_LED, OUTPUT);
 #ifdef BLUE_LED
     DigitalWrite(BLUE_LED, LED_OFF);
