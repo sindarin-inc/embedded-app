@@ -29,7 +29,7 @@ adc_oneshot_unit_handle_t adcOneshotHandle;
 bool ledcFailed = false;
 uint8_t sysOnPin;
 
-bool useRtcGpio(int pin) {
+auto UseRtcGpio(int pin) -> bool {
     if (pin == RED_LED) {
         return true;
     }
@@ -37,8 +37,8 @@ bool useRtcGpio(int pin) {
     return false;
 }
 
-void PinMode(int pin, int mode) { 
-    if (useRtcGpio(pin)) {
+void PinMode(int pin, int mode) {
+    if (UseRtcGpio(pin)) {
         rtc_gpio_mode_t rtcMode = RTC_GPIO_MODE_INPUT_ONLY;
         if (mode == OUTPUT) {
             rtcMode = RTC_GPIO_MODE_OUTPUT_ONLY;
@@ -50,20 +50,20 @@ void PinMode(int pin, int mode) {
 
         // note: when this is set you cannot toggle the pin value
         // but this may be what we want when going to sleep for power reasons?
-        //rtc_gpio_hold_en((gpio_num_t)pin);
+        // rtc_gpio_hold_en((gpio_num_t)pin);
         return;
     }
 
-    gpio_set_direction((gpio_num_t)pin, (gpio_mode_t)mode); 
+    gpio_set_direction((gpio_num_t)pin, (gpio_mode_t)mode);
 }
 
-void DigitalWrite(int pin, int level) { 
-    if (useRtcGpio(pin)) {
+void DigitalWrite(int pin, int level) {
+    if (UseRtcGpio(pin)) {
         rtc_gpio_set_level((gpio_num_t)pin, level);
         return;
     }
 
-    gpio_set_level((gpio_num_t)pin, (uint32_t)level); 
+    gpio_set_level((gpio_num_t)pin, (uint32_t)level);
 }
 
 auto DigitalRead(uint8_t pin) -> int { return gpio_get_level((gpio_num_t)pin); }
@@ -167,7 +167,7 @@ void InitializePlatform() {
 
     PinMode(RED_LED, OUTPUT);
     DigitalWrite(RED_LED, LED_OFF);
-    
+
     DigitalWrite(GREEN_LED, LED_OFF);
     PinMode(GREEN_LED, OUTPUT);
 #ifdef BLUE_LED
