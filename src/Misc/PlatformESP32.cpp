@@ -47,7 +47,11 @@ void PinMode(int pin, int mode) {
         rtc_gpio_set_direction((gpio_num_t)pin, rtcMode);
         rtc_gpio_pulldown_dis((gpio_num_t)pin);
         rtc_gpio_pullup_dis((gpio_num_t)pin);
-        rtc_gpio_hold_en((gpio_num_t)pin);
+
+        // note: when this is set you cannot toggle the pin value
+        // but this may be what we want when going to sleep for power reasons?
+        //rtc_gpio_hold_en((gpio_num_t)pin);
+        return;
     }
 
     gpio_set_direction((gpio_num_t)pin, (gpio_mode_t)mode); 
