@@ -1,3 +1,5 @@
+#pragma once
+
 #include <ctime>
 #include <freertos/FreeRTOS.h>
 #include <freertos/event_groups.h>
@@ -18,6 +20,8 @@ public:
     void getClockTime(uint8_t &hours, uint8_t &minutes);
 
     void setClockTimeFromInternet();
+
+    auto getEpochTime() -> time_t;
 
 protected:
     EventGroupHandle_t timeSyncEventGroup_;

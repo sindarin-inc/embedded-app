@@ -1242,11 +1242,19 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         (*voltageLogScreen).begin();
     }));
 
-    debugSettingsMenu->addMenuItem(MenuItem("Deep Sleep w/Mag Wakeup", [display,
-                                                                        debugSettingsMenu]() {
+    debugSettingsMenu->addMenuItem(MenuItem("Deep Sleep w/Mag Wakeup", [display, debugSettingsMenu,
+                                                                        &lightingController]() {
         log_w("Deep sleeping. Goodnight.");
         debugSettingsMenu->showTemporaryMessage(*display, "Deep sleeping. Goodnight.", 2000, false);
-        UlpDeepSleepMagnetometerWakeup();
+
+        // sleep with wakeup time set to 30 seconds from now
+        time_t wakeTime = SolClock::getInstance().getEpochTime() + 30;
+
+        // Disable the ambient light sensor to save power
+        // TODO: Centralize this logic for what needs to be configured for deep sleep.
+        lightingController.disableLighting();
+
+        UlpDeepSleepMagnetometerWakeupWithWakeTime(wakeTime);
     }));
 
     oldMenu->addMenuItem(MenuItem("Calibration Screen Run Through", [this, oldMenu]() {
