@@ -28,6 +28,68 @@ enum SLEEP_REASON {
     SLEEP_REASON_TEMPLES_CLOSED = 2,
 };
 
+template <typename T>
+auto GetFromStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t {
+    esp_err_t err;
+    if constexpr (std::is_same_v<T, bool>) {
+        err = nvs_get_u8(nvsHandle, key, (uint8_t *)&value);
+    } else if constexpr (std::is_same_v<T, int> || std::is_same_v<T, int32_t>) {
+        err = nvs_get_i32(nvsHandle, key, (int32_t *)&value);
+    } else if constexpr (std::is_same_v<T, uint32_t>) {
+        err = nvs_get_u32(nvsHandle, key, &value);
+    } else if constexpr (std::is_same_v<T, uint64_t>) {
+        err = nvs_get_u64(nvsHandle, key, &value);
+    } else if constexpr (std::is_same_v<T, std::string>) {
+        size_t len = 0;
+        // NVS strings can be up to 4000 bytes long, so we need to get the length first
+        err = nvs_get_str(nvsHandle, key, nullptr, &len);
+        if (err == ESP_OK) {
+            // Create a blank string of the correct length
+            value.resize(len);
+
+            // Now that we have the len write to a std::string
+            err = nvs_get_str(nvsHandle, key, value.data(), &len);
+            if (err == ESP_OK) {
+                // nvs_get_str's len includes the null terminator (it is a buffer length)
+                // We need to strip back off the null terminator since it was copied into the
+                // string.
+                value.resize(len - 1);
+            }
+        }
+    } else {
+        // TODO: Is there a compile time assert we can use here?
+        log_e("Unhandled prefs type");
+        assert(0);
+    }
+    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
+        log_e("nvs_get_* fail: %s %s", key, esp_err_to_name(err));
+    }
+    return err;
+}
+
+template <typename T>
+auto WriteToStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t {
+    esp_err_t err;
+    if constexpr (std::is_same_v<T, bool>) {
+        err = nvs_set_u8(nvsHandle, key, value);
+    } else if constexpr (std::is_same_v<T, int> || std::is_same_v<T, int32_t>) {
+        err = nvs_set_i32(nvsHandle, key, value);
+    } else if constexpr (std::is_same_v<T, uint32_t>) {
+        err = nvs_set_u32(nvsHandle, key, value);
+    } else if constexpr (std::is_same_v<T, uint64_t>) {
+        err = nvs_set_u64(nvsHandle, key, value);
+    } else if constexpr (std::is_same_v<T, std::string>) {
+        err = nvs_set_str(nvsHandle, key, value.c_str());
+    } else {
+        log_e("Unhandled prefs type for key %s", key);
+        assert(0);
+    }
+    if (err != ESP_OK) {
+        log_e("nvs_set_* fail: %s %s", key, esp_err_to_name(err));
+    }
+    return err;
+}
+
 class PreferencesStore {
 public:
     template <typename T>
@@ -36,20 +98,10 @@ public:
         PrefsItemBase(PreferencesStore &prefs) : prefs(prefs) {}
 
         void writeToStorage(const char *key, T value) {
-            if constexpr (std::is_same_v<T, int> || std::is_same_v<T, bool> ||
-                          std::is_same_v<T, uint32_t>) {
-                esp_err_t err = nvs_set_i32(prefs.nvsHandle, key, value);
-                if (err != ESP_OK) {
-                    log_e("nvs_set_i32 fail: %s %s", key, esp_err_to_name(err));
-                }
-            } else if constexpr (std::is_same_v<T, std::string>) {
-                esp_err_t err = nvs_set_str(prefs.nvsHandle, key, value.c_str());
-                if (err != ESP_OK) {
-                    log_e("nvs_set_str fail: %s %s", key, esp_err_to_name(err));
-                }
-            } else {
-                log_e("Unhandled prefs type for key %s", key);
-                assert(0);
+            esp_err_t err = WriteToStorage(prefs.nvsHandle, key, value);
+            if (err != ESP_OK) {
+                log_e("nvs_set_* fail: %s %s", key, esp_err_to_name(err));
+                return;
             }
             prefs.commit();
         }
@@ -77,39 +129,10 @@ public:
         }
 
         virtual void loadValue() {
-            if constexpr (std::is_same_v<T, int> || std::is_same_v<T, bool> ||
-                          std::is_same_v<T, uint32_t>) {
-                int32_t value;
-                esp_err_t err = nvs_get_i32(this->prefs.nvsHandle, this->key_, &value);
-                if (err == ESP_OK) {
-                    this->value_ = value;
-                }
-            } else if constexpr (std::is_same_v<T, std::string>) {
-                size_t len = 0;
-                // NVS strings can be up to 4000 bytes long, so we need to get the length first
-                esp_err_t err = nvs_get_str(this->prefs.nvsHandle, this->key_, nullptr, &len);
-                if (err != ESP_OK) {
-                    return;
-                }
-
-                // Create a blank string of the correct length
-                std::string str;
-                str.resize(len);
-
-                // Now that we have the len write to a std::string
-                err = nvs_get_str(this->prefs.nvsHandle, this->key_, str.data(), &len);
-                if (err != ESP_OK) {
-                    log_e("nvs_get_str fail: %s %s", this->key_, esp_err_to_name(err));
-                    return;
-                }
-                // nvs_get_str's len includes the null terminator (it is a buffer length)
-                // We need to strip back off the null terminator since it was copied into the
-                // string.
-                str.resize(len - 1);
-                this->value_ = str;
-            } else {
-                log_e("Unhandled prefs type");
-                assert(0);
+            T value;
+            esp_err_t err = GetFromStorage(this->prefs.nvsHandle, this->key_, value);
+            if (err == ESP_OK) {
+                this->value_ = value;
             }
         }
 
@@ -180,16 +203,17 @@ public:
         auto get(const char *prefix) -> T {
             char key[MAX_KEY_LENGTH + 1];
             this->makeKey(key, prefix);
-            if constexpr (std::is_same_v<T, int> || std::is_same_v<T, bool> ||
-                          std::is_same_v<T, uint32_t>) {
-                int32_t value = 0;
-                nvs_get_i32(this->prefs.nvsHandle, key, &value);
-                // Fail silently if the key doesn't exist
-                return value;
-            } else {
-                log_e("Unhandled prefs type for key %s", key);
-                assert(0);
+            T value;
+            esp_err_t err = GetFromStorage(this->prefs.nvsHandle, key, value);
+            log_d("get %s %s", key, esp_err_to_name(err));
+            if (err != ESP_OK) {
+                // Ignore not found errors
+                if (err != ESP_ERR_NVS_NOT_FOUND) {
+                    log_e("nvs_get_* fail: %s %s", key, esp_err_to_name(err));
+                }
+                value = T();
             }
+            return value;
         }
 
         void set(const char *prefix, T value) {
@@ -227,7 +251,7 @@ public:
           cesMode(*this, "ces"), emcMode(*this, "emc"), lastBatteryReport(*this, "last-batt"),
           wifiPower(*this, "wifi-power"), morningNewspaperTime(*this, "morning-news"),
           eveningNewspaperTime(*this, "evening-news"), solTimeZone(*this, "time-zone"),
-          sleepReason(*this, "sleep-reason"){};
+          sleepReason(*this, "sleep-reason"), nextSyncTime(*this, "next-sync"){};
     PreferencesStore(PreferencesStore &) = delete;
 
     auto begin() -> bool {
@@ -298,6 +322,7 @@ public:
     PrefsItem<int> eveningNewspaperTime;
     PrefsItem<int> solTimeZone;
     PrefsItem<int> sleepReason;
+    PrefsItem<uint64_t> nextSyncTime;
 
 protected:
     bool started_;
