@@ -3,6 +3,7 @@
 #include <inicpp.h>
 #include <optional>
 #include <string>
+#include <cstring>
 
 #include "sindarin-debug.h"
 

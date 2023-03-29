@@ -12,6 +12,7 @@
 class LightingController {
 public:
     LightingController() : lightSensor_(0) {}
+    LightingController(LightingController const &) = delete;
 
     // Simple diagnostic test to check if the ambient light sensor is reporting the correct part id
     // and manufacturer id

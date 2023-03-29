@@ -22,6 +22,8 @@ public:
 
     MenuScreen(Power &power) : power_(power) { numMenuItems_ = 0; };
 
+    MenuScreen(MenuScreen const &) = delete;
+
     void render(DisplaySystem &display) override;
 
     void processCommand(RemoteCommand command) override;

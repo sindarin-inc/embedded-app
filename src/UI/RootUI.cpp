@@ -19,6 +19,7 @@
 #include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
+#include "Misc/Ulp.hpp"
 #include "Models/Readable.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/LocalStore.hpp"
@@ -840,13 +841,14 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto confirmMessage = [this, timeZoneMenu, display](int solTimeZone) {
             this->prefs_.solTimeZone.set(solTimeZone);
             timeZoneMenu->showTemporaryMessage(*display, "Setting Clock & Time Zone", 200, false);
-            if (!ConnectWifi()) {
+            WiFi::getInstance().connectWiFiWithTimeout();
+            if (!WiFi::getInstance().connected()) {
                 log_e("Couldn't connect to wifi, not setting clock");
             } else {
                 log_i("Setting time from internet");
-                SolClock theClock = SolClock::getInstance();
+                SolClock &theClock = SolClock::getInstance();
                 theClock.setClockTimeFromInternet();
-                DisconnectWifi();
+                WiFi::getInstance().disconnectWiFi();
             }
             timeZoneMenu->backCallback();
         };
@@ -969,7 +971,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 fileSystem.remove(StringFormat("%s%s", "/coredumps/", file.c_str()).c_str());
             }
             systemSettingsMenu->showTemporaryMessage(*display, "Crash Reports reset.");
-            delay(1500);
+            Delay(1500);
             esp_restart();
         }));
 
@@ -1024,7 +1026,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             for (const std::string &str : localFiles) {
                 log_d("Next File is %s", str.c_str());
                 fsMenu->addMenuItem(MenuItem(str.c_str(), [this, fsMenu, &fileSystem, str]() {
-                    File toSerialOutput = fileSystem.open(StringFormat("/%s", str.c_str()));
+                    SFile toSerialOutput = fileSystem.open(StringFormat("/%s", str.c_str()));
                     while (toSerialOutput.available()) {
                         printf("%c", toSerialOutput.read());
                     }
@@ -1155,7 +1157,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }
         };
 
-        wifiPowerMenu->setExtraText(powerToString(GetWiFiPower()));
+        wifiPowerMenu->setExtraText(powerToString(WiFi::getInstance().getWiFiPower()));
 
         auto confirmMessage = [this, wifiPowerMenu, display](wifi_power_t power) {
             this->prefs_.wifiPower.set(power);
@@ -1164,28 +1166,28 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
 
         wifiPowerMenu->addMenuItem(MenuItem("Max (19.5dBm)", [confirmMessage]() {
-            SetWiFiPower(WIFI_POWER_19_5dBm);
+            WiFi::getInstance().setWiFiPower(WIFI_POWER_19_5dBm);
             confirmMessage(WIFI_POWER_19_5dBm);
         }));
         wifiPowerMenu->addMenuItem(MenuItem("High (17dBm)", [confirmMessage]() {
-            SetWiFiPower(WIFI_POWER_17dBm);
+            WiFi::getInstance().setWiFiPower(WIFI_POWER_17dBm);
             confirmMessage(WIFI_POWER_17dBm);
         }));
         wifiPowerMenu->addMenuItem(MenuItem("Medium (11dBm)", [confirmMessage]() {
-            SetWiFiPower(WIFI_POWER_11dBm);
+            WiFi::getInstance().setWiFiPower(WIFI_POWER_11dBm);
             confirmMessage(WIFI_POWER_11dBm);
         }));
         wifiPowerMenu->addMenuItem(MenuItem("Low (5dBm)", [confirmMessage]() {
-            SetWiFiPower(WIFI_POWER_5dBm);
+            WiFi::getInstance().setWiFiPower(WIFI_POWER_5dBm);
             confirmMessage(WIFI_POWER_5dBm);
         }));
         wifiPowerMenu->addMenuItem(MenuItem("Min (-1dBm)", [confirmMessage]() {
-            SetWiFiPower(WIFI_POWER_MINUS_1dBm);
+            WiFi::getInstance().setWiFiPower(WIFI_POWER_MINUS_1dBm);
             confirmMessage(WIFI_POWER_MINUS_1dBm);
         }));
 
         int menuIndex = 0;
-        switch (GetWiFiPower()) {
+        switch (WiFi::getInstance().getWiFiPower()) {
         case WIFI_POWER_17dBm:
             menuIndex = 1;
             break;
@@ -1238,6 +1240,21 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             delete voltageLogScreen;
         };
         (*voltageLogScreen).begin();
+    }));
+
+    debugSettingsMenu->addMenuItem(MenuItem("Deep Sleep w/Mag Wakeup", [display, debugSettingsMenu,
+                                                                        &lightingController]() {
+        log_w("Deep sleeping. Goodnight.");
+        debugSettingsMenu->showTemporaryMessage(*display, "Deep sleeping. Goodnight.", 2000, false);
+
+        // sleep with wakeup time set to 30 seconds from now
+        time_t wakeTime = SolClock::getInstance().getEpochTime() + 30;
+
+        // Disable the ambient light sensor to save power
+        // TODO: Centralize this logic for what needs to be configured for deep sleep.
+        lightingController.disableLighting();
+
+        UlpDeepSleepMagnetometerWakeupWithWakeTime(wakeTime);
     }));
 
     oldMenu->addMenuItem(MenuItem("Calibration Screen Run Through", [this, oldMenu]() {
@@ -1330,7 +1347,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             this->display_->setFont(this->display_->style.getFontFamily().readableFont);
             log_i("Setting Readable Screen on boot in %.0f ms", esp_timer_get_time() / 1000.0f);
             this->setCurrentScreen(*readableScreen);
-            log_i("Resuming readable %s at place %d", (*it).title.c_str(), (*it).place);
+            log_i("Resuming readable %s at place %" PRIu32, (*it).title.c_str(), (*it).place);
         } else {
             // Assume this readable has gone away (or changed from id to uuid)
             prefs_.lastReadableId.remove();
@@ -1358,7 +1375,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto calibrationScreen = new LogoScreen();
         calibrationScreen->backCallback = [this, calibrationScreen, display, mainMenu]() {
             display->clearScreen();
-            delay(100);
+            Delay(100);
 
             setCurrentScreen(*mainMenu);
             delete calibrationScreen;
@@ -1380,7 +1397,7 @@ void RootUI::loop(DisplaySystem &display, RemoteCommand command) {
         setCurrentScreen(*powerDepletedScreen);
         this->render(display);
         // Wait 5 seconds to be able to see the message
-        delay(5000);
+        Delay(5000);
         // Unless wake sources are defined, nothing can wake us up. Goodnight.
         esp_deep_sleep_start();
     }

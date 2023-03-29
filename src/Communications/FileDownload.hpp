@@ -5,11 +5,11 @@
 #include "Communications/HttpClient.hpp"
 #include "Storage/FileSystem.hpp"
 
-auto DownloadFile(const char *url,
-                  const std::function<bool(int httpCode, int contentLength)> &openedConnection,
-                  const std::function<size_t(HttpClient &client, int index)> &readWrite,
-                  const std::function<void(int bytesWritten, float percentage)> &progressCallback,
-                  bool gzip) -> bool;
+auto DownloadFile(
+    const char *url, const std::function<bool(int httpCode, int contentLength)> &openedConnection,
+    const std::function<size_t(HttpClient &client, int index, int contentLength)> &readWrite,
+    const std::function<void(int bytesWritten, float percentage)> &progressCallback, bool gzip)
+    -> bool;
 
 auto DownloadFile(const char *url,
                   const std::function<bool(int httpCode, int contentLength)> &openedConnection,

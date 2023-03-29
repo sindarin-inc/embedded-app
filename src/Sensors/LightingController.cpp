@@ -87,7 +87,7 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
         // total darkness, but the alternative is to _always_ do extra work so I think this is
         // better
         Ltr329als01StatusValue status;
-        auto startTime = millis();
+        auto startTime = Millis();
         while (true) {
             if (!lightSensor_.readStatus(status)) {
                 // Failed to read status, so just give up and return (will be logged from the
@@ -97,7 +97,7 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
             if (status.alsDataStatus == 1 && status.alsDataValid == 0) {
                 break;
             }
-            if (millis() - startTime > timeoutMs) {
+            if (Millis() - startTime > timeoutMs) {
                 log_e("Light sensor timed out");
                 return;
             }

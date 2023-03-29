@@ -40,8 +40,8 @@ public:
         newPlace_ = readable_.place;
         atEnd_ = this->checkAtEnd();
 
-        log_d("Found place for %s = %d %s", readable_.shortenedUuid.c_str(), readable_.place,
-              atEnd_ ? "(at end)" : "");
+        log_d("Found place for %s = %" PRIu32 " %s", readable_.shortenedUuid.c_str(),
+              readable_.place, atEnd_ ? "(at end)" : "");
         popup_.backCallback = [this]() { this->setCurrentScreen(*this); };
         archiveMenu_.backCallback = [this]() { this->setCurrentScreen(*this); };
     }

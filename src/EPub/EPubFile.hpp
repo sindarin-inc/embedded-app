@@ -45,7 +45,7 @@ public:
     };
     auto seek(uint32_t pos) -> bool override {
         if (pos < position_) {
-            log_w("Seeking backwards in ePub from %d to %d", position_, pos);
+            log_w("Seeking backwards in ePub from %d to %" PRIu32 "", position_, pos);
             position_ = 0;
             currentXhtmlIndex_ = 0;
             epubZipFile_.closeFile();

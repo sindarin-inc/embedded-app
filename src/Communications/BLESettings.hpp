@@ -1,7 +1,6 @@
 #pragma once
 
 #include <NimBLEDevice.h>
-#include <Preferences.h>
 
 #include "BLEAbstractions.hpp"
 #include "Communications/BLEManager.hpp"
@@ -14,6 +13,7 @@ class BLESettings : BLECharacteristicProvider {
 
 public:
     BLESettings(PreferencesStore *prefs);
+    BLESettings(BLESettings const &) = delete;
     void configureCharacteristics(BLEService *service) override;
     void attachTTRemoteInput(TTRemoteInput *ttRemoteInput);
 

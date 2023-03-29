@@ -284,7 +284,7 @@ auto SindarinAPI::uploadAndResetVoltageLog(FileSystem &fileSystem) -> int {
     return httpCode;
 }
 
-auto SindarinAPI::uploadCrashReport(File &crashFile, const String &contentType) -> int {
+auto SindarinAPI::uploadCrashReport(SFile &crashFile, const std::string &contentType) -> int {
     HttpClient client(SINDARIN_SERVER_URL "/coredumps/", contentType.c_str(), HTTP_METHOD_POST);
     setAuth(client);
 

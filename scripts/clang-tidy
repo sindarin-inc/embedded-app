@@ -86,12 +86,25 @@ def clang_options(idedata):
             "-D_XTENSA_CORE_CONFIGURATION_H",
             "-DXCHAL_NUM_INTLEVELS=6",
             "-DXCHAL_HAVE_NMI=1",
-            "-DXCHAL_HAVE_INTERRUPTS=0",
             "-DXCHAL_HAVE_MAC16=0",
             "-DSSIZE_MAX=INT_MAX",
             "-DXCHAL_NUM_AREGS=0",
             "-DXCHAL_HAVE_LOOPS=1",
             "-Dregister=",
+            "-DFORCE_INLINE_ATTR=",
+            "-DXCHAL_HAVE_INTERRUPTS=0",
+            # All of the below interrupt things should probably not be necessary when XCHAL_HAVE_INTERRUPTS=0
+            # (since they're not defined), but IDF seems to try to use them anyways. I believe this is an IDF bug.
+            "-Dxt_int_has_handler(intr_num, core_id)=false",
+            "-Dxt_handler(intr_num, core_id)=false",
+            "-Dxt_handler=(void*)",
+            "-Dxt_int_has_handler(intr, cpu)=false",
+            "-Dxt_set_interrupt_handler(n, f, arg)=nullptr",
+            "-Dxt_get_interrupt_handler_arg(n)=nullptr",
+            "-Dxt_ints_on(mask)=",
+            "-Dxt_ints_off(mask)=",
+            # Workaround for https://github.com/espressif/esp-idf/issues/10802
+            "-U__linux__",
         ]
     )
 
@@ -123,6 +136,7 @@ def clang_options(idedata):
             not directory.startswith(f"{root_path}/")
             or directory.startswith(f"{root_path}/.pio/")
             or directory.startswith(f"{root_path}/components/")
+            or directory.startswith(f"{root_path}/managed_components/")
         ):
             cmd.extend(["-isystem", directory])
         else:
@@ -354,7 +368,7 @@ def main():
             print(f"\t{f}")
         print("\nExiting before applying fixes!\n")
         sys.exit(len(failed_files))
-    
+
     if args.fix:
         print("Applying fixes ...")
         try:

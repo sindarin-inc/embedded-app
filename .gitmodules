@@ -1,15 +1,6 @@
-[submodule "components/esp-nimble-cpp"]
-	path = components/esp-nimble-cpp
-	url = https://github.com/h2zero/esp-nimble-cpp
-[submodule "components/arduino"]
-	path = components/arduino
-	url = https://github.com/espressif/arduino-esp32.git
 [submodule "components/Adafruit-GFX-Library"]
 	path = components/Adafruit-GFX-Library
-	url = https://github.com/adafruit/Adafruit-GFX-Library.git
-[submodule "components/Adafruit_BusIO"]
-	path = components/Adafruit_BusIO
-	url = https://github.com/adafruit/Adafruit_BusIO.git
+	url = https://github.com/sindarin-inc/Adafruit-GFX-Library.git
 [submodule "components/ArduinoJson"]
 	path = components/ArduinoJson
 	url = https://github.com/bblanchon/ArduinoJson.git
@@ -25,3 +16,9 @@
 [submodule "lib/expat/libexpat"]
 	path = lib/Simulator/stubs/expat/libexpat
 	url = git@github.com:libexpat/libexpat.git
+[submodule "components/esp-nimble-cpp"]
+	path = components/esp-nimble-cpp
+	url = git@github.com:sindarin-inc/esp-nimble-cpp.git
+[submodule "components/astubs"]
+	path = components/astubs
+	url = git@github.com:sindarin-inc/astubs.git

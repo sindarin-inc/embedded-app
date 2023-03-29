@@ -125,7 +125,7 @@ auto LookBackStream::seek(uint32_t pos) -> bool {
             int bytesRead = readBytes(buf, bytesToCopy);
             bytesCopied += bytesRead;
             if (bytesRead != bytesToCopy) {
-                log_i("failed to seek to %d", pos);
+                log_i("failed to seek to %" PRIu32 "", pos);
                 return false;
             }
         }

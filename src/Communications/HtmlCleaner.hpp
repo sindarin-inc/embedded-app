@@ -1,12 +1,12 @@
 #pragma once
 
-#include <Stream.h>
 #include <iostream>
 #include <sstream>
 #include <string>
 
 #include "Misc/SpiramAllocator.hpp"
 #include "Renderers/RendererStream.hpp"
+#include "Storage/SFile.hpp"
 
 enum StripHtmlState {
     HTML_TEXT,
@@ -18,11 +18,11 @@ enum StripHtmlState {
 // TODO: A Stream<->std::stringstream adapter class could simplify this
 void StripHtml(std::stringstream &inStream, std::stringstream &outStream);
 void StripHtml(const std::string &str, std::stringstream &outStream);
-void StripHtml(Stream &inStream, std::stringstream &outStream);
-void StripHtml(std::stringstream &inStream, Stream &outStream);
-void StripHtml(const std::string &str, Stream &outStream);
+void StripHtml(SStream &inStream, std::stringstream &outStream);
+void StripHtml(std::stringstream &inStream, SStream &outStream);
+void StripHtml(const std::string &str, SStream &outStream);
 void StripHtml(const std::basic_string<char, std::char_traits<char>, SpiramAllocator<char>> &str,
-               Stream &outStream);
+               SStream &outStream);
 
 class HtmlCleaner : public RendererStream {
 public:
@@ -34,7 +34,7 @@ public:
     auto read() -> int override;
     auto seek(uint32_t pos) -> bool override {
         if (pos < position_) {
-            log_w("Seeking backwards in HtmlCleaner from %d to %d", position_, pos);
+            log_w("Seeking backwards in HtmlCleaner from %d to %" PRIu32, position_, pos);
             position_ = 0;
             outStream_.str(std::string());
             outStream_.clear();

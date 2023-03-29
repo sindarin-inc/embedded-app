@@ -10,6 +10,7 @@
 class BLEManager {
 public:
     BLEManager();
+    BLEManager(BLEManager const &) = delete;
     static auto getInstance() -> std::shared_ptr<BLEManager>;
     auto startAdvertisingIfNecessary() -> bool;
     auto server() -> BLEServer *;

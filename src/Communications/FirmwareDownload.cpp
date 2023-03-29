@@ -1,6 +1,5 @@
 #include "FirmwareDownload.hpp"
 
-#include <Update.h>
 #include <cstdio>
 #include <string>
 
@@ -11,6 +10,7 @@
 #include "Misc/Dispatch.hpp"
 #include "Misc/SemVer.hpp"
 #include "Misc/StringUtil.hpp"
+#include "Update.h"
 #include "Version.hpp"
 #include "sindarin-debug.h"
 
@@ -95,7 +95,7 @@ void FirmwareDownloader::downloadFirmware(
 
         if (!success) {
             log_e("Failed to download firmware");
-            if (!NetworkConnected()) {
+            if (!WiFi::getInstance().connected()) {
                 progressCallback(
                     FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
                                           .message = "Failed: WiFi disconnected!"});

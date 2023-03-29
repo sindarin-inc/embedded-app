@@ -8,7 +8,7 @@
 #define SPACING 5
 
 void LoadingScreen::render(DisplaySystem &display) {
-    auto now = millis();
+    auto now = Millis();
     if (needsRerender || (now - timer_ > INTERVAL)) {
         // TODO: Would be nice to selectively clear parts of the screen
         if (state_ == 0) {

@@ -2,7 +2,7 @@
 
 // Simply reads from the bookmark file for this Readable and returns whether it was
 // a turn on or turn off bookmark.
-auto ReadOneBookmark(File &file, LocalBookmark &bookmark) -> bool {
+auto ReadOneBookmark(SFile &file, LocalBookmark &bookmark) -> bool {
     // The first character in the line is a + or -, read that first
     if (!file.available()) {
         return false;
@@ -24,11 +24,11 @@ auto ReadOneBookmark(File &file, LocalBookmark &bookmark) -> bool {
         return false;
     }
 
-    String firstThing = file.readStringUntil(' ');
-    bookmark.firstPlace = firstThing.toInt();
+    std::string firstThing = file.readStringUntil(' ');
+    bookmark.firstPlace = std::stoi(firstThing);
 
-    String secondThing = file.readStringUntil('\n');
-    bookmark.lastPlace = secondThing.toInt();
+    std::string secondThing = file.readStringUntil('\n');
+    bookmark.lastPlace = std::stoi(secondThing);
     return true;
 }
 

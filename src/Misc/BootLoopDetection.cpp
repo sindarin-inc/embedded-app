@@ -1,5 +1,7 @@
 #include "BootLoopDetection.hpp"
 
+#include "Misc/Platform.hpp"
+
 #if SIMULATOR
 
 void BootLoopCheck() {}
@@ -7,13 +9,13 @@ void GoodBootTimer() {}
 
 #else
 
-#include <Arduino.h>
-#include <Update.h>
 #include <esp_ota_ops.h>
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/timers.h>
 #include <nvs.h>
+
+#include "sindarin-debug.h"
 
 #define PANIC_BOOT_THRESHOLD 10
 #define GOOD_BOOT_THRESHOLD_MS 60000
@@ -28,7 +30,7 @@ auto PartitionIsBootable(const esp_partition_t *partition) -> bool {
     if (!partition) {
         return false;
     }
-    if (!ESP.partitionRead(partition, 0, (uint32_t *)buf, ENCRYPTED_BLOCK_SIZE)) {
+    if (!esp_partition_read(partition, 0, buf, ENCRYPTED_BLOCK_SIZE)) {
         return false;
     }
 
@@ -78,10 +80,11 @@ auto OpenBootInfo(nvs_handle_t *handle) -> bool {
 }
 
 auto SetPanicBootCount(nvs_handle_t handle, uint32_t bootCount) -> bool {
-    log_i("Setting panic-count to %d", bootCount);
+    log_i("Setting panic-count to %" PRIu32, bootCount);
     esp_err_t err = nvs_set_u32(handle, "panic-count", bootCount);
     if (err != ESP_OK) {
-        log_e("Could not set panic-count to %d with error: %s ", bootCount, esp_err_to_name(err));
+        log_e("Could not set panic-count to %" PRIu32 " with error: %s ", bootCount,
+              esp_err_to_name(err));
         return false;
     }
 
