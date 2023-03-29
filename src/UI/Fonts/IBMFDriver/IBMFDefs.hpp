@@ -215,8 +215,6 @@ struct FaceHeader {
     uint16_t glyphCount;       // Must be the same for all face
     uint16_t ligKernStepCount; // Length of the Ligature/Kerning table
     uint32_t pixelsPoolSize;   // Size of the Pixels Pool
-    uint8_t maxHight;          // The maximum hight in pixels of every glyph in the face
-    uint8_t filler[3];         // To keep the struct to be at a frontier of 32 bits
 };
 typedef FaceHeader *FaceHeaderPtr;
 typedef uint8_t (*PixelsPoolPtr)[];
@@ -439,8 +437,7 @@ struct Plane {
 
 struct CodePointBundle {
     char16_t firstCodePoint; // The first UTF16 codePoint of the bundle
-    char16_t
-        endCodePoint; // Codepoint corresponding to the one after the last codePoint of that bundle
+    char16_t lastCodePoint;  // The last UTF16 codePoint of the bundle
 };
 
 typedef Plane Planes[4];

@@ -38,26 +38,9 @@ const GFont FONT_TAHOMA_REGULAR_FONT20PT7B = GFont(TAHOMA_REGULAR_FONT10PT7B);
 // object is created using the IBMFFontLow class that manage the whole .h file
 // and "faces" are hooked through the IBMFFont class.
 
-extern IBMFFontLow EC_Regular_75; // Instanciated in Fonts.cpp
+extern IBMFFontLow Tahoma_75; // Instanciated in Fonts.cpp
 
-// extern IBMFFont FONT_EC_REGULAR_75BPI12PT; // Instanciated in Fonts.cpp
-extern IBMFFont FONT_EC_REGULAR_75BPI14PT; // Instanciated in Fonts.cpp
-// extern IBMFFont FONT_EC_REGULAR_75BPI17PT; // Instanciated in Fonts.cpp
-
-/// extern IBMFFontLow ECSans_Regular_75; // Instanciated in Fonts.cpp
-
-// extern IBMFFont FONT_ECSANS_REGULAR_75BPI12PT; // Instanciated in Fonts.cpp
-/// extern IBMFFont FONT_ECSANS_REGULAR_75BPI14PT; // Instanciated in Fonts.cpp
-// extern IBMFFont FONTSANS_EC_REGULAR_75BPI17PT; // Instanciated in Fonts.cpp
-
-// extern IBMFFontLow EC_Regular_100; // Instanciated in Fonts.cpp
-
-// extern IBMFFont FONT_EC_REGULAR_100BPI12PT; // Instanciated in Fonts.cpp
-// extern IBMFFont FONT_EC_REGULAR_100BPI14PT; // Instanciated in Fonts.cpp
-// extern IBMFFont FONT_EC_REGULAR_100BPI17PT; // Instanciated in Fonts.cpp
-
-// extern IBMFFontLow ECSans_Regular_100; // Instanciated in Fonts.cpp
-
-// extern IBMFFont FONT_ECSANS_REGULAR_100BPI12PT; // Instanciated in Fonts.cpp
-// extern IBMFFont FONT_ECSANS_REGULAR_100BPI14PT; // Instanciated in Fonts.cpp
-// extern IBMFFont FONT_ECSANS_REGULAR_100BPI17PT; // Instanciated in Fonts.cpp
+extern IBMFFont FONT_TAHOMA_75BPI9PT;  // Instanciated in Fonts.cpp
+extern IBMFFont FONT_TAHOMA_75BPI10PT; // Instanciated in Fonts.cpp
+extern IBMFFont FONT_TAHOMA_75BPI12PT; // Instanciated in Fonts.cpp
+extern IBMFFont FONT_TAHOMA_75BPI14PT; // Instanciated in Fonts.cpp

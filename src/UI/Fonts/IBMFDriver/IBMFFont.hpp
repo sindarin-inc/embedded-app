@@ -97,9 +97,7 @@ public:
                 LOGE("Not initialized!!!");
             }
         }
-        // max-hight is the maximum hight in pixels of all the glyph from the baseline
-        // descender-height is the negative number of pixels below the baseline
-        return isInitialized() ? ((int)face_->getMaxHight()) - face_->getDescenderHeight() : 0;
+        return isInitialized() ? ((int)face_->getLineHeight()) - face_->getDescenderHeight() - (face_->getLineHeight() / 5) : 0;
     }
 
     auto drawSingleLineOfText(IBMFDefs::Bitmap &canvas, IBMFDefs::Pos pos,
