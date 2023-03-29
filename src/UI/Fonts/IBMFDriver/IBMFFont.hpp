@@ -98,7 +98,7 @@ public:
             }
         }
         return isInitialized() ? ((int)face_->getLineHeight()) - face_->getDescenderHeight() -
-                                     (face_->getLineHeight() / 5)
+                                     (face_->getLineHeight() / 4)
                                : 0;
     }
 
