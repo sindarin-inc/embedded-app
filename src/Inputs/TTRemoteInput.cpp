@@ -9,6 +9,9 @@
 #include "TurnTouch.hpp"
 #include "sindarin-debug.h"
 
+#define CONNECTION_INTERVAL_MIN 40
+#define CONNECTION_INTERVAL_MAX 90
+
 using namespace std::placeholders;
 
 auto TTRemoteInput::connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &device) -> bool {
@@ -18,6 +21,9 @@ auto TTRemoteInput::connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &
         client_->setClientCallbacks(&clientCallbacks_);
     }
 
+    // Update connection parameters after establishing a connection
+    client_->setConnectionParams(CONNECTION_INTERVAL_MIN, CONNECTION_INTERVAL_MAX, 10, 1000);
+
     BLEAddress address = device->getAddress();
     log_d("Attempting to connect to TurnTouch at address: %s", address.toString().c_str());
 
@@ -25,7 +31,6 @@ auto TTRemoteInput::connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &
         log_e("Failed to connect to TurnTouch");
         return false;
     }
-
     // Obtain a reference to the service we are after in the remote BLE server.
     BLERemoteService *buttonService = client_->getService(TURNTOUCH_BUTTON_SVC_UUID);
     if (buttonService == nullptr) {
