@@ -1,4 +1,8 @@
+#pragma once
+
 #include <ctime>
+#include <freertos/FreeRTOS.h>
+#include <freertos/event_groups.h>
 #include <string>
 
 #include "Storage/PreferencesStore.hpp"
@@ -6,8 +10,10 @@
 class SolClock {
 public:
     static auto getInstance() -> SolClock &;
+    // Delete the copy constructor
+    SolClock(SolClock const &) = delete;
 
-    SolClock(PreferencesStore &prefs) : prefs_(prefs) {}
+    SolClock(PreferencesStore &prefs) : prefs_(prefs) { timeSyncEventGroup_ = xEventGroupCreate(); }
 
     auto getTimeString() -> std::string;
 
@@ -15,6 +21,9 @@ public:
 
     void setClockTimeFromInternet();
 
+    auto getEpochTime() -> time_t;
+
 protected:
+    EventGroupHandle_t timeSyncEventGroup_;
     PreferencesStore &prefs_;
 };

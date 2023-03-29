@@ -1,66 +1,43 @@
 #include "LittleFSFileSystem.hpp"
 
-#include <LittleFS.h>
+#include <dirent.h>
+#include <esp_littlefs.h>
+#include <esp_vfs.h>
 
+#include "Misc/Platform.hpp"
 #include "sindarin-debug.h"
 
-auto LittleFSFileSystem::begin() -> bool {
-    SHOW_HEAP();
+const char *partitionLabel = "data";
 
-    // Launch LITTLEFS file system
-    // TODO: I've seen an issue but haven't debugged it where formatOnFail doesn't then begin the
-    // filesystem afterwards so it takes a reboot before the FS can be used.
-
-    if (!LittleFS.begin(true, "/littlefs", 255, "data")) {
-        log_e("An Error has occurred while mounting LittleFS");
+auto LittleFSFileSystem::format() -> bool {
+    log_i("formatting littlefs..");
+    DisableCore0Wdt();
+    esp_err_t err = esp_littlefs_format(partitionLabel);
+    EnableCore0Wdt();
+    if (err) {
+        log_e("Formatting LittleFS failed! Error: %d", err);
         return false;
     }
-
-    SHOW_HEAP();
     return true;
 }
 
-auto LittleFSFileSystem::open(const std::string &path, const char *mode, const bool create) const
-    -> File {
-    // Note(john): The version of framework-arduinoespressif32
-    // (https://github.com/marcovannoord/arduino-esp32.git#idf-release/v4.0) has a slightly
-    // different API here.
-    return LittleFS.open(path.c_str(), mode, create);
-}
-
-auto LittleFSFileSystem::exists(const std::string &path) const -> bool {
-    return LittleFS.exists(path.c_str());
-}
-
-auto LittleFSFileSystem::listDir(const std::string &path, FileList &files, int limit) const -> int {
-    int counted = 0;
-    File root = LittleFS.open(path.c_str());
-    File file = root.openNextFile();
-    while (file) {
-        files.push_back(file.name());
-        file.close();
-        file = root.openNextFile();
-        counted++;
-        if (limit > 0 && counted >= limit) {
-            break;
+auto LittleFSFileSystem::begin() -> bool {
+    // register littlefs filesystem
+    esp_vfs_littlefs_conf_t config = {.base_path = getPrefix(),
+                                      .partition_label = partitionLabel,
+                                      .format_if_mount_failed = false};
+    esp_err_t err = esp_vfs_littlefs_register(&config);
+    if (err == ESP_FAIL) {
+        if (format()) {
+            err = esp_vfs_littlefs_register(&config);
         }
     }
-    root.close();
-    return 0;
-}
 
-auto LittleFSFileSystem::createDir(const std::string &path, bool allowExists) -> bool {
-    if (!LittleFS.mkdir(path.c_str())) {
-        if (errno == EEXIST && allowExists) {
-            log_d("Directory %s already exists", path.c_str());
-        } else {
-            log_e("Failed to create dir %s", path.c_str());
-            return false;
-        }
+    if (err != ESP_OK) {
+        log_e("Mounting LittleFS failed! Error: %d", err);
+        return false;
     }
     return true;
 }
 
-auto LittleFSFileSystem::remove(const std::string &path) -> bool {
-    return LittleFS.remove(path.c_str());
-}
+void LittleFSFileSystem::close() { esp_vfs_littlefs_unregister(partitionLabel); }

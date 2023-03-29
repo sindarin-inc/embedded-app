@@ -2,6 +2,8 @@
 
 #include <ArduinoJson.h>
 
+#include "esp_heap_caps.h"
+
 #if SIMULATOR
 
 using SpiRamJsonDocument = DynamicJsonDocument;

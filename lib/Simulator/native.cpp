@@ -22,6 +22,14 @@
 #endif
 #include "Inputs/RemoteInput.hpp"
 
+#define SIM_LED_ON 1
+#define SIM_LED_ROUND 1
+#if SIM_LED_ON
+#define SIM_LED_DIM 6
+#else
+#define SIM_LED_DIM 0
+#endif
+
 extern void UIInnerLoop(RemoteCommand command);
 extern "C" void app_main(void); // NOLINT(readability-identifier-naming)
 
@@ -31,6 +39,8 @@ const char *kGitHash = "SIMULATOR";
 
 // Will be set by PlatformSimulator.cpp SetLeftScreenLight() and SetRightScreenLight()
 extern int LightingSetting;
+extern bool simLeds[3];
+extern bool ledChange;
 
 SDL_Window *window;
 SDL_Renderer *renderer;
@@ -59,6 +69,77 @@ void SimDrawScreen() {
             SDL_RenderDrawPoint(renderer, x, y);
         }
     }
+}
+
+void DrawRectLed(int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b) {
+    SDL_Rect rect;
+    rect.x = x;
+    rect.y = y;
+    rect.w = w;
+    rect.h = h;
+
+    SDL_SetRenderDrawColor(renderer, r, g, b, 0xFF);
+    SDL_RenderFillRect(renderer, &rect);
+}
+
+void DrawRoundLed(int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b) {
+    float centerX = (float)x + ((float)w / 2.0);
+    float centerY = (float)y + ((float)h / 2.0);
+    float rad = centerX - (float)x;
+
+    for (int xx = x; xx < x + w; xx++) {
+        for (int yy = y; yy < y + h; yy++) {
+            float dx = (float)xx - centerX;
+            float dy = (float)yy - centerY;
+            float dist = sqrt(dx*dx + dy*dy);
+            if (dist > rad) {
+                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
+            } else {
+                float f = 1.0 - (dist / rad);
+                uint8_t rr = (uint8_t)((float)r * f);
+                uint8_t gg = (uint8_t)((float)g * f);
+                uint8_t bb = (uint8_t)((float)b * f);
+                SDL_SetRenderDrawColor(renderer, rr, gg, bb, 0xFF);
+            }
+            SDL_RenderDrawPoint(renderer, xx, yy);
+        }
+    }
+}
+
+void SimDrawLeds() {
+#if SIM_LED_ON
+    // draw simulated leds
+    int ledDim = SIM_LED_DIM;
+    int ledStartY = EinkET013TT1_PIXEL_HEIGHT;
+    int ledStartX = (EinkET013TT1_PIXEL_WIDTH/2) - (ledDim/2);
+
+    // clear area
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
+    SDL_Rect rect;
+    rect.x = 0;
+    rect.y = ledStartY;
+    rect.h = ledDim;
+    rect.w = EinkET013TT1_PIXEL_WIDTH;
+
+    SDL_RenderFillRect(renderer, &rect);
+
+    uint8_t color[3];
+    for (int i = 0; i < 3; i++) {
+        bool ledVal = simLeds[i];
+        memset(color, 0, 3);
+
+        if (ledVal) {
+            color[i] = 0xFF;
+        }
+        #if SIM_LED_ROUND
+        DrawRoundLed(ledStartX, ledStartY, ledDim, ledDim, color[0], color[1], color[2]);
+        #else
+        DrawRectLed(ledStartX, ledStartY, ledDim, ledDim, color[0], color[1], color[2]);
+        #endif
+        ledStartX += ledDim;
+    }
+    ledChange = false;
+#endif
 };
 
 bool isPngEqual(std::string filepath1, std::string filepath2) {
@@ -157,6 +238,7 @@ void sendCodeAndRender(RemoteCommand command, SDL_Renderer *renderer) {
     SDL_SetRenderTarget(renderer, NULL);
     SDL_RenderCopy(renderer, deviceScreen, NULL, NULL);
     SimDrawScreen();
+    SimDrawLeds();
     SDL_RenderPresent(renderer);
 }
 
@@ -249,7 +331,14 @@ auto mainLoop() -> bool {
         SDL_SetRenderTarget(renderer, NULL);
         SDL_RenderCopy(renderer, deviceScreen, NULL, NULL);
         SimDrawScreen();
+        SimDrawLeds();
         SDL_RenderPresent(renderer);
+    } else if (ledChange) {
+        #if SIM_LED_ON
+        SDL_SetRenderTarget(renderer, NULL);
+        SimDrawLeds();
+        SDL_RenderPresent(renderer);
+        #endif
     }
 
     return true;
@@ -273,7 +362,7 @@ auto main(int argc, char *argv[]) -> int {
         return 1;
     }
 
-    SDL_CreateWindowAndRenderer(EinkET013TT1_PIXEL_WIDTH * SCALE, EinkET013TT1_PIXEL_WIDTH * SCALE,
+    SDL_CreateWindowAndRenderer(EinkET013TT1_PIXEL_WIDTH * SCALE, ((EinkET013TT1_PIXEL_WIDTH+SIM_LED_DIM) * SCALE),
                                 0, &window, &renderer);
     if (renderer == NULL) {
         fprintf(stderr, "Could not create renderer: %s\n", SDL_GetError());

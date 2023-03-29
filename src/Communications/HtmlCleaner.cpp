@@ -127,7 +127,7 @@ void StripHtml(const std::string &str, std::stringstream &outStream) {
     StripHtml(inStream, outStream);
 }
 
-void StripHtml(Stream &inStream, std::stringstream &outStream) {
+void StripHtml(SStream &inStream, std::stringstream &outStream) {
     StripHtmlState state = HTML_TEXT;
     std::string element;
 
@@ -138,7 +138,7 @@ void StripHtml(Stream &inStream, std::stringstream &outStream) {
     }
 }
 
-void StripHtml(std::stringstream &inStream, Stream &outStream) {
+void StripHtml(std::stringstream &inStream, SStream &outStream) {
     StripHtmlState state = HTML_TEXT;
     std::string element;
 
@@ -154,7 +154,7 @@ void StripHtml(std::stringstream &inStream, Stream &outStream) {
     }
 }
 
-void StripHtml(const std::string &str, Stream &outStream) {
+void StripHtml(const std::string &str, SStream &outStream) {
     std::stringstream inStream;
     inStream << str;
 
@@ -162,7 +162,7 @@ void StripHtml(const std::string &str, Stream &outStream) {
 }
 
 void StripHtml(const std::basic_string<char, std::char_traits<char>, SpiramAllocator<char>> &str,
-               Stream &outStream) {
+               SStream &outStream) {
     std::stringstream inStream;
     inStream << str;
 

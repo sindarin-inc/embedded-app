@@ -13,7 +13,8 @@ jobs:
     strategy:
       matrix:
         pioenv:
-          - sol3dev
+          # Seems like RISCV ULP compilation is busted in PlatformIO at least for IDF 5.0.1
+          # - sol3dev
           - simulator
           # - simulator-wasm
 
@@ -54,6 +55,12 @@ jobs:
   build-idf:
     name: "idf.py build"
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Tags from here: https://hub.docker.com/r/espressif/idf/tags
+        idf_version:
+          - latest
+          - v5.0.1
 
     steps:
       - name: Checkout repo
@@ -62,9 +69,9 @@ jobs:
           submodules: "recursive"
 
       - name: esp-idf build
-        uses: espressif/esp-idf-ci-action@main
+        uses: espressif/esp-idf-ci-action@v1
         with:
-          esp_idf_version: v4.4.3
+          esp_idf_version: ${{ matrix.idf_version }}
           target: esp32s3
           path: .
 

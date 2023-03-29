@@ -21,6 +21,7 @@ public:
         : MenuScreen(power, myStyle), EinkView(display), batteryTextView_(display, ""),
           topBarSelectionView_(display, 3),
           batteryIconView_(display, boltBits, bolt_width, bolt_height), clockView_(display, ""){};
+    MainMenuScreen(MainMenuScreen const &) = delete;
 
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;

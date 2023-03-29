@@ -45,7 +45,7 @@ def generate_readables(path):
         elif file.suffix == ".epub":
             name = file.name
             author = "Local Only"
-
+            
         # Get SHA256 of file
         with open(file, "rb") as f:
             sha256 = hashlib.sha256(f.read()).hexdigest()
@@ -56,7 +56,7 @@ def generate_readables(path):
         readables.append(
             {
                 "local_only": True,
-                "uuid": to_id(id),
+                "uuid": path,
                 "id": to_id(id),
                 "title": name,
                 "date_created": now,

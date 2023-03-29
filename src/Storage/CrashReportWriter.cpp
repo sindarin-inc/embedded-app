@@ -53,7 +53,7 @@ auto CrashReportWriter::writeCrashReportIfExists() -> bool {
             return false;
         }
         if (!mpData.writeFileChunk(tmp, bytesToRead)) {
-            log_e("failed to write address %d to core dump file", currAddr);
+            log_e("failed to write address %" PRIu32 " to core dump file", currAddr);
             return false;
         }
         // updates

@@ -2,37 +2,58 @@
 
 #include <string>
 
-#include "WiFi.hpp"
+#include "Communications/WiFi.hpp"
+#include "Misc/Platform.hpp"
+#include "config.h"
 #include "sindarin-debug.h"
 
-wifi_power_t WiFiPower = WIFI_POWER_19_5dBm;
+// Note(john): We might consider mocking this at the esp_* level like we've done with other esp
+// components. But that's a little more complexity than I want to bite off right now. This is
+// easier.
 
-auto GetWiFiCredentials(wifi_config_t *conf) -> bool {
-    strncpy((char *)conf->sta.ssid, "ssid", sizeof(conf->sta.ssid));
-    strncpy((char *)conf->sta.password, "password", sizeof(conf->sta.password));
+WiFi wiFi;
+
+auto WiFi::getInstance() -> WiFi & { return wiFi; }
+
+auto WiFi::begin() -> esp_err_t { return ESP_OK; }
+
+auto WiFi::end() -> esp_err_t { return ESP_OK; }
+
+auto WiFi::getWifiConfig(wifi_config_t *conf) -> esp_err_t { return ESP_OK; }
+
+auto WiFi::hasWiFiCredentials(wifi_config_t *conf) -> bool { return true; }
+
+auto WiFi::hasWiFiCredentials() -> bool { return true; }
+
+auto WiFi::scanNetworks(
+    const std::function<void(wifi_ap_record_t *apRecords, int recordCount)> &completeCB)
+    -> esp_err_t {
+    assert(false && "Not implemented");
+    return ESP_OK;
+}
+
+auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> esp_err_t {
+    log_i("Pretending to connect WiFi (wiFiPower_=%d, ssid=%s, password=%s)", wiFiPower_,
+          ssid.c_str(), password.c_str());
+    Delay(1000);
+    return ESP_OK;
+}
+
+auto WiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
+    log_i("Pretending to connect WiFi (wiFiPower_=%d, timeoutMs=%dms)", wiFiPower_, timeoutMs);
+    Delay(1000);
     return true;
 }
 
-auto HasWiFiCredentials() -> bool { return true; }
-
-auto ConnectWiFiIfCredentialsExist() -> bool {
-    log_i("Pretending to connect WiFi (power %d)", WiFiPower);
-    delay(1000);
-    return true;
+void WiFi::disconnectWiFi() {
+    log_i("Pretending to disconnect WiFi");
+    connected_ = false;
 }
 
-void DisconnectWifi() { log_i("Pretending to disconnect WiFi"); }
+auto WiFi::connected() -> bool { return connected_; }
 
-auto NetworkConnected() -> bool { return true; }
+auto WiFi::getLocalIp() -> esp_ip4_addr_t { return esp_ip4_addr{.addr = 0}; }
 
-auto ConnectWifi(int timeoutMs) -> bool {
-    log_i("Pretending to connect WiFi (power %d)", WiFiPower);
-    delay(1000);
-    return true;
-}
-
-void SetWiFiPower(wifi_power_t power) { WiFiPower = power; }
-
-auto GetWiFiPower() -> wifi_power_t { return WiFiPower; }
+auto WiFi::getLocalIpStr() -> std::string { return "0.0.0.0"; }
 
 #endif

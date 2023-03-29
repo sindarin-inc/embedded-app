@@ -1,7 +1,9 @@
 #include "CircBuffer.hpp"
 
-#include <Arduino.h>
+#include <algorithm>
 #include <cstring>
+
+#include "sindarin-debug.h"
 
 void CircBuffer::push(uint8_t *input, int size) {
     if ((size_ + size) > capacity_) {

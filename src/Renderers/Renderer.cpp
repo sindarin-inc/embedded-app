@@ -1,5 +1,6 @@
 #include "Renderer.hpp"
 
+#include <algorithm>
 #include <utility>
 
 #include "Misc/Platform.hpp"
@@ -352,8 +353,6 @@ void Renderer::loaded() {
 // Show the (already loaded into buffer) current page
 // and load the next page into the next buffer so we have it.
 auto Renderer::renderPage(unsigned long placeInFile, int numSkipLines) -> unsigned long {
-    SetCpuSpeedMhz(CPU_FREQ_MHZ_HIGH);
-
 #ifdef RENDERER_DEBUG
     log_d("%lu is place in file being requested", placeInFile);
 #endif
@@ -393,8 +392,6 @@ auto Renderer::renderPage(unsigned long placeInFile, int numSkipLines) -> unsign
             }
         }
     }
-
-    SetCpuSpeedMhz(CPU_FREQ_MHZ_LOW);
 
     return nextPlace_;
 }
