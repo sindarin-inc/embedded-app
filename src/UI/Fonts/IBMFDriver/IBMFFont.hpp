@@ -97,7 +97,9 @@ public:
                 LOGE("Not initialized!!!");
             }
         }
-        return isInitialized() ? ((int)face_->getLineHeight()) - face_->getDescenderHeight() - (face_->getLineHeight() / 5) : 0;
+        return isInitialized() ? ((int)face_->getLineHeight()) - face_->getDescenderHeight() -
+                                     (face_->getLineHeight() / 5)
+                               : 0;
     }
 
     auto drawSingleLineOfText(IBMFDefs::Bitmap &canvas, IBMFDefs::Pos pos,
@@ -112,7 +114,7 @@ public:
 
             ligKernUTF8Map(line, [this, &glyph, &atPos](GlyphCode glyphCode, FIX16 kern) {
                 if (this->face_->getGlyph(glyphCode, glyph, true, false, atPos)) {
-                    atPos.x += (glyph.metrics.advance + kern + 32) >> 6;
+                    atPos.x += (glyph.metrics.advance + kern + ((kern < 0) ? -32 : 32)) >> 6;
                 } else {
                     LOGW("Unable to retrieve glyph for glyphCode %d", glyphCode);
                 }
