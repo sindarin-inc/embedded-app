@@ -748,10 +748,14 @@ void LocalStore::deleteReadableFiles(const ReadablesVector &readables, bool rest
         prefs_.lastBooksSince.set("");
     }
 
+    int64_t start = esp_timer_get_time();
     for (const Readable &readable : readables) {
         log_i("Removing %s \"%s\"", ToString(modelType).c_str(), readable.title.c_str());
         readableFilePurge(readable);
     }
+    int64_t duration = esp_timer_get_time() - start;
+    log_d("Purged %zu %ss in %lld ms", readables.size(), ToString(modelType).c_str(),
+          duration / 1000);
 
     log_i("Resetting to guarantee %s are removed", ToString(modelType).c_str());
 
@@ -893,22 +897,16 @@ void LocalStore::readableFilePurge(const Readable &readable) {
     auto type = readable.readableType;
     auto &uuid = readable.uuid;
 
-    auto removeIfExists = [&](const std::string &path) {
-        if (fileSystem.exists(path)) {
-            fileSystem.remove(path);
-        }
-    };
-
     log_d("Purging readable file %s (%s)", readable.title.c_str(), uuid.c_str());
-    removeIfExists(StringFormat("/%s/%s.txt.gz", type.c_str(), uuid.c_str()));
-    removeIfExists(StringFormat("/%s/%s.txt", type.c_str(), uuid.c_str()));
-    removeIfExists(StringFormat("/%s/%s.epub", type.c_str(), uuid.c_str()));
+    fileSystem.remove(StringFormat("/%s/%s.txt.gz", type.c_str(), uuid.c_str()));
+    fileSystem.remove(StringFormat("/%s/%s.txt", type.c_str(), uuid.c_str()));
+    fileSystem.remove(StringFormat("/%s/%s.epub", type.c_str(), uuid.c_str()));
 
     if (readable.files.size() > 0) {
-        removeIfExists(StringFormat("/%s.gz", readable.file().name.c_str()));
-        removeIfExists(StringFormat("/%s", readable.file().name.c_str()));
+        fileSystem.remove(StringFormat("/%s.gz", readable.file().name.c_str()));
+        fileSystem.remove(StringFormat("/%s", readable.file().name.c_str()));
     }
 
-    removeIfExists(StringFormat("/articles/%s.txt.gz", uuid.c_str()));
-    removeIfExists(StringFormat("/articles/%s.txt", uuid.c_str()));
+    fileSystem.remove(StringFormat("/articles/%s.txt.gz", uuid.c_str()));
+    fileSystem.remove(StringFormat("/articles/%s.txt", uuid.c_str()));
 }

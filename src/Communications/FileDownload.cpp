@@ -255,6 +255,8 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
         log_e("Downloaded file is shorter than expected, expected %d bytes but got %zu bytes",
               length, fileSize);
         return false;
+    } else {
+        log_d("Downloaded file is correct size: %zu bytes", fileSize);
     }
 
     return true;
