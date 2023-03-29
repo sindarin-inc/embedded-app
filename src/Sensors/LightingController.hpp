@@ -22,10 +22,10 @@ public:
     void begin();
 
     // Disable lights altogether
-    void disableLighting();
+    void disableLighting(int fadeMs = 200);
 
     // Enable lights altogether
-    void enableLighting();
+    void enableLighting(int fadeMs = 200);
 
     // Disable updates and keeps a specific lighting setting (for when the user adjusts the setting
     // manually)
@@ -52,6 +52,7 @@ protected:
 
     int currentDutyCycle_ = 0;
     int overrideDutyCycle_{-1};
+    bool enabled_ = false;
     bool lightsOut_;
 
     void setCurrentDutyCycle(int dutyCycle, int fadeMs);

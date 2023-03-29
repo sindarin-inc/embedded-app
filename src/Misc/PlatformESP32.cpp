@@ -10,6 +10,7 @@
 #include <esp_sleep.h>
 #include <esp_task_wdt.h>
 #include <esp_timer.h>
+#include <hal/gpio_types.h>
 #include <nvs_flash.h>
 #include <optional>
 #include <soc/rtc.h>
@@ -40,14 +41,83 @@ void Delay(int ms) { vTaskDelay(ms * portTICK_PERIOD_MS); }
 auto Millis() -> int { return GetRunTimeMs(); }
 
 void HardwareInit() {
+#if USE_I2C
     // release rtc i2c lines
     ulp_timer_stop();
     ulp_riscv_halt();
-    rtc_gpio_deinit((gpio_num_t)I2C_MASTER_SDA_IO);
-    rtc_gpio_deinit((gpio_num_t)I2C_MASTER_SCL_IO);
+    esp_err_t err;
+    err = rtc_gpio_deinit((gpio_num_t)I2C_MASTER_SDA_IO);
+    if (err != ESP_OK) {
+        log_e("rtc_gpio_deinit failed for SDA: %d", err);
+    }
+    err = rtc_gpio_deinit((gpio_num_t)I2C_MASTER_SCL_IO);
+    if (err != ESP_OK) {
+        log_e("rtc_gpio_deinit failed for SCL: %d", err);
+    }
+
+    // Initialize I2C port 0
+    int i2cPort = 0;
+    i2c_config_t conf = {
+        .mode = I2C_MODE_MASTER,
+        .sda_io_num = I2C_MASTER_SDA_IO,
+        .scl_io_num = I2C_MASTER_SCL_IO,
+        // TODO: We have 2.7K hardware pullups, we should experiment with removing them
+        .sda_pullup_en = GPIO_PULLUP_ENABLE,
+        .scl_pullup_en = GPIO_PULLUP_ENABLE,
+    };
+    conf.master.clk_speed = I2C_MASTER_FREQ_HZ;
+    err = i2c_param_config((i2c_port_t)i2cPort, &conf);
+    if (err != ESP_OK) {
+        log_e("i2c_param_config failed: %d", err);
+    }
+    err = i2c_driver_install((i2c_port_t)i2cPort, conf.mode, 0, 0, 0);
+    if (err != ESP_OK) {
+        log_e("i2c_driver_install failed: %d", err);
+    }
+#endif
+
+#ifdef USB_CONNECTED_PIN
+    PinMode(USB_CONNECTED_PIN, INPUT);
+#endif
+
+    DigitalWrite(RED_LED, LED_OFF);
+    DigitalWrite(GREEN_LED, LED_OFF);
+    PinMode(RED_LED, OUTPUT);
+    PinMode(GREEN_LED, OUTPUT);
+#ifdef BLUE_LED
+    DigitalWrite(BLUE_LED, LED_OFF);
+    PinMode(BLUE_LED, OUTPUT);
+#endif
+
+    // Attenuation of 2.5db gets us up to a max of 1250mV
+    // Using our 442k/160k divider, that's 4.7V max
+    adc_cali_curve_fitting_config_t adcConfig;
+    adcConfig.unit_id = ADC_UNIT_1;
+    adcConfig.atten = ADC_ATTEN_DB_2_5;
+    adcConfig.bitwidth = ADC_BITWIDTH_12;
+
+    if (adc_cali_create_scheme_curve_fitting(&adcConfig, &adcCalHandle) != ESP_OK) {
+        log_e("Failed to create adc curve fitting scheme");
+    }
+
+    adc_oneshot_unit_init_cfg_t adcOneshotCfg;
+    adcOneshotCfg.unit_id = ADC_UNIT_1;
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
+    adcOneshotCfg.clk_src = (adc_oneshot_clk_src_t)0;
+#endif
+    adcOneshotCfg.ulp_mode = ADC_ULP_MODE_DISABLE;
+
+    ESP_ERROR_CHECK(adc_oneshot_new_unit(&adcOneshotCfg, &adcOneshotHandle));
+
+    adc_oneshot_chan_cfg_t adcChanCfg;
+    adcChanCfg.bitwidth = adcConfig.bitwidth;
+    adcChanCfg.atten = adcConfig.atten;
+
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(adcOneshotHandle, BATT_CHANNEL_LEFT, &adcChanCfg));
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(adcOneshotHandle, BATT_CHANNEL_RIGHT, &adcChanCfg));
 
     esp_log_level_set("*", (esp_log_level_t)CONFIG_LOG_DEFAULT_LEVEL);
-    esp_err_t err = nvs_flash_init();
+    err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         const esp_partition_t *partition = esp_partition_find_first(
             ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, nullptr);
@@ -105,42 +175,6 @@ void InitializePlatform() {
     ESP_ERROR_CHECK(uart_driver_install(0, 256, 0, 20, nullptr, 0));
     ESP_ERROR_CHECK(uart_param_config(0, &uartConfig));
 
-    // Attenuation of 2.5db gets us up to a max of 1250mV
-    // Using our 442k/160k divider, that's 4.7V max
-    adc_cali_curve_fitting_config_t adcConfig;
-    adcConfig.unit_id = ADC_UNIT_1;
-    adcConfig.atten = ADC_ATTEN_DB_2_5;
-    adcConfig.bitwidth = ADC_BITWIDTH_12;
-
-    if (adc_cali_create_scheme_curve_fitting(&adcConfig, &adcCalHandle) != ESP_OK) {
-        log_e("Failed to create adc curve fitting scheme");
-    }
-
-    adc_oneshot_unit_init_cfg_t adcOneshotCfg;
-    adcOneshotCfg.unit_id = ADC_UNIT_1;
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
-    adcOneshotCfg.clk_src = (adc_oneshot_clk_src_t)0;
-#endif
-    adcOneshotCfg.ulp_mode = ADC_ULP_MODE_DISABLE;
-
-    ESP_ERROR_CHECK(adc_oneshot_new_unit(&adcOneshotCfg, &adcOneshotHandle));
-
-    adc_oneshot_chan_cfg_t adcChanCfg;
-    adcChanCfg.bitwidth = adcConfig.bitwidth;
-    adcChanCfg.atten = adcConfig.atten;
-
-    ESP_ERROR_CHECK(adc_oneshot_config_channel(adcOneshotHandle, BATT_CHANNEL_LEFT, &adcChanCfg));
-    ESP_ERROR_CHECK(adc_oneshot_config_channel(adcOneshotHandle, BATT_CHANNEL_RIGHT, &adcChanCfg));
-
-    DigitalWrite(RED_LED, LED_OFF);
-    DigitalWrite(GREEN_LED, LED_OFF);
-    PinMode(RED_LED, OUTPUT);
-    PinMode(GREEN_LED, OUTPUT);
-#ifdef BLUE_LED
-    DigitalWrite(BLUE_LED, LED_OFF);
-    PinMode(BLUE_LED, OUTPUT);
-#endif
-
 #if USE_SYS_ON
     auto hardwareRevision = GetHardwareRevision();
     if (hardwareRevision == 1) {
@@ -151,20 +185,6 @@ void InitializePlatform() {
     // The MCU will keep itself on until the digital magnetometer detects the temples are closed, or
     // there are 5 mins of inactivity
     ForcePowerOn();
-#endif
-#if USE_I2C
-    // Initialize I2C port 0
-    int i2cPort = 0;
-    i2c_config_t conf = {
-        .mode = I2C_MODE_MASTER,
-        .sda_io_num = I2C_MASTER_SDA_IO,
-        .scl_io_num = I2C_MASTER_SCL_IO,
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-    };
-    conf.master.clk_speed = I2C_MASTER_FREQ_HZ;
-    i2c_param_config((i2c_port_t)i2cPort, &conf);
-    i2c_driver_install((i2c_port_t)i2cPort, conf.mode, 0, 0, 0);
 #endif
 
 #if EINKET013TT1
@@ -241,10 +261,6 @@ void InitializePlatform() {
     }
 #endif
 #endif // EINKET013TT1
-
-#ifdef USB_CONNECTED_PIN
-    PinMode(USB_CONNECTED_PIN, INPUT);
-#endif
 }
 
 // Forked from TinyPico's GetBatteryVoltage() method:

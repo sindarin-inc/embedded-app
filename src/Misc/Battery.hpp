@@ -34,6 +34,8 @@ public:
 
     static auto voltageLogPath() -> const char * { return "/logs/voltagelog.txt"; }
 
+    void saveLastBatteryReport();
+
 protected:
     auto average(const std::array<float, BATTERY_MEASUREMENTS_COUNT> &array, int count) -> float;
 

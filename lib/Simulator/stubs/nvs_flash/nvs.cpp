@@ -134,3 +134,5 @@ esp_err_t nvs_commit(nvs_handle_t handle) {
     IniFile.save(SimprefsIni);
     return ESP_OK;
 }
+
+void nvs_close(nvs_handle_t handle) { return; }

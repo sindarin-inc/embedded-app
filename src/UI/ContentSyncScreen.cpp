@@ -128,7 +128,7 @@ void ContentSyncScreen::fail(const std::string &message) {
     vTaskDelay(3000 / portTICK_PERIOD_MS);
     WiFi::getInstance().disconnectWiFi();
 #if !SIMULATOR
-    esp_restart();
+    PowerManager::getInstance().reboot();
 #endif
     if (backCallback) {
         backCallback();
@@ -165,7 +165,7 @@ void ContentSyncScreen::begin() {
 #if !SIMULATOR
             if (state.state == ContentSyncState::Synced) {
                 log_d("Content sync done, rebooting");
-                esp_restart();
+                PowerManager::getInstance().reboot();
             }
 #endif
             if (state.state == ContentSyncState::Failure ||

@@ -22,10 +22,11 @@ enum FONT_CHOICES {
     PREFS_TAHOMA_LARGE = 4,
 };
 
-enum SLEEP_REASON {
-    SLEEP_REASON_NONE = 0,
-    SLEEP_REASON_INACTIVITY = 1,
-    SLEEP_REASON_TEMPLES_CLOSED = 2,
+enum class SyncReason {
+    None = 0,
+    Inactivity = 1,
+    Periodic = 2,
+    SyncOnClose = 3,
 };
 
 template <typename T>
@@ -205,7 +206,6 @@ public:
             this->makeKey(key, prefix);
             T value;
             esp_err_t err = GetFromStorage(this->prefs.nvsHandle, key, value);
-            log_d("get %s %s", key, esp_err_to_name(err));
             if (err != ESP_OK) {
                 // Ignore not found errors
                 if (err != ESP_ERR_NVS_NOT_FOUND) {
@@ -241,17 +241,15 @@ public:
           lastPageTurnerBuild(*this, "pt-build"), lastArticlesSince(*this, "articles-since"),
           lastReadablesSince(*this, "readables-since"), readablePlace(*this, "-p"),
           readablePlaceChanged(*this, "-pc"), readableArchivedChanged(*this, "-ar"),
-          readableBookmarksChanged(*this, "-bm"), lastPageTurnerBattery(*this, "pt-battery"),
-          invertSetting(*this, "invert"), vcom(*this, "vcom"), font(*this, "font"),
-          rectX(*this, "rectX"), rectY(*this, "rectY"), rectW(*this, "rectW"),
-          rectH(*this, "rectH"), lineSpacing(*this, "line-space"), demoMode(*this, "demo"),
-          wordCount(*this, "word-count"), totalReadingTimeSeconds(*this, "tot-rd-time"),
-          bootCount(*this, "boot-count"), firstRead(*this, "first-read"),
-          autoPilotSpeed(*this, "auto-speed"), firstAutopilotRead(*this, "fst-auto-rd"),
-          cesMode(*this, "ces"), emcMode(*this, "emc"), lastBatteryReport(*this, "last-batt"),
+          readableBookmarksChanged(*this, "-bm"), invertSetting(*this, "invert"),
+          vcom(*this, "vcom"), font(*this, "font"), rectX(*this, "rectX"), rectY(*this, "rectY"),
+          rectW(*this, "rectW"), rectH(*this, "rectH"), lineSpacing(*this, "line-space"),
+          demoMode(*this, "demo"), wordCount(*this, "word-count"),
+          totalReadingTimeSeconds(*this, "tot-rd-time"), bootCount(*this, "boot-count"),
+          firstRead(*this, "first-read"), autoPilotSpeed(*this, "auto-speed"),
+          firstAutopilotRead(*this, "fst-auto-rd"), cesMode(*this, "ces"), emcMode(*this, "emc"),
           wifiPower(*this, "wifi-power"), morningNewspaperTime(*this, "morning-news"),
-          eveningNewspaperTime(*this, "evening-news"), solTimeZone(*this, "time-zone"),
-          sleepReason(*this, "sleep-reason"), nextSyncTime(*this, "next-sync"){};
+          eveningNewspaperTime(*this, "evening-news"), solTimeZone(*this, "time-zone"){};
     PreferencesStore(PreferencesStore &) = delete;
 
     auto begin() -> bool {
@@ -265,6 +263,19 @@ public:
         }
         started_ = true;
         return true;
+    }
+
+    auto end() -> esp_err_t {
+        if (!started_) {
+            return ESP_OK;
+        }
+        esp_err_t err = nvs_commit(nvsHandle);
+        if (err) {
+            log_e("nvs_commit on close failed: %s", esp_err_to_name(err));
+        }
+        nvs_close(nvsHandle);
+        started_ = false;
+        return err;
     }
 
     void clear() {
@@ -298,7 +309,6 @@ public:
     KeyedPrefsItem<bool> readablePlaceChanged;
     KeyedPrefsItem<bool> readableArchivedChanged;
     KeyedPrefsItem<bool> readableBookmarksChanged;
-    PrefsItem<int> lastPageTurnerBattery;
     PrefsItem<bool> invertSetting;
     PrefsItem<int> vcom;
     PrefsItem<int> font;
@@ -316,13 +326,17 @@ public:
     PrefsItem<bool> firstAutopilotRead;
     PrefsItem<bool> cesMode;
     PrefsItem<bool> emcMode;
-    PrefsItem<int> lastBatteryReport;
     PrefsItem<int> wifiPower;
     PrefsItem<int> morningNewspaperTime;
     PrefsItem<int> eveningNewspaperTime;
     PrefsItem<int> solTimeZone;
-    PrefsItem<int> sleepReason;
-    PrefsItem<uint64_t> nextSyncTime;
+
+    // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
+    // reset on power cycles
+    static SyncReason syncReason;
+    static uint64_t nextSyncTime;
+    static uint8_t lastBatteryReport;
+    static uint8_t lastPageTurnerBattery;
 
 protected:
     bool started_;

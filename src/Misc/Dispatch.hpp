@@ -29,12 +29,18 @@ public:
                   UBaseType_t priority = 5, BaseType_t core = 1);
     ~DispatchQueue();
 
+    void beginShutdown();
+    void waitForShutdown(int timeoutMs = 10);
+
     // dispatch and copy
     void dispatch(const fp_t &op);
     void dispatchFromISR(const fp_t &op);
     // dispatch and move
     void dispatch(fp_t &&op);
     void dispatchFromISR(fp_t &&op);
+
+    // Returns true if were' currently executing inside this queue
+    auto isInQueue() -> bool;
 
     // Deleted operations
     DispatchQueue(const DispatchQueue &rhs) = delete;
@@ -57,8 +63,8 @@ private:
     void dispatchThreadHandler();
 };
 
-auto DispatchGetCore0BackgroundQueue() -> DispatchQueue *;
+auto DispatchGetCore0BackgroundQueue(bool create = true) -> DispatchQueue *;
 
-auto DispatchGetCore1BackgroundQueue() -> DispatchQueue *;
+auto DispatchGetCore1BackgroundQueue(bool create = true) -> DispatchQueue *;
 
-auto DispatchGetUiQueue() -> DispatchQueue *;
+auto DispatchGetUiQueue(bool create = true) -> DispatchQueue *;

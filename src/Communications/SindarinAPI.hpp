@@ -11,6 +11,7 @@
 #include "Models/SyncBookmarksResponse.hpp"
 #include "Models/UserReadable.hpp"
 #include "Storage/FileSystem.hpp"
+#include "Storage/PreferencesStore.hpp"
 
 struct CheckSyncRequest {
     std::string readablesSince;
@@ -21,7 +22,7 @@ struct CheckSyncRequest {
     std::vector<std::string> articlesArchived;
     std::vector<std::string> readablesBookmarked;
     std::vector<std::string> articlesBookmarked;
-    int sleepReason;
+    SyncReason syncReason;
     int ptBattery;
     std::string ptBuild;
     bool skipContent;
