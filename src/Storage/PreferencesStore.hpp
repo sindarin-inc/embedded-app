@@ -23,14 +23,19 @@ enum FONT_CHOICES {
 };
 
 enum class SyncReason {
-    None = 0,
+    Manual = 0,
     Inactivity = 1,
-    Periodic = 2,
-    SyncOnClose = 3,
+    TemplesClosed = 2,
+    Periodic = 3,
 };
 
 template <typename T>
 auto GetFromStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t {
+    static_assert(
+        std::disjunction_v<std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int32_t>,
+                           std::is_same<T, uint32_t>, std::is_same<T, uint64_t>,
+                           std::is_same<T, std::string>, std::is_same<T, BLEAddress>>,
+        "Unsupported type for NVS storage");
     esp_err_t err;
     if constexpr (std::is_same_v<T, bool>) {
         err = nvs_get_u8(nvsHandle, key, (uint8_t *)&value);
@@ -38,8 +43,8 @@ auto GetFromStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
         err = nvs_get_i32(nvsHandle, key, (int32_t *)&value);
     } else if constexpr (std::is_same_v<T, uint32_t>) {
         err = nvs_get_u32(nvsHandle, key, &value);
-    } else if constexpr (std::is_same_v<T, uint64_t>) {
-        err = nvs_get_u64(nvsHandle, key, &value);
+    } else if constexpr (std::is_same_v<T, uint64_t> || std::is_same_v<T, BLEAddress>) {
+        err = nvs_get_u64(nvsHandle, key, (uint64_t *)&value);
     } else if constexpr (std::is_same_v<T, std::string>) {
         size_t len = 0;
         // NVS strings can be up to 4000 bytes long, so we need to get the length first
@@ -58,7 +63,7 @@ auto GetFromStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
             }
         }
     } else {
-        // TODO: Is there a compile time assert we can use here?
+        // Should never happen because of the static_assert
         log_e("Unhandled prefs type");
         assert(0);
     }
@@ -70,6 +75,11 @@ auto GetFromStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
 
 template <typename T>
 auto WriteToStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t {
+    static_assert(
+        std::disjunction_v<std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int32_t>,
+                           std::is_same<T, uint32_t>, std::is_same<T, uint64_t>,
+                           std::is_same<T, std::string>, std::is_same<T, BLEAddress>>,
+        "Unsupported type for NVS storage");
     esp_err_t err;
     if constexpr (std::is_same_v<T, bool>) {
         err = nvs_set_u8(nvsHandle, key, value);
@@ -77,7 +87,7 @@ auto WriteToStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
         err = nvs_set_i32(nvsHandle, key, value);
     } else if constexpr (std::is_same_v<T, uint32_t>) {
         err = nvs_set_u32(nvsHandle, key, value);
-    } else if constexpr (std::is_same_v<T, uint64_t>) {
+    } else if constexpr (std::is_same_v<T, uint64_t> || std::is_same_v<T, BLEAddress>) {
         err = nvs_set_u64(nvsHandle, key, value);
     } else if constexpr (std::is_same_v<T, std::string>) {
         err = nvs_set_str(nvsHandle, key, value.c_str());
@@ -160,33 +170,6 @@ public:
         std::optional<T> value_;
         char key_[MAX_KEY_LENGTH + 1];
     };
-
-#if USE_TURN_TOUCH_REMOTE
-    class BLEAddressPrefsItem : public PrefsItem<BLEAddress> {
-    public:
-        BLEAddressPrefsItem(PreferencesStore &prefs, const char *key) : PrefsItem(prefs, key){};
-
-        void loadValue() override {
-
-            uint64_t addressValue;
-            esp_err_t err = nvs_get_u64(prefs.nvsHandle, this->key_, &addressValue);
-            if (err != ESP_OK) {
-                // Fail silently if the key doesn't exist
-                return;
-            }
-            this->value_ = BLEAddress(addressValue);
-        }
-
-        void set(BLEAddress address) override {
-            esp_err_t err = nvs_set_u64(prefs.nvsHandle, this->key_, uint64_t(address));
-            if (err != ESP_OK) {
-                log_e("nvs_set_i64 fail: %s %s", this->key_, esp_err_to_name(err));
-            }
-            prefs.commit();
-            this->value_ = address;
-        }
-    };
-#endif
 
     template <typename T>
     class KeyedPrefsItem : PrefsItemBase<T> {
@@ -298,7 +281,7 @@ public:
     uint32_t nvsHandle;
 
 #if USE_TURN_TOUCH_REMOTE
-    BLEAddressPrefsItem pairedTurnTouchAddress;
+    PrefsItem<BLEAddress> pairedTurnTouchAddress;
 #endif
     PrefsItem<std::string> cloudToken;
     PrefsItem<std::string> lastReadableId;

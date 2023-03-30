@@ -144,6 +144,8 @@ void PowerManager::wakeupCheck(SolClock &clock) {
             log_i("Next sync time is %" PRIu64 ". Back to sleep.", PreferencesStore::nextSyncTime);
             ulpDeepSleep(SleepReason::WaitingForSync);
         }
+    } else {
+        log_w("Unexpectedly resuming boot");
     }
 }
 
@@ -265,7 +267,7 @@ void PowerManager::ulpDeepSleep(SleepReason reason) {
     // On temples close or inactivity we want to set a sync-on-close timer 30s after sleep starts.
     // This is mostly to save placemarks after reading
     if (reason == SleepReason::TempleClosed) {
-        PreferencesStore::syncReason = SyncReason::SyncOnClose;
+        PreferencesStore::syncReason = SyncReason::TemplesClosed;
         PreferencesStore::nextSyncTime = SolClock::getInstance().getEpochTime() + 30;
         log_d("Sync-on-close scheduled for %" PRIu64, PreferencesStore::nextSyncTime);
     } else if (reason == SleepReason::Inactivity) {
