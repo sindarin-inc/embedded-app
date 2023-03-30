@@ -4,7 +4,6 @@
 #include "Displays/DisplayEinkET013TT1.hpp"
 #endif
 
-#include "UI/Fonts/Tahoma8pt7b.h"
 #include "sindarin-debug.h"
 
 void BatteryScreen::render(DisplaySystem &display) {
