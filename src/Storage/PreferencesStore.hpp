@@ -10,6 +10,8 @@
 
 #if USE_TURN_TOUCH_REMOTE
 #include <NimBLEDevice.h>
+#elif SIMULATOR
+typedef uint64_t BLEAddress;
 #endif
 
 #define MAX_KEY_LENGTH 15
