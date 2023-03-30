@@ -7,7 +7,7 @@
 #include "IBMFDefs.hpp"
 #include "IBMFFaceLow.hpp"
 
-using namespace IBMFDefs;
+using namespace ibmf_defs;
 
 /**
  * @brief Access to a IBMF font.
@@ -22,15 +22,15 @@ private:
 
     typedef IBMFFaceLow *IBMFFaceLowPtr;
 
-    bool initialized_;
-    PreamblePtr preamble_;
+    bool initialized_{false};
+    PreamblePtr preamble_{nullptr};
     IBMFFaceLow faces_[MAX_FACE_COUNT];
 
-    PlanesPtr planes_;
-    CodePointBundlesPtr codePointBundles_;
+    PlanesPtr planes_{nullptr};
+    CodePointBundlesPtr codePointBundles_{nullptr};
 
 public:
-    IBMFFontLow(MemoryPtr fontData, uint32_t length) {
+    IBMFFontLow(MemoryPtr fontData, uint32_t length) noexcept {
 
         initialized_ = load(fontData, length);
         if (!initialized_) {
@@ -38,8 +38,8 @@ public:
         }
     }
 
-    IBMFFontLow() : initialized_(false), planes_(nullptr), codePointBundles_(nullptr) {}
-    ~IBMFFontLow() {}
+    IBMFFontLow() = default;
+    ~IBMFFontLow() = default;
 
     inline auto getFontFormat() const -> FontFormat {
         return (isInitialized()) ? preamble_->bits.fontFormat : FontFormat::UNKNOWN;
@@ -55,7 +55,8 @@ public:
         preamble_ = reinterpret_cast<PreamblePtr>(fontData);
 
         if constexpr (IBMF_TRACING) {
-            LOGD("Loading font at location 0x%p of length %u", fontData, static_cast<unsigned int>(length));
+            LOGD("Loading font at location 0x%p of length %u", fontData,
+                 static_cast<unsigned int>(length));
         }
 
         if (strncmp("IBMF", preamble_->marker, 4) != 0) {
@@ -73,7 +74,7 @@ public:
             return false;
         }
         if (preamble_->faceCount >= 10) {
-            LOGE("Too many faces in the font. Limit is set to %d in IBMFDefs.h", MAX_FACE_COUNT);
+            LOGE("Too many faces in the font. Limit is set to %d in ibmf_defs.h", MAX_FACE_COUNT);
             return false;
         }
 
@@ -83,7 +84,7 @@ public:
 
         // retrieve offsets from the beginning of the file to the face starts
 
-        uint32_t(*binFaceOffsets)[] = reinterpret_cast<uint32_t(*)[]>(data);
+        auto binFaceOffsets = reinterpret_cast<uint32_t(*)[]>(data);
         data += (sizeof(uint32_t) * preamble_->faceCount);
 
         // If fontFormat is UTF32, retrieve the CodePoint directory
@@ -101,7 +102,8 @@ public:
 
         // Check for discrepancies
         if ((*binFaceOffsets)[0] != static_cast<uint32_t>(data - fontData)) {
-            LOGE("Wrong faces offset in font file, got %08x, expected %08x.", static_cast<unsigned int>((*binFaceOffsets)[0]),
+            LOGE("Wrong faces offset in font file, got %08x, expected %08x.",
+                 static_cast<unsigned int>((*binFaceOffsets)[0]),
                  static_cast<unsigned int>(data - fontData));
             return false;
         }
@@ -180,11 +182,12 @@ public:
     auto translate(char32_t codePoint) const -> GlyphCode {
         GlyphCode glyphCode = SPACE_CODE;
 
+#if LATIN_SUPPORT
         if (preamble_->bits.fontFormat == FontFormat::LATIN) {
             if ((codePoint > 0x20) && (codePoint < 0x7F)) {
                 glyphCode = codePoint; // ASCII codes No accent
             } else if ((codePoint >= 0xA1) && (codePoint <= 0x1FF)) {
-                glyphCode = latinTranslationSet[codePoint - 0xA1];
+                glyphCode = LATIN_TRANSLATION_SET[codePoint - 0xA1];
             } else {
                 switch (codePoint) {
                 case 0x2013: // endash
@@ -233,11 +236,14 @@ public:
                     break;
                 }
             }
-        } else if (preamble_->bits.fontFormat == FontFormat::UTF32) {
-            uint16_t planeIdx = static_cast<uint16_t>(codePoint >> 16);
+        }
+#endif
+
+        if (preamble_->bits.fontFormat == FontFormat::UTF32) {
+            auto planeIdx = static_cast<uint16_t>(codePoint >> 16);
 
             if (planeIdx <= 3) {
-                char16_t u16 = static_cast<char16_t>(codePoint);
+                auto u16 = static_cast<char16_t>(codePoint);
 
                 uint16_t codePointBundleIdx = (*planes_)[planeIdx].codePointBundlesIdx;
                 uint16_t entriesCount = (*planes_)[planeIdx].entriesCount;

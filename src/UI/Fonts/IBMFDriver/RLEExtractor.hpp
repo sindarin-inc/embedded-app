@@ -6,7 +6,7 @@
 
 #include "IBMFDefs.hpp"
 
-using namespace IBMFDefs;
+using namespace ibmf_defs;
 
 class RLEExtractor {
 private:
@@ -20,8 +20,8 @@ private:
 
     PixelResolution resolution_;
 
-    const uint8_t PK_REPEAT_COUNT = 14;
-    const uint8_t PK_REPEAT_ONCE = 15;
+    static constexpr uint8_t PK_REPEAT_COUNT = 14;
+    static constexpr uint8_t PK_REPEAT_ONCE = 15;
 
     auto getnext8(uint8_t &val) -> bool {
         if (fromPixelsPtr_ >= fromPixelsEnd_) {
@@ -117,7 +117,9 @@ private:
                 //   return false;
                 // }
                 if (i == PK_REPEAT_COUNT) {
-                    if (!getPackedNumber(repeatCount_, rleMetrics)) return false;
+                    if (!getPackedNumber(repeatCount_, rleMetrics)) {
+                        return false;
+                    }
                 } else { // i == PK_REPEAT_ONCE
                     repeatCount_ = 1;
                 }
@@ -165,7 +167,7 @@ public:
 
         if (resolution_ == PixelResolution::ONE_BIT) {
             uint32_t toRowSize = (toBitmap.dim.width + 7) >> 3;
-            toRowPtr = toBitmap.pixels + (atOffset.y * toRowSize);
+            toRowPtr = toBitmap.pixels + static_cast<size_t>(atOffset.y * toRowSize);
 
             if (rleMetrics.dynF == 14) { // is a non-compressed RLE?
                 uint32_t count = 8;
@@ -246,7 +248,7 @@ public:
             }
         } else {
             uint32_t toRowSize = toBitmap.dim.width;
-            toRowPtr = toBitmap.pixels + (atOffset.y * toRowSize);
+            toRowPtr = toBitmap.pixels + static_cast<size_t>(atOffset.y * toRowSize);
 
             repeatCount_ = 0;
             nybbleFlipper_ = 0xf0U;

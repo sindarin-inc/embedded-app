@@ -8,11 +8,11 @@ class UTF8Iterator {
 private:
     std::string::const_iterator stringIterator_;
 
-    const unsigned char MASK_1 = 0x80;
-    const unsigned char MASK_2 = 0x40;
-    const unsigned char MASK_3 = 0x20;
-    const unsigned char MASK_4 = 0x10;
-    const unsigned char MASK_5 = 0x08;
+    static constexpr unsigned char MASK_1 = 0x80;
+    static constexpr unsigned char MASK_2 = 0x40;
+    static constexpr unsigned char MASK_3 = 0x20;
+    static constexpr unsigned char MASK_4 = 0x10;
+    static constexpr unsigned char MASK_5 = 0x08;
 
 public:
     UTF8Iterator(std::string::const_iterator it) : stringIterator_(it) {}
@@ -24,7 +24,7 @@ public:
         return *this;
     }
 
-    ~UTF8Iterator() {}
+    ~UTF8Iterator() = default;
 
     auto operator++() -> UTF8Iterator & {
         char firstByte = *stringIterator_;

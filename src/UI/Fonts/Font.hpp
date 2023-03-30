@@ -6,22 +6,22 @@ enum FontType { GFX, IBMF };
 
 class Font {
 private:
-    FontType type;
+    FontType type_;
 
 public:
-    inline bool isA(FontType font_type) const { return font_type == type; }
-    virtual int yAdvance() const = 0;
+    inline auto isA(FontType fontType) const -> bool { return fontType == type_; }
+    virtual auto yAdvance() const -> int = 0;
 
 protected:
-    Font(FontType font_type) : type(font_type) {}
+    Font(FontType fontType) : type_(fontType) {}
 };
 
 class GFont : public Font {
 public:
     const GFXfont *font;
 
-    GFont(const GFXfont &gfx_font) : Font(FontType::GFX), font(&gfx_font) {}
+    GFont(const GFXfont &gfxFont) : Font(FontType::GFX), font(&gfxFont) {}
 
-    inline GFXfont const *get() const { return font; }
-    inline int yAdvance() const { return font->yAdvance; }
+    inline auto get() const -> GFXfont const * { return font; }
+    inline auto yAdvance() const -> int override { return font->yAdvance; }
 };

@@ -212,9 +212,9 @@ void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y) 
             gfxClass_->printf("%s", line.c_str());
         } else {
             gfxClass_->startWrite();
-            IBMFDefs::Bitmap canvas;
+            ibmf_defs::Bitmap canvas;
             canvas.pixels = canvasBuffer_;
-            canvas.dim = IBMFDefs::Dim(canvasWidth_, canvasHeight_);
+            canvas.dim = ibmf_defs::Dim(canvasWidth_, canvasHeight_);
             static_cast<IBMFFont *>(font_)->drawSingleLineOfText(
                 canvas, Pos(xOffset(x), yOffset(y + getTextHeight() - lineSpacing_ - 3)), line);
             gfxClass_->endWrite();
@@ -244,7 +244,7 @@ void DisplaySystem::getTextBounds(const char *buffer, uint16_t *w, uint16_t *h) 
 auto DisplaySystem::getTextHeight() -> int { return font_->yAdvance() + lineSpacing_; }
 
 auto DisplaySystem::getTextHeight(const char *buffer) -> int {
-    uint16_t h;
+    uint16_t h = 0;
     if (font_ != nullptr) {
         if (font_->isA(FontType::GFX)) {
             int16_t x, y;

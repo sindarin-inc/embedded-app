@@ -6,6 +6,8 @@
 //---  ESP_IDF
 //#include <esp_log.h>
 
+#define LATIN_SUPPORT 0
+
 const constexpr bool IBMF_TRACING = false;
 
 // The following is used when testing the driver outside of this application
@@ -80,7 +82,7 @@ extern char *formatStr(const std::string &format, ...);
 //
 // clang-format on
 
-namespace IBMFDefs {
+namespace ibmf_defs {
 
 #define LOGI(format, ...) log_i(format, ##__VA_ARGS__)
 #define LOGW(format, ...) log_w(format, ##__VA_ARGS__)
@@ -123,14 +125,14 @@ struct Dim {
     int16_t width;
     int16_t height;
     Dim(uint16_t w, uint16_t h) : width(w), height(h) {}
-    Dim() {}
+    Dim() = default;
 };
 
 struct Pos {
     int16_t x;
     int16_t y;
     Pos(int16_t xpos, int16_t ypos) : x(xpos), y(ypos) {}
-    Pos() {}
+    Pos() = default;
 };
 
 typedef uint8_t *MemoryPtr;
@@ -474,6 +476,7 @@ struct Glyph {
 const constexpr GlyphCode SPACE_CODE = 0x7FFE;
 const constexpr GlyphCode NO_GLYPH_CODE = 0x7FFF;
 
+#if LATIN_SUPPORT
 // Latin Character Set constants (FontFormat 0)
 
 const constexpr uint16_t LATIN_GLYPH_CODE_MASK = 0x7FF;
@@ -498,7 +501,7 @@ const constexpr GlyphCode APOSTROPHE = 0x27;
 //
 // The index in the table corresponds to UTF16 U+00A1 to U+017F CodePoints.
 
-const constexpr GlyphCode latinTranslationSet[] = {
+const constexpr GlyphCode LATIN_TRANSLATION_SET[] = {
     /* 0x0A1 */ 0x0020, // ¡
     /* 0x0A2 */ 0x0098, // ¢
     /* 0x0A3 */ 0x008B, // £
@@ -732,4 +735,6 @@ const constexpr GlyphCode latinTranslationSet[] = {
     /* 0x17F */ 0x00FF  // ſ   ???
 };
 
-} // namespace IBMFDefs
+#endif
+
+} // namespace ibmf_defs

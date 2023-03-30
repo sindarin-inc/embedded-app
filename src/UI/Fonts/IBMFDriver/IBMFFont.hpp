@@ -16,7 +16,7 @@ private:
     IBMFFaceLow *face_;
 
     // Maximum size of an allocated buffer to do vsnprintf formatting
-    const int MAX_SIZE = 100;
+    static constexpr int MAX_SIZE = 100;
 
     typedef std::function<void(GlyphCode, FIX16)> const &LigKernMappingHandler;
 
@@ -50,7 +50,7 @@ private:
     }
 
 public:
-    IBMFFont(IBMFFontLow &ibmFont, const uint8_t *data, unsigned int length, int index)
+    IBMFFont(IBMFFontLow &ibmFont, const uint8_t *data, unsigned int length, int index) noexcept
         : Font(FontType::IBMF), font_(&ibmFont) {
         if constexpr (IBMF_TRACING) {
             LOGD("IBMFFont initialisation with data of length %d and face index %d.", length,
@@ -102,13 +102,13 @@ public:
                                : 0;
     }
 
-    auto drawSingleLineOfText(IBMFDefs::Bitmap &canvas, IBMFDefs::Pos pos,
+    auto drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
                               const std::string &line) const -> void {
         if constexpr (IBMF_TRACING) {
             LOGD("drawSingleLineOfText()");
         }
         if (isInitialized()) {
-            IBMFDefs::Pos atPos = pos;
+            ibmf_defs::Pos atPos = pos;
             Glyph glyph;
             glyph.bitmap = canvas;
 
@@ -122,7 +122,8 @@ public:
         }
     }
 
-    auto printFormatted(IBMFDefs::Bitmap &canvas, IBMFDefs::Pos pos, char *fmt, ...) const -> void {
+    auto printFormatted(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos, char *fmt, ...) const
+        -> void {
         if constexpr (IBMF_TRACING) {
             LOGD("printFormatted()");
         }
@@ -132,21 +133,21 @@ public:
 
             char *buffer = new char[MAX_SIZE];
             if (buffer != nullptr) {
-                vsnprintf(buffer, MAX_SIZE, fmt, args);
+                (void)vsnprintf(buffer, MAX_SIZE, fmt, args);
                 drawSingleLineOfText(canvas, pos, buffer);
             }
             delete[] buffer;
         }
     }
 
-    auto getTextBounds(const std::string &buffer) -> IBMFDefs::Dim {
+    auto getTextBounds(const std::string &buffer) -> ibmf_defs::Dim {
         if constexpr (IBMF_TRACING) {
             LOGD("getTextBounds()");
         }
-        IBMFDefs::Dim dim = IBMFDefs::Dim(0, 0);
+        ibmf_defs::Dim dim = ibmf_defs::Dim(0, 0);
         if (isInitialized()) {
             ligKernUTF8Map(buffer, [this, &dim](GlyphCode glyphCode, FIX16 kern) {
-                IBMFDefs::Glyph glyph;
+                ibmf_defs::Glyph glyph;
                 if (face_->getGlyph(glyphCode, glyph, false)) { // retrieves only the metrics
                     // LOGD("Advance value: %f, yoff value: %d",
                     //      IBMFFaceLow::fromFIX16(glyph.metrics.advance), glyph.metrics.yoff);
@@ -171,7 +172,7 @@ public:
         int width = 0;
         if (isInitialized()) {
             ligKernUTF8Map(buffer, [this, &width](GlyphCode glyphCode, FIX16 kern) {
-                IBMFDefs::Glyph glyph;
+                ibmf_defs::Glyph glyph;
                 if (face_->getGlyph(glyphCode, glyph, false)) { // retrieves only the metrics
                     // LOGD("Advance value: %f, kern: %f",
                     //     IBMFFaceLow::fromFIX16(glyph.metrics.advance),
@@ -193,7 +194,7 @@ public:
         int height = 0;
         if (isInitialized()) {
             // for (UTF8Iterator chrIter = buffer.begin(); chrIter != buffer.end(); chrIter++) {
-            //     IBMFDefs::Glyph glyph;
+            //     ibmf_defs::Glyph glyph;
             //     if (face_->getGlyph(*chrIter, glyph, false)) {
             //         // LOGD("yoff value: %d", glyph.metrics.yoff);
             //         if (height > glyph.metrics.yoff) {
