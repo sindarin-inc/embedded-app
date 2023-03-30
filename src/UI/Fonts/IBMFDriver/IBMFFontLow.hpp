@@ -179,7 +179,7 @@ public:
      * @param codePoint The UTF32 character code
      * @return The internal representation of CodePoint
      */
-    auto translate(char32_t codePoint) const -> GlyphCode {
+    [[nodiscard]] auto translate(char32_t codePoint) const -> GlyphCode {
         GlyphCode glyphCode = SPACE_CODE;
 
 #if LATIN_SUPPORT
