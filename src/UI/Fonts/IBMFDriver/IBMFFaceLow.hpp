@@ -403,8 +403,8 @@ public:
     auto showGlyph(const Glyph &glyph, GlyphCode glyphCode, char32_t codePoint = ' ') const
         -> void {
         if constexpr (DEBUG) {
-            std::wcout << "Glyph Base Code: 0x" << std::hex << glyphCode << std::dec << "("
-                       << codePoint << ")" << std::endl
+            std::cout << "Glyph Base Code: 0x" << std::hex << glyphCode << std::dec << "("
+                       << +codePoint << ")" << std::endl
                        << "  Metrics: [" << std::dec << glyph.bitmap.dim.width << ", "
                        << glyph.bitmap.dim.height << "] " << std::endl
                        << "  Position: [" << glyph.metrics.xoff << ", " << glyph.metrics.yoff << ']'

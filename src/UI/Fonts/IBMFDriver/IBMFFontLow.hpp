@@ -55,7 +55,7 @@ public:
         preamble_ = reinterpret_cast<PreamblePtr>(fontData);
 
         if constexpr (IBMF_TRACING) {
-            LOGD("Loading font at location 0x%p of length %d", fontData, length);
+            LOGD("Loading font at location 0x%p of length %u", fontData, static_cast<unsigned int>(length));
         }
 
         if (strncmp("IBMF", preamble_->marker, 4) != 0) {
@@ -101,8 +101,8 @@ public:
 
         // Check for discrepancies
         if ((*binFaceOffsets)[0] != static_cast<uint32_t>(data - fontData)) {
-            LOGE("Wrong faces offset in font file, got %08x, expected %08x.", (*binFaceOffsets)[0],
-                 static_cast<uint32_t>(data - fontData));
+            LOGE("Wrong faces offset in font file, got %08x, expected %08x.", static_cast<unsigned int>((*binFaceOffsets)[0]),
+                 static_cast<unsigned int>(data - fontData));
             return false;
         }
 
@@ -267,8 +267,8 @@ public:
         if constexpr (DEBUG) {
             for (int idx = firstIdx; count > 0; idx++, count--) {
                 std::cout << "[" << idx << "] "
-                          << "First CodePoint: " << (*codePointBundles_)[idx].firstCodePoint
-                          << ", Last CodePoint: " << (*codePointBundles_)[idx].lastCodePoint
+                          << "First CodePoint: " << +(*codePointBundles_)[idx].firstCodePoint
+                          << ", Last CodePoint: " << +(*codePointBundles_)[idx].lastCodePoint
                           << std::endl;
             }
         }
