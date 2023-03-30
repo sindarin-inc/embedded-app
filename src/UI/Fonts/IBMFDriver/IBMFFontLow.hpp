@@ -41,12 +41,12 @@ public:
     IBMFFontLow() = default;
     ~IBMFFontLow() = default;
 
-    inline auto getFontFormat() const -> FontFormat {
+    [[nodiscard]] inline auto getFontFormat() const -> FontFormat {
         return (isInitialized()) ? preamble_->bits.fontFormat : FontFormat::UNKNOWN;
     }
-    inline auto isInitialized() const -> bool { return initialized_; }
+    [[nodiscard]] inline auto isInitialized() const -> bool { return initialized_; }
 
-    inline auto getFace(int idx) -> IBMFFaceLowPtr {
+    [[nodiscard]] inline auto getFace(int idx) -> IBMFFaceLowPtr {
         return (isInitialized() && (idx < preamble_->faceCount)) ? &faces_[idx] : nullptr;
     }
 

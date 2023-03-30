@@ -258,7 +258,7 @@ auto DisplaySystem::getTextHeight(const char *buffer) -> int {
 }
 
 auto DisplaySystem::getTextWidth(const char *buffer) -> int {
-    uint16_t w;
+    uint16_t w = 0;
     if (font_ != nullptr) {
         if (font_->isA(FontType::GFX)) {
             int16_t x, y;

@@ -78,24 +78,25 @@ public:
         return true;
     }
 
-    inline auto isInitialized() const -> bool { return initialized_; }
-    inline auto getFacePtSize() const -> uint8_t { return faceHeader_->pointSize; }
-    inline auto getLineHeight() const -> uint16_t { return faceHeader_->lineHeight; }
-    inline auto getEmHeight() const -> uint16_t { return faceHeader_->emHeight >> 6; }
-    inline auto getDescenderHeight() const -> int16_t {
+    [[nodiscard]] inline auto isInitialized() const -> bool { return initialized_; }
+    [[nodiscard]] inline auto getFacePtSize() const -> uint8_t { return faceHeader_->pointSize; }
+    [[nodiscard]] inline auto getLineHeight() const -> uint16_t { return faceHeader_->lineHeight; }
+    [[nodiscard]] inline auto getEmHeight() const -> uint16_t { return faceHeader_->emHeight >> 6; }
+    [[nodiscard]] inline auto getDescenderHeight() const -> int16_t {
         return -(int16_t)faceHeader_->descenderHeight;
     }
-    inline auto getLigKernStep(uint16_t idx) const -> LigKernStep * {
+    [[nodiscard]] inline auto getLigKernStep(uint16_t idx) const -> LigKernStep * {
         return &(*ligKernSteps_)[idx];
     }
-    inline auto setResolution(PixelResolution res) -> void { resolution_ = res; }
-    inline auto getResolution() const -> PixelResolution { return resolution_; }
+    [[nodiscard]] inline auto setResolution(PixelResolution res) -> void { resolution_ = res; }
+    [[nodiscard]] inline auto getResolution() const -> PixelResolution { return resolution_; }
 
-    inline auto getGlyphInfo(GlyphCode glyphCode) const -> const GlyphInfo & {
+    [[nodiscard]] inline auto getGlyphInfo(GlyphCode glyphCode) const -> const GlyphInfo & {
         return (*glyphsInfo_)[glyphCode];
     }
 
-    inline auto getLigKernPgmIndex(GlyphCode glyphCode) const -> uint16_t {
+    [[nodiscard]] inline auto getLigKernPgmIndex(GlyphCode glyphCode) const -> uint16_t {
+
 #if LATIN_SUPPORT
         if ((fontFormat_ == FontFormat::LATIN) && (glyphCode != SPACE_CODE)) {
             glyphCode &= LATIN_GLYPH_CODE_MASK;

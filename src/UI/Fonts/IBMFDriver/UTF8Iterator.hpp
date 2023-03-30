@@ -15,12 +15,14 @@ private:
     static constexpr unsigned char MASK_5 = 0x08;
 
 public:
-    UTF8Iterator(std::string::const_iterator it) : stringIterator_(it) {}
+    UTF8Iterator(std::string::const_iterator it) { stringIterator_ = it; }
 
-    UTF8Iterator(const UTF8Iterator &source) : stringIterator_(source.stringIterator_) {}
+    UTF8Iterator(const UTF8Iterator &source) { stringIterator_ = source.stringIterator_; }
 
     auto operator=(const UTF8Iterator &rhs) -> UTF8Iterator & {
-        stringIterator_ = rhs.stringIterator_;
+        if (this != &rhs) {
+            stringIterator_ = rhs.stringIterator_;
+        }
         return *this;
     }
 

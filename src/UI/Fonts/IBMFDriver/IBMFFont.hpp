@@ -62,19 +62,20 @@ public:
             }
         }
         if (font_->isInitialized()) {
-            if ((face_ = font_->getFace(index)) == nullptr) {
+            face_ = font_->getFace(index);
+            if (face_ == nullptr) {
                 LOGE("Internal error!!");
             }
         }
     }
 
-    inline auto isInitialized() const -> bool {
+    [[nodiscard]] inline auto isInitialized() const -> bool {
         return (face_ != nullptr) && face_->isInitialized();
     }
 
-    inline auto getFace() -> const IBMFFaceLow * { return face_; }
+    [[nodiscard]] inline auto getFace() -> const IBMFFaceLow * { return face_; }
 
-    inline auto setResolution(PixelResolution res) -> void {
+    [[nodiscard]] inline auto setResolution(PixelResolution res) -> void {
         if constexpr (IBMF_TRACING) {
             LOGD("setResolution()");
         }
@@ -83,14 +84,14 @@ public:
         }
     }
 
-    inline auto getResolution() const -> PixelResolution {
+    [[nodiscard]] inline auto getResolution() const -> PixelResolution {
         if constexpr (IBMF_TRACING) {
             LOGD("getResolution()");
         }
         return (face_ != nullptr) ? face_->getResolution() : DEFAULT_RESOLUTION;
     }
 
-    inline auto yAdvance() const -> int {
+    [[nodiscard]] inline auto yAdvance() const -> int override {
         if constexpr (IBMF_TRACING) {
             LOGD("yAdvance()");
             if (!isInitialized()) {
