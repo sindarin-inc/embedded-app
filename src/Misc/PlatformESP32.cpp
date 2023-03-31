@@ -158,23 +158,6 @@ void DisableCore0Wdt() {
 }
 
 void InitializePlatform() {
-    // Arduino breaks the UART with sleep. So we manually initialize the UART using IDF functions.
-    // There's unfortunately no way currently to customize the source clock in Arduino:
-    // https://github.com/espressif/arduino-esp32/blob/548412952ba58e299ad83d932cea417a2490fd78/cores/esp32/esp32-hal-uart.c#L163
-    // NOTE: This _might_ not be necessary when using the USB/JTAG peripheral on the ESP32-S3, but
-    // it probably can't hurt.
-    uart_config_t uartConfig;
-    uartConfig.baud_rate = 115200;
-    uartConfig.data_bits = UART_DATA_8_BITS;
-    uartConfig.parity = UART_PARITY_DISABLE;
-    uartConfig.stop_bits = UART_STOP_BITS_1;
-    uartConfig.flow_ctrl = UART_HW_FLOWCTRL_DISABLE;
-    uartConfig.rx_flow_ctrl_thresh = 0;
-    // On the ESP32-S3, since the UART is built into the chip, we use XTAL I guess.
-    uartConfig.source_clk = UART_SCLK_XTAL;
-    ESP_ERROR_CHECK(uart_driver_install(0, 256, 0, 20, nullptr, 0));
-    ESP_ERROR_CHECK(uart_param_config(0, &uartConfig));
-
 #if USE_SYS_ON
     auto hardwareRevision = GetHardwareRevision();
     if (hardwareRevision == 1) {
