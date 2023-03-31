@@ -389,27 +389,11 @@ void PowerManager::ulpDeepSleep(SleepReason reason) {
         // Get current freertos task name
         auto taskName = pcTaskGetName(nullptr);
         log_d("ulpDeepSleep executing in queue %s", taskName);
-
         xTaskCreatePinnedToCore(
-            [](void *) {
-                log_d("Waiting for dispatch queues to shutdown");
-                auto core0BgQueue = DispatchGetCore0BackgroundQueue(false);
-                if (core0BgQueue) {
-                    core0BgQueue->waitForShutdown(5000);
-                }
-                auto core1BgQueue = DispatchGetCore1BackgroundQueue(false);
-                if (core1BgQueue) {
-                    core1BgQueue->waitForShutdown(5000);
-                }
-                auto uiQueue = DispatchGetUiQueue(false);
-                if (uiQueue) {
-                    uiQueue->waitForShutdown(5000);
-                }
-                log_d("Dispatch queues shutdown");
-                log_i("Entering deep sleep, wake up with magnetometer");
-                esp_deep_sleep_start();
-            },
-            "DeepSleep", 2048, nullptr, 1, nullptr, 1);
+            [](void *) { PowerManager::getInstance().waitForQueuesThenDeepSleep(); }, "DeepSleep",
+            2048, nullptr, 1, nullptr, 1);
+    } else if (core0BgQueue != nullptr || core1BgQueue != nullptr || uiQueue != nullptr) {
+        waitForQueuesThenDeepSleep();
     } else {
         log_i("Entering deep sleep, wake up with magnetometer");
         esp_deep_sleep_start();
@@ -447,3 +431,22 @@ void PowerManager::checkUsb() {
 }
 
 void PowerManager::reboot() { esp_restart(); }
+
+void PowerManager::waitForQueuesThenDeepSleep() {
+    log_d("Waiting for dispatch queues to shutdown");
+    auto core0BgQueue = DispatchGetCore0BackgroundQueue(false);
+    if (core0BgQueue) {
+        core0BgQueue->waitForShutdown(5000);
+    }
+    auto core1BgQueue = DispatchGetCore1BackgroundQueue(false);
+    if (core1BgQueue) {
+        core1BgQueue->waitForShutdown(5000);
+    }
+    auto uiQueue = DispatchGetUiQueue(false);
+    if (uiQueue) {
+        uiQueue->waitForShutdown(5000);
+    }
+    log_d("Dispatch queues shutdown");
+    log_i("Entering deep sleep, wake up with magnetometer");
+    esp_deep_sleep_start();
+}
