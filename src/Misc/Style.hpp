@@ -44,6 +44,8 @@ public:
 #endif
 
         tahomaRegular.mainMenuFont = (Font *)&FONT_TAHOMA_REGULAR_FONT5PT7B;
+        tahomaRegular.settingsFont = (Font *)&TAHOMA_REGULAR_FONT5PT7B;
+        tahomaRegular.popupFont = (Font *)&TAHOMA_REGULAR_FONT5PT7B;
 #if !IBMF_TEST
         tahomaRegular.readableFont = (Font *)&FONT_TAHOMA_REGULAR_FONT5PT7B;
 #else
