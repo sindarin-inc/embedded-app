@@ -206,13 +206,13 @@ auto SindarinAPI::uploadAndResetVoltageLog(FileSystem &fileSystem) -> int {
     // serialized data will be until we actually serialize it. We probably only need 20% more or so
     // but we have plenty of SPIRAM so let's just double it.
     size_t serializedMaxSize = (*requestJson).memoryUsage() * 2;
-    char *serialized = (char *)heap_caps_malloc(serializedMaxSize, MALLOC_CAP_SPIRAM);
+    auto serialized = SpiRamArrayPtr<char>(serializedMaxSize);
 
     // Write to SPIRAM
     // TODO: I can't find a good way to verify that the whole thing was written. Maybe would be
     // better for this to be a stream so we could check if we attempted to write but ran out of
     // space.
-    size_t serializedLength = serializeJson(*requestJson, serialized, serializedMaxSize);
+    size_t serializedLength = serializeJson(*requestJson, serialized.get(), serializedMaxSize);
     if (serializedLength == serializedMaxSize) {
         log_e("serializedLength is the same as the max size, probably ran out of space");
     }
@@ -224,17 +224,14 @@ auto SindarinAPI::uploadAndResetVoltageLog(FileSystem &fileSystem) -> int {
     auto err = client.open(serializedLength);
     if (err != ESP_OK) {
         log_e("HttpClient failed to open: %d", err);
-        heap_caps_free(serialized);
         return -1;
     }
 
-    int writeLength = client.write(serialized, serializedLength);
+    int writeLength = client.write(serialized.get(), serializedLength);
     if (writeLength != serializedLength) {
         log_w("HttpClient failed to write fully (writeLength=%d, serializedLength=%zu)",
               writeLength, serializedLength);
     }
-
-    heap_caps_free(serialized);
 
     client.fetchHeaders();
     int httpCode = client.getStatusCode();
@@ -252,16 +249,14 @@ auto SindarinAPI::uploadCrashReport(SFile &crashFile, const std::string &content
     client.open(writeSize);
 
     size_t bufferSize = 4096;
-    char *buffer = (char *)heap_caps_malloc(bufferSize, MALLOC_CAP_SPIRAM);
+    auto buffer = SpiRamArrayPtr<char>(bufferSize);
 
     // NOTE: crashFile.available() never goes down but it seems like it should
     int bytesWritten = 0;
     while (bytesWritten < writeSize) {
-        auto bytesRead = crashFile.readBytes(buffer, bufferSize);
-        bytesWritten += client.write(buffer, bytesRead);
+        auto bytesRead = crashFile.readBytes(buffer.get(), bufferSize);
+        bytesWritten += client.write(buffer.get(), bytesRead);
     }
-
-    heap_caps_free(buffer);
 
     client.fetchHeaders();
     int httpCode = client.getStatusCode();
