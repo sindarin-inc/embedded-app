@@ -104,7 +104,7 @@ void HardwareInit() {
     adc_oneshot_unit_init_cfg_t adcOneshotCfg;
     adcOneshotCfg.unit_id = ADC_UNIT_1;
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
-    adcOneshotCfg.clk_src = TIMER_SRC_CLK_APB;
+    adcOneshotCfg.clk_src = ADC_RTC_CLK_SRC_DEFAULT;
 #endif
     adcOneshotCfg.ulp_mode = ADC_ULP_MODE_DISABLE;
 
