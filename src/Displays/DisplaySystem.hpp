@@ -91,9 +91,13 @@ public:
                                 yOffset(y2), color);
     }
     void setFont(Font *f) {
-        font_ = f;
-        if (font_->isA(FontType::GFX)) {
-            gfxClass_->setFont(static_cast<GFont *>(font_)->get());
+        if (f != nullptr) {
+            font_ = f;
+            if (font_->isA(FontType::GFX)) {
+                gfxClass_->setFont(static_cast<GFont *>(font_)->get());
+            }
+        } else {
+            log_e("Received a bad (null) font pointer!");
         }
     }
     void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
