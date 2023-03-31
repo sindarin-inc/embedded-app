@@ -75,7 +75,7 @@ public:
 
     [[nodiscard]] inline auto getFace() -> const IBMFFaceLow * { return face_; }
 
-    [[nodiscard]] inline auto setResolution(PixelResolution res) -> void {
+    inline auto setResolution(PixelResolution res) -> void {
         if constexpr (IBMF_TRACING) {
             LOGD("setResolution()");
         }

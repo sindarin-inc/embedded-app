@@ -88,7 +88,7 @@ public:
     [[nodiscard]] inline auto getLigKernStep(uint16_t idx) const -> LigKernStep * {
         return &(*ligKernSteps_)[idx];
     }
-    [[nodiscard]] inline auto setResolution(PixelResolution res) -> void { resolution_ = res; }
+    inline auto setResolution(PixelResolution res) -> void { resolution_ = res; }
     [[nodiscard]] inline auto getResolution() const -> PixelResolution { return resolution_; }
 
     [[nodiscard]] inline auto getGlyphInfo(GlyphCode glyphCode) const -> const GlyphInfo & {
