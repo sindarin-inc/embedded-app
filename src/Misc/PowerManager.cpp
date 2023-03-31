@@ -285,8 +285,30 @@ void PowerManager::ulpDeepSleep(SleepReason reason) {
     log_i("ulpDeepSleep");
 #else
 
-    rtc_gpio_init((gpio_num_t)I2C_MASTER_SDA_IO);
-    rtc_gpio_init((gpio_num_t)I2C_MASTER_SCL_IO);
+    esp_err_t err;
+
+    if (BLEDevice::getInitialized()) {
+        BLEDevice::deinit();
+    }
+
+    err = DeinitializePlatform();
+    if (err != ESP_OK) {
+        log_e("Failed to deinit platform with err %s", esp_err_to_name(err));
+    }
+
+    err = HardwareDeinit();
+    if (err != ESP_OK) {
+        log_e("Failed to deinit hardware with err %s", esp_err_to_name(err));
+    }
+
+    err = rtc_gpio_init((gpio_num_t)I2C_MASTER_SDA_IO);
+    if (err != ESP_OK) {
+        log_e("Failed to init SDA with err %s", esp_err_to_name(err));
+    }
+    err = rtc_gpio_init((gpio_num_t)I2C_MASTER_SCL_IO);
+    if (err != ESP_OK) {
+        log_e("Failed to init SCL with err %s", esp_err_to_name(err));
+    }
 
     ulp_riscv_i2c_cfg_t i2cCfg;
     i2cCfg.i2c_pin_cfg.sda_io_num = I2C_MASTER_SDA_IO;
@@ -299,9 +321,13 @@ void PowerManager::ulpDeepSleep(SleepReason reason) {
     i2cCfg.i2c_timing_cfg.scl_start_period = 3;
     i2cCfg.i2c_timing_cfg.scl_stop_period = 6;
     i2cCfg.i2c_timing_cfg.i2c_trans_timeout = 20;
-    ulp_riscv_i2c_master_init(&i2cCfg);
-
-    esp_err_t err;
+    err = ulp_riscv_i2c_master_init(&i2cCfg);
+    if (err != ESP_OK) {
+        log_e("Failed to init I2C with err %s", esp_err_to_name(err));
+        // If the magnetometer is not working we can never wake up. Power off instead.
+        powerOff();
+        return;
+    }
 
     // `ulp_riscv_load_binary` seems to reset all the ulp variables including `ulp_waitForClose`
     // which we only want to unset if the temples are closed.

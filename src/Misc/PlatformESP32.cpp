@@ -29,6 +29,7 @@ adc_cali_handle_t adcCalHandle;
 adc_oneshot_unit_handle_t adcOneshotHandle;
 bool ledcFailed = false;
 uint8_t sysOnPin;
+bool platformInitialized;
 
 void PinMode(int pin, int mode) { gpio_set_direction((gpio_num_t)pin, (gpio_mode_t)mode); }
 
@@ -137,6 +138,33 @@ void HardwareInit() {
     }
 }
 
+auto HardwareDeinit() -> esp_err_t {
+    esp_err_t err;
+
+    err = nvs_flash_deinit();
+    if (err != ESP_OK) {
+        log_e("Failed to deinit NVS: %d", err);
+    }
+
+    // We need to shut down the ADC or else we consume ~1.6mA during deep sleep
+    err = adc_oneshot_del_unit(adcOneshotHandle);
+    if (err != ESP_OK) {
+        log_e("Failed to delete oneshot unit: %d", err);
+    }
+
+    err = adc_cali_delete_scheme_curve_fitting(adcCalHandle);
+    if (err != ESP_OK) {
+        log_e("Failed to delete adc calibration scheme: %d", err);
+    }
+
+    err = i2c_driver_delete(I2C_NUM_0);
+    if (err != ESP_OK) {
+        log_e("Failed to delete I2C driver with err %s", esp_err_to_name(err));
+    }
+
+    return err;
+}
+
 auto GetHeapSize() -> size_t {
     multi_heap_info_t info;
     heap_caps_get_info(&info, MALLOC_CAP_INTERNAL);
@@ -189,7 +217,7 @@ void InitializePlatform() {
 
 #if EINKET013TT1
 #ifdef DISPLAY_POWER
-    pinMode(DISPLAY_POWER, OUTPUT);
+    PinMode(DISPLAY_POWER, OUTPUT);
 #endif
 #if LEDC_BACKLIGHT
     // This allows LEDC to work in light sleep on ESP32-S3
@@ -261,6 +289,39 @@ void InitializePlatform() {
     }
 #endif
 #endif // EINKET013TT1
+    platformInitialized = true;
+}
+
+auto DeinitializePlatform() -> esp_err_t {
+    if (!platformInitialized) {
+        return ESP_OK;
+    }
+
+    esp_err_t err;
+
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
+    err = esp_sleep_pd_config(ESP_PD_DOMAIN_RC_FAST, ESP_PD_OPTION_OFF);
+#else
+    err = esp_sleep_pd_config(ESP_PD_DOMAIN_RTC8M, ESP_PD_OPTION_OFF);
+#endif
+    if (err != ESP_OK) {
+        log_e("Failed to disable fast RC oscillator: %d", err);
+    }
+
+#if LEDC_BACKLIGHT
+    ledc_fade_func_uninstall();
+
+    err = ledc_stop(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);
+    if (err != ESP_OK) {
+        log_e("Failed to stop left LEDC: %d", err);
+    }
+
+    err = ledc_stop(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, 0);
+    if (err != ESP_OK) {
+        log_e("Failed to stop right LEDC: %d", err);
+    }
+#endif
+    return err;
 }
 
 // Forked from TinyPico's GetBatteryVoltage() method:
