@@ -19,9 +19,9 @@
 
 extern void UIInnerLoop(RemoteCommand command);
 
-DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power,
+DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
                        LightingController &lightingController)
-    : display_(display), renderer_(display), prefs_(prefs), power_(power),
+    : display_(display), renderer_(display), prefs_(prefs),
       lightingController_(lightingController) {}
 
 void DemoScreen::render(DisplaySystem &display) {

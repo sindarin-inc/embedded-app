@@ -5,6 +5,7 @@
 #include "Communications/FirmwareDownload.hpp"
 #include "Communications/WiFi.hpp"
 #include "Misc/Dispatch.hpp"
+#include "Misc/PowerManager.hpp"
 #include "UI/Fonts/Tahoma10pt7b.h"
 #include "sindarin-debug.h"
 
@@ -161,7 +162,7 @@ void FirmwareUpdateScreen::begin() {
             } else if (state.state == FirmwareDownloadState::Installed) {
                 vTaskDelay(3000 / portTICK_PERIOD_MS);
                 log_i("Rebooting after successful firmware update");
-                esp_restart();
+                PowerManager::getInstance().reboot();
                 // Only for the sim
                 backCallback();
             }

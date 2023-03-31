@@ -71,7 +71,7 @@ auto TTRemoteInput::connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &
         uint8_t battery = 0;
         if (batteryCharacteristic->canRead()) {
             battery = batteryCharacteristic->readValue<uint8_t>();
-            prefs_.lastPageTurnerBattery.set(battery);
+            PreferencesStore::lastPageTurnerBattery = battery;
             log_i("Page turner battery level: %d%%", battery);
         }
 

@@ -1,7 +1,7 @@
 #ifndef LINE_SPACING_SCREEN_HPP
 #define LINE_SPACING_SCREEN_HPP
 
-#include "Misc/Power.hpp"
+#include "Misc/Battery.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Screen.hpp"

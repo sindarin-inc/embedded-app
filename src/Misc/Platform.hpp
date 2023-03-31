@@ -38,6 +38,10 @@
 
 #define ESP_IMAGE_HEADER_MAGIC 0xE9 /*!< The magic word for the esp_image_header_t structure. */
 
+// Bare minimum init before processing wake reasons
+void HardwareInit();
+
+// Full initialization of all peripherals needed in active mode
 void InitializePlatform();
 
 auto GetBatteryVoltageLeft() -> float;
@@ -63,8 +67,6 @@ auto GetHardwareRevision() -> uint8_t;
 void ForcePowerOn();
 
 void AllowPowerOff();
-
-void HardwareInit();
 
 void Delay(int ms);
 

@@ -6,9 +6,9 @@
 
 extern void UIInnerLoop(RemoteCommand command);
 
-CesScreen::CesScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power,
+CesScreen::CesScreen(DisplaySystem &display, PreferencesStore &prefs,
                      LightingController &lightingController)
-    : display_(display), renderer_(display), prefs_(prefs), power_(power),
+    : display_(display), renderer_(display), prefs_(prefs),
       lightingController_(lightingController) {}
 
 void CesScreen::render(DisplaySystem &display) {

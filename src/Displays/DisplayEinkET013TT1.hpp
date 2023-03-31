@@ -19,6 +19,7 @@ public:
           driver_(csLeft, csRight, rst) {
         gfxClass_ = &gfxCanvas_;
     };
+    DisplayEinkET013TT1(DisplayEinkET013TT1 const &) = delete;
 
     ~DisplayEinkET013TT1() = default;
 

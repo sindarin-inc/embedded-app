@@ -14,6 +14,7 @@
 #include "Models/SyncBookmarksResponse.hpp"
 #include "Models/UserReadable.hpp"
 #include "Storage/FileSystem.hpp"
+#include "Storage/PreferencesStore.hpp"
 
 class SindarinAPI {
 public:

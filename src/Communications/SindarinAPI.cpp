@@ -4,8 +4,8 @@
 
 #include "FileDownload.hpp"
 #include "GitVersion.hpp"
+#include "Misc/Battery.hpp"
 #include "Misc/Platform.hpp"
-#include "Misc/Power.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
 #include "Models/UserReadable.hpp"
@@ -184,7 +184,7 @@ auto SindarinAPI::downloadReadable(const Readable &readable, FileSystem &fileSys
 }
 
 auto SindarinAPI::uploadAndResetVoltageLog(FileSystem &fileSystem) -> int {
-    auto localPath = Power::voltageLogPath();
+    auto localPath = Battery::voltageLogPath();
     if (!fileSystem.exists(localPath)) {
         log_w("Voltage log file %s does not exist", localPath);
         return false;

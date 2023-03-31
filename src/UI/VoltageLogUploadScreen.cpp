@@ -2,8 +2,8 @@
 
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
+#include "Misc/Battery.hpp"
 #include "Misc/Dispatch.hpp"
-#include "Misc/Power.hpp"
 #include "UI/Fonts/Tahoma10pt7b.h"
 #include "sindarin-debug.h"
 
@@ -117,7 +117,7 @@ void VoltageLogUploadScreen::begin() {
         }
 
         log_d("Deleting voltage log");
-        fileSystem_.remove(Power::voltageLogPath());
+        fileSystem_.remove(Battery::voltageLogPath());
 
         DispatchGetUiQueue()->dispatch([this]() {
             log_i("Voltage log upload complete");

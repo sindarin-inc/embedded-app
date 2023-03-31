@@ -1,34 +1,28 @@
-#include <freertos/FreeRTOS.h>
-#include <freertos/timers.h>
 #include <functional>
+#include <optional>
 #include <utility>
 
 #include "Mmc5603.hpp"
 
+// TODO: Consider collapsing this into PowerManager
 class TempleCloseSensor {
 public:
     TempleCloseSensor() : magSensor_(0) {}
-
-    void checkTemple();
+    TempleCloseSensor(TempleCloseSensor const &) = delete;
 
     // Simple diagnostic test to check if the magnetometer is reporting the correct product ID
     auto checkProductId() -> bool;
 
+    auto isTempleOpen() -> bool;
+    // Should be called periodically to fire the callback when the temple is opened or closed (only
+    // on state change)
+    void checkTemple();
+
     void setCallback(std::function<void(bool opened)> callback) { callback_ = std::move(callback); }
-
-    // Callback fired after 15s of being closed
-    void setLongCloseCallback(std::function<void()> callback) {
-        longCloseCallback_ = std::move(callback);
-    }
-
-    auto getOpened() -> bool { return opened_; }
 
 protected:
     Mmc5603 magSensor_;
-    bool opened_ = false;
+    // std::optional so we don't trigger the callback on the very first state, only on state changes
+    std::optional<bool> opened_;
     std::function<void(bool opened)> callback_;
-    std::function<void()> longCloseCallback_;
-
-    TimerHandle_t longCloseTimer_;
-    void resetLongCloseTimer();
 };

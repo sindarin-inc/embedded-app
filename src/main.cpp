@@ -13,15 +13,14 @@
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
 #include "Inputs/RemoteInput.hpp"
+#include "Misc/Battery.hpp"
 #include "Misc/BootError.hpp"
 #include "Misc/BootLoopDetection.hpp"
 #include "Misc/Platform.hpp"
-#include "Misc/Power.hpp"
 #include "Misc/PowerManager.hpp"
 #include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
-#include "Misc/Ulp.hpp"
 #include "Models/Readable.hpp"
 #include "Storage/CrashReportWriter.hpp"
 #include "Storage/LocalStore.hpp"
@@ -68,12 +67,6 @@ TTRemoteInput ttRemoteInput(prefs);
 #include "Sensors/LightingController.hpp"
 LightingController lightingController;
 
-#if USE_MMC5603
-#include "Sensors/TempleCloseSensor.hpp"
-TempleCloseSensor templeCloseSensor;
-bool runningContentSync;
-#endif
-
 #if SIMULATOR
 #include "Storage/PosixFileSystem.hpp"
 PosixFileSystem fileSystem;
@@ -84,12 +77,10 @@ LittleFSFileSystem fileSystem;
 
 LocalStore localStore(fileSystem, prefs);
 
-Power power(fileSystem, prefs);
-RootUI rootUi(prefs, power);
+PowerManager powerManager(fileSystem, prefs, lightingController);
+RootUI rootUi(prefs, powerManager);
 SolClock solClock(prefs);
-PowerManager powerManager(prefs);
 
-bool templesClosed = false;
 bool bootCompleted = false;
 
 // Task for all periodic things that need to run ~1Hz. Polling tasks should be grouped here so that
@@ -97,11 +88,11 @@ bool bootCompleted = false;
 void PollingLoopTask(void *parameter) {
     for (;;) {
         // Run the power loop first so that we don't show a 0% battery reading
-        power.loop();
+        powerManager.loop();
 
 #if USE_TURN_TOUCH_REMOTE
         // Skip scanning while WiFi is connected to avoid kicking off the WiFi connection
-        if (!WiFi::getInstance().connected() && !templesClosed) {
+        if (!WiFi::getInstance().connected()) {
             ttRemoteInput.connect();
         } else if (!ttRemoteInput.connected()) {
             // log_d("Skipping Turn Touch scan while WiFi is connected");
@@ -110,10 +101,6 @@ void PollingLoopTask(void *parameter) {
 
 #if USE_BLE_SERVER_REMOTE
         bleWifi.loop();
-#endif
-
-#if USE_MMC5603
-        templeCloseSensor.checkTemple();
 #endif
 
         vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -151,9 +138,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 
 #if !SIMULATOR
-    UlpWakeupCheck(solClock);
     // Configure log level for all Sindarin logs
     esp_log_level_set("Sindarin", ESP_LOG_DEBUG);
+    powerManager.wakeupCheck(solClock);
 #endif
     BootLoopCheck();
     std::vector<BootError> bootErrors;
@@ -172,60 +159,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         bootErrors.push_back({.type = BootError::Type::Preferences});
     }
 
-#if USE_MMC5603 & !SIMULATOR
-    int morningNews = prefs.morningNewspaperTime.get().value_or(0);
-    int eveningNews = prefs.eveningNewspaperTime.get().value_or(0);
-
-    log_i("Morning News: %d, Evening News: %d", morningNews, eveningNews);
-
-    // We are waking up after the inactivty timeout, so we need to check if the temple is closed
-    // and if so, reset it.
-    if (prefs.sleepReason.get().value_or(SLEEP_REASON_NONE) == SLEEP_REASON_INACTIVITY) {
-        log_i("Inactivity timer caused this reboot, checking if temple is closed");
-        templeCloseSensor.checkTemple();
-        if (!templeCloseSensor.getOpened()) {
-            log_i("Changing sleep reason because the temple is now closed");
-            prefs.sleepReason.set(SLEEP_REASON_TEMPLES_CLOSED);
-        }
-    }
-
-    if ((prefs.sleepReason.get().value_or(SLEEP_REASON_NONE) == SLEEP_REASON_INACTIVITY) ||
-        (morningNews != 0) || (eveningNews != 0)) {
-        templeCloseSensor.checkTemple();
-        if (!templeCloseSensor.getOpened() ||
-            (prefs.sleepReason.get().value_or(SLEEP_REASON_NONE) == SLEEP_REASON_INACTIVITY)) {
-            uint8_t hours, minutes;
-            solClock.getClockTime(hours, minutes);
-            log_i("Temple is closed or glasses inactive, current time: %d:%d", hours, minutes);
-            if (((hours && (hours == morningNews)) || (hours && (hours == eveningNews))) &&
-                (minutes == 0)) {
-                DigitalWrite(BLUE_LED, LED_ON);
-                runningContentSync = true;
-                localStore.syncFromRemote([](const ContentSyncState &state) {
-                    if (state.state == ContentSyncState::Failure ||
-                        state.state == ContentSyncState::Synced ||
-                        state.state == ContentSyncState::AlreadySynced) {
-                        if (state.state == ContentSyncState::Failure) {
-                            log_i("Content sync failed with error: %s", state.message.c_str());
-                        } else if (state.state == ContentSyncState::Synced) {
-                            log_i("Content sync successful");
-                        } else if (state.state == ContentSyncState::AlreadySynced) {
-                            log_i("Content sync already synced");
-                        }
-                        DigitalWrite(BLUE_LED, LED_OFF);
-                        runningContentSync = false;
-                        WiFi::getInstance().disconnectWiFi();
-                        log_i("Going to sleep after content sync");
-                        PowerManager::getInstance().powerOff();
-                    }
-                });
-            } else {
-                log_i("Temple closed, going to sleep");
-                PowerManager::getInstance().powerOff();
-            }
-        }
-    }
-#endif
+    solClock.begin();
 
     log_i("SN: %s", GetSerialNumber().c_str());
 
@@ -244,73 +178,100 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
     }
 
+    if (powerManager.begin() != ESP_OK) {
+        bootErrors.push_back({.type = BootError::Type::PowerManagement});
+    }
+
+    if (!fileSystem.begin()) {
+        bootErrors.push_back({.type = BootError::Type::FileSystem});
+    }
+
+    // Set current boot id
+    auto bootCount = prefs.bootCount.get().value_or(0);
+    bootCount++;
+    prefs.bootCount.set(bootCount);
+
+    // This is a hack for now for debugging crashes while connected to the serial
+    // monitor -- don't save (and thus delete crashes) when connected to USB. This means
+    // the boot count will be wrong once this is saved, but that's probably ok
+    if (!USBConnected()) {
+        // file system started
+        // attempt to write any core dumps to disk for later upload
+        CrashReportWriter crashReportWriter(fileSystem, bootCount - 1);
+        crashReportWriter.writeCrashReportIfExists();
+    }
+
+    if (!localStore.begin()) {
+        bootErrors.push_back({.type = BootError::Type::LocalStore});
+    }
+
+    if (powerManager.state() == PowerState::Background) {
+        log_i("Booting into PowerState::Background, running a content sync");
+
+        // Spit up a task just to check the temple and battery
+        xTaskCreatePinnedToCore(
+            [](void *) {
+                for (;;) {
+                    powerManager.loop();
+                    vTaskDelay(1000 / portTICK_PERIOD_MS);
+                }
+            },
+            "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
+
+        // TODO: Also upload core dumps, voltage logs (?), and firmware update, set the lock
+        // Debug LED so we know what's happening
+        DigitalWrite(BLUE_LED, LED_ON);
+        localStore.syncFromRemote([](const ContentSyncState &state) {
+            powerManager.feedInactivityTimer();
+
+            if (state.state == ContentSyncState::Failure ||
+                state.state == ContentSyncState::Synced ||
+                state.state == ContentSyncState::AlreadySynced) {
+                if (state.state == ContentSyncState::Failure) {
+                    log_i("Content sync failed with error: %s", state.message.c_str());
+                } else if (state.state == ContentSyncState::Synced) {
+                    log_i("Content sync successful");
+                } else if (state.state == ContentSyncState::AlreadySynced) {
+                    log_i("Content sync already synced");
+                }
+                DigitalWrite(BLUE_LED, LED_OFF);
+
+                if (WiFi::getInstance().connected()) {
+                    SolClock::getInstance().setClockTimeFromInternet();
+                }
+
+                // TODO: It would probably be good to do some sort of retry with exponential
+                // backup if we fail. But We don't want to drain battery if you're away from
+                // WiFi. So we'll need to think carefully how we want to handle that.
+
+                // Figure out the next content sync and set the best time for it
+                time_t now = time(nullptr);
+                PreferencesStore::syncReason = SyncReason::Periodic;
+                PreferencesStore::nextSyncTime = SolClock::getInstance().calculateNextSyncTime(now);
+                PowerManager::getInstance().ulpDeepSleep(SleepReason::SyncDone);
+            }
+        });
+
+        // If we still are here after 5 mins probably something went wrong
+        vTaskDelay(5 * 60 * 1000 / portTICK_PERIOD_MS);
+
+        log_e("Background content sync timed out!");
+
+        time_t now = time(nullptr);
+        PreferencesStore::syncReason = SyncReason::Periodic;
+        PreferencesStore::nextSyncTime = SolClock::getInstance().calculateNextSyncTime(now);
+        PowerManager::getInstance().ulpDeepSleep(SleepReason::SyncDone);
+    }
+
     if (!lightingController.checkSensorAvailable()) {
         bootErrors.push_back({.type = BootError::Type::AmbientLight});
     } else {
         lightingController.begin();
     }
 
-#if USE_MMC5603
-    if (!templeCloseSensor.checkProductId()) {
+    if (!powerManager.checkMagnetometerProductId()) {
         bootErrors.push_back({.type = BootError::Type::Magnetometer});
-    } else {
-        templeCloseSensor.setCallback([](bool open) {
-            if (open) {
-                lightingController.enableLighting();
-                templesClosed = false;
-                if (runningContentSync) {
-                    // Effectively cancel the content sync by disconnecting WiFi
-                    WiFi::getInstance().disconnectWiFi();
-                }
-            } else {
-                lightingController.disableLighting();
-                templesClosed = true;
-                // Will be turned off after content sync
-                prefs.lastBatteryReport.set((int)power.getBatteryPercentage());
-            }
-        });
-        templeCloseSensor.setLongCloseCallback([]() {
-#if ENABLE_CONTENT_SYNC_ON_CLOSE
-            DispatchGetUiQueue()->dispatch([]() {
-                log_d("Temples closed for a while, running content sync");
-                // Debug LED so we know what's happening
-                if (templesClosed) {
-                    DigitalWrite(BLUE_LED, LED_ON);
-                    runningContentSync = true;
-                    localStore.syncFromRemote([](const ContentSyncState &state) {
-                        if (state.state == ContentSyncState::Failure ||
-                            state.state == ContentSyncState::Synced ||
-                            state.state == ContentSyncState::AlreadySynced) {
-                            if (state.state == ContentSyncState::Failure) {
-                                log_i("Content sync failed with error: %s", state.message.c_str());
-                            } else if (state.state == ContentSyncState::Synced) {
-                                log_i("Content sync successful");
-                            } else if (state.state == ContentSyncState::AlreadySynced) {
-                                log_i("Content sync already synced");
-                            }
-                            DigitalWrite(BLUE_LED, LED_OFF);
-                            // Only if the temples are still closed, allow power off
-                            if (templesClosed) {
-                                prefs.sleepReason.set(SLEEP_REASON_TEMPLES_CLOSED);
-                                PowerManager::getInstance().powerOff();
-                            }
-                            runningContentSync = false;
-                            WiFi::getInstance().disconnectWiFi();
-                        }
-                    });
-                }
-            });
-#else
-            // Just precautinoary in case we turn off ENABLE_CONTENT_SYNC_ON_CLOSE in the future
-            // We should still power down if the temples are closed for a while!
-            if (templesClosed) {
-                prefs.sleepReason.set(SLEEP_REASON_TEMPLES_CLOSED);
-                PowerManager::getInstance().powerOff();
-            }
-#endif
-        });
     }
-#endif
 
     SHOW_HEAP();
 
@@ -450,41 +411,12 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 
 #if !DISABLE_POWER_MANAGEMENT
-    if (powerManager.begin() != ESP_OK) {
-        bootErrors.push_back({.type = BootError::Type::PowerManagement});
-    }
-
     if (rtc_clk_slow_freq_get() != RTC_SLOW_FREQ_32K_XTAL) {
         bootErrors.push_back({.type = BootError::Type::LowPowerOscillator});
     }
 #endif
 
-    // set current boot id
-    auto bootCount = prefs.bootCount.get().value_or(0);
-    bootCount++;
-    prefs.bootCount.set(bootCount);
-
-    if (!fileSystem.begin()) {
-        bootErrors.push_back({.type = BootError::Type::FileSystem});
-    } else {
-        // This is a hack for now for debugging crashes while connected to the serial
-        // monitor -- don't save (and thus delete crashes) when connected to USB. This means
-        // the boot count will be wrong once this is saved, but that's probably ok
-        if (!USBConnected()) {
-            // file system started
-            // attempt to write any core dumps to disk for later upload
-            CrashReportWriter crashReportWriter(fileSystem, bootCount - 1);
-            crashReportWriter.writeCrashReportIfExists();
-        }
-    }
-
-    if (!localStore.begin()) {
-        bootErrors.push_back({.type = BootError::Type::LocalStore});
-    }
-
     SHOW_HEAP();
-
-    power.setup();
 
     rootUi.setup(&myDisplay, localStore, fileSystem, lightingController);
 

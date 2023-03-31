@@ -16,53 +16,29 @@ auto TempleCloseSensor::checkProductId() -> bool {
     }
 }
 
-void TempleCloseSensor::resetLongCloseTimer() {
-    if (longCloseTimer_) {
-        xTimerDelete(longCloseTimer_, 0);
-        longCloseTimer_ = nullptr;
-    }
-}
-
-void TempleCloseSensor::checkTemple() {
+auto TempleCloseSensor::isTempleOpen() -> bool {
     Xyz8bit magReading;
     auto success = magSensor_.readXZ8Bit(magReading);
     if (!success) {
         log_e("Failed to read magnetometer");
-        return;
+        return false;
     }
-    bool templeOpen = IsTempleOpen(magReading.x, magReading.z);
+    return IsTempleOpen(magReading.x, magReading.z);
+}
 
-    if (templeOpen && opened_ == false) {
+void TempleCloseSensor::checkTemple() {
+    auto templeOpen = isTempleOpen();
+    if (templeOpen && opened_.value_or(false) == false) {
         log_i("Temple is open");
-        opened_ = true;
         if (callback_) {
             callback_(true);
         }
-        resetLongCloseTimer();
-    } else if (!templeOpen && opened_ == true) {
+        opened_ = true;
+    } else if (!templeOpen && opened_.value_or(false) == true) {
         log_i("Temple is closed");
-        opened_ = false;
         if (callback_) {
             callback_(false);
         }
-
-        if (longCloseCallback_) {
-            // Start a timer to fire after 60s of being closed
-            if (longCloseTimer_) {
-                log_w("Somehow tried to create a new longCloseTimer_ while one was already active");
-                resetLongCloseTimer();
-            }
-
-            auto onTimer = [](TimerHandle_t timer) {
-                auto *templeCloseSensor =
-                    static_cast<TempleCloseSensor *>(pvTimerGetTimerID(timer));
-                templeCloseSensor->resetLongCloseTimer();
-                templeCloseSensor->longCloseCallback_();
-            };
-
-            longCloseTimer_ =
-                xTimerCreate("LongCloseTimer", pdMS_TO_TICKS(15000), pdFALSE, this, onTimer);
-            xTimerStart(longCloseTimer_, 0);
-        }
+        opened_ = false;
     }
 }

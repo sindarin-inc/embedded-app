@@ -9,6 +9,7 @@
 #include "Misc/Crypto.hpp"
 #include "Misc/GUnzipStream.hpp"
 #include "Misc/Platform.hpp"
+#include "Misc/PowerManager.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
 #include "Models/ReadableBookmark.hpp"
@@ -359,7 +360,7 @@ void LocalStore::syncFromRemote(
     // Run this work on a separate thread, since it's long running
     auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this, progressCallback] {
-        auto sleepReason = this->prefs_.sleepReason.get().value_or(SLEEP_REASON_NONE);
+        auto syncReason = PreferencesStore::syncReason;
         CheckSyncResponse checkSyncResponse;
         int checkSyncFailures = 0;
         bool booksAlreadySynced = false;
@@ -384,7 +385,7 @@ void LocalStore::syncFromRemote(
             this->changedReadablesArchivedJson(*readables, archivesJsonArray);
             this->changedReadablesBookmarksJson(bookmarksJsonArray);
             body["sleep_reason"] = sleepReason;
-            body["pt_battery"] = this->prefs_.lastPageTurnerBattery.get().value_or(0);
+            body["pt_battery"] = PreferencesStore::lastPageTurnerBattery;
             body["pt_build"] = this->prefs_.lastPageTurnerBuild.get().value_or("");
             body["skip_content"] = true;
             if (modelType == ReadablesModelType::Book) {
@@ -721,7 +722,55 @@ auto LocalStore::processReadableDownload(
         tasksIndex += 1;
     }
 
-    return failedDownload;
+    // Store since date values for next sync
+    if (failedArticleDownload || failedReadableDownload) {
+        log_w("Not setting lastReadablesSince to %s and lastArticlesSince to %s due to failed "
+              "download",
+              checkSyncResponse.readablesSince.c_str(), checkSyncResponse.articlesSince.c_str());
+    } else {
+        log_i("Setting lastReadablesSince to %s and lastArticlesSince to %s",
+              checkSyncResponse.readablesSince.c_str(), checkSyncResponse.articlesSince.c_str());
+    }
+    if (checkSyncResponse.readablesSince != "" && !failedReadableDownload) {
+        this->prefs_.lastReadablesSince.set(checkSyncResponse.readablesSince.c_str());
+    }
+    if (checkSyncResponse.articlesSince != "" && !failedArticleDownload) {
+        this->prefs_.lastArticlesSince.set(checkSyncResponse.articlesSince.c_str());
+    }
+
+    // Update the since dates and try again
+    readablesSince = this->readablesSince();
+    articlesSince = this->articlesSince();
+    request = CheckSyncRequest{
+        .readablesSince = readablesSince,
+        .articlesSince = articlesSince,
+        .readablePlacemarks = {},
+        .articlePlacemarks = {},
+        .readablesArchived = {},
+        .articlesArchived = {},
+        .ptBattery = PreferencesStore::lastPageTurnerBattery,
+        .ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or(""),
+    };
+
+    // Artificially delay so the user has the satisfaction of seeing the list done
+    Delay(1000);
+
+    SindarinAPI::getInstance()->checkSync(request, &checkSyncResponse);
+
+    // TODO: Force reload of rootUI instead of rebooting
+    if (checkSyncResponse.synced) {
+        log_i("Glasses are synced!");
+        progressCallback(ContentSyncState{.state = ContentSyncState::State::Synced});
+    } else {
+        log_w("After running sync, local readables are still out of sync");
+        // TODO: this isn't 100% right
+        progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                          .message = "Not in sync...restarting"});
+    }
+});
+}
+
+return failedDownload;
 }
 void LocalStore::deleteReadables(bool restart) {
     deleteReadableFiles(books_, restart);
@@ -760,7 +809,7 @@ void LocalStore::deleteReadableFiles(const ReadablesVector &readables, bool rest
     log_i("Resetting to guarantee %s are removed", ToString(modelType).c_str());
 
     if (restart) {
-        esp_restart();
+        PowerManager::getInstance().reboot();
     }
 }
 

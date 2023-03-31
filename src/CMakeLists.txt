@@ -46,7 +46,7 @@ if(IDF_VERSION_MAJOR EQUAL 5 AND IDF_VERSION_MINOR LESS 1)
 else()
     set(ulp_riscv_sources "Ulp/main.c" "Ulp/UlpTableLookup.c")
 endif()
-set(ulp_exp_dep_srcs "Misc/Ulp.cpp")
+set(ulp_exp_dep_srcs "Misc/PowerManager.cpp")
 ulp_embed_binary(${ulp_app_name} "${ulp_riscv_sources}" "${ulp_exp_dep_srcs}")
 
 target_compile_options(${COMPONENT_TARGET} PUBLIC ${compile_options})
