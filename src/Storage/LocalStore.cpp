@@ -1,6 +1,7 @@
 #include "LocalStore.hpp"
 
 #include <esp_system.h>
+#include <esp_timer.h>
 #include <memory>
 #include <unordered_map>
 
