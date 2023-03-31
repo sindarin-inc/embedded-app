@@ -74,7 +74,7 @@ HttpClient::HttpClient(const char *url, const char *contentType, esp_http_client
 
 HttpClient::~HttpClient() {
     esp_http_client_close(client_);
-    // esp_http_client_cleanup(client_); // TODO: This crashes
+    esp_http_client_cleanup(client_);
     responseHeaders_.clear();
     free(url_);
 }

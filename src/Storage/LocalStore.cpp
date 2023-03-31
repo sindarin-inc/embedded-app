@@ -6,6 +6,7 @@
 
 #include "Communications/HtmlCleaner.hpp"
 #include "Communications/WiFi.hpp"
+#include "GitVersion.hpp"
 #include "Misc/Crypto.hpp"
 #include "Misc/GUnzipStream.hpp"
 #include "Misc/Platform.hpp"
@@ -13,6 +14,7 @@
 #include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
 #include "Models/ReadableBookmark.hpp"
+#include "Version.hpp"
 #include "sindarin-debug.h"
 
 #define BOOKS_PATH "/readables.json"
@@ -387,6 +389,9 @@ void LocalStore::syncFromRemote(
             body["sync_reason"] = (int)syncReason;
             body["pt_battery"] = PreferencesStore::lastPageTurnerBattery;
             body["pt_build"] = this->prefs_.lastPageTurnerBuild.get().value_or("");
+            body["build"] = kVersionString;
+            body["git_hash"] = kGitHash;
+            body["sn"] = GetSerialNumber();
             body["skip_content"] = true;
             if (modelType == ReadablesModelType::Book) {
                 body["books_since"] = since;
@@ -547,6 +552,9 @@ void LocalStore::syncFromRemote(
             body["sync_reason"] = (int)syncReason;
             body["pt_battery"] = PreferencesStore::lastPageTurnerBattery;
             body["pt_build"] = this->prefs_.lastPageTurnerBuild.get().value_or("");
+            body["build"] = kVersionString;
+            body["git_hash"] = kGitHash;
+            body["sn"] = GetSerialNumber();
             body["skip_content"] = true;
             if (modelType == ReadablesModelType::Book) {
                 body["books_since"] = serverSince;
