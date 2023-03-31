@@ -31,3 +31,15 @@ auto operator!=(const SpiramAllocator<T> &, const SpiramAllocator<U> &) -> bool 
 }
 
 typedef std::basic_string<char, std::char_traits<char>, SpiramAllocator<char>> SpiramString;
+
+template <typename T>
+class SpiRamDeleter {
+public:
+    void operator()(T *d) const { heap_caps_free(d); }
+};
+
+template <typename T>
+auto SpiRamArrayPtr(size_t len) -> std::shared_ptr<T[]> {
+    return std::shared_ptr<T[]>((T *)heap_caps_malloc(len * sizeof(T), MALLOC_CAP_SPIRAM),
+                                SpiRamDeleter<T>());
+}
