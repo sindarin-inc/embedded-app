@@ -45,7 +45,9 @@ component_libs = [
     "unzipLIB/src",
 ]
 
-lib_includes += "\n" + "\n".join([f"-I{components_dir}/{lib}" for lib in component_libs])
+lib_includes += "\n" + "\n".join(
+    [f"-I{components_dir}/{lib}" for lib in component_libs]
+)
 
 # Build the big flags list
 flags = [
