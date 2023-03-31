@@ -996,6 +996,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     debugSettingsMenu->addMenuItem(
         MenuItem("Unpair PageTurner", [this, debugSettingsMenu, display]() {
             prefs_.pairedTurnTouchAddress.remove();
+            prefs_.lastPageTurnerBuild.remove();
+            prefs_.lastPageTurnerBattery.remove();
             log_w("Unpaired PageTurner. Rebooting...");
             debugSettingsMenu->showTemporaryMessage(*display, "Unpaired PageTurner! Resetting...",
                                                     2000, false);
