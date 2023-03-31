@@ -61,6 +61,7 @@ flags = [
     "-DUSE_BLE_SERVER_REMOTE=0",
     "-DUSE_BLE_SERVER_SETTINGS=0",
     "-DUSE_BLE_SERVER_IMPROV=0",
+    "-DRTC_SLOW_ATTR=",
     "-DENABLE_OTA=0",
     "-DEINKET013TT1=1",
     "-lpthread",

@@ -30,15 +30,18 @@ void TempleCloseSensor::checkTemple() {
     auto templeOpen = isTempleOpen();
     if (templeOpen && opened_.value_or(false) == false) {
         log_i("Temple is open");
-        if (callback_) {
-            callback_(true);
+        if (opened_.has_value()) {
+            if (callback_) {
+                callback_(true);
+            }
         }
-        opened_ = true;
     } else if (!templeOpen && opened_.value_or(false) == true) {
         log_i("Temple is closed");
-        if (callback_) {
-            callback_(false);
+        if (opened_.has_value()) {
+            if (callback_) {
+                callback_(false);
+            }
         }
-        opened_ = false;
     }
+    opened_ = templeOpen;
 }
