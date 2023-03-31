@@ -26,8 +26,8 @@ enum FONT_CHOICES {
 
 enum class SyncReason {
     Manual = 0,
-    Inactivity = 1,
-    TemplesClosed = 2,
+    OnInactivity = 1,
+    OnClose = 2,
     Periodic = 3,
 };
 
