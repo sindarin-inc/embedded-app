@@ -6,6 +6,7 @@
 
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
+#include "Misc/SemVer.hpp"
 #include "TurnTouch.hpp"
 #include "sindarin-debug.h"
 
@@ -149,6 +150,22 @@ void TTRemoteInput::scanForDevice() {
     } else {
         log_d("Scanning for any available TurnTouch...");
     }
+
+    // PT build 0.2.0 and earlier only support active scanning, which is less power efficient
+    bool useActiveScan = false;
+    auto ptBuild = prefs_.lastPageTurnerBuild.get();
+    if (ptBuild.has_value()) {
+        std::string build = ptBuild.value();
+        if (SemVerCompareVersions(build.c_str(), "0.2.99") == SemVerComparison::LessThan) {
+            log_i("Using active scan for PT build %s", build.c_str());
+            useActiveScan = true;
+        }
+    } else {
+        // If we haven't connected to a PT yet, cast a wider net to pickup both old and new builds
+        log_i("Using active scan for PT because we have yet to connect to one");
+        useActiveScan = true;
+    }
+
     BLEScan *scan = BLEDevice::getScan();
 
     scan->setAdvertisedDeviceCallbacks(&advertisedDeviceCallbacks_);
@@ -159,7 +176,9 @@ void TTRemoteInput::scanForDevice() {
     // scanWindow equal to the scanInterval in order to do continuous scanning.
     scan->setInterval(40);
     scan->setWindow(30);
-    // scan->setActiveScan(true);
+    if (useActiveScan) {
+        scan->setActiveScan(true);
+    }
     scan->start((int)(RESCAN_INTERVAL_MS / 1000), nullptr, false);
 
     lastScanMs_ = Millis();
