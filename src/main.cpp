@@ -240,6 +240,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                     SolClock::getInstance().setClockTimeFromInternet();
                 }
 
+                // Something about shutting down WiFi here causes a crash
+                WiFi::getInstance().disconnectWiFi();
+
                 // TODO: It would probably be good to do some sort of retry with exponential
                 // backup if we fail. But We don't want to drain battery if you're away from
                 // WiFi. So we'll need to think carefully how we want to handle that.
@@ -256,6 +259,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         vTaskDelay(5 * 60 * 1000 / portTICK_PERIOD_MS);
 
         log_e("Background content sync timed out!");
+
+        WiFi::getInstance().disconnectWiFi();
 
         time_t now = time(nullptr);
         PreferencesStore::syncReason = SyncReason::Periodic;
