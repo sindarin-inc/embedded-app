@@ -136,7 +136,6 @@ auto DownloadFile(const char *url,
                   const std::function<void(int bytesWritten, float percentage)> &progressCallback,
                   bool gzip) -> bool {
 
-    // W25Q512JV* chips have a page size of 256 bytes so we should only use a multiple of that
     constexpr int bufferSize = 4096;
     auto buffer = SpiRamArrayPtr<uint8_t>(bufferSize);
 

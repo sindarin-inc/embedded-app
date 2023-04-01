@@ -22,7 +22,7 @@ auto StringFormat(const char *format, ARGS... args) -> std::string {
     // This raises a warning about `format` not being a literal.
     int sizeS = std::snprintf(nullptr, 0, format, args...);
     if (sizeS <= 0) {
-        log_e("Failed to generate formatted string");
+        log_e("Failed to generate formatted string: %s", format);
         return "";
     }
     auto size = sizeS + 1;
