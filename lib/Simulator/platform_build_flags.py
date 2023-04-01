@@ -52,9 +52,6 @@ lib_includes += "\n" + "\n".join(
 # Build the big flags list
 flags = [
     "-std=c++17",
-    "-Dheap_caps_malloc(s,l)='((void *)malloc(s))'",
-    "-Dheap_caps_realloc(p,s,l)='((void *)realloc(p,s))'",
-    "-Dheap_caps_free(p)='( free(p) )'",
     "-DTTRemoteInput_H",
     "-Dnvs_flash_erase()=' '",
     "-Dtypeof(a)='auto '",

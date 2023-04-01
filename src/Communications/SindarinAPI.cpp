@@ -61,11 +61,11 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
     ConvertToJson(req, body);
 
     size_t serializedMaxSize = (*doc).memoryUsage() * 2;
-    char *reqBody = (char *)heap_caps_malloc(serializedMaxSize, MALLOC_CAP_SPIRAM);
-    size_t bodyLength = serializeJson(*doc, reqBody, serializedMaxSize);
+    auto reqBody = SpiRamArrayPtr<char>(serializedMaxSize);
+    size_t bodyLength = serializeJson(*doc, reqBody.get(), serializedMaxSize);
 
     client.open(bodyLength);
-    int writeLength = client.write(reqBody, bodyLength);
+    int writeLength = client.write(reqBody.get(), bodyLength);
     if (writeLength < bodyLength) {
         log_w("HttpClient failed to write (writeLength=%d, bodyLength=%zu)", writeLength,
               bodyLength);
@@ -75,13 +75,11 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
     int contentLength = client.fetchHeaders();
     if (contentLength <= 0) {
         log_e("Failed to fetch headers");
-        heap_caps_free(reqBody);
         return 0;
     }
     int httpCode = client.getStatusCode();
     if (httpCode != 200) {
         log_e("Failed to check sync: %d", httpCode);
-        heap_caps_free(reqBody);
         return httpCode;
     }
     auto stream = client.makeReadStream();
@@ -109,8 +107,6 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
 
     log_d("Synced: %d Message: %s", resp->synced, resp->message.c_str());
 
-    SHOW_HEAP();
-    heap_caps_free(reqBody);
     SHOW_HEAP();
 
     return httpCode;

@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <esp_heap_caps.h>
+#include <functional>
 #include <memory>
 
 template <typename T>
@@ -33,13 +34,29 @@ auto operator!=(const SpiramAllocator<T> &, const SpiramAllocator<U> &) -> bool 
 typedef std::basic_string<char, std::char_traits<char>, SpiramAllocator<char>> SpiramString;
 
 template <typename T>
-class SpiRamDeleter {
+class CustomDeleter {
 public:
-    void operator()(T *d) const { heap_caps_free(d); }
+    using FreeFuncPtr = void (*)(void *);
+
+    explicit CustomDeleter(FreeFuncPtr freeFunc) : freeFunc_(freeFunc) {}
+
+    void operator()(T *d) const { freeFunc_(d); }
+
+private:
+    FreeFuncPtr freeFunc_;
 };
+
+// It's heap_caps_malloc but with always uses MALLOC_CAP_SPIRAM to have a malloc-compatible
+// interface.
+void *spiRamMalloc(size_t size);
+
+template <typename T>
+auto CustomArrayPtr(size_t len, void *(*mallocFunc)(size_t), void (*freeFunc)(void *))
+    -> std::shared_ptr<T[]> {
+    return std::shared_ptr<T[]>((T *)mallocFunc(len * sizeof(T)), CustomDeleter<T>(freeFunc));
+}
 
 template <typename T>
 auto SpiRamArrayPtr(size_t len) -> std::shared_ptr<T[]> {
-    return std::shared_ptr<T[]>((T *)heap_caps_malloc(len * sizeof(T), MALLOC_CAP_SPIRAM),
-                                SpiRamDeleter<T>());
+    return CustomArrayPtr<T>(len, &spiRamMalloc, &heap_caps_free);
 }
