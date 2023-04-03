@@ -58,7 +58,7 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
         2048 * std::max(1, (int)(req.placemarks.size() + req.archives.size() +
                                  req.bookmarks.size() + req.storedUuids.size())));
     JsonObject body = doc->to<JsonObject>();
-    convertToJson(req, body);
+    ConvertToJson(req, body);
 
     size_t serializedMaxSize = (*doc).memoryUsage() * 2;
     char *reqBody = (char *)heap_caps_malloc(serializedMaxSize, MALLOC_CAP_SPIRAM);

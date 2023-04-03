@@ -44,7 +44,7 @@ public:
     auto fromJson(const JsonObject &j) -> bool override { return true; }
 };
 
-auto convertToJson(const CheckSyncRequest &src, JsonVariant dst) -> bool;
+auto ConvertToJson(const CheckSyncRequest &src, JsonVariant dst) -> bool;
 
 class CheckSyncResponse : JsonSerializable {
 public:

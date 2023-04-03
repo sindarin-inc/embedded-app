@@ -11,7 +11,7 @@ auto ReadableModelTypeToString(ReadablesModelType type) -> std::string {
     }
 }
 
-auto convertToJson(const CheckSyncRequest &src, JsonVariant dst) -> bool {
+auto ConvertToJson(const CheckSyncRequest &src, JsonVariant dst) -> bool {
     if (src.modelType == ReadablesModelType::Book) {
         dst["books_since"] = src.since;
     } else if (src.modelType == ReadablesModelType::Article) {
