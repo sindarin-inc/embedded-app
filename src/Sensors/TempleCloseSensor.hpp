@@ -15,7 +15,7 @@ public:
 
     auto isTempleOpen() -> bool;
     // Should be called periodically to fire the callback when the temple is opened or closed (only
-    // on state change)
+    // fires the callback on state change, not on the initial reading)
     void checkTemple();
 
     void setCallback(std::function<void(bool opened)> callback) { callback_ = std::move(callback); }

@@ -22,6 +22,8 @@
 // unused vairable warnings
 extern uint32_t ulp_waitForClose; // NOLINT(readability-identifier-naming)
 
+RTC_SLOW_ATTR bool ulpLoaded = false;
+
 extern const uint8_t ULP_MAIN_BIN_START[] asm("_binary_ulp_src_bin_start");
 extern const uint8_t ULP_MAIN_BIN_END[] asm("_binary_ulp_src_bin_end");
 
@@ -299,12 +301,17 @@ void PowerManager::ulpDeepSleep(SleepReason reason) {
     i2cCfg.i2c_timing_cfg.i2c_trans_timeout = 20;
     ulp_riscv_i2c_master_init(&i2cCfg);
 
-    // TODO: Does this need to happen every execution? Is this nil-ing the variables?
-    esp_err_t err =
-        ulp_riscv_load_binary(ULP_MAIN_BIN_START, (ULP_MAIN_BIN_END - ULP_MAIN_BIN_START));
-    if (err != ESP_OK) {
-        log_e("load binary err %d", err);
-        return;
+    esp_err_t err;
+
+    // `ulp_riscv_load_binary` seems to reset all the ulp variables including `ulp_waitForClose`
+    // which we only want to unset if the temples are closed.
+    if (!ulpLoaded) {
+        err = ulp_riscv_load_binary(ULP_MAIN_BIN_START, (ULP_MAIN_BIN_END - ULP_MAIN_BIN_START));
+        if (err != ESP_OK) {
+            log_e("load binary err %d", err);
+            return;
+        }
+        ulpLoaded = true;
     }
 
     // If we're sleeping and the temples are already open, tell the ULP to wait for them to be

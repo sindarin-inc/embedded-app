@@ -45,7 +45,9 @@ component_libs = [
     "unzipLIB/src",
 ]
 
-lib_includes += "\n" + "\n".join([f"-I{components_dir}/{lib}" for lib in component_libs])
+lib_includes += "\n" + "\n".join(
+    [f"-I{components_dir}/{lib}" for lib in component_libs]
+)
 
 # Build the big flags list
 flags = [
@@ -61,6 +63,7 @@ flags = [
     "-DUSE_BLE_SERVER_REMOTE=0",
     "-DUSE_BLE_SERVER_SETTINGS=0",
     "-DUSE_BLE_SERVER_IMPROV=0",
+    "-DRTC_SLOW_ATTR=",
     "-DENABLE_OTA=0",
     "-DEINKET013TT1=1",
     "-lpthread",
