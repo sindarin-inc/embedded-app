@@ -24,17 +24,6 @@
 enum { NUMBER_OF_READABLE_DOWNLOAD_TRIES = 3 };
 enum { MAX_NUMBER_OF_PAGES_TO_BACKFILL = 10 };
 
-auto ToString(ReadablesModelType type) -> std::string {
-    switch (type) {
-    case ReadablesModelType::Article:
-        return "article";
-    case ReadablesModelType::Book:
-        return "book";
-    default:
-        return "unknown";
-    }
-}
-
 auto LocalStore::begin() -> bool {
     auto loadedBooks = loadReadablesFromFile(books_, BOOKS_PATH);
     auto loadedArticles = loadReadablesFromFile(articles_, ARTICLES_PATH);
@@ -44,7 +33,8 @@ auto LocalStore::begin() -> bool {
 
 auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::string &path)
     -> bool {
-    log_d("Loading %ss from %s", ToString(readablesModelType(readables)).c_str(), path.c_str());
+    log_d("Loading %ss from %s", ReadableModelTypeToString(readablesModelType(readables)).c_str(),
+          path.c_str());
     SFile readablesFile = fileSystem.open(path);
     if (!readablesFile || (int)readablesFile.size() == 0) {
         log_w("Failed to open %s", path.c_str());
@@ -153,17 +143,17 @@ auto LocalStore::readablesSince(const ReadablesModelType modelType) -> std::stri
 }
 
 void LocalStore::storedReadableUuids(const ReadablesVector &readables,
-                                     JsonArray &storedUuidsJsonArray) {
+                                     StoredUuidsVector &storedUuids) {
     for (auto &readable : readables) {
         if (readable.localOnly) {
             continue;
         }
-        storedUuidsJsonArray.add(readable.uuid);
+        storedUuids.emplace_back(readable.uuid);
     }
 }
 
 void LocalStore::changedReadablePlacemarkJson(const ReadablesVector &readables,
-                                              JsonArray &placemarksJsonArray) {
+                                              ReadablePlacemarksVector &placemarks) {
     auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
 
     for (auto &readable : readables) {
@@ -174,17 +164,19 @@ void LocalStore::changedReadablePlacemarkJson(const ReadablesVector &readables,
         bool changed = prefs_.readablePlaceChanged.get(readable.shortenedUuid.c_str());
         if (changed) {
             uint32_t place = prefs_.readablePlace.get(readable.shortenedUuid.c_str());
-            log_i("Placemark on %s %s %s has changed to %" PRIu32, ToString(modelType).c_str(),
-                  readable.title.c_str(), readable.uuid.c_str(), place);
-            auto placemark = placemarksJsonArray.createNestedObject();
-            placemark["uuid"] = readable.uuid;
-            placemark["position"] = place;
+            log_i("Placemark on %s %s %s has changed to %" PRIu32,
+                  ReadableModelTypeToString(modelType).c_str(), readable.title.c_str(),
+                  readable.uuid.c_str(), place);
+            ReadablePlacemark placemark;
+            placemark.uuid = readable.uuid;
+            placemark.position = place;
+            placemarks.emplace_back(placemark);
         }
     }
 }
 
 void LocalStore::changedReadablesArchivedJson(const ReadablesVector &readables,
-                                              JsonArray &archivesJsonArray) {
+                                              ReadableArchivesVector &archives) {
     auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
 
     for (auto &readable : readables) {
@@ -194,16 +186,17 @@ void LocalStore::changedReadablesArchivedJson(const ReadablesVector &readables,
 
         bool changed = prefs_.readableArchivedChanged.get(readable.shortenedUuid.c_str());
         if (changed) {
-            log_i("Archived %s %s %s", ToString(modelType).c_str(), readable.title.c_str(),
-                  readable.uuid.c_str());
-            auto archive = archivesJsonArray.createNestedObject();
-            archive["uuid"] = readable.uuid;
-            archive["is_archived"] = true;
+            log_i("Archived %s %s %s", ReadableModelTypeToString(modelType).c_str(),
+                  readable.title.c_str(), readable.uuid.c_str());
+            ReadableArchive archive;
+            archive.uuid = readable.uuid;
+            archive.isArchived = true;
+            archives.emplace_back(archive);
         }
     }
 }
 
-void LocalStore::changedReadablesBookmarksJson(JsonArray &bookmarksJsonArray) {
+void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmarks) {
     for (auto &readables : {books_, articles_}) {
         for (auto &readable : readables) {
             if (readable.localOnly) {
@@ -216,7 +209,7 @@ void LocalStore::changedReadablesBookmarksJson(JsonArray &bookmarksJsonArray) {
             }
 
             auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
-            log_i("Bookmarks changed on %s %s %s", ToString(modelType).c_str(),
+            log_i("Bookmarks changed on %s %s %s", ReadableModelTypeToString(modelType).c_str(),
                   readable.title.c_str(), readable.uuid.c_str());
             std::string bookmarkPath =
                 StringFormat("/bookmarks/%s-bookmark.txt", readable.uuid.c_str());
@@ -227,7 +220,7 @@ void LocalStore::changedReadablesBookmarksJson(JsonArray &bookmarksJsonArray) {
             }
 
             // Store bookmarks in a hash table
-            std::unordered_map<uint32_t, uint32_t> bookmarks;
+            std::unordered_map<uint32_t, uint32_t> bookmarksToAdd;
             std::unordered_map<uint32_t, uint32_t> bookmarksToDelete;
             LocalBookmark bookmark;
             while (ReadOneBookmark(bookmarkFile, bookmark)) {
@@ -235,30 +228,32 @@ void LocalStore::changedReadablesBookmarksJson(JsonArray &bookmarksJsonArray) {
                       bookmark.lastPlace, bookmark.status);
 
                 if (bookmark.status == BOOKMARK_ON && bookmark.firstPlace < bookmark.lastPlace) {
-                    bookmarks[bookmark.firstPlace] = bookmark.lastPlace;
+                    bookmarksToAdd[bookmark.firstPlace] = bookmark.lastPlace;
                     bookmarksToDelete.erase(bookmark.firstPlace);
                 } else if (bookmark.status == BOOKMARK_OFF) {
-                    bookmarks.erase(bookmark.firstPlace);
+                    bookmarksToAdd.erase(bookmark.firstPlace);
                     bookmarksToDelete[bookmark.firstPlace] = bookmark.lastPlace;
                 }
             }
             bookmarkFile.close();
 
             // Add bookmarks to the JSON array
-            for (const auto &[starting_position, ending_position] : bookmarks) {
-                JsonObject bookmark = bookmarksJsonArray.createNestedObject();
-                bookmark["starting_position"] = starting_position;
-                bookmark["ending_position"] = ending_position;
-                bookmark["readable"] = readable.uuid;
+            for (const auto &[startingPosition, endingPosition] : bookmarksToAdd) {
+                ReadableBookmark bookmark;
+                bookmark.readable = readable.uuid;
+                bookmark.startingPosition = startingPosition;
+                bookmark.endingPosition = endingPosition;
+                bookmarks.emplace_back(bookmark);
             }
 
             // Add bookmarks to delete to the JSON array
-            for (const auto &[starting_position, ending_position] : bookmarksToDelete) {
-                JsonObject bookmark = bookmarksJsonArray.createNestedObject();
-                bookmark["starting_position"] = starting_position;
-                bookmark["ending_position"] = ending_position;
-                bookmark["status"] = 0;
-                bookmark["readable"] = readable.uuid;
+            for (const auto &[startingPosition, endingPosition] : bookmarksToDelete) {
+                ReadableBookmark bookmark;
+                bookmark.readable = readable.uuid;
+                bookmark.startingPosition = startingPosition;
+                bookmark.endingPosition = endingPosition;
+                bookmark.willDelete = true;
+                bookmarks.emplace_back(bookmark);
             }
         }
     }
@@ -364,6 +359,7 @@ void LocalStore::syncFromRemote(
     auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this, progressCallback] {
         auto syncReason = PreferencesStore::syncReason;
+        CheckSyncRequest checkSyncRequest;
         CheckSyncResponse checkSyncResponse;
         int checkSyncFailures = 0;
         bool booksAlreadySynced = false;
@@ -373,38 +369,39 @@ void LocalStore::syncFromRemote(
 
         std::vector<ReadablesVector *> readablesList = {&books_, &articles_};
         for (auto &readables : readablesList) {
-            auto doc =
-                std::make_shared<SpiRamJsonDocument>(2048 * std::max(1, (int)(*readables).size()));
-            JsonObject body = doc->to<JsonObject>();
-            JsonArray bookmarksJsonArray = body.createNestedArray("bookmarks");
-            JsonArray placemarksJsonArray = body.createNestedArray("placemarks");
-            JsonArray archivesJsonArray = body.createNestedArray("archives");
-            JsonArray storedUuidsJsonArray = body.createNestedArray("stored_uuids");
             bool failedDownload = false;
             auto modelType = readablesModelType(const_cast<ReadablesVector &>(*readables));
             auto since = this->readablesSince(modelType);
-            this->storedReadableUuids(*readables, storedUuidsJsonArray);
-            this->changedReadablePlacemarkJson(*readables, placemarksJsonArray);
-            this->changedReadablesArchivedJson(*readables, archivesJsonArray);
-            this->changedReadablesBookmarksJson(bookmarksJsonArray);
-            body["sync_reason"] = (int)syncReason;
-            body["pt_battery"] = PreferencesStore::lastPageTurnerBattery;
-            body["pt_build"] = this->prefs_.lastPageTurnerBuild.get().value_or("");
-            body["build"] = kVersionString;
-            body["git_hash"] = kGitHash;
-            body["sn"] = GetSerialNumber();
-            body["skip_content"] = true;
-            if (modelType == ReadablesModelType::Book) {
-                body["books_since"] = since;
-            } else if (modelType == ReadablesModelType::Article) {
-                body["articles_since"] = since;
-            }
+            StoredUuidsVector storedUuids;
+            ReadableArchivesVector archives;
+            ReadableBookmarksVector bookmarks;
+            ReadablePlacemarksVector placemarks;
+
+            this->storedReadableUuids(*readables, storedUuids);
+            this->changedReadablePlacemarkJson(*readables, placemarks);
+            this->changedReadablesArchivedJson(*readables, archives);
+            this->changedReadablesBookmarksJson(bookmarks);
+
+            checkSyncRequest.syncReason = syncReason;
+            checkSyncRequest.modelType = modelType;
+            checkSyncRequest.since = since;
+            checkSyncRequest.archives = archives;
+            checkSyncRequest.placemarks = placemarks;
+            checkSyncRequest.bookmarks = bookmarks;
+            checkSyncRequest.storedUuids = storedUuids;
+            checkSyncRequest.skipContent = true;
+            checkSyncRequest.ptBattery = PreferencesStore::lastPageTurnerBattery;
+            checkSyncRequest.ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or("");
+            checkSyncRequest.build = kVersionString;
+            checkSyncRequest.gitHash = kGitHash;
+            checkSyncRequest.sn = GetSerialNumber();
 
             auto nextPageCounter = 0;
             auto nextPageUrl = std::string();
             while (nextPageUrl.length() || nextPageCounter == 0) {
                 if (nextPageCounter == 0) {
-                    log_d("Fetching first page of %ss", ToString(modelType).c_str());
+                    log_d("Fetching first page of %ss",
+                          ReadableModelTypeToString(modelType).c_str());
                 } else {
                     log_d("Fetching next page (#%d): %s", nextPageCounter + 1, nextPageUrl.c_str());
                 }
@@ -417,15 +414,15 @@ void LocalStore::syncFromRemote(
                 int httpCode = 0;
                 if (nextPageCounter == 1) {
                     SHOW_HEAP();
-                    httpCode = SindarinAPI::getInstance()->checkSync(doc, &checkSyncResponse,
-                                                                     ToString(modelType).c_str());
+                    httpCode =
+                        SindarinAPI::getInstance()->checkSync(checkSyncRequest, &checkSyncResponse);
                     SHOW_HEAP();
                 } else {
                     httpCode = SindarinAPI::getInstance()->checkSync(
-                        nextPageUrl.c_str(), doc, &checkSyncResponse, ToString(modelType).c_str());
+                        nextPageUrl.c_str(), checkSyncRequest, &checkSyncResponse);
                 }
                 log_d("Server has %d %ss, next page: %s", checkSyncResponse.totalCount,
-                      ToString(modelType).c_str(), nextPageUrl.c_str());
+                      ReadableModelTypeToString(modelType).c_str(), nextPageUrl.c_str());
                 if (httpCode != 200) {
                     log_e("Failed to check sync (HTTP %d)", httpCode);
                     progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
@@ -443,9 +440,10 @@ void LocalStore::syncFromRemote(
                     this->processReadables(checkSyncResponse, *readables, userReadables);
 
                 SHOW_HEAP();
-                log_d("%ss to download: %zu", ToString(modelType).c_str(),
+                log_d("%ss to download: %zu", ReadableModelTypeToString(modelType).c_str(),
                       readablesToDownload.size());
-                log_d("%ss to delete: %zu", ToString(modelType).c_str(), readablesToDelete.size());
+                log_d("%ss to delete: %zu", ReadableModelTypeToString(modelType).c_str(),
+                      readablesToDelete.size());
                 nextPageUrl = checkSyncResponse.nextPageUrl;
 
                 ContentSyncState syncState;
@@ -461,7 +459,7 @@ void LocalStore::syncFromRemote(
 
                 if (checkSyncResponse.synced) {
                     log_i("%ss are already in sync, no need to download anything",
-                          ToString(modelType).c_str());
+                          ReadableModelTypeToString(modelType).c_str());
                     if (modelType == ReadablesModelType::Book) {
                         booksAlreadySynced = true;
                     } else if (modelType == ReadablesModelType::Article) {
@@ -512,21 +510,22 @@ void LocalStore::syncFromRemote(
                                             progressCallback, modelType) ||
                     failedDownload;
                 if (failedDownload) {
-                    log_d("Failed to process %ss, have %zu %ss", ToString(modelType).c_str(),
-                          readables->size(), ToString(modelType).c_str());
+                    log_d("Failed to process %ss, have %zu %ss",
+                          ReadableModelTypeToString(modelType).c_str(), readables->size(),
+                          ReadableModelTypeToString(modelType).c_str());
                 }
                 progressCallback(syncState);
             }
 
             if (!this->saveReadables(*readables)) {
-                log_e("Failed to save %s", ToString(modelType).c_str());
+                log_e("Failed to save %s", ReadableModelTypeToString(modelType).c_str());
                 failedDownload = true;
             }
 
             // Store since date values for next sync
             log_i("%sSetting last%sSince to %s/%s", failedDownload ? "Not " : "",
-                  ToString(modelType).c_str(), checkSyncResponse.booksSince.c_str(),
-                  checkSyncResponse.articlesSince.c_str());
+                  ReadableModelTypeToString(modelType).c_str(),
+                  checkSyncResponse.booksSince.c_str(), checkSyncResponse.articlesSince.c_str());
             std::string serverSince;
             if (!failedDownload) {
                 if (checkSyncResponse.booksSince != "") {
@@ -545,31 +544,17 @@ void LocalStore::syncFromRemote(
             }
 
             // Update the since dates and try once more to sync to ensure we don't miss anything
-            doc->clear();
-            body = doc->to<JsonObject>();
-            storedUuidsJsonArray = body.createNestedArray("stored_uuids");
-            this->storedReadableUuids(*readables, storedUuidsJsonArray);
-
-            body["sync_reason"] = (int)syncReason;
-            body["pt_battery"] = PreferencesStore::lastPageTurnerBattery;
-            body["pt_build"] = this->prefs_.lastPageTurnerBuild.get().value_or("");
-            body["build"] = kVersionString;
-            body["git_hash"] = kGitHash;
-            body["sn"] = GetSerialNumber();
-            body["skip_content"] = true;
-            if (modelType == ReadablesModelType::Book) {
-                body["books_since"] = serverSince;
-            } else if (modelType == ReadablesModelType::Article) {
-                body["articles_since"] = serverSince;
-            }
+            storedUuids.clear();
+            this->storedReadableUuids(*readables, storedUuids);
+            checkSyncRequest.storedUuids = storedUuids;
+            checkSyncRequest.since = serverSince;
 
             SHOW_HEAP();
-            SindarinAPI::getInstance()->checkSync(doc, &checkSyncResponse,
-                                                  ToString(modelType).c_str());
+            SindarinAPI::getInstance()->checkSync(checkSyncRequest, &checkSyncResponse);
 
             // TODO: Force reload of rootUI instead of rebooting
             if (checkSyncResponse.synced) {
-                log_i("%ss are in sync", ToString(modelType).c_str());
+                log_i("%ss are in sync", ReadableModelTypeToString(modelType).c_str());
                 if (modelType == ReadablesModelType::Book) {
                     booksNowSynced = true;
                 } else if (modelType == ReadablesModelType::Article) {
@@ -577,7 +562,7 @@ void LocalStore::syncFromRemote(
                 }
             } else {
                 log_w("After running sync, local %ss are still out of sync",
-                      ToString(modelType).c_str());
+                      ReadableModelTypeToString(modelType).c_str());
                 checkSyncFailures += 1;
             }
         }
@@ -706,7 +691,7 @@ auto LocalStore::processReadableDownload(
                 addReadable(readables, readable);
                 log_d("File successfully downloaded.");
                 if (!saveReadables(readables)) {
-                    log_e("Failed to save %s", ToString(modelType).c_str());
+                    log_e("Failed to save %s", ReadableModelTypeToString(modelType).c_str());
                 }
 
                 break;
@@ -760,14 +745,15 @@ void LocalStore::deleteReadableFiles(const ReadablesVector &readables, bool rest
 
     int64_t start = esp_timer_get_time();
     for (const Readable &readable : readables) {
-        log_i("Removing %s \"%s\"", ToString(modelType).c_str(), readable.title.c_str());
+        log_i("Removing %s \"%s\"", ReadableModelTypeToString(modelType).c_str(),
+              readable.title.c_str());
         readableFilePurge(readable);
     }
     int64_t duration = esp_timer_get_time() - start;
-    log_d("Purged %zu %ss in %" PRIi64 " ms", readables.size(), ToString(modelType).c_str(),
-          duration / 1000);
+    log_d("Purged %zu %ss in %" PRIi64 " ms", readables.size(),
+          ReadableModelTypeToString(modelType).c_str(), duration / 1000);
 
-    log_i("Resetting to guarantee %s are removed", ToString(modelType).c_str());
+    log_i("Resetting to guarantee %s are removed", ReadableModelTypeToString(modelType).c_str());
 
     if (restart) {
         PowerManager::getInstance().reboot();

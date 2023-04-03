@@ -40,6 +40,9 @@ auto convertToJson(const ReadableBookmark &src, JsonVariant dst) -> bool {
     dst["starting_position"] = src.startingPosition;
     dst["ending_position"] = src.endingPosition;
     dst["readable"] = src.readable;
+    if (src.willDelete) {
+        dst["status"] = 0;
+    }
 
     return true;
 }

@@ -1,10 +1,50 @@
 #pragma once
 
+#include <ArduinoJson.h>
 #include <string>
 
 #include "Misc/SpiramAllocator.hpp"
 #include "Models/JsonSerializable.hpp"
+#include "Models/ReadableArchive.hpp"
+#include "Models/ReadableBookmark.hpp"
+#include "Models/ReadablePlacemark.hpp"
 #include "Models/UserReadable.hpp"
+#include "Storage/PreferencesStore.hpp"
+
+enum class ReadablesModelType { Article, Book };
+
+auto ReadableModelTypeToString(ReadablesModelType type) -> std::string;
+
+typedef std::vector<std::string, SpiramAllocator<std::string>> StoredUuidsVector;
+typedef std::vector<ReadableArchive, SpiramAllocator<ReadableArchive>> ReadableArchivesVector;
+typedef std::vector<ReadablePlacemark, SpiramAllocator<ReadablePlacemark>> ReadablePlacemarksVector;
+typedef std::vector<ReadableBookmark, SpiramAllocator<ReadableBookmark>> ReadableBookmarksVector;
+
+class CheckSyncRequest : JsonSerializable {
+public:
+    CheckSyncRequest() = default;
+    CheckSyncRequest(const CheckSyncRequest &) = delete;
+    ~CheckSyncRequest() override = default;
+
+    StoredUuidsVector storedUuids;
+    ReadableBookmarksVector bookmarks;
+    ReadableArchivesVector archives;
+    ReadablePlacemarksVector placemarks;
+
+    std::string since;
+    ReadablesModelType modelType;
+    bool skipContent;
+    SyncReason syncReason;
+    uint8_t ptBattery;
+    std::string ptBuild;
+    std::string build;
+    std::string gitHash;
+    std::string sn;
+
+    auto fromJson(const JsonObject &j) -> bool override { return true; }
+};
+
+auto convertToJson(const CheckSyncRequest &src, JsonVariant dst) -> bool;
 
 class CheckSyncResponse : JsonSerializable {
 public:

@@ -41,29 +41,31 @@ void SindarinAPI::setAuth(HttpClient &client) {
 
 void SindarinAPI::setAccessToken(const std::string &token) { accessToken_ = token; }
 
-auto SindarinAPI::checkSync(const std::shared_ptr<SpiRamJsonDocument> &doc, CheckSyncResponse *resp,
-                            const std::string &modelType) -> int {
-    auto url = StringFormat(SINDARIN_SERVER_URL "/sync/%ss/", modelType.c_str());
-    log_d("Checking sync: %s", url.c_str());
-    return checkSync(url, doc, resp, modelType);
+auto SindarinAPI::checkSync(CheckSyncRequest &req, CheckSyncResponse *resp) -> int {
+    auto url = StringFormat(SINDARIN_SERVER_URL "/sync/%ss/",
+                            ReadableModelTypeToString(req.modelType).c_str());
+    log_d("Checking sync for %s: %s", ReadableModelTypeToString(req.modelType).c_str(),
+          url.c_str());
+    return checkSync(url, req, resp);
 }
 
-auto SindarinAPI::checkSync(const std::string &url, const std::shared_ptr<SpiRamJsonDocument> &doc,
-                            CheckSyncResponse *resp, const std::string &modelType) -> int {
+auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, CheckSyncResponse *resp)
+    -> int {
     HttpClient client(url.c_str(), "application/json", HTTP_METHOD_POST);
     setAuth(client);
 
-    // auto bodyLength = doc->memoryUsage();
-    // client.open(bodyLength);
-    // auto ostream = client.makeWriteStream();
-    // size_t writeLength = serializeJson(*doc, *ostream);
+    auto doc = std::make_shared<SpiRamJsonDocument>(
+        2048 * std::max(1, (int)(req.placemarks.size() + req.archives.size() +
+                                 req.bookmarks.size() + req.storedUuids.size())));
+    JsonObject body = doc->to<JsonObject>();
+    convertToJson(req, body);
 
     size_t serializedMaxSize = (*doc).memoryUsage() * 2;
-    char *body = (char *)heap_caps_malloc(serializedMaxSize, MALLOC_CAP_SPIRAM);
-    size_t bodyLength = serializeJson(*doc, body, serializedMaxSize);
+    char *reqBody = (char *)heap_caps_malloc(serializedMaxSize, MALLOC_CAP_SPIRAM);
+    size_t bodyLength = serializeJson(*doc, reqBody, serializedMaxSize);
 
     client.open(bodyLength);
-    int writeLength = client.write(body, bodyLength);
+    int writeLength = client.write(reqBody, bodyLength);
     if (writeLength < bodyLength) {
         log_w("HttpClient failed to write (writeLength=%d, bodyLength=%zu)", writeLength,
               bodyLength);
@@ -73,13 +75,13 @@ auto SindarinAPI::checkSync(const std::string &url, const std::shared_ptr<SpiRam
     int contentLength = client.fetchHeaders();
     if (contentLength <= 0) {
         log_e("Failed to fetch headers");
-        heap_caps_free(body);
+        heap_caps_free(reqBody);
         return 0;
     }
     int httpCode = client.getStatusCode();
     if (httpCode != 200) {
         log_e("Failed to check sync: %d", httpCode);
-        heap_caps_free(body);
+        heap_caps_free(reqBody);
         return httpCode;
     }
     auto stream = client.makeReadStream();
@@ -108,7 +110,7 @@ auto SindarinAPI::checkSync(const std::string &url, const std::shared_ptr<SpiRam
     log_d("Synced: %d Message: %s", resp->synced, resp->message.c_str());
 
     SHOW_HEAP();
-    heap_caps_free(body);
+    heap_caps_free(reqBody);
     SHOW_HEAP();
 
     return httpCode;

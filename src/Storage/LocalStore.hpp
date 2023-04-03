@@ -5,7 +5,7 @@
 
 #include "Communications/SindarinAPI.hpp"
 #include "Misc/Dispatch.hpp"
-#include "Models/CheckSyncResponse.hpp"
+#include "Models/CheckSync.hpp"
 #include "Models/Readable.hpp"
 #include "Models/UserReadable.hpp"
 #include "Storage/FileSystem.hpp"
@@ -33,8 +33,6 @@ struct ContentSyncState {
     std::string message;
 };
 
-enum class ReadablesModelType { Article, Book };
-
 typedef std::vector<Readable, SpiramAllocator<Readable>> ReadablesVector;
 typedef std::vector<UserReadable, SpiramAllocator<UserReadable>> UserReadablesVector;
 
@@ -57,12 +55,12 @@ public:
     void removeReadable(ReadablesVector &readables, const Readable &readable);
     auto readablesSince(const ReadablesModelType modelType) -> std::string;
 
-    void storedReadableUuids(const ReadablesVector &readables, JsonArray &storedUuidsJsonArray);
+    void storedReadableUuids(const ReadablesVector &readables, StoredUuidsVector &storedUuids);
     void changedReadablePlacemarkJson(const ReadablesVector &readables,
-                                      JsonArray &placemarksJsonArray);
+                                      ReadablePlacemarksVector &placemarks);
     void changedReadablesArchivedJson(const ReadablesVector &readables,
-                                      JsonArray &archivedJsonArray);
-    void changedReadablesBookmarksJson(JsonArray &bookmarksJsonArray);
+                                      ReadableArchivesVector &archives);
+    void changedReadablesBookmarksJson(ReadableBookmarksVector &bookmarks);
     auto processReadablePlacemarksFromServer(const Readable &readable, const uint32_t placemark)
         -> bool;
     auto processReadableBookmarksFromServer(const Readable &readable,
