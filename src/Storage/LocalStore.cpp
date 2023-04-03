@@ -547,6 +547,9 @@ void LocalStore::syncFromRemote(
             storedUuids.clear();
             this->storedReadableUuids(*readables, storedUuids);
             checkSyncRequest.storedUuids = storedUuids;
+            checkSyncRequest.bookmarks = {};
+            checkSyncRequest.archives = {};
+            checkSyncRequest.placemarks = {};
             checkSyncRequest.since = serverSince;
 
             SHOW_HEAP();
