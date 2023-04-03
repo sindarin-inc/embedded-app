@@ -6,9 +6,18 @@
 //---  ESP_IDF
 //#include <esp_log.h>
 
-#define LATIN_SUPPORT 0
+const constexpr bool IBMF_TRACING = false;
 
-const constexpr bool IBMF_TRACING = true;
+#define LATIN_SUPPORT 0
+#define OPTICAL_KERNING 1
+
+#if OPTICAL_KERNING
+const constexpr int K_BUFF_WIDTH = 40;
+const constexpr int K_BUFF_HEIGHT = 25;
+const constexpr int K_ORIGIN_X = 5;
+const constexpr int K_ORIGIN_Y = 19;
+const constexpr int KERNING_SIZE = 1;
+#endif
 
 // The following is used when testing the driver outside of this application
 #if IBMF_TESTING

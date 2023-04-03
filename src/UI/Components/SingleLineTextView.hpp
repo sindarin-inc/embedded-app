@@ -9,7 +9,8 @@
 class SingleLineTextView : public EinkView {
 public:
     SingleLineTextView(DisplaySystem &display, std::string text,
-                       Font *font = (Font *)&FONT_TAHOMA_REGULAR_FONT5PT7B, bool allCaps = false)
+                       Font *font = static_cast<Font *>(&FONT_TAHOMA_REGULAR_FONT5PT7B),
+                       bool allCaps = false)
         : EinkView(display), font_(font) {
         setText(std::move(text), allCaps);
     }
@@ -50,7 +51,8 @@ public:
             display_.getTextBounds(text_.c_str(), &w, &h);
         }
         display_.setFont(oldFont);
-        return {w, display_.getFont()->yAdvance()};
+        Font *theFont = display_.getFont();
+        return {w, theFont->yAdvance()};
     }
 
     void drawInRect(Rect rect) override {

@@ -123,6 +123,7 @@ public:
             }
         }
         initialized_ = true;
+        // showFont();
         return true;
     }
 
@@ -307,6 +308,9 @@ public:
             if (preamble_->bits.fontFormat == FontFormat::UTF32) {
                 showPlanes();
             }
+        }
+        for (int i = 0; i < preamble_->faceCount; i++) {
+            faces_[i].showFace();
         }
     }
 };

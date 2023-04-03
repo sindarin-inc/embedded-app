@@ -91,7 +91,7 @@ public:
         return (face_ != nullptr) ? face_->getResolution() : DEFAULT_RESOLUTION;
     }
 
-    [[nodiscard]] inline auto yAdvance() const -> int override {
+    auto yAdvance() const -> int override {
         if constexpr (IBMF_TRACING) {
             LOGD("yAdvance()");
             if (!isInitialized()) {
@@ -115,7 +115,9 @@ public:
 
             ligKernUTF8Map(line, [this, &glyph, &atPos](GlyphCode glyphCode, FIX16 kern) {
                 if (this->face_->getGlyph(glyphCode, glyph, true, false, atPos)) {
-                    atPos.x += (glyph.metrics.advance + kern + ((kern < 0) ? -32 : 32)) >> 6;
+                    // As advance is positive and greather than kern, we can shift right
+                    // to get rid of the fix point decimals
+                    atPos.x += (glyph.metrics.advance + kern) >> 6;
                 } else {
                     LOGW("Unable to retrieve glyph for glyphCode %d", glyphCode);
                 }

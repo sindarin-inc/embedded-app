@@ -125,9 +125,9 @@ public:
     /// @param kern Out. When a kerning entry is found in the program, kern will receive the value.
     /// @return True if a ligature was found, false otherwise.
     ///
-    auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const -> bool {
+    auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) -> bool {
         if ((glyphCode1 == NO_GLYPH_CODE) || (glyphCode1 == SPACE_CODE) ||
-            (*glyphCode2 == NO_GLYPH_CODE) || (*glyphCode2 == NO_GLYPH_CODE)) {
+            (*glyphCode2 == NO_GLYPH_CODE) || (*glyphCode2 == SPACE_CODE)) {
             *kern = 0;
             return false;
         }
@@ -137,41 +137,141 @@ public:
             *kern = 0;
             return false;
         }
+
+        // Check for ligatures
         uint16_t lkIdx = getLigKernPgmIndex(glyphCode1);
-        if (lkIdx == NO_LIG_KERN_PGM) {
+        if (lkIdx != NO_LIG_KERN_PGM) {
+            LigKernStep *lk = getLigKernStep(lkIdx);
+            if (lk->b.goTo.isAKern && lk->b.goTo.isAGoTo) {
+                lkIdx = lk->b.goTo.displacement;
+                lk = getLigKernStep(lkIdx);
+            }
+
+            GlyphCode code = (*glyphsInfo_)[*glyphCode2].mainCode;
+#if LATIN_SUPPORT
+            if (fontFormat_ == FontFormat::LATIN) {
+                code &= LATIN_GLYPH_CODE_MASK;
+            }
+#endif
+            bool first = true;
+
+            do {
+                if (!first) {
+                    lk++;
+                } else {
+                    first = false;
+                }
+
+                if (lk->a.nextGlyphCode == code) {
+                    if (lk->b.kern.isAKern) {
+                        *kern = lk->b.kern.kerningValue;
+                        return false; // No other iteration to be done
+                    } else {
+                        *glyphCode2 = lk->b.repl.replGlyphCode;
+                        return true;
+                    }
+                }
+            } while (!lk->a.stop);
+        }
+
+#if OPTICAL_KERNING
+        const constexpr size_t K_BUFF_PITCH = ((K_BUFF_WIDTH + 7) >> 3);
+        const constexpr size_t K_BUFF_SIZE = K_BUFF_PITCH * K_BUFF_HEIGHT;
+        static uint8_t buff[K_BUFF_SIZE];
+        Glyph glyph;
+
+        glyph.bitmap =
+            Bitmap{.pixels = static_cast<MemoryPtr>(buff), .dim = Dim(K_BUFF_WIDTH, K_BUFF_HEIGHT)};
+        memset(buff, WHITE_EIGHT_BITS, K_BUFF_SIZE);
+        Pos pos = Pos(K_ORIGIN_X, K_ORIGIN_Y);
+
+        // Position the first glyph in the buffer
+        bool result = getGlyph(glyphCode1, glyph, true, false, pos);
+        if (!result) {
+            LOGE("Unable to load glyphCode %d related glyph bitmap.", glyphCode1);
             return false;
         }
-        LigKernStep *lk = getLigKernStep(lkIdx);
-        if (lk->b.goTo.isAKern && lk->b.goTo.isAGoTo) {
-            lkIdx = lk->b.goTo.displacement;
-            lk = getLigKernStep(lkIdx);
-        }
 
-        GlyphCode code = (*glyphsInfo_)[*glyphCode2].mainCode;
-#if LATIN_SUPPORT
-        if (fontFormat_ == FontFormat::LATIN) {
-            code &= LATIN_GLYPH_CODE_MASK;
+        int voff = (*glyphsInfo_)[*glyphCode2].verticalOffset;
+        int hoff = (*glyphsInfo_)[*glyphCode2].horizontalOffset;
+
+        Glyph glyph2;
+        result = getGlyph(*glyphCode2, glyph2, true, true, Pos(0, voff));
+        if (!result) {
+            LOGE("Unable to load glyphCode %d related glyph bitmap.", *glyphCode2);
+            return false;
         }
-#endif
+        // showBitmap(glyph2.bitmap);
+        int advance =
+            ((glyph.metrics.advance + 32) >> 6); // + (*glyphsInfo_)[*glyphCode2].horizontalOffset;
+        if (advance == 0) advance = glyph.bitmap.dim.width + 1;
+
+        pos.x += advance;
+
+        int max = advance;
+        int kerning = 0;
+        int pitch2 = (glyph2.bitmap.dim.width + 7) >> 3;
+
         bool first = true;
+        int col, row;
+        uint8_t mask, mask2;
+        int idx, idx2, ridx, ridx2;
 
-        do {
-            if (!first) {
-                lk++;
-            } else {
-                first = false;
-            }
+        while (max > 0) {
 
-            if (lk->a.nextGlyphCode == code) {
-                if (lk->b.kern.isAKern) {
-                    *kern = lk->b.kern.kerningValue;
-                    return false; // No other iteration to be done
-                } else {
-                    *glyphCode2 = lk->b.repl.replGlyphCode;
-                    return true;
+            mask = 0x80 >> ((pos.x - hoff) & 7);
+            mask2 = 0x80;
+            idx = ((pos.y - voff) * K_BUFF_PITCH) + ((pos.x - hoff) >> 3);
+            idx2 = 0;
+
+            for (col = 0; col < glyph2.bitmap.dim.width; col++) {
+
+                for (row = 0, ridx = idx, ridx2 = idx2; row < glyph2.bitmap.dim.height;
+                     row++, ridx += K_BUFF_PITCH, ridx2 += pitch2) {
+                    if constexpr (BLACK_ONE_BIT) {
+                        if ((glyph2.bitmap.pixels[ridx2] & mask2) != 0) {
+                            if ((buff[ridx] & mask) != 0) {
+                                goto fin;
+                            } else if ((buff[ridx - K_BUFF_PITCH] & mask) != 0) {
+                                goto fin;
+                            } else if ((buff[ridx + K_BUFF_PITCH] & mask) != 0) {
+                                goto fin;
+                            }
+                        }
+                    } else {
+                        if ((glyph2.bitmap.pixels[ridx2] & mask2) == 0) {
+                            if ((buff[ridx] & mask) == 0) {
+                                goto fin;
+                            } else if ((buff[ridx - K_BUFF_PITCH] & mask) == 0) {
+                                goto fin;
+                            } else if ((buff[ridx + K_BUFF_PITCH] & mask) == 0) {
+                                goto fin;
+                            }
+                        }
+                    }
+                }
+                mask >>= 1;
+                if (mask == 0) {
+                    mask = 0x80;
+                    idx += 1;
+                }
+                mask2 >>= 1;
+                if (mask2 == 0) {
+                    mask2 = 0x80;
+                    idx2 += 1;
                 }
             }
-        } while (!lk->a.stop);
+
+            first = false;
+            pos.x -= 1;
+            kerning -= 1;
+            max -= 1;
+        }
+    fin:
+        delete[] glyph2.bitmap.pixels;
+        *kern = static_cast<FIX16>((max > 0) ? ((kerning + KERNING_SIZE + 1) << 6) : 0);
+        // LOGD("Computed kern: %d (%d).", static_cast<int>((float)*kern / 64.0), kerning);
+#endif
         return false;
     }
 
@@ -236,9 +336,9 @@ public:
 
         Dim dim = Dim(glyphInfo->bitmapWidth, glyphInfo->bitmapHeight);
         Pos glyphOffsets = Pos(0, 0);
-        Pos accentOffsets = Pos(0, 0);
 
 #if LATIN_SUPPORT
+        Pos accentOffsets = Pos(0, 0);
         if (accentIsPresent) {
 
             if (latinCode == 0xE06E) { // Apostrophe n
@@ -313,13 +413,16 @@ public:
         } else {
             glyphOffsets.y = -glyphInfo->verticalOffset;
         }
-#else
-        glyphOffsets.y = -glyphInfo->verticalOffset;
-#endif
         if (!caching) {
             glyphOffsets.x -= glyphInfo->horizontalOffset;
             accentOffsets.x -= glyphInfo->horizontalOffset;
         }
+#else
+        glyphOffsets.y = -glyphInfo->verticalOffset;
+        if (!caching) {
+            glyphOffsets.x -= glyphInfo->horizontalOffset;
+        }
+#endif
 
         if (loadBitmap) {
             if (caching) {
@@ -345,8 +448,9 @@ public:
                                      .length = glyphInfo->packetLength};
             RLEExtractor rle(resolution_);
 
-            Pos outPos = Pos(atPos.x + accentOffsets.x, atPos.y + accentOffsets.y);
+            Pos outPos;
 #if LATIN_SUPPORT
+            outPos = Pos(atPos.x + accentOffsets.x, atPos.y + accentOffsets.y);
             if (accentIsPresent) {
                 RLEBitmap accentBitmap = {
                     .pixels = &(*pixelsPool_)[(*glyphsPixelPoolIndexes_)[accentIdx]],
@@ -354,11 +458,12 @@ public:
                     .length = accentInfo->packetLength};
                 rle.retrieveBitmap(accentBitmap, appGlyph.bitmap, outPos, accentInfo->rleMetrics);
 
-                showBitmap(appGlyph.bitmap);
+                // showBitmap(appGlyph.bitmap);
             }
 #endif
-
             outPos = Pos(atPos.x + glyphOffsets.x, atPos.y + glyphOffsets.y);
+            // std::cout << "inPos: [" << atPos.x << ", " << atPos.y << "], outPos: [" << outPos.x
+            //           << ", " << outPos.y << "] " << std::endl;
             rle.retrieveBitmap(glyphBitmap, appGlyph.bitmap, outPos, glyphInfo->rleMetrics);
         }
 

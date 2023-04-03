@@ -23,8 +23,8 @@ struct MenuStyleFamily {
 class MenuStyle {
 public:
     MenuStyle() {
-        mainMenu.itemFont = (Font *)&FONT_TAHOMA_REGULAR_FONT6PT7B;
-        mainMenu.navigationFont = (Font *)&FONT_TAHOMA_REGULAR_FONT5PT7B;
+        mainMenu.itemFont = static_cast<Font *>(&FONT_TAHOMA_REGULAR_FONT6PT7B);
+        mainMenu.navigationFont = static_cast<Font *>(&FONT_TAHOMA_REGULAR_FONT5PT7B);
 
         mainMenu.xOffsetForArrows = 45;
         mainMenu.yOffsetForArrows = 45;
@@ -35,8 +35,8 @@ public:
         mainMenu.yOffsetForList = 60;
         mainMenu.numberOfItemsPerPage = 4;
 
-        settingsMenu.itemFont = (Font *)&FONT_TAHOMA_REGULAR_FONT5PT7B;
-        settingsMenu.navigationFont = (Font *)&FONT_TAHOMA_REGULAR_FONT5PT7B;
+        settingsMenu.itemFont = static_cast<Font *>(&FONT_TAHOMA_REGULAR_FONT5PT7B);
+        settingsMenu.navigationFont = static_cast<Font *>(&FONT_TAHOMA_REGULAR_FONT5PT7B);
 
         settingsMenu.xOffsetForArrows = 25;
         settingsMenu.yOffsetForArrows = 15;
