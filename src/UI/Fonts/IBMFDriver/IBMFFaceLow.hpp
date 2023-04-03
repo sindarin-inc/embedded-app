@@ -126,6 +126,17 @@ public:
     /// @return True if a ligature was found, false otherwise.
     ///
     auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) const -> bool {
+        if ((glyphCode1 == NO_GLYPH_CODE) || (glyphCode1 == SPACE_CODE) ||
+            (*glyphCode2 == NO_GLYPH_CODE) || (*glyphCode2 == NO_GLYPH_CODE)) {
+            *kern = 0;
+            return false;
+        }
+        if ((glyphCode1 >= faceHeader_->glyphCount) || (*glyphCode2 >= faceHeader_->glyphCount)) {
+            LOGE("Bad Glyphcode glyphCode1: %d, glyphCode2: %d, max: %d", glyphCode1, *glyphCode2,
+                 faceHeader_->glyphCount);
+            *kern = 0;
+            return false;
+        }
         uint16_t lkIdx = getLigKernPgmIndex(glyphCode1);
         if (lkIdx == NO_LIG_KERN_PGM) {
             return false;
@@ -136,7 +147,7 @@ public:
             lk = getLigKernStep(lkIdx);
         }
 
-        GlyphCode code = *glyphCode2;
+        GlyphCode code = (*glyphsInfo_)[*glyphCode2].mainCode;
 #if LATIN_SUPPORT
         if (fontFormat_ == FontFormat::LATIN) {
             code &= LATIN_GLYPH_CODE_MASK;
@@ -437,14 +448,17 @@ public:
 
     auto showGlyphInfo(GlyphCode i, const GlyphInfo &g) const -> void {
         if constexpr (DEBUG) {
-            std::cout << "  [" << i << "]: "
-                      << ", height: " << +g.bitmapHeight << ", hoffset: " << +g.horizontalOffset
-                      << ", voffset: " << +g.verticalOffset << ", pktLen: " << +g.packetLength
-                      << ", advance: " << +((float)g.advance / 64.0)
+            std::cout << "  [" << i << "]: w: " << +g.bitmapWidth << ", h: " << +g.bitmapHeight
+                      << ", hoff: " << +g.horizontalOffset << ", voff: " << +g.verticalOffset
+                      << ", pktLen: " << +g.packetLength << ", adv: " << +((float)g.advance / 64.0)
                       << ", dynF: " << +g.rleMetrics.dynF
-                      << ", firstIsBlack: " << +g.rleMetrics.firstIsBlack
-                      << ", ligKernPgmIndex: " << +g.ligKernPgmIndex
-                      << ", pixelsPoolIndex: " << +(*glyphsPixelPoolIndexes_)[i] << std::endl;
+                      << ", 1stBlack: " << +g.rleMetrics.firstIsBlack
+                      << ", lKPgmIdx: " << +g.ligKernPgmIndex
+                      << ", poolIdx: " << +(*glyphsPixelPoolIndexes_)[i];
+            if (g.mainCode != i) {
+                std::cout << ", mainCode: " << g.mainCode;
+            }
+            std::cout << std::endl;
         }
     }
 
@@ -481,16 +495,16 @@ public:
 
             std::cout << std::endl << "----------- Face Header: ----------" << std::endl;
 
-            std::cout << "DPI: " << faceHeader_->dpi << ", point size: " << +faceHeader_->pointSize
-                      << ", line height: " << +faceHeader_->lineHeight
-                      << ", x height: " << +((float)faceHeader_->xHeight / 64.0)
-                      << ", em size: " << +((float)faceHeader_->emHeight / 64.0)
-                      << ", space size: " << +((float)faceHeader_->spaceSize / 64.0)
-                      << ", glyph count: " << +faceHeader_->glyphCount
-                      << ", lig kern count: " << +faceHeader_->ligKernStepCount
-                      << ", Pixels Pool Size: " << +faceHeader_->pixelsPoolSize
-                      << ", slant corr: " << +faceHeader_->slantCorrection
-                      << ", descender height: " << +faceHeader_->descenderHeight << std::endl;
+            std::cout << "DPI: " << faceHeader_->dpi << ", point siz: " << +faceHeader_->pointSize
+                      << ", linHght: " << +faceHeader_->lineHeight
+                      << ", xHght: " << +((float)faceHeader_->xHeight / 64.0)
+                      << ", emSiz: " << +((float)faceHeader_->emHeight / 64.0)
+                      << ", spcSiz: " << +faceHeader_->spaceSize
+                      << ", glyphCnt: " << +faceHeader_->glyphCount
+                      << ", LKCnt: " << +faceHeader_->ligKernStepCount
+                      << ", PixPoolSiz: " << +faceHeader_->pixelsPoolSize
+                      << ", slantCorr: " << +((float)faceHeader_->slantCorrection / 64.0)
+                      << ", descHght: " << +faceHeader_->descenderHeight << std::endl;
 
             std::cout << std::endl << "----------- Glyphs: ----------" << std::endl;
 

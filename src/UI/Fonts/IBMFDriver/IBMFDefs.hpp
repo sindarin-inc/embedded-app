@@ -8,7 +8,7 @@
 
 #define LATIN_SUPPORT 0
 
-const constexpr bool IBMF_TRACING = false;
+const constexpr bool IBMF_TRACING = true;
 
 // The following is used when testing the driver outside of this application
 #if IBMF_TESTING
@@ -408,6 +408,7 @@ struct GlyphInfo {
     FIX16 advance;           // Normal advance to the next glyph position in line
     RLEMetrics rleMetrics;   // RLE Compression information
     uint8_t ligKernPgmIndex; // = 255 if none, Index in the ligature/kern array
+    GlyphCode mainCode;      // Main composite (or not) glyphCode for kerning matching algo
 };
 typedef GlyphInfo (*GlyphsInfoPtr)[];
 
