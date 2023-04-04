@@ -190,7 +190,7 @@ auto LocalStore::changedReadablesArchivedQueryParams(const ReadablesVector &read
     return archived;
 }
 
-auto LocalStore::changedReadablesBookmarksJson() -> std::pair<char *, int> {
+auto LocalStore::changedReadablesBookmarksJson() -> std::pair<std::shared_ptr<char[]>, int> {
     auto doc = std::make_unique<SpiRamJsonDocument>(
         2048 * std::max(1, (int)readables_.size() + (int)articles_.size()));
     JsonArray bookmarksJsonArray = doc->to<JsonArray>();
@@ -265,8 +265,8 @@ auto LocalStore::changedReadablesBookmarksJson() -> std::pair<char *, int> {
     }
 
     size_t serializedMaxSize = (*doc).memoryUsage() * 2;
-    char *bookmarksJson = (char *)heap_caps_malloc(serializedMaxSize, MALLOC_CAP_SPIRAM);
-    size_t serializedLength = serializeJson(*doc, bookmarksJson, serializedMaxSize);
+    auto bookmarksJson = SpiRamArrayPtr<char>(serializedMaxSize);
+    size_t serializedLength = serializeJson(*doc, bookmarksJson.get(), serializedMaxSize);
 
     return std::make_pair(bookmarksJson, serializedLength);
 }
@@ -563,7 +563,7 @@ void LocalStore::syncFromRemote(
         // Sync bookmarks before we download any new readables
         if (readablesBookmarkedSize > 0) {
             log_i("Syncing bookmarks");
-            auto success = SindarinAPI::getInstance()->syncBookmarks(readablesBookmarked,
+            auto success = SindarinAPI::getInstance()->syncBookmarks(readablesBookmarked.get(),
                                                                      readablesBookmarkedSize);
             if (success) {
                 log_i("Bookmarks synced");

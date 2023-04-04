@@ -136,16 +136,16 @@ auto DownloadFile(const char *url,
                   const std::function<void(int bytesWritten, float percentage)> &progressCallback,
                   bool gzip) -> bool {
 
-    // W25Q512JV* chips have a page size of 256 bytes so we should only use a multiple of that
     constexpr int bufferSize = 4096;
-    auto *buffer = (uint8_t *)heap_caps_malloc(bufferSize, MALLOC_CAP_SPIRAM);
+    auto buffer = SpiRamArrayPtr<uint8_t>(bufferSize);
 
     return DownloadFile(
         url, openedConnection,
         [buffer, bufferSize, writeBytes](HttpClient &client, int index, int contentLength) {
-            int readLen = client.read((char *)buffer, std::min(bufferSize, contentLength - index));
+            int readLen =
+                client.read((char *)buffer.get(), std::min(bufferSize, contentLength - index));
 
-            auto written = writeBytes(buffer, (size_t)readLen);
+            auto written = writeBytes(buffer.get(), (size_t)readLen);
             if (written != readLen) {
                 log_w("Failed to write to file, wrote %zu but expected %d", written, readLen);
             }
@@ -173,7 +173,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
     // TODO: We could probably improve overall speed, while minimizing WiFi connected time by
     // writing to disk as we go from another core or writing to disk from a lower priority task. But
     // that will be harder to make
-    uint8_t *fileBuffer = nullptr;
+    std::shared_ptr<uint8_t[]> fileBuffer;
     int fileLength;
 
     // Because file writes tend to be twice the time the http download takes right now, adjust the
@@ -187,16 +187,16 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
         url,
         [&fileBuffer, &fileLength](int httpCode, int contentLength) -> bool {
             fileLength = contentLength;
-            fileBuffer = (uint8_t *)heap_caps_malloc(contentLength, MALLOC_CAP_SPIRAM);
+            fileBuffer = SpiRamArrayPtr<uint8_t>(contentLength);
             if (fileBuffer == nullptr) {
                 log_e("Failed to allocate %d bytes for file download", contentLength);
                 return false;
             }
             return true;
         },
-        [&fileBuffer](HttpClient &client, int index, int contentLength) -> size_t {
+        [fileBuffer](HttpClient &client, int index, int contentLength) -> size_t {
             constexpr int bufferSize = 16384;
-            return client.read((char *)(fileBuffer + index),
+            return client.read((char *)(fileBuffer.get() + index),
                                std::min(bufferSize, contentLength - index));
         },
         fileProgress, gzip);
@@ -219,7 +219,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
     while (written < fileLength) {
         // Every ~ 6s at ~40-44KB/S
         auto bytesWrittenToFile =
-            file.write(fileBuffer + written, std::min(fileLength - written, 262144));
+            file.write(fileBuffer.get() + written, std::min(fileLength - written, 262144));
         if (bytesWrittenToFile <= 0) {
             log_w("Failed to write to file");
             break;
@@ -235,8 +235,6 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
     float bps = fileLength / (duration / 1000000.0f);
     log_i("File write complete %d in %" PRId64 "us (%f Bps %f KB/s, %f kbps)", fileLength, duration,
           bps, bps / 1000, 8 * bps / 1000);
-
-    heap_caps_free(fileBuffer);
 
     // The file must be re-opened to check its size
     size_t fileSize = 0;

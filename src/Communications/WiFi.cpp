@@ -3,6 +3,7 @@
 #include <cstring>
 #include <string>
 
+#include "Misc/SpiramAllocator.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
 
@@ -144,9 +145,8 @@ auto WiFi::hasWiFiCredentials() -> bool {
     return hasWiFiCredentials(&conf);
 }
 
-auto WiFi::scanNetworks(
-    const std::function<void(wifi_ap_record_t *apRecords, int recordCount)> &completeCB)
-    -> esp_err_t {
+auto WiFi::scanNetworks(const std::function<void(std::shared_ptr<wifi_ap_record_t[]> apRecords,
+                                                 int recordCount)> &completeCB) -> esp_err_t {
 
     esp_err_t err = begin();
     if (err != ESP_OK) {
@@ -178,10 +178,9 @@ auto WiFi::scanNetworks(
     }
     SHOW_HEAP();
 
-    auto apRecords =
-        (wifi_ap_record_t *)heap_caps_malloc(sizeof(wifi_ap_record_t) * apNum, MALLOC_CAP_8BIT);
+    auto apRecords = SpiRamArrayPtr<wifi_ap_record_t>(apNum);
 
-    err = esp_wifi_scan_get_ap_records(&apNum, apRecords);
+    err = esp_wifi_scan_get_ap_records(&apNum, apRecords.get());
     if (err != ESP_OK) {
         log_e("esp_wifi_scan_get_ap_records failed with error %s", esp_err_to_name(err));
         return err;
@@ -190,7 +189,6 @@ auto WiFi::scanNetworks(
 
     completeCB(apRecords, apNum);
 
-    heap_caps_free(apRecords);
     SHOW_HEAP();
 
     err = esp_wifi_stop();
