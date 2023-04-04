@@ -12,6 +12,8 @@
 
 #define CONNECTION_INTERVAL_MIN 40
 #define CONNECTION_INTERVAL_MAX 90
+#define CONNECTION_LATENCY 10
+#define CONNECTION_TIMEOUT 1000
 
 using namespace std::placeholders;
 
@@ -23,7 +25,8 @@ auto TTRemoteInput::connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &
     }
 
     // Update connection parameters after establishing a connection
-    client_->setConnectionParams(CONNECTION_INTERVAL_MIN, CONNECTION_INTERVAL_MAX, 10, 1000);
+    client_->setConnectionParams(CONNECTION_INTERVAL_MIN, CONNECTION_INTERVAL_MAX,
+                                 CONNECTION_LATENCY, CONNECTION_TIMEOUT);
 
     BLEAddress address = device->getAddress();
     log_d("Attempting to connect to TurnTouch at address: %s", address.toString().c_str());
