@@ -49,6 +49,11 @@ public:
         assert(0);
         return false;
     }
+    virtual auto format() -> bool {
+        log_e("Abstract");
+        assert(0);
+        return false;
+    }
 
 protected:
     FileSystem() noexcept = default;

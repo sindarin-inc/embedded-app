@@ -9,7 +9,5 @@ public:
 
     auto begin() -> bool override;
     void close() override;
-
-protected:
-    auto format() -> bool;
+    auto format() -> bool override;
 };

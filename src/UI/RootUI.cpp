@@ -1188,6 +1188,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         (*voltageLogScreen).begin();
     }));
 
+    debugSettingsMenu->addMenuItem(
+        MenuItem("Format FS", [this, display, &fileSystem, debugSettingsMenu]() {
+            log_w("Formatting...");
+            debugSettingsMenu->showTemporaryMessage(
+                *display, "Formatting, this will take several minutes.", 2000, false);
+            fileSystem.format();
+            power_.reboot();
+        }));
+
     debugSettingsMenu->addMenuItem(MenuItem("Power Off", [this, display, debugSettingsMenu]() {
         log_w("Powering off.");
         debugSettingsMenu->showTemporaryMessage(*display, "Powering off.", 2000, false);
