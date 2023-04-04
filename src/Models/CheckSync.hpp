@@ -15,10 +15,13 @@ enum class ReadablesModelType { Article, Book };
 
 auto ReadableModelTypeToString(ReadablesModelType type) -> std::string;
 
-typedef std::vector<std::string, SpiramAllocator<std::string>> StoredUuidsVector;
-typedef std::vector<ReadableArchive, SpiramAllocator<ReadableArchive>> ReadableArchivesVector;
-typedef std::vector<ReadablePlacemark, SpiramAllocator<ReadablePlacemark>> ReadablePlacemarksVector;
-typedef std::vector<ReadableBookmark, SpiramAllocator<ReadableBookmark>> ReadableBookmarksVector;
+template <typename T>
+using SpiramVector = std::vector<T, SpiramAllocator<T>>;
+
+typedef SpiramVector<std::string> StoredUuidsVector;
+typedef SpiramVector<ReadableArchive> ReadableArchivesVector;
+typedef SpiramVector<ReadablePlacemark> ReadablePlacemarksVector;
+typedef SpiramVector<ReadableBookmark> ReadableBookmarksVector;
 
 class CheckSyncRequest : JsonSerializable {
 public:
