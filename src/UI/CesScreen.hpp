@@ -1,7 +1,7 @@
 #ifndef CES_SCREEN_HPP
 #define CES_SCREEN_HPP
 
-#include "Misc/Power.hpp"
+#include "Misc/Battery.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Sensors/LightingController.hpp"
 #include "Storage/PreferencesStore.hpp"
@@ -19,7 +19,7 @@
 
 class CesScreen : public Screen {
 public:
-    CesScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power,
+    CesScreen(DisplaySystem &display, PreferencesStore &prefs,
               LightingController &lightingController);
 
     void render(DisplaySystem &display) override;
@@ -30,7 +30,6 @@ protected:
     DisplaySystem &display_;
     Renderer renderer_;
     PreferencesStore &prefs_;
-    Power &power_;
     LightingController &lightingController_;
 
     unsigned int currentScreen_ = 0;

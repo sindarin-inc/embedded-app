@@ -23,6 +23,7 @@ public:
     uint32_t startingPosition;
     uint32_t endingPosition;
     SpiramString readable;
+    bool willDelete;
 
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("uuid") || !j.containsKey("name") || !j.containsKey("description")) {

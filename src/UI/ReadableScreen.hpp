@@ -1,6 +1,6 @@
 #include <utility>
 
-#include "Misc/Power.hpp"
+#include "Misc/Battery.hpp"
 #include "Models/Readable.hpp"
 #include "Models/ReadableBookmark.hpp"
 #include "Renderers/RendererStream.hpp"
@@ -15,13 +15,12 @@
 class ReadableScreen : public ContainerScreen {
 public:
     ReadableScreen(std::shared_ptr<RendererStream> stream, DisplaySystem &display,
-                   const Readable &readable, PreferencesStore &prefs, Power &power,
+                   const Readable &readable, PreferencesStore &prefs, Battery &battery,
                    FileSystem &fileSystem, LightingController &lightingController)
 
         : renderer_(display), firstTimeRenderer_(display), readable_(readable), prefs_(prefs),
-          popup_(display, power, renderer_, prefs_, readable_, lightingController),
-          archiveMenu_(power, readable_, prefs_, display), fileSystem_(fileSystem),
-          display_(display) {
+          popup_(display, battery, renderer_, prefs_, readable_, lightingController),
+          archiveMenu_(readable_, prefs_, display), fileSystem_(fileSystem), display_(display) {
         currentScreen_ = this;
         renderer_.setStream(std::move(stream));
         pageSpeed_ = prefs_.autoPilotSpeed.get().value_or(0);

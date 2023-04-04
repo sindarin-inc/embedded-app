@@ -1,6 +1,6 @@
-#include <inttypes.h>
-#include <math.h>
-#include <stdio.h>
+#include <cinttypes>
+#include <cmath>
+#include <cstdio>
 
 #include "../../src/Sensors/TempleAngle.hpp"
 
@@ -13,7 +13,7 @@
 // of z, make the 'end' byte 0.
 // If the temple is not open at all for a given row, both bytes are 0.
 
-int main(int argc, char **argv) {
+auto main(int argc, char **argv) -> int {
     int size = 256 * 2;
     printf("#include <stdint.h>\n");
     printf("const uint8_t templeAngleValues[%d] = {\n", size);

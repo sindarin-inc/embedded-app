@@ -1,7 +1,7 @@
 #ifndef DEMO_SCREEN_HPP
 #define DEMO_SCREEN_HPP
 
-#include "Misc/Power.hpp"
+#include "Misc/Battery.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Sensors/LightingController.hpp"
 #include "Storage/PreferencesStore.hpp"
@@ -56,7 +56,7 @@
 
 class DemoScreen : public Screen {
 public:
-    DemoScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power,
+    DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
                LightingController &lightingController);
 
     void render(DisplaySystem &display) override;
@@ -68,7 +68,6 @@ protected:
     DisplaySystem &display_;
     Renderer renderer_;
     PreferencesStore &prefs_;
-    Power &power_;
     LightingController &lightingController_;
 
     unsigned int currentScreen_ = 0;

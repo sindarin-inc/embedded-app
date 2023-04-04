@@ -6,7 +6,7 @@
 
 #include "sindarin-debug.h"
 
-#define I2C_MASTER_TIMEOUT_MS 1000
+#define I2C_MASTER_TIMEOUT_MS 200
 #define LTR329ALS01_SENSOR_ADDR 0x29
 
 struct Ltr329als01AlsContrValue {
@@ -70,7 +70,7 @@ auto Ltr329Als::readManufacturerId() -> uint8_t {
     uint8_t manufacturerId = 0;
     auto err = registerReadByte(LTR329ALS01_REG_MANUFAC_ID, &manufacturerId);
     if (err != ESP_OK) {
-        ESP_LOGE("LTR329ALS", "Failed to read part ID (%s)", esp_err_to_name(err));
+        ESP_LOGE("LTR329ALS", "Failed to read manufacturer ID (%s)", esp_err_to_name(err));
     }
     return manufacturerId;
 }

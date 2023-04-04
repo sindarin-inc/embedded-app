@@ -3,8 +3,11 @@
 #include <algorithm>
 #include <vector>
 
+#include "Communications/SindarinAPI.hpp"
 #include "Misc/Dispatch.hpp"
+#include "Models/CheckSync.hpp"
 #include "Models/Readable.hpp"
+#include "Models/UserReadable.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
 
@@ -13,7 +16,8 @@ struct ContentSyncState {
         Idle,
         ConnectingWifi,
         CheckingSync,
-        LoadingTasks,
+        SyncingBooks,
+        SyncingArticles,
         Syncing,
         Synced,
         AlreadySynced,
@@ -29,9 +33,8 @@ struct ContentSyncState {
     std::string message;
 };
 
-enum class ReadablesModelType { Article, Readable };
-
 typedef std::vector<Readable, SpiramAllocator<Readable>> ReadablesVector;
+typedef std::vector<UserReadable, SpiramAllocator<UserReadable>> UserReadablesVector;
 
 //! Interface for local storage of structured data
 class LocalStore {
@@ -44,20 +47,20 @@ public:
     auto loadReadablesFromFile(ReadablesVector &readables, const std::string &path) -> bool;
 
     // Convenience methods
+    auto books() -> ReadablesVector & { return books_; };
+    auto articles() -> ReadablesVector & { return articles_; };
     auto readablesModelType(const ReadablesVector &readables) -> ReadablesModelType;
     auto hasReadable(const ReadablesVector &readables, const Readable &readable) -> bool;
-    auto readables() -> ReadablesVector & { return readables_; };
-    auto articles() -> ReadablesVector & { return articles_; };
     void addReadable(ReadablesVector &readables, const Readable &readable);
     void removeReadable(ReadablesVector &readables, const Readable &readable);
-    auto readablesSince() -> std::string;
-    auto articlesSince() -> std::string;
+    auto readablesSince(const ReadablesModelType modelType) -> std::string;
 
-    auto changedReadablePlacemarkQueryParams(const ReadablesVector &readables)
-        -> std::vector<std::string>;
-    auto changedReadablesArchivedQueryParams(const ReadablesVector &readables)
-        -> std::vector<std::string>;
-    auto changedReadablesBookmarksJson() -> std::pair<char *, int>;
+    void storedReadableUuids(const ReadablesVector &readables, StoredUuidsVector &storedUuids);
+    void changedReadablePlacemarkJson(const ReadablesVector &readables,
+                                      ReadablePlacemarksVector &placemarks);
+    void changedReadablesArchivedJson(const ReadablesVector &readables,
+                                      ReadableArchivesVector &archives);
+    void changedReadablesBookmarksJson(ReadableBookmarksVector &bookmarks);
     auto processReadablePlacemarksFromServer(const Readable &readable, const uint32_t placemark)
         -> bool;
     auto processReadableBookmarksFromServer(const Readable &readable,
@@ -67,10 +70,22 @@ public:
     void resetReadablesBookmarksChanged(const ReadablesVector &readables);
 
     void syncFromRemote(const std::function<void(ContentSyncState state)> &progressCallback);
+    auto processReadables(const CheckSyncResponse &checkSyncResponse,
+                          const ReadablesVector &readables, UserReadablesVector &userReadables)
+        -> std::pair<ReadablesVector, ReadablesVector>;
+    void processReadableDeletion(const ReadablesVector &readablesToDelete,
+                                 ReadablesVector &readables, int &tasksIndex,
+                                 ContentSyncState &syncState,
+                                 const std::function<void(ContentSyncState)> &progressCallback);
+    auto processReadableDownload(const ReadablesVector &readablesToDownload,
+                                 ReadablesVector &readables, int &tasksIndex,
+                                 ContentSyncState &syncState,
+                                 const std::function<void(ContentSyncState)> &progressCallback,
+                                 ReadablesModelType modelType) -> bool;
     void deleteReadables(bool restart = true);
     void deleteArticles(bool restart = true);
     void deleteReadableFiles(const ReadablesVector &readables, bool restart);
-    auto saveReadables(const ReadablesVector &readables, const std::string &path) -> bool;
+    auto saveReadables(const ReadablesVector &readables) -> bool;
 
     // Methods for interacting with readable files on disk
     [[nodiscard]] auto readableFilePathForWriting(const Readable &readable) const -> std::string;
@@ -82,8 +97,8 @@ public:
     FileSystem &fileSystem;
 
 private:
-    ReadablesVector readables_;
-    ReadablesVector articles_;
-
     PreferencesStore &prefs_;
+
+    ReadablesVector books_;
+    ReadablesVector articles_;
 };
