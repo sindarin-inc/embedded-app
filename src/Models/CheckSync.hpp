@@ -18,10 +18,10 @@ auto ReadableModelTypeToString(ReadablesModelType type) -> std::string;
 template <typename T>
 using SpiramVector = std::vector<T, SpiramAllocator<T>>;
 
-typedef SpiramVector<std::string> StoredUuidsVector;
-typedef SpiramVector<ReadableArchive> ReadableArchivesVector;
-typedef SpiramVector<ReadablePlacemark> ReadablePlacemarksVector;
-typedef SpiramVector<ReadableBookmark> ReadableBookmarksVector;
+using StoredUuidsVector = SpiramVector<std::string>;
+using ReadableArchivesVector = SpiramVector<ReadableArchive>;
+using ReadablePlacemarksVector = SpiramVector<ReadablePlacemark>;
+using ReadableBookmarksVector = SpiramVector<ReadableBookmark>;
 
 class CheckSyncRequest : JsonSerializable {
 public:
