@@ -111,24 +111,24 @@ void FirmwareDownloader::downloadFirmware(
             return;
         }
 
-        progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloaded});
-
-        if (!skipInstall_) {
+        if (skipInstall_) {
             progressCallback(
-                FirmwareDownloadState{.state = FirmwareDownloadState::State::Installing});
-
-            // Swap out the firmware
-            if (!Update.end()) {
-                auto error = Update.getError();
-                log_e("Failed to Update.end() (%d)", error);
-                progressCallback(FirmwareDownloadState{
-                    .state = FirmwareDownloadState::State::Failure,
-                    .message = StringFormat("Failed to finalize update (%d)", error)});
-                return;
-            }
-
-            progressCallback(
-                FirmwareDownloadState{.state = FirmwareDownloadState::State::Installed});
+                FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloaded});
+            return;
         }
+
+        progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Installing});
+
+        // Swap out the firmware
+        if (!Update.end()) {
+            auto error = Update.getError();
+            log_e("Failed to Update.end() (%d)", error);
+            progressCallback(FirmwareDownloadState{
+                .state = FirmwareDownloadState::State::Failure,
+                .message = StringFormat("Failed to finalize update (%d)", error)});
+            return;
+        }
+
+        progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Installed});
     });
 }

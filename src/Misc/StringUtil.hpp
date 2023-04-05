@@ -36,11 +36,6 @@ auto StringFormatInternal(const char *format, ARGS... args) -> T {
     return {buf.get(), buf.get() + size - 1};
 }
 
-// template <typename F, typename... P>
-// void foo(F &&func, P &&...args) {
-//     std::invoke(std::forward<F>(func), std::forward<P>(args)...);
-// }
-
 template <typename... ARGS>
 auto StringFormat(const char *format, ARGS... args) -> std::string {
     return StringFormatInternal<std::string>(format, args...);

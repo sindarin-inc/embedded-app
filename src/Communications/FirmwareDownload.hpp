@@ -32,9 +32,6 @@ struct FirmwareDownloadState {
     }
 };
 
-// TODO: Split implementation so that downloading happens in a synchronous implementation that we
-// can use from a bg content sync and the installing happens in a separate part
-
 class FirmwareDownloader {
 public:
     FirmwareDownloader(PreferencesStore &prefs, bool skipInstall = false)
