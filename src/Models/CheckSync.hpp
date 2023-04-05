@@ -15,9 +15,6 @@ enum class ReadablesModelType { Article, Book };
 
 auto ReadableModelTypeToString(ReadablesModelType type) -> std::string;
 
-template <typename T>
-using SpiramVector = std::vector<T, SpiramAllocator<T>>;
-
 using StoredUuidsVector = SpiramVector<std::string>;
 using ReadableArchivesVector = SpiramVector<ReadableArchive>;
 using ReadablePlacemarksVector = SpiramVector<ReadablePlacemark>;

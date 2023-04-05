@@ -32,6 +32,7 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
     case FirmwareDownloadState::CheckingForLatest:
     case FirmwareDownloadState::AlreadyUpToDate:
     case FirmwareDownloadState::Downloading:
+    case FirmwareDownloadState::Downloaded:
     case FirmwareDownloadState::Installing:
     case FirmwareDownloadState::Installed: {
         // Calculate group height

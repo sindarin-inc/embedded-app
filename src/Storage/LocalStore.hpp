@@ -33,8 +33,8 @@ struct ContentSyncState {
     std::string message;
 };
 
-typedef std::vector<Readable, SpiramAllocator<Readable>> ReadablesVector;
-typedef std::vector<UserReadable, SpiramAllocator<UserReadable>> UserReadablesVector;
+using ReadablesVector = SpiramVector<Readable>;
+using UserReadablesVector = SpiramVector<UserReadable>;
 
 //! Interface for local storage of structured data
 class LocalStore {
@@ -93,6 +93,12 @@ public:
     [[nodiscard]] auto readableFilePathForReading(const Readable &readable) const -> std::string;
     [[nodiscard]] auto readableGetUncompressedSize(const Readable &readable) const -> int;
     void readableFilePurge(const Readable &readable);
+
+    // Save a firmware JSON for future use. Indicates that firmware has already been successfully
+    // downloaded into the alternate firmware slot.
+    void saveFirmware(const Firmware &firmware);
+    // Returns true if a newer firmware has been loaded.
+    auto getPendingFirmwareUpdate(Firmware &firmware) -> bool;
 
     FileSystem &fileSystem;
 

@@ -29,3 +29,6 @@ public:
         return true;
     }
 };
+
+// NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
+auto convertToJson(const Firmware &src, JsonVariant dst) -> bool;

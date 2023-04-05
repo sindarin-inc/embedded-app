@@ -10,7 +10,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 
-#include "Communications/SindarinAPI.hpp"
+#include "Communications/BackgroundSync.hpp"
 #include "Communications/WiFi.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Battery.hpp"
@@ -25,7 +25,6 @@
 #include "Storage/CrashReportWriter.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
-#include "UI/ContentSyncScreen.hpp"
 #include "UI/RootUI.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -207,8 +206,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     if (powerManager.state() == PowerState::Background) {
         log_i("Booting into PowerState::Background, running a content sync");
-
-        // Spit up a task just to check the temple and battery
+        // Spin up a task just to check the temple and battery
         xTaskCreatePinnedToCore(
             [](void *) {
                 for (;;) {
@@ -217,56 +215,11 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
                 }
             },
             "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
-
-        // TODO: Also upload core dumps, voltage logs (?), and firmware update, set the lock
-        // Debug LED so we know what's happening
-        DigitalWrite(BLUE_LED, LED_ON);
-        localStore.syncFromRemote([](const ContentSyncState &state) {
-            powerManager.feedInactivityTimer();
-
-            if (state.state == ContentSyncState::Failure ||
-                state.state == ContentSyncState::Synced ||
-                state.state == ContentSyncState::AlreadySynced) {
-                if (state.state == ContentSyncState::Failure) {
-                    log_i("Content sync failed with error: %s", state.message.c_str());
-                } else if (state.state == ContentSyncState::Synced) {
-                    log_i("Content sync successful");
-                } else if (state.state == ContentSyncState::AlreadySynced) {
-                    log_i("Content sync already synced");
-                }
-                DigitalWrite(BLUE_LED, LED_OFF);
-
-                if (WiFi::getInstance().connected()) {
-                    SolClock::getInstance().setClockTimeFromInternet();
-                }
-
-                // Something about shutting down WiFi here causes a crash
-                WiFi::getInstance().disconnectWiFi();
-
-                // TODO: It would probably be good to do some sort of retry with exponential
-                // backup if we fail. But We don't want to drain battery if you're away from
-                // WiFi. So we'll need to think carefully how we want to handle that.
-
-                // Figure out the next content sync and set the best time for it
-                time_t now = time(nullptr);
-                PreferencesStore::syncReason = SyncReason::Periodic;
-                PreferencesStore::nextSyncTime = SolClock::getInstance().calculateNextSyncTime(now);
-                PowerManager::getInstance().ulpDeepSleep(SleepReason::SyncDone);
-            }
-        });
-
-        // If we still are here after 5 mins probably something went wrong
-        vTaskDelay(5 * 60 * 1000 / portTICK_PERIOD_MS);
-
-        log_e("Background content sync timed out!");
-
-        WiFi::getInstance().disconnectWiFi();
-
-        time_t now = time(nullptr);
-        PreferencesStore::syncReason = SyncReason::Periodic;
-        PreferencesStore::nextSyncTime = SolClock::getInstance().calculateNextSyncTime(now);
-        PowerManager::getInstance().ulpDeepSleep(SleepReason::SyncDone);
+        BackgroundSyncAndSleep(powerManager, prefs, localStore);
+        // Should never get here, the system should be asleep
     }
+
+    // Below code should only execute on an Active boot
 
     if (!lightingController.checkSensorAvailable()) {
         bootErrors.push_back({.type = BootError::Type::AmbientLight});

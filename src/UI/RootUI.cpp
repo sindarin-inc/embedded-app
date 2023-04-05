@@ -41,6 +41,7 @@
 #include "UI/OffsetAdjustScreen.hpp"
 #include "UI/PowerDepletedScreen.hpp"
 #include "UI/ReadableScreen.hpp"
+#include "UI/ReleaseNotesScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
 #include "UI/StatsScreen.hpp"
 #include "UI/VoltageLogUploadScreen.hpp"
@@ -195,6 +196,26 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     auto booksMenu = new MenuScreen(mainMenu->getMyStyle(), "Books");
+
+    // If there is firmware available, show the Update Firmware item in the books tab.
+    Firmware firmware;
+    if (localStore.getPendingFirmwareUpdate(firmware)) {
+        log_i("Found pending firmware update");
+        auto updateString = StringFormat("Update Firmware to %s", firmware.version.c_str());
+        booksMenu->addMenuItem(
+            MenuItem(updateString, [this, display, mainMenu, &lightingController, &firmware]() {
+                auto releaseNotesScreen = new ReleaseNotesScreen(*display, this->prefs_, firmware);
+
+                display->clearDisplay();
+                releaseNotesScreen->backCallback = [this, display, releaseNotesScreen, mainMenu]() {
+                    display->clearDisplay();
+                    mainMenu->setFirstLoad();
+                    setCurrentScreen(*mainMenu);
+                    delete releaseNotesScreen;
+                };
+                this->setCurrentScreen(*releaseNotesScreen);
+            }));
+    }
 
     // If there are no books, show the Sync Content item in the books tab.
     if (readables.size() == 0) {

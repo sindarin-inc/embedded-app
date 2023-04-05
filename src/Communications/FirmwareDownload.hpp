@@ -16,6 +16,7 @@ struct FirmwareDownloadState {
         ConnectingWifi,
         CheckingForLatest,
         Downloading,
+        Downloaded,
         Installing,
         Installed,
         Failure,
@@ -30,14 +31,20 @@ struct FirmwareDownloadState {
     }
 };
 
+// TODO: Split implementation so that downloading happens in a synchronous implementation that we
+// can use from a bg content sync and the installing happens in a separate part
+
 class FirmwareDownloader {
 public:
-    FirmwareDownloader(PreferencesStore &prefs) : prefs_(prefs){};
+    FirmwareDownloader(PreferencesStore &prefs, bool skipInstall = false)
+        : prefs_(prefs), skipInstall_(skipInstall){};
 
     void downloadFirmware(const std::function<void(FirmwareDownloadState state)> &progressCallback);
 
     std::string versionString;
+    FirmwareResponse response;
 
 protected:
     PreferencesStore &prefs_;
+    bool skipInstall_;
 };

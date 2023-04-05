@@ -4,6 +4,8 @@
 #include <esp_heap_caps.h>
 #include <functional>
 #include <memory>
+#include <sstream>
+#include <string>
 
 template <typename T>
 struct SpiramAllocator {
@@ -60,3 +62,62 @@ template <typename T>
 auto SpiRamArrayPtr(size_t len) -> std::shared_ptr<T[]> {
     return CustomArrayPtr<T>(len, &SpiRamMalloc, &heap_caps_free);
 }
+
+template <typename T>
+using SpiramVector = std::vector<T, SpiramAllocator<T>>;
+
+// Define a custom string stream buffer that uses your string type
+class SpiramStringStreamBuf : public std::stringbuf {
+public:
+    SpiramStringStreamBuf() {
+        // Set the internal buffer to use your custom string type
+        char_type *buffer = SpiramAllocator<char>().allocate(1024);
+        this->setp(buffer, buffer + 1024);
+    }
+
+    ~SpiramStringStreamBuf() {
+        // Clean up the internal buffer
+        // SpiramAllocator<char>().deallocate(this->pbase(), 1024);
+    }
+
+    SpiramString str() const {
+        // Return the internal buffer as a SpiramString
+        return SpiramString(this->pbase(), this->pptr() - this->pbase());
+    }
+
+    void str(const SpiramString &s) {
+        // Set the internal buffer to the specified SpiramString
+        // TODO: Don't copy
+        char_type *buffer = SpiramAllocator<char>().allocate(s.length() + 1);
+        std::copy(s.begin(), s.end(), buffer);
+        buffer[s.length()] = '\0';
+        this->setp(buffer, buffer + s.length());
+    }
+};
+
+class SpiramStringStream : public std::stringstream {
+public:
+    SpiramStringStream() {
+        // Set the string buffer to use your custom string type
+        this->set_rdbuf(&buffer_);
+    }
+
+    explicit SpiramStringStream(const SpiramString &str = "") {
+        // Set the string buffer to use your custom string type
+        buffer_.str(str);
+        this->set_rdbuf(&buffer_);
+    }
+
+    SpiramStringStreamBuf *rdbuf() const {
+        // Return a pointer to the internal buffer
+        return const_cast<SpiramStringStreamBuf *>(&buffer_);
+    }
+
+    ~SpiramStringStream() {
+        // Clean up the string buffer
+        delete this->rdbuf();
+    }
+
+protected:
+    mutable SpiramStringStreamBuf buffer_;
+};
