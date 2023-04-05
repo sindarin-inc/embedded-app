@@ -133,18 +133,20 @@ private:
         memcpy(toLine + fromCol, fromLine + fromCol, size);
     }
 
-    auto copyOneRowOneBit(MemoryPtr fromLine, MemoryPtr toLine, int16_t fromCol, int size) const
-        -> void {
+    auto copyOneRowOneBit(MemoryPtr fromLine, MemoryPtr toLine, int16_t fromCol,
+                          int16_t endCol) const -> void {
         uint8_t mask = 0x80 >> (fromCol & 7);
-        for (int col = fromCol; col < fromCol + size; col++) {
+        int idx = fromCol >> 3;
+        for (int i = fromCol; i < endCol; i++) {
             if constexpr (BLACK_ONE_BIT) {
-                toLine[col >> 3] |= (fromLine[col >> 3] & mask);
+                toLine[idx] |= (fromLine[idx] & mask);
             } else {
-                toLine[col >> 3] &= fromLine[col >> 3] | ~mask;
+                toLine[idx] &= fromLine[idx] | ~mask;
             }
             mask >>= 1;
             if (mask == 0) {
                 mask = 0x80;
+                idx += 1;
             }
         }
     }
@@ -170,30 +172,38 @@ public:
             toRowPtr = toBitmap.pixels + static_cast<size_t>(atOffset.y * toRowSize);
 
             if (rleMetrics.dynF == 14) { // is a non-compressed RLE?
-                uint32_t count = 8;
                 uint8_t data;
+                uint8_t fromMask = 0;
 
                 for (uint32_t fromRow = 0; fromRow < fromBitmap.dim.height;
                      fromRow++, toRowPtr += toRowSize) {
-                    for (uint32_t toCol = atOffset.x; toCol < fromBitmap.dim.width + atOffset.x;
-                         toCol++) {
-                        if (count >= 8) {
+                    uint8_t toMask = 0x80 >> (atOffset.x & 7);
+                    int idx = (atOffset.x >> 3);
+                    for (uint32_t i = 0; i < fromBitmap.dim.width; i++) {
+                        if (fromMask == 0) {
+                            fromMask = 0x80;
                             if (!getnext8(data)) {
                                 std::cerr << "Not enough bitmap data!" << std::endl;
                                 return false;
                             }
                             // std::cout << std::hex << +data << ' ';
-                            count = 0;
+                            // count = 0;
                         }
-                        if (data & (0x80U >> count)) {
+                        if (data & fromMask) {
                             if constexpr (BLACK_ONE_BIT) {
-                                toRowPtr[toCol >> 3] |= (0x80U >> (toCol & 7));
+                                toRowPtr[idx] |= toMask;
 
                             } else {
-                                toRowPtr[toCol >> 3] &= ~(0x80U >> (toCol & 7));
+                                toRowPtr[idx] &= ~toMask;
                             }
                         }
-                        count++;
+                        fromMask >>= 1;
+                        toMask >>= 1;
+                        if (toMask == 0) {
+                            idx += 1;
+                            toMask = 0x80;
+                        }
+                        // count++;
                     }
                 }
                 // std::cout << std::endl;
@@ -208,8 +218,9 @@ public:
 
                 for (uint32_t fromRow = 0; fromRow < fromBitmap.dim.height;
                      fromRow++, toRowPtr += toRowSize) {
-                    for (uint32_t toCol = atOffset.x; toCol < fromBitmap.dim.width + atOffset.x;
-                         toCol++) {
+                    uint8_t toMask = 0x80 >> (atOffset.x & 7);
+                    int idx = (atOffset.x >> 3);
+                    for (uint32_t i = 0; i < fromBitmap.dim.width; i++) {
                         if (count == 0) {
                             if (!getPackedNumber(count, rleMetrics)) {
                                 return false;
@@ -224,12 +235,17 @@ public:
                         }
                         if (black) {
                             if constexpr (BLACK_ONE_BIT) {
-                                toRowPtr[toCol >> 3] |= (0x80U >> (toCol & 0x07));
+                                toRowPtr[idx] |= toMask;
                             } else {
-                                toRowPtr[toCol >> 3] &= ~(0x80U >> (toCol & 0x07));
+                                toRowPtr[idx] &= ~toMask;
                             }
                         }
-                        count--;
+                        toMask >>= 1;
+                        if (toMask == 0) {
+                            idx += 1;
+                            toMask = 0x80;
+                        }
+                        count -= 1;
                     }
 
                     // if (repeatCount_ != 0) {
@@ -237,7 +253,7 @@ public:
                     // }
                     while ((fromRow < fromBitmap.dim.height) && (repeatCount_-- > 0)) {
                         copyOneRowOneBit(toRowPtr, toRowPtr + toRowSize, atOffset.x,
-                                         fromBitmap.dim.width);
+                                         atOffset.x + fromBitmap.dim.width);
                         fromRow++;
                         toRowPtr += toRowSize;
                     }

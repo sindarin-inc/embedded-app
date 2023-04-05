@@ -15,14 +15,18 @@
 #include "GFXFonts/Tahoma9pt7b.h"
 #include "IBMFDriver/IBMFFont.hpp"
 #include "IBMFDriver/IBMFFontLow.hpp"
-#include "IBMFFonts/Tahoma_75.h"
+//#include "IBMFFonts/Tahoma_75.h"
 
-IBMFFontLow tahoma75 = IBMFFontLow();
+IBMFFontLow test75 = IBMFFontLow();
 
-IBMFFont fontTahoma75BPI9PT = IBMFFont(tahoma75, TAHOMA_75_IBMF, TAHOMA_75_IBMF_LEN, 0);
-IBMFFont fontTahoma75BPI10PT = IBMFFont(tahoma75, TAHOMA_75_IBMF, TAHOMA_75_IBMF_LEN, 1);
-IBMFFont fontTahoma75BPI12PT = IBMFFont(tahoma75, TAHOMA_75_IBMF, TAHOMA_75_IBMF_LEN, 2);
-IBMFFont fontTahoma75BPI14PT = IBMFFont(tahoma75, TAHOMA_75_IBMF, TAHOMA_75_IBMF_LEN, 3);
+#define FONTS(name)                                                                                \
+    IBMFFont fontTest75BPI9PT = IBMFFont(test75, name##_75_IBMF, name##_75_IBMF_LEN, 0);           \
+    IBMFFont fontTest75BPI10PT = IBMFFont(test75, name##_75_IBMF, name##_75_IBMF_LEN, 1);          \
+    IBMFFont fontTest75BPI12PT = IBMFFont(test75, name##_75_IBMF, name##_75_IBMF_LEN, 2);          \
+    IBMFFont fontTest75BPI14PT = IBMFFont(test75, name##_75_IBMF, name##_75_IBMF_LEN, 3);
+
+#include "IBMFFonts/NotoSansMedium_75.h"
+FONTS(NOTOSANSMEDIUM)
 
 GFont FONT_LUCIDA_GRANDE5PT7B = GFont(LUCIDA_GRANDE5PT7B);
 GFont FONT_LUCIDA_GRANDE5PT7B_SKINNY = GFont(LUCIDA_GRANDE5PT7B_SKINNY);

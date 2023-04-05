@@ -22,7 +22,7 @@ public:
 #if !IBMF_TEST
         lucidaRegular.readableFont = static_cast<Font *>(&FONT_LUCIDA_GRANDE5PT7B);
 #else
-        lucidaRegular.readableFont = static_cast<Font *>(&fontTahoma75BPI10PT);
+        lucidaRegular.readableFont = static_cast<Font *>(&fontTest75BPI10PT);
 #endif
 
         lucidaFat.mainMenuFont = static_cast<Font *>(&FONT_LUCIDA_GRANDE10PT7B);
@@ -31,7 +31,7 @@ public:
 #if !IBMF_TEST
         lucidaFat.readableFont = static_cast<Font *>(&FONT_LUCIDA_GRANDE5PT7B_FAT);
 #else
-        lucidaFat.readableFont = static_cast<Font *>(&fontTahoma75BPI10PT);
+        lucidaFat.readableFont = static_cast<Font *>(&fontTest75BPI10PT);
 #endif
 
         lucidaSkinny.mainMenuFont = static_cast<Font *>(&FONT_LUCIDA_GRANDE10PT7B);
@@ -40,7 +40,7 @@ public:
 #if !IBMF_TEST
         lucidaSkinny.readableFont = static_cast<Font *>(&FONT_LUCIDA_GRANDE5PT7B_SKINNY);
 #else
-        lucidaSkinny.readableFont = static_cast<Font *>(&fontTahoma75BPI10PT);
+        lucidaSkinny.readableFont = static_cast<Font *>(&fontTest75BPI10PT);
 #endif
 
         tahomaRegular.mainMenuFont = static_cast<Font *>(&FONT_TAHOMA_REGULAR_FONT5PT7B);
@@ -49,7 +49,7 @@ public:
 #if !IBMF_TEST
         tahomaRegular.readableFont = static_cast<Font *>(&FONT_TAHOMA_REGULAR_FONT5PT7B);
 #else
-        tahomaRegular.readableFont = static_cast<Font *>(&fontTahoma75BPI10PT);
+        tahomaRegular.readableFont = static_cast<Font *>(&fontTest75BPI10PT);
 #endif
 
         tahomaLarge.mainMenuFont = static_cast<Font *>(&FONT_TAHOMA_REGULAR_FONT6PT7B);
@@ -58,7 +58,7 @@ public:
 #if !IBMF_TEST
         tahomaLarge.readableFont = static_cast<Font *>(&FONT_TAHOMA_REGULAR_FONT6PT7B);
 #else
-        tahomaLarge.readableFont = static_cast<Font *>(&fontTahoma75BPI10PT);
+        tahomaLarge.readableFont = static_cast<Font *>(&fontTest75BPI10PT);
 #endif
 
         currentFont = tahomaRegular;
