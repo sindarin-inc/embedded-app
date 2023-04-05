@@ -6,8 +6,8 @@
 
 ReleaseNotesScreen::ReleaseNotesScreen(DisplaySystem &display, PreferencesStore &prefs,
                                        PowerManager &power, const Firmware &firmware)
-    : display_(display), renderer_(display), prefs_(prefs), power_(power),
-      firmware_(std::move(firmware)), menu_(prefs, display) {
+    : display_(display), renderer_(display), prefs_(prefs), power_(power), firmware_(firmware),
+      menu_(prefs, display) {
 
     SpiramString message = SpiRamStringFormat(
         "New firmware %s is now available! Here's what's new:\n\n", firmware.version.c_str());
@@ -75,7 +75,7 @@ void ReleaseNotesScreen::processCommand(RemoteCommand command) {
     }
 }
 
-void ReleaseNotesScreen::updateError(std::string logMessage) {
+void ReleaseNotesScreen::updateError(const std::string &logMessage) {
     auto error = Update.getError();
     log_e("%s error (%d)", logMessage.c_str(), error);
     display_.drawSingleLineOfCenteredText(StringFormat("Install failed (%d)", error));

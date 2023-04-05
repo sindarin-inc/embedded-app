@@ -29,7 +29,7 @@ protected:
 
     auto atEnd() -> bool { return newPlace_ == 0; };
 
-    void updateError(std::string logMessage);
+    void updateError(const std::string &logMessage);
     void runUpdate();
 
     void setFirstLoad() { firstLoad_ = true; }

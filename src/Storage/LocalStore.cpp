@@ -911,22 +911,22 @@ void LocalStore::readableFilePurge(const Readable &readable) {
     fileSystem.remove(StringFormat("/articles/%s.txt", uuid.c_str()));
 }
 
-const char *FIRMWARE_PATH = "/firmware.json";
+const char *firmwarePath = "/firmware.json";
 
 void LocalStore::saveFirmware(const Firmware &firmware) {
     auto doc = std::make_unique<SpiRamJsonDocument>(
-        std::min(firmware.releaseNotes.length() * 2, (size_t)2048));
+        std::min((size_t)firmware.releaseNotes.size() * 2, (size_t)2048));
     convertToJson(firmware, *doc);
     // Delete any existing firmware file if it exists
-    fileSystem.remove(FIRMWARE_PATH);
-    auto firmwareFile = fileSystem.open(FIRMWARE_PATH, "w");
+    fileSystem.remove(firmwarePath);
+    auto firmwareFile = fileSystem.open(firmwarePath, "w");
     serializeJson(*doc, firmwareFile);
     firmwareFile.close();
     prefs_.firmwareLoaded.set(firmware.version);
 }
 
 auto LocalStore::getPendingFirmwareUpdate(Firmware &firmware) -> bool {
-    auto firmwareFile = fileSystem.open(FIRMWARE_PATH, "r");
+    auto firmwareFile = fileSystem.open(firmwarePath, "r");
     if (!firmwareFile) {
         return false;
     } else {

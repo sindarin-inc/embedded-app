@@ -75,8 +75,8 @@ public:
     }
 
 protected:
-    pos_type seekoff(off_type off, std::ios_base::seekdir dir,
-                     std::ios_base::openmode which) override {
+    auto seekoff(off_type off, std::ios_base::seekdir dir, std::ios_base::openmode which)
+        -> pos_type override {
         if (dir == std::ios_base::beg) {
             setg(eback(), eback() + off, egptr());
         } else if (dir == std::ios_base::cur) {
@@ -87,14 +87,14 @@ protected:
         return gptr() - eback();
     }
 
-    pos_type seekpos(pos_type pos, std::ios_base::openmode which) override {
+    auto seekpos(pos_type pos, std::ios_base::openmode which) -> pos_type override {
         return seekoff(pos, std::ios_base::beg, which);
     }
 };
 
 class SpiramIStream : public std::istream {
 public:
-    SpiramIStream(const SpiramString &str) : std::istream(&buf_), str_(str), buf_(str_) {}
+    SpiramIStream(SpiramString str) : std::istream(&buf_), str_(std::move(str)), buf_(str_) {}
 
 private:
     SpiramString str_;

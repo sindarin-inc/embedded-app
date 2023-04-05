@@ -76,7 +76,7 @@ public:
     auto size() -> size_t override { return size_; }
 
 protected:
-    StdStringStream(std::shared_ptr<std::istream> stream) : stream_(stream) {}
+    StdStringStream(std::shared_ptr<std::istream> stream) : stream_(std::move(stream)) {}
 
     std::shared_ptr<std::istream> stream_;
     size_t size_ = 0;
