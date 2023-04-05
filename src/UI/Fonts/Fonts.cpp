@@ -25,8 +25,8 @@ IBMFFontLow test75 = IBMFFontLow();
     IBMFFont fontTest75BPI12PT = IBMFFont(test75, name##_75_IBMF, name##_75_IBMF_LEN, 2);          \
     IBMFFont fontTest75BPI14PT = IBMFFont(test75, name##_75_IBMF, name##_75_IBMF_LEN, 3);
 
-#include "IBMFFonts/NotoSansMedium_75.h"
-FONTS(NOTOSANSMEDIUM)
+#include "IBMFFonts/ComicSans_75.h"
+FONTS(COMICSANS)
 
 GFont FONT_LUCIDA_GRANDE5PT7B = GFont(LUCIDA_GRANDE5PT7B);
 GFont FONT_LUCIDA_GRANDE5PT7B_SKINNY = GFont(LUCIDA_GRANDE5PT7B_SKINNY);
