@@ -1,14 +1,17 @@
 #pragma once
 
 #include "Misc/Battery.hpp"
+#include "Misc/PowerManager.hpp"
 #include "Models/Firmware.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
-#include "UI/Screen.hpp"
+#include "UI/ContainerScreen.hpp"
+#include "UI/LineMenuScreen.hpp"
 
-class ReleaseNotesScreen : public Screen {
+class ReleaseNotesScreen : public ContainerScreen {
 public:
-    ReleaseNotesScreen(DisplaySystem &display, PreferencesStore &prefs, Firmware &firmware);
+    ReleaseNotesScreen(DisplaySystem &display, PreferencesStore &prefs, PowerManager &power,
+                       const Firmware &firmware);
 
 protected:
     void render(DisplaySystem &display) override;
@@ -17,5 +20,17 @@ protected:
     DisplaySystem &display_;
     Renderer renderer_;
     PreferencesStore &prefs_;
-    Firmware &firmware_;
+    PowerManager &power_;
+    Firmware firmware_;
+    LineMenuScreen menu_;
+
+    bool firstLoad_ = true;
+    uint32_t place_{0}, newPlace_{0};
+
+    auto atEnd() -> bool { return newPlace_ == 0; };
+
+    void updateError(std::string logMessage);
+    void runUpdate();
+
+    void setFirstLoad() { firstLoad_ = true; }
 };

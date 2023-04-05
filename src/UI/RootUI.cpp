@@ -198,23 +198,29 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto booksMenu = new MenuScreen(mainMenu->getMyStyle(), "Books");
 
     // If there is firmware available, show the Update Firmware item in the books tab.
-    Firmware firmware;
-    if (localStore.getPendingFirmwareUpdate(firmware)) {
-        log_i("Found pending firmware update");
+    auto makeReleaseNotesMenuItem = [this, &localStore, display, mainMenu]() {
+        Firmware firmware;
+        localStore.getPendingFirmwareUpdate(firmware);
+        log_i("Found pending firmware update %s", firmware.version.c_str());
         auto updateString = StringFormat("Update Firmware to %s", firmware.version.c_str());
-        booksMenu->addMenuItem(
-            MenuItem(updateString, [this, display, mainMenu, &lightingController, &firmware]() {
-                auto releaseNotesScreen = new ReleaseNotesScreen(*display, this->prefs_, firmware);
-
+        return MenuItem(updateString, [this, display, mainMenu, firmware]() {
+            auto releaseNotesScreen =
+                new ReleaseNotesScreen(*display, this->prefs_, power_, firmware);
+            display->clearDisplay();
+            this->setCurrentScreen(*releaseNotesScreen);
+            // auto resizeBox = new ResizeBoxScreen(*display, prefs_);
+            // this->setCurrentScreen(*resizeBox);
+            releaseNotesScreen->backCallback = [this, display, releaseNotesScreen, mainMenu]() {
                 display->clearDisplay();
-                releaseNotesScreen->backCallback = [this, display, releaseNotesScreen, mainMenu]() {
-                    display->clearDisplay();
-                    mainMenu->setFirstLoad();
-                    setCurrentScreen(*mainMenu);
-                    delete releaseNotesScreen;
-                };
-                this->setCurrentScreen(*releaseNotesScreen);
-            }));
+                mainMenu->setFirstLoad();
+                setCurrentScreen(*mainMenu);
+                delete releaseNotesScreen;
+            };
+        });
+    };
+
+    if (prefs_.firmwareLoaded.get().has_value()) {
+        booksMenu->addMenuItem(makeReleaseNotesMenuItem());
     }
 
     // If there are no books, show the Sync Content item in the books tab.
@@ -265,6 +271,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     log_i("Loading %zu Pocket articles", articles.size());
 
     auto pocketMenu = new MenuScreen(mainMenu->getMyStyle(), "Articles");
+
+    if (prefs_.firmwareLoaded.get().has_value()) {
+        pocketMenu->addMenuItem(makeReleaseNotesMenuItem());
+    }
 
     // If there are no articles, show the Sync Content item in the articles tab.
     if (articles.size() == 0) {

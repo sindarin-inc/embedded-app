@@ -20,7 +20,7 @@ public:
 
         : renderer_(display), firstTimeRenderer_(display), readable_(readable), prefs_(prefs),
           popup_(display, battery, renderer_, prefs_, readable_, lightingController),
-          archiveMenu_(readable_, prefs_, display), fileSystem_(fileSystem), display_(display) {
+          archiveMenu_(prefs_, display), fileSystem_(fileSystem), display_(display) {
         currentScreen_ = this;
         renderer_.setStream(std::move(stream));
         pageSpeed_ = prefs_.autoPilotSpeed.get().value_or(0);

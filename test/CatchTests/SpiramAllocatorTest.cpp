@@ -1,6 +1,9 @@
+#include "Misc/SpiramAllocator.hpp"
+
 #include <catch_amalgamated.hpp>
 
-#include "Misc/SpiramAllocator.hpp"
+#include "Misc/StringUtil.hpp"
+#include "Renderers/RendererStream.hpp"
 #include "sindarin-debug.h"
 
 int mallocSize;
@@ -52,4 +55,28 @@ TEST_CASE("Test CustomArrayPtr") {
     }
 
     REQUIRE(freedPtr == ptrToFree);
+}
+
+TEST_CASE("Test SpiramIStream") {
+    SpiramString message =
+        SpiRamStringFormat("New firmware %s is now available! Here's what's new:\n\n", "0.2.0");
+    auto strinstream = std::make_shared<SpiramIStream>(message);
+    REQUIRE(strinstream->get() == 'N');
+    REQUIRE(strinstream->get() == 'e');
+    // REQUIRE(strinstream->tellg() == 0);
+    REQUIRE(strinstream->good());
+    REQUIRE(!strinstream->eof());
+    strinstream->seekg(0, std::ios::beg);
+    REQUIRE(strinstream->get() == 'N');
+    REQUIRE(strinstream->get() == 'e');
+    REQUIRE(strinstream->get() == 'w');
+    REQUIRE(strinstream->get() == ' ');
+    strinstream->seekg(0, std::ios::beg);
+
+    // Now make a StdStringStream
+    auto stream = std::make_shared<StdStringStream>(message);
+    REQUIRE(stream->available() == 57);
+    REQUIRE(stream->read() == 'N');
+    REQUIRE(stream->read() == 'e');
+    REQUIRE(stream->available() == 55);
 }

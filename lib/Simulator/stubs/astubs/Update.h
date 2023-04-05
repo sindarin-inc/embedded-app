@@ -24,7 +24,7 @@ public:
         totalSize_ = 0;
     }
 
-    bool end() {
+    bool end(bool evenIfSuccessful = false) {
         bool success = size_ == totalSize_;
         if (!success) {
             log_e("Update.end failed with size_=%d totalSize_=%d", size_, totalSize_);
@@ -45,7 +45,7 @@ public:
     void restart() {}
 };
 
-update Update;
-esp ESP;
+extern update Update;
+extern esp ESP;
 
 #endif

@@ -59,9 +59,15 @@ void BackgroundSyncAndSleep(PowerManager &powerManager, PreferencesStore &prefs,
     firmwareDownloader.downloadFirmware(
         [&firmwareDownloader, &localStore, &backgroundGroup](const FirmwareDownloadState &state) {
             if (state.state == FirmwareDownloadState::Failure) {
-                log_i("Firmware download failed with error: %s", state.message.c_str());
+                log_i("Firmware download for %s failed with error: %s",
+                      firmwareDownloader.response.latestGlassesFirmware.version.c_str(),
+                      state.message.c_str());
+            } else if (state.state == FirmwareDownloadState::AlreadyDownloaded) {
+                log_i("Firmware download for %s already queued.",
+                      firmwareDownloader.response.latestGlassesFirmware.version.c_str());
             } else if (state.state == FirmwareDownloadState::Downloaded) {
-                log_i("Firmware download successful. Mark for install.");
+                log_i("Firmware download for %s successful. Mark for install.",
+                      firmwareDownloader.response.latestGlassesFirmware.version.c_str());
                 localStore.saveFirmware(firmwareDownloader.response.latestGlassesFirmware);
             } else if (state.state == FirmwareDownloadState::AlreadyUpToDate) {
                 log_i("Firmware up to date.");

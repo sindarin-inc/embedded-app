@@ -20,12 +20,11 @@
 
 class LineMenuScreen : public Screen, public Menu, public EinkView {
 public:
-    LineMenuScreen(Readable &readable, PreferencesStore &prefs, DisplaySystem &display,
-                   MenuStyleFamily menuStyle)
+    LineMenuScreen(PreferencesStore &prefs, DisplaySystem &display, MenuStyleFamily menuStyle)
         : Menu(menuStyle), EinkView(display), display_(display) {
         numMenuItems_ = 0;
     }
-    LineMenuScreen(Readable &readable, PreferencesStore &prefs, DisplaySystem &display)
+    LineMenuScreen(PreferencesStore &prefs, DisplaySystem &display)
         : Menu(), EinkView(display), display_(display) {
         numMenuItems_ = 0;
         MenuStyle styleFamilies;

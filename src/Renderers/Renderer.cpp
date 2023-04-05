@@ -358,6 +358,11 @@ auto Renderer::renderPage(unsigned long placeInFile, int numSkipLines) -> unsign
     log_d("%lu is place in file being requested", placeInFile);
 #endif
     currentPlace_ = placeInFile;
+
+    // This needs to happen before loading into buffer since it will affect what we load into the
+    // buffer.
+    display_.setFont(display_.style.getFontFamily().readableFont);
+
     PROFILE_START(loadCurrIntoBuffer);
     nextPlace_ = loadCurrIntoBuffer();
     PROFILE_END_LOG_MS(loadCurrIntoBuffer);
@@ -365,8 +370,6 @@ auto Renderer::renderPage(unsigned long placeInFile, int numSkipLines) -> unsign
     currentPageWordCount_ = WordCount(currBuffer_.data());
 
     int newLineAdjust = 0;
-
-    display_.setFont(display_.style.getFontFamily().readableFont);
 
     // A first attempt to get the the text to look better with newlines as sole
     // characters on the line with a smaller height than a full line.

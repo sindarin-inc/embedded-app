@@ -922,6 +922,7 @@ void LocalStore::saveFirmware(const Firmware &firmware) {
     auto firmwareFile = fileSystem.open(FIRMWARE_PATH, "w");
     serializeJson(*doc, firmwareFile);
     firmwareFile.close();
+    prefs_.firmwareLoaded.set(firmware.version);
 }
 
 auto LocalStore::getPendingFirmwareUpdate(Firmware &firmware) -> bool {

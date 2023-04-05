@@ -1,5 +1,6 @@
 #include "FirmwareDownload.hpp"
 
+#include <Update.h>
 #include <cstdio>
 #include <string>
 
@@ -10,7 +11,6 @@
 #include "Misc/Dispatch.hpp"
 #include "Misc/SemVer.hpp"
 #include "Misc/StringUtil.hpp"
-#include "Update.h"
 #include "Version.hpp"
 #include "sindarin-debug.h"
 
@@ -35,6 +35,14 @@ void FirmwareDownloader::downloadFirmware(
             log_e("Failed to get firmware (HTTP %d)", httpCode);
             progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
                                                    .message = "Failed to check for update"});
+            return;
+        }
+
+        if (skipInstall_ && prefs_.firmwareLoaded.get().value_or("0.0.0") ==
+                                response.latestGlassesFirmware.version) {
+            log_d("Firmware already downloaded and ready to install.");
+            progressCallback(
+                FirmwareDownloadState{.state = FirmwareDownloadState::State::AlreadyDownloaded});
             return;
         }
 

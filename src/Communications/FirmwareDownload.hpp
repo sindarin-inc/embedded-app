@@ -16,6 +16,7 @@ struct FirmwareDownloadState {
         ConnectingWifi,
         CheckingForLatest,
         Downloading,
+        AlreadyDownloaded,
         Downloaded,
         Installing,
         Installed,

@@ -234,7 +234,8 @@ public:
           firstRead(*this, "first-read"), autoPilotSpeed(*this, "auto-speed"),
           firstAutopilotRead(*this, "fst-auto-rd"), cesMode(*this, "ces"), emcMode(*this, "emc"),
           wifiPower(*this, "wifi-power"), morningNewspaperTime(*this, "morning-news"),
-          eveningNewspaperTime(*this, "evening-news"), solTimeZone(*this, "time-zone"){};
+          eveningNewspaperTime(*this, "evening-news"), solTimeZone(*this, "time-zone"),
+          firmwareLoaded(*this, "fw-loaded"), firmwareLoadedSize(*this, "fw-size"){};
     PreferencesStore(PreferencesStore &) = delete;
 
     auto begin() -> bool {
@@ -315,6 +316,9 @@ public:
     PrefsItem<int> morningNewspaperTime;
     PrefsItem<int> eveningNewspaperTime;
     PrefsItem<int> solTimeZone;
+    // Firmware that's been loaded to the other flash slot but not yet installed
+    PrefsItem<std::string> firmwareLoaded;
+    PrefsItem<int> firmwareLoadedSize;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles
