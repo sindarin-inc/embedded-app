@@ -8,6 +8,7 @@
 #include <soc/soc_ulp.h>
 
 #include <ulp_riscv_i2c_ulp_core.h>
+#include "ulp_i2c_patch.h"
 #include "MagDefs.h"
 #include "UlpTableLookup.h"
 
@@ -25,7 +26,7 @@ void magReading() {
 
     ulp_riscv_i2c_master_set_slave_reg_addr(MAG_CONTROL_0_REG);
 
-    ulp_riscv_i2c_master_write_to_device(&dataRd, 1);
+    ulp_riscv_i2c_master_write_to_device_patch(&dataRd, 1);
 
     // TODO: How is this determined? Is it necessary?
     ulp_riscv_delay_cycles(10 * ULP_RISCV_CYCLES_PER_MS);
@@ -36,7 +37,7 @@ void magReading() {
     uint32_t start = ULP_RISCV_GET_CCOUNT();
     uint32_t end = start + 50 * ULP_RISCV_CYCLES_PER_MS;
     while (1) {
-        ulp_riscv_i2c_master_read_from_device(&dataRd, 1);
+        ulp_riscv_i2c_master_read_from_device_patch(&dataRd, 1);
         if ((dataRd & MAG_STATUS_MEAS_DONE_BIT) != 0) {
             break;
         }
@@ -51,7 +52,7 @@ void magReading() {
     // read magnetometer data
     ulp_riscv_i2c_master_set_slave_reg_addr(0x00);
 
-    ulp_riscv_i2c_master_read_from_device(magReadingBytes, 9);
+    ulp_riscv_i2c_master_read_from_device_patch(magReadingBytes, 9);
 
     uint8_t xReading = magReadingBytes[MAG_X_OUT_0];
     uint8_t zReading = magReadingBytes[MAG_Z_OUT_0];
