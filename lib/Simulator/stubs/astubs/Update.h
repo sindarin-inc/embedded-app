@@ -18,6 +18,7 @@ public:
         return size;
     }
     bool setMD5(const char *md5) { return true; }
+    void recalculateMD5() {}
     uint8_t getError() { return 0; }
     void abort() {
         size_ = 0;

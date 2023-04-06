@@ -2,6 +2,7 @@
 
 #include <Update.h>
 
+#include "Misc/Platform.hpp"
 #include "sindarin-debug.h"
 
 ReleaseNotesScreen::ReleaseNotesScreen(DisplaySystem &display, PreferencesStore &prefs,
@@ -115,7 +116,7 @@ void ReleaseNotesScreen::runUpdate() {
     localStore_.resetFirmware();
 
     display_.drawSingleLineOfCenteredText(
-        StringFormat("%s installed! Rebooting.", firmware_.version));
+        StringFormat("%s installed! Rebooting.", firmware_.version.c_str()));
     display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 
     Delay(2000);
