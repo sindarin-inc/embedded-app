@@ -315,11 +315,11 @@ void PowerManager::ulpDeepSleep(SleepReason reason) {
     i2cCfg.i2c_pin_cfg.scl_io_num = I2C_MASTER_SCL_IO;
     i2cCfg.i2c_pin_cfg.sda_pullup_en = true;
     i2cCfg.i2c_pin_cfg.scl_pullup_en = true;
-    i2cCfg.i2c_timing_cfg.scl_low_period = 5.0f;
-    i2cCfg.i2c_timing_cfg.scl_high_period = 5.0f;
-    i2cCfg.i2c_timing_cfg.sda_duty_period = 2.0f;
-    i2cCfg.i2c_timing_cfg.scl_start_period = 3.0f;
-    i2cCfg.i2c_timing_cfg.scl_stop_period = 6.0f;
+    i2cCfg.i2c_timing_cfg.scl_low_period = 1.4f;
+    i2cCfg.i2c_timing_cfg.scl_high_period = 0.3f;
+    i2cCfg.i2c_timing_cfg.sda_duty_period = 1.0f;
+    i2cCfg.i2c_timing_cfg.scl_start_period = 2.0f;
+    i2cCfg.i2c_timing_cfg.scl_stop_period = 1.3f;
     i2cCfg.i2c_timing_cfg.i2c_trans_timeout = 20.0f;
     err = ulp_riscv_i2c_master_init(&i2cCfg);
     if (err != ESP_OK) {
