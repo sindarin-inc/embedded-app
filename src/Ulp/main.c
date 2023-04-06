@@ -8,7 +8,11 @@
 #include <soc/soc.h>
 #include <soc/soc_ulp.h>
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
+#include <ulp_riscv_i2c_ulp_core.h>
+#else
 #include "../components/ulp-i2c/src/ulp/ulp_riscv_i2c_ulp_core.h"
+#endif
 #include "MagDefs.h"
 #include "UlpTableLookup.h"
 
