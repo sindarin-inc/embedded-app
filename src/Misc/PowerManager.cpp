@@ -238,7 +238,7 @@ void PowerManager::loop() {
 }
 
 #if !SIMULATOR
-void ulpI2cSetup(ulp_riscv_i2c_cfg_t &i2cCfg) {
+void UlpI2cSetup(ulp_riscv_i2c_cfg_t &i2cCfg) {
     i2cCfg.i2c_pin_cfg.sda_io_num = I2C_MASTER_SDA_IO;
     i2cCfg.i2c_pin_cfg.scl_io_num = I2C_MASTER_SCL_IO;
     i2cCfg.i2c_pin_cfg.sda_pullup_en = true;
@@ -337,7 +337,7 @@ void PowerManager::ulpDeepSleep(SleepReason reason) {
     }
 
     ulp_riscv_i2c_cfg_t i2cCfg;
-    ulpI2cSetup(i2cCfg);
+    UlpI2cSetup(i2cCfg);
     err = ulp_riscv_i2c_master_init(&i2cCfg);
     if (err != ESP_OK) {
         log_e("Failed to init I2C with err %s", esp_err_to_name(err));
