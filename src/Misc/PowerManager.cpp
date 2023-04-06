@@ -237,32 +237,6 @@ void PowerManager::loop() {
 #endif
 }
 
-#if !SIMULATOR
-void UlpI2cSetup(ulp_riscv_i2c_cfg_t &i2cCfg) {
-    i2cCfg.i2c_pin_cfg.sda_io_num = I2C_MASTER_SDA_IO;
-    i2cCfg.i2c_pin_cfg.scl_io_num = I2C_MASTER_SCL_IO;
-    i2cCfg.i2c_pin_cfg.sda_pullup_en = true;
-    i2cCfg.i2c_pin_cfg.scl_pullup_en = true;
-
-    // SCL low must be >= 1.3us
-    // SCL high must be >= 0.3us
-    // these parameters are uint32_t for some reason
-    i2cCfg.i2c_timing_cfg.scl_low_period = 2;
-    i2cCfg.i2c_timing_cfg.scl_high_period = 1;
-
-    // data setup time (low_period - duty_period) cannot be less than 250ns
-    i2cCfg.i2c_timing_cfg.sda_duty_period = 1;
-
-    // start period must be more than 8 RTC_FAST_CLK cycles
-    i2cCfg.i2c_timing_cfg.scl_start_period = 2;
-
-    // stop period cannot be less than 0.6us
-    // stop period must be > than high period
-    i2cCfg.i2c_timing_cfg.scl_stop_period = 2;
-    i2cCfg.i2c_timing_cfg.i2c_trans_timeout = 20;
-}
-#endif
-
 void PowerManager::ulpDeepSleep(SleepReason reason) {
     // TODO: We need to ensure there's not file system activity or screen activity happening before
     // we go to sleep
@@ -337,7 +311,16 @@ void PowerManager::ulpDeepSleep(SleepReason reason) {
     }
 
     ulp_riscv_i2c_cfg_t i2cCfg;
-    UlpI2cSetup(i2cCfg);
+    i2cCfg.i2c_pin_cfg.sda_io_num = I2C_MASTER_SDA_IO;
+    i2cCfg.i2c_pin_cfg.scl_io_num = I2C_MASTER_SCL_IO;
+    i2cCfg.i2c_pin_cfg.sda_pullup_en = true;
+    i2cCfg.i2c_pin_cfg.scl_pullup_en = true;
+    i2cCfg.i2c_timing_cfg.scl_low_period = 5;
+    i2cCfg.i2c_timing_cfg.scl_high_period = 5;
+    i2cCfg.i2c_timing_cfg.sda_duty_period = 2;
+    i2cCfg.i2c_timing_cfg.scl_start_period = 3;
+    i2cCfg.i2c_timing_cfg.scl_stop_period = 6;
+    i2cCfg.i2c_timing_cfg.i2c_trans_timeout = 20;
     err = ulp_riscv_i2c_master_init(&i2cCfg);
     if (err != ESP_OK) {
         log_e("Failed to init I2C with err %s", esp_err_to_name(err));
