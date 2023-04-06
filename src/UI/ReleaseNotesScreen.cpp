@@ -5,15 +5,15 @@
 #include "sindarin-debug.h"
 
 ReleaseNotesScreen::ReleaseNotesScreen(DisplaySystem &display, PreferencesStore &prefs,
-                                       PowerManager &power, const Firmware &firmware)
-    : display_(display), renderer_(display), prefs_(prefs), power_(power), firmware_(firmware),
-      menu_(prefs, display) {
+                                       PowerManager &power, LocalStore &localStore,
+                                       const Firmware &firmware)
+    : display_(display), renderer_(display), prefs_(prefs), power_(power), localStore_(localStore),
+      firmware_(firmware), menu_(prefs, display) {
 
     SpiramString message = SpiRamStringFormat(
         "New firmware %s is now available! Here's what's new:\n\n", firmware.version.c_str());
     message += firmware.releaseNotes;
-    message +=
-        "\n\nPress the center button to update, or the up button to return to the main menu.";
+    message += "\n\nPress the center button to update!";
     auto stream = std::make_shared<StdStringStream>(message);
     renderer_.setStream(stream);
 
@@ -81,7 +81,7 @@ void ReleaseNotesScreen::updateError(const std::string &logMessage) {
     display_.drawSingleLineOfCenteredText(StringFormat("Install failed (%d)", error));
     display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     prefs_.firmwareLoaded.remove();
-    prefs_.firmwareLoadedSize.remove();
+    localStore_.resetFirmware();
     backCallback();
     return;
 }
@@ -91,7 +91,7 @@ void ReleaseNotesScreen::runUpdate() {
     display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 
     // TODO: Would be better if we had this saved in the firmware model
-    if (!Update.begin(prefs_.firmwareLoadedSize.get().value_or(0), U_FLASH)) {
+    if (!Update.begin(firmware_.fileSize, U_FLASH)) {
         updateError("Update.begin");
         return;
     }
@@ -101,6 +101,9 @@ void ReleaseNotesScreen::runUpdate() {
         return;
     }
 
+    // Rerun all of the bytes through the MD5 for the checker
+    Update.recalculateMD5();
+
     // TODO: Not sure if this is going to work since we've already written the firmware
     // Will have to test.
     if (!Update.end(true)) {
@@ -109,10 +112,13 @@ void ReleaseNotesScreen::runUpdate() {
     }
 
     prefs_.firmwareLoaded.remove();
-    prefs_.firmwareLoadedSize.remove();
+    localStore_.resetFirmware();
 
-    display_.drawSingleLineOfCenteredText("Rebooting into new version!");
+    display_.drawSingleLineOfCenteredText(
+        StringFormat("%s installed! Rebooting.", firmware_.version));
     display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+
+    Delay(2000);
 
     // Reboot
     power_.reboot();

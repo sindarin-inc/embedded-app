@@ -944,3 +944,5 @@ auto LocalStore::getPendingFirmwareUpdate(Firmware &firmware) -> bool {
                SemVerComparison::LessThan;
     }
 }
+
+void LocalStore::resetFirmware() { fileSystem.remove(firmwarePath); }

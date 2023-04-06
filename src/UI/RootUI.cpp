@@ -203,9 +203,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         localStore.getPendingFirmwareUpdate(firmware);
         log_i("Found pending firmware update %s", firmware.version.c_str());
         auto updateString = StringFormat("Update Firmware to %s", firmware.version.c_str());
-        return MenuItem(updateString, [this, display, mainMenu, firmware]() {
+        return MenuItem(updateString, [this, display, mainMenu, &localStore, firmware]() {
             auto releaseNotesScreen =
-                new ReleaseNotesScreen(*display, this->prefs_, power_, firmware);
+                new ReleaseNotesScreen(*display, this->prefs_, power_, localStore, firmware);
             display->clearDisplay();
             this->setCurrentScreen(*releaseNotesScreen);
             // auto resizeBox = new ResizeBoxScreen(*display, prefs_);

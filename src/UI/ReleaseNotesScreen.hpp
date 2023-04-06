@@ -4,6 +4,7 @@
 #include "Misc/PowerManager.hpp"
 #include "Models/Firmware.hpp"
 #include "Renderers/Renderer.hpp"
+#include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/ContainerScreen.hpp"
 #include "UI/LineMenuScreen.hpp"
@@ -11,7 +12,7 @@
 class ReleaseNotesScreen : public ContainerScreen {
 public:
     ReleaseNotesScreen(DisplaySystem &display, PreferencesStore &prefs, PowerManager &power,
-                       const Firmware &firmware);
+                       LocalStore &localStore, const Firmware &firmware);
 
 protected:
     void render(DisplaySystem &display) override;
@@ -21,6 +22,7 @@ protected:
     Renderer renderer_;
     PreferencesStore &prefs_;
     PowerManager &power_;
+    LocalStore &localStore_;
     Firmware firmware_;
     LineMenuScreen menu_;
 

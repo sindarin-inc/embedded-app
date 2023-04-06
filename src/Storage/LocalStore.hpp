@@ -99,6 +99,8 @@ public:
     void saveFirmware(const Firmware &firmware);
     // Returns true if a newer firmware has been loaded.
     auto getPendingFirmwareUpdate(Firmware &firmware) -> bool;
+    // Delete any existing firmware.json file.
+    void resetFirmware();
 
     FileSystem &fileSystem;
 
