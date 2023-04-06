@@ -203,7 +203,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         localStore.getPendingFirmwareUpdate(firmware);
         log_i("Found pending firmware update %s", firmware.version.c_str());
         return MenuItem(
-            "Update Firmware", firmware.version,
+            "Upgrade Software",
+            StringFormat("From %s to %s", kVersionString, firmware.version.c_str()),
             [this, display, mainMenu, &localStore, firmware]() {
                 auto releaseNotesScreen =
                     new ReleaseNotesScreen(*display, this->prefs_, power_, localStore, firmware);
