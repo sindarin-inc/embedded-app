@@ -202,21 +202,22 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         Firmware firmware;
         localStore.getPendingFirmwareUpdate(firmware);
         log_i("Found pending firmware update %s", firmware.version.c_str());
-        auto updateString = StringFormat("Update Firmware to %s", firmware.version.c_str());
-        return MenuItem(updateString, [this, display, mainMenu, &localStore, firmware]() {
-            auto releaseNotesScreen =
-                new ReleaseNotesScreen(*display, this->prefs_, power_, localStore, firmware);
-            display->clearDisplay();
-            this->setCurrentScreen(*releaseNotesScreen);
-            // auto resizeBox = new ResizeBoxScreen(*display, prefs_);
-            // this->setCurrentScreen(*resizeBox);
-            releaseNotesScreen->backCallback = [this, display, releaseNotesScreen, mainMenu]() {
+        return MenuItem(
+            "Update Firmware", firmware.version,
+            [this, display, mainMenu, &localStore, firmware]() {
+                auto releaseNotesScreen =
+                    new ReleaseNotesScreen(*display, this->prefs_, power_, localStore, firmware);
                 display->clearDisplay();
-                mainMenu->setFirstLoad();
-                setCurrentScreen(*mainMenu);
-                delete releaseNotesScreen;
-            };
-        });
+                this->setCurrentScreen(*releaseNotesScreen);
+                // auto resizeBox = new ResizeBoxScreen(*display, prefs_);
+                // this->setCurrentScreen(*resizeBox);
+                releaseNotesScreen->backCallback = [this, display, releaseNotesScreen, mainMenu]() {
+                    display->clearDisplay();
+                    mainMenu->setFirstLoad();
+                    setCurrentScreen(*mainMenu);
+                    delete releaseNotesScreen;
+                };
+            });
     };
 
     if (prefs_.firmwareLoaded.get().has_value()) {
