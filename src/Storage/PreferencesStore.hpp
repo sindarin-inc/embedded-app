@@ -235,7 +235,12 @@ public:
           firstAutopilotRead(*this, "fst-auto-rd"), cesMode(*this, "ces"), emcMode(*this, "emc"),
           wifiPower(*this, "wifi-power"), morningNewspaperTime(*this, "morning-news"),
           eveningNewspaperTime(*this, "evening-news"), solTimeZone(*this, "time-zone"),
-          firmwareLoaded(*this, "fw-loaded"){};
+          firmwareLoaded(*this, "fw-loaded"), sleepReason(*this, "sleep-reason"),
+          showBooks(*this, "show-books"), showNews(*this, "show-news"),
+          showArticles(*this, "show-articles"), showBible(*this, "show-bible"),
+          deliverOnClose(*this, "deliver-close"), morningDelivery(*this, "morn-deliver"),
+          eveningDelivery(*this, "eve-deliver"){};
+
     PreferencesStore(PreferencesStore &) = delete;
 
     auto begin() -> bool {
@@ -316,6 +321,15 @@ public:
     PrefsItem<int> morningNewspaperTime;
     PrefsItem<int> eveningNewspaperTime;
     PrefsItem<int> solTimeZone;
+    PrefsItem<int> sleepReason;
+    PrefsItem<bool> showBooks;
+    PrefsItem<bool> showNews;
+    PrefsItem<bool> showArticles;
+    PrefsItem<bool> showBible;
+    PrefsItem<bool> deliverOnClose;
+    PrefsItem<bool> morningDelivery;
+    PrefsItem<bool> eveningDelivery;
+
     // Firmware that's been loaded to the other flash slot but not yet installed
     PrefsItem<std::string> firmwareLoaded;
 

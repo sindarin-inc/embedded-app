@@ -44,6 +44,7 @@
 #include "UI/ReleaseNotesScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
 #include "UI/StatsScreen.hpp"
+#include "UI/ToggleMenuScreen.hpp"
 #include "UI/VoltageLogUploadScreen.hpp"
 #include "Version.hpp"
 #include "config.h"
@@ -361,7 +362,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     // Settings menus
-    // Sync Content
+    // Sync Content -- removed for now
     // Reading Settings
     // System Settings
     // Debug Settings
@@ -382,6 +383,95 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         mainMenu->setFirstLoad();
         setCurrentScreen(*mainMenu);
     };
+
+    // Books
+    // News
+    // Articles
+    // Bible
+    // Deliver content on close
+    // Morning delivery
+    // Evening delivery
+    auto contentSettingsMenu = new ToggleMenuScreen(this->power_, *display_,
+                                                    styleFamilies.settingsMenu, "Content Settings");
+
+    contentSettingsMenu->backCallback = [this, mainMenu]() {
+        this->display_->clearDisplay();
+        mainMenu->setFirstLoad();
+        setCurrentScreen(*mainMenu);
+    };
+
+    contentSettingsMenu->addMenuItem(MenuItem("Books", [this, display, contentSettingsMenu]() {
+        this->prefs_.showBooks.set(!this->prefs_.showBooks.get().value_or(0));
+    }));
+
+    if (prefs_.showBooks.get().value_or(0)) {
+        contentSettingsMenu->setToggleLastItem(true);
+    } else {
+        contentSettingsMenu->setToggleLastItem(false);
+    }
+
+    contentSettingsMenu->addMenuItem(MenuItem("News", [this, display, contentSettingsMenu]() {
+        this->prefs_.showNews.set(!this->prefs_.showNews.get().value_or(0));
+    }));
+
+    if (prefs_.showNews.get().value_or(0)) {
+        contentSettingsMenu->setToggleLastItem(true);
+    } else {
+        contentSettingsMenu->setToggleLastItem(false);
+    }
+
+    contentSettingsMenu->addMenuItem(MenuItem("Articles", [this, display, contentSettingsMenu]() {
+        this->prefs_.showArticles.set(!this->prefs_.showArticles.get().value_or(0));
+    }));
+
+    if (prefs_.showArticles.get().value_or(0)) {
+        contentSettingsMenu->setToggleLastItem(true);
+    } else {
+        contentSettingsMenu->setToggleLastItem(false);
+    }
+
+    contentSettingsMenu->addMenuItem(MenuItem("Bible", [this, display, contentSettingsMenu]() {
+        this->prefs_.showBible.set(!this->prefs_.showBible.get().value_or(0));
+    }));
+
+    if (prefs_.showBible.get().value_or(0)) {
+        contentSettingsMenu->setToggleLastItem(true);
+    } else {
+        contentSettingsMenu->setToggleLastItem(false);
+    }
+
+    contentSettingsMenu->addMenuItem(
+        MenuItem("Deliver content on close", [this, display, contentSettingsMenu]() {
+            this->prefs_.deliverOnClose.set(!this->prefs_.deliverOnClose.get().value_or(0));
+        }));
+
+    if (prefs_.deliverOnClose.get().value_or(0)) {
+        contentSettingsMenu->setToggleLastItem(true);
+    } else {
+        contentSettingsMenu->setToggleLastItem(false);
+    }
+
+    contentSettingsMenu->addMenuItem(
+        MenuItem("Morning delivery", [this, display, contentSettingsMenu]() {
+            this->prefs_.morningDelivery.set(!this->prefs_.morningDelivery.get().value_or(0));
+        }));
+
+    if (prefs_.morningDelivery.get().value_or(0)) {
+        contentSettingsMenu->setToggleLastItem(true);
+    } else {
+        contentSettingsMenu->setToggleLastItem(false);
+    }
+
+    contentSettingsMenu->addMenuItem(
+        MenuItem("Evening delivery", [this, display, contentSettingsMenu]() {
+            this->prefs_.eveningDelivery.set(!this->prefs_.eveningDelivery.get().value_or(0));
+        }));
+
+    if (prefs_.eveningDelivery.get().value_or(0)) {
+        contentSettingsMenu->setToggleLastItem(true);
+    } else {
+        contentSettingsMenu->setToggleLastItem(false);
+    }
 
     // Firmware Update
     // Send Crash Report
@@ -434,25 +524,32 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     //    };
     // }));
 
-    settingsMenu->addMenuItem(
-        MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
-            auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
-            this->setCurrentScreen(*contentSyncScreen);
-            lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
-            contentSyncScreen->backCallback = [this, contentSyncScreen, mainMenu, display]() {
-                this->display_->clearDisplay();
-                mainMenu->setFirstLoad();
-                setCurrentScreen(*mainMenu);
-                mainMenu->render(*display);
-                delete contentSyncScreen;
-            };
-            contentSyncScreen->begin();
-        }));
-
+    /*
+        settingsMenu->addMenuItem(
+            MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
+                auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
+                this->setCurrentScreen(*contentSyncScreen);
+                lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
+                contentSyncScreen->backCallback = [this, contentSyncScreen, mainMenu, display]() {
+                    this->display_->clearDisplay();
+                    mainMenu->setFirstLoad();
+                    setCurrentScreen(*mainMenu);
+                    mainMenu->render(*display);
+                    delete contentSyncScreen;
+                };
+                contentSyncScreen->begin();
+            }));
+    */
     settingsMenu->addMenuItem(MenuItem("Reading", [this, readingSettingsMenu]() {
         log_d("Loading Reading Settings Menu");
         readingSettingsMenu->setFirstLoad();
         this->setCurrentScreen(*readingSettingsMenu);
+    }));
+
+    settingsMenu->addMenuItem(MenuItem("Content", [this, contentSettingsMenu]() {
+        log_d("Loading Content Settings Menu");
+        contentSettingsMenu->setFirstLoad();
+        this->setCurrentScreen(*contentSettingsMenu);
     }));
 
     settingsMenu->addMenuItem(MenuItem("System", [this, systemSettingsMenu]() {

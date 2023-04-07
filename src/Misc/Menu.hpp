@@ -26,6 +26,9 @@ public:
     std::string subtitle;
     // Called when this menu item is selected
     std::function<void()> callback;
+
+    bool isToggle = false;
+    bool toggleValue = false;
 };
 
 class Menu {

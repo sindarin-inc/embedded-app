@@ -104,7 +104,7 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
         });
 
     return size;
-};
+}
 
 void MainMenuScreen::drawInRect(Rect rect) {
     for (auto &view : topBarViews_) {
