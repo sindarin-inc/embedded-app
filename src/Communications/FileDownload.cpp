@@ -194,7 +194,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
             }
             return true;
         },
-        [fileBuffer](HttpClient &client, int index, int contentLength) -> size_t {
+        [&fileBuffer](HttpClient &client, int index, int contentLength) -> size_t {
             constexpr int bufferSize = 16384;
             return client.read((char *)(fileBuffer.get() + index),
                                std::min(bufferSize, contentLength - index));
