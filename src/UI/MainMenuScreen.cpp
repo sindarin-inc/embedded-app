@@ -85,15 +85,15 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
             return {size.width, y};
         });
 
-    context.setViewFrame(clockView_, {{0, 0}, size},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft |
-                             LayoutOptionsAlignBottom);
-
     context.setSublayoutFrame(
-        {{0, 0}, size}, LayoutOptionsSizeToFit | LayoutOptionsAlignBottom | LayoutOptionsAlignRight,
+        {{0, 0}, size},
+        LayoutOptionsSizeToFit | LayoutOptionsAlignBottom | LayoutOptionsAlignCenter,
         [this](LayoutContext &context, Size size) -> Size {
             int x = 0;
             int y = 0;
+            auto clockRect =
+                context.setViewFrame(clockView_, {{x, y}, size}, LayoutOptionsSizeToFit);
+            x += clockRect.size.width + 20;
             auto iconRect = context.setViewFrame(
                 batteryIconView_, {{x, y}, {size.width, size.height}}, LayoutOptionsSizeToFit);
             x += iconRect.size.width + 3;
@@ -136,7 +136,12 @@ void MainMenuScreen::render(DisplaySystem &display) {
 
     setNeedsLayout();
 
-    setFrame({{0, 0}, {display.width(), display.height()}});
+    // For the main menu, we want to use the entire screen and ignore the user settings for reading
+    // box.
+    setFrame(
+        {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
+         {display.defaultScreenWidth - 2 * display.defaultXPadding,
+          display.defaultScreenHeight - 2 * display.defaultYPadding}});
 
     // On the first load, we want to only render the items in the menu because we are going
     // to do a partial refresh with the selector button at a lower/higher vcom to reduce

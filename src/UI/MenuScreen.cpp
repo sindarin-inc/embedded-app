@@ -19,6 +19,9 @@ void MenuScreen::populateMenuItems(std::vector<MenuItem> &menuItems) {
 void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool withLastItem) {
     display.setFont(myStyle_.itemFont);
     int iteratorEnd = (withLastItem) ? numMenuItems_ : numMenuItems_ - 1;
+    int xOffsetForMenu = display.xAbsolute(display.defaultXPadding) + myStyle_.xOffsetForList;
+    int yOffsetForMenu = display.yAbsolute(display.defaultYPadding) + myStyle_.yOffsetForList;
+
     for (int i = currMenuPage_ * myStyle_.numberOfItemsPerPage;
          (i < (currMenuPage_ * myStyle_.numberOfItemsPerPage + myStyle_.numberOfItemsPerPage)) &&
          (i < iteratorEnd);
@@ -35,16 +38,16 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
             }
         }
         display.drawSingleLineOfText(
-            itemTitle, myStyle_.xOffsetForList,
-            myStyle_.yOffsetForList + (i % myStyle_.numberOfItemsPerPage) *
-                                          (display.getTextHeight() / 5 + display.getTextHeight()));
+            itemTitle, xOffsetForMenu,
+            yOffsetForMenu + (i % myStyle_.numberOfItemsPerPage) *
+                                 (display.getTextHeight() / 5 + display.getTextHeight()));
 
         // xoffset for main menu is 12, for settings menu is 23
         // yoffset for main menu is some crazy thing
         // for settings menu some other crazy thing
         if ((i == currSelection_) && (withBullet)) {
-            display.fillRoundRect(myStyle_.xOffsetForList - display.getTextHeight() / 4 - 2,
-                                  myStyle_.yOffsetForList +
+            display.fillRoundRect(xOffsetForMenu - display.getTextHeight() / 4 - 2,
+                                  yOffsetForMenu +
                                       (i % myStyle_.numberOfItemsPerPage) *
                                           (display.getTextHeight() / 5 + display.getTextHeight()) +
                                       4,
@@ -55,8 +58,8 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
 
     int oldTextHeight = display.getTextHeight();
     display.setFont(display.style.getFontFamily().readableFont);
-    display.drawSingleLineOfText(extraTextBelowMenu_.c_str(), myStyle_.xOffsetForList + 10,
-                                 myStyle_.yOffsetForList +
+    display.drawSingleLineOfText(extraTextBelowMenu_.c_str(), xOffsetForMenu + 10,
+                                 yOffsetForMenu +
                                      (1 + myStyle_.numberOfItemsPerPage) * oldTextHeight + 20);
 }
 
