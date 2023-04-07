@@ -540,6 +540,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 contentSyncScreen->begin();
             }));
     */
+
     settingsMenu->addMenuItem(MenuItem("Reading", [this, readingSettingsMenu]() {
         log_d("Loading Reading Settings Menu");
         readingSettingsMenu->setFirstLoad();

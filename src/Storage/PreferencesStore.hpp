@@ -240,7 +240,6 @@ public:
           showArticles(*this, "show-articles"), showBible(*this, "show-bible"),
           deliverOnClose(*this, "deliver-close"), morningDelivery(*this, "morn-deliver"),
           eveningDelivery(*this, "eve-deliver"){};
-
     PreferencesStore(PreferencesStore &) = delete;
 
     auto begin() -> bool {
@@ -332,6 +331,14 @@ public:
 
     // Firmware that's been loaded to the other flash slot but not yet installed
     PrefsItem<std::string> firmwareLoaded;
+    PrefsItem<int> sleepReason;
+    PrefsItem<bool> showBooks;
+    PrefsItem<bool> showNews;
+    PrefsItem<bool> showArticles;
+    PrefsItem<bool> showBible;
+    PrefsItem<bool> deliverOnClose;
+    PrefsItem<bool> morningDelivery;
+    PrefsItem<bool> eveningDelivery;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles
