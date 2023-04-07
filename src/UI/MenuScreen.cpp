@@ -78,6 +78,7 @@ void MenuScreen::drawArrowsAndSelections(DisplaySystem &display) {
         display.yAbsolute(myStyle_.yOffsetForArrows + myStyle_.arrowHeight / 2), display.fg);
 
     // Lower right arrow for "Read" or flip between "Books and Articles"
+    /*
     display.drawLine(display.xAbsolute(display.xAbsoluteMax() - myStyle_.xOffsetForArrows),
                      display.yAbsolute(display.yAbsoluteMax() - myStyle_.yOffsetForArrows),
                      display.xAbsolute(display.xAbsoluteMax() -
@@ -92,21 +93,22 @@ void MenuScreen::drawArrowsAndSelections(DisplaySystem &display) {
                      display.yAbsolute(display.yAbsoluteMax() -
                                        (myStyle_.yOffsetForArrows + myStyle_.arrowHeight / 2)),
                      display.fg);
-
+*/
     display.drawSingleLineOfText(
         upperLeftText_.c_str(),
         display.xAbsolute(myStyle_.xOffsetForArrows + myStyle_.arrowWidth +
                           myStyle_.arrowTextSpacing),
         display.yAbsolute(myStyle_.yOffsetForArrows - display.getTextHeight() / 2));
-
-    display.drawSingleLineOfText(
-        lowerRightText_.c_str(),
-        display.xAbsolute(display.xAbsoluteMax() -
-                          (myStyle_.xOffsetForArrows + myStyle_.arrowWidth +
-                           myStyle_.arrowTextSpacing +
-                           display.getTextWidth(lowerRightText_.c_str()))),
-        display.yAbsolute(display.yAbsoluteMax() -
-                          (myStyle_.yOffsetForArrows + display.getTextHeight() / 2)));
+    /*
+        display.drawSingleLineOfText(
+            lowerRightText_.c_str(),
+            display.xAbsolute(display.xAbsoluteMax() -
+                              (myStyle_.xOffsetForArrows + myStyle_.arrowWidth +
+                               myStyle_.arrowTextSpacing +
+                               display.getTextWidth(lowerRightText_.c_str()))),
+            display.yAbsolute(display.yAbsoluteMax() -
+                              (myStyle_.yOffsetForArrows + display.getTextHeight() / 2)));
+    */
 }
 
 void MenuScreen::showTemporaryMessage(DisplaySystem &display, const std::string &message,
