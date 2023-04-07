@@ -1,10 +1,8 @@
 #include "ContentSyncScreen.hpp"
 
 #include "Communications/WiFi.hpp"
-#include "Misc/InactivityTimer.hpp"
-
-// TODO(john): Note-to-self: Externs are janky. Do better.
-extern InactivityTimer inactivityTimer;
+#include "Misc/Platform.hpp"
+#include "Misc/PowerManager.hpp"
 
 void ContentSyncScreen::render(DisplaySystem &display) {
     if (!needsRerender) {
@@ -27,7 +25,8 @@ void ContentSyncScreen::render(DisplaySystem &display) {
         { break; }
     case ContentSyncState::ConnectingWifi:
     case ContentSyncState::CheckingSync:
-    case ContentSyncState::LoadingTasks:
+    case ContentSyncState::SyncingBooks:
+    case ContentSyncState::SyncingArticles:
     case ContentSyncState::Syncing:
     case ContentSyncState::AlreadySynced:
     case ContentSyncState::Synced: {
@@ -38,8 +37,8 @@ void ContentSyncScreen::render(DisplaySystem &display) {
         uint16_t textHeight = display.getFont()->yAdvance;
         uint16_t lineCount;
 
-        if (state_.state <= ContentSyncState::LoadingTasks) {
-            lineCount = 3;
+        if (state_.state <= ContentSyncState::SyncingArticles) {
+            lineCount = 4;
         } else {
             lineCount = state_.tasks.size();
         }
@@ -71,7 +70,7 @@ void ContentSyncScreen::render(DisplaySystem &display) {
             y += spacing;
         };
 
-        if (state_.state <= ContentSyncState::LoadingTasks) {
+        if (state_.state <= ContentSyncState::SyncingArticles) {
 
             drawBulletLine("Connecting WiFi",
                            state_.state > ContentSyncState::ConnectingWifi ? 100 : 0, false);
@@ -79,18 +78,20 @@ void ContentSyncScreen::render(DisplaySystem &display) {
             drawBulletLine("Checking for update",
                            state_.state > ContentSyncState::CheckingSync ? 100 : 0, false);
 
-            drawBulletLine("Loading tasks...",
-                           state_.state > ContentSyncState::LoadingTasks ? 100 : 0, false);
+            drawBulletLine("Syncing books...",
+                           state_.state > ContentSyncState::SyncingBooks ? 100 : 0, false);
+
+            drawBulletLine("Syncing articles...",
+                           state_.state > ContentSyncState::SyncingArticles ? 100 : 0, false);
 
             break;
         }
-
         for (const auto &task : state_.tasks) {
             drawBulletLine(task.message.c_str(), task.percentage, true);
         }
 
         if (state_.state == ContentSyncState::AlreadySynced) {
-            drawBulletLine(StringFormat("No new books or articles").c_str(), 100, false);
+            drawBulletLine("No new books or articles", 100, false);
             break;
         }
 
@@ -128,9 +129,9 @@ void ContentSyncScreen::fail(const std::string &message) {
     needsRerender = true;
     render(display_);
     vTaskDelay(3000 / portTICK_PERIOD_MS);
-    DisconnectWifi();
+    WiFi::getInstance().disconnectWiFi();
 #if !SIMULATOR
-    esp_restart();
+    PowerManager::getInstance().reboot();
 #endif
     if (backCallback) {
         backCallback();
@@ -145,7 +146,7 @@ void ContentSyncScreen::begin() {
         return;
     }
 
-    if (!HasWiFiCredentials()) {
+    if (!WiFi::getInstance().hasWiFiCredentials()) {
         fail("Go to Settings > WiFi Setup in the Sol app.");
         return;
     }
@@ -154,11 +155,11 @@ void ContentSyncScreen::begin() {
     render(display_);
 
     localStore_.syncFromRemote([this](const ContentSyncState &state) {
-        inactivityTimer.feed();
+        PowerManager::getInstance().feedInactivityTimer();
 
         if (state.state == ContentSyncState::Failure || state.state == ContentSyncState::Synced ||
             state.state == ContentSyncState::AlreadySynced) {
-            DisconnectWifi();
+            WiFi::getInstance().disconnectWiFi();
         }
         // Do UI stuff back on core 1
         DispatchGetUiQueue()->dispatch([this, state]() {
@@ -167,13 +168,14 @@ void ContentSyncScreen::begin() {
 #if !SIMULATOR
             if (state.state == ContentSyncState::Synced) {
                 log_d("Content sync done, rebooting");
-                esp_restart();
+                PowerManager::getInstance().reboot();
             }
 #endif
             if (state.state == ContentSyncState::Failure ||
                 state.state == ContentSyncState::Synced ||
                 state.state == ContentSyncState::AlreadySynced) {
-                delay(5000);
+                log_d("Content sync done, waiting 5 seconds before going back");
+                Delay(5000);
                 backCallback();
             }
         });

@@ -6,7 +6,7 @@
 
 #include "sindarin-debug.h"
 
-#define I2C_MASTER_TIMEOUT_MS 1000
+#define I2C_MASTER_TIMEOUT_MS 200
 #define LTR329ALS01_SENSOR_ADDR 0x29
 
 struct Ltr329als01AlsContrValue {
@@ -43,15 +43,16 @@ struct Ltr329als01AlsContrValue {
 };
 
 auto Ltr329Als::registerReadByte(ltr329als01_reg_t regAddr, uint8_t *data) -> esp_err_t {
-    return i2c_master_write_read_device(i2cNum_, LTR329ALS01_SENSOR_ADDR, (uint8_t *)&regAddr, 1,
-                                        data, 1, I2C_MASTER_TIMEOUT_MS / portTICK_RATE_MS);
+    return i2c_master_write_read_device((i2c_port_t)i2cNum_, LTR329ALS01_SENSOR_ADDR,
+                                        (uint8_t *)&regAddr, 1, data, 1,
+                                        I2C_MASTER_TIMEOUT_MS / portTICK_RATE_MS);
 }
 
 auto Ltr329Als::registerWriteByte(ltr329als01_reg_t regAddr, uint8_t data) -> esp_err_t {
     int ret;
     uint8_t writeBuf[2] = {static_cast<uint8_t>(regAddr), data};
-    ret = i2c_master_write_to_device(i2cNum_, LTR329ALS01_SENSOR_ADDR, writeBuf, sizeof(writeBuf),
-                                     I2C_MASTER_TIMEOUT_MS / portTICK_RATE_MS);
+    ret = i2c_master_write_to_device((i2c_port_t)i2cNum_, LTR329ALS01_SENSOR_ADDR, writeBuf,
+                                     sizeof(writeBuf), I2C_MASTER_TIMEOUT_MS / portTICK_RATE_MS);
 
     return ret;
 }
@@ -69,7 +70,7 @@ auto Ltr329Als::readManufacturerId() -> uint8_t {
     uint8_t manufacturerId = 0;
     auto err = registerReadByte(LTR329ALS01_REG_MANUFAC_ID, &manufacturerId);
     if (err != ESP_OK) {
-        ESP_LOGE("LTR329ALS", "Failed to read part ID (%s)", esp_err_to_name(err));
+        ESP_LOGE("LTR329ALS", "Failed to read manufacturer ID (%s)", esp_err_to_name(err));
     }
     return manufacturerId;
 }

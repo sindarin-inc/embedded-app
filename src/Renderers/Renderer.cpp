@@ -1,5 +1,6 @@
 #include "Renderer.hpp"
 
+#include <algorithm>
 #include <utility>
 
 #include "Misc/Platform.hpp"
@@ -254,6 +255,18 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
     // Set the EOF place correctly.
     currTokenBuffer_[plcInTokenBuffer].place = plcInBuffer;
     currTokenBuffer_[plcInTokenBuffer].streamPlace = placeInFile + plcInBuffer;
+
+    // we need to set the size of the last token if it wasn't set (e.g., when there is no newline at
+    // the end)
+    if ((plcInTokenBuffer > 0) && (currTokenBuffer_[plcInTokenBuffer - 1].token == TOKEN_TEXT) &&
+        (currTokenBuffer_[plcInTokenBuffer - 1].width == 0)) {
+        setSizeOfTextToken(plcInTokenBuffer - 1);
+        // set the size of that space token
+        // based on this token and the token before the space.
+        if ((plcInTokenBuffer > 2) && currTokenBuffer_[plcInTokenBuffer - 2].token == TOKEN_SPACE) {
+            setSizeOfTextToken(plcInTokenBuffer - 2);
+        }
+    }
 }
 
 // debugging method
@@ -341,12 +354,15 @@ void Renderer::loaded() {
 // Show the (already loaded into buffer) current page
 // and load the next page into the next buffer so we have it.
 auto Renderer::renderPage(unsigned long placeInFile, int numSkipLines) -> unsigned long {
-    SetCpuSpeedMhz(CPU_FREQ_MHZ_HIGH);
-
 #ifdef RENDERER_DEBUG
     log_d("%lu is place in file being requested", placeInFile);
 #endif
     currentPlace_ = placeInFile;
+
+    // This needs to happen before loading into buffer since it will affect what we load into the
+    // buffer.
+    display_.setFont(display_.style.getFontFamily().readableFont);
+
     PROFILE_START(loadCurrIntoBuffer);
     nextPlace_ = loadCurrIntoBuffer();
     PROFILE_END_LOG_MS(loadCurrIntoBuffer);
@@ -354,8 +370,6 @@ auto Renderer::renderPage(unsigned long placeInFile, int numSkipLines) -> unsign
     currentPageWordCount_ = WordCount(currBuffer_.data());
 
     int newLineAdjust = 0;
-
-    display_.setFont(display_.style.getFontFamily().readableFont);
 
     // A first attempt to get the the text to look better with newlines as sole
     // characters on the line with a smaller height than a full line.
@@ -382,8 +396,6 @@ auto Renderer::renderPage(unsigned long placeInFile, int numSkipLines) -> unsign
             }
         }
     }
-
-    SetCpuSpeedMhz(CPU_FREQ_MHZ_LOW);
 
     return nextPlace_;
 }

@@ -4,7 +4,7 @@
 #include <utility>
 
 #include "Inputs/RemoteInput.hpp"
-#include "Misc/Power.hpp"
+#include "Misc/Battery.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Sensors/LightingController.hpp"
 #include "Storage/PreferencesStore.hpp"
@@ -24,11 +24,12 @@
 class PopupMenuScreen : public ContainerScreen, public EinkView {
 
 public:
-    PopupMenuScreen(DisplaySystem &display, Power &power, Renderer &renderer,
+    PopupMenuScreen(DisplaySystem &display, Battery &battery, Renderer &renderer,
                     PreferencesStore &prefs, Readable &readable,
                     LightingController &lightingController)
-        : EinkView(display), prefs_(prefs), power_(power), renderer_(renderer), readable_(readable),
-          leftButtonTitle_("Brightness"), lightingAdjustScreen_(display, prefs, lightingController),
+        : EinkView(display), prefs_(prefs), battery_(battery), renderer_(renderer),
+          readable_(readable), leftButtonTitle_("Brightness"),
+          lightingAdjustScreen_(display, prefs, lightingController),
           readableSeekScreen_(prefs, readable, renderer_), batteryTextView_(display, ""),
           batteryIconView_(display, boltBits, bolt_width, bolt_height),
           placeInReadableView_(display, ""), clockView_(display, "") {
@@ -62,7 +63,7 @@ public:
 
 protected:
     PreferencesStore &prefs_;
-    Power &power_;
+    Battery &battery_;
     Renderer &renderer_;
     Readable &readable_;
     std::string leftButtonTitle_;

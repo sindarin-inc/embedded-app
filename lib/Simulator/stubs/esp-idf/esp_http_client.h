@@ -41,6 +41,7 @@ typedef enum {
                            of the packet */
     HTTP_EVENT_ON_FINISH,    /*!< Occurs when finish a HTTP session */
     HTTP_EVENT_DISCONNECTED, /*!< The connection has been disconnected */
+    HTTP_EVENT_REDIRECT
 } esp_http_client_event_id_t;
 
 /**

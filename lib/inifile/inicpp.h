@@ -104,6 +104,25 @@ namespace ini
         return false;
     }
 
+    inline bool strToULongLong(const std::string &value, unsigned long long &result)
+    {
+        char *endptr;
+        // check if decimal
+        result = std::strtoul(value.c_str(), &endptr, 10);
+        if(*endptr == '\0')
+            return true;
+        // check if octal
+        result = std::strtoul(value.c_str(), &endptr, 8);
+        if(*endptr == '\0')
+            return true;
+        // check if hex
+        result = std::strtoul(value.c_str(), &endptr, 16);
+        if(*endptr == '\0')
+            return true;
+
+        return false;
+    }
+
     template<typename T>
     struct Convert
     {};
@@ -265,6 +284,23 @@ namespace ini
         }
 
         void encode(const unsigned long value, std::string &result)
+        {
+            std::stringstream ss;
+            ss << value;
+            result = ss.str();
+        }
+    };
+
+    template<>
+    struct Convert<unsigned long long>
+    {
+        void decode(const std::string &value, unsigned long long &result)
+        {
+            if(!strToULongLong(value, result))
+                throw std::invalid_argument("field is not an unsigned long");
+        }
+
+        void encode(const unsigned long long value, std::string &result)
         {
             std::stringstream ss;
             ss << value;

@@ -20,15 +20,15 @@
 
 class LineMenuScreen : public Screen, public Menu, public EinkView {
 public:
-    LineMenuScreen(Power &power, Readable &readable, PreferencesStore &prefs,
-                   DisplaySystem &display, MenuStyleFamily menuStyle)
-        : Menu(), EinkView(display), display_(display), power_(power) {
+    LineMenuScreen(PreferencesStore &prefs, DisplaySystem &display, MenuStyleFamily menuStyle)
+        : Menu(menuStyle), EinkView(display), display_(display) {
         numMenuItems_ = 0;
     }
-    LineMenuScreen(Power &power, Readable &readable, PreferencesStore &prefs,
-                   DisplaySystem &display)
-        : Menu(), EinkView(display), display_(display), power_(power) {
+    LineMenuScreen(PreferencesStore &prefs, DisplaySystem &display)
+        : Menu(), EinkView(display), display_(display) {
         numMenuItems_ = 0;
+        MenuStyle styleFamilies;
+        myStyle_ = styleFamilies.mainMenu;
     }
 
     auto layout(LayoutContext &context, Size size) -> Size override;
@@ -53,6 +53,5 @@ public:
 protected:
     DisplaySystem &display_;
     std::vector<std::shared_ptr<MenuItemView>> menuItemViews_;
-    Power &power_;
     bool firstLoad_ = true;
 };

@@ -9,8 +9,12 @@ def remove_non_simulator_files(node):
     `node.get_abspath()` - an absolute path
     """
     ignore = [
+        "CryptoMbedTls.cpp",
+        "PlatformESP32.cpp",
+        "SindarinWiFi.cpp",
+        "Updater.cpp",
+        "interrupt-hal.cpp",
         "ExternalSPIFlash.cpp",
-        "SpiffsFileSystem.cpp",
         "LittleFSFileSystem.cpp",
         "Adafruit_SPITFT.cpp",
         "Adafruit_GrayOLED.cpp",
@@ -18,6 +22,7 @@ def remove_non_simulator_files(node):
         "Mmc5603.cpp",
         "TempleCloseSensor.cpp",
         "WiFi.cpp",
+        "main.c",
     ]
 
     if node.name in ignore:
@@ -26,4 +31,24 @@ def remove_non_simulator_files(node):
     return node
 
 
+def ignore_unzipLIB_warnings(env, node):
+    """
+    Ignore -Wdeprecated-non-prototype warnings for unzipLIB
+
+    `node.name` - a name of File System Node
+    `node.get_path()` - a relative path
+    `node.get_abspath()` - an absolute path
+    """
+
+    if "unzipLIB" not in node.get_path():
+        return node
+
+    return env.Object(
+        node,
+        CPPDEFINES=env["CPPDEFINES"],
+        CCFLAGS=env["CCFLAGS"] + ["-Wno-deprecated-non-prototype"],
+    )
+
+
 env.AddBuildMiddleware(remove_non_simulator_files, "*")
+env.AddBuildMiddleware(ignore_unzipLIB_warnings, "*.c")

@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "Misc/SpiramAllocator.hpp"
 #include "sindarin-debug.h"
 
 // C++20 has std::format which could replace this
@@ -16,23 +17,33 @@
 auto WordCount(const char *str) -> int;
 auto BytesToHex(const uint8_t *data, size_t size) -> std::string;
 
-template <typename... ARGS>
-auto StringFormat(const char *format, ARGS... args) -> std::string {
+template <typename T, typename... ARGS>
+auto StringFormatInternal(const char *format, ARGS... args) -> T {
     // Extra space for '\0'
     // This raises a warning about `format` not being a literal.
     int sizeS = std::snprintf(nullptr, 0, format, args...);
     if (sizeS <= 0) {
-        log_e("Failed to generate formatted string");
+        log_e("Failed to generate formatted string: %s", format);
         return "";
     }
     auto size = sizeS + 1;
     auto buf = std::make_unique<char[]>(size);
-    auto sizeF = std::snprintf(buf.get(), size, format, args...);
+    auto sizeF = std::snprintf(buf.get(), size, format, std::forward<ARGS>(args)...);
     if (sizeS != sizeF) {
         log_e("Formatted string was a different size %d vs %d", sizeS, sizeF);
     }
     // We don't want the '\0' inside
     return {buf.get(), buf.get() + size - 1};
+}
+
+template <typename... ARGS>
+auto StringFormat(const char *format, ARGS... args) -> std::string {
+    return StringFormatInternal<std::string>(format, args...);
+}
+
+template <typename... ARGS>
+auto SpiRamStringFormat(const char *format, ARGS... args) -> SpiramString {
+    return StringFormatInternal<SpiramString>(format, args...);
 }
 
 auto SafeSnprintf(char *str, size_t size, const char *format, ...) -> bool;

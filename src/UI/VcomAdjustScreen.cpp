@@ -11,8 +11,8 @@
 #define MIN_VCOM_IN_MV (-4500)
 #define MAX_VCOM_IN_MV (-3500)
 
-VcomAdjustScreen::VcomAdjustScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power)
-    : display_(display), renderer_(display), prefs_(prefs), power_(power) {
+VcomAdjustScreen::VcomAdjustScreen(DisplaySystem &display, PreferencesStore &prefs)
+    : display_(display), renderer_(display), prefs_(prefs) {
 
     auto *driver = (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver();
     vCom = driver->getVcom();

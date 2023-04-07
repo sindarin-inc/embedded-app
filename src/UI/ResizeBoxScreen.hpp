@@ -1,7 +1,7 @@
 #ifndef RESIZE_BOX_SCREEN_HPP
 #define RESIZE_BOX_SCREEN_HPP
 
-#include "Misc/Power.hpp"
+#include "Misc/Battery.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Screen.hpp"
@@ -11,7 +11,7 @@
 // This is just to test that this concept works ok.
 class ResizeBoxScreen : public Screen {
 public:
-    ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs, Power &power);
+    ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs);
 
 protected:
     void render(DisplaySystem &display) override;
@@ -20,7 +20,6 @@ protected:
     DisplaySystem &display_;
     Renderer renderer_;
     PreferencesStore &prefs_;
-    Power &power_;
 };
 
 #endif

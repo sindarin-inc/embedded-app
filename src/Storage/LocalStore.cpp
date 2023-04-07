@@ -1,45 +1,42 @@
 #include "LocalStore.hpp"
 
 #include <esp_system.h>
+#include <esp_timer.h>
+#include <memory>
 #include <unordered_map>
 
 #include "Communications/HtmlCleaner.hpp"
-#include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
+#include "GitVersion.hpp"
 #include "Misc/Crypto.hpp"
 #include "Misc/GUnzipStream.hpp"
+#include "Misc/Platform.hpp"
+#include "Misc/PowerManager.hpp"
+#include "Misc/SemVer.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
 #include "Models/ReadableBookmark.hpp"
+#include "Version.hpp"
 #include "sindarin-debug.h"
 
-#define READABLES_PATH "/readables.json"
+#define BOOKS_PATH "/readables.json"
 #define ARTICLES_PATH "/articles.json"
 
 enum { NUMBER_OF_READABLE_DOWNLOAD_TRIES = 3 };
-
-auto ToString(ReadablesModelType type) -> std::string {
-    switch (type) {
-    case ReadablesModelType::Article:
-        return "article";
-    case ReadablesModelType::Readable:
-        return "readable";
-    default:
-        return "unknown";
-    }
-}
+enum { MAX_NUMBER_OF_PAGES_TO_BACKFILL = 10 };
 
 auto LocalStore::begin() -> bool {
-    auto loadedReadables = loadReadablesFromFile(readables_, READABLES_PATH);
+    auto loadedBooks = loadReadablesFromFile(books_, BOOKS_PATH);
     auto loadedArticles = loadReadablesFromFile(articles_, ARTICLES_PATH);
 
-    return loadedReadables && loadedArticles;
+    return loadedBooks && loadedArticles;
 }
 
 auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::string &path)
     -> bool {
-    log_d("Loading %ss from %s", ToString(readablesModelType(readables)).c_str(), path.c_str());
-    File readablesFile = fileSystem.open(path);
+    log_d("Loading %ss from %s", ReadableModelTypeToString(readablesModelType(readables)).c_str(),
+          path.c_str());
+    SFile readablesFile = fileSystem.open(path);
     if (!readablesFile || (int)readablesFile.size() == 0) {
         log_w("Failed to open %s", path.c_str());
         // Fail positively since it's ok to not have any when you first use the glasses
@@ -91,7 +88,7 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
 }
 
 auto LocalStore::readablesModelType(const ReadablesVector &readables) -> ReadablesModelType {
-    return &readables == &articles_ ? ReadablesModelType::Article : ReadablesModelType::Readable;
+    return &readables == &articles_ ? ReadablesModelType::Article : ReadablesModelType::Book;
 }
 
 auto LocalStore::hasReadable(const ReadablesVector &readables, const Readable &readable) -> bool {
@@ -135,17 +132,29 @@ void LocalStore::removeReadable(ReadablesVector &readables, const Readable &read
     }
 }
 
-auto LocalStore::readablesSince() -> std::string {
-    return prefs_.lastReadablesSince.get().value_or("");
+auto LocalStore::readablesSince(const ReadablesModelType modelType) -> std::string {
+    switch (modelType) {
+    case ReadablesModelType::Article:
+        return prefs_.lastArticlesSince.get().value_or("");
+    case ReadablesModelType::Book:
+        return prefs_.lastBooksSince.get().value_or("");
+    default:
+        return "";
+    }
 }
 
-auto LocalStore::articlesSince() -> std::string {
-    return prefs_.lastArticlesSince.get().value_or("");
+void LocalStore::storedReadableUuids(const ReadablesVector &readables,
+                                     StoredUuidsVector &storedUuids) {
+    for (auto &readable : readables) {
+        if (readable.localOnly) {
+            continue;
+        }
+        storedUuids.emplace_back(readable.uuid);
+    }
 }
 
-auto LocalStore::changedReadablePlacemarkQueryParams(const ReadablesVector &readables)
-    -> std::vector<std::string> {
-    std::vector<std::string> placemarks;
+void LocalStore::changedReadablePlacemarkJson(const ReadablesVector &readables,
+                                              ReadablePlacemarksVector &placemarks) {
     auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
 
     for (auto &readable : readables) {
@@ -156,19 +165,19 @@ auto LocalStore::changedReadablePlacemarkQueryParams(const ReadablesVector &read
         bool changed = prefs_.readablePlaceChanged.get(readable.shortenedUuid.c_str());
         if (changed) {
             uint32_t place = prefs_.readablePlace.get(readable.shortenedUuid.c_str());
-            log_i("Placemark on readable %s %s has changed to %d", readable.title.c_str(),
+            log_i("Placemark on %s %s %s has changed to %" PRIu32,
+                  ReadableModelTypeToString(modelType).c_str(), readable.title.c_str(),
                   readable.uuid.c_str(), place);
-            placemarks.push_back(StringFormat("&%s_placemark_%s=%d", ToString(modelType).c_str(),
-                                              readable.uuid.c_str(), place));
+            ReadablePlacemark placemark;
+            placemark.uuid = readable.uuid;
+            placemark.position = place;
+            placemarks.emplace_back(placemark);
         }
     }
-
-    return placemarks;
 }
 
-auto LocalStore::changedReadablesArchivedQueryParams(const ReadablesVector &readables)
-    -> std::vector<std::string> {
-    std::vector<std::string> archived;
+void LocalStore::changedReadablesArchivedJson(const ReadablesVector &readables,
+                                              ReadableArchivesVector &archives) {
     auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
 
     for (auto &readable : readables) {
@@ -178,95 +187,77 @@ auto LocalStore::changedReadablesArchivedQueryParams(const ReadablesVector &read
 
         bool changed = prefs_.readableArchivedChanged.get(readable.shortenedUuid.c_str());
         if (changed) {
-            log_i("Archived %s %s %s", ToString(modelType).c_str(), readable.title.c_str(),
-                  readable.uuid.c_str());
-            archived.push_back(StringFormat("&%s_archive_%s=1", ToString(modelType).c_str(),
-                                            readable.uuid.c_str()));
+            log_i("Archived %s %s %s", ReadableModelTypeToString(modelType).c_str(),
+                  readable.title.c_str(), readable.uuid.c_str());
+            ReadableArchive archive;
+            archive.uuid = readable.uuid;
+            archive.isArchived = true;
+            archives.emplace_back(archive);
         }
     }
-
-    return archived;
 }
 
-auto LocalStore::changedReadablesBookmarksJson() -> std::pair<char *, int> {
-    auto doc = std::make_unique<SpiRamJsonDocument>(
-        2048 * std::max(1, (int)readables_.size() + (int)articles_.size()));
-    JsonArray bookmarksJsonArray = doc->to<JsonArray>();
-    int changedCount = 0;
-
-    for (auto &readables : {readables_, articles_}) {
+void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmarks) {
+    for (auto &readables : {books_, articles_}) {
         for (auto &readable : readables) {
             if (readable.localOnly) {
                 continue;
             }
 
             bool changed = prefs_.readableBookmarksChanged.get(readable.shortenedUuid.c_str());
-            if (changed) {
-                auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
-                log_i("Bookmarks changed on %s %s %s", ToString(modelType).c_str(),
-                      readable.title.c_str(), readable.uuid.c_str());
-                std::string bookmarkPath =
-                    StringFormat("/bookmarks/%s-bookmark.txt", readable.uuid.c_str());
-                File bookmarkFile = fileSystem.open(bookmarkPath.c_str(), FILE_READ, false);
-                if (!bookmarkFile) {
-                    log_i("Failed to open bookmark file: %s", bookmarkPath.c_str());
-                    continue;
-                }
-                changedCount += 1;
+            if (!changed) {
+                continue;
+            }
 
-                // Store bookmarks in a hash table
-                std::unordered_map<uint32_t, uint32_t> bookmarks;
-                std::unordered_map<uint32_t, uint32_t> bookmarksToDelete;
-                LocalBookmark bookmark;
-                while (ReadOneBookmark(bookmarkFile, bookmark)) {
-                    log_d("Bookmark: %d %d %d", bookmark.firstPlace, bookmark.lastPlace,
-                          bookmark.status);
+            auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
+            log_i("Bookmarks changed on %s %s %s", ReadableModelTypeToString(modelType).c_str(),
+                  readable.title.c_str(), readable.uuid.c_str());
+            std::string bookmarkPath =
+                StringFormat("/bookmarks/%s-bookmark.txt", readable.uuid.c_str());
+            SFile bookmarkFile = fileSystem.open(bookmarkPath.c_str(), FILE_READ, false);
+            if (!bookmarkFile) {
+                log_i("Failed to open bookmark file: %s", bookmarkPath.c_str());
+                continue;
+            }
 
-                    if (bookmark.status == BOOKMARK_ON &&
-                        bookmark.firstPlace < bookmark.lastPlace) {
-                        bookmarks[bookmark.firstPlace] = bookmark.lastPlace;
-                        bookmarksToDelete.erase(bookmark.firstPlace);
-                    } else if (bookmark.status == BOOKMARK_OFF) {
-                        bookmarks.erase(bookmark.firstPlace);
-                        bookmarksToDelete[bookmark.firstPlace] = bookmark.lastPlace;
-                    }
-                }
-                bookmarkFile.close();
+            // Store bookmarks in a hash table
+            std::unordered_map<uint32_t, uint32_t> bookmarksToAdd;
+            std::unordered_map<uint32_t, uint32_t> bookmarksToDelete;
+            LocalBookmark bookmark;
+            while (ReadOneBookmark(bookmarkFile, bookmark)) {
+                log_d("Bookmark: %" PRIu32 " %" PRIu32 " %d", bookmark.firstPlace,
+                      bookmark.lastPlace, bookmark.status);
 
-                // Add bookmarks to the JSON array
-                for (const auto &[starting_position, ending_position] : bookmarks) {
-                    JsonObject bookmark = bookmarksJsonArray.createNestedObject();
-                    bookmark["starting_position"] = starting_position;
-                    bookmark["ending_position"] = ending_position;
-                    bookmark["readable"] = readable.uuid;
+                if (bookmark.status == BOOKMARK_ON && bookmark.firstPlace < bookmark.lastPlace) {
+                    bookmarksToAdd[bookmark.firstPlace] = bookmark.lastPlace;
+                    bookmarksToDelete.erase(bookmark.firstPlace);
+                } else if (bookmark.status == BOOKMARK_OFF) {
+                    bookmarksToAdd.erase(bookmark.firstPlace);
+                    bookmarksToDelete[bookmark.firstPlace] = bookmark.lastPlace;
                 }
+            }
+            bookmarkFile.close();
 
-                // Add bookmarks to delete to the JSON array
-                for (const auto &[starting_position, ending_position] : bookmarksToDelete) {
-                    JsonObject bookmark = bookmarksJsonArray.createNestedObject();
-                    bookmark["starting_position"] = starting_position;
-                    bookmark["ending_position"] = ending_position;
-                    bookmark["status"] = 0;
-                    bookmark["readable"] = readable.uuid;
-                }
+            // Add bookmarks to the JSON array
+            for (const auto &[startingPosition, endingPosition] : bookmarksToAdd) {
+                ReadableBookmark bookmark;
+                bookmark.readable = readable.uuid;
+                bookmark.startingPosition = startingPosition;
+                bookmark.endingPosition = endingPosition;
+                bookmarks.emplace_back(bookmark);
+            }
 
-                if (doc->overflowed()) {
-                    log_e("Out of space in SpiRamJsonDocument for %s", bookmarkPath.c_str());
-                    return std::make_pair(nullptr, 0);
-                }
+            // Add bookmarks to delete to the JSON array
+            for (const auto &[startingPosition, endingPosition] : bookmarksToDelete) {
+                ReadableBookmark bookmark;
+                bookmark.readable = readable.uuid;
+                bookmark.startingPosition = startingPosition;
+                bookmark.endingPosition = endingPosition;
+                bookmark.willDelete = true;
+                bookmarks.emplace_back(bookmark);
             }
         }
     }
-
-    if (!changedCount) {
-        return std::make_pair(nullptr, 0);
-    }
-
-    size_t serializedMaxSize = (*doc).memoryUsage() * 2;
-    char *bookmarksJson = (char *)heap_caps_malloc(serializedMaxSize, MALLOC_CAP_SPIRAM);
-    size_t serializedLength = serializeJson(*doc, bookmarksJson, serializedMaxSize);
-
-    return std::make_pair(bookmarksJson, serializedLength);
 }
 
 auto LocalStore::processReadablePlacemarksFromServer(const Readable &readable,
@@ -279,15 +270,15 @@ auto LocalStore::processReadablePlacemarksFromServer(const Readable &readable,
         return false;
     } else if (placemark > onDevicePlace && !changed) {
         // Placemark on server is further than on the device, so update to the server value
-        log_i("Updating placemark for \"%s\" from device value of %d to server "
-              "value of %d",
+        log_i("Updating placemark for \"%s\" from device value of %" PRIu32 " to server "
+              "value of %" PRIu32,
               readable.title.c_str(), onDevicePlace, placemark);
         prefs_.readablePlace.set(readable.shortenedUuid.c_str(), placemark);
         return true;
     } else if (placemark != 0) {
         // Placemark on server is less than on the device, so don't update to the server value
-        log_i("Not updating placemark for \"%s\" from device value of %d to server "
-              "value of %d. Changed: %d",
+        log_i("Not updating placemark for \"%s\" from device value of %" PRIu32 " to server "
+              "value of %" PRIu32 ". Changed: %d",
               readable.title.c_str(), onDevicePlace, placemark, changed);
         return false;
     }
@@ -331,14 +322,14 @@ void LocalStore::resetReadablesBookmarksChanged(const ReadablesVector &readables
 void LocalStore::syncFromRemote(
     const std::function<void(ContentSyncState state)> &progressCallback) {
 
-    if (!HasWiFiCredentials()) {
+    if (!WiFi::getInstance().hasWiFiCredentials()) {
         progressCallback(
             ContentSyncState{.state = ContentSyncState::State::Failure,
                              .message = "Go to Settings > WiFi Setup in the Sol app."});
         return;
     }
 
-    if (!ConnectWifi()) {
+    if (!WiFi::getInstance().connectWiFiWithTimeout()) {
         progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
                                           .message = "Failed to connect to WiFi."});
         return;
@@ -368,383 +359,372 @@ void LocalStore::syncFromRemote(
     // Run this work on a separate thread, since it's long running
     auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this, progressCallback] {
-        // Uncomment below to force a full sync
-        // this->prefs_.lastReadablesSince.set("");
-        // this->prefs_.lastArticlesSince.set("");
-        bool failedReadableDownload = false;
-        bool failedArticleDownload = false;
-        auto readablesSince = this->readablesSince();
-        auto articlesSince = this->articlesSince();
-        auto readablePlacemarks = this->changedReadablePlacemarkQueryParams(readables_);
-        auto articlePlacemarks = this->changedReadablePlacemarkQueryParams(articles_);
-        auto readablesArchived = this->changedReadablesArchivedQueryParams(readables_);
-        auto articlesArchived = this->changedReadablesArchivedQueryParams(articles_);
-        auto sleepReason = this->prefs_.sleepReason.get().value_or(SLEEP_REASON_NONE);
-        auto [readablesBookmarked, readablesBookmarkedSize] = this->changedReadablesBookmarksJson();
-        log_i("Bookmarked readables (%d bytes)", readablesBookmarkedSize);
+        auto syncReason = PreferencesStore::syncReason;
+        CheckSyncRequest checkSyncRequest;
         CheckSyncResponse checkSyncResponse;
-        CheckSyncRequest request =
-            CheckSyncRequest{.readablesSince = readablesSince,
-                             .articlesSince = articlesSince,
-                             .readablePlacemarks = readablePlacemarks,
-                             .articlePlacemarks = articlePlacemarks,
-                             .readablesArchived = readablesArchived,
-                             .articlesArchived = articlesArchived,
-                             .sleepReason = sleepReason,
-                             .ptBattery = this->prefs_.lastPageTurnerBattery.get().value_or(0),
-                             .ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or(""),
-                             .skipContent = true};
+        int checkSyncFailures = 0;
+        bool booksAlreadySynced = false;
+        bool articlesAlreadySynced = false;
+        bool booksNowSynced = false;
+        bool articlesNowSynced = false;
 
-        SHOW_HEAP();
-        auto httpCode = SindarinAPI::getInstance()->checkSync(request, &checkSyncResponse);
-        SHOW_HEAP();
+        std::vector<ReadablesVector *> readablesList = {&books_, &articles_};
+        for (auto &readables : readablesList) {
+            bool failedDownload = false;
+            auto modelType = readablesModelType(const_cast<ReadablesVector &>(*readables));
+            auto since = this->readablesSince(modelType);
+            StoredUuidsVector storedUuids;
+            ReadableArchivesVector archives;
+            ReadableBookmarksVector bookmarks;
+            ReadablePlacemarksVector placemarks;
 
-        if (httpCode != 200) {
-            log_e("Failed to check sync (HTTP %d)", httpCode);
-            progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
-                                              .message = "Failed to check sync"});
-            return;
-        }
-        if (checkSyncResponse.synced) {
-            log_i("Client is in sync");
-            progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
-            return;
-        }
+            this->storedReadableUuids(*readables, storedUuids);
+            this->changedReadablePlacemarkJson(*readables, placemarks);
+            this->changedReadablesArchivedJson(*readables, archives);
+            this->changedReadablesBookmarksJson(bookmarks);
 
-        progressCallback(ContentSyncState{.state = ContentSyncState::State::LoadingTasks});
+            checkSyncRequest.syncReason = syncReason;
+            checkSyncRequest.modelType = modelType;
+            checkSyncRequest.since = since;
+            checkSyncRequest.archives = archives;
+            checkSyncRequest.placemarks = placemarks;
+            checkSyncRequest.bookmarks = bookmarks;
+            checkSyncRequest.storedUuids = storedUuids;
+            checkSyncRequest.skipContent = true;
+            checkSyncRequest.ptBattery = PreferencesStore::lastPageTurnerBattery;
+            checkSyncRequest.ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or("");
+            checkSyncRequest.build = kVersionString;
+            checkSyncRequest.gitHash = kGitHash;
+            checkSyncRequest.sn = GetSerialNumber();
 
-        // If out of sync, download any new readables.
-        ReadablesVector readablesToDownload = {};
-        ReadablesVector readablesToDelete = {};
-        ReadablesVector articlesToDelete = {};
-        ReadablesVector articlesToSave = {};
-
-        // Now look through all the readables here, and download any that we don't have
-        // already
-        for (auto &userReadable : checkSyncResponse.userReadables) {
-            log_d("User readable %s (%s)", userReadable.readable.title.c_str(),
-                  userReadable.readable.file().shaHash.c_str());
-            SHOW_HEAP();
-
-            if (this->processReadablePlacemarksFromServer(userReadable.readable,
-                                                          userReadable.placemark)) {
-                log_i("Placemark for %s updated to %d", userReadable.readable.title.c_str(),
-                      userReadable.placemark);
-            }
-
-            auto hasReadable = this->hasReadable(readables_, userReadable.readable);
-            if (userReadable.isArchived) {
-                log_i("Readable \"%s\" is archived, will delete",
-                      userReadable.readable.title.c_str());
-                // TODO: Store these articles in an accessible archive instead of just deleting them
-                // and ignoring
-                if (hasReadable) {
-                    readablesToDelete.push_back(userReadable.readable);
+            auto nextPageCounter = 0;
+            auto nextPageUrl = std::string();
+            while (nextPageUrl.length() || nextPageCounter == 0) {
+                if (nextPageCounter == 0) {
+                    log_d("Fetching first page of %ss",
+                          ReadableModelTypeToString(modelType).c_str());
                 } else {
-                    log_i("Already deleted \"%s\" %s", userReadable.readable.title.c_str(),
-                          userReadable.readable.uuid.c_str());
+                    log_d("Fetching next page (#%d): %s", nextPageCounter + 1, nextPageUrl.c_str());
                 }
-                continue;
-            } else if (hasReadable) {
-                // Should never get here as readablesSince should hide these articles
-                log_w("Already have \"%s\" %s", userReadable.readable.title.c_str(),
-                      userReadable.readable.uuid.c_str());
-                continue;
-            }
-
-            readablesToDownload.push_back(userReadable.readable);
-        }
-        this->resetReadablesPlacemarkChanged(readables_);
-        this->resetReadablesArchivedChanged(readables_);
-
-        // Look through all the articles, deleting archived ones and downloading new ones
-        for (auto &userReadable : checkSyncResponse.userArticles) {
-            log_d("Fetched user article: %s (%zu bytes, placemark: %d)",
-                  userReadable.readable.title.c_str(), (size_t)userReadable.readable.content.size(),
-                  userReadable.placemark);
-            SHOW_HEAP();
-
-            if (this->processReadablePlacemarksFromServer(userReadable.readable,
-                                                          userReadable.placemark)) {
-                log_i("Placemark for %s updated to %d", userReadable.readable.title.c_str(),
-                      userReadable.placemark);
-            }
-
-            auto hasReadable = this->hasReadable(articles_, userReadable.readable);
-            if (userReadable.isArchived) {
-                log_i("Article \"%s\" is archived, will delete",
-                      userReadable.readable.title.c_str());
-                // TODO: Store these articles in an accessible archive instead of just deleting them
-                // and ignoring
-                if (hasReadable) {
-                    articlesToDelete.push_back(userReadable.readable);
-                } else {
-                    log_i("Already deleted \"%s\" %s", userReadable.readable.title.c_str(),
-                          userReadable.readable.uuid.c_str());
-                }
-                continue;
-            } else if (hasReadable) {
-                // Should never get here as articlesSince should hide these articles
-                log_w("Already have \"%s\" %s", userReadable.readable.title.c_str(),
-                      userReadable.readable.uuid.c_str());
-                continue;
-            }
-            articlesToSave.push_back(userReadable.readable);
-        }
-        this->resetReadablesPlacemarkChanged(articles_);
-        this->resetReadablesArchivedChanged(articles_);
-
-        // TODO: Probably these should be set operations
-        SHOW_HEAP();
-        log_d("Readables to download: %zu", readablesToDownload.size());
-        log_d("Readables to delete: %zu", readablesToDelete.size());
-        log_d("Articles to delete: %zu", articlesToDelete.size());
-
-        // syncState is used to track the progress of the sync
-        ContentSyncState syncState = {.state = ContentSyncState::State::Syncing};
-        syncState.tasks.reserve(readablesToDownload.size() + readablesToDelete.size() +
-                                articlesToDelete.size() + articlesToSave.size() +
-                                (readablesBookmarkedSize > 0 ? 1 : 0));
-        auto tasksIndex = 0;
-
-        if (readablesBookmarkedSize == 0 && readablesToDownload.size() == 0 &&
-            readablesToDelete.size() == 0 && articlesToDelete.size() == 0 &&
-            articlesToSave.size() == 0) {
-            log_i("No new content to download");
-            progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
-            return;
-        }
-
-        if (readablesBookmarkedSize > 0) {
-            syncState.tasks.push_back(ContentSyncState::Task{
-                .message = "Storing bookmarks",
-                .percentage = 0,
-            });
-        }
-
-        // Clear the readablesSince cache since it will be set at the end of a successful run.
-        // If we fail, then the next content sync will not have a cutoff date
-        if (checkSyncResponse.readablesSince != "") {
-            log_d("Clearing readablesSince cache since it will be set at the end of a "
-                  "successful run");
-            this->prefs_.lastReadablesSince.set("");
-        }
-
-        for (const auto &readable : readablesToDelete) {
-            syncState.tasks.push_back(ContentSyncState::Task{
-                .message = StringFormat("Delete: %s", readable.title.c_str()),
-                .percentage = 0,
-            });
-        }
-
-        for (const auto &readable : readablesToDownload) {
-            syncState.tasks.push_back(ContentSyncState::Task{
-                .message = StringFormat("Get: %s", readable.title.c_str()),
-                .percentage = 0,
-            });
-        }
-        if (articlesToDelete.size() > 0) {
-            syncState.tasks.push_back(ContentSyncState::Task{
-                .message = "Delete: Archived articles",
-                .percentage = 0,
-            });
-        }
-        if (articlesToSave.size() > 0) {
-            syncState.tasks.push_back(ContentSyncState::Task{
-                .message = "Get: Articles from Pocket",
-                .percentage = 0,
-            });
-        }
-
-        progressCallback(syncState);
-
-        // Sync bookmarks before we download any new readables
-        if (readablesBookmarkedSize > 0) {
-            log_i("Syncing bookmarks");
-            auto success = SindarinAPI::getInstance()->syncBookmarks(readablesBookmarked,
-                                                                     readablesBookmarkedSize);
-            if (success) {
-                log_i("Bookmarks synced");
-                this->resetReadablesBookmarksChanged(readables_);
-                this->resetReadablesBookmarksChanged(articles_);
-            } else {
-                log_e("Failed to sync bookmarks");
-                progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
-                                                  .message = "Failed to sync bookmarks"});
-                delay(1000);
-            }
-
-            syncState.tasks[tasksIndex].percentage = 100;
-            tasksIndex += 1;
-            progressCallback(syncState);
-        }
-
-        for (auto &readable : readablesToDelete) {
-            log_i("Deleting %s", readable.title.c_str());
-            readableFilePurge(readable);
-            this->removeReadable(readables_, readable);
-            syncState.tasks[tasksIndex].percentage = 100;
-            tasksIndex += 1;
-        }
-
-        progressCallback(syncState);
-
-        for (auto &readable : readablesToDownload) {
-            // Index into the progress tasks vector
-
-            auto path = readableFilePathForWriting(readable);
-            log_i("Downloading %s (file=%s, url=%s)", readable.title.c_str(), path.c_str(),
-                  readable.remoteUrl().c_str());
-            SHOW_HEAP();
-
-            for (int t = 0; t < NUMBER_OF_READABLE_DOWNLOAD_TRIES; t++) {
-                auto success = SindarinAPI::getInstance()->downloadReadable(
-                    readable, this->fileSystem, path,
-                    [progressCallback, &syncState, tasksIndex](int percentage) {
-                        syncState.tasks[tasksIndex].percentage = percentage;
-                        progressCallback(syncState);
-                    });
-                if (success) {
-                    addReadable(readables_, readable);
-                    log_d("File successfully downloaded.");
+                nextPageCounter += 1;
+                if (nextPageCounter > MAX_NUMBER_OF_PAGES_TO_BACKFILL) {
+                    log_w("Too many pages to backfill, aborting");
                     break;
+                }
+
+                int httpCode = 0;
+                if (nextPageCounter == 1) {
+                    SHOW_HEAP();
+                    httpCode =
+                        SindarinAPI::getInstance()->checkSync(checkSyncRequest, &checkSyncResponse);
+                    SHOW_HEAP();
                 } else {
-                    log_w("Failed to download file. Retrying...");
-                    if (t == NUMBER_OF_READABLE_DOWNLOAD_TRIES - 1) {
-                        log_e("Failed to download file.");
-                        failedReadableDownload = true;
-                    }
+                    httpCode = SindarinAPI::getInstance()->checkSync(
+                        nextPageUrl.c_str(), checkSyncRequest, &checkSyncResponse);
                 }
-            }
+                log_d("Server has %d %ss, next page: %s", checkSyncResponse.totalCount,
+                      ReadableModelTypeToString(modelType).c_str(), nextPageUrl.c_str());
+                if (httpCode != 200) {
+                    log_e("Failed to check sync (HTTP %d)", httpCode);
+                    progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                                      .message = "Failed to check sync"});
+                    return;
+                }
 
-            tasksIndex += 1;
-        }
+                // Look through all the books and articles and download any that we don't have
+                // already We also process readables before checking if we're synced before we need
+                // to reset the local changed flags
+                auto userReadables = modelType == ReadablesModelType::Book
+                                         ? checkSyncResponse.userBooks
+                                         : checkSyncResponse.userArticles;
+                auto [readablesToDownload, readablesToDelete] =
+                    this->processReadables(checkSyncResponse, *readables, userReadables);
 
-        progressCallback(syncState);
+                SHOW_HEAP();
+                log_d("%ss to download: %zu", ReadableModelTypeToString(modelType).c_str(),
+                      readablesToDownload.size());
+                log_d("%ss to delete: %zu", ReadableModelTypeToString(modelType).c_str(),
+                      readablesToDelete.size());
+                nextPageUrl = checkSyncResponse.nextPageUrl;
 
-        if (articlesToDelete.size() > 0) {
-            for (int i = 0; i < articlesToDelete.size(); i++) {
-                syncState.tasks[tasksIndex].percentage =
-                    (float(i + 1) / articlesToDelete.size()) * 100;
+                ContentSyncState syncState;
+                if (modelType == ReadablesModelType::Book) {
+                    progressCallback(
+                        ContentSyncState{.state = ContentSyncState::State::SyncingBooks});
+                    syncState = {.state = ContentSyncState::State::Syncing};
+                } else if (modelType == ReadablesModelType::Article) {
+                    progressCallback(
+                        ContentSyncState{.state = ContentSyncState::State::SyncingArticles});
+                    syncState = {.state = ContentSyncState::State::Syncing};
+                }
 
-                const auto &readable = articlesToDelete[i];
-                log_i("Deleting %s", readable.title.c_str());
-                readableFilePurge(readable);
-                this->removeReadable(articles_, readable);
-            }
+                if (checkSyncResponse.synced) {
+                    log_i("%ss are already in sync, no need to download anything",
+                          ReadableModelTypeToString(modelType).c_str());
+                    if (modelType == ReadablesModelType::Book) {
+                        booksAlreadySynced = true;
+                    } else if (modelType == ReadablesModelType::Article) {
+                        articlesAlreadySynced = true;
+                    }
 
-            // All article deletions take a single task line item
-            tasksIndex += 1;
-        }
+                    break;
+                }
 
-        progressCallback(syncState);
+                // Count books/articles to download and delete
+                syncState.tasks.reserve(readablesToDownload.size() + readablesToDelete.size());
+                auto tasksIndex = 0;
 
-        // Clear the articlesSince cache since it will be set at the end of a successful run.
-        // If we fail, then the next content sync will not have a cutoff date
-        if (checkSyncResponse.articlesSince != "") {
-            log_d("Clearing articlesSince cache since it will be set at the end of a successful "
-                  "run.");
-            this->prefs_.lastArticlesSince.set("");
-        }
-
-        // Save the articles that are new
-        if (articlesToSave.size() > 0) {
-            float pctPerArticle = 100.0 / articlesToSave.size();
-            for (int i = 0; i < articlesToSave.size(); i++) {
-                float currPercentage = (float)i * pctPerArticle;
-                auto &readable = articlesToSave[i];
-                for (int t = 0; t < NUMBER_OF_READABLE_DOWNLOAD_TRIES; t++) {
-                    auto path = readableFilePathForWriting(readable);
-                    auto success = SindarinAPI::getInstance()->downloadReadable(
-                        readable, this->fileSystem, path,
-                        [progressCallback, &syncState, tasksIndex, currPercentage,
-                         pctPerArticle](int percentage) {
-                            float pctThisReadable = (float)percentage * pctPerArticle / 100.0;
-                            syncState.tasks[tasksIndex].percentage =
-                                currPercentage + pctThisReadable;
-                            progressCallback(syncState);
+                if (modelType == ReadablesModelType::Book) {
+                    for (const auto &readable : readablesToDelete) {
+                        syncState.tasks.push_back(ContentSyncState::Task{
+                            .message = StringFormat("Delete: %s", readable.title.c_str()),
+                            .percentage = 0,
                         });
-                    if (success) {
-                        this->addReadable(articles_, readable);
-                        log_d("File successfully downloaded.");
-                        break;
-                    } else {
-                        log_w("Failed to download file. Retrying...");
-                        if (t == NUMBER_OF_READABLE_DOWNLOAD_TRIES - 1) {
-                            log_e("Failed to download file.");
-                            failedArticleDownload = true;
-                        }
+                    }
+
+                    for (const auto &readable : readablesToDownload) {
+                        syncState.tasks.push_back(ContentSyncState::Task{
+                            .message = StringFormat("Get: %s", readable.title.c_str()),
+                            .percentage = 0,
+                        });
+                    }
+                } else {
+                    if (readablesToDelete.size() > 0) {
+                        syncState.tasks.push_back(ContentSyncState::Task{
+                            .message = "Delete: Archived articles",
+                            .percentage = 0,
+                        });
+                    }
+                    if (readablesToDownload.size() > 0) {
+                        syncState.tasks.push_back(ContentSyncState::Task{
+                            .message = "Get: Articles and newsletters",
+                            .percentage = 0,
+                        });
                     }
                 }
+                progressCallback(syncState);
+
+                processReadableDeletion(readablesToDelete, *readables, tasksIndex, syncState,
+                                        progressCallback);
+                failedDownload =
+                    processReadableDownload(readablesToDownload, *readables, tasksIndex, syncState,
+                                            progressCallback, modelType) ||
+                    failedDownload;
+                if (failedDownload) {
+                    log_d("Failed to process %ss, have %zu %ss",
+                          ReadableModelTypeToString(modelType).c_str(), readables->size(),
+                          ReadableModelTypeToString(modelType).c_str());
+                }
+                progressCallback(syncState);
             }
-            tasksIndex += 1;
-        }
 
-        progressCallback(syncState);
+            if (!this->saveReadables(*readables)) {
+                log_e("Failed to save %s", ReadableModelTypeToString(modelType).c_str());
+                failedDownload = true;
+            }
 
-        // Store the metadata for both readables and articles
-        if (!this->saveReadables(readables_, READABLES_PATH)) {
-            log_e("Failed to save %s", READABLES_PATH);
-            failedReadableDownload = true;
-        }
-        if (!this->saveReadables(articles_, ARTICLES_PATH)) {
-            log_e("Failed to save %s", ARTICLES_PATH);
-            failedArticleDownload = true;
-        }
+            // Store since date values for next sync
+            log_i("%sSetting last%sSince to %s/%s", failedDownload ? "Not " : "",
+                  ReadableModelTypeToString(modelType).c_str(),
+                  checkSyncResponse.booksSince.c_str(), checkSyncResponse.articlesSince.c_str());
+            std::string serverSince;
+            if (!failedDownload) {
+                if (checkSyncResponse.booksSince != "") {
+                    this->prefs_.lastBooksSince.set(checkSyncResponse.booksSince.c_str());
+                    serverSince = checkSyncResponse.booksSince;
+                }
+                if (checkSyncResponse.articlesSince != "") {
+                    this->prefs_.lastArticlesSince.set(checkSyncResponse.articlesSince.c_str());
+                    serverSince = checkSyncResponse.articlesSince;
+                }
+            }
 
-        // Store since date values for next sync
-        if (failedArticleDownload || failedReadableDownload) {
-            log_w("Not setting lastReadablesSince to %s and lastArticlesSince to %s due to failed "
-                  "download",
-                  checkSyncResponse.readablesSince.c_str(),
-                  checkSyncResponse.articlesSince.c_str());
-        } else {
-            log_i("Setting lastReadablesSince to %s and lastArticlesSince to %s",
-                  checkSyncResponse.readablesSince.c_str(),
-                  checkSyncResponse.articlesSince.c_str());
-        }
-        if (checkSyncResponse.readablesSince != "" && !failedReadableDownload) {
-            this->prefs_.lastReadablesSince.set(checkSyncResponse.readablesSince.c_str());
-        }
-        if (checkSyncResponse.articlesSince != "" && !failedArticleDownload) {
-            this->prefs_.lastArticlesSince.set(checkSyncResponse.articlesSince.c_str());
-        }
+            if ((modelType == ReadablesModelType::Book && booksAlreadySynced) ||
+                (modelType == ReadablesModelType::Article && articlesAlreadySynced)) {
+                continue;
+            }
 
-        // Update the since dates and try again
-        readablesSince = this->readablesSince();
-        articlesSince = this->articlesSince();
-        request = CheckSyncRequest{
-            .readablesSince = readablesSince,
-            .articlesSince = articlesSince,
-            .readablePlacemarks = {},
-            .articlePlacemarks = {},
-            .readablesArchived = {},
-            .articlesArchived = {},
-            .ptBattery = this->prefs_.lastPageTurnerBattery.get().value_or(0),
-            .ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or(""),
-        };
+            // Update the since dates and try once more to sync to ensure we don't miss anything
+            storedUuids.clear();
+            this->storedReadableUuids(*readables, storedUuids);
+            checkSyncRequest.storedUuids = storedUuids;
+            checkSyncRequest.bookmarks = {};
+            checkSyncRequest.archives = {};
+            checkSyncRequest.placemarks = {};
+            checkSyncRequest.since = serverSince;
+
+            SHOW_HEAP();
+            SindarinAPI::getInstance()->checkSync(checkSyncRequest, &checkSyncResponse);
+
+            // TODO: Force reload of rootUI instead of rebooting
+            if (checkSyncResponse.synced) {
+                log_i("%ss are in sync", ReadableModelTypeToString(modelType).c_str());
+                if (modelType == ReadablesModelType::Book) {
+                    booksNowSynced = true;
+                } else if (modelType == ReadablesModelType::Article) {
+                    articlesNowSynced = true;
+                }
+            } else {
+                log_w("After running sync, local %ss are still out of sync",
+                      ReadableModelTypeToString(modelType).c_str());
+                checkSyncFailures += 1;
+            }
+        }
 
         // Artificially delay so the user has the satisfaction of seeing the list done
-        delay(1000);
+        Delay(1000);
 
-        SindarinAPI::getInstance()->checkSync(request, &checkSyncResponse);
-
-        // TODO: Force reload of rootUI instead of rebooting
-        if (checkSyncResponse.synced) {
-            log_i("Glasses are synced!");
+        if (booksAlreadySynced && articlesAlreadySynced) {
+            progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
+        } else if (booksNowSynced || articlesNowSynced) {
             progressCallback(ContentSyncState{.state = ContentSyncState::State::Synced});
-        } else {
-            log_w("After running sync, local readables are still out of sync");
-            // TODO: this isn't 100% right
+        } else if (checkSyncFailures > 0) {
             progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
-                                              .message = "Not in sync...restarting"});
+                                              .message = "Failed to check sync"});
+        } else {
+            progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced,
+                                              .message = "Already synced"});
         }
     });
 }
 
+auto LocalStore::processReadables(const CheckSyncResponse &checkSyncResponse,
+                                  const ReadablesVector &readables,
+                                  UserReadablesVector &userReadables)
+    -> std::pair<ReadablesVector, ReadablesVector> {
+    ReadablesVector readablesToDownload = {};
+    ReadablesVector readablesToDelete = {};
+    auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
+
+    auto serverReadables = modelType == ReadablesModelType::Book ? checkSyncResponse.userBooks
+                                                                 : checkSyncResponse.userArticles;
+
+    for (auto &userReadable : serverReadables) {
+        log_d("User readable %s (%s)", userReadable.readable.title.c_str(),
+              userReadable.readable.uuid.c_str());
+        SHOW_HEAP();
+
+        if (processReadablePlacemarksFromServer(userReadable.readable, userReadable.placemark)) {
+            log_i("Placemark for %s updated to %" PRIu32, userReadable.readable.title.c_str(),
+                  userReadable.placemark);
+        }
+
+        auto found = hasReadable(readables, userReadable.readable);
+        if (userReadable.isArchived) {
+            log_i("Readable \"%s\" is archived, will delete", userReadable.readable.title.c_str());
+            // TODO: Store these articles in an accessible archive instead of just deleting them
+            // and ignoring
+            if (found) {
+                readablesToDelete.push_back(userReadable.readable);
+            } else {
+                log_i("Already deleted \"%s\" %s", userReadable.readable.title.c_str(),
+                      userReadable.readable.uuid.c_str());
+            }
+            continue;
+        } else if (found) {
+            // Should never get here as readablesSince should hide these articles
+            log_w("Already have \"%s\" %s", userReadable.readable.title.c_str(),
+                  userReadable.readable.uuid.c_str());
+            continue;
+        }
+        readablesToDownload.push_back(userReadable.readable);
+    }
+    resetReadablesPlacemarkChanged(readables);
+    resetReadablesArchivedChanged(readables);
+
+    // Clear both sets of readables because all bookmarks are synced at once
+    resetReadablesBookmarksChanged(books_);
+    resetReadablesBookmarksChanged(articles_);
+
+    return std::make_pair(readablesToDownload, readablesToDelete);
+}
+
+void LocalStore::processReadableDeletion(
+    const ReadablesVector &readablesToDelete, ReadablesVector &readables, int &tasksIndex,
+    ContentSyncState &syncState, const std::function<void(ContentSyncState)> &progressCallback) {
+    for (int i = 0; i < readablesToDelete.size(); i++) {
+
+        syncState.tasks[tasksIndex].percentage = (float(i + 1) / readablesToDelete.size()) * 100;
+
+        log_i("Deleting %s", readablesToDelete[i].title.c_str());
+        readableFilePurge(readablesToDelete[i]);
+        this->removeReadable(readables, readablesToDelete[i]);
+    }
+
+    // All article deletions take a single task line item
+    if (readablesToDelete.size() > 0) {
+        tasksIndex += 1;
+    }
+    progressCallback(syncState);
+}
+
+auto LocalStore::processReadableDownload(
+    const ReadablesVector &readablesToDownload, ReadablesVector &readables, int &tasksIndex,
+    ContentSyncState &syncState, const std::function<void(ContentSyncState)> &progressCallback,
+    ReadablesModelType modelType) -> bool {
+    bool failedDownload = false;
+
+    if (readablesToDownload.size() == 0) {
+        progressCallback(syncState);
+        return failedDownload;
+    }
+
+    float pctPerReadable = 100.0 / readablesToDownload.size();
+    for (int i = 0; i < readablesToDownload.size(); i++) {
+        float currPercentage = (float)i * pctPerReadable;
+        auto &readable = readablesToDownload[i];
+        auto path = readableFilePathForWriting(readable);
+        log_i("Downloading %s (file=%s, url=%s)", readable.title.c_str(), path.c_str(),
+              readable.remoteUrl().c_str());
+        SHOW_HEAP();
+
+        for (int t = 0; t < NUMBER_OF_READABLE_DOWNLOAD_TRIES; t++) {
+            auto success = SindarinAPI::getInstance()->downloadReadable(
+                readable, this->fileSystem, path,
+                [progressCallback, &syncState, tasksIndex, currPercentage, pctPerReadable,
+                 modelType](int percentage) {
+                    if (modelType == ReadablesModelType::Book) {
+                        syncState.tasks[tasksIndex].percentage = percentage;
+                    } else if (modelType == ReadablesModelType::Article) {
+                        float pctThisReadable = (float)percentage * pctPerReadable / 100.0;
+                        syncState.tasks[tasksIndex].percentage = currPercentage + pctThisReadable;
+                    }
+                    progressCallback(syncState);
+                });
+            if (success) {
+                addReadable(readables, readable);
+                log_d("File successfully downloaded.");
+                if (!saveReadables(readables)) {
+                    log_e("Failed to save %s", ReadableModelTypeToString(modelType).c_str());
+                }
+
+                break;
+            } else {
+                log_w("Failed to download file. Retrying...");
+                if (t == NUMBER_OF_READABLE_DOWNLOAD_TRIES - 1) {
+                    log_e("Failed to download file.");
+                    failedDownload = true;
+                }
+            }
+        }
+
+        if (modelType == ReadablesModelType::Book) {
+            tasksIndex += 1;
+        }
+    }
+
+    progressCallback(syncState);
+
+    if (modelType == ReadablesModelType::Article) {
+        tasksIndex += 1;
+    }
+
+    return failedDownload;
+}
+
 void LocalStore::deleteReadables(bool restart) {
-    deleteReadableFiles(readables_, restart);
-    readables_.clear();
+    deleteReadableFiles(books_, restart);
+    books_.clear();
 }
 
 void LocalStore::deleteArticles(bool restart) {
@@ -754,7 +734,7 @@ void LocalStore::deleteArticles(bool restart) {
 
 void LocalStore::deleteReadableFiles(const ReadablesVector &readables, bool restart) {
     auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
-    std::string path = modelType == ReadablesModelType::Readable ? READABLES_PATH : ARTICLES_PATH;
+    std::string path = modelType == ReadablesModelType::Book ? BOOKS_PATH : ARTICLES_PATH;
     log_i("Clearing %s", path.c_str());
     bool removed = fileSystem.remove(path);
     if (!removed) {
@@ -763,26 +743,33 @@ void LocalStore::deleteReadableFiles(const ReadablesVector &readables, bool rest
 
     if (modelType == ReadablesModelType::Article) {
         prefs_.lastArticlesSince.set("");
-    } else if (modelType == ReadablesModelType::Readable) {
-        prefs_.lastReadablesSince.set("");
+    } else if (modelType == ReadablesModelType::Book) {
+        prefs_.lastBooksSince.set("");
     }
 
+    int64_t start = esp_timer_get_time();
     for (const Readable &readable : readables) {
-        log_i("Removing %s \"%s\"", ToString(modelType).c_str(), readable.title.c_str());
+        log_i("Removing %s \"%s\"", ReadableModelTypeToString(modelType).c_str(),
+              readable.title.c_str());
         readableFilePurge(readable);
     }
+    int64_t duration = esp_timer_get_time() - start;
+    log_d("Purged %zu %ss in %" PRIi64 " ms", readables.size(),
+          ReadableModelTypeToString(modelType).c_str(), duration / 1000);
 
-    log_i("Resetting to guarantee %s are removed", ToString(modelType).c_str());
+    log_i("Resetting to guarantee %s are removed", ReadableModelTypeToString(modelType).c_str());
 
     if (restart) {
-        esp_restart();
+        PowerManager::getInstance().reboot();
     }
 }
 
-auto LocalStore::saveReadables(const ReadablesVector &readables, const std::string &path) -> bool {
+auto LocalStore::saveReadables(const ReadablesVector &readables) -> bool {
     // 2048 is probably a safe-ish upper bound per readable. I'm seeing about half that in my
     // testing so far
     auto doc = std::make_unique<SpiRamJsonDocument>(2048 * std::max(1, (int)readables.size()));
+    auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
+    std::string path = modelType == ReadablesModelType::Book ? BOOKS_PATH : ARTICLES_PATH;
 
     // Create a key named readables of type array
     JsonArray readablesJson = doc->createNestedArray("readables");
@@ -798,7 +785,7 @@ auto LocalStore::saveReadables(const ReadablesVector &readables, const std::stri
     }
 
     // Write doc to disk
-    File file = fileSystem.open(path, FILE_WRITE, true);
+    SFile file = fileSystem.open(path, FILE_WRITE, true);
     if (!file) {
         log_e("Failed to open file for writing");
         return false;
@@ -910,27 +897,52 @@ void LocalStore::readableFilePurge(const Readable &readable) {
     auto type = readable.readableType;
     auto &uuid = readable.uuid;
 
-    std::string path;
-    path = StringFormat("/%s/%s.txt.gz", type.c_str(), uuid.c_str());
-    fileSystem.remove(path);
-
-    path = StringFormat("/%s/%s.txt", type.c_str(), uuid.c_str());
-    fileSystem.remove(path);
-
-    path = StringFormat("/%s/%s.epub", type.c_str(), uuid.c_str());
-    fileSystem.remove(path);
+    log_d("Purging readable file %s (%s)", readable.title.c_str(), uuid.c_str());
+    fileSystem.remove(StringFormat("/%s/%s.txt.gz", type.c_str(), uuid.c_str()));
+    fileSystem.remove(StringFormat("/%s/%s.txt", type.c_str(), uuid.c_str()));
+    fileSystem.remove(StringFormat("/%s/%s.epub", type.c_str(), uuid.c_str()));
 
     if (readable.files.size() > 0) {
-        path = StringFormat("/%s.gz", readable.file().name.c_str());
-        fileSystem.remove(path);
-
-        path = StringFormat("/%s", readable.file().name.c_str());
-        fileSystem.remove(path);
+        fileSystem.remove(StringFormat("/%s.gz", readable.file().name.c_str()));
+        fileSystem.remove(StringFormat("/%s", readable.file().name.c_str()));
     }
 
-    path = StringFormat("/articles/%s.txt.gz", uuid.c_str());
-    fileSystem.remove(path);
-
-    path = StringFormat("/articles/%s.txt", uuid.c_str());
-    fileSystem.remove(path);
+    fileSystem.remove(StringFormat("/articles/%s.txt.gz", uuid.c_str()));
+    fileSystem.remove(StringFormat("/articles/%s.txt", uuid.c_str()));
 }
+
+const char *firmwarePath = "/firmware.json";
+
+void LocalStore::saveFirmware(const Firmware &firmware) {
+    auto doc = std::make_unique<SpiRamJsonDocument>(
+        std::min((size_t)firmware.releaseNotes.size() * 2, (size_t)2048));
+    convertToJson(firmware, *doc);
+    // Delete any existing firmware file if it exists
+    fileSystem.remove(firmwarePath);
+    auto firmwareFile = fileSystem.open(firmwarePath, "w");
+    serializeJson(*doc, firmwareFile);
+    firmwareFile.close();
+    prefs_.firmwareLoaded.set(firmware.version);
+}
+
+auto LocalStore::getPendingFirmwareUpdate(Firmware &firmware) -> bool {
+    auto firmwareFile = fileSystem.open(firmwarePath, "r");
+    if (!firmwareFile) {
+        return false;
+    } else {
+        auto doc = std::make_unique<SpiRamJsonDocument>(firmwareFile.size() * 4);
+
+        DeserializationError error = deserializeJson(*doc, firmwareFile);
+        if (error) {
+            log_e("Failed to parse firmware file: %s", error.c_str());
+            return false;
+        }
+        firmware.fromJson(doc->as<JsonObject>());
+        firmwareFile.close();
+
+        return SemVerCompareVersions(kVersionString, firmware.version) ==
+               SemVerComparison::LessThan;
+    }
+}
+
+void LocalStore::resetFirmware() { fileSystem.remove(firmwarePath); }

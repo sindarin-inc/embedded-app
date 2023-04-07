@@ -34,7 +34,7 @@ protected:
     FileSystem &fileSystem_;
     std::string fileName_;
     UNZIP zip_;
-    File fp_;
+    SFile fp_;
 
     static std::map<std::string, ZipFile *> zipRegistry;
 

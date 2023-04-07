@@ -45,15 +45,13 @@ component_libs = [
     "unzipLIB/src",
 ]
 
-lib_includes += "\n" + "\n".join([f"-I{components_dir}/{lib}" for lib in component_libs])
+lib_includes += "\n" + "\n".join(
+    [f"-I{components_dir}/{lib}" for lib in component_libs]
+)
 
 # Build the big flags list
 flags = [
     "-std=c++17",
-    "-DARDUINO=100",
-    "-Dheap_caps_malloc(s,l)='((void *)malloc(s))'",
-    "-Dheap_caps_realloc(p,s,l)='((void *)realloc(p,s))'",
-    "-Dheap_caps_free(p)='( free(p) )'",
     "-DTTRemoteInput_H",
     "-Dnvs_flash_erase()=' '",
     "-Dtypeof(a)='auto '",
@@ -62,6 +60,7 @@ flags = [
     "-DUSE_BLE_SERVER_REMOTE=0",
     "-DUSE_BLE_SERVER_SETTINGS=0",
     "-DUSE_BLE_SERVER_IMPROV=0",
+    "-DRTC_SLOW_ATTR=",
     "-DENABLE_OTA=0",
     "-DEINKET013TT1=1",
     "-lpthread",

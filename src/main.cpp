@@ -2,6 +2,7 @@
 #include <driver/uart.h>
 #include <esp_err.h>
 #include <esp_log.h>
+#include <soc/rtc.h>
 #endif
 
 #include <esp_sleep.h>
@@ -9,14 +10,13 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 
-#include "Communications/SindarinAPI.hpp"
+#include "Communications/BackgroundSync.hpp"
 #include "Communications/WiFi.hpp"
 #include "Inputs/RemoteInput.hpp"
+#include "Misc/Battery.hpp"
 #include "Misc/BootError.hpp"
 #include "Misc/BootLoopDetection.hpp"
-#include "Misc/InactivityTimer.hpp"
 #include "Misc/Platform.hpp"
-#include "Misc/Power.hpp"
 #include "Misc/PowerManager.hpp"
 #include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
@@ -25,16 +25,11 @@
 #include "Storage/CrashReportWriter.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
-#include "UI/ContentSyncScreen.hpp"
 #include "UI/RootUI.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
 
 #define ENABLE_CONTENT_SYNC_ON_CLOSE 1
-
-#if !DISABLE_POWER_MANAGEMENT
-#include <esp_pm.h>
-#endif
 
 #if EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
@@ -71,17 +66,6 @@ TTRemoteInput ttRemoteInput(prefs);
 #include "Sensors/LightingController.hpp"
 LightingController lightingController;
 
-#if USE_MMC5603
-#include "Sensors/TempleCloseSensor.hpp"
-TempleCloseSensor templeCloseSensor;
-bool runningContentSync;
-#if !DISABLE_POWER_MANAGEMENT
-esp_pm_lock_handle_t maglock;
-#endif
-#endif
-
-InactivityTimer inactivityTimer;
-
 #if SIMULATOR
 #include "Storage/PosixFileSystem.hpp"
 PosixFileSystem fileSystem;
@@ -92,20 +76,22 @@ LittleFSFileSystem fileSystem;
 
 LocalStore localStore(fileSystem, prefs);
 
-Power power(fileSystem, prefs);
-RootUI rootUi(prefs, power);
+PowerManager powerManager(fileSystem, prefs, lightingController);
+RootUI rootUi(prefs, powerManager);
 SolClock solClock(prefs);
-PowerManager powerManager(prefs);
 
-bool templesClosed = false;
 bool bootCompleted = false;
 
-// Resonsible for handling connecting / reconnecting to remotes
-void RadioTask(void *parameter) {
+// Task for all periodic things that need to run ~1Hz. Polling tasks should be grouped here so that
+// they all complete in a tight loop, thus maximizing sleep time.
+void PollingLoopTask(void *parameter) {
     for (;;) {
+        // Run the power loop first so that we don't show a 0% battery reading
+        powerManager.loop();
+
 #if USE_TURN_TOUCH_REMOTE
         // Skip scanning while WiFi is connected to avoid kicking off the WiFi connection
-        if (!NetworkConnected() && !templesClosed) {
+        if (!WiFi::getInstance().connected()) {
             ttRemoteInput.connect();
         } else if (!ttRemoteInput.connected()) {
             // log_d("Skipping Turn Touch scan while WiFi is connected");
@@ -116,56 +102,10 @@ void RadioTask(void *parameter) {
         bleWifi.loop();
 #endif
 
-// Put this with other periodic tasks so they all execute on the same wakeup
-#if USE_MMC5603
-        templeCloseSensor.checkTemple();
-#endif
         vTaskDelay(1000 / portTICK_PERIOD_MS);
+
         // This happens after the delay, so that the first check can run with a faster fade.
-        // TODO(john): Since LEDC doesn't work with the serial monitor connected, this is really
-        // noisy in the logs
         lightingController.checkAmbientLight();
-    }
-    vTaskDelete(nullptr);
-}
-
-TaskHandle_t powerTaskHandle = nullptr;
-
-#if !DISABLE_POWER_MANAGEMENT
-esp_pm_config_esp32s3_t pmConfig;
-#endif
-
-void PowerTask(void *parameter) {
-
-    for (;;) {
-        // Run the power loop first so that we don't show a 0% battery reading
-        power.loop();
-
-        xTaskNotifyWait(0, 0, nullptr, 30000 / portTICK_PERIOD_MS);
-
-#if !DISABLE_POWER_MANAGEMENT
-        if (USBConnected() && pmConfig.light_sleep_enable == true) {
-            // USB is connected so disable light sleep
-            pmConfig.light_sleep_enable = false;
-            auto err = esp_pm_configure(&pmConfig);
-            if (err != ESP_OK) {
-                log_e("Failed to disable light sleep with err %s", esp_err_to_name(err));
-            } else {
-                log_d("Disabled light sleep");
-            }
-            inactivityTimer.pause();
-        } else if (!USBConnected() && pmConfig.light_sleep_enable == false) {
-            // USB is disconnected so enable light sleep
-            pmConfig.light_sleep_enable = true;
-            auto err = esp_pm_configure(&pmConfig);
-            if (err != ESP_OK) {
-                log_e("Failed to enable light sleep with err %s", esp_err_to_name(err));
-            } else {
-                log_d("Enabled light sleep");
-            }
-            inactivityTimer.resume();
-        }
-#endif
     }
     vTaskDelete(nullptr);
 }
@@ -184,7 +124,7 @@ void StatsTask(void *parameter) {
 }
 
 void UIInnerLoop(RemoteCommand command) {
-    inactivityTimer.feed();
+    powerManager.feedInactivityTimer();
     rootUi.loop(myDisplay, command);
 }
 
@@ -193,12 +133,13 @@ void loop() { vTaskDelay(portMAX_DELAY); };
 void setup() {
 #else
 extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
-    initArduino();
+    HardwareInit();
 #endif
 
 #if !SIMULATOR
     // Configure log level for all Sindarin logs
     esp_log_level_set("Sindarin", ESP_LOG_DEBUG);
+    powerManager.wakeupCheck(solClock);
 #endif
     BootLoopCheck();
     std::vector<BootError> bootErrors;
@@ -217,77 +158,68 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         bootErrors.push_back({.type = BootError::Type::Preferences});
     }
 
-#if USE_MMC5603 & !SIMULATOR
-    int morningNews = prefs.morningNewspaperTime.get().value_or(0);
-    int eveningNews = prefs.eveningNewspaperTime.get().value_or(0);
-
-    log_i("Morning News: %d, Evening News: %d", morningNews, eveningNews);
-
-    // We are waking up after the inactivty timeout, so we need to check if the temple is closed
-    // and if so, reset it.
-    if (prefs.sleepReason.get().value_or(SLEEP_REASON_NONE) == SLEEP_REASON_INACTIVITY) {
-        log_i("Inactivity timer caused this reboot, checking if temple is closed");
-        templeCloseSensor.checkTemple();
-        if (!templeCloseSensor.getOpened()) {
-            log_i("Changing sleep reason because the temple is now closed");
-            prefs.sleepReason.set(SLEEP_REASON_TEMPLES_CLOSED);
-        }
-    }
-
-    if ((prefs.sleepReason.get().value_or(SLEEP_REASON_NONE) == SLEEP_REASON_INACTIVITY) ||
-        (morningNews != 0) || (eveningNews != 0)) {
-        templeCloseSensor.checkTemple();
-        if (!templeCloseSensor.getOpened() ||
-            (prefs.sleepReason.get().value_or(SLEEP_REASON_NONE) == SLEEP_REASON_INACTIVITY)) {
-            uint8_t hours, minutes;
-            solClock.getClockTime(hours, minutes);
-            log_i("Temple is closed or glasses inactive, current time: %d:%d", hours, minutes);
-            if (((hours && (hours == morningNews)) || (hours && (hours == eveningNews))) &&
-                (minutes == 0)) {
-                digitalWrite(BLUE_LED, LED_ON);
-                runningContentSync = true;
-                localStore.syncFromRemote([](const ContentSyncState &state) {
-                    if (state.state == ContentSyncState::Failure ||
-                        state.state == ContentSyncState::Synced ||
-                        state.state == ContentSyncState::AlreadySynced) {
-                        if (state.state == ContentSyncState::Failure) {
-                            log_i("Content sync failed with error: %s", state.message.c_str());
-                        } else if (state.state == ContentSyncState::Synced) {
-                            log_i("Content sync successful");
-                        } else if (state.state == ContentSyncState::AlreadySynced) {
-                            log_i("Content sync already synced");
-                        }
-                        digitalWrite(BLUE_LED, LED_OFF);
-                        runningContentSync = false;
-                        DisconnectWifi();
-                        log_i("Going to sleep after content sync");
-                        PowerManager::getInstance().powerOff();
-                    }
-                });
-            } else {
-                log_i("Temple closed, going to sleep");
-                PowerManager::getInstance().powerOff();
-            }
-        }
-    }
-#endif
+    solClock.begin();
 
     log_i("SN: %s", GetSerialNumber().c_str());
 
     if (esp_reset_reason() == ESP_RST_POWERON) {
         // Flash all the LEDs
-        digitalWrite(RED_LED, LED_ON);
+        DigitalWrite(RED_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        digitalWrite(RED_LED, LED_OFF);
-        digitalWrite(GREEN_LED, LED_ON);
+        DigitalWrite(RED_LED, LED_OFF);
+        DigitalWrite(GREEN_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        digitalWrite(GREEN_LED, LED_OFF);
+        DigitalWrite(GREEN_LED, LED_OFF);
 #ifdef BLUE_LED
-        digitalWrite(BLUE_LED, LED_ON);
+        DigitalWrite(BLUE_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        digitalWrite(BLUE_LED, LED_OFF);
+        DigitalWrite(BLUE_LED, LED_OFF);
 #endif
     }
+
+    if (powerManager.begin() != ESP_OK) {
+        bootErrors.push_back({.type = BootError::Type::PowerManagement});
+    }
+
+    if (!fileSystem.begin()) {
+        bootErrors.push_back({.type = BootError::Type::FileSystem});
+    }
+
+    // Set current boot id
+    auto bootCount = prefs.bootCount.get().value_or(0);
+    bootCount++;
+    prefs.bootCount.set(bootCount);
+
+    // This is a hack for now for debugging crashes while connected to the serial
+    // monitor -- don't save (and thus delete crashes) when connected to USB. This means
+    // the boot count will be wrong once this is saved, but that's probably ok
+    if (!USBConnected()) {
+        // file system started
+        // attempt to write any core dumps to disk for later upload
+        CrashReportWriter crashReportWriter(fileSystem, bootCount - 1);
+        crashReportWriter.writeCrashReportIfExists();
+    }
+
+    if (!localStore.begin()) {
+        bootErrors.push_back({.type = BootError::Type::LocalStore});
+    }
+
+    if (powerManager.state() == PowerState::Background) {
+        log_i("Booting into PowerState::Background, running a content sync");
+        // Spin up a task just to check the temple and battery
+        xTaskCreatePinnedToCore(
+            [](void *) {
+                for (;;) {
+                    powerManager.loop();
+                    vTaskDelay(1000 / portTICK_PERIOD_MS);
+                }
+            },
+            "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
+        BackgroundSyncAndSleep(powerManager, prefs, localStore);
+        // Should never get here, the system should be asleep
+    }
+
+    // Below code should only execute on an Active boot
 
     if (!lightingController.checkSensorAvailable()) {
         bootErrors.push_back({.type = BootError::Type::AmbientLight});
@@ -295,75 +227,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         lightingController.begin();
     }
 
-#if !SIMULATOR
-    inactivityTimer.start([]() {
-        log_d("Inactive! Allow power off.");
-        prefs.sleepReason.set(SLEEP_REASON_INACTIVITY);
-        PowerManager::getInstance().powerOff();
-    });
-#endif
-
-#if USE_MMC5603
-    if (!templeCloseSensor.checkProductId()) {
+    if (!powerManager.checkMagnetometerProductId()) {
         bootErrors.push_back({.type = BootError::Type::Magnetometer});
-    } else {
-        templeCloseSensor.setCallback([](bool open) {
-            if (open) {
-                lightingController.enableLighting();
-                templesClosed = false;
-                if (runningContentSync) {
-                    // Effectively cancel the content sync by disconnecting WiFi
-                    DisconnectWifi();
-                }
-            } else {
-                lightingController.disableLighting();
-                templesClosed = true;
-                // Will be turned off after content sync
-                prefs.lastBatteryReport.set((int)power.getBatteryPercentage());
-            }
-        });
-        templeCloseSensor.setLongCloseCallback([]() {
-#if ENABLE_CONTENT_SYNC_ON_CLOSE
-            DispatchGetUiQueue()->dispatch([]() {
-                log_d("Temples closed for a while, running content sync");
-                // Debug LED so we know what's happening
-                if (templesClosed) {
-                    digitalWrite(BLUE_LED, LED_ON);
-                    runningContentSync = true;
-                    localStore.syncFromRemote([](const ContentSyncState &state) {
-                        if (state.state == ContentSyncState::Failure ||
-                            state.state == ContentSyncState::Synced ||
-                            state.state == ContentSyncState::AlreadySynced) {
-                            if (state.state == ContentSyncState::Failure) {
-                                log_i("Content sync failed with error: %s", state.message.c_str());
-                            } else if (state.state == ContentSyncState::Synced) {
-                                log_i("Content sync successful");
-                            } else if (state.state == ContentSyncState::AlreadySynced) {
-                                log_i("Content sync already synced");
-                            }
-                            digitalWrite(BLUE_LED, LED_OFF);
-                            // Only if the temples are still closed, allow power off
-                            if (templesClosed) {
-                                prefs.sleepReason.set(SLEEP_REASON_TEMPLES_CLOSED);
-                                PowerManager::getInstance().powerOff();
-                            }
-                            runningContentSync = false;
-                            DisconnectWifi();
-                        }
-                    });
-                }
-            });
-#else
-            // Just precautinoary in case we turn off ENABLE_CONTENT_SYNC_ON_CLOSE in the future
-            // We should still power down if the temples are closed for a while!
-            if (templesClosed) {
-                prefs.sleepReason.set(SLEEP_REASON_TEMPLES_CLOSED);
-                PowerManager::getInstance().powerOff();
-            }
-#endif
-        });
     }
-#endif
 
     SHOW_HEAP();
 
@@ -378,7 +244,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #if EINKET013TT1
 #ifdef DISPLAY_POWER
     // Turn on power to the screen
-    digitalWrite(DISPLAY_POWER, HIGH);
+    DigitalWrite(DISPLAY_POWER, HIGH);
 #endif
     // If the saved prefs indicated a vcom, set it here.
     auto vcomSetting = prefs.vcom.get();
@@ -415,8 +281,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     initialRect.width = prefs.rectW.get().value_or(myDisplay.defaultBoundingBox.width);
     initialRect.height = prefs.rectH.get().value_or(myDisplay.defaultBoundingBox.height);
 
-    log_d("Initial bounding box is %d %d %d %d", initialRect.x, initialRect.y, initialRect.width,
-          initialRect.height);
+    log_d("Initial bounding box is %" PRIu32 " %" PRIu32 " %" PRIu32 " %" PRIu32 "", initialRect.x,
+          initialRect.y, initialRect.width, initialRect.height);
     myDisplay.setBoundingBox(initialRect);
     myDisplay.setLineSpacing(prefs.lineSpacing.get().value_or(0));
 
@@ -493,7 +359,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-    SetWiFiPower((wifi_power_t)prefs.wifiPower.get().value_or(WIFI_POWER_17dBm));
+    WiFi::getInstance().setWiFiPower(
+        (wifi_power_t)prefs.wifiPower.get().value_or(WIFI_POWER_17dBm));
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
     if (!bleManager->startAdvertisingIfNecessary()) {
@@ -502,64 +369,21 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 
 #if !DISABLE_POWER_MANAGEMENT
-    pmConfig.max_freq_mhz = CPU_FREQ_MHZ_HIGH;
-    pmConfig.min_freq_mhz = CPU_FREQ_MHZ_LOW;
-    pmConfig.light_sleep_enable = !USBConnected();
-    if (esp_pm_configure(&pmConfig) != ESP_OK) {
-        bootErrors.push_back({.type = BootError::Type::PowerManagement});
-    }
-    // There may be a magic incantation that keeps USB running through light sleep,
-    // but I haven't found it yet. I've tried every power domain in esp_sleep_pd_config but
-    // it didn't help
     if (rtc_clk_slow_freq_get() != RTC_SLOW_FREQ_32K_XTAL) {
         bootErrors.push_back({.type = BootError::Type::LowPowerOscillator});
     }
-
-#ifdef USB_CONNECTED_PIN
-    attachInterrupt(
-        digitalPinToInterrupt(USB_CONNECTED_PIN),
-        []() { xTaskNotify(powerTaskHandle, 0, eNoAction); }, CHANGE);
 #endif
-#endif
-
-    // set current boot id
-    auto bootCount = prefs.bootCount.get().value_or(0);
-    bootCount++;
-    prefs.bootCount.set(bootCount);
-
-    if (!fileSystem.begin()) {
-        bootErrors.push_back({.type = BootError::Type::FileSystem});
-    } else {
-        // This is a hack for now for debugging crashes while connected to the serial
-        // monitor -- don't save (and thus delete crashes) when connected to USB. This means
-        // the boot count will be wrong once this is saved, but that's probably ok
-        if (!USBConnected()) {
-            // file system started
-            // attempt to write any core dumps to disk for later upload
-            CrashReportWriter crashReportWriter(fileSystem, bootCount - 1);
-            crashReportWriter.writeCrashReportIfExists();
-        }
-    }
-
-    if (!localStore.begin()) {
-        bootErrors.push_back({.type = BootError::Type::LocalStore});
-    }
 
     SHOW_HEAP();
-
-    power.setup();
 
     rootUi.setup(&myDisplay, localStore, fileSystem, lightingController);
 
     SHOW_HEAP();
 
-    SetCpuSpeedMhz(CPU_FREQ_MHZ_LOW);
-
     BlinkBootErrors(bootErrors);
 
-    xTaskCreatePinnedToCore(RadioTask, "Radio", 10000, nullptr, 1, nullptr, 0);
+    xTaskCreatePinnedToCore(PollingLoopTask, "Polling", 10000, nullptr, 1, nullptr, 0);
     // xTaskCreatePinnedToCore(StatsTask, "Stats", 5000, nullptr, 0, nullptr, 1);
-    xTaskCreatePinnedToCore(PowerTask, "Power", 5000, nullptr, 0, &powerTaskHandle, 1);
 
     // Begin fade-in on the lighting before rendering the UI
     DispatchGetUiQueue()->dispatch([]() { lightingController.checkAmbientLight(300, 100); });

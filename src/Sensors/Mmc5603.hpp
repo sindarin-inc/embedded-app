@@ -43,7 +43,7 @@ public:
 
     // Only read the most significant byte on each axis
     auto readXYZ8Bit(Xyz8bit &out) -> bool;
-    // Only read the most significant byte on X and Z axes
+    // Only read the most significant byte on X and Z axes. Takes ~800us to run.
     auto readXZ8Bit(Xyz8bit &out) -> bool;
 
 private:

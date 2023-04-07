@@ -47,8 +47,7 @@ void BLESettings::writePageTurnerBuildToCharacteristic(BLECharacteristic *charac
 
 void BLESettings::writePageTurnerBatteryToCharacteristic(BLECharacteristic *characteristic,
                                                          const std::string &key) {
-    std::string value =
-        StringFormat("%s=%d", key.c_str(), this->prefs_->lastPageTurnerBattery.get().value_or(0));
+    std::string value = StringFormat("%s=%d", key.c_str(), PreferencesStore::lastPageTurnerBattery);
     log_i("GATT client reading page turner battery: %s", value.c_str());
     characteristic->setValue(value);
     characteristic->notify();
@@ -63,16 +62,16 @@ void BLESettings::disconnectPageTurnerForSeconds(const int seconds) {
 void BLESettings::blinkLedAfterConnect(BLECharacteristic *characteristic, const std::string &key) {
     for (int i = 0; i < 10; i++) {
         // Flash all the LEDs
-        digitalWrite(RED_LED, LED_ON);
+        DigitalWrite(RED_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        digitalWrite(RED_LED, LED_OFF);
-        digitalWrite(GREEN_LED, LED_ON);
+        DigitalWrite(RED_LED, LED_OFF);
+        DigitalWrite(GREEN_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        digitalWrite(GREEN_LED, LED_OFF);
+        DigitalWrite(GREEN_LED, LED_OFF);
 #ifdef BLUE_LED
-        digitalWrite(BLUE_LED, LED_ON);
+        DigitalWrite(BLUE_LED, LED_ON);
         vTaskDelay(200 / portTICK_PERIOD_MS);
-        digitalWrite(BLUE_LED, LED_OFF);
+        DigitalWrite(BLUE_LED, LED_OFF);
 #endif
     }
 
@@ -87,13 +86,12 @@ void BLESettings::writeWifiSSIDtoCharacteristic(BLECharacteristic *characteristi
     queue->dispatch([key, characteristic] {
         // Check if wifi is already connected, and if so, don't disconnect at the end of this
         // function
-        bool wifiConnected = NetworkConnected();
+        bool wifiConnected = WiFi::getInstance().connected();
         wifi_config_t conf;
-
-        if (GetWiFiCredentials(&conf) && strlen((const char *)conf.sta.ssid) > 0) {
+        esp_err_t err = WiFi::getInstance().getWifiConfig(&conf);
+        if (err == ESP_OK && WiFi::getInstance().hasWiFiCredentials(&conf)) {
             std::string value = StringFormat("%s=%s", key.c_str(), (const char *)conf.sta.ssid);
             characteristic->setValue(value);
-
             log_i("GATT client reading wifi ssid, initializing wifi, sharing ssid: %s %zu/%zu",
                   value.c_str(), value.length(), sizeof(value.c_str()));
         } else {
@@ -107,7 +105,7 @@ void BLESettings::writeWifiSSIDtoCharacteristic(BLECharacteristic *characteristi
 
         // Turn wifi back off if we weren't already using it
         if (!wifiConnected) {
-            DisconnectWifi();
+            WiFi::getInstance().disconnectWiFi();
         }
     });
 }

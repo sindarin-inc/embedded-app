@@ -5,6 +5,7 @@
 #include "Communications/FirmwareDownload.hpp"
 #include "Communications/WiFi.hpp"
 #include "Misc/Dispatch.hpp"
+#include "Misc/PowerManager.hpp"
 #include "UI/Fonts/Tahoma10pt7b.h"
 #include "sindarin-debug.h"
 
@@ -31,6 +32,8 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
     case FirmwareDownloadState::CheckingForLatest:
     case FirmwareDownloadState::AlreadyUpToDate:
     case FirmwareDownloadState::Downloading:
+    case FirmwareDownloadState::AlreadyDownloaded:
+    case FirmwareDownloadState::Downloaded:
     case FirmwareDownloadState::Installing:
     case FirmwareDownloadState::Installed: {
         // Calculate group height
@@ -118,12 +121,12 @@ void FirmwareUpdateScreen::fail(const std::string &message) {
     needsRerender = true;
     render(display_);
     vTaskDelay(5000 / portTICK_PERIOD_MS);
-    DisconnectWifi();
+    WiFi::getInstance().disconnectWiFi();
     backCallback();
 }
 
 void FirmwareUpdateScreen::begin() {
-    if (!HasWiFiCredentials()) {
+    if (!WiFi::getInstance().hasWiFiCredentials()) {
         fail("Go to Settings > WiFi Setup in the Sol app.");
         return;
     }
@@ -131,7 +134,7 @@ void FirmwareUpdateScreen::begin() {
     state_.state = FirmwareDownloadState::ConnectingWifi;
     render(display_);
 
-    if (!ConnectWifi()) {
+    if (!WiFi::getInstance().connectWiFiWithTimeout()) {
         fail("Failed to connect to WiFi.");
         return;
     }
@@ -151,7 +154,7 @@ void FirmwareUpdateScreen::begin() {
             if (state.state == FirmwareDownloadState::Failure ||
                 state.state == FirmwareDownloadState::Installing ||
                 state.state == FirmwareDownloadState::AlreadyUpToDate) {
-                DisconnectWifi();
+                WiFi::getInstance().disconnectWiFi();
             }
 
             if (state.state == FirmwareDownloadState::Failure ||
@@ -161,7 +164,7 @@ void FirmwareUpdateScreen::begin() {
             } else if (state.state == FirmwareDownloadState::Installed) {
                 vTaskDelay(3000 / portTICK_PERIOD_MS);
                 log_i("Rebooting after successful firmware update");
-                esp_restart();
+                PowerManager::getInstance().reboot();
                 // Only for the sim
                 backCallback();
             }

@@ -1,12 +1,13 @@
 #pragma once
 
-#include <FS.h>
 #include <vector>
 
+#include "Misc/SpiramAllocator.hpp"
 #include "Models/Readable.hpp"
 #include "Renderers/RendererStream.hpp"
+#include "Storage/SFile.hpp"
 
-typedef std::vector<std::string> FileList;
+using FileList = SpiramVector<std::string>;
 
 // TODO: It's probably worth exploring `esp_vfs_t` as a generic filesystem interface
 // Or we could checkout the Arduino FS class since it supports custom file systems via FSImpl
@@ -14,6 +15,8 @@ typedef std::vector<std::string> FileList;
 // duplication potentially.
 class FileSystem {
 public:
+    FileSystem(FileSystem const &) = delete;
+
     // Note: Allocates the ContainerStream on the heap, make sure to `delete` it somewhere.
     auto newRendererStream(const char *path) -> std::shared_ptr<RendererStream>;
     auto newGzipRendererStream(const char *path) -> std::shared_ptr<RendererStream>;
@@ -22,7 +25,7 @@ public:
     virtual auto begin() -> bool { return true; };
 
     virtual auto open(const std::string &path, const char *mode = FILE_READ,
-                      const bool create = false) const -> File {
+                      const bool create = false) const -> SFile {
         log_e("Abstract");
         assert(0);
         return {};
@@ -43,6 +46,11 @@ public:
         return false;
     }
     virtual auto remove(const std::string &path) -> bool {
+        log_e("Abstract");
+        assert(0);
+        return false;
+    }
+    virtual auto format() -> bool {
         log_e("Abstract");
         assert(0);
         return false;

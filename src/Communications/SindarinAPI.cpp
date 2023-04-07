@@ -4,8 +4,8 @@
 
 #include "FileDownload.hpp"
 #include "GitVersion.hpp"
+#include "Misc/Battery.hpp"
 #include "Misc/Platform.hpp"
-#include "Misc/Power.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
 #include "Models/UserReadable.hpp"
@@ -41,39 +41,34 @@ void SindarinAPI::setAuth(HttpClient &client) {
 
 void SindarinAPI::setAccessToken(const std::string &token) { accessToken_ = token; }
 
-auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp) -> int {
-    HttpClient client(SINDARIN_SERVER_URL "/sync/all/", "application/x-www-form-urlencoded",
-                      HTTP_METHOD_POST);
+auto SindarinAPI::checkSync(CheckSyncRequest &req, CheckSyncResponse *resp) -> int {
+    auto url = StringFormat(SINDARIN_SERVER_URL "/sync/%ss/",
+                            ReadableModelTypeToString(req.modelType).c_str());
+    log_d("Checking sync for %s: %s", ReadableModelTypeToString(req.modelType).c_str(),
+          url.c_str());
+    return checkSync(url, req, resp);
+}
+
+auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, CheckSyncResponse *resp)
+    -> int {
+    HttpClient client(url.c_str(), "application/json", HTTP_METHOD_POST);
     setAuth(client);
 
-    auto body =
-        StringFormat("build=%s&git_hash=%s&sn=%"
-                     "s&pt_battery=%d&pt_build=%s&skip_content=%s&sleep_reason=%d",
-                     kVersionString, kGitHash, GetSerialNumber().c_str(), req.ptBattery,
-                     req.ptBuild.c_str(), req.skipContent ? "true" : "false", req.sleepReason);
-    if (req.readablesSince.length() > 0) {
-        body += StringFormat("&readables_since=%s", req.readablesSince.c_str());
-    }
-    if (req.articlesSince.length() > 0) {
-        body += StringFormat("&articles_since=%s", req.articlesSince.c_str());
-    }
-    for (auto &placemark : req.readablePlacemarks) {
-        body += placemark.c_str();
-    }
-    for (auto &placemark : req.articlePlacemarks) {
-        body += placemark.c_str();
-    }
-    for (auto &readable : req.readablesArchived) {
-        body += readable.c_str();
-    }
-    for (auto &article : req.articlesArchived) {
-        body += article.c_str();
-    }
+    auto doc = std::make_shared<SpiRamJsonDocument>(
+        2048 * std::max(1, (int)(req.placemarks.size() + req.archives.size() +
+                                 req.bookmarks.size() + req.storedUuids.size())));
+    JsonObject body = doc->to<JsonObject>();
+    ConvertToJson(req, body);
 
-    client.open(body.length());
-    int writeLength = client.write(body.c_str(), body.length());
-    if (writeLength < body.length()) {
-        log_e("HttpClient failed to write (writeLength=%d)", writeLength);
+    size_t serializedMaxSize = (*doc).memoryUsage() * 2;
+    auto reqBody = SpiRamArrayPtr<char>(serializedMaxSize);
+    size_t bodyLength = serializeJson(*doc, reqBody.get(), serializedMaxSize);
+
+    client.open(bodyLength);
+    int writeLength = client.write(reqBody.get(), bodyLength);
+    if (writeLength < bodyLength) {
+        log_w("HttpClient failed to write (writeLength=%d, bodyLength=%zu)", writeLength,
+              bodyLength);
         return 0;
     }
 
@@ -110,8 +105,7 @@ auto SindarinAPI::checkSync(const CheckSyncRequest &req, CheckSyncResponse *resp
 
     SHOW_HEAP();
 
-    log_d("Synced: %d Message: %s, Firmware: %s", resp->synced, resp->message.c_str(),
-          resp->firmware.url.c_str());
+    log_d("Synced: %d Message: %s", resp->synced, resp->message.c_str());
 
     SHOW_HEAP();
 
@@ -158,44 +152,6 @@ auto SindarinAPI::checkFirmware(FirmwareResponse *resp) -> int {
     return httpCode;
 }
 
-auto SindarinAPI::syncBookmarks(const char *bookmarksJson, const int bookmarksSize) -> int {
-    SyncBookmarksResponse resp;
-    HttpClient client(SINDARIN_SERVER_URL "/user/bookmarks/", "application/json", HTTP_METHOD_POST);
-    setAuth(client);
-
-    client.open(bookmarksSize);
-    int writeLength = client.write(bookmarksJson, bookmarksSize);
-    if (writeLength < bookmarksSize) {
-        log_e("HttpClient failed to write (writeLength=%d)", writeLength);
-        return 0;
-    }
-
-    int contentLength = client.fetchHeaders();
-    int httpCode = client.getStatusCode();
-    auto stream = client.makeReadStream();
-
-    SHOW_HEAP();
-
-    auto respJson = std::make_unique<SpiRamJsonDocument>(1024 + contentLength * 3);
-    auto error = ArduinoJson::deserializeJson(*respJson, *stream);
-
-    SHOW_HEAP();
-
-    if (error.code() != DeserializationError::Ok) {
-        log_e("Failed to deserialize sync bookmarks response: %s (length=%d)", error.c_str(),
-              contentLength);
-        return 0;
-    }
-
-    SHOW_HEAP();
-
-    resp.fromJson(respJson->as<JsonObject>());
-
-    SHOW_HEAP();
-
-    return httpCode;
-}
-
 auto SindarinAPI::downloadReadable(const Readable &readable, FileSystem &fileSystem,
                                    const std::string &path,
                                    const std::function<void(int percentage)> &progressCallback)
@@ -226,7 +182,7 @@ auto SindarinAPI::downloadReadable(const Readable &readable, FileSystem &fileSys
 }
 
 auto SindarinAPI::uploadAndResetVoltageLog(FileSystem &fileSystem) -> int {
-    auto localPath = Power::voltageLogPath();
+    auto localPath = Battery::voltageLogPath();
     if (!fileSystem.exists(localPath)) {
         log_w("Voltage log file %s does not exist", localPath);
         return false;
@@ -246,13 +202,13 @@ auto SindarinAPI::uploadAndResetVoltageLog(FileSystem &fileSystem) -> int {
     // serialized data will be until we actually serialize it. We probably only need 20% more or so
     // but we have plenty of SPIRAM so let's just double it.
     size_t serializedMaxSize = (*requestJson).memoryUsage() * 2;
-    char *serialized = (char *)heap_caps_malloc(serializedMaxSize, MALLOC_CAP_SPIRAM);
+    auto serialized = SpiRamArrayPtr<char>(serializedMaxSize);
 
     // Write to SPIRAM
     // TODO: I can't find a good way to verify that the whole thing was written. Maybe would be
     // better for this to be a stream so we could check if we attempted to write but ran out of
     // space.
-    size_t serializedLength = serializeJson(*requestJson, serialized, serializedMaxSize);
+    size_t serializedLength = serializeJson(*requestJson, serialized.get(), serializedMaxSize);
     if (serializedLength == serializedMaxSize) {
         log_e("serializedLength is the same as the max size, probably ran out of space");
     }
@@ -264,17 +220,14 @@ auto SindarinAPI::uploadAndResetVoltageLog(FileSystem &fileSystem) -> int {
     auto err = client.open(serializedLength);
     if (err != ESP_OK) {
         log_e("HttpClient failed to open: %d", err);
-        heap_caps_free(serialized);
         return -1;
     }
 
-    int writeLength = client.write(serialized, serializedLength);
+    int writeLength = client.write(serialized.get(), serializedLength);
     if (writeLength != serializedLength) {
-        log_e("HttpClient failed to write fully (writeLength=%d, serializedLength=%zu)",
+        log_w("HttpClient failed to write fully (writeLength=%d, serializedLength=%zu)",
               writeLength, serializedLength);
     }
-
-    heap_caps_free(serialized);
 
     client.fetchHeaders();
     int httpCode = client.getStatusCode();
@@ -284,7 +237,7 @@ auto SindarinAPI::uploadAndResetVoltageLog(FileSystem &fileSystem) -> int {
     return httpCode;
 }
 
-auto SindarinAPI::uploadCrashReport(File &crashFile, const String &contentType) -> int {
+auto SindarinAPI::uploadCrashReport(SFile &crashFile, const std::string &contentType) -> int {
     HttpClient client(SINDARIN_SERVER_URL "/coredumps/", contentType.c_str(), HTTP_METHOD_POST);
     setAuth(client);
 
@@ -292,16 +245,14 @@ auto SindarinAPI::uploadCrashReport(File &crashFile, const String &contentType) 
     client.open(writeSize);
 
     size_t bufferSize = 4096;
-    char *buffer = (char *)heap_caps_malloc(bufferSize, MALLOC_CAP_SPIRAM);
+    auto buffer = SpiRamArrayPtr<char>(bufferSize);
 
     // NOTE: crashFile.available() never goes down but it seems like it should
     int bytesWritten = 0;
     while (bytesWritten < writeSize) {
-        auto bytesRead = crashFile.readBytes(buffer, bufferSize);
-        bytesWritten += client.write(buffer, bytesRead);
+        auto bytesRead = crashFile.readBytes(buffer.get(), bufferSize);
+        bytesWritten += client.write(buffer.get(), bytesRead);
     }
-
-    heap_caps_free(buffer);
 
     client.fetchHeaders();
     int httpCode = client.getStatusCode();

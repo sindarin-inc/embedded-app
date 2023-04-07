@@ -69,7 +69,7 @@ void CrashReportScreen::render(DisplaySystem &display) {
         }
 
         if (state_.state == CrashUploadState::NoCrashReport) {
-            drawBulletLine(StringFormat("No crash report found.").c_str(), 100, false);
+            drawBulletLine("No crash report found.", 100, false);
             break;
         }
 
@@ -97,12 +97,12 @@ void CrashReportScreen::fail(const std::string &message) {
     needsRerender = true;
     render(display_);
     vTaskDelay(5000 / portTICK_PERIOD_MS);
-    DisconnectWifi();
+    WiFi::getInstance().disconnectWiFi();
     backCallback();
 }
 
 void CrashReportScreen::begin() {
-    if (!HasWiFiCredentials()) {
+    if (!WiFi::getInstance().hasWiFiCredentials()) {
         fail("Go to Settings > WiFi Setup in the Sol app.");
         return;
     }
@@ -110,7 +110,7 @@ void CrashReportScreen::begin() {
     state_.state = CrashUploadState::ConnectingWifi;
     render(display_);
 
-    if (!ConnectWifi()) {
+    if (!WiFi::getInstance().connectWiFiWithTimeout()) {
         fail("Failed to connect to WiFi.");
         return;
     }
@@ -124,7 +124,7 @@ void CrashReportScreen::begin() {
             if (state.state == CrashUploadState::Failure ||
                 state.state == CrashUploadState::NoCrashReport ||
                 state.state == CrashUploadState::Done) {
-                DisconnectWifi();
+                WiFi::getInstance().disconnectWiFi();
                 vTaskDelay(3000 / portTICK_PERIOD_MS);
                 backCallback();
             }

@@ -1,6 +1,6 @@
-Import("env")
 import json
 import os
+import hashlib
 from pathlib import Path
 from time import strftime
 
@@ -26,35 +26,39 @@ def to_id(original_id):
 
 
 def generate_readables(path):
-    """Generate readables.json dynamically based on .txt files in `path`"""
+    """Generate readables.json dynamically based on .txt/.epub files in `path`"""
     os.makedirs(path, exist_ok=True)
 
     manifest_file = path / Path("readables.json")
 
-    p = Path(path).glob("*.txt")
-    files = [x for x in p if x.is_file()]
-
+    p = Path(path)
+    files = [x for x in p.glob("*.txt") if x.is_file()] + [x for x in p.glob("*.epub") if x.is_file()]
+    print(f"Found {len(files)} files in {path} to add to manifest: {files}")
     readables = []
 
     for file in files:
         path = f"/{file.name}"
         id = file.stem
-        with open(file) as f:
-            # First line of the file is the title
-            name = f.readline().rstrip()
-            author = f.readline().rstrip()
-
+        if file.suffix == ".txt":
+            with open(file) as f:
+                # First line of the file is the title
+                name = f.readline().rstrip()
+                author = f.readline().rstrip()
+        elif file.suffix == ".epub":
+            name = file.name
+            author = "Local Only"
+            
         # Get SHA256 of file
         with open(file, "rb") as f:
-            import hashlib
-
             sha256 = hashlib.sha256(f.read()).hexdigest()
 
         # Get the current time in ISO8601
         now = strftime("%Y-%m-%dT%H:%M:%S%Z")
+        print(f"Adding {name} to readables.json manifest")
         readables.append(
             {
                 "local_only": True,
+                "uuid": path,
                 "id": to_id(id),
                 "title": name,
                 "date_created": now,
@@ -67,6 +71,7 @@ def generate_readables(path):
                 ],
                 "files": [
                     {
+                        "uuid": to_id(id),
                         "id": to_id(id),
                         "name": file.name,
                         "size": os.path.getsize(file),
@@ -75,6 +80,7 @@ def generate_readables(path):
                         "sha_hash": sha256,
                     }
                 ],
+                "readable_type": "book",
             }
         )
 
@@ -85,5 +91,6 @@ def generate_readables(path):
 # TODO: It will be cleaner to only generate the manifest when building the filesystem
 # but I'll need to learn more about target dependencies in SCons to do this. For now
 # we will just build it every time. It doesn't add much time.
+env = {}
 env["SPIFFS_SOURCES"] = "data"
 generate_readables(env["SPIFFS_SOURCES"])

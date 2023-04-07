@@ -8,11 +8,11 @@
 #include "Misc/GUnzipStream.hpp"
 #include "sindarin-debug.h"
 
-auto DownloadFile(const char *url,
-                  const std::function<bool(int httpCode, int contentLength)> &openedConnection,
-                  const std::function<size_t(HttpClient &client, int index)> &readWrite,
-                  const std::function<void(int bytesWritten, float percentage)> &progressCallback,
-                  bool gzip) -> bool {
+auto DownloadFile(
+    const char *url, const std::function<bool(int httpCode, int contentLength)> &openedConnection,
+    const std::function<size_t(HttpClient &client, int index, int contentLength)> &readWrite,
+    const std::function<void(int bytesWritten, float percentage)> &progressCallback, bool gzip)
+    -> bool {
 
     HttpClient client(url);
 
@@ -46,6 +46,23 @@ auto DownloadFile(const char *url,
         return false;
     }
 
+    if (gzip) {
+        char *contentEncoding = nullptr;
+        err = client.getResponseHeader("Content-Encoding", &contentEncoding);
+        if (err == ESP_ERR_NOT_FOUND) {
+            log_e("Requested GZIP but did not get any Content-Encoding header!");
+        } else if (err != ESP_OK) {
+            log_e("Unexpected error getting Content-Encoding header %d %s", err,
+                  esp_err_to_name(err));
+        } else if (contentEncoding == nullptr) {
+            log_e("contentEncoding is null but didn't throw an error");
+        } else if (strcmp(contentEncoding, "gzip") != 0) {
+            log_e("Requested GZIP but instead got Content-Encoding: %s!", contentEncoding);
+        } else {
+            log_d("Got %s content encoding", contentEncoding);
+        }
+    }
+
     if (contentLength <= 0) {
         // if we somehow don't have a content length header, consider it an error for now
         log_e("Server did not return a content length for %s", url);
@@ -66,7 +83,7 @@ auto DownloadFile(const char *url,
     int lastPercentage = 0;
 
     while (totalReadLen < contentLength) {
-        int readLen = readWrite(client, totalReadLen);
+        int readLen = readWrite(client, totalReadLen, contentLength);
         if (readLen <= 0) {
             log_w("Error read data (readLen == 0)");
             if (!client.connected) {
@@ -119,16 +136,16 @@ auto DownloadFile(const char *url,
                   const std::function<void(int bytesWritten, float percentage)> &progressCallback,
                   bool gzip) -> bool {
 
-    // W25Q512JV* chips have a page size of 256 bytes so we should only use a multiple of that
     constexpr int bufferSize = 4096;
-    auto *buffer = (uint8_t *)heap_caps_malloc(bufferSize, MALLOC_CAP_SPIRAM);
+    auto buffer = SpiRamArrayPtr<uint8_t>(bufferSize);
 
     return DownloadFile(
         url, openedConnection,
-        [buffer, writeBytes](HttpClient &client, int index) {
-            int readLen = client.read((char *)buffer, bufferSize);
+        [buffer, bufferSize, writeBytes](HttpClient &client, int index, int contentLength) {
+            int readLen =
+                client.read((char *)buffer.get(), std::min(bufferSize, contentLength - index));
 
-            auto written = writeBytes(buffer, (size_t)readLen);
+            auto written = writeBytes(buffer.get(), (size_t)readLen);
             if (written != readLen) {
                 log_w("Failed to write to file, wrote %zu but expected %d", written, readLen);
             }
@@ -156,7 +173,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
     // TODO: We could probably improve overall speed, while minimizing WiFi connected time by
     // writing to disk as we go from another core or writing to disk from a lower priority task. But
     // that will be harder to make
-    uint8_t *fileBuffer = nullptr;
+    std::shared_ptr<uint8_t[]> fileBuffer;
     int fileLength;
 
     // Because file writes tend to be twice the time the http download takes right now, adjust the
@@ -170,16 +187,17 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
         url,
         [&fileBuffer, &fileLength](int httpCode, int contentLength) -> bool {
             fileLength = contentLength;
-            fileBuffer = (uint8_t *)heap_caps_malloc(contentLength, MALLOC_CAP_SPIRAM);
+            fileBuffer = SpiRamArrayPtr<uint8_t>(contentLength);
             if (fileBuffer == nullptr) {
                 log_e("Failed to allocate %d bytes for file download", contentLength);
                 return false;
             }
             return true;
         },
-        [&fileBuffer](HttpClient &client, int index) -> size_t {
+        [&fileBuffer](HttpClient &client, int index, int contentLength) -> size_t {
             constexpr int bufferSize = 16384;
-            return client.read((char *)(fileBuffer + index), bufferSize);
+            return client.read((char *)(fileBuffer.get() + index),
+                               std::min(bufferSize, contentLength - index));
         },
         fileProgress, gzip);
 
@@ -201,7 +219,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
     while (written < fileLength) {
         // Every ~ 6s at ~40-44KB/S
         auto bytesWrittenToFile =
-            file.write(fileBuffer + written, std::min(fileLength - written, 262144));
+            file.write(fileBuffer.get() + written, std::min(fileLength - written, 262144));
         if (bytesWrittenToFile <= 0) {
             log_w("Failed to write to file");
             break;
@@ -217,8 +235,6 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
     float bps = fileLength / (duration / 1000000.0f);
     log_i("File write complete %d in %" PRId64 "us (%f Bps %f KB/s, %f kbps)", fileLength, duration,
           bps, bps / 1000, 8 * bps / 1000);
-
-    heap_caps_free(fileBuffer);
 
     // The file must be re-opened to check its size
     size_t fileSize = 0;
@@ -237,6 +253,8 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
         log_e("Downloaded file is shorter than expected, expected %d bytes but got %zu bytes",
               length, fileSize);
         return false;
+    } else {
+        log_d("Downloaded file is correct size: %zu bytes", fileSize);
     }
 
     return true;

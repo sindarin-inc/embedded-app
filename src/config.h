@@ -57,8 +57,8 @@
 
 #define BAT_VOLTAGE_RIGHT 10
 #define BAT_VOLTAGE_LEFT 4
-#define BATT_CHANNEL_RIGHT ADC1_CHANNEL_9
-#define BATT_CHANNEL_LEFT ADC1_CHANNEL_3
+#define BATT_CHANNEL_RIGHT ADC_CHANNEL_9
+#define BATT_CHANNEL_LEFT ADC_CHANNEL_3
 #define UPPER_DIVIDER 442
 #define LOWER_DIVIDER 160
 // Unused on ESP32-S3
@@ -90,17 +90,8 @@
 #define DISPLAY_CLK 13
 
 #define CPU_FREQ_MHZ_HIGH 240
-#if !DISABLE_POWER_MANAGEMENT
+#define CPU_FREQ_MHZ_BACKGROUND 80
 #define CPU_FREQ_MHZ_LOW 40
-#else
-#define CPU_FREQ_MHZ_LOW 80
-#endif
-
-// HACK for Adafruit_GFX. Adafruit_GFX needs this value, but if we set it globally, then Arduino
-// complains it's already defined.
-#ifndef ARDUINO
-#define ARDUINO 10185
-#endif
 
 #if (USE_LTR329 || USE_MMC5603)
 #define USE_I2C 1

@@ -5,8 +5,15 @@
 #include <functional>
 
 #include "Misc/Dispatch.hpp"
+#include "Misc/Platform.hpp"
+#include "Misc/SemVer.hpp"
 #include "TurnTouch.hpp"
 #include "sindarin-debug.h"
+
+#define CONNECTION_INTERVAL_MIN 40
+#define CONNECTION_INTERVAL_MAX 90
+#define CONNECTION_LATENCY 10
+#define CONNECTION_TIMEOUT 1000
 
 using namespace std::placeholders;
 
@@ -17,6 +24,10 @@ auto TTRemoteInput::connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &
         client_->setClientCallbacks(&clientCallbacks_);
     }
 
+    // Update connection parameters after establishing a connection
+    client_->setConnectionParams(CONNECTION_INTERVAL_MIN, CONNECTION_INTERVAL_MAX,
+                                 CONNECTION_LATENCY, CONNECTION_TIMEOUT);
+
     BLEAddress address = device->getAddress();
     log_d("Attempting to connect to TurnTouch at address: %s", address.toString().c_str());
 
@@ -24,7 +35,6 @@ auto TTRemoteInput::connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &
         log_e("Failed to connect to TurnTouch");
         return false;
     }
-
     // Obtain a reference to the service we are after in the remote BLE server.
     BLERemoteService *buttonService = client_->getService(TURNTOUCH_BUTTON_SVC_UUID);
     if (buttonService == nullptr) {
@@ -70,7 +80,7 @@ auto TTRemoteInput::connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &
         uint8_t battery = 0;
         if (batteryCharacteristic->canRead()) {
             battery = batteryCharacteristic->readValue<uint8_t>();
-            prefs_.lastPageTurnerBattery.set(battery);
+            PreferencesStore::lastPageTurnerBattery = battery;
             log_i("Page turner battery level: %d%%", battery);
         }
 
@@ -119,7 +129,7 @@ void TTRemoteInput::disconnectTemporarily(int seconds) {
         client_->disconnect();
     }
     state_ = SCANNING;
-    keepDisconnectedUntilMs_ = millis() + seconds * 1000;
+    keepDisconnectedUntilMs_ = Millis() + seconds * 1000;
 
     std::string dfuString = "DFU-";
     auto ptBuild = prefs_.lastPageTurnerBuild.get();
@@ -135,16 +145,32 @@ void TTRemoteInput::disconnectTemporarily(int seconds) {
 }
 
 void TTRemoteInput::scanForDevice() {
-    digitalWrite(BLUE_LED, LED_ON);
+    DigitalWrite(BLUE_LED, LED_ON);
 
-    // Run a scan for 1 second
     auto address = this->prefs_.pairedTurnTouchAddress.get();
     if (address.has_value()) {
         log_d("Scanning for paired TurnTouch %s", std::string(address.value()).c_str());
     } else {
         log_d("Scanning for any available TurnTouch...");
     }
+
+    // PT build 0.2.0 and earlier only support active scanning, which is less power efficient
+    bool useActiveScan = false;
+    auto ptBuild = prefs_.lastPageTurnerBuild.get();
+    if (ptBuild.has_value()) {
+        std::string build = ptBuild.value();
+        if (SemVerCompareVersions(build.c_str(), "0.2.99") == SemVerComparison::LessThan) {
+            log_i("Using active scan for PT build %s", build.c_str());
+            useActiveScan = true;
+        }
+    } else {
+        // If we haven't connected to a PT yet, cast a wider net to pickup both old and new builds
+        log_i("Using active scan for PT because we have yet to connect to one");
+        useActiveScan = true;
+    }
+
     BLEScan *scan = BLEDevice::getScan();
+
     scan->setAdvertisedDeviceCallbacks(&advertisedDeviceCallbacks_);
     // See: https://electronics.stackexchange.com/a/359158/16459
     // Only one advertising channel is being looked at during each
@@ -153,10 +179,13 @@ void TTRemoteInput::scanForDevice() {
     // scanWindow equal to the scanInterval in order to do continuous scanning.
     scan->setInterval(40);
     scan->setWindow(30);
-    scan->setActiveScan(true);
+    if (useActiveScan) {
+        scan->setActiveScan(true);
+    }
     scan->start((int)(RESCAN_INTERVAL_MS / 1000), nullptr, false);
-    lastScanMs_ = millis();
-    digitalWrite(BLUE_LED, LED_OFF);
+
+    lastScanMs_ = Millis();
+    DigitalWrite(BLUE_LED, LED_OFF);
 }
 
 void TTRemoteInput::buttonNotificationCallback(BLERemoteCharacteristic *remoteCharacteristic,
@@ -185,13 +214,13 @@ void TTRemoteInput::buttonNotificationCallback(BLERemoteCharacteristic *remoteCh
 
 void TTRemoteInput::connect() {
     if (state_ == SCANNING && !BLEDevice::getScan()->isScanning() &&
-        (keepDisconnectedUntilMs_ == 0 || millis() >= keepDisconnectedUntilMs_) &&
-        (lastScanMs_ == 0 || millis() > (lastScanMs_ + RESCAN_INTERVAL_MS + RESCAN_GAP_MS))) {
-        lastScanMs_ = millis();
+        (keepDisconnectedUntilMs_ == 0 || Millis() >= keepDisconnectedUntilMs_) &&
+        (lastScanMs_ == 0 || Millis() > (lastScanMs_ + RESCAN_INTERVAL_MS + RESCAN_GAP_MS))) {
+        lastScanMs_ = Millis();
         scanForDevice();
     }
 
-    if (millis() < keepDisconnectedUntilMs_) {
+    if (Millis() < keepDisconnectedUntilMs_) {
         log_d("Waiting to reconnect to TurnTouch until %lu", keepDisconnectedUntilMs_);
     }
 }

@@ -41,6 +41,7 @@ struct DisplayRect {
 class DisplaySystem {
 public:
     DisplaySystem();
+    DisplaySystem(DisplaySystem const &) = delete;
     ~DisplaySystem() = default;
 
     virtual auto setup() -> bool;

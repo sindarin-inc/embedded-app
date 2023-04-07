@@ -82,9 +82,9 @@ void PopupMenuScreen::render(DisplaySystem &display) {
 
     log_d("PopupMenuScreen render");
 
-    batteryTextView_.setText(power_.getBatteryPercentageOnlyString());
+    batteryTextView_.setText(battery_.getBatteryPercentageOnlyString());
 
-    SolClock theClock = SolClock::getInstance();
+    SolClock &theClock = SolClock::getInstance();
     clockView_.setText(theClock.getTimeString());
 
     size_t place = renderer_.getCurrentPlace();
@@ -105,7 +105,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
 
     // Now draw!
     uint16_t textWidth = 0, textHeight = 0;
-    auto batteryStatus = this->power_.getBatteryPercentageOnlyString();
+    auto batteryStatus = this->battery_.getBatteryPercentageOnlyString();
     uint16_t screenWidth = display.width();
     uint16_t screenHeight = display.height();
 

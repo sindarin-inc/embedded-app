@@ -28,7 +28,7 @@
 //
 void ReadableScreen::updateBookmarkStatus() {
     inBookmark_ = false;
-    File bookmarkFile = fileSystem_.open(readable_.bookmarkFilePath().c_str(), FILE_READ, false);
+    SFile bookmarkFile = fileSystem_.open(readable_.bookmarkFilePath().c_str(), FILE_READ, false);
     if (!bookmarkFile) {
         log_i("Failed to open bookmark file: %s", readable_.bookmarkFilePath().c_str());
         return;
@@ -58,7 +58,7 @@ void ReadableScreen::writeOutBookmarkUpdate() {
         return;
     }
 
-    File bookmarkFile = fileSystem_.open(readable_.bookmarkFilePath().c_str(), FILE_APPEND, true);
+    SFile bookmarkFile = fileSystem_.open(readable_.bookmarkFilePath().c_str(), FILE_APPEND, true);
 
     if (!bookmarkFile) {
         log_i("Failed to open bookmark file: %s", readable_.bookmarkFilePath().c_str());

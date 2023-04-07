@@ -1,5 +1,3 @@
-#if !SIMULATOR
-
 #include <mbedtls/md.h>
 
 #include "Crypto.hpp"
@@ -8,7 +6,7 @@
 #include "sindarin-debug.h"
 
 auto CalculateFileHash(const FileSystem &fileSystem, const char *path) -> std::string {
-    File file = fileSystem.open(path);
+    SFile file = fileSystem.open(path);
     if (!file) {
         log_e("Failed to open file: %s is the filename", path);
         return "";
@@ -69,5 +67,3 @@ auto CalculateStringHash(const std::string &input) -> std::string {
 
     return hashString;
 }
-
-#endif
