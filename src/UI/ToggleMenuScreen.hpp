@@ -7,7 +7,7 @@
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Menu.hpp"
 #include "Misc/MenuStyle.hpp"
-#include "Misc/Power.hpp"
+#include "Misc/PowerManager.hpp"
 #include "Renderers/Renderer.hpp"
 #include "UI/Bitmaps/Battery_Bolt.hpp"
 #include "UI/Components/BoxView.hpp"
@@ -25,12 +25,13 @@ class ToggleMenuScreen : public MenuScreen, public EinkView {
 
     // constructor to create a toggle menu screen
 public:
-    ToggleMenuScreen(Power &power, DisplaySystem &display, MenuStyleFamily myStyle,
+    ToggleMenuScreen(Battery &battery, DisplaySystem &display, MenuStyleFamily myStyle,
                      std::string menuName = "Default")
-        : MenuScreen(power, myStyle, menuName), EinkView(display), headerTextView_(display, ""),
+        : MenuScreen(myStyle, menuName), EinkView(display), headerTextView_(display, ""),
           onTextView_(display, "ON"), offTextView_(display, "OFF"),
           selectedSelectionView_(display, 3), batteryTextView_(display, ""),
-          batteryIconView_(display, boltBits, bolt_width, bolt_height), clockView_(display, ""){};
+          batteryIconView_(display, boltBits, bolt_width, bolt_height), clockView_(display, ""),
+          battery_(battery){};
 
     auto layout(LayoutContext &context, Size size) -> Size;
     void drawInRect(Rect rect);
@@ -60,5 +61,6 @@ protected:
     IconView batteryIconView_;
     SingleLineTextView clockView_;
 
+    Battery &battery_;
     bool drawBubbles_ = false;
 };

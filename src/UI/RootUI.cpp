@@ -391,7 +391,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // Deliver content on close
     // Morning delivery
     // Evening delivery
-    auto contentSettingsMenu = new ToggleMenuScreen(this->power_, *display_,
+    auto contentSettingsMenu = new ToggleMenuScreen(power_.battery, *display_,
                                                     styleFamilies.settingsMenu, "Content Settings");
 
     contentSettingsMenu->backCallback = [this, mainMenu]() {
