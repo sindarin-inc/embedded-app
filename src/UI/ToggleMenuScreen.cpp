@@ -227,6 +227,8 @@ void ToggleMenuScreen::render(DisplaySystem &display) {
                 std::make_shared<MenuItemView>(display, menuItem, myStyle_.navigationFont, true);
             menuItemViews_.push_back(menuItemView);
             menuToggleSelectionViews_.push_back(std::make_shared<BoxView>(display, 3));
+            menuToggleSelectionViews_[menuToggleSelectionViews_.size() - 1]->fillColor =
+                display_.fg;
         }
 
         drawArrowsAndSelections(display);
