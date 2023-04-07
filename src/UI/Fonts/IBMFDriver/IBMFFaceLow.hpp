@@ -317,7 +317,7 @@ public:
         }
 #endif
 
-        if (glyphCode == SPACE_CODE) { // send as a space character
+        if ((glyphCode == SPACE_CODE) || ((*glyphsInfo_)[glyphCode].bitmapWidth == 0)) { // send as a space character
             appGlyph.metrics.lineHeight = faceHeader_->lineHeight;
             appGlyph.metrics.advance = (int16_t)faceHeader_->spaceSize << 6;
             appGlyph.pointSize = faceHeader_->pointSize;
