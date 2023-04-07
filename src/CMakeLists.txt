@@ -7,12 +7,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(components ulp astubs expat improv ArduinoJson Adafruit-GFX-Library driver mbedtls vfs lwip efuse esp_hw_support soc esp_eth spi_flash bt nvs_flash esp_system esp_event xtensa wpa_supplicant esp_hw_support freertos heap esp_pm esp_adc esp_http_client wifi_provisioning esp_littlefs esp-nimble-cpp espcoredump app_update unzipLIB)
 
-# ulp-i2c is our backported version of IDF 5.1's ULP I2C driver, so don't include it for IDF > 5.1.0
-if(IDF_VERSION_MAJOR EQUAL 5 AND IDF_VERSION_MINOR LESS 1)
-    message(STATUS "Adding backported ulp-i2c component")
-    list(APPEND components ulp-i2c)
-endif()
-
 set(compile_options
     -includeconfig.h
     -Wno-unknown-pragmas
