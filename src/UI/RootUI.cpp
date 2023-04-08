@@ -366,13 +366,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     // Settings menus
-    // Sync Content -- removed for now
     // Reading Settings
+    // Content Settings
     // System Settings
-    // Debug Settings
+    // Experimental Settings
+    // Debug Settings [ hidden unless debug turned on ]
     auto settingsMenu = new MenuScreen(styleFamilies.settingsMenu, "Settings");
 
     // Text Size
+    // Brightness
     // Move Page in Display
     // Resize Page
     // Line Spacing
@@ -504,17 +506,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         contentSettingsMenu->setToggleLastItem(false);
     }
 
-    // Firmware Update
-    // Send Crash Report
-    // Batteries and Temperature
+    // About
+    // Tutorials
+    // Legal & Regulatory
     // Set Time Zone
-    // Turn on Onboarding Mode
-    // Turn on CES Mode
-    // Statistics
     // Reset Statistics
+    // Clear All Content and Restart
     // Reset Preferences
-    // Clear Books and Restart
-    // Clear Articles and Restart
     // Factory Defaults
     auto systemSettingsMenu = new MenuScreen(styleFamilies.settingsMenu);
 
@@ -524,24 +522,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         setCurrentScreen(*mainMenu);
     };
 
-    // Unpair PageTurner
-    // Onboarding Screens
-    // File System Browser
-    // Optics Test
-    // Turn on EMC Mode
-    // Turn off EMC Mode
-    // Alignment Setup
-    // Set Vcom
-    // Set Vcom Precise
-    // Upload Voltage Log
-    auto debugSettingsMenu = new MenuScreen(styleFamilies.settingsMenu);
-
-    debugSettingsMenu->backCallback = [this, mainMenu]() {
-        this->display_->clearDisplay();
-        mainMenu->setFirstLoad();
-        setCurrentScreen(*mainMenu);
-    };
-
+    // Dark Mode
+    // Autopilot
+    // Fast Page Transitions
+    // Upload Crashes on Sync
+    // Show Debug
     auto experimentalSettingsMenu = new ToggleMenuScreen(
         power_.battery, *display_, styleFamilies.settingsMenu, "Experimental Settings");
 
@@ -616,7 +601,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     experimentalSettingsMenu->addMenuItem(
-        MenuItem("Show Debug", [this, experimentalSettingsMenu, display]() {
+        MenuItem("Show Debug Menu", [this, experimentalSettingsMenu, display]() {
             this->prefs_.showDebugMenu.set(!this->prefs_.showDebugMenu.get().value_or(0));
             experimentalSettingsMenu->requireRestart();
         }));
@@ -626,6 +611,34 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     } else {
         experimentalSettingsMenu->setToggleLastItem(false);
     }
+
+    // Unpair PageTurner
+    // Sync Content
+    // Turn on Onboarding Mode
+    // Turn on Demo Mode
+    // Clear Books and Restart
+    // Clear Articles and Restart
+    // Clear Crash Reports and Restart
+    // Onboarding Screens
+    // File System Browser
+    // Batteries and Temperature
+    // Optics Test
+    // Turn on EMC Mode
+    // Turn off EMC Mode
+    // Alignment Setup
+    // Set Vcom
+    // Set WiFi Power
+    // Set Vcom Precise
+    // Upload Voltage Log
+    // Format FS
+    // Power Off
+    auto debugSettingsMenu = new MenuScreen(styleFamilies.settingsMenu);
+
+    debugSettingsMenu->backCallback = [this, mainMenu]() {
+        this->display_->clearDisplay();
+        mainMenu->setFirstLoad();
+        setCurrentScreen(*mainMenu);
+    };
 
     // For items we don't want to throw away yet, but this isn't hooked up anywhere
     auto oldMenu = new MenuScreen(styleFamilies.settingsMenu);
