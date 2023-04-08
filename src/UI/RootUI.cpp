@@ -561,13 +561,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     experimentalSettingsMenu->addMenuItem(MenuItem("Upload Crashes on Sync", [this]() {
-        this->prefs_.uploadCrashes.set(!this->prefs_.uploadCrashes.get().value_or(0));
+        this->prefs_.noUploadCrashes.set(!this->prefs_.noUploadCrashes.get().value_or(0));
     }));
 
-    if (prefs_.uploadCrashes.get().value_or(0)) {
-        experimentalSettingsMenu->setToggleLastItem(true);
-    } else {
+    // This one is opposite of the above because we want to default it to true and make them
+    // turn it off if they don't want it. At least for beta.
+    if (prefs_.noUploadCrashes.get().value_or(0)) {
         experimentalSettingsMenu->setToggleLastItem(false);
+    } else {
+        experimentalSettingsMenu->setToggleLastItem(true);
     }
 
     experimentalSettingsMenu->addMenuItem(

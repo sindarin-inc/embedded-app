@@ -241,7 +241,7 @@ public:
           deliverOnClose(*this, "deliver-close"), morningDelivery(*this, "morn-deliver"),
           eveningDelivery(*this, "eve-deliver"), darkMode(*this, "dark-mode"),
           autoPilot(*this, "auto-pilot"), fastTransitions(*this, "fast-tran"),
-          uploadCrashes(*this, "upload-crashes"), showDebugMenu(*this, "show-debug"){};
+          noUploadCrashes(*this, "no-upload-crash"), showDebugMenu(*this, "show-debug"){};
     PreferencesStore(PreferencesStore &) = delete;
 
     auto begin() -> bool {
@@ -344,7 +344,7 @@ public:
     PrefsItem<bool> darkMode;
     PrefsItem<bool> autoPilot;
     PrefsItem<bool> fastTransitions;
-    PrefsItem<bool> uploadCrashes;
+    PrefsItem<bool> noUploadCrashes;
     PrefsItem<bool> showDebugMenu;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
