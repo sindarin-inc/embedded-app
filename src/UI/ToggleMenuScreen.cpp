@@ -178,7 +178,7 @@ void ToggleMenuScreen::drawArrowsAndSelections(DisplaySystem &display) {
         upperLeftText_.c_str(),
         display.xAbsolute(myStyle_.xOffsetForArrows + myStyle_.arrowWidth +
                           myStyle_.arrowTextSpacing),
-        display.yAbsolute(myStyle_.yOffsetForArrows - display.getTextHeight() / 2));
+        display.yAbsolute(myStyle_.yOffsetForArrows - display.getTextHeight() / 3 - 1));
     /*
         display.drawSingleLineOfText(
             lowerRightText_.c_str(),

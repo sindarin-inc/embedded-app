@@ -19,9 +19,18 @@ void MenuScreen::populateMenuItems(std::vector<MenuItem> &menuItems) {
 
 void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool withLastItem) {
     display.setFont(myStyle_.itemFont);
+    int additionalYOffset = 0;
     int iteratorEnd = (withLastItem) ? numMenuItems_ : numMenuItems_ - 1;
     int xOffsetForMenu = display.xAbsolute(display.defaultXPadding) + myStyle_.xOffsetForList;
     int yOffsetForMenu = display.yAbsolute(display.defaultYPadding) + myStyle_.yOffsetForList;
+
+    // If we have less than a page worth, we need to add some extra padding at the top to center
+    // the items. For each item less than the numnber of items, we add half the height of the
+    // text. Bias a bit to the top by subtracting 5.
+    if (getNumItems() < myStyle_.numberOfItemsPerPage) {
+        additionalYOffset = (myStyle_.numberOfItemsPerPage - getNumItems() - 1) *
+                            (display.getTextHeight() - display.getLineSpacing() + 3) / 2;
+    }
 
     for (int i = currMenuPage_ * myStyle_.numberOfItemsPerPage;
          (i < (currMenuPage_ * myStyle_.numberOfItemsPerPage + myStyle_.numberOfItemsPerPage)) &&
@@ -40,17 +49,18 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
         }
         display.drawSingleLineOfText(
             itemTitle, xOffsetForMenu,
-            yOffsetForMenu + (i % myStyle_.numberOfItemsPerPage) *
-                                 (display.getTextHeight() / 5 + display.getTextHeight()));
+            yOffsetForMenu + additionalYOffset +
+                (i % myStyle_.numberOfItemsPerPage) *
+                    (display.getTextHeight() - display.getLineSpacing() + 3));
 
         // xoffset for main menu is 12, for settings menu is 23
         // yoffset for main menu is some crazy thing
         // for settings menu some other crazy thing
         if ((i == currSelection_) && (withBullet)) {
             display.fillRoundRect(xOffsetForMenu - display.getTextHeight() / 4 - 2,
-                                  yOffsetForMenu +
+                                  yOffsetForMenu + additionalYOffset +
                                       (i % myStyle_.numberOfItemsPerPage) *
-                                          (display.getTextHeight() / 5 + display.getTextHeight()) +
+                                          (display.getTextHeight() - display.getLineSpacing() + 3) +
                                       4,
                                   5, 5, 3, display.fg);
         }
@@ -59,7 +69,7 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
     int oldTextHeight = display.getTextHeight();
     display.setFont(display.style.getFontFamily().readableFont);
     display.drawSingleLineOfText(extraTextBelowMenu_.c_str(), xOffsetForMenu + 10,
-                                 yOffsetForMenu +
+                                 yOffsetForMenu + additionalYOffset +
                                      (1 + myStyle_.numberOfItemsPerPage) * oldTextHeight + 20);
 }
 
@@ -97,7 +107,7 @@ void MenuScreen::drawArrowsAndSelections(DisplaySystem &display) {
         upperLeftText_.c_str(),
         display.xAbsolute(myStyle_.xOffsetForArrows + myStyle_.arrowWidth +
                           myStyle_.arrowTextSpacing),
-        display.yAbsolute(myStyle_.yOffsetForArrows - display.getTextHeight() / 2));
+        display.yAbsolute(myStyle_.yOffsetForArrows - display.getTextHeight() / 3 - 1));
     /*
         display.drawSingleLineOfText(
             lowerRightText_.c_str(),

@@ -853,6 +853,33 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
     }));
 
+#if USE_TURN_TOUCH_REMOTE
+    debugSettingsMenu->addMenuItem(
+        MenuItem("Unpair PageTurner", [this, debugSettingsMenu, display]() {
+            prefs_.pairedTurnTouchAddress.remove();
+            prefs_.lastPageTurnerBuild.remove();
+            PreferencesStore::lastPageTurnerBattery = 0;
+            log_w("Unpaired PageTurner. Rebooting...");
+            debugSettingsMenu->showTemporaryMessage(*display, "Unpaired PageTurner! Resetting...",
+                                                    2000, false);
+            power_.reboot();
+        }));
+#endif
+
+    debugSettingsMenu->addMenuItem(
+        MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
+            auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
+            this->setCurrentScreen(*contentSyncScreen);
+            lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
+            contentSyncScreen->backCallback = [this, contentSyncScreen, mainMenu, display]() {
+                mainMenu->setFirstLoad();
+                setCurrentScreen(*mainMenu);
+                mainMenu->render(*display);
+                delete contentSyncScreen;
+            };
+            contentSyncScreen->begin();
+        }));
+
     debugSettingsMenu->addMenuItem(
         MenuItem("Turn on Onboarding Mode", [this, debugSettingsMenu, display]() {
             log_d("Entering calibration");
@@ -898,19 +925,19 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                                      2000, false);
             power_.reboot();
         }));
-    /*
-        systemSettingsMenu->addMenuItem(
-            MenuItem("Clear Books and Restart", [systemSettingsMenu, display, &localStore]() {
-                localStore.deleteReadables();
-                systemSettingsMenu->showTemporaryMessage(*display, "Books reset.");
-            }));
 
-        systemSettingsMenu->addMenuItem(
-            MenuItem("Clear Articles and Restart", [systemSettingsMenu, display, &localStore]() {
-                localStore.deleteArticles();
-                systemSettingsMenu->showTemporaryMessage(*display, "Articles reset.");
-            }));
-    */
+    debugSettingsMenu->addMenuItem(
+        MenuItem("Clear Books and Restart", [debugSettingsMenu, display, &localStore]() {
+            localStore.deleteReadables();
+            debugSettingsMenu->showTemporaryMessage(*display, "Books reset.");
+        }));
+
+    debugSettingsMenu->addMenuItem(
+        MenuItem("Clear Articles and Restart", [debugSettingsMenu, display, &localStore]() {
+            localStore.deleteArticles();
+            debugSettingsMenu->showTemporaryMessage(*display, "Articles reset.");
+        }));
+
     debugSettingsMenu->addMenuItem(MenuItem(
         "Clear Crash Reports and Restart", [this, debugSettingsMenu, display, &fileSystem]() {
             FileList coreDumpFiles;
@@ -939,19 +966,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 #endif
         power_.reboot();
     }));
-
-#if USE_TURN_TOUCH_REMOTE
-    debugSettingsMenu->addMenuItem(
-        MenuItem("Unpair PageTurner", [this, debugSettingsMenu, display]() {
-            prefs_.pairedTurnTouchAddress.remove();
-            prefs_.lastPageTurnerBuild.remove();
-            PreferencesStore::lastPageTurnerBattery = 0;
-            log_w("Unpaired PageTurner. Rebooting...");
-            debugSettingsMenu->showTemporaryMessage(*display, "Unpaired PageTurner! Resetting...",
-                                                    2000, false);
-            power_.reboot();
-        }));
-#endif
 
     debugSettingsMenu->addMenuItem(
         MenuItem("Onboarding Screens", [this, debugSettingsMenu, display, &lightingController]() {
