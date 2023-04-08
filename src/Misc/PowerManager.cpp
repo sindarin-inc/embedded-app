@@ -172,25 +172,27 @@ auto PowerManager::begin() -> esp_err_t {
         digitalPinToInterrupt(USB_CONNECTED_PIN),
         [this]() {
 #if !DISABLE_POWER_MANAGEMENT
-            if (USBConnected() && pmConfig_.light_sleep_enable == true) {
-                // USB is connected so disable light sleep
-                pmConfig_.light_sleep_enable = false;
-                auto err = esp_pm_configure(&pmConfig_);
-                if (err != ESP_OK) {
-                    log_e("Failed to disable light sleep with err %s", esp_err_to_name(err));
-                } else {
-                    log_d("Disabled light sleep");
+            DispatchGetCore1BackgroundQueue()->dispatch([this]() {
+                if (USBConnected() && pmConfig_.light_sleep_enable == true) {
+                    // USB is connected so disable light sleep
+                    pmConfig_.light_sleep_enable = false;
+                    auto err = esp_pm_configure(&pmConfig_);
+                    if (err != ESP_OK) {
+                        log_e("Failed to disable light sleep with err %s", esp_err_to_name(err));
+                    } else {
+                        log_d("Disabled light sleep");
+                    }
+                } else if (!USBConnected() && pmConfig_.light_sleep_enable == false) {
+                    // USB is disconnected so enable light sleep
+                    pmConfig_.light_sleep_enable = true;
+                    auto err = esp_pm_configure(&pmConfig_);
+                    if (err != ESP_OK) {
+                        log_e("Failed to enable light sleep with err %s", esp_err_to_name(err));
+                    } else {
+                        log_d("Enabled light sleep");
+                    }
                 }
-            } else if (!USBConnected() && pmConfig_.light_sleep_enable == false) {
-                // USB is disconnected so enable light sleep
-                pmConfig_.light_sleep_enable = true;
-                auto err = esp_pm_configure(&pmConfig_);
-                if (err != ESP_OK) {
-                    log_e("Failed to enable light sleep with err %s", esp_err_to_name(err));
-                } else {
-                    log_d("Enabled light sleep");
-                }
-            }
+            });
 #endif
         },
         CHANGE);
