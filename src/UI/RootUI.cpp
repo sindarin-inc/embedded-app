@@ -792,6 +792,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                                  "Someday we'll implement amazing tutorials!");
     }));
 
+    systemSettingsMenu->addMenuItem(
+        MenuItem("Legal & Regulatory", [this, systemSettingsMenu, display]() {
+            systemSettingsMenu->showTemporaryMessage(*display, "FCC Stuff, Legal Stuff, etc.");
+        }));
+
     systemSettingsMenu->addMenuItem(MenuItem("Set Time Zone", [this, display,
                                                                systemSettingsMenu]() {
         auto timeZoneMenu = new MenuScreen(systemSettingsMenu->getMyStyle());
