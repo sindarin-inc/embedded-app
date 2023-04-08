@@ -359,16 +359,20 @@ void PowerManager::waitForQueuesThenDeepSleep(SleepReason reason) {
     }
     log_d("Dispatch queues shutdown");
 
-    // On temples close or inactivity we want to set a sync-on-close timer 30s after sleep starts.
-    // This is mostly to save placemarks after reading
-    if (reason == SleepReason::TempleClosed) {
-        PreferencesStore::syncReason = SyncReason::OnClose;
-        PreferencesStore::nextSyncTime = SolClock::getInstance().getEpochTime() + 30;
-        log_d("Sync-on-close scheduled for %" PRIu64, PreferencesStore::nextSyncTime);
-    } else if (reason == SleepReason::Inactivity) {
-        PreferencesStore::syncReason = SyncReason::OnInactivity;
-        PreferencesStore::nextSyncTime = SolClock::getInstance().getEpochTime() + 30;
-        log_d("Sync-after-inactivity scheduled for %" PRIu64, PreferencesStore::nextSyncTime);
+    bool syncOnClose = !prefs_.noDeliverOnClose.get().value_or(false);
+
+    if (syncOnClose) {
+        // On temples close or inactivity we want to set a sync-on-close timer 30s after sleep
+        // starts. This is mostly to save placemarks after reading
+        if (reason == SleepReason::TempleClosed) {
+            PreferencesStore::syncReason = SyncReason::OnClose;
+            PreferencesStore::nextSyncTime = SolClock::getInstance().getEpochTime() + 30;
+            log_d("Sync-on-close scheduled for %" PRIu64, PreferencesStore::nextSyncTime);
+        } else if (reason == SleepReason::Inactivity) {
+            PreferencesStore::syncReason = SyncReason::OnInactivity;
+            PreferencesStore::nextSyncTime = SolClock::getInstance().getEpochTime() + 30;
+            log_d("Sync-after-inactivity scheduled for %" PRIu64, PreferencesStore::nextSyncTime);
+        }
     }
 
     // Make sure the ambient light sensor is off so it's not using power while in deep sleep

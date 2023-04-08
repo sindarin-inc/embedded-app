@@ -439,13 +439,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     contentSettingsMenu->addMenuItem(
         MenuItem("Deliver content on close", [this, display, contentSettingsMenu]() {
-            this->prefs_.deliverOnClose.set(!this->prefs_.deliverOnClose.get().value_or(0));
+            this->prefs_.noDeliverOnClose.set(!this->prefs_.noDeliverOnClose.get().value_or(0));
         }));
 
-    if (prefs_.deliverOnClose.get().value_or(0)) {
-        contentSettingsMenu->setToggleLastItem(true);
-    } else {
+    if (prefs_.noDeliverOnClose.get().value_or(0)) {
         contentSettingsMenu->setToggleLastItem(false);
+    } else {
+        contentSettingsMenu->setToggleLastItem(true);
     }
 
     contentSettingsMenu->addMenuItem(

@@ -238,7 +238,7 @@ public:
           firmwareLoaded(*this, "fw-loaded"), sleepReason(*this, "sleep-reason"),
           showBooks(*this, "show-books"), showNews(*this, "show-news"),
           showArticles(*this, "show-articles"), showBible(*this, "show-bible"),
-          deliverOnClose(*this, "deliver-close"), morningDelivery(*this, "morn-deliver"),
+          noDeliverOnClose(*this, "no-deliv-close"), morningDelivery(*this, "morn-deliver"),
           eveningDelivery(*this, "eve-deliver"), darkMode(*this, "dark-mode"),
           autoPilot(*this, "auto-pilot"), fastTransitions(*this, "fast-tran"),
           noUploadCrashes(*this, "no-upload-crash"), showDebugMenu(*this, "show-debug"){};
@@ -338,7 +338,7 @@ public:
     PrefsItem<bool> showNews;
     PrefsItem<bool> showArticles;
     PrefsItem<bool> showBible;
-    PrefsItem<bool> deliverOnClose;
+    PrefsItem<bool> noDeliverOnClose;
     PrefsItem<bool> morningDelivery;
     PrefsItem<bool> eveningDelivery;
     PrefsItem<bool> darkMode;
