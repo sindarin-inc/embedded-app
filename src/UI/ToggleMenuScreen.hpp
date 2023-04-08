@@ -28,8 +28,8 @@ public:
     ToggleMenuScreen(Battery &battery, DisplaySystem &display, MenuStyleFamily myStyle,
                      std::string menuName = "Default")
         : MenuScreen(myStyle, menuName), EinkView(display), headerTextView_(display, ""),
-          onTextView_(display, "ON"), offTextView_(display, "OFF"),
-          selectedSelectionView_(display, 3), batteryTextView_(display, ""),
+          onTextView_(display, "ON"), offTextView_(display, "OFF"), selectedSelectionView_(nullptr),
+          batteryTextView_(display, ""),
           batteryIconView_(display, boltBits, bolt_width, bolt_height), clockView_(display, ""),
           battery_(battery){};
 
@@ -54,7 +54,7 @@ protected:
     SingleLineTextView offTextView_;
     std::vector<std::shared_ptr<MenuItemView>> menuItemViews_;
     std::vector<std::shared_ptr<BoxView>> menuPageViews_;
-    BoxView selectedSelectionView_;
+    std::shared_ptr<BoxView> selectedSelectionView_;
     std::vector<bool> menuToggleValues_;
     std::vector<std::shared_ptr<BoxView>> menuToggleSelectionViews_;
     SingleLineTextView batteryTextView_;

@@ -55,7 +55,7 @@ auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
                 auto viewFrame =
                     context.setViewFrame(*view, {{x, y}, boxSize}, LayoutOptionsSizeToFit);
                 if (place == currSelection_) {
-                    context.setViewFrame(selectedSelectionView_,
+                    context.setViewFrame(*selectedSelectionView_,
                                          {{x, y}, {boxSize.width - 70, boxSize.height}},
                                          LayoutOptionsSizeToFit);
                 }
@@ -134,7 +134,7 @@ void ToggleMenuScreen::drawInRect(Rect rect) {
     }
 
     if (drawBubbles_) {
-        selectedSelectionView_.draw();
+        selectedSelectionView_->draw();
     }
     batteryIconView_.draw();
     batteryTextView_.draw();
@@ -220,6 +220,10 @@ void ToggleMenuScreen::render(DisplaySystem &display) {
         // Populate the menu items with the correct menus for the current subMenu
         menuItemViews_.clear();
         menuPageViews_.clear();
+        menuToggleSelectionViews_.clear();
+
+        // Need to do it this way to handle the dark mode / regular mode toggle correctly.
+        selectedSelectionView_ = std::make_shared<BoxView>(display, 3);
 
         for (auto &menuItem : menuItems_) {
             log_d("Adding menu item %s", menuItem.title.c_str());

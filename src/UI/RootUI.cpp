@@ -517,8 +517,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         setCurrentScreen(*mainMenu);
     };
 
-    experimentalSettingsMenu->addMenuItem(MenuItem("Dark Mode", [this]() {
+    experimentalSettingsMenu->addMenuItem(MenuItem("Dark Mode", [this, experimentalSettingsMenu]() {
         this->prefs_.darkMode.set(!this->prefs_.darkMode.get().value_or(0));
+        // Reserved for future use? Potentially lighting up and down?
+        this->display_->flipInversion();
+        // When we invert, we should do a full clear of the display to make sure
+        // the blacks are really gone.
+        this->display_->clearDisplay();
+        prefs_.invertSetting.set(this->display_->getInversion());
+        experimentalSettingsMenu->needsRerender = true;
+        experimentalSettingsMenu->setFirstLoad();
     }));
 
     if (prefs_.darkMode.get().value_or(0)) {
