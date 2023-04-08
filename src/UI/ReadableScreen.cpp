@@ -219,7 +219,8 @@ void ReadableScreen::render(DisplaySystem &display) {
             "Welcome to the beta of Autopilot mode! Here is what each button does "
             "while in autopilot mode.\n\n\nUp: Main Menu\n\nDown: Reading "
             "Settings\n\nLeft: Slow Down "
-            "Page\n\nRight: Speed Up\n\nCenter: Turn off autopilot mode\n\n\nPress any button to "
+            "Page\n\nRight: Speed Up\n\nCenter: Pause/unpause\n\n\nPress any button "
+            "to "
             "start reading... \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
 
         auto streamFirstTime = std::make_shared<StdStringStream>(message);
@@ -334,7 +335,9 @@ void ReadableScreen::render(DisplaySystem &display) {
     } else {
         // Must stop the timer because ChangePeriod starts it.
         xTimerStop(DisplaySystem::animationTimer, 0);
-        xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
+        if (!autoPilotPause_) {
+            xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
+        }
     }
 
     if (prefs_.emcMode.get().value_or(false)) {
@@ -398,10 +401,15 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             turnPage();
             needsRerender = true;
         } else {
-            pageSpeed_ = 0;
-            prefs_.autoPilotSpeed.set(0);
-            log_d("Stopping timer and turning off AutoPilot");
-            xTimerStop(DisplaySystem::animationTimer, 0);
+            // If we aren't pause, pause.
+            // If we are paused, start the timer again.
+            log_d("Pausing or unpausing auto pilot");
+            if (!autoPilotPause_) {
+                xTimerStop(DisplaySystem::animationTimer, 0);
+            } else {
+                xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
+            }
+            autoPilotPause_ = !autoPilotPause_;
         }
         numUps_ = 0;
         break;

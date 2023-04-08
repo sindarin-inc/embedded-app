@@ -537,6 +537,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     experimentalSettingsMenu->addMenuItem(MenuItem("Autopilot", [this]() {
         this->prefs_.autoPilot.set(!this->prefs_.autoPilot.get().value_or(0));
+        if (this->prefs_.autoPilot.get().value_or(0)) {
+            prefs_.autoPilotSpeed.set(10000);
+        } else {
+            prefs_.autoPilotSpeed.set(0);
+        }
     }));
 
     if (prefs_.autoPilot.get().value_or(0)) {
