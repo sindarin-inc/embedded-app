@@ -52,8 +52,7 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
                                       (i % myStyle_.numberOfItemsPerPage) *
                                           (display.getTextHeight() / 5 + display.getTextHeight()) +
                                       4,
-                                  display.getTextHeight() - 7, display.getTextHeight() - 7,
-                                  display.getTextHeight() / 5, display.fg);
+                                  5, 5, 3, display.fg);
         }
     }
 
