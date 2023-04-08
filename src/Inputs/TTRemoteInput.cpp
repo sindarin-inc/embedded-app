@@ -159,6 +159,10 @@ void TTRemoteInput::scanForDevice() {
     auto ptBuild = prefs_.lastPageTurnerBuild.get();
     if (ptBuild.has_value()) {
         std::string build = ptBuild.value();
+        // If `build` has a prefix of "DFU-", strip it off
+        if (build.find("DFU-") == 0) {
+            build = build.substr(4);
+        }
         if (SemVerCompareVersions(build.c_str(), "0.2.99") == SemVerComparison::LessThan) {
             log_i("Using active scan for PT build %s", build.c_str());
             useActiveScan = true;
