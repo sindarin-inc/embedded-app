@@ -10,12 +10,7 @@
 #include "UI/ContentSyncScreen.hpp"
 #include "config.h"
 
-// TODO: It would probably be good to do some sort of retry with exponential
-// backup if we fail. But We don't want to drain battery if you're away from
-// WiFi. So we'll need to think carefully how we want to handle that.
-void BackgroundSyncAndSleep(PowerManager &powerManager, PreferencesStore &prefs,
-                            LocalStore &localStore) {
-
+void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalStore &localStore) {
     // Debug LED so we know what's happening (will be turned off when deep sleep happens)
     DigitalWrite(BLUE_LED, LED_ON);
 
@@ -111,6 +106,15 @@ void BackgroundSyncAndSleep(PowerManager &powerManager, PreferencesStore &prefs,
             log_w("Coredump upload timed out");
         }
     }
+}
+
+// TODO: It would probably be good to do some sort of retry with exponential
+// backup if we fail. But We don't want to drain battery if you're away from
+// WiFi. So we'll need to think carefully how we want to handle that.
+void BackgroundSyncAndSleep(PowerManager &powerManager, PreferencesStore &prefs,
+                            LocalStore &localStore) {
+
+    BackgroundSync(powerManager, prefs, localStore);
 
     // TODO: Perhaps try dispatching this (maybe needs to happen outside of app_main)
     WiFi::getInstance().disconnectWiFi();
