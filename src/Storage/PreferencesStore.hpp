@@ -236,12 +236,13 @@ public:
           wifiPower(*this, "wifi-power"), morningNewspaperTime(*this, "morning-news"),
           eveningNewspaperTime(*this, "evening-news"), solTimeZone(*this, "time-zone"),
           firmwareLoaded(*this, "fw-loaded"), sleepReason(*this, "sleep-reason"),
-          showBooks(*this, "show-books"), showNews(*this, "show-news"),
-          showArticles(*this, "show-articles"), showBible(*this, "show-bible"),
+          noBooks(*this, "no-books"), showNews(*this, "show-news"),
+          noArticles(*this, "no-articles"), noBible(*this, "no-bible"),
           noDeliverOnClose(*this, "no-deliv-close"), morningDelivery(*this, "morn-deliver"),
           eveningDelivery(*this, "eve-deliver"), darkMode(*this, "dark-mode"),
           autoPilot(*this, "auto-pilot"), fastTransitions(*this, "fast-tran"),
-          noUploadCrashes(*this, "no-upload-crash"), showDebugMenu(*this, "show-debug"){};
+          noUploadCrashes(*this, "no-upload-crash"), showDebugMenu(*this, "show-debug"),
+          settingsOnRestart(*this, "settings-boot"){};
     PreferencesStore(PreferencesStore &) = delete;
 
     auto begin() -> bool {
@@ -334,10 +335,10 @@ public:
     // Firmware that's been loaded to the other flash slot but not yet installed
     PrefsItem<std::string> firmwareLoaded;
     PrefsItem<int> sleepReason;
-    PrefsItem<bool> showBooks;
+    PrefsItem<bool> noBooks;
     PrefsItem<bool> showNews;
-    PrefsItem<bool> showArticles;
-    PrefsItem<bool> showBible;
+    PrefsItem<bool> noArticles;
+    PrefsItem<bool> noBible;
     PrefsItem<bool> noDeliverOnClose;
     PrefsItem<bool> morningDelivery;
     PrefsItem<bool> eveningDelivery;
@@ -346,6 +347,7 @@ public:
     PrefsItem<bool> fastTransitions;
     PrefsItem<bool> noUploadCrashes;
     PrefsItem<bool> showDebugMenu;
+    PrefsItem<bool> settingsOnRestart;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles

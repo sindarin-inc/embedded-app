@@ -36,6 +36,10 @@ public:
     auto layout(LayoutContext &context, Size size) -> Size;
     void drawInRect(Rect rect);
 
+    void requireRestart();
+
+    auto getRequireRestart() -> bool { return restartOnBack_; }
+
     void render(DisplaySystem &display);
 
     void processCommand(RemoteCommand command);
@@ -63,4 +67,6 @@ protected:
 
     Battery &battery_;
     bool drawBubbles_ = false;
+
+    bool restartOnBack_ = false;
 };

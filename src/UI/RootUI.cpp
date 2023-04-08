@@ -268,7 +268,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         delete booksMenu;
     };
 
-    mainMenu->addSubMenuScreen(booksMenu);
+    if (!prefs_.noBooks.get().value_or(false)) {
+        mainMenu->addSubMenuScreen(booksMenu);
+    }
 
     SHOW_HEAP();
 
@@ -328,9 +330,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         delete pocketMenu;
     };
 
-    mainMenu->addSubMenuScreen(pocketMenu);
+    if (!prefs_.noArticles.get().value_or(false)) {
+        mainMenu->addSubMenuScreen(pocketMenu);
+    }
 
-    if (oldTestament || newTestament || psalmsProverbs) {
+    if (!prefs_.noBible.get().value_or(false) && (oldTestament || newTestament || psalmsProverbs)) {
         auto bibleMenu = new MenuScreen(mainMenu->getMyStyle(), "Bible");
 
         for (const Readable &r : readables) {
@@ -382,7 +386,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     };
 
     // Books
-    // News
     // Articles
     // Bible
     // Deliver content on close
@@ -391,22 +394,38 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto contentSettingsMenu = new ToggleMenuScreen(power_.battery, *display_,
                                                     styleFamilies.settingsMenu, "Content Settings");
 
-    contentSettingsMenu->backCallback = [this, mainMenu]() {
-        this->display_->clearDisplay();
-        mainMenu->setFirstLoad();
-        setCurrentScreen(*mainMenu);
+    contentSettingsMenu->backCallback = [this, mainMenu, display, contentSettingsMenu]() {
+        // Ideally we'd move this into the ToggleClass so it's not duplicated with
+        // experimentalSettingsMenu below, but that would require teh ToggleMenuScreen
+        // to have the power intead of just the battery and also the prefs. Big deal or not?
+        if (contentSettingsMenu->getRequireRestart()) {
+            // Start on the settings menu when we boot so it feels like we just
+            // went back to it!
+            this->prefs_.settingsOnRestart.set(true);
+            contentSettingsMenu->showTemporaryMessage(
+                *display, "Settings change required restart! Restarting...", 1500, false);
+            this->power_.reboot();
+        } else {
+            this->display_->clearDisplay();
+            mainMenu->setFirstLoad();
+            setCurrentScreen(*mainMenu);
+        }
     };
 
     contentSettingsMenu->addMenuItem(MenuItem("Books", [this, display, contentSettingsMenu]() {
-        this->prefs_.showBooks.set(!this->prefs_.showBooks.get().value_or(0));
+        this->prefs_.noBooks.set(!this->prefs_.noBooks.get().value_or(0));
+        contentSettingsMenu->requireRestart();
     }));
 
-    if (prefs_.showBooks.get().value_or(0)) {
-        contentSettingsMenu->setToggleLastItem(true);
-    } else {
+    if (prefs_.noBooks.get().value_or(0)) {
         contentSettingsMenu->setToggleLastItem(false);
+    } else {
+        contentSettingsMenu->setToggleLastItem(true);
     }
 
+// At some point, we may split out News (emails) and Articles (pocket), but for now
+// We'll keep it the same.
+#if 0
     contentSettingsMenu->addMenuItem(MenuItem("News", [this, display, contentSettingsMenu]() {
         this->prefs_.showNews.set(!this->prefs_.showNews.get().value_or(0));
     }));
@@ -416,25 +435,28 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     } else {
         contentSettingsMenu->setToggleLastItem(false);
     }
+#endif
 
     contentSettingsMenu->addMenuItem(MenuItem("Articles", [this, display, contentSettingsMenu]() {
-        this->prefs_.showArticles.set(!this->prefs_.showArticles.get().value_or(0));
+        this->prefs_.noArticles.set(!this->prefs_.noArticles.get().value_or(0));
+        contentSettingsMenu->requireRestart();
     }));
 
-    if (prefs_.showArticles.get().value_or(0)) {
-        contentSettingsMenu->setToggleLastItem(true);
-    } else {
+    if (prefs_.noArticles.get().value_or(0)) {
         contentSettingsMenu->setToggleLastItem(false);
+    } else {
+        contentSettingsMenu->setToggleLastItem(true);
     }
 
     contentSettingsMenu->addMenuItem(MenuItem("Bible", [this, display, contentSettingsMenu]() {
-        this->prefs_.showBible.set(!this->prefs_.showBible.get().value_or(0));
+        this->prefs_.noBible.set(!this->prefs_.noBible.get().value_or(0));
+        contentSettingsMenu->requireRestart();
     }));
 
-    if (prefs_.showBible.get().value_or(0)) {
-        contentSettingsMenu->setToggleLastItem(true);
-    } else {
+    if (prefs_.noBible.get().value_or(0)) {
         contentSettingsMenu->setToggleLastItem(false);
+    } else {
+        contentSettingsMenu->setToggleLastItem(true);
     }
 
     contentSettingsMenu->addMenuItem(
@@ -523,10 +545,19 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto experimentalSettingsMenu = new ToggleMenuScreen(
         power_.battery, *display_, styleFamilies.settingsMenu, "Experimental Settings");
 
-    experimentalSettingsMenu->backCallback = [this, mainMenu]() {
-        this->display_->clearDisplay();
-        mainMenu->setFirstLoad();
-        setCurrentScreen(*mainMenu);
+    experimentalSettingsMenu->backCallback = [this, display, mainMenu, experimentalSettingsMenu]() {
+        if (experimentalSettingsMenu->getRequireRestart()) {
+            // Start on the settings menu when we boot so it feels like we just
+            // went back to it!
+            this->prefs_.settingsOnRestart.set(true);
+            experimentalSettingsMenu->showTemporaryMessage(
+                *display, "Settings change required restart! Restarting...", 1500, false);
+            this->power_.reboot();
+        } else {
+            this->display_->clearDisplay();
+            mainMenu->setFirstLoad();
+            setCurrentScreen(*mainMenu);
+        }
     };
 
     experimentalSettingsMenu->addMenuItem(MenuItem("Dark Mode", [this, experimentalSettingsMenu]() {
@@ -585,11 +616,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     experimentalSettingsMenu->addMenuItem(
-        MenuItem("Show Debug (restart)", [this, experimentalSettingsMenu, display]() {
+        MenuItem("Show Debug", [this, experimentalSettingsMenu, display]() {
             this->prefs_.showDebugMenu.set(!this->prefs_.showDebugMenu.get().value_or(0));
-            experimentalSettingsMenu->showTemporaryMessage(
-                *display, "Switching Debug menu setting! Resetting...", 2000, false);
-            this->power_.reboot();
+            experimentalSettingsMenu->requireRestart();
         }));
 
     if (prefs_.showDebugMenu.get().value_or(0)) {
@@ -1280,6 +1309,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             // Assume this readable has gone away (or changed from id to uuid)
             prefs_.lastReadableId.remove();
         }
+    }
+
+    // A settings changed caused this restart, so go to the settings tab
+    // and clear out that pref.
+    if (prefs_.settingsOnRestart.get().value_or(false)) {
+        prefs_.settingsOnRestart.set(false);
+        mainMenu->setTabToLast();
     }
 
     // This still has to be this way rather than else if because the

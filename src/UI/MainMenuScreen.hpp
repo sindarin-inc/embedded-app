@@ -31,6 +31,8 @@ public:
 
     void addSubMenuScreen(MenuScreen *newSubScreen);
 
+    void setTabToLast() { currentSelection_ = subMenus_.size() - 1; }
+
 protected:
     void processCommand(RemoteCommand command) override;
 
