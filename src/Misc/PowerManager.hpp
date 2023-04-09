@@ -29,6 +29,7 @@ enum class SleepReason {
     Unspecified,
     Inactivity,
     TempleClosed,
+    TempleClosedAtBoot,
     SyncDone,
     UlpCrashed,
     UpdateUSBState,

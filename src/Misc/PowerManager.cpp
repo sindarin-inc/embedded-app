@@ -132,7 +132,7 @@ void PowerManager::wakeupCheck(SolClock &clock) {
 #endif
         if (!open) {
             log_w("Temple is closed at boot, going back to sleep");
-            ulpDeepSleep(SleepReason::TempleClosed);
+            ulpDeepSleep(SleepReason::TempleClosedAtBoot);
         }
 
         state_ = PowerState::Active;
@@ -326,6 +326,8 @@ std::string toString(SleepReason reason) {
         return "Inactivity";
     case SleepReason::TempleClosed:
         return "TempleClosed";
+    case SleepReason::TempleClosedAtBoot:
+        return "TempleClosedAtBoot";
     case SleepReason::SyncDone:
         return "SyncDone";
     case SleepReason::UlpCrashed:
