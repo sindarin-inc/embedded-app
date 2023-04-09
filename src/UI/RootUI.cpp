@@ -365,20 +365,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         mainMenu->addSubMenuScreen(bibleMenu);
     }
 
-    // Settings menus
-    // Reading Settings
-    // Content Settings
-    // System Settings
-    // Experimental Settings
-    // Debug Settings [ hidden unless debug turned on ]
     auto settingsMenu = new MenuScreen(styleFamilies.settingsMenu, "Settings");
-
-    // Text Size
-    // Brightness
-    // Move Page in Display
-    // Resize Page
-    // Line Spacing
-    // Statistics
     auto readingSettingsMenu = new MenuScreen(styleFamilies.settingsMenu);
 
     readingSettingsMenu->backCallback = [this, mainMenu]() {
@@ -387,12 +374,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         setCurrentScreen(*mainMenu);
     };
 
-    // Books
-    // Articles
-    // Bible
-    // Deliver content on close
-    // Morning delivery
-    // Evening delivery
     auto contentSettingsMenu = new ToggleMenuScreen(power_.battery, *display_,
                                                     styleFamilies.settingsMenu, "Content Settings");
 
@@ -414,12 +395,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
     };
 
-    contentSettingsMenu->addMenuItem(MenuItem("Books", [this, display, contentSettingsMenu]() {
-        this->prefs_.noBooks.set(!this->prefs_.noBooks.get().value_or(0));
+    contentSettingsMenu->addMenuItem(MenuItem("Books", [this, contentSettingsMenu]() {
+        this->prefs_.noBooks.set(!this->prefs_.noBooks.get().value_or(false));
         contentSettingsMenu->requireRestart();
     }));
 
-    if (prefs_.noBooks.get().value_or(0)) {
+    if (prefs_.noBooks.get().value_or(false)) {
         contentSettingsMenu->setToggleLastItem(false);
     } else {
         contentSettingsMenu->setToggleLastItem(true);
@@ -429,53 +410,52 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 // We'll keep it the same.
 #if 0
     contentSettingsMenu->addMenuItem(MenuItem("News", [this, display, contentSettingsMenu]() {
-        this->prefs_.showNews.set(!this->prefs_.showNews.get().value_or(0));
+        this->prefs_.showNews.set(!this->prefs_.showNews.get().value_or(false));
     }));
 
-    if (prefs_.showNews.get().value_or(0)) {
+    if (prefs_.showNews.get().value_or(false)) {
         contentSettingsMenu->setToggleLastItem(true);
     } else {
         contentSettingsMenu->setToggleLastItem(false);
     }
 #endif
 
-    contentSettingsMenu->addMenuItem(MenuItem("Articles", [this, display, contentSettingsMenu]() {
-        this->prefs_.noArticles.set(!this->prefs_.noArticles.get().value_or(0));
+    contentSettingsMenu->addMenuItem(MenuItem("Articles", [this, contentSettingsMenu]() {
+        this->prefs_.noArticles.set(!this->prefs_.noArticles.get().value_or(false));
         contentSettingsMenu->requireRestart();
     }));
 
-    if (prefs_.noArticles.get().value_or(0)) {
+    if (prefs_.noArticles.get().value_or(false)) {
         contentSettingsMenu->setToggleLastItem(false);
     } else {
         contentSettingsMenu->setToggleLastItem(true);
     }
 
-    contentSettingsMenu->addMenuItem(MenuItem("Bible", [this, display, contentSettingsMenu]() {
-        this->prefs_.noBible.set(!this->prefs_.noBible.get().value_or(0));
+    contentSettingsMenu->addMenuItem(MenuItem("Bible", [this, contentSettingsMenu]() {
+        this->prefs_.noBible.set(!this->prefs_.noBible.get().value_or(false));
         contentSettingsMenu->requireRestart();
     }));
 
-    if (prefs_.noBible.get().value_or(0)) {
+    if (prefs_.noBible.get().value_or(false)) {
+        contentSettingsMenu->setToggleLastItem(false);
+    } else {
+        contentSettingsMenu->setToggleLastItem(true);
+    }
+
+    contentSettingsMenu->addMenuItem(MenuItem("Deliver content on close", [this]() {
+        this->prefs_.noDeliverOnClose.set(!this->prefs_.noDeliverOnClose.get().value_or(false));
+    }));
+
+    if (prefs_.noDeliverOnClose.get().value_or(false)) {
         contentSettingsMenu->setToggleLastItem(false);
     } else {
         contentSettingsMenu->setToggleLastItem(true);
     }
 
     contentSettingsMenu->addMenuItem(
-        MenuItem("Deliver content on close", [this, display, contentSettingsMenu]() {
-            this->prefs_.noDeliverOnClose.set(!this->prefs_.noDeliverOnClose.get().value_or(0));
-        }));
-
-    if (prefs_.noDeliverOnClose.get().value_or(0)) {
-        contentSettingsMenu->setToggleLastItem(false);
-    } else {
-        contentSettingsMenu->setToggleLastItem(true);
-    }
-
-    contentSettingsMenu->addMenuItem(
-        MenuItem("Morning delivery", [this, display, contentSettingsMenu]() {
-            this->prefs_.morningDelivery.set(!this->prefs_.morningDelivery.get().value_or(0));
-            if (this->prefs_.morningDelivery.get().value_or(0)) {
+        MenuItem("Morning delivery", [this]() {
+            this->prefs_.morningDelivery.set(!this->prefs_.morningDelivery.get().value_or(false));
+            if (this->prefs_.morningDelivery.get().value_or(false)) {
                 // Default to 6am delivery. May have configuration at some other time
                 this->prefs_.morningNewspaperTime.set(6);
             } else {
@@ -483,16 +463,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }
         }));
 
-    if (prefs_.morningDelivery.get().value_or(0)) {
+    if (prefs_.morningDelivery.get().value_or(false)) {
         contentSettingsMenu->setToggleLastItem(true);
     } else {
         contentSettingsMenu->setToggleLastItem(false);
     }
 
     contentSettingsMenu->addMenuItem(
-        MenuItem("Evening delivery", [this, display, contentSettingsMenu]() {
-            this->prefs_.eveningDelivery.set(!this->prefs_.eveningDelivery.get().value_or(0));
-            if (this->prefs_.eveningDelivery.get().value_or(0)) {
+        MenuItem("Evening delivery", [this]() {
+            this->prefs_.eveningDelivery.set(!this->prefs_.eveningDelivery.get().value_or(false));
+            if (this->prefs_.eveningDelivery.get().value_or(false)) {
                 // default to 8pm delivery. May have configuration at some other time
                 this->prefs_.eveningNewspaperTime.set(20);
             } else {
@@ -500,20 +480,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }
         }));
 
-    if (prefs_.eveningDelivery.get().value_or(0)) {
+    if (prefs_.eveningDelivery.get().value_or(false)) {
         contentSettingsMenu->setToggleLastItem(true);
     } else {
         contentSettingsMenu->setToggleLastItem(false);
     }
 
-    // About
-    // Tutorials
-    // Legal & Regulatory
-    // Set Time Zone
-    // Reset Statistics
-    // Clear All Content and Restart
-    // Reset Preferences
-    // Factory Defaults
     auto systemSettingsMenu = new MenuScreen(styleFamilies.settingsMenu);
 
     systemSettingsMenu->backCallback = [this, mainMenu]() {
@@ -522,11 +494,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         setCurrentScreen(*mainMenu);
     };
 
-    // Dark Mode
-    // Autopilot
-    // Fast Page Transitions
-    // Upload Crashes on Sync
-    // Show Debug
     auto experimentalSettingsMenu = new ToggleMenuScreen(
         power_.battery, *display_, styleFamilies.settingsMenu, "Experimental Settings");
 
@@ -546,7 +513,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     };
 
     experimentalSettingsMenu->addMenuItem(MenuItem("Dark Mode", [this, experimentalSettingsMenu]() {
-        this->prefs_.darkMode.set(!this->prefs_.darkMode.get().value_or(0));
+        this->prefs_.darkMode.set(!this->prefs_.darkMode.get().value_or(false));
         // Reserved for future use? Potentially lighting up and down?
         this->display_->flipInversion();
         // When we invert, we should do a full clear of the display to make sure
@@ -557,56 +524,56 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         experimentalSettingsMenu->setFirstLoad();
     }));
 
-    if (prefs_.darkMode.get().value_or(0)) {
+    if (prefs_.darkMode.get().value_or(false)) {
         experimentalSettingsMenu->setToggleLastItem(true);
     } else {
         experimentalSettingsMenu->setToggleLastItem(false);
     }
 
     experimentalSettingsMenu->addMenuItem(MenuItem("Autopilot", [this]() {
-        this->prefs_.autoPilot.set(!this->prefs_.autoPilot.get().value_or(0));
-        if (this->prefs_.autoPilot.get().value_or(0)) {
+        this->prefs_.autoPilot.set(!this->prefs_.autoPilot.get().value_or(false));
+        if (this->prefs_.autoPilot.get().value_or(false)) {
             prefs_.autoPilotSpeed.set(10000);
         } else {
             prefs_.autoPilotSpeed.set(0);
         }
     }));
 
-    if (prefs_.autoPilot.get().value_or(0)) {
+    if (prefs_.autoPilot.get().value_or(false)) {
         experimentalSettingsMenu->setToggleLastItem(true);
     } else {
         experimentalSettingsMenu->setToggleLastItem(false);
     }
 
     experimentalSettingsMenu->addMenuItem(MenuItem("Fast Page Transitions", [this]() {
-        this->prefs_.fastTransitions.set(!this->prefs_.fastTransitions.get().value_or(0));
+        this->prefs_.fastTransitions.set(!this->prefs_.fastTransitions.get().value_or(false));
     }));
 
-    if (prefs_.fastTransitions.get().value_or(0)) {
+    if (prefs_.fastTransitions.get().value_or(false)) {
         experimentalSettingsMenu->setToggleLastItem(true);
     } else {
         experimentalSettingsMenu->setToggleLastItem(false);
     }
 
     experimentalSettingsMenu->addMenuItem(MenuItem("Upload Crashes on Sync", [this]() {
-        this->prefs_.noUploadCrashes.set(!this->prefs_.noUploadCrashes.get().value_or(0));
+        this->prefs_.noUploadCrashes.set(!this->prefs_.noUploadCrashes.get().value_or(false));
     }));
 
     // This one is opposite of the above because we want to default it to true and make them
     // turn it off if they don't want it. At least for beta.
-    if (prefs_.noUploadCrashes.get().value_or(0)) {
+    if (prefs_.noUploadCrashes.get().value_or(false)) {
         experimentalSettingsMenu->setToggleLastItem(false);
     } else {
         experimentalSettingsMenu->setToggleLastItem(true);
     }
 
     experimentalSettingsMenu->addMenuItem(
-        MenuItem("Show Debug Menu", [this, experimentalSettingsMenu, display]() {
-            this->prefs_.showDebugMenu.set(!this->prefs_.showDebugMenu.get().value_or(0));
+        MenuItem("Show Debug Menu", [this, experimentalSettingsMenu]() {
+            this->prefs_.showDebugMenu.set(!this->prefs_.showDebugMenu.get().value_or(false));
             experimentalSettingsMenu->requireRestart();
         }));
 
-    if (prefs_.showDebugMenu.get().value_or(0)) {
+    if (prefs_.showDebugMenu.get().value_or(false)) {
         experimentalSettingsMenu->setToggleLastItem(true);
     } else {
         experimentalSettingsMenu->setToggleLastItem(false);
@@ -694,7 +661,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         this->setCurrentScreen(*experimentalSettingsMenu);
     }));
 
-    if (prefs_.showDebugMenu.get().value_or(0)) {
+    if (prefs_.showDebugMenu.get().value_or(false)) {
         settingsMenu->addMenuItem(MenuItem("Debug", [this, debugSettingsMenu]() {
             log_d("Loading Debug Settings Menu");
             debugSettingsMenu->setFirstLoad();
@@ -787,7 +754,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
     }));
 
-    systemSettingsMenu->addMenuItem(MenuItem("About", [this, systemSettingsMenu, display]() {
+    systemSettingsMenu->addMenuItem(MenuItem("About", [systemSettingsMenu, display]() {
         std::string snString = StringFormat("SN: %s", GetSerialNumber().c_str());
 #ifdef GITHASH
         std::string buildString = StringFormat("Build: %s (%s)", kVersionString, GITHASH);
@@ -800,13 +767,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         systemSettingsMenu->showTemporaryMessage(*display, aboutString.c_str());
     }));
 
-    systemSettingsMenu->addMenuItem(MenuItem("Tutorials", [this, systemSettingsMenu, display]() {
+    systemSettingsMenu->addMenuItem(MenuItem("Tutorials", [systemSettingsMenu, display]() {
         systemSettingsMenu->showTemporaryMessage(*display,
                                                  "Someday we'll implement amazing tutorials!");
     }));
 
     systemSettingsMenu->addMenuItem(
-        MenuItem("Legal & Regulatory", [this, systemSettingsMenu, display]() {
+        MenuItem("Legal & Regulatory", [systemSettingsMenu, display]() {
             systemSettingsMenu->showTemporaryMessage(*display, "FCC Stuff, Legal Stuff, etc.");
         }));
 

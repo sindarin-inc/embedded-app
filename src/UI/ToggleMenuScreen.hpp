@@ -27,22 +27,22 @@ class ToggleMenuScreen : public MenuScreen, public EinkView {
 public:
     ToggleMenuScreen(Battery &battery, DisplaySystem &display, MenuStyleFamily myStyle,
                      std::string menuName = "Default")
-        : MenuScreen(myStyle, menuName), EinkView(display), headerTextView_(display, ""),
+        : MenuScreen(myStyle, std::move(menuName)), EinkView(display), headerTextView_(display, ""),
           onTextView_(display, "ON"), offTextView_(display, "OFF"), selectedSelectionView_(nullptr),
           batteryTextView_(display, ""),
           batteryIconView_(display, boltBits, bolt_width, bolt_height), clockView_(display, ""),
           battery_(battery){};
 
-    auto layout(LayoutContext &context, Size size) -> Size;
-    void drawInRect(Rect rect);
+    auto layout(LayoutContext &context, Size size) -> Size override;
+    void drawInRect(Rect rect) override;
 
     void requireRestart();
 
     auto getRequireRestart() -> bool { return restartOnBack_; }
 
-    void render(DisplaySystem &display);
+    void render(DisplaySystem &display) override;
 
-    void processCommand(RemoteCommand command);
+    void processCommand(RemoteCommand command) override;
 
     void setToggleValue(int index, bool value) { menuToggleValues_[index] = value; }
 

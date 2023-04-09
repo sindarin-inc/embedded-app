@@ -12,18 +12,7 @@ void ToggleMenuScreen::requireRestart() { restartOnBack_ = true; }
 
 auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto inset = 3;
-    //    const auto spacing = 5;
-    /*
-        context.setSublayoutFrame(
-            {{0, 0}, size}, LayoutOptionsSizeToFit | LayoutOptionsAlignTop |
-       LayoutOptionsAlignCenter, [this](LayoutContext &context, Size size) -> Size { int x = 0; int
-       y = 10;
 
-                context.setViewFrame(headerTextView_, {{x, y}, size}, LayoutOptionsSizeToFit);
-
-                return {x, size.height};
-            });
-    */
     context.setSublayoutFrame(
         {{inset, inset}, {size.width - 2 * inset, 50 - 2 * inset}},
         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignRight,
@@ -116,7 +105,6 @@ auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
 }
 
 void ToggleMenuScreen::drawInRect(Rect rect) {
-    // headerTextView_.draw();
     onTextView_.draw();
     offTextView_.draw();
     for (auto &view : menuItemViews_) {
@@ -156,39 +144,11 @@ void ToggleMenuScreen::drawArrowsAndSelections(DisplaySystem &display) {
         display.xAbsolute(myStyle_.xOffsetForArrows + myStyle_.arrowWidth),
         display.yAbsolute(myStyle_.yOffsetForArrows + myStyle_.arrowHeight / 2), display.fg);
 
-    // Lower right arrow for "Read" or flip between "Books and Articles"
-    /*
-    display.drawLine(display.xAbsolute(display.xAbsoluteMax() - myStyle_.xOffsetForArrows),
-                     display.yAbsolute(display.yAbsoluteMax() - myStyle_.yOffsetForArrows),
-                     display.xAbsolute(display.xAbsoluteMax() -
-                                       (myStyle_.xOffsetForArrows + myStyle_.arrowWidth)),
-                     display.yAbsolute(display.yAbsoluteMax() -
-                                       (myStyle_.yOffsetForArrows - myStyle_.arrowHeight / 2)),
-                     display.fg);
-    display.drawLine(display.xAbsolute(display.xAbsoluteMax() - myStyle_.xOffsetForArrows),
-                     display.yAbsolute(display.yAbsoluteMax() - myStyle_.yOffsetForArrows),
-                     display.xAbsolute(display.yAbsoluteMax() -
-                                       (myStyle_.xOffsetForArrows + myStyle_.arrowWidth)),
-                     display.yAbsolute(display.yAbsoluteMax() -
-                                       (myStyle_.yOffsetForArrows + myStyle_.arrowHeight / 2)),
-                     display.fg);
-                     */
-
     display.drawSingleLineOfText(
         upperLeftText_.c_str(),
         display.xAbsolute(myStyle_.xOffsetForArrows + myStyle_.arrowWidth +
                           myStyle_.arrowTextSpacing),
         display.yAbsolute(myStyle_.yOffsetForArrows - display.getTextHeight() / 3 - 1));
-    /*
-        display.drawSingleLineOfText(
-            lowerRightText_.c_str(),
-            display.xAbsolute(display.xAbsoluteMax() -
-                              (myStyle_.xOffsetForArrows + myStyle_.arrowWidth +
-                               myStyle_.arrowTextSpacing +
-                               display.getTextWidth(lowerRightText_.c_str()))),
-            display.yAbsolute(display.yAbsoluteMax() -
-                              (myStyle_.yOffsetForArrows + display.getTextHeight() / 2)));
-                              */
 }
 
 // This largely mirrors the superclass implementation, but with enough
