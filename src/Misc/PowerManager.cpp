@@ -318,7 +318,7 @@ void PowerManager::ulpDeepSleep(SleepReason reason) {
     }
 }
 
-std::string toString(SleepReason reason) {
+auto ToString(SleepReason reason) -> std::string {
     switch (reason) {
     case SleepReason::Unspecified:
         return "Unspecified";
@@ -342,7 +342,7 @@ std::string toString(SleepReason reason) {
 }
 
 void PowerManager::waitForQueuesThenDeepSleep(SleepReason reason) {
-    log_d("Beginning shutdown sequence with reason %s", toString(reason).c_str());
+    log_d("Beginning shutdown sequence with reason %s", ToString(reason).c_str());
 
     log_d("Waiting for dispatch queues to shutdown");
     auto core0BgQueue = DispatchGetCore0BackgroundQueue(false);
