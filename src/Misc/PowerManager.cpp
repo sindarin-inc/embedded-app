@@ -239,10 +239,37 @@ void PowerManager::loop() {
 #endif
 }
 
-void PowerManager::ulpDeepSleep(SleepReason reason) {
-    // TODO: We need to ensure there's not file system activity or screen activity happening before
-    // we go to sleep
+void PowerManager::checkUsb() {
+    if (USBConnected()) {
+        // TODO: Should we take multiple measurements?
+        battery.loop();
+        auto percentage = battery.getBatteryPercentage();
+        if (percentage > 95) {
+            // If the battery is fully charged, turn the GREEN LED on.
+            DigitalWrite(GREEN_LED, LED_ON);
+            DigitalWrite(RED_LED, LED_OFF);
+            gpio_hold_en((gpio_num_t)GREEN_LED);
+            gpio_hold_en((gpio_num_t)RED_LED);
+            gpio_deep_sleep_hold_en();
+        } else {
+            // TODO: Need some histeresis here
+            DigitalWrite(GREEN_LED, LED_OFF);
+            DigitalWrite(RED_LED, LED_ON);
+            gpio_hold_en((gpio_num_t)GREEN_LED);
+            gpio_hold_en((gpio_num_t)RED_LED);
+            gpio_deep_sleep_hold_en();
+        }
+    } else {
+        DigitalWrite(GREEN_LED, LED_OFF);
+        DigitalWrite(RED_LED, LED_OFF);
+        gpio_hold_dis((gpio_num_t)GREEN_LED);
+        gpio_hold_dis((gpio_num_t)RED_LED);
+    }
+}
 
+void PowerManager::reboot() { esp_restart(); }
+
+void PowerManager::ulpDeepSleep(SleepReason reason) {
     battery.saveLastBatteryReport();
 
     // Really this probably only needs to be the screens and the filesystem that we shut down
@@ -266,7 +293,69 @@ void PowerManager::ulpDeepSleep(SleepReason reason) {
         uiQueue->beginShutdown();
     }
 
-    prefs_.end();
+    // We do the final shutdown sequence in a new task, in case the shutdown was running in one of
+    // the queues that needed to be shut down
+    auto taskName = pcTaskGetName(nullptr);
+    log_d("ulpDeepSleep executing from task %s", taskName);
+    auto reasonPtr = new SleepReason(reason);
+    BaseType_t status = xTaskCreatePinnedToCore(
+        [](void *reasonPtr) {
+            SleepReason reason = *reinterpret_cast<SleepReason *>(reasonPtr);
+            PowerManager::getInstance().waitForQueuesThenDeepSleep(reason);
+        },
+        "DeepSleep", 4096, (void *)reasonPtr, 1, nullptr, 1);
+    if (status != pdPASS) {
+        log_e("Failed to create DeepSleep task");
+        powerOff();
+        return;
+    }
+
+    if (!isExecutingInQueue) {
+        // If we're not executing in a queue just shut down this task
+        vTaskDelete(nullptr);
+        // Shouldn't ever get here
+        log_e("ulpDeepSleep task deleted itself but still running!");
+    }
+}
+
+std::string toString(SleepReason reason) {
+    switch (reason) {
+    case SleepReason::Unspecified:
+        return "Unspecified";
+    case SleepReason::Inactivity:
+        return "Inactivity";
+    case SleepReason::TempleClosed:
+        return "TempleClosed";
+    case SleepReason::SyncDone:
+        return "SyncDone";
+    case SleepReason::UlpCrashed:
+        return "UlpCrashed";
+    case SleepReason::UpdateUSBState:
+        return "UpdateUSBState";
+    case SleepReason::WaitingForSync:
+        return "WaitingForSync";
+    default:
+        return "Unknown";
+    }
+}
+
+void PowerManager::waitForQueuesThenDeepSleep(SleepReason reason) {
+    log_d("Beginning shutdown sequence with reason %s", toString(reason).c_str());
+
+    log_d("Waiting for dispatch queues to shutdown");
+    auto core0BgQueue = DispatchGetCore0BackgroundQueue(false);
+    if (core0BgQueue) {
+        core0BgQueue->waitForShutdown(5000);
+    }
+    auto core1BgQueue = DispatchGetCore1BackgroundQueue(false);
+    if (core1BgQueue) {
+        core1BgQueue->waitForShutdown(5000);
+    }
+    auto uiQueue = DispatchGetUiQueue(false);
+    if (uiQueue) {
+        uiQueue->waitForShutdown(5000);
+    }
+    log_d("Dispatch queues shutdown");
 
     // On temples close or inactivity we want to set a sync-on-close timer 30s after sleep starts.
     // This is mostly to save placemarks after reading
@@ -282,6 +371,8 @@ void PowerManager::ulpDeepSleep(SleepReason reason) {
 
     // Make sure the ambient light sensor is off so it's not using power while in deep sleep
     lightingController_.disableLighting(0);
+
+    prefs_.end();
 
 #if SIMULATOR
     log_i("ulpDeepSleep");
@@ -355,18 +446,21 @@ void PowerManager::ulpDeepSleep(SleepReason reason) {
     err = ulp_riscv_run();
     if (err != ESP_OK) {
         log_e("ulp_riscv_run error %d", err);
+        powerOff();
         return;
     }
 
     err = esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
     if (err != ESP_OK) {
         log_e("error enabling ESP_PD_DOMAIN_RTC_PERIPH power domain %d", err);
+        powerOff();
         return;
     }
 
     err = esp_sleep_enable_ulp_wakeup();
     if (err != ESP_OK) {
         log_e("error enabling ulp wakeup from deep sleep %d", err);
+        powerOff();
         return;
     }
 
@@ -375,12 +469,14 @@ void PowerManager::ulpDeepSleep(SleepReason reason) {
         err = esp_sleep_enable_ext0_wakeup((gpio_num_t)USB_CONNECTED_PIN, 0);
         if (err != ESP_OK) {
             log_e("error enabling USB_CONNECTED_PIN low wakeup from deep sleep %d", err);
+            powerOff();
             return;
         }
     } else {
         err = esp_sleep_enable_ext0_wakeup((gpio_num_t)USB_CONNECTED_PIN, 1);
         if (err != ESP_OK) {
             log_e("error enabling USB_CONNECTED_PIN high wakeup from deep sleep %d", err);
+            powerOff();
             return;
         }
     }
@@ -407,74 +503,7 @@ void PowerManager::ulpDeepSleep(SleepReason reason) {
         log_d("Sleeping for %" PRIu64 " seconds", sleepTime / 1000000);
     }
 
-    // We do the final shutdown sequence in a new task, in case the shutdown was running in one of
-    // the queues that needed to be shut down
-
-    // If we are inside a queue, we should wait for the queue operation to finish gracefully.
-    // Otherwise just go to sleep.
-    if (isExecutingInQueue) {
-        // TODO: If we're not in a dispatch queue we probably want to wait forever here
-        // Get current freertos task name
-        auto taskName = pcTaskGetName(nullptr);
-        log_d("ulpDeepSleep executing in queue %s", taskName);
-        xTaskCreatePinnedToCore(
-            [](void *) { PowerManager::getInstance().waitForQueuesThenDeepSleep(); }, "DeepSleep",
-            2048, nullptr, 1, nullptr, 1);
-    } else if (core0BgQueue != nullptr || core1BgQueue != nullptr || uiQueue != nullptr) {
-        waitForQueuesThenDeepSleep();
-    } else {
-        log_i("Entering deep sleep, wake up with magnetometer");
-        esp_deep_sleep_start();
-    }
-
-#endif
-}
-
-void PowerManager::checkUsb() {
-    if (USBConnected()) {
-        // TODO: Should we take multiple measurements?
-        battery.loop();
-        auto percentage = battery.getBatteryPercentage();
-        if (percentage > 95) {
-            // If the battery is fully charged, turn the GREEN LED on.
-            DigitalWrite(GREEN_LED, LED_ON);
-            DigitalWrite(RED_LED, LED_OFF);
-            gpio_hold_en((gpio_num_t)GREEN_LED);
-            gpio_hold_en((gpio_num_t)RED_LED);
-            gpio_deep_sleep_hold_en();
-        } else {
-            // TODO: Need some histeresis here
-            DigitalWrite(GREEN_LED, LED_OFF);
-            DigitalWrite(RED_LED, LED_ON);
-            gpio_hold_en((gpio_num_t)GREEN_LED);
-            gpio_hold_en((gpio_num_t)RED_LED);
-            gpio_deep_sleep_hold_en();
-        }
-    } else {
-        DigitalWrite(GREEN_LED, LED_OFF);
-        DigitalWrite(RED_LED, LED_OFF);
-        gpio_hold_dis((gpio_num_t)GREEN_LED);
-        gpio_hold_dis((gpio_num_t)RED_LED);
-    }
-}
-
-void PowerManager::reboot() { esp_restart(); }
-
-void PowerManager::waitForQueuesThenDeepSleep() {
-    log_d("Waiting for dispatch queues to shutdown");
-    auto core0BgQueue = DispatchGetCore0BackgroundQueue(false);
-    if (core0BgQueue) {
-        core0BgQueue->waitForShutdown(5000);
-    }
-    auto core1BgQueue = DispatchGetCore1BackgroundQueue(false);
-    if (core1BgQueue) {
-        core1BgQueue->waitForShutdown(5000);
-    }
-    auto uiQueue = DispatchGetUiQueue(false);
-    if (uiQueue) {
-        uiQueue->waitForShutdown(5000);
-    }
-    log_d("Dispatch queues shutdown");
     log_i("Entering deep sleep, wake up with magnetometer");
     esp_deep_sleep_start();
+#endif
 }
