@@ -103,8 +103,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         readableScreen->backCallback = [this, display, stream, readableScreen, mainMenu]() {
             // When leaving a readable to go back to the main menu, do a full clear
             // of the display.
-            display->clearDisplay();
             prefs_.lastReadableId.remove();
+            display->clearDisplay();
             mainMenu->setFirstLoad();
             setCurrentScreen(*mainMenu);
 
@@ -234,6 +234,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 display->setFont(mainMenu->getMyStyle().navigationFont);
                 this->setCurrentScreen(*contentSyncScreen);
                 contentSyncScreen->backCallback = [this, contentSyncScreen, mainMenu, display]() {
+                    display->clearDisplay();
                     mainMenu->setFirstLoad();
                     setCurrentScreen(*mainMenu);
                     mainMenu->render(*display);
@@ -287,6 +288,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 display->setFont(mainMenu->getMyStyle().navigationFont);
                 this->setCurrentScreen(*contentSyncScreen);
                 contentSyncScreen->backCallback = [this, contentSyncScreen, mainMenu, display]() {
+                    display->clearDisplay();
                     mainMenu->setFirstLoad();
                     setCurrentScreen(*mainMenu);
                     mainMenu->render(*display);
@@ -307,10 +309,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             setCurrentScreen(*readableScreen);
             readableScreen->backCallback = [this, r, display, readableScreen, mainMenu,
                                             pocketMenu]() {
-                display->clearDisplay();
                 bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
                 auto title = StringFormat("%s%s", archived ? "Archived: " : "", r.title.c_str());
                 pocketMenu->changeItemTitleAt(pocketMenu->getCurrSelection(), title);
+                display->clearDisplay();
                 mainMenu->setFirstLoad();
                 setCurrentScreen(*mainMenu);
                 delete readableScreen;
@@ -341,6 +343,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     this->setCurrentScreen(*readableScreen);
                     readableScreen->backCallback = [this, r, display, readableScreen, mainMenu]() {
                         display->clearDisplay();
+                        mainMenu->setFirstLoad();
                         setCurrentScreen(*mainMenu);
                         delete readableScreen;
                     };
@@ -437,6 +440,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             this->setCurrentScreen(*contentSyncScreen);
             lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
             contentSyncScreen->backCallback = [this, contentSyncScreen, mainMenu, display]() {
+                this->display_->clearDisplay();
                 mainMenu->setFirstLoad();
                 setCurrentScreen(*mainMenu);
                 mainMenu->render(*display);
@@ -1287,6 +1291,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto demoScreen = new DemoScreen(*display, prefs_, lightingController);
         demoScreen->backCallback = [this, demoScreen, mainMenu, display]() {
             display->clearDisplay();
+            mainMenu->setFirstLoad();
             setCurrentScreen(*mainMenu);
             delete demoScreen;
         };
