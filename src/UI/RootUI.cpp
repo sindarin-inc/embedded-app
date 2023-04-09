@@ -452,16 +452,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         contentSettingsMenu->setToggleLastItem(true);
     }
 
-    contentSettingsMenu->addMenuItem(
-        MenuItem("Morning delivery", [this]() {
-            this->prefs_.morningDelivery.set(!this->prefs_.morningDelivery.get().value_or(false));
-            if (this->prefs_.morningDelivery.get().value_or(false)) {
-                // Default to 6am delivery. May have configuration at some other time
-                this->prefs_.morningNewspaperTime.set(6);
-            } else {
-                this->prefs_.morningNewspaperTime.set(0);
-            }
-        }));
+    contentSettingsMenu->addMenuItem(MenuItem("Morning delivery", [this]() {
+        this->prefs_.morningDelivery.set(!this->prefs_.morningDelivery.get().value_or(false));
+        if (this->prefs_.morningDelivery.get().value_or(false)) {
+            // Default to 6am delivery. May have configuration at some other time
+            this->prefs_.morningNewspaperTime.set(6);
+        } else {
+            this->prefs_.morningNewspaperTime.set(0);
+        }
+    }));
 
     if (prefs_.morningDelivery.get().value_or(false)) {
         contentSettingsMenu->setToggleLastItem(true);
@@ -469,16 +468,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         contentSettingsMenu->setToggleLastItem(false);
     }
 
-    contentSettingsMenu->addMenuItem(
-        MenuItem("Evening delivery", [this]() {
-            this->prefs_.eveningDelivery.set(!this->prefs_.eveningDelivery.get().value_or(false));
-            if (this->prefs_.eveningDelivery.get().value_or(false)) {
-                // default to 8pm delivery. May have configuration at some other time
-                this->prefs_.eveningNewspaperTime.set(20);
-            } else {
-                this->prefs_.eveningNewspaperTime.set(0);
-            }
-        }));
+    contentSettingsMenu->addMenuItem(MenuItem("Evening delivery", [this]() {
+        this->prefs_.eveningDelivery.set(!this->prefs_.eveningDelivery.get().value_or(false));
+        if (this->prefs_.eveningDelivery.get().value_or(false)) {
+            // default to 8pm delivery. May have configuration at some other time
+            this->prefs_.eveningNewspaperTime.set(20);
+        } else {
+            this->prefs_.eveningNewspaperTime.set(0);
+        }
+    }));
 
     if (prefs_.eveningDelivery.get().value_or(false)) {
         contentSettingsMenu->setToggleLastItem(true);
@@ -772,10 +770,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                                  "Someday we'll implement amazing tutorials!");
     }));
 
-    systemSettingsMenu->addMenuItem(
-        MenuItem("Legal & Regulatory", [systemSettingsMenu, display]() {
-            systemSettingsMenu->showTemporaryMessage(*display, "FCC Stuff, Legal Stuff, etc.");
-        }));
+    systemSettingsMenu->addMenuItem(MenuItem("Legal & Regulatory", [systemSettingsMenu, display]() {
+        systemSettingsMenu->showTemporaryMessage(*display, "FCC Stuff, Legal Stuff, etc.");
+    }));
 
     systemSettingsMenu->addMenuItem(MenuItem("Set Time Zone", [this, display,
                                                                systemSettingsMenu]() {
