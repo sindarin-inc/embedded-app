@@ -40,8 +40,6 @@ public:
     void setToggleLastItem(bool value) { menuToggleValues_.push_back(value); }
 
 protected:
-    void drawArrowsAndSelections(DisplaySystem &display);
-
     SingleLineTextView headerTextView_;
     SingleLineTextView onTextView_;
     SingleLineTextView offTextView_;

@@ -15,6 +15,7 @@
 #include "UI/Components/ClockBatteryView.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/IconView.hpp"
+#include "UI/Components/LeftArrowView.hpp"
 #include "UI/Components/MenuItemView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
 #include "UI/Components/StackView.hpp"
@@ -26,12 +27,12 @@ class MenuScreen : public Screen, public Menu, public EinkView {
 
 public:
     MenuScreen(Battery &battery, DisplaySystem &display, MenuStyleFamily myStyle,
-               std::string menuName = "Default")
-        : Menu(myStyle), EinkView(display), menuName_(std::move(menuName)),
-          batteryTextView_(display, ""),
+               std::string menuName = "Default", std::string upperLeftText = "Main Menu")
+        : Menu(myStyle), EinkView(display), upperLeftText_(std::move(upperLeftText)),
+          menuName_(std::move(menuName)), batteryTextView_(display, ""),
           batteryIconView_(display, boltBits, bolt_width, bolt_height), clockView_(display, ""),
           battery_(battery), clockBatteryView_(battery, display),
-          upperLeftTextView_(display, upperLeftText_) {
+          upperLeftTextView_(display, upperLeftText_), leftArrowView_(display) {
         numMenuItems_ = 0;
     };
 
@@ -60,11 +61,9 @@ public:
     auto getFirstLoad() -> bool { return firstLoad_; }
 
 protected:
-    void drawArrowsAndSelections(DisplaySystem &display);
     bool firstLoad_ = true;
 
     std::string upperLeftText_ = "Main Menu";
-    std::string lowerRightText_ = "Select";
 
     std::string extraTextBelowMenu_ = "";
 
@@ -78,4 +77,6 @@ protected:
     ClockBatteryView clockBatteryView_;
 
     SingleLineTextView upperLeftTextView_;
+
+    LeftArrowView leftArrowView_;
 };

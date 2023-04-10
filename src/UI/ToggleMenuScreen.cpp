@@ -13,6 +13,11 @@ void ToggleMenuScreen::requireRestart() { restartOnBack_ = true; }
 auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto inset = 3;
 
+    context.setViewFrame(leftArrowView_, {{0, 1}, {5, 10}},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
+    context.setViewFrame(upperLeftTextView_, {{10, 0}, size},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
+
     context.setSublayoutFrame(
         {{inset, inset}, {size.width - 2 * inset, 50 - 2 * inset}},
         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignRight,
@@ -91,6 +96,8 @@ auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
 }
 
 void ToggleMenuScreen::drawInRect(Rect rect) {
+    leftArrowView_.draw();
+    upperLeftTextView_.draw();
     onTextView_.draw();
     offTextView_.draw();
     for (auto &view : menuItemViews_) {
@@ -114,26 +121,6 @@ void ToggleMenuScreen::drawInRect(Rect rect) {
     }
 
     clockBatteryView_.draw();
-}
-
-void ToggleMenuScreen::drawArrowsAndSelections(DisplaySystem &display) {
-
-    display.setFont(myStyle_.navigationFont);
-    // Upper left arrow for Settings
-    display.drawLine(
-        display.xAbsolute(myStyle_.xOffsetForArrows), display.yAbsolute(myStyle_.yOffsetForArrows),
-        display.xAbsolute(myStyle_.xOffsetForArrows + myStyle_.arrowWidth),
-        display.yAbsolute(myStyle_.yOffsetForArrows - myStyle_.arrowHeight / 2), display.fg);
-    display.drawLine(
-        display.xAbsolute(myStyle_.xOffsetForArrows), display.yAbsolute(myStyle_.yOffsetForArrows),
-        display.xAbsolute(myStyle_.xOffsetForArrows + myStyle_.arrowWidth),
-        display.yAbsolute(myStyle_.yOffsetForArrows + myStyle_.arrowHeight / 2), display.fg);
-
-    display.drawSingleLineOfText(
-        upperLeftText_.c_str(),
-        display.xAbsolute(myStyle_.xOffsetForArrows + myStyle_.arrowWidth +
-                          myStyle_.arrowTextSpacing),
-        display.yAbsolute(myStyle_.yOffsetForArrows - display.getTextHeight() / 3 - 1));
 }
 
 // This largely mirrors the superclass implementation, but with enough
@@ -181,12 +168,10 @@ void ToggleMenuScreen::render(DisplaySystem &display) {
                 display_.fg;
         }
 
-        drawArrowsAndSelections(display);
         draw();
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     }
 
-    drawArrowsAndSelections(display);
     drawBubbles_ = true;
     draw();
 

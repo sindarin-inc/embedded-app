@@ -10,13 +10,22 @@
 
 auto MenuScreen::layout(LayoutContext &context, Size size) -> Size {
 
+    context.setViewFrame(leftArrowView_, {{0, 1}, {5, 10}},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
+    context.setViewFrame(upperLeftTextView_, {{10, 0}, size},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
+
     context.setViewFrame(clockBatteryView_, {{0, 0}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
                              LayoutOptionsAlignCenter);
     return size;
 }
 
-void MenuScreen::drawInRect(Rect rect) { clockBatteryView_.draw(); }
+void MenuScreen::drawInRect(Rect rect) {
+    leftArrowView_.draw();
+    upperLeftTextView_.draw();
+    clockBatteryView_.draw();
+}
 
 void MenuScreen::populateMenuItems(std::vector<MenuItem> &menuItems) {
     for (int i = currMenuPage_ * myStyle_.numberOfItemsPerPage;
@@ -84,26 +93,6 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
                                  display.yAbsolute(display.yAbsoluteMax() - 60));
 }
 
-void MenuScreen::drawArrowsAndSelections(DisplaySystem &display) {
-
-    display.setFont(myStyle_.navigationFont);
-    // Upper left arrow for Settings
-    display.drawLine(
-        display.xAbsolute(myStyle_.xOffsetForArrows), display.yAbsolute(myStyle_.yOffsetForArrows),
-        display.xAbsolute(myStyle_.xOffsetForArrows + myStyle_.arrowWidth),
-        display.yAbsolute(myStyle_.yOffsetForArrows - myStyle_.arrowHeight / 2), display.fg);
-    display.drawLine(
-        display.xAbsolute(myStyle_.xOffsetForArrows), display.yAbsolute(myStyle_.yOffsetForArrows),
-        display.xAbsolute(myStyle_.xOffsetForArrows + myStyle_.arrowWidth),
-        display.yAbsolute(myStyle_.yOffsetForArrows + myStyle_.arrowHeight / 2), display.fg);
-
-    display.drawSingleLineOfText(
-        upperLeftText_.c_str(),
-        display.xAbsolute(myStyle_.xOffsetForArrows + myStyle_.arrowWidth +
-                          myStyle_.arrowTextSpacing),
-        display.yAbsolute(myStyle_.yOffsetForArrows - display.getTextHeight() / 3 - 1));
-}
-
 void MenuScreen::showTemporaryMessage(DisplaySystem &display, const std::string &message,
                                       int duration, bool rerenderAfter) {
     display.drawSingleLineOfCenteredText(message);
@@ -131,8 +120,6 @@ void MenuScreen::render(DisplaySystem &display) {
          {display.defaultScreenWidth - 2 * display.defaultXPadding,
           display.defaultScreenHeight - 2 * display.defaultYPadding}});
 
-    drawArrowsAndSelections(display);
-
     // On the first load, we want to only render the items in the menu because we are going
     // to do a partial refresh with the selector button at a lower/higher vcom to reduce
     // ghosting.
@@ -149,7 +136,6 @@ void MenuScreen::render(DisplaySystem &display) {
     }
 
     drawMenuItems(display, true);
-    drawArrowsAndSelections(display);
     draw();
     display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
 

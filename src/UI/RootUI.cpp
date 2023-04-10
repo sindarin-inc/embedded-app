@@ -669,7 +669,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     readingSettingsMenu->addMenuItem(MenuItem("Text Size", [this, display, readingSettingsMenu]() {
-        auto fontMenu = new MenuScreen(power_.battery, *display, readingSettingsMenu->getMyStyle());
+        auto fontMenu = new MenuScreen(power_.battery, *display, readingSettingsMenu->getMyStyle(),
+                                       "Font Settings", "Reading Settings");
         fontMenu->setExtraText("Example text size");
         fontMenu->addMenuItem(MenuItem("Small", [this, fontMenu]() {
             this->display_->style.setFontFamily(this->display_->style.tahomaRegular);
@@ -778,7 +779,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     systemSettingsMenu->addMenuItem(MenuItem("Set Time Zone", [this, display,
                                                                systemSettingsMenu]() {
         auto timeZoneMenu =
-            new MenuScreen(power_.battery, *display, systemSettingsMenu->getMyStyle());
+            new MenuScreen(power_.battery, *display, systemSettingsMenu->getMyStyle(),
+                           "Time Zone Settings", "System Settings");
 
         SolClock &clock = SolClock::getInstance();
 
@@ -965,7 +967,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     debugSettingsMenu->addMenuItem(
         MenuItem("File System Browser", [this, display, debugSettingsMenu, &fileSystem]() {
-            auto fsMenu = new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle());
+            auto fsMenu = new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle(),
+                                         "FS Browser", "Debug Settings");
             fsMenu->setExtraText("ls of /");
 
             FileList localFiles;
@@ -1047,7 +1050,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 */
 #if EINKET013TT1
     debugSettingsMenu->addMenuItem(MenuItem("Set Vcom", [this, display, debugSettingsMenu]() {
-        auto vcomMenu = new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle());
+        auto vcomMenu = new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle(),
+                                       "Vcom Settings", "Debug Settings");
         auto *driver = (static_cast<DisplayEinkET013TT1 *>(display))->getDriver();
         vcomMenu->addMenuItem(MenuItem("0V", [this, vcomMenu, driver]() {
             driver->setVcom(0);
@@ -1095,7 +1099,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     debugSettingsMenu->addMenuItem(MenuItem("Set WiFi Power", [this, display, debugSettingsMenu]() {
         auto wifiPowerMenu =
-            new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle());
+            new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle(),
+                           "WiFi Power Settings", "Debug Settings");
 
         auto powerToString = [](wifi_power_t power) -> std::string {
             switch (power) {
