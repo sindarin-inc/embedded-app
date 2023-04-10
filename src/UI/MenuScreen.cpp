@@ -10,32 +10,13 @@
 
 auto MenuScreen::layout(LayoutContext &context, Size size) -> Size {
 
-    context.setSublayoutFrame(
-        {{0, 0}, size},
-        LayoutOptionsSizeToFit | LayoutOptionsAlignBottom | LayoutOptionsAlignCenter,
-        [this](LayoutContext &context, Size size) -> Size {
-            int x = 0;
-            int y = 0;
-            auto clockRect =
-                context.setViewFrame(clockView_, {{x, y}, size}, LayoutOptionsSizeToFit);
-            x += clockRect.size.width + 20;
-            auto iconRect = context.setViewFrame(
-                batteryIconView_, {{x, y}, {size.width, size.height}}, LayoutOptionsSizeToFit);
-            x += iconRect.size.width + 3;
-            auto textRect = context.setViewFrame(
-                batteryTextView_, {{x, y}, {size.width, size.height}}, LayoutOptionsSizeToFit);
-            x += textRect.size.width;
-            return {x, std::max(iconRect.size.height, textRect.size.height)};
-        });
-
+    context.setViewFrame(clockBatteryView_, {{0, 0}, size},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
+                             LayoutOptionsAlignCenter);
     return size;
 }
 
-void MenuScreen::drawInRect(Rect rect) {
-    batteryIconView_.draw();
-    batteryTextView_.draw();
-    clockView_.draw();
-}
+void MenuScreen::drawInRect(Rect rect) { clockBatteryView_.draw(); }
 
 void MenuScreen::populateMenuItems(std::vector<MenuItem> &menuItems) {
     for (int i = currMenuPage_ * myStyle_.numberOfItemsPerPage;

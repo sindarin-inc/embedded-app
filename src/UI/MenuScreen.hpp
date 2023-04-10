@@ -12,6 +12,7 @@
 #include "Renderers/Renderer.hpp"
 #include "UI/Bitmaps/Battery_Bolt.hpp"
 #include "UI/Components/BoxView.hpp"
+#include "UI/Components/ClockBatteryView.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/IconView.hpp"
 #include "UI/Components/MenuItemView.hpp"
@@ -29,7 +30,8 @@ public:
         : Menu(myStyle), EinkView(display), menuName_(std::move(menuName)),
           batteryTextView_(display, ""),
           batteryIconView_(display, boltBits, bolt_width, bolt_height), clockView_(display, ""),
-          battery_(battery), upperLeftTextView_(display, upperLeftText_) {
+          battery_(battery), clockBatteryView_(battery, display),
+          upperLeftTextView_(display, upperLeftText_) {
         numMenuItems_ = 0;
     };
 
@@ -72,5 +74,8 @@ protected:
     IconView batteryIconView_;
     SingleLineTextView clockView_;
     Battery &battery_;
+
+    ClockBatteryView clockBatteryView_;
+
     SingleLineTextView upperLeftTextView_;
 };

@@ -6,6 +6,7 @@
 #include "Renderers/Renderer.hpp"
 #include "UI/Bitmaps/Battery_Bolt.hpp"
 #include "UI/Components/BoxView.hpp"
+#include "UI/Components/ClockBatteryView.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/IconView.hpp"
 #include "UI/Components/MenuItemView.hpp"
