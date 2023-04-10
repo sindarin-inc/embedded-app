@@ -71,8 +71,6 @@ protected:
     SingleLineTextView batteryTextView_;
     IconView batteryIconView_;
     SingleLineTextView clockView_;
-
-    SingleLineTextView upperLeftTextView_;
-
     Battery &battery_;
+    SingleLineTextView upperLeftTextView_;
 };
