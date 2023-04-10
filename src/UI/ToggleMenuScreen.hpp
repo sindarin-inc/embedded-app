@@ -7,31 +7,20 @@
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Menu.hpp"
 #include "Misc/MenuStyle.hpp"
-#include "Misc/PowerManager.hpp"
 #include "Renderers/Renderer.hpp"
-#include "UI/Bitmaps/Battery_Bolt.hpp"
-#include "UI/Components/BoxView.hpp"
-#include "UI/Components/EinkView.hpp"
-#include "UI/Components/IconView.hpp"
-#include "UI/Components/MenuItemView.hpp"
-#include "UI/Components/SingleLineTextView.hpp"
-#include "UI/Components/StackView.hpp"
-#include "UI/Layout/View.hpp"
 #include "UI/MenuScreen.hpp"
 #include "UI/Screen.hpp"
 #include "sindarin-debug.h"
 
-class ToggleMenuScreen : public MenuScreen, public EinkView {
+class ToggleMenuScreen : public MenuScreen {
 
     // constructor to create a toggle menu screen
 public:
     ToggleMenuScreen(Battery &battery, DisplaySystem &display, MenuStyleFamily myStyle,
                      std::string menuName = "Default")
-        : MenuScreen(myStyle, std::move(menuName)), EinkView(display), headerTextView_(display, ""),
-          onTextView_(display, "ON"), offTextView_(display, "OFF"), selectedSelectionView_(nullptr),
-          batteryTextView_(display, ""),
-          batteryIconView_(display, boltBits, bolt_width, bolt_height), clockView_(display, ""),
-          battery_(battery){};
+        : MenuScreen(battery, display, myStyle, std::move(menuName)), headerTextView_(display, ""),
+          onTextView_(display, "ON"), offTextView_(display, "OFF"),
+          selectedSelectionView_(nullptr){};
 
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
@@ -61,11 +50,6 @@ protected:
     std::shared_ptr<BoxView> selectedSelectionView_;
     std::vector<bool> menuToggleValues_;
     std::vector<std::shared_ptr<BoxView>> menuToggleSelectionViews_;
-    SingleLineTextView batteryTextView_;
-    IconView batteryIconView_;
-    SingleLineTextView clockView_;
-
-    Battery &battery_;
     bool drawBubbles_ = false;
 
     bool restartOnBack_ = false;

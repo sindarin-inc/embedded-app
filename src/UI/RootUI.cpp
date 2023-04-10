@@ -196,7 +196,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         prefs_.emcMode.remove();
     }
 
-    auto booksMenu = new MenuScreen(mainMenu->getMyStyle(), "Books");
+    auto booksMenu = new MenuScreen(power_.battery, *display, mainMenu->getMyStyle(), "Books");
 
     // If there is firmware available, show the Update Firmware item in the books tab.
     auto makeReleaseNotesMenuItem = [this, &localStore, display, mainMenu]() {
@@ -276,7 +276,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     log_i("Loading %zu Pocket articles", articles.size());
 
-    auto pocketMenu = new MenuScreen(mainMenu->getMyStyle(), "Articles");
+    auto pocketMenu = new MenuScreen(power_.battery, *display, mainMenu->getMyStyle(), "Articles");
 
     if (prefs_.firmwareLoaded.get().has_value()) {
         pocketMenu->addMenuItem(makeReleaseNotesMenuItem());
@@ -335,7 +335,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     if (!prefs_.noBible.get().value_or(false) && (oldTestament || newTestament || psalmsProverbs)) {
-        auto bibleMenu = new MenuScreen(mainMenu->getMyStyle(), "Bible");
+        auto bibleMenu = new MenuScreen(power_.battery, *display, mainMenu->getMyStyle(), "Bible");
 
         for (const Readable &r : readables) {
             bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
@@ -365,8 +365,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         mainMenu->addSubMenuScreen(bibleMenu);
     }
 
-    auto settingsMenu = new MenuScreen(styleFamilies.settingsMenu, "Settings");
-    auto readingSettingsMenu = new MenuScreen(styleFamilies.settingsMenu);
+    auto settingsMenu =
+        new MenuScreen(power_.battery, *display, styleFamilies.settingsMenu, "Settings");
+    auto readingSettingsMenu = new MenuScreen(power_.battery, *display, styleFamilies.settingsMenu);
 
     readingSettingsMenu->backCallback = [this, mainMenu]() {
         this->display_->clearDisplay();
@@ -484,7 +485,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         contentSettingsMenu->setToggleLastItem(false);
     }
 
-    auto systemSettingsMenu = new MenuScreen(styleFamilies.settingsMenu);
+    auto systemSettingsMenu = new MenuScreen(power_.battery, *display, styleFamilies.settingsMenu);
 
     systemSettingsMenu->backCallback = [this, mainMenu]() {
         this->display_->clearDisplay();
@@ -597,7 +598,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // Upload Voltage Log
     // Format FS
     // Power Off
-    auto debugSettingsMenu = new MenuScreen(styleFamilies.settingsMenu);
+    auto debugSettingsMenu = new MenuScreen(power_.battery, *display, styleFamilies.settingsMenu);
 
     debugSettingsMenu->backCallback = [this, mainMenu]() {
         this->display_->clearDisplay();
@@ -606,7 +607,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     };
 
     // For items we don't want to throw away yet, but this isn't hooked up anywhere
-    auto oldMenu = new MenuScreen(styleFamilies.settingsMenu);
+    auto oldMenu = new MenuScreen(power_.battery, *display, styleFamilies.settingsMenu);
 
     // settingsMenu->addMenuItem(MenuItem("Layout Example", [this, settingsMenu, display]() {
     //    auto layoutTestScreen = new LayoutTestScreen(*display);
@@ -667,8 +668,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }));
     }
 
-    readingSettingsMenu->addMenuItem(MenuItem("Text Size", [this, readingSettingsMenu]() {
-        auto fontMenu = new MenuScreen(readingSettingsMenu->getMyStyle());
+    readingSettingsMenu->addMenuItem(MenuItem("Text Size", [this, display, readingSettingsMenu]() {
+        auto fontMenu = new MenuScreen(power_.battery, *display, readingSettingsMenu->getMyStyle());
         fontMenu->setExtraText("Example text size");
         fontMenu->addMenuItem(MenuItem("Small", [this, fontMenu]() {
             this->display_->style.setFontFamily(this->display_->style.tahomaRegular);
@@ -776,7 +777,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     systemSettingsMenu->addMenuItem(MenuItem("Set Time Zone", [this, display,
                                                                systemSettingsMenu]() {
-        auto timeZoneMenu = new MenuScreen(systemSettingsMenu->getMyStyle());
+        auto timeZoneMenu =
+            new MenuScreen(power_.battery, *display, systemSettingsMenu->getMyStyle());
 
         SolClock &clock = SolClock::getInstance();
 
@@ -962,8 +964,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }));
 
     debugSettingsMenu->addMenuItem(
-        MenuItem("File System Browser", [this, debugSettingsMenu, &fileSystem]() {
-            auto fsMenu = new MenuScreen(debugSettingsMenu->getMyStyle());
+        MenuItem("File System Browser", [this, display, debugSettingsMenu, &fileSystem]() {
+            auto fsMenu = new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle());
             fsMenu->setExtraText("ls of /");
 
             FileList localFiles;
@@ -1045,7 +1047,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 */
 #if EINKET013TT1
     debugSettingsMenu->addMenuItem(MenuItem("Set Vcom", [this, display, debugSettingsMenu]() {
-        auto vcomMenu = new MenuScreen(debugSettingsMenu->getMyStyle());
+        auto vcomMenu = new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle());
         auto *driver = (static_cast<DisplayEinkET013TT1 *>(display))->getDriver();
         vcomMenu->addMenuItem(MenuItem("0V", [this, vcomMenu, driver]() {
             driver->setVcom(0);
@@ -1092,7 +1094,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 #endif
 
     debugSettingsMenu->addMenuItem(MenuItem("Set WiFi Power", [this, display, debugSettingsMenu]() {
-        auto wifiPowerMenu = new MenuScreen(debugSettingsMenu->getMyStyle());
+        auto wifiPowerMenu =
+            new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle());
 
         auto powerToString = [](wifi_power_t power) -> std::string {
             switch (power) {

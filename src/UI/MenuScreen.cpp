@@ -8,6 +8,35 @@
 
 #define MAX_WIDTH 150
 
+auto MenuScreen::layout(LayoutContext &context, Size size) -> Size {
+
+    context.setSublayoutFrame(
+        {{0, 0}, size},
+        LayoutOptionsSizeToFit | LayoutOptionsAlignBottom | LayoutOptionsAlignCenter,
+        [this](LayoutContext &context, Size size) -> Size {
+            int x = 0;
+            int y = 0;
+            auto clockRect =
+                context.setViewFrame(clockView_, {{x, y}, size}, LayoutOptionsSizeToFit);
+            x += clockRect.size.width + 20;
+            auto iconRect = context.setViewFrame(
+                batteryIconView_, {{x, y}, {size.width, size.height}}, LayoutOptionsSizeToFit);
+            x += iconRect.size.width + 3;
+            auto textRect = context.setViewFrame(
+                batteryTextView_, {{x, y}, {size.width, size.height}}, LayoutOptionsSizeToFit);
+            x += textRect.size.width;
+            return {x, std::max(iconRect.size.height, textRect.size.height)};
+        });
+
+    return size;
+}
+
+void MenuScreen::drawInRect(Rect rect) {
+    batteryIconView_.draw();
+    batteryTextView_.draw();
+    clockView_.draw();
+}
+
 void MenuScreen::populateMenuItems(std::vector<MenuItem> &menuItems) {
     for (int i = currMenuPage_ * myStyle_.numberOfItemsPerPage;
          (i < (currMenuPage_ * myStyle_.numberOfItemsPerPage + myStyle_.numberOfItemsPerPage)) &&
@@ -68,9 +97,10 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
 
     int oldTextHeight = display.getTextHeight();
     display.setFont(display.style.getFontFamily().readableFont);
-    display.drawSingleLineOfText(extraTextBelowMenu_.c_str(), xOffsetForMenu + 10,
-                                 yOffsetForMenu + additionalYOffset +
-                                     (1 + myStyle_.numberOfItemsPerPage) * oldTextHeight + 20);
+    int extraTextWidth = display.getTextWidth(extraTextBelowMenu_.c_str());
+    display.drawSingleLineOfText(extraTextBelowMenu_.c_str(),
+                                 display.xAbsolute(display.xAbsoluteCenter() - extraTextWidth / 2),
+                                 display.yAbsolute(display.yAbsoluteMax() - 60));
 }
 
 void MenuScreen::drawArrowsAndSelections(DisplaySystem &display) {
@@ -111,18 +141,35 @@ void MenuScreen::render(DisplaySystem &display) {
     }
     log_i("Menuscreen render (selected = %s)", getCurrItem().title.c_str());
 
+    setNeedsLayout();
+
+    // For the main menu, we want to use the entire screen and ignore the user settings for reading
+    // box.
+    setFrame(
+        {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
+         {display.defaultScreenWidth - 2 * display.defaultXPadding,
+          display.defaultScreenHeight - 2 * display.defaultYPadding}});
+
     drawArrowsAndSelections(display);
 
     // On the first load, we want to only render the items in the menu because we are going
     // to do a partial refresh with the selector button at a lower/higher vcom to reduce
     // ghosting.
     if (firstLoad_) {
+
+        batteryTextView_.setText(battery_.getBatteryPercentageOnlyString());
+
+        SolClock &theClock = SolClock::getInstance();
+        clockView_.setText(theClock.getTimeString());
+
         drawMenuItems(display, false);
+        draw();
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
     }
 
     drawMenuItems(display, true);
     drawArrowsAndSelections(display);
+    draw();
     display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
 
     firstLoad_ = false;

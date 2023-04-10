@@ -9,7 +9,9 @@
 class PagedMenuScreen : public MenuScreen {
 
 public:
-    PagedMenuScreen() : MenuScreen(){};
+    PagedMenuScreen(Battery &battery, DisplaySystem &display, MenuStyleFamily myStyle,
+                    std::string menuName)
+        : MenuScreen(battery, display, myStyle, menuName){};
 
     auto nextSelection(bool skipLast = false) -> bool override;
     auto prevSelection(bool skipLast = false) -> bool override;

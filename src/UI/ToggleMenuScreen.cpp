@@ -163,8 +163,7 @@ void ToggleMenuScreen::render(DisplaySystem &display) {
     // In case this changes for whatever reason?
     headerTextView_.setText(menuName_);
 
-    // For the main menu, we want to use the entire screen and ignore the user settings for reading
-    // box.
+    // Take up the whole screen
     setFrame(
         {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
          {display.defaultScreenWidth - 2 * display.defaultXPadding,

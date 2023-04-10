@@ -14,14 +14,10 @@
 #include "UI/Layout/View.hpp"
 #include "UI/MenuScreen.hpp"
 #include "sindarin-debug.h"
-
-class MainMenuScreen : public MenuScreen, public EinkView {
+class MainMenuScreen : public MenuScreen {
 public:
     MainMenuScreen(Battery &battery, DisplaySystem &display, MenuStyleFamily myStyle)
-        : MenuScreen(myStyle), EinkView(display), batteryTextView_(display, ""),
-          topBarSelectionView_(display, 3),
-          batteryIconView_(display, boltBits, bolt_width, bolt_height), clockView_(display, ""),
-          battery_(battery){};
+        : MenuScreen(battery, display, myStyle), topBarSelectionView_(display, 3){};
     MainMenuScreen(MainMenuScreen const &) = delete;
 
     auto layout(LayoutContext &context, Size size) -> Size override;
@@ -41,14 +37,9 @@ protected:
     std::vector<std::shared_ptr<MenuItemView>> menuItemViews_;
     std::vector<std::shared_ptr<BoxView>> menuPageViews_;
     std::vector<std::shared_ptr<SingleLineTextView>> topBarViews_;
-    SingleLineTextView batteryTextView_;
     BoxView topBarSelectionView_;
-    IconView batteryIconView_;
-    SingleLineTextView clockView_;
 
     int currentSelection_ = 0;
-
-    Battery &battery_;
 };
 
 #endif // MAIN_MENU_SCREEN_H
