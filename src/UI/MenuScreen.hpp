@@ -28,8 +28,8 @@ class MenuScreen : public Screen, public Menu, public EinkView {
 public:
     MenuScreen(Battery &battery, DisplaySystem &display, MenuStyleFamily myStyle,
                std::string menuName = "Default", std::string upperLeftText = "Main Menu")
-        : Menu(myStyle, menuName), EinkView(display), upperLeftText_(std::move(upperLeftText)),
-          batteryTextView_(display, ""),
+        : Menu(myStyle, std::move(menuName)), EinkView(display),
+          upperLeftText_(std::move(upperLeftText)), batteryTextView_(display, ""),
           batteryIconView_(display, boltBits, bolt_width, bolt_height), clockView_(display, ""),
           battery_(battery), clockBatteryView_(battery, display),
           upperLeftTextView_(display, upperLeftText_), leftArrowView_(display) {
