@@ -323,15 +323,6 @@ public:
     PrefsItem<int> morningNewspaperTime;
     PrefsItem<int> eveningNewspaperTime;
     PrefsItem<int> solTimeZone;
-    PrefsItem<int> sleepReason;
-    PrefsItem<bool> showBooks;
-    PrefsItem<bool> showNews;
-    PrefsItem<bool> showArticles;
-    PrefsItem<bool> showBible;
-    PrefsItem<bool> deliverOnClose;
-    PrefsItem<bool> morningDelivery;
-    PrefsItem<bool> eveningDelivery;
-
     // Firmware that's been loaded to the other flash slot but not yet installed
     PrefsItem<std::string> firmwareLoaded;
     PrefsItem<int> sleepReason;

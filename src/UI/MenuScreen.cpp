@@ -85,7 +85,6 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
         }
     }
 
-    int oldTextHeight = display.getTextHeight();
     display.setFont(display.style.getFontFamily().readableFont);
     int extraTextWidth = display.getTextWidth(extraTextBelowMenu_.c_str());
     display.drawSingleLineOfText(extraTextBelowMenu_.c_str(),
