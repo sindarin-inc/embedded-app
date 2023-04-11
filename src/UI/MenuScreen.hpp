@@ -10,7 +10,6 @@
 #include "Misc/MenuStyle.hpp"
 #include "Misc/PowerManager.hpp"
 #include "Renderers/Renderer.hpp"
-#include "UI/Bitmaps/Battery_Bolt.hpp"
 #include "UI/Components/BoxView.hpp"
 #include "UI/Components/ClockBatteryView.hpp"
 #include "UI/Components/EinkView.hpp"
@@ -29,9 +28,7 @@ public:
     MenuScreen(Battery &battery, DisplaySystem &display, MenuStyleFamily myStyle,
                std::string menuName = "Default", std::string upperLeftText = "Main Menu")
         : Menu(myStyle, std::move(menuName)), EinkView(display),
-          upperLeftText_(std::move(upperLeftText)), batteryTextView_(display, ""),
-          batteryIconView_(display, boltBits, bolt_width, bolt_height), clockView_(display, ""),
-          battery_(battery), clockBatteryView_(battery, display),
+          upperLeftText_(std::move(upperLeftText)), clockBatteryView_(battery, display),
           upperLeftTextView_(display, upperLeftText_), leftArrowView_(display) {
         numMenuItems_ = 0;
     };
@@ -62,11 +59,6 @@ protected:
     std::string upperLeftText_ = "Main Menu";
 
     std::string extraTextBelowMenu_ = "";
-
-    SingleLineTextView batteryTextView_;
-    IconView batteryIconView_;
-    SingleLineTextView clockView_;
-    Battery &battery_;
 
     ClockBatteryView clockBatteryView_;
 

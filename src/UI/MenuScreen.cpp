@@ -114,12 +114,6 @@ void MenuScreen::render(DisplaySystem &display) {
     // to do a partial refresh with the selector button at a lower/higher vcom to reduce
     // ghosting.
     if (firstLoad_) {
-
-        batteryTextView_.setText(battery_.getBatteryPercentageOnlyString());
-
-        SolClock &theClock = SolClock::getInstance();
-        clockView_.setText(theClock.getTimeString());
-
         drawMenuItems(display, false);
         draw();
         display.updateDisplay(DisplaySystem::UpdateType::FULL);

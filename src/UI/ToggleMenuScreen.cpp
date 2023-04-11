@@ -3,7 +3,6 @@
 #include <utility>
 
 #include "Misc/MenuStyle.hpp"
-#include "Misc/SolClock.hpp"
 #include "Misc/Style.hpp"
 
 #define MAX_WIDTH 150
@@ -145,11 +144,6 @@ void ToggleMenuScreen::render(DisplaySystem &display) {
     // to do a partial refresh with the selector button at a lower/higher vcom to reduce
     // ghosting.
     if (firstLoad_) {
-        batteryTextView_.setText(battery_.getBatteryPercentageOnlyString());
-
-        SolClock &theClock = SolClock::getInstance();
-        clockView_.setText(theClock.getTimeString());
-
         // Populate the menu items with the correct menus for the current subMenu
         menuItemViews_.clear();
         menuPageViews_.clear();
