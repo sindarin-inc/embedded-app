@@ -28,8 +28,8 @@ class MenuScreen : public Screen, public Menu, public EinkView {
 public:
     MenuScreen(Battery &battery, DisplaySystem &display, MenuStyleFamily myStyle,
                std::string menuName = "Default", std::string upperLeftText = "Main Menu")
-        : Menu(myStyle), EinkView(display), upperLeftText_(std::move(upperLeftText)),
-          menuName_(std::move(menuName)), batteryTextView_(display, ""),
+        : Menu(myStyle, menuName), EinkView(display), upperLeftText_(std::move(upperLeftText)),
+          batteryTextView_(display, ""),
           batteryIconView_(display, boltBits, bolt_width, bolt_height), clockView_(display, ""),
           battery_(battery), clockBatteryView_(battery, display),
           upperLeftTextView_(display, upperLeftText_), leftArrowView_(display) {
@@ -54,10 +54,6 @@ public:
     void showTemporaryMessage(DisplaySystem &display, const std::string &message,
                               int duration = 2000, bool rerenderAfter = true);
 
-    void populateMenuItems(std::vector<MenuItem> &menuItems);
-
-    auto getMenuName() -> std::string { return menuName_; }
-
     auto getFirstLoad() -> bool { return firstLoad_; }
 
 protected:
@@ -66,8 +62,6 @@ protected:
     std::string upperLeftText_ = "Main Menu";
 
     std::string extraTextBelowMenu_ = "";
-
-    std::string menuName_ = "Default";
 
     SingleLineTextView batteryTextView_;
     IconView batteryIconView_;

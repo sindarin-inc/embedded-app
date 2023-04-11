@@ -11,9 +11,7 @@
 #include "Displays/DisplayEinkET013TT1.hpp"
 #endif
 
-void MainMenuScreen::addSubMenuScreen(MenuScreen *newSubScreen) {
-    subMenus_.push_back(newSubScreen);
-}
+void MainMenuScreen::addSubMenu(Menu *newSubMenu) { subMenus_.push_back(newSubMenu); }
 
 auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto inset = 3;
@@ -212,16 +210,28 @@ void MainMenuScreen::render(DisplaySystem &display) {
 void MainMenuScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::PREV:
+        if (subMenus_[currentSelection_]->prevSelection()) {
+            firstLoad_ = true;
+        } else {
+            firstLoad_ = false;
+        }
+        needsRerender = true;
+        break;
     case RemoteCommand::NEXT:
-        subMenus_[currentSelection_]->processCommand(command);
-        firstLoad_ = subMenus_[currentSelection_]->getFirstLoad();
+        if (subMenus_[currentSelection_]->nextSelection()) {
+            firstLoad_ = true;
+        } else {
+            firstLoad_ = false;
+        }
         needsRerender = true;
         break;
     // Long press down on the TT should count as enter since we don't have the
     // 5th button
     case RemoteCommand::ENTER:
     case RemoteCommand::STOP:
-        subMenus_[currentSelection_]->processCommand(command);
+        if (subMenus_[currentSelection_]->getCurrItem().callback != nullptr) {
+            subMenus_[currentSelection_]->getCurrItem().callback();
+        }
         break;
     case RemoteCommand::CHANNEL_PLUS:
         // This will switch between the menus

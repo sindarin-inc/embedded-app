@@ -26,14 +26,14 @@ public:
 
     void render(DisplaySystem &display) override;
 
-    void addSubMenuScreen(MenuScreen *newSubScreen);
+    void addSubMenu(Menu *newSubMenu);
 
     void setTabToLast() { currentSelection_ = subMenus_.size() - 1; }
 
 protected:
     void processCommand(RemoteCommand command) override;
 
-    std::vector<MenuScreen *> subMenus_;
+    std::vector<Menu *> subMenus_;
 
     std::vector<std::shared_ptr<MenuItemView>> menuItemViews_;
     std::vector<std::shared_ptr<BoxView>> menuPageViews_;

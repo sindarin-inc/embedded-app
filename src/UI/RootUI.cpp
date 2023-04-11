@@ -196,7 +196,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         prefs_.emcMode.remove();
     }
 
-    auto booksMenu = new MenuScreen(power_.battery, *display, mainMenu->getMyStyle(), "Books");
+    auto booksMenu = new Menu(mainMenu->getMyStyle(), "Books");
 
     // If there is firmware available, show the Update Firmware item in the books tab.
     auto makeReleaseNotesMenuItem = [this, &localStore, display, mainMenu]() {
@@ -261,22 +261,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                         }));
     }
 
-    booksMenu->backCallback = [this, mainMenu, booksMenu, display]() {
-        display->clearDisplay();
-        mainMenu->setFirstLoad();
-        setCurrentScreen(*mainMenu);
-        delete booksMenu;
-    };
-
     if (!prefs_.noBooks.get().value_or(false)) {
-        mainMenu->addSubMenuScreen(booksMenu);
+        mainMenu->addSubMenu(booksMenu);
     }
 
     SHOW_HEAP();
 
     log_i("Loading %zu Pocket articles", articles.size());
 
-    auto pocketMenu = new MenuScreen(power_.battery, *display, mainMenu->getMyStyle(), "Articles");
+    auto pocketMenu = new Menu(mainMenu->getMyStyle(), "Articles");
 
     if (prefs_.firmwareLoaded.get().has_value()) {
         pocketMenu->addMenuItem(makeReleaseNotesMenuItem());
@@ -323,19 +316,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }));
     }
 
-    pocketMenu->backCallback = [this, mainMenu, pocketMenu, display]() {
-        display->clearDisplay();
-        mainMenu->setFirstLoad();
-        setCurrentScreen(*mainMenu);
-        delete pocketMenu;
-    };
-
     if (!prefs_.noArticles.get().value_or(false)) {
-        mainMenu->addSubMenuScreen(pocketMenu);
+        mainMenu->addSubMenu(pocketMenu);
     }
 
     if (!prefs_.noBible.get().value_or(false) && (oldTestament || newTestament || psalmsProverbs)) {
-        auto bibleMenu = new MenuScreen(power_.battery, *display, mainMenu->getMyStyle(), "Bible");
+        auto bibleMenu = new Menu(mainMenu->getMyStyle(), "Bible");
 
         for (const Readable &r : readables) {
             bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
@@ -355,19 +341,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 }));
             }
         }
-
-        bibleMenu->backCallback = [this, mainMenu, bibleMenu, display]() {
-            display->clearDisplay();
-            mainMenu->setFirstLoad();
-            setCurrentScreen(*mainMenu);
-            delete bibleMenu;
-        };
-        mainMenu->addSubMenuScreen(bibleMenu);
+        mainMenu->addSubMenu(bibleMenu);
     }
 
-    auto settingsMenu =
-        new MenuScreen(power_.battery, *display, styleFamilies.settingsMenu, "Settings");
-    auto readingSettingsMenu = new MenuScreen(power_.battery, *display, styleFamilies.settingsMenu);
+    auto settingsMenu = new Menu(styleFamilies.settingsMenu, "Settings");
+    auto readingSettingsMenu =
+        new MenuScreen(power_.battery, *display, styleFamilies.settingsMenu, "Reading");
 
     readingSettingsMenu->backCallback = [this, mainMenu]() {
         this->display_->clearDisplay();
@@ -375,8 +354,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         setCurrentScreen(*mainMenu);
     };
 
-    auto contentSettingsMenu = new ToggleMenuScreen(power_.battery, *display_,
-                                                    styleFamilies.settingsMenu, "Content Settings");
+    auto contentSettingsMenu =
+        new ToggleMenuScreen(power_.battery, *display_, styleFamilies.settingsMenu, "Content");
 
     contentSettingsMenu->backCallback = [this, mainMenu, display, contentSettingsMenu]() {
         // Ideally we'd move this into the ToggleClass so it's not duplicated with
@@ -485,7 +464,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         contentSettingsMenu->setToggleLastItem(false);
     }
 
-    auto systemSettingsMenu = new MenuScreen(power_.battery, *display, styleFamilies.settingsMenu);
+    auto systemSettingsMenu =
+        new MenuScreen(power_.battery, *display, styleFamilies.settingsMenu, "System");
 
     systemSettingsMenu->backCallback = [this, mainMenu]() {
         this->display_->clearDisplay();
@@ -493,8 +473,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         setCurrentScreen(*mainMenu);
     };
 
-    auto experimentalSettingsMenu = new ToggleMenuScreen(
-        power_.battery, *display_, styleFamilies.settingsMenu, "Experimental Settings");
+    auto experimentalSettingsMenu =
+        new ToggleMenuScreen(power_.battery, *display_, styleFamilies.settingsMenu, "Experimental");
 
     experimentalSettingsMenu->backCallback = [this, display, mainMenu, experimentalSettingsMenu]() {
         if (experimentalSettingsMenu->getRequireRestart()) {
@@ -598,7 +578,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // Upload Voltage Log
     // Format FS
     // Power Off
-    auto debugSettingsMenu = new MenuScreen(power_.battery, *display, styleFamilies.settingsMenu);
+    auto debugSettingsMenu =
+        new MenuScreen(power_.battery, *display, styleFamilies.settingsMenu, "Debug");
 
     debugSettingsMenu->backCallback = [this, mainMenu]() {
         this->display_->clearDisplay();
@@ -1253,14 +1234,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
     }));
 
-    // Shouldn't matter anymore.
-    settingsMenu->backCallback = [this, mainMenu]() {
-        this->display_->clearDisplay();
-        mainMenu->setFirstLoad();
-        setCurrentScreen(*mainMenu);
-    };
-
-    mainMenu->addSubMenuScreen(settingsMenu);
+    mainMenu->addSubMenu(settingsMenu);
 
     bool inDemo = prefs_.demoMode.get().value_or(false);
 

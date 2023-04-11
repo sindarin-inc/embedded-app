@@ -27,15 +27,6 @@ void MenuScreen::drawInRect(Rect rect) {
     clockBatteryView_.draw();
 }
 
-void MenuScreen::populateMenuItems(std::vector<MenuItem> &menuItems) {
-    for (int i = currMenuPage_ * myStyle_.numberOfItemsPerPage;
-         (i < (currMenuPage_ * myStyle_.numberOfItemsPerPage + myStyle_.numberOfItemsPerPage)) &&
-         (i < numMenuItems_);
-         i++) {
-        menuItems.push_back(menuItems_[i]);
-    }
-}
-
 void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool withLastItem) {
     display.setFont(myStyle_.itemFont);
     int additionalYOffset = 0;
