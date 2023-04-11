@@ -162,7 +162,7 @@ public:
     auto getFont() -> Font *;
     void drawSingleLineOfText(const std::string &line, int x, int y);
     void drawSingleLineOfCenteredText(const std::string &line);
-    void getTextBounds(const char *buffer, uint16_t *w, uint16_t *h);
+    void getTextSize(const char *buffer, uint16_t *w, uint16_t *h);
     auto getTextHeight() -> int;
     auto getTextHeight(const char *buffer) -> int;
     auto getTextWidth(const char *buffer) -> int;

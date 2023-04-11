@@ -88,7 +88,6 @@ public:
     [[nodiscard]] inline auto getLigKernStep(uint16_t idx) const -> LigKernStep * {
         return &(*ligKernSteps_)[idx];
     }
-    inline auto setResolution(PixelResolution res) -> void { resolution_ = res; }
     [[nodiscard]] inline auto getResolution() const -> PixelResolution { return resolution_; }
 
     [[nodiscard]] inline auto getGlyphInfo(GlyphCode glyphCode) const -> const GlyphInfo & {
@@ -105,6 +104,8 @@ public:
         return (glyphCode < SPACE_CODE) ? (*glyphsInfo_)[glyphCode].ligKernPgmIndex
                                         : NO_LIG_KERN_PGM;
     }
+
+    inline auto setResolution(PixelResolution res) -> void { resolution_ = res; }
 
     /// @brief Search Ligature and Kerning table
     ///
@@ -230,21 +231,17 @@ public:
                      row++, ridx += K_BUFF_PITCH, ridx2 += pitch2) {
                     if constexpr (BLACK_ONE_BIT) {
                         if ((glyph2.bitmap.pixels[ridx2] & mask2) != 0) {
-                            if ((buff[ridx] & mask) != 0) {
-                                goto fin;
-                            } else if ((buff[ridx - K_BUFF_PITCH] & mask) != 0) {
-                                goto fin;
-                            } else if ((buff[ridx + K_BUFF_PITCH] & mask) != 0) {
+                            if (((buff[ridx] & mask) != 0) ||
+                                ((buff[ridx - K_BUFF_PITCH] & mask) != 0) ||
+                                ((buff[ridx + K_BUFF_PITCH] & mask) != 0)) {
                                 goto fin;
                             }
                         }
                     } else {
                         if ((glyph2.bitmap.pixels[ridx2] & mask2) == 0) {
-                            if ((buff[ridx] & mask) == 0) {
-                                goto fin;
-                            } else if ((buff[ridx - K_BUFF_PITCH] & mask) == 0) {
-                                goto fin;
-                            } else if ((buff[ridx + K_BUFF_PITCH] & mask) == 0) {
+                            if (((buff[ridx] & mask) == 0) ||
+                                ((buff[ridx - K_BUFF_PITCH] & mask) == 0) ||
+                                ((buff[ridx + K_BUFF_PITCH] & mask) == 0)) {
                                 goto fin;
                             }
                         }
@@ -317,7 +314,8 @@ public:
         }
 #endif
 
-        if ((glyphCode == SPACE_CODE) || ((*glyphsInfo_)[glyphCode].bitmapWidth == 0)) { // send as a space character
+        if ((glyphCode == SPACE_CODE) ||
+            ((*glyphsInfo_)[glyphCode].bitmapWidth == 0)) { // send as a space character
             appGlyph.metrics.lineHeight = faceHeader_->lineHeight;
             appGlyph.metrics.advance = (int16_t)faceHeader_->spaceSize << 6;
             appGlyph.pointSize = faceHeader_->pointSize;

@@ -65,12 +65,13 @@ public:
         // Probably not ideal, but for now it'll have to do.
         Font *oldFont = display_.getFont();
         display_.setFont(font_);
-        display_.getTextBounds(text_.c_str(), &w, &h);
+        display_.getTextSize(text_.c_str(), &w, &h);
 
         splitLines_ = splitMultiLine(display_, size.width, text_);
 
         int lineCount = std::min((size_t)maxLines_, splitLines_.size());
-        int height = lineCount * display_.getFont()->yAdvance() + (lineCount - 1) * spacingOffset_;
+        int height =
+            lineCount * display_.getFont()->lineHeight() + (lineCount - 1) * spacingOffset_;
 
         display_.setFont(oldFont);
         return {size.width, height};
@@ -101,7 +102,7 @@ public:
             // not ideal, but it works.
             display_.drawSingleLineOfText(
                 splitLines_[i], rect.origin.x,
-                rect.origin.y + i * (display_.getFont()->yAdvance() + spacingOffset_) - 1);
+                rect.origin.y + i * (display_.getFont()->lineHeight() + spacingOffset_) - 1);
         }
         display_.setFont(oldFont);
     }

@@ -32,7 +32,7 @@ public:
         // Probably not ideal, but for now it'll have to do.
         Font *oldFont = display_.getFont();
         display_.setFont(font_);
-        display_.getTextBounds(text_.c_str(), &w, &h);
+        display_.getTextSize(text_.c_str(), &w, &h);
 
         //
         // If we don't have the option to grow horizontally as much as we want,
@@ -48,11 +48,11 @@ public:
                 text_ = "too big!";
                 break;
             }
-            display_.getTextBounds(text_.c_str(), &w, &h);
+            display_.getTextSize(text_.c_str(), &w, &h);
         }
         display_.setFont(oldFont);
         Font *theFont = display_.getFont();
-        return {w, theFont->yAdvance()};
+        return {w, theFont->lineHeight()};
     }
 
     void drawInRect(Rect rect) override {

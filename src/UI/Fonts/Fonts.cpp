@@ -19,21 +19,22 @@
 
 IBMFFontLow test75 = IBMFFontLow();
 
-#define FONTS(name)                                                                                \
+#define FACES(name)                                                                                \
     IBMFFont fontTest75BPI9PT = IBMFFont(test75, name##_75_IBMF, name##_75_IBMF_LEN, 0);           \
     IBMFFont fontTest75BPI10PT = IBMFFont(test75, name##_75_IBMF, name##_75_IBMF_LEN, 1);          \
     IBMFFont fontTest75BPI12PT = IBMFFont(test75, name##_75_IBMF, name##_75_IBMF_LEN, 2);          \
     IBMFFont fontTest75BPI14PT = IBMFFont(test75, name##_75_IBMF, name##_75_IBMF_LEN, 3);
 
-// As the GNU Font possesses only one face, the four default faces are pointing to the same one.
-#define ONE_FONT(name)                                                                             \
+// As the GNU Font possesses only one face size, the four default faces are pointing to the same
+// one.
+#define ONE_FACE(name)                                                                             \
     IBMFFont fontTest75BPI9PT = IBMFFont(test75, name##_75_IBMF, name##_75_IBMF_LEN, 0);           \
     IBMFFont fontTest75BPI10PT = IBMFFont(test75, name##_75_IBMF, name##_75_IBMF_LEN, 0);          \
     IBMFFont fontTest75BPI12PT = IBMFFont(test75, name##_75_IBMF, name##_75_IBMF_LEN, 0);          \
     IBMFFont fontTest75BPI14PT = IBMFFont(test75, name##_75_IBMF, name##_75_IBMF_LEN, 0);
 
 #include "IBMFFonts/GnuUnifont_75.h"
-ONE_FONT(GNUUNIFONT)
+ONE_FACE(GNUUNIFONT)
 
 GFont FONT_LUCIDA_GRANDE5PT7B = GFont(LUCIDA_GRANDE5PT7B);
 GFont FONT_LUCIDA_GRANDE5PT7B_SKINNY = GFont(LUCIDA_GRANDE5PT7B_SKINNY);

@@ -119,7 +119,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     std::string bottomStr =
         std::string("Seek ") + std::string("(") + placeString + std::string(")");
 
-    display.getTextBounds(bottomStr.c_str(), &textWidth, &textHeight);
+    display.getTextSize(bottomStr.c_str(), &textWidth, &textHeight);
     display.drawSingleLineOfText(bottomStr, (screenWidth / 2) - (textWidth / 2),
                                  display.height() - yDirOffset - arrowWidth_ - arrowTextSpacing_ -
                                      narrowToCenter - textHeight);
@@ -139,7 +139,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
                      display.height() - yDirOffset - arrowWidth_ - narrowToCenter, display.fg);
 
     auto topStr = "Text";
-    display.getTextBounds(topStr, &textWidth, &textHeight);
+    display.getTextSize(topStr, &textWidth, &textHeight);
     display.drawSingleLineOfText(topStr, (screenWidth / 2) - (textWidth / 2),
                                  yDirOffset + arrowWidth_ + arrowTextSpacing_ + narrowToCenter);
 
@@ -151,7 +151,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
                      display.width() / 2 + arrowHeight_ / 2,
                      yDirOffset + arrowWidth_ + narrowToCenter, display.fg);
 
-    display.getTextBounds(leftButtonTitle_.c_str(), &textWidth, &textHeight);
+    display.getTextSize(leftButtonTitle_.c_str(), &textWidth, &textHeight);
     display.drawSingleLineOfText(leftButtonTitle_, arrowWidth_ + arrowTextSpacing_ + narrowToCenter,
                                  (screenHeight / 2) - textHeight / 2 - 1);
 
@@ -164,7 +164,7 @@ void PopupMenuScreen::render(DisplaySystem &display) {
                      screenHeight / 2 - arrowHeight_ / 2, display.fg);
 
     auto rightStr = "Dark Mode";
-    display.getTextBounds(rightStr, &textWidth, &textHeight);
+    display.getTextSize(rightStr, &textWidth, &textHeight);
     display.drawSingleLineOfText(
         rightStr, (display.width() - arrowWidth_ - arrowTextSpacing_ - textWidth - narrowToCenter),
         (screenHeight / 2) - textHeight / 2 - 2);

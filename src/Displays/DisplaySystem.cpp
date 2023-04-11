@@ -228,20 +228,20 @@ void DisplaySystem::drawSingleLineOfCenteredText(const std::string &line) {
         this->yAbsolute(this->yAbsoluteCenter() - this->getTextHeight() / 2));
 }
 
-void DisplaySystem::getTextBounds(const char *buffer, uint16_t *w, uint16_t *h) {
+void DisplaySystem::getTextSize(const char *buffer, uint16_t *w, uint16_t *h) {
     if (font_ != nullptr) {
         if (font_->isA(FontType::GFX)) {
             int16_t x, y;
             gfxClass_->getTextBounds(buffer, 0, 0, &x, &y, w, h);
         } else {
-            Dim dim = static_cast<IBMFFont *>(font_)->getTextBounds(buffer);
+            Dim dim = static_cast<IBMFFont *>(font_)->getTextSize(buffer);
             *w = dim.width;
             *h = dim.height;
         }
     }
 }
 
-auto DisplaySystem::getTextHeight() -> int { return font_->yAdvance() + lineSpacing_; }
+auto DisplaySystem::getTextHeight() -> int { return font_->lineHeight() + lineSpacing_; }
 
 auto DisplaySystem::getTextHeight(const char *buffer) -> int {
     uint16_t h = 0;

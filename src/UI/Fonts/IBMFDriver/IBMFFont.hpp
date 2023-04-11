@@ -91,16 +91,14 @@ public:
         return (face_ != nullptr) ? face_->getResolution() : DEFAULT_RESOLUTION;
     }
 
-    auto yAdvance() const -> int override {
+    [[nodiscard]] inline auto lineHeight() const -> int override {
         if constexpr (IBMF_TRACING) {
-            LOGD("yAdvance()");
+            LOGD("lineHeight()");
             if (!isInitialized()) {
                 LOGE("Not initialized!!!");
             }
         }
-        return isInitialized() ? ((int)face_->getLineHeight()) - face_->getDescenderHeight() -
-                                     (face_->getLineHeight() / 4)
-                               : 0;
+        return isInitialized() ? ((int)face_->getLineHeight()) : 0;
     }
 
     auto drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
@@ -143,9 +141,9 @@ public:
         }
     }
 
-    auto getTextBounds(const std::string &buffer) -> ibmf_defs::Dim {
+    auto getTextSize(const std::string &buffer) -> ibmf_defs::Dim {
         if constexpr (IBMF_TRACING) {
-            LOGD("getTextBounds()");
+            LOGD("getTextSize()");
         }
         ibmf_defs::Dim dim = ibmf_defs::Dim(0, 0);
         if (isInitialized()) {
