@@ -270,6 +270,11 @@ void PowerManager::checkUsb() {
 void PowerManager::reboot() { esp_restart(); }
 
 void PowerManager::ulpDeepSleep(SleepReason reason) {
+#if DISABLE_DEEP_SLEEP
+    log_w("Deep sleep disabled. Not sleeping.");
+    return;
+#endif
+
     battery.saveLastBatteryReport();
 
     // Really this probably only needs to be the screens and the filesystem that we shut down
