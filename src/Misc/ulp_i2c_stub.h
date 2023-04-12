@@ -1,5 +1,9 @@
 #pragma once
 
+// stub definitions for ulp_i2c.
+// this was needed because clang-tidy could not find the ulp_riscv_i2c.h file, only in IDF 5.1
+// this will be removed after IDF 5.1 release and clang-tidy is able to use it.
+
 #include <stdint.h>
 
 #include "esp_err.h"
