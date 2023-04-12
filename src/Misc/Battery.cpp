@@ -1,4 +1,4 @@
-#include "Power.hpp"
+#include "Battery.hpp"
 
 #include <algorithm>
 
@@ -10,9 +10,7 @@
 // Currently 1MB
 #define MAX_VOLTAGE_LOG_SIZE 1000000
 
-void Power::setup() {}
-
-void Power::loop() {
+void Battery::loop() {
     auto now = Millis();
 
     if (this->lastMeasurementTime_ == 0 ||
@@ -61,22 +59,9 @@ void Power::loop() {
 #endif
         this->lastMeasurementTime_ = now;
     }
-    if (USBConnected()) {
-        if (getBatteryPercentage() > 99) {
-            // If the battery is fully charged, turn the GREEN LED on.
-            DigitalWrite(GREEN_LED, LED_ON);
-            DigitalWrite(RED_LED, LED_OFF);
-        } else {
-            DigitalWrite(GREEN_LED, LED_OFF);
-            DigitalWrite(RED_LED, LED_ON);
-        }
-    } else {
-        DigitalWrite(GREEN_LED, LED_OFF);
-        DigitalWrite(RED_LED, LED_OFF);
-    }
 }
 
-auto Power::average(const std::array<float, BATTERY_MEASUREMENTS_COUNT> &array, int count)
+auto Battery::average(const std::array<float, BATTERY_MEASUREMENTS_COUNT> &array, int count)
     -> float {
     if (count == 0) {
         return 0;
@@ -88,17 +73,17 @@ auto Power::average(const std::array<float, BATTERY_MEASUREMENTS_COUNT> &array, 
     return sum / count;
 }
 
-auto Power::getLeftBatteryVoltage() -> float {
+auto Battery::getLeftBatteryVoltage() -> float {
     auto avg = this->average(this->leftMeasurements_, this->leftMeasurementCount_);
     return avg;
 }
 
-auto Power::getRightBatteryVoltage() -> float {
+auto Battery::getRightBatteryVoltage() -> float {
     auto avg = this->average(this->rightMeasurements_, this->rightMeasurementCount_);
     return avg;
 }
 
-auto Power::getBatteryLifeString() -> std::string {
+auto Battery::getBatteryLifeString() -> std::string {
     float voltageLevelLeft = this->getLeftBatteryVoltage();
     float batteryFractionLeft =
         (voltageLevelLeft - BATTERY_MIN_VOLTAGE) / (BATTERY_MAX_VOLTAGE - BATTERY_MIN_VOLTAGE);
@@ -114,13 +99,13 @@ auto Power::getBatteryLifeString() -> std::string {
     return batteryOutput;
 }
 
-auto Power::getBatteryPercentageOnlyString() -> std::string {
+auto Battery::getBatteryPercentageOnlyString() -> std::string {
     float batteryAverage = getBatteryPercentage();
     std::string averageOutput = StringFormat("%.0f%%", batteryAverage);
     return averageOutput;
 }
 
-auto Power::getBatteryPercentage() -> float {
+auto Battery::getBatteryPercentage() -> float {
     float voltageLevelLeft = this->getLeftBatteryVoltage();
     float batteryFractionLeft =
         (voltageLevelLeft - BATTERY_MIN_VOLTAGE) / (BATTERY_MAX_VOLTAGE - BATTERY_MIN_VOLTAGE);
@@ -132,13 +117,14 @@ auto Power::getBatteryPercentage() -> float {
     float batteryAverage = (batteryFractionLeft + batteryFractionRight) / 2.0 * 100;
 
     if ((int)batteryAverage == 0) {
-        batteryAverage = prefs_.lastBatteryReport.get().value_or(90.0);
+        batteryAverage =
+            PreferencesStore::lastBatteryReport == 0 ? 90 : PreferencesStore::lastBatteryReport;
     }
 
     return batteryAverage;
 }
 
-auto Power::getDepleted() -> bool {
+auto Battery::getDepleted() -> bool {
 #if SIMULATOR
     return false;
 #else
@@ -146,7 +132,7 @@ auto Power::getDepleted() -> bool {
 #endif
 }
 
-void Power::logVoltages(float lVoltage, float rVoltage) {
+void Battery::logVoltages(float lVoltage, float rVoltage) {
     // create log directory in filesystem if it doesn't exist
     if (!fileSystem_.createDir("/logs")) {
         log_e("could not create /logs directory");
@@ -164,7 +150,7 @@ void Power::logVoltages(float lVoltage, float rVoltage) {
     log_d("Left: %.2fV (%d readings)", lVoltage, this->leftMeasurementCount_);
     log_d("Right: %.2fV (%d readings)", rVoltage, this->rightMeasurementCount_);
 
-    std::string path = Power::voltageLogPath();
+    std::string path = Battery::voltageLogPath();
     SFile file = fileSystem_.open(path.c_str(), FILE_APPEND);
     if (file.size() < MAX_VOLTAGE_LOG_SIZE) {
         file.write((const uint8_t *)logString.c_str(), logString.length());
@@ -175,5 +161,12 @@ void Power::logVoltages(float lVoltage, float rVoltage) {
         log_e("Voltage log file is too large. Deleting.");
         file.close();
         fileSystem_.remove(path.c_str());
+    }
+}
+
+void Battery::saveLastBatteryReport() {
+    float batteryAverage = getBatteryPercentage();
+    if (batteryAverage > 0) {
+        PreferencesStore::lastBatteryReport = uint8_t(batteryAverage);
     }
 }

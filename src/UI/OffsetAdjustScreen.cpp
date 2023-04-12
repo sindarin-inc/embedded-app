@@ -6,9 +6,8 @@
 
 #define OFFSET_ADJUST_AMOUNT 5
 
-OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore &prefs,
-                                       Power &power)
-    : display_(display), renderer_(display), prefs_(prefs), power_(power) {
+OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore &prefs)
+    : display_(display), renderer_(display), prefs_(prefs) {
 
     std::string message;
     // This needs to be pretty big for smaller fonts

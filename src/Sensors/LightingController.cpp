@@ -1,5 +1,6 @@
 #include "LightingController.hpp"
 
+#include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
@@ -8,6 +9,14 @@
 #include "sindarin-debug.h"
 
 auto LightingController::checkSensorAvailable() -> bool {
+    // In case we're still operating from a software reset, attempt to disable the light sensor so
+    // we can start fresh
+    auto resetReason = esp_reset_reason();
+    if (resetReason == ESP_RST_SW || resetReason == ESP_RST_INT_WDT ||
+        resetReason == ESP_RST_TASK_WDT || resetReason == ESP_RST_WDT) {
+        lightSensor_.disable();
+    }
+
     auto partId = lightSensor_.readPartId();
     auto manufacturerId = lightSensor_.readManufacturerId();
     if (partId != 0xA0 || manufacturerId != 0x05) {
@@ -26,26 +35,32 @@ void LightingController::begin() {
     // code over there because the LEDC driver is configured globally and we'll probably also want
     // to configure the RGB LEDs with LEDC eventually
     lightSensor_.enable();
+    enabled_ = true;
 }
 
-void LightingController::disableLighting() {
+void LightingController::disableLighting(int fadeMs) {
+    if (!enabled_) {
+        return;
+    }
     lightsOut_ = true;
     lightSensor_.disable();
     currentDutyCycle_ = 0;
-    setCurrentDutyCycle(currentDutyCycle_, 200);
+    setCurrentDutyCycle(currentDutyCycle_, fadeMs);
+    enabled_ = false;
 }
 
-void LightingController::enableLighting() {
+void LightingController::enableLighting(int fadeMs) {
     if (!lightsOut_) {
         return;
     }
     lightsOut_ = false;
     if (overrideDutyCycle_ != -1) {
         currentDutyCycle_ = overrideDutyCycle_;
-        setCurrentDutyCycle(currentDutyCycle_, 200);
+        setCurrentDutyCycle(currentDutyCycle_, fadeMs);
         return;
     } else {
         lightSensor_.enable();
+        enabled_ = true;
     }
 }
 
@@ -81,30 +96,7 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
         // driver)
         return;
     }
-    if (channel1 == 0) {
-        // If it's zero, check that the data is actually valid and wait for valid data if needed
-        // Note(john): 0 is a valid value here, so we're possibly doing some extra work here when in
-        // total darkness, but the alternative is to _always_ do extra work so I think this is
-        // better
-        Ltr329als01StatusValue status;
-        auto startTime = Millis();
-        while (true) {
-            if (!lightSensor_.readStatus(status)) {
-                // Failed to read status, so just give up and return (will be logged from the
-                // Ltr329Als driver)
-                return;
-            }
-            if (status.alsDataStatus == 1 && status.alsDataValid == 0) {
-                break;
-            }
-            if (Millis() - startTime > timeoutMs) {
-                log_e("Light sensor timed out");
-                return;
-            }
-            vTaskDelay(10 * portTICK_PERIOD_MS);
-        };
-        lightSensor_.readData(channel1, channel0);
-    }
+
     // Clamp to a max value of 1000 to avoid the moving average getting too large
     movingAverage_.add(std::min(channel1, uint16_t(1000)));
     auto average = movingAverage_.average();

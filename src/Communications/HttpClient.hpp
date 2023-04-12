@@ -22,6 +22,7 @@ class HttpClient {
 public:
     HttpClient(const char *url, const char *contentType = "",
                esp_http_client_method_t method = HTTP_METHOD_GET);
+    HttpClient(const HttpClient &) = delete;
 
     ~HttpClient();
 

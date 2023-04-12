@@ -207,7 +207,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         prefs_.firstRead.set(true);
         ignoreNextPress_ = true;
         firstTimeRenderer_.renderPage(0);
-        renderIcons(display);
+        // renderIcons(display);
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         needsRerender = false;
         return;
@@ -228,7 +228,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         prefs_.firstAutopilotRead.set(true);
         ignoreNextPress_ = true;
         firstTimeRenderer_.renderPage(0);
-        renderIcons(display);
+        // renderIcons(display);
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         needsRerender = false;
         return;
@@ -288,7 +288,7 @@ void ReadableScreen::render(DisplaySystem &display) {
     // Show the home screen and gear icon on the first page you read as a reminder. Then drop them
     // after that.
     if (!shownIcons_) {
-        renderIcons(display);
+        // renderIcons(display);
         shownIcons_ = true;
     }
 

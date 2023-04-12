@@ -22,6 +22,7 @@ public:
         canvasWidth_ = EinkET013TT1_X_PIXELS;
         canvasHeight_ = EinkET013TT1_Y_PIXELS;
     };
+    DisplayEinkET013TT1(DisplayEinkET013TT1 const &) = delete;
 
     ~DisplayEinkET013TT1() = default;
 

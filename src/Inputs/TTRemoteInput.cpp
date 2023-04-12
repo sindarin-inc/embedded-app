@@ -6,8 +6,14 @@
 
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
+#include "Misc/SemVer.hpp"
 #include "TurnTouch.hpp"
 #include "sindarin-debug.h"
+
+#define CONNECTION_INTERVAL_MIN 40
+#define CONNECTION_INTERVAL_MAX 90
+#define CONNECTION_LATENCY 10
+#define CONNECTION_TIMEOUT 1000
 
 using namespace std::placeholders;
 
@@ -18,6 +24,10 @@ auto TTRemoteInput::connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &
         client_->setClientCallbacks(&clientCallbacks_);
     }
 
+    // Update connection parameters after establishing a connection
+    client_->setConnectionParams(CONNECTION_INTERVAL_MIN, CONNECTION_INTERVAL_MAX,
+                                 CONNECTION_LATENCY, CONNECTION_TIMEOUT);
+
     BLEAddress address = device->getAddress();
     log_d("Attempting to connect to TurnTouch at address: %s", address.toString().c_str());
 
@@ -25,7 +35,6 @@ auto TTRemoteInput::connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &
         log_e("Failed to connect to TurnTouch");
         return false;
     }
-
     // Obtain a reference to the service we are after in the remote BLE server.
     BLERemoteService *buttonService = client_->getService(TURNTOUCH_BUTTON_SVC_UUID);
     if (buttonService == nullptr) {
@@ -71,7 +80,7 @@ auto TTRemoteInput::connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &
         uint8_t battery = 0;
         if (batteryCharacteristic->canRead()) {
             battery = batteryCharacteristic->readValue<uint8_t>();
-            prefs_.lastPageTurnerBattery.set(battery);
+            PreferencesStore::lastPageTurnerBattery = battery;
             log_i("Page turner battery level: %d%%", battery);
         }
 
@@ -144,6 +153,26 @@ void TTRemoteInput::scanForDevice() {
     } else {
         log_d("Scanning for any available TurnTouch...");
     }
+
+    // PT build 0.2.0 and earlier only support active scanning, which is less power efficient
+    bool useActiveScan = false;
+    auto ptBuild = prefs_.lastPageTurnerBuild.get();
+    if (ptBuild.has_value()) {
+        std::string build = ptBuild.value();
+        // If `build` has a prefix of "DFU-", strip it off
+        if (build.find("DFU-") == 0) {
+            build = build.substr(4);
+        }
+        if (SemVerCompareVersions(build.c_str(), "0.2.99") == SemVerComparison::LessThan) {
+            log_i("Using active scan for PT build %s", build.c_str());
+            useActiveScan = true;
+        }
+    } else {
+        // If we haven't connected to a PT yet, cast a wider net to pickup both old and new builds
+        log_i("Using active scan for PT because we have yet to connect to one");
+        useActiveScan = true;
+    }
+
     BLEScan *scan = BLEDevice::getScan();
 
     scan->setAdvertisedDeviceCallbacks(&advertisedDeviceCallbacks_);
@@ -154,7 +183,9 @@ void TTRemoteInput::scanForDevice() {
     // scanWindow equal to the scanInterval in order to do continuous scanning.
     scan->setInterval(40);
     scan->setWindow(30);
-    scan->setActiveScan(true);
+    if (useActiveScan) {
+        scan->setActiveScan(true);
+    }
     scan->start((int)(RESCAN_INTERVAL_MS / 1000), nullptr, false);
 
     lastScanMs_ = Millis();

@@ -1,5 +1,6 @@
 #include "FirmwareDownload.hpp"
 
+#include <Update.h>
 #include <cstdio>
 #include <string>
 
@@ -10,7 +11,6 @@
 #include "Misc/Dispatch.hpp"
 #include "Misc/SemVer.hpp"
 #include "Misc/StringUtil.hpp"
-#include "Update.h"
 #include "Version.hpp"
 #include "sindarin-debug.h"
 
@@ -30,15 +30,19 @@ void FirmwareDownloader::downloadFirmware(
 
     auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this, progressCallback] {
-        // Skip calculating the readable shas and changed placemarks for now, the firmware info is
-        // sent either way
-        // TODO: we really need a way to get the latest firmware without calling /sync/all
-        FirmwareResponse response;
         auto httpCode = SindarinAPI::getInstance()->checkFirmware(&response);
         if (httpCode != 200) {
             log_e("Failed to get firmware (HTTP %d)", httpCode);
             progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
                                                    .message = "Failed to check for update"});
+            return;
+        }
+
+        if (skipInstall_ && prefs_.firmwareLoaded.get().value_or("0.0.0") ==
+                                response.latestGlassesFirmware.version) {
+            log_d("Firmware already downloaded and ready to install.");
+            progressCallback(
+                FirmwareDownloadState{.state = FirmwareDownloadState::State::AlreadyDownloaded});
             return;
         }
 
@@ -61,7 +65,7 @@ void FirmwareDownloader::downloadFirmware(
         std::string failMessage = "";
         auto success = DownloadFile(
             response.latestGlassesFirmware.url.c_str(),
-            [&response, &failMessage](int httpCode, int contentLength) -> bool {
+            [this, &failMessage](int httpCode, int contentLength) -> bool {
                 if (httpCode != 200) {
                     log_e("HTTP GET to %s failed, error: %d",
                           response.latestGlassesFirmware.url.c_str(), httpCode);
@@ -104,6 +108,12 @@ void FirmwareDownloader::downloadFirmware(
                     .state = FirmwareDownloadState::State::Failure, .message = failMessage});
             }
             Update.abort();
+            return;
+        }
+
+        if (skipInstall_) {
+            progressCallback(
+                FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloaded});
             return;
         }
 

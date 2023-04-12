@@ -10,6 +10,8 @@
 
 #if USE_TURN_TOUCH_REMOTE
 #include <NimBLEDevice.h>
+#elif SIMULATOR
+typedef uint64_t BLEAddress;
 #endif
 
 #define MAX_KEY_LENGTH 15
@@ -22,11 +24,84 @@ enum FONT_CHOICES {
     PREFS_TAHOMA_LARGE = 4,
 };
 
-enum SLEEP_REASON {
-    SLEEP_REASON_NONE = 0,
-    SLEEP_REASON_INACTIVITY = 1,
-    SLEEP_REASON_TEMPLES_CLOSED = 2,
+enum class SyncReason {
+    Manual = 0,
+    OnInactivity = 1,
+    OnClose = 2,
+    Periodic = 3,
 };
+
+template <typename T>
+auto GetFromStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t {
+    static_assert(
+        std::disjunction_v<std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int32_t>,
+                           std::is_same<T, uint32_t>, std::is_same<T, uint64_t>,
+                           std::is_same<T, std::string>, std::is_same<T, BLEAddress>>,
+        "Unsupported type for NVS storage");
+    esp_err_t err;
+    if constexpr (std::is_same_v<T, bool>) {
+        err = nvs_get_u8(nvsHandle, key, (uint8_t *)&value);
+    } else if constexpr (std::is_same_v<T, int> || std::is_same_v<T, int32_t>) {
+        err = nvs_get_i32(nvsHandle, key, (int32_t *)&value);
+    } else if constexpr (std::is_same_v<T, uint32_t>) {
+        err = nvs_get_u32(nvsHandle, key, &value);
+    } else if constexpr (std::is_same_v<T, uint64_t> || std::is_same_v<T, BLEAddress>) {
+        err = nvs_get_u64(nvsHandle, key, (uint64_t *)&value);
+    } else if constexpr (std::is_same_v<T, std::string>) {
+        size_t len = 0;
+        // NVS strings can be up to 4000 bytes long, so we need to get the length first
+        err = nvs_get_str(nvsHandle, key, nullptr, &len);
+        if (err == ESP_OK) {
+            // Create a blank string of the correct length
+            value.resize(len);
+
+            // Now that we have the len write to a std::string
+            err = nvs_get_str(nvsHandle, key, value.data(), &len);
+            if (err == ESP_OK) {
+                // nvs_get_str's len includes the null terminator (it is a buffer length)
+                // We need to strip back off the null terminator since it was copied into the
+                // string.
+                value.resize(len - 1);
+            }
+        }
+    } else {
+        // Should never happen because of the static_assert
+        log_e("Unhandled prefs type");
+        assert(0);
+    }
+    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
+        log_e("nvs_get_* fail: %s %s", key, esp_err_to_name(err));
+    }
+    return err;
+}
+
+template <typename T>
+auto WriteToStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t {
+    static_assert(
+        std::disjunction_v<std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int32_t>,
+                           std::is_same<T, uint32_t>, std::is_same<T, uint64_t>,
+                           std::is_same<T, std::string>, std::is_same<T, BLEAddress>>,
+        "Unsupported type for NVS storage");
+    esp_err_t err;
+    if constexpr (std::is_same_v<T, bool>) {
+        err = nvs_set_u8(nvsHandle, key, value);
+    } else if constexpr (std::is_same_v<T, int> || std::is_same_v<T, int32_t>) {
+        err = nvs_set_i32(nvsHandle, key, value);
+    } else if constexpr (std::is_same_v<T, uint32_t>) {
+        err = nvs_set_u32(nvsHandle, key, value);
+    } else if constexpr (std::is_same_v<T, uint64_t> || std::is_same_v<T, BLEAddress>) {
+        err = nvs_set_u64(nvsHandle, key, value);
+    } else if constexpr (std::is_same_v<T, std::string>) {
+        err = nvs_set_str(nvsHandle, key, value.c_str());
+    } else {
+        log_e("Unhandled prefs type for key %s", key);
+        assert(0);
+    }
+    if (err != ESP_OK) {
+        log_e("nvs_set_* fail: %s %s", key, esp_err_to_name(err));
+    }
+    return err;
+}
 
 class PreferencesStore {
 public:
@@ -36,20 +111,10 @@ public:
         PrefsItemBase(PreferencesStore &prefs) : prefs(prefs) {}
 
         void writeToStorage(const char *key, T value) {
-            if constexpr (std::is_same_v<T, int> || std::is_same_v<T, bool> ||
-                          std::is_same_v<T, uint32_t>) {
-                esp_err_t err = nvs_set_i32(prefs.nvsHandle, key, value);
-                if (err != ESP_OK) {
-                    log_e("nvs_set_i32 fail: %s %s", key, esp_err_to_name(err));
-                }
-            } else if constexpr (std::is_same_v<T, std::string>) {
-                esp_err_t err = nvs_set_str(prefs.nvsHandle, key, value.c_str());
-                if (err != ESP_OK) {
-                    log_e("nvs_set_str fail: %s %s", key, esp_err_to_name(err));
-                }
-            } else {
-                log_e("Unhandled prefs type for key %s", key);
-                assert(0);
+            esp_err_t err = WriteToStorage(prefs.nvsHandle, key, value);
+            if (err != ESP_OK) {
+                log_e("nvs_set_* fail: %s %s", key, esp_err_to_name(err));
+                return;
             }
             prefs.commit();
         }
@@ -77,39 +142,10 @@ public:
         }
 
         virtual void loadValue() {
-            if constexpr (std::is_same_v<T, int> || std::is_same_v<T, bool> ||
-                          std::is_same_v<T, uint32_t>) {
-                int32_t value;
-                esp_err_t err = nvs_get_i32(this->prefs.nvsHandle, this->key_, &value);
-                if (err == ESP_OK) {
-                    this->value_ = value;
-                }
-            } else if constexpr (std::is_same_v<T, std::string>) {
-                size_t len = 0;
-                // NVS strings can be up to 4000 bytes long, so we need to get the length first
-                esp_err_t err = nvs_get_str(this->prefs.nvsHandle, this->key_, nullptr, &len);
-                if (err != ESP_OK) {
-                    return;
-                }
-
-                // Create a blank string of the correct length
-                std::string str;
-                str.resize(len);
-
-                // Now that we have the len write to a std::string
-                err = nvs_get_str(this->prefs.nvsHandle, this->key_, str.data(), &len);
-                if (err != ESP_OK) {
-                    log_e("nvs_get_str fail: %s %s", this->key_, esp_err_to_name(err));
-                    return;
-                }
-                // nvs_get_str's len includes the null terminator (it is a buffer length)
-                // We need to strip back off the null terminator since it was copied into the
-                // string.
-                str.resize(len - 1);
-                this->value_ = str;
-            } else {
-                log_e("Unhandled prefs type");
-                assert(0);
+            T value;
+            esp_err_t err = GetFromStorage(this->prefs.nvsHandle, this->key_, value);
+            if (err == ESP_OK) {
+                this->value_ = value;
             }
         }
 
@@ -137,33 +173,6 @@ public:
         char key_[MAX_KEY_LENGTH + 1];
     };
 
-#if USE_TURN_TOUCH_REMOTE
-    class BLEAddressPrefsItem : public PrefsItem<BLEAddress> {
-    public:
-        BLEAddressPrefsItem(PreferencesStore &prefs, const char *key) : PrefsItem(prefs, key){};
-
-        void loadValue() override {
-
-            uint64_t addressValue;
-            esp_err_t err = nvs_get_u64(prefs.nvsHandle, this->key_, &addressValue);
-            if (err != ESP_OK) {
-                // Fail silently if the key doesn't exist
-                return;
-            }
-            this->value_ = BLEAddress(addressValue);
-        }
-
-        void set(BLEAddress address) override {
-            esp_err_t err = nvs_set_u64(prefs.nvsHandle, this->key_, uint64_t(address));
-            if (err != ESP_OK) {
-                log_e("nvs_set_i64 fail: %s %s", this->key_, esp_err_to_name(err));
-            }
-            prefs.commit();
-            this->value_ = address;
-        }
-    };
-#endif
-
     template <typename T>
     class KeyedPrefsItem : PrefsItemBase<T> {
     public:
@@ -180,16 +189,16 @@ public:
         auto get(const char *prefix) -> T {
             char key[MAX_KEY_LENGTH + 1];
             this->makeKey(key, prefix);
-            if constexpr (std::is_same_v<T, int> || std::is_same_v<T, bool> ||
-                          std::is_same_v<T, uint32_t>) {
-                int32_t value = 0;
-                nvs_get_i32(this->prefs.nvsHandle, key, &value);
-                // Fail silently if the key doesn't exist
-                return value;
-            } else {
-                log_e("Unhandled prefs type for key %s", key);
-                assert(0);
+            T value;
+            esp_err_t err = GetFromStorage(this->prefs.nvsHandle, key, value);
+            if (err != ESP_OK) {
+                // Ignore not found errors
+                if (err != ESP_ERR_NVS_NOT_FOUND) {
+                    log_e("nvs_get_* fail: %s %s", key, esp_err_to_name(err));
+                }
+                value = T();
             }
+            return value;
         }
 
         void set(const char *prefix, T value) {
@@ -215,19 +224,18 @@ public:
 #endif
           cloudToken(*this, "cloud-token"), lastReadableId(*this, "rui-readable"),
           lastPageTurnerBuild(*this, "pt-build"), lastArticlesSince(*this, "articles-since"),
-          lastReadablesSince(*this, "readables-since"), readablePlace(*this, "-p"),
+          lastBooksSince(*this, "readables-since"), readablePlace(*this, "-p"),
           readablePlaceChanged(*this, "-pc"), readableArchivedChanged(*this, "-ar"),
-          readableBookmarksChanged(*this, "-bm"), lastPageTurnerBattery(*this, "pt-battery"),
-          invertSetting(*this, "invert"), vcom(*this, "vcom"), font(*this, "font"),
-          rectX(*this, "rectX"), rectY(*this, "rectY"), rectW(*this, "rectW"),
-          rectH(*this, "rectH"), lineSpacing(*this, "line-space"), demoMode(*this, "demo"),
-          wordCount(*this, "word-count"), totalReadingTimeSeconds(*this, "tot-rd-time"),
-          bootCount(*this, "boot-count"), firstRead(*this, "first-read"),
-          autoPilotSpeed(*this, "auto-speed"), firstAutopilotRead(*this, "fst-auto-rd"),
-          cesMode(*this, "ces"), emcMode(*this, "emc"), lastBatteryReport(*this, "last-batt"),
+          readableBookmarksChanged(*this, "-bm"), invertSetting(*this, "invert"),
+          vcom(*this, "vcom"), font(*this, "font"), rectX(*this, "rectX"), rectY(*this, "rectY"),
+          rectW(*this, "rectW"), rectH(*this, "rectH"), lineSpacing(*this, "line-space"),
+          demoMode(*this, "demo"), wordCount(*this, "word-count"),
+          totalReadingTimeSeconds(*this, "tot-rd-time"), bootCount(*this, "boot-count"),
+          firstRead(*this, "first-read"), autoPilotSpeed(*this, "auto-speed"),
+          firstAutopilotRead(*this, "fst-auto-rd"), cesMode(*this, "ces"), emcMode(*this, "emc"),
           wifiPower(*this, "wifi-power"), morningNewspaperTime(*this, "morning-news"),
           eveningNewspaperTime(*this, "evening-news"), solTimeZone(*this, "time-zone"),
-          sleepReason(*this, "sleep-reason"){};
+          firmwareLoaded(*this, "fw-loaded"){};
     PreferencesStore(PreferencesStore &) = delete;
 
     auto begin() -> bool {
@@ -241,6 +249,19 @@ public:
         }
         started_ = true;
         return true;
+    }
+
+    auto end() -> esp_err_t {
+        if (!started_) {
+            return ESP_OK;
+        }
+        esp_err_t err = nvs_commit(nvsHandle);
+        if (err) {
+            log_e("nvs_commit on close failed: %s", esp_err_to_name(err));
+        }
+        nvs_close(nvsHandle);
+        started_ = false;
+        return err;
     }
 
     void clear() {
@@ -263,18 +284,17 @@ public:
     uint32_t nvsHandle;
 
 #if USE_TURN_TOUCH_REMOTE
-    BLEAddressPrefsItem pairedTurnTouchAddress;
+    PrefsItem<BLEAddress> pairedTurnTouchAddress;
 #endif
     PrefsItem<std::string> cloudToken;
     PrefsItem<std::string> lastReadableId;
     PrefsItem<std::string> lastPageTurnerBuild;
     PrefsItem<std::string> lastArticlesSince;
-    PrefsItem<std::string> lastReadablesSince;
+    PrefsItem<std::string> lastBooksSince;
     KeyedPrefsItem<uint32_t> readablePlace;
     KeyedPrefsItem<bool> readablePlaceChanged;
     KeyedPrefsItem<bool> readableArchivedChanged;
     KeyedPrefsItem<bool> readableBookmarksChanged;
-    PrefsItem<int> lastPageTurnerBattery;
     PrefsItem<bool> invertSetting;
     PrefsItem<int> vcom;
     PrefsItem<int> font;
@@ -292,12 +312,19 @@ public:
     PrefsItem<bool> firstAutopilotRead;
     PrefsItem<bool> cesMode;
     PrefsItem<bool> emcMode;
-    PrefsItem<int> lastBatteryReport;
     PrefsItem<int> wifiPower;
     PrefsItem<int> morningNewspaperTime;
     PrefsItem<int> eveningNewspaperTime;
     PrefsItem<int> solTimeZone;
-    PrefsItem<int> sleepReason;
+    // Firmware that's been loaded to the other flash slot but not yet installed
+    PrefsItem<std::string> firmwareLoaded;
+
+    // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
+    // reset on power cycles
+    static SyncReason syncReason;
+    static uint64_t nextSyncTime;
+    static uint8_t lastBatteryReport;
+    static uint8_t lastPageTurnerBattery;
 
 protected:
     bool started_;

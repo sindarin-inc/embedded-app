@@ -16,6 +16,8 @@ struct FirmwareDownloadState {
         ConnectingWifi,
         CheckingForLatest,
         Downloading,
+        AlreadyDownloaded,
+        Downloaded,
         Installing,
         Installed,
         Failure,
@@ -32,12 +34,15 @@ struct FirmwareDownloadState {
 
 class FirmwareDownloader {
 public:
-    FirmwareDownloader(PreferencesStore &prefs) : prefs_(prefs){};
+    FirmwareDownloader(PreferencesStore &prefs, bool skipInstall = false)
+        : prefs_(prefs), skipInstall_(skipInstall){};
 
     void downloadFirmware(const std::function<void(FirmwareDownloadState state)> &progressCallback);
 
     std::string versionString;
+    FirmwareResponse response;
 
 protected:
     PreferencesStore &prefs_;
+    bool skipInstall_;
 };

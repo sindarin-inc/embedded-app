@@ -13,7 +13,7 @@ git submodule update --init --recursive
 The primary way to build the firmware itself is with Espressif's official esp-idf toolchain. We use a [fork of esp-idf](http://github.com/sindarin-inc/esp-idf) that has some patches included. In some other directory (not in this repo), run:
 
 ```sh
-git clone -b sindarin/v5.0.1 --recursive git@github.com:sindarin-inc/esp-idf.git
+git clone -b sindarin/idf5-51772f4fb5 --recursive git@github.com:sindarin-inc/esp-idf.git
 cd esp-idf
 ./install.sh esp32s3
 ```
@@ -31,6 +31,14 @@ idf.py build flash monitor
 This will build the latest firmware, flash it to the device, and open a serial monitor. You can also use `idf.py menuconfig` to configure the build if you need to change build options.
 
 See also the official [esp-idf installation instructions](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/get-started/index.html) for more details
+
+## `idf.py monitor` but without resetting
+
+By defualt `idf.py monitor` will reboot the MCU as soon as it connects so that you can get logs from the very start of execution. If you want to connect to the MCU without rebooting it, you can use `idf.py monitor --no-reset -p [port]`. Here's a handy command to connect to the first device named `/dev/cu.usbmodem*`.
+
+```sh
+idf.py monitor --no-reset -p $(ls /dev/cu.usbmodem* 2> /dev/null | head -n 1)
+```
 
 ## Install recommended tools
 

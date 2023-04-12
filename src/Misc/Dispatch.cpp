@@ -54,6 +54,13 @@ DispatchQueue::DispatchQueue(std::string name, size_t threadCnt, size_t threadSt
 }
 
 DispatchQueue::~DispatchQueue() {
+    beginShutdown();
+    waitForShutdown();
+    // Cleanup event flags and mutex
+    vEventGroupDelete(notifyFlags_);
+}
+
+void DispatchQueue::beginShutdown() {
     // Signal to dispatch threads that it's time to wrap up
     quit_ = true;
 
@@ -62,33 +69,58 @@ DispatchQueue::~DispatchQueue() {
         // Queue one quit signal for each thread
         auto quit = new WorkItem{.op = nullptr, .quit = true};
         xQueueSend(q_, (void *)&quit, portMAX_DELAY);
-
-        // Wait until a thread signals exit. Timeout is acceptable.
-        xEventGroupWaitBits(notifyFlags_, DISPATCH_EXIT_EVT, pdTRUE, pdFALSE, 10);
     }
+}
 
-    // Cleanup event flags and mutex
-    vEventGroupDelete(notifyFlags_);
+void DispatchQueue::waitForShutdown(int timeoutMs) {
+    // Wait until a thread signals exit. Timeout is acceptable.
+    auto bits = xEventGroupWaitBits(notifyFlags_, DISPATCH_EXIT_EVT, pdTRUE, pdFALSE,
+                                    pdMS_TO_TICKS(timeoutMs));
+    // Determine if we timed out by checking if DISPATCH_EXIT_EVT was not set
+    if (!(bits & DISPATCH_EXIT_EVT)) {
+        log_w("Dispatch thread %s timed out on exit!", name_.c_str());
+        // TODO: kill the threads?
+        // for (int i = 0; i < threads_.size(); i++) {
+        //     vTaskDelete(threads_[i].thread);
+        // }
+    }
 }
 
 void DispatchQueue::dispatch(const fp_t &op) {
-    auto work = new WorkItem{.op = op, .quit = false};
-    xQueueSend(q_, (void *)&work, portMAX_DELAY);
+    if (!quit_) {
+        auto work = new WorkItem{.op = op, .quit = false};
+        xQueueSend(q_, (void *)&work, portMAX_DELAY);
+    }
 }
 
 void DispatchQueue::dispatch(fp_t &&op) {
-    auto work = new WorkItem{.op = std::move(op), .quit = false};
-    xQueueSend(q_, (void *)&work, portMAX_DELAY);
+    if (!quit_) {
+        auto work = new WorkItem{.op = std::move(op), .quit = false};
+        xQueueSend(q_, (void *)&work, portMAX_DELAY);
+    }
 }
 
 void DispatchQueue::dispatchFromISR(const fp_t &op) {
-    auto work = new WorkItem{.op = op, .quit = false};
-    xQueueSendFromISR(q_, (void *)&work, NULL);
+    if (!quit_) {
+        auto work = new WorkItem{.op = op, .quit = false};
+        xQueueSendFromISR(q_, (void *)&work, NULL);
+    }
 }
 
 void DispatchQueue::dispatchFromISR(fp_t &&op) {
-    auto work = new WorkItem{.op = std::move(op), .quit = false};
-    xQueueSendFromISR(q_, (void *)&work, NULL);
+    if (!quit_) {
+        auto work = new WorkItem{.op = std::move(op), .quit = false};
+        xQueueSendFromISR(q_, (void *)&work, NULL);
+    }
+}
+
+auto DispatchQueue::isInQueue() -> bool {
+    for (auto &thread : threads_) {
+        if (xTaskGetCurrentTaskHandle() == thread.thread) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void DispatchQueue::dispatchThreadHandler() {
@@ -104,8 +136,9 @@ void DispatchQueue::dispatchThreadHandler() {
     } while (!quit_);
 
     // Set a signal to indicate a thread exited
-    auto status = xEventGroupSetBits(notifyFlags_, DISPATCH_EXIT_EVT);
-    assert(status == pdTRUE && "Failed to set event flags!");
+    xEventGroupSetBits(notifyFlags_, DISPATCH_EXIT_EVT);
+
+    log_d("Dispatch thread %s exiting...", name_.c_str());
 
     // Delete the current thread
     vTaskDelete(nullptr);
@@ -115,22 +148,22 @@ static DispatchQueue *core0BackgroundQueue = nullptr;
 static DispatchQueue *core1BackgroundQueue = nullptr;
 static DispatchQueue *uiQueue = nullptr;
 
-auto DispatchGetCore0BackgroundQueue() -> DispatchQueue * {
-    if (core0BackgroundQueue == nullptr) {
+auto DispatchGetCore0BackgroundQueue(bool create) -> DispatchQueue * {
+    if (core0BackgroundQueue == nullptr && create) {
         core0BackgroundQueue = new DispatchQueue("Core0BG", 1, 10000, 0, 0);
     }
     return core0BackgroundQueue;
 }
 
-auto DispatchGetCore1BackgroundQueue() -> DispatchQueue * {
-    if (core1BackgroundQueue == nullptr) {
+auto DispatchGetCore1BackgroundQueue(bool create) -> DispatchQueue * {
+    if (core1BackgroundQueue == nullptr && create) {
         core1BackgroundQueue = new DispatchQueue("Core1BG", 1, 10000, 0, 1);
     }
     return core1BackgroundQueue;
 }
 
-auto DispatchGetUiQueue() -> DispatchQueue * {
-    if (uiQueue == nullptr) {
+auto DispatchGetUiQueue(bool create) -> DispatchQueue * {
+    if (uiQueue == nullptr && create) {
         uiQueue = new DispatchQueue("UI", 1, 10000, 10, 1);
     }
     return uiQueue;

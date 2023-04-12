@@ -127,19 +127,19 @@ void BLEImprov::loop() {
         this->setState(STATE_SCANNING);
 
         // TODO: Make this send APs in real time to the app
-        int err =
-            WiFi::getInstance().scanNetworks([this](wifi_ap_record_t *apRecords, int recordCount) {
+        int err = WiFi::getInstance().scanNetworks(
+            [this](const std::shared_ptr<wifi_ap_record_t[]> &apRecords, int recordCount) {
                 log_d("Wifi scanning complete: %d APs found.", recordCount);
 
                 // Sort records in appRecords by rssi
-                std::sort(apRecords, apRecords + recordCount,
+                std::sort(apRecords.get(), apRecords.get() + recordCount,
                           [](const wifi_ap_record_t &a, const wifi_ap_record_t &b) {
                               return a.rssi > b.rssi;
                           });
 
                 std::vector<std::string> ssidList;
                 for (int i = 0; i < recordCount; i++) {
-                    auto record = apRecords[i];
+                    auto record = apRecords.get()[i];
 
                     std::string ssid = std::string(reinterpret_cast<const char *>(record.ssid));
                     std::string rssi = std::to_string(record.rssi);

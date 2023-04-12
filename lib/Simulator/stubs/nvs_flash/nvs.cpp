@@ -1,9 +1,9 @@
 #include "nvs.h"
 
+#include <cstring>
 #include <inicpp.h>
 #include <optional>
 #include <string>
-#include <cstring>
 
 #include "sindarin-debug.h"
 
@@ -40,19 +40,39 @@ esp_err_t nvs_open(const char *name, nvs_open_mode_t open_mode, nvs_handle_t *ou
     return ESP_OK;
 }
 
+esp_err_t nvs_set_u8(nvs_handle_t handle, const char *key, uint8_t value) {
+    IniFile[PrefsKey][key] = value;
+    return ESP_OK;
+}
+
 esp_err_t nvs_set_i32(nvs_handle_t handle, const char *key, int32_t value) {
     IniFile[PrefsKey][key] = value;
     return ESP_OK;
 }
 
-// esp_err_t nvs_set_u64(nvs_handle_t handle, const char *key, uint64_t value) {
-//     IniFile[PrefsKey][key] = value;
-//     return ESP_OK;
-// }
+esp_err_t nvs_set_u32(nvs_handle_t handle, const char *key, uint32_t value) {
+    IniFile[PrefsKey][key] = value;
+    return ESP_OK;
+}
+
+esp_err_t nvs_set_u64(nvs_handle_t handle, const char *key, uint64_t value) {
+    IniFile[PrefsKey][key] = value;
+    return ESP_OK;
+}
 
 esp_err_t nvs_set_str(nvs_handle_t handle, const char *key, const char *value) {
     IniFile[PrefsKey][key] = value;
     return ESP_OK;
+}
+
+esp_err_t nvs_get_u8(nvs_handle_t handle, const char *key, uint8_t *out_value) {
+    auto opt = IniFile[PrefsKey][key].as<std::optional<uint8_t>>();
+    if (opt.has_value()) {
+        *out_value = opt.value();
+        return ESP_OK;
+    } else {
+        return (esp_err_t)ESP_ERR_NVS_NOT_FOUND;
+    }
 }
 
 esp_err_t nvs_get_i32(nvs_handle_t handle, const char *key, int32_t *out_value) {
@@ -65,13 +85,25 @@ esp_err_t nvs_get_i32(nvs_handle_t handle, const char *key, int32_t *out_value) 
     }
 }
 
-// esp_err_t nvs_get_u64(nvs_handle_t handle, const char *key, uint64_t *out_value) {
-//     if (!IniFile[PrefsKey].has(key)) {
-//         return ESP_ERR_NVS_NOT_FOUND;
-//     }
-//     return IniFile[PrefsKey][key].as<uint64_t>();
-//     return ESP_OK;
-// }
+esp_err_t nvs_get_u32(nvs_handle_t handle, const char *key, uint32_t *out_value) {
+    auto opt = IniFile[PrefsKey][key].as<std::optional<uint32_t>>();
+    if (opt.has_value()) {
+        *out_value = opt.value();
+        return ESP_OK;
+    } else {
+        return (esp_err_t)ESP_ERR_NVS_NOT_FOUND;
+    }
+}
+
+esp_err_t nvs_get_u64(nvs_handle_t handle, const char *key, uint64_t *out_value) {
+    auto opt = IniFile[PrefsKey][key].as<std::optional<uint64_t>>();
+    if (opt.has_value()) {
+        *out_value = opt.value();
+        return ESP_OK;
+    } else {
+        return (esp_err_t)ESP_ERR_NVS_NOT_FOUND;
+    }
+}
 
 // NOTE: nvs_get_str's returned length includes the null terminator (it is a buffer length)
 esp_err_t nvs_get_str(nvs_handle_t handle, const char *key, char *out_value, size_t *length) {
@@ -102,3 +134,5 @@ esp_err_t nvs_commit(nvs_handle_t handle) {
     IniFile.save(SimprefsIni);
     return ESP_OK;
 }
+
+void nvs_close(nvs_handle_t handle) { return; }

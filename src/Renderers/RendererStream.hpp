@@ -9,6 +9,7 @@
 #include <string>
 #include <utility>
 
+#include "Misc/SpiramAllocator.hpp"
 #include "sindarin-debug.h"
 
 class RendererStream {
@@ -56,21 +57,27 @@ protected:
 
 class StdStringStream : public RendererStream {
 public:
-    StdStringStream(std::stringstream &stream) : stream_(std::move(stream)) {}
-    StdStringStream(std::string &string) : stream_(string) { setSize(string.length()); }
+    StdStringStream(std::string &string) : stream_(std::make_shared<std::istringstream>(string)) {
+        setSize(string.length());
+    }
+    StdStringStream(SpiramString &string) : stream_(std::make_shared<SpiramIStream>(string)) {
+        setSize(string.length());
+    }
 
     void setSize(size_t size) { size_ = size; }
 
     auto available() -> int override { return size() - position(); }
-    auto read() -> int override { return stream_.get(); };
+    auto read() -> int override { return stream_->get(); };
     auto seek(uint32_t pos) -> bool override {
-        stream_.seekg(pos);
-        return stream_.good();
+        stream_->seekg(pos);
+        return stream_->good();
     };
-    auto position() -> size_t override { return stream_.tellg(); }
+    auto position() -> size_t override { return stream_->tellg(); }
     auto size() -> size_t override { return size_; }
 
 protected:
-    std::stringstream stream_;
+    StdStringStream(std::shared_ptr<std::istream> stream) : stream_(std::move(stream)) {}
+
+    std::shared_ptr<std::istream> stream_;
     size_t size_ = 0;
 };

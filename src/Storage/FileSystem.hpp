@@ -2,11 +2,12 @@
 
 #include <vector>
 
+#include "Misc/SpiramAllocator.hpp"
 #include "Models/Readable.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "Storage/SFile.hpp"
 
-typedef std::vector<std::string> FileList;
+using FileList = SpiramVector<std::string>;
 
 // TODO: It's probably worth exploring `esp_vfs_t` as a generic filesystem interface
 // Or we could checkout the Arduino FS class since it supports custom file systems via FSImpl
@@ -45,6 +46,11 @@ public:
         return false;
     }
     virtual auto remove(const std::string &path) -> bool {
+        log_e("Abstract");
+        assert(0);
+        return false;
+    }
+    virtual auto format() -> bool {
         log_e("Abstract");
         assert(0);
         return false;

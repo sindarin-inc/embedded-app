@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <esp_err.h>
 #include <string>
 
 // Note: This abstraction exists as an abstraction layer between the specific hardware and the rest
@@ -38,7 +39,15 @@
 
 #define ESP_IMAGE_HEADER_MAGIC 0xE9 /*!< The magic word for the esp_image_header_t structure. */
 
+// Bare minimum init before processing wake reasons
+void HardwareInit();
+
+auto HardwareDeinit() -> esp_err_t;
+
+// Full initialization of all peripherals needed in active mode
 void InitializePlatform();
+
+auto DeinitializePlatform() -> esp_err_t;
 
 auto GetBatteryVoltageLeft() -> float;
 
@@ -63,8 +72,6 @@ auto GetHardwareRevision() -> uint8_t;
 void ForcePowerOn();
 
 void AllowPowerOff();
-
-void HardwareInit();
 
 void Delay(int ms);
 

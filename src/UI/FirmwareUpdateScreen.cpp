@@ -5,6 +5,7 @@
 #include "Communications/FirmwareDownload.hpp"
 #include "Communications/WiFi.hpp"
 #include "Misc/Dispatch.hpp"
+#include "Misc/PowerManager.hpp"
 #include "UI/Fonts/Font.hpp"
 #include "sindarin-debug.h"
 
@@ -31,6 +32,8 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
     case FirmwareDownloadState::CheckingForLatest:
     case FirmwareDownloadState::AlreadyUpToDate:
     case FirmwareDownloadState::Downloading:
+    case FirmwareDownloadState::AlreadyDownloaded:
+    case FirmwareDownloadState::Downloaded:
     case FirmwareDownloadState::Installing:
     case FirmwareDownloadState::Installed: {
         // Calculate group height
@@ -161,7 +164,7 @@ void FirmwareUpdateScreen::begin() {
             } else if (state.state == FirmwareDownloadState::Installed) {
                 vTaskDelay(3000 / portTICK_PERIOD_MS);
                 log_i("Rebooting after successful firmware update");
-                esp_restart();
+                PowerManager::getInstance().reboot();
                 // Only for the sim
                 backCallback();
             }
