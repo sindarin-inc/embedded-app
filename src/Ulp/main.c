@@ -6,8 +6,8 @@
 #include <soc/rtc_cntl_reg.h>
 #include <soc/soc.h>
 #include <soc/soc_ulp.h>
-
 #include <ulp_riscv_i2c_ulp_core.h>
+
 #include "MagDefs.h"
 #include "UlpTableLookup.h"
 
