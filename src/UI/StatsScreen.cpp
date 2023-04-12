@@ -34,7 +34,7 @@ void StatsScreen::render(DisplaySystem &display) {
         timeMessage += formattedString;
     }
 
-    display.setFont(static_cast<Font *>(&FONT_TAHOMA_REGULAR_FONT8PT7B));
+    display.setFont(static_cast<Font *>(&fontTahomaRegularFonT8PT7B));
     display.drawSingleLineOfText(wordsMessage, 0, 0);
     display.drawSingleLineOfText(timeMessage, 0, display.getTextHeight() + 1);
     display.updateDisplay();

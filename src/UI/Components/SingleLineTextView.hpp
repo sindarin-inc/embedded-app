@@ -9,7 +9,7 @@
 class SingleLineTextView : public EinkView {
 public:
     SingleLineTextView(DisplaySystem &display, std::string text,
-                       Font *font = static_cast<Font *>(&FONT_TAHOMA_REGULAR_FONT5PT7B),
+                       Font *font = static_cast<Font *>(&fontTahomaRegularFonT5PT7B),
                        bool allCaps = false)
         : EinkView(display), font_(font) {
         setText(std::move(text), allCaps);

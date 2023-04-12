@@ -176,14 +176,14 @@ public:
         }
 
 #if OPTICAL_KERNING
-        const constexpr size_t K_BUFF_PITCH = ((K_BUFF_WIDTH + 7) >> 3);
-        const constexpr size_t K_BUFF_SIZE = K_BUFF_PITCH * K_BUFF_HEIGHT;
-        static uint8_t buff[K_BUFF_SIZE];
+        const constexpr size_t kBuffPitch = ((K_BUFF_WIDTH + 7) >> 3);
+        const constexpr size_t kBuffSize = kBuffPitch * K_BUFF_HEIGHT;
+        static uint8_t buff[kBuffSize];
         Glyph glyph;
 
         glyph.bitmap =
             Bitmap{.pixels = static_cast<MemoryPtr>(buff), .dim = Dim(K_BUFF_WIDTH, K_BUFF_HEIGHT)};
-        memset(buff, WHITE_EIGHT_BITS, K_BUFF_SIZE);
+        memset(buff, WHITE_EIGHT_BITS, kBuffSize);
         Pos pos = Pos(K_ORIGIN_X, K_ORIGIN_Y);
 
         // Position the first glyph in the buffer
@@ -205,7 +205,9 @@ public:
         // showBitmap(glyph2.bitmap);
         int advance =
             ((glyph.metrics.advance + 32) >> 6); // + (*glyphsInfo_)[*glyphCode2].horizontalOffset;
-        if (advance == 0) advance = glyph.bitmap.dim.width + 1;
+        if (advance == 0) {
+            advance = glyph.bitmap.dim.width + 1;
+        }
 
         pos.x += advance;
 
@@ -222,26 +224,26 @@ public:
 
             mask = 0x80 >> ((pos.x - hoff) & 7);
             mask2 = 0x80;
-            idx = ((pos.y - voff) * K_BUFF_PITCH) + ((pos.x - hoff) >> 3);
+            idx = ((pos.y - voff) * kBuffPitch) + ((pos.x - hoff) >> 3);
             idx2 = 0;
 
             for (col = 0; col < glyph2.bitmap.dim.width; col++) {
 
                 for (row = 0, ridx = idx, ridx2 = idx2; row < glyph2.bitmap.dim.height;
-                     row++, ridx += K_BUFF_PITCH, ridx2 += pitch2) {
+                     row++, ridx += kBuffPitch, ridx2 += pitch2) {
                     if constexpr (BLACK_ONE_BIT) {
                         if ((glyph2.bitmap.pixels[ridx2] & mask2) != 0) {
                             if (((buff[ridx] & mask) != 0) ||
-                                ((buff[ridx - K_BUFF_PITCH] & mask) != 0) ||
-                                ((buff[ridx + K_BUFF_PITCH] & mask) != 0)) {
+                                ((buff[ridx - kBuffPitch] & mask) != 0) ||
+                                ((buff[ridx + kBuffPitch] & mask) != 0)) {
                                 goto fin;
                             }
                         }
                     } else {
                         if ((glyph2.bitmap.pixels[ridx2] & mask2) == 0) {
                             if (((buff[ridx] & mask) == 0) ||
-                                ((buff[ridx - K_BUFF_PITCH] & mask) == 0) ||
-                                ((buff[ridx + K_BUFF_PITCH] & mask) == 0)) {
+                                ((buff[ridx - kBuffPitch] & mask) == 0) ||
+                                ((buff[ridx + kBuffPitch] & mask) == 0)) {
                                 goto fin;
                             }
                         }

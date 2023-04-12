@@ -16,45 +16,45 @@ struct FontFamily {
 class Style {
 public:
     Style() {
-        lucidaRegular.mainMenuFont = static_cast<Font *>(&FONT_LUCIDA_GRANDE10PT7B);
-        lucidaRegular.settingsFont = static_cast<Font *>(&FONT_LUCIDA_GRANDE5PT7B);
-        lucidaRegular.popupFont = static_cast<Font *>(&FONT_LUCIDA_GRANDE5PT7B);
+        lucidaRegular.mainMenuFont = static_cast<Font *>(&fontLucidaGrandE10PT7B);
+        lucidaRegular.settingsFont = static_cast<Font *>(&fontLucidaGrandE5PT7B);
+        lucidaRegular.popupFont = static_cast<Font *>(&fontLucidaGrandE5PT7B);
 #if !IBMF_TEST
         lucidaRegular.readableFont = static_cast<Font *>(&FONT_LUCIDA_GRANDE5PT7B);
 #else
         lucidaRegular.readableFont = static_cast<Font *>(&fontTest75BPI10PT);
 #endif
 
-        lucidaFat.mainMenuFont = static_cast<Font *>(&FONT_LUCIDA_GRANDE10PT7B);
-        lucidaFat.settingsFont = static_cast<Font *>(&FONT_LUCIDA_GRANDE5PT7B_FAT);
-        lucidaFat.popupFont = static_cast<Font *>(&FONT_LUCIDA_GRANDE5PT7B);
+        lucidaFat.mainMenuFont = static_cast<Font *>(&fontLucidaGrandE10PT7B);
+        lucidaFat.settingsFont = static_cast<Font *>(&fontLucidaGrandE5PT7BFat);
+        lucidaFat.popupFont = static_cast<Font *>(&fontLucidaGrandE5PT7B);
 #if !IBMF_TEST
         lucidaFat.readableFont = static_cast<Font *>(&FONT_LUCIDA_GRANDE5PT7B_FAT);
 #else
         lucidaFat.readableFont = static_cast<Font *>(&fontTest75BPI10PT);
 #endif
 
-        lucidaSkinny.mainMenuFont = static_cast<Font *>(&FONT_LUCIDA_GRANDE10PT7B);
-        lucidaSkinny.settingsFont = static_cast<Font *>(&FONT_LUCIDA_GRANDE5PT7B_SKINNY);
-        lucidaSkinny.popupFont = static_cast<Font *>(&FONT_LUCIDA_GRANDE5PT7B_SKINNY);
+        lucidaSkinny.mainMenuFont = static_cast<Font *>(&fontLucidaGrandE10PT7B);
+        lucidaSkinny.settingsFont = static_cast<Font *>(&fontLucidaGrandE5PT7BSkinny);
+        lucidaSkinny.popupFont = static_cast<Font *>(&fontLucidaGrandE5PT7BSkinny);
 #if !IBMF_TEST
         lucidaSkinny.readableFont = static_cast<Font *>(&FONT_LUCIDA_GRANDE5PT7B_SKINNY);
 #else
         lucidaSkinny.readableFont = static_cast<Font *>(&fontTest75BPI10PT);
 #endif
 
-        tahomaRegular.mainMenuFont = static_cast<Font *>(&FONT_TAHOMA_REGULAR_FONT5PT7B);
-        tahomaRegular.settingsFont = static_cast<Font *>(&FONT_TAHOMA_REGULAR_FONT5PT7B);
-        tahomaRegular.popupFont = static_cast<Font *>(&FONT_TAHOMA_REGULAR_FONT5PT7B);
+        tahomaRegular.mainMenuFont = static_cast<Font *>(&fontTahomaRegularFonT5PT7B);
+        tahomaRegular.settingsFont = static_cast<Font *>(&fontTahomaRegularFonT5PT7B);
+        tahomaRegular.popupFont = static_cast<Font *>(&fontTahomaRegularFonT5PT7B);
 #if !IBMF_TEST
         tahomaRegular.readableFont = static_cast<Font *>(&FONT_TAHOMA_REGULAR_FONT5PT7B);
 #else
         tahomaRegular.readableFont = static_cast<Font *>(&fontTest75BPI10PT);
 #endif
 
-        tahomaLarge.mainMenuFont = static_cast<Font *>(&FONT_TAHOMA_REGULAR_FONT6PT7B);
-        tahomaLarge.settingsFont = static_cast<Font *>(&FONT_TAHOMA_REGULAR_FONT5PT7B);
-        tahomaLarge.popupFont = static_cast<Font *>(&FONT_TAHOMA_REGULAR_FONT5PT7B);
+        tahomaLarge.mainMenuFont = static_cast<Font *>(&fontTahomaRegularFonT6PT7B);
+        tahomaLarge.settingsFont = static_cast<Font *>(&fontTahomaRegularFonT5PT7B);
+        tahomaLarge.popupFont = static_cast<Font *>(&fontTahomaRegularFonT5PT7B);
 #if !IBMF_TEST
         tahomaLarge.readableFont = static_cast<Font *>(&FONT_TAHOMA_REGULAR_FONT6PT7B);
 #else
