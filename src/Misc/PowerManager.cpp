@@ -10,7 +10,7 @@
 #include <rom/rtc.h>
 #include <ulp_riscv.h>
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
+#if SIMULATOR || ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
 #include <ulp_riscv_i2c.h>
 #else
 #include "ulp_riscv_i2c_stub.h"
