@@ -13,7 +13,7 @@
 #if SIMULATOR || ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
 #include <ulp_riscv_i2c.h>
 #else
-#include "ulp_riscv_i2c_stub.h"
+#include "ulp_i2c_stub.h"
 #endif
 
 #include "Misc/Dispatch.hpp"
