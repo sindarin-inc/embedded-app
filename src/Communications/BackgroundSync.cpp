@@ -12,7 +12,10 @@
 
 void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalStore &localStore) {
     // Debug LED so we know what's happening (will be turned off when deep sleep happens)
-    DigitalWrite(BLUE_LED, LED_ON);
+    // Only turn on if debug menu is enabled
+    if (prefs.showDebugMenu.get().value_or(false)) {
+        DigitalWrite(BLUE_LED, LED_ON);
+    }
 
     // Create a notification group to wait for background tasks
     auto backgroundGroup = xEventGroupCreate();
