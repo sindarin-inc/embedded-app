@@ -8,20 +8,39 @@
 
 #define MAX_WIDTH 150
 
-void MenuScreen::populateMenuItems(std::vector<MenuItem> &menuItems) {
-    for (int i = currMenuPage_ * myStyle_.numberOfItemsPerPage;
-         (i < (currMenuPage_ * myStyle_.numberOfItemsPerPage + myStyle_.numberOfItemsPerPage)) &&
-         (i < numMenuItems_);
-         i++) {
-        menuItems.push_back(menuItems_[i]);
-    }
+auto MenuScreen::layout(LayoutContext &context, Size size) -> Size {
+
+    context.setViewFrame(leftArrowView_, {{0, 1}, {5, 10}},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
+    context.setViewFrame(upperLeftTextView_, {{10, 0}, size},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
+
+    context.setViewFrame(clockBatteryView_, {{0, 0}, size},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
+                             LayoutOptionsAlignCenterHorizontal);
+    return size;
+}
+
+void MenuScreen::drawInRect(Rect rect) {
+    leftArrowView_.draw();
+    upperLeftTextView_.draw();
+    clockBatteryView_.draw();
 }
 
 void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool withLastItem) {
     display.setFont(myStyle_.itemFont);
+    int additionalYOffset = 0;
     int iteratorEnd = (withLastItem) ? numMenuItems_ : numMenuItems_ - 1;
     int xOffsetForMenu = display.xAbsolute(display.defaultXPadding) + myStyle_.xOffsetForList;
     int yOffsetForMenu = display.yAbsolute(display.defaultYPadding) + myStyle_.yOffsetForList;
+
+    // If we have less than a page worth, we need to add some extra padding at the top to center
+    // the items. For each item less than the numnber of items, we add half the height of the
+    // text. Bias a bit to the top by subtracting 5.
+    if (getNumItems() < myStyle_.numberOfItemsPerPage) {
+        additionalYOffset = (myStyle_.numberOfItemsPerPage - getNumItems() - 1) *
+                            (display.getTextHeight() - display.getLineSpacing() + 3) / 2;
+    }
 
     for (int i = currMenuPage_ * myStyle_.numberOfItemsPerPage;
          (i < (currMenuPage_ * myStyle_.numberOfItemsPerPage + myStyle_.numberOfItemsPerPage)) &&
@@ -40,77 +59,33 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
         }
         display.drawSingleLineOfText(
             itemTitle, xOffsetForMenu,
-            yOffsetForMenu + (i % myStyle_.numberOfItemsPerPage) *
-                                 (display.getTextHeight() / 5 + display.getTextHeight()));
+            yOffsetForMenu + additionalYOffset +
+                (i % myStyle_.numberOfItemsPerPage) *
+                    (display.getTextHeight() - display.getLineSpacing() + 3));
 
         // xoffset for main menu is 12, for settings menu is 23
         // yoffset for main menu is some crazy thing
         // for settings menu some other crazy thing
         if ((i == currSelection_) && (withBullet)) {
             display.fillRoundRect(xOffsetForMenu - display.getTextHeight() / 4 - 2,
-                                  yOffsetForMenu +
+                                  yOffsetForMenu + additionalYOffset +
                                       (i % myStyle_.numberOfItemsPerPage) *
-                                          (display.getTextHeight() / 5 + display.getTextHeight()) +
+                                          (display.getTextHeight() - display.getLineSpacing() + 3) +
                                       4,
-                                  display.getTextHeight() - 7, display.getTextHeight() - 7,
-                                  display.getTextHeight() / 5, display.fg);
+                                  5, 5, 3, display.fg);
         }
     }
 
-    int oldTextHeight = display.getTextHeight();
     display.setFont(display.style.getFontFamily().readableFont);
-    display.drawSingleLineOfText(extraTextBelowMenu_.c_str(), xOffsetForMenu + 10,
-                                 yOffsetForMenu +
-                                     (1 + myStyle_.numberOfItemsPerPage) * oldTextHeight + 20);
-}
-
-void MenuScreen::drawArrowsAndSelections(DisplaySystem &display) {
-
-    display.setFont(myStyle_.navigationFont);
-    // Upper left arrow for Settings
-    display.drawLine(
-        display.xAbsolute(myStyle_.xOffsetForArrows), display.yAbsolute(myStyle_.yOffsetForArrows),
-        display.xAbsolute(myStyle_.xOffsetForArrows + myStyle_.arrowWidth),
-        display.yAbsolute(myStyle_.yOffsetForArrows - myStyle_.arrowHeight / 2), display.fg);
-    display.drawLine(
-        display.xAbsolute(myStyle_.xOffsetForArrows), display.yAbsolute(myStyle_.yOffsetForArrows),
-        display.xAbsolute(myStyle_.xOffsetForArrows + myStyle_.arrowWidth),
-        display.yAbsolute(myStyle_.yOffsetForArrows + myStyle_.arrowHeight / 2), display.fg);
-
-    // Lower right arrow for "Read" or flip between "Books and Articles"
-    display.drawLine(display.xAbsolute(display.xAbsoluteMax() - myStyle_.xOffsetForArrows),
-                     display.yAbsolute(display.yAbsoluteMax() - myStyle_.yOffsetForArrows),
-                     display.xAbsolute(display.xAbsoluteMax() -
-                                       (myStyle_.xOffsetForArrows + myStyle_.arrowWidth)),
-                     display.yAbsolute(display.yAbsoluteMax() -
-                                       (myStyle_.yOffsetForArrows - myStyle_.arrowHeight / 2)),
-                     display.fg);
-    display.drawLine(display.xAbsolute(display.xAbsoluteMax() - myStyle_.xOffsetForArrows),
-                     display.yAbsolute(display.yAbsoluteMax() - myStyle_.yOffsetForArrows),
-                     display.xAbsolute(display.yAbsoluteMax() -
-                                       (myStyle_.xOffsetForArrows + myStyle_.arrowWidth)),
-                     display.yAbsolute(display.yAbsoluteMax() -
-                                       (myStyle_.yOffsetForArrows + myStyle_.arrowHeight / 2)),
-                     display.fg);
-
-    display.drawSingleLineOfText(
-        upperLeftText_.c_str(),
-        display.xAbsolute(myStyle_.xOffsetForArrows + myStyle_.arrowWidth +
-                          myStyle_.arrowTextSpacing),
-        display.yAbsolute(myStyle_.yOffsetForArrows - display.getTextHeight() / 2));
-
-    display.drawSingleLineOfText(
-        lowerRightText_.c_str(),
-        display.xAbsolute(display.xAbsoluteMax() -
-                          (myStyle_.xOffsetForArrows + myStyle_.arrowWidth +
-                           myStyle_.arrowTextSpacing +
-                           display.getTextWidth(lowerRightText_.c_str()))),
-        display.yAbsolute(display.yAbsoluteMax() -
-                          (myStyle_.yOffsetForArrows + display.getTextHeight() / 2)));
+    int extraTextWidth = display.getTextWidth(extraTextBelowMenu_.c_str());
+    display.drawSingleLineOfText(extraTextBelowMenu_.c_str(),
+                                 display.xAbsolute(display.xAbsoluteCenter() - extraTextWidth / 2),
+                                 display.yAbsolute(display.yAbsoluteMax() - 60));
 }
 
 void MenuScreen::showTemporaryMessage(DisplaySystem &display, const std::string &message,
                                       int duration, bool rerenderAfter) {
+    display.setFont(display.style.getFontFamily().settingsFont);
     display.drawSingleLineOfCenteredText(message);
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     Delay(duration);
@@ -127,18 +102,26 @@ void MenuScreen::render(DisplaySystem &display) {
     }
     log_i("Menuscreen render (selected = %s)", getCurrItem().title.c_str());
 
-    drawArrowsAndSelections(display);
+    setNeedsLayout();
+
+    // For the main menu, we want to use the entire screen and ignore the user settings for reading
+    // box.
+    setFrame(
+        {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
+         {display.defaultScreenWidth - 2 * display.defaultXPadding,
+          display.defaultScreenHeight - 2 * display.defaultYPadding}});
 
     // On the first load, we want to only render the items in the menu because we are going
     // to do a partial refresh with the selector button at a lower/higher vcom to reduce
     // ghosting.
     if (firstLoad_) {
         drawMenuItems(display, false);
+        draw();
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
     }
 
     drawMenuItems(display, true);
-    drawArrowsAndSelections(display);
+    draw();
     display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
 
     firstLoad_ = false;

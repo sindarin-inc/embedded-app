@@ -84,7 +84,7 @@ void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalSt
     fileSystem.listDir("/coredumps", coreDumpFiles, maxCoredumps);
     int coreDumpCount = coreDumpFiles.size();
 
-    if (coreDumpCount > 0) {
+    if (!(prefs.noUploadCrashes.get().value_or(false)) && (coreDumpCount > 0)) {
         log_i("Uploading %d core dumps", coreDumpCount);
         CrashUploader crashUploader(fileSystem, prefs);
         crashUploader.uploadCrash([&backgroundGroup](const CrashUploadState &state) {

@@ -26,12 +26,18 @@ public:
     std::string subtitle;
     // Called when this menu item is selected
     std::function<void()> callback;
+
+    bool isToggle = false;
+    bool toggleValue = false;
 };
 
 class Menu {
 
 public:
-    Menu(MenuStyleFamily myStyle) : myStyle_(myStyle) { numMenuItems_ = 0; };
+    Menu(MenuStyleFamily myStyle, std::string menuName = "Default")
+        : myStyle_(myStyle), menuName_(std::move(menuName)) {
+        numMenuItems_ = 0;
+    };
 
     Menu() { numMenuItems_ = 0; };
 
@@ -48,6 +54,10 @@ public:
     auto getCurrItem() -> MenuItem;
 
     auto updateCurrItemTitle(std::string newTitle) -> bool;
+
+    auto getMenuName() -> std::string { return menuName_; }
+
+    void populateMenuItems(std::vector<MenuItem> &menuItems);
 
     // Returns 1 if the selection was updated, 0 otherwise
     // Helps client to know if it needs to refresh (at beginning or end of menu)
@@ -72,6 +82,7 @@ protected:
     int currMenuPage_ = 0;
 
     MenuStyleFamily myStyle_;
+    std::string menuName_;
 };
 
 #endif
