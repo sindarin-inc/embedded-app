@@ -11,7 +11,7 @@
 #include "UI/Bitmaps/Battery_Bolt.hpp"
 #include "UI/Layout/View.hpp"
 
-// A view that draws a line of text
+// A view that draws a lockup of the battery and time
 class ClockBatteryView : public EinkView {
 public:
     ClockBatteryView(Battery &battery, DisplaySystem &display)

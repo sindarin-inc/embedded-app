@@ -3,15 +3,9 @@
 #include <utility>
 
 #include "EinkView.hpp"
-#include "IconView.hpp"
-#include "Misc/Battery.hpp"
-#include "Misc/SolClock.hpp"
-#include "Misc/Style.hpp"
-#include "SingleLineTextView.hpp"
-#include "UI/Bitmaps/Battery_Bolt.hpp"
 #include "UI/Layout/View.hpp"
 
-// A view that draws a line of text
+// A view that draws a left arrow
 class LeftArrowView : public EinkView {
 public:
     LeftArrowView(DisplaySystem &display) : EinkView(display) {}

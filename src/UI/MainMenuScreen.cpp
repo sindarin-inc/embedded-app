@@ -84,7 +84,7 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
 
     context.setViewFrame(clockBatteryView_, {{0, 0}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
-                             LayoutOptionsAlignCenter);
+                             LayoutOptionsAlignCenterHorizontal);
 
     return size;
 }

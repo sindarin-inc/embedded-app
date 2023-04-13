@@ -17,7 +17,7 @@ auto MenuScreen::layout(LayoutContext &context, Size size) -> Size {
 
     context.setViewFrame(clockBatteryView_, {{0, 0}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
-                             LayoutOptionsAlignCenter);
+                             LayoutOptionsAlignCenterHorizontal);
     return size;
 }
 
@@ -85,6 +85,7 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
 
 void MenuScreen::showTemporaryMessage(DisplaySystem &display, const std::string &message,
                                       int duration, bool rerenderAfter) {
+    display.setFont(display.style.getFontFamily().settingsFont);
     display.drawSingleLineOfCenteredText(message);
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     Delay(duration);

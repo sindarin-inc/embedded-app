@@ -234,7 +234,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         ignoreNextPress_ = true;
         firstTimeRenderer_.renderPage(0);
         // renderIcons(display);
-        if (prefs_.fastTransitions.get().value_or(0)) {
+        if (prefs_.fastTransitions.get().value_or(false)) {
             display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         } else {
             display.updateDisplay(DisplaySystem::UpdateType::FULL);
@@ -328,7 +328,7 @@ void ReadableScreen::render(DisplaySystem &display) {
     if ((pageSpeed_ != 0) && (speedLinesToSkip_ > 0)) {
         display.updateDisplay(DisplaySystem::UpdateType::FAST_ORIGINAL_AU4);
     } else {
-        if (prefs_.fastTransitions.get().value_or(0)) {
+        if (prefs_.fastTransitions.get().value_or(false)) {
             display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         } else {
             display.updateDisplay(DisplaySystem::UpdateType::FULL);

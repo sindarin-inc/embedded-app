@@ -364,7 +364,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         if (contentSettingsMenu->getRequireRestart()) {
             // Start on the settings menu when we boot so it feels like we just
             // went back to it!
-            this->prefs_.settingsOnRestart.set(true);
+            PreferencesStore::settingsOnRestart = true;
             contentSettingsMenu->showTemporaryMessage(
                 *display, "Settings change required restart! Restarting...", 1500, false);
             this->power_.reboot();
@@ -480,7 +480,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         if (experimentalSettingsMenu->getRequireRestart()) {
             // Start on the settings menu when we boot so it feels like we just
             // went back to it!
-            this->prefs_.settingsOnRestart.set(true);
+            PreferencesStore::settingsOnRestart = true;
             experimentalSettingsMenu->showTemporaryMessage(
                 *display, "Settings change required restart! Restarting...", 1500, false);
             this->power_.reboot();
@@ -1291,8 +1291,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     // A settings changed caused this restart, so go to the settings tab
     // and clear out that pref.
-    if (prefs_.settingsOnRestart.get().value_or(false)) {
-        prefs_.settingsOnRestart.set(false);
+    if (PreferencesStore::settingsOnRestart) {
+        PreferencesStore::settingsOnRestart = false;
         mainMenu->setTabToLast();
     }
 
