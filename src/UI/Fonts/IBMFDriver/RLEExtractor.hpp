@@ -220,6 +220,7 @@ public:
                      fromRow++, toRowPtr += toRowSize) {
                     uint8_t toMask = 0x80 >> (atOffset.x & 7);
                     int idx = (atOffset.x >> 3);
+                    int firstBlack = -1;
                     for (uint32_t i = 0; i < fromBitmap.dim.width; i++) {
                         if (count == 0) {
                             if (!getPackedNumber(count, rleMetrics)) {
@@ -234,6 +235,9 @@ public:
                             // }
                         }
                         if (black) {
+                            if (firstBlack < 0) {
+                                firstBlack = i;
+                            }
                             if constexpr (BLACK_ONE_BIT) {
                                 toRowPtr[idx] |= toMask;
                             } else {
@@ -252,8 +256,11 @@ public:
                     //     std::cout << "Repeat count: " << repeatCount_ << std::endl;
                     // }
                     while ((fromRow < fromBitmap.dim.height) && (repeatCount_-- > 0)) {
-                        copyOneRowOneBit(toRowPtr, toRowPtr + toRowSize, atOffset.x,
-                                         atOffset.x + fromBitmap.dim.width);
+                        if (firstBlack >= 0) {
+                            copyOneRowOneBit(toRowPtr, toRowPtr + toRowSize,
+                                             atOffset.x + firstBlack,
+                                             atOffset.x + fromBitmap.dim.width);
+                        }
                         fromRow++;
                         toRowPtr += toRowSize;
                     }
@@ -302,6 +309,7 @@ public:
 
                 for (uint32_t fromRow = 0; fromRow < (fromBitmap.dim.height);
                      fromRow++, toRowPtr += toRowSize) {
+                    int firstBlack = -1;
                     for (uint32_t toCol = atOffset.x; toCol < (fromBitmap.dim.width + atOffset.x);
                          toCol++) {
                         if (count == 0) {
@@ -317,6 +325,9 @@ public:
                             // }
                         }
                         if (black) {
+                            if (firstBlack < 0) {
+                                firstBlack = toCol - atOffset.x;
+                            }
                             toRowPtr[toCol] = BLACK_EIGHT_BITS;
                         }
                         count--;
@@ -325,8 +336,10 @@ public:
                     // if (repeatCount_ != 0) std::cout << "Repeat count: " << repeatCount_ <<
                     // std::endl;
                     while ((fromRow < toBitmap.dim.height) && (repeatCount_-- > 0)) {
-                        copyOneRowEightBits(toRowPtr, toRowPtr + toRowSize, atOffset.x,
+                        if (firstBlack >= 0) {
+                        copyOneRowEightBits(toRowPtr, toRowPtr + toRowSize, atOffset.x + firstBlack,
                                             fromBitmap.dim.width);
+                        }
                         fromRow++;
                         toRowPtr += toRowSize;
                     }

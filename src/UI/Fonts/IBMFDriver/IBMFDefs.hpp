@@ -459,7 +459,8 @@ typedef Plane (*PlanesPtr)[];
 #pragma pack(pop)
 
 struct GlyphMetrics {
-    int16_t xoff, yoff;              // Used when the glyph is retrieved for caching
+    int16_t xoff, yoff; // Used when the glyph is retrieved for caching
+    int16_t descent;
     FIX16 advance;                   // Normal advance to the next glyph position in line
     int16_t lineHeight;              // This is the normal line height for all glyphs in the face
     int16_t ligatureAndKernPgmIndex; // Index of the ligature/kerning pgm for the glyph

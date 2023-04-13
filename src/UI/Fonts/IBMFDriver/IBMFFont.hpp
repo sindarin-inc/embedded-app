@@ -142,29 +142,60 @@ public:
     }
 
     auto getTextSize(const std::string &buffer) -> ibmf_defs::Dim {
+        LOGD("getTextSize(): %s", buffer.c_str());
         if constexpr (IBMF_TRACING) {
             LOGD("getTextSize()");
         }
         ibmf_defs::Dim dim = ibmf_defs::Dim(0, 0);
+        int16_t up = 0;
+        int16_t down = 0;
         if (isInitialized()) {
-            ligKernUTF8Map(buffer, [this, &dim](GlyphCode glyphCode, FIX16 kern) {
+            ligKernUTF8Map(buffer, [this, &dim, &up, &down](GlyphCode glyphCode, FIX16 kern) {
                 ibmf_defs::Glyph glyph;
                 if (face_->getGlyph(glyphCode, glyph, false)) { // retrieves only the metrics
-                    // LOGD("Advance value: %f, yoff value: %d",
-                    //      IBMFFaceLow::fromFIX16(glyph.metrics.advance), glyph.metrics.yoff);
+                    // LOGD("Advance: %f, xoff: %d, yoff: %d, descent: %d, kern: %d",
+                    //      IBMFFaceLow::fromFIX16(glyph.metrics.advance), glyph.metrics.xoff,
+                    //      glyph.metrics.yoff, glyph.metrics.descent, kern);
                     dim.width += (glyph.metrics.advance + kern) >> 6;
-                    dim.height = (dim.height > glyph.metrics.yoff)
-                                     ? glyph.metrics.yoff
-                                     : dim.height; // yoff is negative...
+                    up = (up < glyph.metrics.yoff) ? glyph.metrics.yoff : up;
+                    down = (down < glyph.metrics.descent) ? glyph.metrics.descent : down;
+                    // dim.height = (dim.height > glyph.metrics.yoff)
+                    //                  ? glyph.metrics.yoff
+                    //                  : dim.height; // yoff is negative...
                 } else {
                     // LOGW("Unable to retrieve glyph for glyphCode %d", glyphCode);
                 }
             });
         }
-        dim.height = -dim.height;
+        dim.height = (up + down);
         // LOGD("IBMFFont: TextBound: width: %d, height: %d", dim.width, dim.height);
         return dim;
     }
+
+    // auto getTextSize(const std::string &buffer) -> ibmf_defs::Dim {
+    //     if constexpr (IBMF_TRACING) {
+    //         LOGD("getTextSize()");
+    //     }
+    //     ibmf_defs::Dim dim = ibmf_defs::Dim(0, 0);
+    //     if (isInitialized()) {
+    //         ligKernUTF8Map(buffer, [this, &dim](GlyphCode glyphCode, FIX16 kern) {
+    //             ibmf_defs::Glyph glyph;
+    //             if (face_->getGlyph(glyphCode, glyph, false)) { // retrieves only the metrics
+    //                 // LOGD("Advance value: %f, yoff value: %d",
+    //                 //      IBMFFaceLow::fromFIX16(glyph.metrics.advance), glyph.metrics.yoff);
+    //                 dim.width += (glyph.metrics.advance + kern) >> 6;
+    //                 dim.height = (dim.height > glyph.metrics.yoff)
+    //                                  ? glyph.metrics.yoff
+    //                                  : dim.height; // yoff is negative...
+    //             } else {
+    //                 // LOGW("Unable to retrieve glyph for glyphCode %d", glyphCode);
+    //             }
+    //         });
+    //     }
+    //     dim.height = -dim.height;
+    //     // LOGD("IBMFFont: TextBound: width: %d, height: %d", dim.width, dim.height);
+    //     return dim;
+    // }
 
     auto getTextWidth(const std::string &buffer) -> int {
         if constexpr (IBMF_TRACING) {
@@ -205,7 +236,9 @@ public:
             //         LOGW("Unable to retrieve glyph for char %d(%c)", *chrIter, *chrIter);
             //     }
             // }
-            height = face_->getEmHeight();
+            // height = face_->getEmHeight();
+            Dim dim = getTextSize(buffer);
+            height = dim.height;
         }
         // LOGD("TextHeight: %d", height);
         return height;

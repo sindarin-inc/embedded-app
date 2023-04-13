@@ -176,6 +176,7 @@ public:
         }
 
 #if OPTICAL_KERNING
+        // LOGD("Optical Kerning Start %d, %d", glyphCode1, *glyphCode2);
         const constexpr size_t kBuffPitch = ((K_BUFF_WIDTH + 7) >> 3);
         const constexpr size_t kBuffSize = kBuffPitch * K_BUFF_HEIGHT;
         static uint8_t buff[kBuffSize];
@@ -271,6 +272,7 @@ public:
         *kern = static_cast<FIX16>((max > 0) ? ((kerning + KERNING_SIZE + 1) << 6) : 0);
         // LOGD("Computed kern: %d (%d).", static_cast<int>((float)*kern / 64.0), kerning);
 #endif
+        // LOGD("Optical Kerning End");
         return false;
     }
 
@@ -465,14 +467,27 @@ public:
             // std::cout << "inPos: [" << atPos.x << ", " << atPos.y << "], outPos: [" << outPos.x
             //           << ", " << outPos.y << "] " << std::endl;
             rle.retrieveBitmap(glyphBitmap, appGlyph.bitmap, outPos, glyphInfo->rleMetrics);
+            if (!caching) {
+                showBitmap(appGlyph.bitmap);
+            }
         }
 
-        appGlyph.metrics = {
-            .xoff = (int16_t) - (glyphOffsets.x + ((caching) ? glyphInfo->horizontalOffset : 0)),
-            .yoff = (int16_t) - (glyphOffsets.y + ((caching) ? glyphInfo->verticalOffset : 0)),
-            .advance = glyphInfo->advance,
-            .lineHeight = faceHeader_->lineHeight,
-            .ligatureAndKernPgmIndex = glyphInfo->ligKernPgmIndex};
+        appGlyph.metrics = {.xoff = static_cast<int16_t>(glyphInfo->horizontalOffset),
+                            .yoff = static_cast<int16_t>(glyphInfo->verticalOffset),
+                            .descent = static_cast<int16_t>(
+                                (glyphInfo->bitmapHeight - glyphInfo->verticalOffset) > 0
+                                    ? glyphInfo->bitmapHeight - glyphInfo->verticalOffset
+                                    : 0),
+                            .advance = glyphInfo->advance,
+                            .lineHeight = faceHeader_->lineHeight,
+                            .ligatureAndKernPgmIndex = glyphInfo->ligKernPgmIndex};
+
+        // appGlyph.metrics = {
+        //     .xoff = (int16_t) - (glyphOffsets.x + ((caching) ? glyphInfo->horizontalOffset : 0)),
+        //     .yoff = (int16_t) - (glyphOffsets.y + ((caching) ? glyphInfo->verticalOffset : 0)),
+        //     .advance = glyphInfo->advance,
+        //     .lineHeight = faceHeader_->lineHeight,
+        //     .ligatureAndKernPgmIndex = glyphInfo->ligKernPgmIndex};
 
         // showGlyph(appGlyph, glyphCode & 0xFF);
         return true;
@@ -483,18 +498,21 @@ public:
             uint32_t row, col;
             MemoryPtr rowPtr;
 
+            uint32_t max_width = 50;
+            if (bitmap.dim.width < max_width) max_width = bitmap.dim.width;
+
             std::cout << "   +";
-            for (col = 0; col < bitmap.dim.width; col++) {
+            for (col = 0; col < max_width; col++) {
                 std::cout << '-';
             }
-            std::cout << '+' << std::endl;
+            std::cout << '+' << std::endl << std::flush;
 
             if (resolution_ == PixelResolution::ONE_BIT) {
                 uint32_t rowSize = (bitmap.dim.width + 7) >> 3;
                 for (row = 0, rowPtr = bitmap.pixels; row < bitmap.dim.height;
                      row++, rowPtr += rowSize) {
                     std::cout << "   |";
-                    for (col = 0; col < bitmap.dim.width; col++) {
+                    for (col = 0; col < max_width; col++) {
                         if constexpr (BLACK_ONE_BIT) {
                             std::cout << ((rowPtr[col >> 3] & (0x80 >> (col & 7))) ? 'X' : ' ');
                         } else {
@@ -502,14 +520,14 @@ public:
                         }
                     }
                     std::cout << '|';
-                    std::cout << std::endl;
+                    std::cout << std::endl << std::flush;
                 }
             } else {
                 uint32_t rowSize = bitmap.dim.width;
                 for (row = 0, rowPtr = bitmap.pixels; row < bitmap.dim.height;
                      row++, rowPtr += rowSize) {
                     std::cout << "   |";
-                    for (col = 0; col < bitmap.dim.width; col++) {
+                    for (col = 0; col < max_width; col++) {
                         if constexpr (BLACK_EIGHT_BITS) {
                             std::cout << ((rowPtr[col] == BLACK_EIGHT_BITS) ? 'X' : ' ');
                         } else {
@@ -517,15 +535,15 @@ public:
                         }
                     }
                     std::cout << '|';
-                    std::cout << std::endl;
+                    std::cout << std::endl << std::flush;
                 }
             }
 
             std::cout << "   +";
-            for (col = 0; col < bitmap.dim.width; col++) {
+            for (col = 0; col < max_width; col++) {
                 std::cout << '-';
             }
-            std::cout << '+' << std::endl << std::endl;
+            std::cout << '+' << std::endl << std::endl << std::flush;
         }
     }
 
