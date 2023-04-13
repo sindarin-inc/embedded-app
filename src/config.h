@@ -12,6 +12,9 @@
 #define EINKET013TT1 1
 #endif
 
+// Uncomment to disable deep sleep
+// #define DISABLE_DEEP_SLEEP 1
+
 #define Hastings20x40_3
 
 // Uncomment to disable power management when debugging on the rev1 dev board
