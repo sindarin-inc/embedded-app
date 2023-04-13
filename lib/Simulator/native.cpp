@@ -47,12 +47,6 @@ SDL_Renderer *renderer;
 // Texture on which to draw the UI from the firmware
 SDL_Texture *deviceScreen;
 
-// Variables related to drawing the overlay
-SDL_Surface *arrow;
-SDL_Texture *arrowTexture;
-Uint8 arrowOpacity = 0;
-double arrowRotation = 0;
-
 float lerp(float a, float b, float t) { return a + t * (b - a); }
 
 void SimDrawScreen() {
@@ -91,7 +85,7 @@ void DrawRoundLed(int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b) {
         for (int yy = y; yy < y + h; yy++) {
             float dx = (float)xx - centerX;
             float dy = (float)yy - centerY;
-            float dist = sqrt(dx*dx + dy*dy);
+            float dist = sqrt(dx * dx + dy * dy);
             if (dist > rad) {
                 SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
             } else {
@@ -111,7 +105,7 @@ void SimDrawLeds() {
     // draw simulated leds
     int ledDim = SIM_LED_DIM;
     int ledStartY = EinkET013TT1_PIXEL_HEIGHT;
-    int ledStartX = (EinkET013TT1_PIXEL_WIDTH/2) - (ledDim/2);
+    int ledStartX = (EinkET013TT1_PIXEL_WIDTH / 2) - (ledDim / 2);
 
     // clear area
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
@@ -131,11 +125,11 @@ void SimDrawLeds() {
         if (ledVal) {
             color[i] = 0xFF;
         }
-        #if SIM_LED_ROUND
+#if SIM_LED_ROUND
         DrawRoundLed(ledStartX, ledStartY, ledDim, ledDim, color[0], color[1], color[2]);
-        #else
+#else
         DrawRectLed(ledStartX, ledStartY, ledDim, ledDim, color[0], color[1], color[2]);
-        #endif
+#endif
         ledStartX += ledDim;
     }
     ledChange = false;
@@ -189,36 +183,6 @@ bool saveScreenshotPng(std::string filepath, SDL_Window *window, SDL_Renderer *r
     SDL_FreeSurface(saveSurface);
 
     return true;
-}
-
-void drawOverlay(RemoteCommand command) {
-    if (command == RemoteCommand::PREV) {
-        arrowOpacity = SDL_MAX_UINT8;
-        arrowRotation = 90;
-    } else if (command == RemoteCommand::NEXT) {
-        arrowOpacity = SDL_MAX_UINT8;
-        arrowRotation = 270;
-    } else if (command == RemoteCommand::CHANNEL_MINUS) {
-        arrowOpacity = SDL_MAX_UINT8;
-        arrowRotation = 0;
-    } else if (command == RemoteCommand::CHANNEL_PLUS) {
-        arrowOpacity = SDL_MAX_UINT8;
-        arrowRotation = 180;
-    } else if (command == RemoteCommand::ENTER) {
-        arrowOpacity = SDL_MAX_UINT8;
-        arrowRotation = 225;
-    }
-    if (arrowOpacity > 0) {
-        arrowOpacity = std::max(arrowOpacity - 10, 0);
-        // The left arrow default position
-        SDL_Rect left = {
-            .x = 5, .y = (EinkET013TT1_PIXEL_HEIGHT - arrow->h) / 2, .w = arrow->w, .h = arrow->h};
-        // The center of the screen, relative to left arrow coordinates
-        SDL_Point center = {.x = EinkET013TT1_PIXEL_WIDTH / 2 - left.x, .y = arrow->h / 2};
-        SDL_SetTextureAlphaMod(arrowTexture, arrowOpacity);
-        SDL_RenderCopyEx(renderer, arrowTexture, NULL, &left, arrowRotation, &center,
-                         SDL_FLIP_NONE);
-    }
 }
 
 #if SIMULATOR_BLE
@@ -334,11 +298,11 @@ auto mainLoop() -> bool {
         SimDrawLeds();
         SDL_RenderPresent(renderer);
     } else if (ledChange) {
-        #if SIM_LED_ON
+#if SIM_LED_ON
         SDL_SetRenderTarget(renderer, NULL);
         SimDrawLeds();
         SDL_RenderPresent(renderer);
-        #endif
+#endif
     }
 
     return true;
@@ -362,8 +326,9 @@ auto main(int argc, char *argv[]) -> int {
         return 1;
     }
 
-    SDL_CreateWindowAndRenderer(EinkET013TT1_PIXEL_WIDTH * SCALE, ((EinkET013TT1_PIXEL_WIDTH+SIM_LED_DIM) * SCALE),
-                                0, &window, &renderer);
+    SDL_CreateWindowAndRenderer(EinkET013TT1_PIXEL_WIDTH * SCALE,
+                                ((EinkET013TT1_PIXEL_WIDTH + SIM_LED_DIM) * SCALE), 0, &window,
+                                &renderer);
     if (renderer == NULL) {
         fprintf(stderr, "Could not create renderer: %s\n", SDL_GetError());
         return 1;
@@ -372,15 +337,6 @@ auto main(int argc, char *argv[]) -> int {
     deviceScreen = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
                                      EinkET013TT1_PIXEL_WIDTH, EinkET013TT1_PIXEL_HEIGHT);
     SDL_RenderSetScale(renderer, SCALE, SCALE);
-
-    IMG_Init(IMG_INIT_PNG);
-    arrow = IMG_Load("lib/Simulator/assets/arrow.png");
-    if (arrow == NULL) {
-        fprintf(stderr, "Could not find arrow asset: %s\n", SDL_GetError());
-        return 1;
-    }
-    arrowTexture = SDL_CreateTextureFromSurface(renderer, arrow);
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
 #if defined(EMSCRIPTEN)
     emscripten_set_main_loop(emscriptemLoop, 0, 0);
