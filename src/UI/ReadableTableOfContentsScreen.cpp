@@ -46,12 +46,38 @@ void ReadableTableOfContentsScreen::render(DisplaySystem &display) {
 
     if (firstLoad_) {
         PROFILE_START(ReadableTableOfContentsScreenLayoutAndDraw);
+        menuItemsPage_.clear();
+        menuItemViews_.clear();
+
+        populateMenuItems(menuItemsPage_);
+
+        for (auto &menuItem : menuItemsPage_) {
+            auto menuItemView =
+                std::make_shared<MenuItemView>(display, menuItem, myStyle_.navigationFont, false);
+            menuItemViews_.push_back(menuItemView);
+        }
+
+        int numPages = getNumItems() / getMyStyle().numberOfItemsPerPage + 1;
+        if (getNumItems() % getMyStyle().numberOfItemsPerPage == 0) {
+            numPages--;
+        }
+
+        for (int i = 0; i < numPages; i++) {
+            auto menuPageView = std::make_shared<BoxView>(display, 3);
+
+            if (i == (getCurrSelection() / getMyStyle().numberOfItemsPerPage)) {
+                menuPageView->fillColor = display.fg;
+            }
+            menuPageIndicatorViews_.push_back(menuPageView);
+        }
+
         draw();
         PROFILE_END_LOG_US(ReadableTableOfContentsScreenLayoutAndDraw);
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
     }
 
-    std::shared_ptr<MenuItemView> selectedMenuItemView = menuItemViews_[getCurrSelection()];
+    std::shared_ptr<MenuItemView> selectedMenuItemView =
+        menuItemViews_[getCurrSelection() % getMyStyle().numberOfItemsPerPage];
     for (auto &menuItemView : menuItemViews_) {
         if (menuItemView && menuItemView == selectedMenuItemView) {
             menuItemView->setSelected(true);

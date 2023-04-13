@@ -80,9 +80,9 @@ public:
             bookmarks.back().fromJson(bookmark);
         }
         toc.clear();
-        for (const auto &tocItem : j["toc"].as<JsonArray>()) {
+        for (const auto &chapter : j["toc"].as<JsonArray>()) {
             toc.emplace_back();
-            toc.back().fromJson(tocItem);
+            toc.back().fromJson(chapter);
         }
 
         // Temporary migration for stored pocket articles that don't have a readable_type

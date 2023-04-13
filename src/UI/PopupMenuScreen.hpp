@@ -48,6 +48,8 @@ public:
             lightingAdjustScreen_.firstLoad = true;
             this->setCurrentScreen(lightingAdjustScreen_);
         };
+        hasToc_ = readable.toc.size() >= 1;
+        log_d("hasToc_ = %d, readable.toc.size: %zu", hasToc_, readable.toc.size());
     };
 
     void drawBattery(DisplaySystem &display, int x, int y, int percentage);
@@ -90,6 +92,7 @@ protected:
     int arrowWidth_ = 5;
     int arrowHeight_ = 10;
     int arrowTextSpacing_ = 5;
+    bool hasToc_ = false;
 };
 
 #endif

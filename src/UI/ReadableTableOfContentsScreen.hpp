@@ -43,11 +43,6 @@ public:
         firstLoad_ = true;
     }
 
-    void addMenuItem(const MenuItem &newItem) override {
-        Menu::addMenuItem(newItem);
-        auto menuItemView = std::make_shared<MenuItemView>(display_, newItem);
-        menuItemViews_.push_back(menuItemView);
-    }
     void setPlacemark();
 
 protected:
@@ -55,7 +50,8 @@ protected:
     Readable &readable_;
     Renderer &renderer_;
     DisplaySystem &display_;
-
+    std::vector<MenuItem> menuItemsPage_;
+    std::vector<std::shared_ptr<BoxView>> menuPageIndicatorViews_;
     std::vector<std::shared_ptr<MenuItemView>> menuItemViews_;
     bool firstLoad_ = true;
 };

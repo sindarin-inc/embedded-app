@@ -116,8 +116,8 @@ void PopupMenuScreen::render(DisplaySystem &display) {
     }
     int narrowToCenter = 20;
 
-    std::string bottomStr =
-        std::string("Seek ") + std::string("(") + placeString + std::string(")");
+    std::string bottomStr = std::string(hasToc_ ? "Table of Contents" : "Seek ") +
+                            std::string("(") + placeString + std::string(")");
 
     display.getTextBounds(bottomStr.c_str(), &textWidth, &textHeight);
     display.drawSingleLineOfText(bottomStr, (screenWidth / 2) - (textWidth / 2),
@@ -228,7 +228,7 @@ void PopupMenuScreen::processCommand(RemoteCommand command) {
 void PopupMenuScreen::showTocOrSeekScreen() {
     // If readable has a ToC with at least 1 element, show the ToC screen.
     // Otherwise, show the seek screen.
-    if (readable_.toc.size() >= 1) {
+    if (hasToc_) {
         for (ReadableTableOfContentsChapter &chapter : readable_.toc) {
             readableTableOfContentsScreen_.addMenuItem(MenuItem(
                 chapter.title, [this]() { readableTableOfContentsScreen_.backCallback(); }));
