@@ -28,6 +28,7 @@ public:
         numMenuItems_ = 0;
         MenuStyle styleFamilies;
         myStyle_ = styleFamilies.mainMenu;
+        myStyle_.numberOfItemsPerPage = 8;
     }
 
     auto layout(LayoutContext &context, Size size) -> Size override;
@@ -44,6 +45,7 @@ public:
     }
 
     void setPlacemark();
+    void setFirstLoad() { firstLoad_ = true; }
 
 protected:
     PreferencesStore &prefs_;

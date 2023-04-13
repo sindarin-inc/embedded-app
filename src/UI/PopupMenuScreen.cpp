@@ -229,11 +229,12 @@ void PopupMenuScreen::showTocOrSeekScreen() {
     // If readable has a ToC with at least 1 element, show the ToC screen.
     // Otherwise, show the seek screen.
     if (hasToc_) {
+        readableTableOfContentsScreen_.resetMenuItems();
         for (ReadableTableOfContentsChapter &chapter : readable_.toc) {
             readableTableOfContentsScreen_.addMenuItem(MenuItem(
                 chapter.title, [this]() { readableTableOfContentsScreen_.backCallback(); }));
         }
-
+        readableTableOfContentsScreen_.setFirstLoad();
         setCurrentScreen(readableTableOfContentsScreen_);
     } else {
         readableSeekScreen_.firstLoad = true;

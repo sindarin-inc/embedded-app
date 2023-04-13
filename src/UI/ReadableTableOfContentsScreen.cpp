@@ -14,10 +14,26 @@ auto ReadableTableOfContentsScreen::layout(LayoutContext &context, Size size) ->
                   size.height);
 
             for (auto &view : menuItemViews_) {
-                auto viewFrame = context.setViewFrame(*view, {{x, y}, size},
-                                                      LayoutOptionsSizeToFitVertical |
-                                                          LayoutOptionsAlignCenterVertical);
+                auto viewFrame = context.setViewFrame(
+                    *view, {{x, y}, size}, LayoutOptionsSizeToFitVertical | LayoutOptionsAlignTop);
                 y += viewFrame.size.height + spacing;
+            }
+
+            return {size.width, y};
+        });
+
+    context.setSublayoutFrame(
+        // The -5 is to leave room for the paging circles at the right hand side of the view
+        {{size.width - 5, 0}, {10, size.height}},
+        LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical | LayoutOptionsAlignRight,
+        [this](LayoutContext &context, Size size) -> Size {
+            int x = 0;
+            int y = 0;
+            Size boxSize = {5, 5};
+            for (auto &view : menuPageIndicatorViews_) {
+                auto viewFrame = context.setViewFrame(
+                    *view, {{x, y}, boxSize}, LayoutOptionsSizeToFit | LayoutOptionsAlignRight);
+                y += viewFrame.size.height + 5;
             }
 
             return {size.width, y};
@@ -29,6 +45,12 @@ auto ReadableTableOfContentsScreen::layout(LayoutContext &context, Size size) ->
 void ReadableTableOfContentsScreen::drawInRect(Rect rect) {
     for (auto &view : menuItemViews_) {
         (*view).draw();
+    }
+
+    if (menuPageIndicatorViews_.size() > 1) {
+        for (auto &view : menuPageIndicatorViews_) {
+            (*view).draw();
+        }
     }
 }
 
@@ -48,6 +70,7 @@ void ReadableTableOfContentsScreen::render(DisplaySystem &display) {
         PROFILE_START(ReadableTableOfContentsScreenLayoutAndDraw);
         menuItemsPage_.clear();
         menuItemViews_.clear();
+        menuPageIndicatorViews_.clear();
 
         populateMenuItems(menuItemsPage_);
 
