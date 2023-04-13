@@ -6,6 +6,7 @@
 #include "Misc/Menu.hpp"
 #include "Misc/MenuStyle.hpp"
 #include "Models/Readable.hpp"
+#include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/BoxView.hpp"
 #include "UI/Components/EinkView.hpp"
@@ -20,13 +21,10 @@
 
 class ReadableTableOfContentsScreen : public Screen, public Menu, public EinkView {
 public:
-    ReadableTableOfContentsScreen(PreferencesStore &prefs, DisplaySystem &display,
-                                  MenuStyleFamily menuStyle)
-        : Menu(menuStyle), EinkView(display), display_(display) {
-        numMenuItems_ = 0;
-    }
-    ReadableTableOfContentsScreen(PreferencesStore &prefs, DisplaySystem &display)
-        : Menu(), EinkView(display), display_(display) {
+    ReadableTableOfContentsScreen(PreferencesStore &prefs, Readable &readable, Renderer &renderer,
+                                  DisplaySystem &display)
+        : Menu(), EinkView(display), prefs_(prefs), readable_(readable), renderer_(renderer),
+          display_(display) {
         numMenuItems_ = 0;
         MenuStyle styleFamilies;
         myStyle_ = styleFamilies.mainMenu;
@@ -50,9 +48,14 @@ public:
         auto menuItemView = std::make_shared<MenuItemView>(display_, newItem);
         menuItemViews_.push_back(menuItemView);
     }
+    void setPlacemark();
 
 protected:
+    PreferencesStore &prefs_;
+    Readable &readable_;
+    Renderer &renderer_;
     DisplaySystem &display_;
+
     std::vector<std::shared_ptr<MenuItemView>> menuItemViews_;
     bool firstLoad_ = true;
 };

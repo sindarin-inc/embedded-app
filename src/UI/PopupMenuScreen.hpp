@@ -19,6 +19,7 @@
 #include "UI/Layout/View.hpp"
 #include "UI/LightingAdjustScreen.hpp"
 #include "UI/ReadableSeekScreen.hpp"
+#include "UI/ReadableTableOfContentsScreen.hpp"
 #include "sindarin-debug.h"
 
 class PopupMenuScreen : public ContainerScreen, public EinkView {
@@ -30,7 +31,9 @@ public:
         : EinkView(display), prefs_(prefs), battery_(battery), renderer_(renderer),
           readable_(readable), leftButtonTitle_("Brightness"),
           lightingAdjustScreen_(display, prefs, lightingController),
-          readableSeekScreen_(prefs, readable, renderer_), batteryTextView_(display, ""),
+          readableSeekScreen_(prefs, readable, renderer),
+          readableTableOfContentsScreen_(prefs, readable, renderer, display),
+          batteryTextView_(display, ""),
           batteryIconView_(display, boltBits, bolt_width, bolt_height),
           placeInReadableView_(display, ""), clockView_(display, "") {
         currentScreen_ = this;
@@ -40,6 +43,7 @@ public:
             this->setCurrentScreen(*this);
         };
         readableSeekScreen_.backCallback = [this]() { this->setCurrentScreen(*this); };
+        readableTableOfContentsScreen_.backCallback = [this]() { this->setCurrentScreen(*this); };
         leftButtonCallback_ = [this]() {
             lightingAdjustScreen_.firstLoad = true;
             this->setCurrentScreen(lightingAdjustScreen_);
@@ -56,6 +60,8 @@ public:
 
     void processCommand(RemoteCommand command) override;
 
+    void showTocOrSeekScreen();
+
     void setLeftPopupButton(const std::string &title, std::function<void(void)> callback) {
         leftButtonTitle_ = title;
         leftButtonCallback_ = std::move(callback);
@@ -70,6 +76,7 @@ protected:
     LightingAdjustScreen lightingAdjustScreen_;
 
     ReadableSeekScreen readableSeekScreen_;
+    ReadableTableOfContentsScreen readableTableOfContentsScreen_;
     std::function<void(void)> leftButtonCallback_;
 
     SingleLineTextView batteryTextView_;

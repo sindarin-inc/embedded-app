@@ -85,6 +85,7 @@ void ReadableTableOfContentsScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::ENTER:
     case RemoteCommand::CHANNEL_PLUS:
+        setPlacemark();
         if (getCurrItem().callback != nullptr) {
             getCurrItem().callback();
         }
@@ -103,4 +104,12 @@ void ReadableTableOfContentsScreen::processCommand(RemoteCommand command) {
     default:
         break;
     }
+}
+
+void ReadableTableOfContentsScreen::setPlacemark() {
+    auto chapter = readable_.toc[getCurrSelection()];
+    readable_.place = chapter.txtOffset;
+    renderer_.setCurrentPlace(readable_.place);
+    prefs_.readablePlace.set(readable_.shortenedUuid.c_str(), readable_.place);
+    prefs_.readablePlaceChanged.set(readable_.shortenedUuid.c_str(), true);
 }

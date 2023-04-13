@@ -209,8 +209,7 @@ void PopupMenuScreen::processCommand(RemoteCommand command) {
         back();
         break;
     case RemoteCommand::NEXT:
-        readableSeekScreen_.firstLoad = true;
-        setCurrentScreen(readableSeekScreen_);
+        showTocOrSeekScreen();
         break;
     case RemoteCommand::BACK:
         back();
@@ -223,5 +222,21 @@ void PopupMenuScreen::processCommand(RemoteCommand command) {
         break;
     default:
         break;
+    }
+}
+
+void PopupMenuScreen::showTocOrSeekScreen() {
+    // If readable has a ToC with at least 1 element, show the ToC screen.
+    // Otherwise, show the seek screen.
+    if (readable_.toc.size() >= 1) {
+        for (ReadableTableOfContentsChapter &chapter : readable_.toc) {
+            readableTableOfContentsScreen_.addMenuItem(MenuItem(
+                chapter.title, [this]() { readableTableOfContentsScreen_.backCallback(); }));
+        }
+
+        setCurrentScreen(readableTableOfContentsScreen_);
+    } else {
+        readableSeekScreen_.firstLoad = true;
+        setCurrentScreen(readableSeekScreen_);
     }
 }
