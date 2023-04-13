@@ -142,7 +142,7 @@ public:
     }
 
     auto getTextSize(const std::string &buffer) -> ibmf_defs::Dim {
-        LOGD("getTextSize(): %s", buffer.c_str());
+        // LOGD("getTextSize(): %s", buffer.c_str());
         if constexpr (IBMF_TRACING) {
             LOGD("getTextSize()");
         }
