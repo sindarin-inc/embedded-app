@@ -30,6 +30,7 @@
 #include "UI/CrashReportScreen.hpp"
 #include "UI/DemoScreen.hpp"
 #include "UI/FirmwareUpdateScreen.hpp"
+#include "UI/Fonts/Fonts.hpp"
 #include "UI/LayoutTestScreen.hpp"
 #include "UI/LightingAdjustScreen.hpp"
 #include "UI/LineMenuScreen.hpp"
@@ -75,6 +76,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto readables = localStore.books();
     auto articles = localStore.articles();
+
+    ibmf75.load((ibmf_defs::MemoryPtr)fontsList[prefs_.fontType.get().value_or(0)].content,
+                fontsList[prefs_.fontType.get().value_or(0)].length);
 
     auto createReadableScreen = [this, display, mainMenu, &fileSystem, &lightingController,
                                  &localStore](const Readable &readable) -> ReadableScreen * {
@@ -509,6 +513,18 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         experimentalSettingsMenu->setToggleLastItem(false);
     }
 
+    experimentalSettingsMenu->addMenuItem(
+        MenuItem("Fonts Library", [this, experimentalSettingsMenu]() {
+            this->prefs_.fontsLibrary.set(!this->prefs_.fontsLibrary.get().value_or(false));
+            experimentalSettingsMenu->requireRestart();
+        }));
+
+    if (prefs_.fontsLibrary.get().value_or(false)) {
+        experimentalSettingsMenu->setToggleLastItem(true);
+    } else {
+        experimentalSettingsMenu->setToggleLastItem(false);
+    }
+
     experimentalSettingsMenu->addMenuItem(MenuItem("Autopilot", [this]() {
         this->prefs_.autoPilot.set(!this->prefs_.autoPilot.get().value_or(false));
         if (this->prefs_.autoPilot.get().value_or(false)) {
@@ -673,6 +689,30 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
     }));
 
+    if (prefs_.fontsLibrary.get().value_or(false)) {
+        readingSettingsMenu->addMenuItem(
+            MenuItem("Font Type (Experimental)", [this, display, readingSettingsMenu]() {
+                auto fontTypeMenu =
+                    new MenuScreen(power_.battery, *display, readingSettingsMenu->getMyStyle(),
+                                   "Font Type Settings", "Reading Settings");
+                for (int i = 0; i < fontsList.size(); i++) {
+                    fontTypeMenu->addMenuItem(
+                        MenuItem(fontsList[i].caption, [this, fontTypeMenu, i]() {
+                            ibmf75.load((ibmf_defs::MemoryPtr)fontsList[i].content,
+                                        fontsList[i].length);
+                            prefs_.fontType.set(i);
+                            this->display_->clearDisplay();
+                            fontTypeMenu->needsRerender = true;
+                        }));
+                }
+                setCurrentScreen(*fontTypeMenu);
+                fontTypeMenu->backCallback = [this, fontTypeMenu, readingSettingsMenu]() {
+                    readingSettingsMenu->setFirstLoad();
+                    setCurrentScreen(*readingSettingsMenu);
+                    delete fontTypeMenu;
+                };
+            }));
+    }
     readingSettingsMenu->addMenuItem(MenuItem("Brightness", [this, display, readingSettingsMenu,
                                                              &lightingController]() {
         auto lightingAdjustScreen =
