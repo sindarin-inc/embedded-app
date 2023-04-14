@@ -43,6 +43,15 @@ public:
         lucidaSkinny.readableFont = static_cast<Font *>(&ibmf75Face1);
 #endif
 
+        tahomaTiny.mainMenuFont = static_cast<Font *>(&fontTahomaRegularFonT5PT7B);
+        tahomaTiny.settingsFont = static_cast<Font *>(&fontTahomaRegularFonT5PT7B);
+        tahomaTiny.popupFont = static_cast<Font *>(&fontTahomaRegularFonT5PT7B);
+#if !IBMF_TEST
+        tahomaRegular.readableFont = static_cast<Font *>(&FONT_TAHOMA_REGULAR_FONT5PT7B);
+#else
+        tahomaTiny.readableFont = static_cast<Font *>(&ibmf75Face0);
+#endif
+
         tahomaRegular.mainMenuFont = static_cast<Font *>(&fontTahomaRegularFonT5PT7B);
         tahomaRegular.settingsFont = static_cast<Font *>(&fontTahomaRegularFonT5PT7B);
         tahomaRegular.popupFont = static_cast<Font *>(&fontTahomaRegularFonT5PT7B);
@@ -61,6 +70,14 @@ public:
         tahomaLarge.readableFont = static_cast<Font *>(&ibmf75Face2);
 #endif
 
+        tahomaHuge.mainMenuFont = static_cast<Font *>(&fontTahomaRegularFonT6PT7B);
+        tahomaHuge.settingsFont = static_cast<Font *>(&fontTahomaRegularFonT5PT7B);
+        tahomaHuge.popupFont = static_cast<Font *>(&fontTahomaRegularFonT5PT7B);
+#if !IBMF_TEST
+        tahomaHuge.readableFont = static_cast<Font *>(&FONT_TAHOMA_REGULAR_FONT6PT7B);
+#else
+        tahomaHuge.readableFont = static_cast<Font *>(&ibmf75Face3);
+#endif
         currentFont = tahomaRegular;
     }
 
@@ -73,6 +90,8 @@ public:
     FontFamily lucidaSkinny;
     FontFamily tahomaRegular;
     FontFamily tahomaLarge;
+    FontFamily tahomaTiny;
+    FontFamily tahomaHuge;
 
     FontFamily currentFont;
 
