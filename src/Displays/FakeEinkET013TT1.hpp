@@ -62,6 +62,8 @@ public:
 
     auto errored() -> bool { return false; }
 
+    void beginPowerOn(){};
+
 protected:
     uint8_t previousBuffer_[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT / 8];
     int framerate_ = FRAMERATE_DEFAULT;
