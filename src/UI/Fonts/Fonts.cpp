@@ -12,8 +12,8 @@
 #include "IBMFFonts/Baskerville_75.h"
 #include "IBMFFonts/BeausiteClassic_75.h"
 #include "IBMFFonts/ComicSans_75.h"
-#include "IBMFFonts/DejaVueSansCondensed_75.h"
-#include "IBMFFonts/DejaVueSans_75.h"
+#include "IBMFFonts/DejaVuSansCondensed_75.h"
+#include "IBMFFonts/DejaVuSans_75.h"
 #include "IBMFFonts/FiraSans_75.h"
 #include "IBMFFonts/FreeSans_75.h"
 #include "IBMFFonts/GnuUnifont_75.h"
@@ -21,6 +21,7 @@
 #include "IBMFFonts/NotoSansLight_75.h"
 #include "IBMFFonts/NotoSansMedium_75.h"
 #include "IBMFFonts/NotoSans_75.h"
+#include "IBMFFonts/OpenSansCondensed_75.h"
 #include "IBMFFonts/OpenSans_75.h"
 #include "IBMFFonts/RobotoCondensed_75.h"
 #include "IBMFFonts/Roboto_75.h"
@@ -43,15 +44,15 @@
 #define FONT_ENTRY(caption, name) {caption, name##_75_IBMF, name##_75_IBMF_LEN},
 
 // clang-format off
-std::array<FontEntry, 17> fontsList{{
+std::array<FontEntry, 18> fontsList{{
     FONT_ENTRY("GnuUnifont", GNUUNIFONT)
     FONT_ENTRY("Tahoma", TAHOMA)
     FONT_ENTRY("Arial", ARIAL)
     FONT_ENTRY("Baskerville", BASKERVILLE)
     FONT_ENTRY("Beausite", BEAUSITECLASSIC)
     FONT_ENTRY("Comic", COMICSANS)
-    FONT_ENTRY("DejaVue", DEJAVUESANS)
-    FONT_ENTRY("DejaVueCondensed", DEJAVUESANSCONDENSED)
+    FONT_ENTRY("DejaVu", DEJAVUSANS)
+    FONT_ENTRY("DejaVuCondensed", DEJAVUSANSCONDENSED)
     FONT_ENTRY("Fira", FIRASANS)
     FONT_ENTRY("Free", FREESANS)
     FONT_ENTRY("Liberation", LIBERATION)
@@ -59,6 +60,7 @@ std::array<FontEntry, 17> fontsList{{
     FONT_ENTRY("NotoLight", NOTOSANSLIGHT)
     FONT_ENTRY("NotoMedium", NOTOSANSMEDIUM)
     FONT_ENTRY("Open", OPENSANS)
+    FONT_ENTRY("OpenCondensed", OPENSANSCONDENSED)
     FONT_ENTRY("Roboto", ROBOTO)
     FONT_ENTRY("RobotoCondensed", ROBOTOCONDENSED)
 }};

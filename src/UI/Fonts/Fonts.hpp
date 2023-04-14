@@ -18,7 +18,7 @@ extern IBMFFont ibmf75Face1;
 extern IBMFFont ibmf75Face2;
 extern IBMFFont ibmf75Face3;
 
-extern std::array<FontEntry, 17> fontsList;
+extern std::array<FontEntry, 18> fontsList;
 
 extern GFont fontLucidaGrandE5PT7B;
 extern GFont fontLucidaGrandE5PT7BSkinny;
