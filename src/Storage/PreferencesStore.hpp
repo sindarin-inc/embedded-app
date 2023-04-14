@@ -22,6 +22,8 @@ enum FONT_CHOICES {
     PREFS_LUCIDA_FAT = 2,
     PREFS_LUCIDA_REGULAR = 3,
     PREFS_TAHOMA_LARGE = 4,
+    PREFS_TAHOMA_TINY = 5,
+    PREFS_TAHOMA_HUGE = 6,
 };
 
 enum class SyncReason {

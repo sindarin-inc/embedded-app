@@ -669,6 +669,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto fontMenu = new MenuScreen(power_.battery, *display, readingSettingsMenu->getMyStyle(),
                                        "Font Settings", "Reading Settings");
         fontMenu->setExtraText("Example text size");
+        fontMenu->addMenuItem(MenuItem("Tiny", [this, fontMenu]() {
+            this->display_->style.setFontFamily(this->display_->style.tahomaTiny);
+            this->display_->clearDisplay();
+            prefs_.font.set(PREFS_TAHOMA_TINY);
+            fontMenu->needsRerender = true;
+        }));
         fontMenu->addMenuItem(MenuItem("Small", [this, fontMenu]() {
             this->display_->style.setFontFamily(this->display_->style.tahomaRegular);
             this->display_->clearDisplay();
@@ -679,6 +685,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             this->display_->style.setFontFamily(this->display_->style.tahomaLarge);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_TAHOMA_LARGE);
+            fontMenu->needsRerender = true;
+        }));
+        fontMenu->addMenuItem(MenuItem("Huge", [this, fontMenu]() {
+            this->display_->style.setFontFamily(this->display_->style.tahomaHuge);
+            this->display_->clearDisplay();
+            prefs_.font.set(PREFS_TAHOMA_HUGE);
             fontMenu->needsRerender = true;
         }));
         setCurrentScreen(*fontMenu);
