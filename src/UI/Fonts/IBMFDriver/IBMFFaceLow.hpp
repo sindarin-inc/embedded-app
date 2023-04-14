@@ -216,7 +216,6 @@ public:
         int kerning = 0;
         int pitch2 = (glyph2.bitmap.dim.width + 7) >> 3;
 
-        bool first = true;
         int col, row;
         uint8_t mask, mask2;
         int idx, idx2, ridx, ridx2;
@@ -262,7 +261,6 @@ public:
                 }
             }
 
-            first = false;
             pos.x -= 1;
             kerning -= 1;
             max -= 1;
