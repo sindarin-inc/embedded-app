@@ -485,7 +485,7 @@ void EinkET013TT1::beginPowerOn() {
                                  static_cast<EventBits_t>(PowerEventGroupBits::POWERING_ON));
             xEventGroupSetBits(tthis->powerEventGroup_,
                                static_cast<EventBits_t>(PowerEventGroupBits::POWERED_ON));
-            vTaskDelete(NULL);
+            vTaskDelete(nullptr);
         },
         "powerOn", 4096, this, 11, nullptr, 1);
 }
