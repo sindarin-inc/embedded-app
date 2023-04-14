@@ -43,7 +43,10 @@ public:
             this->setCurrentScreen(*this);
         };
         readableSeekScreen_.backCallback = [this]() { this->setCurrentScreen(*this); };
-        readableTableOfContentsScreen_.backCallback = [this]() { this->setCurrentScreen(*this); };
+        readableTableOfContentsScreen_.backCallback = [this]() {
+            this->needsRerender = true;
+            this->setCurrentScreen(*this);
+        };
         leftButtonCallback_ = [this]() {
             lightingAdjustScreen_.firstLoad = true;
             this->setCurrentScreen(lightingAdjustScreen_);

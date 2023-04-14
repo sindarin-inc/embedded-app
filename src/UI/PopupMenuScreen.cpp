@@ -231,8 +231,13 @@ void PopupMenuScreen::showTocOrSeekScreen() {
     if (hasToc_) {
         readableTableOfContentsScreen_.resetMenuItems();
         for (ReadableTableOfContentsChapter &chapter : readable_.toc) {
-            readableTableOfContentsScreen_.addMenuItem(MenuItem(
-                chapter.title, [this]() { readableTableOfContentsScreen_.backCallback(); }));
+            readableTableOfContentsScreen_.addMenuItem(MenuItem(chapter.title, [this]() {
+                readableTableOfContentsScreen_.backCallback();
+
+                needsRerender = true;
+                this->renderer_.getDisplay()->clearDisplay();
+                this->backCallback();
+            }));
         }
         readableTableOfContentsScreen_.setNearestChapterSelection(renderer_.getCurrentPlace());
         readableTableOfContentsScreen_.setFirstLoad();
