@@ -78,7 +78,7 @@ public:
             font_->getFace(faceIndex_)->isInitialized()) {
             return true;
         }
-        
+
         LOGE("!!!! FONT NOT INITIALIZED !!!!");
         return false;
     }
