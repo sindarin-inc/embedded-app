@@ -73,6 +73,8 @@ public:
     };
     virtual void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED) = 0;
 
+    virtual void beginPowerOn() {}
+
     // Use `gfxClass` when you need to get direct access to draw to the whole screen (potentially
     // outside of focus areas)
     [[nodiscard]] auto gfxClass() const -> Adafruit_GFX * { return gfxClass_; }

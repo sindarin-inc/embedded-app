@@ -2,11 +2,13 @@
 
 #include <array>
 #include <cstdint>
+#include <driver/spi_master.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/event_groups.h>
+#include <string>
 #if !DISABLE_POWER_MANAGEMENT
 #include <esp_pm.h>
 #endif
-#include <driver/spi_master.h>
-#include <string>
 
 #include "EinkWaveform.hpp"
 
@@ -93,9 +95,13 @@ public:
 
     auto errored() -> bool { return error_; }
 
+    // When we know we will need to render UI but haven't calculated the UI yet, we can begin the
+    // power on sequence in parallel to drawing the UI.
+    void beginPowerOn();
+
 protected:
     inline void setCS(bool value, ScreenSide screen);
-    void powerOn();
+    void powerOnInternal();
     void powerOff();
     inline void writeRegister(Register index, uint8_t data);
     void writeRegister(Register index, const uint8_t *data, size_t len);
@@ -135,6 +141,8 @@ protected:
 
     spi_device_handle_t spiHigh_;
     spi_device_handle_t spiLow_;
+
+    EventGroupHandle_t powerEventGroup_;
 
 #if !DISABLE_POWER_MANAGEMENT
     esp_pm_lock_handle_t freqLock_;

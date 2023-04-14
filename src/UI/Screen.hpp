@@ -19,6 +19,7 @@ public:
         if (command != RemoteCommand::NONE) {
             processCommand(command);
         }
+        display.beginPowerOn();
         render(display);
     }
 

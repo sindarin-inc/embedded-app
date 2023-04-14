@@ -86,6 +86,11 @@ static uint8_t const BORDER_TEMPLATE[4] = {0x00, 0x00, 0x00, 0x0C};
 
 static uint8_t const BORDER_NONE[4] = {0x00, 0x00, 0x00, 0x03};
 
+enum class PowerEventGroupBits : EventBits_t {
+    POWERING_ON = 1 << 0,
+    POWERED_ON = 1 << 1,
+};
+
 void EinkET013TT1::init() {
     log_d("Initializing EinkET013TT1 with config csLeft_=%d csRight_=%d rst_=%d mosi=%d miso=%d "
           "clk=%d",
@@ -155,6 +160,8 @@ void EinkET013TT1::init() {
 #if !DISABLE_POWER_MANAGEMENT
     ESP_ERROR_CHECK(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "eink", &freqLock_));
 #endif
+
+    powerEventGroup_ = xEventGroupCreate();
 
     log_d("Initialized EinkET013TT1");
 }
@@ -226,7 +233,21 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
 
     log_d("Updating display with waveform \"%s\"", waveform.name);
 
-    powerOn();
+    // Check if we've began powering on the display already and if so wait for it to finish
+    auto bits = xEventGroupGetBits(powerEventGroup_);
+    if (bits & static_cast<EventBits_t>(PowerEventGroupBits::POWERING_ON)) {
+        log_d("Waiting for screen power on");
+        auto bits = xEventGroupWaitBits(powerEventGroup_,
+                                        static_cast<EventBits_t>(PowerEventGroupBits::POWERED_ON),
+                                        pdTRUE, pdTRUE, pdMS_TO_TICKS(220));
+        if (bits & static_cast<EventBits_t>(PowerEventGroupBits::POWERED_ON)) {
+            log_d("Done waiting for screen power on");
+        } else {
+            log_w("Failed to wait for display power on.");
+        }
+    } else {
+        powerOnInternal();
+    }
 
 #if !DISABLE_POWER_MANAGEMENT
     ESP_ERROR_CHECK(esp_pm_lock_acquire(freqLock_));
@@ -450,7 +471,26 @@ auto EinkET013TT1::readDeviceIdReg(ScreenSide screen) -> uint8_t {
     return result;
 }
 
-void EinkET013TT1::powerOn() {
+void EinkET013TT1::beginPowerOn() {
+    xEventGroupSetBits(powerEventGroup_,
+                       static_cast<EventBits_t>(PowerEventGroupBits::POWERING_ON));
+
+    // Power on in a separate task and use an event group to synchronize
+    // with the main task.
+    xTaskCreatePinnedToCore(
+        [](void *arg) {
+            auto *tthis = (EinkET013TT1 *)arg;
+            tthis->powerOnInternal();
+            xEventGroupClearBits(tthis->powerEventGroup_,
+                                 static_cast<EventBits_t>(PowerEventGroupBits::POWERING_ON));
+            xEventGroupSetBits(tthis->powerEventGroup_,
+                               static_cast<EventBits_t>(PowerEventGroupBits::POWERED_ON));
+            vTaskDelete(NULL);
+        },
+        "powerOn", 4096, this, 11, nullptr, 1);
+}
+
+void EinkET013TT1::powerOnInternal() {
     log_d("Powering on EinkET013TT1");
     DigitalWrite(rst_, HIGH);
 
@@ -497,6 +537,8 @@ void EinkET013TT1::powerOn() {
     writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10);
 
     spi_device_release_bus(spiHigh_);
+
+    log_d("Powered on EinkET013TT1");
 }
 
 void EinkET013TT1::powerOff() {
