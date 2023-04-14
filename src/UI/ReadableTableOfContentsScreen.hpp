@@ -46,6 +46,7 @@ public:
 
     void setPlacemark();
     void setFirstLoad() { firstLoad_ = true; }
+    void setNearestChapterSelection(unsigned long placeInFile);
 
 protected:
     PreferencesStore &prefs_;

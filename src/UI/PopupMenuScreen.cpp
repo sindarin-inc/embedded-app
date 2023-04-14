@@ -234,6 +234,7 @@ void PopupMenuScreen::showTocOrSeekScreen() {
             readableTableOfContentsScreen_.addMenuItem(MenuItem(
                 chapter.title, [this]() { readableTableOfContentsScreen_.backCallback(); }));
         }
+        readableTableOfContentsScreen_.setNearestChapterSelection(renderer_.getCurrentPlace());
         readableTableOfContentsScreen_.setFirstLoad();
         setCurrentScreen(readableTableOfContentsScreen_);
     } else {

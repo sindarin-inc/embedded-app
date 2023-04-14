@@ -162,3 +162,15 @@ void ReadableTableOfContentsScreen::setPlacemark() {
     prefs_.readablePlace.set(readable_.shortenedUuid.c_str(), readable_.place);
     prefs_.readablePlaceChanged.set(readable_.shortenedUuid.c_str(), true);
 }
+
+void ReadableTableOfContentsScreen::setNearestChapterSelection(unsigned long placeInFile) {
+    int nearestChapter = 0;
+    for (int i = 0; i < readable_.toc.size(); i++) {
+        if (readable_.toc[i].txtOffset <= placeInFile) {
+            nearestChapter = i;
+        } else {
+            break;
+        }
+    }
+    setCurrSelection(nearestChapter);
+}
