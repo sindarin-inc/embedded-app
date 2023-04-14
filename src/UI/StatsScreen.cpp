@@ -35,8 +35,17 @@ void StatsScreen::render(DisplaySystem &display) {
     }
 
     display.setFont(static_cast<Font *>(&fontTahomaRegularFonT8PT7B));
-    display.drawSingleLineOfText(wordsMessage, 0, 0);
-    display.drawSingleLineOfText(timeMessage, 0, display.getTextHeight() + 1);
+    display.drawSingleLineOfText(
+        wordsMessage,
+        display.xAbsolute(display.xAbsoluteCenter() -
+                          display.getTextWidth(wordsMessage.c_str()) / 2),
+        display.yAbsolute(display.yAbsoluteCenter() - (display.getTextHeight() * 2 + 1) / 2));
+    display.drawSingleLineOfText(timeMessage,
+                                 display.xAbsolute(display.xAbsoluteCenter() -
+                                                   display.getTextWidth(timeMessage.c_str()) / 2),
+                                 display.yAbsolute(display.yAbsoluteCenter() -
+                                                   (display.getTextHeight() * 2 + 1) / 2 +
+                                                   display.getTextHeight() + 1));
     display.updateDisplay();
     needsRerender = false;
 }

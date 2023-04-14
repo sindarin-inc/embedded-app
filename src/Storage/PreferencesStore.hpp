@@ -235,7 +235,13 @@ public:
           firstAutopilotRead(*this, "fst-auto-rd"), cesMode(*this, "ces"), emcMode(*this, "emc"),
           wifiPower(*this, "wifi-power"), morningNewspaperTime(*this, "morning-news"),
           eveningNewspaperTime(*this, "evening-news"), solTimeZone(*this, "time-zone"),
-          firmwareLoaded(*this, "fw-loaded"){};
+          firmwareLoaded(*this, "fw-loaded"), sleepReason(*this, "sleep-reason"),
+          noBooks(*this, "no-books"), showNews(*this, "show-news"),
+          noArticles(*this, "no-articles"), noBible(*this, "no-bible"),
+          noDeliverOnClose(*this, "no-deliv-close"), morningDelivery(*this, "morn-deliver"),
+          eveningDelivery(*this, "eve-deliver"), darkMode(*this, "dark-mode"),
+          autoPilot(*this, "auto-pilot"), fastTransitions(*this, "fast-tran"),
+          noUploadCrashes(*this, "no-upload-crash"), showDebugMenu(*this, "show-debug"){};
     PreferencesStore(PreferencesStore &) = delete;
 
     auto begin() -> bool {
@@ -318,6 +324,19 @@ public:
     PrefsItem<int> solTimeZone;
     // Firmware that's been loaded to the other flash slot but not yet installed
     PrefsItem<std::string> firmwareLoaded;
+    PrefsItem<int> sleepReason;
+    PrefsItem<bool> noBooks;
+    PrefsItem<bool> showNews;
+    PrefsItem<bool> noArticles;
+    PrefsItem<bool> noBible;
+    PrefsItem<bool> noDeliverOnClose;
+    PrefsItem<bool> morningDelivery;
+    PrefsItem<bool> eveningDelivery;
+    PrefsItem<bool> darkMode;
+    PrefsItem<bool> autoPilot;
+    PrefsItem<bool> fastTransitions;
+    PrefsItem<bool> noUploadCrashes;
+    PrefsItem<bool> showDebugMenu;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles
@@ -325,6 +344,7 @@ public:
     static uint64_t nextSyncTime;
     static uint8_t lastBatteryReport;
     static uint8_t lastPageTurnerBattery;
+    static bool settingsOnRestart;
 
 protected:
     bool started_;

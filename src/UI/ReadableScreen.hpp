@@ -88,6 +88,7 @@ protected:
     unsigned long nextInterval_ = 0;
     // How many ms we should take to read the page
     int pageSpeed_ = 10000;
+    bool autoPilotPause_ = false;
 
     bool showAutopilotPlus_ = false;
     bool showAutopilotMinus_ = false;

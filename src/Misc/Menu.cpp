@@ -17,6 +17,15 @@ void Menu::resetMenuItems() {
     currMenuPage_ = 0;
 }
 
+void Menu::populateMenuItems(std::vector<MenuItem> &menuItems) {
+    for (int i = currMenuPage_ * myStyle_.numberOfItemsPerPage;
+         (i < (currMenuPage_ * myStyle_.numberOfItemsPerPage + myStyle_.numberOfItemsPerPage)) &&
+         (i < numMenuItems_);
+         i++) {
+        menuItems.push_back(menuItems_[i]);
+    }
+}
+
 auto Menu::getNumItems() -> int { return numMenuItems_; }
 
 void Menu::setCurrSelection(int newSelection) { currSelection_ = newSelection; }
