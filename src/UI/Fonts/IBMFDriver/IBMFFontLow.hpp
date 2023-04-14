@@ -32,7 +32,7 @@ private:
     MemoryPtr currentFontData_{nullptr};
 
 public:
-    IBMFFontLow(const uint8_t * fontData, uint32_t length) noexcept {
+    IBMFFontLow(const uint8_t *fontData, uint32_t length) noexcept {
 
         load((MemoryPtr)fontData, length);
         if (!initialized_) {

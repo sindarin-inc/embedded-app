@@ -498,11 +498,13 @@ public:
             uint32_t row, col;
             MemoryPtr rowPtr;
 
-            uint32_t max_width = 50;
-            if (bitmap.dim.width < max_width) max_width = bitmap.dim.width;
+            uint32_t maxWidth = 50;
+            if (bitmap.dim.width < maxWidth) {
+                maxWidth = bitmap.dim.width;
+            }
 
             std::cout << "   +";
-            for (col = 0; col < max_width; col++) {
+            for (col = 0; col < maxWidth; col++) {
                 std::cout << '-';
             }
             std::cout << '+' << std::endl << std::flush;
@@ -512,7 +514,7 @@ public:
                 for (row = 0, rowPtr = bitmap.pixels; row < bitmap.dim.height;
                      row++, rowPtr += rowSize) {
                     std::cout << "   |";
-                    for (col = 0; col < max_width; col++) {
+                    for (col = 0; col < maxWidth; col++) {
                         if constexpr (BLACK_ONE_BIT) {
                             std::cout << ((rowPtr[col >> 3] & (0x80 >> (col & 7))) ? 'X' : ' ');
                         } else {
@@ -527,7 +529,7 @@ public:
                 for (row = 0, rowPtr = bitmap.pixels; row < bitmap.dim.height;
                      row++, rowPtr += rowSize) {
                     std::cout << "   |";
-                    for (col = 0; col < max_width; col++) {
+                    for (col = 0; col < maxWidth; col++) {
                         if constexpr (BLACK_EIGHT_BITS) {
                             std::cout << ((rowPtr[col] == BLACK_EIGHT_BITS) ? 'X' : ' ');
                         } else {
@@ -540,7 +542,7 @@ public:
             }
 
             std::cout << "   +";
-            for (col = 0; col < max_width; col++) {
+            for (col = 0; col < maxWidth; col++) {
                 std::cout << '-';
             }
             std::cout << '+' << std::endl << std::endl << std::flush;

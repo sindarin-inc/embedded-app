@@ -337,8 +337,8 @@ public:
                     // std::endl;
                     while ((fromRow < toBitmap.dim.height) && (repeatCount_-- > 0)) {
                         if (firstBlack >= 0) {
-                        copyOneRowEightBits(toRowPtr, toRowPtr + toRowSize, atOffset.x + firstBlack,
-                                            fromBitmap.dim.width);
+                            copyOneRowEightBits(toRowPtr, toRowPtr + toRowSize,
+                                                atOffset.x + firstBlack, fromBitmap.dim.width);
                         }
                         fromRow++;
                         toRowPtr += toRowSize;
