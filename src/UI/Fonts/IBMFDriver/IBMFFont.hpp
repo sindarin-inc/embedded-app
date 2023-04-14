@@ -13,7 +13,8 @@ private:
     static constexpr char const *TAG = "IBMFFont";
 
     IBMFFontLow *font_;
-    IBMFFaceLow *face_;
+    int faceIndex_;
+    // IBMFFaceLow *face_;
 
     // Maximum size of an allocated buffer to do vsnprintf formatting
     static constexpr int MAX_SIZE = 100;
@@ -38,7 +39,7 @@ private:
             while (glyphCode1 != NO_GLYPH_CODE) {
                 kern = (FIX16)0;
                 // Ligature loop
-                while (face_->ligKern(glyphCode1, &glyphCode2, &kern)) {
+                while (font_->getFace(faceIndex_)->ligKern(glyphCode1, &glyphCode2, &kern)) {
                     glyphCode1 = glyphCode2;
                     glyphCode2 = (iter == line.end()) ? NO_GLYPH_CODE : font_->translate(*iter++);
                 }
@@ -50,37 +51,48 @@ private:
     }
 
 public:
-    IBMFFont(IBMFFontLow &ibmFont, const uint8_t *data, unsigned int length, int index) noexcept
-        : Font(FontType::IBMF), font_(&ibmFont) {
-        if constexpr (IBMF_TRACING) {
-            LOGD("IBMFFont initialisation with data of length %d and face index %d.", length,
-                 index);
-        }
-        if (!font_->isInitialized()) {
-            if (!font_->load((MemoryPtr)data, length)) {
-                LOGE("Unable to initialize an IBMFFont!!");
-            }
-        }
-        if (font_->isInitialized()) {
-            face_ = font_->getFace(index);
-            if (face_ == nullptr) {
-                LOGE("Internal error!!");
-            }
-        }
-    }
+    IBMFFont(IBMFFontLow &ibmFont, int index) noexcept
+        : Font(FontType::IBMF), font_(&ibmFont), faceIndex_(index) {}
+
+    // IBMFFont(IBMFFontLow &ibmFont, const uint8_t *data, unsigned int length, int index) noexcept
+    //     : Font(FontType::IBMF), font_(&ibmFont) {
+    //     if constexpr (IBMF_TRACING) {
+    //         LOGD("IBMFFont initialisation with data of length %d and face index %d.", length,
+    //              index);
+    //     }
+    //     if (!font_->isInitialized()) {
+    //         if (!font_->load((MemoryPtr)data, length)) {
+    //             LOGE("Unable to initialize an IBMFFont!!");
+    //         }
+    //     }
+    //     // if (font_->isInitialized()) {
+    //     //     face_ = font_->getFace(index);
+    //     //     if (face_ == nullptr) {
+    //     //         LOGE("Internal error!!");
+    //     //     }
+    //     // }
+    // }
 
     [[nodiscard]] inline auto isInitialized() const -> bool {
-        return (face_ != nullptr) && face_->isInitialized();
+        if ((font_ != nullptr) && font_->isInitialized() &&
+            font_->getFace(faceIndex_)->isInitialized()) {
+            return true;
+        }
+        
+        LOGE("!!!! FONT NOT INITIALIZED !!!!");
+        return false;
     }
 
-    [[nodiscard]] inline auto getFace() -> const IBMFFaceLow * { return face_; }
+    [[nodiscard]] inline auto getFace() -> const IBMFFaceLow * {
+        return isInitialized() ? font_->getFace(faceIndex_) : nullptr;
+    }
 
     inline auto setResolution(PixelResolution res) -> void {
         if constexpr (IBMF_TRACING) {
             LOGD("setResolution()");
         }
-        if (face_ != nullptr) {
-            face_->setResolution(res);
+        if (isInitialized()) {
+            font_->getFace(faceIndex_)->setResolution(res);
         }
     }
 
@@ -88,7 +100,7 @@ public:
         if constexpr (IBMF_TRACING) {
             LOGD("getResolution()");
         }
-        return (face_ != nullptr) ? face_->getResolution() : DEFAULT_RESOLUTION;
+        return (isInitialized()) ? font_->getFace(faceIndex_)->getResolution() : DEFAULT_RESOLUTION;
     }
 
     [[nodiscard]] inline auto lineHeight() const -> int override {
@@ -98,7 +110,7 @@ public:
                 LOGE("Not initialized!!!");
             }
         }
-        return isInitialized() ? ((int)face_->getLineHeight()) : 0;
+        return isInitialized() ? static_cast<int>(font_->getFace(faceIndex_)->getLineHeight()) : 0;
     }
 
     auto drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
@@ -112,7 +124,7 @@ public:
             glyph.bitmap = canvas;
 
             ligKernUTF8Map(line, [this, &glyph, &atPos](GlyphCode glyphCode, FIX16 kern) {
-                if (this->face_->getGlyph(glyphCode, glyph, true, false, atPos)) {
+                if (font_->getFace(faceIndex_)->getGlyph(glyphCode, glyph, true, false, atPos)) {
                     // As advance is positive and greather than kern, we can shift right
                     // to get rid of the fix point decimals
                     atPos.x += (glyph.metrics.advance + kern) >> 6;
@@ -152,7 +164,8 @@ public:
         if (isInitialized()) {
             ligKernUTF8Map(buffer, [this, &dim, &up, &down](GlyphCode glyphCode, FIX16 kern) {
                 ibmf_defs::Glyph glyph;
-                if (face_->getGlyph(glyphCode, glyph, false)) { // retrieves only the metrics
+                if (font_->getFace(faceIndex_)
+                        ->getGlyph(glyphCode, glyph, false)) { // retrieves only the metrics
                     // LOGD("Advance: %f, xoff: %d, yoff: %d, descent: %d, kern: %d",
                     //      IBMFFaceLow::fromFIX16(glyph.metrics.advance), glyph.metrics.xoff,
                     //      glyph.metrics.yoff, glyph.metrics.descent, kern);
@@ -205,7 +218,8 @@ public:
         if (isInitialized()) {
             ligKernUTF8Map(buffer, [this, &width](GlyphCode glyphCode, FIX16 kern) {
                 ibmf_defs::Glyph glyph;
-                if (face_->getGlyph(glyphCode, glyph, false)) { // retrieves only the metrics
+                if (font_->getFace(faceIndex_)
+                        ->getGlyph(glyphCode, glyph, false)) { // retrieves only the metrics
                     // LOGD("Advance value: %f, kern: %f",
                     //     IBMFFaceLow::fromFIX16(glyph.metrics.advance),
                     //     IBMFFaceLow::fromFIX16(kern));
@@ -227,7 +241,7 @@ public:
         if (isInitialized()) {
             // for (UTF8Iterator chrIter = buffer.begin(); chrIter != buffer.end(); chrIter++) {
             //     ibmf_defs::Glyph glyph;
-            //     if (face_->getGlyph(*chrIter, glyph, false)) {
+            //     if (font_->getFace(faceIndex_)->getGlyph(*chrIter, glyph, false)) {
             //         // LOGD("yoff value: %d", glyph.metrics.yoff);
             //         if (height > glyph.metrics.yoff) {
             //             height = glyph.metrics.yoff; // yoff is negative
@@ -236,7 +250,7 @@ public:
             //         LOGW("Unable to retrieve glyph for char %d(%c)", *chrIter, *chrIter);
             //     }
             // }
-            // height = face_->getEmHeight();
+            // height = font_->getFace(faceIndex_)->getEmHeight();
             Dim dim = getTextSize(buffer);
             height = dim.height;
         }

@@ -29,10 +29,12 @@ private:
     PlanesPtr planes_{nullptr};
     CodePointBundlesPtr codePointBundles_{nullptr};
 
-public:
-    IBMFFontLow(MemoryPtr fontData, uint32_t length) noexcept {
+    MemoryPtr currentFontData_{nullptr};
 
-        initialized_ = load(fontData, length);
+public:
+    IBMFFontLow(const uint8_t * fontData, uint32_t length) noexcept {
+
+        load((MemoryPtr)fontData, length);
         if (!initialized_) {
             LOGE("Font data not recognized!");
         }
@@ -47,11 +49,20 @@ public:
     [[nodiscard]] inline auto isInitialized() const -> bool { return initialized_; }
 
     [[nodiscard]] inline auto getFace(int idx) -> IBMFFaceLowPtr {
-        return (isInitialized() && (idx < preamble_->faceCount)) ? &faces_[idx] : nullptr;
+        if (isInitialized()) {
+            return (idx < preamble_->faceCount) ? &faces_[idx] : &faces_[preamble_->faceCount - 1];
+        } else {
+            return nullptr;
+        }
     }
 
-    auto load(const MemoryPtr fontData, uint32_t length) -> bool {
+    auto load(MemoryPtr fontData, uint32_t length) -> bool {
 
+        if (currentFontData_ == fontData) {
+            return true;
+        }
+
+        initialized_ = false;
         preamble_ = reinterpret_cast<PreamblePtr>(fontData);
 
         if constexpr (IBMF_TRACING) {
@@ -122,7 +133,9 @@ public:
                 return false;
             }
         }
+
         initialized_ = true;
+        currentFontData_ = fontData;
         // showFont();
         return true;
     }

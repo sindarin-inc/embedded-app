@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Font.hpp"
+#include "FontEntry.hpp"
 #include "IBMFDriver/IBMFFont.hpp"
 #include "IBMFDriver/IBMFFontLow.hpp"
 
@@ -10,12 +11,14 @@
 
 // All the fonts are instanciated in Fonts.cpp
 
-extern IBMFFontLow tahoma75;
+extern IBMFFontLow ibmf75;
 
-extern IBMFFont fontTest75BPI9PT;
-extern IBMFFont fontTest75BPI10PT;
-extern IBMFFont fontTest75BPI12PT;
-extern IBMFFont fontTest75BPI14PT;
+extern IBMFFont ibmf75Face0;
+extern IBMFFont ibmf75Face1;
+extern IBMFFont ibmf75Face2;
+extern IBMFFont ibmf75Face3;
+
+extern std::array<FontEntry, 17> fontsList;
 
 extern GFont fontLucidaGrandE5PT7B;
 extern GFont fontLucidaGrandE5PT7BSkinny;
