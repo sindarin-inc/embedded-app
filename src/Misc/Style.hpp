@@ -58,7 +58,7 @@ public:
 #if !IBMF_TEST
         tahomaLarge.readableFont = static_cast<Font *>(&FONT_TAHOMA_REGULAR_FONT6PT7B);
 #else
-        tahomaLarge.readableFont = static_cast<Font *>(&ibmf75Face1);
+        tahomaLarge.readableFont = static_cast<Font *>(&ibmf75Face2);
 #endif
 
         currentFont = tahomaRegular;
