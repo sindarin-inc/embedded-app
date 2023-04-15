@@ -49,7 +49,8 @@ public:
     void drawMenuItems(DisplaySystem &display, bool withBullet, bool withLastItem = true);
 
     void showTemporaryMessage(DisplaySystem &display, const std::string &message,
-                              int duration = 2000, bool rerenderAfter = true);
+                              int duration = 2000, bool rerenderAfter = true,
+                              bool renderBacl = false);
 
     auto getFirstLoad() -> bool { return firstLoad_; }
 

@@ -754,7 +754,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 
     systemSettingsMenu->addMenuItem(MenuItem("Legal & Regulatory", [systemSettingsMenu, display]() {
-        systemSettingsMenu->showTemporaryMessage(*display, "FCC Stuff, Legal Stuff, etc.");
+        systemSettingsMenu->showTemporaryMessage(*display, "FCC Stuff, Legal Stuff, etc.", 4000,
+                                                 true, true);
     }));
 
     systemSettingsMenu->addMenuItem(MenuItem("Set Time Zone", [this, display,

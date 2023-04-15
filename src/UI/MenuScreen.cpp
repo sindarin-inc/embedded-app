@@ -5,6 +5,7 @@
 #include "Misc/MenuStyle.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/Style.hpp"
+#include "UI/Bitmaps/bacl.hpp"
 
 #define MAX_WIDTH 150
 
@@ -84,9 +85,11 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
 }
 
 void MenuScreen::showTemporaryMessage(DisplaySystem &display, const std::string &message,
-                                      int duration, bool rerenderAfter) {
+                                      int duration, bool rerenderAfter, bool renderBacl) {
     display.setFont(display.style.getFontFamily().settingsFont);
     display.drawSingleLineOfCenteredText(message);
+    display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(160), bacl_bits, bacl_width,
+                        bacl_height, display.fg);
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     Delay(duration);
     if (rerenderAfter) {
