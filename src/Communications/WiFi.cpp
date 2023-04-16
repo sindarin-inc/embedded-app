@@ -290,6 +290,27 @@ auto WiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
     auto startTime = xTaskGetTickCount();
     // loop twice through available settings, or stop if timed out
     settings_.load();
+    if (settings_.count() == 0) {
+        // attempt to migrate wifi setting from previous method
+        log_i("no wifi credentials found, attempting to migrate");
+        if (hasWiFiCredentials()) {
+            wifi_config_t conf;
+            getWifiConfig(&conf);
+
+            WiFiSetting s;
+            s.ssid_ = (char*)conf.sta.ssid;
+            s.password_ = (char*)conf.sta.password;
+
+            log_i("added setting %s %s", s.ssid_.c_str(), s.password_.c_str());
+
+            settings_.settings[0] = s;
+            settings_.numSettings_ = 1;
+        } else {
+            log_w("no wifi credentials found");
+            return false;
+        }
+    }
+
     int settingsToCheck = settings_.count() * 2;
 
     for (int i = 0; i < settingsToCheck; i++) {
