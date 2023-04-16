@@ -202,6 +202,9 @@ auto WiFi::scanNetworks(const std::function<void(std::shared_ptr<wifi_ap_record_
 }
 
 auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> esp_err_t {
+
+    disconnected_ = false;
+
     // We have to have wifi sleep enabled otherwise Bluetooth can't work
     esp_err_t err = esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
     if (err != ESP_OK) {
@@ -275,30 +278,64 @@ auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> 
     return ESP_OK;
 }
 
+
+
 auto WiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
+
+    if (connected()) {
+        return true;
+    }
+
+    // load wifi settings
     auto startTime = xTaskGetTickCount();
-    if (!connected()) {
-        wifi_config_t wifiConfig = {};
-        getWifiConfig(&wifiConfig);
-        if (!hasWiFiCredentials()) {
-            log_d("No WiFi credentials found");
-            return false;
+    // loop twice through available settings, or stop if timed out
+    settings_.load();
+    int settingsToCheck = settings_.count() * 2;
+
+    for (int i = 0; i < settingsToCheck; i++) {
+        if ((xTaskGetTickCount() - startTime) > timeoutMs) {
+            log_w("timed out connecting to wifi.");
+            break;
         }
-        if (connectWiFi() != ESP_OK) {
-            log_w("connectWiFi failed");
-            return false;
+
+        log_i("trying setting %d: %s %s", i, settings_.top().ssid_.c_str(), settings_.top().password_.c_str());
+        if (connectTopWiFiSettingWithTimeout(20000)) {
+            // save current settings
+            settings_.save();
+            return true;
         }
-        // Wait for a connection
-        // TODO: Would be good to make this not a polling loop so if there's an obvious failure we
-        // could return sooner
-        while (!connected() && (xTaskGetTickCount() - startTime) < timeoutMs) {
-            vTaskDelay(200);
+
+        // top setting failed, try another
+        settings_.rotate();
+    }
+
+    // failed to connect
+    log_w("failed to connect to wifi");
+    disconnectWiFi();
+    return false;
+}
+
+auto WiFi::connectTopWiFiSettingWithTimeout(int timeoutMs) -> bool {
+    auto startTime = xTaskGetTickCount();
+
+    // attempt to connect with last successful settings
+    if (connectWiFi(settings_.top().ssid_, settings_.top().password_) != ESP_OK) {
+        log_w("connectWiFi failed");
+        return false;
+    }
+    // Wait for a connection
+    // TODO: Would be good to make this not a polling loop so if there's an obvious failure we
+    // could return sooner
+    while (!connected() && !disconnected_ && (xTaskGetTickCount() - startTime) < timeoutMs) {
+        vTaskDelay(200);
+    }
+    if (!connected() || disconnected_) {
+        log_w("failed to connect to: %s %s", settings_.top().ssid_.c_str(), settings_.top().password_.c_str());
+        esp_err_t err = esp_wifi_disconnect();
+        if (err != ESP_OK) {
+            log_w("error in esp_wifi_disconnect: %d", err);
         }
-        if (!connected()) {
-            log_w("Timed out waiting for WiFi connection");
-            disconnectWiFi();
-            return false;
-        }
+        return false;
     }
 
     return true;
@@ -361,8 +398,10 @@ void WiFi::wiFiEventHandler(void *arg, esp_event_base_t eventBase, int32_t event
     case WIFI_EVENT_STA_DISCONNECTED:
         log_i("WIFI_EVENT_STA_DISCONNECTED");
         tthis->connected_ = false;
+        tthis->disconnected_ = true;
         break;
     default:
+        log_i("WIFI_EVENT: %" PRIi32, eventId);
         log_d("WIFI_EVENT: %" PRIi32, eventId);
     }
 }
@@ -378,5 +417,6 @@ void WiFi::ipEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId
     }
     default:
         log_d("IP_EVENT: %" PRIi32, eventId);
+        log_i("IP_EVENT: %" PRIi32, eventId);
     }
 }

@@ -5,6 +5,8 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <Storage/PreferencesStore.hpp>
+#include "Communications/WiFiSettings.hpp"
 
 typedef enum {
     WIFI_POWER_19_5dBm = 78,   // 19.5dBm
@@ -57,10 +59,12 @@ public:
 protected:
     bool began_ = false;
     bool connected_ = false;
+    bool disconnected_ = false;
     wifi_power_t wiFiPower_ = WIFI_POWER_19_5dBm;
     esp_netif_t *staNetif_;
     esp_event_handler_instance_t wifiEventHandlerInstance_;
     esp_event_handler_instance_t ipEventHandlerInstance_;
+    WiFiSettings settings_;
 
     // Lifecycle init/deinit
     auto begin() -> esp_err_t;
@@ -71,4 +75,6 @@ protected:
                                  void *eventData);
     static void ipEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId,
                                void *eventData);
+
+    auto connectTopWiFiSettingWithTimeout(int timeoutMs = 20000) -> bool;
 };

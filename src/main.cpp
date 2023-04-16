@@ -12,6 +12,7 @@
 
 #include "Communications/BackgroundSync.hpp"
 #include "Communications/WiFi.hpp"
+#include "Communications/WiFiSettings.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Battery.hpp"
 #include "Misc/BootError.hpp"
@@ -36,7 +37,7 @@
 DisplayEinkET013TT1 myDisplay(DISPLAY_CS_LEFT, DISPLAY_CS_RIGHT, DISPLAY_RST);
 #endif
 
-PreferencesStore prefs;
+extern PreferencesStore prefs;
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS
 #include "Communications/BLESindarinService.hpp"
@@ -156,6 +157,48 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     if (!prefs.begin()) {
         bootErrors.push_back({.type = BootError::Type::Preferences});
+    }
+
+    /*
+    WiFiSettings ws;
+    ws.settings[0].ssid_ = "bruce2";
+    ws.settings[0].password_ = "blah";
+    ws.settings[1].ssid_ = "bruce";
+    ws.settings[1].password_ = "caramelle";
+    ws.numSettings_ = 2;
+    ws.save();
+
+    std::string settingsString = prefs.wifiSettingsJson.get().value_or("");
+    log_i("wifi settings string: %s", settingsString.c_str());
+    */
+
+    //auto doc = std::make_unique<SpiRamJsonDocument>(2048);
+    /*
+    
+    deserializeJson(*doc, settingsString.c_str());
+    JsonObject body = doc->to<JsonObject>();
+    WiFiSettings ws2;
+    ws2.fromJson(body);
+    log_i("num settings %d", ws2.numSettings_);
+    */
+
+    /*
+    DynamicJsonDocument doc(1024);
+    const char* input =
+      "{\"sensor\":\"gps\",\"time\":1351824120,\"data\":[48.756080,2.302038]}";
+    deserializeJson(doc, input);
+    JsonObject obj = doc.as<JsonObject>();
+    //JsonObject obj = doc->to<JsonObject>();
+    std::string jj = DumpJson(obj);
+
+    log_i("jj : %s", jj.c_str());
+    */
+    WiFiSettings ww;
+    ww.load();
+    log_i("ww size %d", ww.count());
+
+    for (int i = 0; i < ww.count(); i++) {
+        log_i("s %d: %s %s", i, ww.settings[i].ssid_.c_str(), ww.settings[i].password_.c_str());
     }
 
     solClock.begin();
