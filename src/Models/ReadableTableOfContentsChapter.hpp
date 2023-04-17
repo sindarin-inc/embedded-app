@@ -11,22 +11,22 @@ public:
     ~ReadableTableOfContentsChapter() override = default;
 
     std::string title;
-    uint8_t order;
     std::string href;
     uint32_t txtOffset;
     std::string inSubsectionHref;
 
     auto fromJson(const JsonObject &j) -> bool override {
-        if (!j.containsKey("href") || !j.containsKey("txt_offset") || !j.containsKey("order") ||
-            !j.containsKey("title")) {
+        if (!j.containsKey("href") || !j.containsKey("txt_offset") || !j.containsKey("title")) {
             return false;
         }
         title = j["title"].as<std::string>();
         href = j["href"].as<std::string>();
         if (j.containsKey("in_subsection_href")) {
             inSubsectionHref = j["in_subsection_href"].as<std::string>();
+            if (!inSubsectionHref.empty()) {
+                title = "  " + title;
+            }
         }
-        order = j["order"].as<uint8_t>();
         txtOffset = j["txt_offset"].as<uint32_t>();
 
         return true;

@@ -23,8 +23,7 @@ auto ReadableTableOfContentsScreen::layout(LayoutContext &context, Size size) ->
         });
 
     context.setSublayoutFrame(
-        // The -5 is to leave room for the paging circles at the right hand side of the view
-        {{size.width - 5, 0}, {10, size.height}},
+        {{size.width + 10, 0}, {10, size.height}},
         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical | LayoutOptionsAlignRight,
         [this](LayoutContext &context, Size size) -> Size {
             int x = 0;
