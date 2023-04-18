@@ -23,7 +23,7 @@ void convertFromJson(JsonVariantConst src, WiFiSetting &dst);
 
 class WiFiSettings : JsonSerializable {
 public:
-    WiFiSettings() { load(); }
+    WiFiSettings() {}
     ~WiFiSettings() {}
 
     WiFiSetting settings[MAX_WIFI_SETTINGS];
@@ -58,6 +58,7 @@ public:
     bool isValid() { return valid_; }
 
 private:
+    bool loaded_ = false;
     bool settingExists(const std::string &ssid, const std::string &password);
 };
 

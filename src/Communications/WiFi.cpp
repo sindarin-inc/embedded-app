@@ -155,6 +155,7 @@ void WiFi::migrateWiFiCredentials() {
 
 auto WiFi::hasWiFiCredentials() -> bool {
 
+    settings_.load();
     if (!settings_.isValid()) {
         migrateWiFiCredentials();
     }
@@ -314,8 +315,15 @@ auto WiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
         return true;
     }
 
+    esp_err_t err = begin();
+    if (err != ESP_OK) {
+        log_e("begin failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+
     // load wifi settings
     auto startTime = xTaskGetTickCount();
+    settings_.load();
     // loop twice through available settings, or stop if timed out
     if (!settings_.isValid()) {
         migrateWiFiCredentials();
@@ -337,7 +345,6 @@ auto WiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
         log_i("trying setting %d: %s %s", i, settings_.top().ssid_.c_str(),
               settings_.top().password_.c_str());
         if (connectTopWiFiSettingWithTimeout(20000)) {
-            // save current settings
             return true;
         }
 

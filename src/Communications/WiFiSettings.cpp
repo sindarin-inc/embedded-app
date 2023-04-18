@@ -27,6 +27,9 @@ auto convertToJson(const WiFiSettings &src, JsonVariant dst) -> bool {
 }
 
 void WiFiSettings::load() {
+    if (loaded_) {
+        return;
+    }
     std::string settingsString = prefs.wifiSettingsJson.get().value_or("");
     log_i("wifi settings load: %s", settingsString.c_str());
     if (settingsString.size() == 0) {
@@ -38,6 +41,7 @@ void WiFiSettings::load() {
     JsonObject obj = doc.as<JsonObject>();
     fromJson(obj);
     valid_ = true;
+    loaded_ = true;
 }
 
 void WiFiSettings::save() const {
