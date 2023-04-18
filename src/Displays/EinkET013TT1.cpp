@@ -402,6 +402,9 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
 
     einkQueue_->dispatch([this, waveform, buffer, overrideVcom, group]() {
         if (!poweredOn_) {
+            // This shouldn't happen, we should have been powering on the screen early in the render
+            // pipeline before update is called
+            log_w("Screen not powered on at update time. Powering on.");
             powerOnInternal();
         }
         updateInternal(waveform, buffer, overrideVcom);
@@ -413,12 +416,16 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
         if (!einkQueue_->waitNotEmpty(100)) {
             einkQueue_->dispatch([this]() { powerOffInternal(); });
         } else {
-            log_d("Eink queue has %d items still, not powering off", einkQueue_->size());
+            log_d("Eink queue has work to do! Not powering off");
         }
     });
 
     // Wait for the update to finish
-    xEventGroupWaitBits(group, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(1000));
+    constexpr int maxWaitTimeMs = (MAX_FRAMES_PER_WAVEFORM / FRAMERATE_DEFAULT) * 1000;
+    auto bits = xEventGroupWaitBits(group, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(maxWaitTimeMs));
+    if (bits != 1) {
+        log_e("Timed out waiting for update to finish!");
+    }
 }
 
 void EinkET013TT1::writeRegister(Register index, const uint8_t *data, size_t len) {
@@ -501,19 +508,22 @@ auto EinkET013TT1::readDeviceIdReg(ScreenSide screen) -> uint8_t {
 
 void EinkET013TT1::beginPowerOn() {
     einkQueue_->dispatch([this]() {
-        if (poweredOn_) {
-            return;
-        }
-        powerOnInternal();
-        // If we get here and don't have something queued yet, the render code took longer than the
-        // powerOn code (180ms) and so the render code is the refresh bottleneck.
-        if (einkQueue_->size() == 0) {
-            log_w("Render code took longer than power on code!");
-            // Wait for something else to get queued, otherwise power off (this shouldn't happen)
-            if (!einkQueue_->waitNotEmpty(100)) {
-                log_e("Nothing rendered 100ms after Eink power on, powering off");
-                einkQueue_->dispatch([this]() { powerOffInternal(); });
+        auto startTime = Millis();
+        if (!poweredOn_) {
+            powerOnInternal();
+            if (einkQueue_->size() == 0) {
+                // If we get here and don't have something queued yet, the render code took longer
+                // than the powerOn code (180ms) and so the render code is the refresh bottleneck.
+                log_w("Render code took longer than power on code!");
             }
+        }
+        // Give views a maximum of 300ms to do something before giving up and turning off. Since
+        // the powerOn code may or may not run in this method depending on whether the screen
+        // was already powered on, we need to calculate how long to wait.
+        int millisToWait = 300 - (Millis() - startTime);
+        if (!einkQueue_->waitNotEmpty(millisToWait)) {
+            log_e("Nothing rendered after Eink power on, powering off (this shouldn't happen)");
+            einkQueue_->dispatch([this]() { powerOffInternal(); });
         }
     });
 }
