@@ -124,6 +124,9 @@ void MainMenuScreen::render(DisplaySystem &display) {
          {display.defaultScreenWidth - 2 * display.defaultXPadding,
           display.defaultScreenHeight - 2 * display.defaultYPadding}});
 
+    // We must explicitly set this in case of toggle between dark mode and not dark mode
+    topBarSelectionView_.strokeColor = display.fg;
+
     // On the first load, we want to only render the items in the menu because we are going
     // to do a partial refresh with the selector button at a lower/higher vcom to reduce
     // ghosting.
