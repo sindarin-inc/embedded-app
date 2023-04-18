@@ -128,7 +128,7 @@ void PowerManager::wakeupCheck(SolClock &clock) {
         // a crash during content sync). Just go back to sleep.
         bool open = true;
 #if USE_MMC5603
-        // open = templeCloseSensor_.isTempleOpen();
+        //open = templeCloseSensor_.isTempleOpen();
 #endif
         if (!open) {
             log_w("Temple is closed at boot, going back to sleep");
