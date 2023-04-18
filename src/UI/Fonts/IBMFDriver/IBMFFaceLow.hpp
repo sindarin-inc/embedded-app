@@ -275,7 +275,7 @@ public:
     }
 
     auto getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap, bool caching = true,
-                  Pos atPos = Pos(0, 0)) -> bool {
+                  Pos atPos = Pos(0, 0), bool inverted = false) -> bool {
 
         // LOGD("glyphCode: %04x, loadBitmap: %s, caching: %s, pos: [%d, %d]", glyphCode,
         //      loadBitmap ? "YES" : "NO", caching ? "YES" : "NO", atPos.x, atPos.y);
@@ -456,7 +456,8 @@ public:
                     .pixels = &(*pixelsPool_)[(*glyphsPixelPoolIndexes_)[accentIdx]],
                     .dim = Dim(accentInfo->bitmapWidth, accentInfo->bitmapHeight),
                     .length = accentInfo->packetLength};
-                rle.retrieveBitmap(accentBitmap, appGlyph.bitmap, outPos, accentInfo->rleMetrics);
+                rle.retrieveBitmap(accentBitmap, appGlyph.bitmap, outPos, accentInfo->rleMetrics,
+                                   inverted);
 
                 // showBitmap(appGlyph.bitmap);
             }
@@ -464,7 +465,8 @@ public:
             outPos = Pos(atPos.x + glyphOffsets.x, atPos.y + glyphOffsets.y);
             // std::cout << "inPos: [" << atPos.x << ", " << atPos.y << "], outPos: [" << outPos.x
             //           << ", " << outPos.y << "] " << std::endl;
-            rle.retrieveBitmap(glyphBitmap, appGlyph.bitmap, outPos, glyphInfo->rleMetrics);
+            rle.retrieveBitmap(glyphBitmap, appGlyph.bitmap, outPos, glyphInfo->rleMetrics,
+                               inverted);
             if (!caching) {
                 showBitmap(appGlyph.bitmap);
             }

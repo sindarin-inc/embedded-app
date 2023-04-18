@@ -133,15 +133,23 @@ private:
         memcpy(toLine + fromCol, fromLine + fromCol, size);
     }
 
-    auto copyOneRowOneBit(MemoryPtr fromLine, MemoryPtr toLine, int16_t fromCol,
-                          int16_t endCol) const -> void {
+    auto copyOneRowOneBit(MemoryPtr fromLine, MemoryPtr toLine, int16_t fromCol, int16_t endCol,
+                          bool inverted) const -> void {
         uint8_t mask = 0x80 >> (fromCol & 7);
         int idx = fromCol >> 3;
         for (int i = fromCol; i < endCol; i++) {
             if constexpr (BLACK_ONE_BIT) {
-                toLine[idx] |= (fromLine[idx] & mask);
+                if (inverted) {
+                    toLine[idx] &= fromLine[idx] | ~mask;
+                } else {
+                    toLine[idx] |= (fromLine[idx] & mask);
+                }
             } else {
-                toLine[idx] &= fromLine[idx] | ~mask;
+                if (inverted) {
+                    toLine[idx] |= (fromLine[idx] & mask);
+                } else {
+                    toLine[idx] &= fromLine[idx] | ~mask;
+                }
             }
             mask >>= 1;
             if (mask == 0) {
@@ -155,7 +163,7 @@ public:
     RLEExtractor(PixelResolution resolution) : resolution_(resolution) {}
 
     auto retrieveBitmap(const RLEBitmap &fromBitmap, Bitmap &toBitmap, const Pos atOffset,
-                        const RLEMetrics rleMetrics) -> bool {
+                        const RLEMetrics rleMetrics, bool inverted) -> bool {
         // point on the glyphs' bitmap definition
         fromPixelsPtr_ = fromBitmap.pixels;
         fromPixelsEnd_ = fromPixelsPtr_ + fromBitmap.length;
@@ -191,10 +199,18 @@ public:
                         }
                         if (data & fromMask) {
                             if constexpr (BLACK_ONE_BIT) {
-                                toRowPtr[idx] |= toMask;
+                                if (inverted) {
+                                    toRowPtr[idx] &= ~toMask;
+                                } else {
+                                    toRowPtr[idx] |= toMask;
+                                }
 
                             } else {
-                                toRowPtr[idx] &= ~toMask;
+                                if (inverted) {
+                                    toRowPtr[idx] |= toMask;
+                                } else {
+                                    toRowPtr[idx] &= ~toMask;
+                                }
                             }
                         }
                         fromMask >>= 1;
@@ -239,9 +255,18 @@ public:
                                 firstBlack = i;
                             }
                             if constexpr (BLACK_ONE_BIT) {
-                                toRowPtr[idx] |= toMask;
+                                if (inverted) {
+                                    toRowPtr[idx] &= ~toMask;
+                                } else {
+                                    toRowPtr[idx] |= toMask;
+                                }
+
                             } else {
-                                toRowPtr[idx] &= ~toMask;
+                                if (inverted) {
+                                    toRowPtr[idx] |= toMask;
+                                } else {
+                                    toRowPtr[idx] &= ~toMask;
+                                }
                             }
                         }
                         toMask >>= 1;
@@ -259,7 +284,7 @@ public:
                         if (firstBlack >= 0) {
                             copyOneRowOneBit(toRowPtr, toRowPtr + toRowSize,
                                              atOffset.x + firstBlack,
-                                             atOffset.x + fromBitmap.dim.width);
+                                             atOffset.x + fromBitmap.dim.width, inverted);
                         }
                         fromRow++;
                         toRowPtr += toRowSize;
@@ -293,7 +318,7 @@ public:
                             count = 0;
                         }
                         if ((data & (0x80U >> count)) != 0) {
-                            toRowPtr[toCol] = BLACK_EIGHT_BITS;
+                            toRowPtr[toCol] = (inverted) ? WHITE_EIGHT_BITS : BLACK_EIGHT_BITS;
                         }
                         count++;
                     }
@@ -328,7 +353,7 @@ public:
                             if (firstBlack < 0) {
                                 firstBlack = toCol - atOffset.x;
                             }
-                            toRowPtr[toCol] = BLACK_EIGHT_BITS;
+                            toRowPtr[toCol] = (inverted) ? WHITE_EIGHT_BITS : BLACK_EIGHT_BITS;
                         }
                         count--;
                     }

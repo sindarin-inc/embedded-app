@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstdarg>
 #include <cstdio>
 #include <functional>
 
@@ -114,7 +113,7 @@ public:
     }
 
     auto drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos,
-                              const std::string &line) const -> void {
+                              const std::string &line, bool inverted) const -> void {
         if constexpr (IBMF_TRACING) {
             LOGD("drawSingleLineOfText()");
         }
@@ -123,8 +122,9 @@ public:
             Glyph glyph;
             glyph.bitmap = canvas;
 
-            ligKernUTF8Map(line, [this, &glyph, &atPos](GlyphCode glyphCode, FIX16 kern) {
-                if (font_->getFace(faceIndex_)->getGlyph(glyphCode, glyph, true, false, atPos)) {
+            ligKernUTF8Map(line, [this, &glyph, &atPos, inverted](GlyphCode glyphCode, FIX16 kern) {
+                if (font_->getFace(faceIndex_)
+                        ->getGlyph(glyphCode, glyph, true, false, atPos, inverted)) {
                     // As advance is positive and greather than kern, we can shift right
                     // to get rid of the fix point decimals
                     atPos.x += (glyph.metrics.advance + kern) >> 6;
@@ -132,24 +132,6 @@ public:
                     LOGW("Unable to retrieve glyph for glyphCode %d", glyphCode);
                 }
             });
-        }
-    }
-
-    auto printFormatted(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos pos, char *fmt, ...) const
-        -> void {
-        if constexpr (IBMF_TRACING) {
-            LOGD("printFormatted()");
-        }
-        if (isInitialized()) {
-            va_list args;
-            va_start(args, fmt);
-
-            char *buffer = new char[MAX_SIZE];
-            if (buffer != nullptr) {
-                (void)vsnprintf(buffer, MAX_SIZE, fmt, args);
-                drawSingleLineOfText(canvas, pos, buffer);
-            }
-            delete[] buffer;
         }
     }
 
