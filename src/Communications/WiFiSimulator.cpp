@@ -55,4 +55,6 @@ auto WiFi::getLocalIp() -> esp_ip4_addr_t { return esp_ip4_addr{.addr = 0}; }
 
 auto WiFi::getLocalIpStr() -> std::string { return "0.0.0.0"; }
 
+void WiFi::clearWiFiCredentials() { log_i("Pretending to clear WiFi credentials"); }
+
 #endif
