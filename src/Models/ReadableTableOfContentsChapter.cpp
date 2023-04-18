@@ -9,11 +9,3 @@ auto convertToJson(const ReadableTableOfContentsChapter &src, JsonVariant dst) -
 
     return true;
 }
-
-// NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
-void convertFromJson(JsonVariantConst src, ReadableTableOfContentsChapter &dst) {
-    dst.title = src["title"].as<std::string>();
-    dst.href = src["href"].as<std::string>();
-    dst.inSubsectionHref = src["in_subsection_href"].as<std::string>();
-    dst.txtOffset = src["txt_offset"].as<uint32_t>();
-}

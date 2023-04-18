@@ -5,13 +5,11 @@ auto ReadableTableOfContentsScreen::layout(LayoutContext &context, Size size) ->
     const auto spacing = 10;
 
     auto insetRect = context.setSublayoutFrame(
-        {{inset, inset}, {size.width - 2 * inset, size.height - 2 * inset}},
+        Rect{{0, 0}, size}.inset(inset),
         LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
         [this](LayoutContext &context, Size size) -> Size {
             int x = 0;
             int y = 0;
-            log_i("ToC menu layout: %zu views in size %dpx x %d", menuItemViews_.size(), size.width,
-                  size.height);
 
             for (auto &view : menuItemViews_) {
                 auto viewFrame = context.setViewFrame(
@@ -30,8 +28,7 @@ auto ReadableTableOfContentsScreen::layout(LayoutContext &context, Size size) ->
             int y = 0;
             Size boxSize = {5, 5};
             for (auto &view : menuPageIndicatorViews_) {
-                auto viewFrame = context.setViewFrame(
-                    *view, {{x, y}, boxSize}, LayoutOptionsSizeToFit | LayoutOptionsAlignRight);
+                auto viewFrame = context.setViewFrame(*view, {{x, y}, boxSize});
                 y += viewFrame.size.height + 5;
             }
 
