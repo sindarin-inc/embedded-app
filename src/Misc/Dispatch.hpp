@@ -44,6 +44,10 @@ public:
 
     // Number of items on the queue
     auto size() -> int { return uxQueueMessagesWaiting(q_); }
+    auto waitNotEmpty(int timeoutMs = 10) -> bool {
+        WorkItem dummy;
+        return xQueuePeek(q_, &dummy, pdMS_TO_TICKS(timeoutMs)) == pdTRUE;
+    }
 
     // Deleted operations
     DispatchQueue(const DispatchQueue &rhs) = delete;

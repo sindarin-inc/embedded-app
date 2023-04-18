@@ -168,7 +168,7 @@ void EinkET013TT1::init() {
 void EinkET013TT1::setVcom(int mV) {
     mV = std::clamp(mV, -5600, 0);
     vcomInMV_ = mV;
-    log_d("Setting VCOM to %" PRIi32 " mV (register 0x9 = %" PRIu32 ")", vcomInMV_,
+    log_d("Setting VCOM to %" PRIi32 " mV (register 0x9 = %" PRIu8 ")", vcomInMV_,
           VcomMVToRegisterValue(vcomInMV_));
 }
 
@@ -409,15 +409,11 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
         // Release the lock
         xEventGroupSetBits(group, 1);
 
-        // Wait a little bit to see if we're going to want to update again soon.
-        Delay(100);
-
-        // If we've got other things on the dispatch queue, don't power off just yet
-        if (einkQueue_->size() > 0) {
-            log_d("Eink queue has %d items still, not powering off", einkQueue_->size());
-            return;
-        } else {
+        // Wait for something else to get queued, otherwise power off
+        if (!einkQueue_->waitNotEmpty(100)) {
             einkQueue_->dispatch([this]() { powerOffInternal(); });
+        } else {
+            log_d("Eink queue has %d items still, not powering off", einkQueue_->size());
         }
     });
 
@@ -513,6 +509,11 @@ void EinkET013TT1::beginPowerOn() {
         // powerOn code (180ms) and so the render code is the refresh bottleneck.
         if (einkQueue_->size() == 0) {
             log_w("Render code took longer than power on code!");
+            // Wait for something else to get queued, otherwise power off (this shouldn't happen)
+            if (!einkQueue_->waitNotEmpty(100)) {
+                log_e("Nothing rendered 100ms after Eink power on, powering off");
+                einkQueue_->dispatch([this]() { powerOffInternal(); });
+            }
         }
     });
 }
