@@ -10,10 +10,6 @@ CesScreen::CesScreen(DisplaySystem &display, PreferencesStore &prefs,
       lightingController_(lightingController) {}
 
 void CesScreen::render(DisplaySystem &display) {
-    if (!needsRerender) {
-        return;
-    }
-
     std::string message = messages_[currentScreen_];
 
     display.setFont(static_cast<Font *>(&fontTahomaRegularFonT6PT7B));
@@ -48,8 +44,6 @@ void CesScreen::render(DisplaySystem &display) {
         display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message.c_str()) / 2),
         display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2));
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-
-    needsRerender = false;
 }
 
 void CesScreen::processCommand(RemoteCommand command) {
@@ -68,7 +62,7 @@ void CesScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::BACK:
     case RemoteCommand::ENTER:
         currentScreen_++;
-        needsRerender = true;
+        setNeedsRerender();
         break;
     default:
         break;

@@ -2,13 +2,14 @@
 
 #include <array>
 #include <cstdint>
+#include <driver/spi_master.h>
+#include <string>
 #if !DISABLE_POWER_MANAGEMENT
 #include <esp_pm.h>
 #endif
-#include <driver/spi_master.h>
-#include <string>
 
 #include "EinkWaveform.hpp"
+#include "Misc/Dispatch.hpp"
 
 #define EinkET013TT1_PIXEL_WIDTH 256
 #define EinkET013TT1_PIXEL_HEIGHT 256
@@ -87,16 +88,21 @@ public:
 
     void clear(const EinkET013TT1Waveform &waveform);
 
-    void update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer);
+    void update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
+                int32_t overrideVcom = INT32_MAX);
 
     auto readTemperature(ScreenSide screen) -> int16_t;
 
     auto errored() -> bool { return error_; }
 
+    // When we know we will need to render UI but haven't calculated the UI yet, we can begin the
+    // power on sequence in parallel to drawing the UI.
+    void beginPowerOn();
+
 protected:
     inline void setCS(bool value, ScreenSide screen);
-    void powerOn();
-    void powerOff();
+    void powerOnInternal();
+    void powerOffInternal();
     inline void writeRegister(Register index, uint8_t data);
     void writeRegister(Register index, const uint8_t *data, size_t len);
     auto readRegister(uint8_t index, ScreenSide screen) -> uint8_t;
@@ -109,6 +115,8 @@ protected:
     inline auto timerRunning() -> bool;
     inline void waitForTimer();
     inline void waitForNotBusy();
+    void updateInternal(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
+                        int32_t overrideVcom);
 
     uint8_t csLeft_;
     uint8_t csRight_;
@@ -135,6 +143,9 @@ protected:
 
     spi_device_handle_t spiHigh_;
     spi_device_handle_t spiLow_;
+
+    bool poweredOn_ = false;
+    DispatchQueue *einkQueue_;
 
 #if !DISABLE_POWER_MANAGEMENT
     esp_pm_lock_handle_t freqLock_;

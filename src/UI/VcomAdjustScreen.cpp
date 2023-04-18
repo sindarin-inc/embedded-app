@@ -17,10 +17,6 @@ VcomAdjustScreen::VcomAdjustScreen(DisplaySystem &display, PreferencesStore &pre
 }
 
 void VcomAdjustScreen::render(DisplaySystem &display) {
-    if (!needsRerender) {
-        return;
-    }
-
     display.setFont(static_cast<Font *>(&fontLucidaGrandE10PT7B));
 
     auto vcomStr = StringFormat("%dmV", vCom);
@@ -37,7 +33,6 @@ void VcomAdjustScreen::render(DisplaySystem &display) {
     display.updateDisplay();
 
     display.setFont(static_cast<Font *>(&fontLucidaGrandE5PT7B));
-    needsRerender = false;
 }
 
 void VcomAdjustScreen::processCommand(RemoteCommand command) {
@@ -48,7 +43,7 @@ void VcomAdjustScreen::processCommand(RemoteCommand command) {
         prefs_.vcom.set(vCom);
         log_d("Saving vcom to preferences: (%d)", vCom);
         backCallback();
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::NEXT:
         vCom += STEP_IN_MV;
@@ -56,7 +51,7 @@ void VcomAdjustScreen::processCommand(RemoteCommand command) {
             vCom = MAX_VCOM_IN_MV;
         }
         driver->setVcom(vCom);
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::PREV:
         vCom -= STEP_IN_MV;
@@ -64,7 +59,7 @@ void VcomAdjustScreen::processCommand(RemoteCommand command) {
             vCom = MIN_VCOM_IN_MV;
         }
         driver->setVcom(vCom);
-        needsRerender = true;
+        setNeedsRerender();
         break;
     default:
         break;

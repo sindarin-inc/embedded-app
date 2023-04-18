@@ -7,10 +7,6 @@
 #include "sindarin-debug.h"
 
 void VoltageLogUploadScreen::render(DisplaySystem &display) {
-    if (!needsRerender) {
-        return;
-    }
-
     uint16_t x = 0;
     uint16_t y = 0;
 
@@ -64,8 +60,6 @@ void VoltageLogUploadScreen::render(DisplaySystem &display) {
     } else {
         display.updateDisplay(DisplaySystem::UpdateType::FAST);
     }
-
-    needsRerender = false;
 }
 
 void VoltageLogUploadScreen::processCommand(RemoteCommand command) {}

@@ -4,10 +4,6 @@
 #include "UI/Bitmaps/SeekBook.hpp"
 
 void ReadableSeekScreen::render(DisplaySystem &display) {
-    if (!needsRerender) {
-        return;
-    }
-
     auto place = prefs_.readablePlace.get(readable_.shortenedUuid.c_str());
     auto progress = 100 * (float)place / (float)renderer_.size();
 
@@ -79,8 +75,6 @@ void ReadableSeekScreen::render(DisplaySystem &display) {
     display.updateDisplay(firstLoad ? DisplaySystem::UpdateType::FULL
                                     : DisplaySystem::UpdateType::FAST);
     firstLoad = false;
-
-    needsRerender = false;
 }
 
 void ReadableSeekScreen::processCommand(RemoteCommand command) {
@@ -106,7 +100,7 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
         renderer_.setCurrentPlace(readable_.place);
         prefs_.readablePlace.set(readable_.shortenedUuid.c_str(), readable_.place);
         prefs_.readablePlaceChanged.set(readable_.shortenedUuid.c_str(), true);
-        needsRerender = true;
+        setNeedsRerender();
         break;
     }
     case RemoteCommand::CHANNEL_PLUS: {
@@ -129,7 +123,7 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
         renderer_.setCurrentPlace(readable_.place);
         prefs_.readablePlace.set(readable_.shortenedUuid.c_str(), readable_.place);
         prefs_.readablePlaceChanged.set(readable_.shortenedUuid.c_str(), true);
-        needsRerender = true;
+        setNeedsRerender();
         break;
     }
     case RemoteCommand::PREV: {
@@ -154,7 +148,7 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
         default:
             break;
         }
-        needsRerender = true;
+        setNeedsRerender();
         firstLoad = true;
         break;
     }

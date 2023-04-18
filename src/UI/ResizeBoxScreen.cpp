@@ -21,14 +21,8 @@ ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs
 }
 
 void ResizeBoxScreen::render(DisplaySystem &display) {
-    if (!needsRerender) {
-        return;
-    }
-
     this->renderer_.renderPage(0);
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-
-    needsRerender = false;
 }
 
 void ResizeBoxScreen::processCommand(RemoteCommand command) {
@@ -37,22 +31,22 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::CHANNEL_MINUS:
         oldRect.width += BOX_OFFSET_ADJUST_AMOUNT;
         oldRect.x -= BOX_OFFSET_ADJUST_AMOUNT / 2;
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::CHANNEL_PLUS:
         oldRect.width -= BOX_OFFSET_ADJUST_AMOUNT;
         oldRect.x += BOX_OFFSET_ADJUST_AMOUNT / 2;
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::PREV:
         oldRect.height += BOX_OFFSET_ADJUST_AMOUNT;
         oldRect.y -= BOX_OFFSET_ADJUST_AMOUNT / 2;
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::NEXT:
         oldRect.height -= BOX_OFFSET_ADJUST_AMOUNT;
         oldRect.y += BOX_OFFSET_ADJUST_AMOUNT / 2;
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::BACK:
         // The Turn Touch also sends a left keypress when long-pressing back so let's undo that

@@ -40,6 +40,6 @@ protected:
             needsFullUpdate_ = true;
         }
         state_ = state;
-        needsRerender = true;
+        setNeedsRerender();
     }
 };

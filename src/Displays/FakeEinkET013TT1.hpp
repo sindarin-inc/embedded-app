@@ -56,11 +56,14 @@ public:
 
     void clear(const EinkET013TT1Waveform &waveform);
 
-    void update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer);
+    void update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
+                int32_t overrideVcom = INT32_MAX);
 
     auto readTemperature(ScreenSide screen) -> int16_t;
 
     auto errored() -> bool { return false; }
+
+    void beginPowerOn(){};
 
 protected:
     uint8_t previousBuffer_[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT / 8];

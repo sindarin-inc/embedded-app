@@ -93,10 +93,6 @@ void LayoutTestScreen::drawInRect(Rect rect) {
 }
 
 void LayoutTestScreen::render(DisplaySystem &display) {
-    if (!needsRerender) {
-        return;
-    }
-
     setFrame({{0, 0}, {display.width(), display.height()}});
     PROFILE_START(LayoutTestScreenLayoutAndDraw);
     draw();
@@ -105,7 +101,6 @@ void LayoutTestScreen::render(DisplaySystem &display) {
     display.updateDisplay(firstLoad ? DisplaySystem::UpdateType::FULL
                                     : DisplaySystem::UpdateType::FAST);
     firstLoad = false;
-    needsRerender = false;
 }
 
 void LayoutTestScreen::processCommand(RemoteCommand command) {

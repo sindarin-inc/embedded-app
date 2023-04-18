@@ -79,6 +79,10 @@ inline auto GateBlockH(uint8_t i) -> uint32_t {
     }
 }
 
+inline auto VcomMVToRegisterValue(uint32_t vcomInMV) -> uint8_t {
+    return ((5600 + vcomInMV) * 255) / 5600;
+}
+
 static const uint8_t CHANNEL_SETTINGS[] = {0x1E, 0x00, 0xE0};
 
 // Second byte will be replaced based on the frame transition
@@ -156,14 +160,16 @@ void EinkET013TT1::init() {
     ESP_ERROR_CHECK(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "eink", &freqLock_));
 #endif
 
+    einkQueue_ = new DispatchQueue("Eink", 1, 4096, 11, 1);
+
     log_d("Initialized EinkET013TT1");
 }
 
 void EinkET013TT1::setVcom(int mV) {
     mV = std::clamp(mV, -5600, 0);
     vcomInMV_ = mV;
-    log_d("Setting VCOM to %" PRIi32 " mV (register 0x9 = %" PRIu32 ")", vcomInMV_,
-          ((5600 + vcomInMV_) * 255) / 5600);
+    log_d("Setting VCOM to %" PRIi32 " mV (register 0x9 = %" PRIu8 ")", vcomInMV_,
+          VcomMVToRegisterValue(vcomInMV_));
 }
 
 void EinkET013TT1::setFramerate(int frameRate) {
@@ -203,7 +209,16 @@ inline void EinkET013TT1::setCS(bool value, ScreenSide screen) {
     }
 }
 
-void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer) {
+void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
+                                  int32_t overrideVcom) {
+    if (overrideVcom != INT32_MAX) {
+        uint8_t newVcomRegisterValue = VcomMVToRegisterValue(overrideVcom);
+        log_d("Overriding VCOM from %" PRIu32 " (0x%02X) to %" PRIi32 " (0x%02X)", vcomInMV_,
+              VcomMVToRegisterValue(vcomInMV_), overrideVcom, newVcomRegisterValue);
+        writeRegister(PWM_WIDTH_SELECT, newVcomRegisterValue);
+        Delay(30);
+    }
+
     timerOverruns_ = 0;
     busyWaits_ = 0;
     maxFrameCycles_ = 0;
@@ -225,8 +240,6 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     auto *gateBlockHigh = (uint32_t *)&(scanLine[44]);
 
     log_d("Updating display with waveform \"%s\"", waveform.name);
-
-    powerOn();
 
 #if !DISABLE_POWER_MANAGEMENT
     ESP_ERROR_CHECK(esp_pm_lock_acquire(freqLock_));
@@ -360,7 +373,11 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     esp_pm_lock_release(freqLock_);
 #endif
 
-    powerOff();
+    if (overrideVcom != INT32_MAX) {
+        auto oldVcomRegisterValue = VcomMVToRegisterValue(vcomInMV_);
+        log_d("Restoring VCOM to 0x%" PRIi32 " (0x%" PRIu8 ")", vcomInMV_, oldVcomRegisterValue);
+        writeRegister(PWM_WIDTH_SELECT, oldVcomRegisterValue);
+    }
 
     float timeNs = PROFILE_CALCULATE_NS(sendFrames);
     int totalScanlines = (EinkET013TT1_GATE_COUNT + 1) * waveform.frameCount;
@@ -378,7 +395,43 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     previousBorder_ = border_;
 }
 
+void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
+                          int32_t overrideVcom) {
+    // Create a notification group to wait for the update to finish
+    auto group = xEventGroupCreate();
+
+    einkQueue_->dispatch([this, waveform, buffer, overrideVcom, group]() {
+        if (!poweredOn_) {
+            // This shouldn't happen, we should have been powering on the screen early in the render
+            // pipeline before update is called
+            log_w("Screen not powered on at update time. Powering on.");
+            powerOnInternal();
+        }
+        updateInternal(waveform, buffer, overrideVcom);
+
+        // Release the lock
+        xEventGroupSetBits(group, 1);
+
+        // Wait for something else to get queued, otherwise power off
+        if (!einkQueue_->waitNotEmpty(100)) {
+            einkQueue_->dispatch([this]() { powerOffInternal(); });
+        } else {
+            log_d("Eink queue has work to do! Not powering off");
+        }
+    });
+
+    // Wait for the update to finish
+    constexpr int maxWaitTimeMs = (MAX_FRAMES_PER_WAVEFORM / FRAMERATE_DEFAULT) * 1000;
+    auto bits = xEventGroupWaitBits(group, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(maxWaitTimeMs));
+    if (bits != 1) {
+        log_e("Timed out waiting for update to finish!");
+    }
+}
+
 void EinkET013TT1::writeRegister(Register index, const uint8_t *data, size_t len) {
+    if (!einkQueue_->isInQueue()) {
+        log_w("writeRegister called from outside of einkQueue_");
+    }
     spi_transaction_t t = {
         .cmd = (uint16_t)((0x70 << 8) | (index & 0x0F)), // 0x70 is the command prefix
         .length = len * 8,
@@ -394,6 +447,9 @@ inline void EinkET013TT1::writeRegister(Register index, uint8_t data) {
 }
 
 auto EinkET013TT1::readRegister(uint8_t index, ScreenSide screen) -> uint8_t {
+    if (!einkQueue_->isInQueue()) {
+        log_w("readRegister called from outside of einkQueue_");
+    }
     ESP_ERROR_CHECK(spi_device_acquire_bus(spiHigh_, portMAX_DELAY));
     spi_transaction_t t = {.cmd = (uint16_t)((0x70 << 8) | (index & 0x0F))};
     // TODO: Hardcoding reading to the left one for now
@@ -450,7 +506,34 @@ auto EinkET013TT1::readDeviceIdReg(ScreenSide screen) -> uint8_t {
     return result;
 }
 
-void EinkET013TT1::powerOn() {
+void EinkET013TT1::beginPowerOn() {
+    einkQueue_->dispatch([this]() {
+        auto startTime = Millis();
+        if (!poweredOn_) {
+            powerOnInternal();
+            if (einkQueue_->size() == 0) {
+                // If we get here and don't have something queued yet, the render code took longer
+                // than the powerOn code (180ms) and so the render code is the refresh bottleneck.
+                log_w("Render code took longer than power on code!");
+            }
+        }
+        // Give views a maximum of 300ms to do something before giving up and turning off. Since
+        // the powerOn code may or may not run in this method depending on whether the screen
+        // was already powered on, we need to calculate how long to wait.
+        int millisToWait = 300 - (Millis() - startTime);
+        if (!einkQueue_->waitNotEmpty(millisToWait)) {
+            log_e("Nothing rendered after Eink power on, powering off (this shouldn't happen)");
+            einkQueue_->dispatch([this]() { powerOffInternal(); });
+        }
+    });
+}
+
+void EinkET013TT1::powerOnInternal() {
+    if (poweredOn_) {
+        log_w("Double power on!");
+        return;
+    }
+
     log_d("Powering on EinkET013TT1");
     DigitalWrite(rst_, HIGH);
 
@@ -474,7 +557,7 @@ void EinkET013TT1::powerOn() {
     // Select PWM width for vcom. Specified value is divided into 256 levels between the
     // voltages of GND and VCL (-5.6V)
     // 0 for -5600mV, 255 for 0V
-    writeRegister(PWM_WIDTH_SELECT, ((5600 + vcomInMV_) * 255) / 5600);
+    writeRegister(PWM_WIDTH_SELECT, VcomMVToRegisterValue(vcomInMV_));
 
     // Fire up the charge pumps
     // Disable everything (probably a no-op)
@@ -497,9 +580,18 @@ void EinkET013TT1::powerOn() {
     writeRegister(DRIVER_LATCH_RESET_PULSE_GENERATE, 0x10);
 
     spi_device_release_bus(spiHigh_);
+
+    poweredOn_ = true;
+    log_d("EinkET013TT1 powered on");
 }
 
-void EinkET013TT1::powerOff() {
+void EinkET013TT1::powerOffInternal() {
+    log_d("Powering off EinkET013TT1");
+    if (!poweredOn_) {
+        log_w("Double power off!");
+        return;
+    }
+
     // Disable (disconnect) VCOM
     writeRegister(PUMP_SETTING_2, 0x07);
     Delay(30);
@@ -526,6 +618,7 @@ void EinkET013TT1::powerOff() {
     // This is not in the datasheet and its function is a mystery
     writeRegister(MYSTERY_SETTING_2, 0x02);
 
+    poweredOn_ = false;
     log_d("EinkET013TT1 powered off");
 }
 

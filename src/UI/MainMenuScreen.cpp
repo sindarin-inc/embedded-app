@@ -111,10 +111,6 @@ void MainMenuScreen::drawInRect(Rect rect) {
 // This largely mirrors the superclass implementation, but with enough
 // changes that we need to do our own thing here.
 void MainMenuScreen::render(DisplaySystem &display) {
-    if (!needsRerender) {
-        return;
-    }
-
     setNeedsLayout();
 
     // For the main menu, we want to use the entire screen and ignore the user settings for reading
@@ -195,7 +191,6 @@ void MainMenuScreen::render(DisplaySystem &display) {
 
     display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
 
-    needsRerender = false;
     firstLoad_ = false;
 }
 
@@ -207,7 +202,7 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
         } else {
             firstLoad_ = false;
         }
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::NEXT:
         if (subMenus_[currentSelection_]->nextSelection()) {
@@ -215,7 +210,7 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
         } else {
             firstLoad_ = false;
         }
-        needsRerender = true;
+        setNeedsRerender();
         break;
     // Long press down on the TT should count as enter since we don't have the
     // 5th button
@@ -230,7 +225,7 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
         currentSelection_++;
         currentSelection_ = currentSelection_ % topBarViews_.size();
         firstLoad_ = true;
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::CHANNEL_MINUS:
@@ -238,10 +233,9 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
         currentSelection_ = currentSelection_ + topBarViews_.size() - 1;
         currentSelection_ = currentSelection_ % topBarViews_.size();
         firstLoad_ = true;
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::ANIMATION:
-        needsRerender = false;
         break;
     default:
         break;

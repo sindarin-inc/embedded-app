@@ -36,7 +36,7 @@ public:
         currentScreen_ = this;
 
         lightingAdjustScreen_.backCallback = [this]() {
-            this->needsRerender = true;
+            setNeedsRerender();
             this->setCurrentScreen(*this);
         };
         readableSeekScreen_.backCallback = [this]() { this->setCurrentScreen(*this); };

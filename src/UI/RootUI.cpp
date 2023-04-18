@@ -35,7 +35,6 @@
 #include "UI/LightingAdjustScreen.hpp"
 #include "UI/LineMenuScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
-#include "UI/LoadingScreen.hpp"
 #include "UI/LogoScreen.hpp"
 #include "UI/MainMenuScreen.hpp"
 #include "UI/MenuScreen.hpp"
@@ -503,7 +502,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // the blacks are really gone.
         this->display_->clearDisplay();
         prefs_.invertSetting.set(this->display_->getInversion());
-        experimentalSettingsMenu->needsRerender = true;
+        experimentalSettingsMenu->setNeedsRerender();
         experimentalSettingsMenu->setFirstLoad();
     }));
 
@@ -673,25 +672,25 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             this->display_->style.setFontFamily(this->display_->style.tahomaTiny);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_TAHOMA_TINY);
-            fontMenu->needsRerender = true;
+            fontMenu->setNeedsRerender();
         }));
         fontMenu->addMenuItem(MenuItem("Small", [this, fontMenu]() {
             this->display_->style.setFontFamily(this->display_->style.tahomaRegular);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_TAHOMA_REGULAR);
-            fontMenu->needsRerender = true;
+            fontMenu->setNeedsRerender();
         }));
         fontMenu->addMenuItem(MenuItem("Large", [this, fontMenu]() {
             this->display_->style.setFontFamily(this->display_->style.tahomaLarge);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_TAHOMA_LARGE);
-            fontMenu->needsRerender = true;
+            fontMenu->setNeedsRerender();
         }));
         fontMenu->addMenuItem(MenuItem("Huge", [this, fontMenu]() {
             this->display_->style.setFontFamily(this->display_->style.tahomaHuge);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_TAHOMA_HUGE);
-            fontMenu->needsRerender = true;
+            fontMenu->setNeedsRerender();
         }));
         setCurrentScreen(*fontMenu);
         fontMenu->backCallback = [this, fontMenu, readingSettingsMenu]() {
@@ -714,7 +713,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                         fontsList[i].length);
                             prefs_.fontType.set(i);
                             this->display_->clearDisplay();
-                            fontTypeMenu->needsRerender = true;
+                            fontTypeMenu->setNeedsRerender();
                         }));
                 }
                 setCurrentScreen(*fontTypeMenu);
@@ -1015,7 +1014,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     }
                     this->display_->clearDisplay();
                     fsMenu->setExtraText(StringFormat("output %s to serial", str.c_str()));
-                    fsMenu->needsRerender = true;
+                    fsMenu->setNeedsRerender();
                 }));
             }
             setCurrentScreen(*fsMenu);
@@ -1089,37 +1088,37 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         vcomMenu->addMenuItem(MenuItem("0V", [this, vcomMenu, driver]() {
             driver->setVcom(0);
             prefs_.vcom.set(0);
-            vcomMenu->needsRerender = true;
+            vcomMenu->setNeedsRerender();
         }));
         vcomMenu->addMenuItem(MenuItem("-1V", [this, vcomMenu, driver]() {
             driver->setVcom(-1000);
             prefs_.vcom.set(-1000);
-            vcomMenu->needsRerender = true;
+            vcomMenu->setNeedsRerender();
         }));
         vcomMenu->addMenuItem(MenuItem("-2V", [this, vcomMenu, driver]() {
             driver->setVcom(-2000);
             prefs_.vcom.set(-2000);
-            vcomMenu->needsRerender = true;
+            vcomMenu->setNeedsRerender();
         }));
         vcomMenu->addMenuItem(MenuItem("-3V", [this, vcomMenu, driver]() {
             driver->setVcom(-3000);
             prefs_.vcom.set(-3000);
-            vcomMenu->needsRerender = true;
+            vcomMenu->setNeedsRerender();
         }));
         vcomMenu->addMenuItem(MenuItem("-4V", [this, vcomMenu, driver]() {
             driver->setVcom(-4000);
             prefs_.vcom.set(-4000);
-            vcomMenu->needsRerender = true;
+            vcomMenu->setNeedsRerender();
         }));
         vcomMenu->addMenuItem(MenuItem("-5V", [this, vcomMenu, driver]() {
             driver->setVcom(-5000);
             prefs_.vcom.set(-5000);
-            vcomMenu->needsRerender = true;
+            vcomMenu->setNeedsRerender();
         }));
         vcomMenu->addMenuItem(MenuItem("-5.6V", [this, vcomMenu, driver]() {
             driver->setVcom(-5600);
             prefs_.vcom.set(-5600);
-            vcomMenu->needsRerender = true;
+            vcomMenu->setNeedsRerender();
         }));
         setCurrentScreen(*vcomMenu);
         vcomMenu->backCallback = [this, vcomMenu, debugSettingsMenu]() {
@@ -1266,15 +1265,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         log_w("Deep sleeping. Goodnight.");
         oldMenu->showTemporaryMessage(*display, "Deep sleeping. Goodnight.", 2000, false);
         esp_deep_sleep_start();
-    }));
-
-    oldMenu->addMenuItem(MenuItem("Loading Test", [this, oldMenu]() {
-        auto loadingScreen = new LoadingScreen();
-        setCurrentScreen(*loadingScreen);
-        loadingScreen->backCallback = [this, loadingScreen, oldMenu]() {
-            setCurrentScreen(*oldMenu);
-            delete loadingScreen;
-        };
     }));
 
     oldMenu->addMenuItem(MenuItem("Test Bitmap Screen", [this, oldMenu]() {

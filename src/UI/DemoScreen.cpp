@@ -19,10 +19,6 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
       lightingController_(lightingController) {}
 
 void DemoScreen::render(DisplaySystem &display) {
-    if (!needsRerender) {
-        return;
-    }
-
     std::string message = messages_[currentScreen_];
     display.setFont(static_cast<Font *>(&fontTahomaRegularFonT6PT7B));
 
@@ -733,8 +729,6 @@ void DemoScreen::render(DisplaySystem &display) {
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     }
 
-    needsRerender = false;
-
     if (currentScreen_ == 3) {
         RemoteCommand toSend = RemoteCommand::NEXT;
         DispatchGetUiQueue()->dispatch([toSend]() { UIInnerLoop(toSend); });
@@ -757,7 +751,7 @@ void DemoScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::BACK:
     case RemoteCommand::ENTER:
         currentScreen_++;
-        needsRerender = true;
+        setNeedsRerender();
         break;
     default:
         break;
