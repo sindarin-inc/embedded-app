@@ -135,14 +135,41 @@ auto WiFi::hasWiFiCredentials(wifi_config_t *conf) -> bool {
     return true;
 }
 
-auto WiFi::hasWiFiCredentials() -> bool {
+void WiFi::migrateWiFiCredentials() {
     wifi_config_t conf;
     esp_err_t err = getWifiConfig(&conf);
     if (err != ESP_OK) {
-        log_e("getWifiConfig failed with error %s", esp_err_to_name(err));
+        log_w("error getting Wifi Config in migrateWiFiCredentials: %d", err);
+        return;
+    }
+
+    if (hasWiFiCredentials(&conf)) {
+        std::string ssid = (char *)conf.sta.ssid;
+        std::string password = (char *)conf.sta.password;
+        settings_.addSetting(ssid, password);
+    }
+
+    settings_.valid_ = true;
+    settings_.save();
+}
+
+auto WiFi::hasWiFiCredentials() -> bool {
+
+    if (!settings_.isValid()) {
+        migrateWiFiCredentials();
+    }
+
+    if (settings_.count() == 0) {
         return false;
     }
-    return hasWiFiCredentials(&conf);
+
+    return true;
+}
+
+void WiFi::clearWiFiCredentials() {
+    log_i("clearing wifi credentials.");
+    settings_.clear();
+    settings_.save();
 }
 
 auto WiFi::scanNetworks(const std::function<void(std::shared_ptr<wifi_ap_record_t[]> apRecords,
@@ -241,6 +268,9 @@ auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> 
         getWifiConfig(&wifiConfig);
     } else {
         log_i("Using provided WiFi credentials: %s/%s", ssid.c_str(), password.c_str());
+
+        // store these credentials in settings if they don't already exist
+        settings_.addSetting(ssid, password);
         wifiConfig.sta.sae_pwe_h2e = WPA3_SAE_PWE_BOTH;
         strncpy((char *)wifiConfig.sta.ssid, ssid.c_str(), sizeof(wifiConfig.sta.ssid));
         strncpy((char *)wifiConfig.sta.password, password.c_str(), sizeof(wifiConfig.sta.password));
@@ -278,8 +308,6 @@ auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> 
     return ESP_OK;
 }
 
-
-
 auto WiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
 
     if (connected()) {
@@ -289,26 +317,13 @@ auto WiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
     // load wifi settings
     auto startTime = xTaskGetTickCount();
     // loop twice through available settings, or stop if timed out
-    settings_.load();
+    if (!settings_.isValid()) {
+        migrateWiFiCredentials();
+    }
+
     if (settings_.count() == 0) {
-        // attempt to migrate wifi setting from previous method
-        log_i("no wifi credentials found, attempting to migrate");
-        if (hasWiFiCredentials()) {
-            wifi_config_t conf;
-            getWifiConfig(&conf);
-
-            WiFiSetting s;
-            s.ssid_ = (char*)conf.sta.ssid;
-            s.password_ = (char*)conf.sta.password;
-
-            log_i("added setting %s %s", s.ssid_.c_str(), s.password_.c_str());
-
-            settings_.settings[0] = s;
-            settings_.numSettings_ = 1;
-        } else {
-            log_w("no wifi credentials found");
-            return false;
-        }
+        log_w("no wifi credentials found");
+        return false;
     }
 
     int settingsToCheck = settings_.count() * 2;
@@ -319,10 +334,10 @@ auto WiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
             break;
         }
 
-        log_i("trying setting %d: %s %s", i, settings_.top().ssid_.c_str(), settings_.top().password_.c_str());
+        log_i("trying setting %d: %s %s", i, settings_.top().ssid_.c_str(),
+              settings_.top().password_.c_str());
         if (connectTopWiFiSettingWithTimeout(20000)) {
             // save current settings
-            settings_.save();
             return true;
         }
 
@@ -351,7 +366,8 @@ auto WiFi::connectTopWiFiSettingWithTimeout(int timeoutMs) -> bool {
         vTaskDelay(200);
     }
     if (!connected() || disconnected_) {
-        log_w("failed to connect to: %s %s", settings_.top().ssid_.c_str(), settings_.top().password_.c_str());
+        log_w("failed to connect to: %s %s", settings_.top().ssid_.c_str(),
+              settings_.top().password_.c_str());
         esp_err_t err = esp_wifi_disconnect();
         if (err != ESP_OK) {
             log_w("error in esp_wifi_disconnect: %d", err);
@@ -433,6 +449,11 @@ void WiFi::ipEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId
     case IP_EVENT_STA_GOT_IP: {
         auto *event = (ip_event_got_ip_t *)eventData;
         log_i("IP_EVENT_STA_GOT_IP: " IPSTR, IP2STR(&event->ip_info.ip));
+
+        // successful connection
+        // save current wifi settings
+        log_i("successful connection, saving settings.");
+        tthis->settings_.save();
         tthis->connected_ = true;
         break;
     }

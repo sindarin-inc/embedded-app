@@ -159,6 +159,17 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         bootErrors.push_back({.type = BootError::Type::Preferences});
     }
 
+    WiFiSettings s;
+    auto doc = std::make_unique<SpiRamJsonDocument>(2048);
+    JsonObject body = doc->to<JsonObject>();
+    convertToJson(s, body);
+    std::string wifiString = DumpJson(body);
+    log_i("empty wifi settings string: %s****", wifiString.c_str());
+
+    // prefs.wifiSettingsJson.set(wifiString);
+
+    log_i("wifi settings: %s", prefs.wifiSettingsJson.get().value_or("").c_str());
+
     solClock.begin();
 
     log_i("SN: %s", GetSerialNumber().c_str());

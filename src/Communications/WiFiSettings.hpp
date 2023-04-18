@@ -6,7 +6,7 @@
 #include "Storage/PreferencesStore.hpp"
 
 #define MAX_WIFI_SETTINGS 4
- 
+
 class WiFiSetting : public JsonSerializable {
 public:
     WiFiSetting() = default;
@@ -15,9 +15,7 @@ public:
     std::string ssid_;
     std::string password_;
 
-    bool fromJson(const JsonObject &j) {
-        return false;
-    }
+    bool fromJson(const JsonObject &j) { return false; }
 };
 
 auto convertToJson(const WiFiSetting &src, JsonVariant dst) -> bool;
@@ -25,33 +23,26 @@ void convertFromJson(JsonVariantConst src, WiFiSetting &dst);
 
 class WiFiSettings : JsonSerializable {
 public:
-    WiFiSettings() {}
+    WiFiSettings() { load(); }
     ~WiFiSettings() {}
 
     WiFiSetting settings[MAX_WIFI_SETTINGS];
     int numSettings_ = 0;
+    bool valid_ = false;
 
-    int count() const {
-        return numSettings_;
-    }
-
-    WiFiSetting& top() {
-        return settings[0];
-    }
-
+    int count() const { return numSettings_; }
+    WiFiSetting &top() { return settings[0]; }
     void rotate() {
         WiFiSetting temp = top();
-        for (int i = 0; i < numSettings_-1; i++) {
-            settings[i] = settings[i+1];
+        for (int i = 0; i < numSettings_ - 1; i++) {
+            settings[i] = settings[i + 1];
         }
 
-        settings[numSettings_-1] = temp;
+        settings[numSettings_ - 1] = temp;
     }
-
     void save() const;
-
     void load();
-    
+    void addSetting(const std::string &ssid, const std::string &password);
     bool fromJson(const JsonObject &j) {
         JsonArray jsonSettings = j["settings"];
         log_i("in fromJson %d", jsonSettings.size());
@@ -63,7 +54,12 @@ public:
 
         return false;
     }
+    void clear();
+    bool isValid() { return valid_; }
+
+private:
+    bool settingExists(const std::string &ssid, const std::string &password);
 };
 
 auto convertToJson(const WiFiSettings &src, JsonVariant dst) -> bool;
-//void convertFromJson(JsonVariantConst src, WiFiSettings &dst);
+// void convertFromJson(JsonVariantConst src, WiFiSettings &dst);

@@ -1,11 +1,12 @@
 #pragma once
 
+#include <Storage/PreferencesStore.hpp>
 #include <esp_err.h>
 #include <esp_wifi.h>
 #include <functional>
 #include <memory>
 #include <string>
-#include <Storage/PreferencesStore.hpp>
+
 #include "Communications/WiFiSettings.hpp"
 
 typedef enum {
@@ -35,6 +36,8 @@ public:
     auto getWifiConfig(wifi_config_t *conf) -> esp_err_t;
     auto hasWiFiCredentials(wifi_config_t *conf) -> bool;
     auto hasWiFiCredentials() -> bool;
+
+    void clearWiFiCredentials();
 
     // Scanning
     auto scanNetworks(const std::function<void(std::shared_ptr<wifi_ap_record_t[]> apRecords,
@@ -77,4 +80,5 @@ protected:
                                void *eventData);
 
     auto connectTopWiFiSettingWithTimeout(int timeoutMs = 20000) -> bool;
+    void migrateWiFiCredentials();
 };
