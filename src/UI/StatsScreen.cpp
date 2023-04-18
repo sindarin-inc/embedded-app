@@ -7,10 +7,6 @@ StatsScreen::StatsScreen(DisplaySystem &display, PreferencesStore &prefs)
     : display_(display), prefs_(prefs) {}
 
 void StatsScreen::render(DisplaySystem &display) {
-    if (!needsRerender) {
-        return;
-    }
-
     auto wordCount = prefs_.wordCount.get().value_or(0);
     auto totalReadingTimeSeconds = prefs_.totalReadingTimeSeconds.get().value_or(0);
 
@@ -48,7 +44,6 @@ void StatsScreen::render(DisplaySystem &display) {
                                                    (display.getTextHeight() * 2 + 1) / 2 +
                                                    display.getTextHeight() + 1));
     display.updateDisplay();
-    needsRerender = false;
 }
 
 void StatsScreen::processCommand(RemoteCommand command) { backCallback(); }

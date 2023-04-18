@@ -8,10 +8,6 @@ AlignmentScreen::AlignmentScreen(DisplaySystem &display, PreferencesStore &prefs
     : display_(display), prefs_(prefs), lightingController_(lightingController) {}
 
 void AlignmentScreen::render(DisplaySystem &display) {
-    if (!needsRerender) {
-        return;
-    }
-
     // Alternate left and right on for setup.
     if (currentScreen_ == 1) {
         lightingController_.setScreenMask(LightingController::Screens::LEFT);
@@ -44,7 +40,7 @@ void AlignmentScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::PREV:
     case RemoteCommand::NEXT:
         currentScreen_++;
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::ENTER:

@@ -24,6 +24,6 @@ protected:
     void updateState(const ContentSyncState &state) {
         lastState_ = state_;
         state_ = state;
-        needsRerender = true;
+        setNeedsRerender();
     }
 };

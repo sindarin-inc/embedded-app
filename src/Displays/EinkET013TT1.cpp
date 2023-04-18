@@ -211,7 +211,6 @@ inline void EinkET013TT1::setCS(bool value, ScreenSide screen) {
 
 void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
                                   int32_t overrideVcom) {
-    // Make sure the vcom is correct and switch it if it's not
     if (overrideVcom != INT32_MAX) {
         uint8_t newVcomRegisterValue = VcomMVToRegisterValue(overrideVcom);
         log_d("Overriding VCOM from %" PRIu32 " (0x%02X) to %" PRIi32 " (0x%02X)", vcomInMV_,

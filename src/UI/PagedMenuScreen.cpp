@@ -66,8 +66,6 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     display.drawSingleLineOfText("Read", screenWidth / 2 - width / 2, screenHeight - 30 - height);
 
     display.updateDisplay();
-
-    needsRerender = false;
 }
 
 auto PagedMenuScreen::nextSelection(bool skipLast) -> bool {
@@ -75,7 +73,7 @@ auto PagedMenuScreen::nextSelection(bool skipLast) -> bool {
     if (currSelection_ == numMenuItems_ - 2) {
         currSelection_ = 0;
     }
-    needsRerender = true;
+    setNeedsRerender();
     return false;
 }
 
@@ -85,7 +83,7 @@ auto PagedMenuScreen::prevSelection(bool skipLast) -> bool {
         // If there are 0 readables, this breaks the menu
         currSelection_ = numMenuItems_ - 3;
     }
-    needsRerender = true;
+    setNeedsRerender();
     return false;
 }
 
@@ -114,7 +112,7 @@ void PagedMenuScreen::processCommand(RemoteCommand command) {
         }
 
         prevSelection();
-        needsRerender = true;
+        setNeedsRerender();
 
         break;
 
@@ -127,14 +125,14 @@ void PagedMenuScreen::processCommand(RemoteCommand command) {
 
     case RemoteCommand::CHANNEL_PLUS:
         nextSelection();
-        needsRerender = true;
+        setNeedsRerender();
 
         break;
 
     case RemoteCommand::BACK:
     case RemoteCommand::CHANNEL_MINUS:
         prevSelection();
-        needsRerender = true;
+        setNeedsRerender();
         break;
     default:
         break;

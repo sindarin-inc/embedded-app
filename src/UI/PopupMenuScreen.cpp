@@ -73,9 +73,6 @@ void PopupMenuScreen::render(DisplaySystem &display) {
         currentScreen_->render(display);
         return;
     }
-    if (!needsRerender) {
-        return;
-    }
 
     // Blank out screen
     display.fillScreen(display.bg);
@@ -172,7 +169,6 @@ void PopupMenuScreen::render(DisplaySystem &display) {
 
     display.updateDisplay();
     display.setFont(display.style.getFontFamily().readableFont);
-    needsRerender = false;
 }
 
 void PopupMenuScreen::processCommand(RemoteCommand command) {
@@ -183,11 +179,11 @@ void PopupMenuScreen::processCommand(RemoteCommand command) {
 
     auto back = [this]() {
         if (backCallback != nullptr) {
-            needsRerender = true;
+            setNeedsRerender();
             this->renderer_.getDisplay()->clearDisplay();
             backCallback();
         }
-        needsRerender = true;
+        setNeedsRerender();
     };
 
     switch (command) {
@@ -203,7 +199,7 @@ void PopupMenuScreen::processCommand(RemoteCommand command) {
         // the blacks are really gone.
         this->renderer_.getDisplay()->clearDisplay();
         prefs_.invertSetting.set(this->renderer_.getDisplay()->getInversion());
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::PREV:
         back();
@@ -216,10 +212,9 @@ void PopupMenuScreen::processCommand(RemoteCommand command) {
         back();
         break;
     case RemoteCommand::NOP_BUTTON:
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::ANIMATION:
-        needsRerender = false;
         break;
     default:
         break;

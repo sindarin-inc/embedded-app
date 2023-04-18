@@ -182,10 +182,6 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
-    if (!needsRerender) {
-        return;
-    }
-
     prefs_.lastReadableId.set(readable_.uuid);
 
     display.setFont(display.style.getFontFamily().readableFont);
@@ -213,7 +209,6 @@ void ReadableScreen::render(DisplaySystem &display) {
         } else {
             display.updateDisplay(DisplaySystem::UpdateType::FULL);
         }
-        needsRerender = false;
         return;
     }
 
@@ -239,7 +234,6 @@ void ReadableScreen::render(DisplaySystem &display) {
         } else {
             display.updateDisplay(DisplaySystem::UpdateType::FULL);
         }
-        needsRerender = false;
         return;
     }
 
@@ -279,7 +273,7 @@ void ReadableScreen::render(DisplaySystem &display) {
 
         log_d("Setting next interval: %lu", nextInterval_);
 
-        needsRerender = true;
+        setNeedsRerender();
     }
 
     // Future work
@@ -342,9 +336,7 @@ void ReadableScreen::render(DisplaySystem &display) {
     // remember the time this page was rendered
     readingStartTime_ = GetRunTimeMs();
 
-    if (pageSpeed_ == 0) {
-        needsRerender = false;
-    } else {
+    if (pageSpeed_ != 0) {
         // Must stop the timer because ChangePeriod starts it.
         xTimerStop(DisplaySystem::animationTimer, 0);
         if (!autoPilotPause_) {
@@ -379,13 +371,13 @@ void ReadableScreen::processCommand(RemoteCommand command) {
 
     if (ignoreNextPress_) {
         ignoreNextPress_ = false;
-        needsRerender = true;
+        setNeedsRerender();
         return;
     }
 
     auto back = [this]() {
         if (backCallback != nullptr) {
-            needsRerender = true;
+            setNeedsRerender();
             backCallback();
         }
     };
@@ -396,13 +388,12 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             readable_.place = renderer_.getPreviousPlace();
             prefs_.readablePlace.set(readable_.shortenedUuid.c_str(), readable_.place);
             prefs_.readablePlaceChanged.set(readable_.shortenedUuid.c_str(), true);
-            needsRerender = true;
+            setNeedsRerender();
         } else {
             pageSpeed_ = std::min(pageSpeed_ + PAGE_SPEED_INCREMENT, SLOWEST_PAGE_SPEED);
             prefs_.autoPilotSpeed.set(pageSpeed_);
             log_d("Slowing down: New Page Speed is %u", pageSpeed_);
             showAutopilotMinus_ = true;
-            needsRerender = false;
         }
         numUps_ = 0;
         break;
@@ -411,7 +402,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::ENTER:
         if (pageSpeed_ == 0) {
             turnPage();
-            needsRerender = true;
+            setNeedsRerender();
         } else {
             // If we aren't pause, pause.
             // If we are paused, start the timer again.
@@ -441,16 +432,15 @@ void ReadableScreen::processCommand(RemoteCommand command) {
                 log_d("Speeding up: New Page Speed is %u", pageSpeed_);
                 prefs_.autoPilotSpeed.set(pageSpeed_);
                 showAutopilotPlus_ = true;
-                needsRerender = false;
             } else {
                 inBookmark_ = !inBookmark_;
                 writeOutBookmarkUpdate();
             }
         } else {
             turnPage();
-            needsRerender = true;
+            setNeedsRerender();
         }
-        needsRerender = true;
+        setNeedsRerender();
         numUps_ = 0;
         break;
     case RemoteCommand::BACK:
@@ -498,13 +488,13 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::NOP_BUTTON:
     case RemoteCommand::ANIMATION:
-        needsRerender = true;
+        setNeedsRerender();
         break;
     default:
         break;
     }
 
-    if (needsRerender) {
+    if (needsRerender_) {
         incrementReadingTime();
     }
 }

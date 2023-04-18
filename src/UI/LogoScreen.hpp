@@ -27,7 +27,5 @@ public:
                          LOGO_O_RADIUS * 1.6, display.bg);
 
         display.updateDisplay();
-
-        needsRerender = false;
     }
 };

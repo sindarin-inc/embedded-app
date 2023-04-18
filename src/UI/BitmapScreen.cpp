@@ -3,12 +3,6 @@
 #include "Displays/DisplaySystem.hpp"
 
 void BitmapScreen::render(DisplaySystem &display) {
-    // Ideally this would just use dynamic_cast plus the null check,
-    // but it appears ESP-IDF doesn't necessarily play nice yet with RTTI enabled,
-    // so we will hack it with #ifdef for now... -cojo
-    if (!needsRerender) {
-        return;
-    }
     display.fillScreen(display.bg);
 
     // TODO: We should figure out what we really want for these 'full-screen' bitmaps
@@ -20,8 +14,6 @@ void BitmapScreen::render(DisplaySystem &display) {
     display.drawXBitmap((display.width() - width_) / 2, (display.height() - height_) / 2, bitmap_,
                         width_, height_, display.fg);
     display.updateDisplay();
-
-    needsRerender = false;
 }
 
 void BitmapScreen::processCommand(RemoteCommand command) {

@@ -8,10 +8,6 @@
 #include "sindarin-debug.h"
 
 void BatteryScreen::render(DisplaySystem &display) {
-    if (!needsRerender) {
-        return;
-    }
-
     uint16_t width = 0, height = 0;
     display.setFont(display.style.getFontFamily().readableFont);
     auto batteryStatus = battery_.getBatteryLifeString();

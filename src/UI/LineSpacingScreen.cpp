@@ -19,14 +19,8 @@ LineSpacingScreen::LineSpacingScreen(DisplaySystem &display, PreferencesStore &p
 }
 
 void LineSpacingScreen::render(DisplaySystem &display) {
-    if (!needsRerender) {
-        return;
-    }
-
     this->renderer_.renderPage(0);
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-
-    needsRerender = false;
 }
 
 void LineSpacingScreen::processCommand(RemoteCommand command) {
@@ -42,7 +36,7 @@ void LineSpacingScreen::processCommand(RemoteCommand command) {
         }
 
         display_.setLineSpacing(lineSpacing_);
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::NEXT:
         lineSpacing_--;
@@ -50,7 +44,7 @@ void LineSpacingScreen::processCommand(RemoteCommand command) {
             lineSpacing_ = MIN_LINE_SPACING;
         }
         display_.setLineSpacing(lineSpacing_);
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::BACK:
         // If CHANNEL_MINUS is implemented above,
