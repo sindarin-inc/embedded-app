@@ -91,8 +91,6 @@ void LineMenuScreen::processCommand(RemoteCommand command) {
             backCallback();
         }
         setNeedsRerender();
-        setNeedsRerender();
-
         break;
     case RemoteCommand::ANIMATION:
         break;
