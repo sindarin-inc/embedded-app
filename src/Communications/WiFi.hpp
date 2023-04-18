@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Storage/PreferencesStore.hpp>
 #include <esp_err.h>
 #include <esp_wifi.h>
 #include <functional>
@@ -8,6 +7,7 @@
 #include <string>
 
 #include "Communications/WiFiSettings.hpp"
+#include "Storage/PreferencesStore.hpp"
 
 typedef enum {
     WIFI_POWER_19_5dBm = 78,   // 19.5dBm

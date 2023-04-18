@@ -154,8 +154,6 @@ void WiFi::migrateWiFiCredentials() {
 }
 
 auto WiFi::hasWiFiCredentials() -> bool {
-
-    settings_.load();
     if (!settings_.isValid()) {
         migrateWiFiCredentials();
     }
@@ -323,7 +321,6 @@ auto WiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
 
     // load wifi settings
     auto startTime = xTaskGetTickCount();
-    settings_.load();
     // loop twice through available settings, or stop if timed out
     if (!settings_.isValid()) {
         migrateWiFiCredentials();
@@ -445,7 +442,6 @@ void WiFi::wiFiEventHandler(void *arg, esp_event_base_t eventBase, int32_t event
         tthis->disconnected_ = true;
         break;
     default:
-        log_i("WIFI_EVENT: %" PRIi32, eventId);
         log_d("WIFI_EVENT: %" PRIi32, eventId);
     }
 }
