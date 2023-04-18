@@ -42,6 +42,9 @@ public:
     // Returns true if were' currently executing inside this queue
     auto isInQueue() -> bool;
 
+    // Number of items on the queue
+    auto size() -> int { return uxQueueMessagesWaiting(q_); }
+
     // Deleted operations
     DispatchQueue(const DispatchQueue &rhs) = delete;
     auto operator=(const DispatchQueue &rhs) -> DispatchQueue & = delete;

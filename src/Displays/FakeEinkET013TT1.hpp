@@ -56,7 +56,8 @@ public:
 
     void clear(const EinkET013TT1Waveform &waveform);
 
-    void update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer);
+    void update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
+                int32_t overrideVcom = INT32_MAX);
 
     auto readTemperature(ScreenSide screen) -> int16_t;
 
