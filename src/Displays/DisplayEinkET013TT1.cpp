@@ -151,15 +151,11 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
         break;
     case FAST_ORIGINAL_AU4:
         if (!fullRefreshNext_) {
-            int oldVcom = getDriver()->getVcom();
             if (getInversion()) {
-                getDriver()->setVcom(oldVcom - 2000);
-                driver_.update(AU4_ORIGINAL, gfxCanvas_.getBuffer());
+                driver_.update(AU4_ORIGINAL, gfxCanvas_.getBuffer(), getDriver()->getVcom() - 2000);
             } else {
-                getDriver()->setVcom(oldVcom + 2000);
-                driver_.update(AU4_ORIGINAL, gfxCanvas_.getBuffer());
+                driver_.update(AU4_ORIGINAL, gfxCanvas_.getBuffer(), getDriver()->getVcom() + 2000);
             }
-            getDriver()->setVcom(oldVcom);
             au4Count_++;
         } else {
             driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
@@ -178,15 +174,13 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
         break;
     case FAST_WITH_VCOM_NUDGE:
         if (!fullRefreshNext_) {
-            int oldVcom = getDriver()->getVcom();
             if (getInversion()) {
-                getDriver()->setVcom(oldVcom - 2000);
-                driver_.update(BC_INVERTED_EINK_10_13C_WAVEFORM_AU4, gfxCanvas_.getBuffer());
+                driver_.update(BC_INVERTED_EINK_10_13C_WAVEFORM_AU4, gfxCanvas_.getBuffer(),
+                               getDriver()->getVcom() - 2000);
             } else {
-                getDriver()->setVcom(oldVcom + 2000);
-                driver_.update(BC_REGULAR_EINK_10_13C_WAVEFORM_AU4, gfxCanvas_.getBuffer());
+                driver_.update(BC_REGULAR_EINK_10_13C_WAVEFORM_AU4, gfxCanvas_.getBuffer(),
+                               getDriver()->getVcom() + 2000);
             }
-            getDriver()->setVcom(oldVcom);
         } else {
             driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
             firstPartialTime_ = 0;

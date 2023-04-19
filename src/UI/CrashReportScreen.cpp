@@ -7,10 +7,6 @@
 #include "sindarin-debug.h"
 
 void CrashReportScreen::render(DisplaySystem &display) {
-    if (!needsRerender) {
-        return;
-    }
-
     uint16_t x = 0;
     uint16_t y = 0;
 
@@ -84,8 +80,6 @@ void CrashReportScreen::render(DisplaySystem &display) {
     } else {
         display.updateDisplay(DisplaySystem::UpdateType::FAST);
     }
-
-    needsRerender = false;
 }
 
 void CrashReportScreen::processCommand(RemoteCommand command) {}
@@ -94,7 +88,7 @@ void CrashReportScreen::fail(const std::string &message) {
     log_w("Firmware update failed: %s", message.c_str());
     state_.state = CrashUploadState::Failure;
     state_.message = message;
-    needsRerender = true;
+    setNeedsRerender();
     render(display_);
     vTaskDelay(5000 / portTICK_PERIOD_MS);
     WiFi::getInstance().disconnectWiFi();

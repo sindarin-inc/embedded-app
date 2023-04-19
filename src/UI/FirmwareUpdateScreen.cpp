@@ -10,10 +10,6 @@
 #include "sindarin-debug.h"
 
 void FirmwareUpdateScreen::render(DisplaySystem &display) {
-    if (!needsRerender) {
-        return;
-    }
-
     uint16_t x = 0;
     uint16_t y = 0;
 
@@ -108,8 +104,6 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
     } else {
         display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
     }
-
-    needsRerender = false;
 }
 
 void FirmwareUpdateScreen::processCommand(RemoteCommand command) {}
@@ -118,7 +112,7 @@ void FirmwareUpdateScreen::fail(const std::string &message) {
     log_w("Firmware update failed: %s", message.c_str());
     state_.state = FirmwareDownloadState::Failure;
     state_.message = message;
-    needsRerender = true;
+    setNeedsRerender();
     render(display_);
     vTaskDelay(5000 / portTICK_PERIOD_MS);
     WiFi::getInstance().disconnectWiFi();

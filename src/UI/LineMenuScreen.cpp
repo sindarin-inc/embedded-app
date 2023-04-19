@@ -33,10 +33,6 @@ void LineMenuScreen::drawInRect(Rect rect) {
 }
 
 void LineMenuScreen::render(DisplaySystem &display) {
-    if (!needsRerender) {
-        return;
-    }
-
     if (menuItemViews_.size() <= 0) {
         log_w("No views to draw in LineMenuScreen");
     }
@@ -66,7 +62,6 @@ void LineMenuScreen::render(DisplaySystem &display) {
     display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
 
     firstLoad_ = false;
-    needsRerender = false;
 }
 
 void LineMenuScreen::processCommand(RemoteCommand command) {
@@ -75,13 +70,13 @@ void LineMenuScreen::processCommand(RemoteCommand command) {
         if (prevSelection()) {
             firstLoad_ = true;
         }
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::NEXT:
         if (nextSelection()) {
             firstLoad_ = true;
         }
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::ENTER:
     case RemoteCommand::CHANNEL_PLUS:
@@ -95,10 +90,9 @@ void LineMenuScreen::processCommand(RemoteCommand command) {
             firstLoad_ = true;
             backCallback();
         }
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::ANIMATION:
-        needsRerender = false;
         break;
     default:
         break;

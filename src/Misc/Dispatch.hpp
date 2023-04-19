@@ -42,6 +42,13 @@ public:
     // Returns true if were' currently executing inside this queue
     auto isInQueue() -> bool;
 
+    // Number of items on the queue
+    auto size() -> int { return uxQueueMessagesWaiting(q_); }
+    auto waitNotEmpty(int timeoutMs = 10) -> bool {
+        WorkItem dummy;
+        return xQueuePeek(q_, &dummy, pdMS_TO_TICKS(timeoutMs)) == pdTRUE;
+    }
+
     // Deleted operations
     DispatchQueue(const DispatchQueue &rhs) = delete;
     auto operator=(const DispatchQueue &rhs) -> DispatchQueue & = delete;

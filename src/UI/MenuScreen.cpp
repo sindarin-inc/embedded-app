@@ -90,16 +90,13 @@ void MenuScreen::showTemporaryMessage(DisplaySystem &display, const std::string 
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     Delay(duration);
     if (rerenderAfter) {
-        this->needsRerender = true;
+        setNeedsRerender();
         this->setFirstLoad();
         this->render(display);
     }
 }
 
 void MenuScreen::render(DisplaySystem &display) {
-    if (!needsRerender) {
-        return;
-    }
     log_i("Menuscreen render (selected = %s)", getCurrItem().title.c_str());
 
     setNeedsLayout();
@@ -125,7 +122,6 @@ void MenuScreen::render(DisplaySystem &display) {
     display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
 
     firstLoad_ = false;
-    needsRerender = false;
 }
 
 void MenuScreen::processCommand(RemoteCommand command) {
@@ -136,7 +132,7 @@ void MenuScreen::processCommand(RemoteCommand command) {
         } else {
             firstLoad_ = false;
         }
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::NEXT:
         if (nextSelection()) {
@@ -144,7 +140,7 @@ void MenuScreen::processCommand(RemoteCommand command) {
         } else {
             firstLoad_ = false;
         }
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::ENTER:
     case RemoteCommand::CHANNEL_PLUS:
@@ -160,7 +156,6 @@ void MenuScreen::processCommand(RemoteCommand command) {
         }
         break;
     case RemoteCommand::ANIMATION:
-        needsRerender = false;
         break;
     default:
         break;

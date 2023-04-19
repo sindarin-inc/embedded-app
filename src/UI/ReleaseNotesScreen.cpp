@@ -26,9 +26,6 @@ ReleaseNotesScreen::ReleaseNotesScreen(DisplaySystem &display, PreferencesStore 
 }
 
 void ReleaseNotesScreen::render(DisplaySystem &display) {
-    if (!needsRerender) {
-        return;
-    }
     if (currentScreen_ != this) {
         currentScreen_->render(display);
         return;
@@ -41,8 +38,6 @@ void ReleaseNotesScreen::render(DisplaySystem &display) {
     } else {
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     }
-
-    needsRerender = false;
 }
 
 void ReleaseNotesScreen::processCommand(RemoteCommand command) {
@@ -54,22 +49,22 @@ void ReleaseNotesScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
         place_ = renderer_.getPreviousPlace();
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::PREV:
     case RemoteCommand::BACK:
         setCurrentScreen(menu_);
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::NEXT:
     case RemoteCommand::CHANNEL_PLUS:
     case RemoteCommand::ENTER:
         if (atEnd()) {
             setCurrentScreen(menu_);
-            needsRerender = true;
+            setNeedsRerender();
         }
         place_ = newPlace_;
-        needsRerender = true;
+        setNeedsRerender();
         break;
     default:
         break;

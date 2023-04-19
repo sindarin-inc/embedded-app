@@ -27,6 +27,8 @@ public:
 
     void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED) override;
 
+    void beginPowerOn() override { driver_.beginPowerOn(); };
+
     void clearDisplay() override { fullRefreshNext_ = true; };
 
     void invertDisplay(bool newInvert) override;

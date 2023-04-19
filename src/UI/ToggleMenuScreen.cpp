@@ -125,10 +125,6 @@ void ToggleMenuScreen::drawInRect(Rect rect) {
 // This largely mirrors the superclass implementation, but with enough
 // changes that we need to do our own thing here.
 void ToggleMenuScreen::render(DisplaySystem &display) {
-    if (!needsRerender) {
-        return;
-    }
-
     setNeedsLayout();
 
     // In case this changes for whatever reason?
@@ -172,7 +168,6 @@ void ToggleMenuScreen::render(DisplaySystem &display) {
     display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
 
     drawBubbles_ = false;
-    needsRerender = false;
     firstLoad_ = false;
 }
 
@@ -184,7 +179,7 @@ void ToggleMenuScreen::processCommand(RemoteCommand command) {
         } else {
             firstLoad_ = false;
         }
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::NEXT:
         if (nextSelection()) {
@@ -192,12 +187,12 @@ void ToggleMenuScreen::processCommand(RemoteCommand command) {
         } else {
             firstLoad_ = false;
         }
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::ENTER:
     case RemoteCommand::CHANNEL_PLUS:
         menuToggleValues_[currSelection_] = !menuToggleValues_[currSelection_];
-        needsRerender = true;
+        setNeedsRerender();
         if (getCurrItem().callback != nullptr) {
             getCurrItem().callback();
         }
@@ -210,7 +205,6 @@ void ToggleMenuScreen::processCommand(RemoteCommand command) {
         }
         break;
     case RemoteCommand::ANIMATION:
-        needsRerender = false;
         break;
     default:
         break;

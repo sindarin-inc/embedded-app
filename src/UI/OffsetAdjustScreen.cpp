@@ -20,14 +20,8 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
 }
 
 void OffsetAdjustScreen::render(DisplaySystem &display) {
-    if (!needsRerender) {
-        return;
-    }
-
     this->renderer_.renderPage(0);
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-
-    needsRerender = false;
 }
 
 void OffsetAdjustScreen::processCommand(RemoteCommand command) {
@@ -35,19 +29,19 @@ void OffsetAdjustScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
         oldRect.x -= OFFSET_ADJUST_AMOUNT;
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::CHANNEL_PLUS:
         oldRect.x += OFFSET_ADJUST_AMOUNT;
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::PREV:
         oldRect.y -= OFFSET_ADJUST_AMOUNT;
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::NEXT:
         oldRect.y += OFFSET_ADJUST_AMOUNT;
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::BACK:
         // The Turn Touch also sends a left keypress when long-pressing back so let's undo that

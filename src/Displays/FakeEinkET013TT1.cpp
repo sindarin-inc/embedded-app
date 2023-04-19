@@ -46,7 +46,8 @@ auto EinkET013TT1::getPixel(const uint8_t *buffer, int x, int y) -> uint8_t {
     return (buffer[byteIndex] >> (7 - bitIndex)) & 0x01;
 }
 
-void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer) {
+void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
+                          int32_t overrideVcom) {
     if (FakeEinkET013TT1SkipWaveform) {
         // Skip waveform processing and just move the pixel all the way one way or another
         log_d("Skipping waveform processing (would have used \"%s\")", waveform.name);

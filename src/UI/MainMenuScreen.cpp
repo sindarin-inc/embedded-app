@@ -111,10 +111,6 @@ void MainMenuScreen::drawInRect(Rect rect) {
 // This largely mirrors the superclass implementation, but with enough
 // changes that we need to do our own thing here.
 void MainMenuScreen::render(DisplaySystem &display) {
-    if (!needsRerender) {
-        return;
-    }
-
     setNeedsLayout();
 
     // For the main menu, we want to use the entire screen and ignore the user settings for reading
@@ -123,6 +119,9 @@ void MainMenuScreen::render(DisplaySystem &display) {
         {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
          {display.defaultScreenWidth - 2 * display.defaultXPadding,
           display.defaultScreenHeight - 2 * display.defaultYPadding}});
+
+    // We must explicitly set this in case of toggle between dark mode and not dark mode
+    topBarSelectionView_.strokeColor = display.fg;
 
     // On the first load, we want to only render the items in the menu because we are going
     // to do a partial refresh with the selector button at a lower/higher vcom to reduce
@@ -195,7 +194,6 @@ void MainMenuScreen::render(DisplaySystem &display) {
 
     display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
 
-    needsRerender = false;
     firstLoad_ = false;
 }
 
@@ -207,7 +205,7 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
         } else {
             firstLoad_ = false;
         }
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::NEXT:
         if (subMenus_[currentSelection_]->nextSelection()) {
@@ -215,7 +213,7 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
         } else {
             firstLoad_ = false;
         }
-        needsRerender = true;
+        setNeedsRerender();
         break;
     // Long press down on the TT should count as enter since we don't have the
     // 5th button
@@ -230,7 +228,7 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
         currentSelection_++;
         currentSelection_ = currentSelection_ % topBarViews_.size();
         firstLoad_ = true;
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::CHANNEL_MINUS:
@@ -238,10 +236,9 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
         currentSelection_ = currentSelection_ + topBarViews_.size() - 1;
         currentSelection_ = currentSelection_ % topBarViews_.size();
         firstLoad_ = true;
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::ANIMATION:
-        needsRerender = false;
         break;
     default:
         break;

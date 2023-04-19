@@ -90,11 +90,6 @@ void LightingAdjustScreen::drawInRect(Rect rect) {
 }
 
 void LightingAdjustScreen::render(DisplaySystem &display) {
-    if (!needsRerender) {
-        return;
-    }
-
-    // TODO: Unify needsRerender and setNeedsLayout?
     setNeedsLayout();
     setFrame({{0, 0}, {display.width(), display.height()}});
     draw();
@@ -102,8 +97,6 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
     display.updateDisplay(firstLoad ? DisplaySystem::UpdateType::FULL
                                     : DisplaySystem::UpdateType::FAST);
     firstLoad = false;
-
-    needsRerender = false;
 }
 
 void LightingAdjustScreen::processCommand(RemoteCommand command) {
@@ -111,7 +104,7 @@ void LightingAdjustScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::CHANNEL_MINUS:
         showThirdLine_ = true;
         firstLoad = true;
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::CHANNEL_PLUS:
         showThirdLine_ = false;
@@ -123,14 +116,14 @@ void LightingAdjustScreen::processCommand(RemoteCommand command) {
         auto setting =
             std::min(lightingController_.getCurrentPercent() + LIGHTING_STEP_INCREMENT, 100);
         lightingController_.setOverrideValuePercent(setting);
-        needsRerender = true;
+        setNeedsRerender();
         break;
     }
     case RemoteCommand::NEXT: {
         auto setting =
             std::max(lightingController_.getCurrentPercent() - LIGHTING_STEP_INCREMENT, 0);
         lightingController_.setOverrideValuePercent(setting);
-        needsRerender = true;
+        setNeedsRerender();
         break;
     }
     case RemoteCommand::BACK:

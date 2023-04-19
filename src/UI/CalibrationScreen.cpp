@@ -34,10 +34,6 @@ void CalibrationScreen::drawSiemensStar(DisplaySystem &display, uint32_t originX
 }
 
 void CalibrationScreen::render(DisplaySystem &display) {
-    if (!needsRerender) {
-        return;
-    }
-
     if (!opticsTest) {
         const int edgeOffset = 5;
         int midpointX = display.width() / 2;
@@ -100,8 +96,6 @@ void CalibrationScreen::render(DisplaySystem &display) {
 
         display.updateDisplay();
     }
-
-    needsRerender = false;
 }
 
 void CalibrationScreen::processCommand(RemoteCommand command) {
