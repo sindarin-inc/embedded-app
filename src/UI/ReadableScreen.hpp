@@ -22,6 +22,16 @@
 #include "UI/Screen.hpp"
 #include "config.h"
 
+enum PopupMenuFullList {
+    POPUP_MAINMENU,
+    POPUP_ARCHIVE,
+    POPUP_UNARCHIVE,
+    POPUP_BOOKMARK,
+    POPUP_TEXT,
+    POPUP_BRIGHTNESS,
+    POPUP_CONTENTS
+};
+
 class ReadableScreen : public MenuScreen {
 public:
     ReadableScreen(std::shared_ptr<RendererStream> stream, DisplaySystem &display,

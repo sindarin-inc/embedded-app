@@ -219,7 +219,13 @@ void ReadableScreen::turnPage() {
     if (atEnd_) {
         showPopup_ = true;
         // When running off the end, we want to show the popup defaulted on archive.
-        setCurrSelection(1);
+        bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
+
+        if (archived) {
+            setCurrSelection(POPUP_UNARCHIVE);
+        } else {
+            setCurrSelection(POPUP_ARCHIVE);
+        }
         setNeedsRerender();
     } else {
         readable_.placePrev = readable_.place;
@@ -244,10 +250,20 @@ void ReadableScreen::render(DisplaySystem &display) {
         size_t lengthOfFile = renderer_.size();
         float placeInTextPercentage = (float)place / (float)lengthOfFile * 100;
         std::string placeString = StringFormat("%.1f%%", placeInTextPercentage);
-        std::string placeStringForBottom =
-            StringFormat("%d / %d", place / 1000, lengthOfFile / 1000);
+        std::string placeStringForBottom = StringFormat("%d/%d", place / 1000, lengthOfFile / 1000);
 
         placeInReadableView_.setText(placeStringForBottom);
+
+        // Figure out if you should show the Archive menu item or the Unarchive menu item.
+        bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
+
+        if (archived) {
+            menuItemsEnabled_[POPUP_ARCHIVE] = false;
+            menuItemsEnabled_[POPUP_UNARCHIVE] = true;
+        } else {
+            menuItemsEnabled_[POPUP_ARCHIVE] = true;
+            menuItemsEnabled_[POPUP_UNARCHIVE] = false;
+        }
     }
 
     setNeedsLayout();
@@ -484,15 +500,13 @@ void ReadableScreen::populatePopupMenu() {
     }));
 
     addMenuItem(MenuItem("Archive", [this]() {
-        if (readable_.isArticle()) {
-            bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
+        bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
 
-            if (archived) {
-                log_i("Un-Archiving: %s", readable_.title.c_str());
-                this->prefs_.readableArchivedChanged.remove(readable_.shortenedUuid.c_str());
-            } else {
-                this->prefs_.readableArchivedChanged.set(readable_.shortenedUuid.c_str(), true);
-            }
+        if (archived) {
+            log_i("Un-Archiving: %s", readable_.title.c_str());
+            this->prefs_.readableArchivedChanged.remove(readable_.shortenedUuid.c_str());
+        } else {
+            this->prefs_.readableArchivedChanged.set(readable_.shortenedUuid.c_str(), true);
         }
 
         if (backCallback != nullptr) {
@@ -503,15 +517,36 @@ void ReadableScreen::populatePopupMenu() {
         firstPopupLoad_ = true;
     }));
 
+    addMenuItem(
+        MenuItem(
+            "Unarchive",
+            [this]() {
+                showPopup_ = false;
+                firstPopupLoad_ = true;
+                bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
+
+                if (archived) {
+                    log_i("Un-Archiving: %s", readable_.title.c_str());
+                    this->prefs_.readableArchivedChanged.remove(readable_.shortenedUuid.c_str());
+                } else {
+                    this->prefs_.readableArchivedChanged.set(readable_.shortenedUuid.c_str(), true);
+                }
+
+                if (backCallback != nullptr) {
+                    setNeedsRerender();
+                    backCallback();
+                }
+                showPopup_ = false;
+                firstPopupLoad_ = true;
+            }),
+        false);
+
     addMenuItem(MenuItem("Bookmark", [this]() {
-        showPopup_ = false;
+        showPopup_ = true;
         firstPopupLoad_ = true;
         inBookmark_ = !inBookmark_;
         writeOutBookmarkUpdate();
     }));
-
-    //    addMenuItem(MenuItem("Undo Archive", [this]() { showPopup_ = false; firstPopupLoad_ =
-    //    true; }), false);
 
     addMenuItem(MenuItem("Text", [this]() {
         showPopup_ = false;
@@ -601,7 +636,9 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::NEXT:
         if (showPopup_) {
-            nextSelection();
+            do {
+                nextSelection();
+            } while (!menuItemsEnabled_[getCurrSelection()]);
         } else if (!prefs_.cesMode.get().value_or(false)) {
             if (pageSpeed_ != 0) {
                 xTimerStop(DisplaySystem::animationTimer, 0);
@@ -634,7 +671,9 @@ void ReadableScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::BACK:
     case RemoteCommand::PREV:
         if (showPopup_) {
-            prevSelection();
+            do {
+                prevSelection();
+            } while (!menuItemsEnabled_[getCurrSelection()]);
         } else if (!prefs_.cesMode.get().value_or(false)) {
             showPopup_ = true;
             setCurrSelection(0);
