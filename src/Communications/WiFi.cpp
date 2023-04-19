@@ -344,7 +344,6 @@ auto WiFi::connectWiFiFromSettings() -> bool {
 
 auto WiFi::connectWiFiSettingWithTimeout(int timeoutMs, const std::string &ssid,
                                          const std::string &password) -> bool {
-    // attempt to connect with last successful settings
     if (connectWiFi(ssid, password) != ESP_OK) {
         log_w("connectWiFi failed");
         return false;
