@@ -453,7 +453,7 @@ void WiFi::ipEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId
         std::string ssid = (char *)conf.sta.ssid;
         std::string password = (char *)conf.sta.password;
 
-        log_i("setting active: %s %s", ssid.c_str(), ssid.c_str());
+        log_d("setting active: %s %s", ssid.c_str(), ssid.c_str());
 
         tthis->settings_.setActiveSetting(ssid, password);
         tthis->settings_.save();
@@ -462,6 +462,5 @@ void WiFi::ipEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId
     }
     default:
         log_d("IP_EVENT: %" PRIi32, eventId);
-        log_i("IP_EVENT: %" PRIi32, eventId);
     }
 }

@@ -37,7 +37,7 @@ void WiFiSettings::load() {
         // no json, no settings to load
         return;
     }
-    DynamicJsonDocument doc(MAX_WIFI_SETTINGS_JSON_SIZE);
+    SpiRamJsonDocument doc(MAX_WIFI_SETTINGS_JSON_SIZE);
     deserializeJson(doc, settingsString);
     JsonObject obj = doc.as<JsonObject>();
     fromJson(obj);
@@ -77,7 +77,7 @@ void WiFiSettings::addSetting(const std::string &ssid, const std::string &passwo
     load();
     // if this setting does not currently exist, add it to the top
     if (settingExists(ssid, password)) {
-        log_i("addSetting: %s %s already exists", ssid.c_str(), password.c_str());
+        log_d("addSetting: %s %s already exists", ssid.c_str(), password.c_str());
         return;
     }
 
@@ -89,7 +89,7 @@ void WiFiSettings::addSetting(const std::string &ssid, const std::string &passwo
     if (settings.size() > MAX_WIFI_SETTINGS) {
         settings.erase(settings.end() - 1);
     }
-    log_i("added setting %s %s", ssid.c_str(), password.c_str());
+    log_d("added setting %s %s", ssid.c_str(), password.c_str());
 }
 
 void WiFiSettings::clear() { settings.clear(); }
