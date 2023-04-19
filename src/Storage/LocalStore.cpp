@@ -765,9 +765,9 @@ void LocalStore::deleteReadableFiles(const ReadablesVector &readables, bool rest
 }
 
 auto LocalStore::saveReadables(const ReadablesVector &readables) -> bool {
-    // 2048 is probably a safe-ish upper bound per readable. I'm seeing about half that in my
-    // testing so far
     SHOW_HEAP();
+    // Readables take up to 20KB of RAM each since the JSON can be large (includes ToC, cover
+    // images, file metadata, etc.)
     auto doc = std::make_unique<SpiRamJsonDocument>(20000 * std::max(1, (int)readables.size()));
     auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
     std::string path = modelType == ReadablesModelType::Book ? BOOKS_PATH : ARTICLES_PATH;
