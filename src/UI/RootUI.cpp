@@ -61,8 +61,6 @@
 
 #define LAST_READABLE_ID "rui-readable"
 
-extern WiFi wiFi;
-
 void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &fileSystem,
                    LightingController &lightingController) {
     SHOW_HEAP();
@@ -888,7 +886,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     systemSettingsMenu->addMenuItem(
         MenuItem("Clear WiFi Settings", [this, systemSettingsMenu, display]() {
-            wiFi.clearWiFiCredentials();
+            WiFi::getInstance().clearWiFiCredentials();
             log_w("WiFi settings cleared. Rebooting...");
             systemSettingsMenu->showTemporaryMessage(
                 *display, "WiFi settings cleared. Rebooting...", 2000, false);
