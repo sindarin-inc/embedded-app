@@ -30,7 +30,7 @@ public:
     WiFiSettings() {}
     ~WiFiSettings() {}
 
-    std::vector<WiFiSetting> settings;
+    SpiramVector<WiFiSetting> settings;
     bool valid_ = false;
 
     int count() {
