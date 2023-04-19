@@ -16,6 +16,19 @@
 // Change speed of speed reading in increments of 2 seconds
 #define PAGE_SPEED_INCREMENT 2000
 
+void ReadableScreen::setCurrentScreen(Screen &screen) {
+    screen.setNeedsRerender();
+    currentScreen_ = &screen;
+}
+
+auto ReadableScreen::needsRerender() -> bool {
+    if (currentScreen_ != nullptr && currentScreen_ != this) {
+        return currentScreen_->needsRerender();
+    } else {
+        return needsRerender_;
+    }
+};
+
 auto ReadableScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto inset = 10;
     const auto spacing = 10;
@@ -23,6 +36,9 @@ auto ReadableScreen::layout(LayoutContext &context, Size size) -> Size {
     popupMenuBackground_.fillColor = display_.bg;
     popupMenuBackground_.strokeColor = display_.bg;
     popupMenuForeground_.strokeColor = display_.fg;
+
+    SolClock &theClock = SolClock::getInstance();
+    clockView_.setText(theClock.getTimeString());
 
     context.setViewFrame(popupMenuBackground_,
                          {{size.width / 2 - 50, size.height / 2 - 65}, {100, 130}},
@@ -39,18 +55,25 @@ auto ReadableScreen::layout(LayoutContext &context, Size size) -> Size {
             int x = 0;
             int y = 0;
 
-            for (auto &view : menuItemViews_) {
-                auto viewFrame = context.setViewFrame(
-                    *view, {{x, y}, size}, LayoutOptionsSizeToFit | LayoutOptionsAlignTop);
-                y += viewFrame.size.height + spacing;
+            for (auto &index : menuItemsOrder_) {
+                if (menuItemsEnabled_[index]) {
+                    auto viewFrame =
+                        context.setViewFrame(*menuItemViews_[index], {{x, y}, size},
+                                             LayoutOptionsSizeToFit | LayoutOptionsAlignTop);
+                    y += viewFrame.size.height + spacing;
+                }
             }
 
             return {size.width, y};
         });
 
-    context.setViewFrame(clockBatteryView_, {size.width / 2 - 40, size.height / 2 - 55, {80, 110}},
+    context.setViewFrame(clockView_, {size.width / 2 - 30, size.height / 2 - 55, {60, 110}},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
                              LayoutOptionsAlignLeft);
+
+    context.setViewFrame(
+        placeInReadableView_, {size.width / 2 - 30, size.height / 2 - 55, {60, 110}},
+        LayoutOptionsSizeToFit | LayoutOptionsAlignBottom | LayoutOptionsAlignRight);
 
     return {size.width, insetRect.size.height + 2 * inset};
 }
@@ -60,12 +83,15 @@ void ReadableScreen::drawInRect(Rect rect) {
     popupMenuBackground_.draw();
     popupMenuForeground_.draw();
 
-    for (auto &view : menuItemViews_) {
-        (*view).draw();
+    for (auto &index : menuItemsOrder_) {
+        if (menuItemsEnabled_[index]) {
+            menuItemViews_[index]->draw();
+        }
     }
 
-    clockBatteryView_.setShowBattery(false);
-    clockBatteryView_.draw();
+    clockView_.draw();
+
+    placeInReadableView_.draw();
 }
 
 // Once we have a real database, this will all be replaced.
@@ -190,34 +216,11 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
 // Since this happens in a couple of places (animation as well as button press),
 // we have a helper method to do the work.
 void ReadableScreen::turnPage() {
-    if (atEnd_) { /*
-         bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
-         archiveMenu_.resetMenuItems();
-         if (archived) {
-             archiveMenu_.addMenuItem(MenuItem("Undo Archive", [this]() {
-                 log_i("Un-Archiving: %s", readable_.title.c_str());
-                 this->prefs_.readableArchivedChanged.remove(readable_.shortenedUuid.c_str());
-                 if (this->backCallback != nullptr) {
-                     this->backCallback();
-                 }
-             }));
-         } else {
-             archiveMenu_.addMenuItem(MenuItem("Archive and Main Menu", [this]() {
-                 log_i("Archiving: %s", readable_.title.c_str());
-                 this->prefs_.readableArchivedChanged.set(readable_.shortenedUuid.c_str(), true);
-                 if (this->backCallback != nullptr) {
-                     this->backCallback();
-                 }
-             }));
-         }
-         archiveMenu_.addMenuItem(MenuItem("Main Menu", [this]() {
-             log_i("Not archiving: %s", readable_.title.c_str());
-             if (this->backCallback != nullptr) {
-                 this->backCallback();
-             }
-         }));
-         setCurrentScreen(archiveMenu_);
-         */
+    if (atEnd_) {
+        showPopup_ = true;
+        // When running off the end, we want to show the popup defaulted on archive.
+        setCurrSelection(1);
+        setNeedsRerender();
     } else {
         readable_.placePrev = readable_.place;
         readable_.place = newPlace_;
@@ -230,6 +233,23 @@ void ReadableScreen::turnPage() {
 auto ReadableScreen::checkAtEnd() -> bool { return (newPlace_ == 0); }
 
 void ReadableScreen::render(DisplaySystem &display) {
+
+    if (currentScreen_ != this) {
+        currentScreen_->render(display);
+        return;
+    }
+
+    if (showPopup_) {
+        size_t place = renderer_.getCurrentPlace();
+        size_t lengthOfFile = renderer_.size();
+        float placeInTextPercentage = (float)place / (float)lengthOfFile * 100;
+        std::string placeString = StringFormat("%.1f%%", placeInTextPercentage);
+        std::string placeStringForBottom =
+            StringFormat("%d / %d", place / 1000, lengthOfFile / 1000);
+
+        placeInReadableView_.setText(placeStringForBottom);
+    }
+
     setNeedsLayout();
     setFrame({{0, 0}, {display.width(), display.height()}});
 
@@ -245,7 +265,8 @@ void ReadableScreen::render(DisplaySystem &display) {
         std::string message =
             "Welcome to reading with Sol! This is a one page tutorial on what each button does "
             "while reading.\n\n\nUp: Main Menu\n\nDown: Reading Settings\n\nLeft: Previous "
-            "Page\n\nRight: Bookmark Page\n\nCenter: Next Page\n\n\nThat's it! Press any button... "
+            "Page\n\nRight: Bookmark Page\n\nCenter: Next Page\n\n\nThat's it! Press any "
+            "button... "
             "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
 
         auto streamFirstTime = std::make_shared<StdStringStream>(message);
@@ -288,50 +309,53 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
-    if (pageSpeed_ == 0) {
-        newPlace_ = renderer_.renderPage(readable_.place);
-        atEnd_ = checkAtEnd();
-    } else {
-        if (speedLinesToSkip_ >= renderer_.getNumRenderedLines()) {
-            // time to turn the page
-            turnPage();
+    if (firstPopupLoad_) {
+
+        if (pageSpeed_ == 0) {
+            newPlace_ = renderer_.renderPage(readable_.place);
+            atEnd_ = checkAtEnd();
         } else {
-            speedLinesToSkip_++;
-        }
-
-        newPlace_ = renderer_.renderPage(readable_.place, speedLinesToSkip_);
-        atEnd_ = checkAtEnd();
-
-        // If the line is blank, we want to skip it. Also, skip multiple newlines in a row.
-        while ((renderer_.getLengthOfLine(speedLinesToSkip_) == 1) &&
-               speedLinesToSkip_ < renderer_.getNumRenderedLines()) {
-            speedLinesToSkip_++;
-        }
-
-        // Only if we didn't end on a newline. Othwerise wait for next render to turn page.
-        if (speedLinesToSkip_ != renderer_.getNumRenderedLines()) {
-            nextInterval_ = pageSpeed_ * renderer_.getLengthOfLine(speedLinesToSkip_) /
-                            renderer_.getTotalLengthOfLines();
-            if (nextInterval_ == 0) {
-                nextInterval_ = 1;
+            if (speedLinesToSkip_ >= renderer_.getNumRenderedLines()) {
+                // time to turn the page
+                turnPage();
+            } else {
+                speedLinesToSkip_++;
             }
+
+            newPlace_ = renderer_.renderPage(readable_.place, speedLinesToSkip_);
+            atEnd_ = checkAtEnd();
+
+            // If the line is blank, we want to skip it. Also, skip multiple newlines in a row.
+            while ((renderer_.getLengthOfLine(speedLinesToSkip_) == 1) &&
+                   speedLinesToSkip_ < renderer_.getNumRenderedLines()) {
+                speedLinesToSkip_++;
+            }
+
+            // Only if we didn't end on a newline. Othwerise wait for next render to turn page.
+            if (speedLinesToSkip_ != renderer_.getNumRenderedLines()) {
+                nextInterval_ = pageSpeed_ * renderer_.getLengthOfLine(speedLinesToSkip_) /
+                                renderer_.getTotalLengthOfLines();
+                if (nextInterval_ == 0) {
+                    nextInterval_ = 1;
+                }
+            }
+
+            // Give the user extra time for the first line.
+            if (speedLinesToSkip_ == 0) {
+                nextInterval_ *= 2;
+            }
+
+            log_d("Setting next interval: %lu", nextInterval_);
+
+            setNeedsRerender();
         }
-
-        // Give the user extra time for the first line.
-        if (speedLinesToSkip_ == 0) {
-            nextInterval_ *= 2;
-        }
-
-        log_d("Setting next interval: %lu", nextInterval_);
-
-        setNeedsRerender();
     }
 
     // Future work
     // Sync this to cloud and use on mobile.
     updateBookmarkStatus();
 
-    if (inBookmark_) {
+    if (firstPopupLoad_ && inBookmark_) {
         log_d("Drawing bookmark!");
         display.fillRect(display.width() + 1, display.yAbsolute(0), 13, 55, display.fg);
         display.fillTriangle(display.width() + 1, display.yAbsolute(55), display.width() + 13,
@@ -339,15 +363,15 @@ void ReadableScreen::render(DisplaySystem &display) {
                              display.bg);
     }
 
-    // Show the home screen and gear icon on the first page you read as a reminder. Then drop them
-    // after that.
+    // Show the home screen and gear icon on the first page you read as a reminder. Then drop
+    // them after that.
     if (!shownIcons_) {
         // renderIcons(display);
         shownIcons_ = true;
     }
 
-    // Only show the autopilot icon on page turns or if speed was changed -- let it fade out with
-    // the rest of the text
+    // Only show the autopilot icon on page turns or if speed was changed -- let it fade out
+    // with the rest of the text
     if (((pageSpeed_ != 0) && (speedLinesToSkip_ == 0)) || (showAutopilotMinus_) ||
         (showAutopilotPlus_)) {
         int screenWidth = display.width();
@@ -370,8 +394,32 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     log_d("%lu is the new place in the text %s", newPlace_, atEnd_ ? "(at end)" : "");
 
-    if (showPopup_) {
+    if ((showPopup_) && (firstPopupLoad_)) {
+        for (auto &menuItemView : menuItemViews_) {
+            menuItemView->setSelected(false);
+        }
+        draw();
+    }
 
+    if (firstPopupLoad_) {
+        if ((pageSpeed_ != 0) && (speedLinesToSkip_ > 0)) {
+            display.updateDisplay(DisplaySystem::UpdateType::FAST_ORIGINAL_AU4);
+        } else {
+            // We want the popup to always come up as PARTIAL, even if the user has fast transitions
+            // off
+            if (prefs_.fastTransitions.get().value_or(false) || showPopup_) {
+                display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+            } else {
+                display.updateDisplay(DisplaySystem::UpdateType::FULL);
+            }
+        }
+    }
+
+    if ((showPopup_) && (firstPopupLoad_)) {
+        firstPopupLoad_ = false;
+    }
+
+    if (showPopup_) {
         std::shared_ptr<MenuItemView> selectedMenuItemView = menuItemViews_[getCurrSelection()];
         for (auto &menuItemView : menuItemViews_) {
             if (menuItemView && menuItemView == selectedMenuItemView) {
@@ -381,16 +429,7 @@ void ReadableScreen::render(DisplaySystem &display) {
             }
         }
         draw();
-    }
-
-    if ((pageSpeed_ != 0) && (speedLinesToSkip_ > 0)) {
-        display.updateDisplay(DisplaySystem::UpdateType::FAST_ORIGINAL_AU4);
-    } else {
-        if (prefs_.fastTransitions.get().value_or(false)) {
-            display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-        } else {
-            display.updateDisplay(DisplaySystem::UpdateType::FULL);
-        }
+        display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
     }
 
     uint32_t wc = prefs_.wordCount.get().value_or(0);
@@ -427,23 +466,81 @@ void ReadableScreen::incrementReadingTime() {
     prefs_.totalReadingTimeSeconds.set(totalReadingTimeSeconds);
 }
 
-void ReadableScreen::popuplatePopupMenu() {
+void ReadableScreen::populatePopupMenu() {
     resetMenuItems();
-    addMenuItem(MenuItem("Main Menu", []() {
-
+    addMenuItem(MenuItem("Main Menu", [this]() {
+        showPopup_ = false;
+        firstPopupLoad_ = true;
+        prefs_.lastReadableId.remove();
+        if (!prefs_.cesMode.get().value_or(false)) {
+            if (pageSpeed_ != 0) {
+                xTimerStop(DisplaySystem::animationTimer, 0);
+            }
+        }
+        if (backCallback != nullptr) {
+            setNeedsRerender();
+            backCallback();
+        }
     }));
-    addMenuItem(MenuItem("Bookmark", []() {
 
+    addMenuItem(MenuItem("Archive", [this]() {
+        if (readable_.isArticle()) {
+            bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
+
+            if (archived) {
+                log_i("Un-Archiving: %s", readable_.title.c_str());
+                this->prefs_.readableArchivedChanged.remove(readable_.shortenedUuid.c_str());
+            } else {
+                this->prefs_.readableArchivedChanged.set(readable_.shortenedUuid.c_str(), true);
+            }
+        }
+
+        if (backCallback != nullptr) {
+            setNeedsRerender();
+            backCallback();
+        }
+        showPopup_ = false;
+        firstPopupLoad_ = true;
     }));
-    addMenuItem(MenuItem("Brightness", []() {
 
+    addMenuItem(MenuItem("Bookmark", [this]() {
+        showPopup_ = false;
+        firstPopupLoad_ = true;
+        inBookmark_ = !inBookmark_;
+        writeOutBookmarkUpdate();
     }));
-    addMenuItem(MenuItem("Contents", []() {
 
+    //    addMenuItem(MenuItem("Undo Archive", [this]() { showPopup_ = false; firstPopupLoad_ =
+    //    true; }), false);
+
+    addMenuItem(MenuItem("Text", [this]() {
+        showPopup_ = false;
+        firstPopupLoad_ = true;
+    }));
+
+    addMenuItem(MenuItem("Brightness", [this]() {
+        showPopup_ = false;
+        firstPopupLoad_ = true;
+        lightingAdjustScreen_.firstLoad = true;
+        log_d("Setting current screen to brightness screen");
+        setCurrentScreen(lightingAdjustScreen_);
+    }));
+
+    addMenuItem(MenuItem("Contents", [this]() {
+        showPopup_ = false;
+        firstPopupLoad_ = true;
+        readableSeekScreen_.firstLoad = true;
+        log_d("Setting current screen to readable seek screen");
+        setCurrentScreen(readableSeekScreen_);
     }));
 }
 
 void ReadableScreen::processCommand(RemoteCommand command) {
+    if (currentScreen_ != this) {
+        currentScreen_->processCommand(command);
+        return;
+    }
+
     if (ignoreNextPress_) {
         ignoreNextPress_ = false;
         setNeedsRerender();
@@ -461,6 +558,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::CHANNEL_MINUS:
         if (showPopup_) {
             showPopup_ = false;
+            firstPopupLoad_ = true;
             setNeedsRerender();
         } else if (pageSpeed_ == 0) {
             readable_.place = renderer_.getPreviousPlace();
@@ -475,15 +573,17 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         }
         numUps_ = 0;
         break;
-    case RemoteCommand::PLAY: // To allow the PT to long press east to change page without an enter
-                              // button, and undoing the bookmark first
+    case RemoteCommand::PLAY: // To allow the PT to long press east to change page without an
+                              // enter button, and undoing the bookmark first
     case RemoteCommand::ENTER:
         if (showPopup_) {
             showPopup_ = false;
+            firstPopupLoad_ = true;
             if (getCurrItem().callback != nullptr) {
                 getCurrItem().callback();
             }
         } else if (pageSpeed_ == 0) {
+
             turnPage();
             setNeedsRerender();
         } else {
@@ -507,17 +607,14 @@ void ReadableScreen::processCommand(RemoteCommand command) {
                 xTimerStop(DisplaySystem::animationTimer, 0);
             }
             showPopup_ = true;
-            // We'll do this every time because the menu items may have changed based on
-            // context.
-            popuplatePopupMenu();
-            setNeedsRerender();
+            setCurrSelection(numMenuItems_ - 1);
         }
         numUps_ = 0;
         break;
     case RemoteCommand::CHANNEL_PLUS:
         if (showPopup_) {
             showPopup_ = false;
-            setNeedsRerender();
+            firstPopupLoad_ = true;
         } else if (!prefs_.cesMode.get().value_or(false)) {
             if (pageSpeed_ != 0) {
                 pageSpeed_ = std::max(pageSpeed_ - PAGE_SPEED_INCREMENT, 1);
@@ -530,7 +627,6 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             }
         } else {
             turnPage();
-            setNeedsRerender();
         }
         setNeedsRerender();
         numUps_ = 0;
@@ -539,49 +635,15 @@ void ReadableScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::PREV:
         if (showPopup_) {
             prevSelection();
+        } else if (!prefs_.cesMode.get().value_or(false)) {
+            showPopup_ = true;
+            setCurrSelection(0);
         } else {
-            prefs_.lastReadableId.remove();
-            if (!prefs_.cesMode.get().value_or(false)) {
-                if (pageSpeed_ != 0) {
-                    xTimerStop(DisplaySystem::animationTimer, 0);
-                }
-                if (readable_.isArticle()) {
-                    /**
-                    bool archived =
-                        prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
-                    archiveMenu_.resetMenuItems();
-
-                    archiveMenu_.addMenuItem(MenuItem("Main Menu", [this, back]() {
-                        log_i("Not archiving: %s", readable_.title.c_str());
-                        back();
-                    }));*/
-                    if (/*archived*/ 1) {
-                        /* archiveMenu_.addMenuItem(MenuItem("Undo Archive", [this, back]() {
-                             log_i("Un-Archiving: %s", readable_.title.c_str());
-                             this->prefs_.readableArchivedChanged.remove(
-                                 readable_.shortenedUuid.c_str());
-                             back();
-                         }));*/
-                    } else {
-                        /*
-                        archiveMenu_.addMenuItem(MenuItem("Archive and Main Menu", [this, back]() {
-                            log_i("Archiving: %s", readable_.title.c_str());
-                            this->prefs_.readableArchivedChanged.set(
-                                readable_.shortenedUuid.c_str(), true);
-                            back();
-                        }));*/
-                    }
-                    //                    setCurrentScreen(archiveMenu_);
-                } else {
-                    back();
-                }
-            } else {
-                numUps_++;
-                if (numUps_ > 3) {
-                    numUps_ = 0;
-                    prefs_.cesMode.set(false);
-                    back();
-                }
+            numUps_++;
+            if (numUps_ > 3) {
+                numUps_ = 0;
+                prefs_.cesMode.set(false);
+                back();
             }
         }
         break;
