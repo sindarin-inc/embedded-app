@@ -212,7 +212,7 @@ public:
 
         pos.x += advance;
 
-        int max = advance;
+        int max = advance - hoff;
         int kerning = 0;
         int pitch2 = (glyph2.bitmap.dim.width + 7) >> 3;
 
@@ -267,7 +267,7 @@ public:
         }
     fin:
         delete[] glyph2.bitmap.pixels;
-        *kern = static_cast<FIX16>((max > 0) ? ((kerning + KERNING_SIZE + 1) << 6) : 0);
+        *kern = static_cast<FIX16>((max >= 0) ? ((kerning + KERNING_SIZE + 1) << 6) : 0);
         // LOGD("Computed kern: %d (%d).", static_cast<int>((float)*kern / 64.0), kerning);
 #endif
         // LOGD("Optical Kerning End");
