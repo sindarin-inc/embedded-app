@@ -24,13 +24,7 @@ typedef enum {
     WIFI_POWER_MINUS_1dBm = -4 // -1dBm
 } wifi_power_t;
 
-typedef enum {
-    UNINITIALIZED,
-    IDLE,
-    CONNECTING,
-    CONNECTED,
-    DISCONNECTED
-} WiFiState;
+typedef enum { UNINITIALIZED, IDLE, CONNECTING, CONNECTED, DISCONNECTED } WiFiState;
 
 class WiFi {
 
