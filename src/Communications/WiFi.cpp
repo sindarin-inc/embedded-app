@@ -12,7 +12,7 @@ WiFi wiFi;
 auto WiFi::getInstance() -> WiFi & { return wiFi; }
 
 auto WiFi::begin() -> esp_err_t {
-    if (began_) {
+    if (wiFiState_ != UNINITIALIZED) {
         return ESP_OK;
     }
 
@@ -60,12 +60,12 @@ auto WiFi::begin() -> esp_err_t {
     }
     SHOW_HEAP();
 
-    began_ = true;
+    wiFiState_ = IDLE;
     return ESP_OK;
 }
 
 auto WiFi::end() -> esp_err_t {
-    if (!began_) {
+    if (wiFiState_ == UNINITIALIZED) {
         return ESP_OK;
     }
 
@@ -106,7 +106,7 @@ auto WiFi::end() -> esp_err_t {
         return err;
     }
 
-    began_ = false;
+    wiFiState_ = UNINITIALIZED;
     return ESP_OK;
 }
 
@@ -228,9 +228,6 @@ auto WiFi::scanNetworks(const std::function<void(std::shared_ptr<wifi_ap_record_
 }
 
 auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> esp_err_t {
-
-    disconnected_ = false;
-
     // We have to have wifi sleep enabled otherwise Bluetooth can't work
     esp_err_t err = esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
     if (err != ESP_OK) {
@@ -304,6 +301,8 @@ auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> 
         return err;
     }
 
+    wiFiState_ = CONNECTING;
+
     return ESP_OK;
 }
 
@@ -366,16 +365,17 @@ auto WiFi::connectTopWiFiSettingWithTimeout(int timeoutMs) -> bool {
     // Wait for a connection
     // TODO: Would be good to make this not a polling loop so if there's an obvious failure we
     // could return sooner
-    while (!connected() && !disconnected_ && (xTaskGetTickCount() - startTime) < timeoutMs) {
+    while (wiFiState_ == CONNECTING && (xTaskGetTickCount() - startTime) < timeoutMs) {
         vTaskDelay(200);
     }
-    if (!connected() || disconnected_) {
+    if (wiFiState_ != CONNECTED) {
         log_w("failed to connect to: %s %s", settings_.top().ssid_.c_str(),
               settings_.top().password_.c_str());
         esp_err_t err = esp_wifi_disconnect();
         if (err != ESP_OK) {
             log_w("error in esp_wifi_disconnect: %d", err);
         }
+        wiFiState_ = IDLE;
         return false;
     }
 
@@ -406,7 +406,7 @@ void WiFi::disconnectWiFi() {
     SHOW_HEAP();
 }
 
-auto WiFi::connected() -> bool { return connected_; }
+auto WiFi::connected() -> bool { return wiFiState_ == CONNECTED; }
 
 auto WiFi::getLocalIp() -> esp_ip4_addr_t {
     esp_netif_ip_info_t ip;
@@ -438,8 +438,7 @@ void WiFi::wiFiEventHandler(void *arg, esp_event_base_t eventBase, int32_t event
         break;
     case WIFI_EVENT_STA_DISCONNECTED:
         log_i("WIFI_EVENT_STA_DISCONNECTED");
-        tthis->connected_ = false;
-        tthis->disconnected_ = true;
+        tthis->wiFiState_ = DISCONNECTED;
         break;
     default:
         log_d("WIFI_EVENT: %" PRIi32, eventId);
@@ -457,7 +456,7 @@ void WiFi::ipEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId
         // save current wifi settings
         log_i("successful connection, saving settings.");
         tthis->settings_.save();
-        tthis->connected_ = true;
+        tthis->wiFiState_ = CONNECTED;
         break;
     }
     default:

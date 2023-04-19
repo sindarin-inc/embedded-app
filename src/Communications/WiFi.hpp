@@ -24,6 +24,14 @@ typedef enum {
     WIFI_POWER_MINUS_1dBm = -4 // -1dBm
 } wifi_power_t;
 
+typedef enum {
+    UNINITIALIZED,
+    IDLE,
+    CONNECTING,
+    CONNECTED,
+    DISCONNECTED
+} WiFiState;
+
 class WiFi {
 
 public:
@@ -60,9 +68,7 @@ public:
     auto getLocalIpStr() -> std::string;
 
 protected:
-    bool began_ = false;
-    bool connected_ = false;
-    bool disconnected_ = false;
+    WiFiState wiFiState_ = UNINITIALIZED;
     wifi_power_t wiFiPower_ = WIFI_POWER_19_5dBm;
     esp_netif_t *staNetif_;
     esp_event_handler_instance_t wifiEventHandlerInstance_;
