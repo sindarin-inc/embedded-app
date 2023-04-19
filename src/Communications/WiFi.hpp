@@ -79,6 +79,7 @@ protected:
     static void ipEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId,
                                void *eventData);
 
-    auto connectTopWiFiSettingWithTimeout(int timeoutMs = 20000) -> bool;
+    auto connectWiFiSettingWithTimeout(int timeoutMs, const std::string &ssid,
+                                       const std::string &password) -> bool;
     void migrateWiFiCredentials();
 };

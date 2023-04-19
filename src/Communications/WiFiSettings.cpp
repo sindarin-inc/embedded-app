@@ -20,7 +20,7 @@ void convertFromJson(JsonVariantConst src, WiFiSetting &dst) {
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
 auto convertToJson(const WiFiSettings &src, JsonVariant dst) -> bool {
     auto settingsJson = dst.createNestedArray("settings");
-    int numSettings = src.numSettings_;
+    int numSettings = src.settings.size();
     for (int i = 0; i < numSettings; i++) {
         settingsJson.add(src.settings[i]);
     }
@@ -53,12 +53,24 @@ void WiFiSettings::save() const {
 }
 
 bool WiFiSettings::settingExists(const std::string &ssid, const std::string &password) {
-    for (int i = 0; i < numSettings_; i++) {
-        if (settings[i].ssid_ == ssid && settings[i].password_ == password) {
+    for (auto s : settings) {
+        if (s.ssid_ == ssid && s.password_ == password) {
             return true;
         }
     }
     return false;
+}
+
+void WiFiSettings::setActiveSetting(const std::string &ssid, const std::string &password) {
+    // find setting
+    for (auto it = settings.begin(); it != settings.end(); it++) {
+        if (it->ssid_ == ssid && it->password_ == password) {
+            settings.erase(it);
+            break;
+        }
+    }
+
+    addSetting(ssid, password);
 }
 
 void WiFiSettings::addSetting(const std::string &ssid, const std::string &password) {
@@ -69,18 +81,15 @@ void WiFiSettings::addSetting(const std::string &ssid, const std::string &passwo
         return;
     }
 
-    numSettings_++;
-    if (numSettings_ >= MAX_WIFI_SETTINGS) {
-        numSettings_ = MAX_WIFI_SETTINGS;
-    }
+    WiFiSetting s;
+    s.ssid_ = ssid;
+    s.password_ = password;
 
-    for (int i = numSettings_ - 1; i > 0; i--) {
-        settings[i] = settings[i - 1];
+    settings.insert(settings.begin(), s);
+    if (settings.size() > MAX_WIFI_SETTINGS) {
+        settings.erase(settings.end() - 1);
     }
-
-    settings[0].ssid_ = ssid;
-    settings[0].password_ = password;
     log_i("added setting %s %s", ssid.c_str(), password.c_str());
 }
 
-void WiFiSettings::clear() { numSettings_ = 0; }
+void WiFiSettings::clear() { settings.clear(); }

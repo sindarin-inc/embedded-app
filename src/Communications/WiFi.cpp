@@ -264,9 +264,6 @@ auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> 
         getWifiConfig(&wifiConfig);
     } else {
         log_i("Using provided WiFi credentials: %s/%s", ssid.c_str(), password.c_str());
-
-        // store these credentials in settings if they don't already exist
-        settings_.addSetting(ssid, password);
         wifiConfig.sta.sae_pwe_h2e = WPA3_SAE_PWE_BOTH;
         strncpy((char *)wifiConfig.sta.ssid, ssid.c_str(), sizeof(wifiConfig.sta.ssid));
         strncpy((char *)wifiConfig.sta.password, password.c_str(), sizeof(wifiConfig.sta.password));
@@ -318,8 +315,6 @@ auto WiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
         return err;
     }
 
-    // load wifi settings
-    auto startTime = xTaskGetTickCount();
     // loop twice through available settings, or stop if timed out
     if (!settings_.isValid()) {
         migrateWiFiCredentials();
@@ -333,19 +328,12 @@ auto WiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
     int settingsToCheck = settings_.count() * 2;
 
     for (int i = 0; i < settingsToCheck; i++) {
-        if ((xTaskGetTickCount() - startTime) > timeoutMs) {
-            log_w("timed out connecting to wifi.");
-            break;
-        }
-
-        log_i("trying setting %d: %s %s", i, settings_.top().ssid_.c_str(),
-              settings_.top().password_.c_str());
-        if (connectTopWiFiSettingWithTimeout(20000)) {
+        log_i("trying setting %d: %s %s", i, settings_.settings[i].ssid_.c_str(),
+              settings_.settings[i].password_.c_str());
+        if (connectWiFiSettingWithTimeout(20000, settings_.settings[i].ssid_,
+                                          settings_.settings[i].password_)) {
             return true;
         }
-
-        // top setting failed, try another
-        settings_.rotate();
     }
 
     // failed to connect
@@ -354,11 +342,12 @@ auto WiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
     return false;
 }
 
-auto WiFi::connectTopWiFiSettingWithTimeout(int timeoutMs) -> bool {
+auto WiFi::connectWiFiSettingWithTimeout(int timeoutMs, const std::string &ssid,
+                                         const std::string &password) -> bool {
     auto startTime = xTaskGetTickCount();
 
     // attempt to connect with last successful settings
-    if (connectWiFi(settings_.top().ssid_, settings_.top().password_) != ESP_OK) {
+    if (connectWiFi(ssid, password) != ESP_OK) {
         log_w("connectWiFi failed");
         return false;
     }
@@ -369,8 +358,7 @@ auto WiFi::connectTopWiFiSettingWithTimeout(int timeoutMs) -> bool {
         vTaskDelay(200);
     }
     if (wiFiState_ != CONNECTED) {
-        log_w("failed to connect to: %s %s", settings_.top().ssid_.c_str(),
-              settings_.top().password_.c_str());
+        log_w("failed to connect to: %s %s", ssid.c_str(), password.c_str());
         esp_err_t err = esp_wifi_disconnect();
         if (err != ESP_OK) {
             log_w("error in esp_wifi_disconnect: %d", err);
@@ -455,6 +443,19 @@ void WiFi::ipEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId
         // successful connection
         // save current wifi settings
         log_i("successful connection, saving settings.");
+        wifi_config_t conf;
+        esp_err_t err = esp_wifi_get_config(WIFI_IF_STA, &conf);
+        if (err != ESP_OK) {
+            log_e("got ip: esp_wifi_get_config failed with error %s", esp_err_to_name(err));
+            break;
+        }
+
+        std::string ssid = (char *)conf.sta.ssid;
+        std::string password = (char *)conf.sta.password;
+
+        log_i("setting active: %s %s", ssid.c_str(), ssid.c_str());
+
+        tthis->settings_.setActiveSetting(ssid, password);
         tthis->settings_.save();
         tthis->wiFiState_ = CONNECTED;
         break;

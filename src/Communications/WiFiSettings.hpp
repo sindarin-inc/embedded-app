@@ -30,35 +30,23 @@ public:
     WiFiSettings() {}
     ~WiFiSettings() {}
 
-    WiFiSetting settings[MAX_WIFI_SETTINGS];
-    int numSettings_ = 0;
+    std::vector<WiFiSetting> settings;
     bool valid_ = false;
 
     int count() {
         load();
-        return numSettings_;
+        return settings.size();
     }
-    WiFiSetting &top() {
-        load();
-        return settings[0];
-    }
-    void rotate() {
-        load();
-        WiFiSetting temp = top();
-        for (int i = 0; i < numSettings_ - 1; i++) {
-            settings[i] = settings[i + 1];
-        }
+    void setActiveSetting(const std::string &ssid, const std::string &password);
 
-        settings[numSettings_ - 1] = temp;
-    }
     void save() const;
     void addSetting(const std::string &ssid, const std::string &password);
     bool fromJson(const JsonObject &j) {
         JsonArray jsonSettings = j["settings"];
-        numSettings_ = jsonSettings.size();
-
-        for (int i = 0; i < numSettings_; i++) {
-            settings[i] = jsonSettings[i];
+        int numSettings = jsonSettings.size();
+        settings.clear();
+        for (int i = 0; i < numSettings; i++) {
+            settings.push_back(jsonSettings[i]);
         }
 
         return true;
@@ -69,7 +57,6 @@ public:
 
 private:
     bool loaded_ = false;
-
     bool settingExists(const std::string &ssid, const std::string &password);
 };
 
