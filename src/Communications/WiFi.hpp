@@ -2,6 +2,8 @@
 
 #include <esp_err.h>
 #include <esp_wifi.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/event_groups.h>
 #include <functional>
 #include <memory>
 #include <string>
@@ -24,14 +26,20 @@ typedef enum {
     WIFI_POWER_MINUS_1dBm = -4 // -1dBm
 } wifi_power_t;
 
-typedef enum { UNINITIALIZED, IDLE, CONNECTING, CONNECTED, DISCONNECTED } WiFiState;
+typedef enum {
+    UNINITIALIZED = 0,
+    IDLE = 1 << 0,
+    CONNECTING = 1 << 1,
+    CONNECTED = 1 << 2,
+    DISCONNECTED = 1 << 3
+} WiFiState;
 
 class WiFi {
 
 public:
     static auto getInstance() -> WiFi &;
 
-    WiFi() = default;
+    WiFi() { wifiEventGroup_ = xEventGroupCreate(); };
     WiFi(WiFi const &) = delete;
 
     // Credentials
@@ -47,9 +55,12 @@ public:
 
     // Connection
     auto connectWiFi(const std::string &ssid = "", const std::string &password = "") -> esp_err_t;
-    auto connectWiFiWithTimeout(int timeoutMs = 20000) -> bool;
+    auto connectWiFiFromSettings() -> bool;
     void disconnectWiFi();
     auto connected() -> bool;
+
+    void connectedEvent();
+    void disconnectedEvent();
 
     // Settings
     /*!
@@ -67,6 +78,7 @@ protected:
     esp_netif_t *staNetif_;
     esp_event_handler_instance_t wifiEventHandlerInstance_;
     esp_event_handler_instance_t ipEventHandlerInstance_;
+    EventGroupHandle_t wifiEventGroup_;
     WiFiSettings settings_;
 
     // Lifecycle init/deinit

@@ -329,7 +329,7 @@ void LocalStore::syncFromRemote(
         return;
     }
 
-    if (!WiFi::getInstance().connectWiFiWithTimeout()) {
+    if (!WiFi::getInstance().connectWiFiFromSettings()) {
         progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
                                           .message = "Failed to connect to WiFi."});
         return;

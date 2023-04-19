@@ -772,7 +772,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto confirmMessage = [timeZoneMenu, display, &clock](int solTimeZone) {
             clock.setTimezone(solTimeZone);
             timeZoneMenu->showTemporaryMessage(*display, "Setting Clock & Time Zone", 200, false);
-            WiFi::getInstance().connectWiFiWithTimeout();
+            WiFi::getInstance().connectWiFiFromSettings();
             if (!WiFi::getInstance().connected()) {
                 log_e("Couldn't connect to wifi, not setting clock");
             } else {

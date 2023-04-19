@@ -39,8 +39,8 @@ auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> 
     return ESP_OK;
 }
 
-auto WiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
-    log_i("Pretending to connect WiFi (wiFiPower_=%d, timeoutMs=%dms)", wiFiPower_, timeoutMs);
+auto WiFi::connectWiFiFromSettings() -> bool {
+    log_i("Pretending to connect WiFi (wiFiPower_=%d)", wiFiPower_);
     Delay(1000);
     wiFiState_ = CONNECTED;
     return true;

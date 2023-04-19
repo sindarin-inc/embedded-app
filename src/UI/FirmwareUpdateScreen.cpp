@@ -134,7 +134,7 @@ void FirmwareUpdateScreen::begin() {
     state_.state = FirmwareDownloadState::ConnectingWifi;
     render(display_);
 
-    if (!WiFi::getInstance().connectWiFiWithTimeout()) {
+    if (!WiFi::getInstance().connectWiFiFromSettings()) {
         fail("Failed to connect to WiFi.");
         return;
     }

@@ -303,7 +303,7 @@ auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> 
     return ESP_OK;
 }
 
-auto WiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
+auto WiFi::connectWiFiFromSettings() -> bool {
 
     if (connected()) {
         return true;
@@ -344,20 +344,16 @@ auto WiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
 
 auto WiFi::connectWiFiSettingWithTimeout(int timeoutMs, const std::string &ssid,
                                          const std::string &password) -> bool {
-    auto startTime = xTaskGetTickCount();
-
     // attempt to connect with last successful settings
     if (connectWiFi(ssid, password) != ESP_OK) {
         log_w("connectWiFi failed");
         return false;
     }
-    // Wait for a connection
-    // TODO: Would be good to make this not a polling loop so if there's an obvious failure we
-    // could return sooner
-    while (wiFiState_ == CONNECTING && (xTaskGetTickCount() - startTime) < timeoutMs) {
-        vTaskDelay(200);
-    }
-    if (wiFiState_ != CONNECTED) {
+
+    // wait on wifi events
+    EventBits_t bits = xEventGroupWaitBits(wifiEventGroup_, CONNECTED | DISCONNECTED, true, false,
+                                           pdMS_TO_TICKS(timeoutMs));
+    if ((bits & CONNECTED) == 0) {
         log_w("failed to connect to: %s %s", ssid.c_str(), password.c_str());
         esp_err_t err = esp_wifi_disconnect();
         if (err != ESP_OK) {
@@ -396,6 +392,9 @@ void WiFi::disconnectWiFi() {
 
 auto WiFi::connected() -> bool { return wiFiState_ == CONNECTED; }
 
+void WiFi::connectedEvent() { xEventGroupSetBits(wifiEventGroup_, CONNECTED); }
+void WiFi::disconnectedEvent() { xEventGroupSetBits(wifiEventGroup_, DISCONNECTED); }
+
 auto WiFi::getLocalIp() -> esp_ip4_addr_t {
     esp_netif_ip_info_t ip;
     esp_err_t err = esp_netif_get_ip_info(staNetif_, &ip);
@@ -427,6 +426,7 @@ void WiFi::wiFiEventHandler(void *arg, esp_event_base_t eventBase, int32_t event
     case WIFI_EVENT_STA_DISCONNECTED:
         log_i("WIFI_EVENT_STA_DISCONNECTED");
         tthis->wiFiState_ = DISCONNECTED;
+        tthis->disconnectedEvent();
         break;
     default:
         log_d("WIFI_EVENT: %" PRIi32, eventId);
@@ -458,6 +458,7 @@ void WiFi::ipEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId
         tthis->settings_.setActiveSetting(ssid, password);
         tthis->settings_.save();
         tthis->wiFiState_ = CONNECTED;
+        tthis->connectedEvent();
         break;
     }
     default:

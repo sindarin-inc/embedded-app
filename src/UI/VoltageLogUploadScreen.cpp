@@ -99,7 +99,7 @@ void VoltageLogUploadScreen::begin() {
     render(display_);
 
     DispatchGetCore1BackgroundQueue()->dispatch([this]() {
-        if (!WiFi::getInstance().connectWiFiWithTimeout()) {
+        if (!WiFi::getInstance().connectWiFiFromSettings()) {
             DispatchGetUiQueue()->dispatch([this]() { fail("Failed to connect to WiFi."); });
             return;
         }
