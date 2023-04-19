@@ -13,13 +13,19 @@ class MenuItemView : public EinkView {
 public:
     // Always use the smallest font for subtitles
     MenuItemView(DisplaySystem &display, const MenuItem &menuItem,
-                 const GFXfont *font = &TAHOMA_REGULAR_FONT5PT7B, bool multiLine = false)
+                 const GFXfont *font = &TAHOMA_REGULAR_FONT5PT7B, bool multiLine = false,
+                 bool noPadding = false)
         : EinkView(display), textView_(display, menuItem.title, font),
           subtextView_(display, menuItem.subtitle, &TAHOMA_REGULAR_FONT5PT7B, true),
           textMultiView_(display, menuItem.title, 2, 0, font), multiLine_(multiLine),
-          indicator_(display, 4), menuItem_(menuItem) {
+          indicator_(display, 4), menuItem_(menuItem), noPaddingBetween_(noPadding) {
         if (!menuItem.subtitle.empty()) {
             hasSubtext_ = true;
+        }
+        if (noPadding) {
+            indicatorPadding_ = 0;
+        } else {
+            indicatorPadding_ = 3;
         }
         log_i("initializing menu item view with title: %s", menuItem.title.c_str());
     }
@@ -27,7 +33,7 @@ public:
 
     void setIndicatorPadding(int padding) { indicatorPadding_ = padding; }
 
-    void setNoPaddingBewteen(bool noPadding) { noPaddingBetween_ = noPadding; }
+    void setNoPaddingBetween(bool noPadding) { noPaddingBetween_ = noPadding; }
 
     auto layout(LayoutContext &context, Size size) -> Size override {
         int x = 0;
@@ -108,8 +114,8 @@ protected:
     bool multiLine_ = false;
     BoxView indicator_;
     const MenuItem &menuItem_;
-    int indicatorPadding_ = 3;
-    bool noPaddingBetween_ = false;
+    int indicatorPadding_;
+    bool noPaddingBetween_;
     bool selected_ = false;
     bool hasSubtext_ = false;
 };

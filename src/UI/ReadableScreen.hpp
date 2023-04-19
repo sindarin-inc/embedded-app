@@ -6,23 +6,30 @@
 #include "Renderers/RendererStream.hpp"
 #include "Sensors/LightingController.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "UI/Components/BoxView.hpp"
+#include "UI/Components/EinkView.hpp"
+#include "UI/Components/IconView.hpp"
+#include "UI/Components/MenuItemView.hpp"
+#include "UI/Components/SingleLineTextView.hpp"
+#include "UI/Components/StackView.hpp"
 #include "UI/ContainerScreen.hpp"
+#include "UI/Layout/View.hpp"
 #include "UI/LineMenuScreen.hpp"
-#include "UI/PopupMenuScreen.hpp"
+#include "UI/MenuScreen.hpp"
 #include "UI/Screen.hpp"
 #include "config.h"
 
-class ReadableScreen : public ContainerScreen {
+class ReadableScreen : public MenuScreen {
 public:
     ReadableScreen(std::shared_ptr<RendererStream> stream, DisplaySystem &display,
                    const Readable &readable, PreferencesStore &prefs, Battery &battery,
-                   FileSystem &fileSystem, LightingController &lightingController)
-
-        : renderer_(display), firstTimeRenderer_(display), readable_(readable), prefs_(prefs),
-          popup_(display, battery, renderer_, prefs_, readable_, lightingController),
-          archiveMenu_(prefs_, display), fileSystem_(fileSystem), display_(display) {
-        currentScreen_ = this;
+                   FileSystem &fileSystem, LightingController &lightingController,
+                   MenuStyleFamily myStyle)
+        : MenuScreen(battery, display, myStyle), renderer_(display), firstTimeRenderer_(display),
+          readable_(readable), prefs_(prefs), fileSystem_(fileSystem), display_(display),
+          popupMenuBackground_(display, 5), popupMenuForeground_(display, 5) {
         renderer_.setStream(std::move(stream));
+        numMenuItems_ = 0;
         pageSpeed_ = prefs_.autoPilotSpeed.get().value_or(0);
         // Since we copy in the readable from RootUI and RootUI only creates
         // the readable at the initial MainMenu creation, the place of that
@@ -41,20 +48,33 @@ public:
 
         log_d("Found place for %s = %" PRIu32 " %s", readable_.shortenedUuid.c_str(),
               readable_.place, atEnd_ ? "(at end)" : "");
-        popup_.backCallback = [this]() { this->setCurrentScreen(*this); };
-        archiveMenu_.backCallback = [this]() { this->setCurrentScreen(*this); };
     }
 
     ~ReadableScreen() override = default;
 
-    void setLeftPopupButton(const std::string &title, std::function<void(void)> callback) {
-        popup_.setLeftPopupButton(title, std::move(callback));
-    }
+    auto layout(LayoutContext &context, Size size) -> Size override;
+    void drawInRect(Rect rect) override;
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
     void writeOutBookmarkUpdate();
     void updateBookmarkStatus();
+
+    void popuplatePopupMenu();
+
+    void resetMenuItems() override {
+        Menu::resetMenuItems();
+        menuItemViews_.clear();
+        firstLoad_ = true;
+    }
+
+    void addMenuItem(const MenuItem &newItem) override {
+        Menu::addMenuItem(newItem);
+        auto menuItemView = std::make_shared<MenuItemView>(display_, newItem);
+        menuItemView->setIndicatorPadding(0);
+        menuItemView->setNoPaddingBetween(true);
+        menuItemViews_.push_back(menuItemView);
+    }
 
     void renderIcons(DisplaySystem &display);
 
@@ -67,10 +87,6 @@ protected:
     Readable readable_;
     PreferencesStore &prefs_;
 
-    PopupMenuScreen popup_;
-
-    LineMenuScreen archiveMenu_;
-
     FileSystem &fileSystem_;
 
     bool inBookmark_ = false;
@@ -78,10 +94,14 @@ protected:
 
     unsigned long newPlace_ = 0;
     bool atEnd_ = false;
-
+    bool showPopup_ = false;
     bool shownIcons_ = false;
 
     DisplaySystem &display_;
+
+    std::vector<std::shared_ptr<MenuItemView>> menuItemViews_;
+    BoxView popupMenuBackground_;
+    BoxView popupMenuForeground_;
 
     // Must reset this to 0 on each page turn.
     unsigned int speedLinesToSkip_ = 0;

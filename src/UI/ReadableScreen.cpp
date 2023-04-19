@@ -16,6 +16,58 @@
 // Change speed of speed reading in increments of 2 seconds
 #define PAGE_SPEED_INCREMENT 2000
 
+auto ReadableScreen::layout(LayoutContext &context, Size size) -> Size {
+    const auto inset = 10;
+    const auto spacing = 10;
+
+    popupMenuBackground_.fillColor = display_.bg;
+    popupMenuBackground_.strokeColor = display_.bg;
+    popupMenuForeground_.strokeColor = display_.fg;
+
+    context.setViewFrame(popupMenuBackground_,
+                         {{size.width / 2 - 50, size.height / 2 - 65}, {100, 130}},
+                         LayoutOptionsAlignCenter);
+
+    context.setViewFrame(popupMenuForeground_,
+                         {{size.width / 2 - 45, size.height / 2 - 60}, {90, 120}},
+                         LayoutOptionsAlignCenter);
+
+    auto insetRect = context.setSublayoutFrame(
+        {{size.width / 2 - 45 + inset, size.height / 2 - 60 + inset},
+         {90 - 2 * inset, 120 - 2 * inset}},
+        LayoutOptionsAlignTop, [this](LayoutContext &context, Size size) -> Size {
+            int x = 0;
+            int y = 0;
+
+            for (auto &view : menuItemViews_) {
+                auto viewFrame = context.setViewFrame(
+                    *view, {{x, y}, size}, LayoutOptionsSizeToFit | LayoutOptionsAlignTop);
+                y += viewFrame.size.height + spacing;
+            }
+
+            return {size.width, y};
+        });
+
+    context.setViewFrame(clockBatteryView_, {size.width / 2 - 40, size.height / 2 - 55, {80, 110}},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
+                             LayoutOptionsAlignLeft);
+
+    return {size.width, insetRect.size.height + 2 * inset};
+}
+
+void ReadableScreen::drawInRect(Rect rect) {
+
+    popupMenuBackground_.draw();
+    popupMenuForeground_.draw();
+
+    for (auto &view : menuItemViews_) {
+        (*view).draw();
+    }
+
+    clockBatteryView_.setShowBattery(false);
+    clockBatteryView_.draw();
+}
+
 // Once we have a real database, this will all be replaced.
 // For now, since we assume that there won't be TOO many bookmarks, we simply
 // start from the first bookmark action (on or off) that the user did and replay
@@ -138,33 +190,34 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
 // Since this happens in a couple of places (animation as well as button press),
 // we have a helper method to do the work.
 void ReadableScreen::turnPage() {
-    if (atEnd_) {
-        bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
-        archiveMenu_.resetMenuItems();
-        if (archived) {
-            archiveMenu_.addMenuItem(MenuItem("Undo Archive", [this]() {
-                log_i("Un-Archiving: %s", readable_.title.c_str());
-                this->prefs_.readableArchivedChanged.remove(readable_.shortenedUuid.c_str());
-                if (this->backCallback != nullptr) {
-                    this->backCallback();
-                }
-            }));
-        } else {
-            archiveMenu_.addMenuItem(MenuItem("Archive and Main Menu", [this]() {
-                log_i("Archiving: %s", readable_.title.c_str());
-                this->prefs_.readableArchivedChanged.set(readable_.shortenedUuid.c_str(), true);
-                if (this->backCallback != nullptr) {
-                    this->backCallback();
-                }
-            }));
-        }
-        archiveMenu_.addMenuItem(MenuItem("Main Menu", [this]() {
-            log_i("Not archiving: %s", readable_.title.c_str());
-            if (this->backCallback != nullptr) {
-                this->backCallback();
-            }
-        }));
-        setCurrentScreen(archiveMenu_);
+    if (atEnd_) { /*
+         bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
+         archiveMenu_.resetMenuItems();
+         if (archived) {
+             archiveMenu_.addMenuItem(MenuItem("Undo Archive", [this]() {
+                 log_i("Un-Archiving: %s", readable_.title.c_str());
+                 this->prefs_.readableArchivedChanged.remove(readable_.shortenedUuid.c_str());
+                 if (this->backCallback != nullptr) {
+                     this->backCallback();
+                 }
+             }));
+         } else {
+             archiveMenu_.addMenuItem(MenuItem("Archive and Main Menu", [this]() {
+                 log_i("Archiving: %s", readable_.title.c_str());
+                 this->prefs_.readableArchivedChanged.set(readable_.shortenedUuid.c_str(), true);
+                 if (this->backCallback != nullptr) {
+                     this->backCallback();
+                 }
+             }));
+         }
+         archiveMenu_.addMenuItem(MenuItem("Main Menu", [this]() {
+             log_i("Not archiving: %s", readable_.title.c_str());
+             if (this->backCallback != nullptr) {
+                 this->backCallback();
+             }
+         }));
+         setCurrentScreen(archiveMenu_);
+         */
     } else {
         readable_.placePrev = readable_.place;
         readable_.place = newPlace_;
@@ -177,10 +230,8 @@ void ReadableScreen::turnPage() {
 auto ReadableScreen::checkAtEnd() -> bool { return (newPlace_ == 0); }
 
 void ReadableScreen::render(DisplaySystem &display) {
-    if (currentScreen_ != this) {
-        currentScreen_->render(display);
-        return;
-    }
+    setNeedsLayout();
+    setFrame({{0, 0}, {display.width(), display.height()}});
 
     prefs_.lastReadableId.set(readable_.uuid);
 
@@ -319,6 +370,19 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     log_d("%lu is the new place in the text %s", newPlace_, atEnd_ ? "(at end)" : "");
 
+    if (showPopup_) {
+
+        std::shared_ptr<MenuItemView> selectedMenuItemView = menuItemViews_[getCurrSelection()];
+        for (auto &menuItemView : menuItemViews_) {
+            if (menuItemView && menuItemView == selectedMenuItemView) {
+                menuItemView->setSelected(true);
+            } else {
+                menuItemView->setSelected(false);
+            }
+        }
+        draw();
+    }
+
     if ((pageSpeed_ != 0) && (speedLinesToSkip_ > 0)) {
         display.updateDisplay(DisplaySystem::UpdateType::FAST_ORIGINAL_AU4);
     } else {
@@ -363,12 +427,23 @@ void ReadableScreen::incrementReadingTime() {
     prefs_.totalReadingTimeSeconds.set(totalReadingTimeSeconds);
 }
 
-void ReadableScreen::processCommand(RemoteCommand command) {
-    if (currentScreen_ != this) {
-        currentScreen_->processCommand(command);
-        return;
-    }
+void ReadableScreen::popuplatePopupMenu() {
+    resetMenuItems();
+    addMenuItem(MenuItem("Main Menu", []() {
 
+    }));
+    addMenuItem(MenuItem("Bookmark", []() {
+
+    }));
+    addMenuItem(MenuItem("Brightness", []() {
+
+    }));
+    addMenuItem(MenuItem("Contents", []() {
+
+    }));
+}
+
+void ReadableScreen::processCommand(RemoteCommand command) {
     if (ignoreNextPress_) {
         ignoreNextPress_ = false;
         setNeedsRerender();
@@ -384,7 +459,10 @@ void ReadableScreen::processCommand(RemoteCommand command) {
 
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
-        if (pageSpeed_ == 0) {
+        if (showPopup_) {
+            showPopup_ = false;
+            setNeedsRerender();
+        } else if (pageSpeed_ == 0) {
             readable_.place = renderer_.getPreviousPlace();
             prefs_.readablePlace.set(readable_.shortenedUuid.c_str(), readable_.place);
             prefs_.readablePlaceChanged.set(readable_.shortenedUuid.c_str(), true);
@@ -400,7 +478,12 @@ void ReadableScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::PLAY: // To allow the PT to long press east to change page without an enter
                               // button, and undoing the bookmark first
     case RemoteCommand::ENTER:
-        if (pageSpeed_ == 0) {
+        if (showPopup_) {
+            showPopup_ = false;
+            if (getCurrItem().callback != nullptr) {
+                getCurrItem().callback();
+            }
+        } else if (pageSpeed_ == 0) {
             turnPage();
             setNeedsRerender();
         } else {
@@ -417,16 +500,25 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         numUps_ = 0;
         break;
     case RemoteCommand::NEXT:
-        if (!prefs_.cesMode.get().value_or(false)) {
+        if (showPopup_) {
+            nextSelection();
+        } else if (!prefs_.cesMode.get().value_or(false)) {
             if (pageSpeed_ != 0) {
                 xTimerStop(DisplaySystem::animationTimer, 0);
             }
-            setCurrentScreen(popup_);
+            showPopup_ = true;
+            // We'll do this every time because the menu items may have changed based on
+            // context.
+            popuplatePopupMenu();
+            setNeedsRerender();
         }
         numUps_ = 0;
         break;
     case RemoteCommand::CHANNEL_PLUS:
-        if (!prefs_.cesMode.get().value_or(false)) {
+        if (showPopup_) {
+            showPopup_ = false;
+            setNeedsRerender();
+        } else if (!prefs_.cesMode.get().value_or(false)) {
             if (pageSpeed_ != 0) {
                 pageSpeed_ = std::max(pageSpeed_ - PAGE_SPEED_INCREMENT, 1);
                 log_d("Speeding up: New Page Speed is %u", pageSpeed_);
@@ -445,44 +537,51 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::PREV:
-        prefs_.lastReadableId.remove();
-        if (!prefs_.cesMode.get().value_or(false)) {
-            if (pageSpeed_ != 0) {
-                xTimerStop(DisplaySystem::animationTimer, 0);
-            }
-            if (readable_.isArticle()) {
-                bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
-                archiveMenu_.resetMenuItems();
-
-                archiveMenu_.addMenuItem(MenuItem("Main Menu", [this, back]() {
-                    log_i("Not archiving: %s", readable_.title.c_str());
-                    back();
-                }));
-                if (archived) {
-                    archiveMenu_.addMenuItem(MenuItem("Undo Archive", [this, back]() {
-                        log_i("Un-Archiving: %s", readable_.title.c_str());
-                        this->prefs_.readableArchivedChanged.remove(
-                            readable_.shortenedUuid.c_str());
-                        back();
-                    }));
-                } else {
-                    archiveMenu_.addMenuItem(MenuItem("Archive and Main Menu", [this, back]() {
-                        log_i("Archiving: %s", readable_.title.c_str());
-                        this->prefs_.readableArchivedChanged.set(readable_.shortenedUuid.c_str(),
-                                                                 true);
-                        back();
-                    }));
-                }
-                setCurrentScreen(archiveMenu_);
-            } else {
-                back();
-            }
+        if (showPopup_) {
+            prevSelection();
         } else {
-            numUps_++;
-            if (numUps_ > 3) {
-                numUps_ = 0;
-                prefs_.cesMode.set(false);
-                back();
+            prefs_.lastReadableId.remove();
+            if (!prefs_.cesMode.get().value_or(false)) {
+                if (pageSpeed_ != 0) {
+                    xTimerStop(DisplaySystem::animationTimer, 0);
+                }
+                if (readable_.isArticle()) {
+                    /**
+                    bool archived =
+                        prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
+                    archiveMenu_.resetMenuItems();
+
+                    archiveMenu_.addMenuItem(MenuItem("Main Menu", [this, back]() {
+                        log_i("Not archiving: %s", readable_.title.c_str());
+                        back();
+                    }));*/
+                    if (/*archived*/ 1) {
+                        /* archiveMenu_.addMenuItem(MenuItem("Undo Archive", [this, back]() {
+                             log_i("Un-Archiving: %s", readable_.title.c_str());
+                             this->prefs_.readableArchivedChanged.remove(
+                                 readable_.shortenedUuid.c_str());
+                             back();
+                         }));*/
+                    } else {
+                        /*
+                        archiveMenu_.addMenuItem(MenuItem("Archive and Main Menu", [this, back]() {
+                            log_i("Archiving: %s", readable_.title.c_str());
+                            this->prefs_.readableArchivedChanged.set(
+                                readable_.shortenedUuid.c_str(), true);
+                            back();
+                        }));*/
+                    }
+                    //                    setCurrentScreen(archiveMenu_);
+                } else {
+                    back();
+                }
+            } else {
+                numUps_++;
+                if (numUps_ > 3) {
+                    numUps_ = 0;
+                    prefs_.cesMode.set(false);
+                    back();
+                }
             }
         }
         break;
