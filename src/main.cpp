@@ -12,7 +12,6 @@
 
 #include "Communications/BackgroundSync.hpp"
 #include "Communications/WiFi.hpp"
-#include "Communications/WiFiSettings.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Battery.hpp"
 #include "Misc/BootError.hpp"
@@ -37,7 +36,7 @@
 DisplayEinkET013TT1 myDisplay(DISPLAY_CS_LEFT, DISPLAY_CS_RIGHT, DISPLAY_RST);
 #endif
 
-extern PreferencesStore prefs;
+PreferencesStore prefs;
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS
 #include "Communications/BLESindarinService.hpp"

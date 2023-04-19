@@ -884,14 +884,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             this->power_.reboot();
         }));
 
-    systemSettingsMenu->addMenuItem(
-        MenuItem("Clear WiFi Settings", [this, systemSettingsMenu, display]() {
-            WiFi::getInstance().clearWiFiCredentials();
-            log_w("WiFi settings cleared. Rebooting...");
-            systemSettingsMenu->showTemporaryMessage(
-                *display, "WiFi settings cleared. Rebooting...", 2000, false);
-            power_.reboot();
-        }));
+    systemSettingsMenu->addMenuItem(MenuItem("Clear WiFi Settings", [this, systemSettingsMenu,
+                                                                     display]() {
+        WiFi::getInstance().clearWiFiCredentials();
+        log_w("WiFi settings cleared.");
+        systemSettingsMenu->showTemporaryMessage(*display, "WiFi settings cleared.", 2000, false);
+    }));
 
     systemSettingsMenu->addMenuItem(
         MenuItem("Reset Preferences", [this, systemSettingsMenu, display]() {

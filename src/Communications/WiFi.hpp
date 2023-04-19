@@ -39,8 +39,10 @@ class WiFi {
 public:
     static auto getInstance() -> WiFi &;
 
-    WiFi() { wifiEventGroup_ = xEventGroupCreate(); };
+    WiFi() = default;
     WiFi(WiFi const &) = delete;
+
+    EventGroupHandle_t wifiEventGroup_ = nullptr;
 
     // Credentials
     auto getWifiConfig(wifi_config_t *conf) -> esp_err_t;
@@ -59,9 +61,6 @@ public:
     void disconnectWiFi();
     auto connected() -> bool;
 
-    void connectedEvent();
-    void disconnectedEvent();
-
     // Settings
     /*!
      * @brief Set the WiFi power level. Must be run before connecting.
@@ -78,7 +77,6 @@ protected:
     esp_netif_t *staNetif_;
     esp_event_handler_instance_t wifiEventHandlerInstance_;
     esp_event_handler_instance_t ipEventHandlerInstance_;
-    EventGroupHandle_t wifiEventGroup_;
     WiFiSettings settings_;
 
     // Lifecycle init/deinit

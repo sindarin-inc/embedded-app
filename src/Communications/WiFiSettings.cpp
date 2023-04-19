@@ -41,7 +41,6 @@ void WiFiSettings::load() {
     deserializeJson(doc, settingsString);
     JsonObject obj = doc.as<JsonObject>();
     fromJson(obj);
-    valid_ = true;
 }
 
 void WiFiSettings::save() const {
@@ -77,7 +76,6 @@ void WiFiSettings::addSetting(const std::string &ssid, const std::string &passwo
     load();
     // if this setting does not currently exist, add it to the top
     if (settingExists(ssid, password)) {
-        log_d("addSetting: %s %s already exists", ssid.c_str(), password.c_str());
         return;
     }
 
@@ -93,3 +91,5 @@ void WiFiSettings::addSetting(const std::string &ssid, const std::string &passwo
 }
 
 void WiFiSettings::clear() { settings.clear(); }
+
+bool WiFiSettings::needsMigration() { return !prefs.wifiSettingsJson.get().has_value(); }

@@ -31,16 +31,13 @@ public:
     ~WiFiSettings() {}
 
     SpiramVector<WiFiSetting> settings;
-    bool valid_ = false;
 
     int count() {
         load();
         return settings.size();
     }
     void setActiveSetting(const std::string &ssid, const std::string &password);
-
     void save() const;
-    void addSetting(const std::string &ssid, const std::string &password);
     bool fromJson(const JsonObject &j) {
         JsonArray jsonSettings = j["settings"];
         int numSettings = jsonSettings.size();
@@ -52,11 +49,12 @@ public:
         return true;
     }
     void clear();
-    bool isValid() { return valid_; }
     void load();
+    bool needsMigration();
 
 private:
     bool loaded_ = false;
+    void addSetting(const std::string &ssid, const std::string &password);
     bool settingExists(const std::string &ssid, const std::string &password);
 };
 
