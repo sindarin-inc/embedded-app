@@ -9,11 +9,20 @@
 #include "Models/Author.hpp"
 #include "Models/Json.hpp"
 #include "Models/JsonSerializable.hpp"
+#include "Models/ReadableArchive.hpp"
 #include "Models/ReadableBookmark.hpp"
 #include "Models/ReadableFile.hpp"
+#include "Models/ReadablePlacemark.hpp"
 #include "Models/ReadableTableOfContentsChapter.hpp"
 
 #define TRUNCATE_READABLE_UUID_FOR_PLACEMARK_BYTES 8
+
+using ReadableAuthorVector = SpiramVector<Author>;
+using ReadableFileVector = SpiramVector<ReadableFile>;
+using ReadableArchivesVector = SpiramVector<ReadableArchive>;
+using ReadablePlacemarksVector = SpiramVector<ReadablePlacemark>;
+using ReadableBookmarksVector = SpiramVector<ReadableBookmark>;
+using ReadableTableOfContentsChapterVector = SpiramVector<ReadableTableOfContentsChapter>;
 
 class Readable : JsonSerializable {
 public:
@@ -29,10 +38,11 @@ public:
     SpiramString dateCreated;
     SpiramString dateModified;
     SpiramString datePublished;
-    std::vector<Author> authors;
-    std::vector<ReadableFile> files;
-    std::vector<ReadableBookmark> bookmarks;
-    std::vector<ReadableTableOfContentsChapter> toc;
+    ReadableAuthorVector authors;
+    ReadableFileVector files;
+    ReadableBookmarksVector bookmarks;
+    ReadableTableOfContentsChapterVector toc;
+
     SpiramString readableType;
     // TODO: source
     // TODO: categories

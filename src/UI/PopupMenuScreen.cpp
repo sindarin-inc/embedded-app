@@ -229,7 +229,7 @@ void PopupMenuScreen::showTocOrSeekScreen() {
             readableTableOfContentsScreen_.addMenuItem(MenuItem(chapter.title, [this]() {
                 readableTableOfContentsScreen_.backCallback();
 
-                needsRerender = true;
+                setNeedsRerender();
                 this->renderer_.getDisplay()->clearDisplay();
                 this->backCallback();
             }));

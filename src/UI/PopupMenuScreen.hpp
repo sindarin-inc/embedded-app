@@ -44,7 +44,7 @@ public:
         };
         readableSeekScreen_.backCallback = [this]() { this->setCurrentScreen(*this); };
         readableTableOfContentsScreen_.backCallback = [this]() {
-            this->needsRerender = true;
+            setNeedsRerender();
             this->setCurrentScreen(*this);
         };
         leftButtonCallback_ = [this]() {

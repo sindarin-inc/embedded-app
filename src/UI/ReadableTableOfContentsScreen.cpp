@@ -51,10 +51,6 @@ void ReadableTableOfContentsScreen::drawInRect(Rect rect) {
 }
 
 void ReadableTableOfContentsScreen::render(DisplaySystem &display) {
-    if (!needsRerender) {
-        return;
-    }
-
     if (menuItemViews_.size() <= 0) {
         log_w("No views to draw in ReadableTableOfContentsScreen");
     }
@@ -111,7 +107,6 @@ void ReadableTableOfContentsScreen::render(DisplaySystem &display) {
     display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
 
     firstLoad_ = false;
-    needsRerender = false;
 }
 
 void ReadableTableOfContentsScreen::processCommand(RemoteCommand command) {
@@ -120,13 +115,13 @@ void ReadableTableOfContentsScreen::processCommand(RemoteCommand command) {
         if (prevSelection()) {
             firstLoad_ = true;
         }
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::NEXT:
         if (nextSelection()) {
             firstLoad_ = true;
         }
-        needsRerender = true;
+        setNeedsRerender();
         break;
     case RemoteCommand::ENTER:
     case RemoteCommand::CHANNEL_PLUS:
@@ -141,10 +136,7 @@ void ReadableTableOfContentsScreen::processCommand(RemoteCommand command) {
             firstLoad_ = true;
             backCallback();
         }
-        needsRerender = true;
-        break;
-    case RemoteCommand::ANIMATION:
-        needsRerender = false;
+        setNeedsRerender();
         break;
     default:
         break;
