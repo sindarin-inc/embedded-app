@@ -25,13 +25,17 @@ public:
     }
     ~MenuItemView() override = default;
 
+    void setIndicatorPadding(int padding) { indicatorPadding_ = padding; }
+
+    void setNoPaddingBewteen(bool noPadding) { noPaddingBetween_ = noPadding; }
+
     auto layout(LayoutContext &context, Size size) -> Size override {
         int x = 0;
         int y = 0;
         int indicatorWidth = 5;
 
         auto indicatorWidthPlus = indicatorWidth + 8;
-        auto indicatorHeightPadding = 3;
+        auto indicatorHeightPadding = indicatorPadding_;
 
         Rect textRect;
 
@@ -63,10 +67,12 @@ public:
 
         } else {
             context.setViewFrame(
-                indicator_, {{x, y - indicatorHeightPadding},
-                             {indicatorWidth, textRect.size.height + 2 * indicatorHeightPadding}});
+                indicator_,
+                {{x, y - indicatorHeightPadding},
+                 {indicatorWidth,
+                  (noPaddingBetween_ ? 5 : textRect.size.height + 2 * indicatorHeightPadding)}});
         }
-        y += textRect.size.height + subtextRectHeight + 2;
+        y += textRect.size.height + (noPaddingBetween_ ? -8 : +subtextRectHeight + 2);
         return {size.width, y};
     }
 
@@ -102,6 +108,8 @@ protected:
     bool multiLine_ = false;
     BoxView indicator_;
     const MenuItem &menuItem_;
+    int indicatorPadding_ = 3;
+    bool noPaddingBetween_ = false;
     bool selected_ = false;
     bool hasSubtext_ = false;
 };
