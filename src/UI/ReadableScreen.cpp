@@ -583,12 +583,24 @@ void ReadableScreen::populatePopupMenu() {
         setCurrentScreen(lightingAdjustScreen_);
     }));
 
-    addMenuItem(MenuItem("Contents", [this]() {
+    addMenuItem(MenuItem(hasToc_ ? "Contents" : "Seek", [this]() {
         showPopup_ = false;
         firstPopupLoad_ = true;
-        readableSeekScreen_.firstLoad = true;
-        log_d("Setting current screen to readable seek screen");
-        setCurrentScreen(readableSeekScreen_);
+        // If readable has a ToC with at least 1 element, show the ToC screen.
+        // Otherwise, show the seek screen.
+        if (hasToc_) {
+            readableTableOfContentsScreen_.resetMenuItems();
+            for (ReadableTableOfContentsChapter &chapter : readable_.toc) {
+                readableTableOfContentsScreen_.addMenuItem(MenuItem(
+                    chapter.title, [this]() { readableTableOfContentsScreen_.backCallback(); }));
+            }
+            readableTableOfContentsScreen_.setNearestChapterSelection(renderer_.getCurrentPlace());
+            readableTableOfContentsScreen_.setFirstLoad();
+            setCurrentScreen(readableTableOfContentsScreen_);
+        } else {
+            readableSeekScreen_.firstLoad = true;
+            setCurrentScreen(readableSeekScreen_);
+        }
     }));
 }
 

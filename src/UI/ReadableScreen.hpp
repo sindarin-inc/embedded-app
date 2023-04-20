@@ -16,6 +16,7 @@
 #include "UI/LightingAdjustScreen.hpp"
 #include "UI/MenuScreen.hpp"
 #include "UI/ReadableSeekScreen.hpp"
+#include "UI/ReadableTableOfContentsScreen.hpp"
 #include "UI/Screen.hpp"
 #include "config.h"
 
@@ -40,7 +41,8 @@ public:
           popupMenuBackground_(display, 5), popupMenuForeground_(display, 5),
           lightingAdjustScreen_(display, prefs, lightingController),
           readableSeekScreen_(prefs, readable_, renderer_), placeInReadableView_(display, ""),
-          clockView_(display, "") {
+          clockView_(display, ""),
+          readableTableOfContentsScreen_(prefs, readable_, renderer_, display) {
 
         currentScreen_ = this;
         renderer_.setStream(std::move(stream));
@@ -50,6 +52,11 @@ public:
             this->setCurrentScreen(*this);
         };
         readableSeekScreen_.backCallback = [this]() { this->setCurrentScreen(*this); };
+
+        readableTableOfContentsScreen_.backCallback = [this]() {
+            setNeedsRerender();
+            this->setCurrentScreen(*this);
+        };
 
         pageSpeed_ = prefs_.autoPilotSpeed.get().value_or(0);
         // Since we copy in the readable from RootUI and RootUI only creates
@@ -67,8 +74,12 @@ public:
         newPlace_ = readable_.place;
         atEnd_ = this->checkAtEnd();
 
+        hasToc_ = readable.toc.size() >= 1;
+        log_d("hasToc_ = %d, readable.toc.size: %zu", hasToc_, readable.toc.size());
+
         log_d("Found place for %s = %" PRIu32 " %s", readable_.shortenedUuid.c_str(),
               readable_.place, atEnd_ ? "(at end)" : "");
+
         populatePopupMenu();
     }
 
@@ -135,6 +146,8 @@ protected:
     bool firstPopupLoad_ = true;
     bool autoPilotForceFull_ = false;
 
+    bool hasToc_ = false;
+
     DisplaySystem &display_;
 
     std::vector<std::shared_ptr<MenuItemView>> menuItemViews_;
@@ -148,6 +161,8 @@ protected:
     SingleLineTextView placeInReadableView_;
 
     SingleLineTextView clockView_;
+
+    ReadableTableOfContentsScreen readableTableOfContentsScreen_;
 
     // Must reset this to 0 on each page turn.
     unsigned int speedLinesToSkip_ = 0;

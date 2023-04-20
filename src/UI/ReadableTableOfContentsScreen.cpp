@@ -4,6 +4,13 @@ auto ReadableTableOfContentsScreen::layout(LayoutContext &context, Size size) ->
     const auto inset = 2;
     const auto spacing = 10;
 
+    // Adding these two lines for now but won't draw them until we decide what the
+    // right layout for all of this is.
+    context.setViewFrame(leftArrowView_, {{0, 1}, {5, 10}},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
+    context.setViewFrame(upperLeftTextView_, {{10, 0}, size},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
+
     auto insetRect = context.setSublayoutFrame(
         Rect{{0, 0}, size}.inset(inset),
         LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
@@ -39,6 +46,10 @@ auto ReadableTableOfContentsScreen::layout(LayoutContext &context, Size size) ->
 };
 
 void ReadableTableOfContentsScreen::drawInRect(Rect rect) {
+    // Future work
+    // leftArrowView_.draw();
+    // upperLeftTextView_.draw();
+
     for (auto &view : menuItemViews_) {
         (*view).draw();
     }
