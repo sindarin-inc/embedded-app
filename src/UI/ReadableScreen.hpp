@@ -109,6 +109,11 @@ public:
     void renderIcons(DisplaySystem &display);
 
 protected:
+    void processCommandDemoMode(RemoteCommand command);
+    void processCommandAutoPilot(RemoteCommand command);
+    void processCommandPopup(RemoteCommand command);
+    void processCommandNormal(RemoteCommand command);
+
     Renderer renderer_;
     Renderer firstTimeRenderer_;
     // Note that this is a copy of the readable from RootUI.

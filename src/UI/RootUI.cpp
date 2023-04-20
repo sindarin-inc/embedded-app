@@ -525,6 +525,26 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         experimentalSettingsMenu->setToggleLastItem(false);
     }
 
+    experimentalSettingsMenu->addMenuItem(MenuItem("Bookmark Right Select", [this]() {
+        this->prefs_.fastBookmarkRight.set(!this->prefs_.fastBookmarkRight.get().value_or(false));
+    }));
+
+    if (prefs_.fastBookmarkRight.get().value_or(false)) {
+        experimentalSettingsMenu->setToggleLastItem(true);
+    } else {
+        experimentalSettingsMenu->setToggleLastItem(false);
+    }
+
+    experimentalSettingsMenu->addMenuItem(MenuItem("Bookmark Center Select", [this]() {
+        this->prefs_.fastBookmarkCenter.set(!this->prefs_.fastBookmarkCenter.get().value_or(false));
+    }));
+
+    if (prefs_.fastBookmarkCenter.get().value_or(false)) {
+        experimentalSettingsMenu->setToggleLastItem(true);
+    } else {
+        experimentalSettingsMenu->setToggleLastItem(false);
+    }
+
     experimentalSettingsMenu->addMenuItem(MenuItem("Fast Page Transitions", [this]() {
         this->prefs_.fastTransitions.set(!this->prefs_.fastTransitions.get().value_or(false));
     }));

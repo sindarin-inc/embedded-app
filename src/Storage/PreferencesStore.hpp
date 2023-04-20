@@ -241,7 +241,8 @@ public:
           noDeliverOnClose(*this, "no-deliv-close"), morningDelivery(*this, "morn-deliver"),
           eveningDelivery(*this, "eve-deliver"), darkMode(*this, "dark-mode"),
           autoPilot(*this, "auto-pilot"), fastTransitions(*this, "fast-tran"),
-          noUploadCrashes(*this, "no-upload-crash"), showDebugMenu(*this, "show-debug"){};
+          noUploadCrashes(*this, "no-upload-crash"), showDebugMenu(*this, "show-debug"),
+          fastBookmarkRight(*this, "fst-mark-right"), fastBookmarkCenter(*this, "fst-mark-cent"){};
     PreferencesStore(PreferencesStore &) = delete;
 
     auto begin() -> bool {
@@ -337,6 +338,8 @@ public:
     PrefsItem<bool> fastTransitions;
     PrefsItem<bool> noUploadCrashes;
     PrefsItem<bool> showDebugMenu;
+    PrefsItem<bool> fastBookmarkRight;
+    PrefsItem<bool> fastBookmarkCenter;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles
