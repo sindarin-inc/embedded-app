@@ -884,7 +884,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             this->power_.reboot();
         }));
 
-    systemSettingsMenu->addMenuItem(MenuItem("Clear WiFi Settings", [this, systemSettingsMenu,
+    systemSettingsMenu->addMenuItem(MenuItem("Clear WiFi Settings", [systemSettingsMenu,
                                                                      display]() {
         WiFi::getInstance().clearWiFiCredentials();
         log_w("WiFi settings cleared.");

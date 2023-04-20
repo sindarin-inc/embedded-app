@@ -42,8 +42,6 @@ public:
     WiFi() = default;
     WiFi(WiFi const &) = delete;
 
-    EventGroupHandle_t wifiEventGroup_ = nullptr;
-
     // Credentials
     auto getWifiConfig(wifi_config_t *conf) -> esp_err_t;
     auto hasWiFiCredentials(wifi_config_t *conf) -> bool;
@@ -78,6 +76,7 @@ protected:
     esp_event_handler_instance_t wifiEventHandlerInstance_;
     esp_event_handler_instance_t ipEventHandlerInstance_;
     WiFiSettings settings_;
+    EventGroupHandle_t wifiEventGroup_ = nullptr;
 
     // Lifecycle init/deinit
     auto begin() -> esp_err_t;
