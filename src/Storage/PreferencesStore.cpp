@@ -214,9 +214,8 @@ void DumpNVS() {
 
     nvs_stats_t nvsStats;
     nvs_get_stats(nullptr, &nvsStats);
-    log_i("Count: UsedEntries = (%zu), FreeEntries = (%zu), AllEntries = (%zu), Namespace = %zu",
-          nvsStats.used_entries, nvsStats.free_entries, nvsStats.total_entries,
-          nvsStats.namespace_count);
+    log_i("NVS stats (entries): used=%zu free=%zu total=%zu", nvsStats.used_entries,
+          nvsStats.free_entries, nvsStats.total_entries);
 
     // Iterate through the handleMap and call nvs_get_used_entry_count
     // for each namespace
@@ -227,7 +226,7 @@ void DumpNVS() {
             log_e("NVS error: %s", esp_err_to_name(result));
             continue;
         }
-        log_i("Namespace %s has %zu used entries", name.c_str(), usedEntries);
+        log_i("-> \"%s\" (%zu entries)", name.c_str(), usedEntries);
     }
 #endif
 }
