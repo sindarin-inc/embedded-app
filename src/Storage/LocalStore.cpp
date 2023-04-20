@@ -215,8 +215,7 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
             auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
             log_i("Bookmarks changed on %s %s %s", ReadableModelTypeToString(modelType).c_str(),
                   readable.title.c_str(), readable.uuid.c_str());
-            std::string bookmarkPath =
-                StringFormat("/bookmarks/%s-bookmark.txt", readable.uuid.c_str());
+            std::string bookmarkPath = readable.bookmarkFilePath();
             SFile bookmarkFile = fileSystem.open(bookmarkPath.c_str(), FILE_READ, false);
             if (!bookmarkFile) {
                 log_i("Failed to open bookmark file: %s", bookmarkPath.c_str());
@@ -914,6 +913,8 @@ void LocalStore::readableFilePurge(const Readable &readable) {
     fileSystem.remove(StringFormat("/articles/%s.txt.gz", uuid.c_str()));
     fileSystem.remove(StringFormat("/articles/%s.txt", uuid.c_str()));
 
+    fileSystem.remove(readable.bookmarkFilePath().c_str());
+
     // Also purge placemarks in NVS
     prefs_.readablePlace.remove(readable.shortenedUuid.c_str());
     prefs_.readablePlaceChanged.remove(readable.shortenedUuid.c_str());
@@ -975,12 +976,13 @@ void LocalStore::garbageCollectPreferences() {
     allKeys.insert(readableBookmarksChangedKeys.begin(), readableBookmarksChangedKeys.end());
 
     for (auto &key : allKeys) {
-        bool isBook = std::any_of(books_.begin(), books_.end(),
-                                  [&key](const auto &r) { return r.shortenedUuid == key.c_str(); });
-        bool isArticle = std::any_of(articles_.begin(), articles_.end(), [&key](const auto &r) {
+        bool isStoredBook = std::any_of(books_.begin(), books_.end(), [&key](const auto &r) {
             return r.shortenedUuid == key.c_str();
         });
-        if (!isBook && !isArticle) {
+        bool isStoredArticle =
+            std::any_of(articles_.begin(), articles_.end(),
+                        [&key](const auto &r) { return r.shortenedUuid == key.c_str(); });
+        if (!isStoredBook && !isStoredArticle) {
             log_i("Removing all KeyedPrefsItems for %s", key.c_str());
             prefs_.readablePlace.remove(key.c_str());
             prefs_.readablePlaceChanged.remove(key.c_str());

@@ -55,6 +55,7 @@ public:
 
     [[nodiscard]] auto file() const -> const ReadableFile & { return files[0]; }
 
+    // TODO: Move file path operations to LocalStore
     [[nodiscard]] auto bookmarkFilePath() const -> std::string {
         return StringFormat("/bookmarks/%s-bookmark.txt", uuid.c_str());
     }
