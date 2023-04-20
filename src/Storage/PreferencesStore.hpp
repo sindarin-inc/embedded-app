@@ -306,8 +306,56 @@ public:
           noDeliverOnClose(*this, "no-deliv-close"), morningDelivery(*this, "morn-deliver"),
           eveningDelivery(*this, "eve-deliver"), darkMode(*this, "dark-mode"),
           autoPilot(*this, "auto-pilot"), fastTransitions(*this, "fast-tran"),
-          noUploadCrashes(*this, "no-upload-crash"), showDebugMenu(*this, "show-debug"){};
+          noUploadCrashes(*this, "no-upload-crash"), showDebugMenu(*this, "show-debug"),
+          localStoreMigrationVersion(*this, "ls-version"),
+          preferencesStoreMigrationVersion(*this, "ps-version"){};
     PreferencesStore(PreferencesStore &) = delete;
+
+    void migrateIfNeeded() {
+        bool ranMigration = false;
+        auto migrationVersion = preferencesStoreMigrationVersion.get().value_or(0);
+        while (migrationVersion < version) {
+            log_i("Migrating PreferencesStore from version %" PRIu32 " to %" PRIu32 "",
+                  migrationVersion, migrationVersion + 1);
+            ranMigration = true;
+            switch (migrationVersion) {
+            case 0: {
+                // This method exists to destorys keys we created before the migration system
+                // was set up. I used this absolutely horrifying bash command to find these:
+                // clang-format off
+                /*
+                    git log -S'PrefsItem<' --pickaxe-all -p --all -- src/Storage/PreferencesStore.hpp | perl -lne \
+                    'print $1 if /PrefsItem<.*> (.*);/' | sort | uniq | xargs -I {} sh -c 'git log -S"{}(" \
+                    --pickaxe-all -p --all -- src/Storage/PreferencesStore.hpp | perl -lne "print \$2 if \
+                    /^-.*{}\((\*this|this->prefs_), ([a-zA-Z-\"]*)/"' | sort | uniq | xargs -I {} sh -c \
+                    'grep -q "{}" src/Storage/PreferencesStore.hpp || echo \"{}\"'
+                */
+                // clang-format on
+                std::vector<std::string> keys = {
+                    "backlight",    "box-h-off-mm",   "box-w-off-mm",  "deliver-close",
+                    "fw-size",      "gzip-readables", "last-batt",     "next-sync",
+                    "pocket-token", "pt-battery",     "show-articles", "show-bible",
+                    "show-books",   "upload-crashes", "x-offset",      "y-offset",
+                };
+                for (auto &key : keys) {
+                    esp_err_t err = nvs_erase_key(nvsHandle, key.c_str());
+                    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
+                        log_e("nvs_erase_key failed: %s", esp_err_to_name(err));
+                    }
+                }
+                break;
+            }
+            default:
+                log_e("Unknown migration version: %" PRIu32, migrationVersion);
+                return;
+            }
+            migrationVersion++;
+            preferencesStoreMigrationVersion.set(migrationVersion);
+        }
+        if (ranMigration) {
+            logStats();
+        }
+    }
 
     auto begin() -> bool {
         if (started_) {
@@ -319,6 +367,7 @@ public:
             return false;
         }
         logStats();
+        migrateIfNeeded();
         started_ = true;
         return true;
     }
@@ -373,39 +422,6 @@ public:
 #endif
     }
 
-    // This method exists to destory any old keys that we no longer use. You can find deleted
-    // PrefsItems in all of git history with
-    /*
-    git log -S'PrefsItem<' --pickaxe-all -p --all -- src/Storage/PreferencesStore.hpp | grep -E \
-    '^-.*PrefsItem<'
-    */
-    // And you can ge all of the deleted keys with this absolutely horrifying bash command:
-    /*
-    git log -S'PrefsItem<' --pickaxe-all -p --all -- src/Storage/PreferencesStore.hpp | perl -lne \
-    'print $1 if /PrefsItem<.*> (.*);/' | sort | uniq | xargs -I {} sh -c 'git log -S"{}(" \
-    --pickaxe-all -p --all -- src/Storage/PreferencesStore.hpp | perl -lne "print \$2 if \
-    /^-.*{}\((\*this|this->prefs_), ([a-zA-Z-\"]*)/"' | sort | uniq | xargs -I {} sh -c \
-    'grep -q "{}" src/Storage/PreferencesStore.hpp || echo \"{}\"'
-    */
-    // Then make sure to cross reference here that none of the keys actually still exist (and were
-    // just moved around at one point in the git history)
-    void purgeOldKeys() {
-        std::vector<std::string> keys = {
-            "backlight",    "box-h-off-mm",   "box-w-off-mm",  "deliver-close",
-            "fw-size",      "gzip-readables", "last-batt",     "next-sync",
-            "pocket-token", "pt-battery",     "show-articles", "show-bible",
-            "show-books",   "upload-crashes", "x-offset",      "y-offset",
-        };
-        for (auto &key : keys) {
-            esp_err_t err = nvs_erase_key(nvsHandle, key.c_str());
-            if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
-                log_e("nvs_erase_key failed: %s", esp_err_to_name(err));
-            }
-        }
-    }
-
-    uint32_t nvsHandle;
-
 #if USE_TURN_TOUCH_REMOTE
     PrefsItem<BLEAddress> pairedTurnTouchAddress;
 #endif
@@ -454,6 +470,7 @@ public:
     PrefsItem<bool> fastTransitions;
     PrefsItem<bool> noUploadCrashes;
     PrefsItem<bool> showDebugMenu;
+    PrefsItem<uint32_t> localStoreMigrationVersion;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles
@@ -464,7 +481,11 @@ public:
     static bool settingsOnRestart;
 
 protected:
+    const uint32_t version = 1;
+    uint32_t nvsHandle;
     bool started_;
+
+    PrefsItem<uint32_t> preferencesStoreMigrationVersion;
 
     void commit() {
         esp_err_t err = nvs_commit(nvsHandle);

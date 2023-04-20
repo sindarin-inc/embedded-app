@@ -30,6 +30,8 @@ auto LocalStore::begin() -> bool {
     auto loadedBooks = loadReadablesFromFile(books_, BOOKS_PATH);
     auto loadedArticles = loadReadablesFromFile(articles_, ARTICLES_PATH);
 
+    migrateIfNeeded();
+
     return loadedBooks && loadedArticles;
 }
 
@@ -987,7 +989,27 @@ void LocalStore::garbageCollectPreferences() {
         }
     }
 
-    prefs_.purgeOldKeys();
-
     prefs_.logStats();
+}
+
+void LocalStore::migrateIfNeeded() {
+    auto migrationVersion = prefs_.localStoreMigrationVersion.get().value_or(0);
+    while (migrationVersion < version) {
+        log_i("Migrating LocalStore from version %" PRIu32 " to %" PRIu32 "", migrationVersion,
+              migrationVersion + 1);
+        switch (migrationVersion) {
+        case 0: {
+            // For a long while we weren't actively cleaning up these old readable-specific keys in
+            // NVS. This migration goes through all readable-keys and purges any keys that don't
+            // correspond to a readable on the glasses.
+            garbageCollectPreferences();
+            break;
+        }
+        default:
+            log_e("Unknown LocalStore migration version: %" PRIu32, migrationVersion);
+            return;
+        }
+        migrationVersion++;
+        prefs_.localStoreMigrationVersion.set(migrationVersion);
+    }
 }

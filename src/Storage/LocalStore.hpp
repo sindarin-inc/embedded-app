@@ -104,10 +104,12 @@ public:
 
     // Clean up old keys in NVS
     void garbageCollectPreferences();
+    void migrateIfNeeded();
 
     FileSystem &fileSystem;
 
 private:
+    const uint32_t version = 1;
     PreferencesStore &prefs_;
 
     ReadablesVector books_;
