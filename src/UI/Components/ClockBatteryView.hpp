@@ -20,8 +20,6 @@ public:
           battery_(battery) {}
     ~ClockBatteryView() override = default;
 
-    void setShowBattery(bool show) { showBattery_ = show; }
-
     auto layout(LayoutContext &context, Size size) -> Size override {
 
         SolClock &theClock = SolClock::getInstance();
@@ -43,10 +41,8 @@ public:
     }
 
     void drawInRect(Rect rect) override {
-        if (showBattery_) {
-            batteryIconView_.draw();
-            batteryTextView_.draw();
-        }
+        batteryIconView_.draw();
+        batteryTextView_.draw();
         clockView_.draw();
     }
 
@@ -55,5 +51,4 @@ protected:
     IconView batteryIconView_;
     SingleLineTextView clockView_;
     Battery &battery_;
-    bool showBattery_ = true;
 };
