@@ -315,7 +315,7 @@ public:
     void migrateIfNeeded() {
         bool ranMigration = false;
         auto migrationVersion = preferencesStoreMigrationVersion_.get().value_or(0);
-        while (migrationVersion < version_) {
+        while (migrationVersion < latestMigrationVersion_) {
             log_i("Migrating PreferencesStore from version %" PRIu32 " to %" PRIu32,
                   migrationVersion, migrationVersion + 1);
             ranMigration = true;
@@ -482,7 +482,7 @@ public:
     static bool settingsOnRestart;
 
 protected:
-    const uint32_t version_ = 1;
+    const uint32_t latestMigrationVersion_ = 1;
     uint32_t nvsHandle_;
     bool started_;
 
