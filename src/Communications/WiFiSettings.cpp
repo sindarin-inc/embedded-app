@@ -39,7 +39,7 @@ void WiFiSettings::load() {
     }
     SpiRamJsonDocument doc(MAX_WIFI_SETTINGS_JSON_SIZE);
     deserializeJson(doc, settingsString);
-    JsonObject obj = doc.as<JsonObject>();
+    auto obj = doc.as<JsonObject>();
     fromJson(obj);
 }
 
@@ -52,7 +52,7 @@ void WiFiSettings::save() const {
 }
 
 auto WiFiSettings::settingExists(const std::string &ssid, const std::string &password) -> bool {
-    for (auto s : settings) {
+    for (const auto &s : settings) {
         if (s.ssid == ssid && s.password == password) {
             return true;
         }
