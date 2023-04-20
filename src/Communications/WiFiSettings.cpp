@@ -51,7 +51,7 @@ void WiFiSettings::save() const {
     prefs.wifiSettingsJson.set(wifiString);
 }
 
-bool WiFiSettings::settingExists(const std::string &ssid, const std::string &password) {
+auto WiFiSettings::settingExists(const std::string &ssid, const std::string &password) -> bool {
     for (auto s : settings) {
         if (s.ssid == ssid && s.password == password) {
             return true;
@@ -92,4 +92,4 @@ void WiFiSettings::addSetting(const std::string &ssid, const std::string &passwo
 
 void WiFiSettings::clear() { settings.clear(); }
 
-bool WiFiSettings::needsMigration() { return !prefs.wifiSettingsJson.get().has_value(); }
+auto WiFiSettings::needsMigration() -> bool { return !prefs.wifiSettingsJson.get().has_value(); }
