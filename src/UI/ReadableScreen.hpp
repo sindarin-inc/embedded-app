@@ -16,7 +16,6 @@
 #include "UI/ContainerScreen.hpp"
 #include "UI/Layout/View.hpp"
 #include "UI/LightingAdjustScreen.hpp"
-#include "UI/LineMenuScreen.hpp"
 #include "UI/MenuScreen.hpp"
 #include "UI/ReadableSeekScreen.hpp"
 #include "UI/Screen.hpp"

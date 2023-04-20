@@ -542,7 +542,7 @@ void ReadableScreen::populatePopupMenu() {
         false);
 
     addMenuItem(MenuItem("Bookmark", [this]() {
-        showPopup_ = true;
+        showPopup_ = false;
         firstPopupLoad_ = true;
         inBookmark_ = !inBookmark_;
         writeOutBookmarkUpdate();
