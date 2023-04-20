@@ -317,6 +317,7 @@ public:
             log_e("nvs_open failed: %s", esp_err_to_name(err));
             return false;
         }
+        logStats();
         started_ = true;
         return true;
     }
@@ -364,7 +365,7 @@ public:
             log_e("nvs_get_used_entry_count error: %s", esp_err_to_name(err));
             return;
         }
-        log_i("NVS stats (entries): used=%zu free=%zu total=%zu sindarin-app=%zu",
+        log_d("NVS stats (entries): used=%zu free=%zu total=%zu sindarin-app=%zu",
               nvsStats.used_entries, nvsStats.free_entries, nvsStats.total_entries,
               sindarinEntries);
     }
