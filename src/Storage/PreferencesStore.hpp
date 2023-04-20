@@ -353,6 +353,7 @@ public:
     }
 
     void logStats() {
+#if !SIMULATOR
         nvs_stats_t nvsStats;
         esp_err_t err = nvs_get_stats(nullptr, &nvsStats);
         if (err != ESP_OK) {
@@ -368,6 +369,7 @@ public:
         log_d("NVS stats (entries): used=%zu free=%zu total=%zu sindarin-app=%zu",
               nvsStats.used_entries, nvsStats.free_entries, nvsStats.total_entries,
               sindarinEntries);
+#endif
     }
 
     // This method exists to destory any old keys that we no longer use. You can find deleted
