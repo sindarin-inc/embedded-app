@@ -139,7 +139,7 @@ public:
         PrefsItemBase(PreferencesStore &prefs) : prefs(prefs) {}
 
         void writeToStorage(const char *key, T value) {
-            esp_err_t err = WriteToStorage(prefs.nvsHandle, key, value);
+            esp_err_t err = WriteToStorage(prefs.nvsHandle_, key, value);
             if (err != ESP_OK) {
                 log_e("nvs_set_* fail: %s %s", key, esp_err_to_name(err));
                 return;
@@ -148,7 +148,7 @@ public:
         }
 
         void deleteFromStorage(const char *key) {
-            esp_err_t err = nvs_erase_key(prefs.nvsHandle, key);
+            esp_err_t err = nvs_erase_key(prefs.nvsHandle_, key);
             if (err) {
                 // Fail silently if the key doesn't exist
                 if (err != ESP_ERR_NVS_NOT_FOUND) {
@@ -171,7 +171,7 @@ public:
 
         virtual void loadValue() {
             T value;
-            esp_err_t err = GetFromStorage(this->prefs.nvsHandle, this->key_, value);
+            esp_err_t err = GetFromStorage(this->prefs.nvsHandle_, this->key_, value);
             if (err == ESP_OK) {
                 this->value_ = value;
             }
@@ -218,7 +218,7 @@ public:
             char key[MAX_KEY_LENGTH + 1];
             this->makeKey(key, prefix);
             T value;
-            esp_err_t err = GetFromStorage(this->prefs.nvsHandle, key, value);
+            esp_err_t err = GetFromStorage(this->prefs.nvsHandle_, key, value);
             if (err != ESP_OK) {
                 // Ignore not found errors
                 if (err != ESP_ERR_NVS_NOT_FOUND) {
@@ -309,13 +309,13 @@ public:
           autoPilot(*this, "auto-pilot"), fastTransitions(*this, "fast-tran"),
           noUploadCrashes(*this, "no-upload-crash"), showDebugMenu(*this, "show-debug"),
           localStoreMigrationVersion(*this, "ls-version"),
-          preferencesStoreMigrationVersion(*this, "ps-version"){};
+          preferencesStoreMigrationVersion_(*this, "ps-version"){};
     PreferencesStore(PreferencesStore &) = delete;
 
     void migrateIfNeeded() {
         bool ranMigration = false;
-        auto migrationVersion = preferencesStoreMigrationVersion.get().value_or(0);
-        while (migrationVersion < version) {
+        auto migrationVersion = preferencesStoreMigrationVersion_.get().value_or(0);
+        while (migrationVersion < version_) {
             log_i("Migrating PreferencesStore from version %" PRIu32 " to %" PRIu32,
                   migrationVersion, migrationVersion + 1);
             ranMigration = true;
@@ -339,7 +339,7 @@ public:
                     "show-books",   "upload-crashes", "x-offset",      "y-offset",
                 };
                 for (auto &key : keys) {
-                    esp_err_t err = nvs_erase_key(nvsHandle, key.c_str());
+                    esp_err_t err = nvs_erase_key(nvsHandle_, key.c_str());
                     if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
                         log_e("nvs_erase_key failed: %s", esp_err_to_name(err));
                     }
@@ -351,7 +351,7 @@ public:
                 return;
             }
             migrationVersion++;
-            preferencesStoreMigrationVersion.set(migrationVersion);
+            preferencesStoreMigrationVersion_.set(migrationVersion);
         }
         if (ranMigration) {
             logStats();
@@ -362,7 +362,7 @@ public:
         if (started_) {
             return true;
         }
-        esp_err_t err = nvs_open("sindarin-app", NVS_READWRITE, &nvsHandle);
+        esp_err_t err = nvs_open("sindarin-app", NVS_READWRITE, &nvsHandle_);
         if (err) {
             log_e("nvs_open failed: %s", esp_err_to_name(err));
             return false;
@@ -377,11 +377,11 @@ public:
         if (!started_) {
             return ESP_OK;
         }
-        esp_err_t err = nvs_commit(nvsHandle);
+        esp_err_t err = nvs_commit(nvsHandle_);
         if (err) {
             log_e("nvs_commit on close failed: %s", esp_err_to_name(err));
         }
-        nvs_close(nvsHandle);
+        nvs_close(nvsHandle_);
         started_ = false;
         return err;
     }
@@ -391,7 +391,7 @@ public:
 #if USE_TURN_TOUCH_REMOTE
         auto turnTouchAddress = this->pairedTurnTouchAddress.get();
 #endif
-        esp_err_t err = nvs_erase_all(nvsHandle);
+        esp_err_t err = nvs_erase_all(nvsHandle_);
         if (err) {
             log_e("nvs_erase_all fail: %s", esp_err_to_name(err));
         }
@@ -412,7 +412,7 @@ public:
             return;
         }
         size_t sindarinEntries = 0;
-        err = nvs_get_used_entry_count(nvsHandle, &sindarinEntries);
+        err = nvs_get_used_entry_count(nvsHandle_, &sindarinEntries);
         if (err != ESP_OK) {
             log_e("nvs_get_used_entry_count error: %s", esp_err_to_name(err));
             return;
@@ -482,14 +482,14 @@ public:
     static bool settingsOnRestart;
 
 protected:
-    const uint32_t version = 1;
-    uint32_t nvsHandle;
+    const uint32_t version_ = 1;
+    uint32_t nvsHandle_;
     bool started_;
 
-    PrefsItem<uint32_t> preferencesStoreMigrationVersion;
+    PrefsItem<uint32_t> preferencesStoreMigrationVersion_;
 
     void commit() {
-        esp_err_t err = nvs_commit(nvsHandle);
+        esp_err_t err = nvs_commit(nvsHandle_);
         if (err) {
             log_e("nvs_commit fail: %s", esp_err_to_name(err));
         }

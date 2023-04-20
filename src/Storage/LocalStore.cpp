@@ -994,7 +994,7 @@ void LocalStore::garbageCollectPreferences() {
 
 void LocalStore::migrateIfNeeded() {
     auto migrationVersion = prefs_.localStoreMigrationVersion.get().value_or(0);
-    while (migrationVersion < version) {
+    while (migrationVersion < version_) {
         log_i("Migrating LocalStore from version %" PRIu32 " to %" PRIu32 "", migrationVersion,
               migrationVersion + 1);
         switch (migrationVersion) {
