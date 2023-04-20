@@ -292,7 +292,7 @@ void LocalStore::resetReadablesPlacemarkChanged(const ReadablesVector &readables
         if (!readable.localOnly && changed) {
             log_d("Resetting placemark changed for \"%s\" (now synced to server)",
                   readable.title.c_str());
-            prefs_.readablePlaceChanged.set(readable.shortenedUuid.c_str(), false);
+            prefs_.readablePlaceChanged.remove(readable.shortenedUuid.c_str());
         }
     }
 }
@@ -742,9 +742,9 @@ void LocalStore::deleteReadableFiles(const ReadablesVector &readables, bool rest
     }
 
     if (modelType == ReadablesModelType::Article) {
-        prefs_.lastArticlesSince.set("");
+        prefs_.lastArticlesSince.remove();
     } else if (modelType == ReadablesModelType::Book) {
-        prefs_.lastBooksSince.set("");
+        prefs_.lastBooksSince.remove();
     }
 
     int64_t start = esp_timer_get_time();
@@ -910,6 +910,10 @@ void LocalStore::readableFilePurge(const Readable &readable) {
 
     fileSystem.remove(StringFormat("/articles/%s.txt.gz", uuid.c_str()));
     fileSystem.remove(StringFormat("/articles/%s.txt", uuid.c_str()));
+
+    // Also purge placemarks in NVS
+    prefs_.readablePlace.remove(readable.shortenedUuid.c_str());
+    prefs_.readablePlaceChanged.remove(readable.shortenedUuid.c_str());
 }
 
 const char *firmwarePath = "/firmware.json";

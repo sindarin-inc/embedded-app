@@ -481,7 +481,7 @@ void ReadableScreen::processCommand(RemoteCommand command) {
             numUps_++;
             if (numUps_ > 3) {
                 numUps_ = 0;
-                prefs_.cesMode.set(false);
+                prefs_.cesMode.remove();
                 back();
             }
         }

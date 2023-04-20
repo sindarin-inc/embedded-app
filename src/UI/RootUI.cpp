@@ -437,7 +437,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             // Default to 6am delivery. May have configuration at some other time
             this->prefs_.morningNewspaperTime.set(6);
         } else {
-            this->prefs_.morningNewspaperTime.set(0);
+            this->prefs_.morningNewspaperTime.remove();
         }
     }));
 
@@ -453,7 +453,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             // default to 8pm delivery. May have configuration at some other time
             this->prefs_.eveningNewspaperTime.set(20);
         } else {
-            this->prefs_.eveningNewspaperTime.set(0);
+            this->prefs_.eveningNewspaperTime.remove();
         }
     }));
 
@@ -513,7 +513,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         if (this->prefs_.autoPilot.get().value_or(false)) {
             prefs_.autoPilotSpeed.set(10000);
         } else {
-            prefs_.autoPilotSpeed.set(0);
+            prefs_.autoPilotSpeed.remove();
         }
     }));
 
@@ -869,8 +869,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     systemSettingsMenu->addMenuItem(
         MenuItem("Reset Statistics", [this, systemSettingsMenu, display]() {
-            prefs_.wordCount.set(0);
-            prefs_.totalReadingTimeSeconds.set(0);
+            prefs_.wordCount.remove();
+            prefs_.totalReadingTimeSeconds.remove();
             systemSettingsMenu->showTemporaryMessage(*display, "Statistics reset.");
         }));
 
