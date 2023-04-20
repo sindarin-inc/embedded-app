@@ -79,6 +79,7 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         // Render the popup menu
         SendRemoteCommand(NEXT);
         WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("PopupMenu");
     }
 
