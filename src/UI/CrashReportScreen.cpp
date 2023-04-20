@@ -103,7 +103,7 @@ void CrashReportScreen::begin() {
     state_.state = CrashUploadState::ConnectingWifi;
     render(display_);
 
-    if (!WiFi::getInstance().connectWiFiWithTimeout()) {
+    if (!WiFi::getInstance().connectWiFiFromSettings()) {
         fail("Failed to connect to WiFi.");
         return;
     }

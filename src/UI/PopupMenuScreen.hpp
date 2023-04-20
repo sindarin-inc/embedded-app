@@ -19,6 +19,7 @@
 #include "UI/Layout/View.hpp"
 #include "UI/LightingAdjustScreen.hpp"
 #include "UI/ReadableSeekScreen.hpp"
+#include "UI/ReadableTableOfContentsScreen.hpp"
 #include "sindarin-debug.h"
 
 class PopupMenuScreen : public ContainerScreen, public EinkView {
@@ -30,7 +31,9 @@ public:
         : EinkView(display), prefs_(prefs), battery_(battery), renderer_(renderer),
           readable_(readable), leftButtonTitle_("Brightness"),
           lightingAdjustScreen_(display, prefs, lightingController),
-          readableSeekScreen_(prefs, readable, renderer_), batteryTextView_(display, ""),
+          readableSeekScreen_(prefs, readable, renderer),
+          readableTableOfContentsScreen_(prefs, readable, renderer, display),
+          batteryTextView_(display, ""),
           batteryIconView_(display, boltBits, bolt_width, bolt_height),
           placeInReadableView_(display, ""), clockView_(display, "") {
         currentScreen_ = this;
@@ -40,10 +43,16 @@ public:
             this->setCurrentScreen(*this);
         };
         readableSeekScreen_.backCallback = [this]() { this->setCurrentScreen(*this); };
+        readableTableOfContentsScreen_.backCallback = [this]() {
+            setNeedsRerender();
+            this->setCurrentScreen(*this);
+        };
         leftButtonCallback_ = [this]() {
             lightingAdjustScreen_.firstLoad = true;
             this->setCurrentScreen(lightingAdjustScreen_);
         };
+        hasToc_ = readable.toc.size() >= 1;
+        log_d("hasToc_ = %d, readable.toc.size: %zu", hasToc_, readable.toc.size());
     };
 
     void drawBattery(DisplaySystem &display, int x, int y, int percentage);
@@ -55,6 +64,8 @@ public:
     void render(DisplaySystem &display) override;
 
     void processCommand(RemoteCommand command) override;
+
+    void showTocOrSeekScreen();
 
     void setLeftPopupButton(const std::string &title, std::function<void(void)> callback) {
         leftButtonTitle_ = title;
@@ -70,6 +81,7 @@ protected:
     LightingAdjustScreen lightingAdjustScreen_;
 
     ReadableSeekScreen readableSeekScreen_;
+    ReadableTableOfContentsScreen readableTableOfContentsScreen_;
     std::function<void(void)> leftButtonCallback_;
 
     SingleLineTextView batteryTextView_;
@@ -83,6 +95,7 @@ protected:
     int arrowWidth_ = 5;
     int arrowHeight_ = 10;
     int arrowTextSpacing_ = 5;
+    bool hasToc_ = false;
 };
 
 #endif

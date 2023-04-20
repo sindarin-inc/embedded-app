@@ -28,7 +28,10 @@ void Menu::populateMenuItems(std::vector<MenuItem> &menuItems) {
 
 auto Menu::getNumItems() -> int { return numMenuItems_; }
 
-void Menu::setCurrSelection(int newSelection) { currSelection_ = newSelection; }
+void Menu::setCurrSelection(int newSelection) {
+    currSelection_ = newSelection;
+    currMenuPage_ = currSelection_ / myStyle_.numberOfItemsPerPage;
+}
 
 auto Menu::getCurrSelection() -> int { return currSelection_; }
 

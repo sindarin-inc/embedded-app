@@ -35,24 +35,28 @@ auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> 
     log_i("Pretending to connect WiFi (wiFiPower_=%d, ssid=%s, password=%s)", wiFiPower_,
           ssid.c_str(), password.c_str());
     Delay(1000);
+    wiFiState_ = CONNECTED;
     return ESP_OK;
 }
 
-auto WiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
-    log_i("Pretending to connect WiFi (wiFiPower_=%d, timeoutMs=%dms)", wiFiPower_, timeoutMs);
+auto WiFi::connectWiFiFromSettings() -> bool {
+    log_i("Pretending to connect WiFi (wiFiPower_=%d)", wiFiPower_);
     Delay(1000);
+    wiFiState_ = CONNECTED;
     return true;
 }
 
 void WiFi::disconnectWiFi() {
     log_i("Pretending to disconnect WiFi");
-    connected_ = false;
+    wiFiState_ = UNINITIALIZED;
 }
 
-auto WiFi::connected() -> bool { return connected_; }
+auto WiFi::connected() -> bool { return wiFiState_ == CONNECTED; }
 
 auto WiFi::getLocalIp() -> esp_ip4_addr_t { return esp_ip4_addr{.addr = 0}; }
 
 auto WiFi::getLocalIpStr() -> std::string { return "0.0.0.0"; }
+
+void WiFi::clearWiFiCredentials() { log_i("Pretending to clear WiFi credentials"); }
 
 #endif

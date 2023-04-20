@@ -9,10 +9,20 @@
 #include "Models/Author.hpp"
 #include "Models/Json.hpp"
 #include "Models/JsonSerializable.hpp"
+#include "Models/ReadableArchive.hpp"
 #include "Models/ReadableBookmark.hpp"
 #include "Models/ReadableFile.hpp"
+#include "Models/ReadablePlacemark.hpp"
+#include "Models/ReadableTableOfContentsChapter.hpp"
 
 #define TRUNCATE_READABLE_UUID_FOR_PLACEMARK_BYTES 8
+
+using ReadableAuthorVector = SpiramVector<Author>;
+using ReadableFileVector = SpiramVector<ReadableFile>;
+using ReadableArchivesVector = SpiramVector<ReadableArchive>;
+using ReadablePlacemarksVector = SpiramVector<ReadablePlacemark>;
+using ReadableBookmarksVector = SpiramVector<ReadableBookmark>;
+using ReadableTableOfContentsChapterVector = SpiramVector<ReadableTableOfContentsChapter>;
 
 class Readable : JsonSerializable {
 public:
@@ -28,9 +38,11 @@ public:
     SpiramString dateCreated;
     SpiramString dateModified;
     SpiramString datePublished;
-    std::vector<Author> authors;
-    std::vector<ReadableFile> files;
-    std::vector<ReadableBookmark> bookmarks;
+    ReadableAuthorVector authors;
+    ReadableFileVector files;
+    ReadableBookmarksVector bookmarks;
+    ReadableTableOfContentsChapterVector toc;
+
     SpiramString readableType;
     // TODO: source
     // TODO: categories
@@ -43,6 +55,7 @@ public:
 
     [[nodiscard]] auto file() const -> const ReadableFile & { return files[0]; }
 
+    // TODO: Move file path operations to LocalStore
     [[nodiscard]] auto bookmarkFilePath() const -> std::string {
         return StringFormat("/bookmarks/%s-bookmark.txt", uuid.c_str());
     }
@@ -76,6 +89,11 @@ public:
         for (const auto &bookmark : j["bookmarks"].as<JsonArray>()) {
             bookmarks.emplace_back();
             bookmarks.back().fromJson(bookmark);
+        }
+        toc.clear();
+        for (const auto &chapter : j["toc"].as<JsonArray>()) {
+            toc.emplace_back();
+            toc.back().fromJson(chapter);
         }
 
         // Temporary migration for stored pocket articles that don't have a readable_type

@@ -5,6 +5,7 @@
 
 #include "Misc/SpiramAllocator.hpp"
 #include "Models/JsonSerializable.hpp"
+#include "Models/Readable.hpp"
 #include "Models/ReadableArchive.hpp"
 #include "Models/ReadableBookmark.hpp"
 #include "Models/ReadablePlacemark.hpp"
@@ -16,9 +17,6 @@ enum class ReadablesModelType { Article, Book };
 auto ReadableModelTypeToString(ReadablesModelType type) -> std::string;
 
 using StoredUuidsVector = SpiramVector<std::string>;
-using ReadableArchivesVector = SpiramVector<ReadableArchive>;
-using ReadablePlacemarksVector = SpiramVector<ReadablePlacemark>;
-using ReadableBookmarksVector = SpiramVector<ReadableBookmark>;
 
 class CheckSyncRequest : JsonSerializable {
 public:

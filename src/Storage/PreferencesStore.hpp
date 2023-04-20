@@ -1,9 +1,11 @@
 #pragma once
 
+#include <cinttypes>
 #include <cstring>
 #include <nvs.h>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "config.h"
 #include "sindarin-debug.h"
@@ -78,6 +80,30 @@ auto GetFromStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
 }
 
 template <typename T>
+auto GetNVSType() -> nvs_type_t {
+    static_assert(
+        std::disjunction_v<std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int32_t>,
+                           std::is_same<T, uint32_t>, std::is_same<T, uint64_t>,
+                           std::is_same<T, std::string>, std::is_same<T, BLEAddress>>,
+        "Unsupported type for NVS storage");
+    if constexpr (std::is_same_v<T, bool>) {
+        return NVS_TYPE_U8;
+    } else if constexpr (std::is_same_v<T, int> || std::is_same_v<T, int32_t>) {
+        return NVS_TYPE_I32;
+    } else if constexpr (std::is_same_v<T, uint32_t>) {
+        return NVS_TYPE_U32;
+    } else if constexpr (std::is_same_v<T, uint64_t> || std::is_same_v<T, BLEAddress>) {
+        return NVS_TYPE_U64;
+    } else if constexpr (std::is_same_v<T, std::string>) {
+        return NVS_TYPE_STR;
+    } else {
+        // Should never happen because of the static_assert
+        log_e("Unhandled prefs type");
+        assert(0);
+    }
+}
+
+template <typename T>
 auto WriteToStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t {
     static_assert(
         std::disjunction_v<std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int32_t>,
@@ -105,6 +131,8 @@ auto WriteToStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
     return err;
 }
 
+void DumpNVS();
+
 class PreferencesStore {
 public:
     template <typename T>
@@ -113,7 +141,7 @@ public:
         PrefsItemBase(PreferencesStore &prefs) : prefs(prefs) {}
 
         void writeToStorage(const char *key, T value) {
-            esp_err_t err = WriteToStorage(prefs.nvsHandle, key, value);
+            esp_err_t err = WriteToStorage(prefs.nvsHandle_, key, value);
             if (err != ESP_OK) {
                 log_e("nvs_set_* fail: %s %s", key, esp_err_to_name(err));
                 return;
@@ -122,7 +150,7 @@ public:
         }
 
         void deleteFromStorage(const char *key) {
-            esp_err_t err = nvs_erase_key(prefs.nvsHandle, key);
+            esp_err_t err = nvs_erase_key(prefs.nvsHandle_, key);
             if (err) {
                 // Fail silently if the key doesn't exist
                 if (err != ESP_ERR_NVS_NOT_FOUND) {
@@ -145,7 +173,7 @@ public:
 
         virtual void loadValue() {
             T value;
-            esp_err_t err = GetFromStorage(this->prefs.nvsHandle, this->key_, value);
+            esp_err_t err = GetFromStorage(this->prefs.nvsHandle_, this->key_, value);
             if (err == ESP_OK) {
                 this->value_ = value;
             }
@@ -192,7 +220,7 @@ public:
             char key[MAX_KEY_LENGTH + 1];
             this->makeKey(key, prefix);
             T value;
-            esp_err_t err = GetFromStorage(this->prefs.nvsHandle, key, value);
+            esp_err_t err = GetFromStorage(this->prefs.nvsHandle_, key, value);
             if (err != ESP_OK) {
                 // Ignore not found errors
                 if (err != ESP_ERR_NVS_NOT_FOUND) {
@@ -213,6 +241,44 @@ public:
             char key[MAX_KEY_LENGTH + 1];
             this->makeKey(key, prefix);
             this->deleteFromStorage(key);
+        }
+
+        auto getAllKeyPrefixes() -> std::vector<std::string> {
+            std::vector<std::string> keys;
+#if !SIMULATOR
+            // Grab all keys
+            nvs_iterator_t it = nullptr;
+            esp_err_t result = nvs_entry_find("nvs", "sindarin-app", NVS_TYPE_ANY, &it);
+            if (result == ESP_ERR_NVS_NOT_FOUND) {
+                return keys;
+            }
+
+            if (result != ESP_OK) {
+                log_e("nvs_entry_find error: %s", esp_err_to_name(result));
+                return keys;
+            }
+
+            do {
+                nvs_entry_info_t info;
+                nvs_entry_info(it, &info);
+                result = nvs_entry_next(&it);
+                if (result != ESP_OK) {
+                    break;
+                }
+
+                // Check if info.key has the same suffix as this item
+                if (strncmp(info.key + strlen(info.key) - strlen(this->suffix_), this->suffix_,
+                            strlen(this->suffix_)) == 0) {
+                    // Key has the same suffix, so add it to the list
+                    keys.push_back(std::string(info.key, strlen(info.key) - strlen(this->suffix_)));
+                }
+            } while (result == ESP_OK);
+
+            if (result != ESP_ERR_NVS_NOT_FOUND) {
+                log_e("NVS error %s at current iteration, stopping.", esp_err_to_name(result));
+            }
+#endif
+            return keys;
         }
 
     protected:
@@ -244,18 +310,68 @@ public:
           eveningDelivery(*this, "eve-deliver"), darkMode(*this, "dark-mode"),
           autoPilot(*this, "auto-pilot"), fastTransitions(*this, "fast-tran"),
           noUploadCrashes(*this, "no-upload-crash"), showDebugMenu(*this, "show-debug"),
-          fontsLibrary(*this, "fonts-lib"), fontType(*this, "font-type"){};
+          wifiSettingsJson(*this, "wifi-settings"), localStoreMigrationVersion(*this, "ls-version"),
+          fontsLibrary(*this, "fonts-lib"), fontType(*this, "font-type"),
+          preferencesStoreMigrationVersion_(*this, "ps-version"){};
     PreferencesStore(PreferencesStore &) = delete;
+
+    void migrateIfNeeded() {
+        bool ranMigration = false;
+        auto migrationVersion = preferencesStoreMigrationVersion_.get().value_or(0);
+        while (migrationVersion < latestMigrationVersion_) {
+            log_i("Migrating PreferencesStore from version %" PRIu32 " to %" PRIu32,
+                  migrationVersion, migrationVersion + 1);
+            ranMigration = true;
+            switch (migrationVersion) {
+            case 0: {
+                // This method exists to destorys keys we created before the migration system
+                // was set up. I used this absolutely horrifying bash command to find these:
+                // clang-format off
+                /*
+                    git log -S'PrefsItem<' --pickaxe-all -p --all -- src/Storage/PreferencesStore.hpp | perl -lne \
+                    'print $1 if /PrefsItem<.*> (.*);/' | sort | uniq | xargs -I {} sh -c 'git log -S"{}(" \
+                    --pickaxe-all -p --all -- src/Storage/PreferencesStore.hpp | perl -lne "print \$2 if \
+                    /^-.*{}\((\*this|this->prefs_), ([a-zA-Z-\"]*)/"' | sort | uniq | xargs -I {} sh -c \
+                    'grep -q "{}" src/Storage/PreferencesStore.hpp || echo \"{}\"'
+                */
+                // clang-format on
+                std::vector<std::string> keys = {
+                    "backlight",    "box-h-off-mm",   "box-w-off-mm",  "deliver-close",
+                    "fw-size",      "gzip-readables", "last-batt",     "next-sync",
+                    "pocket-token", "pt-battery",     "show-articles", "show-bible",
+                    "show-books",   "upload-crashes", "x-offset",      "y-offset",
+                };
+                for (auto &key : keys) {
+                    esp_err_t err = nvs_erase_key(nvsHandle_, key.c_str());
+                    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
+                        log_e("nvs_erase_key failed: %s", esp_err_to_name(err));
+                    }
+                }
+                break;
+            }
+            default:
+                log_e("Unknown migration version: %" PRIu32, migrationVersion);
+                return;
+            }
+            migrationVersion++;
+            preferencesStoreMigrationVersion_.set(migrationVersion);
+        }
+        if (ranMigration) {
+            logStats();
+        }
+    }
 
     auto begin() -> bool {
         if (started_) {
             return true;
         }
-        esp_err_t err = nvs_open("sindarin-app", NVS_READWRITE, &nvsHandle);
+        esp_err_t err = nvs_open("sindarin-app", NVS_READWRITE, &nvsHandle_);
         if (err) {
             log_e("nvs_open failed: %s", esp_err_to_name(err));
             return false;
         }
+        logStats();
+        migrateIfNeeded();
         started_ = true;
         return true;
     }
@@ -264,11 +380,11 @@ public:
         if (!started_) {
             return ESP_OK;
         }
-        esp_err_t err = nvs_commit(nvsHandle);
+        esp_err_t err = nvs_commit(nvsHandle_);
         if (err) {
             log_e("nvs_commit on close failed: %s", esp_err_to_name(err));
         }
-        nvs_close(nvsHandle);
+        nvs_close(nvsHandle_);
         started_ = false;
         return err;
     }
@@ -278,7 +394,7 @@ public:
 #if USE_TURN_TOUCH_REMOTE
         auto turnTouchAddress = this->pairedTurnTouchAddress.get();
 #endif
-        esp_err_t err = nvs_erase_all(nvsHandle);
+        esp_err_t err = nvs_erase_all(nvsHandle_);
         if (err) {
             log_e("nvs_erase_all fail: %s", esp_err_to_name(err));
         }
@@ -290,7 +406,25 @@ public:
         commit();
     }
 
-    uint32_t nvsHandle;
+    void logStats() {
+#if !SIMULATOR
+        nvs_stats_t nvsStats;
+        esp_err_t err = nvs_get_stats(nullptr, &nvsStats);
+        if (err != ESP_OK) {
+            log_e("nvs_get_stats error: %s", esp_err_to_name(err));
+            return;
+        }
+        size_t sindarinEntries = 0;
+        err = nvs_get_used_entry_count(nvsHandle_, &sindarinEntries);
+        if (err != ESP_OK) {
+            log_e("nvs_get_used_entry_count error: %s", esp_err_to_name(err));
+            return;
+        }
+        log_d("NVS stats (entries): used=%zu free=%zu total=%zu sindarin-app=%zu",
+              nvsStats.used_entries, nvsStats.free_entries, nvsStats.total_entries,
+              sindarinEntries);
+#endif
+    }
 
 #if USE_TURN_TOUCH_REMOTE
     PrefsItem<BLEAddress> pairedTurnTouchAddress;
@@ -340,6 +474,8 @@ public:
     PrefsItem<bool> fastTransitions;
     PrefsItem<bool> noUploadCrashes;
     PrefsItem<bool> showDebugMenu;
+    PrefsItem<std::string> wifiSettingsJson;
+    PrefsItem<uint32_t> localStoreMigrationVersion;
     PrefsItem<bool> fontsLibrary;
     PrefsItem<int> fontType;
 
@@ -352,10 +488,14 @@ public:
     static bool settingsOnRestart;
 
 protected:
+    const uint32_t latestMigrationVersion_ = 1;
+    uint32_t nvsHandle_;
     bool started_;
 
+    PrefsItem<uint32_t> preferencesStoreMigrationVersion_;
+
     void commit() {
-        esp_err_t err = nvs_commit(nvsHandle);
+        esp_err_t err = nvs_commit(nvsHandle_);
         if (err) {
             log_e("nvs_commit fail: %s", esp_err_to_name(err));
         }
