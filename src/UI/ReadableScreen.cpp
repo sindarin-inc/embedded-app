@@ -67,12 +67,12 @@ auto ReadableScreen::layout(LayoutContext &context, Size size) -> Size {
             return {size.width, y};
         });
 
-    context.setViewFrame(clockView_, {size.width / 2 - 30, size.height / 2 - 55, {60, 110}},
+    context.setViewFrame(clockView_, {{size.width / 2 - 30, size.height / 2 - 55}, {60, 110}},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
                              LayoutOptionsAlignLeft);
 
     context.setViewFrame(
-        placeInReadableView_, {size.width / 2 - 30, size.height / 2 - 55, {60, 110}},
+        placeInReadableView_, {{size.width / 2 - 30, size.height / 2 - 55}, {60, 110}},
         LayoutOptionsSizeToFit | LayoutOptionsAlignBottom | LayoutOptionsAlignRight);
 
     return {size.width, insetRect.size.height + 2 * inset};

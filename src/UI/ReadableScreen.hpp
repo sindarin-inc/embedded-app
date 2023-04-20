@@ -107,7 +107,7 @@ public:
         firstLoad_ = true;
     }
 
-    void addMenuItem(const MenuItem &newItem, bool enabled = true) {
+    void addMenuItem(const MenuItem &newItem, bool enabled = true) override {
         Menu::addMenuItem(newItem);
         auto menuItemView = std::make_shared<MenuItemView>(display_, newItem);
         menuItemView->setIndicatorPadding(0);

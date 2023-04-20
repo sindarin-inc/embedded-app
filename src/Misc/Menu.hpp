@@ -41,7 +41,7 @@ public:
 
     Menu() { numMenuItems_ = 0; };
 
-    virtual void addMenuItem(const MenuItem &newItem);
+    virtual void addMenuItem(const MenuItem &newItem, bool enabled = true);
 
     virtual void resetMenuItems();
 

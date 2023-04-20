@@ -5,7 +5,7 @@
 #include "Misc/MenuStyle.hpp"
 #include "Misc/Style.hpp"
 
-void Menu::addMenuItem(const MenuItem &newItem) {
+void Menu::addMenuItem(const MenuItem &newItem, bool enabled) {
     menuItems_.push_back(newItem);
     numMenuItems_++;
 }
