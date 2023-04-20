@@ -40,6 +40,7 @@ public:
     };
 
     Menu() { numMenuItems_ = 0; };
+    virtual ~Menu() = default;
 
     virtual void addMenuItem(const MenuItem &newItem);
 
