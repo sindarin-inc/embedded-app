@@ -915,6 +915,8 @@ void LocalStore::readableFilePurge(const Readable &readable) {
     // Also purge placemarks in NVS
     prefs_.readablePlace.remove(readable.shortenedUuid.c_str());
     prefs_.readablePlaceChanged.remove(readable.shortenedUuid.c_str());
+    prefs_.readableArchivedChanged.remove(readable.shortenedUuid.c_str());
+    prefs_.readableBookmarksChanged.remove(readable.shortenedUuid.c_str());
 }
 
 const char *firmwarePath = "/firmware.json";
