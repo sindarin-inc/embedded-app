@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cinttypes>
 #include <cstring>
 #include <nvs.h>
 #include <optional>
@@ -315,7 +316,7 @@ public:
         bool ranMigration = false;
         auto migrationVersion = preferencesStoreMigrationVersion.get().value_or(0);
         while (migrationVersion < version) {
-            log_i("Migrating PreferencesStore from version %" PRIu32 " to %" PRIu32 "",
+            log_i("Migrating PreferencesStore from version %" PRIu32 " to %" PRIu32,
                   migrationVersion, migrationVersion + 1);
             ranMigration = true;
             switch (migrationVersion) {
