@@ -242,6 +242,32 @@ void ReadableScreen::turnPage() {
 
 auto ReadableScreen::checkAtEnd() -> bool { return (newPlace_ == 0); }
 
+// If we're in the popup menu, figure out the place in the text
+// as well as whether this readable is archived so we can set the
+// menu items correctly.
+// If we ever wanted to do other setup for the popup menu, this
+// is where we'd do it.
+void ReadableScreen::setUpPopupMenu() {
+    size_t place = renderer_.getCurrentPlace();
+    size_t lengthOfFile = renderer_.size();
+    float placeInTextPercentage = (float)place / (float)lengthOfFile * 100;
+    std::string placeString = StringFormat("%.1f%%", placeInTextPercentage);
+    std::string placeStringForBottom = StringFormat("%d/%d", place / 1000, lengthOfFile / 1000);
+
+    placeInReadableView_.setText(placeStringForBottom);
+
+    // Figure out if you should show the Archive menu item or the Unarchive menu item.
+    bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
+
+    if (archived) {
+        menuItemsEnabled_[POPUP_ARCHIVE] = false;
+        menuItemsEnabled_[POPUP_UNARCHIVE] = true;
+    } else {
+        menuItemsEnabled_[POPUP_ARCHIVE] = true;
+        menuItemsEnabled_[POPUP_UNARCHIVE] = false;
+    }
+}
+
 void ReadableScreen::render(DisplaySystem &display) {
 
     if (currentScreen_ != this) {
@@ -250,24 +276,7 @@ void ReadableScreen::render(DisplaySystem &display) {
     }
 
     if (showPopup_) {
-        size_t place = renderer_.getCurrentPlace();
-        size_t lengthOfFile = renderer_.size();
-        float placeInTextPercentage = (float)place / (float)lengthOfFile * 100;
-        std::string placeString = StringFormat("%.1f%%", placeInTextPercentage);
-        std::string placeStringForBottom = StringFormat("%d/%d", place / 1000, lengthOfFile / 1000);
-
-        placeInReadableView_.setText(placeStringForBottom);
-
-        // Figure out if you should show the Archive menu item or the Unarchive menu item.
-        bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
-
-        if (archived) {
-            menuItemsEnabled_[POPUP_ARCHIVE] = false;
-            menuItemsEnabled_[POPUP_UNARCHIVE] = true;
-        } else {
-            menuItemsEnabled_[POPUP_ARCHIVE] = true;
-            menuItemsEnabled_[POPUP_UNARCHIVE] = false;
-        }
+        setUpPopupMenu();
     }
 
     setNeedsLayout();
@@ -331,11 +340,12 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     if (firstPopupLoad_) {
         if (pageSpeed_ == 0) {
+            // Regular Reading
             newPlace_ = renderer_.renderPage(readable_.place);
             atEnd_ = checkAtEnd();
         } else {
+            // Autopilot Reading
             if (speedLinesToSkip_ >= renderer_.getNumRenderedLines()) {
-                // time to turn the page
                 turnPage();
             } else {
                 speedLinesToSkip_++;
@@ -411,6 +421,8 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     log_d("%lu is the new place in the text %s", newPlace_, atEnd_ ? "(at end)" : "");
 
+    // This displays the popup with a pre-AU4 refresh without the bullet
+    // indiciating which menu item is selected.
     if ((showPopup_) && (firstPopupLoad_)) {
         for (auto &menuItemView : menuItemViews_) {
             menuItemView->setSelected(false);
@@ -421,13 +433,19 @@ void ReadableScreen::render(DisplaySystem &display) {
     if (firstPopupLoad_) {
         if ((pageSpeed_ != 0) && (speedLinesToSkip_ > 0)) {
             if (!showPopup_) {
-                display.updateDisplay(DisplaySystem::UpdateType::FAST_ORIGINAL_AU4);
+                if (autoPilotForceFull_) {
+                    display.updateDisplay(DisplaySystem::UpdateType::FULL);
+                    autoPilotForceFull_ = false;
+                } else {
+                    display.updateDisplay(DisplaySystem::UpdateType::FAST_ORIGINAL_AU4);
+                }
             } else {
+                log_d("Showing popup in autopilot mode with partial refresh");
                 display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
             }
         } else {
-            // We want the popup to always come up as PARTIAL, even if the user has fast transitions
-            // off
+            // We want the popup to always come up as PARTIAL,
+            // even if the user has fast transitions off
             if (prefs_.fastTransitions.get().value_or(false) || showPopup_) {
                 display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
             } else {
@@ -436,10 +454,13 @@ void ReadableScreen::render(DisplaySystem &display) {
         }
     }
 
+    // Once the popup has been showed in one render, we can use this flag
+    // to stop drawing everything behind it until we close the popup.
     if ((showPopup_) && (firstPopupLoad_)) {
         firstPopupLoad_ = false;
     }
 
+    // Logic to show the popup with the bullet indicating which menu item is selected.
     if (showPopup_) {
         std::shared_ptr<MenuItemView> selectedMenuItemView = menuItemViews_[getCurrSelection()];
         for (auto &menuItemView : menuItemViews_) {
@@ -583,6 +604,7 @@ void ReadableScreen::processCommandDemoMode(RemoteCommand command) {
     case RemoteCommand::CHANNEL_PLUS:
         numUps_ = 0;
         turnPage();
+        setNeedsRerender();
         break;
     case RemoteCommand::NEXT:
         numUps_ = 0;
@@ -607,7 +629,6 @@ void ReadableScreen::processCommandDemoMode(RemoteCommand command) {
     default:
         break;
     }
-    setNeedsRerender();
 }
 
 void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
@@ -635,6 +656,14 @@ void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
     case RemoteCommand::NEXT:
     case RemoteCommand::BACK:
     case RemoteCommand::PREV:
+        // When entering the popup menu from autopilot, go back up to two line so that coming
+        // out the user can not be behind.
+        if (speedLinesToSkip_ > 0) {
+            speedLinesToSkip_--;
+        }
+        if (speedLinesToSkip_ > 0) {
+            speedLinesToSkip_--;
+        }
         xTimerStop(DisplaySystem::animationTimer, 0);
         processCommandNormal(command);
         break;
@@ -662,6 +691,7 @@ void ReadableScreen::processCommandPopup(RemoteCommand command) {
     case RemoteCommand::CHANNEL_MINUS:
         showPopup_ = false;
         firstPopupLoad_ = true;
+        autoPilotForceFull_ = true;
         setNeedsRerender();
         break;
     case RemoteCommand::PLAY:
@@ -681,6 +711,7 @@ void ReadableScreen::processCommandPopup(RemoteCommand command) {
     case RemoteCommand::CHANNEL_PLUS:
         showPopup_ = false;
         firstPopupLoad_ = true;
+        autoPilotForceFull_ = true;
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::PREV:
