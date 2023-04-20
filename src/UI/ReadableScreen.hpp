@@ -9,10 +9,8 @@
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/BoxView.hpp"
 #include "UI/Components/EinkView.hpp"
-#include "UI/Components/IconView.hpp"
 #include "UI/Components/MenuItemView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
-#include "UI/Components/StackView.hpp"
 #include "UI/ContainerScreen.hpp"
 #include "UI/Layout/View.hpp"
 #include "UI/LightingAdjustScreen.hpp"
@@ -43,9 +41,9 @@ public:
           lightingAdjustScreen_(display, prefs, lightingController),
           readableSeekScreen_(prefs, readable_, renderer_), placeInReadableView_(display, ""),
           clockView_(display, "") {
+
         currentScreen_ = this;
         renderer_.setStream(std::move(stream));
-        numMenuItems_ = 0;
 
         lightingAdjustScreen_.backCallback = [this]() {
             setNeedsRerender();
