@@ -6,15 +6,15 @@ extern PreferencesStore prefs;
 
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
 auto convertToJson(const WiFiSetting &src, JsonVariant dst) -> bool {
-    dst["ssid"] = src.ssid_;
-    dst["password"] = src.password_;
+    dst["ssid"] = src.ssid;
+    dst["password"] = src.password;
     return true;
 }
 
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
 void convertFromJson(JsonVariantConst src, WiFiSetting &dst) {
-    dst.ssid_ = src["ssid"].as<std::string>();
-    dst.password_ = src["password"].as<std::string>();
+    dst.ssid = src["ssid"].as<std::string>();
+    dst.password = src["password"].as<std::string>();
 }
 
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
@@ -53,7 +53,7 @@ void WiFiSettings::save() const {
 
 bool WiFiSettings::settingExists(const std::string &ssid, const std::string &password) {
     for (auto s : settings) {
-        if (s.ssid_ == ssid && s.password_ == password) {
+        if (s.ssid == ssid && s.password == password) {
             return true;
         }
     }
@@ -63,7 +63,7 @@ bool WiFiSettings::settingExists(const std::string &ssid, const std::string &pas
 void WiFiSettings::setActiveSetting(const std::string &ssid, const std::string &password) {
     // find setting
     for (auto it = settings.begin(); it != settings.end(); it++) {
-        if (it->ssid_ == ssid && it->password_ == password) {
+        if (it->ssid == ssid && it->password == password) {
             settings.erase(it);
             break;
         }
@@ -80,8 +80,8 @@ void WiFiSettings::addSetting(const std::string &ssid, const std::string &passwo
     }
 
     WiFiSetting s;
-    s.ssid_ = ssid;
-    s.password_ = password;
+    s.ssid = ssid;
+    s.password = password;
 
     settings.insert(settings.begin(), s);
     if (settings.size() > MAX_WIFI_SETTINGS) {

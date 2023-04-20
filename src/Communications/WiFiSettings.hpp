@@ -13,8 +13,8 @@ public:
     WiFiSetting() = default;
     ~WiFiSetting() override = default;
 
-    std::string ssid_;
-    std::string password_;
+    std::string ssid;
+    std::string password;
 
     bool fromJson(const JsonObject &j) { return false; }
 };

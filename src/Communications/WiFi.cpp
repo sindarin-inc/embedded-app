@@ -331,8 +331,8 @@ auto WiFi::connectWiFiFromSettings() -> bool {
     for (int attempt = 0; attempt < 2; attempt++) {
         int settingsToCheck = settings_.count();
         for (int i = 0; i < settingsToCheck; i++) {
-            if (connectWiFiSettingWithTimeout(20000, settings_.settings[i].ssid_,
-                                              settings_.settings[i].password_)) {
+            if (connectWiFiSettingWithTimeout(20000, settings_.settings[i].ssid,
+                                              settings_.settings[i].password)) {
                 return true;
             }
         }
