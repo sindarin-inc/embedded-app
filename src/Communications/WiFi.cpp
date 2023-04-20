@@ -450,7 +450,7 @@ void WiFi::ipEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId
         std::string ssid = (char *)conf.sta.ssid;
         std::string password = (char *)conf.sta.password;
 
-        log_d("setting active: %s %s", ssid.c_str(), ssid.c_str());
+        log_d("Saving most-recent WiFi: %s", ssid.c_str());
 
         tthis->settings_.setActiveSetting(ssid, password);
         tthis->settings_.save();
