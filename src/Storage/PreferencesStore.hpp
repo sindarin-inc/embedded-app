@@ -103,6 +103,8 @@ auto WriteToStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
     return err;
 }
 
+void DumpNVS();
+
 class PreferencesStore {
 public:
     template <typename T>
