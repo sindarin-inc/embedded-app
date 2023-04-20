@@ -4,6 +4,7 @@
 #include <nvs.h>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "config.h"
 #include "sindarin-debug.h"
