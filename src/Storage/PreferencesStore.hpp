@@ -308,7 +308,7 @@ public:
           eveningDelivery(*this, "eve-deliver"), darkMode(*this, "dark-mode"),
           autoPilot(*this, "auto-pilot"), fastTransitions(*this, "fast-tran"),
           noUploadCrashes(*this, "no-upload-crash"), showDebugMenu(*this, "show-debug"),
-          localStoreMigrationVersion(*this, "ls-version"),
+          wifiSettingsJson(*this, "wifi-settings"), localStoreMigrationVersion(*this, "ls-version"),
           preferencesStoreMigrationVersion_(*this, "ps-version"){};
     PreferencesStore(PreferencesStore &) = delete;
 
@@ -471,6 +471,7 @@ public:
     PrefsItem<bool> fastTransitions;
     PrefsItem<bool> noUploadCrashes;
     PrefsItem<bool> showDebugMenu;
+    PrefsItem<std::string> wifiSettingsJson;
     PrefsItem<uint32_t> localStoreMigrationVersion;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be

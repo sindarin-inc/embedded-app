@@ -769,7 +769,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto confirmMessage = [timeZoneMenu, display, &clock](int solTimeZone) {
             clock.setTimezone(solTimeZone);
             timeZoneMenu->showTemporaryMessage(*display, "Setting Clock & Time Zone", 200, false);
-            WiFi::getInstance().connectWiFiWithTimeout();
+            WiFi::getInstance().connectWiFiFromSettings();
             if (!WiFi::getInstance().connected()) {
                 log_e("Couldn't connect to wifi, not setting clock");
             } else {
@@ -882,6 +882,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             Delay(1500);
             this->power_.reboot();
         }));
+
+    systemSettingsMenu->addMenuItem(MenuItem("Clear WiFi Settings", [systemSettingsMenu,
+                                                                     display]() {
+        WiFi::getInstance().clearWiFiCredentials();
+        log_w("WiFi settings cleared.");
+        systemSettingsMenu->showTemporaryMessage(*display, "WiFi settings cleared.", 2000, false);
+    }));
 
     systemSettingsMenu->addMenuItem(
         MenuItem("Reset Preferences", [this, systemSettingsMenu, display]() {
@@ -1320,6 +1327,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // with the demo code and set the back callback to mainMenu.
 
     SHOW_HEAP();
+
+    // Yes, clang-tidy, it is weird that we are calling `new` and not `delete` and we know this
+    // should be a shared_ptr or something. But just leave us alone for now, ok?
+    // NOTE: I couldn't figure out how to use
+    // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks) in a way that disabled these warnings
+    // for these variables
+#ifdef __clang_analyzer__
+    delete pocketMenu;
+    delete booksMenu;
+#endif
 }
 
 void RootUI::loop(DisplaySystem &display, RemoteCommand command) {
