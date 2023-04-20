@@ -3,6 +3,7 @@
 #include <esp_system.h>
 #include <esp_timer.h>
 #include <memory>
+#include <set>
 #include <unordered_map>
 
 #include "Communications/HtmlCleaner.hpp"
@@ -951,3 +952,40 @@ auto LocalStore::getPendingFirmwareUpdate(Firmware &firmware) -> bool {
 }
 
 void LocalStore::resetFirmware() { fileSystem.remove(firmwarePath); }
+
+void LocalStore::garbageCollectPreferences() {
+    log_i("Running NVS garbage collection");
+    prefs_.logStats();
+
+    // Remove any readablePlace and readablePlaceChanged keys for readables that no longer exist
+    auto readablePlaceKeys = prefs_.readablePlace.getAllKeyPrefixes();
+    auto readablePlaceChangedKeys = prefs_.readablePlaceChanged.getAllKeyPrefixes();
+    auto readableArchivedChangedKeys = prefs_.readableArchivedChanged.getAllKeyPrefixes();
+    auto readableBookmarksChangedKeys = prefs_.readableBookmarksChanged.getAllKeyPrefixes();
+
+    // Combine and deduplicate all keys
+    std::set<std::string> allKeys;
+    allKeys.insert(readablePlaceKeys.begin(), readablePlaceKeys.end());
+    allKeys.insert(readablePlaceChangedKeys.begin(), readablePlaceChangedKeys.end());
+    allKeys.insert(readableArchivedChangedKeys.begin(), readableArchivedChangedKeys.end());
+    allKeys.insert(readableBookmarksChangedKeys.begin(), readableBookmarksChangedKeys.end());
+
+    for (auto &key : allKeys) {
+        bool isBook = std::any_of(books_.begin(), books_.end(),
+                                  [&key](const auto &r) { return r.shortenedUuid == key.c_str(); });
+        bool isArticle = std::any_of(articles_.begin(), articles_.end(), [&key](const auto &r) {
+            return r.shortenedUuid == key.c_str();
+        });
+        if (!isBook && !isArticle) {
+            log_i("Removing all KeyedPrefsItems for %s", key.c_str());
+            prefs_.readablePlace.remove(key.c_str());
+            prefs_.readablePlaceChanged.remove(key.c_str());
+            prefs_.readableArchivedChanged.remove(key.c_str());
+            prefs_.readableBookmarksChanged.remove(key.c_str());
+        }
+    }
+
+    prefs_.purgeOldKeys();
+
+    prefs_.logStats();
+}

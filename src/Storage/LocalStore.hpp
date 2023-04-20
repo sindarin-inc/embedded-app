@@ -102,6 +102,9 @@ public:
     // Delete any existing firmware.json file.
     void resetFirmware();
 
+    // Clean up old keys in NVS
+    void garbageCollectPreferences();
+
     FileSystem &fileSystem;
 
 private:

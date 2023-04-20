@@ -76,6 +76,30 @@ auto GetFromStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t 
 }
 
 template <typename T>
+auto GetNVSType() -> nvs_type_t {
+    static_assert(
+        std::disjunction_v<std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int32_t>,
+                           std::is_same<T, uint32_t>, std::is_same<T, uint64_t>,
+                           std::is_same<T, std::string>, std::is_same<T, BLEAddress>>,
+        "Unsupported type for NVS storage");
+    if constexpr (std::is_same_v<T, bool>) {
+        return NVS_TYPE_U8;
+    } else if constexpr (std::is_same_v<T, int> || std::is_same_v<T, int32_t>) {
+        return NVS_TYPE_I32;
+    } else if constexpr (std::is_same_v<T, uint32_t>) {
+        return NVS_TYPE_U32;
+    } else if constexpr (std::is_same_v<T, uint64_t> || std::is_same_v<T, BLEAddress>) {
+        return NVS_TYPE_U64;
+    } else if constexpr (std::is_same_v<T, std::string>) {
+        return NVS_TYPE_STR;
+    } else {
+        // Should never happen because of the static_assert
+        log_e("Unhandled prefs type");
+        assert(0);
+    }
+}
+
+template <typename T>
 auto WriteToStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t {
     static_assert(
         std::disjunction_v<std::is_same<T, bool>, std::is_same<T, int>, std::is_same<T, int32_t>,
@@ -215,6 +239,44 @@ public:
             this->deleteFromStorage(key);
         }
 
+        auto getAllKeyPrefixes() -> std::vector<std::string> {
+            std::vector<std::string> keys;
+#if !SIMULATOR
+            // Grab all keys
+            nvs_iterator_t it = nullptr;
+            esp_err_t result = nvs_entry_find("nvs", "sindarin-app", NVS_TYPE_ANY, &it);
+            if (result == ESP_ERR_NVS_NOT_FOUND) {
+                return keys;
+            }
+
+            if (result != ESP_OK) {
+                log_e("nvs_entry_find error: %s", esp_err_to_name(result));
+                return keys;
+            }
+
+            do {
+                nvs_entry_info_t info;
+                nvs_entry_info(it, &info);
+                result = nvs_entry_next(&it);
+                if (result != ESP_OK) {
+                    break;
+                }
+
+                // Check if info.key has the same suffix as this item
+                if (strncmp(info.key + strlen(info.key) - strlen(this->suffix_), this->suffix_,
+                            strlen(this->suffix_)) == 0) {
+                    // Key has the same suffix, so add it to the list
+                    keys.push_back(std::string(info.key, strlen(info.key) - strlen(this->suffix_)));
+                }
+            } while (result == ESP_OK);
+
+            if (result != ESP_ERR_NVS_NOT_FOUND) {
+                log_e("NVS error %s at current iteration, stopping.", esp_err_to_name(result));
+            }
+#endif
+            return keys;
+        }
+
     protected:
         const char *suffix_;
     };
@@ -287,6 +349,55 @@ public:
         }
 #endif
         commit();
+    }
+
+    void logStats() {
+        nvs_stats_t nvsStats;
+        esp_err_t err = nvs_get_stats(nullptr, &nvsStats);
+        if (err != ESP_OK) {
+            log_e("nvs_get_stats error: %s", esp_err_to_name(err));
+            return;
+        }
+        size_t sindarinEntries = 0;
+        err = nvs_get_used_entry_count(nvsHandle, &sindarinEntries);
+        if (err != ESP_OK) {
+            log_e("nvs_get_used_entry_count error: %s", esp_err_to_name(err));
+            return;
+        }
+        log_i("NVS stats (entries): used=%zu free=%zu total=%zu sindarin-app=%zu",
+              nvsStats.used_entries, nvsStats.free_entries, nvsStats.total_entries,
+              sindarinEntries);
+    }
+
+    // This method exists to destory any old keys that we no longer use. You can find deleted
+    // PrefsItems in all of git history with
+    /*
+    git log -S'PrefsItem<' --pickaxe-all -p --all -- src/Storage/PreferencesStore.hpp | grep -E \
+    '^-.*PrefsItem<'
+    */
+    // And you can ge all of the deleted keys with this absolutely horrifying bash command:
+    /*
+    git log -S'PrefsItem<' --pickaxe-all -p --all -- src/Storage/PreferencesStore.hpp | perl -lne \
+    'print $1 if /PrefsItem<.*> (.*);/' | sort | uniq | xargs -I {} sh -c 'git log -S"{}(" \
+    --pickaxe-all -p --all -- src/Storage/PreferencesStore.hpp | perl -lne "print \$2 if \
+    /^-.*{}\((\*this|this->prefs_), ([a-zA-Z-\"]*)/"' | sort | uniq | xargs -I {} sh -c \
+    'grep -q "{}" src/Storage/PreferencesStore.hpp || echo \"{}\"'
+    */
+    // Then make sure to cross reference here that none of the keys actually still exist (and were
+    // just moved around at one point in the git history)
+    void purgeOldKeys() {
+        std::vector<std::string> keys = {
+            "backlight",    "box-h-off-mm",   "box-w-off-mm",  "deliver-close",
+            "fw-size",      "gzip-readables", "last-batt",     "next-sync",
+            "pocket-token", "pt-battery",     "show-articles", "show-bible",
+            "show-books",   "upload-crashes", "x-offset",      "y-offset",
+        };
+        for (auto &key : keys) {
+            esp_err_t err = nvs_erase_key(nvsHandle, key.c_str());
+            if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
+                log_e("nvs_erase_key failed: %s", esp_err_to_name(err));
+            }
+        }
     }
 
     uint32_t nvsHandle;

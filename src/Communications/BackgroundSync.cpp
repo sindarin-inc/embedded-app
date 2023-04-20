@@ -122,6 +122,9 @@ void BackgroundSyncAndSleep(PowerManager &powerManager, PreferencesStore &prefs,
     // TODO: Perhaps try dispatching this (maybe needs to happen outside of app_main)
     WiFi::getInstance().disconnectWiFi();
 
+    // Clean up NVS
+    localStore.garbageCollectPreferences();
+
     // Figure out the next content sync and set the best time for it
     time_t now = time(nullptr);
     PreferencesStore::syncReason = SyncReason::Periodic;
