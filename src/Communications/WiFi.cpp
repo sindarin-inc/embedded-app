@@ -36,6 +36,20 @@ auto WiFi::begin() -> esp_err_t {
         return err;
     }
 
+    err = esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wiFiEventHandler, this,
+                                              &wifiEventHandlerInstance_);
+    if (err != ESP_OK) {
+        log_e("esp_event_handler_instance_register failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+
+    err = esp_event_handler_instance_register(IP_EVENT, ESP_EVENT_ANY_ID, &ipEventHandler, this,
+                                              &ipEventHandlerInstance_);
+    if (err != ESP_OK) {
+        log_e("esp_event_handler_instance_register failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+
     SHOW_HEAP();
     staNetif_ = esp_netif_create_default_wifi_sta(); // 1k
     if (staNetif_ == nullptr) {
@@ -243,20 +257,6 @@ auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> 
     err = begin();
     if (err != ESP_OK) {
         log_e("begin failed with error %s", esp_err_to_name(err));
-        return err;
-    }
-
-    err = esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wiFiEventHandler, this,
-                                              &wifiEventHandlerInstance_);
-    if (err != ESP_OK) {
-        log_e("esp_event_handler_instance_register failed with error %s", esp_err_to_name(err));
-        return err;
-    }
-
-    err = esp_event_handler_instance_register(IP_EVENT, ESP_EVENT_ANY_ID, &ipEventHandler, this,
-                                              &ipEventHandlerInstance_);
-    if (err != ESP_OK) {
-        log_e("esp_event_handler_instance_register failed with error %s", esp_err_to_name(err));
         return err;
     }
 
