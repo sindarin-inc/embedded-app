@@ -52,7 +52,7 @@ auto ReadableScreen::layout(LayoutContext &context, Size size) -> Size {
             int y = 0;
 
             for (auto &index : menuItemsOrder_) {
-                if (menuItemsEnabled_[index]) {
+                if (!menuItemViews_[index]->isHidden()) {
                     auto viewFrame =
                         context.setViewFrame(*menuItemViews_[index], {{x, y}, size},
                                              LayoutOptionsSizeToFit | LayoutOptionsAlignTop);
@@ -80,7 +80,7 @@ void ReadableScreen::drawInRect(Rect rect) {
     popupMenuForeground_.draw();
 
     for (auto &index : menuItemsOrder_) {
-        if (menuItemsEnabled_[index]) {
+        if (!menuItemViews_[index]->isHidden()) {
             menuItemViews_[index]->draw();
         }
     }
@@ -217,11 +217,14 @@ void ReadableScreen::turnPage() {
         // When running off the end, we want to show the popup defaulted on archive.
         bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
 
-        if (archived) {
-            setCurrSelection(POPUP_UNARCHIVE);
-        } else {
-            setCurrSelection(POPUP_ARCHIVE);
+        int index = 0;
+        for (auto &menuItemView : menuItemViews_) {
+            if (menuItemView == (archived ? unarchiveMenuItemView_ : archiveMenuItemView_)) {
+                setCurrSelection(index);
+                break;
+            }
         }
+
         setNeedsRerender();
     } else {
         readable_.placePrev = readable_.place;
@@ -256,11 +259,11 @@ void ReadableScreen::setUpPopupMenu() {
     bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
 
     if (archived) {
-        menuItemsEnabled_[POPUP_ARCHIVE] = false;
-        menuItemsEnabled_[POPUP_UNARCHIVE] = true;
+        archiveMenuItemView_->setHidden(true);
+        unarchiveMenuItemView_->setHidden(false);
     } else {
-        menuItemsEnabled_[POPUP_ARCHIVE] = true;
-        menuItemsEnabled_[POPUP_UNARCHIVE] = false;
+        archiveMenuItemView_->setHidden(false);
+        unarchiveMenuItemView_->setHidden(true);
     }
 }
 
@@ -544,6 +547,8 @@ void ReadableScreen::populatePopupMenu() {
         hidePopupMenu();
     }));
 
+    archiveMenuItemView_ = menuItemViews_[menuItemViews_.size() - 1];
+
     addMenuItem(
         MenuItem(
             "Unarchive",
@@ -565,6 +570,8 @@ void ReadableScreen::populatePopupMenu() {
                 hidePopupMenu();
             }),
         false);
+
+    unarchiveMenuItemView_ = menuItemViews_[menuItemViews_.size() - 1];
 
     addMenuItem(MenuItem("Bookmark", [this]() {
         hidePopupMenu();
@@ -713,7 +720,7 @@ void ReadableScreen::processCommandPopup(RemoteCommand command) {
     case RemoteCommand::NEXT:
         do {
             nextSelection();
-        } while (!menuItemsEnabled_[getCurrSelection()]);
+        } while (menuItemViews_[getCurrSelection()]->isHidden());
         break;
     case RemoteCommand::CHANNEL_PLUS:
         hidePopupMenu();
@@ -723,7 +730,7 @@ void ReadableScreen::processCommandPopup(RemoteCommand command) {
     case RemoteCommand::PREV:
         do {
             prevSelection();
-        } while (!menuItemsEnabled_[getCurrSelection()]);
+        } while (menuItemViews_[getCurrSelection()]->isHidden());
         break;
     case RemoteCommand::NOP_BUTTON:
     case RemoteCommand::ANIMATION:

@@ -20,16 +20,6 @@
 #include "UI/Screen.hpp"
 #include "config.h"
 
-enum PopupMenuFullList {
-    POPUP_MAINMENU,
-    POPUP_ARCHIVE,
-    POPUP_UNARCHIVE,
-    POPUP_BOOKMARK,
-    POPUP_TEXT,
-    POPUP_BRIGHTNESS,
-    POPUP_CONTENTS
-};
-
 class ReadableScreen : public MenuScreen {
 public:
     ReadableScreen(std::shared_ptr<RendererStream> stream, DisplaySystem &display,
@@ -112,9 +102,9 @@ public:
         auto menuItemView = std::make_shared<MenuItemView>(display_, newItem);
         menuItemView->setIndicatorPadding(0);
         menuItemView->setNoPaddingBetween(true);
+        menuItemView->setHidden(!enabled);
         menuItemViews_.push_back(menuItemView);
         menuItemsOrder_.push_back(menuItemViews_.size() - 1);
-        menuItemsEnabled_.push_back(enabled);
     }
 
     void renderIcons(DisplaySystem &display);
@@ -152,6 +142,9 @@ protected:
     DisplaySystem &display_;
 
     std::vector<std::shared_ptr<MenuItemView>> menuItemViews_;
+    std::shared_ptr<MenuItemView> archiveMenuItemView_;
+    std::shared_ptr<MenuItemView> unarchiveMenuItemView_;
+
     BoxView popupMenuBackground_;
     BoxView popupMenuForeground_;
 
@@ -178,7 +171,6 @@ protected:
     Screen *currentScreen_;
 
     std::vector<int> menuItemsOrder_;
-    std::vector<bool> menuItemsEnabled_;
 
 private:
     void incrementReadingTime();
