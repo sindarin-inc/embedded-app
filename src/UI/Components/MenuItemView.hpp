@@ -18,7 +18,7 @@ public:
         : EinkView(display), textView_(display, menuItem.title, font),
           subtextView_(display, menuItem.subtitle, &TAHOMA_REGULAR_FONT5PT7B, true),
           textMultiView_(display, menuItem.title, 2, 0, font), multiLine_(multiLine),
-          indicator_(display, 4), menuItem_(menuItem), noPaddingBetween_(noPadding) {
+          indicator_(display, 4), menuItem_(menuItem), noVerticalPadding_(noPadding) {
         if (!menuItem.subtitle.empty()) {
             hasSubtext_ = true;
         }
@@ -33,7 +33,7 @@ public:
 
     void setIndicatorPadding(int padding) { indicatorPadding_ = padding; }
 
-    void setNoPaddingBetween(bool noPadding) { noPaddingBetween_ = noPadding; }
+    void setNoPaddingBetween(bool noPadding) { noVerticalPadding_ = noPadding; }
 
     auto layout(LayoutContext &context, Size size) -> Size override {
         int x = 0;
@@ -74,11 +74,11 @@ public:
         } else {
             context.setViewFrame(
                 indicator_,
-                {{x, y - indicatorHeightPadding},
+                {{x, y - (noVerticalPadding_ ? -4 : indicatorHeightPadding)},
                  {indicatorWidth,
-                  (noPaddingBetween_ ? 5 : textRect.size.height + 2 * indicatorHeightPadding)}});
+                  (noVerticalPadding_ ? 5 : textRect.size.height + 2 * indicatorHeightPadding)}});
         }
-        y += textRect.size.height + (noPaddingBetween_ ? -8 : +subtextRectHeight + 2);
+        y += textRect.size.height + (noVerticalPadding_ ? 0 : subtextRectHeight + 2);
         return {size.width, y};
     }
 
@@ -115,7 +115,7 @@ protected:
     BoxView indicator_;
     const MenuItem &menuItem_;
     int indicatorPadding_;
-    bool noPaddingBetween_;
+    bool noVerticalPadding_;
     bool selected_ = false;
     bool hasSubtext_ = false;
 };

@@ -125,6 +125,7 @@ protected:
     void processCommandPopup(RemoteCommand command);
     void processCommandNormal(RemoteCommand command);
     void setUpPopupMenu();
+    void hidePopupMenu();
 
     Renderer renderer_;
     Renderer firstTimeRenderer_;
@@ -143,7 +144,7 @@ protected:
     bool atEnd_ = false;
     bool showPopup_ = false;
     bool shownIcons_ = false;
-    bool firstPopupLoad_ = true;
+    bool popupAlreadyRenderedOnce_ = true;
     bool autoPilotForceFull_ = false;
 
     bool hasToc_ = false;

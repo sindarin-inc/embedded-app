@@ -33,10 +33,6 @@ auto ReadableScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto inset = 10;
     const auto spacing = 10;
 
-    popupMenuBackground_.fillColor = display_.bg;
-    popupMenuBackground_.strokeColor = display_.bg;
-    popupMenuForeground_.strokeColor = display_.fg;
-
     SolClock &theClock = SolClock::getInstance();
     clockView_.setText(theClock.getTimeString());
 
@@ -60,7 +56,7 @@ auto ReadableScreen::layout(LayoutContext &context, Size size) -> Size {
                     auto viewFrame =
                         context.setViewFrame(*menuItemViews_[index], {{x, y}, size},
                                              LayoutOptionsSizeToFit | LayoutOptionsAlignTop);
-                    y += viewFrame.size.height + spacing;
+                    y += viewFrame.size.height;
                 }
             }
 
@@ -275,6 +271,10 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
+    popupMenuBackground_.fillColor = display_.bg;
+    popupMenuBackground_.strokeColor = display_.bg;
+    popupMenuForeground_.strokeColor = display_.fg;
+
     if (showPopup_) {
         setUpPopupMenu();
     }
@@ -338,7 +338,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
-    if (firstPopupLoad_) {
+    if (popupAlreadyRenderedOnce_) {
         if (pageSpeed_ == 0) {
             // Regular Reading
             newPlace_ = renderer_.renderPage(readable_.place);
@@ -382,7 +382,7 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     updateBookmarkStatus();
 
-    if (firstPopupLoad_ && inBookmark_) {
+    if (popupAlreadyRenderedOnce_ && inBookmark_) {
         log_d("Drawing bookmark!");
         display.fillRect(display.width() + 1, display.yAbsolute(0), 13, 55, display.fg);
         display.fillTriangle(display.width() + 1, display.yAbsolute(55), display.width() + 13,
@@ -423,14 +423,14 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     // This displays the popup with a pre-AU4 refresh without the bullet
     // indiciating which menu item is selected.
-    if ((showPopup_) && (firstPopupLoad_)) {
+    if ((showPopup_) && (popupAlreadyRenderedOnce_)) {
         for (auto &menuItemView : menuItemViews_) {
             menuItemView->setSelected(false);
         }
         draw();
     }
 
-    if (firstPopupLoad_) {
+    if (popupAlreadyRenderedOnce_) {
         if ((pageSpeed_ != 0) && (speedLinesToSkip_ > 0)) {
             if (!showPopup_) {
                 if (autoPilotForceFull_) {
@@ -456,8 +456,8 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     // Once the popup has been showed in one render, we can use this flag
     // to stop drawing everything behind it until we close the popup.
-    if ((showPopup_) && (firstPopupLoad_)) {
-        firstPopupLoad_ = false;
+    if ((showPopup_) && (popupAlreadyRenderedOnce_)) {
+        popupAlreadyRenderedOnce_ = false;
     }
 
     // Logic to show the popup with the bullet indicating which menu item is selected.
@@ -504,11 +504,17 @@ void ReadableScreen::incrementReadingTime() {
     prefs_.totalReadingTimeSeconds.set(totalReadingTimeSeconds);
 }
 
+// Sets the variables necessary so that on the next render
+// the popup won't be shown.
+void ReadableScreen::hidePopupMenu() {
+    showPopup_ = false;
+    popupAlreadyRenderedOnce_ = true;
+}
+
 void ReadableScreen::populatePopupMenu() {
     resetMenuItems();
     addMenuItem(MenuItem("Main Menu", [this]() {
-        showPopup_ = false;
-        firstPopupLoad_ = true;
+        hidePopupMenu();
         prefs_.lastReadableId.remove();
         if (!prefs_.cesMode.get().value_or(false)) {
             if (pageSpeed_ != 0) {
@@ -535,16 +541,14 @@ void ReadableScreen::populatePopupMenu() {
             setNeedsRerender();
             backCallback();
         }
-        showPopup_ = false;
-        firstPopupLoad_ = true;
+        hidePopupMenu();
     }));
 
     addMenuItem(
         MenuItem(
             "Unarchive",
             [this]() {
-                showPopup_ = false;
-                firstPopupLoad_ = true;
+                hidePopupMenu();
                 bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
 
                 if (archived) {
@@ -558,34 +562,27 @@ void ReadableScreen::populatePopupMenu() {
                     setNeedsRerender();
                     backCallback();
                 }
-                showPopup_ = false;
-                firstPopupLoad_ = true;
+                hidePopupMenu();
             }),
         false);
 
     addMenuItem(MenuItem("Bookmark", [this]() {
-        showPopup_ = false;
-        firstPopupLoad_ = true;
+        hidePopupMenu();
         inBookmark_ = !inBookmark_;
         writeOutBookmarkUpdate();
     }));
 
-    addMenuItem(MenuItem("Text", [this]() {
-        showPopup_ = false;
-        firstPopupLoad_ = true;
-    }));
+    addMenuItem(MenuItem("Text", [this]() { hidePopupMenu(); }));
 
     addMenuItem(MenuItem("Brightness", [this]() {
-        showPopup_ = false;
-        firstPopupLoad_ = true;
+        hidePopupMenu();
         lightingAdjustScreen_.firstLoad = true;
         log_d("Setting current screen to brightness screen");
         setCurrentScreen(lightingAdjustScreen_);
     }));
 
     addMenuItem(MenuItem(hasToc_ ? "Contents" : "Seek", [this]() {
-        showPopup_ = false;
-        firstPopupLoad_ = true;
+        hidePopupMenu();
         // If readable has a ToC with at least 1 element, show the ToC screen.
         // Otherwise, show the seek screen.
         if (hasToc_) {
@@ -701,15 +698,13 @@ void ReadableScreen::processCommandPopup(RemoteCommand command) {
 
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
-        showPopup_ = false;
-        firstPopupLoad_ = true;
+        hidePopupMenu();
         autoPilotForceFull_ = true;
         setNeedsRerender();
         break;
     case RemoteCommand::PLAY:
     case RemoteCommand::ENTER:
-        showPopup_ = false;
-        firstPopupLoad_ = true;
+        hidePopupMenu();
         if (getCurrItem().callback != nullptr) {
             getCurrItem().callback();
         }
@@ -721,8 +716,7 @@ void ReadableScreen::processCommandPopup(RemoteCommand command) {
         } while (!menuItemsEnabled_[getCurrSelection()]);
         break;
     case RemoteCommand::CHANNEL_PLUS:
-        showPopup_ = false;
-        firstPopupLoad_ = true;
+        hidePopupMenu();
         autoPilotForceFull_ = true;
         break;
     case RemoteCommand::BACK:
@@ -813,7 +807,6 @@ void ReadableScreen::processCommand(RemoteCommand command) {
     // Then we move on to autopilot mode and regular mode.
     if (pageSpeed_ != 0) {
         processCommandAutoPilot(command);
-
     } else {
         processCommandNormal(command);
     }
