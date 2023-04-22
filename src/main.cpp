@@ -92,9 +92,9 @@ void PollingLoopTask(void *parameter) {
 #if USE_TURN_TOUCH_REMOTE
         // Skip scanning while WiFi is connected to avoid kicking off the WiFi connection
         if (!WiFi::getInstance().connected()) {
-            ttRemoteInput.connect();
+            ttRemoteInput.scanIfNecessary();
         } else if (!ttRemoteInput.connected()) {
-            // log_d("Skipping Turn Touch scan while WiFi is connected");
+            // log_d("Skipping PageTurner scan while WiFi is connected");
         }
 #endif
 
