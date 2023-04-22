@@ -102,9 +102,14 @@ public:
     // Delete any existing firmware.json file.
     void resetFirmware();
 
+    // Clean up old keys in NVS
+    void garbageCollectPreferences();
+    void migrateIfNeeded();
+
     FileSystem &fileSystem;
 
 private:
+    const uint32_t latestMigrationVersion_ = 1;
     PreferencesStore &prefs_;
 
     ReadablesVector books_;

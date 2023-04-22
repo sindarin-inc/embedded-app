@@ -93,7 +93,6 @@ void LineMenuScreen::processCommand(RemoteCommand command) {
         setNeedsRerender();
         break;
     case RemoteCommand::ANIMATION:
-        break;
     default:
         break;
     }

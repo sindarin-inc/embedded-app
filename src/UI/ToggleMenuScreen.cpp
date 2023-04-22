@@ -205,7 +205,6 @@ void ToggleMenuScreen::processCommand(RemoteCommand command) {
         }
         break;
     case RemoteCommand::ANIMATION:
-        break;
     default:
         break;
     }

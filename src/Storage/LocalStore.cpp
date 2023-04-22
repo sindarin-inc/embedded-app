@@ -3,6 +3,7 @@
 #include <esp_system.h>
 #include <esp_timer.h>
 #include <memory>
+#include <set>
 #include <unordered_map>
 
 #include "Communications/HtmlCleaner.hpp"
@@ -28,6 +29,8 @@ enum { MAX_NUMBER_OF_PAGES_TO_BACKFILL = 10 };
 auto LocalStore::begin() -> bool {
     auto loadedBooks = loadReadablesFromFile(books_, BOOKS_PATH);
     auto loadedArticles = loadReadablesFromFile(articles_, ARTICLES_PATH);
+
+    migrateIfNeeded();
 
     return loadedBooks && loadedArticles;
 }
@@ -212,8 +215,7 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
             auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
             log_i("Bookmarks changed on %s %s %s", ReadableModelTypeToString(modelType).c_str(),
                   readable.title.c_str(), readable.uuid.c_str());
-            std::string bookmarkPath =
-                StringFormat("/bookmarks/%s-bookmark.txt", readable.uuid.c_str());
+            std::string bookmarkPath = readable.bookmarkFilePath();
             SFile bookmarkFile = fileSystem.open(bookmarkPath.c_str(), FILE_READ, false);
             if (!bookmarkFile) {
                 log_i("Failed to open bookmark file: %s", bookmarkPath.c_str());
@@ -292,7 +294,7 @@ void LocalStore::resetReadablesPlacemarkChanged(const ReadablesVector &readables
         if (!readable.localOnly && changed) {
             log_d("Resetting placemark changed for \"%s\" (now synced to server)",
                   readable.title.c_str());
-            prefs_.readablePlaceChanged.set(readable.shortenedUuid.c_str(), false);
+            prefs_.readablePlaceChanged.remove(readable.shortenedUuid.c_str());
         }
     }
 }
@@ -329,7 +331,7 @@ void LocalStore::syncFromRemote(
         return;
     }
 
-    if (!WiFi::getInstance().connectWiFiWithTimeout()) {
+    if (!WiFi::getInstance().connectWiFiFromSettings()) {
         progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
                                           .message = "Failed to connect to WiFi."});
         return;
@@ -742,9 +744,9 @@ void LocalStore::deleteReadableFiles(const ReadablesVector &readables, bool rest
     }
 
     if (modelType == ReadablesModelType::Article) {
-        prefs_.lastArticlesSince.set("");
+        prefs_.lastArticlesSince.remove();
     } else if (modelType == ReadablesModelType::Book) {
-        prefs_.lastBooksSince.set("");
+        prefs_.lastBooksSince.remove();
     }
 
     int64_t start = esp_timer_get_time();
@@ -910,6 +912,14 @@ void LocalStore::readableFilePurge(const Readable &readable) {
 
     fileSystem.remove(StringFormat("/articles/%s.txt.gz", uuid.c_str()));
     fileSystem.remove(StringFormat("/articles/%s.txt", uuid.c_str()));
+
+    fileSystem.remove(readable.bookmarkFilePath().c_str());
+
+    // Also purge placemarks in NVS
+    prefs_.readablePlace.remove(readable.shortenedUuid.c_str());
+    prefs_.readablePlaceChanged.remove(readable.shortenedUuid.c_str());
+    prefs_.readableArchivedChanged.remove(readable.shortenedUuid.c_str());
+    prefs_.readableBookmarksChanged.remove(readable.shortenedUuid.c_str());
 }
 
 const char *firmwarePath = "/firmware.json";
@@ -947,3 +957,61 @@ auto LocalStore::getPendingFirmwareUpdate(Firmware &firmware) -> bool {
 }
 
 void LocalStore::resetFirmware() { fileSystem.remove(firmwarePath); }
+
+void LocalStore::garbageCollectPreferences() {
+    log_i("Running NVS garbage collection");
+    prefs_.logStats();
+
+    // Remove any readablePlace and readablePlaceChanged keys for readables that no longer exist
+    auto readablePlaceKeys = prefs_.readablePlace.getAllKeyPrefixes();
+    auto readablePlaceChangedKeys = prefs_.readablePlaceChanged.getAllKeyPrefixes();
+    auto readableArchivedChangedKeys = prefs_.readableArchivedChanged.getAllKeyPrefixes();
+    auto readableBookmarksChangedKeys = prefs_.readableBookmarksChanged.getAllKeyPrefixes();
+
+    // Combine and deduplicate all keys
+    std::set<std::string> allKeys;
+    allKeys.insert(readablePlaceKeys.begin(), readablePlaceKeys.end());
+    allKeys.insert(readablePlaceChangedKeys.begin(), readablePlaceChangedKeys.end());
+    allKeys.insert(readableArchivedChangedKeys.begin(), readableArchivedChangedKeys.end());
+    allKeys.insert(readableBookmarksChangedKeys.begin(), readableBookmarksChangedKeys.end());
+
+    for (auto &key : allKeys) {
+        bool isStoredBook = std::any_of(books_.begin(), books_.end(), [&key](const auto &r) {
+            return r.shortenedUuid == key.c_str();
+        });
+        bool isStoredArticle =
+            std::any_of(articles_.begin(), articles_.end(),
+                        [&key](const auto &r) { return r.shortenedUuid == key.c_str(); });
+        if (!isStoredBook && !isStoredArticle) {
+            log_i("Removing all KeyedPrefsItems for %s", key.c_str());
+            prefs_.readablePlace.remove(key.c_str());
+            prefs_.readablePlaceChanged.remove(key.c_str());
+            prefs_.readableArchivedChanged.remove(key.c_str());
+            prefs_.readableBookmarksChanged.remove(key.c_str());
+        }
+    }
+
+    prefs_.logStats();
+}
+
+void LocalStore::migrateIfNeeded() {
+    auto migrationVersion = prefs_.localStoreMigrationVersion.get().value_or(0);
+    while (migrationVersion < latestMigrationVersion_) {
+        log_i("Migrating LocalStore from version %" PRIu32 " to %" PRIu32 "", migrationVersion,
+              migrationVersion + 1);
+        switch (migrationVersion) {
+        case 0: {
+            // For a long while we weren't actively cleaning up these old readable-specific keys in
+            // NVS. This migration goes through all readable-keys and purges any keys that don't
+            // correspond to a readable on the glasses.
+            garbageCollectPreferences();
+            break;
+        }
+        default:
+            log_e("Unknown LocalStore migration version: %" PRIu32, migrationVersion);
+            return;
+        }
+        migrationVersion++;
+        prefs_.localStoreMigrationVersion.set(migrationVersion);
+    }
+}

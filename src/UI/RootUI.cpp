@@ -439,7 +439,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             // Default to 6am delivery. May have configuration at some other time
             this->prefs_.morningNewspaperTime.set(6);
         } else {
-            this->prefs_.morningNewspaperTime.set(0);
+            this->prefs_.morningNewspaperTime.remove();
         }
     }));
 
@@ -455,7 +455,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             // default to 8pm delivery. May have configuration at some other time
             this->prefs_.eveningNewspaperTime.set(20);
         } else {
-            this->prefs_.eveningNewspaperTime.set(0);
+            this->prefs_.eveningNewspaperTime.remove();
         }
     }));
 
@@ -515,7 +515,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         if (this->prefs_.autoPilot.get().value_or(false)) {
             prefs_.autoPilotSpeed.set(10000);
         } else {
-            prefs_.autoPilotSpeed.set(0);
+            prefs_.autoPilotSpeed.remove();
         }
     }));
 
@@ -791,7 +791,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto confirmMessage = [timeZoneMenu, display, &clock](int solTimeZone) {
             clock.setTimezone(solTimeZone);
             timeZoneMenu->showTemporaryMessage(*display, "Setting Clock & Time Zone", 200, false);
-            WiFi::getInstance().connectWiFiWithTimeout();
+            WiFi::getInstance().connectWiFiFromSettings();
             if (!WiFi::getInstance().connected()) {
                 log_e("Couldn't connect to wifi, not setting clock");
             } else {
@@ -891,8 +891,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     systemSettingsMenu->addMenuItem(
         MenuItem("Reset Statistics", [this, systemSettingsMenu, display]() {
-            prefs_.wordCount.set(0);
-            prefs_.totalReadingTimeSeconds.set(0);
+            prefs_.wordCount.remove();
+            prefs_.totalReadingTimeSeconds.remove();
             systemSettingsMenu->showTemporaryMessage(*display, "Statistics reset.");
         }));
 
@@ -904,6 +904,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             Delay(1500);
             this->power_.reboot();
         }));
+
+    systemSettingsMenu->addMenuItem(MenuItem("Clear WiFi Settings", [systemSettingsMenu,
+                                                                     display]() {
+        WiFi::getInstance().clearWiFiCredentials();
+        log_w("WiFi settings cleared.");
+        systemSettingsMenu->showTemporaryMessage(*display, "WiFi settings cleared.", 2000, false);
+    }));
 
     systemSettingsMenu->addMenuItem(
         MenuItem("Reset Preferences", [this, systemSettingsMenu, display]() {
@@ -1342,6 +1349,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // with the demo code and set the back callback to mainMenu.
 
     SHOW_HEAP();
+
+    // Yes, clang-tidy, it is weird that we are calling `new` and not `delete` and we know this
+    // should be a shared_ptr or something. But just leave us alone for now, ok?
+    // NOTE: I couldn't figure out how to use
+    // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks) in a way that disabled these warnings
+    // for these variables
+#ifdef __clang_analyzer__
+    delete pocketMenu;
+    delete booksMenu;
+#endif
 }
 
 void RootUI::loop(DisplaySystem &display, RemoteCommand command) {

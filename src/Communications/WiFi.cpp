@@ -12,11 +12,16 @@ WiFi wiFi;
 auto WiFi::getInstance() -> WiFi & { return wiFi; }
 
 auto WiFi::begin() -> esp_err_t {
-    if (began_) {
+    if (wiFiState_ != UNINITIALIZED) {
         return ESP_OK;
     }
 
     SHOW_HEAP();
+
+    // create event group if uninitialized
+    if (wifiEventGroup_ == nullptr) {
+        wifiEventGroup_ = xEventGroupCreate();
+    }
 
     esp_err_t err = esp_netif_init(); // ~5k
     if (err != ESP_OK) {
@@ -28,6 +33,20 @@ auto WiFi::begin() -> esp_err_t {
     err = esp_event_loop_create_default(); // 4k
     if (err != ESP_OK) {
         log_e("esp_event_loop_create_default failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+
+    err = esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wiFiEventHandler, this,
+                                              &wifiEventHandlerInstance_);
+    if (err != ESP_OK) {
+        log_e("esp_event_handler_instance_register failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+
+    err = esp_event_handler_instance_register(IP_EVENT, ESP_EVENT_ANY_ID, &ipEventHandler, this,
+                                              &ipEventHandlerInstance_);
+    if (err != ESP_OK) {
+        log_e("esp_event_handler_instance_register failed with error %s", esp_err_to_name(err));
         return err;
     }
 
@@ -60,12 +79,12 @@ auto WiFi::begin() -> esp_err_t {
     }
     SHOW_HEAP();
 
-    began_ = true;
+    wiFiState_ = IDLE;
     return ESP_OK;
 }
 
 auto WiFi::end() -> esp_err_t {
-    if (!began_) {
+    if (wiFiState_ == UNINITIALIZED) {
         return ESP_OK;
     }
 
@@ -106,7 +125,7 @@ auto WiFi::end() -> esp_err_t {
         return err;
     }
 
-    began_ = false;
+    wiFiState_ = UNINITIALIZED;
     return ESP_OK;
 }
 
@@ -135,14 +154,38 @@ auto WiFi::hasWiFiCredentials(wifi_config_t *conf) -> bool {
     return true;
 }
 
-auto WiFi::hasWiFiCredentials() -> bool {
+void WiFi::migrateWiFiCredentials() {
     wifi_config_t conf;
     esp_err_t err = getWifiConfig(&conf);
     if (err != ESP_OK) {
-        log_e("getWifiConfig failed with error %s", esp_err_to_name(err));
+        log_w("error getting Wifi Config in migrateWiFiCredentials: %d", err);
+        return;
+    }
+
+    if (hasWiFiCredentials(&conf)) {
+        std::string ssid = (char *)conf.sta.ssid;
+        std::string password = (char *)conf.sta.password;
+        settings_.setActiveSetting(ssid, password);
+    }
+    settings_.save();
+}
+
+auto WiFi::hasWiFiCredentials() -> bool {
+    if (settings_.needsMigration()) {
+        migrateWiFiCredentials();
+    }
+
+    if (settings_.count() == 0) {
         return false;
     }
-    return hasWiFiCredentials(&conf);
+
+    return true;
+}
+
+void WiFi::clearWiFiCredentials() {
+    log_i("clearing wifi credentials.");
+    settings_.clear();
+    settings_.save();
 }
 
 auto WiFi::scanNetworks(const std::function<void(std::shared_ptr<wifi_ap_record_t[]> apRecords,
@@ -217,20 +260,6 @@ auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> 
         return err;
     }
 
-    err = esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wiFiEventHandler, this,
-                                              &wifiEventHandlerInstance_);
-    if (err != ESP_OK) {
-        log_e("esp_event_handler_instance_register failed with error %s", esp_err_to_name(err));
-        return err;
-    }
-
-    err = esp_event_handler_instance_register(IP_EVENT, ESP_EVENT_ANY_ID, &ipEventHandler, this,
-                                              &ipEventHandlerInstance_);
-    if (err != ESP_OK) {
-        log_e("esp_event_handler_instance_register failed with error %s", esp_err_to_name(err));
-        return err;
-    }
-
     wifi_config_t wifiConfig = {};
 
     if (ssid.length() <= 0 || password.length() <= 0) {
@@ -272,33 +301,66 @@ auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> 
         return err;
     }
 
+    wiFiState_ = CONNECTING;
+
     return ESP_OK;
 }
 
-auto WiFi::connectWiFiWithTimeout(int timeoutMs) -> bool {
-    auto startTime = xTaskGetTickCount();
-    if (!connected()) {
-        wifi_config_t wifiConfig = {};
-        getWifiConfig(&wifiConfig);
-        if (!hasWiFiCredentials()) {
-            log_d("No WiFi credentials found");
-            return false;
+auto WiFi::connectWiFiFromSettings() -> bool {
+
+    if (connected()) {
+        return true;
+    }
+
+    esp_err_t err = begin();
+    if (err != ESP_OK) {
+        log_e("begin failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+
+    if (settings_.needsMigration()) {
+        migrateWiFiCredentials();
+    }
+
+    if (settings_.count() == 0) {
+        log_w("no wifi credentials found");
+        return false;
+    }
+
+    // loop twice through all available wifi settings
+    for (int attempt = 0; attempt < 2; attempt++) {
+        int settingsToCheck = settings_.count();
+        for (int i = 0; i < settingsToCheck; i++) {
+            if (connectWiFiSettingWithTimeout(20000, settings_.settings[i].ssid,
+                                              settings_.settings[i].password)) {
+                return true;
+            }
         }
-        if (connectWiFi() != ESP_OK) {
-            log_w("connectWiFi failed");
-            return false;
+    }
+
+    // failed to connect
+    log_w("failed to connect to wifi");
+    disconnectWiFi();
+    return false;
+}
+
+auto WiFi::connectWiFiSettingWithTimeout(int timeoutMs, const std::string &ssid,
+                                         const std::string &password) -> bool {
+    if (connectWiFi(ssid, password) != ESP_OK) {
+        log_w("connectWiFi failed");
+        return false;
+    }
+
+    // wait on wifi events
+    EventBits_t bits = xEventGroupWaitBits(wifiEventGroup_, CONNECTED | DISCONNECTED, true, false,
+                                           pdMS_TO_TICKS(timeoutMs));
+    if ((bits & CONNECTED) == 0) {
+        esp_err_t err = esp_wifi_disconnect();
+        if (err != ESP_OK) {
+            log_w("error in esp_wifi_disconnect: %d", err);
         }
-        // Wait for a connection
-        // TODO: Would be good to make this not a polling loop so if there's an obvious failure we
-        // could return sooner
-        while (!connected() && (xTaskGetTickCount() - startTime) < timeoutMs) {
-            vTaskDelay(200);
-        }
-        if (!connected()) {
-            log_w("Timed out waiting for WiFi connection");
-            disconnectWiFi();
-            return false;
-        }
+        wiFiState_ = IDLE;
+        return false;
     }
 
     return true;
@@ -328,7 +390,7 @@ void WiFi::disconnectWiFi() {
     SHOW_HEAP();
 }
 
-auto WiFi::connected() -> bool { return connected_; }
+auto WiFi::connected() -> bool { return wiFiState_ == CONNECTED; }
 
 auto WiFi::getLocalIp() -> esp_ip4_addr_t {
     esp_netif_ip_info_t ip;
@@ -360,7 +422,8 @@ void WiFi::wiFiEventHandler(void *arg, esp_event_base_t eventBase, int32_t event
         break;
     case WIFI_EVENT_STA_DISCONNECTED:
         log_i("WIFI_EVENT_STA_DISCONNECTED");
-        tthis->connected_ = false;
+        tthis->wiFiState_ = DISCONNECTED;
+        xEventGroupSetBits(tthis->wifiEventGroup_, DISCONNECTED);
         break;
     default:
         log_d("WIFI_EVENT: %" PRIi32, eventId);
@@ -373,7 +436,26 @@ void WiFi::ipEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId
     case IP_EVENT_STA_GOT_IP: {
         auto *event = (ip_event_got_ip_t *)eventData;
         log_i("IP_EVENT_STA_GOT_IP: " IPSTR, IP2STR(&event->ip_info.ip));
-        tthis->connected_ = true;
+
+        // successful connection
+        // save current wifi settings
+        log_i("successful connection, saving settings.");
+        wifi_config_t conf;
+        esp_err_t err = esp_wifi_get_config(WIFI_IF_STA, &conf);
+        if (err != ESP_OK) {
+            log_e("got ip: esp_wifi_get_config failed with error %s", esp_err_to_name(err));
+            break;
+        }
+
+        std::string ssid = (char *)conf.sta.ssid;
+        std::string password = (char *)conf.sta.password;
+
+        log_d("Saving most-recent WiFi: %s", ssid.c_str());
+
+        tthis->settings_.setActiveSetting(ssid, password);
+        tthis->settings_.save();
+        tthis->wiFiState_ = CONNECTED;
+        xEventGroupSetBits(tthis->wifiEventGroup_, CONNECTED);
         break;
     }
     default:
