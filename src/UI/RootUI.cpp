@@ -127,22 +127,22 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // sync content, delete content, repeat.
     if (prefs_.emcMode.get().value_or(false)) {
         mainMenu->addMenuItem(MenuItem("Mode 1 On", []() {}));
-        mainMenu->addMenuItem(
-            MenuItem("Mode 2 (reading)", [this, display, readables, createReadableScreen]() {
-                log_d("Starting EMC mode readable reading turn page every 30 seconds");
-                auto it = std::find_if(readables.begin(), readables.end(), [](const Readable &x) {
-                    return (x.title.compare("The Last Question") == 0);
-                });
-                if (it == readables.end()) {
-                    log_e("Could not find readable: %s", "The Last Question");
-                } else {
-                    log_d("Found readable: %s", (*it).title.c_str());
-                }
-                auto readableScreen = createReadableScreen(*it);
-                display->clearDisplay();
-                this->display_->setFont(this->display_->style.getFontFamily().readableFont);
-                this->setCurrentScreen(*readableScreen);
-            }));
+        mainMenu->addMenuItem(MenuItem("Mode 2 (reading)",
+                                       [this, display, readables, createReadableScreen]() {
+            log_d("Starting EMC mode readable reading turn page every 30 seconds");
+            auto it = std::find_if(readables.begin(), readables.end(), [](const Readable &x) {
+                return (x.title.compare("The Last Question") == 0);
+            });
+            if (it == readables.end()) {
+                log_e("Could not find readable: %s", "The Last Question");
+            } else {
+                log_d("Found readable: %s", (*it).title.c_str());
+            }
+            auto readableScreen = createReadableScreen(*it);
+            display->clearDisplay();
+            this->display_->setFont(this->display_->style.getFontFamily().readableFont);
+            this->setCurrentScreen(*readableScreen);
+        }));
     }
 
     ReadableScreen *psalmsProverbs = nullptr;
@@ -202,23 +202,22 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         Firmware firmware;
         localStore.getPendingFirmwareUpdate(firmware);
         log_i("Found pending firmware update %s", firmware.version.c_str());
-        return MenuItem(
-            "Upgrade Software",
-            StringFormat("From %s to %s", kVersionString, firmware.version.c_str()),
-            [this, display, mainMenu, &localStore, firmware]() {
-                auto releaseNotesScreen =
-                    new ReleaseNotesScreen(*display, this->prefs_, power_, localStore, firmware);
+        return MenuItem("Upgrade Software",
+                        StringFormat("From %s to %s", kVersionString, firmware.version.c_str()),
+                        [this, display, mainMenu, &localStore, firmware]() {
+            auto releaseNotesScreen =
+                new ReleaseNotesScreen(*display, this->prefs_, power_, localStore, firmware);
+            display->clearDisplay();
+            this->setCurrentScreen(*releaseNotesScreen);
+            // auto resizeBox = new ResizeBoxScreen(*display, prefs_);
+            // this->setCurrentScreen(*resizeBox);
+            releaseNotesScreen->backCallback = [this, display, releaseNotesScreen, mainMenu]() {
                 display->clearDisplay();
-                this->setCurrentScreen(*releaseNotesScreen);
-                // auto resizeBox = new ResizeBoxScreen(*display, prefs_);
-                // this->setCurrentScreen(*resizeBox);
-                releaseNotesScreen->backCallback = [this, display, releaseNotesScreen, mainMenu]() {
-                    display->clearDisplay();
-                    mainMenu->setFirstLoad();
-                    setCurrentScreen(*mainMenu);
-                    delete releaseNotesScreen;
-                };
-            });
+                mainMenu->setFirstLoad();
+                setCurrentScreen(*mainMenu);
+                delete releaseNotesScreen;
+            };
+        });
     };
 
     if (prefs_.firmwareLoaded.get().has_value()) {
@@ -255,9 +254,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         booksMenu->addMenuItem(MenuItem(StringFormat("%s", title.c_str()),
                                         StringFormat("%s", r.authors[0].name.c_str()),
                                         [this, r, createReadableScreen]() {
-                                            auto readableScreen = createReadableScreen(r);
-                                            this->setCurrentScreen(*readableScreen);
-                                        }));
+            auto readableScreen = createReadableScreen(r);
+            this->setCurrentScreen(*readableScreen);
+        }));
     }
 
     if (!prefs_.noBooks.get().value_or(false)) {
@@ -297,13 +296,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
         auto title = StringFormat("%s%s", archived ? "Archived: " : "", r.title.c_str());
 
-        pocketMenu->addMenuItem(MenuItem(title, [this, display, pocketMenu, mainMenu, r,
-                                                 createReadableScreen]() {
-            display->clearDisplay();
-            auto readableScreen = createReadableScreen(r);
-            setCurrentScreen(*readableScreen);
-            readableScreen->backCallback = [this, r, display, readableScreen, mainMenu,
-                                            pocketMenu]() {
+        pocketMenu->addMenuItem(
+            MenuItem(title, [this, display, pocketMenu, mainMenu, r, createReadableScreen]() {
+                display->clearDisplay();
+                auto readableScreen = createReadableScreen(r);
+                setCurrentScreen(*readableScreen);
+                readableScreen->backCallback =
+                    [this, r, display, readableScreen, mainMenu, pocketMenu]() {
                 bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
                 auto title = StringFormat("%s%s", archived ? "Archived: " : "", r.title.c_str());
                 pocketMenu->changeItemTitleAt(pocketMenu->getCurrSelection(), title);
@@ -311,8 +310,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 mainMenu->setFirstLoad();
                 setCurrentScreen(*mainMenu);
                 delete readableScreen;
-            };
-        }));
+                };
+            }));
     }
 
     if (!prefs_.noArticles.get().value_or(false)) {
@@ -545,11 +544,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         experimentalSettingsMenu->setToggleLastItem(true);
     }
 
-    experimentalSettingsMenu->addMenuItem(
-        MenuItem("Show Debug Menu", [this, experimentalSettingsMenu]() {
-            this->prefs_.showDebugMenu.set(!this->prefs_.showDebugMenu.get().value_or(false));
-            experimentalSettingsMenu->requireRestart();
-        }));
+    experimentalSettingsMenu->addMenuItem(MenuItem("Show Debug Menu",
+                                                   [this, experimentalSettingsMenu]() {
+        this->prefs_.showDebugMenu.set(!this->prefs_.showDebugMenu.get().value_or(false));
+        experimentalSettingsMenu->requireRestart();
+    }));
 
     if (prefs_.showDebugMenu.get().value_or(false)) {
         experimentalSettingsMenu->setToggleLastItem(true);
@@ -685,44 +684,44 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
     }));
 
-    readingSettingsMenu->addMenuItem(
-        MenuItem("Move Page in Display", [this, readingSettingsMenu, display]() {
-            log_d("Loading adjust offset");
-            auto offsetAdjust = new OffsetAdjustScreen(*display, prefs_);
-            this->setCurrentScreen(*offsetAdjust);
-            log_d("setting up callback");
-            offsetAdjust->backCallback = [this, offsetAdjust, readingSettingsMenu]() {
-                readingSettingsMenu->setFirstLoad();
-                setCurrentScreen(*readingSettingsMenu);
-                delete offsetAdjust;
-            };
-            log_d("set up callback");
-        }));
+    readingSettingsMenu->addMenuItem(MenuItem("Move Page in Display",
+                                              [this, readingSettingsMenu, display]() {
+        log_d("Loading adjust offset");
+        auto offsetAdjust = new OffsetAdjustScreen(*display, prefs_);
+        this->setCurrentScreen(*offsetAdjust);
+        log_d("setting up callback");
+        offsetAdjust->backCallback = [this, offsetAdjust, readingSettingsMenu]() {
+            readingSettingsMenu->setFirstLoad();
+            setCurrentScreen(*readingSettingsMenu);
+            delete offsetAdjust;
+        };
+        log_d("set up callback");
+    }));
 
-    readingSettingsMenu->addMenuItem(
-        MenuItem("Resize Page", [this, readingSettingsMenu, display]() {
-            log_d("Loading resize box");
-            auto resizeBox = new ResizeBoxScreen(*display, prefs_);
-            this->setCurrentScreen(*resizeBox);
-            log_d("setting up callback");
-            resizeBox->backCallback = [this, resizeBox, readingSettingsMenu]() {
-                readingSettingsMenu->setFirstLoad();
-                setCurrentScreen(*readingSettingsMenu);
-                delete resizeBox;
-            };
-            log_d("set up callback");
-        }));
+    readingSettingsMenu->addMenuItem(MenuItem("Resize Page",
+                                              [this, readingSettingsMenu, display]() {
+        log_d("Loading resize box");
+        auto resizeBox = new ResizeBoxScreen(*display, prefs_);
+        this->setCurrentScreen(*resizeBox);
+        log_d("setting up callback");
+        resizeBox->backCallback = [this, resizeBox, readingSettingsMenu]() {
+            readingSettingsMenu->setFirstLoad();
+            setCurrentScreen(*readingSettingsMenu);
+            delete resizeBox;
+        };
+        log_d("set up callback");
+    }));
 
-    readingSettingsMenu->addMenuItem(
-        MenuItem("Line Spacing", [this, readingSettingsMenu, display]() {
-            auto lineSpacingScreen = new LineSpacingScreen(*display, prefs_);
-            this->setCurrentScreen(*lineSpacingScreen);
-            lineSpacingScreen->backCallback = [this, lineSpacingScreen, readingSettingsMenu]() {
-                readingSettingsMenu->setFirstLoad();
-                setCurrentScreen(*readingSettingsMenu);
-                delete lineSpacingScreen;
-            };
-        }));
+    readingSettingsMenu->addMenuItem(MenuItem("Line Spacing",
+                                              [this, readingSettingsMenu, display]() {
+        auto lineSpacingScreen = new LineSpacingScreen(*display, prefs_);
+        this->setCurrentScreen(*lineSpacingScreen);
+        lineSpacingScreen->backCallback = [this, lineSpacingScreen, readingSettingsMenu]() {
+            readingSettingsMenu->setFirstLoad();
+            setCurrentScreen(*readingSettingsMenu);
+            delete lineSpacingScreen;
+        };
+    }));
 
     readingSettingsMenu->addMenuItem(MenuItem("Statistics", [this, readingSettingsMenu, display]() {
         auto statsScreen = new StatsScreen(*display, prefs_);
@@ -756,8 +755,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         systemSettingsMenu->showTemporaryMessage(*display, "FCC Stuff, Legal Stuff, etc.");
     }));
 
-    systemSettingsMenu->addMenuItem(MenuItem("Set Time Zone", [this, display,
-                                                               systemSettingsMenu]() {
+    systemSettingsMenu->addMenuItem(MenuItem("Set Time Zone",
+                                             [this, display, systemSettingsMenu]() {
         auto timeZoneMenu =
             new MenuScreen(power_.battery, *display, systemSettingsMenu->getMyStyle(),
                            "Time Zone Settings", "System Settings");
@@ -820,16 +819,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 
 #if USE_TURN_TOUCH_REMOTE
-    debugSettingsMenu->addMenuItem(
-        MenuItem("Unpair PageTurner", [this, debugSettingsMenu, display]() {
-            prefs_.pairedTurnTouchAddress.remove();
-            prefs_.lastPageTurnerBuild.remove();
-            PreferencesStore::lastPageTurnerBattery = 0;
-            log_w("Unpaired PageTurner. Rebooting...");
-            debugSettingsMenu->showTemporaryMessage(*display, "Unpaired PageTurner! Resetting...",
-                                                    2000, false);
-            power_.reboot();
-        }));
+    debugSettingsMenu->addMenuItem(MenuItem("Unpair PageTurner",
+                                            [this, debugSettingsMenu, display]() {
+        prefs_.pairedTurnTouchAddress.remove();
+        prefs_.lastPageTurnerBuild.remove();
+        PreferencesStore::lastPageTurnerBattery = 0;
+        log_w("Unpaired PageTurner. Rebooting...");
+        debugSettingsMenu->showTemporaryMessage(*display, "Unpaired PageTurner! Resetting...", 2000,
+                                                false);
+        power_.reboot();
+    }));
 #endif
 
     debugSettingsMenu->addMenuItem(
@@ -846,86 +845,86 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             contentSyncScreen->begin();
         }));
 
-    debugSettingsMenu->addMenuItem(
-        MenuItem("Turn on Onboarding Mode", [this, debugSettingsMenu, display]() {
-            log_d("Entering calibration");
-            prefs_.demoMode.set(true);
+    debugSettingsMenu->addMenuItem(MenuItem("Turn on Onboarding Mode",
+                                            [this, debugSettingsMenu, display]() {
+        log_d("Entering calibration");
+        prefs_.demoMode.set(true);
 
-            debugSettingsMenu->showTemporaryMessage(*display, "Onboarding mode on! Resetting...",
-                                                    2000, false);
-            power_.reboot();
-        }));
+        debugSettingsMenu->showTemporaryMessage(*display, "Onboarding mode on! Resetting...", 2000,
+                                                false);
+        power_.reboot();
+    }));
 
     if (hasLastQuestion) {
-        debugSettingsMenu->addMenuItem(
-            MenuItem("Turn on Demo Mode", [this, debugSettingsMenu, display]() {
-                log_d("Demo On!");
-                prefs_.cesMode.set(true);
-                debugSettingsMenu->showTemporaryMessage(*display, "Demo mode on! Resetting...",
-                                                        2000, false);
-                power_.reboot();
-            }));
+        debugSettingsMenu->addMenuItem(MenuItem("Turn on Demo Mode",
+                                                [this, debugSettingsMenu, display]() {
+            log_d("Demo On!");
+            prefs_.cesMode.set(true);
+            debugSettingsMenu->showTemporaryMessage(*display, "Demo mode on! Resetting...", 2000,
+                                                    false);
+            power_.reboot();
+        }));
     }
 
-    systemSettingsMenu->addMenuItem(
-        MenuItem("Reset Statistics", [this, systemSettingsMenu, display]() {
-            prefs_.wordCount.remove();
-            prefs_.totalReadingTimeSeconds.remove();
-            systemSettingsMenu->showTemporaryMessage(*display, "Statistics reset.");
-        }));
+    systemSettingsMenu->addMenuItem(MenuItem("Reset Statistics",
+                                             [this, systemSettingsMenu, display]() {
+        prefs_.wordCount.remove();
+        prefs_.totalReadingTimeSeconds.remove();
+        systemSettingsMenu->showTemporaryMessage(*display, "Statistics reset.");
+    }));
 
-    systemSettingsMenu->addMenuItem(MenuItem(
-        "Clear All Content and Restart", [this, systemSettingsMenu, display, &localStore]() {
-            localStore.deleteReadables();
-            localStore.deleteArticles();
-            systemSettingsMenu->showTemporaryMessage(*display, "Content cleared.");
-            Delay(1500);
-            this->power_.reboot();
-        }));
+    systemSettingsMenu->addMenuItem(MenuItem("Clear All Content and Restart",
+                                             [this, systemSettingsMenu, display, &localStore]() {
+        localStore.deleteReadables();
+        localStore.deleteArticles();
+        systemSettingsMenu->showTemporaryMessage(*display, "Content cleared.");
+        Delay(1500);
+        this->power_.reboot();
+    }));
 
-    systemSettingsMenu->addMenuItem(MenuItem("Clear WiFi Settings", [systemSettingsMenu,
-                                                                     display]() {
+    systemSettingsMenu->addMenuItem(MenuItem("Clear WiFi Settings",
+                                             [systemSettingsMenu, display]() {
         WiFi::getInstance().clearWiFiCredentials();
         log_w("WiFi settings cleared.");
         systemSettingsMenu->showTemporaryMessage(*display, "WiFi settings cleared.", 2000, false);
     }));
 
-    systemSettingsMenu->addMenuItem(
-        MenuItem("Reset Preferences", [this, systemSettingsMenu, display]() {
-            prefs_.clear();
-            log_w("Preferences cleared. Rebooting...");
-            systemSettingsMenu->showTemporaryMessage(*display, "Preferences cleared. Rebooting...",
-                                                     2000, false);
-            power_.reboot();
-        }));
+    systemSettingsMenu->addMenuItem(MenuItem("Reset Preferences",
+                                             [this, systemSettingsMenu, display]() {
+        prefs_.clear();
+        log_w("Preferences cleared. Rebooting...");
+        systemSettingsMenu->showTemporaryMessage(*display, "Preferences cleared. Rebooting...",
+                                                 2000, false);
+        power_.reboot();
+    }));
 
-    debugSettingsMenu->addMenuItem(
-        MenuItem("Clear Books and Restart", [debugSettingsMenu, display, &localStore]() {
-            localStore.deleteReadables();
-            debugSettingsMenu->showTemporaryMessage(*display, "Books reset.");
-        }));
+    debugSettingsMenu->addMenuItem(MenuItem("Clear Books and Restart",
+                                            [debugSettingsMenu, display, &localStore]() {
+        localStore.deleteReadables();
+        debugSettingsMenu->showTemporaryMessage(*display, "Books reset.");
+    }));
 
-    debugSettingsMenu->addMenuItem(
-        MenuItem("Clear Articles and Restart", [debugSettingsMenu, display, &localStore]() {
-            localStore.deleteArticles();
-            debugSettingsMenu->showTemporaryMessage(*display, "Articles reset.");
-        }));
+    debugSettingsMenu->addMenuItem(MenuItem("Clear Articles and Restart",
+                                            [debugSettingsMenu, display, &localStore]() {
+        localStore.deleteArticles();
+        debugSettingsMenu->showTemporaryMessage(*display, "Articles reset.");
+    }));
 
-    debugSettingsMenu->addMenuItem(MenuItem(
-        "Clear Crash Reports and Restart", [this, debugSettingsMenu, display, &fileSystem]() {
-            FileList coreDumpFiles;
-            fileSystem.listDir("/coredumps", coreDumpFiles);
-            for (auto &file : coreDumpFiles) {
-                log_i("Removing %s", file.c_str());
-                fileSystem.remove(StringFormat("%s%s", "/coredumps/", file.c_str()).c_str());
-            }
-            debugSettingsMenu->showTemporaryMessage(*display, "Crash Reports reset.");
-            Delay(1500);
-            power_.reboot();
-        }));
+    debugSettingsMenu->addMenuItem(MenuItem("Clear Crash Reports and Restart",
+                                            [this, debugSettingsMenu, display, &fileSystem]() {
+        FileList coreDumpFiles;
+        fileSystem.listDir("/coredumps", coreDumpFiles);
+        for (auto &file : coreDumpFiles) {
+            log_i("Removing %s", file.c_str());
+            fileSystem.remove(StringFormat("%s%s", "/coredumps/", file.c_str()).c_str());
+        }
+        debugSettingsMenu->showTemporaryMessage(*display, "Crash Reports reset.");
+        Delay(1500);
+        power_.reboot();
+    }));
 
-    systemSettingsMenu->addMenuItem(MenuItem("Factory Defaults", [this, systemSettingsMenu, display,
-                                                                  &localStore]() {
+    systemSettingsMenu->addMenuItem(MenuItem("Factory Defaults",
+                                             [this, systemSettingsMenu, display, &localStore]() {
 #if SIMULATOR
         // Remove the preferences file simprefs.ini
         std::filesystem::remove("simprefs.ini");
@@ -952,44 +951,44 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             };
         }));
 
-    debugSettingsMenu->addMenuItem(
-        MenuItem("File System Browser", [this, display, debugSettingsMenu, &fileSystem]() {
-            auto fsMenu = new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle(),
-                                         "FS Browser", "Debug Settings");
-            fsMenu->setExtraText("ls of /");
+    debugSettingsMenu->addMenuItem(MenuItem("File System Browser",
+                                            [this, display, debugSettingsMenu, &fileSystem]() {
+        auto fsMenu = new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle(),
+                                     "FS Browser", "Debug Settings");
+        fsMenu->setExtraText("ls of /");
 
-            FileList localFiles;
-            fileSystem.listDir("/", localFiles);
-            for (const std::string &str : localFiles) {
-                log_d("Next File is %s", str.c_str());
-                fsMenu->addMenuItem(MenuItem(str.c_str(), [this, fsMenu, &fileSystem, str]() {
-                    SFile toSerialOutput = fileSystem.open(StringFormat("/%s", str.c_str()));
-                    while (toSerialOutput.available()) {
-                        printf("%c", toSerialOutput.read());
-                    }
-                    this->display_->clearDisplay();
-                    fsMenu->setExtraText(StringFormat("output %s to serial", str.c_str()));
-                    fsMenu->setNeedsRerender();
-                }));
-            }
-            setCurrentScreen(*fsMenu);
-            fsMenu->backCallback = [this, fsMenu, debugSettingsMenu]() {
-                debugSettingsMenu->setFirstLoad();
-                setCurrentScreen(*debugSettingsMenu);
-                delete fsMenu;
-            };
-        }));
+        FileList localFiles;
+        fileSystem.listDir("/", localFiles);
+        for (const std::string &str : localFiles) {
+            log_d("Next File is %s", str.c_str());
+            fsMenu->addMenuItem(MenuItem(str.c_str(), [this, fsMenu, &fileSystem, str]() {
+                SFile toSerialOutput = fileSystem.open(StringFormat("/%s", str.c_str()));
+                while (toSerialOutput.available()) {
+                    printf("%c", toSerialOutput.read());
+                }
+                this->display_->clearDisplay();
+                fsMenu->setExtraText(StringFormat("output %s to serial", str.c_str()));
+                fsMenu->setNeedsRerender();
+            }));
+        }
+        setCurrentScreen(*fsMenu);
+        fsMenu->backCallback = [this, fsMenu, debugSettingsMenu]() {
+            debugSettingsMenu->setFirstLoad();
+            setCurrentScreen(*debugSettingsMenu);
+            delete fsMenu;
+        };
+    }));
 
-    debugSettingsMenu->addMenuItem(
-        MenuItem("Batteries and Temperature", [this, display, debugSettingsMenu]() {
-            auto batteryScreen = new BatteryScreen(*display, prefs_, power_.battery);
-            this->setCurrentScreen(*batteryScreen);
-            batteryScreen->backCallback = [this, batteryScreen, debugSettingsMenu]() {
-                debugSettingsMenu->setFirstLoad();
-                setCurrentScreen(*debugSettingsMenu);
-                delete batteryScreen;
-            };
-        }));
+    debugSettingsMenu->addMenuItem(MenuItem("Batteries and Temperature",
+                                            [this, display, debugSettingsMenu]() {
+        auto batteryScreen = new BatteryScreen(*display, prefs_, power_.battery);
+        this->setCurrentScreen(*batteryScreen);
+        batteryScreen->backCallback = [this, batteryScreen, debugSettingsMenu]() {
+            debugSettingsMenu->setFirstLoad();
+            setCurrentScreen(*debugSettingsMenu);
+            delete batteryScreen;
+        };
+    }));
 
     debugSettingsMenu->addMenuItem(MenuItem("Optics Test", [this, debugSettingsMenu]() {
         auto opticsTestScreen = new CalibrationScreen();
@@ -1004,23 +1003,23 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 
     if (hasLastQuestion) {
-        debugSettingsMenu->addMenuItem(
-            MenuItem("Turn on EMC Mode", [this, debugSettingsMenu, display]() {
-                log_d("EMC On!");
-                prefs_.emcMode.set(true);
-                debugSettingsMenu->showTemporaryMessage(*display, "EMC mode on! Resetting...", 2000,
-                                                        false);
-                power_.reboot();
-            }));
+        debugSettingsMenu->addMenuItem(MenuItem("Turn on EMC Mode",
+                                                [this, debugSettingsMenu, display]() {
+            log_d("EMC On!");
+            prefs_.emcMode.set(true);
+            debugSettingsMenu->showTemporaryMessage(*display, "EMC mode on! Resetting...", 2000,
+                                                    false);
+            power_.reboot();
+        }));
 
-        debugSettingsMenu->addMenuItem(
-            MenuItem("Turn off EMC Mode", [this, debugSettingsMenu, display]() {
-                log_d("EMC Off!");
-                prefs_.emcMode.remove();
-                debugSettingsMenu->showTemporaryMessage(*display, "EMC mode off! Resetting...",
-                                                        2000, false);
-                power_.reboot();
-            }));
+        debugSettingsMenu->addMenuItem(MenuItem("Turn off EMC Mode",
+                                                [this, debugSettingsMenu, display]() {
+            log_d("EMC Off!");
+            prefs_.emcMode.remove();
+            debugSettingsMenu->showTemporaryMessage(*display, "EMC mode off! Resetting...", 2000,
+                                                    false);
+            power_.reboot();
+        }));
     }
 /*
     debugSettingsMenu->addMenuItem(
@@ -1165,21 +1164,21 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 
 #if EINKET013TT1
-    debugSettingsMenu->addMenuItem(
-        MenuItem("Set Vcom Precise", [this, display, debugSettingsMenu]() {
-            auto vcomPreciseScreen = new VcomAdjustScreen(*display, this->prefs_);
-            this->display_->clearDisplay();
-            setCurrentScreen(*vcomPreciseScreen);
-            vcomPreciseScreen->backCallback = [this, vcomPreciseScreen, debugSettingsMenu]() {
-                debugSettingsMenu->setFirstLoad();
-                setCurrentScreen(*debugSettingsMenu);
-                delete vcomPreciseScreen;
-            };
-        }));
+    debugSettingsMenu->addMenuItem(MenuItem("Set Vcom Precise",
+                                            [this, display, debugSettingsMenu]() {
+        auto vcomPreciseScreen = new VcomAdjustScreen(*display, this->prefs_);
+        this->display_->clearDisplay();
+        setCurrentScreen(*vcomPreciseScreen);
+        vcomPreciseScreen->backCallback = [this, vcomPreciseScreen, debugSettingsMenu]() {
+            debugSettingsMenu->setFirstLoad();
+            setCurrentScreen(*debugSettingsMenu);
+            delete vcomPreciseScreen;
+        };
+    }));
 #endif
 
-    debugSettingsMenu->addMenuItem(MenuItem("Upload Voltage Log", [this, display, &fileSystem,
-                                                                   debugSettingsMenu]() {
+    debugSettingsMenu->addMenuItem(MenuItem("Upload Voltage Log",
+                                            [this, display, &fileSystem, debugSettingsMenu]() {
         auto voltageLogScreen = new VoltageLogUploadScreen(*display, this->prefs_, fileSystem);
         this->setCurrentScreen(*voltageLogScreen);
         (*voltageLogScreen).backCallback = [this, voltageLogScreen, debugSettingsMenu, display]() {
@@ -1191,14 +1190,14 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         (*voltageLogScreen).begin();
     }));
 
-    debugSettingsMenu->addMenuItem(
-        MenuItem("Format FS", [this, display, &fileSystem, debugSettingsMenu]() {
-            log_w("Formatting...");
-            debugSettingsMenu->showTemporaryMessage(
-                *display, "Formatting, this will take several minutes.", 2000, false);
-            fileSystem.format();
-            power_.reboot();
-        }));
+    debugSettingsMenu->addMenuItem(MenuItem("Format FS",
+                                            [this, display, &fileSystem, debugSettingsMenu]() {
+        log_w("Formatting...");
+        debugSettingsMenu->showTemporaryMessage(
+            *display, "Formatting, this will take several minutes.", 2000, false);
+        fileSystem.format();
+        power_.reboot();
+    }));
 
     debugSettingsMenu->addMenuItem(MenuItem("Power Off", [this, display, debugSettingsMenu]() {
         log_w("Powering off.");

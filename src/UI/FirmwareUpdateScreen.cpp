@@ -40,8 +40,8 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
 
         y = (display.height() - groupHeight) / 2;
 
-        auto drawBulletLine = [&display, textHeight, &x, &y](const char *message, int percentage,
-                                                             bool drawLine) {
+        auto drawBulletLine =
+            [&display, textHeight, &x, &y](const char *message, int percentage, bool drawLine) {
             uint16_t textWidth = display.getTextWidth(message);
             uint16_t bulletRadius = textHeight / 3;
             uint16_t bulletY = y + (textHeight - bulletRadius * 2) / 2 + bulletRadius;

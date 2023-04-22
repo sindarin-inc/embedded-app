@@ -209,10 +209,10 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         // Spin up a task just to check the temple and battery
         xTaskCreatePinnedToCore(
             [](void *) {
-                for (;;) {
-                    powerManager.loop();
-                    vTaskDelay(1000 / portTICK_PERIOD_MS);
-                }
+            for (;;) {
+                powerManager.loop();
+                vTaskDelay(1000 / portTICK_PERIOD_MS);
+            }
             },
             "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
         BackgroundSyncAndSleep(powerManager, prefs, localStore);

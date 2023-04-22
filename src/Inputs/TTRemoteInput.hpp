@@ -75,13 +75,13 @@ protected:
                     // Fire off a high-ish priority temporary task to connect the TT
                     xTaskCreatePinnedToCore(
                         [](void *params) {
-                            auto *tThis = (TTRemoteInput *)params;
-                            if (tThis->connectToDevice(tThis->turntouchDevice_)) {
-                            } else {
-                                tThis->client_->disconnect();
-                                tThis->state_ = SCANNING;
-                            }
-                            vTaskDelete(nullptr);
+                        auto *tThis = (TTRemoteInput *)params;
+                        if (tThis->connectToDevice(tThis->turntouchDevice_)) {
+                        } else {
+                            tThis->client_->disconnect();
+                            tThis->state_ = SCANNING;
+                        }
+                        vTaskDelete(nullptr);
                         },
                         "TTConnect", 5000, this->enclosed, 2, nullptr, 0);
                 }
