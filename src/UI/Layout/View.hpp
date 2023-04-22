@@ -24,7 +24,7 @@ public:
     }
 
     // Acccessors for hidden_ field
-    bool isHidden() const { return hidden_; }
+    [[nodiscard]] auto isHidden() const -> bool { return hidden_; }
     void setHidden(bool hidden) { hidden_ = hidden; }
 
     // Set flags indicating layout is needed. Call this when a view's content changes enough that

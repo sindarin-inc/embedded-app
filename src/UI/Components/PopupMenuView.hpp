@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "Displays/DisplaySystem.hpp"
 #include "UI/Components/BoxView.hpp"
 #include "UI/Components/EinkView.hpp"
@@ -24,7 +26,7 @@ public:
         popupMenuForeground_.strokeColor = display_.fg;
     }
 
-    void setAuxText(std::string auxText) { auxTextView_.setText(auxText); }
+    void setAuxText(std::string auxText) { auxTextView_.setText(std::move(auxText)); }
 
     auto layout(LayoutContext &context, Size size) -> Size override {
         const auto inset = 10;
