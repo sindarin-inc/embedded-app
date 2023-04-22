@@ -161,40 +161,44 @@ void TTRemoteInput::scanForNewDevice() {
     scan->setInterval(40);
     scan->setWindow(30);
     scan->setActiveScan(true);
-    BLEScanResults results = scan->start(10, false);
-
-    if (results.getCount() == 0) {
-        log_w("Absolutely 0 BLE devices found.");
-        return;
-    }
-
-    std::vector<NimBLEAdvertisedDevice *> filteredDevices;
-
-    for (auto advertisedDevice : results) {
-        if (advertisedDevice->isAdvertisingService(BLEUUID(TURNTOUCH_BUTTON_SVC_ID))) {
-            filteredDevices.push_back(advertisedDevice);
+    static TTRemoteInput *sInstance = this;
+    auto started = scan->start(10, [](NimBLEScanResults results) {
+        if (results.getCount() == 0) {
+            log_w("Absolutely 0 BLE devices found.");
+            return;
         }
-    }
 
-    // Sort devices by RSSI (descending order)
-    std::sort(filteredDevices.begin(), filteredDevices.end(),
-              [](NimBLEAdvertisedDevice *a, NimBLEAdvertisedDevice *b) {
-                  return a->getRSSI() > b->getRSSI();
-              });
+        std::vector<NimBLEAdvertisedDevice *> filteredDevices;
 
-    log_i("Scan complete. Found %d PageTurner devices (%d total BLE devices)",
-          filteredDevices.size(), results.getCount());
+        for (auto advertisedDevice : results) {
+            if (advertisedDevice->isAdvertisingService(BLEUUID(TURNTOUCH_BUTTON_SVC_ID))) {
+                filteredDevices.push_back(advertisedDevice);
+            }
+        }
 
-    if (filteredDevices.size() == 0) {
+        // Sort devices by RSSI (descending order)
+        std::sort(filteredDevices.begin(), filteredDevices.end(),
+                  [](NimBLEAdvertisedDevice *a, NimBLEAdvertisedDevice *b) {
+                      return a->getRSSI() > b->getRSSI();
+                  });
+
+        log_i("Scan complete. Found %d PageTurner devices (%d total BLE devices)",
+              filteredDevices.size(), results.getCount());
+
+        if (filteredDevices.size() == 0) {
+            return;
+        }
+        for (auto advertisedDevice : filteredDevices) {
+            log_d("PageTurner: %s, RSSI: %d", advertisedDevice->getAddress().toString().c_str(),
+                  advertisedDevice->getRSSI());
+        }
+
+        sInstance->dispatchConnection(*(filteredDevices[0]));
+    });
+    if (!started) {
+        log_e("Failed to start scan");
         return;
     }
-    // Print all devices and their rssi
-    for (auto advertisedDevice : filteredDevices) {
-        log_d("PageTurner: %s, RSSI: %d", advertisedDevice->getAddress().toString().c_str(),
-              advertisedDevice->getRSSI());
-    }
-
-    dispatchConnection(*(filteredDevices[0]));
 }
 
 void TTRemoteInput::scanForPairedDevice() {
@@ -227,7 +231,11 @@ void TTRemoteInput::scanForPairedDevice() {
     scan->setInterval(40);
     scan->setWindow(30);
     scan->setActiveScan(useActiveScan);
-    scan->start((int)(RESCAN_INTERVAL_MS / 1000), nullptr, false);
+    auto started = scan->start((int)(RESCAN_INTERVAL_MS / 1000), nullptr, false);
+    if (!started) {
+        log_e("Failed to start scan");
+        return;
+    }
 }
 
 void TTRemoteInput::scanForDevice() {
