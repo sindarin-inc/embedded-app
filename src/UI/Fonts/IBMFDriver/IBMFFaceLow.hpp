@@ -270,7 +270,9 @@ public:
             max -= 1;
         }
     fin:
-        if (glyph2.bitmap.pixels != nullptr) delete[] glyph2.bitmap.pixels;
+        if (glyph2.bitmap.pixels != nullptr) {
+            delete[] glyph2.bitmap.pixels;
+        }
         *kern = static_cast<FIX16>((max >= 0) ? ((kerning + KERNING_SIZE + 1) << 6) : 0);
         // LOGD("Computed kern: %d (%d).", static_cast<int>((float)*kern / 64.0), kerning);
 #endif
