@@ -136,11 +136,10 @@ protected:
 
     DisplaySystem &display_;
 
-    PopupMenuView popupMenuView_;
-
     LightingAdjustScreen lightingAdjustScreen_;
-
     ReadableSeekScreen readableSeekScreen_;
+
+    PopupMenuView popupMenuView_;
 
     ReadableTableOfContentsScreen readableTableOfContentsScreen_;
 

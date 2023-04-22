@@ -28,7 +28,6 @@ public:
 
     auto layout(LayoutContext &context, Size size) -> Size override {
         const auto inset = 10;
-        const auto spacing = 10;
 
         SolClock &theClock = SolClock::getInstance();
         clockView_.setText(theClock.getTimeString());
@@ -38,7 +37,7 @@ public:
         context.setViewFrame(popupMenuForeground_, {{5, 5}, {size.width - 10, size.height - 10}},
                              LayoutOptionsAlignCenter);
 
-        auto insetRect = context.setSublayoutFrame(
+        context.setSublayoutFrame(
             {{5 + inset, 5 + inset}, {size.width - 10 - 2 * inset, size.height - 10 - 2 * inset}},
             LayoutOptionsAlignTop, [this](LayoutContext &context, Size size) -> Size {
                 int x = 0;
@@ -91,14 +90,14 @@ protected:
     std::vector<std::shared_ptr<MenuItemView>> menuItemViews_;
     std::vector<int> menuItemsOrder_;
 
+    BoxView popupMenuBackground_;
+    BoxView popupMenuForeground_;
+
     // Every popup has the clock on the lower left if they want it
     SingleLineTextView clockView_;
 
     // Aux text to show on the lower right
     SingleLineTextView auxTextView_;
-
-    BoxView popupMenuBackground_;
-    BoxView popupMenuForeground_;
 
     bool showClock_ = true;
 };
