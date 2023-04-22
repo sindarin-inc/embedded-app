@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstring>
+#include <new>
 
 #include "IBMFDefs.hpp"
 #include "RLEExtractor.hpp"
@@ -201,6 +202,9 @@ public:
         result = getGlyph(*glyphCode2, glyph2, true, true, Pos(0, voff));
         if (!result) {
             LOGE("Unable to load glyphCode %d related glyph bitmap.", *glyphCode2);
+            if (glyph2.bitmap.pixels != nullptr) {
+                delete[] glyph2.bitmap.pixels;
+            }
             return false;
         }
         // showBitmap(glyph2.bitmap);
@@ -266,7 +270,7 @@ public:
             max -= 1;
         }
     fin:
-        delete[] glyph2.bitmap.pixels;
+        if (glyph2.bitmap.pixels != nullptr) delete[] glyph2.bitmap.pixels;
         *kern = static_cast<FIX16>((max >= 0) ? ((kerning + KERNING_SIZE + 1) << 6) : 0);
         // LOGD("Computed kern: %d (%d).", static_cast<int>((float)*kern / 64.0), kerning);
 #endif
@@ -437,7 +441,12 @@ public:
                     white = WHITE_EIGHT_BITS;
                 }
 
-                appGlyph.bitmap.pixels = new uint8_t[size];
+                appGlyph.bitmap.pixels = new (std::nothrow) uint8_t[size];
+                if (appGlyph.bitmap.pixels == nullptr) {
+                    LOGE("Unable to allocate glyph pixel memory of size %d!", size);
+                    appGlyph.bitmap.dim = Dim(0, 0);
+                    return false;
+                }
                 memset(appGlyph.bitmap.pixels, white, size);
                 appGlyph.bitmap.dim = dim;
             }
