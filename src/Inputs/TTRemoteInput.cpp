@@ -164,7 +164,8 @@ void TTRemoteInput::scanForNewDevice() {
     BLEScanResults results = scan->start(10, false);
 
     if (results.getCount() == 0) {
-        log_w("Absolutely 0 BLE devices found.") return;
+        log_w("Absolutely 0 BLE devices found.");
+        return;
     }
 
     std::vector<NimBLEAdvertisedDevice *> filteredDevices;
@@ -238,7 +239,6 @@ void TTRemoteInput::scanForDevice() {
     } else {
         log_i("Scanning for any available PageTurner...");
         scanForNewDevice();
-        return;
     }
     lastScanMs_ = Millis();
     DigitalWrite(BLUE_LED, LED_OFF);
