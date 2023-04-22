@@ -143,9 +143,9 @@ void DispatchQueue::dispatchThreadHandler() {
     vTaskDelete(nullptr);
 }
 
-void DispatchQueue::DispatchOneOff(const fp_t &op, size_t threadStack, UBaseType_t priority,
+void DispatchQueue::dispatchOneOff(const fp_t &op, size_t threadStack, UBaseType_t priority,
                                    BaseType_t core) {
-    auto work = new WorkItem{.op = std::move(op), .quit = false};
+    auto work = new WorkItem{.op = op, .quit = false};
     xTaskCreatePinnedToCore(
         [](void *param) {
             auto work = reinterpret_cast<WorkItem *>(param);

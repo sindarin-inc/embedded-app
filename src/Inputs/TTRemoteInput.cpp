@@ -126,7 +126,7 @@ auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice &device) -> bool {
 
 void TTRemoteInput::dispatchConnection(BLEAdvertisedDevice &device) {
     state_ = CONNECTING;
-    DispatchQueue::DispatchOneOff(
+    DispatchQueue::dispatchOneOff(
         [this, &device] {
             if (!connectToDevice(device)) {
                 client_->disconnect();
@@ -169,8 +169,7 @@ void TTRemoteInput::scanForNewDevice() {
 
     std::vector<NimBLEAdvertisedDevice *> filteredDevices;
 
-    for (auto it = results.begin(); it != results.end(); ++it) {
-        NimBLEAdvertisedDevice *advertisedDevice = *it;
+    for (auto advertisedDevice : results) {
         if (advertisedDevice->isAdvertisingService(BLEUUID(TURNTOUCH_BUTTON_SVC_ID))) {
             filteredDevices.push_back(advertisedDevice);
         }
@@ -189,8 +188,7 @@ void TTRemoteInput::scanForNewDevice() {
         return;
     }
     // Print all devices and their rssi
-    for (auto it = filteredDevices.begin(); it != filteredDevices.end(); ++it) {
-        NimBLEAdvertisedDevice *advertisedDevice = *it;
+    for (auto advertisedDevice : filteredDevices) {
         log_d("PageTurner: %s, RSSI: %d", advertisedDevice->getAddress().toString().c_str(),
               advertisedDevice->getRSSI());
     }
