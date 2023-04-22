@@ -30,64 +30,15 @@ auto ReadableScreen::needsRerender() -> bool {
 };
 
 auto ReadableScreen::layout(LayoutContext &context, Size size) -> Size {
-    const auto inset = 10;
-    const auto spacing = 10;
-
-    SolClock &theClock = SolClock::getInstance();
-    clockView_.setText(theClock.getTimeString());
-
-    context.setViewFrame(popupMenuBackground_,
-                         {{size.width / 2 - 50, size.height / 2 - 65}, {100, 130}},
+    context.setViewFrame(popupMenuView_, {{size.width / 2 - 50, size.height / 2 - 65}, {100, 130}},
                          LayoutOptionsAlignCenter);
-
-    context.setViewFrame(popupMenuForeground_,
-                         {{size.width / 2 - 45, size.height / 2 - 60}, {90, 120}},
-                         LayoutOptionsAlignCenter);
-
-    auto insetRect = context.setSublayoutFrame(
-        {{size.width / 2 - 45 + inset, size.height / 2 - 60 + inset},
-         {90 - 2 * inset, 120 - 2 * inset}},
-        LayoutOptionsAlignTop, [this](LayoutContext &context, Size size) -> Size {
-            int x = 0;
-            int y = 0;
-
-            for (auto &index : menuItemsOrder_) {
-                if (!menuItemViews_[index]->isHidden()) {
-                    auto viewFrame =
-                        context.setViewFrame(*menuItemViews_[index], {{x, y}, size},
-                                             LayoutOptionsSizeToFit | LayoutOptionsAlignTop);
-                    y += viewFrame.size.height;
-                }
-            }
-
-            return {size.width, y};
-        });
-
-    context.setViewFrame(clockView_, {{size.width / 2 - 30, size.height / 2 - 55}, {60, 110}},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
-                             LayoutOptionsAlignLeft);
-
-    context.setViewFrame(
-        placeInReadableView_, {{size.width / 2 - 30, size.height / 2 - 55}, {60, 110}},
-        LayoutOptionsSizeToFit | LayoutOptionsAlignBottom | LayoutOptionsAlignRight);
-
-    return {size.width, insetRect.size.height + 2 * inset};
+    return size;
 }
 
 void ReadableScreen::drawInRect(Rect rect) {
-
-    popupMenuBackground_.draw();
-    popupMenuForeground_.draw();
-
-    for (auto &index : menuItemsOrder_) {
-        if (!menuItemViews_[index]->isHidden()) {
-            menuItemViews_[index]->draw();
-        }
+    if (showPopup_) {
+        popupMenuView_.draw();
     }
-
-    clockView_.draw();
-
-    placeInReadableView_.draw();
 }
 
 // Once we have a real database, this will all be replaced.
@@ -223,6 +174,7 @@ void ReadableScreen::turnPage() {
                 setCurrSelection(index);
                 break;
             }
+            index++;
         }
 
         setNeedsRerender();
@@ -250,10 +202,15 @@ void ReadableScreen::setUpPopupMenu() {
     size_t place = renderer_.getCurrentPlace();
     size_t lengthOfFile = renderer_.size();
     float placeInTextPercentage = (float)place / (float)lengthOfFile * 100;
+    // If we only have 1 "page", make sure we just display 1/1
+    if (lengthOfFile / 1000 == 0) {
+        place = 1000;
+        lengthOfFile = 1000;
+    }
     std::string placeString = StringFormat("%.1f%%", placeInTextPercentage);
     std::string placeStringForBottom = StringFormat("%d/%d", place / 1000, lengthOfFile / 1000);
 
-    placeInReadableView_.setText(placeStringForBottom);
+    popupMenuView_.setAuxText(placeStringForBottom);
 
     // Figure out if you should show the Archive menu item or the Unarchive menu item.
     bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
@@ -265,6 +222,8 @@ void ReadableScreen::setUpPopupMenu() {
         archiveMenuItemView_->setHidden(false);
         unarchiveMenuItemView_->setHidden(true);
     }
+
+    popupMenuView_.populateMenuItems(menuItemViews_, menuItemsOrder_);
 }
 
 void ReadableScreen::render(DisplaySystem &display) {
@@ -273,10 +232,6 @@ void ReadableScreen::render(DisplaySystem &display) {
         currentScreen_->render(display);
         return;
     }
-
-    popupMenuBackground_.fillColor = display_.bg;
-    popupMenuBackground_.strokeColor = display_.bg;
-    popupMenuForeground_.strokeColor = display_.fg;
 
     if (showPopup_) {
         setUpPopupMenu();

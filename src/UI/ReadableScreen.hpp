@@ -7,10 +7,7 @@
 #include "Renderers/RendererStream.hpp"
 #include "Sensors/LightingController.hpp"
 #include "Storage/PreferencesStore.hpp"
-#include "UI/Components/BoxView.hpp"
-#include "UI/Components/EinkView.hpp"
-#include "UI/Components/MenuItemView.hpp"
-#include "UI/Components/SingleLineTextView.hpp"
+#include "UI/Components/PopupMenuView.hpp"
 #include "UI/ContainerScreen.hpp"
 #include "UI/Layout/View.hpp"
 #include "UI/LightingAdjustScreen.hpp"
@@ -28,10 +25,8 @@ public:
                    MenuStyleFamily myStyle)
         : MenuScreen(battery, display, myStyle), renderer_(display), firstTimeRenderer_(display),
           readable_(readable), prefs_(prefs), fileSystem_(fileSystem), display_(display),
-          popupMenuBackground_(display, 5), popupMenuForeground_(display, 5),
           lightingAdjustScreen_(display, prefs, lightingController),
-          readableSeekScreen_(prefs, readable_, renderer_), placeInReadableView_(display, ""),
-          clockView_(display, ""),
+          readableSeekScreen_(prefs, readable_, renderer_), popupMenuView_(display),
           readableTableOfContentsScreen_(prefs, readable_, renderer_, display) {
 
         currentScreen_ = this;
@@ -141,20 +136,11 @@ protected:
 
     DisplaySystem &display_;
 
-    std::vector<std::shared_ptr<MenuItemView>> menuItemViews_;
-    std::shared_ptr<MenuItemView> archiveMenuItemView_;
-    std::shared_ptr<MenuItemView> unarchiveMenuItemView_;
-
-    BoxView popupMenuBackground_;
-    BoxView popupMenuForeground_;
+    PopupMenuView popupMenuView_;
 
     LightingAdjustScreen lightingAdjustScreen_;
 
     ReadableSeekScreen readableSeekScreen_;
-
-    SingleLineTextView placeInReadableView_;
-
-    SingleLineTextView clockView_;
 
     ReadableTableOfContentsScreen readableTableOfContentsScreen_;
 
@@ -169,6 +155,11 @@ protected:
     bool showAutopilotMinus_ = false;
 
     Screen *currentScreen_;
+
+    std::vector<std::shared_ptr<MenuItemView>> menuItemViews_;
+
+    std::shared_ptr<MenuItemView> archiveMenuItemView_;
+    std::shared_ptr<MenuItemView> unarchiveMenuItemView_;
 
     std::vector<int> menuItemsOrder_;
 
