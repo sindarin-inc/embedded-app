@@ -364,8 +364,8 @@ void PowerManager::waitForQueuesThenDeepSleep(SleepReason reason) {
     }
     log_d("Dispatch queues shutdown");
 
-    bool syncOnClose = !prefs_.noDeliverOnClose.get().value_or(false);
-
+    bool syncOnClose = (reason == SleepReason::TempleClosed || reason == SleepReason::Inactivity) &&
+                       !prefs_.noDeliverOnClose.get().value_or(false);
     if (syncOnClose) {
         // On temples close or inactivity we want to set a sync-on-close timer 30s after sleep
         // starts. This is mostly to save placemarks after reading
