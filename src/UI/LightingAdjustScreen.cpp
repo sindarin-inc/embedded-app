@@ -108,9 +108,7 @@ void LightingAdjustScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::CHANNEL_PLUS:
         showThirdLine_ = false;
-        if (backCallback != nullptr) {
-            backCallback();
-        }
+        back();
         break;
     case RemoteCommand::PREV: {
         auto setting =
@@ -128,9 +126,7 @@ void LightingAdjustScreen::processCommand(RemoteCommand command) {
     }
     case RemoteCommand::BACK:
         showThirdLine_ = false;
-        if (backCallback != nullptr) {
-            backCallback();
-        }
+        back();
         break;
     default:
         break;

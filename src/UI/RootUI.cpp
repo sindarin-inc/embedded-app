@@ -100,7 +100,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // When switching to a readable from a menu, we should clear the display
         // to make the whites really white and the blacks really black.
         display->clearDisplay();
-        readableScreen->backCallback = [this, display, stream, readableScreen, mainMenu]() {
+        readableScreen->setBackCallback([this, display, stream, readableScreen, mainMenu]() {
             // When leaving a readable to go back to the main menu, do a full clear
             // of the display.
             prefs_.lastReadableId.remove();
@@ -113,7 +113,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             // deletion on the next loop by adding them to a vector, OR we could rearrange things
             // so that the `backCallback` is copied by the parent screen, and then executed there.
             delete readableScreen;
-        };
+        });
         return readableScreen;
     };
 
@@ -211,12 +211,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             this->setCurrentScreen(*releaseNotesScreen);
             // auto resizeBox = new ResizeBoxScreen(*display, prefs_);
             // this->setCurrentScreen(*resizeBox);
-            releaseNotesScreen->backCallback = [this, display, releaseNotesScreen, mainMenu]() {
+            releaseNotesScreen->setBackCallback([this, display, releaseNotesScreen, mainMenu]() {
                 display->clearDisplay();
                 mainMenu->setFirstLoad();
                 setCurrentScreen(*mainMenu);
                 delete releaseNotesScreen;
-            };
+            });
         });
     };
 
@@ -232,13 +232,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
                 display->setFont(mainMenu->getMyStyle().navigationFont);
                 this->setCurrentScreen(*contentSyncScreen);
-                contentSyncScreen->backCallback = [this, contentSyncScreen, mainMenu, display]() {
+                contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
                     display->clearDisplay();
                     mainMenu->setFirstLoad();
                     setCurrentScreen(*mainMenu);
                     mainMenu->render(*display);
                     delete contentSyncScreen;
-                };
+                });
                 contentSyncScreen->begin();
             }));
     }
@@ -281,13 +281,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
                 display->setFont(mainMenu->getMyStyle().navigationFont);
                 this->setCurrentScreen(*contentSyncScreen);
-                contentSyncScreen->backCallback = [this, contentSyncScreen, mainMenu, display]() {
+                contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
                     display->clearDisplay();
                     mainMenu->setFirstLoad();
                     setCurrentScreen(*mainMenu);
                     mainMenu->render(*display);
                     delete contentSyncScreen;
-                };
+                });
                 contentSyncScreen->begin();
             }));
     }
@@ -301,7 +301,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 display->clearDisplay();
                 auto readableScreen = createReadableScreen(r);
                 setCurrentScreen(*readableScreen);
-                readableScreen->backCallback =
+                readableScreen->setBackCallback(
                     [this, r, display, readableScreen, mainMenu, pocketMenu]() {
                 bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
                 auto title = StringFormat("%s%s", archived ? "Archived: " : "", r.title.c_str());
@@ -310,7 +310,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 mainMenu->setFirstLoad();
                 setCurrentScreen(*mainMenu);
                 delete readableScreen;
-                };
+                });
             }));
     }
 
@@ -330,12 +330,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                                         mainMenu]() {
                     auto readableScreen = createReadableScreen(r);
                     this->setCurrentScreen(*readableScreen);
-                    readableScreen->backCallback = [this, r, display, readableScreen, mainMenu]() {
+                    readableScreen->setBackCallback([this, r, display, readableScreen, mainMenu]() {
                         display->clearDisplay();
                         mainMenu->setFirstLoad();
                         setCurrentScreen(*mainMenu);
                         delete readableScreen;
-                    };
+                    });
                 }));
             }
         }
@@ -346,16 +346,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto readingSettingsMenu =
         new MenuScreen(power_.battery, *display, styleFamilies.settingsMenu, "Reading");
 
-    readingSettingsMenu->backCallback = [this, mainMenu]() {
+    readingSettingsMenu->setBackCallback([this, mainMenu]() {
         this->display_->clearDisplay();
         mainMenu->setFirstLoad();
         setCurrentScreen(*mainMenu);
-    };
+    });
 
     auto contentSettingsMenu =
         new ToggleMenuScreen(power_.battery, *display_, styleFamilies.settingsMenu, "Content");
 
-    contentSettingsMenu->backCallback = [this, mainMenu, display, contentSettingsMenu]() {
+    contentSettingsMenu->setBackCallback([this, mainMenu, display, contentSettingsMenu]() {
         // Ideally we'd move this into the ToggleClass so it's not duplicated with
         // experimentalSettingsMenu below, but that would require teh ToggleMenuScreen
         // to have the power intead of just the battery and also the prefs. Big deal or not?
@@ -371,7 +371,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             mainMenu->setFirstLoad();
             setCurrentScreen(*mainMenu);
         }
-    };
+    });
 
     contentSettingsMenu->addMenuItem(MenuItem("Books", [this, contentSettingsMenu]() {
         this->prefs_.noBooks.set(!this->prefs_.noBooks.get().value_or(false));
@@ -465,16 +465,17 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto systemSettingsMenu =
         new MenuScreen(power_.battery, *display, styleFamilies.settingsMenu, "System");
 
-    systemSettingsMenu->backCallback = [this, mainMenu]() {
+    systemSettingsMenu->setBackCallback([this, mainMenu]() {
         this->display_->clearDisplay();
         mainMenu->setFirstLoad();
         setCurrentScreen(*mainMenu);
-    };
+    });
 
     auto experimentalSettingsMenu =
         new ToggleMenuScreen(power_.battery, *display_, styleFamilies.settingsMenu, "Experimental");
 
-    experimentalSettingsMenu->backCallback = [this, display, mainMenu, experimentalSettingsMenu]() {
+    experimentalSettingsMenu->setBackCallback(
+        [this, display, mainMenu, experimentalSettingsMenu]() {
         if (experimentalSettingsMenu->getRequireRestart()) {
             // Start on the settings menu when we boot so it feels like we just
             // went back to it!
@@ -487,7 +488,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             mainMenu->setFirstLoad();
             setCurrentScreen(*mainMenu);
         }
-    };
+    });
 
     experimentalSettingsMenu->addMenuItem(MenuItem("Dark Mode", [this, experimentalSettingsMenu]() {
         this->prefs_.darkMode.set(!this->prefs_.darkMode.get().value_or(false));
@@ -579,11 +580,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto debugSettingsMenu =
         new MenuScreen(power_.battery, *display, styleFamilies.settingsMenu, "Debug");
 
-    debugSettingsMenu->backCallback = [this, mainMenu]() {
+    debugSettingsMenu->setBackCallback([this, mainMenu]() {
         this->display_->clearDisplay();
         mainMenu->setFirstLoad();
         setCurrentScreen(*mainMenu);
-    };
+    });
 
     // For items we don't want to throw away yet, but this isn't hooked up anywhere
     auto oldMenu = new MenuScreen(power_.battery, *display, styleFamilies.settingsMenu);
@@ -591,11 +592,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // settingsMenu->addMenuItem(MenuItem("Layout Example", [this, settingsMenu, display]() {
     //    auto layoutTestScreen = new LayoutTestScreen(*display);
     //    setCurrentScreen(*layoutTestScreen);
-    //    layoutTestScreen->backCallback = [this, layoutTestScreen, settingsMenu]() {
+    //    layoutTestScreen->setBackCallback([this, layoutTestScreen, settingsMenu]() {
     //       settingsMenu->setFirstLoad();
     //        setCurrentScreen(*settingsMenu);
     //        delete layoutTestScreen;
-    //    };
+    //    });
     // }));
 
     /*
@@ -604,13 +605,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
                 this->setCurrentScreen(*contentSyncScreen);
                 lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
-                contentSyncScreen->backCallback = [this, contentSyncScreen, mainMenu, display]() {
+                contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
                     this->display_->clearDisplay();
                     mainMenu->setFirstLoad();
                     setCurrentScreen(*mainMenu);
                     mainMenu->render(*display);
                     delete contentSyncScreen;
-                };
+                });
                 contentSyncScreen->begin();
             }));
     */
@@ -664,11 +665,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             fontMenu->setNeedsRerender();
         }));
         setCurrentScreen(*fontMenu);
-        fontMenu->backCallback = [this, fontMenu, readingSettingsMenu]() {
+        fontMenu->setBackCallback([this, fontMenu, readingSettingsMenu]() {
             readingSettingsMenu->setFirstLoad();
             setCurrentScreen(*readingSettingsMenu);
             delete fontMenu;
-        };
+        });
     }));
 
     readingSettingsMenu->addMenuItem(MenuItem("Brightness", [this, display, readingSettingsMenu,
@@ -677,11 +678,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             new LightingAdjustScreen(*display, this->prefs_, lightingController);
         this->display_->clearDisplay();
         setCurrentScreen(*lightingAdjustScreen);
-        lightingAdjustScreen->backCallback = [this, lightingAdjustScreen, readingSettingsMenu]() {
+        lightingAdjustScreen->setBackCallback([this, lightingAdjustScreen, readingSettingsMenu]() {
             readingSettingsMenu->setFirstLoad();
             setCurrentScreen(*readingSettingsMenu);
             delete lightingAdjustScreen;
-        };
+        });
     }));
 
     readingSettingsMenu->addMenuItem(MenuItem("Move Page in Display",
@@ -690,11 +691,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto offsetAdjust = new OffsetAdjustScreen(*display, prefs_);
         this->setCurrentScreen(*offsetAdjust);
         log_d("setting up callback");
-        offsetAdjust->backCallback = [this, offsetAdjust, readingSettingsMenu]() {
+        offsetAdjust->setBackCallback([this, offsetAdjust, readingSettingsMenu]() {
             readingSettingsMenu->setFirstLoad();
             setCurrentScreen(*readingSettingsMenu);
             delete offsetAdjust;
-        };
+        });
         log_d("set up callback");
     }));
 
@@ -704,11 +705,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto resizeBox = new ResizeBoxScreen(*display, prefs_);
         this->setCurrentScreen(*resizeBox);
         log_d("setting up callback");
-        resizeBox->backCallback = [this, resizeBox, readingSettingsMenu]() {
+        resizeBox->setBackCallback([this, resizeBox, readingSettingsMenu]() {
             readingSettingsMenu->setFirstLoad();
             setCurrentScreen(*readingSettingsMenu);
             delete resizeBox;
-        };
+        });
         log_d("set up callback");
     }));
 
@@ -716,21 +717,21 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                               [this, readingSettingsMenu, display]() {
         auto lineSpacingScreen = new LineSpacingScreen(*display, prefs_);
         this->setCurrentScreen(*lineSpacingScreen);
-        lineSpacingScreen->backCallback = [this, lineSpacingScreen, readingSettingsMenu]() {
+        lineSpacingScreen->setBackCallback([this, lineSpacingScreen, readingSettingsMenu]() {
             readingSettingsMenu->setFirstLoad();
             setCurrentScreen(*readingSettingsMenu);
             delete lineSpacingScreen;
-        };
+        });
     }));
 
     readingSettingsMenu->addMenuItem(MenuItem("Statistics", [this, readingSettingsMenu, display]() {
         auto statsScreen = new StatsScreen(*display, prefs_);
         this->setCurrentScreen(*statsScreen);
-        statsScreen->backCallback = [this, statsScreen, readingSettingsMenu]() {
+        statsScreen->setBackCallback([this, statsScreen, readingSettingsMenu]() {
             readingSettingsMenu->setFirstLoad();
             setCurrentScreen(*readingSettingsMenu);
             delete statsScreen;
-        };
+        });
     }));
 
     systemSettingsMenu->addMenuItem(MenuItem("About", [systemSettingsMenu, display]() {
@@ -776,7 +777,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 clock.setClockTimeFromInternet();
                 WiFi::getInstance().disconnectWiFi();
             }
-            timeZoneMenu->backCallback();
+            timeZoneMenu->back();
         };
 
         timeZoneMenu->addMenuItem(
@@ -811,11 +812,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         timeZoneMenu->setCurrSelection(menuIndex);
 
         setCurrentScreen(*timeZoneMenu);
-        timeZoneMenu->backCallback = [this, timeZoneMenu, systemSettingsMenu]() {
+        timeZoneMenu->setBackCallback([this, timeZoneMenu, systemSettingsMenu]() {
             systemSettingsMenu->setFirstLoad();
             setCurrentScreen(*systemSettingsMenu);
             delete timeZoneMenu;
-        };
+        });
     }));
 
 #if USE_TURN_TOUCH_REMOTE
@@ -836,12 +837,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
             this->setCurrentScreen(*contentSyncScreen);
             lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
-            contentSyncScreen->backCallback = [this, contentSyncScreen, mainMenu, display]() {
+            contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
                 mainMenu->setFirstLoad();
                 setCurrentScreen(*mainMenu);
                 mainMenu->render(*display);
                 delete contentSyncScreen;
-            };
+            });
             contentSyncScreen->begin();
         }));
 
@@ -943,12 +944,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         MenuItem("Onboarding Screens", [this, debugSettingsMenu, display, &lightingController]() {
             auto demoScreen = new DemoScreen(*display, prefs_, lightingController);
             this->setCurrentScreen(*demoScreen);
-            demoScreen->backCallback = [this, demoScreen, debugSettingsMenu, display]() {
+            demoScreen->setBackCallback([this, demoScreen, debugSettingsMenu, display]() {
                 debugSettingsMenu->setFirstLoad();
                 display->clearDisplay();
                 setCurrentScreen(*debugSettingsMenu);
                 delete demoScreen;
-            };
+            });
         }));
 
     debugSettingsMenu->addMenuItem(MenuItem("File System Browser",
@@ -972,22 +973,22 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }));
         }
         setCurrentScreen(*fsMenu);
-        fsMenu->backCallback = [this, fsMenu, debugSettingsMenu]() {
+        fsMenu->setBackCallback([this, fsMenu, debugSettingsMenu]() {
             debugSettingsMenu->setFirstLoad();
             setCurrentScreen(*debugSettingsMenu);
             delete fsMenu;
-        };
+        });
     }));
 
     debugSettingsMenu->addMenuItem(MenuItem("Batteries and Temperature",
                                             [this, display, debugSettingsMenu]() {
         auto batteryScreen = new BatteryScreen(*display, prefs_, power_.battery);
         this->setCurrentScreen(*batteryScreen);
-        batteryScreen->backCallback = [this, batteryScreen, debugSettingsMenu]() {
+        batteryScreen->setBackCallback([this, batteryScreen, debugSettingsMenu]() {
             debugSettingsMenu->setFirstLoad();
             setCurrentScreen(*debugSettingsMenu);
             delete batteryScreen;
-        };
+        });
     }));
 
     debugSettingsMenu->addMenuItem(MenuItem("Optics Test", [this, debugSettingsMenu]() {
@@ -995,11 +996,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         opticsTestScreen->setOpticsTest();
         this->display_->clearDisplay();
         this->setCurrentScreen(*opticsTestScreen);
-        opticsTestScreen->backCallback = [this, opticsTestScreen, debugSettingsMenu]() {
+        opticsTestScreen->setBackCallback([this, opticsTestScreen, debugSettingsMenu]() {
             debugSettingsMenu->setFirstLoad();
             setCurrentScreen(*debugSettingsMenu);
             delete opticsTestScreen;
-        };
+        });
     }));
 
     if (hasLastQuestion) {
@@ -1026,12 +1027,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         MenuItem("Alignment Setup", [this, debugSettingsMenu, display, &lightingController]() {
             auto alignmentScreen = new AlignmentScreen(*display, prefs_, lightingController);
             this->setCurrentScreen(*alignmentScreen);
-            alignmentScreen->backCallback = [this, alignmentScreen, debugSettingsMenu, display]() {
+            alignmentScreen->setBackCallback([this, alignmentScreen, debugSettingsMenu, display]() {
                 debugSettingsMenu->setFirstLoad();
                 display->clearDisplay();
                 setCurrentScreen(*debugSettingsMenu);
                 delete alignmentScreen;
-            };
+            });
         }));
 */
 #if EINKET013TT1
@@ -1075,11 +1076,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             vcomMenu->setNeedsRerender();
         }));
         setCurrentScreen(*vcomMenu);
-        vcomMenu->backCallback = [this, vcomMenu, debugSettingsMenu]() {
+        vcomMenu->setBackCallback([this, vcomMenu, debugSettingsMenu]() {
             debugSettingsMenu->setFirstLoad();
             setCurrentScreen(*debugSettingsMenu);
             delete vcomMenu;
-        };
+        });
     }));
 #endif
 
@@ -1110,7 +1111,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto confirmMessage = [this, wifiPowerMenu, display](wifi_power_t power) {
             this->prefs_.wifiPower.set(power);
             wifiPowerMenu->showTemporaryMessage(*display, "Power set", 200, false);
-            wifiPowerMenu->backCallback();
+            wifiPowerMenu->back();
         };
 
         wifiPowerMenu->addMenuItem(MenuItem("Max (19.5dBm)", [confirmMessage]() {
@@ -1156,11 +1157,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         wifiPowerMenu->setCurrSelection(menuIndex);
 
         setCurrentScreen(*wifiPowerMenu);
-        wifiPowerMenu->backCallback = [this, wifiPowerMenu, debugSettingsMenu]() {
+        wifiPowerMenu->setBackCallback([this, wifiPowerMenu, debugSettingsMenu]() {
             debugSettingsMenu->setFirstLoad();
             setCurrentScreen(*debugSettingsMenu);
             delete wifiPowerMenu;
-        };
+        });
     }));
 
 #if EINKET013TT1
@@ -1169,11 +1170,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto vcomPreciseScreen = new VcomAdjustScreen(*display, this->prefs_);
         this->display_->clearDisplay();
         setCurrentScreen(*vcomPreciseScreen);
-        vcomPreciseScreen->backCallback = [this, vcomPreciseScreen, debugSettingsMenu]() {
+        vcomPreciseScreen->setBackCallback([this, vcomPreciseScreen, debugSettingsMenu]() {
             debugSettingsMenu->setFirstLoad();
             setCurrentScreen(*debugSettingsMenu);
             delete vcomPreciseScreen;
-        };
+        });
     }));
 #endif
 
@@ -1181,12 +1182,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                             [this, display, &fileSystem, debugSettingsMenu]() {
         auto voltageLogScreen = new VoltageLogUploadScreen(*display, this->prefs_, fileSystem);
         this->setCurrentScreen(*voltageLogScreen);
-        (*voltageLogScreen).backCallback = [this, voltageLogScreen, debugSettingsMenu, display]() {
+        (*voltageLogScreen).setBackCallback([this, voltageLogScreen, debugSettingsMenu, display]() {
             debugSettingsMenu->setFirstLoad();
             setCurrentScreen(*debugSettingsMenu);
             debugSettingsMenu->render(*display);
             delete voltageLogScreen;
-        };
+        });
         (*voltageLogScreen).begin();
     }));
 
@@ -1209,10 +1210,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto calibrationScreen = new CalibrationScreen();
         this->display_->clearDisplay();
         this->setCurrentScreen(*calibrationScreen);
-        calibrationScreen->backCallback = [this, calibrationScreen, oldMenu]() {
+        calibrationScreen->setBackCallback([this, calibrationScreen, oldMenu]() {
             setCurrentScreen(*oldMenu);
             delete calibrationScreen;
-        };
+        });
     }));
 
     oldMenu->addMenuItem(MenuItem("Deep sleep", [display, oldMenu]() {
@@ -1224,10 +1225,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     oldMenu->addMenuItem(MenuItem("Test Bitmap Screen", [this, oldMenu]() {
         auto bitmapScreen = new BitmapScreen(LOGO_BITS, LOGO_WIDTH, LOGO_HEIGHT);
         setCurrentScreen(*bitmapScreen);
-        bitmapScreen->backCallback = [this, bitmapScreen, oldMenu]() {
+        bitmapScreen->setBackCallback([this, bitmapScreen, oldMenu]() {
             setCurrentScreen(*oldMenu);
             delete bitmapScreen;
-        };
+        });
     }));
 
     mainMenu->addSubMenu(settingsMenu);
@@ -1236,12 +1237,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     if (inDemo) {
         auto demoScreen = new DemoScreen(*display, prefs_, lightingController);
-        demoScreen->backCallback = [this, demoScreen, mainMenu, display]() {
+        demoScreen->setBackCallback([this, demoScreen, mainMenu, display]() {
             display->clearDisplay();
             mainMenu->setFirstLoad();
             setCurrentScreen(*mainMenu);
             delete demoScreen;
-        };
+        });
         this->setCurrentScreen(*demoScreen);
     } else if (prefs_.cesMode.get().value_or(false)) {
         auto cesScreen = new CesScreen(*display, prefs_, lightingController);
@@ -1256,13 +1257,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             log_d("Found readable: %s", (*it).title.c_str());
         }
         auto readableScreen = createReadableScreen(*it);
-        cesScreen->backCallback = [this, cesScreen, display, readableScreen]() {
+        cesScreen->setBackCallback([this, cesScreen, display, readableScreen]() {
             display->clearDisplay();
             this->display_->setFont(this->display_->style.getFontFamily().readableFont);
             log_i("Setting Readable Screen after focus in CES mode");
             this->setCurrentScreen(*readableScreen);
             delete cesScreen;
-        };
+        });
         this->setCurrentScreen(*cesScreen);
     } else if (currentReadable.has_value()) {
         // Check if we left-off on a readable and if so, reload that readable by default
@@ -1311,13 +1312,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         /*
         auto calibrationScreen = new LogoScreen();
-        calibrationScreen->backCallback = [this, calibrationScreen, display, mainMenu]() {
+        calibrationScreen->setBackCallback([this, calibrationScreen, display, mainMenu]() {
             display->clearScreen();
             Delay(100);
 
             setCurrentScreen(*mainMenu);
             delete calibrationScreen;
-        };
+        });
         setCurrentScreen(*calibrationScreen);
         */
     }

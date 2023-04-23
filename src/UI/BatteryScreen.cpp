@@ -40,4 +40,4 @@ void BatteryScreen::render(DisplaySystem &display) {
     display.updateDisplay();
 }
 
-void BatteryScreen::processCommand(RemoteCommand command) { backCallback(); }
+void BatteryScreen::processCommand(RemoteCommand command) { back(); }

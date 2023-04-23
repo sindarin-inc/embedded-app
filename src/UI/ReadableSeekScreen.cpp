@@ -127,9 +127,7 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
         break;
     }
     case RemoteCommand::PREV: {
-        if (backCallback != nullptr) {
-            backCallback();
-        }
+        back();
         break;
     }
     case RemoteCommand::NEXT: {
@@ -153,9 +151,7 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
         break;
     }
     case RemoteCommand::BACK: {
-        if (backCallback != nullptr) {
-            backCallback();
-        }
+        back();
         break;
     }
     default:

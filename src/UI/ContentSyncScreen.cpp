@@ -127,11 +127,7 @@ void ContentSyncScreen::fail(const std::string &message) {
 #if !SIMULATOR
     PowerManager::getInstance().reboot();
 #endif
-    if (backCallback) {
-        backCallback();
-    } else {
-        log_w("No back callback set for ContentSyncScreen");
-    }
+    back();
 }
 
 void ContentSyncScreen::begin() {
@@ -170,7 +166,7 @@ void ContentSyncScreen::begin() {
                 state.state == ContentSyncState::AlreadySynced) {
                 log_d("Content sync done, waiting 5 seconds before going back");
                 Delay(5000);
-                backCallback();
+                back();
             }
         });
     });

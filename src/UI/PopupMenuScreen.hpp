@@ -38,15 +38,15 @@ public:
           placeInReadableView_(display, ""), clockView_(display, "") {
         currentScreen_ = this;
 
-        lightingAdjustScreen_.backCallback = [this]() {
+        lightingAdjustScreen_.setBackCallback([this]() {
             setNeedsRerender();
             this->setCurrentScreen(*this);
-        };
-        readableSeekScreen_.backCallback = [this]() { this->setCurrentScreen(*this); };
-        readableTableOfContentsScreen_.backCallback = [this]() {
+        });
+        readableSeekScreen_.setBackCallback([this]() { this->setCurrentScreen(*this); });
+        readableTableOfContentsScreen_.setBackCallback([this]() {
             setNeedsRerender();
             this->setCurrentScreen(*this);
-        };
+        });
         leftButtonCallback_ = [this]() {
             lightingAdjustScreen_.firstLoad = true;
             this->setCurrentScreen(lightingAdjustScreen_);

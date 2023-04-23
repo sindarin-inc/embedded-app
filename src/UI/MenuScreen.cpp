@@ -150,10 +150,8 @@ void MenuScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::CHANNEL_MINUS:
-        if (backCallback != nullptr) {
-            firstLoad_ = true;
-            backCallback();
-        }
+        firstLoad_ = true;
+        back();
         break;
     case RemoteCommand::ANIMATION:
     default:

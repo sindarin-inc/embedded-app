@@ -41,8 +41,8 @@ public:
 
         log_d("Found place for %s = %" PRIu32 " %s", readable_.shortenedUuid.c_str(),
               readable_.place, atEnd_ ? "(at end)" : "");
-        popup_.backCallback = [this]() { this->setCurrentScreen(*this); };
-        archiveMenu_.backCallback = [this]() { this->setCurrentScreen(*this); };
+        popup_.setBackCallback([this]() { this->setCurrentScreen(*this); });
+        archiveMenu_.setBackCallback([this]() { this->setCurrentScreen(*this); });
     }
 
     ~ReadableScreen() override = default;

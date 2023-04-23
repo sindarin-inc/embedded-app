@@ -52,7 +52,7 @@ void LineSpacingScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::ENTER:
         prefs_.lineSpacing.set(lineSpacing_);
         log_d("Saving lineSpacing to preferences: (%d)", lineSpacing_);
-        backCallback();
+        back();
         break;
     default:
         break;

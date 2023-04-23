@@ -145,24 +145,18 @@ void ReadableScreen::turnPage() {
             archiveMenu_.addMenuItem(MenuItem("Undo Archive", [this]() {
                 log_i("Un-Archiving: %s", readable_.title.c_str());
                 this->prefs_.readableArchivedChanged.remove(readable_.shortenedUuid.c_str());
-                if (this->backCallback != nullptr) {
-                    this->backCallback();
-                }
+                this->back();
             }));
         } else {
             archiveMenu_.addMenuItem(MenuItem("Archive and Main Menu", [this]() {
                 log_i("Archiving: %s", readable_.title.c_str());
                 this->prefs_.readableArchivedChanged.set(readable_.shortenedUuid.c_str(), true);
-                if (this->backCallback != nullptr) {
-                    this->backCallback();
-                }
+                this->back();
             }));
         }
         archiveMenu_.addMenuItem(MenuItem("Main Menu", [this]() {
             log_i("Not archiving: %s", readable_.title.c_str());
-            if (this->backCallback != nullptr) {
-                this->backCallback();
-            }
+            this->back();
         }));
         setCurrentScreen(archiveMenu_);
     } else {
@@ -376,10 +370,8 @@ void ReadableScreen::processCommand(RemoteCommand command) {
     }
 
     auto back = [this]() {
-        if (backCallback != nullptr) {
-            setNeedsRerender();
-            backCallback();
-        }
+        setNeedsRerender();
+        this->back();
     };
 
     switch (command) {

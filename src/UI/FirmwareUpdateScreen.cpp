@@ -116,7 +116,7 @@ void FirmwareUpdateScreen::fail(const std::string &message) {
     render(display_);
     vTaskDelay(5000 / portTICK_PERIOD_MS);
     WiFi::getInstance().disconnectWiFi();
-    backCallback();
+    back();
 }
 
 void FirmwareUpdateScreen::begin() {
@@ -154,13 +154,13 @@ void FirmwareUpdateScreen::begin() {
             if (state.state == FirmwareDownloadState::Failure ||
                 state.state == FirmwareDownloadState::AlreadyUpToDate) {
                 vTaskDelay(3000 / portTICK_PERIOD_MS);
-                backCallback();
+                back();
             } else if (state.state == FirmwareDownloadState::Installed) {
                 vTaskDelay(3000 / portTICK_PERIOD_MS);
                 log_i("Rebooting after successful firmware update");
                 PowerManager::getInstance().reboot();
                 // Only for the sim
-                backCallback();
+                back();
             }
         });
     });

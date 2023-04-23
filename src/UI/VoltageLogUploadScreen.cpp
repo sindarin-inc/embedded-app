@@ -73,7 +73,7 @@ void VoltageLogUploadScreen::fail(const std::string &message) {
     render(display_);
     vTaskDelay(5000 / portTICK_PERIOD_MS);
     WiFi::getInstance().disconnectWiFi();
-    backCallback();
+    back();
 }
 
 void VoltageLogUploadScreen::begin() {
@@ -120,7 +120,7 @@ void VoltageLogUploadScreen::begin() {
             render(display_);
             vTaskDelay(2000 / portTICK_PERIOD_MS);
             WiFi::getInstance().disconnectWiFi();
-            backCallback();
+            back();
         });
 
         return;

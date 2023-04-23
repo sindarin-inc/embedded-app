@@ -92,7 +92,7 @@ void CrashReportScreen::fail(const std::string &message) {
     render(display_);
     vTaskDelay(5000 / portTICK_PERIOD_MS);
     WiFi::getInstance().disconnectWiFi();
-    backCallback();
+    back();
 }
 
 void CrashReportScreen::begin() {
@@ -120,7 +120,7 @@ void CrashReportScreen::begin() {
                 state.state == CrashUploadState::Done) {
                 WiFi::getInstance().disconnectWiFi();
                 vTaskDelay(3000 / portTICK_PERIOD_MS);
-                backCallback();
+                back();
             }
         });
     });
