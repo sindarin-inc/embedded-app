@@ -4,7 +4,6 @@
 
 #include "Displays/DisplaySystem.hpp"
 #include "UI/Components/BoxView.hpp"
-#include "UI/Components/EinkView.hpp"
 #include "UI/Components/MenuItemView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
 #include "UI/Layout/View.hpp"
@@ -26,22 +25,27 @@ public:
         popupMenuForeground_.strokeColor = display_.fg;
     }
 
-    void setAuxText(std::string auxText) { auxTextView_.setText(std::move(auxText)); }
+    void setAuxText(std::string auxText) {
+        auxTextView_.setText(std::move(auxText));
+        setNeedsLayout();
+    }
 
     auto layout(LayoutContext &context, Size size) -> Size override {
-        const auto inset = 10;
+        auto fullFrame = Rect::fromSize(size);
 
         SolClock &theClock = SolClock::getInstance();
         clockView_.setText(theClock.getTimeString());
 
-        context.setViewFrame(popupMenuBackground_, {{0, 0}, size}, LayoutOptionsAlignCenter);
+        context.setViewFrame(popupMenuBackground_, fullFrame, LayoutOptionsAlignCenter);
 
-        context.setViewFrame(popupMenuForeground_, {{5, 5}, {size.width - 10, size.height - 10}},
-                             LayoutOptionsAlignCenter);
+        // Border is inset by 5 pixels from the total size
+        auto foregroundFrame = context.setViewFrame(popupMenuForeground_, fullFrame.inset(5),
+                                                    LayoutOptionsAlignCenter);
 
-        context.setSublayoutFrame(
-            {{5 + inset, 5 + inset}, {size.width - 10 - 2 * inset, size.height - 10 - 2 * inset}},
-            LayoutOptionsAlignTop, [this](LayoutContext &context, Size size) -> Size {
+        // Internal content sublayout is further inset
+        auto contentFrame = context.setSublayoutFrame(
+            foregroundFrame.inset(10), LayoutOptionsAlignTop,
+            [this](LayoutContext &context, Size size) -> Size {
                 int x = 0;
                 int y = 0;
 
@@ -57,11 +61,12 @@ public:
                 return {size.width, y};
             });
 
-        context.setViewFrame(clockView_, {{15, 10}, {size.width - 30, size.height - 20}},
+        // Inset clock and aux horizontally to match the content but with only 5px on the bottom
+        context.setViewFrame(clockView_, foregroundFrame.inset(10, 5),
                              LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
                                  LayoutOptionsAlignLeft);
 
-        context.setViewFrame(auxTextView_, {{15, 10}, {size.width - 30, size.height - 20}},
+        context.setViewFrame(auxTextView_, foregroundFrame.inset(10, 5),
                              LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
                                  LayoutOptionsAlignRight);
 
@@ -69,7 +74,6 @@ public:
     }
 
     void drawInRect(Rect rect) override {
-
         popupMenuBackground_.draw();
         popupMenuForeground_.draw();
 
