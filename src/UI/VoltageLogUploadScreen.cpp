@@ -4,7 +4,6 @@
 #include "Communications/WiFi.hpp"
 #include "Misc/Battery.hpp"
 #include "Misc/Dispatch.hpp"
-#include "UI/Fonts/Tahoma10pt7b.h"
 #include "sindarin-debug.h"
 
 void VoltageLogUploadScreen::render(DisplaySystem &display) {
@@ -28,7 +27,7 @@ void VoltageLogUploadScreen::render(DisplaySystem &display) {
         // Calculate group height
         const uint16_t spacing = 2;
         const uint16_t lineCount = 3;
-        uint16_t textHeight = display.getFont()->yAdvance;
+        uint16_t textHeight = display.getFont()->lineHeight();
         uint16_t groupHeight = textHeight * lineCount + spacing * (lineCount - 1);
 
         y = (display.height() - groupHeight) / 2;
@@ -43,7 +42,7 @@ void VoltageLogUploadScreen::render(DisplaySystem &display) {
             }
             auto textX = x + bulletRadius * 2 + 5;
             display.drawSingleLineOfText(message, textX, y);
-            y += display.getFont()->yAdvance;
+            y += display.getFont()->lineHeight();
             y += spacing;
         };
 

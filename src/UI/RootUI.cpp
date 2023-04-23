@@ -30,6 +30,7 @@
 #include "UI/CrashReportScreen.hpp"
 #include "UI/DemoScreen.hpp"
 #include "UI/FirmwareUpdateScreen.hpp"
+#include "UI/Fonts/Fonts.hpp"
 #include "UI/LayoutTestScreen.hpp"
 #include "UI/LightingAdjustScreen.hpp"
 #include "UI/LineMenuScreen.hpp"
@@ -74,6 +75,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto readables = localStore.books();
     auto articles = localStore.articles();
+
+    ibmf75.load((ibmf_defs::MemoryPtr)fontsList[prefs_.fontType.get().value_or(0)].content,
+                fontsList[prefs_.fontType.get().value_or(0)].length);
 
     auto createReadableScreen = [this, display, mainMenu, &fileSystem, &lightingController,
                                  &localStore,
@@ -510,6 +514,18 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         experimentalSettingsMenu->setToggleLastItem(false);
     }
 
+    experimentalSettingsMenu->addMenuItem(
+        MenuItem("Fonts Library", [this, experimentalSettingsMenu]() {
+            this->prefs_.fontsLibrary.set(!this->prefs_.fontsLibrary.get().value_or(false));
+            experimentalSettingsMenu->requireRestart();
+        }));
+
+    if (prefs_.fontsLibrary.get().value_or(false)) {
+        experimentalSettingsMenu->setToggleLastItem(true);
+    } else {
+        experimentalSettingsMenu->setToggleLastItem(false);
+    }
+
     experimentalSettingsMenu->addMenuItem(MenuItem("Autopilot", [this]() {
         this->prefs_.autoPilot.set(!this->prefs_.autoPilot.get().value_or(false));
         if (this->prefs_.autoPilot.get().value_or(false)) {
@@ -674,6 +690,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto fontMenu = new MenuScreen(power_.battery, *display, readingSettingsMenu->getMyStyle(),
                                        "Font Settings", "Reading Settings");
         fontMenu->setExtraText("Example text size");
+        fontMenu->addMenuItem(MenuItem("Tiny", [this, fontMenu]() {
+            this->display_->style.setFontFamily(this->display_->style.tahomaTiny);
+            this->display_->clearDisplay();
+            prefs_.font.set(PREFS_TAHOMA_TINY);
+            fontMenu->setNeedsRerender();
+        }));
         fontMenu->addMenuItem(MenuItem("Small", [this, fontMenu]() {
             this->display_->style.setFontFamily(this->display_->style.tahomaRegular);
             this->display_->clearDisplay();
@@ -686,6 +708,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             prefs_.font.set(PREFS_TAHOMA_LARGE);
             fontMenu->setNeedsRerender();
         }));
+        fontMenu->addMenuItem(MenuItem("Huge", [this, fontMenu]() {
+            this->display_->style.setFontFamily(this->display_->style.tahomaHuge);
+            this->display_->clearDisplay();
+            prefs_.font.set(PREFS_TAHOMA_HUGE);
+            fontMenu->setNeedsRerender();
+        }));
         setCurrentScreen(*fontMenu);
         fontMenu->backCallback = [this, fontMenu, readingSettingsMenu]() {
             readingSettingsMenu->setFirstLoad();
@@ -694,6 +722,30 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         };
     }));
 
+    if (prefs_.fontsLibrary.get().value_or(false)) {
+        readingSettingsMenu->addMenuItem(
+            MenuItem("Font Type (Experimental)", [this, display, readingSettingsMenu]() {
+                auto fontTypeMenu =
+                    new MenuScreen(power_.battery, *display, readingSettingsMenu->getMyStyle(),
+                                   "Font Type Settings", "Reading Settings");
+                for (int i = 0; i < fontsList.size(); i++) {
+                    fontTypeMenu->addMenuItem(
+                        MenuItem(fontsList[i].caption, [this, fontTypeMenu, i]() {
+                            ibmf75.load((ibmf_defs::MemoryPtr)fontsList[i].content,
+                                        fontsList[i].length);
+                            prefs_.fontType.set(i);
+                            this->display_->clearDisplay();
+                            fontTypeMenu->setNeedsRerender();
+                        }));
+                }
+                setCurrentScreen(*fontTypeMenu);
+                fontTypeMenu->backCallback = [this, fontTypeMenu, readingSettingsMenu]() {
+                    readingSettingsMenu->setFirstLoad();
+                    setCurrentScreen(*readingSettingsMenu);
+                    delete fontTypeMenu;
+                };
+            }));
+    }
     readingSettingsMenu->addMenuItem(MenuItem("Brightness", [this, display, readingSettingsMenu,
                                                              &lightingController]() {
         auto lightingAdjustScreen =

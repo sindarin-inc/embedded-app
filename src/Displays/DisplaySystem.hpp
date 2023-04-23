@@ -18,6 +18,7 @@
 
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
+#include "UI/Fonts/Font.hpp"
 
 // This isn't the best -- we may want to make this dynamically
 // allocated instead in the object?
@@ -91,9 +92,15 @@ public:
         gfxClass_->fillTriangle(xOffset(x0), yOffset(y0), xOffset(x1), yOffset(y1), xOffset(x2),
                                 yOffset(y2), color);
     }
-    void setFont(const GFXfont *f) {
-        font_ = f;
-        gfxClass_->setFont(f);
+    void setFont(Font *f) {
+        if (f != nullptr) {
+            font_ = f;
+            if (font_->isA(FontType::GFX)) {
+                gfxClass_->setFont(static_cast<GFont *>(font_)->get());
+            }
+        } else {
+            log_e("Received a bad (null) font pointer!");
+        }
     }
     void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
         gfxClass_->fillRect(xOffset(x), yOffset(y), w, h, color);
@@ -154,13 +161,10 @@ public:
 
     // MARK: - Text rendering code
 
-    auto getFont() -> const GFXfont *;
+    auto getFont() -> Font *;
     void drawSingleLineOfText(const std::string &line, int x, int y);
     void drawSingleLineOfCenteredText(const std::string &line);
-
-    void drawText(const std::string &newText, int x, int y, int width, int height)
-        __attribute__((deprecated));
-    void getTextBounds(const char *buffer, uint16_t *w, uint16_t *h);
+    void getTextSize(const char *buffer, uint16_t *w, uint16_t *h);
     auto getTextHeight() -> int;
     auto getTextHeight(const char *buffer) -> int;
     auto getTextWidth(const char *buffer) -> int;
@@ -195,7 +199,10 @@ public:
 protected:
     // Must be set in the constructor of subclasses
     Adafruit_GFX *gfxClass_ = nullptr;
-    const GFXfont *font_ = nullptr;
+    Font *font_ = nullptr;
+    uint8_t *canvasBuffer_;
+    uint16_t canvasWidth_;
+    uint16_t canvasHeight_;
 
     inline auto xOffset(int16_t value) -> int16_t { return value + boundingBox_.x; }
     inline auto yOffset(int16_t value) -> int16_t { return value + boundingBox_.y; }

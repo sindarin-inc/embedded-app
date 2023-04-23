@@ -269,6 +269,12 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     case PREFS_TAHOMA_LARGE:
         myDisplay.style.setFontFamily(myDisplay.style.tahomaLarge);
         break;
+    case PREFS_TAHOMA_TINY:
+        myDisplay.style.setFontFamily(myDisplay.style.tahomaTiny);
+        break;
+    case PREFS_TAHOMA_HUGE:
+        myDisplay.style.setFontFamily(myDisplay.style.tahomaHuge);
+        break;
     }
 
     if (!myDisplay.setup()) {

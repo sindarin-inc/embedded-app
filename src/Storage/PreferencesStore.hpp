@@ -24,6 +24,8 @@ enum FONT_CHOICES {
     PREFS_LUCIDA_FAT = 2,
     PREFS_LUCIDA_REGULAR = 3,
     PREFS_TAHOMA_LARGE = 4,
+    PREFS_TAHOMA_TINY = 5,
+    PREFS_TAHOMA_HUGE = 6,
 };
 
 enum class SyncReason {
@@ -310,6 +312,7 @@ public:
           noUploadCrashes(*this, "no-upload-crash"), showDebugMenu(*this, "show-debug"),
           fastBookmarkRight(*this, "fst-mark-right"), fastBookmarkCenter(*this, "fst-mark-cent"),
           wifiSettingsJson(*this, "wifi-settings"), localStoreMigrationVersion(*this, "ls-version"),
+          fontsLibrary(*this, "fonts-lib"), fontType(*this, "font-type"),
           preferencesStoreMigrationVersion_(*this, "ps-version"){};
     PreferencesStore(PreferencesStore &) = delete;
 
@@ -476,6 +479,8 @@ public:
     PrefsItem<bool> fastBookmarkCenter;
     PrefsItem<std::string> wifiSettingsJson;
     PrefsItem<uint32_t> localStoreMigrationVersion;
+    PrefsItem<bool> fontsLibrary;
+    PrefsItem<int> fontType;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles
