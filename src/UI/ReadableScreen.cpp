@@ -223,7 +223,7 @@ void ReadableScreen::setUpPopupMenu() {
         unarchiveMenuItemView_->setHidden(true);
     }
 
-    popupMenuView_.populateMenuItems(menuItemViews_, menuItemsOrder_);
+    popupMenuView_.populateMenuItems(menuItemViews_);
 }
 
 void ReadableScreen::render(DisplaySystem &display) {

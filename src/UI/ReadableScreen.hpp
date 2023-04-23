@@ -99,7 +99,6 @@ public:
         menuItemView->setNoPaddingBetween(true);
         menuItemView->setHidden(!enabled);
         menuItemViews_.push_back(menuItemView);
-        menuItemsOrder_.push_back(menuItemViews_.size() - 1);
     }
 
     void renderIcons(DisplaySystem &display);
@@ -159,8 +158,6 @@ protected:
 
     std::shared_ptr<MenuItemView> archiveMenuItemView_;
     std::shared_ptr<MenuItemView> unarchiveMenuItemView_;
-
-    std::vector<int> menuItemsOrder_;
 
 private:
     void incrementReadingTime();
