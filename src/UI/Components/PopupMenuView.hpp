@@ -16,10 +16,8 @@ public:
 
     ~PopupMenuView() override = default;
 
-    void populateMenuItems(std::vector<std::shared_ptr<MenuItemView>> menuItems,
-                           std::vector<int> menuItemsOrder) {
+    void populateMenuItems(std::vector<std::shared_ptr<MenuItemView>> menuItems) {
         menuItemViews_ = std::move(menuItems);
-        menuItemsOrder_ = std::move(menuItemsOrder);
         popupMenuBackground_.fillColor = display_.bg;
         popupMenuBackground_.strokeColor = display_.bg;
         popupMenuForeground_.strokeColor = display_.fg;
@@ -49,11 +47,10 @@ public:
                 int x = 0;
                 int y = 0;
 
-                for (auto &index : menuItemsOrder_) {
-                    if (!menuItemViews_[index]->isHidden()) {
-                        auto viewFrame =
-                            context.setViewFrame(*menuItemViews_[index], {{x, y}, size},
-                                                 LayoutOptionsSizeToFit | LayoutOptionsAlignTop);
+                for (auto &view : menuItemViews_) {
+                    if (!view->isHidden()) {
+                        auto viewFrame = context.setViewFrame(
+                            *view, {{x, y}, size}, LayoutOptionsSizeToFit | LayoutOptionsAlignTop);
                         y += viewFrame.size.height;
                     }
                 }
@@ -77,9 +74,9 @@ public:
         popupMenuBackground_.draw();
         popupMenuForeground_.draw();
 
-        for (auto &index : menuItemsOrder_) {
-            if (!menuItemViews_[index]->isHidden()) {
-                menuItemViews_[index]->draw();
+        for (auto &view : menuItemViews_) {
+            if (!view->isHidden()) {
+                view->draw();
             }
         }
 
@@ -94,7 +91,6 @@ protected:
     DisplaySystem &display_;
 
     std::vector<std::shared_ptr<MenuItemView>> menuItemViews_;
-    std::vector<int> menuItemsOrder_;
 
     BoxView popupMenuBackground_;
     BoxView popupMenuForeground_;
