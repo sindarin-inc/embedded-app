@@ -25,6 +25,7 @@
 #include "IBMFFonts/OpenSans_75.h"
 #include "IBMFFonts/RobotoCondensed_75.h"
 #include "IBMFFonts/Roboto_75.h"
+#include "IBMFFonts/SolSans_75.h"
 #include "IBMFFonts/Tahoma_75.h"
 
 // Here is the list of all fonts that can be selected through a menu in the application.
@@ -44,7 +45,8 @@
 #define FONT_ENTRY(caption, name) {caption, name##_75_IBMF, name##_75_IBMF_LEN},
 
 // clang-format off
-std::array<FontEntry, 18> fontsList{{
+std::array<FontEntry, 19> fontsList{{
+    FONT_ENTRY("SolSans", SOL_SANS)
     FONT_ENTRY("GnuUnifont", GNUUNIFONT)
     FONT_ENTRY("Tahoma", TAHOMA)
     FONT_ENTRY("Arial", ARIAL)
