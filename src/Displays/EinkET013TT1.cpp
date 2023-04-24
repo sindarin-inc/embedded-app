@@ -213,7 +213,7 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
                                   int32_t overrideVcom) {
     if (overrideVcom != INT32_MAX) {
         uint8_t newVcomRegisterValue = VcomMVToRegisterValue(overrideVcom);
-        log_d("Overriding VCOM from %" PRIu32 " (0x%02X) to %" PRIi32 " (0x%02X)", vcomInMV_,
+        log_d("Overriding VCOM from %" PRIi32 " (0x%02X) to %" PRIi32 " (0x%02X)", vcomInMV_,
               VcomMVToRegisterValue(vcomInMV_), overrideVcom, newVcomRegisterValue);
         writeRegister(PWM_WIDTH_SELECT, newVcomRegisterValue);
         Delay(30);
@@ -375,7 +375,7 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
 
     if (overrideVcom != INT32_MAX) {
         auto oldVcomRegisterValue = VcomMVToRegisterValue(vcomInMV_);
-        log_d("Restoring VCOM to 0x%" PRIi32 " (0x%" PRIu8 ")", vcomInMV_, oldVcomRegisterValue);
+        log_d("Restoring VCOM to %" PRIi32 " (0x%" PRIu8 ")", vcomInMV_, oldVcomRegisterValue);
         writeRegister(PWM_WIDTH_SELECT, oldVcomRegisterValue);
     }
 
@@ -421,7 +421,7 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     });
 
     // Wait for the update to finish
-    constexpr int maxWaitTimeMs = (MAX_FRAMES_PER_WAVEFORM / FRAMERATE_DEFAULT) * 1000;
+    constexpr int maxWaitTimeMs = (MAX_FRAMES_PER_WAVEFORM / FRAMERATE_DEFAULT) * 1000 * 1.2;
     auto bits = xEventGroupWaitBits(group, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(maxWaitTimeMs));
     if (bits != 1) {
         log_e("Timed out waiting for update to finish!");

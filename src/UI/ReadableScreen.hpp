@@ -32,16 +32,16 @@ public:
         currentScreen_ = this;
         renderer_.setStream(std::move(stream));
 
-        lightingAdjustScreen_.backCallback = [this]() {
+        lightingAdjustScreen_.setBackCallback([this]() {
             setNeedsRerender();
             this->setCurrentScreen(*this);
-        };
-        readableSeekScreen_.backCallback = [this]() { this->setCurrentScreen(*this); };
+        });
+        readableSeekScreen_.setBackCallback([this]() { this->setCurrentScreen(*this); });
 
-        readableTableOfContentsScreen_.backCallback = [this]() {
+        readableTableOfContentsScreen_.setBackCallback([this]() {
             setNeedsRerender();
             this->setCurrentScreen(*this);
-        };
+        });
 
         pageSpeed_ = prefs_.autoPilotSpeed.get().value_or(0);
         // Since we copy in the readable from RootUI and RootUI only creates

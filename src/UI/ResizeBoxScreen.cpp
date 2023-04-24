@@ -66,7 +66,7 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
         prefs_.rectH.set(display_.getBoundingBox().height);
         log_d("Saving bounding box to preferences: (%s)",
               display_.getBoundingBox().toString().c_str());
-        backCallback();
+        back();
         break;
     default:
         break;

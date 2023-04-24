@@ -685,13 +685,13 @@ auto LocalStore::processReadableDownload(
                 readable, this->fileSystem, path,
                 [progressCallback, &syncState, tasksIndex, currPercentage, pctPerReadable,
                  modelType](int percentage) {
-                    if (modelType == ReadablesModelType::Book) {
-                        syncState.tasks[tasksIndex].percentage = percentage;
-                    } else if (modelType == ReadablesModelType::Article) {
-                        float pctThisReadable = (float)percentage * pctPerReadable / 100.0;
-                        syncState.tasks[tasksIndex].percentage = currPercentage + pctThisReadable;
-                    }
-                    progressCallback(syncState);
+                if (modelType == ReadablesModelType::Book) {
+                    syncState.tasks[tasksIndex].percentage = percentage;
+                } else if (modelType == ReadablesModelType::Article) {
+                    float pctThisReadable = (float)percentage * pctPerReadable / 100.0;
+                    syncState.tasks[tasksIndex].percentage = currPercentage + pctThisReadable;
+                }
+                progressCallback(syncState);
                 });
             if (success) {
                 addReadable(readables, readable);

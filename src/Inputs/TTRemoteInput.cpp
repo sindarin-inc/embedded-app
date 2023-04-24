@@ -2,6 +2,7 @@
 
 #include "TTRemoteInput.hpp"
 
+#include <algorithm>
 #include <functional>
 
 #include "Misc/Dispatch.hpp"
@@ -17,9 +18,8 @@
 
 using namespace std::placeholders;
 
-auto TTRemoteInput::connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &device) -> bool {
+auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice &device) -> bool {
     if (client_ == nullptr) {
-        log_d("Creating Turn Touch client");
         client_ = BLEDevice::createClient();
         client_->setClientCallbacks(&clientCallbacks_);
     }
@@ -28,26 +28,26 @@ auto TTRemoteInput::connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &
     client_->setConnectionParams(CONNECTION_INTERVAL_MIN, CONNECTION_INTERVAL_MAX,
                                  CONNECTION_LATENCY, CONNECTION_TIMEOUT);
 
-    BLEAddress address = device->getAddress();
-    log_d("Attempting to connect to TurnTouch at address: %s", address.toString().c_str());
+    BLEAddress address = device.getAddress();
+    log_d("Attempting to connect to PageTurner at address: %s", address.toString().c_str());
 
-    if (!client_->connect(device.get())) {
-        log_e("Failed to connect to TurnTouch");
+    if (!client_->connect(&device)) {
+        log_e("Failed to connect to PageTurner");
         return false;
     }
     // Obtain a reference to the service we are after in the remote BLE server.
     BLERemoteService *buttonService = client_->getService(TURNTOUCH_BUTTON_SVC_UUID);
     if (buttonService == nullptr) {
-        log_e("Failed to find TurnTouch button service UUID.");
+        log_e("Failed to find PageTurner button service UUID.");
         return false;
     }
-    log_d("TurnTouch service found.");
+    log_d("PageTurner service found.");
 
     // Obtain a reference to the characteristic in the service of the remote BLE server.
     BLERemoteCharacteristic *buttonCharacteristic =
         buttonService->getCharacteristic(TURNTOUCH_BUTTON_CHR_UUID);
     if (buttonCharacteristic == nullptr) {
-        log_e("Failed to find TurnTouch button characteristic UUID.");
+        log_e("Failed to find PageTurner button characteristic UUID.");
         return false;
     }
 
@@ -66,14 +66,14 @@ auto TTRemoteInput::connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &
         // Read the battery level from the battery service
         BLERemoteService *batteryService = client_->getService(TURNTOUCH_BATTERY_SVC_ID);
         if (batteryService == nullptr) {
-            log_e("Failed to find TurnTouch battery service ID.");
+            log_e("Failed to find PageTurner battery service ID.");
             return;
         }
 
         BLERemoteCharacteristic *batteryCharacteristic =
             batteryService->getCharacteristic(TURNTOUCH_BATTERY_CHR_ID);
         if (batteryCharacteristic == nullptr) {
-            log_e("Failed to find TurnTouch battery characteristic UUID.");
+            log_e("Failed to find PageTurner battery characteristic UUID.");
             return;
         }
 
@@ -88,20 +88,20 @@ auto TTRemoteInput::connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &
         BLERemoteService *disService = client_->getService(TURNTOUCH_DIS_SVC_ID);
         std::string build;
         if (disService == nullptr) {
-            log_w("Failed to find TurnTouch Device Information Service ID.");
+            log_w("Failed to find PageTurner Device Information Service ID.");
             // return false; // Don't exit if not found, simply means an older remote
         } else {
             BLERemoteCharacteristic *buildCharacteristic =
                 disService->getCharacteristic(TURNTOUCH_BUILD_CHR_ID);
             if (buildCharacteristic == nullptr) {
-                log_e("Failed to find TurnTouch build characteristic UUID.");
+                log_e("Failed to find PageTurner build characteristic UUID.");
                 return;
             }
 
             if (buildCharacteristic->canRead()) {
                 build = buildCharacteristic->readValue();
                 prefs_.lastPageTurnerBuild.set(build);
-                log_d("Page turner build: %s", build.c_str());
+                log_d("PageTurner build: %s", build.c_str());
             }
         }
 
@@ -112,7 +112,7 @@ auto TTRemoteInput::connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &
         }
     });
 
-    log_i("Connected to TurnTouch %s", address.toString().c_str());
+    log_i("Connected to PageTurner %s", address.toString().c_str());
 
     // Output a metric log on the very first TT connection
     static bool sFirstConnection = true;
@@ -122,6 +122,18 @@ auto TTRemoteInput::connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &
     }
 
     return true;
+}
+
+void TTRemoteInput::dispatchConnection(BLEAdvertisedDevice &device) {
+    state_ = CONNECTING;
+    DispatchQueue::dispatchOneOff(
+        [this, &device] {
+        if (!connectToDevice(device)) {
+            client_->disconnect();
+            state_ = SCANNING;
+        }
+        },
+        4000, 3, 0);
 }
 
 void TTRemoteInput::disconnectTemporarily(int seconds) {
@@ -144,16 +156,52 @@ void TTRemoteInput::disconnectTemporarily(int seconds) {
     prefs_.lastPageTurnerBuild.set(dfuString);
 }
 
-void TTRemoteInput::scanForDevice() {
-    DigitalWrite(BLUE_LED, LED_ON);
+void TTRemoteInput::scanForNewDevice() {
+    auto scan = BLEDevice::getScan();
+    scan->setInterval(40);
+    scan->setWindow(30);
+    scan->setActiveScan(true);
+    static TTRemoteInput *sInstance = this;
+    auto started = scan->start(10, [](NimBLEScanResults results) {
+        if (results.getCount() == 0) {
+            log_w("Absolutely 0 BLE devices found.");
+            return;
+        }
 
-    auto address = this->prefs_.pairedTurnTouchAddress.get();
-    if (address.has_value()) {
-        log_d("Scanning for paired TurnTouch %s", std::string(address.value()).c_str());
-    } else {
-        log_d("Scanning for any available TurnTouch...");
+        std::vector<NimBLEAdvertisedDevice *> filteredDevices;
+
+        for (auto advertisedDevice : results) {
+            if (advertisedDevice->isAdvertisingService(BLEUUID(TURNTOUCH_BUTTON_SVC_ID))) {
+                filteredDevices.push_back(advertisedDevice);
+            }
+        }
+
+        // Sort devices by RSSI (descending order)
+        std::sort(filteredDevices.begin(), filteredDevices.end(),
+                  [](NimBLEAdvertisedDevice *a, NimBLEAdvertisedDevice *b) {
+            return a->getRSSI() > b->getRSSI();
+        });
+
+        log_i("Scan complete. Found %d PageTurner devices (%d total BLE devices)",
+              filteredDevices.size(), results.getCount());
+
+        if (filteredDevices.size() == 0) {
+            return;
+        }
+        for (auto advertisedDevice : filteredDevices) {
+            log_d("PageTurner: %s, RSSI: %d", advertisedDevice->getAddress().toString().c_str(),
+                  advertisedDevice->getRSSI());
+        }
+
+        sInstance->dispatchConnection(*(filteredDevices[0]));
+    });
+    if (!started) {
+        log_e("Failed to start scan");
+        return;
     }
+}
 
+void TTRemoteInput::scanForPairedDevice() {
     // PT build 0.2.0 and earlier only support active scanning, which is less power efficient
     bool useActiveScan = false;
     auto ptBuild = prefs_.lastPageTurnerBuild.get();
@@ -168,13 +216,12 @@ void TTRemoteInput::scanForDevice() {
             useActiveScan = true;
         }
     } else {
-        // If we haven't connected to a PT yet, cast a wider net to pickup both old and new builds
+        // If we're unsure, just revert to using active scan
         log_i("Using active scan for PT because we have yet to connect to one");
         useActiveScan = true;
     }
 
     BLEScan *scan = BLEDevice::getScan();
-
     scan->setAdvertisedDeviceCallbacks(&advertisedDeviceCallbacks_);
     // See: https://electronics.stackexchange.com/a/359158/16459
     // Only one advertising channel is being looked at during each
@@ -183,11 +230,24 @@ void TTRemoteInput::scanForDevice() {
     // scanWindow equal to the scanInterval in order to do continuous scanning.
     scan->setInterval(40);
     scan->setWindow(30);
-    if (useActiveScan) {
-        scan->setActiveScan(true);
+    scan->setActiveScan(useActiveScan);
+    auto started = scan->start((int)(RESCAN_INTERVAL_MS / 1000), nullptr, false);
+    if (!started) {
+        log_e("Failed to start scan");
+        return;
     }
-    scan->start((int)(RESCAN_INTERVAL_MS / 1000), nullptr, false);
+}
 
+void TTRemoteInput::scanForDevice() {
+    DigitalWrite(BLUE_LED, LED_ON);
+    auto address = this->prefs_.pairedTurnTouchAddress.get();
+    if (address.has_value()) {
+        log_i("Scanning for paired PageTurner %s", std::string(address.value()).c_str());
+        scanForPairedDevice();
+    } else {
+        log_i("Scanning for any available PageTurner...");
+        scanForNewDevice();
+    }
     lastScanMs_ = Millis();
     DigitalWrite(BLUE_LED, LED_OFF);
 }
@@ -216,7 +276,7 @@ void TTRemoteInput::buttonNotificationCallback(BLERemoteCharacteristic *remoteCh
     }
 }
 
-void TTRemoteInput::connect() {
+void TTRemoteInput::scanIfNecessary() {
     if (state_ == SCANNING && !BLEDevice::getScan()->isScanning() &&
         (keepDisconnectedUntilMs_ == 0 || Millis() >= keepDisconnectedUntilMs_) &&
         (lastScanMs_ == 0 || Millis() > (lastScanMs_ + RESCAN_INTERVAL_MS + RESCAN_GAP_MS))) {
@@ -225,7 +285,7 @@ void TTRemoteInput::connect() {
     }
 
     if (Millis() < keepDisconnectedUntilMs_) {
-        log_d("Waiting to reconnect to TurnTouch until %lu", keepDisconnectedUntilMs_);
+        log_d("Waiting to reconnect to PageTurner until %lu", keepDisconnectedUntilMs_);
     }
 }
 

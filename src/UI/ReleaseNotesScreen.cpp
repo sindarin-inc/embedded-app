@@ -20,7 +20,7 @@ ReleaseNotesScreen::ReleaseNotesScreen(DisplaySystem &display, PreferencesStore 
 
     menu_.resetMenuItems();
     menu_.addMenuItem(MenuItem("Update Now", [this]() { runUpdate(); }));
-    menu_.addMenuItem(MenuItem("Maybe later", [this]() { backCallback(); }));
+    menu_.addMenuItem(MenuItem("Maybe later", [this]() { back(); }));
 
     setCurrentScreen(*this);
 }
@@ -78,7 +78,7 @@ void ReleaseNotesScreen::updateError(const std::string &logMessage) {
     display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     prefs_.firmwareLoaded.remove();
     localStore_.resetFirmware();
-    backCallback();
+    back();
     return;
 }
 
@@ -120,5 +120,5 @@ void ReleaseNotesScreen::runUpdate() {
     power_.reboot();
 
     // Only for the sim
-    backCallback();
+    back();
 }

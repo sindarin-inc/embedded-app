@@ -55,6 +55,11 @@ public:
     DispatchQueue(DispatchQueue &&rhs) = delete;
     auto operator=(DispatchQueue &&rhs) -> DispatchQueue & = delete;
 
+    // Fires up a task for only the purpose of running a single function.
+    // Handy since you can use lambda captures with it.
+    static void dispatchOneOff(const fp_t &op, size_t threadStack = 1024, UBaseType_t priority = 5,
+                               BaseType_t core = 1);
+
 private:
     std::string name_;
 

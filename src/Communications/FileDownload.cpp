@@ -142,15 +142,15 @@ auto DownloadFile(const char *url,
     return DownloadFile(
         url, openedConnection,
         [buffer, bufferSize, writeBytes](HttpClient &client, int index, int contentLength) {
-            int readLen =
-                client.read((char *)buffer.get(), std::min(bufferSize, contentLength - index));
+        int readLen =
+            client.read((char *)buffer.get(), std::min(bufferSize, contentLength - index));
 
-            auto written = writeBytes(buffer.get(), (size_t)readLen);
-            if (written != readLen) {
-                log_w("Failed to write to file, wrote %zu but expected %d", written, readLen);
-            }
+        auto written = writeBytes(buffer.get(), (size_t)readLen);
+        if (written != readLen) {
+            log_w("Failed to write to file, wrote %zu but expected %d", written, readLen);
+        }
 
-            return readLen;
+        return readLen;
         },
         progressCallback, gzip);
 }

@@ -11,10 +11,14 @@ IncludeBlocks: Regroup
 IncludeCategories:
   # (implied) Header file for the current cpp file
   # All "Library" <> headers
-  - Regex:           '<[[:alnum:].\/_-]+>'
-    Priority:        1
+  - Regex: '<[[:alnum:].\/_-]+>'
+    Priority: 1
   # All other headers
-  - Regex:           '.*'
-    Priority:        2
+  - Regex: ".*"
+    Priority: 2
 AllowShortIfStatementsOnASingleLine: true
 AlwaysBreakTemplateDeclarations: true
+
+# Don't allow the indentation of a lambda to be affected by the length
+# of the line it's declared on.
+LambdaBodyIndentation: OuterScope

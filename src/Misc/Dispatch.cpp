@@ -64,7 +64,6 @@ void DispatchQueue::beginShutdown() {
     // Signal to dispatch threads that it's time to wrap up
     quit_ = true;
 
-    // We will join each thread to confirm exiting
     for (int i = 0; i < threads_.size(); i++) {
         // Queue one quit signal for each thread
         auto quit = new WorkItem{.op = nullptr, .quit = true};
@@ -142,6 +141,19 @@ void DispatchQueue::dispatchThreadHandler() {
 
     // Delete the current thread
     vTaskDelete(nullptr);
+}
+
+void DispatchQueue::dispatchOneOff(const fp_t &op, size_t threadStack, UBaseType_t priority,
+                                   BaseType_t core) {
+    auto work = new WorkItem{.op = op, .quit = false};
+    xTaskCreatePinnedToCore(
+        [](void *param) {
+        auto work = reinterpret_cast<WorkItem *>(param);
+        work->op();
+        delete work;
+        vTaskDelete(nullptr);
+        },
+        "D:OneOff", threadStack, work, priority, nullptr, core);
 }
 
 static DispatchQueue *core0BackgroundQueue = nullptr;

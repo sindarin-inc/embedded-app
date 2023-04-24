@@ -40,8 +40,8 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
 
         y = (display.height() - groupHeight) / 2;
 
-        auto drawBulletLine = [&display, textHeight, &x, &y](const char *message, int percentage,
-                                                             bool drawLine) {
+        auto drawBulletLine =
+            [&display, textHeight, &x, &y](const char *message, int percentage, bool drawLine) {
             uint16_t textWidth = display.getTextWidth(message);
             uint16_t bulletRadius = textHeight / 3;
             uint16_t bulletY = y + (textHeight - bulletRadius * 2) / 2 + bulletRadius;
@@ -116,7 +116,7 @@ void FirmwareUpdateScreen::fail(const std::string &message) {
     render(display_);
     vTaskDelay(5000 / portTICK_PERIOD_MS);
     WiFi::getInstance().disconnectWiFi();
-    backCallback();
+    back();
 }
 
 void FirmwareUpdateScreen::begin() {
@@ -154,13 +154,13 @@ void FirmwareUpdateScreen::begin() {
             if (state.state == FirmwareDownloadState::Failure ||
                 state.state == FirmwareDownloadState::AlreadyUpToDate) {
                 vTaskDelay(3000 / portTICK_PERIOD_MS);
-                backCallback();
+                back();
             } else if (state.state == FirmwareDownloadState::Installed) {
                 vTaskDelay(3000 / portTICK_PERIOD_MS);
                 log_i("Rebooting after successful firmware update");
                 PowerManager::getInstance().reboot();
                 // Only for the sim
-                backCallback();
+                back();
             }
         });
     });

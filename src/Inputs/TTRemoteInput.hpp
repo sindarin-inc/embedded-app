@@ -19,8 +19,8 @@ public:
         : prefs_(prefs), advertisedDeviceCallbacks_(this), clientCallbacks_(this){};
     TTRemoteInput(TTRemoteInput const &) = delete;
 
-    // Connect to the TurnTouch. Can be safely called even if the TurnTouch is already connected.
-    void connect();
+    // Scan for a PageTurner. Can be safely called even if one is already connected.
+    void scanIfNecessary();
     void disconnectTemporarily(int seconds);
     auto connected() -> bool { return state_ == CONNECTED; }
 
@@ -36,12 +36,14 @@ protected:
 
     PreferencesStore &prefs_;
     State state_ = SCANNING;
-    std::shared_ptr<BLEAdvertisedDevice> turntouchDevice_;
     long lastScanMs_ = 0;
     long keepDisconnectedUntilMs_ = 0;
     BLEClient *client_ = nullptr;
 
-    auto connectToDevice(const std::shared_ptr<BLEAdvertisedDevice> &device) -> bool;
+    auto connectToDevice(BLEAdvertisedDevice &device) -> bool;
+    void dispatchConnection(BLEAdvertisedDevice &device);
+    void scanForNewDevice();
+    void scanForPairedDevice();
     void scanForDevice();
 
     class AdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
@@ -52,38 +54,20 @@ protected:
 
         void onResult(BLEAdvertisedDevice *advertisedDevice) override {
             if (advertisedDevice->haveServiceUUID()) {
-                log_v("BLEAdvertisedDevice w/ services found: %s",
-                      advertisedDevice->getName().c_str());
-                for (int i = 0; i < advertisedDevice->getServiceUUIDCount(); ++i) {
-                    log_v("Service %u - %s", i,
-                          advertisedDevice->getServiceUUID(i).toString().c_str());
-                }
-                // Connect to device if:
-                //  - This is the paired device
-                //  - We don't have any paired devices and this device is advertising the TurnTouch
-                //    button service
+                // log_v("BLEAdvertisedDevice w/ services found: %s",
+                //       advertisedDevice->getName().c_str());
+                // for (int i = 0; i < advertisedDevice->getServiceUUIDCount(); ++i) {
+                //     log_v("Service %u - %s", i,
+                //           advertisedDevice->getServiceUUID(i).toString().c_str());
+                // }
+                // Connect to device if this is the paired device
                 std::optional<BLEAddress> address = enclosed->prefs_.pairedTurnTouchAddress.get();
-                if ((address.has_value() && address.value() == advertisedDevice->getAddress()) ||
-                    (!address.has_value() &&
-                     advertisedDevice->isAdvertisingService(BLEUUID(TURNTOUCH_BUTTON_SVC_ID)))) {
-                    enclosed->state_ = CONNECTING;
-                    BLEDevice::getScan()->stop();
-                    enclosed->turntouchDevice_ =
-                        std::make_shared<BLEAdvertisedDevice>(*advertisedDevice);
-                    log_i("%s TurnTouch device found; queueing for connect...",
+                if (advertisedDevice->isAdvertisingService(BLEUUID(TURNTOUCH_BUTTON_SVC_ID)) &&
+                    (address.has_value() && address.value() == advertisedDevice->getAddress())) {
+                    log_i("%s PageTurner found; queueing for connect...",
                           address.has_value() ? "Paired" : "New");
-                    // Fire off a high-ish priority temporary task to connect the TT
-                    xTaskCreatePinnedToCore(
-                        [](void *params) {
-                            auto *tThis = (TTRemoteInput *)params;
-                            if (tThis->connectToDevice(tThis->turntouchDevice_)) {
-                            } else {
-                                tThis->client_->disconnect();
-                                tThis->state_ = SCANNING;
-                            }
-                            vTaskDelete(nullptr);
-                        },
-                        "TTConnect", 5000, this->enclosed, 2, nullptr, 0);
+                    BLEDevice::getScan()->stop();
+                    enclosed->dispatchConnection(*advertisedDevice);
                 }
             }
         }
@@ -98,14 +82,13 @@ protected:
         ClientCallbacks(TTRemoteInput *enclosure) { enclosed = enclosure; }
 
         void onConnect(BLEClient *client) override {
-            log_d("BLE TurnTouch client connected!");
+            log_d("BLE PageTurner connected!");
             enclosed->state_ = CONNECTED;
         }
 
         void onDisconnect(BLEClient *client) override {
-            log_w("BLE TurnTouch client disconnected!");
+            log_w("BLE PageTurner disconnected!");
             enclosed->state_ = SCANNING;
-            enclosed->turntouchDevice_ = nullptr;
         }
     };
 

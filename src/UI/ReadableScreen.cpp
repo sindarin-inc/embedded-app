@@ -479,10 +479,8 @@ void ReadableScreen::populatePopupMenu() {
                 xTimerStop(DisplaySystem::animationTimer, 0);
             }
         }
-        if (backCallback != nullptr) {
-            setNeedsRerender();
-            backCallback();
-        }
+        setNeedsRerender();
+        back();
     }));
 
     addMenuItem(MenuItem("Archive", [this]() {
@@ -495,36 +493,31 @@ void ReadableScreen::populatePopupMenu() {
             this->prefs_.readableArchivedChanged.set(readable_.shortenedUuid.c_str(), true);
         }
 
-        if (backCallback != nullptr) {
-            setNeedsRerender();
-            backCallback();
-        }
+        setNeedsRerender();
+        back();
         hidePopupMenu();
     }));
 
     archiveMenuItemView_ = menuItemViews_[menuItemViews_.size() - 1];
 
-    addMenuItem(
-        MenuItem(
-            "Unarchive",
-            [this]() {
-                hidePopupMenu();
-                bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
+    addMenuItem(MenuItem(
+                    "Unarchive",
+                    [this]() {
+        hidePopupMenu();
+        bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
 
-                if (archived) {
-                    log_i("Un-Archiving: %s", readable_.title.c_str());
-                    this->prefs_.readableArchivedChanged.remove(readable_.shortenedUuid.c_str());
-                } else {
-                    this->prefs_.readableArchivedChanged.set(readable_.shortenedUuid.c_str(), true);
-                }
+        if (archived) {
+            log_i("Un-Archiving: %s", readable_.title.c_str());
+            this->prefs_.readableArchivedChanged.remove(readable_.shortenedUuid.c_str());
+        } else {
+            this->prefs_.readableArchivedChanged.set(readable_.shortenedUuid.c_str(), true);
+        }
 
-                if (backCallback != nullptr) {
-                    setNeedsRerender();
-                    backCallback();
-                }
-                hidePopupMenu();
-            }),
-        false);
+        setNeedsRerender();
+        back();
+        hidePopupMenu();
+                    }),
+                false);
 
     unarchiveMenuItemView_ = menuItemViews_[menuItemViews_.size() - 1];
 
@@ -550,8 +543,8 @@ void ReadableScreen::populatePopupMenu() {
         if (hasToc_) {
             readableTableOfContentsScreen_.resetMenuItems();
             for (ReadableTableOfContentsChapter &chapter : readable_.toc) {
-                readableTableOfContentsScreen_.addMenuItem(MenuItem(
-                    chapter.title, [this]() { readableTableOfContentsScreen_.backCallback(); }));
+                readableTableOfContentsScreen_.addMenuItem(
+                    MenuItem(chapter.title, [this]() { readableTableOfContentsScreen_.back(); }));
             }
             readableTableOfContentsScreen_.setNearestChapterSelection(renderer_.getCurrentPlace());
             readableTableOfContentsScreen_.setFirstLoad();
@@ -586,10 +579,8 @@ void ReadableScreen::processCommandDemoMode(RemoteCommand command) {
         if (numUps_ > 3) {
             numUps_ = 0;
             prefs_.cesMode.set(false);
-            if (backCallback != nullptr) {
-                setNeedsRerender();
-                backCallback();
-            }
+            setNeedsRerender();
+            back();
         }
         break;
 
