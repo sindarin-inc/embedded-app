@@ -28,8 +28,14 @@ public:
         }
     }
 
-    std::function<void()> backCallback;
+    void setBackCallback(std::function<void()> callback) { backCallback_ = std::move(callback); }
+    void back() {
+        if (backCallback_ != nullptr) {
+            backCallback_();
+        }
+    }
 
 protected:
     bool needsRerender_ = true;
+    std::function<void()> backCallback_;
 };

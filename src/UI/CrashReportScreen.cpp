@@ -34,8 +34,8 @@ void CrashReportScreen::render(DisplaySystem &display) {
 
         y = (display.height() - groupHeight) / 2;
 
-        auto drawBulletLine = [&display, textHeight, &x, &y](const char *message, int percentage,
-                                                             bool drawLine) {
+        auto drawBulletLine =
+            [&display, textHeight, &x, &y](const char *message, int percentage, bool drawLine) {
             uint16_t textWidth = display.getTextWidth(message);
             uint16_t bulletRadius = textHeight / 3;
             uint16_t bulletY = y + (textHeight - bulletRadius * 2) / 2 + bulletRadius;
@@ -92,7 +92,7 @@ void CrashReportScreen::fail(const std::string &message) {
     render(display_);
     vTaskDelay(5000 / portTICK_PERIOD_MS);
     WiFi::getInstance().disconnectWiFi();
-    backCallback();
+    back();
 }
 
 void CrashReportScreen::begin() {
@@ -120,7 +120,7 @@ void CrashReportScreen::begin() {
                 state.state == CrashUploadState::Done) {
                 WiFi::getInstance().disconnectWiFi();
                 vTaskDelay(3000 / portTICK_PERIOD_MS);
-                backCallback();
+                back();
             }
         });
     });

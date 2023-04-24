@@ -47,8 +47,8 @@ void ContentSyncScreen::render(DisplaySystem &display) {
 
         y = (display.height() - groupHeight) / 2;
 
-        auto drawBulletLine = [&display, textHeight, &x, &y](const char *message, int percentage,
-                                                             bool drawLine) {
+        auto drawBulletLine =
+            [&display, textHeight, &x, &y](const char *message, int percentage, bool drawLine) {
             uint16_t textWidth = display.getTextWidth(message);
             uint16_t bulletRadius = textHeight / 3;
             uint16_t bulletY = y + (textHeight - bulletRadius * 2) / 2 + bulletRadius;
@@ -127,11 +127,7 @@ void ContentSyncScreen::fail(const std::string &message) {
 #if !SIMULATOR
     PowerManager::getInstance().reboot();
 #endif
-    if (backCallback) {
-        backCallback();
-    } else {
-        log_w("No back callback set for ContentSyncScreen");
-    }
+    back();
 }
 
 void ContentSyncScreen::begin() {
@@ -170,7 +166,7 @@ void ContentSyncScreen::begin() {
                 state.state == ContentSyncState::AlreadySynced) {
                 log_d("Content sync done, waiting 5 seconds before going back");
                 Delay(5000);
-                backCallback();
+                back();
             }
         });
     });

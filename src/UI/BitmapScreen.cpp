@@ -23,9 +23,7 @@ void BitmapScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::PREV:
     case RemoteCommand::NEXT:
     case RemoteCommand::BACK:
-        if (backCallback != nullptr) {
-            backCallback();
-        }
+        back();
         break;
     default:
         break;

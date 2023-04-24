@@ -50,6 +50,6 @@ void AlignmentScreen::processCommand(RemoteCommand command) {
 
     if (currentScreen_ >= 2) {
         lightingController_.setScreenMask(LightingController::Screens::BOTH);
-        backCallback();
+        back();
     }
 }

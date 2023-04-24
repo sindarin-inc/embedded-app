@@ -178,11 +178,9 @@ void PopupMenuScreen::processCommand(RemoteCommand command) {
     }
 
     auto back = [this]() {
-        if (backCallback != nullptr) {
-            setNeedsRerender();
-            this->renderer_.getDisplay()->clearDisplay();
-            backCallback();
-        }
+        setNeedsRerender();
+        this->renderer_.getDisplay()->clearDisplay();
+        this->back();
         setNeedsRerender();
     };
 
@@ -226,11 +224,11 @@ void PopupMenuScreen::showTocOrSeekScreen() {
         readableTableOfContentsScreen_.resetMenuItems();
         for (ReadableTableOfContentsChapter &chapter : readable_.toc) {
             readableTableOfContentsScreen_.addMenuItem(MenuItem(chapter.title, [this]() {
-                readableTableOfContentsScreen_.backCallback();
+                readableTableOfContentsScreen_.back();
 
                 setNeedsRerender();
                 this->renderer_.getDisplay()->clearDisplay();
-                this->backCallback();
+                this->back();
             }));
         }
         readableTableOfContentsScreen_.setNearestChapterSelection(renderer_.getCurrentPlace());
