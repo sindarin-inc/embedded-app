@@ -13,27 +13,27 @@ class MenuItemView : public EinkView {
 public:
     // Always use the smallest font for subtitles
     MenuItemView(DisplaySystem &display, const MenuItem &menuItem,
-                 const GFXfont *font = &TAHOMA_REGULAR_FONT5PT7B, bool multiLine = false,
-                 bool noPadding = false)
+                 const GFXfont *font = &TAHOMA_REGULAR_FONT5PT7B, bool multiLine = false)
         : EinkView(display), textView_(display, menuItem.title, font),
           subtextView_(display, menuItem.subtitle, &TAHOMA_REGULAR_FONT5PT7B, true),
           textMultiView_(display, menuItem.title, 2, 0, font), multiLine_(multiLine),
-          indicator_(display, 4), menuItem_(menuItem), noVerticalPadding_(noPadding) {
+          indicator_(display, 4) {
         if (!menuItem.subtitle.empty()) {
             hasSubtext_ = true;
-        }
-        if (noPadding) {
-            indicatorPadding_ = 0;
-        } else {
-            indicatorPadding_ = 3;
         }
         log_i("initializing menu item view with title: %s", menuItem.title.c_str());
     }
     ~MenuItemView() override = default;
 
+    // Extra height on top and bottom of the indicator relative to the size to fit the text.
     void setIndicatorPadding(int padding) { indicatorPadding_ = padding; }
 
-    void setNoPaddingBetween(bool noPadding) { noVerticalPadding_ = noPadding; }
+    // Extra vertical spacing at the bottom of this view.
+    void setVerticalPadding(int padding) { verticalPadding_ = padding; }
+
+    // Whether or not the indicator should be a circle or the full height of the text (plus
+    // indicatorPadding)
+    void setCircleIndicator(bool circle) { circleIndicator_ = circle; }
 
     auto layout(LayoutContext &context, Size size) -> Size override {
         int x = 0;
@@ -70,15 +70,16 @@ public:
                                   {indicatorWidth, textRect.size.height + subtextRect.size.height +
                                                        2 * indicatorHeightPadding}});
             subtextRectHeight = subtextRect.size.height;
-
         } else {
-            context.setViewFrame(
-                indicator_,
-                {{x, y - (noVerticalPadding_ ? -4 : indicatorHeightPadding)},
-                 {indicatorWidth,
-                  (noVerticalPadding_ ? 5 : textRect.size.height + 2 * indicatorHeightPadding)}});
+            auto indicatorHeight = circleIndicator_
+                                       ? indicatorWidth
+                                       : textRect.size.height + 2 * indicatorHeightPadding;
+
+            context.setViewSizeInRect(indicator_, {indicatorWidth, indicatorHeight},
+                                      Rect{{x, y + 1}, {indicatorWidth, textRect.size.height}},
+                                      LayoutOptionsAlignCenterVertical);
         }
-        y += textRect.size.height + (noVerticalPadding_ ? 0 : subtextRectHeight + 2);
+        y += textRect.size.height + subtextRectHeight + verticalPadding_;
         return {size.width, y};
     }
 
@@ -113,9 +114,9 @@ protected:
     MultiLineTextView textMultiView_;
     bool multiLine_ = false;
     BoxView indicator_;
-    const MenuItem &menuItem_;
-    int indicatorPadding_;
-    bool noVerticalPadding_;
+    int indicatorPadding_ = 3;
+    int verticalPadding_ = 2;
+    bool circleIndicator_ = false;
     bool selected_ = false;
     bool hasSubtext_ = false;
 };

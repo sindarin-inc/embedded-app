@@ -76,8 +76,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto articles = localStore.articles();
 
     auto createReadableScreen = [this, display, mainMenu, &fileSystem, &lightingController,
-                                 &localStore,
-                                 styleFamilies](const Readable &readable) -> ReadableScreen * {
+                                 &localStore](const Readable &readable) -> ReadableScreen * {
         // TODO: Would be better to not allocate / delete these all the time
 
         std::shared_ptr<RendererStream> stream;
@@ -95,9 +94,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         } else {
             stream = fileSystem.newRendererStream(path.c_str());
         }
-        auto *readableScreen =
-            new ReadableScreen(stream, *display, readable, this->prefs_, power_.battery, fileSystem,
-                               lightingController, styleFamilies.settingsMenu);
+        auto *readableScreen = new ReadableScreen(stream, *display, readable, this->prefs_,
+                                                  power_.battery, fileSystem, lightingController);
 
         // When switching to a readable from a menu, we should clear the display
         // to make the whites really white and the blacks really black.

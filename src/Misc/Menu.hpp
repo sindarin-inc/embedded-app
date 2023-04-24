@@ -42,7 +42,7 @@ public:
     Menu() { numMenuItems_ = 0; };
     virtual ~Menu() = default;
 
-    virtual void addMenuItem(const MenuItem &newItem, bool enabled = true);
+    virtual void addMenuItem(const MenuItem &newItem);
 
     virtual void resetMenuItems();
 

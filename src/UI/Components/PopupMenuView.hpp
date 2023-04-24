@@ -8,20 +8,13 @@
 #include "UI/Components/SingleLineTextView.hpp"
 #include "UI/Layout/View.hpp"
 
-class PopupMenuView : public View {
+class PopupMenuView : public View, public Menu {
 public:
     PopupMenuView(DisplaySystem &display)
         : View(), display_(display), popupMenuBackground_(display, 5),
           popupMenuForeground_(display, 5), clockView_(display, ""), auxTextView_(display, "") {}
 
     ~PopupMenuView() override = default;
-
-    void populateMenuItems(std::vector<std::shared_ptr<MenuItemView>> menuItems) {
-        menuItemViews_ = std::move(menuItems);
-        popupMenuBackground_.fillColor = display_.bg;
-        popupMenuBackground_.strokeColor = display_.bg;
-        popupMenuForeground_.strokeColor = display_.fg;
-    }
 
     void setAuxText(std::string auxText) {
         auxTextView_.setText(std::move(auxText));
@@ -47,7 +40,7 @@ public:
                 int x = 0;
                 int y = 0;
 
-                for (auto &view : menuItemViews_) {
+                for (auto &view : menuItemViews) {
                     if (!view->isHidden()) {
                         auto viewFrame = context.setViewFrame(
                             *view, {{x, y}, size}, LayoutOptionsSizeToFit | LayoutOptionsAlignTop);
@@ -58,12 +51,13 @@ public:
                 return {size.width, y};
             });
 
-        // Inset clock and aux horizontally to match the content but with only 5px on the bottom
-        context.setViewFrame(clockView_, foregroundFrame.inset(10, 5),
+        // Inset clock and aux horizontally to match the content but with 5px less padding on
+        // the bottom
+        context.setViewFrame(clockView_, contentFrame.inset(0, -5),
                              LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
                                  LayoutOptionsAlignLeft);
 
-        context.setViewFrame(auxTextView_, foregroundFrame.inset(10, 5),
+        context.setViewFrame(auxTextView_, contentFrame.inset(0, -5),
                              LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
                                  LayoutOptionsAlignRight);
 
@@ -71,10 +65,14 @@ public:
     }
 
     void drawInRect(Rect rect) override {
+        popupMenuBackground_.fillColor = display_.bg;
+        popupMenuBackground_.strokeColor = display_.bg;
+        popupMenuForeground_.strokeColor = display_.fg;
+
         popupMenuBackground_.draw();
         popupMenuForeground_.draw();
 
-        for (auto &view : menuItemViews_) {
+        for (auto &view : menuItemViews) {
             if (!view->isHidden()) {
                 view->draw();
             }
@@ -87,10 +85,10 @@ public:
         auxTextView_.draw();
     }
 
+    std::vector<std::shared_ptr<MenuItemView>> menuItemViews;
+
 protected:
     DisplaySystem &display_;
-
-    std::vector<std::shared_ptr<MenuItemView>> menuItemViews_;
 
     BoxView popupMenuBackground_;
     BoxView popupMenuForeground_;

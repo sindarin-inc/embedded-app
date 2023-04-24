@@ -5,7 +5,7 @@
 #include "Misc/MenuStyle.hpp"
 #include "Misc/Style.hpp"
 
-void Menu::addMenuItem(const MenuItem &newItem, bool enabled) {
+void Menu::addMenuItem(const MenuItem &newItem) {
     menuItems_.push_back(newItem);
     numMenuItems_++;
 }
@@ -53,7 +53,13 @@ auto Menu::nextSelection(bool skipLast) -> bool {
     if (skipLast && (currSelection_ == numMenuItems_ - 1)) {
         currSelection_ = 0;
     }
-    currMenuPage_ = currSelection_ / myStyle_.numberOfItemsPerPage;
+    log_d("currSelection_ = %d, myStyle_.numberOfItemsPerPage = %d", currSelection_,
+          myStyle_.numberOfItemsPerPage);
+    if (myStyle_.numberOfItemsPerPage == 0) {
+        currMenuPage_ = 0;
+    } else {
+        currMenuPage_ = currSelection_ / myStyle_.numberOfItemsPerPage;
+    }
     // This makes sure we do a full refresh when the page changes
     if (oldCurMenuPage != currMenuPage_) {
         log_d("Page changed, refreshing");

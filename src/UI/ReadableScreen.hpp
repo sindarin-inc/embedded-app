@@ -1,47 +1,27 @@
 #include <utility>
 
 #include "Misc/Battery.hpp"
-#include "Misc/SolClock.hpp"
 #include "Models/Readable.hpp"
 #include "Models/ReadableBookmark.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "Sensors/LightingController.hpp"
 #include "Storage/PreferencesStore.hpp"
-#include "UI/Components/PopupMenuView.hpp"
 #include "UI/ContainerScreen.hpp"
-#include "UI/Layout/View.hpp"
-#include "UI/LightingAdjustScreen.hpp"
-#include "UI/MenuScreen.hpp"
-#include "UI/ReadableSeekScreen.hpp"
-#include "UI/ReadableTableOfContentsScreen.hpp"
+#include "UI/ReadablePopupMenuScreen.hpp"
 #include "UI/Screen.hpp"
 #include "config.h"
 
-class ReadableScreen : public MenuScreen {
+class ReadableScreen : public ContainerScreen {
 public:
     ReadableScreen(std::shared_ptr<RendererStream> stream, DisplaySystem &display,
                    const Readable &readable, PreferencesStore &prefs, Battery &battery,
-                   FileSystem &fileSystem, LightingController &lightingController,
-                   MenuStyleFamily myStyle)
-        : MenuScreen(battery, display, myStyle), renderer_(display), firstTimeRenderer_(display),
-          readable_(readable), prefs_(prefs), fileSystem_(fileSystem), display_(display),
-          lightingAdjustScreen_(display, prefs, lightingController),
-          readableSeekScreen_(prefs, readable_, renderer_), popupMenuView_(display),
-          readableTableOfContentsScreen_(prefs, readable_, renderer_, display) {
+                   FileSystem &fileSystem, LightingController &lightingController)
+        : renderer_(display), firstTimeRenderer_(display), readable_(readable), prefs_(prefs),
+          fileSystem_(fileSystem), display_(display),
+          popupMenuScreen_(display, prefs, readable_, lightingController, renderer_) {
 
         currentScreen_ = this;
         renderer_.setStream(std::move(stream));
-
-        lightingAdjustScreen_.setBackCallback([this]() {
-            setNeedsRerender();
-            this->setCurrentScreen(*this);
-        });
-        readableSeekScreen_.setBackCallback([this]() { this->setCurrentScreen(*this); });
-
-        readableTableOfContentsScreen_.setBackCallback([this]() {
-            setNeedsRerender();
-            this->setCurrentScreen(*this);
-        });
 
         pageSpeed_ = prefs_.autoPilotSpeed.get().value_or(0);
         // Since we copy in the readable from RootUI and RootUI only creates
@@ -59,56 +39,48 @@ public:
         newPlace_ = readable_.place;
         atEnd_ = this->checkAtEnd();
 
-        hasToc_ = readable.toc.size() >= 1;
-        log_d("hasToc_ = %d, readable.toc.size: %zu", hasToc_, readable.toc.size());
-
         log_d("Found place for %s = %" PRIu32 " %s", readable_.shortenedUuid.c_str(),
               readable_.place, atEnd_ ? "(at end)" : "");
 
-        populatePopupMenu();
+        popupMenuScreen_.setBackCallback([this]() {
+            autoPilotForceFull_ = true;
+            this->setCurrentScreen(*this);
+        });
+
+        popupMenuScreen_.onMainMenu = [this]() {
+            hidePopupMenu();
+            prefs_.lastReadableId.remove();
+            if (!prefs_.cesMode.get().value_or(false)) {
+                if (pageSpeed_ != 0) {
+                    xTimerStop(DisplaySystem::animationTimer, 0);
+                }
+            }
+            setNeedsRerender();
+            back();
+        };
+
+        popupMenuScreen_.onBookmarkToggle = [this]() {
+            inBookmark_ = !inBookmark_;
+            writeOutBookmarkUpdate();
+        };
+
+        popupMenuScreen_.onRerender = [this]() { renderPopup_ = true; };
     }
 
     ~ReadableScreen() override = default;
-
-    void setCurrentScreen(Screen &screen);
-
-    auto getCurrentScreen() -> Screen * { return currentScreen_; }
-
-    auto needsRerender() -> bool override;
-
-    auto layout(LayoutContext &context, Size size) -> Size override;
-    void drawInRect(Rect rect) override;
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
     void writeOutBookmarkUpdate();
     void updateBookmarkStatus();
 
-    void populatePopupMenu();
-
-    void resetMenuItems() override {
-        Menu::resetMenuItems();
-        menuItemViews_.clear();
-        firstLoad_ = true;
-    }
-
-    void addMenuItem(const MenuItem &newItem, bool enabled = true) override {
-        Menu::addMenuItem(newItem);
-        auto menuItemView = std::make_shared<MenuItemView>(display_, newItem);
-        menuItemView->setIndicatorPadding(0);
-        menuItemView->setNoPaddingBetween(true);
-        menuItemView->setHidden(!enabled);
-        menuItemViews_.push_back(menuItemView);
-    }
-
     void renderIcons(DisplaySystem &display);
 
 protected:
     void processCommandDemoMode(RemoteCommand command);
     void processCommandAutoPilot(RemoteCommand command);
-    void processCommandPopup(RemoteCommand command);
     void processCommandNormal(RemoteCommand command);
-    void setUpPopupMenu();
+    void showPopupMenu();
     void hidePopupMenu();
 
     Renderer renderer_;
@@ -126,21 +98,13 @@ protected:
 
     unsigned long newPlace_ = 0;
     bool atEnd_ = false;
-    bool showPopup_ = false;
     bool shownIcons_ = false;
-    bool popupAlreadyRenderedOnce_ = true;
+    bool renderPopup_ = false;
     bool autoPilotForceFull_ = false;
-
-    bool hasToc_ = false;
 
     DisplaySystem &display_;
 
-    LightingAdjustScreen lightingAdjustScreen_;
-    ReadableSeekScreen readableSeekScreen_;
-
-    PopupMenuView popupMenuView_;
-
-    ReadableTableOfContentsScreen readableTableOfContentsScreen_;
+    ReadablePopupMenuScreen popupMenuScreen_;
 
     // Must reset this to 0 on each page turn.
     unsigned int speedLinesToSkip_ = 0;
@@ -151,13 +115,6 @@ protected:
 
     bool showAutopilotPlus_ = false;
     bool showAutopilotMinus_ = false;
-
-    Screen *currentScreen_;
-
-    std::vector<std::shared_ptr<MenuItemView>> menuItemViews_;
-
-    std::shared_ptr<MenuItemView> archiveMenuItemView_;
-    std::shared_ptr<MenuItemView> unarchiveMenuItemView_;
 
 private:
     void incrementReadingTime();

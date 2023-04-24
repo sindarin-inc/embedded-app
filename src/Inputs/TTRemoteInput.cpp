@@ -182,7 +182,7 @@ void TTRemoteInput::scanForNewDevice() {
             return a->getRSSI() > b->getRSSI();
         });
 
-        log_i("Scan complete. Found %d PageTurner devices (%d total BLE devices)",
+        log_i("Scan complete. Found %zu PageTurner devices (%d total BLE devices)",
               filteredDevices.size(), results.getCount());
 
         if (filteredDevices.size() == 0) {

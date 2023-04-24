@@ -44,6 +44,7 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         // This is the new default way to get a bookmark on a page
         SendRemoteCommand(PREV);
         WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW();
         SendRemoteCommand(NEXT);
         WAIT_FOR_DRAW();
         SendRemoteCommand(NEXT);

@@ -29,7 +29,7 @@ public:
     }
 
     void setBackCallback(std::function<void()> callback) { backCallback_ = std::move(callback); }
-    void back() {
+    virtual void back() {
         if (backCallback_ != nullptr) {
             backCallback_();
         }

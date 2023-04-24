@@ -421,6 +421,7 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     });
 
     // Wait for the update to finish
+    // NOLINTNEXTLINE(bugprone-integer-division) -- it's fine for this to be approximate
     constexpr int maxWaitTimeMs = (MAX_FRAMES_PER_WAVEFORM / FRAMERATE_DEFAULT) * 1000 * 1.2;
     auto bits = xEventGroupWaitBits(group, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(maxWaitTimeMs));
     if (bits != 1) {
