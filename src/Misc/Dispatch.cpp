@@ -148,10 +148,10 @@ void DispatchQueue::dispatchOneOff(const fp_t &op, size_t threadStack, UBaseType
     auto work = new WorkItem{.op = op, .quit = false};
     xTaskCreatePinnedToCore(
         [](void *param) {
-            auto work = reinterpret_cast<WorkItem *>(param);
-            work->op();
-            delete work;
-            vTaskDelete(nullptr);
+        auto work = reinterpret_cast<WorkItem *>(param);
+        work->op();
+        delete work;
+        vTaskDelete(nullptr);
         },
         "D:OneOff", threadStack, work, priority, nullptr, core);
 }

@@ -128,10 +128,10 @@ void TTRemoteInput::dispatchConnection(BLEAdvertisedDevice &device) {
     state_ = CONNECTING;
     DispatchQueue::dispatchOneOff(
         [this, &device] {
-            if (!connectToDevice(device)) {
-                client_->disconnect();
-                state_ = SCANNING;
-            }
+        if (!connectToDevice(device)) {
+            client_->disconnect();
+            state_ = SCANNING;
+        }
         },
         4000, 3, 0);
 }
@@ -179,8 +179,8 @@ void TTRemoteInput::scanForNewDevice() {
         // Sort devices by RSSI (descending order)
         std::sort(filteredDevices.begin(), filteredDevices.end(),
                   [](NimBLEAdvertisedDevice *a, NimBLEAdvertisedDevice *b) {
-                      return a->getRSSI() > b->getRSSI();
-                  });
+            return a->getRSSI() > b->getRSSI();
+        });
 
         log_i("Scan complete. Found %d PageTurner devices (%d total BLE devices)",
               filteredDevices.size(), results.getCount());
