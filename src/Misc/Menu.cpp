@@ -30,7 +30,11 @@ auto Menu::getNumItems() -> int { return numMenuItems_; }
 
 void Menu::setCurrSelection(int newSelection) {
     currSelection_ = newSelection;
-    currMenuPage_ = currSelection_ / myStyle_.numberOfItemsPerPage;
+    if (myStyle_.numberOfItemsPerPage == 0) {
+        currMenuPage_ = 0;
+    } else {
+        currMenuPage_ = currSelection_ / myStyle_.numberOfItemsPerPage;
+    }
 }
 
 auto Menu::getCurrSelection() -> int { return currSelection_; }
@@ -53,8 +57,6 @@ auto Menu::nextSelection(bool skipLast) -> bool {
     if (skipLast && (currSelection_ == numMenuItems_ - 1)) {
         currSelection_ = 0;
     }
-    log_d("currSelection_ = %d, myStyle_.numberOfItemsPerPage = %d", currSelection_,
-          myStyle_.numberOfItemsPerPage);
     if (myStyle_.numberOfItemsPerPage == 0) {
         currMenuPage_ = 0;
     } else {
@@ -78,7 +80,11 @@ auto Menu::prevSelection(bool skipLast) -> bool {
     if (skipLast && (currSelection_ == numMenuItems_ - 1)) {
         currSelection_--;
     }
-    currMenuPage_ = currSelection_ / myStyle_.numberOfItemsPerPage;
+    if (myStyle_.numberOfItemsPerPage == 0) {
+        currMenuPage_ = 0;
+    } else {
+        currMenuPage_ = currSelection_ / myStyle_.numberOfItemsPerPage;
+    }
     // This makes sure we do a full refresh when the page changes
     if (oldCurMenuPage != currMenuPage_) {
         needsRefresh = true;
