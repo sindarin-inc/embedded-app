@@ -473,6 +473,7 @@ void ReadableScreen::processCommandNormal(RemoteCommand command) {
         break;
     case RemoteCommand::NEXT:
         showPopupMenu();
+        popupMenuScreen_.preselectLastItem();
         break;
     case RemoteCommand::CHANNEL_PLUS:
         if (prefs_.fastBookmarkRight.get().value_or(false)) {
@@ -485,6 +486,7 @@ void ReadableScreen::processCommandNormal(RemoteCommand command) {
     case RemoteCommand::BACK:
     case RemoteCommand::PREV:
         showPopupMenu();
+        popupMenuScreen_.preselectFirstItem();
         break;
 
     case RemoteCommand::NOP_BUTTON:

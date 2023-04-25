@@ -104,6 +104,10 @@ void ReadablePopupMenuScreen::preselectArchiveMenuItem() {
     }
 }
 
+void ReadablePopupMenuScreen::preselectFirstItem() { setCurrSelection(0); }
+
+void ReadablePopupMenuScreen::preselectLastItem() { setCurrSelection(numMenuItems_ - 1); }
+
 void ReadablePopupMenuScreen::processCommand(RemoteCommand command) {
     if (currentScreen_ != this) {
         currentScreen_->processCommand(command);
@@ -126,9 +130,9 @@ void ReadablePopupMenuScreen::processCommand(RemoteCommand command) {
         } while (popupMenuView_.menuItemViews[getCurrSelection()]->isHidden());
         break;
     case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::BACK:
         back();
         break;
-    case RemoteCommand::BACK:
     case RemoteCommand::PREV:
         do {
             prevSelection();

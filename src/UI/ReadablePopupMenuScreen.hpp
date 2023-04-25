@@ -45,6 +45,8 @@ public:
 
     void setUpPopupMenu();
     void preselectArchiveMenuItem();
+    void preselectFirstItem();
+    void preselectLastItem();
 
     std::function<void()> onMainMenu;
     std::function<void()> onBookmarkToggle;
