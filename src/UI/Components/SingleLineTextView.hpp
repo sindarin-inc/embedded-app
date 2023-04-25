@@ -50,7 +50,7 @@ public:
             display_.getTextBounds(text_.c_str(), &w, &h);
         }
         display_.setFont(oldFont);
-        return {w, display_.getFont()->yAdvance};
+        return {w, font_->yAdvance};
     }
 
     void drawInRect(Rect rect) override {
