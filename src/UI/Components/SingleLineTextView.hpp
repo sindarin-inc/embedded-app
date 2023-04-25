@@ -51,8 +51,7 @@ public:
             display_.getTextSize(text_.c_str(), &w, &h);
         }
         display_.setFont(oldFont);
-        Font *theFont = display_.getFont();
-        return {w, theFont->lineHeight()};
+        return {w, font_->lineHeight()};
     }
 
     void drawInRect(Rect rect) override {

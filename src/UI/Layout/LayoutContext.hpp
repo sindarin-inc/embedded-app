@@ -84,6 +84,10 @@ public:
         needsSizing_ = true;
         cachedSize_ = Size::zero();
         cachedLayoutSize_ = Size::zero();
+        // Invalidate sublayouts as well
+        for (auto &sublayout : sublayouts_) {
+            sublayout.second->setNeedsLayout();
+        }
     }
 
     // This runs the layout if necessary, or returns the cached size if layout is not

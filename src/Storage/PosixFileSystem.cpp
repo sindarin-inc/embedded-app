@@ -39,7 +39,7 @@ auto PosixFileSystem::listDir(const std::string &path, FileList &files, int limi
         int counted = 0;
         while ((ep = readdir(dp))) {
             if (ep->d_type != DT_DIR) {
-                files.push_back(ep->d_name);
+                files.emplace_back(ep->d_name);
                 counted++;
             }
             if (limit > 0 && counted >= limit) {

@@ -7,8 +7,7 @@
 #include "Sensors/LightingController.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/ContainerScreen.hpp"
-#include "UI/LineMenuScreen.hpp"
-#include "UI/PopupMenuScreen.hpp"
+#include "UI/ReadablePopupMenuScreen.hpp"
 #include "UI/Screen.hpp"
 #include "config.h"
 
@@ -17,12 +16,13 @@ public:
     ReadableScreen(std::shared_ptr<RendererStream> stream, DisplaySystem &display,
                    const Readable &readable, PreferencesStore &prefs, Battery &battery,
                    FileSystem &fileSystem, LightingController &lightingController)
-
         : renderer_(display), firstTimeRenderer_(display), readable_(readable), prefs_(prefs),
-          popup_(display, battery, renderer_, prefs_, readable_, lightingController),
-          archiveMenu_(prefs_, display), fileSystem_(fileSystem), display_(display) {
+          fileSystem_(fileSystem), display_(display),
+          popupMenuScreen_(display, prefs, readable_, lightingController, renderer_) {
+
         currentScreen_ = this;
         renderer_.setStream(std::move(stream));
+
         pageSpeed_ = prefs_.autoPilotSpeed.get().value_or(0);
         // Since we copy in the readable from RootUI and RootUI only creates
         // the readable at the initial MainMenu creation, the place of that
@@ -41,15 +41,33 @@ public:
 
         log_d("Found place for %s = %" PRIu32 " %s", readable_.shortenedUuid.c_str(),
               readable_.place, atEnd_ ? "(at end)" : "");
-        popup_.backCallback = [this]() { this->setCurrentScreen(*this); };
-        archiveMenu_.backCallback = [this]() { this->setCurrentScreen(*this); };
+
+        popupMenuScreen_.setBackCallback([this]() {
+            autoPilotForceFull_ = true;
+            this->setCurrentScreen(*this);
+        });
+
+        popupMenuScreen_.onMainMenu = [this]() {
+            hidePopupMenu();
+            prefs_.lastReadableId.remove();
+            if (!prefs_.cesMode.get().value_or(false)) {
+                if (pageSpeed_ != 0) {
+                    xTimerStop(DisplaySystem::animationTimer, 0);
+                }
+            }
+            setNeedsRerender();
+            back();
+        };
+
+        popupMenuScreen_.onBookmarkToggle = [this]() {
+            inBookmark_ = !inBookmark_;
+            writeOutBookmarkUpdate();
+        };
+
+        popupMenuScreen_.onRerender = [this]() { renderPopup_ = true; };
     }
 
     ~ReadableScreen() override = default;
-
-    void setLeftPopupButton(const std::string &title, std::function<void(void)> callback) {
-        popup_.setLeftPopupButton(title, std::move(callback));
-    }
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
@@ -59,6 +77,12 @@ public:
     void renderIcons(DisplaySystem &display);
 
 protected:
+    void processCommandDemoMode(RemoteCommand command);
+    void processCommandAutoPilot(RemoteCommand command);
+    void processCommandNormal(RemoteCommand command);
+    void showPopupMenu();
+    void hidePopupMenu();
+
     Renderer renderer_;
     Renderer firstTimeRenderer_;
     // Note that this is a copy of the readable from RootUI.
@@ -67,10 +91,6 @@ protected:
     Readable readable_;
     PreferencesStore &prefs_;
 
-    PopupMenuScreen popup_;
-
-    LineMenuScreen archiveMenu_;
-
     FileSystem &fileSystem_;
 
     bool inBookmark_ = false;
@@ -78,10 +98,13 @@ protected:
 
     unsigned long newPlace_ = 0;
     bool atEnd_ = false;
-
     bool shownIcons_ = false;
+    bool renderPopup_ = false;
+    bool autoPilotForceFull_ = false;
 
     DisplaySystem &display_;
+
+    ReadablePopupMenuScreen popupMenuScreen_;
 
     // Must reset this to 0 on each page turn.
     unsigned int speedLinesToSkip_ = 0;

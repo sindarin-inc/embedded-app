@@ -139,32 +139,8 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
 // we have a helper method to do the work.
 void ReadableScreen::turnPage() {
     if (atEnd_) {
-        bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
-        archiveMenu_.resetMenuItems();
-        if (archived) {
-            archiveMenu_.addMenuItem(MenuItem("Undo Archive", [this]() {
-                log_i("Un-Archiving: %s", readable_.title.c_str());
-                this->prefs_.readableArchivedChanged.remove(readable_.shortenedUuid.c_str());
-                if (this->backCallback != nullptr) {
-                    this->backCallback();
-                }
-            }));
-        } else {
-            archiveMenu_.addMenuItem(MenuItem("Archive and Main Menu", [this]() {
-                log_i("Archiving: %s", readable_.title.c_str());
-                this->prefs_.readableArchivedChanged.set(readable_.shortenedUuid.c_str(), true);
-                if (this->backCallback != nullptr) {
-                    this->backCallback();
-                }
-            }));
-        }
-        archiveMenu_.addMenuItem(MenuItem("Main Menu", [this]() {
-            log_i("Not archiving: %s", readable_.title.c_str());
-            if (this->backCallback != nullptr) {
-                this->backCallback();
-            }
-        }));
-        setCurrentScreen(archiveMenu_);
+        showPopupMenu();
+        popupMenuScreen_.preselectArchiveMenuItem();
     } else {
         readable_.placePrev = readable_.place;
         readable_.place = newPlace_;
@@ -172,12 +148,26 @@ void ReadableScreen::turnPage() {
         prefs_.readablePlaceChanged.set(readable_.shortenedUuid.c_str(), true);
         speedLinesToSkip_ = 0;
     }
+
+    uint32_t wc = prefs_.wordCount.get().value_or(0);
+    wc = wc + renderer_.getCurrentPageWordCount();
+    prefs_.wordCount.set(wc);
 }
 
 auto ReadableScreen::checkAtEnd() -> bool { return (newPlace_ == 0); }
 
 void ReadableScreen::render(DisplaySystem &display) {
-    if (currentScreen_ != this) {
+    // Rendering the popup is a special case. We first re-draw the text onto the background (since
+    // it would have been cleared at the end of the last updateDisplay), then we render the popup
+    // over it, then we draw that as a partial refresh. Then we only render the popup (no text) and
+    // update again as AU4. That causes the text to be slightly faded out, but the popup menu to be
+    // very clear.
+    // NOTE: We might consider in the future, not always clearing the display (`fillScreen(bg);`)
+    // after updateDisplay. Then we could simply draw over existing screen contents without
+    // rerendering it. But that would be a pretty global change, so we'll leave it for now.
+    bool renderPopupBackground = currentScreen_ == &popupMenuScreen_ && renderPopup_;
+
+    if (currentScreen_ != this && !renderPopupBackground) {
         currentScreen_->render(display);
         return;
     }
@@ -238,11 +228,12 @@ void ReadableScreen::render(DisplaySystem &display) {
     }
 
     if (pageSpeed_ == 0) {
+        // Regular Reading
         newPlace_ = renderer_.renderPage(readable_.place);
         atEnd_ = checkAtEnd();
     } else {
+        // Autopilot Reading
         if (speedLinesToSkip_ >= renderer_.getNumRenderedLines()) {
-            // time to turn the page
             turnPage();
         } else {
             speedLinesToSkip_++;
@@ -276,8 +267,6 @@ void ReadableScreen::render(DisplaySystem &display) {
         setNeedsRerender();
     }
 
-    // Future work
-    // Sync this to cloud and use on mobile.
     updateBookmarkStatus();
 
     if (inBookmark_) {
@@ -319,8 +308,18 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     log_d("%lu is the new place in the text %s", newPlace_, atEnd_ ? "(at end)" : "");
 
-    if ((pageSpeed_ != 0) && (speedLinesToSkip_ > 0)) {
-        display.updateDisplay(DisplaySystem::UpdateType::FAST_ORIGINAL_AU4);
+    if (renderPopupBackground) {
+        // Initial popup render (will use PARTIAL and not clear out the text)
+        popupMenuScreen_.render(display);
+        // Render again (This time it will use AU4 and render without the text)
+        popupMenuScreen_.render(display);
+    } else if ((pageSpeed_ != 0) && (speedLinesToSkip_ > 0)) {
+        if (autoPilotForceFull_) {
+            display.updateDisplay(DisplaySystem::UpdateType::FULL);
+            autoPilotForceFull_ = false;
+        } else {
+            display.updateDisplay(DisplaySystem::UpdateType::FAST_ORIGINAL_AU4);
+        }
     } else {
         if (prefs_.fastTransitions.get().value_or(false)) {
             display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
@@ -328,10 +327,6 @@ void ReadableScreen::render(DisplaySystem &display) {
             display.updateDisplay(DisplaySystem::UpdateType::FULL);
         }
     }
-
-    uint32_t wc = prefs_.wordCount.get().value_or(0);
-    wc = wc + renderer_.getCurrentPageWordCount();
-    prefs_.wordCount.set(wc);
 
     // remember the time this page was rendered
     readingStartTime_ = GetRunTimeMs();
@@ -351,6 +346,8 @@ void ReadableScreen::render(DisplaySystem &display) {
         xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(30000), 0);
         turnPage();
     }
+
+    renderPopup_ = false;
 }
 
 void ReadableScreen::incrementReadingTime() {
@@ -361,6 +358,144 @@ void ReadableScreen::incrementReadingTime() {
     auto totalReadingTimeSeconds = prefs_.totalReadingTimeSeconds.get().value_or(0);
     totalReadingTimeSeconds += thisPageReadingTimeSeconds;
     prefs_.totalReadingTimeSeconds.set(totalReadingTimeSeconds);
+}
+
+void ReadableScreen::showPopupMenu() {
+    renderPopup_ = true;
+    popupMenuScreen_.setUpPopupMenu();
+    setCurrentScreen(popupMenuScreen_);
+}
+
+void ReadableScreen::hidePopupMenu() { setCurrentScreen(*this); }
+
+void ReadableScreen::processCommandDemoMode(RemoteCommand command) {
+    switch (command) {
+    case RemoteCommand::CHANNEL_MINUS:
+        numUps_ = 0;
+        processCommandNormal(command);
+        break;
+    case RemoteCommand::PLAY:
+    case RemoteCommand::ENTER:
+    case RemoteCommand::CHANNEL_PLUS:
+        numUps_ = 0;
+        turnPage();
+        setNeedsRerender();
+        break;
+    case RemoteCommand::NEXT:
+        numUps_ = 0;
+        break;
+    case RemoteCommand::BACK:
+    case RemoteCommand::PREV:
+        numUps_++;
+        if (numUps_ > 3) {
+            numUps_ = 0;
+            prefs_.cesMode.set(false);
+            setNeedsRerender();
+            back();
+        }
+        break;
+
+    case RemoteCommand::NOP_BUTTON:
+    case RemoteCommand::ANIMATION:
+    default:
+        break;
+    }
+}
+
+void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
+
+    switch (command) {
+    case RemoteCommand::CHANNEL_MINUS:
+        pageSpeed_ = std::min(pageSpeed_ + PAGE_SPEED_INCREMENT, SLOWEST_PAGE_SPEED);
+        prefs_.autoPilotSpeed.set(pageSpeed_);
+        log_d("Slowing down: New Page Speed is %u", pageSpeed_);
+        showAutopilotMinus_ = true;
+        break;
+    case RemoteCommand::PLAY:
+    case RemoteCommand::ENTER:
+        // If we aren't pause, pause.
+        // If we are paused, start the timer again.
+        log_d("Pausing or unpausing auto pilot");
+        if (!autoPilotPause_) {
+            xTimerStop(DisplaySystem::animationTimer, 0);
+        } else {
+            xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
+        }
+        autoPilotPause_ = !autoPilotPause_;
+        break;
+
+    case RemoteCommand::NEXT:
+    case RemoteCommand::BACK:
+    case RemoteCommand::PREV:
+        // When entering the popup menu from autopilot, go back up to two line so that coming
+        // out the user can not be behind.
+        if (speedLinesToSkip_ > 0) {
+            speedLinesToSkip_--;
+        }
+        if (speedLinesToSkip_ > 0) {
+            speedLinesToSkip_--;
+        }
+        xTimerStop(DisplaySystem::animationTimer, 0);
+        processCommandNormal(command);
+        break;
+    case RemoteCommand::CHANNEL_PLUS:
+        pageSpeed_ = std::max(pageSpeed_ - PAGE_SPEED_INCREMENT, 1);
+        log_d("Speeding up: New Page Speed is %u", pageSpeed_);
+        prefs_.autoPilotSpeed.set(pageSpeed_);
+        showAutopilotPlus_ = true;
+        break;
+
+    case RemoteCommand::NOP_BUTTON:
+    case RemoteCommand::ANIMATION:
+    default:
+        break;
+    }
+
+    setNeedsRerender();
+}
+
+void ReadableScreen::processCommandNormal(RemoteCommand command) {
+
+    switch (command) {
+    case RemoteCommand::CHANNEL_MINUS:
+        readable_.place = renderer_.getPreviousPlace();
+        prefs_.readablePlace.set(readable_.shortenedUuid.c_str(), readable_.place);
+        prefs_.readablePlaceChanged.set(readable_.shortenedUuid.c_str(), true);
+        break;
+    case RemoteCommand::PLAY:
+    case RemoteCommand::ENTER:
+        if (prefs_.fastBookmarkCenter.get().value_or(false)) {
+            inBookmark_ = !inBookmark_;
+            writeOutBookmarkUpdate();
+        } else {
+            turnPage();
+        }
+        break;
+    case RemoteCommand::NEXT:
+        showPopupMenu();
+        popupMenuScreen_.preselectLastItem();
+        break;
+    case RemoteCommand::CHANNEL_PLUS:
+        if (prefs_.fastBookmarkRight.get().value_or(false)) {
+            inBookmark_ = !inBookmark_;
+            writeOutBookmarkUpdate();
+        } else {
+            turnPage();
+        }
+        break;
+    case RemoteCommand::BACK:
+    case RemoteCommand::PREV:
+        showPopupMenu();
+        popupMenuScreen_.preselectFirstItem();
+        break;
+
+    case RemoteCommand::NOP_BUTTON:
+    case RemoteCommand::ANIMATION:
+    default:
+        break;
+    }
+
+    setNeedsRerender();
 }
 
 void ReadableScreen::processCommand(RemoteCommand command) {
@@ -375,123 +510,17 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         return;
     }
 
-    auto back = [this]() {
-        if (backCallback != nullptr) {
-            setNeedsRerender();
-            backCallback();
-        }
-    };
+    // Similarly, for demo mode, we want a simple set of commands.
+    if (prefs_.cesMode.get().value_or(false)) {
+        processCommandDemoMode(command);
+        return;
+    }
 
-    switch (command) {
-    case RemoteCommand::CHANNEL_MINUS:
-        if (pageSpeed_ == 0) {
-            readable_.place = renderer_.getPreviousPlace();
-            prefs_.readablePlace.set(readable_.shortenedUuid.c_str(), readable_.place);
-            prefs_.readablePlaceChanged.set(readable_.shortenedUuid.c_str(), true);
-            setNeedsRerender();
-        } else {
-            pageSpeed_ = std::min(pageSpeed_ + PAGE_SPEED_INCREMENT, SLOWEST_PAGE_SPEED);
-            prefs_.autoPilotSpeed.set(pageSpeed_);
-            log_d("Slowing down: New Page Speed is %u", pageSpeed_);
-            showAutopilotMinus_ = true;
-        }
-        numUps_ = 0;
-        break;
-    case RemoteCommand::PLAY: // To allow the PT to long press east to change page without an enter
-                              // button, and undoing the bookmark first
-    case RemoteCommand::ENTER:
-        if (pageSpeed_ == 0) {
-            turnPage();
-            setNeedsRerender();
-        } else {
-            // If we aren't pause, pause.
-            // If we are paused, start the timer again.
-            log_d("Pausing or unpausing auto pilot");
-            if (!autoPilotPause_) {
-                xTimerStop(DisplaySystem::animationTimer, 0);
-            } else {
-                xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
-            }
-            autoPilotPause_ = !autoPilotPause_;
-        }
-        numUps_ = 0;
-        break;
-    case RemoteCommand::NEXT:
-        if (!prefs_.cesMode.get().value_or(false)) {
-            if (pageSpeed_ != 0) {
-                xTimerStop(DisplaySystem::animationTimer, 0);
-            }
-            setCurrentScreen(popup_);
-        }
-        numUps_ = 0;
-        break;
-    case RemoteCommand::CHANNEL_PLUS:
-        if (!prefs_.cesMode.get().value_or(false)) {
-            if (pageSpeed_ != 0) {
-                pageSpeed_ = std::max(pageSpeed_ - PAGE_SPEED_INCREMENT, 1);
-                log_d("Speeding up: New Page Speed is %u", pageSpeed_);
-                prefs_.autoPilotSpeed.set(pageSpeed_);
-                showAutopilotPlus_ = true;
-            } else {
-                inBookmark_ = !inBookmark_;
-                writeOutBookmarkUpdate();
-            }
-        } else {
-            turnPage();
-            setNeedsRerender();
-        }
-        setNeedsRerender();
-        numUps_ = 0;
-        break;
-    case RemoteCommand::BACK:
-    case RemoteCommand::PREV:
-        prefs_.lastReadableId.remove();
-        if (!prefs_.cesMode.get().value_or(false)) {
-            if (pageSpeed_ != 0) {
-                xTimerStop(DisplaySystem::animationTimer, 0);
-            }
-            if (readable_.isArticle()) {
-                bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
-                archiveMenu_.resetMenuItems();
-
-                archiveMenu_.addMenuItem(MenuItem("Main Menu", [this, back]() {
-                    log_i("Not archiving: %s", readable_.title.c_str());
-                    back();
-                }));
-                if (archived) {
-                    archiveMenu_.addMenuItem(MenuItem("Undo Archive", [this, back]() {
-                        log_i("Un-Archiving: %s", readable_.title.c_str());
-                        this->prefs_.readableArchivedChanged.remove(
-                            readable_.shortenedUuid.c_str());
-                        back();
-                    }));
-                } else {
-                    archiveMenu_.addMenuItem(MenuItem("Archive and Main Menu", [this, back]() {
-                        log_i("Archiving: %s", readable_.title.c_str());
-                        this->prefs_.readableArchivedChanged.set(readable_.shortenedUuid.c_str(),
-                                                                 true);
-                        back();
-                    }));
-                }
-                setCurrentScreen(archiveMenu_);
-            } else {
-                back();
-            }
-        } else {
-            numUps_++;
-            if (numUps_ > 3) {
-                numUps_ = 0;
-                prefs_.cesMode.remove();
-                back();
-            }
-        }
-        break;
-    case RemoteCommand::NOP_BUTTON:
-    case RemoteCommand::ANIMATION:
-        setNeedsRerender();
-        break;
-    default:
-        break;
+    // Then we move on to autopilot mode and regular mode.
+    if (pageSpeed_ != 0) {
+        processCommandAutoPilot(command);
+    } else {
+        processCommandNormal(command);
     }
 
     if (needsRerender_) {

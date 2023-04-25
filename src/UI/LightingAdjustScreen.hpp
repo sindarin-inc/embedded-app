@@ -20,12 +20,13 @@ public:
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
 
-    bool firstLoad = true;
+    void setFirstLoad() { firstLoad_ = true; }
 
 protected:
     PreferencesStore &prefs_;
     LightingController &lightingController_;
     bool showThirdLine_;
+    bool firstLoad_ = true;
 
     // Subviews
     IconView lightbulbView_;

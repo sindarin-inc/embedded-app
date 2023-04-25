@@ -172,27 +172,27 @@ auto PowerManager::begin() -> esp_err_t {
         digitalPinToInterrupt(USB_CONNECTED_PIN),
         [this]() {
 #if !DISABLE_POWER_MANAGEMENT
-            DispatchGetCore1BackgroundQueue()->dispatch([this]() {
-                if (USBConnected() && pmConfig_.light_sleep_enable == true) {
-                    // USB is connected so disable light sleep
-                    pmConfig_.light_sleep_enable = false;
-                    auto err = esp_pm_configure(&pmConfig_);
-                    if (err != ESP_OK) {
-                        log_e("Failed to disable light sleep with err %s", esp_err_to_name(err));
-                    } else {
-                        log_d("Disabled light sleep");
-                    }
-                } else if (!USBConnected() && pmConfig_.light_sleep_enable == false) {
-                    // USB is disconnected so enable light sleep
-                    pmConfig_.light_sleep_enable = true;
-                    auto err = esp_pm_configure(&pmConfig_);
-                    if (err != ESP_OK) {
-                        log_e("Failed to enable light sleep with err %s", esp_err_to_name(err));
-                    } else {
-                        log_d("Enabled light sleep");
-                    }
+        DispatchGetCore1BackgroundQueue()->dispatch([this]() {
+            if (USBConnected() && pmConfig_.light_sleep_enable == true) {
+                // USB is connected so disable light sleep
+                pmConfig_.light_sleep_enable = false;
+                auto err = esp_pm_configure(&pmConfig_);
+                if (err != ESP_OK) {
+                    log_e("Failed to disable light sleep with err %s", esp_err_to_name(err));
+                } else {
+                    log_d("Disabled light sleep");
                 }
-            });
+            } else if (!USBConnected() && pmConfig_.light_sleep_enable == false) {
+                // USB is disconnected so enable light sleep
+                pmConfig_.light_sleep_enable = true;
+                auto err = esp_pm_configure(&pmConfig_);
+                if (err != ESP_OK) {
+                    log_e("Failed to enable light sleep with err %s", esp_err_to_name(err));
+                } else {
+                    log_d("Enabled light sleep");
+                }
+            }
+        });
 #endif
         },
         CHANGE);
@@ -305,8 +305,8 @@ void PowerManager::ulpDeepSleep(SleepReason reason) {
     auto reasonPtr = new SleepReason(reason);
     BaseType_t status = xTaskCreatePinnedToCore(
         [](void *reasonPtr) {
-            SleepReason reason = *reinterpret_cast<SleepReason *>(reasonPtr);
-            PowerManager::getInstance().waitForQueuesThenDeepSleep(reason);
+        SleepReason reason = *reinterpret_cast<SleepReason *>(reasonPtr);
+        PowerManager::getInstance().waitForQueuesThenDeepSleep(reason);
         },
         "DeepSleep", 4096, (void *)reasonPtr, 1, nullptr, 1);
     if (status != pdPASS) {

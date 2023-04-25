@@ -92,9 +92,9 @@ void PollingLoopTask(void *parameter) {
 #if USE_TURN_TOUCH_REMOTE
         // Skip scanning while WiFi is connected to avoid kicking off the WiFi connection
         if (!WiFi::getInstance().connected()) {
-            ttRemoteInput.connect();
+            ttRemoteInput.scanIfNecessary();
         } else if (!ttRemoteInput.connected()) {
-            // log_d("Skipping Turn Touch scan while WiFi is connected");
+            // log_d("Skipping PageTurner scan while WiFi is connected");
         }
 #endif
 
@@ -209,10 +209,10 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         // Spin up a task just to check the temple and battery
         xTaskCreatePinnedToCore(
             [](void *) {
-                for (;;) {
-                    powerManager.loop();
-                    vTaskDelay(1000 / portTICK_PERIOD_MS);
-                }
+            for (;;) {
+                powerManager.loop();
+                vTaskDelay(1000 / portTICK_PERIOD_MS);
+            }
             },
             "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
         BackgroundSyncAndSleep(powerManager, prefs, localStore);

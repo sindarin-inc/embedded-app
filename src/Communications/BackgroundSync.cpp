@@ -56,24 +56,24 @@ void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalSt
     FirmwareDownloader firmwareDownloader(prefs, true);
     firmwareDownloader.downloadFirmware(
         [&firmwareDownloader, &localStore, &backgroundGroup](const FirmwareDownloadState &state) {
-            if (state.state == FirmwareDownloadState::Failure) {
-                log_i("Firmware download for %s failed with error: %s",
-                      firmwareDownloader.response.latestGlassesFirmware.version.c_str(),
-                      state.message.c_str());
-            } else if (state.state == FirmwareDownloadState::AlreadyDownloaded) {
-                log_i("Firmware download for %s already queued.",
-                      firmwareDownloader.response.latestGlassesFirmware.version.c_str());
-            } else if (state.state == FirmwareDownloadState::Downloaded) {
-                log_i("Firmware download for %s successful. Mark for install.",
-                      firmwareDownloader.response.latestGlassesFirmware.version.c_str());
-                localStore.saveFirmware(firmwareDownloader.response.latestGlassesFirmware);
-            } else if (state.state == FirmwareDownloadState::AlreadyUpToDate) {
-                log_i("Firmware up to date.");
-            } else {
-                return;
-            }
-            xEventGroupSetBits(backgroundGroup, 1);
-        });
+        if (state.state == FirmwareDownloadState::Failure) {
+            log_i("Firmware download for %s failed with error: %s",
+                  firmwareDownloader.response.latestGlassesFirmware.version.c_str(),
+                  state.message.c_str());
+        } else if (state.state == FirmwareDownloadState::AlreadyDownloaded) {
+            log_i("Firmware download for %s already queued.",
+                  firmwareDownloader.response.latestGlassesFirmware.version.c_str());
+        } else if (state.state == FirmwareDownloadState::Downloaded) {
+            log_i("Firmware download for %s successful. Mark for install.",
+                  firmwareDownloader.response.latestGlassesFirmware.version.c_str());
+            localStore.saveFirmware(firmwareDownloader.response.latestGlassesFirmware);
+        } else if (state.state == FirmwareDownloadState::AlreadyUpToDate) {
+            log_i("Firmware up to date.");
+        } else {
+            return;
+        }
+        xEventGroupSetBits(backgroundGroup, 1);
+    });
 
     // Wait for firmware download to finish
     bits = xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(5 * 60 * 1000));

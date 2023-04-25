@@ -72,9 +72,9 @@ void ReadableSeekScreen::render(DisplaySystem &display) {
     display.drawLine(x, y - arrowHeight, x + arrowWidth / 2, y, display.fg);
     display.drawLine(x + arrowWidth / 2, y, x + arrowWidth, y - arrowHeight, display.fg);
 
-    display.updateDisplay(firstLoad ? DisplaySystem::UpdateType::FULL
-                                    : DisplaySystem::UpdateType::FAST);
-    firstLoad = false;
+    display.updateDisplay(firstLoad_ ? DisplaySystem::UpdateType::FULL
+                                     : DisplaySystem::UpdateType::FAST);
+    firstLoad_ = false;
 }
 
 void ReadableSeekScreen::processCommand(RemoteCommand command) {
@@ -127,9 +127,7 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
         break;
     }
     case RemoteCommand::PREV: {
-        if (backCallback != nullptr) {
-            backCallback();
-        }
+        back();
         break;
     }
     case RemoteCommand::NEXT: {
@@ -149,13 +147,11 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
             break;
         }
         setNeedsRerender();
-        firstLoad = true;
+        firstLoad_ = true;
         break;
     }
     case RemoteCommand::BACK: {
-        if (backCallback != nullptr) {
-            backCallback();
-        }
+        back();
         break;
     }
     default:

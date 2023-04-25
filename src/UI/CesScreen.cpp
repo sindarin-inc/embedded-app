@@ -69,6 +69,6 @@ void CesScreen::processCommand(RemoteCommand command) {
     }
 
     if (currentScreen_ >= NUM_CES_SCREENS) {
-        backCallback();
+        back();
     }
 }

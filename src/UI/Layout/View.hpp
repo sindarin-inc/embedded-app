@@ -23,6 +23,10 @@ public:
         drawInRect(layoutContext_.screenFrame());
     }
 
+    // Acccessors for hidden_ field
+    [[nodiscard]] auto isHidden() const -> bool { return hidden_; }
+    void setHidden(bool hidden) { hidden_ = hidden; }
+
     // Set flags indicating layout is needed. Call this when a view's content changes enough that
     // the sizing may change
     void setNeedsLayout() { layoutContext_.setNeedsLayout(); }
@@ -37,4 +41,6 @@ private:
 
     LayoutContext layoutContext_;
     friend class LayoutContext;
+
+    bool hidden_ = false;
 };

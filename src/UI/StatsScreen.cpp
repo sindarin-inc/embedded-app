@@ -45,4 +45,4 @@ void StatsScreen::render(DisplaySystem &display) {
     display.updateDisplay();
 }
 
-void StatsScreen::processCommand(RemoteCommand command) { backCallback(); }
+void StatsScreen::processCommand(RemoteCommand command) { back(); }

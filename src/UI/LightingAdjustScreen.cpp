@@ -94,23 +94,21 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
     setFrame({{0, 0}, {display.width(), display.height()}});
     draw();
 
-    display.updateDisplay(firstLoad ? DisplaySystem::UpdateType::FULL
-                                    : DisplaySystem::UpdateType::FAST);
-    firstLoad = false;
+    display.updateDisplay(firstLoad_ ? DisplaySystem::UpdateType::FULL
+                                     : DisplaySystem::UpdateType::FAST);
+    firstLoad_ = false;
 }
 
 void LightingAdjustScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
         showThirdLine_ = true;
-        firstLoad = true;
+        firstLoad_ = true;
         setNeedsRerender();
         break;
     case RemoteCommand::CHANNEL_PLUS:
         showThirdLine_ = false;
-        if (backCallback != nullptr) {
-            backCallback();
-        }
+        back();
         break;
     case RemoteCommand::PREV: {
         auto setting =
@@ -128,9 +126,7 @@ void LightingAdjustScreen::processCommand(RemoteCommand command) {
     }
     case RemoteCommand::BACK:
         showThirdLine_ = false;
-        if (backCallback != nullptr) {
-            backCallback();
-        }
+        back();
         break;
     default:
         break;
