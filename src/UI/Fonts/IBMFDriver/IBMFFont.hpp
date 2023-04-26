@@ -169,7 +169,8 @@ public:
         if (isInitialized()) {
             ligKernUTF8Map(buffer, [this, &dim, &up, &down](GlyphCode glyphCode, FIX16 kern,
                                                             bool first, bool last) {
-                int8_t hOffset = first ? font_->getFace(faceIndex_)->getGlyphHOffset(glyphCode) : 0;
+                // int8_t hOffset = first ? font_->getFace(faceIndex_)->getGlyphHOffset(glyphCode) :
+                // 0;
 
                 ibmf_defs::Glyph glyph;
                 if (font_->getFace(faceIndex_)
@@ -177,9 +178,13 @@ public:
                     // LOGD("Advance: %f, xoff: %d, yoff: %d, descent: %d, kern: %d",
                     //      IBMFFaceLow::fromFIX16(glyph.metrics.advance), glyph.metrics.xoff,
                     //      glyph.metrics.yoff, glyph.metrics.descent, kern);
-                    dim.width +=
-                        last ? font_->getFace(faceIndex_)->getGlyphWidth(glyphCode) - (kern / 64)
-                             : ((glyph.metrics.advance + kern) >> 6) - hOffset;
+                    if (glyphCode == SPACE_CODE) {
+                        dim.width += glyph.metrics.advance >> 6;
+                    } else {
+                        dim.width += last ? font_->getFace(faceIndex_)->getGlyphWidth(glyphCode) -
+                                                (kern / 64) - glyph.metrics.xoff
+                                          : ((glyph.metrics.advance + kern) >> 6);
+                    }
                     up = (up < glyph.metrics.yoff) ? glyph.metrics.yoff : up;
                     down = (down < glyph.metrics.descent) ? glyph.metrics.descent : down;
                     // dim.height = (dim.height > glyph.metrics.yoff)
