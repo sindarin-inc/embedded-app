@@ -128,7 +128,11 @@ void PowerManager::wakeupCheck(SolClock &clock) {
         // a crash during content sync). Just go back to sleep.
         bool open = true;
 #if USE_MMC5603
-        open = templeCloseSensor_.isTempleOpen();
+        bool error = false;
+        open = templeCloseSensor_.isTempleOpen(error);
+        if (error) {
+            log_e("error reading MMC5603");
+        }
 #endif
         if (!open) {
             log_w("Temple is closed at boot, going back to sleep");
@@ -231,11 +235,13 @@ void PowerManager::powerOff() {
     esp_deep_sleep_start();
 }
 
-void PowerManager::loop() {
+auto PowerManager::loop() -> bool {
     battery.loop();
     checkUsb();
 #if USE_MMC5603
-    templeCloseSensor_.checkTemple();
+    return templeCloseSensor_.checkTemple();
+#else
+    return true;
 #endif
 }
 

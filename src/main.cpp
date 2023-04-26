@@ -82,12 +82,20 @@ SolClock solClock(prefs);
 
 bool bootCompleted = false;
 
+void FactoryReset() {
+    prefs.clear();
+    localStore.deleteReadables();
+    localStore.deleteArticles();
+    powerManager.reboot();
+}
+
 // Task for all periodic things that need to run ~1Hz. Polling tasks should be grouped here so that
 // they all complete in a tight loop, thus maximizing sleep time.
 void PollingLoopTask(void *parameter) {
+    int factoryResetReads = 0;
     for (;;) {
         // Run the power loop first so that we don't show a 0% battery reading
-        powerManager.loop();
+        bool pmLoopSuccess = powerManager.loop();
 
 #if USE_TURN_TOUCH_REMOTE
         // Skip scanning while WiFi is connected to avoid kicking off the WiFi connection
@@ -106,6 +114,26 @@ void PollingLoopTask(void *parameter) {
 
         // This happens after the delay, so that the first check can run with a faster fade.
         lightingController.checkAmbientLight();
+
+        // if power manager loop fails, it means the magnetometer failed to read.
+        // in this case, turn off i2c and check the button attached to GPIO0.
+        // May be going into factory reset.
+
+#if !SIMULATOR
+        if (!pmLoopSuccess) {
+            int p = DigitalRead(FACTORY_RESET_BUTTON);
+            if (p == 0) {
+                factoryResetReads++;
+                if (factoryResetReads > FACTORY_RESET_SECONDS) {
+                    FactoryReset();
+                }
+            } else {
+                factoryResetReads = 0;
+            }
+        } else {
+            factoryResetReads = 0;
+        }
+#endif
     }
     vTaskDelete(nullptr);
 }

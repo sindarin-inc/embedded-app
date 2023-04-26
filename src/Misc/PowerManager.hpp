@@ -64,7 +64,7 @@ public:
 
     void feedInactivityTimer() { inactivityTimer_.feed(); }
 
-    void loop();
+    auto loop() -> bool;
 
     // Exposed so we can check this peripheral as a part of the power-on self-test
     auto checkMagnetometerProductId() -> bool {
