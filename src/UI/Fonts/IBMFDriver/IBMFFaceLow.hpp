@@ -205,7 +205,7 @@ public:
         auto &i1 = (*glyphsInfo_)[glyphCode1];
         auto &i2 = (*glyphsInfo_)[*glyphCode2];
 
-        int normal_distance =
+        int normalDistance =
             i1.horizontalOffset + ((i1.advance + 32) >> 6) - i1.bitmapWidth - i2.horizontalOffset;
 
         // std::cout << "Normal distance:" << normal_distance << std::endl;
@@ -448,24 +448,34 @@ public:
             FIX32 dist;
             for (int i = firstIdx; i < firstIdx + length; i++) {
                 dist = distLeft[i] + distRight[i];
-                if (dist < kerning) kerning = dist;
+                if (dist < kerning) {
+                    kerning = dist;
+                }
                 if ((i > 0) && (distLeft[i - 1] >= 0)) {
                     dist = distLeft[i - 1] + distRight[i];
-                    if (dist < kerning) kerning = dist;
+                    if (dist < kerning) {
+                        kerning = dist;
+                    }
                 }
                 if ((i < (hight - 1)) && (distLeft[i + 1] >= 0)) {
                     dist = distLeft[i + 1] + distRight[i];
-                    if (dist < kerning) kerning = dist;
+                    if (dist < kerning) {
+                        kerning = dist;
+                    }
                 }
             }
             if ((firstIdx > 0) && (distRight[firstIdx - 1] >= 0)) {
                 dist = distLeft[firstIdx] + distRight[firstIdx - 1];
-                if (dist < kerning) kerning = dist;
+                if (dist < kerning) {
+                    kerning = dist;
+                }
             }
             int lastIdx = firstIdx + length - 1;
             if ((lastIdx < (hight - 1)) && (distRight[lastIdx + 1] >= 0)) {
                 dist = distLeft[lastIdx] + distRight[lastIdx + 1];
-                if (dist < kerning) kerning = dist;
+                if (dist < kerning) {
+                    kerning = dist;
+                }
             }
 
             // std::cout << "Minimal distance: " << MAKE_FIXED_FLOAT(kerning) << std::endl;
@@ -475,7 +485,7 @@ public:
             // will be used by the writing algorithm
             kerning =
                 (-MIN(kerning - MAKE_INT_FIXED(KERNING_SIZE), MAKE_INT_FIXED(i2.bitmapWidth))) -
-                MAKE_INT_FIXED(normal_distance);
+                MAKE_INT_FIXED(normalDistance);
 
             if (glyph1.bitmap.pixels != nullptr) {
                 delete[] glyph1.bitmap.pixels;
