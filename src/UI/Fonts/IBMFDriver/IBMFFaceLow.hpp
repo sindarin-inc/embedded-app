@@ -96,6 +96,14 @@ public:
         return (*glyphsInfo_)[glyphCode];
     }
 
+    [[nodiscard]] inline auto getGlyphHOffset(GlyphCode glyphCode) const -> int8_t {
+        return (*glyphsInfo_)[glyphCode].horizontalOffset;
+    }
+
+    [[nodiscard]] inline auto getGlyphWidth(GlyphCode glyphCode) const -> uint8_t {
+        return (*glyphsInfo_)[glyphCode].bitmapWidth;
+    }
+
     [[nodiscard]] inline auto getLigKernPgmIndex(GlyphCode glyphCode) const -> uint16_t {
 
 #if LATIN_SUPPORT

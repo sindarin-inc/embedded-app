@@ -18,7 +18,7 @@ private:
     // Maximum size of an allocated buffer to do vsnprintf formatting
     static constexpr int MAX_SIZE = 100;
 
-    typedef std::function<void(GlyphCode, FIX16)> const &LigKernMappingHandler;
+    typedef std::function<void(GlyphCode, FIX16, bool, bool)> const &LigKernMappingHandler;
 
     /// @brief Ligature/Kerning/UTF8 Mapper
     ///
@@ -35,14 +35,25 @@ private:
             GlyphCode glyphCode1 = font_->translate(*iter++);
             GlyphCode glyphCode2 = (iter == line.end()) ? NO_GLYPH_CODE : font_->translate(*iter++);
             FIX16 kern;
+            bool firstWordChar = true;
+            bool wasEndOfWord = false;
             while (glyphCode1 != NO_GLYPH_CODE) {
+                if (wasEndOfWord && (glyphCode1 != SPACE_CODE)) {
+                    wasEndOfWord = false;
+                    firstWordChar = true;
+                }
                 kern = (FIX16)0;
                 // Ligature loop
                 while (font_->getFace(faceIndex_)->ligKern(glyphCode1, &glyphCode2, &kern)) {
                     glyphCode1 = glyphCode2;
                     glyphCode2 = (iter == line.end()) ? NO_GLYPH_CODE : font_->translate(*iter++);
                 }
-                (handler)(glyphCode1, kern);
+                bool lastWordChar = (glyphCode2 == SPACE_CODE) || (glyphCode2 == NO_GLYPH_CODE);
+                (handler)(glyphCode1, kern, firstWordChar, lastWordChar);
+                firstWordChar = false;
+                if (lastWordChar) {
+                    wasEndOfWord = true;
+                }
                 glyphCode1 = glyphCode2;
                 glyphCode2 = (iter == line.end()) ? NO_GLYPH_CODE : font_->translate(*iter++);
             }
@@ -122,12 +133,24 @@ public:
             Glyph glyph;
             glyph.bitmap = canvas;
 
-            ligKernUTF8Map(line, [this, &glyph, &atPos, inverted](GlyphCode glyphCode, FIX16 kern) {
+            ligKernUTF8Map(line, [this, &glyph, &atPos, inverted](GlyphCode glyphCode, FIX16 kern,
+                                                                  bool first, bool last) {
+                int8_t hOffset = first ? font_->getFace(faceIndex_)->getGlyphHOffset(glyphCode) : 0;
+                atPos.x += hOffset;
+
+                // LOGD("Word Markers: %d %d", first, last);
+
                 if (font_->getFace(faceIndex_)
                         ->getGlyph(glyphCode, glyph, true, false, atPos, inverted)) {
                     // As advance is positive and greather than kern, we can shift right
                     // to get rid of the fix point decimals
-                    atPos.x += (glyph.metrics.advance + kern) >> 6;
+                    if (glyphCode == SPACE_CODE) {
+                        atPos.x += glyph.metrics.advance >> 6;
+                    } else {
+                        atPos.x += last ? font_->getFace(faceIndex_)->getGlyphWidth(glyphCode) -
+                                              (kern / 64) - glyph.metrics.xoff
+                                        : ((glyph.metrics.advance + kern) >> 6);
+                    }
                 } else {
                     LOGW("Unable to retrieve glyph for glyphCode %d", glyphCode);
                 }
@@ -144,14 +167,19 @@ public:
         int16_t up = 0;
         int16_t down = 0;
         if (isInitialized()) {
-            ligKernUTF8Map(buffer, [this, &dim, &up, &down](GlyphCode glyphCode, FIX16 kern) {
+            ligKernUTF8Map(buffer, [this, &dim, &up, &down](GlyphCode glyphCode, FIX16 kern,
+                                                            bool first, bool last) {
+                int8_t hOffset = first ? font_->getFace(faceIndex_)->getGlyphHOffset(glyphCode) : 0;
+
                 ibmf_defs::Glyph glyph;
                 if (font_->getFace(faceIndex_)
                         ->getGlyph(glyphCode, glyph, false)) { // retrieves only the metrics
                     // LOGD("Advance: %f, xoff: %d, yoff: %d, descent: %d, kern: %d",
                     //      IBMFFaceLow::fromFIX16(glyph.metrics.advance), glyph.metrics.xoff,
                     //      glyph.metrics.yoff, glyph.metrics.descent, kern);
-                    dim.width += (glyph.metrics.advance + kern) >> 6;
+                    dim.width +=
+                        last ? font_->getFace(faceIndex_)->getGlyphWidth(glyphCode) - (kern / 64)
+                             : ((glyph.metrics.advance + kern) >> 6) - hOffset;
                     up = (up < glyph.metrics.yoff) ? glyph.metrics.yoff : up;
                     down = (down < glyph.metrics.descent) ? glyph.metrics.descent : down;
                     // dim.height = (dim.height > glyph.metrics.yoff)
@@ -198,7 +226,8 @@ public:
         }
         int width = 0;
         if (isInitialized()) {
-            ligKernUTF8Map(buffer, [this, &width](GlyphCode glyphCode, FIX16 kern) {
+            ligKernUTF8Map(buffer,
+                           [this, &width](GlyphCode glyphCode, FIX16 kern, bool first, bool last) {
                 ibmf_defs::Glyph glyph;
                 if (font_->getFace(faceIndex_)
                         ->getGlyph(glyphCode, glyph, false)) { // retrieves only the metrics
