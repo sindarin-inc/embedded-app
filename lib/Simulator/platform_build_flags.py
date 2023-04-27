@@ -71,7 +71,6 @@ flags = [
 if args.wasm:
     flags += [
         "-sUSE_SDL=2",
-        "-sUSE_SDL_IMAGE=2",
     ]
 
 if args.sdl:
@@ -106,7 +105,6 @@ if args.sdl:
         .strip()
     )
     flags += [
-        "-lSDL2_image",
         arch_flag,
         sdl_flags,
         f"-I{prefix}/include",

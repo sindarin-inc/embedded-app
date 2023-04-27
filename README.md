@@ -69,7 +69,7 @@ Issues that will be fixed automatically will be fixed by clang-tidy, warnings wi
 
 The simulator compiles in <3s from a clean build, and even less on an incremental build. This makes it super fast for us to iterate on anything that doesn't need the physical hardware.
 
-You'll need SDL2 & openssl for it to work: `brew install sdl2 sdl2_image openssl` (on Ubuntu `sudo apt install libsdl2-dev libsdl2-image-dev libssl-dev`). Then you can run `pio run -e simulator -t upload` to run it. You can alternately hit the upload button in VSCode+PlatformIO and it should build and run! You can also debug with lldb at the command line: `pio run -e simulator && lldb .pio/build/simulator/program`.
+You'll need SDL2 & openssl for it to work: `brew install sdl2 openssl` (on Ubuntu `sudo apt install libsdl2-dev libssl-dev`). Then you can run `pio run -e simulator -t upload` to run it. You can alternately hit the upload button in VSCode+PlatformIO and it should build and run! You can also debug with lldb at the command line: `pio run -e simulator && lldb .pio/build/simulator/program`.
 
 ### Extract your Sol cloud access token to download content onto the Simulator
 

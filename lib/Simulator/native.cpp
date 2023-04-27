@@ -2,7 +2,6 @@
 #include <emscripten.h>
 #endif
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
 #include <cstring>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -144,35 +143,51 @@ void SimDrawLeds() {
 };
 
 bool isPngEqual(std::string filepath1, std::string filepath2) {
-    // TODO: SDL_Image is problematic on Linux, move instead to STB_Image
-    SDL_Surface *saveSurface1 = IMG_Load(filepath1.c_str());
-    SDL_Surface *saveSurface2 = IMG_Load(filepath2.c_str());
+    int width1, height1, bpp1;
+    int width2, height2, bpp2;
 
-    for (int w = 0; w < EinkET013TT1_PIXEL_WIDTH; w++) {
-        for (int h = 0; h < EinkET013TT1_PIXEL_HEIGHT; h++) {
-            Uint8 r1, g1, b1, r2, g2, b2;
-            Uint32 *pixels1, *pixels2;
-            pixels1 = (Uint32 *)saveSurface1->pixels;
-            pixels2 = (Uint32 *)saveSurface2->pixels;
-            Uint32 pixel1 = pixels1[w + h * saveSurface1->w];
-            Uint32 pixel2 = pixels2[w + h * saveSurface2->w];
-            SDL_GetRGB(pixel1, saveSurface1->format, &r1, &g1, &b1);
-            SDL_GetRGB(pixel2, saveSurface2->format, &r2, &g2, &b2);
-            if ((r1 != r2) || (g1 != g2) || (b1 != b2)) {
-                std::cerr << "Got here and something went wrong " << w << " " << h << "\n";
-                std::cerr << r1 << " " << g1 << " " << b1 << "\n";
-                std::cerr << r2 << " " << g2 << " " << b2 << "\n";
+    uint8_t *img1 = stbi_load(filepath1.c_str(), &width1, &height1, &bpp1, 3);
+    uint8_t *img2 = stbi_load(filepath2.c_str(), &width2, &height2, &bpp2, 3);
+
+    if (img1 == nullptr || img2 == nullptr) {
+        std::cerr << "Failed to load one or both images\n";
+        return false;
+    }
+
+    if (width1 != width2 || height1 != height2 || bpp1 != bpp2) {
+        std::cerr << "Images are not the same size or color depth\n";
+        stbi_image_free(img1);
+        stbi_image_free(img2);
+        return false;
+    }
+
+    for (int y = 0; y < height1; y++) {
+        for (int x = 0; x < width1; x++) {
+            int idx = (y * width1 + x) * 3;
+            if (img1[idx] != img2[idx] || img1[idx + 1] != img2[idx + 1] ||
+                img1[idx + 2] != img2[idx + 2]) {
+                std::cerr << "Pixel difference at " << x << ", " << y << "\n";
+                std::cerr << "Image 1: " << (int)img1[idx] << " " << (int)img1[idx + 1] << " "
+                          << (int)img1[idx + 2] << "\n";
+                std::cerr << "Image 2: " << (int)img2[idx] << " " << (int)img2[idx + 1] << " "
+                          << (int)img2[idx + 2] << "\n";
+                stbi_image_free(img1);
+                stbi_image_free(img2);
                 return false;
             }
         }
     }
+
+    stbi_image_free(img1);
+    stbi_image_free(img2);
+
     return true;
 }
 
 bool saveScreenshotPng(std::string filepath, SDL_Window *window, SDL_Renderer *renderer) {
-    if (!stbi_write_png("screenshot.png", EinkET013TT1_PIXEL_WIDTH, EinkET013TT1_PIXEL_HEIGHT, 1,
+    if (!stbi_write_png(filepath.c_str(), EinkET013TT1_PIXEL_WIDTH, EinkET013TT1_PIXEL_HEIGHT, 1,
                         FakeEinkET013TT1ParticlePositions, 0)) {
-        log_e("Unable to save rendered image to screenshot.png");
+        log_e("Unable to save rendered image to %s", filepath.c_str());
     }
 
     return true;
@@ -188,7 +203,7 @@ void sendCodeAndRender(RemoteCommand command, SDL_Renderer *renderer) {
 
     // Wait for the UI thread to do the rendering to be rendered
     uint8_t out;
-    while (xQueueReceiveFromISR(FakeEinkET013TT1DoneWaveformQueue, &out, nullptr) == pdFALSE) {
+    while (xQueueReceiveFromISR(FakeEinkET013TT1RenderQueue, &out, nullptr) == pdFALSE) {
         usleep(10000);
     }
 
@@ -201,6 +216,8 @@ void sendCodeAndRender(RemoteCommand command, SDL_Renderer *renderer) {
 
 // Only press 'u' when you are on a page in a readable.
 void runBackwardsUnitTest(SDL_Window *window, SDL_Renderer *renderer) {
+    auto skipWaveform = FakeEinkET013TT1SkipWaveform;
+    FakeEinkET013TT1SkipWaveform = true;
     for (int i = 0; i < 500; i++) {
         saveScreenshotPng("current.png", window, renderer);
         sendCodeAndRender(RemoteCommand::ENTER, renderer);
@@ -217,6 +234,7 @@ void runBackwardsUnitTest(SDL_Window *window, SDL_Renderer *renderer) {
             exit(1);
         }
     }
+    FakeEinkET013TT1SkipWaveform = skipWaveform;
     std::cerr << "unit test passed\n";
 }
 
