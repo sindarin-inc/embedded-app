@@ -116,6 +116,9 @@ auto Battery::getBatteryPercentage() -> float {
     batteryFractionRight = std::clamp(batteryFractionRight, 0.0f, 1.0f);
     float batteryAverage = (batteryFractionLeft + batteryFractionRight) / 2.0 * 100;
 
+    // log_d("Battery: %.0f%% (left: %fV, right %fV)", batteryAverage, voltageLevelLeft,
+    // voltageLevelRight);
+
     if ((int)batteryAverage == 0) {
         batteryAverage =
             PreferencesStore::lastBatteryReport == 0 ? 90 : PreferencesStore::lastBatteryReport;
