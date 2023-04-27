@@ -37,7 +37,7 @@ void DigitalWrite(int pin, int level) { gpio_set_level((gpio_num_t)pin, (uint32_
 
 auto DigitalRead(uint8_t pin) -> int { return gpio_get_level((gpio_num_t)pin); }
 
-void Delay(int ms) { vTaskDelay(ms * portTICK_PERIOD_MS); }
+void Delay(int ms) { vTaskDelay(pdMS_TO_TICKS(ms)); }
 
 auto Millis() -> int { return GetRunTimeMs(); }
 
