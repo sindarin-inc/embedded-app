@@ -10,6 +10,13 @@
 #include <signal.h>
 #include <thread>
 #include <unistd.h>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+#pragma clang diagnostic pop
 
 #include "Displays/FakeEinkET013TT1.hpp"
 #include "Misc/Dispatch.hpp"
@@ -137,6 +144,7 @@ void SimDrawLeds() {
 };
 
 bool isPngEqual(std::string filepath1, std::string filepath2) {
+    // TODO: SDL_Image is problematic on Linux, move instead to STB_Image
     SDL_Surface *saveSurface1 = IMG_Load(filepath1.c_str());
     SDL_Surface *saveSurface2 = IMG_Load(filepath2.c_str());
 
@@ -162,25 +170,10 @@ bool isPngEqual(std::string filepath1, std::string filepath2) {
 }
 
 bool saveScreenshotPng(std::string filepath, SDL_Window *window, SDL_Renderer *renderer) {
-    // 4 bytes per pixel
-    auto pitch = EinkET013TT1_PIXEL_WIDTH * 4;
-
-    SDL_Surface *saveSurface = SDL_CreateRGBSurface(0, EinkET013TT1_PIXEL_WIDTH,
-                                                    EinkET013TT1_PIXEL_HEIGHT, 32, 0, 0, 0, 0);
-    if (saveSurface == NULL) {
-        std::cerr << "SDL_CreateRGBSurface error: " << SDL_GetError() << "\n";
-        return false;
+    if (!stbi_write_png("screenshot.png", EinkET013TT1_PIXEL_WIDTH, EinkET013TT1_PIXEL_HEIGHT, 1,
+                        FakeEinkET013TT1ParticlePositions, 0)) {
+        log_e("Unable to save rendered image to screenshot.png");
     }
-    SDL_Rect rect = {.x = 0, .y = 0, .w = EinkET013TT1_PIXEL_WIDTH, .h = EinkET013TT1_PIXEL_HEIGHT};
-    SDL_SetRenderTarget(renderer, deviceScreen);
-    if (SDL_RenderReadPixels(renderer, &rect, 0, saveSurface->pixels, pitch) != 0) {
-        std::cerr << "SDL_RenderReadPixels error: " << SDL_GetError() << "\n";
-        return false;
-    }
-    SDL_SetRenderTarget(renderer, NULL);
-
-    IMG_SavePNG(saveSurface, filepath.c_str());
-    SDL_FreeSurface(saveSurface);
 
     return true;
 }
