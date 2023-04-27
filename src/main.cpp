@@ -84,8 +84,7 @@ bool bootCompleted = false;
 
 void FactoryReset() {
     prefs.clear();
-    localStore.deleteReadables();
-    localStore.deleteArticles();
+    fileSystem.deleteAll();
     powerManager.reboot();
 }
 
