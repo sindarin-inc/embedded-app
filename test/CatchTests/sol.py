@@ -586,6 +586,12 @@ def close_temple():
         send_command(arduino, "p90")
 
 
+def detach_servo():
+    with serial.Serial(arduino_port, baud_rate, timeout=1) as arduino:
+        time.sleep(2)
+        send_command(arduino, "pdetach")
+
+
 # Power on test function (conditions in mA and run time in seconds)
 def power_on_test(power_on_pass_condition, power_on_fail_condition, power_on_run_time):
     ## POWER ON TESTING CONDITIONS
@@ -662,11 +668,13 @@ def deep_sleep_test(
     )  # Finding the average deep sleep consumption
 
     # print("Average Deep Sleep Consumption: "+ str(deep_sleep_consum) + "uA")
-    if deep_sleep_consum < deep_sleep_pass_condition:
-        return f"Passed"
-    elif deep_sleep_consum < deep_sleep_fail_condition:
-        return f"Failed"
+    # if deep_sleep_consum < deep_sleep_pass_condition:
+    #     return f"Passed"
+    # elif deep_sleep_consum < deep_sleep_fail_condition:
+    #     return f"Failed"
 
     ppk2_test.stop_measuring()
     del ppk2_test
     gc.collect()  # Close the port
+
+    return deep_sleep_consum

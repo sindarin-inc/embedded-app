@@ -43,7 +43,7 @@ def test_startup(dut: IdfDut) -> None:
         pytest.fail("Failed: Sindarin: Error-free boot! not found")
 
 
-def test_power() -> None:
+def test_power_on() -> None:
     # Start with power on test
     sol.open_temple()
 
@@ -57,9 +57,25 @@ def test_power() -> None:
     # Check if the average value is within the expected range, otherwise fail the test
     assert (
         min_out <= average_value <= max_out
-    ), f"Failed: The average value {average_value} is not within the range {min_out} to {max_out}"
+    ), f"Failed Power On: The average value {average_value} is not within the range {min_out}mA to {max_out}mA"
 
     # Deep sleep test
+
+
+def test_deep_sleep() -> None:
+    sol.close_temple()
+    max_out = 250
+    min_out = 50
+    test_duration = 15
+    # Run the power_on_test and get the average value
+    average_value = sol.deep_sleep_test(max_out, min_out, test_duration)
+
+    # Check if the average value is within the expected range, otherwise fail the test
+    assert (
+        min_out <= average_value <= max_out
+    ), f"Failed Deep Sleep: The average value {average_value} is not within the range {min_out}uA to {max_out}uA"
+
+    sol.detach_servo()
 
 
 #     sol.close_temple()
