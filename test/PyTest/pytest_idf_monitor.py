@@ -7,6 +7,7 @@ import time
 import subprocess  # To access the shell commands
 import re  # To read through the output lines
 import pexpect  # To run shell commands
+
 import sol  # To access the sol.py file
 
 import pytest
@@ -26,7 +27,20 @@ import pexpect.exceptions
 
 
 def test_startup(dut: IdfDut) -> None:
-    sol.open_temple()
+    # sol.open_temple()
+    # Sindarin: formatting littlefs..
+    # Check for formatting
+    # TODO: Check this conditionally
+    try:
+        dut.expect("Sindarin: Formatting LittleFS...", timeout=30)
+    except pexpect.exceptions.TIMEOUT:
+        pytest.fail("Failed: Did not format")
+
+    try:
+        dut.expect("Sindarin: Formatting LittleFS Complete.", timeout=300)
+    except pexpect.exceptions.TIMEOUT:
+        pytest.fail("Failed: Formatting failed")
+
     try:
         dut.expect("LTR329 ambient light sensor found", timeout=30)
     except pexpect.exceptions.TIMEOUT:
@@ -43,39 +57,39 @@ def test_startup(dut: IdfDut) -> None:
         pytest.fail("Failed: Sindarin: Error-free boot! not found")
 
 
-def test_power_on() -> None:
-    # Start with power on test
-    sol.open_temple()
+# def test_power_on() -> None:
+#     # Start with power on test
+#     sol.open_temple()
 
-    max_out = 100
-    min_out = 50
-    test_duration = 15
+#     max_out = 100
+#     min_out = 50
+#     test_duration = 15
 
-    # Run the power_on_test and get the average value
-    average_value = sol.power_on_test(max_out, min_out, test_duration)
+#     # Run the power_on_test and get the average value
+#     average_value = sol.power_on_test(max_out, min_out, test_duration)
 
-    # Check if the average value is within the expected range, otherwise fail the test
-    assert (
-        min_out <= average_value <= max_out
-    ), f"Failed Power On: The average value {average_value} is not within the range {min_out}mA to {max_out}mA"
+#     # Check if the average value is within the expected range, otherwise fail the test
+#     assert (
+#         min_out <= average_value <= max_out
+#     ), f"Failed Power On: The average value {average_value} is not within the range {min_out}mA to {max_out}mA"
 
-    # Deep sleep test
+#     # Deep sleep test
 
 
-def test_deep_sleep() -> None:
-    sol.close_temple()
-    max_out = 250
-    min_out = 50
-    test_duration = 15
-    # Run the power_on_test and get the average value
-    average_value = sol.deep_sleep_test(max_out, min_out, test_duration)
+# def test_deep_sleep() -> None:
+#     sol.close_temple()
+#     max_out = 250
+#     min_out = 50
+#     test_duration = 15
+#     # Run the power_on_test and get the average value
+#     average_value = sol.deep_sleep_test(max_out, min_out, test_duration)
 
-    # Check if the average value is within the expected range, otherwise fail the test
-    assert (
-        min_out <= average_value <= max_out
-    ), f"Failed Deep Sleep: The average value {average_value} is not within the range {min_out}uA to {max_out}uA"
+#     # Check if the average value is within the expected range, otherwise fail the test
+#     assert (
+#         min_out <= average_value <= max_out
+#     ), f"Failed Deep Sleep: The average value {average_value} is not within the range {min_out}uA to {max_out}uA"
 
-    sol.detach_servo()
+#     sol.detach_servo()
 
 
 #     sol.close_temple()

@@ -6,8 +6,9 @@ import logging
 import os
 import queue
 import multiprocessing
-import matplotlib.pyplot as plt
-import numpy as np
+
+# import matplotlib.pyplot as plt
+# import numpy as np
 import gc
 
 # Servo stuff
