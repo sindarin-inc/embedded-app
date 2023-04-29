@@ -8,9 +8,8 @@ LightingAdjustScreen::LightingAdjustScreen(DisplaySystem &display, PreferencesSt
                                            LightingController &lightingController)
     : Screen(), EinkView(display), prefs_(prefs), lightingController_(lightingController),
       lightbulbView_(display, lightbulbBits, Lightbulb_width, Lightbulb_height), barView_(display),
-      fillView_(display), firstLine_(display, "Press up and down"),
-      secondLine_(display, "to adjust brightness"), thirdLine_(display, "Let there be light!"),
-      arrowView_(display) {
+      fillView_(display), firstLine_(display, "Press ^ or v,"), secondLine_(display, "to adjust."),
+      thirdLine_(display, "Let there be light!"), arrowView_(display) {
     fillView_.fillColor = display_.fg;
 }
 

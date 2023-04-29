@@ -34,7 +34,12 @@ public:
             setFirstLoad();
             this->setCurrentScreen(*this);
         });
+
+        popupMenuView_.setAltViewIndex(0);
+        popupMenuView_.addAltView(static_cast<std::shared_ptr<View>>(&lightingAdjustScreen_));
+        popupMenuView_.setShowAltView(false);
     };
+
     ~ReadablePopupMenuScreen() override = default;
 
     void render(DisplaySystem &display) override;

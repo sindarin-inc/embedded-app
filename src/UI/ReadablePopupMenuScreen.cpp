@@ -65,8 +65,9 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
 
     addMenuItem(MenuItem("Brightness", [this]() {
         log_d("Setting current screen to brightness screen");
-        lightingAdjustScreen_.setFirstLoad();
-        setCurrentScreen(lightingAdjustScreen_);
+        // lightingAdjustScreen_.setFirstLoad();
+        // setCurrentScreen(lightingAdjustScreen_);
+        popupMenuView_.setShowAltView(true);
     }));
 
     auto hasToc = readable_.toc.size() >= 1;
@@ -111,6 +112,26 @@ void ReadablePopupMenuScreen::preselectLastItem() { setCurrSelection(numMenuItem
 void ReadablePopupMenuScreen::processCommand(RemoteCommand command) {
     if (currentScreen_ != this) {
         currentScreen_->processCommand(command);
+        return;
+    }
+
+    // For Brightness Screen embedded in Popup Menu
+    if (popupMenuView_.showAltView()) {
+        switch (command) {
+        case RemoteCommand::ENTER:
+        case RemoteCommand::CHANNEL_MINUS:
+        case RemoteCommand::CHANNEL_PLUS:
+            popupMenuView_.setShowAltView(false);
+            firstLoad_ = true;
+            break;
+
+        case RemoteCommand::PREV:
+        case RemoteCommand::NEXT:
+            lightingAdjustScreen_.processCommand(command);
+            break;
+        default:
+            break;
+        }
         return;
     }
 

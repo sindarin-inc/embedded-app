@@ -21,6 +21,28 @@ public:
         setNeedsLayout();
     }
 
+    auto showAltView() -> bool { return showAltView_; }
+
+    void addAltView(std::shared_ptr<View> view) { altViews_.push_back(view); }
+
+    void setAltViewIndex(uint32_t index) {
+        uint32_t oldIndex = altViewIndex_;
+        if (index < altViews_.size()) {
+            altViewIndex_ = index;
+        }
+        if ((oldIndex != index) && (showAltView_)) {
+            setNeedsLayout();
+        }
+    }
+
+    void setShowAltView(bool showAltView) {
+        bool oldShowAltView = showAltView_;
+        showAltView_ = showAltView;
+        if (showAltView_ != oldShowAltView) {
+            setNeedsLayout();
+        }
+    }
+
     auto layout(LayoutContext &context, Size size) -> Size override {
         auto fullFrame = Rect::fromSize(size);
 
@@ -33,33 +55,39 @@ public:
         auto foregroundFrame = context.setViewFrame(popupMenuForeground_, fullFrame.inset(5),
                                                     LayoutOptionsAlignCenter);
 
-        // Internal content sublayout is further inset
-        auto contentFrame = context.setSublayoutFrame(
-            foregroundFrame.inset(10), LayoutOptionsAlignTop,
-            [this](LayoutContext &context, Size size) -> Size {
-                int x = 0;
-                int y = 0;
+        if (!showAltView_) {
+            // Internal content sublayout is further inset
+            auto contentFrame = context.setSublayoutFrame(
+                foregroundFrame.inset(10), LayoutOptionsAlignTop,
+                [this](LayoutContext &context, Size size) -> Size {
+                    int x = 0;
+                    int y = 0;
 
-                for (auto &view : menuItemViews) {
-                    if (!view->isHidden()) {
-                        auto viewFrame = context.setViewFrame(
-                            *view, {{x, y}, size}, LayoutOptionsSizeToFit | LayoutOptionsAlignTop);
-                        y += viewFrame.size.height;
+                    for (auto &view : menuItemViews) {
+                        if (!view->isHidden()) {
+                            auto viewFrame = context.setViewFrame(*view, {{x, y}, size},
+                                                                  LayoutOptionsSizeToFit |
+                                                                      LayoutOptionsAlignTop);
+                            y += viewFrame.size.height;
+                        }
                     }
-                }
 
-                return {size.width, y};
-            });
+                    return {size.width, y};
+                });
 
-        // Inset clock and aux horizontally to match the content but with 5px less padding on
-        // the bottom
-        context.setViewFrame(clockView_, contentFrame.inset(0, -5),
-                             LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
-                                 LayoutOptionsAlignLeft);
+            // Inset clock and aux horizontally to match the content but with 5px less padding on
+            // the bottom
+            context.setViewFrame(clockView_, contentFrame.inset(0, -5),
+                                 LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
+                                     LayoutOptionsAlignLeft);
 
-        context.setViewFrame(auxTextView_, contentFrame.inset(0, -5),
-                             LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
-                                 LayoutOptionsAlignRight);
+            context.setViewFrame(auxTextView_, contentFrame.inset(0, -5),
+                                 LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
+                                     LayoutOptionsAlignRight);
+        } else {
+            context.setViewFrame(*altViews_[altViewIndex_], foregroundFrame.inset(10),
+                                 LayoutOptionsSizeToFit | LayoutOptionsAlignTop);
+        }
 
         return size;
     }
@@ -69,20 +97,28 @@ public:
         popupMenuBackground_.strokeColor = display_.bg;
         popupMenuForeground_.strokeColor = display_.fg;
 
+        // Always draw the background and foreground
         popupMenuBackground_.draw();
         popupMenuForeground_.draw();
 
-        for (auto &view : menuItemViews) {
-            if (!view->isHidden()) {
-                view->draw();
+        if (!showAltView_) {
+            // By default, draw the menu items
+            // but if there are other views stored in this view for various
+            // functionality, optionally draw those instead
+            for (auto &view : menuItemViews) {
+                if (!view->isHidden()) {
+                    view->draw();
+                }
             }
-        }
 
-        if (showClock_) {
-            clockView_.draw();
-        }
+            if (showClock_) {
+                clockView_.draw();
+            }
 
-        auxTextView_.draw();
+            auxTextView_.draw();
+        } else {
+            altViews_[altViewIndex_]->draw();
+        }
     }
 
     std::vector<std::shared_ptr<MenuItemView>> menuItemViews;
@@ -100,4 +136,8 @@ protected:
     SingleLineTextView auxTextView_;
 
     bool showClock_ = true;
+
+    bool showAltView_ = false;
+    std::vector<std::shared_ptr<View>> altViews_;
+    uint32_t altViewIndex_ = 0;
 };
