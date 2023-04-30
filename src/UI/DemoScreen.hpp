@@ -7,7 +7,8 @@
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Screen.hpp"
 
-#define NUM_DEMO_SCREENS 4
+#define NUM_DEMO_SCREENS 36
+#define NUM_DEMO_MESSAGES 41
 #define DEMO_SCREEN_1 "Focus left eye"
 #define DEMO_SCREEN_2 "Focus right eye"
 #define DEMO_SCREEN_3 "When focused, press any button"
@@ -63,8 +64,16 @@ public:
     void processCommand(RemoteCommand command) override;
 
 protected:
-    std::array<std::string, NUM_DEMO_SCREENS> messages_ = {DEMO_SCREEN_1, DEMO_SCREEN_2,
-                                                           DEMO_SCREEN_3, DEMO_SCREEN_4};
+    std::array<std::string, NUM_DEMO_MESSAGES> messages_ = {
+        DEMO_SCREEN_1,   DEMO_SCREEN_2,   DEMO_SCREEN_3,   DEMO_SCREEN_4,   DEMO_SCREEN_5,
+        DEMO_SCREEN_6,   DEMO_SCREEN_6a,  DEMO_SCREEN_7,   DEMO_SCREEN_8,   DEMO_SCREEN_8a,
+        DEMO_SCREEN_9,   DEMO_SCREEN_10,  DEMO_SCREEN_11,  DEMO_SCREEN_11a, DEMO_SCREEN_11b,
+        DEMO_SCREEN_12,  DEMO_SCREEN_13,  DEMO_SCREEN_13a, DEMO_SCREEN_13b, DEMO_SCREEN_14,
+        DEMO_SCREEN_14a, DEMO_SCREEN_14b, DEMO_SCREEN_15,  DEMO_SCREEN_16,  DEMO_SCREEN_16a,
+        DEMO_SCREEN_16b, DEMO_SCREEN_16c, DEMO_SCREEN_16d, DEMO_SCREEN_16e, DEMO_SCREEN_17,
+        DEMO_SCREEN_17a, DEMO_SCREEN_17b, DEMO_SCREEN_18,  DEMO_SCREEN_18a, DEMO_SCREEN_18b,
+        DEMO_SCREEN_18c, DEMO_SCREEN_19,  DEMO_SCREEN_19a, DEMO_SCREEN_20,  DEMO_SCREEN_20a,
+        DEMO_SCREEN_20b};
     DisplaySystem &display_;
     Renderer renderer_;
     PreferencesStore &prefs_;
