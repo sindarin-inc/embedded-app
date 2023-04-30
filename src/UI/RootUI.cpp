@@ -282,7 +282,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             SpiramString message = SpiRamStringFormat(
                 "Welcome to the Books menu. This tab "
                 "shows you the books currently synced to your Sol Reader. To add more books or "
-                "manage the books on your device, use the Sol mobile app. Press "
+                "manage the books on your device, use the Sol mobile app.\n\n\nPress "
                 "(Sol Logo) (center) to continue.");
             auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_BOOKS);
             this->setCurrentScreen(*tutorialScreen);
@@ -351,7 +351,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 "Welcome to the Articles menu. This tab "
                 "shows you the articles currently synced to your Sol Reader. To add more articles, "
                 "simply connect your Pocket account in the Sol mobile app or forward newsletters "
-                "from your inbox to add@solreader.com. Press (Sol Logo) (center) to continue.\n");
+                "from your inbox to add@solreader.com.\n\n\nPress (Sol Logo) (center) to "
+                "continue.\n");
             auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_ARTICLES);
             this->setCurrentScreen(*tutorialScreen);
         }));
@@ -387,12 +388,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             bibleMenu->addMenuItem(MenuItem("(Sol Logo) Bible Tutorial",
                                             [this, createTutorialScreen]() {
                 SpiramString message = SpiRamStringFormat(
-                    "Welcome to the Bible. Crossway Publishing has generously provided the English "
+                    "Crossway Publishing has generously provided the English "
                     "Standard Version"
-                    " of the Bible to you free of charge (Copyright 2000, Crossway Publishing). "
-                    " Scripture not your thing? No worries! You can toggle this feature on and off "
-                    "in the Content"
-                    " Settings Menu. Press (Sol Logo) (center) to continue.\n\n");
+                    " of the Bible to you free of charge (Copyright 2000, Crossway Publishing).\n\n"
+                    " Scripture not your thing? No worries! You can toggle this app off "
+                    "in the Content Settings.\n\n"
+                    " Look for more scripture and meditation Sol Reader apps down the road!\n\n\n"
+                    " Press (Sol Logo) (center) to continue.\n\n");
                 auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_BIBLE);
                 this->setCurrentScreen(*tutorialScreen);
             }));
@@ -1312,11 +1314,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_SETTINGS)) {
         settingsMenu->addMenuItem(MenuItem("(Sol Logo) Settings Tutorial",
                                            [this, createTutorialScreen]() {
-            SpiramString message =
-                SpiRamStringFormat("Welcome to the settings menu. Here you can "
-                                   "change the settings of your Sol Reader. Check out the "
-                                   "experimental settings for features we are beta testing! Press "
-                                   "(Sol Logo) (center) to continue.  ");
+            SpiramString message = SpiRamStringFormat(
+                "Welcome to the settings menu. Here you can "
+                "change the settings of your Sol Reader. Check out the "
+                "experimental settings for features we are beta testing!\n\n\nPress "
+                "(Sol Logo) (center) to continue.  ");
             auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_SETTINGS);
             this->setCurrentScreen(*tutorialScreen);
         }));
