@@ -208,8 +208,7 @@ void ReadableScreen::render(DisplaySystem &display) {
             "Welcome to the beta of Autopilot mode! Here is what each button does "
             "while in autopilot mode.\n\n\nUp or Down: Popup Menu\n\nLeft: Slow Down "
             "\n\nRight: Speed Up\n\nCenter: Pause/unpause\n\n\nPress any button "
-            "to "
-            "start reading... \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
+            "to start reading... \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
 
         auto streamFirstTime = std::make_shared<StdStringStream>(message);
         firstTimeRenderer_.setStream(streamFirstTime);
