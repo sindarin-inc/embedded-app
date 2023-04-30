@@ -120,9 +120,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto createTutorialScreen = [this, display, mainMenu](SpiramString text,
                                                           int bit) -> TutorialScreen * {
-        auto tutorialScreen = new TutorialScreen(*display, this->prefs_, text, bit);
+        auto tutorialScreen = new TutorialScreen(*display, this->prefs_, std::move(text), bit);
 
-        tutorialScreen->setBackCallback([this, display, tutorialScreen, mainMenu]() {
+        tutorialScreen->setBackCallback([this, display, mainMenu]() {
             display->clearDisplay();
             mainMenu->setFirstLoad();
             setCurrentScreen(*mainMenu);
