@@ -310,8 +310,8 @@ public:
           noUploadCrashes(*this, "no-upload-crash"), showDebugMenu(*this, "show-debug"),
           fastBookmarkRight(*this, "fst-mark-right"), fastBookmarkCenter(*this, "fst-mark-cent"),
           wifiSettingsJson(*this, "wifi-settings"), localStoreMigrationVersion(*this, "ls-version"),
-          preferencesStoreMigrationVersion_(*this, "ps-version"),
-          tutorialsDeleted(*this, "tutorials"){};
+          tutorialsDeleted(*this, "tutorials"),
+          preferencesStoreMigrationVersion_(*this, "ps-version"){};
     PreferencesStore(PreferencesStore &) = delete;
 
     void migrateIfNeeded() {
