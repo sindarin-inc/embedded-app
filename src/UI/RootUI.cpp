@@ -122,13 +122,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                                           int bit) -> TutorialScreen * {
         auto tutorialScreen = new TutorialScreen(*display, this->prefs_, std::move(text), bit);
 
-        tutorialScreen->setBackCallback([this, display, mainMenu]() {
+        tutorialScreen->setBackCallback([this, display, mainMenu, tutorialScreen]() {
             display->clearDisplay();
             mainMenu->setFirstLoad();
             setCurrentScreen(*mainMenu);
-
-            // Don't delete this here in case they call it again.
-            // delete tutorialScreen;
+            delete tutorialScreen;
         });
 
         return tutorialScreen;
@@ -388,13 +386,19 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             bibleMenu->addMenuItem(MenuItem("(Sol Logo) Bible Tutorial",
                                             [this, createTutorialScreen]() {
                 SpiramString message = SpiRamStringFormat(
+                    "The Gutenberg Bible "
+                    "was the earliest major book printed using mass-produced movable "
+                    "metal type in Europe. It marked the start of the Gutenberg Revolution "
+                    "and the age of printed books in the West. So we thought it would be "
+                    "appropriate to include the Bible as one of the first books on the Sol "
+                    "Reader.\n\n"
                     "Crossway Publishing has generously provided the English "
                     "Standard Version"
                     " of the Bible to you free of charge (Copyright 2000, Crossway Publishing).\n\n"
-                    " Scripture not your thing? No worries! You can toggle this app off "
+                    " Not your thing? No worries! You can toggle this app off "
                     "in the Content Settings.\n\n"
                     " Look for more scripture and meditation Sol Reader apps down the road!\n\n\n"
-                    " Press (Sol Logo) (center) to continue.\n\n");
+                    " Press (Sol Logo) (center) to continue.");
                 auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_BIBLE);
                 this->setCurrentScreen(*tutorialScreen);
             }));

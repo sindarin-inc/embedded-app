@@ -477,7 +477,7 @@ public:
     PrefsItem<bool> fastBookmarkCenter;
     PrefsItem<std::string> wifiSettingsJson;
     PrefsItem<uint32_t> localStoreMigrationVersion;
-    PrefsItem<int> tutorialsDeleted;
+    PrefsItem<uint32_t> tutorialsDeleted;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles

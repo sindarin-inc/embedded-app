@@ -17,7 +17,13 @@ TutorialScreen::TutorialScreen(DisplaySystem &display, PreferencesStore &prefs, 
         prefs_.tutorialsDeleted.set(prefs_.tutorialsDeleted.get().value_or(0) | bit);
         back();
     }));
-    menu_.addMenuItem(MenuItem("Keep this tutorial", [this]() { back(); }));
+    menu_.addMenuItem(MenuItem("Keep this tutorial", [this, bit]() {
+        // Set it here just in case they change their mind after deleting it and perform
+        // this operation a second time.
+        uint32_t mask = ~bit;
+        prefs_.tutorialsDeleted.set(prefs_.tutorialsDeleted.get().value_or(0) & mask);
+        back();
+    }));
 
     setCurrentScreen(*this);
 }
