@@ -19,6 +19,7 @@
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
 #include "Misc/SolClock.hpp"
+#include "Misc/SolMorse.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
 #include "Models/Readable.hpp"

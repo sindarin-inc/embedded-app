@@ -14,12 +14,11 @@ public:
     auto checkProductId() -> bool;
 
     // check the magnetometer to determine if the temple is open.
-    // return bool indicating success
-    auto isTempleOpen(bool &open) -> bool;
+    auto isTempleOpen() -> bool;
 
     // Should be called periodically to fire the callback when the temple is opened or closed (only
     // fires the callback on state change, not on the initial reading)
-    auto checkTemple() -> bool;
+    void checkTemple();
 
     void setCallback(std::function<void(bool opened)> callback) { callback_ = std::move(callback); }
 
