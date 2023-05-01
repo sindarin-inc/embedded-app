@@ -94,7 +94,7 @@ void PollingLoopTask(void *parameter) {
             if (factoryResetStartTimeMs == 0) {
                 factoryResetStartTimeMs = Millis();
             } else if ((Millis() - factoryResetStartTimeMs) > FACTORY_RESET_MS) {
-                FactoryReset(prefs, fileSystem, powerManager);
+                FactoryReset(prefs, fileSystem, powerManager, true);
             }
         } else {
             factoryResetStartTimeMs = 0;

@@ -5,7 +5,7 @@
 #include "Misc/SolMorse.hpp"
 #include "sindarin-debug.h"
 
-void FactoryReset(PreferencesStore &prefs, FileSystem &fs, PowerManager &pm) {
+void FactoryReset(PreferencesStore &prefs, FileSystem &fs, PowerManager &pm, bool reboot) {
     log_i("performing factory reset");
     prefs.clear();
     fs.deleteAll();
@@ -14,7 +14,10 @@ void FactoryReset(PreferencesStore &prefs, FileSystem &fs, PowerManager &pm) {
     log_i("erasing all nvs");
     nvs_flash_erase();
 #endif
-    pm.releaseLED();
-    blinkSOL();
-    pm.reboot();
+
+    if (reboot) {
+        pm.releaseLED();
+        blinkSOL();
+        pm.reboot();
+    }
 }
