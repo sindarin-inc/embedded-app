@@ -16,21 +16,21 @@ auto TempleCloseSensor::checkProductId() -> bool {
     }
 }
 
-auto TempleCloseSensor::isTempleOpen(bool &error) -> bool {
-    error = false;
+auto TempleCloseSensor::isTempleOpen(bool &open) -> bool {
     Xyz8bit magReading;
     auto success = magSensor_.readXZ8Bit(magReading);
     if (!success) {
         log_e("Failed to read magnetometer");
-        error = true;
+        open = false;
         return false;
     }
-    return IsTempleOpen(magReading.x, magReading.z);
+    open = IsTempleOpen(magReading.x, magReading.z);
+    return true;
 }
 
 auto TempleCloseSensor::checkTemple() -> bool {
-    bool error = false;
-    auto templeOpen = isTempleOpen(error);
+    bool templeOpen = false;
+    bool success = isTempleOpen(&templeOpen);
 
     // Don't fire the callback if this is the first call to this method
     // (because we can't determine yet if this is a state change)
@@ -42,8 +42,7 @@ auto TempleCloseSensor::checkTemple() -> bool {
         }
     }
     opened_ = templeOpen;
-    if (error) {
-        log_e("failed to read magnetometer");
+    if (!success) {
         return false;
     }
 

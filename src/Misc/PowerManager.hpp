@@ -64,6 +64,7 @@ public:
 
     void feedInactivityTimer() { inactivityTimer_.feed(); }
 
+    // return false if we fail to read the magnetometer
     auto loop() -> bool;
 
     void releaseLED();
