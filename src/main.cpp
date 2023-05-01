@@ -16,6 +16,7 @@
 #include "Misc/Battery.hpp"
 #include "Misc/BootError.hpp"
 #include "Misc/BootLoopDetection.hpp"
+#include "Misc/FactoryReset.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
 #include "Misc/SolClock.hpp"
@@ -83,14 +84,6 @@ SolClock solClock(prefs);
 
 bool bootCompleted = false;
 
-void FactoryReset() {
-    prefs.clear();
-    fileSystem.deleteAll();
-    powerManager.releaseLED();
-    BlinkSol();
-    powerManager.reboot();
-}
-
 // Task for all periodic things that need to run ~1Hz. Polling tasks should be grouped here so that
 // they all complete in a tight loop, thus maximizing sleep time.
 void PollingLoopTask(void *parameter) {
@@ -101,7 +94,7 @@ void PollingLoopTask(void *parameter) {
             if (factoryResetStartTimeMs == 0) {
                 factoryResetStartTimeMs = Millis();
             } else if ((Millis() - factoryResetStartTimeMs) > FACTORY_RESET_MS) {
-                FactoryReset();
+                FactoryReset(prefs, fileSystem, powerManager);
             }
         } else {
             factoryResetStartTimeMs = 0;
