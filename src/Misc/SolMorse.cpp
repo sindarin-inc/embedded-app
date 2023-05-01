@@ -2,37 +2,37 @@
 
 #include "Platform.hpp"
 
-void blinkDot() {
+void BlinkDot() {
     DigitalWrite(RED_LED, LED_ON);
     Delay(100);
     DigitalWrite(RED_LED, LED_OFF);
     Delay(100);
 }
 
-void blinkDash() {
+void BlinkDash() {
     DigitalWrite(RED_LED, LED_ON);
     Delay(300);
     DigitalWrite(RED_LED, LED_OFF);
     Delay(100);
 }
 
-void blinkSpace() { Delay(500); }
+void BlinkSpace() { Delay(500); }
 
-void blinkSOL() {
-    blinkDot();
-    blinkDot();
-    blinkDot();
+void BlinkSol() {
+    BlinkDot();
+    BlinkDot();
+    BlinkDot();
 
-    blinkSpace();
+    BlinkSpace();
 
-    blinkDash();
-    blinkDash();
-    blinkDash();
+    BlinkDash();
+    BlinkDash();
+    BlinkDash();
 
-    blinkSpace();
+    BlinkSpace();
 
-    blinkDot();
-    blinkDash();
-    blinkDot();
-    blinkDot();
+    BlinkDot();
+    BlinkDash();
+    BlinkDot();
+    BlinkDot();
 }

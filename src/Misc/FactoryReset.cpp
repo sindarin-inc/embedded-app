@@ -17,7 +17,7 @@ void FactoryReset(PreferencesStore &prefs, FileSystem &fs, PowerManager &pm, boo
 
     if (reboot) {
         pm.releaseLED();
-        blinkSOL();
+        BlinkSol();
         pm.reboot();
     }
 }
