@@ -311,6 +311,7 @@ public:
           fastBookmarkRight(*this, "fst-mark-right"), fastBookmarkCenter(*this, "fst-mark-cent"),
           noPageTransitionArrows(*this, "no-page-arrows"), wifiSettingsJson(*this, "wifi-settings"),
           localStoreMigrationVersion(*this, "ls-version"),
+          tutorialsDeleted(*this, "tutorials"),
           preferencesStoreMigrationVersion_(*this, "ps-version"){};
     PreferencesStore(PreferencesStore &) = delete;
 
@@ -478,6 +479,7 @@ public:
     PrefsItem<bool> noPageTransitionArrows;
     PrefsItem<std::string> wifiSettingsJson;
     PrefsItem<uint32_t> localStoreMigrationVersion;
+    PrefsItem<uint32_t> tutorialsDeleted;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles
