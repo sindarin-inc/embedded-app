@@ -48,19 +48,19 @@ auto ReadableScreen::layout(LayoutContext &context, Size size) -> Size {
 void ReadableScreen::drawInRect(Rect rect) {
     switch (lastArrowPress_) {
     case REMOTE_LEFT:
-        leftArrowView_.color_ = eraseArrow_ ? display_.bg : display_.fg;
+        leftArrowView_.color = eraseArrow_ ? display_.bg : display_.fg;
         leftArrowView_.draw();
         break;
     case REMOTE_RIGHT:
-        rightArrowView_.color_ = eraseArrow_ ? display_.bg : display_.fg;
+        rightArrowView_.color = eraseArrow_ ? display_.bg : display_.fg;
         rightArrowView_.draw();
         break;
     case REMOTE_UP:
-        upArrowView_.color_ = eraseArrow_ ? display_.bg : display_.fg;
+        upArrowView_.color = eraseArrow_ ? display_.bg : display_.fg;
         upArrowView_.draw();
         break;
     case REMOTE_DOWN:
-        downArrowView_.color_ = eraseArrow_ ? display_.bg : display_.fg;
+        downArrowView_.color = eraseArrow_ ? display_.bg : display_.fg;
         downArrowView_.draw();
         break;
     default:

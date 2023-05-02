@@ -11,45 +11,45 @@ enum ArrowDirection { ArrowLeft, ArrowRight, ArrowUp, ArrowDown };
 class ArrowView : public EinkView {
 public:
     ArrowView(DisplaySystem &display, ArrowDirection direction = ArrowLeft)
-        : EinkView(display), arrowDirection_(direction), color_(display.fg) {}
+        : EinkView(display), arrowDirection(direction), color(display.fg) {}
     ~ArrowView() override = default;
 
-    ArrowDirection arrowDirection_ = ArrowLeft;
-    uint16_t color_;
+    ArrowDirection arrowDirection = ArrowLeft;
+    uint16_t color;
 
     auto layout(LayoutContext &context, Size size) -> Size override { return size; }
 
     void drawInRect(Rect rect) override {
-        switch (arrowDirection_) {
+        switch (arrowDirection) {
         case ArrowLeft:
             // Draw Left Arrow with the following two drawLine calls
             display_.drawLine(rect.size.width + rect.origin.x, rect.origin.y, rect.origin.x,
-                              rect.size.height / 2 + rect.origin.y, color_);
+                              rect.size.height / 2 + rect.origin.y, color);
             display_.drawLine(rect.origin.x, rect.size.height / 2 + rect.origin.y,
                               rect.origin.x + rect.size.width, rect.origin.y + rect.size.height,
-                              color_);
+                              color);
             break;
         case ArrowRight:
             /* Draw Right arrow with the following two drawLine calls*/
             display_.drawLine(rect.origin.x, rect.origin.y, rect.size.width + rect.origin.x,
-                              rect.size.height / 2 + rect.origin.y, color_);
+                              rect.size.height / 2 + rect.origin.y, color);
             display_.drawLine(rect.size.width + rect.origin.x, rect.size.height / 2 + rect.origin.y,
-                              rect.origin.x, rect.size.height + rect.origin.y, color_);
+                              rect.origin.x, rect.size.height + rect.origin.y, color);
             break;
         case ArrowUp:
             /* Draw Up arrow with the following two drawLine calls*/
             display_.drawLine(rect.origin.x, rect.size.height + rect.origin.y,
-                              rect.size.width / 2 + rect.origin.x, rect.origin.y, color_);
+                              rect.size.width / 2 + rect.origin.x, rect.origin.y, color);
             display_.drawLine(rect.size.width / 2 + rect.origin.x, rect.origin.y,
                               rect.size.width + rect.origin.x, rect.size.height + rect.origin.y,
-                              color_);
+                              color);
             break;
         case ArrowDown:
             /* Draw Down arrow with the following two drawLine calls*/
             display_.drawLine(rect.origin.x, rect.origin.y, rect.size.width / 2 + rect.origin.x,
-                              rect.size.height + rect.origin.y, color_);
+                              rect.size.height + rect.origin.y, color);
             display_.drawLine(rect.size.width / 2 + rect.origin.x, rect.size.height + rect.origin.y,
-                              rect.size.width + rect.origin.x, rect.origin.y, color_);
+                              rect.size.width + rect.origin.x, rect.origin.y, color);
             break;
         default:
             break;
