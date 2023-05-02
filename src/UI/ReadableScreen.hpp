@@ -6,6 +6,7 @@
 #include "Renderers/RendererStream.hpp"
 #include "Sensors/LightingController.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "UI/Components/ArrowView.hpp"
 #include "UI/ContainerScreen.hpp"
 #include "UI/ReadablePopupMenuScreen.hpp"
 #include "UI/Screen.hpp"
@@ -20,14 +21,16 @@ enum LastArrowPress {
     REMOTE_CENTER
 };
 
-class ReadableScreen : public ContainerScreen {
+class ReadableScreen : public ContainerScreen, public EinkView {
 public:
     ReadableScreen(std::shared_ptr<RendererStream> stream, DisplaySystem &display,
                    const Readable &readable, PreferencesStore &prefs, Battery &battery,
                    FileSystem &fileSystem, LightingController &lightingController)
-        : renderer_(display), firstTimeRenderer_(display), readable_(readable), prefs_(prefs),
-          fileSystem_(fileSystem), display_(display),
-          popupMenuScreen_(display, prefs, readable_, lightingController, renderer_) {
+        : EinkView(display), renderer_(display), firstTimeRenderer_(display), readable_(readable),
+          prefs_(prefs), fileSystem_(fileSystem), display_(display),
+          popupMenuScreen_(display, prefs, readable_, lightingController, renderer_),
+          leftArrowView_(display, ArrowLeft), rightArrowView_(display, ArrowRight),
+          upArrowView_(display, ArrowUp), downArrowView_(display, ArrowDown) {
 
         currentScreen_ = this;
         renderer_.setStream(std::move(stream));
@@ -78,6 +81,9 @@ public:
 
     ~ReadableScreen() override = default;
 
+    auto layout(LayoutContext &context, Size size) -> Size override;
+    void drawInRect(Rect rect) override;
+
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
     void writeOutBookmarkUpdate();
@@ -110,6 +116,7 @@ protected:
     bool shownIcons_ = false;
     bool renderPopup_ = false;
     bool autoPilotForceFull_ = false;
+    bool eraseArrow_ = false;
 
     DisplaySystem &display_;
 
@@ -121,6 +128,11 @@ protected:
     // How many ms we should take to read the page
     int pageSpeed_ = 10000;
     bool autoPilotPause_ = false;
+
+    ArrowView leftArrowView_;
+    ArrowView rightArrowView_;
+    ArrowView upArrowView_;
+    ArrowView downArrowView_;
 
 private:
     void incrementReadingTime();

@@ -7,14 +7,66 @@
 
 #include "Misc/Platform.hpp"
 #include "UI/Bitmaps/Auto_Pilot_Icons.hpp"
-#include "UI/Bitmaps/Home.hpp"
-#include "UI/Bitmaps/Read_Gear.hpp"
 #include "sindarin-debug.h"
 
 // Two minutes per page currently
 #define SLOWEST_PAGE_SPEED 120000
 // Change speed of speed reading in increments of 2 seconds
 #define PAGE_SPEED_INCREMENT 2000
+
+auto ReadableScreen::layout(LayoutContext &context, Size size) -> Size {
+    int arrowWidth = 24;
+    int arrowHeight = 8;
+    int sidePadding = -15;
+    int topBottomPadding = -10;
+
+    context.setViewFrame(
+        leftArrowView_,
+        {{sidePadding, size.height / 2 - arrowWidth / 2}, {arrowHeight, arrowWidth}},
+        LayoutOptionsSizeToFit);
+    context.setViewFrame(
+        rightArrowView_,
+        {{size.width - sidePadding - arrowHeight, size.height / 2 - arrowWidth / 2},
+         {arrowHeight, arrowWidth}},
+        LayoutOptionsSizeToFit);
+    // context.setViewSizeInRect(textView_, {arrowHeight, arrowWidth},
+    //                           Rect::fromSize(size).inset(sidePadding, topBottomPadding),
+    //                           LayoutOptionsAlignRight | LayoutOptionsAlignCenterVertical);
+    context.setViewFrame(
+        upArrowView_,
+        {{size.width / 2 - arrowWidth / 2, topBottomPadding}, {arrowWidth, arrowHeight}},
+        LayoutOptionsSizeToFit);
+    context.setViewFrame(
+        downArrowView_,
+        {{size.width / 2 - arrowWidth / 2, size.height - topBottomPadding - arrowHeight},
+         {arrowWidth, arrowHeight}},
+        LayoutOptionsSizeToFit);
+
+    return size;
+}
+
+void ReadableScreen::drawInRect(Rect rect) {
+    switch (lastArrowPress_) {
+    case REMOTE_LEFT:
+        leftArrowView_.color_ = eraseArrow_ ? display_.bg : display_.fg;
+        leftArrowView_.draw();
+        break;
+    case REMOTE_RIGHT:
+        rightArrowView_.color_ = eraseArrow_ ? display_.bg : display_.fg;
+        rightArrowView_.draw();
+        break;
+    case REMOTE_UP:
+        upArrowView_.color_ = eraseArrow_ ? display_.bg : display_.fg;
+        upArrowView_.draw();
+        break;
+    case REMOTE_DOWN:
+        downArrowView_.color_ = eraseArrow_ ? display_.bg : display_.fg;
+        downArrowView_.draw();
+        break;
+    default:
+        break;
+    }
+}
 
 // Once we have a real database, this will all be replaced.
 // For now, since we assume that there won't be TOO many bookmarks, we simply
@@ -157,14 +209,14 @@ void ReadableScreen::turnPage() {
 auto ReadableScreen::checkAtEnd() -> bool { return (newPlace_ == 0); }
 
 void ReadableScreen::render(DisplaySystem &display) {
-    // Rendering the popup is a special case. We first re-draw the text onto the background (since
-    // it would have been cleared at the end of the last updateDisplay), then we render the popup
-    // over it, then we draw that as a partial refresh. Then we only render the popup (no text) and
-    // update again as AU4. That causes the text to be slightly faded out, but the popup menu to be
-    // very clear.
-    // NOTE: We might consider in the future, not always clearing the display (`fillScreen(bg);`)
-    // after updateDisplay. Then we could simply draw over existing screen contents without
-    // rerendering it. But that would be a pretty global change, so we'll leave it for now.
+    // Rendering the popup is a special case. We first re-draw the text onto the background
+    // (since it would have been cleared at the end of the last updateDisplay), then we render
+    // the popup over it, then we draw that as a partial refresh. Then we only render the popup
+    // (no text) and update again as AU4. That causes the text to be slightly faded out, but the
+    // popup menu to be very clear. NOTE: We might consider in the future, not always clearing
+    // the display (`fillScreen(bg);`) after updateDisplay. Then we could simply draw over
+    // existing screen contents without rerendering it. But that would be a pretty global
+    // change, so we'll leave it for now.
     bool renderPopupBackground = currentScreen_ == &popupMenuScreen_ && renderPopup_;
 
     bool renderTransitionArrows = !prefs_.noPageTransitionArrows.get().value_or(false);
@@ -174,9 +226,16 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
+    // For the main menu, we want to use the entire screen and ignore the user settings for
+    // reading box.
+    setFrame(
+        {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
+         {display.defaultScreenWidth - 2 * display.defaultXPadding,
+          display.defaultScreenHeight - 2 * display.defaultYPadding}});
+
     if (renderTransitionArrows) {
         if (lastArrowPress_ != REMOTE_NONE) {
-            renderIcons(display);
+            draw();
             display.updateDisplay(DisplaySystem::UpdateType::FAST);
         }
     }
@@ -283,8 +342,8 @@ void ReadableScreen::render(DisplaySystem &display) {
                              display.bg);
     }
 
-    // Only show the autopilot icon on page turns or if speed was changed -- let it fade out with
-    // the rest of the text
+    // Only show the autopilot icon on page turns or if speed was changed -- let it fade out
+    // with the rest of the text
     if ((pageSpeed_ != 0) && (speedLinesToSkip_ == 0)) {
         int screenWidth = display.width();
         display.drawXBitmap(screenWidth + 2, 0, autoPilotBits, auto_pilot_width, auto_pilot_height,
@@ -307,7 +366,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         }
     } else {
         if (renderTransitionArrows) {
-            renderIcons(display);
+            draw();
         }
         if (prefs_.fastTransitions.get().value_or(false)) {
             display.updateDisplay(DisplaySystem::UpdateType::PARTIAL,
@@ -317,8 +376,10 @@ void ReadableScreen::render(DisplaySystem &display) {
                                   (renderTransitionArrows) ? false : true);
         }
         if (renderTransitionArrows) {
-            renderIcons(display, false);
+            eraseArrow_ = true;
+            draw();
             display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
+            eraseArrow_ = false;
         }
     }
 
@@ -401,7 +462,6 @@ void ReadableScreen::processCommandDemoMode(RemoteCommand command) {
 }
 
 void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
-
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
         pageSpeed_ = std::min(pageSpeed_ + PAGE_SPEED_INCREMENT, SLOWEST_PAGE_SPEED);
@@ -451,7 +511,6 @@ void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
 }
 
 void ReadableScreen::processCommandNormal(RemoteCommand command) {
-
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
         readable_.place = renderer_.getPreviousPlace();

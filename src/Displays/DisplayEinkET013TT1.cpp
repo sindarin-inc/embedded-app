@@ -153,17 +153,12 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType,
         }
         break;
     case ERASE:
-        if (!fullRefreshNext_) {
-            if (getInversion()) {
-                driver_.update(ERASE_WAVEFORM_REGULAR, gfxCanvas_.getBuffer());
-            } else {
-                driver_.update(ERASE_WAVEFORM_INVERTED, gfxCanvas_.getBuffer());
-            }
+        if (getInversion()) {
+            driver_.update(ERASE_WAVEFORM_REGULAR, gfxCanvas_.getBuffer());
         } else {
-            driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
-            firstPartialTime_ = 0;
-            numPartials_ = 0;
+            driver_.update(ERASE_WAVEFORM_INVERTED, gfxCanvas_.getBuffer());
         }
+        numPartials_++;
         break;
     case FAST_ORIGINAL_AU4:
         if (!fullRefreshNext_) {
