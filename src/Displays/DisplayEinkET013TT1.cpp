@@ -84,7 +84,8 @@ void DisplayEinkET013TT1::invertDisplay(bool newInvert) {
     fillScreen(bg);
 }
 
-void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
+void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType,
+                                        bool clearFrameBuffer) {
     switch (updateType) {
     case UNSPECIFIED:
         if (getPartialRefresh()) {
@@ -189,8 +190,11 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
         break;
     }
 
-    // Clear buffer afterwards
-    fillScreen(bg);
+    // Clear buffer afterwards if argument not set to false.
+    if (clearFrameBuffer) {
+        fillScreen(bg);
+    }
+
     fullRefreshNext_ = false;
 }
 

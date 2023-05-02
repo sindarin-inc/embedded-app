@@ -71,7 +71,8 @@ public:
         FAST_ORIGINAL_AU4,
         ORIGINAL_PARTIAL,
     };
-    virtual void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED) = 0;
+    virtual void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED,
+                               bool clearFrameBuffer = true) = 0;
 
     virtual void beginPowerOn() {}
 

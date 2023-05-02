@@ -172,6 +172,21 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
+    int screenWidth = display.width();
+    int screenHeight = display.height();
+    int arrowWidth = 24;
+    int arrowHeight = 8;
+
+    // Give feedback of the button press before rerendering anything else. Be sure to clear
+    // the buffer after this one
+    // Left Arrow
+    display.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 - arrowWidth / 2,
+                     display.fg);
+    display.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 + arrowWidth / 2,
+                     display.fg);
+
+    display.updateDisplay(DisplaySystem::UpdateType::FAST);
+
     prefs_.lastReadableId.set(readable_.uuid);
 
     display.setFont(display.style.getFontFamily().readableFont);
@@ -324,7 +339,22 @@ void ReadableScreen::render(DisplaySystem &display) {
         if (prefs_.fastTransitions.get().value_or(false)) {
             display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         } else {
-            display.updateDisplay(DisplaySystem::UpdateType::FULL);
+
+            // Left Arrow
+            display.drawLine(-arrowHeight - 8, screenHeight / 2, -8,
+                             screenHeight / 2 - arrowWidth / 2, display.fg);
+            display.drawLine(-arrowHeight - 8, screenHeight / 2, -8,
+                             screenHeight / 2 + arrowWidth / 2, display.fg);
+
+            display.updateDisplay(DisplaySystem::UpdateType::FULL, false);
+
+            Delay(70);
+            // Left Arrow
+            display.drawLine(-arrowHeight - 8, screenHeight / 2, -8,
+                             screenHeight / 2 - arrowWidth / 2, display.bg);
+            display.drawLine(-arrowHeight - 8, screenHeight / 2, -8,
+                             screenHeight / 2 + arrowWidth / 2, display.bg);
+            display.updateDisplay(DisplaySystem::UpdateType::FAST, false);
         }
     }
 
