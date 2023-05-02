@@ -46,22 +46,40 @@ auto ReadableScreen::layout(LayoutContext &context, Size size) -> Size {
 }
 
 void ReadableScreen::drawInRect(Rect rect) {
+
+    // Because the user can repurpose the center button and right button, we need to check
+    // if they did that before showing the right arrow.
+    bool skipDisplay = false;
+
     switch (lastArrowPress_) {
     case REMOTE_LEFT:
         leftArrowView_.color = eraseArrow_ ? display_.bg : display_.fg;
         leftArrowView_.draw();
         break;
     case REMOTE_RIGHT:
-        rightArrowView_.color = eraseArrow_ ? display_.bg : display_.fg;
-        rightArrowView_.draw();
+    case REMOTE_CENTER:
+        if (prefs_.fastBookmarkRight.get().value_or(false) && (lastArrowPress_ == REMOTE_RIGHT)) {
+            skipDisplay = true;
+        }
+        if (prefs_.fastBookmarkCenter.get().value_or(false) && (lastArrowPress_ == REMOTE_CENTER)) {
+            skipDisplay = true;
+        }
+        if (!skipDisplay) {
+            rightArrowView_.color = eraseArrow_ ? display_.bg : display_.fg;
+            rightArrowView_.draw();
+        }
         break;
     case REMOTE_UP:
-        upArrowView_.color = eraseArrow_ ? display_.bg : display_.fg;
-        upArrowView_.draw();
+        if (!prefs_.cesMode.get().value_or(false)) {
+            upArrowView_.color = eraseArrow_ ? display_.bg : display_.fg;
+            upArrowView_.draw();
+        }
         break;
     case REMOTE_DOWN:
-        downArrowView_.color = eraseArrow_ ? display_.bg : display_.fg;
-        downArrowView_.draw();
+        if (!prefs_.cesMode.get().value_or(false)) {
+            downArrowView_.color = eraseArrow_ ? display_.bg : display_.fg;
+            downArrowView_.draw();
+        }
         break;
     default:
         break;
@@ -124,67 +142,6 @@ void ReadableScreen::writeOutBookmarkUpdate() {
     bookmarkFile.close();
 
     prefs_.readableBookmarksChanged.set(readable_.shortenedUuid.c_str(), true);
-}
-
-void ReadableScreen::renderIcons(DisplaySystem &display, bool fg) {
-    int screenWidth = display.width();
-    int screenHeight = display.height();
-    int arrowWidth = 24;
-    int arrowHeight = 8;
-
-    int color = fg ? display.fg : display.bg;
-
-    // Because the user can repurpose the center button and right button, we need to check
-    // if they did that before showing the right arrow.
-    bool skipDisplay = false;
-
-    switch (lastArrowPress_) {
-    case REMOTE_LEFT:
-        // Left Arrow
-        display.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 - arrowWidth / 2,
-                         color);
-        display.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 + arrowWidth / 2,
-                         color);
-        break;
-    case REMOTE_RIGHT:
-    case REMOTE_CENTER:
-        if (prefs_.fastBookmarkRight.get().value_or(false) && (lastArrowPress_ == REMOTE_RIGHT)) {
-            skipDisplay = true;
-        }
-        if (prefs_.fastBookmarkCenter.get().value_or(false) && (lastArrowPress_ == REMOTE_CENTER)) {
-            skipDisplay = true;
-        }
-
-        if (!skipDisplay) {
-            // Right Arrow
-            display.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
-                             screenHeight / 2 + arrowWidth / 2, color);
-            display.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
-                             screenHeight / 2 - arrowWidth / 2, color);
-        }
-        break;
-    case REMOTE_UP:
-        // Only draw up and down if not in CES mode
-        if (!prefs_.cesMode.get().value_or(false)) {
-            display.drawLine(screenWidth / 2, -arrowHeight - 2, screenWidth / 2 - arrowWidth / 2,
-                             -2, color);
-            display.drawLine(screenWidth / 2, -arrowHeight - 2, screenWidth / 2 + arrowWidth / 2,
-                             -2, color);
-        }
-        break;
-    case REMOTE_DOWN:
-        // Only draw up and down if not in CES mode
-        if (!prefs_.cesMode.get().value_or(false)) {
-            display.drawLine(screenWidth / 2, screenHeight + arrowHeight + 2,
-                             screenWidth / 2 - arrowWidth / 2, screenHeight + 2, color);
-            display.drawLine(screenWidth / 2, screenHeight + arrowHeight + 2,
-                             screenWidth / 2 + arrowWidth / 2, screenHeight + 2, color);
-        }
-        break;
-    case REMOTE_NONE:
-    default:
-        break;
-    }
 }
 
 // Since this happens in a couple of places (animation as well as button press),

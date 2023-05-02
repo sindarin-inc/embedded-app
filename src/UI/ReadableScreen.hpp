@@ -89,8 +89,6 @@ public:
     void writeOutBookmarkUpdate();
     void updateBookmarkStatus();
 
-    void renderIcons(DisplaySystem &display, bool fg = true);
-
 protected:
     void processCommandDemoMode(RemoteCommand command);
     void processCommandAutoPilot(RemoteCommand command);
