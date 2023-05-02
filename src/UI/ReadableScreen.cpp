@@ -139,6 +139,13 @@ void ReadableScreen::renderIcons(DisplaySystem &display) {
 // we have a helper method to do the work.
 void ReadableScreen::turnPage() {
     if (atEnd_) {
+        if (prefs_.emcMode.get().value_or(false)) {
+            log_d("Looping back to the beginning of Readable for EMC testing mode");
+            // Loop back to the beginning
+            readable_.placePrev = 0;
+            readable_.place = 0;
+            return;
+        }
         showPopupMenu();
         popupMenuScreen_.preselectArchiveMenuItem();
     } else {
