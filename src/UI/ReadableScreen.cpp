@@ -74,64 +74,76 @@ void ReadableScreen::writeOutBookmarkUpdate() {
     prefs_.readableBookmarksChanged.set(readable_.shortenedUuid.c_str(), true);
 }
 
-void ReadableScreen::renderIcons(DisplaySystem &display) {
+void ReadableScreen::renderIcons(DisplaySystem &display, bool fg) {
     int screenWidth = display.width();
     int screenHeight = display.height();
-    int arrowWidth = 8;
-    int arrowHeight = 4;
+    int arrowWidth = 24;
+    int arrowHeight = 8;
 
-    // Use a gear for the bottom icon.
-    // the Y calcuation is a bit of a hack, but at least it takes into acccount line spacing
-    // differences. This is one place that will benefit from more descriptive getTextHeight
-    // methods.
-    if (!prefs_.cesMode.get().value_or(false)) {
-        display.drawXBitmap(screenWidth / 2 - READ_GEAR_WIDTH / 2,
-                            screenHeight + display.getTextHeight() / 2 + 3, readGearBits,
-                            READ_GEAR_WIDTH, READ_GEAR_HEIGHT, display.fg);
-    }
+    int color = fg ? display.fg : display.bg;
 
-    if (pageSpeed_ == 0) {
+    // Because the user can repurpose the center button and right button, we need to check
+    // if they did that before showing the right arrow.
+    bool skipDisplay = false;
+
+    switch (lastArrowPress_) {
+    case REMOTE_LEFT:
         // Left Arrow
         display.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 - arrowWidth / 2,
-                         display.fg);
+                         color);
         display.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 + arrowWidth / 2,
-                         display.fg);
-    } else {
+                         color);
+        break;
+    case REMOTE_RIGHT:
+    case REMOTE_CENTER:
+        if (prefs_.fastBookmarkRight.get().value_or(false) && (lastArrowPress_ == REMOTE_RIGHT)) {
+            skipDisplay = true;
+        }
+        if (prefs_.fastBookmarkCenter.get().value_or(false) && (lastArrowPress_ == REMOTE_CENTER)) {
+            skipDisplay = true;
+        }
+
+        if (!skipDisplay) {
+            // Right Arrow
+            display.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
+                             screenHeight / 2 + arrowWidth / 2, color);
+            display.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
+                             screenHeight / 2 - arrowWidth / 2, color);
+        }
+        break;
+    case REMOTE_UP:
+        // Only draw up and down if not in CES mode
+        if (!prefs_.cesMode.get().value_or(false)) {
+            display.drawLine(screenWidth / 2, -arrowHeight - 2, screenWidth / 2 - arrowWidth / 2,
+                             -2, color);
+            display.drawLine(screenWidth / 2, -arrowHeight - 2, screenWidth / 2 + arrowWidth / 2,
+                             -2, color);
+        }
+        break;
+    case REMOTE_DOWN:
+        // Only draw up and down if not in CES mode
+        if (!prefs_.cesMode.get().value_or(false)) {
+            display.drawLine(screenWidth / 2, screenHeight + arrowHeight + 2,
+                             screenWidth / 2 - arrowWidth / 2, screenHeight + 2, color);
+            display.drawLine(screenWidth / 2, screenHeight + arrowHeight + 2,
+                             screenWidth / 2 + arrowWidth / 2, screenHeight + 2, color);
+        }
+        break;
+    case REMOTE_NONE:
+    default:
+        break;
+    }
+
+    if (pageSpeed_ != 0) {
         display.drawXBitmap(-auto_minus_width - 8, screenHeight / 2 - auto_minus_height / 2 - 5,
                             autoMinusBits, auto_minus_width, auto_minus_height, display.fg);
     }
 
     if (!prefs_.cesMode.get().value_or(false)) {
-        // Up arrow - looks like a bookmark to indicate that's what you can do.
-        display.drawXBitmap(screenWidth / 2 - HOME2_WIDTH / 2, -HOME2_HEIGHT - 3, home2bits,
-                            HOME2_WIDTH, HOME2_HEIGHT, display.fg);
-
-        if (pageSpeed_ == 0) {
-            display.setRotation(1);
-            // Right side show bookmark icon.
-            display.drawLine(screenWidth / 2, -arrowHeight - 1, screenWidth / 2 - arrowWidth / 2,
-                             -1, display.fg);
-            display.drawLine(screenWidth / 2, -arrowHeight - 1, screenWidth / 2 + arrowWidth / 2,
-                             -1, display.fg);
-
-            display.drawLine(screenWidth / 2 - arrowWidth / 2, -1, screenWidth / 2 - arrowWidth / 2,
-                             display.yAbsolute(0), display.fg);
-            display.drawLine(screenWidth / 2 + arrowWidth / 2, -1, screenWidth / 2 + arrowWidth / 2,
-                             display.yAbsolute(0), display.fg);
-
-            display.setRotation(0);
-        } else {
+        if (pageSpeed_ != 0) {
             display.drawXBitmap(screenWidth + 2, screenHeight / 2 - auto_plus_height / 2,
                                 autoPlusBits, auto_plus_width, auto_plus_height, display.fg);
         }
-    }
-
-    // Right Arrow
-    if (prefs_.cesMode.get().value_or(false)) {
-        display.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
-                         screenHeight / 2 + arrowWidth / 2, display.fg);
-        display.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
-                         screenHeight / 2 - arrowWidth / 2, display.fg);
     }
 }
 
@@ -167,25 +179,19 @@ void ReadableScreen::render(DisplaySystem &display) {
     // rerendering it. But that would be a pretty global change, so we'll leave it for now.
     bool renderPopupBackground = currentScreen_ == &popupMenuScreen_ && renderPopup_;
 
+    bool renderTransitionArrows = !prefs_.noPageTransitionArrows.get().value_or(false);
+
     if (currentScreen_ != this && !renderPopupBackground) {
         currentScreen_->render(display);
         return;
     }
 
-    int screenWidth = display.width();
-    int screenHeight = display.height();
-    int arrowWidth = 24;
-    int arrowHeight = 8;
-
-    // Give feedback of the button press before rerendering anything else. Be sure to clear
-    // the buffer after this one
-    // Left Arrow
-    display.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 - arrowWidth / 2,
-                     display.fg);
-    display.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 + arrowWidth / 2,
-                     display.fg);
-
-    display.updateDisplay(DisplaySystem::UpdateType::FAST);
+    if (renderTransitionArrows) {
+        if (lastArrowPress_ != REMOTE_NONE) {
+            renderIcons(display);
+            display.updateDisplay(DisplaySystem::UpdateType::FAST);
+        }
+    }
 
     prefs_.lastReadableId.set(readable_.uuid);
 
@@ -208,7 +214,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         prefs_.firstRead.set(true);
         ignoreNextPress_ = true;
         firstTimeRenderer_.renderPage(0);
-        // renderIcons(display);
+
         if (prefs_.fastTransitions.get().value_or(false)) {
             display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         } else {
@@ -233,7 +239,6 @@ void ReadableScreen::render(DisplaySystem &display) {
         prefs_.firstAutopilotRead.set(true);
         ignoreNextPress_ = true;
         firstTimeRenderer_.renderPage(0);
-        // renderIcons(display);
         if (prefs_.fastTransitions.get().value_or(false)) {
             display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         } else {
@@ -292,13 +297,6 @@ void ReadableScreen::render(DisplaySystem &display) {
                              display.bg);
     }
 
-    // Show the home screen and gear icon on the first page you read as a reminder. Then drop them
-    // after that.
-    if (!shownIcons_) {
-        // renderIcons(display);
-        shownIcons_ = true;
-    }
-
     // Only show the autopilot icon on page turns or if speed was changed -- let it fade out with
     // the rest of the text
     if (((pageSpeed_ != 0) && (speedLinesToSkip_ == 0)) || (showAutopilotMinus_) ||
@@ -336,25 +334,19 @@ void ReadableScreen::render(DisplaySystem &display) {
             display.updateDisplay(DisplaySystem::UpdateType::FAST_ORIGINAL_AU4);
         }
     } else {
+        if (renderTransitionArrows) {
+            renderIcons(display);
+        }
         if (prefs_.fastTransitions.get().value_or(false)) {
-            display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+            display.updateDisplay(DisplaySystem::UpdateType::PARTIAL,
+                                  (renderTransitionArrows) ? false : true);
         } else {
-
-            // Left Arrow
-            display.drawLine(-arrowHeight - 8, screenHeight / 2, -8,
-                             screenHeight / 2 - arrowWidth / 2, display.fg);
-            display.drawLine(-arrowHeight - 8, screenHeight / 2, -8,
-                             screenHeight / 2 + arrowWidth / 2, display.fg);
-
-            display.updateDisplay(DisplaySystem::UpdateType::FULL, false);
-
-            Delay(70);
-            // Left Arrow
-            display.drawLine(-arrowHeight - 8, screenHeight / 2, -8,
-                             screenHeight / 2 - arrowWidth / 2, display.bg);
-            display.drawLine(-arrowHeight - 8, screenHeight / 2, -8,
-                             screenHeight / 2 + arrowWidth / 2, display.bg);
-            display.updateDisplay(DisplaySystem::UpdateType::FAST, false);
+            display.updateDisplay(DisplaySystem::UpdateType::FULL,
+                                  (renderTransitionArrows) ? false : true);
+        }
+        if (renderTransitionArrows) {
+            renderIcons(display, false);
+            display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
         }
     }
 
@@ -378,6 +370,10 @@ void ReadableScreen::render(DisplaySystem &display) {
     }
 
     renderPopup_ = false;
+
+    // Reset the lastArrowPress so we don't show it again until another key is pressed (for
+    // autopilot mostly)
+    lastArrowPress_ = REMOTE_NONE;
 }
 
 void ReadableScreen::incrementReadingTime() {
@@ -540,6 +536,27 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         return;
     }
 
+    switch (command) {
+    case RemoteCommand::CHANNEL_MINUS:
+        lastArrowPress_ = REMOTE_LEFT;
+        break;
+    case RemoteCommand::CHANNEL_PLUS:
+        lastArrowPress_ = REMOTE_RIGHT;
+        break;
+    case RemoteCommand::PLAY:
+    case RemoteCommand::ENTER:
+        lastArrowPress_ = REMOTE_CENTER;
+        break;
+    case RemoteCommand::NEXT:
+        lastArrowPress_ = REMOTE_DOWN;
+        break;
+    case RemoteCommand::BACK:
+    case RemoteCommand::PREV:
+        lastArrowPress_ = REMOTE_UP;
+        break;
+    default:
+        break;
+    }
     // Similarly, for demo mode, we want a simple set of commands.
     if (prefs_.cesMode.get().value_or(false)) {
         processCommandDemoMode(command);

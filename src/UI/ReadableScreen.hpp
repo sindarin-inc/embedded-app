@@ -11,6 +11,15 @@
 #include "UI/Screen.hpp"
 #include "config.h"
 
+enum LastArrowPress {
+    REMOTE_NONE,
+    REMOTE_UP,
+    REMOTE_DOWN,
+    REMOTE_LEFT,
+    REMOTE_RIGHT,
+    REMOTE_CENTER
+};
+
 class ReadableScreen : public ContainerScreen {
 public:
     ReadableScreen(std::shared_ptr<RendererStream> stream, DisplaySystem &display,
@@ -74,7 +83,7 @@ public:
     void writeOutBookmarkUpdate();
     void updateBookmarkStatus();
 
-    void renderIcons(DisplaySystem &display);
+    void renderIcons(DisplaySystem &display, bool fg = true);
 
 protected:
     void processCommandDemoMode(RemoteCommand command);
@@ -121,5 +130,7 @@ private:
     void turnPage();
     auto checkAtEnd() -> bool;
     uint32_t readingStartTime_;
+    LastArrowPress lastArrowPress_ = REMOTE_NONE;
+
     int numUps_ = 0;
 };

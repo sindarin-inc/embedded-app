@@ -309,7 +309,8 @@ public:
           autoPilot(*this, "auto-pilot"), fastTransitions(*this, "fast-tran"),
           noUploadCrashes(*this, "no-upload-crash"), showDebugMenu(*this, "show-debug"),
           fastBookmarkRight(*this, "fst-mark-right"), fastBookmarkCenter(*this, "fst-mark-cent"),
-          wifiSettingsJson(*this, "wifi-settings"), localStoreMigrationVersion(*this, "ls-version"),
+          noPageTransitionArrows(*this, "no-page-arrows"), wifiSettingsJson(*this, "wifi-settings"),
+          localStoreMigrationVersion(*this, "ls-version"),
           preferencesStoreMigrationVersion_(*this, "ps-version"){};
     PreferencesStore(PreferencesStore &) = delete;
 
@@ -474,6 +475,7 @@ public:
     PrefsItem<bool> showDebugMenu;
     PrefsItem<bool> fastBookmarkRight;
     PrefsItem<bool> fastBookmarkCenter;
+    PrefsItem<bool> noPageTransitionArrows;
     PrefsItem<std::string> wifiSettingsJson;
     PrefsItem<uint32_t> localStoreMigrationVersion;
 

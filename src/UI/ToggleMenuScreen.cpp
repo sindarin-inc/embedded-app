@@ -22,7 +22,7 @@ auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignRight,
         [this](LayoutContext &context, Size size) -> Size {
             int x = 0;
-            int y = 35;
+            int y = 28;
 
             context.setViewFrame(onTextView_, {{x, y}, size}, LayoutOptionsSizeToFit);
             x += 25;
