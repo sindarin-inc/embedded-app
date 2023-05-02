@@ -12,6 +12,7 @@ const char *partitionLabel = "data";
 auto LittleFSFileSystem::format() -> bool {
     log_i("Formatting LittleFS...");
     DisableCore0Wdt();
+    // TODO: Fix noisy 'task_wdt: esp_task_wdt_reset(783): task not found' log`
     esp_err_t err = esp_littlefs_format(partitionLabel);
     EnableCore0Wdt();
     if (err) {
