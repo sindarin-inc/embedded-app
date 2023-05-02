@@ -65,7 +65,7 @@ auto PosixFileSystem::listDirWithSubdirectories(const std::string &path, FileLis
         while ((ep = readdir(dp))) {
             if (ep->d_type != DT_DIR) {
                 files.emplace_back(ep->d_name);
-            } else {
+            } else if (strcmp(ep->d_name, ".") != 0 && strcmp(ep->d_name, "..") != 0) {
                 dirs.emplace_back(ep->d_name);
             }
         }

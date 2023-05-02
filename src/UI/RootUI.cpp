@@ -947,15 +947,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     systemSettingsMenu->addMenuItem(MenuItem("Factory Defaults",
                                              [this, systemSettingsMenu, display, &fileSystem]() {
-#if SIMULATOR
-        // Remove the preferences file simprefs.ini
-        std::filesystem::remove("simprefs.ini");
-        systemSettingsMenu->showTemporaryMessage(*display, "simprefs.ini deleted! Resetting...");
-#else
         FactoryReset(prefs_, fileSystem, power_, false);
         log_w("NVS and FS cleared. Rebooting...");
         systemSettingsMenu->showTemporaryMessage(*display, "NVS cleared! Resetting...");
-#endif
         power_.reboot();
     }));
 

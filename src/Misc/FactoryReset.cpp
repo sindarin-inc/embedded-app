@@ -10,10 +10,8 @@ void FactoryReset(PreferencesStore &prefs, FileSystem &fs, PowerManager &pm, boo
     prefs.clear();
     fs.deleteAll();
     // delete entire nvs partition
-#if !SIMULATOR
     log_i("erasing all nvs");
     nvs_flash_erase();
-#endif
 
     if (reboot) {
         pm.releaseLED();
