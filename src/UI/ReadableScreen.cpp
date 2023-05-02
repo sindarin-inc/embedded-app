@@ -133,18 +133,6 @@ void ReadableScreen::renderIcons(DisplaySystem &display, bool fg) {
     default:
         break;
     }
-
-    if (pageSpeed_ != 0) {
-        display.drawXBitmap(-auto_minus_width - 8, screenHeight / 2 - auto_minus_height / 2 - 5,
-                            autoMinusBits, auto_minus_width, auto_minus_height, display.fg);
-    }
-
-    if (!prefs_.cesMode.get().value_or(false)) {
-        if (pageSpeed_ != 0) {
-            display.drawXBitmap(screenWidth + 2, screenHeight / 2 - auto_plus_height / 2,
-                                autoPlusBits, auto_plus_width, auto_plus_height, display.fg);
-        }
-    }
 }
 
 // Since this happens in a couple of places (animation as well as button press),
@@ -299,24 +287,10 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     // Only show the autopilot icon on page turns or if speed was changed -- let it fade out with
     // the rest of the text
-    if (((pageSpeed_ != 0) && (speedLinesToSkip_ == 0)) || (showAutopilotMinus_) ||
-        (showAutopilotPlus_)) {
+    if ((pageSpeed_ != 0) && (speedLinesToSkip_ == 0)) {
         int screenWidth = display.width();
-        int screenHeight = display.height();
         display.drawXBitmap(screenWidth + 2, 0, autoPilotBits, auto_pilot_width, auto_pilot_height,
                             display.fg);
-
-        if (showAutopilotMinus_) {
-            display.drawXBitmap(screenWidth + 2, screenHeight / 2 - auto_minus_height / 2,
-                                autoMinusBits, auto_minus_width, auto_minus_height, display.fg);
-            showAutopilotMinus_ = false;
-        }
-
-        if (showAutopilotPlus_) {
-            display.drawXBitmap(screenWidth + 2, screenHeight / 2 - auto_plus_height / 2,
-                                autoPlusBits, auto_plus_width, auto_plus_height, display.fg);
-            showAutopilotPlus_ = false;
-        }
     }
 
     log_d("%lu is the new place in the text %s", newPlace_, atEnd_ ? "(at end)" : "");
@@ -435,7 +409,6 @@ void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
         pageSpeed_ = std::min(pageSpeed_ + PAGE_SPEED_INCREMENT, SLOWEST_PAGE_SPEED);
         prefs_.autoPilotSpeed.set(pageSpeed_);
         log_d("Slowing down: New Page Speed is %u", pageSpeed_);
-        showAutopilotMinus_ = true;
         break;
     case RemoteCommand::PLAY:
     case RemoteCommand::ENTER:
@@ -468,7 +441,6 @@ void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
         pageSpeed_ = std::max(pageSpeed_ - PAGE_SPEED_INCREMENT, 1);
         log_d("Speeding up: New Page Speed is %u", pageSpeed_);
         prefs_.autoPilotSpeed.set(pageSpeed_);
-        showAutopilotPlus_ = true;
         break;
 
     case RemoteCommand::NOP_BUTTON:

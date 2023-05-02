@@ -122,9 +122,6 @@ protected:
     int pageSpeed_ = 10000;
     bool autoPilotPause_ = false;
 
-    bool showAutopilotPlus_ = false;
-    bool showAutopilotMinus_ = false;
-
 private:
     void incrementReadingTime();
     void turnPage();
