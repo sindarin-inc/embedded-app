@@ -152,7 +152,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
 #if !SIMULATOR
     // Configure log level for all Sindarin logs
-    esp_log_level_set("Sindarin", ESP_LOG_DEBUG);
+    esp_log_level_set("Sol", ESP_LOG_DEBUG);
     powerManager.wakeupCheck(solClock);
 #endif
     BootLoopCheck();
@@ -313,7 +313,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 
 #if USE_BLE
-    BLEDevice::init("Sindarin");
+    BLEDevice::init("Sol Reader");
     auto bleStatus = esp_bt_controller_get_status();
     if (bleStatus != ESP_BT_CONTROLLER_STATUS_ENABLED) {
         bootErrors.push_back({.type = BootError::Type::BLE});
@@ -338,6 +338,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
     auto bleManager = BLEManager::getInstance();
+    if (prefs.bleAdvertisingKey.get().has_value()) {
+        bleManager->setManfacturerData(prefs.bleAdvertisingKey.get().value());
+    }
 #endif
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS

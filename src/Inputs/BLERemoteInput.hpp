@@ -22,7 +22,11 @@ protected:
 
         CharacteristicCallbacks(BLERemoteInput *enclosure) { enclosed = enclosure; }
 
-        void onWrite(BLECharacteristic *characteristic) override {
+        void onWrite(NimBLECharacteristic *characteristic, ble_gap_conn_desc *desc) override {
+            if (!BLEManager::getInstance()->checkAuthed(desc)) {
+                return;
+            }
+
             std::string value = characteristic->getValue();
             uint8_t messageSize = value.length();
             if (messageSize == 1) {

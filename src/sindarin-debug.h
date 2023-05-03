@@ -73,11 +73,11 @@ extern "C" {
 #undef log_i
 #undef log_w
 #undef log_e
-#define log_v(format, ...) ESP_LOGV("Sindarin", format, ##__VA_ARGS__);
-#define log_d(format, ...) ESP_LOGD("Sindarin", format, ##__VA_ARGS__);
-#define log_i(format, ...) ESP_LOGI("Sindarin", format, ##__VA_ARGS__);
-#define log_w(format, ...) ESP_LOGW("Sindarin", format, ##__VA_ARGS__);
-#define log_e(format, ...) ESP_LOGE("Sindarin", format, ##__VA_ARGS__);
+#define log_v(format, ...) ESP_LOGV("Sol", format, ##__VA_ARGS__);
+#define log_d(format, ...) ESP_LOGD("Sol", format, ##__VA_ARGS__);
+#define log_i(format, ...) ESP_LOGI("Sol", format, ##__VA_ARGS__);
+#define log_w(format, ...) ESP_LOGW("Sol", format, ##__VA_ARGS__);
+#define log_e(format, ...) ESP_LOGE("Sol", format, ##__VA_ARGS__);
 #endif
 
 #define SHOW_HEAP()                                                                                \
