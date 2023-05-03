@@ -134,32 +134,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto currentReadable = prefs_.lastReadableId.get();
 
-    // All we need to do at this level is to have a mode where the glasses have full LED on
-    // and a mode where a page turns every 30 seconds.
-    //
-    // Currently, the wifi plan is to have the Espressif FCC test mode take care of that
-    // piece. But if it doesn't, then we can add it here by doing a wifi connect,
-    // sync content, delete content, repeat.
-    if (prefs_.emcMode.get().value_or(false)) {
-        mainMenu->addMenuItem(MenuItem("Mode 1 On", []() {}));
-        mainMenu->addMenuItem(MenuItem("Mode 2 (reading)",
-                                       [this, display, readables, createReadableScreen]() {
-            log_d("Starting EMC mode readable reading turn page every 30 seconds");
-            auto it = std::find_if(readables.begin(), readables.end(), [](const Readable &x) {
-                return (x.title.compare("The Last Question") == 0);
-            });
-            if (it == readables.end()) {
-                log_e("Could not find readable: %s", "The Last Question");
-            } else {
-                log_d("Found readable: %s", (*it).title.c_str());
-            }
-            auto readableScreen = createReadableScreen(*it);
-            display->clearDisplay();
-            this->display_->setFont(this->display_->style.getFontFamily().readableFont);
-            this->setCurrentScreen(*readableScreen);
-        }));
-    }
-
     ReadableScreen *psalmsProverbs = nullptr;
     ReadableScreen *newTestament = nullptr;
     ReadableScreen *oldTestament = nullptr;
@@ -1362,6 +1336,20 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             delete cesScreen;
         });
         this->setCurrentScreen(*cesScreen);
+    } else if (prefs_.emcMode.get().value_or(false)) {
+        log_d("Starting EMC mode readable reading turn page every 30s and content sync every 60s");
+        auto it = std::find_if(readables.begin(), readables.end(), [](const Readable &x) {
+            return (x.title.compare("The Last Question") == 0);
+        });
+        if (it == readables.end()) {
+            log_e("Could not find readable: %s", "The Last Question");
+        } else {
+            log_d("Found readable: %s", (*it).title.c_str());
+        }
+        auto readableScreen = createReadableScreen(*it);
+        display->clearDisplay();
+        this->display_->setFont(this->display_->style.getFontFamily().readableFont);
+        this->setCurrentScreen(*readableScreen);
     } else if (currentReadable.has_value()) {
         // Check if we left-off on a readable and if so, reload that readable by default
         log_d("Attempting to find readable: %s", currentReadable.value().c_str());
