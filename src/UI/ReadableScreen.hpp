@@ -96,6 +96,8 @@ protected:
     void showPopupMenu();
     void hidePopupMenu();
 
+    void drawArrows(bool eraseArrow);
+
     Renderer renderer_;
     Renderer firstTimeRenderer_;
     // Note that this is a copy of the readable from RootUI.
@@ -114,7 +116,6 @@ protected:
     bool shownIcons_ = false;
     bool renderPopup_ = false;
     bool autoPilotForceFull_ = false;
-    bool eraseArrow_ = false;
 
     DisplaySystem &display_;
 

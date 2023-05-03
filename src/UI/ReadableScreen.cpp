@@ -20,40 +20,28 @@ auto ReadableScreen::layout(LayoutContext &context, Size size) -> Size {
     int sidePadding = -15;
     int topBottomPadding = -10;
 
-    context.setViewFrame(
-        leftArrowView_,
-        {{sidePadding, size.height / 2 - arrowWidth / 2}, {arrowHeight, arrowWidth}},
-        LayoutOptionsSizeToFit);
-    context.setViewFrame(
-        rightArrowView_,
-        {{size.width - sidePadding - arrowHeight, size.height / 2 - arrowWidth / 2},
-         {arrowHeight, arrowWidth}},
-        LayoutOptionsSizeToFit);
-    // context.setViewSizeInRect(textView_, {arrowHeight, arrowWidth},
-    //                           Rect::fromSize(size).inset(sidePadding, topBottomPadding),
-    //                           LayoutOptionsAlignRight | LayoutOptionsAlignCenterVertical);
-    context.setViewFrame(
-        upArrowView_,
-        {{size.width / 2 - arrowWidth / 2, topBottomPadding}, {arrowWidth, arrowHeight}},
-        LayoutOptionsSizeToFit);
-    context.setViewFrame(
-        downArrowView_,
-        {{size.width / 2 - arrowWidth / 2, size.height - topBottomPadding - arrowHeight},
-         {arrowWidth, arrowHeight}},
-        LayoutOptionsSizeToFit);
+    context.setViewFrame(leftArrowView_, {{sidePadding, size.height / 2 - arrowWidth / 2},
+                                          {arrowHeight, arrowWidth}});
+    context.setViewFrame(rightArrowView_, {{size.width - sidePadding - arrowHeight,
+                                            size.height / 2 - arrowWidth / 2},
+                                           {arrowHeight, arrowWidth}});
+    context.setViewFrame(upArrowView_, {{size.width / 2 - arrowWidth / 2, topBottomPadding},
+                                        {arrowWidth, arrowHeight}});
+    context.setViewFrame(downArrowView_, {{size.width / 2 - arrowWidth / 2,
+                                           size.height - topBottomPadding - arrowHeight},
+                                          {arrowWidth, arrowHeight}});
 
     return size;
 }
 
-void ReadableScreen::drawInRect(Rect rect) {
-
+void ReadableScreen::drawArrows(bool eraseArrow = false) {
     // Because the user can repurpose the center button and right button, we need to check
     // if they did that before showing the right arrow.
     bool skipDisplay = false;
 
     switch (lastArrowPress_) {
     case REMOTE_LEFT:
-        leftArrowView_.color = eraseArrow_ ? display_.bg : display_.fg;
+        leftArrowView_.color = eraseArrow ? display_.bg : display_.fg;
         leftArrowView_.draw();
         break;
     case REMOTE_RIGHT:
@@ -65,19 +53,19 @@ void ReadableScreen::drawInRect(Rect rect) {
             skipDisplay = true;
         }
         if (!skipDisplay) {
-            rightArrowView_.color = eraseArrow_ ? display_.bg : display_.fg;
+            rightArrowView_.color = eraseArrow ? display_.bg : display_.fg;
             rightArrowView_.draw();
         }
         break;
     case REMOTE_UP:
         if (!prefs_.cesMode.get().value_or(false)) {
-            upArrowView_.color = eraseArrow_ ? display_.bg : display_.fg;
+            upArrowView_.color = eraseArrow ? display_.bg : display_.fg;
             upArrowView_.draw();
         }
         break;
     case REMOTE_DOWN:
         if (!prefs_.cesMode.get().value_or(false)) {
-            downArrowView_.color = eraseArrow_ ? display_.bg : display_.fg;
+            downArrowView_.color = eraseArrow ? display_.bg : display_.fg;
             downArrowView_.draw();
         }
         break;
@@ -85,6 +73,8 @@ void ReadableScreen::drawInRect(Rect rect) {
         break;
     }
 }
+
+void ReadableScreen::drawInRect(Rect rect) { drawArrows(); }
 
 // Once we have a real database, this will all be replaced.
 // For now, since we assume that there won't be TOO many bookmarks, we simply
@@ -183,8 +173,6 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
-    // For the main menu, we want to use the entire screen and ignore the user settings for
-    // reading box.
     setFrame(
         {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
          {display.defaultScreenWidth - 2 * display.defaultXPadding,
@@ -333,10 +321,8 @@ void ReadableScreen::render(DisplaySystem &display) {
                                   (renderTransitionArrows) ? false : true);
         }
         if (renderTransitionArrows) {
-            eraseArrow_ = true;
-            draw();
+            drawArrows(true);
             display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
-            eraseArrow_ = false;
         }
     }
 
