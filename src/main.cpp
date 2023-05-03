@@ -301,6 +301,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         xTaskCreatePinnedToCore(
             [](void *) {
             for (;;) {
+                PreferencesStore::syncReason = SyncReason::Periodic;
                 BackgroundSync(powerManager, prefs, localStore);
                 vTaskDelay(60000 / portTICK_PERIOD_MS);
             }
