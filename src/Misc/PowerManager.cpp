@@ -153,10 +153,13 @@ void PowerManager::wakeupCheck(SolClock &clock) {
 
 auto PowerManager::begin() -> esp_err_t {
 #if !SIMULATOR
-    inactivityTimer_.start([this]() {
-        log_i("Inactive! Close and open temple to wake");
-        ulpDeepSleep(SleepReason::Inactivity);
-    });
+    // Disable inactivity timer in emc testing mode
+    if (!prefs_.emcMode.get().value_or(false)) {
+        inactivityTimer_.start([this]() {
+            log_i("Inactive! Close and open temple to wake");
+            ulpDeepSleep(SleepReason::Inactivity);
+        });
+    }
 #endif
 
     esp_err_t err = ESP_OK;
