@@ -7,6 +7,9 @@
 #include "Misc/Platform.hpp"
 #include "UI/Bitmaps/Logo.hpp"
 #include "UI/Bitmaps/Sol_Logo.hpp"
+#include "UI/Bitmaps/bottom-arrow.hpp"
+#include "UI/Bitmaps/left-arrow.hpp"
+#include "UI/Bitmaps/right-arrow.hpp"
 #include "UI/Bitmaps/stone.hpp"
 #include "UI/Fonts/Tahoma10pt7b.h"
 #include "UI/Fonts/Tahoma20pt7b.h"
@@ -55,7 +58,32 @@ void DemoScreen::render(DisplaySystem &display) {
     switch (currentScreen_) {
     case 0:
     case 1:
+        display.drawXBitmap(display.xAbsolute(128 - bottom_arrow_width / 2),
+                            display.xAbsolute(128 - bottom_arrow_height / 2), bottom_arrow_bits,
+                            bottom_arrow_width, bottom_arrow_height, display.fg);
+        display.updateDisplay(DisplaySystem::UpdateType::FULL);
+        Delay(500);
+        display.drawXBitmap(display.xAbsolute(128 - bottom_arrow_width / 2 - 14),
+                            display.xAbsolute(128 - bottom_arrow_height / 2 - 22), left_arrow_bits,
+                            left_arrow_width, left_arrow_height, display.fg);
+        display.updateDisplay(DisplaySystem::UpdateType::ERASE);
+        Delay(500);
+        display.drawXBitmap(display.xAbsolute(128 - bottom_arrow_width / 2),
+                            display.xAbsolute(128 - bottom_arrow_height / 2), bottom_arrow_bits,
+                            bottom_arrow_width, bottom_arrow_height, display.fg);
+        display.updateDisplay(DisplaySystem::UpdateType::ERASE);
+        Delay(500);
+        display.drawXBitmap(display.xAbsolute(128 - bottom_arrow_width / 2 + 14),
+                            display.xAbsolute(128 - bottom_arrow_height / 2 - 22), right_arrow_bits,
+                            right_arrow_width, right_arrow_height, display.fg);
+        display.updateDisplay(DisplaySystem::UpdateType::ERASE);
+        Delay(500);
+        display.drawXBitmap(display.xAbsolute(128 - bottom_arrow_width / 2),
+                            display.xAbsolute(128 - bottom_arrow_height / 2), bottom_arrow_bits,
+                            bottom_arrow_width, bottom_arrow_height, display.fg);
+        display.updateDisplay(DisplaySystem::UpdateType::ERASE);
         display.setFont(&TAHOMA_REGULAR_FONT8PT7B);
+        return;
         break;
     case 2:
     case 3:
