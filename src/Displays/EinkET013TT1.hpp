@@ -8,6 +8,7 @@
 #include <esp_pm.h>
 #endif
 
+#include "CustomWaveforms.hpp"
 #include "EinkWaveform.hpp"
 #include "Misc/Dispatch.hpp"
 
@@ -89,7 +90,9 @@ public:
     void clear(const EinkET013TT1Waveform &waveform);
 
     void update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
-                int32_t overrideVcom = INT32_MAX);
+                int32_t overrideVcom = INT32_MAX,
+                const EinkET013TT1Waveform &altWaveform = BC_WAVEFORM_NONE, uint8_t x0 = 0,
+                uint8_t y0 = 0, uint8_t x1 = 255, uint8_t y1 = 255);
 
     auto readTemperature(ScreenSide screen) -> int16_t;
 
@@ -116,7 +119,8 @@ protected:
     inline void waitForTimer();
     inline void waitForNotBusy();
     void updateInternal(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
-                        int32_t overrideVcom);
+                        int32_t overrideVcom, const EinkET013TT1Waveform &altWaveform, uint8_t x0,
+                        uint8_t y0, uint8_t x1, uint8_t y1);
 
     uint8_t csLeft_;
     uint8_t csRight_;

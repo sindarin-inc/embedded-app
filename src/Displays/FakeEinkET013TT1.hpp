@@ -7,6 +7,7 @@
 #include <freertos/queue.h>
 #include <string>
 
+#include "CustomWaveforms.hpp"
 #include "EinkWaveform.hpp"
 
 #define EinkET013TT1_PIXEL_WIDTH 256
@@ -57,7 +58,9 @@ public:
     void clear(const EinkET013TT1Waveform &waveform);
 
     void update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
-                int32_t overrideVcom = INT32_MAX);
+                int32_t overrideVcom = INT32_MAX,
+                const EinkET013TT1Waveform &altWaveform = BC_WAVEFORM_NONE, uint8_t x0 = 0,
+                uint8_t y0 = 0, uint8_t x1 = 255, uint8_t y1 = 255);
 
     auto readTemperature(ScreenSide screen) -> int16_t;
 

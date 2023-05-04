@@ -96,7 +96,9 @@ void DemoScreen::render(DisplaySystem &display) {
                             display.yAbsolute(128 - glass_small_left_height / 2 + yOffsetOverall),
                             glass_small_left_bits, glass_small_left_width, glass_small_left_height,
                             display.fg);
+        display.setAltUpdateType(DisplaySystem::UpdateType::FAST, 0, 0, 255, 140);
         display.updateDisplay(DisplaySystem::UpdateType::FULL, false);
+        display.setNoAltUpdateType();
         Delay(500);
         display.drawXBitmap(
             display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
@@ -171,7 +173,9 @@ void DemoScreen::render(DisplaySystem &display) {
                             display.yAbsolute(128 - glass_small_right_height / 2 + yOffsetOverall),
                             glass_small_right_bits, glass_small_right_width,
                             glass_small_right_height, display.fg);
+        display.setAltUpdateType(DisplaySystem::UpdateType::FAST, 0, 0, 255, 140);
         display.updateDisplay(DisplaySystem::UpdateType::FULL, false);
+        display.setNoAltUpdateType();
         Delay(500);
         display.drawXBitmap(
             display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
@@ -249,7 +253,9 @@ void DemoScreen::render(DisplaySystem &display) {
             display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
             display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall),
             arrow_up_down_bits, arrow_up_down_width, arrow_up_down_height, display.fg);
+        display.setAltUpdateType(DisplaySystem::UpdateType::FAST, 0, 0, 255, 140);
         display.updateDisplay(DisplaySystem::UpdateType::FULL, false);
+        display.setNoAltUpdateType();
         Delay(500);
         display.drawXBitmap(
             display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),

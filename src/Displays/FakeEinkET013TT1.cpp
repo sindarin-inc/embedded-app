@@ -47,7 +47,8 @@ auto EinkET013TT1::getPixel(const uint8_t *buffer, int x, int y) -> uint8_t {
 }
 
 void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
-                          int32_t overrideVcom) {
+                          int32_t overrideVcom, const EinkET013TT1Waveform &altWaveform, uint8_t x0,
+                          uint8_t y0, uint8_t x1, uint8_t y1) {
     if (FakeEinkET013TT1SkipWaveform) {
         // Skip waveform processing and just move the pixel all the way one way or another
         log_d("Skipping waveform processing (would have used \"%s\")", waveform.name);
@@ -71,6 +72,9 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
             // For each pixel, calculate the correct way to move it for the waveform
             for (int x = 0; x < EinkET013TT1_PIXEL_WIDTH; x++) {
                 for (int y = 0; y < EinkET013TT1_PIXEL_HEIGHT; y++) {
+                    if (x < x0 || x > x1 || y < y0 || y > y1) {
+                        continue;
+                    }
                     auto pixel = getPixel(buffer, x, y);
                     auto previousPixel = getPixel(previousBuffer_, x, y);
                     auto setting = frame.getSetting(previousPixel, pixel);

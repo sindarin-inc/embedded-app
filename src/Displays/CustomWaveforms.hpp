@@ -14,6 +14,12 @@ const EinkET013TT1Waveform BC_REGULAR_EINK_10_13C_WAVEFORM_AU4 = {
     },
 };
 
+const EinkET013TT1Waveform BC_WAVEFORM_NONE = {
+    "BC_WAVEFORM_NONE",
+    0,
+    std::array<Frame, MAX_FRAMES_PER_WAVEFORM>{},
+};
+
 // Pushes white a little more at the end to reduce ghosting
 const EinkET013TT1Waveform BC_INVERTED_EINK_10_13C_WAVEFORM_AU4 = {
     "Eink 10-13C (AU4)",

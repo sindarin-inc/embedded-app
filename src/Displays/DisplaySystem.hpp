@@ -75,6 +75,18 @@ public:
     virtual void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED,
                                bool clearFrameBuffer = true) = 0;
 
+    void setAltUpdateType(DisplaySystem::UpdateType updateType, uint8_t x0, uint8_t y0, uint8_t x1,
+                          uint8_t y1) {
+        useAltUpdateType_ = true;
+        altUpdateType_ = updateType;
+        altX0_ = x0;
+        altY0_ = y0;
+        altX1_ = x1;
+        altY1_ = y1;
+    }
+
+    void setNoAltUpdateType() { useAltUpdateType_ = false; }
+
     virtual void beginPowerOn() {}
 
     // Use `gfxClass` when you need to get direct access to draw to the whole screen (potentially
@@ -215,6 +227,13 @@ protected:
     // This is the default value from before of 15mmx15mm
     DisplayRect boundingBox_ = defaultBoundingBox;
     int lineSpacing_ = 0;
+
+    bool useAltUpdateType_ = false;
+    DisplaySystem::UpdateType altUpdateType_;
+    uint8_t altX0_ = 0;
+    uint8_t altY0_ = 0;
+    uint8_t altX1_ = 255;
+    uint8_t altY1_ = 255;
 };
 
 #endif
