@@ -7,7 +7,11 @@
 #include "Misc/Platform.hpp"
 #include "UI/Bitmaps/Logo.hpp"
 #include "UI/Bitmaps/Sol_Logo.hpp"
+#include "UI/Bitmaps/arrow-up-down.hpp"
 #include "UI/Bitmaps/bottom-arrow.hpp"
+#include "UI/Bitmaps/glass-small-above.hpp"
+#include "UI/Bitmaps/glass-small-left.hpp"
+#include "UI/Bitmaps/glass-small-right.hpp"
 #include "UI/Bitmaps/left-arrow.hpp"
 #include "UI/Bitmaps/right-arrow.hpp"
 #include "UI/Bitmaps/stone.hpp"
@@ -53,39 +57,244 @@ void DemoScreen::render(DisplaySystem &display) {
         lightingController_.setScreenMask(LightingController::Screens::BOTH);
     }
     // Don't need to set it after that as they are on.
+    int xOffset = -33;
+    int yOffset = 53;
+
+    int yOffsetOverall = -55;
+    int textYOffset = 30;
 
     // NOLINTBEGIN(bugprone-branch-clone) - keeping these duplicative for symmetry
     switch (currentScreen_) {
     case 0:
+        display.setFont(&TAHOMA_REGULAR_FONT6PT7B);
+        message = DEMO_SCREEN_1a;
+        // This Y coordinate is just a guess
+        display.drawSingleLineOfText(message.c_str(),
+                                     display.xAbsolute(display.xAbsoluteCenter() -
+                                                       display.getTextWidth(message.c_str()) / 2),
+                                     display.yAbsolute(display.yAbsoluteCenter() -
+                                                       display.getTextHeight() / 2 + textYOffset));
+        message = DEMO_SCREEN_1b;
+        display.drawSingleLineOfText(message.c_str(),
+                                     display.xAbsolute(display.xAbsoluteCenter() -
+                                                       display.getTextWidth(message.c_str()) / 2),
+                                     display.yAbsolute(display.yAbsoluteCenter() -
+                                                       display.getTextHeight() / 2 + textYOffset +
+                                                       17));
+        message = DEMO_SCREEN_1c;
+        display.drawSingleLineOfText(message.c_str(),
+                                     display.xAbsolute(display.xAbsoluteCenter() -
+                                                       display.getTextWidth(message.c_str()) / 2),
+                                     display.yAbsolute(display.yAbsoluteCenter() -
+                                                       display.getTextHeight() / 2 + textYOffset +
+                                                       34));
+        display.drawXBitmap(
+            display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
+            display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
+            bottom_arrow_bits, bottom_arrow_width, bottom_arrow_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(128 - glass_small_left_width / 2),
+                            display.yAbsolute(128 - glass_small_left_height / 2 + yOffsetOverall),
+                            glass_small_left_bits, glass_small_left_width, glass_small_left_height,
+                            display.fg);
+        display.updateDisplay(DisplaySystem::UpdateType::FULL, false);
+        Delay(500);
+        display.drawXBitmap(
+            display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
+            display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
+            bottom_arrow_bits, bottom_arrow_width, bottom_arrow_height, display.bg);
+        display.drawXBitmap(
+            display.xAbsolute(128 - bottom_arrow_width / 2 - 14 + xOffset),
+            display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
+            left_arrow_bits, left_arrow_width, left_arrow_height, display.fg);
+        display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
+        Delay(500);
+        display.drawXBitmap(
+            display.xAbsolute(128 - bottom_arrow_width / 2 - 14 + xOffset),
+            display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
+            left_arrow_bits, left_arrow_width, left_arrow_height, display.bg);
+        display.drawXBitmap(
+            display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
+            display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
+            bottom_arrow_bits, bottom_arrow_width, bottom_arrow_height, display.fg);
+        display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
+        Delay(500);
+        display.drawXBitmap(
+            display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
+            display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
+            bottom_arrow_bits, bottom_arrow_width, bottom_arrow_height, display.bg);
+        display.drawXBitmap(
+            display.xAbsolute(128 - bottom_arrow_width / 2 + 14 + xOffset),
+            display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
+            right_arrow_bits, right_arrow_width, right_arrow_height, display.fg);
+        display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
+        Delay(500);
+        display.drawXBitmap(
+            display.xAbsolute(128 - bottom_arrow_width / 2 + 14 + xOffset),
+            display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
+            right_arrow_bits, right_arrow_width, right_arrow_height, display.bg);
+        display.drawXBitmap(
+            display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
+            display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
+            bottom_arrow_bits, bottom_arrow_width, bottom_arrow_height, display.fg);
+        display.updateDisplay(DisplaySystem::UpdateType::ERASE);
+        return;
+        break;
     case 1:
-        display.drawXBitmap(display.xAbsolute(128 - bottom_arrow_width / 2),
-                            display.xAbsolute(128 - bottom_arrow_height / 2), bottom_arrow_bits,
-                            bottom_arrow_width, bottom_arrow_height, display.fg);
-        display.updateDisplay(DisplaySystem::UpdateType::FULL);
+        xOffset = -xOffset;
+        display.setFont(&TAHOMA_REGULAR_FONT6PT7B);
+        message = DEMO_SCREEN_2a;
+        // This Y coordinate is just a guess
+        display.drawSingleLineOfText(message.c_str(),
+                                     display.xAbsolute(display.xAbsoluteCenter() -
+                                                       display.getTextWidth(message.c_str()) / 2),
+                                     display.yAbsolute(display.yAbsoluteCenter() -
+                                                       display.getTextHeight() / 2 + textYOffset));
+        message = DEMO_SCREEN_1b;
+        display.drawSingleLineOfText(message.c_str(),
+                                     display.xAbsolute(display.xAbsoluteCenter() -
+                                                       display.getTextWidth(message.c_str()) / 2),
+                                     display.yAbsolute(display.yAbsoluteCenter() -
+                                                       display.getTextHeight() / 2 + textYOffset +
+                                                       17));
+        message = DEMO_SCREEN_1c;
+        display.drawSingleLineOfText(message.c_str(),
+                                     display.xAbsolute(display.xAbsoluteCenter() -
+                                                       display.getTextWidth(message.c_str()) / 2),
+                                     display.yAbsolute(display.yAbsoluteCenter() -
+                                                       display.getTextHeight() / 2 + textYOffset +
+                                                       34));
+        display.drawXBitmap(
+            display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
+            display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
+            bottom_arrow_bits, bottom_arrow_width, bottom_arrow_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(128 - glass_small_right_width / 2),
+                            display.yAbsolute(128 - glass_small_right_height / 2 + yOffsetOverall),
+                            glass_small_right_bits, glass_small_right_width,
+                            glass_small_right_height, display.fg);
+        display.updateDisplay(DisplaySystem::UpdateType::FULL, false);
         Delay(500);
-        display.drawXBitmap(display.xAbsolute(128 - bottom_arrow_width / 2 - 14),
-                            display.xAbsolute(128 - bottom_arrow_height / 2 - 22), left_arrow_bits,
-                            left_arrow_width, left_arrow_height, display.fg);
-        display.updateDisplay(DisplaySystem::UpdateType::ERASE);
+        display.drawXBitmap(
+            display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
+            display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
+            bottom_arrow_bits, bottom_arrow_width, bottom_arrow_height, display.bg);
+        display.drawXBitmap(
+            display.xAbsolute(128 - bottom_arrow_width / 2 - 14 + xOffset),
+            display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
+            left_arrow_bits, left_arrow_width, left_arrow_height, display.fg);
+        display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
         Delay(500);
-        display.drawXBitmap(display.xAbsolute(128 - bottom_arrow_width / 2),
-                            display.xAbsolute(128 - bottom_arrow_height / 2), bottom_arrow_bits,
-                            bottom_arrow_width, bottom_arrow_height, display.fg);
-        display.updateDisplay(DisplaySystem::UpdateType::ERASE);
+        display.drawXBitmap(
+            display.xAbsolute(128 - bottom_arrow_width / 2 - 14 + xOffset),
+            display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
+            left_arrow_bits, left_arrow_width, left_arrow_height, display.bg);
+        display.drawXBitmap(
+            display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
+            display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
+            bottom_arrow_bits, bottom_arrow_width, bottom_arrow_height, display.fg);
+        display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
         Delay(500);
-        display.drawXBitmap(display.xAbsolute(128 - bottom_arrow_width / 2 + 14),
-                            display.xAbsolute(128 - bottom_arrow_height / 2 - 22), right_arrow_bits,
-                            right_arrow_width, right_arrow_height, display.fg);
-        display.updateDisplay(DisplaySystem::UpdateType::ERASE);
+        display.drawXBitmap(
+            display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
+            display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
+            bottom_arrow_bits, bottom_arrow_width, bottom_arrow_height, display.bg);
+        display.drawXBitmap(
+            display.xAbsolute(128 - bottom_arrow_width / 2 + 14 + xOffset),
+            display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
+            right_arrow_bits, right_arrow_width, right_arrow_height, display.fg);
+        display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
         Delay(500);
-        display.drawXBitmap(display.xAbsolute(128 - bottom_arrow_width / 2),
-                            display.xAbsolute(128 - bottom_arrow_height / 2), bottom_arrow_bits,
-                            bottom_arrow_width, bottom_arrow_height, display.fg);
-        display.updateDisplay(DisplaySystem::UpdateType::ERASE);
-        display.setFont(&TAHOMA_REGULAR_FONT8PT7B);
+        display.drawXBitmap(
+            display.xAbsolute(128 - bottom_arrow_width / 2 + 14 + xOffset),
+            display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
+            right_arrow_bits, right_arrow_width, right_arrow_height, display.bg);
+        display.drawXBitmap(
+            display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
+            display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
+            bottom_arrow_bits, bottom_arrow_width, bottom_arrow_height, display.fg);
+        display.updateDisplay(DisplaySystem::UpdateType::ERASE, true);
+        display.setFont(&TAHOMA_REGULAR_FONT6PT7B);
         return;
         break;
     case 2:
+        xOffset = -2;
+        yOffset = -40;
+        display.setFont(&TAHOMA_REGULAR_FONT6PT7B);
+        message = DEMO_SCREEN_3a;
+        // This Y coordinate is just a guess
+        display.drawSingleLineOfText(message.c_str(),
+                                     display.xAbsolute(display.xAbsoluteCenter() -
+                                                       display.getTextWidth(message.c_str()) / 2),
+                                     display.yAbsolute(display.yAbsoluteCenter() -
+                                                       display.getTextHeight() / 2 + textYOffset));
+        message = DEMO_SCREEN_3b;
+        display.drawSingleLineOfText(message.c_str(),
+                                     display.xAbsolute(display.xAbsoluteCenter() -
+                                                       display.getTextWidth(message.c_str()) / 2),
+                                     display.yAbsolute(display.yAbsoluteCenter() -
+                                                       display.getTextHeight() / 2 + textYOffset +
+                                                       17));
+        message = DEMO_SCREEN_3c;
+        display.drawSingleLineOfText(message.c_str(),
+                                     display.xAbsolute(display.xAbsoluteCenter() -
+                                                       display.getTextWidth(message.c_str()) / 2),
+                                     display.yAbsolute(display.yAbsoluteCenter() -
+                                                       display.getTextHeight() / 2 + textYOffset +
+                                                       34));
+        display.drawXBitmap(display.xAbsolute(128 - glass_small_above_width / 2),
+                            display.yAbsolute(128 - glass_small_above_height / 2 + yOffsetOverall),
+                            glass_small_above_bits, glass_small_above_width,
+                            glass_small_above_height, display.fg);
+
+        display.drawXBitmap(
+            display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
+            display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall),
+            arrow_up_down_bits, arrow_up_down_width, arrow_up_down_height, display.fg);
+        display.updateDisplay(DisplaySystem::UpdateType::FULL, false);
+        Delay(500);
+        display.drawXBitmap(
+            display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
+            display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall),
+            arrow_up_down_bits, arrow_up_down_width, arrow_up_down_height, display.bg);
+
+        display.drawXBitmap(
+            display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
+            display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall - 12),
+            arrow_up_down_bits, arrow_up_down_width, arrow_up_down_height, display.fg);
+        display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
+        Delay(500);
+        display.drawXBitmap(
+            display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
+            display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall - 12),
+            arrow_up_down_bits, arrow_up_down_width, arrow_up_down_height, display.bg);
+
+        display.drawXBitmap(
+            display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
+            display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall),
+            arrow_up_down_bits, arrow_up_down_width, arrow_up_down_height, display.fg);
+        display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
+        Delay(500);
+        display.drawXBitmap(
+            display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
+            display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall),
+            arrow_up_down_bits, arrow_up_down_width, arrow_up_down_height, display.bg);
+
+        display.drawXBitmap(
+            display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
+            display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall - 12),
+            arrow_up_down_bits, arrow_up_down_width, arrow_up_down_height, display.fg);
+        display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
+        Delay(500);
+        display.drawXBitmap(
+            display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
+            display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall - 12),
+            arrow_up_down_bits, arrow_up_down_width, arrow_up_down_height, display.bg);
+        display.drawXBitmap(
+            display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
+            display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall),
+            arrow_up_down_bits, arrow_up_down_width, arrow_up_down_height, display.fg);
+        display.updateDisplay(DisplaySystem::UpdateType::ERASE, true);
+        return;
+        break;
     case 3:
     default:
         display.setFont(&TAHOMA_REGULAR_FONT5PT7B);
@@ -98,20 +307,13 @@ void DemoScreen::render(DisplaySystem &display) {
     case 1:
     case 2:
         if (currentScreen_ == 0) {
-            message = DEMO_SCREEN_1;
+            message = DEMO_SCREEN_1a;
         } else if (currentScreen_ == 1) {
-            message = DEMO_SCREEN_2;
+            message = DEMO_SCREEN_2a;
         } else {
-            message = DEMO_SCREEN_3;
+            message = DEMO_SCREEN_3a;
         }
 
-        // This Y coordinate is just a guess
-        display.drawSingleLineOfText(
-            message.c_str(),
-            display.xAbsolute(display.xAbsoluteCenter() -
-                              display.getTextWidth(message.c_str()) / 2),
-            display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2));
-        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
         break;
     case 3:
         message = DEMO_SCREEN_4;

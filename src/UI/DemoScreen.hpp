@@ -9,9 +9,13 @@
 
 #define NUM_DEMO_SCREENS 36
 #define NUM_DEMO_MESSAGES 41
-#define DEMO_SCREEN_1 "Focus left eye"
-#define DEMO_SCREEN_2 "Focus right eye"
-#define DEMO_SCREEN_3 "When focused, press any button"
+#define DEMO_SCREEN_1a "Twist lens in front of LEFT"
+#define DEMO_SCREEN_1b "eye like a binocular. When"
+#define DEMO_SCREEN_1c "text is crisp, press SOL"
+#define DEMO_SCREEN_2a "Twist lens in front of RIGHT"
+#define DEMO_SCREEN_3a "Optionally, turn the knob on TOP "
+#define DEMO_SCREEN_3b "to adjust lens spacing. When "
+#define DEMO_SCREEN_3c "text is comfortable, press SOL"
 #define DEMO_SCREEN_4 "Now put down the PageTurner and read!"
 #define DEMO_SCREEN_5 "Five thousand years ago"
 #define DEMO_SCREEN_6 "these words would have"
@@ -65,7 +69,7 @@ public:
 
 protected:
     std::array<std::string, NUM_DEMO_MESSAGES> messages_ = {
-        DEMO_SCREEN_1,   DEMO_SCREEN_2,   DEMO_SCREEN_3,   DEMO_SCREEN_4,   DEMO_SCREEN_5,
+        DEMO_SCREEN_1a,  DEMO_SCREEN_2a,  DEMO_SCREEN_3a,  DEMO_SCREEN_4,   DEMO_SCREEN_5,
         DEMO_SCREEN_6,   DEMO_SCREEN_6a,  DEMO_SCREEN_7,   DEMO_SCREEN_8,   DEMO_SCREEN_8a,
         DEMO_SCREEN_9,   DEMO_SCREEN_10,  DEMO_SCREEN_11,  DEMO_SCREEN_11a, DEMO_SCREEN_11b,
         DEMO_SCREEN_12,  DEMO_SCREEN_13,  DEMO_SCREEN_13a, DEMO_SCREEN_13b, DEMO_SCREEN_14,

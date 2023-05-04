@@ -114,7 +114,8 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType,
     case FULL:
         firstPartialTime_ = 0;
         numPartials_ = 0;
-        driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
+        driver_.update(/*FULL_BIG_ORIGINAL_WAVEFORM*/ BC_REGULAR_31_35C_WAVEFORM_FULL_DARK_IMAGE,
+                       gfxCanvas_.getBuffer());
         break;
     case PARTIAL:
         if (((numPartials_ > 2) && (Millis() - firstPartialTime_ < 5000)) || (numPartials_ > 10) ||
