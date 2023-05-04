@@ -126,9 +126,11 @@ void BLEImprov::loop() {
     } else if (this->state_ == STATE_READY_TO_SCAN) {
         this->setState(STATE_SCANNING);
 
+        std::vector<std::string> existingSsidList;
+
         // TODO: Make this send APs in real time to the app
         int err = WiFi::getInstance().scanNetworks(
-            [this](const std::shared_ptr<wifi_ap_record_t[]> &apRecords, int recordCount) {
+            [this, &existingSsidList](const std::shared_ptr<wifi_ap_record_t[]> &apRecords, int recordCount) {
             log_d("Wifi scanning complete: %d APs found.", recordCount);
 
             // Sort records in appRecords by rssi
@@ -149,8 +151,10 @@ void BLEImprov::loop() {
 
                 // Skip duplicate APs that have the same SSID, probably satellite
                 // routers/repeaters
-                if (std::find(ssidList.begin(), ssidList.end(), ssid) == ssidList.end()) {
+                if (std::find(ssidList.begin(), ssidList.end(), ssid) == ssidList.end() && 
+                    std::find(existingSsidList.begin(), existingSsidList.end(), ssid) == existingSsidList.end()) {
                     ssidList.push_back(ssid);
+                    existingSsidList.push_back(ssid);
                 } else {
                     log_d("Skipping duplicate AP scan result: %s %s %s", ssid.c_str(), rssi.c_str(),
                           auth.c_str());
@@ -164,13 +168,18 @@ void BLEImprov::loop() {
                     this->rpcResultCharacteristic_->setValue(response.data(), response.size());
                     this->rpcResultCharacteristic_->notify();
 
+                    // adding a short delay to avoid sending notifications too quickly and losing data
+                    // not a perfect solution, but should improve things
+                    Delay(100);
+
                 } else {
                     log_d("Skipping empty AP scan result: %s", ssid.c_str());
                 }
             }
-
-            this->setState(STATE_SCAN_COMPLETE);
         });
+
+        this->setState(STATE_SCAN_COMPLETE);
+
         if (err != ESP_OK) {
             log_e("Error scanning WiFi networks: %s", esp_err_to_name(err));
             this->setError(improv::ERROR_UNKNOWN);
