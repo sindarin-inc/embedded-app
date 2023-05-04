@@ -22,6 +22,7 @@ public:
     }
 
     void markAsAuthed() { authed_ = true; }
+    auto isAuthed() -> bool { return authed_; }
     auto checkAuthed(ble_gap_conn_desc *desc) -> bool {
         if (!authed_) {
             log_w("Client not authenticated, disconnecting");

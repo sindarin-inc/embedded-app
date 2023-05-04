@@ -6,6 +6,7 @@
 #include "BLEAbstractions.hpp"
 #include "Communications/BLEManager.hpp"
 #include "Inputs/TTRemoteInput.hpp"
+#include "Misc/StringUtil.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "esp_wifi.h"
 #include "sindarin-debug.h"
@@ -57,6 +58,10 @@ protected:
                     this->enclosed->writePageTurnerBatteryToCharacteristic(characteristic, value);
                 } else if (value == "blink-led") {
                     this->enclosed->blinkLedAfterConnect(characteristic, value);
+                } else if (value == "pair") {
+                    characteristic->setValue(StringFormat(
+                        "pair=%s", enclosed->prefs_->bleAdvertisingKey.get().value_or("").c_str()));
+                    characteristic->notify();
                 } else if (!BLEManager::getInstance()->checkAuthed(desc)) {
                     log_w("GATT client asking to read setting while unauthed: %s", value.c_str());
                 }
@@ -80,7 +85,16 @@ protected:
                         log_i("Locking auth key to %s", settingValue.c_str());
                         enclosed->prefs_->bleAuthKey.set(settingValue);
                         BLEManager::getInstance()->markAsAuthed();
-                    } else if (settingValue == enclosed->prefs_->bleAuthKey.get()) {
+                    }
+                    // If we're already authed, allow changing the key
+                    else if (BLEManager::getInstance()->isAuthed()) {
+                        log_i("Changing auth key from %s to %s",
+                              enclosed->prefs_->bleAuthKey.get().value().c_str(),
+                              settingValue.c_str());
+                        enclosed->prefs_->bleAuthKey.set(settingValue);
+                    }
+                    // If we're not authed but this is the correct key
+                    else if (settingValue == enclosed->prefs_->bleAuthKey.get()) {
                         BLEManager::getInstance()->markAsAuthed();
                         log_i("GATT client authenticated");
                     } else {
