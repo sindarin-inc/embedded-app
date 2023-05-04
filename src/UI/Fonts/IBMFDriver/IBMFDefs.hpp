@@ -405,7 +405,8 @@ typedef LigKernStep (*LigKernStepsPtr)[];
 struct RLEMetrics {
     uint8_t dynF : 4;      // Compression factor
     bool firstIsBlack : 1; // First pixels in compressed format are black
-    uint8_t filler : 3;    // To keep it at byte boundary
+    uint8_t beforeAddedOptKern : 2;
+    uint8_t afterAddedOptKern : 1;
 };
 
 struct GlyphInfo {

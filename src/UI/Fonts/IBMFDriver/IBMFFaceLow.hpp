@@ -478,14 +478,23 @@ public:
                 }
             }
 
+            int addedWildcard;
+
+            if (i2.rleMetrics.beforeAddedOptKern == 3) {
+                addedWildcard = -1;
+            } else {
+                addedWildcard = i2.rleMetrics.beforeAddedOptKern;
+            }
+            addedWildcard += i1.rleMetrics.afterAddedOptKern;
+
             // std::cout << "Minimal distance: " << MAKE_FIXED_FLOAT(kerning) << std::endl;
 
             // Adjust the resulting kerning value, considering the targetted KERNING_SIZE (the space
             // to have between characters), the size of the character and the normal distance that
             // will be used by the writing algorithm
-            kerning =
-                (-MIN(kerning - MAKE_INT_FIXED(KERNING_SIZE), MAKE_INT_FIXED(i2.bitmapWidth))) -
-                MAKE_INT_FIXED(normalDistance);
+            kerning = (-MIN(kerning - MAKE_INT_FIXED(KERNING_SIZE + addedWildcard),
+                            MAKE_INT_FIXED(i2.bitmapWidth))) -
+                      MAKE_INT_FIXED(normalDistance);
 
             if (glyph1.bitmap.pixels != nullptr) {
                 delete[] glyph1.bitmap.pixels;
