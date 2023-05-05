@@ -243,7 +243,7 @@ void PowerManager::checkUsb() {
     if (USBConnected()) {
         gpio_hold_dis((gpio_num_t)RED_LED);
         gpio_hold_dis((gpio_num_t)GREEN_LED);
-        float temp;
+        float temp = 0.0f;
         if (templeCloseSensor_.magSensor_.readTemperature(temp) && temp < 45) {
             // All's good, enable charging
             // log_d("Temperature: %.1f", temp);
@@ -260,7 +260,7 @@ void PowerManager::checkUsb() {
                 DigitalWrite(RED_LED, LED_ON);
             }
         } else {
-            log_w("Temperature is too high, disabling charging");
+            log_w("Temperature is too high (%.1fC), disabling charging", temp);
             DisableCharging();
             DigitalWrite(GREEN_LED, LED_OFF);
             DigitalWrite(RED_LED, LED_OFF);

@@ -12,6 +12,7 @@
 #include <hal/gpio_types.h>
 #include <nvs_flash.h>
 #include <optional>
+#include <soc/io_mux_reg.h>
 #include <soc/rtc.h>
 #include <ulp_riscv.h>
 
@@ -41,9 +42,10 @@ void Delay(int ms) { vTaskDelay(pdMS_TO_TICKS(ms)); }
 auto Millis() -> int { return GetRunTimeMs(); }
 
 void HardwareInit() {
-    // Disable LiPo charging until it's explicitly enabled after a temp check
-    gpio_set_direction((gpio_num_t)CHARGER_ENABLED_PIN, (gpio_mode_t)GPIO_MODE_OUTPUT);
-    gpio_set_level((gpio_num_t)CHARGER_ENABLED_PIN, 0);
+    // Take over GPIO44 to control battery chargers
+    gpio_iomux_out(44, FUNC_U0RXD_GPIO44, false);
+
+    DisableCharging();
 
     esp_err_t err;
 #if USE_I2C
@@ -513,7 +515,7 @@ void EnableCharging() {
 
 void DisableCharging() {
     gpio_hold_dis((gpio_num_t)CHARGER_ENABLED_PIN);
-    gpio_set_direction((gpio_num_t)CHARGER_ENABLED_PIN, (gpio_mode_t)GPIO_MODE_OUTPUT);
+    gpio_set_direction((gpio_num_t)CHARGER_ENABLED_PIN, (gpio_mode_t)GPIO_MODE_OUTPUT_OD);
     gpio_set_level((gpio_num_t)CHARGER_ENABLED_PIN, 0);
     gpio_hold_en((gpio_num_t)CHARGER_ENABLED_PIN);
 }
