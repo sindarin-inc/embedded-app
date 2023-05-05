@@ -108,4 +108,8 @@ const char *pathToFileName(const char *path) {
     return path + pos;
 }
 
+void EnableCharging() {}
+
+void DisableCharging() {}
+
 #endif

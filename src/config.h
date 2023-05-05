@@ -109,3 +109,5 @@
 #endif
 
 #define USB_CONNECTED_PIN 8
+
+#define CHARGER_ENABLED_PIN 44

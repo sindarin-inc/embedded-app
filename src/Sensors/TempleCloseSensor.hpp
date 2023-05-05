@@ -21,9 +21,9 @@ public:
     void checkTemple();
 
     void setCallback(std::function<void(bool opened)> callback) { callback_ = std::move(callback); }
+    Mmc5603 magSensor_;
 
 protected:
-    Mmc5603 magSensor_;
     // std::optional so we don't trigger the callback on the very first state, only on state changes
     std::optional<bool> opened_;
     std::function<void(bool opened)> callback_;

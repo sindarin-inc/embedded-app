@@ -241,18 +241,29 @@ void PowerManager::loop() {
 
 void PowerManager::checkUsb() {
     if (USBConnected()) {
-        // TODO: Should we take multiple measurements?
-        battery.loop();
-        auto percentage = battery.getBatteryPercentage();
-        gpio_hold_dis((gpio_num_t)GREEN_LED);
         gpio_hold_dis((gpio_num_t)RED_LED);
-        if (percentage > 95) {
-            // If the battery is fully charged, turn the GREEN LED on.
-            DigitalWrite(GREEN_LED, LED_ON);
-            DigitalWrite(RED_LED, LED_OFF);
+        gpio_hold_dis((gpio_num_t)GREEN_LED);
+        float temp;
+        if (templeCloseSensor_.magSensor_.readTemperature(temp) && temp < 45) {
+            // All's good, enable charging
+            // log_d("Temperature: %.1f", temp);
+            // TODO: Should we take multiple measurements?
+            battery.loop();
+            auto percentage = battery.getBatteryPercentage();
+            EnableCharging();
+            if (percentage > 95) {
+                // If the battery is fully charged, turn the GREEN LED on.
+                DigitalWrite(GREEN_LED, LED_ON);
+                DigitalWrite(RED_LED, LED_OFF);
+            } else {
+                DigitalWrite(GREEN_LED, LED_OFF);
+                DigitalWrite(RED_LED, LED_ON);
+            }
         } else {
+            log_w("Temperature is too high, disabling charging");
+            DisableCharging();
             DigitalWrite(GREEN_LED, LED_OFF);
-            DigitalWrite(RED_LED, LED_ON);
+            DigitalWrite(RED_LED, LED_OFF);
         }
         gpio_hold_en((gpio_num_t)GREEN_LED);
         gpio_hold_en((gpio_num_t)RED_LED);
@@ -262,6 +273,7 @@ void PowerManager::checkUsb() {
         DigitalWrite(RED_LED, LED_OFF);
         gpio_hold_dis((gpio_num_t)GREEN_LED);
         gpio_hold_dis((gpio_num_t)RED_LED);
+        DisableCharging();
     }
 }
 

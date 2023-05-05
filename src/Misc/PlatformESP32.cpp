@@ -41,6 +41,10 @@ void Delay(int ms) { vTaskDelay(pdMS_TO_TICKS(ms)); }
 auto Millis() -> int { return GetRunTimeMs(); }
 
 void HardwareInit() {
+    // Disable LiPo charging until it's explicitly enabled after a temp check
+    gpio_set_direction((gpio_num_t)CHARGER_ENABLED_PIN, (gpio_mode_t)GPIO_MODE_OUTPUT);
+    gpio_set_level((gpio_num_t)CHARGER_ENABLED_PIN, 0);
+
     esp_err_t err;
 #if USE_I2C
     // release rtc i2c lines
@@ -498,4 +502,18 @@ void AllowPowerOff() {
 
     // pinMode(sysOnPin, OUTPUT);
     // DigitalWrite(sysOnPin, LOW);
+}
+
+void EnableCharging() {
+    gpio_hold_dis((gpio_num_t)CHARGER_ENABLED_PIN);
+    gpio_set_direction((gpio_num_t)CHARGER_ENABLED_PIN, (gpio_mode_t)GPIO_MODE_INPUT);
+    gpio_set_pull_mode((gpio_num_t)44, GPIO_FLOATING);
+    gpio_hold_en((gpio_num_t)CHARGER_ENABLED_PIN);
+}
+
+void DisableCharging() {
+    gpio_hold_dis((gpio_num_t)CHARGER_ENABLED_PIN);
+    gpio_set_direction((gpio_num_t)CHARGER_ENABLED_PIN, (gpio_mode_t)GPIO_MODE_OUTPUT);
+    gpio_set_level((gpio_num_t)CHARGER_ENABLED_PIN, 0);
+    gpio_hold_en((gpio_num_t)CHARGER_ENABLED_PIN);
 }
