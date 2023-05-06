@@ -9,7 +9,6 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include <unordered_map>
 
 #include "../Communications/WiFi.hpp"
 #include "../Misc/StringUtil.hpp"
@@ -49,7 +48,7 @@ auto SolClock::readTimezones(const std::string &filename)
         std::getline(ss, iana, ',');
         std::getline(ss, posix, ',');
 
-        // Remove double quotes from key and value
+        // Remove double quotes from both values
         iana = iana.substr(1, iana.size() - 2);
         posix = posix.substr(1, posix.size() - 2);
 

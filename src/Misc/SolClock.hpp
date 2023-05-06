@@ -4,6 +4,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/event_groups.h>
 #include <string>
+#include <unordered_map>
 
 #include "Storage/PreferencesStore.hpp"
 
