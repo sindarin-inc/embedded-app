@@ -5,7 +5,6 @@
 #include <esp_adc/adc_cali.h>
 #include <esp_adc/adc_cali_scheme.h>
 #include <esp_adc/adc_oneshot.h>
-#include <esp_bt.h>
 #include <esp_err.h>
 #include <esp_sleep.h>
 #include <esp_task_wdt.h>
@@ -37,16 +36,16 @@ void DigitalWrite(int pin, int level) { gpio_set_level((gpio_num_t)pin, (uint32_
 
 auto DigitalRead(uint8_t pin) -> int { return gpio_get_level((gpio_num_t)pin); }
 
-void Delay(int ms) { vTaskDelay(ms * portTICK_PERIOD_MS); }
+void Delay(int ms) { vTaskDelay(pdMS_TO_TICKS(ms)); }
 
 auto Millis() -> int { return GetRunTimeMs(); }
 
 void HardwareInit() {
+    esp_err_t err;
 #if USE_I2C
     // release rtc i2c lines
     ulp_timer_stop();
     ulp_riscv_halt();
-    esp_err_t err;
     err = rtc_gpio_deinit((gpio_num_t)I2C_MASTER_SDA_IO);
     if (err != ESP_OK) {
         log_e("rtc_gpio_deinit failed for SDA: %d", err);

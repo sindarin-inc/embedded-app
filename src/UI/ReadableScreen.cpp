@@ -210,11 +210,9 @@ void ReadableScreen::render(DisplaySystem &display) {
         // We need to make sure this goes onto the second page because of a bug in the renderer.
         std::string message =
             "Welcome to the beta of Autopilot mode! Here is what each button does "
-            "while in autopilot mode.\n\n\nUp: Main Menu\n\nDown: Reading "
-            "Settings\n\nLeft: Slow Down "
-            "Page\n\nRight: Speed Up\n\nCenter: Pause/unpause\n\n\nPress any button "
-            "to "
-            "start reading... \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
+            "while in autopilot mode.\n\n\nUp or Down: Popup Menu\n\nLeft: Slow Down "
+            "\n\nRight: Speed Up\n\nCenter: Pause/unpause\n\n\nPress any button "
+            "to start reading... \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
 
         auto streamFirstTime = std::make_shared<StdStringStream>(message);
         firstTimeRenderer_.setStream(streamFirstTime);

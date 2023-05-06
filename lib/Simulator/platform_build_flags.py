@@ -53,7 +53,6 @@ lib_includes += "\n" + "\n".join(
 flags = [
     "-std=c++17",
     "-DTTRemoteInput_H",
-    "-Dnvs_flash_erase()=' '",
     "-Dtypeof(a)='auto '",
     "-DSIMULATOR=1",
     "-DUSE_TURN_TOUCH_REMOTE=0",
@@ -71,7 +70,6 @@ flags = [
 if args.wasm:
     flags += [
         "-sUSE_SDL=2",
-        "-sUSE_SDL_IMAGE=2",
     ]
 
 if args.sdl:
@@ -106,7 +104,6 @@ if args.sdl:
         .strip()
     )
     flags += [
-        "-lSDL2_image",
         arch_flag,
         sdl_flags,
         f"-I{prefix}/include",

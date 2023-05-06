@@ -22,6 +22,17 @@ void DemoScreen::render(DisplaySystem &display) {
     std::string message = messages_[currentScreen_];
     display.setFont(static_cast<Font *>(&fontTahomaRegularFonT6PT7B));
 
+    if (currentScreen_ > NUM_DEMO_SCREENS) {
+        lightingController_.setScreenMask(LightingController::Screens::BOTH);
+        // When we're done with the onboarding screen, turn this mode off.
+        prefs_.demoMode.remove();
+        back();
+        return;
+    }
+
+    auto nextUpdateType = DisplaySystem::UpdateType::FULL;
+    auto nextInterval = 0;
+
     // Alternate left and right on for setup.
     if (currentScreen_ == 1) {
         lightingController_.setScreenMask(LightingController::Screens::LEFT);
@@ -48,7 +59,27 @@ void DemoScreen::render(DisplaySystem &display) {
     }
     // NOLINTEND(bugprone-branch-clone)
 
-    if (currentScreen_ == 3) {
+    switch (currentScreen_) {
+    case 0:
+    case 1:
+    case 2:
+        if (currentScreen_ == 0) {
+            message = DEMO_SCREEN_1;
+        } else if (currentScreen_ == 1) {
+            message = DEMO_SCREEN_2;
+        } else {
+            message = DEMO_SCREEN_3;
+        }
+
+        // This Y coordinate is just a guess
+        display.drawSingleLineOfText(
+            message.c_str(),
+            display.xAbsolute(display.xAbsoluteCenter() -
+                              display.getTextWidth(message.c_str()) / 2),
+            display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2));
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        break;
+    case 3:
         message = DEMO_SCREEN_4;
 
         display.drawSingleLineOfText(
@@ -56,10 +87,11 @@ void DemoScreen::render(DisplaySystem &display) {
             display.xAbsolute(display.xAbsoluteCenter() -
                               display.getTextWidth(message.c_str()) / 2),
             display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight(message.c_str())));
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-        Delay(2500);
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 2500;
+        break;
+    case 4:
         display.clearDisplay();
-
         message = DEMO_SCREEN_5;
         display.drawSingleLineOfText(
             message.c_str(),
@@ -67,9 +99,10 @@ void DemoScreen::render(DisplaySystem &display) {
                               display.getTextWidth(message.c_str()) / 2),
             display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight(message.c_str())));
 
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-        Delay(2000);
-
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 2000;
+        break;
+    case 5:
         message = DEMO_SCREEN_6;
         display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -93,9 +126,10 @@ void DemoScreen::render(DisplaySystem &display) {
 
         display.drawLine(display.width() / 2 - 12, 108, display.width() / 2 + 12, 108, display.fg);
 
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-        Delay(250);
-
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 250;
+        break;
+    case 6:
         message = DEMO_SCREEN_6;
         display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -121,9 +155,10 @@ void DemoScreen::render(DisplaySystem &display) {
 
         display.drawLine(display.width() / 2 - 12, 115, display.width() / 2 + 12, 115, display.fg);
 
-        display.updateDisplay(DisplaySystem::UpdateType::FAST);
-        Delay(750);
-
+        nextUpdateType = DisplaySystem::UpdateType::FAST;
+        nextInterval = 750;
+        break;
+    case 7:
         message = DEMO_SCREEN_6;
         display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -151,9 +186,10 @@ void DemoScreen::render(DisplaySystem &display) {
 
         display.drawLine(display.width() / 2 - 12, 122, display.width() / 2 + 12, 122, display.fg);
 
-        display.updateDisplay(DisplaySystem::UpdateType::FAST);
-        Delay(750);
-
+        nextUpdateType = DisplaySystem::UpdateType::FAST;
+        nextInterval = 750;
+        break;
+    case 8:
         message = DEMO_SCREEN_6;
         display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -182,11 +218,11 @@ void DemoScreen::render(DisplaySystem &display) {
         display.drawLine(display.width() / 2 - 12, 122, display.width() / 2 + 12, 122, display.fg);
 
         display.drawLine(display.width() / 2 - 12, 129, display.width() / 2 + 8, 129, display.fg);
-        display.updateDisplay(DisplaySystem::UpdateType::FAST);
-
+        nextUpdateType = DisplaySystem::UpdateType::FAST;
+        nextInterval = 750;
+        break;
+    case 9:
         display.clearDisplay();
-        Delay(750);
-
         message = DEMO_SCREEN_7;
         display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -194,9 +230,10 @@ void DemoScreen::render(DisplaySystem &display) {
                                      display.yAbsolute(display.yAbsoluteCenter() -
                                                        display.getTextHeight(message.c_str()) / 2));
 
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-        Delay(1500);
-
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 1500;
+        break;
+    case 10:
         message = DEMO_SCREEN_8;
         display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -215,9 +252,10 @@ void DemoScreen::render(DisplaySystem &display) {
         display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - papyrus2_width / 2), 90,
                             papyrus2Bits, papyrus2_width, papyrus2_height, display.fg);
 
-        display.updateDisplay(DisplaySystem::UpdateType::FULL);
-        Delay(3000);
-
+        nextUpdateType = DisplaySystem::UpdateType::FULL;
+        nextInterval = 3000;
+        break;
+    case 11:
         message = DEMO_SCREEN_9;
         display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -225,9 +263,10 @@ void DemoScreen::render(DisplaySystem &display) {
                                      display.yAbsolute(display.yAbsoluteCenter() -
                                                        display.getTextHeight(message.c_str()) / 2));
 
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-        Delay(1500);
-
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 1500;
+        break;
+    case 12:
         message = DEMO_SCREEN_10;
         display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -239,9 +278,10 @@ void DemoScreen::render(DisplaySystem &display) {
                             display.yAbsolute(display.yAbsoluteCenter() - paper_height / 2),
                             paperBits, paper_width, paper_height, display.fg);
 
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-        Delay(1500);
-
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 1500;
+        break;
+    case 13:
         message = DEMO_SCREEN_11;
 
         display.drawSingleLineOfText(message,
@@ -253,8 +293,10 @@ void DemoScreen::render(DisplaySystem &display) {
 
         display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - hi_hand_width / 2) - 45,
                             30, hiHandBits, hi_hand_width, hi_hand_height, display.fg);
-        display.updateDisplay(DisplaySystem::UpdateType::FULL);
-        Delay(1500);
+        nextUpdateType = DisplaySystem::UpdateType::FULL;
+        nextInterval = 1500;
+        break;
+    case 14:
         message = DEMO_SCREEN_11;
         display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -276,9 +318,10 @@ void DemoScreen::render(DisplaySystem &display) {
         display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - hi_blocks_width / 2) - 45,
                             display.yAbsolute(display.yAbsoluteCenter() - hi_blocks_height / 2),
                             hiBlocksBits, hi_blocks_width, hi_blocks_height, display.fg);
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-        Delay(1500);
-
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 1500;
+        break;
+    case 15:
         message = DEMO_SCREEN_11;
         display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -311,21 +354,22 @@ void DemoScreen::render(DisplaySystem &display) {
         display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - hi_pixel3_width / 2) - 45,
                             130, hiPixel3Bits, hi_pixel3_width, hi_pixel3_height, display.fg);
 
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 1500;
+        break;
+    case 16:
         display.clearDisplay();
-
-        Delay(1500);
         message = DEMO_SCREEN_12;
         display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
                                                        display.getTextWidth(message.c_str()) / 2),
                                      display.yAbsolute(display.yAbsoluteCenter() -
                                                        display.getTextHeight(message.c_str()) / 2));
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
 
-        Delay(1500);
-
+        nextInterval = 1500;
+        break;
+    case 17:
         message = DEMO_SCREEN_13;
         display.drawSingleLineOfText(
             message.c_str(), display.xAbsolute(display.xAbsoluteCenter() - 65),
@@ -347,10 +391,11 @@ void DemoScreen::render(DisplaySystem &display) {
         display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - spark_width / 2) + 55, 45,
                             sparkBits, spark_width, spark_height, display.fg);
 
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
 
-        Delay(4000);
-
+        nextInterval = 4000;
+        break;
+    case 18:
         message = DEMO_SCREEN_14;
         display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -376,10 +421,11 @@ void DemoScreen::render(DisplaySystem &display) {
                               display.getTextHeight(message.c_str()) / 2 +
                               3 * display.getTextHeight(message.c_str()) / 2));
 
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
 
-        Delay(4000);
-
+        nextInterval = 4000;
+        break;
+    case 19:
         message = DEMO_SCREEN_15;
         display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -388,26 +434,27 @@ void DemoScreen::render(DisplaySystem &display) {
                                                        display.getTextHeight(message.c_str()) / 2));
 
         display.clearDisplay();
-
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-
-        Delay(2000);
-
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 2000;
+        break;
+    case 20:
         message = DEMO_SCREEN_16;
         display.drawSingleLineOfText(message, display.xAbsolute(display.xAbsoluteCenter() - 65),
                                      display.yAbsolute(display.yAbsoluteCenter() - 30));
-        display.updateDisplay(DisplaySystem::UpdateType::FULL);
-        Delay(1000);
-
+        nextUpdateType = DisplaySystem::UpdateType::FULL;
+        nextInterval = 1000;
+        break;
+    case 21:
         message = DEMO_SCREEN_16;
         display.drawSingleLineOfText(message, display.xAbsolute(display.xAbsoluteCenter() - 65),
                                      display.yAbsolute(display.yAbsoluteCenter() - 30));
         message = DEMO_SCREEN_16a;
         display.drawSingleLineOfText(message, display.xAbsolute(display.xAbsoluteCenter() - 35),
                                      display.yAbsolute(display.yAbsoluteCenter()));
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-        Delay(1000);
-
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 1000;
+        break;
+    case 22:
         message = DEMO_SCREEN_16;
         display.drawSingleLineOfText(message, display.xAbsolute(display.xAbsoluteCenter() - 65),
                                      display.yAbsolute(display.yAbsoluteCenter() - 30));
@@ -421,9 +468,10 @@ void DemoScreen::render(DisplaySystem &display) {
 
         display.drawCircle(display.xAbsoluteCenter() - thought_width / 2 - 7, 129, 3, display.fg);
 
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-        Delay(100);
-
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 100;
+        break;
+    case 23:
         message = DEMO_SCREEN_16;
         display.drawSingleLineOfText(message, display.xAbsolute(display.xAbsoluteCenter() - 65),
                                      display.yAbsolute(display.yAbsoluteCenter() - 30));
@@ -439,9 +487,10 @@ void DemoScreen::render(DisplaySystem &display) {
 
         display.drawCircle(display.xAbsoluteCenter() - thought_width / 2 + 2, 125 - 2, 4,
                            display.fg);
-        display.updateDisplay(DisplaySystem::UpdateType::FAST);
-        Delay(100);
-
+        nextUpdateType = DisplaySystem::UpdateType::FAST;
+        nextInterval = 100;
+        break;
+    case 24:
         message = DEMO_SCREEN_16;
         display.drawSingleLineOfText(message, display.xAbsolute(display.xAbsoluteCenter() - 65),
                                      display.yAbsolute(display.yAbsoluteCenter() - 30));
@@ -460,9 +509,10 @@ void DemoScreen::render(DisplaySystem &display) {
         display.drawCircle(display.xAbsoluteCenter() - thought_width / 2 + 10, 125 - 11, 5,
                            display.fg);
 
-        display.updateDisplay(DisplaySystem::UpdateType::FAST);
-        Delay(100);
-
+        nextUpdateType = DisplaySystem::UpdateType::FAST;
+        nextInterval = 100;
+        break;
+    case 25:
         message = DEMO_SCREEN_16;
         display.drawSingleLineOfText(message, display.xAbsolute(display.xAbsoluteCenter() - 65),
                                      display.yAbsolute(display.yAbsoluteCenter() - 30));
@@ -506,11 +556,11 @@ void DemoScreen::render(DisplaySystem &display) {
             display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 - 3 -
                               display.getTextHeight() * 2));
 
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 2500;
+        break;
+    case 26:
         display.clearDisplay();
-        Delay(2500);
-
         message = DEMO_SCREEN_17;
         display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -526,9 +576,10 @@ void DemoScreen::render(DisplaySystem &display) {
             display.yAbsolute(display.yAbsoluteCenter() -
                               display.getTextHeight(message.c_str()) / 2 -
                               7 * display.getTextHeight(message.c_str()) / 2));
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-        Delay(1500);
-
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 1500;
+        break;
+    case 27:
         message = DEMO_SCREEN_17;
         display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -554,10 +605,11 @@ void DemoScreen::render(DisplaySystem &display) {
         display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - lightbulb_width / 2), 90,
                             lightbulbBits, lightbulb_width, lightbulb_height, display.fg);
 
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
 
-        Delay(1500);
-
+        nextInterval = 1500;
+        break;
+    case 28:
         message = DEMO_SCREEN_18;
         display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -565,9 +617,10 @@ void DemoScreen::render(DisplaySystem &display) {
                                      display.yAbsolute(display.yAbsoluteCenter() -
                                                        display.getTextHeight(message.c_str()) / 2 -
                                                        8 * display.getTextHeight(message.c_str())));
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-        Delay(750);
-
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 750;
+        break;
+    case 29:
         message = DEMO_SCREEN_18;
         display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -584,9 +637,10 @@ void DemoScreen::render(DisplaySystem &display) {
                                                        display.getTextHeight(message.c_str()) / 2 -
                                                        2 * display.getTextHeight(message.c_str())));
 
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-        Delay(500);
-
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 500;
+        break;
+    case 30:
         message = DEMO_SCREEN_18;
         display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -612,9 +666,10 @@ void DemoScreen::render(DisplaySystem &display) {
                                                        display.getTextHeight(message.c_str()) / 2 +
                                                        1 * display.getTextHeight(message.c_str())));
 
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-        Delay(500);
-
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 500;
+        break;
+    case 31:
         message = DEMO_SCREEN_18;
         display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -647,11 +702,11 @@ void DemoScreen::render(DisplaySystem &display) {
                                      display.yAbsolute(display.yAbsoluteCenter() -
                                                        display.getTextHeight(message.c_str()) / 2 +
                                                        4 * display.getTextHeight(message.c_str())));
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-
-        Delay(1500);
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 1500;
+        break;
+    case 32:
         display.clearDisplay();
-
         message = DEMO_SCREEN_19;
         display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -666,8 +721,10 @@ void DemoScreen::render(DisplaySystem &display) {
                                      display.yAbsolute(display.yAbsoluteCenter() -
                                                        display.getTextHeight() / 2 -
                                                        7 * display.getTextHeight() / 2));
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-        Delay(2000);
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 2000;
+        break;
+    case 33:
         message = DEMO_SCREEN_19;
         display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -684,10 +741,10 @@ void DemoScreen::render(DisplaySystem &display) {
                                                        7 * display.getTextHeight() / 2));
         display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - franklin_width / 2), 80,
                             franklinBits, franklin_width, franklin_height, display.fg);
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-
-        Delay(2250);
-
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 2250;
+        break;
+    case 34:
         message = DEMO_SCREEN_20;
         display.drawSingleLineOfText(message,
                                      display.xAbsolute(display.xAbsoluteCenter() -
@@ -712,26 +769,28 @@ void DemoScreen::render(DisplaySystem &display) {
                                                        display.getTextHeight() / 2 +
                                                        3 * display.getTextHeight() / 2));
 
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-        Delay(5000);
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 5000;
+        break;
+    case 35:
         display.drawXBitmap(display.width() / 2 - sol_logo_width / 2,
                             display.height() / 2 - sol_logo_height / 2, solLogoBits, sol_logo_width,
                             sol_logo_height, display.fg);
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-        Delay(3000);
-    } else {
-        // This Y coordinate is just a guess
-        display.drawSingleLineOfText(
-            message.c_str(),
-            display.xAbsolute(display.xAbsoluteCenter() -
-                              display.getTextWidth(message.c_str()) / 2),
-            display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2));
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 3000;
+        break;
+    default:
+        break;
     }
 
-    if (currentScreen_ == 3) {
-        RemoteCommand toSend = RemoteCommand::NEXT;
-        DispatchGetUiQueue()->dispatch([toSend]() { UIInnerLoop(toSend); });
+    display.updateDisplay(nextUpdateType);
+
+    if (currentScreen_ >= 3) {
+        // Must stop the timer because ChangePeriod starts it.
+        xTimerStop(DisplaySystem::animationTimer, 0);
+        // Move to the next animation
+        xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval), 0);
+        currentScreen_++;
     }
 }
 
@@ -745,19 +804,39 @@ void DemoScreen::processCommand(RemoteCommand command) {
     // the messages, but for now, any button press is fine.
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
+        if (currentScreen_ > 0) {
+            currentScreen_--;
+        }
+        setNeedsRerender();
+        break;
     case RemoteCommand::CHANNEL_PLUS:
-    case RemoteCommand::PREV:
     case RemoteCommand::NEXT:
-    case RemoteCommand::BACK:
     case RemoteCommand::ENTER:
+        if (currentScreen_ >= 3) {
+            xTimerStop(DisplaySystem::animationTimer, 0);
+            display_.clearDisplay();
+        }
         currentScreen_++;
         setNeedsRerender();
         break;
+    case RemoteCommand::PREV:
+    case RemoteCommand::BACK:
     default:
         break;
     }
 
-    if (currentScreen_ >= NUM_DEMO_SCREENS) {
+    // For now, on the first three screens, we want to take the up button
+    // and just advance the screen.
+    if ((currentScreen_ < 3) &&
+        ((command == RemoteCommand::BACK) || (command == RemoteCommand::PREV))) {
+        currentScreen_++;
+        setNeedsRerender();
+    }
+
+    // Allow the user to press up to exit out of demo mode;
+    if ((currentScreen_ >= NUM_DEMO_SCREENS) ||
+        ((currentScreen_ >= 3) &&
+         ((command == RemoteCommand::BACK) || command == RemoteCommand::PREV))) {
         lightingController_.setScreenMask(LightingController::Screens::BOTH);
         // When we're done with the onboarding screen, turn this mode off.
         prefs_.demoMode.remove();

@@ -313,6 +313,7 @@ public:
           fastBookmarkRight(*this, "fst-mark-right"), fastBookmarkCenter(*this, "fst-mark-cent"),
           wifiSettingsJson(*this, "wifi-settings"), localStoreMigrationVersion(*this, "ls-version"),
           fontsLibrary(*this, "fonts-lib"), fontType(*this, "font-type"),
+          tutorialsDeleted(*this, "tutorials"),
           preferencesStoreMigrationVersion_(*this, "ps-version"){};
     PreferencesStore(PreferencesStore &) = delete;
 
@@ -481,6 +482,7 @@ public:
     PrefsItem<uint32_t> localStoreMigrationVersion;
     PrefsItem<bool> fontsLibrary;
     PrefsItem<int> fontType;
+    PrefsItem<uint32_t> tutorialsDeleted;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles

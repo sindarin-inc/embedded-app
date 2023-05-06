@@ -13,7 +13,9 @@ public:
     // Simple diagnostic test to check if the magnetometer is reporting the correct product ID
     auto checkProductId() -> bool;
 
+    // check the magnetometer to determine if the temple is open.
     auto isTempleOpen() -> bool;
+
     // Should be called periodically to fire the callback when the temple is opened or closed (only
     // fires the callback on state change, not on the initial reading)
     void checkTemple();
