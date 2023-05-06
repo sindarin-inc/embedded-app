@@ -85,7 +85,13 @@ public:
         altY1_ = y1;
     }
 
-    void setNoAltUpdateType() { useAltUpdateType_ = false; }
+    void setNoAltUpdateType() {
+        useAltUpdateType_ = false;
+        altX0_ = 0;
+        altY0_ = 0;
+        altX1_ = 255;
+        altY1_ = 255;
+    }
 
     virtual void beginPowerOn() {}
 

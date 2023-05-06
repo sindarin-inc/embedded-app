@@ -137,7 +137,16 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType,
             if (getInversion()) {
                 driver_.update(PARTIAL_REFRESH_WAVEFORM_INVERTED, gfxCanvas_.getBuffer());
             } else {
-                driver_.update(PARTIAL_REFRESH_WAVEFORM_REGULAR, gfxCanvas_.getBuffer());
+                if (useAltUpdateType_) {
+                    driver_.update(
+                        PARTIAL_REFRESH_WAVEFORM_REGULAR, gfxCanvas_.getBuffer(),
+                        getDriver()->getVcom(),
+                        BC_REGULAR_EINK_10_13C_WAVEFORM_AU4 /*BC_REGULAR_31_35C_WAVEFORM_FULL_DARK_IMAGE*/
+                        ,
+                        altX0_, altY0_, altX1_, altY1_);
+                } else {
+                    driver_.update(PARTIAL_REFRESH_WAVEFORM_REGULAR, gfxCanvas_.getBuffer());
+                }
             }
         } else {
             driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());

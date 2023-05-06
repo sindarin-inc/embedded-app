@@ -174,10 +174,24 @@ void MainMenuScreen::render(DisplaySystem &display) {
             }
             menuPageViews_.push_back(menuPageView);
         }
-
+        /*
+                std::shared_ptr<MenuItemView> selectedMenuItemView =
+                    menuItemViews_[subMenus_[currentSelection_]->getCurrSelection() %
+                                   subMenus_[currentSelection_]->getMyStyle().numberOfItemsPerPage];
+                for (auto &menuItemView : menuItemViews_) {
+                    if (menuItemView && menuItemView == selectedMenuItemView) {
+                        menuItemView->setSelected(true);
+                    } else {
+                        menuItemView->setSelected(false);
+                    }
+                }
+        */
         draw();
+        // display.setAltUpdateType(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE, 24, 50, 32,
+        // 205);
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-    }
+        // display.setNoAltUpdateType();
+    } // else {
 
     std::shared_ptr<MenuItemView> selectedMenuItemView =
         menuItemViews_[subMenus_[currentSelection_]->getCurrSelection() %
@@ -193,6 +207,7 @@ void MainMenuScreen::render(DisplaySystem &display) {
     draw();
 
     display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
+    //}
 
     firstLoad_ = false;
 }
