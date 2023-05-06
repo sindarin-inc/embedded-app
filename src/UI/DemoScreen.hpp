@@ -16,7 +16,7 @@
 #define DEMO_SCREEN_3a "Optionally, turn the knob on TOP "
 #define DEMO_SCREEN_3b "to adjust lens spacing. When "
 #define DEMO_SCREEN_3c "text is comfortable, press SOL"
-#define DEMO_SCREEN_4 "Now put down the PageTurner and read!"
+#define DEMO_SCREEN_4 "Now put down the Sol Remote and read!"
 #define DEMO_SCREEN_5 "Five thousand years ago"
 #define DEMO_SCREEN_6 "these words would have"
 #define DEMO_SCREEN_6a "been carved in stone."
@@ -84,6 +84,7 @@ protected:
     LightingController &lightingController_;
 
     unsigned int currentScreen_ = 0;
+    unsigned int currentSubScreen_ = 0;
 };
 
 #endif
