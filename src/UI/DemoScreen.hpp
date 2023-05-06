@@ -9,6 +9,8 @@
 
 #define NUM_DEMO_SCREENS 36
 #define NUM_DEMO_MESSAGES 41
+
+#define SKIP_MESSAGE "Press (SOL) to skip"
 #define DEMO_SCREEN_1a "Twist lens in front of LEFT"
 #define DEMO_SCREEN_1b "eye like a binocular. When"
 #define DEMO_SCREEN_1c "text is crisp, press SOL"
@@ -17,12 +19,14 @@
 #define DEMO_SCREEN_3b "to adjust lens spacing. When "
 #define DEMO_SCREEN_3c "text is comfortable, press SOL"
 #define DEMO_SCREEN_4 "Now put down the Sol Remote and read!"
-#define DEMO_SCREEN_5 "Five thousand years ago"
-#define DEMO_SCREEN_6 "these words would have"
-#define DEMO_SCREEN_6a "been carved in stone."
-#define DEMO_SCREEN_7 "A millennium or so later"
-#define DEMO_SCREEN_8 "you'd be unraveling a"
-#define DEMO_SCREEN_8a "scroll of yellowed papyrus."
+#define DEMO_SCREEN_5a "The way we read"
+#define DEMO_SCREEN_5b "is always changing."
+#define DEMO_SCREEN_6a "But across the centuries"
+#define DEMO_SCREEN_6b "one thing hasn't."
+#define DEMO_SCREEN_7a "What reading can do"
+#define DEMO_SCREEN_7b "for our minds:"
+#define DEMO_SCREEN_8a "Whisking us away"
+#define DEMO_SCREEN_8b "into other realms."
 #define DEMO_SCREEN_9 "Jump forward a bit from there:"
 #define DEMO_SCREEN_10 "paper!"
 #define DEMO_SCREEN_11 "handwritten words"
@@ -68,9 +72,14 @@ public:
     void processCommand(RemoteCommand command) override;
 
 protected:
+    void drawSkipMessage(DisplaySystem &display, bool inverted = false);
+    void drawDoubleLine(DisplaySystem &display, std::string one, std::string two);
+    void drawTripleLine(DisplaySystem &display, std::string one, std::string two,
+                        std::string three);
+
     std::array<std::string, NUM_DEMO_MESSAGES> messages_ = {
-        DEMO_SCREEN_1a,  DEMO_SCREEN_2a,  DEMO_SCREEN_3a,  DEMO_SCREEN_4,   DEMO_SCREEN_5,
-        DEMO_SCREEN_6,   DEMO_SCREEN_6a,  DEMO_SCREEN_7,   DEMO_SCREEN_8,   DEMO_SCREEN_8a,
+        DEMO_SCREEN_1a,  DEMO_SCREEN_2a,  DEMO_SCREEN_3a,  DEMO_SCREEN_4,   DEMO_SCREEN_5a,
+        DEMO_SCREEN_6a,  DEMO_SCREEN_6b,  DEMO_SCREEN_7a,  DEMO_SCREEN_8a,  DEMO_SCREEN_8b,
         DEMO_SCREEN_9,   DEMO_SCREEN_10,  DEMO_SCREEN_11,  DEMO_SCREEN_11a, DEMO_SCREEN_11b,
         DEMO_SCREEN_12,  DEMO_SCREEN_13,  DEMO_SCREEN_13a, DEMO_SCREEN_13b, DEMO_SCREEN_14,
         DEMO_SCREEN_14a, DEMO_SCREEN_14b, DEMO_SCREEN_15,  DEMO_SCREEN_16,  DEMO_SCREEN_16a,

@@ -169,7 +169,7 @@ public:
     // MARK: - Text rendering code
 
     auto getFont() -> const GFXfont *;
-    void drawSingleLineOfText(const std::string &line, int x, int y);
+    void drawSingleLineOfText(const std::string &line, int x, int y, bool inverted = false);
     void drawSingleLineOfCenteredText(const std::string &line);
 
     void drawText(const std::string &newText, int x, int y, int width, int height)

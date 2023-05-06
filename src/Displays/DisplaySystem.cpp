@@ -193,8 +193,12 @@ void DisplaySystem::splitStringToLines(const std::string &stringToSplit,
 // Eventually, we could add an optional argument at the end to wrap the text
 // and return whether the text was wrapped or not.
 // But that's for another day.
-void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y) {
-    gfxClass_->setTextColor(fg);
+void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, bool inverted) {
+    if (!inverted) {
+        gfxClass_->setTextColor(fg);
+    } else {
+        gfxClass_->setTextColor(bg);
+    }
     // We are allowing the this method to take an the upper left corner of the text
     // as an argument. But the setCursor method takes the lower left corner of text
     // to be drawn (or rather, that's how printf does it). So we need to adjust the
