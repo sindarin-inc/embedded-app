@@ -301,16 +301,16 @@ public:
           firstAutopilotRead(*this, "fst-auto-rd"), cesMode(*this, "ces"), emcMode(*this, "emc"),
           wifiPower(*this, "wifi-power"), morningNewspaperTime(*this, "morning-news"),
           eveningNewspaperTime(*this, "evening-news"), solTimeZone(*this, "time-zone"),
-          firmwareLoaded(*this, "fw-loaded"), sleepReason(*this, "sleep-reason"),
-          noBooks(*this, "no-books"), showNews(*this, "show-news"),
-          noArticles(*this, "no-articles"), noBible(*this, "no-bible"),
-          noDeliverOnClose(*this, "no-deliv-close"), morningDelivery(*this, "morn-deliver"),
-          eveningDelivery(*this, "eve-deliver"), darkMode(*this, "dark-mode"),
-          autoPilot(*this, "auto-pilot"), fastTransitions(*this, "fast-tran"),
-          noUploadCrashes(*this, "no-upload-crash"), showDebugMenu(*this, "show-debug"),
-          fastBookmarkRight(*this, "fst-mark-right"), fastBookmarkCenter(*this, "fst-mark-cent"),
-          wifiSettingsJson(*this, "wifi-settings"), localStoreMigrationVersion(*this, "ls-version"),
-          tutorialsDeleted(*this, "tutorials"),
+          tzIana(*this, "tz-iana"), tzPosix(*this, "tz-posix"), firmwareLoaded(*this, "fw-loaded"),
+          sleepReason(*this, "sleep-reason"), noBooks(*this, "no-books"),
+          showNews(*this, "show-news"), noArticles(*this, "no-articles"),
+          noBible(*this, "no-bible"), noDeliverOnClose(*this, "no-deliv-close"),
+          morningDelivery(*this, "morn-deliver"), eveningDelivery(*this, "eve-deliver"),
+          darkMode(*this, "dark-mode"), autoPilot(*this, "auto-pilot"),
+          fastTransitions(*this, "fast-tran"), noUploadCrashes(*this, "no-upload-crash"),
+          showDebugMenu(*this, "show-debug"), fastBookmarkRight(*this, "fst-mark-right"),
+          fastBookmarkCenter(*this, "fst-mark-cent"), wifiSettingsJson(*this, "wifi-settings"),
+          localStoreMigrationVersion(*this, "ls-version"), tutorialsDeleted(*this, "tutorials"),
           preferencesStoreMigrationVersion_(*this, "ps-version"){};
     PreferencesStore(PreferencesStore &) = delete;
 
@@ -458,6 +458,8 @@ public:
     PrefsItem<int> morningNewspaperTime;
     PrefsItem<int> eveningNewspaperTime;
     PrefsItem<int> solTimeZone;
+    PrefsItem<std::string> tzIana;
+    PrefsItem<std::string> tzPosix;
     // Firmware that's been loaded to the other flash slot but not yet installed
     PrefsItem<std::string> firmwareLoaded;
     PrefsItem<int> sleepReason;

@@ -841,67 +841,23 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         systemSettingsMenu->showTemporaryMessage(*display, "FCC Stuff, Legal Stuff, etc.");
     }));
 
-    systemSettingsMenu->addMenuItem(MenuItem("Set Time Zone",
-                                             [this, display, systemSettingsMenu]() {
-        auto timeZoneMenu =
-            new MenuScreen(power_.battery, *display, systemSettingsMenu->getMyStyle(),
-                           "Time Zone Settings", "System Settings");
-
+    systemSettingsMenu->addMenuItem(MenuItem("Set Clock", [this, display, systemSettingsMenu]() {
         SolClock &clock = SolClock::getInstance();
 
-        timeZoneMenu->setExtraText(clock.timeZoneString());
+        systemSettingsMenu->showTemporaryMessage(*display, "Setting the Clock", 200, false);
+        systemSettingsMenu->setExtraText(clock.ianaTimezoneString());
 
-        auto confirmMessage = [timeZoneMenu, display, &clock](int solTimeZone) {
-            clock.setTimezone(solTimeZone);
-            timeZoneMenu->showTemporaryMessage(*display, "Setting Clock & Time Zone", 200, false);
-            WiFi::getInstance().connectWiFiFromSettings();
-            if (!WiFi::getInstance().connected()) {
-                log_e("Couldn't connect to wifi, not setting clock");
-            } else {
-                log_i("Setting time from internet");
-                clock.setClockTimeFromInternet();
-                WiFi::getInstance().disconnectWiFi();
-            }
-            timeZoneMenu->back();
-        };
-
-        timeZoneMenu->addMenuItem(
-            MenuItem("Pacific Time", [confirmMessage]() { confirmMessage(-8); }));
-        timeZoneMenu->addMenuItem(
-            MenuItem("Mountain Time", [confirmMessage]() { confirmMessage(-7); }));
-        timeZoneMenu->addMenuItem(
-            MenuItem("Central Time", [confirmMessage]() { confirmMessage(-6); }));
-        timeZoneMenu->addMenuItem(
-            MenuItem("Eastern Time", [confirmMessage]() { confirmMessage(-5); }));
-
-        int menuIndex = 0;
-        switch (prefs_.solTimeZone.get().value_or(0)) {
-        case -8:
-            menuIndex = 0;
-            break;
-        case -7:
-            menuIndex = 1;
-            break;
-        case -6:
-            menuIndex = 2;
-            break;
-        case -5:
-            menuIndex = 3;
-            break;
-        case 0:
-        default:
-            menuIndex = 0;
-            break;
+        WiFi::getInstance().connectWiFiFromSettings();
+        if (!WiFi::getInstance().connected()) {
+            log_e("Couldn't connect to wifi, not setting clock");
+        } else {
+            log_i("Setting time from internet");
+            clock.setClockTimeFromInternet();
+            WiFi::getInstance().disconnectWiFi();
         }
 
-        timeZoneMenu->setCurrSelection(menuIndex);
-
-        setCurrentScreen(*timeZoneMenu);
-        timeZoneMenu->setBackCallback([this, timeZoneMenu, systemSettingsMenu]() {
-            systemSettingsMenu->setFirstLoad();
-            setCurrentScreen(*systemSettingsMenu);
-            delete timeZoneMenu;
-        });
+        systemSettingsMenu->setFirstLoad();
+        setCurrentScreen(*systemSettingsMenu);
     }));
 
 #if USE_TURN_TOUCH_REMOTE

@@ -6,6 +6,10 @@
 #endif
 
 #include <cinttypes>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <unordered_map>
 
 #include "../Communications/WiFi.hpp"
 #include "../Misc/StringUtil.hpp"
@@ -32,54 +36,62 @@ auto SolClock::getTimeString() -> std::string {
     return StringFormat("%d:%02d", hours, minutes);
 }
 
-void SolClock::loadTimeZone() {
-    std::string timeZoneString;
-    switch (prefs_.solTimeZone.get().value_or(0)) {
-    case -8:
-        timeZoneString = "PST8PDT";
-        break;
-    case -7:
-        timeZoneString = "MST7MDT";
-        break;
-    case -6:
-        timeZoneString = "CST6CDT";
-        break;
-    case -5:
-        timeZoneString = "EST5EDT";
-        break;
-    case 0:
-    default:
-        timeZoneString = "UTC";
-        break;
+auto SolClock::readTimezones(const std::string &filename)
+    -> std::unordered_map<std::string, std::string> {
+    std::ifstream file(filename);
+    std::unordered_map<std::string, std::string> timezones;
+    std::string line;
+
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::string iana, posix;
+
+        std::getline(ss, iana, ',');
+        std::getline(ss, posix, ',');
+
+        // Remove double quotes from key and value
+        iana = iana.substr(1, iana.size() - 2);
+        posix = posix.substr(1, posix.size() - 2);
+
+        timezones[iana] = posix;
     }
-    log_d("Using timezone %s", timeZoneString.c_str());
-    setenv("TZ", timeZoneString.c_str(), 1);
+
+    return timezones;
+}
+
+void SolClock::loadTimeZone() {
+    log_d("Loading timezone %s=%s", ianaTimezoneString().c_str(), posixTimezoneString().c_str());
+    setenv("TZ", posixTimezoneString().c_str(), 1);
     tzset();
 }
 
-auto SolClock::timeZoneString(int timeZone) -> std::string {
-    switch (timeZone) {
-    case -8:
-        return "Pacific Time";
-    case -7:
-        return "Mountain Time";
-    case -6:
-        return "Central Time";
-    case -5:
-        return "Eastern Time";
-    case 0:
-        return "UTC - Not Set";
-    default:
-        return "Unknown";
+auto SolClock::ianaTimezoneString() -> std::string {
+    return prefs_.tzIana.get().value_or("Etc/UTC");
+}
+
+auto SolClock::posixTimezoneString() -> std::string {
+    return prefs_.tzPosix.get().value_or("UTC0");
+}
+
+void SolClock::setTimezone(const std::string &ianaTimezone) {
+    if (ianaTimezone == prefs_.tzIana.get().value_or("Etc/UTC")) {
+        log_d("Timezone already set to %s", ianaTimezone.c_str());
+        return;
     }
-}
 
-auto SolClock::timeZoneString() -> std::string {
-    return timeZoneString(prefs_.solTimeZone.get().value_or(0));
-}
+    prefs_.tzIana.set(ianaTimezone);
 
-void SolClock::setTimezone(int timeZone) {
-    prefs_.solTimeZone.set(timeZone);
+    static const std::unordered_map<std::string, std::string> timezones =
+        readTimezones("timezones.txt");
+
+    std::string posixTimezoneString;
+    if (timezones.find(ianaTimezone) != timezones.end()) {
+        posixTimezoneString = timezones.at(ianaTimezone);
+    } else {
+        posixTimezoneString = "UTC0";
+    }
+
+    log_d("Switching to timezone %s=%s", ianaTimezone.c_str(), posixTimezoneString.c_str());
     loadTimeZone();
 }
 
