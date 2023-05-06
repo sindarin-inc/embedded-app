@@ -139,9 +139,9 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType,
         }
         break;
     case PARTIAL:
-        if (((numPartials_ > 2) && (Millis() - firstPartialTime_ < 5000)) || (numPartials_ > 10) ||
-            (au4Count_ > 50)) {
-            // fullRefreshNext_ = true;
+        if (!forceRefreshType_ && (((numPartials_ > 2) && (Millis() - firstPartialTime_ < 5000)) ||
+                                   (numPartials_ > 10) || (au4Count_ > 50))) {
+            fullRefreshNext_ = true;
         }
         if (!fullRefreshNext_) {
             if (firstPartialTime_ == 0) {

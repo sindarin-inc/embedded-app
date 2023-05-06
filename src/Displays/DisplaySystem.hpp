@@ -162,6 +162,9 @@ public:
     virtual void clearDisplay(){};
     virtual void clearFrameBuffer(){};
 
+    void forceDontChangeRefreshType() { forceRefreshType_ = true; }
+    void clearDontChangeRefreshType() { forceRefreshType_ = false; }
+
     auto setBoundingBox(DisplayRect newBox) -> DisplayRect;
     auto getBoundingBox() -> DisplayRect { return boundingBox_; }
 
@@ -224,6 +227,8 @@ protected:
     uint16_t partialX_ = 0, partialY_ = 0, partialW_ = 0, partialH_ = 0;
 
     bool invertedDisplay_ = false;
+
+    bool forceRefreshType_ = false;
 
     // This is the default value from before of 15mmx15mm
     DisplayRect boundingBox_ = defaultBoundingBox;

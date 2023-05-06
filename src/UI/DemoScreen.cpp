@@ -59,7 +59,10 @@ extern void UIInnerLoop(RemoteCommand command);
 DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
                        LightingController &lightingController)
     : display_(display), renderer_(display), prefs_(prefs),
-      lightingController_(lightingController) {}
+      lightingController_(lightingController) {
+    // We want to control exactly when full and partial will happen.
+    display.forceDontChangeRefreshType();
+}
 
 void DemoScreen::drawSkipMessage(DisplaySystem &display, bool inverted) {
     std::string message = SKIP_MESSAGE;
@@ -488,7 +491,7 @@ void DemoScreen::render(DisplaySystem &display) {
             display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight(message.c_str())));
         drawSkipMessage(display);
         nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 4000;
+        nextInterval = 3000;
         break;
     case 4:
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), bk1_bits, bk1_width,
@@ -523,25 +526,25 @@ void DemoScreen::render(DisplaySystem &display) {
         drawDoubleLine(display, DEMO_SCREEN_5a, DEMO_SCREEN_5b);
         drawSkipMessage(display);
         nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 3000;
+        nextInterval = 2000;
         break;
     case 9:
         drawDoubleLine(display, DEMO_SCREEN_6a, DEMO_SCREEN_6b);
         drawSkipMessage(display);
         nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 3000;
+        nextInterval = 2000;
         break;
     case 10:
         drawDoubleLine(display, DEMO_SCREEN_7a, DEMO_SCREEN_7b);
         drawSkipMessage(display);
         nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 3000;
+        nextInterval = 2000;
         break;
     case 11:
         drawDoubleLine(display, DEMO_SCREEN_8a, DEMO_SCREEN_8b);
         drawSkipMessage(display);
         nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 3000;
+        nextInterval = 2000;
         break;
 
     case 12:
@@ -549,7 +552,7 @@ void DemoScreen::render(DisplaySystem &display) {
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), sp1_bits, sp1_width,
                             sp1_height, display.fg);
         nextUpdateType = DisplaySystem::UpdateType::ERASE;
-        nextInterval = 2000;
+        nextInterval = 1500;
         break;
     case 13:
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), sp2_bits, sp2_width,
@@ -567,20 +570,20 @@ void DemoScreen::render(DisplaySystem &display) {
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), sp4_bits, sp4_width,
                             sp4_height, display.fg);
         nextUpdateType = DisplaySystem::UpdateType::ERASE;
-        nextInterval = 1500;
+        nextInterval = 1000;
         break;
     case 16:
         drawDoubleLine(display, DEMO_SCREEN_9a, DEMO_SCREEN_9b);
         drawSkipMessage(display);
         nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 3000;
+        nextInterval = 2000;
         break;
     case 17:
         display.clearDisplay();
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), idea1_bits, idea1_width,
                             idea1_height, display.fg);
         nextUpdateType = DisplaySystem::UpdateType::ERASE;
-        nextInterval = 2000;
+        nextInterval = 1500;
         break;
     case 18:
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), idea2_bits, idea2_width,
@@ -598,14 +601,14 @@ void DemoScreen::render(DisplaySystem &display) {
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), idea4_bits, idea4_width,
                             idea4_height, display.fg);
         nextUpdateType = DisplaySystem::UpdateType::ERASE;
-        nextInterval = 1500;
+        nextInterval = 1000;
         break;
     case 21:
         display.invertDisplay(true);
         drawTripleLine(display, DEMO_SCREEN_10a, DEMO_SCREEN_10b, DEMO_SCREEN_10c);
         drawSkipMessage(display);
         nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 3000;
+        nextInterval = 2000;
         break;
 
     case 22:
@@ -614,7 +617,7 @@ void DemoScreen::render(DisplaySystem &display) {
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), phone1_bits, phone1_width,
                             phone1_height, display.fg);
         nextUpdateType = DisplaySystem::UpdateType::ERASE;
-        nextInterval = 2000;
+        nextInterval = 1500;
         break;
     case 23:
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), phone2_bits, phone2_width,
@@ -626,49 +629,48 @@ void DemoScreen::render(DisplaySystem &display) {
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), phone3_bits, phone3_width,
                             phone3_height, display.fg);
         nextUpdateType = DisplaySystem::UpdateType::ERASE;
-        nextInterval = 1500;
+        nextInterval = 1000;
         break;
-
     case 25:
-        display.clearDisplay();
+        display.invertDisplay(true);
         drawTripleLine(display, DEMO_SCREEN_11a, DEMO_SCREEN_11b, DEMO_SCREEN_11c);
         drawSkipMessage(display);
         nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 3000;
+        nextInterval = 2500;
         break;
     case 26:
-        display.clearDisplay();
-        drawTripleLine(display, DEMO_SCREEN_12a, DEMO_SCREEN_12b, DEMO_SCREEN_12c);
-        drawSkipMessage(display);
-        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 3000;
-        break;
-
-    case 27:
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), eye1_bits, eye1_width,
-                            eye1_height, display.fg);
-        nextUpdateType = DisplaySystem::UpdateType::ERASE;
-        nextInterval = 1500;
-        break;
-    case 28:
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), eye2_bits, eye2_width,
-                            eye2_height, display.fg);
-        nextUpdateType = DisplaySystem::UpdateType::ERASE;
-        nextInterval = 750;
-        break;
-    case 29:
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), eye3_bits, eye3_width,
-                            eye3_height, display.fg);
-        nextUpdateType = DisplaySystem::UpdateType::ERASE;
-        nextInterval = 750;
-        break;
-    case 30:
+        display.invertDisplay(false);
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), sol_reader1_bits,
                             sol_reader1_width, sol_reader1_height, display.fg);
         nextUpdateType = DisplaySystem::UpdateType::ERASE;
         nextInterval = 1500;
         break;
-
+    case 27:
+        display.invertDisplay(true);
+        drawTripleLine(display, DEMO_SCREEN_12a, DEMO_SCREEN_12b, DEMO_SCREEN_12c);
+        drawSkipMessage(display);
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 2500;
+        break;
+    case 28:
+        display.invertDisplay(false);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), eye1_bits, eye1_width,
+                            eye1_height, display.fg);
+        nextUpdateType = DisplaySystem::UpdateType::ERASE;
+        nextInterval = 1500;
+        break;
+    case 29:
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), eye2_bits, eye2_width,
+                            eye2_height, display.fg);
+        nextUpdateType = DisplaySystem::UpdateType::ERASE;
+        nextInterval = 750;
+        break;
+    case 30:
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), eye3_bits, eye3_width,
+                            eye3_height, display.fg);
+        nextUpdateType = DisplaySystem::UpdateType::ERASE;
+        nextInterval = 750;
+        break;
     case 31:
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), space_scape1_bits,
                             space_scape1_width, space_scape1_height, display.fg);

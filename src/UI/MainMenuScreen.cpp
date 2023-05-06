@@ -209,6 +209,9 @@ void MainMenuScreen::render(DisplaySystem &display) {
     display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
     //}
 
+    // This handles the case where we are in the main menu right after the
+    // onboarding stuff.
+    display.clearDontChangeRefreshType();
     firstLoad_ = false;
 }
 
