@@ -32,6 +32,7 @@ public:
 
     void clearDisplay() override { fullRefreshNext_ = true; };
 
+    void clearFrameBuffer() override { fillScreen(bg); };
     void invertDisplay(bool newInvert) override;
 
     // For those moments where you need to expose the driver directly

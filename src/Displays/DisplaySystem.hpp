@@ -160,6 +160,7 @@ public:
     void setLineSpacing(int newSpacing) { lineSpacing_ = newSpacing; }
 
     virtual void clearDisplay(){};
+    virtual void clearFrameBuffer(){};
 
     auto setBoundingBox(DisplayRect newBox) -> DisplayRect;
     auto getBoundingBox() -> DisplayRect { return boundingBox_; }

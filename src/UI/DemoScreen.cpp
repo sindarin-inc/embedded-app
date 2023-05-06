@@ -56,11 +56,14 @@
 
 extern void UIInnerLoop(RemoteCommand command);
 
-void DemoScreen::drawSkipMessage(DisplaySystem &display, bool inverted) {
+DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
+                       LightingController &lightingController)
+    : display_(display), renderer_(display), prefs_(prefs),
+      lightingController_(lightingController) {}
 
+void DemoScreen::drawSkipMessage(DisplaySystem &display, bool inverted) {
     std::string message = SKIP_MESSAGE;
     display.setFont(&TAHOMA_REGULAR_FONT5PT7B);
-
     display.drawSingleLineOfText(
         message.c_str(),
         display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message.c_str()) / 2),
@@ -104,13 +107,7 @@ void DemoScreen::drawTripleLine(DisplaySystem &display, std::string one, std::st
         display.yAbsolute(display.yAbsoluteCenter() + display.getTextHeight(message.c_str())));
 }
 
-DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
-                       LightingController &lightingController)
-    : display_(display), renderer_(display), prefs_(prefs),
-      lightingController_(lightingController) {}
-
 void DemoScreen::render(DisplaySystem &display) {
-
     if (currentScreen_ > NUM_DEMO_SCREENS) {
         lightingController_.setScreenMask(LightingController::Screens::BOTH);
         // When we're done with the onboarding screen, turn this mode off.
@@ -119,11 +116,12 @@ void DemoScreen::render(DisplaySystem &display) {
         return;
     }
 
-    std::string message = messages_[currentScreen_];
+    std::string message;
     auto nextUpdateType = DisplaySystem::UpdateType::FULL;
     auto nextInterval = 0;
 
-    // Alternate left and right on for setup.
+    // Alternate left and right on for setup. Note: This seems backwards
+    // but it looks right in-glass. Are LEFT and RIGHT backwards in the LightingController?
     if (currentScreen_ == 1) {
         lightingController_.setScreenMask(LightingController::Screens::LEFT);
     } else if (currentScreen_ == 0) {
@@ -458,23 +456,19 @@ void DemoScreen::render(DisplaySystem &display) {
         break;
     case 3:
         display.clearDisplay();
+        display.clearFrameBuffer();
         display.setFont(&TAHOMA_REGULAR_FONT5PT7B);
         message = DEMO_SCREEN_4;
-
         display.drawSingleLineOfText(
             message.c_str(),
             display.xAbsolute(display.xAbsoluteCenter() -
                               display.getTextWidth(message.c_str()) / 2),
             display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight(message.c_str())));
-
         drawSkipMessage(display);
         nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
         nextInterval = 4000;
         break;
-
     case 4:
-        display.clearDisplay();
-        display.updateDisplay();
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), bk1_bits, bk1_width,
                             bk1_height, display.fg);
         nextUpdateType = DisplaySystem::UpdateType::ERASE;
@@ -791,23 +785,25 @@ void DemoScreen::processCommand(RemoteCommand command) {
     // the messages, but for now, any button press is fine.
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
-        if (currentScreen_ > 0) {
+        if ((currentScreen_ > 0) && (currentScreen_ < 3)) {
             currentScreen_--;
         }
         currentSubScreen_ = 0;
         setNeedsRerender();
         break;
+    case RemoteCommand::ENTER:
+        xTimerStop(DisplaySystem::animationTimer, 0);
+        if (currentScreen_ >= 3) {
+            display_.clearDisplay();
+            currentScreen_ = NUM_DEMO_SCREENS;
+        } else {
+            currentScreen_++;
+            currentSubScreen_ = 0;
+            setNeedsRerender();
+        }
+        break;
     case RemoteCommand::CHANNEL_PLUS:
     case RemoteCommand::NEXT:
-    case RemoteCommand::ENTER:
-        if (currentScreen_ >= 3) {
-            xTimerStop(DisplaySystem::animationTimer, 0);
-            display_.clearDisplay();
-        }
-        currentScreen_++;
-        currentSubScreen_ = 0;
-        setNeedsRerender();
-        break;
     case RemoteCommand::PREV:
     case RemoteCommand::BACK:
     default:
