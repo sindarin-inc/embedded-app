@@ -5,24 +5,45 @@
 
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
-#include "UI/Bitmaps/Logo.hpp"
-#include "UI/Bitmaps/Sol_Logo.hpp"
 #include "UI/Bitmaps/arrow-up-down.hpp"
 #include "UI/Bitmaps/book1.hpp"
 #include "UI/Bitmaps/book2.hpp"
 #include "UI/Bitmaps/book3.hpp"
 #include "UI/Bitmaps/book4.hpp"
 #include "UI/Bitmaps/bottom-arrow.hpp"
+#include "UI/Bitmaps/eye1.hpp"
+#include "UI/Bitmaps/eye2.hpp"
+#include "UI/Bitmaps/eye3.hpp"
 #include "UI/Bitmaps/glass-small-above.hpp"
 #include "UI/Bitmaps/glass-small-left.hpp"
 #include "UI/Bitmaps/glass-small-right.hpp"
+#include "UI/Bitmaps/idea1.hpp"
+#include "UI/Bitmaps/idea2.hpp"
+#include "UI/Bitmaps/idea3.hpp"
+#include "UI/Bitmaps/idea4.hpp"
+#include "UI/Bitmaps/im10.hpp"
+#include "UI/Bitmaps/im100.hpp"
+#include "UI/Bitmaps/im20.hpp"
+#include "UI/Bitmaps/im30.hpp"
+#include "UI/Bitmaps/im40.hpp"
+#include "UI/Bitmaps/im50.hpp"
+#include "UI/Bitmaps/im60.hpp"
+#include "UI/Bitmaps/im70.hpp"
+#include "UI/Bitmaps/im80.hpp"
+#include "UI/Bitmaps/im90.hpp"
 #include "UI/Bitmaps/left-arrow.hpp"
+#include "UI/Bitmaps/phone1.hpp"
+#include "UI/Bitmaps/phone2.hpp"
+#include "UI/Bitmaps/phone3.hpp"
 #include "UI/Bitmaps/right-arrow.hpp"
+#include "UI/Bitmaps/sol-reader1.hpp"
+#include "UI/Bitmaps/sol-scroll-large.hpp"
+#include "UI/Bitmaps/sol-scroll-small.hpp"
 #include "UI/Bitmaps/sp1.hpp"
 #include "UI/Bitmaps/sp2.hpp"
 #include "UI/Bitmaps/sp3.hpp"
 #include "UI/Bitmaps/sp4.hpp"
-#include "UI/Bitmaps/stone.hpp"
+#include "UI/Bitmaps/space-scape1.hpp"
 #include "UI/Fonts/Tahoma10pt7b.h"
 #include "UI/Fonts/Tahoma20pt7b.h"
 #include "UI/Fonts/Tahoma5pt7b.h"
@@ -70,25 +91,23 @@ void DemoScreen::drawTripleLine(DisplaySystem &display, std::string one, std::st
     display.drawSingleLineOfText(
         message.c_str(),
         display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message.c_str()) / 2),
-        display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight(message.c_str()) - 4));
+        display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight(message.c_str()) - 8));
     message = two;
     display.drawSingleLineOfText(
         message.c_str(),
         display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message.c_str()) / 2),
-        display.yAbsolute(display.yAbsoluteCenter()));
+        display.yAbsolute(display.yAbsoluteCenter() - 3));
     message = three;
     display.drawSingleLineOfText(
         message.c_str(),
         display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message.c_str()) / 2),
-        display.yAbsolute(display.yAbsoluteCenter() + display.getTextHeight(message.c_str() + 4)));
+        display.yAbsolute(display.yAbsoluteCenter() + display.getTextHeight(message.c_str())));
 }
 
 DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
                        LightingController &lightingController)
     : display_(display), renderer_(display), prefs_(prefs),
-      lightingController_(lightingController) {
-    currentScreen_ = 3;
-}
+      lightingController_(lightingController) {}
 
 void DemoScreen::render(DisplaySystem &display) {
 
@@ -488,25 +507,25 @@ void DemoScreen::render(DisplaySystem &display) {
         drawDoubleLine(display, DEMO_SCREEN_5a, DEMO_SCREEN_5b);
         drawSkipMessage(display);
         nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 4000;
+        nextInterval = 3000;
         break;
     case 9:
         drawDoubleLine(display, DEMO_SCREEN_6a, DEMO_SCREEN_6b);
         drawSkipMessage(display);
         nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 4000;
+        nextInterval = 3000;
         break;
     case 10:
         drawDoubleLine(display, DEMO_SCREEN_7a, DEMO_SCREEN_7b);
         drawSkipMessage(display);
         nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 4000;
+        nextInterval = 3000;
         break;
     case 11:
         drawDoubleLine(display, DEMO_SCREEN_8a, DEMO_SCREEN_8b);
         drawSkipMessage(display);
         nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 4000;
+        nextInterval = 3000;
         break;
 
     case 12:
@@ -514,639 +533,234 @@ void DemoScreen::render(DisplaySystem &display) {
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), sp1_bits, sp1_width,
                             sp1_height, display.fg);
         nextUpdateType = DisplaySystem::UpdateType::ERASE;
-        drawSkipMessage(display, true);
         nextInterval = 2000;
         break;
     case 13:
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), sp2_bits, sp2_width,
                             sp2_height, display.fg);
         nextUpdateType = DisplaySystem::UpdateType::ERASE;
-        drawSkipMessage(display, true);
         nextInterval = 750;
         break;
     case 14:
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), sp3_bits, sp3_width,
                             sp3_height, display.fg);
         nextUpdateType = DisplaySystem::UpdateType::ERASE;
-        drawSkipMessage(display, true);
         nextInterval = 750;
         break;
     case 15:
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), sp4_bits, sp4_width,
                             sp4_height, display.fg);
         nextUpdateType = DisplaySystem::UpdateType::ERASE;
-        drawSkipMessage(display, true);
-        nextInterval = 1500;
-        break;
-
-        /*
-    case 8:
-        message = DEMO_SCREEN_6;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2) -
-                                         7 * display.getTextHeight(message.c_str()));
-        message = DEMO_SCREEN_6a;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2) -
-                                         5.5 * display.getTextHeight(message.c_str()));
-
-        display.drawCircle(display.width() / 2, 100, 25, display.fg);
-        display.drawRect(display.width() / 2 - 25, 100, 51, 50, display.fg);
-        display.fillRect(display.width() / 2 - 24, 100, 49, 49, display.bg);
-
-        display.drawLine(display.width() / 2 - 8, 101, display.width() / 2 + 12, 101, display.fg);
-
-        display.drawLine(display.width() / 2 - 12, 108, display.width() / 2 + 12, 108, display.fg);
-
-        display.drawLine(display.width() / 2 - 12, 115, display.width() / 2 + 12, 115, display.fg);
-
-        display.drawLine(display.width() / 2 - 12, 122, display.width() / 2 + 12, 122, display.fg);
-
-        display.drawLine(display.width() / 2 - 12, 129, display.width() / 2 + 8, 129, display.fg);
-        nextUpdateType = DisplaySystem::UpdateType::FAST;
-        nextInterval = 750;
-        break;
-    case 9:
-        display.clearDisplay();
-        message = DEMO_SCREEN_7;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2));
-
-        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 1500;
-        break;
-    case 10:
-        message = DEMO_SCREEN_8;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2) -
-                                         4.5 * display.getTextHeight(message.c_str()));
-
-        message = DEMO_SCREEN_8a;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2) -
-                                         3 * display.getTextHeight(message.c_str()));
-        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - papyrus2_width / 2), 90,
-                            papyrus2Bits, papyrus2_width, papyrus2_height, display.fg);
-
-        nextUpdateType = DisplaySystem::UpdateType::FULL;
-        nextInterval = 3000;
-        break;
-    case 11:
-        message = DEMO_SCREEN_9;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2));
-
-        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 1500;
-        break;
-    case 12:
-        message = DEMO_SCREEN_10;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2) -
-                                         6);
-        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - paper_width / 2),
-                            display.yAbsolute(display.yAbsoluteCenter() - paper_height / 2),
-                            paperBits, paper_width, paper_height, display.fg);
-
-        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 1500;
-        break;
-    case 13:
-        message = DEMO_SCREEN_11;
-
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2 +
-                                                       35),
-                                     display.yAbsolute(58 + hi_hand_height / 2 -
-                                                       display.getTextHeight(message.c_str()) / 2));
-
-        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - hi_hand_width / 2) - 45,
-                            30, hiHandBits, hi_hand_width, hi_hand_height, display.fg);
-        nextUpdateType = DisplaySystem::UpdateType::FULL;
-        nextInterval = 1500;
-        break;
-    case 14:
-        message = DEMO_SCREEN_11;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2 +
-                                                       35),
-                                     display.yAbsolute(58 + hi_hand_height / 2 -
-                                                       display.getTextHeight(message.c_str()) / 2));
-        message = DEMO_SCREEN_11a;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2 +
-                                                       35),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2));
-
-        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - hi_hand_width / 2) - 45,
-                            30, hiHandBits, hi_hand_width, hi_hand_height, display.fg);
-
-        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - hi_blocks_width / 2) - 45,
-                            display.yAbsolute(display.yAbsoluteCenter() - hi_blocks_height / 2),
-                            hiBlocksBits, hi_blocks_width, hi_blocks_height, display.fg);
-        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 1500;
-        break;
-    case 15:
-        message = DEMO_SCREEN_11;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2 +
-                                                       35),
-                                     display.yAbsolute(58 + hi_hand_height / 2 -
-                                                       display.getTextHeight(message.c_str()) / 2));
-        message = DEMO_SCREEN_11a;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2 +
-                                                       35),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2));
-        message = DEMO_SCREEN_11b;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2 +
-                                                       35),
-                                     display.yAbsolute(display.yAbsoluteCenter() + 45));
-        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - hi_hand_width / 2) - 45,
-                            30, hiHandBits, hi_hand_width, hi_hand_height, display.fg);
-
-        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - hi_blocks_width / 2) - 45,
-                            display.yAbsolute(display.yAbsoluteCenter() - hi_blocks_height / 2),
-                            hiBlocksBits, hi_blocks_width, hi_blocks_height, display.fg);
-
-        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - hi_pixel3_width / 2) - 45,
-                            130, hiPixel1Bits, hi_pixel1_width, hi_pixel1_height, display.fg);
-        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - hi_pixel3_width / 2) - 45,
-                            130, hiPixel3Bits, hi_pixel3_width, hi_pixel3_height, display.fg);
-
-        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
         nextInterval = 1500;
         break;
     case 16:
-        display.clearDisplay();
-        message = DEMO_SCREEN_12;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2));
-        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-
-        nextInterval = 1500;
-        break;
-    case 17:
-        message = DEMO_SCREEN_13;
-        display.drawSingleLineOfText(
-            message.c_str(), display.xAbsolute(display.xAbsoluteCenter() - 65),
-            display.yAbsolute(display.yAbsoluteCenter() -
-                              display.getTextHeight(message.c_str()) / 2 -
-                              3 * display.getTextHeight(message.c_str()) / 2));
-
-        message = DEMO_SCREEN_13a;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() - 65),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2 -
-                                                       0 * display.getTextHeight(message.c_str())));
-        message = DEMO_SCREEN_13b;
-        display.drawSingleLineOfText(
-            message.c_str(), display.xAbsolute(display.xAbsoluteCenter() - 65),
-            display.yAbsolute(display.yAbsoluteCenter() -
-                              display.getTextHeight(message.c_str()) / 2 +
-                              3 * display.getTextHeight(message.c_str()) / 2));
-        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - spark_width / 2) + 55, 45,
-                            sparkBits, spark_width, spark_height, display.fg);
-
-        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-
-        nextInterval = 4000;
-        break;
-    case 18:
-        message = DEMO_SCREEN_14;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2 -
-                                                       3 * display.getTextHeight(message.c_str())));
-
-        message = DEMO_SCREEN_14a;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2 -
-                                                       2 * display.getTextHeight(message.c_str())));
-
-        message = DEMO_SCREEN_14b;
-        display.drawSingleLineOfText(
-            message.c_str(),
-            display.xAbsolute(display.xAbsoluteCenter() -
-                              display.getTextWidth(message.c_str()) / 2),
-            display.yAbsolute(display.yAbsoluteCenter() -
-                              display.getTextHeight(message.c_str()) / 2 +
-                              3 * display.getTextHeight(message.c_str()) / 2));
-
-        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-
-        nextInterval = 4000;
-        break;
-    case 19:
-        message = DEMO_SCREEN_15;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2));
-
-        display.clearDisplay();
-        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 2000;
-        break;
-    case 20:
-        message = DEMO_SCREEN_16;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() - 65),
-                                     display.yAbsolute(display.yAbsoluteCenter() - 30));
-        nextUpdateType = DisplaySystem::UpdateType::FULL;
-        nextInterval = 1000;
-        break;
-    case 21:
-        message = DEMO_SCREEN_16;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() - 65),
-                                     display.yAbsolute(display.yAbsoluteCenter() - 30));
-        message = DEMO_SCREEN_16a;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() - 35),
-                                     display.yAbsolute(display.yAbsoluteCenter()));
-        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 1000;
-        break;
-    case 22:
-        message = DEMO_SCREEN_16;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() - 65),
-                                     display.yAbsolute(display.yAbsoluteCenter() - 30));
-        message = DEMO_SCREEN_16a;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() - 35),
-                                     display.yAbsolute(display.yAbsoluteCenter()));
-
-        message = DEMO_SCREEN_16b;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter()) - 10,
-                                     display.yAbsolute(display.yAbsoluteCenter() + 25));
-
-        display.drawCircle(display.xAbsoluteCenter() - thought_width / 2 - 7, 129, 3, display.fg);
-
-        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 100;
-        break;
-    case 23:
-        message = DEMO_SCREEN_16;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() - 65),
-                                     display.yAbsolute(display.yAbsoluteCenter() - 30));
-        message = DEMO_SCREEN_16a;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() - 35),
-                                     display.yAbsolute(display.yAbsoluteCenter()));
-
-        message = DEMO_SCREEN_16b;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter()) - 10,
-                                     display.yAbsolute(display.yAbsoluteCenter() + 25));
-
-        display.drawCircle(display.xAbsoluteCenter() - thought_width / 2 - 7, 129, 3, display.fg);
-
-        display.drawCircle(display.xAbsoluteCenter() - thought_width / 2 + 2, 125 - 2, 4,
-                           display.fg);
-        nextUpdateType = DisplaySystem::UpdateType::FAST;
-        nextInterval = 100;
-        break;
-    case 24:
-        message = DEMO_SCREEN_16;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() - 65),
-                                     display.yAbsolute(display.yAbsoluteCenter() - 30));
-        message = DEMO_SCREEN_16a;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() - 35),
-                                     display.yAbsolute(display.yAbsoluteCenter()));
-
-        message = DEMO_SCREEN_16b;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter()) - 10,
-                                     display.yAbsolute(display.yAbsoluteCenter() + 25));
-
-        display.drawCircle(display.xAbsoluteCenter() - thought_width / 2 - 7, 129, 3, display.fg);
-
-        display.drawCircle(display.xAbsoluteCenter() - thought_width / 2 + 2, 125 - 2, 4,
-                           display.fg);
-        display.drawCircle(display.xAbsoluteCenter() - thought_width / 2 + 10, 125 - 11, 5,
-                           display.fg);
-
-        nextUpdateType = DisplaySystem::UpdateType::FAST;
-        nextInterval = 100;
-        break;
-    case 25:
-        message = DEMO_SCREEN_16;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() - 65),
-                                     display.yAbsolute(display.yAbsoluteCenter() - 30));
-        message = DEMO_SCREEN_16a;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() - 35),
-                                     display.yAbsolute(display.yAbsoluteCenter()));
-
-        message = DEMO_SCREEN_16b;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter()) - 10,
-                                     display.yAbsolute(display.yAbsoluteCenter() + 25));
-
-        display.drawCircle(display.xAbsoluteCenter() - thought_width / 2 - 7, 129, 3, display.fg);
-
-        display.drawCircle(display.xAbsoluteCenter() - thought_width / 2 + 2, 125 - 2, 4,
-                           display.fg);
-        display.drawCircle(display.xAbsoluteCenter() - thought_width / 2 + 10, 125 - 11, 5,
-                           display.fg);
-
-        display.drawRoundRect(display.xAbsoluteCenter() - thought_width / 2 + 12,
-                              125 - 14 - 7 - 3 - 41, 65, 50, 12, display.fg);
-        message = DEMO_SCREEN_16e;
-        display.drawSingleLineOfText(
-            message.c_str(),
-            display.xAbsolute(display.xAbsoluteCenter() -
-                              display.getTextWidth(message.c_str()) / 2 + 59),
-            display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 - 3));
-        message = DEMO_SCREEN_16d;
-        display.drawSingleLineOfText(
-            message.c_str(),
-            display.xAbsolute(display.xAbsoluteCenter() -
-                              display.getTextWidth(message.c_str()) / 2 + 59),
-            display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 - 3 -
-                              display.getTextHeight()));
-
-        message = DEMO_SCREEN_16c;
-
-        display.drawSingleLineOfText(
-            message.c_str(),
-            display.xAbsolute(display.xAbsoluteCenter() -
-                              display.getTextWidth(message.c_str()) / 2 + 59),
-            display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 - 3 -
-                              display.getTextHeight() * 2));
-
-        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 2500;
-        break;
-    case 26:
-        display.clearDisplay();
-        message = DEMO_SCREEN_17;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2 -
-                                                       5 * display.getTextHeight(message.c_str())));
-        message = DEMO_SCREEN_17a;
-        display.drawSingleLineOfText(
-            message.c_str(),
-            display.xAbsolute(display.xAbsoluteCenter() -
-                              display.getTextWidth(message.c_str()) / 2),
-            display.yAbsolute(display.yAbsoluteCenter() -
-                              display.getTextHeight(message.c_str()) / 2 -
-                              7 * display.getTextHeight(message.c_str()) / 2));
-        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 1500;
-        break;
-    case 27:
-        message = DEMO_SCREEN_17;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2 -
-                                                       5 * display.getTextHeight(message.c_str())));
-        message = DEMO_SCREEN_17a;
-        display.drawSingleLineOfText(
-            message.c_str(),
-            display.xAbsolute(display.xAbsoluteCenter() -
-                              display.getTextWidth(message.c_str()) / 2),
-            display.yAbsolute(display.yAbsoluteCenter() -
-                              display.getTextHeight(message.c_str()) / 2 -
-                              7 * display.getTextHeight(message.c_str()) / 2));
-        message = DEMO_SCREEN_17b;
-
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2) +
-                                         2,
-                                     display.yAbsolute(display.yAbsoluteCenter() + 10));
-        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - lightbulb_width / 2), 90,
-                            lightbulbBits, lightbulb_width, lightbulb_height, display.fg);
-
-        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-
-        nextInterval = 1500;
-        break;
-    case 28:
-        message = DEMO_SCREEN_18;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2 -
-                                                       8 * display.getTextHeight(message.c_str())));
-        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 750;
-        break;
-    case 29:
-        message = DEMO_SCREEN_18;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2 -
-                                                       8 * display.getTextHeight(message.c_str())));
-        message = DEMO_SCREEN_18a;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2) +
-                                         30,
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2 -
-                                                       2 * display.getTextHeight(message.c_str())));
-
-        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 500;
-        break;
-    case 30:
-        message = DEMO_SCREEN_18;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2 -
-                                                       8 * display.getTextHeight(message.c_str())));
-        message = DEMO_SCREEN_18a;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2) +
-                                         30,
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2 -
-                                                       2 * display.getTextHeight(message.c_str())));
-
-        message = DEMO_SCREEN_18b;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2) -
-                                         30,
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2 +
-                                                       1 * display.getTextHeight(message.c_str())));
-
-        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 500;
-        break;
-    case 31:
-        message = DEMO_SCREEN_18;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2 -
-                                                       8 * display.getTextHeight(message.c_str())));
-        message = DEMO_SCREEN_18a;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2) +
-                                         30,
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2 -
-                                                       2 * display.getTextHeight(message.c_str())));
-
-        message = DEMO_SCREEN_18b;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2) -
-                                         30,
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2 +
-                                                       1 * display.getTextHeight(message.c_str())));
-
-        message = DEMO_SCREEN_18c;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight(message.c_str()) / 2 +
-                                                       4 * display.getTextHeight(message.c_str())));
-        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 1500;
-        break;
-    case 32:
-        display.clearDisplay();
-        message = DEMO_SCREEN_19;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight() / 2 -
-                                                       5 * display.getTextHeight()));
-        message = DEMO_SCREEN_19a;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight() / 2 -
-                                                       7 * display.getTextHeight() / 2));
-        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 2000;
-        break;
-    case 33:
-        message = DEMO_SCREEN_19;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight() / 2 -
-                                                       5 * display.getTextHeight()));
-        message = DEMO_SCREEN_19a;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight() / 2 -
-                                                       7 * display.getTextHeight() / 2));
-        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - franklin_width / 2), 80,
-                            franklinBits, franklin_width, franklin_height, display.fg);
-        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 2250;
-        break;
-    case 34:
-        message = DEMO_SCREEN_20;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight() / 2 -
-                                                       3 * display.getTextHeight() / 2));
-
-        message = DEMO_SCREEN_20a;
-
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight() / 2 -
-                                                       0 * display.getTextHeight()));
-        message = DEMO_SCREEN_20b;
-        display.drawSingleLineOfText(message.c_str(),
-                                     display.xAbsolute(display.xAbsoluteCenter() -
-                                                       display.getTextWidth(message.c_str()) / 2),
-                                     display.yAbsolute(display.yAbsoluteCenter() -
-                                                       display.getTextHeight() / 2 +
-                                                       3 * display.getTextHeight() / 2));
-
-        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval = 5000;
-        break;
-    case 35:
-        display.drawXBitmap(display.width() / 2 - sol_logo_width / 2,
-                            display.height() / 2 - sol_logo_height / 2, solLogoBits, sol_logo_width,
-                            sol_logo_height, display.fg);
+        drawDoubleLine(display, DEMO_SCREEN_9a, DEMO_SCREEN_9b);
+        drawSkipMessage(display);
         nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
         nextInterval = 3000;
         break;
-        */
+    case 17:
+        display.clearDisplay();
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), idea1_bits, idea1_width,
+                            idea1_height, display.fg);
+        nextUpdateType = DisplaySystem::UpdateType::ERASE;
+        nextInterval = 2000;
+        break;
+    case 18:
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), idea2_bits, idea2_width,
+                            idea2_height, display.fg);
+        nextUpdateType = DisplaySystem::UpdateType::ERASE;
+        nextInterval = 750;
+        break;
+    case 19:
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), idea3_bits, idea3_width,
+                            idea3_height, display.fg);
+        nextUpdateType = DisplaySystem::UpdateType::ERASE;
+        nextInterval = 750;
+        break;
+    case 20:
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), idea4_bits, idea4_width,
+                            idea4_height, display.fg);
+        nextUpdateType = DisplaySystem::UpdateType::ERASE;
+        nextInterval = 1500;
+        break;
+    case 21:
+        display.invertDisplay(true);
+        drawTripleLine(display, DEMO_SCREEN_10a, DEMO_SCREEN_10b, DEMO_SCREEN_10c);
+        drawSkipMessage(display);
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 3000;
+        break;
+
+    case 22:
+        display.invertDisplay(false);
+        display.clearDisplay();
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), phone1_bits, phone1_width,
+                            phone1_height, display.fg);
+        nextUpdateType = DisplaySystem::UpdateType::ERASE;
+        nextInterval = 2000;
+        break;
+    case 23:
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), phone2_bits, phone2_width,
+                            phone2_height, display.fg);
+        nextUpdateType = DisplaySystem::UpdateType::ERASE;
+        nextInterval = 750;
+        break;
+    case 24:
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), phone3_bits, phone3_width,
+                            phone3_height, display.fg);
+        nextUpdateType = DisplaySystem::UpdateType::ERASE;
+        nextInterval = 1500;
+        break;
+
+    case 25:
+        display.clearDisplay();
+        drawTripleLine(display, DEMO_SCREEN_11a, DEMO_SCREEN_11b, DEMO_SCREEN_11c);
+        drawSkipMessage(display);
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 3000;
+        break;
+    case 26:
+        display.clearDisplay();
+        drawTripleLine(display, DEMO_SCREEN_12a, DEMO_SCREEN_12b, DEMO_SCREEN_12c);
+        drawSkipMessage(display);
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 3000;
+        break;
+
+    case 27:
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), eye1_bits, eye1_width,
+                            eye1_height, display.fg);
+        nextUpdateType = DisplaySystem::UpdateType::ERASE;
+        nextInterval = 1500;
+        break;
+    case 28:
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), eye2_bits, eye2_width,
+                            eye2_height, display.fg);
+        nextUpdateType = DisplaySystem::UpdateType::ERASE;
+        nextInterval = 750;
+        break;
+    case 29:
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), eye3_bits, eye3_width,
+                            eye3_height, display.fg);
+        nextUpdateType = DisplaySystem::UpdateType::ERASE;
+        nextInterval = 750;
+        break;
+    case 30:
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), sol_reader1_bits,
+                            sol_reader1_width, sol_reader1_height, display.fg);
+        nextUpdateType = DisplaySystem::UpdateType::ERASE;
+        nextInterval = 1500;
+        break;
+
+    case 31:
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), space_scape1_bits,
+                            space_scape1_width, space_scape1_height, display.fg);
+        nextUpdateType = DisplaySystem::UpdateType::ERASE;
+        nextInterval = 1500;
+        break;
+    case 32:
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), space_scape1_bits,
+                            space_scape1_width, space_scape1_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
+                            display.yAbsolute(display.yAbsoluteCenter() - im10_height / 2),
+                            im10_bits, im10_width, im10_height, display.bg);
+        nextUpdateType = DisplaySystem::UpdateType::ERASE;
+        nextInterval = 10;
+        break;
+    case 33:
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), space_scape1_bits,
+                            space_scape1_width, space_scape1_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
+                            display.yAbsolute(display.yAbsoluteCenter() - im10_height / 2),
+                            im20_bits, im20_width, im20_height, display.bg);
+        nextUpdateType = DisplaySystem::UpdateType::ERASE;
+        nextInterval = 10;
+        break;
+    case 34:
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), space_scape1_bits,
+                            space_scape1_width, space_scape1_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
+                            display.yAbsolute(display.yAbsoluteCenter() - im10_height / 2),
+                            im30_bits, im30_width, im30_height, display.bg);
+        nextUpdateType = DisplaySystem::UpdateType::ERASE;
+        nextInterval = 10;
+        break;
+    case 35:
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), space_scape1_bits,
+                            space_scape1_width, space_scape1_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
+                            display.yAbsolute(display.yAbsoluteCenter() - im10_height / 2),
+                            im40_bits, im40_width, im40_height, display.bg);
+        nextUpdateType = DisplaySystem::UpdateType::ERASE;
+        nextInterval = 10;
+        break;
+    case 36:
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), space_scape1_bits,
+                            space_scape1_width, space_scape1_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
+                            display.yAbsolute(display.yAbsoluteCenter() - im10_height / 2),
+                            im50_bits, im50_width, im50_height, display.bg);
+        nextUpdateType = DisplaySystem::UpdateType::ERASE;
+        nextInterval = 10;
+        break;
+    case 37:
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), space_scape1_bits,
+                            space_scape1_width, space_scape1_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
+                            display.yAbsolute(display.yAbsoluteCenter() - im10_height / 2),
+                            im60_bits, im60_width, im60_height, display.bg);
+        nextUpdateType = DisplaySystem::UpdateType::ERASE;
+        nextInterval = 10;
+        break;
+    case 38:
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), space_scape1_bits,
+                            space_scape1_width, space_scape1_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
+                            display.yAbsolute(display.yAbsoluteCenter() - im10_height / 2),
+                            im70_bits, im70_width, im70_height, display.bg);
+        nextUpdateType = DisplaySystem::UpdateType::ERASE;
+        nextInterval = 10;
+        break;
+    case 39:
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), space_scape1_bits,
+                            space_scape1_width, space_scape1_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
+                            display.yAbsolute(display.yAbsoluteCenter() - im10_height / 2),
+                            im80_bits, im80_width, im80_height, display.bg);
+        nextUpdateType = DisplaySystem::UpdateType::ERASE;
+        nextInterval = 10;
+        break;
+    case 40:
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), space_scape1_bits,
+                            space_scape1_width, space_scape1_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
+                            display.yAbsolute(display.yAbsoluteCenter() - im10_height / 2),
+                            im90_bits, im90_width, im90_height, display.bg);
+        nextUpdateType = DisplaySystem::UpdateType::ERASE;
+        nextInterval = 10;
+        break;
+    case 41:
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), space_scape1_bits,
+                            space_scape1_width, space_scape1_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - im100_width / 2),
+                            display.yAbsolute(display.yAbsoluteCenter() - im100_height / 2),
+                            im100_bits, im100_width, im100_height, display.bg);
+        nextUpdateType = DisplaySystem::UpdateType::ERASE;
+        nextInterval = 1500;
+        break;
+    case 42:
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), sol_scroll_small_bits,
+                            sol_scroll_small_width, sol_scroll_small_height, display.fg);
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 750;
+        break;
+    case 43:
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), sol_scroll_large_bits,
+                            sol_scroll_large_width, sol_scroll_large_height, display.fg);
+        nextUpdateType = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval = 750;
+        break;
     default:
         break;
     }
