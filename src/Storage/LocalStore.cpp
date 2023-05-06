@@ -460,6 +460,10 @@ void LocalStore::syncFromRemote(
                     syncState = {.state = ContentSyncState::State::Syncing};
                 }
 
+                if (checkSyncResponse.timezone.size()) {
+                    SolClock::getInstance().setTimezone(checkSyncResponse.timezone);
+                }
+
                 if (checkSyncResponse.synced) {
                     log_i("%ss are already in sync, no need to download anything",
                           ReadableModelTypeToString(modelType).c_str());

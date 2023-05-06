@@ -58,6 +58,7 @@ public:
     std::string articlesSince;
     std::string nextPageUrl;
     int totalCount;
+    std::string timezone;
 
     auto fromJson(const JsonObject &j) -> bool override {
         message = j["message"].as<std::string>();
@@ -95,6 +96,9 @@ public:
         }
         if (j.containsKey("count")) {
             totalCount = j["count"].as<int>();
+        }
+        if (j.containsKey("timezone")) {
+            timezone = j["timezone"].as<std::string>();
         }
         return true;
     }
