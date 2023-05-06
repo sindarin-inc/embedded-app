@@ -18,6 +18,7 @@
 
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
+#include "UI/Layout/Types.hpp"
 
 // This isn't the best -- we may want to make this dynamically
 // allocated instead in the object?
@@ -75,22 +76,15 @@ public:
     virtual void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED,
                                bool clearFrameBuffer = true) = 0;
 
-    void setAltUpdateType(DisplaySystem::UpdateType updateType, uint8_t x0, uint8_t y0, uint8_t x1,
-                          uint8_t y1) {
+    void setAltUpdateType(DisplaySystem::UpdateType updateType, Rect rect) {
         useAltUpdateType_ = true;
         altUpdateType_ = updateType;
-        altX0_ = x0;
-        altY0_ = y0;
-        altX1_ = x1;
-        altY1_ = y1;
+        altRect_ = rect;
     }
 
     void setNoAltUpdateType() {
         useAltUpdateType_ = false;
-        altX0_ = 0;
-        altY0_ = 0;
-        altX1_ = 255;
-        altY1_ = 255;
+        altRect_ = {{0, 0}, {255, 255}};
     }
 
     virtual void beginPowerOn() {}
@@ -236,10 +230,7 @@ protected:
 
     bool useAltUpdateType_ = false;
     DisplaySystem::UpdateType altUpdateType_;
-    uint8_t altX0_ = 0;
-    uint8_t altY0_ = 0;
-    uint8_t altX1_ = 255;
-    uint8_t altY1_ = 255;
+    Rect altRect_ = {{0, 0}, {255, 255}};
 };
 
 #endif

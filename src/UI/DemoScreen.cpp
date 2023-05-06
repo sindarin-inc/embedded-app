@@ -22,6 +22,7 @@
 #include "UI/Fonts/Tahoma7pt7b.h"
 #include "UI/Fonts/Tahoma8pt7b.h"
 #include "UI/Fonts/Tahoma9pt7b.h"
+#include "UI/Layout/Types.hpp"
 #include "sindarin-debug.h"
 
 extern void UIInnerLoop(RemoteCommand command);
@@ -101,7 +102,7 @@ void DemoScreen::render(DisplaySystem &display) {
                 display.xAbsolute(128 - glass_small_left_width / 2),
                 display.yAbsolute(128 - glass_small_left_height / 2 + yOffsetOverall),
                 glass_small_left_bits, glass_small_left_width, glass_small_left_height, display.fg);
-            display.setAltUpdateType(DisplaySystem::UpdateType::FAST, 0, 0, 255, 140);
+            display.setAltUpdateType(DisplaySystem::UpdateType::FAST, {{0, 0}, {255, 140}});
             display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, false);
             display.setNoAltUpdateType();
             nextInterval = 500;
@@ -206,7 +207,7 @@ void DemoScreen::render(DisplaySystem &display) {
                 display.yAbsolute(128 - glass_small_right_height / 2 + yOffsetOverall),
                 glass_small_right_bits, glass_small_right_width, glass_small_right_height,
                 display.fg);
-            display.setAltUpdateType(DisplaySystem::UpdateType::FAST, 0, 0, 255, 140);
+            display.setAltUpdateType(DisplaySystem::UpdateType::FAST, {{0, 0}, {255, 140}});
             display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, false);
             display.setNoAltUpdateType();
             nextInterval = 500;
@@ -316,7 +317,7 @@ void DemoScreen::render(DisplaySystem &display) {
                 display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
                 display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall),
                 arrow_up_down_bits, arrow_up_down_width, arrow_up_down_height, display.fg);
-            display.setAltUpdateType(DisplaySystem::UpdateType::FAST, 0, 0, 255, 140);
+            display.setAltUpdateType(DisplaySystem::UpdateType::FAST, {{0, 0}, {255, 140}});
             display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, false);
             display.setNoAltUpdateType();
             nextInterval = 500;

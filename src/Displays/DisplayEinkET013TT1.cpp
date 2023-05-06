@@ -115,10 +115,25 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType,
         firstPartialTime_ = 0;
         numPartials_ = 0;
         if (useAltUpdateType_) {
-            driver_.update(
-                FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer(), getDriver()->getVcom(),
-                EINK_ORIGINAL_WAVEFORM_AU4 /*BC_REGULAR_31_35C_WAVEFORM_FULL_DARK_IMAGE*/, altX0_,
-                altY0_, altX1_, altY1_);
+            switch (altUpdateType_) {
+            // right now these are the only two supported
+            case FAST:
+                driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer(),
+                               getDriver()->getVcom(), BC_REGULAR_EINK_10_13C_WAVEFORM_AU4,
+                               altRect_.origin.x, altRect_.origin.y,
+                               altRect_.origin.x + altRect_.size.width,
+                               altRect_.origin.y + altRect_.size.height);
+                break;
+            case ERASE:
+                driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer(),
+                               getDriver()->getVcom(), ERASE_WAVEFORM_REGULAR, altRect_.origin.x,
+                               altRect_.origin.y, altRect_.origin.x + altRect_.size.width,
+                               altRect_.origin.y + altRect_.size.height);
+                break;
+            default:
+                log_e("UNSUPPORTED ALT UPDATE TYPE");
+                break;
+            }
         } else {
             driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer());
         }
@@ -138,12 +153,26 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType,
                 driver_.update(PARTIAL_REFRESH_WAVEFORM_INVERTED, gfxCanvas_.getBuffer());
             } else {
                 if (useAltUpdateType_) {
-                    driver_.update(
-                        PARTIAL_REFRESH_WAVEFORM_REGULAR, gfxCanvas_.getBuffer(),
-                        getDriver()->getVcom(),
-                        BC_REGULAR_EINK_10_13C_WAVEFORM_AU4 /*BC_REGULAR_31_35C_WAVEFORM_FULL_DARK_IMAGE*/
-                        ,
-                        altX0_, altY0_, altX1_, altY1_);
+                    switch (altUpdateType_) {
+                    // right now these are the only two supported
+                    case FAST:
+                        driver_.update(PARTIAL_REFRESH_WAVEFORM_REGULAR, gfxCanvas_.getBuffer(),
+                                       getDriver()->getVcom(), BC_REGULAR_EINK_10_13C_WAVEFORM_AU4,
+                                       altRect_.origin.x, altRect_.origin.y,
+                                       altRect_.origin.x + altRect_.size.width,
+                                       altRect_.origin.y + altRect_.size.height);
+                        break;
+                    case ERASE:
+                        driver_.update(PARTIAL_REFRESH_WAVEFORM_REGULAR, gfxCanvas_.getBuffer(),
+                                       getDriver()->getVcom(), ERASE_WAVEFORM_REGULAR,
+                                       altRect_.origin.x, altRect_.origin.y,
+                                       altRect_.origin.x + altRect_.size.width,
+                                       altRect_.origin.y + altRect_.size.height);
+                        break;
+                    default:
+                        log_e("UNSUPPORTED ALT UPDATE TYPE");
+                        break;
+                    }
                 } else {
                     driver_.update(PARTIAL_REFRESH_WAVEFORM_REGULAR, gfxCanvas_.getBuffer());
                 }
@@ -171,9 +200,26 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType,
     case ERASE:
         if (getInversion()) {
             if (useAltUpdateType_) {
-                driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer(),
-                               getDriver()->getVcom(), EINK_ORIGINAL_WAVEFORM_AU4, altX0_, altY0_,
-                               altX1_, altY1_);
+                switch (altUpdateType_) {
+                // right now these are the only two supported
+                case FAST:
+                    driver_.update(ERASE_WAVEFORM_REGULAR, gfxCanvas_.getBuffer(),
+                                   getDriver()->getVcom(), BC_REGULAR_EINK_10_13C_WAVEFORM_AU4,
+                                   altRect_.origin.x, altRect_.origin.y,
+                                   altRect_.origin.x + altRect_.size.width,
+                                   altRect_.origin.y + altRect_.size.height);
+                    break;
+                case ERASE:
+                    driver_.update(ERASE_WAVEFORM_REGULAR, gfxCanvas_.getBuffer(),
+                                   getDriver()->getVcom(), ERASE_WAVEFORM_REGULAR,
+                                   altRect_.origin.x, altRect_.origin.y,
+                                   altRect_.origin.x + altRect_.size.width,
+                                   altRect_.origin.y + altRect_.size.height);
+                    break;
+                default:
+                    log_e("UNSUPPORTED ALT UPDATE TYPE");
+                    break;
+                }
             } else {
                 driver_.update(ERASE_WAVEFORM_REGULAR, gfxCanvas_.getBuffer(),
                                getDriver()->getVcom());

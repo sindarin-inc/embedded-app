@@ -89,6 +89,9 @@ public:
 
     void clear(const EinkET013TT1Waveform &waveform);
 
+    // I lose the Rect thing here mostly to avoid doing the math to convert from Rect to x0, y0, x1,
+    // and y1 in in the driver code. Maybe that's an optimization we don't need to worry about
+    // but it's also a little more convenient to not have to do the math here.
     void update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
                 int32_t overrideVcom = INT32_MAX,
                 const EinkET013TT1Waveform &altWaveform = BC_WAVEFORM_NONE, uint8_t x0 = 0,
