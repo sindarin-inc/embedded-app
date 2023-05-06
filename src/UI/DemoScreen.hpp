@@ -62,6 +62,8 @@ protected:
     PreferencesStore &prefs_;
     LightingController &lightingController_;
 
+    bool shownOne_ = false;
+    bool shownTwo_ = false;
     unsigned int currentScreen_ = 0;
     unsigned int currentSubScreen_ = 0;
 };

@@ -239,23 +239,29 @@ void DemoScreen::render(DisplaySystem &display) {
         xOffset = -xOffset;
         switch (currentSubScreen_) {
         case 0:
-            display.drawXBitmap(
-                display.xAbsolute(128 - bottom_arrow_width / 2 - xOffset),
-                display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
-                bottom_arrow_bits, bottom_arrow_width, bottom_arrow_height, display.bg);
-            display.drawXBitmap(
-                display.xAbsolute(128 - bottom_arrow_width / 2 + 14 - xOffset),
-                display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
-                right_arrow_bits, right_arrow_width, right_arrow_height, display.bg);
-            display.drawXBitmap(
-                display.xAbsolute(128 - bottom_arrow_width / 2 - 14 - xOffset),
-                display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
-                left_arrow_bits, left_arrow_width, left_arrow_height, display.bg);
-            display.drawXBitmap(
-                display.xAbsolute(128 - glass_small_left_width / 2),
-                display.yAbsolute(128 - glass_small_left_height / 2 + yOffsetOverall),
-                glass_small_left_bits, glass_small_left_width, glass_small_left_height, display.bg);
-            display.updateDisplay(DisplaySystem::UpdateType::ERASE);
+            if (!shownOne_) {
+                display.drawXBitmap(
+                    display.xAbsolute(128 - bottom_arrow_width / 2 - xOffset),
+                    display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
+                    bottom_arrow_bits, bottom_arrow_width, bottom_arrow_height, display.bg);
+                display.drawXBitmap(display.xAbsolute(128 - bottom_arrow_width / 2 + 14 - xOffset),
+                                    display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset +
+                                                      yOffsetOverall),
+                                    right_arrow_bits, right_arrow_width, right_arrow_height,
+                                    display.bg);
+                display.drawXBitmap(display.xAbsolute(128 - bottom_arrow_width / 2 - 14 - xOffset),
+                                    display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset +
+                                                      yOffsetOverall),
+                                    left_arrow_bits, left_arrow_width, left_arrow_height,
+                                    display.bg);
+                display.drawXBitmap(
+                    display.xAbsolute(128 - glass_small_left_width / 2),
+                    display.yAbsolute(128 - glass_small_left_height / 2 + yOffsetOverall),
+                    glass_small_left_bits, glass_small_left_width, glass_small_left_height,
+                    display.bg);
+                display.updateDisplay(DisplaySystem::UpdateType::ERASE);
+                shownOne_ = true;
+            }
             display.setFont(&TAHOMA_REGULAR_FONT6PT7B);
             message = DEMO_SCREEN_2a;
             // This Y coordinate is just a guess
@@ -354,25 +360,28 @@ void DemoScreen::render(DisplaySystem &display) {
         switch (currentSubScreen_) {
         case 0:
             display.setFont(&TAHOMA_REGULAR_FONT6PT7B);
-            // fragile with the original xOffset above. Figure out a better way.
-            display.drawXBitmap(
-                display.xAbsolute(128 - bottom_arrow_width / 2 + 33),
-                display.yAbsolute(128 - bottom_arrow_height / 2 + 53 + yOffsetOverall),
-                bottom_arrow_bits, bottom_arrow_width, bottom_arrow_height, display.bg);
-            display.drawXBitmap(
-                display.xAbsolute(128 - bottom_arrow_width / 2 + 14 + 33),
-                display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + 53 + yOffsetOverall),
-                right_arrow_bits, right_arrow_width, right_arrow_height, display.bg);
-            display.drawXBitmap(
-                display.xAbsolute(128 - bottom_arrow_width / 2 - 14 + 33),
-                display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + 53 + yOffsetOverall),
-                left_arrow_bits, left_arrow_width, left_arrow_height, display.bg);
-            display.drawXBitmap(
-                display.xAbsolute(128 - glass_small_right_width / 2),
-                display.yAbsolute(128 - glass_small_right_height / 2 + yOffsetOverall),
-                glass_small_right_bits, glass_small_right_width, glass_small_right_height,
-                display.bg);
-            display.updateDisplay(DisplaySystem::UpdateType::ERASE);
+            if (!shownTwo_) {
+                // fragile with the original xOffset above. Figure out a better way.
+                display.drawXBitmap(
+                    display.xAbsolute(128 - bottom_arrow_width / 2 + 33),
+                    display.yAbsolute(128 - bottom_arrow_height / 2 + 53 + yOffsetOverall),
+                    bottom_arrow_bits, bottom_arrow_width, bottom_arrow_height, display.bg);
+                display.drawXBitmap(
+                    display.xAbsolute(128 - bottom_arrow_width / 2 + 14 + 33),
+                    display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + 53 + yOffsetOverall),
+                    right_arrow_bits, right_arrow_width, right_arrow_height, display.bg);
+                display.drawXBitmap(
+                    display.xAbsolute(128 - bottom_arrow_width / 2 - 14 + 33),
+                    display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + 53 + yOffsetOverall),
+                    left_arrow_bits, left_arrow_width, left_arrow_height, display.bg);
+                display.drawXBitmap(
+                    display.xAbsolute(128 - glass_small_right_width / 2),
+                    display.yAbsolute(128 - glass_small_right_height / 2 + yOffsetOverall),
+                    glass_small_right_bits, glass_small_right_width, glass_small_right_height,
+                    display.bg);
+                display.updateDisplay(DisplaySystem::UpdateType::ERASE);
+                shownTwo_ = true;
+            }
             message = DEMO_SCREEN_3a;
             // This Y coordinate is just a guess
             display.drawSingleLineOfText(
