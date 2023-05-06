@@ -852,7 +852,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     systemSettingsMenu->addMenuItem(MenuItem("Legal & Regulatory", [systemSettingsMenu, display]() {
         systemSettingsMenu->showTemporaryMessage(
             *display, "FBACL: LISTED UL 62368-1, CAN/CSA C22,2 NO., 62368-1, A0049\n FCC IDs: "
-                      "2BAHC-READER1, 2BAHC-PT1\nISED: 30424");
+                      "2BAHC-READER1, 2BAHC-PT1\nIC: 30424");
     }));
 
     systemSettingsMenu->addMenuItem(MenuItem("Set Time Zone",

@@ -44,7 +44,7 @@ const EinkET013TT1Waveform BC_REGULAR_EINK_10_13C_WAVEFORM_ERASE = {
         Frame{.bb = NOCHG, .bw = WHITE, .wb = BLACK, .ww = NOCHG},
         Frame{.bb = NOCHG, .bw = WHITE, .wb = BLACK, .ww = NOCHG},
         Frame{.bb = NOCHG, .bw = WHITE, .wb = BLACK, .ww = NOCHG},
-        Frame{.bb = BLACK, .bw = WHITE, .wb = BLACK, .ww = NOCHG},
+        Frame{.bb = NOCHG, .bw = WHITE, .wb = BLACK, .ww = NOCHG},
         Frame{.bb = NOCHG, .bw = NOCHG, .wb = NOCHG, .ww = NOCHG},
     },
 };
