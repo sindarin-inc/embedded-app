@@ -1342,7 +1342,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     if (inDemo) {
         auto demoScreen = new DemoScreen(*display, prefs_, lightingController);
-        demoScreen->setBackCallback([this, demoScreen, mainMenu, display]() {
+        demoScreen->setBackCallback([this, demoScreen, mainMenu]() {
             // We want to go straight from the scroll expanding into the main menu
             // via partial refresh.
             // display->clearDisplay();
