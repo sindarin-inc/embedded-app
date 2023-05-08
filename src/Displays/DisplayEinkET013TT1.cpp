@@ -194,4 +194,26 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
     fullRefreshNext_ = false;
 }
 
+void DisplayEinkET013TT1::drawFullscreenBitmapFromFile(SFile &file) {
+    // data is packed 1 bit binary
+    uint8_t *buffer = gfxCanvas_.getBuffer();
+    if (!buffer) {
+        log_e("failed to get draw buffer");
+        return;
+    }
+
+    int size = gfxCanvas_.width() * gfxCanvas_.height() / 8;
+
+    if (file.readBytes((char *)buffer, size) != size) {
+        log_e("failed to read pbm bytes");
+        return;
+    }
+
+    // pbm files have 0 white and 1 black
+    // invert to display properly (for now)
+    for (int i = 0; i < size; i++) {
+        buffer[i] = buffer[i] ^ 0xFF; // XOR to invert all bits
+    }
+}
+
 #endif

@@ -286,6 +286,111 @@ void DisplaySystem::drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], in
     gfxClass_->drawXBitmap(xOffset(x), yOffset(y), bitmap, w, h, color);
 }
 
+bool parsePBMHeader(SFile &f, int &width, int &height) {
+    uint8_t tmp[16];
+    width = 0;
+    height = 0;
+    if (f.readBytes((char *)tmp, 2) != 2) return false;
+
+    // pbm format, 1 bit binary only
+    if (tmp[0] != 'P' || tmp[1] != '4') {
+        return false;
+    }
+
+    // skip to newline
+    tmp[0] = ' ';
+    while (isspace(tmp[0])) {
+        if (f.readBytes((char *)tmp, 1) != 1) return false;
+    }
+
+    bool done = false;
+    while (!done) {
+        // check for comment
+        if (tmp[0] == '#') {
+            // skip until newline
+            while (tmp[0] != '\n') {
+                if (f.readBytes((char *)tmp, 1) != 1) return false;
+            }
+            // skip to next line
+            continue;
+        }
+
+        // not a comment, parse as width, height
+        uint8_t *strptr = tmp;
+        int size = 1;
+        while (!isspace(*strptr)) {
+            strptr++;
+            if (++size >= 15) return false; // string too long
+            if (f.readBytes((char *)strptr, 1) != 1) return false;
+        }
+
+        // terminate string
+        *strptr = 0;
+
+        // parse width
+        width = atoi((const char *)tmp);
+
+        // read height
+        strptr = tmp;
+        size = 1;
+
+        // read first character
+        if (f.readBytes((char *)strptr, 1) != 1) return false;
+        while (!isspace(*strptr)) {
+            strptr++;
+            if (++size >= 15) return false; // string too long
+            if (f.readBytes((char *)strptr, 1) != 1) return false;
+        }
+
+        // terminate string
+        *strptr = 0;
+
+        // parse height
+        height = atoi((const char *)tmp);
+        done = true;
+    }
+
+    return true;
+}
+
+void DisplaySystem::drawPBM(int16_t x, int16_t y, const std::string &fname, FileSystem &fs) {
+    if (!fs.exists(fname)) {
+        log_e("cannot display pbm, file not present: %s", fname.c_str());
+        return;
+    }
+    SFile pbmFile = fs.open(fname);
+
+    // read pbm header
+    int width = 0;
+    int height = 0;
+    if (!parsePBMHeader(pbmFile, width, height)) {
+        log_e("failed to parse PBM header");
+        return;
+    }
+
+    log_i("parsed PBM header, w %d height %d", width, height);
+    int byteSize = width * height / 8;
+
+    // if this is a full-screen image, load directly into memory
+    // otherwise load separately and draw with drawBitmap
+
+    bool fullScreen =
+        x == 0 && y == 0 && width == gfxClass_->width() && height == gfxClass_->height();
+    if (!fullScreen) {
+        // load bitmap into memory
+        auto bitmap = SpiRamArrayPtr<uint8_t>(byteSize);
+        if (pbmFile.readBytes((char *)bitmap.get(), byteSize) != byteSize) {
+            log_e("failed to read bitmap");
+            return;
+        }
+
+        gfxClass_->drawBitmap(x, y, bitmap.get(), width, height, 0);
+        return;
+    }
+
+    drawFullscreenBitmapFromFile(pbmFile);
+}
+
 void DisplaySystem::clearScreen() {
     fillScreen(bg);
     updateDisplay();
