@@ -280,13 +280,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BOOKS)) {
-        booksMenu->addMenuItem(MenuItem("(Sol Logo) Books Tutorial", "",
+        booksMenu->addMenuItem(MenuItem("\ue000 Books Tutorial", "",
                                         [this, createTutorialScreen]() {
             SpiramString message = SpiRamStringFormat(
                 "Welcome to the Books menu. This tab "
                 "shows you the books currently synced to your Sol Reader. To add more books or "
                 "manage the books on your device, use the Sol mobile app.\n\n\nPress "
-                "(Sol Logo) (center) to continue.");
+                "\ue000 (center) to continue.");
             auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_BOOKS);
             this->setCurrentScreen(*tutorialScreen);
         }));
@@ -348,13 +348,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_ARTICLES)) {
-        pocketMenu->addMenuItem(MenuItem("(Sol Logo) Articles Tutorial",
+        pocketMenu->addMenuItem(MenuItem("\ue000 Articles Tutorial",
                                          [this, createTutorialScreen]() {
             SpiramString message = SpiRamStringFormat(
                 "Welcome to the Articles menu. This tab "
                 "shows you the articles currently synced to your Sol Reader. To add more articles, "
                 "simply connect your Pocket account in the Sol mobile app or forward newsletters "
-                "from your inbox to add@solreader.com.\n\n\nPress (Sol Logo) (center) to "
+                "from your inbox to add@solreader.com.\n\n\nPress \ue000 (center) to "
                 "continue.\n");
             auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_ARTICLES);
             this->setCurrentScreen(*tutorialScreen);
@@ -388,7 +388,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
 
         if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BIBLE)) {
-            bibleMenu->addMenuItem(MenuItem("(Sol Logo) Bible Tutorial",
+            bibleMenu->addMenuItem(MenuItem("\ue000 Bible Tutorial",
                                             [this, createTutorialScreen]() {
                 SpiramString message = SpiRamStringFormat(
                     "The Gutenberg Bible "
@@ -403,7 +403,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     " Not your thing? No worries! You can toggle this app off "
                     "in the Content Settings.\n\n"
                     " Look for more scripture and meditation Sol Reader apps down the road!\n\n\n"
-                    " Press (Sol Logo) (center) to continue.");
+                    " Press \ue000 (center) to continue.");
                 auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_BIBLE);
                 this->setCurrentScreen(*tutorialScreen);
             }));
@@ -1359,13 +1359,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 
     if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_SETTINGS)) {
-        settingsMenu->addMenuItem(MenuItem("(Sol Logo) Settings Tutorial",
+        settingsMenu->addMenuItem(MenuItem("\ue000 Settings Tutorial",
                                            [this, createTutorialScreen]() {
             SpiramString message = SpiRamStringFormat(
                 "Welcome to the settings menu. Here you can "
                 "change the settings of your Sol Reader. Check out the "
                 "experimental settings for features we are beta testing!\n\n\nPress "
-                "(Sol Logo) (center) to continue.  ");
+                "\ue000 (center) to continue.  ");
             auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_SETTINGS);
             this->setCurrentScreen(*tutorialScreen);
         }));
