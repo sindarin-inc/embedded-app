@@ -73,7 +73,8 @@ auto SolClock::posixTimezoneString() -> std::string {
 }
 
 void SolClock::setTimezone(const std::string &ianaTimezone) {
-    if (ianaTimezone == prefs_.tzIana.get().value_or("Etc/UTC")) {
+    if (ianaTimezone == prefs_.tzIana.get().value_or("Etc/UTC") &&
+        prefs_.tzPosix.get().has_value()) {
         log_d("Timezone already set to %s", ianaTimezone.c_str());
         return;
     }
@@ -81,7 +82,7 @@ void SolClock::setTimezone(const std::string &ianaTimezone) {
     prefs_.tzIana.set(ianaTimezone);
 
     static const std::unordered_map<std::string, std::string> timezones =
-        readTimezones("timezones.txt");
+        readTimezones("timezones.csv");
 
     std::string posixTimezoneString;
     if (timezones.find(ianaTimezone) != timezones.end()) {
@@ -89,6 +90,8 @@ void SolClock::setTimezone(const std::string &ianaTimezone) {
     } else {
         posixTimezoneString = "UTC0";
     }
+
+    prefs_.tzPosix.set(posixTimezoneString);
 
     log_d("Switching to timezone %s=%s", ianaTimezone.c_str(), posixTimezoneString.c_str());
     loadTimeZone();

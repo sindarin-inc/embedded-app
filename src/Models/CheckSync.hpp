@@ -70,7 +70,6 @@ public:
         }
         auto results = j["results"].as<JsonObject>();
         synced = results["synced"].as<bool>();
-
         if (results.containsKey("books_since")) {
             booksSince = results["books_since"].as<std::string>();
             for (const auto &userReadable : results["books"].as<JsonArray>()) {
@@ -91,14 +90,15 @@ public:
             articlesSince = "";
         }
 
+        if (results.containsKey("timezone")) {
+            timezone = results["timezone"].as<std::string>();
+        }
+
         if (j.containsKey("next")) {
             nextPageUrl = j["next"].isNull() ? std::string() : j["next"].as<std::string>();
         }
         if (j.containsKey("count")) {
             totalCount = j["count"].as<int>();
-        }
-        if (j.containsKey("timezone")) {
-            timezone = j["timezone"].as<std::string>();
         }
         return true;
     }
