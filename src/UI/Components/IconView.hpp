@@ -5,7 +5,7 @@
 // A view that draws an icon
 class IconView : public EinkView {
 public:
-    IconView(DisplaySystem &display, unsigned char *iconBits, int width, int height)
+    IconView(DisplaySystem &display, const unsigned char *iconBits, int width, int height)
         : EinkView(display), iconBits_(iconBits), width_(width), height_(height) {}
     ~IconView() override = default;
 
@@ -16,7 +16,7 @@ public:
     }
 
 protected:
-    unsigned char *iconBits_;
+    const unsigned char *iconBits_;
     int width_;
     int height_;
 };
