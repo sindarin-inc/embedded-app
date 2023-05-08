@@ -300,8 +300,8 @@ public:
           firstRead(*this, "first-read"), autoPilotSpeed(*this, "auto-speed"),
           firstAutopilotRead(*this, "fst-auto-rd"), cesMode(*this, "ces"), emcMode(*this, "emc"),
           wifiPower(*this, "wifi-power"), morningNewspaperTime(*this, "morning-news"),
-          eveningNewspaperTime(*this, "evening-news"), solTimeZone(*this, "time-zone"),
-          tzIana(*this, "tz-iana"), tzPosix(*this, "tz-posix"), firmwareLoaded(*this, "fw-loaded"),
+          eveningNewspaperTime(*this, "evening-news"), tzIana(*this, "tz-iana"),
+          tzPosix(*this, "tz-posix"), firmwareLoaded(*this, "fw-loaded"),
           sleepReason(*this, "sleep-reason"), noBooks(*this, "no-books"),
           showNews(*this, "show-news"), noArticles(*this, "no-articles"),
           noBible(*this, "no-bible"), noDeliverOnClose(*this, "no-deliv-close"),
@@ -323,7 +323,7 @@ public:
             ranMigration = true;
             switch (migrationVersion) {
             case 0: {
-                // This method exists to destorys keys we created before the migration system
+                // This method exists to destroys keys we created before the migration system
                 // was set up. I used this absolutely horrifying bash command to find these:
                 // clang-format off
                 /*
@@ -345,6 +345,14 @@ public:
                     if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
                         log_e("nvs_erase_key failed: %s", esp_err_to_name(err));
                     }
+                }
+                break;
+            }
+            case 1: {
+                // Destroying time-zone, replaced by tz-iana and tz-posix
+                esp_err_t err = nvs_erase_key(nvsHandle_, "time-zone");
+                if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
+                    log_e("nvs_erase_key failed: %s", esp_err_to_name(err));
                 }
                 break;
             }
@@ -457,7 +465,6 @@ public:
     PrefsItem<int> wifiPower;
     PrefsItem<int> morningNewspaperTime;
     PrefsItem<int> eveningNewspaperTime;
-    PrefsItem<int> solTimeZone;
     PrefsItem<std::string> tzIana;
     PrefsItem<std::string> tzPosix;
     // Firmware that's been loaded to the other flash slot but not yet installed
@@ -490,7 +497,7 @@ public:
     static bool settingsOnRestart;
 
 protected:
-    const uint32_t latestMigrationVersion_ = 1;
+    const uint32_t latestMigrationVersion_ = 2;
     uint32_t nvsHandle_;
     bool started_;
 
