@@ -385,7 +385,7 @@ void DisplaySystem::drawPBM(int16_t x, int16_t y, const std::string &fname, File
             return;
         }
 
-        gfxClass_->drawBitmap(x, y, bitmap.get(), width, height, 0);
+        gfxClass_->drawBitmap(x, y, bitmap.get(), width, height, 0, 1);
         return;
     }
 
