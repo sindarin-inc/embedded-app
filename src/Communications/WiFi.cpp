@@ -189,7 +189,8 @@ void WiFi::clearWiFiCredentials() {
 }
 
 auto WiFi::scanNetworks(const std::function<void(std::shared_ptr<wifi_ap_record_t[]> apRecords,
-                                                 int recordCount)> &completeCB) -> esp_err_t {
+                                                 int recordCount)> &channelScanCompleteCB)
+    -> esp_err_t {
     esp_err_t err = begin();
     if (err != ESP_OK) {
         log_e("begin failed with error %s", esp_err_to_name(err));
@@ -227,6 +228,7 @@ auto WiFi::scanNetworks(const std::function<void(std::shared_ptr<wifi_ap_record_
         SHOW_HEAP();
 
         if (apNum == 0) {
+            log_i("Channel %d, no APs found", ch);
             continue;
         }
 
@@ -237,9 +239,9 @@ auto WiFi::scanNetworks(const std::function<void(std::shared_ptr<wifi_ap_record_
             log_e("esp_wifi_scan_get_ap_records failed with error %s", esp_err_to_name(err));
             continue;
         }
-        log_i("Total APs scanned = %u", apNum);
+        log_i("Channel %d, Total APs scanned = %u", ch, apNum);
 
-        completeCB(apRecords, apNum);
+        channelScanCompleteCB(apRecords, apNum);
     }
     SHOW_HEAP();
 
