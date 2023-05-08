@@ -16,7 +16,7 @@ class ClockBatteryView : public EinkView {
 public:
     ClockBatteryView(Battery &battery, DisplaySystem &display)
         : EinkView(display), batteryTextView_(display, ""),
-          batteryIconView_(display, boltBits, bolt_width, bolt_height), clockView_(display, ""),
+          batteryIconView_(display, BOLT_BITS, bolt_width, bolt_height), clockView_(display, ""),
           battery_(battery) {}
     ~ClockBatteryView() override = default;
 

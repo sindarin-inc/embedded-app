@@ -16,7 +16,7 @@ void ReadableSeekScreen::render(DisplaySystem &display) {
     // TODO: Do this calculation dynamically, once we have a way to gracefully layout subviews
     int16_t y = (display.height() - 96) / 2;
 
-    display.drawXBitmap(x, y, seekbookBits, Seekbook_width, Seekbook_height, display.fg);
+    display.drawXBitmap(x, y, SEEKBOOK_BITS, Seekbook_width, Seekbook_height, display.fg);
     y += Seekbook_height + spacing;
 
     uint16_t percentWidth, percentHeight;
