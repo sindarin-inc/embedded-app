@@ -19,18 +19,15 @@ auto ReadableScreen::layout(LayoutContext &context, Size size) -> Size {
     int arrowHeight = 8;
     int sidePadding = -15;
     int topBottomPadding = -10;
-
-    context.setViewFrame(leftArrowView_, {{sidePadding, size.height / 2 - arrowWidth / 2},
-                                          {arrowHeight, arrowWidth}});
-    context.setViewFrame(rightArrowView_, {{size.width - sidePadding - arrowHeight,
-                                            size.height / 2 - arrowWidth / 2},
-                                           {arrowHeight, arrowWidth}});
-    context.setViewFrame(upArrowView_, {{size.width / 2 - arrowWidth / 2, topBottomPadding},
-                                        {arrowWidth, arrowHeight}});
-    context.setViewFrame(downArrowView_, {{size.width / 2 - arrowWidth / 2,
-                                           size.height - topBottomPadding - arrowHeight},
-                                          {arrowWidth, arrowHeight}});
-
+    auto arrowContainer = Rect::fromSize(size).inset(sidePadding, topBottomPadding);
+    context.setViewSizeInRect(leftArrowView_, {arrowHeight, arrowWidth}, arrowContainer,
+                              LayoutOptionsAlignLeft | LayoutOptionsAlignCenterVertical);
+    context.setViewSizeInRect(rightArrowView_, {arrowHeight, arrowWidth}, arrowContainer,
+                              LayoutOptionsAlignRight | LayoutOptionsAlignCenterVertical);
+    context.setViewSizeInRect(upArrowView_, {arrowWidth, arrowHeight}, arrowContainer,
+                              LayoutOptionsAlignTop | LayoutOptionsAlignCenterHorizontal);
+    context.setViewSizeInRect(downArrowView_, {arrowWidth, arrowHeight}, arrowContainer,
+                              LayoutOptionsAlignBottom | LayoutOptionsAlignCenterHorizontal);
     return size;
 }
 
