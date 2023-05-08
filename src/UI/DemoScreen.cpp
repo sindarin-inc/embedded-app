@@ -76,13 +76,13 @@ void DemoScreen::drawSkipMessage(DisplaySystem &display, bool inverted) {
 void DemoScreen::drawDoubleLine(DisplaySystem &display, std::string one, std::string two) {
     std::string message;
     display.setFont(&TAHOMA_REGULAR_FONT6PT7B);
-    message = one;
+    message = std::move(one);
     display.drawSingleLineOfText(
         message.c_str(),
         display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message.c_str()) / 2),
         display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight(message.c_str()) / 2) -
             4);
-    message = two;
+    message = std::move(two);
     display.drawSingleLineOfText(
         message.c_str(),
         display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message.c_str()) / 2),
@@ -93,17 +93,17 @@ void DemoScreen::drawTripleLine(DisplaySystem &display, std::string one, std::st
                                 std::string three) {
     std::string message;
     display.setFont(&TAHOMA_REGULAR_FONT6PT7B);
-    message = one;
+    message = std::move(one);
     display.drawSingleLineOfText(
         message.c_str(),
         display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message.c_str()) / 2),
         display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight(message.c_str()) - 8));
-    message = two;
+    message = std::move(two);
     display.drawSingleLineOfText(
         message.c_str(),
         display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message.c_str()) / 2),
         display.yAbsolute(display.yAbsoluteCenter() - 3));
-    message = three;
+    message = std::move(three);
     display.drawSingleLineOfText(
         message.c_str(),
         display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message.c_str()) / 2),
