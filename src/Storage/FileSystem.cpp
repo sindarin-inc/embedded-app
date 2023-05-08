@@ -25,3 +25,5 @@ auto FileSystem::newGzipRendererStream(const char *path) -> std::shared_ptr<Rend
     return std::make_shared<LookBackStream>(std::make_unique<GUnzipStream>(file),
                                             LOOKBACK_BUFFER_SIZE);
 }
+
+auto FileSystem::deleteAll() -> bool { return removeDir(""); }

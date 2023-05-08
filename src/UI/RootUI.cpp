@@ -13,6 +13,7 @@
 #include "EPub/EPubFile.hpp"
 #include "GitVersion.hpp"
 #include "Inputs/RemoteInput.hpp"
+#include "Misc/FactoryReset.hpp"
 #include "Misc/LookBackStream.hpp"
 #include "Misc/MenuStyle.hpp"
 #include "Misc/Platform.hpp"
@@ -1024,18 +1025,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 
     systemSettingsMenu->addMenuItem(MenuItem("Factory Defaults",
-                                             [this, systemSettingsMenu, display, &localStore]() {
-#if SIMULATOR
-        // Remove the preferences file simprefs.ini
-        std::filesystem::remove("simprefs.ini");
-        systemSettingsMenu->showTemporaryMessage(*display, "simprefs.ini deleted! Resetting...");
-#else
-        nvs_flash_erase();
-        localStore.deleteArticles(false);
-        localStore.deleteReadables(false);
+                                             [this, systemSettingsMenu, display, &fileSystem]() {
+        FactoryReset(prefs_, fileSystem, power_, false);
         log_w("NVS and FS cleared. Rebooting...");
         systemSettingsMenu->showTemporaryMessage(*display, "NVS cleared! Resetting...");
-#endif
         power_.reboot();
     }));
 

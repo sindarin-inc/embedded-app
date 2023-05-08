@@ -265,6 +265,13 @@ void PowerManager::checkUsb() {
     }
 }
 
+void PowerManager::releaseLED() {
+    DigitalWrite(GREEN_LED, LED_OFF);
+    DigitalWrite(RED_LED, LED_OFF);
+    gpio_hold_dis((gpio_num_t)GREEN_LED);
+    gpio_hold_dis((gpio_num_t)RED_LED);
+}
+
 void PowerManager::reboot() { esp_restart(); }
 
 void PowerManager::ulpDeepSleep(SleepReason reason) {

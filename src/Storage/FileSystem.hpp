@@ -30,12 +30,27 @@ public:
         assert(0);
         return {};
     };
+
+    virtual auto removeDir(const std::string &path) -> bool {
+        log_e("Abstract");
+        assert(0);
+        return false;
+    }
+
+    auto deleteAll() -> bool;
+
     [[nodiscard]] virtual auto exists(const std::string &path) const -> bool {
         log_e("Abstract");
         assert(0);
         return false;
     };
     virtual auto listDir(const std::string &path, FileList &files, int limit = 0) const -> int {
+        log_e("Abstract");
+        assert(0);
+        return 0;
+    };
+    virtual auto listDirWithSubdirectories(const std::string &path, FileList &files,
+                                           FileList &dirs) const -> int {
         log_e("Abstract");
         assert(0);
         return 0;

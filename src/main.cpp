@@ -16,9 +16,11 @@
 #include "Misc/Battery.hpp"
 #include "Misc/BootError.hpp"
 #include "Misc/BootLoopDetection.hpp"
+#include "Misc/FactoryReset.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
 #include "Misc/SolClock.hpp"
+#include "Misc/SolMorse.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
 #include "Models/Readable.hpp"
@@ -85,7 +87,19 @@ bool bootCompleted = false;
 // Task for all periodic things that need to run ~1Hz. Polling tasks should be grouped here so that
 // they all complete in a tight loop, thus maximizing sleep time.
 void PollingLoopTask(void *parameter) {
+    int factoryResetStartTimeMs = 0;
     for (;;) {
+        // check if factory reset button is held down
+        if (DigitalRead(FACTORY_RESET_BUTTON) == 0) {
+            if (factoryResetStartTimeMs == 0) {
+                factoryResetStartTimeMs = Millis();
+            } else if ((Millis() - factoryResetStartTimeMs) > FACTORY_RESET_MS) {
+                FactoryReset(prefs, fileSystem, powerManager, true);
+            }
+        } else {
+            factoryResetStartTimeMs = 0;
+        }
+
         // Run the power loop first so that we don't show a 0% battery reading
         powerManager.loop();
 

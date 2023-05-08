@@ -66,6 +66,8 @@ public:
 
     void loop();
 
+    void releaseLED();
+
     // Exposed so we can check this peripheral as a part of the power-on self-test
     auto checkMagnetometerProductId() -> bool {
 #if USE_MMC5603

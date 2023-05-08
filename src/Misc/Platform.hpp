@@ -39,6 +39,9 @@
 
 #define ESP_IMAGE_HEADER_MAGIC 0xE9 /*!< The magic word for the esp_image_header_t structure. */
 
+#define FACTORY_RESET_BUTTON 0
+#define FACTORY_RESET_MS 5000
+
 // Bare minimum init before processing wake reasons
 void HardwareInit();
 
@@ -79,9 +82,10 @@ auto Millis() -> int;
 
 void DigitalWrite(int pin, int level);
 
+auto DigitalRead(uint8_t pin) -> int;
+
 #if !SIMULATOR
 void PinMode(int pin, int mode);
-auto DigitalRead(uint8_t pin) -> int;
 auto GetHeapSize() -> size_t;
 void EnableCore0Wdt();
 void DisableCore0Wdt();

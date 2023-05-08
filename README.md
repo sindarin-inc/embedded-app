@@ -236,3 +236,23 @@ Note that when you run the above command, the resulting `include/EFusesCustomTab
 ```
 
 This is [fixed](https://github.com/espressif/esp-idf/blob/master/components/efuse/efuse_table_gen.py#L277) in the pre-release version of ESP-IDF 5.0.
+
+## Run PyTest On-Device Tests
+
+You'll need to make sure you set up IDF with the pytest bits.
+
+```sh
+$IDF_PATH/install.sh --enable-pytest
+```
+
+You'll need to make sure you have some binaries available
+
+```sh
+idf.py build
+```
+
+And then you can run the tests
+
+```sh
+pytest --target esp32s3
+```
