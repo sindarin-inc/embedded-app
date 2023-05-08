@@ -172,8 +172,6 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
             }
             newToken.width = spaceWidth_;
             newToken.height = spaceHeight_;
-            // newToken.width = display_.getTextWidth(" ");
-            // newToken.height = display_.getTextHeight(" ");
             currTokenBuffer_[plcInTokenBuffer] = newToken;
             numCurrTokens_++;
             currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
@@ -194,8 +192,6 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
         case '\t':
             newToken.token = TOKEN_TAB;
             display_.getTextSize("\t", &newToken.width, &newToken.height);
-            // newToken.width = display_.getTextWidth("\t");
-            // newToken.height = display_.getTextHeight("\t");
             currTokenBuffer_[plcInTokenBuffer] = newToken;
             numCurrTokens_++;
             currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
@@ -220,8 +216,6 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
                 if (prevToken.token == TOKEN_HYPHEN) {
                     newToken.token = TOKEN_EMDASH;
                     display_.getTextSize("--", &newToken.width, &newToken.height);
-                    // newToken.width = display_.getTextWidth("--");
-                    // newToken.height = display_.getTextHeight("--");
                     newToken.place = plcInBuffer - 1;
                     newToken.streamPlace = placeInFile + plcInBuffer - 1;
                     currTokenBuffer_[plcInTokenBuffer - 1] = newToken;
@@ -233,8 +227,6 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
             }
             newToken.token = TOKEN_HYPHEN;
             display_.getTextSize("-", &newToken.width, &newToken.height);
-            // newToken.width = display_.getTextWidth("-");
-            // newToken.height = display_.getTextHeight("-");
             currTokenBuffer_[plcInTokenBuffer] = newToken;
             numCurrTokens_++;
             currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
