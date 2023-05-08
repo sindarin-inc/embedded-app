@@ -286,11 +286,13 @@ void DisplaySystem::drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], in
     gfxClass_->drawXBitmap(xOffset(x), yOffset(y), bitmap, w, h, color);
 }
 
-bool parsePBMHeader(SFile &f, int &width, int &height) {
+auto ParsePbmHeader(SFile &f, int &width, int &height) -> bool {
     uint8_t tmp[16];
     width = 0;
     height = 0;
-    if (f.readBytes((char *)tmp, 2) != 2) return false;
+    if (f.readBytes((char *)tmp, 2) != 2) {
+        return false;
+    }
 
     // pbm format, 1 bit binary only
     if (tmp[0] != 'P' || tmp[1] != '4') {
@@ -300,7 +302,9 @@ bool parsePBMHeader(SFile &f, int &width, int &height) {
     // skip to newline
     tmp[0] = ' ';
     while (isspace(tmp[0])) {
-        if (f.readBytes((char *)tmp, 1) != 1) return false;
+        if (f.readBytes((char *)tmp, 1) != 1) {
+            return false;
+        }
     }
 
     bool done = false;
@@ -309,10 +313,14 @@ bool parsePBMHeader(SFile &f, int &width, int &height) {
         if (tmp[0] == '#') {
             // skip until newline
             while (tmp[0] != '\n') {
-                if (f.readBytes((char *)tmp, 1) != 1) return false;
+                if (f.readBytes((char *)tmp, 1) != 1) {
+                    return false;
+                }
             }
             // skip to next line
-            if (f.readBytes((char *)tmp, 1) != 1) return false;
+            if (f.readBytes((char *)tmp, 1) != 1) {
+                return false;
+            }
             continue;
         }
 
@@ -321,8 +329,12 @@ bool parsePBMHeader(SFile &f, int &width, int &height) {
         int size = 1;
         while (!isspace(*strptr)) {
             strptr++;
-            if (++size >= 15) return false; // string too long
-            if (f.readBytes((char *)strptr, 1) != 1) return false;
+            if (++size >= 15) {
+                return false; // string too long
+            }
+            if (f.readBytes((char *)strptr, 1) != 1) {
+                return false;
+            }
         }
 
         // terminate string
@@ -336,11 +348,17 @@ bool parsePBMHeader(SFile &f, int &width, int &height) {
         size = 1;
 
         // read first character
-        if (f.readBytes((char *)strptr, 1) != 1) return false;
+        if (f.readBytes((char *)strptr, 1) != 1) {
+            return false;
+        }
         while (!isspace(*strptr)) {
             strptr++;
-            if (++size >= 15) return false; // string too long
-            if (f.readBytes((char *)strptr, 1) != 1) return false;
+            if (++size >= 15) {
+                return false; // string too long
+            }
+            if (f.readBytes((char *)strptr, 1) != 1) {
+                return false;
+            }
         }
 
         // terminate string
@@ -364,7 +382,7 @@ void DisplaySystem::drawPBM(int16_t x, int16_t y, const std::string &fname, File
     // read pbm header
     int width = 0;
     int height = 0;
-    if (!parsePBMHeader(pbmFile, width, height)) {
+    if (!ParsePbmHeader(pbmFile, width, height)) {
         log_e("failed to parse PBM header");
         return;
     }
