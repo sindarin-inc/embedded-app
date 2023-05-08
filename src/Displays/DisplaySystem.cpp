@@ -312,6 +312,7 @@ bool parsePBMHeader(SFile &f, int &width, int &height) {
                 if (f.readBytes((char *)tmp, 1) != 1) return false;
             }
             // skip to next line
+            if (f.readBytes((char *)tmp, 1) != 1) return false;
             continue;
         }
 
