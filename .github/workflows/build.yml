@@ -32,7 +32,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install platformio
           pio lib install
-          pip install -U "urllib3<2"
+          pip install "urllib3<2"
+          pip install "git+https://github.com/espressif/idf-component-manager@dd53dec"
 
       - name: Install SDL
         if: matrix.pioenv == 'simulator'
@@ -94,7 +95,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install platformio
           pio lib install
-          pip install -U "urllib3<2"
+          pip install "urllib3<2"
+          pip install "git+https://github.com/espressif/idf-component-manager@dd53dec"
 
       - name: Create a dummy readable
         run: |
