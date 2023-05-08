@@ -9,14 +9,14 @@
 
 #define NUM_DEMO_SCREENS 44
 
-#define SKIP_MESSAGE "Press (SOL) to skip"
-#define DEMO_SCREEN_1a "Twist lens in front of LEFT"
-#define DEMO_SCREEN_1b "eye like a binocular. When"
-#define DEMO_SCREEN_1c "text is crisp, press SOL"
-#define DEMO_SCREEN_2a "Twist lens in front of RIGHT"
+#define SKIP_MESSAGE "Press \ue000 to skip"
+#define DEMO_SCREEN_1a "Twist lens in front of LEFT eye"
+#define DEMO_SCREEN_1b "like a binocular. When text is"
+#define DEMO_SCREEN_1c "crisp, press \ue000 on your remote."
+#define DEMO_SCREEN_2a "Twist lens in front of RIGHT eye"
 #define DEMO_SCREEN_3a "Optionally, turn the knob on TOP "
 #define DEMO_SCREEN_3b "to adjust lens spacing. When "
-#define DEMO_SCREEN_3c "text is comfortable, press SOL"
+#define DEMO_SCREEN_3c "text is comfortable, press \ue000"
 #define DEMO_SCREEN_4 "Now put down the Sol Remote and enjoy!"
 #define DEMO_SCREEN_5a "The way we read"
 #define DEMO_SCREEN_5b "is always changing."
