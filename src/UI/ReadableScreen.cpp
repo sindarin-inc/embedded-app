@@ -35,17 +35,17 @@ auto ReadableScreen::layout(LayoutContext &context, Size size) -> Size {
 }
 
 void ReadableScreen::drawArrows(bool eraseArrow = false) {
-    // Because the user can repurpose the center button and right button, we need to check
-    // if they did that before showing the right arrow.
-    bool skipDisplay = false;
-
     switch (lastArrowPress_) {
     case REMOTE_LEFT:
         leftArrowView_.color = eraseArrow ? display_.bg : display_.fg;
         leftArrowView_.draw();
         break;
     case REMOTE_RIGHT:
-    case REMOTE_CENTER:
+    case REMOTE_CENTER: {
+        // Because the user can repurpose the center button and right button, we need to check
+        // if they did that before showing the right arrow.
+        bool skipDisplay = false;
+
         if (prefs_.fastBookmarkRight.get().value_or(false) && (lastArrowPress_ == REMOTE_RIGHT)) {
             skipDisplay = true;
         }
@@ -57,6 +57,7 @@ void ReadableScreen::drawArrows(bool eraseArrow = false) {
             rightArrowView_.draw();
         }
         break;
+    }
     case REMOTE_UP:
         if (!prefs_.cesMode.get().value_or(false)) {
             upArrowView_.color = eraseArrow ? display_.bg : display_.fg;
