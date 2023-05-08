@@ -90,6 +90,9 @@ void DigitalWrite(int pin, int level) {
     ledChange = true;
 }
 
+// mock for reading GPIO, default to logic high
+auto DigitalRead(uint8_t pin) -> int { return 1; }
+
 // for logging
 const char *pathToFileName(const char *path) {
     size_t i = 0;

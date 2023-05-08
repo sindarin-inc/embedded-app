@@ -27,7 +27,8 @@ auto TempleCloseSensor::isTempleOpen() -> bool {
 }
 
 void TempleCloseSensor::checkTemple() {
-    auto templeOpen = isTempleOpen();
+    bool templeOpen = isTempleOpen();
+
     // Don't fire the callback if this is the first call to this method
     // (because we can't determine yet if this is a state change)
     bool stateChanged = opened_.has_value() && templeOpen != opened_.value();
