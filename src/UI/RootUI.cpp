@@ -80,8 +80,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto &readables = localStore.books();
     auto &articles = localStore.articles();
 
-    ibmf75.load((ibmf_defs::MemoryPtr)fontsList[prefs_.fontType.get().value_or(0)].content,
-                fontsList[prefs_.fontType.get().value_or(0)].length);
+    // Load the SolSans font only.
+    ibmf75.load((ibmf_defs::MemoryPtr)fontsList[0].content, fontsList[0].length);
 
     SHOW_HEAP();
 
@@ -573,6 +573,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         experimentalSettingsMenu->setToggleLastItem(false);
     }
 
+#if 0
     experimentalSettingsMenu->addMenuItem(MenuItem("Fonts Library",
                                                    [this, experimentalSettingsMenu]() {
         this->prefs_.fontsLibrary.set(!this->prefs_.fontsLibrary.get().value_or(false));
@@ -584,6 +585,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     } else {
         experimentalSettingsMenu->setToggleLastItem(false);
     }
+#endif
 
     experimentalSettingsMenu->addMenuItem(MenuItem("Autopilot", [this]() {
         this->prefs_.autoPilot.set(!this->prefs_.autoPilot.get().value_or(false));
@@ -794,6 +796,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     SHOW_HEAP();
 
+#if 0
     if (prefs_.fontsLibrary.get().value_or(false)) {
         readingSettingsMenu->addMenuItem(MenuItem("Font Type (Experimental)",
                                                   [this, display, readingSettingsMenu]() {
@@ -816,6 +819,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             });
         }));
     }
+#endif
+
     readingSettingsMenu->addMenuItem(MenuItem("Brightness", [this, display, readingSettingsMenu,
                                                              &lightingController]() {
         auto lightingAdjustScreen =

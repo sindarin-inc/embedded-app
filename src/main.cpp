@@ -267,7 +267,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-    switch (prefs.font.get().value_or(PREFS_TAHOMA_REGULAR)) {
+    switch (prefs.font.get().value_or(PREFS_TAHOMA_TINY)) {
     case PREFS_LUCIDA_REGULAR:
         myDisplay.style.setFontFamily(myDisplay.style.lucidaRegular);
         break;
