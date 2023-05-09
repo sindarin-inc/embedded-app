@@ -1,37 +1,49 @@
 #include "PBMImage.hpp"
 
-bool skipSpace(RendererStream &stream) {
+auto SkipSpace(RendererStream &stream) -> bool {
     uint8_t tmp = ' ';
     while (isspace(tmp)) {
-        if (stream.readBytes(&tmp, 1) != 1) return false;
+        if (stream.readBytes(&tmp, 1) != 1) {
+            return false;
+        }
     }
 
     // back up one byte
-    if (!stream.seek(stream.position() - 1)) return false;
+    if (!stream.seek(stream.position() - 1)) {
+        return false;
+    }
     return true;
 }
 
-bool skipToNewLine(RendererStream &stream) {
+auto SkipToNewLine(RendererStream &stream) -> bool {
     uint8_t tmp = 0;
     while (tmp != '\n') {
-        if (stream.readBytes(&tmp, 1) != 1) return false;
+        if (stream.readBytes(&tmp, 1) != 1) {
+            return false;
+        }
     }
     return true;
 }
 
 // attempt to read a text integer value from the stream
-bool readInt(RendererStream &stream, int &val) {
+auto ReadInt(RendererStream &stream, int &val) -> bool {
     uint8_t tmp[5];
     uint8_t *str = tmp;
     int size = 0;
     int maxSize = 4;
     // read first character
-    if (stream.readBytes(str, 1) != 1) return false;
+    if (stream.readBytes(str, 1) != 1) {
+        return false;
+    }
 
     while (!isspace(*str)) {
         str++;
-        if (++size > maxSize) return false;
-        if (stream.readBytes(str, 1) != 1) return false;
+        if (++size > maxSize) {
+            return false;
+        }
+        if (stream.readBytes(str, 1) != 1) {
+            return false;
+        }
     }
     // terminate string
     *str = 0;
@@ -39,19 +51,23 @@ bool readInt(RendererStream &stream, int &val) {
     return true;
 }
 
-bool skipComment(RendererStream &stream, bool &error) {
+auto SkipComment(RendererStream &stream, bool &error) -> bool {
     uint8_t tmp;
     error = true;
     // read first character of next line
-    if (stream.readBytes(&tmp, 1) != 1) return false;
+    if (stream.readBytes(&tmp, 1) != 1) {
+        return false;
+    }
 
     if (tmp != '#') {
-        if (!stream.seek(stream.position() - 1)) return false;
+        if (!stream.seek(stream.position() - 1)) {
+            return false;
+        }
         error = false;
         return false;
     }
 
-    if (!skipToNewLine(stream)) {
+    if (!SkipToNewLine(stream)) {
         error = true;
         return false;
     }
@@ -59,33 +75,49 @@ bool skipComment(RendererStream &stream, bool &error) {
     return true;
 }
 
-bool skipComments(RendererStream &stream) {
+auto SkipComments(RendererStream &stream) -> bool {
     bool error = false;
-    while (skipComment(stream, error)) {
+    while (SkipComment(stream, error)) {
     }
 
-    if (error) return false;
+    if (error) {
+        return false;
+    }
 
     return true;
 }
 
-bool readPBMType(RendererStream &stream) {
+auto ReadPbmType(RendererStream &stream) -> bool {
     uint8_t tmp[2];
-    if (stream.readBytes(tmp, 2) != 2) return false;
+    if (stream.readBytes(tmp, 2) != 2) {
+        return false;
+    }
 
     // pbm format, 1 bit binary only
-    if (tmp[0] != 'P' || tmp[1] != '4') return false;
+    if (tmp[0] != 'P' || tmp[1] != '4') {
+        return false;
+    }
 
     // skip whitespace
-    if (!skipSpace(stream)) return false;
+    if (!SkipSpace(stream)) {
+        return false;
+    }
 
     return true;
 }
 
-bool parsePBMHeader(RendererStream &stream, int &width, int &height) {
-    if (!readPBMType(stream)) return false;
-    if (!skipComments(stream)) return false;
-    if (!readInt(stream, width)) return false;
-    if (!readInt(stream, height)) return false;
+auto ParsePbmHeader(RendererStream &stream, int &width, int &height) -> bool {
+    if (!ReadPbmType(stream)) {
+        return false;
+    }
+    if (!SkipComments(stream)) {
+        return false;
+    }
+    if (!ReadInt(stream, width)) {
+        return false;
+    }
+    if (!ReadInt(stream, height)) {
+        return false;
+    }
     return true;
 }

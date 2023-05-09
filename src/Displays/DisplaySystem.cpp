@@ -303,7 +303,7 @@ void DisplaySystem::drawPBM(int16_t x, int16_t y, const std::string &fname, File
 void DisplaySystem::drawPBM(int16_t x, int16_t y, RendererStream &stream) {
     int width;
     int height;
-    if (!parsePBMHeader(stream, width, height)) {
+    if (!ParsePbmHeader(stream, width, height)) {
         log_e("failed to parse PBM header");
         return;
     }

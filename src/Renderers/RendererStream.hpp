@@ -48,7 +48,7 @@ public:
 
     auto available() -> int override { return contained_.available(); }
     auto read() -> int override { return contained_.read(); };
-    auto readBytes(uint8_t *buf, int size) -> int {
+    auto readBytes(uint8_t *buf, int size) -> int override {
         return contained_.readBytes((char *)buf, size);
     }
     auto seek(uint32_t pos) -> bool override { return contained_.seek(pos); };
@@ -91,7 +91,7 @@ public:
     BufferStream(const uint8_t *data, int size) : data_(data), size_(size) {}
 
     auto read() -> int override { return data_[pos_++]; };
-    auto readBytes(uint8_t *buf, int size) -> int {
+    auto readBytes(uint8_t *buf, int size) -> int override {
         int readSize = size;
         if (available() < readSize) {
             readSize = available();
