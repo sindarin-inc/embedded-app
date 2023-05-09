@@ -927,7 +927,7 @@ const char *firmwarePath = "/firmware.json";
 
 void LocalStore::saveFirmware(const Firmware &firmware) {
     auto doc = std::make_unique<SpiRamJsonDocument>(
-        std::min((size_t)firmware.releaseNotes.size() * 2, (size_t)2048));
+        std::max((size_t)firmware.releaseNotes.size() * 2, (size_t)2048));
     convertToJson(firmware, *doc);
     // Delete any existing firmware file if it exists
     fileSystem.remove(firmwarePath);
