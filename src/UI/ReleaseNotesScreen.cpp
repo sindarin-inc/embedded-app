@@ -14,7 +14,7 @@ ReleaseNotesScreen::ReleaseNotesScreen(DisplaySystem &display, PreferencesStore 
     SpiramString message = SpiRamStringFormat(
         "New firmware %s is now available! Here's what's new:\n\n", firmware.version.c_str());
     message += firmware.releaseNotes;
-    message += "\n\nPress the center button to update!";
+    message += "\n\nPress \ue000 (center) to update!";
     auto stream = std::make_shared<StdStringStream>(message);
     renderer_.setStream(stream);
 

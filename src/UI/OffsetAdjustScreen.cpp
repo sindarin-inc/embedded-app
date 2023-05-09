@@ -13,7 +13,7 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
     // This needs to be pretty big for smaller fonts
     for (int i = 0; i < 30; i++) {
         message += "Press arrows to move box around to your liking. Then "
-                   "press the center button when done! Message repeats.\n\n";
+                   "press \ue000 (center) when done! Message repeats.\n\n";
     }
     auto stream = std::make_shared<StdStringStream>(message);
     renderer_.setStream(stream);
