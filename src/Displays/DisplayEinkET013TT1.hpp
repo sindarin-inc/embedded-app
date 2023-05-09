@@ -36,7 +36,7 @@ public:
     // For those moments where you need to expose the driver directly
     auto getDriver() -> EinkET013TT1 * { return &driver_; }
 
-    void drawFullscreenBitmapFromFile(SFile &file) override;
+    void drawFullscreenBitmapFromFile(RendererStream &stream) override;
 
 protected:
     GFXcanvas1 gfxCanvas_;

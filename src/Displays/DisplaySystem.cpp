@@ -286,13 +286,11 @@ void DisplaySystem::drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], in
     gfxClass_->drawXBitmap(xOffset(x), yOffset(y), bitmap, w, h, color);
 }
 
-auto ParsePbmHeader(SFile &f, int &width, int &height) -> bool {
+bool parsePBMHeader(RendererStream &stream, int &width, int &height) {
     uint8_t tmp[16];
     width = 0;
     height = 0;
-    if (f.readBytes((char *)tmp, 2) != 2) {
-        return false;
-    }
+    if (stream.readBytes(tmp, 2) != 2) return false;
 
     // pbm format, 1 bit binary only
     if (tmp[0] != 'P' || tmp[1] != '4') {
@@ -302,9 +300,7 @@ auto ParsePbmHeader(SFile &f, int &width, int &height) -> bool {
     // skip to newline
     tmp[0] = ' ';
     while (isspace(tmp[0])) {
-        if (f.readBytes((char *)tmp, 1) != 1) {
-            return false;
-        }
+        if (stream.readBytes(tmp, 1) != 1) return false;
     }
 
     bool done = false;
@@ -313,14 +309,10 @@ auto ParsePbmHeader(SFile &f, int &width, int &height) -> bool {
         if (tmp[0] == '#') {
             // skip until newline
             while (tmp[0] != '\n') {
-                if (f.readBytes((char *)tmp, 1) != 1) {
-                    return false;
-                }
+                if (stream.readBytes(tmp, 1) != 1) return false;
             }
             // skip to next line
-            if (f.readBytes((char *)tmp, 1) != 1) {
-                return false;
-            }
+            if (stream.readBytes(tmp, 1) != 1) return false;
             continue;
         }
 
@@ -329,12 +321,8 @@ auto ParsePbmHeader(SFile &f, int &width, int &height) -> bool {
         int size = 1;
         while (!isspace(*strptr)) {
             strptr++;
-            if (++size >= 15) {
-                return false; // string too long
-            }
-            if (f.readBytes((char *)strptr, 1) != 1) {
-                return false;
-            }
+            if (++size >= 15) return false; // string too long
+            if (stream.readBytes(strptr, 1) != 1) return false;
         }
 
         // terminate string
@@ -348,17 +336,11 @@ auto ParsePbmHeader(SFile &f, int &width, int &height) -> bool {
         size = 1;
 
         // read first character
-        if (f.readBytes((char *)strptr, 1) != 1) {
-            return false;
-        }
+        if (stream.readBytes(strptr, 1) != 1) return false;
         while (!isspace(*strptr)) {
             strptr++;
-            if (++size >= 15) {
-                return false; // string too long
-            }
-            if (f.readBytes((char *)strptr, 1) != 1) {
-                return false;
-            }
+            if (++size >= 15) return false; // string too long
+            if (stream.readBytes(strptr, 1) != 1) return false;
         }
 
         // terminate string
@@ -372,17 +354,25 @@ auto ParsePbmHeader(SFile &f, int &width, int &height) -> bool {
     return true;
 }
 
+void DisplaySystem::drawPBM(int16_t x, int16_t y, const uint8_t *pbmbytes, int size) {
+    BufferStream stream(pbmbytes, size);
+    drawPBM(x, y, stream);
+}
+
 void DisplaySystem::drawPBM(int16_t x, int16_t y, const std::string &fname, FileSystem &fs) {
     if (!fs.exists(fname)) {
         log_e("cannot display pbm, file not present: %s", fname.c_str());
         return;
     }
     SFile pbmFile = fs.open(fname);
+    ContainerStream<SFile> stream(pbmFile);
+    drawPBM(x, y, stream);
+}
 
-    // read pbm header
-    int width = 0;
-    int height = 0;
-    if (!ParsePbmHeader(pbmFile, width, height)) {
+void DisplaySystem::drawPBM(int16_t x, int16_t y, RendererStream &stream) {
+    int width;
+    int height;
+    if (!parsePBMHeader(stream, width, height)) {
         log_e("failed to parse PBM header");
         return;
     }
@@ -398,7 +388,7 @@ void DisplaySystem::drawPBM(int16_t x, int16_t y, const std::string &fname, File
     if (!fullScreen) {
         // load bitmap into memory
         auto bitmap = SpiRamArrayPtr<uint8_t>(byteSize);
-        if (pbmFile.readBytes((char *)bitmap.get(), byteSize) != byteSize) {
+        if (stream.readBytes(bitmap.get(), byteSize) != byteSize) {
             log_e("failed to read bitmap");
             return;
         }
@@ -407,7 +397,7 @@ void DisplaySystem::drawPBM(int16_t x, int16_t y, const std::string &fname, File
         return;
     }
 
-    drawFullscreenBitmapFromFile(pbmFile);
+    drawFullscreenBitmapFromFile(stream);
 }
 
 void DisplaySystem::clearScreen() {

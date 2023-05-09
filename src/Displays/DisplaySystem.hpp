@@ -177,9 +177,11 @@ public:
                      uint16_t color);
 
     void drawPBM(int16_t x, int16_t y, const std::string &fname, FileSystem &fs);
+    void drawPBM(int16_t x, int16_t y, const uint8_t *pbmBytes, int size);
+    void drawPBM(int16_t x, int16_t y, RendererStream &stream);
 
     // override for subclass, need access to raw drawing buffer
-    virtual void drawFullscreenBitmapFromFile(SFile &file) { log_i("not supported"); }
+    virtual void drawFullscreenBitmapFromFile(RendererStream &stream) { log_i("not supported"); }
 
     // Clear the whole screen
     void clearScreen();
