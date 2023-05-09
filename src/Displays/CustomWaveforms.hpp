@@ -26,6 +26,40 @@ const EinkET013TT1Waveform BC_INVERTED_EINK_10_13C_WAVEFORM_AU4 = {
     },
 };
 
+// Like an AU4 but meant to push a little more to reduce ghosting for black
+// to white transitions
+const EinkET013TT1Waveform BC_REGULAR_EINK_10_13C_WAVEFORM_ERASE = {
+    "Eink 10-13C (AU4)",
+    8,
+    std::array<Frame, MAX_FRAMES_PER_WAVEFORM>{
+        Frame{.bb = NOCHG, .bw = WHITE, .wb = BLACK, .ww = NOCHG},
+        Frame{.bb = NOCHG, .bw = WHITE, .wb = BLACK, .ww = NOCHG},
+        Frame{.bb = NOCHG, .bw = WHITE, .wb = BLACK, .ww = NOCHG},
+        Frame{.bb = NOCHG, .bw = WHITE, .wb = BLACK, .ww = NOCHG},
+        Frame{.bb = NOCHG, .bw = WHITE, .wb = BLACK, .ww = NOCHG},
+        Frame{.bb = NOCHG, .bw = WHITE, .wb = BLACK, .ww = NOCHG},
+        Frame{.bb = BLACK, .bw = WHITE, .wb = BLACK, .ww = NOCHG},
+        Frame{.bb = NOCHG, .bw = NOCHG, .wb = NOCHG, .ww = NOCHG},
+    },
+};
+
+// Like an AU4 but meant to push a little more to reduce ghosting for black
+// to white transitions
+const EinkET013TT1Waveform BC_INVERTED_EINK_10_13C_WAVEFORM_ERASE = {
+    "Eink 10-13C (AU4)",
+    8,
+    std::array<Frame, MAX_FRAMES_PER_WAVEFORM>{
+        Frame{.bb = NOCHG, .bw = WHITE, .wb = BLACK, .ww = NOCHG},
+        Frame{.bb = NOCHG, .bw = WHITE, .wb = BLACK, .ww = NOCHG},
+        Frame{.bb = NOCHG, .bw = WHITE, .wb = BLACK, .ww = NOCHG},
+        Frame{.bb = NOCHG, .bw = WHITE, .wb = BLACK, .ww = NOCHG},
+        Frame{.bb = NOCHG, .bw = WHITE, .wb = BLACK, .ww = NOCHG},
+        Frame{.bb = NOCHG, .bw = WHITE, .wb = BLACK, .ww = NOCHG},
+        Frame{.bb = NOCHG, .bw = WHITE, .wb = BLACK, .ww = WHITE},
+        Frame{.bb = NOCHG, .bw = NOCHG, .wb = NOCHG, .ww = NOCHG},
+    },
+};
+
 const EinkET013TT1Waveform BC_EINK_31_35C_WAVEFORM_FULL = {
     "BC edits of Eink 31-35C (FULL)",
     18,

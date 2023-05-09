@@ -28,16 +28,16 @@ import pexpect.exceptions
 
 def test_startup(dut: IdfDut) -> None:
     # sol.open_temple()
-    # Sindarin: formatting littlefs..
+    # Sol: formatting littlefs..
     # Check for formatting
     # TODO: Check this conditionally
     try:
-        dut.expect("Sindarin: Formatting LittleFS...", timeout=30)
+        dut.expect("Sol: Formatting LittleFS...", timeout=30)
     except pexpect.exceptions.TIMEOUT:
         pytest.fail("Failed: Did not format")
 
     try:
-        dut.expect("Sindarin: Formatting LittleFS Complete.", timeout=300)
+        dut.expect("Sol: Formatting LittleFS Complete.", timeout=300)
     except pexpect.exceptions.TIMEOUT:
         pytest.fail("Failed: Formatting failed")
 
@@ -52,9 +52,9 @@ def test_startup(dut: IdfDut) -> None:
         pytest.fail("Failed: MMC5603 magnetometer not found")
 
     try:
-        dut.expect("Sindarin: Error-free boot!", timeout=30)
+        dut.expect("Sol: Error-free boot!", timeout=30)
     except pexpect.exceptions.TIMEOUT:
-        pytest.fail("Failed: Sindarin: Error-free boot! not found")
+        pytest.fail("Failed: Sol: Error-free boot! not found")
 
 
 # def test_power_on() -> None:
@@ -120,4 +120,4 @@ def test_startup(dut: IdfDut) -> None:
 
 # # Check for error free boot
 # def test_error_boot(dut: IdfDut) -> None:
-#     dut.expect("Sindarin: Error-free boot!", timeout=90)
+#     dut.expect("Sol: Error-free boot!", timeout=90)

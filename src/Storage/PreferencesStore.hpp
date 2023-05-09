@@ -311,9 +311,10 @@ public:
           autoPilot(*this, "auto-pilot"), fastTransitions(*this, "fast-tran"),
           noUploadCrashes(*this, "no-upload-crash"), showDebugMenu(*this, "show-debug"),
           fastBookmarkRight(*this, "fst-mark-right"), fastBookmarkCenter(*this, "fst-mark-cent"),
-          wifiSettingsJson(*this, "wifi-settings"), localStoreMigrationVersion(*this, "ls-version"),
-          fontsLibrary(*this, "fonts-lib"), fontType(*this, "font-type"),
-          tutorialsDeleted(*this, "tutorials"),
+          noPageTransitionArrows(*this, "no-page-arrows"), wifiSettingsJson(*this, "wifi-settings"),
+          localStoreMigrationVersion(*this, "ls-version"), fontsLibrary(*this, "fonts-lib"),
+          fontType(*this, "font-type"), tutorialsDeleted(*this, "tutorials"),
+          bleAdvertisingKey(*this, "ble-adv-key"), bleAuthKey(*this, "ble-auth-key"),
           preferencesStoreMigrationVersion_(*this, "ps-version"){};
     PreferencesStore(PreferencesStore &) = delete;
 
@@ -478,11 +479,17 @@ public:
     PrefsItem<bool> showDebugMenu;
     PrefsItem<bool> fastBookmarkRight;
     PrefsItem<bool> fastBookmarkCenter;
+    PrefsItem<bool> noPageTransitionArrows;
     PrefsItem<std::string> wifiSettingsJson;
     PrefsItem<uint32_t> localStoreMigrationVersion;
     PrefsItem<bool> fontsLibrary;
     PrefsItem<int> fontType;
     PrefsItem<uint32_t> tutorialsDeleted;
+    // Value that's advertised in manufacturer data as a hint to mobile apps so that they can
+    // connect to a device paired with the correct account.
+    PrefsItem<std::string> bleAdvertisingKey;
+    // Value that's used to authenticate the mobile app to the glasses
+    PrefsItem<std::string> bleAuthKey;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles

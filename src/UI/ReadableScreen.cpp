@@ -7,14 +7,72 @@
 
 #include "Misc/Platform.hpp"
 #include "UI/Bitmaps/Auto_Pilot_Icons.hpp"
-#include "UI/Bitmaps/Home.hpp"
-#include "UI/Bitmaps/Read_Gear.hpp"
 #include "sindarin-debug.h"
 
 // Two minutes per page currently
 #define SLOWEST_PAGE_SPEED 120000
 // Change speed of speed reading in increments of 2 seconds
 #define PAGE_SPEED_INCREMENT 2000
+
+auto ReadableScreen::layout(LayoutContext &context, Size size) -> Size {
+    int arrowWidth = 24;
+    int arrowHeight = 8;
+    int sidePadding = -15;
+    int topBottomPadding = -10;
+    auto arrowContainer = Rect::fromSize(size).inset(sidePadding, topBottomPadding);
+    context.setViewSizeInRect(leftArrowView_, {arrowHeight, arrowWidth}, arrowContainer,
+                              LayoutOptionsAlignLeft | LayoutOptionsAlignCenterVertical);
+    context.setViewSizeInRect(rightArrowView_, {arrowHeight, arrowWidth}, arrowContainer,
+                              LayoutOptionsAlignRight | LayoutOptionsAlignCenterVertical);
+    context.setViewSizeInRect(upArrowView_, {arrowWidth, arrowHeight}, arrowContainer,
+                              LayoutOptionsAlignTop | LayoutOptionsAlignCenterHorizontal);
+    context.setViewSizeInRect(downArrowView_, {arrowWidth, arrowHeight}, arrowContainer,
+                              LayoutOptionsAlignBottom | LayoutOptionsAlignCenterHorizontal);
+    return size;
+}
+
+void ReadableScreen::drawArrows(bool eraseArrow = false) {
+    switch (lastArrowPress_) {
+    case REMOTE_LEFT:
+        leftArrowView_.color = eraseArrow ? display_.bg : display_.fg;
+        leftArrowView_.draw();
+        break;
+    case REMOTE_RIGHT:
+    case REMOTE_CENTER: {
+        // Because the user can repurpose the center button and right button, we need to check
+        // if they did that before showing the right arrow.
+        bool skipDisplay = false;
+
+        if (prefs_.fastBookmarkRight.get().value_or(false) && (lastArrowPress_ == REMOTE_RIGHT)) {
+            skipDisplay = true;
+        }
+        if (prefs_.fastBookmarkCenter.get().value_or(false) && (lastArrowPress_ == REMOTE_CENTER)) {
+            skipDisplay = true;
+        }
+        if (!skipDisplay) {
+            rightArrowView_.color = eraseArrow ? display_.bg : display_.fg;
+            rightArrowView_.draw();
+        }
+        break;
+    }
+    case REMOTE_UP:
+        if (!prefs_.cesMode.get().value_or(false)) {
+            upArrowView_.color = eraseArrow ? display_.bg : display_.fg;
+            upArrowView_.draw();
+        }
+        break;
+    case REMOTE_DOWN:
+        if (!prefs_.cesMode.get().value_or(false)) {
+            downArrowView_.color = eraseArrow ? display_.bg : display_.fg;
+            downArrowView_.draw();
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+void ReadableScreen::drawInRect(Rect rect) { drawArrows(); }
 
 // Once we have a real database, this will all be replaced.
 // For now, since we assume that there won't be TOO many bookmarks, we simply
@@ -74,71 +132,17 @@ void ReadableScreen::writeOutBookmarkUpdate() {
     prefs_.readableBookmarksChanged.set(readable_.shortenedUuid.c_str(), true);
 }
 
-void ReadableScreen::renderIcons(DisplaySystem &display) {
-    int screenWidth = display.width();
-    int screenHeight = display.height();
-    int arrowWidth = 8;
-    int arrowHeight = 4;
-
-    // Use a gear for the bottom icon.
-    // the Y calcuation is a bit of a hack, but at least it takes into acccount line spacing
-    // differences. This is one place that will benefit from more descriptive getTextHeight
-    // methods.
-    if (!prefs_.cesMode.get().value_or(false)) {
-        display.drawXBitmap(screenWidth / 2 - READ_GEAR_WIDTH / 2,
-                            screenHeight + display.getTextHeight() / 2 + 3, readGearBits,
-                            READ_GEAR_WIDTH, READ_GEAR_HEIGHT, display.fg);
-    }
-
-    if (pageSpeed_ == 0) {
-        // Left Arrow
-        display.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 - arrowWidth / 2,
-                         display.fg);
-        display.drawLine(-arrowHeight - 8, screenHeight / 2, -8, screenHeight / 2 + arrowWidth / 2,
-                         display.fg);
-    } else {
-        display.drawXBitmap(-auto_minus_width - 8, screenHeight / 2 - auto_minus_height / 2 - 5,
-                            autoMinusBits, auto_minus_width, auto_minus_height, display.fg);
-    }
-
-    if (!prefs_.cesMode.get().value_or(false)) {
-        // Up arrow - looks like a bookmark to indicate that's what you can do.
-        display.drawXBitmap(screenWidth / 2 - HOME2_WIDTH / 2, -HOME2_HEIGHT - 3, home2bits,
-                            HOME2_WIDTH, HOME2_HEIGHT, display.fg);
-
-        if (pageSpeed_ == 0) {
-            display.setRotation(1);
-            // Right side show bookmark icon.
-            display.drawLine(screenWidth / 2, -arrowHeight - 1, screenWidth / 2 - arrowWidth / 2,
-                             -1, display.fg);
-            display.drawLine(screenWidth / 2, -arrowHeight - 1, screenWidth / 2 + arrowWidth / 2,
-                             -1, display.fg);
-
-            display.drawLine(screenWidth / 2 - arrowWidth / 2, -1, screenWidth / 2 - arrowWidth / 2,
-                             display.yAbsolute(0), display.fg);
-            display.drawLine(screenWidth / 2 + arrowWidth / 2, -1, screenWidth / 2 + arrowWidth / 2,
-                             display.yAbsolute(0), display.fg);
-
-            display.setRotation(0);
-        } else {
-            display.drawXBitmap(screenWidth + 2, screenHeight / 2 - auto_plus_height / 2,
-                                autoPlusBits, auto_plus_width, auto_plus_height, display.fg);
-        }
-    }
-
-    // Right Arrow
-    if (prefs_.cesMode.get().value_or(false)) {
-        display.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
-                         screenHeight / 2 + arrowWidth / 2, display.fg);
-        display.drawLine(screenWidth + arrowHeight + 2, screenHeight / 2, screenWidth + 2,
-                         screenHeight / 2 - arrowWidth / 2, display.fg);
-    }
-}
-
 // Since this happens in a couple of places (animation as well as button press),
 // we have a helper method to do the work.
 void ReadableScreen::turnPage() {
     if (atEnd_) {
+        if (prefs_.emcMode.get().value_or(false)) {
+            log_d("Looping back to the beginning of Readable for EMC testing mode");
+            // Loop back to the beginning
+            readable_.placePrev = 0;
+            readable_.place = 0;
+            return;
+        }
         showPopupMenu();
         popupMenuScreen_.preselectArchiveMenuItem();
     } else {
@@ -157,28 +161,44 @@ void ReadableScreen::turnPage() {
 auto ReadableScreen::checkAtEnd() -> bool { return (newPlace_ == 0); }
 
 void ReadableScreen::render(DisplaySystem &display) {
-    // Rendering the popup is a special case. We first re-draw the text onto the background (since
-    // it would have been cleared at the end of the last updateDisplay), then we render the popup
-    // over it, then we draw that as a partial refresh. Then we only render the popup (no text) and
-    // update again as AU4. That causes the text to be slightly faded out, but the popup menu to be
-    // very clear.
-    // NOTE: We might consider in the future, not always clearing the display (`fillScreen(bg);`)
-    // after updateDisplay. Then we could simply draw over existing screen contents without
-    // rerendering it. But that would be a pretty global change, so we'll leave it for now.
+    // Rendering the popup is a special case. We first re-draw the text onto the background
+    // (since it would have been cleared at the end of the last updateDisplay), then we render
+    // the popup over it, then we draw that as a partial refresh. Then we only render the popup
+    // (no text) and update again as AU4. That causes the text to be slightly faded out, but the
+    // popup menu to be very clear. NOTE: We might consider in the future, not always clearing
+    // the display (`fillScreen(bg);`) after updateDisplay. Then we could simply draw over
+    // existing screen contents without rerendering it. But that would be a pretty global
+    // change, so we'll leave it for now.
     bool renderPopupBackground = currentScreen_ == &popupMenuScreen_ && renderPopup_;
+
+    bool renderTransitionArrows = !prefs_.noPageTransitionArrows.get().value_or(false);
 
     if (currentScreen_ != this && !renderPopupBackground) {
         currentScreen_->render(display);
         return;
     }
 
+    setFrame(
+        {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
+         {display.defaultScreenWidth - 2 * display.defaultXPadding,
+          display.defaultScreenHeight - 2 * display.defaultYPadding}});
+
+    if (renderTransitionArrows) {
+        if (lastArrowPress_ != REMOTE_NONE) {
+            draw();
+            display.updateDisplay(DisplaySystem::UpdateType::FAST);
+        }
+    }
+
     prefs_.lastReadableId.set(readable_.uuid);
 
     display.setFont(display.style.getFontFamily().readableFont);
 
+    bool emcMode = prefs_.emcMode.get().value_or(false);
+
     // If it's the first read of the book, show the help screen.
     // Then ignore the next press of the button
-    if (!prefs_.firstRead.get().value_or(false)) {
+    if (!emcMode && !prefs_.firstRead.get().value_or(false)) {
 
         // We need to make sure this goes onto the second page because of a bug in the renderer.
         std::string message =
@@ -197,7 +217,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         prefs_.firstRead.set(true);
         ignoreNextPress_ = true;
         firstTimeRenderer_.renderPage(0);
-        // renderIcons(display);
+
         if (prefs_.fastTransitions.get().value_or(false)) {
             display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         } else {
@@ -206,7 +226,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
-    if (!prefs_.firstAutopilotRead.get().value_or(false) && (pageSpeed_ != 0)) {
+    if (!emcMode && !prefs_.firstAutopilotRead.get().value_or(false) && (pageSpeed_ != 0)) {
         // We need to make sure this goes onto the second page because of a bug in the renderer.
         std::string message =
             "Welcome to the beta of Autopilot mode! Here is what each button does "
@@ -220,7 +240,6 @@ void ReadableScreen::render(DisplaySystem &display) {
         prefs_.firstAutopilotRead.set(true);
         ignoreNextPress_ = true;
         firstTimeRenderer_.renderPage(0);
-        // renderIcons(display);
         if (prefs_.fastTransitions.get().value_or(false)) {
             display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         } else {
@@ -279,33 +298,12 @@ void ReadableScreen::render(DisplaySystem &display) {
                              display.bg);
     }
 
-    // Show the home screen and gear icon on the first page you read as a reminder. Then drop them
-    // after that.
-    if (!shownIcons_) {
-        // renderIcons(display);
-        shownIcons_ = true;
-    }
-
-    // Only show the autopilot icon on page turns or if speed was changed -- let it fade out with
-    // the rest of the text
-    if (((pageSpeed_ != 0) && (speedLinesToSkip_ == 0)) || (showAutopilotMinus_) ||
-        (showAutopilotPlus_)) {
+    // Only show the autopilot icon on page turns or if speed was changed -- let it fade out
+    // with the rest of the text
+    if ((pageSpeed_ != 0) && (speedLinesToSkip_ == 0)) {
         int screenWidth = display.width();
-        int screenHeight = display.height();
         display.drawXBitmap(screenWidth + 2, 0, autoPilotBits, auto_pilot_width, auto_pilot_height,
                             display.fg);
-
-        if (showAutopilotMinus_) {
-            display.drawXBitmap(screenWidth + 2, screenHeight / 2 - auto_minus_height / 2,
-                                autoMinusBits, auto_minus_width, auto_minus_height, display.fg);
-            showAutopilotMinus_ = false;
-        }
-
-        if (showAutopilotPlus_) {
-            display.drawXBitmap(screenWidth + 2, screenHeight / 2 - auto_plus_height / 2,
-                                autoPlusBits, auto_plus_width, auto_plus_height, display.fg);
-            showAutopilotPlus_ = false;
-        }
     }
 
     log_d("%lu is the new place in the text %s", newPlace_, atEnd_ ? "(at end)" : "");
@@ -323,10 +321,19 @@ void ReadableScreen::render(DisplaySystem &display) {
             display.updateDisplay(DisplaySystem::UpdateType::FAST_ORIGINAL_AU4);
         }
     } else {
+        if (renderTransitionArrows) {
+            draw();
+        }
         if (prefs_.fastTransitions.get().value_or(false)) {
-            display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+            display.updateDisplay(DisplaySystem::UpdateType::PARTIAL,
+                                  (renderTransitionArrows) ? false : true);
         } else {
-            display.updateDisplay(DisplaySystem::UpdateType::FULL);
+            display.updateDisplay(DisplaySystem::UpdateType::FULL,
+                                  (renderTransitionArrows) ? false : true);
+        }
+        if (renderTransitionArrows) {
+            drawArrows(true);
+            display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
         }
     }
 
@@ -341,7 +348,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         }
     }
 
-    if (prefs_.emcMode.get().value_or(false)) {
+    if (emcMode) {
         // Must stop the timer because ChangePeriod starts it.
         xTimerStop(DisplaySystem::animationTimer, 0);
         // Change page every 30 seconds
@@ -350,6 +357,10 @@ void ReadableScreen::render(DisplaySystem &display) {
     }
 
     renderPopup_ = false;
+
+    // Reset the lastArrowPress so we don't show it again until another key is pressed (for
+    // autopilot mostly)
+    lastArrowPress_ = REMOTE_NONE;
 }
 
 void ReadableScreen::incrementReadingTime() {
@@ -405,13 +416,11 @@ void ReadableScreen::processCommandDemoMode(RemoteCommand command) {
 }
 
 void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
-
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
         pageSpeed_ = std::min(pageSpeed_ + PAGE_SPEED_INCREMENT, SLOWEST_PAGE_SPEED);
         prefs_.autoPilotSpeed.set(pageSpeed_);
         log_d("Slowing down: New Page Speed is %u", pageSpeed_);
-        showAutopilotMinus_ = true;
         break;
     case RemoteCommand::PLAY:
     case RemoteCommand::ENTER:
@@ -444,7 +453,6 @@ void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
         pageSpeed_ = std::max(pageSpeed_ - PAGE_SPEED_INCREMENT, 1);
         log_d("Speeding up: New Page Speed is %u", pageSpeed_);
         prefs_.autoPilotSpeed.set(pageSpeed_);
-        showAutopilotPlus_ = true;
         break;
 
     case RemoteCommand::NOP_BUTTON:
@@ -457,7 +465,6 @@ void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
 }
 
 void ReadableScreen::processCommandNormal(RemoteCommand command) {
-
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
         readable_.place = renderer_.getPreviousPlace();
@@ -512,6 +519,27 @@ void ReadableScreen::processCommand(RemoteCommand command) {
         return;
     }
 
+    switch (command) {
+    case RemoteCommand::CHANNEL_MINUS:
+        lastArrowPress_ = REMOTE_LEFT;
+        break;
+    case RemoteCommand::CHANNEL_PLUS:
+        lastArrowPress_ = REMOTE_RIGHT;
+        break;
+    case RemoteCommand::PLAY:
+    case RemoteCommand::ENTER:
+        lastArrowPress_ = REMOTE_CENTER;
+        break;
+    case RemoteCommand::NEXT:
+        lastArrowPress_ = REMOTE_DOWN;
+        break;
+    case RemoteCommand::BACK:
+    case RemoteCommand::PREV:
+        lastArrowPress_ = REMOTE_UP;
+        break;
+    default:
+        break;
+    }
     // Similarly, for demo mode, we want a simple set of commands.
     if (prefs_.cesMode.get().value_or(false)) {
         processCommandDemoMode(command);

@@ -2,6 +2,7 @@
 
 #include "BLESettings.hpp"
 
+#include <driver/gpio.h>
 #include <utility>
 
 #include "Misc/Dispatch.hpp"
@@ -60,6 +61,10 @@ void BLESettings::disconnectPageTurnerForSeconds(const int seconds) {
 }
 
 void BLESettings::blinkLedAfterConnect(BLECharacteristic *characteristic, const std::string &key) {
+    // TODO: Fully take over the LED for a while
+    gpio_hold_dis((gpio_num_t)RED_LED);
+    gpio_hold_dis((gpio_num_t)GREEN_LED);
+    gpio_hold_dis((gpio_num_t)BLUE_LED);
     for (int i = 0; i < 10; i++) {
         // Flash all the LEDs
         DigitalWrite(RED_LED, LED_ON);
