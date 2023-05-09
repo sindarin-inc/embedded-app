@@ -58,10 +58,10 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
             }
         }
         display.drawSingleLineOfText(
-            itemTitle, xOffsetForMenu,
-            yOffsetForMenu + additionalYOffset +
+            itemTitle, xOffsetForMenu + 5,
+            yOffsetForMenu + additionalYOffset - 1 +
                 (i % myStyle_.numberOfItemsPerPage) *
-                    (display.getTextHeight() - display.getLineSpacing() + 3));
+                    (display.getTextHeight() - display.getLineSpacing() + 1));
 
         // xoffset for main menu is 12, for settings menu is 23
         // yoffset for main menu is some crazy thing
@@ -70,7 +70,7 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
             display.fillRoundRect(xOffsetForMenu - display.getTextHeight() / 4 - 2,
                                   yOffsetForMenu + additionalYOffset +
                                       (i % myStyle_.numberOfItemsPerPage) *
-                                          (display.getTextHeight() - display.getLineSpacing() + 3) +
+                                          (display.getTextHeight() - display.getLineSpacing() + 1) +
                                       4,
                                   5, 5, 3, display.fg);
         }
