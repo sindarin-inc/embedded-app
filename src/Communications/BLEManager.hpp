@@ -41,8 +41,12 @@ protected:
     public:
         BLEManager *enclosed;
         ServerCallbacks(BLEManager *enclosure) { enclosed = enclosure; }
-        void onConnect(BLEServer *server) override { log_i("BLE client connected to our server!"); }
+        void onConnect(BLEServer *server) override {
+            SHOW_HEAP();
+            log_i("BLE client connected to our server!");
+        }
         void onDisconnect(BLEServer *server) override {
+            SHOW_HEAP();
             log_i("BLE client disconnected from our server!");
             enclosed->authed_ = false;
         }

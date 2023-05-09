@@ -112,6 +112,8 @@ auto TTRemoteInput::connectToDevice(BLEAdvertisedDevice &device) -> bool {
         }
     });
 
+    SHOW_HEAP();
+
     log_i("Connected to PageTurner %s", address.toString().c_str());
 
     // Output a metric log on the very first TT connection
