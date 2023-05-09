@@ -310,9 +310,9 @@ public:
           noUploadCrashes(*this, "no-upload-crash"), showDebugMenu(*this, "show-debug"),
           fastBookmarkRight(*this, "fst-mark-right"), fastBookmarkCenter(*this, "fst-mark-cent"),
           noPageTransitionArrows(*this, "no-page-arrows"), wifiSettingsJson(*this, "wifi-settings"),
-          wifiSettingsJson(*this, "wifi-settings"), localStoreMigrationVersion(*this, "ls-version"),
-          tutorialsDeleted(*this, "tutorials"), bleAdvertisingKey(*this, "ble-adv-key"),
-          bleAuthKey(*this, "ble-aut-key"), preferencesStoreMigrationVersion_(*this, "ps-version"){};
+          localStoreMigrationVersion(*this, "ls-version"), tutorialsDeleted(*this, "tutorials"),
+          bleAdvertisingKey(*this, "ble-adv-key"), bleAuthKey(*this, "ble-aut-key"),
+          preferencesStoreMigrationVersion_(*this, "ps-version"){};
     PreferencesStore(PreferencesStore &) = delete;
 
     void migrateIfNeeded() {
