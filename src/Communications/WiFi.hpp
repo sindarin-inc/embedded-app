@@ -70,6 +70,10 @@ public:
     auto getLocalIp() -> esp_ip4_addr_t;
     auto getLocalIpStr() -> std::string;
 
+    auto getFirstWiFiSSID() -> std::string {
+        return hasWiFiCredentials() ? settings_.settings[0].ssid : "";
+    }
+
 protected:
     WiFiState wiFiState_ = UNINITIALIZED;
     wifi_power_t wiFiPower_ = WIFI_POWER_19_5dBm;
