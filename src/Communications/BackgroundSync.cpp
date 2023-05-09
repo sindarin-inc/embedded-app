@@ -10,13 +10,8 @@
 #include "UI/ContentSyncScreen.hpp"
 #include "config.h"
 
-void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalStore &localStore) {
-    // Debug LED so we know what's happening (will be turned off when deep sleep happens)
-    // Only turn on if debug menu is enabled
-    if (prefs.showDebugMenu.get().value_or(false)) {
-        DigitalWrite(BLUE_LED, LED_ON);
-    }
-
+void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
+                            LocalStore &localStore) {
     // Create a notification group to wait for background tasks
     auto backgroundGroup = xEventGroupCreate();
     auto &fileSystem = localStore.fileSystem;
@@ -108,6 +103,20 @@ void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalSt
         if (!(bits & 1)) {
             log_w("Coredump upload timed out");
         }
+    }
+}
+
+void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalStore &localStore) {
+    // Debug LED so we know what's happening (will be turned off when deep sleep happens)
+    // Only turn on if debug menu is enabled
+    if (prefs.showDebugMenu.get().value_or(false)) {
+        DigitalWrite(BLUE_LED, LED_ON);
+    }
+
+    BackgroundSyncInternal(powerManager, prefs, localStore);
+
+    if (prefs.showDebugMenu.get().value_or(false)) {
+        DigitalWrite(BLUE_LED, LED_OFF);
     }
 }
 

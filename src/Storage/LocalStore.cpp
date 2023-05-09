@@ -94,7 +94,8 @@ auto LocalStore::readablesModelType(const ReadablesVector &readables) -> Readabl
     return &readables == &articles_ ? ReadablesModelType::Article : ReadablesModelType::Book;
 }
 
-auto LocalStore::hasReadable(const ReadablesVector &readables, const Readable &readable) -> bool {
+auto LocalStore::hasReadable(const ReadablesVector &readables, const Readable &readable,
+                             bool ignoreFileSizeCheck) -> bool {
     for (const auto &r : readables) {
         auto path = readableFilePathForReading(r);
         if (r.uuid == readable.uuid && !path.empty()) {
@@ -106,7 +107,7 @@ auto LocalStore::hasReadable(const ReadablesVector &readables, const Readable &r
             }
 
             // If we have a file object, check that the size matches
-            if (r.files.size() > 0) {
+            if (r.files.size() > 0 && !ignoreFileSizeCheck) {
                 if (fileSize >= 0 && fileSize != readable.file().size) {
                     log_w("File size mismatch for %s (%d on disk vs %d in local store), ignoring",
                           path.c_str(), fileSize, readable.file().size);
@@ -611,7 +612,7 @@ auto LocalStore::processReadables(const CheckSyncResponse &checkSyncResponse,
                   userReadable.placemark);
         }
 
-        auto found = hasReadable(readables, userReadable.readable);
+        auto found = hasReadable(readables, userReadable.readable, true);
         if (userReadable.isArchived) {
             log_i("Readable \"%s\" is archived, will delete", userReadable.readable.title.c_str());
             // TODO: Store these articles in an accessible archive instead of just deleting them

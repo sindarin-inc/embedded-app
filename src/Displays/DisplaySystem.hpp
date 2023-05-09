@@ -71,8 +71,10 @@ public:
         FAST_WITH_VCOM_NUDGE,
         FAST_ORIGINAL_AU4,
         ORIGINAL_PARTIAL,
+        ERASE,
     };
-    virtual void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED) = 0;
+    virtual void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED,
+                               bool clearFrameBuffer = true) = 0;
 
     virtual void beginPowerOn() {}
 
