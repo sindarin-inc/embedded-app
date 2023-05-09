@@ -6,6 +6,7 @@
 
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Dispatch.hpp"
+#include "Misc/PBMImage.hpp"
 #include "Misc/StringUtil.hpp"
 #include "sindarin-debug.h"
 
@@ -284,74 +285,6 @@ void DisplaySystem::drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], in
         setPartialWindow(x, y, w, h);
     }
     gfxClass_->drawXBitmap(xOffset(x), yOffset(y), bitmap, w, h, color);
-}
-
-bool parsePBMHeader(RendererStream &stream, int &width, int &height) {
-    uint8_t tmp[16];
-    width = 0;
-    height = 0;
-    if (stream.readBytes(tmp, 2) != 2) return false;
-
-    // pbm format, 1 bit binary only
-    if (tmp[0] != 'P' || tmp[1] != '4') {
-        return false;
-    }
-
-    // skip to newline
-    tmp[0] = ' ';
-    while (isspace(tmp[0])) {
-        if (stream.readBytes(tmp, 1) != 1) return false;
-    }
-
-    bool done = false;
-    while (!done) {
-        // check for comment
-        if (tmp[0] == '#') {
-            // skip until newline
-            while (tmp[0] != '\n') {
-                if (stream.readBytes(tmp, 1) != 1) return false;
-            }
-            // skip to next line
-            if (stream.readBytes(tmp, 1) != 1) return false;
-            continue;
-        }
-
-        // not a comment, parse as width, height
-        uint8_t *strptr = tmp;
-        int size = 1;
-        while (!isspace(*strptr)) {
-            strptr++;
-            if (++size >= 15) return false; // string too long
-            if (stream.readBytes(strptr, 1) != 1) return false;
-        }
-
-        // terminate string
-        *strptr = 0;
-
-        // parse width
-        width = atoi((const char *)tmp);
-
-        // read height
-        strptr = tmp;
-        size = 1;
-
-        // read first character
-        if (stream.readBytes(strptr, 1) != 1) return false;
-        while (!isspace(*strptr)) {
-            strptr++;
-            if (++size >= 15) return false; // string too long
-            if (stream.readBytes(strptr, 1) != 1) return false;
-        }
-
-        // terminate string
-        *strptr = 0;
-
-        // parse height
-        height = atoi((const char *)tmp);
-        done = true;
-    }
-
-    return true;
 }
 
 void DisplaySystem::drawPBM(int16_t x, int16_t y, const uint8_t *pbmbytes, int size) {
