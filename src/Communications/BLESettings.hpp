@@ -89,7 +89,7 @@ protected:
                     // If we're already authed, allow changing the key
                     else if (BLEManager::getInstance()->isAuthed()) {
                         log_i("Changing auth key from %s to %s",
-                              enclosed->prefs_->bleAuthKey.get().value().c_str(),
+                              enclosed->prefs_->bleAuthKey.get().value_or("").c_str(),
                               settingValue.c_str());
                         enclosed->prefs_->bleAuthKey.set(settingValue);
                     }
