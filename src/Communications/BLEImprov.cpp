@@ -57,17 +57,28 @@ void BLEImprov::setState(BLEImprovState state) {
     this->state_ = state;
     // Translate BLEImprov state to the most relevant Improv state
     int improvState;
-    if (state == STATE_WAITING) {
+    switch (state) {
+    case STATE_WAITING:
         improvState = improv::STATE_AUTHORIZED;
-    } else if (state == STATE_READY_TO_CONNECT || state == STATE_CONNECTING) {
+        break;
+    case STATE_READY_TO_CONNECT:
+    case STATE_CONNECTING:
         this->setError(improv::ERROR_NONE, false);
         improvState = improv::STATE_PROVISIONING;
-    } else if (state == STATE_SCANNING) {
-        this->setError(improv::ERROR_NONE, false);
-        improvState = improv::STATE_SCANNING;
-    } else {
+        break;
+    case STATE_CONNECTED:
         this->setError(improv::ERROR_NONE, false);
         improvState = improv::STATE_PROVISIONED;
+        break;
+    case STATE_READY_TO_SCAN:
+    case STATE_SCANNING:
+        this->setError(improv::ERROR_NONE, false);
+        improvState = improv::STATE_SCANNING;
+        break;
+    case STATE_SCAN_COMPLETE:
+        this->setError(improv::ERROR_NONE, false);
+        improvState = improv::STATE_AUTHORIZED;
+        break;
     }
     log_d("Switched improv state to %d (internal state = %d)", improvState, state);
     SHOW_HEAP();
