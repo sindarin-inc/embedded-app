@@ -97,6 +97,9 @@ public:
     }
 
     [[nodiscard]] inline auto getGlyphHOffset(GlyphCode glyphCode) const -> int8_t {
+        if (glyphCode == SPACE_CODE) {
+            return 0;
+        }
         return (*glyphsInfo_)[glyphCode].horizontalOffset;
     }
 
