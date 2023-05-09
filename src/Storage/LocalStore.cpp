@@ -95,7 +95,7 @@ auto LocalStore::readablesModelType(const ReadablesVector &readables) -> Readabl
 }
 
 auto LocalStore::hasReadable(const ReadablesVector &readables, const Readable &readable,
-                             bool ignoreFileSizeCheck = false) -> bool {
+                             bool ignoreFileSizeCheck) -> bool {
     for (const auto &r : readables) {
         auto path = readableFilePathForReading(r);
         if (r.uuid == readable.uuid && !path.empty()) {

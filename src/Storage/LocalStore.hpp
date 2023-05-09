@@ -51,7 +51,7 @@ public:
     auto articles() -> ReadablesVector & { return articles_; };
     auto readablesModelType(const ReadablesVector &readables) -> ReadablesModelType;
     auto hasReadable(const ReadablesVector &readables, const Readable &readable,
-                     bool ignoreFileSizeCheck) -> bool;
+                     bool ignoreFileSizeCheck = false) -> bool;
     void addReadable(ReadablesVector &readables, const Readable &readable);
     void removeReadable(ReadablesVector &readables, const Readable &readable);
     auto readablesSince(const ReadablesModelType modelType) -> std::string;
