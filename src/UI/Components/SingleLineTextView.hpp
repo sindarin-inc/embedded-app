@@ -9,7 +9,8 @@
 class SingleLineTextView : public EinkView {
 public:
     SingleLineTextView(DisplaySystem &display, std::string text,
-                       const GFXfont *font = &TAHOMA_REGULAR_FONT5PT7B, bool allCaps = false)
+                       Font *font = static_cast<Font *>(&fontTahomaRegularFonT5PT7B),
+                       bool allCaps = false)
         : EinkView(display), font_(font) {
         setText(std::move(text), allCaps);
     }
@@ -29,9 +30,9 @@ public:
         uint16_t w, h;
         // Leave the display font the way we found it.
         // Probably not ideal, but for now it'll have to do.
-        const GFXfont *oldFont = display_.getFont();
+        Font *oldFont = display_.getFont();
         display_.setFont(font_);
-        display_.getTextBounds(text_.c_str(), &w, &h);
+        display_.getTextSize(text_.c_str(), &w, &h);
 
         //
         // If we don't have the option to grow horizontally as much as we want,
@@ -47,16 +48,16 @@ public:
                 text_ = "too big!";
                 break;
             }
-            display_.getTextBounds(text_.c_str(), &w, &h);
+            display_.getTextSize(text_.c_str(), &w, &h);
         }
         display_.setFont(oldFont);
-        return {w, font_->yAdvance};
+        return {w, font_->lineHeight()};
     }
 
     void drawInRect(Rect rect) override {
         // Leave the display font the way we found it.
         // Probably not ideal, but for now it'll have to do.
-        const GFXfont *oldFont = display_.getFont();
+        Font *oldFont = display_.getFont();
         display_.setFont(font_);
         display_.drawSingleLineOfText(text_, rect.origin.x, rect.origin.y);
         display_.setFont(oldFont);
@@ -64,5 +65,5 @@ public:
 
 protected:
     std::string text_;
-    const GFXfont *font_;
+    Font *font_;
 };

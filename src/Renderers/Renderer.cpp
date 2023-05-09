@@ -4,7 +4,6 @@
 #include <utility>
 
 #include "Misc/Platform.hpp"
-#include "UI/Fonts/Tahoma4pt7b.h"
 #include "config.h"
 #include "sindarin-debug.h"
 
@@ -43,37 +42,56 @@ void Renderer::tokenToString(unsigned long placeInTokenBuffer, TokenString &outp
 // I suspect this will only grow as our font rendering becomes more sophisticated.
 // So this returns the obvious thing for non-spaces and does the math for spaces
 // based on the tokens before and after the space.
+//
+// Modified by Guy Turcotte:
+//
+// As this issue maybe related to the GFX way of doing things, the code has been
+// modified to simplify the process when the current font is an IBMF one.
 void Renderer::tokenRenderedWidthHeight(unsigned long placeInTokenBuffer, uint16_t *renderedWidth,
                                         uint16_t *renderedHeight) {
     TokenString converted;
-    // Spaces are a mess. The width of them depends on the tokens before and after. Joy.
-    if (currTokenBuffer_[placeInTokenBuffer].token != TOKEN_SPACE) {
-        tokenToString(placeInTokenBuffer, converted);
-        *renderedWidth = display_.getTextWidth(converted.data());
-        *renderedHeight = display_.getTextHeight(converted.data());
-    } else {
-        // Check bounds. Punt otherwise.
-        // Get the tokens before and after the space, then do the width
-        // of that whole thing and subtract out the two tokens. That's the
-        // real width of the rendered space.
-        if ((placeInTokenBuffer > 0) &&
-            (currTokenBuffer_[placeInTokenBuffer + 1].token != TOKEN_EOF)) {
-            TokenString prev, next;
-            LineBuffer temp;
-            tokenToString(placeInTokenBuffer - 1, prev);
-            tokenToString(placeInTokenBuffer + 1, next);
-            std::copy_n(prev.data(), strlen(prev.data()), &temp[0]);
-            temp[strlen(prev.data())] = ' ';
-            std::copy_n(next.data(), strlen(next.data()), &temp[strlen(prev.data()) + 1]);
-            temp[strlen(prev.data()) + strlen(next.data()) + 1] = '\0';
-            *renderedHeight = display_.getTextHeight(temp.data());
-            *renderedWidth = display_.getTextWidth(temp.data()) -
-                             display_.getTextWidth(prev.data()) -
-                             display_.getTextWidth(next.data());
-        } else {
+    if (display_.getFont()->isA(FontType::IBMF)) {
+        if (currTokenBuffer_[placeInTokenBuffer].token != TOKEN_SPACE) {
             tokenToString(placeInTokenBuffer, converted);
-            *renderedWidth = display_.getTextWidth(converted.data());
-            *renderedHeight = display_.getTextHeight(converted.data());
+            display_.getTextSize(converted.data(), renderedWidth, renderedHeight);
+        } else {
+            if (spaceWidth_ == 0) {
+                display_.getTextSize(" ", &spaceWidth_, &spaceHeight_);
+            }
+            *renderedWidth = spaceWidth_;
+            *renderedHeight = spaceHeight_;
+        }
+    } else {
+        // Spaces are a mess. The width of them depends on the tokens before and after. Joy.
+        if (currTokenBuffer_[placeInTokenBuffer].token != TOKEN_SPACE) {
+            tokenToString(placeInTokenBuffer, converted);
+            display_.getTextSize(converted.data(), renderedWidth, renderedHeight);
+            // *renderedWidth = display_.getTextWidth(converted.data());
+            // *renderedHeight = display_.getTextHeight(converted.data());
+        } else {
+            // Check bounds. Punt otherwise.
+            // Get the tokens before and after the space, then do the width
+            // of that whole thing and subtract out the two tokens. That's the
+            // real width of the rendered space.
+            if ((placeInTokenBuffer > 0) &&
+                (currTokenBuffer_[placeInTokenBuffer + 1].token != TOKEN_EOF)) {
+                TokenString prev, next;
+                LineBuffer temp;
+                tokenToString(placeInTokenBuffer - 1, prev);
+                tokenToString(placeInTokenBuffer + 1, next);
+                std::copy_n(prev.data(), strlen(prev.data()), &temp[0]);
+                temp[strlen(prev.data())] = ' ';
+                std::copy_n(next.data(), strlen(next.data()), &temp[strlen(prev.data()) + 1]);
+                temp[strlen(prev.data()) + strlen(next.data()) + 1] = '\0';
+                *renderedHeight = display_.getTextHeight(temp.data());
+                *renderedWidth = display_.getTextWidth(temp.data()) -
+                                 display_.getTextWidth(prev.data()) -
+                                 display_.getTextWidth(next.data());
+            } else {
+                tokenToString(placeInTokenBuffer, converted);
+                *renderedWidth = display_.getTextWidth(converted.data());
+                *renderedHeight = display_.getTextHeight(converted.data());
+            }
         }
     }
 }
@@ -100,6 +118,8 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
     unsigned int curPrevNewLine = 0;
 
     numCurrTokens_ = 0;
+
+    spaceWidth_ = 0;
 
     charTokenBuffer_[plcInBuffer] = '\0';
 
@@ -147,8 +167,11 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
             break;
         case ' ':
             newToken.token = TOKEN_SPACE;
-            newToken.width = display_.getTextWidth(" ");
-            newToken.height = display_.getTextHeight(" ");
+            if (spaceWidth_ == 0) {
+                display_.getTextSize(" ", &spaceWidth_, &spaceHeight_);
+            }
+            newToken.width = spaceWidth_;
+            newToken.height = spaceHeight_;
             currTokenBuffer_[plcInTokenBuffer] = newToken;
             numCurrTokens_++;
             currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
@@ -168,8 +191,7 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
             break;
         case '\t':
             newToken.token = TOKEN_TAB;
-            newToken.width = display_.getTextWidth("\t");
-            newToken.height = display_.getTextHeight("\t");
+            display_.getTextSize("\t", &newToken.width, &newToken.height);
             currTokenBuffer_[plcInTokenBuffer] = newToken;
             numCurrTokens_++;
             currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
@@ -193,8 +215,7 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
                 prevToken = currTokenBuffer_[plcInTokenBuffer - 1];
                 if (prevToken.token == TOKEN_HYPHEN) {
                     newToken.token = TOKEN_EMDASH;
-                    newToken.width = display_.getTextWidth("--");
-                    newToken.height = display_.getTextHeight("--");
+                    display_.getTextSize("--", &newToken.width, &newToken.height);
                     newToken.place = plcInBuffer - 1;
                     newToken.streamPlace = placeInFile + plcInBuffer - 1;
                     currTokenBuffer_[plcInTokenBuffer - 1] = newToken;
@@ -205,8 +226,7 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
                 }
             }
             newToken.token = TOKEN_HYPHEN;
-            newToken.width = display_.getTextWidth("-");
-            newToken.height = display_.getTextHeight("-");
+            display_.getTextSize("-", &newToken.width, &newToken.height);
             currTokenBuffer_[plcInTokenBuffer] = newToken;
             numCurrTokens_++;
             currTokenBuffer_[plcInTokenBuffer + 1] = eofToken;
@@ -354,6 +374,8 @@ void Renderer::loaded() {
 // Show the (already loaded into buffer) current page
 // and load the next page into the next buffer so we have it.
 auto Renderer::renderPage(unsigned long placeInFile, int numSkipLines) -> unsigned long {
+    log_d("%lu is place in file being requested", placeInFile);
+
 #ifdef RENDERER_DEBUG
     log_d("%lu is place in file being requested", placeInFile);
 #endif
@@ -450,6 +472,7 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     }
 
     // Step 2.
+    // log_d("loadAndTokenizePage called for step 2 of goBackwardsOnePage");
     loadAndTokenizePage(seekPlace);
 
     // Go backwards from the last token and do the same as the loadIntoBuffer
@@ -609,6 +632,7 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
     // methods calling this method expect this to not change what's loaded
     // into buffers, so we need to retokenize.
     // we could probably avoid this rework by introducing an extra token buffer if we wanted to.
+    // log_d("loadAndTokenizePage called: need to retokenize");
     loadAndTokenizePage(place);
 
 #ifdef RENDERER_DEBUG
@@ -654,6 +678,7 @@ auto Renderer::loadIntoBuffer(PageBuffer &buffer, unsigned long place) -> unsign
     singleLine[0] = '\0';
 
     // Debugging stuff
+    // log_d("loadAndTokenizePage called: debugging stuff");
     loadAndTokenizePage(place);
 
     unsigned int nextToken = 0;

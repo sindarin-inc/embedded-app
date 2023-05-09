@@ -51,7 +51,8 @@ public:
 
     // Scanning
     auto scanNetworks(const std::function<void(std::shared_ptr<wifi_ap_record_t[]> apRecords,
-                                               int recordCount)> &completeCB) -> esp_err_t;
+                                               int recordCount)> &channelScanCompleteCB)
+        -> esp_err_t;
 
     // Connection
     auto connectWiFi(const std::string &ssid = "", const std::string &password = "") -> esp_err_t;

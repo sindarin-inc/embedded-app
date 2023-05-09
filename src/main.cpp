@@ -152,7 +152,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
 #if !SIMULATOR
     // Configure log level for all Sindarin logs
-    esp_log_level_set("Sindarin", ESP_LOG_DEBUG);
+    esp_log_level_set("Sol", ESP_LOG_DEBUG);
     powerManager.wakeupCheck(solClock);
 #endif
     BootLoopCheck();
@@ -283,6 +283,12 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     case PREFS_TAHOMA_LARGE:
         myDisplay.style.setFontFamily(myDisplay.style.tahomaLarge);
         break;
+    case PREFS_TAHOMA_TINY:
+        myDisplay.style.setFontFamily(myDisplay.style.tahomaTiny);
+        break;
+    case PREFS_TAHOMA_HUGE:
+        myDisplay.style.setFontFamily(myDisplay.style.tahomaHuge);
+        break;
     }
 
     if (!myDisplay.setup()) {
@@ -310,10 +316,21 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // For all the EMC modes, we'll keep the lights at 100%
     if (prefs.emcMode.get().value_or(false)) {
         lightingController.setOverrideValuePercent(100);
+
+        // Also kick off a task to try to content sync every minute or so
+        xTaskCreatePinnedToCore(
+            [](void *) {
+            for (;;) {
+                PreferencesStore::syncReason = SyncReason::Periodic;
+                BackgroundSync(powerManager, prefs, localStore);
+                vTaskDelay(60000 / portTICK_PERIOD_MS);
+            }
+            },
+            "BackgroundSync", 4096, nullptr, 1, nullptr, 1);
     }
 
 #if USE_BLE
-    BLEDevice::init("Sindarin");
+    BLEDevice::init("Sol Reader");
     auto bleStatus = esp_bt_controller_get_status();
     if (bleStatus != ESP_BT_CONTROLLER_STATUS_ENABLED) {
         bootErrors.push_back({.type = BootError::Type::BLE});
@@ -338,6 +355,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
     auto bleManager = BLEManager::getInstance();
+    if (prefs.bleAdvertisingKey.get().has_value()) {
+        bleManager->setManfacturerData(prefs.bleAdvertisingKey.get().value_or(""));
+    }
 #endif
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS

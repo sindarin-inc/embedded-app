@@ -21,7 +21,7 @@ void ReadableSeekScreen::render(DisplaySystem &display) {
 
     uint16_t percentWidth, percentHeight;
     // Just pick a number for measurement. We don't want the UI moving when the number changes
-    display.getTextBounds("50%", &percentWidth, &percentHeight);
+    display.getTextSize("50%", &percentWidth, &percentHeight);
 
     int16_t barWidth = 60;
     x = (display.width() - barWidth - percentWidth - spacing) / 2;
@@ -37,26 +37,26 @@ void ReadableSeekScreen::render(DisplaySystem &display) {
     y += barHeight + spacing + display.getTextHeight();
     uint16_t textWidth, textHeight;
     auto message1 = "Press right and left";
-    display.getTextBounds(message1, &textWidth, &textHeight);
+    display.getTextSize(message1, &textWidth, &textHeight);
     display.setCursor((display.width() - textWidth) / 2, y);
     display.println(message1);
 
     y += display.getTextHeight();
     auto message2 = "to seek through";
-    display.getTextBounds(message2, &textWidth, &textHeight);
+    display.getTextSize(message2, &textWidth, &textHeight);
     display.setCursor((display.width() - textWidth) / 2, y);
     display.println(message2);
 
     y += display.getTextHeight();
     auto message3 = "readable";
-    display.getTextBounds(message3, &textWidth, &textHeight);
+    display.getTextSize(message3, &textWidth, &textHeight);
     display.setCursor((display.width() - textWidth) / 2, y);
     display.println(message3);
 
     y += display.getTextHeight() + 10;
     std::string message4 = "Seek granularity: ";
     message4 += StringFormat("%.1f%%", (float)(100 / (float)seekGranularity_));
-    display.getTextBounds(message4.c_str(), &textWidth, &textHeight);
+    display.getTextSize(message4.c_str(), &textWidth, &textHeight);
     display.setCursor((display.width() - textWidth) / 2, y);
     display.println(message4.c_str());
 

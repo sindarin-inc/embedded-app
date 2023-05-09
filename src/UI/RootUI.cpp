@@ -31,6 +31,7 @@
 #include "UI/CrashReportScreen.hpp"
 #include "UI/DemoScreen.hpp"
 #include "UI/FirmwareUpdateScreen.hpp"
+#include "UI/Fonts/Fonts.hpp"
 #include "UI/LayoutTestScreen.hpp"
 #include "UI/LightingAdjustScreen.hpp"
 #include "UI/LineMenuScreen.hpp"
@@ -76,6 +77,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto readables = localStore.books();
     auto articles = localStore.articles();
+
+    ibmf75.load((ibmf_defs::MemoryPtr)fontsList[prefs_.fontType.get().value_or(0)].content,
+                fontsList[prefs_.fontType.get().value_or(0)].length);
 
     auto createReadableScreen = [this, display, mainMenu, &fileSystem, &lightingController,
                                  &localStore](const Readable &readable) -> ReadableScreen * {
@@ -134,32 +138,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     };
 
     auto currentReadable = prefs_.lastReadableId.get();
-
-    // All we need to do at this level is to have a mode where the glasses have full LED on
-    // and a mode where a page turns every 30 seconds.
-    //
-    // Currently, the wifi plan is to have the Espressif FCC test mode take care of that
-    // piece. But if it doesn't, then we can add it here by doing a wifi connect,
-    // sync content, delete content, repeat.
-    if (prefs_.emcMode.get().value_or(false)) {
-        mainMenu->addMenuItem(MenuItem("Mode 1 On", []() {}));
-        mainMenu->addMenuItem(MenuItem("Mode 2 (reading)",
-                                       [this, display, readables, createReadableScreen]() {
-            log_d("Starting EMC mode readable reading turn page every 30 seconds");
-            auto it = std::find_if(readables.begin(), readables.end(), [](const Readable &x) {
-                return (x.title.compare("The Last Question") == 0);
-            });
-            if (it == readables.end()) {
-                log_e("Could not find readable: %s", "The Last Question");
-            } else {
-                log_d("Found readable: %s", (*it).title.c_str());
-            }
-            auto readableScreen = createReadableScreen(*it);
-            display->clearDisplay();
-            this->display_->setFont(this->display_->style.getFontFamily().readableFont);
-            this->setCurrentScreen(*readableScreen);
-        }));
-    }
 
     ReadableScreen *psalmsProverbs = nullptr;
     ReadableScreen *newTestament = nullptr;
@@ -276,13 +254,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BOOKS)) {
-        booksMenu->addMenuItem(MenuItem("(Sol Logo) Books Tutorial", "",
+        booksMenu->addMenuItem(MenuItem("\ue000 Books Tutorial", "",
                                         [this, createTutorialScreen]() {
             SpiramString message = SpiRamStringFormat(
                 "Welcome to the Books menu. This tab "
                 "shows you the books currently synced to your Sol Reader. To add more books or "
                 "manage the books on your device, use the Sol mobile app.\n\n\nPress "
-                "(Sol Logo) (center) to continue.");
+                "\ue000 (center) to continue.");
             auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_BOOKS);
             this->setCurrentScreen(*tutorialScreen);
         }));
@@ -344,13 +322,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_ARTICLES)) {
-        pocketMenu->addMenuItem(MenuItem("(Sol Logo) Articles Tutorial",
+        pocketMenu->addMenuItem(MenuItem("\ue000 Articles Tutorial",
                                          [this, createTutorialScreen]() {
             SpiramString message = SpiRamStringFormat(
                 "Welcome to the Articles menu. This tab "
                 "shows you the articles currently synced to your Sol Reader. To add more articles, "
                 "simply connect your Pocket account in the Sol mobile app or forward newsletters "
-                "from your inbox to add@solreader.com.\n\n\nPress (Sol Logo) (center) to "
+                "from your inbox to add@solreader.com.\n\n\nPress \ue000 (center) to "
                 "continue.\n");
             auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_ARTICLES);
             this->setCurrentScreen(*tutorialScreen);
@@ -384,7 +362,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
 
         if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BIBLE)) {
-            bibleMenu->addMenuItem(MenuItem("(Sol Logo) Bible Tutorial",
+            bibleMenu->addMenuItem(MenuItem("\ue000 Bible Tutorial",
                                             [this, createTutorialScreen]() {
                 SpiramString message = SpiRamStringFormat(
                     "The Gutenberg Bible "
@@ -399,7 +377,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     " Not your thing? No worries! You can toggle this app off "
                     "in the Content Settings.\n\n"
                     " Look for more scripture and meditation Sol Reader apps down the road!\n\n\n"
-                    " Press (Sol Logo) (center) to continue.");
+                    " Press \ue000 (center) to continue.");
                 auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_BIBLE);
                 this->setCurrentScreen(*tutorialScreen);
             }));
@@ -573,6 +551,18 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         experimentalSettingsMenu->setToggleLastItem(false);
     }
 
+    experimentalSettingsMenu->addMenuItem(MenuItem("Fonts Library",
+                                                   [this, experimentalSettingsMenu]() {
+        this->prefs_.fontsLibrary.set(!this->prefs_.fontsLibrary.get().value_or(false));
+        experimentalSettingsMenu->requireRestart();
+    }));
+
+    if (prefs_.fontsLibrary.get().value_or(false)) {
+        experimentalSettingsMenu->setToggleLastItem(true);
+    } else {
+        experimentalSettingsMenu->setToggleLastItem(false);
+    }
+
     experimentalSettingsMenu->addMenuItem(MenuItem("Autopilot", [this]() {
         this->prefs_.autoPilot.set(!this->prefs_.autoPilot.get().value_or(false));
         if (this->prefs_.autoPilot.get().value_or(false)) {
@@ -618,11 +608,24 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         experimentalSettingsMenu->setToggleLastItem(false);
     }
 
+    experimentalSettingsMenu->addMenuItem(MenuItem("Page Transition Arrows", [this]() {
+        this->prefs_.noPageTransitionArrows.set(
+            !this->prefs_.noPageTransitionArrows.get().value_or(false));
+    }));
+
+    // This one is opposite because we want to default it to true and make them
+    // turn it off if they don't want it. At least for beta.
+    if (prefs_.noPageTransitionArrows.get().value_or(false)) {
+        experimentalSettingsMenu->setToggleLastItem(false);
+    } else {
+        experimentalSettingsMenu->setToggleLastItem(true);
+    }
+
     experimentalSettingsMenu->addMenuItem(MenuItem("Upload Crashes on Sync", [this]() {
         this->prefs_.noUploadCrashes.set(!this->prefs_.noUploadCrashes.get().value_or(false));
     }));
 
-    // This one is opposite of the above because we want to default it to true and make them
+    // This one is opposite because we want to default it to true and make them
     // turn it off if they don't want it. At least for beta.
     if (prefs_.noUploadCrashes.get().value_or(false)) {
         experimentalSettingsMenu->setToggleLastItem(false);
@@ -738,6 +741,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                        "Font Settings", "Reading Settings");
         fontMenu->setExtraText("Example text size");
         fontMenu->addMenuItem(MenuItem("Small", [this, fontMenu]() {
+            this->display_->style.setFontFamily(this->display_->style.tahomaTiny);
+            this->display_->clearDisplay();
+            prefs_.font.set(PREFS_TAHOMA_TINY);
+            fontMenu->setNeedsRerender();
+        }));
+        fontMenu->addMenuItem(MenuItem("Medium", [this, fontMenu]() {
             this->display_->style.setFontFamily(this->display_->style.tahomaRegular);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_TAHOMA_REGULAR);
@@ -757,6 +766,28 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         });
     }));
 
+    if (prefs_.fontsLibrary.get().value_or(false)) {
+        readingSettingsMenu->addMenuItem(MenuItem("Font Type (Experimental)",
+                                                  [this, display, readingSettingsMenu]() {
+            auto fontTypeMenu =
+                new MenuScreen(power_.battery, *display, readingSettingsMenu->getMyStyle(),
+                               "Font Type Settings", "Reading Settings");
+            for (int i = 0; i < fontsList.size(); i++) {
+                fontTypeMenu->addMenuItem(MenuItem(fontsList[i].caption, [this, fontTypeMenu, i]() {
+                    ibmf75.load((ibmf_defs::MemoryPtr)fontsList[i].content, fontsList[i].length);
+                    prefs_.fontType.set(i);
+                    this->display_->clearDisplay();
+                    fontTypeMenu->setNeedsRerender();
+                }));
+            }
+            setCurrentScreen(*fontTypeMenu);
+            fontTypeMenu->setBackCallback([this, fontTypeMenu, readingSettingsMenu]() {
+                readingSettingsMenu->setFirstLoad();
+                setCurrentScreen(*readingSettingsMenu);
+                delete fontTypeMenu;
+            });
+        }));
+    }
     readingSettingsMenu->addMenuItem(MenuItem("Brightness", [this, display, readingSettingsMenu,
                                                              &lightingController]() {
         auto lightingAdjustScreen =
@@ -1309,13 +1340,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 
     if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_SETTINGS)) {
-        settingsMenu->addMenuItem(MenuItem("(Sol Logo) Settings Tutorial",
+        settingsMenu->addMenuItem(MenuItem("\ue000 Settings Tutorial",
                                            [this, createTutorialScreen]() {
             SpiramString message = SpiRamStringFormat(
                 "Welcome to the settings menu. Here you can "
                 "change the settings of your Sol Reader. Check out the "
                 "experimental settings for features we are beta testing!\n\n\nPress "
-                "(Sol Logo) (center) to continue.  ");
+                "\ue000 (center) to continue.  ");
             auto tutorialScreen = createTutorialScreen(message, TUTORIAL_SCREEN_SETTINGS);
             this->setCurrentScreen(*tutorialScreen);
         }));
@@ -1355,6 +1386,20 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             delete cesScreen;
         });
         this->setCurrentScreen(*cesScreen);
+    } else if (prefs_.emcMode.get().value_or(false)) {
+        log_d("Starting EMC mode readable reading turn page every 30s and content sync every 60s");
+        auto it = std::find_if(readables.begin(), readables.end(), [](const Readable &x) {
+            return (x.title.compare("The Last Question") == 0);
+        });
+        if (it == readables.end()) {
+            log_e("Could not find readable: %s", "The Last Question");
+        } else {
+            log_d("Found readable: %s", (*it).title.c_str());
+        }
+        auto readableScreen = createReadableScreen(*it);
+        display->clearDisplay();
+        this->display_->setFont(this->display_->style.getFontFamily().readableFont);
+        this->setCurrentScreen(*readableScreen);
     } else if (currentReadable.has_value()) {
         // Check if we left-off on a readable and if so, reload that readable by default
         log_d("Attempting to find readable: %s", currentReadable.value().c_str());

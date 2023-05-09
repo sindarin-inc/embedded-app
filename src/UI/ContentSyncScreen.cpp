@@ -30,7 +30,7 @@ void ContentSyncScreen::render(DisplaySystem &display) {
         // runs off the page, so be it. Realistically, this only happens if the user has a ton of
         // things to sync (e.g., 6+ books).
         const uint16_t spacing = 2;
-        uint16_t textHeight = display.getFont()->yAdvance;
+        uint16_t textHeight = display.getFont()->lineHeight();
         uint16_t lineCount;
 
         if (state_.state <= ContentSyncState::SyncingArticles) {
@@ -59,7 +59,7 @@ void ContentSyncScreen::render(DisplaySystem &display) {
             }
             auto textX = x + bulletRadius * 2 + 5;
             display.drawSingleLineOfText(message, textX, y);
-            y += display.getFont()->yAdvance;
+            y += display.getFont()->lineHeight();
             if (drawLine && percentage > 0) {
                 display.drawLine(textX, y, textX + (textWidth * percentage / 100), y, display.fg);
             }

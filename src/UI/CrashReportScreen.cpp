@@ -3,7 +3,6 @@
 #include "Communications/CrashReportUploader.hpp"
 #include "Communications/WiFi.hpp"
 #include "Misc/Dispatch.hpp"
-#include "UI/Fonts/Tahoma10pt7b.h"
 #include "sindarin-debug.h"
 
 void CrashReportScreen::render(DisplaySystem &display) {
@@ -29,7 +28,7 @@ void CrashReportScreen::render(DisplaySystem &display) {
         // Calculate group height
         const uint16_t spacing = 2;
         const uint16_t lineCount = 5;
-        uint16_t textHeight = display.getFont()->yAdvance;
+        uint16_t textHeight = display.getFont()->lineHeight();
         uint16_t groupHeight = textHeight * lineCount + spacing * (lineCount - 1);
 
         y = (display.height() - groupHeight) / 2;
@@ -46,7 +45,7 @@ void CrashReportScreen::render(DisplaySystem &display) {
             }
             auto textX = x + bulletRadius * 2 + 5;
             display.drawSingleLineOfText(message, textX, y);
-            y += display.getFont()->yAdvance;
+            y += display.getFont()->lineHeight();
             if (drawLine && percentage > 0) {
                 display.drawLine(textX, y, textX + (textWidth * percentage / 100), y, display.fg);
             }

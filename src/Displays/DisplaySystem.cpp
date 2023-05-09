@@ -8,6 +8,8 @@
 #include "Misc/Dispatch.hpp"
 #include "Misc/PBMImage.hpp"
 #include "Misc/StringUtil.hpp"
+#include "UI/Fonts/Font.hpp"
+#include "UI/Fonts/IBMFDriver/IBMFFont.hpp"
 #include "sindarin-debug.h"
 
 DisplaySystem::DisplaySystem() = default;
@@ -149,7 +151,7 @@ auto DisplaySystem::setBoundingBox(DisplayRect newBox) -> DisplayRect {
     return boundingBox_;
 }
 
-auto DisplaySystem::getFont() -> const GFXfont * { return font_; }
+auto DisplaySystem::getFont() -> Font * { return font_; }
 
 // Takes the member variable string_to_draw and splits it
 // based on the \n characater and populates the String* lines;
@@ -195,17 +197,31 @@ void DisplaySystem::splitStringToLines(const std::string &stringToSplit,
 // and return whether the text was wrapped or not.
 // But that's for another day.
 void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y) {
-    gfxClass_->setTextColor(fg);
-    // We are allowing the this method to take an the upper left corner of the text
-    // as an argument. But the setCursor method takes the lower left corner of text
-    // to be drawn (or rather, that's how printf does it). So we need to adjust the
-    // y value by the height of the font. getTextHeight includes lineSpacing_ so
-    // we subtract that out.
-    // The magic number (3) is a hack for now to handle the bottom of the display.
-    // Need to investigate why the text is getting cut off when the y dimension is
-    // all the way at the bottom. This hasn't impacted the top.
-    gfxClass_->setCursor(xOffset(x), yOffset(y + getTextHeight() - lineSpacing_ - 3));
-    gfxClass_->printf("%s", line.c_str());
+    if (font_ != nullptr) {
+        if (font_->isA(FontType::GFX)) {
+
+            gfxClass_->setTextColor(fg);
+            // We are allowing the this method to take an the upper left corner of the text
+            // as an argument. But the setCursor method takes the lower left corner of text
+            // to be drawn (or rather, that's how printf does it). So we need to adjust the
+            // y value by the height of the font. getTextHeight includes lineSpacing_ so
+            // we subtract that out.
+            // The magic number (3) is a hack for now to handle the bottom of the display.
+            // Need to investigate why the text is getting cut off when the y dimension is
+            // all the way at the bottom. This hasn't impacted the top.
+            gfxClass_->setCursor(xOffset(x), yOffset(y + getTextHeight() - lineSpacing_ - 3));
+            gfxClass_->printf("%s", line.c_str());
+        } else {
+            gfxClass_->startWrite();
+            ibmf_defs::Bitmap canvas;
+            canvas.pixels = canvasBuffer_;
+            canvas.dim = ibmf_defs::Dim(canvasWidth_, canvasHeight_);
+            static_cast<IBMFFont *>(font_)->drawSingleLineOfText(
+                canvas, Pos(xOffset(x), yOffset(y + getTextHeight() - lineSpacing_ - 3)), line,
+                invertedDisplay_);
+            gfxClass_->endWrite();
+        }
+    }
 }
 
 void DisplaySystem::drawSingleLineOfCenteredText(const std::string &line) {
@@ -214,64 +230,46 @@ void DisplaySystem::drawSingleLineOfCenteredText(const std::string &line) {
         this->yAbsolute(this->yAbsoluteCenter() - this->getTextHeight() / 2));
 }
 
-// y is the y coordinate of the top of the first line
-// MOSTLY DEPRECATED -- use drawSingleLineOfText instead.
-// The display class shouldn't be in charge rendering multiple lines because
-// it doesn't know what that should look like.
-void DisplaySystem::drawText(const std::string &newText, int x, int y, int width, int height) {
-    // hack for now
-    // figure out what the right window is
-    // SUPER HACK -- the y value is just guessing about ascent
-    // Need to figure out ascent
-
-    int lineHeight = getTextHeight();
-    int numLines = height / lineHeight;
-
-    log_w("This method is deprecated. Please use drawSingleLineOfText instead.");
-
-    // We want to draw the characters down from the x/y coordinates given
-    // so the renderer doesn't need to concern itself with how tall the
-    // font is, etc.
-    // u8g2Fonts->setFontPosTop();
-
-    std::array<std::string, MAX_LINES_IN_SPLIT> lines;
-
-    splitStringToLines(newText, lines, numLines);
-
-    // We want to have only 1 pixel length difference between the rows of
-    // text to squeeze as much in there as we can
-    // ascent = u8g2Fonts->getAscent();
-    // descent = u8g2Fonts->getDescent();
-
-    gfxClass_->setTextColor(fg);
-
-    // We start at i+1 in the since setting the cursor puts where the lower left of the text
-    // will be, not upper left.
-    for (int i = 0; i < numLines; i++) {
-        // Don't know if it starts the line from the baseline or from the top -- TO LEARN: HACK
-        setCursor(xOffset(x), yOffset(y + (i + 1) * (lineHeight)));
-        gfxClass_->printf("%s\n", lines[i].c_str());
+void DisplaySystem::getTextSize(const char *buffer, uint16_t *w, uint16_t *h) {
+    if (font_ != nullptr) {
+        if (font_->isA(FontType::GFX)) {
+            int16_t x, y;
+            gfxClass_->getTextBounds(buffer, 0, 0, &x, &y, w, h);
+        } else {
+            Dim dim = static_cast<IBMFFont *>(font_)->getTextSize(buffer);
+            *w = dim.width;
+            *h = dim.height;
+        }
     }
 }
 
-void DisplaySystem::getTextBounds(const char *buffer, uint16_t *w, uint16_t *h) {
-    int16_t x, y;
-    gfxClass_->getTextBounds(buffer, 0, 0, &x, &y, w, h);
-}
-
-auto DisplaySystem::getTextHeight() -> int { return font_->yAdvance + lineSpacing_; }
+auto DisplaySystem::getTextHeight() -> int { return font_->lineHeight() + lineSpacing_; }
 
 auto DisplaySystem::getTextHeight(const char *buffer) -> int {
-    int16_t x, y;
-    uint16_t w, h;
-    gfxClass_->getTextBounds(buffer, 0, 0, &x, &y, &w, &h);
+    uint16_t h = 0;
+    if (font_ != nullptr) {
+        if (font_->isA(FontType::GFX)) {
+            int16_t x, y;
+            uint16_t w;
+            gfxClass_->getTextBounds(buffer, 0, 0, &x, &y, &w, &h);
+        } else {
+            h = static_cast<IBMFFont *>(font_)->getTextHeight(buffer);
+        }
+    }
     return h;
 }
 
 auto DisplaySystem::getTextWidth(const char *buffer) -> int {
-    int16_t x, y;
-    uint16_t w, h;
-    gfxClass_->getTextBounds(buffer, 0, 0, &x, &y, &w, &h);
+    uint16_t w = 0;
+    if (font_ != nullptr) {
+        if (font_->isA(FontType::GFX)) {
+            int16_t x, y;
+            uint16_t h;
+            gfxClass_->getTextBounds(buffer, 0, 0, &x, &y, &w, &h);
+        } else {
+            w = static_cast<IBMFFont *>(font_)->getTextWidth(buffer);
+        }
+    }
     return w;
 }
 

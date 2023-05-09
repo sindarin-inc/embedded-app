@@ -18,7 +18,7 @@ BLEManager::BLEManager() = default;
 auto BLEManager::server() -> BLEServer * {
     if (server_ == nullptr) {
         server_ = BLEDevice::createServer();
-        server_->setCallbacks(new ServerCallbacks());
+        server_->setCallbacks(new ServerCallbacks(this));
     }
     return server_;
 }
