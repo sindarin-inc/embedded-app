@@ -65,15 +65,12 @@
 
 void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &fileSystem,
                    LightingController &lightingController) {
-    SHOW_HEAP();
 
     display_ = display;
 
     MenuStyle styleFamilies;
 
     auto mainMenu = new MainMenuScreen(power_.battery, *display_, styleFamilies.mainMenu);
-
-    SHOW_HEAP();
 
     SIZE_OF(*mainMenu);
 
@@ -82,8 +79,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     // Load the SolSans font only.
     ibmf75.load((ibmf_defs::MemoryPtr)fontsList[0].content, fontsList[0].length);
-
-    SHOW_HEAP();
 
     auto createReadableScreen = [this, display, mainMenu, &fileSystem, &lightingController,
                                  &localStore](const Readable &readable) -> ReadableScreen * {
@@ -193,8 +188,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         prefs_.emcMode.remove();
     }
 
-    SHOW_HEAP();
-
     auto booksMenu = new Menu(mainMenu->getMyStyle(), "Books");
 
     // If there is firmware available, show the Update Firmware item in the books tab.
@@ -253,7 +246,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             r.title == "Old Testament") {
             continue;
         }
-        SHOW_HEAP();
 
         booksMenu->addMenuItem(MenuItem(StringFormat("%s", title.c_str()),
                                         StringFormat("%s", r.authors[0].name.c_str()),
@@ -282,8 +274,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         mainMenu->addSubMenu(booksMenu);
     }
 
-    SHOW_HEAP();
-
     log_i("Loading %zu Pocket articles", articles.size());
 
     auto pocketMenu = new Menu(mainMenu->getMyStyle(), "Articles");
@@ -310,8 +300,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 contentSyncScreen->begin();
             }));
     }
-
-    SHOW_HEAP();
 
     for (const Readable &r : articles) {
         bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
@@ -411,8 +399,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         setCurrentScreen(*mainMenu);
     });
 
-    SHOW_HEAP();
-
     auto contentSettingsMenu =
         new ToggleMenuScreen(power_.battery, *display_, styleFamilies.settingsMenu, "Content");
 
@@ -444,8 +430,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     } else {
         contentSettingsMenu->setToggleLastItem(true);
     }
-
-    SHOW_HEAP();
 
 // At some point, we may split out News (emails) and Articles (pocket), but for now
 // We'll keep it the same.
@@ -524,8 +508,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     } else {
         contentSettingsMenu->setToggleLastItem(false);
     }
-
-    SHOW_HEAP();
 
     auto systemSettingsMenu =
         new MenuScreen(power_.battery, *display, styleFamilies.settingsMenu, "System");
@@ -669,8 +651,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         experimentalSettingsMenu->setToggleLastItem(false);
     }
 
-    SHOW_HEAP();
-
     // Unpair PageTurner
     // Sync Content
     // Turn on Onboarding Mode
@@ -794,8 +774,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         });
     }));
 
-    SHOW_HEAP();
-
 #if 0
     if (prefs_.fontsLibrary.get().value_or(false)) {
         readingSettingsMenu->addMenuItem(MenuItem("Font Type (Experimental)",
@@ -883,8 +861,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         });
     }));
 
-    SHOW_HEAP();
-
     systemSettingsMenu->addMenuItem(MenuItem("About", [systemSettingsMenu, display]() {
         std::string snString = StringFormat("SN: %s", GetSerialNumber().c_str());
 #ifdef GITHASH
@@ -969,8 +945,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             delete timeZoneMenu;
         });
     }));
-
-    SHOW_HEAP();
 
 #if USE_TURN_TOUCH_REMOTE
     debugSettingsMenu->addMenuItem(MenuItem("Unpair PageTurner",
@@ -1392,8 +1366,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     mainMenu->addSubMenu(settingsMenu);
-
-    SHOW_HEAP();
 
     bool inDemo = prefs_.demoMode.get().value_or(false);
 
