@@ -15,11 +15,10 @@ LightingAdjustScreen::LightingAdjustScreen(DisplaySystem &display, PreferencesSt
 }
 
 auto LightingAdjustScreen::layout(LayoutContext &context, Size size) -> Size {
-    int y = 0;
     int spacing = 8;
 
     // Sublayout for centering all the main content in the view
-    auto mainRect = context.setSublayoutFrame(
+    context.setSublayoutFrame(
         {{0, 0}, {size.width, size.height}}, LayoutOptionsSizeToFit | LayoutOptionsAlignCenter,
         [this, spacing](LayoutContext &context, Size size) -> Size {
             // Sublayout for horizontally centering the lightbulb and bar
