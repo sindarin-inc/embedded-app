@@ -316,9 +316,11 @@ void DisplaySystem::drawPBM(int16_t x, int16_t y, RendererStream &stream) {
     // if this is a full-screen image, load directly into memory
     // otherwise load separately and draw with drawBitmap
 
-    bool fullScreen =
-        x == 0 && y == 0 && width == gfxClass_->width() && height == gfxClass_->height();
-    if (!fullScreen) {
+    // check for fullscreen
+    if (x == 0 && y == 0 && width == gfxClass_->width() && height == gfxClass_->height()) {
+        drawFullscreenBitmapFromFile(stream);
+    } else {
+        // not fullscreen
         // load bitmap into memory
         auto bitmap = SpiRamArrayPtr<uint8_t>(byteSize);
         if (stream.readBytes(bitmap.get(), byteSize) != byteSize) {
@@ -327,10 +329,7 @@ void DisplaySystem::drawPBM(int16_t x, int16_t y, RendererStream &stream) {
         }
 
         gfxClass_->drawBitmap(x, y, bitmap.get(), width, height, 0, 1);
-        return;
     }
-
-    drawFullscreenBitmapFromFile(stream);
 }
 
 void DisplaySystem::clearScreen() {
