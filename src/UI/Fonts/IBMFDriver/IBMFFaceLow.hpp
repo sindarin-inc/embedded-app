@@ -140,6 +140,11 @@ public:
     /// @return True if a ligature was found, false otherwise.
     ///
     auto ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) -> bool {
+
+        // LOGD("ligKern...");
+        // *kern = 0;
+        // return false;
+
         if ((glyphCode1 == NO_GLYPH_CODE) || (glyphCode1 == SPACE_CODE) ||
             (*glyphCode2 == NO_GLYPH_CODE) || (*glyphCode2 == SPACE_CODE)) {
             *kern = 0;
@@ -194,7 +199,7 @@ public:
 
 #define FRACT_BITS 10
 #define FIXED_POINT_ONE (1 << FRACT_BITS)
-#define MAKE_INT_FIXED(x) ((x) << FRACT_BITS)
+#define MAKE_INT_FIXED(x) (int32_t(x) << FRACT_BITS)
 #define MAKE_FLOAT_FIXED(x) ((FIX32)((x)*FIXED_POINT_ONE))
 #define MAKE_FIXED_INT(x) ((x) >> FRACT_BITS)
 #define MAKE_FIXED_FLOAT(x) (((float)(x)) / FIXED_POINT_ONE)
@@ -204,6 +209,38 @@ public:
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
+
+// Table lookup could be used to get a tiny bit faster kerning algorithm.
+// BUT this code must be debugged, as it doesn't supply proper results.
+// Been kept in case this is going to be considered a good avenue.
+#if TABLE_LOOKUP
+        const constexpr uint8_t BitsRightLT[256] = {
+            8, 7, 6, 6, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+            3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+            2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+        const constexpr uint8_t BitsLeftLT[256] = {
+            8, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2,
+            0, 1, 0, 5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4, 0, 1, 0, 2, 0, 1, 0, 3, 0,
+            1, 0, 2, 0, 1, 0, 6, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4, 0, 1, 0, 2, 0, 1,
+            0, 3, 0, 1, 0, 2, 0, 1, 0, 5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4, 0, 1, 0,
+            2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 7, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4,
+            0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0,
+            1, 0, 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 6, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1,
+            0, 2, 0, 1, 0, 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 5, 0, 1, 0, 2, 0, 1, 0,
+            3, 0, 1, 0, 2, 0, 1, 0, 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0};
+#endif
+
+        // auto start_time = esp_log_timestamp();
+
+        static GlyphCode cachedGlyphCode;
+        static PixelsPtr cachedPixels = nullptr;
 
         auto &i1 = (*glyphsInfo_)[glyphCode1];
         auto &i2 = (*glyphsInfo_)[*glyphCode2];
@@ -232,23 +269,36 @@ public:
                                         (i2.bitmapHeight - i2.verticalOffset));
 
             Glyph glyph1;
-            bool result = getGlyph(glyphCode1, glyph1, true, true, Pos(0, i1.verticalOffset));
-            if (!result) {
-                if (glyph1.bitmap.pixels != nullptr) {
-                    delete[] glyph1.bitmap.pixels;
+            if ((cachedPixels == nullptr) || (cachedGlyphCode != glyphCode1)) {
+                bool result = getGlyph(glyphCode1, glyph1, true, true, Pos(0, i1.verticalOffset));
+                if (!result) {
+                    if (glyph1.bitmap.pixels != nullptr) {
+                        delete[] glyph1.bitmap.pixels;
+                    }
+                    if (cachedPixels != nullptr) {
+                        delete[] cachedPixels;
+                        cachedPixels = nullptr;
+                    }
+                    LOGE("Unable to load glyphCode %d related glyph bitmap.", glyphCode1);
+                    return false;
                 }
-                LOGE("Unable to load glyphCode %d related glyph bitmap.", glyphCode1);
-                return false;
+            } else {
+                glyph1.bitmap.pixels = cachedPixels;
+                // LOGD("Cached glyph...");
             }
 
             Glyph glyph2;
-            result = getGlyph(*glyphCode2, glyph2, true, true, Pos(0, i2.verticalOffset));
+            bool result = getGlyph(*glyphCode2, glyph2, true, true, Pos(0, i2.verticalOffset));
             if (!result) {
-                if (glyph1.bitmap.pixels != nullptr) {
+                if ((glyph1.bitmap.pixels != cachedPixels) && (glyph1.bitmap.pixels != nullptr)) {
                     delete[] glyph1.bitmap.pixels;
                 }
                 if (glyph2.bitmap.pixels != nullptr) {
                     delete[] glyph2.bitmap.pixels;
+                }
+                if (cachedPixels != nullptr) {
+                    delete[] cachedPixels;
+                    cachedPixels = nullptr;
                 }
                 LOGE("Unable to load glyphCode %d related glyph bitmap.", *glyphCode2);
                 return false;
@@ -265,12 +315,16 @@ public:
 
             // distLeft is receiving the right distance in pixels of the first black pixel on each
             // line of the character
-            int idx = 0;
+            // uint8_t maxWidth = i1.bitmapWidth & 7;
+            uint8_t *pp = &glyph1.bitmap.pixels[((i1.bitmapWidth - 1) >> 3)];
             int pitch = (i1.bitmapWidth + 7) >> 3;
-            for (uint8_t i = distIdxLeft; i < i1.bitmapHeight + distIdxLeft; i++, idx += pitch) {
+            for (uint8_t i = distIdxLeft; i < i1.bitmapHeight + distIdxLeft; i++, pp += pitch) {
+#if TABLE_LOOKUP
+                distLeft[i] = MAKE_FIXED_INT(MIN(maxWidth, BitsLeftLT[*pp]));
+#else
                 distLeft[i] = 0;
                 uint8_t mask = 1 << (7 - ((i1.bitmapWidth - 1) & 7));
-                uint8_t *p = &glyph1.bitmap.pixels[idx + ((i1.bitmapWidth - 1) >> 3)];
+                uint8_t *p = pp;
                 for (int col = i1.bitmapWidth - 1; col >= 0; col--) {
                     if constexpr (BLACK_ONE_BIT) {
                         if ((*p & mask) != 0) {
@@ -288,16 +342,21 @@ public:
                         p -= 1;
                     }
                 }
+#endif
             }
 
             // distRight is receiving the left distance in pixels of the first black pixel on each
             // line of the character
-            idx = 0;
+            // maxWidth = i2.bitmapWidth & 7;
+            pp = &glyph2.bitmap.pixels[0];
             pitch = (i2.bitmapWidth + 7) >> 3;
-            for (uint8_t i = distIdxRight; i < i2.bitmapHeight + distIdxRight; i++, idx += pitch) {
+            for (uint8_t i = distIdxRight; i < i2.bitmapHeight + distIdxRight; i++, pp += pitch) {
+#if TABLE_LOOKUP
+                distRight[i] = MAKE_FIXED_INT(MIN(maxWidth, BitsRightLT[*pp]));
+#else
                 distRight[i] = 0;
                 uint8_t mask = 0x80;
-                uint8_t *p = &glyph2.bitmap.pixels[idx];
+                uint8_t *p = pp;
                 for (int col = 0; col < i2.bitmapWidth; col++) {
                     if constexpr (BLACK_ONE_BIT) {
                         if ((*p & mask) != 0) {
@@ -315,6 +374,7 @@ public:
                         p += 1;
                     }
                 }
+#endif
             }
 
             // find convex corner locations and adjust distances
@@ -499,118 +559,25 @@ public:
                             MAKE_INT_FIXED(i2.bitmapWidth))) -
                       MAKE_INT_FIXED(normalDistance);
 
-            if (glyph1.bitmap.pixels != nullptr) {
+            if ((glyph1.bitmap.pixels != cachedPixels) && (glyph1.bitmap.pixels != nullptr)) {
                 delete[] glyph1.bitmap.pixels;
             }
+            if (cachedPixels != nullptr) {
+                delete[] cachedPixels;
+                cachedPixels = nullptr;
+            }
             if (glyph2.bitmap.pixels != nullptr) {
-                delete[] glyph2.bitmap.pixels;
+                cachedPixels = glyph2.bitmap.pixels;
+                cachedGlyphCode = *glyphCode2;
             }
         }
 
         *kern = static_cast<FIX16>(kerning >> 4); // Convert to FIX16
 
-#if 0
-        // LOGD("Optical Kerning Start %d, %d", glyphCode1, *glyphCode2);
-        const constexpr size_t kBuffPitch = ((K_BUFF_WIDTH + 7) >> 3);
-        const constexpr size_t kBuffSize = kBuffPitch * K_BUFF_HEIGHT;
-        static uint8_t buff[kBuffSize];
-        Glyph glyph;
-
-        glyph.bitmap =
-            Bitmap{.pixels = static_cast<MemoryPtr>(buff), .dim = Dim(K_BUFF_WIDTH, K_BUFF_HEIGHT)};
-        memset(buff, WHITE_EIGHT_BITS, kBuffSize);
-        Pos pos = Pos(K_ORIGIN_X, K_ORIGIN_Y);
-
-        // Position the first glyph in the buffer
-        bool result = getGlyph(glyphCode1, glyph, true, false, pos);
-        if (!result) {
-            LOGE("Unable to load glyphCode %d related glyph bitmap.", glyphCode1);
-            return false;
-        }
-
-        int voff = (*glyphsInfo_)[*glyphCode2].verticalOffset;
-        int hoff = (*glyphsInfo_)[*glyphCode2].horizontalOffset;
-
-        Glyph glyph2;
-        result = getGlyph(*glyphCode2, glyph2, true, true, Pos(0, voff));
-        if (!result) {
-            LOGE("Unable to load glyphCode %d related glyph bitmap.", *glyphCode2);
-            if (glyph2.bitmap.pixels != nullptr) {
-                delete[] glyph2.bitmap.pixels;
-            }
-            return false;
-        }
-        // showBitmap(glyph2.bitmap);
-        int advance =
-            ((glyph.metrics.advance + 32) >> 6); // + (*glyphsInfo_)[*glyphCode2].horizontalOffset;
-        if (advance == 0) {
-            advance = glyph.bitmap.dim.width + 1;
-        }
-
-        pos.x += advance;
-
-        int max = advance - hoff;
-        int kerning = 0;
-        int pitch2 = (glyph2.bitmap.dim.width + 7) >> 3;
-
-        int col, row;
-        uint8_t mask, mask2;
-        int idx, idx2, ridx, ridx2;
-
-        while (max > 0) {
-
-            mask = 0x80 >> ((pos.x - hoff) & 7);
-            mask2 = 0x80;
-            idx = ((pos.y - voff) * kBuffPitch) + ((pos.x - hoff) >> 3);
-            idx2 = 0;
-
-            for (col = 0; col < glyph2.bitmap.dim.width; col++) {
-
-                for (row = 0, ridx = idx, ridx2 = idx2; row < glyph2.bitmap.dim.height;
-                     row++, ridx += kBuffPitch, ridx2 += pitch2) {
-                    if constexpr (BLACK_ONE_BIT) {
-                        if ((glyph2.bitmap.pixels[ridx2] & mask2) != 0) {
-                            if (((buff[ridx] & mask) != 0) ||
-                                ((buff[ridx - kBuffPitch] & mask) != 0) ||
-                                ((buff[ridx + kBuffPitch] & mask) != 0)) {
-                                goto fin;
-                            }
-                        }
-                    } else {
-                        if ((glyph2.bitmap.pixels[ridx2] & mask2) == 0) {
-                            if (((buff[ridx] & mask) == 0) ||
-                                ((buff[ridx - kBuffPitch] & mask) == 0) ||
-                                ((buff[ridx + kBuffPitch] & mask) == 0)) {
-                                goto fin;
-                            }
-                        }
-                    }
-                }
-                mask >>= 1;
-                if (mask == 0) {
-                    mask = 0x80;
-                    idx += 1;
-                }
-                mask2 >>= 1;
-                if (mask2 == 0) {
-                    mask2 = 0x80;
-                    idx2 += 1;
-                }
-            }
-
-            pos.x -= 1;
-            kerning -= 1;
-            max -= 1;
-        }
-    fin:
-        if (glyph2.bitmap.pixels != nullptr) {
-            delete[] glyph2.bitmap.pixels;
-        }
-        *kern = static_cast<FIX16>((max >= 0) ? ((kerning + KERNING_SIZE + 1) << 6) : 0);
-        // LOGD("Computed kern: %d (%d).", static_cast<int>((float)*kern / 64.0), kerning);
-#endif // old code
 #endif
-            // LOGD("Optical Kerning End");
+        // auto end_time = esp_log_timestamp();
+        // unsigned int dur = end_time - start_time;
+        // log_d("Optical Kerning Duration: %u", dur);
         return false;
     }
 

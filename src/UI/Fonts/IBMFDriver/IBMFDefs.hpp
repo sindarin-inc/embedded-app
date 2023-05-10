@@ -185,8 +185,10 @@ const constexpr uint8_t WHITE_EIGHT_BITS = 0xFF;
 // const constexpr uint8_t BLACK_EIGHT_BITS = 0xFF;
 // const constexpr uint8_t WHITE_EIGHT_BITS = 0x00;
 
+typedef MemoryPtr PixelsPtr;
+
 struct Bitmap {
-    MemoryPtr pixels;
+    PixelsPtr pixels;
     Dim dim;
     void clear() {
         pixels = nullptr;
