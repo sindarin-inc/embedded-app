@@ -12,6 +12,7 @@
 
 #include "../Communications/WiFi.hpp"
 #include "../Misc/StringUtil.hpp"
+#include "../Misc/Timezones.hpp"
 
 extern SolClock solClock;
 
@@ -33,29 +34,6 @@ auto SolClock::getTimeString() -> std::string {
         hours -= 12;
     }
     return StringFormat("%d:%02d", hours, minutes);
-}
-
-auto SolClock::readTimezones(const std::string &filename)
-    -> std::unordered_map<std::string, std::string> {
-    std::ifstream file(filename);
-    std::unordered_map<std::string, std::string> timezones;
-    std::string line;
-
-    while (std::getline(file, line)) {
-        std::stringstream ss(line);
-        std::string iana, posix;
-
-        std::getline(ss, iana, ',');
-        std::getline(ss, posix, ',');
-
-        // Remove double quotes from both values
-        iana = iana.substr(1, iana.size() - 2);
-        posix = posix.substr(1, posix.size() - 2);
-
-        timezones[iana] = posix;
-    }
-
-    return timezones;
 }
 
 void SolClock::loadTimeZone() {
@@ -81,12 +59,9 @@ void SolClock::setTimezone(const std::string &ianaTimezone) {
 
     prefs_.tzIana.set(ianaTimezone);
 
-    static const std::unordered_map<std::string, std::string> timezones =
-        readTimezones("timezones.csv");
-
     std::string posixTimezoneString;
-    if (timezones.find(ianaTimezone) != timezones.end()) {
-        posixTimezoneString = timezones.at(ianaTimezone);
+    if (ianaToPosixTimezones.find(ianaTimezone) != ianaToPosixTimezones.end()) {
+        posixTimezoneString = ianaToPosixTimezones.at(ianaTimezone);
     } else {
         posixTimezoneString = "UTC0";
     }
