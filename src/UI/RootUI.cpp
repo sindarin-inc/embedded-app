@@ -1385,7 +1385,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         display->updateDisplay(DisplaySystem::UpdateType::FULL);
         this->setCurrentScreen(*demoScreen);
     } else if (prefs_.cesMode.get().value_or(false)) {
-        auto cesScreen = new CesScreen(*display, prefs_, lightingController);
+        auto cesScreen = new DemoScreen(*display, prefs_, lightingController);
+        cesScreen->bailAfterLensAdjust();
+
         // reset prefs for of The Last Question readable
         log_d("Starting CES mode readable load");
         auto it = std::find_if(readables.begin(), readables.end(), [](const Readable &x) {

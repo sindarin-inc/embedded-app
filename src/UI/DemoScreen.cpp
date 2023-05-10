@@ -819,7 +819,7 @@ void DemoScreen::finishDemo() {
 }
 
 void DemoScreen::render(DisplaySystem &display) {
-    if (currentScreen_ > lambdas_.size() - 1) {
+    if ((currentScreen_ > lambdas_.size() - 1) || (bailAfterLens_ && currentScreen_ > 1)) {
         finishDemo();
         return;
     }

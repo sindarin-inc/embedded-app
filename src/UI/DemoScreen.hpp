@@ -20,6 +20,8 @@ public:
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
 
+    void bailAfterLensAdjust() { bailAfterLens_ = true; }
+
 protected:
     void drawSkipMessage(DisplaySystem &display, bool inverted = false);
     void drawDoubleLine(DisplaySystem &display, std::string one, std::string two);
@@ -35,6 +37,8 @@ protected:
 
     bool shownOne_ = false;
     bool shownTwo_ = false;
+    bool bailAfterLens_ = false;
+
     unsigned int currentScreen_ = 0;
     unsigned int currentSubScreen_ = 0;
 
