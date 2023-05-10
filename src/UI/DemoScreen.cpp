@@ -54,8 +54,6 @@
 #include "UI/Layout/Types.hpp"
 #include "sindarin-debug.h"
 
-extern void UIInnerLoop(RemoteCommand command);
-
 DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
                        LightingController &lightingController)
     : display_(display), renderer_(display), prefs_(prefs),
