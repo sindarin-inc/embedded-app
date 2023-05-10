@@ -26,7 +26,6 @@
 #include "UI/AlignmentScreen.hpp"
 #include "UI/BatteryScreen.hpp"
 #include "UI/CalibrationScreen.hpp"
-#include "UI/CesScreen.hpp"
 #include "UI/ContentSyncScreen.hpp"
 #include "UI/CrashReportScreen.hpp"
 #include "UI/DemoScreen.hpp"
