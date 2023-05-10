@@ -113,8 +113,8 @@ void MainMenuScreen::drawInRect(Rect rect) {
 void MainMenuScreen::render(DisplaySystem &display) {
     setNeedsLayout();
 
-    // For the main menu, we want to use the entire screen and ignore the user settings for reading
-    // box.
+    // For the main menu, we want to use the entire screen and ignore the user settings for
+    // reading box.
     setFrame(
         {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
          {display.defaultScreenWidth - 2 * display.defaultXPadding,

@@ -178,6 +178,10 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
+    if (!needsRerender_) {
+        return;
+    }
+
     setFrame(
         {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
          {display.defaultScreenWidth - 2 * display.defaultXPadding,
@@ -361,6 +365,8 @@ void ReadableScreen::render(DisplaySystem &display) {
     // Reset the lastArrowPress so we don't show it again until another key is pressed (for
     // autopilot mostly)
     lastArrowPress_ = REMOTE_NONE;
+
+    needsRerender_ = false;
 }
 
 void ReadableScreen::incrementReadingTime() {
@@ -404,10 +410,12 @@ void ReadableScreen::processCommandDemoMode(RemoteCommand command) {
             numUps_ = 0;
             prefs_.cesMode.set(false);
             setNeedsRerender();
+            display_.clearDisplay();
+            display_.clearFrameBuffer();
+            display_.clearDontChangeRefreshType();
             back();
         }
         break;
-
     case RemoteCommand::NOP_BUTTON:
     case RemoteCommand::ANIMATION:
     default:
