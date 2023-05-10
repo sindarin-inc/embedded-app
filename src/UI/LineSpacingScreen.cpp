@@ -12,7 +12,7 @@ LineSpacingScreen::LineSpacingScreen(DisplaySystem &display, PreferencesStore &p
     std::string message;
     for (int i = 0; i < 200; i++) {
         message += "Press up arrow to increase line spacing, down arrow to decrease line spacing. "
-                   "Press center button when finished. Message repeats. ";
+                   "Press \ue000 (center) when finished. Message repeats. ";
     }
     auto stream = std::make_shared<StdStringStream>(message);
     renderer_.setStream(stream);

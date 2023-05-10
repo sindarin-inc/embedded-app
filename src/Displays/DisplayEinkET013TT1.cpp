@@ -19,6 +19,8 @@ const EinkET013TT1Waveform ORIGINAL_PARTIAL_REFRESH_WAVEFORM = EINK_31_35C_WAVEF
 const EinkET013TT1Waveform FULL_BIG_ORIGINAL_WAVEFORM = EINK_10_13C_WAVEFORM_FULL;
 
 // Currently used waveforms
+const EinkET013TT1Waveform ERASE_WAVEFORM_REGULAR = BC_REGULAR_EINK_10_13C_WAVEFORM_ERASE;
+const EinkET013TT1Waveform ERASE_WAVEFORM_INVERTED = BC_REGULAR_EINK_10_13C_WAVEFORM_ERASE;
 const EinkET013TT1Waveform PANEL_CLEAR_WAVEFORM = EINK_31_35C_WAVEFORM_CLEAR;
 const EinkET013TT1Waveform FULL_REFRESH_WAVEFORM_REGULAR = BC_REGULAR_31_35C_WAVEFORM_FULL;
 const EinkET013TT1Waveform FULL_REFRESH_WAVEFORM_INVERTED = BC_INVERTED_31_35C_WAVEFORM_FULL;
@@ -84,7 +86,8 @@ void DisplayEinkET013TT1::invertDisplay(bool newInvert) {
     fillScreen(bg);
 }
 
-void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
+void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType,
+                                        bool clearFrameBuffer) {
     switch (updateType) {
     case UNSPECIFIED:
         if (getPartialRefresh()) {
@@ -149,6 +152,14 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
             numPartials_ = 0;
         }
         break;
+    case ERASE:
+        if (getInversion()) {
+            driver_.update(ERASE_WAVEFORM_REGULAR, gfxCanvas_.getBuffer());
+        } else {
+            driver_.update(ERASE_WAVEFORM_INVERTED, gfxCanvas_.getBuffer());
+        }
+        numPartials_++;
+        break;
     case FAST_ORIGINAL_AU4:
         if (!fullRefreshNext_) {
             if (getInversion()) {
@@ -189,9 +200,30 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType) {
         break;
     }
 
-    // Clear buffer afterwards
-    fillScreen(bg);
+    // Clear buffer afterwards if argument not set to false.
+    if (clearFrameBuffer) {
+        fillScreen(bg);
+    }
+
     fullRefreshNext_ = false;
+}
+
+void DisplayEinkET013TT1::drawFullscreenBitmapFromFile(RendererStream &stream) {
+    // data is packed 1 bit binary
+    uint8_t *buffer = gfxCanvas_.getBuffer();
+    assert(buffer);
+    int size = gfxCanvas_.width() * gfxCanvas_.height() / 8;
+
+    if (stream.readBytes(buffer, size) != size) {
+        log_e("failed to read pbm bytes");
+        return;
+    }
+
+    // pbm files have 0 white and 1 black
+    // invert to display properly (for now)
+    for (int i = 0; i < size; i++) {
+        buffer[i] = buffer[i] ^ 0xFF; // XOR to invert all bits
+    }
 }
 
 #endif

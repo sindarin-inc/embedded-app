@@ -10,11 +10,11 @@
 #include "Misc/MenuStyle.hpp"
 #include "Misc/PowerManager.hpp"
 #include "Renderers/Renderer.hpp"
+#include "UI/Components/ArrowView.hpp"
 #include "UI/Components/BoxView.hpp"
 #include "UI/Components/ClockBatteryView.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/IconView.hpp"
-#include "UI/Components/LeftArrowView.hpp"
 #include "UI/Components/MenuItemView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
 #include "UI/Components/StackView.hpp"
@@ -64,5 +64,5 @@ protected:
 
     SingleLineTextView upperLeftTextView_;
 
-    LeftArrowView leftArrowView_;
+    ArrowView leftArrowView_;
 };

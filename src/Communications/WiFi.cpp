@@ -189,8 +189,8 @@ void WiFi::clearWiFiCredentials() {
 }
 
 auto WiFi::scanNetworks(const std::function<void(std::shared_ptr<wifi_ap_record_t[]> apRecords,
-                                                 int recordCount)> &completeCB) -> esp_err_t {
-
+                                                 int recordCount)> &channelScanCompleteCB)
+    -> esp_err_t {
     esp_err_t err = begin();
     if (err != ESP_OK) {
         log_e("begin failed with error %s", esp_err_to_name(err));
@@ -204,34 +204,45 @@ auto WiFi::scanNetworks(const std::function<void(std::shared_ptr<wifi_ap_record_
     }
     SHOW_HEAP();
 
-    // TODO: Use a non-blocking scan and send reusults back in realtime
-    // Q: How do we get callbacks when a new network is found
-    err = esp_wifi_scan_start(nullptr, true); // 3k PSRAM
-    if (err != ESP_OK) {
-        log_e("esp_wifi_scan_start failed with error %s", esp_err_to_name(err));
-        return err;
+    wifi_scan_config_t params;
+    memset(&params, 0, sizeof(wifi_scan_config_t));
+    params.scan_type = WIFI_SCAN_TYPE_ACTIVE;
+
+    // check possible wifi channels
+    for (int ch = 1; ch <= 11; ch++) {
+        params.channel = ch;
+        log_i("scanning wifi channel %d", ch);
+        err = esp_wifi_scan_start(&params, true); // 3k PSRAM
+        if (err != ESP_OK) {
+            log_e("esp_wifi_scan_start failed with error %s", esp_err_to_name(err));
+            continue;
+        }
+        SHOW_HEAP();
+
+        uint16_t apNum = 0;
+        err = esp_wifi_scan_get_ap_num(&apNum); // 0k
+        if (err != ESP_OK) {
+            log_e("esp_wifi_scan_get_ap_num failed with error %s", esp_err_to_name(err));
+            continue;
+        }
+        SHOW_HEAP();
+
+        if (apNum == 0) {
+            log_i("Channel %d, no APs found", ch);
+            continue;
+        }
+
+        auto apRecords = SpiRamArrayPtr<wifi_ap_record_t>(apNum);
+
+        err = esp_wifi_scan_get_ap_records(&apNum, apRecords.get());
+        if (err != ESP_OK) {
+            log_e("esp_wifi_scan_get_ap_records failed with error %s", esp_err_to_name(err));
+            continue;
+        }
+        log_i("Channel %d, Total APs scanned = %u", ch, apNum);
+
+        channelScanCompleteCB(apRecords, apNum);
     }
-    SHOW_HEAP();
-
-    uint16_t apNum = 0;
-    err = esp_wifi_scan_get_ap_num(&apNum); // 0k
-    if (err != ESP_OK) {
-        log_e("esp_wifi_scan_get_ap_num failed with error %s", esp_err_to_name(err));
-        return err;
-    }
-    SHOW_HEAP();
-
-    auto apRecords = SpiRamArrayPtr<wifi_ap_record_t>(apNum);
-
-    err = esp_wifi_scan_get_ap_records(&apNum, apRecords.get());
-    if (err != ESP_OK) {
-        log_e("esp_wifi_scan_get_ap_records failed with error %s", esp_err_to_name(err));
-        return err;
-    }
-    log_i("Total APs scanned = %u", apNum);
-
-    completeCB(apRecords, apNum);
-
     SHOW_HEAP();
 
     err = esp_wifi_stop();

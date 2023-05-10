@@ -13,8 +13,6 @@ max_id_length = 10
 # readable.
 def to_id(original_id):
     out_id = original_id
-    if len(out_id) <= max_id_length:
-        return out_id
 
     chars_to_strip = ("a", "e", "i", "o", "u", "-", "_", " ")
     out_id = "".join([l for l in original_id if l not in chars_to_strip])

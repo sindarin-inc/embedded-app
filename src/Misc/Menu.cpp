@@ -98,7 +98,7 @@ auto Menu::prevSelection(bool skipLast) -> bool {
 auto Menu::getItemTitleAt(int index) -> std::string {
     std::string all;
     assert(index < numMenuItems_);
-    all = "  " + menuItems_[index].title;
+    all = menuItems_[index].title;
     return all;
 }
 void Menu::changeItemTitleAt(int index, std::string title) {

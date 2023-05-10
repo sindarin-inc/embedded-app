@@ -38,12 +38,12 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     auto itemTitle = getCurrItem().title;
     uint16_t width, height;
 
-    display.getTextBounds(itemTitle.c_str(), &width, &height);
+    display.getTextSize(itemTitle.c_str(), &width, &height);
     uint16_t screenWidth = display.width();
     uint16_t screenHeight = display.height();
 
     display.setRotation(0);
-    display.drawSingleLineOfText(itemTitle.c_str(), (screenWidth / 2) - (width / 2),
+    display.drawSingleLineOfText(itemTitle, (screenWidth / 2) - (width / 2),
                                  (screenHeight / 2) - (display.getTextHeight()) / 2);
 
     auto prevTitle = getItemAt((currSelection_ > 0) ? ((currSelection_ - 1) % numMenuItems_)
@@ -51,17 +51,17 @@ void PagedMenuScreen::render(DisplaySystem &display) {
                          .title;
     auto nextTitle = getItemAt((currSelection_ + 1) % numMenuItems_).title;
 
-    display.getTextBounds(prevTitle.c_str(), &width, &height);
+    display.getTextSize(prevTitle.c_str(), &width, &height);
 
-    display.getTextBounds(nextTitle.c_str(), &width, &height);
+    display.getTextSize(nextTitle.c_str(), &width, &height);
 
     display.setFont(display.style.getFontFamily().readableFont);
 
-    display.getTextBounds("Settings", &width, &height);
+    display.getTextSize("Settings", &width, &height);
 
     display.drawSingleLineOfText("Settings", screenWidth / 2 - width / 2, 28);
 
-    display.getTextBounds("Read", &width, &height);
+    display.getTextSize("Read", &width, &height);
 
     display.drawSingleLineOfText("Read", screenWidth / 2 - width / 2, screenHeight - 30 - height);
 

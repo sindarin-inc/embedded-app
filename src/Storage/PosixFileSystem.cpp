@@ -117,7 +117,7 @@ auto PosixFileSystem::removeDir(const std::string &path) -> bool {
     }
 
     for (auto &file : files) {
-        snprintf(fullPath, sizeof(fullPath), "%s/%s", path.c_str(), file.c_str());
+        (void)snprintf(fullPath, sizeof(fullPath), "%s/%s", path.c_str(), file.c_str());
         log_i("deleting %s", file.c_str());
         bool removed = remove(fullPath);
         if (!removed) {
@@ -129,7 +129,7 @@ auto PosixFileSystem::removeDir(const std::string &path) -> bool {
     for (auto &dir : dirs) {
         log_i("deleting dir: %s", dir.c_str());
         // delete this directory
-        snprintf(fullPath, sizeof(fullPath), "%s/%s", path.c_str(), dir.c_str());
+        (void)snprintf(fullPath, sizeof(fullPath), "%s/%s", path.c_str(), dir.c_str());
         if (!removeDir(fullPath)) {
             log_e("failed to remove: %s", fullPath);
             return false;

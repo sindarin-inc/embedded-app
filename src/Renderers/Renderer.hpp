@@ -107,6 +107,9 @@ protected:
 
     uint32_t currentPageWordCount_ = 0;
 
+    uint16_t spaceWidth_ = 0;
+    uint16_t spaceHeight_ = 0;
+
     auto loadCurrIntoBuffer() -> unsigned long;
     auto goBackwardsOnePage(unsigned long place) -> unsigned long;
 

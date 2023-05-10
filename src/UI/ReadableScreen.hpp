@@ -6,19 +6,31 @@
 #include "Renderers/RendererStream.hpp"
 #include "Sensors/LightingController.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "UI/Components/ArrowView.hpp"
 #include "UI/ContainerScreen.hpp"
 #include "UI/ReadablePopupMenuScreen.hpp"
 #include "UI/Screen.hpp"
 #include "config.h"
 
-class ReadableScreen : public ContainerScreen {
+enum LastArrowPress {
+    REMOTE_NONE,
+    REMOTE_UP,
+    REMOTE_DOWN,
+    REMOTE_LEFT,
+    REMOTE_RIGHT,
+    REMOTE_CENTER
+};
+
+class ReadableScreen : public ContainerScreen, public EinkView {
 public:
     ReadableScreen(std::shared_ptr<RendererStream> stream, DisplaySystem &display,
                    const Readable &readable, PreferencesStore &prefs, Battery &battery,
                    FileSystem &fileSystem, LightingController &lightingController)
-        : renderer_(display), firstTimeRenderer_(display), readable_(readable), prefs_(prefs),
-          fileSystem_(fileSystem), display_(display),
-          popupMenuScreen_(display, prefs, readable_, lightingController, renderer_) {
+        : EinkView(display), renderer_(display), firstTimeRenderer_(display), readable_(readable),
+          prefs_(prefs), fileSystem_(fileSystem), display_(display),
+          popupMenuScreen_(display, prefs, readable_, lightingController, renderer_),
+          leftArrowView_(display, ArrowLeft), rightArrowView_(display, ArrowRight),
+          upArrowView_(display, ArrowUp), downArrowView_(display, ArrowDown) {
 
         currentScreen_ = this;
         renderer_.setStream(std::move(stream));
@@ -69,12 +81,13 @@ public:
 
     ~ReadableScreen() override = default;
 
+    auto layout(LayoutContext &context, Size size) -> Size override;
+    void drawInRect(Rect rect) override;
+
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
     void writeOutBookmarkUpdate();
     void updateBookmarkStatus();
-
-    void renderIcons(DisplaySystem &display);
 
 protected:
     void processCommandDemoMode(RemoteCommand command);
@@ -82,6 +95,8 @@ protected:
     void processCommandNormal(RemoteCommand command);
     void showPopupMenu();
     void hidePopupMenu();
+
+    void drawArrows(bool eraseArrow);
 
     Renderer renderer_;
     Renderer firstTimeRenderer_;
@@ -113,13 +128,17 @@ protected:
     int pageSpeed_ = 10000;
     bool autoPilotPause_ = false;
 
-    bool showAutopilotPlus_ = false;
-    bool showAutopilotMinus_ = false;
+    ArrowView leftArrowView_;
+    ArrowView rightArrowView_;
+    ArrowView upArrowView_;
+    ArrowView downArrowView_;
 
 private:
     void incrementReadingTime();
     void turnPage();
     auto checkAtEnd() -> bool;
     uint32_t readingStartTime_;
+    LastArrowPress lastArrowPress_ = REMOTE_NONE;
+
     int numUps_ = 0;
 };

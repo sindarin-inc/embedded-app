@@ -2,14 +2,11 @@
 
 #include <Adafruit_GFX.h>
 
-#include "UI/Fonts/Tahoma10pt7b.h"
-#include "UI/Fonts/Tahoma5pt7b.h"
-#include "UI/Fonts/Tahoma6pt7b.h"
-#include "UI/Fonts/Tahoma8pt7b.h"
+#include "UI/Fonts/Fonts.hpp"
 
 struct MenuStyleFamily {
-    const GFXfont *itemFont;
-    const GFXfont *navigationFont;
+    Font *itemFont;
+    Font *navigationFont;
 
     int xOffsetForArrows;
     int yOffsetForArrows;
@@ -26,8 +23,9 @@ struct MenuStyleFamily {
 class MenuStyle {
 public:
     MenuStyle() {
-        mainMenu.itemFont = &TAHOMA_REGULAR_FONT6PT7B;
-        mainMenu.navigationFont = &TAHOMA_REGULAR_FONT5PT7B;
+
+        mainMenu.itemFont = static_cast<Font *>(&ibmf75Face1);
+        mainMenu.navigationFont = static_cast<Font *>(&ibmf75Face0);
 
         mainMenu.xOffsetForArrows = 45;
         mainMenu.yOffsetForArrows = 45;
@@ -38,8 +36,8 @@ public:
         mainMenu.yOffsetForList = 60;
         mainMenu.numberOfItemsPerPage = 4;
 
-        settingsMenu.itemFont = &TAHOMA_REGULAR_FONT5PT7B;
-        settingsMenu.navigationFont = &TAHOMA_REGULAR_FONT5PT7B;
+        settingsMenu.itemFont = static_cast<Font *>(&ibmf75Face0);
+        settingsMenu.navigationFont = static_cast<Font *>(&ibmf75Face0);
 
         settingsMenu.xOffsetForArrows = 25;
         settingsMenu.yOffsetForArrows = 15;

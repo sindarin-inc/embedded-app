@@ -1,8 +1,17 @@
 #include <catch_amalgamated.hpp>
 
+// Allow access to protected methods from tests
+#define protected public
+#define private public
 #include "UI/LayoutTestScreen.hpp"
+#include "UI/LineSpacingScreen.hpp"
+#include "UI/OffsetAdjustScreen.hpp"
 #include "UI/PowerDepletedScreen.hpp"
+#include "UI/ReleaseNotesScreen.hpp"
+#include "UI/ResizeBoxScreen.hpp"
 #include "ViewTestCommon.hpp"
+#undef protected
+#undef private
 
 TEST_CASE("First few screens render correctly and handle remote commands") {
     StartFreeRtos();
@@ -102,5 +111,35 @@ TEST_CASE("Test some views independently") {
         LayoutTestScreen screen(*display);
         screen.render(*display);
         ASSERT_VIEW_UNCHANGED("LayoutTestScreen");
+    }
+
+    SECTION("Test things that need prefs") {
+        PreferencesStore prefs;
+        prefs.begin();
+        prefs.invertSetting.remove();
+        prefs.font.remove();
+        prefs.lineSpacing.remove();
+        prefs.rectX.remove();
+        prefs.rectY.remove();
+        prefs.rectW.remove();
+        prefs.rectH.remove();
+
+        SECTION("Test OffsetAdjustScreen") {
+            OffsetAdjustScreen screen(*display, prefs);
+            screen.render(*display);
+            ASSERT_VIEW_UNCHANGED("OffsetAdjustScreen");
+        }
+
+        SECTION("Test ResizeBoxScreen") {
+            ResizeBoxScreen screen(*display, prefs);
+            screen.render(*display);
+            ASSERT_VIEW_UNCHANGED("ResizeBoxScreen");
+        }
+
+        SECTION("Test LineSpacingScreen") {
+            LineSpacingScreen screen(*display, prefs);
+            screen.render(*display);
+            ASSERT_VIEW_UNCHANGED("LineSpacingScreen");
+        }
     }
 }

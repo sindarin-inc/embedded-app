@@ -3,6 +3,7 @@
 #include <cinttypes>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -47,6 +48,9 @@ public:
 
     auto available() -> int override { return contained_.available(); }
     auto read() -> int override { return contained_.read(); };
+    auto readBytes(uint8_t *buf, int size) -> int override {
+        return contained_.readBytes((char *)buf, size);
+    }
     auto seek(uint32_t pos) -> bool override { return contained_.seek(pos); };
     auto position() -> size_t override { return contained_.position(); }
     auto size() -> size_t override { return contained_.size(); }
@@ -79,5 +83,41 @@ protected:
     StdStringStream(std::shared_ptr<std::istream> stream) : stream_(std::move(stream)) {}
 
     std::shared_ptr<std::istream> stream_;
+    size_t size_ = 0;
+};
+
+class BufferStream : public RendererStream {
+public:
+    BufferStream(const uint8_t *data, int size) : data_(data), size_(size) {}
+
+    auto read() -> int override { return data_[pos_++]; };
+    auto readBytes(uint8_t *buf, int size) -> int override {
+        int readSize = size;
+        if (available() < readSize) {
+            readSize = available();
+        }
+
+        if (readSize == 0) {
+            return 0;
+        }
+
+        memcpy(buf, &data_[pos_], readSize);
+        pos_ += readSize;
+        return readSize;
+    }
+    auto seek(uint32_t pos) -> bool override {
+        if (pos_ < 0 || pos >= size_) {
+            return false;
+        }
+
+        pos_ = pos;
+        return true;
+    }
+    auto position() -> size_t override { return pos_; }
+    auto size() -> size_t override { return size_; }
+
+protected:
+    const uint8_t *data_;
+    int pos_ = 0;
     size_t size_ = 0;
 };

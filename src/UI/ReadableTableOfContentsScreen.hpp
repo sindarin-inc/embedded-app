@@ -8,6 +8,7 @@
 #include "Models/Readable.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "UI/Components/ArrowView.hpp"
 #include "UI/Components/BoxView.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/MenuItemView.hpp"
@@ -58,5 +59,5 @@ protected:
     std::string upperLeftText_ = "Dismiss";
     SingleLineTextView upperLeftTextView_;
 
-    LeftArrowView leftArrowView_;
+    ArrowView leftArrowView_;
 };
