@@ -820,6 +820,11 @@ void DemoScreen::finishDemo() {
 
 void DemoScreen::render(DisplaySystem &display) {
     if ((currentScreen_ > lambdas_.size() - 1) || (bailAfterLens_ && currentScreen_ > 1)) {
+        if (bailAfterLens_) {
+            display_.clearDontChangeRefreshType();
+            display_.clearDisplay();
+            display_.clearFrameBuffer();
+        }
         finishDemo();
         return;
     }
