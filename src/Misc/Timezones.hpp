@@ -1,7 +1,7 @@
 #include <string>
 #include <unordered_map>
 
-static const std::unordered_map<std::string, std::string> ianaToPosixTimezones = {
+static const std::unordered_map<std::string, std::string> IANA_TO_POSIX_TIMEZONES = {
     {"Africa/Abidjan", "GMT0"},
     {"Africa/Accra", "GMT0"},
     {"Africa/Addis_Ababa", "EAT-3"},

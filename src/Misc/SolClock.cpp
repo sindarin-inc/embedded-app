@@ -60,8 +60,8 @@ void SolClock::setTimezone(const std::string &ianaTimezone) {
     prefs_.tzIana.set(ianaTimezone);
 
     std::string posixTimezoneString;
-    if (ianaToPosixTimezones.find(ianaTimezone) != ianaToPosixTimezones.end()) {
-        posixTimezoneString = ianaToPosixTimezones.at(ianaTimezone);
+    if (IANA_TO_POSIX_TIMEZONES.find(ianaTimezone) != IANA_TO_POSIX_TIMEZONES.end()) {
+        posixTimezoneString = IANA_TO_POSIX_TIMEZONES.at(ianaTimezone);
     } else {
         posixTimezoneString = "UTC0";
     }
