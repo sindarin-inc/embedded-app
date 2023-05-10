@@ -812,12 +812,15 @@ void DemoScreen::drawTripleLine(DisplaySystem &display, std::string one, std::st
         display.yAbsolute(display.yAbsoluteCenter() + display.getTextHeight(message.c_str())));
 }
 
+void DemoScreen::finishDemo() {
+    // When we're done with the onboarding screens, turn this mode off.
+    prefs_.demoMode.remove();
+    back();
+}
+
 void DemoScreen::render(DisplaySystem &display) {
     if (currentScreen_ > lambdas_.size() - 1) {
-        lightingController_.setScreenMask(LightingController::Screens::BOTH);
-        // When we're done with the onboarding screen, turn this mode off.
-        prefs_.demoMode.remove();
-        back();
+        finishDemo();
         return;
     }
 
@@ -830,7 +833,7 @@ void DemoScreen::render(DisplaySystem &display) {
     }
 
     // Turn on both screen lights for last case
-    if (currentScreen_ >= 2) {
+    if (currentScreen_ == 2) {
         lightingController_.setScreenMask(LightingController::Screens::BOTH);
     }
 
@@ -869,7 +872,7 @@ void DemoScreen::processCommand(RemoteCommand command) {
             display_.clearDontChangeRefreshType();
             display_.clearDisplay();
             display_.clearFrameBuffer();
-            currentScreen_ = lambdas_.size();
+            finishDemo();
         } else {
             currentScreen_++;
             currentSubScreen_ = 0;

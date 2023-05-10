@@ -26,6 +26,8 @@ protected:
     void drawTripleLine(DisplaySystem &display, std::string one, std::string two,
                         std::string three);
 
+    void finishDemo();
+
     DisplaySystem &display_;
     Renderer renderer_;
     PreferencesStore &prefs_;
