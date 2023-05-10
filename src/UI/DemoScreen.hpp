@@ -36,8 +36,8 @@ protected:
     unsigned int currentScreen_ = 0;
     unsigned int currentSubScreen_ = 0;
 
-    unsigned int nextInterval = 0;
-    DisplaySystem::UpdateType nextUpdateType = DisplaySystem::UpdateType::FULL;
+    unsigned int nextInterval_ = 0;
+    DisplaySystem::UpdateType nextUpdateType_ = DisplaySystem::UpdateType::FULL;
 
     std::vector<std::function<void(DisplaySystem &)>> lambdas_;
 };
