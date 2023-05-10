@@ -47,8 +47,8 @@ auto EinkET013TT1::getPixel(const uint8_t *buffer, int x, int y) -> uint8_t {
 }
 
 void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
-                          int32_t overrideVcom, const EinkET013TT1Waveform &altWaveform, uint8_t x0,
-                          uint8_t y0, uint8_t x1, uint8_t y1) {
+                          int32_t overrideVcom, const EinkET013TT1Waveform &altWaveform,
+                          FakeEinkBox box) {
     if (FakeEinkET013TT1SkipWaveform) {
         // Skip waveform processing and just move the pixel all the way one way or another
         log_d("Skipping waveform processing (would have used \"%s\")", waveform.name);
@@ -67,14 +67,18 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
         log_d("Updating display with waveform \"%s\"", waveform.name);
         // For each frame in the waveform
         log_d("Alt waveform: \"%s\"", altWaveform.name);
-        for (int frameIndex = 0; frameIndex < waveform.frameCount; frameIndex++) {
-            auto frame = waveform.frames[frameIndex];
 
-            Frame altFrame;
+        int maxFrames = waveform.frameCount > altWaveform.frameCount ? waveform.frameCount
+                                                                     : altWaveform.frameCount;
 
-            if (frameIndex < altWaveform.frameCount) {
-                altFrame = altWaveform.frames[frameIndex];
-            }
+        for (int frameIndex = 0; frameIndex < maxFrames; frameIndex++) {
+            auto frame = frameIndex < waveform.frames.size()
+                             ? waveform.frames[frameIndex]
+                             : Frame{.bb = NOCHG, .bw = NOCHG, .wb = NOCHG, .ww = NOCHG};
+            // Even if the altFrame doesn't have enough frames, this will result in a NOCHG line.
+            auto altFrame = frameIndex < altWaveform.frames.size()
+                                ? altWaveform.frames[frameIndex]
+                                : Frame{.bb = NOCHG, .bw = NOCHG, .wb = NOCHG, .ww = NOCHG};
 
             // For each pixel, calculate the correct way to move it for the waveform
             for (int x = 0; x < EinkET013TT1_PIXEL_WIDTH; x++) {
@@ -84,33 +88,26 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
                     uint8_t setting;
                     bool dontRender = false;
                     if ((frameIndex < altWaveform.frameCount) &&
-                        (x >= x0 && x <= x1 && y >= y0 && y <= y1)) {
-                        if (frameIndex < altWaveform.frameCount) {
-                            setting = altFrame.getSetting(previousPixel, pixel);
-                        } else {
-                            dontRender = true;
-                        }
+                        (x >= box.leftX && x <= box.rightX && y >= box.topY && y <= box.bottomY)) {
+                        setting = altFrame.getSetting(previousPixel, pixel);
                     } else {
                         setting = frame.getSetting(previousPixel, pixel);
                     }
-                    if (!dontRender) {
-                        auto position =
-                            FakeEinkET013TT1ParticlePositions[y * EinkET013TT1_PIXEL_WIDTH + x];
-                        // TODO: We could probably get math-y here and simulate the movement of the
-                        // particles with physics. For now we're just estimating.
-                        switch (setting) {
-                        case WHITE:
-                            position = std::min(position + FakeEinkET013TT1ParticleMovement, 255);
-                            break;
-                        case BLACK:
-                            position = std::max(position - FakeEinkET013TT1ParticleMovement, 0);
-                            break;
-                        case NOCHG:
-                            break;
-                        }
-                        FakeEinkET013TT1ParticlePositions[y * EinkET013TT1_PIXEL_WIDTH + x] =
-                            position;
+                    auto position =
+                        FakeEinkET013TT1ParticlePositions[y * EinkET013TT1_PIXEL_WIDTH + x];
+                    // TODO: We could probably get math-y here and simulate the movement of the
+                    // particles with physics. For now we're just estimating.
+                    switch (setting) {
+                    case WHITE:
+                        position = std::min(position + FakeEinkET013TT1ParticleMovement, 255);
+                        break;
+                    case BLACK:
+                        position = std::max(position - FakeEinkET013TT1ParticleMovement, 0);
+                        break;
+                    case NOCHG:
+                        break;
                     }
+                    FakeEinkET013TT1ParticlePositions[y * EinkET013TT1_PIXEL_WIDTH + x] = position;
                 }
             }
             uint8_t in = 1;

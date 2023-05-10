@@ -16,6 +16,13 @@
 #define EinkET013TT1_PIXEL_HEIGHT 256
 #define EinkET013TT1_GATE_COUNT 512
 
+struct EinkBox {
+    int leftX;
+    int rightX;
+    int topY;
+    int bottomY;
+};
+
 typedef union {
     uint8_t value;
     struct {
@@ -89,13 +96,11 @@ public:
 
     void clear(const EinkET013TT1Waveform &waveform);
 
-    // I lose the Rect thing here mostly to avoid doing the math to convert from Rect to x0, y0, x1,
-    // and y1 in in the driver code. Maybe that's an optimization we don't need to worry about
-    // but it's also a little more convenient to not have to do the math here.
+    // Note that EinkBox is DIFFERENT than a Rect. This is to avoid math in the update driver.
     void update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
                 int32_t overrideVcom = INT32_MAX,
-                const EinkET013TT1Waveform &altWaveform = BC_WAVEFORM_NONE, uint8_t x0 = 0,
-                uint8_t y0 = 0, uint8_t x1 = 255, uint8_t y1 = 255);
+                const EinkET013TT1Waveform &altWaveform = BC_WAVEFORM_NONE,
+                EinkBox box = {0, 255, 0, 255});
 
     auto readTemperature(ScreenSide screen) -> int16_t;
 
@@ -122,8 +127,7 @@ protected:
     inline void waitForTimer();
     inline void waitForNotBusy();
     void updateInternal(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
-                        int32_t overrideVcom, const EinkET013TT1Waveform &altWaveform, uint8_t x0,
-                        uint8_t y0, uint8_t x1, uint8_t y1);
+                        int32_t overrideVcom, const EinkET013TT1Waveform &altWaveform, EinkBox box);
 
     uint8_t csLeft_;
     uint8_t csRight_;

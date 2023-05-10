@@ -61,6 +61,8 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     : display_(display), renderer_(display), prefs_(prefs),
       lightingController_(lightingController) {
     // We want to control exactly when full and partial will happen.
+    // This allows us to cross ownership boundaries and to force a partial update
+    // even when we switch to the main menu the first time.
     display.forceDontChangeRefreshType();
 }
 

@@ -15,6 +15,13 @@
 #define FRAMERATE_DEFAULT 24
 #define PARTICLE_MOVEMENT_DEFAULT 40
 
+struct FakeEinkBox {
+    int leftX;
+    int rightX;
+    int topY;
+    int bottomY;
+};
+
 enum class ScreenSide {
     Left = 1 << 0,
     Right = 1 << 1,
@@ -59,8 +66,8 @@ public:
 
     void update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
                 int32_t overrideVcom = INT32_MAX,
-                const EinkET013TT1Waveform &altWaveform = BC_WAVEFORM_NONE, uint8_t x0 = 0,
-                uint8_t y0 = 0, uint8_t x1 = 255, uint8_t y1 = 255);
+                const EinkET013TT1Waveform &altWaveform = BC_WAVEFORM_NONE,
+                FakeEinkBox box = {0, 255, 0, 255});
 
     auto readTemperature(ScreenSide screen) -> int16_t;
 
