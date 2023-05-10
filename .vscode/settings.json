@@ -103,7 +103,8 @@
         "event_groups.h": "c",
         "console.h": "c",
         "queue": "cpp",
-        "coroutine": "cpp"
+        "coroutine": "cpp",
+        "forward_list": "cpp"
     },
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "xaver.clang-format",

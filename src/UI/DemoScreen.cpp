@@ -44,13 +44,13 @@
 #include "UI/Bitmaps/sp3.hpp"
 #include "UI/Bitmaps/sp4.hpp"
 #include "UI/Bitmaps/space-scape1.hpp"
-#include "UI/Fonts/Tahoma10pt7b.h"
-#include "UI/Fonts/Tahoma20pt7b.h"
-#include "UI/Fonts/Tahoma5pt7b.h"
-#include "UI/Fonts/Tahoma6pt7b.h"
-#include "UI/Fonts/Tahoma7pt7b.h"
-#include "UI/Fonts/Tahoma8pt7b.h"
-#include "UI/Fonts/Tahoma9pt7b.h"
+#include "UI/Fonts/GFXFonts/Tahoma10pt7b.h"
+#include "UI/Fonts/GFXFonts/Tahoma20pt7b.h"
+#include "UI/Fonts/GFXFonts/Tahoma5pt7b.h"
+#include "UI/Fonts/GFXFonts/Tahoma6pt7b.h"
+#include "UI/Fonts/GFXFonts/Tahoma7pt7b.h"
+#include "UI/Fonts/GFXFonts/Tahoma8pt7b.h"
+#include "UI/Fonts/GFXFonts/Tahoma9pt7b.h"
 #include "UI/Layout/Types.hpp"
 #include "sindarin-debug.h"
 
@@ -68,7 +68,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
 
 void DemoScreen::drawSkipMessage(DisplaySystem &display, bool inverted) {
     std::string message = SKIP_MESSAGE;
-    display.setFont(&TAHOMA_REGULAR_FONT5PT7B);
+    display.setFont(static_cast<Font *>(&fontTahomaRegularFonT5PT7B));
     display.drawSingleLineOfText(
         message.c_str(),
         display.xAbsolute(display.xAbsoluteCenter() - display.getTextWidth(message.c_str()) / 2),
@@ -77,7 +77,7 @@ void DemoScreen::drawSkipMessage(DisplaySystem &display, bool inverted) {
 
 void DemoScreen::drawDoubleLine(DisplaySystem &display, std::string one, std::string two) {
     std::string message;
-    display.setFont(&TAHOMA_REGULAR_FONT6PT7B);
+    display.setFont(static_cast<Font *>(&fontTahomaRegularFonT6PT7B));
     message = std::move(one);
     display.drawSingleLineOfText(
         message.c_str(),
@@ -94,7 +94,7 @@ void DemoScreen::drawDoubleLine(DisplaySystem &display, std::string one, std::st
 void DemoScreen::drawTripleLine(DisplaySystem &display, std::string one, std::string two,
                                 std::string three) {
     std::string message;
-    display.setFont(&TAHOMA_REGULAR_FONT6PT7B);
+    display.setFont(static_cast<Font *>(&fontTahomaRegularFonT6PT7B));
     message = std::move(one);
     display.drawSingleLineOfText(
         message.c_str(),
@@ -149,7 +149,7 @@ void DemoScreen::render(DisplaySystem &display) {
     case 0:
         switch (currentSubScreen_) {
         case 0:
-            display.setFont(&TAHOMA_REGULAR_FONT6PT7B);
+            display.setFont(static_cast<Font *>(&fontTahomaRegularFonT6PT7B));
             message = DEMO_SCREEN_1a;
             // This Y coordinate is just a guess
             display.drawSingleLineOfText(
@@ -267,7 +267,7 @@ void DemoScreen::render(DisplaySystem &display) {
                 display.updateDisplay(DisplaySystem::UpdateType::ERASE);
                 shownOne_ = true;
             }
-            display.setFont(&TAHOMA_REGULAR_FONT6PT7B);
+            display.setFont(static_cast<Font *>(&fontTahomaRegularFonT6PT7B));
             message = DEMO_SCREEN_2a;
             // This Y coordinate is just a guess
             display.drawSingleLineOfText(
@@ -350,7 +350,7 @@ void DemoScreen::render(DisplaySystem &display) {
                 display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
                 BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.fg);
             display.updateDisplay(DisplaySystem::UpdateType::ERASE, true);
-            display.setFont(&TAHOMA_REGULAR_FONT6PT7B);
+            display.setFont(static_cast<Font *>(&fontTahomaRegularFonT6PT7B));
             nextInterval = 2500;
             break;
         case 5:
@@ -364,7 +364,7 @@ void DemoScreen::render(DisplaySystem &display) {
         yOffset = -40;
         switch (currentSubScreen_) {
         case 0:
-            display.setFont(&TAHOMA_REGULAR_FONT6PT7B);
+            display.setFont(static_cast<Font *>(&fontTahomaRegularFonT6PT7B));
             if (!shownTwo_) {
                 // fragile with the original xOffset above. Figure out a better way.
                 display.drawXBitmap(
@@ -484,7 +484,7 @@ void DemoScreen::render(DisplaySystem &display) {
     case 3:
         display.clearDisplay();
         display.clearFrameBuffer();
-        display.setFont(&TAHOMA_REGULAR_FONT5PT7B);
+        display.setFont(static_cast<Font *>(&fontTahomaRegularFonT5PT7B));
         message = DEMO_SCREEN_4;
         display.drawSingleLineOfText(
             message.c_str(),

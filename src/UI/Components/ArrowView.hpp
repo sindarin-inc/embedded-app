@@ -7,7 +7,7 @@
 
 enum ArrowDirection { ArrowLeft, ArrowRight, ArrowUp, ArrowDown };
 
-// A view that draws a left arrow
+// A view that draws an arrow
 class ArrowView : public EinkView {
 public:
     ArrowView(DisplaySystem &display, ArrowDirection direction = ArrowLeft)

@@ -19,33 +19,30 @@ auto ReadableScreen::layout(LayoutContext &context, Size size) -> Size {
     int arrowHeight = 8;
     int sidePadding = -15;
     int topBottomPadding = -10;
-
-    context.setViewFrame(leftArrowView_, {{sidePadding, size.height / 2 - arrowWidth / 2},
-                                          {arrowHeight, arrowWidth}});
-    context.setViewFrame(rightArrowView_, {{size.width - sidePadding - arrowHeight,
-                                            size.height / 2 - arrowWidth / 2},
-                                           {arrowHeight, arrowWidth}});
-    context.setViewFrame(upArrowView_, {{size.width / 2 - arrowWidth / 2, topBottomPadding},
-                                        {arrowWidth, arrowHeight}});
-    context.setViewFrame(downArrowView_, {{size.width / 2 - arrowWidth / 2,
-                                           size.height - topBottomPadding - arrowHeight},
-                                          {arrowWidth, arrowHeight}});
-
+    auto arrowContainer = Rect::fromSize(size).inset(sidePadding, topBottomPadding);
+    context.setViewSizeInRect(leftArrowView_, {arrowHeight, arrowWidth}, arrowContainer,
+                              LayoutOptionsAlignLeft | LayoutOptionsAlignCenterVertical);
+    context.setViewSizeInRect(rightArrowView_, {arrowHeight, arrowWidth}, arrowContainer,
+                              LayoutOptionsAlignRight | LayoutOptionsAlignCenterVertical);
+    context.setViewSizeInRect(upArrowView_, {arrowWidth, arrowHeight}, arrowContainer,
+                              LayoutOptionsAlignTop | LayoutOptionsAlignCenterHorizontal);
+    context.setViewSizeInRect(downArrowView_, {arrowWidth, arrowHeight}, arrowContainer,
+                              LayoutOptionsAlignBottom | LayoutOptionsAlignCenterHorizontal);
     return size;
 }
 
 void ReadableScreen::drawArrows(bool eraseArrow = false) {
-    // Because the user can repurpose the center button and right button, we need to check
-    // if they did that before showing the right arrow.
-    bool skipDisplay = false;
-
     switch (lastArrowPress_) {
     case REMOTE_LEFT:
         leftArrowView_.color = eraseArrow ? display_.bg : display_.fg;
         leftArrowView_.draw();
         break;
     case REMOTE_RIGHT:
-    case REMOTE_CENTER:
+    case REMOTE_CENTER: {
+        // Because the user can repurpose the center button and right button, we need to check
+        // if they did that before showing the right arrow.
+        bool skipDisplay = false;
+
         if (prefs_.fastBookmarkRight.get().value_or(false) && (lastArrowPress_ == REMOTE_RIGHT)) {
             skipDisplay = true;
         }
@@ -57,6 +54,7 @@ void ReadableScreen::drawArrows(bool eraseArrow = false) {
             rightArrowView_.draw();
         }
         break;
+    }
     case REMOTE_UP:
         if (!prefs_.cesMode.get().value_or(false)) {
             upArrowView_.color = eraseArrow ? display_.bg : display_.fg;
@@ -138,6 +136,13 @@ void ReadableScreen::writeOutBookmarkUpdate() {
 // we have a helper method to do the work.
 void ReadableScreen::turnPage() {
     if (atEnd_) {
+        if (prefs_.emcMode.get().value_or(false)) {
+            log_d("Looping back to the beginning of Readable for EMC testing mode");
+            // Loop back to the beginning
+            readable_.placePrev = 0;
+            readable_.place = 0;
+            return;
+        }
         showPopupMenu();
         popupMenuScreen_.preselectArchiveMenuItem();
     } else {
@@ -189,15 +194,21 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     display.setFont(display.style.getFontFamily().readableFont);
 
+    bool emcMode = prefs_.emcMode.get().value_or(false);
+
     // If it's the first read of the book, show the help screen.
     // Then ignore the next press of the button
-    if (!prefs_.firstRead.get().value_or(false)) {
+    if (!emcMode && !prefs_.firstRead.get().value_or(false)) {
 
         // We need to make sure this goes onto the second page because of a bug in the renderer.
         std::string message =
             "Welcome to reading with Sol! This is a one page tutorial on what each button does "
-            "while reading.\n\n\nUp or Down: Popup Menu\n\nLeft: Previous "
-            "Page\n\nRight or Center: Next Page\n\n\nThat's it! Press any button... "
+            "while reading.\n\n\n\ue003   Main Menu\n\n\ue004   Reading "
+            "Settings\n\n\ue001   "
+            "Previous "
+            "Page\n\n\uE002   Bookmark Page\n\n\ue000   Next Page\n\n\nThat's "
+            "it! Press "
+            "any button... "
             "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
 
         auto streamFirstTime = std::make_shared<StdStringStream>(message);
@@ -215,7 +226,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
-    if (!prefs_.firstAutopilotRead.get().value_or(false) && (pageSpeed_ != 0)) {
+    if (!emcMode && !prefs_.firstAutopilotRead.get().value_or(false) && (pageSpeed_ != 0)) {
         // We need to make sure this goes onto the second page because of a bug in the renderer.
         std::string message =
             "Welcome to the beta of Autopilot mode! Here is what each button does "
@@ -291,8 +302,8 @@ void ReadableScreen::render(DisplaySystem &display) {
     // with the rest of the text
     if ((pageSpeed_ != 0) && (speedLinesToSkip_ == 0)) {
         int screenWidth = display.width();
-        display.drawXBitmap(screenWidth + 2, 0, AUTO_PILOT_BITS, auto_pilot_width,
-                            auto_pilot_height, display.fg);
+        display.drawXBitmap(screenWidth + 2, 0, autoPilotBits, auto_pilot_width, auto_pilot_height,
+                            display.fg);
     }
 
     log_d("%lu is the new place in the text %s", newPlace_, atEnd_ ? "(at end)" : "");
@@ -337,7 +348,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         }
     }
 
-    if (prefs_.emcMode.get().value_or(false)) {
+    if (emcMode) {
         // Must stop the timer because ChangePeriod starts it.
         xTimerStop(DisplaySystem::animationTimer, 0);
         // Change page every 30 seconds

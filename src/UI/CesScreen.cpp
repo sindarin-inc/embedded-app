@@ -1,7 +1,5 @@
 #include "UI/CesScreen.hpp"
 
-#include "UI/Fonts/Tahoma5pt7b.h"
-#include "UI/Fonts/Tahoma6pt7b.h"
 #include "sindarin-debug.h"
 
 extern void UIInnerLoop(RemoteCommand command);
@@ -14,7 +12,7 @@ CesScreen::CesScreen(DisplaySystem &display, PreferencesStore &prefs,
 void CesScreen::render(DisplaySystem &display) {
     std::string message = messages_[currentScreen_];
 
-    display.setFont(&TAHOMA_REGULAR_FONT6PT7B);
+    display.setFont(static_cast<Font *>(&fontTahomaRegularFonT6PT7B));
 
     // Alternate left and right on for setup.
     if (currentScreen_ == 1) {
@@ -32,10 +30,10 @@ void CesScreen::render(DisplaySystem &display) {
     switch (currentScreen_) {
     case 0:
     case 1:
-        display.setFont(&TAHOMA_REGULAR_FONT8PT7B);
+        display.setFont(static_cast<Font *>(&fontTahomaRegularFonT8PT7B));
         break;
     case 2:
-        display.setFont(&TAHOMA_REGULAR_FONT5PT7B);
+        display.setFont(static_cast<Font *>(&fontTahomaRegularFonT5PT7B));
         break;
     }
     // NOLINTEND(bugprone-branch-clone)

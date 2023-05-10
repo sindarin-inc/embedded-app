@@ -3,8 +3,6 @@
 
 #include "Displays/DisplayEinkET013TT1.hpp"
 #include "Misc/StringUtil.hpp"
-#include "UI/Fonts/LucidaGrande10pt7b.h"
-#include "UI/Fonts/LucidaGrande5pt7b.h"
 #include "sindarin-debug.h"
 
 #define STEP_IN_MV 50
@@ -19,7 +17,7 @@ VcomAdjustScreen::VcomAdjustScreen(DisplaySystem &display, PreferencesStore &pre
 }
 
 void VcomAdjustScreen::render(DisplaySystem &display) {
-    display.setFont(&LUCIDA_GRANDE10PT7B);
+    display.setFont(static_cast<Font *>(&fontLucidaGrandE10PT7B));
 
     auto vcomStr = StringFormat("%dmV", vCom);
 
@@ -34,7 +32,7 @@ void VcomAdjustScreen::render(DisplaySystem &display) {
 
     display.updateDisplay();
 
-    display.setFont(&LUCIDA_GRANDE5PT7B);
+    display.setFont(static_cast<Font *>(&fontLucidaGrandE5PT7B));
 }
 
 void VcomAdjustScreen::processCommand(RemoteCommand command) {

@@ -18,6 +18,9 @@ public:
         : DisplaySystem(), gfxCanvas_(EinkET013TT1_X_PIXELS, EinkET013TT1_Y_PIXELS),
           driver_(csLeft, csRight, rst) {
         gfxClass_ = &gfxCanvas_;
+        canvasBuffer_ = gfxCanvas_.getBuffer();
+        canvasWidth_ = EinkET013TT1_X_PIXELS;
+        canvasHeight_ = EinkET013TT1_Y_PIXELS;
     };
     DisplayEinkET013TT1(DisplayEinkET013TT1 const &) = delete;
 
@@ -37,6 +40,8 @@ public:
 
     // For those moments where you need to expose the driver directly
     auto getDriver() -> EinkET013TT1 * { return &driver_; }
+
+    void drawFullscreenBitmapFromFile(RendererStream &stream) override;
 
 protected:
     GFXcanvas1 gfxCanvas_;
