@@ -658,9 +658,15 @@ public:
 
         if ((glyphCode == SPACE_CODE) ||
             ((*glyphsInfo_)[glyphCode].bitmapWidth == 0)) { // send as a space character
-            appGlyph.metrics.lineHeight = faceHeader_->lineHeight;
-            appGlyph.metrics.advance = (int16_t)faceHeader_->spaceSize << 6;
             appGlyph.pointSize = faceHeader_->pointSize;
+            appGlyph.metrics = {.xoff = 0,
+                                .yoff = 0,
+                                .descent = 0,
+                                .lineHeight = faceHeader_->lineHeight,
+                                .ligatureAndKernPgmIndex = 255};
+            // For some reason, casting this above triggers a narrowing conversion error but it
+            // doesn't here.
+            appGlyph.metrics.advance = (int16_t)faceHeader_->spaceSize << 6;
             return true;
         }
 
