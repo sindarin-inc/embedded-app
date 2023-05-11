@@ -78,10 +78,10 @@ auto SolClock::readTimezones(const std::string &str)
 
     std::string line;
     while (std::getline(stream, line)) {
-        std::size_t comma_pos = line.find(',');
-        if (comma_pos != std::string::npos && comma_pos < line.size() - 1) {
-            std::string iana = line.substr(0, comma_pos);
-            std::string posix = line.substr(comma_pos + 2); // Skip comma and space
+        std::size_t commaPos = line.find(',');
+        if (commaPos != std::string::npos && commaPos < line.size() - 1) {
+            std::string iana = line.substr(0, commaPos);
+            std::string posix = line.substr(commaPos + 2); // Skip comma and space
             result[iana] = posix;
         }
     }
