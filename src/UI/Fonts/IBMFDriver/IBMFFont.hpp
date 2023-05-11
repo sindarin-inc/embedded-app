@@ -178,15 +178,17 @@ public:
                     // LOGD("Advance: %f, xoff: %d, yoff: %d, descent: %d, kern: %d",
                     //      IBMFFaceLow::fromFIX16(glyph.metrics.advance), glyph.metrics.xoff,
                     //      glyph.metrics.yoff, glyph.metrics.descent, kern);
+                    up = (up < glyph.metrics.yoff) ? glyph.metrics.yoff : up;
+                    down = (down < glyph.metrics.descent) ? glyph.metrics.descent : down;
                     if (glyphCode == SPACE_CODE) {
                         dim.width += glyph.metrics.advance >> 6;
+                        up = 0;
+                        down = 0;
                     } else {
                         dim.width += last ? font_->getFace(faceIndex_)->getGlyphWidth(glyphCode) -
                                                 (kern / 64) - glyph.metrics.xoff
                                           : ((glyph.metrics.advance + kern) >> 6);
                     }
-                    up = (up < glyph.metrics.yoff) ? glyph.metrics.yoff : up;
-                    down = (down < glyph.metrics.descent) ? glyph.metrics.descent : down;
                     // dim.height = (dim.height > glyph.metrics.yoff)
                     //                  ? glyph.metrics.yoff
                     //                  : dim.height; // yoff is negative...

@@ -59,8 +59,7 @@ void Renderer::tokenRenderedWidthHeight(unsigned long placeInTokenBuffer, uint16
                 display_.getTextSize(" ", &spaceWidth_, &spaceHeight_);
             }
             *renderedWidth = spaceWidth_;
-            *renderedHeight = 0;
-            spaceHeight_ = 0;
+            *renderedHeight = spaceHeight_;
         }
     } else {
         // Spaces are a mess. The width of them depends on the tokens before and after. Joy.
