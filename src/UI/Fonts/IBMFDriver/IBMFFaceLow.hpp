@@ -349,6 +349,7 @@ public:
 
                 // Find vertices using the cross product and adjust the distances
                 // to get the right portion of the Convex Hull polygon.
+                // NOLINTNEXTLINE(bugprone-signed-char-misuse,cert-str34-c)
                 int i = distIdxLeft;
                 int j = i + 1;
                 while (j < (i1.bitmapHeight + distIdxLeft)) {
@@ -401,6 +402,7 @@ public:
 
                 // Find vertices using the cross product and adjust the distances
                 // to get the left portion of the Convex Hull polygon.
+                // NOLINTNEXTLINE(bugprone-signed-char-misuse,cert-str34-c)
                 int i = distIdxRight;
                 int j = i + 1;
                 while (j < (i2.bitmapHeight + distIdxRight)) {
@@ -449,6 +451,7 @@ public:
             // as angled pixels (on the lines above and below)
             kerning = MAKE_INT_FIXED(999);
             FIX32 dist;
+            // NOLINTNEXTLINE(bugprone-signed-char-misuse,cert-str34-c)
             for (int i = firstIdx; i < firstIdx + length; i++) {
                 dist = distLeft[i] + distRight[i];
                 if (dist < kerning) {

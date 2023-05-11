@@ -47,7 +47,7 @@ auto ReadInt(RendererStream &stream, int &val) -> bool {
     }
     // terminate string
     *str = 0;
-    val = atoi((const char *)tmp);
+    val = strtol((const char *)tmp, nullptr, sizeof(tmp));
     return true;
 }
 
