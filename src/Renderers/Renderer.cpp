@@ -59,7 +59,8 @@ void Renderer::tokenRenderedWidthHeight(unsigned long placeInTokenBuffer, uint16
                 display_.getTextSize(" ", &spaceWidth_, &spaceHeight_);
             }
             *renderedWidth = spaceWidth_;
-            *renderedHeight = spaceHeight_;
+            *renderedHeight = 0;
+            spaceHeight_ = 0;
         }
     } else {
         // Spaces are a mess. The width of them depends on the tokens before and after. Joy.
@@ -108,9 +109,8 @@ unsigned int Renderer::setSizeOfTextToken(unsigned long placeInTokenBuffer) {
     tokenRenderedWidthHeight(placeInTokenBuffer, &currTokenBuffer_[placeInTokenBuffer].width,
                              &currTokenBuffer_[placeInTokenBuffer].height);
     // If the token is a space, then we need to just return zero because the height is undefined.
-    return ((converted.data()[0] != ' ') ? currTokenBuffer_[placeInTokenBuffer].width *
-                                               currTokenBuffer_[placeInTokenBuffer].height
-                                         : 0);
+    return (currTokenBuffer_[placeInTokenBuffer].width *
+            currTokenBuffer_[placeInTokenBuffer].height);
 }
 
 //
