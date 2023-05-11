@@ -55,38 +55,31 @@ void SolClock::setTimezone(const std::string &ianaTimezone) {
     }
 
     prefs_.tzIana.set(ianaTimezone);
-    auto timezones = readTimezones(IANA_TO_POSIX_TIMEZONES);
-
-    std::string posixTimezoneString;
-    if (timezones.find(ianaTimezone) != timezones.end()) {
-        posixTimezoneString = timezones.at(ianaTimezone);
-    } else {
-        log_w("Timezone %s not found in IANA_TO_POSIX_TIMEZONES", ianaTimezone.c_str());
-        return;
-    }
-
+    std::string posixTimezoneString = ianaToPosix(ianaTimezone);
     prefs_.tzPosix.set(posixTimezoneString);
 
     log_d("Switching to timezone %s=%s", ianaTimezone.c_str(), posixTimezoneString.c_str());
     loadTimeZone();
 }
 
-auto SolClock::readTimezones(const std::string &str)
-    -> std::unordered_map<std::string, std::string> {
-    std::unordered_map<std::string, std::string> result;
-    std::istringstream stream(str);
-
+auto SolClock::ianaToPosix(const std::string &ianaTimezone) -> std::string {
+    SHOW_HEAP();
+    std::istringstream ss(IANA_TO_POSIX_TIMEZONES);
     std::string line;
-    while (std::getline(stream, line)) {
-        std::size_t commaPos = line.find(',');
-        if (commaPos != std::string::npos && commaPos < line.size() - 1) {
-            std::string iana = line.substr(0, commaPos);
-            std::string posix = line.substr(commaPos + 2); // Skip comma and space
-            result[iana] = posix;
+    SHOW_HEAP();
+
+    while (std::getline(ss, line)) {
+        std::string::size_type pos = line.find(ianaTimezone);
+        if (pos != std::string::npos) {
+            std::string::size_type commaPos = line.find(',', pos);
+            if (commaPos != std::string::npos) {
+                SHOW_HEAP();
+                return line.substr(commaPos + 2); // skip comma and space
+            }
         }
     }
 
-    return result;
+    return "UTC0";
 }
 
 void SolClock::getLocaltime(tm *timeinfo) {
