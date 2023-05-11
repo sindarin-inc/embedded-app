@@ -23,7 +23,7 @@ public:
 
     void getClockTime(uint8_t &hours, uint8_t &minutes);
 
-    auto readTimezones(const std::string &filename) -> std::unordered_map<std::string, std::string>;
+    auto readTimezones(const std::string &str) -> std::unordered_map<std::string, std::string>;
 
     auto ianaTimezoneString() -> std::string;
     auto posixTimezoneString() -> std::string;

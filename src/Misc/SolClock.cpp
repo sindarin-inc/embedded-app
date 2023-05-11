@@ -58,10 +58,11 @@ void SolClock::setTimezone(const std::string &ianaTimezone) {
     }
 
     prefs_.tzIana.set(ianaTimezone);
+    auto timezones = readTimezones(IANA_TO_POSIX_TIMEZONES);
 
     std::string posixTimezoneString;
-    if (IANA_TO_POSIX_TIMEZONES.find(ianaTimezone) != IANA_TO_POSIX_TIMEZONES.end()) {
-        posixTimezoneString = IANA_TO_POSIX_TIMEZONES.at(ianaTimezone);
+    if (timezones.find(ianaTimezone) != timezones.end()) {
+        posixTimezoneString = timezones.at(ianaTimezone);
     } else {
         posixTimezoneString = "UTC0";
     }
@@ -70,6 +71,24 @@ void SolClock::setTimezone(const std::string &ianaTimezone) {
 
     log_d("Switching to timezone %s=%s", ianaTimezone.c_str(), posixTimezoneString.c_str());
     loadTimeZone();
+}
+
+auto SolClock::readTimezones(const std::string &str)
+    -> std::unordered_map<std::string, std::string> {
+    std::unordered_map<std::string, std::string> result;
+    std::istringstream stream(str);
+
+    std::string line;
+    while (std::getline(stream, line)) {
+        std::size_t comma_pos = line.find(',');
+        if (comma_pos != std::string::npos && comma_pos < line.size() - 1) {
+            std::string iana = line.substr(0, comma_pos);
+            std::string posix = line.substr(comma_pos + 2); // Skip comma and space
+            result[iana] = posix;
+        }
+    }
+
+    return result;
 }
 
 void SolClock::getLocaltime(tm *timeinfo) {
