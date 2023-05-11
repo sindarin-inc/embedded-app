@@ -103,7 +103,7 @@ void Renderer::tokenRenderedWidthHeight(unsigned long placeInTokenBuffer, uint16
 // Returns the area of the token (width * height)
 // for use in calcuating how much space we need for a page.
 //
-unsigned int Renderer::setSizeOfTextToken(unsigned long placeInTokenBuffer) {
+auto Renderer::setSizeOfTextToken(unsigned long placeInTokenBuffer) -> unsigned int {
     TokenString converted;
     tokenToString(placeInTokenBuffer, converted);
     tokenRenderedWidthHeight(placeInTokenBuffer, &currTokenBuffer_[placeInTokenBuffer].width,

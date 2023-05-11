@@ -82,7 +82,7 @@ public:
     void tokenToString(unsigned long placeInTokenBuffer, TokenString &outputString);
     void tokenRenderedWidthHeight(unsigned long placeInTokenBuffer, uint16_t *renderedWidth,
                                   uint16_t *renderedHeight);
-    unsigned int setSizeOfTextToken(unsigned long placeInTokenBuffer);
+    auto setSizeOfTextToken(unsigned long placeInTokenBuffer) -> unsigned int;
 
     auto getLengthOfLine(unsigned int index) -> unsigned int;
 
