@@ -281,18 +281,17 @@ void InitializePlatform() {
 void USBDeviceInit() {
     // init usb device driver
     log_i("USB initialization");
-    const tinyusb_config_t tusb_cfg = {
-        .device_descriptor = NULL,
-        .string_descriptor = NULL,
+    const tinyusb_config_t tusbCfg = {
+        .device_descriptor = nullptr,
+        .string_descriptor = nullptr,
         .external_phy = false,
-        .configuration_descriptor = NULL,
+        .configuration_descriptor = nullptr,
     };
 
-    ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
+    ESP_ERROR_CHECK(tinyusb_driver_install(&tusbCfg));
 
-    tinyusb_config_cdcacm_t acm_cfg = {
-        (tinyusb_usbdev_t)0}; // the configuration uses default values
-    ESP_ERROR_CHECK(tusb_cdc_acm_init(&acm_cfg));
+    tinyusb_config_cdcacm_t acmCfg = {(tinyusb_usbdev_t)0}; // the configuration uses default values
+    ESP_ERROR_CHECK(tusb_cdc_acm_init(&acmCfg));
     esp_tusb_init_console(TINYUSB_CDC_ACM_0); // log to usb
 }
 
