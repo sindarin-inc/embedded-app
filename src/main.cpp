@@ -147,6 +147,7 @@ void loop() { vTaskDelay(portMAX_DELAY); };
 void setup() {
 #else
 extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
+    USBDeviceInit();
     HardwareInit();
 #endif
 

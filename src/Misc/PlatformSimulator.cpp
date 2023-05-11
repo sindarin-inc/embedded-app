@@ -108,4 +108,6 @@ const char *pathToFileName(const char *path) {
     return path + pos;
 }
 
+void USBDeviceInit() {}
+
 #endif

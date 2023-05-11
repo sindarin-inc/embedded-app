@@ -13,6 +13,9 @@
 #include <nvs_flash.h>
 #include <optional>
 #include <soc/rtc.h>
+#include <tinyusb.h>
+#include <tusb_cdc_acm.h>
+#include <tusb_console.h>
 #include <ulp_riscv.h>
 
 #include "Misc/StringUtil.hpp"
@@ -271,7 +274,26 @@ void InitializePlatform() {
     }
 #endif
 #endif // EINKET013TT1
+
     platformInitialized = true;
+}
+
+void USBDeviceInit() {
+    // init usb device driver
+    log_i("USB initialization");
+    const tinyusb_config_t tusb_cfg = {
+        .device_descriptor = NULL,
+        .string_descriptor = NULL,
+        .external_phy = false,
+        .configuration_descriptor = NULL,
+    };
+
+    ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
+
+    tinyusb_config_cdcacm_t acm_cfg = {
+        (tinyusb_usbdev_t)0}; // the configuration uses default values
+    ESP_ERROR_CHECK(tusb_cdc_acm_init(&acm_cfg));
+    esp_tusb_init_console(TINYUSB_CDC_ACM_0); // log to usb
 }
 
 auto DeinitializePlatform() -> esp_err_t {
