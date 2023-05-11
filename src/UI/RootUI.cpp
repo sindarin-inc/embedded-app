@@ -615,13 +615,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     experimentalSettingsMenu->addMenuItem(MenuItem("Page Transition Arrows", [this]() {
-        this->prefs_.noPageTransitionArrows.set(
-            !this->prefs_.noPageTransitionArrows.get().value_or(false));
+        this->prefs_.pageTransitionArrows.set(
+            !this->prefs_.pageTransitionArrows.get().value_or(false));
     }));
 
-    // This one is opposite because we want to default it to true and make them
-    // turn it off if they don't want it. At least for beta.
-    if (prefs_.noPageTransitionArrows.get().value_or(false)) {
+    if (prefs_.pageTransitionArrows.get().value_or(false)) {
         experimentalSettingsMenu->setToggleLastItem(false);
     } else {
         experimentalSettingsMenu->setToggleLastItem(true);

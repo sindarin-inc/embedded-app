@@ -311,12 +311,11 @@ public:
           darkMode(*this, "dark-mode"), autoPilot(*this, "auto-pilot"),
           fastTransitions(*this, "fast-tran"), noUploadCrashes(*this, "no-upload-crash"),
           showDebugMenu(*this, "show-debug"), fastBookmarkRight(*this, "fst-mark-right"),
-          fastBookmarkCenter(*this, "fst-mark-cent"),
-          noPageTransitionArrows(*this, "no-page-arrows"), wifiSettingsJson(*this, "wifi-settings"),
-
-          localStoreMigrationVersion(*this, "ls-version"), fontsLibrary(*this, "fonts-lib"),
-          fontType(*this, "font-type"), tutorialsDeleted(*this, "tutorials"),
-          bleAdvertisingKey(*this, "ble-adv-key"), bleAuthKey(*this, "ble-auth-key"),
+          fastBookmarkCenter(*this, "fst-mark-cent"), pageTransitionArrows(*this, "no-page-arrows"),
+          wifiSettingsJson(*this, "wifi-settings"), localStoreMigrationVersion(*this, "ls-version"),
+          fontsLibrary(*this, "fonts-lib"), fontType(*this, "font-type"),
+          tutorialsDeleted(*this, "tutorials"), bleAdvertisingKey(*this, "ble-adv-key"),
+          bleAuthKey(*this, "ble-auth-key"),
           preferencesStoreMigrationVersion_(*this, "ps-version"){};
     PreferencesStore(PreferencesStore &) = delete;
 
@@ -490,7 +489,7 @@ public:
     PrefsItem<bool> showDebugMenu;
     PrefsItem<bool> fastBookmarkRight;
     PrefsItem<bool> fastBookmarkCenter;
-    PrefsItem<bool> noPageTransitionArrows;
+    PrefsItem<bool> pageTransitionArrows;
     PrefsItem<std::string> wifiSettingsJson;
     PrefsItem<uint32_t> localStoreMigrationVersion;
     PrefsItem<bool> fontsLibrary;

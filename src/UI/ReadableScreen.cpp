@@ -171,7 +171,7 @@ void ReadableScreen::render(DisplaySystem &display) {
     // change, so we'll leave it for now.
     bool renderPopupBackground = currentScreen_ == &popupMenuScreen_ && renderPopup_;
 
-    bool renderTransitionArrows = !prefs_.noPageTransitionArrows.get().value_or(false);
+    bool renderTransitionArrows = prefs_.pageTransitionArrows.get().value_or(false);
 
     if (currentScreen_ != this && !renderPopupBackground) {
         currentScreen_->render(display);
