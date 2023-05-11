@@ -82,7 +82,7 @@ public:
     void tokenToString(unsigned long placeInTokenBuffer, TokenString &outputString);
     void tokenRenderedWidthHeight(unsigned long placeInTokenBuffer, uint16_t *renderedWidth,
                                   uint16_t *renderedHeight);
-    void setSizeOfTextToken(unsigned long placeInTokenBuffer);
+    unsigned int setSizeOfTextToken(unsigned long placeInTokenBuffer);
 
     auto getLengthOfLine(unsigned int index) -> unsigned int;
 
@@ -113,7 +113,7 @@ protected:
     auto loadCurrIntoBuffer() -> unsigned long;
     auto goBackwardsOnePage(unsigned long place) -> unsigned long;
 
-    void loadAndTokenizePage(unsigned long placeInFile);
+    void loadAndTokenizePage(unsigned long placeInFile, bool backwards = false);
 
     // Debugging
     void printOutTokensInCurrTokenBuffer();

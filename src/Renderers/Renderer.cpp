@@ -98,11 +98,17 @@ void Renderer::tokenRenderedWidthHeight(unsigned long placeInTokenBuffer, uint16
 
 // A helper method to fill the size of a token after the tokens have been loaded
 // into the token buffer.
-void Renderer::setSizeOfTextToken(unsigned long placeInTokenBuffer) {
+//
+// Returns the area of the token (width * height)
+// for use in calcuating how much space we need for a page.
+//
+unsigned int Renderer::setSizeOfTextToken(unsigned long placeInTokenBuffer) {
     TokenString converted;
     tokenToString(placeInTokenBuffer, converted);
     tokenRenderedWidthHeight(placeInTokenBuffer, &currTokenBuffer_[placeInTokenBuffer].width,
                              &currTokenBuffer_[placeInTokenBuffer].height);
+    return (currTokenBuffer_[placeInTokenBuffer].width *
+            currTokenBuffer_[placeInTokenBuffer].height);
 }
 
 //
@@ -112,10 +118,18 @@ void Renderer::setSizeOfTextToken(unsigned long placeInTokenBuffer) {
 // through the tokens, checking size, and rendering the text on
 // a line by line basis.
 //
-void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
+// We track backwards because we need to double the amount read in a backwards
+// read (2 pages instead of 1)
+//
+void Renderer::loadAndTokenizePage(unsigned long placeInFile, bool backwards) {
     unsigned int plcInBuffer = 0;
     unsigned int plcInTokenBuffer = 0;
     unsigned int curPrevNewLine = 0;
+
+    unsigned int runningGlyphArea = 0;
+    unsigned int maxArea = display_.width() * display_.height();
+
+    maxArea = backwards ? maxArea * 2 : maxArea;
 
     numCurrTokens_ = 0;
 
@@ -133,7 +147,8 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
 
     // Needs to be minus one for the corner case of all spaces or newlines
     // and need room for EOF character.
-    while (stream_->available() && plcInBuffer < MAX_CHARS_PER_PAGE - 1) {
+    while ((stream_->available()) && (plcInBuffer < MAX_CHARS_PER_PAGE - 1) &&
+           (runningGlyphArea < maxArea)) {
         auto curChar = stream_->read();
         RendererToken newToken = {TOKEN_EOF,      plcInBuffer, placeInFile + plcInBuffer,
                                   curPrevNewLine, 0,           0};
@@ -153,13 +168,13 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
             // we need to set the size of the previous token
             if ((plcInTokenBuffer > 0) &&
                 currTokenBuffer_[plcInTokenBuffer - 1].token == TOKEN_TEXT) {
-                setSizeOfTextToken(plcInTokenBuffer - 1);
+                runningGlyphArea += setSizeOfTextToken(plcInTokenBuffer - 1);
                 // If we've started a new text token and the previous token was a space
                 // we know that we should go back and set the size of that space token
                 // based on this token and the token before the space.
                 if ((plcInTokenBuffer > 2) &&
                     currTokenBuffer_[plcInTokenBuffer - 2].token == TOKEN_SPACE) {
-                    setSizeOfTextToken(plcInTokenBuffer - 2);
+                    runningGlyphArea += setSizeOfTextToken(plcInTokenBuffer - 2);
                 }
             }
             curPrevNewLine = plcInTokenBuffer;
@@ -178,13 +193,13 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
             // we need to set the size of the previous token
             if ((plcInTokenBuffer > 0) &&
                 currTokenBuffer_[plcInTokenBuffer - 1].token == TOKEN_TEXT) {
-                setSizeOfTextToken(plcInTokenBuffer - 1);
+                runningGlyphArea += setSizeOfTextToken(plcInTokenBuffer - 1);
                 // If we've started a new text token and the previous token was a space
                 // we know that we should go back and set the size of that space token
                 // based on this token and the token before the space.
                 if ((plcInTokenBuffer > 2) &&
                     currTokenBuffer_[plcInTokenBuffer - 2].token == TOKEN_SPACE) {
-                    setSizeOfTextToken(plcInTokenBuffer - 2);
+                    runningGlyphArea += setSizeOfTextToken(plcInTokenBuffer - 2);
                 }
             }
             plcInTokenBuffer++;
@@ -198,13 +213,13 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
             // we need to set the size of the previous token
             if ((plcInTokenBuffer > 0) &&
                 currTokenBuffer_[plcInTokenBuffer - 1].token == TOKEN_TEXT) {
-                setSizeOfTextToken(plcInTokenBuffer - 1);
+                runningGlyphArea += setSizeOfTextToken(plcInTokenBuffer - 1);
                 // If we've started a new text token and the previous token was a space
                 // we know that we should go back and set the size of that space token
                 // based on this token and the token before the space.
                 if ((plcInTokenBuffer > 2) &&
                     currTokenBuffer_[plcInTokenBuffer - 2].token == TOKEN_SPACE) {
-                    setSizeOfTextToken(plcInTokenBuffer - 2);
+                    runningGlyphArea += setSizeOfTextToken(plcInTokenBuffer - 2);
                 }
             }
             plcInTokenBuffer++;
@@ -233,13 +248,13 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
             // we need to set the size of the previous token
             if ((plcInTokenBuffer > 0) &&
                 currTokenBuffer_[plcInTokenBuffer - 1].token == TOKEN_TEXT) {
-                setSizeOfTextToken(plcInTokenBuffer - 1);
+                runningGlyphArea += setSizeOfTextToken(plcInTokenBuffer - 1);
                 // If we've started a new text token and the previous token was a space
                 // we know that we should go back and set the size of that space token
                 // based on this token and the token before the space.
                 if ((plcInTokenBuffer > 2) &&
                     currTokenBuffer_[plcInTokenBuffer - 2].token == TOKEN_SPACE) {
-                    setSizeOfTextToken(plcInTokenBuffer - 2);
+                    runningGlyphArea += setSizeOfTextToken(plcInTokenBuffer - 2);
                 }
             }
             plcInTokenBuffer++;
@@ -266,6 +281,10 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile) {
         }
         plcInBuffer++;
     }
+
+    log_d("Finished tokenizing with runningArea %d and max area %d and place %d", runningGlyphArea,
+          maxArea, plcInBuffer);
+
     // Ended on a text token, so we move forward one before setting the EOF
     // token.
     if (currTokenBuffer_[plcInTokenBuffer].token != TOKEN_EOF) {
@@ -473,7 +492,7 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
 
     // Step 2.
     // log_d("loadAndTokenizePage called for step 2 of goBackwardsOnePage");
-    loadAndTokenizePage(seekPlace);
+    loadAndTokenizePage(seekPlace, true);
 
     // Go backwards from the last token and do the same as the loadIntoBuffer
     // method.
