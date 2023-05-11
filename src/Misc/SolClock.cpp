@@ -6,9 +6,6 @@
 #endif
 
 #include <cinttypes>
-#include <fstream>
-#include <iostream>
-#include <sstream>
 
 #include "../Communications/WiFi.hpp"
 #include "../Misc/StringUtil.hpp"
