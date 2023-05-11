@@ -8,7 +8,7 @@
 
 // This needs to be a bit bigger -- it's really the max number of chars that will get us 2 full
 // pages where the previous page has a newline.
-#define MAX_CHARS_PER_PAGE 3000
+#define MAX_CHARS_PER_PAGE 6000
 #define MAX_CHARS_PER_LINE 200
 #define MAX_TOKEN_STRING_LENGTH 100
 

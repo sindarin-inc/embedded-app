@@ -131,8 +131,6 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile, bool backwards) {
     unsigned int runningGlyphArea = 0;
     unsigned int maxArea = display_.width() * display_.height();
 
-    maxArea = backwards ? maxArea * 2 : maxArea;
-
     numCurrTokens_ = 0;
 
     spaceWidth_ = 0;
@@ -149,8 +147,8 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile, bool backwards) {
 
     // Needs to be minus one for the corner case of all spaces or newlines
     // and need room for EOF character.
-    while ((stream_->available()) && (plcInBuffer < MAX_CHARS_PER_PAGE - 1) &&
-           (runningGlyphArea < maxArea)) {
+    while ((stream_->available()) && (plcInBuffer < (MAX_CHARS_PER_PAGE - 1)) &&
+           ((backwards || runningGlyphArea < maxArea))) {
         auto curChar = stream_->read();
         RendererToken newToken = {TOKEN_EOF,      plcInBuffer, placeInFile + plcInBuffer,
                                   curPrevNewLine, 0,           0};
@@ -284,9 +282,6 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile, bool backwards) {
         plcInBuffer++;
     }
 
-    log_d("Finished tokenizing with runningArea %d and max area %d and place %d", runningGlyphArea,
-          maxArea, plcInBuffer);
-
     // Ended on a text token, so we move forward one before setting the EOF
     // token.
     if (currTokenBuffer_[plcInTokenBuffer].token != TOKEN_EOF) {
@@ -296,6 +291,12 @@ void Renderer::loadAndTokenizePage(unsigned long placeInFile, bool backwards) {
     // Set the EOF place correctly.
     currTokenBuffer_[plcInTokenBuffer].place = plcInBuffer;
     currTokenBuffer_[plcInTokenBuffer].streamPlace = placeInFile + plcInBuffer;
+
+#ifdef RENDERER_DEBUG
+    log_d("Finished tokenizing with runningArea %d and max area %d, plcInBuffer is %d, and place "
+          "in file is %d",
+          runningGlyphArea, maxArea, plcInBuffer, currTokenBuffer_[plcInTokenBuffer].streamPlace);
+#endif
 
     // we need to set the size of the last token if it wasn't set (e.g., when there is no newline at
     // the end)
@@ -524,12 +525,12 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
 // Find which token to start with
 // Could switch to an algorithm that is log(n) instead of n if we need to
 #ifdef RENDERER_DEBUG
-    log_d("About to look for where to start: place = %d", place);
+    log_d("About to look for where to start: place = %lu", place);
 #endif
     while ((currTokenBuffer_[currToken].streamPlace > place) && (currToken > 0)) {
 #ifdef RENDERER_DEBUG
-        log_d("Going back another token %d", currTokenBuffer_[currToken].streamPlace);
-        log_d("The token is %d", currToken);
+        log_d("Going back another token %lu", currTokenBuffer_[currToken].streamPlace);
+        log_d("The token is %u", currToken);
 #endif
         currToken--;
     }
@@ -538,8 +539,8 @@ auto Renderer::goBackwardsOnePage(unsigned long place) -> unsigned long {
         // Can't go back any further, must be at beginning of file.
         return 0;
     }
-#ifdef RENDERER_DEBUG
-    log_d("Found the place to start and it's %d token type %d",
+#if RENDERER_DEBUG
+    log_d("Found the place to start and it's %lu token type %d",
           currTokenBuffer_[currToken].streamPlace, currTokenBuffer_[currToken + 1].token);
 #endif
 
