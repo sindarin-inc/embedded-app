@@ -107,6 +107,9 @@ unsigned int Renderer::setSizeOfTextToken(unsigned long placeInTokenBuffer) {
     tokenToString(placeInTokenBuffer, converted);
     tokenRenderedWidthHeight(placeInTokenBuffer, &currTokenBuffer_[placeInTokenBuffer].width,
                              &currTokenBuffer_[placeInTokenBuffer].height);
+    log_d("Set the token '%s' size to %d x %d with area %d", converted.data(),
+          currTokenBuffer_[placeInTokenBuffer].width, currTokenBuffer_[placeInTokenBuffer].height,
+          currTokenBuffer_[placeInTokenBuffer].width * currTokenBuffer_[placeInTokenBuffer].height);
     return (currTokenBuffer_[placeInTokenBuffer].width *
             currTokenBuffer_[placeInTokenBuffer].height);
 }
