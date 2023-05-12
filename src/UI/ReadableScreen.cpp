@@ -178,6 +178,12 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
+    // Ideally this would be handled as a part of the Screen class, but it's late and Ben and I
+    // can't quite figure out how to make that work right. See reverted commit f9c797aa from #551
+    if (!needsRerender_) {
+        return;
+    }
+
     setFrame(
         {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
          {display.defaultScreenWidth - 2 * display.defaultXPadding,
@@ -361,6 +367,8 @@ void ReadableScreen::render(DisplaySystem &display) {
     // Reset the lastArrowPress so we don't show it again until another key is pressed (for
     // autopilot mostly)
     lastArrowPress_ = REMOTE_NONE;
+
+    needsRerender_ = false;
 }
 
 void ReadableScreen::incrementReadingTime() {
