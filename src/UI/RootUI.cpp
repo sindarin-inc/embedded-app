@@ -1068,7 +1068,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 debugSettingsMenu->setFirstLoad();
                 display->clearDisplay();
                 setCurrentScreen(*debugSettingsMenu);
-                loop(*this->display_, RemoteCommand::NONE);
+                debugSettingsMenu->render(*this->display_);
                 delete demoScreen;
             });
         }));
@@ -1379,7 +1379,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             // display->clearDisplay();
             mainMenu->setFirstLoad();
             setCurrentScreen(*mainMenu);
-            loop(*this->display_, RemoteCommand::NONE);
+            mainMenu->render(*this->display_);
             delete demoScreen;
         });
         display->clearDisplay();
@@ -1405,7 +1405,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             this->display_->setFont(this->display_->style.getFontFamily().readableFont);
             log_i("Setting Readable Screen after focus in CES mode");
             this->setCurrentScreen(*readableScreen);
-            loop(*this->display_, RemoteCommand::NONE);
+            readableScreen->render(*this->display_);
             delete cesScreen;
         });
         this->setCurrentScreen(*cesScreen);
