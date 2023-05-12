@@ -179,7 +179,7 @@ void ToggleMenuScreen::render(DisplaySystem &display) {
 
 void ToggleMenuScreen::processCommand(RemoteCommand command) {
     switch (command) {
-    case RemoteCommand::PREV:
+    case RemoteCommand::UP:
         if (prevSelection()) {
             firstLoad_ = true;
         } else {
@@ -187,7 +187,7 @@ void ToggleMenuScreen::processCommand(RemoteCommand command) {
         }
         setNeedsRerender();
         break;
-    case RemoteCommand::NEXT:
+    case RemoteCommand::DOWN:
         if (nextSelection()) {
             firstLoad_ = true;
         } else {
@@ -196,7 +196,7 @@ void ToggleMenuScreen::processCommand(RemoteCommand command) {
         setNeedsRerender();
         break;
     case RemoteCommand::ENTER:
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::RIGHT:
         menuToggleValues_[currSelection_] = !menuToggleValues_[currSelection_];
         setNeedsRerender();
         if (getCurrItem().callback != nullptr) {
@@ -204,7 +204,7 @@ void ToggleMenuScreen::processCommand(RemoteCommand command) {
         }
         break;
     case RemoteCommand::BACK:
-    case RemoteCommand::CHANNEL_MINUS:
+    case RemoteCommand::LEFT:
         firstLoad_ = true;
         back();
         break;

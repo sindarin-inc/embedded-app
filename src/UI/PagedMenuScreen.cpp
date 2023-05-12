@@ -90,7 +90,7 @@ auto PagedMenuScreen::prevSelection(bool skipLast) -> bool {
 //
 // For a PagedMenu, we actually want to progress through
 // the options via the left and right buttons and use
-// the down button (CHANNEL_PLUS) to select the text.
+// the down button (RIGHT) to select the text.
 //
 // This is more consistent with the behavior of turning pages
 // and using down to go to the popup menu and up to go back.
@@ -104,7 +104,7 @@ auto PagedMenuScreen::prevSelection(bool skipLast) -> bool {
 //
 void PagedMenuScreen::processCommand(RemoteCommand command) {
     switch (command) {
-    case RemoteCommand::PREV:
+    case RemoteCommand::UP:
         // Settings are always the last item
         currSelection_ = numMenuItems_ - 1;
         if (getCurrItem().callback != nullptr) {
@@ -116,21 +116,21 @@ void PagedMenuScreen::processCommand(RemoteCommand command) {
 
         break;
 
-    case RemoteCommand::NEXT:
+    case RemoteCommand::DOWN:
     case RemoteCommand::ENTER:
         if (getCurrItem().callback != nullptr) {
             getCurrItem().callback();
         }
         break;
 
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::RIGHT:
         nextSelection();
         setNeedsRerender();
 
         break;
 
     case RemoteCommand::BACK:
-    case RemoteCommand::CHANNEL_MINUS:
+    case RemoteCommand::LEFT:
         prevSelection();
         setNeedsRerender();
         break;

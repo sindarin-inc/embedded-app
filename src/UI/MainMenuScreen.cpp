@@ -208,7 +208,7 @@ void MainMenuScreen::render(DisplaySystem &display) {
 
 void MainMenuScreen::processCommand(RemoteCommand command) {
     switch (command) {
-    case RemoteCommand::PREV:
+    case RemoteCommand::UP:
         if (subMenus_[currentSelection_]->prevSelection()) {
             firstLoad_ = true;
         } else {
@@ -216,7 +216,7 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
         }
         setNeedsRerender();
         break;
-    case RemoteCommand::NEXT:
+    case RemoteCommand::DOWN:
         if (subMenus_[currentSelection_]->nextSelection()) {
             firstLoad_ = true;
         } else {
@@ -227,12 +227,11 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
     // Long press down on the TT should count as enter since we don't have the
     // 5th button
     case RemoteCommand::ENTER:
-    case RemoteCommand::STOP:
         if (subMenus_[currentSelection_]->getCurrItem().callback != nullptr) {
             subMenus_[currentSelection_]->getCurrItem().callback();
         }
         break;
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::RIGHT:
         // This will switch between the menus
         currentSelection_++;
         currentSelection_ = currentSelection_ % topBarViews_.size();
@@ -240,7 +239,7 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
         setNeedsRerender();
         break;
     case RemoteCommand::BACK:
-    case RemoteCommand::CHANNEL_MINUS:
+    case RemoteCommand::LEFT:
         // This will switch between the menus
         currentSelection_ = currentSelection_ + topBarViews_.size() - 1;
         currentSelection_ = currentSelection_ % topBarViews_.size();

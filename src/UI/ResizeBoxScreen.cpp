@@ -29,22 +29,22 @@ void ResizeBoxScreen::render(DisplaySystem &display) {
 void ResizeBoxScreen::processCommand(RemoteCommand command) {
     DisplayRect oldRect = display_.getBoundingBox();
     switch (command) {
-    case RemoteCommand::CHANNEL_MINUS:
+    case RemoteCommand::LEFT:
         oldRect.width += BOX_OFFSET_ADJUST_AMOUNT;
         oldRect.x -= BOX_OFFSET_ADJUST_AMOUNT / 2;
         setNeedsRerender();
         break;
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::RIGHT:
         oldRect.width -= BOX_OFFSET_ADJUST_AMOUNT;
         oldRect.x += BOX_OFFSET_ADJUST_AMOUNT / 2;
         setNeedsRerender();
         break;
-    case RemoteCommand::PREV:
+    case RemoteCommand::UP:
         oldRect.height += BOX_OFFSET_ADJUST_AMOUNT;
         oldRect.y -= BOX_OFFSET_ADJUST_AMOUNT / 2;
         setNeedsRerender();
         break;
-    case RemoteCommand::NEXT:
+    case RemoteCommand::DOWN:
         oldRect.height -= BOX_OFFSET_ADJUST_AMOUNT;
         oldRect.y += BOX_OFFSET_ADJUST_AMOUNT / 2;
         setNeedsRerender();

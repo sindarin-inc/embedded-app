@@ -126,7 +126,7 @@ void MenuScreen::render(DisplaySystem &display) {
 
 void MenuScreen::processCommand(RemoteCommand command) {
     switch (command) {
-    case RemoteCommand::PREV:
+    case RemoteCommand::UP:
         if (prevSelection()) {
             firstLoad_ = true;
         } else {
@@ -134,7 +134,7 @@ void MenuScreen::processCommand(RemoteCommand command) {
         }
         setNeedsRerender();
         break;
-    case RemoteCommand::NEXT:
+    case RemoteCommand::DOWN:
         if (nextSelection()) {
             firstLoad_ = true;
         } else {
@@ -143,13 +143,13 @@ void MenuScreen::processCommand(RemoteCommand command) {
         setNeedsRerender();
         break;
     case RemoteCommand::ENTER:
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::RIGHT:
         if (getCurrItem().callback != nullptr) {
             getCurrItem().callback();
         }
         break;
     case RemoteCommand::BACK:
-    case RemoteCommand::CHANNEL_MINUS:
+    case RemoteCommand::LEFT:
         firstLoad_ = true;
         back();
         break;

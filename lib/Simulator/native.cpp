@@ -226,7 +226,7 @@ void runBackwardsUnitTest(SDL_Window *window, SDL_Renderer *renderer) {
         saveScreenshotPng("next.png", window, renderer);
         sendCodeAndRender(RemoteCommand::ENTER, renderer);
         saveScreenshotPng("nextnext.png", window, renderer);
-        sendCodeAndRender(RemoteCommand::CHANNEL_MINUS, renderer);
+        sendCodeAndRender(RemoteCommand::LEFT, renderer);
         saveScreenshotPng("nextprev.png", window, renderer);
         // compare the most two recent pngs -- they should be the same.
         // if not, error out.
@@ -244,7 +244,7 @@ void goBackNumPages(SDL_Window *window, SDL_Renderer *renderer, int numPages) {
     int i = 0;
 
     for (i = 0; i < numPages; i++) {
-        sendCodeAndRender(RemoteCommand::CHANNEL_MINUS, renderer);
+        sendCodeAndRender(RemoteCommand::LEFT, renderer);
         usleep(1000000.0 / 240.0);
     }
 }
@@ -259,16 +259,16 @@ auto mainLoop() -> bool {
         } else if (e.type == SDL_KEYDOWN) {
             switch (e.key.keysym.sym) {
             case SDLK_UP:
-                remoteCode = RemoteCommand::PREV;
+                remoteCode = RemoteCommand::UP;
                 break;
             case SDLK_DOWN:
-                remoteCode = RemoteCommand::NEXT;
+                remoteCode = RemoteCommand::DOWN;
                 break;
             case SDLK_LEFT:
-                remoteCode = RemoteCommand::CHANNEL_MINUS;
+                remoteCode = RemoteCommand::LEFT;
                 break;
             case SDLK_RIGHT:
-                remoteCode = RemoteCommand::CHANNEL_PLUS;
+                remoteCode = RemoteCommand::RIGHT;
                 break;
             case SDLK_ESCAPE:
                 remoteCode = RemoteCommand::BACK;

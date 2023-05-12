@@ -105,7 +105,7 @@ void LayoutTestScreen::render(DisplaySystem &display) {
 
 void LayoutTestScreen::processCommand(RemoteCommand command) {
     switch (command) {
-    case RemoteCommand::CHANNEL_MINUS:
+    case RemoteCommand::LEFT:
         back();
         break;
     default:
