@@ -289,13 +289,11 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
     PROFILE_START(sendFrames);
 
     // Take into account for doing more frames in the altWaveform than the main one.
-    int maxFrames =
-        waveform.frameCount > altWaveform.frameCount ? waveform.frameCount : altWaveform.frameCount;
+    int maxFrames = std::max(waveform.frameCount, altWaveform.frameCount);
 
     // For each frame in the waveform
     for (int frameIndex = 0; frameIndex < maxFrames; frameIndex++) {
         auto frame = waveform.frameOrDefault(frameIndex);
-        // Even if the altFrame doesn't have enough frames, this will result in a NOCHG line.
         auto altFrame = waveform.frameOrDefault(frameIndex);
 
         // Generate a look up table to quickly look up old bits -> new bits and the resulting

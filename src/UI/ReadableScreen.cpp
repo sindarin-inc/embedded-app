@@ -178,10 +178,6 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
-    if (!needsRerender_) {
-        return;
-    }
-
     setFrame(
         {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
          {display.defaultScreenWidth - 2 * display.defaultXPadding,
@@ -365,8 +361,6 @@ void ReadableScreen::render(DisplaySystem &display) {
     // Reset the lastArrowPress so we don't show it again until another key is pressed (for
     // autopilot mostly)
     lastArrowPress_ = REMOTE_NONE;
-
-    needsRerender_ = false;
 }
 
 void ReadableScreen::incrementReadingTime() {
