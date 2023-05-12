@@ -71,7 +71,7 @@ void StartFreeRtos(bool runAppMain) {
     prefs.rectW.set(255 - 42 * 2);
     prefs.rectH.set(255 - 30 * 2);
     prefs.firstRead.set(0);
-    prefs.noPageTransitionArrows.set(true);
+    prefs.pageTransitionArrows.set(false);
     prefs.lastReadableId.remove();
     prefs.readablePlace.set("93d56842", 0);
 
