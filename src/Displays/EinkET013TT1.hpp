@@ -25,6 +25,8 @@ struct EinkBox {
     [[nodiscard]] inline auto contains(int x, int y) -> bool {
         return ((x >= leftX) && (x <= rightX) && (y >= topY) && (y <= bottomY));
     }
+
+    constexpr static auto zero() -> EinkBox { return {0, 0, 0, 0}; };
 };
 
 typedef union {
@@ -104,7 +106,7 @@ public:
     void update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
                 int32_t overrideVcom = INT32_MAX,
                 const EinkET013TT1Waveform &altWaveform = BC_WAVEFORM_NONE,
-                EinkBox box = {0, 255, 0, 255});
+                EinkBox box = EinkBox::zero());
 
     auto readTemperature(ScreenSide screen) -> int16_t;
 
