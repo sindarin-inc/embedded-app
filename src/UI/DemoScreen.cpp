@@ -819,6 +819,7 @@ void DemoScreen::render(DisplaySystem &display) {
             display_.clearDontChangeRefreshType();
             display_.clearDisplay();
             display_.clearFrameBuffer();
+            lightingController_.setScreenMask(LightingController::Screens::BOTH);
         }
         finishDemo();
         return;
