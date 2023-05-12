@@ -209,6 +209,11 @@ inline void EinkET013TT1::setCS(bool value, ScreenSide screen) {
     }
 }
 
+inline auto EinkET013TT1::frameOrDefault(std::array<Frame, 31U> frames, int index) -> Frame {
+    return index < frames.size() ? frames[index]
+                                 : Frame{.bb = NOCHG, .bw = NOCHG, .wb = NOCHG, .ww = NOCHG};
+}
+
 void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
                                   int32_t overrideVcom, const EinkET013TT1Waveform &altWaveform,
                                   EinkBox box) {
@@ -294,13 +299,9 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
 
     // For each frame in the waveform
     for (int frameIndex = 0; frameIndex < maxFrames; frameIndex++) {
-        auto frame = frameIndex < waveform.frames.size()
-                         ? waveform.frames[frameIndex]
-                         : Frame{.bb = NOCHG, .bw = NOCHG, .wb = NOCHG, .ww = NOCHG};
+        auto frame = frameOrDefault(waveform.frames, frameIndex);
         // Even if the altFrame doesn't have enough frames, this will result in a NOCHG line.
-        auto altFrame = frameIndex < altWaveform.frames.size()
-                            ? altWaveform.frames[frameIndex]
-                            : Frame{.bb = NOCHG, .bw = NOCHG, .wb = NOCHG, .ww = NOCHG};
+        auto altFrame = frameOrDefault(altWaveform.frames, frameIndex);
 
         bool updateMain = (frameIndex < waveform.frameCount);
         bool updateAlt = (frameIndex < altWaveform.frameCount);

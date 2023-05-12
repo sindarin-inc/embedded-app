@@ -115,6 +115,8 @@ public:
     void beginPowerOn();
 
 protected:
+    inline auto frameOrDefault(std::array<Frame, 31U> frames, int index) -> Frame;
+
     inline void setCS(bool value, ScreenSide screen);
     void powerOnInternal();
     void powerOffInternal();
