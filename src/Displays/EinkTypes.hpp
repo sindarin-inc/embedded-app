@@ -192,7 +192,7 @@ struct EinkBox {
     int bottomY;
 
     [[nodiscard]] inline auto contains(int x, int y) const -> bool {
-        return ((x >= leftX) && (x <= rightX) && (y >= topY) && (y <= bottomY));
+        return ((x >= leftX) && (x < rightX) && (y >= topY) && (y < bottomY));
     }
 
     constexpr static auto zero() -> EinkBox { return {0, 0, 0, 0}; };
