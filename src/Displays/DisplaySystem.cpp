@@ -215,7 +215,6 @@ void DisplaySystem::drawSingleLineOfText(const std::string &line, int x, int y, 
             gfxClass_->setCursor(xOffset(x), yOffset(y + getTextHeight() - lineSpacing_ - 3));
             gfxClass_->printf("%s", line.c_str());
         } else {
-            // Need to handle the inverted bool here.
             gfxClass_->startWrite();
             ibmf_defs::Bitmap canvas;
             canvas.pixels = canvasBuffer_;
