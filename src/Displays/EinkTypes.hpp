@@ -98,6 +98,8 @@ struct Frame {
         string->append(" ww: ");
         string->append(pixelSettingString(ww));
     }
+
+    constexpr static auto nochg() -> Frame { return {NOCHG, NOCHG, NOCHG, NOCHG}; }
 };
 
 struct EinkET013TT1Waveform {
@@ -180,8 +182,7 @@ struct EinkET013TT1Waveform {
     }
 
     [[nodiscard]] inline auto frameOrDefault(int index) const -> Frame {
-        return index < frames.size() ? frames[index]
-                                     : Frame{.bb = NOCHG, .bw = NOCHG, .wb = NOCHG, .ww = NOCHG};
+        return index < frames.size() ? frames[index] : Frame::nochg();
     }
 };
 

@@ -68,8 +68,7 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
         // For each frame in the waveform
         log_d("Alt waveform: \"%s\"", altWaveform.name);
 
-        int maxFrames = waveform.frameCount > altWaveform.frameCount ? waveform.frameCount
-                                                                     : altWaveform.frameCount;
+        int maxFrames = std::max(waveform.frameCount, altWaveform.frameCount);
 
         for (int frameIndex = 0; frameIndex < maxFrames; frameIndex++) {
             auto frame = waveform.frameOrDefault(frameIndex);
