@@ -9,7 +9,7 @@ auto ContainerScreen::needsRerender() -> bool {
     if (currentScreen_ != nullptr && currentScreen_ != this) {
         return currentScreen_->needsRerender();
     } else {
-        return Screen::needsRerender();
+        return needsRerender_;
     }
 };
 
@@ -18,14 +18,6 @@ void ContainerScreen::render(DisplaySystem &display) {
         currentScreen_->render(display);
     }
 };
-
-void ContainerScreen::renderIfNeeded(DisplaySystem &display) {
-    if (currentScreen_ != nullptr && currentScreen_ != this) {
-        currentScreen_->renderIfNeeded(display);
-    } else {
-        Screen::renderIfNeeded(display);
-    }
-}
 
 void ContainerScreen::processCommand(RemoteCommand command) {
     if (currentScreen_ != nullptr) {

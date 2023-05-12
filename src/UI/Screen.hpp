@@ -15,22 +15,17 @@ public:
     virtual void render(DisplaySystem &display) = 0;
     virtual void processCommand(RemoteCommand command) = 0;
     virtual void setNeedsRerender() { needsRerender_ = true; }
-
-    virtual void renderIfNeeded(DisplaySystem &display) {
-        if (needsRerender()) {
-            display.beginPowerOn();
-            render(display);
-            needsRerender_ = false;
-        }
-    }
-
     virtual auto needsRerender() -> bool { return needsRerender_; }
 
     virtual void loop(DisplaySystem &display, RemoteCommand command) {
         if (command != RemoteCommand::NONE) {
             processCommand(command);
         }
-        renderIfNeeded(display);
+        if (needsRerender()) {
+            display.beginPowerOn();
+            render(display);
+            needsRerender_ = false;
+        }
     }
 
     void setBackCallback(std::function<void()> callback) { backCallback_ = std::move(callback); }
