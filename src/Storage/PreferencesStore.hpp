@@ -311,7 +311,7 @@ public:
           darkMode(*this, "dark-mode"), autoPilot(*this, "auto-pilot"),
           fastTransitions(*this, "fast-tran"), noUploadCrashes(*this, "no-upload-crash"),
           showDebugMenu(*this, "show-debug"), fastBookmarkRight(*this, "fst-mark-right"),
-          fastBookmarkCenter(*this, "fst-mark-cent"), pageTransitionArrows(*this, "no-page-arrows"),
+          fastBookmarkCenter(*this, "fst-mark-cent"), pageTransitionArrows(*this, "page-arrows"),
           wifiSettingsJson(*this, "wifi-settings"), localStoreMigrationVersion(*this, "ls-version"),
           fontsLibrary(*this, "fonts-lib"), fontType(*this, "font-type"),
           tutorialsDeleted(*this, "tutorials"), bleAdvertisingKey(*this, "ble-adv-key"),

@@ -619,9 +619,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 
     if (prefs_.pageTransitionArrows.get().value_or(false)) {
-        experimentalSettingsMenu->setToggleLastItem(false);
-    } else {
         experimentalSettingsMenu->setToggleLastItem(true);
+    } else {
+        experimentalSettingsMenu->setToggleLastItem(false);
     }
 
     experimentalSettingsMenu->addMenuItem(MenuItem("Upload Crashes on Sync", [this]() {
