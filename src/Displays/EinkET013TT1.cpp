@@ -370,17 +370,8 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
                     oldPixels = oldBuffer[pixel / 8] & 0xF;
                     newPixels = newBuffer[pixel / 8] & 0xF;
                 }
-                // Only use the lookup table if the pixel is in the update region for
-                // the alternate waveform
-                if (updateAlt && box.contains(x, y)) {
-                    sourceData[pixel / 4] = altLut[oldPixels << 4 | newPixels];
-                } else {
-                    if (updateMain) {
-                        sourceData[pixel / 4] = lut[oldPixels << 4 | newPixels];
-                    } else {
-                        // What to do here? To discuss
-                    }
-                }
+                auto *lutToUse = box.contains(x, y) ? &altLut : &lut;
+                sourceData[pixel / 4] = (*lutToUse)[oldPixels << 4 | newPixels];
             }
 
             // Send the scan line!
