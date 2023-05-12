@@ -861,6 +861,9 @@ void DemoScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::CHANNEL_MINUS:
         if ((currentScreen_ > 0) && (currentScreen_ < 3)) {
+            display_.clearFrameBuffer();
+            shownOne_ = false;
+            shownTwo_ = false;
             currentScreen_--;
         }
         currentSubScreen_ = 0;
@@ -884,6 +887,10 @@ void DemoScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::NEXT:
     case RemoteCommand::PREV:
     case RemoteCommand::BACK:
+        break;
+    case RemoteCommand::ANIMATION:
+        setNeedsRerender();
+        break;
     default:
         break;
     }

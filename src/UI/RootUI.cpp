@@ -1382,8 +1382,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             mainMenu->render(*this->display_);
             delete demoScreen;
         });
-        display->clearDisplay();
-        display->updateDisplay(DisplaySystem::UpdateType::FULL);
         this->setCurrentScreen(*demoScreen);
     } else if (prefs_.cesMode.get().value_or(false)) {
         auto cesScreen = new DemoScreen(*display, prefs_, lightingController);
