@@ -21,6 +21,10 @@ struct EinkBox {
     int rightX;
     int topY;
     int bottomY;
+
+    [[nodiscard]] inline auto contains(int x, int y) -> bool {
+        return ((x >= leftX) && (x <= rightX) && (y >= topY) && (y <= bottomY));
+    }
 };
 
 typedef union {

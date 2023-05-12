@@ -371,8 +371,7 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
                 }
                 // Only use the lookup table if the pixel is in the update region for
                 // the alternate waveform
-                if (updateAlt && x >= box.leftX && x <= box.rightX && y >= box.topY &&
-                    y <= box.bottomY) {
+                if (updateAlt && box.contains(x, y)) {
                     sourceData[pixel / 4] = altLut[oldPixels << 4 | newPixels];
                 } else {
                     if (updateMain) {
