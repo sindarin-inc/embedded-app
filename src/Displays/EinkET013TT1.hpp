@@ -9,25 +9,12 @@
 #endif
 
 #include "CustomWaveforms.hpp"
-#include "EinkWaveform.hpp"
+#include "EinkTypes.hpp"
 #include "Misc/Dispatch.hpp"
 
 #define EinkET013TT1_PIXEL_WIDTH 256
 #define EinkET013TT1_PIXEL_HEIGHT 256
 #define EinkET013TT1_GATE_COUNT 512
-
-struct EinkBox {
-    int leftX;
-    int rightX;
-    int topY;
-    int bottomY;
-
-    [[nodiscard]] inline auto contains(int x, int y) -> bool {
-        return ((x >= leftX) && (x <= rightX) && (y >= topY) && (y <= bottomY));
-    }
-
-    constexpr static auto zero() -> EinkBox { return {0, 0, 0, 0}; };
-};
 
 typedef union {
     uint8_t value;
@@ -39,12 +26,6 @@ typedef union {
         uint8_t lvds : 1;
     } bits;
 } PumpStatus;
-
-enum BorderSetting {
-    BORDER_SETTING_BLACK = 0,
-    BORDER_SETTING_WHITE = 1,
-    BORDER_SETTING_NONE = 2,
-};
 
 enum Register {
     PUMP_STATUS = 0x00,
@@ -71,12 +52,6 @@ enum OSC_FREQ {
 #define OSC_SELECT OSC_2MHZ
 #define VCOM_DEFAULT (-4000)
 #define FRAMERATE_DEFAULT 24
-
-enum class ScreenSide {
-    Left = 1 << 0,
-    Right = 1 << 1,
-    Both = Left | Right,
-};
 
 // Driver for dual Eink 1.3" 256x256 displays
 class EinkET013TT1 {
@@ -117,8 +92,6 @@ public:
     void beginPowerOn();
 
 protected:
-    inline auto frameOrDefault(std::array<Frame, 31U> frames, int index) -> Frame;
-
     inline void setCS(bool value, ScreenSide screen);
     void powerOnInternal();
     void powerOffInternal();

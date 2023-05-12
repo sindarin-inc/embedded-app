@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Displays/EinkWaveform.hpp"
+#include "Displays/EinkTypes.hpp"
 
 // Pushes black a little more at the end to reduce ghosting
 const EinkET013TT1Waveform BC_REGULAR_EINK_10_13C_WAVEFORM_AU4 = {

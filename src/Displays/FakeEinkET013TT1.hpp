@@ -8,31 +8,12 @@
 #include <string>
 
 #include "CustomWaveforms.hpp"
-#include "EinkWaveform.hpp"
+#include "EinkTypes.hpp"
 
 #define EinkET013TT1_PIXEL_WIDTH 256
 #define EinkET013TT1_PIXEL_HEIGHT 256
 #define FRAMERATE_DEFAULT 24
 #define PARTICLE_MOVEMENT_DEFAULT 40
-
-struct FakeEinkBox {
-    int leftX;
-    int rightX;
-    int topY;
-    int bottomY;
-};
-
-enum class ScreenSide {
-    Left = 1 << 0,
-    Right = 1 << 1,
-    Both = Left | Right,
-};
-
-enum BorderSetting {
-    BORDER_SETTING_BLACK = 0,
-    BORDER_SETTING_WHITE = 1,
-    BORDER_SETTING_NONE = 2,
-};
 
 extern uint8_t
     FakeEinkET013TT1ParticlePositions[EinkET013TT1_PIXEL_WIDTH * EinkET013TT1_PIXEL_HEIGHT];
