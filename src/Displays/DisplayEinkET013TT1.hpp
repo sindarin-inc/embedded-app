@@ -29,7 +29,9 @@ public:
     auto setup() -> bool override;
 
     void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED,
-                       bool clearFrameBuffer = true) override;
+                       bool clearFrameBuffer = true,
+                       DisplaySystem::UpdateType altUpdateType = UNSPECIFIED,
+                       Rect altRect = {{0, 0}, {0, 0}}) override;
 
     void beginPowerOn() override { driver_.beginPowerOn(); };
 

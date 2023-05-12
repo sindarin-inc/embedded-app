@@ -76,18 +76,9 @@ public:
         ERASE,
     };
     virtual void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED,
-                               bool clearFrameBuffer = true) = 0;
-
-    void setAltUpdateType(DisplaySystem::UpdateType updateType, Rect rect) {
-        useAltUpdateType_ = true;
-        altUpdateType_ = updateType;
-        altRect_ = rect;
-    }
-
-    void setNoAltUpdateType() {
-        useAltUpdateType_ = false;
-        altRect_ = {{0, 0}, {255, 255}};
-    }
+                               bool clearFrameBuffer = true,
+                               DisplaySystem::UpdateType altUpdateType = UNSPECIFIED,
+                               Rect altRect = {{0, 0}, {0, 0}}) = 0;
 
     virtual void beginPowerOn() {}
 
@@ -247,10 +238,6 @@ protected:
     // This is the default value from before of 15mmx15mm
     DisplayRect boundingBox_ = defaultBoundingBox;
     int lineSpacing_ = 0;
-
-    bool useAltUpdateType_ = false;
-    DisplaySystem::UpdateType altUpdateType_;
-    Rect altRect_ = {{0, 0}, {255, 255}};
 };
 
 #endif
