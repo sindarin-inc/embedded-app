@@ -155,7 +155,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
                 display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
                 display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
                 BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.fg);
-            display.updateDisplay(DisplaySystem::UpdateType::ERASE);
+            display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
             // wait 3 seconds before starting the animatiion over again.
             nextInterval_ = 2500;
             break;
@@ -281,7 +281,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
                 display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
                 display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
                 BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.fg);
-            display.updateDisplay(DisplaySystem::UpdateType::ERASE);
+            display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
             display.setFont(static_cast<Font *>(&ibmf75Face1));
             nextInterval_ = 2500;
             break;
@@ -410,7 +410,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
                 display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
                 display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall),
                 ARROW_UP_DOWN_BITS, arrow_up_down_width, arrow_up_down_height, display.fg);
-            display.updateDisplay(DisplaySystem::UpdateType::ERASE);
+            display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
             nextInterval_ = 2500;
             break;
         case 5:
