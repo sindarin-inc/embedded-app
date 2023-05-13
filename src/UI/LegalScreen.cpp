@@ -11,27 +11,22 @@ auto LegalScreen::layout(LayoutContext &context, Size size) -> Size {
 
     x += leftPadding;
 
-    context.setViewFrame(productNameView_, {{x, y}, size},
+    context.setViewFrame(baclLine1View_, {{x, y}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
     y += yAdvance - 8;
 
-    context.setViewFrame(serialNumberView_, {{x, y}, size},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
-
-    // y += yAdvance;
-
-    // context.setViewFrame(firmwareVersionView_, {{x, y}, size},
-    //                      LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
-
-    y += yAdvance - 3;
-
-    context.setViewFrame(remoteFirmwareVersionView_, {{x, y}, size},
+    context.setViewFrame(baclLine2View_, {{x, y}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
     y += yAdvance - 3;
 
-    context.setViewFrame(remoteBatteryView_, {{x, y}, size},
+    context.setViewFrame(fccLineView_, {{x, y}, size},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
+
+    y += yAdvance - 3;
+
+    context.setViewFrame(icLineView_, {{x, y}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
     context.setViewFrame(returnToMenuView_, {{0, 0}, size},
@@ -54,11 +49,10 @@ auto LegalScreen::layout(LayoutContext &context, Size size) -> Size {
 }
 
 void LegalScreen::drawInRect(Rect rect) {
-    productNameView_.draw();
-    serialNumberView_.draw();
-    // firmwareVersionView_.draw();
-    remoteFirmwareVersionView_.draw();
-    remoteBatteryView_.draw();
+    baclLine1View_.draw();
+    baclLine2View_.draw();
+    fccLineView_.draw();
+    icLineView_.draw();
     fccView_.draw();
     ceView_.draw();
     baclView_.draw();
@@ -80,17 +74,7 @@ void LegalScreen::render(DisplaySystem &display) {
 }
 
 void LegalScreen::processCommand(RemoteCommand command) {
-    if (command == secretCodeCommands_[secretCodeIndex_]) {
-        log_d("Got the right code %d time(s)!", secretCodeIndex_ + 1);
-        secretCodeIndex_++;
-        if (secretCodeIndex_ == secretCodeCommands_.size()) {
-            log_d("Got the right secret code -- toggling Debug Screen and rebooting!");
-            this->prefs_.showDebugMenu.set(!this->prefs_.showDebugMenu.get().value_or(false));
-            power_.reboot();
-        }
-    } else {
-        secretCodeIndex_ = 0;
-    }
+    // Ignore all other presses to match About menu but no secret code here.
     if (command == RemoteCommand::ENTER) {
         back();
     }

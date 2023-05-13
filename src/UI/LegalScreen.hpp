@@ -21,30 +21,11 @@ public:
           fccView_(display, fcc_bits, fcc_width, fcc_height),
           ceView_(display, ce_bits, ce_width, ce_height),
           baclView_(display, bacl_bits, bacl_width, bacl_height),
-          productNameView_(display, "BACL: LISTED UL 62368-1,", &ibmf75Face0),
-          serialNumberView_(display, "CAN/CSA C22,2 NO. 62368-1, A0049", &ibmf75Face0),
-          firmwareVersionView_(display, "", &ibmf75Face0),
-          remoteFirmwareVersionView_(display, "FCC IDs: 2BAHC-READER1, 2BAHC-PT1", &ibmf75Face0),
-          remoteBatteryView_(display, "IC: 30424", &ibmf75Face0),
-          returnToMenuView_(display, "Press  \ue000  to return to System Settings", &ibmf75Face0) {
-        //  productNameView_.setText("Product Name: Sol Reader");
-
-        // serialNumberView_.setText(serialStr);
-
-        //        firmwareVersionView_.setText(buildString);
-
-        //      remoteFirmwareVersionView_.setText(ptBattery);
-        //        remoteBatteryView_.setText(ptBuildString);
-
-        secretCodeCommands_.push_back(RemoteCommand::PREV);
-        secretCodeCommands_.push_back(RemoteCommand::PREV);
-        secretCodeCommands_.push_back(RemoteCommand::NEXT);
-        secretCodeCommands_.push_back(RemoteCommand::NEXT);
-        secretCodeCommands_.push_back(RemoteCommand::CHANNEL_MINUS);
-        secretCodeCommands_.push_back(RemoteCommand::CHANNEL_PLUS);
-        secretCodeCommands_.push_back(RemoteCommand::CHANNEL_MINUS);
-        secretCodeCommands_.push_back(RemoteCommand::CHANNEL_PLUS);
-    };
+          baclLine1View_(display, "BACL: LISTED UL 62368-1,", &ibmf75Face0),
+          baclLine2View_(display, "CAN/CSA C22,2 NO. 62368-1, A0049", &ibmf75Face0),
+          fccLineView_(display, "FCC IDs: 2BAHC-READER1, 2BAHC-PT1", &ibmf75Face0),
+          icLineView_(display, "IC: 30424", &ibmf75Face0),
+          returnToMenuView_(display, "Press  \ue000  to return to System Settings", &ibmf75Face0){};
 
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
@@ -57,17 +38,13 @@ protected:
     PreferencesStore &prefs_;
     PowerManager &power_;
 
-    std::vector<RemoteCommand> secretCodeCommands_;
-    uint8_t secretCodeIndex_ = 0;
-
     IconView fccView_;
     IconView ceView_;
     IconView baclView_;
-    SingleLineTextView productNameView_;
-    SingleLineTextView serialNumberView_;
-    SingleLineTextView firmwareVersionView_;
-    SingleLineTextView remoteFirmwareVersionView_;
-    SingleLineTextView remoteBatteryView_;
+    SingleLineTextView baclLine1View_;
+    SingleLineTextView baclLine2View_;
+    SingleLineTextView fccLineView_;
+    SingleLineTextView icLineView_;
     SingleLineTextView returnToMenuView_;
 };
 
