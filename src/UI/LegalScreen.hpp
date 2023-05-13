@@ -18,9 +18,9 @@ class LegalScreen : public Screen, public EinkView {
 public:
     LegalScreen(DisplaySystem &display, PreferencesStore &prefs, PowerManager &power)
         : EinkView(display), display_(display), prefs_(prefs), power_(power),
-          fccView_(display, fcc_bits, fcc_width, fcc_height),
-          ceView_(display, ce_bits, ce_width, ce_height),
-          baclView_(display, bacl_bits, bacl_width, bacl_height),
+          fccView_(display, FCC_BITS, fcc_width, fcc_height),
+          ceView_(display, CE_BITS, ce_width, ce_height),
+          baclView_(display, BACL_BITS, bacl_width, bacl_height),
           productNameView_(display, "BACL: LISTED UL 62368-1,", &ibmf75Face0),
           serialNumberView_(display, "CAN/CSA C22,2 NO. 62368-1, A0049", &ibmf75Face0),
           firmwareVersionView_(display, "", &ibmf75Face0),
