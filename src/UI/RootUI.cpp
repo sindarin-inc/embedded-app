@@ -23,6 +23,7 @@
 #include "Models/Readable.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/LocalStore.hpp"
+#include "UI/AboutScreen.hpp"
 #include "UI/AlignmentScreen.hpp"
 #include "UI/BatteryScreen.hpp"
 #include "UI/CalibrationScreen.hpp"
@@ -636,18 +637,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         experimentalSettingsMenu->setToggleLastItem(true);
     }
 
-    experimentalSettingsMenu->addMenuItem(MenuItem("Show Debug Menu",
-                                                   [this, experimentalSettingsMenu]() {
-        this->prefs_.showDebugMenu.set(!this->prefs_.showDebugMenu.get().value_or(false));
-        experimentalSettingsMenu->requireRestart();
-    }));
-
-    if (prefs_.showDebugMenu.get().value_or(false)) {
-        experimentalSettingsMenu->setToggleLastItem(true);
-    } else {
-        experimentalSettingsMenu->setToggleLastItem(false);
-    }
-
     // Unpair PageTurner
     // Sync Content
     // Turn on Onboarding Mode
@@ -858,17 +847,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         });
     }));
 
-    systemSettingsMenu->addMenuItem(MenuItem("About", [systemSettingsMenu, display]() {
-        std::string snString = StringFormat("SN: %s", GetSerialNumber().c_str());
-#ifdef GITHASH
-        std::string buildString = StringFormat("Build: %s (%s)", kVersionString, GITHASH);
-#else
-        std::string buildString = StringFormat("%s (%s)", kVersionString, kGitHash);
-#endif
-
-        std::string aboutString = StringFormat("%s, %s", snString.c_str(), buildString.c_str());
-
-        systemSettingsMenu->showTemporaryMessage(*display, aboutString.c_str());
+    systemSettingsMenu->addMenuItem(MenuItem("About", [this, systemSettingsMenu, display]() {
+        auto aboutScreen = new AboutScreen(*display, prefs_, power_);
+        this->setCurrentScreen(*aboutScreen);
+        aboutScreen->setBackCallback([this, aboutScreen, systemSettingsMenu]() {
+            systemSettingsMenu->setFirstLoad();
+            display_->clearDisplay();
+            setCurrentScreen(*systemSettingsMenu);
+            delete aboutScreen;
+        });
     }));
 
     systemSettingsMenu->addMenuItem(MenuItem("Tutorials", [systemSettingsMenu, display]() {
