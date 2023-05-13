@@ -33,6 +33,7 @@
 #include "UI/FirmwareUpdateScreen.hpp"
 #include "UI/Fonts/Fonts.hpp"
 #include "UI/LayoutTestScreen.hpp"
+#include "UI/LegalScreen.hpp"
 #include "UI/LightingAdjustScreen.hpp"
 #include "UI/LineMenuScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
@@ -863,10 +864,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                                  "Someday we'll implement amazing tutorials!");
     }));
 
-    systemSettingsMenu->addMenuItem(MenuItem("Legal & Regulatory", [systemSettingsMenu, display]() {
-        systemSettingsMenu->showTemporaryMessage(
-            *display, "FBACL: LISTED UL 62368-1, CAN/CSA C22,2 NO., 62368-1, A0049\n FCC IDs: "
-                      "2BAHC-READER1, 2BAHC-PT1\nIC: 30424");
+    systemSettingsMenu->addMenuItem(MenuItem("Legal & Regulatory",
+                                             [this, systemSettingsMenu, display]() {
+        auto legalScreen = new LegalScreen(*display, prefs_, power_);
+        this->setCurrentScreen(*legalScreen);
+        legalScreen->setBackCallback([this, legalScreen, systemSettingsMenu]() {
+            systemSettingsMenu->setFirstLoad();
+            display_->clearDisplay();
+            setCurrentScreen(*systemSettingsMenu);
+            delete legalScreen;
+        });
     }));
 
     systemSettingsMenu->addMenuItem(MenuItem("Set Clock", [this, display, systemSettingsMenu]() {
