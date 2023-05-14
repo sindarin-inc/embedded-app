@@ -17,7 +17,7 @@ protected:
     DisplaySystem &display_;
     PreferencesStore &prefs_;
     Battery &battery_;
-    uint16_t leftTemp;
+    uint16_t leftTemp_{0};
 };
 
 #endif

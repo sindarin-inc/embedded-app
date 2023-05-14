@@ -7,7 +7,7 @@
 #include "sindarin-debug.h"
 
 BatteryScreen::BatteryScreen(DisplaySystem &display, PreferencesStore &prefs, Battery &battery)
-    : display_(display), prefs_(prefs), battery_(battery), leftTemp(0) {
+    : display_(display), prefs_(prefs), battery_(battery) {
 
 #if EINKET013TT1
     auto *driver = (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver();
