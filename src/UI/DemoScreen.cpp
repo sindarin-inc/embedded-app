@@ -829,7 +829,7 @@ void DemoScreen::render(DisplaySystem &display) {
     }
 
     if ((WiFi::getInstance().getFirstWiFiSSID() != "") && !startedSync_) {
-        // BackgroundSync(power_, prefs_, localStore_);
+        BackgroundSync(power_, prefs_, localStore_, true);
         startedSync_ = true;
     }
 

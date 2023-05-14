@@ -11,7 +11,7 @@
 #include "config.h"
 
 void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
-                            LocalStore &localStore) {
+                            LocalStore &localStore, bool fromSetup) {
     // Create a notification group to wait for background tasks
     auto backgroundGroup = xEventGroupCreate();
     auto &fileSystem = localStore.fileSystem;
@@ -34,86 +34,94 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
         }
     });
 
-    // Wait for content sync to finish
-    auto bits =
-        xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(5 * 60 * 1000));
-    if (!(bits & 1)) {
-        log_w("Content sync timed out");
-    }
+    EventBits_t bits;
 
-    if (!WiFi::getInstance().connected()) {
-        log_w("WiFi not connected, ending background sync");
-        return;
+    // Wait for content sync to finish, but only if we aren't in setup mode
+    if (!fromSetup) {
+        bits =
+            xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(5 * 60 * 1000));
+        if (!(bits & 1)) {
+            log_w("Content sync timed out");
+        }
+
+        if (!WiFi::getInstance().connected()) {
+            log_w("WiFi not connected, ending background sync");
+            return;
+        }
     }
 
     SolClock::getInstance().setClockTimeFromInternet();
 
-    FirmwareDownloader firmwareDownloader(prefs, true);
-    firmwareDownloader.downloadFirmware(
-        [&firmwareDownloader, &localStore, &backgroundGroup](const FirmwareDownloadState &state) {
-        if (state.state == FirmwareDownloadState::Failure) {
-            log_i("Firmware download for %s failed with error: %s",
-                  firmwareDownloader.response.latestGlassesFirmware.version.c_str(),
-                  state.message.c_str());
-        } else if (state.state == FirmwareDownloadState::AlreadyDownloaded) {
-            log_i("Firmware download for %s already queued.",
-                  firmwareDownloader.response.latestGlassesFirmware.version.c_str());
-        } else if (state.state == FirmwareDownloadState::Downloaded) {
-            log_i("Firmware download for %s successful. Mark for install.",
-                  firmwareDownloader.response.latestGlassesFirmware.version.c_str());
-            localStore.saveFirmware(firmwareDownloader.response.latestGlassesFirmware);
-        } else if (state.state == FirmwareDownloadState::AlreadyUpToDate) {
-            log_i("Firmware up to date.");
-        } else {
-            return;
-        }
-        xEventGroupSetBits(backgroundGroup, 1);
-    });
-
-    // Wait for firmware download to finish
-    bits = xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(5 * 60 * 1000));
-    if (!(bits & 1)) {
-        log_w("Firmware download timed out");
-    }
-
-    // Upload core dumps
-    FileList coreDumpFiles;
-    const int maxCoredumps = 10;
-    fileSystem.listDir("/coredumps", coreDumpFiles, maxCoredumps);
-    int coreDumpCount = coreDumpFiles.size();
-
-    if (!(prefs.noUploadCrashes.get().value_or(false)) && (coreDumpCount > 0)) {
-        log_i("Uploading %d core dumps", coreDumpCount);
-        CrashUploader crashUploader(fileSystem, prefs);
-        crashUploader.uploadCrash([&backgroundGroup](const CrashUploadState &state) {
-            if (state.state == CrashUploadState::Failure) {
-                log_e("Failed to upload crash reports");
-            } else if (state.state == CrashUploadState::NoCrashReport) {
-                log_w("No crash reports (shouldn't get here)");
-            } else if (state.state == CrashUploadState::Done) {
-                log_i("Crash reports uploaded");
+    if (!fromSetup) {
+        FirmwareDownloader firmwareDownloader(prefs, true);
+        firmwareDownloader.downloadFirmware([&firmwareDownloader, &localStore,
+                                             &backgroundGroup](const FirmwareDownloadState &state) {
+            if (state.state == FirmwareDownloadState::Failure) {
+                log_i("Firmware download for %s failed with error: %s",
+                      firmwareDownloader.response.latestGlassesFirmware.version.c_str(),
+                      state.message.c_str());
+            } else if (state.state == FirmwareDownloadState::AlreadyDownloaded) {
+                log_i("Firmware download for %s already queued.",
+                      firmwareDownloader.response.latestGlassesFirmware.version.c_str());
+            } else if (state.state == FirmwareDownloadState::Downloaded) {
+                log_i("Firmware download for %s successful. Mark for install.",
+                      firmwareDownloader.response.latestGlassesFirmware.version.c_str());
+                localStore.saveFirmware(firmwareDownloader.response.latestGlassesFirmware);
+            } else if (state.state == FirmwareDownloadState::AlreadyUpToDate) {
+                log_i("Firmware up to date.");
             } else {
                 return;
             }
             xEventGroupSetBits(backgroundGroup, 1);
         });
 
-        auto bits =
-            xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(2 * 60 * 1000));
+        // Wait for firmware download to finish
+        bits =
+            xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(5 * 60 * 1000));
         if (!(bits & 1)) {
-            log_w("Coredump upload timed out");
+            log_w("Firmware download timed out");
+        }
+
+        // Upload core dumps
+        FileList coreDumpFiles;
+        const int maxCoredumps = 10;
+        fileSystem.listDir("/coredumps", coreDumpFiles, maxCoredumps);
+        int coreDumpCount = coreDumpFiles.size();
+
+        if (!(prefs.noUploadCrashes.get().value_or(false)) && (coreDumpCount > 0)) {
+            log_i("Uploading %d core dumps", coreDumpCount);
+            CrashUploader crashUploader(fileSystem, prefs);
+            crashUploader.uploadCrash([&backgroundGroup](const CrashUploadState &state) {
+                if (state.state == CrashUploadState::Failure) {
+                    log_e("Failed to upload crash reports");
+                } else if (state.state == CrashUploadState::NoCrashReport) {
+                    log_w("No crash reports (shouldn't get here)");
+                } else if (state.state == CrashUploadState::Done) {
+                    log_i("Crash reports uploaded");
+                } else {
+                    return;
+                }
+                xEventGroupSetBits(backgroundGroup, 1);
+            });
+
+            auto bits = xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE,
+                                            pdMS_TO_TICKS(2 * 60 * 1000));
+            if (!(bits & 1)) {
+                log_w("Coredump upload timed out");
+            }
         }
     }
 }
 
-void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalStore &localStore) {
+void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalStore &localStore,
+                    bool fromSetup) {
     // Debug LED so we know what's happening (will be turned off when deep sleep happens)
     // Only turn on if debug menu is enabled
     if (prefs.showDebugMenu.get().value_or(false)) {
         DigitalWrite(BLUE_LED, LED_ON);
     }
 
-    BackgroundSyncInternal(powerManager, prefs, localStore);
+    BackgroundSyncInternal(powerManager, prefs, localStore, fromSetup);
 
     if (prefs.showDebugMenu.get().value_or(false)) {
         DigitalWrite(BLUE_LED, LED_OFF);
