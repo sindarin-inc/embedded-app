@@ -27,17 +27,17 @@ class ClockBatteryView : public EinkView {
 public:
     ClockBatteryView(Battery &battery, DisplaySystem &display)
         : EinkView(display),
-          batteryIcon0View_(display, battery_0_bits, battery_0_width, battery_0_height),
-          batteryIcon10View_(display, battery_10_bits, battery_10_width, battery_10_height),
-          batteryIcon20View_(display, battery_20_bits, battery_20_width, battery_20_height),
-          batteryIcon30View_(display, battery_30_bits, battery_30_width, battery_30_height),
-          batteryIcon40View_(display, battery_40_bits, battery_40_width, battery_40_height),
-          batteryIcon50View_(display, battery_50_bits, battery_50_width, battery_50_height),
-          batteryIcon60View_(display, battery_60_bits, battery_60_width, battery_60_height),
-          batteryIcon70View_(display, battery_70_bits, battery_70_width, battery_70_height),
-          batteryIcon80View_(display, battery_80_bits, battery_80_width, battery_80_height),
-          batteryIcon90View_(display, battery_90_bits, battery_90_width, battery_90_height),
-          batteryIcon100View_(display, battery_100_bits, battery_100_width, battery_100_height),
+          batteryIcon0View_(display, BATTERY_0_BITS, battery_0_width, battery_0_height),
+          batteryIcon10View_(display, BATTERY_10_BITS, battery_10_width, battery_10_height),
+          batteryIcon20View_(display, BATTERY_20_BITS, battery_20_width, battery_20_height),
+          batteryIcon30View_(display, BATTERY_30_BITS, battery_30_width, battery_30_height),
+          batteryIcon40View_(display, BATTERY_40_BITS, battery_40_width, battery_40_height),
+          batteryIcon50View_(display, BATTERY_50_BITS, battery_50_width, battery_50_height),
+          batteryIcon60View_(display, BATTERY_60_BITS, battery_60_width, battery_60_height),
+          batteryIcon70View_(display, BATTERY_70_BITS, battery_70_width, battery_70_height),
+          batteryIcon80View_(display, BATTERY_80_BITS, battery_80_width, battery_80_height),
+          batteryIcon90View_(display, BATTERY_90_BITS, battery_90_width, battery_90_height),
+          batteryIcon100View_(display, BATTERY_100_BITS, battery_100_width, battery_100_height),
           clockView_(display, ""), battery_(battery) {}
     ~ClockBatteryView() override = default;
 
