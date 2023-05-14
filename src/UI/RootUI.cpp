@@ -879,25 +879,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         power_.reboot();
     }));
 
-    systemSettingsMenu->addMenuItem(MenuItem("Set Clock", [this, display, systemSettingsMenu]() {
-        SolClock &clock = SolClock::getInstance();
-
-        systemSettingsMenu->showTemporaryMessage(*display, "Setting the Clock", 200, false);
-        systemSettingsMenu->setExtraText(clock.ianaTimezoneString());
-
-        WiFi::getInstance().connectWiFiFromSettings();
-        if (!WiFi::getInstance().connected()) {
-            log_e("Couldn't connect to wifi, not setting clock");
-        } else {
-            log_i("Setting time from internet");
-            clock.setClockTimeFromInternet();
-            WiFi::getInstance().disconnectWiFi();
-        }
-
-        systemSettingsMenu->setFirstLoad();
-        setCurrentScreen(*systemSettingsMenu);
-    }));
-
 #if USE_TURN_TOUCH_REMOTE
     debugSettingsMenu->addMenuItem(MenuItem("Unpair PageTurner",
                                             [this, debugSettingsMenu, display]() {
