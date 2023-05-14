@@ -1015,16 +1015,17 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 
     debugSettingsMenu->addMenuItem(
-        MenuItem("Onboarding Screens", [this, debugSettingsMenu, display, &lightingController]() {
-            auto demoScreen = new DemoScreen(*display, prefs_, lightingController);
-            this->setCurrentScreen(*demoScreen);
-            demoScreen->setBackCallback([this, demoScreen, debugSettingsMenu, display]() {
-                debugSettingsMenu->setFirstLoad();
-                display->clearDisplay();
-                setCurrentScreen(*debugSettingsMenu);
-                debugSettingsMenu->render(*this->display_);
-                delete demoScreen;
-            });
+        MenuItem("Onboarding Screens",
+                 [this, debugSettingsMenu, display, &lightingController, &localStore]() {
+        auto demoScreen = new DemoScreen(*display, prefs_, lightingController, power_, localStore);
+        this->setCurrentScreen(*demoScreen);
+        demoScreen->setBackCallback([this, demoScreen, debugSettingsMenu, display]() {
+            debugSettingsMenu->setFirstLoad();
+            display->clearDisplay();
+            setCurrentScreen(*debugSettingsMenu);
+            debugSettingsMenu->render(*this->display_);
+            delete demoScreen;
+        });
         }));
 
     debugSettingsMenu->addMenuItem(MenuItem("File System Browser",
@@ -1326,7 +1327,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     bool inDemo = prefs_.demoMode.get().value_or(false);
 
     if (inDemo) {
-        auto demoScreen = new DemoScreen(*display, prefs_, lightingController);
+        auto demoScreen = new DemoScreen(*display, prefs_, lightingController, power_, localStore);
         demoScreen->setBackCallback([this, demoScreen, mainMenu]() {
             // We want to go straight from the scroll expanding into the main menu
             // via partial refresh.
@@ -1338,7 +1339,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         });
         this->setCurrentScreen(*demoScreen);
     } else if (prefs_.cesMode.get().value_or(false)) {
-        auto cesScreen = new DemoScreen(*display, prefs_, lightingController);
+        auto cesScreen = new DemoScreen(*display, prefs_, lightingController, power_, localStore);
         cesScreen->bailAfterLensAdjust();
 
         // reset prefs for of The Last Question readable

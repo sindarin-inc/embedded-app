@@ -3,6 +3,8 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 
+#include "Communications/BackgroundSync.hpp"
+#include "Communications/WiFi.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
 #include "UI/Bitmaps/arrow-up-down.hpp"
@@ -55,9 +57,10 @@
 #include "sindarin-debug.h"
 
 DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
-                       LightingController &lightingController)
-    : display_(display), renderer_(display), prefs_(prefs),
-      lightingController_(lightingController) {
+                       LightingController &lightingController, PowerManager &power,
+                       LocalStore &localStore)
+    : display_(display), renderer_(display), prefs_(prefs), lightingController_(lightingController),
+      power_(power), localStore_(localStore) {
     // We want to control exactly when full and partial will happen.
     // This allows us to cross ownership boundaries and to force a partial update
     // even when we switch to the main menu the first time.
@@ -823,6 +826,11 @@ void DemoScreen::render(DisplaySystem &display) {
         }
         finishDemo();
         return;
+    }
+
+    if ((WiFi::getInstance().getFirstWiFiSSID() != "") && !startedSync_) {
+        // BackgroundSync(power_, prefs_, localStore_);
+        startedSync_ = true;
     }
 
     // Alternate left and right on for setup. Note: This seems backwards

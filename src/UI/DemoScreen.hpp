@@ -2,8 +2,10 @@
 #define DEMO_SCREEN_HPP
 
 #include "Misc/Battery.hpp"
+#include "Misc/PowerManager.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Sensors/LightingController.hpp"
+#include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Screen.hpp"
 
@@ -15,7 +17,7 @@
 class DemoScreen : public Screen {
 public:
     DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
-               LightingController &lightingController);
+               LightingController &lightingController, PowerManager &power, LocalStore &localStore);
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
@@ -34,6 +36,10 @@ protected:
     Renderer renderer_;
     PreferencesStore &prefs_;
     LightingController &lightingController_;
+    PowerManager &power_;
+    LocalStore &localStore_;
+
+    bool startedSync_ = false;
 
     bool shownOne_ = false;
     bool shownTwo_ = false;
