@@ -8,8 +8,7 @@
 
 class BatteryScreen : public Screen {
 public:
-    BatteryScreen(DisplaySystem &display, PreferencesStore &prefs, Battery &battery)
-        : display_(display), prefs_(prefs), battery_(battery){};
+    BatteryScreen(DisplaySystem &display, PreferencesStore &prefs, Battery &battery);
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
@@ -18,6 +17,7 @@ protected:
     DisplaySystem &display_;
     PreferencesStore &prefs_;
     Battery &battery_;
+    uint16_t leftTemp;
 };
 
 #endif
