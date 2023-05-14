@@ -297,10 +297,11 @@ void ReadableScreen::render(DisplaySystem &display) {
     updateBookmarkStatus();
 
     if (inBookmark_) {
+        int leftSide = display.xAbsolute(display.xAbsoluteMax() - 25);
         log_d("Drawing bookmark!");
-        display.fillRect(display.width() + 1, display.yAbsolute(0), 13, 55, display.fg);
-        display.fillTriangle(display.width() + 1, display.yAbsolute(55), display.width() + 13,
-                             display.yAbsolute(55), display.width() + 7, display.yAbsolute(50),
+        display.fillRect(leftSide + 1, display.yAbsolute(0), 13, 55, display.fg);
+        display.fillTriangle(leftSide + 1, display.yAbsolute(55), leftSide + 13,
+                             display.yAbsolute(55), leftSide + 7, display.yAbsolute(50),
                              display.bg);
     }
 
