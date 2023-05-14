@@ -958,8 +958,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     systemSettingsMenu->addMenuItem(MenuItem("Clear All Content and Restart",
                                              [this, systemSettingsMenu, display, &localStore]() {
-        localStore.deleteReadables();
-        localStore.deleteArticles();
+        localStore.deleteReadables(false);
+        localStore.deleteArticles(false);
         systemSettingsMenu->showTemporaryMessage(*display, "Content cleared.");
         Delay(1500);
         this->power_.reboot();
