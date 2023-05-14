@@ -6,8 +6,8 @@
 #include "Ltr329Als.hpp"
 #include "Misc/MovingAverage.hpp"
 
-#define MIN_LIGHTING_DUTY_CYCLE 5
-#define MAX_LIGHTING_DUTY_CYCLE 60
+#define MIN_LIGHTING_DUTY_CYCLE 10
+#define MAX_LIGHTING_DUTY_CYCLE 210
 
 class LightingController {
 public:
