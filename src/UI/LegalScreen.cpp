@@ -3,7 +3,7 @@
 #include "sindarin-debug.h"
 
 auto LegalScreen::layout(LayoutContext &context, Size size) -> Size {
-    uint8_t leftPadding = 10;
+    uint8_t leftPadding = 5;
     uint8_t yAdvance = 20;
 
     int x = 0;
@@ -14,32 +14,42 @@ auto LegalScreen::layout(LayoutContext &context, Size size) -> Size {
     context.setViewFrame(baclLine1View_, {{x, y}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
-    y += yAdvance - 8;
+    y += yAdvance - 9;
 
     context.setViewFrame(baclLine2View_, {{x, y}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
-    y += yAdvance - 3;
+    y += yAdvance - 6;
 
-    context.setViewFrame(fccLineView_, {{x, y}, size},
+    context.setViewFrame(fcc1LineView_, {{x, y}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
-    y += yAdvance - 3;
+    y += yAdvance - 8;
 
-    context.setViewFrame(icLineView_, {{x, y}, size},
+    context.setViewFrame(fcc1LineViewPart2_, {{x, y}, size},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
+
+    y += yAdvance - 6;
+
+    context.setViewFrame(fcc2LineView_, {{x, y}, size},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
+
+    y += yAdvance - 8;
+
+    context.setViewFrame(fcc2LineViewPart2_, {{x, y}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
     context.setViewFrame(returnToMenuView_, {{0, 0}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenter |
                              LayoutOptionsAlignBottom);
 
-    y += yAdvance - 1;
+    y += yAdvance - 1 + 3;
 
-    context.setViewFrame(fccView_, {{10, y}, size}, LayoutOptionsAlignLeft);
+    context.setViewFrame(ceView_, {{10, y}, size}, LayoutOptionsAlignLeft);
 
-    y += 5;
+    y -= 5;
 
-    context.setViewFrame(ceView_, {{110, y}, size}, LayoutOptionsAlignLeft);
+    context.setViewFrame(fccView_, {{110, y}, size}, LayoutOptionsAlignLeft);
 
     y += 65;
 
@@ -51,8 +61,10 @@ auto LegalScreen::layout(LayoutContext &context, Size size) -> Size {
 void LegalScreen::drawInRect(Rect rect) {
     baclLine1View_.draw();
     baclLine2View_.draw();
-    fccLineView_.draw();
-    icLineView_.draw();
+    fcc1LineView_.draw();
+    fcc1LineViewPart2_.draw();
+    fcc2LineView_.draw();
+    fcc2LineViewPart2_.draw();
     fccView_.draw();
     ceView_.draw();
     baclView_.draw();

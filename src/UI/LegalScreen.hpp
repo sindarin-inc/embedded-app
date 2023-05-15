@@ -23,8 +23,10 @@ public:
           baclView_(display, BACL_BITS, bacl_width, bacl_height),
           baclLine1View_(display, "BACL: LISTED UL 62368-1,", &ibmf75Face0),
           baclLine2View_(display, "CAN/CSA C22,2 NO. 62368-1, A0049", &ibmf75Face0),
-          fccLineView_(display, "FCC IDs: 2BAHC-READER1, 2BAHC-PT1", &ibmf75Face0),
-          icLineView_(display, "IC: 30424", &ibmf75Face0),
+          fcc1LineView_(display, "FCC ID: 2BAHC-READER1,", &ibmf75Face0),
+          fcc1LineViewPart2_(display, "IC: 30424-READER1, Model: ARC-READER", &ibmf75Face0),
+          fcc2LineView_(display, "FCC ID: 2BAHC-PT1,", &ibmf75Face0),
+          fcc2LineViewPart2_(display, "IC: 30424-PT1, Model: ARC-PT1", &ibmf75Face0),
           returnToMenuView_(display, "Press  \ue000  to return to System Settings", &ibmf75Face0){};
 
     auto layout(LayoutContext &context, Size size) -> Size override;
@@ -43,8 +45,10 @@ protected:
     IconView baclView_;
     SingleLineTextView baclLine1View_;
     SingleLineTextView baclLine2View_;
-    SingleLineTextView fccLineView_;
-    SingleLineTextView icLineView_;
+    SingleLineTextView fcc1LineView_;
+    SingleLineTextView fcc1LineViewPart2_;
+    SingleLineTextView fcc2LineView_;
+    SingleLineTextView fcc2LineViewPart2_;
     SingleLineTextView returnToMenuView_;
 };
 
