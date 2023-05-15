@@ -148,8 +148,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     if (it == readables.end()) {
         log_d("Could not find readable: %s", "Psalms and Proverbs");
     } else {
-        psalmsProverbs = createReadableScreen(*it);
-        log_d("Found readable: %s", (*it).title.c_str());
+        psalmsProverbs = createReadableScreen(*(it->get()));
+        log_d("Found readable: %s", it->get()->title.c_str());
     }
 
     it = std::find_if(readables.begin(), readables.end(),
@@ -157,8 +157,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     if (it == readables.end()) {
         log_d("Could not find readable: %s", "New Testament");
     } else {
-        newTestament = createReadableScreen(*it);
-        log_d("Found readable: %s", (*it).title.c_str());
+        newTestament = createReadableScreen(*(it->get()));
+        log_d("Found readable: %s", it->get()->title.c_str());
     }
 
     it = std::find_if(readables.begin(), readables.end(),
@@ -166,8 +166,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     if (it == readables.end()) {
         log_d("Could not find readable: %s", "Old Testament");
     } else {
-        oldTestament = createReadableScreen(*it);
-        log_d("Found readable: %s", (*it).title.c_str());
+        oldTestament = createReadableScreen(*(it->get()));
+        log_d("Found readable: %s", it->get()->title.c_str());
     }
 
     bool hasLastQuestion = false;
@@ -237,19 +237,19 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     SHOW_HEAP();
 
-    for (const Readable &r : readables) {
-        bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
-        auto title = StringFormat("%s%s", archived ? "Archived: " : "", r.title.c_str());
+    for (auto r : readables) {
+        bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
+        auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
         // Bible books go in their own menu / app
-        if (r.title == "Psalms and Proverbs" || r.title == "New Testament" ||
-            r.title == "Old Testament") {
+        if (r->title == "Psalms and Proverbs" || r->title == "New Testament" ||
+            r->title == "Old Testament") {
             continue;
         }
 
         booksMenu->addMenuItem(MenuItem(StringFormat("%s", title.c_str()),
-                                        StringFormat("%s", r.authors[0].name.c_str()),
-                                        [this, &r, createReadableScreen]() {
-            auto readableScreen = createReadableScreen(r);
+                                        StringFormat("%s", r->authors[0].name.c_str()),
+                                        [this, r, createReadableScreen]() {
+            auto readableScreen = createReadableScreen(*r);
             this->setCurrentScreen(*readableScreen);
         }));
     }
@@ -300,19 +300,19 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }));
     }
 
-    for (const Readable &r : articles) {
-        bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
-        auto title = StringFormat("%s%s", archived ? "Archived: " : "", r.title.c_str());
+    for (auto r : articles) {
+        bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
+        auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
 
         pocketMenu->addMenuItem(
             MenuItem(title, [this, display, pocketMenu, mainMenu, r, createReadableScreen]() {
                 display->clearDisplay();
-                auto readableScreen = createReadableScreen(r);
+                auto readableScreen = createReadableScreen(*r);
                 setCurrentScreen(*readableScreen);
                 readableScreen->setBackCallback(
                     [this, r, display, readableScreen, mainMenu, pocketMenu]() {
-                bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
-                auto title = StringFormat("%s%s", archived ? "Archived: " : "", r.title.c_str());
+                bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
+                auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
                 pocketMenu->changeItemTitleAt(pocketMenu->getCurrSelection(), title);
                 display->clearDisplay();
                 mainMenu->setFirstLoad();
@@ -345,14 +345,14 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     if (!prefs_.noBible.get().value_or(false) && (oldTestament || newTestament || psalmsProverbs)) {
         auto bibleMenu = new Menu(mainMenu->getMyStyle(), "Bible");
 
-        for (const Readable &r : readables) {
-            bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
-            auto title = StringFormat("%s%s", archived ? "Archived: " : "", r.title.c_str());
-            if (r.title == "Psalms and Proverbs" || r.title == "New Testament" ||
-                r.title == "Old Testament") {
-                bibleMenu->addMenuItem(MenuItem(title, [this, &r, createReadableScreen, display,
+        for (auto r : readables) {
+            bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
+            auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
+            if (r->title == "Psalms and Proverbs" || r->title == "New Testament" ||
+                r->title == "Old Testament") {
+                bibleMenu->addMenuItem(MenuItem(title, [this, r, createReadableScreen, display,
                                                         mainMenu]() {
-                    auto readableScreen = createReadableScreen(r);
+                    auto readableScreen = createReadableScreen(readable);
                     this->setCurrentScreen(*readableScreen);
                     readableScreen->setBackCallback([this, r, display, readableScreen, mainMenu]() {
                         display->clearDisplay();
@@ -1349,9 +1349,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         if (it == readables.end()) {
             log_e("Could not find readable: %s", "The Last Question");
         } else {
-            log_d("Found readable: %s", (*it).title.c_str());
+            log_d("Found readable: %s", it->get()->title.c_str());
         }
-        auto readableScreen = createReadableScreen(*it);
+        auto readableScreen = createReadableScreen(*(it->get()));
         cesScreen->setBackCallback([this, cesScreen, display, readableScreen]() {
             display->clearDisplay();
             this->display_->setFont(this->display_->style.getFontFamily().readableFont);
@@ -1369,9 +1369,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         if (it == readables.end()) {
             log_e("Could not find readable: %s", "The Last Question");
         } else {
-            log_d("Found readable: %s", (*it).title.c_str());
+            log_d("Found readable: %s", it->get()->title.c_str());
         }
-        auto readableScreen = createReadableScreen(*it);
+        auto readableScreen = createReadableScreen(*(it->get()));
         display->clearDisplay();
         this->display_->setFont(this->display_->style.getFontFamily().readableFont);
         this->setCurrentScreen(*readableScreen);
@@ -1385,11 +1385,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 return currentReadable == x.uuid;
             });
         if (it != readables.end()) {
-            auto readableScreen = createReadableScreen(*it);
+            auto readableScreen = createReadableScreen(*(it->get()));
             this->display_->setFont(this->display_->style.getFontFamily().readableFont);
             log_i("Setting Readable Screen on boot in %.0f ms", esp_timer_get_time() / 1000.0f);
             this->setCurrentScreen(*readableScreen);
-            log_i("Resuming readable %s at place %" PRIu32, (*it).title.c_str(), (*it).place);
+            log_i("Resuming readable %s at place %" PRIu32, it->get()->title.c_str(),
+                  it->get()->place);
         } else {
             // Assume this readable has gone away (or changed from id to uuid)
             prefs_.lastReadableId.remove();

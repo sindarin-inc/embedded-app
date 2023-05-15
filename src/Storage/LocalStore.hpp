@@ -33,7 +33,8 @@ struct ContentSyncState {
     std::string message;
 };
 
-using ReadablesVector = SpiramVector<Readable>;
+// using ReadablesVector = SpiramVector<std::shared_ptr<Readable>>;
+using ReadablesVector = std::vector<std::shared_ptr<Readable>>;
 using UserReadablesVector = SpiramVector<UserReadable>;
 
 //! Interface for local storage of structured data
