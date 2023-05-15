@@ -7,7 +7,7 @@
 
 class ReadableSeekScreen : public Screen {
 public:
-    ReadableSeekScreen(PreferencesStore &prefs, Readable &readable, Renderer &renderer)
+    ReadableSeekScreen(PreferencesStore &prefs, ReadablePtr readable, Renderer &renderer)
         : Screen(), prefs_(prefs), readable_(readable), renderer_(renderer) {}
 
     void processCommand(RemoteCommand command) override;
@@ -17,7 +17,7 @@ public:
 
 protected:
     PreferencesStore &prefs_;
-    Readable &readable_;
+    ReadablePtr readable_;
     Renderer &renderer_;
     bool firstLoad_ = true;
 

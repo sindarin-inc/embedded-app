@@ -72,12 +72,12 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
             log_e("Failed to parse Readable");
             continue;
         }
-        auto path = readableFilePathForReading(*readable);
+        auto path = readableFilePathForReading(readable);
         if (path.empty()) {
             log_w("Couldn't find readable with path %s", path.c_str());
             continue;
         }
-        int fileSize = readableGetUncompressedSize(*readable);
+        int fileSize = readableGetUncompressedSize(readable);
 
         if (fileSize >= 0 && readable->files.size() && fileSize != readable->file().size) {
             log_w("File size mismatch for %s (%d on disk vs %d in local store), ignoring",
@@ -95,11 +95,11 @@ auto LocalStore::readablesModelType(const ReadablesVector &readables) -> Readabl
     return &readables == &articles_ ? ReadablesModelType::Article : ReadablesModelType::Book;
 }
 
-auto LocalStore::hasReadable(const ReadablesVector &readables, const Readable &readable,
+auto LocalStore::hasReadable(const ReadablesVector &readables, ReadablePtr readable,
                              bool ignoreFileSizeCheck) -> bool {
     for (auto r : readables) {
-        auto path = readableFilePathForReading(*r);
-        if (r->uuid == readable.uuid && !path.empty()) {
+        auto path = readableFilePathForReading(r);
+        if (r->uuid == readable->uuid && !path.empty()) {
             int fileSize = readableGetUncompressedSize(readable);
 
             if (fileSize <= 0) {
@@ -109,9 +109,9 @@ auto LocalStore::hasReadable(const ReadablesVector &readables, const Readable &r
 
             // If we have a file object, check that the size matches
             if (r->files.size() > 0 && !ignoreFileSizeCheck) {
-                if (fileSize >= 0 && fileSize != readable.file().size) {
+                if (fileSize >= 0 && fileSize != readable->file().size) {
                     log_w("File size mismatch for %s (%d on disk vs %d in local store), ignoring",
-                          path.c_str(), fileSize, readable.file().size);
+                          path.c_str(), fileSize, readable->file().size);
                     return false;
                 } else {
                     return true;
@@ -123,14 +123,14 @@ auto LocalStore::hasReadable(const ReadablesVector &readables, const Readable &r
     return false;
 }
 
-void LocalStore::addReadable(ReadablesVector &readables, const Readable &readable) {
+void LocalStore::addReadable(ReadablesVector &readables, ReadablePtr readable) {
     readables.emplace_back(readable);
     return;
 }
 
-void LocalStore::removeReadable(ReadablesVector &readables, const Readable &readable) {
+void LocalStore::removeReadable(ReadablesVector &readables, ReadablePtr readable) {
     for (auto it = readables.begin(); it != readables.end(); ++it) {
-        if (it->get()->uuid == readable.uuid) {
+        if (it->get()->uuid == readable->uuid) {
             readables.erase(it);
             return;
         }
@@ -264,10 +264,10 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
     }
 }
 
-auto LocalStore::processReadablePlacemarksFromServer(const Readable &readable,
-                                                     const uint32_t placemark) -> bool {
-    uint32_t onDevicePlace = prefs_.readablePlace.get(readable.shortenedUuid.c_str());
-    bool changed = prefs_.readablePlaceChanged.get(readable.shortenedUuid.c_str());
+auto LocalStore::processReadablePlacemarksFromServer(ReadablePtr readable, const uint32_t placemark)
+    -> bool {
+    uint32_t onDevicePlace = prefs_.readablePlace.get(readable->shortenedUuid.c_str());
+    bool changed = prefs_.readablePlaceChanged.get(readable->shortenedUuid.c_str());
 
     if (placemark == onDevicePlace) {
         // If the placemark on the server is the same as the one on the device, don't change it
@@ -276,14 +276,14 @@ auto LocalStore::processReadablePlacemarksFromServer(const Readable &readable,
         // Placemark on server is further than on the device, so update to the server value
         log_i("Updating placemark for \"%s\" from device value of %" PRIu32 " to server "
               "value of %" PRIu32,
-              readable.title.c_str(), onDevicePlace, placemark);
-        prefs_.readablePlace.set(readable.shortenedUuid.c_str(), placemark);
+              readable->title.c_str(), onDevicePlace, placemark);
+        prefs_.readablePlace.set(readable->shortenedUuid.c_str(), placemark);
         return true;
     } else if (placemark != 0) {
         // Placemark on server is less than on the device, so don't update to the server value
         log_i("Not updating placemark for \"%s\" from device value of %" PRIu32 " to server "
               "value of %" PRIu32 ". Changed: %d",
-              readable.title.c_str(), onDevicePlace, placemark, changed);
+              readable->title.c_str(), onDevicePlace, placemark, changed);
         return false;
     }
 
@@ -612,12 +612,12 @@ auto LocalStore::processReadables(const CheckSyncResponse &checkSyncResponse,
               userReadable.readable->uuid.c_str());
         SHOW_HEAP();
 
-        if (processReadablePlacemarksFromServer(*userReadable.readable, userReadable.placemark)) {
+        if (processReadablePlacemarksFromServer(userReadable.readable, userReadable.placemark)) {
             log_i("Placemark for %s updated to %" PRIu32, userReadable.readable->title.c_str(),
                   userReadable.placemark);
         }
 
-        auto found = hasReadable(readables, *userReadable.readable, true);
+        auto found = hasReadable(readables, userReadable.readable, true);
         if (userReadable.isArchived) {
             log_i("Readable \"%s\" is archived, will delete", userReadable.readable->title.c_str());
             // TODO: Store these articles in an accessible archive instead of just deleting them
@@ -655,8 +655,8 @@ void LocalStore::processReadableDeletion(
         syncState.tasks[tasksIndex].percentage = (float(i + 1) / readablesToDelete.size()) * 100;
 
         log_i("Deleting %s", readablesToDelete[i]->title.c_str());
-        readableFilePurge(*readablesToDelete[i]);
-        this->removeReadable(readables, *readablesToDelete[i]);
+        readableFilePurge(readablesToDelete[i]);
+        this->removeReadable(readables, readablesToDelete[i]);
     }
 
     // All article deletions take a single task line item
@@ -681,14 +681,14 @@ auto LocalStore::processReadableDownload(
     for (int i = 0; i < readablesToDownload.size(); i++) {
         float currPercentage = (float)i * pctPerReadable;
         auto readable = readablesToDownload[i];
-        auto path = readableFilePathForWriting(*readable);
+        auto path = readableFilePathForWriting(readable);
         log_i("Downloading %s (file=%s, url=%s)", readable->title.c_str(), path.c_str(),
               readable->remoteUrl().c_str());
         SHOW_HEAP();
 
         for (int t = 0; t < NUMBER_OF_READABLE_DOWNLOAD_TRIES; t++) {
             auto success = SindarinAPI::getInstance()->downloadReadable(
-                *readable, this->fileSystem, path,
+                readable, this->fileSystem, path,
                 [progressCallback, &syncState, tasksIndex, currPercentage, pctPerReadable,
                  modelType](int percentage) {
                 if (modelType == ReadablesModelType::Book) {
@@ -700,7 +700,7 @@ auto LocalStore::processReadableDownload(
                 progressCallback(syncState);
                 });
             if (success) {
-                addReadable(readables, *readable);
+                addReadable(readables, readable);
                 log_d("File successfully downloaded.");
                 if (!saveReadables(readables)) {
                     log_e("Failed to save %s", ReadableModelTypeToString(modelType).c_str());
@@ -759,7 +759,7 @@ void LocalStore::deleteReadableFiles(const ReadablesVector &readables, bool rest
     for (auto readable : readables) {
         log_i("Removing %s \"%s\"", ReadableModelTypeToString(modelType).c_str(),
               readable->title.c_str());
-        readableFilePurge(*readable);
+        readableFilePurge(readable);
     }
     int64_t duration = esp_timer_get_time() - start;
     log_d("Purged %zu %ss in %" PRIi64 " ms", readables.size(),
@@ -806,11 +806,11 @@ auto LocalStore::saveReadables(const ReadablesVector &readables) -> bool {
     return true;
 };
 
-auto LocalStore::readableFilePathForWriting(const Readable &readable) const -> std::string {
-    return StringFormat("/%s/%s.txt.gz", readable.readableType.c_str(), readable.uuid.c_str());
+auto LocalStore::readableFilePathForWriting(ReadablePtr readable) const -> std::string {
+    return StringFormat("/%s/%s.txt.gz", readable->readableType.c_str(), readable->uuid.c_str());
 }
 
-auto LocalStore::readableFilePathForReading(const Readable &readable) const -> std::string {
+auto LocalStore::readableFilePathForReading(ReadablePtr readable) const -> std::string {
     // We look for the readable file in the following order:
     // We first try the most modern path style:
     // /[readableType]/[uuid].txt.gz
@@ -825,8 +825,8 @@ auto LocalStore::readableFilePathForReading(const Readable &readable) const -> s
     // /articles/[uuid].txt.gz
     // /articles/[uuid].txt
 
-    auto type = readable.readableType;
-    auto &uuid = readable.uuid;
+    auto type = readable->readableType;
+    auto &uuid = readable->uuid;
 
     std::string path;
 
@@ -845,12 +845,12 @@ auto LocalStore::readableFilePathForReading(const Readable &readable) const -> s
             return path;
         }
         // Previously we also stored books in the root directory
-        if (readable.files.size() > 0) {
-            path = StringFormat("/%s.gz", readable.file().name.c_str());
+        if (readable->files.size() > 0) {
+            path = StringFormat("/%s.gz", readable->file().name.c_str());
             if (fileSystem.exists(path)) {
                 return path;
             }
-            path = StringFormat("/%s", readable.file().name.c_str());
+            path = StringFormat("/%s", readable->file().name.c_str());
             if (fileSystem.exists(path)) {
                 return path;
             }
@@ -865,11 +865,11 @@ auto LocalStore::readableFilePathForReading(const Readable &readable) const -> s
             return path;
         }
     }
-    log_w("Unable to find readable file for %s (%s)", readable.title.c_str(), uuid.c_str());
+    log_w("Unable to find readable file for %s (%s)", readable->title.c_str(), uuid.c_str());
     return "";
 }
 
-auto LocalStore::readableGetUncompressedSize(const Readable &readable) const -> int {
+auto LocalStore::readableGetUncompressedSize(ReadablePtr readable) const -> int {
     auto path = readableFilePathForReading(readable);
     if (path.empty()) {
         return -1;
@@ -893,7 +893,7 @@ auto LocalStore::readableGetUncompressedSize(const Readable &readable) const -> 
     return fileSize;
 }
 
-void LocalStore::readableFilePurge(const Readable &readable) {
+void LocalStore::readableFilePurge(ReadablePtr readable) {
     // Purge all possible readble file paths:
     // /[readableType]/[uuid].txt.gz
     // /[readableType]/[uuid].txt
@@ -903,29 +903,29 @@ void LocalStore::readableFilePurge(const Readable &readable) {
     // /articles/[uuid].txt.gz
     // /articles/[uuid].txt
 
-    auto type = readable.readableType;
-    auto &uuid = readable.uuid;
+    auto type = readable->readableType;
+    auto &uuid = readable->uuid;
 
-    log_d("Purging readable file %s (%s)", readable.title.c_str(), uuid.c_str());
+    log_d("Purging readable file %s (%s)", readable->title.c_str(), uuid.c_str());
     fileSystem.remove(StringFormat("/%s/%s.txt.gz", type.c_str(), uuid.c_str()));
     fileSystem.remove(StringFormat("/%s/%s.txt", type.c_str(), uuid.c_str()));
     fileSystem.remove(StringFormat("/%s/%s.epub", type.c_str(), uuid.c_str()));
 
-    if (readable.files.size() > 0) {
-        fileSystem.remove(StringFormat("/%s.gz", readable.file().name.c_str()));
-        fileSystem.remove(StringFormat("/%s", readable.file().name.c_str()));
+    if (readable->files.size() > 0) {
+        fileSystem.remove(StringFormat("/%s.gz", readable->file().name.c_str()));
+        fileSystem.remove(StringFormat("/%s", readable->file().name.c_str()));
     }
 
     fileSystem.remove(StringFormat("/articles/%s.txt.gz", uuid.c_str()));
     fileSystem.remove(StringFormat("/articles/%s.txt", uuid.c_str()));
 
-    fileSystem.remove(readable.bookmarkFilePath().c_str());
+    fileSystem.remove(readable->bookmarkFilePath().c_str());
 
     // Also purge placemarks in NVS
-    prefs_.readablePlace.remove(readable.shortenedUuid.c_str());
-    prefs_.readablePlaceChanged.remove(readable.shortenedUuid.c_str());
-    prefs_.readableArchivedChanged.remove(readable.shortenedUuid.c_str());
-    prefs_.readableBookmarksChanged.remove(readable.shortenedUuid.c_str());
+    prefs_.readablePlace.remove(readable->shortenedUuid.c_str());
+    prefs_.readablePlaceChanged.remove(readable->shortenedUuid.c_str());
+    prefs_.readableArchivedChanged.remove(readable->shortenedUuid.c_str());
+    prefs_.readableBookmarksChanged.remove(readable->shortenedUuid.c_str());
 }
 
 const char *firmwarePath = "/firmware.json";

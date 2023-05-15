@@ -152,13 +152,13 @@ auto SindarinAPI::checkFirmware(FirmwareResponse *resp) -> int {
     return httpCode;
 }
 
-auto SindarinAPI::downloadReadable(const Readable &readable, FileSystem &fileSystem,
+auto SindarinAPI::downloadReadable(ReadablePtr readable, FileSystem &fileSystem,
                                    const std::string &path,
                                    const std::function<void(int percentage)> &progressCallback)
     -> bool {
     bool success = false;
     // auto remoteUrl = readable.remoteUrl();
-    auto file = readable.file();
+    auto file = readable->file();
     auto remoteUrl = file.fileProxied;
     auto fileSize = file.size;
 
