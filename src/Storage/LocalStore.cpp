@@ -607,34 +607,34 @@ auto LocalStore::processReadables(const CheckSyncResponse &checkSyncResponse,
                                                                  : checkSyncResponse.userArticles;
 
     for (auto &userReadable : serverReadables) {
-        log_d("User readable %s (%s)", userReadable.readable.title.c_str(),
-              userReadable.readable.uuid.c_str());
+        log_d("User readable %s (%s)", userReadable.readable->title.c_str(),
+              userReadable.readable->uuid.c_str());
         SHOW_HEAP();
 
-        if (processReadablePlacemarksFromServer(userReadable.readable, userReadable.placemark)) {
-            log_i("Placemark for %s updated to %" PRIu32, userReadable.readable.title.c_str(),
+        if (processReadablePlacemarksFromServer(*userReadable.readable, userReadable.placemark)) {
+            log_i("Placemark for %s updated to %" PRIu32, userReadable.readable->title.c_str(),
                   userReadable.placemark);
         }
 
-        auto found = hasReadable(readables, userReadable.readable, true);
+        auto found = hasReadable(readables, *userReadable.readable, true);
         if (userReadable.isArchived) {
-            log_i("Readable \"%s\" is archived, will delete", userReadable.readable.title.c_str());
+            log_i("Readable \"%s\" is archived, will delete", userReadable.readable->title.c_str());
             // TODO: Store these articles in an accessible archive instead of just deleting them
             // and ignoring
             if (found) {
-                readablesToDelete.push_back(userReadable.readable);
+                readablesToDelete.push_back(*userReadable.readable);
             } else {
-                log_i("Already deleted \"%s\" %s", userReadable.readable.title.c_str(),
-                      userReadable.readable.uuid.c_str());
+                log_i("Already deleted \"%s\" %s", userReadable.readable->title.c_str(),
+                      userReadable.readable->uuid.c_str());
             }
             continue;
         } else if (found) {
             // Should never get here as readablesSince should hide these articles
-            log_w("Already have \"%s\" %s", userReadable.readable.title.c_str(),
-                  userReadable.readable.uuid.c_str());
+            log_w("Already have \"%s\" %s", userReadable.readable->title.c_str(),
+                  userReadable.readable->uuid.c_str());
             continue;
         }
-        readablesToDownload.push_back(userReadable.readable);
+        readablesToDownload.push_back(*userReadable.readable);
     }
     resetReadablesPlacemarkChanged(readables);
     resetReadablesArchivedChanged(readables);
