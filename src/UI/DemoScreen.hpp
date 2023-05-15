@@ -39,6 +39,8 @@ protected:
     bool shownTwo_ = false;
     bool bailAfterLens_ = false;
 
+    bool dropVcom_ = false;
+
     unsigned int currentScreen_ = 0;
     unsigned int currentSubScreen_ = 0;
 

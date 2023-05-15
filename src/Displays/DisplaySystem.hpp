@@ -212,6 +212,10 @@ public:
     auto xAbsoluteMax() -> int { return 255; }
     auto yAbsoluteMax() -> int { return 255; }
 
+    auto getAuxInteger1() -> int { return auxInteger1_; }
+
+    void setAuxInteger1(int auxInteger) { auxInteger1_ = auxInteger; }
+
 protected:
     // Must be set in the constructor of subclasses
     Adafruit_GFX *gfxClass_ = nullptr;
@@ -219,6 +223,8 @@ protected:
     uint8_t *canvasBuffer_;
     uint16_t canvasWidth_;
     uint16_t canvasHeight_;
+
+    int auxInteger1_ = 0;
 
     inline auto xOffset(int16_t value) -> int16_t { return value + boundingBox_.x; }
     inline auto yOffset(int16_t value) -> int16_t { return value + boundingBox_.y; }

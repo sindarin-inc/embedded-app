@@ -453,7 +453,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        std::string message = "Now put down the Sol Remote and enjoy!";
+        std::string message = "Welcome to the Sol Reader! Let's begin...";
         display.clearDisplay();
         display.clearFrameBuffer();
         display.setFont(static_cast<Font *>(&ibmf75Face0));
@@ -468,10 +468,10 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
+        dropVcom_ = true;
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_61_bits, mani_61_width,
                             mani_61_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
-        drawSkipMessage(display, true);
         nextInterval_ = 1250;
     });
 
@@ -479,7 +479,6 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_62_bits, mani_62_width,
                             mani_62_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
-        drawSkipMessage(display, true);
         nextInterval_ = 1000;
     });
 
@@ -487,7 +486,6 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_23_bits, mani_23_width,
                             mani_23_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
-        drawSkipMessage(display, true);
         nextInterval_ = 1000;
     });
 
@@ -495,11 +493,11 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_23_bits, mani_23_width,
                             mani_23_height, display.bg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
-        drawSkipMessage(display, true);
         nextInterval_ = 1000;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
+        dropVcom_ = false;
         display.clearDisplay();
         drawDoubleLine(display, "The way we read", "is always changing.");
         drawSkipMessage(display);
@@ -515,14 +513,14 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        drawDoubleLine(display, "What reading does", "for our minds:");
+        drawDoubleLine(display, "What reading does", "for our minds.");
         drawSkipMessage(display);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 2000;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        drawDoubleLine(display, "whisking us away", "into other realms.");
+        drawDoubleLine(display, "Whisking us away", "into other realms.");
         drawSkipMessage(display);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 1000;
@@ -552,6 +550,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
+        dropVcom_ = true;
         display.clearDisplay();
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_4_bits, mani_4_width,
                             mani_4_height, display.fg);
@@ -562,25 +561,26 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_5_bits, mani_5_width,
                             mani_5_height, display.fg);
-        nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
+        nextUpdateType_ = DisplaySystem::UpdateType::FULL;
         nextInterval_ = 1000;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_3_bits, mani_3_width,
                             mani_3_height, display.fg);
-        nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
+        nextUpdateType_ = DisplaySystem::UpdateType::FULL;
         nextInterval_ = 1000;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_2_bits, mani_2_width,
                             mani_2_height, display.fg);
-        nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
+        nextUpdateType_ = DisplaySystem::UpdateType::FULL;
         nextInterval_ = 1250;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
+        dropVcom_ = false;
         drawDoubleLine(display, "Sparking new", "thoughts and ideas.");
         drawSkipMessage(display);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
@@ -588,6 +588,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
+        dropVcom_ = true;
         display.clearDisplay();
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_7_bits, mani_7_width,
                             mani_7_height, display.fg);
@@ -624,6 +625,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
+        dropVcom_ = false;
         display.invertDisplay(true);
         drawTripleLine(display, "In this era of", "constant beeps,", "alerts, and updates...");
         drawSkipMessage(display);
@@ -632,121 +634,123 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
+        dropVcom_ = true;
         display.invertDisplay(false);
         display.clearDisplay();
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_14_bits, mani_14_width,
                             mani_14_height, display.fg);
-        nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
+        nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 1000;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_15_bits, mani_15_width,
                             mani_15_height, display.fg);
-        nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
+        nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 750;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_16_bits, mani_16_width,
                             mani_16_height, display.fg);
-        nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
+        nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 750;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_17_bits, mani_17_width,
                             mani_17_height, display.fg);
-        nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
+        nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 750;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_18_bits, mani_18_width,
                             mani_18_height, display.fg);
-        nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
+        nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 1000;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
+        dropVcom_ = false;
         display.invertDisplay(true);
         drawTripleLine(display, "...what will the", "next evolution of", "reading look like?");
         drawSkipMessage(display);
-        nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
+        nextUpdateType_ = DisplaySystem::UpdateType::FULL;
         nextInterval_ = 2500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.invertDisplay(true);
         drawTripleLine(display, "Simply lean back,", "open your eyes, and",
                        "let words light the way.");
         drawSkipMessage(display);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
-        nextInterval_ = 2500;
+        nextInterval_ = 2000;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
+        dropVcom_ = true;
         display.invertDisplay(false);
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_41_bits, mani_41_width,
                             mani_41_height, display.fg);
-        nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
-        nextInterval_ = 1500;
+        nextUpdateType_ = DisplaySystem::UpdateType::FULL;
+        nextInterval_ = 1250;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.invertDisplay(false);
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_42_bits, mani_42_width,
                             mani_42_height, display.fg);
-        nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
-        nextInterval_ = 750;
+        nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval_ = 500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_43_bits, mani_43_width,
                             mani_43_height, display.fg);
-        nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
-        nextInterval_ = 750;
+        nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval_ = 500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_44_bits, mani_44_width,
                             mani_44_height, display.fg);
-        nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
-        nextInterval_ = 750;
+        nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval_ = 500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_45_bits, mani_45_width,
                             mani_45_height, display.fg);
-        nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
-        nextInterval_ = 750;
+        nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval_ = 500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_46_bits, mani_46_width,
                             mani_46_height, display.fg);
-        nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
-        nextInterval_ = 750;
+        nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval_ = 500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_47_bits, mani_47_width,
                             mani_47_height, display.fg);
-        nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
-        nextInterval_ = 750;
+        nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval_ = 500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_48_bits, mani_48_width,
                             mani_48_height, display.fg);
-        nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
-        nextInterval_ = 750;
+        nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
+        nextInterval_ = 500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_49_bits, mani_49_width,
                             mani_49_height, display.fg);
-        nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
+        nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 2000;
     });
 
@@ -843,6 +847,8 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
 
 #endif
     lambdas_.emplace_back([this](DisplaySystem &display) {
+        dropVcom_ = false;
+        display.invertDisplay(true);
         display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - im100_width / 2),
                             display.yAbsolute(display.yAbsoluteCenter() - im100_height / 2),
                             IM100_BITS, im100_width, im100_height, display.fg);
@@ -867,7 +873,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
 }
 
 void DemoScreen::drawSkipMessage(DisplaySystem &display, bool inverted) {
-    std::string message = "Press \ue000 to skip";
+    std::string message = "Press \ue000 to skip to Main Menu";
     display.setFont(static_cast<Font *>(&ibmf75Face0));
     display.drawSingleLineOfText(
         message.c_str(),
@@ -945,6 +951,12 @@ void DemoScreen::render(DisplaySystem &display) {
 
     // @john -- tada :)
     lambdas_[currentScreen_](display);
+
+    if (dropVcom_) {
+        display.setAuxInteger1(-2500);
+    } else {
+        display.setAuxInteger1(0);
+    }
 
     if (currentScreen_ >= 3) {
         display.updateDisplay(nextUpdateType_);
