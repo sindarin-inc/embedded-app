@@ -40,6 +40,7 @@ protected:
     bool bailAfterLens_ = false;
 
     bool dropVcom_ = false;
+    bool skipNextRender_ = false;
 
     unsigned int currentScreen_ = 0;
     unsigned int currentSubScreen_ = 0;

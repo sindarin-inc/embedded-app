@@ -462,7 +462,6 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
             display.xAbsolute(display.xAbsoluteCenter() -
                               display.getTextWidth(message.c_str()) / 2),
             display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight(message.c_str())));
-        drawSkipMessage(display);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 3000;
     });
@@ -478,8 +477,6 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
                               display.getTextWidth(message.c_str()) / 2),
             display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight(message.c_str())),
             true);
-        drawSkipMessage(display);
-        nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 10;
     });
 
@@ -952,6 +949,15 @@ void DemoScreen::render(DisplaySystem &display) {
         return;
     }
 
+    if (skipNextRender_) {
+        skipNextRender_ = false;
+        // Must stop the timer because ChangePeriod starts it.
+        xTimerStop(DisplaySystem::animationTimer, 0);
+        // Restart the timer if they stopped it.
+        xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
+        return;
+    }
+
     // Alternate left and right on for setup. Note: This seems backwards
     // but it looks right in-glass. Are LEFT and RIGHT backwards in the LightingController?
     if (currentScreen_ == 1) {
@@ -1004,16 +1010,20 @@ void DemoScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::ENTER:
         xTimerStop(DisplaySystem::animationTimer, 0);
-        if (currentScreen_ >= 3) {
+        if (currentScreen_ >= 9) {
             // Gives us the full refresh
             display_.clearDontChangeRefreshType();
             display_.clearDisplay();
             display_.clearFrameBuffer();
             finishDemo();
-        } else {
+        } else if (currentScreen_ < 3) {
             currentScreen_++;
             currentSubScreen_ = 0;
             setNeedsRerender();
+        } else {
+            // Since every button press advances the animation, we need to skip the next render
+            // in the cases we want to explicitly ignore.
+            skipNextRender_ = true;
         }
         break;
     case RemoteCommand::CHANNEL_PLUS:
