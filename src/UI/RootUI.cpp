@@ -953,15 +953,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         debugSettingsMenu->addMenuItem(MenuItem("Disable use while charging",
                                                 [this, debugSettingsMenu, display]() {
             prefs_.allowUsageWhileCharging.remove();
-            debugSettingsMenu->showTemporaryMessage(*display, "Disabling use while charge...", 500,
-                                                    false);
+            debugSettingsMenu->showTemporaryMessage(*display, "Disabling use while charging...",
+                                                    500, false);
             power_.reboot();
         }));
     } else {
         debugSettingsMenu->addMenuItem(MenuItem("Enable use while charging",
                                                 [this, debugSettingsMenu, display]() {
             prefs_.allowUsageWhileCharging.set(true);
-            debugSettingsMenu->showTemporaryMessage(*display, "Enabling use while charge...", 500,
+            debugSettingsMenu->showTemporaryMessage(*display, "Enabling use while charging...", 500,
                                                     false);
             power_.reboot();
         }));
