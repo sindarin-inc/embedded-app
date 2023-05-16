@@ -3,6 +3,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 
+#include "Communications/WiFi.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
 #include "UI/Bitmaps/arrow-up-down.hpp"
@@ -784,6 +785,18 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
         nextUpdateType_ = DisplaySystem::UpdateType::FULL;
         nextInterval_ = 2500;
     });
+
+    lambdas_.emplace_back([this](DisplaySystem &display) {
+        drawTripleLine(display, "Download the Sol App", "on your mobile device", "to get started.");
+        std::string message = "Press \ue000 after app setup";
+        prefs_.demoMode.remove();
+        display.setFont(static_cast<Font *>(&ibmf75Face0));
+        display.drawSingleLineOfText(message.c_str(),
+                                     display.xAbsolute(display.xAbsoluteCenter() -
+                                                       display.getTextWidth(message.c_str()) / 2),
+                                     display.yAbsolute(235));
+        nextUpdateType_ = DisplaySystem::UpdateType::FULL;
+    });
 }
 
 void DemoScreen::drawSkipMessage(DisplaySystem &display, bool inverted) {
@@ -843,6 +856,8 @@ void DemoScreen::drawTripleLine(DisplaySystem &display, std::string one, std::st
 
 void DemoScreen::finishDemo() {
     // When we're done with the onboarding screens, turn this mode off.
+    dropVcom_ = false;
+    display_.invertDisplay(false);
     prefs_.demoMode.remove();
     back();
 }
@@ -882,7 +897,20 @@ void DemoScreen::render(DisplaySystem &display) {
     }
 
     // @john -- tada :)
-    lambdas_[currentScreen_](display);
+    if (currentScreen_ == lambdas_.size() - 1) {
+#if !SIMULATOR
+        if ((WiFi::getInstance().getFirstWiFiSSID() == "")) {
+#else
+        if (1) {
+#endif
+            lambdas_[currentScreen_](display);
+        } else {
+            finishDemo();
+            return;
+        }
+    } else {
+        lambdas_[currentScreen_](display);
+    }
 
     if (dropVcom_) {
         display.setAuxInteger1(-2500);
@@ -890,19 +918,22 @@ void DemoScreen::render(DisplaySystem &display) {
         display.setAuxInteger1(0);
     }
 
-    if (currentScreen_ >= 3) {
+    if ((currentScreen_ >= 3) && (currentScreen_ != lambdas_.size() - 1)) {
         display.updateDisplay(nextUpdateType_);
         // Must stop the timer because ChangePeriod starts it.
         xTimerStop(DisplaySystem::animationTimer, 0);
         // Move to the next animation
         xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
         currentScreen_++;
-    } else {
+    } else if (currentScreen_ < 3) {
         // Must stop the timer because ChangePeriod starts it.
         xTimerStop(DisplaySystem::animationTimer, 0);
         // Move to the next animation
         xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
         currentSubScreen_++;
+    } else {
+        // App setup, last screen. Don't advance. Just wait for the button press.
+        display.updateDisplay(nextUpdateType_);
     }
 }
 

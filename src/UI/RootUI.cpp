@@ -956,7 +956,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                              [systemSettingsMenu, display]() {
         WiFi::getInstance().clearWiFiCredentials();
         log_w("WiFi settings cleared.");
-        systemSettingsMenu->showTemporaryMessage(*display, "WiFi settings cleared.", 2000, false);
+        systemSettingsMenu->showTemporaryMessage(*display, "WiFi settings cleared.", 2000, true);
     }));
 
     systemSettingsMenu->addMenuItem(MenuItem("Reset Preferences",
@@ -1007,7 +1007,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             this->setCurrentScreen(*demoScreen);
             demoScreen->setBackCallback([this, demoScreen, debugSettingsMenu, display]() {
                 debugSettingsMenu->setFirstLoad();
-                display->invertDisplay(false);
                 display->clearDisplay();
                 setCurrentScreen(*debugSettingsMenu);
                 debugSettingsMenu->render(*this->display_);
@@ -1317,7 +1316,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto demoScreen = new DemoScreen(*display, prefs_, lightingController);
         demoScreen->setBackCallback([this, demoScreen, mainMenu, display]() {
             display->clearDisplay();
-            display->invertDisplay(false);
             mainMenu->setFirstLoad();
             setCurrentScreen(*mainMenu);
             mainMenu->render(*this->display_);
