@@ -468,6 +468,22 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
+        std::string message = "Welcome to the Sol Reader! Let's begin...";
+        display.clearDisplay();
+        display.clearFrameBuffer();
+        display.setFont(static_cast<Font *>(&ibmf75Face0));
+        display.drawSingleLineOfText(
+            message.c_str(),
+            display.xAbsolute(display.xAbsoluteCenter() -
+                              display.getTextWidth(message.c_str()) / 2),
+            display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight(message.c_str())),
+            true);
+        drawSkipMessage(display);
+        nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
+        nextInterval_ = 10;
+    });
+
+    lambdas_.emplace_back([this](DisplaySystem &display) {
         dropVcom_ = true;
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_61_bits, mani_61_width,
                             mani_61_height, display.fg);
