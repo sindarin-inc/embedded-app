@@ -29,6 +29,7 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
         unarchiveMenuItemView_->setHidden(true);
     }
     popupMenuView_.setNeedsLayout();
+    setFirstLoad();
 }
 
 void ReadablePopupMenuScreen::addMenuItem(const MenuItem &newItem) {
@@ -127,6 +128,7 @@ void ReadablePopupMenuScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::NEXT:
         do {
             nextSelection();
+            setNeedsRerender();
         } while (popupMenuView_.menuItemViews[getCurrSelection()]->isHidden());
         break;
     case RemoteCommand::CHANNEL_PLUS:
@@ -136,6 +138,7 @@ void ReadablePopupMenuScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::PREV:
         do {
             prevSelection();
+            setNeedsRerender();
         } while (popupMenuView_.menuItemViews[getCurrSelection()]->isHidden());
         break;
     case RemoteCommand::NOP_BUTTON:
@@ -194,8 +197,3 @@ void ReadablePopupMenuScreen::render(DisplaySystem &display) {
         display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
     }
 };
-
-void ReadablePopupMenuScreen::back() {
-    setFirstLoad();
-    Screen::back();
-}

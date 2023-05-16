@@ -74,6 +74,7 @@ public:
 
         popupMenuScreen_.onBookmarkToggle = [this]() {
             inBookmark_ = !inBookmark_;
+            setNeedsRerender();
             writeOutBookmarkUpdate();
         };
 

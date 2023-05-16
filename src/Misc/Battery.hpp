@@ -5,7 +5,7 @@
 #define BATTERY_MEASUREMENTS_COUNT 10
 #define BATTERY_DISCONNECT_THRESHOLD 2.5F
 // Battery hard cutoff is at 3V so let's shut off a little before that
-#define BATTERY_MIN_VOLTAGE 3.25F
+#define BATTERY_MIN_VOLTAGE 3.4F
 // Max LiPo cell voltage is 4.2 but as soon as its supplying current it tends to drop closer to 4V
 #define BATTERY_MAX_VOLTAGE 4.15F
 

@@ -10,6 +10,7 @@ class ContainerScreen : public Screen {
 public:
     void setCurrentScreen(Screen &screen);
     auto needsRerender() -> bool override;
+    void clearNeedsRerender() override;
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
     auto getCurrentScreen() -> Screen * { return currentScreen_; }
