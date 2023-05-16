@@ -2,7 +2,7 @@
 
 #include "sindarin-debug.h"
 
-Size AboutScreen::layout(LayoutContext &context, Size size) {
+auto AboutScreen::layout(LayoutContext &context, Size size) -> Size {
     uint8_t leftPadding = 20;
     uint8_t yAdvance = 20;
 
