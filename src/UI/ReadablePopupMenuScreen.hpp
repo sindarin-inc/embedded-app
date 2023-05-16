@@ -17,11 +17,11 @@ public:
           readableTableOfContentsScreen_(prefs, readable, renderer, display) {
         this->setCurrentScreen(*this);
 
-        lightingAdjustScreen_.setBackCallback(backCallback_);
+        lightingAdjustScreen_.setBackCallback([this]() { backCallback_(); });
 
-        readableSeekScreen_.setBackCallback(backCallback_);
+        readableSeekScreen_.setBackCallback([this]() { backCallback_(); });
 
-        readableTableOfContentsScreen_.setBackCallback(backCallback_);
+        readableTableOfContentsScreen_.setBackCallback([this]() { backCallback_(); });
     };
     ~ReadablePopupMenuScreen() override = default;
 
