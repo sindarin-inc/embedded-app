@@ -153,12 +153,22 @@ void PowerManager::wakeupCheck(SolClock &clock) {
 
 auto PowerManager::begin() -> esp_err_t {
 #if !SIMULATOR
+    // If USB is connected, disable operation unless we've disabled this behavior
+    if (USBConnected() && !prefs_.allowUsageWhileCharging.get().value_or(false)) {
+        log_i("USB connected, switching mode to ActiveUSBCharging");
+        state_ = PowerState::ActiveUSBCharging;
+    }
     // Disable inactivity timer in emc testing mode
     if (!prefs_.emcMode.get().value_or(false)) {
-        inactivityTimer_.start([this]() {
+        int inactivityTimeoutMs =
+            state_ == PowerState::ActiveUSBCharging ? 10 * 1000 : 10 * 60 * 1000;
+        log_d("Setting inactivity timeout to %d ms", inactivityTimeoutMs);
+        inactivityTimer_.start(
+            [this]() {
             log_i("Inactive! Close and open temple to wake");
             ulpDeepSleep(SleepReason::Inactivity);
-        });
+            },
+            inactivityTimeoutMs);
     }
 #endif
 

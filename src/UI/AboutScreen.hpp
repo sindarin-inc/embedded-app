@@ -3,6 +3,7 @@
 
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
+#include "Misc/SecretCode.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Bitmaps/im100.hpp"
@@ -44,14 +45,11 @@ public:
         remoteFirmwareVersionView_.setText(ptBattery);
         remoteBatteryView_.setText(ptBuildString);
 
-        secretCodeCommands_.push_back(RemoteCommand::PREV);
-        secretCodeCommands_.push_back(RemoteCommand::PREV);
-        secretCodeCommands_.push_back(RemoteCommand::NEXT);
-        secretCodeCommands_.push_back(RemoteCommand::NEXT);
-        secretCodeCommands_.push_back(RemoteCommand::CHANNEL_MINUS);
-        secretCodeCommands_.push_back(RemoteCommand::CHANNEL_PLUS);
-        secretCodeCommands_.push_back(RemoteCommand::CHANNEL_MINUS);
-        secretCodeCommands_.push_back(RemoteCommand::CHANNEL_PLUS);
+        secretCode_.setCallback([this]() {
+            log_d("Got the right secret code -- toggling Debug Screen and rebooting!");
+            prefs_.showDebugMenu.set(!prefs_.showDebugMenu.get().value_or(false));
+            power_.reboot();
+        });
     };
 
     auto layout(LayoutContext &context, Size size) -> Size override;
@@ -65,8 +63,7 @@ protected:
     PreferencesStore &prefs_;
     PowerManager &power_;
 
-    std::vector<RemoteCommand> secretCodeCommands_;
-    uint8_t secretCodeIndex_ = 0;
+    SecretCode secretCode_;
 
     IconView solLogoView_;
     SingleLineTextView productNameView_;

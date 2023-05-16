@@ -4,7 +4,6 @@
 #include "Misc/Battery.hpp"
 #include "Misc/MenuStyle.hpp"
 #include "Renderers/Renderer.hpp"
-#include "UI/Bitmaps/Battery_Bolt.hpp"
 #include "UI/Components/BoxView.hpp"
 #include "UI/Components/ClockBatteryView.hpp"
 #include "UI/Components/EinkView.hpp"

@@ -15,6 +15,8 @@ enum class PowerState {
     Booting,
     // Screen lighting enabled ~10-60mA, inavtivity timer running.
     Active,
+    // Screen lighting enabled ~10-60mA, inactivity timer at 1min, UI disabled
+    ActiveUSBCharging,
     // Screens/lighting disabled ~6-7mA, inactivity timer disabled.
     Background,
     // Deep sleep with ULP magnetometer and periodic wakeups ~100uA

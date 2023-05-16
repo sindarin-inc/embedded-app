@@ -27,6 +27,7 @@
 #include "Storage/CrashReportWriter.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "UI/ChargingScreen.hpp"
 #include "UI/RootUI.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -214,7 +215,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         crashReportWriter.writeCrashReportIfExists();
     }
 
-    if (!localStore.begin()) {
+    if (powerManager.state() != PowerState::ActiveUSBCharging && !localStore.begin()) {
         bootErrors.push_back({.type = BootError::Type::LocalStore});
     }
 
@@ -410,10 +411,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     SHOW_HEAP();
 
-    rootUi.setup(&myDisplay, localStore, fileSystem, lightingController);
-
-    SHOW_HEAP();
-
     BlinkBootErrors(bootErrors);
 
     xTaskCreatePinnedToCore(PollingLoopTask, "Polling", 10000, nullptr, 1, nullptr, 0);
@@ -423,7 +420,18 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     DispatchGetUiQueue()->dispatch([]() { lightingController.checkAmbientLight(300, 100); });
 
     // Render the first thing
-    DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::NONE); });
+    DispatchGetUiQueue()->dispatch([]() {
+        SHOW_HEAP();
+        if (powerManager.state() == PowerState::ActiveUSBCharging) {
+            lightingController.setOverrideValuePercent(100);
+            auto chargingScreen = new ChargingScreen(prefs);
+            rootUi.setCurrentScreen(*chargingScreen);
+        } else {
+            rootUi.setup(&myDisplay, localStore, fileSystem, lightingController);
+        }
+        SHOW_HEAP();
+        UIInnerLoop(RemoteCommand::NONE);
+    });
 
     GoodBootTimer();
 
