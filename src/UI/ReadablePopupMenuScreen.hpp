@@ -19,20 +19,23 @@ public:
 
         lightingAdjustScreen_.setBackCallback([this]() {
             onRerender();
-            setFirstLoad();
             this->setCurrentScreen(*this);
+            setFirstLoad();
+            backCallback_();
         });
+
         readableSeekScreen_.setBackCallback([this]() {
-            setUpPopupMenu();
             onRerender();
-            setFirstLoad();
             this->setCurrentScreen(*this);
+            setFirstLoad();
+            backCallback_();
         });
 
         readableTableOfContentsScreen_.setBackCallback([this]() {
             onRerender();
-            setFirstLoad();
             this->setCurrentScreen(*this);
+            setFirstLoad();
+            backCallback_();
         });
     };
     ~ReadablePopupMenuScreen() override = default;
