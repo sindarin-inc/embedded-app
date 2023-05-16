@@ -127,6 +127,7 @@ void ReadablePopupMenuScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::NEXT:
         do {
             nextSelection();
+            setNeedsRerender();
         } while (popupMenuView_.menuItemViews[getCurrSelection()]->isHidden());
         break;
     case RemoteCommand::CHANNEL_PLUS:
@@ -136,6 +137,7 @@ void ReadablePopupMenuScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::PREV:
         do {
             prevSelection();
+            setNeedsRerender();
         } while (popupMenuView_.menuItemViews[getCurrSelection()]->isHidden());
         break;
     case RemoteCommand::NOP_BUTTON:
