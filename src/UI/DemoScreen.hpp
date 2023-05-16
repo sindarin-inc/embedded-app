@@ -25,8 +25,8 @@ public:
 protected:
     void drawSkipMessage(DisplaySystem &display, bool inverted = false);
     void drawDoubleLine(DisplaySystem &display, std::string one, std::string two);
-    void drawTripleLine(DisplaySystem &display, std::string one, std::string two,
-                        std::string three);
+    void drawTripleLine(DisplaySystem &display, std::string one, std::string two, std::string three,
+                        bool invert = false);
 
     void finishDemo();
 
