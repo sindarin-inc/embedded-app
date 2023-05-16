@@ -56,6 +56,10 @@ public:
         }
     }
 
+    [[nodiscard]] inline auto getFaceCount() const -> int {
+        return (isInitialized()) ? preamble_->faceCount : 0;
+    }
+
     auto load(MemoryPtr fontData, uint32_t length) -> bool {
 
         if (currentFontData_ == fontData) {

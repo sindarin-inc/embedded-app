@@ -194,10 +194,10 @@ public:
 
 #define FRACT_BITS 10
 #define FIXED_POINT_ONE (1 << FRACT_BITS)
-#define MAKE_INT_FIXED(x) ((x) << FRACT_BITS)
-#define MAKE_FLOAT_FIXED(x) ((FIX32)((x)*FIXED_POINT_ONE))
+#define MAKE_INT_FIXED(x) (static_cast<FIX32>((x) << FRACT_BITS))
+#define MAKE_FLOAT_FIXED(x) (static_cast<FIX32>((x)*FIXED_POINT_ONE))
 #define MAKE_FIXED_INT(x) ((x) >> FRACT_BITS)
-#define MAKE_FIXED_FLOAT(x) (((float)(x)) / FIXED_POINT_ONE)
+#define MAKE_FIXED_FLOAT(x) ((static_cast<float>(x)) / FIXED_POINT_ONE)
 
 #define FIXED_MULT(x, y) ((x) * (y) >> FRACT_BITS)
 #define FIXED_DIV(x, y) (((x) << FRACT_BITS) / (y))
@@ -216,20 +216,21 @@ public:
         int8_t origin = MAX(i1.verticalOffset, i2.verticalOffset);
 
         // start positions in each dist arrays
-        int8_t distIdxLeft = origin - i1.verticalOffset;
-        int8_t distIdxRight = origin - i2.verticalOffset;
+        uint8_t distIdxLeft = origin - i1.verticalOffset;
+        uint8_t distIdxRight = origin - i2.verticalOffset;
 
         // idx and length in each bitmaps to compare
-        int8_t firstIdxLeft = origin - i2.verticalOffset;
-        int8_t firstIdxRight = origin - i1.verticalOffset;
-        int8_t length = MIN((i1.bitmapHeight - firstIdxLeft), (i2.bitmapHeight - firstIdxRight));
-        int8_t firstIdx = MAX(firstIdxLeft, firstIdxRight);
+        uint8_t firstIdxLeft = origin - i2.verticalOffset;
+        uint8_t firstIdxRight = origin - i1.verticalOffset;
+        int8_t length = MIN((int8_t(i1.bitmapHeight) - int8_t(firstIdxLeft)),
+                            (int8_t(i2.bitmapHeight) - int8_t(firstIdxRight)));
+        uint8_t firstIdx = MAX(firstIdxLeft, firstIdxRight);
 
         FIX32 kerning = 0;
         if (length > 0) { // Length <= 0 means that there is no alignment between the characters
             // hight of significant parts of dist arrays
-            int8_t hight = origin + MAX((i1.bitmapHeight - i1.verticalOffset),
-                                        (i2.bitmapHeight - i2.verticalOffset));
+            int8_t hight = origin + MAX((int8_t(i1.bitmapHeight) - i1.verticalOffset),
+                                        (int8_t(i2.bitmapHeight) - i2.verticalOffset));
 
             Glyph glyph1;
             bool result = getGlyph(glyphCode1, glyph1, true, true, Pos(0, i1.verticalOffset));
@@ -349,8 +350,7 @@ public:
 
                 // Find vertices using the cross product and adjust the distances
                 // to get the right portion of the Convex Hull polygon.
-                // NOLINTNEXTLINE(bugprone-signed-char-misuse,cert-str34-c)
-                int i = distIdxLeft;
+                int i = static_cast<int>(distIdxLeft);
                 int j = i + 1;
                 while (j < (i1.bitmapHeight + distIdxLeft)) {
                     bool found = true;
@@ -402,8 +402,7 @@ public:
 
                 // Find vertices using the cross product and adjust the distances
                 // to get the left portion of the Convex Hull polygon.
-                // NOLINTNEXTLINE(bugprone-signed-char-misuse,cert-str34-c)
-                int i = distIdxRight;
+                int i = static_cast<int>(distIdxRight);
                 int j = i + 1;
                 while (j < (i2.bitmapHeight + distIdxRight)) {
                     bool found = true;
@@ -451,8 +450,8 @@ public:
             // as angled pixels (on the lines above and below)
             kerning = MAKE_INT_FIXED(999);
             FIX32 dist;
-            // NOLINTNEXTLINE(bugprone-signed-char-misuse,cert-str34-c)
-            for (int i = firstIdx; i < firstIdx + length; i++) {
+
+            for (uint8_t i = firstIdx; i < firstIdx + length; i++) {
                 dist = distLeft[i] + distRight[i];
                 if (dist < kerning) {
                     kerning = dist;
@@ -476,7 +475,7 @@ public:
                     kerning = dist;
                 }
             }
-            int lastIdx = firstIdx + length - 1;
+            uint8_t lastIdx = firstIdx + length - 1;
             if ((lastIdx < (hight - 1)) && (distRight[lastIdx + 1] >= 0)) {
                 dist = distLeft[lastIdx] + distRight[lastIdx + 1];
                 if (dist < kerning) {
@@ -613,7 +612,7 @@ public:
         // LOGD("Computed kern: %d (%d).", static_cast<int>((float)*kern / 64.0), kerning);
 #endif // old code
 #endif
-            // LOGD("Optical Kerning End");
+        // LOGD("Optical Kerning End");
         return false;
     }
 
@@ -662,14 +661,17 @@ public:
         if ((glyphCode == SPACE_CODE) ||
             ((*glyphsInfo_)[glyphCode].bitmapWidth == 0)) { // send as a space character
             appGlyph.pointSize = faceHeader_->pointSize;
-            appGlyph.metrics = {.xoff = 0,
-                                .yoff = 0,
-                                .descent = 0,
-                                .lineHeight = faceHeader_->lineHeight,
-                                .ligatureAndKernPgmIndex = 255};
+            appGlyph.metrics = {
+                .xoff = 0,
+                .yoff = 0,
+                .descent = 0,
+                .advance = static_cast<FIX16>(static_cast<uint16_t>(faceHeader_->spaceSize) << 6),
+                .lineHeight = faceHeader_->lineHeight,
+                .ligatureAndKernPgmIndex = 255};
             // For some reason, casting this above triggers a narrowing conversion error but it
             // doesn't here.
-            appGlyph.metrics.advance = (int16_t)faceHeader_->spaceSize << 6;
+            // appGlyph.metrics.advance =
+            // static_cast<FIX16>(static_cast<uint16_t>(faceHeader_->spaceSize) << 6);
             return true;
         }
 
