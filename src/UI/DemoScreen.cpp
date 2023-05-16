@@ -471,7 +471,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
         dropVcom_ = true;
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_61_bits, mani_61_width,
                             mani_61_height, display.fg);
-        nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
+        nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 1250;
     });
 
