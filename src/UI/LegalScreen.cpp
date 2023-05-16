@@ -72,9 +72,6 @@ void LegalScreen::drawInRect(Rect rect) {
 }
 
 void LegalScreen::render(DisplaySystem &display) {
-    if (!needsRerender_) {
-        return;
-    }
     setNeedsLayout();
     setFrame(
         {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
@@ -82,7 +79,6 @@ void LegalScreen::render(DisplaySystem &display) {
           display.defaultScreenHeight - 2 * display.defaultYPadding}});
     draw();
     display.updateDisplay();
-    needsRerender_ = false;
 }
 
 void LegalScreen::processCommand(RemoteCommand command) {
