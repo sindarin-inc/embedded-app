@@ -171,9 +171,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     bool hasLastQuestion = false;
-    it = std::find_if(readables.begin(), readables.end(), [](const Readable &x) {
-        return (x.title.compare("The Last Question") == 0);
-    });
+    it = std::find_if(readables.begin(), readables.end(),
+                      [](ReadablePtr x) { return (x->title.compare("The Last Question") == 0); });
     if (it == readables.end()) {
         log_d("Could not find readable: %s, not enabling CES or EMC modes", "The Last Question");
     } else {

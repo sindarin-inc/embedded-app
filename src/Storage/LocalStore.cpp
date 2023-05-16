@@ -784,8 +784,8 @@ auto LocalStore::saveReadables(const ReadablesVector &readables) -> bool {
     JsonArray readablesJson = doc->createNestedArray("readables");
 
     log_d("Saving %zu readables in %s", readables.size(), path.c_str());
-    for (const auto &readable : readables) {
-        readablesJson.add(readable);
+    for (auto readable : readables) {
+        readablesJson.add(*readable);
     }
 
     if (doc->overflowed()) {
