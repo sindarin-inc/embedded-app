@@ -15,6 +15,7 @@ public:
         iconBits_ = iconBits;
         width_ = width;
         height_ = height;
+        setNeedsLayout();
     }
 
     void drawInRect(Rect rect) override {
