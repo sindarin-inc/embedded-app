@@ -202,9 +202,6 @@ public:
 #define FIXED_MULT(x, y) ((x) * (y) >> FRACT_BITS)
 #define FIXED_DIV(x, y) (((x) << FRACT_BITS) / (y))
 
-#define MIN(a, b) (((a) < (b)) ? (a) : (b))
-#define MAX(a, b) (((a) > (b)) ? (a) : (b))
-
         auto &i1 = (*glyphsInfo_)[glyphCode1];
         auto &i2 = (*glyphsInfo_)[*glyphCode2];
 
@@ -213,7 +210,7 @@ public:
 
         // std::cout << "Normal distance:" << normal_distance << std::endl;
 
-        int8_t origin = MAX(i1.verticalOffset, i2.verticalOffset);
+        int8_t origin = std::max(i1.verticalOffset, i2.verticalOffset);
 
         // start positions in each dist arrays
         uint8_t distIdxLeft = origin - i1.verticalOffset;
@@ -222,9 +219,9 @@ public:
         // idx and length in each bitmaps to compare
         uint8_t firstIdxLeft = origin - i2.verticalOffset;
         uint8_t firstIdxRight = origin - i1.verticalOffset;
-        int8_t length = MIN((int8_t(i1.bitmapHeight) - int8_t(firstIdxLeft)),
+        int8_t length = std::min((int8_t(i1.bitmapHeight) - int8_t(firstIdxLeft)),
                             (int8_t(i2.bitmapHeight) - int8_t(firstIdxRight)));
-        uint8_t firstIdx = MAX(firstIdxLeft, firstIdxRight);
+        uint8_t firstIdx = std::max(firstIdxLeft, firstIdxRight);
 
         FIX32 kerning = 0;
 
@@ -253,7 +250,7 @@ public:
         }
 
         // hight of significant parts of dist arrays
-        int8_t hight = origin + MAX((int8_t(i1.bitmapHeight) - i1.verticalOffset),
+        int8_t hight = origin + std::max((int8_t(i1.bitmapHeight) - i1.verticalOffset),
                                     (int8_t(i2.bitmapHeight) - i2.verticalOffset));
 
         // distance computation for left and right characters
@@ -519,7 +516,7 @@ public:
         // Adjust the resulting kerning value, considering the targetted KERNING_SIZE (the space
         // to have between characters), the size of the character and the normal distance that
         // will be used by the writing algorithm
-        kerning = (-MIN(kerning - MAKE_INT_FIXED(KERNING_SIZE + addedWildcard),
+        kerning = (-std::min(kerning - MAKE_INT_FIXED(KERNING_SIZE + addedWildcard),
                         MAKE_INT_FIXED(i2.bitmapWidth))) -
                   MAKE_INT_FIXED(normalDistance);
 
