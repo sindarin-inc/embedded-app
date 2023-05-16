@@ -18,6 +18,7 @@ protected:
     PreferencesStore &prefs_;
     Battery &battery_;
     uint16_t leftTemp_{0};
+    uint16_t rightTemp_{0};
 };
 
 #endif

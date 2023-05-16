@@ -11,10 +11,11 @@ BatteryScreen::BatteryScreen(DisplaySystem &display, PreferencesStore &prefs, Ba
 
 #if EINKET013TT1
     auto *driver = (static_cast<DisplayEinkET013TT1 *>(&display))->getDriver();
-    leftTemp = driver->readTemperature(ScreenSide::Left);
-
+    leftTemp_ = driver->readTemperature(ScreenSide::Left);
+    rightTemp_ = driver->readTemperature(ScreenSide::Right);
 #else
-    leftTemp = 99;
+    leftTemp_ = 99;
+    rightTemp_ = 99;
 #endif
 }
 
@@ -32,7 +33,7 @@ void BatteryScreen::render(DisplaySystem &display) {
                                  display.xAbsolute(display.xAbsoluteCenter() - width / 2),
                                  display.yAbsolute(display.yAbsoluteCenter() + height / 2 + 2));
 
-    batteryStatus += StringFormat(" %dC", leftTemp);
+    batteryStatus += StringFormat("  L: %dC  R: %dC", leftTemp_, rightTemp_);
 
     width = display.getTextWidth(batteryStatus.c_str());
     height = display.getTextHeight(batteryStatus.c_str());
