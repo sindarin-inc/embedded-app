@@ -54,15 +54,15 @@ private:
                 GlyphCode glyphCode3 =
                     (iter == line.end()) ? NO_GLYPH_CODE : font_->translate(*iter);
                 if (glyphCode3 != NO_GLYPH_CODE) {
-                    bool some_lig = false;
+                    bool someLig = false;
                     FIX16 k;
                     while (font_->getFace(faceIndex_)->ligKern(glyphCode2, &glyphCode3, &k)) {
                         glyphCode2 = glyphCode3;
                         glyphCode3 =
                             (iter == line.end()) ? NO_GLYPH_CODE : font_->translate(*++iter);
-                        some_lig = true;
+                        someLig = true;
                     }
-                    if (some_lig) {
+                    if (someLig) {
                         font_->getFace(faceIndex_)->ligKern(glyphCode1, &glyphCode2, &kern);
                     }
                 }
