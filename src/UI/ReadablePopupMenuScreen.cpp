@@ -197,8 +197,3 @@ void ReadablePopupMenuScreen::render(DisplaySystem &display) {
         display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
     }
 };
-
-void ReadablePopupMenuScreen::back() {
-    setFirstLoad();
-    Screen::back();
-}

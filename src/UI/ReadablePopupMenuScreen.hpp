@@ -19,24 +19,23 @@ public:
 
         lightingAdjustScreen_.setBackCallback([this]() {
             this->setCurrentScreen(*this);
-            backCallback_();
+            back();
         });
 
         readableSeekScreen_.setBackCallback([this]() {
             this->setCurrentScreen(*this);
-            backCallback_();
+            back();
         });
 
         readableTableOfContentsScreen_.setBackCallback([this]() {
             this->setCurrentScreen(*this);
-            backCallback_();
+            back();
         });
     };
     ~ReadablePopupMenuScreen() override = default;
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
-    void back() override;
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
 
