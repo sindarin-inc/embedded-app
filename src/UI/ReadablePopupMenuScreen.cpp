@@ -29,6 +29,7 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
         unarchiveMenuItemView_->setHidden(true);
     }
     popupMenuView_.setNeedsLayout();
+    setFirstLoad();
 }
 
 void ReadablePopupMenuScreen::addMenuItem(const MenuItem &newItem) {
