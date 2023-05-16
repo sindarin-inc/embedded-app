@@ -1365,17 +1365,24 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // Check if we left-off on a readable and if so, reload that readable by default
         log_d("Attempting to find readable: %s", currentReadable.value().c_str());
         // If we previously had a readable loaded, show that same readable by default
-
-        auto it =
+        auto booksIterator =
             std::find_if(readables.begin(), readables.end(), [&currentReadable](const Readable &x) {
                 return currentReadable == x.uuid;
             });
-        if (it != readables.end()) {
+        auto articlesIterator =
+            std::find_if(articles.begin(), articles.end(), [&currentReadable](const Readable &x) {
+                return currentReadable == x.uuid;
+            });
+        if (booksIterator != readables.end() || articlesIterator != articles.end()) {
+            auto it = (booksIterator != readables.end()) ? booksIterator : articlesIterator;
             auto readableScreen = createReadableScreen(*it);
             this->display_->setFont(this->display_->style.getFontFamily().readableFont);
             log_i("Setting Readable Screen on boot in %.0f ms", esp_timer_get_time() / 1000.0f);
             this->setCurrentScreen(*readableScreen);
             log_i("Resuming readable %s at place %" PRIu32, (*it).title.c_str(), (*it).place);
+            if (articlesIterator != articles.end()) {
+                mainMenu->setTabToArticles();
+            }
         } else {
             // Assume this readable has gone away (or changed from id to uuid)
             prefs_.lastReadableId.remove();

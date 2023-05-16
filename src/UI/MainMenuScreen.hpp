@@ -27,6 +27,7 @@ public:
 
     void addSubMenu(Menu *newSubMenu);
 
+    void setTabToArticles() { currentSelection_ = 1; }
     void setTabToLast() { currentSelection_ = subMenus_.size() - 1; }
 
 protected:
