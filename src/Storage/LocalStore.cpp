@@ -66,7 +66,7 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
 
     for (JsonVariant v : readablesJson) {
         SpiramAllocator<Readable> allocator;
-        std::shared_ptr<Readable> readable(allocator.allocateShared(1));
+        std::shared_ptr<Readable> readable(allocator.allocateShared());
 
         if (!readable->fromJson(v.as<JsonObject>())) {
             log_e("Failed to parse Readable");

@@ -8,7 +8,7 @@ class UserReadable : JsonSerializable {
 public:
     UserReadable() {
         SpiramAllocator<Readable> allocator;
-        readable = allocator.allocateShared(1);
+        readable = allocator.allocateShared();
     };
     ~UserReadable() override = default;
 
