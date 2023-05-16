@@ -82,7 +82,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     ibmf75.load((ibmf_defs::MemoryPtr)fontsList[0].content, fontsList[0].length);
 
     auto createReadableScreen = [this, display, mainMenu, &fileSystem, &lightingController,
-                                 &localStore](ReadablePtr readable) -> ReadableScreen * {
+                                 &localStore](const ReadablePtr &readable) -> ReadableScreen * {
         // TODO: Would be better to not allocate / delete these all the time
 
         std::shared_ptr<RendererStream> stream;
@@ -145,8 +145,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     // Bible hack (to show off if we wanted to have different "apps" that had different behavior.
     // For now, it's just the same as a regular book.)
-    auto it = std::find_if(readables.begin(), readables.end(),
-                           [](ReadablePtr x) { return (x->title == "Psalms and Proverbs"); });
+    auto it = std::find_if(readables.begin(), readables.end(), [](const ReadablePtr &x) {
+        return (x->title == "Psalms and Proverbs");
+    });
     if (it == readables.end()) {
         log_d("Could not find readable: %s", "Psalms and Proverbs");
     } else {
@@ -154,8 +155,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         log_d("Found readable: %s", it->get()->title.c_str());
     }
 
-    it = std::find_if(readables.begin(), readables.end(),
-                      [](ReadablePtr x) { return (x->title.compare("New Testament") == 0); });
+    it = std::find_if(readables.begin(), readables.end(), [](const ReadablePtr &x) {
+        return (x->title.compare("New Testament") == 0);
+    });
     if (it == readables.end()) {
         log_d("Could not find readable: %s", "New Testament");
     } else {
@@ -163,8 +165,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         log_d("Found readable: %s", it->get()->title.c_str());
     }
 
-    it = std::find_if(readables.begin(), readables.end(),
-                      [](ReadablePtr x) { return (x->title.compare("Old Testament") == 0); });
+    it = std::find_if(readables.begin(), readables.end(), [](const ReadablePtr &x) {
+        return (x->title.compare("Old Testament") == 0);
+    });
     if (it == readables.end()) {
         log_d("Could not find readable: %s", "Old Testament");
     } else {
@@ -173,8 +176,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     bool hasLastQuestion = false;
-    it = std::find_if(readables.begin(), readables.end(),
-                      [](ReadablePtr x) { return (x->title.compare("The Last Question") == 0); });
+    it = std::find_if(readables.begin(), readables.end(), [](const ReadablePtr &x) {
+        return (x->title.compare("The Last Question") == 0);
+    });
     if (it == readables.end()) {
         log_d("Could not find readable: %s, not enabling CES or EMC modes", "The Last Question");
     } else {
@@ -238,7 +242,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     SHOW_HEAP();
 
-    for (auto r : readables) {
+    for (const auto &r : readables) {
         bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
         auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
         // Bible books go in their own menu / app
@@ -301,7 +305,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }));
     }
 
-    for (auto r : articles) {
+    for (const auto &r : articles) {
         bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
         auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
 
@@ -346,7 +350,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     if (!prefs_.noBible.get().value_or(false) && (oldTestament || newTestament || psalmsProverbs)) {
         auto bibleMenu = new Menu(mainMenu->getMyStyle(), "Bible");
 
-        for (auto r : readables) {
+        for (const auto &r : readables) {
             bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
             auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
             if (r->title == "Psalms and Proverbs" || r->title == "New Testament" ||
@@ -1310,7 +1314,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         // reset prefs for of The Last Question readable
         log_d("Starting CES mode readable load");
-        auto it = std::find_if(readables.begin(), readables.end(), [](ReadablePtr x) {
+        auto it = std::find_if(readables.begin(), readables.end(), [](const ReadablePtr &x) {
             return (x->title.compare("The Last Question") == 0);
         });
         if (it == readables.end()) {
@@ -1330,7 +1334,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         this->setCurrentScreen(*cesScreen);
     } else if (prefs_.emcMode.get().value_or(false)) {
         log_d("Starting EMC mode readable reading turn page every 30s and content sync every 60s");
-        auto it = std::find_if(readables.begin(), readables.end(), [](ReadablePtr x) {
+        auto it = std::find_if(readables.begin(), readables.end(), [](const ReadablePtr &x) {
             return (x->title.compare("The Last Question") == 0);
         });
         if (it == readables.end()) {
@@ -1347,9 +1351,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         log_d("Attempting to find readable: %s", currentReadable.value().c_str());
         // If we previously had a readable loaded, show that same readable by default
 
-        auto it =
-            std::find_if(readables.begin(), readables.end(),
-                         [&currentReadable](ReadablePtr x) { return currentReadable == x->uuid; });
+        auto it = std::find_if(readables.begin(), readables.end(),
+                               [&currentReadable](const ReadablePtr &x) {
+            return currentReadable == x->uuid;
+        });
         if (it != readables.end()) {
             auto readableScreen = createReadableScreen(*it);
             this->display_->setFont(this->display_->style.getFontFamily().readableFont);

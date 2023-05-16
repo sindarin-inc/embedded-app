@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "Models/Readable.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
@@ -8,7 +10,7 @@
 class ReadableSeekScreen : public Screen {
 public:
     ReadableSeekScreen(PreferencesStore &prefs, ReadablePtr readable, Renderer &renderer)
-        : Screen(), prefs_(prefs), readable_(readable), renderer_(renderer) {}
+        : Screen(), prefs_(prefs), readable_(std::move(std::move(readable))), renderer_(renderer) {}
 
     void processCommand(RemoteCommand command) override;
     void render(DisplaySystem &display) override;

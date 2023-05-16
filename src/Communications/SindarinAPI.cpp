@@ -152,7 +152,7 @@ auto SindarinAPI::checkFirmware(FirmwareResponse *resp) -> int {
     return httpCode;
 }
 
-auto SindarinAPI::downloadReadable(ReadablePtr readable, FileSystem &fileSystem,
+auto SindarinAPI::downloadReadable(const ReadablePtr &readable, FileSystem &fileSystem,
                                    const std::string &path,
                                    const std::function<void(int percentage)> &progressCallback)
     -> bool {

@@ -9,8 +9,9 @@
 class ReadablePopupMenuScreen : public ContainerScreen, public View, public Menu {
 
 public:
-    ReadablePopupMenuScreen(DisplaySystem &display, PreferencesStore &prefs, ReadablePtr readable,
-                            LightingController &lightingController, Renderer &renderer)
+    ReadablePopupMenuScreen(DisplaySystem &display, PreferencesStore &prefs,
+                            const ReadablePtr &readable, LightingController &lightingController,
+                            Renderer &renderer)
         : display_(display), prefs_(prefs), readable_(readable), renderer_(renderer),
           popupMenuView_(display), lightingAdjustScreen_(display, prefs, lightingController),
           readableSeekScreen_(prefs, readable, renderer),
