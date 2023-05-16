@@ -17,6 +17,7 @@ typedef enum {
     WIFI_POWER_18_5dBm = 74,   // 18.5dBm
     WIFI_POWER_17dBm = 68,     // 17dBm
     WIFI_POWER_15dBm = 60,     // 15dBm
+    WIFI_POWER_14_5dBm = 58,   // 14.5dBm
     WIFI_POWER_13dBm = 52,     // 13dBm
     WIFI_POWER_11dBm = 44,     // 11dBm
     WIFI_POWER_8_5dBm = 34,    // 8.5dBm

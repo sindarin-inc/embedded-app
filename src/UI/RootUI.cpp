@@ -1138,8 +1138,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             switch (power) {
             case WIFI_POWER_19_5dBm:
                 return "Max (19.5dBm)";
-            case WIFI_POWER_17dBm:
-                return "High (17dBm)";
+            case WIFI_POWER_14_5dBm:
+                return "High (14.5dBm)";
             case WIFI_POWER_11dBm:
                 return "Medium (11dBm)";
             case WIFI_POWER_5dBm:
@@ -1163,9 +1163,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             WiFi::getInstance().setWiFiPower(WIFI_POWER_19_5dBm);
             confirmMessage(WIFI_POWER_19_5dBm);
         }));
-        wifiPowerMenu->addMenuItem(MenuItem("High (17dBm)", [confirmMessage]() {
-            WiFi::getInstance().setWiFiPower(WIFI_POWER_17dBm);
-            confirmMessage(WIFI_POWER_17dBm);
+        wifiPowerMenu->addMenuItem(MenuItem("High (14.5dBm)", [confirmMessage]() {
+            WiFi::getInstance().setWiFiPower(WIFI_POWER_14_5dBm);
+            confirmMessage(WIFI_POWER_14_5dBm);
         }));
         wifiPowerMenu->addMenuItem(MenuItem("Medium (11dBm)", [confirmMessage]() {
             WiFi::getInstance().setWiFiPower(WIFI_POWER_11dBm);
@@ -1182,7 +1182,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         int menuIndex = 0;
         switch (WiFi::getInstance().getWiFiPower()) {
-        case WIFI_POWER_17dBm:
+        case WIFI_POWER_14_5dBm:
             menuIndex = 1;
             break;
         case WIFI_POWER_11dBm:

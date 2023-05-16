@@ -394,7 +394,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 
     WiFi::getInstance().setWiFiPower(
-        (wifi_power_t)prefs.wifiPower.get().value_or(WIFI_POWER_17dBm));
+        (wifi_power_t)prefs.wifiPower.get().value_or(WIFI_POWER_14_5dBm));
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
     if (!bleManager->startAdvertisingIfNecessary()) {
