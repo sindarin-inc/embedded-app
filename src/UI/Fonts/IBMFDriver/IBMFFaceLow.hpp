@@ -220,7 +220,7 @@ public:
         uint8_t firstIdxLeft = origin - i2.verticalOffset;
         uint8_t firstIdxRight = origin - i1.verticalOffset;
         int8_t length = std::min((int8_t(i1.bitmapHeight) - int8_t(firstIdxLeft)),
-                            (int8_t(i2.bitmapHeight) - int8_t(firstIdxRight)));
+                                 (int8_t(i2.bitmapHeight) - int8_t(firstIdxRight)));
         uint8_t firstIdx = std::max(firstIdxLeft, firstIdxRight);
 
         FIX32 kerning = 0;
@@ -251,7 +251,7 @@ public:
 
         // hight of significant parts of dist arrays
         int8_t hight = origin + std::max((int8_t(i1.bitmapHeight) - i1.verticalOffset),
-                                    (int8_t(i2.bitmapHeight) - i2.verticalOffset));
+                                         (int8_t(i2.bitmapHeight) - i2.verticalOffset));
 
         // distance computation for left and right characters
         auto distLeft = std::shared_ptr<FIX32[]>(new FIX32[hight]);
@@ -517,7 +517,7 @@ public:
         // to have between characters), the size of the character and the normal distance that
         // will be used by the writing algorithm
         kerning = (-std::min(kerning - MAKE_INT_FIXED(KERNING_SIZE + addedWildcard),
-                        MAKE_INT_FIXED(i2.bitmapWidth))) -
+                             MAKE_INT_FIXED(i2.bitmapWidth))) -
                   MAKE_INT_FIXED(normalDistance);
 
         if (glyph1.bitmap.pixels != nullptr) {
