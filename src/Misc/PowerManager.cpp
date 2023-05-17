@@ -90,6 +90,7 @@ void PowerManager::wakeupCheck(SolClock &clock) {
             if (USBConnected()) {
                 log_i("USB connected, battery level: %d%%", int(percentage));
             } else if (ulp_waitForClose) {
+                ulp_waitForClose = 0;
                 // If the temples were never closed and usb just disconnected, let's power up
                 log_i("Temple is still open on USB disconnect, turning on");
                 break;
