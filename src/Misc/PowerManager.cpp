@@ -16,6 +16,8 @@
 
 #if !SIMULATOR
 #include "FunctionalInterrupt.h"
+#else
+uint32_t ulp_waitForClose;
 #endif
 
 // These are also in build/esp-idf/src/ulp_src/ulp_src.h but including that file throws a lot of
