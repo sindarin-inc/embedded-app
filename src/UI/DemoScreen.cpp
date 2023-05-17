@@ -758,14 +758,14 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_71_bits, mani_71_width,
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_71_BITS, mani_71_width,
                             mani_47_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_72_bits, mani_72_width,
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_72_BITS, mani_72_width,
                             mani_72_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 500;
