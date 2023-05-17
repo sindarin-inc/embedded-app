@@ -67,6 +67,8 @@
 #include "UI/Bitmaps/mani-61.hpp"
 #include "UI/Bitmaps/mani-62.hpp"
 #include "UI/Bitmaps/mani-7.hpp"
+#include "UI/Bitmaps/mani-71.hpp"
+#include "UI/Bitmaps/mani-72.hpp"
 #include "UI/Bitmaps/mani-8.hpp"
 #include "UI/Bitmaps/mani-9.hpp"
 #include "UI/Bitmaps/phone1.hpp"
@@ -756,15 +758,15 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_47_BITS, mani_47_width,
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_71_bits, mani_71_width,
                             mani_47_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_48_BITS, mani_48_width,
-                            mani_48_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), mani_72_bits, mani_72_width,
+                            mani_72_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 500;
     });
