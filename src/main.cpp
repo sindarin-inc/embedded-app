@@ -28,6 +28,7 @@
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/ChargingScreen.hpp"
+#include "UI/OverTempScreen.hpp"
 #include "UI/RootUI.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -229,6 +230,10 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     powerManager.setStateChangeCallback([&showChargingScreen](PowerState state) {
         if (state == PowerState::ActiveUSBCharging) {
             showChargingScreen();
+        } else if (state == PowerState::ActiveOverTemp) {
+            auto overTempScreen = new OverTempScreen();
+            rootUi.setCurrentScreen(*overTempScreen);
+            UIInnerLoop(RemoteCommand::NONE);
         }
     });
 

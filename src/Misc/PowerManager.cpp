@@ -13,6 +13,7 @@
 
 #include "Misc/Dispatch.hpp"
 #include "Platform.hpp"
+#include "Sensors/TempleAngle.hpp"
 
 #if !SIMULATOR
 #include "FunctionalInterrupt.h"
@@ -133,11 +134,12 @@ void PowerManager::wakeupCheck(SolClock &clock) {
     if (state_ == PowerState::Booting) {
         // If the temple is closed but we're active booting, probably something wrong happened (like
         // a crash during content sync). Just go back to sleep.
-        bool open = true;
 #if USE_MMC5603
-        open = templeCloseSensor_.isTempleOpen();
+        templeOpen_ = isTempleOpen();
+#else
+        templeOpen_ = true;
 #endif
-        if (!open) {
+        if (!templeOpen_) {
             log_w("Temple is closed at boot, going back to sleep");
             ulpDeepSleep(SleepReason::TempleClosedAtBoot);
         }
@@ -233,29 +235,6 @@ auto PowerManager::begin() -> esp_err_t {
 #endif
 #endif
 
-    templeCloseSensor_.setCallback([this](bool open) {
-        switch (state_) {
-        case PowerState::Active:
-            if (!open) {
-                lightingController_.disableLighting(200);
-                // Delay to see the fade.
-                // TODO: Use a callback instead
-                Delay(200);
-                ulpDeepSleep(SleepReason::TempleClosed);
-            }
-            break;
-        case PowerState::Background:
-            if (open) {
-                log_i("Temples opened while in Background! Going to Active");
-                // Temples were opened while in the background! Wake up with a reboot.
-                reboot();
-            }
-            break;
-        default:
-            break;
-        };
-    });
-
     return err;
 }
 
@@ -269,8 +248,56 @@ void PowerManager::loop() {
     battery.loop();
     checkUsb();
 #if USE_MMC5603
-    templeCloseSensor_.checkTemple();
+    bool templeOpen = isTempleOpen();
+    if (templeOpen_ != templeOpen) {
+        log_i("Temple is %s", templeOpen ? "open" : "closed");
+        switch (state_) {
+        case PowerState::Active:
+            if (!templeOpen) {
+                lightingController_.disableLighting(200);
+                // Delay to see the fade.
+                // TODO: Use a callback instead
+                Delay(200);
+                ulpDeepSleep(SleepReason::TempleClosed);
+            }
+            break;
+        case PowerState::Background:
+            if (templeOpen) {
+                log_i("Temples opened while in Background! Going to Active");
+                // Temples were opened while in the background! Wake up with a reboot.
+                reboot();
+            }
+            break;
+        default:
+            break;
+        };
+    }
+    templeOpen_ = templeOpen;
+
+    // Check the temperature
+    if (state_ != PowerState::ActiveOverTemp &&
+        magSensor_.getTemperature() > MAX_OPERATIONAL_TEMPERATURE) {
+        log_e("Temperature is too high! Going to sleep.");
+        state_ = PowerState::ActiveOverTemp;
+        inactivityTimer_.setTimeoutMs(5 * 1000);
+        DispatchGetUiQueue()->dispatch([this]() {
+            if (stateChangeCallback_ != nullptr) {
+                stateChangeCallback_(state_);
+            }
+        });
+    }
+
 #endif
+}
+
+auto PowerManager::isTempleOpen() -> bool {
+    Xyz8bit magReading;
+    auto success = magSensor_.readXZ8Bit(magReading);
+    if (!success) {
+        log_e("Failed to read magnetometer");
+        return false;
+    }
+    return IsTempleOpen(magReading.x, magReading.z);
 }
 
 void PowerManager::checkUsb() {
@@ -412,7 +439,7 @@ void PowerManager::waitForQueuesThenDeepSleep(SleepReason reason) {
             PreferencesStore::syncReason = SyncReason::OnClose;
             PreferencesStore::nextSyncTime = SolClock::getInstance().getEpochTime() + 30;
             log_d("Sync-on-close scheduled for %" PRIu64, PreferencesStore::nextSyncTime);
-        } else if (reason == SleepReason::Inactivity) {
+        } else if (reason == SleepReason::Inactivity && state_ != PowerState::ActiveOverTemp) {
             PreferencesStore::syncReason = SyncReason::OnInactivity;
             PreferencesStore::nextSyncTime = SolClock::getInstance().getEpochTime() + 30;
             log_d("Sync-after-inactivity scheduled for %" PRIu64, PreferencesStore::nextSyncTime);
