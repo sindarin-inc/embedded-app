@@ -134,11 +134,7 @@ void PowerManager::wakeupCheck(SolClock &clock) {
     if (state_ == PowerState::Booting) {
         // If the temple is closed but we're active booting, probably something wrong happened (like
         // a crash during content sync). Just go back to sleep.
-#if USE_MMC5603
         templeOpen_ = isTempleOpen();
-#else
-        templeOpen_ = true;
-#endif
         if (!templeOpen_) {
             log_w("Temple is closed at boot, going back to sleep");
             ulpDeepSleep(SleepReason::TempleClosedAtBoot);
@@ -292,12 +288,17 @@ void PowerManager::loop() {
 
 auto PowerManager::isTempleOpen() -> bool {
     Xyz8bit magReading;
+#if USE_MMC5603
+
     auto success = magSensor_.readXZ8Bit(magReading);
     if (!success) {
         log_e("Failed to read magnetometer");
         return false;
     }
     return IsTempleOpen(magReading.x, magReading.z);
+#else
+    return true;
+#endif
 }
 
 void PowerManager::checkUsb() {

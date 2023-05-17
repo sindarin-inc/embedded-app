@@ -6,7 +6,7 @@
 #include "Misc/InactivityTimer.hpp"
 #include "Misc/SolClock.hpp"
 #include "Sensors/LightingController.hpp"
-#include "Sensors/MMC5603.hpp"
+#include "Sensors/Mmc5603.hpp"
 #include "Storage/PreferencesStore.hpp"
 
 #if !DISABLE_POWER_MANAGEMENT
