@@ -139,41 +139,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto currentReadable = prefs_.lastReadableId.get();
 
-    ReadableScreen *psalmsProverbs = nullptr;
-    ReadableScreen *newTestament = nullptr;
-    ReadableScreen *oldTestament = nullptr;
-
-    // Bible hack (to show off if we wanted to have different "apps" that had different behavior.
-    // For now, it's just the same as a regular book.)
-    auto it = std::find_if(readables.begin(), readables.end(),
-                           [](const Readable &x) { return (x.title == "Psalms and Proverbs"); });
-    if (it == readables.end()) {
-        log_d("Could not find readable: %s", "Psalms and Proverbs");
-    } else {
-        psalmsProverbs = createReadableScreen(*it);
-        log_d("Found readable: %s", (*it).title.c_str());
-    }
-
-    it = std::find_if(readables.begin(), readables.end(),
-                      [](const Readable &x) { return (x.title.compare("New Testament") == 0); });
-    if (it == readables.end()) {
-        log_d("Could not find readable: %s", "New Testament");
-    } else {
-        newTestament = createReadableScreen(*it);
-        log_d("Found readable: %s", (*it).title.c_str());
-    }
-
-    it = std::find_if(readables.begin(), readables.end(),
-                      [](const Readable &x) { return (x.title.compare("Old Testament") == 0); });
-    if (it == readables.end()) {
-        log_d("Could not find readable: %s", "Old Testament");
-    } else {
-        oldTestament = createReadableScreen(*it);
-        log_d("Found readable: %s", (*it).title.c_str());
-    }
-
     bool hasLastQuestion = false;
-    it = std::find_if(readables.begin(), readables.end(), [](const Readable &x) {
+    auto it = std::find_if(readables.begin(), readables.end(), [](const Readable &x) {
         return (x.title.compare("The Last Question") == 0);
     });
     if (it == readables.end()) {
@@ -239,12 +206,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     SHOW_HEAP();
 
+    auto isBible = [](const Readable &r) -> bool {
+        return (r.title == "Psalms and Proverbs" || r.title == "New Testament" ||
+                r.title == "Old Testament" || r.title == "Torah");
+    };
+
     for (const Readable &r : readables) {
         bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
         auto title = StringFormat("%s%s", archived ? "Archived: " : "", r.title.c_str());
         // Bible books go in their own menu / app
-        if (r.title == "Psalms and Proverbs" || r.title == "New Testament" ||
-            r.title == "Old Testament") {
+        if (!prefs_.noBible.get().value_or(false) && isBible(r)) {
             continue;
         }
 
@@ -344,14 +315,17 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         mainMenu->addSubMenu(pocketMenu);
     }
 
-    if (!prefs_.noBible.get().value_or(false) && (oldTestament || newTestament || psalmsProverbs)) {
+    // Bible hack (to show off if we wanted to have different "apps" that had different
+    // behavior. For now, it's just the same as a regular book.)
+    it = std::find_if(readables.begin(), readables.end(),
+                      [isBible](const Readable &x) { return isBible(x); });
+    auto hasBible = it != readables.end();
+    if (!prefs_.noBible.get().value_or(false) && hasBible) {
         auto bibleMenu = new Menu(mainMenu->getMyStyle(), "Bible");
-
         for (const Readable &r : readables) {
-            bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
-            auto title = StringFormat("%s%s", archived ? "Archived: " : "", r.title.c_str());
-            if (r.title == "Psalms and Proverbs" || r.title == "New Testament" ||
-                r.title == "Old Testament") {
+            if (isBible(r)) {
+                bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
+                auto title = StringFormat("%s%s", archived ? "Archived: " : "", r.title.c_str());
                 bibleMenu->addMenuItem(MenuItem(title, [this, &r, createReadableScreen, display,
                                                         mainMenu]() {
                     auto readableScreen = createReadableScreen(r);
@@ -1382,6 +1356,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             log_i("Resuming readable %s at place %" PRIu32, (*it).title.c_str(), (*it).place);
             if (articlesIterator != articles.end()) {
                 mainMenu->setTabToArticles();
+            } else if (isBible(*it)) {
+                mainMenu->setTabToBible();
             }
         } else {
             // Assume this readable has gone away (or changed from id to uuid)
