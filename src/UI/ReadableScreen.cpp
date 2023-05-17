@@ -178,12 +178,6 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
-    // Ideally this would be handled as a part of the Screen class, but it's late and Ben and I
-    // can't quite figure out how to make that work right. See reverted commit f9c797aa from #551
-    if (!needsRerender_) {
-        return;
-    }
-
     setFrame(
         {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
          {display.defaultScreenWidth - 2 * display.defaultXPadding,
@@ -297,10 +291,11 @@ void ReadableScreen::render(DisplaySystem &display) {
     updateBookmarkStatus();
 
     if (inBookmark_) {
+        int leftSide = display.xAbsolute(display.xAbsoluteMax() - 25);
         log_d("Drawing bookmark!");
-        display.fillRect(display.width() + 1, display.yAbsolute(0), 13, 55, display.fg);
-        display.fillTriangle(display.width() + 1, display.yAbsolute(55), display.width() + 13,
-                             display.yAbsolute(55), display.width() + 7, display.yAbsolute(50),
+        display.fillRect(leftSide + 1, display.yAbsolute(0), 13, 55, display.fg);
+        display.fillTriangle(leftSide + 1, display.yAbsolute(55), leftSide + 13,
+                             display.yAbsolute(55), leftSide + 7, display.yAbsolute(50),
                              display.bg);
     }
 
@@ -367,8 +362,6 @@ void ReadableScreen::render(DisplaySystem &display) {
     // Reset the lastArrowPress so we don't show it again until another key is pressed (for
     // autopilot mostly)
     lastArrowPress_ = REMOTE_NONE;
-
-    needsRerender_ = false;
 }
 
 void ReadableScreen::incrementReadingTime() {

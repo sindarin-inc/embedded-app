@@ -33,6 +33,7 @@
 #include "UI/FirmwareUpdateScreen.hpp"
 #include "UI/Fonts/Fonts.hpp"
 #include "UI/LayoutTestScreen.hpp"
+#include "UI/LegalScreen.hpp"
 #include "UI/LightingAdjustScreen.hpp"
 #include "UI/LineMenuScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
@@ -620,9 +621,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 
     if (prefs_.pageTransitionArrows.get().value_or(false)) {
-        experimentalSettingsMenu->setToggleLastItem(false);
-    } else {
         experimentalSettingsMenu->setToggleLastItem(true);
+    } else {
+        experimentalSettingsMenu->setToggleLastItem(false);
     }
 
     experimentalSettingsMenu->addMenuItem(MenuItem("Upload Crashes on Sync", [this]() {
@@ -858,34 +859,24 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         });
     }));
 
-    systemSettingsMenu->addMenuItem(MenuItem("Tutorials", [systemSettingsMenu, display]() {
+    systemSettingsMenu->addMenuItem(MenuItem("Legal & Regulatory",
+                                             [this, systemSettingsMenu, display]() {
+        auto legalScreen = new LegalScreen(*display, prefs_, power_);
+        this->setCurrentScreen(*legalScreen);
+        legalScreen->setBackCallback([this, legalScreen, systemSettingsMenu]() {
+            systemSettingsMenu->setFirstLoad();
+            display_->clearDisplay();
+            setCurrentScreen(*systemSettingsMenu);
+            delete legalScreen;
+        });
+    }));
+
+    systemSettingsMenu->addMenuItem(MenuItem("First Time Setup",
+                                             [this, systemSettingsMenu, display]() {
+        prefs_.demoMode.set(true);
         systemSettingsMenu->showTemporaryMessage(*display,
-                                                 "Someday we'll implement amazing tutorials!");
-    }));
-
-    systemSettingsMenu->addMenuItem(MenuItem("Legal & Regulatory", [systemSettingsMenu, display]() {
-        systemSettingsMenu->showTemporaryMessage(
-            *display, "FBACL: LISTED UL 62368-1, CAN/CSA C22,2 NO., 62368-1, A0049\n FCC IDs: "
-                      "2BAHC-READER1, 2BAHC-PT1\nIC: 30424");
-    }));
-
-    systemSettingsMenu->addMenuItem(MenuItem("Set Clock", [this, display, systemSettingsMenu]() {
-        SolClock &clock = SolClock::getInstance();
-
-        systemSettingsMenu->showTemporaryMessage(*display, "Setting the Clock", 200, false);
-        systemSettingsMenu->setExtraText(clock.ianaTimezoneString());
-
-        WiFi::getInstance().connectWiFiFromSettings();
-        if (!WiFi::getInstance().connected()) {
-            log_e("Couldn't connect to wifi, not setting clock");
-        } else {
-            log_i("Setting time from internet");
-            clock.setClockTimeFromInternet();
-            WiFi::getInstance().disconnectWiFi();
-        }
-
-        systemSettingsMenu->setFirstLoad();
-        setCurrentScreen(*systemSettingsMenu);
+                                                 "Turning on first time setup and restarting.");
+        power_.reboot();
     }));
 
 #if USE_TURN_TOUCH_REMOTE
@@ -915,16 +906,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             contentSyncScreen->begin();
         }));
 
-    debugSettingsMenu->addMenuItem(MenuItem("Turn on Onboarding Mode",
-                                            [this, debugSettingsMenu, display]() {
-        log_d("Entering calibration");
-        prefs_.demoMode.set(true);
-
-        debugSettingsMenu->showTemporaryMessage(*display, "Onboarding mode on! Resetting...", 2000,
-                                                false);
-        power_.reboot();
-    }));
-
     if (hasLastQuestion) {
         debugSettingsMenu->addMenuItem(MenuItem("Turn on Demo Mode",
                                                 [this, debugSettingsMenu, display]() {
@@ -945,8 +926,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     systemSettingsMenu->addMenuItem(MenuItem("Clear All Content and Restart",
                                              [this, systemSettingsMenu, display, &localStore]() {
-        localStore.deleteReadables();
-        localStore.deleteArticles();
+        localStore.deleteReadables(false);
+        localStore.deleteArticles(false);
         systemSettingsMenu->showTemporaryMessage(*display, "Content cleared.");
         Delay(1500);
         this->power_.reboot();

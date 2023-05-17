@@ -55,9 +55,6 @@ void AboutScreen::drawInRect(Rect rect) {
 }
 
 void AboutScreen::render(DisplaySystem &display) {
-    if (!needsRerender_) {
-        return;
-    }
     setNeedsLayout();
     setFrame(
         {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
@@ -65,7 +62,6 @@ void AboutScreen::render(DisplaySystem &display) {
           display.defaultScreenHeight - 2 * display.defaultYPadding}});
     draw();
     display.updateDisplay();
-    needsRerender_ = false;
 }
 
 void AboutScreen::processCommand(RemoteCommand command) {

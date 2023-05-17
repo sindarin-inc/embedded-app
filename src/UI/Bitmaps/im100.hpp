@@ -1,3 +1,5 @@
+#pragma once
+
 #define im100_width 200
 #define im100_height 61
 static const unsigned char IM100_BITS[] = {

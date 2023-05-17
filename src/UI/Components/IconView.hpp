@@ -11,6 +11,13 @@ public:
 
     auto layout(LayoutContext &context, Size size) -> Size override { return {width_, height_}; }
 
+    void setIcon(const unsigned char *iconBits, int width, int height) {
+        iconBits_ = iconBits;
+        width_ = width;
+        height_ = height;
+        setNeedsLayout();
+    }
+
     void drawInRect(Rect rect) override {
         display_.drawXBitmap(rect.origin.x, rect.origin.y, iconBits_, width_, height_, display_.fg);
     }
