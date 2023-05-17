@@ -55,6 +55,10 @@ public:
 
     auto state() -> PowerState { return state_; }
 
+    void setStateChangeCallback(std::function<void(PowerState)> callback) {
+        stateChangeCallback_ = callback;
+    }
+
     // Power lifecycle functions
     void reboot();
     void ulpDeepSleep(SleepReason reason = SleepReason::Unspecified);
@@ -86,6 +90,7 @@ public:
 protected:
     PreferencesStore &prefs_;
     PowerState state_ = PowerState::Booting;
+    std::function<void(PowerState)> stateChangeCallback_;
     LightingController &lightingController_;
     InactivityTimer inactivityTimer_;
     TempleCloseSensor templeCloseSensor_;

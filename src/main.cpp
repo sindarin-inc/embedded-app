@@ -219,6 +219,19 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         bootErrors.push_back({.type = BootError::Type::LocalStore});
     }
 
+    auto showChargingScreen = []() {
+        lightingController.setOverrideValuePercent(100);
+        auto chargingScreen = new ChargingScreen(prefs);
+        rootUi.setCurrentScreen(*chargingScreen);
+        UIInnerLoop(RemoteCommand::NONE);
+    };
+
+    powerManager.setStateChangeCallback([&showChargingScreen](PowerState state) {
+        if (state == PowerState::ActiveUSBCharging) {
+            showChargingScreen();
+        }
+    });
+
     if (powerManager.state() == PowerState::Background) {
         log_i("Booting into PowerState::Background, running a content sync");
         // Spin up a task just to check the temple and battery
@@ -420,17 +433,15 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     DispatchGetUiQueue()->dispatch([]() { lightingController.checkAmbientLight(300, 100); });
 
     // Render the first thing
-    DispatchGetUiQueue()->dispatch([]() {
+    DispatchGetUiQueue()->dispatch([showChargingScreen]() {
         SHOW_HEAP();
         if (powerManager.state() == PowerState::ActiveUSBCharging) {
-            lightingController.setOverrideValuePercent(100);
-            auto chargingScreen = new ChargingScreen(prefs);
-            rootUi.setCurrentScreen(*chargingScreen);
+            showChargingScreen();
         } else {
             rootUi.setup(&myDisplay, localStore, fileSystem, lightingController);
+            UIInnerLoop(RemoteCommand::NONE);
         }
         SHOW_HEAP();
-        UIInnerLoop(RemoteCommand::NONE);
     });
 
     GoodBootTimer();

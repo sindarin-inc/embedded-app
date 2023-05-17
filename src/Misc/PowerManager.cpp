@@ -89,6 +89,10 @@ void PowerManager::wakeupCheck(SolClock &clock) {
             auto percentage = battery.getBatteryPercentage();
             if (USBConnected()) {
                 log_i("USB connected, battery level: %d%%", int(percentage));
+            } else if (ulp_waitForClose) {
+                // If the temples were never closed and usb just disconnected, let's power up
+                log_i("Temple is still open on USB disconnect, turning on");
+                break;
             }
             // Wait just a little moment so we can flash software if we get stuck
             Delay(1000);
@@ -154,7 +158,8 @@ void PowerManager::wakeupCheck(SolClock &clock) {
 auto PowerManager::begin() -> esp_err_t {
 #if !SIMULATOR
     // If USB is connected, disable operation unless we've disabled this behavior
-    if (USBConnected() && !prefs_.allowUsageWhileCharging.get().value_or(false)) {
+    if (USBConnected() && state_ == PowerState::Active &&
+        !prefs_.allowUsageWhileCharging.get().value_or(false)) {
         log_i("USB connected, switching mode to ActiveUSBCharging");
         state_ = PowerState::ActiveUSBCharging;
     }
@@ -186,7 +191,20 @@ auto PowerManager::begin() -> esp_err_t {
         [this]() {
 #if !DISABLE_POWER_MANAGEMENT
         DispatchGetCore1BackgroundQueue()->dispatch([this]() {
-            if (USBConnected() && pmConfig_.light_sleep_enable == true) {
+            // If USB is connected, disable operation unless we've disabled this behavior
+            if (USBConnected() && !prefs_.allowUsageWhileCharging.get().value_or(false)) {
+                log_i("USB connected, switching to ActiveUSBCharging");
+                state_ = PowerState::ActiveUSBCharging;
+                inactivityTimer_.setTimeoutMs(10 * 1000);
+                DispatchGetUiQueue()->dispatch([this]() {
+                    if (stateChangeCallback_ != nullptr) {
+                        stateChangeCallback_(state_);
+                    }
+                });
+            } else if (!USBConnected() && state_ == PowerState::ActiveUSBCharging) {
+                log_i("USB disconnected, rebooting to Active");
+                reboot();
+            } else if (USBConnected() && pmConfig_.light_sleep_enable == true) {
                 // USB is connected so disable light sleep
                 pmConfig_.light_sleep_enable = false;
                 auto err = esp_pm_configure(&pmConfig_);
