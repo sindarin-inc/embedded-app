@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "Misc/Battery.hpp"
 #include "Misc/InactivityTimer.hpp"
 #include "Misc/SolClock.hpp"
@@ -56,7 +58,7 @@ public:
     auto state() -> PowerState { return state_; }
 
     void setStateChangeCallback(std::function<void(PowerState)> callback) {
-        stateChangeCallback_ = callback;
+        stateChangeCallback_ = std::move(callback);
     }
 
     // Power lifecycle functions
