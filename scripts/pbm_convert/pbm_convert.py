@@ -1,7 +1,12 @@
+import sys
 from os import listdir
 from os.path import isfile, join
 
-bitmap_dir = '../../src/UI/Bitmaps'
+if len(sys.argv) != 2:
+    print("usage: pbm_convert.py <bitmap_header_dir>")
+    exit(1)
+
+bitmap_dir = sys.argv[1]
 bitmaps = [f for f in listdir(bitmap_dir) if isfile(join(bitmap_dir, f))]
 
 fullscreen_dim = 256 * 256
