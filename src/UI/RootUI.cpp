@@ -1295,11 +1295,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     if (inDemo) {
         auto demoScreen = new DemoScreen(*display, prefs_, lightingController);
-        demoScreen->setBackCallback([this, demoScreen, mainMenu, display]() {
-            display->clearDisplay();
-            mainMenu->setFirstLoad();
-            setCurrentScreen(*mainMenu);
-            mainMenu->render(*this->display_);
+        auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_, true);
+        contentSyncScreen->setBackCallback(
+            [this, contentSyncScreen, mainMenu, display]() { power_.reboot(); });
+        demoScreen->setBackCallback([this, demoScreen, mainMenu, contentSyncScreen]() {
+            this->setCurrentScreen(*contentSyncScreen);
+            contentSyncScreen->begin();
             delete demoScreen;
         });
         this->setCurrentScreen(*demoScreen);

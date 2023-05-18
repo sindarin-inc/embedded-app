@@ -789,7 +789,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        drawTripleLine(display, "Download the Sol App", "on your mobile device", "to get started.");
+        drawTripleLine(display, "Download the Sol App", "to get started:", "solreader.com/app");
         std::string message = "Press \ue000 after app setup";
         prefs_.demoMode.remove();
         display.setFont(static_cast<Font *>(&ibmf75Face0));

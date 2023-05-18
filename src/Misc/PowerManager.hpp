@@ -20,6 +20,10 @@ enum class PowerState {
     // Deep sleep with ULP magnetometer and periodic wakeups ~100uA
     // Included for completeness not used in main CPU code currently
     Sleeping,
+    // Forced on (screen lighting enabled and MCU still running) while temples closed
+    // Same as Active but with the inactivity timer disabled and no change until
+    // explictly taken out of this state.
+    ForcedOn,
     // Fully off (deep sleep) ~22uA
     Off,
 };
@@ -50,6 +54,8 @@ public:
     void wakeupCheck(SolClock &clock);
 
     auto begin() -> esp_err_t;
+
+    auto setState(PowerState state) -> void { state_ = state; }
 
     auto state() -> PowerState { return state_; }
 

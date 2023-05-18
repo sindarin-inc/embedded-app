@@ -220,6 +220,8 @@ auto PowerManager::begin() -> esp_err_t {
                 reboot();
             }
             break;
+        // Explicitly don't do anything in the ForcedOn state when temples change.
+        case PowerState::ForcedOn:
         default:
             break;
         };

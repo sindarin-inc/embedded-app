@@ -3,11 +3,36 @@
 #include "Communications/WiFi.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
+#include "Renderers/Renderer.hpp"
+#include "Renderers/RendererStream.hpp"
 
 void ContentSyncScreen::render(DisplaySystem &display) {
     uint16_t x = 0;
     uint16_t y = 0;
 
+    if (firstTime_) {
+        if (!shownFirstTime_) {
+            Renderer firstTimeRenderer_(display);
+
+            // We need to make sure this goes onto the second page because of a bug in the renderer.
+            std::string message =
+                "Give us 2-4 minutes to sync your content for the first time. Take "
+                "off your Sol Reader and close the temples (will turn them off after this "
+                "download).\n\nMaybe go for a walk. Listen to the birds. Dare you leave "
+                "your phone at home?\n\n When you're back, if the displays are dark "
+                "and the LED is off, you're ready to read...\n\nOf course, if you want to stare "
+                "anxiously at the LED in anticipation, by all means. It's exciting!\n\n";
+
+            auto streamFirstTime = std::make_shared<StdStringStream>(message);
+            firstTimeRenderer_.setStream(streamFirstTime);
+            display.setFont(static_cast<Font *>(&ibmf75Face0));
+            firstTimeRenderer_.renderPage(0);
+            display.updateDisplay(DisplaySystem::UpdateType::FULL);
+            shownFirstTime_ = true;
+        }
+        // Only render once in firstTime_ mode
+        return;
+    }
     display_.setFont(display_.style.getFontFamily().settingsFont);
 
     // Re-render based on state
@@ -141,6 +166,18 @@ void ContentSyncScreen::begin() {
         return;
     }
 
+#if !SIMULATOR
+    if (firstTime_) {
+        PowerManager::getInstance().setState(PowerState::ForcedOn);
+    }
+#endif
+
+    // Debug LED so we know what's happening (will be turned off when deep sleep happens)
+    // Only turn on if debug menu is enabled
+    if (firstTime_) {
+        DigitalWrite(BLUE_LED, LED_ON);
+    }
+
     state_.state = ContentSyncState::ConnectingWifi;
     render(display_);
 
@@ -158,15 +195,26 @@ void ContentSyncScreen::begin() {
 #if !SIMULATOR
             if (state.state == ContentSyncState::Synced) {
                 log_d("Content sync done, rebooting");
+                if (firstTime_) {
+                    DigitalWrite(BLUE_LED, LED_OFF);
+                }
                 PowerManager::getInstance().reboot();
             }
 #endif
             if (state.state == ContentSyncState::Failure ||
                 state.state == ContentSyncState::Synced ||
                 state.state == ContentSyncState::AlreadySynced) {
-                log_d("Content sync done, waiting 5 seconds before going back");
-                Delay(5000);
-                back();
+                if (firstTime_) {
+                    // Maybe we want to retry once?
+                    DigitalWrite(BLUE_LED, LED_OFF);
+#if !SIMULATOR
+                    PowerManager::getInstance().reboot();
+#endif
+                } else {
+                    log_d("Content sync done, waiting 5 seconds before going back");
+                    Delay(5000);
+                    back();
+                }
             }
         });
     });
