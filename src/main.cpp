@@ -92,6 +92,8 @@ void PollingLoopTask(void *parameter) {
     for (;;) {
         // check if factory reset button is held down
         if (DigitalRead(FACTORY_RESET_BUTTON) == 0) {
+            // prevent inactivity sleep while button held down
+            powerManager.feedInactivityTimer();
             if (factoryResetStartTimeMs == 0) {
                 factoryResetStartTimeMs = Millis();
             } else if ((Millis() - factoryResetStartTimeMs) > FACTORY_RESET_MS) {
