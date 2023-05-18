@@ -12,6 +12,7 @@ void ContentSyncScreen::render(DisplaySystem &display) {
 
     if (firstTime_) {
         if (!shownFirstTime_) {
+#if 0
             Renderer firstTimeRenderer_(display);
 
             // We need to make sure this goes onto the second page because of a bug in the renderer.
@@ -27,6 +28,7 @@ void ContentSyncScreen::render(DisplaySystem &display) {
             firstTimeRenderer_.setStream(streamFirstTime);
             display.setFont(static_cast<Font *>(&ibmf75Face0));
             firstTimeRenderer_.renderPage(0);
+#endif
             display.updateDisplay(DisplaySystem::UpdateType::FULL);
             shownFirstTime_ = true;
         }
