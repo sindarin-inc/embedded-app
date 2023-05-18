@@ -6,6 +6,9 @@
 #include "Sensors/LightingController.hpp"
 #include "Sensors/TempleCloseSensor.hpp"
 #include "Storage/PreferencesStore.hpp"
+#if EINKET013TT1
+#include "Displays/DisplayEinkET013TT1.hpp"
+#endif
 
 #if !DISABLE_POWER_MANAGEMENT
 #include <esp_pm.h>
@@ -46,8 +49,9 @@ public:
 
     // Power manager initialization need to be as simple as possible
     PowerManager(FileSystem &fileSystem, PreferencesStore &prefs,
-                 LightingController &lightingController)
-        : battery(fileSystem, prefs), prefs_(prefs), lightingController_(lightingController) {}
+                 LightingController &lightingController, DisplaySystem &display)
+        : battery(fileSystem, prefs), prefs_(prefs), lightingController_(lightingController),
+          display_(display) {}
     PowerManager(const PowerManager &) = delete;
 
     // Runs first thing upon startup to figure out what power mode we're in.
@@ -91,6 +95,7 @@ protected:
     PreferencesStore &prefs_;
     PowerState state_ = PowerState::Booting;
     LightingController &lightingController_;
+    DisplaySystem &display_;
     InactivityTimer inactivityTimer_;
     TempleCloseSensor templeCloseSensor_;
 #if !DISABLE_POWER_MANAGEMENT

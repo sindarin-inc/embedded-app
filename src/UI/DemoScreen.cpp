@@ -98,7 +98,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
                 display.xAbsolute(128 - glass_small_left_width / 2),
                 display.yAbsolute(128 - glass_small_left_height / 2 + yOffsetOverall),
                 GLASS_SMALL_LEFT_BITS, glass_small_left_width, glass_small_left_height, display.fg);
-            display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, false,
+            display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, false, 0,
                                   DisplaySystem::UpdateType::FAST, {{0, 0}, {255, 140}});
             nextInterval_ = 500;
             break;
@@ -224,7 +224,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
                 display.yAbsolute(128 - glass_small_right_height / 2 + yOffsetOverall),
                 GLASS_SMALL_RIGHT_BITS, glass_small_right_width, glass_small_right_height,
                 display.fg);
-            display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, false,
+            display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, false, 0,
                                   DisplaySystem::UpdateType::FAST, {{0, 0}, {255, 140}});
             nextInterval_ = 500;
             break;
@@ -350,7 +350,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
                 display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
                 display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall),
                 ARROW_UP_DOWN_BITS, arrow_up_down_width, arrow_up_down_height, display.fg);
-            display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, false,
+            display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, false, 0,
                                   DisplaySystem::UpdateType::FAST, {{0, 0}, {255, 140}});
             nextInterval_ = 500;
             break;
@@ -878,13 +878,13 @@ void DemoScreen::render(DisplaySystem &display) {
     }
 
     if (dropVcom_) {
-        display.setAuxInteger1(-2500);
+        nextVcomNudge_ = -2500;
     } else {
-        display.setAuxInteger1(0);
+        nextVcomNudge_ = 0;
     }
 
     if ((currentScreen_ >= 3) && (currentScreen_ != lambdas_.size() - 1)) {
-        display.updateDisplay(nextUpdateType_);
+        display.updateDisplay(nextUpdateType_, false, nextVcomNudge_);
         // Must stop the timer because ChangePeriod starts it.
         xTimerStop(DisplaySystem::animationTimer, 0);
         // Move to the next animation
@@ -898,7 +898,7 @@ void DemoScreen::render(DisplaySystem &display) {
         currentSubScreen_++;
     } else {
         // App setup, last screen. Don't advance. Just wait for the button press.
-        display.updateDisplay(nextUpdateType_);
+        display.updateDisplay(nextUpdateType_, true, nextVcomNudge_);
     }
 }
 

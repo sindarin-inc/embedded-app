@@ -210,6 +210,8 @@ auto PowerManager::begin() -> esp_err_t {
                 // Delay to see the fade.
                 // TODO: Use a callback instead
                 Delay(200);
+                display_.clearDisplay();
+                display_.updateDisplay();
                 ulpDeepSleep(SleepReason::TempleClosed);
             }
             break;
