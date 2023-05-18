@@ -1308,7 +1308,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }
         });
 
-        demoScreen->setBackCallback([this, demoScreen, mainMenu, contentSyncScreen]() {
+        demoScreen->setBackCallback([this, demoScreen, contentSyncScreen]() {
             this->setCurrentScreen(*contentSyncScreen);
             contentSyncScreen->begin();
             delete demoScreen;
