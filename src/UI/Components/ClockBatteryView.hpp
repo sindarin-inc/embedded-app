@@ -55,27 +55,27 @@ public:
         auto percent = battery_.getBatteryPercentage();
 
         if (percent > 95.0) {
-            batteryIconView_.setIcon(BATTERY_100_BITS, battery_100_width, battery_100_height);
+            batteryIconView_.setPBMIcon(BATTERY_100_BITS, sizeof(BATTERY_100_BITS));
         } else if (percent > 87.0) {
-            batteryIconView_.setIcon(BATTERY_90_BITS, battery_90_width, battery_90_height);
+            batteryIconView_.setPBMIcon(BATTERY_90_BITS, sizeof(BATTERY_90_BITS));
         } else if (percent > 80.0) {
-            batteryIconView_.setIcon(BATTERY_80_BITS, battery_80_width, battery_80_height);
+            batteryIconView_.setPBMIcon(BATTERY_80_BITS, sizeof(BATTERY_80_BITS));
         } else if (percent > 70.0) {
-            batteryIconView_.setIcon(BATTERY_70_BITS, battery_70_width, battery_70_height);
+            batteryIconView_.setPBMIcon(BATTERY_70_BITS, sizeof(BATTERY_70_BITS));
         } else if (percent > 60.0) {
-            batteryIconView_.setIcon(BATTERY_60_BITS, battery_60_width, battery_60_height);
+            batteryIconView_.setPBMIcon(BATTERY_60_BITS, sizeof(BATTERY_60_BITS));
         } else if (percent > 53.0) {
-            batteryIconView_.setIcon(BATTERY_50_BITS, battery_50_width, battery_50_height);
+            batteryIconView_.setPBMIcon(BATTERY_50_BITS, sizeof(BATTERY_50_BITS));
         } else if (percent > 48.0) {
-            batteryIconView_.setIcon(BATTERY_40_BITS, battery_40_width, battery_40_height);
+            batteryIconView_.setPBMIcon(BATTERY_40_BITS, sizeof(BATTERY_40_BITS));
         } else if (percent > 42.0) {
-            batteryIconView_.setIcon(BATTERY_30_BITS, battery_30_width, battery_30_height);
+            batteryIconView_.setPBMIcon(BATTERY_30_BITS, sizeof(BATTERY_30_BITS));
         } else if (percent > 37.0) {
-            batteryIconView_.setIcon(BATTERY_20_BITS, battery_20_width, battery_20_height);
+            batteryIconView_.setPBMIcon(BATTERY_20_BITS, sizeof(BATTERY_20_BITS));
         } else if (percent > 25.0) {
-            batteryIconView_.setIcon(BATTERY_10_BITS, battery_10_width, battery_10_height);
+            batteryIconView_.setPBMIcon(BATTERY_10_BITS, sizeof(BATTERY_10_BITS));
         } else {
-            batteryIconView_.setIcon(BATTERY_0_BITS, battery_0_width, battery_0_height);
+            batteryIconView_.setPBMIcon(BATTERY_0_BITS, sizeof(BATTERY_0_BITS));
         }
 
         batteryIconView_.draw();

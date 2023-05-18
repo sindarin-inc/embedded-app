@@ -47,7 +47,9 @@ auto ReadInt(RendererStream &stream, int &val) -> bool {
     }
     // terminate string
     *str = 0;
-    val = strtol((const char *)tmp, nullptr, sizeof(tmp));
+    log_i("ReadInt: %s", tmp);
+
+    val = strtol((const char *)tmp, nullptr, 10);
     return true;
 }
 
@@ -119,6 +121,7 @@ auto ParsePbmHeader(RendererStream &stream, int &width, int &height) -> bool {
     if (!ReadInt(stream, height)) {
         return false;
     }
+    log_i("parse: %d %d", width, height);
     return true;
 }
 
