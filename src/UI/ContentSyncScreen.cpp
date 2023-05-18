@@ -3,8 +3,12 @@
 #include "Communications/WiFi.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
-#include "Renderers/Renderer.hpp"
 #include "Renderers/RendererStream.hpp"
+
+#if USE_TURN_TOUCH_REMOTE
+#include "Inputs/TTRemoteInput.hpp"
+extern TTRemoteInput ttRemoteInput;
+#endif
 
 void ContentSyncScreen::render(DisplaySystem &display) {
     uint16_t x = 0;
@@ -12,25 +16,26 @@ void ContentSyncScreen::render(DisplaySystem &display) {
 
     if (firstTime_) {
         if (!shownFirstTime_) {
-#if 0
-            Renderer firstTimeRenderer_(display);
-
             // We need to make sure this goes onto the second page because of a bug in the renderer.
             std::string message =
                 "Give us 2-4 minutes to sync your content for the first time. Take "
-                "off your Sol Reader and close the temples (will turn them off after this "
-                "download).\n\nMaybe go for a walk. Listen to the birds. Dare you leave "
+                "off your Sol Reader and close the temples.\n\nMaybe go "
+                "for a walk. Listen to the birds. Dare you leave "
                 "your phone at home?\n\n When you're back, if the displays are dark "
-                "and the LED is off, you're ready to read...\n\nOf course, if you want to stare "
-                "anxiously at the LED in anticipation, by all means. It's exciting!\n\n";
+                "and the LED is off, open the temples. You're ready to read...\n\nOf course, if "
+                "you want to stare anxiously at the LED in anticipation, by all means. It's "
+                "exciting!\n\n";
 
             auto streamFirstTime = std::make_shared<StdStringStream>(message);
             firstTimeRenderer_.setStream(streamFirstTime);
             display.setFont(static_cast<Font *>(&ibmf75Face0));
             firstTimeRenderer_.renderPage(0);
-#endif
             display.updateDisplay(DisplaySystem::UpdateType::FULL);
             shownFirstTime_ = true;
+#if USE_TURN_TOUCH_REMOTE
+            // Disconnect the remote so it connects more quickly on reboot
+            ttRemoteInput.disconnectTemporarily(1000);
+#endif
         }
         // Only render once in firstTime_ mode
         return;
