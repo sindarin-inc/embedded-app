@@ -121,3 +121,15 @@ auto ParsePbmHeader(RendererStream &stream, int &width, int &height) -> bool {
     }
     return true;
 }
+
+auto isPBM(const unsigned char *bitmap) -> bool {
+    if (sizeof(bitmap) <= 2) {
+        return false;
+    }
+
+    if (bitmap[0] != 'P' || bitmap[1] != '4') {
+        return false;
+    }
+
+    return true;
+}

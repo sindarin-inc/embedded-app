@@ -1,6 +1,6 @@
 #include "Bitmaps/Calibration.hpp"
 #include "UI/BitmapScreen.hpp"
-#include "UI/Bitmaps/Logo.hpp"
+#include "UI/Bitmaps/Logo2.hpp"
 
 #define LOGO_O_RADIUS 80
 #define LOGO_CHARACTER_SPACING 6

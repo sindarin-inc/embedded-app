@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EinkView.hpp"
+#include "Misc/PBMImage.hpp"
 
 // A view that draws an icon
 class IconView : public EinkView {
@@ -19,7 +20,14 @@ public:
     }
 
     void drawInRect(Rect rect) override {
-        display_.drawXBitmap(rect.origin.x, rect.origin.y, iconBits_, width_, height_, display_.fg);
+        if (isPBM(iconBits_)) {
+            log_i("is pbm, size %d", sizeof(iconBits_));
+            BufferStream stream(iconBits_, sizeof(iconBits_));
+            display_.drawPBM(rect.origin.x, rect.origin.y, stream);
+        } else {
+            display_.drawXBitmap(rect.origin.x, rect.origin.y, iconBits_, width_, height_,
+                                 display_.fg);
+        }
     }
 
 protected:
