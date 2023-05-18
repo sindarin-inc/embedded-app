@@ -285,6 +285,7 @@ void DisplaySystem::drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], in
     if (getPartialRefresh()) {
         setPartialWindow(x, y, w, h);
     }
+
     gfxClass_->drawXBitmap(xOffset(x), yOffset(y), bitmap, w, h, color);
 }
 
@@ -306,13 +307,15 @@ void DisplaySystem::drawPBM(int16_t x, int16_t y, const std::string &fname, File
 void DisplaySystem::drawPBM(int16_t x, int16_t y, RendererStream &stream) {
     int width;
     int height;
+
     if (!ParsePbmHeader(stream, width, height)) {
         log_e("failed to parse PBM header");
         return;
     }
 
-    log_i("parsed PBM header, w %d height %d", width, height);
-    int byteSize = width * height / 8;
+    if (getPartialRefresh()) {
+        setPartialWindow(x, y, width, height);
+    }
 
     // if this is a full-screen image, load directly into memory
     // otherwise load separately and draw with drawBitmap
@@ -323,13 +326,17 @@ void DisplaySystem::drawPBM(int16_t x, int16_t y, RendererStream &stream) {
     } else {
         // not fullscreen
         // load bitmap into memory
-        auto bitmap = SpiRamArrayPtr<uint8_t>(byteSize);
-        if (stream.readBytes(bitmap.get(), byteSize) != byteSize) {
-            log_e("failed to read bitmap");
-            return;
+        if (stream.get()) {
+            gfxClass_->drawBitmap(xOffset(x), yOffset(y), stream.get(), width, height, 0, 1);
+        } else {
+            int byteSize = stream.available();
+            auto bitmap = SpiRamArrayPtr<uint8_t>(byteSize);
+            if (stream.readBytes(bitmap.get(), byteSize) != byteSize) {
+                log_e("failed to read bitmap");
+                return;
+            }
+            gfxClass_->drawBitmap(xOffset(x), yOffset(y), bitmap.get(), width, height, 0, 1);
         }
-
-        gfxClass_->drawBitmap(x, y, bitmap.get(), width, height, 0, 1);
     }
 }
 

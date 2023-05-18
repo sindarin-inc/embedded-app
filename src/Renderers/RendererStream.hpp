@@ -38,6 +38,7 @@ public:
     virtual auto seek(uint32_t pos) -> bool = 0;
     virtual auto position() -> size_t = 0;
     virtual auto size() -> size_t = 0;
+    virtual auto get() -> const uint8_t * { return nullptr; }
 };
 
 template <typename T>
@@ -115,6 +116,7 @@ public:
     }
     auto position() -> size_t override { return pos_; }
     auto size() -> size_t override { return size_; }
+    auto get() -> const uint8_t * override { return &data_[pos_]; }
 
 protected:
     const uint8_t *data_;

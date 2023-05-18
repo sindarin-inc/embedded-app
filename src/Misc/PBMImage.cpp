@@ -47,7 +47,6 @@ auto ReadInt(RendererStream &stream, int &val) -> bool {
     }
     // terminate string
     *str = 0;
-    log_i("ReadInt: %s", tmp);
 
     val = strtol((const char *)tmp, nullptr, 10);
     return true;
@@ -121,15 +120,10 @@ auto ParsePbmHeader(RendererStream &stream, int &width, int &height) -> bool {
     if (!ReadInt(stream, height)) {
         return false;
     }
-    log_i("parse: %d %d", width, height);
     return true;
 }
 
 auto isPBM(const unsigned char *bitmap) -> bool {
-    if (sizeof(bitmap) <= 2) {
-        return false;
-    }
-
     if (bitmap[0] != 'P' || bitmap[1] != '4') {
         return false;
     }
