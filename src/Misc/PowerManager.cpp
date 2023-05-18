@@ -135,7 +135,11 @@ void PowerManager::wakeupCheck(SolClock &clock) {
         // a crash during content sync). Just go back to sleep.
         bool open = true;
 #if USE_MMC5603
-        open = templeCloseSensor_.isTempleOpen();
+        bool success = true;
+        open = templeCloseSensor_.isTempleOpen(success);
+        if (!success) {
+            log_e("failed to read magnetometer at boot");
+        }
 #endif
         if (!open) {
             log_w("Temple is closed at boot, going back to sleep");
