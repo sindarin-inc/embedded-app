@@ -13,7 +13,7 @@
 #include <esp_pm.h>
 #endif
 
-static constexpr auto MAX_OPERATIONAL_TEMPERATURE = 50;
+static constexpr auto MAX_OPERATIONAL_TEMPERATURE_C = 50;
 
 enum class PowerState {
     Booting,

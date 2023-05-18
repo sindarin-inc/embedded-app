@@ -272,10 +272,10 @@ void PowerManager::loop() {
 
     // Check the temperature
     if (state_ != PowerState::ActiveOverTemp &&
-        magSensor_.getTemperature() > MAX_OPERATIONAL_TEMPERATURE) {
+        magSensor_.getTemperature() > MAX_OPERATIONAL_TEMPERATURE_C) {
         log_e("Temperature is too high! Going to sleep.");
         state_ = PowerState::ActiveOverTemp;
-        inactivityTimer_.setTimeoutMs(5 * 1000);
+        inactivityTimer_.setTimeoutMs(10 * 1000);
         DispatchGetUiQueue()->dispatch([this]() {
             if (stateChangeCallback_ != nullptr) {
                 stateChangeCallback_(state_);
