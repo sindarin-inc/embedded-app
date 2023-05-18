@@ -8,84 +8,41 @@
 #include "Misc/Platform.hpp"
 #include "UI/Bitmaps/arrow-up-down.hpp"
 #include "UI/Bitmaps/bottom-arrow.hpp"
-#include "UI/Bitmaps/eye1.hpp"
-#include "UI/Bitmaps/eye2.hpp"
-#include "UI/Bitmaps/eye3.hpp"
 #include "UI/Bitmaps/glass-small-above.hpp"
 #include "UI/Bitmaps/glass-small-left.hpp"
 #include "UI/Bitmaps/glass-small-right.hpp"
-#include "UI/Bitmaps/idea1.hpp"
-#include "UI/Bitmaps/idea2.hpp"
-#include "UI/Bitmaps/idea3.hpp"
-#include "UI/Bitmaps/idea4.hpp"
-#include "UI/Bitmaps/im10.hpp"
-#include "UI/Bitmaps/im100.hpp"
-#include "UI/Bitmaps/im20.hpp"
-#include "UI/Bitmaps/im30.hpp"
-#include "UI/Bitmaps/im40.hpp"
-#include "UI/Bitmaps/im50.hpp"
-#include "UI/Bitmaps/im60.hpp"
-#include "UI/Bitmaps/im70.hpp"
-#include "UI/Bitmaps/im80.hpp"
-#include "UI/Bitmaps/im90.hpp"
 #include "UI/Bitmaps/left-arrow.hpp"
-#include "UI/Bitmaps/mani-1.hpp"
-#include "UI/Bitmaps/mani-10.hpp"
-#include "UI/Bitmaps/mani-11.hpp"
-#include "UI/Bitmaps/mani-14.hpp"
-#include "UI/Bitmaps/mani-15.hpp"
-#include "UI/Bitmaps/mani-16.hpp"
-#include "UI/Bitmaps/mani-17.hpp"
-#include "UI/Bitmaps/mani-18.hpp"
-#include "UI/Bitmaps/mani-1b.hpp"
-#include "UI/Bitmaps/mani-1d.hpp"
-#include "UI/Bitmaps/mani-2.hpp"
-#include "UI/Bitmaps/mani-21.hpp"
-#include "UI/Bitmaps/mani-22.hpp"
-#include "UI/Bitmaps/mani-24.hpp"
-#include "UI/Bitmaps/mani-25.hpp"
-#include "UI/Bitmaps/mani-26.hpp"
-#include "UI/Bitmaps/mani-27.hpp"
-#include "UI/Bitmaps/mani-28.hpp"
-#include "UI/Bitmaps/mani-3.hpp"
-#include "UI/Bitmaps/mani-35.hpp"
-#include "UI/Bitmaps/mani-36.hpp"
-#include "UI/Bitmaps/mani-4.hpp"
-#include "UI/Bitmaps/mani-41.hpp"
-#include "UI/Bitmaps/mani-42.hpp"
-#include "UI/Bitmaps/mani-43.hpp"
-#include "UI/Bitmaps/mani-44.hpp"
-#include "UI/Bitmaps/mani-45.hpp"
-#include "UI/Bitmaps/mani-46.hpp"
-#include "UI/Bitmaps/mani-47.hpp"
-#include "UI/Bitmaps/mani-48.hpp"
-#include "UI/Bitmaps/mani-49.hpp"
-#include "UI/Bitmaps/mani-5.hpp"
-#include "UI/Bitmaps/mani-50.hpp"
-#include "UI/Bitmaps/mani-51.hpp"
-#include "UI/Bitmaps/mani-7.hpp"
-#include "UI/Bitmaps/mani-71.hpp"
-#include "UI/Bitmaps/mani-72.hpp"
-#include "UI/Bitmaps/mani-8.hpp"
-#include "UI/Bitmaps/mani-9.hpp"
+#include "UI/Bitmaps/mani-astronaut.hpp"
 #include "UI/Bitmaps/mani-book1.hpp"
 #include "UI/Bitmaps/mani-book2.hpp"
 #include "UI/Bitmaps/mani-book3.hpp"
-#include "UI/Bitmaps/phone1.hpp"
-#include "UI/Bitmaps/phone2.hpp"
-#include "UI/Bitmaps/phone3.hpp"
+#include "UI/Bitmaps/mani-eye1.hpp"
+#include "UI/Bitmaps/mani-eye2.hpp"
+#include "UI/Bitmaps/mani-eye3.hpp"
+#include "UI/Bitmaps/mani-eye4.hpp"
+#include "UI/Bitmaps/mani-eye5.hpp"
+#include "UI/Bitmaps/mani-eye6.hpp"
+#include "UI/Bitmaps/mani-eye7.hpp"
+#include "UI/Bitmaps/mani-eye8.hpp"
+#include "UI/Bitmaps/mani-eye9.hpp"
+#include "UI/Bitmaps/mani-phone1.hpp"
+#include "UI/Bitmaps/mani-phone2.hpp"
+#include "UI/Bitmaps/mani-phone3.hpp"
+#include "UI/Bitmaps/mani-phone4.hpp"
+#include "UI/Bitmaps/mani-phone5.hpp"
+#include "UI/Bitmaps/mani-ship.hpp"
+#include "UI/Bitmaps/mani-spark1.hpp"
+#include "UI/Bitmaps/mani-spark2.hpp"
+#include "UI/Bitmaps/mani-spark3.hpp"
+#include "UI/Bitmaps/mani-spark4.hpp"
+#include "UI/Bitmaps/mani-spark5.hpp"
+#include "UI/Bitmaps/mani-turnpage-large-a.hpp"
+#include "UI/Bitmaps/mani-turnpage-large-b.hpp"
+#include "UI/Bitmaps/mani-turnpage-small.hpp"
+#include "UI/Bitmaps/mani-volcano.hpp"
+#include "UI/Bitmaps/mani-warrior.hpp"
 #include "UI/Bitmaps/right-arrow.hpp"
-#include "UI/Bitmaps/sol-reader1.hpp"
-#include "UI/Bitmaps/sol-scroll-large.hpp"
-#include "UI/Bitmaps/sol-scroll-small.hpp"
-#include "UI/Bitmaps/space-scape1.hpp"
-#include "UI/Fonts/GFXFonts/Tahoma10pt7b.h"
-#include "UI/Fonts/GFXFonts/Tahoma20pt7b.h"
-#include "UI/Fonts/GFXFonts/Tahoma5pt7b.h"
-#include "UI/Fonts/GFXFonts/Tahoma6pt7b.h"
-#include "UI/Fonts/GFXFonts/Tahoma7pt7b.h"
-#include "UI/Fonts/GFXFonts/Tahoma8pt7b.h"
-#include "UI/Fonts/GFXFonts/Tahoma9pt7b.h"
+#include "UI/Bitmaps/sol-logo.hpp"
 #include "UI/Layout/Types.hpp"
 #include "sindarin-debug.h"
 
@@ -543,8 +500,8 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_35_BITS, mani_35_width,
-                            mani_35_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_TURNPAGE_SMALL_BITS,
+                            mani_turnpage_small_width, mani_turnpage_small_height, display.fg);
         drawDoubleLine(display, "Whisking us away", "into other realms.");
         drawSkipMessage(display);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
@@ -552,13 +509,17 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(display.xAbsoluteMax() - mani_50_width + 1),
-                            display.yAbsolute(display.yAbsoluteMax() - mani_50_height + 1),
-                            MANI_50_BITS, mani_50_width, mani_50_height, display.fg);
         display.drawXBitmap(
-            display.xAbsolute(display.xAbsoluteMax() - mani_51_width + 1),
-            display.yAbsolute(display.yAbsoluteMax() - mani_50_height - mani_51_height + 1),
-            MANI_51_BITS, mani_51_width, mani_51_height, display.fg);
+            display.xAbsolute(display.xAbsoluteMax() - mani_turnpage_large_a_width + 1),
+            display.yAbsolute(display.yAbsoluteMax() - mani_turnpage_large_a_height + 1),
+            MANI_TURNPAGE_LARGE_A_BITS, mani_turnpage_large_a_width, mani_turnpage_large_a_height,
+            display.fg);
+        display.drawXBitmap(
+            display.xAbsolute(display.xAbsoluteMax() - mani_turnpage_large_b_width + 1),
+            display.yAbsolute(display.yAbsoluteMax() - mani_turnpage_large_a_height -
+                              mani_turnpage_large_b_height + 1),
+            MANI_TURNPAGE_LARGE_B_BITS, mani_turnpage_large_b_width, mani_turnpage_large_b_height,
+            display.fg);
         drawDoubleLine(display, "Whisking us away", "into other realms.");
         drawSkipMessage(display);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
@@ -568,29 +529,29 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     lambdas_.emplace_back([this](DisplaySystem &display) {
         dropVcom_ = true;
         display.clearDisplay();
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_4_BITS, mani_4_width,
-                            mani_4_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_VOLCANO_BITS,
+                            mani_volcano_width, mani_volcano_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 1500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_5_BITS, mani_5_width,
-                            mani_5_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_ASTRONAUT_BITS,
+                            mani_astronaut_width, mani_astronaut_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::FULL;
         nextInterval_ = 1000;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_3_BITS, mani_3_width,
-                            mani_3_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_SHIP_BITS,
+                            mani_ship_width, mani_ship_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::FULL;
         nextInterval_ = 1000;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_2_BITS, mani_2_width,
-                            mani_2_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_WARRIOR_BITS,
+                            mani_warrior_width, mani_warrior_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::FULL;
         nextInterval_ = 1250;
     });
@@ -606,36 +567,36 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     lambdas_.emplace_back([this](DisplaySystem &display) {
         dropVcom_ = true;
         display.clearDisplay();
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_7_BITS, mani_7_width,
-                            mani_7_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_SPARK1_BITS,
+                            mani_spark1_width, mani_spark1_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::FULL;
         nextInterval_ = 1500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_8_BITS, mani_8_width,
-                            mani_8_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_SPARK2_BITS,
+                            mani_spark2_width, mani_spark2_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 750;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_9_BITS, mani_9_width,
-                            mani_9_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_SPARK3_BITS,
+                            mani_spark3_width, mani_spark3_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 750;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_10_BITS, mani_10_width,
-                            mani_10_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_SPARK4_BITS,
+                            mani_spark4_width, mani_spark4_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 750;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_11_BITS, mani_11_width,
-                            mani_11_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_SPARK5_BITS,
+                            mani_spark5_width, mani_spark5_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 1000;
     });
@@ -653,36 +614,36 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
         dropVcom_ = true;
         display.invertDisplay(false);
         display.clearDisplay();
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_14_BITS, mani_14_width,
-                            mani_14_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_PHONE1_BITS,
+                            mani_phone1_width, mani_phone1_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 1000;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_15_BITS, mani_15_width,
-                            mani_15_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_PHONE2_BITS,
+                            mani_phone2_width, mani_phone2_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 750;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_16_BITS, mani_16_width,
-                            mani_16_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_PHONE3_BITS,
+                            mani_phone3_width, mani_phone3_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 750;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_17_BITS, mani_17_width,
-                            mani_17_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_PHONE4_BITS,
+                            mani_phone4_width, mani_phone4_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 750;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_18_BITS, mani_18_width,
-                            mani_18_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_PHONE5_BITS,
+                            mani_phone5_width, mani_phone5_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 1000;
     });
@@ -715,65 +676,65 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     lambdas_.emplace_back([this](DisplaySystem &display) {
         dropVcom_ = true;
         display.invertDisplay(false);
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_41_BITS, mani_41_width,
-                            mani_41_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_EYE1_BITS,
+                            mani_eye1_width, mani_eye1_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 1250;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.invertDisplay(false);
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_42_BITS, mani_42_width,
-                            mani_42_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_EYE2_BITS,
+                            mani_eye2_width, mani_eye2_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_43_BITS, mani_43_width,
-                            mani_43_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_EYE3_BITS,
+                            mani_eye3_width, mani_eye3_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_44_BITS, mani_44_width,
-                            mani_44_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_EYE4_BITS,
+                            mani_eye4_width, mani_eye4_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_45_BITS, mani_45_width,
-                            mani_45_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_EYE5_BITS,
+                            mani_eye5_width, mani_eye5_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_46_BITS, mani_46_width,
-                            mani_46_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_EYE6_BITS,
+                            mani_eye6_width, mani_eye6_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_71_BITS, mani_71_width,
-                            mani_47_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_EYE7_BITS,
+                            mani_eye7_width, mani_eye7_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_72_BITS, mani_72_width,
-                            mani_72_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_EYE8_BITS,
+                            mani_eye8_width, mani_eye8_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_49_BITS, mani_49_width,
-                            mani_49_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_EYE9_BITS,
+                            mani_eye9_width, mani_eye9_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 2000;
     });
@@ -781,9 +742,9 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     lambdas_.emplace_back([this](DisplaySystem &display) {
         dropVcom_ = false;
         display.invertDisplay(true);
-        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - im100_width / 2),
-                            display.yAbsolute(display.yAbsoluteCenter() - im100_height / 2),
-                            IM100_BITS, im100_width, im100_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - sol_logo_width / 2),
+                            display.yAbsolute(display.yAbsoluteCenter() - sol_logo_height / 2),
+                            SOL_LOGO_BITS, sol_logo_width, sol_logo_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::FULL;
         nextInterval_ = 2500;
     });
@@ -959,7 +920,7 @@ void DemoScreen::processCommand(RemoteCommand command) {
 #if !SIMULATOR
             if ((WiFi::getInstance().getFirstWiFiSSID() == "") && !shownAppDownload_) {
 #else
-            if (1) {
+            if (!shownAppDownload_) {
 #endif
 
                 xTimerStop(DisplaySystem::animationTimer, 0);
