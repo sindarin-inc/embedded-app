@@ -969,7 +969,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             log_i("Removing %s", file.c_str());
             fileSystem.remove(StringFormat("%s%s", "/coredumps/", file.c_str()).c_str());
         }
-        debugSettingsMenu->showTemporaryMessage(*display, "Crash Reports reset.");
+        debugSettingsMenu->showTemporaryMessage(*display, "Crash Reports cleared.");
         Delay(1500);
         power_.reboot();
     }));
@@ -978,7 +978,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                              [this, systemSettingsMenu, display, &fileSystem]() {
         FactoryReset(prefs_, fileSystem, power_, false);
         log_w("NVS and FS cleared. Rebooting...");
-        systemSettingsMenu->showTemporaryMessage(*display, "NVS cleared! Resetting...");
+        systemSettingsMenu->showTemporaryMessage(*display, "Resetting Device! Rebooting...");
         power_.reboot();
     }));
 
