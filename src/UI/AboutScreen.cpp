@@ -12,7 +12,7 @@ auto AboutScreen::layout(LayoutContext &context, Size size) -> Size {
     context.setViewFrame(solLogoView_, {{x, y}, size},
                          LayoutOptionsAlignTop | LayoutOptionsAlignCenterHorizontal);
 
-    y += im100_height + 22;
+    y += sol_logo_height + 22;
     x += leftPadding;
 
     context.setViewFrame(productNameView_, {{x, y}, size},
