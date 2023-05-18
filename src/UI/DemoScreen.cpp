@@ -38,7 +38,6 @@
 #include "UI/Bitmaps/mani-17.hpp"
 #include "UI/Bitmaps/mani-18.hpp"
 #include "UI/Bitmaps/mani-1b.hpp"
-#include "UI/Bitmaps/mani-1c.hpp"
 #include "UI/Bitmaps/mani-1d.hpp"
 #include "UI/Bitmaps/mani-2.hpp"
 #include "UI/Bitmaps/mani-21.hpp"
@@ -64,13 +63,14 @@
 #include "UI/Bitmaps/mani-5.hpp"
 #include "UI/Bitmaps/mani-50.hpp"
 #include "UI/Bitmaps/mani-51.hpp"
-#include "UI/Bitmaps/mani-61.hpp"
-#include "UI/Bitmaps/mani-62.hpp"
 #include "UI/Bitmaps/mani-7.hpp"
 #include "UI/Bitmaps/mani-71.hpp"
 #include "UI/Bitmaps/mani-72.hpp"
 #include "UI/Bitmaps/mani-8.hpp"
 #include "UI/Bitmaps/mani-9.hpp"
+#include "UI/Bitmaps/mani-book1.hpp"
+#include "UI/Bitmaps/mani-book2.hpp"
+#include "UI/Bitmaps/mani-book3.hpp"
 #include "UI/Bitmaps/phone1.hpp"
 #include "UI/Bitmaps/phone2.hpp"
 #include "UI/Bitmaps/phone3.hpp"
@@ -485,29 +485,29 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         dropVcom_ = true;
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_61_BITS, mani_61_width,
-                            mani_61_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_BOOK1_BITS,
+                            mani_book1_width, mani_book1_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 1250;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_62_BITS, mani_62_width,
-                            mani_62_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_BOOK2_BITS,
+                            mani_book2_width, mani_book2_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 1000;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_23_BITS, mani_23_width,
-                            mani_23_height, display.fg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_BOOK3_BITS,
+                            mani_book3_width, mani_book3_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 1000;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_23_BITS, mani_23_width,
-                            mani_23_height, display.bg);
+        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_BOOK3_BITS,
+                            mani_book3_width, mani_book3_height, display.bg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 1000;
     });
@@ -789,6 +789,8 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
+        dropVcom_ = false;
+        display.invertDisplay(false);
         drawTripleLine(display, "Download the Sol App", "to get started:", "solreader.com/app");
         std::string message = "Press \ue000 after app setup";
         prefs_.demoMode.remove();
@@ -954,11 +956,24 @@ void DemoScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::ENTER:
         xTimerStop(DisplaySystem::animationTimer, 0);
         if (currentScreen_ >= 9) {
-            // Gives us the full refresh
-            display_.clearDontChangeRefreshType();
-            display_.clearDisplay();
-            display_.clearFrameBuffer();
-            finishDemo();
+#if !SIMULATOR
+            if ((WiFi::getInstance().getFirstWiFiSSID() == "") && !shownAppDownload_) {
+#else
+            if (1) {
+#endif
+
+                xTimerStop(DisplaySystem::animationTimer, 0);
+                // Restart the timer if they stopped it.
+                xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(5), 0);
+                currentScreen_ = lambdas_.size() - 1;
+                shownAppDownload_ = true;
+            } else {
+                // Gives us the full refresh
+                display_.clearDontChangeRefreshType();
+                display_.clearDisplay();
+                display_.clearFrameBuffer();
+                finishDemo();
+            }
         } else if (currentScreen_ < 3) {
             currentScreen_++;
             currentSubScreen_ = 0;

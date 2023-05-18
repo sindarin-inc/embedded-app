@@ -17,14 +17,26 @@ void ContentSyncScreen::render(DisplaySystem &display) {
     if (firstTime_) {
         if (!shownFirstTime_) {
             // We need to make sure this goes onto the second page because of a bug in the renderer.
-            std::string message =
-                "Give us 2-4 minutes to sync your content for the first time. Take "
-                "off your Sol Reader and close the temples.\n\nMaybe go "
-                "for a walk. Listen to the birds. Dare you leave "
-                "your phone at home?\n\n When you're back, if the displays are dark "
-                "and the LED is off, open the temples. You're ready to read...\n\nOf course, if "
-                "you want to stare anxiously at the LED in anticipation, by all means. It's "
-                "exciting!\n\n";
+            std::string message;
+
+            if (WiFi::getInstance().getFirstWiFiSSID() == "") {
+                message =
+                    "Looks like you didn't set up the mobile app before you got here.\n\n"
+                    "Go to solreader.com/app and download the Sol Reader app to get connected to "
+                    "WiFi so we can download your content.\n\n"
+                    "Don't feel like it right now? No worries! You can browse around the menus and "
+                    "read a couple of tutorials.\n\n\nPress the \ue000 button to continue.";
+            } else {
+                message =
+                    "Give us 2-4 minutes to sync your content for the first time. Take "
+                    "off your Sol Reader and close the temples.\n\nMaybe go "
+                    "for a walk. Listen to the birds. Dare you leave "
+                    "your phone at home?\n\n When you're back, if the displays are dark "
+                    "and the Blue LED is off, open the temples. You're ready to read...\n\nOf "
+                    "course, "
+                    "if you want to stare anxiously at the Blue LED in anticipation, by all means. "
+                    "It's exciting!\n\n";
+            }
 
             auto streamFirstTime = std::make_shared<StdStringStream>(message);
             firstTimeRenderer_.setStream(streamFirstTime);
@@ -32,9 +44,12 @@ void ContentSyncScreen::render(DisplaySystem &display) {
             firstTimeRenderer_.renderPage(0);
             display.updateDisplay(DisplaySystem::UpdateType::FULL);
             shownFirstTime_ = true;
+
 #if USE_TURN_TOUCH_REMOTE
-            // Disconnect the remote so it connects more quickly on reboot
-            ttRemoteInput.disconnectTemporarily(1000);
+            if (WiFi::getInstance().getFirstWiFiSSID() != "") {
+                // Disconnect the remote so it connects more quickly on reboot
+                ttRemoteInput.disconnectTemporarily(1000);
+            }
 #endif
         }
         // Only render once in firstTime_ mode
@@ -146,7 +161,11 @@ void ContentSyncScreen::render(DisplaySystem &display) {
     }
 }
 
-void ContentSyncScreen::processCommand(RemoteCommand command){};
+void ContentSyncScreen::processCommand(RemoteCommand command) {
+    if ((command == RemoteCommand::ENTER) && (WiFi::getInstance().getFirstWiFiSSID() == "")) {
+        back();
+    }
+};
 
 void ContentSyncScreen::fail(const std::string &message) {
     log_w("Content sync failed: %s", message.c_str());
@@ -163,6 +182,13 @@ void ContentSyncScreen::fail(const std::string &message) {
 }
 
 void ContentSyncScreen::begin() {
+    // We're just going to wait until they press a button in this case
+    if ((firstTime_) && (WiFi::getInstance().getFirstWiFiSSID() == "")) {
+        return;
+    }
+
+    // If we're in first time mode, we need to make sure we have a cloud token and WiFi
+    // credentials before we can do anything.
     if (!prefs_.cloudToken.get().has_value()) {
         fail("Go to Settings > Pair Glasses in the Sol app.");
         return;

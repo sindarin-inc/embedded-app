@@ -42,6 +42,8 @@ protected:
     bool dropVcom_ = false;
     bool skipNextRender_ = false;
 
+    bool shownAppDownload_ = false;
+
     unsigned int currentScreen_ = 0;
     unsigned int currentSubScreen_ = 0;
 

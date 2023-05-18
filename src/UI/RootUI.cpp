@@ -1296,8 +1296,18 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     if (inDemo) {
         auto demoScreen = new DemoScreen(*display, prefs_, lightingController);
         auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_, true);
-        contentSyncScreen->setBackCallback(
-            [this, contentSyncScreen, mainMenu, display]() { power_.reboot(); });
+        contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
+            if (WiFi::getInstance().getFirstWiFiSSID() == "") {
+                display->clearDisplay();
+                mainMenu->setFirstLoad();
+                this->setCurrentScreen(*mainMenu);
+                mainMenu->render(*display);
+                delete contentSyncScreen;
+            } else {
+                power_.reboot();
+            }
+        });
+
         demoScreen->setBackCallback([this, demoScreen, mainMenu, contentSyncScreen]() {
             this->setCurrentScreen(*contentSyncScreen);
             contentSyncScreen->begin();
