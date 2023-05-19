@@ -360,7 +360,7 @@ void DisplaySystem::drawPBM(int16_t x, int16_t y, RendererStream &stream, uint16
         // not fullscreen
         // load bitmap into memory
         if (stream.get()) {
-            gfxClass_->drawBitmap(xOffset(x), yOffset(y), stream.get(), width, height, color, color ^ 0xFFFF);
+            gfxClass_->drawBitmap(xOffset(x), yOffset(y), stream.get(), width, height, color);
         } else {
             int byteSize = stream.available();
             auto bitmap = SpiRamArrayPtr<uint8_t>(byteSize);
@@ -368,7 +368,7 @@ void DisplaySystem::drawPBM(int16_t x, int16_t y, RendererStream &stream, uint16
                 log_e("failed to read bitmap");
                 return;
             }
-            gfxClass_->drawBitmap(xOffset(x), yOffset(y), bitmap.get(), width, height, color, color ^ 0xFFFF);
+            gfxClass_->drawBitmap(xOffset(x), yOffset(y), bitmap.get(), width, height, color);
         }
     }
 }
