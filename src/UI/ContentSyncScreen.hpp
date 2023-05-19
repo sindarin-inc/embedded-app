@@ -8,9 +8,9 @@
 class ContentSyncScreen : public Screen {
 public:
     ContentSyncScreen(DisplaySystem &display, LocalStore &localStore, PreferencesStore &prefs,
-                      bool firstTime = false)
-        : display_(display), localStore_(localStore), prefs_(prefs), firstTime_(firstTime),
-          firstTimeRenderer_(display){};
+                      bool onboardingSync = false)
+        : display_(display), localStore_(localStore), prefs_(prefs),
+          onboardingSync_(onboardingSync), onboardingSyncRenderer_(display){};
 
     void render(DisplaySystem &display) override;
     void processCommand(RemoteCommand command) override;
@@ -23,11 +23,11 @@ protected:
     ContentSyncState lastState_;
     ContentSyncState state_;
 
-    bool firstTime_ = false;
+    bool onboardingSync_ = false;
 
-    Renderer firstTimeRenderer_;
+    Renderer onboardingSyncRenderer_;
 
-    bool shownFirstTime_ = false;
+    bool shownOnboardingSyncMessage_ = false;
 
     void fail(const std::string &message);
     void updateState(const ContentSyncState &state) {

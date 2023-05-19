@@ -797,11 +797,7 @@ void DemoScreen::drawTripleLine(DisplaySystem &display, std::string one, std::st
     message = std::move(one);
     int yAdjust = display.getTextHeight() - display.getLineSpacing();
 
-    if (yAdjust % 2 == 1) {
-        yAdjust++;
-    }
-
-    yAdjust /= 2;
+    yAdjust = (yAdjust + 1) / 2;
 
     display.drawSingleLineOfText(
         message.c_str(),

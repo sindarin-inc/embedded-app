@@ -14,8 +14,8 @@ void ContentSyncScreen::render(DisplaySystem &display) {
     uint16_t x = 0;
     uint16_t y = 0;
 
-    if (firstTime_) {
-        if (!shownFirstTime_) {
+    if (onboardingSync_) {
+        if (!shownOnboardingSyncMessage_) {
             // We need to make sure this goes onto the second page because of a bug in the renderer.
             std::string message;
 
@@ -39,11 +39,11 @@ void ContentSyncScreen::render(DisplaySystem &display) {
             }
 
             auto streamFirstTime = std::make_shared<StdStringStream>(message);
-            firstTimeRenderer_.setStream(streamFirstTime);
+            onboardingSyncRenderer_.setStream(streamFirstTime);
             display.setFont(static_cast<Font *>(&ibmf75Face0));
-            firstTimeRenderer_.renderPage(0);
+            onboardingSyncRenderer_.renderPage(0);
             display.updateDisplay(DisplaySystem::UpdateType::FULL);
-            shownFirstTime_ = true;
+            shownOnboardingSyncMessage_ = true;
 
 #if USE_TURN_TOUCH_REMOTE
             if (WiFi::getInstance().getFirstWiFiSSID() != "") {
@@ -52,7 +52,7 @@ void ContentSyncScreen::render(DisplaySystem &display) {
             }
 #endif
         }
-        // Only render once in firstTime_ mode
+        // Only render once in onboardingSync_ mode
         return;
     }
     display_.setFont(display_.style.getFontFamily().settingsFont);
@@ -183,7 +183,7 @@ void ContentSyncScreen::fail(const std::string &message) {
 
 void ContentSyncScreen::begin() {
     // We're just going to wait until they press a button in this case
-    if ((firstTime_) && (WiFi::getInstance().getFirstWiFiSSID() == "")) {
+    if ((onboardingSync_) && (WiFi::getInstance().getFirstWiFiSSID() == "")) {
         return;
     }
 
@@ -199,15 +199,8 @@ void ContentSyncScreen::begin() {
         return;
     }
 
-#if !SIMULATOR
-    if (firstTime_) {
+    if (onboardingSync_) {
         PowerManager::getInstance().forceOn();
-    }
-#endif
-
-    // Debug LED so we know what's happening (will be turned off when deep sleep happens)
-    // Only turn on if debug menu is enabled
-    if (firstTime_) {
         DigitalWrite(BLUE_LED, LED_ON);
     }
 
@@ -228,22 +221,19 @@ void ContentSyncScreen::begin() {
 #if !SIMULATOR
             if (state.state == ContentSyncState::Synced) {
                 log_d("Content sync done, rebooting");
-                if (firstTime_) {
-                    DigitalWrite(BLUE_LED, LED_OFF);
-                }
                 PowerManager::getInstance().reboot();
             }
 #endif
             if (state.state == ContentSyncState::Failure ||
                 state.state == ContentSyncState::Synced ||
                 state.state == ContentSyncState::AlreadySynced) {
-                if (firstTime_) {
-                    // Maybe we want to retry once?
-                    DigitalWrite(BLUE_LED, LED_OFF);
 #if !SIMULATOR
+                if (onboardingSync_) {
+                    // Todo: maybe we want to retry once?
                     PowerManager::getInstance().reboot();
+                } else
 #endif
-                } else {
+                {
                     log_d("Content sync done, waiting 5 seconds before going back");
                     Delay(5000);
                     back();
