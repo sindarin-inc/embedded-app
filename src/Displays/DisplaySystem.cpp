@@ -289,43 +289,7 @@ void DisplaySystem::drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], in
     gfxClass_->drawXBitmap(xOffset(x), yOffset(y), bitmap, w, h, color);
 }
 
-/*
-// this is a convenience method to load a bitmap that might be a pbm or xbm -
-// should remove this once settled onto one format.
-void DisplaySystem::drawBitmap(int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, int16_t h,
-                               uint16_t color) {
-    if (!IsPbm(bitmap)) {
-        // must be xbm
-        drawXBitmap(x, y, bitmap, w, h, color);
-        return;
-    }
-
-    int pw, ph;
-    // figure out byte size
-    int16_t byteWidth = (w + 7) / 8;
-    int16_t minSize = byteWidth * h;
-
-    BufferStream stream(bitmap, minSize);
-    if (!ParsePbmHeader(stream, pw, ph)) {
-        log_e("could not parse PBM bitmap");
-        return;
-    }
-
-    if (pw < 0 || pw > 256 || ph < 0 || ph > 256) {
-        // must be xbm
-        drawXBitmap(x, y, bitmap, w, h, color);
-        return;
-    }
-
-    int pos = stream.position();
-    int size = pos + minSize;
-
-    drawPBM(x, y, bitmap, size, color);
-}
-*/
-
-void DisplaySystem::drawPBM(int16_t x, int16_t y, const uint8_t *pbmbytes, int size,
-                            uint16_t color) {
+void DisplaySystem::drawPBM(int16_t x, int16_t y, const uint8_t *pbmbytes, int size, uint16_t color) {
     BufferStream stream(pbmbytes, size);
     drawPBM(x, y, stream, color);
 }
