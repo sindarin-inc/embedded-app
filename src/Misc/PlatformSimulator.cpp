@@ -40,6 +40,10 @@ void SetRightScreenLightFade(int dutyCycle, int fadeMs) {
     // log_d("Fading right screen light to dutyCycle=%d (but ignoring b/c Simulator)", dutyCycle);
 }
 
+auto GetMinLightingDutyCycle() -> uint8_t { return 10; }
+
+auto GetMaxLightingDutyCycle() -> uint8_t { return 210; }
+
 auto GetRunTimeMs() -> uint32_t { return Millis(); }
 
 auto USBConnected() -> bool { return true; }

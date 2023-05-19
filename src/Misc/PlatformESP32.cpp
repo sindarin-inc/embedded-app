@@ -30,6 +30,9 @@ bool ledcFailed = false;
 uint8_t sysOnPin;
 bool platformInitialized;
 
+static uint8_t minLightingDutyCycle;
+static uint8_t maxLightingDutyCycle;
+
 void PinMode(int pin, int mode) { gpio_set_direction((gpio_num_t)pin, (gpio_mode_t)mode); }
 
 void DigitalWrite(int pin, int level) { gpio_set_level((gpio_num_t)pin, (uint32_t)level); }
@@ -191,6 +194,14 @@ void InitializePlatform() {
         sysOnPin = 5;
     } else {
         sysOnPin = 46;
+    }
+    if (hardwareRevision < 3) {
+        minLightingDutyCycle = 5;
+        maxLightingDutyCycle = 60;
+    } else {
+        // Revisions 3 and higher have the 82ohm resistors in series
+        minLightingDutyCycle = 10;
+        maxLightingDutyCycle = 210;
     }
     // The MCU will keep itself on until the digital magnetometer detects the temples are closed, or
     // there are 5 mins of inactivity
@@ -419,6 +430,10 @@ void SetRightScreenLightFade(int dutyCycle, int fadeMs) {
     }
 #endif
 }
+
+auto GetMinLightingDutyCycle() -> uint8_t { return minLightingDutyCycle; }
+
+auto GetMaxLightingDutyCycle() -> uint8_t { return maxLightingDutyCycle; }
 
 auto GetRunTimeMs() -> uint32_t { return (uint32_t)(xTaskGetTickCount() * portTICK_PERIOD_MS); }
 

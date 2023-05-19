@@ -65,7 +65,8 @@ void LightingController::enableLighting(int fadeMs) {
 }
 
 void LightingController::setOverrideValuePercent(int percent) {
-    auto dutyCycle = MapRange(percent, 0, 100, MIN_LIGHTING_DUTY_CYCLE, MAX_LIGHTING_DUTY_CYCLE);
+    auto dutyCycle = MapRange(percent, 0, 100, static_cast<int>(GetMinLightingDutyCycle()),
+                              static_cast<int>(GetMaxLightingDutyCycle()));
     overrideDutyCycle_ = dutyCycle;
     lightSensor_.disable();
     currentDutyCycle_ = dutyCycle;
@@ -73,7 +74,8 @@ void LightingController::setOverrideValuePercent(int percent) {
 }
 
 auto LightingController::getCurrentPercent() -> int {
-    return MapRange(currentDutyCycle_, MIN_LIGHTING_DUTY_CYCLE, MAX_LIGHTING_DUTY_CYCLE, 0, 100);
+    return MapRange(currentDutyCycle_, static_cast<int>(GetMinLightingDutyCycle()),
+                    static_cast<int>(GetMaxLightingDutyCycle()), 0, 100);
 }
 
 void LightingController::setScreenMask(Screens screens, int fadeMs) {
@@ -101,8 +103,8 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
     movingAverage_.add(std::min(channel1, uint16_t(1000)));
     auto average = movingAverage_.average();
 
-    currentDutyCycle_ =
-        MapRange(average, 0, 1000, MIN_LIGHTING_DUTY_CYCLE, MAX_LIGHTING_DUTY_CYCLE);
+    currentDutyCycle_ = MapRange(average, 0, 1000, static_cast<int>(GetMinLightingDutyCycle()),
+                                 static_cast<int>(GetMaxLightingDutyCycle()));
     // log_d("Light sensor ch1: %d ch0: %d average: %d setting: %d", channel1, channel0, average,
     // currentDutyCycle_);
     setCurrentDutyCycle(currentDutyCycle_, fadeMs);

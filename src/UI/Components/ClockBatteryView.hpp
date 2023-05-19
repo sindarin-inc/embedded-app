@@ -19,7 +19,6 @@
 #include "UI/Bitmaps/Battery_70.hpp"
 #include "UI/Bitmaps/Battery_80.hpp"
 #include "UI/Bitmaps/Battery_90.hpp"
-#include "UI/Bitmaps/Battery_Bolt.hpp"
 #include "UI/Layout/View.hpp"
 
 // A view that draws a lockup of the battery and time

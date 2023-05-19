@@ -64,6 +64,10 @@ void SetRightScreenLight(int dutyCycle);
 
 void SetRightScreenLightFade(int dutyCycle, int fadeMs);
 
+auto GetMinLightingDutyCycle() -> uint8_t;
+
+auto GetMaxLightingDutyCycle() -> uint8_t;
+
 auto GetRunTimeMs() -> uint32_t;
 
 auto USBConnected() -> bool;
