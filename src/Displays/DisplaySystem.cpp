@@ -289,11 +289,11 @@ void DisplaySystem::drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], in
     gfxClass_->drawXBitmap(xOffset(x), yOffset(y), bitmap, w, h, color);
 }
 
-// this is a convenience method to load a bitmap that might be a pbm or xbm - 
+// this is a convenience method to load a bitmap that might be a pbm or xbm -
 // should remove this once settled onto one format.
 void DisplaySystem::drawBitmap(int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, int16_t h,
-                                uint16_t color) {
-    if (!isPBM(bitmap)) {
+                               uint16_t color) {
+    if (!IsPbm(bitmap)) {
         // must be xbm
         drawXBitmap(x, y, bitmap, w, h, color);
         return;
@@ -322,12 +322,14 @@ void DisplaySystem::drawBitmap(int16_t x, int16_t y, const uint8_t bitmap[], int
     drawPBM(x, y, bitmap, size, color);
 }
 
-void DisplaySystem::drawPBM(int16_t x, int16_t y, const uint8_t *pbmbytes, int size, uint16_t color) {
+void DisplaySystem::drawPBM(int16_t x, int16_t y, const uint8_t *pbmbytes, int size,
+                            uint16_t color) {
     BufferStream stream(pbmbytes, size);
     drawPBM(x, y, stream, color);
 }
 
-void DisplaySystem::drawPBM(int16_t x, int16_t y, const std::string &fname, FileSystem &fs, uint16_t color) {
+void DisplaySystem::drawPBM(int16_t x, int16_t y, const std::string &fname, FileSystem &fs,
+                            uint16_t color) {
     if (!fs.exists(fname)) {
         log_e("cannot display pbm, file not present: %s", fname.c_str());
         return;

@@ -175,15 +175,15 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
                     display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
                     BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.bg);
                 display.drawBitmap(display.xAbsolute(128 - bottom_arrow_width / 2 + 14 - xOffset),
-                                    display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset +
-                                                      yOffsetOverall),
-                                    RIGHT_ARROW_BITS, right_arrow_width, right_arrow_height,
-                                    display.bg);
+                                   display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset +
+                                                     yOffsetOverall),
+                                   RIGHT_ARROW_BITS, right_arrow_width, right_arrow_height,
+                                   display.bg);
                 display.drawBitmap(display.xAbsolute(128 - bottom_arrow_width / 2 - 14 - xOffset),
-                                    display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset +
-                                                      yOffsetOverall),
-                                    LEFT_ARROW_BITS, left_arrow_width, left_arrow_height,
-                                    display.bg);
+                                   display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset +
+                                                     yOffsetOverall),
+                                   LEFT_ARROW_BITS, left_arrow_width, left_arrow_height,
+                                   display.bg);
                 display.drawBitmap(
                     display.xAbsolute(128 - glass_small_left_width / 2),
                     display.yAbsolute(128 - glass_small_left_height / 2 + yOffsetOverall),
@@ -444,28 +444,28 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
         dropVcom_ = true;
         log_i("DRAWNG MANI BOOK");
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_BOOK1_BITS,
-                            mani_book1_width, mani_book1_height, display.fg);
+                           mani_book1_width, mani_book1_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 1250;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_BOOK2_BITS,
-                            mani_book2_width, mani_book2_height, display.fg);
+                           mani_book2_width, mani_book2_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 1000;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_BOOK3_BITS,
-                            mani_book3_width, mani_book3_height, display.fg);
+                           mani_book3_width, mani_book3_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 1000;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_BOOK3_BITS,
-                            mani_book3_width, mani_book3_height, display.bg);
+                           mani_book3_width, mani_book3_height, display.bg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 1000;
     });
@@ -502,7 +502,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_TURNPAGE_SMALL_BITS,
-                            mani_turnpage_small_width, mani_turnpage_small_height, display.fg);
+                           mani_turnpage_small_width, mani_turnpage_small_height, display.fg);
         drawDoubleLine(display, "Whisking us away", "into other realms.");
         drawSkipMessage(display);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
@@ -531,28 +531,28 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
         dropVcom_ = true;
         display.clearDisplay();
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_VOLCANO_BITS,
-                            mani_volcano_width, mani_volcano_height, display.fg);
+                           mani_volcano_width, mani_volcano_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 1500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_ASTRONAUT_BITS,
-                            mani_astronaut_width, mani_astronaut_height, display.fg);
+                           mani_astronaut_width, mani_astronaut_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::FULL;
         nextInterval_ = 1000;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_SHIP_BITS,
-                            mani_ship_width, mani_ship_height, display.fg);
+                           mani_ship_width, mani_ship_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::FULL;
         nextInterval_ = 1000;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_WARRIOR_BITS,
-                            mani_warrior_width, mani_warrior_height, display.fg);
+                           mani_warrior_width, mani_warrior_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::FULL;
         nextInterval_ = 1250;
     });
@@ -569,35 +569,35 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
         dropVcom_ = true;
         display.clearDisplay();
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_SPARK1_BITS,
-                            mani_spark1_width, mani_spark1_height, display.fg);
+                           mani_spark1_width, mani_spark1_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::FULL;
         nextInterval_ = 1500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_SPARK2_BITS,
-                            mani_spark2_width, mani_spark2_height, display.fg);
+                           mani_spark2_width, mani_spark2_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 750;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_SPARK3_BITS,
-                            mani_spark3_width, mani_spark3_height, display.fg);
+                           mani_spark3_width, mani_spark3_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 750;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_SPARK4_BITS,
-                            mani_spark4_width, mani_spark4_height, display.fg);
+                           mani_spark4_width, mani_spark4_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 750;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_SPARK5_BITS,
-                            mani_spark5_width, mani_spark5_height, display.fg);
+                           mani_spark5_width, mani_spark5_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 1000;
     });
@@ -616,35 +616,35 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
         display.invertDisplay(false);
         display.clearDisplay();
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_PHONE1_BITS,
-                            mani_phone1_width, mani_phone1_height, display.fg);
+                           mani_phone1_width, mani_phone1_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 1000;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_PHONE2_BITS,
-                            mani_phone2_width, mani_phone2_height, display.fg);
+                           mani_phone2_width, mani_phone2_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 750;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_PHONE3_BITS,
-                            mani_phone3_width, mani_phone3_height, display.fg);
+                           mani_phone3_width, mani_phone3_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 750;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_PHONE4_BITS,
-                            mani_phone4_width, mani_phone4_height, display.fg);
+                           mani_phone4_width, mani_phone4_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 750;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_PHONE5_BITS,
-                            mani_phone5_width, mani_phone5_height, display.fg);
+                           mani_phone5_width, mani_phone5_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 1000;
     });
@@ -678,7 +678,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
         dropVcom_ = true;
         display.invertDisplay(false);
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_EYE1_BITS,
-                            mani_eye1_width, mani_eye1_height, display.fg);
+                           mani_eye1_width, mani_eye1_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 1250;
     });
@@ -686,56 +686,56 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.invertDisplay(false);
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_EYE2_BITS,
-                            mani_eye2_width, mani_eye2_height, display.fg);
+                           mani_eye2_width, mani_eye2_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_EYE3_BITS,
-                            mani_eye3_width, mani_eye3_height, display.fg);
+                           mani_eye3_width, mani_eye3_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_EYE4_BITS,
-                            mani_eye4_width, mani_eye4_height, display.fg);
+                           mani_eye4_width, mani_eye4_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_EYE5_BITS,
-                            mani_eye5_width, mani_eye5_height, display.fg);
+                           mani_eye5_width, mani_eye5_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_EYE6_BITS,
-                            mani_eye6_width, mani_eye6_height, display.fg);
+                           mani_eye6_width, mani_eye6_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_EYE7_BITS,
-                            mani_eye7_width, mani_eye7_height, display.fg);
+                           mani_eye7_width, mani_eye7_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_EYE8_BITS,
-                            mani_eye8_width, mani_eye8_height, display.fg);
+                           mani_eye8_width, mani_eye8_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_EYE9_BITS,
-                            mani_eye9_width, mani_eye9_height, display.fg);
+                           mani_eye9_width, mani_eye9_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 2000;
     });
@@ -744,8 +744,8 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
         dropVcom_ = false;
         display.invertDisplay(true);
         display.drawBitmap(display.xAbsolute(display.xAbsoluteCenter() - sol_logo_width / 2),
-                            display.yAbsolute(display.yAbsoluteCenter() - sol_logo_height / 2),
-                            SOL_LOGO_BITS, sol_logo_width, sol_logo_height, display.fg);
+                           display.yAbsolute(display.yAbsoluteCenter() - sol_logo_height / 2),
+                           SOL_LOGO_BITS, sol_logo_width, sol_logo_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::FULL;
         nextInterval_ = 2500;
     });

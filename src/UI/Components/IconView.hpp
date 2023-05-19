@@ -7,7 +7,7 @@
 class IconView : public EinkView {
 public:
     IconView(DisplaySystem &display, const unsigned char *iconBits, int width, int height)
-        : EinkView(display), iconBits_(iconBits), width_(width), height_(height), size_(0) {}
+        : EinkView(display), iconBits_(iconBits), width_(width), height_(height) {}
     ~IconView() override = default;
 
     auto layout(LayoutContext &context, Size size) -> Size override { return {width_, height_}; }
@@ -44,5 +44,5 @@ protected:
     const unsigned char *iconBits_;
     int width_;
     int height_;
-    int size_;
+    int size_{0};
 };

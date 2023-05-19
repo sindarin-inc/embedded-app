@@ -302,8 +302,8 @@ void ReadableScreen::render(DisplaySystem &display) {
     // with the rest of the text
     if ((pageSpeed_ != 0) && (speedLinesToSkip_ == 0)) {
         int screenWidth = display.width();
-        display.drawBitmap(screenWidth + 2, 0, autoPilotBits, auto_pilot_width, auto_pilot_height,
-                            display.fg);
+        display.drawBitmap(screenWidth + 2, 0, AUTO_PILOT_BITS, auto_pilot_width, auto_pilot_height,
+                           display.fg);
     }
 
     log_d("%lu is the new place in the text %s", newPlace_, atEnd_ ? "(at end)" : "");
