@@ -90,7 +90,6 @@ bool bootCompleted = false;
 // they all complete in a tight loop, thus maximizing sleep time.
 void PollingLoopTask(void *parameter) {
     int factoryResetStartTimeMs = 0;
-    bool factoryResetTriggered = false;
     for (;;) {
         // check if factory reset button is held down
         if (DigitalRead(FACTORY_RESET_BUTTON) == 0) {
@@ -104,10 +103,6 @@ void PollingLoopTask(void *parameter) {
                 FactoryReset(prefs, fileSystem, powerManager, true);
             }
         } else {
-            if (factoryResetTriggered) {
-                log_i("button released, factory reset");
-                FactoryReset(prefs, fileSystem, powerManager, true);
-            }
             factoryResetStartTimeMs = 0;
         }
 
