@@ -279,9 +279,12 @@ void PowerManager::loop() {
         templeOpen_ = templeOpen;
     }
 
-    // Check the temperature
-    if (state_ != PowerState::ActiveOverTemp &&
-        magSensor_.getTemperature() > MAX_OPERATIONAL_TEMPERATURE_C) {
+    float temperature;
+    err = magSensor_.readTemperature(temperature);
+    if (err != ESP_OK) {
+        log_e("Error reading temperature %d, ignoring.", err);
+    } else if (state_ != PowerState::ActiveOverTemp &&
+               temperature > MAX_OPERATIONAL_TEMPERATURE_C) {
         log_e("Temperature is too high! Going to sleep.");
         state_ = PowerState::ActiveOverTemp;
         inactivityTimer_.setTimeoutMs(10 * 1000);

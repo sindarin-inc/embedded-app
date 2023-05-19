@@ -175,7 +175,6 @@ auto Mmc5603::readXZ8Bit(Xyz8bit &out) -> esp_err_t {
     Mmc5603Ctrl0Value ctrl0Value;
     ctrl0Value.autoSrEn = 1;
     ctrl0Value.takeMeasM = 1;
-    ctrl0Value.takeMeasT = 1;
     esp_err_t err = ESP_OK;
     err = registerWriteByte(MMC5603_REG_CTRL_0, ctrl0Value.raw);
     if (err != ESP_OK) {
@@ -195,14 +194,26 @@ auto Mmc5603::readXZ8Bit(Xyz8bit &out) -> esp_err_t {
     }
     out.z -= 128;
 
-    // Also grab temp while we're here
+    return err;
+}
+
+auto Mmc5603::readTemperature(float &temp) -> esp_err_t {
+    Mmc5603Ctrl0Value ctrl0Value;
+    ctrl0Value.autoSrEn = 1;
+    ctrl0Value.takeMeasT = 1;
+    esp_err_t err = ESP_OK;
+    err = registerWriteByte(MMC5603_REG_CTRL_0, ctrl0Value.raw);
+    if (err != ESP_OK) {
+        log_e("Failed to write to MMC5603_REG_CTRL_0 (error: %s)", esp_err_to_name(err));
+        return err;
+    }
     uint8_t raw;
     err = registerReadByte(MMC5603_REG_TOUT, &raw);
     if (err != ESP_OK) {
         log_e("Failed to read from MMC5603_REG_TOUT (error: %s)", esp_err_to_name(err));
         return err;
     }
-    temperature_ = (float)raw * 0.8f - 75.0f;
+    temp = (float)raw * 0.8f - 75.0f;
 
     return err;
 }

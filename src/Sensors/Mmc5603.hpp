@@ -49,11 +49,10 @@ public:
     auto readXZ8Bit(Xyz8bit &out) -> esp_err_t;
 
     // Read the temperature in degrees Celsius
-    auto getTemperature() -> float { return temperature_; }
+    auto readTemperature(float &temp) -> esp_err_t;
 
 private:
     int i2cNum_;
-    float temperature_ = 0;
 
     auto registerReadByte(mmc5603_reg_t regAddr, uint8_t *data) -> esp_err_t;
 
