@@ -24,8 +24,8 @@ enum class PowerState {
     // Included for completeness not used in main CPU code currently
     Sleeping,
     // Forced on (screen lighting enabled and MCU still running) while temples closed
-    // Same as Active but with the inactivity timer disabled and no change until
-    // explictly taken out of this state.
+    // Same as Active but no turning off when the temples are closed until
+    // explictly taken out of this state or put to deep sleep.
     ForcedOn,
     // Fully off (deep sleep) ~22uA
     Off,
