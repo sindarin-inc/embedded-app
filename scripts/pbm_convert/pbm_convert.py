@@ -80,6 +80,7 @@ for bmp in bitmaps:
 
     #write top of header
     fields_fp.write('#pragma once\n')
+    fields_fp.write('// PBM\n')
     fields_fp.write('#define '+width_name+' '+str(width)+'\n')
     fields_fp.write('#define '+height_name+' '+str(height)+'\n')
     fields_fp.write('static const unsigned char ' + data_name + '[] = {\n')
