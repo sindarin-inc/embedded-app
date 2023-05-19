@@ -289,22 +289,22 @@ void DisplaySystem::drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], in
     gfxClass_->drawXBitmap(xOffset(x), yOffset(y), bitmap, w, h, color);
 }
 
-void DisplaySystem::drawPBM(int16_t x, int16_t y, const uint8_t *pbmbytes, int size) {
+void DisplaySystem::drawPBM(int16_t x, int16_t y, const uint8_t *pbmbytes, int size, uint16_t color) {
     BufferStream stream(pbmbytes, size);
-    drawPBM(x, y, stream);
+    drawPBM(x, y, stream, color);
 }
 
-void DisplaySystem::drawPBM(int16_t x, int16_t y, const std::string &fname, FileSystem &fs) {
+void DisplaySystem::drawPBM(int16_t x, int16_t y, const std::string &fname, FileSystem &fs, uint16_t color) {
     if (!fs.exists(fname)) {
         log_e("cannot display pbm, file not present: %s", fname.c_str());
         return;
     }
     SFile pbmFile = fs.open(fname);
     ContainerStream<SFile> stream(pbmFile);
-    drawPBM(x, y, stream);
+    drawPBM(x, y, stream, color);
 }
 
-void DisplaySystem::drawPBM(int16_t x, int16_t y, RendererStream &stream) {
+void DisplaySystem::drawPBM(int16_t x, int16_t y, RendererStream &stream, uint16_t color) {
     int width;
     int height;
 
@@ -335,7 +335,11 @@ void DisplaySystem::drawPBM(int16_t x, int16_t y, RendererStream &stream) {
                 log_e("failed to read bitmap");
                 return;
             }
-            gfxClass_->drawBitmap(xOffset(x), yOffset(y), bitmap.get(), width, height, 0, 1);
+            if (color == 0) {
+                gfxClass_->drawBitmap(xOffset(x), yOffset(y), bitmap.get(), width, height, 0, 1);
+            } else {
+                gfxClass_->drawBitmap(xOffset(x), yOffset(y), bitmap.get(), width, height, 1, 0);
+            }
         }
     }
 }
