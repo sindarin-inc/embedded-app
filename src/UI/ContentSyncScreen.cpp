@@ -19,7 +19,7 @@ void ContentSyncScreen::render(DisplaySystem &display) {
             // We need to make sure this goes onto the second page because of a bug in the renderer.
             std::string message;
 
-            if (WiFi::getInstance().getFirstWiFiSSID() == "") {
+            if (WiFi::getInstance().hasWiFiCredentials()) {
                 message =
                     "Looks like you didn't set up the mobile app before you got here.\n\n"
                     "Go to solreader.com/app and download the Sol Reader app to get connected to "
