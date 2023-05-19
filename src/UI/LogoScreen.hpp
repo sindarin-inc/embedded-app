@@ -14,7 +14,7 @@
 
 class LogoScreen : public BitmapScreen {
 public:
-    LogoScreen() : BitmapScreen(LOGO2_BITS, LOGO2_WIDTH, LOGO2_HEIGHT) {}
+    LogoScreen() : BitmapScreen(LOGO2_BITS, sizeof(LOGO2_BITS)) {}
     ~LogoScreen() override = default;
 
     void render(DisplaySystem &display) override {

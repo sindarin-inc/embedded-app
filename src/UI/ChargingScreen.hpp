@@ -7,8 +7,7 @@
 class ChargingScreen : public BitmapScreen {
 public:
     ChargingScreen(PreferencesStore &prefs)
-        : BitmapScreen(BATTERY_CHARGING_LARGE_BITS, BatteryChargingLargeWidth,
-                       BatteryChargingLargeHeight) {
+        : BitmapScreen(BATTERY_CHARGING_LARGE_BITS, sizeof(BATTERY_CHARGING_LARGE_BITS)) {
         secretCode_.setCallback([&prefs]() {
             log_d("Enabling use while charging");
             prefs.allowUsageWhileCharging.set(true);

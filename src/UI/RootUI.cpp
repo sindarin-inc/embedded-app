@@ -1263,7 +1263,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }));
 
     oldMenu->addMenuItem(MenuItem("Test Bitmap Screen", [this, oldMenu]() {
-        auto bitmapScreen = new BitmapScreen(LOGO_BITS, LOGO_WIDTH, LOGO_HEIGHT);
+        auto bitmapScreen = new BitmapScreen(LOGO_BITS, sizeof(LOGO_BITS));
         setCurrentScreen(*bitmapScreen);
         bitmapScreen->setBackCallback([this, bitmapScreen, oldMenu]() {
             setCurrentScreen(*oldMenu);

@@ -289,6 +289,7 @@ void DisplaySystem::drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], in
     gfxClass_->drawXBitmap(xOffset(x), yOffset(y), bitmap, w, h, color);
 }
 
+/*
 // this is a convenience method to load a bitmap that might be a pbm or xbm -
 // should remove this once settled onto one format.
 void DisplaySystem::drawBitmap(int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, int16_t h,
@@ -321,6 +322,7 @@ void DisplaySystem::drawBitmap(int16_t x, int16_t y, const uint8_t bitmap[], int
 
     drawPBM(x, y, bitmap, size, color);
 }
+*/
 
 void DisplaySystem::drawPBM(int16_t x, int16_t y, const uint8_t *pbmbytes, int size,
                             uint16_t color) {
