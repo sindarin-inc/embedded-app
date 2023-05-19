@@ -1,10 +1,8 @@
 
 #include "Misc/SecretCode.hpp"
-#include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/BitmapScreen.hpp"
 #include "UI/Bitmaps/BatteryChargingLarge.hpp"
-#include "UI/Screen.hpp"
 
 class ChargingScreen : public BitmapScreen {
 public:

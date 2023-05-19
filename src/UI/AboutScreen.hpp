@@ -6,7 +6,7 @@
 #include "Misc/SecretCode.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
-#include "UI/Bitmaps/im100.hpp"
+#include "UI/Bitmaps/sol-logo.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/IconView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
@@ -17,7 +17,7 @@ class AboutScreen : public Screen, public EinkView {
 public:
     AboutScreen(DisplaySystem &display, PreferencesStore &prefs, PowerManager &power)
         : EinkView(display), display_(display), prefs_(prefs), power_(power),
-          solLogoView_(display, IM100_BITS, im100_width, im100_height),
+          solLogoView_(display, SOL_LOGO_BITS, sol_logo_width, sol_logo_height),
           productNameView_(display, "Product Name: Sol Reader", &ibmf75Face0),
           serialNumberView_(display, "", &ibmf75Face0),
           firmwareVersionView_(display, "", &ibmf75Face0),

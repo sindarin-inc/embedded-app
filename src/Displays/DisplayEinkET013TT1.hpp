@@ -29,7 +29,7 @@ public:
     auto setup() -> bool override;
 
     void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED,
-                       bool clearFrameBuffer = true,
+                       bool clearFrameBuffer = true, int vcomNudge = 0,
                        DisplaySystem::UpdateType altUpdateType = UNSPECIFIED,
                        Rect altRect = {{0, 0}, {0, 0}}) override;
 

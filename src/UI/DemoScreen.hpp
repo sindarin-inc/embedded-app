@@ -25,8 +25,8 @@ public:
 protected:
     void drawSkipMessage(DisplaySystem &display, bool inverted = false);
     void drawDoubleLine(DisplaySystem &display, std::string one, std::string two);
-    void drawTripleLine(DisplaySystem &display, std::string one, std::string two,
-                        std::string three);
+    void drawTripleLine(DisplaySystem &display, std::string one, std::string two, std::string three,
+                        bool invert = false);
 
     void finishDemo();
 
@@ -39,10 +39,17 @@ protected:
     bool shownTwo_ = false;
     bool bailAfterLens_ = false;
 
+    bool dropVcom_ = false;
+    bool skipNextRender_ = false;
+
+    bool shownAppDownload_ = false;
+
     unsigned int currentScreen_ = 0;
     unsigned int currentSubScreen_ = 0;
 
     unsigned int nextInterval_ = 0;
+    int nextVcomNudge_ = 0;
+
     DisplaySystem::UpdateType nextUpdateType_ = DisplaySystem::UpdateType::FULL;
 
     std::vector<std::function<void(DisplaySystem &)>> lambdas_;

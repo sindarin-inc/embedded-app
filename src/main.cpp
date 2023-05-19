@@ -28,6 +28,7 @@
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/ChargingScreen.hpp"
+#include "UI/OverTempScreen.hpp"
 #include "UI/RootUI.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -79,7 +80,7 @@ LittleFSFileSystem fileSystem;
 
 LocalStore localStore(fileSystem, prefs);
 
-PowerManager powerManager(fileSystem, prefs, lightingController);
+PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay);
 RootUI rootUi(prefs, powerManager);
 SolClock solClock(prefs);
 
@@ -98,7 +99,9 @@ void PollingLoopTask(void *parameter) {
             if (factoryResetStartTimeMs == 0) {
                 factoryResetStartTimeMs = Millis();
             } else if ((Millis() - factoryResetStartTimeMs) > FACTORY_RESET_MS) {
-                factoryResetTriggered = true;
+                log_i("Button held down for %dms performing factory reset",
+                      Millis() - factoryResetStartTimeMs);
+                FactoryReset(prefs, fileSystem, powerManager, true);
             }
         } else {
             if (factoryResetTriggered) {
@@ -236,6 +239,10 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     powerManager.setStateChangeCallback([&showChargingScreen](PowerState state) {
         if (state == PowerState::ActiveUSBCharging) {
             showChargingScreen();
+        } else if (state == PowerState::ActiveOverTemp) {
+            auto overTempScreen = new OverTempScreen();
+            rootUi.setCurrentScreen(*overTempScreen);
+            UIInnerLoop(RemoteCommand::NONE);
         }
     });
 

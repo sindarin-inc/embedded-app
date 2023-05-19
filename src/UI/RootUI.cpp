@@ -352,7 +352,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     "Reader.\n\n"
                     "Crossway Publishing has generously provided the English "
                     "Standard Version"
-                    " of the Bible to you free of charge (Copyright 2000, Crossway Publishing).\n\n"
+                    " of the Bible to you free of charge (Copyright 2001, Crossway Publishing).\n\n"
                     " Not your thing? No worries! You can toggle this app off "
                     "in the Content Settings.\n\n"
                     " Look for more scripture and meditation Sol Reader apps down the road!\n\n\n"
@@ -850,6 +850,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         prefs_.demoMode.set(true);
         systemSettingsMenu->showTemporaryMessage(*display,
                                                  "Turning on first time setup and restarting.");
+        display_->clearDisplay();
+        display_->clearFrameBuffer();
+        display->updateDisplay();
         power_.reboot();
     }));
 
@@ -911,7 +914,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                              [systemSettingsMenu, display]() {
         WiFi::getInstance().clearWiFiCredentials();
         log_w("WiFi settings cleared.");
-        systemSettingsMenu->showTemporaryMessage(*display, "WiFi settings cleared.", 2000, false);
+        systemSettingsMenu->showTemporaryMessage(*display, "WiFi settings cleared.", 2000, true);
     }));
 
     systemSettingsMenu->addMenuItem(MenuItem("Reset Preferences",
@@ -961,7 +964,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             log_i("Removing %s", file.c_str());
             fileSystem.remove(StringFormat("%s%s", "/coredumps/", file.c_str()).c_str());
         }
-        debugSettingsMenu->showTemporaryMessage(*display, "Crash Reports reset.");
+        debugSettingsMenu->showTemporaryMessage(*display, "Crash Reports cleared.");
         Delay(1500);
         power_.reboot();
     }));
@@ -970,7 +973,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                              [this, systemSettingsMenu, display, &fileSystem]() {
         FactoryReset(prefs_, fileSystem, power_, false);
         log_w("NVS and FS cleared. Rebooting...");
-        systemSettingsMenu->showTemporaryMessage(*display, "NVS cleared! Resetting...");
+        systemSettingsMenu->showTemporaryMessage(*display, "Resetting Device! Rebooting...");
         power_.reboot();
     }));
 
@@ -1287,13 +1290,22 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     if (inDemo) {
         auto demoScreen = new DemoScreen(*display, prefs_, lightingController);
-        demoScreen->setBackCallback([this, demoScreen, mainMenu]() {
-            // We want to go straight from the scroll expanding into the main menu
-            // via partial refresh.
-            // display->clearDisplay();
-            mainMenu->setFirstLoad();
-            setCurrentScreen(*mainMenu);
-            mainMenu->render(*this->display_);
+        auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_, true);
+        contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
+            if (!WiFi::getInstance().hasWiFiCredentials()) {
+                display->clearDisplay();
+                mainMenu->setFirstLoad();
+                this->setCurrentScreen(*mainMenu);
+                mainMenu->render(*display);
+                delete contentSyncScreen;
+            } else {
+                power_.reboot();
+            }
+        });
+
+        demoScreen->setBackCallback([this, demoScreen, contentSyncScreen]() {
+            this->setCurrentScreen(*contentSyncScreen);
+            contentSyncScreen->begin();
             delete demoScreen;
         });
         this->setCurrentScreen(*demoScreen);
