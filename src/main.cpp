@@ -28,6 +28,7 @@
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/ChargingScreen.hpp"
+#include "UI/OverTempScreen.hpp"
 #include "UI/RootUI.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -89,7 +90,6 @@ bool bootCompleted = false;
 // they all complete in a tight loop, thus maximizing sleep time.
 void PollingLoopTask(void *parameter) {
     int factoryResetStartTimeMs = 0;
-    bool factoryResetTriggered = false;
     for (;;) {
         // check if factory reset button is held down
         if (DigitalRead(FACTORY_RESET_BUTTON) == 0) {
@@ -98,13 +98,11 @@ void PollingLoopTask(void *parameter) {
             if (factoryResetStartTimeMs == 0) {
                 factoryResetStartTimeMs = Millis();
             } else if ((Millis() - factoryResetStartTimeMs) > FACTORY_RESET_MS) {
-                factoryResetTriggered = true;
-            }
-        } else {
-            if (factoryResetTriggered) {
-                log_i("button released, factory reset");
+                log_i("Button held down for %dms performing factory reset",
+                      Millis() - factoryResetStartTimeMs);
                 FactoryReset(prefs, fileSystem, powerManager, true);
             }
+        } else {
             factoryResetStartTimeMs = 0;
         }
 
@@ -236,6 +234,10 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     powerManager.setStateChangeCallback([&showChargingScreen](PowerState state) {
         if (state == PowerState::ActiveUSBCharging) {
             showChargingScreen();
+        } else if (state == PowerState::ActiveOverTemp) {
+            auto overTempScreen = new OverTempScreen();
+            rootUi.setCurrentScreen(*overTempScreen);
+            UIInnerLoop(RemoteCommand::NONE);
         }
     });
 
