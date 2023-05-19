@@ -14,6 +14,10 @@ fullscreen_dim = 256 * 256
 fullscreen_byte_size = fullscreen_dim / 8
 
 for bmp in bitmaps:
+    if bmp.endswith('.hpp') == False:
+        continue
+
+    print(bmp)
     fp = open(join(bitmap_dir, bmp), 'r')
     fileparts = bmp.split('.')
     base = fileparts[0]
@@ -91,3 +95,5 @@ for bmp in bitmaps:
         fp_out.write(byte_val)
     fp_out.close()
     fp.close()
+
+print("done.")

@@ -14,7 +14,8 @@ output_dir = sys.argv[2]
 pbms = [f for f in listdir(input_dir) if isfile(join(input_dir, f))]
 
 for pbm in pbms:
-    if '.pbm' in pbm:
+    if pbm.endswith('.pbm') == True:
+        print("converting " + pbm)
         parts = pbm.split('.')
         base = parts[0]
         inputfilename = join(input_dir, pbm)
@@ -31,6 +32,6 @@ for pbm in pbms:
             cmd = 'echo "};" >> ' + outputfilename
             subprocess.run(cmd, shell=True)
         else:
-            print("no header")
+            print("no header: " + pbm)
             cmd = 'xxd -i ' + inputfilename + ' > ' + outputfilename
             subprocess.run(cmd, shell=True)
