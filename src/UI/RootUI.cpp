@@ -1297,7 +1297,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto demoScreen = new DemoScreen(*display, prefs_, lightingController);
         auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_, true);
         contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
-            if (WiFi::getInstance().getFirstWiFiSSID() == "") {
+            if (!WiFi::getInstance().hasWiFiCredentials()) {
                 display->clearDisplay();
                 mainMenu->setFirstLoad();
                 this->setCurrentScreen(*mainMenu);
