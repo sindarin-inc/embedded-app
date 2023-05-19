@@ -183,7 +183,7 @@ void ContentSyncScreen::fail(const std::string &message) {
 
 void ContentSyncScreen::begin() {
     // We're just going to wait until they press a button in this case
-    if ((firstTime_) && (WiFi::getInstance().getFirstWiFiSSID() == "")) {
+    if (firstTime_ && !WiFi::getInstance().hasWiFiCredentials()) {
         return;
     }
 
