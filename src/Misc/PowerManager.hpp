@@ -59,7 +59,8 @@ public:
 
     auto begin() -> esp_err_t;
 
-    auto setState(PowerState state) -> void { state_ = state; }
+    auto forceOn() -> void { state_ = PowerState::ForcedOn; }
+    auto disableForceOn() -> void { state_ = PowerState::Active; }
 
     auto state() -> PowerState { return state_; }
 

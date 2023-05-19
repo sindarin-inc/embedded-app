@@ -201,7 +201,7 @@ void ContentSyncScreen::begin() {
 
 #if !SIMULATOR
     if (firstTime_) {
-        PowerManager::getInstance().setState(PowerState::ForcedOn);
+        PowerManager::getInstance().forceOn();
     }
 #endif
 
