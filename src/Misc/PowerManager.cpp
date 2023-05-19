@@ -211,6 +211,7 @@ auto PowerManager::begin() -> esp_err_t {
                 // TODO: Use a callback instead
                 Delay(200);
                 display_.clearDisplay();
+                display_.clearScreenBuffer();
                 display_.updateDisplay();
                 ulpDeepSleep(SleepReason::TempleClosed);
             }
