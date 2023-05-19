@@ -46,7 +46,7 @@ void ContentSyncScreen::render(DisplaySystem &display) {
             shownFirstTime_ = true;
 
 #if USE_TURN_TOUCH_REMOTE
-            if (WiFi::getInstance().getFirstWiFiSSID() != "") {
+            if (WiFi::getInstance().hasWiFiCredentials()) {
                 // Disconnect the remote so it connects more quickly on reboot
                 ttRemoteInput.disconnectTemporarily(1000);
             }
