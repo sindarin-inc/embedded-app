@@ -65,17 +65,7 @@ void AboutScreen::render(DisplaySystem &display) {
 }
 
 void AboutScreen::processCommand(RemoteCommand command) {
-    if (command == secretCodeCommands_[secretCodeIndex_]) {
-        log_d("Got the right code %d time(s)!", secretCodeIndex_ + 1);
-        secretCodeIndex_++;
-        if (secretCodeIndex_ == secretCodeCommands_.size()) {
-            log_d("Got the right secret code -- toggling Debug Screen and rebooting!");
-            this->prefs_.showDebugMenu.set(!this->prefs_.showDebugMenu.get().value_or(false));
-            power_.reboot();
-        }
-    } else {
-        secretCodeIndex_ = 0;
-    }
+    secretCode_.processCommand(command);
     if (command == RemoteCommand::ENTER) {
         back();
     }

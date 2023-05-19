@@ -914,7 +914,7 @@ void DemoScreen::processCommand(RemoteCommand command) {
         xTimerStop(DisplaySystem::animationTimer, 0);
         if (currentScreen_ >= 9) {
 #if !SIMULATOR
-            if ((WiFi::getInstance().getFirstWiFiSSID() == "") && !shownAppDownload_) {
+            if (!WiFi::getInstance().hasWiFiCredentials() && !shownAppDownload_) {
 #else
             if (!shownAppDownload_) {
 #endif

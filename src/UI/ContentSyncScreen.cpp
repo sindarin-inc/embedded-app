@@ -19,7 +19,7 @@ void ContentSyncScreen::render(DisplaySystem &display) {
             // We need to make sure this goes onto the second page because of a bug in the renderer.
             std::string message;
 
-            if (WiFi::getInstance().getFirstWiFiSSID() == "") {
+            if (WiFi::getInstance().hasWiFiCredentials()) {
                 message =
                     "Looks like you didn't set up the mobile app before you got here.\n\n"
                     "Go to solreader.com/app and download the Sol Reader app to get connected to "
@@ -46,7 +46,7 @@ void ContentSyncScreen::render(DisplaySystem &display) {
             shownOnboardingSyncMessage_ = true;
 
 #if USE_TURN_TOUCH_REMOTE
-            if (WiFi::getInstance().getFirstWiFiSSID() != "") {
+            if (WiFi::getInstance().hasWiFiCredentials()) {
                 // Disconnect the remote so it connects more quickly on reboot
                 ttRemoteInput.disconnectTemporarily(1000);
             }
@@ -162,7 +162,7 @@ void ContentSyncScreen::render(DisplaySystem &display) {
 }
 
 void ContentSyncScreen::processCommand(RemoteCommand command) {
-    if ((command == RemoteCommand::ENTER) && (WiFi::getInstance().getFirstWiFiSSID() == "")) {
+    if ((command == RemoteCommand::ENTER) && !WiFi::getInstance().hasWiFiCredentials()) {
         back();
     }
 };
@@ -183,7 +183,7 @@ void ContentSyncScreen::fail(const std::string &message) {
 
 void ContentSyncScreen::begin() {
     // We're just going to wait until they press a button in this case
-    if ((onboardingSync_) && (WiFi::getInstance().getFirstWiFiSSID() == "")) {
+    if (onboardingSync_ && !WiFi::getInstance().hasWiFiCredentials()) {
         return;
     }
 

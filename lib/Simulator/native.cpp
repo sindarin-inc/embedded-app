@@ -20,6 +20,7 @@
 #include "Displays/FakeEinkET013TT1.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/Math.hpp"
+#include "Misc/Platform.hpp"
 #include "Sensors/LightingController.hpp"
 #include "sindarin-debug.h"
 
@@ -61,7 +62,8 @@ void SimDrawScreen() {
             uint8_t color = FakeEinkET013TT1ParticlePositions[x + y * EinkET013TT1_PIXEL_WIDTH];
             float colorF = color / 255.0;
             uint16_t brightnessOffset =
-                MapRange(LightingSetting, MIN_LIGHTING_DUTY_CYCLE, MAX_LIGHTING_DUTY_CYCLE, 60, 0);
+                MapRange(LightingSetting, static_cast<int>(GetMinLightingDutyCycle()),
+                         static_cast<int>(GetMaxLightingDutyCycle()), 60, 0);
             SDL_SetRenderDrawColor(
                 renderer, lerp(40 + brightnessOffset, 248 - brightnessOffset, colorF),
                 lerp(40 + brightnessOffset, 240 - brightnessOffset, colorF),

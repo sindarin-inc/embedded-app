@@ -312,10 +312,10 @@ public:
           fastTransitions(*this, "fast-tran"), noUploadCrashes(*this, "no-upload-crash"),
           showDebugMenu(*this, "show-debug"), fastBookmarkRight(*this, "fst-mark-right"),
           fastBookmarkCenter(*this, "fst-mark-cent"), pageTransitionArrows(*this, "page-arrows"),
-          wifiSettingsJson(*this, "wifi-settings"), localStoreMigrationVersion(*this, "ls-version"),
-          fontsLibrary(*this, "fonts-lib"), fontType(*this, "font-type"),
-          tutorialsDeleted(*this, "tutorials"), bleAdvertisingKey(*this, "ble-adv-key"),
-          bleAuthKey(*this, "ble-auth-key"),
+          allowUsageWhileCharging(*this, "allow-use-chg"), wifiSettingsJson(*this, "wifi-settings"),
+          localStoreMigrationVersion(*this, "ls-version"), fontsLibrary(*this, "fonts-lib"),
+          fontType(*this, "font-type"), tutorialsDeleted(*this, "tutorials"),
+          bleAdvertisingKey(*this, "ble-adv-key"), bleAuthKey(*this, "ble-auth-key"),
           preferencesStoreMigrationVersion_(*this, "ps-version"){};
     PreferencesStore(PreferencesStore &) = delete;
 
@@ -490,6 +490,7 @@ public:
     PrefsItem<bool> fastBookmarkRight;
     PrefsItem<bool> fastBookmarkCenter;
     PrefsItem<bool> pageTransitionArrows;
+    PrefsItem<bool> allowUsageWhileCharging;
     PrefsItem<std::string> wifiSettingsJson;
     PrefsItem<uint32_t> localStoreMigrationVersion;
     PrefsItem<bool> fontsLibrary;

@@ -139,41 +139,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto currentReadable = prefs_.lastReadableId.get();
 
-    ReadableScreen *psalmsProverbs = nullptr;
-    ReadableScreen *newTestament = nullptr;
-    ReadableScreen *oldTestament = nullptr;
-
-    // Bible hack (to show off if we wanted to have different "apps" that had different behavior.
-    // For now, it's just the same as a regular book.)
-    auto it = std::find_if(readables.begin(), readables.end(),
-                           [](const Readable &x) { return (x.title == "Psalms and Proverbs"); });
-    if (it == readables.end()) {
-        log_d("Could not find readable: %s", "Psalms and Proverbs");
-    } else {
-        psalmsProverbs = createReadableScreen(*it);
-        log_d("Found readable: %s", (*it).title.c_str());
-    }
-
-    it = std::find_if(readables.begin(), readables.end(),
-                      [](const Readable &x) { return (x.title.compare("New Testament") == 0); });
-    if (it == readables.end()) {
-        log_d("Could not find readable: %s", "New Testament");
-    } else {
-        newTestament = createReadableScreen(*it);
-        log_d("Found readable: %s", (*it).title.c_str());
-    }
-
-    it = std::find_if(readables.begin(), readables.end(),
-                      [](const Readable &x) { return (x.title.compare("Old Testament") == 0); });
-    if (it == readables.end()) {
-        log_d("Could not find readable: %s", "Old Testament");
-    } else {
-        oldTestament = createReadableScreen(*it);
-        log_d("Found readable: %s", (*it).title.c_str());
-    }
-
     bool hasLastQuestion = false;
-    it = std::find_if(readables.begin(), readables.end(), [](const Readable &x) {
+    auto it = std::find_if(readables.begin(), readables.end(), [](const Readable &x) {
         return (x.title.compare("The Last Question") == 0);
     });
     if (it == readables.end()) {
@@ -239,12 +206,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     SHOW_HEAP();
 
+    auto isBible = [](const Readable &r) -> bool {
+        return (r.title == "Psalms and Proverbs" || r.title == "New Testament" ||
+                r.title == "Old Testament" || r.title == "Torah");
+    };
+
     for (const Readable &r : readables) {
         bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
         auto title = StringFormat("%s%s", archived ? "Archived: " : "", r.title.c_str());
         // Bible books go in their own menu / app
-        if (r.title == "Psalms and Proverbs" || r.title == "New Testament" ||
-            r.title == "Old Testament") {
+        if (!prefs_.noBible.get().value_or(false) && isBible(r)) {
             continue;
         }
 
@@ -344,14 +315,17 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         mainMenu->addSubMenu(pocketMenu);
     }
 
-    if (!prefs_.noBible.get().value_or(false) && (oldTestament || newTestament || psalmsProverbs)) {
+    // Bible hack (to show off if we wanted to have different "apps" that had different
+    // behavior. For now, it's just the same as a regular book.)
+    it = std::find_if(readables.begin(), readables.end(),
+                      [isBible](const Readable &x) { return isBible(x); });
+    auto hasBible = it != readables.end();
+    if (!prefs_.noBible.get().value_or(false) && hasBible) {
         auto bibleMenu = new Menu(mainMenu->getMyStyle(), "Bible");
-
         for (const Readable &r : readables) {
-            bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
-            auto title = StringFormat("%s%s", archived ? "Archived: " : "", r.title.c_str());
-            if (r.title == "Psalms and Proverbs" || r.title == "New Testament" ||
-                r.title == "Old Testament") {
+            if (isBible(r)) {
+                bool archived = prefs_.readableArchivedChanged.get(r.shortenedUuid.c_str());
+                auto title = StringFormat("%s%s", archived ? "Archived: " : "", r.title.c_str());
                 bibleMenu->addMenuItem(MenuItem(title, [this, &r, createReadableScreen, display,
                                                         mainMenu]() {
                     auto readableScreen = createReadableScreen(r);
@@ -949,6 +923,24 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         power_.reboot();
     }));
 
+    if (prefs_.allowUsageWhileCharging.get().value_or(false)) {
+        debugSettingsMenu->addMenuItem(MenuItem("Disable use while charging",
+                                                [this, debugSettingsMenu, display]() {
+            prefs_.allowUsageWhileCharging.remove();
+            debugSettingsMenu->showTemporaryMessage(*display, "Disabling use while charging...",
+                                                    500, false);
+            power_.reboot();
+        }));
+    } else {
+        debugSettingsMenu->addMenuItem(MenuItem("Enable use while charging",
+                                                [this, debugSettingsMenu, display]() {
+            prefs_.allowUsageWhileCharging.set(true);
+            debugSettingsMenu->showTemporaryMessage(*display, "Enabling use while charging...", 500,
+                                                    false);
+            power_.reboot();
+        }));
+    }
+
     debugSettingsMenu->addMenuItem(MenuItem("Clear Books and Restart",
                                             [debugSettingsMenu, display, &localStore]() {
         localStore.deleteReadables();
@@ -1138,8 +1130,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             switch (power) {
             case WIFI_POWER_19_5dBm:
                 return "Max (19.5dBm)";
-            case WIFI_POWER_17dBm:
-                return "High (17dBm)";
+            case WIFI_POWER_14_5dBm:
+                return "High (14.5dBm)";
             case WIFI_POWER_11dBm:
                 return "Medium (11dBm)";
             case WIFI_POWER_5dBm:
@@ -1163,9 +1155,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             WiFi::getInstance().setWiFiPower(WIFI_POWER_19_5dBm);
             confirmMessage(WIFI_POWER_19_5dBm);
         }));
-        wifiPowerMenu->addMenuItem(MenuItem("High (17dBm)", [confirmMessage]() {
-            WiFi::getInstance().setWiFiPower(WIFI_POWER_17dBm);
-            confirmMessage(WIFI_POWER_17dBm);
+        wifiPowerMenu->addMenuItem(MenuItem("High (14.5dBm)", [confirmMessage]() {
+            WiFi::getInstance().setWiFiPower(WIFI_POWER_14_5dBm);
+            confirmMessage(WIFI_POWER_14_5dBm);
         }));
         wifiPowerMenu->addMenuItem(MenuItem("Medium (11dBm)", [confirmMessage]() {
             WiFi::getInstance().setWiFiPower(WIFI_POWER_11dBm);
@@ -1182,7 +1174,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         int menuIndex = 0;
         switch (WiFi::getInstance().getWiFiPower()) {
-        case WIFI_POWER_17dBm:
+        case WIFI_POWER_14_5dBm:
             menuIndex = 1;
             break;
         case WIFI_POWER_11dBm:
@@ -1297,7 +1289,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         auto demoScreen = new DemoScreen(*display, prefs_, lightingController);
         auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_, true);
         contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
-            if (WiFi::getInstance().getFirstWiFiSSID() == "") {
+            if (!WiFi::getInstance().hasWiFiCredentials()) {
                 display->clearDisplay();
                 mainMenu->setFirstLoad();
                 this->setCurrentScreen(*mainMenu);
@@ -1356,17 +1348,26 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // Check if we left-off on a readable and if so, reload that readable by default
         log_d("Attempting to find readable: %s", currentReadable.value().c_str());
         // If we previously had a readable loaded, show that same readable by default
-
-        auto it =
+        auto booksIterator =
             std::find_if(readables.begin(), readables.end(), [&currentReadable](const Readable &x) {
                 return currentReadable == x.uuid;
             });
-        if (it != readables.end()) {
+        auto articlesIterator =
+            std::find_if(articles.begin(), articles.end(), [&currentReadable](const Readable &x) {
+                return currentReadable == x.uuid;
+            });
+        if (booksIterator != readables.end() || articlesIterator != articles.end()) {
+            auto it = (booksIterator != readables.end()) ? booksIterator : articlesIterator;
             auto readableScreen = createReadableScreen(*it);
             this->display_->setFont(this->display_->style.getFontFamily().readableFont);
             log_i("Setting Readable Screen on boot in %.0f ms", esp_timer_get_time() / 1000.0f);
             this->setCurrentScreen(*readableScreen);
             log_i("Resuming readable %s at place %" PRIu32, (*it).title.c_str(), (*it).place);
+            if (articlesIterator != articles.end()) {
+                mainMenu->setTabToArticles();
+            } else if (isBible(*it)) {
+                mainMenu->setTabToBible();
+            }
         } else {
             // Assume this readable has gone away (or changed from id to uuid)
             prefs_.lastReadableId.remove();

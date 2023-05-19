@@ -29,6 +29,7 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
         unarchiveMenuItemView_->setHidden(true);
     }
     popupMenuView_.setNeedsLayout();
+    setFirstLoad();
 }
 
 void ReadablePopupMenuScreen::addMenuItem(const MenuItem &newItem) {
@@ -196,8 +197,3 @@ void ReadablePopupMenuScreen::render(DisplaySystem &display) {
         display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
     }
 };
-
-void ReadablePopupMenuScreen::back() {
-    setFirstLoad();
-    Screen::back();
-}

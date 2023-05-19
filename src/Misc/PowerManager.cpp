@@ -13,9 +13,12 @@
 
 #include "Misc/Dispatch.hpp"
 #include "Platform.hpp"
+#include "Sensors/TempleAngle.hpp"
 
 #if !SIMULATOR
 #include "FunctionalInterrupt.h"
+#else
+uint32_t ulp_waitForClose;
 #endif
 
 // These are also in build/esp-idf/src/ulp_src/ulp_src.h but including that file throws a lot of
@@ -89,6 +92,11 @@ void PowerManager::wakeupCheck(SolClock &clock) {
             auto percentage = battery.getBatteryPercentage();
             if (USBConnected()) {
                 log_i("USB connected, battery level: %d%%", int(percentage));
+            } else if (ulp_waitForClose) {
+                ulp_waitForClose = 0;
+                // If the temples were never closed and usb just disconnected, let's power up
+                log_i("Temple is still open on USB disconnect, turning on");
+                break;
             }
             // Wait just a little moment so we can flash software if we get stuck
             Delay(1000);
@@ -126,11 +134,8 @@ void PowerManager::wakeupCheck(SolClock &clock) {
     if (state_ == PowerState::Booting) {
         // If the temple is closed but we're active booting, probably something wrong happened (like
         // a crash during content sync). Just go back to sleep.
-        bool open = true;
-#if USE_MMC5603
-        open = templeCloseSensor_.isTempleOpen();
-#endif
-        if (!open) {
+        templeOpen_ = isTempleOpen();
+        if (!templeOpen_) {
             log_w("Temple is closed at boot, going back to sleep");
             ulpDeepSleep(SleepReason::TempleClosedAtBoot);
         }
@@ -153,12 +158,23 @@ void PowerManager::wakeupCheck(SolClock &clock) {
 
 auto PowerManager::begin() -> esp_err_t {
 #if !SIMULATOR
+    // If USB is connected, disable operation unless we've disabled this behavior
+    if (USBConnected() && state_ == PowerState::Active &&
+        !prefs_.allowUsageWhileCharging.get().value_or(false)) {
+        log_i("USB connected, switching mode to ActiveUSBCharging");
+        state_ = PowerState::ActiveUSBCharging;
+    }
     // Disable inactivity timer in emc testing mode
     if (!prefs_.emcMode.get().value_or(false)) {
-        inactivityTimer_.start([this]() {
+        int inactivityTimeoutMs =
+            state_ == PowerState::ActiveUSBCharging ? 10 * 1000 : 10 * 60 * 1000;
+        log_d("Setting inactivity timeout to %d ms", inactivityTimeoutMs);
+        inactivityTimer_.start(
+            [this]() {
             log_i("Inactive! Close and open temple to wake");
             ulpDeepSleep(SleepReason::Inactivity);
-        });
+            },
+            inactivityTimeoutMs);
     }
 #endif
 
@@ -176,7 +192,20 @@ auto PowerManager::begin() -> esp_err_t {
         [this]() {
 #if !DISABLE_POWER_MANAGEMENT
         DispatchGetCore1BackgroundQueue()->dispatch([this]() {
-            if (USBConnected() && pmConfig_.light_sleep_enable == true) {
+            // If USB is connected, disable operation unless we've disabled this behavior
+            if (USBConnected() && !prefs_.allowUsageWhileCharging.get().value_or(false)) {
+                log_i("USB connected, switching to ActiveUSBCharging");
+                state_ = PowerState::ActiveUSBCharging;
+                inactivityTimer_.setTimeoutMs(10 * 1000);
+                DispatchGetUiQueue()->dispatch([this]() {
+                    if (stateChangeCallback_ != nullptr) {
+                        stateChangeCallback_(state_);
+                    }
+                });
+            } else if (!USBConnected() && state_ == PowerState::ActiveUSBCharging) {
+                log_i("USB disconnected, rebooting to Active");
+                reboot();
+            } else if (USBConnected() && pmConfig_.light_sleep_enable == true) {
                 // USB is connected so disable light sleep
                 pmConfig_.light_sleep_enable = false;
                 auto err = esp_pm_configure(&pmConfig_);
@@ -202,34 +231,6 @@ auto PowerManager::begin() -> esp_err_t {
 #endif
 #endif
 
-    templeCloseSensor_.setCallback([this](bool open) {
-        switch (state_) {
-        case PowerState::Active:
-            if (!open) {
-                lightingController_.disableLighting(200);
-                // Delay to see the fade.
-                // TODO: Use a callback instead
-                Delay(200);
-                display_.clearDisplay();
-                display_.clearFrameBuffer();
-                display_.updateDisplay();
-                ulpDeepSleep(SleepReason::TempleClosed);
-            }
-            break;
-        case PowerState::Background:
-            if (open) {
-                log_i("Temples opened while in Background! Going to Active");
-                // Temples were opened while in the background! Wake up with a reboot.
-                reboot();
-            }
-            break;
-        // Explicitly don't do anything in the ForcedOn state when temples change.
-        case PowerState::ForcedOn:
-        default:
-            break;
-        };
-    });
-
     return err;
 }
 
@@ -243,7 +244,65 @@ void PowerManager::loop() {
     battery.loop();
     checkUsb();
 #if USE_MMC5603
-    templeCloseSensor_.checkTemple();
+    bool templeOpen = isTempleOpen();
+    if (templeOpen_ != templeOpen) {
+        log_i("Temple is %s", templeOpen ? "open" : "closed");
+        switch (state_) {
+        case PowerState::Active:
+            if (!templeOpen) {
+                lightingController_.disableLighting(200);
+                // Delay to see the fade.
+                // TODO: Use a callback instead
+                Delay(200);
+                display_.clearDisplay();
+                display_.clearFrameBuffer();
+                display_.updateDisplay();
+                ulpDeepSleep(SleepReason::TempleClosed);
+            }
+            break;
+        case PowerState::Background:
+            if (templeOpen) {
+                log_i("Temples opened while in Background! Going to Active");
+                // Temples were opened while in the background! Wake up with a reboot.
+                reboot();
+            }
+            break;
+        // Explicitly don't do anything in the ForcedOn state when temples change.
+        case PowerState::ForcedOn:
+        default:
+            break;
+        };
+    }
+    templeOpen_ = templeOpen;
+
+    // Check the temperature
+    if (state_ != PowerState::ActiveOverTemp &&
+        magSensor_.getTemperature() > MAX_OPERATIONAL_TEMPERATURE_C) {
+        log_e("Temperature is too high! Going to sleep.");
+        state_ = PowerState::ActiveOverTemp;
+        inactivityTimer_.setTimeoutMs(10 * 1000);
+        DispatchGetUiQueue()->dispatch([this]() {
+            if (stateChangeCallback_ != nullptr) {
+                stateChangeCallback_(state_);
+            }
+        });
+    }
+
+#endif
+}
+
+auto PowerManager::isTempleOpen() -> bool {
+    Xyz8bit magReading;
+#if USE_MMC5603
+
+    auto success = magSensor_.readXZ8Bit(magReading);
+    if (!success) {
+        log_e("Failed to read magnetometer");
+        return false;
+    }
+    return IsTempleOpen(magReading.x, magReading.z);
+#else
+    return true;
 #endif
 }
 
@@ -386,7 +445,7 @@ void PowerManager::waitForQueuesThenDeepSleep(SleepReason reason) {
             PreferencesStore::syncReason = SyncReason::OnClose;
             PreferencesStore::nextSyncTime = SolClock::getInstance().getEpochTime() + 30;
             log_d("Sync-on-close scheduled for %" PRIu64, PreferencesStore::nextSyncTime);
-        } else if (reason == SleepReason::Inactivity) {
+        } else if (reason == SleepReason::Inactivity && state_ != PowerState::ActiveOverTemp) {
             PreferencesStore::syncReason = SyncReason::OnInactivity;
             PreferencesStore::nextSyncTime = SolClock::getInstance().getEpochTime() + 30;
             log_d("Sync-after-inactivity scheduled for %" PRIu64, PreferencesStore::nextSyncTime);

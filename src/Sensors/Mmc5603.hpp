@@ -11,6 +11,8 @@ enum mmc5603_reg_t {
     MMC5603_REG_XOUT_2 = 0x06,
     MMC5603_REG_YOUT_2 = 0x07,
     MMC5603_REG_ZOUT_2 = 0x08,
+    // Temperature output, unsigned format. The range is -75-125°C, about 0.8°C/LSB, 00000000 stands
+    // for -75°C
     MMC5603_REG_TOUT = 0x09,
     MMC5603_REG_STATUS_1 = 0x18,
     MMC5603_REG_ODR = 0x1A,
@@ -46,8 +48,12 @@ public:
     // Only read the most significant byte on X and Z axes. Takes ~800us to run.
     auto readXZ8Bit(Xyz8bit &out) -> bool;
 
+    // Read the temperature in degrees Celsius
+    auto getTemperature() -> float { return temperature_; }
+
 private:
     int i2cNum_;
+    float temperature_ = 0;
 
     auto registerReadByte(mmc5603_reg_t regAddr, uint8_t *data) -> esp_err_t;
 
