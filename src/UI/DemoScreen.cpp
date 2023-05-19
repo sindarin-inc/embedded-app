@@ -98,11 +98,11 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
                                   display.getTextWidth(message.c_str()) / 2),
                 display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 +
                                   textYOffset + 34));
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
                 display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
                 BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.fg);
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - glass_small_left_width / 2),
                 display.yAbsolute(128 - glass_small_left_height / 2 + yOffsetOverall),
                 GLASS_SMALL_LEFT_BITS, glass_small_left_width, glass_small_left_height, display.fg);
@@ -111,11 +111,11 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
             nextInterval_ = 500;
             break;
         case 1:
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
                 display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
                 BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.bg);
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - bottom_arrow_width / 2 - 14 + xOffset),
                 display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
                 LEFT_ARROW_BITS, left_arrow_width, left_arrow_height, display.fg);
@@ -123,11 +123,11 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
             nextInterval_ = 500;
             break;
         case 2:
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - bottom_arrow_width / 2 - 14 + xOffset),
                 display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
                 LEFT_ARROW_BITS, left_arrow_width, left_arrow_height, display.bg);
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
                 display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
                 BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.fg);
@@ -135,11 +135,11 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
             nextInterval_ = 500;
             break;
         case 3:
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
                 display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
                 BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.bg);
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - bottom_arrow_width / 2 + 14 + xOffset),
                 display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
                 RIGHT_ARROW_BITS, right_arrow_width, right_arrow_height, display.fg);
@@ -147,11 +147,11 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
             nextInterval_ = 500;
             break;
         case 4:
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - bottom_arrow_width / 2 + 14 + xOffset),
                 display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
                 RIGHT_ARROW_BITS, right_arrow_width, right_arrow_height, display.bg);
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
                 display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
                 BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.fg);
@@ -178,21 +178,21 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
         switch (currentSubScreen_) {
         case 0:
             if (!shownOne_) {
-                display.drawXBitmap(
+                display.drawBitmap(
                     display.xAbsolute(128 - bottom_arrow_width / 2 - xOffset),
                     display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
                     BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.bg);
-                display.drawXBitmap(display.xAbsolute(128 - bottom_arrow_width / 2 + 14 - xOffset),
+                display.drawBitmap(display.xAbsolute(128 - bottom_arrow_width / 2 + 14 - xOffset),
                                     display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset +
                                                       yOffsetOverall),
                                     RIGHT_ARROW_BITS, right_arrow_width, right_arrow_height,
                                     display.bg);
-                display.drawXBitmap(display.xAbsolute(128 - bottom_arrow_width / 2 - 14 - xOffset),
+                display.drawBitmap(display.xAbsolute(128 - bottom_arrow_width / 2 - 14 - xOffset),
                                     display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset +
                                                       yOffsetOverall),
                                     LEFT_ARROW_BITS, left_arrow_width, left_arrow_height,
                                     display.bg);
-                display.drawXBitmap(
+                display.drawBitmap(
                     display.xAbsolute(128 - glass_small_left_width / 2),
                     display.yAbsolute(128 - glass_small_left_height / 2 + yOffsetOverall),
                     GLASS_SMALL_LEFT_BITS, glass_small_left_width, glass_small_left_height,
@@ -223,11 +223,11 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
                                   display.getTextWidth(message.c_str()) / 2),
                 display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 +
                                   textYOffset + 34));
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
                 display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
                 BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.fg);
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - glass_small_right_width / 2),
                 display.yAbsolute(128 - glass_small_right_height / 2 + yOffsetOverall),
                 GLASS_SMALL_RIGHT_BITS, glass_small_right_width, glass_small_right_height,
@@ -237,11 +237,11 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
             nextInterval_ = 500;
             break;
         case 1:
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
                 display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
                 BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.bg);
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - bottom_arrow_width / 2 - 14 + xOffset),
                 display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
                 LEFT_ARROW_BITS, left_arrow_width, left_arrow_height, display.fg);
@@ -249,11 +249,11 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
             nextInterval_ = 500;
             break;
         case 2:
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - bottom_arrow_width / 2 - 14 + xOffset),
                 display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
                 LEFT_ARROW_BITS, left_arrow_width, left_arrow_height, display.bg);
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
                 display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
                 BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.fg);
@@ -261,11 +261,11 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
             nextInterval_ = 500;
             break;
         case 3:
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
                 display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
                 BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.bg);
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - bottom_arrow_width / 2 + 14 + xOffset),
                 display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
                 RIGHT_ARROW_BITS, right_arrow_width, right_arrow_height, display.fg);
@@ -273,11 +273,11 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
             nextInterval_ = 500;
             break;
         case 4:
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - bottom_arrow_width / 2 + 14 + xOffset),
                 display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + yOffset + yOffsetOverall),
                 RIGHT_ARROW_BITS, right_arrow_width, right_arrow_height, display.bg);
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - bottom_arrow_width / 2 + xOffset),
                 display.yAbsolute(128 - bottom_arrow_height / 2 + yOffset + yOffsetOverall),
                 BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.fg);
@@ -306,19 +306,19 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
             display.setFont(static_cast<Font *>(&ibmf75Face1));
             if (!shownTwo_) {
                 // fragile with the original xOffset above. Figure out a better way.
-                display.drawXBitmap(
+                display.drawBitmap(
                     display.xAbsolute(128 - bottom_arrow_width / 2 + 33),
                     display.yAbsolute(128 - bottom_arrow_height / 2 + 53 + yOffsetOverall),
                     BOTTOM_ARROW_BITS, bottom_arrow_width, bottom_arrow_height, display.bg);
-                display.drawXBitmap(
+                display.drawBitmap(
                     display.xAbsolute(128 - bottom_arrow_width / 2 + 14 + 33),
                     display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + 53 + yOffsetOverall),
                     RIGHT_ARROW_BITS, right_arrow_width, right_arrow_height, display.bg);
-                display.drawXBitmap(
+                display.drawBitmap(
                     display.xAbsolute(128 - bottom_arrow_width / 2 - 14 + 33),
                     display.yAbsolute(128 - bottom_arrow_height / 2 - 22 + 53 + yOffsetOverall),
                     LEFT_ARROW_BITS, left_arrow_width, left_arrow_height, display.bg);
-                display.drawXBitmap(
+                display.drawBitmap(
                     display.xAbsolute(128 - glass_small_right_width / 2),
                     display.yAbsolute(128 - glass_small_right_height / 2 + yOffsetOverall),
                     GLASS_SMALL_RIGHT_BITS, glass_small_right_width, glass_small_right_height,
@@ -348,13 +348,13 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
                                   display.getTextWidth(message.c_str()) / 2),
                 display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight() / 2 +
                                   textYOffset + 34));
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - glass_small_above_width / 2),
                 display.yAbsolute(128 - glass_small_above_height / 2 + yOffsetOverall),
                 GLASS_SMALL_ABOVE_BITS, glass_small_above_width, glass_small_above_height,
                 display.fg);
 
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
                 display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall),
                 ARROW_UP_DOWN_BITS, arrow_up_down_width, arrow_up_down_height, display.fg);
@@ -363,12 +363,12 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
             nextInterval_ = 500;
             break;
         case 1:
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
                 display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall),
                 ARROW_UP_DOWN_BITS, arrow_up_down_width, arrow_up_down_height, display.bg);
 
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
                 display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall - 12),
                 ARROW_UP_DOWN_BITS, arrow_up_down_width, arrow_up_down_height, display.fg);
@@ -376,12 +376,12 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
             nextInterval_ = 500;
             break;
         case 2:
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
                 display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall - 12),
                 ARROW_UP_DOWN_BITS, arrow_up_down_width, arrow_up_down_height, display.bg);
 
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
                 display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall),
                 ARROW_UP_DOWN_BITS, arrow_up_down_width, arrow_up_down_height, display.fg);
@@ -389,12 +389,12 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
             nextInterval_ = 500;
             break;
         case 3:
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
                 display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall),
                 ARROW_UP_DOWN_BITS, arrow_up_down_width, arrow_up_down_height, display.bg);
 
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
                 display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall - 12),
                 ARROW_UP_DOWN_BITS, arrow_up_down_width, arrow_up_down_height, display.fg);
@@ -402,11 +402,11 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
             nextInterval_ = 500;
             break;
         case 4:
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
                 display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall - 12),
                 ARROW_UP_DOWN_BITS, arrow_up_down_width, arrow_up_down_height, display.bg);
-            display.drawXBitmap(
+            display.drawBitmap(
                 display.xAbsolute(128 - arrow_up_down_width / 2 + xOffset),
                 display.yAbsolute(128 - arrow_up_down_height / 2 + yOffset + yOffsetOverall),
                 ARROW_UP_DOWN_BITS, arrow_up_down_width, arrow_up_down_height, display.fg);
@@ -436,7 +436,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), BK1_BITS, bk1_width,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), BK1_BITS, bk1_width,
                             bk1_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         drawSkipMessage(display, true);
@@ -444,7 +444,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), BK2_BITS, bk2_width,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), BK2_BITS, bk2_width,
                             bk2_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         drawSkipMessage(display, true);
@@ -452,7 +452,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), BK3_BITS, bk3_width,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), BK3_BITS, bk3_width,
                             bk3_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         drawSkipMessage(display, true);
@@ -460,7 +460,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), BK4_BITS, bk4_width,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), BK4_BITS, bk4_width,
                             bk4_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         drawSkipMessage(display, true);
@@ -498,28 +498,28 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.clearDisplay();
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), SP1_BITS, sp1_width,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), SP1_BITS, sp1_width,
                             sp1_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 1500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), SP2_BITS, sp2_width,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), SP2_BITS, sp2_width,
                             sp2_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 750;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), SP3_BITS, sp3_width,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), SP3_BITS, sp3_width,
                             sp3_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 750;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), SP4_BITS, sp4_width,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), SP4_BITS, sp4_width,
                             sp4_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 1000;
@@ -534,28 +534,28 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.clearDisplay();
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), IDEA1_BITS, idea1_width,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), IDEA1_BITS, idea1_width,
                             idea1_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 1500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), IDEA2_BITS, idea2_width,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), IDEA2_BITS, idea2_width,
                             idea2_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 750;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), IDEA3_BITS, idea3_width,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), IDEA3_BITS, idea3_width,
                             idea3_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 750;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), IDEA4_BITS, idea4_width,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), IDEA4_BITS, idea4_width,
                             idea4_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 1000;
@@ -572,21 +572,21 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.invertDisplay(false);
         display.clearDisplay();
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), PHONE1_BITS, phone1_width,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), PHONE1_BITS, phone1_width,
                             phone1_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 1500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), PHONE2_BITS, phone2_width,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), PHONE2_BITS, phone2_width,
                             phone2_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 750;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), PHONE3_BITS, phone3_width,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), PHONE3_BITS, phone3_width,
                             phone3_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 1000;
@@ -602,7 +602,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.invertDisplay(false);
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), SOL_READER1_BITS,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), SOL_READER1_BITS,
                             sol_reader1_width, sol_reader1_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 1500;
@@ -619,37 +619,37 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         display.invertDisplay(false);
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), EYE1_BITS, eye1_width,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), EYE1_BITS, eye1_width,
                             eye1_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 1500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), EYE2_BITS, eye2_width,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), EYE2_BITS, eye2_width,
                             eye2_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 750;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), EYE3_BITS, eye3_width,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), EYE3_BITS, eye3_width,
                             eye3_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 750;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), SPACE_SCAPE1_BITS,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), SPACE_SCAPE1_BITS,
                             space_scape1_width, space_scape1_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
         nextInterval_ = 1500;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), SPACE_SCAPE1_BITS,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), SPACE_SCAPE1_BITS,
                             space_scape1_width, space_scape1_height, display.fg);
-        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
+        display.drawBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
                             display.yAbsolute(display.yAbsoluteCenter() - im10_height / 2),
                             IM10_BITS, im10_width, im10_height, display.bg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
@@ -657,9 +657,9 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), SPACE_SCAPE1_BITS,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), SPACE_SCAPE1_BITS,
                             space_scape1_width, space_scape1_height, display.fg);
-        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
+        display.drawBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
                             display.yAbsolute(display.yAbsoluteCenter() - im10_height / 2),
                             IM20_BITS, im20_width, im20_height, display.bg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
@@ -667,9 +667,9 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), SPACE_SCAPE1_BITS,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), SPACE_SCAPE1_BITS,
                             space_scape1_width, space_scape1_height, display.fg);
-        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
+        display.drawBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
                             display.yAbsolute(display.yAbsoluteCenter() - im10_height / 2),
                             IM30_BITS, im30_width, im30_height, display.bg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
@@ -677,9 +677,9 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), SPACE_SCAPE1_BITS,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), SPACE_SCAPE1_BITS,
                             space_scape1_width, space_scape1_height, display.fg);
-        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
+        display.drawBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
                             display.yAbsolute(display.yAbsoluteCenter() - im10_height / 2),
                             IM40_BITS, im40_width, im40_height, display.bg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
@@ -687,9 +687,9 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), SPACE_SCAPE1_BITS,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), SPACE_SCAPE1_BITS,
                             space_scape1_width, space_scape1_height, display.fg);
-        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
+        display.drawBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
                             display.yAbsolute(display.yAbsoluteCenter() - im10_height / 2),
                             IM50_BITS, im50_width, im50_height, display.bg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
@@ -697,9 +697,9 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), SPACE_SCAPE1_BITS,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), SPACE_SCAPE1_BITS,
                             space_scape1_width, space_scape1_height, display.fg);
-        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
+        display.drawBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
                             display.yAbsolute(display.yAbsoluteCenter() - im10_height / 2),
                             IM60_BITS, im60_width, im60_height, display.bg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
@@ -707,9 +707,9 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), SPACE_SCAPE1_BITS,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), SPACE_SCAPE1_BITS,
                             space_scape1_width, space_scape1_height, display.fg);
-        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
+        display.drawBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
                             display.yAbsolute(display.yAbsoluteCenter() - im10_height / 2),
                             IM70_BITS, im70_width, im70_height, display.bg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
@@ -717,9 +717,9 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), SPACE_SCAPE1_BITS,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), SPACE_SCAPE1_BITS,
                             space_scape1_width, space_scape1_height, display.fg);
-        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
+        display.drawBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
                             display.yAbsolute(display.yAbsoluteCenter() - im10_height / 2),
                             IM80_BITS, im80_width, im80_height, display.bg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
@@ -727,9 +727,9 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), SPACE_SCAPE1_BITS,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), SPACE_SCAPE1_BITS,
                             space_scape1_width, space_scape1_height, display.fg);
-        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
+        display.drawBitmap(display.xAbsolute(display.xAbsoluteCenter() - im10_width / 2),
                             display.yAbsolute(display.yAbsoluteCenter() - im10_height / 2),
                             IM90_BITS, im90_width, im90_height, display.bg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
@@ -737,9 +737,9 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), SPACE_SCAPE1_BITS,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), SPACE_SCAPE1_BITS,
                             space_scape1_width, space_scape1_height, display.fg);
-        display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - im100_width / 2),
+        display.drawBitmap(display.xAbsolute(display.xAbsoluteCenter() - im100_width / 2),
                             display.yAbsolute(display.yAbsoluteCenter() - im100_height / 2),
                             IM100_BITS, im100_width, im100_height, display.bg);
         nextUpdateType_ = DisplaySystem::UpdateType::ERASE;
@@ -747,14 +747,14 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), SOL_SCROLL_SMALL_BITS,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), SOL_SCROLL_SMALL_BITS,
                             sol_scroll_small_width, sol_scroll_small_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 750;
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), SOL_SCROLL_LARGE_BITS,
+        display.drawBitmap(display.xAbsolute(0), display.yAbsolute(0), SOL_SCROLL_LARGE_BITS,
                             sol_scroll_large_width, sol_scroll_large_height, display.fg);
         nextUpdateType_ = DisplaySystem::UpdateType::PARTIAL;
         nextInterval_ = 750;

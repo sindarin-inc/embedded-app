@@ -11,7 +11,7 @@ void BitmapScreen::render(DisplaySystem &display) {
 
     // By default, we draw the bitmap in the middle of the screen. TODO: add the screen offset if
     // we'd like. This is one step closer to that, however.
-    display.drawXBitmap((display.width() - width_) / 2, (display.height() - height_) / 2, bitmap_,
+    display.drawBitmap((display.width() - width_) / 2, (display.height() - height_) / 2, bitmap_,
                         width_, height_, display.fg);
     display.updateDisplay();
 }

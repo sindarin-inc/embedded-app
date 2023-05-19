@@ -33,7 +33,7 @@ public:
     void drawInRect(Rect rect) override {
         if (size_ > 0) {
             BufferStream stream(iconBits_, size_);
-            display_.drawPBM(rect.origin.x, rect.origin.y, stream);
+            display_.drawPBM(rect.origin.x, rect.origin.y, stream, display_.fg);
         } else {
             display_.drawXBitmap(rect.origin.x, rect.origin.y, iconBits_, width_, height_,
                                  display_.fg);

@@ -272,7 +272,7 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bo
     fullRefreshNext_ = false;
 }
 
-void DisplayEinkET013TT1::drawFullscreenBitmapFromFile(RendererStream &stream) {
+void DisplayEinkET013TT1::drawFullscreenBitmapFromFile(RendererStream &stream, uint16_t color) {
     // data is packed 1 bit binary
     uint8_t *buffer = gfxCanvas_.getBuffer();
     assert(buffer);
@@ -283,10 +283,12 @@ void DisplayEinkET013TT1::drawFullscreenBitmapFromFile(RendererStream &stream) {
         return;
     }
 
-    // pbm files have 0 white and 1 black
-    // invert to display properly (for now)
-    for (int i = 0; i < size; i++) {
-        buffer[i] = buffer[i] ^ 0xFF; // XOR to invert all bits
+    if (color == 0) {
+        // pbm files have 0 white and 1 black
+        // invert to display properly (for now)
+        for (int i = 0; i < size; i++) {
+            buffer[i] = buffer[i] ^ 0xFF; // XOR to invert all bits
+        }
     }
 }
 
