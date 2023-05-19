@@ -850,6 +850,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         prefs_.demoMode.set(true);
         systemSettingsMenu->showTemporaryMessage(*display,
                                                  "Turning on first time setup and restarting.");
+        display_->clearDisplay();
+        display_->clearFrameBuffer();
+        display->updateDisplay();
         power_.reboot();
     }));
 
