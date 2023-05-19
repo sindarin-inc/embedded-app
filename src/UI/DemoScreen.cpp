@@ -864,7 +864,7 @@ void DemoScreen::render(DisplaySystem &display) {
     // @john -- tada :)
     if (currentScreen_ == lambdas_.size() - 1) {
 #if !SIMULATOR
-        if ((WiFi::getInstance().getFirstWiFiSSID() == "")) {
+        if (WiFi::getInstance().hasWiFiCredentials()) {
 #else
         if (1) {
 #endif
