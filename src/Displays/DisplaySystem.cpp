@@ -289,7 +289,8 @@ void DisplaySystem::drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], in
     gfxClass_->drawXBitmap(xOffset(x), yOffset(y), bitmap, w, h, color);
 }
 
-void DisplaySystem::drawPBM(int16_t x, int16_t y, const uint8_t *pbmbytes, int size, uint16_t color) {
+void DisplaySystem::drawPBM(int16_t x, int16_t y, const uint8_t *pbmbytes, int size,
+                            uint16_t color) {
     BufferStream stream(pbmbytes, size);
     drawPBM(x, y, stream, color);
 }

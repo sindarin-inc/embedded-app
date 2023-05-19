@@ -9,8 +9,7 @@ public:
     // Allow custom size bitmaps. By default they'll be rendered in the middle of the
     // screen. Can go from here if we want to do something different and extend the
     // functionality of this class.
-    BitmapScreen(const uint8_t *bitmap, int size)
-        : bitmap_(bitmap), size_(size) {
+    BitmapScreen(const uint8_t *bitmap, int size) : bitmap_(bitmap), size_(size) {
 
         log_i("creating bitmap screen");
         BufferStream stream(bitmap, size);
