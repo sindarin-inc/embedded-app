@@ -162,7 +162,7 @@ void ContentSyncScreen::render(DisplaySystem &display) {
 }
 
 void ContentSyncScreen::processCommand(RemoteCommand command) {
-    if ((command == RemoteCommand::ENTER) && (WiFi::getInstance().getFirstWiFiSSID() == "")) {
+    if ((command == RemoteCommand::ENTER) && !WiFi::getInstance().hasWiFiCredentials()) {
         back();
     }
 };
