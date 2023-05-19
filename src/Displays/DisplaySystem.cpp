@@ -310,7 +310,7 @@ void DisplaySystem::drawBitmap(int16_t x, int16_t y, const uint8_t bitmap[], int
         return;
     }
 
-    if (pw < 0 || pw >= 256 || ph < 0 || ph >= 256) {
+    if (pw < 0 || pw > 256 || ph < 0 || ph > 256) {
         // must be xbm
         drawXBitmap(x, y, bitmap, w, h, color);
         return;
