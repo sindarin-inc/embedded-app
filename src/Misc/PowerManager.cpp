@@ -447,7 +447,7 @@ auto ToString(SleepReason reason) -> std::string {
 void PowerManager::waitForQueuesThenDeepSleep(SleepReason reason) {
     log_d("Beginning shutdown sequence with reason %s", ToString(reason).c_str());
 
-    DispatchWaitForShutdown();
+    DispatchWaitForShutdown(10000);
 
     bool syncOnClose = (reason == SleepReason::TempleClosed || reason == SleepReason::Inactivity) &&
                        !prefs_.noDeliverOnClose.get().value_or(false);
