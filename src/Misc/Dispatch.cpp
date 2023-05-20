@@ -2,6 +2,7 @@
 
 #include <cassert>
 
+#include "Misc/Platform.hpp"
 #include "Misc/StringUtil.hpp"
 
 // Definitions for dispatch event flags

@@ -6,6 +6,7 @@
 
 #include "Displays/CustomWaveforms.hpp"
 #include "Displays/EinkWaveforms.hpp"
+#include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
 #include "config.h"
 
