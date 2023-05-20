@@ -79,7 +79,8 @@ auto DispatchQueue::waitForShutdown(int timeoutMs) -> bool {
     if (bits & DISPATCH_EXIT_EVT) {
         return true;
     } else {
-        log_w("Dispatch thread %s timed out on exit!", name_.c_str());
+        log_w("Dispatch thread %s timed out on exit with %d items remaining!", name_.c_str(),
+              size());
         return false;
         // TODO: kill the threads?
         // for (int i = 0; i < threads_.size(); i++) {
@@ -213,7 +214,7 @@ auto DispatchBeginShutdown() -> bool {
         isExecutingInQueue = isExecutingInQueue || uiQueue->isInQueue();
         uiQueue->beginShutdown();
     }
-    auto einkQueue = DispatchGetUiQueue(false);
+    auto einkQueue = DispatchGetEinkQueue(false);
     if (einkQueue != nullptr) {
         isExecutingInQueue = isExecutingInQueue || einkQueue->isInQueue();
         einkQueue->beginShutdown();
