@@ -131,10 +131,10 @@ void PowerManager::wakeupCheck(SolClock &clock) {
 
     // At this point state_ is either Background or Booting. If it's Booting, we likely want to
     // proceed to Active
+    esp_err_t err = isTempleOpen(templeOpen_);
     if (state_ == PowerState::Booting) {
         // If the temple is closed but we're active booting, probably something wrong happened (like
         // a crash during content sync). Just go back to sleep.
-        esp_err_t err = isTempleOpen(templeOpen_);
         if (err != ESP_OK) {
             log_e("Error checking temple state: %d, continuing boot", err);
         } else if (!templeOpen_) {
