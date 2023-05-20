@@ -54,7 +54,7 @@ public:
     static TimerHandle_t animationTimer;
 
     int32_t defaultXPadding = 30;
-    int32_t defaultYPadding = 25;
+    int32_t defaultYPadding = 20;
     int32_t defaultScreenWidth = 255;
     int32_t defaultScreenHeight = 255;
 
