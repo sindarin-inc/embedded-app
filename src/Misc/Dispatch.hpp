@@ -30,7 +30,7 @@ public:
     ~DispatchQueue();
 
     void beginShutdown();
-    void waitForShutdown(int timeoutMs = 10);
+    auto waitForShutdown(int timeoutMs = 10) -> bool;
 
     // dispatch and copy
     void dispatch(const fp_t &op);
@@ -80,3 +80,10 @@ auto DispatchGetCore0BackgroundQueue(bool create = true) -> DispatchQueue *;
 auto DispatchGetCore1BackgroundQueue(bool create = true) -> DispatchQueue *;
 
 auto DispatchGetUiQueue(bool create = true) -> DispatchQueue *;
+
+auto DispatchGetEinkQueue(bool create = true) -> DispatchQueue *;
+
+// Returns true if we're currently inside one of the queues
+auto DispatchBeginShutdown() -> bool;
+
+auto DispatchWaitForShutdown(int timeoutMs = 5000) -> bool;

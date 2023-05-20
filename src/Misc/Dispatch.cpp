@@ -71,13 +71,16 @@ void DispatchQueue::beginShutdown() {
     }
 }
 
-void DispatchQueue::waitForShutdown(int timeoutMs) {
+auto DispatchQueue::waitForShutdown(int timeoutMs) -> bool {
     // Wait until a thread signals exit. Timeout is acceptable.
     auto bits = xEventGroupWaitBits(notifyFlags_, DISPATCH_EXIT_EVT, pdTRUE, pdFALSE,
                                     pdMS_TO_TICKS(timeoutMs));
     // Determine if we timed out by checking if DISPATCH_EXIT_EVT was not set
-    if (!(bits & DISPATCH_EXIT_EVT)) {
+    if (bits & DISPATCH_EXIT_EVT) {
+        return true;
+    } else {
         log_w("Dispatch thread %s timed out on exit!", name_.c_str());
+        return false;
         // TODO: kill the threads?
         // for (int i = 0; i < threads_.size(); i++) {
         //     vTaskDelete(threads_[i].thread);
@@ -159,6 +162,7 @@ void DispatchQueue::dispatchOneOff(const fp_t &op, size_t threadStack, UBaseType
 static DispatchQueue *core0BackgroundQueue = nullptr;
 static DispatchQueue *core1BackgroundQueue = nullptr;
 static DispatchQueue *uiQueue = nullptr;
+static DispatchQueue *einkQueue = nullptr;
 
 auto DispatchGetCore0BackgroundQueue(bool create) -> DispatchQueue * {
     if (core0BackgroundQueue == nullptr && create) {
@@ -179,4 +183,67 @@ auto DispatchGetUiQueue(bool create) -> DispatchQueue * {
         uiQueue = new DispatchQueue("UI", 1, 10000, 10, 1);
     }
     return uiQueue;
+}
+
+auto DispatchGetEinkQueue(bool create) -> DispatchQueue * {
+    if (einkQueue == nullptr && create) {
+        einkQueue = new DispatchQueue("Eink", 1, 4096, 11, 1);
+    }
+    return einkQueue;
+}
+
+// Really this probably only needs to be the screens and the filesystem that we shut down
+// gracefully. Everything else should be fine to just let die. We should consider moving all
+// filesystem operations into their own queue and just shutting down that queue and the UI
+// queue.
+auto DispatchBeginShutdown() -> bool {
+    bool isExecutingInQueue = false;
+    auto core0BgQueue = DispatchGetCore0BackgroundQueue(false);
+    if (core0BgQueue != nullptr) {
+        isExecutingInQueue = isExecutingInQueue || core0BgQueue->isInQueue();
+        core0BgQueue->beginShutdown();
+    }
+    auto core1BgQueue = DispatchGetCore1BackgroundQueue(false);
+    if (core1BgQueue != nullptr) {
+        isExecutingInQueue = isExecutingInQueue || core1BgQueue->isInQueue();
+        core1BgQueue->beginShutdown();
+    }
+    auto uiQueue = DispatchGetUiQueue(false);
+    if (uiQueue != nullptr) {
+        isExecutingInQueue = isExecutingInQueue || uiQueue->isInQueue();
+        uiQueue->beginShutdown();
+    }
+    auto einkQueue = DispatchGetUiQueue(false);
+    if (einkQueue != nullptr) {
+        isExecutingInQueue = isExecutingInQueue || einkQueue->isInQueue();
+        einkQueue->beginShutdown();
+    }
+    return isExecutingInQueue;
+}
+
+auto DispatchWaitForShutdown(int timeoutMs) -> bool {
+    auto startMs = Millis();
+    bool success = true;
+    log_d("Waiting for dispatch queues to shutdown");
+    auto core0BgQueue = DispatchGetCore0BackgroundQueue(false);
+    if (core0BgQueue) {
+        success &= core0BgQueue->waitForShutdown(timeoutMs);
+    }
+    auto core1BgQueue = DispatchGetCore1BackgroundQueue(false);
+    if (core1BgQueue) {
+        int remainingMs = timeoutMs - std::max(0, Millis() - startMs);
+        success &= core1BgQueue->waitForShutdown(remainingMs);
+    }
+    auto uiQueue = DispatchGetUiQueue(false);
+    if (uiQueue) {
+        int remainingMs = timeoutMs - std::max(0, Millis() - startMs);
+        success &= uiQueue->waitForShutdown(remainingMs);
+    }
+    auto einkQueue = DispatchGetEinkQueue(false);
+    if (einkQueue) {
+        int remainingMs = timeoutMs - std::max(0, Millis() - startMs);
+        success &= einkQueue->waitForShutdown(remainingMs);
+    }
+    log_d("Dispatch queues shutdown");
+    return success;
 }

@@ -160,7 +160,7 @@ void EinkET013TT1::init() {
     ESP_ERROR_CHECK(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "eink", &freqLock_));
 #endif
 
-    einkQueue_ = new DispatchQueue("Eink", 1, 4096, 11, 1);
+    einkQueue_ = DispatchGetEinkQueue();
 
     log_d("Initialized EinkET013TT1");
 }
