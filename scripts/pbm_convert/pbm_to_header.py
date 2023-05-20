@@ -11,6 +11,10 @@ if len(sys.argv) != 3:
 input_dir = sys.argv[1]
 output_dir = sys.argv[2]
 
+# convert any bmp or png images to pbm in input directory
+cmd = 'cd ' + input_dir + '; mogrify -format pbm *.bmp *.png'
+subprocess.run(cmd, shell=True)
+
 pbms = [f for f in listdir(input_dir) if isfile(join(input_dir, f))]
 
 for pbm in pbms:
