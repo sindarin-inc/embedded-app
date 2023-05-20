@@ -60,9 +60,9 @@ DispatchQueue::~DispatchQueue() {
     vEventGroupDelete(notifyFlags_);
 }
 
-void DispatchQueue::beginShutdown() {
+void DispatchQueue::beginShutdown(bool graceful) {
     // Signal to dispatch threads that it's time to wrap up
-    quit_ = true;
+    shutdownType_ = graceful ? ShutdownType::Graceful : ShutdownType::Immediate;
 
     for (int i = 0; i < threads_.size(); i++) {
         // Queue one quit signal for each thread
@@ -90,28 +90,28 @@ auto DispatchQueue::waitForShutdown(int timeoutMs) -> bool {
 }
 
 void DispatchQueue::dispatch(const fp_t &op) {
-    if (!quit_) {
+    if (shutdownType_ == ShutdownType::None) {
         auto work = new WorkItem{.op = op, .quit = false};
         xQueueSend(q_, (void *)&work, portMAX_DELAY);
     }
 }
 
 void DispatchQueue::dispatch(fp_t &&op) {
-    if (!quit_) {
+    if (shutdownType_ == ShutdownType::None) {
         auto work = new WorkItem{.op = std::move(op), .quit = false};
         xQueueSend(q_, (void *)&work, portMAX_DELAY);
     }
 }
 
 void DispatchQueue::dispatchFromISR(const fp_t &op) {
-    if (!quit_) {
+    if (shutdownType_ == ShutdownType::None) {
         auto work = new WorkItem{.op = op, .quit = false};
         xQueueSendFromISR(q_, (void *)&work, NULL);
     }
 }
 
 void DispatchQueue::dispatchFromISR(fp_t &&op) {
-    if (!quit_) {
+    if (shutdownType_ == ShutdownType::None) {
         auto work = new WorkItem{.op = std::move(op), .quit = false};
         xQueueSendFromISR(q_, (void *)&work, NULL);
     }
@@ -131,12 +131,15 @@ void DispatchQueue::dispatchThreadHandler() {
     WorkItem *work;
     do {
         xQueueReceive(q_, &(work), portMAX_DELAY);
-        if (!work->quit && !quit_) {
+        if (work->quit) {
+            delete work;
+            break;
+        } else if (shutdownType_ != ShutdownType::Immediate) {
             // Execute the work
             work->op();
         }
         delete work;
-    } while (!quit_);
+    } while (shutdownType_ != ShutdownType::Immediate);
 
     // Set a signal to indicate a thread exited
     xEventGroupSetBits(notifyFlags_, DISPATCH_EXIT_EVT);
@@ -212,12 +215,7 @@ auto DispatchBeginShutdown() -> bool {
     auto uiQueue = DispatchGetUiQueue(false);
     if (uiQueue != nullptr) {
         isExecutingInQueue = isExecutingInQueue || uiQueue->isInQueue();
-        uiQueue->beginShutdown();
-    }
-    auto einkQueue = DispatchGetEinkQueue(false);
-    if (einkQueue != nullptr) {
-        isExecutingInQueue = isExecutingInQueue || einkQueue->isInQueue();
-        einkQueue->beginShutdown();
+        uiQueue->beginShutdown(true);
     }
     return isExecutingInQueue;
 }
@@ -240,11 +238,15 @@ auto DispatchWaitForShutdown(int timeoutMs) -> bool {
         int remainingMs = timeoutMs - std::max(0, Millis() - startMs);
         success &= uiQueue->waitForShutdown(remainingMs);
     }
+    // Eink queue is a special case. We must wait for it to gracefully shutdown _after_ the UI queue
+    // has already shutdown Once other queues are shutdown we can shutdown the eink queue
     auto einkQueue = DispatchGetEinkQueue(false);
     if (einkQueue) {
+        einkQueue->beginShutdown(true);
         int remainingMs = timeoutMs - std::max(0, Millis() - startMs);
         success &= einkQueue->waitForShutdown(remainingMs);
     }
+
     log_d("Dispatch queues shutdown");
     return success;
 }

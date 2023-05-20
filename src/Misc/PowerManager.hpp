@@ -22,6 +22,10 @@ enum class PowerState {
     Booting,
     // Screen lighting enabled ~10-60mA, inavtivity timer running.
     Active,
+    // Forced on (screen lighting enabled and MCU still running) while temples closed
+    // Same as Active but no turning off when the temples are closed until
+    // explictly taken out of this state or put to deep sleep.
+    ActiveForcedOn,
     // Screen lighting enabled ~10-60mA, inactivity timer at 10s, UI disabled
     ActiveUSBCharging,
     // Screen lighting enabled ~10-60mA, inactivity timer at 10s, UI disabled
@@ -31,10 +35,6 @@ enum class PowerState {
     // Deep sleep with ULP magnetometer and periodic wakeups ~100uA
     // Included for completeness not used in main CPU code currently
     Sleeping,
-    // Forced on (screen lighting enabled and MCU still running) while temples closed
-    // Same as Active but no turning off when the temples are closed until
-    // explictly taken out of this state or put to deep sleep.
-    ForcedOn,
     // Fully off (deep sleep) ~22uA
     Off,
 };
@@ -68,7 +68,7 @@ public:
 
     auto begin() -> esp_err_t;
 
-    auto forceOn() -> void { state_ = PowerState::ForcedOn; }
+    auto forceOn() -> void { state_ = PowerState::ActiveForcedOn; }
     auto disableForceOn() -> void { state_ = PowerState::Active; }
 
     auto state() -> PowerState { return state_; }
@@ -78,6 +78,7 @@ public:
     }
 
     // Power lifecycle functions
+    auto beginShutdown() -> bool;
     void reboot();
     void ulpDeepSleep(SleepReason reason = SleepReason::Unspecified);
     // Fully power down the device (assuming USB is disconnected and left temple closed)

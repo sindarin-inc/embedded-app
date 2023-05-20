@@ -428,7 +428,7 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
 
         // Wait for something else to get queued, otherwise power off
         if (!einkQueue_->waitNotEmpty(100)) {
-            einkQueue_->dispatch([this]() { powerOffInternal(); });
+            powerOffInternal();
         } else {
             log_d("Eink queue has work to do! Not powering off");
         }
@@ -538,7 +538,7 @@ void EinkET013TT1::beginPowerOn() {
         int millisToWait = 300 - (Millis() - startTime);
         if (!einkQueue_->waitNotEmpty(millisToWait)) {
             log_e("Nothing rendered after Eink power on, powering off (this shouldn't happen)");
-            einkQueue_->dispatch([this]() { powerOffInternal(); });
+            powerOffInternal();
         }
     });
 }

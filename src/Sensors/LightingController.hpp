@@ -24,6 +24,8 @@ public:
     // Enable lights altogether
     void enableLighting(int fadeMs = 200);
 
+    bool enabled() { return enabled_; }
+
     // Disable updates and keeps a specific lighting setting (for when the user adjusts the setting
     // manually)
     void setOverrideValuePercent(int percent);
