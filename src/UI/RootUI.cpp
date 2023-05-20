@@ -453,19 +453,19 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     contentSettingsMenu->addMenuItem(MenuItem("Morning delivery", [this]() {
-        this->prefs_.morningDelivery.set(!this->prefs_.morningDelivery.get().value_or(false));
-        if (this->prefs_.morningDelivery.get().value_or(false)) {
+        this->prefs_.noMorningDelivery.set(!this->prefs_.noMorningDelivery.get().value_or(false));
+        if (this->prefs_.noMorningDelivery.get().value_or(false)) {
+            this->prefs_.morningNewspaperTime.remove();
+        } else {
             // Default to 6am delivery. May have configuration at some other time
             this->prefs_.morningNewspaperTime.set(6);
-        } else {
-            this->prefs_.morningNewspaperTime.remove();
         }
     }));
 
-    if (prefs_.morningDelivery.get().value_or(false)) {
-        contentSettingsMenu->setToggleLastItem(true);
-    } else {
+    if (prefs_.noMorningDelivery.get().value_or(false)) {
         contentSettingsMenu->setToggleLastItem(false);
+    } else {
+        contentSettingsMenu->setToggleLastItem(true);
     }
 
     contentSettingsMenu->addMenuItem(MenuItem("Evening delivery", [this]() {
