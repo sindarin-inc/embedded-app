@@ -741,7 +741,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         dropVcom_ = false;
-        display.invertDisplay(true);
+        display.invertDisplay(false);
         display.drawXBitmap(display.xAbsolute(display.xAbsoluteCenter() - sol_logo_width / 2),
                             display.yAbsolute(display.yAbsoluteCenter() - sol_logo_height / 2),
                             SOL_LOGO_BITS, sol_logo_width, sol_logo_height, display.fg);
@@ -860,7 +860,7 @@ void DemoScreen::render(DisplaySystem &display) {
     // @john -- tada :)
     if (currentScreen_ == lambdas_.size() - 1) {
 #if !SIMULATOR
-        if (WiFi::getInstance().hasWiFiCredentials()) {
+        if (!WiFi::getInstance().hasWiFiCredentials()) {
 #else
         if (1) {
 #endif
