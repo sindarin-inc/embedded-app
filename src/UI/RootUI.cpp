@@ -944,6 +944,20 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }));
     }
 
+    debugSettingsMenu->addMenuItem(MenuItem("Firmware Update",
+                                            [this, debugSettingsMenu, display]() {
+        auto firmwareUpdateScreen = new FirmwareUpdateScreen(*display, this->prefs_);
+        this->setCurrentScreen(*firmwareUpdateScreen);
+        firmwareUpdateScreen->setBackCallback(
+            [this, firmwareUpdateScreen, debugSettingsMenu, display]() {
+            debugSettingsMenu->setFirstLoad();
+            setCurrentScreen(*debugSettingsMenu);
+            debugSettingsMenu->render(*display);
+            delete firmwareUpdateScreen;
+        });
+        firmwareUpdateScreen->begin();
+    }));
+
     debugSettingsMenu->addMenuItem(MenuItem("Clear Books and Restart",
                                             [debugSettingsMenu, display, &localStore]() {
         localStore.deleteReadables();
