@@ -55,12 +55,16 @@ auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
                                          LayoutOptionsSizeToFit);
                 }
 
-                if (menuToggleValues_[place] == true) {
-                    context.setViewFrame(*menuToggleSelectionViews_[place],
-                                         {{x + 139, y + 3}, {7, 7}}, LayoutOptionsSizeToFit);
-                } else {
-                    context.setViewFrame(*menuToggleSelectionViews_[place],
-                                         {{x + 167, y + 3}, {7, 7}}, LayoutOptionsSizeToFit);
+                // Only layout the bubble if it's visible (doing this here instead of draw since we
+                // already have the place in the vector here)
+                if (showToggleBubble_[place]) {
+                    if (menuToggleValues_[place]) {
+                        context.setViewFrame(*menuToggleSelectionViews_[place],
+                                             {{x + 139, y + 3}, {7, 7}}, LayoutOptionsSizeToFit);
+                    } else {
+                        context.setViewFrame(*menuToggleSelectionViews_[place],
+                                             {{x + 167, y + 3}, {7, 7}}, LayoutOptionsSizeToFit);
+                    }
                 }
 
                 y += viewFrame.size.height - 1;

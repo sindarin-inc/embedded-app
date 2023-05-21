@@ -37,7 +37,10 @@ public:
 
     void toggleToggleValue(int index) { menuToggleValues_[index] = !menuToggleValues_[index]; }
 
-    void setToggleLastItem(bool value) { menuToggleValues_.push_back(value); }
+    void setToggleLastItem(bool value, bool showToggle = true) {
+        menuToggleValues_.push_back(value);
+        showToggleBubble_.push_back(showToggle);
+    }
 
 protected:
     SingleLineTextView headerTextView_;
@@ -47,6 +50,7 @@ protected:
     std::vector<std::shared_ptr<BoxView>> menuPageViews_;
     std::shared_ptr<BoxView> selectedSelectionView_;
     std::vector<bool> menuToggleValues_;
+    std::vector<bool> showToggleBubble_;
     std::vector<std::shared_ptr<BoxView>> menuToggleSelectionViews_;
     bool drawBubbles_ = false;
 

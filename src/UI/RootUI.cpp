@@ -442,7 +442,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         contentSettingsMenu->setToggleLastItem(true);
     }
 
-    contentSettingsMenu->addMenuItem(MenuItem("Deliver content on close", [this]() {
+    contentSettingsMenu->addMenuItem(MenuItem("Sync content on close", [this]() {
         this->prefs_.noDeliverOnClose.set(!this->prefs_.noDeliverOnClose.get().value_or(false));
     }));
 
@@ -452,7 +452,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         contentSettingsMenu->setToggleLastItem(true);
     }
 
-    contentSettingsMenu->addMenuItem(MenuItem("Morning delivery", [this]() {
+    contentSettingsMenu->addMenuItem(MenuItem("Morning content sync", [this]() {
         this->prefs_.noMorningDelivery.set(!this->prefs_.noMorningDelivery.get().value_or(false));
         if (this->prefs_.noMorningDelivery.get().value_or(false)) {
             this->prefs_.morningNewspaperTime.remove();
@@ -468,7 +468,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         contentSettingsMenu->setToggleLastItem(true);
     }
 
-    contentSettingsMenu->addMenuItem(MenuItem("Evening delivery", [this]() {
+    contentSettingsMenu->addMenuItem(MenuItem("Evening content sync", [this]() {
         this->prefs_.eveningDelivery.set(!this->prefs_.eveningDelivery.get().value_or(false));
         if (this->prefs_.eveningDelivery.get().value_or(false)) {
             // default to 8pm delivery. May have configuration at some other time
@@ -483,6 +483,25 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     } else {
         contentSettingsMenu->setToggleLastItem(false);
     }
+
+    contentSettingsMenu->addMenuItem(
+        MenuItem("Sync content now", [this, display, &localStore, mainMenu, &lightingController]() {
+            auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
+            lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
+            display->setFont(mainMenu->getMyStyle().navigationFont);
+            this->setCurrentScreen(*contentSyncScreen);
+            contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
+                display->clearDisplay();
+                mainMenu->setFirstLoad();
+                setCurrentScreen(*mainMenu);
+                mainMenu->render(*display);
+                delete contentSyncScreen;
+            });
+            contentSyncScreen->begin();
+        }));
+
+    // Hide the bubble for the last item, Sync content now
+    contentSettingsMenu->setToggleLastItem(false, false);
 
     auto systemSettingsMenu =
         new MenuScreen(power_.battery, *display, styleFamilies.settingsMenu, "System");
