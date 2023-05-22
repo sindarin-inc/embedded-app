@@ -88,6 +88,8 @@ public:
     void powerOff();
 
     void feedInactivityTimer() { inactivityTimer_.feed(); }
+    void disableInactivityTimer() { inactivityTimer_.pause(); }
+    void enableInactivityTimer() { inactivityTimer_.resume(); }
 
     void loop();
 
