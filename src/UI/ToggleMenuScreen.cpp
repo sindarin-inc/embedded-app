@@ -60,10 +60,12 @@ auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
                 if (showToggleBubble_[place]) {
                     if (menuToggleValues_[place]) {
                         context.setViewFrame(*menuToggleSelectionViews_[place],
-                                             {{x + 139, y + 3}, {7, 7}}, LayoutOptionsSizeToFit);
+                                             {{size.width - 25 - 37, y + 3}, {7, 7}},
+                                             LayoutOptionsSizeToFit);
                     } else {
                         context.setViewFrame(*menuToggleSelectionViews_[place],
-                                             {{x + 167, y + 3}, {7, 7}}, LayoutOptionsSizeToFit);
+                                             {{size.width - 37, y + 3}, {7, 7}},
+                                             LayoutOptionsSizeToFit);
                     }
                 }
 
