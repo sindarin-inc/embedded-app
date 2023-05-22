@@ -35,6 +35,19 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
 
         ASSERT_VIEW_UNCHANGED("Settings");
 
+        SendRemoteCommand(NEXT);
+        WAIT_FOR_DRAW();
+
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW();
+
+        ASSERT_VIEW_UNCHANGED("ContentSettings");
+
+        SendRemoteCommand(CHANNEL_MINUS);
+        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW();
+
         // Go back to the main screen
         SendRemoteCommand(CHANNEL_PLUS);
         WAIT_FOR_DRAW();
