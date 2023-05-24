@@ -273,7 +273,7 @@ auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> 
 
     wifi_config_t wifiConfig = {};
 
-    if (ssid.length() <= 0 || password.length() <= 0) {
+    if (ssid.length() <= 0) {
         log_i("No WiFi credentials provided, using stored credentials");
         getWifiConfig(&wifiConfig);
     } else {
