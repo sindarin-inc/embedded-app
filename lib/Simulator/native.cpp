@@ -51,10 +51,22 @@ extern bool ledChange;
 
 SDL_Window *window;
 SDL_Renderer *renderer;
+int totalFrames = 0;
+bool movieOn_ = false;
+
 // Texture on which to draw the UI from the firmware
 SDL_Texture *deviceScreen;
 
 float lerp(float a, float b, float t) { return a + t * (b - a); }
+
+bool saveScreenshotPng(std::string filepath, SDL_Window *window, SDL_Renderer *renderer) {
+    if (!stbi_write_png(filepath.c_str(), EinkET013TT1_PIXEL_WIDTH, EinkET013TT1_PIXEL_HEIGHT, 1,
+                        FakeEinkET013TT1ParticlePositions, 0)) {
+        log_e("Unable to save rendered image to %s", filepath.c_str());
+    }
+
+    return true;
+}
 
 void SimDrawScreen() {
     for (int x = 0; x < EinkET013TT1_PIXEL_WIDTH; x++) {
@@ -70,6 +82,13 @@ void SimDrawScreen() {
                 lerp(40 + brightnessOffset, 227 - brightnessOffset, colorF), 0xFF);
             SDL_RenderDrawPoint(renderer, x, y);
         }
+    }
+
+    if (movieOn_) {
+        totalFrames++;
+        char filename[100];
+        sprintf(filename, "frames/frame-%05d.png", totalFrames);
+        saveScreenshotPng(filename, window, renderer);
     }
 }
 
@@ -186,15 +205,6 @@ bool isPngEqual(std::string filepath1, std::string filepath2) {
     return true;
 }
 
-bool saveScreenshotPng(std::string filepath, SDL_Window *window, SDL_Renderer *renderer) {
-    if (!stbi_write_png(filepath.c_str(), EinkET013TT1_PIXEL_WIDTH, EinkET013TT1_PIXEL_HEIGHT, 1,
-                        FakeEinkET013TT1ParticlePositions, 0)) {
-        log_e("Unable to save rendered image to %s", filepath.c_str());
-    }
-
-    return true;
-}
-
 #if SIMULATOR_BLE
 // BLE command from the TurnTouch remote
 RemoteCommand ttCommand;
@@ -278,6 +288,9 @@ auto mainLoop() -> bool {
                 break;
             case 'p':
                 saveScreenshotPng("./screenshot.png", window, renderer);
+                break;
+            case 'm':
+                movieOn_ = !movieOn_;
                 break;
             case 'u':
                 runBackwardsUnitTest(window, renderer);
