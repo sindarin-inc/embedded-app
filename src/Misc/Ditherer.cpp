@@ -1,7 +1,7 @@
 #include "Ditherer.hpp"
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 
 #include "Platform.hpp"
 #include "sindarin-debug.h"
@@ -11,7 +11,7 @@ Ditherer ditherer;
 void Ditherer::convertToFloat(uint8_t *image, int width, int height) {
     uint8_t *inpixel = image;
     float div = 1.0 / 255.0;
-    float *outpixel = _ditherBuffer.get();
+    float *outpixel = ditherBuffer_.get();
     for (int h = 0; h < height; h++) {
         for (int w = 0; w < width; w++) {
             *(outpixel++) = (float)(*(inpixel++)) * div;
@@ -24,16 +24,16 @@ void Ditherer::ditherToBitmap(uint8_t *image, uint8_t *bitmap, int width, int he
     ditherFloatToBitmap(bitmap, width, height);
 }
 
-float *Ditherer::pixelAt(int x, int y, int width, int height) {
+auto Ditherer::pixelAt(int x, int y, int width, int height) -> float * {
     if (x >= 0 && x < width && y >= 0 && y < height) {
-        return &_ditherBuffer.get()[y * width + x];
+        return &ditherBuffer_.get()[y * width + x];
     } else {
-        return NULL;
+        return nullptr;
     }
 }
 
 void Ditherer::ditherFloatToBitmap(uint8_t *bitmap, int width, int height) {
-    float *pixel = _ditherBuffer.get();
+    float *pixel = ditherBuffer_.get();
     float val;
     float div1 = 7.0 / 16.0;
     float div2 = 3.0 / 16.0;
@@ -69,13 +69,21 @@ void Ditherer::ditherFloatToBitmap(uint8_t *bitmap, int width, int height) {
 
             float *pp;
             pp = pixelAt(w + 1, h, width, height);
-            if (pp) *pp += diff * div1;
+            if (pp) {
+                *pp += diff * div1;
+            }
             pp = pixelAt(w - 1, h + 1, width, height);
-            if (pp) *pp += diff * div2;
+            if (pp) {
+                *pp += diff * div2;
+            }
             pp = pixelAt(w, h + 1, width, height);
-            if (pp) *pp += diff * div3;
+            if (pp) {
+                *pp += diff * div3;
+            }
             pp = pixelAt(w + 1, h + 1, width, height);
-            if (pp) *pp += diff * div4;
+            if (pp) {
+                *pp += diff * div4;
+            }
 
             *(pixel++) = val;
             if (bitsInByte == 8) {
