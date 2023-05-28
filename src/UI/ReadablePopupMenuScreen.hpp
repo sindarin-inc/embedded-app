@@ -10,7 +10,7 @@ class ReadablePopupMenuScreen : public ContainerScreen, public View, public Menu
 
 public:
     ReadablePopupMenuScreen(DisplaySystem &display, PreferencesStore &prefs,
-                            const std::shared_ptr<Readable> &readable, LightingController &lightingController,
+                            const std::shared_ptr<Readable> readable, LightingController &lightingController,
                             Renderer &renderer)
         : display_(display), prefs_(prefs), readable_(readable), renderer_(renderer),
           popupMenuView_(display), lightingAdjustScreen_(display, prefs, lightingController),
