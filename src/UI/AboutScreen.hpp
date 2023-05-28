@@ -3,9 +3,10 @@
 
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
+#include "Misc/SecretCode.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
-#include "UI/Bitmaps/im100.hpp"
+#include "UI/Bitmaps/sol-logo.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/IconView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
@@ -16,7 +17,7 @@ class AboutScreen : public Screen, public EinkView {
 public:
     AboutScreen(DisplaySystem &display, PreferencesStore &prefs, PowerManager &power)
         : EinkView(display), display_(display), prefs_(prefs), power_(power),
-          solLogoView_(display, IM100_BITS, im100_width, im100_height),
+          solLogoView_(display, SOL_LOGO_BITS, sol_logo_width, sol_logo_height),
           productNameView_(display, "Product Name: Sol Reader", &ibmf75Face0),
           serialNumberView_(display, "", &ibmf75Face0),
           firmwareVersionView_(display, "", &ibmf75Face0),
@@ -44,14 +45,11 @@ public:
         remoteFirmwareVersionView_.setText(ptBattery);
         remoteBatteryView_.setText(ptBuildString);
 
-        secretCodeCommands_.push_back(RemoteCommand::PREV);
-        secretCodeCommands_.push_back(RemoteCommand::PREV);
-        secretCodeCommands_.push_back(RemoteCommand::NEXT);
-        secretCodeCommands_.push_back(RemoteCommand::NEXT);
-        secretCodeCommands_.push_back(RemoteCommand::CHANNEL_MINUS);
-        secretCodeCommands_.push_back(RemoteCommand::CHANNEL_PLUS);
-        secretCodeCommands_.push_back(RemoteCommand::CHANNEL_MINUS);
-        secretCodeCommands_.push_back(RemoteCommand::CHANNEL_PLUS);
+        secretCode_.setCallback([this]() {
+            log_d("Got the right secret code -- toggling Debug Screen and rebooting!");
+            prefs_.showDebugMenu.set(!prefs_.showDebugMenu.get().value_or(false));
+            power_.reboot();
+        });
     };
 
     auto layout(LayoutContext &context, Size size) -> Size override;
@@ -65,8 +63,7 @@ protected:
     PreferencesStore &prefs_;
     PowerManager &power_;
 
-    std::vector<RemoteCommand> secretCodeCommands_;
-    uint8_t secretCodeIndex_ = 0;
+    SecretCode secretCode_;
 
     IconView solLogoView_;
     SingleLineTextView productNameView_;

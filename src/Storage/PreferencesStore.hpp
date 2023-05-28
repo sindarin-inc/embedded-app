@@ -307,15 +307,15 @@ public:
           sleepReason(*this, "sleep-reason"), noBooks(*this, "no-books"),
           showNews(*this, "show-news"), noArticles(*this, "no-articles"),
           noBible(*this, "no-bible"), noDeliverOnClose(*this, "no-deliv-close"),
-          morningDelivery(*this, "morn-deliver"), eveningDelivery(*this, "eve-deliver"),
+          noMorningDelivery(*this, "no-morn-sync"), eveningDelivery(*this, "eve-deliver"),
           darkMode(*this, "dark-mode"), autoPilot(*this, "auto-pilot"),
           fastTransitions(*this, "fast-tran"), noUploadCrashes(*this, "no-upload-crash"),
           showDebugMenu(*this, "show-debug"), fastBookmarkRight(*this, "fst-mark-right"),
           fastBookmarkCenter(*this, "fst-mark-cent"), pageTransitionArrows(*this, "page-arrows"),
-          wifiSettingsJson(*this, "wifi-settings"), localStoreMigrationVersion(*this, "ls-version"),
-          fontsLibrary(*this, "fonts-lib"), fontType(*this, "font-type"),
-          tutorialsDeleted(*this, "tutorials"), bleAdvertisingKey(*this, "ble-adv-key"),
-          bleAuthKey(*this, "ble-auth-key"),
+          allowUsageWhileCharging(*this, "allow-use-chg"), wifiSettingsJson(*this, "wifi-settings"),
+          localStoreMigrationVersion(*this, "ls-version"), fontsLibrary(*this, "fonts-lib"),
+          fontType(*this, "font-type"), tutorialsDeleted(*this, "tutorials"),
+          bleAdvertisingKey(*this, "ble-adv-key"), bleAuthKey(*this, "ble-auth-key"),
           preferencesStoreMigrationVersion_(*this, "ps-version"){};
     PreferencesStore(PreferencesStore &) = delete;
 
@@ -480,7 +480,7 @@ public:
     PrefsItem<bool> noArticles;
     PrefsItem<bool> noBible;
     PrefsItem<bool> noDeliverOnClose;
-    PrefsItem<bool> morningDelivery;
+    PrefsItem<bool> noMorningDelivery;
     PrefsItem<bool> eveningDelivery;
     PrefsItem<bool> darkMode;
     PrefsItem<bool> autoPilot;
@@ -490,6 +490,7 @@ public:
     PrefsItem<bool> fastBookmarkRight;
     PrefsItem<bool> fastBookmarkCenter;
     PrefsItem<bool> pageTransitionArrows;
+    PrefsItem<bool> allowUsageWhileCharging;
     PrefsItem<std::string> wifiSettingsJson;
     PrefsItem<uint32_t> localStoreMigrationVersion;
     PrefsItem<bool> fontsLibrary;

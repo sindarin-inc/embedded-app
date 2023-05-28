@@ -203,10 +203,9 @@ void ReadableScreen::render(DisplaySystem &display) {
         // We need to make sure this goes onto the second page because of a bug in the renderer.
         std::string message =
             "Welcome to reading with Sol! This is a one page tutorial on what each button does "
-            "while reading.\n\n\n\ue003   Main Menu\n\n\ue004   Reading "
-            "Settings\n\n\ue001   "
+            "while reading.\n\n\n\ue003  or  \ue004   Popup Menu\n\n\ue001   "
             "Previous "
-            "Page\n\n\uE002   Bookmark Page\n\n\ue000   Next Page\n\n\nThat's "
+            "Page\n\n\ue000  or  \uE002  Next Page\n\n\nThat's "
             "it! Press "
             "any button... "
             "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
@@ -384,22 +383,21 @@ void ReadableScreen::hidePopupMenu() { setCurrentScreen(*this); }
 
 void ReadableScreen::processCommandDemoMode(RemoteCommand command) {
     switch (command) {
-    case RemoteCommand::CHANNEL_MINUS:
+    case RemoteCommand::LEFT:
         numUps_ = 0;
         processCommandNormal(command);
         break;
-    case RemoteCommand::PLAY:
     case RemoteCommand::ENTER:
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::RIGHT:
         numUps_ = 0;
         turnPage();
         setNeedsRerender();
         break;
-    case RemoteCommand::NEXT:
+    case RemoteCommand::DOWN:
         numUps_ = 0;
         break;
     case RemoteCommand::BACK:
-    case RemoteCommand::PREV:
+    case RemoteCommand::UP:
         numUps_++;
         if (numUps_ > 3) {
             numUps_ = 0;
@@ -411,7 +409,6 @@ void ReadableScreen::processCommandDemoMode(RemoteCommand command) {
             back();
         }
         break;
-    case RemoteCommand::NOP_BUTTON:
     case RemoteCommand::ANIMATION:
     default:
         break;
@@ -420,12 +417,11 @@ void ReadableScreen::processCommandDemoMode(RemoteCommand command) {
 
 void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
     switch (command) {
-    case RemoteCommand::CHANNEL_MINUS:
+    case RemoteCommand::LEFT:
         pageSpeed_ = std::min(pageSpeed_ + PAGE_SPEED_INCREMENT, SLOWEST_PAGE_SPEED);
         prefs_.autoPilotSpeed.set(pageSpeed_);
         log_d("Slowing down: New Page Speed is %u", pageSpeed_);
         break;
-    case RemoteCommand::PLAY:
     case RemoteCommand::ENTER:
         // If we aren't pause, pause.
         // If we are paused, start the timer again.
@@ -438,9 +434,9 @@ void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
         autoPilotPause_ = !autoPilotPause_;
         break;
 
-    case RemoteCommand::NEXT:
+    case RemoteCommand::DOWN:
     case RemoteCommand::BACK:
-    case RemoteCommand::PREV:
+    case RemoteCommand::UP:
         // When entering the popup menu from autopilot, go back up to two line so that coming
         // out the user can not be behind.
         if (speedLinesToSkip_ > 0) {
@@ -452,13 +448,12 @@ void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
         xTimerStop(DisplaySystem::animationTimer, 0);
         processCommandNormal(command);
         break;
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::RIGHT:
         pageSpeed_ = std::max(pageSpeed_ - PAGE_SPEED_INCREMENT, 1);
         log_d("Speeding up: New Page Speed is %u", pageSpeed_);
         prefs_.autoPilotSpeed.set(pageSpeed_);
         break;
 
-    case RemoteCommand::NOP_BUTTON:
     case RemoteCommand::ANIMATION:
     default:
         break;
@@ -469,12 +464,11 @@ void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
 
 void ReadableScreen::processCommandNormal(RemoteCommand command) {
     switch (command) {
-    case RemoteCommand::CHANNEL_MINUS:
+    case RemoteCommand::LEFT:
         readable_.place = renderer_.getPreviousPlace();
         prefs_.readablePlace.set(readable_.shortenedUuid.c_str(), readable_.place);
         prefs_.readablePlaceChanged.set(readable_.shortenedUuid.c_str(), true);
         break;
-    case RemoteCommand::PLAY:
     case RemoteCommand::ENTER:
         if (prefs_.fastBookmarkCenter.get().value_or(false)) {
             inBookmark_ = !inBookmark_;
@@ -483,11 +477,11 @@ void ReadableScreen::processCommandNormal(RemoteCommand command) {
             turnPage();
         }
         break;
-    case RemoteCommand::NEXT:
+    case RemoteCommand::DOWN:
         showPopupMenu();
         popupMenuScreen_.preselectLastItem();
         break;
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::RIGHT:
         if (prefs_.fastBookmarkRight.get().value_or(false)) {
             inBookmark_ = !inBookmark_;
             writeOutBookmarkUpdate();
@@ -496,12 +490,11 @@ void ReadableScreen::processCommandNormal(RemoteCommand command) {
         }
         break;
     case RemoteCommand::BACK:
-    case RemoteCommand::PREV:
+    case RemoteCommand::UP:
         showPopupMenu();
         popupMenuScreen_.preselectFirstItem();
         break;
 
-    case RemoteCommand::NOP_BUTTON:
     case RemoteCommand::ANIMATION:
     default:
         break;
@@ -523,21 +516,20 @@ void ReadableScreen::processCommand(RemoteCommand command) {
     }
 
     switch (command) {
-    case RemoteCommand::CHANNEL_MINUS:
+    case RemoteCommand::LEFT:
         lastArrowPress_ = REMOTE_LEFT;
         break;
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::RIGHT:
         lastArrowPress_ = REMOTE_RIGHT;
         break;
-    case RemoteCommand::PLAY:
     case RemoteCommand::ENTER:
         lastArrowPress_ = REMOTE_CENTER;
         break;
-    case RemoteCommand::NEXT:
+    case RemoteCommand::DOWN:
         lastArrowPress_ = REMOTE_DOWN;
         break;
     case RemoteCommand::BACK:
-    case RemoteCommand::PREV:
+    case RemoteCommand::UP:
         lastArrowPress_ = REMOTE_UP;
         break;
     default:

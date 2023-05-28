@@ -100,10 +100,10 @@ void CalibrationScreen::render(DisplaySystem &display) {
 
 void CalibrationScreen::processCommand(RemoteCommand command) {
     switch (command) {
-    case RemoteCommand::CHANNEL_MINUS:
-    case RemoteCommand::CHANNEL_PLUS:
-    case RemoteCommand::PREV:
-    case RemoteCommand::NEXT:
+    case RemoteCommand::LEFT:
+    case RemoteCommand::RIGHT:
+    case RemoteCommand::UP:
+    case RemoteCommand::DOWN:
     case RemoteCommand::BACK:
         back();
         break;

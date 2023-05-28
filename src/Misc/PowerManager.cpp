@@ -13,9 +13,12 @@
 
 #include "Misc/Dispatch.hpp"
 #include "Platform.hpp"
+#include "Sensors/TempleAngle.hpp"
 
 #if !SIMULATOR
 #include "FunctionalInterrupt.h"
+#else
+uint32_t ulp_waitForClose;
 #endif
 
 // These are also in build/esp-idf/src/ulp_src/ulp_src.h but including that file throws a lot of
@@ -89,6 +92,11 @@ void PowerManager::wakeupCheck(SolClock &clock) {
             auto percentage = battery.getBatteryPercentage();
             if (USBConnected()) {
                 log_i("USB connected, battery level: %d%%", int(percentage));
+            } else if (ulp_waitForClose) {
+                ulp_waitForClose = 0;
+                // If the temples were never closed and usb just disconnected, let's power up
+                log_i("Temple is still open on USB disconnect, turning on");
+                break;
             }
             // Wait just a little moment so we can flash software if we get stuck
             Delay(1000);
@@ -123,18 +131,16 @@ void PowerManager::wakeupCheck(SolClock &clock) {
 
     // At this point state_ is either Background or Booting. If it's Booting, we likely want to
     // proceed to Active
+    esp_err_t err = isTempleOpen(templeOpen_);
     if (state_ == PowerState::Booting) {
         // If the temple is closed but we're active booting, probably something wrong happened (like
         // a crash during content sync). Just go back to sleep.
-        bool open = true;
-#if USE_MMC5603
-        open = templeCloseSensor_.isTempleOpen();
-#endif
-        if (!open) {
+        if (err != ESP_OK) {
+            log_e("Error checking temple state: %d, continuing boot", err);
+        } else if (!templeOpen_) {
             log_w("Temple is closed at boot, going back to sleep");
             ulpDeepSleep(SleepReason::TempleClosedAtBoot);
         }
-
         state_ = PowerState::Active;
         log_i("Beginning active boot");
     } else if (state_ == PowerState::Background) {
@@ -153,12 +159,23 @@ void PowerManager::wakeupCheck(SolClock &clock) {
 
 auto PowerManager::begin() -> esp_err_t {
 #if !SIMULATOR
+    // If USB is connected, disable operation unless we've disabled this behavior
+    if (USBConnected() && state_ == PowerState::Active &&
+        !prefs_.allowUsageWhileCharging.get().value_or(false)) {
+        log_i("USB connected, switching mode to ActiveUSBCharging");
+        state_ = PowerState::ActiveUSBCharging;
+    }
     // Disable inactivity timer in emc testing mode
     if (!prefs_.emcMode.get().value_or(false)) {
-        inactivityTimer_.start([this]() {
+        int inactivityTimeoutMs =
+            state_ == PowerState::ActiveUSBCharging ? 15 * 1000 : 10 * 60 * 1000;
+        log_d("Setting inactivity timeout to %d ms", inactivityTimeoutMs);
+        inactivityTimer_.start(
+            [this]() {
             log_i("Inactive! Close and open temple to wake");
             ulpDeepSleep(SleepReason::Inactivity);
-        });
+            },
+            inactivityTimeoutMs);
     }
 #endif
 
@@ -176,7 +193,20 @@ auto PowerManager::begin() -> esp_err_t {
         [this]() {
 #if !DISABLE_POWER_MANAGEMENT
         DispatchGetCore1BackgroundQueue()->dispatch([this]() {
-            if (USBConnected() && pmConfig_.light_sleep_enable == true) {
+            // If USB is connected, disable operation unless we've disabled this behavior
+            if (USBConnected() && !prefs_.allowUsageWhileCharging.get().value_or(false)) {
+                log_i("USB connected, switching to ActiveUSBCharging");
+                state_ = PowerState::ActiveUSBCharging;
+                inactivityTimer_.setTimeoutMs(10 * 1000);
+                DispatchGetUiQueue()->dispatch([this]() {
+                    if (stateChangeCallback_ != nullptr) {
+                        stateChangeCallback_(state_);
+                    }
+                });
+            } else if (!USBConnected() && state_ == PowerState::ActiveUSBCharging) {
+                log_i("USB disconnected, rebooting to Active");
+                reboot();
+            } else if (USBConnected() && pmConfig_.light_sleep_enable == true) {
                 // USB is connected so disable light sleep
                 pmConfig_.light_sleep_enable = false;
                 auto err = esp_pm_configure(&pmConfig_);
@@ -202,29 +232,6 @@ auto PowerManager::begin() -> esp_err_t {
 #endif
 #endif
 
-    templeCloseSensor_.setCallback([this](bool open) {
-        switch (state_) {
-        case PowerState::Active:
-            if (!open) {
-                lightingController_.disableLighting(200);
-                // Delay to see the fade.
-                // TODO: Use a callback instead
-                Delay(200);
-                ulpDeepSleep(SleepReason::TempleClosed);
-            }
-            break;
-        case PowerState::Background:
-            if (open) {
-                log_i("Temples opened while in Background! Going to Active");
-                // Temples were opened while in the background! Wake up with a reboot.
-                reboot();
-            }
-            break;
-        default:
-            break;
-        };
-    });
-
     return err;
 }
 
@@ -238,8 +245,67 @@ void PowerManager::loop() {
     battery.loop();
     checkUsb();
 #if USE_MMC5603
-    templeCloseSensor_.checkTemple();
+    bool templeOpen;
+    auto err = isTempleOpen(templeOpen);
+    if (err != ESP_OK) {
+        log_e("Error checking temple state %d, ignoring.", err);
+    } else if (templeOpen_ != templeOpen) {
+        log_i("Temple is %s", templeOpen ? "open" : "closed");
+        switch (state_) {
+        case PowerState::Active:
+        case PowerState::ActiveUSBCharging:
+        case PowerState::ActiveOverTemp:
+            if (!templeOpen) {
+                ulpDeepSleep(SleepReason::TempleClosed);
+            }
+            break;
+        case PowerState::Background:
+            if (templeOpen) {
+                log_i("Temples opened while in Background! Going to Active");
+                // Temples were opened while in the background! Wake up with a reboot.
+                reboot();
+            }
+            break;
+        // Explicitly don't do anything in the ActiveForcedOn state when temples change.
+        case PowerState::ActiveForcedOn:
+        default:
+            break;
+        };
+        templeOpen_ = templeOpen;
+    }
+
+    float temperature;
+    err = magSensor_.readTemperature(temperature);
+    if (err != ESP_OK) {
+        log_e("Error reading temperature %d, ignoring.", err);
+    } else if (state_ != PowerState::ActiveOverTemp &&
+               temperature > MAX_OPERATIONAL_TEMPERATURE_C) {
+        log_e("Temperature is too high! Going to sleep.");
+        state_ = PowerState::ActiveOverTemp;
+        inactivityTimer_.setTimeoutMs(10 * 1000);
+        DispatchGetUiQueue()->dispatch([this]() {
+            if (stateChangeCallback_ != nullptr) {
+                stateChangeCallback_(state_);
+            }
+        });
+    }
+
 #endif
+}
+
+auto PowerManager::isTempleOpen(bool &open) -> esp_err_t {
+    Xyz8bit magReading;
+#if USE_MMC5603
+    auto err = magSensor_.readXZ8Bit(magReading);
+    if (err != ESP_OK) {
+        log_e("Failed to read magnetometer");
+        return err;
+    }
+    open = IsTempleOpen(magReading.x, magReading.z);
+#else
+    open = true;
+#endif
+    return ESP_OK;
 }
 
 void PowerManager::checkUsb() {
@@ -275,7 +341,54 @@ void PowerManager::releaseLED() {
     gpio_hold_dis((gpio_num_t)RED_LED);
 }
 
-void PowerManager::reboot() { esp_restart(); }
+auto PowerManager::beginShutdown() -> bool {
+    auto taskName = pcTaskGetName(nullptr);
+    log_d("beginShutdown from task %s", taskName);
+
+    battery.saveLastBatteryReport();
+
+    if (state_ == PowerState::Active || state_ == PowerState::ActiveOverTemp ||
+        state_ == PowerState::ActiveUSBCharging || state_ == PowerState::ActiveForcedOn) {
+        lightingController_.disableLighting(200);
+        // Delay to see the fade.
+        // TODO: Use a callback instead
+        Delay(200);
+        DispatchGetUiQueue()->dispatch([this]() {
+            display_.clearDisplay();
+            display_.clearFrameBuffer();
+            display_.updateDisplay();
+        });
+    }
+
+    return DispatchBeginShutdown();
+}
+
+void PowerManager::reboot() {
+    // TODO: Figure out how to unify the below code with ulpDeepSleep
+
+    auto isExecutingInQueue = beginShutdown();
+
+    // We do the final shutdown sequence in a new task, in case the shutdown was running in one of
+    // the queues that needed to be shut down
+    BaseType_t status = xTaskCreatePinnedToCore(
+        [](void *) {
+        DispatchWaitForShutdown();
+        esp_restart();
+        },
+        "Reboot", 4096, nullptr, 1, nullptr, 1);
+    if (status != pdPASS) {
+        log_e("Failed to create Reboot task");
+        esp_restart();
+        return;
+    }
+
+    if (!isExecutingInQueue) {
+        // If we're not executing in a queue just shut down this task
+        vTaskDelete(nullptr);
+        // Shouldn't ever get here
+        log_e("ulpDeepSleep task deleted itself but still running!");
+    }
+}
 
 void PowerManager::ulpDeepSleep(SleepReason reason) {
 #if DISABLE_DEEP_SLEEP
@@ -283,33 +396,10 @@ void PowerManager::ulpDeepSleep(SleepReason reason) {
     return;
 #endif
 
-    battery.saveLastBatteryReport();
-
-    // Really this probably only needs to be the screens and the filesystem that we shut down
-    // gracefully. Everything else should be fine to just let die. We should consider moving all
-    // filesystem operations into their own queue and just shutting down that queue and the UI
-    // queue.
-    bool isExecutingInQueue = false;
-    auto core0BgQueue = DispatchGetCore0BackgroundQueue(false);
-    if (core0BgQueue != nullptr) {
-        isExecutingInQueue = isExecutingInQueue || core0BgQueue->isInQueue();
-        core0BgQueue->beginShutdown();
-    }
-    auto core1BgQueue = DispatchGetCore1BackgroundQueue(false);
-    if (core1BgQueue != nullptr) {
-        isExecutingInQueue = isExecutingInQueue || core1BgQueue->isInQueue();
-        core1BgQueue->beginShutdown();
-    }
-    auto uiQueue = DispatchGetUiQueue(false);
-    if (uiQueue != nullptr) {
-        isExecutingInQueue = isExecutingInQueue || uiQueue->isInQueue();
-        uiQueue->beginShutdown();
-    }
+    auto isExecutingInQueue = beginShutdown();
 
     // We do the final shutdown sequence in a new task, in case the shutdown was running in one of
     // the queues that needed to be shut down
-    auto taskName = pcTaskGetName(nullptr);
-    log_d("ulpDeepSleep executing from task %s", taskName);
     auto reasonPtr = new SleepReason(reason);
     BaseType_t status = xTaskCreatePinnedToCore(
         [](void *reasonPtr) {
@@ -357,20 +447,7 @@ auto ToString(SleepReason reason) -> std::string {
 void PowerManager::waitForQueuesThenDeepSleep(SleepReason reason) {
     log_d("Beginning shutdown sequence with reason %s", ToString(reason).c_str());
 
-    log_d("Waiting for dispatch queues to shutdown");
-    auto core0BgQueue = DispatchGetCore0BackgroundQueue(false);
-    if (core0BgQueue) {
-        core0BgQueue->waitForShutdown(5000);
-    }
-    auto core1BgQueue = DispatchGetCore1BackgroundQueue(false);
-    if (core1BgQueue) {
-        core1BgQueue->waitForShutdown(5000);
-    }
-    auto uiQueue = DispatchGetUiQueue(false);
-    if (uiQueue) {
-        uiQueue->waitForShutdown(5000);
-    }
-    log_d("Dispatch queues shutdown");
+    DispatchWaitForShutdown(10000);
 
     bool syncOnClose = (reason == SleepReason::TempleClosed || reason == SleepReason::Inactivity) &&
                        !prefs_.noDeliverOnClose.get().value_or(false);
@@ -381,7 +458,7 @@ void PowerManager::waitForQueuesThenDeepSleep(SleepReason reason) {
             PreferencesStore::syncReason = SyncReason::OnClose;
             PreferencesStore::nextSyncTime = SolClock::getInstance().getEpochTime() + 30;
             log_d("Sync-on-close scheduled for %" PRIu64, PreferencesStore::nextSyncTime);
-        } else if (reason == SleepReason::Inactivity) {
+        } else if (reason == SleepReason::Inactivity && state_ != PowerState::ActiveOverTemp) {
             PreferencesStore::syncReason = SyncReason::OnInactivity;
             PreferencesStore::nextSyncTime = SolClock::getInstance().getEpochTime() + 30;
             log_d("Sync-after-inactivity scheduled for %" PRIu64, PreferencesStore::nextSyncTime);

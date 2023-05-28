@@ -27,6 +27,8 @@
 #include "Storage/CrashReportWriter.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "UI/ChargingScreen.hpp"
+#include "UI/OverTempScreen.hpp"
 #include "UI/RootUI.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -78,7 +80,7 @@ LittleFSFileSystem fileSystem;
 
 LocalStore localStore(fileSystem, prefs);
 
-PowerManager powerManager(fileSystem, prefs, lightingController);
+PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay);
 RootUI rootUi(prefs, powerManager);
 SolClock solClock(prefs);
 
@@ -91,9 +93,13 @@ void PollingLoopTask(void *parameter) {
     for (;;) {
         // check if factory reset button is held down
         if (DigitalRead(FACTORY_RESET_BUTTON) == 0) {
+            // prevent inactivity sleep while button held down
+            powerManager.feedInactivityTimer();
             if (factoryResetStartTimeMs == 0) {
                 factoryResetStartTimeMs = Millis();
             } else if ((Millis() - factoryResetStartTimeMs) > FACTORY_RESET_MS) {
+                log_i("Button held down for %dms performing factory reset",
+                      Millis() - factoryResetStartTimeMs);
                 FactoryReset(prefs, fileSystem, powerManager, true);
             }
         } else {
@@ -214,9 +220,26 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         crashReportWriter.writeCrashReportIfExists();
     }
 
-    if (!localStore.begin()) {
+    if (powerManager.state() != PowerState::ActiveUSBCharging && !localStore.begin()) {
         bootErrors.push_back({.type = BootError::Type::LocalStore});
     }
+
+    auto showChargingScreen = []() {
+        lightingController.setOverrideValuePercent(100);
+        auto chargingScreen = new ChargingScreen(prefs);
+        rootUi.setCurrentScreen(*chargingScreen);
+        UIInnerLoop(RemoteCommand::NONE);
+    };
+
+    powerManager.setStateChangeCallback([&showChargingScreen](PowerState state) {
+        if (state == PowerState::ActiveUSBCharging) {
+            showChargingScreen();
+        } else if (state == PowerState::ActiveOverTemp) {
+            auto overTempScreen = new OverTempScreen();
+            rootUi.setCurrentScreen(*overTempScreen);
+            UIInnerLoop(RemoteCommand::NONE);
+        }
+    });
 
     if (powerManager.state() == PowerState::Background) {
         log_i("Booting into PowerState::Background, running a content sync");
@@ -394,7 +417,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 
     WiFi::getInstance().setWiFiPower(
-        (wifi_power_t)prefs.wifiPower.get().value_or(WIFI_POWER_17dBm));
+        (wifi_power_t)prefs.wifiPower.get().value_or(WIFI_POWER_16dBm));
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
     if (!bleManager->startAdvertisingIfNecessary()) {
@@ -410,10 +433,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     SHOW_HEAP();
 
-    rootUi.setup(&myDisplay, localStore, fileSystem, lightingController);
-
-    SHOW_HEAP();
-
     BlinkBootErrors(bootErrors);
 
     xTaskCreatePinnedToCore(PollingLoopTask, "Polling", 10000, nullptr, 1, nullptr, 0);
@@ -423,7 +442,16 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     DispatchGetUiQueue()->dispatch([]() { lightingController.checkAmbientLight(300, 100); });
 
     // Render the first thing
-    DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::NONE); });
+    DispatchGetUiQueue()->dispatch([showChargingScreen]() {
+        SHOW_HEAP();
+        if (powerManager.state() == PowerState::ActiveUSBCharging) {
+            showChargingScreen();
+        } else {
+            rootUi.setup(&myDisplay, localStore, fileSystem, lightingController);
+            UIInnerLoop(RemoteCommand::NONE);
+        }
+        SHOW_HEAP();
+    });
 
     GoodBootTimer();
 

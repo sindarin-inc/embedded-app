@@ -20,6 +20,7 @@
 #include "Displays/FakeEinkET013TT1.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/Math.hpp"
+#include "Misc/Platform.hpp"
 #include "Sensors/LightingController.hpp"
 #include "sindarin-debug.h"
 
@@ -61,7 +62,8 @@ void SimDrawScreen() {
             uint8_t color = FakeEinkET013TT1ParticlePositions[x + y * EinkET013TT1_PIXEL_WIDTH];
             float colorF = color / 255.0;
             uint16_t brightnessOffset =
-                MapRange(LightingSetting, MIN_LIGHTING_DUTY_CYCLE, MAX_LIGHTING_DUTY_CYCLE, 60, 0);
+                MapRange(LightingSetting, static_cast<int>(GetMinLightingDutyCycle()),
+                         static_cast<int>(GetMaxLightingDutyCycle()), 60, 0);
             SDL_SetRenderDrawColor(
                 renderer, lerp(40 + brightnessOffset, 248 - brightnessOffset, colorF),
                 lerp(40 + brightnessOffset, 240 - brightnessOffset, colorF),
@@ -224,7 +226,7 @@ void runBackwardsUnitTest(SDL_Window *window, SDL_Renderer *renderer) {
         saveScreenshotPng("next.png", window, renderer);
         sendCodeAndRender(RemoteCommand::ENTER, renderer);
         saveScreenshotPng("nextnext.png", window, renderer);
-        sendCodeAndRender(RemoteCommand::CHANNEL_MINUS, renderer);
+        sendCodeAndRender(RemoteCommand::LEFT, renderer);
         saveScreenshotPng("nextprev.png", window, renderer);
         // compare the most two recent pngs -- they should be the same.
         // if not, error out.
@@ -242,7 +244,7 @@ void goBackNumPages(SDL_Window *window, SDL_Renderer *renderer, int numPages) {
     int i = 0;
 
     for (i = 0; i < numPages; i++) {
-        sendCodeAndRender(RemoteCommand::CHANNEL_MINUS, renderer);
+        sendCodeAndRender(RemoteCommand::LEFT, renderer);
         usleep(1000000.0 / 240.0);
     }
 }
@@ -257,16 +259,16 @@ auto mainLoop() -> bool {
         } else if (e.type == SDL_KEYDOWN) {
             switch (e.key.keysym.sym) {
             case SDLK_UP:
-                remoteCode = RemoteCommand::PREV;
+                remoteCode = RemoteCommand::UP;
                 break;
             case SDLK_DOWN:
-                remoteCode = RemoteCommand::NEXT;
+                remoteCode = RemoteCommand::DOWN;
                 break;
             case SDLK_LEFT:
-                remoteCode = RemoteCommand::CHANNEL_MINUS;
+                remoteCode = RemoteCommand::LEFT;
                 break;
             case SDLK_RIGHT:
-                remoteCode = RemoteCommand::CHANNEL_PLUS;
+                remoteCode = RemoteCommand::RIGHT;
                 break;
             case SDLK_ESCAPE:
                 remoteCode = RemoteCommand::BACK;

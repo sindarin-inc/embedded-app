@@ -139,44 +139,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto currentReadable = prefs_.lastReadableId.get();
 
-    ReadableScreen *psalmsProverbs = nullptr;
-    ReadableScreen *newTestament = nullptr;
-    ReadableScreen *oldTestament = nullptr;
-
-    // Bible hack (to show off if we wanted to have different "apps" that had different behavior.
-    // For now, it's just the same as a regular book.)
-    auto it = std::find_if(readables.begin(), readables.end(), [](const std::shared_ptr<Readable> x) {
-        return (x->title == "Psalms and Proverbs");
-    });
-    if (it == readables.end()) {
-        log_d("Could not find readable: %s", "Psalms and Proverbs");
-    } else {
-        psalmsProverbs = createReadableScreen(*it);
-        log_d("Found readable: %s", it->get()->title.c_str());
-    }
-
-    it = std::find_if(readables.begin(), readables.end(), [](const std::shared_ptr<Readable> x) {
-        return (x->title.compare("New Testament") == 0);
-    });
-    if (it == readables.end()) {
-        log_d("Could not find readable: %s", "New Testament");
-    } else {
-        newTestament = createReadableScreen(*it);
-        log_d("Found readable: %s", it->get()->title.c_str());
-    }
-
-    it = std::find_if(readables.begin(), readables.end(), [](const std::shared_ptr<Readable> x) {
-        return (x->title.compare("Old Testament") == 0);
-    });
-    if (it == readables.end()) {
-        log_d("Could not find readable: %s", "Old Testament");
-    } else {
-        oldTestament = createReadableScreen(*it);
-        log_d("Found readable: %s", (*it)->title.c_str());
-    }
-
     bool hasLastQuestion = false;
-    it = std::find_if(readables.begin(), readables.end(), [](const std::shared_ptr<Readable> x) {
+    auto it = std::find_if(readables.begin(), readables.end(), [](const std::shared_ptr<Readable> x) {
         return (x->title.compare("The Last Question") == 0);
     });
     if (it == readables.end()) {
@@ -242,12 +206,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     SHOW_HEAP();
 
-    for (const auto &r : readables) {
+    auto isBible = [](const std::shared_ptr<Readable> r) -> bool {
+        return (r->title == "Psalms and Proverbs" || r->title == "New Testament" ||
+                r->title == "Old Testament" || r->title == "Torah");
+    };
+
+    for (const auto r : readables) {
         bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
         auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
         // Bible books go in their own menu / app
-        if (r->title == "Psalms and Proverbs" || r->title == "New Testament" ||
-            r->title == "Old Testament") {
+        if (!prefs_.noBible.get().value_or(false) && isBible(r)) {
             continue;
         }
 
@@ -347,14 +315,17 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         mainMenu->addSubMenu(pocketMenu);
     }
 
-    if (!prefs_.noBible.get().value_or(false) && (oldTestament || newTestament || psalmsProverbs)) {
+    // Bible hack (to show off if we wanted to have different "apps" that had different
+    // behavior. For now, it's just the same as a regular book.)
+    it = std::find_if(readables.begin(), readables.end(),
+                      [isBible](const std::shared_ptr<Readable> x) { return isBible(x); });
+    auto hasBible = it != readables.end();
+    if (!prefs_.noBible.get().value_or(false) && hasBible) {
         auto bibleMenu = new Menu(mainMenu->getMyStyle(), "Bible");
-
-        for (const auto &r : readables) {
-            bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
-            auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
-            if (r->title == "Psalms and Proverbs" || r->title == "New Testament" ||
-                r->title == "Old Testament") {
+        for (auto r : readables) {
+            if (isBible(r)) {
+                bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
+                auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
                 bibleMenu->addMenuItem(MenuItem(title, [this, r, createReadableScreen, display,
                                                         mainMenu]() {
                     auto readableScreen = createReadableScreen(r);
@@ -381,7 +352,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     "Reader.\n\n"
                     "Crossway Publishing has generously provided the English "
                     "Standard Version"
-                    " of the Bible to you free of charge (Copyright 2000, Crossway Publishing).\n\n"
+                    " of the Bible to you free of charge (Copyright 2001, Crossway Publishing).\n\n"
                     " Not your thing? No worries! You can toggle this app off "
                     "in the Content Settings.\n\n"
                     " Look for more scripture and meditation Sol Reader apps down the road!\n\n\n"
@@ -471,7 +442,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         contentSettingsMenu->setToggleLastItem(true);
     }
 
-    contentSettingsMenu->addMenuItem(MenuItem("Deliver content on close", [this]() {
+    contentSettingsMenu->addMenuItem(MenuItem("Sync content on close", [this]() {
         this->prefs_.noDeliverOnClose.set(!this->prefs_.noDeliverOnClose.get().value_or(false));
     }));
 
@@ -481,23 +452,23 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         contentSettingsMenu->setToggleLastItem(true);
     }
 
-    contentSettingsMenu->addMenuItem(MenuItem("Morning delivery", [this]() {
-        this->prefs_.morningDelivery.set(!this->prefs_.morningDelivery.get().value_or(false));
-        if (this->prefs_.morningDelivery.get().value_or(false)) {
+    contentSettingsMenu->addMenuItem(MenuItem("Morning content sync", [this]() {
+        this->prefs_.noMorningDelivery.set(!this->prefs_.noMorningDelivery.get().value_or(false));
+        if (this->prefs_.noMorningDelivery.get().value_or(false)) {
+            this->prefs_.morningNewspaperTime.remove();
+        } else {
             // Default to 6am delivery. May have configuration at some other time
             this->prefs_.morningNewspaperTime.set(6);
-        } else {
-            this->prefs_.morningNewspaperTime.remove();
         }
     }));
 
-    if (prefs_.morningDelivery.get().value_or(false)) {
-        contentSettingsMenu->setToggleLastItem(true);
-    } else {
+    if (prefs_.noMorningDelivery.get().value_or(false)) {
         contentSettingsMenu->setToggleLastItem(false);
+    } else {
+        contentSettingsMenu->setToggleLastItem(true);
     }
 
-    contentSettingsMenu->addMenuItem(MenuItem("Evening delivery", [this]() {
+    contentSettingsMenu->addMenuItem(MenuItem("Evening content sync", [this]() {
         this->prefs_.eveningDelivery.set(!this->prefs_.eveningDelivery.get().value_or(false));
         if (this->prefs_.eveningDelivery.get().value_or(false)) {
             // default to 8pm delivery. May have configuration at some other time
@@ -512,6 +483,25 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     } else {
         contentSettingsMenu->setToggleLastItem(false);
     }
+
+    contentSettingsMenu->addMenuItem(
+        MenuItem("Sync content now", [this, display, &localStore, mainMenu, &lightingController]() {
+            auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
+            lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
+            display->setFont(mainMenu->getMyStyle().navigationFont);
+            this->setCurrentScreen(*contentSyncScreen);
+            contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
+                display->clearDisplay();
+                mainMenu->setFirstLoad();
+                setCurrentScreen(*mainMenu);
+                mainMenu->render(*display);
+                delete contentSyncScreen;
+            });
+            contentSyncScreen->begin();
+        }));
+
+    // Hide the bubble for the last item, Sync content now
+    contentSettingsMenu->setToggleLastItem(false, false);
 
     auto systemSettingsMenu =
         new MenuScreen(power_.battery, *display, styleFamilies.settingsMenu, "System");
@@ -879,6 +869,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         prefs_.demoMode.set(true);
         systemSettingsMenu->showTemporaryMessage(*display,
                                                  "Turning on first time setup and restarting.");
+        display_->clearDisplay();
+        display_->clearFrameBuffer();
+        display->updateDisplay();
         power_.reboot();
     }));
 
@@ -940,7 +933,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                              [systemSettingsMenu, display]() {
         WiFi::getInstance().clearWiFiCredentials();
         log_w("WiFi settings cleared.");
-        systemSettingsMenu->showTemporaryMessage(*display, "WiFi settings cleared.", 2000, false);
+        systemSettingsMenu->showTemporaryMessage(*display, "WiFi settings cleared.", 2000, true);
     }));
 
     systemSettingsMenu->addMenuItem(MenuItem("Reset Preferences",
@@ -950,6 +943,38 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         systemSettingsMenu->showTemporaryMessage(*display, "Preferences cleared. Rebooting...",
                                                  2000, false);
         power_.reboot();
+    }));
+
+    if (prefs_.allowUsageWhileCharging.get().value_or(false)) {
+        debugSettingsMenu->addMenuItem(MenuItem("Disable use while charging",
+                                                [this, debugSettingsMenu, display]() {
+            prefs_.allowUsageWhileCharging.remove();
+            debugSettingsMenu->showTemporaryMessage(*display, "Disabling use while charging...",
+                                                    500, false);
+            power_.reboot();
+        }));
+    } else {
+        debugSettingsMenu->addMenuItem(MenuItem("Enable use while charging",
+                                                [this, debugSettingsMenu, display]() {
+            prefs_.allowUsageWhileCharging.set(true);
+            debugSettingsMenu->showTemporaryMessage(*display, "Enabling use while charging...", 500,
+                                                    false);
+            power_.reboot();
+        }));
+    }
+
+    debugSettingsMenu->addMenuItem(MenuItem("Firmware Update",
+                                            [this, debugSettingsMenu, display]() {
+        auto firmwareUpdateScreen = new FirmwareUpdateScreen(*display, this->prefs_);
+        this->setCurrentScreen(*firmwareUpdateScreen);
+        firmwareUpdateScreen->setBackCallback(
+            [this, firmwareUpdateScreen, debugSettingsMenu, display]() {
+            debugSettingsMenu->setFirstLoad();
+            setCurrentScreen(*debugSettingsMenu);
+            debugSettingsMenu->render(*display);
+            delete firmwareUpdateScreen;
+        });
+        firmwareUpdateScreen->begin();
     }));
 
     debugSettingsMenu->addMenuItem(MenuItem("Clear Books and Restart",
@@ -972,7 +997,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             log_i("Removing %s", file.c_str());
             fileSystem.remove(StringFormat("%s%s", "/coredumps/", file.c_str()).c_str());
         }
-        debugSettingsMenu->showTemporaryMessage(*display, "Crash Reports reset.");
+        debugSettingsMenu->showTemporaryMessage(*display, "Crash Reports cleared.");
         Delay(1500);
         power_.reboot();
     }));
@@ -981,7 +1006,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                              [this, systemSettingsMenu, display, &fileSystem]() {
         FactoryReset(prefs_, fileSystem, power_, false);
         log_w("NVS and FS cleared. Rebooting...");
-        systemSettingsMenu->showTemporaryMessage(*display, "NVS cleared! Resetting...");
+        systemSettingsMenu->showTemporaryMessage(*display, "Resetting Device! Rebooting...");
         power_.reboot();
     }));
 
@@ -1141,8 +1166,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             switch (power) {
             case WIFI_POWER_19_5dBm:
                 return "Max (19.5dBm)";
-            case WIFI_POWER_17dBm:
-                return "High (17dBm)";
+            case WIFI_POWER_16dBm:
+                return "High (16dBm)";
             case WIFI_POWER_11dBm:
                 return "Medium (11dBm)";
             case WIFI_POWER_5dBm:
@@ -1166,9 +1191,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             WiFi::getInstance().setWiFiPower(WIFI_POWER_19_5dBm);
             confirmMessage(WIFI_POWER_19_5dBm);
         }));
-        wifiPowerMenu->addMenuItem(MenuItem("High (17dBm)", [confirmMessage]() {
-            WiFi::getInstance().setWiFiPower(WIFI_POWER_17dBm);
-            confirmMessage(WIFI_POWER_17dBm);
+        wifiPowerMenu->addMenuItem(MenuItem("High (16dBm)", [confirmMessage]() {
+            WiFi::getInstance().setWiFiPower(WIFI_POWER_16dBm);
+            confirmMessage(WIFI_POWER_16dBm);
         }));
         wifiPowerMenu->addMenuItem(MenuItem("Medium (11dBm)", [confirmMessage]() {
             WiFi::getInstance().setWiFiPower(WIFI_POWER_11dBm);
@@ -1185,7 +1210,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         int menuIndex = 0;
         switch (WiFi::getInstance().getWiFiPower()) {
-        case WIFI_POWER_17dBm:
+        case WIFI_POWER_16dBm:
             menuIndex = 1;
             break;
         case WIFI_POWER_11dBm:
@@ -1298,13 +1323,22 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     if (inDemo) {
         auto demoScreen = new DemoScreen(*display, prefs_, lightingController);
-        demoScreen->setBackCallback([this, demoScreen, mainMenu]() {
-            // We want to go straight from the scroll expanding into the main menu
-            // via partial refresh.
-            // display->clearDisplay();
-            mainMenu->setFirstLoad();
-            setCurrentScreen(*mainMenu);
-            mainMenu->render(*this->display_);
+        auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_, true);
+        contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
+            if (!WiFi::getInstance().hasWiFiCredentials()) {
+                display->clearDisplay();
+                mainMenu->setFirstLoad();
+                this->setCurrentScreen(*mainMenu);
+                mainMenu->render(*display);
+                delete contentSyncScreen;
+            } else {
+                power_.reboot();
+            }
+        });
+
+        demoScreen->setBackCallback([this, demoScreen, contentSyncScreen]() {
+            this->setCurrentScreen(*contentSyncScreen);
+            contentSyncScreen->begin();
             delete demoScreen;
         });
         this->setCurrentScreen(*demoScreen);
@@ -1350,17 +1384,26 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // Check if we left-off on a readable and if so, reload that readable by default
         log_d("Attempting to find readable: %s", currentReadable.value().c_str());
         // If we previously had a readable loaded, show that same readable by default
-
-        auto it = std::find_if(readables.begin(), readables.end(),
-                               [&currentReadable](const std::shared_ptr<Readable> x) {
-            return currentReadable == x->uuid;
-        });
-        if (it != readables.end()) {
+        auto booksIterator =
+            std::find_if(readables.begin(), readables.end(), [&currentReadable](const std::shared_ptr<Readable> x) {
+                return currentReadable == x->uuid;
+            });
+        auto articlesIterator =
+            std::find_if(articles.begin(), articles.end(), [&currentReadable](const std::shared_ptr<Readable> x) {
+                return currentReadable == x->uuid;
+            });
+        if (booksIterator != readables.end() || articlesIterator != articles.end()) {
+            auto it = (booksIterator != readables.end()) ? booksIterator : articlesIterator;
             auto readableScreen = createReadableScreen(*it);
             this->display_->setFont(this->display_->style.getFontFamily().readableFont);
             log_i("Setting Readable Screen on boot in %.0f ms", esp_timer_get_time() / 1000.0f);
             this->setCurrentScreen(*readableScreen);
             log_i("Resuming readable %s at place %" PRIu32, (*it)->title.c_str(), (*it)->place);
+            if (articlesIterator != articles.end()) {
+                mainMenu->setTabToArticles();
+            } else if (isBible(*it)) {
+                mainMenu->setTabToBible();
+            }
         } else {
             // Assume this readable has gone away (or changed from id to uuid)
             prefs_.lastReadableId.remove();

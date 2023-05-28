@@ -26,6 +26,14 @@ public:
         xTimerStart(timer_, portMAX_DELAY);
     }
 
+    void setTimeoutMs(int timeoutMs) {
+        if (timer_ == nullptr) {
+            return;
+        }
+        xTimerStop(timer_, 0);
+        xTimerChangePeriod(timer_, pdMS_TO_TICKS(timeoutMs), portMAX_DELAY);
+    }
+
     void feed() {
         if (timer_ == nullptr) {
             return;

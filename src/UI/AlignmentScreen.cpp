@@ -35,10 +35,10 @@ void AlignmentScreen::processCommand(RemoteCommand command) {
     // Eventually, we'll add more logic to do the right thing based on
     // the messages, but for now, any button press is fine.
     switch (command) {
-    case RemoteCommand::CHANNEL_MINUS:
-    case RemoteCommand::CHANNEL_PLUS:
-    case RemoteCommand::PREV:
-    case RemoteCommand::NEXT:
+    case RemoteCommand::LEFT:
+    case RemoteCommand::RIGHT:
+    case RemoteCommand::UP:
+    case RemoteCommand::DOWN:
         currentScreen_++;
         setNeedsRerender();
         break;

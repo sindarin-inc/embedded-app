@@ -12,7 +12,7 @@ auto AboutScreen::layout(LayoutContext &context, Size size) -> Size {
     context.setViewFrame(solLogoView_, {{x, y}, size},
                          LayoutOptionsAlignTop | LayoutOptionsAlignCenterHorizontal);
 
-    y += im100_height + 22;
+    y += sol_logo_height + 22;
     x += leftPadding;
 
     context.setViewFrame(productNameView_, {{x, y}, size},
@@ -56,26 +56,18 @@ void AboutScreen::drawInRect(Rect rect) {
 
 void AboutScreen::render(DisplaySystem &display) {
     setNeedsLayout();
-    setFrame(
-        {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
-         {display.defaultScreenWidth - 2 * display.defaultXPadding,
-          display.defaultScreenHeight - 2 * display.defaultYPadding}});
+    int adjustedXPadding = display.defaultXPadding - 5;
+    int adjustedYPadding = display.defaultYPadding - 5;
+    setFrame({{display.xAbsolute(adjustedXPadding), display.yAbsolute(adjustedYPadding)},
+              {display.defaultScreenWidth - 2 * adjustedXPadding,
+               display.defaultScreenHeight - 2 * adjustedYPadding}});
+
     draw();
     display.updateDisplay();
 }
 
 void AboutScreen::processCommand(RemoteCommand command) {
-    if (command == secretCodeCommands_[secretCodeIndex_]) {
-        log_d("Got the right code %d time(s)!", secretCodeIndex_ + 1);
-        secretCodeIndex_++;
-        if (secretCodeIndex_ == secretCodeCommands_.size()) {
-            log_d("Got the right secret code -- toggling Debug Screen and rebooting!");
-            this->prefs_.showDebugMenu.set(!this->prefs_.showDebugMenu.get().value_or(false));
-            power_.reboot();
-        }
-    } else {
-        secretCodeIndex_ = 0;
-    }
+    secretCode_.processCommand(command);
     if (command == RemoteCommand::ENTER) {
         back();
     }

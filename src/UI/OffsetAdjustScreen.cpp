@@ -27,19 +27,19 @@ void OffsetAdjustScreen::render(DisplaySystem &display) {
 void OffsetAdjustScreen::processCommand(RemoteCommand command) {
     DisplayRect oldRect = display_.getBoundingBox();
     switch (command) {
-    case RemoteCommand::CHANNEL_MINUS:
+    case RemoteCommand::LEFT:
         oldRect.x -= OFFSET_ADJUST_AMOUNT;
         setNeedsRerender();
         break;
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::RIGHT:
         oldRect.x += OFFSET_ADJUST_AMOUNT;
         setNeedsRerender();
         break;
-    case RemoteCommand::PREV:
+    case RemoteCommand::UP:
         oldRect.y -= OFFSET_ADJUST_AMOUNT;
         setNeedsRerender();
         break;
-    case RemoteCommand::NEXT:
+    case RemoteCommand::DOWN:
         oldRect.y += OFFSET_ADJUST_AMOUNT;
         setNeedsRerender();
         break;

@@ -25,11 +25,11 @@ void LineSpacingScreen::render(DisplaySystem &display) {
 
 void LineSpacingScreen::processCommand(RemoteCommand command) {
     switch (command) {
-    case RemoteCommand::CHANNEL_MINUS:
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::LEFT:
+    case RemoteCommand::RIGHT:
         // Intentionally left out for now
         break;
-    case RemoteCommand::PREV:
+    case RemoteCommand::UP:
         lineSpacing_++;
         if (lineSpacing_ > MAX_LINE_SPACING) {
             lineSpacing_ = MAX_LINE_SPACING;
@@ -38,7 +38,7 @@ void LineSpacingScreen::processCommand(RemoteCommand command) {
         display_.setLineSpacing(lineSpacing_);
         setNeedsRerender();
         break;
-    case RemoteCommand::NEXT:
+    case RemoteCommand::DOWN:
         lineSpacing_--;
         if (lineSpacing_ < MIN_LINE_SPACING) {
             lineSpacing_ = MIN_LINE_SPACING;
@@ -47,7 +47,7 @@ void LineSpacingScreen::processCommand(RemoteCommand command) {
         setNeedsRerender();
         break;
     case RemoteCommand::BACK:
-        // If CHANNEL_MINUS is implemented above,
+        // If LEFT is implemented above,
         // undo that here, since you get both PREV and BACK on a longpress
     case RemoteCommand::ENTER:
         prefs_.lineSpacing.set(lineSpacing_);

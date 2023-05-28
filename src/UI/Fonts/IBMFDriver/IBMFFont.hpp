@@ -43,11 +43,30 @@ private:
                     firstWordChar = true;
                 }
                 kern = (FIX16)0;
-                // Ligature loop
+
+                // Ligature loop for glyphCode1
                 while (font_->getFace(faceIndex_)->ligKern(glyphCode1, &glyphCode2, &kern)) {
                     glyphCode1 = glyphCode2;
                     glyphCode2 = (iter == line.end()) ? NO_GLYPH_CODE : font_->translate(*iter++);
                 }
+
+                // Ligature loop for glyphCode2
+                GlyphCode glyphCode3 =
+                    (iter == line.end()) ? NO_GLYPH_CODE : font_->translate(*iter);
+                if (glyphCode3 != NO_GLYPH_CODE) {
+                    bool someLig = false;
+                    FIX16 k;
+                    while (font_->getFace(faceIndex_)->ligKern(glyphCode2, &glyphCode3, &k)) {
+                        glyphCode2 = glyphCode3;
+                        glyphCode3 =
+                            (iter == line.end()) ? NO_GLYPH_CODE : font_->translate(*++iter);
+                        someLig = true;
+                    }
+                    if (someLig) {
+                        font_->getFace(faceIndex_)->ligKern(glyphCode1, &glyphCode2, &kern);
+                    }
+                }
+
                 bool lastWordChar = (glyphCode2 == SPACE_CODE) || (glyphCode2 == NO_GLYPH_CODE);
                 (handler)(glyphCode1, kern, firstWordChar, lastWordChar);
                 firstWordChar = false;

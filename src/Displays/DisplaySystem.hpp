@@ -53,8 +53,8 @@ public:
 
     static TimerHandle_t animationTimer;
 
-    int32_t defaultXPadding = 25;
-    int32_t defaultYPadding = 15;
+    int32_t defaultXPadding = 30;
+    int32_t defaultYPadding = 20;
     int32_t defaultScreenWidth = 255;
     int32_t defaultScreenHeight = 255;
 
@@ -76,7 +76,7 @@ public:
         ERASE,
     };
     virtual void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED,
-                               bool clearFrameBuffer = true,
+                               bool clearFrameBuffer = true, int vcomNudge = 0,
                                DisplaySystem::UpdateType altUpdateType = UNSPECIFIED,
                                Rect altRect = {{0, 0}, {0, 0}}) = 0;
 
