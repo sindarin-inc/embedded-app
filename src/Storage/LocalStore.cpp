@@ -96,7 +96,7 @@ auto LocalStore::readablesModelType(const ReadablesVector &readables) -> Readabl
     return &readables == &articles_ ? ReadablesModelType::Article : ReadablesModelType::Book;
 }
 
-auto LocalStore::hasReadable(const ReadablesVector &readables, const ReadablePtr &readable,
+auto LocalStore::hasReadable(const ReadablesVector &readables, const std::shared_ptr<Readable> &readable,
                              bool ignoreFileSizeCheck) -> bool {
     for (const auto &r : readables) {
         auto path = readableFilePathForReading(r);
@@ -124,12 +124,12 @@ auto LocalStore::hasReadable(const ReadablesVector &readables, const ReadablePtr
     return false;
 }
 
-void LocalStore::addReadable(ReadablesVector &readables, const ReadablePtr &readable) {
+void LocalStore::addReadable(ReadablesVector &readables, const std::shared_ptr<Readable> &readable) {
     readables.emplace_back(readable);
     return;
 }
 
-void LocalStore::removeReadable(ReadablesVector &readables, const ReadablePtr &readable) {
+void LocalStore::removeReadable(ReadablesVector &readables, const std::shared_ptr<Readable> &readable) {
     for (auto it = readables.begin(); it != readables.end(); ++it) {
         if (it->get()->uuid == readable->uuid) {
             readables.erase(it);
@@ -265,7 +265,7 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
     }
 }
 
-auto LocalStore::processReadablePlacemarksFromServer(const ReadablePtr &readable,
+auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Readable> &readable,
                                                      const uint32_t placemark) -> bool {
     uint32_t onDevicePlace = prefs_.readablePlace.get(readable->shortenedUuid.c_str());
     bool changed = prefs_.readablePlaceChanged.get(readable->shortenedUuid.c_str());
@@ -807,11 +807,11 @@ auto LocalStore::saveReadables(const ReadablesVector &readables) -> bool {
     return true;
 };
 
-auto LocalStore::readableFilePathForWriting(const ReadablePtr &readable) const -> std::string {
+auto LocalStore::readableFilePathForWriting(const std::shared_ptr<Readable> &readable) const -> std::string {
     return StringFormat("/%s/%s.txt.gz", readable->readableType.c_str(), readable->uuid.c_str());
 }
 
-auto LocalStore::readableFilePathForReading(const ReadablePtr &readable) const -> std::string {
+auto LocalStore::readableFilePathForReading(const std::shared_ptr<Readable> &readable) const -> std::string {
     // We look for the readable file in the following order:
     // We first try the most modern path style:
     // /[readableType]/[uuid].txt.gz
@@ -870,7 +870,7 @@ auto LocalStore::readableFilePathForReading(const ReadablePtr &readable) const -
     return "";
 }
 
-auto LocalStore::readableGetUncompressedSize(ReadablePtr readable) const -> int {
+auto LocalStore::readableGetUncompressedSize(std::shared_ptr<Readable> readable) const -> int {
     auto path = readableFilePathForReading(std::move(readable));
     if (path.empty()) {
         return -1;
@@ -894,7 +894,7 @@ auto LocalStore::readableGetUncompressedSize(ReadablePtr readable) const -> int 
     return fileSize;
 }
 
-void LocalStore::readableFilePurge(const ReadablePtr &readable) {
+void LocalStore::readableFilePurge(const std::shared_ptr<Readable> &readable) {
     // Purge all possible readble file paths:
     // /[readableType]/[uuid].txt.gz
     // /[readableType]/[uuid].txt

@@ -30,6 +30,12 @@ struct SpiramAllocator {
     void deallocate(T *p, std::size_t n) { heap_caps_free((void *)p); }
 };
 
+template <typename T>
+auto SpiRamPtr() -> std::shared_ptr<T> {
+    static SpiramAllocator<T> allocator;
+    return allocator.allocateShared();
+}
+
 template <typename T, typename U>
 auto operator==(const SpiramAllocator<T> &, const SpiramAllocator<U> &) -> bool {
     return true;

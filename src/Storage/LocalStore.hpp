@@ -33,7 +33,7 @@ struct ContentSyncState {
     std::string message;
 };
 
-using ReadablesVector = std::vector<ReadablePtr>;
+using ReadablesVector = std::vector<std::shared_ptr<Readable>>;
 using UserReadablesVector = SpiramVector<UserReadable>;
 
 //! Interface for local storage of structured data
@@ -50,10 +50,10 @@ public:
     auto books() -> ReadablesVector & { return books_; };
     auto articles() -> ReadablesVector & { return articles_; };
     auto readablesModelType(const ReadablesVector &readables) -> ReadablesModelType;
-    auto hasReadable(const ReadablesVector &readables, const ReadablePtr &readable,
+    auto hasReadable(const ReadablesVector &readables, const std::shared_ptr<Readable> &readable,
                      bool ignoreFileSizeCheck = false) -> bool;
-    void addReadable(ReadablesVector &readables, const ReadablePtr &readable);
-    void removeReadable(ReadablesVector &readables, const ReadablePtr &readable);
+    void addReadable(ReadablesVector &readables, const std::shared_ptr<Readable> &readable);
+    void removeReadable(ReadablesVector &readables, const std::shared_ptr<Readable> &readable);
     auto readablesSince(const ReadablesModelType modelType) -> std::string;
 
     void storedReadableUuids(const ReadablesVector &readables, StoredUuidsVector &storedUuids);
@@ -62,9 +62,9 @@ public:
     void changedReadablesArchivedJson(const ReadablesVector &readables,
                                       ReadableArchivesVector &archives);
     void changedReadablesBookmarksJson(ReadableBookmarksVector &bookmarks);
-    auto processReadablePlacemarksFromServer(const ReadablePtr &readable, const uint32_t placemark)
+    auto processReadablePlacemarksFromServer(const std::shared_ptr<Readable> &readable, const uint32_t placemark)
         -> bool;
-    auto processReadableBookmarksFromServer(ReadablePtr readable, const std::string bookmarkRange)
+    auto processReadableBookmarksFromServer(std::shared_ptr<Readable> readable, const std::string bookmarkRange)
         -> bool;
     void resetReadablesPlacemarkChanged(const ReadablesVector &readables);
     void resetReadablesArchivedChanged(const ReadablesVector &readables);
@@ -89,11 +89,11 @@ public:
     auto saveReadables(const ReadablesVector &readables) -> bool;
 
     // Methods for interacting with readable files on disk
-    [[nodiscard]] auto readableFilePathForWriting(const ReadablePtr &readable) const -> std::string;
+    [[nodiscard]] auto readableFilePathForWriting(const std::shared_ptr<Readable> &readable) const -> std::string;
     // When reading, we will take whatever readable file type that's available
-    [[nodiscard]] auto readableFilePathForReading(const ReadablePtr &readable) const -> std::string;
-    [[nodiscard]] auto readableGetUncompressedSize(ReadablePtr readable) const -> int;
-    void readableFilePurge(const ReadablePtr &readable);
+    [[nodiscard]] auto readableFilePathForReading(const std::shared_ptr<Readable> &readable) const -> std::string;
+    [[nodiscard]] auto readableGetUncompressedSize(std::shared_ptr<Readable> readable) const -> int;
+    void readableFilePurge(const std::shared_ptr<Readable> &readable);
 
     // Save a firmware JSON for future use. Indicates that firmware has already been successfully
     // downloaded into the alternate firmware slot.

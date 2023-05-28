@@ -20,7 +20,7 @@
 
 class ReadableTableOfContentsScreen : public Screen, public Menu, public EinkView {
 public:
-    ReadableTableOfContentsScreen(PreferencesStore &prefs, ReadablePtr readable, Renderer &renderer,
+    ReadableTableOfContentsScreen(PreferencesStore &prefs, std::shared_ptr<Readable> readable, Renderer &renderer,
                                   DisplaySystem &display)
         : Menu(), EinkView(display), prefs_(prefs), readable_(std::move(std::move(readable))),
           renderer_(renderer), display_(display), upperLeftTextView_(display, upperLeftText_),
@@ -50,7 +50,7 @@ public:
 
 protected:
     PreferencesStore &prefs_;
-    ReadablePtr readable_;
+    std::shared_ptr<Readable> readable_;
     Renderer &renderer_;
     DisplaySystem &display_;
     std::vector<MenuItem> menuItemsPage_;

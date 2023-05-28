@@ -123,7 +123,5 @@ public:
     }
 };
 
-using ReadablePtr = std::shared_ptr<Readable>;
-
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
 auto convertToJson(const Readable &src, JsonVariant dst) -> bool;
