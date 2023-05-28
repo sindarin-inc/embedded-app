@@ -442,7 +442,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         contentSettingsMenu->setToggleLastItem(true);
     }
 
-    contentSettingsMenu->addMenuItem(MenuItem("Deliver content on close", [this]() {
+    contentSettingsMenu->addMenuItem(MenuItem("Sync content on close", [this]() {
         this->prefs_.noDeliverOnClose.set(!this->prefs_.noDeliverOnClose.get().value_or(false));
     }));
 
@@ -452,23 +452,23 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         contentSettingsMenu->setToggleLastItem(true);
     }
 
-    contentSettingsMenu->addMenuItem(MenuItem("Morning delivery", [this]() {
-        this->prefs_.morningDelivery.set(!this->prefs_.morningDelivery.get().value_or(false));
-        if (this->prefs_.morningDelivery.get().value_or(false)) {
+    contentSettingsMenu->addMenuItem(MenuItem("Morning content sync", [this]() {
+        this->prefs_.noMorningDelivery.set(!this->prefs_.noMorningDelivery.get().value_or(false));
+        if (this->prefs_.noMorningDelivery.get().value_or(false)) {
+            this->prefs_.morningNewspaperTime.remove();
+        } else {
             // Default to 6am delivery. May have configuration at some other time
             this->prefs_.morningNewspaperTime.set(6);
-        } else {
-            this->prefs_.morningNewspaperTime.remove();
         }
     }));
 
-    if (prefs_.morningDelivery.get().value_or(false)) {
-        contentSettingsMenu->setToggleLastItem(true);
-    } else {
+    if (prefs_.noMorningDelivery.get().value_or(false)) {
         contentSettingsMenu->setToggleLastItem(false);
+    } else {
+        contentSettingsMenu->setToggleLastItem(true);
     }
 
-    contentSettingsMenu->addMenuItem(MenuItem("Evening delivery", [this]() {
+    contentSettingsMenu->addMenuItem(MenuItem("Evening content sync", [this]() {
         this->prefs_.eveningDelivery.set(!this->prefs_.eveningDelivery.get().value_or(false));
         if (this->prefs_.eveningDelivery.get().value_or(false)) {
             // default to 8pm delivery. May have configuration at some other time
@@ -483,6 +483,25 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     } else {
         contentSettingsMenu->setToggleLastItem(false);
     }
+
+    contentSettingsMenu->addMenuItem(
+        MenuItem("Sync content now", [this, display, &localStore, mainMenu, &lightingController]() {
+            auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
+            lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
+            display->setFont(mainMenu->getMyStyle().navigationFont);
+            this->setCurrentScreen(*contentSyncScreen);
+            contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
+                display->clearDisplay();
+                mainMenu->setFirstLoad();
+                setCurrentScreen(*mainMenu);
+                mainMenu->render(*display);
+                delete contentSyncScreen;
+            });
+            contentSyncScreen->begin();
+        }));
+
+    // Hide the bubble for the last item, Sync content now
+    contentSettingsMenu->setToggleLastItem(false, false);
 
     auto systemSettingsMenu =
         new MenuScreen(power_.battery, *display, styleFamilies.settingsMenu, "System");
@@ -944,6 +963,20 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }));
     }
 
+    debugSettingsMenu->addMenuItem(MenuItem("Firmware Update",
+                                            [this, debugSettingsMenu, display]() {
+        auto firmwareUpdateScreen = new FirmwareUpdateScreen(*display, this->prefs_);
+        this->setCurrentScreen(*firmwareUpdateScreen);
+        firmwareUpdateScreen->setBackCallback(
+            [this, firmwareUpdateScreen, debugSettingsMenu, display]() {
+            debugSettingsMenu->setFirstLoad();
+            setCurrentScreen(*debugSettingsMenu);
+            debugSettingsMenu->render(*display);
+            delete firmwareUpdateScreen;
+        });
+        firmwareUpdateScreen->begin();
+    }));
+
     debugSettingsMenu->addMenuItem(MenuItem("Clear Books and Restart",
                                             [debugSettingsMenu, display, &localStore]() {
         localStore.deleteReadables();
@@ -1133,8 +1166,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             switch (power) {
             case WIFI_POWER_19_5dBm:
                 return "Max (19.5dBm)";
-            case WIFI_POWER_14_5dBm:
-                return "High (14.5dBm)";
+            case WIFI_POWER_16dBm:
+                return "High (16dBm)";
             case WIFI_POWER_11dBm:
                 return "Medium (11dBm)";
             case WIFI_POWER_5dBm:
@@ -1158,9 +1191,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             WiFi::getInstance().setWiFiPower(WIFI_POWER_19_5dBm);
             confirmMessage(WIFI_POWER_19_5dBm);
         }));
-        wifiPowerMenu->addMenuItem(MenuItem("High (14.5dBm)", [confirmMessage]() {
-            WiFi::getInstance().setWiFiPower(WIFI_POWER_14_5dBm);
-            confirmMessage(WIFI_POWER_14_5dBm);
+        wifiPowerMenu->addMenuItem(MenuItem("High (16dBm)", [confirmMessage]() {
+            WiFi::getInstance().setWiFiPower(WIFI_POWER_16dBm);
+            confirmMessage(WIFI_POWER_16dBm);
         }));
         wifiPowerMenu->addMenuItem(MenuItem("Medium (11dBm)", [confirmMessage]() {
             WiFi::getInstance().setWiFiPower(WIFI_POWER_11dBm);
@@ -1177,7 +1210,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         int menuIndex = 0;
         switch (WiFi::getInstance().getWiFiPower()) {
-        case WIFI_POWER_14_5dBm:
+        case WIFI_POWER_16dBm:
             menuIndex = 1;
             break;
         case WIFI_POWER_11dBm:

@@ -79,7 +79,7 @@ void ReadableSeekScreen::render(DisplaySystem &display) {
 
 void ReadableSeekScreen::processCommand(RemoteCommand command) {
     switch (command) {
-    case RemoteCommand::CHANNEL_MINUS: {
+    case RemoteCommand::LEFT: {
         // Do the -5% thing. This is unlikley to be right long-term
         // but it's way better if you overshoot.
         // TODO: Do we need placePrev anymore except for logging?
@@ -103,7 +103,7 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
         setNeedsRerender();
         break;
     }
-    case RemoteCommand::CHANNEL_PLUS: {
+    case RemoteCommand::RIGHT: {
         // TODO: Do we need placePrev anymore except for logging?
         readable_.placePrev = readable_.place;
 
@@ -126,11 +126,11 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
         setNeedsRerender();
         break;
     }
-    case RemoteCommand::PREV: {
+    case RemoteCommand::UP: {
         back();
         break;
     }
-    case RemoteCommand::NEXT: {
+    case RemoteCommand::DOWN: {
         switch (seekGranularity_) {
         case 20:
             seekGranularity_ = 100;

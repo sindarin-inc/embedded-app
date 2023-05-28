@@ -20,6 +20,8 @@ public:
     auto layout(LayoutContext &context, Size size) -> Size override { return size; }
 
     void drawInRect(Rect rect) override {
+        // have to set it again here in case the color changed since the the constructor.
+        color = display_.fg;
         switch (arrowDirection) {
         case ArrowLeft:
             // Draw Left Arrow with the following two drawLine calls

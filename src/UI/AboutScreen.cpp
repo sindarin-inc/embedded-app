@@ -56,10 +56,12 @@ void AboutScreen::drawInRect(Rect rect) {
 
 void AboutScreen::render(DisplaySystem &display) {
     setNeedsLayout();
-    setFrame(
-        {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
-         {display.defaultScreenWidth - 2 * display.defaultXPadding,
-          display.defaultScreenHeight - 2 * display.defaultYPadding}});
+    int adjustedXPadding = display.defaultXPadding - 5;
+    int adjustedYPadding = display.defaultYPadding - 5;
+    setFrame({{display.xAbsolute(adjustedXPadding), display.yAbsolute(adjustedYPadding)},
+              {display.defaultScreenWidth - 2 * adjustedXPadding,
+               display.defaultScreenHeight - 2 * adjustedYPadding}});
+
     draw();
     display.updateDisplay();
 }

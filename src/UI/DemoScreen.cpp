@@ -730,7 +730,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         dropVcom_ = false;
-        display.invertDisplay(true);
+        display.invertDisplay(false);
         display.drawPBM(display.xAbsolute(display.xAbsoluteCenter() - sol_logo_width / 2),
                         display.yAbsolute(display.yAbsoluteCenter() - sol_logo_height / 2),
                         SOL_LOGO_BITS, sizeof(SOL_LOGO_BITS), display.fg);
@@ -849,7 +849,7 @@ void DemoScreen::render(DisplaySystem &display) {
     // @john -- tada :)
     if (currentScreen_ == lambdas_.size() - 1) {
 #if !SIMULATOR
-        if (WiFi::getInstance().hasWiFiCredentials()) {
+        if (!WiFi::getInstance().hasWiFiCredentials()) {
 #else
         if (1) {
 #endif
@@ -889,7 +889,7 @@ void DemoScreen::render(DisplaySystem &display) {
 
 void DemoScreen::processCommand(RemoteCommand command) {
     switch (command) {
-    case RemoteCommand::CHANNEL_MINUS:
+    case RemoteCommand::LEFT:
         if ((currentScreen_ > 0) && (currentScreen_ < 3)) {
             display_.clearFrameBuffer();
             shownOne_ = false;
@@ -930,9 +930,9 @@ void DemoScreen::processCommand(RemoteCommand command) {
             skipNextRender_ = true;
         }
         break;
-    case RemoteCommand::CHANNEL_PLUS:
-    case RemoteCommand::NEXT:
-    case RemoteCommand::PREV:
+    case RemoteCommand::RIGHT:
+    case RemoteCommand::DOWN:
+    case RemoteCommand::UP:
     case RemoteCommand::BACK:
         break;
     case RemoteCommand::ANIMATION:

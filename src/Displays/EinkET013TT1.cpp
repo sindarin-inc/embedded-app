@@ -160,7 +160,7 @@ void EinkET013TT1::init() {
     ESP_ERROR_CHECK(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "eink", &freqLock_));
 #endif
 
-    einkQueue_ = new DispatchQueue("Eink", 1, 4096, 11, 1);
+    einkQueue_ = DispatchGetEinkQueue();
 
     log_d("Initialized EinkET013TT1");
 }
@@ -212,7 +212,7 @@ inline void EinkET013TT1::setCS(bool value, ScreenSide screen) {
 void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
                                   int32_t overrideVcom, const EinkET013TT1Waveform &altWaveform,
                                   EinkBox box) {
-    if (overrideVcom != INT32_MAX) {
+    if (overrideVcom != INT32_MAX && overrideVcom != vcomInMV_) {
         uint8_t newVcomRegisterValue = VcomMVToRegisterValue(overrideVcom);
         log_d("Overriding VCOM from %" PRIi32 " (0x%02X) to %" PRIi32 " (0x%02X)", vcomInMV_,
               VcomMVToRegisterValue(vcomInMV_), overrideVcom, newVcomRegisterValue);
@@ -428,7 +428,7 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
 
         // Wait for something else to get queued, otherwise power off
         if (!einkQueue_->waitNotEmpty(100)) {
-            einkQueue_->dispatch([this]() { powerOffInternal(); });
+            powerOffInternal();
         } else {
             log_d("Eink queue has work to do! Not powering off");
         }
@@ -436,7 +436,7 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
 
     // Wait for the update to finish
     // NOLINTNEXTLINE(bugprone-integer-division) -- it's fine for this to be approximate
-    constexpr int maxWaitTimeMs = (MAX_FRAMES_PER_WAVEFORM / FRAMERATE_DEFAULT) * 1000 * 1.2;
+    constexpr int maxWaitTimeMs = (MAX_FRAMES_PER_WAVEFORM / FRAMERATE_DEFAULT) * 1200;
     auto bits = xEventGroupWaitBits(group, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(maxWaitTimeMs));
     if (bits != 1) {
         log_e("Timed out waiting for update to finish!");
@@ -538,7 +538,7 @@ void EinkET013TT1::beginPowerOn() {
         int millisToWait = 300 - (Millis() - startTime);
         if (!einkQueue_->waitNotEmpty(millisToWait)) {
             log_e("Nothing rendered after Eink power on, powering off (this shouldn't happen)");
-            einkQueue_->dispatch([this]() { powerOffInternal(); });
+            powerOffInternal();
         }
     });
 }

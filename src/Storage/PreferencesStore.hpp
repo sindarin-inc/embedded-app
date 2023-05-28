@@ -307,7 +307,7 @@ public:
           sleepReason(*this, "sleep-reason"), noBooks(*this, "no-books"),
           showNews(*this, "show-news"), noArticles(*this, "no-articles"),
           noBible(*this, "no-bible"), noDeliverOnClose(*this, "no-deliv-close"),
-          morningDelivery(*this, "morn-deliver"), eveningDelivery(*this, "eve-deliver"),
+          noMorningDelivery(*this, "no-morn-sync"), eveningDelivery(*this, "eve-deliver"),
           darkMode(*this, "dark-mode"), autoPilot(*this, "auto-pilot"),
           fastTransitions(*this, "fast-tran"), noUploadCrashes(*this, "no-upload-crash"),
           showDebugMenu(*this, "show-debug"), fastBookmarkRight(*this, "fst-mark-right"),
@@ -480,7 +480,7 @@ public:
     PrefsItem<bool> noArticles;
     PrefsItem<bool> noBible;
     PrefsItem<bool> noDeliverOnClose;
-    PrefsItem<bool> morningDelivery;
+    PrefsItem<bool> noMorningDelivery;
     PrefsItem<bool> eveningDelivery;
     PrefsItem<bool> darkMode;
     PrefsItem<bool> autoPilot;

@@ -92,19 +92,19 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
 
 void LightingAdjustScreen::processCommand(RemoteCommand command) {
     switch (command) {
-    case RemoteCommand::CHANNEL_MINUS:
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::LEFT:
+    case RemoteCommand::RIGHT:
     case RemoteCommand::ENTER:
         back();
         break;
-    case RemoteCommand::PREV: {
+    case RemoteCommand::UP: {
         auto setting =
             std::min(lightingController_.getCurrentPercent() + LIGHTING_STEP_INCREMENT, 100);
         lightingController_.setOverrideValuePercent(setting);
         setNeedsRerender();
         break;
     }
-    case RemoteCommand::NEXT: {
+    case RemoteCommand::DOWN: {
         auto setting =
             std::max(lightingController_.getCurrentPercent() - LIGHTING_STEP_INCREMENT, 0);
         lightingController_.setOverrideValuePercent(setting);

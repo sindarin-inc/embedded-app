@@ -6,6 +6,7 @@
 
 #include "Displays/CustomWaveforms.hpp"
 #include "Displays/EinkWaveforms.hpp"
+#include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
 #include "config.h"
 
@@ -89,6 +90,9 @@ void DisplayEinkET013TT1::invertDisplay(bool newInvert) {
 void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bool clearFrameBuffer,
                                         int vcomNudge, DisplaySystem::UpdateType altUpdateType,
                                         Rect altRect) {
+    if (!DispatchGetUiQueue()->isInQueue()) {
+        log_w("updateDisplay called from outside the UI queue.");
+    }
     int adjustedVcom = driver_.getVcom() + vcomNudge;
     switch (updateType) {
     case UNSPECIFIED:

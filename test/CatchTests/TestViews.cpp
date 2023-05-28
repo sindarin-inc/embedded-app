@@ -29,14 +29,27 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
     // multiple sections so that all the state resets between tests.
     SECTION("Render a bunch of views") {
         // Send a remote command for left (for Settings)
-        SendRemoteCommand(CHANNEL_MINUS);
+        SendRemoteCommand(LEFT);
         WAIT_FOR_DRAW();
         WAIT_FOR_DRAW();
 
         ASSERT_VIEW_UNCHANGED("Settings");
 
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW();
+
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW();
+
+        ASSERT_VIEW_UNCHANGED("ContentSettings");
+
+        SendRemoteCommand(LEFT);
+        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW();
+
         // Go back to the main screen
-        SendRemoteCommand(CHANNEL_PLUS);
+        SendRemoteCommand(RIGHT);
         WAIT_FOR_DRAW();
         WAIT_FOR_DRAW();
 
@@ -51,12 +64,12 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         ASSERT_VIEW_UNCHANGED("LastQuestion1");
 
         // This is the new default way to get a bookmark on a page
-        SendRemoteCommand(PREV);
+        SendRemoteCommand(UP);
         WAIT_FOR_DRAW();
         WAIT_FOR_DRAW();
-        SendRemoteCommand(NEXT);
+        SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW();
-        SendRemoteCommand(NEXT);
+        SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW();
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW();
@@ -87,7 +100,7 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         ASSERT_VIEW_UNCHANGED("LastQuestion7");
 
         // Render the popup menu
-        SendRemoteCommand(NEXT);
+        SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW();
         WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("PopupMenu");

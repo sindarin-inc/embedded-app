@@ -29,8 +29,11 @@ public:
                   UBaseType_t priority = 5, BaseType_t core = 1);
     ~DispatchQueue();
 
-    void beginShutdown();
-    void waitForShutdown(int timeoutMs = 10);
+    // Begin the queue shutdown. If graceful==false, this will finish executing the current task but
+    // all future tasks will be ignored. If graceful==true, this will wait for all tasks to finish
+    // executing before shutting down.
+    void beginShutdown(bool graceful = false);
+    auto waitForShutdown(int timeoutMs = 10) -> bool;
 
     // dispatch and copy
     void dispatch(const fp_t &op);
@@ -45,8 +48,10 @@ public:
     // Number of items on the queue
     auto size() -> int { return uxQueueMessagesWaiting(q_); }
     auto waitNotEmpty(int timeoutMs = 10) -> bool {
-        WorkItem dummy;
-        return xQueuePeek(q_, &dummy, pdMS_TO_TICKS(timeoutMs)) == pdTRUE;
+        WorkItem *queued;
+        auto hasItem = xQueuePeek(q_, &queued, pdMS_TO_TICKS(timeoutMs)) == pdTRUE;
+        // Only report the queue as not empty if it's not a quit signal that's queued
+        return hasItem && !queued->quit;
     }
 
     // Deleted operations
@@ -70,7 +75,14 @@ private:
     EventGroupHandle_t notifyFlags_;
 
     QueueHandle_t q_;
-    bool quit_ = false;
+
+    enum class ShutdownType {
+        None = 0,
+        Graceful = 1,
+        Immediate = 2,
+    };
+
+    ShutdownType shutdownType_ = ShutdownType::None;
 
     void dispatchThreadHandler();
 };
@@ -80,3 +92,10 @@ auto DispatchGetCore0BackgroundQueue(bool create = true) -> DispatchQueue *;
 auto DispatchGetCore1BackgroundQueue(bool create = true) -> DispatchQueue *;
 
 auto DispatchGetUiQueue(bool create = true) -> DispatchQueue *;
+
+auto DispatchGetEinkQueue(bool create = true) -> DispatchQueue *;
+
+// Returns true if we're currently inside one of the queues
+auto DispatchBeginShutdown() -> bool;
+
+auto DispatchWaitForShutdown(int timeoutMs = 5000) -> bool;

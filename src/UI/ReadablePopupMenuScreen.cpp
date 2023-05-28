@@ -116,32 +116,30 @@ void ReadablePopupMenuScreen::processCommand(RemoteCommand command) {
     }
 
     switch (command) {
-    case RemoteCommand::CHANNEL_MINUS:
+    case RemoteCommand::LEFT:
         back();
         break;
-    case RemoteCommand::PLAY:
     case RemoteCommand::ENTER:
         if (getCurrItem().callback != nullptr) {
             getCurrItem().callback();
         }
         break;
-    case RemoteCommand::NEXT:
+    case RemoteCommand::DOWN:
         do {
             nextSelection();
             setNeedsRerender();
         } while (popupMenuView_.menuItemViews[getCurrSelection()]->isHidden());
         break;
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::RIGHT:
     case RemoteCommand::BACK:
         back();
         break;
-    case RemoteCommand::PREV:
+    case RemoteCommand::UP:
         do {
             prevSelection();
             setNeedsRerender();
         } while (popupMenuView_.menuItemViews[getCurrSelection()]->isHidden());
         break;
-    case RemoteCommand::NOP_BUTTON:
     case RemoteCommand::ANIMATION:
     default:
         break;

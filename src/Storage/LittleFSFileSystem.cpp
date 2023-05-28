@@ -5,6 +5,7 @@
 #include <esp_vfs.h>
 
 #include "Misc/Platform.hpp"
+#include "Misc/PowerManager.hpp"
 #include "sindarin-debug.h"
 
 const char *partitionLabel = "data";
@@ -12,8 +13,12 @@ const char *partitionLabel = "data";
 auto LittleFSFileSystem::format() -> bool {
     log_i("Formatting LittleFS...");
     DisableCore0Wdt();
+    PowerManager::getInstance().disableInactivityTimer();
+
     // TODO: Fix noisy 'task_wdt: esp_task_wdt_reset(783): task not found' log`
     esp_err_t err = esp_littlefs_format(partitionLabel);
+
+    PowerManager::getInstance().enableInactivityTimer();
     EnableCore0Wdt();
     if (err) {
         log_e("Formatting LittleFS failed! Error: %d", err);

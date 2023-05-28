@@ -8,14 +8,14 @@
 class SecretCode {
 public:
     SecretCode() {
-        commands_[0] = RemoteCommand::PREV;
-        commands_[1] = RemoteCommand::PREV;
-        commands_[2] = RemoteCommand::NEXT;
-        commands_[3] = RemoteCommand::NEXT;
-        commands_[4] = RemoteCommand::CHANNEL_MINUS;
-        commands_[5] = RemoteCommand::CHANNEL_PLUS;
-        commands_[6] = RemoteCommand::CHANNEL_MINUS;
-        commands_[7] = RemoteCommand::CHANNEL_PLUS;
+        commands_[0] = RemoteCommand::UP;
+        commands_[1] = RemoteCommand::UP;
+        commands_[2] = RemoteCommand::DOWN;
+        commands_[3] = RemoteCommand::DOWN;
+        commands_[4] = RemoteCommand::LEFT;
+        commands_[5] = RemoteCommand::RIGHT;
+        commands_[6] = RemoteCommand::LEFT;
+        commands_[7] = RemoteCommand::RIGHT;
     };
     ~SecretCode() = default;
 

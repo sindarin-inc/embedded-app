@@ -47,17 +47,17 @@ void ReleaseNotesScreen::processCommand(RemoteCommand command) {
     }
 
     switch (command) {
-    case RemoteCommand::CHANNEL_MINUS:
+    case RemoteCommand::LEFT:
         place_ = renderer_.getPreviousPlace();
         setNeedsRerender();
         break;
-    case RemoteCommand::PREV:
+    case RemoteCommand::UP:
     case RemoteCommand::BACK:
         setCurrentScreen(menu_);
         setNeedsRerender();
         break;
-    case RemoteCommand::NEXT:
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::DOWN:
+    case RemoteCommand::RIGHT:
     case RemoteCommand::ENTER:
         if (atEnd()) {
             setCurrentScreen(menu_);
