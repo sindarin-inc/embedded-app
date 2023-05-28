@@ -6,9 +6,7 @@
 
 class UserReadable : JsonSerializable {
 public:
-    UserReadable() {
-        readable = SpiRamPtr<Readable>();
-    };
+    UserReadable() { readable = SpiRamPtr<Readable>(); };
     ~UserReadable() override = default;
 
     std::string uuid;

@@ -81,8 +81,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // Load the SolSans font only.
     ibmf75.load((ibmf_defs::MemoryPtr)fontsList[0].content, fontsList[0].length);
 
-    auto createReadableScreen = [this, display, mainMenu, &fileSystem, &lightingController,
-                                 &localStore](const std::shared_ptr<Readable> readable) -> ReadableScreen * {
+    auto createReadableScreen =
+        [this, display, mainMenu, &fileSystem, &lightingController,
+         &localStore](const std::shared_ptr<Readable> &readable) -> ReadableScreen * {
         // TODO: Would be better to not allocate / delete these all the time
 
         std::shared_ptr<RendererStream> stream;
@@ -140,9 +141,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto currentReadable = prefs_.lastReadableId.get();
 
     bool hasLastQuestion = false;
-    auto it = std::find_if(readables.begin(), readables.end(), [](const std::shared_ptr<Readable> x) {
-        return (x->title.compare("The Last Question") == 0);
-    });
+    auto it =
+        std::find_if(readables.begin(), readables.end(), [](const std::shared_ptr<Readable> &x) {
+            return (x->title.compare("The Last Question") == 0);
+        });
     if (it == readables.end()) {
         log_d("Could not find readable: %s, not enabling CES or EMC modes", "The Last Question");
     } else {
@@ -206,12 +208,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     SHOW_HEAP();
 
-    auto isBible = [](const std::shared_ptr<Readable> r) -> bool {
+    auto isBible = [](const std::shared_ptr<Readable> &r) -> bool {
         return (r->title == "Psalms and Proverbs" || r->title == "New Testament" ||
                 r->title == "Old Testament" || r->title == "Torah");
     };
 
-    for (auto r : readables) {
+    for (const auto &r : readables) {
         bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
         auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
         // Bible books go in their own menu / app
@@ -318,11 +320,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // Bible hack (to show off if we wanted to have different "apps" that had different
     // behavior. For now, it's just the same as a regular book.)
     it = std::find_if(readables.begin(), readables.end(),
-                      [isBible](const std::shared_ptr<Readable> x) { return isBible(x); });
+                      [isBible](const std::shared_ptr<Readable> &x) { return isBible(x); });
     auto hasBible = it != readables.end();
     if (!prefs_.noBible.get().value_or(false) && hasBible) {
         auto bibleMenu = new Menu(mainMenu->getMyStyle(), "Bible");
-        for (auto r : readables) {
+        for (const auto &r : readables) {
             if (isBible(r)) {
                 bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
                 auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
@@ -1348,7 +1350,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         // reset prefs for of The Last Question readable
         log_d("Starting CES mode readable load");
-        auto it = std::find_if(readables.begin(), readables.end(), [](const std::shared_ptr<Readable> x) {
+        auto it = std::find_if(readables.begin(), readables.end(),
+                               [](const std::shared_ptr<Readable> &x) {
             return (x->title.compare("The Last Question") == 0);
         });
         if (it == readables.end()) {
@@ -1368,7 +1371,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         this->setCurrentScreen(*cesScreen);
     } else if (prefs_.emcMode.get().value_or(false)) {
         log_d("Starting EMC mode readable reading turn page every 30s and content sync every 60s");
-        auto it = std::find_if(readables.begin(), readables.end(), [](const std::shared_ptr<Readable> x) {
+        auto it = std::find_if(readables.begin(), readables.end(),
+                               [](const std::shared_ptr<Readable> &x) {
             return (x->title.compare("The Last Question") == 0);
         });
         if (it == readables.end()) {
@@ -1384,13 +1388,14 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // Check if we left-off on a readable and if so, reload that readable by default
         log_d("Attempting to find readable: %s", currentReadable.value().c_str());
         // If we previously had a readable loaded, show that same readable by default
-        auto booksIterator =
-            std::find_if(readables.begin(), readables.end(), [&currentReadable](const std::shared_ptr<Readable> x) {
-                return currentReadable == x->uuid;
-            });
+        auto booksIterator = std::find_if(readables.begin(), readables.end(),
+                                          [&currentReadable](const std::shared_ptr<Readable> &x) {
+            return currentReadable == x->uuid;
+        });
         auto articlesIterator =
-            std::find_if(articles.begin(), articles.end(), [&currentReadable](const std::shared_ptr<Readable> x) {
-                return currentReadable == x->uuid;
+            std::find_if(articles.begin(), articles.end(),
+                         [&currentReadable](const std::shared_ptr<Readable> &x) {
+            return currentReadable == x->uuid;
             });
         if (booksIterator != readables.end() || articlesIterator != articles.end()) {
             auto it = (booksIterator != readables.end()) ? booksIterator : articlesIterator;

@@ -152,8 +152,8 @@ auto SindarinAPI::checkFirmware(FirmwareResponse *resp) -> int {
     return httpCode;
 }
 
-auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> readable, FileSystem &fileSystem,
-                                   const std::string &path,
+auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
+                                   FileSystem &fileSystem, const std::string &path,
                                    const std::function<void(int percentage)> &progressCallback)
     -> bool {
     bool success = false;

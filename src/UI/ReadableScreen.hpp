@@ -25,8 +25,8 @@ enum LastArrowPress {
 class ReadableScreen : public ContainerScreen, public EinkView {
 public:
     ReadableScreen(std::shared_ptr<RendererStream> stream, DisplaySystem &display,
-                   const std::shared_ptr<Readable> readable, PreferencesStore &prefs, Battery &battery,
-                   FileSystem &fileSystem, LightingController &lightingController)
+                   const std::shared_ptr<Readable> &readable, PreferencesStore &prefs,
+                   Battery &battery, FileSystem &fileSystem, LightingController &lightingController)
         : EinkView(display), renderer_(display), firstTimeRenderer_(display), readable_(*readable),
           prefs_(prefs), fileSystem_(fileSystem), display_(display),
           popupMenuScreen_(display, prefs, readable, lightingController, renderer_),
