@@ -211,7 +211,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 r->title == "Old Testament" || r->title == "Torah");
     };
 
-    for (const auto r : readables) {
+    for (auto r : readables) {
         bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
         auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
         // Bible books go in their own menu / app
