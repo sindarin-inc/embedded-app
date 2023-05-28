@@ -33,8 +33,7 @@ public:
 class LayoutTestScreen : public Screen, public EinkView {
 public:
     LayoutTestScreen(DisplaySystem &display)
-        : Screen(), EinkView(display),
-          iconView_(display, LIGHTBULB_BITS, sizeof(LIGHTBULB_BITS)),
+        : Screen(), EinkView(display), iconView_(display, LIGHTBULB_BITS, sizeof(LIGHTBULB_BITS)),
           topView_(display, "First row of text"), bottomView_(display, "Second row"),
           nestedTextView_(std::make_shared<SingleLineTextView>(display, "HI")),
           tripleBoxView_(display, {std::make_shared<BoxView>(display),
