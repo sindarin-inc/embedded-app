@@ -18,9 +18,9 @@ class LegalScreen : public Screen, public EinkView {
 public:
     LegalScreen(DisplaySystem &display, PreferencesStore &prefs, PowerManager &power)
         : EinkView(display), display_(display), prefs_(prefs), power_(power),
-          fccView_(display, FCC_BITS, fcc_width, fcc_height),
-          ceView_(display, CE_BITS, ce_width, ce_height),
-          baclView_(display, BACL_BITS, bacl_width, bacl_height),
+          fccView_(display, FCC_BITS, sizeof(FCC_BITS)),
+          ceView_(display, CE_BITS, sizeof(CE_BITS)),
+          baclView_(display, BACL_BITS, sizeof(BACL_BITS)),
           baclLine1View_(display, "BACL: LISTED UL 62368-1,", &ibmf75Face0),
           baclLine2View_(display, "CAN/CSA C22,2 NO. 62368-1, A0049", &ibmf75Face0),
           fcc1LineView_(display, "FCC ID: 2BAHC-READER1,", &ibmf75Face0),

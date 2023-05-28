@@ -6,18 +6,16 @@
 // A view that draws an icon
 class IconView : public EinkView {
 public:
-    IconView(DisplaySystem &display, const unsigned char *iconBits, int width, int height)
-        : EinkView(display), iconBits_(iconBits), width_(width), height_(height) {}
+    IconView(DisplaySystem &display, const unsigned char *iconBits, int size)
+        : EinkView(display), iconBits_(iconBits), size_(size) {
+        BufferStream stream(iconBits_, size_);
+        if (!ParsePbmHeader(stream, width_, height_)) {
+            log_e("failed to parse pbm header");
+        }
+    }
     ~IconView() override = default;
 
     auto layout(LayoutContext &context, Size size) -> Size override { return {width_, height_}; }
-
-    void setIcon(const unsigned char *iconBits, int width, int height) {
-        iconBits_ = iconBits;
-        width_ = width;
-        height_ = height;
-        setNeedsLayout();
-    }
 
     void setPBMIcon(const unsigned char *iconBits, int size) {
         iconBits_ = iconBits;
