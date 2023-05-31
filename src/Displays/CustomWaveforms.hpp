@@ -2,6 +2,15 @@
 
 #include "Displays/EinkTypes.hpp"
 
+const EinkET013TT1Waveform BC_CUSTOM_AU2 = {
+    "Custom (AU2)",
+    2,
+    std::array<Frame, MAX_FRAMES_PER_WAVEFORM>{
+        Frame{.bb = NOCHG, .bw = WHITE, .wb = BLACK, .ww = NOCHG},
+        Frame{.bb = NOCHG, .bw = NOCHG, .wb = NOCHG, .ww = NOCHG},
+    },
+};
+
 // Pushes black a little more at the end to reduce ghosting
 const EinkET013TT1Waveform BC_REGULAR_EINK_10_13C_WAVEFORM_AU4 = {
     "Eink 10-13C (AU4)",
