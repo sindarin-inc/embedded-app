@@ -129,7 +129,7 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bo
             // right now these are the only two supported
             case FAST:
                 driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer(), adjustedVcom,
-                               BC_CUSTOM_AU2,
+                               EINK_ORIGINAL_WAVEFORM_AU4,
                                {altRect.origin.x, altRect.origin.x + altRect.size.width,
                                 altRect.origin.y, altRect.origin.y + altRect.size.height});
                 break;
@@ -167,7 +167,7 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bo
                     // right now these are the only two supported
                     case FAST:
                         driver_.update(PARTIAL_REFRESH_WAVEFORM_REGULAR, gfxCanvas_.getBuffer(),
-                                       adjustedVcom, BC_CUSTOM_AU2,
+                                       adjustedVcom, EINK_ORIGINAL_WAVEFORM_AU4,
                                        {altRect.origin.x, altRect.origin.x + altRect.size.width,
                                         altRect.origin.y, altRect.origin.y + altRect.size.height});
                         break;
@@ -215,7 +215,7 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bo
                 // right now these are the only two supported
                 case FAST:
                     driver_.update(ERASE_WAVEFORM_REGULAR, gfxCanvas_.getBuffer(), adjustedVcom,
-                                   BC_CUSTOM_AU2,
+                                   EINK_ORIGINAL_WAVEFORM_AU4,
                                    {altRect.origin.x, altRect.origin.x + altRect.size.width,
                                     altRect.origin.y, altRect.origin.y + altRect.size.height});
                     break;
