@@ -175,30 +175,42 @@ void MainMenuScreen::render(DisplaySystem &display) {
             menuPageViews_.push_back(menuPageView);
         }
 
-        draw();
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
-        // display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
-        //                       DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE, {24, 50, 32,
-        //                       205});
-    }
-
-    // If we want to try using the alt update mechanism here, we should move this code above the
-    // update, and remove the second update
-    std::shared_ptr<MenuItemView> selectedMenuItemView =
-        menuItemViews_[subMenus_[currentSelection_]->getCurrSelection() %
-                       subMenus_[currentSelection_]->getMyStyle().numberOfItemsPerPage];
-    for (auto &menuItemView : menuItemViews_) {
-        if (menuItemView && menuItemView == selectedMenuItemView) {
-            menuItemView->setSelected(true);
-        } else {
-            menuItemView->setSelected(false);
+        // If we want to try using the alt update mechanism here, we should move this code above the
+        // update, and remove the second update
+        std::shared_ptr<MenuItemView> selectedMenuItemView =
+            menuItemViews_[subMenus_[currentSelection_]->getCurrSelection() %
+                           subMenus_[currentSelection_]->getMyStyle().numberOfItemsPerPage];
+        for (auto &menuItemView : menuItemViews_) {
+            if (menuItemView && menuItemView == selectedMenuItemView) {
+                menuItemView->setSelected(true);
+            } else {
+                menuItemView->setSelected(false);
+            }
         }
+
+        draw();
+        // display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+
+        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true, 0,
+                              DisplaySystem::UpdateType::FAST, {28, 45, 12, 170});
+    } else {
+        // If we want to try using the alt update mechanism here, we should move this code above the
+        // update, and remove the second update
+        std::shared_ptr<MenuItemView> selectedMenuItemView =
+            menuItemViews_[subMenus_[currentSelection_]->getCurrSelection() %
+                           subMenus_[currentSelection_]->getMyStyle().numberOfItemsPerPage];
+        for (auto &menuItemView : menuItemViews_) {
+            if (menuItemView && menuItemView == selectedMenuItemView) {
+                menuItemView->setSelected(true);
+            } else {
+                menuItemView->setSelected(false);
+            }
+        }
+
+        draw();
+
+        display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
     }
-
-    draw();
-
-    display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
-    //}
 
     // This handles the case where we are in the main menu right after the
     // onboarding stuff.
