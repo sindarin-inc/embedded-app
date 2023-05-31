@@ -294,7 +294,7 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
     // For each frame in the waveform
     for (int frameIndex = 0; frameIndex < maxFrames; frameIndex++) {
         auto frame = waveform.frameOrDefault(frameIndex);
-        auto altFrame = waveform.frameOrDefault(frameIndex);
+        auto altFrame = altWaveform.frameOrDefault(frameIndex);
 
         // Generate a look up table to quickly look up old bits -> new bits and the resulting
         // transitions
