@@ -866,7 +866,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     systemSettingsMenu->addMenuItem(MenuItem("First Time Setup",
                                              [this, systemSettingsMenu, display]() {
-        prefs_.demoMode.set(true);
+        prefs_.noSetupMode.remove();
         systemSettingsMenu->showTemporaryMessage(*display,
                                                  "Turning on first time setup and restarting.");
         display_->clearDisplay();
@@ -1319,7 +1319,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     mainMenu->addSubMenu(settingsMenu);
 
-    bool inDemo = prefs_.demoMode.get().value_or(false);
+    bool inDemo = !prefs_.noSetupMode.get().value_or(false);
 
     if (inDemo) {
         auto demoScreen = new DemoScreen(*display, prefs_, lightingController);

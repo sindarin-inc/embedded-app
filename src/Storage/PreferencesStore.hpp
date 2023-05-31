@@ -297,7 +297,7 @@ public:
           readableBookmarksChanged(*this, "-bm"), invertSetting(*this, "invert"),
           vcom(*this, "vcom"), font(*this, "font"), rectX(*this, "rectX"), rectY(*this, "rectY"),
           rectW(*this, "rectW"), rectH(*this, "rectH"), lineSpacing(*this, "line-space"),
-          demoMode(*this, "demo"), wordCount(*this, "word-count"),
+          noSetupMode(*this, "no-setup"), wordCount(*this, "word-count"),
           totalReadingTimeSeconds(*this, "tot-rd-time"), bootCount(*this, "boot-count"),
           firstRead(*this, "first-read"), autoPilotSpeed(*this, "auto-speed"),
           firstAutopilotRead(*this, "fst-auto-rd"), cesMode(*this, "ces"), emcMode(*this, "emc"),
@@ -458,7 +458,7 @@ public:
     PrefsItem<int> rectW;
     PrefsItem<int> rectH;
     PrefsItem<int> lineSpacing;
-    PrefsItem<bool> demoMode;
+    PrefsItem<bool> noSetupMode;
     PrefsItem<uint32_t> wordCount;
     PrefsItem<uint32_t> totalReadingTimeSeconds;
     PrefsItem<uint32_t> bootCount;
