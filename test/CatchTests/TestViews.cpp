@@ -15,6 +15,9 @@
 
 TEST_CASE("First few screens render correctly and handle remote commands") {
     StartFreeRtos();
+    PreferencesStore prefs;
+    prefs.begin();
+    prefs.noSetupMode.set(true);
 
     SetupFileSystemMock("TestData");
 
@@ -136,6 +139,7 @@ TEST_CASE("Test some views independently") {
         prefs.rectY.remove();
         prefs.rectW.remove();
         prefs.rectH.remove();
+        prefs.noSetupMode.set(true);
 
         SECTION("Test OffsetAdjustScreen") {
             OffsetAdjustScreen screen(*display, prefs);
