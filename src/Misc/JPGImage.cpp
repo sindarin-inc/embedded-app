@@ -32,6 +32,6 @@ auto JPGImage::readFromBytes(uint8_t *jpgbytes, int size) -> bool {
     return true;
 }
 
-auto JPGImage::getBytesPerPixel() -> int { return 3; }
+auto JPGImage::getBitsPerPixel() -> int { return 24; }
 
 auto JPGImage::getBuffer() -> uint8_t * { return outputBuffer_.get(); }

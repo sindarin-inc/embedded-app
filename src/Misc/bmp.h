@@ -296,24 +296,6 @@ auto BmpGetpixelcolor(bmp_image *img, int x, int y, bmp_color color) -> uint8_t;
  */
 auto BmpFindgray(uint8_t red, uint8_t green, uint8_t blue) -> uint8_t;
 
-/* printing functions ---------------------------------------------------------*/
-
-/**
- * @brief Print the image's metadata from its headers.
- *
- * @param img pointer to the <bmp_image> metadata.
- */
-void BmpPrintdetails(bmp_image *img);
-
-/**
- * @brief Print the specified image[x,y] pixel value.
- *
- * @param img pointer to the <bmp_image> metadata.
- * @param x the pixel x position.
- * @param y the pixel y position.
- */
-void BmpPrintpixel(bmp_image *img, int x, int y);
-
 /* helper functions -----------------------------------------------------------*/
 
 /**

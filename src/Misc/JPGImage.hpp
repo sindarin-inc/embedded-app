@@ -11,7 +11,7 @@ public:
     ~JPGImage() = default;
 
     auto readFromBytes(uint8_t *jpgbytes, int size) -> bool;
-    auto getBytesPerPixel() -> int;
+    auto getBitsPerPixel() -> int;
     auto getBuffer() -> uint8_t *;
 
 private:
