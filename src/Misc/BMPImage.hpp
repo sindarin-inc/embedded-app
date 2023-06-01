@@ -5,8 +5,8 @@
 class BMPImage {
 public:
     BMPImage() {
-        outputBuffer_ = std::shared_ptr<uint8_t[]>(
-            (uint8_t *)SpiRamMalloc(sizeof(uint8_t) * 256 * 256), free);
+        outputBuffer_ =
+            std::shared_ptr<uint8_t[]>((uint8_t *)SpiRamMalloc(sizeof(uint8_t) * 256 * 256), free);
     }
     ~BMPImage() = default;
 
@@ -20,5 +20,4 @@ private:
     std::shared_ptr<uint8_t[]> outputBuffer_;
     int width_;
     int height_;
-
 };

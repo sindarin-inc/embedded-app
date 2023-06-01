@@ -1,15 +1,16 @@
 #include "BMPImage.hpp"
-#include "bmp.h"
+
 #include "Renderers/RendererStream.hpp"
+#include "bmp.h"
 
 auto BMPImage::readFromBytes(uint8_t *bmpbytes, int size) -> bool {
     BufferStream stream(bmpbytes, size);
-    bmp_image* img = bmp_read(stream);
+    bmp_image *img = BmpRead(stream);
     if (!img) {
         log_e("error reading bmp image");
         return false;
     }
-    
+
     width_ = img->dib.bmiHeader.biWidth;
     height_ = img->dib.bmiHeader.biHeight;
 
@@ -25,15 +26,15 @@ auto BMPImage::readFromBytes(uint8_t *bmpbytes, int size) -> bool {
 
     // BMP stores lines of pixels starting at the bottom
     // copy starting at the bottom to match current bitmap format
-    uint8_t* imptr;
-    uint8_t* buf = outputBuffer_.get();
-    for (int y = height_-1; y >= 0; y--) {
-        imptr = &img->ciPixelArray[y*bytesPerLine];
+    uint8_t *imptr;
+    uint8_t *buf = outputBuffer_.get();
+    for (int y = height_ - 1; y >= 0; y--) {
+        imptr = &img->ciPixelArray[y * bytesPerLine];
         memcpy(buf, imptr, width_);
         buf += width_;
     }
 
-    bmp_cleanup(NULL, img);
+    BmpCleanup(nullptr, img);
 
     return true;
 }
@@ -42,11 +43,6 @@ auto BMPImage::getBytesPerPixel() -> int { return 1; }
 
 auto BMPImage::getBuffer() -> uint8_t * { return outputBuffer_.get(); }
 
-auto BMPImage::getWidth() -> int {
-    return width_;
-}
+auto BMPImage::getWidth() -> int { return width_; }
 
-auto BMPImage::getHeight() -> int {
-    return height_;
-}
-
+auto BMPImage::getHeight() -> int { return height_; }

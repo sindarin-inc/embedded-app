@@ -7,21 +7,21 @@
  * @brief Bitmap C library
  * @version 0.7
  * @date 2022-04-06
- * 
+ *
  * @copyright Copyright (c) 2022
  */
 
 #ifndef __BMP_H_
-#define __BMP_H_
+#define BMP_H_
 
 #include "Renderers/RendererStream.hpp"
 
 /* Includes -------------------------------------------------------------------*/
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdint.h>
 #include <math.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* Defines --------------------------------------------------------------------*/
 #define BMP_FILETYPE_BM 0x4d42
@@ -78,7 +78,7 @@ typedef enum bmp_bitcount {
     BMP_8_BITS = 8,
     BMP_4_BITS = 4,
     BMP_2_BITS = 2,
-    BMP_1_BIT = 1, 
+    BMP_1_BIT = 1,
     BMP_0_BITS = 0
 } bmp_bitcount;
 
@@ -114,20 +114,19 @@ typedef enum bmp_setncolours {
     BMP_SET_2_COLOURS = 2
 } bmp_setncolours;
 
-typedef enum bmp_padtype {
-    BMP_PADTYPE_ZEROS,
-    BMP_PADTYPE_REPLICATE
-} bmp_padtype;
+typedef enum bmp_padtype { BMP_PADTYPE_ZEROS, BMP_PADTYPE_REPLICATE } bmp_padtype;
 
 // (from https://docs.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-logcolorspacea)
-// (from https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-wmf/eb4bbd50-b3ce-4917-895c-be31f214797f) 
+// (from
+// https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-wmf/eb4bbd50-b3ce-4917-895c-be31f214797f)
 typedef enum bmp_bv4cstype {
     BMP_LCS_CALIBRATED_RGB = 0x00000000,
     BMP_LCS_sRGB = 0x73524742,
     BMP_LCS_WINDOWS_COLOR_SPACE = 0x57696E20
 } bmp_bv4cstype;
 
-// (from https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-wmf/3c289fe1-c42e-42f6-b125-4b5fc49a2b20)
+// (from
+// https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-wmf/3c289fe1-c42e-42f6-b125-4b5fc49a2b20)
 typedef enum bmp_bv5cstype {
     BMP_LCS_PROFILE_LINKED = 0x4C494E4B,
     BMP_LCS_PROFILE_EMBEDDED = 0x4D424544
@@ -144,7 +143,7 @@ typedef enum bmp_bv5intent {
 /* RLE structures -------------------------------------------------------------*/
 
 #pragma pack(1)
-typedef struct bmp_rle8duo {
+typedef struct BmpRle8duo {
     uint8_t count;
     uint8_t value;
 } bmp_rle8duo;
@@ -153,7 +152,7 @@ typedef struct bmp_rle8duo {
 
 // CIEXYZ structure
 #pragma pack(1)
-typedef struct bmp_ciexyz {
+typedef struct BmpCiexyz {
     uint32_t ciexyzX; // all 3 are FXPT2DOT30 type variables.
     uint32_t ciexyzY; // 32-bit floats
     uint32_t ciexyzZ; // still need to clarify these types
@@ -161,7 +160,7 @@ typedef struct bmp_ciexyz {
 
 // CIEXYZTRIPLE structure
 #pragma pack(1)
-typedef struct bmp_ciexyztriple {
+typedef struct BmpCiexyztriple {
     bmp_ciexyz ciexyzRed;
     bmp_ciexyz ciexyzGreen;
     bmp_ciexyz ciexyzBlue;
@@ -171,7 +170,7 @@ typedef struct bmp_ciexyztriple {
 
 // BITMAPFILEHEADER structure
 #pragma pack(1)
-typedef struct bmp_fileheader {
+typedef struct BmpFileheader {
     uint16_t bfType;
     uint32_t bfSize;
     uint16_t bfReserved1;
@@ -183,7 +182,7 @@ typedef struct bmp_fileheader {
 
 // BITMAPINFOHEADER structure
 #pragma pack(1)
-typedef struct bmp_infoheader {
+typedef struct BmpInfoheader {
     uint32_t biSize;
     int32_t biWidth;
     int32_t biHeight;
@@ -199,7 +198,7 @@ typedef struct bmp_infoheader {
 
 // BITMAPV4HEADER structure complementary piece
 #pragma pack(1)
-typedef struct bmp_v4header {
+typedef struct BmpV4header {
     uint32_t bV4RedMask;
     uint32_t bV4GreenMask;
     uint32_t bV4BlueMask;
@@ -213,18 +212,18 @@ typedef struct bmp_v4header {
 
 // BITMAPV5HEADER structure complementary piece
 #pragma pack(1)
-typedef struct bmp_v5header {
+typedef struct BmpV5header {
     uint32_t bV5Intent;
     uint32_t bV5ProfileData;
     uint32_t bV5ProfileSize;
     uint32_t bV5Reserved;
 } bmp_v5header;
 
-/* Colour Palettes ------------------------------------------------------------*/ 
+/* Colour Palettes ------------------------------------------------------------*/
 
 // RGBQUAD structure
 #pragma pack(1)
-typedef struct bmp_rgbquad {
+typedef struct BmpRgbquad {
     uint8_t rgbBlue;
     uint8_t rgbGreen;
     uint8_t rgbRed;
@@ -233,7 +232,7 @@ typedef struct bmp_rgbquad {
 
 // RGBTRIPLE structure
 #pragma pack(1)
-typedef struct bmp_rgbtriple {
+typedef struct BmpRgbtriple {
     uint8_t rgbBlue;
     uint8_t rgbGreen;
     uint8_t rgbRed;
@@ -243,21 +242,21 @@ typedef struct bmp_rgbtriple {
 
 // BITMAPINFO structure bmp_dibheader
 #pragma pack(1)
-typedef struct bmp_dibheader {
+typedef struct BmpDibheader {
     bmp_infoheader bmiHeader;
     bmp_v4header bmiv4Header;
     bmp_v5header bmiv5Header;
-    bmp_rgbquad * bmiColors;
+    bmp_rgbquad *bmiColors;
 } bmp_dibheader;
 
 /* Main Structure -------------------------------------------------------------*/
 //  (from https://docs.microsoft.com/en-us/windows/win32/gdi/bitmap-storage?redirectedfrom=MSDN)
 
 #pragma pack(1)
-typedef struct bmp_image {
+typedef struct BmpImage {
     bmp_fileheader fileheader;
     bmp_dibheader dib;
-    uint8_t * ciPixelArray;
+    uint8_t *ciPixelArray;
 } bmp_image;
 
 /* Functions ------------------------------------------------------------------*/
@@ -265,147 +264,147 @@ typedef struct bmp_image {
 /* file related functions -----------------------------------------------------*/
 
 /**
- * @brief Read a Bitmap image and returns its metadata organized 
+ * @brief Read a Bitmap image and returns its metadata organized
  * in a <bmp_image> struct pointer.
- * 
+ *
  * @param filename string specifying the filename to be read.
- * @return bmp_image* - pointer to the struct loaded with the 
+ * @return bmp_image* - pointer to the struct loaded with the
  *                      <filename> image data.
  */
-bmp_image * bmp_read(RendererStream& stream);
+auto BmpRead(RendererStream &stream) -> bmp_image *;
 
 /* RGB functions --------------------------------------------------------------*/
 
 /**
  * @brief Get the specified color value from the image[x,y] pixel.
- * 
+ *
  * @param img pointer to the <bmp_image> metadata.
  * @param x the pixel x position.
  * @param y the pixel y position.
  * @param color the specified color.
  * @return uint8_t - color value retrieved.
  */
-uint8_t bmp_getpixelcolor(bmp_image * img, int x, int y, bmp_color color);
+auto BmpGetpixelcolor(bmp_image *img, int x, int y, bmp_color color) -> uint8_t;
 
 /**
  * @brief Find the gray-scale equivalent value from RGB entries.
- * 
+ *
  * @param red red color entry value.
  * @param green green color entry value.
  * @param blue blue color entry value.
  * @return uint8_t - calculated gray-scale equivalent value.
  */
-uint8_t bmp_findgray(uint8_t red, uint8_t green, uint8_t blue);
+auto BmpFindgray(uint8_t red, uint8_t green, uint8_t blue) -> uint8_t;
 
 /* printing functions ---------------------------------------------------------*/
 
 /**
  * @brief Print the image's metadata from its headers.
- * 
+ *
  * @param img pointer to the <bmp_image> metadata.
  */
-void bmp_printdetails(bmp_image * img);
+void BmpPrintdetails(bmp_image *img);
 
 /**
  * @brief Print the specified image[x,y] pixel value.
- * 
+ *
  * @param img pointer to the <bmp_image> metadata.
  * @param x the pixel x position.
  * @param y the pixel y position.
  */
-void bmp_printpixel(bmp_image * img, int x, int y);
+void BmpPrintpixel(bmp_image *img, int x, int y);
 
 /* helper functions -----------------------------------------------------------*/
 
 /**
  * @brief Clean both pointers.
- * 
+ *
  * @param fptr file pointer.
  * @param img <bmp_image> pointer.
  * @return bmp_image* always NULL.
  */
-bmp_image * bmp_cleanup(FILE * fptr , bmp_image * img);
+auto BmpCleanup(FILE *fptr, bmp_image *img) -> bmp_image *;
 
 /**
  * @brief Check file headers to evaluate Bitmap conformity.
- * 
+ *
  * @param img pointer to the <bmp_image> metadata.
  * @return int - returns 0 if headers have some problem, 1 otherwise.
  */
-int bmp_checkheaders(bmp_image * img);
+auto BmpCheckheaders(bmp_image *img) -> int;
 
 /* utils ----------------------------------------------------------------------*/
 
 /**
  * @brief Get file size from the <bmp_image> metadata.
- * 
+ *
  * @param img <bmp_image> pointer.
  * @return uint32_t - the file size.
  */
-uint32_t bmp_getfilesize(bmp_image * img);
+auto BmpGetfilesize(bmp_image *img) -> uint32_t;
 
 /**
  * @brief Get offset from the <bmp_image> metadata.
- * 
+ *
  * @param img <bmp_image> pointer.
  * @return uint32_t - the offset.
  */
-uint32_t bmp_getoffset(bmp_image * img);
+auto BmpGetoffset(bmp_image *img) -> uint32_t;
 
 /**
  * @brief Get datasize from the <bmp_image> metadata.
- * 
+ *
  * @param img <bmp_image> pointer.
  * @return uint32_t - the data size.
  */
-uint32_t bmp_getdatasize(bmp_image * img);
+auto BmpGetdatasize(bmp_image *img) -> uint32_t;
 
 /**
  * @brief Get DIB header format from the <bmp_image> metadata.
- * 
+ *
  * @param img <bmp_image> pointer.
  * @return uint32_t - the DIB header format.
  */
-uint32_t bmp_getdibformat(bmp_image * img);
+auto BmpGetdibformat(bmp_image *img) -> uint32_t;
 
 /**
  * @brief Get bit count from the <bmp_image> metadata.
- * 
+ *
  * @param img <bmp_image> pointer.
  * @return uint16_t - the bit count.
  */
-uint16_t bmp_getbitcount(bmp_image * img);
+auto BmpGetbitcount(bmp_image *img) -> uint16_t;
 
 /**
  * @brief Get palette size from the <bmp_image> metadata.
- * 
+ *
  * @param img <bmp_image> pointer.
  * @return uint32_t - the palette size.
  */
-uint32_t bmp_getpalettesize(bmp_image * img);
+auto BmpGetpalettesize(bmp_image *img) -> uint32_t;
 
 /**
  * @brief Get compression type from the <bmp_image> metadata.
- * 
+ *
  * @param img <bmp_image> pointer.
  * @return uint32_t - the compression type.
  */
-uint32_t bmp_getcompression(bmp_image * img);
+auto BmpGetcompression(bmp_image *img) -> uint32_t;
 
 /**
  * @brief Get how many pixels are specified for this image.
- * 
+ *
  * @param img <bmp_image> pointer.
  * @return uint32_t - the number of pixels.
  */
-uint32_t bmp_getnpixels(bmp_image * img);
+auto BmpGetnpixels(bmp_image *img) -> uint32_t;
 
 /**
  * @brief Get how many colors are being used by this image.
- * 
+ *
  * @param img <bmp_image> pointer.
  * @return uint32_t - the number of colors
  */
-uint32_t bmp_getncolors(bmp_image * img);
+auto BmpGetncolors(bmp_image *img) -> uint32_t;
 
 #endif
