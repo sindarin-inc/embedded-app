@@ -1,3 +1,6 @@
+// Adapted from https://github.com/niloedson/Bitmap-C-Library (MIT license)
+// Changed to support stream reading, and removed unused sections
+
 /**
  * @file bmp.h
  * @author Nilo Edson (niloedson.ms@gmail.com)
