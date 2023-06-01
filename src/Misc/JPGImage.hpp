@@ -6,11 +6,11 @@ public:
         outputBuffer_ = std::shared_ptr<uint8_t[]>(
             (uint8_t *)SpiRamMalloc(sizeof(uint8_t) * 256 * 256 * 3), free);
     }
-    ~JPGImage() {}
+    ~JPGImage() = default;
 
-    bool readFromBytes(uint8_t *jpgbytes, int size);
-    int getBytesPerPixel();
-    uint8_t *getBuffer();
+    auto readFromBytes(uint8_t *jpgbytes, int size) -> bool;
+    auto getBytesPerPixel() -> int;
+    auto getBuffer() -> uint8_t *;
 
 private:
     std::shared_ptr<uint8_t[]> outputBuffer_;
