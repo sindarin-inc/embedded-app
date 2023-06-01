@@ -34,10 +34,10 @@ auto BMPImage::readFromBytes(uint8_t *bmpbytes, int size) -> bool {
 
     // BMP stores lines of pixels starting at the bottom
     // copy starting at the bottom to match current bitmap format
-    uint8_t* imptr;
-    uint8_t* buf = outputBuffer_.get();
-    for (int y = height_-1; y >= 0; y--) {
-        imptr = &img->ciPixelArray[y*bytesPerLine];
+    uint8_t *imptr;
+    uint8_t *buf = outputBuffer_.get();
+    for (int y = height_ - 1; y >= 0; y--) {
+        imptr = &img->ciPixelArray[y * bytesPerLine];
         memcpy(buf, imptr, outputBytesPerLine);
 
         // bit convert to match xbm format
