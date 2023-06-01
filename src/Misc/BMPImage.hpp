@@ -1,0 +1,24 @@
+#pragma once
+
+#include <Misc/SpiramAllocator.hpp>
+
+class BMPImage {
+public:
+    BMPImage() {
+        outputBuffer_ = std::shared_ptr<uint8_t[]>(
+            (uint8_t *)SpiRamMalloc(sizeof(uint8_t) * 256 * 256), free);
+    }
+    ~BMPImage() = default;
+
+    auto readFromBytes(uint8_t *bmpbytes, int size) -> bool;
+    auto getWidth() -> int;
+    auto getHeight() -> int;
+    auto getBytesPerPixel() -> int;
+    auto getBuffer() -> uint8_t *;
+
+private:
+    std::shared_ptr<uint8_t[]> outputBuffer_;
+    int width_;
+    int height_;
+
+};

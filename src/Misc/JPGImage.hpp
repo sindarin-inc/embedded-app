@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Misc/SpiramAllocator.hpp>
 
 class JPGImage {
