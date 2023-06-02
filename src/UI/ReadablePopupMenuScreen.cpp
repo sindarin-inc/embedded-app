@@ -170,6 +170,7 @@ void ReadablePopupMenuScreen::render(DisplaySystem &display) {
             menuItemView->setSelected(false);
         }
 
+        popupMenuView_.updateTime();
         popupMenuView_.draw();
 
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);

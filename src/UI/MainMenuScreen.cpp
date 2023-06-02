@@ -128,6 +128,8 @@ void MainMenuScreen::render(DisplaySystem &display) {
     // ghosting.
     if (firstLoad_) {
         topBarViews_.clear();
+        // Only update the time on these partial refreshes
+        clockBatteryView_.updateTime();
         log_i("Menuscreen render (selected = %s)",
               subMenus_[currentSelection_]->getMenuName().c_str());
 

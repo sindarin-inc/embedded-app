@@ -146,6 +146,8 @@ void ToggleMenuScreen::render(DisplaySystem &display) {
     // to do a partial refresh with the selector button at a lower/higher vcom to reduce
     // ghosting.
     if (firstLoad_) {
+        clockBatteryView_.updateTime();
+
         // Populate the menu items with the correct menus for the current subMenu
         menuItemViews_.clear();
         menuPageViews_.clear();

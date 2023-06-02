@@ -112,6 +112,7 @@ void MenuScreen::render(DisplaySystem &display) {
     // to do a partial refresh with the selector button at a lower/higher vcom to reduce
     // ghosting.
     if (firstLoad_) {
+        clockBatteryView_.updateTime();
         drawMenuItems(display, false);
         draw();
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
