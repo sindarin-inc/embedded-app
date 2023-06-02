@@ -158,14 +158,10 @@ auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
     struct tm timeinfo;
     localtime_r(&now, &timeinfo);
 
-    // Get the morning and evening news hours
-    int morningNews = prefs_.morningNewspaperTime.get().value_or(0);
-    int eveningNews = prefs_.eveningNewspaperTime.get().value_or(0);
-
-    // If otherwise unselected, let's force a sync at 6pm
-    if (morningNews == 0 && eveningNews == 0) {
-        eveningNews = 18;
-    }
+    // Set morning delivery to 6am and evening delivery to 8pm
+    // if the user has toggled those options on.
+    int morningNews = prefs_.noMorningDelivery.get().value_or(false) ? 0 : 6;
+    int eveningNews = prefs_.eveningDelivery.get().value_or(false) ? 20 : 0;
 
     // Create tm structs for the morning and evening events
     struct tm morningEvent = timeinfo;
@@ -182,6 +178,11 @@ auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
     time_t morningEventEpoch = mktime(&morningEvent);
     time_t eveningEventEpoch = mktime(&eveningEvent);
 
+    struct tm oneDayLaterEvent = timeinfo;
+    oneDayLaterEvent.tm_mday += 1;
+
+    time_t oneDayLaterEpoch = mktime(&oneDayLaterEvent);
+
     // Adjust for the next day if the events have already occurred today
     if (morningEventEpoch <= now) {
         morningEvent.tm_mday += 1;
@@ -195,19 +196,26 @@ auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
     // Determine the next event
     time_t nextEventEpoch;
     char strftimeBuf[64];
-    if (morningNews != 0 && morningEventEpoch <= eveningEventEpoch) {
+    if (morningNews != 0 && ((eveningNews == 0) || morningEventEpoch <= eveningEventEpoch)) {
         nextEventEpoch = morningEventEpoch;
         size_t size = strftime(strftimeBuf, sizeof(strftimeBuf), "%c", &morningEvent);
         if (size == 0) {
             log_e("strftime failed");
         }
-    } else {
+    } else if (eveningNews != 0) {
         nextEventEpoch = eveningEventEpoch;
         size_t size = strftime(strftimeBuf, sizeof(strftimeBuf), "%c", &eveningEvent);
         if (size == 0) {
             log_e("strftime failed");
         }
+    } else {
+        nextEventEpoch = oneDayLaterEpoch;
+        size_t size = strftime(strftimeBuf, sizeof(strftimeBuf), "%c", &oneDayLaterEvent);
+        if (size == 0) {
+            log_e("strftime failed");
+        }
     }
+
     log_i("Next sync time is: %s (%" PRIu64 "s from now)", strftimeBuf,
           (int64_t)nextEventEpoch - now);
 
