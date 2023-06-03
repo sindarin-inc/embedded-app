@@ -4,9 +4,7 @@
 
 class BMPImage {
 public:
-    BMPImage() : outputBuffer_(nullptr), bitsPerPixel_(0), width_(0), height_(0) {
-        createLUT();
-    }
+    BMPImage() : outputBuffer_(nullptr) { createLUT(); }
     ~BMPImage() = default;
 
     auto readFromBytes(uint8_t *bmpbytes, int size) -> bool;

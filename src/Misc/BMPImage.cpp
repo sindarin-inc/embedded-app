@@ -12,7 +12,7 @@ void BMPImage::createLUT() {
         return;
     }
 
-    bmpConversionLUT = std::shared_ptr<uint8_t[]>((uint8_t*)SpiRamMalloc(256), free);
+    bmpConversionLUT = std::shared_ptr<uint8_t[]>((uint8_t *)SpiRamMalloc(256), free);
 
     // store bit-reversed and value flipped version of each byte
     // converts from bmp 1 bit to xbm format
@@ -62,11 +62,11 @@ auto BMPImage::readFromBytes(uint8_t *bmpbytes, int size) -> bool {
     if (bitsPerPixel_ == 1) {
         // BMP stores lines of pixels starting at the bottom
         // copy starting at the bottom to match current bitmap format
-        uint8_t* imptr;
-        uint8_t* buf = outputBuffer_.get();
+        uint8_t *imptr;
+        uint8_t *buf = outputBuffer_.get();
 
-        for (int y = height_-1; y >= 0; y--) {
-            imptr = &img->ciPixelArray[y*bytesPerLine];
+        for (int y = height_ - 1; y >= 0; y--) {
+            imptr = &img->ciPixelArray[y * bytesPerLine];
             // bit convert to match xbm format
             for (int x = 0; x < outputBytesPerLine; x++) {
                 buf[x] = bmpConversionLUT[imptr[x]];
