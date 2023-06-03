@@ -4,10 +4,7 @@
 
 class BMPImage {
 public:
-    BMPImage() {
-        outputBuffer_ =
-            std::shared_ptr<uint8_t[]>((uint8_t *)SpiRamMalloc(sizeof(uint8_t) * 256 * 256), free);
-    }
+    BMPImage() : outputBuffer_(nullptr), bitsPerPixel_(0), width_(0), height_(0) {}
     ~BMPImage() = default;
 
     auto readFromBytes(uint8_t *bmpbytes, int size) -> bool;
