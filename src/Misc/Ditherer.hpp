@@ -8,7 +8,8 @@ public:
     Ditherer() {
         ditherBuffer_ = std::shared_ptr<float[]>((float *)SpiRamMalloc(sizeof(float) * 256 * 256));
     }
-    void ditherToBitmap(uint8_t *image, uint8_t *bitmap, int width, int height, int bytesPerLine, bool reversed = false);
+    void ditherToBitmap(uint8_t *image, uint8_t *bitmap, int width, int height, int bytesPerLine,
+                        bool reversed = false);
 
 private:
     std::shared_ptr<float[]> ditherBuffer_;

@@ -1,8 +1,8 @@
 #include "BMPImage.hpp"
 
+#include "Misc/Ditherer.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "bmp.h"
-#include "Misc/Ditherer.hpp"
 
 extern Ditherer ditherer;
 
@@ -38,11 +38,11 @@ auto BMPImage::readFromBytes(uint8_t *bmpbytes, int size) -> bool {
     if (bitsPerPixel_ == 1) {
         // BMP stores lines of pixels starting at the bottom
         // copy starting at the bottom to match current bitmap format
-        uint8_t* imptr;
-        uint8_t* buf = outputBuffer_.get();
-        for (int y = height_-1; y >= 0; y--) {
-            imptr = &img->ciPixelArray[y*bytesPerLine];
-            
+        uint8_t *imptr;
+        uint8_t *buf = outputBuffer_.get();
+        for (int y = height_ - 1; y >= 0; y--) {
+            imptr = &img->ciPixelArray[y * bytesPerLine];
+
             // bit convert to match xbm format
             // TODO: change this for pbm bitmap format
             if (bitsPerPixel_ == 1) {
@@ -68,10 +68,11 @@ auto BMPImage::readFromBytes(uint8_t *bmpbytes, int size) -> bool {
             buf += outputBytesPerLine;
         }
     } else if (bitsPerPixel_ == 8) {
-        
+
         // this is an 8 bit grayscale image
         // dither the image into the allocated output buffer
-        ditherer.ditherToBitmap(img->ciPixelArray, outputBuffer_.get(), width_, height_, bytesPerLine, true);
+        ditherer.ditherToBitmap(img->ciPixelArray, outputBuffer_.get(), width_, height_,
+                                bytesPerLine, true);
     }
 
     BmpCleanup(nullptr, img);

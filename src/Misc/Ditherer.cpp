@@ -8,21 +8,22 @@
 
 Ditherer ditherer;
 
-void Ditherer::convertToFloat(uint8_t *image, int width, int height, int bytesPerLine, bool reversed) {
+void Ditherer::convertToFloat(uint8_t *image, int width, int height, int bytesPerLine,
+                              bool reversed) {
     uint8_t *inpixel = image;
     float div = 1.0 / 255.0;
     float *outpixel = ditherBuffer_.get();
 
     if (reversed) {
-        for (int h = height-1; h >= 0; h--) {
-            inpixel = &image[h*bytesPerLine];
+        for (int h = height - 1; h >= 0; h--) {
+            inpixel = &image[h * bytesPerLine];
             for (int w = 0; w < width; w++) {
                 *(outpixel++) = (float)(*(inpixel++)) * div;
             }
         }
     } else {
         for (int h = 0; h < height; h++) {
-            inpixel = &image[h*bytesPerLine];
+            inpixel = &image[h * bytesPerLine];
             for (int w = 0; w < width; w++) {
                 *(outpixel++) = (float)(*(inpixel++)) * div;
             }
@@ -30,7 +31,8 @@ void Ditherer::convertToFloat(uint8_t *image, int width, int height, int bytesPe
     }
 }
 
-void Ditherer::ditherToBitmap(uint8_t *image, uint8_t *bitmap, int width, int height, int bytesPerLine, bool reversed) {
+void Ditherer::ditherToBitmap(uint8_t *image, uint8_t *bitmap, int width, int height,
+                              int bytesPerLine, bool reversed) {
     convertToFloat(image, width, height, bytesPerLine, reversed);
     ditherFloatToBitmap(bitmap, width, height);
 }
