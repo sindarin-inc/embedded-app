@@ -5,6 +5,30 @@
 #include "bmp.h"
 
 extern Ditherer ditherer;
+static std::shared_ptr<uint8_t[]> bmpConversionLUT = nullptr;
+
+void BMPImage::createLUT() {
+    if (bmpConversionLUT) {
+        return;
+    }
+
+    bmpConversionLUT = std::shared_ptr<uint8_t[]>((uint8_t*)SpiRamMalloc(256), free);
+
+    // store bit-reversed and value flipped version of each byte
+    // converts from bmp 1 bit to xbm format
+    for (int i = 0; i < 256; i++) {
+        uint8_t val = i;
+        uint8_t out = 0;
+        for (int b = 0; b < 8; b++) {
+            out <<= 1;
+            out |= val & 0b1;
+            val >>= 1;
+        }
+
+        out ^= 0xFF;
+        bmpConversionLUT[i] = out;
+    }
+}
 
 auto BMPImage::readFromBytes(uint8_t *bmpbytes, int size) -> bool {
     BufferStream stream(bmpbytes, size);
@@ -38,31 +62,14 @@ auto BMPImage::readFromBytes(uint8_t *bmpbytes, int size) -> bool {
     if (bitsPerPixel_ == 1) {
         // BMP stores lines of pixels starting at the bottom
         // copy starting at the bottom to match current bitmap format
-        uint8_t *imptr;
-        uint8_t *buf = outputBuffer_.get();
-        for (int y = height_ - 1; y >= 0; y--) {
-            imptr = &img->ciPixelArray[y * bytesPerLine];
+        uint8_t* imptr;
+        uint8_t* buf = outputBuffer_.get();
 
+        for (int y = height_-1; y >= 0; y--) {
+            imptr = &img->ciPixelArray[y*bytesPerLine];
             // bit convert to match xbm format
-            // TODO: change this for pbm bitmap format
-            if (bitsPerPixel_ == 1) {
-                uint8_t tmpin, tmpout;
-
-                // flip bit order
-                // could be done in LUT for performance, if needed
-                for (int x = 0; x < outputBytesPerLine; x++) {
-                    tmpin = imptr[x];
-                    tmpout = 0;
-                    for (int b = 0; b < 8; b++) {
-                        tmpout <<= 1;
-                        tmpout |= tmpin & 0b1;
-                        tmpin >>= 1;
-                    }
-
-                    // flip color bits
-                    tmpout ^= 0xFF;
-                    buf[x] = tmpout;
-                }
+            for (int x = 0; x < outputBytesPerLine; x++) {
+                buf[x] = bmpConversionLUT[imptr[x]];
             }
 
             buf += outputBytesPerLine;
