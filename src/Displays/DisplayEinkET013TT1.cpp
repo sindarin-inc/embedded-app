@@ -187,7 +187,28 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bo
                 }
             }
         } else {
-            driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer(), adjustedVcom);
+            if (altUpdateType != UNSPECIFIED) {
+                switch (altUpdateType) {
+                // right now these are the only two supported
+                case FAST:
+                    driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer(), adjustedVcom,
+                                   EINK_ORIGINAL_WAVEFORM_AU4,
+                                   {altRect.origin.x, altRect.origin.x + altRect.size.width,
+                                    altRect.origin.y, altRect.origin.y + altRect.size.height});
+                    break;
+                case ERASE:
+                    driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer(), adjustedVcom,
+                                   ERASE_WAVEFORM_REGULAR,
+                                   {altRect.origin.x, altRect.origin.x + altRect.size.width,
+                                    altRect.origin.y, altRect.origin.y + altRect.size.height});
+                    break;
+                default:
+                    log_e("UNSUPPORTED ALT UPDATE TYPE");
+                    break;
+                }
+            } else {
+                driver_.update(FULL_BIG_ORIGINAL_WAVEFORM, gfxCanvas_.getBuffer(), adjustedVcom);
+            }
             firstPartialTime_ = 0;
             numPartials_ = 0;
             au4Count_ = 0;

@@ -28,6 +28,10 @@ void EinkET013TT1::init() {
         FakeEinkET013TT1DoneWaveformQueue = xQueueCreate(1, sizeof(uint8_t));
     }
     xQueueReset(FakeEinkET013TT1DoneWaveformQueue);
+
+    // Set the previous buffer to be all white by default.
+    memset(previousBuffer_, 0, sizeof(previousBuffer_));
+    clear(BC_REGULAR_31_35C_WAVEFORM_FULL);
 }
 
 void EinkET013TT1::setVcom(int mV) {}
@@ -87,11 +91,18 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
                     // particles with physics. For now we're just estimating.
                     switch (setting) {
                     case WHITE:
+                        // if (!box.contains(x, y)) {
                         position = std::min(position + FakeEinkET013TT1ParticleMovement, 255);
+                        //}
                         break;
-                    case BLACK:
+                    case BLACK: {
+                        // if (!box.contains(x, y)) {
+                        // if (!box.contains(x, y)) {
                         position = std::max(position - FakeEinkET013TT1ParticleMovement, 0);
+                        //}
+                        //}
                         break;
+                    }
                     case NOCHG:
                         break;
                     }
