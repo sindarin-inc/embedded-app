@@ -100,6 +100,8 @@ struct Frame {
     }
 
     constexpr static auto nochg() -> Frame { return {NOCHG, NOCHG, NOCHG, NOCHG}; }
+
+    constexpr static auto allBG() -> Frame { return {WHITE, WHITE, WHITE, WHITE}; }
 };
 
 struct EinkET013TT1Waveform {
@@ -184,6 +186,8 @@ struct EinkET013TT1Waveform {
     [[nodiscard]] inline auto frameOrDefault(int index) const -> Frame {
         return index < frames.size() ? frames[index] : Frame::nochg();
     }
+
+    [[nodiscard]] inline auto bgFrame() const -> Frame { return Frame::allBG(); }
 };
 
 struct EinkBox {

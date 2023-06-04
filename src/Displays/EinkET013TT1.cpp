@@ -294,7 +294,15 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
     // For each frame in the waveform
     for (int frameIndex = 0; frameIndex < maxFrames; frameIndex++) {
         auto frame = waveform.frameOrDefault(frameIndex);
-        auto altFrame = altWaveform.frameOrDefault(frameIndex);
+        Frame altFrame;
+
+        // We want to put all the alt frames at the end and before that
+        // just do a frame that has only the background color.
+        if (frameIndex < waveform.frameCount - altWaveform.frameCount) {
+            altFrame = altWaveform.bgFrame();
+        } else {
+            altFrame = altWaveform.frameOrDefault(frameIndex);
+        }
 
         // Generate a look up table to quickly look up old bits -> new bits and the resulting
         // transitions
