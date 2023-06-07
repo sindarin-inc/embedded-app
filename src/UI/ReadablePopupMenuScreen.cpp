@@ -1,5 +1,8 @@
 #include "ReadablePopupMenuScreen.hpp"
 
+// This is #define because there might be different types passed in
+#define SOL_PAGE_NUMBER(x) ((x) / 1000)
+
 void ReadablePopupMenuScreen::setUpPopupMenu() {
     size_t place = renderer_.getCurrentPlace();
     size_t lengthOfFile = renderer_.size();
@@ -11,7 +14,8 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
         lengthOfFile = 1000;
     }
     std::string placeString = StringFormat("%.1f%%", placeInTextPercentage);
-    std::string placeStringForBottom = StringFormat("%d/%d", place / 1000, lengthOfFile / 1000);
+    std::string placeStringForBottom =
+        StringFormat("%d/%d", SOL_PAGE_NUMBER(place), lengthOfFile / 1000);
 
     popupMenuView_.setAuxText(placeStringForBottom);
 
@@ -78,8 +82,9 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
         addMenuItem(MenuItem("Contents", [this]() {
             readableTableOfContentsScreen_.resetMenuItems();
             for (const ReadableTableOfContentsChapter &chapter : readable_->toc) {
-                readableTableOfContentsScreen_.addMenuItem(
-                    MenuItem(chapter.title, [this]() { readableTableOfContentsScreen_.back(); }));
+                readableTableOfContentsScreen_.addMenuItem(MenuItem(
+                    StringFormat("%d: ", SOL_PAGE_NUMBER(chapter.txtOffset)) + chapter.title,
+                    [this]() { readableTableOfContentsScreen_.back(); }));
             }
             readableTableOfContentsScreen_.setNearestChapterSelection(renderer_.getCurrentPlace());
             readableTableOfContentsScreen_.setFirstLoad();

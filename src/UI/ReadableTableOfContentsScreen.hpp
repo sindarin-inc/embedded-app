@@ -28,7 +28,7 @@ public:
         numMenuItems_ = 0;
         MenuStyle styleFamilies;
         myStyle_ = styleFamilies.mainMenu;
-        myStyle_.numberOfItemsPerPage = 8;
+        myStyle_.numberOfItemsPerPage = 11;
     }
 
     auto layout(LayoutContext &context, Size size) -> Size override;
