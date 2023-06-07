@@ -37,6 +37,8 @@ public:
     // indicatorPadding)
     void setCircleIndicator(bool circle) { circleIndicator_ = circle; }
 
+    // Whether or not the subtitle should be right aligned on the same line as the title
+    void setRightSubtext(bool rightSubtext) { rightSubtext_ = rightSubtext; }
     auto layout(LayoutContext &context, Size size) -> Size override {
         int x = 0;
         int y = 0;
@@ -44,44 +46,57 @@ public:
 
         auto indicatorWidthPlus = indicatorWidth + 8;
         auto indicatorHeightPadding = indicatorPadding_;
-
-        Rect textRect;
+        auto rightSubtextWidth = rightSubtext_ ? 24 : 0;
+        Rect textRect, subtextRect;
 
         if (multiLine_) {
             textRect = context.setViewFrame(
                 textMultiView_,
-                {{indicatorWidthPlus, y}, {size.width - indicatorWidthPlus, size.height}},
+                {{indicatorWidthPlus, y},
+                 {size.width - indicatorWidthPlus - rightSubtextWidth, size.height}},
                 LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
         } else {
             textRect = context.setViewFrame(
                 textView_,
-                {{indicatorWidthPlus, y}, {size.width - indicatorWidthPlus, size.height}},
+                {{indicatorWidthPlus, y},
+                 {size.width - indicatorWidthPlus - rightSubtextWidth, size.height}},
                 LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
         }
 
-        int subtextRectHeight = 0;
-        if (hasSubtext_) {
-            auto subtextRect =
-                context.setViewFrame(subtextView_,
-                                     {{indicatorWidthPlus + 15, y + textRect.size.height + 2},
-                                      {size.width - indicatorWidthPlus - 15, size.height}},
-                                     LayoutOptionsSizeToFitVertical |
-                                         LayoutOptionsAlignCenterVertical | LayoutOptionsAlignLeft);
-            context.setViewFrame(indicator_,
-                                 {{x, y + indicatorHeightPadding + 2},
-                                  {indicatorWidth, textRect.size.height + subtextRect.size.height +
-                                                       2 * indicatorHeightPadding}});
-            subtextRectHeight = subtextRect.size.height;
-        } else {
-            auto indicatorHeight = circleIndicator_
-                                       ? indicatorWidth
-                                       : textRect.size.height + 2 * indicatorHeightPadding;
+        auto indicatorHeight =
+            circleIndicator_ ? indicatorWidth : textRect.size.height + 2 * indicatorHeightPadding;
+
+        if (hasSubtext_ && rightSubtext_) {
+            subtextRect = context.setViewFrame(subtextView_,
+                                               {{indicatorWidthPlus + textRect.size.width + 2, y},
+                                                {rightSubtextWidth, size.height}},
+                                               LayoutOptionsSizeToFitVertical |
+                                                   LayoutOptionsAlignCenterVertical);
 
             context.setViewSizeInRect(indicator_, {indicatorWidth, indicatorHeight},
                                       Rect{{x, y + 1}, {indicatorWidth, textRect.size.height}},
                                       LayoutOptionsAlignCenterVertical);
+        } else if (hasSubtext_ && !rightSubtext_) {
+            subtextRect = context.setViewFrame(
+                subtextView_,
+                {{indicatorWidthPlus + 15, y + textRect.size.height + 2},
+                 {size.width - indicatorWidthPlus - 15, size.height}},
+                LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical);
+
+            context.setViewFrame(indicator_,
+                                 {{x, y + indicatorHeightPadding + 2},
+                                  {indicatorWidth, textRect.size.height + subtextRect.size.height +
+                                                       2 * indicatorHeightPadding}});
+        } else {
+            context.setViewSizeInRect(indicator_, {indicatorWidth, indicatorHeight},
+                                      Rect{{x, y + 1}, {indicatorWidth, textRect.size.height}},
+                                      LayoutOptionsAlignCenterVertical);
         }
-        y += textRect.size.height + subtextRectHeight + verticalPadding_;
+
+        y += textRect.size.height + verticalPadding_;
+        if (!rightSubtext_ && hasSubtext_) {
+            y += subtextRect.size.height;
+        }
         return {size.width, y};
     }
 
@@ -121,4 +136,5 @@ protected:
     bool circleIndicator_ = false;
     bool selected_ = false;
     bool hasSubtext_ = false;
+    bool rightSubtext_ = false;
 };

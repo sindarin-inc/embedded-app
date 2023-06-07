@@ -1,7 +1,7 @@
 #include "ReadablePopupMenuScreen.hpp"
 
 // This is #define because there might be different types passed in
-#define SOL_PAGE_NUMBER(x) ((x) / 1000)
+#define SOL_PAGE_NUMBER(x) ((x) / 1000 + 1)
 
 void ReadablePopupMenuScreen::setUpPopupMenu() {
     size_t place = renderer_.getCurrentPlace();
@@ -82,9 +82,9 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
         addMenuItem(MenuItem("Contents", [this]() {
             readableTableOfContentsScreen_.resetMenuItems();
             for (const ReadableTableOfContentsChapter &chapter : readable_->toc) {
-                readableTableOfContentsScreen_.addMenuItem(MenuItem(
-                    StringFormat("%d: ", SOL_PAGE_NUMBER(chapter.txtOffset)) + chapter.title,
-                    [this]() { readableTableOfContentsScreen_.back(); }));
+                readableTableOfContentsScreen_.addMenuItem(
+                    MenuItem(chapter.title, StringFormat("%d", SOL_PAGE_NUMBER(chapter.txtOffset)),
+                             [this]() { readableTableOfContentsScreen_.back(); }));
             }
             readableTableOfContentsScreen_.setNearestChapterSelection(renderer_.getCurrentPlace());
             readableTableOfContentsScreen_.setFirstLoad();

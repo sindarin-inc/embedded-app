@@ -86,6 +86,7 @@ void ReadableTableOfContentsScreen::render(DisplaySystem &display) {
             menuItemView->setIndicatorPadding(0);
             menuItemView->setVerticalPadding(0);
             menuItemView->setCircleIndicator(true);
+            menuItemView->setRightSubtext(true);
             menuItemViews_.push_back(menuItemView);
         }
 

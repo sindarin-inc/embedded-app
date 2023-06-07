@@ -4,6 +4,7 @@
 
 #include "Misc/SpiramAllocator.hpp"
 #include "Models/JsonSerializable.hpp"
+#include "sindarin-debug.h"
 
 class ReadableTableOfContentsChapter : public JsonSerializable {
 public:
@@ -24,7 +25,7 @@ public:
         if (j.containsKey("in_subsection_href")) {
             inSubsectionHref = j["in_subsection_href"].as<std::string>();
             if (!inSubsectionHref.empty()) {
-                title = "  " + title;
+                title = " " + title;
             }
         }
         txtOffset = j["txt_offset"].as<uint32_t>();
