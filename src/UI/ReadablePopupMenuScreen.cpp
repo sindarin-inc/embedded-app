@@ -15,7 +15,7 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
     }
     std::string placeString = StringFormat("%.1f%%", placeInTextPercentage);
     std::string placeStringForBottom =
-        StringFormat("%d/%d", SOL_PAGE_NUMBER(place), lengthOfFile / 1000);
+        StringFormat("%d/%d", SOL_PAGE_NUMBER(place), lengthOfFile / 1000 + 1);
 
     popupMenuView_.setAuxText(placeStringForBottom);
 
