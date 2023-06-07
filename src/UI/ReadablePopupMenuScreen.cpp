@@ -8,11 +8,7 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
     size_t lengthOfFile = renderer_.size();
 
     float placeInTextPercentage = (float)place / (float)lengthOfFile * 100;
-    // If we only have 1 "page", make sure we just display 1/1
-    if (lengthOfFile / 1000 == 0) {
-        place = 1000;
-        lengthOfFile = 1000;
-    }
+
     std::string placeString = StringFormat("%.1f%%", placeInTextPercentage);
     std::string placeStringForBottom =
         StringFormat("%d/%d", SOL_PAGE_NUMBER(place), lengthOfFile / 1000 + 1);
