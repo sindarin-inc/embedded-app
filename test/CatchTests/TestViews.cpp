@@ -85,6 +85,7 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
 
         // Return to book on page 1, then start paging through the book
         SendRemoteCommand(LEFT);
+        WAIT_FOR_DRAW();
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("LastQuestion2");
@@ -117,7 +118,6 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
 
         // Seek to the end of the book, then confirm page number
         SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
         WAIT_FOR_DRAW();
         SendRemoteCommand(DOWN); // 1% granularity
         WAIT_FOR_DRAW();
