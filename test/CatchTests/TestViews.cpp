@@ -125,24 +125,10 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         WAIT_FOR_DRAW();
         SendRemoteCommand(DOWN); // 10% granularity
         WAIT_FOR_DRAW();
-        SendRemoteCommand(RIGHT);
-        WAIT_FOR_DRAW();
-        SendRemoteCommand(RIGHT);
-        WAIT_FOR_DRAW();
-        SendRemoteCommand(RIGHT);
-        WAIT_FOR_DRAW();
-        SendRemoteCommand(RIGHT);
-        WAIT_FOR_DRAW();
-        SendRemoteCommand(RIGHT);
-        WAIT_FOR_DRAW();
-        SendRemoteCommand(RIGHT);
-        WAIT_FOR_DRAW();
-        SendRemoteCommand(RIGHT);
-        WAIT_FOR_DRAW();
-        SendRemoteCommand(RIGHT);
-        WAIT_FOR_DRAW();
-        SendRemoteCommand(RIGHT);
-        WAIT_FOR_DRAW();
+        for (int i = 0; i < 10; i++) {
+            SendRemoteCommand(RIGHT);
+            WAIT_FOR_DRAW();
+        }
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW();
         SendRemoteCommand(UP); // Show popup menu
