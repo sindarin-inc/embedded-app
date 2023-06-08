@@ -208,6 +208,12 @@ auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
             log_e("strftime failed");
         }
     }
+
+    // Add the random number of seconds to the nextEventEpoch between 0 and 10 minutes
+    std::srand(std::time(NULL));
+    int randomSeconds = std::rand() % 600;
+    nextEventEpoch += randomSeconds;
+
     log_i("Next sync time is: %s (%" PRIu64 "s from now)", strftimeBuf,
           (int64_t)nextEventEpoch - now);
 
