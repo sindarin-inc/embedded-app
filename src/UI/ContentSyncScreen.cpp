@@ -105,6 +105,13 @@ void ContentSyncScreen::render(DisplaySystem &display) {
                 display.fillCircle(x + bulletRadius, bulletY, bulletRadius, display.fg);
             }
             auto textX = x + bulletRadius * 2 + 5;
+            std::string truncatedMessage;
+            if (std::strlen(message) > 32) {
+                truncatedMessage = std::string(message).substr(0, 32) + "...";
+                message = truncatedMessage.c_str();
+                textWidth = display.getTextWidth(message);
+            }
+
             display.drawSingleLineOfText(message, textX, y);
             y += display.getFont()->lineHeight();
             if (drawLine && percentage > 0) {
