@@ -152,7 +152,6 @@ void SolClock::setClockTimeFromInternet() {
     log_i("Not setting clock time from internet in simulator");
 #endif
 }
-
 auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
     // Current local time as a tm struct
     struct tm timeinfo;
@@ -194,25 +193,29 @@ auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
 
     // Determine the next event
     time_t nextEventEpoch;
-    char strftimeBuf[64];
+    struct tm *nextEventTM;
     if (morningNews != 0 && morningEventEpoch <= eveningEventEpoch) {
         nextEventEpoch = morningEventEpoch;
-        size_t size = strftime(strftimeBuf, sizeof(strftimeBuf), "%c", &morningEvent);
-        if (size == 0) {
-            log_e("strftime failed");
-        }
+        nextEventTM = &morningEvent;
     } else {
         nextEventEpoch = eveningEventEpoch;
-        size_t size = strftime(strftimeBuf, sizeof(strftimeBuf), "%c", &eveningEvent);
-        if (size == 0) {
-            log_e("strftime failed");
-        }
+        nextEventTM = &eveningEvent;
     }
 
     // Add the random number of seconds to the nextEventEpoch between 0 and 10 minutes
     std::srand(std::time(nullptr));
     int randomSeconds = std::rand() % 600;
     nextEventEpoch += randomSeconds;
+
+    // Convert the epoch time back to tm struct
+    nextEventTM = localtime(&nextEventEpoch);
+
+    // Generate human-readable representation of the updated next event time
+    char strftimeBuf[64];
+    size_t size = strftime(strftimeBuf, sizeof(strftimeBuf), "%c", nextEventTM);
+    if (size == 0) {
+        log_e("strftime failed");
+    }
 
     log_i("Next sync time is: %s (%" PRIu64 "s from now)", strftimeBuf,
           (int64_t)nextEventEpoch - now);
