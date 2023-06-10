@@ -59,20 +59,24 @@ class OverrideIdfSerial(IdfSerial):
             port = wait_for_port_by_device_name("USB JTAG/serial debug unit")
             logger.debug(f"Found port {port} for DUT serial port, re-opening")
             try:
-                # For whatever reason setting these crash at open in linux with a trace like this:
+                self.proc.open()
+            except (serial.serialutil.SerialException, termios.error) as e:
+                logger.warning(f"Attempt {n+1} failed with error: {e}")
+                time.sleep(1)
+            except BrokenPipeError as e:
+                # For whatever reason configuring rtscts/dsrdtr crash at self.proc.open() in linux with a trace like this:
                 # venv/lib/python3.10/site-packages/serial/serialutil.py:463: in rts
                 #     self._update_rts_state()
                 # venv/lib/python3.10/site-packages/serial/serialposix.py:708: in _update_rts_state
                 #     fcntl.ioctl(self.fd, TIOCMBIC, TIOCM_RTS_str)
                 # E   BrokenPipeError: [Errno 32] Broken pipe
-                # As a workaround we force them to True. Not sure if that's good
+                # As a workaround we force them to True and try again. Not sure if that's good
                 if platform.system() == "Linux":
+                    logger.warning("Attempting workaround for Linux rtscts/dsrdtr BrokenPipeError")
                     self.proc.rtscts = True
                     self.proc.dsrdtr = True
-                self.proc.open()
-            except (serial.serialutil.SerialException, termios.error) as e:
-                logger.warning(f"Attempt {n+1} failed with error: {e}")
-                time.sleep(1)
+                else:
+                    raise e
             else:
                 logger.debug("Reopened DUT serial port successfully")
                 break
