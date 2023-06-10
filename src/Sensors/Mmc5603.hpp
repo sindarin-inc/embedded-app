@@ -38,7 +38,7 @@ class Mmc5603 {
 public:
     Mmc5603(int i2cNum) : i2cNum_(i2cNum) {}
 
-    auto readProductId() -> uint8_t;
+    auto readProductId(uint8_t *productIdOut) -> esp_err_t;
 
     auto readX() -> float;
     auto readX20Bit() -> float;

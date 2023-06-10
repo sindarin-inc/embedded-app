@@ -33,6 +33,14 @@ set(compile_options
     -DLED_INVERT=1
 )
 
+# Check if the BUILD_FOR_TEST environment variable is set and add the extra option if it is
+if($ENV{BUILD_FOR_TEST})
+    # Must be enabled when building firmware for use with the ICT and PyTest test code otherwise
+    # the DUT will not reliably enumerate because of light sleep.
+    message(WARNING "TEST BUILD ENABLED!")
+    list(APPEND compile_options -DDISABLE_POWER_MANAGEMENT=1)
+endif()
+
 idf_component_register(
     SRCS ${app_sources}
     INCLUDE_DIRS "."
