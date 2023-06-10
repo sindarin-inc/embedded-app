@@ -3,6 +3,7 @@ import termios
 import time
 import typing as t
 from typing import Any
+import platform
 
 import pytest
 import serial
@@ -54,9 +55,20 @@ class OverrideIdfSerial(IdfSerial):
     def reconnect_serial(self):
         max_attempts = 3
         for n in range(max_attempts):
+            # self.close()
             port = wait_for_port_by_device_name("USB JTAG/serial debug unit")
             logger.debug(f"Found port {port} for DUT serial port, re-opening")
             try:
+                # For whatever reason setting these crash at open in linux with a trace like this:
+                # venv/lib/python3.10/site-packages/serial/serialutil.py:463: in rts
+                #     self._update_rts_state()
+                # venv/lib/python3.10/site-packages/serial/serialposix.py:708: in _update_rts_state
+                #     fcntl.ioctl(self.fd, TIOCMBIC, TIOCM_RTS_str)
+                # E   BrokenPipeError: [Errno 32] Broken pipe
+                # As a workaround we force them to True. Not sure if that's good
+                if platform.system() == "Linux":
+                    self.proc.rtscts = True
+                    self.proc.dsrdtr = True
                 self.proc.open()
             except (serial.serialutil.SerialException, termios.error) as e:
                 logger.warning(f"Attempt {n+1} failed with error: {e}")
@@ -206,14 +218,14 @@ class TestPowerConsumption:
         time.sleep(0.5)
         ict_client.set_servo("left", 75)
 
+        # Wait for serial port to come back
+        dut.serial.reconnect_serial()
+
         time.sleep(2)
 
         # Check voltage while powered via the battery connector (tests the battery combiner circuit)
         voltage = ict_client.get_voltage("V33")
         assert 3.2 < voltage < 3.4
-
-        # Wait for serial port to come back
-        dut.serial.reconnect_serial()
 
         # NOTE NOTE NOTE NOTE WARNING: Currently this will only work if the firmware is compiled with -DDISABLE_POWER_MANAGEMENT=1.
         # That's because without USB power connected, the DUT will sporadically go into light sleep here, which will cause the USB serial to come and go.
