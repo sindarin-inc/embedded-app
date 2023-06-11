@@ -15,9 +15,6 @@
 
 TEST_CASE("First few screens render correctly and handle remote commands") {
     StartFreeRtos();
-    PreferencesStore prefs;
-    prefs.begin();
-    prefs.noSetupMode.set(true);
 
     SetupFileSystemMock("TestData");
 
