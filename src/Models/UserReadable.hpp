@@ -6,13 +6,13 @@
 
 class UserReadable : JsonSerializable {
 public:
-    UserReadable() { readable = SpiRamPtr<Readable>(); };
+    UserReadable() = default;
     ~UserReadable() override = default;
 
     std::string uuid;
     uint32_t placemark;
     bool isArchived;
-    std::shared_ptr<Readable> readable;
+    std::shared_ptr<Readable> readable = nullptr;
 
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("uuid") || !j.containsKey("readable")) {
@@ -22,6 +22,7 @@ public:
         uuid = j["uuid"].as<std::string>();
         placemark = j["placemark"].as<uint32_t>();
         isArchived = j["is_archived"].as<bool>();
+        readable = SpiRamPtr<Readable>();
         return readable->fromJson(j["readable"]);
     }
 
