@@ -11,7 +11,7 @@ class ReadableSeekScreen : public Screen {
 public:
     ReadableSeekScreen(PreferencesStore &prefs, std::shared_ptr<Readable> readable,
                        Renderer &renderer)
-        : Screen(), prefs_(prefs), readable_(std::move(std::move(readable))), renderer_(renderer) {}
+        : Screen(), prefs_(prefs), readable_(std::move(readable)), renderer_(renderer) {}
 
     void processCommand(RemoteCommand command) override;
     void render(DisplaySystem &display) override;
