@@ -874,8 +874,9 @@ auto LocalStore::readableFilePathForReading(const std::shared_ptr<Readable> &rea
     return "";
 }
 
-auto LocalStore::readableGetUncompressedSize(std::shared_ptr<Readable> readable) const -> int {
-    auto path = readableFilePathForReading(std::move(readable));
+auto LocalStore::readableGetUncompressedSize(const std::shared_ptr<Readable> readable) const
+    -> int {
+    auto path = readableFilePathForReading(readable);
     if (path.empty()) {
         return -1;
     }
