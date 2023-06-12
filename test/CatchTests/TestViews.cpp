@@ -136,6 +136,7 @@ TEST_CASE("Test some views independently") {
         prefs.rectY.remove();
         prefs.rectW.remove();
         prefs.rectH.remove();
+        prefs.noSetupMode.set(true);
 
         SECTION("Test OffsetAdjustScreen") {
             OffsetAdjustScreen screen(*display, prefs);

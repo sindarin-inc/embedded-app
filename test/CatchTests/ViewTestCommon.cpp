@@ -74,6 +74,7 @@ void StartFreeRtos(bool runAppMain) {
     prefs.pageTransitionArrows.set(false);
     prefs.lastReadableId.remove();
     prefs.readablePlace.set("93d56842", 0);
+    prefs.noSetupMode.set(true);
 
     // Start the FreeRTOS scheduler
     SchedulerThread = std::make_unique<std::thread>([runAppMain]() {

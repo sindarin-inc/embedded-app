@@ -241,6 +241,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         }
     });
 
+    WiFi::getInstance().setWiFiPower(
+        (wifi_power_t)prefs.wifiPower.get().value_or(WIFI_POWER_16dBm));
+
     if (powerManager.state() == PowerState::Background) {
         log_i("Booting into PowerState::Background, running a content sync");
         // Spin up a task just to check the temple and battery
@@ -415,9 +418,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         bootErrors.push_back({.type = BootError::Type::BLEWifi});
     }
 #endif
-
-    WiFi::getInstance().setWiFiPower(
-        (wifi_power_t)prefs.wifiPower.get().value_or(WIFI_POWER_16dBm));
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
     if (!bleManager->startAdvertisingIfNecessary()) {
