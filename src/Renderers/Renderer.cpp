@@ -23,7 +23,7 @@ const constexpr int RendererDebug = 1;
 
 Renderer::Renderer(DisplaySystem &display) : display_(display) {}
 
-// must be called after loadAndTokenizePage
+// Must be called only in the context of loadAndTokenizePage() method.
 // Takes a place in the token buffer and places the string that the token
 // represents in the outputString buffer. This is a helper since it's a
 // common thing we want to do in the rendering code.
@@ -33,6 +33,7 @@ void Renderer::tokenToString(uint16_t tokenIdx, TokenString &outputString) {
     outputString[tokens_[tokenIdx + 1].pageIdx - tokens_[tokenIdx].pageIdx] = '\0';
 }
 
+// Must be called only in the context of loadAndTokenizePage() method.
 // The thing is, most tokens are easy to determine the width of because the
 // operation is the same regardless of context. Spaces are the exception.
 // A space may render differently based on the characters before and after it.
@@ -91,6 +92,7 @@ void Renderer::tokenRenderedWidthHeight(uint16_t tokenIdx, uint16_t *width, uint
     }
 }
 
+// Must be called only in the context of loadAndTokenizePage() method.
 // A helper method to fill the size of a token after the tokens have been loaded
 // into the token buffer.
 //
@@ -105,9 +107,10 @@ auto Renderer::setSizeOfTextToken(uint16_t tokenIdx) -> uint16_t {
     return (tokens_[tokenIdx].width * tokens_[tokenIdx].height);
 }
 
+// Must be called BEFORE using the loadAndTokenizePage().
 // From the fromPlace variable, seek into the file and synchronize
 // the value at a valid UTF8 location. An UTF8 character start with
-// a first byte MSB == 0 or the two most significant bits equals to 11
+// a first byte MSBit == 0 or the two MSBits == 11
 //
 // returns an updated fromPlace location or the LocationError value.
 auto Renderer::getFileLocation(uint32_t fromPlace) -> uint32_t {
@@ -149,7 +152,7 @@ void Renderer::loadAndTokenizePage(uint32_t fromPlace, bool backwards) {
     uint16_t textArea = 0;
     uint16_t maxTextArea = display_.width() * display_.height();
 
-    pageTokensCount_ = 0;
+    tokensCount_ = 0;
 
     spaceWidth_ = 0;
 
@@ -190,7 +193,7 @@ void Renderer::loadAndTokenizePage(uint32_t fromPlace, bool backwards) {
         case '\n':
             newToken.tokenId = TOKEN_ID::NEWLINE;
             tokens_[tokenIdx] = newToken;
-            pageTokensCount_++;
+            tokensCount_++;
             tokens_[tokenIdx + 1] = eofToken;
             computePreviousTokenSize();
             prevNewLineIdx = tokenIdx;
@@ -204,7 +207,7 @@ void Renderer::loadAndTokenizePage(uint32_t fromPlace, bool backwards) {
             newToken.width = spaceWidth_;
             newToken.height = spaceHeight_;
             tokens_[tokenIdx] = newToken;
-            pageTokensCount_++;
+            tokensCount_++;
             tokens_[tokenIdx + 1] = eofToken;
             computePreviousTokenSize();
             tokenIdx++;
@@ -213,7 +216,7 @@ void Renderer::loadAndTokenizePage(uint32_t fromPlace, bool backwards) {
             newToken.tokenId = TOKEN_ID::TAB;
             display_.getTextSize("\t", &newToken.width, &newToken.height);
             tokens_[tokenIdx] = newToken;
-            pageTokensCount_++;
+            tokensCount_++;
             tokens_[tokenIdx + 1] = eofToken;
             computePreviousTokenSize();
             tokenIdx++;
@@ -237,7 +240,7 @@ void Renderer::loadAndTokenizePage(uint32_t fromPlace, bool backwards) {
             newToken.tokenId = TOKEN_ID::HYPHEN;
             display_.getTextSize("-", &newToken.width, &newToken.height);
             tokens_[tokenIdx] = newToken;
-            pageTokensCount_++;
+            tokensCount_++;
             tokens_[tokenIdx + 1] = eofToken;
             computePreviousTokenSize();
             tokenIdx++;
@@ -256,7 +259,7 @@ void Renderer::loadAndTokenizePage(uint32_t fromPlace, bool backwards) {
             if (prevToken.tokenId != TOKEN_ID::TEXT) {
                 newToken.tokenId = TOKEN_ID::TEXT;
                 tokens_[tokenIdx] = newToken;
-                pageTokensCount_++;
+                tokensCount_++;
                 tokens_[tokenIdx + 1] = eofToken;
                 tokenIdx++;
                 break;
@@ -288,7 +291,7 @@ void Renderer::loadAndTokenizePage(uint32_t fromPlace, bool backwards) {
 }
 
 // debugging method
-void Renderer::printOutTokensInCurrTokenBuffer() {
+void Renderer::printOutTokens() {
     if constexpr (RendererDebug) {
         auto currToken = tokens_[0];
         for (int16_t i = 0; (i < MAX_CHARS_PER_PAGE) && (currToken.tokenId != TOKEN_ID::ENDOFFILE);
@@ -475,7 +478,7 @@ auto Renderer::goBackwardsOnePage(uint32_t fromPlace) -> uint32_t {
     // Go backwards from the last token and do the same as the loadCurrentPage
     // method.
 
-    uint16_t tokenIdx = pageTokensCount_ - 1;
+    uint16_t tokenIdx = tokensCount_ - 1;
     int16_t deciLinesCount = 1;
     int16_t linesCount = 1;
     Line singleLine{};

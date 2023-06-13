@@ -18,12 +18,13 @@
 //
 // In the following class definition
 //
-// - "Place" as a variable suffix defines a character index in the file stream
-// - "Idx" as a variable suffix defines an index in one of the arrays maintained by this class
+// - "Place" as a variable suffix, defines a character index in the file stream
+// - "Idx" as a variable suffix, defines an index in one of the arrays maintained by this class
 
 class Renderer {
 
 private:
+    // Used by the getFileLocation() method in case of error
     const uint32_t LocationError = 0xFFFFFFFF;
 
     // These are the different tokens so as we parse a buffer
@@ -111,7 +112,7 @@ private:
 
     // This keeps all the tokens for the max amount of read from the stream
     Tokens tokens_{};
-    uint16_t pageTokensCount_ = 0;
+    uint16_t tokensCount_ = 0;
 
     PageLines pageLines_{};
     uint16_t pageLinesLengths_[MAX_LINES_PER_PAGE] = {0};
@@ -132,7 +133,7 @@ private:
     auto setSizeOfTextToken(uint16_t tokenIdx) -> uint16_t;
 
     // Debugging
-    void printOutTokensInCurrTokenBuffer();
+    void printOutTokens();
 
     auto getLineOfTextForRendering(uint16_t startTokenIdx, Line &line) -> uint16_t;
 };
