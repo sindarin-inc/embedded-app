@@ -8,7 +8,7 @@
 #include "sindarin-debug.h"
 
 // For deep logging when changing this file
-// #define RENDERER_DEBUG
+const constexpr int RendererDebug = 1;
 
 // This is the number of SUB-lines we want to split a line into
 // for the purpose of being able to render bare newlines as less
@@ -17,6 +17,7 @@
 // on a line will render as 4/10s of a full line height.
 // Theoretically we can do any percentage we want here, but there's
 // a lot of testing to do for that!
+
 #define FULL_DECI_LINE_HEIGHT 10
 #define NEWLINE_ONLY_DECI_LINE_HEIGHT 4
 
@@ -26,7 +27,7 @@ Renderer::Renderer(DisplaySystem &display) : display_(display) {}
 // Takes a place in the token buffer and places the string that the token
 // represents in the outputString buffer. This is a helper since it's a
 // common thing we want to do in the rendering code.
-void Renderer::tokenToString(unsigned long tokenIdx, TokenString &outputString) {
+void Renderer::tokenToString(uint16_t tokenIdx, TokenString &outputString) {
     std::copy_n(&page_[tokens_[tokenIdx].pageIdx],
                 tokens_[tokenIdx + 1].pageIdx - tokens_[tokenIdx].pageIdx, &outputString[0]);
     outputString[tokens_[tokenIdx + 1].pageIdx - tokens_[tokenIdx].pageIdx] = '\0';
@@ -44,7 +45,7 @@ void Renderer::tokenToString(unsigned long tokenIdx, TokenString &outputString) 
 //
 // As this issue maybe related to the GFX way of doing things, the code has been
 // modified to simplify the process when the current font is an IBMF one.
-void Renderer::tokenRenderedWidthHeight(unsigned long tokenIdx, uint16_t *width, uint16_t *height) {
+void Renderer::tokenRenderedWidthHeight(uint16_t tokenIdx, uint16_t *width, uint16_t *height) {
     TokenString converted;
     if (display_.getFont()->isA(FontType::IBMF)) {
         if (tokens_[tokenIdx].tokenId != TOKEN_ID::SPACE) {
@@ -96,12 +97,37 @@ void Renderer::tokenRenderedWidthHeight(unsigned long tokenIdx, uint16_t *width,
 // Returns the area of the token (width * height)
 // for use in calcuating how much space we need for a page.
 //
-auto Renderer::setSizeOfTextToken(unsigned long tokenIdx) -> unsigned int {
+auto Renderer::setSizeOfTextToken(uint16_t tokenIdx) -> uint16_t {
     TokenString converted;
     tokenToString(tokenIdx, converted);
     tokenRenderedWidthHeight(tokenIdx, &tokens_[tokenIdx].width, &tokens_[tokenIdx].height);
     // If the token is a space, then we need to just return zero because the height is undefined.
     return (tokens_[tokenIdx].width * tokens_[tokenIdx].height);
+}
+
+// From the fromPlace variable, seek into the file and synchronize
+// the value at a valid UTF8 location. An UTF8 character start with
+// a first byte MSB == 0 or the two most significant bits equals to 11
+//
+// returns an updated fromPlace location or the LocationError value.
+auto Renderer::getFileLocation(uint32_t fromPlace) -> uint32_t {
+    if (!stream_->seek(fromPlace)) {
+        log_e("failed to seek at place %" PRIu32 " in file!", fromPlace);
+    } else {
+        while (stream_->available()) {
+            char ch = stream_->read();
+            if (((ch & 0x80) == 0) || ((ch & 0xC0) == 0xC0)) {
+                stream_->seek(fromPlace);
+                return fromPlace;
+            }
+            fromPlace += 1;
+            if constexpr (RendererDebug) {
+                log_d("Synching to start of UTF8 character at place %" PRIu32, fromPlace);
+            }
+        }
+    }
+
+    return LocationError;
 }
 
 //
@@ -114,13 +140,14 @@ auto Renderer::setSizeOfTextToken(unsigned long tokenIdx) -> unsigned int {
 // We track backwards because we need to double the amount read in a backwards
 // read (2 pages instead of 1)
 //
-void Renderer::loadAndTokenizePage(unsigned long fromPlace, bool backwards) {
-    unsigned int pageIdx = 0;
-    unsigned int tokenIdx = 0;
-    unsigned int prevNewLineIdx = 0;
+// IMPORTANT: The getFileLocation() method must be called before using this method.
+void Renderer::loadAndTokenizePage(uint32_t fromPlace, bool backwards) {
+    uint16_t pageIdx = 0;
+    uint16_t tokenIdx = 0;
+    uint16_t prevNewLineIdx = 0;
 
-    unsigned int textArea = 0;
-    unsigned int maxTextArea = display_.width() * display_.height();
+    uint16_t textArea = 0;
+    uint16_t maxTextArea = display_.width() * display_.height();
 
     pageTokensCount_ = 0;
 
@@ -131,19 +158,14 @@ void Renderer::loadAndTokenizePage(unsigned long fromPlace, bool backwards) {
     Token eofToken = {TOKEN_ID::ENDOFFILE, 0, 0, 0, 0};
     tokens_[tokenIdx] = eofToken;
 
-    if (!stream_->seek(fromPlace)) {
-        log_e("failed to seek %lu is the file at place", fromPlace);
-        return;
-    }
-
-    auto computePreviousTokenSize = [this, &textArea, tokenIdx]() -> void {
+    auto computePreviousTokenSize = [this, &textArea, &tokenIdx]() -> void {
         // we need to set the size of the previous token
-        if ((tokenIdx > 0) && tokens_[tokenIdx - 1].tokenId == TOKEN_ID::TEXT) {
+        if ((tokenIdx > 0) && (tokens_[tokenIdx - 1].tokenId == TOKEN_ID::TEXT)) {
             textArea += setSizeOfTextToken(tokenIdx - 1);
             // If we've started a new text token and the previous token was a space
             // we know that we should go back and set the size of that space token
             // based on this token and the token before the space.
-            if ((tokenIdx > 2) && tokens_[tokenIdx - 2].tokenId == TOKEN_ID::SPACE) {
+            if ((tokenIdx > 2) && (tokens_[tokenIdx - 2].tokenId == TOKEN_ID::SPACE)) {
                 textArea += setSizeOfTextToken(tokenIdx - 2);
             }
         }
@@ -157,9 +179,9 @@ void Renderer::loadAndTokenizePage(unsigned long fromPlace, bool backwards) {
         Token newToken = {TOKEN_ID::ENDOFFILE, pageIdx, fromPlace + pageIdx, prevNewLineIdx, 0, 0};
         Token prevToken;
 
-#ifdef RENDERER_DEBUG
-        log_d("Set the stream place to %lu", fromPlace + pageIdx);
-#endif
+        // if constexpr (RendererDebug) {
+        //     log_d("Set the stream place to %" PRIu32, fromPlace + pageIdx);
+        // }
 
         page_[pageIdx] = curChar;
         page_[pageIdx + 1] = '\0';
@@ -253,11 +275,12 @@ void Renderer::loadAndTokenizePage(unsigned long fromPlace, bool backwards) {
     tokens_[tokenIdx].pageIdx = pageIdx;
     tokens_[tokenIdx].streamPlace = fromPlace + pageIdx;
 
-#ifdef RENDERER_DEBUG
-    log_d("Finished tokenizing with running text area %d and max area %d, pageIdx is %d, and place "
-          "in file is %d",
-          textArea, maxTextArea, pageIdx, tokens_[tokenIdx].streamPlace);
-#endif
+    if constexpr (RendererDebug) {
+        log_d("Finished tokenizing with running text area %" PRIu16 " and max area %" PRIu16
+              ", pageIdx is %" PRIu16 ", and place "
+              "in file is %" PRIu32,
+              textArea, maxTextArea, pageIdx, tokens_[tokenIdx].streamPlace);
+    }
 
     // we need to set the size of the last token if it wasn't set
     // (e.g., when there is no newline at the end)
@@ -265,33 +288,32 @@ void Renderer::loadAndTokenizePage(unsigned long fromPlace, bool backwards) {
 }
 
 // debugging method
-#ifdef RENDERER_DEBUG
 void Renderer::printOutTokensInCurrTokenBuffer() {
-    auto currToken = tokens_[0];
-    for (int i = 0; (i < MAX_CHARS_PER_PAGE) && (currToken.tokenId != TOKEN_ID::ENDOFFILE); i++) {
-        currToken = tokens_[i];
-        log_d("%u: %u", currToken.tokenId, currToken.pageIdx);
-        if (currToken.tokenId == TOKEN_ID::TEXT) {
-            for (int j = currToken.pageIdx; j < tokens_[i + 1].pageIdx; j++) {
-                log_d("%c", page_[j]);
+    if constexpr (RendererDebug) {
+        auto currToken = tokens_[0];
+        for (int16_t i = 0; (i < MAX_CHARS_PER_PAGE) && (currToken.tokenId != TOKEN_ID::ENDOFFILE);
+             i++) {
+            currToken = tokens_[i];
+            log_d("%" PRIu8 ": %" PRIu32, (uint8_t)currToken.tokenId, currToken.pageIdx);
+            if (currToken.tokenId == TOKEN_ID::TEXT) {
+                for (int16_t j = currToken.pageIdx; j < tokens_[i + 1].pageIdx; j++) {
+                    log_d("%c", page_[j]);
+                }
+                log_d("\n");
             }
-            log_d("\n");
         }
     }
 }
-#endif
 
 // This method takes in a place in the token buffer.
 // It puts the string in the line parameter.
 // It returns the next token idx in the TokenBuffer unless already at EOF, then
 // it returns EOF again.
-//
-//
-auto Renderer::getLineOfTextForRendering(unsigned int startTokenIdx, Line &line) -> unsigned int {
-    unsigned int tokenIdx = startTokenIdx;
-    unsigned int lineIdx = 0;
-    int maxWidth = (display_.width() - 4);
-    int runningWidth = 0;
+auto Renderer::getLineOfTextForRendering(uint16_t startTokenIdx, Line &line) -> uint16_t {
+    uint16_t tokenIdx = startTokenIdx;
+    uint16_t lineIdx = 0;
+    int16_t maxWidth = (display_.width() - 4);
+    int16_t runningWidth = 0;
 
     line[lineIdx] = '\0';
 
@@ -320,7 +342,7 @@ auto Renderer::getLineOfTextForRendering(unsigned int startTokenIdx, Line &line)
         tokenIdx++;
     }
 
-    for (int i = startTokenIdx; i < tokenIdx; i++) {
+    for (int16_t i = startTokenIdx; i < tokenIdx; i++) {
         if (tokens_[i].tokenId != TOKEN_ID::ENDOFFILE) {
             // Skip over a space if it's the first token in the line.
             if ((i == startTokenIdx) && (tokens_[i].tokenId == TOKEN_ID::SPACE)) {
@@ -333,9 +355,10 @@ auto Renderer::getLineOfTextForRendering(unsigned int startTokenIdx, Line &line)
         }
     }
 
-#ifdef RENDERER_DEBUG
-    log_d("Returning place %d", tokenIdx);
-#endif
+    if constexpr (RendererDebug) {
+        log_d("Returning place %" PRIu16 ", width: %" PRIi16 " line: %s", tokenIdx, runningWidth,
+              line.data());
+    }
     return tokenIdx;
 }
 
@@ -343,12 +366,12 @@ void Renderer::loaded() { nextPlace_ = loadCurrentPage(); }
 
 // Show the (already loaded into buffer) current page
 // and load the next page into the next buffer so we have it.
-auto Renderer::renderPage(unsigned long fromPlace, int numSkipLines) -> unsigned long {
-    log_d("%lu is place in file being requested", fromPlace);
+auto Renderer::renderPage(uint32_t fromPlace, int16_t numSkipLines) -> uint32_t {
 
-#ifdef RENDERER_DEBUG
-    log_d("%lu is place in file being requested", fromPlace);
-#endif
+    if constexpr (RendererDebug) {
+        log_d("%" PRIu32 " is place in file being requested", fromPlace);
+    }
+
     currentPlace_ = fromPlace;
 
     // This needs to happen before loading into buffer since it will affect what we load into the
@@ -361,7 +384,7 @@ auto Renderer::renderPage(unsigned long fromPlace, int numSkipLines) -> unsigned
 
     currentPageWordCount_ = WordCount(currentPage_.data());
 
-    int newLineAdjust = 0;
+    int16_t newLineAdjust = 0;
 
     // A first attempt to get the the text to look better with newlines as sole
     // characters on the line with a smaller height than a full line.
@@ -371,10 +394,10 @@ auto Renderer::renderPage(unsigned long fromPlace, int numSkipLines) -> unsigned
     // The y position calucalted is based on the number of newlines we've seen so far
     // in this page.
 
-    for (int j = 0; j < pageLinesCount_; j++) {
-#ifdef RENDERER_DEBUG
-        log_d("%s", pageLines_[j].data());
-#endif
+    for (int16_t j = 0; j < pageLinesCount_; j++) {
+        if constexpr (RendererDebug) {
+            log_d("%s", pageLines_[j].data());
+        }
         if (pageLines_[j][0] == '\n') {
             newLineAdjust++;
         } else {
@@ -431,8 +454,8 @@ auto Renderer::renderPage(unsigned long fromPlace, int numSkipLines) -> unsigned
 //
 // Step 5: Save off the place in the token buffer where the prevous page starts and
 // return it.
-auto Renderer::goBackwardsOnePage(unsigned long fromPlace) -> unsigned long {
-    unsigned long seekPlace = 0;
+auto Renderer::goBackwardsOnePage(uint32_t fromPlace) -> uint32_t {
+    uint32_t seekPlace = 0;
 
     // Step 1 (See above)
     if (fromPlace >= MAX_CHARS_PER_PAGE) {
@@ -442,6 +465,9 @@ auto Renderer::goBackwardsOnePage(unsigned long fromPlace) -> unsigned long {
         seekPlace = 0;
     }
 
+    seekPlace = getFileLocation(seekPlace);
+    if (seekPlace == LocationError) return 0;
+
     // Step 2.
     // log_d("loadAndTokenizePage called for step 2 of goBackwardsOnePage");
     loadAndTokenizePage(seekPlace, true);
@@ -449,34 +475,34 @@ auto Renderer::goBackwardsOnePage(unsigned long fromPlace) -> unsigned long {
     // Go backwards from the last token and do the same as the loadCurrentPage
     // method.
 
-    unsigned int tokenIdx = pageTokensCount_ - 1;
-    int deciLinesCount = 1;
-    int linesCount = 1;
+    uint16_t tokenIdx = pageTokensCount_ - 1;
+    int16_t deciLinesCount = 1;
+    int16_t linesCount = 1;
     Line singleLine{};
 
     // It's minus 2 because we want to start 1 off the top and leave 1 at the bottom
     // Note that get_text_height adds 1 over the max character height
     // change to deciLines for better newline performance
-    int maxDeciLines =
+    int16_t maxDeciLines =
         (display_.height() - 2) / (this->display_.getTextHeight()) * FULL_DECI_LINE_HEIGHT;
 
-#ifdef RENDERER_DEBUG
-    log_d("BACKWARDS DISPLAY READOUT: %d, %d, %d", display_.height() - 2,
-          this->display_.getTextHeight(), this->display_.getLineSpacing());
-#endif
+    if constexpr (RendererDebug) {
+        log_d("BACKWARDS DISPLAY READOUT: %d, %d, %d", display_.height() - 2,
+              this->display_.getTextHeight(), this->display_.getLineSpacing());
+    }
 
     singleLine[0] = '\0';
 
-// Find which token to start with
-// Could switch to an algorithm that is log(n) instead of n if we need to
-#ifdef RENDERER_DEBUG
-    log_d("About to look for where to start: place = %lu", place);
-#endif
+    // Find which token to start with
+    // Could switch to an algorithm that is log(n) instead of n if we need to
+    if constexpr (RendererDebug) {
+        log_d("About to look for where to start: place = %" PRIu32, fromPlace);
+    }
     while ((tokens_[tokenIdx].streamPlace > fromPlace) && (tokenIdx > 0)) {
-#ifdef RENDERER_DEBUG
-        log_d("Going back another token at place %lu", tokens_[tokenIdx].streamPlace);
-        log_d("The token idx is %u", tokenIdx);
-#endif
+        if constexpr (RendererDebug) {
+            log_d("Going back another token at place %" PRIu32, tokens_[tokenIdx].streamPlace);
+            log_d("The token idx is %" PRIu16, tokenIdx);
+        }
         tokenIdx--;
     }
 
@@ -484,26 +510,26 @@ auto Renderer::goBackwardsOnePage(unsigned long fromPlace) -> unsigned long {
         // Can't go back any further, must be at beginning of file.
         return 0;
     }
-#if RENDERER_DEBUG
-    log_d("Found the place to start and it's %lu token type %d", tokens_[tokenIdx].streamPlace,
-          tokens_[tokenIdx + 1].tokenId);
-#endif
+    if constexpr (RendererDebug) {
+        log_d("Found the place to start and it's %" PRIu32 " token type %" PRIu8,
+              tokens_[tokenIdx].streamPlace, (uint8_t)tokens_[tokenIdx + 1].tokenId);
+    }
 
-    unsigned int paragraphTokenIdx = tokens_[tokenIdx].prevNewlineTokenIdx + 1;
+    uint16_t paragraphTokenIdx = tokens_[tokenIdx].prevNewlineTokenIdx + 1;
 
     // Step 3.
     // First, check the immediate paragraph for how many lines fit before
     // the passed in token;
     while (paragraphTokenIdx < tokenIdx) {
         paragraphTokenIdx = getLineOfTextForRendering(paragraphTokenIdx, singleLine);
-#ifdef RENDERER_DEBUG
-        log_d("paragraphToke: %d, currToke: %d, First PARAGRAPH ANALYSIS %s", paragraphTokenIdx,
-              tokenIdx, singleLine.data());
-#endif
+        if constexpr (RendererDebug) {
+            log_d("paragraphToke: %" PRIu16 ", currToke: %" PRIu16 ", First PARAGRAPH ANALYSIS %s",
+                  paragraphTokenIdx, tokenIdx, singleLine.data());
+        }
         if (singleLine[0] == '\n') {
-#ifdef RENDERER_DEBUG
-            log_d("Found a blank line");
-#endif
+            if constexpr (RendererDebug) {
+                log_d("Found a blank line");
+            }
             deciLinesCount += NEWLINE_ONLY_DECI_LINE_HEIGHT;
         } else {
             deciLinesCount += FULL_DECI_LINE_HEIGHT;
@@ -511,15 +537,15 @@ auto Renderer::goBackwardsOnePage(unsigned long fromPlace) -> unsigned long {
         linesCount++;
     }
 
-    unsigned int numDeciLinesInFirstParagraph = deciLinesCount;
+    uint16_t numDeciLinesInFirstParagraph = deciLinesCount;
 
     deciLinesCount = 1;
     linesCount = 1;
-    unsigned int newlinesInLastSection = 0;
+    uint16_t newlinesInLastSection = 0;
 
-    unsigned int prevParagraphTokenIdx =
+    uint16_t prevParagraphTokenIdx =
         tokens_[tokens_[tokenIdx].prevNewlineTokenIdx].prevNewlineTokenIdx + 1;
-    unsigned int nextyTokenIdx = tokens_[tokenIdx].prevNewlineTokenIdx;
+    uint16_t nextyTokenIdx = tokens_[tokenIdx].prevNewlineTokenIdx;
 
     // Step 4.
     while ((deciLinesCount + numDeciLinesInFirstParagraph) <= maxDeciLines) {
@@ -527,14 +553,15 @@ auto Renderer::goBackwardsOnePage(unsigned long fromPlace) -> unsigned long {
         newlinesInLastSection = 0;
         while (paragraphTokenIdx <= nextyTokenIdx) {
             paragraphTokenIdx = getLineOfTextForRendering(paragraphTokenIdx, singleLine);
-#ifdef RENDERER_DEBUG
-            log_d("paragraphToke: %d, PrevToke: %d, Second PARAGRAPH ANALYSIS %s",
-                  paragraphTokenIdx, prevParagraphTokenIdx, singleLine.data());
-#endif
+            if constexpr (RendererDebug) {
+                log_d("paragraphToke: %" PRIu16 ", PrevToke: %" PRIu16
+                      ", Second PARAGRAPH ANALYSIS %s",
+                      paragraphTokenIdx, prevParagraphTokenIdx, singleLine.data());
+            }
             if (singleLine[0] == '\n') {
-#ifdef RENDERER_DEBUG
-                log_d("Found a blank line");
-#endif
+                if constexpr (RendererDebug) {
+                    log_d("Found a blank line");
+                }
                 deciLinesCount += NEWLINE_ONLY_DECI_LINE_HEIGHT;
                 newlinesInLastSection++;
             } else {
@@ -542,14 +569,14 @@ auto Renderer::goBackwardsOnePage(unsigned long fromPlace) -> unsigned long {
             }
             linesCount++;
         }
-#ifdef RENDERER_DEBUG
-        log_d("Done with that paragraph! onto the next");
-#endif
+        if constexpr (RendererDebug) {
+            log_d("Done with that paragraph! onto the next");
+        }
         prevParagraphTokenIdx =
             tokens_[tokens_[nextyTokenIdx].prevNewlineTokenIdx].prevNewlineTokenIdx + 1;
-#ifdef RENDERER_DEBUG
-        log_d("After done prevParagraphTokenIdx = %d", prevParagraphTokenIdx);
-#endif
+        if constexpr (RendererDebug) {
+            log_d("After done prevParagraphTokenIdx = %" PRIu16, prevParagraphTokenIdx);
+        }
         // there's no newline at beginning of file, so need to check for that.
         if (prevParagraphTokenIdx == 1) {
             prevParagraphTokenIdx = 0;
@@ -563,15 +590,15 @@ auto Renderer::goBackwardsOnePage(unsigned long fromPlace) -> unsigned long {
         paragraphTokenIdx = 0;
     }
 
-    int overage = (deciLinesCount + numDeciLinesInFirstParagraph) - maxDeciLines;
+    int16_t overage = (deciLinesCount + numDeciLinesInFirstParagraph) - maxDeciLines;
 
-    int firstParagraphLinesOffset = 0;
+    int16_t firstParagraphLinesOffset = 0;
 
     // Only index in if we need to.
     if (overage > FULL_DECI_LINE_HEIGHT) {
-#ifdef RENDERER_DEBUG
-        log_d("The overage was %d overlines", overage);
-#endif
+        if constexpr (RendererDebug) {
+            log_d("The overage was %" PRIi16 " overlines", overage);
+        }
         firstParagraphLinesOffset = overage / FULL_DECI_LINE_HEIGHT;
 
         if (overage % FULL_DECI_LINE_HEIGHT != 0) {
@@ -580,13 +607,12 @@ auto Renderer::goBackwardsOnePage(unsigned long fromPlace) -> unsigned long {
         firstParagraphLinesOffset++;
     }
 
-#ifdef RENDERER_DEBUG
+    if constexpr (RendererDebug) {
 
-    log_d("First Paragraph Lines Offset %d", firstParagraphLinesOffset);
+        log_d("First Paragraph Lines Offset %" PRIi16, firstParagraphLinesOffset);
+    }
 
-#endif
-
-    for (int i = 0; i < firstParagraphLinesOffset; i++) {
+    for (int16_t i = 0; i < firstParagraphLinesOffset; i++) {
         paragraphTokenIdx = getLineOfTextForRendering(paragraphTokenIdx, singleLine);
     }
 
@@ -594,32 +620,36 @@ auto Renderer::goBackwardsOnePage(unsigned long fromPlace) -> unsigned long {
     // At this point, we found the place to start the new page!
     tokenIdx = paragraphTokenIdx;
 
-    unsigned long returnValue = tokens_[tokenIdx].streamPlace;
+    uint32_t returnValue = tokens_[tokenIdx].streamPlace;
 
     // methods calling this method expect this to not change what's loaded
     // into buffers, so we need to retokenize.
     // we could probably avoid this rework by introducing an extra token buffer if we wanted to.
     // log_d("loadAndTokenizePage called: need to retokenize");
+
+    fromPlace = getFileLocation(fromPlace);
+    if (fromPlace == LocationError) return 0;
+
     loadAndTokenizePage(fromPlace);
 
-#ifdef RENDERER_DEBUG
-    log_d("Returning the following place! %d", returnValue);
-#endif
+    if constexpr (RendererDebug) {
+        log_d("Returning the following place! %" PRIu32, returnValue);
+    }
     return returnValue;
 }
 
-auto Renderer::getTotalLengthOfLines() -> unsigned int {
-    int totalLengthsOfLines = 0;
-    for (int i = 0; i < pageLinesCount_; i++) {
+auto Renderer::getTotalLengthOfLines() -> uint16_t {
+    uint16_t totalLengthsOfLines = 0;
+    for (int16_t i = 0; i < pageLinesCount_; i++) {
         totalLengthsOfLines += pageLinesLengths_[i];
     }
     return totalLengthsOfLines;
 }
 
 // returns the new place of the stream
-auto Renderer::loadCurrentPage() -> unsigned long {
-    unsigned int pageIdx = 0;
-    int deciLinesCount = 1;
+auto Renderer::loadCurrentPage() -> uint32_t {
+    uint16_t pageIdx = 0;
+    int16_t deciLinesCount = 1;
     Line singleLine{};
 
     // It's minus 2 because we want to start 1 off the top and leave 1 at the bottom
@@ -627,23 +657,28 @@ auto Renderer::loadCurrentPage() -> unsigned long {
     //
     // Switch to 1/10 of a line as this gives us more flexibilty in rendering
     // precision between lines.
-    int maxDeciLines =
+    int16_t maxDeciLines =
         ((display_.height() - 2) / (this->display_.getTextHeight())) * FULL_DECI_LINE_HEIGHT;
 
-#ifdef RENDERER_DEBUG
-    log_d("Max lines calc: %d %d %d", display_.height(), display_.getTextHeight(),
-          display_.getLineSpacing());
-#endif
+    if constexpr (RendererDebug) {
+        log_d("Max lines calc: %d %d %d", display_.height(), display_.getTextHeight(),
+              display_.getLineSpacing());
+    }
 
     currentPage_[0] = '\0';
     singleLine[0] = '\0';
 
     // Debugging stuff
     // log_d("loadAndTokenizePage called: debugging stuff");
+    currentPlace_ = getFileLocation(currentPlace_);
+    if (currentPlace_ == LocationError) {
+        currentPlace_ = 0;
+        currentPlace_ = getFileLocation(currentPlace_);
+    }
     loadAndTokenizePage(currentPlace_);
 
-    unsigned int nextTokenIdx = 0;
-    unsigned int tokenIdx = 0;
+    uint16_t nextTokenIdx = 0;
+    uint16_t tokenIdx = 0;
 
     pageLinesCount_ = 0;
 
@@ -695,9 +730,9 @@ auto Renderer::loadCurrentPage() -> unsigned long {
         tokenIdx = nextTokenIdx;
     }
 
-#ifdef RENDERER_DEBUG
-    log_d("loaded this into page buffer %s", page.data());
-#endif
+    if constexpr (RendererDebug) {
+        log_d("loaded this into page buffer %s", currentPage_.data());
+    }
 
     // If we hit EOF, the next screen wraps around.
     if (tokens_[tokenIdx].tokenId == TOKEN_ID::ENDOFFILE) {
@@ -707,7 +742,7 @@ auto Renderer::loadCurrentPage() -> unsigned long {
     }
 }
 
-auto Renderer::getPreviousPlace() -> unsigned long {
+auto Renderer::getPreviousPlace() -> uint32_t {
     previousPlace_ = goBackwardsOnePage(currentPlace_);
     return previousPlace_;
 }
