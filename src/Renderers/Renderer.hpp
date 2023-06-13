@@ -23,13 +23,17 @@
 
 class Renderer {
 
+public:
+    typedef uint32_t Place;
+    typedef uint16_t Idx;
+
 private:
     // Used by the getFileLocation() method in case of error
     const uint32_t LocationError = 0xFFFFFFFF;
 
     // These are the different tokens so as we parse a buffer
     // we more easily know what to do with the text.
-    enum class TOKEN_ID : uint8_t {
+    enum class TokenId : uint8_t {
         TEXT = 0,
         NEWLINE = 1,
         SPACE = 2,
@@ -46,17 +50,19 @@ private:
     // To determine the length of a token, we can simply look at the
     // next token in the buffer and subtract the current token's
     // place.
-
+    //
+    // Fields ordering is to optimize the space required.
     struct Token {
-        TOKEN_ID tokenId;
-        uint32_t pageIdx;
-        uint32_t streamPlace;
+        Place streamPlace;
         // This basically gives each token knowledge of where the paragraph
         // start is for where it's located. It's useful for looking backwards
         // while rendering backwards.
-        uint32_t prevNewlineTokenIdx;
+        Idx pageIdx;
+        Idx prevNewlineTokenIdx;
         uint16_t width;
         uint16_t height;
+        uint16_t length; // Length in bytes
+        TokenId tokenId;
     };
 
     typedef std::array<char, MAX_CHARS_PER_PAGE> Page;
@@ -66,13 +72,13 @@ private:
     typedef std::array<Token, MAX_CHARS_PER_PAGE> Tokens;
 
 public:
-    Renderer(DisplaySystem &display);
+    Renderer(DisplaySystem &display) : display_(display) {}
 
     void setStream(std::shared_ptr<RendererStream> stream) { stream_ = std::move(stream); }
 
-    auto getPreviousPlace() -> uint32_t;
-    auto getCurrentPlace() const -> uint32_t { return currentPlace_; }
-    auto setCurrentPlace(uint32_t newPlace) { currentPlace_ = newPlace; }
+    auto getPreviousPlace() -> Place;
+    auto getCurrentPlace() const -> Place { return currentPlace_; }
+    auto setCurrentPlace(Place newPlace) { currentPlace_ = newPlace; }
 
     auto size() const -> uint32_t { return stream_->size(); }
 
@@ -82,13 +88,13 @@ public:
     //
     // numSkipLines allows us to not render the first X lines of the page
     // for the speed reading functionality.
-    auto renderPage(uint32_t fromPlace, int16_t numSkipLines = 0) -> uint32_t;
+    auto renderPage(Place fromPlace, int16_t numSkipLines = 0) -> Place;
 
     auto getCurrentPageWordCount() const -> uint32_t { return currentPageWordCount_; }
 
-    auto getLengthOfLine(uint16_t lineIdx) const -> uint16_t { return pageLinesLengths_[lineIdx]; }
+    auto getLengthOfLine(Idx lineIdx) const -> uint16_t { return pageLinesLengths_[lineIdx]; }
 
-    auto getTotalLengthOfLines() -> uint16_t;
+    auto getTotalLengthOfLines() const -> uint16_t;
 
     auto getNumRenderedLines() const -> uint16_t { return pageLinesCount_; }
 
@@ -96,9 +102,9 @@ private:
     DisplaySystem &display_;
     std::shared_ptr<RendererStream> stream_;
 
-    uint32_t currentPlace_ = 0;
-    uint32_t previousPlace_ = 0;
-    uint32_t nextPlace_ = 0;
+    Place currentPlace_ = 0;
+    Place previousPlace_ = 0;
+    Place nextPlace_ = 0;
 
     uint32_t currentPageWordCount_ = 0;
 
@@ -119,23 +125,23 @@ private:
     uint16_t pageLinesCount_ = 0;
 
     // This should be called by subclasses after content is loaded
-    void loaded();
+    void loaded() { nextPlace_ = loadCurrentPage(); };
 
-    auto loadCurrentPage() -> uint32_t;
-    auto goBackwardsOnePage(uint32_t fromPlace) -> uint32_t;
+    auto loadCurrentPage() -> Place;
+    auto goBackwardsOnePage(Place fromPlace) -> Place;
 
-    auto getFileLocation(uint32_t fromPlace) -> uint32_t;
+    auto getFileLocation(Place fromPlace) -> Place;
 
-    void loadAndTokenizePage(uint32_t fromPlace, bool backwards = false);
+    auto loadAndTokenizePage(Place fromPlace, bool backwards = false) -> Place;
 
-    void tokenToString(uint16_t tokenIdx, TokenString &outputString);
-    void tokenRenderedWidthHeight(uint16_t tokenIdx, uint16_t *width, uint16_t *height);
-    auto setSizeOfTextToken(uint16_t tokenIdx) -> uint16_t;
+    void tokenToString(Idx tokenIdx, TokenString &outputString) const;
+    void setTokenWidthHeight(Idx tokenIdx);
+    auto setTokenSizes(Idx tokenIdx) -> uint16_t;
 
     // Debugging
-    void printOutTokens();
+    void printOutTokens() const;
 
-    auto getLineOfTextForRendering(uint16_t startTokenIdx, Line &line) -> uint16_t;
+    auto getLineOfTextForRendering(Idx startTokenIdx, Line &line) -> Idx;
 };
 
 #endif

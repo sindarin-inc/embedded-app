@@ -8,7 +8,7 @@
 #include "sindarin-debug.h"
 
 // For deep logging when changing this file
-const constexpr int RendererDebug = 1;
+const constexpr int RendererDebug = 0;
 
 // This is the number of SUB-lines we want to split a line into
 // for the purpose of being able to render bare newlines as less
@@ -21,19 +21,21 @@ const constexpr int RendererDebug = 1;
 #define FULL_DECI_LINE_HEIGHT 10
 #define NEWLINE_ONLY_DECI_LINE_HEIGHT 4
 
-Renderer::Renderer(DisplaySystem &display) : display_(display) {}
-
 // Must be called only in the context of loadAndTokenizePage() method.
 // Takes a place in the token buffer and places the string that the token
 // represents in the outputString buffer. This is a helper since it's a
 // common thing we want to do in the rendering code.
-void Renderer::tokenToString(uint16_t tokenIdx, TokenString &outputString) {
-    std::copy_n(&page_[tokens_[tokenIdx].pageIdx],
-                tokens_[tokenIdx + 1].pageIdx - tokens_[tokenIdx].pageIdx, &outputString[0]);
-    outputString[tokens_[tokenIdx + 1].pageIdx - tokens_[tokenIdx].pageIdx] = '\0';
+void Renderer::tokenToString(Idx tokenIdx, TokenString &outputString) const {
+    std::copy_n(&page_[tokens_[tokenIdx].pageIdx], tokens_[tokenIdx].length, &outputString[0]);
+    outputString[tokens_[tokenIdx].length] = '\0';
+    // log_d("String: [%s] page: [%s] tokenIdx: %" PRIu16, outputString.data(), page_.data(),
+    // tokenIdx);
 }
 
 // Must be called only in the context of loadAndTokenizePage() method.
+// A helper method to fill the size of a token after the tokens have been loaded
+// into the token buffer.
+//
 // The thing is, most tokens are easy to determine the width of because the
 // operation is the same regardless of context. Spaces are the exception.
 // A space may render differently based on the characters before and after it.
@@ -46,64 +48,59 @@ void Renderer::tokenToString(uint16_t tokenIdx, TokenString &outputString) {
 //
 // As this issue maybe related to the GFX way of doing things, the code has been
 // modified to simplify the process when the current font is an IBMF one.
-void Renderer::tokenRenderedWidthHeight(uint16_t tokenIdx, uint16_t *width, uint16_t *height) {
-    TokenString converted;
+//
+// Returns the area of the token (width * height)
+// for use in calcuating how much space we need for a page.
+//
+auto Renderer::setTokenSizes(Idx tokenIdx) -> uint16_t {
+    TokenString tokenString; // ToDo: 100 bytes in the stack!
     if (display_.getFont()->isA(FontType::IBMF)) {
-        if (tokens_[tokenIdx].tokenId != TOKEN_ID::SPACE) {
-            tokenToString(tokenIdx, converted);
-            display_.getTextSize(converted.data(), width, height);
+        if (tokens_[tokenIdx].tokenId != TokenId::SPACE) {
+            tokenToString(tokenIdx, tokenString);
+            display_.getTextSize(tokenString.data(), &tokens_[tokenIdx].width,
+                                 &tokens_[tokenIdx].height);
         } else {
             if (spaceWidth_ == 0) {
                 display_.getTextSize(" ", &spaceWidth_, &spaceHeight_);
             }
-            *width = spaceWidth_;
-            *height = spaceHeight_;
+            tokens_[tokenIdx].width = spaceWidth_;
+            tokens_[tokenIdx].height = spaceHeight_;
         }
     } else {
-        // Spaces are a mess. The width of them depends on the tokens before and after. Joy.
-        if (tokens_[tokenIdx].tokenId != TOKEN_ID::SPACE) {
-            tokenToString(tokenIdx, converted);
-            display_.getTextSize(converted.data(), width, height);
-            // *width = display_.getTextWidth(converted.data());
-            // *height = display_.getTextHeight(converted.data());
+        // With GFX Fonts, spaces are a mess. The width of them depends on the tokens before and
+        // after. Joy.
+        if (tokens_[tokenIdx].tokenId != TokenId::SPACE) {
+            tokenToString(tokenIdx, tokenString);
+            display_.getTextSize(tokenString.data(), &tokens_[tokenIdx].width,
+                                 &tokens_[tokenIdx].height);
         } else {
             // Check bounds. Punt otherwise.
             // Get the tokens before and after the space, then do the width
             // of that whole thing and subtract out the two tokens. That's the
             // real width of the rendered space.
-            if ((tokenIdx > 0) && (tokens_[tokenIdx + 1].tokenId != TOKEN_ID::ENDOFFILE)) {
-                TokenString prev, next;
+            if ((tokenIdx > 0) && (tokens_[tokenIdx + 1].tokenId != TokenId::ENDOFFILE)) {
+                // ToDo: Very expensive.... 300 bytes in the stack
+                TokenString next;
                 Line temp;
-                tokenToString(tokenIdx - 1, prev);
+                tokenToString(tokenIdx - 1, tokenString);
                 tokenToString(tokenIdx + 1, next);
-                std::copy_n(prev.data(), strlen(prev.data()), &temp[0]);
-                temp[strlen(prev.data())] = ' ';
-                std::copy_n(next.data(), strlen(next.data()), &temp[strlen(prev.data()) + 1]);
-                temp[strlen(prev.data()) + strlen(next.data()) + 1] = '\0';
-                *height = display_.getTextHeight(temp.data());
-                *width = display_.getTextWidth(temp.data()) - display_.getTextWidth(prev.data()) -
-                         display_.getTextWidth(next.data());
+                std::copy_n(tokenString.data(), strlen(tokenString.data()), &temp[0]);
+                temp[strlen(tokenString.data())] = ' ';
+                std::copy_n(next.data(), strlen(next.data()),
+                            &temp[strlen(tokenString.data()) + 1]);
+                temp[strlen(tokenString.data()) + strlen(next.data()) + 1] = '\0';
+                tokens_[tokenIdx].height = display_.getTextHeight(temp.data());
+                tokens_[tokenIdx].width = display_.getTextWidth(temp.data()) -
+                                          display_.getTextWidth(tokenString.data()) -
+                                          display_.getTextWidth(next.data());
             } else {
-                tokenToString(tokenIdx, converted);
-                *width = display_.getTextWidth(converted.data());
-                *height = display_.getTextHeight(converted.data());
+                tokenToString(tokenIdx, tokenString);
+                tokens_[tokenIdx].width = display_.getTextWidth(tokenString.data());
+                tokens_[tokenIdx].height = display_.getTextHeight(tokenString.data());
             }
         }
     }
-}
 
-// Must be called only in the context of loadAndTokenizePage() method.
-// A helper method to fill the size of a token after the tokens have been loaded
-// into the token buffer.
-//
-// Returns the area of the token (width * height)
-// for use in calcuating how much space we need for a page.
-//
-auto Renderer::setSizeOfTextToken(uint16_t tokenIdx) -> uint16_t {
-    TokenString converted;
-    tokenToString(tokenIdx, converted);
-    tokenRenderedWidthHeight(tokenIdx, &tokens_[tokenIdx].width, &tokens_[tokenIdx].height);
-    // If the token is a space, then we need to just return zero because the height is undefined.
     return (tokens_[tokenIdx].width * tokens_[tokenIdx].height);
 }
 
@@ -113,7 +110,7 @@ auto Renderer::setSizeOfTextToken(uint16_t tokenIdx) -> uint16_t {
 // a first byte MSBit == 0 or the two MSBits == 11
 //
 // returns an updated fromPlace location or the LocationError value.
-auto Renderer::getFileLocation(uint32_t fromPlace) -> uint32_t {
+auto Renderer::getFileLocation(Place fromPlace) -> Place {
     if (!stream_->seek(fromPlace)) {
         log_e("failed to seek at place %" PRIu32 " in file!", fromPlace);
     } else {
@@ -143,14 +140,17 @@ auto Renderer::getFileLocation(uint32_t fromPlace) -> uint32_t {
 // We track backwards because we need to double the amount read in a backwards
 // read (2 pages instead of 1)
 //
+// Returns the computed place where the page start really.
+//
 // IMPORTANT: The getFileLocation() method must be called before using this method.
-void Renderer::loadAndTokenizePage(uint32_t fromPlace, bool backwards) {
-    uint16_t pageIdx = 0;
-    uint16_t tokenIdx = 0;
-    uint16_t prevNewLineIdx = 0;
+auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
 
-    uint16_t textArea = 0;
-    uint16_t maxTextArea = display_.width() * display_.height();
+    Idx pageIdx = 0;
+    Idx tokenIdx = 0;
+    Idx prevNewLineIdx = 0;
+
+    uint32_t textArea = 0;
+    uint32_t maxTextArea = static_cast<uint32_t>(display_.width()) * display_.height();
 
     tokensCount_ = 0;
 
@@ -158,29 +158,55 @@ void Renderer::loadAndTokenizePage(uint32_t fromPlace, bool backwards) {
 
     page_[pageIdx] = '\0';
 
-    Token eofToken = {TOKEN_ID::ENDOFFILE, 0, 0, 0, 0};
+    Token eofToken = {.streamPlace = 0,
+                      .pageIdx = 0,
+                      .prevNewlineTokenIdx = 0,
+                      .width = 0,
+                      .height = 0,
+                      .length = 0,
+                      .tokenId = TokenId::ENDOFFILE};
+
+    Token newToken;
+
     tokens_[tokenIdx] = eofToken;
 
+    // Keep it DRY
     auto computePreviousTokenSize = [this, &textArea, &tokenIdx]() -> void {
         // we need to set the size of the previous token
-        if ((tokenIdx > 0) && (tokens_[tokenIdx - 1].tokenId == TOKEN_ID::TEXT)) {
-            textArea += setSizeOfTextToken(tokenIdx - 1);
+        if ((tokenIdx > 0) && (tokens_[tokenIdx - 1].tokenId == TokenId::TEXT)) {
+            textArea += setTokenSizes(tokenIdx - 1);
             // If we've started a new text token and the previous token was a space
             // we know that we should go back and set the size of that space token
             // based on this token and the token before the space.
-            if ((tokenIdx > 2) && (tokens_[tokenIdx - 2].tokenId == TOKEN_ID::SPACE)) {
-                textArea += setSizeOfTextToken(tokenIdx - 2);
+            if ((tokenIdx > 2) && (tokens_[tokenIdx - 2].tokenId == TokenId::SPACE)) {
+                textArea += setTokenSizes(tokenIdx - 2);
             }
         }
+        // log_d("textArea size: %" PRIu32 ", tokenIdx: %" PRIu16, textArea, tokenIdx);
     };
+
+    auto appendToken = [this, &newToken, &tokenIdx, &eofToken]() -> void {
+        tokens_[tokenIdx] = newToken;
+        tokensCount_++;
+        tokens_[tokenIdx + 1] = eofToken;
+        tokenIdx++;
+    };
+
+    fromPlace = getFileLocation(fromPlace);
+    if (fromPlace == LocationError) return 0;
 
     // Needs to be minus one for the corner case of all spaces or newlines
     // and need room for EOF character.
     while ((stream_->available()) && (pageIdx < (MAX_CHARS_PER_PAGE - 1)) &&
            ((backwards || textArea < maxTextArea))) {
-        auto curChar = stream_->read();
-        Token newToken = {TOKEN_ID::ENDOFFILE, pageIdx, fromPlace + pageIdx, prevNewLineIdx, 0, 0};
-        Token prevToken;
+        uint8_t curChar = stream_->read();
+        newToken = {.streamPlace = fromPlace + pageIdx,
+                    .pageIdx = pageIdx,
+                    .prevNewlineTokenIdx = prevNewLineIdx,
+                    .width = 0,
+                    .height = 0,
+                    .length = 1,
+                    .tokenId = TokenId::ENDOFFILE};
 
         // if constexpr (RendererDebug) {
         //     log_d("Set the stream place to %" PRIu32, fromPlace + pageIdx);
@@ -189,88 +215,73 @@ void Renderer::loadAndTokenizePage(uint32_t fromPlace, bool backwards) {
         page_[pageIdx] = curChar;
         page_[pageIdx + 1] = '\0';
 
+        // log_d("Current Character: %c (%02" PRIX8 "H)",
+        //       (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '), curChar);
+
         switch (curChar) {
         case '\n':
-            newToken.tokenId = TOKEN_ID::NEWLINE;
-            tokens_[tokenIdx] = newToken;
-            tokensCount_++;
-            tokens_[tokenIdx + 1] = eofToken;
-            computePreviousTokenSize();
+            newToken.tokenId = TokenId::NEWLINE;
             prevNewLineIdx = tokenIdx;
-            tokenIdx++;
+            computePreviousTokenSize();
+            appendToken();
+
             break;
         case ' ':
-            newToken.tokenId = TOKEN_ID::SPACE;
+            newToken.tokenId = TokenId::SPACE;
+            // Space size is cached to limit redondent computation
             if (spaceWidth_ == 0) {
                 display_.getTextSize(" ", &spaceWidth_, &spaceHeight_);
             }
             newToken.width = spaceWidth_;
             newToken.height = spaceHeight_;
-            tokens_[tokenIdx] = newToken;
-            tokensCount_++;
-            tokens_[tokenIdx + 1] = eofToken;
             computePreviousTokenSize();
-            tokenIdx++;
+            appendToken();
+
             break;
         case '\t':
-            newToken.tokenId = TOKEN_ID::TAB;
+            newToken.tokenId = TokenId::TAB;
             display_.getTextSize("\t", &newToken.width, &newToken.height);
-            tokens_[tokenIdx] = newToken;
-            tokensCount_++;
-            tokens_[tokenIdx + 1] = eofToken;
             computePreviousTokenSize();
-            tokenIdx++;
+            appendToken();
+
             break;
         case '-':
             // Check to see if this is an emdash case
-            if (tokenIdx > 0) {
-                prevToken = tokens_[tokenIdx - 1];
-                if (prevToken.tokenId == TOKEN_ID::HYPHEN) {
-                    newToken.tokenId = TOKEN_ID::EMDASH;
-                    display_.getTextSize("--", &newToken.width, &newToken.height);
-                    newToken.pageIdx = pageIdx - 1;
-                    newToken.streamPlace = fromPlace + pageIdx - 1;
-                    tokens_[tokenIdx - 1] = newToken;
-                    tokens_[tokenIdx] = eofToken;
-                    // Specifically don't increment the token buffer
-                    // because the previous hyphen already did that
-                    break;
-                }
+            if ((tokenIdx > 0) && (tokens_[tokenIdx - 1].tokenId == TokenId::HYPHEN)) {
+                newToken.tokenId = TokenId::EMDASH;
+                display_.getTextSize("--", &newToken.width, &newToken.height);
+                newToken.pageIdx = pageIdx - 1;
+                newToken.streamPlace = fromPlace + pageIdx - 1;
+                newToken.length = 2;
+                tokens_[tokenIdx - 1] = newToken;
+                tokens_[tokenIdx] = eofToken;
+                // Specifically don't increment the token buffer
+                // because the previous hyphen already did that
+            } else {
+                newToken.tokenId = TokenId::HYPHEN;
+                display_.getTextSize("-", &newToken.width, &newToken.height);
+                computePreviousTokenSize();
+                appendToken();
             }
-            newToken.tokenId = TOKEN_ID::HYPHEN;
-            display_.getTextSize("-", &newToken.width, &newToken.height);
-            tokens_[tokenIdx] = newToken;
-            tokensCount_++;
-            tokens_[tokenIdx + 1] = eofToken;
-            computePreviousTokenSize();
-            tokenIdx++;
+
             break;
         // All other characters are considered part of a text token,
         // so we just increment and move on.
         default:
-            if (tokenIdx > 0) {
-                prevToken = tokens_[tokenIdx - 1];
+            if ((tokenIdx == 0) || (tokens_[tokenIdx - 1].tokenId != TokenId::TEXT)) {
+                newToken.tokenId = TokenId::TEXT;
+                appendToken();
             } else {
-                // If this is the first character in the token buffer,
-                // pretend like the previous token was EOF so we handle
-                // the new token creation correctly below.
-                prevToken.tokenId = TOKEN_ID::ENDOFFILE;
+                tokens_[tokenIdx - 1].length += 1;
             }
-            if (prevToken.tokenId != TOKEN_ID::TEXT) {
-                newToken.tokenId = TOKEN_ID::TEXT;
-                tokens_[tokenIdx] = newToken;
-                tokensCount_++;
-                tokens_[tokenIdx + 1] = eofToken;
-                tokenIdx++;
-                break;
-            }
+            break;
         }
         pageIdx++;
     }
 
     // Ended on a text token, so we move forward one before setting the EOF
     // token.
-    if (tokens_[tokenIdx].tokenId != TOKEN_ID::ENDOFFILE) {
+    if (tokens_[tokenIdx].tokenId != TokenId::ENDOFFILE) {
         tokenIdx++;
     }
 
@@ -279,7 +290,7 @@ void Renderer::loadAndTokenizePage(uint32_t fromPlace, bool backwards) {
     tokens_[tokenIdx].streamPlace = fromPlace + pageIdx;
 
     if constexpr (RendererDebug) {
-        log_d("Finished tokenizing with running text area %" PRIu16 " and max area %" PRIu16
+        log_d("Finished tokenizing with running text area %" PRIu32 " and max area %" PRIu32
               ", pageIdx is %" PRIu16 ", and place "
               "in file is %" PRIu32,
               textArea, maxTextArea, pageIdx, tokens_[tokenIdx].streamPlace);
@@ -288,19 +299,26 @@ void Renderer::loadAndTokenizePage(uint32_t fromPlace, bool backwards) {
     // we need to set the size of the last token if it wasn't set
     // (e.g., when there is no newline at the end)
     computePreviousTokenSize();
+
+    return fromPlace;
 }
 
 // debugging method
-void Renderer::printOutTokens() {
+void Renderer::printOutTokens() const {
     if constexpr (RendererDebug) {
-        auto currToken = tokens_[0];
-        for (int16_t i = 0; (i < MAX_CHARS_PER_PAGE) && (currToken.tokenId != TOKEN_ID::ENDOFFILE);
+        auto currToken = &tokens_[0];
+        for (int16_t i = 0; (i < MAX_CHARS_PER_PAGE) && (currToken->tokenId != TokenId::ENDOFFILE);
              i++) {
-            currToken = tokens_[i];
-            log_d("%" PRIu8 ": %" PRIu32, (uint8_t)currToken.tokenId, currToken.pageIdx);
-            if (currToken.tokenId == TOKEN_ID::TEXT) {
-                for (int16_t j = currToken.pageIdx; j < tokens_[i + 1].pageIdx; j++) {
-                    log_d("%c", page_[j]);
+            currToken = &tokens_[i];
+            log_d("%" PRIu8 ": %" PRIu32, (uint8_t)currToken->tokenId, currToken->pageIdx);
+            if (currToken->tokenId == TokenId::TEXT) {
+                for (int16_t j = currToken->pageIdx; j < currToken->pageIdx + currToken->length;
+                     j++) {
+                    if ((page_[j] > ' ') && (page_[j] < 127)) {
+                        log_d("%c", page_[j]);
+                    } else {
+                        log_d("[%02" PRIX8 "H]", page_[j]);
+                    }
                 }
                 log_d("\n");
             }
@@ -312,9 +330,9 @@ void Renderer::printOutTokens() {
 // It puts the string in the line parameter.
 // It returns the next token idx in the TokenBuffer unless already at EOF, then
 // it returns EOF again.
-auto Renderer::getLineOfTextForRendering(uint16_t startTokenIdx, Line &line) -> uint16_t {
-    uint16_t tokenIdx = startTokenIdx;
-    uint16_t lineIdx = 0;
+auto Renderer::getLineOfTextForRendering(Idx startTokenIdx, Line &line) -> Idx {
+    Idx tokenIdx = startTokenIdx;
+    Idx lineIdx = 0;
     int16_t maxWidth = (display_.width() - 4);
     int16_t runningWidth = 0;
 
@@ -323,8 +341,8 @@ auto Renderer::getLineOfTextForRendering(uint16_t startTokenIdx, Line &line) -> 
     while (runningWidth < maxWidth) {
         Token &token = tokens_[tokenIdx];
 
-        if (token.tokenId == TOKEN_ID::ENDOFFILE || token.tokenId == TOKEN_ID::NEWLINE) {
-            if (token.tokenId == TOKEN_ID::NEWLINE) {
+        if (token.tokenId == TokenId::ENDOFFILE || token.tokenId == TokenId::NEWLINE) {
+            if (token.tokenId == TokenId::NEWLINE) {
                 tokenIdx++;
             }
             break;
@@ -346,9 +364,9 @@ auto Renderer::getLineOfTextForRendering(uint16_t startTokenIdx, Line &line) -> 
     }
 
     for (int16_t i = startTokenIdx; i < tokenIdx; i++) {
-        if (tokens_[i].tokenId != TOKEN_ID::ENDOFFILE) {
+        if (tokens_[i].tokenId != TokenId::ENDOFFILE) {
             // Skip over a space if it's the first token in the line.
-            if ((i == startTokenIdx) && (tokens_[i].tokenId == TOKEN_ID::SPACE)) {
+            if ((i == startTokenIdx) && (tokens_[i].tokenId == TokenId::SPACE)) {
                 continue;
             }
             std::copy_n(&page_[tokens_[i].pageIdx], tokens_[i + 1].pageIdx - tokens_[i].pageIdx,
@@ -362,14 +380,13 @@ auto Renderer::getLineOfTextForRendering(uint16_t startTokenIdx, Line &line) -> 
         log_d("Returning place %" PRIu16 ", width: %" PRIi16 " line: %s", tokenIdx, runningWidth,
               line.data());
     }
+
     return tokenIdx;
 }
 
-void Renderer::loaded() { nextPlace_ = loadCurrentPage(); }
-
 // Show the (already loaded into buffer) current page
 // and load the next page into the next buffer so we have it.
-auto Renderer::renderPage(uint32_t fromPlace, int16_t numSkipLines) -> uint32_t {
+auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
 
     if constexpr (RendererDebug) {
         log_d("%" PRIu32 " is place in file being requested", fromPlace);
@@ -457,8 +474,8 @@ auto Renderer::renderPage(uint32_t fromPlace, int16_t numSkipLines) -> uint32_t 
 //
 // Step 5: Save off the place in the token buffer where the prevous page starts and
 // return it.
-auto Renderer::goBackwardsOnePage(uint32_t fromPlace) -> uint32_t {
-    uint32_t seekPlace = 0;
+auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
+    Place seekPlace = 0;
 
     // Step 1 (See above)
     if (fromPlace >= MAX_CHARS_PER_PAGE) {
@@ -468,17 +485,14 @@ auto Renderer::goBackwardsOnePage(uint32_t fromPlace) -> uint32_t {
         seekPlace = 0;
     }
 
-    seekPlace = getFileLocation(seekPlace);
-    if (seekPlace == LocationError) return 0;
-
     // Step 2.
     // log_d("loadAndTokenizePage called for step 2 of goBackwardsOnePage");
-    loadAndTokenizePage(seekPlace, true);
+    seekPlace = loadAndTokenizePage(seekPlace, true);
 
     // Go backwards from the last token and do the same as the loadCurrentPage
     // method.
 
-    uint16_t tokenIdx = tokensCount_ - 1;
+    Idx tokenIdx = tokensCount_ - 1;
     int16_t deciLinesCount = 1;
     int16_t linesCount = 1;
     Line singleLine{};
@@ -501,7 +515,7 @@ auto Renderer::goBackwardsOnePage(uint32_t fromPlace) -> uint32_t {
     if constexpr (RendererDebug) {
         log_d("About to look for where to start: place = %" PRIu32, fromPlace);
     }
-    while ((tokens_[tokenIdx].streamPlace > fromPlace) && (tokenIdx > 0)) {
+    while ((tokenIdx > 0) && (tokens_[tokenIdx].streamPlace > fromPlace)) {
         if constexpr (RendererDebug) {
             log_d("Going back another token at place %" PRIu32, tokens_[tokenIdx].streamPlace);
             log_d("The token idx is %" PRIu16, tokenIdx);
@@ -518,7 +532,7 @@ auto Renderer::goBackwardsOnePage(uint32_t fromPlace) -> uint32_t {
               tokens_[tokenIdx].streamPlace, (uint8_t)tokens_[tokenIdx + 1].tokenId);
     }
 
-    uint16_t paragraphTokenIdx = tokens_[tokenIdx].prevNewlineTokenIdx + 1;
+    Idx paragraphTokenIdx = tokens_[tokenIdx].prevNewlineTokenIdx + 1;
 
     // Step 3.
     // First, check the immediate paragraph for how many lines fit before
@@ -546,9 +560,9 @@ auto Renderer::goBackwardsOnePage(uint32_t fromPlace) -> uint32_t {
     linesCount = 1;
     uint16_t newlinesInLastSection = 0;
 
-    uint16_t prevParagraphTokenIdx =
+    Idx prevParagraphTokenIdx =
         tokens_[tokens_[tokenIdx].prevNewlineTokenIdx].prevNewlineTokenIdx + 1;
-    uint16_t nextyTokenIdx = tokens_[tokenIdx].prevNewlineTokenIdx;
+    Idx nextyTokenIdx = tokens_[tokenIdx].prevNewlineTokenIdx;
 
     // Step 4.
     while ((deciLinesCount + numDeciLinesInFirstParagraph) <= maxDeciLines) {
@@ -623,25 +637,23 @@ auto Renderer::goBackwardsOnePage(uint32_t fromPlace) -> uint32_t {
     // At this point, we found the place to start the new page!
     tokenIdx = paragraphTokenIdx;
 
-    uint32_t returnValue = tokens_[tokenIdx].streamPlace;
+    Place returnPlace = tokens_[tokenIdx].streamPlace;
 
     // methods calling this method expect this to not change what's loaded
     // into buffers, so we need to retokenize.
     // we could probably avoid this rework by introducing an extra token buffer if we wanted to.
     // log_d("loadAndTokenizePage called: need to retokenize");
 
-    fromPlace = getFileLocation(fromPlace);
-    if (fromPlace == LocationError) return 0;
-
-    loadAndTokenizePage(fromPlace);
+    fromPlace = loadAndTokenizePage(fromPlace);
 
     if constexpr (RendererDebug) {
-        log_d("Returning the following place! %" PRIu32, returnValue);
+        log_d("Returning the following place! %" PRIu32, returnPlace);
     }
-    return returnValue;
+
+    return returnPlace;
 }
 
-auto Renderer::getTotalLengthOfLines() -> uint16_t {
+auto Renderer::getTotalLengthOfLines() const -> uint16_t {
     uint16_t totalLengthsOfLines = 0;
     for (int16_t i = 0; i < pageLinesCount_; i++) {
         totalLengthsOfLines += pageLinesLengths_[i];
@@ -650,8 +662,9 @@ auto Renderer::getTotalLengthOfLines() -> uint16_t {
 }
 
 // returns the new place of the stream
-auto Renderer::loadCurrentPage() -> uint32_t {
-    uint16_t pageIdx = 0;
+auto Renderer::loadCurrentPage() -> Place {
+
+    Idx pageIdx = 0;
     int16_t deciLinesCount = 1;
     Line singleLine{};
 
@@ -673,29 +686,24 @@ auto Renderer::loadCurrentPage() -> uint32_t {
 
     // Debugging stuff
     // log_d("loadAndTokenizePage called: debugging stuff");
-    currentPlace_ = getFileLocation(currentPlace_);
-    if (currentPlace_ == LocationError) {
-        currentPlace_ = 0;
-        currentPlace_ = getFileLocation(currentPlace_);
-    }
-    loadAndTokenizePage(currentPlace_);
+    currentPlace_ = loadAndTokenizePage(currentPlace_);
 
-    uint16_t nextTokenIdx = 0;
-    uint16_t tokenIdx = 0;
+    Idx nextTokenIdx = 0;
+    Idx tokenIdx = 0;
 
     pageLinesCount_ = 0;
 
-    while ((deciLinesCount <= maxDeciLines) && (tokens_[tokenIdx].tokenId != TOKEN_ID::ENDOFFILE)) {
+    while ((deciLinesCount <= maxDeciLines) && (tokens_[tokenIdx].tokenId != TokenId::ENDOFFILE)) {
         // Don't start pages with newlines.
         if (nextTokenIdx == 0) {
-            while (tokens_[tokenIdx].tokenId == TOKEN_ID::NEWLINE) {
+            while (tokens_[tokenIdx].tokenId == TokenId::NEWLINE) {
                 tokenIdx++;
             }
         }
 
         // If the last page is all new lines, we need to not crash.
         // Put a single space witn newline in the page so something renders, and continue.
-        if (tokens_[tokenIdx].tokenId == TOKEN_ID::ENDOFFILE) {
+        if (tokens_[tokenIdx].tokenId == TokenId::ENDOFFILE) {
             singleLine[0] = ' ';
             singleLine[1] = '\n';
             singleLine[2] = '\0';
@@ -734,18 +742,18 @@ auto Renderer::loadCurrentPage() -> uint32_t {
     }
 
     if constexpr (RendererDebug) {
-        log_d("loaded this into page buffer %s", currentPage_.data());
+        log_d("loaded this into page buffer:\n%s\n[end]", currentPage_.data());
     }
 
     // If we hit EOF, the next screen wraps around.
-    if (tokens_[tokenIdx].tokenId == TOKEN_ID::ENDOFFILE) {
+    if (tokens_[tokenIdx].tokenId == TokenId::ENDOFFILE) {
         return 0;
     } else {
         return tokens_[tokenIdx].streamPlace;
     }
 }
 
-auto Renderer::getPreviousPlace() -> uint32_t {
+auto Renderer::getPreviousPlace() -> Place {
     previousPlace_ = goBackwardsOnePage(currentPlace_);
     return previousPlace_;
 }
