@@ -280,9 +280,10 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
             // - There is more than 95 bytes in the last TEXT token and curChar is a
             //   first byte of a UTF8 character.
             if ((tokenIdx == 0) || (tokens_[tokenIdx - 1].tokenId != TokenId::TEXT) ||
-                ((tokens_[tokenIdx - 1].length > 95) &&
+                ((tokens_[tokenIdx - 1].length > 30) &&
                  ((curChar <= 0x7FU) || (curChar >= 0xC0U)))) {
                 newToken.tokenId = TokenId::TEXT;
+                computePreviousTokenSize();
                 appendToken();
             } else {
                 tokens_[tokenIdx - 1].length += 1;
