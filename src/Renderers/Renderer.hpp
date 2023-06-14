@@ -36,13 +36,14 @@ private:
     // we more easily know what to do with the text.
     enum class TokenId : uint8_t {
         TEXT = 0,
-        NEWLINE = 1,
-        SPACE = 2,
-        HYPHEN = 3,
-        EMDASH = 4,
-        TAB = 5,
-        ENDOFFILE = 6,
-        NOTOKEN = 7,
+        NEWLINE,
+        NEWPARAGRAPH,
+        SPACE,
+        HYPHEN,
+        EMDASH,
+        TAB,
+        ENDOFFILE,
+        NOTOKEN,
     };
 
     // A token is simply a place in the buffer and a token identifer
@@ -59,7 +60,7 @@ private:
         // start is for where it's located. It's useful for looking backwards
         // while rendering backwards.
         Idx pageIdx;
-        Idx prevNewlineTokenIdx;
+        Idx prevNewParagraphTokenIdx;
         uint16_t width;
         uint16_t height;
         uint16_t length; // Length in bytes
