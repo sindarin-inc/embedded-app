@@ -22,7 +22,7 @@ ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs
 }
 
 void ResizeBoxScreen::render(DisplaySystem &display) {
-    this->renderer_.renderPage(0);
+    static_cast<void>(this->renderer_.renderPage(0));
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 }
 

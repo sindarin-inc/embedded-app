@@ -20,7 +20,7 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
 }
 
 void OffsetAdjustScreen::render(DisplaySystem &display) {
-    this->renderer_.renderPage(0);
+    static_cast<void>(this->renderer_.renderPage(0));
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 }
 

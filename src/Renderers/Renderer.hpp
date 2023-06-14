@@ -75,9 +75,7 @@ private:
 public:
     Renderer(DisplaySystem &display) : display_(display) {}
 
-    [[nodiscard]] void setStream(std::shared_ptr<RendererStream> stream) {
-        stream_ = std::move(stream);
-    }
+    void setStream(std::shared_ptr<RendererStream> stream) { stream_ = std::move(stream); }
 
     [[nodiscard]] auto getPreviousPlace() -> Place;
 

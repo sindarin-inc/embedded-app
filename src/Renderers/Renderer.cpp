@@ -8,7 +8,7 @@
 #include "sindarin-debug.h"
 
 // For deep logging when changing this file
-const constexpr bool RendererDebug = false;
+const constexpr bool RENDERER_DEBUG = false;
 
 // This is the number of SUB-lines we want to split a line into
 // for the purpose of being able to render bare newlines as less
@@ -123,7 +123,7 @@ auto Renderer::getFileLocation(Place fromPlace) -> Place {
                 return fromPlace;
             }
             fromPlace += 1;
-            if constexpr (RendererDebug) {
+            if constexpr (RENDERER_DEBUG) {
                 log_d("Synching to start of UTF8 character at place %" PRIu32, fromPlace);
             }
         }
@@ -199,7 +199,9 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
     };
 
     fromPlace = getFileLocation(fromPlace);
-    if (fromPlace == locationError_) return 0;
+    if (fromPlace == locationError_) {
+        return 0;
+    }
 
     // Needs to be minus one for the corner case of all spaces or newlines
     // and need room for EOF character.
@@ -214,7 +216,7 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
                     .length = 1,
                     .tokenId = TokenId::ENDOFFILE};
 
-        // if constexpr (RendererDebug) {
+        // if constexpr (RENDERER_DEBUG) {
         //     log_d("Set the stream place to %" PRIu32, fromPlace + pageIdx);
         // }
 
@@ -303,7 +305,7 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
     tokens_[tokenIdx].pageIdx = pageIdx;
     tokens_[tokenIdx].streamPlace = fromPlace + pageIdx;
 
-    if constexpr (RendererDebug) {
+    if constexpr (RENDERER_DEBUG) {
         log_d("Finished tokenizing with running text area %" PRIu32 " and max area %" PRIu32
               ", pageIdx is %" PRIu16 ", and place "
               "in file is %" PRIu32,
@@ -316,7 +318,7 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
     // (e.g., when there is no newline at the end)
     computePreviousTokenSize();
 
-    if constexpr (RendererDebug) {
+    if constexpr (RENDERER_DEBUG) {
         log_d("Tokens Count: %" PRIu16, tokensCount_);
     }
 
@@ -325,7 +327,7 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
 
 // debugging method
 void Renderer::printOutTokens() const {
-    if constexpr (RendererDebug) {
+    if constexpr (RENDERER_DEBUG) {
         for (Idx i = 0; i < tokensCount_; i++) {
             auto currToken = &tokens_[i];
             log_d("TokenIdx: %" PRIu16 ", TokenId: %" PRIu8 ", streamPlace: %" PRIu32
@@ -390,9 +392,9 @@ auto Renderer::getLineOfTextForRendering(Idx startTokenIdx, Line &line) -> Idx {
         }
     }
 
-    if constexpr (RendererDebug) {
+    if constexpr (RENDERER_DEBUG) {
         log_d("Returning from tokenIdx %" PRIu16 " to %" PRIu16 ", width: %" PRIi16 " line: %s",
-              startTokenIdx, tokenIdx - 1, runningWidth, line.data());
+              startTokenIdx, static_cast<Idx>(tokenIdx - 1), runningWidth, line.data());
     }
 
     return tokenIdx;
@@ -402,7 +404,7 @@ auto Renderer::getLineOfTextForRendering(Idx startTokenIdx, Line &line) -> Idx {
 // and load the next page into the next buffer so we have it.
 auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
 
-    if constexpr (RendererDebug) {
+    if constexpr (RENDERER_DEBUG) {
         log_d("%" PRIu32 " is place in file being requested", fromPlace);
     }
 
@@ -429,7 +431,7 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
     // in this page.
 
     for (Idx j = 0; j < pageLinesCount_; j++) {
-        if constexpr (RendererDebug) {
+        if constexpr (RENDERER_DEBUG) {
             log_d("%s", pageLines_[j].data());
         }
         if (pageLines_[j][0] == '\n') {
@@ -457,14 +459,14 @@ auto Renderer::getParagraphDeciLinesCount(Idx startTokenIdx, Idx endTokenIdx, bo
     uint16_t deciLinesCount = 0;
     Line singleLine{};
 
-    if constexpr (RendererDebug) {
+    if constexpr (RENDERER_DEBUG) {
         log_d("Paragraph startIdx: %" PRIu16 ", endIdx: %" PRIu16, startTokenIdx, endTokenIdx);
     }
 
     while (tokenIdx <= endTokenIdx) {
         Idx firstTokenIdx = tokenIdx;
         tokenIdx = getLineOfTextForRendering(tokenIdx, singleLine);
-        if constexpr (RendererDebug) {
+        if constexpr (RENDERER_DEBUG) {
             log_d("Line at firstTokenIdx %" PRIu16 ", nextTokenIdx: %" PRIu16 ", Content: %s",
                   firstTokenIdx, tokenIdx, singleLine.data());
         }
@@ -479,7 +481,7 @@ auto Renderer::getParagraphDeciLinesCount(Idx startTokenIdx, Idx endTokenIdx, bo
         }
     }
 
-    if constexpr (RendererDebug) {
+    if constexpr (RENDERER_DEBUG) {
         log_d("DeciLinesCount: %" PRIu16, deciLinesCount);
     }
 
@@ -493,7 +495,7 @@ auto Renderer::getTokenIdxPassedDeciLines(uint16_t deciLines, Idx startTokenIdx,
     uint16_t deciLinesCount = 0;
     Line singleLine{};
 
-    if constexpr (RendererDebug) {
+    if constexpr (RENDERER_DEBUG) {
         log_d("deciLines: %" PRIu16 "Paragraph startIdx: %" PRIu16 ", endIdx: %" PRIu16, deciLines,
               startTokenIdx, endTokenIdx);
     }
@@ -502,7 +504,7 @@ auto Renderer::getTokenIdxPassedDeciLines(uint16_t deciLines, Idx startTokenIdx,
     while ((tokenIdx <= endTokenIdx) && (deciLinesCount < deciLines)) {
         firstTokenIdx = tokenIdx;
         tokenIdx = getLineOfTextForRendering(tokenIdx, singleLine);
-        if constexpr (RendererDebug) {
+        if constexpr (RENDERER_DEBUG) {
             log_d("Line at firstTokenIdx %" PRIu16 ", nextTokenIdx: %" PRIu16 ", Content: %s",
                   firstTokenIdx, tokenIdx, singleLine.data());
         }
@@ -570,19 +572,19 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
     // is represented.
     Idx endTokenIdx = tokensCount_ - 1;
 
-    if constexpr (RendererDebug) {
+    if constexpr (RENDERER_DEBUG) {
         log_d("BACKWARDS DISPLAY READOUT: %d, %d, %d", display_.height() - 2,
               this->display_.getTextHeight(), this->display_.getLineSpacing());
     }
 
     // Find which token to end with
     // Could switch to an algorithm that is log(n) instead of n if we need to
-    if constexpr (RendererDebug) {
+    if constexpr (RENDERER_DEBUG) {
         log_d("About to look for where to end: place = %" PRIu32, fromPlace);
     }
 
     while ((endTokenIdx > 0) && (tokens_[endTokenIdx].streamPlace > fromPlace)) {
-        // if constexpr (RendererDebug) {
+        // if constexpr (RENDERER_DEBUG) {
         //     log_d("Going back another token at place %" PRIu32,
         //     tokens_[endTokenIdx].streamPlace); log_d("The token idx is %" PRIu16, endTokenIdx);
         // }
@@ -598,7 +600,7 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
     // Point at the token preceeding the passed place.
     endTokenIdx -= 1;
 
-    if constexpr (RendererDebug) {
+    if constexpr (RENDERER_DEBUG) {
         log_d("Found the place to end and it's at place %" PRIu32 ", tokenId %" PRIu8
               ", tokenIdx: %" PRIu16,
               tokens_[endTokenIdx].streamPlace, (uint8_t)tokens_[endTokenIdx].tokenId, endTokenIdx);
@@ -610,7 +612,7 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
         startTokenIdx += 1;
     }
 
-    if constexpr (RendererDebug) {
+    if constexpr (RENDERER_DEBUG) {
         log_d("Last paraghaph boundaries: %" PRIu16 " through %" PRIu16, startTokenIdx,
               endTokenIdx);
     }
@@ -657,7 +659,7 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
 
     fromPlace = loadAndTokenizePage(fromPlace);
 
-    if constexpr (RendererDebug) {
+    if constexpr (RENDERER_DEBUG) {
         log_d("Returning the following place! %" PRIu32, returnPlace);
     }
 
@@ -734,7 +736,7 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
     int16_t maxDeciLines =
         (display_.height() - 2) / (this->display_.getTextHeight()) * FULL_DECI_LINE_HEIGHT;
 
-    if constexpr (RendererDebug) {
+    if constexpr (RENDERER_DEBUG) {
         log_d("BACKWARDS DISPLAY READOUT: %d, %d, %d", display_.height() - 2,
               this->display_.getTextHeight(), this->display_.getLineSpacing());
     }
@@ -743,11 +745,11 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
 
     // Find which token to start with
     // Could switch to an algorithm that is log(n) instead of n if we need to
-    if constexpr (RendererDebug) {
+    if constexpr (RENDERER_DEBUG) {
         log_d("About to look for where to start: place = %" PRIu32, fromPlace);
     }
     while ((tokenIdx > 0) && (tokens_[tokenIdx].streamPlace > fromPlace)) {
-        if constexpr (RendererDebug) {
+        if constexpr (RENDERER_DEBUG) {
             log_d("Going back another token at place %" PRIu32, tokens_[tokenIdx].streamPlace);
             log_d("The token idx is %" PRIu16, tokenIdx);
         }
@@ -758,7 +760,7 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
         // Can't go back any further, must be at beginning of file.
         return 0;
     }
-    if constexpr (RendererDebug) {
+    if constexpr (RENDERER_DEBUG) {
         log_d("Found the place to start and it's at place %" PRIu32 ", tokenId %" PRIu8
               ", tokenIdx: %" PRIu16,
               tokens_[tokenIdx].streamPlace, (uint8_t)tokens_[tokenIdx + 1].tokenId, tokenIdx);
@@ -766,7 +768,7 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
 
     Idx paragraphTokenIdx = tokens_[tokenIdx].prevNewlineTokenIdx + 1;
 
-    if constexpr (RendererDebug) {
+    if constexpr (RENDERER_DEBUG) {
         log_d("Last paraghaph start at tokenIdx %" PRIu16, paragraphTokenIdx);
     }
 
@@ -775,12 +777,12 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
     // the passed in token;
     while (paragraphTokenIdx < tokenIdx) {
         paragraphTokenIdx = getLineOfTextForRendering(paragraphTokenIdx, singleLine);
-        if constexpr (RendererDebug) {
+        if constexpr (RENDERER_DEBUG) {
             log_d("paragraphToke: %" PRIu16 ", currToke: %" PRIu16 ", First PARAGRAPH ANALYSIS %s",
                   paragraphTokenIdx, tokenIdx, singleLine.data());
         }
         if (singleLine[0] == '\n') {
-            if constexpr (RendererDebug) {
+            if constexpr (RENDERER_DEBUG) {
                 log_d("Found a blank line");
             }
             deciLinesCount += NEWLINE_ONLY_DECI_LINE_HEIGHT;
@@ -806,13 +808,13 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
         newlinesInLastSection = 0;
         while (paragraphTokenIdx <= nextyTokenIdx) {
             paragraphTokenIdx = getLineOfTextForRendering(paragraphTokenIdx, singleLine);
-            if constexpr (RendererDebug) {
+            if constexpr (RENDERER_DEBUG) {
                 log_d("paragraphToke: %" PRIu16 ", PrevToke: %" PRIu16
                       ", Second PARAGRAPH ANALYSIS %s",
                       paragraphTokenIdx, prevParagraphTokenIdx, singleLine.data());
             }
             if (singleLine[0] == '\n') {
-                if constexpr (RendererDebug) {
+                if constexpr (RENDERER_DEBUG) {
                     log_d("Found a blank line");
                 }
                 deciLinesCount += NEWLINE_ONLY_DECI_LINE_HEIGHT;
@@ -822,12 +824,12 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
             }
             linesCount++;
         }
-        if constexpr (RendererDebug) {
+        if constexpr (RENDERER_DEBUG) {
             log_d("Done with that paragraph! onto the next");
         }
         prevParagraphTokenIdx =
             tokens_[tokens_[nextyTokenIdx].prevNewlineTokenIdx].prevNewlineTokenIdx + 1;
-        if constexpr (RendererDebug) {
+        if constexpr (RENDERER_DEBUG) {
             log_d("After done prevParagraphTokenIdx = %" PRIu16, prevParagraphTokenIdx);
         }
         // there's no newline at beginning of file, so need to check for that.
@@ -849,7 +851,7 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
 
     // Only index in if we need to.
     if (overage > FULL_DECI_LINE_HEIGHT) {
-        if constexpr (RendererDebug) {
+        if constexpr (RENDERER_DEBUG) {
             log_d("The overage was %" PRIi16 " overlines", overage);
         }
         firstParagraphLinesOffset = overage / FULL_DECI_LINE_HEIGHT;
@@ -860,7 +862,7 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
         firstParagraphLinesOffset++;
     }
 
-    if constexpr (RendererDebug) {
+    if constexpr (RENDERER_DEBUG) {
 
         log_d("First Paragraph Lines Offset %" PRIi16, firstParagraphLinesOffset);
     }
@@ -882,7 +884,7 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
 
     fromPlace = loadAndTokenizePage(fromPlace);
 
-    if constexpr (RendererDebug) {
+    if constexpr (RENDERER_DEBUG) {
         log_d("Returning the following place! %" PRIu32, returnPlace);
     }
 
@@ -913,7 +915,7 @@ auto Renderer::loadCurrentPage() -> Place {
     int16_t maxDeciLines =
         ((display_.height() - 2) / (this->display_.getTextHeight())) * FULL_DECI_LINE_HEIGHT;
 
-    if constexpr (RendererDebug) {
+    if constexpr (RENDERER_DEBUG) {
         log_d("Max lines calc: %d %d %d", display_.height(), display_.getTextHeight(),
               display_.getLineSpacing());
     }
@@ -975,7 +977,7 @@ auto Renderer::loadCurrentPage() -> Place {
         tokenIdx = nextTokenIdx;
     }
 
-    if constexpr (RendererDebug) {
+    if constexpr (RENDERER_DEBUG) {
         log_d("loaded this into page buffer:\n%s\n[end]", currentPage_.data());
     }
 

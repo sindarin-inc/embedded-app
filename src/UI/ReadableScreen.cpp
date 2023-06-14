@@ -215,7 +215,7 @@ void ReadableScreen::render(DisplaySystem &display) {
 
         prefs_.firstRead.set(true);
         ignoreNextPress_ = true;
-        firstTimeRenderer_.renderPage(0);
+        static_cast<void>(firstTimeRenderer_.renderPage(0));
 
         if (prefs_.fastTransitions.get().value_or(false)) {
             display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
@@ -238,7 +238,7 @@ void ReadableScreen::render(DisplaySystem &display) {
 
         prefs_.firstAutopilotRead.set(true);
         ignoreNextPress_ = true;
-        firstTimeRenderer_.renderPage(0);
+        static_cast<void>(firstTimeRenderer_.renderPage(0));
         if (prefs_.fastTransitions.get().value_or(false)) {
             display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         } else {
