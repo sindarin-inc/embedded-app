@@ -4,7 +4,6 @@
 #include "Renderers/RendererStream.hpp"
 #include "bmp.h"
 
-extern Ditherer ditherer;
 static std::shared_ptr<uint8_t[]> bmpConversionLUT = nullptr;
 
 void BMPImage::createLUT() {
@@ -12,7 +11,7 @@ void BMPImage::createLUT() {
         return;
     }
 
-    bmpConversionLUT = std::shared_ptr<uint8_t[]>((uint8_t *)SpiRamMalloc(256), free);
+    bmpConversionLUT = SpiRamArrayPtr<uint8_t>(256);
 
     // store bit-reversed and value flipped version of each byte
     // converts from bmp 1 bit to xbm format
@@ -55,7 +54,7 @@ auto BMPImage::readFromBytes(uint8_t *bmpbytes, int size) -> bool {
     int outputTotalBytes = outputBytesPerLine * height_;
 
     // allocate output buffer
-    outputBuffer_ = std::shared_ptr<uint8_t[]>((uint8_t *)SpiRamMalloc(outputTotalBytes), free);
+    outputBuffer_ = SpiRamArrayPtr<uint8_t>(outputTotalBytes);
 
     // if the bmp already has 1 bit per pixel, it can be displayed directly
     // convert to xbm format
@@ -78,8 +77,8 @@ auto BMPImage::readFromBytes(uint8_t *bmpbytes, int size) -> bool {
 
         // this is an 8 bit grayscale image
         // dither the image into the allocated output buffer
-        ditherer.ditherToBitmap(img->ciPixelArray, outputBuffer_.get(), width_, height_,
-                                bytesPerLine, true);
+        Ditherer::getInstance().ditherToBitmap(img->ciPixelArray, outputBuffer_.get(), width_,
+                                               height_, bytesPerLine, true);
     }
 
     BmpCleanup(nullptr, img);

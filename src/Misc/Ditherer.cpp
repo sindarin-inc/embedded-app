@@ -8,6 +8,8 @@
 
 Ditherer ditherer;
 
+auto Ditherer::getInstance() -> Ditherer & { return ditherer; }
+
 void Ditherer::convertToFloat(uint8_t *image, int width, int height, int bytesPerLine,
                               bool reversed) {
     uint8_t *inpixel = image;

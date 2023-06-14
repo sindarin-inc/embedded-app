@@ -1,3 +1,4 @@
+#if USE_JPG_DECODER
 #include "JPGImage.hpp"
 
 #include <cstring>
@@ -35,3 +36,4 @@ auto JPGImage::readFromBytes(uint8_t *jpgbytes, int size) -> bool {
 auto JPGImage::getBitsPerPixel() -> int { return 24; }
 
 auto JPGImage::getBuffer() -> uint8_t * { return outputBuffer_.get(); }
+#endif

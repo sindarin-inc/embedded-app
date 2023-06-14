@@ -1,3 +1,4 @@
+#if USE_JPG_DECODER
 #pragma once
 
 #include <Misc/SpiramAllocator.hpp>
@@ -17,3 +18,4 @@ public:
 private:
     std::shared_ptr<uint8_t[]> outputBuffer_;
 };
+#endif

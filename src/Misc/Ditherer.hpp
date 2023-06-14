@@ -5,9 +5,9 @@
 
 class Ditherer {
 public:
-    Ditherer() {
-        ditherBuffer_ = std::shared_ptr<float[]>((float *)SpiRamMalloc(sizeof(float) * 256 * 256));
-    }
+    static auto getInstance() -> Ditherer &;
+
+    Ditherer() { ditherBuffer_ = SpiRamArrayPtr<float>(256 * 256); }
     void ditherToBitmap(uint8_t *image, uint8_t *bitmap, int width, int height, int bytesPerLine,
                         bool reversed = false);
 
