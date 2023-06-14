@@ -9,7 +9,8 @@
 // This needs to be a bit bigger -- it's really the max number of chars that will get us 2 full
 // pages where the previous page has a newline.
 
-#define MAX_CHARS_PER_PAGE 2000
+#define MAX_CHARS_PER_PAGE 3000
+#define MAX_TOKEN_COUNT 1800
 #define MAX_CHARS_PER_LINE 200
 #define MAX_TOKEN_STRING_LENGTH 100
 #define MAX_LINES_PER_PAGE 50
@@ -69,7 +70,7 @@ private:
     typedef std::array<char, MAX_CHARS_PER_LINE> Line;
     typedef std::array<Line, MAX_LINES_PER_PAGE> PageLines;
     typedef std::array<char, MAX_TOKEN_STRING_LENGTH> TokenString;
-    typedef std::array<Token, MAX_CHARS_PER_PAGE> Tokens;
+    typedef std::array<Token, MAX_TOKEN_COUNT> Tokens;
 
 public:
     Renderer(DisplaySystem &display) : display_(display) {}
@@ -128,6 +129,9 @@ private:
     void loaded() { nextPlace_ = loadCurrentPage(); };
 
     auto loadCurrentPage() -> Place;
+    auto getParagraphDeciLinesCount(Idx startTokenIdx, Idx endTokenIdx, bool lastParagraph)
+        -> uint16_t;
+    auto getTokenIdxPassedDeciLines(uint16_t deciLines, Idx startTokenIdx, Idx endTokenIdx) -> Idx;
     auto goBackwardsOnePage(Place fromPlace) -> Place;
 
     auto getFileLocation(Place fromPlace) -> Place;

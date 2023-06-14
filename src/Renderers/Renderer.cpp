@@ -8,7 +8,7 @@
 #include "sindarin-debug.h"
 
 // For deep logging when changing this file
-const constexpr int RendererDebug = 1;
+const constexpr bool RendererDebug = false;
 
 // This is the number of SUB-lines we want to split a line into
 // for the purpose of being able to render bare newlines as less
@@ -104,7 +104,7 @@ auto Renderer::setTokenSizes(Idx tokenIdx) -> uint16_t {
     return (tokens_[tokenIdx].width * tokens_[tokenIdx].height);
 }
 
-// Must be called BEFORE using the loadAndTokenizePage().
+// Must be called only by the loadAndTokenizePage().
 // From the fromPlace variable, seek into the file and synchronize
 // the value at a valid UTF8 location. An UTF8 character start with
 // a first byte MSBit == 0 or the two MSBits == 11
@@ -115,8 +115,10 @@ auto Renderer::getFileLocation(Place fromPlace) -> Place {
         log_e("failed to seek at place %" PRIu32 " in file!", fromPlace);
     } else {
         while (stream_->available()) {
-            char ch = stream_->read();
-            if (((ch & 0x80) == 0) || ((ch & 0xC0) == 0xC0)) {
+            uint8_t ch = stream_->read();
+            // A valid UTF8 character is ASCII or got it's first byte
+            // larger or equal to 0xC0
+            if ((ch < 0x7FU) || (ch >= 0xC0U)) {
                 stream_->seek(fromPlace);
                 return fromPlace;
             }
@@ -142,7 +144,7 @@ auto Renderer::getFileLocation(Place fromPlace) -> Place {
 //
 // Returns the computed place where the page start really.
 //
-// IMPORTANT: The getFileLocation() method must be called before using this method.
+// IMPORTANT: The getFileLocation() method must be called only through this method.
 auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
 
     Idx pageIdx = 0;
@@ -197,7 +199,7 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
 
     // Needs to be minus one for the corner case of all spaces or newlines
     // and need room for EOF character.
-    while ((stream_->available()) && (pageIdx < (MAX_CHARS_PER_PAGE - 1)) &&
+    while ((stream_->available()) && (pageIdx < (MAX_CHARS_PER_PAGE - 2)) &&
            ((backwards || textArea < maxTextArea))) {
         uint8_t curChar = stream_->read();
         newToken = {.streamPlace = fromPlace + pageIdx,
@@ -303,12 +305,14 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
               textArea, maxTextArea, pageIdx, tokens_[tokenIdx].streamPlace);
     }
 
-    printOutTokens();
+    // printOutTokens();
 
     // we need to set the size of the last token if it wasn't set
     // (e.g., when there is no newline at the end)
     computePreviousTokenSize();
 
+    log_d("Tokens Count: %" PRIu16, tokensCount_);
+    
     return fromPlace;
 }
 
@@ -438,6 +442,223 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
 
     return nextPlace_;
 }
+
+auto Renderer::getParagraphDeciLinesCount(Idx startTokenIdx, Idx endTokenIdx, bool lastParagraph)
+    -> uint16_t {
+
+    Idx tokenIdx = startTokenIdx;
+    uint16_t deciLinesCount = 0;
+    Line singleLine{};
+
+    if constexpr (RendererDebug) {
+        log_d("Paragraph startIdx: %" PRIu16 ", endIdx: %" PRIu16, startTokenIdx, endTokenIdx);
+    }
+
+    while (tokenIdx <= endTokenIdx) {
+        Idx firstTokenIdx = tokenIdx;
+        tokenIdx = getLineOfTextForRendering(tokenIdx, singleLine);
+        if constexpr (RendererDebug) {
+            log_d("Line at firstTokenIdx %" PRIu16 ", nextTokenIdx: %" PRIu16 ", Content: %s",
+                  firstTokenIdx, tokenIdx, singleLine.data());
+        }
+        if (singleLine[0] == '\n') {
+            // For the last paragraph of a page, we don't take into account the
+            // newline character at the end, as we are at a page boundary
+            if (!lastParagraph) {
+                deciLinesCount += NEWLINE_ONLY_DECI_LINE_HEIGHT;
+            }
+        } else {
+            deciLinesCount += FULL_DECI_LINE_HEIGHT;
+        }
+    }
+
+    if constexpr (RendererDebug) {
+        log_d("DeciLinesCount: %" PRIu16, deciLinesCount);
+    }
+
+    return deciLinesCount;
+}
+
+auto Renderer::getTokenIdxPassedDeciLines(uint16_t deciLines, Idx startTokenIdx, Idx endTokenIdx)
+    -> Idx {
+
+    Idx tokenIdx = startTokenIdx;
+    uint16_t deciLinesCount = 0;
+    Line singleLine{};
+
+    if constexpr (RendererDebug) {
+        log_d("deciLines: %" PRIu16 "Paragraph startIdx: %" PRIu16 ", endIdx: %" PRIu16, deciLines,
+              startTokenIdx, endTokenIdx);
+    }
+
+    Idx firstTokenIdx = tokenIdx;
+    while ((tokenIdx <= endTokenIdx) && (deciLinesCount < deciLines)) {
+        firstTokenIdx = tokenIdx;
+        tokenIdx = getLineOfTextForRendering(tokenIdx, singleLine);
+        if constexpr (RendererDebug) {
+            log_d("Line at firstTokenIdx %" PRIu16 ", nextTokenIdx: %" PRIu16 ", Content: %s",
+                  firstTokenIdx, tokenIdx, singleLine.data());
+        }
+        if (singleLine[0] == '\n') {
+            deciLinesCount += NEWLINE_ONLY_DECI_LINE_HEIGHT;
+        } else {
+            deciLinesCount += FULL_DECI_LINE_HEIGHT;
+        }
+    }
+
+    return firstTokenIdx;
+}
+
+// Seeks backwards and returns the place of one page previous.
+// This function's purpose is only to find the place in the file that's one
+// page previous, not to load anything into buffers.
+//
+// This is the most complicated alogrithm in the whole renderer currently.
+//
+// In order to make this work correctly while not keeping the whole readable
+// in memory, we must find a previous point before the current place where
+// we know a token is at the beginning of a line. That's the only way to
+// ensure that our "backwards render" will match what happened in the similar
+// forwards render.
+//
+// To do this, the method is split into a couple of parts.
+//
+// Step 1: Figure out how much to read before the current place. If we're too
+// close to the beginning, we just read from the beginning.
+//
+// Step 2: Once the data is read into the buffer, tokenize it the same as you
+// would for a forwards render. seekPlace will be returned to be at a UTF8 character
+// boundary.
+//
+// Step 3: Find the place in the token buffer where the passed in place in file
+// is represented.
+//
+// Step 4: Compute the startTokenIdx and endTokenIdx for the last paragraph.
+//
+// Step5: Iterate each paragraph in reverse order until we get at least enough deciLines to
+// cover the page size.
+//
+// Step 6: Remove lines from the last scanned paragraph enough to have it fit in the
+// available page space.
+//
+// Got the location!
+auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
+    Place seekPlace = 0;
+
+    // Step 1: Figure out how much to read before the current place. If we're too
+    // close to the beginning, we just read from the beginning.
+    if (fromPlace >= MAX_CHARS_PER_PAGE) {
+        // Need to make sure we're at least 1 character past the place given. For tokenizer.
+        seekPlace = fromPlace - MAX_CHARS_PER_PAGE + 2;
+    } else {
+        seekPlace = 0;
+    }
+
+    // Step 2: Once the data is read into the buffer, tokenize it the same as you
+    // would for a forwards render. seekPlace will be returned to be at a UTF8 character
+    // boundary
+    seekPlace = loadAndTokenizePage(seekPlace, true);
+
+    // Step 3: Find the place in the token buffer where the passed in place in file
+    // is represented.
+    Idx endTokenIdx = tokensCount_ - 1;
+
+    if constexpr (RendererDebug) {
+        log_d("BACKWARDS DISPLAY READOUT: %d, %d, %d", display_.height() - 2,
+              this->display_.getTextHeight(), this->display_.getLineSpacing());
+    }
+
+    // Find which token to end with
+    // Could switch to an algorithm that is log(n) instead of n if we need to
+    if constexpr (RendererDebug) {
+        log_d("About to look for where to end: place = %" PRIu32, fromPlace);
+    }
+
+    while ((endTokenIdx > 0) && (tokens_[endTokenIdx].streamPlace > fromPlace)) {
+        // if constexpr (RendererDebug) {
+        //     log_d("Going back another token at place %" PRIu32,
+        //     tokens_[endTokenIdx].streamPlace); log_d("The token idx is %" PRIu16, endTokenIdx);
+        // }
+        endTokenIdx--;
+    }
+
+    if (endTokenIdx == 0) {
+        // Can't go back any further, must be at beginning of file.
+        return 0;
+    }
+
+    // Step 4: Compute the startTokenIdx and endTokenIdx for the last paragraph.
+    // Point at the token preceeding the passed place.
+    endTokenIdx -= 1;
+
+    if constexpr (RendererDebug) {
+        log_d("Found the place to end and it's at place %" PRIu32 ", tokenId %" PRIu8
+              ", tokenIdx: %" PRIu16,
+              tokens_[endTokenIdx].streamPlace, (uint8_t)tokens_[endTokenIdx].tokenId, endTokenIdx);
+    }
+
+    Idx startTokenIdx = tokens_[endTokenIdx].prevNewlineTokenIdx;
+    // if it's not a NEWLINE, it means we are at the beginning of the file
+    if (tokens_[startTokenIdx].tokenId == TokenId::NEWLINE) {
+        startTokenIdx += 1;
+    }
+
+    if constexpr (RendererDebug) {
+        log_d("Last paraghaph boundaries: %" PRIu16 " through %" PRIu16, startTokenIdx,
+              endTokenIdx);
+    }
+
+    // Step5: Iterate each paragraph in reverse order until we get at least enough deciLines to
+    // cover the page size.
+    int16_t deciLinesCount = 1;
+
+    // It's minus 2 because we want to start 1 off the top and leave 1 at the bottom
+    // Note that get_text_height adds 1 over the max character height
+    // change to deciLines for better newline performance
+    int16_t maxDeciLines =
+        (display_.height() - 2) / (this->display_.getTextHeight()) * FULL_DECI_LINE_HEIGHT;
+
+    bool lastParagraph = true;
+    while (deciLinesCount <= maxDeciLines) {
+        deciLinesCount += getParagraphDeciLinesCount(startTokenIdx, endTokenIdx, lastParagraph);
+        lastParagraph = false;
+        if ((deciLinesCount >= maxDeciLines) || (startTokenIdx == 0)) {
+            break;
+        }
+        endTokenIdx = startTokenIdx - 1;
+        startTokenIdx = tokens_[endTokenIdx].prevNewlineTokenIdx;
+        // if it's not a NEWLINE, it means we are at the beginning of the file
+        if (tokens_[startTokenIdx].tokenId == TokenId::NEWLINE) {
+            startTokenIdx += 1;
+        }
+    }
+
+    // Step 6: Remove lines from the last scanned paragraph enough to have it fit in the
+    // available page space.
+    if (deciLinesCount > maxDeciLines) {
+        startTokenIdx =
+            getTokenIdxPassedDeciLines(deciLinesCount - maxDeciLines, startTokenIdx, endTokenIdx);
+    }
+
+    // Got it!
+    Place returnPlace = tokens_[startTokenIdx].streamPlace;
+
+    // methods calling this method expect this to not change what's loaded
+    // into buffers, so we need to retokenize.
+    // we could probably avoid this rework by introducing an extra token buffer if we wanted to.
+    // log_d("loadAndTokenizePage called: need to retokenize");
+
+    fromPlace = loadAndTokenizePage(fromPlace);
+
+    if constexpr (RendererDebug) {
+        log_d("Returning the following place! %" PRIu32, returnPlace);
+    }
+
+    return returnPlace;
+}
+
+#if 0
+// The following is the original code. 
 
 // Seeks backwards and returns the place of one page previous.
 // This function's purpose is only to find the place in the file that's one
@@ -660,6 +881,7 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
 
     return returnPlace;
 }
+#endif
 
 auto Renderer::getTotalLengthOfLines() const -> uint16_t {
     uint16_t totalLengthsOfLines = 0;
@@ -701,14 +923,9 @@ auto Renderer::loadCurrentPage() -> Place {
 
     pageLinesCount_ = 0;
 
-    while ((deciLinesCount <= maxDeciLines) && (tokens_[tokenIdx].tokenId != TokenId::ENDOFFILE)) {
-        // Don't start pages with newlines.
-        if (nextTokenIdx == 0) {
-            while (tokens_[tokenIdx].tokenId == TokenId::NEWLINE) {
-                tokenIdx++;
-            }
-        }
+    bool lastLineWasNewline = false;
 
+    while ((deciLinesCount <= maxDeciLines) && (tokens_[tokenIdx].tokenId != TokenId::ENDOFFILE)) {
         // If the last page is all new lines, we need to not crash.
         // Put a single space witn newline in the page so something renders, and continue.
         if (tokens_[tokenIdx].tokenId == TokenId::ENDOFFILE) {
@@ -741,8 +958,10 @@ auto Renderer::loadCurrentPage() -> Place {
         // A regular new line is 10 deciLines, a newline all by itself is 4/10 (40% of a line)
         if (pageLines_[pageLinesCount_][0] == '\n') {
             deciLinesCount += NEWLINE_ONLY_DECI_LINE_HEIGHT;
+            lastLineWasNewline = true;
         } else {
             deciLinesCount += FULL_DECI_LINE_HEIGHT;
+            lastLineWasNewline = false;
         }
 
         pageLinesCount_++;
@@ -751,6 +970,13 @@ auto Renderer::loadCurrentPage() -> Place {
 
     if constexpr (RendererDebug) {
         log_d("loaded this into page buffer:\n%s\n[end]", currentPage_.data());
+    }
+
+    // The following is necessary when the last line of the page doesn't consume the next
+    // token that is a newline. As we are at the end of a page, this is considered the
+    // right place to have the newline consume, not at the beginning of next page.
+    if ((!lastLineWasNewline) && (tokens_[tokenIdx].tokenId == TokenId::NEWLINE)) {
+        tokenIdx += 1;
     }
 
     // If we hit EOF, the next screen wraps around.
