@@ -8,7 +8,7 @@
 #include "sindarin-debug.h"
 
 // For deep logging when changing this file
-const constexpr int RendererDebug = 0;
+const constexpr int RendererDebug = 1;
 
 // This is the number of SUB-lines we want to split a line into
 // for the purpose of being able to render bare newlines as less
@@ -268,7 +268,14 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
         // All other characters are considered part of a text token,
         // so we just increment and move on.
         default:
-            if ((tokenIdx == 0) || (tokens_[tokenIdx - 1].tokenId != TokenId::TEXT)) {
+            // Will create a new token if
+            // - This is the first token in the list, or
+            // - The preceeding token was not TEXT, or
+            // - There is more than 95 bytes in the last TEXT token and curChar is a
+            //   first byte of a UTF8 character.
+            if ((tokenIdx == 0) || (tokens_[tokenIdx - 1].tokenId != TokenId::TEXT) ||
+                ((tokens_[tokenIdx - 1].length > 95) &&
+                 ((curChar <= 0x7FU) || (curChar >= 0xC0U)))) {
                 newToken.tokenId = TokenId::TEXT;
                 appendToken();
             } else {
@@ -296,6 +303,8 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
               textArea, maxTextArea, pageIdx, tokens_[tokenIdx].streamPlace);
     }
 
+    printOutTokens();
+
     // we need to set the size of the last token if it wasn't set
     // (e.g., when there is no newline at the end)
     computePreviousTokenSize();
@@ -306,21 +315,16 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
 // debugging method
 void Renderer::printOutTokens() const {
     if constexpr (RendererDebug) {
-        auto currToken = &tokens_[0];
-        for (int16_t i = 0; (i < MAX_CHARS_PER_PAGE) && (currToken->tokenId != TokenId::ENDOFFILE);
-             i++) {
-            currToken = &tokens_[i];
-            log_d("%" PRIu8 ": %" PRIu32, (uint8_t)currToken->tokenId, currToken->pageIdx);
+        for (Idx i = 0; i < tokensCount_; i++) {
+            auto currToken = &tokens_[i];
+            log_d("TokenIdx: %" PRIu16 ", TokenId: %" PRIu8 ", streamPlace: %" PRIu32
+                  ", pageIdx: %" PRIu32 ", prevNewlineIdx: %" PRIu16 ", width: %" PRIu16
+                  ", height: %" PRIu16 ", Length: %" PRIu16,
+                  i, (uint8_t)currToken->tokenId, currToken->streamPlace, currToken->pageIdx,
+                  currToken->prevNewlineTokenIdx, currToken->width, currToken->height,
+                  currToken->length);
             if (currToken->tokenId == TokenId::TEXT) {
-                for (int16_t j = currToken->pageIdx; j < currToken->pageIdx + currToken->length;
-                     j++) {
-                    if ((page_[j] > ' ') && (page_[j] < 127)) {
-                        log_d("%c", page_[j]);
-                    } else {
-                        log_d("[%02" PRIX8 "H]", page_[j]);
-                    }
-                }
-                log_d("\n");
+                log_d("Text Content: [%.*s]", currToken->length, &page_[currToken->pageIdx]);
             }
         }
     }
@@ -363,22 +367,21 @@ auto Renderer::getLineOfTextForRendering(Idx startTokenIdx, Line &line) -> Idx {
         tokenIdx++;
     }
 
-    for (int16_t i = startTokenIdx; i < tokenIdx; i++) {
+    for (Idx i = startTokenIdx; i < tokenIdx; i++) {
         if (tokens_[i].tokenId != TokenId::ENDOFFILE) {
             // Skip over a space if it's the first token in the line.
             if ((i == startTokenIdx) && (tokens_[i].tokenId == TokenId::SPACE)) {
                 continue;
             }
-            std::copy_n(&page_[tokens_[i].pageIdx], tokens_[i + 1].pageIdx - tokens_[i].pageIdx,
-                        &line[lineIdx]);
-            lineIdx += tokens_[i + 1].pageIdx - tokens_[i].pageIdx;
+            std::copy_n(&page_[tokens_[i].pageIdx], tokens_[i].length, &line[lineIdx]);
+            lineIdx += tokens_[i].length;
             line[lineIdx] = '\0';
         }
     }
 
     if constexpr (RendererDebug) {
-        log_d("Returning place %" PRIu16 ", width: %" PRIi16 " line: %s", tokenIdx, runningWidth,
-              line.data());
+        log_d("Returning from tokenIdx %" PRIu16 " to %" PRIu16 ", width: %" PRIi16 " line: %s",
+              startTokenIdx, tokenIdx - 1, runningWidth, line.data());
     }
 
     return tokenIdx;
@@ -414,7 +417,7 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
     // The y position calucalted is based on the number of newlines we've seen so far
     // in this page.
 
-    for (int16_t j = 0; j < pageLinesCount_; j++) {
+    for (Idx j = 0; j < pageLinesCount_; j++) {
         if constexpr (RendererDebug) {
             log_d("%s", pageLines_[j].data());
         }
@@ -528,11 +531,16 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
         return 0;
     }
     if constexpr (RendererDebug) {
-        log_d("Found the place to start and it's %" PRIu32 " token type %" PRIu8,
-              tokens_[tokenIdx].streamPlace, (uint8_t)tokens_[tokenIdx + 1].tokenId);
+        log_d("Found the place to start and it's at place %" PRIu32 ", tokenId %" PRIu8
+              ", tokenIdx: %" PRIu16,
+              tokens_[tokenIdx].streamPlace, (uint8_t)tokens_[tokenIdx + 1].tokenId, tokenIdx);
     }
 
     Idx paragraphTokenIdx = tokens_[tokenIdx].prevNewlineTokenIdx + 1;
+
+    if constexpr (RendererDebug) {
+        log_d("Last paraghaph start at tokenIdx %" PRIu16, paragraphTokenIdx);
+    }
 
     // Step 3.
     // First, check the immediate paragraph for how many lines fit before
@@ -655,7 +663,7 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
 
 auto Renderer::getTotalLengthOfLines() const -> uint16_t {
     uint16_t totalLengthsOfLines = 0;
-    for (int16_t i = 0; i < pageLinesCount_; i++) {
+    for (Idx i = 0; i < pageLinesCount_; i++) {
         totalLengthsOfLines += pageLinesLengths_[i];
     }
     return totalLengthsOfLines;
