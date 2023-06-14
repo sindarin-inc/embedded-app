@@ -15,6 +15,9 @@
 #include "Models/ReadablePlacemark.hpp"
 #include "Models/ReadableTableOfContentsChapter.hpp"
 
+// This is #define because there might be different types passed in
+#define SOL_PAGE_NUMBER(x) ((x) / 1000 + 1)
+
 #define TRUNCATE_READABLE_UUID_FOR_PLACEMARK_BYTES 8
 
 using ReadableAuthorVector = SpiramVector<Author>;

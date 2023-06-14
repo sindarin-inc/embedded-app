@@ -42,7 +42,7 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
         });
 
     const auto mainInset = 2;
-    const auto mainSpacing = 10;
+    const auto mainSpacing = 12;
 
     context.setSublayoutFrame(
         // The -20 is to leave room for the paging circles at the right hand side of the view

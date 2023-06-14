@@ -220,10 +220,8 @@ TEST_CASE("Test some views independently") {
             Renderer renderer(*display);
 
             ReadableTableOfContentsScreen screen(prefs, readable, renderer, *display);
-            screen.resetMenuItems();
-            for (const ReadableTableOfContentsChapter &chapter : readable->toc) {
-                screen.addMenuItem(MenuItem(chapter.title, []() {}));
-            }
+            screen.loadMenuItems();
+
             // This view renders twice, once with a full refresh and once with a AU4 so we need to
             // not wait on the signaling otherwise we'll hang here.
             FakeEinkET013TT1SkipSignalling = true;

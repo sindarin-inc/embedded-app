@@ -44,6 +44,8 @@ public:
         firstLoad_ = true;
     }
 
+    void loadMenuItems();
+
     void setPlacemark();
     void setFirstLoad() { firstLoad_ = true; }
     void setNearestChapterSelection(unsigned long placeInFile);

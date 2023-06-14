@@ -4,7 +4,6 @@
 
 #include "Misc/SpiramAllocator.hpp"
 #include "Models/JsonSerializable.hpp"
-#include "sindarin-debug.h"
 
 class ReadableTableOfContentsChapter : public JsonSerializable {
 public:

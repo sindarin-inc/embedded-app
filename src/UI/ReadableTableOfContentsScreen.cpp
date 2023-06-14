@@ -2,7 +2,6 @@
 
 auto ReadableTableOfContentsScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto inset = 2;
-    const auto spacing = 10;
 
     // This mirrors what happens in MenuScreen right now. We may want to refactor this into a
     // helper so that it is reused and consistent.
@@ -81,12 +80,10 @@ void ReadableTableOfContentsScreen::render(DisplaySystem &display) {
         populateMenuItems(menuItemsPage_);
 
         for (auto &menuItem : menuItemsPage_) {
-            auto menuItemView =
-                std::make_shared<MenuItemView>(display, menuItem, myStyle_.navigationFont, false);
-            menuItemView->setIndicatorPadding(0);
-            menuItemView->setVerticalPadding(0);
+            auto menuItemView = std::make_shared<MenuItemView>(
+                display, menuItem, myStyle_.navigationFont, false, false);
             menuItemView->setCircleIndicator(true);
-            menuItemView->setRightSubtext(true);
+            menuItemView->setRightText(menuItem.subtitle);
             menuItemViews_.push_back(menuItemView);
         }
 
@@ -156,6 +153,14 @@ void ReadableTableOfContentsScreen::processCommand(RemoteCommand command) {
         break;
     default:
         break;
+    }
+}
+
+void ReadableTableOfContentsScreen::loadMenuItems() {
+    resetMenuItems();
+    for (const ReadableTableOfContentsChapter &chapter : readable_->toc) {
+        addMenuItem(MenuItem(chapter.title, StringFormat("%d", SOL_PAGE_NUMBER(chapter.txtOffset)),
+                             [this]() { back(); }));
     }
 }
 
