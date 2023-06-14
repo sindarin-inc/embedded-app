@@ -75,9 +75,11 @@ private:
 public:
     Renderer(DisplaySystem &display) : display_(display) {}
 
-    void setStream(std::shared_ptr<RendererStream> stream) { stream_ = std::move(stream); }
+    [[nodiscard]] void setStream(std::shared_ptr<RendererStream> stream) {
+        stream_ = std::move(stream);
+    }
 
-    auto getPreviousPlace() -> Place;
+    [[nodiscard]] auto getPreviousPlace() -> Place;
 
     [[nodiscard]] auto getCurrentPlace() const -> Place { return currentPlace_; }
     [[nodiscard]] auto setCurrentPlace(Place newPlace) { currentPlace_ = newPlace; }
@@ -90,9 +92,9 @@ public:
     //
     // numSkipLines allows us to not render the first X lines of the page
     // for the speed reading functionality.
-    auto renderPage(Place fromPlace, int16_t numSkipLines = 0) -> Place;
+    [[nodiscard]] auto renderPage(Place fromPlace, int16_t numSkipLines = 0) -> Place;
 
-    auto getTotalLengthOfLines() const -> uint16_t;
+    [[nodiscard]] auto getTotalLengthOfLines() const -> uint16_t;
 
     [[nodiscard]] auto getCurrentPageWordCount() const -> uint32_t { return currentPageWordCount_; }
 
