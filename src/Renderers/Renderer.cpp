@@ -189,9 +189,13 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
 
     auto appendToken = [this, &newToken, &tokenIdx, &eofToken]() -> void {
         tokens_[tokenIdx] = newToken;
-        tokensCount_++;
         tokens_[tokenIdx + 1] = eofToken;
-        tokenIdx++;
+
+        // Be sure that we want overflow the tokens_ array
+        if (tokensCount_ < (MAX_TOKEN_COUNT - 3)) {
+            tokensCount_++;
+            tokenIdx++;
+        }
     };
 
     fromPlace = getFileLocation(fromPlace);
@@ -311,8 +315,10 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
     // (e.g., when there is no newline at the end)
     computePreviousTokenSize();
 
-    log_d("Tokens Count: %" PRIu16, tokensCount_);
-    
+    if constexpr (RendererDebug) {
+        log_d("Tokens Count: %" PRIu16, tokensCount_);
+    }
+
     return fromPlace;
 }
 
