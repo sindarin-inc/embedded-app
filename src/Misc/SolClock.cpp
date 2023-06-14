@@ -163,6 +163,11 @@ auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
     int morningNews = prefs_.noMorningDelivery.get().value_or(false) ? 0 : 6;
     int eveningNews = prefs_.eveningDelivery.get().value_or(false) ? 20 : 0;
 
+    // If otherwise unselected, let's force a sync at 6am
+    if (morningNews == 0 && eveningNews == 0) {
+        morningNews = 6;
+    }
+
     // Create tm structs for the morning and evening events
     struct tm morningEvent = timeinfo;
     morningEvent.tm_hour = morningNews;
@@ -178,11 +183,6 @@ auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
     time_t morningEventEpoch = mktime(&morningEvent);
     time_t eveningEventEpoch = mktime(&eveningEvent);
 
-    struct tm oneDayLaterEvent = timeinfo;
-    oneDayLaterEvent.tm_mday += 1;
-
-    time_t oneDayLaterEpoch = mktime(&oneDayLaterEvent);
-
     // Adjust for the next day if the events have already occurred today
     if (morningEventEpoch <= now) {
         morningEvent.tm_mday += 1;
@@ -196,21 +196,15 @@ auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
     // Determine the next event
     time_t nextEventEpoch;
     char strftimeBuf[64];
-    if (morningNews != 0 && ((eveningNews == 0) || morningEventEpoch <= eveningEventEpoch)) {
-        nextEventEpoch = morningEventEpoch;
-        size_t size = strftime(strftimeBuf, sizeof(strftimeBuf), "%c", &morningEvent);
-        if (size == 0) {
-            log_e("strftime failed");
-        }
-    } else if (eveningNews != 0) {
+    if (eveningNews != 0 && eveningEventEpoch <= morningEventEpoch) {
         nextEventEpoch = eveningEventEpoch;
         size_t size = strftime(strftimeBuf, sizeof(strftimeBuf), "%c", &eveningEvent);
         if (size == 0) {
             log_e("strftime failed");
         }
     } else {
-        nextEventEpoch = oneDayLaterEpoch;
-        size_t size = strftime(strftimeBuf, sizeof(strftimeBuf), "%c", &oneDayLaterEvent);
+        nextEventEpoch = morningEventEpoch;
+        size_t size = strftime(strftimeBuf, sizeof(strftimeBuf), "%c", &morningEvent);
         if (size == 0) {
             log_e("strftime failed");
         }
