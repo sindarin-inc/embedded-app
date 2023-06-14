@@ -328,7 +328,7 @@ void Renderer::printOutTokens() const {
         for (Idx i = 0; i < tokensCount_; i++) {
             auto currToken = &tokens_[i];
             log_d("TokenIdx: %" PRIu16 ", TokenId: %" PRIu8 ", streamPlace: %" PRIu32
-                  ", pageIdx: %" PRIu32 ", prevNewlineIdx: %" PRIu16 ", width: %" PRIu16
+                  ", pageIdx: %" PRIu16 ", prevNewlineIdx: %" PRIu16 ", width: %" PRIu16
                   ", height: %" PRIu16 ", Length: %" PRIu16,
                   i, (uint8_t)currToken->tokenId, currToken->streamPlace, currToken->pageIdx,
                   currToken->prevNewlineTokenIdx, currToken->width, currToken->height,
