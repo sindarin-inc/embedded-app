@@ -30,7 +30,7 @@ public:
 
 private:
     // Used by the getFileLocation() method in case of error
-    const uint32_t LocationError = 0xFFFFFFFF;
+    const uint32_t locationError_ = 0xFFFFFFFF;
 
     // These are the different tokens so as we parse a buffer
     // we more easily know what to do with the text.
@@ -78,10 +78,11 @@ public:
     void setStream(std::shared_ptr<RendererStream> stream) { stream_ = std::move(stream); }
 
     auto getPreviousPlace() -> Place;
-    auto getCurrentPlace() const -> Place { return currentPlace_; }
-    auto setCurrentPlace(Place newPlace) { currentPlace_ = newPlace; }
 
-    auto size() const -> uint32_t { return stream_->size(); }
+    [[nodiscard]] auto getCurrentPlace() const -> Place { return currentPlace_; }
+    [[nodiscard]] auto setCurrentPlace(Place newPlace) { currentPlace_ = newPlace; }
+
+    [[nodiscard]] auto size() const -> uint32_t { return stream_->size(); }
 
     // Render a page of text with the current place
     // returns the next place for reading so the calling function can
@@ -91,13 +92,15 @@ public:
     // for the speed reading functionality.
     auto renderPage(Place fromPlace, int16_t numSkipLines = 0) -> Place;
 
-    auto getCurrentPageWordCount() const -> uint32_t { return currentPageWordCount_; }
-
-    auto getLengthOfLine(Idx lineIdx) const -> uint16_t { return pageLinesLengths_[lineIdx]; }
-
     auto getTotalLengthOfLines() const -> uint16_t;
 
-    auto getNumRenderedLines() const -> uint16_t { return pageLinesCount_; }
+    [[nodiscard]] auto getCurrentPageWordCount() const -> uint32_t { return currentPageWordCount_; }
+
+    [[nodiscard]] auto getLengthOfLine(Idx lineIdx) const -> uint16_t {
+        return pageLinesLengths_[lineIdx];
+    }
+
+    [[nodiscard]] auto getNumRenderedLines() const -> uint16_t { return pageLinesCount_; }
 
 private:
     DisplaySystem &display_;

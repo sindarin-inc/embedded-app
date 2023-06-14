@@ -109,7 +109,7 @@ auto Renderer::setTokenSizes(Idx tokenIdx) -> uint16_t {
 // the value at a valid UTF8 location. An UTF8 character start with
 // a first byte MSBit == 0 or the two MSBits == 11
 //
-// returns an updated fromPlace location or the LocationError value.
+// returns an updated fromPlace location or the locationError_ value.
 auto Renderer::getFileLocation(Place fromPlace) -> Place {
     if (!stream_->seek(fromPlace)) {
         log_e("failed to seek at place %" PRIu32 " in file!", fromPlace);
@@ -129,7 +129,7 @@ auto Renderer::getFileLocation(Place fromPlace) -> Place {
         }
     }
 
-    return LocationError;
+    return locationError_;
 }
 
 //
@@ -199,7 +199,7 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
     };
 
     fromPlace = getFileLocation(fromPlace);
-    if (fromPlace == LocationError) return 0;
+    if (fromPlace == locationError_) return 0;
 
     // Needs to be minus one for the corner case of all spaces or newlines
     // and need room for EOF character.
