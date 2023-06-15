@@ -553,7 +553,7 @@ auto Renderer::getTokenIdxPassedDeciLines(uint16_t deciLines, Idx startTokenIdx,
 
     Idx firstTokenIdx = tokenIdx; // NOLINT(clang-analyzer-deadcode.DeadStores)
     while ((tokenIdx <= endTokenIdx) && (deciLinesCount < deciLines)) {
-        firstTokenIdx = tokenIdx;
+        firstTokenIdx = tokenIdx; // NOLINT(clang-analyzer-deadcode.DeadStores)
         if (tokens_[tokenIdx].tokenId == TokenId::ENDPARAGRAPH) {
             deciLinesCount += ENDPARAGRAPH_DECI_LINE_HEIGHT;
             log_d("End of paragraph at %" PRIu16 "(%" PRIu32 ")", tokenIdx,
@@ -744,8 +744,8 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
     // Step 6: Remove lines from the last scanned paragraph enough to have it fit in the
     // available page space.
     if (deciLinesCount > maxDeciLines) {
-        startTokenIdx = getTokenIdxPassedDeciLines(deciLinesCount - maxDeciLines, startTokenIdx,
-                                                   endTokenIdx);
+        startTokenIdx =
+            getTokenIdxPassedDeciLines(deciLinesCount - maxDeciLines, startTokenIdx, endTokenIdx);
     }
 
     // Don't let a page start with a NEWPARAGRAH Token
@@ -1040,7 +1040,7 @@ auto Renderer::loadCurrentPage() -> Place {
 
     while ((deciLinesCount <= maxDeciLines) && (tokens_[tokenIdx].tokenId != TokenId::ENDOFFILE)) {
 
-        lastDeciLinesCount = deciLinesCount;
+        lastDeciLinesCount = deciLinesCount; // NOLINT(clang-analyzer-deadcode.DeadStores)
         // Don't start pages with new paragraphs.
         // if (nextTokenIdx == 0) {
         //     if (tokens_[tokenIdx].tokenId == TokenId::ENDPARAGRAPH) {
