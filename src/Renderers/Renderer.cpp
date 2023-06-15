@@ -111,6 +111,9 @@ auto Renderer::setTokenSizes(Idx tokenIdx) -> uint16_t {
 //
 // returns an updated fromPlace location or the locationError_ value.
 auto Renderer::getFileLocation(Place fromPlace) -> Place {
+
+    // if received place is larger than the stream size, reset it to
+    // the beginning of file
     if (fromPlace >= stream_->size()) {
         fromPlace = 0;
     }
@@ -146,6 +149,8 @@ auto Renderer::getFileLocation(Place fromPlace) -> Place {
 // We track backwards because we need to double the amount read in a backwards
 // read (2 pages instead of 1)
 //
+// Computes the number of word in the page.
+//
 // Returns the computed place where the page start really.
 //
 // IMPORTANT: The getFileLocation() method must be called only through this method.
@@ -159,7 +164,7 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
     uint32_t maxTextArea = static_cast<uint32_t>(display_.width()) * display_.height();
 
     tokensCount_ = 0;
-
+    currentPageWordCount_ = 0;
     spaceWidth_ = 0;
 
     page_[pageIdx] = '\0';
@@ -302,12 +307,18 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
                 newToken.tokenId = TokenId::TEXT;
                 computePreviousTokenSize();
                 appendToken();
+                currentPageWordCount_ += 1;
             } else {
                 tokens_[tokenIdx - 1].length += 1;
             }
             break;
         }
-        pageIdx++;
+
+        if (pageIdx < (MAX_CHARS_PER_PAGE - 2)) {
+            pageIdx++;
+        } else {
+            log_e("page_[] too small !!!");
+        }
     }
 
     // Ended on a text token, so we move forward one before setting the EOF
@@ -325,6 +336,7 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
               ", pageIdx is %" PRIu16 ", and place "
               "in file is %" PRIu32,
               textArea, maxTextArea, pageIdx, tokens_[tokenIdx].streamPlace);
+        log_d("Computed Word Count: %" PRIu32, currentPageWordCount_);
     }
 
     // printOutTokens();
@@ -368,8 +380,6 @@ auto Renderer::getLineOfTextForRendering(Idx startTokenIdx, Line &line) -> Idx {
     int16_t maxWidth = (display_.width() - 4);
     int16_t runningWidth = 0;
 
-    line[lineIdx] = '\0';
-
     while (runningWidth < maxWidth) {
         Token &token = tokens_[tokenIdx];
 
@@ -409,11 +419,16 @@ auto Renderer::getLineOfTextForRendering(Idx startTokenIdx, Line &line) -> Idx {
             if ((i == startTokenIdx) && (tokens_[i].tokenId == TokenId::SPACE)) {
                 continue;
             }
-            std::copy_n(&page_[tokens_[i].pageIdx], tokens_[i].length, &line[lineIdx]);
-            lineIdx += tokens_[i].length;
-            line[lineIdx] = '\0';
+            if ((lineIdx + tokens_[i].length) < (sizeof(line) - 2)) {
+                std::copy_n(&page_[tokens_[i].pageIdx], tokens_[i].length, &line[lineIdx]);
+                lineIdx += tokens_[i].length;
+            } else {
+                log_e("line[] too small!");
+            }
         }
     }
+
+    line[lineIdx] = '\0';
 
     if constexpr (RENDERER_DEBUG) {
         log_d("Returning from tokenIdx %" PRIu16 " to %" PRIu16 ", width: %" PRIi16 " line: %s",
@@ -440,8 +455,6 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
     PROFILE_START(loadCurrentPage);
     nextPlace_ = loadCurrentPage();
     PROFILE_END_LOG_MS(loadCurrentPage);
-
-    currentPageWordCount_ = WordCount(page_.data());
 
     int16_t newLineAdjust = 0;
 
