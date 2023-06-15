@@ -456,12 +456,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     contentSettingsMenu->addMenuItem(MenuItem("Morning content sync", [this]() {
         this->prefs_.noMorningDelivery.set(!this->prefs_.noMorningDelivery.get().value_or(false));
-        if (this->prefs_.noMorningDelivery.get().value_or(false)) {
-            this->prefs_.morningNewspaperTime.remove();
-        } else {
-            // Default to 6am delivery. May have configuration at some other time
-            this->prefs_.morningNewspaperTime.set(6);
-        }
     }));
 
     if (prefs_.noMorningDelivery.get().value_or(false)) {
@@ -472,12 +466,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     contentSettingsMenu->addMenuItem(MenuItem("Evening content sync", [this]() {
         this->prefs_.eveningDelivery.set(!this->prefs_.eveningDelivery.get().value_or(false));
-        if (this->prefs_.eveningDelivery.get().value_or(false)) {
-            // default to 8pm delivery. May have configuration at some other time
-            this->prefs_.eveningNewspaperTime.set(20);
-        } else {
-            this->prefs_.eveningNewspaperTime.remove();
-        }
     }));
 
     if (prefs_.eveningDelivery.get().value_or(false)) {
