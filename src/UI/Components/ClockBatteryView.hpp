@@ -30,11 +30,13 @@ public:
           clockView_(display, ""), battery_(battery) {}
     ~ClockBatteryView() override = default;
 
-    auto layout(LayoutContext &context, Size size) -> Size override {
-
+    auto updateTime() {
         SolClock &theClock = SolClock::getInstance();
         clockView_.setText(theClock.getTimeString());
+        setNeedsLayout();
+    }
 
+    auto layout(LayoutContext &context, Size size) -> Size override {
         int x = 0;
         int y = 0;
         auto clockRect = context.setViewFrame(clockView_, {{x, y}, size}, LayoutOptionsSizeToFit);

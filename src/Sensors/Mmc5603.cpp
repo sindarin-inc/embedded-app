@@ -93,10 +93,8 @@ auto Mmc5603::registerWriteByte(mmc5603_reg_t regAddr, uint8_t data) -> esp_err_
     return ret;
 }
 
-auto Mmc5603::readProductId() -> uint8_t {
-    uint8_t productId;
-    registerReadByte(MMC5603_REG_PRODUCT_ID, &productId);
-    return productId;
+auto Mmc5603::readProductId(uint8_t *productIdOut) -> esp_err_t {
+    return registerReadByte(MMC5603_REG_PRODUCT_ID, productIdOut);
 }
 
 auto Mmc5603::readX20Bit() -> float {

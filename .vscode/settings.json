@@ -108,10 +108,26 @@
     },
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "xaver.clang-format",
-    "[python]": {
-        "editor.defaultFormatter": "ms-python.python"
-    },
     "python.formatting.provider": "black",
+    "python.formatting.blackArgs": [
+        "--line-length=110"
+    ],
+    "python.linting.enabled": true,
+    "black-formatter.args": [
+        "--preview",
+        "--line-length=110"
+    ],
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.sortImports": true
+        },
+    },
+    "isort.args": [
+        "--profile",
+        "black"
+    ],
     "[yaml]": {
         "editor.defaultFormatter": "redhat.vscode-yaml"
     },

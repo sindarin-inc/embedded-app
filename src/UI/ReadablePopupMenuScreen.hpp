@@ -9,7 +9,8 @@
 class ReadablePopupMenuScreen : public ContainerScreen, public View, public Menu {
 
 public:
-    ReadablePopupMenuScreen(DisplaySystem &display, PreferencesStore &prefs, Readable &readable,
+    ReadablePopupMenuScreen(DisplaySystem &display, PreferencesStore &prefs,
+                            const std::shared_ptr<Readable> &readable,
                             LightingController &lightingController, Renderer &renderer)
         : display_(display), prefs_(prefs), readable_(readable), renderer_(renderer),
           popupMenuView_(display), lightingAdjustScreen_(display, prefs, lightingController),
@@ -51,7 +52,7 @@ public:
 protected:
     DisplaySystem &display_;
     PreferencesStore &prefs_;
-    const Readable &readable_;
+    std::shared_ptr<Readable> readable_;
     Renderer &renderer_;
     PopupMenuView popupMenuView_;
     bool firstLoad_ = true;

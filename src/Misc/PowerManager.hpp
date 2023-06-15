@@ -98,8 +98,12 @@ public:
     // Exposed so we can check this peripheral as a part of the power-on self-test
     auto checkMagnetometerProductId() -> bool {
 #if USE_MMC5603
-        auto mmcProductId = magSensor_.readProductId();
-        if (mmcProductId != 0x10) {
+        uint8_t mmcProductId;
+        auto err = magSensor_.readProductId(&mmcProductId);
+        if (err != ESP_OK) {
+            log_e("MMC5603 magnetometer not found (error: %s)", esp_err_to_name(err));
+            return false;
+        } else if (mmcProductId != 0x10) {
             log_e("MMC5603 magnetometer not found (productId: 0x%02X)", mmcProductId);
             return false;
         } else {

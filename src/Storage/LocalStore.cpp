@@ -5,6 +5,7 @@
 #include <memory>
 #include <set>
 #include <unordered_map>
+#include <utility>
 
 #include "Communications/HtmlCleaner.hpp"
 #include "Communications/WiFi.hpp"
@@ -65,9 +66,9 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
     readables.reserve(readablesJson.size());
 
     for (JsonVariant v : readablesJson) {
-        Readable readable;
+        std::shared_ptr<Readable> readable = SpiRamPtr<Readable>();
 
-        if (!readable.fromJson(v.as<JsonObject>())) {
+        if (!readable->fromJson(v.as<JsonObject>())) {
             log_e("Failed to parse Readable");
             continue;
         }
@@ -78,9 +79,9 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
         }
         int fileSize = readableGetUncompressedSize(readable);
 
-        if (fileSize >= 0 && readable.files.size() && fileSize != readable.file().size) {
+        if (fileSize >= 0 && readable->files.size() && fileSize != readable->file().size) {
             log_w("File size mismatch for %s (%d on disk vs %d in local store), ignoring",
-                  path.c_str(), fileSize, readable.file().size);
+                  path.c_str(), fileSize, readable->file().size);
             continue;
         }
         readables.push_back(readable);
@@ -94,11 +95,12 @@ auto LocalStore::readablesModelType(const ReadablesVector &readables) -> Readabl
     return &readables == &articles_ ? ReadablesModelType::Article : ReadablesModelType::Book;
 }
 
-auto LocalStore::hasReadable(const ReadablesVector &readables, const Readable &readable,
-                             bool ignoreFileSizeCheck) -> bool {
+auto LocalStore::hasReadable(const ReadablesVector &readables,
+                             const std::shared_ptr<Readable> &readable, bool ignoreFileSizeCheck)
+    -> bool {
     for (const auto &r : readables) {
         auto path = readableFilePathForReading(r);
-        if (r.uuid == readable.uuid && !path.empty()) {
+        if (r->uuid == readable->uuid && !path.empty()) {
             int fileSize = readableGetUncompressedSize(readable);
 
             if (fileSize <= 0) {
@@ -107,10 +109,10 @@ auto LocalStore::hasReadable(const ReadablesVector &readables, const Readable &r
             }
 
             // If we have a file object, check that the size matches
-            if (r.files.size() > 0 && !ignoreFileSizeCheck) {
-                if (fileSize >= 0 && fileSize != readable.file().size) {
+            if (r->files.size() > 0 && !ignoreFileSizeCheck) {
+                if (fileSize >= 0 && fileSize != readable->file().size) {
                     log_w("File size mismatch for %s (%d on disk vs %d in local store), ignoring",
-                          path.c_str(), fileSize, readable.file().size);
+                          path.c_str(), fileSize, readable->file().size);
                     return false;
                 } else {
                     return true;
@@ -122,14 +124,16 @@ auto LocalStore::hasReadable(const ReadablesVector &readables, const Readable &r
     return false;
 }
 
-void LocalStore::addReadable(ReadablesVector &readables, const Readable &readable) {
+void LocalStore::addReadable(ReadablesVector &readables,
+                             const std::shared_ptr<Readable> &readable) {
     readables.emplace_back(readable);
     return;
 }
 
-void LocalStore::removeReadable(ReadablesVector &readables, const Readable &readable) {
+void LocalStore::removeReadable(ReadablesVector &readables,
+                                const std::shared_ptr<Readable> &readable) {
     for (auto it = readables.begin(); it != readables.end(); ++it) {
-        if (it->uuid == readable.uuid) {
+        if (it->get()->uuid == readable->uuid) {
             readables.erase(it);
             return;
         }
@@ -149,11 +153,11 @@ auto LocalStore::readablesSince(const ReadablesModelType modelType) -> std::stri
 
 void LocalStore::storedReadableUuids(const ReadablesVector &readables,
                                      StoredUuidsVector &storedUuids) {
-    for (auto &readable : readables) {
-        if (readable.localOnly) {
+    for (const auto &readable : readables) {
+        if (readable->localOnly) {
             continue;
         }
-        storedUuids.emplace_back(readable.uuid);
+        storedUuids.emplace_back(readable->uuid);
     }
 }
 
@@ -161,19 +165,19 @@ void LocalStore::changedReadablePlacemarkJson(const ReadablesVector &readables,
                                               ReadablePlacemarksVector &placemarks) {
     auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
 
-    for (auto &readable : readables) {
-        if (readable.localOnly) {
+    for (const auto &readable : readables) {
+        if (readable->localOnly) {
             continue;
         }
 
-        bool changed = prefs_.readablePlaceChanged.get(readable.shortenedUuid.c_str());
+        bool changed = prefs_.readablePlaceChanged.get(readable->shortenedUuid.c_str());
         if (changed) {
-            uint32_t place = prefs_.readablePlace.get(readable.shortenedUuid.c_str());
+            uint32_t place = prefs_.readablePlace.get(readable->shortenedUuid.c_str());
             log_i("Placemark on %s %s %s has changed to %" PRIu32,
-                  ReadableModelTypeToString(modelType).c_str(), readable.title.c_str(),
-                  readable.uuid.c_str(), place);
+                  ReadableModelTypeToString(modelType).c_str(), readable->title.c_str(),
+                  readable->uuid.c_str(), place);
             ReadablePlacemark placemark;
-            placemark.uuid = readable.uuid;
+            placemark.uuid = readable->uuid;
             placemark.position = place;
             placemarks.emplace_back(placemark);
         }
@@ -184,17 +188,17 @@ void LocalStore::changedReadablesArchivedJson(const ReadablesVector &readables,
                                               ReadableArchivesVector &archives) {
     auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
 
-    for (auto &readable : readables) {
-        if (readable.localOnly) {
+    for (const auto &readable : readables) {
+        if (readable->localOnly) {
             continue;
         }
 
-        bool changed = prefs_.readableArchivedChanged.get(readable.shortenedUuid.c_str());
+        bool changed = prefs_.readableArchivedChanged.get(readable->shortenedUuid.c_str());
         if (changed) {
             log_i("Archived %s %s %s", ReadableModelTypeToString(modelType).c_str(),
-                  readable.title.c_str(), readable.uuid.c_str());
+                  readable->title.c_str(), readable->uuid.c_str());
             ReadableArchive archive;
-            archive.uuid = readable.uuid;
+            archive.uuid = readable->uuid;
             archive.isArchived = true;
             archives.emplace_back(archive);
         }
@@ -203,20 +207,20 @@ void LocalStore::changedReadablesArchivedJson(const ReadablesVector &readables,
 
 void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmarks) {
     for (auto &readables : {books_, articles_}) {
-        for (auto &readable : readables) {
-            if (readable.localOnly) {
+        for (const auto &readable : readables) {
+            if (readable->localOnly) {
                 continue;
             }
 
-            bool changed = prefs_.readableBookmarksChanged.get(readable.shortenedUuid.c_str());
+            bool changed = prefs_.readableBookmarksChanged.get(readable->shortenedUuid.c_str());
             if (!changed) {
                 continue;
             }
 
             auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
             log_i("Bookmarks changed on %s %s %s", ReadableModelTypeToString(modelType).c_str(),
-                  readable.title.c_str(), readable.uuid.c_str());
-            std::string bookmarkPath = readable.bookmarkFilePath();
+                  readable->title.c_str(), readable->uuid.c_str());
+            std::string bookmarkPath = readable->bookmarkFilePath();
             SFile bookmarkFile = fileSystem.open(bookmarkPath.c_str(), FILE_READ, false);
             if (!bookmarkFile) {
                 log_i("Failed to open bookmark file: %s", bookmarkPath.c_str());
@@ -244,7 +248,7 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
             // Add bookmarks to the JSON array
             for (const auto &[startingPosition, endingPosition] : bookmarksToAdd) {
                 ReadableBookmark bookmark;
-                bookmark.readable = readable.uuid;
+                bookmark.readable = readable->uuid;
                 bookmark.startingPosition = startingPosition;
                 bookmark.endingPosition = endingPosition;
                 bookmarks.emplace_back(bookmark);
@@ -253,7 +257,7 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
             // Add bookmarks to delete to the JSON array
             for (const auto &[startingPosition, endingPosition] : bookmarksToDelete) {
                 ReadableBookmark bookmark;
-                bookmark.readable = readable.uuid;
+                bookmark.readable = readable->uuid;
                 bookmark.startingPosition = startingPosition;
                 bookmark.endingPosition = endingPosition;
                 bookmark.willDelete = true;
@@ -263,10 +267,10 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
     }
 }
 
-auto LocalStore::processReadablePlacemarksFromServer(const Readable &readable,
+auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Readable> &readable,
                                                      const uint32_t placemark) -> bool {
-    uint32_t onDevicePlace = prefs_.readablePlace.get(readable.shortenedUuid.c_str());
-    bool changed = prefs_.readablePlaceChanged.get(readable.shortenedUuid.c_str());
+    uint32_t onDevicePlace = prefs_.readablePlace.get(readable->shortenedUuid.c_str());
+    bool changed = prefs_.readablePlaceChanged.get(readable->shortenedUuid.c_str());
 
     if (placemark == onDevicePlace) {
         // If the placemark on the server is the same as the one on the device, don't change it
@@ -275,14 +279,14 @@ auto LocalStore::processReadablePlacemarksFromServer(const Readable &readable,
         // Placemark on server is further than on the device, so update to the server value
         log_i("Updating placemark for \"%s\" from device value of %" PRIu32 " to server "
               "value of %" PRIu32,
-              readable.title.c_str(), onDevicePlace, placemark);
-        prefs_.readablePlace.set(readable.shortenedUuid.c_str(), placemark);
+              readable->title.c_str(), onDevicePlace, placemark);
+        prefs_.readablePlace.set(readable->shortenedUuid.c_str(), placemark);
         return true;
     } else if (placemark != 0) {
         // Placemark on server is less than on the device, so don't update to the server value
         log_i("Not updating placemark for \"%s\" from device value of %" PRIu32 " to server "
               "value of %" PRIu32 ". Changed: %d",
-              readable.title.c_str(), onDevicePlace, placemark, changed);
+              readable->title.c_str(), onDevicePlace, placemark, changed);
         return false;
     }
 
@@ -290,34 +294,34 @@ auto LocalStore::processReadablePlacemarksFromServer(const Readable &readable,
 }
 
 void LocalStore::resetReadablesPlacemarkChanged(const ReadablesVector &readables) {
-    for (auto &readable : readables) {
-        bool changed = prefs_.readablePlaceChanged.get(readable.shortenedUuid.c_str());
-        if (!readable.localOnly && changed) {
+    for (const auto &readable : readables) {
+        bool changed = prefs_.readablePlaceChanged.get(readable->shortenedUuid.c_str());
+        if (!readable->localOnly && changed) {
             log_d("Resetting placemark changed for \"%s\" (now synced to server)",
-                  readable.title.c_str());
-            prefs_.readablePlaceChanged.remove(readable.shortenedUuid.c_str());
+                  readable->title.c_str());
+            prefs_.readablePlaceChanged.remove(readable->shortenedUuid.c_str());
         }
     }
 }
 
 void LocalStore::resetReadablesArchivedChanged(const ReadablesVector &readables) {
-    for (auto &readable : readables) {
-        bool changed = prefs_.readableArchivedChanged.get(readable.shortenedUuid.c_str());
-        if (!readable.localOnly && changed) {
+    for (const auto &readable : readables) {
+        bool changed = prefs_.readableArchivedChanged.get(readable->shortenedUuid.c_str());
+        if (!readable->localOnly && changed) {
             log_d("Resetting article archive changed for \"%s\" (now synced to server)",
-                  readable.title.c_str());
-            prefs_.readableArchivedChanged.remove(readable.shortenedUuid.c_str());
+                  readable->title.c_str());
+            prefs_.readableArchivedChanged.remove(readable->shortenedUuid.c_str());
         }
     }
 }
 
 void LocalStore::resetReadablesBookmarksChanged(const ReadablesVector &readables) {
-    for (auto &readable : readables) {
-        bool changed = prefs_.readableBookmarksChanged.get(readable.shortenedUuid.c_str());
-        if (!readable.localOnly && changed) {
+    for (const auto &readable : readables) {
+        bool changed = prefs_.readableBookmarksChanged.get(readable->shortenedUuid.c_str());
+        if (!readable->localOnly && changed) {
             log_d("Resetting bookmarks changed for \"%s\" (now synced to server)",
-                  readable.title.c_str());
-            prefs_.readableBookmarksChanged.remove(readable.shortenedUuid.c_str());
+                  readable->title.c_str());
+            prefs_.readableBookmarksChanged.remove(readable->shortenedUuid.c_str());
         }
     }
 }
@@ -484,14 +488,14 @@ void LocalStore::syncFromRemote(
                 if (modelType == ReadablesModelType::Book) {
                     for (const auto &readable : readablesToDelete) {
                         syncState.tasks.push_back(ContentSyncState::Task{
-                            .message = StringFormat("Delete: %s", readable.title.c_str()),
+                            .message = StringFormat("Delete: %s", readable->title.c_str()),
                             .percentage = 0,
                         });
                     }
 
                     for (const auto &readable : readablesToDownload) {
                         syncState.tasks.push_back(ContentSyncState::Task{
-                            .message = StringFormat("Get: %s", readable.title.c_str()),
+                            .message = StringFormat("Get: %s", readable->title.c_str()),
                             .percentage = 0,
                         });
                     }
@@ -607,31 +611,31 @@ auto LocalStore::processReadables(const CheckSyncResponse &checkSyncResponse,
                                                                  : checkSyncResponse.userArticles;
 
     for (auto &userReadable : serverReadables) {
-        log_d("User readable %s (%s)", userReadable.readable.title.c_str(),
-              userReadable.readable.uuid.c_str());
+        log_d("User readable %s (%s)", userReadable.readable->title.c_str(),
+              userReadable.readable->uuid.c_str());
         SHOW_HEAP();
 
         if (processReadablePlacemarksFromServer(userReadable.readable, userReadable.placemark)) {
-            log_i("Placemark for %s updated to %" PRIu32, userReadable.readable.title.c_str(),
+            log_i("Placemark for %s updated to %" PRIu32, userReadable.readable->title.c_str(),
                   userReadable.placemark);
         }
 
         auto found = hasReadable(readables, userReadable.readable, true);
         if (userReadable.isArchived) {
-            log_i("Readable \"%s\" is archived, will delete", userReadable.readable.title.c_str());
+            log_i("Readable \"%s\" is archived, will delete", userReadable.readable->title.c_str());
             // TODO: Store these articles in an accessible archive instead of just deleting them
             // and ignoring
             if (found) {
                 readablesToDelete.push_back(userReadable.readable);
             } else {
-                log_i("Already deleted \"%s\" %s", userReadable.readable.title.c_str(),
-                      userReadable.readable.uuid.c_str());
+                log_i("Already deleted \"%s\" %s", userReadable.readable->title.c_str(),
+                      userReadable.readable->uuid.c_str());
             }
             continue;
         } else if (found) {
             // Should never get here as readablesSince should hide these articles
-            log_w("Already have \"%s\" %s", userReadable.readable.title.c_str(),
-                  userReadable.readable.uuid.c_str());
+            log_w("Already have \"%s\" %s", userReadable.readable->title.c_str(),
+                  userReadable.readable->uuid.c_str());
             continue;
         }
         readablesToDownload.push_back(userReadable.readable);
@@ -653,7 +657,7 @@ void LocalStore::processReadableDeletion(
 
         syncState.tasks[tasksIndex].percentage = (float(i + 1) / readablesToDelete.size()) * 100;
 
-        log_i("Deleting %s", readablesToDelete[i].title.c_str());
+        log_i("Deleting %s", readablesToDelete[i]->title.c_str());
         readableFilePurge(readablesToDelete[i]);
         this->removeReadable(readables, readablesToDelete[i]);
     }
@@ -679,10 +683,10 @@ auto LocalStore::processReadableDownload(
     float pctPerReadable = 100.0 / readablesToDownload.size();
     for (int i = 0; i < readablesToDownload.size(); i++) {
         float currPercentage = (float)i * pctPerReadable;
-        auto &readable = readablesToDownload[i];
+        const auto &readable = readablesToDownload[i];
         auto path = readableFilePathForWriting(readable);
-        log_i("Downloading %s (file=%s, url=%s)", readable.title.c_str(), path.c_str(),
-              readable.remoteUrl().c_str());
+        log_i("Downloading %s (file=%s, url=%s)", readable->title.c_str(), path.c_str(),
+              readable->remoteUrl().c_str());
         SHOW_HEAP();
 
         for (int t = 0; t < NUMBER_OF_READABLE_DOWNLOAD_TRIES; t++) {
@@ -755,9 +759,9 @@ void LocalStore::deleteReadableFiles(const ReadablesVector &readables, bool rest
     }
 
     int64_t start = esp_timer_get_time();
-    for (const Readable &readable : readables) {
+    for (const auto &readable : readables) {
         log_i("Removing %s \"%s\"", ReadableModelTypeToString(modelType).c_str(),
-              readable.title.c_str());
+              readable->title.c_str());
         readableFilePurge(readable);
     }
     int64_t duration = esp_timer_get_time() - start;
@@ -784,7 +788,7 @@ auto LocalStore::saveReadables(const ReadablesVector &readables) -> bool {
 
     log_d("Saving %zu readables in %s", readables.size(), path.c_str());
     for (const auto &readable : readables) {
-        readablesJson.add(readable);
+        readablesJson.add(*readable);
     }
 
     if (doc->overflowed()) {
@@ -805,11 +809,13 @@ auto LocalStore::saveReadables(const ReadablesVector &readables) -> bool {
     return true;
 };
 
-auto LocalStore::readableFilePathForWriting(const Readable &readable) const -> std::string {
-    return StringFormat("/%s/%s.txt.gz", readable.readableType.c_str(), readable.uuid.c_str());
+auto LocalStore::readableFilePathForWriting(const std::shared_ptr<Readable> &readable) const
+    -> std::string {
+    return StringFormat("/%s/%s.txt.gz", readable->readableType.c_str(), readable->uuid.c_str());
 }
 
-auto LocalStore::readableFilePathForReading(const Readable &readable) const -> std::string {
+auto LocalStore::readableFilePathForReading(const std::shared_ptr<Readable> &readable) const
+    -> std::string {
     // We look for the readable file in the following order:
     // We first try the most modern path style:
     // /[readableType]/[uuid].txt.gz
@@ -824,8 +830,8 @@ auto LocalStore::readableFilePathForReading(const Readable &readable) const -> s
     // /articles/[uuid].txt.gz
     // /articles/[uuid].txt
 
-    auto type = readable.readableType;
-    auto &uuid = readable.uuid;
+    auto type = readable->readableType;
+    auto &uuid = readable->uuid;
 
     std::string path;
 
@@ -844,12 +850,12 @@ auto LocalStore::readableFilePathForReading(const Readable &readable) const -> s
             return path;
         }
         // Previously we also stored books in the root directory
-        if (readable.files.size() > 0) {
-            path = StringFormat("/%s.gz", readable.file().name.c_str());
+        if (readable->files.size() > 0) {
+            path = StringFormat("/%s.gz", readable->file().name.c_str());
             if (fileSystem.exists(path)) {
                 return path;
             }
-            path = StringFormat("/%s", readable.file().name.c_str());
+            path = StringFormat("/%s", readable->file().name.c_str());
             if (fileSystem.exists(path)) {
                 return path;
             }
@@ -864,11 +870,12 @@ auto LocalStore::readableFilePathForReading(const Readable &readable) const -> s
             return path;
         }
     }
-    log_w("Unable to find readable file for %s (%s)", readable.title.c_str(), uuid.c_str());
+    log_w("Unable to find readable file for %s (%s)", readable->title.c_str(), uuid.c_str());
     return "";
 }
 
-auto LocalStore::readableGetUncompressedSize(const Readable &readable) const -> int {
+auto LocalStore::readableGetUncompressedSize(const std::shared_ptr<Readable> &readable) const
+    -> int {
     auto path = readableFilePathForReading(readable);
     if (path.empty()) {
         return -1;
@@ -892,7 +899,7 @@ auto LocalStore::readableGetUncompressedSize(const Readable &readable) const -> 
     return fileSize;
 }
 
-void LocalStore::readableFilePurge(const Readable &readable) {
+void LocalStore::readableFilePurge(const std::shared_ptr<Readable> &readable) {
     // Purge all possible readble file paths:
     // /[readableType]/[uuid].txt.gz
     // /[readableType]/[uuid].txt
@@ -902,29 +909,29 @@ void LocalStore::readableFilePurge(const Readable &readable) {
     // /articles/[uuid].txt.gz
     // /articles/[uuid].txt
 
-    auto type = readable.readableType;
-    auto &uuid = readable.uuid;
+    auto type = readable->readableType;
+    auto &uuid = readable->uuid;
 
-    log_d("Purging readable file %s (%s)", readable.title.c_str(), uuid.c_str());
+    log_d("Purging readable file %s (%s)", readable->title.c_str(), uuid.c_str());
     fileSystem.remove(StringFormat("/%s/%s.txt.gz", type.c_str(), uuid.c_str()));
     fileSystem.remove(StringFormat("/%s/%s.txt", type.c_str(), uuid.c_str()));
     fileSystem.remove(StringFormat("/%s/%s.epub", type.c_str(), uuid.c_str()));
 
-    if (readable.files.size() > 0) {
-        fileSystem.remove(StringFormat("/%s.gz", readable.file().name.c_str()));
-        fileSystem.remove(StringFormat("/%s", readable.file().name.c_str()));
+    if (readable->files.size() > 0) {
+        fileSystem.remove(StringFormat("/%s.gz", readable->file().name.c_str()));
+        fileSystem.remove(StringFormat("/%s", readable->file().name.c_str()));
     }
 
     fileSystem.remove(StringFormat("/articles/%s.txt.gz", uuid.c_str()));
     fileSystem.remove(StringFormat("/articles/%s.txt", uuid.c_str()));
 
-    fileSystem.remove(readable.bookmarkFilePath().c_str());
+    fileSystem.remove(readable->bookmarkFilePath().c_str());
 
     // Also purge placemarks in NVS
-    prefs_.readablePlace.remove(readable.shortenedUuid.c_str());
-    prefs_.readablePlaceChanged.remove(readable.shortenedUuid.c_str());
-    prefs_.readableArchivedChanged.remove(readable.shortenedUuid.c_str());
-    prefs_.readableBookmarksChanged.remove(readable.shortenedUuid.c_str());
+    prefs_.readablePlace.remove(readable->shortenedUuid.c_str());
+    prefs_.readablePlaceChanged.remove(readable->shortenedUuid.c_str());
+    prefs_.readableArchivedChanged.remove(readable->shortenedUuid.c_str());
+    prefs_.readableBookmarksChanged.remove(readable->shortenedUuid.c_str());
 }
 
 const char *firmwarePath = "/firmware.json";
@@ -981,12 +988,11 @@ void LocalStore::garbageCollectPreferences() {
     allKeys.insert(readableBookmarksChangedKeys.begin(), readableBookmarksChangedKeys.end());
 
     for (auto &key : allKeys) {
-        bool isStoredBook = std::any_of(books_.begin(), books_.end(), [&key](const auto &r) {
-            return r.shortenedUuid == key.c_str();
+        bool isStoredBook = std::any_of(books_.begin(), books_.end(),
+                                        [&key](auto r) { return r->shortenedUuid == key.c_str(); });
+        bool isStoredArticle = std::any_of(articles_.begin(), articles_.end(), [&key](auto r) {
+            return r->shortenedUuid == key.c_str();
         });
-        bool isStoredArticle =
-            std::any_of(articles_.begin(), articles_.end(),
-                        [&key](const auto &r) { return r.shortenedUuid == key.c_str(); });
         if (!isStoredBook && !isStoredArticle) {
             log_i("Removing all KeyedPrefsItems for %s", key.c_str());
             prefs_.readablePlace.remove(key.c_str());
