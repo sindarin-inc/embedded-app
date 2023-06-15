@@ -180,14 +180,14 @@ TEST_CASE("Test bmp file rendering") {
         ASSERT_VIEW_UNCHANGED("BitmapViewLena");
     }
 
-    SECTION("Test bitmap view Peppers (grayscale)") {
-        SFile file = fs.open("/peppers.bmp");
+    SECTION("Test bitmap view Lena (pre-dithered)") {
+        SFile file = fs.open("/lena_dithered.bmp");
         ContainerStream<SFile> stream(file);
         BMPImage image;
         image.readFromStream(stream);
 
         BitmapScreen screen(image.getBuffer(), image.getWidth(), image.getHeight());
         screen.render(*display);
-        ASSERT_VIEW_UNCHANGED("BitmapViewPeppers");
+        ASSERT_VIEW_UNCHANGED("BitmapViewLena");
     }
 }
