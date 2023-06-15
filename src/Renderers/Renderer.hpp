@@ -37,7 +37,7 @@ private:
     enum class TokenId : uint8_t {
         TEXT = 0,
         NEWLINE,
-        NEWPARAGRAPH,
+        ENDPARAGRAPH,
         SPACE,
         HYPHEN,
         EMDASH,
@@ -76,12 +76,12 @@ private:
 public:
     Renderer(DisplaySystem &display) : display_(display) {}
 
-    void setStream(std::shared_ptr<RendererStream> stream) { stream_ = std::move(stream); }
+    auto setStream(std::shared_ptr<RendererStream> stream) -> void { stream_ = std::move(stream); }
+    auto setCurrentPlace(Place newPlace) -> void { currentPlace_ = newPlace; }
 
     [[nodiscard]] auto getPreviousPlace() -> Place;
 
     [[nodiscard]] auto getCurrentPlace() const -> Place { return currentPlace_; }
-    [[nodiscard]] auto setCurrentPlace(Place newPlace) { currentPlace_ = newPlace; }
 
     [[nodiscard]] auto size() const -> uint32_t { return stream_->size(); }
 
@@ -91,7 +91,9 @@ public:
     //
     // numSkipLines allows us to not render the first X lines of the page
     // for the speed reading functionality.
-    [[nodiscard]] auto renderPage(Place fromPlace, int16_t numSkipLines = 0) -> Place;
+
+    // NOLINTNEXTLINE(modernize-use-nodiscard)
+    auto renderPage(Place fromPlace, int16_t numSkipLines = 0) -> Place;
 
     [[nodiscard]] auto getTotalLengthOfLines() const -> uint16_t;
 
