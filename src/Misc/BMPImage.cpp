@@ -31,6 +31,10 @@ void BMPImage::createLUT() {
 
 auto BMPImage::readFromBytes(uint8_t *bmpbytes, int size) -> bool {
     BufferStream stream(bmpbytes, size);
+    return readFromStream(stream);
+}
+
+auto BMPImage::readFromStream(RendererStream &stream) -> bool {
     bmp_image *img = BmpRead(stream);
     if (!img) {
         log_e("error reading bmp image");

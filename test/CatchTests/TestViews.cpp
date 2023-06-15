@@ -3,6 +3,10 @@
 // Allow access to protected methods from tests
 #define protected public
 #define private public
+#include "Misc/BMPImage.hpp"
+#include "Renderers/RendererStream.hpp"
+#include "Storage/PosixFileSystem.hpp"
+#include "UI/BitmapScreen.hpp"
 #include "UI/LayoutTestScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
@@ -154,5 +158,36 @@ TEST_CASE("Test some views independently") {
             screen.render(*display);
             ASSERT_VIEW_UNCHANGED("LineSpacingScreen");
         }
+    }
+}
+
+TEST_CASE("Test bmp file rendering") {
+    SetupFileSystemMock("TestData");
+
+    PosixFileSystem fs;
+    fs.begin();
+    // create and render a full screen bitmap view
+    auto display = createDisplay();
+
+    SECTION("Test bitmap view Lena (grayscale)") {
+        SFile file = fs.open("/lena.bmp");
+        ContainerStream<SFile> stream(file);
+        BMPImage image;
+        image.readFromStream(stream);
+
+        BitmapScreen screen(image.getBuffer(), image.getWidth(), image.getHeight());
+        screen.render(*display);
+        ASSERT_VIEW_UNCHANGED("BitmapViewLena");
+    }
+
+    SECTION("Test bitmap view Peppers (grayscale)") {
+        SFile file = fs.open("/peppers.bmp");
+        ContainerStream<SFile> stream(file);
+        BMPImage image;
+        image.readFromStream(stream);
+
+        BitmapScreen screen(image.getBuffer(), image.getWidth(), image.getHeight());
+        screen.render(*display);
+        ASSERT_VIEW_UNCHANGED("BitmapViewPeppers");
     }
 }

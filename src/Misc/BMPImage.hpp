@@ -1,6 +1,7 @@
 #pragma once
 
-#include <Misc/SpiramAllocator.hpp>
+#include "Misc/SpiramAllocator.hpp"
+#include "Renderers/RendererStream.hpp"
 
 class BMPImage {
 public:
@@ -8,6 +9,7 @@ public:
     ~BMPImage() = default;
 
     auto readFromBytes(uint8_t *bmpbytes, int size) -> bool;
+    auto readFromStream(RendererStream &stream) -> bool;
     auto getWidth() -> int;
     auto getHeight() -> int;
     auto getBitsPerPixel() -> int;
