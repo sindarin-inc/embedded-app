@@ -41,9 +41,10 @@ class PowerTester:
     def dump_samples_to_csv(self, filename, samples):
         with open(filename, mode="w", newline="") as file:
             writer = csv.writer(file)
-            writer.writerow(["Sample"])
-            for sample in samples:
-                writer.writerow([sample])
+            writer.writerow(["Time (ms)", "Current (uA)"])
+            for index, sample in enumerate(samples):
+                # Assumes 100k samples per second
+                writer.writerow([index / 100, sample])
 
     def measure_current(self, duration: int):
         # Purge data already in the buffer
