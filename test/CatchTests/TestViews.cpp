@@ -169,25 +169,25 @@ TEST_CASE("Test bmp file rendering") {
     // create and render a full screen bitmap view
     auto display = createDisplay();
 
-    SECTION("Test bitmap view Lena (grayscale)") {
-        SFile file = fs.open("/lena.bmp");
+    SECTION("Test bitmap view Books (grayscale)") {
+        SFile file = fs.open("/books.bmp");
         ContainerStream<SFile> stream(file);
         BMPImage image;
         image.readFromStream(stream);
 
         BitmapScreen screen(image.getBuffer(), image.getWidth(), image.getHeight());
         screen.render(*display);
-        ASSERT_VIEW_UNCHANGED("BitmapViewLena");
+        ASSERT_VIEW_UNCHANGED("BitmapViewBooks");
     }
 
-    SECTION("Test bitmap view Lena (pre-dithered)") {
-        SFile file = fs.open("/lena_dithered.bmp");
+    SECTION("Test bitmap view Books (pre-dithered)") {
+        SFile file = fs.open("/books_dithered.bmp");
         ContainerStream<SFile> stream(file);
         BMPImage image;
         image.readFromStream(stream);
 
         BitmapScreen screen(image.getBuffer(), image.getWidth(), image.getHeight());
         screen.render(*display);
-        ASSERT_VIEW_UNCHANGED("BitmapViewLena");
+        ASSERT_VIEW_UNCHANGED("BitmapViewBooks");
     }
 }
