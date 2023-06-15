@@ -1,27 +1,297 @@
 {
     "readables": [
         {
+            "uuid": "00491216-5612-4863-8735-b42004f3e64a",
+            "title": "The Last Question",
+            "date_created": "2022-10-20T08:44:55.813541-07:00",
+            "date_modified": "2022-10-20T08:44:55.813554-07:00",
+            "date_published": "null",
             "authors": [
                 {
-                    "id": "asimovi",
-                    "uuid": "1942d6fa5c2746bdb113f69577d8cb6e",
-                    "name": "Isaac Asimov"
+                    "uuid": "91ae1429-c6d4-4b8b-88fa-81041d838f92",
+                    "name": "Isaac Asimov",
+                    "description": "null"
                 }
             ],
-            "date_created": "2023-01-08T11:29:48PST",
-            "date_modified": "2023-01-08T11:29:48PST",
             "files": [
                 {
-                    "uuid": "aa1d7ee8c3c345dd9f51a1575856d49c",
-                    "filetype": "txt",
+                    "uuid": "06aa0331-2758-49d5-83d8-f2e4929ee333",
                     "name": "last-question.txt",
-                    "sha_hash": "903f6068ba98797d135f96dec91314d710f222c3e6cad2c98d76c4f399f2845a",
-                    "size": 25924,
-                    "uploaded_at": "2023-01-08T11:29:48PST"
+                    "size": 25923,
+                    "filetype": "txt",
+                    "uploaded_at": "2022-10-20T08:44:53.847361-07:00",
+                    "sha_hash": "db07de86d749785a210282636c412ada8efc7046f8bb55a7ba06527714e89344",
+                    "file": "https://nyc3.digitaloceanspaces.com/sol-cloud/uploads/last-question.txt",
+                    "readable_type": "book"
                 }
             ],
-            "uuid": "93d5684250ea405f997540a9625fc585",
-            "title": "The Last Question"
+            "toc": [],
+            "readable_type": "book"
+        },
+        {
+            "uuid": "91ebc912-c83e-4d85-91c7-9506ae02af50",
+            "title": "The Dawn of Everything",
+            "date_created": "2023-05-22T00:06:04.209990-07:00",
+            "date_modified": "2023-05-22T00:06:09.971522-07:00",
+            "date_published": "null",
+            "authors": [
+                {
+                    "uuid": "4cb461ce-e238-4d6b-85bd-bbe5257e282e",
+                    "name": "David Graeber and David Wengrow",
+                    "description": "null"
+                }
+            ],
+            "files": [
+                {
+                    "uuid": "b8ede347-e701-4c2a-b4cb-b5f7780bc4e9",
+                    "name": "91ebc912-c83e-4d85-91c7-9506ae02af50.epub.txt",
+                    "size": 1621527,
+                    "filetype": "txt",
+                    "uploaded_at": "2023-05-22T00:06:14.374676-07:00",
+                    "sha_hash": "9657079cd6ffe51af845e3e7ef558ce830f716ccd8a7ca7ad2bc168675628211",
+                    "file": "https://nyc3.digitaloceanspaces.com/sol-cloud/uploads/readables/b8ede347-e701-4c2a-b4cb-b5f7780bc4e9.epub.txt",
+                    "readable_type": "book"
+                },
+                {
+                    "uuid": "745d8a61-560a-49a6-a883-62aad758cf4d",
+                    "name": "91ebc912-c83e-4d85-91c7-9506ae02af50.epub",
+                    "size": 720548,
+                    "filetype": "epub",
+                    "uploaded_at": "2023-05-22T00:06:04.204864-07:00",
+                    "sha_hash": "c9858661cd49b34c53b6182256f8e918b74df7b9e2f9cb8a7a131dc8f0074f23",
+                    "file": "https://nyc3.digitaloceanspaces.com/sol-cloud/uploads/readables/745d8a61-560a-49a6-a883-62aad758cf4d.epub",
+                    "readable_type": "book"
+                },
+                {
+                    "uuid": "493f6ed0-ee88-4a6f-87f5-64d012431951",
+                    "name": "91ebc912-c83e-4d85-91c7-9506ae02af50.epub-original",
+                    "size": 4242577,
+                    "filetype": "epub-original",
+                    "uploaded_at": "2023-05-22T00:06:08.482184-07:00",
+                    "sha_hash": "0b138970b41c02dd0376193fcebe71f6fe5b678ebc9f8d1bea86b2fb5bd03760",
+                    "file": "https://nyc3.digitaloceanspaces.com/sol-cloud/uploads/readables/493f6ed0-ee88-4a6f-87f5-64d012431951.epub-original",
+                    "readable_type": "book"
+                }
+            ],
+            "toc": [
+                {
+                    "title": "Title Page",
+                    "href": "OEBPS/xhtml/title.xhtml",
+                    "in_subsection_href": "",
+                    "txt_offset": 3
+                },
+                {
+                    "title": "Copyright Notice",
+                    "href": "OEBPS/xhtml/copyrightnotice.xhtml",
+                    "in_subsection_href": "",
+                    "txt_offset": 519
+                },
+                {
+                    "title": "List of Maps and Figures",
+                    "href": "OEBPS/xhtml/list-maps-figures.xhtml",
+                    "in_subsection_href": "",
+                    "txt_offset": 862
+                },
+                {
+                    "title": "Foreword and Dedication",
+                    "href": "OEBPS/xhtml/foreword.xhtml",
+                    "in_subsection_href": "",
+                    "txt_offset": 2656
+                },
+                {
+                    "title": "Acknowledgements",
+                    "href": "OEBPS/xhtml/acknowledgments.xhtml",
+                    "in_subsection_href": "",
+                    "txt_offset": 4904
+                },
+                {
+                    "title": "1. Farewell to Humanity's Childhood: Or, why this is not a book about the origins of inequality",
+                    "href": "OEBPS/xhtml/chapter1.xhtml",
+                    "in_subsection_href": "",
+                    "txt_offset": 8984
+                },
+                {
+                    "title": "2. Wicked Liberty: The indigenous critique and the myth of progress",
+                    "href": "OEBPS/xhtml/chapter2.xhtml",
+                    "in_subsection_href": "",
+                    "txt_offset": 67554
+                },
+                {
+                    "title": "3. Unfreezing the Ice Age: In and out of chains: the protean possibilities of human politics",
+                    "href": "OEBPS/xhtml/chapter3.xhtml",
+                    "in_subsection_href": "",
+                    "txt_offset": 185628
+                },
+                {
+                    "title": "4. Free People, the Origin of Cultures, and the Advent of Private Property: (Not necessarily in that order)",
+                    "href": "OEBPS/xhtml/chapter4.xhtml",
+                    "in_subsection_href": "",
+                    "txt_offset": 283795
+                },
+                {
+                    "title": "5. Many Seasons Ago: Why Canadian foragers kept slaves and their Californian neighbours didn't; or, the problem with 'modes of production'",
+                    "href": "OEBPS/xhtml/chapter5.xhtml",
+                    "in_subsection_href": "",
+                    "txt_offset": 385249
+                },
+                {
+                    "title": "6. Gardens of Adonis: The revolution that never happened: how Neolithic peoples avoided agriculture",
+                    "href": "OEBPS/xhtml/chapter6_split_000.xhtml",
+                    "in_subsection_href": "",
+                    "txt_offset": 489111
+                },
+                {
+                    "title": "7. The Ecology of Freedom: How farming first hopped, stumbled and bluffed its way around the world",
+                    "href": "OEBPS/xhtml/chapter7.xhtml",
+                    "in_subsection_href": "",
+                    "txt_offset": 578623
+                },
+                {
+                    "title": "8. Imaginary Cities: Eurasia's first urbanites - in Mesopotamia, the Indus valley, Ukraine and China - and how they built cities without kings",
+                    "href": "OEBPS/xhtml/chapter8.xhtml",
+                    "in_subsection_href": "",
+                    "txt_offset": 637348
+                },
+                {
+                    "title": "9. Hiding in Plain Sight: The indigenous origins of social housing and democracy in the Americas",
+                    "href": "OEBPS/xhtml/chapter9.xhtml",
+                    "in_subsection_href": "",
+                    "txt_offset": 757147
+                },
+                {
+                    "title": "10. Why the State Has No Origin: The humble beginnings of sovereignty, bureaucracy and politics",
+                    "href": "OEBPS/xhtml/chapter10.xhtml",
+                    "in_subsection_href": "",
+                    "txt_offset": 825407
+                },
+                {
+                    "title": "11. Full Circle: On the historical foundations of the indigenous critique",
+                    "href": "OEBPS/xhtml/chapter11.xhtml",
+                    "in_subsection_href": "",
+                    "txt_offset": 1018992
+                },
+                {
+                    "title": "12. Conclusion: The dawn of everything",
+                    "href": "OEBPS/xhtml/chapter12.xhtml",
+                    "in_subsection_href": "",
+                    "txt_offset": 1138254
+                },
+                {
+                    "title": "Notes",
+                    "href": "OEBPS/xhtml/notes-ch1.xhtml",
+                    "in_subsection_href": "",
+                    "txt_offset": 1218168
+                },
+                {
+                    "title": " Notes 2",
+                    "href": "OEBPS/xhtml/notes-ch2.xhtml",
+                    "in_subsection_href": "OEBPS/xhtml/notes-ch1.xhtml",
+                    "txt_offset": 1231898
+                },
+                {
+                    "title": " Notes 3",
+                    "href": "OEBPS/xhtml/notes-ch3.xhtml",
+                    "in_subsection_href": "OEBPS/xhtml/notes-ch1.xhtml",
+                    "txt_offset": 1247879
+                },
+                {
+                    "title": " Notes 4",
+                    "href": "OEBPS/xhtml/notes-ch4.xhtml",
+                    "in_subsection_href": "OEBPS/xhtml/notes-ch1.xhtml",
+                    "txt_offset": 1268632
+                },
+                {
+                    "title": " Notes 5",
+                    "href": "OEBPS/xhtml/notes-ch5.xhtml",
+                    "in_subsection_href": "OEBPS/xhtml/notes-ch1.xhtml",
+                    "txt_offset": 1285401
+                },
+                {
+                    "title": " Notes 6",
+                    "href": "OEBPS/xhtml/notes-ch6.xhtml",
+                    "in_subsection_href": "OEBPS/xhtml/notes-ch1.xhtml",
+                    "txt_offset": 1303459
+                },
+                {
+                    "title": " Notes 7",
+                    "href": "OEBPS/xhtml/notes-ch7.xhtml",
+                    "in_subsection_href": "OEBPS/xhtml/notes-ch1.xhtml",
+                    "txt_offset": 1319842
+                },
+                {
+                    "title": " Notes 8",
+                    "href": "OEBPS/xhtml/notes-ch8.xhtml",
+                    "in_subsection_href": "OEBPS/xhtml/notes-ch1.xhtml",
+                    "txt_offset": 1328965
+                },
+                {
+                    "title": " Notes 9",
+                    "href": "OEBPS/xhtml/notes-ch9.xhtml",
+                    "in_subsection_href": "OEBPS/xhtml/notes-ch1.xhtml",
+                    "txt_offset": 1356802
+                },
+                {
+                    "title": " Notes 10",
+                    "href": "OEBPS/xhtml/notes-ch10.xhtml",
+                    "in_subsection_href": "OEBPS/xhtml/notes-ch1.xhtml",
+                    "txt_offset": 1369697
+                },
+                {
+                    "title": " Notes 11",
+                    "href": "OEBPS/xhtml/notes-ch11.xhtml",
+                    "in_subsection_href": "OEBPS/xhtml/notes-ch1.xhtml",
+                    "txt_offset": 1407685
+                },
+                {
+                    "title": " Notes 12",
+                    "href": "OEBPS/xhtml/notes-ch12.xhtml",
+                    "in_subsection_href": "OEBPS/xhtml/notes-ch1.xhtml",
+                    "txt_offset": 1425997
+                },
+                {
+                    "title": "Bibliography",
+                    "href": "OEBPS/xhtml/bibliography.xhtml",
+                    "in_subsection_href": "",
+                    "txt_offset": 1429253
+                },
+                {
+                    "title": "Index",
+                    "href": "OEBPS/xhtml/index.xhtml",
+                    "in_subsection_href": "",
+                    "txt_offset": 1579825
+                },
+                {
+                    "title": "Also by David Graeber and David Wengrow",
+                    "href": "OEBPS/xhtml/adcard.xhtml",
+                    "in_subsection_href": "",
+                    "txt_offset": 1603539
+                },
+                {
+                    "title": "Praise for The Dawn of Everything",
+                    "href": "OEBPS/xhtml/praise.xhtml",
+                    "in_subsection_href": "",
+                    "txt_offset": 1604328
+                },
+                {
+                    "title": "A Note About the Authors",
+                    "href": "OEBPS/xhtml/abouttheauthor.xhtml",
+                    "in_subsection_href": "",
+                    "txt_offset": 1617515
+                },
+                {
+                    "title": "Newsletter Sign-up",
+                    "href": "OEBPS/xhtml/newsletter.xhtml",
+                    "in_subsection_href": "",
+                    "txt_offset": 1618505
+                },
+                {
+                    "title": "Copyright",
+                    "href": "OEBPS/xhtml/copyright.xhtml",
+                    "in_subsection_href": "",
+                    "txt_offset": 1619944
+                }
+            ],
+            "readable_type": "book"
         }
     ]
 }
