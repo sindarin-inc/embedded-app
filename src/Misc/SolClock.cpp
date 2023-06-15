@@ -152,6 +152,7 @@ void SolClock::setClockTimeFromInternet() {
     log_i("Not setting clock time from internet in simulator");
 #endif
 }
+
 auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
     // Current local time as a tm struct
     struct tm timeinfo;
@@ -191,6 +192,7 @@ auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
         eveningEvent.tm_mday += 1;
         eveningEventEpoch = mktime(&eveningEvent);
     }
+
     // Determine the next event
     time_t nextEventEpoch;
     struct tm *nextEventTime;
