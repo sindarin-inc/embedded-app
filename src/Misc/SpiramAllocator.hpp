@@ -20,8 +20,21 @@ struct SpiramAllocator {
         return reinterpret_cast<T *>(heap_caps_malloc(n * sizeof(T), MALLOC_CAP_SPIRAM));
     }
 
+    auto allocateShared() -> std::shared_ptr<T> {
+        T *tp = allocate(1);
+        assert(tp);
+        T *p = new (tp) T();
+        return std::shared_ptr<T>(p, &heap_caps_free);
+    }
+
     void deallocate(T *p, std::size_t n) { heap_caps_free((void *)p); }
 };
+
+template <typename T>
+auto SpiRamPtr() -> std::shared_ptr<T> {
+    static SpiramAllocator<T> allocator;
+    return allocator.allocateShared();
+}
 
 template <typename T, typename U>
 auto operator==(const SpiramAllocator<T> &, const SpiramAllocator<U> &) -> bool {

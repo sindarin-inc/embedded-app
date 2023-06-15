@@ -297,21 +297,20 @@ public:
           readableBookmarksChanged(*this, "-bm"), invertSetting(*this, "invert"),
           vcom(*this, "vcom"), font(*this, "font"), rectX(*this, "rectX"), rectY(*this, "rectY"),
           rectW(*this, "rectW"), rectH(*this, "rectH"), lineSpacing(*this, "line-space"),
-          demoMode(*this, "demo"), wordCount(*this, "word-count"),
+          noSetupMode(*this, "no-setup"), wordCount(*this, "word-count"),
           totalReadingTimeSeconds(*this, "tot-rd-time"), bootCount(*this, "boot-count"),
           firstRead(*this, "first-read"), autoPilotSpeed(*this, "auto-speed"),
           firstAutopilotRead(*this, "fst-auto-rd"), cesMode(*this, "ces"), emcMode(*this, "emc"),
-          wifiPower(*this, "wifi-power"), morningNewspaperTime(*this, "morning-news"),
-          eveningNewspaperTime(*this, "evening-news"), tzIana(*this, "tz-iana"),
-          tzPosix(*this, "tz-posix"), firmwareLoaded(*this, "fw-loaded"),
-          sleepReason(*this, "sleep-reason"), noBooks(*this, "no-books"),
-          showNews(*this, "show-news"), noArticles(*this, "no-articles"),
-          noBible(*this, "no-bible"), noDeliverOnClose(*this, "no-deliv-close"),
-          noMorningDelivery(*this, "no-morn-sync"), eveningDelivery(*this, "eve-deliver"),
-          darkMode(*this, "dark-mode"), autoPilot(*this, "auto-pilot"),
-          fastTransitions(*this, "fast-tran"), noUploadCrashes(*this, "no-upload-crash"),
-          showDebugMenu(*this, "show-debug"), fastBookmarkRight(*this, "fst-mark-right"),
-          fastBookmarkCenter(*this, "fst-mark-cent"), pageTransitionArrows(*this, "page-arrows"),
+          wifiPower(*this, "wifi-power"), tzIana(*this, "tz-iana"), tzPosix(*this, "tz-posix"),
+          firmwareLoaded(*this, "fw-loaded"), sleepReason(*this, "sleep-reason"),
+          noBooks(*this, "no-books"), showNews(*this, "show-news"),
+          noArticles(*this, "no-articles"), noBible(*this, "no-bible"),
+          noDeliverOnClose(*this, "no-deliv-close"), noMorningDelivery(*this, "no-morn-sync"),
+          eveningDelivery(*this, "eve-deliver"), darkMode(*this, "dark-mode"),
+          autoPilot(*this, "auto-pilot"), fastTransitions(*this, "fast-tran"),
+          noUploadCrashes(*this, "no-upload-crash"), showDebugMenu(*this, "show-debug"),
+          fastBookmarkRight(*this, "fst-mark-right"), fastBookmarkCenter(*this, "fst-mark-cent"),
+          pageTransitionArrows(*this, "page-arrows"),
           allowUsageWhileCharging(*this, "allow-use-chg"), wifiSettingsJson(*this, "wifi-settings"),
           localStoreMigrationVersion(*this, "ls-version"), fontsLibrary(*this, "fonts-lib"),
           fontType(*this, "font-type"), tutorialsDeleted(*this, "tutorials"),
@@ -322,6 +321,8 @@ public:
     void migrateIfNeeded() {
         bool ranMigration = false;
         auto migrationVersion = preferencesStoreMigrationVersion_.get().value_or(0);
+        // Some migrations need to know if this is the first time the device has been booted
+        bool firstEverBoot = (migrationVersion == 0);
         while (migrationVersion < latestMigrationVersion_) {
             log_i("Migrating PreferencesStore from version %" PRIu32 " to %" PRIu32,
                   migrationVersion, migrationVersion + 1);
@@ -356,6 +357,32 @@ public:
             case 1: {
                 // Destroying time-zone, replaced by tz-iana and tz-posix
                 esp_err_t err = nvs_erase_key(nvsHandle_, "time-zone");
+                if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
+                    log_e("nvs_erase_key failed: %s", esp_err_to_name(err));
+                }
+                break;
+            }
+            case 2: {
+                // Removing the morning and evening newspaper time for now in favor of fixing it
+                // to 6am and 8pm. May revive at some later date.
+                esp_err_t err = nvs_erase_key(nvsHandle_, "morning-news");
+                if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
+                    log_e("nvs_erase_key failed: %s", esp_err_to_name(err));
+                }
+
+                err = nvs_erase_key(nvsHandle_, "evening-news");
+                if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
+                    log_e("nvs_erase_key failed: %s", esp_err_to_name(err));
+                }
+
+                bool demoMode = false;
+                err = nvs_get_u8(nvsHandle_, "demo", (uint8_t *)&demoMode);
+                // If it's not set or it's set to 0, set the noSetup flag to true.
+                if (!firstEverBoot && (err == ESP_ERR_NVS_NOT_FOUND || !demoMode)) {
+                    noSetupMode.set(true);
+                }
+
+                err = nvs_erase_key(nvsHandle_, "demo");
                 if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
                     log_e("nvs_erase_key failed: %s", esp_err_to_name(err));
                 }
@@ -458,7 +485,7 @@ public:
     PrefsItem<int> rectW;
     PrefsItem<int> rectH;
     PrefsItem<int> lineSpacing;
-    PrefsItem<bool> demoMode;
+    PrefsItem<bool> noSetupMode;
     PrefsItem<uint32_t> wordCount;
     PrefsItem<uint32_t> totalReadingTimeSeconds;
     PrefsItem<uint32_t> bootCount;
@@ -468,8 +495,6 @@ public:
     PrefsItem<bool> cesMode;
     PrefsItem<bool> emcMode;
     PrefsItem<int> wifiPower;
-    PrefsItem<int> morningNewspaperTime;
-    PrefsItem<int> eveningNewspaperTime;
     PrefsItem<std::string> tzIana;
     PrefsItem<std::string> tzPosix;
     // Firmware that's been loaded to the other flash slot but not yet installed
@@ -511,7 +536,7 @@ public:
     static bool settingsOnRestart;
 
 protected:
-    const uint32_t latestMigrationVersion_ = 2;
+    const uint32_t latestMigrationVersion_ = 3;
     uint32_t nvsHandle_;
     bool started_;
 

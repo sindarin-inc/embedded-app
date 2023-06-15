@@ -12,7 +12,7 @@ public:
     std::string uuid;
     uint32_t placemark;
     bool isArchived;
-    Readable readable;
+    std::shared_ptr<Readable> readable = nullptr;
 
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("uuid") || !j.containsKey("readable")) {
@@ -22,7 +22,8 @@ public:
         uuid = j["uuid"].as<std::string>();
         placemark = j["placemark"].as<uint32_t>();
         isArchived = j["is_archived"].as<bool>();
-        return readable.fromJson(j["readable"]);
+        readable = SpiRamPtr<Readable>();
+        return readable->fromJson(j["readable"]);
     }
 
     operator std::string() const { return uuid; }

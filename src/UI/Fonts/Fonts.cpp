@@ -46,7 +46,7 @@
 
 // clang-format off
 std::array<FontEntry, 19> fontsList{{
-    FONT_ENTRY("SolSans", SOL_SANS)
+    FONT_ENTRY("SolSans", SOLSANS)
     FONT_ENTRY("GnuUnifont", GNUUNIFONT)
     FONT_ENTRY("Tahoma", TAHOMA)
     FONT_ENTRY("Arial", ARIAL)

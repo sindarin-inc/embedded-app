@@ -20,7 +20,7 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
     }
 
     // Figure out if you should show the Archive menu item or the Unarchive menu item.
-    bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
+    bool archived = prefs_.readableArchivedChanged.get(readable_->shortenedUuid.c_str());
     if (archived) {
         archiveMenuItemView_->setHidden(true);
         unarchiveMenuItemView_->setHidden(false);
@@ -46,13 +46,13 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
     addMenuItem(MenuItem("Main Menu", [this]() { onMainMenu(); }));
 
     addMenuItem(MenuItem("Archive", [this]() {
-        prefs_.readableArchivedChanged.set(readable_.shortenedUuid.c_str(), true);
+        prefs_.readableArchivedChanged.set(readable_->shortenedUuid.c_str(), true);
         onMainMenu();
     }));
     archiveMenuItemView_ = popupMenuView_.menuItemViews.back();
 
     addMenuItem(MenuItem("Unarchive", [this]() {
-        this->prefs_.readableArchivedChanged.remove(readable_.shortenedUuid.c_str());
+        this->prefs_.readableArchivedChanged.remove(readable_->shortenedUuid.c_str());
         back();
     }));
     unarchiveMenuItemView_ = popupMenuView_.menuItemViews.back();
@@ -70,14 +70,14 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
         setCurrentScreen(lightingAdjustScreen_);
     }));
 
-    auto hasToc = readable_.toc.size() >= 1;
-    log_d("hasToc = %d, readable_.toc.size: %zu", hasToc, readable_.toc.size());
+    auto hasToc = readable_->toc.size() >= 1;
+    log_d("hasToc = %d, readable_.toc.size: %zu", hasToc, readable_->toc.size());
     // If readable has a ToC with at least 1 element, show the ToC screen.
     // Otherwise, show the seek screen.
     if (hasToc) {
         addMenuItem(MenuItem("Contents", [this]() {
             readableTableOfContentsScreen_.resetMenuItems();
-            for (const ReadableTableOfContentsChapter &chapter : readable_.toc) {
+            for (const ReadableTableOfContentsChapter &chapter : readable_->toc) {
                 readableTableOfContentsScreen_.addMenuItem(
                     MenuItem(chapter.title, [this]() { readableTableOfContentsScreen_.back(); }));
             }
@@ -94,7 +94,7 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
 }
 
 void ReadablePopupMenuScreen::preselectArchiveMenuItem() {
-    bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
+    bool archived = prefs_.readableArchivedChanged.get(readable_->shortenedUuid.c_str());
     int index = 0;
     for (auto &menuItemView : popupMenuView_.menuItemViews) {
         if (menuItemView == (archived ? unarchiveMenuItemView_ : archiveMenuItemView_)) {
@@ -170,6 +170,7 @@ void ReadablePopupMenuScreen::render(DisplaySystem &display) {
             menuItemView->setSelected(false);
         }
 
+        popupMenuView_.updateTime();
         popupMenuView_.draw();
 
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);

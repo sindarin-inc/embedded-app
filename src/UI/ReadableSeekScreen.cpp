@@ -4,7 +4,7 @@
 #include "UI/Bitmaps/SeekBook.hpp"
 
 void ReadableSeekScreen::render(DisplaySystem &display) {
-    auto place = prefs_.readablePlace.get(readable_.shortenedUuid.c_str());
+    auto place = prefs_.readablePlace.get(readable_->shortenedUuid.c_str());
     auto progress = 100 * (float)place / (float)renderer_.size();
 
     auto percentStr = StringFormat("%.1f%%", progress);
@@ -83,46 +83,46 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
         // Do the -5% thing. This is unlikley to be right long-term
         // but it's way better if you overshoot.
         // TODO: Do we need placePrev anymore except for logging?
-        readable_.placePrev = readable_.place;
+        readable_->placePrev = readable_->place;
 
         size_t lengthOfFile = renderer_.size();
 
         // Subtract 5% to the file
-        if (readable_.place >= lengthOfFile / seekGranularity_) {
-            readable_.place = readable_.place - lengthOfFile / seekGranularity_;
+        if (readable_->place >= lengthOfFile / seekGranularity_) {
+            readable_->place = readable_->place - lengthOfFile / seekGranularity_;
         } else {
-            readable_.place = 0;
+            readable_->place = 0;
         }
 
-        log_d("Setting place from %" PRIu32 " to %" PRIu32 "", readable_.placePrev,
-              readable_.place);
+        log_d("Setting place from %" PRIu32 " to %" PRIu32 "", readable_->placePrev,
+              readable_->place);
 
-        renderer_.setCurrentPlace(readable_.place);
-        prefs_.readablePlace.set(readable_.shortenedUuid.c_str(), readable_.place);
-        prefs_.readablePlaceChanged.set(readable_.shortenedUuid.c_str(), true);
+        renderer_.setCurrentPlace(readable_->place);
+        prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place);
+        prefs_.readablePlaceChanged.set(readable_->shortenedUuid.c_str(), true);
         setNeedsRerender();
         break;
     }
     case RemoteCommand::RIGHT: {
         // TODO: Do we need placePrev anymore except for logging?
-        readable_.placePrev = readable_.place;
+        readable_->placePrev = readable_->place;
 
         size_t lengthOfFile = renderer_.size();
 
         // Add 5% to the file
-        readable_.place = readable_.place + lengthOfFile / seekGranularity_;
+        readable_->place = readable_->place + lengthOfFile / seekGranularity_;
 
-        log_d("Setting place from %" PRIu32 " to %" PRIu32 "", readable_.placePrev,
-              readable_.place);
+        log_d("Setting place from %" PRIu32 " to %" PRIu32 "", readable_->placePrev,
+              readable_->place);
 
         // Don't set place past EOF
-        if (readable_.place >= lengthOfFile) {
-            readable_.place = lengthOfFile - 1;
+        if (readable_->place >= lengthOfFile) {
+            readable_->place = lengthOfFile - 1;
         }
 
-        renderer_.setCurrentPlace(readable_.place);
-        prefs_.readablePlace.set(readable_.shortenedUuid.c_str(), readable_.place);
-        prefs_.readablePlaceChanged.set(readable_.shortenedUuid.c_str(), true);
+        renderer_.setCurrentPlace(readable_->place);
+        prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place);
+        prefs_.readablePlaceChanged.set(readable_->shortenedUuid.c_str(), true);
         setNeedsRerender();
         break;
     }

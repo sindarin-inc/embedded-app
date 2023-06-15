@@ -203,6 +203,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     if (!fileSystem.begin()) {
         bootErrors.push_back({.type = BootError::Type::FileSystem});
+    } else {
+        log_d("Filesystem ready!");
     }
 
     // Set current boot id
@@ -240,6 +242,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             UIInnerLoop(RemoteCommand::NONE);
         }
     });
+
+    WiFi::getInstance().setWiFiPower(
+        (wifi_power_t)prefs.wifiPower.get().value_or(WIFI_POWER_16dBm));
 
     if (powerManager.state() == PowerState::Background) {
         log_i("Booting into PowerState::Background, running a content sync");
@@ -416,9 +421,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-    WiFi::getInstance().setWiFiPower(
-        (wifi_power_t)prefs.wifiPower.get().value_or(WIFI_POWER_16dBm));
-
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
     if (!bleManager->startAdvertisingIfNecessary()) {
         bootErrors.push_back({.type = BootError::Type::BLEManagerAdvertising});
@@ -432,6 +434,10 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 
     SHOW_HEAP();
+
+#if DISABLE_POWER_MANAGEMENT
+    log_w("Power Management Disabled");
+#endif
 
     BlinkBootErrors(bootErrors);
 

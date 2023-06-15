@@ -53,7 +53,21 @@ public:
     // Local state
     uint32_t place{0}, placePrev{0};
 
-    [[nodiscard]] auto file() const -> const ReadableFile & { return files[0]; }
+    [[nodiscard]] auto file() const -> const ReadableFile & {
+        for (const auto &file : files) {
+            if (file.filetype == "utf8_txt") {
+                return file;
+            }
+        }
+
+        for (const auto &file : files) {
+            if (file.filetype == "txt") {
+                return file;
+            }
+        }
+
+        return files[0];
+    }
 
     // TODO: Move file path operations to LocalStore
     [[nodiscard]] auto bookmarkFilePath() const -> std::string {
