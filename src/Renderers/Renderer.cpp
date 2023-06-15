@@ -8,7 +8,7 @@
 #include "sindarin-debug.h"
 
 // For deep logging when changing this file
-const constexpr bool RENDERER_DEBUG = false;
+const constexpr bool RENDERER_DEBUG = true;
 
 // This is the number of SUB-lines we want to split a line into
 // for the purpose of being able to render bare newlines as less
@@ -199,12 +199,18 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
         if (tokensCount_ < (MAX_TOKEN_COUNT - 3)) {
             tokensCount_++;
             tokenIdx++;
+        } else {
+            log_e("tokens_[] too small!!");
         }
     };
 
     fromPlace = getFileLocation(fromPlace);
     if (fromPlace == locationError_) {
         return 0;
+    }
+
+    if constexpr (RENDERER_DEBUG) {
+        log_e("Starting tokenizer at place %" PRIu32, fromPlace);
     }
 
     // Needs to be minus one for the corner case of all spaces or newlines
@@ -435,7 +441,7 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
     nextPlace_ = loadCurrentPage();
     PROFILE_END_LOG_MS(loadCurrentPage);
 
-    currentPageWordCount_ = WordCount(currentPage_.data());
+    currentPageWordCount_ = WordCount(page_.data());
 
     int16_t newLineAdjust = 0;
 
@@ -453,6 +459,9 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
         }
         if (pageLines_[j][0] == '\n') {
             newLineAdjust++;
+            if constexpr (RENDERER_DEBUG) {
+                log_e("NewLineAdjust for line %" PRIu16, j);
+            }
         } else {
             // Only draw the lines if it's not skipped from the caller.
             if (j >= numSkipLines) {
@@ -466,6 +475,9 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
         }
     }
 
+    if constexpr (RENDERER_DEBUG) {
+        log_e("Returning next page place to be %" PRIu32, nextPlace_);
+    }
     return nextPlace_;
 }
 
@@ -485,12 +497,14 @@ auto Renderer::getParagraphDeciLinesCount(Idx startTokenIdx, Idx endTokenIdx, bo
             deciLinesCount += NEWPARAGRAPH_DECI_LINE_HEIGHT;
             tokenIdx++;
         } else {
-            Idx firstTokenIdx = tokenIdx;
-            tokenIdx = getLineOfTextForRendering(tokenIdx, singleLine);
             if constexpr (RENDERER_DEBUG) {
+                Idx firstTokenIdx = tokenIdx;
+                tokenIdx = getLineOfTextForRendering(tokenIdx, singleLine);
                 log_d("Line at firstTokenIdx %" PRIu16 ", next line tokenIdx: %" PRIu16
                       ", Content: %s",
                       firstTokenIdx, tokenIdx, singleLine.data());
+            } else {
+                tokenIdx = getLineOfTextForRendering(tokenIdx, singleLine);
             }
             deciLinesCount += NEWLINE_DECI_LINE_HEIGHT;
         }
@@ -516,12 +530,12 @@ auto Renderer::getTokenIdxPassedDeciLines(uint16_t deciLines, Idx startTokenIdx,
     }
 
     Idx firstTokenIdx = tokenIdx;
-    while ((tokenIdx <= endTokenIdx) && (deciLinesCount < deciLines)) {
+    while ((tokenIdx <= endTokenIdx) && (deciLinesCount <= deciLines)) {
+        firstTokenIdx = tokenIdx;
         if (tokens_[tokenIdx].tokenId == TokenId::NEWPARAGRAPH) {
             deciLinesCount += NEWPARAGRAPH_DECI_LINE_HEIGHT;
             tokenIdx++;
         } else {
-            firstTokenIdx = tokenIdx;
             tokenIdx = getLineOfTextForRendering(tokenIdx, singleLine);
             if constexpr (RENDERER_DEBUG) {
                 log_d("Line at firstTokenIdx %" PRIu16 ", nextTokenIdx: %" PRIu16 ", Content: %s",
@@ -582,7 +596,7 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
     // Step 2: Once the data is read into the buffer, tokenize it the same as you
     // would for a forwards render. seekPlace will be returned to be at a UTF8 character
     // boundary
-    seekPlace = loadAndTokenizePage(seekPlace, true);
+    static_cast<void>(loadAndTokenizePage(seekPlace, true));
 
     // Step 3: Find the place in the token buffer where the passed in place in file
     // is represented.
@@ -686,10 +700,10 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
     // we could probably avoid this rework by introducing an extra token buffer if we wanted to.
     // log_d("loadAndTokenizePage called: need to retokenize");
 
-    fromPlace = loadAndTokenizePage(fromPlace);
+    static_cast<void>(loadAndTokenizePage(fromPlace));
 
     if constexpr (RENDERER_DEBUG) {
-        log_d("Returning the following place! %" PRIu32, returnPlace);
+        log_e("Returning the following place! %" PRIu32, returnPlace);
     }
 
     return returnPlace;
@@ -932,7 +946,6 @@ auto Renderer::getTotalLengthOfLines() const -> uint16_t {
 // returns the new place of the stream
 auto Renderer::loadCurrentPage() -> Place {
 
-    Idx pageIdx = 0;
     int16_t deciLinesCount = 1;
     Line singleLine{};
 
@@ -949,7 +962,6 @@ auto Renderer::loadCurrentPage() -> Place {
               display_.getLineSpacing());
     }
 
-    currentPage_[0] = '\0';
     singleLine[0] = '\0';
 
     // Debugging stuff
@@ -973,12 +985,13 @@ auto Renderer::loadCurrentPage() -> Place {
         // }
 
         if (tokens_[tokenIdx].tokenId == TokenId::NEWPARAGRAPH) {
+            if constexpr (RENDERER_DEBUG) {
+                log_e("NEW PARAGRAPH on line %" PRIu16, pageLinesCount_);
+            }
             nextTokenIdx = tokenIdx + 1;
             pageLines_[pageLinesCount_][0] = '\n';
             pageLines_[pageLinesCount_][1] = '\0';
             deciLinesCount += NEWPARAGRAPH_DECI_LINE_HEIGHT;
-            currentPage_[pageIdx] = '\n';
-            pageIdx++;
         } else {
             // If the last page is all new lines, we need to not crash.
             // Put a single space witn newline in the page so something renders, and continue.
@@ -991,53 +1004,26 @@ auto Renderer::loadCurrentPage() -> Place {
                 nextTokenIdx = getLineOfTextForRendering(tokenIdx, singleLine);
             }
 
-            std::copy_n(singleLine.data(), strlen(singleLine.data()), &currentPage_[pageIdx]);
-
             std::copy_n(singleLine.data(), strlen(singleLine.data()),
                         pageLines_[pageLinesCount_].data());
 
             pageLines_[pageLinesCount_][strlen(singleLine.data())] = '\0';
             pageLinesLengths_[pageLinesCount_] = strlen(singleLine.data());
 
-            pageIdx += strlen(singleLine.data());
-
-            // if it doesn't have a \n at the end of the line, we need to add it.
-            if (singleLine[strlen(singleLine.data()) - 1] != '\n') {
-                currentPage_[pageIdx] = '\n';
-                pageIdx++;
-            }
-
             deciLinesCount += NEWLINE_DECI_LINE_HEIGHT;
         }
 
-        currentPage_[pageIdx] = '\0';
-
-        // // A regular new line is 10 deciLines, a newline all by itself is 4/10 (40% of a line)
-        // if (pageLines_[pageLinesCount_][0] == '\n') {
-        //     deciLinesCount += NEWPARAGRAPH_DECI_LINE_HEIGHT;
-        //     lastLineWasNewline = true;
-        // } else {
-        //     deciLinesCount += NEWLINE_DECI_LINE_HEIGHT;
-        //     lastLineWasNewline = false;
-        // }
-
         if (pageLinesCount_ < (MAX_LINES_PER_PAGE - 2)) {
             pageLinesCount_++;
+        } else {
+            log_e("pageLines_[] too small!");
         }
         tokenIdx = nextTokenIdx;
     }
 
     if constexpr (RENDERER_DEBUG) {
         log_d("deciLinesCount: %" PRIu16 ", max: %" PRIu16, deciLinesCount, maxDeciLines);
-        log_d("loaded this into page buffer:\n%s\n[end]", currentPage_.data());
     }
-
-    // The following is necessary when the last line of the page doesn't consume the next
-    // token that is a newline. As we are at the end of a page, this is considered the
-    // right place to have the newline consume, not at the beginning of next page.
-    // if ((!lastLineWasNewline) && (tokens_[tokenIdx].tokenId == TokenId::NEWLINE)) {
-    //     tokenIdx += 1;
-    // }
 
     // If we hit EOF, the next screen wraps around.
     if (tokens_[tokenIdx].tokenId == TokenId::ENDOFFILE) {

@@ -116,8 +116,6 @@ private:
     uint16_t spaceWidth_ = 0;
     uint16_t spaceHeight_ = 0;
 
-    Page currentPage_{};
-
     // Character buffer for the page being built
     Page page_{};
 
