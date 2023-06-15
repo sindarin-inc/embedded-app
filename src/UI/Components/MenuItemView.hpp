@@ -98,6 +98,10 @@ public:
         } else {
             // Extends above and below the size by indicatorExtraVerticalHeight_
             indicatorHeight = size.height + 2 * indicatorExtraVerticalHeight_;
+            // Ben says nudge the indicator down 2px but only when there is subtext
+            if (subtextView_ != nullptr) {
+                indicatorYNudge = 2;
+            }
         }
         context.setViewSizeInRect(indicator_, {indicatorWidth, indicatorHeight},
                                   Rect{{x, indicatorYNudge}, {indicatorWidth, size.height}},
