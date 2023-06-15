@@ -191,22 +191,16 @@ auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
         eveningEvent.tm_mday += 1;
         eveningEventEpoch = mktime(&eveningEvent);
     }
-
     // Determine the next event
     time_t nextEventEpoch;
-    struct tm *nextEventTM;
-    char strftimeBuf[64];
+    struct tm *nextEventTime;
 
-    if (morningNews != 0 && morningEventEpoch <= eveningEventEpoch) {
-        nextEventEpoch = morningEventEpoch;
-        nextEventTM = &morningEvent;
-    } else if (eveningNews != 0 && eveningEventEpoch <= morningEventEpoch) {
+    if (eveningNews != 0 && eveningEventEpoch <= morningEventEpoch) {
         nextEventEpoch = eveningEventEpoch;
-        nextEventTM = &eveningEvent;
+        nextEventTime = &eveningEvent;
     } else {
-        nextEventEpoch =
-            (morningEventEpoch < eveningEventEpoch) ? morningEventEpoch : eveningEventEpoch;
-        nextEventTM = (morningEventEpoch < eveningEventEpoch) ? &morningEvent : &eveningEvent;
+        nextEventEpoch = morningEventEpoch;
+        nextEventTime = &morningEvent;
     }
 
     // Add the random number of seconds to the nextEventEpoch between 0 and 10 minutes
@@ -214,11 +208,13 @@ auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
     int randomSeconds = std::rand() % 600;
     nextEventEpoch += randomSeconds;
 
-    // Convert the epoch time back to tm struct
-    nextEventTM = localtime(&nextEventEpoch);
+    // Update nextEventTime to reflect the addition of randomSeconds
+    time_t updatedNextEventEpoch = nextEventEpoch;
+    nextEventTime = localtime(&updatedNextEventEpoch);
 
-    // Generate human-readable representation of the updated next event time
-    size_t size = strftime(strftimeBuf, sizeof(strftimeBuf), "%c", nextEventTM);
+    // Now set the strftimeBuf after the randomSeconds have been added
+    char strftimeBuf[64];
+    size_t size = strftime(strftimeBuf, sizeof(strftimeBuf), "%c", nextEventTime);
     if (size == 0) {
         log_e("strftime failed");
     }
