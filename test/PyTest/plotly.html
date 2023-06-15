@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5/papaparse.min.js"></script>
+</head>
+<body>
+    <div id="myDiv"></div>
+    <script>
+        // Get the filename from the URL query string
+        const urlParams = new URLSearchParams(window.location.search);
+        const csvFile = urlParams.get('csv') || 'current_samples_2-150-250.csv';
+
+        // Parse the CSV file
+        Papa.parse(csvFile, {
+            download: true,
+            header: true,
+            dynamicTyping: true,
+            complete: function(results) {
+                var data = results.data;
+
+                var xValues = data.map(row => row['Time (ms)']);
+                var yValues = data.map(row => row['Current (uA)']);
+
+                // Create a trace object
+                var trace = {
+                    type: 'scatter',  // set the chart type
+                    mode: 'lines',  // connect points with lines
+                    x: xValues,
+                    y: yValues,
+                };
+
+                var layout = {
+                    title: 'Current Samples',
+                    xaxis: {
+                        title: 'Time (ms)'
+                    },
+                    yaxis: {
+                        title: 'Current (uA)'
+                    }
+                };
+
+                var config = {responsive: true}
+
+                // Create the data array for our plot
+                var plotData = [trace];
+
+                // Define the plot layout
+
+                // Plot the chart to a div tag with id "myDiv"
+                Plotly.newPlot('myDiv', plotData, layout, config);
+            }
+        });
+    </script>
+</body>
+</html>
