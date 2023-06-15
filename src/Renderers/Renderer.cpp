@@ -8,7 +8,7 @@
 #include "sindarin-debug.h"
 
 // For deep logging when changing this file
-const constexpr bool RENDERER_DEBUG = true;
+const constexpr bool RENDERER_DEBUG = false;
 
 // This is the number of SUB-lines we want to split a line into
 // for the purpose of being able to render bare newlines as less
