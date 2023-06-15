@@ -29,3 +29,6 @@ auto CheckViewUnchanged(std::string key) -> ViewTestResult;
 std::shared_ptr<DisplayEinkET013TT1> createDisplay();
 
 void SetupFileSystemMock(const std::string &directory);
+
+auto LoadJsonDoc(FileSystem &fileSystem, const std::string &path)
+    -> std::unique_ptr<SpiRamJsonDocument>;

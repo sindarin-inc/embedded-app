@@ -3,10 +3,12 @@
 // Allow access to protected methods from tests
 #define protected public
 #define private public
+#include "Storage/PosixFileSystem.hpp"
 #include "UI/LayoutTestScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
 #include "UI/PowerDepletedScreen.hpp"
+#include "UI/ReadableTableOfContentsScreen.hpp"
 #include "UI/ReleaseNotesScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
 #include "ViewTestCommon.hpp"
@@ -100,10 +102,33 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         ASSERT_VIEW_UNCHANGED("LastQuestion7");
 
         // Render the popup menu
-        SendRemoteCommand(DOWN);
+        SendRemoteCommand(UP);
         WAIT_FOR_DRAW();
         WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("PopupMenu");
+
+        // Go back to the main menu
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW();
+
+        // Go to the second readable (which has a TOC)
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW();
+
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+
+        // Render the popup menu
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW();
+
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW();
+
+        ASSERT_VIEW_UNCHANGED("PopupTOC");
     }
 
     StopFreeRtos();
@@ -154,6 +179,28 @@ TEST_CASE("Test some views independently") {
             LineSpacingScreen screen(*display, prefs);
             screen.render(*display);
             ASSERT_VIEW_UNCHANGED("LineSpacingScreen");
+        }
+
+        PosixFileSystem fileSystem;
+
+        SECTION("Test ReadableTableOfContentsScreen") {
+            auto readable = std::make_shared<Readable>();
+            auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables.json");
+            readable->fromJson((*readablesJsonDoc)["readables"][1]);
+
+            Renderer renderer(*display);
+
+            ReadableTableOfContentsScreen screen(prefs, readable, renderer, *display);
+            screen.resetMenuItems();
+            for (const ReadableTableOfContentsChapter &chapter : readable->toc) {
+                screen.addMenuItem(MenuItem(chapter.title, []() {}));
+            }
+            // This view renders twice, once with a full refresh and once with a AU4 so we need to
+            // not wait on the signaling otherwise we'll hang here.
+            FakeEinkET013TT1SkipSignalling = true;
+            screen.render(*display);
+            FakeEinkET013TT1SkipSignalling = false;
+            ASSERT_VIEW_UNCHANGED("ReadableTableOfContentsScreen");
         }
     }
 }
