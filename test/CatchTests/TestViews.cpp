@@ -3,7 +3,10 @@
 // Allow access to protected methods from tests
 #define protected public
 #define private public
+#include "Misc/BMPImage.hpp"
+#include "Renderers/RendererStream.hpp"
 #include "Storage/PosixFileSystem.hpp"
+#include "UI/BitmapScreen.hpp"
 #include "UI/LayoutTestScreen.hpp"
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
@@ -245,5 +248,36 @@ TEST_CASE("Test some views independently") {
             FakeEinkET013TT1SkipSignalling = false;
             ASSERT_VIEW_UNCHANGED("ReadableTableOfContentsScreen");
         }
+    }
+}
+
+TEST_CASE("Test bmp file rendering") {
+    SetupFileSystemMock("TestData");
+
+    PosixFileSystem fs;
+    fs.begin();
+    // create and render a full screen bitmap view
+    auto display = createDisplay();
+
+    SECTION("Test bitmap view Books (grayscale)") {
+        SFile file = fs.open("/books.bmp");
+        ContainerStream<SFile> stream(file);
+        BMPImage image;
+        image.readFromStream(stream);
+
+        BitmapScreen screen(image.getBuffer(), image.getWidth(), image.getHeight());
+        screen.render(*display);
+        ASSERT_VIEW_UNCHANGED("BitmapViewBooks");
+    }
+
+    SECTION("Test bitmap view Books (pre-dithered)") {
+        SFile file = fs.open("/books_dithered.bmp");
+        ContainerStream<SFile> stream(file);
+        BMPImage image;
+        image.readFromStream(stream);
+
+        BitmapScreen screen(image.getBuffer(), image.getWidth(), image.getHeight());
+        screen.render(*display);
+        ASSERT_VIEW_UNCHANGED("BitmapViewBooks");
     }
 }
