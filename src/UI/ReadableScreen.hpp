@@ -27,7 +27,7 @@ public:
     ReadableScreen(std::shared_ptr<RendererStream> stream, DisplaySystem &display,
                    const std::shared_ptr<Readable> &readable, PreferencesStore &prefs,
                    Battery &battery, FileSystem &fileSystem, LightingController &lightingController)
-        : EinkView(display), renderer_(display), firstTimeRenderer_(display), readable_(*readable),
+        : EinkView(display), renderer_(display), firstTimeRenderer_(display), readable_(readable),
           prefs_(prefs), fileSystem_(fileSystem), display_(display),
           popupMenuScreen_(display, prefs, readable, lightingController, renderer_),
           leftArrowView_(display, ArrowLeft), rightArrowView_(display, ArrowRight),
@@ -37,23 +37,18 @@ public:
         renderer_.setStream(std::move(stream));
 
         pageSpeed_ = prefs_.autoPilotSpeed.get().value_or(0);
-        // Since we copy in the readable from RootUI and RootUI only creates
-        // the readable at the initial MainMenu creation, the place of that
-        // readable may be stale. Hence we must re-load it from the prefs.
-        // Not the prettiest of fixes, but passing the readable by reference
-        // seems to not work with some of the const requirements by the lamdas.
         if (!prefs_.cesMode.get().value_or(false)) {
-            readable_.place = prefs_.readablePlace.get(readable_.shortenedUuid.c_str());
+            readable_->place = prefs_.readablePlace.get(readable_->shortenedUuid.c_str());
         } else {
-            readable_.place = 0;
+            readable_->place = 0;
         }
         // for the animation bits since we may end up coming back to this constructor after being
         // interrupted.
-        newPlace_ = readable_.place;
+        newPlace_ = readable_->place;
         atEnd_ = this->checkAtEnd();
 
-        log_d("Found place for %s = %" PRIu32 " %s", readable_.shortenedUuid.c_str(),
-              readable_.place, atEnd_ ? "(at end)" : "");
+        log_d("Found place for %s = %" PRIu32 " %s", readable_->shortenedUuid.c_str(),
+              readable_->place, atEnd_ ? "(at end)" : "");
 
         popupMenuScreen_.setBackCallback([this]() {
             autoPilotForceFull_ = true;
@@ -102,10 +97,7 @@ protected:
 
     Renderer renderer_;
     Renderer firstTimeRenderer_;
-    // Note that this is a copy of the readable from RootUI.
-    // So when we change the place in this readable's state,
-    // it doesn't persist past when this screen is closed.
-    Readable readable_;
+    std::shared_ptr<Readable> readable_;
     PreferencesStore &prefs_;
 
     FileSystem &fileSystem_;
