@@ -25,3 +25,4 @@ managed_components
 sol-pytest-*
 venv
 test/PyTest/requirements.txt
+current_samples_*

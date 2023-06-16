@@ -104,7 +104,10 @@
         "console.h": "c",
         "queue": "cpp",
         "coroutine": "cpp",
-        "forward_list": "cpp"
+        "forward_list": "cpp",
+        "numbers": "cpp",
+        "semaphore": "cpp",
+        "stop_token": "cpp"
     },
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "xaver.clang-format",
@@ -141,4 +144,7 @@
         "vcom",
         "VCOM"
     ],
+    "[json]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
 }

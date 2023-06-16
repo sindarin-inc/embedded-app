@@ -321,6 +321,8 @@ public:
     void migrateIfNeeded() {
         bool ranMigration = false;
         auto migrationVersion = preferencesStoreMigrationVersion_.get().value_or(0);
+        // Some migrations need to know if this is the first time the device has been booted
+        bool firstEverBoot = (migrationVersion == 0);
         while (migrationVersion < latestMigrationVersion_) {
             log_i("Migrating PreferencesStore from version %" PRIu32 " to %" PRIu32,
                   migrationVersion, migrationVersion + 1);
@@ -369,6 +371,18 @@ public:
                 }
 
                 err = nvs_erase_key(nvsHandle_, "evening-news");
+                if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
+                    log_e("nvs_erase_key failed: %s", esp_err_to_name(err));
+                }
+
+                bool demoMode = false;
+                err = nvs_get_u8(nvsHandle_, "demo", (uint8_t *)&demoMode);
+                // If it's not set or it's set to 0, set the noSetup flag to true.
+                if (!firstEverBoot && (err == ESP_ERR_NVS_NOT_FOUND || !demoMode)) {
+                    noSetupMode.set(true);
+                }
+
+                err = nvs_erase_key(nvsHandle_, "demo");
                 if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
                     log_e("nvs_erase_key failed: %s", esp_err_to_name(err));
                 }

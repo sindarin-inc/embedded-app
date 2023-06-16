@@ -16,7 +16,8 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto inset = 3;
     const auto spacing = 5;
 
-    context.setSublayoutFrame(
+    // Layout the top bar
+    auto topBarRect = context.setSublayoutFrame(
         {{inset, inset}, {size.width - 2 * inset, 20 - 2 * inset}},
         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignCenterHorizontal,
         [this](LayoutContext &context, Size size) -> Size {
@@ -41,33 +42,19 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
             return {x, size.height};
         });
 
-    const auto mainInset = 2;
-    const auto mainSpacing = 10;
+    // Then layout the clock/battery view on the bottom
+    auto clockBatteryRect = context.setViewFrame(clockBatteryView_, {{0, 0}, size},
+                                                 LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
+                                                     LayoutOptionsAlignCenterHorizontal);
 
-    context.setSublayoutFrame(
-        // The -20 is to leave room for the paging circles at the right hand side of the view
-        {{mainInset, mainInset}, {size.width - 2 * mainInset - 20, size.height - 2 * mainInset}},
-        LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
-        [this](LayoutContext &context, Size size) -> Size {
-            int x = 0;
-            int y = 0;
-            int viewCount = menuItemViews_.size();
-            int boxHeight = (size.height - (viewCount - 1) * mainSpacing) / viewCount;
-            Size boxSize = {size.width, boxHeight};
+    // The remaining space is available for menu items
+    auto mainRect =
+        Rect{{0, topBarRect.bottom()}, {size.width, clockBatteryRect.top() - topBarRect.bottom()}};
+    mainRect = mainRect.inset(2);
 
-            for (auto &view : menuItemViews_) {
-                auto viewFrame =
-                    context.setViewFrame(*view, {{x, y}, boxSize},
-                                         LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenter);
-                y += viewFrame.size.height + mainSpacing;
-            }
-
-            return {size.width, y};
-        });
-
-    context.setSublayoutFrame(
-        // The -5 is to leave room for the paging circles at the right hand side of the view
-        {{size.width - mainInset - 5, mainInset}, {10, size.height - 2 * mainInset}},
+    // Layout the paging bubbles
+    auto pagingRect = context.setSublayoutFrame(
+        mainRect,
         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical | LayoutOptionsAlignRight,
         [this](LayoutContext &context, Size size) -> Size {
             int x = 0;
@@ -78,13 +65,32 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
                     *view, {{x, y}, boxSize}, LayoutOptionsSizeToFit | LayoutOptionsAlignRight);
                 y += viewFrame.size.height + 5;
             }
+            y -= 5;
+
+            return {boxSize.width, y};
+        });
+
+    // Layout the menu items in the mainRect, but minus the paging bubbles
+    mainRect.size.width = mainRect.size.width - pagingRect.size.width - 5;
+    context.setSublayoutFrame(
+        mainRect, LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
+        [this](LayoutContext &context, Size size) -> Size {
+            int x = 0;
+            int y = 0;
+            int viewCount = menuItemViews_.size();
+            const auto mainSpacing = 8;
+            int boxHeight = (size.height - (viewCount - 1) * mainSpacing) / viewCount;
+            Size boxSize = {size.width, boxHeight};
+
+            for (auto &view : menuItemViews_) {
+                auto viewFrame =
+                    context.setViewFrame(*view, {{x, y}, boxSize}, LayoutOptionsSizeToFitVertical);
+                y += viewFrame.size.height + mainSpacing;
+            }
+            y -= mainSpacing;
 
             return {size.width, y};
         });
-
-    context.setViewFrame(clockBatteryView_, {{0, 0}, size},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
-                             LayoutOptionsAlignCenterHorizontal);
 
     return size;
 }

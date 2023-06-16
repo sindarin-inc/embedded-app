@@ -48,7 +48,7 @@ auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
 
             for (auto &view : menuItemViews_) {
                 auto viewFrame =
-                    context.setViewFrame(*view, {{x, y}, boxSize}, LayoutOptionsSizeToFit);
+                    context.setViewFrame(*view, {{x, y + 1}, boxSize}, LayoutOptionsSizeToFit);
                 if (place == currSelection_) {
                     context.setViewFrame(*selectedSelectionView_,
                                          {{x, y + 1}, {boxSize.width - 70, boxSize.height + 1}},
@@ -69,7 +69,7 @@ auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
                     }
                 }
 
-                y += viewFrame.size.height - 1;
+                y += viewFrame.size.height + 1;
                 place++;
             }
 

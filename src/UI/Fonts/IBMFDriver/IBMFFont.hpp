@@ -255,10 +255,20 @@ public:
                 ibmf_defs::Glyph glyph;
                 if (font_->getFace(faceIndex_)
                         ->getGlyph(glyphCode, glyph, false)) { // retrieves only the metrics
-                    // LOGD("Advance value: %f, kern: %f",
+                    // LOGD("Advance: %f, xoff: %d, yoff: %d, descent: %d, kern: %d",
+                    //      IBMFFaceLow::fromFIX16(glyph.metrics.advance), glyph.metrics.xoff,
+                    //      glyph.metrics.yoff, glyph.metrics.descent, kern);
+                    if (glyphCode == SPACE_CODE) {
+                        width += glyph.metrics.advance >> 6;
+                    } else {
+                        width +=
+                            last ? font_->getFace(faceIndex_)->getGlyphWidth(glyphCode) -
+                                       (kern / 64) - glyph.metrics.xoff
+                                 : ((glyph.metrics.advance + kern) >> 6); // + glyph.metrics.xoff;
+                    } // LOGD("Advance value: %f, kern: %f",
                     //     IBMFFaceLow::fromFIX16(glyph.metrics.advance),
                     //     IBMFFaceLow::fromFIX16(kern));
-                    width += (glyph.metrics.advance + kern + 32) >> 6;
+                    // width += (glyph.metrics.advance + kern + 32) >> 6;
                 } else {
                     // LOGW("Unable to retrieve glyph for glyphCode %d", glyphCode);
                 }

@@ -2,10 +2,9 @@
 
 auto ReadableTableOfContentsScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto inset = 2;
-    const auto spacing = 10;
 
-    // Adding these two lines for now but won't draw them until we decide what the
-    // right layout for all of this is.
+    // This mirrors what happens in MenuScreen right now. We may want to refactor this into a
+    // helper so that it is reused and consistent.
     context.setViewFrame(leftArrowView_, {{0, 1}, {5, 10}},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
     context.setViewFrame(upperLeftTextView_, {{10, 0}, size},
@@ -21,7 +20,7 @@ auto ReadableTableOfContentsScreen::layout(LayoutContext &context, Size size) ->
             for (auto &view : menuItemViews_) {
                 auto viewFrame = context.setViewFrame(
                     *view, {{x, y}, size}, LayoutOptionsSizeToFitVertical | LayoutOptionsAlignTop);
-                y += viewFrame.size.height + spacing;
+                y += viewFrame.size.height + 1;
             }
 
             return {size.width, y};
@@ -46,9 +45,8 @@ auto ReadableTableOfContentsScreen::layout(LayoutContext &context, Size size) ->
 };
 
 void ReadableTableOfContentsScreen::drawInRect(Rect rect) {
-    // Future work
-    // leftArrowView_.draw();
-    // upperLeftTextView_.draw();
+    leftArrowView_.draw();
+    upperLeftTextView_.draw();
 
     for (auto &view : menuItemViews_) {
         (*view).draw();
@@ -67,7 +65,11 @@ void ReadableTableOfContentsScreen::render(DisplaySystem &display) {
     }
 
     setNeedsLayout();
-    setFrame({{0, 0}, {display.width(), display.height()}});
+
+    setFrame(
+        {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
+         {display.defaultScreenWidth - 2 * display.defaultXPadding,
+          display.defaultScreenHeight - 2 * display.defaultYPadding}});
 
     if (firstLoad_) {
         PROFILE_START(ReadableTableOfContentsScreenLayoutAndDraw);
@@ -78,8 +80,10 @@ void ReadableTableOfContentsScreen::render(DisplaySystem &display) {
         populateMenuItems(menuItemsPage_);
 
         for (auto &menuItem : menuItemsPage_) {
-            auto menuItemView =
-                std::make_shared<MenuItemView>(display, menuItem, myStyle_.navigationFont, false);
+            auto menuItemView = std::make_shared<MenuItemView>(
+                display, menuItem, myStyle_.navigationFont, false, false);
+            menuItemView->setCircleIndicator(true);
+            menuItemView->setRightText(menuItem.subtitle);
             menuItemViews_.push_back(menuItemView);
         }
 
@@ -149,6 +153,14 @@ void ReadableTableOfContentsScreen::processCommand(RemoteCommand command) {
         break;
     default:
         break;
+    }
+}
+
+void ReadableTableOfContentsScreen::loadMenuItems() {
+    resetMenuItems();
+    for (const ReadableTableOfContentsChapter &chapter : readable_->toc) {
+        addMenuItem(MenuItem(chapter.title, StringFormat("%d", SOL_PAGE_NUMBER(chapter.txtOffset)),
+                             [this]() { back(); }));
     }
 }
 

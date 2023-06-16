@@ -5,13 +5,10 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
     size_t lengthOfFile = renderer_.size();
 
     float placeInTextPercentage = (float)place / (float)lengthOfFile * 100;
-    // If we only have 1 "page", make sure we just display 1/1
-    if (lengthOfFile / 1000 == 0) {
-        place = 1000;
-        lengthOfFile = 1000;
-    }
+
     std::string placeString = StringFormat("%.1f%%", placeInTextPercentage);
-    std::string placeStringForBottom = StringFormat("%d/%d", place / 1000, lengthOfFile / 1000);
+    std::string placeStringForBottom =
+        StringFormat("%d/%d", SOL_PAGE_NUMBER(place), SOL_PAGE_NUMBER(lengthOfFile));
 
     popupMenuView_.setAuxText(placeStringForBottom);
 
@@ -35,8 +32,6 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
 void ReadablePopupMenuScreen::addMenuItem(const MenuItem &newItem) {
     Menu::addMenuItem(newItem);
     auto menuItemView = std::make_shared<MenuItemView>(display_, newItem);
-    menuItemView->setIndicatorPadding(0);
-    menuItemView->setVerticalPadding(0);
     menuItemView->setCircleIndicator(true);
     popupMenuView_.menuItemViews.emplace_back(menuItemView);
 }
@@ -76,11 +71,7 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
     // Otherwise, show the seek screen.
     if (hasToc) {
         addMenuItem(MenuItem("Contents", [this]() {
-            readableTableOfContentsScreen_.resetMenuItems();
-            for (const ReadableTableOfContentsChapter &chapter : readable_->toc) {
-                readableTableOfContentsScreen_.addMenuItem(
-                    MenuItem(chapter.title, [this]() { readableTableOfContentsScreen_.back(); }));
-            }
+            readableTableOfContentsScreen_.loadMenuItems();
             readableTableOfContentsScreen_.setNearestChapterSelection(renderer_.getCurrentPlace());
             readableTableOfContentsScreen_.setFirstLoad();
             setCurrentScreen(readableTableOfContentsScreen_);

@@ -16,6 +16,32 @@ This includes the firmware, test scripts, and any other files needed to run the 
 
 Now you can probably compress up that dir and run it on another computer.
 
+## Visualizing PPK2 Data
+
+There's a Plotly html file that can graph the exported PPK2 data from power tests.
+
+After running tests copy in the `current_samples_*` files into `test/Pytest` dir. When running remotely you might do something like this:
+
+```sh
+scp sol@192.168.1.235:~/Public/sol-pytest-5c612fd7/current_samples_0-10-30.csv ./test/Pytest/
+scp sol@192.168.1.235:~/Public/sol-pytest-5c612fd7/current_samples_1-30000-110000.csv ./test/Pytest/
+scp sol@192.168.1.235:~/Public/sol-pytest-5c612fd7/current_samples_2-150-250.csv ./test/Pytest/
+```
+
+Then run a Python HTTP server.
+
+```sh
+python3 -m http.server --directory test/PyTest
+```
+
+And in a separate terminal open up the plots
+
+```sh
+open http://localhost:8000/plotly.html?csv=current_samples_0-10-30.csv
+open http://localhost:8000/plotly.html?csv=current_samples_1-30000-110000.csv
+open http://localhost:8000/plotly.html?csv=current_samples_2-150-250.csv
+```
+
 ## TODO
 
 * Set this up to run from CI

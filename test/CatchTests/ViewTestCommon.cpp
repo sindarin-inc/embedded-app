@@ -229,3 +229,25 @@ void SetupFileSystemMock(const std::string &directory) {
     auto logs = path + std::string("/logs");
     std::filesystem::remove_all(logs);
 }
+
+auto LoadJsonDoc(FileSystem &fileSystem, const std::string &path)
+    -> std::unique_ptr<SpiRamJsonDocument> {
+    SFile readablesFile = fileSystem.open(path);
+    if (!readablesFile || (int)readablesFile.size() == 0) {
+        log_w("Failed to open %s", path.c_str());
+        return nullptr;
+    }
+
+    // Grab a minimum amount of ram, even if the readables file is empty
+    auto docSize = (int)readablesFile.size() * 2;
+    auto doc = std::make_unique<SpiRamJsonDocument>(docSize);
+    auto error = deserializeJson(*doc, readablesFile);
+    readablesFile.close();
+
+    if (error.code() != DeserializationError::Ok) {
+        log_e("Failed to deserialize readables file: %s", error.c_str());
+        return nullptr;
+    }
+
+    return doc;
+}

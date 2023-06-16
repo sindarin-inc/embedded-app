@@ -1,3 +1,4 @@
+import csv
 import logging
 import statistics
 import time
@@ -8,6 +9,8 @@ from util import find_port_by_device_name
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+file_index = 0
 
 
 class PowerTester:
@@ -35,6 +38,14 @@ class PowerTester:
         self.ppk.stop_measuring()
         self.ppk.toggle_DUT_power("OFF")
 
+    def dump_samples_to_csv(self, filename, samples):
+        with open(filename, mode="w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(["Time (ms)", "Current (uA)"])
+            for index, sample in enumerate(samples):
+                # Assumes 100k samples per second
+                writer.writerow([index / 100, sample])
+
     def measure_current(self, duration: int):
         # Purge data already in the buffer
         while self.ppk.get_data() != b"":
@@ -58,7 +69,7 @@ class PowerTester:
         # Calculate average current
         average_current = statistics.mean(samples)
         logger.info(f"Average of {len(samples)} samples is: {average_current:0.1f}uA")
-        return average_current
+        return average_current, samples
 
     def expect_current(self, range: tuple[int, int], time: int):
         # Sometimes the PPK2 likes to return negative values. Retry until we get a positive value.
@@ -66,10 +77,14 @@ class PowerTester:
         average_current = -1
         attempts = 0
         while average_current < 0 and attempts < 3:
-            average_current = self.measure_current(time)
+            average_current, samples = self.measure_current(time)
             if average_current < 0:
                 logger.warn(f"Got negative average current: {average_current:0.1f}uA, retrying...")
             attempts += 1
+
+        global file_index
+        self.dump_samples_to_csv(f"current_samples_{file_index}-{range[0]}-{range[1]}.csv", samples)
+        file_index += 1
 
         assert (
             range[0] <= average_current <= range[1]

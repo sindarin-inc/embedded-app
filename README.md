@@ -256,3 +256,23 @@ And then you can run the tests
 ```sh
 pytest --target esp32s3
 ```
+
+## Editing Sol Sans font in the IBMF Font Editor
+
+To change the glyphs in the Sol Sans character map:
+
+1. Download the IBMF Font Editor repo: https://github.com/turgu1/IBMFFontEditor
+2. Build the editor:
+
+```sh
+mkdir build
+cd build
+cmake ..
+make -j
+open IBMFFontEditor.app
+```
+
+3. Commit both changes:
+
+    - src/UI/Fonts/IBMFFonts/SolSans_75.h
+    - src/UI/Fonts/IBMFFonts/SolSans_75.ibmf

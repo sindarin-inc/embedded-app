@@ -195,19 +195,30 @@ auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
 
     // Determine the next event
     time_t nextEventEpoch;
-    char strftimeBuf[64];
+    struct tm *nextEventTime;
+
     if (eveningNews != 0 && eveningEventEpoch <= morningEventEpoch) {
         nextEventEpoch = eveningEventEpoch;
-        size_t size = strftime(strftimeBuf, sizeof(strftimeBuf), "%c", &eveningEvent);
-        if (size == 0) {
-            log_e("strftime failed");
-        }
+        nextEventTime = &eveningEvent;
     } else {
         nextEventEpoch = morningEventEpoch;
-        size_t size = strftime(strftimeBuf, sizeof(strftimeBuf), "%c", &morningEvent);
-        if (size == 0) {
-            log_e("strftime failed");
-        }
+        nextEventTime = &morningEvent;
+    }
+
+    // Add the random number of seconds to the nextEventEpoch between 0 and 10 minutes
+    std::srand(std::time(nullptr));
+    int randomSeconds = std::rand() % 600;
+    nextEventEpoch += randomSeconds;
+
+    // Update nextEventTime to reflect the addition of randomSeconds
+    time_t updatedNextEventEpoch = nextEventEpoch;
+    nextEventTime = localtime(&updatedNextEventEpoch);
+
+    // Now set the strftimeBuf after the randomSeconds have been added
+    char strftimeBuf[64];
+    size_t size = strftime(strftimeBuf, sizeof(strftimeBuf), "%c", nextEventTime);
+    if (size == 0) {
+        log_e("strftime failed");
     }
 
     log_i("Next sync time is: %s (%" PRIu64 "s from now)", strftimeBuf,
