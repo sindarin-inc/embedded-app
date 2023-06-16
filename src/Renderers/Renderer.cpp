@@ -541,7 +541,7 @@ auto Renderer::getTokenIdxPassedDeciLines(uint16_t deciLines, Idx startTokenIdx,
     -> Idx {
 
     Idx tokenIdx = startTokenIdx;
-    uint16_t deciLinesCount = 0;
+    uint16_t deciLinesCount = 1;
     Line singleLine{};
 
     if constexpr (RENDERER_DEBUG) {
@@ -552,7 +552,7 @@ auto Renderer::getTokenIdxPassedDeciLines(uint16_t deciLines, Idx startTokenIdx,
     }
 
     Idx firstTokenIdx = tokenIdx; // NOLINT(clang-analyzer-deadcode.DeadStores)
-    while ((tokenIdx <= endTokenIdx) && (deciLinesCount < deciLines)) {
+    while ((tokenIdx <= endTokenIdx) && (deciLinesCount <= deciLines)) {
         firstTokenIdx = tokenIdx; // NOLINT(clang-analyzer-deadcode.DeadStores)
         if (tokens_[tokenIdx].tokenId == TokenId::ENDPARAGRAPH) {
             deciLinesCount += ENDPARAGRAPH_DECI_LINE_HEIGHT;
@@ -689,10 +689,6 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
     // Point at the token preceeding the passed place.
     endTokenIdx -= 1;
 
-    // if (tokens_[endTokenIdx].tokenId == TokenId::ENDPARAGRAPH) {
-    //     endTokenIdx -= 1;
-    // }
-
     if constexpr (RENDERER_DEBUG) {
         log_d("Found the place to end and it's at place %" PRIu32 ", tokenId %" PRIu8
               ", tokenIdx: %" PRIu16,
@@ -723,7 +719,7 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
         (display_.height() - 2) / (this->display_.getTextHeight()) * NEWLINE_DECI_LINE_HEIGHT;
 
     bool lastParagraph = true;
-    while (deciLinesCount <= maxDeciLines) {
+    while (deciLinesCount < maxDeciLines) {
         deciLinesCount += getParagraphDeciLinesCount(startTokenIdx, endTokenIdx, lastParagraph);
         lastParagraph = false;
         if ((deciLinesCount > maxDeciLines) || (startTokenIdx == 0)) {
@@ -731,7 +727,7 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
         }
         endTokenIdx = startTokenIdx - 1;
         startTokenIdx = tokens_[endTokenIdx].prevNewParagraphTokenIdx;
-        // if it's not a NEWLINE, it means we are at the beginning of token list
+        // if it's not a ENDPARAGRAPH, it means we are at the beginning of the token list
         if (tokens_[startTokenIdx].tokenId == TokenId::ENDPARAGRAPH) {
             startTokenIdx += 1;
         }
@@ -746,11 +742,6 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
     if (deciLinesCount > maxDeciLines) {
         startTokenIdx =
             getTokenIdxPassedDeciLines(deciLinesCount - maxDeciLines, startTokenIdx, endTokenIdx);
-    }
-
-    // Don't let a page start with a NEWPARAGRAH Token
-    if (tokens_[startTokenIdx].tokenId == TokenId::ENDPARAGRAPH) {
-        startTokenIdx += 1;
     }
 
     // Got it!
@@ -1038,16 +1029,16 @@ auto Renderer::loadCurrentPage() -> Place {
     bool lastLineWasNewline = false;
     int16_t lastDeciLinesCount = 0; // NOLINT(clang-analyzer-deadcode.DeadStores)
 
-    while ((deciLinesCount <= maxDeciLines) && (tokens_[tokenIdx].tokenId != TokenId::ENDOFFILE)) {
+    while ((deciLinesCount < maxDeciLines) && (tokens_[tokenIdx].tokenId != TokenId::ENDOFFILE)) {
 
         lastDeciLinesCount = deciLinesCount; // NOLINT(clang-analyzer-deadcode.DeadStores)
         // Don't start pages with new paragraphs.
-        // if (nextTokenIdx == 0) {
-        //     if (tokens_[tokenIdx].tokenId == TokenId::ENDPARAGRAPH) {
-        //         tokenIdx++;
-        //         // deciLinesCount += ENDPARAGRAPH_DECI_LINE_HEIGHT;
-        //     }
-        // }
+        if (nextTokenIdx == 0) {
+            if (tokens_[tokenIdx].tokenId == TokenId::ENDPARAGRAPH) {
+                tokenIdx++;
+                deciLinesCount += ENDPARAGRAPH_DECI_LINE_HEIGHT;
+            }
+        }
 
         if (tokens_[tokenIdx].tokenId == TokenId::ENDPARAGRAPH) {
             if constexpr (RENDERER_DEBUG) {
