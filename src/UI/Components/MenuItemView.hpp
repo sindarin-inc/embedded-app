@@ -55,11 +55,12 @@ public:
 
         // Layout the right text view if necessary
         if (rightTextView_ != nullptr && !rightTextView_->isHidden()) {
-            auto rightTextRect = context.setViewSizeInRect(
-                *rightTextView_, {24, size.height}, Rect::fromSize(size),
-                LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical |
-                    LayoutOptionsAlignRight);
-            right = rightTextRect.origin.x - 2;
+            auto rightTextRect =
+                context.setViewFrame(*rightTextView_, Rect::fromSize(size),
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical |
+                                         LayoutOptionsAlignRight);
+            // Use a column of at least 24px wide, but larger if necessary
+            right = size.width - std::max(24, rightTextRect.size.width);
         }
 
         // Layout the main text item
