@@ -157,7 +157,23 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         WAIT_FOR_DRAW();
         WAIT_FOR_DRAW();
 
+        for (int i = 0; i < 6; i++) {
+            SendRemoteCommand(DOWN);
+            WAIT_FOR_DRAW();
+        }
+
         ASSERT_VIEW_UNCHANGED("PopupTOC");
+
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+
+        ASSERT_VIEW_UNCHANGED("Dawn");
+
+        // Render the popup menu
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("PopupMenu4"); // Should show the updated seeked spot from the TOC
     }
 
     StopFreeRtos();
