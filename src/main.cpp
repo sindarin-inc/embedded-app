@@ -78,9 +78,8 @@ PosixFileSystem fileSystem;
 LittleFSFileSystem fileSystem;
 #endif
 
-LocalStore localStore(fileSystem, prefs);
-
 PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay);
+LocalStore localStore(fileSystem, prefs, powerManager.battery);
 RootUI rootUi(prefs, powerManager);
 SolClock solClock(prefs);
 

@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Communications/SindarinAPI.hpp"
+#include "Misc/Battery.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Models/CheckSync.hpp"
 #include "Models/Readable.hpp"
@@ -39,8 +40,8 @@ using UserReadablesVector = SpiramVector<UserReadable>;
 //! Interface for local storage of structured data
 class LocalStore {
 public:
-    LocalStore(FileSystem &fileSystem, PreferencesStore &prefs)
-        : fileSystem(fileSystem), prefs_(prefs){};
+    LocalStore(FileSystem &fileSystem, PreferencesStore &prefs, Battery &battery)
+        : fileSystem(fileSystem), prefs_(prefs), battery_(battery){};
     LocalStore(LocalStore const &) = delete;
 
     auto begin() -> bool;
@@ -113,6 +114,7 @@ public:
 private:
     const uint32_t latestMigrationVersion_ = 1;
     PreferencesStore &prefs_;
+    Battery &battery_;
 
     ReadablesVector books_;
     ReadablesVector articles_;
