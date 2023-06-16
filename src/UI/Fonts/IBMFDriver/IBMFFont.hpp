@@ -261,10 +261,11 @@ public:
                     if (glyphCode == SPACE_CODE) {
                         width += glyph.metrics.advance >> 6;
                     } else {
-                        width += last ? font_->getFace(faceIndex_)->getGlyphWidth(glyphCode) -
-                                            (kern / 64) - glyph.metrics.xoff
-                                      : ((glyph.metrics.advance + kern) >> 6);// + glyph.metrics.xoff;
-                    }                    // LOGD("Advance value: %f, kern: %f",
+                        width +=
+                            last ? font_->getFace(faceIndex_)->getGlyphWidth(glyphCode) -
+                                       (kern / 64) - glyph.metrics.xoff
+                                 : ((glyph.metrics.advance + kern) >> 6); // + glyph.metrics.xoff;
+                    } // LOGD("Advance value: %f, kern: %f",
                     //     IBMFFaceLow::fromFIX16(glyph.metrics.advance),
                     //     IBMFFaceLow::fromFIX16(kern));
                     // width += (glyph.metrics.advance + kern + 32) >> 6;
