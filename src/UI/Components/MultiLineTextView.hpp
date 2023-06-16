@@ -58,8 +58,6 @@ public:
         return lines;
     }
     auto layout(LayoutContext &context, Size size) -> Size override {
-        uint16_t w, h;
-
         // Leave the display font the way we found it.
         // Probably not ideal, but for now it'll have to do.
         Font *oldFont = display_.getFont();
