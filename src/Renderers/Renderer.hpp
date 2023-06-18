@@ -12,7 +12,7 @@
 // a paragraph cannot have more than 3000 bytes, followed with a NEWLINE, an ENDOFPARAGRAPH and a
 // null.
 
-#define MAX_TOKEN_STRING_LENGTH 25
+#define MAX_TOKEN_STRING_LENGTH 21
 #define MAX_CHARS_PER_PARAGRAPH 3003
 #define MAX_CHARS_PER_PAGE (MAX_CHARS_PER_PARAGRAPH + 10 + MAX_TOKEN_STRING_LENGTH)
 #define MAX_TOKEN_COUNT 1800
