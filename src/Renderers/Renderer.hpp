@@ -143,8 +143,8 @@ private:
 
     auto loadCurrentPage() -> Place;
     auto getParagraphDeciLinesCount(Idx startTokenIdx, Idx endTokenIdx) -> uint16_t;
-    auto getFirstLineOfPageTokenIdx(Idx lastTokenIdx, uint16_t deciLinesCount,
-                                    uint16_t maxDeciLines) const -> Idx;
+    [[nodiscard]] auto getFirstLineOfPageTokenIdx(Idx lastTokenIdx, uint16_t deciLinesCount,
+                                                  uint16_t maxDeciLines) const -> Idx;
     // auto getTokenIdxPassedDeciLines(uint16_t deciLines, Idx startTokenIdx, Idx endTokenIdx) ->
     // Idx;
     auto goBackwardsOnePage(Place fromPlace) -> Place;

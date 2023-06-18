@@ -183,9 +183,9 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
 
     // Keep it DRY
     auto computePreviousTokenSize = [this, &textArea, &tokenIdx]() -> void {
-        //log_d("computePreviousTokenSize()..., tokenIdx: %" PRIu16 ", tokensCount_: %" PRIu16,
-        //      tokenIdx, tokensCount_);
-        // we need to set the size of the previous token
+        // log_d("computePreviousTokenSize()..., tokenIdx: %" PRIu16 ", tokensCount_: %" PRIu16,
+        //       tokenIdx, tokensCount_);
+        //  we need to set the size of the previous token
         if ((tokenIdx > 0) && (tokens_[tokenIdx - 1].tokenId == TokenId::TEXT)) {
             textArea += setTokenSizes(tokenIdx - 1);
             // If we've started a new text token and the previous token was a space
@@ -195,7 +195,7 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
                 textArea += setTokenSizes(tokenIdx - 2);
             }
         }
-        //log_d("textArea size: %" PRIu32 ", tokenIdx: %" PRIu16, textArea, tokenIdx);
+        // log_d("textArea size: %" PRIu32 ", tokenIdx: %" PRIu16, textArea, tokenIdx);
     };
 
     auto appendToken = [this, &newToken, &tokenIdx, &eofToken]() -> void {
