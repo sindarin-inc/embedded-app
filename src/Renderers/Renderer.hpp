@@ -6,13 +6,17 @@
 #include "Displays/DisplaySystem.hpp"
 #include "Renderers/RendererStream.hpp"
 
-// This needs to be a bit bigger -- it's really the max number of chars that will get us 2 full
-// pages where the previous page has a newline.
+// A Page array must be large enough to accomodate the need to load a complete display page, but
+// also able to load a complete paragraph followed by the first token of the next paragraph (that
+// will not be larger than a TEXT token) when the back page command is issued by the user. By design
+// a paragraph cannot have more than 3000 bytes, followed with a NEWLINE, an ENDOFPARAGRAPH and a
+// null.
 
-#define MAX_CHARS_PER_PAGE 4000
+#define MAX_TOKEN_STRING_LENGTH 25
+#define MAX_CHARS_PER_PARAGRAPH 3003
+#define MAX_CHARS_PER_PAGE (MAX_CHARS_PER_PARAGRAPH + 10 + MAX_TOKEN_STRING_LENGTH)
 #define MAX_TOKEN_COUNT 1800
 #define MAX_CHARS_PER_LINE 200
-#define MAX_TOKEN_STRING_LENGTH 100
 #define MAX_LINES_PER_PAGE 50
 #define MAX_PARAGRAPH_LINES 25
 
@@ -72,6 +76,7 @@ private:
     typedef std::array<char, MAX_CHARS_PER_LINE> Line;
     typedef std::array<Line, MAX_LINES_PER_PAGE> PageLines;
     typedef std::array<char, MAX_TOKEN_STRING_LENGTH> TokenString;
+    typedef std::array<char, MAX_TOKEN_STRING_LENGTH * 2 + 2> TokenStringDouble;
     typedef std::array<Token, MAX_TOKEN_COUNT> Tokens;
     typedef std::array<Idx, MAX_PARAGRAPH_LINES> ParaLineIdxs;
 
