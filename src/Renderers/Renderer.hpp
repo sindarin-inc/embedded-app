@@ -9,11 +9,12 @@
 // This needs to be a bit bigger -- it's really the max number of chars that will get us 2 full
 // pages where the previous page has a newline.
 
-#define MAX_CHARS_PER_PAGE 3000
+#define MAX_CHARS_PER_PAGE 4000
 #define MAX_TOKEN_COUNT 1800
 #define MAX_CHARS_PER_LINE 200
 #define MAX_TOKEN_STRING_LENGTH 100
 #define MAX_LINES_PER_PAGE 50
+#define MAX_PARAGRAPH_LINES 25
 
 // NOTE:
 //
@@ -72,6 +73,7 @@ private:
     typedef std::array<Line, MAX_LINES_PER_PAGE> PageLines;
     typedef std::array<char, MAX_TOKEN_STRING_LENGTH> TokenString;
     typedef std::array<Token, MAX_TOKEN_COUNT> Tokens;
+    typedef std::array<Idx, MAX_PARAGRAPH_LINES> ParaLineIdxs;
 
 public:
     Renderer(DisplaySystem &display) : display_(display) {}
@@ -118,7 +120,7 @@ private:
     uint16_t spaceWidth_ = 0;
     uint16_t spaceHeight_ = 0;
 
-    // Character buffer for the page being built
+    // Character buffer for the page being built by the tokenizer
     Page page_{};
 
     // This keeps all the tokens for the max amount of read from the stream
@@ -129,13 +131,22 @@ private:
     uint16_t pageLinesLengths_[MAX_LINES_PER_PAGE] = {0};
     uint16_t pageLinesCount_ = 0;
 
+    // The following are used to support the backpage algorithm:
+    // they will keep tokenIdx pointers at the last lines that are part of
+    // the last paragraph read to complete the page.
+    ParaLineIdxs paraLineIdxs_;
+    Idx paraLineFirstIdx_;
+    Idx paraLineLastIdx_;
+
     // This should be called by subclasses after content is loaded
     void loaded() { nextPlace_ = loadCurrentPage(); };
 
     auto loadCurrentPage() -> Place;
-    auto getParagraphDeciLinesCount(Idx startTokenIdx, Idx endTokenIdx, bool lastParagraph)
-        -> uint16_t;
-    auto getTokenIdxPassedDeciLines(uint16_t deciLines, Idx startTokenIdx, Idx endTokenIdx) -> Idx;
+    auto getParagraphDeciLinesCount(Idx startTokenIdx, Idx endTokenIdx) -> uint16_t;
+    auto getFirstLineOfPageTokenIdx(Idx lastTokenIdx, uint16_t deciLinesCount,
+                                    uint16_t maxDeciLines) const -> Idx;
+    // auto getTokenIdxPassedDeciLines(uint16_t deciLines, Idx startTokenIdx, Idx endTokenIdx) ->
+    // Idx;
     auto goBackwardsOnePage(Place fromPlace) -> Place;
 
     auto getFileLocation(Place fromPlace) -> Place;
