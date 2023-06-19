@@ -12,7 +12,7 @@
 // a paragraph cannot have more than 3000 bytes, followed with a NEWLINE, an ENDOFPARAGRAPH and a
 // null.
 
-#define MAX_TOKEN_STRING_LENGTH 21
+#define MAX_TOKEN_STRING_LENGTH 60
 #define MAX_CHARS_PER_PARAGRAPH 3003
 #define MAX_CHARS_PER_PAGE (MAX_CHARS_PER_PARAGRAPH + 10 + MAX_TOKEN_STRING_LENGTH)
 #define MAX_TOKEN_COUNT 1800
@@ -125,6 +125,10 @@ private:
     uint16_t spaceWidth_ = 0;
     uint16_t spaceHeight_ = 0;
 
+    // Computed TEXT Token character size that will fit on a line depending
+    // on the current font size and line width
+    uint16_t maxTextTokenCharSize_ = 10;
+
     // Character buffer for the page being built by the tokenizer
     Page page_{};
 
@@ -150,8 +154,9 @@ private:
     auto getParagraphDeciLinesCount(Idx startTokenIdx, Idx endTokenIdx) -> uint16_t;
     [[nodiscard]] auto getFirstLineOfPageTokenIdx(Idx lastTokenIdx, uint16_t deciLinesCount,
                                                   uint16_t maxDeciLines) const -> Idx;
-    // auto getTokenIdxPassedDeciLines(uint16_t deciLines, Idx startTokenIdx, Idx endTokenIdx) ->
-    // Idx;
+
+    void computeMaxTextTokenCharSize();
+
     auto goBackwardsOnePage(Place fromPlace) -> Place;
 
     auto getFileLocation(Place fromPlace) -> Place;

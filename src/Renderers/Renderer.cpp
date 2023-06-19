@@ -162,6 +162,7 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
 
     uint32_t textArea = 0;
     uint32_t maxTextArea = static_cast<uint32_t>(display_.width()) * display_.height();
+    uint16_t textCharCount = 0;
 
     tokensCount_ = 0;
     currentPageWordCount_ = 0;
@@ -306,14 +307,19 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
             // - There is more than (MAX_TOKEN_STRING_LENGTH - 5) bytes in the last TEXT token and
             //   curChar is a first byte of a UTF8 character.
             if ((tokenIdx == 0) || (tokens_[tokenIdx - 1].tokenId != TokenId::TEXT) ||
-                ((tokens_[tokenIdx - 1].length > (MAX_TOKEN_STRING_LENGTH - 5)) &&
-                 ((curChar <= 0x7FU) || (curChar >= 0xC0U)))) {
+                (((curChar <= 0x7FU) || (curChar >= 0xC0U)) &&
+                 ((tokens_[tokenIdx - 1].length > (MAX_TOKEN_STRING_LENGTH - 5)) ||
+                  (textCharCount >= maxTextTokenCharSize_)))) {
                 newToken.tokenId = TokenId::TEXT;
                 computePreviousTokenSize();
                 appendToken();
                 currentPageWordCount_ += 1;
+                textCharCount = 1;
             } else {
                 tokens_[tokenIdx - 1].length += 1;
+                if ((curChar <= 0x7FU) || (curChar >= 0xC0U)) {
+                    textCharCount += 1;
+                }
             }
             break;
         }
@@ -374,6 +380,22 @@ void Renderer::printOutTokens() const {
             }
         }
     }
+}
+
+void Renderer::computeMaxTextTokenCharSize() {
+    // Using character 'G' is a compromize to compute the number of characters that mostly fit a
+    // line, between a 'n' and a 'm' in size, on the various font sizes, to try to fit better long
+    // words with the available line width.
+    std::array<char, 100> buff = {"GGGGGGGGGG"};
+    uint16_t size = 10;
+    uint16_t maxWidth = (display_.width() - 4);
+
+    while ((size < 99) && (display_.getTextWidth(buff.data()) < maxWidth)) {
+        buff[size++] = 'G';
+        buff[size] = '\0';
+    }
+
+    maxTextTokenCharSize_ = size - 1;
 }
 
 // This method takes in a place in the token buffer.
@@ -459,6 +481,8 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
     // This needs to happen before loading into buffer since it will affect what we load into the
     // buffer.
     display_.setFont(display_.style.getFontFamily().readableFont);
+
+    computeMaxTextTokenCharSize();
 
     PROFILE_START(loadCurrentPage);
     nextPlace_ = loadCurrentPage();
@@ -625,6 +649,8 @@ auto Renderer::getFirstLineOfPageTokenIdx(Idx lastTokenIdx, uint16_t deciLinesCo
 //
 auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
     Place seekPlace = 0;
+
+    computeMaxTextTokenCharSize();
 
     // Step 1: Figure out how much to read before the current place. If we're too
     // close to the beginning, we just read from the beginning.
