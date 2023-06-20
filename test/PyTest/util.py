@@ -8,11 +8,17 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-def find_port_by_device_name(device_name):
+def find_port_by_device_name(device_name, index=0):
     ports = list_ports.comports()
+    devices = []
     for port in ports:
         if device_name in port.description:
-            return port.device
+            devices.append(port.device)
+
+    if len(devices) > index:
+        devices.sort()
+        return devices[index]
+
     return None
 
 

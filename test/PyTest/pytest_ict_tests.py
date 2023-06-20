@@ -56,7 +56,9 @@ class OverrideIdfSerial(IdfSerial):
         max_attempts = 3
         for n in range(max_attempts):
             # self.close()
-            port = wait_for_port_by_device_name("USB JTAG/serial debug unit")
+            # find second device with SOL Mainframe ICT name
+            # this is the DUT serial relay
+            port = wait_for_port_by_device_name("SOL Mainframe ICT", 1)
             logger.debug(f"Found port {port} for DUT serial port, re-opening")
             try:
                 self.proc.open()
@@ -223,6 +225,9 @@ class TestPowerConsumption:
         ict_client.set_servo("left", 75)
 
         # Wait for serial port to come back
+        # first wait for DUT device to show up
+        port = wait_for_port_by_device_name("USB JTAG/serial debug unit")
+        # then connect to serial relay for log parsing
         dut.serial.reconnect_serial()
 
         time.sleep(2)

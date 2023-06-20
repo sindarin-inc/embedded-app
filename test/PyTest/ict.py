@@ -11,7 +11,8 @@ logger.setLevel(logging.DEBUG)
 
 class MFICTClient:
     def __init__(self, baudrate=115200, timeout=1):
-        port = find_port_by_device_name("SOL Mainframe ICT")
+        # get first device with this name, other device is serial port relay
+        port = find_port_by_device_name("SOL Mainframe ICT", 0)
         if port is None:
             # TODO: Retry?
             raise Exception("Failed to find ICT")
