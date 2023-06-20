@@ -33,11 +33,11 @@ private:
 
     // A Page array must be large enough to accommodate the need to load a complete display page,
     // but also able to load a complete paragraph that can precede the page when the back page
-    // command is issued by the user. By design a paragraph cannot have more than 3000 bytes,
+    // command is issued by the user. By design a paragraph cannot have more than 1500 bytes,
     // followed by a NEWLINE, an ENDOFPARAGRAPH, and a null.
 
     static constexpr uint16_t MAX_BYTES_PER_TEXT_TOKEN = 60;
-    static constexpr uint16_t MAX_BYTES_PER_PARAGRAPH = 3003;
+    static constexpr uint16_t MAX_BYTES_PER_PARAGRAPH = 1503;
     static constexpr uint16_t MAX_BYTES_PER_DISPLAY_PAGE = 2400;
     static constexpr uint16_t MAX_BYTES_TO_RETRIEVE =
         (MAX_BYTES_PER_PARAGRAPH + MAX_BYTES_PER_DISPLAY_PAGE - MAX_BYTES_PER_TEXT_TOKEN);
