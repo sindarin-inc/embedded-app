@@ -8,18 +8,7 @@
 #include "sindarin-debug.h"
 
 // For deep logging when changing this file
-const constexpr bool RENDERER_DEBUG = false;
-
-// This is the number of SUB-lines we want to split a line into
-// for the purpose of being able to render bare newlines as less
-// than a full line height of text. (Deci was chosen as 1/10)/
-// So what the two lines below mean is that a new line by itself
-// on a line will render as 4/10s of a full line height.
-// Theoretically we can do any percentage we want here, but there's
-// a lot of testing to do for that!
-
-#define NEWLINE_DECI_LINE_HEIGHT 10
-#define ENDPARAGRAPH_DECI_LINE_HEIGHT 4
+static constexpr bool RENDERER_DEBUG = false;
 
 // Must be called only in the context of loadAndTokenizePage() method.
 // Takes a place in the token buffer and places the string that the token
@@ -109,7 +98,7 @@ auto Renderer::setTokenSizes(Idx tokenIdx) -> uint16_t {
 // the value at a valid UTF8 location. An UTF8 character start with
 // a first byte MSBit == 0 or the two MSBits == 11
 //
-// returns an updated fromPlace location or the locationError_ value.
+// returns an updated fromPlace location or the LOCATION_ERROR value.
 auto Renderer::getFileLocation(Place fromPlace) -> Place {
 
     // if received place is larger than the stream size, reset it to
@@ -136,7 +125,7 @@ auto Renderer::getFileLocation(Place fromPlace) -> Place {
         }
     }
 
-    return locationError_;
+    return LOCATION_ERROR;
 }
 
 //
@@ -213,7 +202,7 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
     };
 
     fromPlace = getFileLocation(fromPlace);
-    if (fromPlace == locationError_) {
+    if (fromPlace == LOCATION_ERROR) {
         return 0;
     }
 
@@ -223,7 +212,7 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
 
     // Needs to be minus one for the corner case of all spaces or newlines
     // and need room for EOF character.
-    while ((stream_->available()) && (pageIdx < (MAX_CHARS_PER_PAGE - 2)) &&
+    while ((stream_->available()) && (pageIdx < PAGE_BUFFER_SIZE) &&
            ((backwards || textArea < maxTextArea))) {
         uint8_t curChar = stream_->read();
         newToken = {.streamPlace = fromPlace + pageIdx,
@@ -308,7 +297,7 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
             //   curChar is a first byte of a UTF8 character.
             if ((tokenIdx == 0) || (tokens_[tokenIdx - 1].tokenId != TokenId::TEXT) ||
                 (((curChar <= 0x7FU) || (curChar >= 0xC0U)) &&
-                 ((tokens_[tokenIdx - 1].length > (MAX_TOKEN_STRING_LENGTH - 5)) ||
+                 ((tokens_[tokenIdx - 1].length > (MAX_BYTES_PER_TEXT_TOKEN - 5)) ||
                   (textCharCount >= maxTextTokenCharSize_)))) {
                 newToken.tokenId = TokenId::TEXT;
                 computePreviousTokenSize();
@@ -324,7 +313,7 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
             break;
         }
 
-        if (pageIdx < (MAX_CHARS_PER_PAGE - 2)) {
+        if (pageIdx < PAGE_BUFFER_SIZE) {
             pageIdx++;
         } else {
             log_e("page_[] is too small !!!");
@@ -333,7 +322,7 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
 
     // Ended on a text token, so we move forward one before setting the EOF
     // token.
-    if (tokens_[tokenIdx].tokenId != TokenId::ENDOFFILE) {
+    if ((tokenIdx < (MAX_TOKEN_COUNT - 2)) && (tokens_[tokenIdx].tokenId != TokenId::ENDOFFILE)) {
         tokenIdx++;
     }
 
@@ -650,13 +639,14 @@ auto Renderer::getFirstLineOfPageTokenIdx(Idx lastTokenIdx, uint16_t deciLinesCo
 auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
     Place seekPlace = 0;
 
+    display_.setFont(display_.style.getFontFamily().readableFont);
     computeMaxTextTokenCharSize();
 
     // Step 1: Figure out how much to read before the current place. If we're too
     // close to the beginning, we just read from the beginning.
-    if (fromPlace > MAX_CHARS_PER_PARAGRAPH) {
+    if (fromPlace > MAX_BYTES_TO_RETRIEVE) {
         // Need to make sure we're at least 1 character past the place given. For tokenizer.
-        seekPlace = fromPlace - MAX_CHARS_PER_PARAGRAPH;
+        seekPlace = fromPlace - MAX_BYTES_TO_RETRIEVE;
     } else {
         seekPlace = 0;
     }
@@ -692,7 +682,7 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
 
     if (endTokenIdx == 0) {
         // Can't go back any further, must be at beginning of file or the paragraph is larger than
-        // MAX_CHARS_PER_PAGE bytes.
+        // MAX_CHARS_TO_RETRIEVE bytes.
         return 0;
     }
 
@@ -723,6 +713,8 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
     // if it's not a NEWLINE, it means we are at the beginning of the file
     if (tokens_[startTokenIdx].tokenId == TokenId::ENDPARAGRAPH) {
         startTokenIdx += 1;
+    } else {
+        log_w("We may not have reached the beginning of previous paragraph.");
     }
 
     if constexpr (RENDERER_DEBUG) {
@@ -756,6 +748,8 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
         // if it's not a ENDPARAGRAPH, it means we are at the beginning of the token list
         if (tokens_[startTokenIdx].tokenId == TokenId::ENDPARAGRAPH) {
             startTokenIdx += 1;
+        } else {
+            log_w("We may not have reached the beginning of previous paragraph.");
         }
     }
 

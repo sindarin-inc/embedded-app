@@ -1,24 +1,9 @@
-#ifndef RENDERER_H
-#define RENDERER_H
+#pragma once
 
 #include <utility>
 
 #include "Displays/DisplaySystem.hpp"
 #include "Renderers/RendererStream.hpp"
-
-// A Page array must be large enough to accomodate the need to load a complete display page, but
-// also able to load a complete paragraph followed by the first token of the next paragraph (that
-// will not be larger than a TEXT token) when the back page command is issued by the user. By design
-// a paragraph cannot have more than 3000 bytes, followed with a NEWLINE, an ENDOFPARAGRAPH and a
-// null.
-
-#define MAX_TOKEN_STRING_LENGTH 60
-#define MAX_CHARS_PER_PARAGRAPH 3003
-#define MAX_CHARS_PER_PAGE (MAX_CHARS_PER_PARAGRAPH + 10 + MAX_TOKEN_STRING_LENGTH)
-#define MAX_TOKEN_COUNT 1800
-#define MAX_CHARS_PER_LINE 200
-#define MAX_LINES_PER_PAGE 50
-#define MAX_PARAGRAPH_LINES 25
 
 // NOTE:
 //
@@ -35,7 +20,33 @@ public:
 
 private:
     // Used by the getFileLocation() method in case of error
-    const uint32_t locationError_ = 0xFFFFFFFF;
+    static constexpr uint32_t LOCATION_ERROR = 0xFFFFFFFF;
+
+    // This is the number of SUB-lines we want to split a line into to be able to render bare
+    // newlines as less than a full line height of the text. (Deci was chosen as 1/10) So what the
+    // two lines below mean is that a new line by itself on a line will render as 4/10s of a full
+    // line height. Theoretically we can do any percentage we want here, but there is a lot of
+    // testing to do for that!
+
+    static constexpr uint16_t NEWLINE_DECI_LINE_HEIGHT = 10;
+    static constexpr uint16_t ENDPARAGRAPH_DECI_LINE_HEIGHT = 4;
+
+    // A Page array must be large enough to accommodate the need to load a complete display page,
+    // but also able to load a complete paragraph that can precede the page (that will not be larger
+    // than a TEXT token) when the back page command is issued by the user. By design a paragraph
+    // cannot have more than 3000 bytes, followed by a NEWLINE, an ENDOFPARAGRAPH, and a null.
+
+    static constexpr uint16_t MAX_BYTES_PER_TEXT_TOKEN = 60;
+    static constexpr uint16_t MAX_BYTES_PER_PARAGRAPH = 3003;
+    static constexpr uint16_t MAX_BYTES_PER_DISPLAY_PAGE = 2400;
+    static constexpr uint16_t MAX_BYTES_TO_RETRIEVE =
+        (MAX_BYTES_PER_PARAGRAPH + MAX_BYTES_PER_DISPLAY_PAGE - MAX_BYTES_PER_TEXT_TOKEN);
+    static constexpr uint16_t PAGE_BUFFER_SIZE =
+        (MAX_BYTES_PER_PARAGRAPH + MAX_BYTES_PER_DISPLAY_PAGE);
+    static constexpr uint16_t MAX_TOKEN_COUNT = (PAGE_BUFFER_SIZE / 2);
+    static constexpr uint16_t MAX_BYTES_PER_LINE = 200;
+    static constexpr uint16_t MAX_LINES_PER_PAGE = 31;
+    static constexpr uint16_t MAX_PARAGRAPH_LINES = MAX_LINES_PER_PAGE + 2;
 
     // These are the different tokens so as we parse a buffer
     // we more easily know what to do with the text.
@@ -72,11 +83,11 @@ private:
         TokenId tokenId;
     };
 
-    typedef std::array<char, MAX_CHARS_PER_PAGE> Page;
-    typedef std::array<char, MAX_CHARS_PER_LINE> Line;
+    typedef std::array<char, PAGE_BUFFER_SIZE + 1> Page;
+    typedef std::array<char, MAX_BYTES_PER_LINE> Line;
     typedef std::array<Line, MAX_LINES_PER_PAGE> PageLines;
-    typedef std::array<char, MAX_TOKEN_STRING_LENGTH> TokenString;
-    typedef std::array<char, MAX_TOKEN_STRING_LENGTH * 2 + 2> TokenStringDouble;
+    typedef std::array<char, MAX_BYTES_PER_TEXT_TOKEN> TokenString;
+    typedef std::array<char, MAX_BYTES_PER_TEXT_TOKEN * 2 + 2> TokenStringDouble;
     typedef std::array<Token, MAX_TOKEN_COUNT> Tokens;
     typedef std::array<Idx, MAX_PARAGRAPH_LINES> ParaLineIdxs;
 
@@ -172,5 +183,3 @@ private:
 
     auto getLineOfTextForRendering(Idx startTokenIdx, Line &line) -> Idx;
 };
-
-#endif

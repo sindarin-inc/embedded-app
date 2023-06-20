@@ -1,9 +1,9 @@
 #pragma once
 
+#include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <memory>
-#include <stdint.h>
-#include <stdio.h>
 #include <string>
 #include <utility>
 
