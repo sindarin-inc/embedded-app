@@ -36,6 +36,7 @@ auto ConvertToJson(const CheckSyncRequest &src, JsonVariant dst) -> bool {
     }
 
     dst["sync_reason"] = (int)src.syncReason;
+    dst["battery"] = src.battery;
     dst["pt_battery"] = src.ptBattery;
     dst["pt_build"] = src.ptBuild;
     dst["build"] = src.build;

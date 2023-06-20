@@ -30,7 +30,8 @@ public:
     auto checkSync(const std::string &url, CheckSyncRequest &req, CheckSyncResponse *resp) -> int;
     auto checkFirmware(FirmwareResponse *resp) -> int;
 
-    auto downloadReadable(const Readable &readable, FileSystem &fileSystem, const std::string &path,
+    auto downloadReadable(const std::shared_ptr<Readable> &readable, FileSystem &fileSystem,
+                          const std::string &path,
                           const std::function<void(int percentage)> &progressCallback) -> bool;
 
     auto uploadAndResetVoltageLog(FileSystem &fileSystem) -> int;

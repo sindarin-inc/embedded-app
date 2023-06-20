@@ -34,6 +34,7 @@ public:
     bool skipContent;
     SyncReason syncReason;
     uint8_t ptBattery;
+    uint8_t battery;
     std::string ptBuild;
     std::string build;
     std::string gitHash;

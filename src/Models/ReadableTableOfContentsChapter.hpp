@@ -24,7 +24,7 @@ public:
         if (j.containsKey("in_subsection_href")) {
             inSubsectionHref = j["in_subsection_href"].as<std::string>();
             if (!inSubsectionHref.empty()) {
-                title = "  " + title;
+                title = " " + title;
             }
         }
         txtOffset = j["txt_offset"].as<uint32_t>();

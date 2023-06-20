@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "Misc/Menu.hpp"
@@ -19,14 +20,15 @@
 
 class ReadableTableOfContentsScreen : public Screen, public Menu, public EinkView {
 public:
-    ReadableTableOfContentsScreen(PreferencesStore &prefs, Readable &readable, Renderer &renderer,
-                                  DisplaySystem &display)
-        : Menu(), EinkView(display), prefs_(prefs), readable_(readable), renderer_(renderer),
-          display_(display), upperLeftTextView_(display, upperLeftText_), leftArrowView_(display) {
+    ReadableTableOfContentsScreen(PreferencesStore &prefs, std::shared_ptr<Readable> readable,
+                                  Renderer &renderer, DisplaySystem &display)
+        : Menu(), EinkView(display), prefs_(prefs), readable_(std::move(readable)),
+          renderer_(renderer), display_(display), upperLeftTextView_(display, upperLeftText_),
+          leftArrowView_(display) {
         numMenuItems_ = 0;
         MenuStyle styleFamilies;
         myStyle_ = styleFamilies.mainMenu;
-        myStyle_.numberOfItemsPerPage = 8;
+        myStyle_.numberOfItemsPerPage = 11;
     }
 
     auto layout(LayoutContext &context, Size size) -> Size override;
@@ -42,13 +44,15 @@ public:
         firstLoad_ = true;
     }
 
+    void loadMenuItems();
+
     void setPlacemark();
     void setFirstLoad() { firstLoad_ = true; }
     void setNearestChapterSelection(unsigned long placeInFile);
 
 protected:
     PreferencesStore &prefs_;
-    Readable &readable_;
+    std::shared_ptr<Readable> readable_;
     Renderer &renderer_;
     DisplaySystem &display_;
     std::vector<MenuItem> menuItemsPage_;

@@ -69,7 +69,7 @@ public:
 class SFile : public SStream {
 public:
     SFile() : p_(nullptr) {}
-    SFile(std::shared_ptr<SFileImpl> p) : p_(std::move(std::move(p))) {}
+    SFile(std::shared_ptr<SFileImpl> p) : p_(std::move(p)) {}
 
     auto write(uint8_t c) -> size_t override;
     auto write(const uint8_t *buf, size_t size) -> size_t override;

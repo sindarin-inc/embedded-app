@@ -5,13 +5,10 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
     size_t lengthOfFile = renderer_.size();
 
     float placeInTextPercentage = (float)place / (float)lengthOfFile * 100;
-    // If we only have 1 "page", make sure we just display 1/1
-    if (lengthOfFile / 1000 == 0) {
-        place = 1000;
-        lengthOfFile = 1000;
-    }
+
     std::string placeString = StringFormat("%.1f%%", placeInTextPercentage);
-    std::string placeStringForBottom = StringFormat("%d/%d", place / 1000, lengthOfFile / 1000);
+    std::string placeStringForBottom =
+        StringFormat("%d/%d", SOL_PAGE_NUMBER(place), SOL_PAGE_NUMBER(lengthOfFile));
 
     popupMenuView_.setAuxText(placeStringForBottom);
 
@@ -20,7 +17,7 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
     }
 
     // Figure out if you should show the Archive menu item or the Unarchive menu item.
-    bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
+    bool archived = prefs_.readableArchivedChanged.get(readable_->shortenedUuid.c_str());
     if (archived) {
         archiveMenuItemView_->setHidden(true);
         unarchiveMenuItemView_->setHidden(false);
@@ -35,8 +32,6 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
 void ReadablePopupMenuScreen::addMenuItem(const MenuItem &newItem) {
     Menu::addMenuItem(newItem);
     auto menuItemView = std::make_shared<MenuItemView>(display_, newItem);
-    menuItemView->setIndicatorPadding(0);
-    menuItemView->setVerticalPadding(0);
     menuItemView->setCircleIndicator(true);
     popupMenuView_.menuItemViews.emplace_back(menuItemView);
 }
@@ -46,13 +41,13 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
     addMenuItem(MenuItem("Main Menu", [this]() { onMainMenu(); }));
 
     addMenuItem(MenuItem("Archive", [this]() {
-        prefs_.readableArchivedChanged.set(readable_.shortenedUuid.c_str(), true);
+        prefs_.readableArchivedChanged.set(readable_->shortenedUuid.c_str(), true);
         onMainMenu();
     }));
     archiveMenuItemView_ = popupMenuView_.menuItemViews.back();
 
     addMenuItem(MenuItem("Unarchive", [this]() {
-        this->prefs_.readableArchivedChanged.remove(readable_.shortenedUuid.c_str());
+        this->prefs_.readableArchivedChanged.remove(readable_->shortenedUuid.c_str());
         back();
     }));
     unarchiveMenuItemView_ = popupMenuView_.menuItemViews.back();
@@ -70,17 +65,13 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
         setCurrentScreen(lightingAdjustScreen_);
     }));
 
-    auto hasToc = readable_.toc.size() >= 1;
-    log_d("hasToc = %d, readable_.toc.size: %zu", hasToc, readable_.toc.size());
+    auto hasToc = readable_->toc.size() >= 1;
+    log_d("hasToc = %d, readable_.toc.size: %zu", hasToc, readable_->toc.size());
     // If readable has a ToC with at least 1 element, show the ToC screen.
     // Otherwise, show the seek screen.
     if (hasToc) {
         addMenuItem(MenuItem("Contents", [this]() {
-            readableTableOfContentsScreen_.resetMenuItems();
-            for (const ReadableTableOfContentsChapter &chapter : readable_.toc) {
-                readableTableOfContentsScreen_.addMenuItem(
-                    MenuItem(chapter.title, [this]() { readableTableOfContentsScreen_.back(); }));
-            }
+            readableTableOfContentsScreen_.loadMenuItems();
             readableTableOfContentsScreen_.setNearestChapterSelection(renderer_.getCurrentPlace());
             readableTableOfContentsScreen_.setFirstLoad();
             setCurrentScreen(readableTableOfContentsScreen_);
@@ -94,7 +85,7 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
 }
 
 void ReadablePopupMenuScreen::preselectArchiveMenuItem() {
-    bool archived = prefs_.readableArchivedChanged.get(readable_.shortenedUuid.c_str());
+    bool archived = prefs_.readableArchivedChanged.get(readable_->shortenedUuid.c_str());
     int index = 0;
     for (auto &menuItemView : popupMenuView_.menuItemViews) {
         if (menuItemView == (archived ? unarchiveMenuItemView_ : archiveMenuItemView_)) {
@@ -170,6 +161,7 @@ void ReadablePopupMenuScreen::render(DisplaySystem &display) {
             menuItemView->setSelected(false);
         }
 
+        popupMenuView_.updateTime();
         popupMenuView_.draw();
 
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);

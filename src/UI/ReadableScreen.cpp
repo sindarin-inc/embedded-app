@@ -86,9 +86,9 @@ void ReadableScreen::drawInRect(Rect rect) { drawArrows(); }
 //
 void ReadableScreen::updateBookmarkStatus() {
     inBookmark_ = false;
-    SFile bookmarkFile = fileSystem_.open(readable_.bookmarkFilePath().c_str(), FILE_READ, false);
+    SFile bookmarkFile = fileSystem_.open(readable_->bookmarkFilePath().c_str(), FILE_READ, false);
     if (!bookmarkFile) {
-        log_i("Failed to open bookmark file: %s", readable_.bookmarkFilePath().c_str());
+        log_i("Failed to open bookmark file: %s", readable_->bookmarkFilePath().c_str());
         return;
     }
 
@@ -98,7 +98,7 @@ void ReadableScreen::updateBookmarkStatus() {
         // the current page range, then turn the bookmark on for this page.
         uint32_t averagePlace =
             (bookmark.lastPlace - bookmark.firstPlace) / 2 + bookmark.firstPlace;
-        if ((averagePlace >= readable_.place) && (averagePlace <= newPlace_)) {
+        if ((averagePlace >= readable_->place) && (averagePlace <= newPlace_)) {
             if (bookmark.status == BOOKMARK_ON) {
                 inBookmark_ = true;
             } else {
@@ -116,20 +116,20 @@ void ReadableScreen::writeOutBookmarkUpdate() {
         return;
     }
 
-    SFile bookmarkFile = fileSystem_.open(readable_.bookmarkFilePath().c_str(), FILE_APPEND, true);
+    SFile bookmarkFile = fileSystem_.open(readable_->bookmarkFilePath().c_str(), FILE_APPEND, true);
 
     if (!bookmarkFile) {
-        log_i("Failed to open bookmark file: %s", readable_.bookmarkFilePath().c_str());
+        log_i("Failed to open bookmark file: %s", readable_->bookmarkFilePath().c_str());
         return;
     }
 
     std::string plusOrMinus = inBookmark_ ? "+ " : "- ";
-    plusOrMinus += std::to_string(readable_.place) + " " + std::to_string(newPlace_) + "\n";
+    plusOrMinus += std::to_string(readable_->place) + " " + std::to_string(newPlace_) + "\n";
     bookmarkFile.write((const uint8_t *)plusOrMinus.c_str(), plusOrMinus.length());
     bookmarkFile.flush();
     bookmarkFile.close();
 
-    prefs_.readableBookmarksChanged.set(readable_.shortenedUuid.c_str(), true);
+    prefs_.readableBookmarksChanged.set(readable_->shortenedUuid.c_str(), true);
 }
 
 // Since this happens in a couple of places (animation as well as button press),
@@ -139,17 +139,17 @@ void ReadableScreen::turnPage() {
         if (prefs_.emcMode.get().value_or(false)) {
             log_d("Looping back to the beginning of Readable for EMC testing mode");
             // Loop back to the beginning
-            readable_.placePrev = 0;
-            readable_.place = 0;
+            readable_->placePrev = 0;
+            readable_->place = 0;
             return;
         }
         showPopupMenu();
         popupMenuScreen_.preselectArchiveMenuItem();
     } else {
-        readable_.placePrev = readable_.place;
-        readable_.place = newPlace_;
-        prefs_.readablePlace.set(readable_.shortenedUuid.c_str(), readable_.place);
-        prefs_.readablePlaceChanged.set(readable_.shortenedUuid.c_str(), true);
+        readable_->placePrev = readable_->place;
+        readable_->place = newPlace_;
+        prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place);
+        prefs_.readablePlaceChanged.set(readable_->shortenedUuid.c_str(), true);
         speedLinesToSkip_ = 0;
     }
 
@@ -190,7 +190,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         }
     }
 
-    prefs_.lastReadableId.set(readable_.uuid);
+    prefs_.lastReadableId.set(readable_->uuid);
 
     display.setFont(display.style.getFontFamily().readableFont);
 
@@ -249,7 +249,7 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     if (pageSpeed_ == 0) {
         // Regular Reading
-        newPlace_ = renderer_.renderPage(readable_.place);
+        newPlace_ = renderer_.renderPage(readable_->place);
         atEnd_ = checkAtEnd();
     } else {
         // Autopilot Reading
@@ -259,7 +259,7 @@ void ReadableScreen::render(DisplaySystem &display) {
             speedLinesToSkip_++;
         }
 
-        newPlace_ = renderer_.renderPage(readable_.place, speedLinesToSkip_);
+        newPlace_ = renderer_.renderPage(readable_->place, speedLinesToSkip_);
         atEnd_ = checkAtEnd();
 
         // If the line is blank, we want to skip it. Also, skip multiple newlines in a row.
@@ -465,9 +465,9 @@ void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
 void ReadableScreen::processCommandNormal(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::LEFT:
-        readable_.place = renderer_.getPreviousPlace();
-        prefs_.readablePlace.set(readable_.shortenedUuid.c_str(), readable_.place);
-        prefs_.readablePlaceChanged.set(readable_.shortenedUuid.c_str(), true);
+        readable_->place = renderer_.getPreviousPlace();
+        prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place);
+        prefs_.readablePlaceChanged.set(readable_->shortenedUuid.c_str(), true);
         break;
     case RemoteCommand::ENTER:
         if (prefs_.fastBookmarkCenter.get().value_or(false)) {

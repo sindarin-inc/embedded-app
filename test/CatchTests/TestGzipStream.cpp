@@ -9,7 +9,7 @@ TEST_CASE("Test GZip stream handling") {
     PosixFileSystem fs;
     fs.begin();
 
-    auto stream = fs.newGzipRendererStream("/old-testament.txt.gz");
+    auto stream = fs.newGzipRendererStream("/book/old-testament.txt.gz");
     REQUIRE(stream->size() == 3061230);
 
     uint8_t buffer[100];

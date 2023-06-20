@@ -48,7 +48,7 @@ auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
 
             for (auto &view : menuItemViews_) {
                 auto viewFrame =
-                    context.setViewFrame(*view, {{x, y}, boxSize}, LayoutOptionsSizeToFit);
+                    context.setViewFrame(*view, {{x, y + 1}, boxSize}, LayoutOptionsSizeToFit);
                 if (place == currSelection_) {
                     context.setViewFrame(*selectedSelectionView_,
                                          {{x, y + 1}, {boxSize.width - 70, boxSize.height + 1}},
@@ -69,7 +69,7 @@ auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
                     }
                 }
 
-                y += viewFrame.size.height - 1;
+                y += viewFrame.size.height + 1;
                 place++;
             }
 
@@ -146,6 +146,8 @@ void ToggleMenuScreen::render(DisplaySystem &display) {
     // to do a partial refresh with the selector button at a lower/higher vcom to reduce
     // ghosting.
     if (firstLoad_) {
+        clockBatteryView_.updateTime();
+
         // Populate the menu items with the correct menus for the current subMenu
         menuItemViews_.clear();
         menuPageViews_.clear();

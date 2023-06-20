@@ -11,7 +11,7 @@ TEST_CASE("Test ePub parsing") {
     PosixFileSystem fs;
     fs.begin();
 
-    EPubFile epub(fs, "/butcher.epub");
+    EPubFile epub(fs, "/book/butcher.epub");
     REQUIRE(epub.open());
 
     uint8_t buffer[1025];
@@ -39,7 +39,7 @@ TEST_CASE("Stripped ePub") {
     PosixFileSystem fs;
     fs.begin();
 
-    auto epubFile = std::make_unique<EPubFile>(fs, "/butcher.epub");
+    auto epubFile = std::make_unique<EPubFile>(fs, "/book/butcher.epub");
     epubFile->open();
     auto stream = std::make_shared<HtmlCleaner>(std::move(epubFile));
 

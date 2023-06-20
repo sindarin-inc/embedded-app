@@ -78,9 +78,8 @@ PosixFileSystem fileSystem;
 LittleFSFileSystem fileSystem;
 #endif
 
-LocalStore localStore(fileSystem, prefs);
-
 PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay);
+LocalStore localStore(fileSystem, prefs, powerManager.battery);
 RootUI rootUi(prefs, powerManager);
 SolClock solClock(prefs);
 
@@ -203,6 +202,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     if (!fileSystem.begin()) {
         bootErrors.push_back({.type = BootError::Type::FileSystem});
+    } else {
+        log_d("Filesystem ready!");
     }
 
     // Set current boot id
@@ -432,6 +433,10 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #endif
 
     SHOW_HEAP();
+
+#if DISABLE_POWER_MANAGEMENT
+    log_w("Power Management Disabled");
+#endif
 
     BlinkBootErrors(bootErrors);
 

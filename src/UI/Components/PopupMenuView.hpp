@@ -21,11 +21,14 @@ public:
         setNeedsLayout();
     }
 
-    auto layout(LayoutContext &context, Size size) -> Size override {
-        auto fullFrame = Rect::fromSize(size);
-
+    auto updateTime() {
         SolClock &theClock = SolClock::getInstance();
         clockView_.setText(theClock.getTimeString());
+        setNeedsLayout();
+    }
+
+    auto layout(LayoutContext &context, Size size) -> Size override {
+        auto fullFrame = Rect::fromSize(size);
 
         context.setViewFrame(popupMenuBackground_, fullFrame, LayoutOptionsAlignCenter);
 

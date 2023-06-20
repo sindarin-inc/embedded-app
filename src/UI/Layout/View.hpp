@@ -18,7 +18,7 @@ public:
     virtual void drawInRect(Rect rect) = 0;
 
     // Draw the view in its current screen-coordinate frame
-    void draw() {
+    virtual void draw() {
         layoutIfNeeded();
         drawInRect(layoutContext_.screenFrame());
     }
@@ -34,13 +34,14 @@ public:
     // Should be called sometime before drawing
     void layoutIfNeeded() { layoutContext_.layoutIfNeeded(layoutContext_.frame().size, false); }
 
+protected:
+    LayoutContext layoutContext_;
+    friend class LayoutContext;
+
 private:
     // View subclasses should implement this method to layout any elements and return their
     // desired size. This will be called by LayoutContext and should not be called directly.
     virtual auto layout(LayoutContext &context, Size size) -> Size = 0;
-
-    LayoutContext layoutContext_;
-    friend class LayoutContext;
 
     bool hidden_ = false;
 };

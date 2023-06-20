@@ -15,6 +15,9 @@
 #include "Models/ReadablePlacemark.hpp"
 #include "Models/ReadableTableOfContentsChapter.hpp"
 
+// This is #define because there might be different types passed in
+#define SOL_PAGE_NUMBER(x) ((x) / 1000 + 1)
+
 #define TRUNCATE_READABLE_UUID_FOR_PLACEMARK_BYTES 8
 
 using ReadableAuthorVector = SpiramVector<Author>;
@@ -53,7 +56,21 @@ public:
     // Local state
     uint32_t place{0}, placePrev{0};
 
-    [[nodiscard]] auto file() const -> const ReadableFile & { return files[0]; }
+    [[nodiscard]] auto file() const -> const ReadableFile & {
+        for (const auto &file : files) {
+            if (file.filetype == "utf8_txt") {
+                return file;
+            }
+        }
+
+        for (const auto &file : files) {
+            if (file.filetype == "txt") {
+                return file;
+            }
+        }
+
+        return files[0];
+    }
 
     // TODO: Move file path operations to LocalStore
     [[nodiscard]] auto bookmarkFilePath() const -> std::string {
