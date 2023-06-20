@@ -32,9 +32,9 @@ private:
     static constexpr uint16_t ENDPARAGRAPH_DECI_LINE_HEIGHT = 4;
 
     // A Page array must be large enough to accommodate the need to load a complete display page,
-    // but also able to load a complete paragraph that can precede the page (that will not be larger
-    // than a TEXT token) when the back page command is issued by the user. By design a paragraph
-    // cannot have more than 3000 bytes, followed by a NEWLINE, an ENDOFPARAGRAPH, and a null.
+    // but also able to load a complete paragraph that can precede the page when the back page
+    // command is issued by the user. By design a paragraph cannot have more than 3000 bytes,
+    // followed by a NEWLINE, an ENDOFPARAGRAPH, and a null.
 
     static constexpr uint16_t MAX_BYTES_PER_TEXT_TOKEN = 60;
     static constexpr uint16_t MAX_BYTES_PER_PARAGRAPH = 3003;
@@ -74,7 +74,7 @@ private:
         Place streamPlace;
         // This basically gives each token knowledge of where the paragraph
         // start is for where it's located. It's useful for looking backwards
-        // while rendering backwards.
+        // while rendering a back page command.
         Idx pageIdx;
         Idx prevNewParagraphTokenIdx;
         uint16_t width;
@@ -87,9 +87,14 @@ private:
     typedef std::array<char, MAX_BYTES_PER_LINE> Line;
     typedef std::array<Line, MAX_LINES_PER_PAGE> PageLines;
     typedef std::array<char, MAX_BYTES_PER_TEXT_TOKEN> TokenString;
-    typedef std::array<char, MAX_BYTES_PER_TEXT_TOKEN * 2 + 2> TokenStringDouble;
     typedef std::array<Token, MAX_TOKEN_COUNT> Tokens;
+
+    // Indexes into the last lines of the last retrieved paragraphs
+    // used to find the first line in the back page command context
     typedef std::array<Idx, MAX_PARAGRAPH_LINES> ParaLineIdxs;
+
+    // Only used in to compute a space size in a GFX font context
+    typedef std::array<char, MAX_BYTES_PER_TEXT_TOKEN * 2 + 2> TokenStringDouble;
 
 public:
     Renderer(DisplaySystem &display) : display_(display) {}
@@ -151,7 +156,7 @@ private:
     uint16_t pageLinesLengths_[MAX_LINES_PER_PAGE] = {0};
     uint16_t pageLinesCount_ = 0;
 
-    // The following are used to support the backpage algorithm:
+    // The following are used to support the back page command algorithm:
     // they will keep tokenIdx pointers at the last lines that are part of
     // the last paragraph read to complete the page.
     ParaLineIdxs paraLineIdxs_;
