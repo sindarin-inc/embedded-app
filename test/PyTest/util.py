@@ -22,10 +22,10 @@ def find_port_by_device_name(device_name, index=0):
     return None
 
 
-def wait_for_port_by_device_name(device_name, timeout=5):
+def wait_for_port_by_device_name(device_name, index=0, timeout=5):
     start_time = time.time()
     while True:
-        port = find_port_by_device_name(device_name)
+        port = find_port_by_device_name(device_name, index)
         if port is not None:
             return port
         if time.time() - start_time < timeout:

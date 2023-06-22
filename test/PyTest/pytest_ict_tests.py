@@ -19,11 +19,16 @@ from util import maybe_format, wait_for_port_by_device_name
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+dut_port_name = "USB JTAG/serial debug unit"
+dut_port_index = 0
+
+dut_log_port_name = "SOL Mainframe ICT"
+dut_log_port_index = 1
 
 @pytest.fixture
 def port(request: FixtureRequest) -> t.Optional[str]:
     """Overridden to make sure we pick the right USB port for the DUT"""
-    custom_port = wait_for_port_by_device_name("USB JTAG/serial debug unit")
+    custom_port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
     return custom_port
 
 
@@ -48,17 +53,17 @@ class OverrideIdfSerial(IdfSerial):
         # Wait for device to go away and come back again
         # If we don't do this, we may discover and attempt to connect to the port too quickly, then it will de-enumerate.
         time.sleep(2)
-        port = wait_for_port_by_device_name("USB JTAG/serial debug unit")
+        port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
 
-        self.reconnect_serial()
+        self.connect_dut_log_port()
 
-    def reconnect_serial(self):
+    def connect_dut_log_port(self):
         max_attempts = 3
         for n in range(max_attempts):
             # self.close()
             # find second device with SOL Mainframe ICT name
             # this is the DUT serial relay
-            port = wait_for_port_by_device_name("SOL Mainframe ICT", 1)
+            port = wait_for_port_by_device_name(dut_log_port_name, dut_log_port_index)
             logger.debug(f"Found port {port} for DUT serial port, re-opening")
             try:
                 self.proc.open()
@@ -93,7 +98,7 @@ class OverrideDut(IdfDut):
     """Overridden to make sure we pick the right USB port for the DUT"""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        port = wait_for_port_by_device_name("USB JTAG/serial debug unit")
+        port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
         kwargs["port"] = port
         super().__init__(*args, **kwargs)
 
@@ -134,7 +139,7 @@ def ict_client():
     client.reset_dut()
     client.set_gpio0(1)
 
-    wait_for_port_by_device_name("USB JTAG/serial debug unit")
+    wait_for_port_by_device_name(dut_port_name, dut_port_index)
 
     yield client  # Tests run here
 
@@ -226,9 +231,9 @@ class TestPowerConsumption:
 
         # Wait for serial port to come back
         # first wait for DUT device to show up
-        port = wait_for_port_by_device_name("USB JTAG/serial debug unit")
+        port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
         # then connect to serial relay for log parsing
-        dut.serial.reconnect_serial()
+        dut.serial.connect_dut_log_port()
 
         time.sleep(2)
 
