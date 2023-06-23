@@ -869,7 +869,7 @@ auto Renderer::loadCurrentPage() -> Place {
         log_d("lastDeciLinesCount: %" PRIu16 ", max: %" PRIu16, lastDeciLinesCount, maxDeciLines);
     }
 
-    if ((lastDeciLinesCount > maxDeciLines) || (lastDeciLinesCount < (maxDeciLines - 8))) {
+    if ((lastDeciLinesCount > maxDeciLines) || (lastDeciLinesCount < (maxDeciLines - 10))) {
         log_e("lastDeciLinesCount: %" PRIu16 " not supposed to happen!! max: %" PRIu16,
               lastDeciLinesCount, maxDeciLines);
     }
