@@ -11,8 +11,7 @@
  * @copyright Copyright (c) 2022
  */
 
-#ifndef __BMP_H_
-#define BMP_H_
+#pragma once
 
 #include "Renderers/RendererStream.hpp"
 
@@ -388,5 +387,3 @@ auto BmpGetnpixels(bmp_image *img) -> uint32_t;
  * @return uint32_t - the number of colors
  */
 auto BmpGetncolors(bmp_image *img) -> uint32_t;
-
-#endif
