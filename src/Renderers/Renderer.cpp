@@ -503,8 +503,9 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
                     pageLines_[j].data(), 0,
                     j * (display_.getTextHeight()) -
                         display_.getTextHeight() *
-                            (NEWLINE_DECI_LINE_HEIGHT - ENDPARAGRAPH_DECI_LINE_HEIGHT) *
-                            newLineAdjust / NEWLINE_DECI_LINE_HEIGHT);
+                            ((NEWLINE_DECI_LINE_HEIGHT - ENDPARAGRAPH_DECI_LINE_HEIGHT) *
+                             newLineAdjust) /
+                            NEWLINE_DECI_LINE_HEIGHT);
             }
         }
     }
@@ -732,7 +733,7 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
     // Note that get_text_height adds 1 over the max character height
     // change to deciLines for better newline performance
     int16_t maxDeciLines =
-        (display_.height() - 2) / (this->display_.getTextHeight()) * NEWLINE_DECI_LINE_HEIGHT;
+        (display_.height() * NEWLINE_DECI_LINE_HEIGHT) / (this->display_.getTextHeight());
 
     uint16_t lastDeciLinesCount = deciLinesCount;
 
@@ -804,7 +805,7 @@ auto Renderer::loadCurrentPage() -> Place {
     // Switch to 1/10 of a line as this gives us more flexibilty in rendering
     // precision between lines.
     int16_t maxDeciLines =
-        ((display_.height() - 2) / (this->display_.getTextHeight())) * NEWLINE_DECI_LINE_HEIGHT;
+        (display_.height() * NEWLINE_DECI_LINE_HEIGHT) / (this->display_.getTextHeight());
 
     if constexpr (RENDERER_DEBUG) {
         log_d("Max lines calc: %d %d %d", display_.height(), display_.getTextHeight(),
