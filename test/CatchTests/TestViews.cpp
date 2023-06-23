@@ -68,6 +68,14 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("LastQuestion1");
 
+        // Check to make sure going forward from page 1 and then back
+        // results in the same page.
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        SendRemoteCommand(LEFT);
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("LastQuestion1");
+
         // This is the new default way to get a bookmark on a page
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW();
