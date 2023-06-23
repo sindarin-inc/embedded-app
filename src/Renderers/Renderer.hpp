@@ -156,6 +156,12 @@ private:
     uint16_t pageLinesLengths_[MAX_LINES_PER_PAGE] = {0};
     uint16_t pageLinesCount_ = 0;
 
+    // Switch to 1/10 of a line as this gives us more flexibilty in rendering
+    // precision between lines.
+    int16_t getMaxDeciLines() {
+        return (display_.height() * NEWLINE_DECI_LINE_HEIGHT) / (this->display_.getTextHeight());
+    }
+
     // The following are used to support the back page command algorithm:
     // they will keep tokenIdx pointers at the last lines that are part of
     // the last paragraph read to complete the page.
