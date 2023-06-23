@@ -158,7 +158,7 @@ private:
 
     // Switch to 1/10 of a line as this gives us more flexibilty in rendering
     // precision between lines.
-    int16_t getMaxDeciLines() {
+    auto getMaxDeciLines() -> int16_t {
         return (display_.height() * NEWLINE_DECI_LINE_HEIGHT) / (this->display_.getTextHeight());
     }
 
