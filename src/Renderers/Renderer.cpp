@@ -9,6 +9,7 @@
 
 // For deep logging when changing this file
 static constexpr bool RENDERER_DEBUG = false;
+static constexpr bool ON_ERROR_EXIT = true;
 
 // Must be called only in the context of loadAndTokenizePage() method.
 // Takes a place in the token buffer and places the string that the token
@@ -109,6 +110,9 @@ auto Renderer::getFileLocation(Place fromPlace) -> Place {
 
     if (!stream_->seek(fromPlace)) {
         log_e("failed to seek at place %" PRIu32 " in file!", fromPlace);
+        if constexpr (ON_ERROR_EXIT) {
+            exit(2);
+        }
     } else {
         while (stream_->available()) {
             uint8_t ch = stream_->read();
@@ -198,6 +202,9 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
             tokenIdx++;
         } else {
             log_e("tokens_[] too small!!");
+            if constexpr (ON_ERROR_EXIT) {
+                exit(3);
+            }
         }
     };
 
@@ -207,7 +214,7 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
     }
 
     if constexpr (RENDERER_DEBUG) {
-        log_e("Starting tokenizer at place %" PRIu32, fromPlace);
+        log_w("Starting tokenizer at place %" PRIu32, fromPlace);
     }
 
     // Needs to be minus one for the corner case of all spaces or newlines
@@ -317,6 +324,9 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
             pageIdx++;
         } else {
             log_e("page_[] is too small !!!");
+            if constexpr (ON_ERROR_EXIT) {
+                exit(4);
+            }
         }
     }
 
@@ -427,6 +437,9 @@ auto Renderer::getLineOfTextForRendering(Idx startTokenIdx, Line &line) -> Idx {
         if ((tokens_[tokenIdx - 1].tokenId != TokenId::NEWLINE) &&
             (tokens_[tokenIdx].tokenId == TokenId::NEWLINE)) {
             log_e("End Of Line Token not being consumed!!!");
+            if constexpr (ON_ERROR_EXIT) {
+                exit(5);
+            }
         }
     }
 
@@ -441,6 +454,9 @@ auto Renderer::getLineOfTextForRendering(Idx startTokenIdx, Line &line) -> Idx {
                 lineIdx += tokens_[i].length;
             } else {
                 log_e("line[] too small!");
+                if constexpr (ON_ERROR_EXIT) {
+                    exit(6);
+                }
             }
         }
     }
@@ -494,7 +510,7 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
         if (pageLines_[j][0] == '\n') {
             newLineAdjust++;
             if constexpr (RENDERER_DEBUG) {
-                log_e("NewLineAdjust for line %" PRIu16, j);
+                log_w("NewLineAdjust for line %" PRIu16, j);
             }
         } else {
             // Only draw the lines if it's not skipped from the caller.
@@ -511,7 +527,7 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
     }
 
     if constexpr (RENDERER_DEBUG) {
-        log_e("Returning next page place to be %" PRIu32, nextPlace_);
+        log_w("Returning next page place to be %" PRIu32, nextPlace_);
     }
     return nextPlace_;
 }
@@ -589,10 +605,21 @@ auto Renderer::getFirstLineOfPageTokenIdx(Idx lastTokenIdx, uint16_t deciLinesCo
             deciLinesCount += NEWLINE_DECI_LINE_HEIGHT;
         }
 
+        if ((deciLinesCount == maxDeciLines) || (tokenIdx == 0)) {
+            returnTokenIdx = tokenIdx;
+            break;
+        }
+
         // The following should never happen as MAX_PARAGRAPH_LINES permits more lines than
         // the display height.
-        if (currentParaLineIdx == paraLineFirstIdx_) {
-            log_e("Last Paragraph line count not big enough!");
+        if ((deciLinesCount < maxDeciLines) && (currentParaLineIdx == paraLineFirstIdx_)) {
+            log_e("Last Paragraph line count not big enough: FirstIdx %" PRIu16 ", LastIdx %" PRIu16
+                  ", Current %" PRIu16 "; deciLineCount %" PRIi16 ", Max %" PRIi16 ".",
+                  paraLineFirstIdx_, paraLineLastIdx_, currentParaLineIdx, deciLinesCount,
+                  maxDeciLines);
+            if constexpr (ON_ERROR_EXIT) {
+                exit(7);
+            }
             break;
         }
 
@@ -690,6 +717,9 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
     if constexpr (RENDERER_DEBUG) {
         if (tokens_[endTokenIdx].streamPlace != fromPlace) {
             log_e("Synchronisation issue. Unable to point at fromPlace with endTokenIdx.");
+            if constexpr (ON_ERROR_EXIT) {
+                exit(8);
+            }
         }
     }
 
@@ -711,10 +741,11 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
     }
 
     Idx startTokenIdx = tokens_[endTokenIdx].prevNewParagraphTokenIdx;
-    // if it's not a NEWLINE, it means we are at the beginning of the file
+
+    // if it's not a ENDPARAGRAPH, it means we maybe at the beginning of the file
     if (tokens_[startTokenIdx].tokenId == TokenId::ENDPARAGRAPH) {
         startTokenIdx += 1;
-    } else {
+    } else if (tokens_[startTokenIdx].streamPlace != 0) {
         log_w("We may not have reached the beginning of previous paragraph.");
     }
 
@@ -736,16 +767,38 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
     while (deciLinesCount < maxDeciLines) {
         lastDeciLinesCount = deciLinesCount;
         deciLinesCount += getParagraphDeciLinesCount(startTokenIdx, endTokenIdx);
-        if ((deciLinesCount > maxDeciLines) || (startTokenIdx == 0)) {
+
+        if constexpr (RENDERER_DEBUG) {
+            log_w("Max: %" PRIu16 ", We are at: %" PRIu16, maxDeciLines, deciLinesCount);
+        }
+
+        if (deciLinesCount > maxDeciLines) {
             break;
         }
+
         lastTokenIdx = startTokenIdx;
+
+        if (startTokenIdx == 0) {
+            if constexpr (RENDERER_DEBUG) {
+                log_w("Reached beginning of file");
+            }
+            break;
+        }
+
+        if (deciLinesCount == maxDeciLines) {
+            if constexpr (RENDERER_DEBUG) {
+                log_w("Exact match!");
+            }
+            break;
+        }
+
         endTokenIdx = startTokenIdx - 1;
         startTokenIdx = tokens_[endTokenIdx].prevNewParagraphTokenIdx;
+
         // if it's not a ENDPARAGRAPH, it means we are at the beginning of the token list
         if (tokens_[startTokenIdx].tokenId == TokenId::ENDPARAGRAPH) {
             startTokenIdx += 1;
-        } else {
+        } else if (tokens_[startTokenIdx].streamPlace != 0) {
             log_w("We may not have reached the beginning of previous paragraph.");
         }
     }
@@ -754,7 +807,7 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
         log_d("deciLinesCount: %" PRIu16 ", max: %" PRIu16, deciLinesCount, maxDeciLines);
     }
 
-    // Step 6: Retrieve lines from the last scanned paragraph enough to have then end
+    // Step 6: Retrieve lines from the last scanned paragraph enough to have
     // it fit in the available page space.
 
     if (deciLinesCount > maxDeciLines) {
@@ -774,7 +827,7 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
     static_cast<void>(loadAndTokenizePage(fromPlace));
 
     if constexpr (RENDERER_DEBUG) {
-        log_e("Returning the following place! %" PRIu32, returnPlace);
+        log_w("Returning the following place! %" PRIu32, returnPlace);
     }
 
     return returnPlace;
@@ -828,7 +881,7 @@ auto Renderer::loadCurrentPage() -> Place {
 
         if (tokens_[tokenIdx].tokenId == TokenId::ENDPARAGRAPH) {
             if constexpr (RENDERER_DEBUG) {
-                log_e("NEW PARAGRAPH on line %" PRIu16, pageLinesCount_);
+                log_w("NEW PARAGRAPH on line %" PRIu16, pageLinesCount_);
             }
             nextTokenIdx = tokenIdx + 1;
             pageLines_[pageLinesCount_][0] = '\n';
@@ -860,19 +913,25 @@ auto Renderer::loadCurrentPage() -> Place {
                 pageLinesCount_++;
             } else {
                 log_e("pageLines_[] too small!");
+                if constexpr (ON_ERROR_EXIT) {
+                    exit(9);
+                }
             }
             tokenIdx = nextTokenIdx;
         }
     }
 
     if constexpr (RENDERER_DEBUG) {
-        log_d("lastDeciLinesCount: %" PRIu16 ", max: %" PRIu16, lastDeciLinesCount, maxDeciLines);
+        log_d("lastDeciLinesCount: %" PRIi16 ", max: %" PRIi16, lastDeciLinesCount, maxDeciLines);
     }
 
-    if ((lastDeciLinesCount > maxDeciLines) || (lastDeciLinesCount < (maxDeciLines - 10))) {
-        log_e("lastDeciLinesCount: %" PRIu16 " not supposed to happen!! max: %" PRIu16,
-              lastDeciLinesCount, maxDeciLines);
-    }
+    // if ((lastDeciLinesCount > maxDeciLines) || (lastDeciLinesCount < (maxDeciLines - 10))) {
+    //     log_e("lastDeciLinesCount: %" PRIi16 " not supposed to happen!! max: %" PRIi16,
+    //           lastDeciLinesCount, maxDeciLines);
+    //     if constexpr (ON_ERROR_EXIT) {
+    //         exit(10);
+    //     }
+    // }
 
     // If we hit EOF, the next screen wraps around.
     if (tokens_[tokenIdx].tokenId == TokenId::ENDOFFILE) {
