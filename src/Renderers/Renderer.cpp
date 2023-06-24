@@ -9,7 +9,7 @@
 
 // For deep logging when changing this file
 static constexpr bool RENDERER_DEBUG = false;
-static constexpr bool ON_ERROR_EXIT = true;
+static constexpr bool ON_ERROR_EXIT = false;
 
 // Must be called only in the context of loadAndTokenizePage() method.
 // Takes a place in the token buffer and places the string that the token
