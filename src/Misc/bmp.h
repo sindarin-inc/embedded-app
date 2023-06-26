@@ -59,7 +59,7 @@
 #define BMP_ALPHABITFIELDS_R8G7B9A5_B9 0x000001FF
 #define BMP_ALPHABITFIELDS_R8G7B9A5_A5 0x1F000000
 
-#pragma pack(1)
+#pragma pack(push, 1)
 
 /* Enumerations ---------------------------------------------------------------*/
 
@@ -139,36 +139,41 @@ typedef enum bmp_bv5intent {
     BMP_LCS_GM_IMAGES
 } bmp_bv5intent;
 
+#pragma pack(pop)
+
 /* RLE structures -------------------------------------------------------------*/
 
-#pragma pack(1)
+#pragma pack(push, 1)
 typedef struct BmpRle8duo {
     uint8_t count;
     uint8_t value;
 } bmp_rle8duo;
+#pragma pack(pop)
 
 /* Coordinates structures -----------------------------------------------------*/
 
 // CIEXYZ structure
-#pragma pack(1)
+#pragma pack(push, 1)
 typedef struct BmpCiexyz {
     uint32_t ciexyzX; // all 3 are FXPT2DOT30 type variables.
     uint32_t ciexyzY; // 32-bit floats
     uint32_t ciexyzZ; // still need to clarify these types
 } bmp_ciexyz;
+#pragma pack(pop)
 
 // CIEXYZTRIPLE structure
-#pragma pack(1)
+#pragma pack(push, 1)
 typedef struct BmpCiexyztriple {
     bmp_ciexyz ciexyzRed;
     bmp_ciexyz ciexyzGreen;
     bmp_ciexyz ciexyzBlue;
 } bmp_ciexyztriple;
+#pragma pack(pop)
 
 /* FILE Header ----------------------------------------------------------------*/
 
 // BITMAPFILEHEADER structure
-#pragma pack(1)
+#pragma pack(push, 1)
 typedef struct BmpFileheader {
     uint16_t bfType;
     uint32_t bfSize;
@@ -176,11 +181,12 @@ typedef struct BmpFileheader {
     uint16_t bfReserved2;
     uint32_t bfOffBits;
 } bmp_fileheader;
+#pragma pack(pop)
 
 /* DIB Headers ----------------------------------------------------------------*/
 
 // BITMAPINFOHEADER structure
-#pragma pack(1)
+#pragma pack(push, 1)
 typedef struct BmpInfoheader {
     uint32_t biSize;
     int32_t biWidth;
@@ -194,9 +200,10 @@ typedef struct BmpInfoheader {
     uint32_t biClrUsed;
     uint32_t biClrImportant;
 } bmp_infoheader;
+#pragma pack(pop)
 
 // BITMAPV4HEADER structure complementary piece
-#pragma pack(1)
+#pragma pack(push, 1)
 typedef struct BmpV4header {
     uint32_t bV4RedMask;
     uint32_t bV4GreenMask;
@@ -208,55 +215,61 @@ typedef struct BmpV4header {
     uint32_t bV4GammaGreen;
     uint32_t bV4GammaBlue;
 } bmp_v4header;
+#pragma pack(pop)
 
 // BITMAPV5HEADER structure complementary piece
-#pragma pack(1)
+#pragma pack(push, 1)
 typedef struct BmpV5header {
     uint32_t bV5Intent;
     uint32_t bV5ProfileData;
     uint32_t bV5ProfileSize;
     uint32_t bV5Reserved;
 } bmp_v5header;
+#pragma pack(pop)
 
 /* Colour Palettes ------------------------------------------------------------*/
 
 // RGBQUAD structure
-#pragma pack(1)
+#pragma pack(push, 1)
 typedef struct BmpRgbquad {
     uint8_t rgbBlue;
     uint8_t rgbGreen;
     uint8_t rgbRed;
     uint8_t rgbReserved;
 } bmp_rgbquad;
+#pragma pack(pop)
 
 // RGBTRIPLE structure
-#pragma pack(1)
+#pragma pack(push, 1)
 typedef struct BmpRgbtriple {
     uint8_t rgbBlue;
     uint8_t rgbGreen;
     uint8_t rgbRed;
 } bmp_rgbtriple;
+#pragma pack(pop)
 
 /* Joint structures -----------------------------------------------------------*/
 
 // BITMAPINFO structure bmp_dibheader
-#pragma pack(1)
+#pragma pack(push, 1)
 typedef struct BmpDibheader {
     bmp_infoheader bmiHeader;
     bmp_v4header bmiv4Header;
     bmp_v5header bmiv5Header;
     bmp_rgbquad *bmiColors;
 } bmp_dibheader;
+#pragma pack(pop)
 
 /* Main Structure -------------------------------------------------------------*/
 //  (from https://docs.microsoft.com/en-us/windows/win32/gdi/bitmap-storage?redirectedfrom=MSDN)
 
-#pragma pack(1)
+#pragma pack(push, 1)
 typedef struct BmpImage {
     bmp_fileheader fileheader;
     bmp_dibheader dib;
     uint8_t *ciPixelArray;
 } bmp_image;
+#pragma pack(pop)
 
 /* Functions ------------------------------------------------------------------*/
 
