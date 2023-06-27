@@ -29,7 +29,7 @@ jobs:
       - name: Build firmware
         run: |
           source ~/esp/esp-idf/export.sh
-          idf.py set-target esp32s33
+          idf.py set-target esp32s3
           idf.py build
 
       - name: Run PyTest
