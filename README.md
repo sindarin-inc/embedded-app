@@ -242,7 +242,7 @@ This is [fixed](https://github.com/espressif/esp-idf/blob/master/components/efus
 You'll need to make sure you set up IDF with the pytest bits.
 
 ```sh
-$IDF_PATH/install.sh --enable-pytest
+$IDF_PATH/install.sh esp32s3 --enable-pytest
 ```
 
 You'll need to make sure you have some binaries available
