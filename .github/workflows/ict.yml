@@ -1,0 +1,35 @@
+name: In-Circuit Tester
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  # TODO: Could be good to separate out the build and the test steps.
+  # Build can happen just fine on the cloud, but testing must happen on our self-hosted runner.
+  test:
+    name: "Run ICT Test"
+    runs-on:
+      group: ICT
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          submodules: "recursive"
+
+      # NOTE: This depends on the correct version of IDF being pre-installed on the tester laptops.
+      - name: Export IDF stuff
+        run: source ~/esp/esp-idf/export.sh
+
+      - name: Install PPK2
+        run: pip install ppk2_api
+
+      - name: Build firmware
+        run: |
+          idf.py set-target esp32s33
+          idf.py build
+
+      - name: Run PyTest
+        run: pytest
