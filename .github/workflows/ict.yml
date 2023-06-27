@@ -41,3 +41,8 @@ jobs:
           command: |
             source ~/esp/esp-idf/export.sh
             pytest && espeak pass || espeak fail
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: power-measurements
+          path: current_samples*.csv
