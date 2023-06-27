@@ -20,16 +20,19 @@ jobs:
           submodules: "recursive"
 
       # NOTE: This depends on the correct version of IDF being pre-installed on the tester laptops.
-      - name: Export IDF stuff
-        run: source ~/esp/esp-idf/export.sh
 
       - name: Install PPK2
-        run: pip install ppk2_api
+        run: |
+          source ~/esp/esp-idf/export.sh
+          pip install ppk2_api
 
       - name: Build firmware
         run: |
+          source ~/esp/esp-idf/export.sh
           idf.py set-target esp32s33
           idf.py build
 
       - name: Run PyTest
-        run: pytest
+        run: |
+          source ~/esp/esp-idf/export.sh
+          pytest
