@@ -5,7 +5,8 @@ on:
 
 jobs:
   clangify:
-    runs-on: ubuntu-latest
+    runs-on:
+      group: ICT
 
     steps:
       - uses: actions/checkout@v3
