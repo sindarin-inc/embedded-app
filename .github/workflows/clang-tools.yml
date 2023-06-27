@@ -6,7 +6,7 @@ on:
 jobs:
   clangify:
     runs-on:
-      group: ICT
+      group: Beefy
 
     steps:
       - uses: actions/checkout@v3
