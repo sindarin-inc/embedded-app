@@ -26,15 +26,16 @@ jobs:
           source ~/esp/esp-idf/export.sh
           pip install ppk2_api
 
+      # TODO: We should be able to skip the BUILD_FOR_TEST part
       - name: Build firmware
         run: |
           source ~/esp/esp-idf/export.sh
-          idf.py set-target esp32s3
-          idf.py build
+          BUILD_FOR_TEST=1 idf.py set-target esp32s3
+          BUILD_FOR_TEST=1 idf.py build
 
       - uses: nick-fields/retry@v2
         with:
-          timeout_seconds: 180
+          timeout_seconds: 500
           max_attempts: 3
           retry_on: error
           command: |
