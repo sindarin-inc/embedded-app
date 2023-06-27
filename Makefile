@@ -1,6 +1,12 @@
+all: build
+
 .PHONY: sim
 sim:
 	pio run -e simulator -t upload
+
+.PHONY: lldb
+lldb:
+	pio run -e simulator && lldb .pio/build/simulator/program
 
 .PHONY: test
 test:
@@ -14,9 +20,16 @@ check_idf:
 		exit 1 ; \
 	fi
 
+# Only runs if build/compile_commands.json isn't available
+.PHONY: configure
+configure: check_idf
+	@if [[ ! -f build/compile_commands.json ]]; then \
+		idf.py set-target esp32s3 ; \
+	fi
+
 .PHONY: build
-build: check_idf
-	idf.py flash
+build: check_idf configure
+	idf.py build
 
 .PHONY: flash
 flash: build
@@ -38,3 +51,7 @@ monitor: check_idf
 		exit 1 ; \
 	fi ; \
 	idf.py monitor --no-reset --port $$PORT
+
+.PHONY: clean
+clean:
+	rm -fr build
