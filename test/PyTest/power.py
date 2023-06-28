@@ -32,10 +32,8 @@ class PowerTester:
     def turn_on(self):
         self.ppk.set_source_voltage(3800)  # set source voltage in mV
         self.ppk.toggle_DUT_power("ON")
-        self.ppk.start_measuring()
 
     def turn_off(self):
-        self.ppk.stop_measuring()
         self.ppk.toggle_DUT_power("OFF")
 
     def dump_samples_to_csv(self, filename, samples):
@@ -82,7 +80,9 @@ class PowerTester:
         average_current = -1
         attempts = 0
         while average_current < 0 and attempts < 3:
+            self.ppk.start_measuring()
             average_current, samples = self.measure_current(time)
+            self.ppk.stop_measuring()
             if average_current < 0:
                 logger.warn(f"Got negative average current: {average_current:0.1f}uA, retrying...")
             attempts += 1
