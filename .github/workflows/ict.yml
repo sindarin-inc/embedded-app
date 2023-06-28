@@ -26,11 +26,12 @@ jobs:
           source ~/esp/esp-idf/export.sh
           pip install ppk2-api==0.9.2
 
+      # TODO: We should be able to skip the BUILD_FOR_TEST part
       - name: Build firmware
         run: |
           source ~/esp/esp-idf/export.sh
-          idf.py set-target esp32s3
-          idf.py build
+          BUILD_FOR_TEST=1 idf.py set-target esp32s3
+          BUILD_FOR_TEST=1 idf.py build
 
       - name: Run Tests
         run: |
