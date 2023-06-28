@@ -32,14 +32,10 @@ jobs:
           idf.py set-target esp32s3
           idf.py build
 
-      - uses: nick-fields/retry@v2
-        with:
-          timeout_seconds: 500
-          max_attempts: 3
-          retry_on: error
-          command: |
-            source ~/esp/esp-idf/export.sh
-            pytest && espeak pass || espeak fail
+      - name: Run Tests
+        run: |
+          source ~/esp/esp-idf/export.sh
+          pytest
 
       - uses: actions/upload-artifact@v3
         with:
