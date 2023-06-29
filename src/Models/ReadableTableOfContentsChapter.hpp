@@ -14,6 +14,7 @@ public:
     std::string href;
     uint32_t txtOffset;
     std::string inSubsectionHref;
+    std::string summary;
 
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("href") || !j.containsKey("txt_offset") || !j.containsKey("title")) {
@@ -28,6 +29,7 @@ public:
             }
         }
         txtOffset = j["txt_offset"].as<uint32_t>();
+        summary = j["summary"].as<std::string>();
 
         return true;
     }

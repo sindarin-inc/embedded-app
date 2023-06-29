@@ -3,6 +3,7 @@
 #include "UI/ContainerScreen.hpp"
 #include "UI/LightingAdjustScreen.hpp"
 #include "UI/ReadableSeekScreen.hpp"
+#include "UI/ReadableSummaryScreen.hpp"
 #include "UI/ReadableTableOfContentsScreen.hpp"
 #include "UI/Screen.hpp"
 
@@ -15,7 +16,8 @@ public:
         : display_(display), prefs_(prefs), readable_(readable), renderer_(renderer),
           popupMenuView_(display), lightingAdjustScreen_(display, prefs, lightingController),
           readableSeekScreen_(prefs, readable, renderer),
-          readableTableOfContentsScreen_(prefs, readable, renderer, display) {
+          readableTableOfContentsScreen_(prefs, readable, renderer, display),
+          readableSummaryScreen_(prefs, readable, renderer, display) {
         this->setCurrentScreen(*this);
 
         lightingAdjustScreen_.setBackCallback([this]() {
@@ -29,6 +31,11 @@ public:
         });
 
         readableTableOfContentsScreen_.setBackCallback([this]() {
+            this->setCurrentScreen(*this);
+            back();
+        });
+
+        readableSummaryScreen_.setBackCallback([this]() {
             this->setCurrentScreen(*this);
             back();
         });
@@ -63,6 +70,7 @@ protected:
     LightingAdjustScreen lightingAdjustScreen_;
     ReadableSeekScreen readableSeekScreen_;
     ReadableTableOfContentsScreen readableTableOfContentsScreen_;
+    ReadableSummaryScreen readableSummaryScreen_;
 
     void addMenuItem(const MenuItem &newItem) override;
     void populatePopupMenu();
