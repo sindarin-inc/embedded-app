@@ -30,8 +30,8 @@ jobs:
       - name: Build firmware
         run: |
           source ~/esp/esp-idf/export.sh
-          BUILD_FOR_TEST=1 idf.py set-target esp32s3
-          BUILD_FOR_TEST=1 idf.py build
+          idf.py set-target esp32s3
+          idf.py build
 
       - name: Run Tests
         run: |
