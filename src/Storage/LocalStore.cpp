@@ -91,6 +91,32 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
     return true;
 }
 
+auto LocalStore::loadToc(std::shared_ptr<Readable> readable) -> bool {
+    std::string tocPath = readable->tocFilePath();
+    SFile tocFile = fileSystem.open(tocPath, FILE_READ, true);
+    if (!tocFile) {
+        log_e("Failed to open TOC file for reading");
+        return false;
+    }
+
+    auto tocDoc = std::make_unique<SpiRamJsonDocument>(50000); // Assuming TOC is less than 50KB
+    auto error = deserializeJson(*tocDoc, tocFile);
+    if (error) {
+        log_e("Failed to parse TOC JSON: %s", error.c_str());
+        return false;
+    }
+
+    readable->toc.clear();
+    auto tocJson = (*tocDoc)["toc"].as<JsonArray>();
+    for (const auto &chapter : tocJson) {
+        readable->toc.emplace_back();
+        readable->toc.back().fromJson(chapter);
+    }
+    log_d("Loaded %zu chapters from %s", readable->toc.size(), tocPath.c_str());
+    tocFile.close();
+    return true;
+}
+
 auto LocalStore::readablesModelType(const ReadablesVector &readables) -> ReadablesModelType {
     return &readables == &articles_ ? ReadablesModelType::Article : ReadablesModelType::Book;
 }
@@ -778,7 +804,7 @@ void LocalStore::deleteReadableFiles(const ReadablesVector &readables, bool rest
 
 auto LocalStore::saveReadables(const ReadablesVector &readables) -> bool {
     SHOW_HEAP();
-    // Readables take up to 20KB of RAM each since the JSON can be large (includes ToC, cover
+    // Readables take up to 20KB of RAM each since the JSON can be large (includes cover
     // images, file metadata, etc.)
     auto doc = std::make_unique<SpiRamJsonDocument>(20000 * std::max(1, (int)readables.size()));
     auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
@@ -789,7 +815,16 @@ auto LocalStore::saveReadables(const ReadablesVector &readables) -> bool {
 
     log_d("Saving %zu readables in %s", readables.size(), path.c_str());
     for (const auto &readable : readables) {
-        readablesJson.add(*readable);
+        // Save ToC separately
+        if (!saveTableOfContents(readable)) {
+            log_e("Failed to save ToC of readable %s", readable->uuid.c_str());
+            return false;
+        }
+
+        // Save the readable without the ToC
+        Readable readableCopy = *readable;
+        readableCopy.toc.clear();
+        readablesJson.add(readableCopy);
     }
 
     if (doc->overflowed()) {
@@ -809,6 +844,39 @@ auto LocalStore::saveReadables(const ReadablesVector &readables) -> bool {
 
     return true;
 };
+
+auto LocalStore::saveTableOfContents(const std::shared_ptr<Readable> &readable) -> bool {
+    if (!fileSystem.createDir("/toc")) {
+        log_e("could not create /toc directory");
+        return false;
+    }
+
+    auto doc =
+        std::make_unique<SpiRamJsonDocument>(50000); // Assuming that the ToC will not exceed 50KB
+    std::string path = readable->tocFilePath();
+    JsonArray tocJson = doc->createNestedArray("toc");
+
+    log_d("Saving ToC of readable %s in %s", readable->uuid.c_str(), path.c_str());
+    for (const auto &chapter : readable->toc) {
+        tocJson.add(chapter);
+    }
+
+    if (doc->overflowed()) {
+        log_e("Out of space in SpiRamJsonDocument for %s", path.c_str());
+        return false;
+    }
+
+    SFile file = fileSystem.open(path, FILE_WRITE, true);
+    if (!file) {
+        log_e("Failed to open file for writing");
+        return false;
+    }
+
+    serializeJsonPretty(*doc, file);
+    file.close();
+
+    return true;
+}
 
 auto LocalStore::readableFilePathForWriting(const std::shared_ptr<Readable> &readable) const
     -> std::string {

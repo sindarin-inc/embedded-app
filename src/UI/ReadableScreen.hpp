@@ -5,6 +5,7 @@
 #include "Models/ReadableBookmark.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "Sensors/LightingController.hpp"
+#include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/ArrowView.hpp"
 #include "UI/ContainerScreen.hpp"
@@ -26,10 +27,11 @@ class ReadableScreen : public ContainerScreen, public EinkView {
 public:
     ReadableScreen(std::shared_ptr<RendererStream> stream, DisplaySystem &display,
                    const std::shared_ptr<Readable> &readable, PreferencesStore &prefs,
-                   Battery &battery, FileSystem &fileSystem, LightingController &lightingController)
+                   Battery &battery, LocalStore &localStore, FileSystem &fileSystem,
+                   LightingController &lightingController)
         : EinkView(display), renderer_(display), firstTimeRenderer_(display), readable_(readable),
-          prefs_(prefs), fileSystem_(fileSystem), display_(display),
-          popupMenuScreen_(display, prefs, readable, lightingController, renderer_),
+          prefs_(prefs), localStore_(localStore), fileSystem_(fileSystem), display_(display),
+          popupMenuScreen_(display, prefs, readable, lightingController, renderer_, localStore_),
           leftArrowView_(display, ArrowLeft), rightArrowView_(display, ArrowRight),
           upArrowView_(display, ArrowUp), downArrowView_(display, ArrowDown) {
 
@@ -99,7 +101,7 @@ protected:
     Renderer firstTimeRenderer_;
     std::shared_ptr<Readable> readable_;
     PreferencesStore &prefs_;
-
+    LocalStore &localStore_;
     FileSystem &fileSystem_;
 
     bool inBookmark_ = false;

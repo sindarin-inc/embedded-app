@@ -38,6 +38,8 @@ void ReadablePopupMenuScreen::addMenuItem(const MenuItem &newItem) {
 
 void ReadablePopupMenuScreen::populatePopupMenu() {
     resetMenuItems();
+    localStore_.loadToc(readable_);
+
     addMenuItem(MenuItem("Main Menu", [this]() { onMainMenu(); }));
 
     addMenuItem(MenuItem("Archive", [this]() {

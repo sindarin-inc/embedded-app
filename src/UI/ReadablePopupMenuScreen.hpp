@@ -1,4 +1,5 @@
 #include "Misc/Menu.hpp"
+#include "Storage/LocalStore.hpp"
 #include "UI/Components/PopupMenuView.hpp"
 #include "UI/ContainerScreen.hpp"
 #include "UI/LightingAdjustScreen.hpp"
@@ -12,9 +13,11 @@ class ReadablePopupMenuScreen : public ContainerScreen, public View, public Menu
 public:
     ReadablePopupMenuScreen(DisplaySystem &display, PreferencesStore &prefs,
                             const std::shared_ptr<Readable> &readable,
-                            LightingController &lightingController, Renderer &renderer)
+                            LightingController &lightingController, Renderer &renderer,
+                            LocalStore &localStore)
         : display_(display), prefs_(prefs), readable_(readable), renderer_(renderer),
-          popupMenuView_(display), lightingAdjustScreen_(display, prefs, lightingController),
+          localStore_(localStore), popupMenuView_(display),
+          lightingAdjustScreen_(display, prefs, lightingController),
           readableSeekScreen_(prefs, readable, renderer),
           readableTableOfContentsScreen_(prefs, readable, renderer, display),
           readableSummaryScreen_(prefs, readable, display) {
@@ -62,6 +65,8 @@ protected:
     std::shared_ptr<Readable> readable_;
     Renderer &renderer_;
     PopupMenuView popupMenuView_;
+    LocalStore &localStore_;
+
     bool firstLoad_ = true;
 
     std::shared_ptr<MenuItemView> archiveMenuItemView_;

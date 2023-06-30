@@ -46,6 +46,7 @@ public:
 
     auto begin() -> bool;
     auto loadReadablesFromFile(ReadablesVector &readables, const std::string &path) -> bool;
+    auto loadToc(std::shared_ptr<Readable> readable) -> bool;
 
     // Convenience methods
     auto books() -> ReadablesVector & { return books_; };
@@ -86,6 +87,7 @@ public:
     void deleteArticles(bool restart = true);
     void deleteReadableFiles(const ReadablesVector &readables, bool restart);
     auto saveReadables(const ReadablesVector &readables) -> bool;
+    auto saveTableOfContents(const std::shared_ptr<Readable> &readable) -> bool;
 
     // Methods for interacting with readable files on disk
     [[nodiscard]] auto readableFilePathForWriting(const std::shared_ptr<Readable> &readable) const
