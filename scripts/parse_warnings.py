@@ -16,6 +16,11 @@ if GITHUB_REF:
 else:
     raise ValueError("GITHUB_REF not found in environment variables")
 
+print(f"GITHUB_REPO: {GITHUB_REPO}")
+print(f"GITHUB_PULL_REQUEST: {GITHUB_PULL_REQUEST}")
+print(f"GITHUB_TOKEN: {GITHUB_TOKEN}")
+print(f"GITHUB_REF: {GITHUB_REF}")
+
 
 def parse_warnings(file_path):
     warnings_and_errors = []

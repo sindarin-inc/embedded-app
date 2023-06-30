@@ -42,12 +42,17 @@ jobs:
       - run: git config --system --add safe.directory /__w/embedded-app/embedded-app
         if: github.event_name == 'pull_request'
 
+      - name: Print last commit SHA
+        run: |
+          echo "Last commit SHA: ${{ github.sha }}"
+
       - name: Post errors and warnings as PR comments
         run: |
           . $IDF_PATH/export.sh
           pip install requests curlify
           python scripts/parse_warnings.py
         env:
+          GITHUB_SHA: ${{ github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: github.event_name == 'pull_request'
 
