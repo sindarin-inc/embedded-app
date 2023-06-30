@@ -20,6 +20,10 @@ auto convertToJson(const Readable &src, JsonVariant dst) -> bool {
     auto tocJson = dst.createNestedArray("toc");
     for (const auto &chapter : src.toc) {
         tocJson.add(chapter);
+        // Check if any chapter has a summary, if so, set hasSummary
+        if (!chapter.summary.empty()) {
+            dst["has_summary"] = true;
+        }
     }
     dst["readable_type"] = src.readableType;
 

@@ -45,6 +45,7 @@ public:
     ReadableFileVector files;
     ReadableBookmarksVector bookmarks;
     ReadableTableOfContentsChapterVector toc;
+    bool hasSummary = false;
 
     SpiramString readableType;
     // TODO: source
@@ -126,6 +127,10 @@ public:
         for (const auto &chapter : j["toc"].as<JsonArray>()) {
             toc.emplace_back();
             toc.back().fromJson(chapter);
+            // Check if any chapter has a summary, if so, set hasSummary
+            if (chapter["summary"].as<std::string>().size() > 0) {
+                hasSummary = true;
+            }
         }
 
         // Temporary migration for stored pocket articles that don't have a readable_type
