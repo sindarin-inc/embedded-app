@@ -131,6 +131,14 @@ def post_annotations(warnings_and_errors: List[Dict[str, str]]):
 #     print(f"Got response: {response.text}")
 #     response.raise_for_status()
 
+
+def post_annotations_chunked(warnings_and_errors: List[Dict[str, str]]):
+    chunk_size = 50
+    for i in range(0, len(warnings_and_errors), chunk_size):
+        chunk = warnings_and_errors[i : i + chunk_size]
+        post_annotations(chunk)
+
+
 if __name__ == "__main__":
     warnings_and_errors = parse_warnings("warnings.txt")
-    post_annotations(warnings_and_errors)
+    post_annotations_chunked(warnings_and_errors)
