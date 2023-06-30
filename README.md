@@ -45,7 +45,6 @@ idf.py monitor --no-reset -p $(ls /dev/cu.usbmodem* 2> /dev/null | head -n 1)
 * Visual Studio Code (`brew install visual-studio-code`)
 * PlatformIO (`brew install platformio`, or on Ubuntu `sudo apt install python3-pip && pip3 install platformio` or the [installer script](https://docs.platformio.org/en/latest/core/installation/methods/installer-script.html)) - we don't typically build the firmware with this but it's needed for the simulator, tests, and clang-tidy.
 * clang-format (`brew install clang-format`)
-* clang-tidy (`brew install llvm`)
 
 ## Reformat code with `clang-format`
 
@@ -57,10 +56,10 @@ find src -iname "*.hpp" -o -iname "*.h" -o -iname "*.cpp" -o -iname "*.c" | xarg
 
 ## Static analysis and cleanup with `clang-tidy`
 
-You can run clang-tidy to do some more advance C++ static analysis and fixes. Make sure you install `clang-tidy` (included with `brew install llvm`) and then run the following to automatically fix things:
+You can run clang-tidy to do some more advance C++ static analysis and fixes. Make sure you've set up IDF, then run the following to automatically fix things and show warnings:
 
 ```bash
-./scripts/clang-tidy -w --fix
+make clang-tidy
 ```
 
 Issues that will be fixed automatically will be fixed by clang-tidy, warnings will mark any suggestions that clang-tidy couldn't fix directly.
