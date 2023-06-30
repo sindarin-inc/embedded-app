@@ -88,7 +88,9 @@ def post_annotations(warnings_and_errors: List[Dict[str, str]]):
         "head_sha": GITHUB_SHA,
         "status": "completed",
         "conclusion": (
-            "success" if all(issue["severity"] != "error" for issue in warnings_and_errors) else "failure"
+            "success"
+            if all(issue["annotation_level"] != "failure" for issue in warnings_and_errors)
+            else "failure"
         ),
         "output": {
             "title": "Clang-Tidy Results",
