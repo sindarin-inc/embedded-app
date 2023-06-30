@@ -2,6 +2,9 @@ name: Run Clang Tools
 
 on:
   pull_request:
+  push:
+    branches:
+      - main
 
 jobs:
   clangify:
@@ -37,6 +40,13 @@ jobs:
 
       # See https://github.com/actions/checkout/issues/1169
       - run: git config --system --add safe.directory /__w/embedded-app/embedded-app
+        if: github.event_name == 'pull_request'
+
+      - name: Post errors and warnings as PR comments
+        run: python scripts/parse_warnings.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: github.event_name == 'pull_request'
 
       - uses: EndBug/add-and-commit@v9
         with:
@@ -46,3 +56,4 @@ jobs:
           message: "Committing clang-format/clang-tidy changes"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: github.event_name == 'pull_request'
