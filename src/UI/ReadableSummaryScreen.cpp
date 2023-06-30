@@ -19,7 +19,6 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
         PROFILE_START(ReadableSummaryScreenLayoutAndDraw);
         draw();
         PROFILE_END_LOG_US(ReadableSummaryScreenLayoutAndDraw);
-        display.updateDisplay(DisplaySystem::UpdateType::FULL);
     }
 
     if (firstLoad_) {
@@ -33,6 +32,7 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
         newPlace_ = renderer_.renderPage(newPlace_);
     }
 
+    display.updateDisplay(DisplaySystem::UpdateType::FULL);
     firstLoad_ = false;
 }
 

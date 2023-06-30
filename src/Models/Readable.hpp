@@ -87,8 +87,10 @@ public:
         for (const auto &chapter : toc) {
             summary += chapter.title;
             summary += "\n\n";
-            summary += chapter.summary;
-            summary += "\n\n";
+            if (!chapter.summary.empty()) {
+                summary += chapter.summary;
+                summary += "\n\n";
+            }
         }
 
         return summary;

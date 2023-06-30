@@ -500,7 +500,7 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
     // The logic is that we split each line into 10 "decilines" and then
     // assign a height to each line based on if it's a newline or not. Newlines
     // get ENDPARAGRAPH_DECI_LINE_HEIGHT decilines (currently set to 4 out of 10).
-    // The y position calucalted is based on the number of newlines we've seen so far
+    // The y position calculated is based on the number of newlines we've seen so far
     // in this page.
 
     for (Idx j = 0; j < pageLinesCount_; j++) {

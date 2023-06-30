@@ -52,4 +52,6 @@ auto HasSuffix(std::string const &str, std::string const &suffix) -> bool;
 
 auto HasPrefix(const char *pre, const char *str) -> bool;
 
+auto commify(uint32_t n) -> std::string;
+
 #pragma clang diagnostic pop

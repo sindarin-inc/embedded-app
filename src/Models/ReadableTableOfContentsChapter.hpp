@@ -24,12 +24,11 @@ public:
         href = j["href"].as<std::string>();
         if (j.containsKey("in_subsection_href")) {
             inSubsectionHref = j["in_subsection_href"].as<std::string>();
-            if (!inSubsectionHref.empty()) {
-                title = " " + title;
-            }
         }
         txtOffset = j["txt_offset"].as<uint32_t>();
-        summary = j["summary"].as<std::string>();
+        if (j.containsKey("summary") && !j["summary"].isNull()) {
+            summary = j["summary"].as<std::string>();
+        }
 
         return true;
     }

@@ -1,5 +1,7 @@
 #include "ReadableTableOfContentsScreen.hpp"
 
+#include "Misc/StringUtil.hpp"
+
 auto ReadableTableOfContentsScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto inset = 2;
 
@@ -159,8 +161,12 @@ void ReadableTableOfContentsScreen::processCommand(RemoteCommand command) {
 void ReadableTableOfContentsScreen::loadMenuItems() {
     resetMenuItems();
     for (const ReadableTableOfContentsChapter &chapter : readable_->toc) {
-        addMenuItem(MenuItem(chapter.title, StringFormat("%d", SOL_PAGE_NUMBER(chapter.txtOffset)),
-                             [this]() { back(); }));
+        std::string title = chapter.title;
+        if (!chapter.inSubsectionHref.empty()) {
+            title = StringFormat("  %s", chapter.title.c_str());
+        }
+        addMenuItem(
+            MenuItem(title, commify(SOL_PAGE_NUMBER(chapter.txtOffset)), [this]() { back(); }));
     }
 }
 
