@@ -4,8 +4,16 @@ import re
 
 GITHUB_API_URL = "https://api.github.com"
 GITHUB_REPO = os.environ["GITHUB_REPOSITORY"]
-GITHUB_PULL_REQUEST = os.environ["GITHUB_PULL_REQUEST"]
 GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
+GITHUB_REF = os.getenv("GITHUB_REF")
+GITHUB_PULL_REQUEST = None
+
+if GITHUB_REF:
+    match = re.search(r"pull/(\d+)/merge", GITHUB_REF)
+    if match:
+        GITHUB_PULL_REQUEST = match.group(1)
+else:
+    raise ValueError("GITHUB_REF not found in environment variables")
 
 
 def parse_warnings(file_path):
