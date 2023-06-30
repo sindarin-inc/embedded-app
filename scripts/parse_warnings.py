@@ -5,44 +5,76 @@ import re
 from typing import List, Dict
 
 GITHUB_API_URL = "https://api.github.com"
-GITHUB_REPO = os.environ["GITHUB_REPOSITORY"]
-GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
+GITHUB_REPO = os.getenv("GITHUB_REPOSITORY")
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_REF = os.getenv("GITHUB_REF")
-GITHUB_PULL_REQUEST = None
-GITHUB_REPOSITORY = os.environ["GITHUB_REPOSITORY"]
-GITHUB_SHA = os.environ["GITHUB_SHA"]
+GITHUB_REPOSITORY = os.getenv("GITHUB_REPOSITORY")
+GITHUB_SHA = os.getenv("GITHUB_SHA")
+# GITHUB_PULL_REQUEST = None
 
-if GITHUB_REF:
-    match = re.search(r"pull/(\d+)/merge", GITHUB_REF)
-    if match:
-        GITHUB_PULL_REQUEST = match.group(1)
-else:
-    raise ValueError("GITHUB_REF not found in environment variables")
-
+# if GITHUB_REF:
+#     match = re.search(r"pull/(\d+)/merge", GITHUB_REF)
+#     if match:
+#         GITHUB_PULL_REQUEST = match.group(1)
+# else:
+#     raise ValueError("GITHUB_REF not found in environment variables")
 print(f"GITHUB_REPO: {GITHUB_REPO}")
-print(f"GITHUB_PULL_REQUEST: {GITHUB_PULL_REQUEST}")
+# print(f"GITHUB_PULL_REQUEST: {GITHUB_PULL_REQUEST}")
 print(f"GITHUB_TOKEN: {GITHUB_TOKEN}")
 print(f"GITHUB_REF: {GITHUB_REF}")
+print(f"GITHUB_SHA: {GITHUB_SHA}")
+print(f"GITHUB_REPOSITORY: {GITHUB_REPOSITORY}")
+
+# def parse_warnings(file_path):
+#     warnings_and_errors = []
+#     with open(file_path, "r") as f:
+#         lines = f.readlines()
+#         for line in lines:
+#             match = re.match(r"(.*):(\d+):(\d+): (warning|error): (.*) \[.*\]", line)
+#             if match:
+#                 file, line_number, column_number, issue_type, message = match.groups()
+#                 warnings_and_errors.append(
+#                     {
+#                         "file": file,
+#                         "line": int(line_number),
+#                         "column_number": int(column_number),
+#                         "severity": issue_type,
+#                         "message": message,
+#                     }
+#                     {"file": "file1.cpp", "line": 10, "message": "warning: some warning", "severity": "warning"},
+
+#                 )
+#     return warnings_and_errors
 
 
 def parse_warnings(file_path):
-    warnings_and_errors = []
+    severity_map = {"warning": "warning", "error": "failure", "note": "notice"}
+
+    warning_pattern = re.compile(r"^(.*?):(\d+):(\d+): (\w+): (.*)$")
+    annotations = []
+
     with open(file_path, "r") as f:
         lines = f.readlines()
         for line in lines:
-            match = re.match(r"(.*):(\d+):(\d+): (warning|error): (.*) \[.*\]", line)
+            match = warning_pattern.match(line)
             if match:
-                file, line_number, column_number, issue_type, message = match.groups()
-                warnings_and_errors.append(
-                    {
-                        "file": file,
-                        "line_number": int(line_number),
-                        "column_number": int(column_number),
-                        "issue_type": issue_type,
-                        "message": message,
-                    }
+                file_path, line, column, severity, message = match.groups()
+                # Remove the '/Users/johnboiles/Developer/repos/sindarin-inc/embedded-app/src/' prefix
+                file_path = file_path.replace(
+                    "/Users/johnboiles/Developer/repos/sindarin-inc/embedded-app/src/", ""
                 )
-    return warnings_and_errors
+                annotation = {
+                    "path": file_path,
+                    "start_line": int(line),
+                    "end_line": int(line),
+                    "start_column": int(column),
+                    "annotation_level": severity_map.get(severity, "notice"),
+                    "message": message,
+                    "title": f"clang-tidy {severity}",
+                }
+                annotations.append(annotation)
+
+    return annotations
 
 
 def post_annotations(warnings_and_errors: List[Dict[str, str]]):
@@ -52,25 +84,16 @@ def post_annotations(warnings_and_errors: List[Dict[str, str]]):
         "Authorization": f"Bearer {GITHUB_TOKEN}",
     }
     data = {
-        "name": "Static Analysis",
+        "name": "Clang-Tidy Analysis",
         "head_sha": GITHUB_SHA,
         "status": "completed",
         "conclusion": (
             "success" if all(issue["severity"] != "error" for issue in warnings_and_errors) else "failure"
         ),
         "output": {
-            "title": "Static Analysis Results",
+            "title": "Clang-Tidy Results",
             "summary": f"{len(warnings_and_errors)} issues found",
-            "annotations": [
-                {
-                    "path": issue["file"],
-                    "start_line": issue["line"],
-                    "end_line": issue["line"],
-                    "annotation_level": "warning" if issue["severity"] == "warning" else "failure",
-                    "message": issue["message"],
-                }
-                for issue in warnings_and_errors
-            ],
+            "annotations": warnings_and_errors,
         },
     }
     response = requests.post(url, headers=headers, json=data)
@@ -106,6 +129,6 @@ def post_annotations(warnings_and_errors: List[Dict[str, str]]):
 #     print(f"Got response: {response.text}")
 #     response.raise_for_status()
 
-
-warnings_and_errors = parse_warnings("warnings.txt")
-post_annotations(warnings_and_errors)
+if __name__ == "__main__":
+    warnings_and_errors = parse_warnings("warnings.txt")
+    post_annotations(warnings_and_errors)
