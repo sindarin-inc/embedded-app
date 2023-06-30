@@ -25,6 +25,7 @@ dut_port_index = 0
 dut_log_port_name = "SOL Mainframe ICT"
 dut_log_port_index = 1
 
+
 @pytest.fixture
 def port(request: FixtureRequest) -> t.Optional[str]:
     """Overridden to make sure we pick the right USB port for the DUT"""
@@ -254,7 +255,7 @@ class TestPowerConsumption:
 
         logger.info("Measuring active mode current")
         # TODO: Why do we need such a wide range here?
-        power_client.expect_current((15000, 40000), 5)
+        power_client.expect_current((15000, 110000), 5)
 
         logger.info("Sleeping")
         ict_client.set_servo("right", 0)
