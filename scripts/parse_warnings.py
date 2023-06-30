@@ -59,6 +59,7 @@ def post_comments(warnings_and_errors):
         json=data,
     )
     print(f"Made request: {curlify.to_curl(response.request)}")
+    print(f"Got response: {response.text}")
     response.raise_for_status()
 
 
