@@ -869,8 +869,9 @@ auto Renderer::loadCurrentPage() -> Place {
     int16_t lastDeciLinesCount = 0;
 
     while ((deciLinesCount <= maxDeciLines) && (tokens_[tokenIdx].tokenId != TokenId::ENDOFFILE)) {
-
-        lastDeciLinesCount = deciLinesCount;
+        if constexpr (RENDERER_DEBUG) {
+            lastDeciLinesCount = deciLinesCount;
+        }
         // Don't start pages with new paragraphs.
         if (nextTokenIdx == 0) {
             if (tokens_[tokenIdx].tokenId == TokenId::ENDPARAGRAPH) {

@@ -55,3 +55,13 @@ monitor: check_idf
 .PHONY: clean
 clean:
 	rm -fr build
+
+.PHONY: clang-tidy
+clang-tidy: check_idf
+	@if ! command -v clang-tidy &> /dev/null ; then \
+		echo "clang-tidy not found. Installing it now:" ; \
+		idf_tools.py install esp-clang ; \
+		pip install --upgrade pyclang ; \
+		source $$IDF_PATH/export.sh ; \
+	fi
+	idf.py clang-check --run-clang-tidy-py scripts/run-clang-tidy.py --run-clang-tidy-options "-fix -header-filter=embedded-app/src/.*" --exclude-paths managed_components --exclude-paths components

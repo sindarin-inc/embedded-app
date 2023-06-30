@@ -199,10 +199,8 @@ auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
 
     if (eveningNews != 0 && eveningEventEpoch <= morningEventEpoch) {
         nextEventEpoch = eveningEventEpoch;
-        nextEventTime = &eveningEvent;
     } else {
         nextEventEpoch = morningEventEpoch;
-        nextEventTime = &morningEvent;
     }
 
     // Add the random number of seconds to the nextEventEpoch between 0 and 10 minutes
