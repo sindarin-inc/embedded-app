@@ -20,6 +20,10 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           submodules: "recursive"
 
+      - name: Print last commit SHA
+        run: |
+          echo "Last commit SHA: ${{ github.sha }}"
+
       - name: Install tools
         run: |
           . $IDF_PATH/export.sh
@@ -30,13 +34,6 @@ jobs:
         run: |
           . $IDF_PATH/export.sh
           idf.py clang-check --run-clang-tidy-py scripts/run-clang-tidy.py --run-clang-tidy-options "-fix -header-filter=embedded-app/src/.*" --exclude-paths managed_components --exclude-paths components
-
-      - uses: DoozyX/clang-format-lint-action@v0.16.2
-        with:
-          source: "./src"
-          extensions: "hpp,h,cpp,c"
-          clangFormatVersion: 15
-          inplace: True
 
       # See https://github.com/actions/checkout/issues/1169
       - run: git config --system --add safe.directory /__w/embedded-app/embedded-app
@@ -65,3 +62,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: github.event_name == 'pull_request'
+
+      - uses: DoozyX/clang-format-lint-action@v0.16.2
+        with:
+          source: "./src"
+          extensions: "hpp,h,cpp,c"
+          clangFormatVersion: 15
+          inplace: True
