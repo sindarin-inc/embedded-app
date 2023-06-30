@@ -50,7 +50,7 @@ print(f"GITHUB_REPOSITORY: {GITHUB_REPOSITORY}")
 def parse_warnings(file_path):
     severity_map = {"warning": "warning", "error": "failure", "note": "notice"}
 
-    warning_pattern = re.compile(r"^(.*?):(\d+):(\d+): (\w+): (.*)$")
+    warning_pattern = re.compile(r"^(.*?):(\d+):(\d+): (warning|error): (.*)$")
     annotations = []
 
     with open(file_path, "r") as f:
