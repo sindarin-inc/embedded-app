@@ -4,7 +4,7 @@
 #include <vector>
 
 //---  ESP_IDF
-//#include <esp_log.h>
+// #include <esp_log.h>
 
 const constexpr bool IBMF_TRACING = false;
 
@@ -107,7 +107,7 @@ const constexpr int DEBUG = 0;
 #endif
 
 #if DEBUG_IBMF
-//#include <fstream>
+// #include <fstream>
 #include <iostream>
 // #include <iomanip>
 #endif
