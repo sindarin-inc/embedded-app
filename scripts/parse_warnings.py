@@ -53,7 +53,7 @@ def post_comments(warnings_and_errors):
             }
         )
     data = {
-        "commit_id": os.environ["GITHUB_SHA"],
+        # "commit_id": os.environ["GITHUB_SHA"],
         "event": "COMMENT",
         "comments": review_comments,
     }

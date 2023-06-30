@@ -21,9 +21,9 @@ jobs:
           submodules: "recursive"
 
       - run: |
-          echo "Relevant commit SHA: $GITHUB_SHA"
+          echo "Relevant commit SHA: $PR_GITHUB_SHA"
         env:
-          GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          PR_GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Install tools
         run: |
