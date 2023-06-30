@@ -59,9 +59,7 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
 
     addMenuItem(MenuItem("Text", [this]() { back(); }));
 
-    addMenuItem(MenuItem("Summary", [this]() {
-        setCurrentScreen(readableSummaryScreen_);
-    })
+    addMenuItem(MenuItem("Summary", [this]() { setCurrentScreen(readableSummaryScreen_); }));
 
     addMenuItem(MenuItem("Brightness", [this]() {
         log_d("Setting current screen to brightness screen");

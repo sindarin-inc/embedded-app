@@ -1,68 +1,12 @@
 #include "ReadableSummaryScreen.hpp"
 
-auto ReadableSummaryScreen::layout(LayoutContext &context, Size size) -> Size {
-    const auto inset = 2;
+#include "Misc/SpiramAllocator.hpp"
 
-    // This mirrors what happens in MenuScreen right now. We may want to refactor this into a
-    // helper so that it is reused and consistent.
-    context.setViewFrame(leftArrowView_, {{0, 1}, {5, 10}},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
-    context.setViewFrame(upperLeftTextView_, {{10, 0}, size},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
+auto ReadableSummaryScreen::layout(LayoutContext &context, Size size) -> Size { return size; };
 
-    auto insetRect = context.setSublayoutFrame(
-        Rect{{0, 0}, size}.inset(inset),
-        LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
-        [this](LayoutContext &context, Size size) -> Size {
-            int x = 0;
-            int y = 0;
-
-            for (auto &view : menuItemViews_) {
-                auto viewFrame = context.setViewFrame(
-                    *view, {{x, y}, size}, LayoutOptionsSizeToFitVertical | LayoutOptionsAlignTop);
-                y += viewFrame.size.height + 1;
-            }
-
-            return {size.width, y};
-        });
-
-    context.setSublayoutFrame(
-        {{size.width + 10, 0}, {10, size.height}},
-        LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical | LayoutOptionsAlignRight,
-        [this](LayoutContext &context, Size size) -> Size {
-            int x = 0;
-            int y = 0;
-            Size boxSize = {5, 5};
-            for (auto &view : menuPageIndicatorViews_) {
-                auto viewFrame = context.setViewFrame(*view, {{x, y}, boxSize});
-                y += viewFrame.size.height + 5;
-            }
-
-            return {size.width, y};
-        });
-
-    return {size.width, insetRect.size.height + 2 * inset};
-};
-
-void ReadableSummaryScreen::drawInRect(Rect rect) {
-    leftArrowView_.draw();
-    upperLeftTextView_.draw();
-
-    for (auto &view : menuItemViews_) {
-        (*view).draw();
-    }
-
-    if (menuPageIndicatorViews_.size() > 1) {
-        for (auto &view : menuPageIndicatorViews_) {
-            (*view).draw();
-        }
-    }
-}
+void ReadableSummaryScreen::drawInRect(Rect rect) {}
 
 void ReadableSummaryScreen::render(DisplaySystem &display) {
-    if (menuItemViews_.size() <= 0) {
-        log_w("No views to draw in ReadableSummaryScreen");
-    }
 
     setNeedsLayout();
 
@@ -73,53 +17,21 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
 
     if (firstLoad_) {
         PROFILE_START(ReadableSummaryScreenLayoutAndDraw);
-        menuItemsPage_.clear();
-        menuItemViews_.clear();
-        menuPageIndicatorViews_.clear();
-
-        populateMenuItems(menuItemsPage_);
-
-        for (auto &menuItem : menuItemsPage_) {
-            auto menuItemView = std::make_shared<MenuItemView>(
-                display, menuItem, myStyle_.navigationFont, false, false);
-            menuItemView->setCircleIndicator(true);
-            menuItemView->setRightText(menuItem.subtitle);
-            menuItemViews_.push_back(menuItemView);
-        }
-
-        int numPages = getNumItems() / getMyStyle().numberOfItemsPerPage + 1;
-        if (getNumItems() % getMyStyle().numberOfItemsPerPage == 0) {
-            numPages--;
-        }
-
-        for (int i = 0; i < numPages; i++) {
-            auto menuPageView = std::make_shared<BoxView>(display, 3);
-
-            if (i == (getCurrSelection() / getMyStyle().numberOfItemsPerPage)) {
-                menuPageView->fillColor = display.fg;
-            }
-            menuPageIndicatorViews_.push_back(menuPageView);
-        }
-
         draw();
         PROFILE_END_LOG_US(ReadableSummaryScreenLayoutAndDraw);
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
     }
 
-    std::shared_ptr<MenuItemView> selectedMenuItemView =
-        menuItemViews_[getCurrSelection() % getMyStyle().numberOfItemsPerPage];
-    for (auto &menuItemView : menuItemViews_) {
-        if (menuItemView && menuItemView == selectedMenuItemView) {
-            menuItemView->setSelected(true);
-        } else {
-            menuItemView->setSelected(false);
-        }
+    if (firstLoad_) {
+        SpiramString summaryString = readable_->summary();
+
+        auto stream = std::make_shared<StdStringStream>(summaryString);
+        renderer_.setStream(stream);
+        newPlace_ = renderer_.renderPage(0);
+    } else {
+        prevPlace_ = newPlace_;
+        newPlace_ = renderer_.renderPage(newPlace_);
     }
-
-    // Redraw with a different vcom setting for the menu item bullet
-    draw();
-
-    display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
 
     firstLoad_ = false;
 }
@@ -127,59 +39,27 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
 void ReadableSummaryScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::UP:
-        if (prevSelection()) {
-            firstLoad_ = true;
-        }
+        back();
         setNeedsRerender();
         break;
     case RemoteCommand::DOWN:
-        if (nextSelection()) {
-            firstLoad_ = true;
-        }
+        back();
         setNeedsRerender();
         break;
     case RemoteCommand::ENTER:
     case RemoteCommand::RIGHT:
-        setPlacemark();
-        if (getCurrItem().callback != nullptr) {
-            getCurrItem().callback();
+        if (atEnd_) {
+            back();
         }
+
+        setNeedsRerender();
         break;
     case RemoteCommand::BACK:
     case RemoteCommand::LEFT:
-        firstLoad_ = true;
         back();
         setNeedsRerender();
         break;
     default:
         break;
     }
-}
-
-void ReadableSummaryScreen::loadMenuItems() {
-    resetMenuItems();
-    for (const ReadableTableOfContentsChapter &chapter : readable_->toc) {
-        addMenuItem(MenuItem(chapter.title, StringFormat("%d", SOL_PAGE_NUMBER(chapter.txtOffset)),
-                             [this]() { back(); }));
-    }
-}
-
-void ReadableSummaryScreen::setPlacemark() {
-    auto chapter = readable_->toc[getCurrSelection()];
-    readable_->place = chapter.txtOffset;
-    renderer_.setCurrentPlace(readable_->place);
-    prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place);
-    prefs_.readablePlaceChanged.set(readable_->shortenedUuid.c_str(), true);
-}
-
-void ReadableSummaryScreen::setNearestChapterSelection(unsigned long placeInFile) {
-    int nearestChapter = 0;
-    for (int i = 0; i < readable_->toc.size(); i++) {
-        if (readable_->toc[i].txtOffset <= placeInFile) {
-            nearestChapter = i;
-        } else {
-            break;
-        }
-    }
-    setCurrSelection(nearestChapter);
 }

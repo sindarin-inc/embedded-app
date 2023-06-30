@@ -18,8 +18,8 @@ class ReadableSummaryScreen : public Screen, public EinkView {
 public:
     ReadableSummaryScreen(PreferencesStore &prefs, std::shared_ptr<Readable> readable,
                           DisplaySystem &display)
-        : EinkView(display), prefs_(prefs), readable_(std::move(readable)), renderer_(renderer),
-          display_(display), upperLeftTextView_(display, upperLeftText_), leftArrowView_(display) {}
+        : EinkView(display), prefs_(prefs), readable_(std::move(readable)), renderer_(display),
+          display_(display) {}
 
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
@@ -37,10 +37,9 @@ protected:
     std::shared_ptr<Readable> readable_;
     Renderer renderer_;
     DisplaySystem &display_;
+
     bool firstLoad_ = true;
-
-    std::string upperLeftText_ = "Dismiss";
-    SingleLineTextView upperLeftTextView_;
-
-    ArrowView leftArrowView_;
+    unsigned long newPlace_ = 0;
+    unsigned long prevPlace_ = 0;
+    bool atEnd_ = false;
 };

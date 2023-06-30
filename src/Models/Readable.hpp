@@ -81,6 +81,19 @@ public:
         return readableType == "pocket_article" || readableType == "email_article";
     }
 
+    auto summary() -> SpiramString {
+        SpiramString summary;
+
+        for (const auto &chapter : toc) {
+            summary += chapter.title;
+            summary += "\n\n";
+            summary += chapter.summary;
+            summary += "\n\n";
+        }
+
+        return summary;
+    }
+
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("uuid") || !j.containsKey("title") || !j.containsKey("date_created") ||
             !j.containsKey("date_modified") || !j.containsKey("authors")) {

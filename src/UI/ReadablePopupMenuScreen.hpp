@@ -17,7 +17,7 @@ public:
           popupMenuView_(display), lightingAdjustScreen_(display, prefs, lightingController),
           readableSeekScreen_(prefs, readable, renderer),
           readableTableOfContentsScreen_(prefs, readable, renderer, display),
-          readableSummaryScreen_(prefs, readable, renderer, display) {
+          readableSummaryScreen_(prefs, readable, display) {
         this->setCurrentScreen(*this);
 
         lightingAdjustScreen_.setBackCallback([this]() {
