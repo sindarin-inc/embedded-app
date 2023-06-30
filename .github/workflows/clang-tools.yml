@@ -43,7 +43,9 @@ jobs:
         if: github.event_name == 'pull_request'
 
       - name: Post errors and warnings as PR comments
-        run: python scripts/parse_warnings.py
+        run: |
+          pip install requests
+          python scripts/parse_warnings.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: github.event_name == 'pull_request'
