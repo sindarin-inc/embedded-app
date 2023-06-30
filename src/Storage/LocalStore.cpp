@@ -111,6 +111,11 @@ auto LocalStore::loadToc(std::shared_ptr<Readable> readable) -> bool {
     for (const auto &chapter : tocJson) {
         readable->toc.emplace_back();
         readable->toc.back().fromJson(chapter);
+
+        // Check if any chapter has a summary, if so, set hasSummary
+        if (chapter["summary"].as<std::string>().size() > 0) {
+            readable->hasSummary = true;
+        }
     }
     log_d("Loaded %zu chapters from %s", readable->toc.size(), tocPath.c_str());
     tocFile.close();
