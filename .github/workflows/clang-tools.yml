@@ -40,7 +40,7 @@ jobs:
       - run: git config --system --add safe.directory /__w/embedded-app/embedded-app
         if: github.event_name == 'pull_request'
 
-      - name: Post errors and warnings as PR comments
+      - name: Post errors and warnings as annotations
         run: |
           . $IDF_PATH/export.sh
           pip install requests curlify
@@ -49,6 +49,13 @@ jobs:
           PR_GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: github.event_name == 'pull_request'
+
+      - uses: DoozyX/clang-format-lint-action@v0.16.2
+        with:
+          source: "./src"
+          extensions: "hpp,h,cpp,c"
+          clangFormatVersion: 15
+          inplace: True
 
       - uses: EndBug/add-and-commit@v9
         with:
@@ -59,10 +66,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: github.event_name == 'pull_request'
-
-      - uses: DoozyX/clang-format-lint-action@v0.16.2
-        with:
-          source: "./src"
-          extensions: "hpp,h,cpp,c"
-          clangFormatVersion: 15
-          inplace: True
