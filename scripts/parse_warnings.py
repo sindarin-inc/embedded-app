@@ -1,3 +1,4 @@
+import curlify
 import os
 import requests
 import re
@@ -57,6 +58,7 @@ def post_comments(warnings_and_errors):
         headers=headers,
         json=data,
     )
+    print(f"Made request: {curlify.to_curl(response.request)}")
     response.raise_for_status()
 
 

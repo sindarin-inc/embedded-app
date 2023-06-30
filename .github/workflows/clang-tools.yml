@@ -45,7 +45,7 @@ jobs:
       - name: Post errors and warnings as PR comments
         run: |
           . $IDF_PATH/export.sh
-          pip install requests
+          pip install requests curlify
           python scripts/parse_warnings.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
