@@ -20,25 +20,20 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           submodules: "recursive"
 
-      - run: |
-          echo "Relevant commit SHA: $PR_GITHUB_SHA"
-        env:
-          PR_GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-
       - name: Install tools
         run: |
           . $IDF_PATH/export.sh
           idf_tools.py install esp-clang
           pip install --upgrade pyclang
 
+      # See https://github.com/actions/checkout/issues/1169
+      - run: git config --system --add safe.directory /__w/embedded-app/embedded-app
+        if: github.event_name == 'pull_request'
+
       - name: Run clang-tidy
         run: |
           . $IDF_PATH/export.sh
           idf.py clang-check --run-clang-tidy-py scripts/run-clang-tidy.py --run-clang-tidy-options "-fix -header-filter=embedded-app/src/.*" --exclude-paths managed_components --exclude-paths components
-
-      # See https://github.com/actions/checkout/issues/1169
-      - run: git config --system --add safe.directory /__w/embedded-app/embedded-app
-        if: github.event_name == 'pull_request'
 
       - name: Post errors and warnings as annotations
         run: |
