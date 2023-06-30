@@ -11,6 +11,7 @@ GITHUB_REF = os.getenv("GITHUB_REF")
 GITHUB_REPOSITORY = os.getenv("GITHUB_REPOSITORY")
 GITHUB_SHA = os.getenv("PR_GITHUB_SHA")
 # GITHUB_PULL_REQUEST = None
+PATH_PREFIX = "/__w/embedded-app/embedded-app/"
 
 # if GITHUB_REF:
 #     match = re.search(r"pull/(\d+)/merge", GITHUB_REF)
@@ -64,7 +65,7 @@ def parse_warnings(file_path):
                     "/Users/johnboiles/Developer/repos/sindarin-inc/embedded-app/src/", ""
                 )
                 annotation = {
-                    "path": file_path,
+                    "path": file_path.replace(PATH_PREFIX, ""),
                     "start_line": int(line),
                     "end_line": int(line),
                     "start_column": int(column),
