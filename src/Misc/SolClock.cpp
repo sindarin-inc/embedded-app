@@ -147,7 +147,7 @@ void SolClock::setClockTimeFromInternet() {
     if (size == 0) {
         log_e("strftime failed");
     }
-    log_i("The current date/time is: %s (%" PRIu64 ")", strftimeBuf, now);
+    log_i("The current date/time is: %s (%" PRIu64 ")", strftimeBuf, (uint64_t)now);
 #else
     log_i("Not setting clock time from internet in simulator");
 #endif
