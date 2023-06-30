@@ -46,7 +46,7 @@ jobs:
           pip install requests curlify
           python scripts/parse_warnings.py
         env:
-          GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          PR_GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: github.event_name == 'pull_request'
 
