@@ -44,6 +44,7 @@ jobs:
 
       - name: Post errors and warnings as PR comments
         run: |
+          . $IDF_PATH/export.sh
           pip install requests
           python scripts/parse_warnings.py
         env:
