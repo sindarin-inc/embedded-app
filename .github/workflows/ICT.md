@@ -47,7 +47,7 @@ NOTE: You'll want to use our fork and make sure `pytest` is installed.
 ```sh
 mkdir -p ~/esp
 cd ~/esp
-git clone -b sindarin/idf5-51772f4fb5 --recursive https://github.com/sindarin-inc/esp-idf.git
+git clone -b release/v5.1 --recursive https://github.com/espressif/esp-idf.git
 cd esp-idf
 ./install.sh esp32s3 --enable-pytest
 ```

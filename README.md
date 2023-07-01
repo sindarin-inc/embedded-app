@@ -10,10 +10,10 @@ After cloning this repo from GitHub you'll need to pull the most recent submodul
 git submodule update --init --recursive
 ```
 
-The primary way to build the firmware itself is with Espressif's official esp-idf toolchain. We use a [fork of esp-idf](http://github.com/sindarin-inc/esp-idf) that has some patches included. In some other directory (not in this repo), run:
+The primary way to build the firmware itself is with Espressif's official [esp-idf toolchain](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/linux-macos-setup.html). In some other directory (not in this repo), run:
 
 ```sh
-git clone -b sindarin/idf5-51772f4fb5 --recursive git@github.com:sindarin-inc/esp-idf.git
+git clone -b release/v5.1 --recursive https://github.com/espressif/esp-idf.git
 cd esp-idf
 ./install.sh esp32s3
 ```
@@ -23,7 +23,7 @@ If you get errors about `cmake` you might need to install `cmake` first (`brew i
 Now from the root of this repo, you can run (replace `/YOUR/PATH/TO` with the path where you put `esp-idf`):
 
 ```bash
-source /YOUR/PATH/TO/esp-idf/export.sh
+. /YOUR/PATH/TO/esp-idf/export.sh
 idf.py set-target esp32s3
 idf.py build flash monitor
 ```
