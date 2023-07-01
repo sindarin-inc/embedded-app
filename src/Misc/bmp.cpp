@@ -148,7 +148,9 @@ void BmpFiltercolor(bmp_image *img, bmp_color color) {
 
 auto BmpCleanup(FILE *fptr, bmp_image *img) -> bmp_image * {
     if (fptr != nullptr) {
-        fclose(fptr);
+        if (fclose(fptr) != 0) {
+            log_e("Failed to close file");
+        }
     }
 
     if (img != nullptr) {
