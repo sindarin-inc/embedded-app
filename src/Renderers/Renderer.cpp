@@ -382,6 +382,10 @@ void Renderer::printOutTokens() const {
 }
 
 void Renderer::computeMaxTextTokenCharSize() {
+    if (maxTextTokenCharSize_ > 0) {
+        return;
+    }
+
     // Using character 'G' is a compromize to compute the number of characters that mostly fit a
     // line, between a 'n' and a 'm' in size, on the various font sizes, to try to fit better long
     // words with the available line width.
@@ -943,6 +947,8 @@ auto Renderer::loadCurrentPage() -> Place {
 }
 
 auto Renderer::getPreviousPlace() -> Place {
+    PROFILE_START(goBackwardsOnePage)
     previousPlace_ = goBackwardsOnePage(currentPlace_);
+    PROFILE_END_LOG_MS(goBackwardsOnePage)
     return previousPlace_;
 }
