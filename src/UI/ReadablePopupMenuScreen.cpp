@@ -62,7 +62,10 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
     addMenuItem(MenuItem("Text", [this]() { back(); }));
 
     if (readable_->hasSummary) {
-        addMenuItem(MenuItem("Summary", [this]() { setCurrentScreen(readableSummaryScreen_); }));
+        addMenuItem(MenuItem("Summary", [this]() {
+            readableSummaryScreen_.setPlaceInFile(renderer_.getCurrentPlace());
+            setCurrentScreen(readableSummaryScreen_);
+        }));
     }
 
     addMenuItem(MenuItem("Brightness", [this]() {

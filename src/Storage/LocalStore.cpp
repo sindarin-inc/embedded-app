@@ -95,7 +95,7 @@ auto LocalStore::loadToc(std::shared_ptr<Readable> readable) -> bool {
     std::string tocPath = readable->tocFilePath();
     SFile tocFile = fileSystem.open(tocPath, FILE_READ, true);
     if (!tocFile) {
-        log_e("Failed to open TOC file for reading");
+        log_w("Failed to open TOC file for reading");
         return false;
     }
 

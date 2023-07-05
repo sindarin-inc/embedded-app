@@ -10,6 +10,7 @@
 #include "UI/Components/ArrowView.hpp"
 #include "UI/Components/BoxView.hpp"
 #include "UI/Components/EinkView.hpp"
+#include "UI/Components/SingleLineTextView.hpp"
 #include "UI/Layout/View.hpp"
 #include "UI/Screen.hpp"
 #include "sindarin-debug.h"
@@ -19,7 +20,7 @@ public:
     ReadableSummaryScreen(PreferencesStore &prefs, std::shared_ptr<Readable> readable,
                           DisplaySystem &display)
         : EinkView(display), prefs_(prefs), readable_(std::move(readable)), renderer_(display),
-          display_(display) {}
+          display_(display), upperLeftTextView_(display, upperLeftText_), leftArrowView_(display) {}
 
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
@@ -30,7 +31,7 @@ public:
 
     void setPlacemark();
     void setFirstLoad() { firstLoad_ = true; }
-    void setNearestChapterSelection(unsigned long placeInFile);
+    void setPlaceInFile(unsigned long placeInFile);
 
 protected:
     PreferencesStore &prefs_;
@@ -39,7 +40,12 @@ protected:
     DisplaySystem &display_;
 
     bool firstLoad_ = true;
+    unsigned long placeInFile_ = 0;
     unsigned long newPlace_ = 0;
     unsigned long prevPlace_ = 0;
     bool atEnd_ = false;
+
+    std::string upperLeftText_ = "Dismiss";
+    SingleLineTextView upperLeftTextView_;
+    ArrowView leftArrowView_;
 };

@@ -85,10 +85,13 @@ public:
         return readableType == "pocket_article" || readableType == "email_article";
     }
 
-    auto summary() -> SpiramString {
+    auto summary(unsigned long placeInFile, unsigned long &placeInSummary) -> SpiramString {
         SpiramString summary;
 
         for (const auto &chapter : toc) {
+            if (placeInFile >= chapter.txtOffset) {
+                placeInSummary = summary.length();
+            }
             summary += chapter.title;
             summary += "\n\n";
             if (!chapter.summary.empty()) {
