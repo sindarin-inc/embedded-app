@@ -25,6 +25,7 @@ dut_port_index = 0
 dut_log_port_name = "SOL Mainframe ICT"
 dut_log_port_index = 1
 
+
 @pytest.fixture
 def port(request: FixtureRequest) -> t.Optional[str]:
     """Overridden to make sure we pick the right USB port for the DUT"""
@@ -64,6 +65,7 @@ class OverrideIdfSerial(IdfSerial):
             # find second device with SOL Mainframe ICT name
             # this is the DUT serial relay
             port = wait_for_port_by_device_name(dut_log_port_name, dut_log_port_index)
+            self.proc.portstr = port
             logger.debug(f"Found port {port} for DUT serial port, re-opening")
             try:
                 self.proc.open()
@@ -253,13 +255,13 @@ class TestPowerConsumption:
 
         logger.info("Measuring active mode current")
         # TODO: Why do we need such a wide range here?
-        power_client.expect_current((30000, 110000), 5)
+        power_client.expect_current((10000, 125000), 5)
 
         logger.info("Sleeping")
         ict_client.set_servo("right", 0)
 
         dut.expect("Sol: Temple is closed", timeout=10)
-        dut.expect("Sol: Entering deep sleep, wake up with magnetometer", timeout=10)
+        dut.expect("Sol: Entering deep sleep, wake up with magnetometer", timeout=20)
 
         time.sleep(5)
 

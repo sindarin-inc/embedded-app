@@ -6,6 +6,7 @@
 #endif
 
 #include <cinttypes>
+#include <random>
 
 #include "../Communications/WiFi.hpp"
 #include "../Misc/StringUtil.hpp"
@@ -147,7 +148,7 @@ void SolClock::setClockTimeFromInternet() {
     if (size == 0) {
         log_e("strftime failed");
     }
-    log_i("The current date/time is: %s (%" PRIu64 ")", strftimeBuf, now);
+    log_i("The current date/time is: %s (%" PRIu64 ")", strftimeBuf, (uint64_t)now);
 #else
     log_i("Not setting clock time from internet in simulator");
 #endif
@@ -199,15 +200,16 @@ auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
 
     if (eveningNews != 0 && eveningEventEpoch <= morningEventEpoch) {
         nextEventEpoch = eveningEventEpoch;
-        nextEventTime = &eveningEvent;
     } else {
         nextEventEpoch = morningEventEpoch;
-        nextEventTime = &morningEvent;
     }
 
     // Add the random number of seconds to the nextEventEpoch between 0 and 10 minutes
-    std::srand(std::time(nullptr));
-    int randomSeconds = std::rand() % 600;
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> distr(0, 600);
+
+    int randomSeconds = distr(gen);
     nextEventEpoch += randomSeconds;
 
     // Update nextEventTime to reflect the addition of randomSeconds

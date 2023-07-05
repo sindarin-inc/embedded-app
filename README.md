@@ -10,10 +10,10 @@ After cloning this repo from GitHub you'll need to pull the most recent submodul
 git submodule update --init --recursive
 ```
 
-The primary way to build the firmware itself is with Espressif's official esp-idf toolchain. We use a [fork of esp-idf](http://github.com/sindarin-inc/esp-idf) that has some patches included. In some other directory (not in this repo), run:
+The primary way to build the firmware itself is with Espressif's official [esp-idf toolchain](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/linux-macos-setup.html). In some other directory (not in this repo), run:
 
 ```sh
-git clone -b sindarin/idf5-51772f4fb5 --recursive git@github.com:sindarin-inc/esp-idf.git
+git clone -b release/v5.1 --recursive https://github.com/espressif/esp-idf.git
 cd esp-idf
 ./install.sh esp32s3
 ```
@@ -23,7 +23,7 @@ If you get errors about `cmake` you might need to install `cmake` first (`brew i
 Now from the root of this repo, you can run (replace `/YOUR/PATH/TO` with the path where you put `esp-idf`):
 
 ```bash
-source /YOUR/PATH/TO/esp-idf/export.sh
+. /YOUR/PATH/TO/esp-idf/export.sh
 idf.py set-target esp32s3
 idf.py build flash monitor
 ```
@@ -45,7 +45,6 @@ idf.py monitor --no-reset -p $(ls /dev/cu.usbmodem* 2> /dev/null | head -n 1)
 * Visual Studio Code (`brew install visual-studio-code`)
 * PlatformIO (`brew install platformio`, or on Ubuntu `sudo apt install python3-pip && pip3 install platformio` or the [installer script](https://docs.platformio.org/en/latest/core/installation/methods/installer-script.html)) - we don't typically build the firmware with this but it's needed for the simulator, tests, and clang-tidy.
 * clang-format (`brew install clang-format`)
-* clang-tidy (`brew install llvm`)
 
 ## Reformat code with `clang-format`
 
@@ -57,10 +56,10 @@ find src -iname "*.hpp" -o -iname "*.h" -o -iname "*.cpp" -o -iname "*.c" | xarg
 
 ## Static analysis and cleanup with `clang-tidy`
 
-You can run clang-tidy to do some more advance C++ static analysis and fixes. Make sure you install `clang-tidy` (included with `brew install llvm`) and then run the following to automatically fix things:
+You can run clang-tidy to do some more advance C++ static analysis and fixes. Make sure you've set up IDF, then run the following to automatically fix things and show warnings:
 
 ```bash
-./scripts/clang-tidy -w --fix
+make clang-tidy
 ```
 
 Issues that will be fixed automatically will be fixed by clang-tidy, warnings will mark any suggestions that clang-tidy couldn't fix directly.
@@ -242,7 +241,7 @@ This is [fixed](https://github.com/espressif/esp-idf/blob/master/components/efus
 You'll need to make sure you set up IDF with the pytest bits.
 
 ```sh
-$IDF_PATH/install.sh --enable-pytest
+$IDF_PATH/install.sh esp32s3 --enable-pytest
 ```
 
 You'll need to make sure you have some binaries available

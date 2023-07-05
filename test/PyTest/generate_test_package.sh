@@ -29,7 +29,7 @@ cp build/partition_table/partition-table.bin $OUTDIR/build/partition_table/
 cp pytest.ini $OUTDIR/
 mkdir -p $OUTDIR/test/PyTest
 cp test/PyTest/*.py $OUTDIR/test/PyTest/
-pip3 install ppk2-api
+pip3 install ppk2-api==0.9.2
 pip freeze > $OUTDIR/requirements.txt
 
 cat << EOF > $OUTDIR/README.md

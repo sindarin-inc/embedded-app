@@ -2,11 +2,16 @@ name: Run Clang Tools
 
 on:
   pull_request:
+  push:
+    branches:
+      - main
 
 jobs:
   clangify:
     runs-on:
       group: Beefy
+    container:
+      image: espressif/idf:release-v5.1
 
     steps:
       - uses: actions/checkout@v3
@@ -15,34 +20,36 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           submodules: "recursive"
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-
-      - name: Install clang-tidy script dependencies
+      - name: Install tools
         run: |
-          python -m pip install --upgrade pip
-          pip install colorama click platformio
+          . $IDF_PATH/export.sh
+          idf_tools.py install esp-clang
+          pip install --upgrade pyclang
 
-      - name: Add Clang Tidy deb repo
-        uses: myci-actions/add-deb-repo@10
-        with:
-          repo: deb http://apt.llvm.org/focal/ llvm-toolchain-focal-15 main
-          repo-name: clang-tidy
-          keys-asc: https://apt.llvm.org/llvm-snapshot.gpg.key
-
-      - name: Install clang-tidy-15
-        run: sudo apt-get update && sudo apt install -y clang-tidy-15
+      # See https://github.com/actions/checkout/issues/1169
+      - run: git config --system --add safe.directory /__w/embedded-app/embedded-app
+        if: github.event_name == 'pull_request'
 
       - name: Run clang-tidy
-        run: ./scripts/clang-tidy -w --fix --clang-tidy-path=/usr/bin/clang-tidy-15 --clang-apply-replacements-path=/usr/bin/clang-apply-replacements-15
+        run: |
+          . $IDF_PATH/export.sh
+          idf.py clang-check --run-clang-tidy-py scripts/run-clang-tidy.py --run-clang-tidy-options "-fix -header-filter=embedded-app/src/.*" --exclude-paths managed_components --exclude-paths components
 
-      - uses: DoozyX/clang-format-lint-action@v0.14
+      - name: Post errors and warnings as annotations
+        run: |
+          . $IDF_PATH/export.sh
+          pip install requests curlify
+          python scripts/parse_warnings.py
+        env:
+          PR_GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: github.event_name == 'pull_request'
+
+      - uses: DoozyX/clang-format-lint-action@v0.16.2
         with:
           source: "./src"
           extensions: "hpp,h,cpp,c"
-          clangFormatVersion: 14
+          clangFormatVersion: 15
           inplace: True
 
       - uses: EndBug/add-and-commit@v9
@@ -53,3 +60,4 @@ jobs:
           message: "Committing clang-format/clang-tidy changes"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: github.event_name == 'pull_request'

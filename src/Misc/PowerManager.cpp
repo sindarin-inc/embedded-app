@@ -600,6 +600,8 @@ void PowerManager::waitForQueuesThenDeepSleep(SleepReason reason) {
     }
 
     log_i("Entering deep sleep, wake up with magnetometer");
+    // Wait a moment for these last logs to go out (for the benefit of the ICT)
+    vTaskDelay(pdMS_TO_TICKS(100));
     esp_deep_sleep_start();
 #endif
 }

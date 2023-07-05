@@ -148,7 +148,9 @@ void BmpFiltercolor(bmp_image *img, bmp_color color) {
 
 auto BmpCleanup(FILE *fptr, bmp_image *img) -> bmp_image * {
     if (fptr != nullptr) {
-        fclose(fptr);
+        if (fclose(fptr) != 0) {
+            log_e("Failed to close file");
+        }
     }
 
     if (img != nullptr) {
@@ -171,19 +173,12 @@ auto BmpCheckheaders(bmp_image *img) -> int {
 
     switch (img->dib.bmiHeader.biBitCount) {
     case BMP_0_BITS:
-        break;
     case BMP_1_BIT:
-        break;
     case BMP_2_BITS:
-        break;
     case BMP_4_BITS:
-        break;
     case BMP_8_BITS:
-        break;
     case BMP_16_BITS:
-        break;
     case BMP_24_BITS:
-        break;
     case BMP_32_BITS:
         break;
     default:
@@ -196,23 +191,14 @@ auto BmpCheckheaders(bmp_image *img) -> int {
 
     switch (img->dib.bmiHeader.biCompression) {
     case BMP_BI_RGB:
-        break;
     case BMP_BI_RLE8:
-        break;
     case BMP_BI_RLE4:
-        break;
     case BMP_BI_BITFIELDS:
-        break;
     case BMP_BI_JPEG:
-        break;
     case BMP_BI_PNG:
-        break;
     case BMP_BI_ALPHABITFIELDS:
-        break;
     case BMP_BI_CMYK:
-        break;
     case BMP_BI_CMYKRLE8:
-        break;
     case BMP_BI_CMYKRLE4:
         break;
     default:
@@ -222,13 +208,9 @@ auto BmpCheckheaders(bmp_image *img) -> int {
     if (img->dib.bmiHeader.biSize >= BMP_V4HEADER) {
         switch (img->dib.bmiv4Header.bV4CSType) {
         case BMP_LCS_CALIBRATED_RGB:
-            break;
         case BMP_LCS_sRGB:
-            break;
         case BMP_LCS_WINDOWS_COLOR_SPACE:
-            break;
         case BMP_LCS_PROFILE_LINKED:
-            break;
         case BMP_LCS_PROFILE_EMBEDDED:
             break;
         default:

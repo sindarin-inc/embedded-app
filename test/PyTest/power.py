@@ -66,6 +66,11 @@ class PowerTester:
         else:
             raise Exception("No data received from PPK2")
 
+        # If samples is a tuple, just take the first part of it
+        # This is to handle a breaking change from https://github.com/IRNAS/ppk2-api-python/pull/33
+        if isinstance(samples, tuple):
+            samples = samples[0]
+
         # Calculate average current
         average_current = statistics.mean(samples)
         logger.info(f"Average of {len(samples)} samples is: {average_current:0.1f}uA")
