@@ -12,7 +12,7 @@ public:
 
     std::string text;
     uint32_t placemark;
-    uint8_t read_pct;
+    uint8_t readPct;
 
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("text") || !j.containsKey("placemark") || !j.containsKey("read_pct")) {
@@ -20,7 +20,7 @@ public:
         }
         text = j["text"].as<std::string>();
         placemark = j["placemark"].as<uint32_t>();
-        read_pct = j["read_pct"].as<uint8_t>();
+        readPct = j["read_pct"].as<uint8_t>();
 
         return true;
     }

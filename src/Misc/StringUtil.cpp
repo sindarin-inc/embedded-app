@@ -57,7 +57,7 @@ auto HasPrefix(const char *str, const char *pre) -> bool {
     return strncmp(pre, str, strlen(pre)) == 0;
 }
 
-auto commify(uint32_t n) -> std::string {
+auto Commify(uint32_t n) -> std::string {
     std::string str = StringFormat("%d", n);
     int insertPosition = str.length() - 3;
     while (insertPosition > 0) {

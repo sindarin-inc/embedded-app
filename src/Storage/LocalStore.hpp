@@ -46,7 +46,7 @@ public:
 
     auto begin() -> bool;
     auto loadReadablesFromFile(ReadablesVector &readables, const std::string &path) -> bool;
-    auto loadToc(std::shared_ptr<Readable> readable) -> bool;
+    auto loadToc(const std::shared_ptr<Readable> &readable) -> bool;
 
     // Convenience methods
     auto books() -> ReadablesVector & { return books_; };

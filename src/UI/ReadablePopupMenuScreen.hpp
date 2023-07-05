@@ -16,7 +16,7 @@ public:
                             LightingController &lightingController, Renderer &renderer,
                             LocalStore &localStore)
         : display_(display), prefs_(prefs), readable_(readable), renderer_(renderer),
-          localStore_(localStore), popupMenuView_(display),
+          popupMenuView_(display), localStore_(localStore),
           lightingAdjustScreen_(display, prefs, lightingController),
           readableSeekScreen_(prefs, readable, renderer),
           readableTableOfContentsScreen_(prefs, readable, renderer, display),

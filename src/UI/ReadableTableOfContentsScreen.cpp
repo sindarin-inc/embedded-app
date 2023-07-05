@@ -166,7 +166,7 @@ void ReadableTableOfContentsScreen::loadMenuItems() {
             title = StringFormat("  %s", chapter.title.c_str());
         }
         addMenuItem(
-            MenuItem(title, commify(SOL_PAGE_NUMBER(chapter.txtOffset)), [this]() { back(); }));
+            MenuItem(title, Commify(SOL_PAGE_NUMBER(chapter.txtOffset)), [this]() { back(); }));
     }
 }
 

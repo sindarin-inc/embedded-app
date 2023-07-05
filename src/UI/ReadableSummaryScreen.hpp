@@ -21,7 +21,7 @@ public:
                           DisplaySystem &display)
         : EinkView(display), prefs_(prefs), readable_(std::move(readable)), renderer_(display),
           display_(display), upperLeftTextView_(display, upperLeftText_),
-          leftArrowView_(display, ArrowUp), bottomRightTextView_(display, bottomRightText_),
+          bottomRightTextView_(display, bottomRightText_), leftArrowView_(display, ArrowUp),
           rightArrowView_(display, ArrowDown) {}
 
     auto layout(LayoutContext &context, Size size) -> Size override;
