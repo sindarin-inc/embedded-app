@@ -20,18 +20,20 @@ public:
     ReadableSummaryScreen(PreferencesStore &prefs, std::shared_ptr<Readable> readable,
                           DisplaySystem &display)
         : EinkView(display), prefs_(prefs), readable_(std::move(readable)), renderer_(display),
-          display_(display), upperLeftTextView_(display, upperLeftText_), leftArrowView_(display) {}
+          display_(display), upperLeftTextView_(display, upperLeftText_),
+          leftArrowView_(display, ArrowUp), bottomRightTextView_(display, bottomRightText_),
+          rightArrowView_(display, ArrowDown) {}
 
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
-
+    auto checkAtEnd() -> bool;
     void render(DisplaySystem &display) override;
 
     void processCommand(RemoteCommand command) override;
 
     void setPlacemark();
     void setFirstLoad() { firstLoad_ = true; }
-    void setPlaceInFile(unsigned long placeInFile);
+    void setPlaceInReadable(unsigned long placeInReadable);
 
 protected:
     PreferencesStore &prefs_;
@@ -40,12 +42,16 @@ protected:
     DisplaySystem &display_;
 
     bool firstLoad_ = true;
-    unsigned long placeInFile_ = 0;
+    bool showUnread_ = false;
+    unsigned long placeInReadable_ = 0;
     unsigned long newPlace_ = 0;
     unsigned long prevPlace_ = 0;
     bool atEnd_ = false;
 
     std::string upperLeftText_ = "Dismiss";
+    std::string bottomRightText_ = "Show Unread Chapters";
     SingleLineTextView upperLeftTextView_;
+    SingleLineTextView bottomRightTextView_;
     ArrowView leftArrowView_;
+    ArrowView rightArrowView_;
 };
