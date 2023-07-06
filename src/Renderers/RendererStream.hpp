@@ -13,9 +13,22 @@
 #include "Misc/SpiramAllocator.hpp"
 #include "sindarin-debug.h"
 
+enum class StreamType : uint8_t { TXT, EPUB, OTHER };
+
 class RendererStream {
+private:
+    StreamType streamType_{StreamType::OTHER};
+
+protected:
+    RendererStream(StreamType streamType) : streamType_(streamType) {}
+    RendererStream() {}
+
 public:
     virtual ~RendererStream() = default;
+
+    auto isA(StreamType streamType) const -> bool { return streamType == streamType_; }
+
+    static auto getType(const char *path) -> StreamType;
 
     virtual auto available() -> int { return size() - position(); };
     virtual auto readBytes(uint8_t *buf, int size) -> int {
@@ -43,8 +56,10 @@ public:
 template <typename T>
 class ContainerStream : public RendererStream {
 public:
-    ContainerStream() : contained_(T()) {}
-    ContainerStream(T contained) : contained_(std::move(contained)) {}
+    ContainerStream(StreamType streamType = StreamType::OTHER)
+        : RendererStream(streamType), contained_(T()) {}
+    ContainerStream(T contained, StreamType streamType = StreamType::OTHER)
+        : RendererStream(streamType), contained_(std::move(contained)) {}
 
     auto available() -> int override { return contained_.available(); }
     auto read() -> int override { return contained_.read(); };
@@ -61,10 +76,12 @@ protected:
 
 class StdStringStream : public RendererStream {
 public:
-    StdStringStream(std::string &string) : stream_(std::make_shared<std::istringstream>(string)) {
+    StdStringStream(std::string &string)
+        : RendererStream(StreamType::TXT), stream_(std::make_shared<std::istringstream>(string)) {
         setSize(string.length());
     }
-    StdStringStream(SpiramString &string) : stream_(std::make_shared<SpiramIStream>(string)) {
+    StdStringStream(SpiramString &string)
+        : RendererStream(StreamType::TXT), stream_(std::make_shared<SpiramIStream>(string)) {
         setSize(string.length());
     }
 
@@ -80,7 +97,8 @@ public:
     auto size() -> size_t override { return size_; }
 
 protected:
-    StdStringStream(std::shared_ptr<std::istream> stream) : stream_(std::move(stream)) {}
+    StdStringStream(std::shared_ptr<std::istream> stream)
+        : RendererStream(StreamType::TXT), stream_(std::move(stream)) {}
 
     std::shared_ptr<std::istream> stream_;
     size_t size_ = 0;
