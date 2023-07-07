@@ -90,3 +90,7 @@ class MFICTClient:
             # We expect an Invalid command (since we sent a '\n')
             if ack != b"Invalid command \n":
                 logger.debug(f"ICT <-: {self.ser.readline()}")
+
+    def get_bt_mac(self):
+        self.write("BTMAC")
+        return self.read()

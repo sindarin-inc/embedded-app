@@ -45,6 +45,10 @@ class OverrideIdfSerial(IdfSerial):
         # The DUT is flashed here unless using --skip-autoflash=True
         super()._start()
 
+        # read ict's bluetooth mac
+        btmac = self.ict_client.get_bt_mac()
+        logger.info("bluetooth mac: " + btmac)
+
         # Close the serial port
         self.close()
 
