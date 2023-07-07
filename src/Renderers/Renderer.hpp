@@ -143,7 +143,7 @@ private:
 
     // Computed TEXT Token character size that will fit on a line depending
     // on the current font size and line width
-    uint16_t maxTextTokenCharSize_ = 10;
+    uint16_t maxTextTokenCharSize_ = 0;
 
     // Character buffer for the page being built by the tokenizer
     Page page_{};

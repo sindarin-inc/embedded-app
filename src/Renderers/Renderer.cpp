@@ -385,16 +385,8 @@ void Renderer::computeMaxTextTokenCharSize() {
     // Using character 'G' is a compromize to compute the number of characters that mostly fit a
     // line, between a 'n' and a 'm' in size, on the various font sizes, to try to fit better long
     // words with the available line width.
-    std::array<char, 100> buff = {"GGGGGGGGGG"};
-    uint16_t size = 10;
-    uint16_t maxWidth = (display_.width() - 4);
 
-    while ((size < 99) && (display_.getTextWidth(buff.data()) < maxWidth)) {
-        buff[size++] = 'G';
-        buff[size] = '\0';
-    }
-
-    maxTextTokenCharSize_ = size - 1;
+    maxTextTokenCharSize_ = (display_.width() - 4) / display_.getTextWidth("G");
 }
 
 // This method takes in a place in the token buffer.
@@ -943,6 +935,8 @@ auto Renderer::loadCurrentPage() -> Place {
 }
 
 auto Renderer::getPreviousPlace() -> Place {
+    PROFILE_START(goBackwardsOnePage)
     previousPlace_ = goBackwardsOnePage(currentPlace_);
+    PROFILE_END_LOG_MS(goBackwardsOnePage)
     return previousPlace_;
 }
