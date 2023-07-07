@@ -11,6 +11,7 @@
 #include <utility>
 
 #include "Misc/SpiramAllocator.hpp"
+#include "Misc/StringUtil.hpp"
 #include "sindarin-debug.h"
 
 enum class StreamType : uint8_t { TXT, EPUB, OTHER };
@@ -27,8 +28,17 @@ public:
     virtual ~RendererStream() = default;
 
     auto isA(StreamType streamType) const -> bool { return streamType == streamType_; }
+    auto getStreamType() const -> StreamType { return streamType_; }
 
-    static auto getType(const char *path) -> StreamType;
+    static auto parseStreamType(const char *path) -> StreamType {
+        if (HasSuffix(path, ".txt") || HasSuffix(path, ".txt.gz")) {
+            return StreamType::TXT;
+        }
+        if (HasSuffix(path, ".epub")) {
+            return StreamType::TXT;
+        }
+        return StreamType::OTHER;
+    }
 
     virtual auto available() -> int { return size() - position(); };
     virtual auto readBytes(uint8_t *buf, int size) -> int {
@@ -76,12 +86,12 @@ protected:
 
 class StdStringStream : public RendererStream {
 public:
-    StdStringStream(std::string &string)
-        : RendererStream(StreamType::TXT), stream_(std::make_shared<std::istringstream>(string)) {
+    StdStringStream(std::string &string, StreamType streamType = StreamType::TXT)
+        : RendererStream(streamType), stream_(std::make_shared<std::istringstream>(string)) {
         setSize(string.length());
     }
-    StdStringStream(SpiramString &string)
-        : RendererStream(StreamType::TXT), stream_(std::make_shared<SpiramIStream>(string)) {
+    StdStringStream(SpiramString &string, StreamType streamType = StreamType::TXT)
+        : RendererStream(streamType), stream_(std::make_shared<SpiramIStream>(string)) {
         setSize(string.length());
     }
 
@@ -97,8 +107,8 @@ public:
     auto size() -> size_t override { return size_; }
 
 protected:
-    StdStringStream(std::shared_ptr<std::istream> stream)
-        : RendererStream(StreamType::TXT), stream_(std::move(stream)) {}
+    StdStringStream(std::shared_ptr<std::istream> stream, StreamType streamType = StreamType::TXT)
+        : RendererStream(streamType), stream_(std::move(stream)) {}
 
     std::shared_ptr<std::istream> stream_;
     size_t size_ = 0;
@@ -106,7 +116,8 @@ protected:
 
 class BufferStream : public RendererStream {
 public:
-    BufferStream(const uint8_t *data, int size) : data_(data), size_(size) {}
+    BufferStream(const uint8_t *data, int size, StreamType streamType = StreamType::OTHER)
+        : RendererStream(streamType), data_(data), size_(size) {}
 
     auto read() -> int override { return data_[pos_++]; };
     auto readBytes(uint8_t *buf, int size) -> int override {
