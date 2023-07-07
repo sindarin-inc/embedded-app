@@ -16,8 +16,8 @@ public:
     [[nodiscard]] static auto factory(std::shared_ptr<RendererStream> stream,
                                       DisplaySystem &display) -> std::shared_ptr<Tokenizer>;
 
-    virtual auto loadAndTokenizePage(Place fromPlace, Tokens &tokens, bool backwards = false)
-        -> Place = 0;
+    virtual auto loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bool backwards = false)
+        -> StreamPlace = 0;
 
     [[nodiscard]] auto getCurrentPageWordCount() const -> uint32_t { return currentPageWordCount_; }
     [[nodiscard]] auto isA(StreamType streamType) const -> bool { return stream_->isA(streamType); }
@@ -26,12 +26,16 @@ public:
         maxTextTokenCharSize_ = (display_.width() - 4) / display_.getTextWidth("G");
     }
 
-    [[nodiscard]] virtual auto getPlaceAfterEndOfFileReached(Place place) const -> Place = 0;
-    [[nodiscard]] virtual auto getPlaceAtBeginningOfFile(Place place) const -> Place = 0;
-    [[nodiscard]] virtual auto getPlaceAtBeginningOfDocument() const -> Place = 0;
-    [[nodiscard]] virtual auto atBeginningOfFile(Place place) const -> bool = 0;
-    [[nodiscard]] virtual auto addOffset(Place place, uint32_t offset) const -> Place = 0;
-    [[nodiscard]] virtual auto subtractOffset(Place place, uint32_t offset) const -> Place = 0;
+    [[nodiscard]] virtual auto getPlaceAfterEndOfFileReached(StreamPlace place) const
+        -> StreamPlace = 0;
+    [[nodiscard]] virtual auto getPlaceAtBeginningOfFile(StreamPlace place) const
+        -> StreamPlace = 0;
+    [[nodiscard]] virtual auto getPlaceAtBeginningOfDocument() const -> StreamPlace = 0;
+    [[nodiscard]] virtual auto atBeginningOfFile(StreamPlace place) const -> bool = 0;
+    [[nodiscard]] virtual auto addOffset(StreamPlace place, uint32_t offset) const
+        -> StreamPlace = 0;
+    [[nodiscard]] virtual auto subtractOffset(StreamPlace place, uint32_t offset) const
+        -> StreamPlace = 0;
 
 protected:
     DisplaySystem &display_;
@@ -43,5 +47,5 @@ protected:
     // on the current font size and line width
     uint16_t maxTextTokenCharSize_{10};
 
-    virtual auto getFileLocation(Place fromPlace) -> Place = 0;
+    virtual auto getFileLocation(StreamPlace fromPlace) -> StreamPlace = 0;
 };

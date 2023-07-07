@@ -81,11 +81,11 @@ auto Renderer::getLineOfTextForRendering(Idx startTokenIdx, Line &line) -> Idx {
 // and load the next page into the next buffer so we have it.
 auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
 
-    if constexpr (RENDERER_DEBUG) {
-        log_d("%s is place in file being requested", fromPlace.str().c_str());
-    }
+    currentPlace_ = toStreamPlace(fromPlace);
 
-    currentPlace_ = fromPlace;
+    if constexpr (RENDERER_DEBUG) {
+        log_d("%s is place in file being requested", currentPlace_.str().c_str());
+    }
 
     // This needs to happen before loading into buffer since it will affect what we load into the
     // buffer.
@@ -133,7 +133,7 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
     if constexpr (RENDERER_DEBUG) {
         log_w("Returning next page place to be %s", nextPlace_.str().c_str());
     }
-    return nextPlace_;
+    return toPlace(nextPlace_);
 }
 
 auto Renderer::getParagraphDeciLinesCount(Idx startTokenIdx, Idx endTokenIdx) -> uint16_t {
@@ -270,13 +270,13 @@ auto Renderer::getFirstLineOfPageTokenIdx(renderer_defs::Idx lastTokenIdx, uint1
 //
 // Got the location!
 //
-auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
+auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
     display_.setFont(display_.style.getFontFamily().readableFont);
     tokenizer_->computeMaxTextTokenCharSize();
 
     // Step 1: Figure out how much to read before the current place. If we're too
     // close to the beginning, we just read from the beginning.
-    Place seekPlace = tokenizer_->subtractOffset(fromPlace, MAX_BYTES_TO_RETRIEVE);
+    StreamPlace seekPlace = tokenizer_->subtractOffset(fromPlace, MAX_BYTES_TO_RETRIEVE);
 
     // Step 2: Once the data is read into the buffer, tokenize it the same as you
     // would for a forwards render. seekPlace will be returned to be at a UTF8 character
@@ -296,8 +296,8 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
     // Find which token to end with
     // Could switch to an algorithm that is log(n) instead of n if we need to
     if constexpr (RENDERER_DEBUG) {
-        log_d("About to look for where to end: place = %" PRIu32 ", starting at place %" PRIu32,
-              fromPlace, seekPlace);
+        log_d("About to look for where to end: place = %s, starting at place %s",
+              fromPlace.str().c_str(), seekPlace.str().c_str());
     }
 
     while ((endTokenIdx > 0) && (tokens_[endTokenIdx].streamPlace.offset > fromPlace.offset)) {
@@ -416,7 +416,7 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
     }
 
     // Got it!
-    Place returnPlace = tokens_[startTokenIdx].streamPlace;
+    StreamPlace returnPlace = tokens_[startTokenIdx].streamPlace;
 
     // methods calling this method expect this to not change what's loaded
     // into buffers, so we need to retokenize.
@@ -441,7 +441,7 @@ auto Renderer::getTotalLengthOfLines() const -> uint16_t {
 }
 
 // returns the new place of the stream
-auto Renderer::loadCurrentPage() -> Place {
+auto Renderer::loadCurrentPage() -> StreamPlace {
 
     int16_t deciLinesCount = 0;
 
@@ -542,5 +542,5 @@ auto Renderer::loadCurrentPage() -> Place {
 
 auto Renderer::getPreviousPlace() -> Place {
     previousPlace_ = goBackwardsOnePage(currentPlace_);
-    return previousPlace_;
+    return previousPlace_.offset;
 }

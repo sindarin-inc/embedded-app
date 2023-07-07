@@ -1,5 +1,6 @@
 #pragma once
 
+#if 0
 #include <cinttypes>
 #include <string>
 
@@ -23,3 +24,6 @@ struct Place {
     }
 };
 #pragma pack(pop)
+#else
+using Place = uint32_t;
+#endif

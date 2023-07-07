@@ -4,7 +4,7 @@ To help in the definition of the interface to the Renderer, here are the changes
 
 ### The RendererStream sub-classes
 
-Each of the `RendererStream` sub-classes constructors have a new optional parameter:  `StreamType` streamType. The `StreamType` is defined as follow: 
+Each of the `RendererStream` sub-classes constructors have a new optional parameter:  `StreamType streamType`. The `StreamType` is defined as follow: 
 
 ``` C++
 enum class StreamType : uint8_t { TXT, EPUB, OTHER };

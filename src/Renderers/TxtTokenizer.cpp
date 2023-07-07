@@ -15,7 +15,8 @@
 // Returns the computed place where the page start really.
 //
 // IMPORTANT: The getFileLocation() method must be called only through this method.
-auto TxtTokenizer::loadAndTokenizePage(Place fromPlace, Tokens &tokens, bool backwards) -> Place {
+auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bool backwards)
+    -> StreamPlace {
 
     Idx pageIdx = 0;
     Idx prevNewParagraphIdx = 0;
@@ -187,7 +188,7 @@ auto TxtTokenizer::loadAndTokenizePage(Place fromPlace, Tokens &tokens, bool bac
 // a first byte MSBit == 0 or the two MSBits == 11
 //
 // returns an updated fromPlace location or the LOCATION_ERROR value.
-auto TxtTokenizer::getFileLocation(Place fromPlace) -> Place {
+auto TxtTokenizer::getFileLocation(StreamPlace fromPlace) -> StreamPlace {
 
     // if received place is larger than the stream size, reset it to
     // the beginning of file

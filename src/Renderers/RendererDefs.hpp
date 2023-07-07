@@ -67,6 +67,27 @@ enum class TokenId : uint8_t {
     NOTOKEN, // Not use
 };
 
+#pragma pack(push, 1)
+struct StreamPlace {
+    uint32_t offset;
+    uint16_t fileNumber;
+
+    auto operator==(const StreamPlace &rhs) const -> bool {
+        return (offset == rhs.offset) && (fileNumber == rhs.fileNumber);
+    }
+
+    auto str() const -> std::string {
+        std::string s;
+        s = "[offset:";
+        s += std::to_string(offset);
+        s.append(" ,fileNbr:");
+        s += std::to_string(fileNumber);
+        s.append("]");
+        return s;
+    }
+};
+#pragma pack(pop)
+
 // A token is simply a place in the buffer and a token identifer
 // that indicates what type of token it is.
 //
@@ -80,7 +101,7 @@ struct Token {
     // start is for where it's located. It's useful for looking backwards
     // while rendering a back page command.
     const char *cStr;
-    Place streamPlace;
+    StreamPlace streamPlace;
     Idx prevNewParagraphTokenIdx;
     uint16_t width;
     uint16_t height;

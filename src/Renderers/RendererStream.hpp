@@ -66,9 +66,9 @@ public:
 template <typename T>
 class ContainerStream : public RendererStream {
 public:
-    ContainerStream(StreamType streamType = StreamType::OTHER)
+    ContainerStream(StreamType streamType = StreamType::TXT)
         : RendererStream(streamType), contained_(T()) {}
-    ContainerStream(T contained, StreamType streamType = StreamType::OTHER)
+    ContainerStream(T contained, StreamType streamType = StreamType::TXT)
         : RendererStream(streamType), contained_(std::move(contained)) {}
 
     auto available() -> int override { return contained_.available(); }
@@ -116,7 +116,7 @@ protected:
 
 class BufferStream : public RendererStream {
 public:
-    BufferStream(const uint8_t *data, int size, StreamType streamType = StreamType::OTHER)
+    BufferStream(const uint8_t *data, int size, StreamType streamType = StreamType::TXT)
         : RendererStream(streamType), data_(data), size_(size) {}
 
     auto read() -> int override { return data_[pos_++]; };

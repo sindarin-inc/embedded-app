@@ -15,7 +15,8 @@
 // Returns the computed place where the page start really.
 //
 // IMPORTANT: The getFileLocation() method must be called only through this method.
-auto EPubTokenizer::loadAndTokenizePage(Place fromPlace, Tokens &tokens, bool backwards) -> Place {
+auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bool backwards)
+    -> StreamPlace {
     return fromPlace;
 }
 
@@ -25,7 +26,7 @@ auto EPubTokenizer::loadAndTokenizePage(Place fromPlace, Tokens &tokens, bool ba
 // a first byte MSBit == 0 or the two MSBits == 11
 //
 // returns an updated fromPlace location or the LOCATION_ERROR value.
-auto EPubTokenizer::getFileLocation(Place fromPlace) -> Place {
+auto EPubTokenizer::getFileLocation(StreamPlace fromPlace) -> StreamPlace {
 
     // if received place is larger than the stream size, reset it to
     // the beginning of file

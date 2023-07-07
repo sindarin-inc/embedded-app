@@ -6,6 +6,12 @@
 
 using namespace renderer_defs;
 
+// ToDo: The renderer interface has been adjusted to consider a new upcoming Place struct. 
+//       It is now using a Place as an int32_t, independant of an renderer independant 
+//       StreamPlace, to support it's development in the current Sol app that support only
+//       TXT files.
+//       Will need to be adjusted considering the upcoming Place definition...
+
 class Renderer {
 
 public:
@@ -14,11 +20,11 @@ public:
     auto setStream(std::shared_ptr<RendererStream> stream) -> void {
         tokenizer_ = Tokenizer::factory(stream, display_);
     }
-    auto setCurrentPlace(Place newPlace) -> void { currentPlace_ = newPlace; }
+    auto setCurrentPlace(Place newPlace) -> void { currentPlace_ = toStreamPlace(newPlace); }
 
     [[nodiscard]] auto getPreviousPlace() -> Place;
 
-    [[nodiscard]] inline auto getCurrentPlace() const -> Place { return currentPlace_; }
+    [[nodiscard]] inline auto getCurrentPlace() const -> Place { return toPlace(currentPlace_); }
 
     [[nodiscard]] inline auto size() const -> uint32_t { return stream_->size(); }
 
@@ -34,7 +40,7 @@ public:
 
     // NOLINTNEXTLINE(modernize-use-nodiscard)
     inline auto renderFirstPage(int16_t numSkipLines = 0) -> Place {
-        return renderPage(tokenizer_->getPlaceAtBeginningOfDocument(), numSkipLines);
+        return renderPage(toPlace(tokenizer_->getPlaceAtBeginningOfDocument()), numSkipLines);
     }
 
     [[nodiscard]] auto getTotalLengthOfLines() const -> uint16_t;
@@ -56,9 +62,9 @@ private:
     Tokens tokens_;
     std::shared_ptr<Tokenizer> tokenizer_{nullptr};
 
-    Place currentPlace_{};
-    Place previousPlace_{};
-    Place nextPlace_{};
+    StreamPlace currentPlace_{};
+    StreamPlace previousPlace_{};
+    StreamPlace nextPlace_{};
 
     PageLines pageLines_{};
     uint16_t pageLinesLengths_[MAX_LINES_PER_PAGE] = {0};
@@ -80,7 +86,7 @@ private:
     // This should be called by subclasses after content is loaded
     void loaded() { nextPlace_ = loadCurrentPage(); };
 
-    auto loadCurrentPage() -> Place;
+    auto loadCurrentPage() -> StreamPlace;
     auto getParagraphDeciLinesCount(renderer_defs::Idx startTokenIdx,
                                     renderer_defs::Idx endTokenIdx) -> uint16_t;
     [[nodiscard]] auto getFirstLineOfPageTokenIdx(renderer_defs::Idx lastTokenIdx,
@@ -88,8 +94,17 @@ private:
                                                   uint16_t maxDeciLines) const
         -> renderer_defs::Idx;
 
-    auto goBackwardsOnePage(Place fromPlace) -> Place;
+    auto goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace;
 
     auto getLineOfTextForRendering(renderer_defs::Idx startTokenIdx, Line &line)
         -> renderer_defs::Idx;
+
+    // ToDo: To be adjusted related to the upcoming Place definition
+    inline auto toStreamPlace(const Place & place) const -> StreamPlace {
+        return StreamPlace{.offset = place, .fileNumber = 0};
+    }
+
+    inline auto toPlace(const StreamPlace & streamPlace) const -> Place {
+        return streamPlace.offset;
+    }
 };
