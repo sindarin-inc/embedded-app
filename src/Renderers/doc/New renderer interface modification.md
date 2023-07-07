@@ -11,14 +11,14 @@ enum class StreamType : uint8_t { TXT, EPUB, OTHER };
 Here are all the sub-classes constructor definitions, showing the default optional parameter values:
 
 ``` C++
-ContainerStream(StreamType streamType = StreamType::OTHER)
-ContainerStream(T contained, StreamType streamType = StreamType::OTHER)
+ContainerStream(StreamType streamType = StreamType::OTHER);
+ContainerStream(T contained, StreamType streamType = StreamType::OTHER);
 
-StdStringStream(std::string &string, StreamType streamType = StreamType::TXT)
-StdStringStream(SpiramString &string, StreamType streamType = StreamType::TXT)
-(protected) StdStringStream(std::shared_ptr<std::istream> stream, StreamType streamType = StreamType::TXT)
+StdStringStream(std::string &string, StreamType streamType = StreamType::TXT);
+StdStringStream(SpiramString &string, StreamType streamType = StreamType::TXT);
+(protected) StdStringStream(std::shared_ptr<std::istream> stream, StreamType streamType = StreamType::TXT);
 
-BufferStream(const uint8_t *data, int size, StreamType streamType = StreamType::OTHER)
+BufferStream(const uint8_t *data, int size, StreamType streamType = StreamType::OTHER);
 ```
 
 The following methods are available to help identify the `StreamType` of an instance of those classes:
