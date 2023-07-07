@@ -45,6 +45,8 @@ public:
     ReadableFileVector files;
     ReadableBookmarksVector bookmarks;
     ReadableTableOfContentsChapterVector toc;
+    // hasSummary denotes if any of the chapters have a summary, used for determining if we should
+    // show the summary menu item
     bool hasSummary = false;
 
     SpiramString readableType;
