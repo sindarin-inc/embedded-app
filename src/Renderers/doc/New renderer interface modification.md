@@ -2,6 +2,8 @@
 
 To help in the definition of the interface to the Renderer, here are the changes to that interface (all of this can be modified at your desire). all the definitions will eventually be Tidy compliant...:
 
+### The RendererStream sub-classes
+
 Each of the `RendererStream` sub-classes constructors have a new optional parameter:  `StreamType` streamType. The `StreamType` is defined as follow: 
 
 ``` C++
@@ -59,6 +61,8 @@ auto FileSystem::newRendererStream(const char *path) -> std::shared_ptr<Renderer
 }
 ```
 
+### The Place struct
+
 The `Models/Place.hpp` is defined as follow. I've added some useful methods to it (to check for equality and to get a std:string for %s formatting in `log_x` method calls (not debugged yet):
 
 ``` C++
@@ -90,6 +94,8 @@ struct Place {
 ```
 
 This is used everywhere in the Renderer interface to get or return a document location. From Sam's conversation, this Place definition is going to be modified...
+
+### The Renderer class interface
 
 Here is the Renderer interface (showing a new method: `renderFirstPage()`):
 
