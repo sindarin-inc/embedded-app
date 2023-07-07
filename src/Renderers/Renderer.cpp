@@ -69,10 +69,9 @@ auto Renderer::getLineOfTextForRendering(Idx startTokenIdx, Line &line) -> Idx {
     line[lineIdx] = '\0';
 
     if constexpr (RENDERER_DEBUG) {
-        log_d("Returning from tokenIdx %" PRIu16 "(%" PRIu32 ") to %" PRIu16 "(%" PRIu32
-              "), width: %" PRIi16 " line: %s",
-              startTokenIdx, tokens_[startTokenIdx].streamPlace, static_cast<Idx>(tokenIdx - 1),
-              tokens_[tokenIdx - 1].streamPlace, runningWidth, line.data());
+        log_d("Returning from tokenIdx %" PRIu16 " %s to %" PRIu16 " %s, width: %" PRIi16 " line: %s",
+              startTokenIdx, tokens_[startTokenIdx].streamPlace.str().c_str(), static_cast<Idx>(tokenIdx - 1),
+              tokens_[tokenIdx - 1].streamPlace.str().c_str(), runningWidth, line.data());
     }
 
     return tokenIdx;
@@ -336,9 +335,9 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
     endTokenIdx -= 1;
 
     if constexpr (RENDERER_DEBUG) {
-        log_d("Found the place to end and it's at place %" PRIu32 ", tokenId %" PRIu8
+        log_d("Found the place to end and it's at place %s, tokenId %" PRIu8
               ", tokenIdx: %" PRIu16,
-              tokens_[endTokenIdx].streamPlace, (uint8_t)tokens_[endTokenIdx].tokenId, endTokenIdx);
+              tokens_[endTokenIdx].streamPlace.str().c_str(), (uint8_t)tokens_[endTokenIdx].tokenId, endTokenIdx);
     }
 
     Idx startTokenIdx = tokens_[endTokenIdx].prevNewParagraphTokenIdx;
@@ -351,10 +350,9 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
     }
 
     if constexpr (RENDERER_DEBUG) {
-        log_d("Last paragraph boundaries: %" PRIu16 "(%" PRIu32 ") through %" PRIu16 "(%" PRIu32
-              ")",
-              startTokenIdx, tokens_[startTokenIdx].streamPlace, endTokenIdx,
-              tokens_[endTokenIdx].streamPlace);
+        log_d("Last paragraph boundaries: %" PRIu16 " %s through %" PRIu16 " %s",
+              startTokenIdx, tokens_[startTokenIdx].streamPlace.str().c_str(), endTokenIdx,
+              tokens_[endTokenIdx].streamPlace.str().c_str());
     }
 
     // Step5: Iterate each paragraph in reverse order until we get at least enough deciLines to
@@ -428,7 +426,7 @@ auto Renderer::goBackwardsOnePage(Place fromPlace) -> Place {
     static_cast<void>(tokenizer_->loadAndTokenizePage(fromPlace, tokens_));
 
     if constexpr (RENDERER_DEBUG) {
-        log_w("Returning the following place! %" PRIu32, returnPlace);
+        log_w("Returning the following place! %s", returnPlace.str().c_str());
     }
 
     return returnPlace;

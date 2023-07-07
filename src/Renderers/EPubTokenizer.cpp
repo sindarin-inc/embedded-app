@@ -49,7 +49,7 @@ auto EPubTokenizer::getFileLocation(Place fromPlace) -> Place {
             }
             fromPlace.offset += 1;
             if constexpr (RENDERER_DEBUG) {
-                log_d("Synching to start of UTF8 character at place %" PRIu32, fromPlace);
+                log_d("Synching to start of UTF8 character at place %s", fromPlace.str().c_str());
             }
         }
     }

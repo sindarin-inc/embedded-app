@@ -52,7 +52,7 @@ auto TxtTokenizer::loadAndTokenizePage(Place fromPlace, Tokens &tokens, bool bac
     }
 
     if constexpr (RENDERER_DEBUG) {
-        log_w("Starting tokenizer at place %" PRIu32, fromPlace);
+        log_w("Starting tokenizer at place %s", fromPlace.str().c_str());
     }
 
     // Needs to be minus one for the corner case of all spaces or newlines
@@ -167,8 +167,8 @@ auto TxtTokenizer::loadAndTokenizePage(Place fromPlace, Tokens &tokens, bool bac
 
     if constexpr (RENDERER_DEBUG) {
         log_d("Finished tokenizing with running text area %" PRIu32 " and max area %" PRIu32
-              ", and place in file is %" PRIu32,
-              textArea, maxTextArea, tokens.getLast().streamPlace);
+              ", and place in file is %s",
+              textArea, maxTextArea, tokens.getLast().streamPlace.str().c_str());
         log_d("Computed Word Count: %" PRIu32, currentPageWordCount_);
     }
 
@@ -196,7 +196,7 @@ auto TxtTokenizer::getFileLocation(Place fromPlace) -> Place {
     }
 
     if (!stream_->seek(fromPlace.offset)) {
-        log_e("failed to seek at place %" PRIu32 " in file!", fromPlace);
+        log_e("failed to seek at place %s in file!", fromPlace.str().c_str());
         if constexpr (ON_ERROR_EXIT) {
             exit(2);
         }
@@ -211,7 +211,7 @@ auto TxtTokenizer::getFileLocation(Place fromPlace) -> Place {
             }
             fromPlace.offset += 1;
             if constexpr (RENDERER_DEBUG) {
-                log_d("Synching to start of UTF8 character at place %" PRIu32, fromPlace);
+                log_d("Synching to start of UTF8 character at place %s", fromPlace.str().c_str());
             }
         }
     }

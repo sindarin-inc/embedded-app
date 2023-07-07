@@ -141,10 +141,10 @@ void Tokens::print() const {
     if constexpr (RENDERER_DEBUG) {
         for (Idx i = 0; i < tokensCount_; i++) {
             auto currToken = &tokens_[i];
-            log_d("TokenIdx: %" PRIu16 ", TokenId: %" PRIu8 ", streamPlace: %" PRIu32
-                  ", prevNewParagraphIdx: %" PRIu16 ", width: %" PRIu16 ", height: %" PRIu16
-                  ", Length: %" PRIu16,
-                  i, (uint8_t)currToken->tokenId, currToken->streamPlace,
+            log_d("TokenIdx: %" PRIu16 ", TokenId: %" PRIu8
+                  ", streamPlace: %s, prevNewParagraphIdx: %" PRIu16 ", width: %" PRIu16
+                  ", height: %" PRIu16 ", Length: %" PRIu16,
+                  i, (uint8_t)currToken->tokenId, currToken->streamPlace.str().c_str(),
                   currToken->prevNewParagraphTokenIdx, currToken->width, currToken->height,
                   currToken->length);
             if (currToken->tokenId == TokenId::TEXT) {
