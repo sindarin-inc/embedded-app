@@ -80,7 +80,8 @@ LittleFSFileSystem fileSystem;
 
 PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay);
 LocalStore localStore(fileSystem, prefs, powerManager.battery);
-RootUI rootUi(prefs, powerManager);
+Telemetry telemetry(fileSystem, prefs);
+RootUI rootUi(prefs, powerManager, telemetry);
 SolClock solClock(prefs);
 
 bool bootCompleted = false;

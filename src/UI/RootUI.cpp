@@ -20,6 +20,7 @@
 #include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
+#include "Misc/Telemetry.hpp"
 #include "Models/Readable.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/LocalStore.hpp"
@@ -102,7 +103,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             stream = fileSystem.newRendererStream(path.c_str());
         }
         auto *readableScreen = new ReadableScreen(stream, *display, readable, this->prefs_,
-                                                  power_.battery, fileSystem, lightingController);
+                                                  this->telemetry_, fileSystem, lightingController);
 
         // When switching to a readable from a menu, we should clear the display
         // to make the whites really white and the blacks really black.
