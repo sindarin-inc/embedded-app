@@ -27,3 +27,33 @@ struct Place {
 #else
 using Place = uint32_t;
 #endif
+
+#if 0
+#pragma pack(push, 1)
+
+struct EPubPlacemark {
+    std::string filename;
+    uint32_t offset;
+};
+
+union Place {
+    uint32_t txt_offset;
+    EPubPlacemark placemark;
+};
+#pragma pack(pop)
+#endif
+
+#if 0
+class Place {};
+
+class TxtPlace : public Place {
+  public:
+    uint32_t offset;
+};
+
+class EPubPlacemark : public Place {
+  public:
+    uint32_t offset;
+    std::string filename;
+};
+#endif

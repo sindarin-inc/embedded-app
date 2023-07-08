@@ -35,7 +35,7 @@ public:
             return StreamType::TXT;
         }
         if (HasSuffix(path, ".epub")) {
-            return StreamType::TXT;
+            return StreamType::EPUB;
         }
         return StreamType::OTHER;
     }

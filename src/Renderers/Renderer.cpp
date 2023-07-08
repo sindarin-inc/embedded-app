@@ -81,7 +81,7 @@ auto Renderer::getLineOfTextForRendering(Idx startTokenIdx, Line &line) -> Idx {
 // and load the next page into the next buffer so we have it.
 auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
 
-    currentPlace_ = toStreamPlace(fromPlace);
+    currentPlace_ = tokenizer_->toStreamPlace(fromPlace);
 
     if constexpr (RENDERER_DEBUG) {
         log_d("%s is place in file being requested", currentPlace_.str().c_str());
@@ -133,7 +133,7 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
     if constexpr (RENDERER_DEBUG) {
         log_w("Returning next page place to be %s", nextPlace_.str().c_str());
     }
-    return toPlace(nextPlace_);
+    return tokenizer_->toPlace(nextPlace_);
 }
 
 auto Renderer::getParagraphDeciLinesCount(Idx startTokenIdx, Idx endTokenIdx) -> uint16_t {

@@ -12,7 +12,7 @@
 //
 // Computes the number of word in the page.
 //
-// Returns the computed place where the page start really.
+// Returns the computed streamPlace where the page start really.
 //
 // IMPORTANT: The getFileLocation() method must be called only through this method.
 auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bool backwards)
@@ -28,14 +28,14 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, b
 // returns an updated fromPlace location or the LOCATION_ERROR value.
 auto EPubTokenizer::getFileLocation(StreamPlace fromPlace) -> StreamPlace {
 
-    // if received place is larger than the stream size, reset it to
+    // if received streamPlace is larger than the stream size, reset it to
     // the beginning of file
     if (fromPlace.offset >= stream_->size()) {
         fromPlace = getPlaceAtBeginningOfDocument();
     }
 
     if (!stream_->seek(fromPlace.offset)) {
-        log_e("failed to seek at place %" PRIu32 " in file!", fromPlace);
+        log_e("failed to seek at streamPlace %" PRIu32 " in file!", fromPlace);
         if constexpr (ON_ERROR_EXIT) {
             exit(2);
         }
@@ -50,7 +50,8 @@ auto EPubTokenizer::getFileLocation(StreamPlace fromPlace) -> StreamPlace {
             }
             fromPlace.offset += 1;
             if constexpr (RENDERER_DEBUG) {
-                log_d("Synching to start of UTF8 character at place %s", fromPlace.str().c_str());
+                log_d("Synching to start of UTF8 character at streamPlace %s",
+                      fromPlace.str().c_str());
             }
         }
     }

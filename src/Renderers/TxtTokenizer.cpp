@@ -12,7 +12,7 @@
 //
 // Computes the number of word in the page.
 //
-// Returns the computed place where the page start really.
+// Returns the computed streamPlace where the page start really.
 //
 // IMPORTANT: The getFileLocation() method must be called only through this method.
 auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bool backwards)
@@ -53,7 +53,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bo
     }
 
     if constexpr (RENDERER_DEBUG) {
-        log_w("Starting tokenizer at place %s", fromPlace.str().c_str());
+        log_w("Starting tokenizer at streamPlace %s", fromPlace.str().c_str());
     }
 
     // Needs to be minus one for the corner case of all spaces or newlines
@@ -168,7 +168,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bo
 
     if constexpr (RENDERER_DEBUG) {
         log_d("Finished tokenizing with running text area %" PRIu32 " and max area %" PRIu32
-              ", and place in file is %s",
+              ", and streamPlace in file is %s",
               textArea, maxTextArea, tokens.getLast().streamPlace.str().c_str());
         log_d("Computed Word Count: %" PRIu32, currentPageWordCount_);
     }
@@ -190,14 +190,14 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bo
 // returns an updated fromPlace location or the LOCATION_ERROR value.
 auto TxtTokenizer::getFileLocation(StreamPlace fromPlace) -> StreamPlace {
 
-    // if received place is larger than the stream size, reset it to
+    // if received streamPlace is larger than the stream size, reset it to
     // the beginning of file
     if (fromPlace.offset >= stream_->size()) {
         fromPlace = getPlaceAtBeginningOfDocument();
     }
 
     if (!stream_->seek(fromPlace.offset)) {
-        log_e("failed to seek at place %s in file!", fromPlace.str().c_str());
+        log_e("failed to seek at streamPlace %s in file!", fromPlace.str().c_str());
         if constexpr (ON_ERROR_EXIT) {
             exit(2);
         }
@@ -212,7 +212,8 @@ auto TxtTokenizer::getFileLocation(StreamPlace fromPlace) -> StreamPlace {
             }
             fromPlace.offset += 1;
             if constexpr (RENDERER_DEBUG) {
-                log_d("Synching to start of UTF8 character at place %s", fromPlace.str().c_str());
+                log_d("Synching to start of UTF8 character at streamPlace %s",
+                      fromPlace.str().c_str());
             }
         }
     }

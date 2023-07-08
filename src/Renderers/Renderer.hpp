@@ -2,12 +2,13 @@
 
 #include "RendererDefs.hpp"
 #include "Tokenizer.hpp"
+#include "NullTokenizer.hpp"
 #include "Tokens.hpp"
 
 using namespace renderer_defs;
 
-// ToDo: The renderer interface has been adjusted to consider a new upcoming Place struct. 
-//       It is now using a Place as an int32_t, independant of an renderer independant 
+// ToDo: The renderer interface has been adjusted to consider a new upcoming Place struct.
+//       It is now using a Place as an int32_t, independant of an renderer independant
 //       StreamPlace, to support it's development in the current Sol app that support only
 //       TXT files.
 //       Will need to be adjusted considering the upcoming Place definition...
@@ -15,16 +16,22 @@ using namespace renderer_defs;
 class Renderer {
 
 public:
-    Renderer(DisplaySystem &display) : display_(display), tokens_(display) {}
+    Renderer(DisplaySystem &display) : display_(display), tokens_(display) {
+        tokenizer_ = std::make_shared<NullTokenizer>(display);
+    }
 
     auto setStream(std::shared_ptr<RendererStream> stream) -> void {
         tokenizer_ = Tokenizer::factory(stream, display_);
     }
-    auto setCurrentPlace(Place newPlace) -> void { currentPlace_ = toStreamPlace(newPlace); }
+    auto setCurrentPlace(Place newPlace) -> void {
+        currentPlace_ = tokenizer_->toStreamPlace(newPlace);
+    }
 
     [[nodiscard]] auto getPreviousPlace() -> Place;
 
-    [[nodiscard]] inline auto getCurrentPlace() const -> Place { return toPlace(currentPlace_); }
+    [[nodiscard]] inline auto getCurrentPlace() const -> Place {
+        return tokenizer_->toPlace(currentPlace_);
+    }
 
     [[nodiscard]] inline auto size() const -> uint32_t { return stream_->size(); }
 
@@ -40,7 +47,8 @@ public:
 
     // NOLINTNEXTLINE(modernize-use-nodiscard)
     inline auto renderFirstPage(int16_t numSkipLines = 0) -> Place {
-        return renderPage(toPlace(tokenizer_->getPlaceAtBeginningOfDocument()), numSkipLines);
+        return renderPage(tokenizer_->toPlace(tokenizer_->getPlaceAtBeginningOfDocument()),
+                          numSkipLines);
     }
 
     [[nodiscard]] auto getTotalLengthOfLines() const -> uint16_t;
@@ -98,13 +106,4 @@ private:
 
     auto getLineOfTextForRendering(renderer_defs::Idx startTokenIdx, Line &line)
         -> renderer_defs::Idx;
-
-    // ToDo: To be adjusted related to the upcoming Place definition
-    inline auto toStreamPlace(const Place & place) const -> StreamPlace {
-        return StreamPlace{.offset = place, .fileNumber = 0};
-    }
-
-    inline auto toPlace(const StreamPlace & streamPlace) const -> Place {
-        return streamPlace.offset;
-    }
 };

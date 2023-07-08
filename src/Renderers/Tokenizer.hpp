@@ -26,16 +26,36 @@ public:
         maxTextTokenCharSize_ = (display_.width() - 4) / display_.getTextWidth("G");
     }
 
-    [[nodiscard]] virtual auto getPlaceAfterEndOfFileReached(StreamPlace place) const
+    [[nodiscard]] auto getPlaceAtBeginningOfFile(StreamPlace streamPlace) const -> StreamPlace {
+        streamPlace.offset = 0;
+        return streamPlace;
+    }
+
+    [[nodiscard]] auto getPlaceAtBeginningOfDocument() const -> StreamPlace {
+        return StreamPlace{.offset = 0, .fileNumber = 0};
+    }
+
+    [[nodiscard]] auto atBeginningOfFile(StreamPlace streamPlace) const -> bool {
+        return streamPlace.offset == 0;
+    }
+
+    [[nodiscard]] auto addOffset(StreamPlace streamPlace, uint32_t offset) const -> StreamPlace {
+        streamPlace.offset += offset;
+        return streamPlace;
+    };
+
+    [[nodiscard]] virtual auto subtractOffset(StreamPlace streamPlace, uint32_t offset) const
+        -> StreamPlace {
+        streamPlace.offset = (streamPlace.offset >= offset) ? streamPlace.offset - offset : 0;
+        return streamPlace;
+    }
+
+    [[nodiscard]] virtual auto getPlaceAfterEndOfFileReached(StreamPlace streamPlace) const
         -> StreamPlace = 0;
-    [[nodiscard]] virtual auto getPlaceAtBeginningOfFile(StreamPlace place) const
-        -> StreamPlace = 0;
-    [[nodiscard]] virtual auto getPlaceAtBeginningOfDocument() const -> StreamPlace = 0;
-    [[nodiscard]] virtual auto atBeginningOfFile(StreamPlace place) const -> bool = 0;
-    [[nodiscard]] virtual auto addOffset(StreamPlace place, uint32_t offset) const
-        -> StreamPlace = 0;
-    [[nodiscard]] virtual auto subtractOffset(StreamPlace place, uint32_t offset) const
-        -> StreamPlace = 0;
+
+    [[nodiscard]] virtual auto toStreamPlace(const Place &place) const -> StreamPlace = 0;
+
+    [[nodiscard]] virtual auto toPlace(const StreamPlace &streamPlace) const -> Place = 0;
 
 protected:
     DisplaySystem &display_;

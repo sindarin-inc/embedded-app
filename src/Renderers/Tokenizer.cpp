@@ -3,6 +3,7 @@
 #include "EPubTokenizer.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "TxtTokenizer.hpp"
+#include "NullTokenizer.hpp"
 
 auto Tokenizer::factory(std::shared_ptr<RendererStream> stream, DisplaySystem &display)
     -> std::shared_ptr<Tokenizer> {
@@ -17,7 +18,7 @@ auto Tokenizer::factory(std::shared_ptr<RendererStream> stream, DisplaySystem &d
         if constexpr (ON_ERROR_EXIT) {
             exit(1);
         }
-        return nullptr;
+        tokenizer = std::make_shared<NullTokenizer>(display);
     }
     tokenizer->stream_ = std::move(stream);
 

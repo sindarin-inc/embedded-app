@@ -8,35 +8,22 @@ class TxtTokenizer : public Tokenizer {
 public:
     TxtTokenizer(DisplaySystem &display) : Tokenizer(display) {}
 
-    [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bool backwards = false)
-        -> StreamPlace override;
+    [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens,
+                                           bool backwards = false) -> StreamPlace override;
 
-    [[nodiscard]] auto getPlaceAtBeginningOfFile(StreamPlace place) const -> StreamPlace override {
-        place.offset = 0;
-        return place;
+    [[nodiscard]] auto getPlaceAfterEndOfFileReached(StreamPlace streamPlace) const
+        -> StreamPlace override {
+        streamPlace.offset = 0;
+        return streamPlace;
     }
 
-    [[nodiscard]] auto getPlaceAtBeginningOfDocument() const -> StreamPlace override {
-        return StreamPlace{.offset = 0, .fileNumber = 1};
+    // ToDo: To be adjusted related to the upcoming Place definition
+    [[nodiscard]] auto toStreamPlace(const Place &place) const -> StreamPlace override {
+        return StreamPlace{.offset = place, .fileNumber = 0};
     }
 
-    [[nodiscard]] auto getPlaceAfterEndOfFileReached(StreamPlace place) const -> StreamPlace override {
-        place.offset = 0;
-        return place;
-    }
-
-    [[nodiscard]] auto atBeginningOfFile(StreamPlace place) const -> bool override {
-        return place.offset == 0;
-    }
-
-    [[nodiscard]] auto addOffset(StreamPlace place, uint32_t offset) const -> StreamPlace override {
-        place.offset += offset;
-        return place;
-    };
-
-    [[nodiscard]] auto subtractOffset(StreamPlace place, uint32_t offset) const -> StreamPlace override {
-        place.offset = (place.offset >= offset) ? place.offset - offset : 0;
-        return place;
+    [[nodiscard]] inline auto toPlace(const StreamPlace &streamPlace) const -> Place override {
+        return streamPlace.offset;
     }
 
 protected:
