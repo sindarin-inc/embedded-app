@@ -49,6 +49,9 @@ class OverrideIdfSerial(IdfSerial):
         btmac = self.ict_client.get_bt_mac()
         logger.info("bluetooth mac: " + btmac)
 
+        # prepare nvs partition image and write to dut
+        self.write_nvs(btmac)
+
         # Close the serial port
         self.close()
 
@@ -61,6 +64,13 @@ class OverrideIdfSerial(IdfSerial):
         port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
 
         self.connect_dut_log_port()
+
+    def write_nvs(self, btmac):
+        parts = btmac.split(":")
+        hexstr = ''.join(parts)
+        logger.info("hex string: " + hexstr)
+        btmac_int = int(hexstr, 16)
+        logger.info(str(btmac_int))
 
     def connect_dut_log_port(self):
         max_attempts = 3
