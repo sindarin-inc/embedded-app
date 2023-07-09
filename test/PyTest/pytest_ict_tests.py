@@ -4,6 +4,7 @@ import time
 import typing as t
 from typing import Any
 import platform
+import os
 
 import pytest
 import serial
@@ -11,6 +12,7 @@ from _pytest.fixtures import FixtureRequest
 from pytest import MonkeyPatch
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.serial import IdfSerial
+from pytest_embedded.log import live_print_call
 
 from ict import MFICTClient
 from power import PowerTester
@@ -47,7 +49,7 @@ class OverrideIdfSerial(IdfSerial):
 
         # read ict's bluetooth mac
         btmac = self.ict_client.get_bt_mac()
-        logger.info("bluetooth mac: " + btmac)
+        logger.info("ICT bluetooth MAC: " + btmac)
 
         # prepare nvs partition image and write to dut
         self.write_nvs(btmac)
@@ -71,6 +73,46 @@ class OverrideIdfSerial(IdfSerial):
         logger.info("hex string: " + hexstr)
         btmac_int = int(hexstr, 16)
         logger.info(str(btmac_int))
+
+        # create partition csv file
+        csvfname = "dutnvs.csv"
+        fp = open(csvfname, "w")
+        fp.write("key,type,encoding,value\n")
+        fp.write("boot-info,namespace,,\n")
+        fp.write("sindarin-app,namespace,,\n")
+        # write paired tt address
+        fp.write("paired-tt,data,u64,"+str(btmac_int)+"\n")
+        fp.close()
+
+        # create partition bin file
+        binfname = "dutnvs.bin"
+        live_print_call(
+            [
+                'test/PyTest/nvs_partition_gen.py',
+                'generate',
+                csvfname,
+                binfname,
+                '20480',
+            ],
+            msg_queue=self._q,
+        )
+
+        # write nvs partition to dut
+        live_print_call(
+            [
+                'test/PyTest/parttool.py',
+                '--port',
+                self.port,
+                'write_partition',
+                '--partition-name=nvs',
+                '--input',
+                binfname,
+            ],
+            msg_queue=self._q,
+        )
+
+        os.remove(csvfname)
+        os.remove(binfname)
 
     def connect_dut_log_port(self):
         max_attempts = 3
