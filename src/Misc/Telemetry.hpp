@@ -15,7 +15,6 @@ class Telemetry {
 public:
     Telemetry(FileSystem &fs, PreferencesStore &prefs) : fileSystem_(fs), prefs_(prefs) {}
     Telemetry(const Telemetry &) = delete;
-
     template <typename T>
     void logMetric(const char *name, T value, std::string readableUuid = "") {
         // create log directory in filesystem if it doesn't exist
@@ -26,17 +25,26 @@ public:
 
         auto runTimeMs = GetRunTimeMs();
 
+        std::string uuidFormat =
+            readableUuid.empty()
+                ? ""
+                : ",\"u\":\"%s\""; // if readableUuid is not empty, add it to the format
         std::string format;
+
         if (std::is_same<T, float>::value) {
-            format = "{\"rt\":%d,\"u\":\"%s\",\"k\":\"%s\",\"v\":%.2f}";
+            format = "{\"rt\":%d" + uuidFormat + ",\"k\":\"%s\",\"v\":%.2f}";
         } else if (std::is_same<T, uint32_t>::value) {
-            format = "{\"rt\":%d,\"u\":\"%s\",\"k\":\"%s\",\"v\":%u}";
+            format = "{\"rt\":%d" + uuidFormat + ",\"k\":\"%s\",\"v\":%u}";
         } else {
-            format = "{\"rt\":%d,\"u\":\"%s\",\"k\":\"%s\",\"v\":\"%s\"}";
+            format = "{\"rt\":%d" + uuidFormat + ",\"k\":\"%s\",\"v\":\"%s\"}";
         }
 
-        std::string logString =
-            StringFormat(format.c_str(), runTimeMs, readableUuid.c_str(), name, value);
+        std::string logString;
+        if (!readableUuid.empty()) {
+            logString = StringFormat(format.c_str(), runTimeMs, readableUuid.c_str(), name, value);
+        } else {
+            logString = StringFormat(format.c_str(), runTimeMs, name, value);
+        }
 
         log_i("Logging metric: %s", logString.c_str());
 
