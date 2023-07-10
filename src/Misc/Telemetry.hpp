@@ -24,6 +24,7 @@ public:
         }
 
         auto runTimeMs = GetRunTimeMs();
+        auto bootCount = prefs_.bootCount.get().value_or(0);
 
         std::string uuidFormat =
             readableUuid.empty()
@@ -32,21 +33,22 @@ public:
         std::string format;
 
         if (std::is_same<T, float>::value) {
-            format = "{\"rt\":%d" + uuidFormat + ",\"k\":\"%s\",\"v\":%.2f}";
+            format = "{\"bc\":%d,\"rt\":%d" + uuidFormat + ",\"v\":%.2f}";
         } else if (std::is_same<T, uint32_t>::value) {
-            format = "{\"rt\":%d" + uuidFormat + ",\"k\":\"%s\",\"v\":%u}";
+            format = "{\"bc\":%d,\"rt\":%d" + uuidFormat + ",\"v\":%u}";
         } else {
-            format = "{\"rt\":%d" + uuidFormat + ",\"k\":\"%s\",\"v\":\"%s\"}";
+            format = "{\"bc\":%d,\"rt\":%d" + uuidFormat + ",\"v\":\"%s\"}";
         }
 
         std::string logString;
         if (!readableUuid.empty()) {
-            logString = StringFormat(format.c_str(), runTimeMs, readableUuid.c_str(), name, value);
+            logString =
+                StringFormat(format.c_str(), bootCount, runTimeMs, readableUuid.c_str(), value);
         } else {
-            logString = StringFormat(format.c_str(), runTimeMs, name, value);
+            logString = StringFormat(format.c_str(), bootCount, runTimeMs, value);
         }
 
-        log_i("Logging metric: %s", logString.c_str());
+        log_i("Logging metric: %s %s", name, logString.c_str());
 
         DispatchGetCore1BackgroundQueue()->dispatch([this, logString, name]() {
             std::string path = Telemetry::metricLogPath(name);
