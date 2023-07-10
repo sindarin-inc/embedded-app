@@ -375,9 +375,7 @@ void LocalStore::syncFromRemote(
         bool booksNowSynced = false;
         bool articlesNowSynced = false;
 
-        std::vector<TelemetryField> fieldsSent;
-        SindarinAPI::getInstance()->uploadAndResetTelemetry(this->fileSystem, this->telemetry_,
-                                                            &fieldsSent);
+        SindarinAPI::getInstance()->uploadAndResetTelemetry(this->fileSystem, this->telemetry_);
 
         progressCallback(ContentSyncState{.state = ContentSyncState::State::CheckingSync});
 
@@ -438,6 +436,7 @@ void LocalStore::syncFromRemote(
                 }
                 log_d("Server has %d %ss, next page: %s", checkSyncResponse.totalCount,
                       ReadableModelTypeToString(modelType).c_str(), nextPageUrl.c_str());
+                this->telemetry_.logMetric(METRIC_SYNC_STATUS, httpCode);
                 if (httpCode != 200) {
                     log_e("Failed to check sync (HTTP %d)", httpCode);
                     progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,

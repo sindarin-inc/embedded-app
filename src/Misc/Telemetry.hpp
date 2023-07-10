@@ -41,7 +41,7 @@ public:
 
         if (std::is_same<T, float>::value) {
             format = "{\"bc\":%d,\"rt\":%d" + uuidFormat + ",\"v\":%.2f},";
-        } else if (std::is_same<T, uint32_t>::value) {
+        } else if (std::is_same<T, uint32_t>::value || std::is_same<T, int>::value) {
             format = "{\"bc\":%d,\"rt\":%d" + uuidFormat + ",\"v\":%u},";
         } else {
             format = "{\"bc\":%d,\"rt\":%d" + uuidFormat + ",\"v\":\"%s\"},";

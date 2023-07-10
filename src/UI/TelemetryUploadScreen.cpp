@@ -101,20 +101,13 @@ void TelemetryUploadScreen::begin() {
         updateState(state_);
         DispatchGetUiQueue()->dispatch([this]() { render(display_); });
 
-        std::vector<TelemetryField> fieldsSent;
-        auto httpCode = SindarinAPI::getInstance()->uploadAndResetTelemetry(fileSystem_, telemetry_,
-                                                                            &fieldsSent);
+        auto httpCode =
+            SindarinAPI::getInstance()->uploadAndResetTelemetry(fileSystem_, telemetry_);
         if (httpCode != 201) {
             DispatchGetUiQueue()->dispatch([this, httpCode]() {
                 fail(StringFormat("Failed to upload voltage log (%d).", httpCode));
             });
             return;
-        }
-
-        log_d("Deleting %lu telemetry logs", fieldsSent.size());
-        for (auto &field : fieldsSent) {
-            auto path = telemetry_.metricLogPath(field);
-            fileSystem_.remove(path.c_str());
         }
 
         DispatchGetUiQueue()->dispatch([this]() {

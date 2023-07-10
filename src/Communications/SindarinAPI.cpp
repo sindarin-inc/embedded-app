@@ -181,9 +181,9 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
     return success;
 }
 
-auto SindarinAPI::uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telemetry,
-                                          std::vector<TelemetryField> *fieldsSent) -> int {
+auto SindarinAPI::uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telemetry) -> int {
     SpiramString jsonStr = "{";
+    std::vector<TelemetryField> fieldsSent;
 
     // Without deserializing the JSONL logs, manually assemble the json string for each field
     for (TelemetryField field : {
@@ -213,11 +213,11 @@ auto SindarinAPI::uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &tel
 
         file.close();
 
-        fieldsSent->push_back(field);
+        fieldsSent.push_back(field);
     }
 
     // Check if any field was added, if so remove the last comma
-    if (!fieldsSent->empty()) {
+    if (!fieldsSent.empty()) {
         jsonStr.pop_back();
     }
 
@@ -244,6 +244,16 @@ auto SindarinAPI::uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &tel
     int httpCode = client.getStatusCode();
 
     log_d("Telemetry log upload http code: %d", httpCode);
+
+    // On successful telemetry log upload (or if not yet deployed on prod), delete the logs
+    if (httpCode == 200 || httpCode == 404) {
+        log_d("Deleting %lu telemetry logs", fieldsSent.size());
+        for (auto &field : fieldsSent) {
+            auto path = telemetry.metricLogPath(field);
+            log_d("Deleting %s", path.c_str());
+            fileSystem.remove(path.c_str());
+        }
+    }
 
     return httpCode;
 }
