@@ -5,7 +5,7 @@
 #include "Misc/StringUtil.hpp"
 #include "sindarin-debug.h"
 
-const char *TelemetryFieldToString(TelemetryField field) {
+auto TelemetryFieldToString(TelemetryField field) -> const char * {
     switch (field) {
     case METRIC_VOLTAGE:
         return "Voltage";

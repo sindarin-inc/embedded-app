@@ -17,7 +17,7 @@ enum TelemetryField {
     METRIC_READABLE_PLACE,
     METRIC_SYNC_STATUS,
 };
-const char *TelemetryFieldToString(TelemetryField field);
+auto TelemetryFieldToString(TelemetryField field) -> const char *;
 
 class Telemetry {
 public:
@@ -38,15 +38,15 @@ public:
         std::string uuidFormat =
             readableUuid.empty()
                 ? ""
-                : ",\"u\":\"%s\""; // if readableUuid is not empty, add it to the format
+                : R"(,"u":"%s")"; // if readableUuid is not empty, add it to the format
         std::string format;
 
         if (std::is_same<T, float>::value) {
-            format = "{\"ts\":%lu,\"bc\":%d,\"rt\":%d" + uuidFormat + ",\"v\":%.2f},";
+            format = R"({"ts":%lu,"bc":%d,"rt":%d)" + uuidFormat + ",\"v\":%.2f},";
         } else if (std::is_same<T, uint32_t>::value || std::is_same<T, int>::value) {
-            format = "{\"ts\":%lu,\"bc\":%d,\"rt\":%d" + uuidFormat + ",\"v\":%u},";
+            format = R"({"ts":%lu,"bc":%d,"rt":%d)" + uuidFormat + ",\"v\":%u},";
         } else {
-            format = "{\"ts\":%lu,\"bc\":%d,\"rt\":%d" + uuidFormat + ",\"v\":\"%s\"},";
+            format = R"({"ts":%lu,"bc":%d,"rt":%d)" + uuidFormat + R"(,"v":"%s"},)";
         }
 
         std::string logString;
