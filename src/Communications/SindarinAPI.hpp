@@ -4,6 +4,7 @@
 #include <functional>
 
 #include "Communications/HttpClient.hpp"
+#include "Misc/Telemetry.hpp"
 #include "Models/CheckSync.hpp"
 #include "Models/Firmware.hpp"
 #include "Models/FirmwareResponse.hpp"
@@ -34,7 +35,8 @@ public:
                           const std::string &path,
                           const std::function<void(int percentage)> &progressCallback) -> bool;
 
-    auto uploadAndResetVoltageLog(FileSystem &fileSystem) -> int;
+    auto uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telemetry,
+                                 std::vector<std::string> *fieldsSent) -> int;
 
     auto uploadCrashReport(SFile &crashFile, const std::string &contentType) -> int;
 

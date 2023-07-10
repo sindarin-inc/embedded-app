@@ -32,8 +32,6 @@ public:
 
     auto getDepleted() -> bool;
 
-    static auto voltageLogPath() -> const char * { return "/logs/voltagelog.txt"; }
-
     void saveLastBatteryReport();
 
 protected:

@@ -1,4 +1,4 @@
-#include "VoltageLogUploadScreen.hpp"
+#include "TelemetryUploadScreen.hpp"
 
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
@@ -6,24 +6,24 @@
 #include "Misc/Dispatch.hpp"
 #include "sindarin-debug.h"
 
-void VoltageLogUploadScreen::render(DisplaySystem &display) {
+void TelemetryUploadScreen::render(DisplaySystem &display) {
     uint16_t x = 0;
     uint16_t y = 0;
 
     // Re-render based on state
     switch (state_.state) {
-    case VoltageLogUploadState::Idle: {
+    case TelemetryUploadState::Idle: {
         // Shouldn't get here
-        log_w("VoltageLogUploadScreen::render() called in Idle state");
+        log_w("TelemetryUploadScreen::render() called in Idle state");
         return;
     }
-    case VoltageLogUploadState::Failure: {
+    case TelemetryUploadState::Failure: {
         display.drawSingleLineOfCenteredText(state_.message);
         break;
     }
-    case VoltageLogUploadState::ConnectingWifi:
-    case VoltageLogUploadState::Uploading:
-    case VoltageLogUploadState::Done: {
+    case TelemetryUploadState::ConnectingWifi:
+    case TelemetryUploadState::Uploading:
+    case TelemetryUploadState::Done: {
         // Calculate group height
         const uint16_t spacing = 2;
         const uint16_t lineCount = 3;
@@ -46,9 +46,9 @@ void VoltageLogUploadScreen::render(DisplaySystem &display) {
             y += spacing;
         };
 
-        drawBulletLine("Connecting WiFi", state_.state > VoltageLogUploadState::ConnectingWifi);
-        drawBulletLine("Uploading voltage log", state_.state > VoltageLogUploadState::Uploading);
-        drawBulletLine("Deleting local copy", state_.state > VoltageLogUploadState::Uploading);
+        drawBulletLine("Connecting WiFi", state_.state > TelemetryUploadState::ConnectingWifi);
+        drawBulletLine("Uploading voltage log", state_.state > TelemetryUploadState::Uploading);
+        drawBulletLine("Deleting local copy", state_.state > TelemetryUploadState::Uploading);
 
         break;
     }
@@ -62,11 +62,11 @@ void VoltageLogUploadScreen::render(DisplaySystem &display) {
     }
 }
 
-void VoltageLogUploadScreen::processCommand(RemoteCommand command) {}
+void TelemetryUploadScreen::processCommand(RemoteCommand command) {}
 
-void VoltageLogUploadScreen::fail(const std::string &message) {
+void TelemetryUploadScreen::fail(const std::string &message) {
     log_w("Voltage log upload failed: %s", message.c_str());
-    state_.state = VoltageLogUploadState::Failure;
+    state_.state = TelemetryUploadState::Failure;
     state_.message = message;
     updateState(state_);
     render(display_);
@@ -75,7 +75,7 @@ void VoltageLogUploadScreen::fail(const std::string &message) {
     back();
 }
 
-void VoltageLogUploadScreen::begin() {
+void TelemetryUploadScreen::begin() {
     auto token = prefs_.cloudToken.get();
     if (!token.has_value()) {
         fail("Go to Settings > Pair Glasses in the Sol app.");
@@ -88,7 +88,7 @@ void VoltageLogUploadScreen::begin() {
         return;
     }
 
-    state_.state = VoltageLogUploadState::ConnectingWifi;
+    state_.state = TelemetryUploadState::ConnectingWifi;
     render(display_);
 
     DispatchGetCore1BackgroundQueue()->dispatch([this]() {
@@ -97,11 +97,13 @@ void VoltageLogUploadScreen::begin() {
             return;
         }
 
-        state_.state = VoltageLogUploadState::Uploading;
+        state_.state = TelemetryUploadState::Uploading;
         updateState(state_);
         DispatchGetUiQueue()->dispatch([this]() { render(display_); });
 
-        auto httpCode = SindarinAPI::getInstance()->uploadAndResetVoltageLog(fileSystem_);
+        std::vector<std::string> fieldsSent;
+        auto httpCode = SindarinAPI::getInstance()->uploadAndResetTelemetry(fileSystem_, telemetry_,
+                                                                            &fieldsSent);
         if (httpCode != 201) {
             DispatchGetUiQueue()->dispatch([this, httpCode]() {
                 fail(StringFormat("Failed to upload voltage log (%d).", httpCode));
@@ -109,12 +111,15 @@ void VoltageLogUploadScreen::begin() {
             return;
         }
 
-        log_d("Deleting voltage log");
-        fileSystem_.remove(Battery::voltageLogPath());
+        log_d("Deleting %lu telemetry logs", fieldsSent.size());
+        for (auto &field : fieldsSent) {
+            auto path = telemetry_.metricLogPath(field);
+            fileSystem_.remove(path.c_str());
+        }
 
         DispatchGetUiQueue()->dispatch([this]() {
             log_i("Voltage log upload complete");
-            state_.state = VoltageLogUploadState::Done;
+            state_.state = TelemetryUploadState::Done;
             updateState(state_);
             render(display_);
             vTaskDelay(2000 / portTICK_PERIOD_MS);

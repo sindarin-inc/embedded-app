@@ -47,9 +47,9 @@
 #include "UI/ReleaseNotesScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
 #include "UI/StatsScreen.hpp"
+#include "UI/TelemetryUploadScreen.hpp"
 #include "UI/ToggleMenuScreen.hpp"
 #include "UI/TutorialScreen.hpp"
-#include "UI/VoltageLogUploadScreen.hpp"
 #include "Version.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -1244,15 +1244,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     debugSettingsMenu->addMenuItem(MenuItem("Upload Voltage Log",
                                             [this, display, &fileSystem, debugSettingsMenu]() {
-        auto voltageLogScreen = new VoltageLogUploadScreen(*display, this->prefs_, fileSystem);
-        this->setCurrentScreen(*voltageLogScreen);
-        (*voltageLogScreen).setBackCallback([this, voltageLogScreen, debugSettingsMenu, display]() {
+        auto telemetryScreen =
+            new TelemetryUploadScreen(*display, this->prefs_, fileSystem, this->telemetry_);
+        this->setCurrentScreen(*telemetryScreen);
+        (*telemetryScreen).setBackCallback([this, telemetryScreen, debugSettingsMenu, display]() {
             debugSettingsMenu->setFirstLoad();
             setCurrentScreen(*debugSettingsMenu);
             debugSettingsMenu->render(*display);
-            delete voltageLogScreen;
+            delete telemetryScreen;
         });
-        (*voltageLogScreen).begin();
+        (*telemetryScreen).begin();
     }));
 
     debugSettingsMenu->addMenuItem(MenuItem("Format FS",

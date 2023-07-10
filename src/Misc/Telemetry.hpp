@@ -11,6 +11,8 @@
 // Currently 1MB
 #define MAX_TELEMETRY_LOG_SIZE 1000000
 
+extern std::vector<std::string> TelemetryFields;
+
 class Telemetry {
 public:
     Telemetry(FileSystem &fs, PreferencesStore &prefs) : fileSystem_(fs), prefs_(prefs) {}
@@ -33,11 +35,11 @@ public:
         std::string format;
 
         if (std::is_same<T, float>::value) {
-            format = "{\"bc\":%d,\"rt\":%d" + uuidFormat + ",\"v\":%.2f}";
+            format = "{\"bc\":%d,\"rt\":%d" + uuidFormat + ",\"v\":%.2f},";
         } else if (std::is_same<T, uint32_t>::value) {
-            format = "{\"bc\":%d,\"rt\":%d" + uuidFormat + ",\"v\":%u}";
+            format = "{\"bc\":%d,\"rt\":%d" + uuidFormat + ",\"v\":%u},";
         } else {
-            format = "{\"bc\":%d,\"rt\":%d" + uuidFormat + ",\"v\":\"%s\"}";
+            format = "{\"bc\":%d,\"rt\":%d" + uuidFormat + ",\"v\":\"%s\"},";
         }
 
         std::string logString;
@@ -67,7 +69,7 @@ public:
     }
 
     static auto metricLogPath(const std::string &name) -> std::string {
-        return StringFormat("/logs/%s.txt", name.c_str());
+        return StringFormat("/logs/%s.jsonl", name.c_str());
     }
 
 protected:

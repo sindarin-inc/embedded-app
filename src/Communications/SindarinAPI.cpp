@@ -181,40 +181,45 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
     return success;
 }
 
-auto SindarinAPI::uploadAndResetVoltageLog(FileSystem &fileSystem) -> int {
-    auto localPath = Battery::voltageLogPath();
-    if (!fileSystem.exists(localPath)) {
-        log_w("Voltage log file %s does not exist", localPath);
-        return false;
-    }
-    auto file = fileSystem.open(localPath, FILE_READ);
+auto SindarinAPI::uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telemetry,
+                                          std::vector<std::string> *fieldsSent) -> int {
+    SpiramString jsonStr = "{";
 
-    auto requestJson = std::make_unique<SpiRamJsonDocument>(file.size() * 2);
-    (*requestJson)["voltage_log"] = file.readString();
-    file.close();
+    // Without deserializing the JSONL logs, manually assemble the json string for each field
+    for (auto &field : TelemetryFields) {
+        auto localPath = telemetry.metricLogPath(field);
+        if (!fileSystem.exists(localPath)) {
+            log_w("%s log file %s does not exist", field.c_str(), localPath.c_str());
+            continue;
+        }
+        auto file = fileSystem.open(localPath, FILE_READ);
+        auto logFileString = file.readString();
 
-    if ((*requestJson).overflowed()) {
-        log_e("Failed to create JSON for voltage log upload");
-        return -1;
-    }
+        // Remove the last newline and comma of the JSONL file
+        if (!logFileString.empty() && logFileString.back() == '\n') {
+            logFileString.pop_back();
+        }
+        if (!logFileString.empty() && logFileString.back() == ',') {
+            logFileString.pop_back();
+        }
 
-    // `memoryUsage()` isn't quite the right amount and we can't know for sure how big the
-    // serialized data will be until we actually serialize it. We probably only need 20% more or so
-    // but we have plenty of SPIRAM so let's just double it.
-    size_t serializedMaxSize = (*requestJson).memoryUsage() * 2;
-    auto serialized = SpiRamArrayPtr<char>(serializedMaxSize);
+        jsonStr += "\"" + field + "\":[" + logFileString + "],";
 
-    // Write to SPIRAM
-    // TODO: I can't find a good way to verify that the whole thing was written. Maybe would be
-    // better for this to be a stream so we could check if we attempted to write but ran out of
-    // space.
-    size_t serializedLength = serializeJson(*requestJson, serialized.get(), serializedMaxSize);
-    if (serializedLength == serializedMaxSize) {
-        log_e("serializedLength is the same as the max size, probably ran out of space");
+        file.close();
+
+        fieldsSent->push_back(field);
     }
 
-    HttpClient client(SINDARIN_SERVER_URL "/user/voltagelogs/", "application/json",
-                      HTTP_METHOD_POST);
+    // Check if any field was added, if so remove the last comma
+    if (!fieldsSent->empty()) {
+        jsonStr.pop_back();
+    }
+
+    jsonStr += "}";
+
+    auto serializedLength = jsonStr.length();
+
+    HttpClient client(SINDARIN_SERVER_URL "/telemetry/", "application/json", HTTP_METHOD_POST);
     setAuth(client);
 
     auto err = client.open(serializedLength);
@@ -223,7 +228,7 @@ auto SindarinAPI::uploadAndResetVoltageLog(FileSystem &fileSystem) -> int {
         return -1;
     }
 
-    int writeLength = client.write(serialized.get(), serializedLength);
+    int writeLength = client.write(jsonStr.c_str(), serializedLength);
     if (writeLength != serializedLength) {
         log_w("HttpClient failed to write fully (writeLength=%d, serializedLength=%zu)",
               writeLength, serializedLength);
@@ -232,7 +237,7 @@ auto SindarinAPI::uploadAndResetVoltageLog(FileSystem &fileSystem) -> int {
     client.fetchHeaders();
     int httpCode = client.getStatusCode();
 
-    log_d("Voltage log upload http code: %d", httpCode);
+    log_d("Telemetry log upload http code: %d", httpCode);
 
     return httpCode;
 }
