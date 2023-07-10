@@ -42,11 +42,11 @@ public:
         std::string format;
 
         if (std::is_same<T, float>::value) {
-            format = R"({"ts":%lu,"bc":%d,"rt":%d)" + uuidFormat + ",\"v\":%.2f},";
+            format = R"({"ts":%zu,"bc":%d,"rt":%d)" + uuidFormat + ",\"v\":%.2f},";
         } else if (std::is_same<T, uint32_t>::value || std::is_same<T, int>::value) {
-            format = R"({"ts":%lu,"bc":%d,"rt":%d)" + uuidFormat + ",\"v\":%u},";
+            format = R"({"ts":%zu,"bc":%d,"rt":%d)" + uuidFormat + ",\"v\":%u},";
         } else {
-            format = R"({"ts":%lu,"bc":%d,"rt":%d)" + uuidFormat + R"(,"v":"%s"},)";
+            format = R"({"ts":%zu,"bc":%d,"rt":%d)" + uuidFormat + R"(,"v":"%s"},)";
         }
 
         std::string logString;
