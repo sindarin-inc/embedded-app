@@ -29,7 +29,7 @@ public:
                    Telemetry &telemetry, FileSystem &fileSystem,
                    LightingController &lightingController)
         : EinkView(display), renderer_(display), firstTimeRenderer_(display), readable_(readable),
-          prefs_(prefs), fileSystem_(fileSystem), display_(display),
+          prefs_(prefs), telemetry_(telemetry), fileSystem_(fileSystem), display_(display),
           popupMenuScreen_(display, prefs, readable, lightingController, renderer_),
           leftArrowView_(display, ArrowLeft), rightArrowView_(display, ArrowRight),
           upArrowView_(display, ArrowUp), downArrowView_(display, ArrowDown) {
@@ -100,7 +100,7 @@ protected:
     Renderer firstTimeRenderer_;
     std::shared_ptr<Readable> readable_;
     PreferencesStore &prefs_;
-
+    Telemetry &telemetry_;
     FileSystem &fileSystem_;
 
     bool inBookmark_ = false;

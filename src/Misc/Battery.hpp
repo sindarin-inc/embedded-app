@@ -12,12 +12,14 @@
 #include <array>
 #include <string>
 
+#include "Misc/Telemetry.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
 
 class Battery {
 public:
-    Battery(FileSystem &fs, PreferencesStore &prefs) : fileSystem_(fs), prefs_(prefs) {}
+    Battery(FileSystem &fs, PreferencesStore &prefs, Telemetry &telemetry)
+        : fileSystem_(fs), prefs_(prefs), telemetry_(telemetry) {}
     Battery(const Battery &) = delete;
 
     void loop();
@@ -27,8 +29,6 @@ public:
     auto getLeftBatteryVoltage() -> float;
     auto getRightBatteryVoltage() -> float;
     auto getBatteryPercentage() -> float;
-
-    void logVoltages(float lVoltage, float rVoltage);
 
     auto getDepleted() -> bool;
 
@@ -41,6 +41,7 @@ protected:
 
     FileSystem &fileSystem_;
     PreferencesStore &prefs_;
+    Telemetry &telemetry_;
     unsigned long lastMeasurementTime_ = 0;
     unsigned long lastLoggingTime_ = 0;
     bool depleted_;

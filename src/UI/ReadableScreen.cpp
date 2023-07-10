@@ -149,10 +149,8 @@ void ReadableScreen::turnPage() {
         readable_->placePrev = readable_->place;
         readable_->place = newPlace_;
         prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place);
-        if (!prefs_.readablePlaceChanged.get().value_or(false)) {
-            prefs_.readablePlaceChanged.set(readable_->shortenedUuid.c_str(), true);
-        }
-
+        prefs_.readablePlaceChanged.set(readable_->shortenedUuid.c_str(), true);
+        telemetry_.logMetric("ReadablePlace", readable_->place, readable_->uuid);
         speedLinesToSkip_ = 0;
     }
 
