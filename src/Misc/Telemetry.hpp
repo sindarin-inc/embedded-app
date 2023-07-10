@@ -11,14 +11,19 @@
 // Currently 1MB
 #define MAX_TELEMETRY_LOG_SIZE 1000000
 
-extern std::vector<std::string> TelemetryFields;
+enum TelemetryField {
+    METRIC_VOLTAGE,
+    METRIC_READABLE_PLACE,
+    METRIC_SYNC_STATUS,
+};
+const char *TelemetryFieldToString(TelemetryField field);
 
 class Telemetry {
 public:
     Telemetry(FileSystem &fs, PreferencesStore &prefs) : fileSystem_(fs), prefs_(prefs) {}
     Telemetry(const Telemetry &) = delete;
     template <typename T>
-    void logMetric(const char *name, T value, std::string readableUuid = "") {
+    void logMetric(TelemetryField field, T value, std::string readableUuid = "") {
         // create log directory in filesystem if it doesn't exist
         if (!fileSystem_.createDir("/logs")) {
             log_e("could not create /logs directory");
@@ -50,10 +55,10 @@ public:
             logString = StringFormat(format.c_str(), bootCount, runTimeMs, value);
         }
 
-        log_i("Logging metric: %s %s", name, logString.c_str());
+        log_i("Logging metric: %s %s", TelemetryFieldToString(field), logString.c_str());
 
-        DispatchGetCore1BackgroundQueue()->dispatch([this, logString, name]() {
-            std::string path = Telemetry::metricLogPath(name);
+        DispatchGetCore1BackgroundQueue()->dispatch([this, logString, field]() {
+            std::string path = Telemetry::metricLogPath(field);
             SFile file = fileSystem_.open(path.c_str(), FILE_APPEND);
             if (file.size() < MAX_TELEMETRY_LOG_SIZE) {
                 file.write((const uint8_t *)logString.c_str(), logString.length());
@@ -61,15 +66,16 @@ public:
                 file.flush();
                 file.close();
             } else {
-                log_e("%s", StringFormat("Telemetry log file for %s is too large. Ignoring.", name)
+                log_e("%s", StringFormat("Telemetry log file for %s is too large. Ignoring.",
+                                         TelemetryFieldToString(field))
                                 .c_str());
                 file.close();
             }
         });
     }
 
-    static auto metricLogPath(const std::string &name) -> std::string {
-        return StringFormat("/logs/%s.jsonl", name.c_str());
+    static auto metricLogPath(TelemetryField field) -> std::string {
+        return StringFormat("/logs/%s.jsonl", TelemetryFieldToString(field));
     }
 
 protected:

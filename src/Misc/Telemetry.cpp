@@ -5,4 +5,15 @@
 #include "Misc/StringUtil.hpp"
 #include "sindarin-debug.h"
 
-std::vector<std::string> TelemetryFields = {"Voltage", "ReadablePlace", "SyncStatus"};
+const char *TelemetryFieldToString(TelemetryField field) {
+    switch (field) {
+    case METRIC_VOLTAGE:
+        return "Voltage";
+    case METRIC_READABLE_PLACE:
+        return "ReadablePlace";
+    case METRIC_SYNC_STATUS:
+        return "SyncStatus";
+    default:
+        return "Unknown";
+    }
+}

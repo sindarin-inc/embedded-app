@@ -192,7 +192,7 @@ void ReadableScreen::render(DisplaySystem &display) {
 
     prefs_.lastReadableId.set(readable_->uuid);
 
-    telemetry_.logMetric("ReadablePlace", readable_->place, readable_->uuid);
+    telemetry_.logMetric(METRIC_READABLE_PLACE, readable_->place, readable_->uuid);
 
     display.setFont(display.style.getFontFamily().readableFont);
 

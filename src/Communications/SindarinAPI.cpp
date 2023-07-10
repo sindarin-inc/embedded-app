@@ -182,14 +182,19 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
 }
 
 auto SindarinAPI::uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telemetry,
-                                          std::vector<std::string> *fieldsSent) -> int {
+                                          std::vector<TelemetryField> *fieldsSent) -> int {
     SpiramString jsonStr = "{";
 
     // Without deserializing the JSONL logs, manually assemble the json string for each field
-    for (auto &field : TelemetryFields) {
+    for (TelemetryField field : {
+             METRIC_VOLTAGE,
+             METRIC_READABLE_PLACE,
+             METRIC_SYNC_STATUS,
+         }) {
         auto localPath = telemetry.metricLogPath(field);
         if (!fileSystem.exists(localPath)) {
-            log_w("%s log file %s does not exist", field.c_str(), localPath.c_str());
+            log_w("%s log file %s does not exist", TelemetryFieldToString(field),
+                  localPath.c_str());
             continue;
         }
         auto file = fileSystem.open(localPath, FILE_READ);
@@ -203,7 +208,8 @@ auto SindarinAPI::uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &tel
             logFileString.pop_back();
         }
 
-        jsonStr += "\"" + field + "\":[" + logFileString + "],";
+        jsonStr += "\"" + StringFormat("%s", TelemetryFieldToString(field)) + "\":[" +
+                   logFileString + "],";
 
         file.close();
 

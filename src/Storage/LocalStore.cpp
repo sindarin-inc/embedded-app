@@ -361,7 +361,7 @@ void LocalStore::syncFromRemote(
     // log_w("Access token: %s", token.value().c_str());
 
     SindarinAPI::getInstance()->setAccessToken(token.value());
-    progressCallback(ContentSyncState{.state = ContentSyncState::State::CheckingSync});
+    progressCallback(ContentSyncState{.state = ContentSyncState::State::UploadTelemetry});
 
     // Run this work on a separate thread, since it's long running
     auto queue = DispatchGetCore0BackgroundQueue();
@@ -374,6 +374,12 @@ void LocalStore::syncFromRemote(
         bool articlesAlreadySynced = false;
         bool booksNowSynced = false;
         bool articlesNowSynced = false;
+
+        std::vector<TelemetryField> fieldsSent;
+        SindarinAPI::getInstance()->uploadAndResetTelemetry(this->fileSystem, this->telemetry_,
+                                                            &fieldsSent);
+
+        progressCallback(ContentSyncState{.state = ContentSyncState::State::CheckingSync});
 
         std::vector<ReadablesVector *> readablesList = {&books_, &articles_};
         for (auto &readables : readablesList) {

@@ -36,7 +36,7 @@ public:
                           const std::function<void(int percentage)> &progressCallback) -> bool;
 
     auto uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telemetry,
-                                 std::vector<std::string> *fieldsSent) -> int;
+                                 std::vector<TelemetryField> *fieldsSent) -> int;
 
     auto uploadCrashReport(SFile &crashFile, const std::string &contentType) -> int;
 

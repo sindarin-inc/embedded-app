@@ -101,7 +101,7 @@ void TelemetryUploadScreen::begin() {
         updateState(state_);
         DispatchGetUiQueue()->dispatch([this]() { render(display_); });
 
-        std::vector<std::string> fieldsSent;
+        std::vector<TelemetryField> fieldsSent;
         auto httpCode = SindarinAPI::getInstance()->uploadAndResetTelemetry(fileSystem_, telemetry_,
                                                                             &fieldsSent);
         if (httpCode != 201) {
