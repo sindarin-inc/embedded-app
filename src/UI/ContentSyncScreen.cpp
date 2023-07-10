@@ -67,6 +67,7 @@ void ContentSyncScreen::render(DisplaySystem &display) {
 
         { break; }
     case ContentSyncState::ConnectingWifi:
+    case ContentSyncState::UploadTelemetry:
     case ContentSyncState::CheckingSync:
     case ContentSyncState::SyncingBooks:
     case ContentSyncState::SyncingArticles:

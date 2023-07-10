@@ -4,6 +4,7 @@
 
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
+#include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
@@ -32,6 +33,7 @@ public:
 
         auto runTimeMs = GetRunTimeMs();
         auto bootCount = prefs_.bootCount.get().value_or(0);
+        auto timestamp = SolClock::getInstance().getEpochTime();
 
         std::string uuidFormat =
             readableUuid.empty()
@@ -40,19 +42,19 @@ public:
         std::string format;
 
         if (std::is_same<T, float>::value) {
-            format = "{\"bc\":%d,\"rt\":%d" + uuidFormat + ",\"v\":%.2f},";
+            format = "{\"ts\":%lu,\"bc\":%d,\"rt\":%d" + uuidFormat + ",\"v\":%.2f},";
         } else if (std::is_same<T, uint32_t>::value || std::is_same<T, int>::value) {
-            format = "{\"bc\":%d,\"rt\":%d" + uuidFormat + ",\"v\":%u},";
+            format = "{\"ts\":%lu,\"bc\":%d,\"rt\":%d" + uuidFormat + ",\"v\":%u},";
         } else {
-            format = "{\"bc\":%d,\"rt\":%d" + uuidFormat + ",\"v\":\"%s\"},";
+            format = "{\"ts\":%lu,\"bc\":%d,\"rt\":%d" + uuidFormat + ",\"v\":\"%s\"},";
         }
 
         std::string logString;
         if (!readableUuid.empty()) {
-            logString =
-                StringFormat(format.c_str(), bootCount, runTimeMs, readableUuid.c_str(), value);
+            logString = StringFormat(format.c_str(), timestamp, bootCount, runTimeMs,
+                                     readableUuid.c_str(), value);
         } else {
-            logString = StringFormat(format.c_str(), bootCount, runTimeMs, value);
+            logString = StringFormat(format.c_str(), timestamp, bootCount, runTimeMs, value);
         }
 
         log_i("Logging metric: %s %s", TelemetryFieldToString(field), logString.c_str());
