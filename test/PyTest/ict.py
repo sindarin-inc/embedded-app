@@ -69,7 +69,7 @@ class MFICTClient:
         return float(voltage_str)
 
     def get_magnet_status(self):
-        self.write("LMAG")
+        self.ser.write("LMAG\n".encode())
         return bool(int(self.read().split(" ")[1]))
 
     def set_gpio0(self, level):
@@ -92,5 +92,6 @@ class MFICTClient:
                 logger.debug(f"ICT <-: {self.ser.readline()}")
 
     def get_bt_mac(self):
-        self.write("BTMAC")
+        self.ser.write("BTMAC\n".encode())
+        time.sleep(0.1)
         return self.read()
