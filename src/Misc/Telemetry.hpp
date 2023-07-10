@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Storage/FileSystem.hpp"
@@ -39,18 +40,20 @@ public:
 
         log_i("Logging metric: %s", logString.c_str());
 
-        std::string path = Telemetry::metricLogPath(name);
-        SFile file = fileSystem_.open(path.c_str(), FILE_APPEND);
-        if (file.size() < MAX_TELEMETRY_LOG_SIZE) {
-            file.write((const uint8_t *)logString.c_str(), logString.length());
-            file.write('\n');
-            file.flush();
-            file.close();
-        } else {
-            log_e("%s",
-                  StringFormat("Telemetry log file for %s is too large. Ignoring.", name).c_str());
-            file.close();
-        }
+        DispatchGetCore1BackgroundQueue()->dispatch([this, logString, name]() {
+            std::string path = Telemetry::metricLogPath(name);
+            SFile file = fileSystem_.open(path.c_str(), FILE_APPEND);
+            if (file.size() < MAX_TELEMETRY_LOG_SIZE) {
+                file.write((const uint8_t *)logString.c_str(), logString.length());
+                file.write('\n');
+                file.flush();
+                file.close();
+            } else {
+                log_e("%s", StringFormat("Telemetry log file for %s is too large. Ignoring.", name)
+                                .c_str());
+                file.close();
+            }
+        });
     }
 
     static auto metricLogPath(const std::string &name) -> std::string {

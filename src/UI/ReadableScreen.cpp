@@ -150,7 +150,6 @@ void ReadableScreen::turnPage() {
         readable_->place = newPlace_;
         prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place);
         prefs_.readablePlaceChanged.set(readable_->shortenedUuid.c_str(), true);
-        telemetry_.logMetric("ReadablePlace", readable_->place, readable_->uuid);
         speedLinesToSkip_ = 0;
     }
 
@@ -192,6 +191,8 @@ void ReadableScreen::render(DisplaySystem &display) {
     }
 
     prefs_.lastReadableId.set(readable_->uuid);
+
+    telemetry_.logMetric("ReadablePlace", readable_->place, readable_->uuid);
 
     display.setFont(display.style.getFontFamily().readableFont);
 
