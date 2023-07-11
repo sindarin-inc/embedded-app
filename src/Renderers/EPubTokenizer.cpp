@@ -35,7 +35,7 @@ auto EPubTokenizer::getFileLocation(StreamPlace fromPlace) -> StreamPlace {
     }
 
     if (!stream_->seek(fromPlace.offset)) {
-        log_e("failed to seek at streamPlace %" PRIu32 " in file!", fromPlace);
+        log_e("failed to seek at streamPlace %s in file!", fromPlace.str().c_str());
         if constexpr (ON_ERROR_EXIT) {
             exit(2);
         }

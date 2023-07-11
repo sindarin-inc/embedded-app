@@ -49,6 +49,9 @@ public:
         return tokens_[tokensCount_ - 2];
     }
 
+    [[nodiscard]] inline auto cStrPoolIsFull() const -> bool {
+        return !(cStrPoolCount_ < (POOL_BUFFER_SIZE - 2));
+    }
     void setSpaceSize(renderer_defs::Idx tokenIdx);
 
     // NOLINTNEXTLINE(modernize-use-nodiscard)

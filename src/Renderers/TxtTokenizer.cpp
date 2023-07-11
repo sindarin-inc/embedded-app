@@ -58,7 +58,8 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bo
 
     // Needs to be minus one for the corner case of all spaces or newlines
     // and need room for EOF character.
-    while ((stream_->available()) && ((backwards || (textArea < maxTextArea)))) {
+    while ((stream_->available()) && (!tokens.cStrPoolIsFull()) &&
+           ((backwards || (textArea < maxTextArea)))) {
         uint8_t curChar = stream_->read();
         newToken = {.cStr = nullptr,
                     .streamPlace = addOffset(fromPlace, pageIdx),

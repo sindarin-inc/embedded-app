@@ -25,7 +25,22 @@ struct Place {
 };
 #pragma pack(pop)
 #else
+#if 0
+class Place {};
+
+class TxtPlace : public Place {
+public:
+    uint32_t offset;
+};
+
+class EPubPlace : public Place {
+public:
+    uint32_t offset;
+    std::string fileName;
+};
+#else
 using Place = uint32_t;
+#endif
 #endif
 
 #if 0

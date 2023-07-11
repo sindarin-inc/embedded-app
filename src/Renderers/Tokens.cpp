@@ -34,9 +34,9 @@ void Tokens::add(Token &token, const char *str, uint8_t strSize) {
 }
 
 void Tokens::addByteToLast(uint8_t b) {
-    // if constexpr (RENDERER_DEBUG) {
-    //     log_d("Adding byte %02" PRIX8 "H to last token.", b);
-    // }
+    if constexpr (RENDERER_DEBUG) {
+        log_d("Adding byte %02" PRIX8 "H to last token at %" PRIu16 ".", b, cStrPoolCount_);
+    }
     if (cStrPoolCount_ < (POOL_BUFFER_SIZE - 2)) {
         Token &token = getLast();
         if (token.cStr == nullptr) {
