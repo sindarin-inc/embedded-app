@@ -809,7 +809,7 @@ auto LocalStore::isSorted(const ReadablesVector &readables, SortCriteria criteri
                           SortDirection direction) -> bool {
     for (auto i = readables.begin(); i < readables.end() - 1; ++i) {
         auto a = *i, b = *(i + 1);
-        bool outOfOrder;
+        bool outOfOrder = true;
         if (criteria == SortCriteria::DateModified) {
             outOfOrder =
                 (a->dateModified < b->dateModified) != (direction == SortDirection::Ascending);
