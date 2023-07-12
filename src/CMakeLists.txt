@@ -23,7 +23,6 @@ set(compile_options
     -DUSE_LTR329=1
     -DUSE_MMC5603=1
     -DINTERNAL_SPIFFS_FLASH=1
-    -DDISABLE_LOW_VOLTAGE_HALT=1
     -DLED_INVERT=1
 )
 
