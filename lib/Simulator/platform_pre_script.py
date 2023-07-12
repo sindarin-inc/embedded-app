@@ -1,5 +1,6 @@
 Import("env")
 
+
 # It'd typically be good to use `src_filter` in the `platformio.ini` file for this kinda
 # thing but that doesn't seem to be able to exclude files from library builds.
 def remove_non_simulator_files(node):
@@ -35,12 +36,14 @@ def ignore_unzipLIB_warnings(env, node):
     """
     Ignore -Wdeprecated-non-prototype warnings for unzipLIB
 
+    See https://github.com/madler/zlib/issues/633
+
     `node.name` - a name of File System Node
     `node.get_path()` - a relative path
     `node.get_abspath()` - an absolute path
     """
 
-    if "unzipLIB" not in node.get_path():
+    if "unzipLIB" not in node.get_path() and "zlib-PIO" not in node.get_path():
         return node
 
     return env.Object(
