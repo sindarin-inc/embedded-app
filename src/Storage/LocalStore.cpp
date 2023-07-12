@@ -831,7 +831,7 @@ auto LocalStore::isSorted(const ReadablesVector &readables, SortCriteria criteri
             }
 
             outOfOrder = (aLastRead < bLastRead) != (direction == SortDirection::Ascending);
-        } else if (criteria == SortCriteria::Random) {
+        } else {
             outOfOrder = true; // Random is never sort, re-sort on every save
         }
         if (outOfOrder) {
