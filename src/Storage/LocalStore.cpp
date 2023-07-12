@@ -822,8 +822,12 @@ auto LocalStore::isSorted(const ReadablesVector &readables, SortCriteria criteri
             auto bLastRead = prefs_.lastReadTime.get(b->shortenedUuid.c_str());
 
             // Unread items are considered least valued
-            if (aLastRead == 0) aLastRead = std::numeric_limits<decltype(aLastRead)>::min();
-            if (bLastRead == 0) bLastRead = std::numeric_limits<decltype(bLastRead)>::min();
+            if (aLastRead == 0) {
+                aLastRead = ArduinoJson6194_71::numeric_limits<decltype(aLastRead)>::min();
+            }
+            if (bLastRead == 0) {
+                bLastRead = ArduinoJson6194_71::numeric_limits<decltype(bLastRead)>::min();
+            }
 
             outOfOrder = (aLastRead < bLastRead) != (direction == SortDirection::Ascending);
         } else if (criteria == SortCriteria::Random) {
@@ -842,15 +846,23 @@ void LocalStore::sortReadables(ReadablesVector &readables, SortCriteria criteria
               [this, &criteria, &direction](const std::shared_ptr<Readable> &a,
                                             const std::shared_ptr<Readable> &b) {
         if (criteria == SortCriteria::DateModified) {
-            if (a->dateModified.empty()) return direction == SortDirection::Descending;
-            if (b->dateModified.empty()) return direction == SortDirection::Ascending;
+            if (a->dateModified.empty()) {
+                return direction == SortDirection::Descending;
+            }
+            if (b->dateModified.empty()) {
+                return direction == SortDirection::Ascending;
+            }
             return direction == SortDirection::Ascending ? a->dateModified < b->dateModified
                                                          : a->dateModified > b->dateModified;
         } else if (criteria == SortCriteria::Alphabetical) {
             std::string aTitle = removeStopWords(a->title);
             std::string bTitle = removeStopWords(b->title);
-            if (aTitle.empty()) return direction == SortDirection::Descending;
-            if (bTitle.empty()) return direction == SortDirection::Ascending;
+            if (aTitle.empty()) {
+                return direction == SortDirection::Descending;
+            }
+            if (bTitle.empty()) {
+                return direction == SortDirection::Ascending;
+            }
             return direction == SortDirection::Ascending ? caseInsensitiveCompare(aTitle, bTitle)
                                                          : caseInsensitiveCompare(bTitle, aTitle);
         } else if (criteria == SortCriteria::LastRead) {
@@ -858,16 +870,26 @@ void LocalStore::sortReadables(ReadablesVector &readables, SortCriteria criteria
             auto bLastRead = prefs_.lastReadTime.get(b->shortenedUuid.c_str());
 
             // When both Readables are unread, ordering doesn't matter.
-            if (!aLastRead && !bLastRead) return false;
+            if (!aLastRead && !bLastRead) {
+                return false;
+            }
 
             // When a is unread (aLastRead == 0), it should appear after b.
-            if (!aLastRead) return false;
+            if (!aLastRead) {
+                return false;
+            }
 
             // When b is unread (bLastRead == 0), a should appear before b.
-            if (!bLastRead) return true;
+            if (!bLastRead) {
+                return true;
+            }
 
-            if (!aLastRead) return direction == SortDirection::Descending;
-            if (!bLastRead) return direction == SortDirection::Ascending;
+            if (!aLastRead) {
+                return direction == SortDirection::Descending;
+            }
+            if (!bLastRead) {
+                return direction == SortDirection::Ascending;
+            }
             return direction == SortDirection::Ascending ? aLastRead < bLastRead
                                                          : aLastRead > bLastRead;
         } else if (criteria == SortCriteria::Random) {
