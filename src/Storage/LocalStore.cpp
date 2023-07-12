@@ -118,6 +118,11 @@ auto LocalStore::loadToc(const std::shared_ptr<Readable> &readable) -> bool {
         }
     }
     log_d("Loaded %zu chapters from %s", readable->toc.size(), tocPath.c_str());
+    if (readable->hasSummary) {
+        log_d("Readable has summary");
+    } else {
+        log_d("Readable has no summary");
+    }
     tocFile.close();
     return true;
 }
@@ -854,6 +859,10 @@ auto LocalStore::saveTableOfContents(const std::shared_ptr<Readable> &readable) 
     if (!fileSystem.createDir("/toc")) {
         log_e("could not create /toc directory");
         return false;
+    }
+    if (fileSystem.exists(readable->tocFilePath())) {
+        log_d("ToC of readable %s already exists", readable->uuid.c_str());
+        return true;
     }
 
     auto doc =
