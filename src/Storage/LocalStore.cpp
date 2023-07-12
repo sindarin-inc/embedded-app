@@ -29,6 +29,29 @@
 enum { NUMBER_OF_READABLE_DOWNLOAD_TRIES = 3 };
 enum { MAX_NUMBER_OF_PAGES_TO_BACKFILL = 10 };
 
+auto SortCriteriaToString(SortCriteria criteria) -> std::string {
+    switch (criteria) {
+    case SortCriteria::DateModified:
+        return "date modified";
+    case SortCriteria::Alphabetical:
+        return "alphabetical";
+    case SortCriteria::LastRead:
+        return "last read";
+    case SortCriteria::Random:
+        return "random";
+    }
+    return "date_modified";
+}
+
+auto SortDirectionToString(SortDirection direction) -> std::string {
+    switch (direction) {
+    case SortDirection::Descending:
+        return "descending";
+    case SortDirection::Ascending:
+        return "ascending";
+    }
+    return "descending";
+}
 auto LocalStore::begin() -> bool {
     auto loadedBooks = loadReadablesFromFile(books_, BOOKS_PATH);
     auto loadedArticles = loadReadablesFromFile(articles_, ARTICLES_PATH);
@@ -805,56 +828,14 @@ auto LocalStore::removeStopWords(const SpiramString &title) -> std::string {
     return tempTitle;
 }
 
-auto LocalStore::isSorted(const ReadablesVector &readables, SortCriteria criteria,
-                          SortDirection direction) -> bool {
+void LocalStore::sortReadables(ReadablesVector &readables) {
+    SortCriteria criteria = static_cast<SortCriteria>(prefs_.sortCriteria.get().value_or(0));
+    SortDirection direction = static_cast<SortDirection>(prefs_.sortDirection.get().value_or(0));
+
     auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
-    log_d("Checking if %ss are sorted", ReadableModelTypeToString(modelType).c_str());
-
-    if (readables.size() < 1) {
-        return true;
-    }
-
-    for (auto i = readables.begin(); i < readables.end() - 1; ++i) {
-        auto a = *i, b = *(i + 1);
-        bool outOfOrder = true;
-        if (criteria == SortCriteria::DateModified) {
-            outOfOrder =
-                (a->dateModified < b->dateModified) != (direction == SortDirection::Ascending);
-        } else if (criteria == SortCriteria::Alphabetical) {
-            std::string aTitle = removeStopWords(a->title);
-            std::string bTitle = removeStopWords(b->title);
-            outOfOrder =
-                (caseInsensitiveCompare(aTitle, bTitle)) != (direction == SortDirection::Ascending);
-        } else if (criteria == SortCriteria::LastRead) {
-            auto aLastRead = prefs_.lastReadTime.get(a->shortenedUuid.c_str());
-            auto bLastRead = prefs_.lastReadTime.get(b->shortenedUuid.c_str());
-
-            // Unread items are considered least valued
-            if (aLastRead == 0) {
-                aLastRead = std::numeric_limits<decltype(aLastRead)>::min();
-            }
-            if (bLastRead == 0) {
-                bLastRead = std::numeric_limits<decltype(bLastRead)>::min();
-            }
-
-            outOfOrder = (aLastRead < bLastRead) != (direction == SortDirection::Ascending);
-        } else if (criteria == SortCriteria::Random) {
-            outOfOrder = true; // Random is never sort, re-sort on every save
-        }
-
-        if (outOfOrder) {
-            log_d("Nope, not sorted");
-            return false;
-        }
-    }
-    log_d("Yep, sorted");
-    return true;
-}
-
-void LocalStore::sortReadables(ReadablesVector &readables, SortCriteria criteria,
-                               SortDirection direction) {
-    auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
-    log_d("Sorting %zu %ss", readables.size(), ReadableModelTypeToString(modelType).c_str());
+    log_d("Sorting %zu %ss by %s/%s", readables.size(),
+          ReadableModelTypeToString(modelType).c_str(), SortCriteriaToString(criteria).c_str(),
+          SortDirectionToString(direction).c_str());
 
     std::sort(readables.begin(), readables.end(),
               [this, &criteria, &direction](const std::shared_ptr<Readable> &a,
@@ -903,18 +884,10 @@ void LocalStore::sortReadables(ReadablesVector &readables, SortCriteria criteria
     log_d("Finished sorting");
 }
 
-auto LocalStore::saveReadables(ReadablesVector &readables, bool checkAlreadySorted) -> bool {
+auto LocalStore::saveReadables(ReadablesVector &readables) -> bool {
     SHOW_HEAP();
 
-    SortCriteria sortCriteria = static_cast<SortCriteria>(prefs_.sortCriteria.get().value_or(0));
-    SortDirection sortDirection =
-        static_cast<SortDirection>(prefs_.sortDirection.get().value_or(0));
-
-    if (checkAlreadySorted && isSorted(readables, sortCriteria, sortDirection)) {
-        log_d("Readables are already sorted");
-        return true;
-    }
-    sortReadables(readables, sortCriteria, sortDirection);
+    sortReadables(readables);
 
     // Readables take up to 20KB of RAM each since the JSON can be large (includes ToC, cover
     // images, file metadata, etc.)
