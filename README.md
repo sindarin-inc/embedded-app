@@ -118,54 +118,27 @@ See also the [Core Dump docs](https://docs.espressif.com/projects/esp-idf/en/lat
 
 ## Debug with OpenOCD
 
-You can use OpenOCD to debug the firmware on the ESP32-S3 using the built-in JTAG interface. Because OpenOCD out of the box does not support >16MB flash chips until [John's PR](https://github.com/espressif/openocd-esp32/pull/245/files) is merged, you'll need to build a custom version of OpenOCD from [sindarin-inc/openocd-esp32:larger-flashes](https://github.com/sindarin-inc/openocd-esp32/tree/larger-flashes).
+You can use OpenOCD (included in ESP-IDF) to debug the firmware on the ESP32-S3 using the built-in USB JTAG interface.
 
-First grab dependencies for building
+Make sure you have `idf.py` set up (see above) and make sure to `idf.py build` the code you want to debug. Then, with your glasses / dev board connect you can run:
 
-```bash
-brew install libtool automake libusb texinfo
-brew link texinfo # Override the system texinfo with the brew version
-```
-
-Now you can build OpenOCD
-
-```bash
-git clone git@github.com:sindarin-inc/openocd-esp32.git
-cd openocd-esp32
-git checkout larger-flashes
-./bootstrap
-./configure --enable-esp-usb-jtag
-make
-```
-
-If all goes well you'll have an `openocd` binary in `src/openocd` inside the repo.
-
-Now save your OpenOCD path to the `OPENOCD_SCRIPTS` variable (used to find board config files and scripts). Also go ahead and add `src` to your path (so you can get to `openocd` later).
-
-```bash
-export OPENOCD_SCRIPTS=$(pwd)/tcl
-export PATH=$(pwd)/src:$PATH
-```
-
-Now go back to the root of the repo, go through the normal process to `idf.py build` and then you can upload using OpenOCD (not sure if uploading with OpenOCD is necessary to debug with OpenOCD but I think so).
-
-```bash
-openocd -f board/esp32s3-builtin.cfg -c "program_esp build/embedded-app.bin 0x10000 verify exit"
-```
-
-Now you can debug with OpenOCD. First create a debugging session
-
-```bash
+```sh
 openocd -f board/esp32s3-builtin.cfg
 ```
 
-And then open a separate terminal and connect to the debugger from GDB. Make sure you used the IDF `source export.sh` command to set up your environment variables.
+Then in a separate terminal, connect gdb:
 
-```bash
+```sh
 xtensa-esp32s3-elf-gdb -x scripts/gdbinit build/embedded-app.elf
 ```
 
 A _very_ useful GDB command is `catch throw` which sets a breakpoint at any C++ exceptions. You might also try `break filename.cpp:55` to set a breakpoint at a file and line number. Then use `continue` (or `c`) to continue execution until the breakpoint is hit. [Here's a handy GDB cheat sheet](https://users.ece.utexas.edu/~adnan/gdb-refcard.pdf).
+
+You can also use `openocd` to flash firmware over the JTAG interface. I don't think there's any advantage to this vs using `esptool.py`:
+
+```bash
+openocd -f board/esp32s3-builtin.cfg -c "program_esp build/embedded-app.bin 0x10000 verify exit"
+```
 
 ## Hooking up OpenOCD to VSCode
 
@@ -179,7 +152,7 @@ It's possible to use connect to OpenOCD from inside VSCode. You'll need to add a
     "program": "${workspaceFolder}/build/embedded-app.elf",
     "MIMode": "gdb",
     // NOTE: This might change as the toolchain changes
-    "miDebuggerPath": "${env:HOME}/.espressif/tools/xtensa-esp32s3-elf/esp-2021r2-patch3-8.4.0/xtensa-esp32s3-elf/bin/xtensa-esp32s3-elf-gdb",
+    "miDebuggerPath": "${env:HOME}/.espressif/tools/xtensa-esp-elf-gdb/12.1_20221002/xtensa-esp-elf-gdb/bin/xtensa-esp32s3-elf-gdb",
     "miDebuggerArgs": "${workspaceFolder}/build/embedded-app.elf",
 
     // This disables adding a breakpoint on `main` though it seems VSCode likes to add it anyways sometimes
