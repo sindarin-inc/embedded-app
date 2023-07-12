@@ -1,5 +1,6 @@
 #include "LocalStore.hpp"
 
+#include <algorithm>
 #include <esp_system.h>
 #include <esp_timer.h>
 #include <memory>
@@ -775,9 +776,69 @@ void LocalStore::deleteReadableFiles(const ReadablesVector &readables, bool rest
         PowerManager::getInstance().reboot();
     }
 }
+auto LocalStore::isSorted(const ReadablesVector &readables, SortCriteria criteria,
+                          SortDirection direction) -> bool {
+    for (auto i = readables.begin(); i < readables.end() - 1; ++i) {
+        auto a = *i, b = *(i + 1);
+        bool outOfOrder;
+        if (criteria == SortCriteria::DateModified) {
+            outOfOrder =
+                (a->dateModified < b->dateModified) != (direction == SortDirection::Ascending);
+        } else if (criteria == SortCriteria::Alphabetical) {
+            outOfOrder = (a->title < b->title) != (direction == SortDirection::Ascending);
+        } else if (criteria == SortCriteria::LastRead) {
+            auto aLastRead = prefs_.lastReadTime.get(a->shortenedUuid.c_str());
+            auto bLastRead = prefs_.lastReadTime.get(b->shortenedUuid.c_str());
+            outOfOrder = (aLastRead < bLastRead) != (direction == SortDirection::Ascending);
+        }
+        if (outOfOrder) {
+            return false;
+        }
+    }
+    return true;
+}
 
-auto LocalStore::saveReadables(const ReadablesVector &readables) -> bool {
+void LocalStore::sortReadables(ReadablesVector &readables, SortCriteria criteria,
+                               SortDirection direction) {
+    std::sort(readables.begin(), readables.end(),
+              [this, &criteria, &direction](const std::shared_ptr<Readable> &a,
+                                            const std::shared_ptr<Readable> &b) {
+        if (criteria == SortCriteria::DateModified) {
+            if (a->dateModified.empty()) return direction == SortDirection::Descending;
+            if (b->dateModified.empty()) return direction == SortDirection::Ascending;
+            return direction == SortDirection::Ascending ? a->dateModified < b->dateModified
+                                                         : a->dateModified > b->dateModified;
+        } else if (criteria == SortCriteria::Alphabetical) {
+            if (a->title.empty()) return direction == SortDirection::Descending;
+            if (b->title.empty()) return direction == SortDirection::Ascending;
+            return direction == SortDirection::Ascending ? a->title < b->title
+                                                         : a->title > b->title;
+        } else if (criteria == SortCriteria::LastRead) {
+            auto aLastRead = prefs_.lastReadTime.get(a->shortenedUuid.c_str());
+            auto bLastRead = prefs_.lastReadTime.get(b->shortenedUuid.c_str());
+            if (!aLastRead) return direction == SortDirection::Descending;
+            if (!bLastRead) return direction == SortDirection::Ascending;
+            return direction == SortDirection::Ascending ? aLastRead < bLastRead
+                                                         : aLastRead > bLastRead;
+        }
+
+        return false;
+    });
+}
+
+auto LocalStore::saveReadables(ReadablesVector &readables, bool checkAlreadySorted) -> bool {
     SHOW_HEAP();
+
+    SortCriteria sortCriteria = static_cast<SortCriteria>(prefs_.sortCriteria.get().value_or(0));
+    SortDirection sortDirection =
+        static_cast<SortDirection>(prefs_.sortDirection.get().value_or(0));
+
+    if (checkAlreadySorted && isSorted(readables, sortCriteria, sortDirection)) {
+        log_d("Readables are already sorted");
+        return true;
+    }
+    sortReadables(readables, sortCriteria, sortDirection);
+
     // Readables take up to 20KB of RAM each since the JSON can be large (includes ToC, cover
     // images, file metadata, etc.)
     auto doc = std::make_unique<SpiRamJsonDocument>(20000 * std::max(1, (int)readables.size()));

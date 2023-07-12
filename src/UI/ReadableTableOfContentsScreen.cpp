@@ -170,6 +170,8 @@ void ReadableTableOfContentsScreen::setPlacemark() {
     renderer_.setCurrentPlace(readable_->place);
     prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place);
     prefs_.readablePlaceChanged.set(readable_->shortenedUuid.c_str(), true);
+    prefs_.lastReadTime.set(readable_->shortenedUuid.c_str(),
+                            SolClock::getInstance().getEpochTime());
 }
 
 void ReadableTableOfContentsScreen::setNearestChapterSelection(unsigned long placeInFile) {

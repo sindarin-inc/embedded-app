@@ -12,6 +12,10 @@
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
 
+enum class SortCriteria { DateModified, Alphabetical, LastRead };
+
+enum class SortDirection { Descending, Ascending };
+
 struct ContentSyncState {
     enum State {
         Idle,
@@ -48,8 +52,14 @@ public:
     auto loadReadablesFromFile(ReadablesVector &readables, const std::string &path) -> bool;
 
     // Convenience methods
-    auto books() -> ReadablesVector & { return books_; };
-    auto articles() -> ReadablesVector & { return articles_; };
+    auto books() -> ReadablesVector & {
+        saveReadables(books_, true);
+        return books_;
+    };
+    auto articles() -> ReadablesVector & {
+        saveReadables(articles_, true);
+        return articles_;
+    };
     auto readablesModelType(const ReadablesVector &readables) -> ReadablesModelType;
     auto hasReadable(const ReadablesVector &readables, const std::shared_ptr<Readable> &readable,
                      bool ignoreFileSizeCheck = false) -> bool;
@@ -85,7 +95,10 @@ public:
     void deleteReadables(bool restart = true);
     void deleteArticles(bool restart = true);
     void deleteReadableFiles(const ReadablesVector &readables, bool restart);
-    auto saveReadables(const ReadablesVector &readables) -> bool;
+    auto isSorted(const ReadablesVector &readables, SortCriteria criteria, SortDirection direction)
+        -> bool;
+    void sortReadables(ReadablesVector &readables, SortCriteria criteria, SortDirection direction);
+    auto saveReadables(ReadablesVector &readables, bool checkAlreadySorted = false) -> bool;
 
     // Methods for interacting with readable files on disk
     [[nodiscard]] auto readableFilePathForWriting(const std::shared_ptr<Readable> &readable) const
