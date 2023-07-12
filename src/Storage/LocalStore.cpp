@@ -40,7 +40,7 @@ auto SortCriteriaToString(SortCriteria criteria) -> std::string {
     case SortCriteria::Random:
         return "random";
     }
-    return "date_modified";
+    return "date modified";
 }
 
 auto SortDirectionToString(SortDirection direction) -> std::string {
@@ -800,13 +800,6 @@ void LocalStore::deleteReadableFiles(const ReadablesVector &readables, bool rest
         PowerManager::getInstance().reboot();
     }
 }
-// Case-insensitive comparison function for strings
-auto caseInsensitiveCompare = [](const std::string &str1, const std::string &str2) {
-    return std::lexicographical_compare(str1.begin(), str1.end(), str2.begin(), str2.end(),
-                                        [](char c1, char c2) {
-        return std::tolower(c1) < std::tolower(c2);
-    });
-};
 
 auto LocalStore::removeStopWords(const SpiramString &title) -> std::string {
     std::string tempTitle(title.begin(), title.end());
@@ -827,6 +820,13 @@ auto LocalStore::removeStopWords(const SpiramString &title) -> std::string {
 
     return tempTitle;
 }
+
+auto LocalStore::caseInsensitiveCompare(const std::string &str1, const std::string &str2) {
+    return std::lexicographical_compare(str1.begin(), str1.end(), str2.begin(), str2.end(),
+                                        [](char c1, char c2) {
+        return std::tolower(c1) < std::tolower(c2);
+    });
+};
 
 void LocalStore::sortReadables(ReadablesVector &readables) {
     SortCriteria criteria = static_cast<SortCriteria>(prefs_.sortCriteria.get().value_or(0));
@@ -1094,6 +1094,7 @@ void LocalStore::garbageCollectPreferences() {
     auto readablePlaceChangedKeys = prefs_.readablePlaceChanged.getAllKeyPrefixes();
     auto readableArchivedChangedKeys = prefs_.readableArchivedChanged.getAllKeyPrefixes();
     auto readableBookmarksChangedKeys = prefs_.readableBookmarksChanged.getAllKeyPrefixes();
+    auto lastReadTime = prefs_.lastReadTime.getAllKeyPrefixes();
 
     // Combine and deduplicate all keys
     std::set<std::string> allKeys;
@@ -1101,6 +1102,7 @@ void LocalStore::garbageCollectPreferences() {
     allKeys.insert(readablePlaceChangedKeys.begin(), readablePlaceChangedKeys.end());
     allKeys.insert(readableArchivedChangedKeys.begin(), readableArchivedChangedKeys.end());
     allKeys.insert(readableBookmarksChangedKeys.begin(), readableBookmarksChangedKeys.end());
+    allKeys.insert(lastReadTime.begin(), lastReadTime.end());
 
     for (auto &key : allKeys) {
         bool isStoredBook = std::any_of(books_.begin(), books_.end(),
@@ -1114,6 +1116,7 @@ void LocalStore::garbageCollectPreferences() {
             prefs_.readablePlaceChanged.remove(key.c_str());
             prefs_.readableArchivedChanged.remove(key.c_str());
             prefs_.readableBookmarksChanged.remove(key.c_str());
+            prefs_.lastReadTime.remove(key.c_str());
         }
     }
 
