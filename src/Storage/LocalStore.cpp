@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <esp_system.h>
 #include <esp_timer.h>
+#include <limits>
 #include <memory>
 #include <set>
 #include <unordered_map>
@@ -823,10 +824,10 @@ auto LocalStore::isSorted(const ReadablesVector &readables, SortCriteria criteri
 
             // Unread items are considered least valued
             if (aLastRead == 0) {
-                aLastRead = ArduinoJson6194_71::numeric_limits<decltype(aLastRead)>::min();
+                aLastRead = std::numeric_limits<decltype(aLastRead)>::min();
             }
             if (bLastRead == 0) {
-                bLastRead = ArduinoJson6194_71::numeric_limits<decltype(bLastRead)>::min();
+                bLastRead = std::numeric_limits<decltype(bLastRead)>::min();
             }
 
             outOfOrder = (aLastRead < bLastRead) != (direction == SortDirection::Ascending);
@@ -869,27 +870,14 @@ void LocalStore::sortReadables(ReadablesVector &readables, SortCriteria criteria
             auto aLastRead = prefs_.lastReadTime.get(a->shortenedUuid.c_str());
             auto bLastRead = prefs_.lastReadTime.get(b->shortenedUuid.c_str());
 
-            // When both Readables are unread, ordering doesn't matter.
-            if (!aLastRead && !bLastRead) {
-                return false;
+            // Unread items are considered least valued
+            if (aLastRead == 0) {
+                aLastRead = std::numeric_limits<decltype(aLastRead)>::min();
+            }
+            if (bLastRead == 0) {
+                bLastRead = std::numeric_limits<decltype(bLastRead)>::min();
             }
 
-            // When a is unread (aLastRead == 0), it should appear after b.
-            if (!aLastRead) {
-                return false;
-            }
-
-            // When b is unread (bLastRead == 0), a should appear before b.
-            if (!bLastRead) {
-                return true;
-            }
-
-            if (!aLastRead) {
-                return direction == SortDirection::Descending;
-            }
-            if (!bLastRead) {
-                return direction == SortDirection::Ascending;
-            }
             return direction == SortDirection::Ascending ? aLastRead < bLastRead
                                                          : aLastRead > bLastRead;
         } else if (criteria == SortCriteria::Random) {
