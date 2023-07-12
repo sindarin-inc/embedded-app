@@ -482,60 +482,60 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                        [this, &localStore, display, contentSettingsMenu]() {
             this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::Alphabetical));
             this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Ascending));
+            contentSettingsMenu->showTemporaryMessage(
+                *display, "Settings change required restart! Restarting...", 500, false);
             localStore.saveReadables(localStore.books());
             localStore.saveReadables(localStore.articles());
-            contentSettingsMenu->showTemporaryMessage(
-                *display, "Settings change required restart! Restarting...", 1000, false);
             this->power_.reboot();
         }));
         sortMenu->addMenuItem(MenuItem("Date added, most recent",
                                        [this, &localStore, display, contentSettingsMenu]() {
             this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::DateModified));
             this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Descending));
+            contentSettingsMenu->showTemporaryMessage(
+                *display, "Settings change required restart! Restarting...", 500, false);
             localStore.saveReadables(localStore.books());
             localStore.saveReadables(localStore.articles());
-            contentSettingsMenu->showTemporaryMessage(
-                *display, "Settings change required restart! Restarting...", 1000, false);
             this->power_.reboot();
         }));
         sortMenu->addMenuItem(MenuItem("Date added, least recent",
                                        [this, &localStore, display, contentSettingsMenu]() {
             this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::DateModified));
             this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Ascending));
+            contentSettingsMenu->showTemporaryMessage(
+                *display, "Settings change required restart! Restarting...", 500, false);
             localStore.saveReadables(localStore.books());
             localStore.saveReadables(localStore.articles());
-            contentSettingsMenu->showTemporaryMessage(
-                *display, "Settings change required restart! Restarting...", 1000, false);
             this->power_.reboot();
         }));
         sortMenu->addMenuItem(MenuItem("Last read, most recent",
                                        [this, &localStore, display, contentSettingsMenu]() {
             this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::LastRead));
             this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Descending));
+            contentSettingsMenu->showTemporaryMessage(
+                *display, "Settings change required restart! Restarting...", 500, false);
             localStore.saveReadables(localStore.books());
             localStore.saveReadables(localStore.articles());
-            contentSettingsMenu->showTemporaryMessage(
-                *display, "Settings change required restart! Restarting...", 1000, false);
             this->power_.reboot();
         }));
         sortMenu->addMenuItem(MenuItem("Last read, least recent",
                                        [this, &localStore, display, contentSettingsMenu]() {
             this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::LastRead));
             this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Ascending));
+            contentSettingsMenu->showTemporaryMessage(
+                *display, "Settings change required restart! Restarting...", 500, false);
             localStore.saveReadables(localStore.books());
             localStore.saveReadables(localStore.articles());
-            contentSettingsMenu->showTemporaryMessage(
-                *display, "Settings change required restart! Restarting...", 1000, false);
             this->power_.reboot();
         }));
         sortMenu->addMenuItem(MenuItem("Random",
                                        [this, &localStore, display, contentSettingsMenu]() {
             this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::Random));
             this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Ascending));
+            contentSettingsMenu->showTemporaryMessage(
+                *display, "Settings change required restart! Restarting...", 500, false);
             localStore.saveReadables(localStore.books());
             localStore.saveReadables(localStore.articles());
-            contentSettingsMenu->showTemporaryMessage(
-                *display, "Settings change required restart! Restarting...", 1000, false);
             this->power_.reboot();
         }));
         int menuIndex = 0;
