@@ -474,6 +474,56 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         contentSettingsMenu->setToggleLastItem(false);
     }
 
+    contentSettingsMenu->addMenuItem(MenuItem("Sort order", [this, display, contentSettingsMenu]() {
+        auto sortMenu = new MenuScreen(power_.battery, *display, contentSettingsMenu->getMyStyle(),
+                                       "Sort Order", "Content Settings");
+        sortMenu->addMenuItem(MenuItem("Alphabetical", [this, display, contentSettingsMenu]() {
+            this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::Alphabetical));
+            this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Ascending));
+            contentSettingsMenu->showTemporaryMessage(
+                *display, "Settings change required restart! Restarting...", 1000, false);
+            this->power_.reboot();
+        }));
+        sortMenu->addMenuItem(MenuItem("Date added, most recent",
+                                       [this, display, contentSettingsMenu]() {
+            this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::DateModified));
+            this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Descending));
+            contentSettingsMenu->showTemporaryMessage(
+                *display, "Settings change required restart! Restarting...", 1000, false);
+            this->power_.reboot();
+        }));
+        sortMenu->addMenuItem(MenuItem("Date added, least recent",
+                                       [this, display, contentSettingsMenu]() {
+            this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::DateModified));
+            this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Ascending));
+            contentSettingsMenu->showTemporaryMessage(
+                *display, "Settings change required restart! Restarting...", 1000, false);
+            this->power_.reboot();
+        }));
+        sortMenu->addMenuItem(MenuItem("Last read, most recent",
+                                       [this, display, contentSettingsMenu]() {
+            this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::LastRead));
+            this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Descending));
+            contentSettingsMenu->showTemporaryMessage(
+                *display, "Settings change required restart! Restarting...", 1000, false);
+            this->power_.reboot();
+        }));
+        sortMenu->addMenuItem(MenuItem("Last read, least recent",
+                                       [this, display, contentSettingsMenu]() {
+            this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::LastRead));
+            this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Ascending));
+            contentSettingsMenu->showTemporaryMessage(
+                *display, "Settings change required restart! Restarting...", 1000, false);
+            this->power_.reboot();
+        }));
+        setCurrentScreen(*sortMenu);
+        sortMenu->setBackCallback([this, sortMenu, contentSettingsMenu]() {
+            contentSettingsMenu->setFirstLoad();
+            setCurrentScreen(*contentSettingsMenu);
+            delete sortMenu;
+        });
+    }));
+
     contentSettingsMenu->addMenuItem(
         MenuItem("Sync content now", [this, display, &localStore, mainMenu, &lightingController]() {
             auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
