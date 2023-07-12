@@ -776,6 +776,33 @@ void LocalStore::deleteReadableFiles(const ReadablesVector &readables, bool rest
         PowerManager::getInstance().reboot();
     }
 }
+// Case-insensitive comparison function for strings
+auto caseInsensitiveCompare = [](const std::string &str1, const std::string &str2) {
+    return std::lexicographical_compare(str1.begin(), str1.end(), str2.begin(), str2.end(),
+                                        [](char c1, char c2) {
+        return std::tolower(c1) < std::tolower(c2);
+    });
+};
+
+auto LocalStore::removeStopWords(const SpiramString &title) -> std::string {
+    std::string tempTitle(title.begin(), title.end());
+    std::set<std::string> stopWords = {"a ", "and ", "the "};
+
+    // Case-insensitive comparison function
+    auto compareIgnoreCase = [](const char c1, const char c2) {
+        return std::tolower(c1) == std::tolower(c2);
+    };
+
+    // Remove stop words from the beginning of the title (case-insensitive)
+    for (const auto &stopWord : stopWords) {
+        if (std::equal(stopWord.begin(), stopWord.end(), tempTitle.begin(), compareIgnoreCase)) {
+            tempTitle.erase(0, stopWord.size());
+            break;
+        }
+    }
+
+    return tempTitle;
+}
 
 auto LocalStore::isSorted(const ReadablesVector &readables, SortCriteria criteria,
                           SortDirection direction) -> bool {
@@ -786,7 +813,10 @@ auto LocalStore::isSorted(const ReadablesVector &readables, SortCriteria criteri
             outOfOrder =
                 (a->dateModified < b->dateModified) != (direction == SortDirection::Ascending);
         } else if (criteria == SortCriteria::Alphabetical) {
-            outOfOrder = (a->title < b->title) != (direction == SortDirection::Ascending);
+            std::string aTitle = removeStopWords(a->title);
+            std::string bTitle = removeStopWords(b->title);
+            outOfOrder =
+                (caseInsensitiveCompare(aTitle, bTitle)) != (direction == SortDirection::Ascending);
         } else if (criteria == SortCriteria::LastRead) {
             auto aLastRead = prefs_.lastReadTime.get(a->shortenedUuid.c_str());
             auto bLastRead = prefs_.lastReadTime.get(b->shortenedUuid.c_str());
@@ -796,6 +826,8 @@ auto LocalStore::isSorted(const ReadablesVector &readables, SortCriteria criteri
             if (bLastRead == 0) bLastRead = std::numeric_limits<decltype(bLastRead)>::min();
 
             outOfOrder = (aLastRead < bLastRead) != (direction == SortDirection::Ascending);
+        } else if (criteria == SortCriteria::Random) {
+            outOfOrder = true; // Random is never sort, re-sort on every save
         }
         if (outOfOrder) {
             return false;
@@ -815,10 +847,12 @@ void LocalStore::sortReadables(ReadablesVector &readables, SortCriteria criteria
             return direction == SortDirection::Ascending ? a->dateModified < b->dateModified
                                                          : a->dateModified > b->dateModified;
         } else if (criteria == SortCriteria::Alphabetical) {
-            if (a->title.empty()) return direction == SortDirection::Descending;
-            if (b->title.empty()) return direction == SortDirection::Ascending;
-            return direction == SortDirection::Ascending ? a->title < b->title
-                                                         : a->title > b->title;
+            std::string aTitle = removeStopWords(a->title);
+            std::string bTitle = removeStopWords(b->title);
+            if (aTitle.empty()) return direction == SortDirection::Descending;
+            if (bTitle.empty()) return direction == SortDirection::Ascending;
+            return direction == SortDirection::Ascending ? caseInsensitiveCompare(aTitle, bTitle)
+                                                         : caseInsensitiveCompare(bTitle, aTitle);
         } else if (criteria == SortCriteria::LastRead) {
             auto aLastRead = prefs_.lastReadTime.get(a->shortenedUuid.c_str());
             auto bLastRead = prefs_.lastReadTime.get(b->shortenedUuid.c_str());
@@ -836,6 +870,8 @@ void LocalStore::sortReadables(ReadablesVector &readables, SortCriteria criteria
             if (!bLastRead) return direction == SortDirection::Ascending;
             return direction == SortDirection::Ascending ? aLastRead < bLastRead
                                                          : aLastRead > bLastRead;
+        } else if (criteria == SortCriteria::Random) {
+            return random() % 2 == 0;
         }
 
         return false;

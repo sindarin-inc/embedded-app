@@ -516,6 +516,39 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                 *display, "Settings change required restart! Restarting...", 1000, false);
             this->power_.reboot();
         }));
+        sortMenu->addMenuItem(MenuItem("Random", [this, display, contentSettingsMenu]() {
+            this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::Random));
+            this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Ascending));
+            contentSettingsMenu->showTemporaryMessage(
+                *display, "Settings change required restart! Restarting...", 1000, false);
+            this->power_.reboot();
+        }));
+        int menuIndex = 0;
+        switch (static_cast<SortCriteria>(this->prefs_.sortCriteria.get().value_or(0))) {
+        case SortCriteria::Alphabetical:
+            menuIndex = 0;
+            break;
+        case SortCriteria::DateModified:
+            if (static_cast<SortDirection>(this->prefs_.sortDirection.get().value_or(0)) ==
+                SortDirection::Descending) {
+                menuIndex = 1;
+            } else {
+                menuIndex = 2;
+            }
+            break;
+        case SortCriteria::LastRead:
+            if (static_cast<SortDirection>(this->prefs_.sortDirection.get().value_or(0)) ==
+                SortDirection::Descending) {
+                menuIndex = 3;
+            } else {
+                menuIndex = 4;
+            }
+            break;
+        case SortCriteria::Random:
+            menuIndex = 5;
+            break;
+        }
+        sortMenu->setCurrSelection(menuIndex);
         setCurrentScreen(*sortMenu);
         sortMenu->setBackCallback([this, sortMenu, contentSettingsMenu]() {
             contentSettingsMenu->setFirstLoad();
@@ -786,6 +819,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             prefs_.font.set(PREFS_TAHOMA_LARGE);
             fontMenu->setNeedsRerender();
         }));
+        int menuIndex = 0;
+        if (prefs_.font.get().value_or(PREFS_TAHOMA_REGULAR) == PREFS_TAHOMA_TINY) {
+            menuIndex = 0;
+        } else if (prefs_.font.get().value_or(PREFS_TAHOMA_REGULAR) == PREFS_TAHOMA_REGULAR) {
+            menuIndex = 1;
+        } else if (prefs_.font.get().value_or(PREFS_TAHOMA_REGULAR) == PREFS_TAHOMA_LARGE) {
+            menuIndex = 2;
+        }
+        fontMenu->setCurrSelection(menuIndex);
         setCurrentScreen(*fontMenu);
         fontMenu->setBackCallback([this, fontMenu, readingSettingsMenu]() {
             readingSettingsMenu->setFirstLoad();

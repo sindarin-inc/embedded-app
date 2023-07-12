@@ -12,7 +12,7 @@
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
 
-enum class SortCriteria { DateModified, Alphabetical, LastRead };
+enum class SortCriteria { DateModified, Alphabetical, LastRead, Random };
 
 enum class SortDirection { Descending, Ascending };
 
@@ -95,6 +95,7 @@ public:
     void deleteReadables(bool restart = true);
     void deleteArticles(bool restart = true);
     void deleteReadableFiles(const ReadablesVector &readables, bool restart);
+    auto removeStopWords(const SpiramString &title) -> std::string;
     auto isSorted(const ReadablesVector &readables, SortCriteria criteria, SortDirection direction)
         -> bool;
     void sortReadables(ReadablesVector &readables, SortCriteria criteria, SortDirection direction);
