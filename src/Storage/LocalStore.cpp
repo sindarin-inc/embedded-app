@@ -807,6 +807,13 @@ auto LocalStore::removeStopWords(const SpiramString &title) -> std::string {
 
 auto LocalStore::isSorted(const ReadablesVector &readables, SortCriteria criteria,
                           SortDirection direction) -> bool {
+    auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
+    log_d("Checking if %ss are sorted", ReadableModelTypeToString(modelType).c_str());
+
+    if (readables.size() < 1) {
+        return true;
+    }
+
     for (auto i = readables.begin(); i < readables.end() - 1; ++i) {
         auto a = *i, b = *(i + 1);
         bool outOfOrder = true;
@@ -836,14 +843,19 @@ auto LocalStore::isSorted(const ReadablesVector &readables, SortCriteria criteri
         }
 
         if (outOfOrder) {
+            log_d("Nope, not sorted");
             return false;
         }
     }
+    log_d("Yep, sorted");
     return true;
 }
 
 void LocalStore::sortReadables(ReadablesVector &readables, SortCriteria criteria,
                                SortDirection direction) {
+    auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
+    log_d("Sorting %zu %ss", readables.size(), ReadableModelTypeToString(modelType).c_str());
+
     std::sort(readables.begin(), readables.end(),
               [this, &criteria, &direction](const std::shared_ptr<Readable> &a,
                                             const std::shared_ptr<Readable> &b) {
@@ -887,6 +899,8 @@ void LocalStore::sortReadables(ReadablesVector &readables, SortCriteria criteria
 
         return false;
     });
+
+    log_d("Finished sorting");
 }
 
 auto LocalStore::saveReadables(ReadablesVector &readables, bool checkAlreadySorted) -> bool {
@@ -911,7 +925,8 @@ auto LocalStore::saveReadables(ReadablesVector &readables, bool checkAlreadySort
     // Create a key named readables of type array
     JsonArray readablesJson = doc->createNestedArray("readables");
 
-    log_d("Saving %zu readables in %s", readables.size(), path.c_str());
+    log_d("Saving %zu %ss in %s", readables.size(), ReadableModelTypeToString(modelType).c_str(),
+          path.c_str());
     for (const auto &readable : readables) {
         readablesJson.add(*readable);
     }
@@ -930,6 +945,8 @@ auto LocalStore::saveReadables(ReadablesVector &readables, bool checkAlreadySort
 
     serializeJsonPretty(*doc, file);
     file.close();
+    log_d("Saved %zu %ss in %s", readables.size(), ReadableModelTypeToString(modelType).c_str(),
+          path.c_str());
 
     return true;
 };
