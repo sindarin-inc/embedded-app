@@ -158,7 +158,6 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
     uint16_t textCharCount = 0;
 
     tokensCount_ = 0;
-    currentPageWordCount_ = 0;
     spaceWidth_ = 0;
 
     page_[pageIdx] = '\0';
@@ -309,7 +308,6 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
                 newToken.tokenId = TokenId::TEXT;
                 computePreviousTokenSize();
                 appendToken();
-                currentPageWordCount_ += 1;
                 textCharCount = 1;
             } else {
                 tokens_[tokenIdx - 1].length += 1;
@@ -345,7 +343,6 @@ auto Renderer::loadAndTokenizePage(Place fromPlace, bool backwards) -> Place {
               ", pageIdx is %" PRIu16 ", and place "
               "in file is %" PRIu32,
               textArea, maxTextArea, pageIdx, tokens_[tokenIdx].streamPlace);
-        log_d("Computed Word Count: %" PRIu32, currentPageWordCount_);
     }
 
     // printOutTokens(); // Debugging - use only when required
@@ -487,6 +484,8 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
 
     int16_t newLineAdjust = 0;
 
+    currentPageWordCount_ = 0;
+
     // A first attempt to get the the text to look better with newlines as sole
     // characters on the line with a smaller height than a full line.
     // The logic is that we split each line into 10 "decilines" and then
@@ -514,11 +513,13 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
                             ((NEWLINE_DECI_LINE_HEIGHT - ENDPARAGRAPH_DECI_LINE_HEIGHT) *
                              newLineAdjust) /
                             NEWLINE_DECI_LINE_HEIGHT);
+                currentPageWordCount_ += WordCount(pageLines_[j].data());
             }
         }
     }
 
     if constexpr (RENDERER_DEBUG) {
+        log_d("Computed Word Count: %" PRIu32, currentPageWordCount_);
         log_w("Returning next page place to be %" PRIu32, nextPlace_);
     }
     return nextPlace_;
