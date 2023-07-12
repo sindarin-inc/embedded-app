@@ -187,7 +187,7 @@ auto SindarinAPI::uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &tel
 
     // Without deserializing the JSONL logs, manually assemble the json string for each field
     for (TelemetryField field : {
-             METRIC_VOLTAGE,
+             METRIC_VOLTAGE_LOG,
              METRIC_READABLE_PLACE,
              METRIC_SYNC_STATUS,
          }) {
