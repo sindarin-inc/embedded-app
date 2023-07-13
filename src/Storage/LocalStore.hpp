@@ -12,10 +12,41 @@
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
 
-enum class SortCriteria { DateModified, Alphabetical, LastRead, Random };
-enum class SortDirection { Descending, Ascending };
-auto SortCriteriaToString(SortCriteria criteria) -> std::string;
-auto SortDirectionToString(SortDirection direction) -> std::string;
+struct SortCriteria {
+    enum Type { DateModified, Alphabetical, LastRead, Random } type = DateModified;
+
+    auto toString() const -> std::string {
+        switch (type) {
+        case SortCriteria::DateModified:
+            return "date modified";
+        case SortCriteria::Alphabetical:
+            return "alphabetical";
+        case SortCriteria::LastRead:
+            return "last read";
+        case SortCriteria::Random:
+            return "random";
+        }
+        return "date modified";
+    }
+
+    auto operator==(const SortCriteria &other) const -> bool { return type == other.type; }
+};
+
+struct SortDirection {
+    enum Type { Descending, Ascending } type = Descending;
+
+    auto toString() const -> std::string {
+        switch (type) {
+        case SortDirection::Descending:
+            return "descending";
+        case SortDirection::Ascending:
+            return "ascending";
+        }
+        return "descending";
+    }
+
+    auto operator==(const SortDirection &other) const -> bool { return type == other.type; }
+};
 
 struct ContentSyncState {
     enum State {

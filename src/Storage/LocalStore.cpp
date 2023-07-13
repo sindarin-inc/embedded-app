@@ -29,29 +29,6 @@
 enum { NUMBER_OF_READABLE_DOWNLOAD_TRIES = 3 };
 enum { MAX_NUMBER_OF_PAGES_TO_BACKFILL = 10 };
 
-auto SortCriteriaToString(SortCriteria criteria) -> std::string {
-    switch (criteria) {
-    case SortCriteria::DateModified:
-        return "date modified";
-    case SortCriteria::Alphabetical:
-        return "alphabetical";
-    case SortCriteria::LastRead:
-        return "last read";
-    case SortCriteria::Random:
-        return "random";
-    }
-    return "date modified";
-}
-
-auto SortDirectionToString(SortDirection direction) -> std::string {
-    switch (direction) {
-    case SortDirection::Descending:
-        return "descending";
-    case SortDirection::Ascending:
-        return "ascending";
-    }
-    return "descending";
-}
 auto LocalStore::begin() -> bool {
     auto loadedBooks = loadReadablesFromFile(books_, BOOKS_PATH);
     auto loadedArticles = loadReadablesFromFile(articles_, ARTICLES_PATH);
@@ -822,38 +799,41 @@ auto LocalStore::removeStopWords(const SpiramString &title) -> std::string {
 }
 
 void LocalStore::sortReadables(ReadablesVector &readables) {
-    SortCriteria criteria = static_cast<SortCriteria>(prefs_.sortCriteria.get().value_or(0));
-    SortDirection direction = static_cast<SortDirection>(prefs_.sortDirection.get().value_or(0));
+    SortCriteria criteria;
+    criteria.type = static_cast<SortCriteria::Type>(prefs_.sortCriteria.get().value_or(0));
+    SortDirection direction;
+    direction.type = static_cast<SortDirection::Type>(prefs_.sortDirection.get().value_or(0));
 
     auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
     log_d("Sorting %zu %ss by %s/%s", readables.size(),
-          ReadableModelTypeToString(modelType).c_str(), SortCriteriaToString(criteria).c_str(),
-          SortDirectionToString(direction).c_str());
+          ReadableModelTypeToString(modelType).c_str(), criteria.toString().c_str(),
+          direction.toString().c_str());
 
     std::sort(readables.begin(), readables.end(),
               [this, &criteria, &direction](const std::shared_ptr<Readable> &a,
                                             const std::shared_ptr<Readable> &b) {
-        if (criteria == SortCriteria::DateModified) {
+        if (criteria.type == SortCriteria::DateModified) {
             if (a->dateModified.empty()) {
-                return direction == SortDirection::Descending;
+                return direction.type == SortDirection::Descending;
             }
             if (b->dateModified.empty()) {
-                return direction == SortDirection::Ascending;
+                return direction.type == SortDirection::Ascending;
             }
-            return direction == SortDirection::Ascending ? a->dateModified < b->dateModified
-                                                         : a->dateModified > b->dateModified;
-        } else if (criteria == SortCriteria::Alphabetical) {
+            return direction.type == SortDirection::Ascending ? a->dateModified < b->dateModified
+                                                              : a->dateModified > b->dateModified;
+        } else if (criteria.type == SortCriteria::Alphabetical) {
             std::string aTitle = removeStopWords(a->title);
             std::string bTitle = removeStopWords(b->title);
             if (aTitle.empty()) {
-                return direction == SortDirection::Descending;
+                return direction.type == SortDirection::Descending;
             }
             if (bTitle.empty()) {
-                return direction == SortDirection::Ascending;
+                return direction.type == SortDirection::Ascending;
             }
-            return direction == SortDirection::Ascending ? CaseInsensitiveCompare(aTitle, bTitle)
-                                                         : CaseInsensitiveCompare(bTitle, aTitle);
-        } else if (criteria == SortCriteria::LastRead) {
+            return direction.type == SortDirection::Ascending
+                       ? CaseInsensitiveCompare(aTitle, bTitle)
+                       : CaseInsensitiveCompare(bTitle, aTitle);
+        } else if (criteria.type == SortCriteria::LastRead) {
             auto aLastRead = prefs_.lastReadTime.get(a->shortenedUuid.c_str());
             auto bLastRead = prefs_.lastReadTime.get(b->shortenedUuid.c_str());
 
@@ -865,9 +845,9 @@ void LocalStore::sortReadables(ReadablesVector &readables) {
                 bLastRead = std::numeric_limits<decltype(bLastRead)>::min();
             }
 
-            return direction == SortDirection::Ascending ? aLastRead < bLastRead
-                                                         : aLastRead > bLastRead;
-        } else if (criteria == SortCriteria::Random) {
+            return direction.type == SortDirection::Ascending ? aLastRead < bLastRead
+                                                              : aLastRead > bLastRead;
+        } else if (criteria.type == SortCriteria::Random) {
             return random() % 2 == 0;
         }
 

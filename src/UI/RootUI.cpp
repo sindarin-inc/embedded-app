@@ -78,6 +78,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto &readables = localStore.books();
     auto &articles = localStore.articles();
 
+    // Dynamically sort readables by last read time
+    if (static_cast<SortCriteria::Type>(this->prefs_.sortCriteria.get().value_or(0)) ==
+        SortCriteria::LastRead) {
+        localStore.sortReadables(readables);
+        localStore.sortReadables(articles);
+    }
+
     // Load the SolSans font only.
     ibmf75.load((ibmf_defs::MemoryPtr)fontsList[0].content, fontsList[0].length);
 
@@ -539,12 +546,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             this->power_.reboot();
         }));
         int menuIndex = 0;
-        switch (static_cast<SortCriteria>(this->prefs_.sortCriteria.get().value_or(0))) {
+        switch (static_cast<SortCriteria::Type>(this->prefs_.sortCriteria.get().value_or(0))) {
         case SortCriteria::Alphabetical:
             menuIndex = 0;
             break;
         case SortCriteria::DateModified:
-            if (static_cast<SortDirection>(this->prefs_.sortDirection.get().value_or(0)) ==
+            if (static_cast<SortDirection::Type>(this->prefs_.sortDirection.get().value_or(0)) ==
                 SortDirection::Descending) {
                 menuIndex = 1;
             } else {
@@ -552,7 +559,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             }
             break;
         case SortCriteria::LastRead:
-            if (static_cast<SortDirection>(this->prefs_.sortDirection.get().value_or(0)) ==
+            if (static_cast<SortDirection::Type>(this->prefs_.sortDirection.get().value_or(0)) ==
                 SortDirection::Descending) {
                 menuIndex = 3;
             } else {
