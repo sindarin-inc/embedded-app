@@ -851,8 +851,8 @@ void LocalStore::sortReadables(ReadablesVector &readables) {
             if (bTitle.empty()) {
                 return direction == SortDirection::Ascending;
             }
-            return direction == SortDirection::Ascending ? caseInsensitiveCompare(aTitle, bTitle)
-                                                         : caseInsensitiveCompare(bTitle, aTitle);
+            return direction == SortDirection::Ascending ? CaseInsensitiveCompare(aTitle, bTitle)
+                                                         : CaseInsensitiveCompare(bTitle, aTitle);
         } else if (criteria == SortCriteria::LastRead) {
             auto aLastRead = prefs_.lastReadTime.get(a->shortenedUuid.c_str());
             auto bLastRead = prefs_.lastReadTime.get(b->shortenedUuid.c_str());
