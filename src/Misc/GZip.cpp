@@ -76,11 +76,15 @@ auto GZip::compressFile(const std::string &inputFileName) -> bool {
         return false;
     }
 
-    // open input file, read chunks and write to compressed file
+    return compressFile(infp);
+}
+
+auto GZip::compressFile(FILE* fp) -> bool {
+    // read chunks and write to compressed file
     uint8_t buf[GZIP_CHUNK_SIZE];
     bool done = false;
     while (!done) {
-        int bytesRead = fread(buf, 1, GZIP_CHUNK_SIZE, infp);
+        int bytesRead = fread(buf, 1, GZIP_CHUNK_SIZE, fp);
         if (bytesRead > 0) {
             if (!writeMemory(buf, bytesRead)) {
                 log_e("GZip error: failed to write %d bytes", bytesRead);

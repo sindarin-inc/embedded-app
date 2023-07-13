@@ -15,6 +15,7 @@ public:
 
     auto writeMemory(uint8_t *mem, int size) -> bool;
     auto compressFile(const std::string &inputFileName) -> bool;
+    auto compressFile(FILE* fp) -> bool;
     auto close() -> bool;
 
 protected:

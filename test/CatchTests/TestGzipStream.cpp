@@ -1,7 +1,39 @@
 #include <catch_amalgamated.hpp>
 
 #include "Storage/PosixFileSystem.hpp"
+#include "Misc/GZip.hpp"
 #include "ViewTestCommon.hpp"
+
+TEST_CASE("Test GZip compression") {
+    SetupFileSystemMock("TestData");
+
+    PosixFileSystem fs;
+    fs.begin();
+
+    auto file = fs.open("/book/last-question.txt");
+    SFile outFile = fs.open("/book/last-question.txt.gz", "w", true);
+
+    GZip gzip;
+    bool ret = gzip.initWithOutputFile(outFile.getFilePtr());
+    REQUIRE(ret == true);
+
+    ret = gzip.compressFile(file.getFilePtr());
+    REQUIRE(ret == true);
+
+    file.close();
+
+    auto stream = fs.newGzipRendererStream("/book/last-question.txt.gz");
+    REQUIRE(stream->size() == 25924);
+
+    uint8_t testBuffer[2][25924];
+    stream->readBytes(testBuffer[0], 25924);
+    REQUIRE(stream->position() == 25924);
+
+    file = fs.open("/book/last-question.txt");
+    REQUIRE(file.readBytes((char*)testBuffer[1], 25924) == 25924);
+
+    REQUIRE(memcmp(testBuffer[0], testBuffer[1], 25924) == 0);
+}
 
 TEST_CASE("Test GZip stream handling") {
     SetupFileSystemMock("TestData");
