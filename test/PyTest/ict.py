@@ -94,4 +94,6 @@ class MFICTClient:
     def get_bt_mac(self):
         self.ser.write("BTMAC\n".encode())
         time.sleep(0.1)
-        return self.read()
+        resp = self.read()
+        btmac = resp.split(" ")[1]
+        return btmac

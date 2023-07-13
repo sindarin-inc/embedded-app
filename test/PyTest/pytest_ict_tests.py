@@ -5,6 +5,7 @@ import typing as t
 from typing import Any
 import platform
 import os
+import csv
 
 import pytest
 import serial
@@ -67,6 +68,20 @@ class OverrideIdfSerial(IdfSerial):
 
         self.connect_dut_log_port()
 
+    def get_nvs_partition_size(self):
+        file_path = "esp32s3-64MB.csv"
+        nvs_size = ""
+        # Correct code to extract size of 'nvs' partition
+        with open(file_path, 'r') as file:
+            csv_reader = csv.reader(file, delimiter=',')
+            for row in csv_reader:
+                if row[0] == 'nvs':
+                    nvs_size = row[4]
+
+        # Convert hexadecimal to decimal
+        nvs_size_decimal = int(nvs_size, 16)
+        return nvs_size_decimal
+
     def write_nvs(self, btmac):
         parts = btmac.split(":")
         hexstr = ''.join(parts)
@@ -86,13 +101,16 @@ class OverrideIdfSerial(IdfSerial):
 
         # create partition bin file
         binfname = "dutnvs.bin"
+        nvssize = self.get_nvs_partition_size()
+        logger.info("nvs partition size: " + str(nvssize))
+
         live_print_call(
             [
                 'test/PyTest/nvs_partition_gen.py',
                 'generate',
                 csvfname,
                 binfname,
-                '20480',
+                str(nvssize),
             ],
             msg_queue=self._q,
         )
