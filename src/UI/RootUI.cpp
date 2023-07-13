@@ -1459,7 +1459,7 @@ void RootUI::loop(DisplaySystem &display, RemoteCommand command) {
 
 void RootUI::handleBrowse(FileSystem &fileSystem, MenuScreen *fsMenu, const std::string &path) {
     FileList localFiles, localDirs;
-    // fileSystem.listDir(path, localFiles);
+
     fileSystem.listDirWithSubdirectories(path, localFiles, localDirs);
 
     fsMenu->resetMenuItems();
