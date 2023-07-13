@@ -245,8 +245,8 @@ auto SindarinAPI::uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &tel
 
     log_d("Telemetry log upload http code: %d", httpCode);
 
-    // On successful telemetry log upload (or if not yet deployed on prod), delete the logs
-    if (httpCode == 200 || httpCode == 404) {
+    // On successful telemetry log upload, delete the logs
+    if (httpCode == 200) {
         log_d("Deleting %zu telemetry logs", fieldsSent.size());
         for (auto &field : fieldsSent) {
             auto path = telemetry.metricLogPath(field);
