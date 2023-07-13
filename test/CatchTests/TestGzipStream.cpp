@@ -11,13 +11,13 @@ TEST_CASE("Test GZip compression") {
     fs.begin();
 
     auto file = fs.open("/book/last-question.txt");
-    SFile outFile = fs.open("/book/last-question.txt.gz", "w", true);
+    auto outFile = fs.open("/book/last-question.txt.gz", "w", true);
 
     GZip gzip;
-    bool ret = gzip.initWithOutputFile(outFile.getFilePtr());
+    bool ret = gzip.initWithOutputFile(outFile);
     REQUIRE(ret == true);
 
-    ret = gzip.compressFile(file.getFilePtr());
+    ret = gzip.compressFile(file);
     REQUIRE(ret == true);
 
     file.close();
