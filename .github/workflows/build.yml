@@ -51,7 +51,7 @@ jobs:
       matrix:
         # Tags from here: https://hub.docker.com/r/espressif/idf/tags
         idf_version:
-          - release-v5.1
+          - v5.1
           - latest
 
     steps:
