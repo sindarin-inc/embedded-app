@@ -15,7 +15,7 @@
 struct SortCriteria {
     enum Type { DateModified, Alphabetical, LastRead, Random } type = DateModified;
 
-    auto toString() const -> std::string {
+    [[nodiscard]] auto toString() const -> std::string {
         switch (type) {
         case SortCriteria::DateModified:
             return "date modified";
@@ -35,7 +35,7 @@ struct SortCriteria {
 struct SortDirection {
     enum Type { Descending, Ascending } type = Descending;
 
-    auto toString() const -> std::string {
+    [[nodiscard]] auto toString() const -> std::string {
         switch (type) {
         case SortDirection::Descending:
             return "descending";
