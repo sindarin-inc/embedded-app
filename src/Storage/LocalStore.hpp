@@ -91,7 +91,6 @@ public:
     void deleteArticles(bool restart = true);
     void deleteReadableFiles(const ReadablesVector &readables, bool restart);
     auto removeStopWords(const SpiramString &title) -> std::string;
-    auto caseInsensitiveCompare(const std::string &str1, const std::string &str2);
     void sortReadables(ReadablesVector &readables);
     auto saveReadables(ReadablesVector &readables) -> bool;
 
