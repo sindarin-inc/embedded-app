@@ -15,11 +15,9 @@ auto GZip::initWithOutputFileName(const std::string &outputFileName) -> bool {
     return initWithOutputFile(fp);
 }
 
-auto GZip::initWithOutputFile(SFile& f) -> bool {
-    return initWithOutputFile(f.getFilePtr());
-}
+auto GZip::initWithOutputFile(SFile &f) -> bool { return initWithOutputFile(f.getFilePtr()); }
 
-auto GZip::initWithOutputFile(FILE* fp) -> bool {
+auto GZip::initWithOutputFile(FILE *fp) -> bool {
     int fd = fileno(fp);
     if (fd == -1) {
         log_e("GZip error: could not get file descriptor");
@@ -83,11 +81,9 @@ auto GZip::compressFile(const std::string &inputFileName) -> bool {
     return compressFile(infp);
 }
 
-auto GZip::compressFile(SFile& f) -> bool {
-    return compressFile(f.getFilePtr());
-}
+auto GZip::compressFile(SFile &f) -> bool { return compressFile(f.getFilePtr()); }
 
-auto GZip::compressFile(FILE* fp) -> bool {
+auto GZip::compressFile(FILE *fp) -> bool {
     // read chunks and write to compressed file
     uint8_t buf[GZIP_CHUNK_SIZE];
     bool done = false;
