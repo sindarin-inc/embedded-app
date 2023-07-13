@@ -56,8 +56,7 @@ void Battery::loop() {
         if (leftBatteryVoltage < BATTERY_MIN_VOLTAGE && rightBatteryVoltage < BATTERY_MIN_VOLTAGE &&
             leftBatteryVoltage != 0 && rightBatteryVoltage != 0) {
             log_i("Voltage is below threshold. Halting. (L: %.2fV, R: %.2fV, < %.2fV)",
-                  this->getLeftBatteryVoltage(), this->getRightBatteryVoltage(),
-                  BATTERY_MIN_VOLTAGE);
+                  leftBatteryVoltage, rightBatteryVoltage, BATTERY_MIN_VOLTAGE);
             this->depleted_ = true;
         }
 #endif
