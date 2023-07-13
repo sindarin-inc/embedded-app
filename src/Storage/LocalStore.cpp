@@ -821,13 +821,6 @@ auto LocalStore::removeStopWords(const SpiramString &title) -> std::string {
     return tempTitle;
 }
 
-auto LocalStore::caseInsensitiveCompare(const std::string &str1, const std::string &str2) {
-    return std::lexicographical_compare(str1.begin(), str1.end(), str2.begin(), str2.end(),
-                                        [](char c1, char c2) {
-        return std::tolower(c1) < std::tolower(c2);
-    });
-};
-
 void LocalStore::sortReadables(ReadablesVector &readables) {
     SortCriteria criteria = static_cast<SortCriteria>(prefs_.sortCriteria.get().value_or(0));
     SortDirection direction = static_cast<SortDirection>(prefs_.sortDirection.get().value_or(0));

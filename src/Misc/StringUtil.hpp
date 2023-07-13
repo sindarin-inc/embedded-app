@@ -52,4 +52,6 @@ auto HasSuffix(std::string const &str, std::string const &suffix) -> bool;
 
 auto HasPrefix(const char *pre, const char *str) -> bool;
 
+auto caseInsensitiveCompare(const std::string &str1, const std::string &str2) -> bool;
+
 #pragma clang diagnostic pop
