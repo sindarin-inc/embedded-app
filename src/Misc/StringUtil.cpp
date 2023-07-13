@@ -57,7 +57,7 @@ auto HasPrefix(const char *str, const char *pre) -> bool {
     return strncmp(pre, str, strlen(pre)) == 0;
 }
 
-auto caseInsensitiveCompare(const std::string &str1, const std::string &str2) -> bool {
+auto CaseInsensitiveCompare(const std::string &str1, const std::string &str2) -> bool {
     return std::lexicographical_compare(str1.begin(), str1.end(), str2.begin(), str2.end(),
                                         [](char c1, char c2) {
         return std::tolower(c1) < std::tolower(c2);
