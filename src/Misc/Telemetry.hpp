@@ -24,7 +24,7 @@ public:
     Telemetry(FileSystem &fs, PreferencesStore &prefs) : fileSystem_(fs), prefs_(prefs) {}
     Telemetry(const Telemetry &) = delete;
     template <typename T>
-    void logMetric(TelemetryField field, T value, std::string readableUuid = "") {
+    void logMetric(TelemetryField field, T value, const std::string &readableUuid = "") {
         // create log directory in filesystem if it doesn't exist
         if (!fileSystem_.createDir("/logs")) {
             log_e("could not create /logs directory");
