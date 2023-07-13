@@ -1,11 +1,12 @@
 #include "GZip.hpp"
+
 #include <sindarin-debug.h>
 
 #define GZIP_CHUNK_SIZE 1024
 
 auto GZip::initWithOutputFileName(const std::string &outputFileName) -> bool {
     // open output filename
-    FILE* fp = fopen(outputFileName.c_str(), "wb");
+    FILE *fp = fopen(outputFileName.c_str(), "wb");
     if (!fp) {
         log_e("GZip error: could not open %s", outputFileName.c_str());
         return false;
@@ -14,7 +15,7 @@ auto GZip::initWithOutputFileName(const std::string &outputFileName) -> bool {
     return initWithOutputFile(fp);
 }
 
-auto GZip::initWithOutputFile(FILE* fp) -> bool {
+auto GZip::initWithOutputFile(FILE *fp) -> bool {
     int fd = fileno(fp);
     if (fd == -1) {
         log_e("GZip error: could not get file descriptor");
@@ -30,7 +31,7 @@ auto GZip::initWithOutputFile(FILE* fp) -> bool {
     return true;
 }
 
-auto GZip::writeMemory(uint8_t* mem, int size) -> bool {
+auto GZip::writeMemory(uint8_t *mem, int size) -> bool {
     if (!gf_) {
         log_e("GZip error: no output file was opened");
         return false;
@@ -69,7 +70,7 @@ auto GZip::compressFile(const std::string &inputFileName) -> bool {
     }
 
     // open input filename
-    FILE* infp = fopen(inputFileName.c_str(), "rb");
+    FILE *infp = fopen(inputFileName.c_str(), "rb");
     if (!infp) {
         log_e("GZip error: could not open input file %s", inputFileName.c_str());
         return false;
