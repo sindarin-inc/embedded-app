@@ -51,9 +51,12 @@ void Battery::loop() {
         // Check if both batteries are below the threshold. If so, show the battery screen and halt
         // everything
 #if !DISABLE_LOW_VOLTAGE_HALT
-        if (this->getLeftBatteryVoltage() < BATTERY_MIN_VOLTAGE &&
-            this->getRightBatteryVoltage() < BATTERY_MIN_VOLTAGE) {
-            log_i("Voltage is below threshold. Halting.");
+        auto leftBatteryVoltage = this->getLeftBatteryVoltage();
+        auto rightBatteryVoltage = this->getRightBatteryVoltage();
+        if (leftBatteryVoltage < BATTERY_MIN_VOLTAGE && rightBatteryVoltage < BATTERY_MIN_VOLTAGE &&
+            leftBatteryVoltage != 0 && rightBatteryVoltage != 0) {
+            log_i("Voltage is below threshold. Halting. (L: %.2fV, R: %.2fV, < %.2fV)",
+                  leftBatteryVoltage, rightBatteryVoltage, BATTERY_MIN_VOLTAGE);
             this->depleted_ = true;
         }
 #endif
