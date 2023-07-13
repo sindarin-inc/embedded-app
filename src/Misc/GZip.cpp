@@ -3,15 +3,6 @@
 
 #define GZIP_CHUNK_SIZE 1024
 
-/*
-auto initWithOutputFileName(const std::string &outputFileName) -> bool;
-    auto initWithOutputFile(FILE* outfp) -> bool;
-    auto initWithMemory(uint8_t* buf, int size) -> bool;
-
-    auto writeMemory(uint8_t* mem, int size) -> bool;
-    auto compressFile(const std::string &inputFileName) -> bool;
-*/
-
 auto GZip::initWithOutputFileName(const std::string &outputFileName) -> bool {
     // open output filename
     FILE* fp = fopen(outputFileName.c_str(), "wb");
@@ -37,16 +28,6 @@ auto GZip::initWithOutputFile(FILE* fp) -> bool {
     }
 
     return true;
-}
-
-auto GZip::initWithMemory(uint8_t* buf, int size) -> bool {
-    FILE* fp = fmemopen(buf, size, "wb");
-    if (!fp) {
-        log_e("GZip error: initWithMemory could not open");
-        return false;
-    }
-
-    return initWithOutputFile(fp);
 }
 
 auto GZip::writeMemory(uint8_t* mem, int size) -> bool {
