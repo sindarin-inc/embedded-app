@@ -18,6 +18,7 @@ def parse_warnings(file_path):
 
     warning_pattern = re.compile(r"^(.*?):(\d+):(\d+): (warning|error): (.*)$")
     annotations = []
+    existing_annotations = set()
 
     with open(file_path, "r") as f:
         lines = f.readlines()
@@ -36,6 +37,11 @@ def parse_warnings(file_path):
                     "message": message,
                     "title": f"clang-tidy {severity}",
                 }
+                # Check if the annotation already exists
+                annotation_key = f"{file_path}:{line}:{column}:{severity}:{message}"
+                if annotation_key in existing_annotations:
+                    continue
+                existing_annotations.add(annotation_key)
                 annotations.append(annotation)
 
     return annotations

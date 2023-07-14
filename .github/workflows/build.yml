@@ -46,7 +46,8 @@ jobs:
 
   build-idf:
     name: "idf.py build"
-    runs-on: ubuntu-latest
+    runs-on:
+      group: Medium
     strategy:
       matrix:
         # Tags from here: https://hub.docker.com/r/espressif/idf/tags
