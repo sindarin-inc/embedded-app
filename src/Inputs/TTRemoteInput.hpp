@@ -1,5 +1,4 @@
-#ifndef TTRemoteInput_H
-#define TTRemoteInput_H
+#pragma once
 
 #include <NimBLEDevice.h>
 #include <memory>
@@ -95,5 +94,3 @@ protected:
 
     ClientCallbacks clientCallbacks_;
 };
-
-#endif

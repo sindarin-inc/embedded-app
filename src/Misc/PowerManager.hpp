@@ -77,6 +77,10 @@ public:
         stateChangeCallback_ = std::move(callback);
     }
 
+    void setBeginShutdownCallback(const std::function<void()> &callback) {
+        beginShutdownCallback_ = callback;
+    }
+
     // Power lifecycle functions
     auto beginShutdown() -> bool;
     void reboot();
@@ -123,6 +127,7 @@ protected:
     PreferencesStore &prefs_;
     PowerState state_ = PowerState::Booting;
     std::function<void(PowerState)> stateChangeCallback_;
+    std::function<void()> beginShutdownCallback_;
     LightingController &lightingController_;
     DisplaySystem &display_;
     InactivityTimer inactivityTimer_;

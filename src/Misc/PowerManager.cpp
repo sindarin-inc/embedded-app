@@ -347,6 +347,10 @@ auto PowerManager::beginShutdown() -> bool {
 
     battery.saveLastBatteryReport();
 
+    if (beginShutdownCallback_ != nullptr) {
+        beginShutdownCallback_();
+    }
+
     if (state_ == PowerState::Active || state_ == PowerState::ActiveOverTemp ||
         state_ == PowerState::ActiveUSBCharging || state_ == PowerState::ActiveForcedOn) {
         lightingController_.disableLighting(200);

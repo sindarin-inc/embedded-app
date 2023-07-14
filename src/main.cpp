@@ -378,6 +378,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
 #if USE_TURN_TOUCH_REMOTE
     ttRemoteInput.setCallback(remoteCallback);
+    powerManager.setBeginShutdownCallback([]() { ttRemoteInput.disconnectTemporarily(60); });
 #endif
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
