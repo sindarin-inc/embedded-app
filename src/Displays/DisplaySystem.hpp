@@ -82,9 +82,6 @@ public:
 
     virtual void beginPowerOn() {}
 
-    // Stop the display from drawing anything else. Useful at shutdown time for clearing the screen
-    void disable() { disabled_ = true; }
-
     // Use `gfxClass` when you need to get direct access to draw to the whole screen (potentially
     // outside of focus areas)
     [[nodiscard]] auto gfxClass() const -> Adafruit_GFX * { return gfxClass_; }
@@ -216,7 +213,6 @@ public:
     auto yAbsoluteMax() -> int { return 255; }
 
 protected:
-    bool disabled_ = false;
     // Must be set in the constructor of subclasses
     Adafruit_GFX *gfxClass_ = nullptr;
     Font *font_ = nullptr;

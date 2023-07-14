@@ -341,7 +341,7 @@ void PowerManager::releaseLED() {
     gpio_hold_dis((gpio_num_t)RED_LED);
 }
 
-auto PowerManager::beginShutdown() -> bool {
+void PowerManager::beginShutdown() {
     auto taskName = pcTaskGetName(nullptr);
     log_d("beginShutdown from task %s", taskName);
 
@@ -353,43 +353,24 @@ auto PowerManager::beginShutdown() -> bool {
         // Delay to see the fade.
         // TODO: Use a callback instead
         Delay(200);
-        DispatchGetUiQueue()->dispatch([this]() {
+        auto clearScreen = [this]() {
             display_.clearDisplay();
             display_.clearFrameBuffer();
             display_.updateDisplay();
-            // Ensure nothing else can be drawn when the queues are shutting down
-            display_.disable();
-        });
+        };
+        // If we're on the UiQueue currently, draw directly instead of dispatching
+        if (DispatchGetUiQueue()->isInQueue()) {
+            clearScreen();
+        } else {
+            DispatchGetUiQueue()->dispatch(clearScreen);
+        }
     }
-
-    return DispatchBeginShutdown();
+    DispatchShutdown();
 }
 
 void PowerManager::reboot() {
-    // TODO: Figure out how to unify the below code with ulpDeepSleep
-
-    auto isExecutingInQueue = beginShutdown();
-
-    // We do the final shutdown sequence in a new task, in case the shutdown was running in one of
-    // the queues that needed to be shut down
-    BaseType_t status = xTaskCreatePinnedToCore(
-        [](void *) {
-        DispatchWaitForShutdown();
-        esp_restart();
-        },
-        "Reboot", 4096, nullptr, 1, nullptr, 1);
-    if (status != pdPASS) {
-        log_e("Failed to create Reboot task");
-        esp_restart();
-        return;
-    }
-
-    if (!isExecutingInQueue) {
-        // If we're not executing in a queue just shut down this task
-        vTaskDelete(nullptr);
-        // Shouldn't ever get here
-        log_e("ulpDeepSleep task deleted itself but still running!");
-    }
+    beginShutdown();
+    esp_restart();
 }
 
 void PowerManager::ulpDeepSleep(SleepReason reason) {
@@ -397,30 +378,8 @@ void PowerManager::ulpDeepSleep(SleepReason reason) {
     log_w("Deep sleep disabled. Not sleeping.");
     return;
 #endif
-
-    auto isExecutingInQueue = beginShutdown();
-
-    // We do the final shutdown sequence in a new task, in case the shutdown was running in one of
-    // the queues that needed to be shut down
-    auto reasonPtr = new SleepReason(reason);
-    BaseType_t status = xTaskCreatePinnedToCore(
-        [](void *reasonPtr) {
-        SleepReason reason = *reinterpret_cast<SleepReason *>(reasonPtr);
-        PowerManager::getInstance().waitForQueuesThenDeepSleep(reason);
-        },
-        "DeepSleep", 4096, (void *)reasonPtr, 1, nullptr, 1);
-    if (status != pdPASS) {
-        log_e("Failed to create DeepSleep task");
-        powerOff();
-        return;
-    }
-
-    if (!isExecutingInQueue) {
-        // If we're not executing in a queue just shut down this task
-        vTaskDelete(nullptr);
-        // Shouldn't ever get here
-        log_e("ulpDeepSleep task deleted itself but still running!");
-    }
+    beginShutdown();
+    deepSleepInternal(reason);
 }
 
 auto ToString(SleepReason reason) -> std::string {
@@ -446,10 +405,8 @@ auto ToString(SleepReason reason) -> std::string {
     }
 }
 
-void PowerManager::waitForQueuesThenDeepSleep(SleepReason reason) {
+void PowerManager::deepSleepInternal(SleepReason reason) {
     log_d("Beginning shutdown sequence with reason %s", ToString(reason).c_str());
-
-    DispatchWaitForShutdown(10000);
 
     bool syncOnClose = (reason == SleepReason::TempleClosed || reason == SleepReason::Inactivity) &&
                        !prefs_.noDeliverOnClose.get().value_or(false);

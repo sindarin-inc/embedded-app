@@ -98,4 +98,6 @@ auto DispatchGetEinkQueue(bool create = true) -> DispatchQueue *;
 // Returns true if we're currently inside one of the queues
 auto DispatchBeginShutdown() -> bool;
 
-auto DispatchWaitForShutdown(int timeoutMs = 5000) -> bool;
+auto DispatchWaitForShutdown(int timeoutMs) -> bool;
+
+auto DispatchShutdown(int timeoutMs = 10000) -> bool;
