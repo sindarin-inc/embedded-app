@@ -39,7 +39,6 @@
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/LogoScreen.hpp"
 #include "UI/MainMenuScreen.hpp"
-#include "UI/MenuScreen.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
 #include "UI/PowerDepletedScreen.hpp"
 #include "UI/ReadableScreen.hpp"
@@ -1017,22 +1016,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                             [this, display, debugSettingsMenu, &fileSystem]() {
         auto fsMenu = new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle(),
                                      "FS Browser", "Debug Settings");
-        fsMenu->setExtraText("ls of /");
 
-        FileList localFiles;
-        fileSystem.listDir("/", localFiles);
-        for (const std::string &str : localFiles) {
-            log_d("Next File is %s", str.c_str());
-            fsMenu->addMenuItem(MenuItem(str.c_str(), [this, fsMenu, &fileSystem, str]() {
-                SFile toSerialOutput = fileSystem.open(StringFormat("/%s", str.c_str()));
-                while (toSerialOutput.available()) {
-                    printf("%c", toSerialOutput.read());
-                }
-                this->display_->clearDisplay();
-                fsMenu->setExtraText(StringFormat("output %s to serial", str.c_str()));
-                fsMenu->setNeedsRerender();
-            }));
-        }
+        handleBrowse(fileSystem, fsMenu);
+
         setCurrentScreen(*fsMenu);
         fsMenu->setBackCallback([this, fsMenu, debugSettingsMenu]() {
             debugSettingsMenu->setFirstLoad();
@@ -1469,4 +1455,36 @@ void RootUI::loop(DisplaySystem &display, RemoteCommand command) {
         esp_deep_sleep_start();
     }
     Screen::loop(display, command);
+}
+
+void RootUI::handleBrowse(FileSystem &fileSystem, MenuScreen *fsMenu, const std::string &path) {
+    FileList localFiles, localDirs;
+
+    fileSystem.listDirWithSubdirectories(path, localFiles, localDirs);
+
+    fsMenu->resetMenuItems();
+
+    for (const std::string &dir : localDirs) {
+        log_d("Next Dir is %s", dir.c_str());
+        fsMenu->addMenuItem(MenuItem(StringFormat("%s/", dir.c_str()).c_str(),
+                                     [this, fsMenu, &fileSystem, path, dir]() {
+            this->display_->clearDisplay();
+            handleBrowse(fileSystem, fsMenu, path + dir + "/");
+            fsMenu->setExtraText(StringFormat("Browsing %s", (path + dir + "/").c_str()));
+            fsMenu->setNeedsRerender();
+        }));
+    }
+
+    for (const std::string &file : localFiles) {
+        log_d("Next File is %s", file.c_str());
+        fsMenu->addMenuItem(MenuItem(file.c_str(), [this, fsMenu, &fileSystem, path, file]() {
+            SFile toSerialOutput = fileSystem.open(path + file);
+            while (toSerialOutput.available()) {
+                printf("%c", toSerialOutput.read());
+            }
+            this->display_->clearDisplay();
+            fsMenu->setExtraText(StringFormat("output %s to serial", (path + file).c_str()));
+            fsMenu->setNeedsRerender();
+        }));
+    }
 }
