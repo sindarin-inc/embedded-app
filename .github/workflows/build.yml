@@ -53,7 +53,7 @@ jobs:
         # Tags from here: https://hub.docker.com/r/espressif/idf/tags
         idf_version:
           - v5.1
-          - latest
+          # - latest
 
     steps:
       - name: Checkout repo
