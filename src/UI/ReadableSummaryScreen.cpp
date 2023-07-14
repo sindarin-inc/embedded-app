@@ -3,10 +3,11 @@
 #include "Misc/SpiramAllocator.hpp"
 
 auto ReadableSummaryScreen::layout(LayoutContext &context, Size size) -> Size {
-    context.setViewFrame(leftArrowView_, {{0, -2}, {10, 5}},
+    log_d("Layouting in size: %d, %d", size.width, size.height);
+    context.setViewFrame(leftArrowView_, {{0, -12}, {10, 5}},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical |
                              LayoutOptionsAlignLeft);
-    context.setViewFrame(upperLeftTextView_, {{15, -5}, size},
+    context.setViewFrame(upperLeftTextView_, {{15, -15}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
     context.setViewFrame(rightArrowView_, {{size.width, size.height + 3}, {10, 5}},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
@@ -19,6 +20,8 @@ auto ReadableSummaryScreen::layout(LayoutContext &context, Size size) -> Size {
 };
 
 void ReadableSummaryScreen::drawInRect(Rect rect) {
+    log_d("Drawing in rect: %d, %d, %d, %d", rect.origin.x, rect.origin.y, rect.size.width,
+          rect.size.height);
     leftArrowView_.draw();
     upperLeftTextView_.draw();
     rightArrowView_.draw();
@@ -27,12 +30,14 @@ void ReadableSummaryScreen::drawInRect(Rect rect) {
 
 void ReadableSummaryScreen::setPlaceInReadable(unsigned long placeInReadable) {
     placeInReadable_ = placeInReadable;
+    preservePlace_ = 0;
 }
 
 auto ReadableSummaryScreen::checkAtEnd() -> bool { return (newPlace_ == 0); }
 
 void ReadableSummaryScreen::render(DisplaySystem &display) {
-
+    log_d("\nRendering summary screen, firstLoad:%d, preservePlace_:%lu", firstLoad_,
+          preservePlace_);
     setNeedsLayout();
 
     setFrame(
@@ -58,6 +63,10 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
         SpiramString summaryString =
             readable_->summary(placeInReadable_, placeInSummary, showUnread_);
 
+        if (preservePlace_) {
+            placeInSummary = preservePlace_;
+            preservePlace_ = 0;
+        }
         auto stream = std::make_shared<StdStringStream>(summaryString);
         renderer_.setStream(stream);
         newPlace_ = renderer_.renderPage(placeInSummary);
@@ -80,6 +89,7 @@ void ReadableSummaryScreen::processCommand(RemoteCommand command) {
         break;
     case RemoteCommand::DOWN:
         showUnread_ = !showUnread_;
+        preservePlace_ = prevPlace_;
         setFirstLoad();
         setNeedsRerender();
         break;

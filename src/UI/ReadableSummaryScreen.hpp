@@ -46,10 +46,11 @@ protected:
     unsigned long placeInReadable_ = 0;
     unsigned long newPlace_ = 0;
     unsigned long prevPlace_ = 0;
+    unsigned long preservePlace_ = 0;
     bool atEnd_ = false;
 
     std::string upperLeftText_ = "Dismiss";
-    std::string bottomRightText_ = "Show Unread Chapters";
+    std::string bottomRightText_;
     SingleLineTextView upperLeftTextView_;
     SingleLineTextView bottomRightTextView_;
     ArrowView leftArrowView_;
