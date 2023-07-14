@@ -357,6 +357,8 @@ auto PowerManager::beginShutdown() -> bool {
             display_.clearDisplay();
             display_.clearFrameBuffer();
             display_.updateDisplay();
+            // Ensure nothing else can be drawn when the queues are shutting down
+            display_.disable();
         });
     }
 
