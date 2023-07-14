@@ -101,7 +101,8 @@ auto LocalStore::loadToc(const std::shared_ptr<Readable> &readable) -> bool {
         return false;
     }
 
-    auto tocDoc = std::make_unique<SpiRamJsonDocument>(50000); // Assuming TOC is less than 50KB
+    auto tocDoc = std::make_unique<SpiRamJsonDocument>(
+        std::max(static_cast<size_t>(50000), 2 * tocFile.size()));
     auto error = deserializeJson(*tocDoc, tocFile);
     if (error) {
         log_e("Failed to parse TOC JSON: %s", error.c_str());
@@ -952,8 +953,9 @@ auto LocalStore::saveTableOfContents(const std::shared_ptr<Readable> &readable) 
         return true;
     }
 
-    auto doc =
-        std::make_unique<SpiRamJsonDocument>(50000); // Assuming that the ToC will not exceed 50KB
+    auto doc = std::make_unique<SpiRamJsonDocument>(std::max(
+        static_cast<size_t>(50000),
+        5000 * readable->toc.size())); // Assuming that the ToC will not exceed 5KB * # of chapter
     std::string path = readable->tocFilePath();
     JsonArray tocJson = doc->createNestedArray("toc");
 
