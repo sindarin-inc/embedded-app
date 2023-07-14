@@ -447,7 +447,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // xTaskCreatePinnedToCore(StatsTask, "Stats", 5000, nullptr, 0, nullptr, 1);
 
     // Begin fade-in on the lighting before rendering the UI
-    DispatchGetUiQueue()->dispatch([]() { lightingController.checkAmbientLight(300, 100); });
+    DispatchGetUiQueue()->dispatch([]() {
+        lightingController.checkAmbientLight(300, 100); });
 
     // Render the first thing
     DispatchGetUiQueue()->dispatch([showChargingScreen]() {

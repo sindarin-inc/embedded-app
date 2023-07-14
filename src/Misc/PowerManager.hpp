@@ -77,7 +77,7 @@ public:
         stateChangeCallback_ = std::move(callback);
     }
 
-    void setBeginShutdownCallback(std::function<void()> callback) {
+    void setBeginShutdownCallback(const std::function<void()> &callback) {
         beginShutdownCallback_ = std::move(callback);
     }
 
