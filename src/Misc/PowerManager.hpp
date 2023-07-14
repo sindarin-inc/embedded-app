@@ -78,7 +78,7 @@ public:
     }
 
     void setBeginShutdownCallback(const std::function<void()> &callback) {
-        beginShutdownCallback_ = std::move(callback);
+        beginShutdownCallback_ = callback;
     }
 
     // Power lifecycle functions
