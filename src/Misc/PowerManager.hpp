@@ -127,7 +127,7 @@ protected:
     PreferencesStore &prefs_;
     PowerState state_ = PowerState::Booting;
     std::function<void(PowerState)> stateChangeCallback_;
-    std::function<void> beginShutdownCallback_;
+    std::function<void()> beginShutdownCallback_;
     LightingController &lightingController_;
     DisplaySystem &display_;
     InactivityTimer inactivityTimer_;
