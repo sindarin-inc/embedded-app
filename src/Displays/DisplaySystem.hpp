@@ -216,7 +216,7 @@ public:
     auto yAbsoluteMax() -> int { return 255; }
 
 protected:
-    bool disabled_;
+    bool disabled_ = false;
     // Must be set in the constructor of subclasses
     Adafruit_GFX *gfxClass_ = nullptr;
     Font *font_ = nullptr;
