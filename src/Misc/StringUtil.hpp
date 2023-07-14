@@ -54,4 +54,6 @@ auto HasPrefix(const char *pre, const char *str) -> bool;
 
 auto Commify(uint32_t n) -> std::string;
 
+auto CaseInsensitiveCompare(const std::string &str1, const std::string &str2) -> bool;
+
 #pragma clang diagnostic pop

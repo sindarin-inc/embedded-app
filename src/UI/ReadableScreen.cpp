@@ -150,6 +150,8 @@ void ReadableScreen::turnPage() {
         readable_->place = newPlace_;
         prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place);
         prefs_.readablePlaceChanged.set(readable_->shortenedUuid.c_str(), true);
+        prefs_.lastReadTime.set(readable_->shortenedUuid.c_str(),
+                                SolClock::getInstance().getEpochTime());
         speedLinesToSkip_ = 0;
     }
 
@@ -468,6 +470,8 @@ void ReadableScreen::processCommandNormal(RemoteCommand command) {
         readable_->place = renderer_.getPreviousPlace();
         prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place);
         prefs_.readablePlaceChanged.set(readable_->shortenedUuid.c_str(), true);
+        prefs_.lastReadTime.set(readable_->shortenedUuid.c_str(),
+                                SolClock::getInstance().getEpochTime());
         break;
     case RemoteCommand::ENTER:
         if (prefs_.fastBookmarkCenter.get().value_or(false)) {

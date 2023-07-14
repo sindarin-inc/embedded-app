@@ -1,5 +1,6 @@
 #include "ReadableSeekScreen.hpp"
 
+#include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
 #include "UI/Bitmaps/SeekBook.hpp"
 
@@ -100,6 +101,8 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
         renderer_.setCurrentPlace(readable_->place);
         prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place);
         prefs_.readablePlaceChanged.set(readable_->shortenedUuid.c_str(), true);
+        prefs_.lastReadTime.set(readable_->shortenedUuid.c_str(),
+                                SolClock::getInstance().getEpochTime());
         setNeedsRerender();
         break;
     }
@@ -123,6 +126,8 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
         renderer_.setCurrentPlace(readable_->place);
         prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place);
         prefs_.readablePlaceChanged.set(readable_->shortenedUuid.c_str(), true);
+        prefs_.lastReadTime.set(readable_->shortenedUuid.c_str(),
+                                SolClock::getInstance().getEpochTime());
         setNeedsRerender();
         break;
     }

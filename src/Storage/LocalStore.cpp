@@ -1,7 +1,9 @@
 #include "LocalStore.hpp"
 
+#include <algorithm>
 #include <esp_system.h>
 #include <esp_timer.h>
+#include <limits>
 #include <memory>
 #include <set>
 #include <unordered_map>
@@ -812,8 +814,90 @@ void LocalStore::deleteReadableFiles(const ReadablesVector &readables, bool rest
     }
 }
 
-auto LocalStore::saveReadables(const ReadablesVector &readables) -> bool {
+auto LocalStore::removeStopWords(const SpiramString &title) -> std::string {
+    std::string tempTitle(title.begin(), title.end());
+    std::set<std::string> stopWords = {"a ", "and ", "the "};
+
+    // Case-insensitive comparison function
+    auto compareIgnoreCase = [](const char c1, const char c2) {
+        return std::tolower(c1) == std::tolower(c2);
+    };
+
+    // Remove stop words from the beginning of the title (case-insensitive)
+    for (const auto &stopWord : stopWords) {
+        if (std::equal(stopWord.begin(), stopWord.end(), tempTitle.begin(), compareIgnoreCase)) {
+            tempTitle.erase(0, stopWord.size());
+            break;
+        }
+    }
+
+    return tempTitle;
+}
+
+void LocalStore::sortReadables(ReadablesVector &readables) {
+    SortCriteria criteria;
+    criteria.type = static_cast<SortCriteria::Type>(prefs_.sortCriteria.get().value_or(0));
+    SortDirection direction;
+    direction.type = static_cast<SortDirection::Type>(prefs_.sortDirection.get().value_or(0));
+
+    auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
+    log_d("Sorting %zu %ss by %s/%s", readables.size(),
+          ReadableModelTypeToString(modelType).c_str(), criteria.toString().c_str(),
+          direction.toString().c_str());
+
+    std::sort(readables.begin(), readables.end(),
+              [this, &criteria, &direction](const std::shared_ptr<Readable> &a,
+                                            const std::shared_ptr<Readable> &b) {
+        if (criteria.type == SortCriteria::DateModified) {
+            if (a->dateModified.empty()) {
+                return direction.type == SortDirection::Descending;
+            }
+            if (b->dateModified.empty()) {
+                return direction.type == SortDirection::Ascending;
+            }
+            return direction.type == SortDirection::Ascending ? a->dateModified < b->dateModified
+                                                              : a->dateModified > b->dateModified;
+        } else if (criteria.type == SortCriteria::Alphabetical) {
+            std::string aTitle = removeStopWords(a->title);
+            std::string bTitle = removeStopWords(b->title);
+            if (aTitle.empty()) {
+                return direction.type == SortDirection::Descending;
+            }
+            if (bTitle.empty()) {
+                return direction.type == SortDirection::Ascending;
+            }
+            return direction.type == SortDirection::Ascending
+                       ? CaseInsensitiveCompare(aTitle, bTitle)
+                       : CaseInsensitiveCompare(bTitle, aTitle);
+        } else if (criteria.type == SortCriteria::LastRead) {
+            auto aLastRead = prefs_.lastReadTime.get(a->shortenedUuid.c_str());
+            auto bLastRead = prefs_.lastReadTime.get(b->shortenedUuid.c_str());
+
+            // Unread items are considered least valued
+            if (aLastRead == 0) {
+                aLastRead = std::numeric_limits<decltype(aLastRead)>::min();
+            }
+            if (bLastRead == 0) {
+                bLastRead = std::numeric_limits<decltype(bLastRead)>::min();
+            }
+
+            return direction.type == SortDirection::Ascending ? aLastRead < bLastRead
+                                                              : aLastRead > bLastRead;
+        } else if (criteria.type == SortCriteria::Random) {
+            return random() % 2 == 0;
+        }
+
+        return false;
+    });
+
+    log_d("Finished sorting");
+}
+
+auto LocalStore::saveReadables(ReadablesVector &readables) -> bool {
     SHOW_HEAP();
+
+    sortReadables(readables);
+
     // Readables take up to 20KB of RAM each since the JSON can be large (includes cover
     // images, file metadata, etc.)
     auto doc = std::make_unique<SpiRamJsonDocument>(20000 * std::max(1, (int)readables.size()));
@@ -823,7 +907,8 @@ auto LocalStore::saveReadables(const ReadablesVector &readables) -> bool {
     // Create a key named readables of type array
     JsonArray readablesJson = doc->createNestedArray("readables");
 
-    log_d("Saving %zu readables in %s", readables.size(), path.c_str());
+    log_d("Saving %zu %ss in %s", readables.size(), ReadableModelTypeToString(modelType).c_str(),
+          path.c_str());
     for (const auto &readable : readables) {
         // Save ToC separately
         if (!saveTableOfContents(readable)) {
@@ -851,6 +936,8 @@ auto LocalStore::saveReadables(const ReadablesVector &readables) -> bool {
 
     serializeJsonPretty(*doc, file);
     file.close();
+    log_d("Saved %zu %ss in %s", readables.size(), ReadableModelTypeToString(modelType).c_str(),
+          path.c_str());
 
     return true;
 };
@@ -1062,6 +1149,7 @@ void LocalStore::garbageCollectPreferences() {
     auto readablePlaceChangedKeys = prefs_.readablePlaceChanged.getAllKeyPrefixes();
     auto readableArchivedChangedKeys = prefs_.readableArchivedChanged.getAllKeyPrefixes();
     auto readableBookmarksChangedKeys = prefs_.readableBookmarksChanged.getAllKeyPrefixes();
+    auto lastReadTime = prefs_.lastReadTime.getAllKeyPrefixes();
 
     // Combine and deduplicate all keys
     std::set<std::string> allKeys;
@@ -1069,6 +1157,7 @@ void LocalStore::garbageCollectPreferences() {
     allKeys.insert(readablePlaceChangedKeys.begin(), readablePlaceChangedKeys.end());
     allKeys.insert(readableArchivedChangedKeys.begin(), readableArchivedChangedKeys.end());
     allKeys.insert(readableBookmarksChangedKeys.begin(), readableBookmarksChangedKeys.end());
+    allKeys.insert(lastReadTime.begin(), lastReadTime.end());
 
     for (auto &key : allKeys) {
         bool isStoredBook = std::any_of(books_.begin(), books_.end(),
@@ -1082,6 +1171,7 @@ void LocalStore::garbageCollectPreferences() {
             prefs_.readablePlaceChanged.remove(key.c_str());
             prefs_.readableArchivedChanged.remove(key.c_str());
             prefs_.readableBookmarksChanged.remove(key.c_str());
+            prefs_.lastReadTime.remove(key.c_str());
         }
     }
 
