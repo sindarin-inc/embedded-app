@@ -3,25 +3,24 @@
 #include "Misc/SpiramAllocator.hpp"
 
 auto ReadableSummaryScreen::layout(LayoutContext &context, Size size) -> Size {
-    log_d("Layouting in size: %d, %d", size.width, size.height);
-    context.setViewFrame(leftArrowView_, {{0, -12}, {10, 5}},
+    auto yNavPadding = 24;
+
+    context.setViewFrame(leftArrowView_, {{0, 19 - yNavPadding}, {10, 5}},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical |
                              LayoutOptionsAlignLeft);
-    context.setViewFrame(upperLeftTextView_, {{15, -15}, size},
+    context.setViewFrame(upperLeftTextView_, {{15, 16 - yNavPadding}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
-    context.setViewFrame(rightArrowView_, {{size.width, size.height + 3}, {10, 5}},
+    context.setViewFrame(rightArrowView_, {{size.width, size.height - (23 - yNavPadding)}, {10, 5}},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
                              LayoutOptionsAlignLeft);
-    context.setViewFrame(bottomRightTextView_, {{0, size.height}, {size.width - 4, 10}},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical |
-                             LayoutOptionsAlignRight);
+    context.setViewFrame(
+        bottomRightTextView_, {{0, size.height - (25 - yNavPadding)}, {size.width - 4, 10}},
+        LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical | LayoutOptionsAlignRight);
 
     return {size.width, size.height - 10};
 };
 
 void ReadableSummaryScreen::drawInRect(Rect rect) {
-    log_d("Drawing in rect: %d, %d, %d, %d", rect.origin.x, rect.origin.y, rect.size.width,
-          rect.size.height);
     leftArrowView_.draw();
     upperLeftTextView_.draw();
     rightArrowView_.draw();
@@ -36,8 +35,7 @@ void ReadableSummaryScreen::setPlaceInReadable(unsigned long placeInReadable) {
 auto ReadableSummaryScreen::checkAtEnd() -> bool { return (newPlace_ == 0); }
 
 void ReadableSummaryScreen::render(DisplaySystem &display) {
-    log_d("\nRendering summary screen, firstLoad:%d, preservePlace_:%lu", firstLoad_,
-          preservePlace_);
+
     setNeedsLayout();
 
     setFrame(
@@ -57,6 +55,14 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
     PROFILE_START(ReadableSummaryScreenLayoutAndDraw);
     draw();
     PROFILE_END_LOG_US(ReadableSummaryScreenLayoutAndDraw);
+
+    // This is a slight hack to get around the fact that the bounding box of the display is not
+    // context specific
+    auto oldDisplayBoundingBox = display_.getBoundingBox();
+    auto newDisplayBoundingBox = display_.getBoundingBox();
+    newDisplayBoundingBox.y += display.defaultYPadding;
+    newDisplayBoundingBox.height -= 2 * display.defaultYPadding;
+    display_.setBoundingBox(newDisplayBoundingBox);
 
     if (firstLoad_) {
         unsigned long placeInSummary = 0;
@@ -79,8 +85,10 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
     atEnd_ = checkAtEnd();
     display.updateDisplay(DisplaySystem::UpdateType::FULL);
     firstLoad_ = false;
-}
 
+    // Reset to the original bounding box for when we return to another screen
+    display_.setBoundingBox(oldDisplayBoundingBox);
+}
 void ReadableSummaryScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::UP:
