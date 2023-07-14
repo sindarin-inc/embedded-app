@@ -579,6 +579,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         });
     }));
 
+    // Hide the toggle for the sort order menu
+    contentSettingsMenu->setToggleLastItem(false, false);
+
     contentSettingsMenu->addMenuItem(
         MenuItem("Sync content now", [this, display, &localStore, mainMenu, &lightingController]() {
             auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
