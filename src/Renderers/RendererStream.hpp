@@ -40,6 +40,14 @@ public:
         return StreamType::OTHER;
     }
 
+    virtual auto getNextByte() -> uint8_t {
+        if (size() > position()) {
+            return static_cast<uint8_t>(read());
+        } else {
+            return 0;
+        }
+    }
+
     virtual auto available() -> int { return size() - position(); };
     virtual auto readBytes(uint8_t *buf, int size) -> int {
         // implementation of byte-by-byte read for a block,

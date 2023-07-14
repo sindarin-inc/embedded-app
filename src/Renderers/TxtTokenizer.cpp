@@ -58,9 +58,10 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bo
 
     // Needs to be minus one for the corner case of all spaces or newlines
     // and need room for EOF character.
-    while ((stream_->available()) && (!tokens.cStrPoolIsFull()) &&
+
+    uint8_t curChar;
+    while ((curChar = stream_->getNextByte()) && (!tokens.cStrPoolIsFull()) &&
            ((backwards || (textArea < maxTextArea)))) {
-        uint8_t curChar = stream_->read();
         newToken = {.cStr = nullptr,
                     .streamPlace = addOffset(fromPlace, pageIdx),
                     .prevNewParagraphTokenIdx = prevNewParagraphIdx,
@@ -105,13 +106,21 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bo
             break;
 
         case '-':
-            // Check to see if this is an emdash case
+            // Check to see if this is an endash or emdash case
             if ((tokens.getCount() > 0) && (tokens.getLast().tokenId == TokenId::HYPHEN)) {
                 Token *token = &tokens.getLast();
-                token->tokenId = TokenId::EMDASH;
+                token->tokenId = TokenId::ENDASH;
                 display_.getTextSize("--", &token->width, &token->height);
                 token->cStr = "--";
                 token->length = 2;
+                // Specifically don't increment the token buffer
+                // because the previous hyphen already did that
+            } else if ((tokens.getCount() > 0) && (tokens.getLast().tokenId == TokenId::ENDASH)) {
+                Token *token = &tokens.getLast();
+                token->tokenId = TokenId::EMDASH;
+                display_.getTextSize("---", &token->width, &token->height);
+                token->cStr = "---";
+                token->length = 3;
                 // Specifically don't increment the token buffer
                 // because the previous hyphen already did that
             } else {
@@ -153,6 +162,12 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bo
         }
 
         pageIdx++;
+    }
+
+    if (tokens.cStrPoolIsFull()) {
+        // There is a potential that the last token is not complete (e.g. a TEXT or ENDASH or
+        // EMDASH), so forget it
+        tokens.forgetLastToken();
     }
 
     computePreviousTokenSize();
