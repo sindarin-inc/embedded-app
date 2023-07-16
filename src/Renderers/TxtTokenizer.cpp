@@ -15,37 +15,19 @@
 // Returns the computed streamPlace where the page start really.
 //
 // IMPORTANT: The getFileLocation() method must be called only through this method.
-auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bool backwards)
-    -> StreamPlace {
+auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bool backwards,
+                                       StreamPlace *toPlace) -> StreamPlace {
 
-    Idx pageIdx = 0;
     Idx prevNewParagraphIdx = 0;
 
     uint32_t textArea = 0;
     uint32_t maxTextArea = static_cast<uint32_t>(display_.width()) * display_.height();
-    uint16_t textCharCount = 0;
 
     tokens.clear();
     currentPageWordCount_ = 0;
 
     Token newToken;
-
-    // Keep it DRY
-    auto computePreviousTokenSize = [this, &textArea, &tokens]() -> void {
-        // log_d("computePreviousTokenSize()..., tokenIdx: %" PRIu16 ", tokensCount_: %" PRIu16,
-        //       tokenIdx, tokensCount_);
-        //  we need to set the size of the previous token
-        if ((tokens.getCount() > 0) && (tokens.getLast().tokenId == TokenId::TEXT)) {
-            textArea += tokens.setSizes(tokens.getCount() - 1);
-            // If we've started a new text token and the previous token was a space
-            // we know that we should go back and set the size of that space token
-            // based on this token and the token before the space.
-            if ((tokens.getCount() > 2) && (tokens.getBeforeLast().tokenId == TokenId::SPACE)) {
-                textArea += tokens.setSizes(tokens.getCount() - 2);
-            }
-        }
-        // log_d("textArea size: %" PRIu32 ", tokenIdx: %" PRIu16, textArea, tokenIdx);
-    };
+    Token spaceToken;
 
     fromPlace = getFileLocation(fromPlace);
     if (fromPlace.offset == LOCATION_ERROR) {
@@ -56,14 +38,29 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bo
         log_w("Starting tokenizer at streamPlace %s", fromPlace.str().c_str());
     }
 
-    // Needs to be minus one for the corner case of all spaces or newlines
-    // and need room for EOF character.
+    uint8_t curChar = stream_->getNextByte();
+    Idx streamRelativeOffset = 0;
 
-    uint8_t curChar;
-    while ((curChar = stream_->getNextByte()) && (!tokens.cStrPoolIsFull()) &&
-           ((backwards || (textArea < maxTextArea)))) {
+    // Keep it DRY
+    auto checkSpace = [&tokens, &spaceToken]() -> void {
+        if (spaceToken.tokenId == TokenId::SPACE) {
+            tokens.add(spaceToken, " ", 1);
+            spaceToken.tokenId = TokenId::NOTOKEN;
+        }
+    };
+
+    auto nextByte = [this, &curChar, &streamRelativeOffset]() -> void {
+        curChar = stream_->getNextByte();
+        streamRelativeOffset++;
+    };
+
+    spaceToken.tokenId = TokenId::NOTOKEN;
+
+    while ((curChar != 0) && !tokens.isFull() &&
+           ((backwards && (toPlace->offset > tokens.getLast().streamPlace.offset)) ||
+            (textArea < maxTextArea))) {
         newToken = {.cStr = nullptr,
-                    .streamPlace = addOffset(fromPlace, pageIdx),
+                    .streamPlace = addOffset(fromPlace, streamRelativeOffset),
                     .prevNewParagraphTokenIdx = prevNewParagraphIdx,
                     .width = 0,
                     .height = 0,
@@ -71,13 +68,14 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bo
                     .tokenId = TokenId::ENDOFFILE};
 
         // if constexpr (RENDERER_DEBUG) {
-        //     log_d("Set the stream place to %" PRIu32, fromPlace + pageIdx);
+        //     log_d("Set the stream place to %" PRIu32, fromPlace + streamRelativeOffset);
         //     log_d("Current Character: %c (%02" PRIX8 "H)",
         //           (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '), curChar);
         // }
 
         switch (curChar) {
         case '\n':
+            checkSpace();
             // No two or more lines with only a \n are allowed.
             if (!((tokens.getCount() > 0) && (tokens.getLast().tokenId == TokenId::ENDPARAGRAPH))) {
                 if ((tokens.getCount() == 0) || (tokens.getLast().tokenId == TokenId::NEWLINE)) {
@@ -86,26 +84,29 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bo
                 } else {
                     newToken.tokenId = TokenId::NEWLINE;
                 }
-                computePreviousTokenSize();
                 tokens.add(newToken, "\n", 1);
             }
+            nextByte();
             break;
 
         case ' ':
-            newToken.tokenId = TokenId::SPACE;
-            computePreviousTokenSize();
-            tokens.add(newToken, " ", 1);
-            tokens.setSpaceSize(tokens.getCount() - 1);
+            checkSpace();
+            spaceToken = newToken;
+            spaceToken.tokenId = TokenId::SPACE;
+            tokens.setSpaceSize(spaceToken);
+            nextByte();
             break;
 
         case '\t':
+            checkSpace();
             newToken.tokenId = TokenId::TAB;
             display_.getTextSize("\t", &newToken.width, &newToken.height);
-            computePreviousTokenSize();
             tokens.add(newToken, "\t", 1);
+            nextByte();
             break;
 
         case '-':
+            checkSpace();
             // Check to see if this is an endash or emdash case
             if ((tokens.getCount() > 0) && (tokens.getLast().tokenId == TokenId::HYPHEN)) {
                 Token *token = &tokens.getLast();
@@ -126,54 +127,56 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bo
             } else {
                 newToken.tokenId = TokenId::HYPHEN;
                 display_.getTextSize("-", &newToken.width, &newToken.height);
-                computePreviousTokenSize();
                 tokens.add(newToken, "-", 1);
             }
+            nextByte();
             break;
 
         // All other characters are considered part of a text token,
-        // so we just increment and move on.
-        default:
-            // if constexpr (RENDERER_DEBUG) {
-            //     log_d("Default...");
-            // }
-            // Will create a new token if
-            // - This is the first token in the list, or
-            // - The preceeding token was not TEXT, or
-            // - There is more than (MAX_TOKEN_STRING_LENGTH - 5) bytes in the last TEXT token and
-            //   curChar is a first byte of a UTF8 character.
-            if ((tokens.getCount() == 0) || (tokens.getLast().tokenId != TokenId::TEXT) ||
-                (((curChar <= 0x7FU) || (curChar >= 0xC0U)) &&
-                 ((tokens.getLast().length > (MAX_BYTES_PER_TEXT_TOKEN - 5)) ||
-                  (textCharCount >= maxTextTokenCharSize_)))) {
-                newToken.tokenId = TokenId::TEXT;
-                computePreviousTokenSize();
-                tokens.add(newToken);
-                tokens.addByteToLast(curChar);
-                currentPageWordCount_ += 1;
-                textCharCount = 1;
-            } else {
-                tokens.addByteToLast(curChar);
+        default: {
+            newToken.tokenId = TokenId::TEXT;
+            uint16_t textCharCount = 0;
+
+            if (display_.getFont()->isA(FontType::GFX) && (spaceToken.tokenId == TokenId::SPACE)) {
+                tokens.setGFXSpaceSize(spaceToken, curChar);
+            }
+            checkSpace();
+
+            do {
                 if ((curChar <= 0x7FU) || (curChar >= 0xC0U)) {
                     textCharCount += 1;
                 }
+                if (!tokens.cStrIsFull()) {
+                    tokens.addByte(newToken, curChar);
+                } else {
+                    break;
+                }
+                nextByte();
+            } while ((curChar > ' ') && (curChar != '-') &&
+                     ((textCharCount < maxTextTokenCharSize_) || (curChar >= 0x80U)));
+            // The last test of the while above is to get a complete UTF8 multi-bytes character if
+            // the maximum word size is reached
+
+            if (!tokens.cStrIsFull()) {
+                display_.getTextSize(newToken.cStr, &newToken.width, &newToken.height);
             }
+            tokens.add(newToken);
+
             break;
         }
-
-        pageIdx++;
+        }
     }
 
-    if (tokens.cStrPoolIsFull()) {
+    if (tokens.cStrIsFull()) {
         // There is a potential that the last token is not complete (e.g. a TEXT or ENDASH or
         // EMDASH), so forget it
         tokens.forgetLastToken();
     }
 
-    computePreviousTokenSize();
+    checkSpace();
 
     Token eofToken = {.cStr = nullptr,
-                      .streamPlace = addOffset(fromPlace, pageIdx),
+                      .streamPlace = addOffset(fromPlace, streamRelativeOffset),
                       .prevNewParagraphTokenIdx = 0,
                       .width = 0,
                       .height = 0,

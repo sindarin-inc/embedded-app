@@ -9,7 +9,8 @@ public:
     TxtTokenizer(DisplaySystem &display) : Tokenizer(display) {}
 
     [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens,
-                                           bool backwards = false) -> StreamPlace override;
+                                           bool backwards = false, StreamPlace *toPlace = nullptr)
+        -> StreamPlace override;
 
     [[nodiscard]] auto getPlaceAfterEndOfFileReached(StreamPlace streamPlace) const
         -> StreamPlace override {

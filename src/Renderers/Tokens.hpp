@@ -19,6 +19,13 @@ private:
     uint16_t spaceWidth_{0};
     uint16_t spaceHeight_{0};
 
+    uint16_t currentPageDecilineHeight_{0};
+    uint16_t currentLineWidth_{0};
+    uint8_t lineCount_{0};
+    Lines lines_{};
+    uint16_t maxDeciLines_{0};
+    uint16_t maxLineWidth_{0};
+
 public:
     Tokens(DisplaySystem &display) : display_(display) {}
     [[nodiscard]] inline auto operator[](renderer_defs::Idx idx) const -> const Token & {
@@ -49,21 +56,47 @@ public:
         return tokens_[tokensCount_ - 2];
     }
 
-    [[nodiscard]] inline auto cStrPoolIsFull() const -> bool {
+    // Switch to 1/10 of a line as this gives us more flexibilty in rendering
+    // precision between lines.
+    [[nodiscard]] auto getMaxDeciLines() -> int16_t {
+        return (display_.height() * NEWLINE_DECI_LINE_HEIGHT) / (this->display_.getTextHeight());
+    }
+
+    inline void forgetLastToken() {
+        if (tokensCount_ > 0) {
+            tokensCount_ -= 1;
+        }
+    }
+
+    [[nodiscard]] inline auto cStrIsFull() const -> bool {
         return !(cStrPoolCount_ < (POOL_BUFFER_SIZE - 2));
     }
-    void setSpaceSize(renderer_defs::Idx tokenIdx);
+
+    [[nodiscard]] inline auto isFull() const -> bool {
+        return !((cStrPoolCount_ < (POOL_BUFFER_SIZE - 2)) &&
+                 (tokensCount_ < (MAX_TOKEN_COUNT - 2)));
+    }
+
+    void setSpaceSize(Token &token);
 
     // NOLINTNEXTLINE(modernize-use-nodiscard)
-    auto setSizes(Idx tokenIdx) -> uint16_t;
+    auto setGFXSpaceSize(Token &token, uint8_t nextChar) -> uint16_t;
 
     void add(Token &token, const char *str = nullptr, uint8_t strSize = 0);
-    void addByteToLast(uint8_t b);
+    void addByte(Token &token, uint8_t b);
 
     inline void clear() {
         tokensCount_ = 0;
         cStrPoolCount_ = 0;
+        lineCount_ = 0;
+        currentLineWidth_ = 0;
+        currentPageDecilineHeight_ = 0;
+        maxDeciLines_ = getMaxDeciLines();
+        maxLineWidth_ = (display_.width() - 4);
+        lines_[0].tokenCount = 0;
     }
+
+    auto addLastTokenToPage() -> bool;
 
     void print() const;
 };

@@ -231,7 +231,7 @@ void runBackwardsUnitTest(SDL_Window *window, SDL_Renderer *renderer) {
     auto skipWaveform = FakeEinkET013TT1SkipWaveform;
     FakeEinkET013TT1SkipWaveform = true;
     bool first = true;
-    for (int i = 0; i < 10000; i++) {
+    for (int i = 0; i < 20000; i++) {
         if (!first) {
             saveScreenshotPng("current.png", window, renderer);
             sendCodeAndRender(RemoteCommand::ENTER, renderer);

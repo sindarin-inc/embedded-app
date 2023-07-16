@@ -17,13 +17,17 @@ class Renderer {
 
 public:
     Renderer(DisplaySystem &display) : display_(display), tokens_(display) {
+        // log_w("constructor...");
         tokenizer_ = std::make_shared<NullTokenizer>(display);
     }
 
     auto setStream(std::shared_ptr<RendererStream> stream) -> void {
+        // log_w("setStream...");
         tokenizer_ = Tokenizer::factory(stream, display_);
+
     }
     auto setCurrentPlace(Place newPlace) -> void {
+        // log_w("setCurrentPlace...");
         currentPlace_ = tokenizer_->toStreamPlace(newPlace);
     }
 
@@ -33,7 +37,7 @@ public:
         return tokenizer_->toPlace(currentPlace_);
     }
 
-    [[nodiscard]] inline auto size() const -> uint32_t { return stream_->size(); }
+    [[nodiscard]] inline auto size() const -> uint32_t { return tokenizer_->streamSize(); }
 
     // Render a page of text with the current place
     // returns the next place for reading so the calling function can
@@ -65,7 +69,6 @@ public:
 
 private:
     DisplaySystem &display_;
-    std::shared_ptr<RendererStream> stream_;
 
     Tokens tokens_;
     std::shared_ptr<Tokenizer> tokenizer_{nullptr};

@@ -16,8 +16,8 @@ public:
     [[nodiscard]] static auto factory(std::shared_ptr<RendererStream> stream,
                                       DisplaySystem &display) -> std::shared_ptr<Tokenizer>;
 
-    virtual auto loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bool backwards = false)
-        -> StreamPlace = 0;
+    virtual auto loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bool backwards = false,
+                                     StreamPlace *toPlace = nullptr) -> StreamPlace = 0;
 
     [[nodiscard]] auto getCurrentPageWordCount() const -> uint32_t { return currentPageWordCount_; }
     [[nodiscard]] auto isA(StreamType streamType) const -> bool { return stream_->isA(streamType); }
@@ -56,6 +56,10 @@ public:
     [[nodiscard]] virtual auto toStreamPlace(const Place &place) const -> StreamPlace = 0;
 
     [[nodiscard]] virtual auto toPlace(const StreamPlace &streamPlace) const -> Place = 0;
+
+    [[nodiscard]] virtual auto streamSize() const -> size_t {
+        return stream_.get() != nullptr ? stream_->size() : 0;
+    }
 
 protected:
     DisplaySystem &display_;

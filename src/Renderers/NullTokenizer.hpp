@@ -9,7 +9,8 @@ public:
     NullTokenizer(DisplaySystem &display) : Tokenizer(display) {}
 
     [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens,
-                                           bool backwards = false) -> StreamPlace override {
+                                           bool backwards = false, StreamPlace *toPlace = nullptr)
+        -> StreamPlace override {
         error();
         return StreamPlace{.offset = 0, .fileNumber = 0};
     };

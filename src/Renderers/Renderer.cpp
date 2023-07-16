@@ -69,9 +69,11 @@ auto Renderer::getLineOfTextForRendering(Idx startTokenIdx, Line &line) -> Idx {
     line[lineIdx] = '\0';
 
     if constexpr (RENDERER_DEBUG) {
-        log_d("Returning from tokenIdx %" PRIu16 " %s to %" PRIu16 " %s, width: %" PRIi16 " line: %s",
-              startTokenIdx, tokens_[startTokenIdx].streamPlace.str().c_str(), static_cast<Idx>(tokenIdx - 1),
-              tokens_[tokenIdx - 1].streamPlace.str().c_str(), runningWidth, line.data());
+        log_d("Returning from tokenIdx %" PRIu16 " %s to %" PRIu16 " %s, width: %" PRIi16
+              " line: %s",
+              startTokenIdx, tokens_[startTokenIdx].streamPlace.str().c_str(),
+              static_cast<Idx>(tokenIdx - 1), tokens_[tokenIdx - 1].streamPlace.str().c_str(),
+              runningWidth, line.data());
     }
 
     return tokenIdx;
@@ -149,8 +151,8 @@ auto Renderer::getParagraphDeciLinesCount(Idx startTokenIdx, Idx endTokenIdx) ->
     paraLineFirstIdx_ = paraLineLastIdx_ = 0;
 
     if constexpr (RENDERER_DEBUG) {
-        log_d("Paragraph startIdx: %" PRIu16 " %s, endIdx: %" PRIu16 " %s",
-              startTokenIdx, tokens_[startTokenIdx].streamPlace.str().c_str(), endTokenIdx,
+        log_d("Paragraph startIdx: %" PRIu16 " %s, endIdx: %" PRIu16 " %s", startTokenIdx,
+              tokens_[startTokenIdx].streamPlace.str().c_str(), endTokenIdx,
               tokens_[endTokenIdx].streamPlace.str().c_str());
     }
 
@@ -282,7 +284,7 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
     // would for a forwards render. seekPlace will be returned to be at a UTF8 character
     // boundary
     seekPlace = tokenizer_->loadAndTokenizePage(seekPlace, tokens_,
-                                                true); // NOLINT(clang-analyzer-deadcode.DeadStores)
+                                                true, &fromPlace); // NOLINT(clang-analyzer-deadcode.DeadStores)
 
     // Step 3: Find the place in the token buffer where the passed in place in file
     // is represented.
@@ -296,7 +298,7 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
     // Find which token to end with
     // Could switch to an algorithm that is log(n) instead of n if we need to
     if constexpr (RENDERER_DEBUG) {
-        log_d("About to look for where to end: place = %s, starting at place %s",
+        log_d("About to look for where to end: fromPlace = %s, starting at seekPlace %s",
               fromPlace.str().c_str(), seekPlace.str().c_str());
     }
 
@@ -316,7 +318,9 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
 
     if constexpr (RENDERER_DEBUG) {
         if (tokens_[endTokenIdx].streamPlace.offset != fromPlace.offset) {
-            log_e("Synchronisation issue. Unable to point at fromPlace with endTokenIdx.");
+            log_e("Synchronisation issue. Unable to point at fromPlace with endTokenIdx %" PRIu16
+                  ": %s.",
+                  endTokenIdx, tokens_[endTokenIdx].streamPlace.str().c_str());
             if constexpr (ON_ERROR_EXIT) {
                 exit(8);
             }
@@ -335,9 +339,9 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
     endTokenIdx -= 1;
 
     if constexpr (RENDERER_DEBUG) {
-        log_d("Found the place to end and it's at place %s, tokenId %" PRIu8
-              ", tokenIdx: %" PRIu16,
-              tokens_[endTokenIdx].streamPlace.str().c_str(), (uint8_t)tokens_[endTokenIdx].tokenId, endTokenIdx);
+        log_d("Found the place to end and it's at place %s, tokenId %" PRIu8 ", tokenIdx: %" PRIu16,
+              tokens_[endTokenIdx].streamPlace.str().c_str(), (uint8_t)tokens_[endTokenIdx].tokenId,
+              endTokenIdx);
     }
 
     Idx startTokenIdx = tokens_[endTokenIdx].prevNewParagraphTokenIdx;
@@ -350,8 +354,8 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
     }
 
     if constexpr (RENDERER_DEBUG) {
-        log_d("Last paragraph boundaries: %" PRIu16 " %s through %" PRIu16 " %s",
-              startTokenIdx, tokens_[startTokenIdx].streamPlace.str().c_str(), endTokenIdx,
+        log_d("Last paragraph boundaries: %" PRIu16 " %s through %" PRIu16 " %s", startTokenIdx,
+              tokens_[startTokenIdx].streamPlace.str().c_str(), endTokenIdx,
               tokens_[endTokenIdx].streamPlace.str().c_str());
     }
 
@@ -361,7 +365,7 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
 
     int16_t maxDeciLines = getMaxDeciLines();
 
-    uint16_t lastDeciLinesCount = deciLinesCount;
+    uint16_t lastDeciLinesCount = 0;
 
     while (deciLinesCount < maxDeciLines) {
         lastDeciLinesCount = deciLinesCount;
@@ -536,6 +540,8 @@ auto Renderer::loadCurrentPage() -> StreamPlace {
     if (tokens_[tokenIdx].tokenId == TokenId::ENDOFFILE) {
         return tokenizer_->getPlaceAfterEndOfFileReached(tokens_[tokenIdx].streamPlace);
     }
+
+    // tokens_.print();
 
     return tokens_[tokenIdx].streamPlace;
 }

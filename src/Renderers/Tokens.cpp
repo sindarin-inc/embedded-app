@@ -3,21 +3,8 @@
 void Tokens::add(Token &token, const char *str, uint8_t strSize) {
     if (tokensCount_ < MAX_TOKEN_COUNT) {
         if (str != nullptr) {
-            if ((cStrPoolCount_ + strSize + 1) < POOL_BUFFER_SIZE) {
-                token.cStr = &cStrPool_[cStrPoolCount_];
-                token.length = strSize;
-                std::copy_n(str, strSize, &cStrPool_[cStrPoolCount_]);
-                cStrPoolCount_ += strSize;
-                cStrPool_[cStrPoolCount_++] = 0;
-            } else {
-                log_e("cStrPool_[] is too small!");
-                if constexpr (ON_ERROR_EXIT) {
-                    exit(1);
-                }
-            }
-        } else {
-            token.length = 0;
-            token.cStr = nullptr;
+            token.cStr = str;
+            token.length = strSize;
         }
 
         tokens_[tokensCount_++] = token;
@@ -33,12 +20,11 @@ void Tokens::add(Token &token, const char *str, uint8_t strSize) {
     }
 }
 
-void Tokens::addByteToLast(uint8_t b) {
-    if constexpr (RENDERER_DEBUG) {
-        log_d("Adding byte %02" PRIX8 "H to last token at %" PRIu16 ".", b, cStrPoolCount_);
-    }
+void Tokens::addByte(Token &token, uint8_t b) {
+    // if constexpr (RENDERER_DEBUG) {
+    //   log_d("Adding byte %02" PRIX8 "H to last token at %" PRIu16 ".", b, cStrPoolCount_);
+    // }
     if (cStrPoolCount_ < (POOL_BUFFER_SIZE - 2)) {
-        Token &token = getLast();
         if (token.cStr == nullptr) {
             token.cStr = &cStrPool_[cStrPoolCount_];
             token.length = 1;
@@ -69,12 +55,12 @@ void Tokens::addByteToLast(uint8_t b) {
     }
 }
 
-void Tokens::setSpaceSize(renderer_defs::Idx tokenIdx) {
+void Tokens::setSpaceSize(Token &token) {
     if (spaceWidth_ == 0) {
         display_.getTextSize(" ", &spaceWidth_, &spaceHeight_);
     }
-    tokens_[tokenIdx].width = spaceWidth_;
-    tokens_[tokenIdx].height = spaceHeight_;
+    token.width = spaceWidth_;
+    token.height = spaceHeight_;
 }
 
 // Must be called only in the context of loadAndTokenizePage() method.
@@ -97,43 +83,97 @@ void Tokens::setSpaceSize(renderer_defs::Idx tokenIdx) {
 // Returns the area of the token (width * height)
 // for use in calcuating how much space we need for a page.
 //
-auto Tokens::setSizes(Idx tokenIdx) -> uint16_t {
-    if (display_.getFont()->isA(FontType::IBMF)) {
-        if (tokens_[tokenIdx].tokenId != TokenId::SPACE) {
-            display_.getTextSize(tokens_[tokenIdx].cStr, &tokens_[tokenIdx].width,
-                                 &tokens_[tokenIdx].height);
-        } else {
-            setSpaceSize(tokenIdx);
-        }
-    } else {
-        // With GFX Fonts, spaces are a mess. The width of them depends on the tokens before and
-        // after. Joy.
-        if (tokens_[tokenIdx].tokenId != TokenId::SPACE) {
-            display_.getTextSize(tokens_[tokenIdx].cStr, &tokens_[tokenIdx].width,
-                                 &tokens_[tokenIdx].height);
-        } else {
-            // Check bounds. Punt otherwise.
-            // Get the tokens before and after the space, then do the width
-            // of that whole thing and subtract out the two tokens. That's the
-            // real width of the rendered space.
-            if ((tokenIdx > 0) && ((tokenIdx + 1) < tokensCount_)) {
-                char temp[4];
-                temp[0] = tokens_[tokenIdx - 1].cStr[tokens_[tokenIdx - 1].length - 1];
-                temp[1] = ' ';
-                temp[2] = tokens_[tokenIdx + 1].cStr[0];
-                temp[3] = 0;
+auto Tokens::setGFXSpaceSize(Token &spaceToken, uint8_t nextChar) -> uint16_t {
 
-                tokens_[tokenIdx].height = display_.getTextHeight(temp);
-                tokens_[tokenIdx].width = display_.getTextWidth(temp) -
-                                          display_.getTextWidth(tokens_[tokenIdx - 1].cStr) -
-                                          display_.getTextWidth(tokens_[tokenIdx + 1].cStr);
+    // With GFX Fonts, spaces are a mess. The width of them depends on the tokens before and
+    // after. Joy.
+
+    // Check bounds. Punt otherwise.
+    // Get the tokens before and nextChar that is after the space, then do the width
+    // of that whole thing and subtract out the two tokens. That's the
+    // real width of the rendered space.
+    if ((tokensCount_ > 0) && (getLast().tokenId == TokenId::TEXT)) {
+        Token &lastToken = getLast();
+        char temp[4];
+        const char *first = &lastToken.cStr[lastToken.length - 1];
+        temp[0] = first[0];
+        temp[1] = ' ';
+        temp[2] = nextChar;
+        temp[3] = 0;
+
+        spaceToken.height = display_.getTextHeight(temp);
+        spaceToken.width = display_.getTextWidth(temp) - display_.getTextWidth(first) -
+                           display_.getTextWidth(&temp[2]);
+    } else {
+        setSpaceSize(spaceToken);
+    }
+
+    return (spaceToken.width * spaceToken.height);
+}
+
+auto Tokens::addLastTokenToPage() -> bool {
+    Token &token = getLast();
+
+    auto newLine = [this](uint16_t size) {
+        currentPageDecilineHeight_ += size;
+        lineCount_ += 1;
+        currentLineWidth_ = 0;
+        lines_[lineCount_].tokenCount = 0;
+    };
+
+    switch (token.tokenId) {
+    case TokenId::TEXT:
+    case TokenId::SPACE:
+    case TokenId::HYPHEN:
+    case TokenId::ENDASH:
+    case TokenId::EMDASH:
+    case TokenId::TAB:
+        if ((token.width + currentLineWidth_) > maxLineWidth_) {
+            if ((token.tokenId == TokenId::SPACE) || (token.tokenId == TokenId::TAB)) {
+                token.tokenId = TokenId::NOTOKEN;
             } else {
-                display_.getTextSize(tokens_[tokenIdx].cStr, &tokens_[tokenIdx].width,
-                                     &tokens_[tokenIdx].height);
+                newLine(NEWLINE_DECI_LINE_HEIGHT);
+                if ((currentPageDecilineHeight_ + NEWLINE_DECI_LINE_HEIGHT) > maxDeciLines_) {
+                    return false;
+                }
             }
         }
+
+        if (lines_[lineCount_].tokenCount == 0) {
+            lines_[lineCount_].tokenIdx = tokensCount_ - 1;
+        }
+        currentLineWidth_ += token.width;
+        lines_[lineCount_].tokenCount += 1;
+        break;
+
+    case TokenId::ENDOFFILE:
+        return false;
+
+    case TokenId::NEWLINE:
+        token.tokenId = TokenId::NOTOKEN;
+        if (lines_[lineCount_].tokenCount > 0) {
+            newLine(NEWLINE_DECI_LINE_HEIGHT);
+        }
+        break;
+
+    case TokenId::ENDPARAGRAPH:
+        if (lines_[lineCount_].tokenCount > 0) {
+            newLine(NEWLINE_DECI_LINE_HEIGHT);
+        }
+        if ((currentPageDecilineHeight_ + ENDPARAGRAPH_DECI_LINE_HEIGHT) > maxDeciLines_) {
+            return false;
+        }
+        lines_[lineCount_].tokenCount = 1;
+        lines_[lineCount_].tokenIdx = tokensCount_ - 1;
+        newLine(ENDPARAGRAPH_DECI_LINE_HEIGHT);
+        break;
+
+    case TokenId::NOTOKEN:
+    case TokenId::PICTURE:
+        break;
     }
-    return (tokens_[tokenIdx].width * tokens_[tokenIdx].height);
+
+    return true;
 }
 
 // debugging method
