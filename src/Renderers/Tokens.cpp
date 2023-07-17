@@ -7,6 +7,11 @@ void Tokens::add(Token &token, const char *str, uint8_t strSize) {
             token.length = strSize;
         }
 
+        // ToDo: Remove the last test when the old Page computation algo is out
+        if ((token.width == 0) && (token.cStr != nullptr) && (token.cStr[0] != '\n')) {
+            display_.getTextSize(token.cStr, &token.width, &token.height);
+        }
+
         tokens_[tokensCount_++] = token;
         // if constexpr (RENDERER_DEBUG) {
         //     log_d("After: tokensCount_: %" PRIu16 ", cStrPoolCount_: %" PRIu16, tokensCount_,
@@ -83,39 +88,39 @@ void Tokens::setSpaceSize(Token &token) {
 // Returns the area of the token (width * height)
 // for use in calcuating how much space we need for a page.
 //
-auto Tokens::setGFXSpaceSize(Token &spaceToken, uint8_t nextChar) -> uint16_t {
+void Tokens::setGFXSpaceSize(Token &spaceToken, uint8_t nextChar) {
 
-    // With GFX Fonts, spaces are a mess. The width of them depends on the tokens before and
-    // after. Joy.
+    if (display_.getFont()->isA(FontType::GFX)) {
+        // With GFX Fonts, spaces are a mess. The width of them depends on the tokens before and
+        // after. Joy.
 
-    // Check bounds. Punt otherwise.
-    // Get the tokens before and nextChar that is after the space, then do the width
-    // of that whole thing and subtract out the two tokens. That's the
-    // real width of the rendered space.
-    if ((tokensCount_ > 0) && (getLast().tokenId == TokenId::TEXT)) {
-        Token &lastToken = getLast();
-        char temp[4];
-        const char *first = &lastToken.cStr[lastToken.length - 1];
-        temp[0] = first[0];
-        temp[1] = ' ';
-        temp[2] = nextChar;
-        temp[3] = 0;
+        // Check bounds. Punt otherwise.
+        // Get the tokens before and nextChar that is after the space, then do the width
+        // of that whole thing and subtract out the two tokens. That's the
+        // real width of the rendered space.
+        if ((tokensCount_ > 0) && (getLast().tokenId == TokenId::TEXT)) {
+            Token &lastToken = getLast();
+            char temp[4];
+            const char *first = &lastToken.cStr[lastToken.length - 1];
+            temp[0] = first[0];
+            temp[1] = ' ';
+            temp[2] = nextChar;
+            temp[3] = 0;
 
-        spaceToken.height = display_.getTextHeight(temp);
-        spaceToken.width = display_.getTextWidth(temp) - display_.getTextWidth(first) -
-                           display_.getTextWidth(&temp[2]);
-    } else {
-        setSpaceSize(spaceToken);
+            spaceToken.height = display_.getTextHeight(temp);
+            spaceToken.width = display_.getTextWidth(temp) - display_.getTextWidth(first) -
+                               display_.getTextWidth(&temp[2]);
+        } else {
+            setSpaceSize(spaceToken);
+        }
     }
-
-    return (spaceToken.width * spaceToken.height);
 }
 
 auto Tokens::addLastTokenToPage() -> bool {
     Token &token = getLast();
 
-    auto newLine = [this](uint16_t size) {
-        currentPageDecilineHeight_ += size;
+    auto newLine = [this](uint16_t height) {
+        currentPageDecilineHeight_ += height;
         lineCount_ += 1;
         currentLineWidth_ = 0;
         lines_[lineCount_].tokenCount = 0;
@@ -128,29 +133,48 @@ auto Tokens::addLastTokenToPage() -> bool {
     case TokenId::ENDASH:
     case TokenId::EMDASH:
     case TokenId::TAB:
-        if ((token.width + currentLineWidth_) > maxLineWidth_) {
+        if ((token.width + currentLineWidth_) >= maxLineWidth_) {
             if ((token.tokenId == TokenId::SPACE) || (token.tokenId == TokenId::TAB)) {
-                token.tokenId = TokenId::NOTOKEN;
+                // token.tokenId = TokenId::NOTOKEN;
+                // or
+                tokensCount_ -= 1;
             } else {
                 newLine(NEWLINE_DECI_LINE_HEIGHT);
-                if ((currentPageDecilineHeight_ + NEWLINE_DECI_LINE_HEIGHT) > maxDeciLines_) {
+                if ((currentPageDecilineHeight_ + NEWLINE_DECI_LINE_HEIGHT) >= maxDeciLines_) {
+                    nextPagePlace_ = token.streamPlace;
                     return false;
                 }
+                currentLineWidth_ += token.width;
+                lines_[lineCount_].tokenIdx = tokensCount_ - 1;
+                lines_[lineCount_].tokenCount += 1;
             }
+        } else if (lines_[lineCount_].tokenCount == 0) {
+            if (((token.tokenId != TokenId::SPACE) && (token.tokenId != TokenId::TAB)) ||
+                (tokensCount_ < 2) ||
+                ((getBeforeLast().tokenId == TokenId::NEWLINE) ||
+                 (getBeforeLast().tokenId == TokenId::ENDPARAGRAPH))) {
+                lines_[lineCount_].tokenIdx = tokensCount_ - 1;
+                lines_[lineCount_].tokenCount = 1;
+                currentLineWidth_ = token.width;
+            } else {
+                tokensCount_ -= 1;
+            }
+        } else {
+            currentLineWidth_ += token.width;
+            lines_[lineCount_].tokenCount += 1;
         }
 
-        if (lines_[lineCount_].tokenCount == 0) {
-            lines_[lineCount_].tokenIdx = tokensCount_ - 1;
+        if (token.tokenId == TokenId::TEXT) {
+            currentPageWordCount_ += 1;
         }
-        currentLineWidth_ += token.width;
-        lines_[lineCount_].tokenCount += 1;
         break;
 
     case TokenId::ENDOFFILE:
+        nextPagePlace_ = token.streamPlace;
         return false;
 
     case TokenId::NEWLINE:
-        token.tokenId = TokenId::NOTOKEN;
+        // token.tokenId = TokenId::NOTOKEN;
         if (lines_[lineCount_].tokenCount > 0) {
             newLine(NEWLINE_DECI_LINE_HEIGHT);
         }
@@ -160,7 +184,8 @@ auto Tokens::addLastTokenToPage() -> bool {
         if (lines_[lineCount_].tokenCount > 0) {
             newLine(NEWLINE_DECI_LINE_HEIGHT);
         }
-        if ((currentPageDecilineHeight_ + ENDPARAGRAPH_DECI_LINE_HEIGHT) > maxDeciLines_) {
+        if ((currentPageDecilineHeight_ + ENDPARAGRAPH_DECI_LINE_HEIGHT) >= maxDeciLines_) {
+            nextPagePlace_ = token.streamPlace;
             return false;
         }
         lines_[lineCount_].tokenCount = 1;
@@ -176,7 +201,7 @@ auto Tokens::addLastTokenToPage() -> bool {
     return true;
 }
 
-// debugging method
+// debugging methods
 void Tokens::print() const {
     if constexpr (RENDERER_DEBUG) {
         for (Idx i = 0; i < tokensCount_; i++) {
@@ -191,5 +216,23 @@ void Tokens::print() const {
                 log_d("Text Content: [%s]", currToken->cStr);
             }
         }
+    }
+}
+
+void Tokens::showPage() const {
+    if constexpr (RENDERER_DEBUG) {
+        for (int i = 0; i < lineCount_; i++) {
+            std::cout << i << ": ";
+            for (int j = lines_[i].tokenIdx; j < lines_[i].tokenIdx + lines_[i].tokenCount; j++) {
+                if ((tokens_[j].tokenId != TokenId::NOTOKEN) &&
+                    (tokens_[j].tokenId != TokenId::NEWLINE) &&
+                    (tokens_[j].tokenId != TokenId::ENDPARAGRAPH)) {
+                    std::cout << tokens_[j].cStr;
+                }
+            }
+            std::cout << std::endl;
+        }
+        std::cout << "Next Page Place: " << nextPagePlace_.str().c_str() << std::endl;
+        std::cout << "Page Word Count: " << currentPageWordCount_ << std::endl;
     }
 }

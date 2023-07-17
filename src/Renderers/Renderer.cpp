@@ -68,13 +68,13 @@ auto Renderer::getLineOfTextForRendering(Idx startTokenIdx, Line &line) -> Idx {
 
     line[lineIdx] = '\0';
 
-    if constexpr (RENDERER_DEBUG) {
-        log_d("Returning from tokenIdx %" PRIu16 " %s to %" PRIu16 " %s, width: %" PRIi16
-              " line: %s",
-              startTokenIdx, tokens_[startTokenIdx].streamPlace.str().c_str(),
-              static_cast<Idx>(tokenIdx - 1), tokens_[tokenIdx - 1].streamPlace.str().c_str(),
-              runningWidth, line.data());
-    }
+    // if constexpr (RENDERER_DEBUG) {
+    //     log_d("Returning from tokenIdx %" PRIu16 " %s to %" PRIu16 " %s, width: %" PRIi16
+    //           " line: %s",
+    //           startTokenIdx, tokens_[startTokenIdx].streamPlace.str().c_str(),
+    //           static_cast<Idx>(tokenIdx - 1), tokens_[tokenIdx - 1].streamPlace.str().c_str(),
+    //           runningWidth, line.data());
+    // }
 
     return tokenIdx;
 }
@@ -483,9 +483,9 @@ auto Renderer::loadCurrentPage() -> StreamPlace {
         }
 
         if (tokens_[tokenIdx].tokenId == TokenId::ENDPARAGRAPH) {
-            if constexpr (RENDERER_DEBUG) {
-                log_w("NEW PARAGRAPH on line %" PRIu16, pageLinesCount_);
-            }
+            // if constexpr (RENDERER_DEBUG) {
+            //     log_w("NEW PARAGRAPH on line %" PRIu16, pageLinesCount_);
+            // }
             nextTokenIdx = tokenIdx + 1;
             pageLines_[pageLinesCount_][0] = '\n';
             pageLines_[pageLinesCount_][1] = '\0';

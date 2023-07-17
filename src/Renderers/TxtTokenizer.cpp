@@ -20,9 +20,6 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bo
 
     Idx prevNewParagraphIdx = 0;
 
-    uint32_t textArea = 0;
-    uint32_t maxTextArea = static_cast<uint32_t>(display_.width()) * display_.height();
-
     tokens.clear();
     currentPageWordCount_ = 0;
 
@@ -41,10 +38,17 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bo
     uint8_t curChar = stream_->getNextByte();
     Idx streamRelativeOffset = 0;
 
+    bool pageCompleted = false;
+
     // Keep it DRY
-    auto checkSpace = [&tokens, &spaceToken]() -> void {
+    auto addToPage = [&pageCompleted, &backwards, &tokens]() {
+        pageCompleted = !backwards && !tokens.addLastTokenToPage();
+    };
+
+    auto checkSpace = [&tokens, &spaceToken, &pageCompleted, &backwards, &addToPage]() -> void {
         if (spaceToken.tokenId == TokenId::SPACE) {
             tokens.add(spaceToken, " ", 1);
+            addToPage();
             spaceToken.tokenId = TokenId::NOTOKEN;
         }
     };
@@ -56,9 +60,13 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bo
 
     spaceToken.tokenId = TokenId::NOTOKEN;
 
-    while ((curChar != 0) && !tokens.isFull() &&
-           ((backwards && (toPlace->offset > tokens.getLast().streamPlace.offset)) ||
-            (textArea < maxTextArea))) {
+    // if constexpr (RENDERER_DEBUG) {
+    //     log_d("First Character: %c (%02" PRIX8 "H)",
+    //           (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '), curChar);
+    // }
+
+    while ((!pageCompleted) && (curChar != 0) && (!tokens.isFull())) {
+
         newToken = {.cStr = nullptr,
                     .streamPlace = addOffset(fromPlace, streamRelativeOffset),
                     .prevNewParagraphTokenIdx = prevNewParagraphIdx,
@@ -68,7 +76,8 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bo
                     .tokenId = TokenId::ENDOFFILE};
 
         // if constexpr (RENDERER_DEBUG) {
-        //     log_d("Set the stream place to %" PRIu32, fromPlace + streamRelativeOffset);
+        //     log_d("Set the stream place to %s",
+        //           addOffset(fromPlace, streamRelativeOffset).str().c_str());
         //     log_d("Current Character: %c (%02" PRIX8 "H)",
         //           (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '), curChar);
         // }
@@ -76,104 +85,132 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bo
         switch (curChar) {
         case '\n':
             checkSpace();
-            // No two or more lines with only a \n are allowed.
-            if (!((tokens.getCount() > 0) && (tokens.getLast().tokenId == TokenId::ENDPARAGRAPH))) {
-                if ((tokens.getCount() == 0) || (tokens.getLast().tokenId == TokenId::NEWLINE)) {
-                    newToken.tokenId = TokenId::ENDPARAGRAPH;
-                    prevNewParagraphIdx = tokens.getCount();
-                } else {
-                    newToken.tokenId = TokenId::NEWLINE;
-                }
+            if (!pageCompleted) {
+                // No two or more lines with only a \n are allowed.
+                newToken.tokenId = TokenId::NEWLINE;
                 tokens.add(newToken, "\n", 1);
+                addToPage();
+                if (!pageCompleted) {
+                    nextByte();
+                    if (curChar == '\n') {
+                        prevNewParagraphIdx = tokens.getCount();
+                        newToken.tokenId = TokenId::ENDPARAGRAPH;
+                        tokens.add(newToken, "\n", 1);
+                        addToPage();
+                        nextByte();
+                        while (curChar == '\n') {
+                            nextByte();
+                        }
+                    }
+                }
+                // if (!((tokens.getCount() > 0) &&
+                //       (tokens.getLast().tokenId == TokenId::ENDPARAGRAPH))) {
+                //     if ((tokens.getCount() == 0) ||
+                //         (tokens.getLast().tokenId == TokenId::NEWLINE)) {
+                //         newToken.tokenId = TokenId::ENDPARAGRAPH;
+                //         prevNewParagraphIdx = tokens.getCount();
+                //     } else {
+                //         newToken.tokenId = TokenId::NEWLINE;
+                //     }
+                //     tokens.add(newToken, "\n", 1);
+                //     pageCompleted = !backwards && !tokens.addLastTokenToPage();
+                // }
+                // nextByte();
             }
-            nextByte();
             break;
 
         case ' ':
             checkSpace();
-            spaceToken = newToken;
-            spaceToken.tokenId = TokenId::SPACE;
-            tokens.setSpaceSize(spaceToken);
-            nextByte();
+            if (!pageCompleted) {
+                spaceToken = newToken;
+                spaceToken.tokenId = TokenId::SPACE;
+                tokens.setSpaceSize(spaceToken);
+                nextByte();
+            }
             break;
 
         case '\t':
             checkSpace();
-            newToken.tokenId = TokenId::TAB;
-            display_.getTextSize("\t", &newToken.width, &newToken.height);
-            tokens.add(newToken, "\t", 1);
-            nextByte();
+            if (!pageCompleted) {
+                newToken.tokenId = TokenId::TAB;
+                tokens.add(newToken, "\t", 1);
+                addToPage();
+                nextByte();
+            }
             break;
 
         case '-':
             checkSpace();
-            // Check to see if this is an endash or emdash case
-            if ((tokens.getCount() > 0) && (tokens.getLast().tokenId == TokenId::HYPHEN)) {
-                Token *token = &tokens.getLast();
-                token->tokenId = TokenId::ENDASH;
-                display_.getTextSize("--", &token->width, &token->height);
-                token->cStr = "--";
-                token->length = 2;
-                // Specifically don't increment the token buffer
-                // because the previous hyphen already did that
-            } else if ((tokens.getCount() > 0) && (tokens.getLast().tokenId == TokenId::ENDASH)) {
-                Token *token = &tokens.getLast();
-                token->tokenId = TokenId::EMDASH;
-                display_.getTextSize("---", &token->width, &token->height);
-                token->cStr = "---";
-                token->length = 3;
-                // Specifically don't increment the token buffer
-                // because the previous hyphen already did that
-            } else {
-                newToken.tokenId = TokenId::HYPHEN;
-                display_.getTextSize("-", &newToken.width, &newToken.height);
-                tokens.add(newToken, "-", 1);
+            if (!pageCompleted) {
+                nextByte();
+                if (curChar != '-') {
+                    newToken.tokenId = TokenId::HYPHEN;
+                    tokens.add(newToken, "-", 1);
+                } else {
+                    nextByte();
+                    if (curChar != '-') {
+                        newToken.tokenId = TokenId::ENDASH;
+                        tokens.add(newToken, "--", 2);
+                    } else {
+                        nextByte();
+                        newToken.tokenId = TokenId::EMDASH;
+                        tokens.add(newToken, "---", 3);
+                    }
+                }
+                addToPage();
             }
-            nextByte();
             break;
 
         // All other characters are considered part of a text token,
-        default: {
+        default:
             newToken.tokenId = TokenId::TEXT;
             uint16_t textCharCount = 0;
 
-            if (display_.getFont()->isA(FontType::GFX) && (spaceToken.tokenId == TokenId::SPACE)) {
+            if (spaceToken.tokenId == TokenId::SPACE) {
                 tokens.setGFXSpaceSize(spaceToken, curChar);
             }
+
             checkSpace();
 
-            do {
-                if ((curChar <= 0x7FU) || (curChar >= 0xC0U)) {
-                    textCharCount += 1;
-                }
-                if (!tokens.cStrIsFull()) {
-                    tokens.addByte(newToken, curChar);
-                } else {
-                    break;
-                }
-                nextByte();
-            } while ((curChar > ' ') && (curChar != '-') &&
-                     ((textCharCount < maxTextTokenCharSize_) || (curChar >= 0x80U)));
-            // The last test of the while above is to get a complete UTF8 multi-bytes character if
-            // the maximum word size is reached
+            if (!pageCompleted) {
+                do {
+                    if ((curChar <= 0x7FU) || (curChar >= 0xC0U)) {
+                        textCharCount += 1;
+                    }
+                    if (!tokens.cStrIsFull()) {
+                        tokens.addByte(newToken, curChar);
+                    } else {
+                        break;
+                    }
+                    nextByte();
+                } while ((curChar > ' ') && (curChar != '-') &&
+                         ((textCharCount < maxTextTokenCharSize_) || (curChar >= 0x80U)));
+                // The last test of the while above is to get a complete UTF8 multi-bytes character
+                // if the maximum word size is reached
 
-            if (!tokens.cStrIsFull()) {
-                display_.getTextSize(newToken.cStr, &newToken.width, &newToken.height);
+                tokens.add(newToken);
+                addToPage();
             }
-            tokens.add(newToken);
-
             break;
         }
+
+        if (backwards && !tokens.isEmpty() &&
+            (tokens.getLast().streamPlace.offset > toPlace->offset)) {
+            break;
         }
     }
 
-    if (tokens.cStrIsFull()) {
-        // There is a potential that the last token is not complete (e.g. a TEXT or ENDASH or
-        // EMDASH), so forget it
-        tokens.forgetLastToken();
+    if (!pageCompleted) {
+        if (tokens.cStrIsFull()) {
+            // There is a potential that the last token is not complete (e.g. a TEXT or ENDASH or
+            // EMDASH), so forget it
+            tokens.forgetLastToken();
+        }
+
+        checkSpace();
     }
 
-    checkSpace();
+    tokens.showPage();
 
     Token eofToken = {.cStr = nullptr,
                       .streamPlace = addOffset(fromPlace, streamRelativeOffset),
@@ -186,15 +223,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bo
     tokens.add(eofToken);
 
     if constexpr (RENDERER_DEBUG) {
-        log_d("Finished tokenizing with running text area %" PRIu32 " and max area %" PRIu32
-              ", and streamPlace in file is %s",
-              textArea, maxTextArea, tokens.getLast().streamPlace.str().c_str());
-        log_d("Computed Word Count: %" PRIu32, currentPageWordCount_);
-    }
-
-    // printOutTokens(); // Debugging - use only when required
-
-    if constexpr (RENDERER_DEBUG) {
+        log_d("Computed Word Count: %" PRIu32, tokens.getCurrentPageWordCount());
         log_d("Tokens Count: %" PRIu16, tokens.getCount());
     }
 

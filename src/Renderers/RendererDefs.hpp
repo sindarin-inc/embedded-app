@@ -11,7 +11,7 @@
 namespace renderer_defs {
 
 // For deep logging when changing this file
-static constexpr bool RENDERER_DEBUG = false;
+static constexpr bool RENDERER_DEBUG = true;
 static constexpr bool ON_ERROR_EXIT = true;
 
 // Used by the Tokenizer::getFileLocation() method in case of error
@@ -124,6 +124,6 @@ using PageLines = std::array<Line, MAX_LINES_PER_PAGE>;
 // used to find the first line in the back page command context
 using ParaLineIdxs = std::array<Idx, MAX_PARAGRAPH_LINES>;
 
-using Lines = std::array<LineStruct, MAX_LINE_PER_PAGE>;
+using Lines = std::array<LineStruct, MAX_LINES_PER_PAGE>;
 
 } // namespace renderer_defs
