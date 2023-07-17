@@ -80,6 +80,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // If prefs_.sortCriteria isn't select, sort the readables by last update and store them
     if (!prefs_.sortCriteria.get().has_value()) {
         log_i("No sort order chosen, sorting by last update and saving readables");
+        prefs_.sortCriteria.set(SortCriteria::DateModified);
+        prefs_.sortDirection.set(SortDirection::Descending);
         localStore.saveReadables(readables);
         localStore.saveReadables(articles);
     } else if (static_cast<SortCriteria::Type>(this->prefs_.sortCriteria.get().value_or(0)) ==
