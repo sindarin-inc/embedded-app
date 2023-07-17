@@ -77,9 +77,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto &readables = localStore.books();
     auto &articles = localStore.articles();
 
-    // Dynamically sort readables by last read time
-    if (static_cast<SortCriteria::Type>(this->prefs_.sortCriteria.get().value_or(0)) ==
-        SortCriteria::LastRead) {
+    // If prefs_.sortCriteria isn't select, sort the readables by last update and store them
+    if (!prefs_.sortCriteria.get().has_value()) {
+        log_i("No sort order chosen, sorting by last update and saving readables");
+        localStore.saveReadables(readables);
+        localStore.saveReadables(articles);
+    } else if (static_cast<SortCriteria::Type>(this->prefs_.sortCriteria.get().value_or(0)) ==
+               SortCriteria::LastRead) {
+        // Dynamically sort readables by last read time
+        log_i("Dynamically sorting readables by last read time");
         localStore.sortReadables(readables);
         localStore.sortReadables(articles);
     }
