@@ -15,8 +15,8 @@
 // Returns the computed streamPlace where the page start really.
 //
 // IMPORTANT: The getFileLocation() method must be called only through this method.
-auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bool backwards,
-                                        StreamPlace *toPlace) -> StreamPlace {
+auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pager &pager,
+                                        bool backwards, StreamPlace *toPlace) -> StreamPlace {
     return fromPlace;
 }
 

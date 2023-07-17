@@ -1,14 +1,13 @@
 #pragma once
 
 #include "Tokenizer.hpp"
-#include "Tokens.hpp"
 
 class NullTokenizer : public Tokenizer {
 
 public:
     NullTokenizer(DisplaySystem &display) : Tokenizer(display) {}
 
-    [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens,
+    [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pager &pager,
                                            bool backwards = false, StreamPlace *toPlace = nullptr)
         -> StreamPlace override {
         error();

@@ -15,13 +15,13 @@
 // Returns the computed streamPlace where the page start really.
 //
 // IMPORTANT: The getFileLocation() method must be called only through this method.
-auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bool backwards,
-                                       StreamPlace *toPlace) -> StreamPlace {
+auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pager &pager,
+                                       bool backwards, StreamPlace *toPlace) -> StreamPlace {
 
     Idx prevNewParagraphIdx = 0;
 
     tokens.clear();
-    currentPageWordCount_ = 0;
+    pager.clear();
 
     Token newToken;
     Token spaceToken;
@@ -41,8 +41,8 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bo
     bool pageCompleted = false;
 
     // Keep it DRY
-    auto addToPage = [&pageCompleted, &backwards, &tokens]() {
-        pageCompleted = !backwards && !tokens.addLastTokenToPage();
+    auto addToPage = [&pageCompleted, &backwards, &pager]() {
+        pageCompleted = !backwards && !pager.addLastTokenToPage();
     };
 
     auto checkSpace = [&tokens, &spaceToken, &pageCompleted, &backwards, &addToPage]() -> void {
@@ -103,19 +103,6 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bo
                         }
                     }
                 }
-                // if (!((tokens.getCount() > 0) &&
-                //       (tokens.getLast().tokenId == TokenId::ENDPARAGRAPH))) {
-                //     if ((tokens.getCount() == 0) ||
-                //         (tokens.getLast().tokenId == TokenId::NEWLINE)) {
-                //         newToken.tokenId = TokenId::ENDPARAGRAPH;
-                //         prevNewParagraphIdx = tokens.getCount();
-                //     } else {
-                //         newToken.tokenId = TokenId::NEWLINE;
-                //     }
-                //     tokens.add(newToken, "\n", 1);
-                //     pageCompleted = !backwards && !tokens.addLastTokenToPage();
-                // }
-                // nextByte();
             }
             break;
 
@@ -204,13 +191,13 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bo
         if (tokens.cStrIsFull()) {
             // There is a potential that the last token is not complete (e.g. a TEXT or ENDASH or
             // EMDASH), so forget it
-            tokens.forgetLastToken();
+            tokens.forgetLast();
         }
 
         checkSpace();
     }
 
-    tokens.showPage();
+    pager.show();
 
     Token eofToken = {.cStr = nullptr,
                       .streamPlace = addOffset(fromPlace, streamRelativeOffset),
@@ -223,7 +210,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bo
     tokens.add(eofToken);
 
     if constexpr (RENDERER_DEBUG) {
-        log_d("Computed Word Count: %" PRIu32, tokens.getCurrentPageWordCount());
+        log_d("Computed Word Count: %" PRIu32, pager.getWordCount());
         log_d("Tokens Count: %" PRIu16, tokens.getCount());
     }
 

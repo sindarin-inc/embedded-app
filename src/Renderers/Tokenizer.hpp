@@ -3,6 +3,7 @@
 #include <array>
 #include <cinttypes>
 
+#include "Pager.hpp"
 #include "RendererDefs.hpp"
 #include "RendererStream.hpp"
 #include "Tokens.hpp"
@@ -16,10 +17,10 @@ public:
     [[nodiscard]] static auto factory(std::shared_ptr<RendererStream> stream,
                                       DisplaySystem &display) -> std::shared_ptr<Tokenizer>;
 
-    virtual auto loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, bool backwards = false,
-                                     StreamPlace *toPlace = nullptr) -> StreamPlace = 0;
+    virtual auto loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pager &pager,
+                                     bool backwards = false, StreamPlace *toPlace = nullptr)
+        -> StreamPlace = 0;
 
-    [[nodiscard]] auto getCurrentPageWordCount() const -> uint32_t { return currentPageWordCount_; }
     [[nodiscard]] auto isA(StreamType streamType) const -> bool { return stream_->isA(streamType); }
 
     void computeMaxTextTokenCharSize() {
@@ -64,8 +65,6 @@ public:
 protected:
     DisplaySystem &display_;
     std::shared_ptr<RendererStream> stream_;
-
-    uint32_t currentPageWordCount_{0};
 
     // Computed TEXT Token character size that will fit on a line depending
     // on the current font size and line width

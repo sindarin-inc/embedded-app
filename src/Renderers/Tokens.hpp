@@ -19,16 +19,6 @@ private:
     uint16_t spaceWidth_{0};
     uint16_t spaceHeight_{0};
 
-    // Page related values
-    uint32_t currentPageWordCount_{0};
-    uint16_t currentPageDecilineHeight_{0};
-    uint16_t currentLineWidth_{0};
-    uint8_t lineCount_{0};
-    Lines lines_{};
-    uint16_t maxDeciLines_{0};
-    uint16_t maxLineWidth_{0};
-    StreamPlace nextPagePlace_;
-
 public:
     Tokens(DisplaySystem &display) : display_(display) {}
     [[nodiscard]] inline auto operator[](renderer_defs::Idx idx) const -> const Token & {
@@ -47,6 +37,19 @@ public:
         }
         return tokens_[tokensCount_ - 1];
     }
+
+    [[nodiscard]] inline auto getLastIdx() const -> Idx {
+        if constexpr (RENDERER_DEBUG) {
+            if ((tokensCount_ == 0) || (tokensCount_ > MAX_TOKEN_COUNT)) {
+                log_e("Invalid tokensCount_ value: %" PRIu16, tokensCount_);
+                if constexpr (ON_ERROR_EXIT) {
+                    exit(1);
+                }
+            }
+        }
+        return tokensCount_ - 1;
+    }
+
     [[nodiscard]] inline auto getBeforeLast() -> Token & {
         if constexpr (RENDERER_DEBUG) {
             if ((tokensCount_ < 2) || (tokensCount_ > MAX_TOKEN_COUNT)) {
@@ -59,13 +62,15 @@ public:
         return tokens_[tokensCount_ - 2];
     }
 
-    // Switch to 1/10 of a line as this gives us more flexibilty in rendering
-    // precision between lines.
-    [[nodiscard]] auto getMaxDeciLines() -> int16_t {
-        return (display_.height() * NEWLINE_DECI_LINE_HEIGHT) / (this->display_.getTextHeight());
-    }
-
-    inline void forgetLastToken() {
+    inline void forgetLast() {
+        if constexpr (RENDERER_DEBUG) {
+            if (tokensCount_ == 0) {
+                log_e("Invalid tokensCount_ value: %" PRIu16, tokensCount_);
+                if constexpr (ON_ERROR_EXIT) {
+                    exit(1);
+                }
+            }
+        }
         if (tokensCount_ > 0) {
             tokensCount_ -= 1;
         }
@@ -93,23 +98,7 @@ public:
     inline void clear() {
         tokensCount_ = 0;
         cStrPoolCount_ = 0;
-
-        currentPageWordCount_ = 0;
-        lineCount_ = 0;
-        currentLineWidth_ = 0;
-        currentPageDecilineHeight_ = 0;
-        maxDeciLines_ = getMaxDeciLines();
-        maxLineWidth_ = (display_.width() - 4);
-        lines_[0].tokenCount = 0;
     }
 
-    // Returns false if the last token is not part of the
-    // page. The token will be the first to appear on next
-    // page.
-    [[nodiscard]] auto addLastTokenToPage() -> bool;
-
-    [[nodiscard]] auto getCurrentPageWordCount() const -> uint32_t { return currentPageWordCount_; }
-
-    void print() const;
-    void showPage() const;
+    void show() const;
 };

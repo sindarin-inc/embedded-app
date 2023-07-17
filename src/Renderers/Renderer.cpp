@@ -115,9 +115,6 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
         }
         if (pageLines_[j][0] == '\n') {
             newLineAdjust++;
-            if constexpr (RENDERER_DEBUG) {
-                log_w("NewLineAdjust for line %" PRIu16, j);
-            }
         } else {
             // Only draw the lines if it's not skipped from the caller.
             if (j >= numSkipLines) {
@@ -134,6 +131,7 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
 
     if constexpr (RENDERER_DEBUG) {
         log_w("Returning next page place to be %s", nextPlace_.str().c_str());
+        pager_.compareWith(pageLines_, pageLinesCount_);
     }
     return tokenizer_->toPlace(nextPlace_);
 }
@@ -283,8 +281,8 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
     // Step 2: Once the data is read into the buffer, tokenize it the same as you
     // would for a forwards render. seekPlace will be returned to be at a UTF8 character
     // boundary
-    seekPlace = tokenizer_->loadAndTokenizePage(seekPlace, tokens_,
-                                                true, &fromPlace); // NOLINT(clang-analyzer-deadcode.DeadStores)
+    seekPlace = tokenizer_->loadAndTokenizePage(
+        seekPlace, tokens_, pager_, true, &fromPlace); // NOLINT(clang-analyzer-deadcode.DeadStores)
 
     // Step 3: Find the place in the token buffer where the passed in place in file
     // is represented.
@@ -427,7 +425,7 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
     // we could probably avoid this rework by introducing an extra token buffer if we wanted to.
     // log_d("loadAndTokenizePage called: need to retokenize");
 
-    static_cast<void>(tokenizer_->loadAndTokenizePage(fromPlace, tokens_));
+    static_cast<void>(tokenizer_->loadAndTokenizePage(fromPlace, tokens_, pager_));
 
     if constexpr (RENDERER_DEBUG) {
         log_w("Returning the following place! %s", returnPlace.str().c_str());
@@ -462,7 +460,7 @@ auto Renderer::loadCurrentPage() -> StreamPlace {
 
     // Debugging stuff
     // log_d("loadAndTokenizePage called: debugging stuff");
-    currentPlace_ = tokenizer_->loadAndTokenizePage(currentPlace_, tokens_);
+    currentPlace_ = tokenizer_->loadAndTokenizePage(currentPlace_, tokens_, pager_);
 
     Idx nextTokenIdx = 0;
     Idx tokenIdx = 0;

@@ -116,93 +116,8 @@ void Tokens::setGFXSpaceSize(Token &spaceToken, uint8_t nextChar) {
     }
 }
 
-auto Tokens::addLastTokenToPage() -> bool {
-    Token &token = getLast();
-
-    auto newLine = [this](uint16_t height) {
-        currentPageDecilineHeight_ += height;
-        lineCount_ += 1;
-        currentLineWidth_ = 0;
-        lines_[lineCount_].tokenCount = 0;
-    };
-
-    switch (token.tokenId) {
-    case TokenId::TEXT:
-    case TokenId::SPACE:
-    case TokenId::HYPHEN:
-    case TokenId::ENDASH:
-    case TokenId::EMDASH:
-    case TokenId::TAB:
-        if ((token.width + currentLineWidth_) >= maxLineWidth_) {
-            if ((token.tokenId == TokenId::SPACE) || (token.tokenId == TokenId::TAB)) {
-                // token.tokenId = TokenId::NOTOKEN;
-                // or
-                tokensCount_ -= 1;
-            } else {
-                newLine(NEWLINE_DECI_LINE_HEIGHT);
-                if ((currentPageDecilineHeight_ + NEWLINE_DECI_LINE_HEIGHT) >= maxDeciLines_) {
-                    nextPagePlace_ = token.streamPlace;
-                    return false;
-                }
-                currentLineWidth_ += token.width;
-                lines_[lineCount_].tokenIdx = tokensCount_ - 1;
-                lines_[lineCount_].tokenCount += 1;
-            }
-        } else if (lines_[lineCount_].tokenCount == 0) {
-            if (((token.tokenId != TokenId::SPACE) && (token.tokenId != TokenId::TAB)) ||
-                (tokensCount_ < 2) ||
-                ((getBeforeLast().tokenId == TokenId::NEWLINE) ||
-                 (getBeforeLast().tokenId == TokenId::ENDPARAGRAPH))) {
-                lines_[lineCount_].tokenIdx = tokensCount_ - 1;
-                lines_[lineCount_].tokenCount = 1;
-                currentLineWidth_ = token.width;
-            } else {
-                tokensCount_ -= 1;
-            }
-        } else {
-            currentLineWidth_ += token.width;
-            lines_[lineCount_].tokenCount += 1;
-        }
-
-        if (token.tokenId == TokenId::TEXT) {
-            currentPageWordCount_ += 1;
-        }
-        break;
-
-    case TokenId::ENDOFFILE:
-        nextPagePlace_ = token.streamPlace;
-        return false;
-
-    case TokenId::NEWLINE:
-        // token.tokenId = TokenId::NOTOKEN;
-        if (lines_[lineCount_].tokenCount > 0) {
-            newLine(NEWLINE_DECI_LINE_HEIGHT);
-        }
-        break;
-
-    case TokenId::ENDPARAGRAPH:
-        if (lines_[lineCount_].tokenCount > 0) {
-            newLine(NEWLINE_DECI_LINE_HEIGHT);
-        }
-        if ((currentPageDecilineHeight_ + ENDPARAGRAPH_DECI_LINE_HEIGHT) >= maxDeciLines_) {
-            nextPagePlace_ = token.streamPlace;
-            return false;
-        }
-        lines_[lineCount_].tokenCount = 1;
-        lines_[lineCount_].tokenIdx = tokensCount_ - 1;
-        newLine(ENDPARAGRAPH_DECI_LINE_HEIGHT);
-        break;
-
-    case TokenId::NOTOKEN:
-    case TokenId::PICTURE:
-        break;
-    }
-
-    return true;
-}
-
 // debugging methods
-void Tokens::print() const {
+void Tokens::show() const {
     if constexpr (RENDERER_DEBUG) {
         for (Idx i = 0; i < tokensCount_; i++) {
             auto currToken = &tokens_[i];
@@ -216,23 +131,5 @@ void Tokens::print() const {
                 log_d("Text Content: [%s]", currToken->cStr);
             }
         }
-    }
-}
-
-void Tokens::showPage() const {
-    if constexpr (RENDERER_DEBUG) {
-        for (int i = 0; i < lineCount_; i++) {
-            std::cout << i << ": ";
-            for (int j = lines_[i].tokenIdx; j < lines_[i].tokenIdx + lines_[i].tokenCount; j++) {
-                if ((tokens_[j].tokenId != TokenId::NOTOKEN) &&
-                    (tokens_[j].tokenId != TokenId::NEWLINE) &&
-                    (tokens_[j].tokenId != TokenId::ENDPARAGRAPH)) {
-                    std::cout << tokens_[j].cStr;
-                }
-            }
-            std::cout << std::endl;
-        }
-        std::cout << "Next Page Place: " << nextPagePlace_.str().c_str() << std::endl;
-        std::cout << "Page Word Count: " << currentPageWordCount_ << std::endl;
     }
 }

@@ -1,8 +1,9 @@
 #pragma once
 
+#include "NullTokenizer.hpp"
+#include "Pager.hpp"
 #include "RendererDefs.hpp"
 #include "Tokenizer.hpp"
-#include "NullTokenizer.hpp"
 #include "Tokens.hpp"
 
 using namespace renderer_defs;
@@ -16,7 +17,8 @@ using namespace renderer_defs;
 class Renderer {
 
 public:
-    Renderer(DisplaySystem &display) : display_(display), tokens_(display) {
+    Renderer(DisplaySystem &display)
+        : display_(display), tokens_(display), pager_(tokens_, display) {
         // log_w("constructor...");
         tokenizer_ = std::make_shared<NullTokenizer>(display);
     }
@@ -24,7 +26,6 @@ public:
     auto setStream(std::shared_ptr<RendererStream> stream) -> void {
         // log_w("setStream...");
         tokenizer_ = Tokenizer::factory(stream, display_);
-
     }
     auto setCurrentPlace(Place newPlace) -> void {
         // log_w("setCurrentPlace...");
@@ -64,13 +65,13 @@ public:
     [[nodiscard]] inline auto getNumRenderedLines() const -> uint16_t { return pageLinesCount_; }
 
     [[nodiscard]] inline auto getCurrentPageWordCount() const -> uint32_t {
-        return (tokenizer_ == nullptr) ? 0 : tokenizer_->getCurrentPageWordCount();
+        return pager_.getWordCount();
     }
 
 private:
     DisplaySystem &display_;
-
     Tokens tokens_;
+    Pager pager_;
     std::shared_ptr<Tokenizer> tokenizer_{nullptr};
 
     StreamPlace currentPlace_{};
