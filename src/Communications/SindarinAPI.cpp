@@ -181,24 +181,62 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
 
     return success;
 }
+auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &localPath,
+                                      FileSystem &fileSystem) -> int {
+    // Create the multipart form data file.
+    MultiPartData mpData(fileSystem, localPath);
 
-auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &contentType,
-                                      const std::string &localPath) -> int {
-    HttpClient client(SINDARIN_SERVER_URL "/telemetry/", contentType.c_str(), HTTP_METHOD_POST);
+    if (!mpData.startFile("file")) {
+        log_e("failed to open telemetry file %s", localPath.c_str());
+        return -1;
+    }
+
+    // Write the telemetry file to the multipart form data file.
+    size_t bufferSize = 4096;
+    auto buffer = SpiRamArrayPtr<char>(bufferSize);
+
+    int bytesWritten = 0;
+    int writeSize = telemetryFile.size();
+    while (bytesWritten < writeSize) {
+        auto bytesRead = telemetryFile.readBytes(buffer.get(), bufferSize);
+        if (!mpData.writeFileChunk((uint8_t *)buffer.get(), bytesRead)) {
+            log_e("failed to write address %d to telemetry file", bytesWritten);
+            return -1;
+        }
+        bytesWritten += bytesRead;
+    }
+
+    if (!mpData.endFile()) {
+        return -1;
+    }
+
+    // Add any additional fields you need here.
+    // For example, you might add a "serial_number" field like this:
+    // if (!mpData.addKeyValue("serial_number", GetSerialNumber())) {
+    //     return -1;
+    // }
+
+    if (!mpData.endMultiPartData()) {
+        return -1;
+    }
+
+    // Now, upload the multipart form data file to the server.
+    HttpClient client(SINDARIN_SERVER_URL "/telemetry/", mpData.getContentType().c_str(),
+                      HTTP_METHOD_POST);
     setAuth(client);
 
     // Set Serial Number header
     client.setHeader("X-Serial-Number", GetSerialNumber().c_str());
 
-    int writeSize = telemetryFile.size();
-    client.open(writeSize);
+    client.open(mpData.getFile().size());
 
-    size_t bufferSize = 4096;
-    auto buffer = SpiRamArrayPtr<char>(bufferSize);
+    bufferSize = 4096;
+    buffer = SpiRamArrayPtr<char>(bufferSize);
 
-    int bytesWritten = 0;
+    bytesWritten = 0;
+    writeSize = mpData.getFile().size();
     while (bytesWritten < writeSize) {
-        auto bytesRead = telemetryFile.readBytes(buffer.get(), bufferSize);
+        auto bytesRead = mpData.getFile().readBytes(buffer.get(), bufferSize);
         bytesWritten += client.write(buffer.get(), bytesRead);
     }
 

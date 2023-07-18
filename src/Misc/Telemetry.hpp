@@ -62,7 +62,7 @@ protected:
 private:
     template <typename T>
     void
-    logMetricImpl(TelemetryField field, const std::string key, std::optional<T> value,
+    logMetricImpl(TelemetryField field, const std::string &key, std::optional<T> value,
                   std::map<std::string, std::variant<int, uint32_t, float, std::string>> &data) {
         // create log directory in filesystem if it doesn't exist
         if (!fileSystem_.createDir("/metrics")) {
@@ -84,11 +84,11 @@ private:
         std::string valueFormat = "";
         if (value.has_value()) {
             if constexpr (std::is_same<T, float>::value) {
-                valueFormat = StringFormat(R"(,"k":%.2f)", *value);
+                valueFormat = StringFormat(R"(,"v":%.2f)", *value);
             } else if constexpr (std::is_same<T, uint32_t>::value || std::is_same<T, int>::value) {
-                valueFormat = StringFormat(R"(,"k":%u)", *value);
+                valueFormat = StringFormat(R"(,"v":%u)", *value);
             } else {
-                valueFormat = StringFormat(R"(,"k":"%s")", (*value).c_str());
+                valueFormat = StringFormat(R"(,"v":"%s")", (*value).c_str());
             }
         }
 
