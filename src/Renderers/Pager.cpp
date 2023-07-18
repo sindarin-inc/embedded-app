@@ -8,6 +8,7 @@ auto Pager::addLastTokenToPage() -> bool {
         lineCount_ += 1;
         currentLineWidth_ = 0;
         lines_[lineCount_].tokenCount = 0;
+        lines_[lineCount_].length = 0;
     };
 
     switch (token.tokenId) {
@@ -33,6 +34,7 @@ auto Pager::addLastTokenToPage() -> bool {
                 currentLineWidth_ += token.width;
                 lines_[lineCount_].tokenIdx = tokens_.getLastIdx();
                 lines_[lineCount_].tokenCount += 1;
+                lines_[lineCount_].length += token.length;
             }
         } else if (lines_[lineCount_].tokenCount == 0) {
             if (((token.tokenId != TokenId::SPACE) && (token.tokenId != TokenId::TAB)) ||
@@ -49,6 +51,7 @@ auto Pager::addLastTokenToPage() -> bool {
                 }
                 lines_[lineCount_].tokenIdx = tokens_.getLastIdx();
                 lines_[lineCount_].tokenCount = 1;
+                lines_[lineCount_].length += token.length;
                 currentLineWidth_ = token.width;
             } else {
                 tokens_.forgetLast();
@@ -56,6 +59,7 @@ auto Pager::addLastTokenToPage() -> bool {
         } else {
             currentLineWidth_ += token.width;
             lines_[lineCount_].tokenCount += 1;
+            lines_[lineCount_].length += token.length;
         }
 
         if (token.tokenId == TokenId::TEXT) {
@@ -105,6 +109,33 @@ void Pager::getLine(Idx lineNbr, Line &line) const {
         if ((tokens_[j].tokenId != TokenId::NOTOKEN) && (tokens_[j].tokenId != TokenId::NEWLINE) &&
             (tokens_[j].tokenId != TokenId::ENDPARAGRAPH)) {
             strcat(line.data(), tokens_[j].cStr);
+        }
+    }
+}
+
+void Pager::displayPage(int16_t numSkipLines) const {
+    uint16_t paraLineAdjust = 0;
+
+    for (Idx i = 0; i < lineCount_; i++) {
+
+        if (tokens_[lines_[i].tokenIdx].tokenId == TokenId::ENDPARAGRAPH) {
+            paraLineAdjust++;
+        } else {
+            // Only draw the lines if it's not skipped from the caller.
+            if (i >= numSkipLines) {
+                Line line;
+                getLine(i, line);
+                if constexpr (RENDERER_DEBUG) {
+                    log_d("%s", line.data());
+                }
+                display_.drawSingleLineOfText(
+                    line.data(), 0,
+                    i * (display_.getTextHeight()) -
+                        display_.getTextHeight() *
+                            ((NEWLINE_DECI_LINE_HEIGHT - ENDPARAGRAPH_DECI_LINE_HEIGHT) *
+                             paraLineAdjust) /
+                            NEWLINE_DECI_LINE_HEIGHT);
+            }
         }
     }
 }

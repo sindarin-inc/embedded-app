@@ -10,7 +10,7 @@ private:
     Tokens &tokens_;
     DisplaySystem &display_;
 
-    uint32_t wordCount_{0};
+    uint16_t wordCount_{0};
     uint16_t currentPageDecilineHeight_{0};
     uint16_t currentLineWidth_{0};
     uint8_t lineCount_{0};
@@ -46,9 +46,14 @@ public:
     // The token will be the first to appear on next page.
     [[nodiscard]] auto addLastTokenToPage() -> bool;
 
-    [[nodiscard]] auto getWordCount() const -> uint32_t { return wordCount_; }
+    [[nodiscard]] inline auto getWordCount() const -> uint16_t { return wordCount_; }
+    [[nodiscard]] inline auto getLineCount() const -> uint16_t { return lineCount_; }
+    [[nodiscard]] inline auto getLineLength(Idx lineIdx) const -> uint16_t { return lines_[lineIdx].length; }
+    [[nodiscard]] inline auto getNextPageStreamPlace() const -> StreamPlace { return nextPagePlace_; }
 
     void getLine(Idx lineNbr, Line &line) const;
+
+    void displayPage(int16_t numSkipLines) const;
 
     void compareWith(PageLines &pageLines, uint16_t lineCount) const;
     void show() const;

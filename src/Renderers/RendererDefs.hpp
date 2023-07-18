@@ -11,7 +11,7 @@
 namespace renderer_defs {
 
 // For deep logging when changing this file
-static constexpr bool RENDERER_DEBUG = true;
+static constexpr bool RENDERER_DEBUG = false;
 static constexpr bool ON_ERROR_EXIT = true;
 
 // Used by the Tokenizer::getFileLocation() method in case of error
@@ -112,6 +112,7 @@ struct Token {
 struct LineStruct {
     Idx tokenIdx;
     uint16_t tokenCount;
+    uint16_t length; // String length
 };
 
 using TokensArray = std::array<Token, MAX_TOKEN_COUNT>;

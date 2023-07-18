@@ -62,9 +62,9 @@ public:
         return pageLinesLengths_[lineIdx];
     }
 
-    [[nodiscard]] inline auto getNumRenderedLines() const -> uint16_t { return pageLinesCount_; }
+    [[nodiscard]] inline auto getNumRenderedLines() const -> uint16_t { return pager_.getLineCount(); }
 
-    [[nodiscard]] inline auto getCurrentPageWordCount() const -> uint32_t {
+    [[nodiscard]] inline auto getCurrentPageWordCount() const -> uint16_t {
         return pager_.getWordCount();
     }
 
@@ -78,15 +78,9 @@ private:
     StreamPlace previousPlace_{};
     StreamPlace nextPlace_{};
 
-    PageLines pageLines_{};
+    // PageLines pageLines_{};
     uint16_t pageLinesLengths_[MAX_LINES_PER_PAGE] = {0};
     uint16_t pageLinesCount_ = 0;
-
-    // Switch to 1/10 of a line as this gives us more flexibilty in rendering
-    // precision between lines.
-    auto getMaxDeciLines() -> int16_t {
-        return (display_.height() * NEWLINE_DECI_LINE_HEIGHT) / (this->display_.getTextHeight());
-    }
 
     // The following are used to support the back page command algorithm:
     // they will keep tokenIdx pointers at the last lines that are part of
@@ -95,10 +89,7 @@ private:
     renderer_defs::Idx paraLineFirstIdx_;
     renderer_defs::Idx paraLineLastIdx_;
 
-    // This should be called by subclasses after content is loaded
-    void loaded() { nextPlace_ = loadCurrentPage(); };
-
-    auto loadCurrentPage() -> StreamPlace;
+    // auto loadCurrentPage() -> StreamPlace;
     auto getParagraphDeciLinesCount(renderer_defs::Idx startTokenIdx,
                                     renderer_defs::Idx endTokenIdx) -> uint16_t;
     [[nodiscard]] auto getFirstLineOfPageTokenIdx(renderer_defs::Idx lastTokenIdx,

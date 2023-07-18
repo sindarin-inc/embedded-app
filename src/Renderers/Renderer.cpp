@@ -96,42 +96,14 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
     tokenizer_->computeMaxTextTokenCharSize();
 
     PROFILE_START(loadCurrentPage);
-    nextPlace_ = loadCurrentPage();
+    currentPlace_ = tokenizer_->loadAndTokenizePage(currentPlace_, tokens_, pager_);
+    nextPlace_ = pager_.getNextPageStreamPlace();
     PROFILE_END_LOG_MS(loadCurrentPage);
 
-    int16_t newLineAdjust = 0;
-
-    // A first attempt to get the the text to look better with newlines as sole
-    // characters on the line with a smaller height than a full line.
-    // The logic is that we split each line into 10 "decilines" and then
-    // assign a height to each line based on if it's a newline or not. Newlines
-    // get ENDPARAGRAPH_DECI_LINE_HEIGHT decilines (currently set to 4 out of 10).
-    // The y position calucalted is based on the number of newlines we've seen so far
-    // in this page.
-
-    for (Idx j = 0; j < pageLinesCount_; j++) {
-        if constexpr (RENDERER_DEBUG) {
-            log_d("%s", pageLines_[j].data());
-        }
-        if (pageLines_[j][0] == '\n') {
-            newLineAdjust++;
-        } else {
-            // Only draw the lines if it's not skipped from the caller.
-            if (j >= numSkipLines) {
-                display_.drawSingleLineOfText(
-                    pageLines_[j].data(), 0,
-                    j * (display_.getTextHeight()) -
-                        display_.getTextHeight() *
-                            ((NEWLINE_DECI_LINE_HEIGHT - ENDPARAGRAPH_DECI_LINE_HEIGHT) *
-                             newLineAdjust) /
-                            NEWLINE_DECI_LINE_HEIGHT);
-            }
-        }
-    }
+    pager_.displayPage(numSkipLines);
 
     if constexpr (RENDERER_DEBUG) {
         log_w("Returning next page place to be %s", nextPlace_.str().c_str());
-        pager_.compareWith(pageLines_, pageLinesCount_);
     }
     return tokenizer_->toPlace(nextPlace_);
 }
@@ -361,7 +333,7 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
     // cover the page size.
     int16_t deciLinesCount = 0;
 
-    int16_t maxDeciLines = getMaxDeciLines();
+    int16_t maxDeciLines = pager_.getMaxDeciLines();
 
     uint16_t lastDeciLinesCount = 0;
 
@@ -442,6 +414,7 @@ auto Renderer::getTotalLengthOfLines() const -> uint16_t {
     return totalLengthsOfLines;
 }
 
+#if 0
 // returns the new place of the stream
 auto Renderer::loadCurrentPage() -> StreamPlace {
 
@@ -543,6 +516,7 @@ auto Renderer::loadCurrentPage() -> StreamPlace {
 
     return tokens_[tokenIdx].streamPlace;
 }
+#endif
 
 auto Renderer::getPreviousPlace() -> Place {
     previousPlace_ = goBackwardsOnePage(currentPlace_);
