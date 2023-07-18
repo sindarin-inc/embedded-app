@@ -36,8 +36,8 @@ public:
                           const std::function<void(int percentage)> &progressCallback) -> bool;
 
     auto uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telemetry) -> int;
-    int uploadTelemetryFile(SFile &telemetryFile, const std::string &contentType,
-                            const std::string &localPath);
+    auto uploadTelemetryFile(SFile &telemetryFile, const std::string &contentType,
+                             const std::string &localPath) -> int;
     auto uploadCrashReport(SFile &crashFile, const std::string &contentType) -> int;
 
     void setAuth(HttpClient &client);

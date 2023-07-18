@@ -182,8 +182,8 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
     return success;
 }
 
-int SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &contentType,
-                                     const std::string &localPath) {
+auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &contentType,
+                                      const std::string &localPath) -> int {
     HttpClient client(SINDARIN_SERVER_URL "/telemetry/", contentType.c_str(), HTTP_METHOD_POST);
     setAuth(client);
 
