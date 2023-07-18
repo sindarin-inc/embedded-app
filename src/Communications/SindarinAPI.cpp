@@ -180,48 +180,16 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
 
     return success;
 }
-
 auto SindarinAPI::uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telemetry) -> int {
-    SpiramString jsonStr = "{";
-    std::vector<TelemetryField> fieldsSent;
-
-    // Without deserializing the JSONL logs, manually assemble the json string for each field
-    for (TelemetryField field : {
-             METRIC_VOLTAGE_LOG,
-             METRIC_READABLE_PLACE,
-             METRIC_SYNC_STATUS,
-         }) {
-        auto localPath = telemetry.metricLogPath(field);
-        if (!fileSystem.exists(localPath)) {
-            log_w("%s log file %s does not exist", TelemetryFieldToString(field),
-                  localPath.c_str());
-            continue;
-        }
-        auto file = fileSystem.open(localPath, FILE_READ);
-        auto logFileString = file.readString();
-
-        // Remove the last newline and comma of the JSONL file
-        if (!logFileString.empty() && logFileString.back() == '\n') {
-            logFileString.pop_back();
-        }
-        if (!logFileString.empty() && logFileString.back() == ',') {
-            logFileString.pop_back();
-        }
-
-        jsonStr += "\"" + StringFormat("%s", TelemetryFieldToString(field)) + "\":[" +
-                   logFileString + "],";
-
-        file.close();
-
-        fieldsSent.push_back(field);
+    auto localPath = telemetry.metricLogPath();
+    if (!fileSystem.exists(localPath)) {
+        log_w("%s log file %s does not exist", TelemetryFieldToString(field), localPath.c_str());
+        continue;
     }
+    auto file = fileSystem.open(localPath, FILE_READ);
+    SpiramString logFileString = file.readString();
 
-    // Check if any field was added, if so remove the last comma
-    if (!fieldsSent.empty()) {
-        jsonStr.pop_back();
-    }
-
-    jsonStr += "}";
+    file.close();
 
     auto serializedLength = jsonStr.length();
 
@@ -247,12 +215,9 @@ auto SindarinAPI::uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &tel
 
     // On successful telemetry log upload, delete the logs
     if (httpCode == 200) {
-        log_d("Deleting %zu telemetry logs", fieldsSent.size());
-        for (auto &field : fieldsSent) {
-            auto path = telemetry.metricLogPath(field);
-            log_d("Deleting %s", path.c_str());
-            fileSystem.remove(path.c_str());
-        }
+        auto path = telemetry.metricLogPath();
+        log_d("Deleting %s", path.c_str());
+        fileSystem.remove(path.c_str());
     }
 
     return httpCode;

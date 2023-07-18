@@ -1,6 +1,8 @@
 #pragma once
 
+#include <map>
 #include <string>
+#include <variant>
 
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
@@ -13,9 +15,10 @@
 #define MAX_TELEMETRY_LOG_SIZE 1000000
 
 enum TelemetryField {
+    METRIC_EVENT,
+    METRIC_COUNTER,
     METRIC_VOLTAGE_LOG,
     METRIC_READABLE_PLACE,
-    METRIC_SYNC_STATUS,
 };
 auto TelemetryFieldToString(TelemetryField field) -> const char *;
 
@@ -23,11 +26,13 @@ class Telemetry {
 public:
     Telemetry(FileSystem &fs, PreferencesStore &prefs) : fileSystem_(fs), prefs_(prefs) {}
     Telemetry(const Telemetry &) = delete;
+
     template <typename T>
-    void logMetric(TelemetryField field, T value, const std::string &readableUuid = "") {
+    void logMetric(TelemetryField field, const std::string &key, std::optional<T> value,
+                   std::map<std::string, std::variant<int, uint32_t, float, std::string>> &data) {
         // create log directory in filesystem if it doesn't exist
-        if (!fileSystem_.createDir("/logs")) {
-            log_e("could not create /logs directory");
+        if (!fileSystem_.createDir("/metrics")) {
+            log_e("could not create /metrics directory");
             return;
         }
 
@@ -35,32 +40,29 @@ public:
         auto bootCount = prefs_.bootCount.get().value_or(0);
         auto timestamp = SolClock::getInstance().getEpochTime();
 
-        std::string uuidFormat =
-            readableUuid.empty()
-                ? ""
-                : R"(,"u":"%s")"; // if readableUuid is not empty, add it to the format
-        std::string format;
+        std::string dataJsonFormat = mapToJson(data);
 
-        if (std::is_same<T, float>::value) {
-            format = R"({"ts":%zu,"bc":%d,"rt":%d)" + uuidFormat + ",\"v\":%.2f},";
-        } else if (std::is_same<T, uint32_t>::value || std::is_same<T, int>::value) {
-            format = R"({"ts":%zu,"bc":%d,"rt":%d)" + uuidFormat + ",\"v\":%u},";
-        } else {
-            format = R"({"ts":%zu,"bc":%d,"rt":%d)" + uuidFormat + R"(,"v":"%s"},)";
+        std::string valueFormat = "";
+        if (value.has_value()) {
+            if constexpr (std::is_same<T, float>::value) {
+                valueFormat = StringFormat(",\"%s\":%.2f", key.c_str(), *value);
+            } else if constexpr (std::is_same<T, uint32_t>::value || std::is_same<T, int>::value) {
+                valueFormat = StringFormat(",\"%s\":%u", key.c_str(), *value);
+            } else {
+                valueFormat = StringFormat(R"(,"%s":"%s")", key.c_str(), (*value).c_str());
+            }
         }
+
+        std::string format = R"({"ts":%zu,"t":"%s","k":"%s")" + dataJsonFormat + valueFormat + "},";
 
         std::string logString;
-        if (!readableUuid.empty()) {
-            logString = StringFormat(format.c_str(), timestamp, bootCount, runTimeMs,
-                                     readableUuid.c_str(), value);
-        } else {
-            logString = StringFormat(format.c_str(), timestamp, bootCount, runTimeMs, value);
-        }
+        logString =
+            StringFormat(format.c_str(), timestamp, TelemetryFieldToString(field), key.c_str());
 
         log_i("Logging metric: %s %s", TelemetryFieldToString(field), logString.c_str());
 
         DispatchGetCore1BackgroundQueue()->dispatch([this, logString, field]() {
-            std::string path = Telemetry::metricLogPath(field);
+            std::string path = Telemetry::metricLogPath();
             SFile file = fileSystem_.open(path.c_str(), FILE_APPEND);
             if (file.size() < MAX_TELEMETRY_LOG_SIZE) {
                 file.write((const uint8_t *)logString.c_str(), logString.length());
@@ -76,9 +78,12 @@ public:
         });
     }
 
-    static auto metricLogPath(TelemetryField field) -> std::string {
-        return StringFormat("/logs/%s.jsonl", TelemetryFieldToString(field));
-    }
+    auto variantToJson(const std::variant<int, uint32_t, float, std::string> &v) -> std::string;
+    auto
+    mapToJson(const std::map<std::string, std::variant<int, uint32_t, float, std::string>> &data)
+        -> std::string;
+
+    static auto metricLogPath() -> std::string { return "/metrics/telemetry.jsonl"; }
 
 protected:
     FileSystem &fileSystem_;
