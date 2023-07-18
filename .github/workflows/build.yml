@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - "release/v*"
 
 jobs:
   build:
@@ -46,13 +48,14 @@ jobs:
 
   build-idf:
     name: "idf.py build"
-    runs-on: ubuntu-latest
+    runs-on:
+      group: Medium
     strategy:
       matrix:
         # Tags from here: https://hub.docker.com/r/espressif/idf/tags
         idf_version:
           - v5.1
-          - latest
+          # - latest
 
     steps:
       - name: Checkout repo
@@ -66,3 +69,38 @@ jobs:
           esp_idf_version: ${{ matrix.idf_version }}
           target: esp32s3
           path: .
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v3
+        if: github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/release/v')
+        with:
+          name: embedded-app-${{ github.sha }}-IDF${{ matrix.idf_version }}
+          path: |
+            build/embedded-app.bin
+            build/embedded-app.elf
+            build/bootloader/bootloader.bin
+            build/partition_table/partition-table.bin
+            build/ota_data_initial.bin
+
+      - name: Create release
+        if: contains(github.ref, 'refs/tags/release/v')
+        run: |
+          TAG_NAME="${{ github.ref }}"
+          VERSION=${TAG_NAME#refs/tags/release/v}
+          curl -X POST 'https://api.sindarin.com/firmware/' \
+          -H "Authorization: Tolkien ${{ secrets.SOL_AUTH_TOLKIEN }}" \
+          -F "version=$VERSION" \
+          -F "file=@${{ github.workspace }}/build/embedded-app.bin;type=application/octet-stream" \
+          -F "elf=@${{ github.workspace }}/build/embedded-app.elf;type=application/octet-stream" \
+          -F "role=DEBUG" \
+          -F "device=GLASSES" \
+          -F "release_notes=TODO"
+
+      - name: Notify Slack
+        if: contains(github.ref, 'refs/tags/release/v')
+        run: |
+          TAG_NAME="${{ github.ref }}"
+          VERSION=${TAG_NAME#refs/tags/release/v}
+          curl -X POST -H 'Content-type: application/json' \
+          --data "{\"text\":\"New release $VERSION has been uploaded. See it at https://api.sindarin.com/admin/devices/firmwaredownload/\"}" \
+          ${{ secrets.SLACK_WEBHOOK_URL }}

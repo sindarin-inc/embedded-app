@@ -1,5 +1,7 @@
 #include "ReadableTableOfContentsScreen.hpp"
 
+#include "Misc/StringUtil.hpp"
+
 auto ReadableTableOfContentsScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto inset = 2;
 
@@ -159,8 +161,12 @@ void ReadableTableOfContentsScreen::processCommand(RemoteCommand command) {
 void ReadableTableOfContentsScreen::loadMenuItems() {
     resetMenuItems();
     for (const ReadableTableOfContentsChapter &chapter : readable_->toc) {
-        addMenuItem(MenuItem(chapter.title, StringFormat("%d", SOL_PAGE_NUMBER(chapter.txtOffset)),
-                             [this]() { back(); }));
+        std::string title = chapter.title;
+        if (!chapter.inSubsectionHref.empty()) {
+            title = StringFormat("  %s", chapter.title.c_str());
+        }
+        addMenuItem(
+            MenuItem(title, Commify(SOL_PAGE_NUMBER(chapter.txtOffset)), [this]() { back(); }));
     }
 }
 
@@ -170,6 +176,8 @@ void ReadableTableOfContentsScreen::setPlacemark() {
     renderer_.setCurrentPlace(readable_->place);
     prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place);
     prefs_.readablePlaceChanged.set(readable_->shortenedUuid.c_str(), true);
+    prefs_.lastReadTime.set(readable_->shortenedUuid.c_str(),
+                            SolClock::getInstance().getEpochTime());
 }
 
 void ReadableTableOfContentsScreen::setNearestChapterSelection(unsigned long placeInFile) {

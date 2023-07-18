@@ -245,7 +245,6 @@ TEST_CASE("Test some views independently") {
             readable->fromJson((*readablesJsonDoc)["readables"][1]);
 
             Renderer renderer(*display);
-
             ReadableTableOfContentsScreen screen(prefs, readable, renderer, *display);
             screen.loadMenuItems();
 

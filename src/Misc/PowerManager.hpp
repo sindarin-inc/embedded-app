@@ -80,8 +80,11 @@ public:
         stateChangeCallback_ = std::move(callback);
     }
 
+    void setBeginShutdownCallback(const std::function<void()> &callback) {
+        beginShutdownCallback_ = callback;
+    }
+
     // Power lifecycle functions
-    auto beginShutdown() -> bool;
     void reboot();
     void ulpDeepSleep(SleepReason reason = SleepReason::Unspecified);
     // Fully power down the device (assuming USB is disconnected and left temple closed)
@@ -126,6 +129,7 @@ protected:
     PreferencesStore &prefs_;
     PowerState state_ = PowerState::Booting;
     std::function<void(PowerState)> stateChangeCallback_;
+    std::function<void()> beginShutdownCallback_;
     LightingController &lightingController_;
     DisplaySystem &display_;
     InactivityTimer inactivityTimer_;
@@ -147,5 +151,7 @@ protected:
     // red or green depending on the charge of the battery.
     void checkUsb();
 
-    void waitForQueuesThenDeepSleep(SleepReason reason);
+    void beginShutdown();
+
+    void deepSleepInternal(SleepReason reason);
 };

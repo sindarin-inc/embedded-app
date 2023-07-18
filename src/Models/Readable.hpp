@@ -45,6 +45,9 @@ public:
     ReadableFileVector files;
     ReadableBookmarksVector bookmarks;
     ReadableTableOfContentsChapterVector toc;
+    // hasSummary denotes if any of the chapters have a summary, used for determining if we should
+    // show the summary menu item
+    bool hasSummary = false;
 
     SpiramString readableType;
     // TODO: source
@@ -76,9 +79,34 @@ public:
     [[nodiscard]] auto bookmarkFilePath() const -> std::string {
         return StringFormat("/bookmarks/%s-bookmark.txt", uuid.c_str());
     }
+    [[nodiscard]] auto tocFilePath() const -> std::string {
+        return StringFormat("/toc/%s-toc.json", uuid.c_str());
+    }
     [[nodiscard]] auto remoteUrl() const -> SpiramString { return file().fileProxied; }
     [[nodiscard]] auto isArticle() const -> bool {
         return readableType == "pocket_article" || readableType == "email_article";
+    }
+
+    auto summary(unsigned long placeInReadable, unsigned long &placeInSummary, bool includeUnread)
+        -> SpiramString {
+        SpiramString summary;
+
+        for (const auto &chapter : toc) {
+            if (placeInReadable >= chapter.txtOffset) {
+                placeInSummary = summary.length();
+            }
+            if (placeInReadable < chapter.txtOffset && !includeUnread) {
+                break;
+            }
+            summary += chapter.title;
+            summary += "\n\n";
+            if (!chapter.summary.empty()) {
+                summary += chapter.summary;
+                summary += "\n\n";
+            }
+        }
+
+        return summary;
     }
 
     auto fromJson(const JsonObject &j) -> bool override {
@@ -111,6 +139,10 @@ public:
         for (const auto &chapter : j["toc"].as<JsonArray>()) {
             toc.emplace_back();
             toc.back().fromJson(chapter);
+            // Check if any chapter has a summary, if so, set hasSummary
+            if (chapter["summary"].as<std::string>().size() > 0) {
+                hasSummary = true;
+            }
         }
 
         // Temporary migration for stored pocket articles that don't have a readable_type

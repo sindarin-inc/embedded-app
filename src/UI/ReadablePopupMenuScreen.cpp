@@ -38,6 +38,8 @@ void ReadablePopupMenuScreen::addMenuItem(const MenuItem &newItem) {
 
 void ReadablePopupMenuScreen::populatePopupMenu() {
     resetMenuItems();
+    localStore_.loadToc(readable_);
+
     addMenuItem(MenuItem("Main Menu", [this]() { onMainMenu(); }));
 
     addMenuItem(MenuItem("Archive", [this]() {
@@ -58,6 +60,14 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
     }));
 
     addMenuItem(MenuItem("Text", [this]() { back(); }));
+
+    if (readable_->hasSummary) {
+        addMenuItem(MenuItem("Summary", [this]() {
+            readableSummaryScreen_.setPlaceInReadable(renderer_.getCurrentPlace());
+            readableSummaryScreen_.setFirstLoad();
+            setCurrentScreen(readableSummaryScreen_);
+        }));
+    }
 
     addMenuItem(MenuItem("Brightness", [this]() {
         log_d("Setting current screen to brightness screen");

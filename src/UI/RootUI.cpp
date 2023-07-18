@@ -78,6 +78,21 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto &readables = localStore.books();
     auto &articles = localStore.articles();
 
+    // If prefs_.sortCriteria isn't select, sort the readables by last update and store them
+    if (!prefs_.sortCriteria.get().has_value()) {
+        log_i("No sort order chosen, sorting by last update and saving readables");
+        prefs_.sortCriteria.set(SortCriteria::DateModified);
+        prefs_.sortDirection.set(SortDirection::Descending);
+        localStore.saveReadables(readables);
+        localStore.saveReadables(articles);
+    } else if (static_cast<SortCriteria::Type>(this->prefs_.sortCriteria.get().value_or(0)) ==
+               SortCriteria::LastRead) {
+        // Dynamically sort readables by last read time
+        log_i("Dynamically sorting readables by last read time");
+        localStore.sortReadables(readables);
+        localStore.sortReadables(articles);
+    }
+
     // Load the SolSans font only.
     ibmf75.load((ibmf_defs::MemoryPtr)fontsList[0].content, fontsList[0].length);
 
@@ -101,8 +116,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         } else {
             stream = fileSystem.newRendererStream(path.c_str());
         }
-        auto *readableScreen = new ReadableScreen(stream, *display, readable, this->prefs_,
-                                                  this->telemetry_, fileSystem, lightingController);
+        auto *readableScreen =
+            new ReadableScreen(stream, *display, readable, this->prefs_, this->telemetry_,
+                               localStore, fileSystem, lightingController);
 
         // When switching to a readable from a menu, we should clear the display
         // to make the whites really white and the blacks really black.
@@ -474,6 +490,107 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         contentSettingsMenu->setToggleLastItem(false);
     }
 
+    contentSettingsMenu->addMenuItem(MenuItem("Sort order",
+                                              [this, &localStore, display, contentSettingsMenu]() {
+        auto sortMenu = new MenuScreen(power_.battery, *display, contentSettingsMenu->getMyStyle(),
+                                       "Sort Order", "Content Settings");
+        sortMenu->addMenuItem(MenuItem("Alphabetical",
+                                       [this, &localStore, display, contentSettingsMenu]() {
+            this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::Alphabetical));
+            this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Ascending));
+            contentSettingsMenu->showTemporaryMessage(
+                *display, "Settings change required restart! Restarting...", 500, false);
+            localStore.saveReadables(localStore.books());
+            localStore.saveReadables(localStore.articles());
+            this->power_.reboot();
+        }));
+        sortMenu->addMenuItem(MenuItem("Date added, most recent",
+                                       [this, &localStore, display, contentSettingsMenu]() {
+            this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::DateModified));
+            this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Descending));
+            contentSettingsMenu->showTemporaryMessage(
+                *display, "Settings change required restart! Restarting...", 500, false);
+            localStore.saveReadables(localStore.books());
+            localStore.saveReadables(localStore.articles());
+            this->power_.reboot();
+        }));
+        sortMenu->addMenuItem(MenuItem("Date added, least recent",
+                                       [this, &localStore, display, contentSettingsMenu]() {
+            this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::DateModified));
+            this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Ascending));
+            contentSettingsMenu->showTemporaryMessage(
+                *display, "Settings change required restart! Restarting...", 500, false);
+            localStore.saveReadables(localStore.books());
+            localStore.saveReadables(localStore.articles());
+            this->power_.reboot();
+        }));
+        sortMenu->addMenuItem(MenuItem("Last read, most recent",
+                                       [this, &localStore, display, contentSettingsMenu]() {
+            this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::LastRead));
+            this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Descending));
+            contentSettingsMenu->showTemporaryMessage(
+                *display, "Settings change required restart! Restarting...", 500, false);
+            localStore.saveReadables(localStore.books());
+            localStore.saveReadables(localStore.articles());
+            this->power_.reboot();
+        }));
+        sortMenu->addMenuItem(MenuItem("Last read, least recent",
+                                       [this, &localStore, display, contentSettingsMenu]() {
+            this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::LastRead));
+            this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Ascending));
+            contentSettingsMenu->showTemporaryMessage(
+                *display, "Settings change required restart! Restarting...", 500, false);
+            localStore.saveReadables(localStore.books());
+            localStore.saveReadables(localStore.articles());
+            this->power_.reboot();
+        }));
+        sortMenu->addMenuItem(MenuItem("Random",
+                                       [this, &localStore, display, contentSettingsMenu]() {
+            this->prefs_.sortCriteria.set(static_cast<int>(SortCriteria::Random));
+            this->prefs_.sortDirection.set(static_cast<int>(SortDirection::Ascending));
+            contentSettingsMenu->showTemporaryMessage(
+                *display, "Settings change required restart! Restarting...", 500, false);
+            localStore.saveReadables(localStore.books());
+            localStore.saveReadables(localStore.articles());
+            this->power_.reboot();
+        }));
+        int menuIndex = 0;
+        switch (static_cast<SortCriteria::Type>(this->prefs_.sortCriteria.get().value_or(0))) {
+        case SortCriteria::Alphabetical:
+            menuIndex = 0;
+            break;
+        case SortCriteria::DateModified:
+            if (static_cast<SortDirection::Type>(this->prefs_.sortDirection.get().value_or(0)) ==
+                SortDirection::Descending) {
+                menuIndex = 1;
+            } else {
+                menuIndex = 2;
+            }
+            break;
+        case SortCriteria::LastRead:
+            if (static_cast<SortDirection::Type>(this->prefs_.sortDirection.get().value_or(0)) ==
+                SortDirection::Descending) {
+                menuIndex = 3;
+            } else {
+                menuIndex = 4;
+            }
+            break;
+        case SortCriteria::Random:
+            menuIndex = 5;
+            break;
+        }
+        sortMenu->setCurrSelection(menuIndex);
+        setCurrentScreen(*sortMenu);
+        sortMenu->setBackCallback([this, sortMenu, contentSettingsMenu]() {
+            contentSettingsMenu->setFirstLoad();
+            setCurrentScreen(*contentSettingsMenu);
+            delete sortMenu;
+        });
+    }));
+
+    // Hide the toggle for the sort order menu
+    contentSettingsMenu->setToggleLastItem(false, false);
+
     contentSettingsMenu->addMenuItem(
         MenuItem("Sync content now", [this, display, &localStore, mainMenu, &lightingController]() {
             auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
@@ -736,6 +853,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             prefs_.font.set(PREFS_TAHOMA_LARGE);
             fontMenu->setNeedsRerender();
         }));
+        int menuIndex = 0;
+        if (prefs_.font.get().value_or(PREFS_TAHOMA_REGULAR) == PREFS_TAHOMA_TINY) {
+            menuIndex = 0;
+        } else if (prefs_.font.get().value_or(PREFS_TAHOMA_REGULAR) == PREFS_TAHOMA_REGULAR) {
+            menuIndex = 1;
+        } else if (prefs_.font.get().value_or(PREFS_TAHOMA_REGULAR) == PREFS_TAHOMA_LARGE) {
+            menuIndex = 2;
+        }
+        fontMenu->setCurrSelection(menuIndex);
         setCurrentScreen(*fontMenu);
         fontMenu->setBackCallback([this, fontMenu, readingSettingsMenu]() {
             readingSettingsMenu->setFirstLoad();
@@ -859,9 +985,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         prefs_.noSetupMode.remove();
         systemSettingsMenu->showTemporaryMessage(*display,
                                                  "Turning on first time setup and restarting.");
-        display_->clearDisplay();
-        display_->clearFrameBuffer();
-        display->updateDisplay();
         power_.reboot();
     }));
 

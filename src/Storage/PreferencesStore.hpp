@@ -292,7 +292,8 @@ public:
 #endif
           cloudToken(*this, "cloud-token"), lastReadableId(*this, "rui-readable"),
           lastPageTurnerBuild(*this, "pt-build"), lastArticlesSince(*this, "articles-since"),
-          lastBooksSince(*this, "readables-since"), readablePlace(*this, "-p"),
+          lastBooksSince(*this, "readables-since"), sortCriteria(*this, "sort-c"),
+          sortDirection(*this, "sort-d"), lastReadTime(*this, "-lr"), readablePlace(*this, "-p"),
           readablePlaceChanged(*this, "-pc"), readableArchivedChanged(*this, "-ar"),
           readableBookmarksChanged(*this, "-bm"), invertSetting(*this, "invert"),
           vcom(*this, "vcom"), font(*this, "font"), rectX(*this, "rectX"), rectY(*this, "rectY"),
@@ -473,6 +474,9 @@ public:
     PrefsItem<std::string> lastPageTurnerBuild;
     PrefsItem<std::string> lastArticlesSince;
     PrefsItem<std::string> lastBooksSince;
+    PrefsItem<int> sortCriteria;  // Stored as int, used as LocalStore::SortCriteria
+    PrefsItem<int> sortDirection; // Stored as int, used as LocalStore::SortDirection
+    KeyedPrefsItem<uint64_t> lastReadTime;
     KeyedPrefsItem<uint32_t> readablePlace;
     KeyedPrefsItem<bool> readablePlaceChanged;
     KeyedPrefsItem<bool> readableArchivedChanged;

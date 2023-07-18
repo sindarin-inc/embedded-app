@@ -233,9 +233,6 @@ void ContentSyncScreen::begin() {
 #if !SIMULATOR
             if (state.state == ContentSyncState::Synced) {
                 log_d("Content sync done, rebooting");
-                this->display_.clearDisplay();
-                this->display_.clearFrameBuffer();
-                this->display_.updateDisplay();
                 PowerManager::getInstance().reboot();
             }
 #endif
@@ -245,9 +242,6 @@ void ContentSyncScreen::begin() {
 #if !SIMULATOR
                 if (onboardingSync_) {
                     // Todo: maybe we want to retry once?
-                    this->display_.clearDisplay();
-                    this->display_.clearFrameBuffer();
-                    this->display_.updateDisplay();
                     PowerManager::getInstance().reboot();
                 } else
 #endif

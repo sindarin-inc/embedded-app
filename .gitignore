@@ -12,6 +12,7 @@ __pycache__
 .temp
 # Simulator prefs
 simprefs.ini
+simprefs.bak
 *.old
 build
 screenshot.png
