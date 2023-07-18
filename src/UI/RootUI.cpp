@@ -119,6 +119,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             new ReadableScreen(stream, *display, readable, this->prefs_, this->telemetry_,
                                localStore, fileSystem, lightingController);
 
+        std::map<std::string, std::variant<int, uint32_t, float, std::string>> data;
+        data["po"] = readable->place;
+        this->telemetry_.logMetric(TelemetryField::METRIC_EVENT, "readable-open",
+                                   std::optional<std::string>(readable->uuid), data);
+
         // When switching to a readable from a menu, we should clear the display
         // to make the whites really white and the blacks really black.
         display->clearDisplay();

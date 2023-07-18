@@ -28,14 +28,15 @@ public:
     Telemetry(const Telemetry &) = delete;
 
     void
-    logMetric(TelemetryField field, const std::string &key = "",
-              std::map<std::string, std::variant<int, uint32_t, float, std::string>> data = {}) {
-        logMetricImpl(field, key, std::optional<uint32_t>(), data);
-    }
-    void
     logMetric(TelemetryField field,
               std::map<std::string, std::variant<int, uint32_t, float, std::string>> data = {}) {
         logMetricImpl(field, "", std::optional<uint32_t>(), data);
+    }
+
+    void
+    logMetric(TelemetryField field, const std::string &key = "",
+              std::map<std::string, std::variant<int, uint32_t, float, std::string>> data = {}) {
+        logMetricImpl(field, key, std::optional<uint32_t>(), data);
     }
 
     template <typename T>
@@ -51,6 +52,7 @@ public:
         -> std::string;
 
     static auto metricLogPath() -> std::string { return "/metrics/telemetry.jsonl"; }
+    static auto multipartPath() -> std::string { return "/metrics/telemetry.multipart.jsonl"; }
 
     auto uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telemetry) -> int;
 

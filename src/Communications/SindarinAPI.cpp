@@ -191,7 +191,7 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
         return -1;
     }
 
-    // Write the telemetry file to the multipart form data file.
+    // Write the telemetry file to the multipart form data file
     size_t bufferSize = 4096;
     auto buffer = SpiRamArrayPtr<char>(bufferSize);
 
@@ -210,12 +210,6 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
         return -1;
     }
 
-    // Add any additional fields you need here.
-    // For example, you might add a "serial_number" field like this:
-    // if (!mpData.addKeyValue("serial_number", GetSerialNumber())) {
-    //     return -1;
-    // }
-
     if (!mpData.endMultiPartData()) {
         return -1;
     }
@@ -225,14 +219,11 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
                       HTTP_METHOD_POST);
     setAuth(client);
 
-    // Set Serial Number header
     client.setHeader("X-Serial-Number", GetSerialNumber().c_str());
-
     client.open(mpData.getFile().size());
 
     bufferSize = 4096;
     buffer = SpiRamArrayPtr<char>(bufferSize);
-
     bytesWritten = 0;
     writeSize = mpData.getFile().size();
     while (bytesWritten < writeSize) {
@@ -240,8 +231,10 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
         bytesWritten += client.write(buffer.get(), bytesRead);
     }
 
+    // Send the request and return the status code
     client.fetchHeaders();
     int httpCode = client.getStatusCode();
+
     return httpCode;
 }
 

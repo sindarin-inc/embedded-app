@@ -60,7 +60,8 @@ auto Telemetry::uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telem
         return -1;
     }
 
-    int httpCode = SindarinAPI::getInstance()->uploadTelemetryFile(file, localPath, fileSystem);
+    auto multipartPath = telemetry.multipartPath();
+    int httpCode = SindarinAPI::getInstance()->uploadTelemetryFile(file, multipartPath, fileSystem);
     file.close();
 
     log_d("Telemetry log upload http code: %d", httpCode);
