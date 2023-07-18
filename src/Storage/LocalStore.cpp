@@ -400,10 +400,15 @@ void LocalStore::syncFromRemote(
     // log_w("Access token: %s", token.value().c_str());
 
     SindarinAPI::getInstance()->setAccessToken(token.value());
-    progressCallback(ContentSyncState{.state = ContentSyncState::State::UploadTelemetry});
+
+    auto queue = DispatchGetCore0BackgroundQueue();
+    queue->dispatch([this, progressCallback] {
+        progressCallback(ContentSyncState{.state = ContentSyncState::State::UploadTelemetry});
+
+        this->telemetry_.uploadAndResetTelemetry(this->fileSystem, this->telemetry_);
+    });
 
     // Run this work on a separate thread, since it's long running
-    auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this, progressCallback] {
         auto syncReason = PreferencesStore::syncReason;
         CheckSyncRequest checkSyncRequest;
@@ -413,8 +418,6 @@ void LocalStore::syncFromRemote(
         bool articlesAlreadySynced = false;
         bool booksNowSynced = false;
         bool articlesNowSynced = false;
-
-        SindarinAPI::getInstance()->uploadAndResetTelemetry(this->fileSystem, this->telemetry_);
 
         progressCallback(ContentSyncState{.state = ContentSyncState::State::CheckingSync});
 
@@ -475,7 +478,10 @@ void LocalStore::syncFromRemote(
                 }
                 log_d("Server has %d %ss, next page: %s", checkSyncResponse.totalCount,
                       ReadableModelTypeToString(modelType).c_str(), nextPageUrl.c_str());
-                this->telemetry_.logMetric(METRIC_SYNC_STATUS, httpCode);
+                this->telemetry_.logMetric(TelemetryField::METRIC_EVENT, "checkSyncStatus",
+                                           std::optional<int>(httpCode));
+                this->telemetry_.logMetric(TelemetryField::METRIC_EVENT, "checkSyncCount",
+                                           std::optional<int>(checkSyncResponse.totalCount));
                 if (httpCode != 200) {
                     log_e("Failed to check sync (HTTP %d)", httpCode);
                     progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,

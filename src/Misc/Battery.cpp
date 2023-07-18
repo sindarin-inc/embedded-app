@@ -22,8 +22,10 @@ void Battery::loop() {
 
         if (now > lastLoggingTime_ + BATTERY_LOGGING_PERIOD_SECONDS * 1000) {
             DispatchGetCore1BackgroundQueue()->dispatch([this, left, right]() {
-                std::string value = StringFormat("%.2f,%.2f", left, right);
-                telemetry_.logMetric(METRIC_VOLTAGE_LOG, value.c_str());
+                std::map<std::string, std::variant<int, uint32_t, float, std::string>> data;
+                data["l"] = left;
+                data["r"] = right;
+                telemetry_.logMetric(TelemetryField::METRIC_BATTERY_VOLTAGE, data);
             });
             lastLoggingTime_ = now;
         }

@@ -17,7 +17,7 @@
 enum TelemetryField {
     METRIC_EVENT,
     METRIC_COUNTER,
-    METRIC_VOLTAGE_LOG,
+    METRIC_BATTERY_VOLTAGE,
     METRIC_READABLE_PLACE,
 };
 auto TelemetryFieldToString(TelemetryField field) -> const char *;
@@ -27,9 +27,43 @@ public:
     Telemetry(FileSystem &fs, PreferencesStore &prefs) : fileSystem_(fs), prefs_(prefs) {}
     Telemetry(const Telemetry &) = delete;
 
+    void
+    logMetric(TelemetryField field, const std::string &key = "",
+              std::map<std::string, std::variant<int, uint32_t, float, std::string>> data = {}) {
+        logMetricImpl(field, key, std::optional<uint32_t>(), data);
+    }
+    void
+    logMetric(TelemetryField field,
+              std::map<std::string, std::variant<int, uint32_t, float, std::string>> data = {}) {
+        logMetricImpl(field, "", std::optional<uint32_t>(), data);
+    }
+
     template <typename T>
-    void logMetric(TelemetryField field, const std::string &key, std::optional<T> value,
-                   std::map<std::string, std::variant<int, uint32_t, float, std::string>> &data) {
+    void
+    logMetric(TelemetryField field, const std::string &key, std::optional<T> value,
+              std::map<std::string, std::variant<int, uint32_t, float, std::string>> data = {}) {
+        logMetricImpl(field, key, value, data);
+    }
+
+    auto variantToJson(const std::variant<int, uint32_t, float, std::string> &v) -> std::string;
+    auto
+    mapToJson(const std::map<std::string, std::variant<int, uint32_t, float, std::string>> &data)
+        -> std::string;
+
+    static auto metricLogPath() -> std::string { return "/metrics/telemetry.jsonl"; }
+
+    auto uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telemetry) -> int;
+
+protected:
+    FileSystem &fileSystem_;
+    PreferencesStore &prefs_;
+    unsigned long lastLoggingTime_ = 0;
+
+private:
+    template <typename T>
+    void
+    logMetricImpl(TelemetryField field, const std::string key, std::optional<T> value,
+                  std::map<std::string, std::variant<int, uint32_t, float, std::string>> &data) {
         // create log directory in filesystem if it doesn't exist
         if (!fileSystem_.createDir("/metrics")) {
             log_e("could not create /metrics directory");
@@ -42,18 +76,24 @@ public:
 
         std::string dataJsonFormat = mapToJson(data);
 
+        std::string keyFormat = "";
+        if (!key.empty()) {
+            keyFormat = StringFormat(R"(,"k":"%s")", key.c_str());
+        }
+
         std::string valueFormat = "";
         if (value.has_value()) {
             if constexpr (std::is_same<T, float>::value) {
-                valueFormat = StringFormat(",\"%s\":%.2f", key.c_str(), *value);
+                valueFormat = StringFormat(R"(,"k":%.2f)", *value);
             } else if constexpr (std::is_same<T, uint32_t>::value || std::is_same<T, int>::value) {
-                valueFormat = StringFormat(",\"%s\":%u", key.c_str(), *value);
+                valueFormat = StringFormat(R"(,"k":%u)", *value);
             } else {
-                valueFormat = StringFormat(R"(,"%s":"%s")", key.c_str(), (*value).c_str());
+                valueFormat = StringFormat(R"(,"k":"%s")", (*value).c_str());
             }
         }
 
-        std::string format = R"({"ts":%zu,"t":"%s","k":"%s")" + dataJsonFormat + valueFormat + "},";
+        std::string format =
+            R"({"ts":%zu,"t":"%s")" + keyFormat + valueFormat + dataJsonFormat + "}";
 
         std::string logString;
         logString =
@@ -77,16 +117,4 @@ public:
             }
         });
     }
-
-    auto variantToJson(const std::variant<int, uint32_t, float, std::string> &v) -> std::string;
-    auto
-    mapToJson(const std::map<std::string, std::variant<int, uint32_t, float, std::string>> &data)
-        -> std::string;
-
-    static auto metricLogPath() -> std::string { return "/metrics/telemetry.jsonl"; }
-
-protected:
-    FileSystem &fileSystem_;
-    PreferencesStore &prefs_;
-    unsigned long lastLoggingTime_ = 0;
 };

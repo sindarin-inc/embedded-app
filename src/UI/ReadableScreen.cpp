@@ -193,8 +193,9 @@ void ReadableScreen::render(DisplaySystem &display) {
     }
 
     prefs_.lastReadableId.set(readable_->uuid);
-
-    telemetry_.logMetric(METRIC_READABLE_PLACE, readable_->place, readable_->uuid);
+    std::map<std::string, std::variant<int, uint32_t, float, std::string>> data;
+    data["po"] = readable_->place;
+    telemetry_.logMetric(TelemetryField::METRIC_READABLE_PLACE, readable_->uuid, data);
 
     display.setFont(display.style.getFontFamily().readableFont);
 

@@ -46,7 +46,6 @@
 #include "UI/ReleaseNotesScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
 #include "UI/StatsScreen.hpp"
-#include "UI/TelemetryUploadScreen.hpp"
 #include "UI/ToggleMenuScreen.hpp"
 #include "UI/TutorialScreen.hpp"
 #include "Version.hpp"
@@ -1350,20 +1349,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         });
     }));
 #endif
-
-    debugSettingsMenu->addMenuItem(MenuItem("Upload Voltage Log",
-                                            [this, display, &fileSystem, debugSettingsMenu]() {
-        auto telemetryScreen =
-            new TelemetryUploadScreen(*display, this->prefs_, fileSystem, this->telemetry_);
-        this->setCurrentScreen(*telemetryScreen);
-        (*telemetryScreen).setBackCallback([this, telemetryScreen, debugSettingsMenu, display]() {
-            debugSettingsMenu->setFirstLoad();
-            setCurrentScreen(*debugSettingsMenu);
-            debugSettingsMenu->render(*display);
-            delete telemetryScreen;
-        });
-        (*telemetryScreen).begin();
-    }));
 
     debugSettingsMenu->addMenuItem(MenuItem("Format FS",
                                             [this, display, &fileSystem, debugSettingsMenu]() {

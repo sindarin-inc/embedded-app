@@ -2,6 +2,7 @@
 
 #include <utility>
 
+#include "Communications/MultiPartData.hpp"
 #include "FileDownload.hpp"
 #include "GitVersion.hpp"
 #include "Misc/Battery.hpp"
@@ -13,8 +14,8 @@
 #include "Version.hpp"
 #include "sindarin-debug.h"
 
-#define SINDARIN_SERVER_URL "https://api.sindarin.com"
-// #define SINDARIN_SERVER_URL "https://staging.sindarin.com"
+// #define SINDARIN_SERVER_URL "https://api.sindarin.com"
+#define SINDARIN_SERVER_URL "https://staging.sindarin.com"
 
 std::shared_ptr<SindarinAPI> SindarinAPI::instance = nullptr;
 
@@ -180,46 +181,29 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
 
     return success;
 }
-auto SindarinAPI::uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telemetry) -> int {
-    auto localPath = telemetry.metricLogPath();
-    if (!fileSystem.exists(localPath)) {
-        log_w("%s log file %s does not exist", TelemetryFieldToString(field), localPath.c_str());
-        continue;
-    }
-    auto file = fileSystem.open(localPath, FILE_READ);
-    SpiramString logFileString = file.readString();
 
-    file.close();
-
-    auto serializedLength = jsonStr.length();
-
-    HttpClient client(SINDARIN_SERVER_URL "/telemetry/", "application/json", HTTP_METHOD_POST);
+int SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &contentType,
+                                     const std::string &localPath) {
+    HttpClient client(SINDARIN_SERVER_URL "/telemetry/", contentType.c_str(), HTTP_METHOD_POST);
     setAuth(client);
 
-    auto err = client.open(serializedLength);
-    if (err != ESP_OK) {
-        log_e("HttpClient failed to open: %d", err);
-        return -1;
-    }
+    // Set Serial Number header
+    client.setHeader("X-Serial-Number", GetSerialNumber().c_str());
 
-    int writeLength = client.write(jsonStr.c_str(), serializedLength);
-    if (writeLength != serializedLength) {
-        log_w("HttpClient failed to write fully (writeLength=%d, serializedLength=%zu)",
-              writeLength, serializedLength);
+    int writeSize = telemetryFile.size();
+    client.open(writeSize);
+
+    size_t bufferSize = 4096;
+    auto buffer = SpiRamArrayPtr<char>(bufferSize);
+
+    int bytesWritten = 0;
+    while (bytesWritten < writeSize) {
+        auto bytesRead = telemetryFile.readBytes(buffer.get(), bufferSize);
+        bytesWritten += client.write(buffer.get(), bytesRead);
     }
 
     client.fetchHeaders();
     int httpCode = client.getStatusCode();
-
-    log_d("Telemetry log upload http code: %d", httpCode);
-
-    // On successful telemetry log upload, delete the logs
-    if (httpCode == 200) {
-        auto path = telemetry.metricLogPath();
-        log_d("Deleting %s", path.c_str());
-        fileSystem.remove(path.c_str());
-    }
-
     return httpCode;
 }
 
