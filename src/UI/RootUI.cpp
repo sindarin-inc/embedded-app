@@ -68,6 +68,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     display_ = display;
 
+    this->telemetry_.logMetric(
+        TelemetryField::METRIC_EVENT, "boot",
+        {{"version", kVersionString}, {"boot-count", prefs_.bootCount.get().value_or(0)}});
+
     MenuStyle styleFamilies;
 
     auto mainMenu = new MainMenuScreen(power_.battery, *display_, styleFamilies.mainMenu);
