@@ -99,6 +99,12 @@ class OverrideIdfSerial(IdfSerial):
         fp.write("paired-tt,data,u64,"+str(btmac_int)+"\n")
         fp.close()
 
+        # check for $IDF_PATH variable
+        if "IDF_PATH" not in os.environ:
+            # no idf path set, must be running from an exported test package
+            # set the variable so tools can be found
+            os.environ["IDF_PATH"] = "test/PyTest/vendor"
+
         # create partition bin file
         binfname = "dutnvs.bin"
         nvssize = self.get_nvs_partition_size()
@@ -106,7 +112,7 @@ class OverrideIdfSerial(IdfSerial):
 
         live_print_call(
             [
-                'test/PyTest/nvs_partition_gen.py',
+                os.environ["IDF_PATH"]+'/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py',
                 'generate',
                 csvfname,
                 binfname,
@@ -118,7 +124,7 @@ class OverrideIdfSerial(IdfSerial):
         # write nvs partition to dut
         live_print_call(
             [
-                'test/PyTest/parttool.py',
+                os.environ["IDF_PATH"]+'/components/partition_table/parttool.py',
                 '--port',
                 self.port,
                 'write_partition',
