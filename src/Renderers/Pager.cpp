@@ -1,14 +1,23 @@
 #include "Pager.hpp"
 
-auto Pager::addLastTokenToPage() -> bool {
+auto Pager::addLastTokenToPage(bool dontStop) -> bool {
     Token &token = tokens_.getLast();
 
     auto newLine = [this](uint16_t height) {
-        currentPageDecilineHeight_ += height;
-        lineCount_ += 1;
-        currentLineWidth_ = 0;
-        lines_[lineCount_].tokenCount = 0;
-        lines_[lineCount_].length = 0;
+        if (lineCount_ < MAX_LINES_PER_PAGE) {
+            // std::cout << "NewLine with tokenCount: " << lines_[lineCount_].tokenCount <<
+            // std::endl;
+            currentPageDecilineHeight_ += height;
+            lineCount_ += 1;
+            currentLineWidth_ = 0;
+            lines_[lineCount_].tokenCount = 0;
+            lines_[lineCount_].length = 0;
+        } else {
+            log_e("Too many lines!!");
+            if constexpr (ON_ERROR_EXIT) {
+                exit(1);
+            }
+        }
     };
 
     switch (token.tokenId) {
@@ -23,7 +32,8 @@ auto Pager::addLastTokenToPage() -> bool {
                 tokens_.forgetLast();
             } else {
                 newLine(NEWLINE_DECI_LINE_HEIGHT);
-                if ((currentPageDecilineHeight_ + NEWLINE_DECI_LINE_HEIGHT) >= maxDeciLines_) {
+                if (!dontStop &&
+                    ((currentPageDecilineHeight_ + NEWLINE_DECI_LINE_HEIGHT) >= maxDeciLines_)) {
                     nextPagePlace_ = token.streamPlace;
                     if constexpr (RENDERER_DEBUG) {
                         log_w("Page completed: %" PRIu16 " decilines. Max: %" PRIu16,
@@ -41,7 +51,8 @@ auto Pager::addLastTokenToPage() -> bool {
                 (tokens_.getCount() < 2) ||
                 ((tokens_.getBeforeLast().tokenId == TokenId::NEWLINE) ||
                  (tokens_.getBeforeLast().tokenId == TokenId::ENDPARAGRAPH))) {
-                if ((currentPageDecilineHeight_ + NEWLINE_DECI_LINE_HEIGHT) >= maxDeciLines_) {
+                if (!dontStop &&
+                    ((currentPageDecilineHeight_ + NEWLINE_DECI_LINE_HEIGHT) >= maxDeciLines_)) {
                     nextPagePlace_ = token.streamPlace;
                     if constexpr (RENDERER_DEBUG) {
                         log_w("Page completed: %" PRIu16 " decilines. Max: %" PRIu16,
@@ -82,7 +93,8 @@ auto Pager::addLastTokenToPage() -> bool {
         if (lines_[lineCount_].tokenCount > 0) {
             newLine(NEWLINE_DECI_LINE_HEIGHT);
         }
-        if ((currentPageDecilineHeight_ + ENDPARAGRAPH_DECI_LINE_HEIGHT) >= maxDeciLines_) {
+        if (!dontStop &&
+            ((currentPageDecilineHeight_ + ENDPARAGRAPH_DECI_LINE_HEIGHT) >= maxDeciLines_)) {
             nextPagePlace_ = token.streamPlace;
             if constexpr (RENDERER_DEBUG) {
                 log_w("Page completed: %" PRIu16 " decilines. Max: %" PRIu16,
@@ -103,6 +115,26 @@ auto Pager::addLastTokenToPage() -> bool {
     return true;
 }
 
+auto Pager::computeWordCount() const -> uint16_t {
+    Idx firstIdx = lines_[firstLineIdx_].tokenIdx;
+    Idx lastIdx = lines_[lineCount_ - 1].tokenIdx + lines_[lineCount_ - 1].tokenCount - 1;
+    uint16_t wordCount = 0;
+    for (Idx i = firstIdx; i < lastIdx; i++) {
+        if (tokens_[i].tokenId == TokenId::TEXT) {
+            wordCount += 1;
+        }
+    }
+    return wordCount;
+}
+
+auto Pager::getPageLength() const -> uint16_t {
+    uint16_t length = 0;
+    for (Idx i = firstLineIdx_; i < lineCount_; i++) {
+        length += lines_[i].length;
+    }
+    return length;
+}
+
 void Pager::getLine(Idx lineNbr, Line &line) const {
     line[0] = 0;
     for (Idx j = lines_[lineNbr].tokenIdx; j <= lastLineTokenIdx(lineNbr); j++) {
@@ -116,21 +148,25 @@ void Pager::getLine(Idx lineNbr, Line &line) const {
 void Pager::displayPage(int16_t numSkipLines) const {
     uint16_t paraLineAdjust = 0;
 
-    for (Idx i = 0; i < lineCount_; i++) {
+    // std::cout << "First Line Idx: " << firstLineIdx_ << ", lineCount: " << lineCount_ <<
+    // std::endl;
 
-        if (tokens_[lines_[i].tokenIdx].tokenId == TokenId::ENDPARAGRAPH) {
+    uint16_t lineNbr = 0;
+    for (Idx lineIdx = firstLineIdx_; lineIdx < lineCount_; lineIdx++, lineNbr++) {
+
+        if (tokens_[lines_[lineIdx].tokenIdx].tokenId == TokenId::ENDPARAGRAPH) {
             paraLineAdjust++;
         } else {
             // Only draw the lines if it's not skipped from the caller.
-            if (i >= numSkipLines) {
+            if (lineNbr >= numSkipLines) {
                 Line line;
-                getLine(i, line);
+                getLine(lineIdx, line);
                 if constexpr (RENDERER_DEBUG) {
                     log_d("%s", line.data());
                 }
                 display_.drawSingleLineOfText(
                     line.data(), 0,
-                    i * (display_.getTextHeight()) -
+                    lineNbr * (display_.getTextHeight()) -
                         display_.getTextHeight() *
                             ((NEWLINE_DECI_LINE_HEIGHT - ENDPARAGRAPH_DECI_LINE_HEIGHT) *
                              paraLineAdjust) /
@@ -140,33 +176,52 @@ void Pager::displayPage(int16_t numSkipLines) const {
     }
 }
 
-void Pager::compareWith(PageLines &pageLines, uint16_t lineCount) const {
+auto Pager::getFirstLineIdxBackward() -> Idx {
+    Idx lineIdx = lineCount_;
+    if (lineIdx > 0) {
+        uint16_t deciLines = 0;
+        do {
+            lineIdx -= 1;
+            deciLines += (tokens_[lines_[lineIdx].tokenIdx].tokenId == TokenId::ENDPARAGRAPH)
+                             ? ENDPARAGRAPH_DECI_LINE_HEIGHT
+                             : NEWLINE_DECI_LINE_HEIGHT;
+        } while ((lineIdx > 0) && (deciLines <= maxDeciLines_));
 
-    if (lineCount != lineCount_) {
-        log_e("Line Count differ: %" PRIu16 " vs %" PRIu16, lineCount_, lineCount);
-        exit(1);
-    }
-
-    for (Idx i = 0; i < lineCount_; i++) {
-        Line line;
-        Line line2;
-        line2 = pageLines[i];
-        while (true) {
-            if ((line2[strlen(line2.data()) - 1] == '\n') ||
-
-                (line2[strlen(line2.data()) - 1] == '\t')) {
-                line2[strlen(line2.data()) - 1] = 0;
-            } else {
-                break;
-            }
-        }
-        getLine(i, line);
-        if (strcmp(line.data(), line2.data()) != 0) {
-            log_e("Line %" PRIu16 " differ:\nnew: [%s]\nold: [%s]", i, line.data(), line2.data());
-            exit(1);
+        if (deciLines > maxDeciLines_) {
+            lineIdx += 1;
         }
     }
+    firstLineIdx_ = lineIdx;
+    return lineIdx;
 }
+
+// void Pager::compareWith(PageLines &pageLines, uint16_t lineCount) const {
+
+//     if (lineCount != lineCount_) {
+//         log_e("Line Count differ: %" PRIu16 " vs %" PRIu16, lineCount_, lineCount);
+//         exit(1);
+//     }
+
+//     for (Idx i = 0; i < lineCount_; i++) {
+//         Line line;
+//         Line line2;
+//         line2 = pageLines[i];
+//         while (true) {
+//             if ((line2[strlen(line2.data()) - 1] == '\n') ||
+
+//                 (line2[strlen(line2.data()) - 1] == '\t')) {
+//                 line2[strlen(line2.data()) - 1] = 0;
+//             } else {
+//                 break;
+//             }
+//         }
+//         getLine(i, line);
+//         if (strcmp(line.data(), line2.data()) != 0) {
+//             log_e("Line %" PRIu16 " differ:\nnew: [%s]\nold: [%s]", i, line.data(),
+//             line2.data()); exit(1);
+//         }
+//     }
+// }
 
 void Pager::show() const {
     if constexpr (RENDERER_DEBUG) {
