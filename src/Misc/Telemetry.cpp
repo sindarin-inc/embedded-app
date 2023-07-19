@@ -1,5 +1,7 @@
 #include "Telemetry.hpp"
 
+#include <iomanip>
+
 #include "Communications/MultiPartData.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"

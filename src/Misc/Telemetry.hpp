@@ -72,8 +72,6 @@ private:
             return;
         }
 
-        auto runTimeMs = GetRunTimeMs();
-        auto bootCount = prefs_.bootCount.get().value_or(0);
         auto timestamp = SolClock::getInstance().getEpochTime();
 
         std::string dataJsonFormat = mapToJson(data);
