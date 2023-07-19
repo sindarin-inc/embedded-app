@@ -27,6 +27,7 @@ mkdir $OUTDIR/build/partition_table
 cp build/partition_table/partition-table.bin $OUTDIR/build/partition_table/
 
 cp pytest.ini $OUTDIR/
+cp esp32s3-64MB.csv $OUTDIR/
 mkdir -p $OUTDIR/test/PyTest
 cp test/PyTest/*.py $OUTDIR/test/PyTest/
 
