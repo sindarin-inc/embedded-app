@@ -27,8 +27,19 @@ mkdir $OUTDIR/build/partition_table
 cp build/partition_table/partition-table.bin $OUTDIR/build/partition_table/
 
 cp pytest.ini $OUTDIR/
+cp esp32s3-64MB.csv $OUTDIR/
 mkdir -p $OUTDIR/test/PyTest
 cp test/PyTest/*.py $OUTDIR/test/PyTest/
+
+# copy parttool.py and nvs_partition_gen.py from esp-idf directory
+mkdir -p $OUTDIR/test/PyTest/vendor/components/partition_table
+mkdir -p $OUTDIR/test/PyTest/vendor/components/nvs_flash/nvs_partition_generator
+mkdir -p $OUTDIR/test/PyTest/vendor/components/esptool_py/esptool
+cp $IDF_PATH/components/partition_table/parttool.py $OUTDIR/test/PyTest/vendor/components/partition_table/
+cp $IDF_PATH/components/partition_table/gen_esp32part.py $OUTDIR/test/PyTest/vendor/components/partition_table/
+cp $IDF_PATH/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py $OUTDIR/test/PyTest/vendor/components/nvs_flash/nvs_partition_generator/
+cp $IDF_PATH/components/esptool_py/esptool/esptool.py $OUTDIR/test/PyTest/vendor/components/esptool_py/esptool/esptool.py
+
 pip3 install ppk2-api==0.9.2
 pip freeze > $OUTDIR/requirements.txt
 

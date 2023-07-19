@@ -4,6 +4,8 @@ import time
 import typing as t
 from typing import Any
 import platform
+import os
+import csv
 
 import pytest
 import serial
@@ -11,6 +13,7 @@ from _pytest.fixtures import FixtureRequest
 from pytest import MonkeyPatch
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.serial import IdfSerial
+from pytest_embedded.log import live_print_call
 
 from ict import MFICTClient
 from power import PowerTester
@@ -45,6 +48,13 @@ class OverrideIdfSerial(IdfSerial):
         # The DUT is flashed here unless using --skip-autoflash=True
         super()._start()
 
+        # read ict's bluetooth mac
+        btmac = self.ict_client.get_bt_mac()
+        logger.info("ICT bluetooth MAC: " + btmac)
+
+        # prepare nvs partition image and write to dut
+        self.write_nvs(btmac)
+
         # Close the serial port
         self.close()
 
@@ -57,6 +67,76 @@ class OverrideIdfSerial(IdfSerial):
         port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
 
         self.connect_dut_log_port()
+
+    def get_nvs_partition_size(self):
+        file_path = "esp32s3-64MB.csv"
+        nvs_size = ""
+        # Correct code to extract size of 'nvs' partition
+        with open(file_path, 'r') as file:
+            csv_reader = csv.reader(file, delimiter=',')
+            for row in csv_reader:
+                if row[0] == 'nvs':
+                    nvs_size = row[4]
+
+        # Convert hexadecimal to decimal
+        nvs_size_decimal = int(nvs_size, 16)
+        return nvs_size_decimal
+
+    def write_nvs(self, btmac):
+        parts = btmac.split(":")
+        hexstr = ''.join(parts)
+        logger.info("hex string: " + hexstr)
+        btmac_int = int(hexstr, 16)
+        logger.info(str(btmac_int))
+
+        # create partition csv file
+        csvfname = "dutnvs.csv"
+        fp = open(csvfname, "w")
+        fp.write("key,type,encoding,value\n")
+        fp.write("boot-info,namespace,,\n")
+        fp.write("sindarin-app,namespace,,\n")
+        # write paired tt address
+        fp.write("paired-tt,data,u64,"+str(btmac_int)+"\n")
+        fp.close()
+
+        # check for $IDF_PATH variable
+        if "IDF_PATH" not in os.environ:
+            # no idf path set, must be running from an exported test package
+            # set the variable so tools can be found
+            os.environ["IDF_PATH"] = "test/PyTest/vendor"
+
+        # create partition bin file
+        binfname = "dutnvs.bin"
+        nvssize = self.get_nvs_partition_size()
+        logger.info("nvs partition size: " + str(nvssize))
+
+        live_print_call(
+            [
+                os.environ["IDF_PATH"]+'/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py',
+                'generate',
+                csvfname,
+                binfname,
+                str(nvssize),
+            ],
+            msg_queue=self._q,
+        )
+
+        # write nvs partition to dut
+        live_print_call(
+            [
+                os.environ["IDF_PATH"]+'/components/partition_table/parttool.py',
+                '--port',
+                self.port,
+                'write_partition',
+                '--partition-name=nvs',
+                '--input',
+                binfname,
+            ],
+            msg_queue=self._q,
+        )
+
+        os.remove(csvfname)
+        os.remove(binfname)
 
     def connect_dut_log_port(self):
         max_attempts = 3
@@ -250,6 +330,9 @@ class TestPowerConsumption:
         maybe_format(dut)
 
         dut.expect("Sol: Error-free boot!", timeout=30)
+
+        # wait for ICT pageturner connect
+        dut.expect("Connected to PageTurner", timeout=5)
 
         time.sleep(1)
 
