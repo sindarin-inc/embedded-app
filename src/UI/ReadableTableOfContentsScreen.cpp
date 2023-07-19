@@ -181,7 +181,7 @@ void ReadableTableOfContentsScreen::setPlacemark() {
     telemetry_.logMetric(
         TelemetryField::METRIC_EVENT, "set-placemark",
         std::optional<std::string>(StringFormat("%s", readable_->shortenedUuid.c_str())),
-        {{"place", readable_->place}});
+        {{"po", readable_->place}});
 }
 
 void ReadableTableOfContentsScreen::setNearestChapterSelection(unsigned long placeInFile) {

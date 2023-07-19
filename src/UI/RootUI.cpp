@@ -68,9 +68,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     display_ = display;
 
-    this->telemetry_.logMetric(
-        TelemetryField::METRIC_EVENT, "boot",
-        {{"version", kVersionString}, {"boot-count", prefs_.bootCount.get().value_or(0)}});
+    this->telemetry_.logMetric(TelemetryField::METRIC_EVENT, "boot",
+                               std::optional<std::string>(kVersionString));
+    this->telemetry_.logMetric(TelemetryField::METRIC_COUNTER, "bc",
+                               std::optional<uint32_t>(prefs_.bootCount.get().value_or(0)));
 
     MenuStyle styleFamilies;
 

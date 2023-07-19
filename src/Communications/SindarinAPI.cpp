@@ -2,7 +2,6 @@
 
 #include <utility>
 
-#include "Communications/MultiPartData.hpp"
 #include "FileDownload.hpp"
 #include "GitVersion.hpp"
 #include "Misc/Battery.hpp"
@@ -181,57 +180,39 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
 
     return success;
 }
+
 auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &localPath,
                                       FileSystem &fileSystem) -> int {
-    // Create the multipart form data file.
-    MultiPartData mpData(fileSystem, localPath);
+    // Construct the headers and footers for multipart file upload
+    static std::string boundary = "SIND12345";
+    std::string header = "--" + boundary + "\r\n" +
+                         "Content-Disposition: form-data; name=\"file\"; filename=\"" + localPath +
+                         "\"\r\n" + "Content-Type: text/plain\r\n\r\n";
+    std::string footer = "\r\n--" + boundary + "--\r\n";
 
-    if (!mpData.startFile("file")) {
-        log_e("failed to open telemetry file %s", localPath.c_str());
-        return -1;
-    }
+    // Create client with multipart headers and write the header
+    int totalSize = header.size() + telemetryFile.size() + footer.size();
+    auto contentType = "multipart/form-data; boundary=" + boundary;
+    HttpClient client(SINDARIN_SERVER_URL "/telemetry/", contentType.c_str(), HTTP_METHOD_POST);
+    setAuth(client);
+    client.setHeader("X-Serial-Number", GetSerialNumber().c_str());
+    client.open(totalSize);
+    client.write(header.c_str(), header.size());
 
-    // Write the telemetry file to the multipart form data file
+    // Write the file data in chunks
     size_t bufferSize = 4096;
     auto buffer = SpiRamArrayPtr<char>(bufferSize);
-
     int bytesWritten = 0;
     int writeSize = telemetryFile.size();
     while (bytesWritten < writeSize) {
         auto bytesRead = telemetryFile.readBytes(buffer.get(), bufferSize);
-        if (!mpData.writeFileChunk((uint8_t *)buffer.get(), bytesRead)) {
-            log_e("failed to write address %d to telemetry file", bytesWritten);
-            return -1;
-        }
-        bytesWritten += bytesRead;
-    }
-
-    if (!mpData.endFile()) {
-        return -1;
-    }
-
-    if (!mpData.endMultiPartData()) {
-        return -1;
-    }
-
-    // Now, upload the multipart form data file to the server.
-    HttpClient client(SINDARIN_SERVER_URL "/telemetry/", mpData.getContentType().c_str(),
-                      HTTP_METHOD_POST);
-    setAuth(client);
-
-    client.setHeader("X-Serial-Number", GetSerialNumber().c_str());
-    client.open(mpData.getFile().size());
-
-    bufferSize = 4096;
-    buffer = SpiRamArrayPtr<char>(bufferSize);
-    bytesWritten = 0;
-    writeSize = mpData.getFile().size();
-    while (bytesWritten < writeSize) {
-        auto bytesRead = mpData.getFile().readBytes(buffer.get(), bufferSize);
         bytesWritten += client.write(buffer.get(), bytesRead);
     }
 
-    // Send the request and return the status code
+    // Write the multipart footer
+    client.write(footer.c_str(), footer.size());
+
+    // Send request and fetch response
     client.fetchHeaders();
     int httpCode = client.getStatusCode();
 
