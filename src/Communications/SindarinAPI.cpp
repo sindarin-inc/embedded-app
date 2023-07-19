@@ -187,7 +187,7 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
     // Construct the headers and footers for multipart file upload
     static std::string boundary = "SIND12345";
     std::string header = "--" + boundary + "\r\n" +
-                         "Content-Disposition: form-data; name=\"file\"; filename=\"" + localPath +
+                         R"(Content-Disposition: form-data; name="file"; filename=")" + localPath +
                          "\"\r\n" + "Content-Type: text/plain\r\n\r\n";
     std::string footer = "\r\n--" + boundary + "--\r\n";
 
