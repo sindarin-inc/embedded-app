@@ -460,9 +460,20 @@ void LocalStore::syncFromRemote(
                 } else {
                     log_d("Fetching next page (#%d): %s", nextPageCounter + 1, nextPageUrl.c_str());
                 }
+                this->telemetry_.logMetric(
+                    TelemetryField::METRIC_EVENT,
+                    StringFormat("sync-%ss-page", ReadableModelTypeToString(modelType).c_str())
+                        .c_str(),
+                    std::optional<int>(nextPageCounter));
+
                 nextPageCounter += 1;
                 if (nextPageCounter > MAX_NUMBER_OF_PAGES_TO_BACKFILL) {
                     log_w("Too many pages to backfill, aborting");
+                    this->telemetry_.logMetric(
+                        TelemetryField::METRIC_EVENT,
+                        StringFormat("sync-%ss-max-backfill",
+                                     ReadableModelTypeToString(modelType).c_str())
+                            .c_str());
                     break;
                 }
 
@@ -478,8 +489,11 @@ void LocalStore::syncFromRemote(
                 }
                 log_d("Server has %d %ss, next page: %s", checkSyncResponse.totalCount,
                       ReadableModelTypeToString(modelType).c_str(), nextPageUrl.c_str());
-                this->telemetry_.logMetric(TelemetryField::METRIC_EVENT, "sync-status",
-                                           std::optional<int>(httpCode));
+                this->telemetry_.logMetric(
+                    TelemetryField::METRIC_EVENT,
+                    StringFormat("sync-status-%ss", ReadableModelTypeToString(modelType).c_str())
+                        .c_str(),
+                    std::optional<int>(httpCode));
                 this->telemetry_.logMetric(
                     TelemetryField::METRIC_EVENT,
                     StringFormat("sync-%ss-count", ReadableModelTypeToString(modelType).c_str())
@@ -775,7 +789,7 @@ auto LocalStore::processReadableDownload(
 
         for (int t = 0; t < NUMBER_OF_READABLE_DOWNLOAD_TRIES; t++) {
             auto success = SindarinAPI::getInstance()->downloadReadable(
-                readable, this->fileSystem, path,
+                readable, this->fileSystem, this->telemetry_, path,
                 [progressCallback, &syncState, tasksIndex, currPercentage, pctPerReadable,
                  modelType](int percentage) {
                 if (modelType == ReadablesModelType::Book) {

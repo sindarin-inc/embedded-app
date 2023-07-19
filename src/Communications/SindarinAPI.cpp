@@ -153,7 +153,8 @@ auto SindarinAPI::checkFirmware(FirmwareResponse *resp) -> int {
 }
 
 auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
-                                   FileSystem &fileSystem, const std::string &path,
+                                   FileSystem &fileSystem, Telemetry &telemetry,
+                                   const std::string &path,
                                    const std::function<void(int percentage)> &progressCallback)
     -> bool {
     bool success = false;
@@ -175,7 +176,7 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
 
     bool gzip = HasSuffix(path, ".gz");
     success = DownloadFile(
-        remoteUrl.c_str(), fileSystem, path.c_str(), fileSize,
+        remoteUrl.c_str(), fileSystem, telemetry, path.c_str(), fileSize,
         [progressCallback](float percentage) { progressCallback(percentage); }, gzip);
 
     return success;
