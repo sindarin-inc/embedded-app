@@ -65,28 +65,35 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
     display_.setFont(display_.style.getFontFamily().readableFont);
     tokenizer_->computeMaxTextTokenCharSize();
 
-    uint16_t displayWidth = display_.width();
-    uint16_t displayHeight = display_.height();
+    // The following is done to compute the maximum number of characters a display
+    // screen can get. The character "G" is a good compromize between smaller
+    // ones (line lowercases) and bigger ones (like "M"). The obtained value added
+    // to the maximum number of bytes in a paragraph will be used to return back in
+    // the document to find the preceeding page start.
 
     uint16_t charWidth, charHeight;
     display_.getTextSize("G", &charWidth, &charHeight);
 
-    uint16_t maxPageCount = ((displayWidth / charWidth) + 1) * ((displayHeight / charHeight) + 1);
+    uint16_t maxPageCount =
+        ((display_.width() / charWidth) + 1) * ((display_.height() / charHeight) + 1);
+    if (maxPageCount > MAX_BYTES_PER_DISPLAY_PAGE) {
+        maxPageCount = MAX_BYTES_PER_DISPLAY_PAGE;
+    }
 
     // std::cout << "Max Page Count: " << maxPageCount << std::endl;
 
-    // Step 1: Figure out how much to read before the current place. If we're too
+    // Figure out how much to read before the current place. If we're too
     // close to the beginning, we just read from the beginning.
+
     StreamPlace seekPlace =
         tokenizer_->subtractOffset(fromPlace, maxPageCount + MAX_BYTES_PER_PARAGRAPH);
 
-    // Step 2: Once the data is read into the buffer, tokenize it the same as you
-    // would for a forwards render. seekPlace will be returned to be at a UTF8 character
-    // boundary
+    // Tokenize it the same as you would for a forwards render. seekPlace will be returned to be at
+    // a UTF8 character boundary
+
     seekPlace = tokenizer_->loadAndTokenizePage(
         seekPlace, tokens_, pager_, true, &fromPlace); // NOLINT(clang-analyzer-deadcode.DeadStores)
 
-    // pager_.show();
 
     // std::cout << "Line Count: " << pager_.getLineCount() << ", Token Count: " <<
     // tokens_.getCount()
@@ -98,6 +105,7 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
     //  }
 
     Idx firstLineIdx = pager_.getFirstLineIdxBackward();
+
     // std::cout << "First line Idx of the page: " << firstLineIdx << std::endl;
 
     // Line line;
@@ -108,7 +116,9 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
 
     pager_.setNextPagePlace_(fromPlace);
 
-    // std::cout << "Characters count in page: " << pager_.getPageLength() << std::endl;
+    pager_.show();
+
+    std::cout << "Characters count in page: " << pager_.getPageLength() << std::endl;
 
     return pager_.getStreamPlaceOfFirstLine();
 }

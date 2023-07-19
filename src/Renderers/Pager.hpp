@@ -19,6 +19,7 @@ private:
     uint16_t maxDeciLines_{0};
     uint16_t maxLineWidth_{0};
     StreamPlace nextPagePlace_;
+    bool atEOF_{false};
 
     [[nodiscard]] inline auto lastLineTokenIdx(Idx lineIdx) const -> Idx {
         return lines_[lineIdx].tokenIdx + lines_[lineIdx].tokenCount - 1;
@@ -34,13 +35,14 @@ public:
     }
 
     inline void clear() {
+        atEOF_ = false;
         wordCount_ = 0;
         lineCount_ = 0;
         firstLineIdx_ = 0;
         currentLineWidth_ = 0;
         currentPageDecilineHeight_ = 0;
         maxDeciLines_ = getMaxDeciLines();
-        maxLineWidth_ = (display_.width() - 4);
+        maxLineWidth_ = display_.width();
         lines_[0].tokenCount = 0;
     }
 
@@ -57,7 +59,7 @@ public:
     [[nodiscard]] auto getPageLength() const -> uint16_t;
 
     [[nodiscard]] inline auto getNextPageStreamPlace() const -> StreamPlace {
-        return nextPagePlace_;
+        return atEOF_ ? StreamPlace{.offset = 0, .fileNumber = 0} : nextPagePlace_;
     }
     
     inline void setNextPagePlace_(StreamPlace place) { nextPagePlace_ = place; }
@@ -71,6 +73,8 @@ public:
     void getLine(Idx lineNbr, Line &line) const;
     void displayPage(int16_t numSkipLines) const;
 
-    // void compareWith(PageLines &pageLines, uint16_t lineCount) const;
+    void endOfFileReached() { atEOF_ = true; }
+    void completeLastLine();
+    
     void show() const;
 };

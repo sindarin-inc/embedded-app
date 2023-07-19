@@ -35,6 +35,9 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
 
     if constexpr (RENDERER_DEBUG) {
         log_w("Starting tokenizer at streamPlace %s", fromPlace.str().c_str());
+        if (backwards) {
+            log_w("Going up to place %s", toPlace->str().c_str());
+        }
     }
 
     uint8_t curChar = stream_->getNextByte();
@@ -75,7 +78,13 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
                     .width = 0,
                     .height = 0,
                     .length = 0,
-                    .tokenId = TokenId::ENDOFFILE};
+                    .tokenId = TokenId::NOTOKEN};
+
+        if (backwards && !tokens.isEmpty() && (newToken.streamPlace.offset >= toPlace->offset)) {
+            pager.completeLastLine();
+            checkSpace();
+            break;
+        }
 
         // if constexpr (RENDERER_DEBUG) {
         //     log_d("Set the stream place to %s",
@@ -182,11 +191,6 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
             }
             break;
         }
-
-        if (backwards && !tokens.isEmpty() &&
-            (tokens.getLast().streamPlace.offset >= toPlace->offset)) {
-            break;
-        }
     }
 
     if (!pageCompleted) {
@@ -199,17 +203,19 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
         checkSpace();
     }
 
-    pager.show();
+    if (curChar == 0) {
+        pager.endOfFileReached();
+    }
 
-    Token eofToken = {.cStr = nullptr,
-                      .streamPlace = addOffset(fromPlace, streamRelativeOffset),
-                      .prevNewParagraphTokenIdx = 0,
-                      .width = 0,
-                      .height = 0,
-                      .length = 0,
-                      .tokenId = TokenId::ENDOFFILE};
+    // Token eofToken = {.cStr = nullptr,
+    //                   .streamPlace = addOffset(fromPlace, streamRelativeOffset),
+    //                   .prevNewParagraphTokenIdx = 0,
+    //                   .width = 0,
+    //                   .height = 0,
+    //                   .length = 0,
+    //                   .tokenId = TokenId::ENDOFFILE};
 
-    tokens.add(eofToken);
+    // tokens.add(eofToken);
 
     if constexpr (RENDERER_DEBUG) {
         log_d("Computed Word Count: %" PRIu32, pager.getWordCount());
