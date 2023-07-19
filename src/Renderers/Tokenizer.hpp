@@ -24,7 +24,7 @@ public:
     [[nodiscard]] auto isA(StreamType streamType) const -> bool { return stream_->isA(streamType); }
 
     void computeMaxTextTokenCharSize() {
-        maxTextTokenCharSize_ = (display_.width() - 4) / display_.getTextWidth("G");
+        maxTextTokenCharSize_ = display_.width() / display_.getTextWidth("G");
     }
 
     [[nodiscard]] auto getPlaceAtBeginningOfFile(StreamPlace streamPlace) const -> StreamPlace {

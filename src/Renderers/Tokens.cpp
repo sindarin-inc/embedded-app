@@ -42,7 +42,7 @@ void Tokens::addByte(Token &token, uint8_t b) {
         }
         if constexpr (RENDERER_DEBUG) {
             if (strlen(token.cStr) != token.length) {
-                log_e("Hum... token length wrong: %" PRIu64 " vs %" PRIu16, strlen(token.cStr),
+                log_e("Hum... token length wrong: %zu vs %" PRIu16, strlen(token.cStr),
                       token.length);
                 if constexpr (ON_ERROR_EXIT) {
                     exit(1);

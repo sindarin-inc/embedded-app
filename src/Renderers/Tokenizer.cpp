@@ -1,9 +1,9 @@
 #include "Tokenizer.hpp"
 
 #include "EPubTokenizer.hpp"
+#include "NullTokenizer.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "TxtTokenizer.hpp"
-#include "NullTokenizer.hpp"
 
 auto Tokenizer::factory(std::shared_ptr<RendererStream> stream, DisplaySystem &display)
     -> std::shared_ptr<Tokenizer> {
@@ -14,7 +14,8 @@ auto Tokenizer::factory(std::shared_ptr<RendererStream> stream, DisplaySystem &d
     } else if (stream->isA(StreamType::EPUB)) {
         tokenizer = std::make_shared<EPubTokenizer>(display);
     } else {
-        log_e("Stream is of wrong type (must be TXT or EPUB)!");
+        log_e("Stream is of wrong type (must be TXT or EPUB)!: %" PRIu8,
+              static_cast<uint8_t>(stream->getStreamType()));
         if constexpr (ON_ERROR_EXIT) {
             exit(1);
         }

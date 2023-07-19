@@ -6,8 +6,9 @@
 
 class LookBackStream : public RendererStream {
 public:
-    LookBackStream(std::unique_ptr<RendererStream> stream, int lookBackSize)
-        : stream_(std::move(stream)), lookBackBuffer_(lookBackSize) {}
+    LookBackStream(std::unique_ptr<RendererStream> stream, int lookBackSize,
+                   StreamType streamType = StreamType::OTHER)
+        : RendererStream(streamType), stream_(std::move(stream)), lookBackBuffer_(lookBackSize) {}
 
     auto available() -> int override;
     auto readBytes(uint8_t *buf, int size) -> int override;

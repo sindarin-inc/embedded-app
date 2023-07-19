@@ -19,8 +19,6 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
 
     tokenizer_->computeMaxTextTokenCharSize();
 
-    PROFILE_START(loadCurrentPage);
-
     // std::cout << "Pager Line Count: " << pager_.getLineCount() << std::endl;
     // std::cout << "currentPlace: " << currentPlace_.str()
     //           << ", Pager first Place: " << pager_.getStreamPlaceOfFirstLine().str() <<
@@ -31,7 +29,10 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
 
         if ((pager_.getLineCount() == 0) ||
             (!(currentPlace_ == pager_.getStreamPlaceOfFirstLine()))) {
+            PROFILE_START(loadAndTokenizePage);
+
             currentPlace_ = tokenizer_->loadAndTokenizePage(currentPlace_, tokens_, pager_);
+            PROFILE_END_LOG_MS(loadAndTokenizePage);
         }
         nextPlace_ = pager_.getNextPageStreamPlace();
 
@@ -48,8 +49,6 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
         }
         nextPlace_ = pager_.getNextPageStreamPlace();
     }
-
-    PROFILE_END_LOG_MS(loadCurrentPage);
 
     pager_.displayPage(numSkipLines);
 
@@ -94,7 +93,6 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
     seekPlace = tokenizer_->loadAndTokenizePage(
         seekPlace, tokens_, pager_, true, &fromPlace); // NOLINT(clang-analyzer-deadcode.DeadStores)
 
-
     // std::cout << "Line Count: " << pager_.getLineCount() << ", Token Count: " <<
     // tokens_.getCount()
     //           << std::endl;
@@ -104,7 +102,7 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
     //      std::cout << "Last token doesn't point at fromPlace" << std::endl;
     //  }
 
-    Idx firstLineIdx = pager_.getFirstLineIdxBackward();
+    // Idx firstLineIdx = pager_.getFirstLineIdxBackward();
 
     // std::cout << "First line Idx of the page: " << firstLineIdx << std::endl;
 
@@ -124,6 +122,9 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
 }
 
 auto Renderer::getPreviousPlace() -> Place {
+
+    PROFILE_START(goBackwardsOnePage);
+
     if constexpr (RENDERER_CHRONO) {
         auto start = std::chrono::high_resolution_clock::now();
 
@@ -137,9 +138,10 @@ auto Renderer::getPreviousPlace() -> Place {
         previousPlace_ = goBackwardsOnePage(currentPlace_);
     }
 
+    PROFILE_END_LOG_MS(goBackwardsOnePage);
+
     if constexpr (RENDERER_DEBUG) {
         log_w("Computed place: %s", previousPlace_.str().c_str());
     }
-
     return tokenizer_->toPlace(previousPlace_);
 }

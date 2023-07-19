@@ -31,12 +31,16 @@ public:
     auto getStreamType() const -> StreamType { return streamType_; }
 
     static auto parseStreamType(const char *path) -> StreamType {
+        log_d("parseStreamType: Path: %s", path);
         if (HasSuffix(path, ".txt") || HasSuffix(path, ".txt.gz")) {
+            log_d("parseStreamType: TXT");
             return StreamType::TXT;
         }
         if (HasSuffix(path, ".epub")) {
+            log_d("parseStreamType: EPUB");
             return StreamType::EPUB;
         }
+        log_d("parseStreamType: OTHER");
         return StreamType::OTHER;
     }
 

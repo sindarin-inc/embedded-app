@@ -218,7 +218,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
     // tokens.add(eofToken);
 
     if constexpr (RENDERER_DEBUG) {
-        log_d("Computed Word Count: %" PRIu32, pager.getWordCount());
+        log_d("Computed Word Count: %" PRIu16, pager.getWordCount());
         log_d("Tokens Count: %" PRIu16, tokens.getCount());
     }
 
