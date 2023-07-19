@@ -13,7 +13,8 @@ private:
     uint16_t wordCount_{0};
     uint16_t currentPageDecilineHeight_{0};
     uint16_t currentLineWidth_{0};
-    uint8_t lineCount_{0};
+    uint16_t lineCount_{0};
+    Idx firstLineIdx_{0};
     Lines lines_{};
     uint16_t maxDeciLines_{0};
     uint16_t maxLineWidth_{0};
@@ -35,6 +36,7 @@ public:
     inline void clear() {
         wordCount_ = 0;
         lineCount_ = 0;
+        firstLineIdx_ = 0;
         currentLineWidth_ = 0;
         currentPageDecilineHeight_ = 0;
         maxDeciLines_ = getMaxDeciLines();
@@ -44,17 +46,31 @@ public:
 
     // Returns false if the last token is not part of the page.
     // The token will be the first to appear on next page.
-    [[nodiscard]] auto addLastTokenToPage() -> bool;
+    [[nodiscard]] auto addLastTokenToPage(bool dontStop = false) -> bool;
+    [[nodiscard]] auto computeWordCount() const -> uint16_t;
 
-    [[nodiscard]] inline auto getWordCount() const -> uint16_t { return wordCount_; }
-    [[nodiscard]] inline auto getLineCount() const -> uint16_t { return lineCount_; }
-    [[nodiscard]] inline auto getLineLength(Idx lineIdx) const -> uint16_t { return lines_[lineIdx].length; }
-    [[nodiscard]] inline auto getNextPageStreamPlace() const -> StreamPlace { return nextPagePlace_; }
+    [[nodiscard]] inline auto getWordCount() const -> uint16_t { return firstLineIdx_ == 0 ? wordCount_ : computeWordCount(); }
+    [[nodiscard]] inline auto getLineCount() const -> uint16_t { return lineCount_ - firstLineIdx_; }
+    [[nodiscard]] inline auto getLineLength(Idx lineIdx) const -> uint16_t {
+        return lines_[firstLineIdx_ + lineIdx].length;
+    }
+    [[nodiscard]] auto getPageLength() const -> uint16_t;
+
+    [[nodiscard]] inline auto getNextPageStreamPlace() const -> StreamPlace {
+        return nextPagePlace_;
+    }
+    
+    inline void setNextPagePlace_(StreamPlace place) { nextPagePlace_ = place; }
+
+    [[nodiscard]] inline auto getStreamPlaceOfFirstLine() -> StreamPlace {
+        return tokens_[lines_[firstLineIdx_].tokenIdx].streamPlace;
+    }
+
+    [[nodiscard]] auto getFirstLineIdxBackward() -> Idx;
 
     void getLine(Idx lineNbr, Line &line) const;
-
     void displayPage(int16_t numSkipLines) const;
 
-    void compareWith(PageLines &pageLines, uint16_t lineCount) const;
+    // void compareWith(PageLines &pageLines, uint16_t lineCount) const;
     void show() const;
 };

@@ -9,7 +9,7 @@
 using namespace renderer_defs;
 
 // ToDo: The renderer interface has been adjusted to consider a new upcoming Place struct.
-//       It is now using a Place as an int32_t, independant of an renderer independant
+//       It is now using a Place as an uint32_t, independant of an renderer independant
 //       StreamPlace, to support it's development in the current Sol app that support only
 //       TXT files.
 //       Will need to be adjusted considering the upcoming Place definition...
@@ -56,13 +56,17 @@ public:
                           numSkipLines);
     }
 
-    [[nodiscard]] auto getTotalLengthOfLines() const -> uint16_t;
-
-    [[nodiscard]] inline auto getLengthOfLine(Idx lineIdx) const -> uint16_t {
-        return pageLinesLengths_[lineIdx];
+    [[nodiscard]] inline auto getTotalLengthOfLines() const -> uint16_t {
+        return pager_.getPageLength();
     }
 
-    [[nodiscard]] inline auto getNumRenderedLines() const -> uint16_t { return pager_.getLineCount(); }
+    [[nodiscard]] inline auto getLengthOfLine(Idx lineIdx) const -> uint16_t {
+        return pager_.getLineLength(lineIdx);
+    }
+
+    [[nodiscard]] inline auto getNumRenderedLines() const -> uint16_t {
+        return pager_.getLineCount();
+    }
 
     [[nodiscard]] inline auto getCurrentPageWordCount() const -> uint16_t {
         return pager_.getWordCount();
@@ -78,27 +82,5 @@ private:
     StreamPlace previousPlace_{};
     StreamPlace nextPlace_{};
 
-    // PageLines pageLines_{};
-    uint16_t pageLinesLengths_[MAX_LINES_PER_PAGE] = {0};
-    uint16_t pageLinesCount_ = 0;
-
-    // The following are used to support the back page command algorithm:
-    // they will keep tokenIdx pointers at the last lines that are part of
-    // the last paragraph read to complete the page.
-    ParaLineIdxs paraLineIdxs_;
-    renderer_defs::Idx paraLineFirstIdx_;
-    renderer_defs::Idx paraLineLastIdx_;
-
-    // auto loadCurrentPage() -> StreamPlace;
-    auto getParagraphDeciLinesCount(renderer_defs::Idx startTokenIdx,
-                                    renderer_defs::Idx endTokenIdx) -> uint16_t;
-    [[nodiscard]] auto getFirstLineOfPageTokenIdx(renderer_defs::Idx lastTokenIdx,
-                                                  uint16_t deciLinesCount,
-                                                  uint16_t maxDeciLines) const
-        -> renderer_defs::Idx;
-
     auto goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace;
-
-    auto getLineOfTextForRendering(renderer_defs::Idx startTokenIdx, Line &line)
-        -> renderer_defs::Idx;
 };

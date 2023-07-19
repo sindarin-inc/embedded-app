@@ -12,6 +12,7 @@ namespace renderer_defs {
 
 // For deep logging when changing this file
 static constexpr bool RENDERER_DEBUG = false;
+static constexpr bool RENDERER_CHRONO = true;
 static constexpr bool ON_ERROR_EXIT = true;
 
 // Used by the Tokenizer::getFileLocation() method in case of error
@@ -31,16 +32,14 @@ static constexpr uint16_t ENDPARAGRAPH_DECI_LINE_HEIGHT = 4;
 // command is issued by the user. By design a paragraph cannot have more than 1500 bytes,
 // followed by a NEWLINE, an ENDOFPARAGRAPH, and a null.
 
-static constexpr uint16_t MAX_BYTES_PER_PARAGRAPH = 10003; /* 1503; */
+static constexpr uint16_t MAX_BYTES_PER_PARAGRAPH = /* 10003; */ 1503;
 static constexpr uint16_t MAX_BYTES_PER_DISPLAY_PAGE = 2400;
 static constexpr uint16_t MAX_BYTES_TO_RETRIEVE =
     (MAX_BYTES_PER_PARAGRAPH + MAX_BYTES_PER_DISPLAY_PAGE);
-static constexpr uint16_t POOL_BUFFER_SIZE =
-    (MAX_BYTES_PER_PARAGRAPH * 2 + MAX_BYTES_PER_DISPLAY_PAGE);
-static constexpr uint16_t MAX_TOKEN_COUNT = POOL_BUFFER_SIZE; // (POOL_BUFFER_SIZE / 2);
+static constexpr uint16_t POOL_BUFFER_SIZE = (MAX_BYTES_PER_PARAGRAPH + MAX_BYTES_PER_DISPLAY_PAGE);
+static constexpr uint16_t MAX_TOKEN_COUNT = POOL_BUFFER_SIZE;
 static constexpr uint16_t MAX_BYTES_PER_LINE = 200;
-static constexpr uint16_t MAX_LINES_PER_PAGE = 31;
-static constexpr uint16_t MAX_PARAGRAPH_LINES = MAX_LINES_PER_PAGE + 2;
+static constexpr uint16_t MAX_LINES_PER_PAGE = 200;
 
 // NOTE:
 //
@@ -119,12 +118,6 @@ using TokensArray = std::array<Token, MAX_TOKEN_COUNT>;
 using CStrPool = std::array<char, POOL_BUFFER_SIZE + 1>;
 
 using Line = std::array<char, MAX_BYTES_PER_LINE>;
-using PageLines = std::array<Line, MAX_LINES_PER_PAGE>;
-
-// Indexes into the last lines of the last retrieved paragraphs
-// used to find the first line in the back page command context
-using ParaLineIdxs = std::array<Idx, MAX_PARAGRAPH_LINES>;
-
 using Lines = std::array<LineStruct, MAX_LINES_PER_PAGE>;
 
 } // namespace renderer_defs

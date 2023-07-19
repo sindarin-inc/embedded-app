@@ -27,6 +27,8 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
     Token spaceToken;
 
     fromPlace = getFileLocation(fromPlace);
+    cacheInit();
+
     if (fromPlace.offset == LOCATION_ERROR) {
         return getPlaceAtBeginningOfDocument();
     }
@@ -42,7 +44,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
 
     // Keep it DRY
     auto addToPage = [&pageCompleted, &backwards, &pager]() {
-        pageCompleted = !backwards && !pager.addLastTokenToPage();
+        pageCompleted = !pager.addLastTokenToPage(backwards) && !backwards;
     };
 
     auto checkSpace = [&tokens, &spaceToken, &pageCompleted, &backwards, &addToPage]() -> void {
@@ -182,7 +184,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
         }
 
         if (backwards && !tokens.isEmpty() &&
-            (tokens.getLast().streamPlace.offset > toPlace->offset)) {
+            (tokens.getLast().streamPlace.offset >= toPlace->offset)) {
             break;
         }
     }
@@ -255,4 +257,21 @@ auto TxtTokenizer::getFileLocation(StreamPlace fromPlace) -> StreamPlace {
 
     fromPlace.offset = LOCATION_ERROR;
     return fromPlace;
+}
+
+auto TxtTokenizer::getNextByte() -> uint8_t {
+    if (cacheIdx >= cacheSize) {
+        cacheSize = stream_->readBytes(byteCache, 100);
+        cacheIdx = 0;
+    }
+    if (cacheIdx < cacheSize) {
+        return byteCache[cacheIdx++];
+    } else {
+        return 0;
+    }
+}
+
+void TxtTokenizer::cacheInit() {
+    cacheIdx = 0;
+    cacheSize = 0;
 }
