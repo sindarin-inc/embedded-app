@@ -404,8 +404,15 @@ void LocalStore::syncFromRemote(
     auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this, progressCallback] {
         progressCallback(ContentSyncState{.state = ContentSyncState::State::UploadTelemetry});
-
-        this->telemetry_.uploadAndResetTelemetry(this->fileSystem, this->telemetry_);
+        auto httpCode =
+            this->telemetry_.uploadAndResetTelemetry(this->fileSystem, this->telemetry_);
+        if (httpCode != 201) {
+            this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-telemetry-failed",
+                                       {{"http-code", httpCode}});
+        } else {
+            this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,
+                                       "sync-telemetry-success");
+        }
     });
 
     // Run this work on a separate thread, since it's long running
@@ -461,16 +468,16 @@ void LocalStore::syncFromRemote(
                     log_d("Fetching next page (#%d): %s", nextPageCounter + 1, nextPageUrl.c_str());
                 }
                 this->telemetry_.logMetric(
-                    TelemetryField::METRIC_EVENT,
+                    TelemetryField::METRIC_SYNC_STATUS,
                     StringFormat("sync-%ss-page", ReadableModelTypeToString(modelType).c_str())
                         .c_str(),
-                    std::optional<int>(nextPageCounter));
+                    {{"page", nextPageCounter}});
 
                 nextPageCounter += 1;
                 if (nextPageCounter > MAX_NUMBER_OF_PAGES_TO_BACKFILL) {
                     log_w("Too many pages to backfill, aborting");
                     this->telemetry_.logMetric(
-                        TelemetryField::METRIC_EVENT,
+                        TelemetryField::METRIC_SYNC_STATUS,
                         StringFormat("sync-%ss-max-backfill",
                                      ReadableModelTypeToString(modelType).c_str())
                             .c_str());
@@ -490,31 +497,31 @@ void LocalStore::syncFromRemote(
                 log_d("Server has %d %ss, next page: %s", checkSyncResponse.totalCount,
                       ReadableModelTypeToString(modelType).c_str(), nextPageUrl.c_str());
                 this->telemetry_.logMetric(
-                    TelemetryField::METRIC_EVENT,
+                    TelemetryField::METRIC_SYNC_STATUS,
                     StringFormat("sync-status-%ss", ReadableModelTypeToString(modelType).c_str())
                         .c_str(),
-                    std::optional<int>(httpCode));
+                    {{"http-code", httpCode}});
                 this->telemetry_.logMetric(
-                    TelemetryField::METRIC_EVENT,
+                    TelemetryField::METRIC_SYNC_STATUS,
                     StringFormat("sync-%ss-count", ReadableModelTypeToString(modelType).c_str())
                         .c_str(),
-                    std::optional<int>(checkSyncResponse.totalCount));
+                    {{"total-count", checkSyncResponse.totalCount}});
                 if (httpCode != 200) {
                     log_e("Failed to check sync (HTTP %d)", httpCode);
                     progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
                                                       .message = "Failed to check sync"});
                     this->telemetry_.logMetric(
-                        TelemetryField::METRIC_EVENT,
+                        TelemetryField::METRIC_SYNC_STATUS,
                         StringFormat("failed-sync-%ss",
                                      ReadableModelTypeToString(modelType).c_str())
                             .c_str(),
-                        std::optional<int>(httpCode));
+                        {{"http-code", httpCode}});
                     return;
                 }
 
                 // Look through all the books and articles and download any that we don't have
-                // already We also process readables before checking if we're synced before we need
-                // to reset the local changed flags
+                // already We also process readables before checking if we're synced before we
+                // need to reset the local changed flags
                 auto userReadables = modelType == ReadablesModelType::Book
                                          ? checkSyncResponse.userBooks
                                          : checkSyncResponse.userArticles;
@@ -553,7 +560,7 @@ void LocalStore::syncFromRemote(
                     }
 
                     this->telemetry_.logMetric(
-                        TelemetryField::METRIC_EVENT,
+                        TelemetryField::METRIC_SYNC_STATUS,
                         StringFormat("already-synced-%ss",
                                      ReadableModelTypeToString(modelType).c_str())
                             .c_str());
@@ -605,7 +612,7 @@ void LocalStore::syncFromRemote(
                           ReadableModelTypeToString(modelType).c_str(), readables->size(),
                           ReadableModelTypeToString(modelType).c_str());
                     this->telemetry_.logMetric(
-                        TelemetryField::METRIC_EVENT,
+                        TelemetryField::METRIC_SYNC_STATUS,
                         StringFormat("failed-download-%ss",
                                      ReadableModelTypeToString(modelType).c_str())
                             .c_str());
@@ -617,7 +624,7 @@ void LocalStore::syncFromRemote(
                 log_e("Failed to save %s", ReadableModelTypeToString(modelType).c_str());
                 failedDownload = true;
                 this->telemetry_.logMetric(
-                    TelemetryField::METRIC_EVENT,
+                    TelemetryField::METRIC_SYNC_STATUS,
                     StringFormat("failed-save-%ss", ReadableModelTypeToString(modelType).c_str())
                         .c_str());
             }
@@ -664,16 +671,15 @@ void LocalStore::syncFromRemote(
                     articlesNowSynced = true;
                 }
                 this->telemetry_.logMetric(
-                    TelemetryField::METRIC_EVENT,
+                    TelemetryField::METRIC_SYNC_STATUS,
                     StringFormat("success-download-%ss",
-                                 ReadableModelTypeToString(modelType).c_str())
-                        .c_str());
+                                 ReadableModelTypeToString(modelType).c_str()));
             } else {
                 log_w("After running sync, local %ss are still out of sync",
                       ReadableModelTypeToString(modelType).c_str());
                 checkSyncFailures += 1;
                 this->telemetry_.logMetric(
-                    TelemetryField::METRIC_EVENT,
+                    TelemetryField::METRIC_SYNC_STATUS,
                     StringFormat("failed-finish-sync-%ss",
                                  ReadableModelTypeToString(modelType).c_str())
                         .c_str());
@@ -807,9 +813,9 @@ auto LocalStore::processReadableDownload(
                     log_e("Failed to save %s", ReadableModelTypeToString(modelType).c_str());
 
                     this->telemetry_.logMetric(
-                        TelemetryField::METRIC_EVENT,
-                        StringFormat("failed-save-%s", ReadableModelTypeToString(modelType).c_str())
-                            .c_str(),
+                        TelemetryField::METRIC_SYNC_STATUS,
+                        StringFormat("failed-save-%s",
+                                     ReadableModelTypeToString(modelType).c_str()),
                         {{"uuid", readable->uuid}, {"title", readable->title.c_str()}});
                 }
 
@@ -820,7 +826,7 @@ auto LocalStore::processReadableDownload(
                     log_e("Failed to download file.");
                     failedDownload = true;
                     this->telemetry_.logMetric(
-                        TelemetryField::METRIC_EVENT,
+                        TelemetryField::METRIC_SYNC_STATUS,
                         StringFormat("failed-download-%s",
                                      ReadableModelTypeToString(modelType).c_str())
                             .c_str(),
@@ -1257,9 +1263,9 @@ void LocalStore::migrateIfNeeded() {
               migrationVersion + 1);
         switch (migrationVersion) {
         case 0: {
-            // For a long while we weren't actively cleaning up these old readable-specific keys in
-            // NVS. This migration goes through all readable-keys and purges any keys that don't
-            // correspond to a readable on the glasses.
+            // For a long while we weren't actively cleaning up these old readable-specific keys
+            // in NVS. This migration goes through all readable-keys and purges any keys that
+            // don't correspond to a readable on the glasses.
             garbageCollectPreferences();
             break;
         }

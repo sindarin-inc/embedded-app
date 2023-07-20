@@ -15,12 +15,20 @@ auto TelemetryFieldToString(TelemetryField field) -> const char * {
         return "ba";
     case METRIC_READABLE_PLACE:
         return "rp";
+    case METRIC_READABLE_OPEN:
+        return "ro";
+    case METRIC_SET_PLACEMARK:
+        return "sp";
     case METRIC_EVENT:
         return "ev";
     case METRIC_COUNTER:
         return "co";
+    case METRIC_SYNC_STATUS:
+        return "sy";
+    case METRIC_BOOT:
+        return "bo";
     default:
-        return "uk";
+        return "";
     }
 }
 

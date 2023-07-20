@@ -19,6 +19,10 @@ enum TelemetryField {
     METRIC_COUNTER,
     METRIC_BATTERY_VOLTAGE,
     METRIC_READABLE_PLACE,
+    METRIC_READABLE_OPEN,
+    METRIC_SET_PLACEMARK,
+    METRIC_SYNC_STATUS,
+    METRIC_BOOT,
 };
 auto TelemetryFieldToString(TelemetryField field) -> const char *;
 
@@ -27,23 +31,17 @@ public:
     Telemetry(FileSystem &fs, PreferencesStore &prefs) : fileSystem_(fs), prefs_(prefs) {}
     Telemetry(const Telemetry &) = delete;
 
-    void
-    logMetric(TelemetryField field,
-              std::map<std::string, std::variant<int, uint32_t, float, std::string>> data = {}) {
-        logMetricImpl(field, "", std::optional<uint32_t>(), data);
-    }
-
-    void
-    logMetric(TelemetryField field, const std::string &key = "",
-              std::map<std::string, std::variant<int, uint32_t, float, std::string>> data = {}) {
-        logMetricImpl(field, key, std::optional<uint32_t>(), data);
+    void logMetricData(
+        TelemetryField field,
+        std::map<std::string, std::variant<int, uint32_t, float, std::string>> data = {}) {
+        logMetricImpl(field, "", data);
     }
 
     template <typename T>
     void
-    logMetric(TelemetryField field, const std::string &key, std::optional<T> value,
+    logMetric(TelemetryField field, T value,
               std::map<std::string, std::variant<int, uint32_t, float, std::string>> data = {}) {
-        logMetricImpl(field, key, value, data);
+        logMetricImpl(field, value, data);
     }
 
     auto variantToJson(const std::variant<int, uint32_t, float, std::string> &v) -> std::string;
@@ -64,7 +62,7 @@ protected:
 private:
     template <typename T>
     void
-    logMetricImpl(TelemetryField field, const std::string &key, std::optional<T> value,
+    logMetricImpl(TelemetryField field, T value,
                   std::map<std::string, std::variant<int, uint32_t, float, std::string>> &data) {
         // create log directory in filesystem if it doesn't exist
         if (!fileSystem_.createDir("/metrics")) {
@@ -75,29 +73,26 @@ private:
         auto timestamp = SolClock::getInstance().getEpochTime();
 
         std::string dataJsonFormat = mapToJson(data);
-
-        std::string keyFormat = "";
-        if (!key.empty()) {
-            keyFormat = StringFormat(R"(,"k":"%s")", key.c_str());
-        }
-
         std::string valueFormat = "";
-        if (value.has_value()) {
-            if constexpr (std::is_same<T, float>::value) {
-                valueFormat = StringFormat(R"(,"v":%.2f)", *value);
-            } else if constexpr (std::is_same<T, uint32_t>::value || std::is_same<T, int>::value) {
-                valueFormat = StringFormat(R"(,"v":%u)", *value);
-            } else {
-                valueFormat = StringFormat(R"(,"v":"%s")", (*value).c_str());
+        if constexpr (std::is_same<T, float>::value) {
+            valueFormat = StringFormat(R"(,"v":%.2f)", *value);
+        } else if constexpr (std::is_same<T, uint32_t>::value || std::is_same<T, int>::value) {
+            valueFormat = StringFormat(R"(,"v":%u)", *value);
+        } else if constexpr (std::is_same<T, char *>::value ||
+                             std::is_same<T, const char *>::value) {
+            if (value && strcmp(value, "") != 0) { // Check if the C-style string is not empty
+                valueFormat = StringFormat(R"(,"v":"%s")", value);
+            }
+        } else if constexpr (std::is_same<T, std::string>::value) {
+            if (!value.empty()) { // Check if the std::string is not empty
+                valueFormat = StringFormat(R"(,"v":"%s")", value.c_str());
             }
         }
 
-        std::string format =
-            R"({"ts":%zu,"t":"%s")" + keyFormat + valueFormat + dataJsonFormat + "}";
+        std::string format = R"({"ts":%zu,"k":"%s")" + valueFormat + dataJsonFormat + "}";
 
         std::string logString;
-        logString =
-            StringFormat(format.c_str(), timestamp, TelemetryFieldToString(field), key.c_str());
+        logString = StringFormat(format.c_str(), timestamp, TelemetryFieldToString(field));
 
         log_i("Logging metric: %s %s", TelemetryFieldToString(field), logString.c_str());
 

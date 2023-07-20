@@ -68,10 +68,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     display_ = display;
 
-    this->telemetry_.logMetric(TelemetryField::METRIC_EVENT, "boot",
-                               std::optional<std::string>(kVersionString));
-    this->telemetry_.logMetric(TelemetryField::METRIC_COUNTER, "bc",
-                               std::optional<uint32_t>(prefs_.bootCount.get().value_or(0)));
+    this->telemetry_.logMetricData(
+        TelemetryField::METRIC_BOOT,
+        {{"fw", kVersionString}, {"bc", prefs_.bootCount.get().value_or(0)}});
 
     MenuStyle styleFamilies;
 
@@ -124,10 +123,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             new ReadableScreen(stream, *display, readable, this->prefs_, this->telemetry_,
                                localStore, fileSystem, lightingController);
 
-        std::map<std::string, std::variant<int, uint32_t, float, std::string>> data;
-        data["po"] = readable->place;
-        this->telemetry_.logMetric(TelemetryField::METRIC_EVENT, "readable-open",
-                                   std::optional<std::string>(readable->uuid), data);
+        this->telemetry_.logMetric(TelemetryField::METRIC_READABLE_OPEN, readable->uuid,
+                                   {{"po", readable->place}});
 
         // When switching to a readable from a menu, we should clear the display
         // to make the whites really white and the blacks really black.
