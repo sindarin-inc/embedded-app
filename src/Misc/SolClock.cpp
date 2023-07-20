@@ -9,6 +9,7 @@
 #include <random>
 
 #include "../Communications/WiFi.hpp"
+#include "../Misc/Platform.hpp"
 #include "../Misc/StringUtil.hpp"
 #include "../Misc/Timezones.hpp"
 
@@ -102,7 +103,7 @@ void SolClock::getClockTime(uint8_t &hours, uint8_t &minutes) {
     minutes = timeinfo.tm_min;
 }
 
-void SolClock::setClockTimeFromInternet() {
+auto SolClock::setClockTimeFromInternet() -> bool {
 #if !SIMULATOR
 
     // Configure the SNTP client
@@ -131,9 +132,11 @@ void SolClock::setClockTimeFromInternet() {
 
     if (bits == 0) {
         log_e("Failed to sync time");
+        return false;
     } else {
         now = time(nullptr);
         localtime_r(&now, &timeinfo);
+        return true;
     }
 
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)

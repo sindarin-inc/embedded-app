@@ -23,6 +23,7 @@ enum TelemetryField {
     METRIC_SET_PLACEMARK,
     METRIC_SYNC_STATUS,
     METRIC_BOOT,
+    METRIC_CLOCK_SET,
 };
 auto TelemetryFieldToString(TelemetryField field) -> const char *;
 

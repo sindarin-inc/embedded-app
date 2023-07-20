@@ -257,7 +257,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             }
             },
             "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
-        BackgroundSyncAndSleep(powerManager, prefs, localStore);
+        BackgroundSyncAndSleep(powerManager, prefs, localStore, telemetry);
         // Should never get here, the system should be asleep
     }
 
@@ -350,7 +350,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             [](void *) {
             for (;;) {
                 PreferencesStore::syncReason = SyncReason::Periodic;
-                BackgroundSync(powerManager, prefs, localStore);
+                BackgroundSync(powerManager, prefs, localStore, telemetry);
                 vTaskDelay(60000 / portTICK_PERIOD_MS);
             }
             },
