@@ -19,6 +19,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
                                        bool backwards, StreamPlace *toPlace) -> StreamPlace {
 
     Idx prevNewParagraphIdx = 0;
+    Idx streamRelativeOffset = 0;
 
     tokens.clear();
     pager.clear();
@@ -27,7 +28,6 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
     Token spaceToken;
 
     fromPlace = getFileLocation(fromPlace);
-    cacheInit();
 
     if (fromPlace.offset == LOCATION_ERROR) {
         return getPlaceAtBeginningOfDocument();
@@ -39,9 +39,6 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
             log_w("Going up to place %s", toPlace->str().c_str());
         }
     }
-
-    uint8_t curChar = stream_->getNextByte();
-    Idx streamRelativeOffset = 0;
 
     bool pageCompleted = false;
 
@@ -58,10 +55,22 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
         }
     };
 
+    uint8_t curChar = stream_->getNextByte();
+
     auto nextByte = [this, &curChar, &streamRelativeOffset]() -> void {
         curChar = stream_->getNextByte();
         streamRelativeOffset++;
     };
+
+    // If we goo backward, get rid of the first bytes that could be the end of a line/paragraph
+    if (backwards && (fromPlace.offset != 0)) {
+        while ((curChar != 0) && (curChar != '\n')) {
+            nextByte();
+        }
+        if (curChar == '\n') {
+            nextByte();
+        }
+    }
 
     spaceToken.tokenId = TokenId::NOTOKEN;
 
@@ -207,16 +216,6 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
         pager.endOfFileReached();
     }
 
-    // Token eofToken = {.cStr = nullptr,
-    //                   .streamPlace = addOffset(fromPlace, streamRelativeOffset),
-    //                   .prevNewParagraphTokenIdx = 0,
-    //                   .width = 0,
-    //                   .height = 0,
-    //                   .length = 0,
-    //                   .tokenId = TokenId::ENDOFFILE};
-
-    // tokens.add(eofToken);
-
     if constexpr (RENDERER_DEBUG) {
         log_d("Computed Word Count: %" PRIu16, pager.getWordCount());
         log_d("Tokens Count: %" PRIu16, tokens.getCount());
@@ -263,21 +262,4 @@ auto TxtTokenizer::getFileLocation(StreamPlace fromPlace) -> StreamPlace {
 
     fromPlace.offset = LOCATION_ERROR;
     return fromPlace;
-}
-
-auto TxtTokenizer::getNextByte() -> uint8_t {
-    if (cacheIdx >= cacheSize) {
-        cacheSize = stream_->readBytes(byteCache, 100);
-        cacheIdx = 0;
-    }
-    if (cacheIdx < cacheSize) {
-        return byteCache[cacheIdx++];
-    } else {
-        return 0;
-    }
-}
-
-void TxtTokenizer::cacheInit() {
-    cacheIdx = 0;
-    cacheSize = 0;
 }

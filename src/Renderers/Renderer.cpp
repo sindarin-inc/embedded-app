@@ -74,29 +74,37 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
     // Tokenize it the same as you would for a forwards render. seekPlace will be returned to be at
     // a UTF8 character boundary
 
-    seekPlace = tokenizer_->loadAndTokenizePage(
-        seekPlace, tokens_, pager_, true, &fromPlace); // NOLINT(clang-analyzer-deadcode.DeadStores)
+    if (!(seekPlace == fromPlace)) {
 
-    // std::cout << "Line Count: " << pager_.getLineCount() << ", Token Count: " <<
-    // tokens_.getCount()
-    //           << std::endl;
-    //  if (tokens_.getLast().streamPlace.offset == fromPlace.offset) {
-    //      std::cout << "Last token point at fromPlace" << std::endl;
-    //  } else {
-    //      std::cout << "Last token doesn't point at fromPlace" << std::endl;
-    //  }
+        seekPlace = tokenizer_->loadAndTokenizePage(
+            seekPlace, tokens_, pager_, true,
+            &fromPlace); // NOLINT(clang-analyzer-deadcode.DeadStores)
 
-    // Idx firstLineIdx = pager_.getFirstLineIdxBackward();
+        // std::cout << "Line Count: " << pager_.getLineCount() << ", Token Count: " <<
+        // tokens_.getCount()
+        //           << std::endl;
+        //  if (tokens_.getLast().streamPlace.offset == fromPlace.offset) {
+        //      std::cout << "Last token point at fromPlace" << std::endl;
+        //  } else {
+        //      std::cout << "Last token doesn't point at fromPlace" << std::endl;
+        //  }
 
-    // std::cout << "First line Idx of the page: " << firstLineIdx << std::endl;
+        pager_.setFirstLineIdxBackward();
 
-    // Line line;
-    // pager_.getLine(firstLineIdx, line);
-    // std::cout << "First line: [" << line.data() << "]" << std::endl;
-    // pager_.getLine(pager_.getLineCount() - 1, line);
-    // std::cout << "Last line: [" << line.data() << "]" << std::endl;
+        // Idx firstLineIdx = pager_.getFirstLineIdx();
+        // std::cout << "First line Idx of the page: " << firstLineIdx << std::endl;
 
-    pager_.setNextPagePlace_(fromPlace);
+        // Line line;
+        // pager_.getLine(firstLineIdx, line);
+        // std::cout << "First line: [" << line.data() << "]" << std::endl;
+        // pager_.getLine(pager_.getLineCount() - 1, line);
+        // std::cout << "Last line: [" << line.data() << "]" << std::endl;
+
+        pager_.setNextPagePlace_(fromPlace);
+    } else {
+        seekPlace = tokenizer_->loadAndTokenizePage(
+            seekPlace, tokens_, pager_); // NOLINT(clang-analyzer-deadcode.DeadStores)
+    }
 
     pager_.show();
 

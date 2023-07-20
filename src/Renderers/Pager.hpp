@@ -63,12 +63,13 @@ public:
     }
     
     inline void setNextPagePlace_(StreamPlace place) { nextPagePlace_ = place; }
+    void setFirstLineIdxBackward();
 
     [[nodiscard]] inline auto getStreamPlaceOfFirstLine() -> StreamPlace {
         return tokens_[lines_[firstLineIdx_].tokenIdx].streamPlace;
     }
 
-    [[nodiscard]] auto getFirstLineIdxBackward() -> Idx;
+    [[nodiscard]] inline auto getFirstLineIdx() const -> Idx { return firstLineIdx_; }
 
     void getLine(Idx lineNbr, Line &line) const;
     void displayPage(int16_t numSkipLines) const;

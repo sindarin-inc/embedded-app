@@ -200,24 +200,23 @@ void Pager::displayPage(int16_t numSkipLines) const {
 }
 
 
-auto Pager::getFirstLineIdxBackward() -> Idx {
+void Pager::setFirstLineIdxBackward() {
     Idx lineIdx = lineCount_;
     if (lineIdx > 0) {
         uint16_t deciLines = 0;
         do {
             lineIdx -= 1;
-            uint16_t hight = (tokens_[lines_[lineIdx].tokenIdx].tokenId == TokenId::ENDPARAGRAPH)
+            uint16_t height = (tokens_[lines_[lineIdx].tokenIdx].tokenId == TokenId::ENDPARAGRAPH)
                                  ? ENDPARAGRAPH_DECI_LINE_HEIGHT
                                  : NEWLINE_DECI_LINE_HEIGHT;
-            if ((deciLines + hight) > maxDeciLines_) {
+            if ((deciLines + height) > maxDeciLines_) {
                 lineIdx += 1;
                 break;
             }
-            deciLines += hight;
+            deciLines += height;
         } while (lineIdx > 0);
     }
     firstLineIdx_ = lineIdx;
-    return lineIdx;
 }
 
 void Pager::show() const {

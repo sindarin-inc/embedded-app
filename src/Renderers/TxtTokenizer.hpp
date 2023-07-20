@@ -27,11 +27,5 @@ public:
     }
 
 private:
-    uint8_t byteCache[100];
-    uint8_t cacheSize; 
-    Idx cacheIdx;
-
     [[nodiscard]] auto getFileLocation(StreamPlace fromPlace) -> StreamPlace override;
-    [[nodiscard]] auto getNextByte() -> uint8_t;
-    void cacheInit();
- };
+};
