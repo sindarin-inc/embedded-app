@@ -3,6 +3,10 @@
 #include <algorithm>
 #include <chrono>
 
+void Renderer::tokenize() {
+    currentPlace_ = tokenizer_->loadAndTokenizePage(currentPlace_, tokens_, pager_);
+}
+
 // Show the (already loaded into buffer) current page
 // and load the next page into the next buffer so we have it.
 auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
@@ -29,10 +33,9 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
 
         if ((pager_.getLineCount() == 0) ||
             (!(currentPlace_ == pager_.getStreamPlaceOfFirstLine()))) {
-            PROFILE_START(loadAndTokenizePage);
-
-            currentPlace_ = tokenizer_->loadAndTokenizePage(currentPlace_, tokens_, pager_);
-            PROFILE_END_LOG_MS(loadAndTokenizePage);
+            PROFILE_START(tokenize);
+            tokenize();
+            PROFILE_END_LOG_MS(tokenize);
         }
         nextPlace_ = pager_.getNextPageStreamPlace();
 
@@ -45,7 +48,9 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
 
         if ((pager_.getLineCount() == 0) ||
             (!(currentPlace_ == pager_.getStreamPlaceOfFirstLine()))) {
+            PROFILE_START(loadAndTokenizePage);
             currentPlace_ = tokenizer_->loadAndTokenizePage(currentPlace_, tokens_, pager_);
+            PROFILE_END_LOG_MS(loadAndTokenizePage);
         }
         nextPlace_ = pager_.getNextPageStreamPlace();
     }
