@@ -30,7 +30,7 @@ def generate_readables(path):
     manifest_file = path / Path("readables.json")
 
     p = Path(path)
-    files = [x for x in p.glob("*.txt") if x.is_file()] + [x for x in p.glob("*.txt.gz") if x.is_file()] + [x for x in p.glob("*.epub") if x.is_file()]
+    files = [x for x in p.glob("*.txt") if x.is_file()] + [x for x in p.glob("*.epub") if x.is_file()]
     print(f"Found {len(files)} files in {path} to add to manifest: {files}")
     readables = []
 
@@ -43,9 +43,6 @@ def generate_readables(path):
                 name = f.readline().rstrip()
                 author = f.readline().rstrip()
         elif file.suffix == ".epub":
-            name = file.name
-            author = "Local Only"
-        elif file.suffixes == [".txt", ".gz"]:
             name = file.name
             author = "Local Only"
             
