@@ -1,11 +1,6 @@
 #include "Renderer.hpp"
 
 #include <algorithm>
-#include <chrono>
-
-void Renderer::tokenize() {
-    currentPlace_ = tokenizer_->loadAndTokenizePage(currentPlace_, tokens_, pager_);
-}
 
 // Show the (already loaded into buffer) current page
 // and load the next page into the next buffer so we have it.
@@ -28,32 +23,16 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
     //           << ", Pager first Place: " << pager_.getStreamPlaceOfFirstLine().str() <<
     //           std::endl;
 
-    if constexpr (RENDERER_CHRONO) {
-        auto start = std::chrono::high_resolution_clock::now();
+    PROFILE_START(loadAndTokenizePage);
 
-        if ((pager_.getLineCount() == 0) ||
-            (!(currentPlace_ == pager_.getStreamPlaceOfFirstLine()))) {
-            PROFILE_START(tokenize);
-            tokenize();
-            PROFILE_END_LOG_MS(tokenize);
-        }
-        nextPlace_ = pager_.getNextPageStreamPlace();
+    // std::cout << "Pager Line Count: " << pager_.getLineCount() << std::endl;
 
-        auto elapsed = std::chrono::high_resolution_clock::now() - start;
-        long long microseconds =
-            std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
-        std::cout << "RENDERER TIME ELAPSED: " << microseconds << std::endl;
-    } else {
-        // std::cout << "Pager Line Count: " << pager_.getLineCount() << std::endl;
-
-        if ((pager_.getLineCount() == 0) ||
-            (!(currentPlace_ == pager_.getStreamPlaceOfFirstLine()))) {
-            PROFILE_START(loadAndTokenizePage);
-            currentPlace_ = tokenizer_->loadAndTokenizePage(currentPlace_, tokens_, pager_);
-            PROFILE_END_LOG_MS(loadAndTokenizePage);
-        }
-        nextPlace_ = pager_.getNextPageStreamPlace();
+    if ((pager_.getLineCount() == 0) || (!(currentPlace_ == pager_.getStreamPlaceOfFirstLine()))) {
+        currentPlace_ = tokenizer_->loadAndTokenizePage(currentPlace_, tokens_, pager_);
     }
+    nextPlace_ = pager_.getNextPageStreamPlace();
+
+    PROFILE_END_LOG_MS(loadAndTokenizePage);
 
     pager_.displayPage(numSkipLines);
 
@@ -121,7 +100,7 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
 
     pager_.show();
 
-    std::cout << "Characters count in page: " << pager_.getPageLength() << std::endl;
+    // std::cout << "Characters count in page: " << pager_.getPageLength() << std::endl;
 
     return pager_.getStreamPlaceOfFirstLine();
 }
@@ -130,18 +109,7 @@ auto Renderer::getPreviousPlace() -> Place {
 
     PROFILE_START(goBackwardsOnePage);
 
-    if constexpr (RENDERER_CHRONO) {
-        auto start = std::chrono::high_resolution_clock::now();
-
-        previousPlace_ = goBackwardsOnePage(currentPlace_);
-
-        auto elapsed = std::chrono::high_resolution_clock::now() - start;
-        long long microseconds =
-            std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
-        std::cout << "PREVIOUS PAGE TIME ELAPSED: " << microseconds << std::endl;
-    } else {
-        previousPlace_ = goBackwardsOnePage(currentPlace_);
-    }
+    previousPlace_ = goBackwardsOnePage(currentPlace_);
 
     PROFILE_END_LOG_MS(goBackwardsOnePage);
 

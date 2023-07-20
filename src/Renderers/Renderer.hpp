@@ -47,8 +47,6 @@ public:
     // numSkipLines allows us to not render the first X lines of the page
     // for the speed reading functionality.
 
-    void tokenize();
-
     // NOLINTNEXTLINE(modernize-use-nodiscard)
     auto renderPage(Place fromPlace, int16_t numSkipLines = 0) -> Place;
 
