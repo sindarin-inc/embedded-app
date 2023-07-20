@@ -4,20 +4,34 @@
 #if SIMULATOR
 
 #include <assert.h>
+#include <chrono>
 #include <stdio.h>
 
 #define SHOW_HEAP()
-#define PROFILE_START(identifier)
-#define PROFILE_END(identifier)
-#define PROFILE_CALCULATE_MS(identifier)
-#define PROFILE_CALCULATE_US(identifier)
-#define PROFILE_CALCULATE_NS(identifier)
-#define PROFILE_LOG_MS(identifier)
-#define PROFILE_LOG_US(identifier)
-#define PROFILE_LOG_NS(identifier)
-#define PROFILE_END_LOG_MS(identifier)
-#define PROFILE_END_LOG_US(identifier)
-#define PROFILE_END_LOG_NS(identifier)
+#define PROFILE_START(identifier)                                                                  \
+    auto profileStart##identifier = std::chrono::high_resolution_clock::now();
+
+#define PROFILE_END(identifier)                                                                    \
+    auto profileEnd##identifier = std::chrono::high_resolution_clock::now();
+
+#define PROFILE_LOG_MS(identifier)                                                                 \
+    log_d("PROFILE_LOG_MS(" #identifier ") %lldms",                                                \
+          std::chrono::duration_cast<std::chrono::milliseconds>(profileEnd##identifier -           \
+                                                                profileStart##identifier)          \
+              .count());
+
+#define PROFILE_LOG_US(identifier)                                                                 \
+    log_d("PROFILE_LOG_US(" #identifier ") %lldus",                                                \
+          std::chrono::duration_cast<std::chrono::microseconds>(profileEnd##identifier -           \
+                                                                profileStart##identifier)          \
+              .count());
+
+// Logs the result of the profile
+#define PROFILE_LOG_NS(identifier)                                                                 \
+    log_d("PROFILE_LOG_US(" #identifier ") %lldns",                                                \
+          std::chrono::duration_cast<std::chrono::nanoseconds>(profileEnd##identifier -            \
+                                                               profileStart##identifier)           \
+              .count());
 
 const char *pathToFileName(const char *path);
 
@@ -128,6 +142,9 @@ extern "C" {
           PROFILE_CALCULATE_NS(identifier), profileEnd##identifier, profileStart##identifier,      \
           profileEnd##identifier - profileStart##identifier)
 
+#endif // SIMULATOR
+
+// Convenience method that ends the profile then logs the result
 #define PROFILE_END_LOG_MS(identifier)                                                             \
     PROFILE_END(identifier);                                                                       \
     PROFILE_LOG_MS(identifier);
@@ -136,12 +153,9 @@ extern "C" {
     PROFILE_END(identifier);                                                                       \
     PROFILE_LOG_US(identifier);
 
-// Convenience method that ends the profile then logs the result
 #define PROFILE_END_LOG_NS(identifier)                                                             \
     PROFILE_END(identifier);                                                                       \
     PROFILE_LOG_NS(identifier);
-
-#endif // SIMULATOR
 
 #define SIZE_OF(obj) log_d("SIZE_OF(%s): %zu", #obj, sizeof(obj))
 
