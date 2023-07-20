@@ -117,8 +117,6 @@ void MainMenuScreen::drawInRect(Rect rect) {
 // This largely mirrors the superclass implementation, but with enough
 // changes that we need to do our own thing here.
 void MainMenuScreen::render(DisplaySystem &display) {
-    setNeedsLayout();
-
     // For the main menu, we want to use the entire screen and ignore the user settings for
     // reading box.
     setFrame(
@@ -133,6 +131,8 @@ void MainMenuScreen::render(DisplaySystem &display) {
     // to do a partial refresh with the selector button at a lower/higher vcom to reduce
     // ghosting.
     if (firstLoad_) {
+        setNeedsLayout();
+
         topBarViews_.clear();
         // Only update the time on these partial refreshes
         clockBatteryView_.updateTime();
