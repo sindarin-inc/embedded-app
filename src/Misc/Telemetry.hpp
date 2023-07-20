@@ -90,10 +90,11 @@ private:
             }
         }
 
-        std::string format = R"({"ts":%zu,"k":"%s")" + valueFormat + dataJsonFormat + "}";
+        std::string format = R"({"ts":%lld,"k":"%s"%s%s})";
 
         std::string logString;
-        logString = StringFormat(format.c_str(), timestamp, TelemetryFieldToString(field));
+        logString = StringFormat(format.c_str(), timestamp, TelemetryFieldToString(field),
+                                 valueFormat.c_str(), dataJsonFormat.c_str());
 
         log_i("Logging metric: %s %s", TelemetryFieldToString(field), logString.c_str());
 
