@@ -31,15 +31,16 @@ public:
 
     void setFont(Font *font) { font_ = font; }
 
-    auto splitMultiLine(DisplaySystem &display, int width, const std::string &text)
-        -> std::vector<std::string> {
-        std::vector<std::string> lines;
+    void splitMultiLine(DisplaySystem &display, int width, const std::string &text) {
+        splitLines_.clear();
         std::string line;
         std::string word;
-        for (char c : text) {
-            if (c == ' ' || c == '\n' || c == '\t' || c == '\r' || c == '-') {
-                if (display.getTextWidth((line + word).c_str()) > width) {
-                    lines.push_back(line);
+        for (int i = 0; i < text.size(); i++) {
+            char c = text[i];
+            if (c == ' ' || c == '\n' || c == '\t' || c == '\r' || c == '-' ||
+                i == text.size() - 1) {
+                if (display.getTextWidth(line + word) > width) {
+                    splitLines_.push_back(line);
                     line = "";
                 }
                 line += word + c;
@@ -47,21 +48,15 @@ public:
             } else {
                 word += c;
             }
-        }
-
-        // Account for the last word
-        if (!word.empty()) {
-            if (display.getTextWidth((line + word).c_str()) > width) {
-                lines.push_back(line);
-                line = "";
+            // Allow going over the max lines by one, so we can add the ... to the end
+            if (splitLines_.size() > maxLines_) {
+                return;
             }
-            line += word;
         }
 
         if (!line.empty()) {
-            lines.push_back(line);
+            splitLines_.push_back(line);
         }
-        return lines;
     }
     auto layout(LayoutContext &context, Size size) -> Size override {
         // Leave the display font the way we found it.
@@ -69,7 +64,7 @@ public:
         Font *oldFont = display_.getFont();
         display_.setFont(font_);
 
-        splitLines_ = splitMultiLine(display_, size.width, text_);
+        splitMultiLine(display_, size.width, text_);
 
         int lineCount = std::min((size_t)maxLines_, splitLines_.size());
         int height = lineCount * font_->lineHeight() + (lineCount - 1) * spacingOffset_;
