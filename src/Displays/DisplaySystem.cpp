@@ -233,11 +233,11 @@ void DisplaySystem::drawSingleLineOfCenteredText(const std::string &line) {
         this->yAbsolute(this->yAbsoluteCenter() - this->getTextHeight() / 2));
 }
 
-void DisplaySystem::getTextSize(const char *buffer, uint16_t *w, uint16_t *h) {
+void DisplaySystem::getTextSize(const std::string &buffer, uint16_t *w, uint16_t *h) {
     if (font_ != nullptr) {
         if (font_->isA(FontType::GFX)) {
             int16_t x, y;
-            gfxClass_->getTextBounds(buffer, 0, 0, &x, &y, w, h);
+            gfxClass_->getTextBounds(buffer.c_str(), 0, 0, &x, &y, w, h);
         } else {
             Dim dim = static_cast<IBMFFont *>(font_)->getTextSize(buffer);
             *w = dim.width;
@@ -248,13 +248,13 @@ void DisplaySystem::getTextSize(const char *buffer, uint16_t *w, uint16_t *h) {
 
 auto DisplaySystem::getTextHeight() -> int { return font_->lineHeight() + lineSpacing_; }
 
-auto DisplaySystem::getTextHeight(const char *buffer) -> int {
+auto DisplaySystem::getTextHeight(const std::string &buffer) -> int {
     uint16_t h = 0;
     if (font_ != nullptr) {
         if (font_->isA(FontType::GFX)) {
             int16_t x, y;
             uint16_t w;
-            gfxClass_->getTextBounds(buffer, 0, 0, &x, &y, &w, &h);
+            gfxClass_->getTextBounds(buffer.c_str(), 0, 0, &x, &y, &w, &h);
         } else {
             h = static_cast<IBMFFont *>(font_)->getTextHeight(buffer);
         }
@@ -262,13 +262,13 @@ auto DisplaySystem::getTextHeight(const char *buffer) -> int {
     return h;
 }
 
-auto DisplaySystem::getTextWidth(const char *buffer) -> int {
+auto DisplaySystem::getTextWidth(const std::string &buffer) -> int {
     uint16_t w = 0;
     if (font_ != nullptr) {
         if (font_->isA(FontType::GFX)) {
             int16_t x, y;
             uint16_t h;
-            gfxClass_->getTextBounds(buffer, 0, 0, &x, &y, &w, &h);
+            gfxClass_->getTextBounds(buffer.c_str(), 0, 0, &x, &y, &w, &h);
         } else {
             w = static_cast<IBMFFont *>(font_)->getTextWidth(buffer);
         }
