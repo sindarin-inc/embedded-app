@@ -3,7 +3,6 @@
 #include "Models/Json.hpp"
 #include "Models/JsonSerializable.hpp"
 #include "Models/Readable.hpp"
-#include "Models/UserReadablePartialChapterSummary.hpp"
 
 class UserReadable : JsonSerializable {
 public:
@@ -14,7 +13,6 @@ public:
     uint32_t placemark;
     bool isArchived;
     std::shared_ptr<Readable> readable = nullptr;
-    std::shared_ptr<UserReadablePartialChapterSummary> partialChapterSummary = nullptr;
 
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("uuid") || !j.containsKey("readable")) {
@@ -25,7 +23,6 @@ public:
         placemark = j["placemark"].as<uint32_t>();
         isArchived = j["is_archived"].as<bool>();
         readable = SpiRamPtr<Readable>();
-        partialChapterSummary = SpiRamPtr<UserReadablePartialChapterSummary>();
         return readable->fromJson(j["readable"]);
     }
 

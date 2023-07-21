@@ -6,7 +6,6 @@ auto convertToJson(const UserReadable &src, JsonVariant dst) -> bool {
     dst["placemark"] = src.placemark;
     dst["is_archived"] = src.isArchived;
     dst["readable"] = *src.readable;
-    dst["partial_chapter_summary"] = *src.partialChapterSummary;
 
     return true;
 }

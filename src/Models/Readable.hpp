@@ -98,11 +98,19 @@ public:
             if (placeInReadable < chapter.txtOffset && !includeUnread) {
                 break;
             }
-            summary += chapter.title;
-            summary += "\n\n";
-            if (!chapter.summary.empty()) {
-                summary += chapter.summary;
+            if (chapter.partialChapterSummary != nullptr &&
+                !chapter.partialChapterSummary->text.empty()) {
+                summary += chapter.title;
+                summary += StringFormat(" (%d)\n\n", chapter.partialChapterSummary->readPct);
+                summary += chapter.partialChapterSummary->text;
                 summary += "\n\n";
+            } else {
+                summary += chapter.title;
+                summary += "\n\n";
+                if (!chapter.summary.empty()) {
+                    summary += chapter.summary;
+                    summary += "\n\n";
+                }
             }
         }
 
