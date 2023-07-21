@@ -117,6 +117,9 @@ void MainMenuScreen::drawInRect(Rect rect) {
 // This largely mirrors the superclass implementation, but with enough
 // changes that we need to do our own thing here.
 void MainMenuScreen::render(DisplaySystem &display) {
+    // log_i("Menuscreen render (selected = %s)",
+    // subMenus_[currentSelection_]->getMenuName().c_str());
+
     // For the main menu, we want to use the entire screen and ignore the user settings for
     // reading box.
     setFrame(
@@ -133,16 +136,16 @@ void MainMenuScreen::render(DisplaySystem &display) {
     if (firstLoad_) {
         setNeedsLayout();
 
-        topBarViews_.clear();
+        if (topBarViews_.size() == 0) {
+            for (auto &subMenu : subMenus_) {
+                auto topBarView =
+                    std::make_shared<SingleLineTextView>(display, subMenu->getMenuName());
+                topBarViews_.push_back(topBarView);
+            }
+        }
+
         // Only update the time on these partial refreshes
         clockBatteryView_.updateTime();
-        log_i("Menuscreen render (selected = %s)",
-              subMenus_[currentSelection_]->getMenuName().c_str());
-
-        for (auto &subMenu : subMenus_) {
-            auto topBarView = std::make_shared<SingleLineTextView>(display, subMenu->getMenuName());
-            topBarViews_.push_back(topBarView);
-        }
 
         // Populate the menu items with the correct menus for the current subMenu
         menuItems_.clear();
