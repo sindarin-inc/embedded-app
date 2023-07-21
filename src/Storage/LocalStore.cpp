@@ -381,6 +381,20 @@ void LocalStore::syncFromRemote(
         return;
     }
 
+    // If we don't have a clock that's accurate, sync it
+    if (SolClock::getInstance().getEpochTime() < 1000000000) {
+        log_i("Clock not set, syncing from internet");
+        // Sync the clock
+        auto success = SolClock::getInstance().setClockTimeFromInternet();
+        if (success) {
+            this->telemetry_.logMetric(TelemetryField::METRIC_CLOCK_SET, "success",
+                                       {{"run-time", GetRunTimeMs()}});
+        } else {
+            this->telemetry_.logMetric(TelemetryField::METRIC_CLOCK_SET, "failure",
+                                       {{"run-time", GetRunTimeMs()}});
+        }
+    }
+
     // Uncomment below line to set your access token for local development
     // prefs._cloudToken.set("");
 
