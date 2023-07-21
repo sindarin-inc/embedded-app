@@ -19,6 +19,9 @@ public:
 
     // Draw the view in its current screen-coordinate frame
     virtual void draw() {
+        if (hidden_) {
+            return;
+        }
         layoutIfNeeded();
         drawInRect(layoutContext_.screenFrame());
     }

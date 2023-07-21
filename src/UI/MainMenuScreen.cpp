@@ -145,22 +145,30 @@ void MainMenuScreen::render(DisplaySystem &display) {
         }
 
         // Populate the menu items with the correct menus for the current subMenu
-        menuItemViews_.clear();
         menuItems_.clear();
         menuPageViews_.clear();
 
         subMenus_[currentSelection_]->populateMenuItems(menuItems_);
 
-        for (auto &menuItem : menuItems_) {
-            auto menuItemView = std::make_shared<MenuItemView>(
-                display, menuItem,
-                ((subMenus_[currentSelection_]->getMenuName().compare("Books") == 0) ||
-                 (subMenus_[currentSelection_]->getMenuName().compare("Bible") == 0))
-                    ? myStyle_.itemFont
-                    : myStyle_.navigationFont,
-                (subMenus_[currentSelection_]->getMenuName().compare("Articles") == 0) ? true
-                                                                                       : false);
-            menuItemViews_.push_back(menuItemView);
+        for (int i = 0; i < menuItems_.size(); i++) {
+            auto &menuItem = menuItems_[i];
+            Font *font = ((subMenus_[currentSelection_]->getMenuName().compare("Books") == 0) ||
+                          (subMenus_[currentSelection_]->getMenuName().compare("Bible") == 0))
+                             ? myStyle_.itemFont
+                             : myStyle_.navigationFont;
+            bool multiline = (subMenus_[currentSelection_]->getMenuName().compare("Articles") == 0)
+                                 ? true
+                                 : false;
+            if (i >= menuItemViews_.size()) {
+                menuItemViews_.emplace_back(std::make_shared<MenuItemView>(display));
+            }
+            menuItemViews_[i]->setMenuItem(menuItem, font, multiline);
+            menuItemViews_[i]->setSelected(false);
+            menuItemViews_[i]->setHidden(false);
+        }
+        // Hide any menu items that are not in the current menu
+        for (int i = menuItems_.size(); i < menuItemViews_.size(); i++) {
+            menuItemViews_[i]->setHidden(true);
         }
 
         int numPages = subMenus_[currentSelection_]->getNumItems() /

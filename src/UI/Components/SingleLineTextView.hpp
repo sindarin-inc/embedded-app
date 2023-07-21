@@ -8,23 +8,30 @@
 // A view that draws a line of text
 class SingleLineTextView : public EinkView {
 public:
+    SingleLineTextView(DisplaySystem &display) : EinkView(display) {}
+
+    //! Convenience method to initialize and then set text and font
     SingleLineTextView(DisplaySystem &display, std::string text,
                        Font *font = static_cast<Font *>(&fontTahomaRegularFonT5PT7B),
                        bool allCaps = false)
-        : EinkView(display), font_(font) {
+        : SingleLineTextView(display) {
+        setFont(font);
         setText(std::move(text), allCaps);
     }
+
     ~SingleLineTextView() override = default;
 
     void setText(std::string text, bool allCaps = false) {
         if (allCaps) {
-            std::string subCopy = text;
-            std::transform(subCopy.begin(), subCopy.end(), subCopy.begin(), ::toupper);
-            text = std::move(subCopy);
+            std::transform(text.begin(), text.end(), text.begin(), ::toupper);
         }
-        text_ = std::move(text);
-        setNeedsLayout();
+        if (text != text_) {
+            text_ = std::move(text);
+            setNeedsLayout();
+        }
     }
+
+    void setFont(Font *font) { font_ = font; }
 
     auto layout(LayoutContext &context, Size size) -> Size override {
         uint16_t w, h;
