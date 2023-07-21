@@ -294,27 +294,15 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-    switch (prefs.font.get().value_or(PREFS_TAHOMA_TINY)) {
-    case PREFS_LUCIDA_REGULAR:
-        myDisplay.style.setFontFamily(myDisplay.style.lucidaRegular);
+    switch (prefs.font.get().value_or(PREFS_SOL_SMALL)) {
+    case PREFS_SOL_MEDIUM:
+        myDisplay.style.setFontFamily(myDisplay.style.solSansMedium);
         break;
-    case PREFS_LUCIDA_SKINNY:
-        myDisplay.style.setFontFamily(myDisplay.style.lucidaSkinny);
+    case PREFS_SOL_LARGE:
+        myDisplay.style.setFontFamily(myDisplay.style.solSansLarge);
         break;
-    case PREFS_LUCIDA_FAT:
-        myDisplay.style.setFontFamily(myDisplay.style.lucidaFat);
-        break;
-    case PREFS_TAHOMA_REGULAR:
-        myDisplay.style.setFontFamily(myDisplay.style.tahomaRegular);
-        break;
-    case PREFS_TAHOMA_LARGE:
-        myDisplay.style.setFontFamily(myDisplay.style.tahomaLarge);
-        break;
-    case PREFS_TAHOMA_TINY:
-        myDisplay.style.setFontFamily(myDisplay.style.tahomaTiny);
-        break;
-    case PREFS_TAHOMA_HUGE:
-        myDisplay.style.setFontFamily(myDisplay.style.tahomaHuge);
+    case PREFS_SOL_SMALL:
+        myDisplay.style.setFontFamily(myDisplay.style.solSansSmall);
         break;
     }
 

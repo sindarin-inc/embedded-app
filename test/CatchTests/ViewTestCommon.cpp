@@ -64,7 +64,7 @@ void StartFreeRtos(bool runAppMain) {
     // TODO: Really mock prefs
     prefs.begin();
     prefs.invertSetting.set(0);
-    prefs.font.set(PREFS_TAHOMA_REGULAR);
+    prefs.font.set(PREFS_SOL_MEDIUM);
     prefs.lineSpacing.set(0);
     prefs.rectX.set(42);
     prefs.rectY.set(30);
@@ -212,7 +212,7 @@ auto CheckViewUnchanged(std::string key) -> ViewTestResult {
 
 std::shared_ptr<DisplayEinkET013TT1> createDisplay() {
     auto display = std::make_shared<DisplayEinkET013TT1>(0, 0, 0);
-    (*display).style.setFontFamily((*display).style.tahomaRegular);
+    (*display).style.setFontFamily((*display).style.solSansMedium);
     (*display).setBoundingBox((*display).defaultBoundingBox);
     (*display).setLineSpacing(0);
     (*display).setup();

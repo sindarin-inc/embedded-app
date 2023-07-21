@@ -835,29 +835,29 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                        "Font Settings", "Reading Settings");
         fontMenu->setExtraText("Example text size");
         fontMenu->addMenuItem(MenuItem("Small", [this, fontMenu]() {
-            this->display_->style.setFontFamily(this->display_->style.tahomaTiny);
+            this->display_->style.setFontFamily(this->display_->style.solSansSmall);
             this->display_->clearDisplay();
-            prefs_.font.set(PREFS_TAHOMA_TINY);
+            prefs_.font.set(PREFS_SOL_SMALL);
             fontMenu->setNeedsRerender();
         }));
         fontMenu->addMenuItem(MenuItem("Medium", [this, fontMenu]() {
-            this->display_->style.setFontFamily(this->display_->style.tahomaRegular);
+            this->display_->style.setFontFamily(this->display_->style.solSansMedium);
             this->display_->clearDisplay();
-            prefs_.font.set(PREFS_TAHOMA_REGULAR);
+            prefs_.font.set(PREFS_SOL_MEDIUM);
             fontMenu->setNeedsRerender();
         }));
         fontMenu->addMenuItem(MenuItem("Large", [this, fontMenu]() {
-            this->display_->style.setFontFamily(this->display_->style.tahomaLarge);
+            this->display_->style.setFontFamily(this->display_->style.solSansLarge);
             this->display_->clearDisplay();
-            prefs_.font.set(PREFS_TAHOMA_LARGE);
+            prefs_.font.set(PREFS_SOL_LARGE);
             fontMenu->setNeedsRerender();
         }));
         int menuIndex = 0;
-        if (prefs_.font.get().value_or(PREFS_TAHOMA_REGULAR) == PREFS_TAHOMA_TINY) {
+        if (prefs_.font.get().value_or(PREFS_SOL_SMALL) == PREFS_SOL_SMALL) {
             menuIndex = 0;
-        } else if (prefs_.font.get().value_or(PREFS_TAHOMA_REGULAR) == PREFS_TAHOMA_REGULAR) {
+        } else if (prefs_.font.get().value_or(PREFS_SOL_SMALL) == PREFS_SOL_MEDIUM) {
             menuIndex = 1;
-        } else if (prefs_.font.get().value_or(PREFS_TAHOMA_REGULAR) == PREFS_TAHOMA_LARGE) {
+        } else if (prefs_.font.get().value_or(PREFS_SOL_SMALL) == PREFS_SOL_LARGE) {
             menuIndex = 2;
         }
         fontMenu->setCurrSelection(menuIndex);
