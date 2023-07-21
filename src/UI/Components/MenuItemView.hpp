@@ -171,6 +171,9 @@ public:
     }
 
     void setSelected(bool selected) {
+        if (selected_ == selected) {
+            return;
+        }
         selected_ = selected;
         setNeedsLayout();
     }

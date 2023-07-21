@@ -23,15 +23,20 @@ public:
         if (allCaps_) {
             std::transform(text.begin(), text.end(), text.begin(), ::toupper);
         }
-        if (text != text_) {
-            text_ = std::move(text);
-            setNeedsLayout();
+        if (text == text_) {
+            return;
         }
+        text_ = std::move(text);
+        setNeedsLayout();
+        cachedWidth_ = 0;
     }
 
     void setFont(Font *font) { font_ = font; }
 
     void splitMultiLine(DisplaySystem &display, int width, const std::string &text) {
+        if (cachedWidth_ == width) {
+            return;
+        }
         splitLines_.clear();
         std::string line;
         std::string word;
@@ -50,13 +55,14 @@ public:
             }
             // Allow going over the max lines by one, so we can add the ... to the end
             if (splitLines_.size() > maxLines_) {
-                return;
+                break;
             }
         }
 
         if (!line.empty()) {
             splitLines_.push_back(line);
         }
+        cachedWidth_ = width;
     }
     auto layout(LayoutContext &context, Size size) -> Size override {
         // Leave the display font the way we found it.
@@ -110,4 +116,5 @@ protected:
     std::vector<std::string> splitLines_;
     Font *font_;
     bool allCaps_;
+    int cachedWidth_ = 0;
 };

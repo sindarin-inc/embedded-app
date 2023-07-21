@@ -75,16 +75,11 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     context.setSublayoutFrame(
         mainRect, LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
         [this](LayoutContext &context, Size size) -> Size {
-            int x = 0;
             int y = 0;
-            int viewCount = menuItemViews_.size();
             const auto mainSpacing = 8;
-            int boxHeight = (size.height - (viewCount - 1) * mainSpacing) / viewCount;
-            Size boxSize = {size.width, boxHeight};
-
             for (auto &view : menuItemViews_) {
-                auto viewFrame =
-                    context.setViewFrame(*view, {{x, y}, boxSize}, LayoutOptionsSizeToFitVertical);
+                auto viewFrame = context.setViewFrame(*view, {{0, y}, {size.width, 0}},
+                                                      LayoutOptionsSizeToFitVertical);
                 y += viewFrame.size.height + mainSpacing;
             }
             y -= mainSpacing;

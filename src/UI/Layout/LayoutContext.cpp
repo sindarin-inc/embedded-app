@@ -48,7 +48,8 @@ auto LayoutContext::setSublayoutSizeInRect(const Size &size, const Rect &inRect,
 }
 
 auto LayoutContext::layoutIfNeeded(const Size &size, bool sizing) -> Size {
-    if (size == cachedSize_ && ((!needsSizing_ && sizing) || (!needsLayout_ && !sizing))) {
+    if ((size == cachedSize_ || size == cachedLayoutSize_) &&
+        ((!needsSizing_ && sizing) || (!needsLayout_ && !sizing))) {
         return cachedLayoutSize_;
     }
 
