@@ -21,10 +21,10 @@ public:
 
     static auto getContentType() -> std::string;
     auto getFile() -> SFile;
-    static std::string boundary;
 
 private:
     FileSystem &fileSystem_;
+    static std::string boundary;
     std::string fileName_;
     bool keyWritten_{false};
     SFile tempFile_;

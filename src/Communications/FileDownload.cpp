@@ -190,7 +190,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
             fileBuffer = SpiRamArrayPtr<uint8_t>(contentLength);
             if (fileBuffer == nullptr) {
                 log_e("Failed to allocate %d bytes for file download", contentLength);
-                telemetry.logMetric(TelemetryField::METRIC_EVENT, "failed-allocate",
+                telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "failed-allocate",
                                     {{"content-length", contentLength}});
                 return false;
             }
@@ -254,7 +254,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         // TODO: What's the best API to get errors from the stream?
         log_e("Downloaded file is shorter than expected, expected %d bytes but got %zu bytes",
               length, fileSize);
-        telemetry.logMetric(TelemetryField::METRIC_EVENT, "wrong-size",
+        telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "wrong-size",
                             {{"expected", length}, {"actual", static_cast<int>(fileSize)}});
         return false;
     } else {

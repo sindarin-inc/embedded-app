@@ -2,7 +2,6 @@
 
 #include <iomanip>
 
-#include "Communications/MultiPartData.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/StringUtil.hpp"
@@ -72,8 +71,7 @@ auto Telemetry::uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telem
         return -1;
     }
 
-    auto multipartPath = telemetry.multipartPath();
-    int httpCode = SindarinAPI::getInstance()->uploadTelemetryFile(file, multipartPath, fileSystem);
+    int httpCode = SindarinAPI::getInstance()->uploadTelemetryFile(file, localPath, fileSystem);
     file.close();
 
     log_d("Telemetry log upload http code: %d", httpCode);

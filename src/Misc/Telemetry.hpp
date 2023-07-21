@@ -51,7 +51,6 @@ public:
         -> std::string;
 
     static auto metricLogPath() -> std::string { return "/metrics/telemetry.jsonl"; }
-    static auto multipartPath() -> std::string { return "/metrics/telemetry.multipart.jsonl"; }
 
     auto uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telemetry) -> int;
 
