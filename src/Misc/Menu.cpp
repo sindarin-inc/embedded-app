@@ -28,7 +28,14 @@ void Menu::populateMenuItems(std::vector<MenuItem> &menuItems) {
 
 auto Menu::getNumItems() -> int { return numMenuItems_; }
 
-void Menu::setCurrSelection(int newSelection) { currSelection_ = newSelection; }
+void Menu::setCurrSelection(int newSelection) {
+    currSelection_ = newSelection;
+    if (myStyle_.numberOfItemsPerPage == 0) {
+        currMenuPage_ = 0;
+    } else {
+        currMenuPage_ = currSelection_ / myStyle_.numberOfItemsPerPage;
+    }
+}
 
 auto Menu::getCurrSelection() -> int { return currSelection_; }
 
@@ -50,7 +57,11 @@ auto Menu::nextSelection(bool skipLast) -> bool {
     if (skipLast && (currSelection_ == numMenuItems_ - 1)) {
         currSelection_ = 0;
     }
-    currMenuPage_ = currSelection_ / myStyle_.numberOfItemsPerPage;
+    if (myStyle_.numberOfItemsPerPage == 0) {
+        currMenuPage_ = 0;
+    } else {
+        currMenuPage_ = currSelection_ / myStyle_.numberOfItemsPerPage;
+    }
     // This makes sure we do a full refresh when the page changes
     if (oldCurMenuPage != currMenuPage_) {
         log_d("Page changed, refreshing");
@@ -69,7 +80,11 @@ auto Menu::prevSelection(bool skipLast) -> bool {
     if (skipLast && (currSelection_ == numMenuItems_ - 1)) {
         currSelection_--;
     }
-    currMenuPage_ = currSelection_ / myStyle_.numberOfItemsPerPage;
+    if (myStyle_.numberOfItemsPerPage == 0) {
+        currMenuPage_ = 0;
+    } else {
+        currMenuPage_ = currSelection_ / myStyle_.numberOfItemsPerPage;
+    }
     // This makes sure we do a full refresh when the page changes
     if (oldCurMenuPage != currMenuPage_) {
         needsRefresh = true;
@@ -83,7 +98,7 @@ auto Menu::prevSelection(bool skipLast) -> bool {
 auto Menu::getItemTitleAt(int index) -> std::string {
     std::string all;
     assert(index < numMenuItems_);
-    all = "  " + menuItems_[index].title;
+    all = menuItems_[index].title;
     return all;
 }
 void Menu::changeItemTitleAt(int index, std::string title) {

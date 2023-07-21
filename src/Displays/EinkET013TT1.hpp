@@ -8,7 +8,8 @@
 #include <esp_pm.h>
 #endif
 
-#include "EinkWaveform.hpp"
+#include "CustomWaveforms.hpp"
+#include "EinkTypes.hpp"
 #include "Misc/Dispatch.hpp"
 
 #define EinkET013TT1_PIXEL_WIDTH 256
@@ -25,12 +26,6 @@ typedef union {
         uint8_t lvds : 1;
     } bits;
 } PumpStatus;
-
-enum BorderSetting {
-    BORDER_SETTING_BLACK = 0,
-    BORDER_SETTING_WHITE = 1,
-    BORDER_SETTING_NONE = 2,
-};
 
 enum Register {
     PUMP_STATUS = 0x00,
@@ -58,12 +53,6 @@ enum OSC_FREQ {
 #define VCOM_DEFAULT (-4000)
 #define FRAMERATE_DEFAULT 24
 
-enum class ScreenSide {
-    Left = 1 << 0,
-    Right = 1 << 1,
-    Both = Left | Right,
-};
-
 // Driver for dual Eink 1.3" 256x256 displays
 class EinkET013TT1 {
 public:
@@ -89,7 +78,9 @@ public:
     void clear(const EinkET013TT1Waveform &waveform);
 
     void update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
-                int32_t overrideVcom = INT32_MAX);
+                int32_t overrideVcom = INT32_MAX,
+                const EinkET013TT1Waveform &altWaveform = BC_WAVEFORM_NONE,
+                EinkBox box = EinkBox::zero());
 
     auto readTemperature(ScreenSide screen) -> int16_t;
 
@@ -116,7 +107,7 @@ protected:
     inline void waitForTimer();
     inline void waitForNotBusy();
     void updateInternal(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
-                        int32_t overrideVcom);
+                        int32_t overrideVcom, const EinkET013TT1Waveform &altWaveform, EinkBox box);
 
     uint8_t csLeft_;
     uint8_t csRight_;

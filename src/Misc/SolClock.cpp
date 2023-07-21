@@ -6,9 +6,11 @@
 #endif
 
 #include <cinttypes>
+#include <random>
 
 #include "../Communications/WiFi.hpp"
 #include "../Misc/StringUtil.hpp"
+#include "../Misc/Timezones.hpp"
 
 extern SolClock solClock;
 
@@ -33,54 +35,52 @@ auto SolClock::getTimeString() -> std::string {
 }
 
 void SolClock::loadTimeZone() {
-    std::string timeZoneString;
-    switch (prefs_.solTimeZone.get().value_or(0)) {
-    case -8:
-        timeZoneString = "PST8PDT";
-        break;
-    case -7:
-        timeZoneString = "MST7MDT";
-        break;
-    case -6:
-        timeZoneString = "CST6CDT";
-        break;
-    case -5:
-        timeZoneString = "EST5EDT";
-        break;
-    case 0:
-    default:
-        timeZoneString = "UTC";
-        break;
-    }
-    log_d("Using timezone %s", timeZoneString.c_str());
-    setenv("TZ", timeZoneString.c_str(), 1);
+    log_d("Loading timezone %s=%s", ianaTimezoneString().c_str(), posixTimezoneString().c_str());
+    setenv("TZ", posixTimezoneString().c_str(), 1);
     tzset();
 }
 
-auto SolClock::timeZoneString(int timeZone) -> std::string {
-    switch (timeZone) {
-    case -8:
-        return "Pacific Time";
-    case -7:
-        return "Mountain Time";
-    case -6:
-        return "Central Time";
-    case -5:
-        return "Eastern Time";
-    case 0:
-        return "UTC - Not Set";
-    default:
-        return "Unknown";
+auto SolClock::ianaTimezoneString() -> std::string {
+    return prefs_.tzIana.get().value_or("Etc/UTC");
+}
+
+auto SolClock::posixTimezoneString() -> std::string {
+    return prefs_.tzPosix.get().value_or("UTC0");
+}
+
+void SolClock::setTimezone(const std::string &ianaTimezone) {
+    if (ianaTimezone == prefs_.tzIana.get().value_or("Etc/UTC") &&
+        prefs_.tzPosix.get().has_value()) {
+        log_d("Timezone already set to %s", ianaTimezone.c_str());
+        return;
     }
-}
 
-auto SolClock::timeZoneString() -> std::string {
-    return timeZoneString(prefs_.solTimeZone.get().value_or(0));
-}
+    prefs_.tzIana.set(ianaTimezone);
+    std::string posixTimezoneString = ianaToPosix(ianaTimezone);
+    prefs_.tzPosix.set(posixTimezoneString);
 
-void SolClock::setTimezone(int timeZone) {
-    prefs_.solTimeZone.set(timeZone);
+    log_d("Switching to timezone %s=%s", ianaTimezone.c_str(), posixTimezoneString.c_str());
     loadTimeZone();
+}
+
+auto SolClock::ianaToPosix(const std::string &ianaTimezone) -> std::string {
+    SHOW_HEAP();
+    std::istringstream ss(IANA_TO_POSIX_TIMEZONES);
+    std::string line;
+    SHOW_HEAP();
+
+    while (std::getline(ss, line)) {
+        std::string::size_type pos = line.find(ianaTimezone);
+        if (pos != std::string::npos) {
+            std::string::size_type commaPos = line.find(',', pos);
+            if (commaPos != std::string::npos) {
+                SHOW_HEAP();
+                return line.substr(commaPos + 2); // skip comma and space
+            }
+        }
+    }
+
+    return "UTC0";
 }
 
 void SolClock::getLocaltime(tm *timeinfo) {
@@ -148,7 +148,7 @@ void SolClock::setClockTimeFromInternet() {
     if (size == 0) {
         log_e("strftime failed");
     }
-    log_i("The current date/time is: %s (%" PRIu64 ")", strftimeBuf, now);
+    log_i("The current date/time is: %s (%" PRIu64 ")", strftimeBuf, (uint64_t)now);
 #else
     log_i("Not setting clock time from internet in simulator");
 #endif
@@ -159,13 +159,14 @@ auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
     struct tm timeinfo;
     localtime_r(&now, &timeinfo);
 
-    // Get the morning and evening news hours
-    int morningNews = prefs_.morningNewspaperTime.get().value_or(0);
-    int eveningNews = prefs_.eveningNewspaperTime.get().value_or(0);
+    // Set morning delivery to 6am and evening delivery to 8pm
+    // if the user has toggled those options on.
+    int morningNews = prefs_.noMorningDelivery.get().value_or(false) ? 0 : 6;
+    int eveningNews = prefs_.eveningDelivery.get().value_or(false) ? 20 : 0;
 
-    // If otherwise unselected, let's force a sync at 6pm
+    // If otherwise unselected, let's force a sync at 6am
     if (morningNews == 0 && eveningNews == 0) {
-        eveningNews = 18;
+        morningNews = 6;
     }
 
     // Create tm structs for the morning and evening events
@@ -195,20 +196,33 @@ auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
 
     // Determine the next event
     time_t nextEventEpoch;
-    char strftimeBuf[64];
-    if (morningNews != 0 && morningEventEpoch <= eveningEventEpoch) {
-        nextEventEpoch = morningEventEpoch;
-        size_t size = strftime(strftimeBuf, sizeof(strftimeBuf), "%c", &morningEvent);
-        if (size == 0) {
-            log_e("strftime failed");
-        }
-    } else {
+    struct tm *nextEventTime;
+
+    if (eveningNews != 0 && eveningEventEpoch <= morningEventEpoch) {
         nextEventEpoch = eveningEventEpoch;
-        size_t size = strftime(strftimeBuf, sizeof(strftimeBuf), "%c", &eveningEvent);
-        if (size == 0) {
-            log_e("strftime failed");
-        }
+    } else {
+        nextEventEpoch = morningEventEpoch;
     }
+
+    // Add the random number of seconds to the nextEventEpoch between 0 and 10 minutes
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> distr(0, 600);
+
+    int randomSeconds = distr(gen);
+    nextEventEpoch += randomSeconds;
+
+    // Update nextEventTime to reflect the addition of randomSeconds
+    time_t updatedNextEventEpoch = nextEventEpoch;
+    nextEventTime = localtime(&updatedNextEventEpoch);
+
+    // Now set the strftimeBuf after the randomSeconds have been added
+    char strftimeBuf[64];
+    size_t size = strftime(strftimeBuf, sizeof(strftimeBuf), "%c", nextEventTime);
+    if (size == 0) {
+        log_e("strftime failed");
+    }
+
     log_i("Next sync time is: %s (%" PRIu64 "s from now)", strftimeBuf,
           (int64_t)nextEventEpoch - now);
 

@@ -160,7 +160,7 @@ void EinkET013TT1::init() {
     ESP_ERROR_CHECK(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "eink", &freqLock_));
 #endif
 
-    einkQueue_ = new DispatchQueue("Eink", 1, 4096, 11, 1);
+    einkQueue_ = DispatchGetEinkQueue();
 
     log_d("Initialized EinkET013TT1");
 }
@@ -210,10 +210,11 @@ inline void EinkET013TT1::setCS(bool value, ScreenSide screen) {
 }
 
 void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
-                                  int32_t overrideVcom) {
-    if (overrideVcom != INT32_MAX) {
+                                  int32_t overrideVcom, const EinkET013TT1Waveform &altWaveform,
+                                  EinkBox box) {
+    if (overrideVcom != INT32_MAX && overrideVcom != vcomInMV_) {
         uint8_t newVcomRegisterValue = VcomMVToRegisterValue(overrideVcom);
-        log_d("Overriding VCOM from %" PRIu32 " (0x%02X) to %" PRIi32 " (0x%02X)", vcomInMV_,
+        log_d("Overriding VCOM from %" PRIi32 " (0x%02X) to %" PRIi32 " (0x%02X)", vcomInMV_,
               VcomMVToRegisterValue(vcomInMV_), overrideVcom, newVcomRegisterValue);
         writeRegister(PWM_WIDTH_SELECT, newVcomRegisterValue);
         Delay(30);
@@ -287,15 +288,22 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
 
     PROFILE_START(sendFrames);
 
+    // Take into account for doing more frames in the altWaveform than the main one.
+    int maxFrames = std::max(waveform.frameCount, altWaveform.frameCount);
+
     // For each frame in the waveform
-    for (int frameIndex = 0; frameIndex < waveform.frameCount; frameIndex++) {
-        auto frame = waveform.frames[frameIndex];
+    for (int frameIndex = 0; frameIndex < maxFrames; frameIndex++) {
+        auto frame = waveform.frameOrDefault(frameIndex);
+        auto altFrame = altWaveform.frameOrDefault(frameIndex);
 
         // Generate a look up table to quickly look up old bits -> new bits and the resulting
         // transitions
         std::array<uint8_t, 256> lut;
-        // This takes ~210us at 160MHz
+        std::array<uint8_t, 256> altLut;
+
+        // These each take ~210us at 160MHz
         frame.makeLUT(&lut);
+        altFrame.makeLUT(&altLut);
 
         if (border_ != BORDER_SETTING_NONE) {
             auto borderBits = frame.getSetting(previousBorder_ & 0x01, border_);
@@ -313,6 +321,9 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
             // Pick the correct gate based on the index
             uint8_t gs = gate & 0x0F;
             uint8_t gb = gate >> 4;
+            uint8_t x;
+            // 0 on the gates is lower left, but we want to do everything based on upper left
+            uint8_t y = EinkET013TT1_PIXEL_WIDTH - gate % EinkET013TT1_PIXEL_WIDTH;
             *gateBlockLow = GateBlockL(gb);
             *gateSelectLow = GateSelectL(gs);
             *gateSelectHigh = GateSelectH(gs);
@@ -334,6 +345,7 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
 
             // This for loop takes 4-16us at 240MHz
             for (int pixel = 0; pixel < EinkET013TT1_PIXEL_WIDTH / 2; pixel += 4) {
+                x = pixel + (gate / EinkET013TT1_PIXEL_WIDTH) * EinkET013TT1_PIXEL_WIDTH / 2;
                 uint8_t oldPixels;
                 uint8_t newPixels;
                 if (pixel % 8 == 0) {
@@ -343,7 +355,8 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
                     oldPixels = oldBuffer[pixel / 8] & 0xF;
                     newPixels = newBuffer[pixel / 8] & 0xF;
                 }
-                sourceData[pixel / 4] = lut[oldPixels << 4 | newPixels];
+                auto *lutToUse = box.contains(x, y) ? &altLut : &lut;
+                sourceData[pixel / 4] = (*lutToUse)[oldPixels << 4 | newPixels];
             }
 
             // Send the scan line!
@@ -375,7 +388,7 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
 
     if (overrideVcom != INT32_MAX) {
         auto oldVcomRegisterValue = VcomMVToRegisterValue(vcomInMV_);
-        log_d("Restoring VCOM to 0x%" PRIi32 " (0x%" PRIu8 ")", vcomInMV_, oldVcomRegisterValue);
+        log_d("Restoring VCOM to %" PRIi32 " (0x%" PRIu8 ")", vcomInMV_, oldVcomRegisterValue);
         writeRegister(PWM_WIDTH_SELECT, oldVcomRegisterValue);
     }
 
@@ -396,32 +409,34 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
 }
 
 void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
-                          int32_t overrideVcom) {
+                          int32_t overrideVcom, const EinkET013TT1Waveform &altWaveform,
+                          EinkBox box) {
     // Create a notification group to wait for the update to finish
     auto group = xEventGroupCreate();
 
-    einkQueue_->dispatch([this, waveform, buffer, overrideVcom, group]() {
+    einkQueue_->dispatch([this, waveform, buffer, overrideVcom, group, altWaveform, box]() {
         if (!poweredOn_) {
             // This shouldn't happen, we should have been powering on the screen early in the render
             // pipeline before update is called
             log_w("Screen not powered on at update time. Powering on.");
             powerOnInternal();
         }
-        updateInternal(waveform, buffer, overrideVcom);
+        updateInternal(waveform, buffer, overrideVcom, altWaveform, box);
 
         // Release the lock
         xEventGroupSetBits(group, 1);
 
         // Wait for something else to get queued, otherwise power off
         if (!einkQueue_->waitNotEmpty(100)) {
-            einkQueue_->dispatch([this]() { powerOffInternal(); });
+            powerOffInternal();
         } else {
             log_d("Eink queue has work to do! Not powering off");
         }
     });
 
     // Wait for the update to finish
-    constexpr int maxWaitTimeMs = (MAX_FRAMES_PER_WAVEFORM / FRAMERATE_DEFAULT) * 1000;
+    // NOLINTNEXTLINE(bugprone-integer-division) -- it's fine for this to be approximate
+    constexpr int maxWaitTimeMs = (MAX_FRAMES_PER_WAVEFORM / FRAMERATE_DEFAULT) * 1200;
     auto bits = xEventGroupWaitBits(group, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(maxWaitTimeMs));
     if (bits != 1) {
         log_e("Timed out waiting for update to finish!");
@@ -523,7 +538,7 @@ void EinkET013TT1::beginPowerOn() {
         int millisToWait = 300 - (Millis() - startTime);
         if (!einkQueue_->waitNotEmpty(millisToWait)) {
             log_e("Nothing rendered after Eink power on, powering off (this shouldn't happen)");
-            einkQueue_->dispatch([this]() { powerOffInternal(); });
+            powerOffInternal();
         }
     });
 }

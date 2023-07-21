@@ -2,7 +2,6 @@
 #include <emscripten.h>
 #endif
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
 #include <cstring>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -10,10 +9,18 @@
 #include <signal.h>
 #include <thread>
 #include <unistd.h>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+#pragma clang diagnostic pop
 
 #include "Displays/FakeEinkET013TT1.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/Math.hpp"
+#include "Misc/Platform.hpp"
 #include "Sensors/LightingController.hpp"
 #include "sindarin-debug.h"
 
@@ -44,16 +51,22 @@ extern bool ledChange;
 
 SDL_Window *window;
 SDL_Renderer *renderer;
+int totalFrames = 0;
+bool movieOn_ = false;
+
 // Texture on which to draw the UI from the firmware
 SDL_Texture *deviceScreen;
 
-// Variables related to drawing the overlay
-SDL_Surface *arrow;
-SDL_Texture *arrowTexture;
-Uint8 arrowOpacity = 0;
-double arrowRotation = 0;
-
 float lerp(float a, float b, float t) { return a + t * (b - a); }
+
+bool saveScreenshotPng(std::string filepath, SDL_Window *window, SDL_Renderer *renderer) {
+    if (!stbi_write_png(filepath.c_str(), EinkET013TT1_PIXEL_WIDTH, EinkET013TT1_PIXEL_HEIGHT, 1,
+                        FakeEinkET013TT1ParticlePositions, 0)) {
+        log_e("Unable to save rendered image to %s", filepath.c_str());
+    }
+
+    return true;
+}
 
 void SimDrawScreen() {
     for (int x = 0; x < EinkET013TT1_PIXEL_WIDTH; x++) {
@@ -61,13 +74,21 @@ void SimDrawScreen() {
             uint8_t color = FakeEinkET013TT1ParticlePositions[x + y * EinkET013TT1_PIXEL_WIDTH];
             float colorF = color / 255.0;
             uint16_t brightnessOffset =
-                MapRange(LightingSetting, MIN_LIGHTING_DUTY_CYCLE, MAX_LIGHTING_DUTY_CYCLE, 60, 0);
+                MapRange(LightingSetting, static_cast<int>(GetMinLightingDutyCycle()),
+                         static_cast<int>(GetMaxLightingDutyCycle()), 60, 0);
             SDL_SetRenderDrawColor(
                 renderer, lerp(40 + brightnessOffset, 248 - brightnessOffset, colorF),
                 lerp(40 + brightnessOffset, 240 - brightnessOffset, colorF),
                 lerp(40 + brightnessOffset, 227 - brightnessOffset, colorF), 0xFF);
             SDL_RenderDrawPoint(renderer, x, y);
         }
+    }
+
+    if (movieOn_) {
+        totalFrames++;
+        char filename[100];
+        snprintf(filename, sizeof(filename), "frames/frame-%05d.png", totalFrames);
+        saveScreenshotPng(filename, window, renderer);
     }
 }
 
@@ -91,7 +112,7 @@ void DrawRoundLed(int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b) {
         for (int yy = y; yy < y + h; yy++) {
             float dx = (float)xx - centerX;
             float dy = (float)yy - centerY;
-            float dist = sqrt(dx*dx + dy*dy);
+            float dist = sqrt(dx * dx + dy * dy);
             if (dist > rad) {
                 SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
             } else {
@@ -111,7 +132,7 @@ void SimDrawLeds() {
     // draw simulated leds
     int ledDim = SIM_LED_DIM;
     int ledStartY = EinkET013TT1_PIXEL_HEIGHT;
-    int ledStartX = (EinkET013TT1_PIXEL_WIDTH/2) - (ledDim/2);
+    int ledStartX = (EinkET013TT1_PIXEL_WIDTH / 2) - (ledDim / 2);
 
     // clear area
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
@@ -131,11 +152,11 @@ void SimDrawLeds() {
         if (ledVal) {
             color[i] = 0xFF;
         }
-        #if SIM_LED_ROUND
+#if SIM_LED_ROUND
         DrawRoundLed(ledStartX, ledStartY, ledDim, ledDim, color[0], color[1], color[2]);
-        #else
+#else
         DrawRectLed(ledStartX, ledStartY, ledDim, ledDim, color[0], color[1], color[2]);
-        #endif
+#endif
         ledStartX += ledDim;
     }
     ledChange = false;
@@ -143,82 +164,45 @@ void SimDrawLeds() {
 };
 
 bool isPngEqual(std::string filepath1, std::string filepath2) {
-    SDL_Surface *saveSurface1 = IMG_Load(filepath1.c_str());
-    SDL_Surface *saveSurface2 = IMG_Load(filepath2.c_str());
+    int width1, height1, bpp1;
+    int width2, height2, bpp2;
 
-    for (int w = 0; w < EinkET013TT1_PIXEL_WIDTH; w++) {
-        for (int h = 0; h < EinkET013TT1_PIXEL_HEIGHT; h++) {
-            Uint8 r1, g1, b1, r2, g2, b2;
-            Uint32 *pixels1, *pixels2;
-            pixels1 = (Uint32 *)saveSurface1->pixels;
-            pixels2 = (Uint32 *)saveSurface2->pixels;
-            Uint32 pixel1 = pixels1[w + h * saveSurface1->w];
-            Uint32 pixel2 = pixels2[w + h * saveSurface2->w];
-            SDL_GetRGB(pixel1, saveSurface1->format, &r1, &g1, &b1);
-            SDL_GetRGB(pixel2, saveSurface2->format, &r2, &g2, &b2);
-            if ((r1 != r2) || (g1 != g2) || (b1 != b2)) {
-                std::cerr << "Got here and something went wrong " << w << " " << h << "\n";
-                std::cerr << r1 << " " << g1 << " " << b1 << "\n";
-                std::cerr << r2 << " " << g2 << " " << b2 << "\n";
+    uint8_t *img1 = stbi_load(filepath1.c_str(), &width1, &height1, &bpp1, 3);
+    uint8_t *img2 = stbi_load(filepath2.c_str(), &width2, &height2, &bpp2, 3);
+
+    if (img1 == nullptr || img2 == nullptr) {
+        std::cerr << "Failed to load one or both images\n";
+        return false;
+    }
+
+    if (width1 != width2 || height1 != height2 || bpp1 != bpp2) {
+        std::cerr << "Images are not the same size or color depth\n";
+        stbi_image_free(img1);
+        stbi_image_free(img2);
+        return false;
+    }
+
+    for (int y = 0; y < height1; y++) {
+        for (int x = 0; x < width1; x++) {
+            int idx = (y * width1 + x) * 3;
+            if (img1[idx] != img2[idx] || img1[idx + 1] != img2[idx + 1] ||
+                img1[idx + 2] != img2[idx + 2]) {
+                std::cerr << "Pixel difference at " << x << ", " << y << "\n";
+                std::cerr << "Image 1: " << (int)img1[idx] << " " << (int)img1[idx + 1] << " "
+                          << (int)img1[idx + 2] << "\n";
+                std::cerr << "Image 2: " << (int)img2[idx] << " " << (int)img2[idx + 1] << " "
+                          << (int)img2[idx + 2] << "\n";
+                stbi_image_free(img1);
+                stbi_image_free(img2);
                 return false;
             }
         }
     }
-    return true;
-}
 
-bool saveScreenshotPng(std::string filepath, SDL_Window *window, SDL_Renderer *renderer) {
-    // 4 bytes per pixel
-    auto pitch = EinkET013TT1_PIXEL_WIDTH * 4;
-
-    SDL_Surface *saveSurface = SDL_CreateRGBSurface(0, EinkET013TT1_PIXEL_WIDTH,
-                                                    EinkET013TT1_PIXEL_HEIGHT, 32, 0, 0, 0, 0);
-    if (saveSurface == NULL) {
-        std::cerr << "SDL_CreateRGBSurface error: " << SDL_GetError() << "\n";
-        return false;
-    }
-    SDL_Rect rect = {.x = 0, .y = 0, .w = EinkET013TT1_PIXEL_WIDTH, .h = EinkET013TT1_PIXEL_HEIGHT};
-    SDL_SetRenderTarget(renderer, deviceScreen);
-    if (SDL_RenderReadPixels(renderer, &rect, 0, saveSurface->pixels, pitch) != 0) {
-        std::cerr << "SDL_RenderReadPixels error: " << SDL_GetError() << "\n";
-        return false;
-    }
-    SDL_SetRenderTarget(renderer, NULL);
-
-    IMG_SavePNG(saveSurface, filepath.c_str());
-    SDL_FreeSurface(saveSurface);
+    stbi_image_free(img1);
+    stbi_image_free(img2);
 
     return true;
-}
-
-void drawOverlay(RemoteCommand command) {
-    if (command == RemoteCommand::PREV) {
-        arrowOpacity = SDL_MAX_UINT8;
-        arrowRotation = 90;
-    } else if (command == RemoteCommand::NEXT) {
-        arrowOpacity = SDL_MAX_UINT8;
-        arrowRotation = 270;
-    } else if (command == RemoteCommand::CHANNEL_MINUS) {
-        arrowOpacity = SDL_MAX_UINT8;
-        arrowRotation = 0;
-    } else if (command == RemoteCommand::CHANNEL_PLUS) {
-        arrowOpacity = SDL_MAX_UINT8;
-        arrowRotation = 180;
-    } else if (command == RemoteCommand::ENTER) {
-        arrowOpacity = SDL_MAX_UINT8;
-        arrowRotation = 225;
-    }
-    if (arrowOpacity > 0) {
-        arrowOpacity = std::max(arrowOpacity - 10, 0);
-        // The left arrow default position
-        SDL_Rect left = {
-            .x = 5, .y = (EinkET013TT1_PIXEL_HEIGHT - arrow->h) / 2, .w = arrow->w, .h = arrow->h};
-        // The center of the screen, relative to left arrow coordinates
-        SDL_Point center = {.x = EinkET013TT1_PIXEL_WIDTH / 2 - left.x, .y = arrow->h / 2};
-        SDL_SetTextureAlphaMod(arrowTexture, arrowOpacity);
-        SDL_RenderCopyEx(renderer, arrowTexture, NULL, &left, arrowRotation, &center,
-                         SDL_FLIP_NONE);
-    }
 }
 
 #if SIMULATOR_BLE
@@ -231,7 +215,7 @@ void sendCodeAndRender(RemoteCommand command, SDL_Renderer *renderer) {
 
     // Wait for the UI thread to do the rendering to be rendered
     uint8_t out;
-    while (xQueueReceiveFromISR(FakeEinkET013TT1DoneWaveformQueue, &out, nullptr) == pdFALSE) {
+    while (xQueueReceiveFromISR(FakeEinkET013TT1RenderQueue, &out, nullptr) == pdFALSE) {
         usleep(10000);
     }
 
@@ -244,13 +228,19 @@ void sendCodeAndRender(RemoteCommand command, SDL_Renderer *renderer) {
 
 // Only press 'u' when you are on a page in a readable.
 void runBackwardsUnitTest(SDL_Window *window, SDL_Renderer *renderer) {
-    for (int i = 0; i < 500; i++) {
-        saveScreenshotPng("current.png", window, renderer);
-        sendCodeAndRender(RemoteCommand::ENTER, renderer);
+    auto skipWaveform = FakeEinkET013TT1SkipWaveform;
+    FakeEinkET013TT1SkipWaveform = true;
+    bool first = true;
+    for (int i = 0; i < 10000; i++) {
+        if (!first) {
+            saveScreenshotPng("current.png", window, renderer);
+            sendCodeAndRender(RemoteCommand::ENTER, renderer);
+        }
+        first = false;
         saveScreenshotPng("next.png", window, renderer);
         sendCodeAndRender(RemoteCommand::ENTER, renderer);
         saveScreenshotPng("nextnext.png", window, renderer);
-        sendCodeAndRender(RemoteCommand::CHANNEL_MINUS, renderer);
+        sendCodeAndRender(RemoteCommand::LEFT, renderer);
         saveScreenshotPng("nextprev.png", window, renderer);
         // compare the most two recent pngs -- they should be the same.
         // if not, error out.
@@ -260,6 +250,7 @@ void runBackwardsUnitTest(SDL_Window *window, SDL_Renderer *renderer) {
             exit(1);
         }
     }
+    FakeEinkET013TT1SkipWaveform = skipWaveform;
     std::cerr << "unit test passed\n";
 }
 
@@ -267,7 +258,7 @@ void goBackNumPages(SDL_Window *window, SDL_Renderer *renderer, int numPages) {
     int i = 0;
 
     for (i = 0; i < numPages; i++) {
-        sendCodeAndRender(RemoteCommand::CHANNEL_MINUS, renderer);
+        sendCodeAndRender(RemoteCommand::LEFT, renderer);
         usleep(1000000.0 / 240.0);
     }
 }
@@ -282,16 +273,16 @@ auto mainLoop() -> bool {
         } else if (e.type == SDL_KEYDOWN) {
             switch (e.key.keysym.sym) {
             case SDLK_UP:
-                remoteCode = RemoteCommand::PREV;
+                remoteCode = RemoteCommand::UP;
                 break;
             case SDLK_DOWN:
-                remoteCode = RemoteCommand::NEXT;
+                remoteCode = RemoteCommand::DOWN;
                 break;
             case SDLK_LEFT:
-                remoteCode = RemoteCommand::CHANNEL_MINUS;
+                remoteCode = RemoteCommand::LEFT;
                 break;
             case SDLK_RIGHT:
-                remoteCode = RemoteCommand::CHANNEL_PLUS;
+                remoteCode = RemoteCommand::RIGHT;
                 break;
             case SDLK_ESCAPE:
                 remoteCode = RemoteCommand::BACK;
@@ -301,6 +292,9 @@ auto mainLoop() -> bool {
                 break;
             case 'p':
                 saveScreenshotPng("./screenshot.png", window, renderer);
+                break;
+            case 'm':
+                movieOn_ = !movieOn_;
                 break;
             case 'u':
                 runBackwardsUnitTest(window, renderer);
@@ -334,11 +328,11 @@ auto mainLoop() -> bool {
         SimDrawLeds();
         SDL_RenderPresent(renderer);
     } else if (ledChange) {
-        #if SIM_LED_ON
+#if SIM_LED_ON
         SDL_SetRenderTarget(renderer, NULL);
         SimDrawLeds();
         SDL_RenderPresent(renderer);
-        #endif
+#endif
     }
 
     return true;
@@ -362,8 +356,9 @@ auto main(int argc, char *argv[]) -> int {
         return 1;
     }
 
-    SDL_CreateWindowAndRenderer(EinkET013TT1_PIXEL_WIDTH * SCALE, ((EinkET013TT1_PIXEL_WIDTH+SIM_LED_DIM) * SCALE),
-                                0, &window, &renderer);
+    SDL_CreateWindowAndRenderer(EinkET013TT1_PIXEL_WIDTH * SCALE,
+                                ((EinkET013TT1_PIXEL_WIDTH + SIM_LED_DIM) * SCALE), 0, &window,
+                                &renderer);
     if (renderer == NULL) {
         fprintf(stderr, "Could not create renderer: %s\n", SDL_GetError());
         return 1;
@@ -372,15 +367,6 @@ auto main(int argc, char *argv[]) -> int {
     deviceScreen = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET,
                                      EinkET013TT1_PIXEL_WIDTH, EinkET013TT1_PIXEL_HEIGHT);
     SDL_RenderSetScale(renderer, SCALE, SCALE);
-
-    IMG_Init(IMG_INIT_PNG);
-    arrow = IMG_Load("lib/Simulator/assets/arrow.png");
-    if (arrow == NULL) {
-        fprintf(stderr, "Could not find arrow asset: %s\n", SDL_GetError());
-        return 1;
-    }
-    arrowTexture = SDL_CreateTextureFromSurface(renderer, arrow);
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
 #if defined(EMSCRIPTEN)
     emscripten_set_main_loop(emscriptemLoop, 0, 0);

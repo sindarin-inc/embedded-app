@@ -13,7 +13,7 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
     // This needs to be pretty big for smaller fonts
     for (int i = 0; i < 30; i++) {
         message += "Press arrows to move box around to your liking. Then "
-                   "press the center button when done! Message repeats.\n\n";
+                   "press \ue000 (center) when done! Message repeats.\n\n";
     }
     auto stream = std::make_shared<StdStringStream>(message);
     renderer_.setStream(stream);
@@ -27,19 +27,19 @@ void OffsetAdjustScreen::render(DisplaySystem &display) {
 void OffsetAdjustScreen::processCommand(RemoteCommand command) {
     DisplayRect oldRect = display_.getBoundingBox();
     switch (command) {
-    case RemoteCommand::CHANNEL_MINUS:
+    case RemoteCommand::LEFT:
         oldRect.x -= OFFSET_ADJUST_AMOUNT;
         setNeedsRerender();
         break;
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::RIGHT:
         oldRect.x += OFFSET_ADJUST_AMOUNT;
         setNeedsRerender();
         break;
-    case RemoteCommand::PREV:
+    case RemoteCommand::UP:
         oldRect.y -= OFFSET_ADJUST_AMOUNT;
         setNeedsRerender();
         break;
-    case RemoteCommand::NEXT:
+    case RemoteCommand::DOWN:
         oldRect.y += OFFSET_ADJUST_AMOUNT;
         setNeedsRerender();
         break;
@@ -60,7 +60,7 @@ void OffsetAdjustScreen::processCommand(RemoteCommand command) {
         prefs_.rectH.set(display_.getBoundingBox().height);
         log_d("Saving bounding box to preferences: (%s)",
               display_.getBoundingBox().toString().c_str());
-        backCallback();
+        back();
         break;
     default:
         break;

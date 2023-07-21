@@ -56,3 +56,20 @@ auto HasSuffix(std::string const &str, std::string const &suffix) -> bool {
 auto HasPrefix(const char *str, const char *pre) -> bool {
     return strncmp(pre, str, strlen(pre)) == 0;
 }
+
+auto Commify(uint32_t n) -> std::string {
+    std::string str = StringFormat("%d", n);
+    int insertPosition = str.length() - 3;
+    while (insertPosition > 0) {
+        str.insert(insertPosition, ",");
+        insertPosition -= 3;
+    }
+    return str;
+}
+
+auto CaseInsensitiveCompare(const std::string &str1, const std::string &str2) -> bool {
+    return std::lexicographical_compare(str1.begin(), str1.end(), str2.begin(), str2.end(),
+                                        [](char c1, char c2) {
+        return std::tolower(c1) < std::tolower(c2);
+    });
+};

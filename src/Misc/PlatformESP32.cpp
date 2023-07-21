@@ -5,7 +5,6 @@
 #include <esp_adc/adc_cali.h>
 #include <esp_adc/adc_cali_scheme.h>
 #include <esp_adc/adc_oneshot.h>
-#include <esp_bt.h>
 #include <esp_err.h>
 #include <esp_sleep.h>
 #include <esp_task_wdt.h>
@@ -31,22 +30,25 @@ bool ledcFailed = false;
 uint8_t sysOnPin;
 bool platformInitialized;
 
+static uint8_t minLightingDutyCycle;
+static uint8_t maxLightingDutyCycle;
+
 void PinMode(int pin, int mode) { gpio_set_direction((gpio_num_t)pin, (gpio_mode_t)mode); }
 
 void DigitalWrite(int pin, int level) { gpio_set_level((gpio_num_t)pin, (uint32_t)level); }
 
 auto DigitalRead(uint8_t pin) -> int { return gpio_get_level((gpio_num_t)pin); }
 
-void Delay(int ms) { vTaskDelay(ms * portTICK_PERIOD_MS); }
+void Delay(int ms) { vTaskDelay(pdMS_TO_TICKS(ms)); }
 
 auto Millis() -> int { return GetRunTimeMs(); }
 
 void HardwareInit() {
+    esp_err_t err;
 #if USE_I2C
     // release rtc i2c lines
     ulp_timer_stop();
     ulp_riscv_halt();
-    esp_err_t err;
     err = rtc_gpio_deinit((gpio_num_t)I2C_MASTER_SDA_IO);
     if (err != ESP_OK) {
         log_e("rtc_gpio_deinit failed for SDA: %d", err);
@@ -192,6 +194,14 @@ void InitializePlatform() {
         sysOnPin = 5;
     } else {
         sysOnPin = 46;
+    }
+    if (hardwareRevision < 3) {
+        minLightingDutyCycle = 5;
+        maxLightingDutyCycle = 60;
+    } else {
+        // Revisions 3 and higher have the 82ohm resistors in series
+        minLightingDutyCycle = 10;
+        maxLightingDutyCycle = 210;
     }
     // The MCU will keep itself on until the digital magnetometer detects the temples are closed, or
     // there are 5 mins of inactivity
@@ -420,6 +430,10 @@ void SetRightScreenLightFade(int dutyCycle, int fadeMs) {
     }
 #endif
 }
+
+auto GetMinLightingDutyCycle() -> uint8_t { return minLightingDutyCycle; }
+
+auto GetMaxLightingDutyCycle() -> uint8_t { return maxLightingDutyCycle; }
 
 auto GetRunTimeMs() -> uint32_t { return (uint32_t)(xTaskGetTickCount() * portTICK_PERIOD_MS); }
 

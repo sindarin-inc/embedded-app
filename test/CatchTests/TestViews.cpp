@@ -1,8 +1,22 @@
 #include <catch_amalgamated.hpp>
 
+// Allow access to protected methods from tests
+#define protected public
+#define private public
+#include "Misc/BMPImage.hpp"
+#include "Renderers/RendererStream.hpp"
+#include "Storage/PosixFileSystem.hpp"
+#include "UI/BitmapScreen.hpp"
 #include "UI/LayoutTestScreen.hpp"
+#include "UI/LineSpacingScreen.hpp"
+#include "UI/OffsetAdjustScreen.hpp"
 #include "UI/PowerDepletedScreen.hpp"
+#include "UI/ReadableTableOfContentsScreen.hpp"
+#include "UI/ReleaseNotesScreen.hpp"
+#include "UI/ResizeBoxScreen.hpp"
 #include "ViewTestCommon.hpp"
+#undef protected
+#undef private
 
 TEST_CASE("First few screens render correctly and handle remote commands") {
     StartFreeRtos();
@@ -20,14 +34,27 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
     // multiple sections so that all the state resets between tests.
     SECTION("Render a bunch of views") {
         // Send a remote command for left (for Settings)
-        SendRemoteCommand(CHANNEL_MINUS);
+        SendRemoteCommand(LEFT);
         WAIT_FOR_DRAW();
         WAIT_FOR_DRAW();
 
         ASSERT_VIEW_UNCHANGED("Settings");
 
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW();
+
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW();
+
+        ASSERT_VIEW_UNCHANGED("ContentSettings");
+
+        SendRemoteCommand(LEFT);
+        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW();
+
         // Go back to the main screen
-        SendRemoteCommand(CHANNEL_PLUS);
+        SendRemoteCommand(RIGHT);
         WAIT_FOR_DRAW();
         WAIT_FOR_DRAW();
 
@@ -41,10 +68,35 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("LastQuestion1");
 
-        SendRemoteCommand(CHANNEL_PLUS);
+        // Check to make sure going forward from page 1 and then back
+        // results in the same page.
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        SendRemoteCommand(LEFT);
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("LastQuestion1");
+
+        // This is the new default way to get a bookmark on a page
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW();
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW();
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW();
+        SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("LastQuestion1Bookmarked");
 
+        // Render the popup menu to confirm page 1
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("PopupMenu1");
+
+        // Return to book on page 1, then start paging through the book
+        SendRemoteCommand(LEFT);
+        WAIT_FOR_DRAW();
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("LastQuestion2");
@@ -70,9 +122,69 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         ASSERT_VIEW_UNCHANGED("LastQuestion7");
 
         // Render the popup menu
-        SendRemoteCommand(NEXT);
+        SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("PopupMenu");
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("PopupMenu2");
+
+        // Seek to the end of the book, then confirm page number
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        SendRemoteCommand(DOWN); // 1% granularity
+        WAIT_FOR_DRAW();
+        SendRemoteCommand(DOWN); // 0.1% granularity
+        WAIT_FOR_DRAW();
+        SendRemoteCommand(DOWN); // 10% granularity
+        WAIT_FOR_DRAW();
+        for (int i = 0; i < 10; i++) {
+            SendRemoteCommand(RIGHT);
+            WAIT_FOR_DRAW();
+        }
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW();
+        SendRemoteCommand(UP); // Show popup menu
+        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("PopupMenu3");
+
+        // Go back to the main menu
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW();
+
+        // Go to the second readable (which has a TOC)
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW();
+
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+
+        // Render the popup menu
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW();
+
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW();
+
+        for (int i = 0; i < 6; i++) {
+            SendRemoteCommand(DOWN);
+            WAIT_FOR_DRAW();
+        }
+
+        ASSERT_VIEW_UNCHANGED("PopupTOC");
+
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+
+        ASSERT_VIEW_UNCHANGED("Dawn");
+
+        // Render the popup menu
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("PopupMenu4"); // Should show the updated seeked spot from the TOC
     }
 
     StopFreeRtos();
@@ -93,5 +205,86 @@ TEST_CASE("Test some views independently") {
         LayoutTestScreen screen(*display);
         screen.render(*display);
         ASSERT_VIEW_UNCHANGED("LayoutTestScreen");
+    }
+
+    SECTION("Test things that need prefs") {
+        PreferencesStore prefs;
+        prefs.begin();
+        prefs.invertSetting.remove();
+        prefs.font.remove();
+        prefs.lineSpacing.remove();
+        prefs.rectX.remove();
+        prefs.rectY.remove();
+        prefs.rectW.remove();
+        prefs.rectH.remove();
+        prefs.noSetupMode.set(true);
+
+        SECTION("Test OffsetAdjustScreen") {
+            OffsetAdjustScreen screen(*display, prefs);
+            screen.render(*display);
+            ASSERT_VIEW_UNCHANGED("OffsetAdjustScreen");
+        }
+
+        SECTION("Test ResizeBoxScreen") {
+            ResizeBoxScreen screen(*display, prefs);
+            screen.render(*display);
+            ASSERT_VIEW_UNCHANGED("ResizeBoxScreen");
+        }
+
+        SECTION("Test LineSpacingScreen") {
+            LineSpacingScreen screen(*display, prefs);
+            screen.render(*display);
+            ASSERT_VIEW_UNCHANGED("LineSpacingScreen");
+        }
+
+        PosixFileSystem fileSystem;
+
+        SECTION("Test ReadableTableOfContentsScreen") {
+            auto readable = std::make_shared<Readable>();
+            auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables.json");
+            readable->fromJson((*readablesJsonDoc)["readables"][1]);
+
+            Renderer renderer(*display);
+            ReadableTableOfContentsScreen screen(prefs, readable, renderer, *display);
+            screen.loadMenuItems();
+
+            // This view renders twice, once with a full refresh and once with a AU4 so we need to
+            // not wait on the signaling otherwise we'll hang here.
+            FakeEinkET013TT1SkipSignalling = true;
+            screen.render(*display);
+            FakeEinkET013TT1SkipSignalling = false;
+            ASSERT_VIEW_UNCHANGED("ReadableTableOfContentsScreen");
+        }
+    }
+}
+
+TEST_CASE("Test bmp file rendering") {
+    SetupFileSystemMock("TestData");
+
+    PosixFileSystem fs;
+    fs.begin();
+    // create and render a full screen bitmap view
+    auto display = createDisplay();
+
+    SECTION("Test bitmap view Books (grayscale)") {
+        SFile file = fs.open("/books.bmp");
+        ContainerStream<SFile> stream(file);
+        BMPImage image;
+        image.readFromStream(stream);
+
+        BitmapScreen screen(image.getBuffer(), image.getWidth(), image.getHeight());
+        screen.render(*display);
+        ASSERT_VIEW_UNCHANGED("BitmapViewBooks");
+    }
+
+    SECTION("Test bitmap view Books (pre-dithered)") {
+        SFile file = fs.open("/books_dithered.bmp");
+        ContainerStream<SFile> stream(file);
+        BMPImage image;
+        image.readFromStream(stream);
+
+        BitmapScreen screen(image.getBuffer(), image.getWidth(), image.getHeight());
+        screen.render(*display);
+        ASSERT_VIEW_UNCHANGED("BitmapViewBooks");
     }
 }

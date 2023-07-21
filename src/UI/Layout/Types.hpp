@@ -26,15 +26,19 @@ struct Rect {
     Point origin;
     Size size;
     static auto zero() -> Rect { return {{0, 0}, {0, 0}}; }
+    static auto fromSize(Size size) -> Rect { return {{0, 0}, size}; }
 
-    [[nodiscard]] auto inset(int amount) const -> Rect {
-        return {{origin.x + amount, origin.y + amount},
-                {size.width - amount * 2, size.height - amount * 2}};
+    [[nodiscard]] auto inset(int xAmount, int yAmount) const -> Rect {
+        return {{origin.x + xAmount, origin.y + yAmount},
+                {size.width - xAmount * 2, size.height - yAmount * 2}};
     }
+    [[nodiscard]] auto inset(int amount) const -> Rect { return inset(amount, amount); }
     [[nodiscard]] auto offset(const Point &offset) const -> Rect {
         return {{origin.x + offset.x, origin.y + offset.y}, size};
     }
+    [[nodiscard]] auto left() const -> int { return origin.x; }
     [[nodiscard]] auto right() const -> int { return origin.x + size.width; }
+    [[nodiscard]] auto top() const -> int { return origin.y; }
     [[nodiscard]] auto bottom() const -> int { return origin.y + size.height; }
 
     auto operator==(const Rect &other) const -> bool {

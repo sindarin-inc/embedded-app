@@ -4,12 +4,49 @@
 #include <vector>
 
 #include "Communications/SindarinAPI.hpp"
+#include "Misc/Battery.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Models/CheckSync.hpp"
 #include "Models/Readable.hpp"
 #include "Models/UserReadable.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
+
+struct SortCriteria {
+    enum Type { DateModified, Alphabetical, LastRead, Random } type = DateModified;
+
+    [[nodiscard]] auto toString() const -> std::string {
+        switch (type) {
+        case SortCriteria::DateModified:
+            return "date modified";
+        case SortCriteria::Alphabetical:
+            return "alphabetical";
+        case SortCriteria::LastRead:
+            return "last read";
+        case SortCriteria::Random:
+            return "random";
+        }
+        return "date modified";
+    }
+
+    auto operator==(const SortCriteria &other) const -> bool { return type == other.type; }
+};
+
+struct SortDirection {
+    enum Type { Descending, Ascending } type = Descending;
+
+    [[nodiscard]] auto toString() const -> std::string {
+        switch (type) {
+        case SortDirection::Descending:
+            return "descending";
+        case SortDirection::Ascending:
+            return "ascending";
+        }
+        return "descending";
+    }
+
+    auto operator==(const SortDirection &other) const -> bool { return type == other.type; }
+};
 
 struct ContentSyncState {
     enum State {
@@ -33,26 +70,28 @@ struct ContentSyncState {
     std::string message;
 };
 
-using ReadablesVector = SpiramVector<Readable>;
+using ReadablesVector = std::vector<std::shared_ptr<Readable>>;
 using UserReadablesVector = SpiramVector<UserReadable>;
 
 //! Interface for local storage of structured data
 class LocalStore {
 public:
-    LocalStore(FileSystem &fileSystem, PreferencesStore &prefs)
-        : fileSystem(fileSystem), prefs_(prefs){};
+    LocalStore(FileSystem &fileSystem, PreferencesStore &prefs, Battery &battery)
+        : fileSystem(fileSystem), prefs_(prefs), battery_(battery){};
     LocalStore(LocalStore const &) = delete;
 
     auto begin() -> bool;
     auto loadReadablesFromFile(ReadablesVector &readables, const std::string &path) -> bool;
+    auto loadToc(const std::shared_ptr<Readable> &readable) -> bool;
 
     // Convenience methods
     auto books() -> ReadablesVector & { return books_; };
     auto articles() -> ReadablesVector & { return articles_; };
     auto readablesModelType(const ReadablesVector &readables) -> ReadablesModelType;
-    auto hasReadable(const ReadablesVector &readables, const Readable &readable) -> bool;
-    void addReadable(ReadablesVector &readables, const Readable &readable);
-    void removeReadable(ReadablesVector &readables, const Readable &readable);
+    auto hasReadable(const ReadablesVector &readables, const std::shared_ptr<Readable> &readable,
+                     bool ignoreFileSizeCheck = false) -> bool;
+    void addReadable(ReadablesVector &readables, const std::shared_ptr<Readable> &readable);
+    void removeReadable(ReadablesVector &readables, const std::shared_ptr<Readable> &readable);
     auto readablesSince(const ReadablesModelType modelType) -> std::string;
 
     void storedReadableUuids(const ReadablesVector &readables, StoredUuidsVector &storedUuids);
@@ -61,10 +100,8 @@ public:
     void changedReadablesArchivedJson(const ReadablesVector &readables,
                                       ReadableArchivesVector &archives);
     void changedReadablesBookmarksJson(ReadableBookmarksVector &bookmarks);
-    auto processReadablePlacemarksFromServer(const Readable &readable, const uint32_t placemark)
-        -> bool;
-    auto processReadableBookmarksFromServer(const Readable &readable,
-                                            const std::string bookmarkRange) -> bool;
+    auto processReadablePlacemarksFromServer(const std::shared_ptr<Readable> &readable,
+                                             const uint32_t placemark) -> bool;
     void resetReadablesPlacemarkChanged(const ReadablesVector &readables);
     void resetReadablesArchivedChanged(const ReadablesVector &readables);
     void resetReadablesBookmarksChanged(const ReadablesVector &readables);
@@ -85,14 +122,20 @@ public:
     void deleteReadables(bool restart = true);
     void deleteArticles(bool restart = true);
     void deleteReadableFiles(const ReadablesVector &readables, bool restart);
-    auto saveReadables(const ReadablesVector &readables) -> bool;
+    auto saveTableOfContents(const std::shared_ptr<Readable> &readable) -> bool;
+    auto removeStopWords(const SpiramString &title) -> std::string;
+    void sortReadables(ReadablesVector &readables);
+    auto saveReadables(ReadablesVector &readables) -> bool;
 
     // Methods for interacting with readable files on disk
-    [[nodiscard]] auto readableFilePathForWriting(const Readable &readable) const -> std::string;
+    [[nodiscard]] auto readableFilePathForWriting(const std::shared_ptr<Readable> &readable) const
+        -> std::string;
     // When reading, we will take whatever readable file type that's available
-    [[nodiscard]] auto readableFilePathForReading(const Readable &readable) const -> std::string;
-    [[nodiscard]] auto readableGetUncompressedSize(const Readable &readable) const -> int;
-    void readableFilePurge(const Readable &readable);
+    [[nodiscard]] auto readableFilePathForReading(const std::shared_ptr<Readable> &readable) const
+        -> std::string;
+    [[nodiscard]] auto readableGetUncompressedSize(const std::shared_ptr<Readable> &readable) const
+        -> int;
+    void readableFilePurge(const std::shared_ptr<Readable> &readable);
 
     // Save a firmware JSON for future use. Indicates that firmware has already been successfully
     // downloaded into the alternate firmware slot.
@@ -102,10 +145,16 @@ public:
     // Delete any existing firmware.json file.
     void resetFirmware();
 
+    // Clean up old keys in NVS
+    void garbageCollectPreferences();
+    void migrateIfNeeded();
+
     FileSystem &fileSystem;
 
 private:
+    const uint32_t latestMigrationVersion_ = 1;
     PreferencesStore &prefs_;
+    Battery &battery_;
 
     ReadablesVector books_;
     ReadablesVector articles_;

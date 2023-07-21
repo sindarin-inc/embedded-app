@@ -5,16 +5,17 @@ on:
   push:
     branches:
       - main
+    tags:
+      - "release/v*"
 
 jobs:
   build:
-    name: "pio run"
+    name: "Build Simulator"
     runs-on: ubuntu-latest
     strategy:
       matrix:
         pioenv:
           # Seems like RISCV ULP compilation is busted in PlatformIO at least for IDF 5.0.1
-          # - sol3dev
           - simulator
           # - simulator-wasm
 
@@ -26,6 +27,8 @@ jobs:
 
       - name: Set up Python
         uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
 
       - name: Install PlatformIO
         run: |
@@ -43,24 +46,16 @@ jobs:
       - name: PlatformIO run
         run: pio run -e ${{ matrix.pioenv }}
 
-      - name: Upload binary firmwares
-        uses: actions/upload-artifact@v2
-        if: matrix.pioenv == 'sol3dev'
-        with:
-          name: ${{ matrix.pioenv }}-binaries-${{ github.sha }}
-          path: |
-            .pio/build/${{ matrix.pioenv }}/*.bin
-            .pio/build/${{ matrix.pioenv }}/upload_command.sh
-
   build-idf:
     name: "idf.py build"
-    runs-on: ubuntu-latest
+    runs-on:
+      group: Medium
     strategy:
       matrix:
         # Tags from here: https://hub.docker.com/r/espressif/idf/tags
         idf_version:
-          - latest
-          - v5.0.1
+          - v5.1
+          # - latest
 
     steps:
       - name: Checkout repo
@@ -75,27 +70,37 @@ jobs:
           target: esp32s3
           path: .
 
-  buildfs:
-    name: "pio run -t buildfs"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v3
+      - name: Upload binaries
+        uses: actions/upload-artifact@v3
+        if: github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/release/v')
         with:
-          submodules: "recursive"
+          name: embedded-app-${{ github.sha }}-IDF${{ matrix.idf_version }}
+          path: |
+            build/embedded-app.bin
+            build/embedded-app.elf
+            build/bootloader/bootloader.bin
+            build/partition_table/partition-table.bin
+            build/ota_data_initial.bin
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-
-      - name: Install PlatformIO
+      - name: Create release
+        if: contains(github.ref, 'refs/tags/release/v')
         run: |
-          python -m pip install --upgrade pip
-          pip install platformio
+          TAG_NAME="${{ github.ref }}"
+          VERSION=${TAG_NAME#refs/tags/release/v}
+          curl -X POST 'https://api.sindarin.com/firmware/' \
+          -H "Authorization: Tolkien ${{ secrets.SOL_AUTH_TOLKIEN }}" \
+          -F "version=$VERSION" \
+          -F "file=@${{ github.workspace }}/build/embedded-app.bin;type=application/octet-stream" \
+          -F "elf=@${{ github.workspace }}/build/embedded-app.elf;type=application/octet-stream" \
+          -F "role=DEBUG" \
+          -F "device=GLASSES" \
+          -F "release_notes=TODO"
 
-      - name: Create a dummy readable
+      - name: Notify Slack
+        if: contains(github.ref, 'refs/tags/release/v')
         run: |
-          mkdir -p data
-          echo "All that is gold does not glitter" > data/ipsum.txt
-
-      - name: PlatformIO run
-        run: pio run -t buildfs
+          TAG_NAME="${{ github.ref }}"
+          VERSION=${TAG_NAME#refs/tags/release/v}
+          curl -X POST -H 'Content-type: application/json' \
+          --data "{\"text\":\"New release $VERSION has been uploaded. See it at https://api.sindarin.com/admin/devices/firmwaredownload/\"}" \
+          ${{ secrets.SLACK_WEBHOOK_URL }}

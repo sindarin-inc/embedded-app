@@ -10,13 +10,8 @@
 #include "UI/ContentSyncScreen.hpp"
 #include "config.h"
 
-void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalStore &localStore) {
-    // Debug LED so we know what's happening (will be turned off when deep sleep happens)
-    // Only turn on if debug menu is enabled
-    if (prefs.showDebugMenu.get().value_or(false)) {
-        DigitalWrite(BLUE_LED, LED_ON);
-    }
-
+void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
+                            LocalStore &localStore) {
     // Create a notification group to wait for background tasks
     auto backgroundGroup = xEventGroupCreate();
     auto &fileSystem = localStore.fileSystem;
@@ -56,24 +51,24 @@ void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalSt
     FirmwareDownloader firmwareDownloader(prefs, true);
     firmwareDownloader.downloadFirmware(
         [&firmwareDownloader, &localStore, &backgroundGroup](const FirmwareDownloadState &state) {
-            if (state.state == FirmwareDownloadState::Failure) {
-                log_i("Firmware download for %s failed with error: %s",
-                      firmwareDownloader.response.latestGlassesFirmware.version.c_str(),
-                      state.message.c_str());
-            } else if (state.state == FirmwareDownloadState::AlreadyDownloaded) {
-                log_i("Firmware download for %s already queued.",
-                      firmwareDownloader.response.latestGlassesFirmware.version.c_str());
-            } else if (state.state == FirmwareDownloadState::Downloaded) {
-                log_i("Firmware download for %s successful. Mark for install.",
-                      firmwareDownloader.response.latestGlassesFirmware.version.c_str());
-                localStore.saveFirmware(firmwareDownloader.response.latestGlassesFirmware);
-            } else if (state.state == FirmwareDownloadState::AlreadyUpToDate) {
-                log_i("Firmware up to date.");
-            } else {
-                return;
-            }
-            xEventGroupSetBits(backgroundGroup, 1);
-        });
+        if (state.state == FirmwareDownloadState::Failure) {
+            log_i("Firmware download for %s failed with error: %s",
+                  firmwareDownloader.response.latestGlassesFirmware.version.c_str(),
+                  state.message.c_str());
+        } else if (state.state == FirmwareDownloadState::AlreadyDownloaded) {
+            log_i("Firmware download for %s already queued.",
+                  firmwareDownloader.response.latestGlassesFirmware.version.c_str());
+        } else if (state.state == FirmwareDownloadState::Downloaded) {
+            log_i("Firmware download for %s successful. Mark for install.",
+                  firmwareDownloader.response.latestGlassesFirmware.version.c_str());
+            localStore.saveFirmware(firmwareDownloader.response.latestGlassesFirmware);
+        } else if (state.state == FirmwareDownloadState::AlreadyUpToDate) {
+            log_i("Firmware up to date.");
+        } else {
+            return;
+        }
+        xEventGroupSetBits(backgroundGroup, 1);
+    });
 
     // Wait for firmware download to finish
     bits = xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(5 * 60 * 1000));
@@ -108,6 +103,20 @@ void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalSt
         if (!(bits & 1)) {
             log_w("Coredump upload timed out");
         }
+    }
+}
+
+void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalStore &localStore) {
+    // Debug LED so we know what's happening (will be turned off when deep sleep happens)
+    // Only turn on if debug menu is enabled
+    if (prefs.showDebugMenu.get().value_or(false)) {
+        DigitalWrite(BLUE_LED, LED_ON);
+    }
+
+    BackgroundSyncInternal(powerManager, prefs, localStore);
+
+    if (prefs.showDebugMenu.get().value_or(false)) {
+        DigitalWrite(BLUE_LED, LED_OFF);
     }
 }
 

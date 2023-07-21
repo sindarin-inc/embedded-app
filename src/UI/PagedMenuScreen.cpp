@@ -38,12 +38,12 @@ void PagedMenuScreen::render(DisplaySystem &display) {
     auto itemTitle = getCurrItem().title;
     uint16_t width, height;
 
-    display.getTextBounds(itemTitle.c_str(), &width, &height);
+    display.getTextSize(itemTitle.c_str(), &width, &height);
     uint16_t screenWidth = display.width();
     uint16_t screenHeight = display.height();
 
     display.setRotation(0);
-    display.drawSingleLineOfText(itemTitle.c_str(), (screenWidth / 2) - (width / 2),
+    display.drawSingleLineOfText(itemTitle, (screenWidth / 2) - (width / 2),
                                  (screenHeight / 2) - (display.getTextHeight()) / 2);
 
     auto prevTitle = getItemAt((currSelection_ > 0) ? ((currSelection_ - 1) % numMenuItems_)
@@ -51,17 +51,17 @@ void PagedMenuScreen::render(DisplaySystem &display) {
                          .title;
     auto nextTitle = getItemAt((currSelection_ + 1) % numMenuItems_).title;
 
-    display.getTextBounds(prevTitle.c_str(), &width, &height);
+    display.getTextSize(prevTitle.c_str(), &width, &height);
 
-    display.getTextBounds(nextTitle.c_str(), &width, &height);
+    display.getTextSize(nextTitle.c_str(), &width, &height);
 
     display.setFont(display.style.getFontFamily().readableFont);
 
-    display.getTextBounds("Settings", &width, &height);
+    display.getTextSize("Settings", &width, &height);
 
     display.drawSingleLineOfText("Settings", screenWidth / 2 - width / 2, 28);
 
-    display.getTextBounds("Read", &width, &height);
+    display.getTextSize("Read", &width, &height);
 
     display.drawSingleLineOfText("Read", screenWidth / 2 - width / 2, screenHeight - 30 - height);
 
@@ -90,7 +90,7 @@ auto PagedMenuScreen::prevSelection(bool skipLast) -> bool {
 //
 // For a PagedMenu, we actually want to progress through
 // the options via the left and right buttons and use
-// the down button (CHANNEL_PLUS) to select the text.
+// the down button (RIGHT) to select the text.
 //
 // This is more consistent with the behavior of turning pages
 // and using down to go to the popup menu and up to go back.
@@ -104,7 +104,7 @@ auto PagedMenuScreen::prevSelection(bool skipLast) -> bool {
 //
 void PagedMenuScreen::processCommand(RemoteCommand command) {
     switch (command) {
-    case RemoteCommand::PREV:
+    case RemoteCommand::UP:
         // Settings are always the last item
         currSelection_ = numMenuItems_ - 1;
         if (getCurrItem().callback != nullptr) {
@@ -116,21 +116,21 @@ void PagedMenuScreen::processCommand(RemoteCommand command) {
 
         break;
 
-    case RemoteCommand::NEXT:
+    case RemoteCommand::DOWN:
     case RemoteCommand::ENTER:
         if (getCurrItem().callback != nullptr) {
             getCurrItem().callback();
         }
         break;
 
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::RIGHT:
         nextSelection();
         setNeedsRerender();
 
         break;
 
     case RemoteCommand::BACK:
-    case RemoteCommand::CHANNEL_MINUS:
+    case RemoteCommand::LEFT:
         prevSelection();
         setNeedsRerender();
         break;

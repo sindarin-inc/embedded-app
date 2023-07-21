@@ -12,9 +12,10 @@ ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs
 
     std::string message;
     for (int i = 0; i < 15; i++) {
-        message += "Press up to increase vertical dimension, down to decrease vertical "
-                   "dimension, left to increase horizontal dimension, right to decrease "
-                   "horizontal dimension. Press center button when finished. Message repeats.\n\n";
+        message +=
+            "Press up to increase vertical dimension, down to decrease vertical "
+            "dimension, left to increase horizontal dimension, right to decrease "
+            "horizontal dimension. Press \ue000 (center) when finished. Message repeats.\n\n";
     }
     auto stream = std::make_shared<StdStringStream>(message);
     renderer_.setStream(stream);
@@ -28,22 +29,22 @@ void ResizeBoxScreen::render(DisplaySystem &display) {
 void ResizeBoxScreen::processCommand(RemoteCommand command) {
     DisplayRect oldRect = display_.getBoundingBox();
     switch (command) {
-    case RemoteCommand::CHANNEL_MINUS:
+    case RemoteCommand::LEFT:
         oldRect.width += BOX_OFFSET_ADJUST_AMOUNT;
         oldRect.x -= BOX_OFFSET_ADJUST_AMOUNT / 2;
         setNeedsRerender();
         break;
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::RIGHT:
         oldRect.width -= BOX_OFFSET_ADJUST_AMOUNT;
         oldRect.x += BOX_OFFSET_ADJUST_AMOUNT / 2;
         setNeedsRerender();
         break;
-    case RemoteCommand::PREV:
+    case RemoteCommand::UP:
         oldRect.height += BOX_OFFSET_ADJUST_AMOUNT;
         oldRect.y -= BOX_OFFSET_ADJUST_AMOUNT / 2;
         setNeedsRerender();
         break;
-    case RemoteCommand::NEXT:
+    case RemoteCommand::DOWN:
         oldRect.height -= BOX_OFFSET_ADJUST_AMOUNT;
         oldRect.y += BOX_OFFSET_ADJUST_AMOUNT / 2;
         setNeedsRerender();
@@ -66,7 +67,7 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
         prefs_.rectH.set(display_.getBoundingBox().height);
         log_d("Saving bounding box to preferences: (%s)",
               display_.getBoundingBox().toString().c_str());
-        backCallback();
+        back();
         break;
     default:
         break;

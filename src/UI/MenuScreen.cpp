@@ -58,10 +58,10 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
             }
         }
         display.drawSingleLineOfText(
-            itemTitle, xOffsetForMenu,
-            yOffsetForMenu + additionalYOffset +
+            itemTitle, xOffsetForMenu + 5,
+            yOffsetForMenu + additionalYOffset - 1 +
                 (i % myStyle_.numberOfItemsPerPage) *
-                    (display.getTextHeight() - display.getLineSpacing() + 3));
+                    (display.getTextHeight() - display.getLineSpacing() + 1));
 
         // xoffset for main menu is 12, for settings menu is 23
         // yoffset for main menu is some crazy thing
@@ -70,7 +70,7 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
             display.fillRoundRect(xOffsetForMenu - display.getTextHeight() / 4 - 2,
                                   yOffsetForMenu + additionalYOffset +
                                       (i % myStyle_.numberOfItemsPerPage) *
-                                          (display.getTextHeight() - display.getLineSpacing() + 3) +
+                                          (display.getTextHeight() - display.getLineSpacing() + 1) +
                                       4,
                                   5, 5, 3, display.fg);
         }
@@ -112,6 +112,7 @@ void MenuScreen::render(DisplaySystem &display) {
     // to do a partial refresh with the selector button at a lower/higher vcom to reduce
     // ghosting.
     if (firstLoad_) {
+        clockBatteryView_.updateTime();
         drawMenuItems(display, false);
         draw();
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
@@ -126,7 +127,7 @@ void MenuScreen::render(DisplaySystem &display) {
 
 void MenuScreen::processCommand(RemoteCommand command) {
     switch (command) {
-    case RemoteCommand::PREV:
+    case RemoteCommand::UP:
         if (prevSelection()) {
             firstLoad_ = true;
         } else {
@@ -134,7 +135,7 @@ void MenuScreen::processCommand(RemoteCommand command) {
         }
         setNeedsRerender();
         break;
-    case RemoteCommand::NEXT:
+    case RemoteCommand::DOWN:
         if (nextSelection()) {
             firstLoad_ = true;
         } else {
@@ -143,20 +144,17 @@ void MenuScreen::processCommand(RemoteCommand command) {
         setNeedsRerender();
         break;
     case RemoteCommand::ENTER:
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::RIGHT:
         if (getCurrItem().callback != nullptr) {
             getCurrItem().callback();
         }
         break;
     case RemoteCommand::BACK:
-    case RemoteCommand::CHANNEL_MINUS:
-        if (backCallback != nullptr) {
-            firstLoad_ = true;
-            backCallback();
-        }
+    case RemoteCommand::LEFT:
+        firstLoad_ = true;
+        back();
         break;
     case RemoteCommand::ANIMATION:
-        break;
     default:
         break;
     }

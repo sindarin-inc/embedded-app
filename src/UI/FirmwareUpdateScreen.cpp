@@ -6,7 +6,7 @@
 #include "Communications/WiFi.hpp"
 #include "Misc/Dispatch.hpp"
 #include "Misc/PowerManager.hpp"
-#include "UI/Fonts/Tahoma10pt7b.h"
+#include "UI/Fonts/Font.hpp"
 #include "sindarin-debug.h"
 
 void FirmwareUpdateScreen::render(DisplaySystem &display) {
@@ -35,13 +35,13 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
         // Calculate group height
         const uint16_t spacing = 2;
         const uint16_t lineCount = 5;
-        uint16_t textHeight = display.getFont()->yAdvance;
+        uint16_t textHeight = display.getFont()->lineHeight();
         uint16_t groupHeight = textHeight * lineCount + spacing * (lineCount - 1);
 
         y = (display.height() - groupHeight) / 2;
 
-        auto drawBulletLine = [&display, textHeight, &x, &y](const char *message, int percentage,
-                                                             bool drawLine) {
+        auto drawBulletLine =
+            [&display, textHeight, &x, &y](const char *message, int percentage, bool drawLine) {
             uint16_t textWidth = display.getTextWidth(message);
             uint16_t bulletRadius = textHeight / 3;
             uint16_t bulletY = y + (textHeight - bulletRadius * 2) / 2 + bulletRadius;
@@ -52,7 +52,7 @@ void FirmwareUpdateScreen::render(DisplaySystem &display) {
             }
             auto textX = x + bulletRadius * 2 + 5;
             display.drawSingleLineOfText(message, textX, y);
-            y += display.getFont()->yAdvance;
+            y += display.getFont()->lineHeight();
             if (drawLine && percentage > 0) {
                 display.drawLine(textX, y, textX + (textWidth * percentage / 100), y, display.fg);
             }
@@ -116,7 +116,7 @@ void FirmwareUpdateScreen::fail(const std::string &message) {
     render(display_);
     vTaskDelay(5000 / portTICK_PERIOD_MS);
     WiFi::getInstance().disconnectWiFi();
-    backCallback();
+    back();
 }
 
 void FirmwareUpdateScreen::begin() {
@@ -128,7 +128,7 @@ void FirmwareUpdateScreen::begin() {
     state_.state = FirmwareDownloadState::ConnectingWifi;
     render(display_);
 
-    if (!WiFi::getInstance().connectWiFiWithTimeout()) {
+    if (!WiFi::getInstance().connectWiFiFromSettings()) {
         fail("Failed to connect to WiFi.");
         return;
     }
@@ -154,13 +154,13 @@ void FirmwareUpdateScreen::begin() {
             if (state.state == FirmwareDownloadState::Failure ||
                 state.state == FirmwareDownloadState::AlreadyUpToDate) {
                 vTaskDelay(3000 / portTICK_PERIOD_MS);
-                backCallback();
+                back();
             } else if (state.state == FirmwareDownloadState::Installed) {
                 vTaskDelay(3000 / portTICK_PERIOD_MS);
                 log_i("Rebooting after successful firmware update");
                 PowerManager::getInstance().reboot();
                 // Only for the sim
-                backCallback();
+                back();
             }
         });
     });

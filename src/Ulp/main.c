@@ -25,6 +25,10 @@ void magReading() {
     ulp_riscv_i2c_master_set_slave_addr(MAG_ADDRESS);
 
     // initiate a reading
+    // ctrl0Value.autoSrEn = 1;
+    // ctrl0Value.takeMeasM = 1;
+    // If we remove the autoSrEn here, and only run set periodically, then we might be able to
+    // significantly reduce power consumption since that seems to drive 20mA spikes
     uint8_t dataRd = 0x21;
     uint8_t magReadingBytes[9];
 
@@ -56,6 +60,8 @@ void magReading() {
     // read magnetometer data
     ulp_riscv_i2c_master_set_slave_reg_addr(0x00);
 
+    // we can maybe read less data here by setting specific addresses perhaps
+    // or just reading 5 bytes instead
     ulp_riscv_i2c_master_read_from_device(magReadingBytes, 9);
 
     uint8_t xReading = magReadingBytes[MAG_X_OUT_0];

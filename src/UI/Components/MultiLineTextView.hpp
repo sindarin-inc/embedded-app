@@ -7,12 +7,14 @@
 #include "EinkView.hpp"
 #include "Misc/Style.hpp"
 #include "SingleLineTextView.hpp"
+#include "UI/Fonts/Fonts.hpp"
 
 // A view that draws multiple lines of text
 class MultiLineTextView : public EinkView {
 public:
     MultiLineTextView(DisplaySystem &display, std::string text, int maxLines, int spacingOffset = 0,
-                      const GFXfont *font = &TAHOMA_REGULAR_FONT5PT7B, bool allCaps = false)
+                      Font *font = static_cast<Font *>(&fontTahomaRegularFonT5PT7B),
+                      bool allCaps = false)
         : EinkView(display), text_(std::move(text)), maxLines_(maxLines),
           spacingOffset_(spacingOffset), font_(font) {
         if (allCaps) {
@@ -30,8 +32,7 @@ public:
         std::string word;
         for (char c : text) {
             if (c == ' ' || c == '\n' || c == '\t' || c == '\r' || c == '-') {
-                if (display.getTextWidth(line.c_str()) + display.getTextWidth(word.c_str()) >
-                    width) {
+                if (display.getTextWidth((line + word).c_str()) > width) {
                     lines.push_back(line);
                     line = "";
                 }
@@ -44,7 +45,7 @@ public:
 
         // Account for the last word
         if (!word.empty()) {
-            if (display.getTextWidth(line.c_str()) + display.getTextWidth(word.c_str()) > width) {
+            if (display.getTextWidth((line + word).c_str()) > width) {
                 lines.push_back(line);
                 line = "";
             }
@@ -57,18 +58,15 @@ public:
         return lines;
     }
     auto layout(LayoutContext &context, Size size) -> Size override {
-        uint16_t w, h;
-
         // Leave the display font the way we found it.
         // Probably not ideal, but for now it'll have to do.
-        const GFXfont *oldFont = display_.getFont();
+        Font *oldFont = display_.getFont();
         display_.setFont(font_);
-        display_.getTextBounds(text_.c_str(), &w, &h);
 
         splitLines_ = splitMultiLine(display_, size.width, text_);
 
         int lineCount = std::min((size_t)maxLines_, splitLines_.size());
-        int height = lineCount * display_.getFont()->yAdvance + (lineCount - 1) * spacingOffset_;
+        int height = lineCount * font_->lineHeight() + (lineCount - 1) * spacingOffset_;
 
         display_.setFont(oldFont);
         return {size.width, height};
@@ -77,7 +75,7 @@ public:
     void drawInRect(Rect rect) override {
         // Leave the display font the way we found it.
         // Probably not ideal, but for now it'll have to do.
-        const GFXfont *oldFont = display_.getFont();
+        Font *oldFont = display_.getFont();
         display_.setFont(font_);
         if (splitLines_.size() > maxLines_) {
             int i = 1;
@@ -97,9 +95,9 @@ public:
         for (int i = 0; i < maxLines_ && i < splitLines_.size(); i++) {
             // The plus 1 in the y is because we know what drawSingleLineOfText will do. It's
             // not ideal, but it works.
-            display_.drawSingleLineOfText(
-                splitLines_[i], rect.origin.x,
-                rect.origin.y + i * (display_.getFont()->yAdvance + spacingOffset_) - 1);
+            display_.drawSingleLineOfText(splitLines_[i], rect.origin.x,
+                                          rect.origin.y +
+                                              i * (font_->lineHeight() + spacingOffset_) - 1);
         }
         display_.setFont(oldFont);
     }
@@ -109,5 +107,5 @@ protected:
     int maxLines_;
     int spacingOffset_;
     std::vector<std::string> splitLines_;
-    const GFXfont *font_;
+    Font *font_;
 };

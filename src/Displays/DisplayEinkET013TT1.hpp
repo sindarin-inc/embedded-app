@@ -18,6 +18,9 @@ public:
         : DisplaySystem(), gfxCanvas_(EinkET013TT1_X_PIXELS, EinkET013TT1_Y_PIXELS),
           driver_(csLeft, csRight, rst) {
         gfxClass_ = &gfxCanvas_;
+        canvasBuffer_ = gfxCanvas_.getBuffer();
+        canvasWidth_ = EinkET013TT1_X_PIXELS;
+        canvasHeight_ = EinkET013TT1_Y_PIXELS;
     };
     DisplayEinkET013TT1(DisplayEinkET013TT1 const &) = delete;
 
@@ -25,16 +28,22 @@ public:
 
     auto setup() -> bool override;
 
-    void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED) override;
+    void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED,
+                       bool clearFrameBuffer = true, int vcomNudge = 0,
+                       DisplaySystem::UpdateType altUpdateType = UNSPECIFIED,
+                       Rect altRect = {{0, 0}, {0, 0}}) override;
 
     void beginPowerOn() override { driver_.beginPowerOn(); };
 
     void clearDisplay() override { fullRefreshNext_ = true; };
 
+    void clearFrameBuffer() override { fillScreen(bg); };
     void invertDisplay(bool newInvert) override;
 
     // For those moments where you need to expose the driver directly
     auto getDriver() -> EinkET013TT1 * { return &driver_; }
+
+    void drawFullscreenBitmapFromFile(RendererStream &stream) override;
 
 protected:
     GFXcanvas1 gfxCanvas_;

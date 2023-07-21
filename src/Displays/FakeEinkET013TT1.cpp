@@ -47,7 +47,8 @@ auto EinkET013TT1::getPixel(const uint8_t *buffer, int x, int y) -> uint8_t {
 }
 
 void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
-                          int32_t overrideVcom) {
+                          int32_t overrideVcom, const EinkET013TT1Waveform &altWaveform,
+                          EinkBox box) {
     if (FakeEinkET013TT1SkipWaveform) {
         // Skip waveform processing and just move the pixel all the way one way or another
         log_d("Skipping waveform processing (would have used \"%s\")", waveform.name);
@@ -65,15 +66,21 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     } else {
         log_d("Updating display with waveform \"%s\"", waveform.name);
         // For each frame in the waveform
-        for (int frameIndex = 0; frameIndex < waveform.frameCount; frameIndex++) {
-            auto frame = waveform.frames[frameIndex];
+        log_d("Alt waveform: \"%s\"", altWaveform.name);
+
+        int maxFrames = std::max(waveform.frameCount, altWaveform.frameCount);
+
+        for (int frameIndex = 0; frameIndex < maxFrames; frameIndex++) {
+            auto frame = waveform.frameOrDefault(frameIndex);
+            auto altFrame = altWaveform.frameOrDefault(frameIndex);
 
             // For each pixel, calculate the correct way to move it for the waveform
             for (int x = 0; x < EinkET013TT1_PIXEL_WIDTH; x++) {
                 for (int y = 0; y < EinkET013TT1_PIXEL_HEIGHT; y++) {
                     auto pixel = getPixel(buffer, x, y);
                     auto previousPixel = getPixel(previousBuffer_, x, y);
-                    auto setting = frame.getSetting(previousPixel, pixel);
+                    uint8_t setting = box.contains(x, y) ? altFrame.getSetting(previousPixel, pixel)
+                                                         : frame.getSetting(previousPixel, pixel);
                     auto position =
                         FakeEinkET013TT1ParticlePositions[y * EinkET013TT1_PIXEL_WIDTH + x];
                     // TODO: We could probably get math-y here and simulate the movement of the

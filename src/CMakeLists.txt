@@ -7,12 +7,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(components ulp astubs expat improv ArduinoJson Adafruit-GFX-Library driver mbedtls vfs lwip efuse esp_hw_support soc esp_eth spi_flash bt nvs_flash esp_system esp_event xtensa wpa_supplicant esp_hw_support freertos heap esp_pm esp_adc esp_http_client wifi_provisioning esp_littlefs esp-nimble-cpp espcoredump app_update unzipLIB)
 
-# ulp-i2c is our backported version of IDF 5.1's ULP I2C driver, so don't include it for IDF > 5.1.0
-if(IDF_VERSION_MAJOR EQUAL 5 AND IDF_VERSION_MINOR LESS 1)
-    message(STATUS "Adding backported ulp-i2c component")
-    list(APPEND components ulp-i2c)
-endif()
-
 set(compile_options
     -includeconfig.h
     -Wno-unknown-pragmas
@@ -29,9 +23,16 @@ set(compile_options
     -DUSE_LTR329=1
     -DUSE_MMC5603=1
     -DINTERNAL_SPIFFS_FLASH=1
-    -DDISABLE_LOW_VOLTAGE_HALT=1
     -DLED_INVERT=1
 )
+
+# Check if the BUILD_FOR_TEST environment variable is set and add the extra option if it is
+if($ENV{BUILD_FOR_TEST})
+    # Must be enabled when building firmware for use with the ICT and PyTest test code otherwise
+    # the DUT will not reliably enumerate because of light sleep.
+    message(WARNING "TEST BUILD ENABLED!")
+    list(APPEND compile_options -DDISABLE_POWER_MANAGEMENT=1)
+endif()
 
 idf_component_register(
     SRCS ${app_sources}
@@ -41,11 +42,7 @@ idf_component_register(
 
 # ULP setup
 set(ulp_app_name ulp_${COMPONENT_NAME})
-if(IDF_VERSION_MAJOR EQUAL 5 AND IDF_VERSION_MINOR LESS 1)
-    set(ulp_riscv_sources "Ulp/main.c" "Ulp/UlpTableLookup.c" "../components/ulp-i2c/src/ulp/ulp_riscv_i2c.c")
-else()
-    set(ulp_riscv_sources "Ulp/main.c" "Ulp/UlpTableLookup.c")
-endif()
+set(ulp_riscv_sources "Ulp/main.c" "Ulp/UlpTableLookup.c")
 set(ulp_exp_dep_srcs "Misc/PowerManager.cpp")
 ulp_embed_binary(${ulp_app_name} "${ulp_riscv_sources}" "${ulp_exp_dep_srcs}")
 

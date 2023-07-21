@@ -20,12 +20,12 @@ public:
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
 
-    bool firstLoad = true;
+    void setFirstLoad() { firstLoad_ = true; }
 
 protected:
     PreferencesStore &prefs_;
     LightingController &lightingController_;
-    bool showThirdLine_;
+    bool firstLoad_ = true;
 
     // Subviews
     IconView lightbulbView_;
@@ -34,6 +34,7 @@ protected:
     // TODO; These first two lines could be one view once we have MultiLineTextView
     SingleLineTextView firstLine_;
     SingleLineTextView secondLine_;
-    SingleLineTextView thirdLine_;
-    ArrowView arrowView_;
+
+    ArrowView leftArrowView_;
+    ArrowView rightArrowView_;
 };

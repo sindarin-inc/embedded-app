@@ -12,6 +12,7 @@ __pycache__
 .temp
 # Simulator prefs
 simprefs.ini
+simprefs.bak
 *.old
 build
 screenshot.png
@@ -22,3 +23,8 @@ nextprev.png
 test/CatchTests/Images/TestRun
 reports
 managed_components
+sol-pytest-*
+venv
+test/PyTest/requirements.txt
+current_samples_*
+warnings.txt

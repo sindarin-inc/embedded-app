@@ -16,7 +16,8 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto inset = 3;
     const auto spacing = 5;
 
-    context.setSublayoutFrame(
+    // Layout the top bar
+    auto topBarRect = context.setSublayoutFrame(
         {{inset, inset}, {size.width - 2 * inset, 20 - 2 * inset}},
         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignCenterHorizontal,
         [this](LayoutContext &context, Size size) -> Size {
@@ -41,33 +42,19 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
             return {x, size.height};
         });
 
-    const auto mainInset = 2;
-    const auto mainSpacing = 10;
+    // Then layout the clock/battery view on the bottom
+    auto clockBatteryRect = context.setViewFrame(clockBatteryView_, {{0, 0}, size},
+                                                 LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
+                                                     LayoutOptionsAlignCenterHorizontal);
 
-    context.setSublayoutFrame(
-        // The -20 is to leave room for the paging circles at the right hand side of the view
-        {{mainInset, mainInset}, {size.width - 2 * mainInset - 20, size.height - 2 * mainInset}},
-        LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
-        [this](LayoutContext &context, Size size) -> Size {
-            int x = 0;
-            int y = 0;
-            int viewCount = menuItemViews_.size();
-            int boxHeight = (size.height - (viewCount - 1) * mainSpacing) / viewCount;
-            Size boxSize = {size.width, boxHeight};
+    // The remaining space is available for menu items
+    auto mainRect =
+        Rect{{0, topBarRect.bottom()}, {size.width, clockBatteryRect.top() - topBarRect.bottom()}};
+    mainRect = mainRect.inset(2);
 
-            for (auto &view : menuItemViews_) {
-                auto viewFrame =
-                    context.setViewFrame(*view, {{x, y}, boxSize},
-                                         LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenter);
-                y += viewFrame.size.height + mainSpacing;
-            }
-
-            return {size.width, y};
-        });
-
-    context.setSublayoutFrame(
-        // The -5 is to leave room for the paging circles at the right hand side of the view
-        {{size.width - mainInset - 5, mainInset}, {10, size.height - 2 * mainInset}},
+    // Layout the paging bubbles
+    auto pagingRect = context.setSublayoutFrame(
+        mainRect,
         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical | LayoutOptionsAlignRight,
         [this](LayoutContext &context, Size size) -> Size {
             int x = 0;
@@ -78,13 +65,32 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
                     *view, {{x, y}, boxSize}, LayoutOptionsSizeToFit | LayoutOptionsAlignRight);
                 y += viewFrame.size.height + 5;
             }
+            y -= 5;
+
+            return {boxSize.width, y};
+        });
+
+    // Layout the menu items in the mainRect, but minus the paging bubbles
+    mainRect.size.width = mainRect.size.width - pagingRect.size.width - 5;
+    context.setSublayoutFrame(
+        mainRect, LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
+        [this](LayoutContext &context, Size size) -> Size {
+            int x = 0;
+            int y = 0;
+            int viewCount = menuItemViews_.size();
+            const auto mainSpacing = 8;
+            int boxHeight = (size.height - (viewCount - 1) * mainSpacing) / viewCount;
+            Size boxSize = {size.width, boxHeight};
+
+            for (auto &view : menuItemViews_) {
+                auto viewFrame =
+                    context.setViewFrame(*view, {{x, y}, boxSize}, LayoutOptionsSizeToFitVertical);
+                y += viewFrame.size.height + mainSpacing;
+            }
+            y -= mainSpacing;
 
             return {size.width, y};
         });
-
-    context.setViewFrame(clockBatteryView_, {{0, 0}, size},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
-                             LayoutOptionsAlignCenterHorizontal);
 
     return size;
 }
@@ -113,8 +119,8 @@ void MainMenuScreen::drawInRect(Rect rect) {
 void MainMenuScreen::render(DisplaySystem &display) {
     setNeedsLayout();
 
-    // For the main menu, we want to use the entire screen and ignore the user settings for reading
-    // box.
+    // For the main menu, we want to use the entire screen and ignore the user settings for
+    // reading box.
     setFrame(
         {{display.xAbsolute(display.defaultXPadding), display.yAbsolute(display.defaultYPadding)},
          {display.defaultScreenWidth - 2 * display.defaultXPadding,
@@ -128,6 +134,8 @@ void MainMenuScreen::render(DisplaySystem &display) {
     // ghosting.
     if (firstLoad_) {
         topBarViews_.clear();
+        // Only update the time on these partial refreshes
+        clockBatteryView_.updateTime();
         log_i("Menuscreen render (selected = %s)",
               subMenus_[currentSelection_]->getMenuName().c_str());
 
@@ -177,8 +185,13 @@ void MainMenuScreen::render(DisplaySystem &display) {
 
         draw();
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+        // display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
+        //                       DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE, {24, 50, 32,
+        //                       205});
     }
 
+    // If we want to try using the alt update mechanism here, we should move this code above the
+    // update, and remove the second update
     std::shared_ptr<MenuItemView> selectedMenuItemView =
         menuItemViews_[subMenus_[currentSelection_]->getCurrSelection() %
                        subMenus_[currentSelection_]->getMyStyle().numberOfItemsPerPage];
@@ -193,13 +206,17 @@ void MainMenuScreen::render(DisplaySystem &display) {
     draw();
 
     display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
+    //}
 
+    // This handles the case where we are in the main menu right after the
+    // onboarding stuff.
+    display.clearDontChangeRefreshType();
     firstLoad_ = false;
 }
 
 void MainMenuScreen::processCommand(RemoteCommand command) {
     switch (command) {
-    case RemoteCommand::PREV:
+    case RemoteCommand::UP:
         if (subMenus_[currentSelection_]->prevSelection()) {
             firstLoad_ = true;
         } else {
@@ -207,7 +224,7 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
         }
         setNeedsRerender();
         break;
-    case RemoteCommand::NEXT:
+    case RemoteCommand::DOWN:
         if (subMenus_[currentSelection_]->nextSelection()) {
             firstLoad_ = true;
         } else {
@@ -218,12 +235,11 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
     // Long press down on the TT should count as enter since we don't have the
     // 5th button
     case RemoteCommand::ENTER:
-    case RemoteCommand::STOP:
         if (subMenus_[currentSelection_]->getCurrItem().callback != nullptr) {
             subMenus_[currentSelection_]->getCurrItem().callback();
         }
         break;
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::RIGHT:
         // This will switch between the menus
         currentSelection_++;
         currentSelection_ = currentSelection_ % topBarViews_.size();
@@ -231,7 +247,7 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
         setNeedsRerender();
         break;
     case RemoteCommand::BACK:
-    case RemoteCommand::CHANNEL_MINUS:
+    case RemoteCommand::LEFT:
         // This will switch between the menus
         currentSelection_ = currentSelection_ + topBarViews_.size() - 1;
         currentSelection_ = currentSelection_ % topBarViews_.size();
@@ -239,7 +255,6 @@ void MainMenuScreen::processCommand(RemoteCommand command) {
         setNeedsRerender();
         break;
     case RemoteCommand::ANIMATION:
-        break;
     default:
         break;
     }

@@ -51,9 +51,12 @@ void Battery::loop() {
         // Check if both batteries are below the threshold. If so, show the battery screen and halt
         // everything
 #if !DISABLE_LOW_VOLTAGE_HALT
-        if (this->getLeftBatteryVoltage() < BATTERY_MIN_VOLTAGE &&
-            this->getRightBatteryVoltage() < BATTERY_MIN_VOLTAGE) {
-            log_i("Voltage is below threshold. Halting.");
+        auto leftBatteryVoltage = this->getLeftBatteryVoltage();
+        auto rightBatteryVoltage = this->getRightBatteryVoltage();
+        if (leftBatteryVoltage < BATTERY_MIN_VOLTAGE && rightBatteryVoltage < BATTERY_MIN_VOLTAGE &&
+            this->leftConnected_ && this->rightConnected_) {
+            log_i("Voltage is below threshold. Halting. (L: %.2fV, R: %.2fV, < %.2fV)",
+                  leftBatteryVoltage, rightBatteryVoltage, BATTERY_MIN_VOLTAGE);
             this->depleted_ = true;
         }
 #endif
@@ -115,6 +118,9 @@ auto Battery::getBatteryPercentage() -> float {
     batteryFractionLeft = std::clamp(batteryFractionLeft, 0.0f, 1.0f);
     batteryFractionRight = std::clamp(batteryFractionRight, 0.0f, 1.0f);
     float batteryAverage = (batteryFractionLeft + batteryFractionRight) / 2.0 * 100;
+
+    // log_d("Battery: %.0f%% (left: %fV, right %fV)", batteryAverage, voltageLevelLeft,
+    // voltageLevelRight);
 
     if ((int)batteryAverage == 0) {
         batteryAverage =

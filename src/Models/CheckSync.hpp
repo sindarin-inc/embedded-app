@@ -5,6 +5,7 @@
 
 #include "Misc/SpiramAllocator.hpp"
 #include "Models/JsonSerializable.hpp"
+#include "Models/Readable.hpp"
 #include "Models/ReadableArchive.hpp"
 #include "Models/ReadableBookmark.hpp"
 #include "Models/ReadablePlacemark.hpp"
@@ -16,9 +17,6 @@ enum class ReadablesModelType { Article, Book };
 auto ReadableModelTypeToString(ReadablesModelType type) -> std::string;
 
 using StoredUuidsVector = SpiramVector<std::string>;
-using ReadableArchivesVector = SpiramVector<ReadableArchive>;
-using ReadablePlacemarksVector = SpiramVector<ReadablePlacemark>;
-using ReadableBookmarksVector = SpiramVector<ReadableBookmark>;
 
 class CheckSyncRequest : JsonSerializable {
 public:
@@ -36,6 +34,7 @@ public:
     bool skipContent;
     SyncReason syncReason;
     uint8_t ptBattery;
+    uint8_t battery;
     std::string ptBuild;
     std::string build;
     std::string gitHash;
@@ -60,6 +59,7 @@ public:
     std::string articlesSince;
     std::string nextPageUrl;
     int totalCount;
+    std::string timezone;
 
     auto fromJson(const JsonObject &j) -> bool override {
         message = j["message"].as<std::string>();
@@ -71,7 +71,6 @@ public:
         }
         auto results = j["results"].as<JsonObject>();
         synced = results["synced"].as<bool>();
-
         if (results.containsKey("books_since")) {
             booksSince = results["books_since"].as<std::string>();
             for (const auto &userReadable : results["books"].as<JsonArray>()) {
@@ -90,6 +89,10 @@ public:
             }
         } else {
             articlesSince = "";
+        }
+
+        if (results.containsKey("timezone")) {
+            timezone = results["timezone"].as<std::string>();
         }
 
         if (j.containsKey("next")) {

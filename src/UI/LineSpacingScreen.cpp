@@ -12,7 +12,7 @@ LineSpacingScreen::LineSpacingScreen(DisplaySystem &display, PreferencesStore &p
     std::string message;
     for (int i = 0; i < 200; i++) {
         message += "Press up arrow to increase line spacing, down arrow to decrease line spacing. "
-                   "Press center button when finished. Message repeats. ";
+                   "Press \ue000 (center) when finished. Message repeats. ";
     }
     auto stream = std::make_shared<StdStringStream>(message);
     renderer_.setStream(stream);
@@ -25,11 +25,11 @@ void LineSpacingScreen::render(DisplaySystem &display) {
 
 void LineSpacingScreen::processCommand(RemoteCommand command) {
     switch (command) {
-    case RemoteCommand::CHANNEL_MINUS:
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::LEFT:
+    case RemoteCommand::RIGHT:
         // Intentionally left out for now
         break;
-    case RemoteCommand::PREV:
+    case RemoteCommand::UP:
         lineSpacing_++;
         if (lineSpacing_ > MAX_LINE_SPACING) {
             lineSpacing_ = MAX_LINE_SPACING;
@@ -38,7 +38,7 @@ void LineSpacingScreen::processCommand(RemoteCommand command) {
         display_.setLineSpacing(lineSpacing_);
         setNeedsRerender();
         break;
-    case RemoteCommand::NEXT:
+    case RemoteCommand::DOWN:
         lineSpacing_--;
         if (lineSpacing_ < MIN_LINE_SPACING) {
             lineSpacing_ = MIN_LINE_SPACING;
@@ -47,12 +47,12 @@ void LineSpacingScreen::processCommand(RemoteCommand command) {
         setNeedsRerender();
         break;
     case RemoteCommand::BACK:
-        // If CHANNEL_MINUS is implemented above,
+        // If LEFT is implemented above,
         // undo that here, since you get both PREV and BACK on a longpress
     case RemoteCommand::ENTER:
         prefs_.lineSpacing.set(lineSpacing_);
         log_d("Saving lineSpacing to preferences: (%d)", lineSpacing_);
-        backCallback();
+        back();
         break;
     default:
         break;

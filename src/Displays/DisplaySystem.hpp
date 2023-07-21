@@ -18,6 +18,9 @@
 
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
+#include "Storage/FileSystem.hpp"
+#include "UI/Fonts/Font.hpp"
+#include "UI/Layout/Types.hpp"
 
 // This isn't the best -- we may want to make this dynamically
 // allocated instead in the object?
@@ -50,8 +53,8 @@ public:
 
     static TimerHandle_t animationTimer;
 
-    int32_t defaultXPadding = 25;
-    int32_t defaultYPadding = 15;
+    int32_t defaultXPadding = 30;
+    int32_t defaultYPadding = 20;
     int32_t defaultScreenWidth = 255;
     int32_t defaultScreenHeight = 255;
 
@@ -70,8 +73,12 @@ public:
         FAST_WITH_VCOM_NUDGE,
         FAST_ORIGINAL_AU4,
         ORIGINAL_PARTIAL,
+        ERASE,
     };
-    virtual void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED) = 0;
+    virtual void updateDisplay(DisplaySystem::UpdateType updateType = UNSPECIFIED,
+                               bool clearFrameBuffer = true, int vcomNudge = 0,
+                               DisplaySystem::UpdateType altUpdateType = UNSPECIFIED,
+                               Rect altRect = {{0, 0}, {0, 0}}) = 0;
 
     virtual void beginPowerOn() {}
 
@@ -91,9 +98,15 @@ public:
         gfxClass_->fillTriangle(xOffset(x0), yOffset(y0), xOffset(x1), yOffset(y1), xOffset(x2),
                                 yOffset(y2), color);
     }
-    void setFont(const GFXfont *f) {
-        font_ = f;
-        gfxClass_->setFont(f);
+    void setFont(Font *f) {
+        if (f != nullptr) {
+            font_ = f;
+            if (font_->isA(FontType::GFX)) {
+                gfxClass_->setFont(static_cast<GFont *>(font_)->get());
+            }
+        } else {
+            log_e("Received a bad (null) font pointer!");
+        }
     }
     void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
         gfxClass_->fillRect(xOffset(x), yOffset(y), w, h, color);
@@ -146,6 +159,10 @@ public:
     void setLineSpacing(int newSpacing) { lineSpacing_ = newSpacing; }
 
     virtual void clearDisplay(){};
+    virtual void clearFrameBuffer(){};
+
+    void forceDontChangeRefreshType() { forceRefreshType_ = true; }
+    void clearDontChangeRefreshType() { forceRefreshType_ = false; }
 
     auto setBoundingBox(DisplayRect newBox) -> DisplayRect;
     auto getBoundingBox() -> DisplayRect { return boundingBox_; }
@@ -153,14 +170,10 @@ public:
     void ensureBoundaries();
 
     // MARK: - Text rendering code
-
-    auto getFont() -> const GFXfont *;
-    void drawSingleLineOfText(const std::string &line, int x, int y);
+    auto getFont() -> Font *;
+    void drawSingleLineOfText(const std::string &line, int x, int y, bool inverted = false);
     void drawSingleLineOfCenteredText(const std::string &line);
-
-    void drawText(const std::string &newText, int x, int y, int width, int height)
-        __attribute__((deprecated));
-    void getTextBounds(const char *buffer, uint16_t *w, uint16_t *h);
+    void getTextSize(const char *buffer, uint16_t *w, uint16_t *h);
     auto getTextHeight() -> int;
     auto getTextHeight(const char *buffer) -> int;
     auto getTextWidth(const char *buffer) -> int;
@@ -174,6 +187,13 @@ public:
     // Draw a bitmap
     void drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, int16_t h,
                      uint16_t color);
+
+    void drawPBM(int16_t x, int16_t y, const std::string &fname, FileSystem &fs);
+    void drawPBM(int16_t x, int16_t y, const uint8_t *pbmBytes, int size);
+    void drawPBM(int16_t x, int16_t y, RendererStream &stream);
+
+    // override for subclass, need access to raw drawing buffer
+    virtual void drawFullscreenBitmapFromFile(RendererStream &stream) { log_i("not supported"); }
 
     // Clear the whole screen
     void clearScreen();
@@ -195,7 +215,10 @@ public:
 protected:
     // Must be set in the constructor of subclasses
     Adafruit_GFX *gfxClass_ = nullptr;
-    const GFXfont *font_ = nullptr;
+    Font *font_ = nullptr;
+    uint8_t *canvasBuffer_;
+    uint16_t canvasWidth_;
+    uint16_t canvasHeight_;
 
     inline auto xOffset(int16_t value) -> int16_t { return value + boundingBox_.x; }
     inline auto yOffset(int16_t value) -> int16_t { return value + boundingBox_.y; }
@@ -209,6 +232,8 @@ protected:
     uint16_t partialX_ = 0, partialY_ = 0, partialW_ = 0, partialH_ = 0;
 
     bool invertedDisplay_ = false;
+
+    bool forceRefreshType_ = false;
 
     // This is the default value from before of 15mmx15mm
     DisplayRect boundingBox_ = defaultBoundingBox;

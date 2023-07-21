@@ -2,6 +2,7 @@
 
 #include "BLESettings.hpp"
 
+#include <driver/gpio.h>
 #include <utility>
 
 #include "Misc/Dispatch.hpp"
@@ -60,6 +61,10 @@ void BLESettings::disconnectPageTurnerForSeconds(const int seconds) {
 }
 
 void BLESettings::blinkLedAfterConnect(BLECharacteristic *characteristic, const std::string &key) {
+    // TODO: Fully take over the LED for a while
+    gpio_hold_dis((gpio_num_t)RED_LED);
+    gpio_hold_dis((gpio_num_t)GREEN_LED);
+    gpio_hold_dis((gpio_num_t)BLUE_LED);
     for (int i = 0; i < 10; i++) {
         // Flash all the LEDs
         DigitalWrite(RED_LED, LED_ON);
@@ -82,32 +87,8 @@ void BLESettings::blinkLedAfterConnect(BLECharacteristic *characteristic, const 
 
 void BLESettings::writeWifiSSIDtoCharacteristic(BLECharacteristic *characteristic,
                                                 const std::string &key) {
-    auto queue = DispatchGetCore0BackgroundQueue();
-    queue->dispatch([key, characteristic] {
-        // Check if wifi is already connected, and if so, don't disconnect at the end of this
-        // function
-        bool wifiConnected = WiFi::getInstance().connected();
-        wifi_config_t conf;
-        esp_err_t err = WiFi::getInstance().getWifiConfig(&conf);
-        if (err == ESP_OK && WiFi::getInstance().hasWiFiCredentials(&conf)) {
-            std::string value = StringFormat("%s=%s", key.c_str(), (const char *)conf.sta.ssid);
-            characteristic->setValue(value);
-            log_i("GATT client reading wifi ssid, initializing wifi, sharing ssid: %s %zu/%zu",
-                  value.c_str(), value.length(), sizeof(value.c_str()));
-        } else {
-            std::string value = StringFormat("%s=", key.c_str());
-            characteristic->setValue(value);
-            log_i("GATT client reading wifi ssid, no wifi credentials, sharing blank ssid: %s",
-                  value.c_str());
-        }
-
-        characteristic->notify();
-
-        // Turn wifi back off if we weren't already using it
-        if (!wifiConnected) {
-            WiFi::getInstance().disconnectWiFi();
-        }
-    });
+    characteristic->setValue(WiFi::getInstance().getFirstWiFiSSID());
+    characteristic->notify();
 }
 
 #endif

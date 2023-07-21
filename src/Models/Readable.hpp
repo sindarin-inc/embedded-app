@@ -9,10 +9,23 @@
 #include "Models/Author.hpp"
 #include "Models/Json.hpp"
 #include "Models/JsonSerializable.hpp"
+#include "Models/ReadableArchive.hpp"
 #include "Models/ReadableBookmark.hpp"
 #include "Models/ReadableFile.hpp"
+#include "Models/ReadablePlacemark.hpp"
+#include "Models/ReadableTableOfContentsChapter.hpp"
+
+// This is #define because there might be different types passed in
+#define SOL_PAGE_NUMBER(x) ((x) / 1000 + 1)
 
 #define TRUNCATE_READABLE_UUID_FOR_PLACEMARK_BYTES 8
+
+using ReadableAuthorVector = SpiramVector<Author>;
+using ReadableFileVector = SpiramVector<ReadableFile>;
+using ReadableArchivesVector = SpiramVector<ReadableArchive>;
+using ReadablePlacemarksVector = SpiramVector<ReadablePlacemark>;
+using ReadableBookmarksVector = SpiramVector<ReadableBookmark>;
+using ReadableTableOfContentsChapterVector = SpiramVector<ReadableTableOfContentsChapter>;
 
 class Readable : JsonSerializable {
 public:
@@ -28,9 +41,14 @@ public:
     SpiramString dateCreated;
     SpiramString dateModified;
     SpiramString datePublished;
-    std::vector<Author> authors;
-    std::vector<ReadableFile> files;
-    std::vector<ReadableBookmark> bookmarks;
+    ReadableAuthorVector authors;
+    ReadableFileVector files;
+    ReadableBookmarksVector bookmarks;
+    ReadableTableOfContentsChapterVector toc;
+    // hasSummary denotes if any of the chapters have a summary, used for determining if we should
+    // show the summary menu item
+    bool hasSummary = false;
+
     SpiramString readableType;
     // TODO: source
     // TODO: categories
@@ -41,14 +59,54 @@ public:
     // Local state
     uint32_t place{0}, placePrev{0};
 
-    [[nodiscard]] auto file() const -> const ReadableFile & { return files[0]; }
+    [[nodiscard]] auto file() const -> const ReadableFile & {
+        for (const auto &file : files) {
+            if (file.filetype == "utf8_txt") {
+                return file;
+            }
+        }
 
+        for (const auto &file : files) {
+            if (file.filetype == "txt") {
+                return file;
+            }
+        }
+
+        return files[0];
+    }
+
+    // TODO: Move file path operations to LocalStore
     [[nodiscard]] auto bookmarkFilePath() const -> std::string {
         return StringFormat("/bookmarks/%s-bookmark.txt", uuid.c_str());
+    }
+    [[nodiscard]] auto tocFilePath() const -> std::string {
+        return StringFormat("/toc/%s-toc.json", uuid.c_str());
     }
     [[nodiscard]] auto remoteUrl() const -> SpiramString { return file().fileProxied; }
     [[nodiscard]] auto isArticle() const -> bool {
         return readableType == "pocket_article" || readableType == "email_article";
+    }
+
+    auto summary(unsigned long placeInReadable, unsigned long &placeInSummary, bool includeUnread)
+        -> SpiramString {
+        SpiramString summary;
+
+        for (const auto &chapter : toc) {
+            if (placeInReadable >= chapter.txtOffset) {
+                placeInSummary = summary.length();
+            }
+            if (placeInReadable < chapter.txtOffset && !includeUnread) {
+                break;
+            }
+            summary += chapter.title;
+            summary += "\n\n";
+            if (!chapter.summary.empty()) {
+                summary += chapter.summary;
+                summary += "\n\n";
+            }
+        }
+
+        return summary;
     }
 
     auto fromJson(const JsonObject &j) -> bool override {
@@ -76,6 +134,15 @@ public:
         for (const auto &bookmark : j["bookmarks"].as<JsonArray>()) {
             bookmarks.emplace_back();
             bookmarks.back().fromJson(bookmark);
+        }
+        toc.clear();
+        for (const auto &chapter : j["toc"].as<JsonArray>()) {
+            toc.emplace_back();
+            toc.back().fromJson(chapter);
+            // Check if any chapter has a summary, if so, set hasSummary
+            if (chapter["summary"].as<std::string>().size() > 0) {
+                hasSummary = true;
+            }
         }
 
         // Temporary migration for stored pocket articles that don't have a readable_type

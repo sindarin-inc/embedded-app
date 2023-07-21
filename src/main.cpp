@@ -16,15 +16,19 @@
 #include "Misc/Battery.hpp"
 #include "Misc/BootError.hpp"
 #include "Misc/BootLoopDetection.hpp"
+#include "Misc/FactoryReset.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
 #include "Misc/SolClock.hpp"
+#include "Misc/SolMorse.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
 #include "Models/Readable.hpp"
 #include "Storage/CrashReportWriter.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
+#include "UI/ChargingScreen.hpp"
+#include "UI/OverTempScreen.hpp"
 #include "UI/RootUI.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -74,9 +78,8 @@ PosixFileSystem fileSystem;
 LittleFSFileSystem fileSystem;
 #endif
 
-LocalStore localStore(fileSystem, prefs);
-
-PowerManager powerManager(fileSystem, prefs, lightingController);
+PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay);
+LocalStore localStore(fileSystem, prefs, powerManager.battery);
 RootUI rootUi(prefs, powerManager);
 SolClock solClock(prefs);
 
@@ -85,16 +88,32 @@ bool bootCompleted = false;
 // Task for all periodic things that need to run ~1Hz. Polling tasks should be grouped here so that
 // they all complete in a tight loop, thus maximizing sleep time.
 void PollingLoopTask(void *parameter) {
+    int factoryResetStartTimeMs = 0;
     for (;;) {
+        // check if factory reset button is held down
+        if (DigitalRead(FACTORY_RESET_BUTTON) == 0) {
+            // prevent inactivity sleep while button held down
+            powerManager.feedInactivityTimer();
+            if (factoryResetStartTimeMs == 0) {
+                factoryResetStartTimeMs = Millis();
+            } else if ((Millis() - factoryResetStartTimeMs) > FACTORY_RESET_MS) {
+                log_i("Button held down for %dms performing factory reset",
+                      Millis() - factoryResetStartTimeMs);
+                FactoryReset(prefs, fileSystem, powerManager, true);
+            }
+        } else {
+            factoryResetStartTimeMs = 0;
+        }
+
         // Run the power loop first so that we don't show a 0% battery reading
         powerManager.loop();
 
 #if USE_TURN_TOUCH_REMOTE
         // Skip scanning while WiFi is connected to avoid kicking off the WiFi connection
         if (!WiFi::getInstance().connected()) {
-            ttRemoteInput.connect();
+            ttRemoteInput.scanIfNecessary();
         } else if (!ttRemoteInput.connected()) {
-            // log_d("Skipping Turn Touch scan while WiFi is connected");
+            // log_d("Skipping PageTurner scan while WiFi is connected");
         }
 #endif
 
@@ -138,7 +157,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
 #if !SIMULATOR
     // Configure log level for all Sindarin logs
-    esp_log_level_set("Sindarin", ESP_LOG_DEBUG);
+    esp_log_level_set("Sol", ESP_LOG_DEBUG);
     powerManager.wakeupCheck(solClock);
 #endif
     BootLoopCheck();
@@ -183,6 +202,8 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     if (!fileSystem.begin()) {
         bootErrors.push_back({.type = BootError::Type::FileSystem});
+    } else {
+        log_d("Filesystem ready!");
     }
 
     // Set current boot id
@@ -200,19 +221,39 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         crashReportWriter.writeCrashReportIfExists();
     }
 
-    if (!localStore.begin()) {
+    if (powerManager.state() != PowerState::ActiveUSBCharging && !localStore.begin()) {
         bootErrors.push_back({.type = BootError::Type::LocalStore});
     }
+
+    auto showChargingScreen = []() {
+        lightingController.setOverrideValuePercent(100);
+        auto chargingScreen = new ChargingScreen(prefs);
+        rootUi.setCurrentScreen(*chargingScreen);
+        UIInnerLoop(RemoteCommand::NONE);
+    };
+
+    powerManager.setStateChangeCallback([&showChargingScreen](PowerState state) {
+        if (state == PowerState::ActiveUSBCharging) {
+            showChargingScreen();
+        } else if (state == PowerState::ActiveOverTemp) {
+            auto overTempScreen = new OverTempScreen();
+            rootUi.setCurrentScreen(*overTempScreen);
+            UIInnerLoop(RemoteCommand::NONE);
+        }
+    });
+
+    WiFi::getInstance().setWiFiPower(
+        (wifi_power_t)prefs.wifiPower.get().value_or(WIFI_POWER_16dBm));
 
     if (powerManager.state() == PowerState::Background) {
         log_i("Booting into PowerState::Background, running a content sync");
         // Spin up a task just to check the temple and battery
         xTaskCreatePinnedToCore(
             [](void *) {
-                for (;;) {
-                    powerManager.loop();
-                    vTaskDelay(1000 / portTICK_PERIOD_MS);
-                }
+            for (;;) {
+                powerManager.loop();
+                vTaskDelay(1000 / portTICK_PERIOD_MS);
+            }
             },
             "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
         BackgroundSyncAndSleep(powerManager, prefs, localStore);
@@ -253,7 +294,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-    switch (prefs.font.get().value_or(PREFS_TAHOMA_REGULAR)) {
+    switch (prefs.font.get().value_or(PREFS_TAHOMA_TINY)) {
     case PREFS_LUCIDA_REGULAR:
         myDisplay.style.setFontFamily(myDisplay.style.lucidaRegular);
         break;
@@ -268,6 +309,12 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         break;
     case PREFS_TAHOMA_LARGE:
         myDisplay.style.setFontFamily(myDisplay.style.tahomaLarge);
+        break;
+    case PREFS_TAHOMA_TINY:
+        myDisplay.style.setFontFamily(myDisplay.style.tahomaTiny);
+        break;
+    case PREFS_TAHOMA_HUGE:
+        myDisplay.style.setFontFamily(myDisplay.style.tahomaHuge);
         break;
     }
 
@@ -296,10 +343,21 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     // For all the EMC modes, we'll keep the lights at 100%
     if (prefs.emcMode.get().value_or(false)) {
         lightingController.setOverrideValuePercent(100);
+
+        // Also kick off a task to try to content sync every minute or so
+        xTaskCreatePinnedToCore(
+            [](void *) {
+            for (;;) {
+                PreferencesStore::syncReason = SyncReason::Periodic;
+                BackgroundSync(powerManager, prefs, localStore);
+                vTaskDelay(60000 / portTICK_PERIOD_MS);
+            }
+            },
+            "BackgroundSync", 4096, nullptr, 1, nullptr, 1);
     }
 
 #if USE_BLE
-    BLEDevice::init("Sindarin");
+    BLEDevice::init("Sol Reader");
     auto bleStatus = esp_bt_controller_get_status();
     if (bleStatus != ESP_BT_CONTROLLER_STATUS_ENABLED) {
         bootErrors.push_back({.type = BootError::Type::BLE});
@@ -320,10 +378,14 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
 #if USE_TURN_TOUCH_REMOTE
     ttRemoteInput.setCallback(remoteCallback);
+    powerManager.setBeginShutdownCallback([]() { ttRemoteInput.disconnectTemporarily(60); });
 #endif
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
     auto bleManager = BLEManager::getInstance();
+    if (prefs.bleAdvertisingKey.get().has_value()) {
+        bleManager->setManfacturerData(prefs.bleAdvertisingKey.get().value_or(""));
+    }
 #endif
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS
@@ -359,9 +421,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-    WiFi::getInstance().setWiFiPower(
-        (wifi_power_t)prefs.wifiPower.get().value_or(WIFI_POWER_17dBm));
-
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
     if (!bleManager->startAdvertisingIfNecessary()) {
         bootErrors.push_back({.type = BootError::Type::BLEManagerAdvertising});
@@ -376,9 +435,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     SHOW_HEAP();
 
-    rootUi.setup(&myDisplay, localStore, fileSystem, lightingController);
-
-    SHOW_HEAP();
+#if DISABLE_POWER_MANAGEMENT
+    log_w("Power Management Disabled");
+#endif
 
     BlinkBootErrors(bootErrors);
 
@@ -389,7 +448,16 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     DispatchGetUiQueue()->dispatch([]() { lightingController.checkAmbientLight(300, 100); });
 
     // Render the first thing
-    DispatchGetUiQueue()->dispatch([]() { UIInnerLoop(RemoteCommand::NONE); });
+    DispatchGetUiQueue()->dispatch([showChargingScreen]() {
+        SHOW_HEAP();
+        if (powerManager.state() == PowerState::ActiveUSBCharging) {
+            showChargingScreen();
+        } else {
+            rootUi.setup(&myDisplay, localStore, fileSystem, lightingController);
+            UIInnerLoop(RemoteCommand::NONE);
+        }
+        SHOW_HEAP();
+    });
 
     GoodBootTimer();
 

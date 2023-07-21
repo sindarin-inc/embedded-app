@@ -22,7 +22,7 @@ auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignRight,
         [this](LayoutContext &context, Size size) -> Size {
             int x = 0;
-            int y = 35;
+            int y = 28;
 
             context.setViewFrame(onTextView_, {{x, y}, size}, LayoutOptionsSizeToFit);
             x += 25;
@@ -48,22 +48,28 @@ auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
 
             for (auto &view : menuItemViews_) {
                 auto viewFrame =
-                    context.setViewFrame(*view, {{x, y}, boxSize}, LayoutOptionsSizeToFit);
+                    context.setViewFrame(*view, {{x, y + 1}, boxSize}, LayoutOptionsSizeToFit);
                 if (place == currSelection_) {
                     context.setViewFrame(*selectedSelectionView_,
-                                         {{x, y}, {boxSize.width - 70, boxSize.height}},
+                                         {{x, y + 1}, {boxSize.width - 70, boxSize.height + 1}},
                                          LayoutOptionsSizeToFit);
                 }
 
-                if (menuToggleValues_[place] == true) {
-                    context.setViewFrame(*menuToggleSelectionViews_[place],
-                                         {{x + 139, y + 3}, {7, 7}}, LayoutOptionsSizeToFit);
-                } else {
-                    context.setViewFrame(*menuToggleSelectionViews_[place],
-                                         {{x + 167, y + 3}, {7, 7}}, LayoutOptionsSizeToFit);
+                // Only layout the bubble if it's visible (doing this here instead of draw since we
+                // already have the place in the vector here)
+                if (showToggleBubble_[place]) {
+                    if (menuToggleValues_[place]) {
+                        context.setViewFrame(*menuToggleSelectionViews_[place],
+                                             {{size.width - 25 - 37, y + 3}, {7, 7}},
+                                             LayoutOptionsSizeToFit);
+                    } else {
+                        context.setViewFrame(*menuToggleSelectionViews_[place],
+                                             {{size.width - 37, y + 3}, {7, 7}},
+                                             LayoutOptionsSizeToFit);
+                    }
                 }
 
-                y += viewFrame.size.height + 2;
+                y += viewFrame.size.height + 1;
                 place++;
             }
 
@@ -140,6 +146,8 @@ void ToggleMenuScreen::render(DisplaySystem &display) {
     // to do a partial refresh with the selector button at a lower/higher vcom to reduce
     // ghosting.
     if (firstLoad_) {
+        clockBatteryView_.updateTime();
+
         // Populate the menu items with the correct menus for the current subMenu
         menuItemViews_.clear();
         menuPageViews_.clear();
@@ -173,7 +181,7 @@ void ToggleMenuScreen::render(DisplaySystem &display) {
 
 void ToggleMenuScreen::processCommand(RemoteCommand command) {
     switch (command) {
-    case RemoteCommand::PREV:
+    case RemoteCommand::UP:
         if (prevSelection()) {
             firstLoad_ = true;
         } else {
@@ -181,7 +189,7 @@ void ToggleMenuScreen::processCommand(RemoteCommand command) {
         }
         setNeedsRerender();
         break;
-    case RemoteCommand::NEXT:
+    case RemoteCommand::DOWN:
         if (nextSelection()) {
             firstLoad_ = true;
         } else {
@@ -190,7 +198,7 @@ void ToggleMenuScreen::processCommand(RemoteCommand command) {
         setNeedsRerender();
         break;
     case RemoteCommand::ENTER:
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::RIGHT:
         menuToggleValues_[currSelection_] = !menuToggleValues_[currSelection_];
         setNeedsRerender();
         if (getCurrItem().callback != nullptr) {
@@ -198,14 +206,11 @@ void ToggleMenuScreen::processCommand(RemoteCommand command) {
         }
         break;
     case RemoteCommand::BACK:
-    case RemoteCommand::CHANNEL_MINUS:
-        if (backCallback != nullptr) {
-            firstLoad_ = true;
-            backCallback();
-        }
+    case RemoteCommand::LEFT:
+        firstLoad_ = true;
+        back();
         break;
     case RemoteCommand::ANIMATION:
-        break;
     default:
         break;
     }

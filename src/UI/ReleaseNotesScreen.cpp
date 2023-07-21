@@ -14,13 +14,13 @@ ReleaseNotesScreen::ReleaseNotesScreen(DisplaySystem &display, PreferencesStore 
     SpiramString message = SpiRamStringFormat(
         "New firmware %s is now available! Here's what's new:\n\n", firmware.version.c_str());
     message += firmware.releaseNotes;
-    message += "\n\nPress the center button to update!";
+    message += "\n\nPress \ue000 (center) to update!";
     auto stream = std::make_shared<StdStringStream>(message);
     renderer_.setStream(stream);
 
     menu_.resetMenuItems();
     menu_.addMenuItem(MenuItem("Update Now", [this]() { runUpdate(); }));
-    menu_.addMenuItem(MenuItem("Maybe later", [this]() { backCallback(); }));
+    menu_.addMenuItem(MenuItem("Maybe later", [this]() { back(); }));
 
     setCurrentScreen(*this);
 }
@@ -47,17 +47,17 @@ void ReleaseNotesScreen::processCommand(RemoteCommand command) {
     }
 
     switch (command) {
-    case RemoteCommand::CHANNEL_MINUS:
+    case RemoteCommand::LEFT:
         place_ = renderer_.getPreviousPlace();
         setNeedsRerender();
         break;
-    case RemoteCommand::PREV:
+    case RemoteCommand::UP:
     case RemoteCommand::BACK:
         setCurrentScreen(menu_);
         setNeedsRerender();
         break;
-    case RemoteCommand::NEXT:
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::DOWN:
+    case RemoteCommand::RIGHT:
     case RemoteCommand::ENTER:
         if (atEnd()) {
             setCurrentScreen(menu_);
@@ -78,7 +78,7 @@ void ReleaseNotesScreen::updateError(const std::string &logMessage) {
     display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     prefs_.firmwareLoaded.remove();
     localStore_.resetFirmware();
-    backCallback();
+    back();
     return;
 }
 
@@ -120,5 +120,5 @@ void ReleaseNotesScreen::runUpdate() {
     power_.reboot();
 
     // Only for the sim
-    backCallback();
+    back();
 }

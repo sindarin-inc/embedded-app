@@ -66,34 +66,31 @@ void LineMenuScreen::render(DisplaySystem &display) {
 
 void LineMenuScreen::processCommand(RemoteCommand command) {
     switch (command) {
-    case RemoteCommand::PREV:
+    case RemoteCommand::UP:
         if (prevSelection()) {
             firstLoad_ = true;
         }
         setNeedsRerender();
         break;
-    case RemoteCommand::NEXT:
+    case RemoteCommand::DOWN:
         if (nextSelection()) {
             firstLoad_ = true;
         }
         setNeedsRerender();
         break;
     case RemoteCommand::ENTER:
-    case RemoteCommand::CHANNEL_PLUS:
+    case RemoteCommand::RIGHT:
         if (getCurrItem().callback != nullptr) {
             getCurrItem().callback();
         }
         break;
     case RemoteCommand::BACK:
-    case RemoteCommand::CHANNEL_MINUS:
-        if (backCallback != nullptr) {
-            firstLoad_ = true;
-            backCallback();
-        }
+    case RemoteCommand::LEFT:
+        firstLoad_ = true;
+        back();
         setNeedsRerender();
         break;
     case RemoteCommand::ANIMATION:
-        break;
     default:
         break;
     }

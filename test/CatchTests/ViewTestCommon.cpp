@@ -70,9 +70,13 @@ void StartFreeRtos(bool runAppMain) {
     prefs.rectY.set(30);
     prefs.rectW.set(255 - 42 * 2);
     prefs.rectH.set(255 - 30 * 2);
+    prefs.sortCriteria.set(0);
+    prefs.sortDirection.set(0);
     prefs.firstRead.set(0);
+    prefs.pageTransitionArrows.set(false);
     prefs.lastReadableId.remove();
     prefs.readablePlace.set("93d56842", 0);
+    prefs.noSetupMode.set(true);
 
     // Start the FreeRTOS scheduler
     SchedulerThread = std::make_unique<std::thread>([runAppMain]() {
@@ -226,4 +230,26 @@ void SetupFileSystemMock(const std::string &directory) {
     std::filesystem::remove_all(bookmarks);
     auto logs = path + std::string("/logs");
     std::filesystem::remove_all(logs);
+}
+
+auto LoadJsonDoc(FileSystem &fileSystem, const std::string &path)
+    -> std::unique_ptr<SpiRamJsonDocument> {
+    SFile readablesFile = fileSystem.open(path);
+    if (!readablesFile || (int)readablesFile.size() == 0) {
+        log_w("Failed to open %s", path.c_str());
+        return nullptr;
+    }
+
+    // Grab a minimum amount of ram, even if the readables file is empty
+    auto docSize = (int)readablesFile.size() * 2;
+    auto doc = std::make_unique<SpiRamJsonDocument>(docSize);
+    auto error = deserializeJson(*doc, readablesFile);
+    readablesFile.close();
+
+    if (error.code() != DeserializationError::Ok) {
+        log_e("Failed to deserialize readables file: %s", error.c_str());
+        return nullptr;
+    }
+
+    return doc;
 }

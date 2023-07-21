@@ -10,10 +10,10 @@ After cloning this repo from GitHub you'll need to pull the most recent submodul
 git submodule update --init --recursive
 ```
 
-The primary way to build the firmware itself is with Espressif's official esp-idf toolchain. We use a [fork of esp-idf](http://github.com/sindarin-inc/esp-idf) that has some patches included. In some other directory (not in this repo), run:
+The primary way to build the firmware itself is with Espressif's official [esp-idf toolchain](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/linux-macos-setup.html). In some other directory (not in this repo), run:
 
 ```sh
-git clone -b sindarin/idf5-51772f4fb5 --recursive git@github.com:sindarin-inc/esp-idf.git
+git clone -b v5.1 --recursive https://github.com/espressif/esp-idf.git
 cd esp-idf
 ./install.sh esp32s3
 ```
@@ -23,7 +23,7 @@ If you get errors about `cmake` you might need to install `cmake` first (`brew i
 Now from the root of this repo, you can run (replace `/YOUR/PATH/TO` with the path where you put `esp-idf`):
 
 ```bash
-source /YOUR/PATH/TO/esp-idf/export.sh
+. /YOUR/PATH/TO/esp-idf/export.sh
 idf.py set-target esp32s3
 idf.py build flash monitor
 ```
@@ -45,7 +45,6 @@ idf.py monitor --no-reset -p $(ls /dev/cu.usbmodem* 2> /dev/null | head -n 1)
 * Visual Studio Code (`brew install visual-studio-code`)
 * PlatformIO (`brew install platformio`, or on Ubuntu `sudo apt install python3-pip && pip3 install platformio` or the [installer script](https://docs.platformio.org/en/latest/core/installation/methods/installer-script.html)) - we don't typically build the firmware with this but it's needed for the simulator, tests, and clang-tidy.
 * clang-format (`brew install clang-format`)
-* clang-tidy (`brew install llvm`)
 
 ## Reformat code with `clang-format`
 
@@ -57,10 +56,10 @@ find src -iname "*.hpp" -o -iname "*.h" -o -iname "*.cpp" -o -iname "*.c" | xarg
 
 ## Static analysis and cleanup with `clang-tidy`
 
-You can run clang-tidy to do some more advance C++ static analysis and fixes. Make sure you install `clang-tidy` (included with `brew install llvm`) and then run the following to automatically fix things:
+You can run clang-tidy to do some more advance C++ static analysis and fixes. Make sure you've set up IDF, then run the following to automatically fix things and show warnings:
 
 ```bash
-./scripts/clang-tidy -w --fix
+make clang-tidy
 ```
 
 Issues that will be fixed automatically will be fixed by clang-tidy, warnings will mark any suggestions that clang-tidy couldn't fix directly.
@@ -69,7 +68,7 @@ Issues that will be fixed automatically will be fixed by clang-tidy, warnings wi
 
 The simulator compiles in <3s from a clean build, and even less on an incremental build. This makes it super fast for us to iterate on anything that doesn't need the physical hardware.
 
-You'll need SDL2 & openssl for it to work: `brew install sdl2 sdl2_image openssl` (on Ubuntu `sudo apt install libsdl2-dev libsdl2-image-dev libssl-dev`). Then you can run `pio run -e simulator -t upload` to run it. You can alternately hit the upload button in VSCode+PlatformIO and it should build and run! You can also debug with lldb at the command line: `pio run -e simulator && lldb .pio/build/simulator/program`.
+You'll need SDL2 & openssl for it to work: `brew install sdl2 openssl` (on Ubuntu `sudo apt install libsdl2-dev libssl-dev`). Then you can run `pio run -e simulator -t upload` to run it. You can alternately hit the upload button in VSCode+PlatformIO and it should build and run! You can also debug with lldb at the command line: `pio run -e simulator && lldb .pio/build/simulator/program`.
 
 ### Extract your Sol cloud access token to download content onto the Simulator
 
@@ -119,54 +118,27 @@ See also the [Core Dump docs](https://docs.espressif.com/projects/esp-idf/en/lat
 
 ## Debug with OpenOCD
 
-You can use OpenOCD to debug the firmware on the ESP32-S3 using the built-in JTAG interface. Because OpenOCD out of the box does not support >16MB flash chips until [John's PR](https://github.com/espressif/openocd-esp32/pull/245/files) is merged, you'll need to build a custom version of OpenOCD from [sindarin-inc/openocd-esp32:larger-flashes](https://github.com/sindarin-inc/openocd-esp32/tree/larger-flashes).
+You can use OpenOCD (included in ESP-IDF) to debug the firmware on the ESP32-S3 using the built-in USB JTAG interface.
 
-First grab dependencies for building
+Make sure you have `idf.py` set up (see above) and make sure to `idf.py build` the code you want to debug. Then, with your glasses / dev board connect you can run:
 
-```bash
-brew install libtool automake libusb texinfo
-brew link texinfo # Override the system texinfo with the brew version
-```
-
-Now you can build OpenOCD
-
-```bash
-git clone git@github.com:sindarin-inc/openocd-esp32.git
-cd openocd-esp32
-git checkout larger-flashes
-./bootstrap
-./configure --enable-esp-usb-jtag
-make
-```
-
-If all goes well you'll have an `openocd` binary in `src/openocd` inside the repo.
-
-Now save your OpenOCD path to the `OPENOCD_SCRIPTS` variable (used to find board config files and scripts). Also go ahead and add `src` to your path (so you can get to `openocd` later).
-
-```bash
-export OPENOCD_SCRIPTS=$(pwd)/tcl
-export PATH=$(pwd)/src:$PATH
-```
-
-Now go back to the root of the repo, go through the normal process to `idf.py build` and then you can upload using OpenOCD (not sure if uploading with OpenOCD is necessary to debug with OpenOCD but I think so).
-
-```bash
-openocd -f board/esp32s3-builtin.cfg -c "program_esp build/embedded-app.bin 0x10000 verify exit"
-```
-
-Now you can debug with OpenOCD. First create a debugging session
-
-```bash
+```sh
 openocd -f board/esp32s3-builtin.cfg
 ```
 
-And then open a separate terminal and connect to the debugger from GDB. Make sure you used the IDF `source export.sh` command to set up your environment variables.
+Then in a separate terminal, connect gdb:
 
-```bash
+```sh
 xtensa-esp32s3-elf-gdb -x scripts/gdbinit build/embedded-app.elf
 ```
 
 A _very_ useful GDB command is `catch throw` which sets a breakpoint at any C++ exceptions. You might also try `break filename.cpp:55` to set a breakpoint at a file and line number. Then use `continue` (or `c`) to continue execution until the breakpoint is hit. [Here's a handy GDB cheat sheet](https://users.ece.utexas.edu/~adnan/gdb-refcard.pdf).
+
+You can also use `openocd` to flash firmware over the JTAG interface. I don't think there's any advantage to this vs using `esptool.py`:
+
+```bash
+openocd -f board/esp32s3-builtin.cfg -c "program_esp build/embedded-app.bin 0x10000 verify exit"
+```
 
 ## Hooking up OpenOCD to VSCode
 
@@ -180,7 +152,7 @@ It's possible to use connect to OpenOCD from inside VSCode. You'll need to add a
     "program": "${workspaceFolder}/build/embedded-app.elf",
     "MIMode": "gdb",
     // NOTE: This might change as the toolchain changes
-    "miDebuggerPath": "${env:HOME}/.espressif/tools/xtensa-esp32s3-elf/esp-2021r2-patch3-8.4.0/xtensa-esp32s3-elf/bin/xtensa-esp32s3-elf-gdb",
+    "miDebuggerPath": "${env:HOME}/.espressif/tools/xtensa-esp-elf-gdb/12.1_20221002/xtensa-esp-elf-gdb/bin/xtensa-esp32s3-elf-gdb",
     "miDebuggerArgs": "${workspaceFolder}/build/embedded-app.elf",
 
     // This disables adding a breakpoint on `main` though it seems VSCode likes to add it anyways sometimes
@@ -236,3 +208,43 @@ Note that when you run the above command, the resulting `include/EFusesCustomTab
 ```
 
 This is [fixed](https://github.com/espressif/esp-idf/blob/master/components/efuse/efuse_table_gen.py#L277) in the pre-release version of ESP-IDF 5.0.
+
+## Run PyTest On-Device Tests
+
+You'll need to make sure you set up IDF with the pytest bits.
+
+```sh
+$IDF_PATH/install.sh esp32s3 --enable-pytest
+```
+
+You'll need to make sure you have some binaries available
+
+```sh
+idf.py build
+```
+
+And then you can run the tests
+
+```sh
+pytest --target esp32s3
+```
+
+## Editing Sol Sans font in the IBMF Font Editor
+
+To change the glyphs in the Sol Sans character map:
+
+1. Download the IBMF Font Editor repo: https://github.com/turgu1/IBMFFontEditor
+2. Build the editor:
+
+```sh
+mkdir build
+cd build
+cmake ..
+make -j
+open IBMFFontEditor.app
+```
+
+3. Commit both changes:
+
+    - src/UI/Fonts/IBMFFonts/SolSans_75.h
+    - src/UI/Fonts/IBMFFonts/SolSans_75.ibmf

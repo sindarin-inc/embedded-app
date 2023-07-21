@@ -1,6 +1,5 @@
 #include "UI/StatsScreen.hpp"
 
-#include "UI/Fonts/Tahoma8pt7b.h"
 #include "sindarin-debug.h"
 
 StatsScreen::StatsScreen(DisplaySystem &display, PreferencesStore &prefs)
@@ -31,7 +30,7 @@ void StatsScreen::render(DisplaySystem &display) {
         timeMessage += formattedString;
     }
 
-    display.setFont(&TAHOMA_REGULAR_FONT5PT7B);
+    display.setFont(static_cast<Font *>(&ibmf75Face0));
     display.drawSingleLineOfText(
         wordsMessage,
         display.xAbsolute(display.xAbsoluteCenter() -
@@ -46,4 +45,4 @@ void StatsScreen::render(DisplaySystem &display) {
     display.updateDisplay();
 }
 
-void StatsScreen::processCommand(RemoteCommand command) { backCallback(); }
+void StatsScreen::processCommand(RemoteCommand command) { back(); }

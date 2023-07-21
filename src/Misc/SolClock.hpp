@@ -4,6 +4,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/event_groups.h>
 #include <string>
+#include <unordered_map>
 
 #include "Storage/PreferencesStore.hpp"
 
@@ -22,9 +23,11 @@ public:
 
     void getClockTime(uint8_t &hours, uint8_t &minutes);
 
-    static auto timeZoneString(int timeZone) -> std::string;
-    auto timeZoneString() -> std::string;
-    void setTimezone(int timeZone);
+    auto ianaToPosix(const std::string &ianaTimezone) -> std::string;
+
+    auto ianaTimezoneString() -> std::string;
+    auto posixTimezoneString() -> std::string;
+    void setTimezone(const std::string &ianaTimezone);
 
     void setClockTimeFromInternet();
 
