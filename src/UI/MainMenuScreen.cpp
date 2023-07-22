@@ -18,8 +18,7 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
 
     // Layout the top bar
     auto topBarRect = context.setSublayoutFrame(
-        {{inset, inset}, {size.width - 2 * inset, 20 - 2 * inset}},
-        LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignCenterHorizontal,
+        {{inset, inset}, {size.width, 20 - 2 * inset}}, LayoutOptionsNone,
         [this](LayoutContext &context, Size size) -> Size {
             int x = 0;
             int y = 0;
@@ -28,7 +27,6 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
             Size boxSize = {boxWidth, size.height};
 
             int place = 0;
-
             for (auto &view : topBarViews_) {
                 context.setViewFrame(*view, {{x, y}, boxSize},
                                      LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
@@ -39,7 +37,7 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
                 place++;
             };
 
-            return {x, size.height};
+            return size;
         });
 
     // Then layout the clock/battery view on the bottom
