@@ -1,15 +1,22 @@
 #pragma once
 
 #include <cinttypes>
+
+#include <memory>
 #include <string>
 
 enum class PlaceType : uint8_t { TXT, EPUB, NONE };
 
 class Place {
+private:
+    static constexpr bool ON_ERROR_EXIT = true;
+
 public:
     [[nodiscard]] virtual auto isA(PlaceType placeType) const -> bool = 0;
     [[nodiscard]] virtual auto getPlaceType() const -> PlaceType = 0;
     [[nodiscard]] virtual auto str() const -> std::string = 0;
+
+    static auto factory(const std::string placeStr) -> std::shared_ptr<Place>;
 };
 
 class NonePlace : public Place {
@@ -19,7 +26,7 @@ public:
     }
     [[nodiscard]] auto getPlaceType() const -> PlaceType override { return PlaceType::NONE; };
     [[nodiscard]] auto str() const -> std::string override {
-        return std::string("[INVALID PLACE]");
+        return std::string("[NONE;INVALID PLACE]");
     }
 };
 
@@ -35,7 +42,7 @@ public:
 
     [[nodiscard]] auto str() const -> std::string override {
         std::string s;
-        s = "[offset:";
+        s = "[TXT;offset:";
         s += std::to_string(offset_);
         s.append("]");
         return s;
@@ -59,9 +66,9 @@ public:
 
     [[nodiscard]] auto str() const -> std::string override {
         std::string s;
-        s = "[offset:";
+        s = "[EPUB:offset:";
         s += std::to_string(offset_);
-        s.append(", filename:");
+        s.append(",filename:");
         s += filename_;
         s.append("]");
         return s;
