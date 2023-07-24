@@ -333,16 +333,17 @@ auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Reada
 }
 
 auto LocalStore::processToCFromServer(const std::shared_ptr<Readable> &readable) -> bool {
-    // If the ToC in the readable differs from what's on disk, update it
+    // Ensure there's a ToC to begin with
     if (readable->toc.size() == 0) {
-        return true;
+        // If there's no ToC from the server, then we can't update it
+        return false;
     }
 
-    // Check if the ToC isn't even saved on disk
+    // Check if the ToC is not yet saved on disk
     auto tocPath = readable->tocFilePath();
     SFile tocFile = fileSystem.open(tocPath, FILE_READ, true);
     if (!tocFile) {
-        log_w("Failed to open TOC file for reading");
+        log_w("Failed to open TOC file for reading: %s", tocPath.c_str());
         return true;
     }
 
@@ -378,20 +379,31 @@ auto LocalStore::processToCFromServer(const std::shared_ptr<Readable> &readable)
                   tocPath.c_str());
             return true;
         }
+
         // Check if summary exists and is different
-        else if (localJson.containsKey("summary") && localJson["summary"] != nullptr &&
-                 localJson["summary"].as<std::string>() != remoteJson.summary) {
-            log_d("ToC chapter summary (%s) mismatch for %s, updating", remoteJson.title.c_str(),
-                  tocPath.c_str());
-            return true;
+        if (remoteJson.summary.size()) {
+            if (!localJson.containsKey("summary") || localJson["summary"] == nullptr ||
+                localJson["summary"].as<std::string>() != remoteJson.summary) {
+                log_d("ToC chapter summary (%s) mismatch for %s, updating",
+                      remoteJson.title.c_str(), tocPath.c_str());
+                return true;
+            }
         }
+
         // Check if partial_chapter_summary exists in remote json and if
         // partial_chapter_summary.placemark is different
-        else if (localJson.containsKey("partial_chapter_summary") &&
-                 localJson["partial_chapter_summary"] != nullptr) {
-            auto partialChapterSummaryJson = localJson["partial_chapter_summary"].as<JsonObject>();
-            if (partialChapterSummaryJson["placemark"].as<uint32_t>() !=
-                remoteJson.partialChapterSummary->placemark) {
+        if (remoteJson.partialChapterSummary != nullptr) {
+            if (localJson.containsKey("partial_chapter_summary") &&
+                localJson["partial_chapter_summary"] != nullptr) {
+                auto partialChapterSummaryJson =
+                    localJson["partial_chapter_summary"].as<JsonObject>();
+                if (partialChapterSummaryJson["placemark"].as<uint32_t>() !=
+                    remoteJson.partialChapterSummary->placemark) {
+                    log_d("ToC chapter partial summary (%s) mismatch for %s, updating",
+                          remoteJson.title.c_str(), tocPath.c_str());
+                    return true;
+                }
+            } else {
                 log_d("ToC chapter partial summary (%s) mismatch for %s, updating",
                       remoteJson.title.c_str(), tocPath.c_str());
                 return true;
@@ -748,12 +760,15 @@ auto LocalStore::processReadables(const CheckSyncResponse &checkSyncResponse,
         if (processToCFromServer(userReadable.readable)) {
             log_i("TOC for %s updated", userReadable.readable->title.c_str());
 
+            // First remove the ToC file from disk so it can be updated later
             auto tocPath = userReadable.readable->tocFilePath();
             if (tocPath.size()) {
                 log_i("Removing TOC for %s: %s", userReadable.readable->title.c_str(),
                       tocPath.c_str());
                 fileSystem.remove(tocPath.c_str());
             }
+
+            // Then update the ToC in memory for later storage
             for (const auto &storedReadable : readables) {
                 if (storedReadable->uuid == userReadable.readable->uuid) {
                     storedReadable->toc = userReadable.readable->toc;
