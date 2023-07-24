@@ -753,7 +753,7 @@ auto LocalStore::processReadables(const CheckSyncResponse &checkSyncResponse,
                       tocPath.c_str());
                 fileSystem.remove(tocPath.c_str());
             }
-            for (auto storedReadable : readables) {
+            for (const auto &storedReadable : readables) {
                 if (storedReadable->uuid == userReadable.readable->uuid) {
                     storedReadable->toc = userReadable.readable->toc;
                     break;
