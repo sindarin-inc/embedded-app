@@ -372,7 +372,8 @@ auto LocalStore::processToCFromServer(const std::shared_ptr<Readable> &readable)
             localJson["href"].as<std::string>() != remoteJson.href ||
             (localJson.containsKey("in_subsection_href") &&
              localJson["in_subsection_href"].as<std::string>() != remoteJson.inSubsectionHref) ||
-            localJson["txt_offset"].as<uint32_t>() != remoteJson.txtOffset) {
+            localJson["txt_offset"].as<uint32_t>() != remoteJson.txtOffset ||
+            localJson["end_txt_offset"].as<uint32_t>() != remoteJson.endTxtOffset) {
             log_d("ToC chapter (%s) mismatch for %s, updating", remoteJson.title.c_str(),
                   tocPath.c_str());
             return true;

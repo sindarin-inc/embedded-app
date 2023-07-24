@@ -98,7 +98,8 @@ public:
             if (placeInReadable < chapter.txtOffset && !includeUnread) {
                 break;
             }
-            if (chapter.partialChapterSummary != nullptr &&
+            if (chapter.txtOffset < placeInReadable && chapter.endTxtOffset > placeInReadable &&
+                chapter.partialChapterSummary != nullptr &&
                 !chapter.partialChapterSummary->text.empty()) {
                 summary += chapter.title;
                 summary += StringFormat(" (%d%% read)\n\n", chapter.partialChapterSummary->readPct);
