@@ -332,100 +332,73 @@ auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Reada
     return false;
 }
 
-auto LocalStore::processToCFromServer(const std::shared_ptr<Readable> &readable,
-                                      const ReadablesVector &readables) -> bool {
-    bool changed = false;
-
+auto LocalStore::processToCFromServer(const std::shared_ptr<Readable> &readable) -> bool {
     // If the ToC in the readable differs from what's on disk, update it
     if (readable->toc.size() == 0) {
-        changed = true;
+        return true;
     }
 
     // Check if the ToC isn't even saved on disk
-    if (!changed) {
-        auto tocPath = readable->tocFilePath();
-        SFile tocFile = fileSystem.open(tocPath, FILE_READ, true);
-        if (!tocFile) {
-            log_w("Failed to open TOC file for reading");
-            changed = true;
-        }
+    auto tocPath = readable->tocFilePath();
+    SFile tocFile = fileSystem.open(tocPath, FILE_READ, true);
+    if (!tocFile) {
+        log_w("Failed to open TOC file for reading");
+        return true;
     }
 
     // Check if the saved ToC is valid JSON
-    if (!changed) {
-        auto tocDoc = std::make_unique<SpiRamJsonDocument>(
-            std::max(static_cast<size_t>(50000), 2 * tocFile.size()));
-        auto error = deserializeJson(*tocDoc, tmpfile);
-        if (error) {
-            log_e("Failed to parse TOC JSON: %s", error.c_str());
-            changed = true;
-        }
+    auto tocDoc = std::make_unique<SpiRamJsonDocument>(
+        std::max(static_cast<size_t>(50000), 2 * tocFile.size()));
+    auto error = deserializeJson(*tocDoc, tocFile);
+    if (error) {
+        log_e("Failed to parse TOC JSON: %s", error.c_str());
+        return true;
     }
 
     // Check if the # of chapters is different
-    if (!changed) {
-        auto tocJson = (*tocDoc)["toc"].as<JsonArray>();
-        if (readable->toc.size() != tocJson.size()) {
-            log_d("ToC size mismatch for %s (%zu on disk vs %zu remotely), updating",
-                  tocPath.c_str(), tocJson.size(), readable->toc.size());
-            changed = true;
-        }
+    auto tocJson = (*tocDoc)["toc"].as<JsonArray>();
+    if (readable->toc.size() != tocJson.size()) {
+        log_d("ToC size mismatch for %s (%zu on disk vs %zu remotely), updating", tocPath.c_str(),
+              tocJson.size(), readable->toc.size());
+        return true;
     }
 
     // Check if any of the chapters are different
-    if (!changed) {
-        for (int i = 0; i < tocJson.size(); i++) {
-            auto localJson = tocJson[i].as<JsonObject>();
-            auto remoteJson = readable->toc[i];
+    for (int i = 0; i < tocJson.size(); i++) {
+        auto localJson = tocJson[i].as<JsonObject>();
+        auto remoteJson = readable->toc[i];
 
-            if (localJson["title"].as<std::string>() != remoteJson.title ||
-                localJson["href"].as<std::string>() != remoteJson.href ||
-                (localJson.containsKey("in_subsection_href") &&
-                 localJson["in_subsection_href"].as<std::string>() !=
-                     remoteJson.inSubsectionHref) ||
-                localJson["txt_offset"].as<uint32_t>() != remoteJson.txtOffset) {
-                log_d("ToC chapter (%s) mismatch for %s, updating", remoteJson.title.c_str(),
-                      tocPath.c_str());
-                changed = true;
-                break;
-            }
-            // Check if summary exists and is different
-            else if (localJson.containsKey("summary") && localJson["summary"] != nullptr &&
-                     localJson["summary"].as<std::string>() != remoteJson.summary) {
-                log_d("ToC chapter summary (%s) mismatch for %s, updating",
+        if (localJson["title"].as<std::string>() != remoteJson.title ||
+            localJson["href"].as<std::string>() != remoteJson.href ||
+            (localJson.containsKey("in_subsection_href") &&
+             localJson["in_subsection_href"].as<std::string>() != remoteJson.inSubsectionHref) ||
+            localJson["txt_offset"].as<uint32_t>() != remoteJson.txtOffset) {
+            log_d("ToC chapter (%s) mismatch for %s, updating", remoteJson.title.c_str(),
+                  tocPath.c_str());
+            return true;
+        }
+        // Check if summary exists and is different
+        else if (localJson.containsKey("summary") && localJson["summary"] != nullptr &&
+                 localJson["summary"].as<std::string>() != remoteJson.summary) {
+            log_d("ToC chapter summary (%s) mismatch for %s, updating", remoteJson.title.c_str(),
+                  tocPath.c_str());
+            return true;
+        }
+        // Check if partial_chapter_summary exists in remote json and if
+        // partial_chapter_summary.placemark is different
+        else if (localJson.containsKey("partial_chapter_summary") &&
+                 localJson["partial_chapter_summary"] != nullptr) {
+            auto partialChapterSummaryJson = localJson["partial_chapter_summary"].as<JsonObject>();
+            if (partialChapterSummaryJson["placemark"].as<uint32_t>() !=
+                remoteJson.partialChapterSummary->placemark) {
+                log_d("ToC chapter partial summary (%s) mismatch for %s, updating",
                       remoteJson.title.c_str(), tocPath.c_str());
-                changed = true;
-                break;
-            }
-            // Check if partial_chapter_summary exists in remote json and if
-            // partial_chapter_summary.placemark is different
-            else if (localJson.containsKey("partial_chapter_summary") &&
-                     localJson["partial_chapter_summary"] != nullptr) {
-                auto partialChapterSummaryJson =
-                    localJson["partial_chapter_summary"].as<JsonObject>();
-                if (partialChapterSummaryJson["placemark"].as<uint32_t>() !=
-                    remoteJson.partialChapterSummary->placemark) {
-                    log_d("ToC chapter partial summary (%s) mismatch for %s, updating",
-                          remoteJson.title.c_str(), tocPath.c_str());
-                    changed = true;
-                    break;
-                }
+                return true;
             }
         }
     }
 
-    // If the ToC has changed, load it from the server into the readable so that it can be saved
-    // later
-    if (changed) {
-        for (auto storedReadable : readables) {
-            if (storedReadable->uuid == readable->uuid) {
-                storedReadable->toc = readable->toc;
-                break;
-            }
-        }
-    }
-
-    return changed;
+    return false;
 }
 
 void LocalStore::resetReadablesPlacemarkChanged(const ReadablesVector &readables) {
@@ -771,7 +744,7 @@ auto LocalStore::processReadables(const CheckSyncResponse &checkSyncResponse,
                   userReadable.placemark);
         }
 
-        if (processToCFromServer(userReadable.readable, readables)) {
+        if (processToCFromServer(userReadable.readable)) {
             log_i("TOC for %s updated", userReadable.readable->title.c_str());
 
             auto tocPath = userReadable.readable->tocFilePath();
@@ -779,6 +752,12 @@ auto LocalStore::processReadables(const CheckSyncResponse &checkSyncResponse,
                 log_i("Removing TOC for %s: %s", userReadable.readable->title.c_str(),
                       tocPath.c_str());
                 fileSystem.remove(tocPath.c_str());
+            }
+            for (auto storedReadable : readables) {
+                if (storedReadable->uuid == userReadable.readable->uuid) {
+                    storedReadable->toc = userReadable.readable->toc;
+                    break;
+                }
             }
         }
 
