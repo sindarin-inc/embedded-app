@@ -355,7 +355,7 @@ auto LocalStore::processToCFromServer(const std::shared_ptr<Readable> &readable,
     if (!changed) {
         auto tocDoc = std::make_unique<SpiRamJsonDocument>(
             std::max(static_cast<size_t>(50000), 2 * tocFile.size()));
-        auto error = deserializeJson(*tocDoc, tocFile);
+        auto error = deserializeJson(*tocDoc, tmpfile);
         if (error) {
             log_e("Failed to parse TOC JSON: %s", error.c_str());
             changed = true;
