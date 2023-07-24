@@ -335,7 +335,9 @@ auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Reada
 auto LocalStore::processToCFromServer(const std::shared_ptr<Readable> &readable,
                                       const ReadablesVector &readables) -> bool {
     // If the ToC in the readable differs from what's on disk, update it
-    if (readable->toc.size() == 0) return true;
+    if (readable->toc.size() == 0) {
+        return true;
+    }
 
     auto tocPath = readable->tocFilePath();
     SFile tocFile = fileSystem.open(tocPath, FILE_READ, true);
