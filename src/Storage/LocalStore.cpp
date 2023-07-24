@@ -332,6 +332,74 @@ auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Reada
     return false;
 }
 
+auto LocalStore::processToCFromServer(const std::shared_ptr<Readable> &readable,
+                                      const ReadablesVector &readables) -> bool {
+    // If the ToC in the readable differs from what's on disk, update it
+    if (readable->toc.size() == 0) return true;
+
+    auto tocPath = readable->tocFilePath();
+    SFile tocFile = fileSystem.open(tocPath, FILE_READ, true);
+    if (!tocFile) {
+        log_w("Failed to open TOC file for reading");
+        return false;
+    }
+
+    auto tocDoc = std::make_unique<SpiRamJsonDocument>(
+        std::max(static_cast<size_t>(50000), 2 * tocFile.size()));
+    auto error = deserializeJson(*tocDoc, tocFile);
+    if (error) {
+        log_e("Failed to parse TOC JSON: %s", error.c_str());
+        return false;
+    }
+
+    auto tocJson = (*tocDoc)["toc"].as<JsonArray>();
+    if (readable->toc.size() != tocJson.size()) {
+        log_d("ToC size mismatch for %s (%zu on disk vs %zu in local store), updating",
+              tocPath.c_str(), tocJson.size(), readable->toc.size());
+        return true;
+    }
+
+    for (int i = 0; i < tocJson.size(); i++) {
+        auto chapterJson = tocJson[i].as<JsonObject>();
+        auto chapter = readable->toc[i];
+
+        if (chapterJson["title"].as<std::string>() != chapter.title ||
+            chapterJson["href"].as<std::string>() != chapter.href ||
+            chapterJson["in_subsection_href"].as<std::string>() != chapter.inSubsectionHref ||
+            chapterJson["txt_offset"].as<uint32_t>() != chapter.txtOffset) {
+            log_d("Remote chapter: %s %s %s %d", chapter.title.c_str(), chapter.href.c_str(),
+                  chapter.inSubsectionHref.c_str(), chapter.txtOffset);
+            log_d("ToC.json chapter: %s %s %s %d", chapterJson["title"].as<std::string>().c_str(),
+                  chapterJson["href"].as<std::string>().c_str(),
+                  chapterJson["in_subsection_href"].as<std::string>().c_str(),
+                  chapterJson["txt_offset"].as<uint32_t>());
+            log_d("ToC chapter %d mismatch for %s, updating", i, tocPath.c_str());
+            return true;
+        }
+        // Check if summary exists and is different
+        else if ((!chapterJson.containsKey("summary") && chapter.summary.size()) ||
+                 (chapterJson.containsKey("summary") &&
+                  chapterJson["summary"].as<std::string>() != chapter.summary)) {
+            log_d("ToC chapter summary %d mismatch for %s, updating", i, tocPath.c_str());
+            return true;
+        }
+        // Check if partial_chapter_summary exists in remote json and if
+        // partial_chapter_summary.placemark is different
+        else if (chapterJson.containsKey("partial_chapter_summary")) {
+            auto partialChapterSummaryJson =
+                chapterJson["partial_chapter_summary"].as<JsonObject>();
+            if (partialChapterSummaryJson["placemark"].as<uint32_t>() !=
+                chapter.partialChapterSummary->placemark) {
+                log_d("ToC chapter partial summary %d mismatch for %s, updating", i,
+                      tocPath.c_str());
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 void LocalStore::resetReadablesPlacemarkChanged(const ReadablesVector &readables) {
     for (const auto &readable : readables) {
         bool changed = prefs_.readablePlaceChanged.get(readable->shortenedUuid.c_str());
@@ -662,15 +730,28 @@ auto LocalStore::processReadables(const CheckSyncResponse &checkSyncResponse,
 
     auto serverReadables = modelType == ReadablesModelType::Book ? checkSyncResponse.userBooks
                                                                  : checkSyncResponse.userArticles;
+    log_d("Processing %zu %ss from server", serverReadables.size(),
+          ReadableModelTypeToString(modelType).c_str());
 
     for (auto &userReadable : serverReadables) {
-        log_d("User readable %s (%s)", userReadable.readable->title.c_str(),
+        log_d("Processing user readable %s (%s)", userReadable.readable->title.c_str(),
               userReadable.readable->uuid.c_str());
         SHOW_HEAP();
 
         if (processReadablePlacemarksFromServer(userReadable.readable, userReadable.placemark)) {
             log_i("Placemark for %s updated to %" PRIu32, userReadable.readable->title.c_str(),
                   userReadable.placemark);
+        }
+
+        if (processToCFromServer(userReadable.readable, readables)) {
+            log_i("TOC for %s updated", userReadable.readable->title.c_str());
+
+            auto tocPath = userReadable.readable->tocFilePath();
+            if (tocPath.size()) {
+                log_i("Removing TOC for %s: %s", userReadable.readable->title.c_str(),
+                      tocPath.c_str());
+                fileSystem.remove(tocPath.c_str());
+            }
         }
 
         auto found = hasReadable(readables, userReadable.readable, true);

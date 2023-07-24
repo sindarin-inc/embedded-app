@@ -101,7 +101,7 @@ public:
             if (chapter.partialChapterSummary != nullptr &&
                 !chapter.partialChapterSummary->text.empty()) {
                 summary += chapter.title;
-                summary += StringFormat(" (%d)\n\n", chapter.partialChapterSummary->readPct);
+                summary += StringFormat(" (%d%% read)\n\n", chapter.partialChapterSummary->readPct);
                 summary += chapter.partialChapterSummary->text;
                 summary += "\n\n";
             } else {
