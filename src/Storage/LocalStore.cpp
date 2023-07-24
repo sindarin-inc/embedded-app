@@ -553,6 +553,19 @@ void LocalStore::syncFromRemote(
                         });
                     }
                 }
+                // Check if we have any readables to download/delete, and if not, continue paging
+                if (syncState.tasks.size() == 0) {
+                    log_i("No %ss to download or delete, continuing to next page",
+                          ReadableModelTypeToString(modelType).c_str());
+                    if (modelType == ReadablesModelType::Book) {
+                        progressCallback(
+                            ContentSyncState{.state = ContentSyncState::State::SyncingBooks});
+                    } else if (modelType == ReadablesModelType::Article) {
+                        progressCallback(
+                            ContentSyncState{.state = ContentSyncState::State::SyncingArticles});
+                    }
+                    continue;
+                }
                 progressCallback(syncState);
 
                 processReadableDeletion(readablesToDelete, *readables, tasksIndex, syncState,
