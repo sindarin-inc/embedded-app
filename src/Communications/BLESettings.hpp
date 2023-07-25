@@ -30,6 +30,7 @@ protected:
     void writePageTurnerBatteryToCharacteristic(BLECharacteristic *characteristic,
                                                 const std::string &key);
     void disconnectPageTurnerForSeconds(const int seconds);
+    void unpairPageTurner(BLECharacteristic *characteristic, const std::string &key);
     void writeWifiSSIDtoCharacteristic(BLECharacteristic *characteristic, const std::string &key);
     void blinkLedAfterConnect(BLECharacteristic *characteristic, const std::string &key);
 
@@ -58,6 +59,8 @@ protected:
                     this->enclosed->writePageTurnerBatteryToCharacteristic(characteristic, value);
                 } else if (value == "blink-led") {
                     this->enclosed->blinkLedAfterConnect(characteristic, value);
+                } else if (value == "unpair-page-turner") {
+                    this->enclosed->unpairPageTurner(characteristic, value);
                 } else if (value == "pair") {
                     characteristic->setValue(StringFormat(
                         "pair=%s", enclosed->prefs_->bleAdvertisingKey.get().value_or("").c_str()));

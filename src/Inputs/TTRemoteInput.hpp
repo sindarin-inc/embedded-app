@@ -20,6 +20,7 @@ public:
 
     // Scan for a PageTurner. Can be safely called even if one is already connected.
     void scanIfNecessary();
+    void unpairAndDisconnect();
     void disconnectTemporarily(int seconds);
     auto connected() -> bool { return state_ == CONNECTED; }
 
