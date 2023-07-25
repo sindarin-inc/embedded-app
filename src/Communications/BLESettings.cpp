@@ -90,7 +90,7 @@ void BLESettings::unpairPageTurner(BLECharacteristic *characteristic, const std:
 
     ttRemoteInput_->unpairAndDisconnect();
 
-    std::string value = StringFormat("%s=1", key);
+    std::string value = StringFormat("%s=1", key.c_str());
     characteristic->setValue(value);
     characteristic->notify();
 }
