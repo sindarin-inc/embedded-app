@@ -28,6 +28,15 @@ void Menu::populateMenuItems(std::vector<MenuItem> &menuItems) {
 
 auto Menu::getNumItems() -> int { return numMenuItems_; }
 
+auto Menu::getMenuItemByTitle(const std::string &title) -> int {
+    for (int i = 0; i < numMenuItems_; i++) {
+        if (menuItems_[i].title == title) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 void Menu::setCurrSelection(int newSelection) {
     currSelection_ = newSelection;
     if (myStyle_.numberOfItemsPerPage == 0) {
