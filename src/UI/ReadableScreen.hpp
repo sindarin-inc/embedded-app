@@ -1,6 +1,6 @@
 #include <utility>
 
-#include "Misc/Battery.hpp"
+#include "Misc/Telemetry.hpp"
 #include "Models/Readable.hpp"
 #include "Models/ReadableBookmark.hpp"
 #include "Renderers/RendererStream.hpp"
@@ -27,11 +27,12 @@ class ReadableScreen : public ContainerScreen, public EinkView {
 public:
     ReadableScreen(std::shared_ptr<RendererStream> stream, DisplaySystem &display,
                    const std::shared_ptr<Readable> &readable, PreferencesStore &prefs,
-                   Battery &battery, LocalStore &localStore, FileSystem &fileSystem,
+                   Telemetry &telemetry, LocalStore &localStore, FileSystem &fileSystem,
                    LightingController &lightingController)
         : EinkView(display), renderer_(display), firstTimeRenderer_(display), readable_(readable),
-          prefs_(prefs), localStore_(localStore), fileSystem_(fileSystem), display_(display),
-          popupMenuScreen_(display, prefs, readable, lightingController, renderer_, localStore_),
+          prefs_(prefs), telemetry_(telemetry), localStore_(localStore), fileSystem_(fileSystem),
+          display_(display), popupMenuScreen_(display, prefs, readable, lightingController,
+                                              renderer_, localStore_, telemetry_),
           leftArrowView_(display, ArrowLeft), rightArrowView_(display, ArrowRight),
           upArrowView_(display, ArrowUp), downArrowView_(display, ArrowDown) {
 
@@ -101,6 +102,7 @@ protected:
     Renderer firstTimeRenderer_;
     std::shared_ptr<Readable> readable_;
     PreferencesStore &prefs_;
+    Telemetry &telemetry_;
     LocalStore &localStore_;
     FileSystem &fileSystem_;
 

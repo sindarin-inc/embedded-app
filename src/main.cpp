@@ -78,9 +78,10 @@ PosixFileSystem fileSystem;
 LittleFSFileSystem fileSystem;
 #endif
 
-PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay);
-LocalStore localStore(fileSystem, prefs, powerManager.battery);
-RootUI rootUi(prefs, powerManager);
+Telemetry telemetry(fileSystem, prefs);
+PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay, telemetry);
+LocalStore localStore(fileSystem, prefs, powerManager.battery, telemetry);
+RootUI rootUi(prefs, powerManager, telemetry);
 SolClock solClock(prefs);
 
 bool bootCompleted = false;
@@ -256,7 +257,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             }
             },
             "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
-        BackgroundSyncAndSleep(powerManager, prefs, localStore);
+        BackgroundSyncAndSleep(powerManager, prefs, localStore, telemetry);
         // Should never get here, the system should be asleep
     }
 
@@ -337,7 +338,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             [](void *) {
             for (;;) {
                 PreferencesStore::syncReason = SyncReason::Periodic;
-                BackgroundSync(powerManager, prefs, localStore);
+                BackgroundSync(powerManager, prefs, localStore, telemetry);
                 vTaskDelay(60000 / portTICK_PERIOD_MS);
             }
             },

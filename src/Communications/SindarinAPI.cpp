@@ -153,7 +153,8 @@ auto SindarinAPI::checkFirmware(FirmwareResponse *resp) -> int {
 }
 
 auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
-                                   FileSystem &fileSystem, const std::string &path,
+                                   FileSystem &fileSystem, Telemetry &telemetry,
+                                   const std::string &path,
                                    const std::function<void(int percentage)> &progressCallback)
     -> bool {
     bool success = false;
@@ -175,64 +176,46 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
 
     bool gzip = HasSuffix(path, ".gz");
     success = DownloadFile(
-        remoteUrl.c_str(), fileSystem, path.c_str(), fileSize,
+        remoteUrl.c_str(), fileSystem, telemetry, path.c_str(), fileSize,
         [progressCallback](float percentage) { progressCallback(percentage); }, gzip);
 
     return success;
 }
 
-auto SindarinAPI::uploadAndResetVoltageLog(FileSystem &fileSystem) -> int {
-    auto localPath = Battery::voltageLogPath();
-    if (!fileSystem.exists(localPath)) {
-        log_w("Voltage log file %s does not exist", localPath);
-        return false;
-    }
-    auto file = fileSystem.open(localPath, FILE_READ);
+auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &localPath,
+                                      FileSystem &fileSystem) -> int {
+    // Construct the headers and footers for multipart file upload
+    static std::string boundary = "SIND12345";
+    std::string header = "--" + boundary + "\r\n" +
+                         R"(Content-Disposition: form-data; name="file"; filename=")" + localPath +
+                         "\"\r\n" + "Content-Type: text/plain\r\n\r\n";
+    std::string footer = "\r\n--" + boundary + "--\r\n";
 
-    auto requestJson = std::make_unique<SpiRamJsonDocument>(file.size() * 2);
-    (*requestJson)["voltage_log"] = file.readString();
-    file.close();
-
-    if ((*requestJson).overflowed()) {
-        log_e("Failed to create JSON for voltage log upload");
-        return -1;
-    }
-
-    // `memoryUsage()` isn't quite the right amount and we can't know for sure how big the
-    // serialized data will be until we actually serialize it. We probably only need 20% more or so
-    // but we have plenty of SPIRAM so let's just double it.
-    size_t serializedMaxSize = (*requestJson).memoryUsage() * 2;
-    auto serialized = SpiRamArrayPtr<char>(serializedMaxSize);
-
-    // Write to SPIRAM
-    // TODO: I can't find a good way to verify that the whole thing was written. Maybe would be
-    // better for this to be a stream so we could check if we attempted to write but ran out of
-    // space.
-    size_t serializedLength = serializeJson(*requestJson, serialized.get(), serializedMaxSize);
-    if (serializedLength == serializedMaxSize) {
-        log_e("serializedLength is the same as the max size, probably ran out of space");
-    }
-
-    HttpClient client(SINDARIN_SERVER_URL "/user/voltagelogs/", "application/json",
-                      HTTP_METHOD_POST);
+    // Create client with multipart headers and write the header
+    int totalSize = header.size() + telemetryFile.size() + footer.size();
+    auto contentType = "multipart/form-data; boundary=" + boundary;
+    HttpClient client(SINDARIN_SERVER_URL "/telemetry/", contentType.c_str(), HTTP_METHOD_POST);
     setAuth(client);
+    client.setHeader("X-Serial-Number", GetSerialNumber().c_str());
+    client.open(totalSize);
+    client.write(header.c_str(), header.size());
 
-    auto err = client.open(serializedLength);
-    if (err != ESP_OK) {
-        log_e("HttpClient failed to open: %d", err);
-        return -1;
+    // Write the file data in chunks
+    size_t bufferSize = 4096;
+    auto buffer = SpiRamArrayPtr<char>(bufferSize);
+    int bytesWritten = 0;
+    int writeSize = telemetryFile.size();
+    while (bytesWritten < writeSize) {
+        auto bytesRead = telemetryFile.readBytes(buffer.get(), bufferSize);
+        bytesWritten += client.write(buffer.get(), bytesRead);
     }
 
-    int writeLength = client.write(serialized.get(), serializedLength);
-    if (writeLength != serializedLength) {
-        log_w("HttpClient failed to write fully (writeLength=%d, serializedLength=%zu)",
-              writeLength, serializedLength);
-    }
+    // Write the multipart footer
+    client.write(footer.c_str(), footer.size());
 
+    // Send request and fetch response
     client.fetchHeaders();
     int httpCode = client.getStatusCode();
-
-    log_d("Voltage log upload http code: %d", httpCode);
 
     return httpCode;
 }

@@ -178,6 +178,8 @@ void ReadableTableOfContentsScreen::setPlacemark() {
     prefs_.readablePlaceChanged.set(readable_->shortenedUuid.c_str(), true);
     prefs_.lastReadTime.set(readable_->shortenedUuid.c_str(),
                             SolClock::getInstance().getEpochTime());
+    telemetry_.logMetric(TelemetryField::METRIC_SET_PLACEMARK, readable_->shortenedUuid.c_str(),
+                         {{"po", readable_->place}});
 }
 
 void ReadableTableOfContentsScreen::setNearestChapterSelection(unsigned long placeInFile) {

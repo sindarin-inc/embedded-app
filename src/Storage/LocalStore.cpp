@@ -381,6 +381,20 @@ void LocalStore::syncFromRemote(
         return;
     }
 
+    // If we don't have a clock that's accurate, sync it
+    if (SolClock::getInstance().getEpochTime() < 1000000000) {
+        log_i("Clock not set, syncing from internet");
+        // Sync the clock
+        auto success = SolClock::getInstance().setClockTimeFromInternet();
+        if (success) {
+            this->telemetry_.logMetric(TelemetryField::METRIC_CLOCK_SET, "success",
+                                       {{"run-time", GetRunTimeMs()}});
+        } else {
+            this->telemetry_.logMetric(TelemetryField::METRIC_CLOCK_SET, "failure",
+                                       {{"run-time", GetRunTimeMs()}});
+        }
+    }
+
     // Uncomment below line to set your access token for local development
     // prefs._cloudToken.set("");
 
@@ -400,10 +414,22 @@ void LocalStore::syncFromRemote(
     // log_w("Access token: %s", token.value().c_str());
 
     SindarinAPI::getInstance()->setAccessToken(token.value());
-    progressCallback(ContentSyncState{.state = ContentSyncState::State::CheckingSync});
+
+    auto queue = DispatchGetCore0BackgroundQueue();
+    queue->dispatch([this, progressCallback] {
+        progressCallback(ContentSyncState{.state = ContentSyncState::State::UploadTelemetry});
+        auto httpCode =
+            this->telemetry_.uploadAndResetTelemetry(this->fileSystem, this->telemetry_);
+        if (httpCode != 201) {
+            this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-telemetry-failed",
+                                       {{"http-code", httpCode}});
+        } else {
+            this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,
+                                       "sync-telemetry-success");
+        }
+    });
 
     // Run this work on a separate thread, since it's long running
-    auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this, progressCallback] {
         auto syncReason = PreferencesStore::syncReason;
         CheckSyncRequest checkSyncRequest;
@@ -413,6 +439,8 @@ void LocalStore::syncFromRemote(
         bool articlesAlreadySynced = false;
         bool booksNowSynced = false;
         bool articlesNowSynced = false;
+
+        progressCallback(ContentSyncState{.state = ContentSyncState::State::CheckingSync});
 
         std::vector<ReadablesVector *> readablesList = {&books_, &articles_};
         for (auto &readables : readablesList) {
@@ -453,9 +481,20 @@ void LocalStore::syncFromRemote(
                 } else {
                     log_d("Fetching next page (#%d): %s", nextPageCounter + 1, nextPageUrl.c_str());
                 }
+                this->telemetry_.logMetric(
+                    TelemetryField::METRIC_SYNC_STATUS,
+                    StringFormat("sync-%ss-page", ReadableModelTypeToString(modelType).c_str())
+                        .c_str(),
+                    {{"page", nextPageCounter}});
+
                 nextPageCounter += 1;
                 if (nextPageCounter > MAX_NUMBER_OF_PAGES_TO_BACKFILL) {
                     log_w("Too many pages to backfill, aborting");
+                    this->telemetry_.logMetric(
+                        TelemetryField::METRIC_SYNC_STATUS,
+                        StringFormat("sync-%ss-max-backfill",
+                                     ReadableModelTypeToString(modelType).c_str())
+                            .c_str());
                     break;
                 }
 
@@ -471,16 +510,32 @@ void LocalStore::syncFromRemote(
                 }
                 log_d("Server has %d %ss, next page: %s", checkSyncResponse.totalCount,
                       ReadableModelTypeToString(modelType).c_str(), nextPageUrl.c_str());
+                this->telemetry_.logMetric(
+                    TelemetryField::METRIC_SYNC_STATUS,
+                    StringFormat("sync-status-%ss", ReadableModelTypeToString(modelType).c_str())
+                        .c_str(),
+                    {{"http-code", httpCode}});
+                this->telemetry_.logMetric(
+                    TelemetryField::METRIC_SYNC_STATUS,
+                    StringFormat("sync-%ss-count", ReadableModelTypeToString(modelType).c_str())
+                        .c_str(),
+                    {{"total-count", checkSyncResponse.totalCount}});
                 if (httpCode != 200) {
                     log_e("Failed to check sync (HTTP %d)", httpCode);
                     progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
                                                       .message = "Failed to check sync"});
+                    this->telemetry_.logMetric(
+                        TelemetryField::METRIC_SYNC_STATUS,
+                        StringFormat("failed-sync-%ss",
+                                     ReadableModelTypeToString(modelType).c_str())
+                            .c_str(),
+                        {{"http-code", httpCode}});
                     return;
                 }
 
                 // Look through all the books and articles and download any that we don't have
-                // already We also process readables before checking if we're synced before we need
-                // to reset the local changed flags
+                // already We also process readables before checking if we're synced before we
+                // need to reset the local changed flags
                 auto userReadables = modelType == ReadablesModelType::Book
                                          ? checkSyncResponse.userBooks
                                          : checkSyncResponse.userArticles;
@@ -518,6 +573,11 @@ void LocalStore::syncFromRemote(
                         articlesAlreadySynced = true;
                     }
 
+                    this->telemetry_.logMetric(
+                        TelemetryField::METRIC_SYNC_STATUS,
+                        StringFormat("already-synced-%ss",
+                                     ReadableModelTypeToString(modelType).c_str())
+                            .c_str());
                     break;
                 }
 
@@ -578,6 +638,11 @@ void LocalStore::syncFromRemote(
                     log_d("Failed to process %ss, have %zu %ss",
                           ReadableModelTypeToString(modelType).c_str(), readables->size(),
                           ReadableModelTypeToString(modelType).c_str());
+                    this->telemetry_.logMetric(
+                        TelemetryField::METRIC_SYNC_STATUS,
+                        StringFormat("failed-download-%ss",
+                                     ReadableModelTypeToString(modelType).c_str())
+                            .c_str());
                 }
                 progressCallback(syncState);
             }
@@ -585,6 +650,10 @@ void LocalStore::syncFromRemote(
             if (!this->saveReadables(*readables)) {
                 log_e("Failed to save %s", ReadableModelTypeToString(modelType).c_str());
                 failedDownload = true;
+                this->telemetry_.logMetric(
+                    TelemetryField::METRIC_SYNC_STATUS,
+                    StringFormat("failed-save-%ss", ReadableModelTypeToString(modelType).c_str())
+                        .c_str());
             }
 
             // Store since date values for next sync
@@ -628,10 +697,19 @@ void LocalStore::syncFromRemote(
                 } else if (modelType == ReadablesModelType::Article) {
                     articlesNowSynced = true;
                 }
+                this->telemetry_.logMetric(
+                    TelemetryField::METRIC_SYNC_STATUS,
+                    StringFormat("success-download-%ss",
+                                 ReadableModelTypeToString(modelType).c_str()));
             } else {
                 log_w("After running sync, local %ss are still out of sync",
                       ReadableModelTypeToString(modelType).c_str());
                 checkSyncFailures += 1;
+                this->telemetry_.logMetric(
+                    TelemetryField::METRIC_SYNC_STATUS,
+                    StringFormat("failed-finish-sync-%ss",
+                                 ReadableModelTypeToString(modelType).c_str())
+                        .c_str());
             }
         }
 
@@ -744,7 +822,7 @@ auto LocalStore::processReadableDownload(
 
         for (int t = 0; t < NUMBER_OF_READABLE_DOWNLOAD_TRIES; t++) {
             auto success = SindarinAPI::getInstance()->downloadReadable(
-                readable, this->fileSystem, path,
+                readable, this->fileSystem, this->telemetry_, path,
                 [progressCallback, &syncState, tasksIndex, currPercentage, pctPerReadable,
                  modelType](int percentage) {
                 if (modelType == ReadablesModelType::Book) {
@@ -760,6 +838,12 @@ auto LocalStore::processReadableDownload(
                 log_d("File successfully downloaded.");
                 if (!saveReadables(readables)) {
                     log_e("Failed to save %s", ReadableModelTypeToString(modelType).c_str());
+
+                    this->telemetry_.logMetric(
+                        TelemetryField::METRIC_SYNC_STATUS,
+                        StringFormat("failed-save-%s",
+                                     ReadableModelTypeToString(modelType).c_str()),
+                        {{"uuid", readable->uuid}, {"title", readable->title.c_str()}});
                 }
 
                 break;
@@ -768,6 +852,12 @@ auto LocalStore::processReadableDownload(
                 if (t == NUMBER_OF_READABLE_DOWNLOAD_TRIES - 1) {
                     log_e("Failed to download file.");
                     failedDownload = true;
+                    this->telemetry_.logMetric(
+                        TelemetryField::METRIC_SYNC_STATUS,
+                        StringFormat("failed-download-%s",
+                                     ReadableModelTypeToString(modelType).c_str())
+                            .c_str(),
+                        {{"uuid", readable->uuid}, {"title", readable->title.c_str()}});
                 }
             }
         }
@@ -1200,9 +1290,9 @@ void LocalStore::migrateIfNeeded() {
               migrationVersion + 1);
         switch (migrationVersion) {
         case 0: {
-            // For a long while we weren't actively cleaning up these old readable-specific keys in
-            // NVS. This migration goes through all readable-keys and purges any keys that don't
-            // correspond to a readable on the glasses.
+            // For a long while we weren't actively cleaning up these old readable-specific keys
+            // in NVS. This migration goes through all readable-keys and purges any keys that
+            // don't correspond to a readable on the glasses.
             garbageCollectPreferences();
             break;
         }

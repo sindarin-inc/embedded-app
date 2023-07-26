@@ -4,6 +4,7 @@
 #define protected public
 #define private public
 #include "Misc/BMPImage.hpp"
+#include "Misc/Telemetry.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "Storage/PosixFileSystem.hpp"
 #include "UI/BitmapScreen.hpp"
@@ -243,9 +244,10 @@ TEST_CASE("Test some views independently") {
             auto readable = std::make_shared<Readable>();
             auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables.json");
             readable->fromJson((*readablesJsonDoc)["readables"][1]);
+            Telemetry telemetry = Telemetry(fileSystem, prefs);
 
             Renderer renderer(*display);
-            ReadableTableOfContentsScreen screen(prefs, readable, renderer, *display);
+            ReadableTableOfContentsScreen screen(prefs, readable, renderer, *display, telemetry);
             screen.loadMenuItems();
 
             // This view renders twice, once with a full refresh and once with a AU4 so we need to

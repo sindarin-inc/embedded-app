@@ -5,6 +5,7 @@
 #include "Misc/Battery.hpp"
 #include "Misc/InactivityTimer.hpp"
 #include "Misc/SolClock.hpp"
+#include "Misc/Telemetry.hpp"
 #include "Sensors/LightingController.hpp"
 #include "Sensors/Mmc5603.hpp"
 #include "Storage/PreferencesStore.hpp"
@@ -57,9 +58,11 @@ public:
 
     // Power manager initialization need to be as simple as possible
     PowerManager(FileSystem &fileSystem, PreferencesStore &prefs,
-                 LightingController &lightingController, DisplaySystem &display)
-        : battery(fileSystem, prefs), prefs_(prefs), lightingController_(lightingController),
-          display_(display), magSensor_(0) {}
+                 LightingController &lightingController, DisplaySystem &display,
+                 Telemetry &telemetry)
+        : battery(fileSystem, prefs, telemetry), prefs_(prefs),
+          lightingController_(lightingController), display_(display), telemetry_(telemetry),
+          magSensor_(0) {}
 
     PowerManager(const PowerManager &) = delete;
 
@@ -130,6 +133,7 @@ protected:
     LightingController &lightingController_;
     DisplaySystem &display_;
     InactivityTimer inactivityTimer_;
+    Telemetry &telemetry_;
     Mmc5603 magSensor_;
     bool templeOpen_ = false;
 #if !DISABLE_POWER_MANAGEMENT
