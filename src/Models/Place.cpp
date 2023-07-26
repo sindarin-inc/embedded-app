@@ -1,5 +1,6 @@
 #include "Place.hpp"
 
+#include <csignal>
 #include <cstring>
 #include <iostream>
 #include <regex>
@@ -7,7 +8,7 @@
 #include "sindarin-debug.h"
 
 auto Place::factory(const std::string placeStr) -> std::shared_ptr<Place> {
-    std::regex regExStr("^\\[(TXT|EPUB);offset:([0-9]+)(,filename:(.*))?\\]$");
+    std::regex regExStr("^" PLACE_REGEX "$");
     std::smatch sm;
     if (regex_match(placeStr, sm, regExStr) && (sm.size() == 5)) {
         std::cout << sm[1] << std::endl;
@@ -21,8 +22,9 @@ auto Place::factory(const std::string placeStr) -> std::shared_ptr<Place> {
             return std::make_shared<EPubPlace>(offset, filename);
         }
     }
-    log_e("Unable to parse place string properly: %s", placeStr.c_str());
+    log_e("Unable to parse place string properly: \"%s\"", placeStr.c_str());
     if constexpr (ON_ERROR_EXIT) {
+        std::raise(SIGINT);
         exit(1);
     }
     return std::make_shared<NonePlace>();

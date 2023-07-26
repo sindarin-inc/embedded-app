@@ -97,7 +97,7 @@ void ReadableScreen::updateBookmarkStatus() {
         // A decent heuristic for now. If the midpoint of the bookmark is within
         // the current page range, then turn the bookmark on for this page.
         uint32_t averagePlace =
-            (bookmark.lastPlace - bookmark.firstPlace) / 2 + bookmark.firstPlace;
+            (bookmark.lastPlace->getOffset() - bookmark.firstPlace->getOffset()) / 2 + bookmark.firstPlace->getOffset();
         if ((averagePlace >= readable_->place->getOffset()) && (averagePlace <= newPlace_->getOffset())) {
             if (bookmark.status == BOOKMARK_ON) {
                 inBookmark_ = true;
@@ -139,8 +139,8 @@ void ReadableScreen::turnPage() {
         if (prefs_.emcMode.get().value_or(false)) {
             log_d("Looping back to the beginning of Readable for EMC testing mode");
             // Loop back to the beginning
-            readable_->placePrev = 0;
-            readable_->place = 0;
+            readable_->placePrev->setOffset(0);
+            readable_->place->setOffset(0);
             return;
         }
         showPopupMenu();
@@ -217,7 +217,7 @@ void ReadableScreen::render(DisplaySystem &display) {
 
         prefs_.firstRead.set(true);
         ignoreNextPress_ = true;
-        firstTimeRenderer_.renderPage(0);
+        firstTimeRenderer_.renderFirstPage();
 
         if (prefs_.fastTransitions.get().value_or(false)) {
             display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
@@ -240,7 +240,7 @@ void ReadableScreen::render(DisplaySystem &display) {
 
         prefs_.firstAutopilotRead.set(true);
         ignoreNextPress_ = true;
-        firstTimeRenderer_.renderPage(0);
+        firstTimeRenderer_.renderFirstPage();
         if (prefs_.fastTransitions.get().value_or(false)) {
             display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
         } else {

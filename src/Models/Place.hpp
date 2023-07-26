@@ -6,6 +6,8 @@
 
 enum class PlaceType : uint8_t { TXT, EPUB, NONE };
 
+#define PLACE_REGEX "\\[(TXT|EPUB);offset:([0-9]+)(,filename:([^\\]]*))?\\]"
+
 class Place {
 private:
     static constexpr bool ON_ERROR_EXIT = true;

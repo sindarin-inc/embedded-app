@@ -90,13 +90,14 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
 
         // Subtract 5% to the file
         if (readable_->place->getOffset() >= (lengthOfFile / seekGranularity_)) {
-            readable_->place->setOffset(readable_->place->getOffset() - lengthOfFile / seekGranularity_);
+            readable_->place->setOffset(readable_->place->getOffset() -
+                                        lengthOfFile / seekGranularity_);
         } else {
-            readable_->place = 0;
+            readable_->place->setOffset(0);
         }
 
-        log_d("Setting place from %" PRIu32 " to %" PRIu32 "", readable_->placePrev,
-              readable_->place);
+        log_d("Setting place from %s to %s", readable_->placePrev->str().c_str(),
+              readable_->place->str().c_str());
 
         renderer_.setCurrentPlace(readable_->place);
         prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place->str());
@@ -113,10 +114,11 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
         size_t lengthOfFile = renderer_.size();
 
         // Add 5% to the file
-        readable_->place->setOffset(readable_->place->getOffset() + (lengthOfFile / seekGranularity_));
+        readable_->place->setOffset(readable_->place->getOffset() +
+                                    (lengthOfFile / seekGranularity_));
 
-        log_d("Setting place from %" PRIu32 " to %" PRIu32 "", readable_->placePrev,
-              readable_->place);
+        log_d("Setting place from %s to %s", readable_->placePrev->str().c_str(),
+              readable_->place->str().c_str());
 
         // Don't set place past EOF
         if (readable_->place->getOffset() >= lengthOfFile) {

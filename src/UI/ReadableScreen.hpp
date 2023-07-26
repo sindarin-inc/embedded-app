@@ -39,9 +39,10 @@ public:
         renderer_.setStream(std::move(stream));
 
         pageSpeed_ = prefs_.autoPilotSpeed.get().value_or(0);
-        if (!prefs_.cesMode.get().value_or(false)) {
-            readable_->place =
-                Place::factory(prefs_.readablePlace.get(readable_->shortenedUuid.c_str()));
+        std::string thePlace = prefs_.readablePlace.get(readable_->shortenedUuid.c_str());
+        log_d("readablePlace: \"%s\"", thePlace.c_str());
+        if (!prefs_.cesMode.get().value_or(false) && !thePlace.empty()) {
+            readable_->place = Place::factory(thePlace);
         } else {
             readable_->place = std::make_shared<TxtPlace>();
         }

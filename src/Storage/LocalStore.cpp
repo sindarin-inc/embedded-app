@@ -268,19 +268,19 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
             }
 
             // Store bookmarks in a hash table
-            std::unordered_map<uint32_t, uint32_t> bookmarksToAdd;
-            std::unordered_map<uint32_t, uint32_t> bookmarksToDelete;
+            std::unordered_map<std::string, std::string> bookmarksToAdd;
+            std::unordered_map<std::string, std::string> bookmarksToDelete;
             LocalBookmark bookmark;
             while (ReadOneBookmark(bookmarkFile, bookmark)) {
-                log_d("Bookmark: %" PRIu32 " %" PRIu32 " %d", bookmark.firstPlace,
-                      bookmark.lastPlace, bookmark.status);
+                log_d("Bookmark: %s %s %d", bookmark.firstPlace->str().c_str(),
+                      bookmark.lastPlace->str().c_str(), bookmark.status);
 
                 if (bookmark.status == BOOKMARK_ON && bookmark.firstPlace < bookmark.lastPlace) {
-                    bookmarksToAdd[bookmark.firstPlace] = bookmark.lastPlace;
-                    bookmarksToDelete.erase(bookmark.firstPlace);
+                    bookmarksToAdd[bookmark.firstPlace->str()] = bookmark.lastPlace->str();
+                    bookmarksToDelete.erase(bookmark.firstPlace->str());
                 } else if (bookmark.status == BOOKMARK_OFF) {
-                    bookmarksToAdd.erase(bookmark.firstPlace);
-                    bookmarksToDelete[bookmark.firstPlace] = bookmark.lastPlace;
+                    bookmarksToAdd.erase(bookmark.firstPlace->str());
+                    bookmarksToDelete[bookmark.firstPlace->str()] = bookmark.lastPlace->str();
                 }
             }
             bookmarkFile.close();

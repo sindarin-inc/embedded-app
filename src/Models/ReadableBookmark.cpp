@@ -1,5 +1,9 @@
 #include "ReadableBookmark.hpp"
 
+#include <regex>
+
+#include "Models/Place.hpp"
+
 // Simply reads from the bookmark file for this Readable and returns whether it was
 // a turn on or turn off bookmark.
 auto ReadOneBookmark(SFile &file, LocalBookmark &bookmark) -> bool {
@@ -24,12 +28,19 @@ auto ReadOneBookmark(SFile &file, LocalBookmark &bookmark) -> bool {
         return false;
     }
 
-    std::string firstThing = file.readStringUntil(' ');
-    bookmark.firstPlace = std::stoi(firstThing);
+    std::string bookmarkStr = file.readStringUntil('\n');
+    std::regex regExStr("^(" PLACE_REGEX ")[ ]+(" PLACE_REGEX ")$");
 
-    std::string secondThing = file.readStringUntil('\n');
-    bookmark.lastPlace = std::stoi(secondThing);
-    return true;
+    std::smatch sm;
+    if (regex_match(bookmarkStr, sm, regExStr) && (sm.size() == 12)) {
+        //log_d("First place: %s, last place: %s", sm[5].str().c_str(), sm[11].str().c_str());
+
+        bookmark.firstPlace = Place::factory(sm[5].str());
+        bookmark.lastPlace = Place::factory(sm[11].str());
+        return true;
+    }
+
+    return false;
 }
 
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
@@ -50,7 +61,7 @@ auto convertToJson(const ReadableBookmark &src, JsonVariant dst) -> bool {
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
 void convertFromJson(JsonVariantConst src, ReadableBookmark &dst) {
     dst.uuid = src["uuid"].as<std::string>();
-    dst.startingPosition = src["starting_position"].as<int>();
-    dst.endingPosition = src["ending_position"].as<int>();
+    dst.startingPosition = src["starting_position"].as<std::string>();
+    dst.endingPosition = src["ending_position"].as<std::string>();
     dst.readable = src["readable"].as<std::string>();
 }
