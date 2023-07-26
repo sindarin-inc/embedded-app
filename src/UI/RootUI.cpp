@@ -237,7 +237,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
 
         booksMenu->addMenuItem(MenuItem(StringFormat("%s", title.c_str()),
-                                        StringFormat("%s", r->authors[0].name.c_str()),
+                                        StringFormat("%s", r->authorString().c_str()),
                                         [this, r, createReadableScreen]() {
             auto readableScreen = createReadableScreen(r);
             this->setCurrentScreen(*readableScreen);

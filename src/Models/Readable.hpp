@@ -109,6 +109,14 @@ public:
         return summary;
     }
 
+    [[nodiscard]] auto authorString() const -> SpiramString {
+        if (authors.size() == 0) {
+            log_w("Blank author for %s", title.c_str());
+            return "";
+        }
+        return authors[0].name;
+    }
+
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("uuid") || !j.containsKey("title") || !j.containsKey("date_created") ||
             !j.containsKey("date_modified") || !j.containsKey("authors")) {
