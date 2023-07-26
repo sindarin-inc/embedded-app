@@ -20,8 +20,6 @@ auto TelemetryFieldToString(TelemetryField field) -> const char * {
         return "sp";
     case METRIC_EVENT:
         return "ev";
-    case METRIC_COUNTER:
-        return "co";
     case METRIC_SYNC_STATUS:
         return "sy";
     case METRIC_BOOT:
