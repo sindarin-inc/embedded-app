@@ -136,7 +136,6 @@ auto SolClock::setClockTimeFromInternet() -> bool {
     } else {
         now = time(nullptr);
         localtime_r(&now, &timeinfo);
-        return true;
     }
 
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
@@ -155,6 +154,8 @@ auto SolClock::setClockTimeFromInternet() -> bool {
 #else
     log_i("Not setting clock time from internet in simulator");
 #endif
+
+    return true;
 }
 
 auto SolClock::calculateNextSyncTime(time_t now) -> time_t {
