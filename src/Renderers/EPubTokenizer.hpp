@@ -13,7 +13,7 @@ public:
 
     [[nodiscard]] auto getPlaceAfterEndOfFileReached(StreamPlace streamPlace) const
         -> StreamPlace override {
-        return {0, streamPlace.getFileNumber() + 1};
+        return {0, static_cast<uint16_t>(streamPlace.getFileNumber() + 1)};
     }
 
     // ToDo: To be adjusted related to the upcoming Place definition
