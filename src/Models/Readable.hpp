@@ -8,6 +8,7 @@
 #include "Misc/StringUtil.hpp"
 #include "Models/Author.hpp"
 #include "Models/Json.hpp"
+#include "Models/Place.hpp"
 #include "Models/JsonSerializable.hpp"
 #include "Models/ReadableArchive.hpp"
 #include "Models/ReadableBookmark.hpp"
@@ -49,6 +50,9 @@ public:
     // show the summary menu item
     bool hasSummary = false;
 
+    // Local state
+    std::shared_ptr<Place> place, placePrev;
+
     SpiramString readableType;
     // TODO: source
     // TODO: categories
@@ -56,8 +60,6 @@ public:
     //! Set to true if this is a readable side-loaded onto the device (that doesn't come from the
     //! server)
     bool localOnly = false;
-    // Local state
-    uint32_t place{0}, placePrev{0};
 
     [[nodiscard]] auto file() const -> const ReadableFile & {
         for (const auto &file : files) {
@@ -87,15 +89,15 @@ public:
         return readableType == "pocket_article" || readableType == "email_article";
     }
 
-    auto summary(unsigned long placeInReadable, unsigned long &placeInSummary, bool includeUnread)
+    auto summary(std::shared_ptr<Place> placeInReadable, std::shared_ptr<Place> placeInSummary, bool includeUnread)
         -> SpiramString {
         SpiramString summary;
 
         for (const auto &chapter : toc) {
-            if (placeInReadable >= chapter.txtOffset) {
-                placeInSummary = summary.length();
+            if (placeInReadable->getOffset() >= chapter.txtOffset) {
+                placeInSummary->setOffset(summary.length());
             }
-            if (placeInReadable < chapter.txtOffset && !includeUnread) {
+            if ((placeInReadable->getOffset() < chapter.txtOffset) && !includeUnread) {
                 break;
             }
             summary += chapter.title;

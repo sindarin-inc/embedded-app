@@ -1,14 +1,14 @@
 #include "ReadablePopupMenuScreen.hpp"
 
 void ReadablePopupMenuScreen::setUpPopupMenu() {
-    size_t place = renderer_.getCurrentPlace();
+    std::shared_ptr<Place> place = renderer_.getCurrentPlace();
     size_t lengthOfFile = renderer_.size();
 
-    float placeInTextPercentage = (float)place / (float)lengthOfFile * 100;
+    float placeInTextPercentage = (float)place->getOffset() / (float)lengthOfFile * 100;
 
     std::string placeString = StringFormat("%.1f%%", placeInTextPercentage);
     std::string placeStringForBottom =
-        StringFormat("%d/%d", SOL_PAGE_NUMBER(place), SOL_PAGE_NUMBER(lengthOfFile));
+        StringFormat("%d/%d", SOL_PAGE_NUMBER(place->getOffset()), SOL_PAGE_NUMBER(lengthOfFile));
 
     popupMenuView_.setAuxText(placeStringForBottom);
 

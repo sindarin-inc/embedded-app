@@ -4,6 +4,7 @@
 
 #include "Misc/SpiramAllocator.hpp"
 #include "Models/JsonSerializable.hpp"
+#include "Models/Place.hpp"
 
 class ReadablePlacemark : public JsonSerializable {
 public:
@@ -11,14 +12,14 @@ public:
     ~ReadablePlacemark() override = default;
 
     std::string uuid;
-    uint32_t position;
+    std::string position;
 
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("uuid") || !j.containsKey("position")) {
             return false;
         }
         uuid = j["uuid"].as<std::string>();
-        position = j["position"].as<uint32_t>();
+        position = j["position"].as<std::string>();
         return true;
     }
 };

@@ -53,7 +53,7 @@ public:
     [[nodiscard]] virtual auto getPlaceAfterEndOfFileReached(StreamPlace streamPlace) const
         -> StreamPlace = 0;
 
-    [[nodiscard]] virtual auto toStreamPlace(const Place &place) const -> StreamPlace = 0;
+    [[nodiscard]] virtual auto toStreamPlace(const std::shared_ptr<Place> place) const -> StreamPlace = 0;
 
     [[nodiscard]] virtual auto toPlace(const StreamPlace &streamPlace) const -> std::shared_ptr<Place> = 0;
 

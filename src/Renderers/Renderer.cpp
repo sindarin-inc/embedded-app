@@ -4,7 +4,7 @@
 
 // Show the (already loaded into buffer) current page
 // and load the next page into the next buffer so we have it.
-auto Renderer::renderPage(Place &fromPlace, int16_t numSkipLines) -> std::shared_ptr<Place> {
+auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines) -> std::shared_ptr<Place> {
 
     currentPlace_ = tokenizer_->toStreamPlace(fromPlace);
 

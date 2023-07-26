@@ -5,8 +5,8 @@
 #include "UI/Bitmaps/SeekBook.hpp"
 
 void ReadableSeekScreen::render(DisplaySystem &display) {
-    auto place = prefs_.readablePlace.get(readable_->shortenedUuid.c_str());
-    auto progress = 100 * (float)place / (float)renderer_.size();
+    auto place = Place::factory(prefs_.readablePlace.get(readable_->shortenedUuid.c_str()));
+    auto progress = 100 * (float)place->getOffset() / (float)renderer_.size();
 
     auto percentStr = StringFormat("%.1f%%", progress);
 
@@ -89,8 +89,8 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
         size_t lengthOfFile = renderer_.size();
 
         // Subtract 5% to the file
-        if (readable_->place >= lengthOfFile / seekGranularity_) {
-            readable_->place = readable_->place - lengthOfFile / seekGranularity_;
+        if (readable_->place->getOffset() >= (lengthOfFile / seekGranularity_)) {
+            readable_->place->setOffset(readable_->place->getOffset() - lengthOfFile / seekGranularity_);
         } else {
             readable_->place = 0;
         }
@@ -99,7 +99,7 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
               readable_->place);
 
         renderer_.setCurrentPlace(readable_->place);
-        prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place);
+        prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place->str());
         prefs_.readablePlaceChanged.set(readable_->shortenedUuid.c_str(), true);
         prefs_.lastReadTime.set(readable_->shortenedUuid.c_str(),
                                 SolClock::getInstance().getEpochTime());
@@ -113,18 +113,18 @@ void ReadableSeekScreen::processCommand(RemoteCommand command) {
         size_t lengthOfFile = renderer_.size();
 
         // Add 5% to the file
-        readable_->place = readable_->place + lengthOfFile / seekGranularity_;
+        readable_->place->setOffset(readable_->place->getOffset() + (lengthOfFile / seekGranularity_));
 
         log_d("Setting place from %" PRIu32 " to %" PRIu32 "", readable_->placePrev,
               readable_->place);
 
         // Don't set place past EOF
-        if (readable_->place >= lengthOfFile) {
-            readable_->place = lengthOfFile - 1;
+        if (readable_->place->getOffset() >= lengthOfFile) {
+            readable_->place->setOffset(lengthOfFile - 1);
         }
 
         renderer_.setCurrentPlace(readable_->place);
-        prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place);
+        prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place->str());
         prefs_.readablePlaceChanged.set(readable_->shortenedUuid.c_str(), true);
         prefs_.lastReadTime.set(readable_->shortenedUuid.c_str(),
                                 SolClock::getInstance().getEpochTime());

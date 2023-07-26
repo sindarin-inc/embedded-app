@@ -48,7 +48,7 @@ public:
 
     void setPlacemark();
     void setFirstLoad() { firstLoad_ = true; }
-    void setNearestChapterSelection(unsigned long placeInFile);
+    void setNearestChapterSelection(std::shared_ptr<Place> placeInFile);
 
 protected:
     PreferencesStore &prefs_;

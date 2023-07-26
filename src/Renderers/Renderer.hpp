@@ -27,7 +27,7 @@ public:
         // log_w("setStream...");
         tokenizer_ = Tokenizer::factory(stream, display_);
     }
-    auto setCurrentPlace(Place & newPlace) -> void {
+    auto setCurrentPlace(std::shared_ptr<Place> newPlace) -> void {
         // log_w("setCurrentPlace...");
         currentPlace_ = tokenizer_->toStreamPlace(newPlace);
     }
@@ -48,11 +48,11 @@ public:
     // for the speed reading functionality.
 
     // NOLINTNEXTLINE(modernize-use-nodiscard)
-    auto renderPage(Place & fromPlace, int16_t numSkipLines = 0) -> std::shared_ptr<Place>;
+    auto renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines = 0) -> std::shared_ptr<Place>;
 
     // NOLINTNEXTLINE(modernize-use-nodiscard)
     inline auto renderFirstPage(int16_t numSkipLines = 0) -> std::shared_ptr<Place> {
-        return renderPage(*tokenizer_->toPlace(tokenizer_->getPlaceAtBeginningOfDocument()).get(),
+        return renderPage(tokenizer_->toPlace(tokenizer_->getPlaceAtBeginningOfDocument()),
                           numSkipLines);
     }
 

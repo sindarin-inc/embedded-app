@@ -477,7 +477,7 @@ public:
     PrefsItem<int> sortCriteria;  // Stored as int, used as LocalStore::SortCriteria
     PrefsItem<int> sortDirection; // Stored as int, used as LocalStore::SortDirection
     KeyedPrefsItem<uint64_t> lastReadTime;
-    KeyedPrefsItem<uint32_t> readablePlace;
+    KeyedPrefsItem<std::string> readablePlace;
     KeyedPrefsItem<bool> readablePlaceChanged;
     KeyedPrefsItem<bool> readableArchivedChanged;
     KeyedPrefsItem<bool> readableBookmarksChanged;

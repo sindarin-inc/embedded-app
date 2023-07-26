@@ -98,7 +98,7 @@ void ReadableScreen::updateBookmarkStatus() {
         // the current page range, then turn the bookmark on for this page.
         uint32_t averagePlace =
             (bookmark.lastPlace - bookmark.firstPlace) / 2 + bookmark.firstPlace;
-        if ((averagePlace >= readable_->place) && (averagePlace <= newPlace_)) {
+        if ((averagePlace >= readable_->place->getOffset()) && (averagePlace <= newPlace_->getOffset())) {
             if (bookmark.status == BOOKMARK_ON) {
                 inBookmark_ = true;
             } else {
@@ -124,7 +124,7 @@ void ReadableScreen::writeOutBookmarkUpdate() {
     }
 
     std::string plusOrMinus = inBookmark_ ? "+ " : "- ";
-    plusOrMinus += std::to_string(readable_->place) + " " + std::to_string(newPlace_) + "\n";
+    plusOrMinus += readable_->place->str() + " " + newPlace_->str() + "\n";
     bookmarkFile.write((const uint8_t *)plusOrMinus.c_str(), plusOrMinus.length());
     bookmarkFile.flush();
     bookmarkFile.close();
@@ -148,7 +148,7 @@ void ReadableScreen::turnPage() {
     } else {
         readable_->placePrev = readable_->place;
         readable_->place = newPlace_;
-        prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place);
+        prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place->str());
         prefs_.readablePlaceChanged.set(readable_->shortenedUuid.c_str(), true);
         prefs_.lastReadTime.set(readable_->shortenedUuid.c_str(),
                                 SolClock::getInstance().getEpochTime());
@@ -308,7 +308,7 @@ void ReadableScreen::render(DisplaySystem &display) {
                             display.fg);
     }
 
-    log_d("%lu is the new place in the text %s", newPlace_, atEnd_ ? "(at end)" : "");
+    log_d("%s is the new place in the text %s", newPlace_->str().c_str(), atEnd_ ? "(at end)" : "");
 
     if (renderPopupBackground) {
         // Initial popup render (will use PARTIAL and not clear out the text)
@@ -468,7 +468,7 @@ void ReadableScreen::processCommandNormal(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::LEFT:
         readable_->place = renderer_.getPreviousPlace();
-        prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place);
+        prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place->str());
         prefs_.readablePlaceChanged.set(readable_->shortenedUuid.c_str(), true);
         prefs_.lastReadTime.set(readable_->shortenedUuid.c_str(),
                                 SolClock::getInstance().getEpochTime());

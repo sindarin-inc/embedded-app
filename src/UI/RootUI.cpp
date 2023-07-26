@@ -1500,7 +1500,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             this->display_->setFont(this->display_->style.getFontFamily().readableFont);
             log_i("Setting Readable Screen on boot in %.0f ms", esp_timer_get_time() / 1000.0f);
             this->setCurrentScreen(*readableScreen);
-            log_i("Resuming readable %s at place %" PRIu32, (*it)->title.c_str(), (*it)->place);
+            log_i("Resuming readable %s at place %s", (*it)->title.c_str(), (*it)->place->str().c_str());
             if (articlesIterator != articles.end()) {
                 mainMenu->setTabToArticles();
             } else if (isBible(*it)) {

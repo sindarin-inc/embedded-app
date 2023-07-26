@@ -19,6 +19,7 @@
 #include "Misc/SemVer.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
+#include "Models/Place.hpp"
 #include "Models/ReadableBookmark.hpp"
 #include "Version.hpp"
 #include "sindarin-debug.h"
@@ -211,10 +212,10 @@ void LocalStore::changedReadablePlacemarkJson(const ReadablesVector &readables,
 
         bool changed = prefs_.readablePlaceChanged.get(readable->shortenedUuid.c_str());
         if (changed) {
-            uint32_t place = prefs_.readablePlace.get(readable->shortenedUuid.c_str());
-            log_i("Placemark on %s %s %s has changed to %" PRIu32,
+            std::string place = prefs_.readablePlace.get(readable->shortenedUuid.c_str());
+            log_i("Placemark on %s %s %s has changed to %s",
                   ReadableModelTypeToString(modelType).c_str(), readable->title.c_str(),
-                  readable->uuid.c_str(), place);
+                  readable->uuid.c_str(), place.c_str());
             ReadablePlacemark placemark;
             placemark.uuid = readable->uuid;
             placemark.position = place;
@@ -307,25 +308,25 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
 }
 
 auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Readable> &readable,
-                                                     const uint32_t placemark) -> bool {
-    uint32_t onDevicePlace = prefs_.readablePlace.get(readable->shortenedUuid.c_str());
+                                                     const std::shared_ptr<Place> placemark) -> bool {
+    std::shared_ptr<Place> onDevicePlace = Place::factory(prefs_.readablePlace.get(readable->shortenedUuid.c_str()));
     bool changed = prefs_.readablePlaceChanged.get(readable->shortenedUuid.c_str());
 
     if (placemark == onDevicePlace) {
         // If the placemark on the server is the same as the one on the device, don't change it
         return false;
-    } else if (placemark > onDevicePlace && !changed) {
+    } else if ((placemark > onDevicePlace) && !changed) {
         // Placemark on server is further than on the device, so update to the server value
-        log_i("Updating placemark for \"%s\" from device value of %" PRIu32 " to server "
-              "value of %" PRIu32,
-              readable->title.c_str(), onDevicePlace, placemark);
-        prefs_.readablePlace.set(readable->shortenedUuid.c_str(), placemark);
+        log_i("Updating placemark for \"%s\" from device value of %s to server "
+              "value of %s",
+              readable->title.c_str(), onDevicePlace->str().c_str(), placemark->str().c_str());
+        prefs_.readablePlace.set(readable->shortenedUuid.c_str(), placemark->str());
         return true;
     } else if (placemark != 0) {
         // Placemark on server is less than on the device, so don't update to the server value
-        log_i("Not updating placemark for \"%s\" from device value of %" PRIu32 " to server "
-              "value of %" PRIu32 ". Changed: %d",
-              readable->title.c_str(), onDevicePlace, placemark, changed);
+        log_i("Not updating placemark for \"%s\" from device value of %s to server "
+              "value of %s. Changed: %d",
+              readable->title.c_str(), onDevicePlace->str().c_str(), placemark->str().c_str(), changed);
         return false;
     }
 
@@ -656,8 +657,8 @@ auto LocalStore::processReadables(const CheckSyncResponse &checkSyncResponse,
         SHOW_HEAP();
 
         if (processReadablePlacemarksFromServer(userReadable.readable, userReadable.placemark)) {
-            log_i("Placemark for %s updated to %" PRIu32, userReadable.readable->title.c_str(),
-                  userReadable.placemark);
+            log_i("Placemark for %s updated to %s", userReadable.readable->title.c_str(),
+                  userReadable.placemark->str().c_str());
         }
 
         auto found = hasReadable(readables, userReadable.readable, true);

@@ -27,7 +27,7 @@ void ReadableSummaryScreen::drawInRect(Rect rect) {
     bottomRightTextView_.draw();
 }
 
-void ReadableSummaryScreen::setPlaceInReadable(unsigned long placeInReadable) {
+void ReadableSummaryScreen::setPlaceInReadable(std::shared_ptr<Place> placeInReadable) {
     placeInReadable_ = placeInReadable;
     preservePlace_ = 0;
 }
@@ -65,7 +65,7 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
     display_.setBoundingBox(newDisplayBoundingBox);
 
     if (firstLoad_) {
-        unsigned long placeInSummary = 0;
+        std::shared_ptr<Place> placeInSummary = 0;
         SpiramString summaryString =
             readable_->summary(placeInReadable_, placeInSummary, showUnread_);
 
@@ -76,7 +76,7 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
         auto stream = std::make_shared<StdStringStream>(summaryString);
         renderer_.setStream(stream);
         newPlace_ = renderer_.renderPage(placeInSummary);
-        log_d("Place in readable: %lu, place in summary: %lu", placeInReadable_, placeInSummary);
+        log_d("Place in readable: %s, place in summary: %s", placeInReadable_->str().c_str(), placeInSummary->str().c_str());
     } else {
         prevPlace_ = newPlace_;
         newPlace_ = renderer_.renderPage(newPlace_);

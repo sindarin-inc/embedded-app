@@ -9,6 +9,7 @@
 #include "Models/CheckSync.hpp"
 #include "Models/Readable.hpp"
 #include "Models/UserReadable.hpp"
+#include "Models/Place.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
 
@@ -101,7 +102,7 @@ public:
                                       ReadableArchivesVector &archives);
     void changedReadablesBookmarksJson(ReadableBookmarksVector &bookmarks);
     auto processReadablePlacemarksFromServer(const std::shared_ptr<Readable> &readable,
-                                             const uint32_t placemark) -> bool;
+                                             const std::shared_ptr<Place> placemark) -> bool;
     void resetReadablesPlacemarkChanged(const ReadablesVector &readables);
     void resetReadablesArchivedChanged(const ReadablesVector &readables);
     void resetReadablesBookmarksChanged(const ReadablesVector &readables);

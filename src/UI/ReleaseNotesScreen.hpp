@@ -27,9 +27,9 @@ protected:
     LineMenuScreen menu_;
 
     bool firstLoad_ = true;
-    uint32_t place_{0}, newPlace_{0};
+    std::shared_ptr<Place> place_, newPlace_;
 
-    auto atEnd() -> bool { return newPlace_ == 0; };
+    auto atEnd() -> bool { return newPlace_->getOffset() == 0; };
 
     void updateError(const std::string &logMessage);
     void runUpdate();

@@ -21,7 +21,7 @@ public:
     }
 
     // ToDo: To be adjusted related to the upcoming Place definition
-    [[nodiscard]] auto toStreamPlace(const Place &place) const -> StreamPlace override {
+    [[nodiscard]] auto toStreamPlace(const std::shared_ptr<Place> place) const -> StreamPlace override {
         error();
         return StreamPlace();
     }

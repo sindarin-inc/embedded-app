@@ -3,6 +3,7 @@
 #include "Models/Json.hpp"
 #include "Models/JsonSerializable.hpp"
 #include "Models/Readable.hpp"
+#include "Models/Place.hpp"
 #include "Models/UserReadablePartialChapterSummary.hpp"
 
 class UserReadable : JsonSerializable {
@@ -11,7 +12,7 @@ public:
     ~UserReadable() override = default;
 
     std::string uuid;
-    uint32_t placemark;
+    std::shared_ptr<Place> placemark;
     bool isArchived;
     std::shared_ptr<Readable> readable = nullptr;
     std::shared_ptr<UserReadablePartialChapterSummary> partialChapterSummary = nullptr;
@@ -22,7 +23,7 @@ public:
             return false;
         }
         uuid = j["uuid"].as<std::string>();
-        placemark = j["placemark"].as<uint32_t>();
+        placemark = Place::factory(j["placemark"].as<std::string>());
         isArchived = j["is_archived"].as<bool>();
         readable = SpiRamPtr<Readable>();
         partialChapterSummary = SpiRamPtr<UserReadablePartialChapterSummary>();

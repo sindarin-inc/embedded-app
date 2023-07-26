@@ -40,17 +40,18 @@ public:
 
         pageSpeed_ = prefs_.autoPilotSpeed.get().value_or(0);
         if (!prefs_.cesMode.get().value_or(false)) {
-            readable_->place = prefs_.readablePlace.get(readable_->shortenedUuid.c_str());
+            readable_->place =
+                Place::factory(prefs_.readablePlace.get(readable_->shortenedUuid.c_str()));
         } else {
-            readable_->place = 0;
+            readable_->place = std::make_shared<TxtPlace>();
         }
         // for the animation bits since we may end up coming back to this constructor after being
         // interrupted.
         newPlace_ = readable_->place;
         atEnd_ = this->checkAtEnd();
 
-        log_d("Found place for %s = %" PRIu32 " %s", readable_->shortenedUuid.c_str(),
-              readable_->place, atEnd_ ? "(at end)" : "");
+        log_d("Found place for %s = %s %s", readable_->shortenedUuid.c_str(),
+              readable_->place->str().c_str(), atEnd_ ? "(at end)" : "");
 
         popupMenuScreen_.setBackCallback([this]() {
             autoPilotForceFull_ = true;
@@ -107,7 +108,7 @@ protected:
     bool inBookmark_ = false;
     bool ignoreNextPress_ = false;
 
-    unsigned long newPlace_ = 0;
+    std::shared_ptr<Place> newPlace_ = 0;
     bool atEnd_ = false;
     bool shownIcons_ = false;
     bool renderPopup_ = false;
