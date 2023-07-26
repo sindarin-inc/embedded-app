@@ -8,8 +8,8 @@
 #include "Misc/StringUtil.hpp"
 #include "Models/Author.hpp"
 #include "Models/Json.hpp"
-#include "Models/Place.hpp"
 #include "Models/JsonSerializable.hpp"
+#include "Models/Place.hpp"
 #include "Models/ReadableArchive.hpp"
 #include "Models/ReadableBookmark.hpp"
 #include "Models/ReadableFile.hpp"
@@ -89,8 +89,8 @@ public:
         return readableType == "pocket_article" || readableType == "email_article";
     }
 
-    auto summary(std::shared_ptr<Place> placeInReadable, std::shared_ptr<Place> placeInSummary, bool includeUnread)
-        -> SpiramString {
+    auto summary(const std::shared_ptr<Place> &placeInReadable,
+                 const std::shared_ptr<Place> &placeInSummary, bool includeUnread) -> SpiramString {
         SpiramString summary;
 
         for (const auto &chapter : toc) {

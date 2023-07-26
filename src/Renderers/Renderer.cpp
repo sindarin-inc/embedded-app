@@ -1,12 +1,14 @@
 #include "Renderer.hpp"
 
 #include <algorithm>
+#include <utility>
 
 // Show the (already loaded into buffer) current page
 // and load the next page into the next buffer so we have it.
-auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines) -> std::shared_ptr<Place> {
+auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines)
+    -> std::shared_ptr<Place> {
 
-    currentPlace_ = tokenizer_->toStreamPlace(fromPlace);
+    currentPlace_ = tokenizer_->toStreamPlace(std::move(fromPlace));
 
     if constexpr (RENDERER_DEBUG) {
         log_d("%s is place in file being requested", currentPlace_.str().c_str());
@@ -100,7 +102,7 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
         // pager_.getLine(pager_.getLineCount() - 1, line);
         // std::cout << "Last line: [" << line.data() << "]" << std::endl;
 
-        pager_.setNextPagePlace_(fromPlace);
+        pager_.setNextPagePlace(fromPlace);
     } else {
         seekPlace = tokenizer_->loadAndTokenizePage(
             seekPlace, tokens_, pager_); // NOLINT(clang-analyzer-deadcode.DeadStores)

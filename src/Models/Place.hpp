@@ -3,6 +3,7 @@
 #include <cinttypes>
 #include <memory>
 #include <string>
+#include <utility>
 
 enum class PlaceType : uint8_t { TXT, EPUB, NONE };
 
@@ -13,14 +14,14 @@ private:
     static constexpr bool ON_ERROR_EXIT = true;
 
 public:
-    ~Place() {}
+    ~Place() = default;
     [[nodiscard]] virtual auto isA(PlaceType placeType) const -> bool = 0;
     [[nodiscard]] virtual auto getPlaceType() const -> PlaceType = 0;
     [[nodiscard]] virtual auto str() const -> std::string = 0;
     [[nodiscard]] inline auto getOffset() const -> uint32_t { return offset_; }
     inline void setOffset(uint32_t offset) { offset_ = offset; }
 
-    static auto factory(const std::string placeStr) -> std::shared_ptr<Place>;
+    static auto factory(const std::string &placeStr) -> std::shared_ptr<Place>;
 
 protected:
     uint32_t offset_;
@@ -28,7 +29,7 @@ protected:
 
 class NonePlace : public Place {
 public:
-    ~NonePlace() {}
+    ~NonePlace() = default;
     [[nodiscard]] auto isA(PlaceType placeType) const -> bool override {
         return placeType == PlaceType::NONE;
     }
@@ -42,7 +43,7 @@ class TxtPlace : public Place {
 public:
     TxtPlace(uint32_t offset) { setOffset(offset); }
     TxtPlace() : Place() { setOffset(0); }
-    ~TxtPlace() {}
+    ~TxtPlace() = default;
     [[nodiscard]] auto isA(PlaceType placeType) const -> bool override {
         return placeType == PlaceType::TXT;
     }
@@ -60,9 +61,11 @@ public:
 
 class EPubPlace : public Place {
 public:
-    EPubPlace(uint32_t offset, std::string filename) : filename_(filename) { setOffset(offset); }
+    EPubPlace(uint32_t offset, std::string filename) : filename_(std::move(std::move(filename))) {
+        setOffset(offset);
+    }
     EPubPlace() : Place(), filename_("") { setOffset(0); }
-    ~EPubPlace() {}
+    ~EPubPlace() = default;
 
     [[nodiscard]] auto isA(PlaceType placeType) const -> bool override {
         return placeType == PlaceType::EPUB;

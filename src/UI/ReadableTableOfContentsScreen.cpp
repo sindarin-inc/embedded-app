@@ -180,7 +180,8 @@ void ReadableTableOfContentsScreen::setPlacemark() {
                             SolClock::getInstance().getEpochTime());
 }
 
-void ReadableTableOfContentsScreen::setNearestChapterSelection(std::shared_ptr<Place> placeInFile) {
+void ReadableTableOfContentsScreen::setNearestChapterSelection(
+    const std::shared_ptr<Place> &placeInFile) {
     int nearestChapter = 0;
     for (int i = 0; i < readable_->toc.size(); i++) {
         if (readable_->toc[i].txtOffset <= placeInFile->getOffset()) {

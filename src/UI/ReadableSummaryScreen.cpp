@@ -1,5 +1,7 @@
 #include "ReadableSummaryScreen.hpp"
 
+#include <utility>
+
 #include "Misc/SpiramAllocator.hpp"
 
 auto ReadableSummaryScreen::layout(LayoutContext &context, Size size) -> Size {
@@ -28,11 +30,11 @@ void ReadableSummaryScreen::drawInRect(Rect rect) {
 }
 
 void ReadableSummaryScreen::setPlaceInReadable(std::shared_ptr<Place> placeInReadable) {
-    placeInReadable_ = placeInReadable;
-    preservePlace_ = 0;
+    placeInReadable_ = std::move(placeInReadable);
+    preservePlace_ = nullptr;
 }
 
-auto ReadableSummaryScreen::checkAtEnd() -> bool { return (newPlace_ == 0); }
+auto ReadableSummaryScreen::checkAtEnd() -> bool { return (newPlace_ == nullptr); }
 
 void ReadableSummaryScreen::render(DisplaySystem &display) {
 
@@ -65,18 +67,19 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
     display_.setBoundingBox(newDisplayBoundingBox);
 
     if (firstLoad_) {
-        std::shared_ptr<Place> placeInSummary = 0;
+        std::shared_ptr<Place> placeInSummary = nullptr;
         SpiramString summaryString =
             readable_->summary(placeInReadable_, placeInSummary, showUnread_);
 
         if (preservePlace_) {
             placeInSummary = preservePlace_;
-            preservePlace_ = 0;
+            preservePlace_ = nullptr;
         }
         auto stream = std::make_shared<StdStringStream>(summaryString);
         renderer_.setStream(stream);
         newPlace_ = renderer_.renderPage(placeInSummary);
-        log_d("Place in readable: %s, place in summary: %s", placeInReadable_->str().c_str(), placeInSummary->str().c_str());
+        log_d("Place in readable: %s, place in summary: %s", placeInReadable_->str().c_str(),
+              placeInSummary->str().c_str());
     } else {
         prevPlace_ = newPlace_;
         newPlace_ = renderer_.renderPage(newPlace_);

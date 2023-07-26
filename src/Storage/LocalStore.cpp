@@ -308,8 +308,10 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
 }
 
 auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Readable> &readable,
-                                                     const std::shared_ptr<Place> placemark) -> bool {
-    std::shared_ptr<Place> onDevicePlace = Place::factory(prefs_.readablePlace.get(readable->shortenedUuid.c_str()));
+                                                     const std::shared_ptr<Place> &placemark)
+    -> bool {
+    std::shared_ptr<Place> onDevicePlace =
+        Place::factory(prefs_.readablePlace.get(readable->shortenedUuid.c_str()));
     bool changed = prefs_.readablePlaceChanged.get(readable->shortenedUuid.c_str());
 
     if (placemark == onDevicePlace) {
@@ -322,11 +324,12 @@ auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Reada
               readable->title.c_str(), onDevicePlace->str().c_str(), placemark->str().c_str());
         prefs_.readablePlace.set(readable->shortenedUuid.c_str(), placemark->str());
         return true;
-    } else if (placemark != 0) {
+    } else if (placemark != nullptr) {
         // Placemark on server is less than on the device, so don't update to the server value
         log_i("Not updating placemark for \"%s\" from device value of %s to server "
               "value of %s. Changed: %d",
-              readable->title.c_str(), onDevicePlace->str().c_str(), placemark->str().c_str(), changed);
+              readable->title.c_str(), onDevicePlace->str().c_str(), placemark->str().c_str(),
+              changed);
         return false;
     }
 

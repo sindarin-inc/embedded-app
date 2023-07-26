@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "NullTokenizer.hpp"
 #include "Pager.hpp"
 #include "RendererDefs.hpp"
@@ -25,11 +27,11 @@ public:
 
     auto setStream(std::shared_ptr<RendererStream> stream) -> void {
         // log_w("setStream...");
-        tokenizer_ = Tokenizer::factory(stream, display_);
+        tokenizer_ = Tokenizer::factory(std::move(stream), display_);
     }
     auto setCurrentPlace(std::shared_ptr<Place> newPlace) -> void {
         // log_w("setCurrentPlace...");
-        currentPlace_ = tokenizer_->toStreamPlace(newPlace);
+        currentPlace_ = tokenizer_->toStreamPlace(std::move(newPlace));
     }
 
     [[nodiscard]] auto getPreviousPlace() -> std::shared_ptr<Place>;
@@ -48,7 +50,8 @@ public:
     // for the speed reading functionality.
 
     // NOLINTNEXTLINE(modernize-use-nodiscard)
-    auto renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines = 0) -> std::shared_ptr<Place>;
+    auto renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines = 0)
+        -> std::shared_ptr<Place>;
 
     // NOLINTNEXTLINE(modernize-use-nodiscard)
     inline auto renderFirstPage(int16_t numSkipLines = 0) -> std::shared_ptr<Place> {

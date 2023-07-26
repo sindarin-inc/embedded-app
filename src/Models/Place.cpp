@@ -7,7 +7,7 @@
 
 #include "sindarin-debug.h"
 
-auto Place::factory(const std::string placeStr) -> std::shared_ptr<Place> {
+auto Place::factory(const std::string &placeStr) -> std::shared_ptr<Place> {
     std::regex regExStr("^" PLACE_REGEX "$");
     std::smatch sm;
     if (regex_match(placeStr, sm, regExStr) && (sm.size() == 5)) {

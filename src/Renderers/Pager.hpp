@@ -51,8 +51,12 @@ public:
     [[nodiscard]] auto addLastTokenToPage(bool dontStop = false) -> bool;
     [[nodiscard]] auto computeWordCount() const -> uint16_t;
 
-    [[nodiscard]] inline auto getWordCount() const -> uint16_t { return firstLineIdx_ == 0 ? wordCount_ : computeWordCount(); }
-    [[nodiscard]] inline auto getLineCount() const -> uint16_t { return lineCount_ - firstLineIdx_; }
+    [[nodiscard]] inline auto getWordCount() const -> uint16_t {
+        return firstLineIdx_ == 0 ? wordCount_ : computeWordCount();
+    }
+    [[nodiscard]] inline auto getLineCount() const -> uint16_t {
+        return lineCount_ - firstLineIdx_;
+    }
     [[nodiscard]] inline auto getLineLength(Idx lineIdx) const -> uint16_t {
         return lines_[firstLineIdx_ + lineIdx].length;
     }
@@ -61,8 +65,8 @@ public:
     [[nodiscard]] inline auto getNextPageStreamPlace() const -> StreamPlace {
         return atEOF_ ? StreamPlace() : nextPagePlace_;
     }
-    
-    inline void setNextPagePlace_(StreamPlace place) { nextPagePlace_ = place; }
+
+    inline void setNextPagePlace(StreamPlace place) { nextPagePlace_ = place; }
     void setFirstLineIdxBackward();
 
     [[nodiscard]] inline auto getStreamPlaceOfFirstLine() -> StreamPlace {
@@ -76,6 +80,6 @@ public:
 
     void endOfFileReached() { atEOF_ = true; }
     void completeLastLine();
-    
+
     void show() const;
 };

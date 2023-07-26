@@ -11,22 +11,24 @@ public:
                                            bool backwards = false, StreamPlace *toPlace = nullptr)
         -> StreamPlace override {
         error();
-        return StreamPlace();
+        return {};
     };
 
     [[nodiscard]] auto getPlaceAfterEndOfFileReached(StreamPlace streamPlace) const
         -> StreamPlace override {
         error();
-        return StreamPlace();
+        return {};
     }
 
     // ToDo: To be adjusted related to the upcoming Place definition
-    [[nodiscard]] auto toStreamPlace(const std::shared_ptr<Place> place) const -> StreamPlace override {
+    [[nodiscard]] auto toStreamPlace(const std::shared_ptr<Place> place) const
+        -> StreamPlace override {
         error();
-        return StreamPlace();
+        return {};
     }
 
-    [[nodiscard]] inline auto toPlace(const StreamPlace &streamPlace) const -> std::shared_ptr<Place> override {
+    [[nodiscard]] inline auto toPlace(const StreamPlace &streamPlace) const
+        -> std::shared_ptr<Place> override {
         error();
         return std::make_shared<NonePlace>();
     }

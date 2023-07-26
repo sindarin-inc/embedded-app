@@ -33,7 +33,7 @@ auto ReadOneBookmark(SFile &file, LocalBookmark &bookmark) -> bool {
 
     std::smatch sm;
     if (regex_match(bookmarkStr, sm, regExStr) && (sm.size() == 12)) {
-        //log_d("First place: %s, last place: %s", sm[5].str().c_str(), sm[11].str().c_str());
+        // log_d("First place: %s, last place: %s", sm[5].str().c_str(), sm[11].str().c_str());
 
         bookmark.firstPlace = Place::factory(sm[5].str());
         bookmark.lastPlace = Place::factory(sm[11].str());

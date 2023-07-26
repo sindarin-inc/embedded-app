@@ -2,8 +2,8 @@
 
 #include "Models/Json.hpp"
 #include "Models/JsonSerializable.hpp"
-#include "Models/Readable.hpp"
 #include "Models/Place.hpp"
+#include "Models/Readable.hpp"
 #include "Models/UserReadablePartialChapterSummary.hpp"
 
 class UserReadable : JsonSerializable {

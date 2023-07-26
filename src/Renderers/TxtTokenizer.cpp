@@ -78,7 +78,8 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
                     .length = 0,
                     .tokenId = TokenId::NOTOKEN};
 
-        if (backwards && !tokens.isEmpty() && (newToken.streamPlace.getOffset() >= toPlace->getOffset())) {
+        if (backwards && !tokens.isEmpty() &&
+            (newToken.streamPlace.getOffset() >= toPlace->getOffset())) {
             pager.completeLastLine();
             break;
         }

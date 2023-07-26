@@ -28,34 +28,33 @@ public:
     }
 
     [[nodiscard]] auto getPlaceAtBeginningOfFile(StreamPlace streamPlace) const -> StreamPlace {
-        return StreamPlace(0, streamPlace.getFileNumber());
+        return {0, streamPlace.getFileNumber()};
     }
 
-    [[nodiscard]] auto getPlaceAtBeginningOfDocument() const -> StreamPlace {
-        return StreamPlace();
-    }
+    [[nodiscard]] auto getPlaceAtBeginningOfDocument() const -> StreamPlace { return {}; }
 
     [[nodiscard]] auto atBeginningOfFile(StreamPlace streamPlace) const -> bool {
         return streamPlace.getOffset() == 0;
     }
 
     [[nodiscard]] auto addOffset(StreamPlace streamPlace, uint32_t offset) const -> StreamPlace {
-        return StreamPlace(streamPlace.getOffset() + offset, streamPlace.getFileNumber());
+        return {streamPlace.getOffset() + offset, streamPlace.getFileNumber()};
     };
 
     [[nodiscard]] virtual auto subtractOffset(StreamPlace streamPlace, uint32_t offset) const
         -> StreamPlace {
-        return StreamPlace((streamPlace.getOffset() >= offset) ? streamPlace.getOffset() - offset
-                                                               : 0,
-                           streamPlace.getFileNumber());
+        return {(streamPlace.getOffset() >= offset) ? streamPlace.getOffset() - offset : 0,
+                streamPlace.getFileNumber()};
     }
 
     [[nodiscard]] virtual auto getPlaceAfterEndOfFileReached(StreamPlace streamPlace) const
         -> StreamPlace = 0;
 
-    [[nodiscard]] virtual auto toStreamPlace(const std::shared_ptr<Place> place) const -> StreamPlace = 0;
+    [[nodiscard]] virtual auto toStreamPlace(const std::shared_ptr<Place> place) const
+        -> StreamPlace = 0;
 
-    [[nodiscard]] virtual auto toPlace(const StreamPlace &streamPlace) const -> std::shared_ptr<Place> = 0;
+    [[nodiscard]] virtual auto toPlace(const StreamPlace &streamPlace) const
+        -> std::shared_ptr<Place> = 0;
 
     [[nodiscard]] virtual auto streamSize() const -> size_t {
         return stream_.get() != nullptr ? stream_->size() : 0;

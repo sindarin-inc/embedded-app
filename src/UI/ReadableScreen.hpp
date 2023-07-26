@@ -109,7 +109,7 @@ protected:
     bool inBookmark_ = false;
     bool ignoreNextPress_ = false;
 
-    std::shared_ptr<Place> newPlace_ = 0;
+    std::shared_ptr<Place> newPlace_ = nullptr;
     bool atEnd_ = false;
     bool shownIcons_ = false;
     bool renderPopup_ = false;

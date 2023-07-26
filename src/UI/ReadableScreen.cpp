@@ -97,8 +97,10 @@ void ReadableScreen::updateBookmarkStatus() {
         // A decent heuristic for now. If the midpoint of the bookmark is within
         // the current page range, then turn the bookmark on for this page.
         uint32_t averagePlace =
-            (bookmark.lastPlace->getOffset() - bookmark.firstPlace->getOffset()) / 2 + bookmark.firstPlace->getOffset();
-        if ((averagePlace >= readable_->place->getOffset()) && (averagePlace <= newPlace_->getOffset())) {
+            (bookmark.lastPlace->getOffset() - bookmark.firstPlace->getOffset()) / 2 +
+            bookmark.firstPlace->getOffset();
+        if ((averagePlace >= readable_->place->getOffset()) &&
+            (averagePlace <= newPlace_->getOffset())) {
             if (bookmark.status == BOOKMARK_ON) {
                 inBookmark_ = true;
             } else {
@@ -160,7 +162,7 @@ void ReadableScreen::turnPage() {
     prefs_.wordCount.set(wc);
 }
 
-auto ReadableScreen::checkAtEnd() -> bool { return (newPlace_ == 0); }
+auto ReadableScreen::checkAtEnd() -> bool { return (newPlace_ == nullptr); }
 
 void ReadableScreen::render(DisplaySystem &display) {
     // Rendering the popup is a special case. We first re-draw the text onto the background

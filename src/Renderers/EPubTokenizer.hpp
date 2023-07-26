@@ -13,13 +13,14 @@ public:
 
     [[nodiscard]] auto getPlaceAfterEndOfFileReached(StreamPlace streamPlace) const
         -> StreamPlace override {
-        return StreamPlace(0, streamPlace.getFileNumber() + 1);
+        return {0, streamPlace.getFileNumber() + 1};
     }
 
     // ToDo: To be adjusted related to the upcoming Place definition
-    [[nodiscard]] auto toStreamPlace(const std::shared_ptr<Place> place) const -> StreamPlace override {
+    [[nodiscard]] auto toStreamPlace(const std::shared_ptr<Place> place) const
+        -> StreamPlace override {
         if (place->isA(PlaceType::EPUB)) {
-            return StreamPlace(place->getOffset(), 0);
+            return {place->getOffset(), 0};
         } else {
             log_e("Wrong Place Type: %" PRIu8, static_cast<uint8_t>(place->getPlaceType()));
             if constexpr (ON_ERROR_EXIT) {
@@ -27,10 +28,11 @@ public:
             }
         }
 
-        return StreamPlace();
+        return {};
     }
 
-    [[nodiscard]] inline auto toPlace(const StreamPlace &streamPlace) const -> std::shared_ptr<Place> override {
+    [[nodiscard]] inline auto toPlace(const StreamPlace &streamPlace) const
+        -> std::shared_ptr<Place> override {
         return std::make_shared<EPubPlace>(streamPlace.getOffset(), "");
     }
 
