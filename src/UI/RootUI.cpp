@@ -95,9 +95,13 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     // Load the SolSans font only.
     ibmf75.load((ibmf_defs::MemoryPtr)fontsList[0].content, fontsList[0].length);
 
-    auto createReadableScreen =
-        [this, display, mainMenu, &fileSystem, &lightingController,
-         &localStore](const std::shared_ptr<Readable> &readable) -> ReadableScreen * {
+    auto booksMenu = new Menu(mainMenu->getMyStyle(), "Books");
+    auto bibleMenu = new Menu(mainMenu->getMyStyle(), "Bible");
+    auto pocketMenu = new Menu(mainMenu->getMyStyle(), "Articles");
+
+    auto createReadableScreen = [this, display, mainMenu, booksMenu, bibleMenu, pocketMenu,
+                                 &fileSystem, &lightingController, &localStore](
+                                    const std::shared_ptr<Readable> &readable) -> ReadableScreen * {
         // TODO: Would be better to not allocate / delete these all the time
 
         std::shared_ptr<RendererStream> stream;
@@ -115,6 +119,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         } else {
             stream = fileSystem.newRendererStream(path.c_str());
         }
+
         auto *readableScreen =
             new ReadableScreen(stream, *display, readable, this->prefs_, power_.battery, localStore,
                                fileSystem, lightingController);
@@ -122,8 +127,26 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // When switching to a readable from a menu, we should clear the display
         // to make the whites really white and the blacks really black.
         display->clearDisplay();
-        readableScreen->setBackCallback([this, display, stream, readableScreen, mainMenu]() {
-            log_d("Loading readables after starting inside a single readable");
+        readableScreen->setBackCallback([this, display, stream, readableScreen, readable, booksMenu,
+                                         bibleMenu, pocketMenu, mainMenu]() {
+            bool archived = prefs_.readableArchivedChanged.get(readable->shortenedUuid.c_str());
+            auto title =
+                StringFormat("%s%s", archived ? "Archived: " : "", readable->title.c_str());
+            auto displayedTitle =
+                StringFormat("%s%s", !archived ? "Archived: " : "", readable->title.c_str());
+            log_d("Changing readable title to %s", title.c_str());
+            // Iterate through the menu items and change the title of the item that matches uuid
+            auto updateMenuTitle = [displayedTitle, title](auto &menu) {
+                auto readableMenuItem = menu->getMenuItemByTitle(displayedTitle.c_str());
+                if (readableMenuItem != -1) {
+                    menu->changeItemTitleAt(readableMenuItem, title);
+                }
+            };
+
+            updateMenuTitle(booksMenu);
+            updateMenuTitle(bibleMenu);
+            updateMenuTitle(pocketMenu);
+
             // When leaving a readable to go back to the main menu, do a full clear
             // of the display.
             prefs_.lastReadableId.remove();
@@ -173,8 +196,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         prefs_.cesMode.remove();
         prefs_.emcMode.remove();
     }
-
-    auto booksMenu = new Menu(mainMenu->getMyStyle(), "Books");
 
     // If there is firmware available, show the Update Firmware item in the books tab.
     auto makeReleaseNotesMenuItem = [this, &localStore, display, mainMenu]() {
@@ -237,23 +258,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             continue;
         }
 
-        booksMenu->addMenuItem(MenuItem(
-            StringFormat("%s", title.c_str()), StringFormat("%s", r->authors[0].name.c_str()),
-            [this, display, booksMenu, mainMenu, r, createReadableScreen]() {
+        booksMenu->addMenuItem(MenuItem(StringFormat("%s", title.c_str()),
+                                        StringFormat("%s", r->authors[0].name.c_str()),
+                                        [this, r, createReadableScreen]() {
             auto readableScreen = createReadableScreen(r);
             this->setCurrentScreen(*readableScreen);
-            readableScreen->setBackCallback(
-                [this, r, display, readableScreen, mainMenu, booksMenu]() {
-                bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
-                auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
-                log_d("Changing book title to %s", title.c_str());
-                booksMenu->changeItemTitleAt(booksMenu->getCurrSelection(), title);
-                display->clearDisplay();
-                mainMenu->setFirstLoad();
-                setCurrentScreen(*mainMenu);
-                delete readableScreen;
-            });
-            }));
+        }));
     }
 
     SHOW_HEAP();
@@ -276,8 +286,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     log_i("Loading %zu Pocket articles", articles.size());
-
-    auto pocketMenu = new Menu(mainMenu->getMyStyle(), "Articles");
 
     if (prefs_.firmwareLoaded.get().has_value()) {
         pocketMenu->addMenuItem(makeReleaseNotesMenuItem());
@@ -315,9 +323,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     [this, r, display, readableScreen, mainMenu, pocketMenu]() {
                 bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
                 auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
-                log_d("Changing article title to %s", title.c_str());
                 pocketMenu->changeItemTitleAt(pocketMenu->getCurrSelection(), title);
-
                 display->clearDisplay();
                 mainMenu->setFirstLoad();
                 setCurrentScreen(*mainMenu);
@@ -352,7 +358,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                       [isBible](const std::shared_ptr<Readable> &x) { return isBible(x); });
     auto hasBible = it != readables.end();
     if (!prefs_.noBible.get().value_or(false) && hasBible) {
-        auto bibleMenu = new Menu(mainMenu->getMyStyle(), "Bible");
         for (const auto &r : readables) {
             if (isBible(r)) {
                 bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
@@ -1509,8 +1514,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             return currentReadable == x->uuid;
             });
         if (booksIterator != readables.end() || articlesIterator != articles.end()) {
-            bool isBook = booksIterator != readables.end();
-            auto it = isBook ? booksIterator : articlesIterator;
+            auto it = (booksIterator != readables.end()) ? booksIterator : articlesIterator;
             auto readableScreen = createReadableScreen(*it);
             this->display_->setFont(this->display_->style.getFontFamily().readableFont);
             log_i("Setting Readable Screen on boot in %.0f ms", esp_timer_get_time() / 1000.0f);
@@ -1521,32 +1525,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             } else if (isBible(*it)) {
                 mainMenu->setTabToBible();
             }
-
-            readableScreen->setBackCallback(
-                [this, it, isBook, display, readableScreen, mainMenu, booksMenu, pocketMenu]() {
-                bool archived = prefs_.readableArchivedChanged.get((*it)->shortenedUuid.c_str());
-                auto title =
-                    StringFormat("%s%s", archived ? "Archived: " : "", (*it)->title.c_str());
-                auto displayedTitle =
-                    StringFormat("%s%s", !archived ? "Archived: " : "", (*it)->title.c_str());
-                log_d("Changing readable title to %s", title.c_str());
-                // Iterate through the menu items and change the title of the item that matches uuid
-                auto updateMenuTitle = [displayedTitle, title](auto &menu) {
-                    auto readableMenuItem = menu->getMenuItemByTitle(displayedTitle.c_str());
-                    if (readableMenuItem != -1) {
-                        menu->changeItemTitleAt(readableMenuItem, title);
-                    }
-                };
-                if (isBook) {
-                    updateMenuTitle(booksMenu);
-                } else {
-                    updateMenuTitle(pocketMenu);
-                }
-                display->clearDisplay();
-                mainMenu->setFirstLoad();
-                setCurrentScreen(*mainMenu);
-                delete readableScreen;
-            });
         } else {
             // Assume this readable has gone away (or changed from id to uuid)
             prefs_.lastReadableId.remove();
