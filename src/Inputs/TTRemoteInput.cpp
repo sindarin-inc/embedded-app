@@ -138,6 +138,17 @@ void TTRemoteInput::dispatchConnection(BLEAdvertisedDevice &device) {
         4000, 3, 0);
 }
 
+void TTRemoteInput::unpairAndDisconnect() {
+    prefs_.lastPageTurnerBuild.remove();
+    prefs_.pairedTurnTouchAddress.remove();
+
+    if (client_ != nullptr) {
+        client_->disconnect();
+    }
+
+    state_ = SCANNING;
+}
+
 void TTRemoteInput::disconnectTemporarily(int seconds) {
     if (client_ != nullptr) {
         client_->disconnect();

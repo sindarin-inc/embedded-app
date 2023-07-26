@@ -13,8 +13,7 @@
 class MultiLineTextView : public EinkView {
 public:
     MultiLineTextView(DisplaySystem &display, std::string text, int maxLines, int spacingOffset = 0,
-                      Font *font = static_cast<Font *>(&fontTahomaRegularFonT5PT7B),
-                      bool allCaps = false)
+                      Font *font = static_cast<Font *>(&ibmf75Face0), bool allCaps = false)
         : EinkView(display), text_(std::move(text)), maxLines_(maxLines),
           spacingOffset_(spacingOffset), font_(font) {
         if (allCaps) {

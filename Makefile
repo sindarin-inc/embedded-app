@@ -58,7 +58,7 @@ clean:
 
 .PHONY: clang-tidy
 clang-tidy: check_idf
-	@if ! command -v clang-tidy &> /dev/null ; then \
+	@if ! command -v clang-tidy &> /dev/null || [[ $$(which clang-tidy) != *"esp-clang"* ]]; then \
 		echo "clang-tidy not found. Installing it now:" ; \
 		idf_tools.py install esp-clang ; \
 		pip install --upgrade pyclang ; \
