@@ -59,8 +59,6 @@ protected:
                     this->enclosed->writePageTurnerBatteryToCharacteristic(characteristic, value);
                 } else if (value == "blink-led") {
                     this->enclosed->blinkLedAfterConnect(characteristic, value);
-                } else if (value == "unpair-page-turner") {
-                    this->enclosed->unpairPageTurner(characteristic, value);
                 } else if (value == "pair") {
                     characteristic->setValue(StringFormat(
                         "pair=%s", enclosed->prefs_->bleAdvertisingKey.get().value_or("").c_str()));
@@ -120,6 +118,8 @@ protected:
                     this->enclosed->prefs_->cloudToken.set(settingValue);
                 } else if (settingKey == "disconnect-pt-sec") {
                     this->enclosed->disconnectPageTurnerForSeconds(std::stoi(settingValue));
+                } else if (settingKey == "unpair-page-turner") {
+                    this->enclosed->unpairPageTurner(characteristic, settingKey);
                 } else {
                     log_w("GATT client asking to write unknown setting: %s=%s", settingKey.c_str(),
                           settingValue.c_str());
