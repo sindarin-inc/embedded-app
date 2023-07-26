@@ -76,6 +76,9 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
             int y = 0;
             const auto mainSpacing = 8;
             for (auto &view : menuItemViews_) {
+                if (view->isHidden()) {
+                    continue;
+                }
                 auto viewFrame = context.setViewFrame(*view, {{0, y}, {size.width, 0}},
                                                       LayoutOptionsSizeToFitVertical);
                 y += viewFrame.size.height + mainSpacing;

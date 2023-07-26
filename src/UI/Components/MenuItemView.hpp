@@ -57,7 +57,7 @@ public:
                     display_, menuItem.subtitle, static_cast<Font *>(&fontTahomaRegularFonT5PT7B),
                     true);
             } else {
-                subtextView_->setText(menuItem.subtitle);
+                subtextView_->setText(menuItem.subtitle, true);
                 subtextView_->setHidden(false);
             }
         }
