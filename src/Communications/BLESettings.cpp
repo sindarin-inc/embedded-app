@@ -85,6 +85,16 @@ void BLESettings::blinkLedAfterConnect(BLECharacteristic *characteristic, const 
     characteristic->notify();
 }
 
+void BLESettings::unpairPageTurner(BLECharacteristic *characteristic, const std::string &key) {
+    log_i("GATT client unpairing page turner");
+
+    ttRemoteInput_->unpairAndDisconnect();
+
+    std::string value = StringFormat("%s=1", key.c_str());
+    characteristic->setValue(value);
+    characteristic->notify();
+}
+
 void BLESettings::writeWifiSSIDtoCharacteristic(BLECharacteristic *characteristic,
                                                 const std::string &key) {
     characteristic->setValue(WiFi::getInstance().getFirstWiFiSSID());

@@ -12,8 +12,7 @@ public:
 
     //! Convenience method to initialize and then set text and font
     SingleLineTextView(DisplaySystem &display, std::string text,
-                       Font *font = static_cast<Font *>(&fontTahomaRegularFonT5PT7B),
-                       bool allCaps = false)
+                       Font *font = static_cast<Font *>(&ibmf75Face0), bool allCaps = false)
         : SingleLineTextView(display) {
         setFont(font);
         setText(std::move(text), allCaps);
