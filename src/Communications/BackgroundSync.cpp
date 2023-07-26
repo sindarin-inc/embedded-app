@@ -7,11 +7,12 @@
 #include "Communications/SindarinAPI.hpp"
 #include "Communications/WiFi.hpp"
 #include "Misc/Platform.hpp"
+#include "Misc/Telemetry.hpp"
 #include "UI/ContentSyncScreen.hpp"
 #include "config.h"
 
 void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
-                            LocalStore &localStore) {
+                            LocalStore &localStore, Telemetry &telemetry) {
     // Create a notification group to wait for background tasks
     auto backgroundGroup = xEventGroupCreate();
     auto &fileSystem = localStore.fileSystem;
@@ -46,7 +47,14 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
         return;
     }
 
-    SolClock::getInstance().setClockTimeFromInternet();
+    auto success = SolClock::getInstance().setClockTimeFromInternet();
+    if (success) {
+        telemetry.logMetric(TelemetryField::METRIC_CLOCK_SET, "success",
+                            {{"run-time", GetRunTimeMs()}});
+    } else {
+        telemetry.logMetric(TelemetryField::METRIC_CLOCK_SET, "failure",
+                            {{"run-time", GetRunTimeMs()}});
+    }
 
     FirmwareDownloader firmwareDownloader(prefs, true);
     firmwareDownloader.downloadFirmware(
@@ -106,14 +114,15 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
     }
 }
 
-void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalStore &localStore) {
+void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalStore &localStore,
+                    Telemetry &telemetry) {
     // Debug LED so we know what's happening (will be turned off when deep sleep happens)
     // Only turn on if debug menu is enabled
     if (prefs.showDebugMenu.get().value_or(false)) {
         DigitalWrite(BLUE_LED, LED_ON);
     }
 
-    BackgroundSyncInternal(powerManager, prefs, localStore);
+    BackgroundSyncInternal(powerManager, prefs, localStore, telemetry);
 
     if (prefs.showDebugMenu.get().value_or(false)) {
         DigitalWrite(BLUE_LED, LED_OFF);
@@ -124,9 +133,9 @@ void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalSt
 // backup if we fail. But We don't want to drain battery if you're away from
 // WiFi. So we'll need to think carefully how we want to handle that.
 void BackgroundSyncAndSleep(PowerManager &powerManager, PreferencesStore &prefs,
-                            LocalStore &localStore) {
+                            LocalStore &localStore, Telemetry &telemetry) {
 
-    BackgroundSync(powerManager, prefs, localStore);
+    BackgroundSync(powerManager, prefs, localStore, telemetry);
 
     // TODO: Perhaps try dispatching this (maybe needs to happen outside of app_main)
     WiFi::getInstance().disconnectWiFi();

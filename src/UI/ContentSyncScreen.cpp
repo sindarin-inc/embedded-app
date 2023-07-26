@@ -67,6 +67,7 @@ void ContentSyncScreen::render(DisplaySystem &display) {
 
         { break; }
     case ContentSyncState::ConnectingWifi:
+    case ContentSyncState::UploadTelemetry:
     case ContentSyncState::CheckingSync:
     case ContentSyncState::SyncingBooks:
     case ContentSyncState::SyncingArticles:
@@ -125,6 +126,9 @@ void ContentSyncScreen::render(DisplaySystem &display) {
 
             drawBulletLine("Connecting WiFi",
                            state_.state > ContentSyncState::ConnectingWifi ? 100 : 0, false);
+
+            drawBulletLine("Syncing telemetry",
+                           state_.state > ContentSyncState::CheckingSync ? 100 : 0, false);
 
             drawBulletLine("Checking for update",
                            state_.state > ContentSyncState::CheckingSync ? 100 : 0, false);

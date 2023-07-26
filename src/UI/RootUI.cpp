@@ -20,6 +20,7 @@
 #include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Misc/Style.hpp"
+#include "Misc/Telemetry.hpp"
 #include "Models/Readable.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/LocalStore.hpp"
@@ -47,7 +48,6 @@
 #include "UI/StatsScreen.hpp"
 #include "UI/ToggleMenuScreen.hpp"
 #include "UI/TutorialScreen.hpp"
-#include "UI/VoltageLogUploadScreen.hpp"
 #include "Version.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -67,6 +67,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                    LightingController &lightingController) {
 
     display_ = display;
+
+    this->telemetry_.logMetricData(
+        TelemetryField::METRIC_BOOT,
+        {{"fw", kVersionString}, {"bc", prefs_.bootCount.get().value_or(0)}});
 
     MenuStyle styleFamilies;
 
@@ -116,8 +120,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             stream = fileSystem.newRendererStream(path.c_str());
         }
         auto *readableScreen =
-            new ReadableScreen(stream, *display, readable, this->prefs_, power_.battery, localStore,
-                               fileSystem, lightingController);
+            new ReadableScreen(stream, *display, readable, this->prefs_, this->telemetry_,
+                               localStore, fileSystem, lightingController);
+
+        this->telemetry_.logMetric(TelemetryField::METRIC_READABLE_OPEN, readable->uuid,
+                                   {{"po", readable->place}});
 
         // When switching to a readable from a menu, we should clear the display
         // to make the whites really white and the blacks really black.
@@ -237,7 +244,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
 
         booksMenu->addMenuItem(MenuItem(StringFormat("%s", title.c_str()),
-                                        StringFormat("%s", r->authors[0].name.c_str()),
+                                        StringFormat("%s", r->authorString().c_str()),
                                         [this, r, createReadableScreen]() {
             auto readableScreen = createReadableScreen(r);
             this->setCurrentScreen(*readableScreen);
@@ -835,29 +842,29 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                        "Font Settings", "Reading Settings");
         fontMenu->setExtraText("Example text size");
         fontMenu->addMenuItem(MenuItem("Small", [this, fontMenu]() {
-            this->display_->style.setFontFamily(this->display_->style.tahomaTiny);
+            this->display_->style.setFontFamily(this->display_->style.solSansSmall);
             this->display_->clearDisplay();
-            prefs_.font.set(PREFS_TAHOMA_TINY);
+            prefs_.font.set(PREFS_SOL_SMALL);
             fontMenu->setNeedsRerender();
         }));
         fontMenu->addMenuItem(MenuItem("Medium", [this, fontMenu]() {
-            this->display_->style.setFontFamily(this->display_->style.tahomaRegular);
+            this->display_->style.setFontFamily(this->display_->style.solSansMedium);
             this->display_->clearDisplay();
-            prefs_.font.set(PREFS_TAHOMA_REGULAR);
+            prefs_.font.set(PREFS_SOL_MEDIUM);
             fontMenu->setNeedsRerender();
         }));
         fontMenu->addMenuItem(MenuItem("Large", [this, fontMenu]() {
-            this->display_->style.setFontFamily(this->display_->style.tahomaLarge);
+            this->display_->style.setFontFamily(this->display_->style.solSansLarge);
             this->display_->clearDisplay();
-            prefs_.font.set(PREFS_TAHOMA_LARGE);
+            prefs_.font.set(PREFS_SOL_LARGE);
             fontMenu->setNeedsRerender();
         }));
         int menuIndex = 0;
-        if (prefs_.font.get().value_or(PREFS_TAHOMA_REGULAR) == PREFS_TAHOMA_TINY) {
+        if (prefs_.font.get().value_or(PREFS_SOL_SMALL) == PREFS_SOL_SMALL) {
             menuIndex = 0;
-        } else if (prefs_.font.get().value_or(PREFS_TAHOMA_REGULAR) == PREFS_TAHOMA_REGULAR) {
+        } else if (prefs_.font.get().value_or(PREFS_SOL_SMALL) == PREFS_SOL_MEDIUM) {
             menuIndex = 1;
-        } else if (prefs_.font.get().value_or(PREFS_TAHOMA_REGULAR) == PREFS_TAHOMA_LARGE) {
+        } else if (prefs_.font.get().value_or(PREFS_SOL_SMALL) == PREFS_SOL_LARGE) {
             menuIndex = 2;
         }
         fontMenu->setCurrSelection(menuIndex);
@@ -1349,19 +1356,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         });
     }));
 #endif
-
-    debugSettingsMenu->addMenuItem(MenuItem("Upload Voltage Log",
-                                            [this, display, &fileSystem, debugSettingsMenu]() {
-        auto voltageLogScreen = new VoltageLogUploadScreen(*display, this->prefs_, fileSystem);
-        this->setCurrentScreen(*voltageLogScreen);
-        (*voltageLogScreen).setBackCallback([this, voltageLogScreen, debugSettingsMenu, display]() {
-            debugSettingsMenu->setFirstLoad();
-            setCurrentScreen(*debugSettingsMenu);
-            debugSettingsMenu->render(*display);
-            delete voltageLogScreen;
-        });
-        (*voltageLogScreen).begin();
-    }));
 
     debugSettingsMenu->addMenuItem(MenuItem("Format FS",
                                             [this, display, &fileSystem, debugSettingsMenu]() {

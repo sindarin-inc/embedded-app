@@ -193,6 +193,8 @@ void ReadableScreen::render(DisplaySystem &display) {
     }
 
     prefs_.lastReadableId.set(readable_->uuid);
+    telemetry_.logMetric(TelemetryField::METRIC_READABLE_PLACE, readable_->shortenedUuid.c_str(),
+                         {{"po", readable_->place}});
 
     display.setFont(display.style.getFontFamily().readableFont);
 
