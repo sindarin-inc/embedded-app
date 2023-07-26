@@ -96,11 +96,21 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     ibmf75.load((ibmf_defs::MemoryPtr)fontsList[0].content, fontsList[0].length);
 
     auto booksMenu = new Menu(mainMenu->getMyStyle(), "Books");
-    auto bibleMenu = new Menu(mainMenu->getMyStyle(), "Bible");
     auto pocketMenu = new Menu(mainMenu->getMyStyle(), "Articles");
 
+    // Bible hack (to show off if we wanted to have different "apps" that had different
+    // behavior. For now, it's just the same as a regular book.)
+    auto isBible = [](const std::shared_ptr<Readable> &r) -> bool {
+        return (r->title == "Psalms and Proverbs" || r->title == "New Testament" ||
+                r->title == "Old Testament" || r->title == "Torah");
+    };
+    auto bibleMenu = new Menu(mainMenu->getMyStyle(), "Bible");
+    auto it = std::find_if(readables.begin(), readables.end(),
+                           [isBible](const std::shared_ptr<Readable> &x) { return isBible(x); });
+    auto hasBible = it != readables.end();
+
     auto createReadableScreen = [this, display, mainMenu, booksMenu, bibleMenu, pocketMenu,
-                                 &fileSystem, &lightingController, &localStore](
+                                 hasBible, &fileSystem, &lightingController, &localStore](
                                     const std::shared_ptr<Readable> &readable) -> ReadableScreen * {
         // TODO: Would be better to not allocate / delete these all the time
 
@@ -128,7 +138,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         // to make the whites really white and the blacks really black.
         display->clearDisplay();
         readableScreen->setBackCallback([this, display, stream, readableScreen, readable, booksMenu,
-                                         bibleMenu, pocketMenu, mainMenu]() {
+                                         bibleMenu, hasBible, pocketMenu, mainMenu]() {
             bool archived = prefs_.readableArchivedChanged.get(readable->shortenedUuid.c_str());
             auto title =
                 StringFormat("%s%s", archived ? "Archived: " : "", readable->title.c_str());
@@ -144,8 +154,10 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             };
 
             updateMenuTitle(booksMenu);
-            updateMenuTitle(bibleMenu);
             updateMenuTitle(pocketMenu);
+            if (!prefs_.noBible.get().value_or(false) && hasBible) {
+                updateMenuTitle(bibleMenu);
+            }
 
             // When leaving a readable to go back to the main menu, do a full clear
             // of the display.
@@ -180,10 +192,9 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     auto currentReadable = prefs_.lastReadableId.get();
 
     bool hasLastQuestion = false;
-    auto it =
-        std::find_if(readables.begin(), readables.end(), [](const std::shared_ptr<Readable> &x) {
-            return (x->title.compare("The Last Question") == 0);
-        });
+    it = std::find_if(readables.begin(), readables.end(), [](const std::shared_ptr<Readable> &x) {
+        return (x->title.compare("The Last Question") == 0);
+    });
     if (it == readables.end()) {
         log_d("Could not find readable: %s, not enabling CES or EMC modes", "The Last Question");
     } else {
@@ -244,11 +255,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     SHOW_HEAP();
-
-    auto isBible = [](const std::shared_ptr<Readable> &r) -> bool {
-        return (r->title == "Psalms and Proverbs" || r->title == "New Testament" ||
-                r->title == "Old Testament" || r->title == "Torah");
-    };
 
     for (const auto &r : readables) {
         bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
@@ -352,11 +358,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         mainMenu->addSubMenu(pocketMenu);
     }
 
-    // Bible hack (to show off if we wanted to have different "apps" that had different
-    // behavior. For now, it's just the same as a regular book.)
-    it = std::find_if(readables.begin(), readables.end(),
-                      [isBible](const std::shared_ptr<Readable> &x) { return isBible(x); });
-    auto hasBible = it != readables.end();
     if (!prefs_.noBible.get().value_or(false) && hasBible) {
         for (const auto &r : readables) {
             if (isBible(r)) {
