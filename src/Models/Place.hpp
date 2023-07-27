@@ -34,9 +34,7 @@ public:
         return placeType == PlaceType::NONE;
     }
     [[nodiscard]] auto getPlaceType() const -> PlaceType override { return PlaceType::NONE; };
-    [[nodiscard]] auto str() const -> std::string override {
-        return std::string("[NONE;INVALID PLACE]");
-    }
+    [[nodiscard]] auto str() const -> std::string override { return "[NONE;INVALID PLACE]"; }
 };
 
 class TxtPlace : public Place {

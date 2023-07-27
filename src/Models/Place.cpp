@@ -1,6 +1,5 @@
 #include "Place.hpp"
 
-#include <csignal>
 #include <cstring>
 #include <iostream>
 #include <regex>
@@ -24,7 +23,6 @@ auto Place::factory(const std::string &placeStr) -> std::shared_ptr<Place> {
     }
     log_e("Unable to parse place string properly: \"%s\"", placeStr.c_str());
     if constexpr (ON_ERROR_EXIT) {
-        std::raise(SIGINT);
         exit(1);
     }
     return std::make_shared<NonePlace>();

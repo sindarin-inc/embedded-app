@@ -100,7 +100,8 @@ public:
             if ((placeInReadable->getOffset() < chapter.txtOffset) && !includeUnread) {
                 break;
             }
-            if (chapter.txtOffset < placeInReadable && chapter.endTxtOffset > placeInReadable &&
+            if ((chapter.txtOffset < placeInReadable->getOffset()) &&
+                (chapter.endTxtOffset > placeInReadable->getOffset()) &&
                 chapter.partialChapterSummary != nullptr &&
                 !chapter.partialChapterSummary->text.empty()) {
                 summary += chapter.title;
