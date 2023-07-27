@@ -303,15 +303,14 @@ public:
           firstRead(*this, "first-read"), autoPilotSpeed(*this, "auto-speed"),
           firstAutopilotRead(*this, "fst-auto-rd"), cesMode(*this, "ces"), emcMode(*this, "emc"),
           wifiPower(*this, "wifi-power"), tzIana(*this, "tz-iana"), tzPosix(*this, "tz-posix"),
-          firmwareLoaded(*this, "fw-loaded"), sleepReason(*this, "sleep-reason"),
-          noBooks(*this, "no-books"), showNews(*this, "show-news"),
-          noArticles(*this, "no-articles"), noBible(*this, "no-bible"),
-          noDeliverOnClose(*this, "no-deliv-close"), noMorningDelivery(*this, "no-morn-sync"),
-          eveningDelivery(*this, "eve-deliver"), darkMode(*this, "dark-mode"),
-          autoPilot(*this, "auto-pilot"), fastTransitions(*this, "fast-tran"),
-          noUploadCrashes(*this, "no-upload-crash"), showDebugMenu(*this, "show-debug"),
-          fastBookmarkRight(*this, "fst-mark-right"), fastBookmarkCenter(*this, "fst-mark-cent"),
-          pageTransitionArrows(*this, "page-arrows"),
+          firmwareLoaded(*this, "fw-loaded"), noBooks(*this, "no-books"),
+          showNews(*this, "show-news"), noArticles(*this, "no-articles"),
+          noBible(*this, "no-bible"), noDeliverOnClose(*this, "no-deliv-close"),
+          noMorningDelivery(*this, "no-morn-sync"), eveningDelivery(*this, "eve-deliver"),
+          darkMode(*this, "dark-mode"), autoPilot(*this, "auto-pilot"),
+          fastTransitions(*this, "fast-tran"), noUploadCrashes(*this, "no-upload-crash"),
+          showDebugMenu(*this, "show-debug"), fastBookmarkRight(*this, "fst-mark-right"),
+          fastBookmarkCenter(*this, "fst-mark-cent"), pageTransitionArrows(*this, "page-arrows"),
           allowUsageWhileCharging(*this, "allow-use-chg"), wifiSettingsJson(*this, "wifi-settings"),
           localStoreMigrationVersion(*this, "ls-version"), fontsLibrary(*this, "fonts-lib"),
           fontType(*this, "font-type"), tutorialsDeleted(*this, "tutorials"),
@@ -388,6 +387,19 @@ public:
                     log_e("nvs_erase_key failed: %s", esp_err_to_name(err));
                 }
                 break;
+            }
+            case 3: {
+                std::vector<std::string> keys = {
+                    "morn-deliver",
+                    "no-page-arrows",
+                    "sleep-reason",
+                };
+                for (auto &key : keys) {
+                    esp_err_t err = nvs_erase_key(nvsHandle_, key.c_str());
+                    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
+                        log_e("nvs_erase_key failed: %s", esp_err_to_name(err));
+                    }
+                }
             }
             default:
                 log_e("Unknown migration version: %" PRIu32, migrationVersion);
@@ -503,7 +515,6 @@ public:
     PrefsItem<std::string> tzPosix;
     // Firmware that's been loaded to the other flash slot but not yet installed
     PrefsItem<std::string> firmwareLoaded;
-    PrefsItem<int> sleepReason;
     PrefsItem<bool> noBooks;
     PrefsItem<bool> showNews;
     PrefsItem<bool> noArticles;
@@ -540,7 +551,7 @@ public:
     static bool settingsOnRestart;
 
 protected:
-    const uint32_t latestMigrationVersion_ = 3;
+    const uint32_t latestMigrationVersion_ = 4;
     uint32_t nvsHandle_;
     bool started_;
 
