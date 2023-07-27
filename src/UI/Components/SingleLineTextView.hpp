@@ -4,6 +4,7 @@
 
 #include "EinkView.hpp"
 #include "Misc/Style.hpp"
+#include "UI/Fonts/TextTruncation.hpp"
 
 // A view that draws a line of text
 class SingleLineTextView : public EinkView {
@@ -38,23 +39,21 @@ public:
         // Probably not ideal, but for now it'll have to do.
         Font *oldFont = display_.getFont();
         display_.setFont(font_);
+
+        // Hard cap the size of the text to the no more than 1/3 the number of pixels (ie assume the
+        // average glyph + space width is at least 3px wide)
+        // TODO: It would be nice if the font told us its minimum glyph size
+        if (text_.size() > size.width / 3) {
+            text_ = text_.substr(0, std::min(size.width / 3, (int)text_.size()));
+        }
+
         display_.getTextSize(text_.c_str(), &w, &h);
 
-        //
         // If we don't have the option to grow horizontally as much as we want,
         // (which, honestly, we should probably never give a text view, right?)
         // we need to do this math and shrink the string until it fits.
-        //
-        while (w > size.width && size.width > 0) {
-            if (text_.length() > 4) {
-                text_ = text_.substr(0, text_.length() - 4) + "...";
-            } else {
-                // Practically, this shouldn't ever happen, but I'm doing
-                // the bounds check here just in case we do hit it some day.
-                text_ = "too big!";
-                break;
-            }
-            display_.getTextSize(text_.c_str(), &w, &h);
+        if (w > size.width && size.width > 0) {
+            text_ = TruncateStringToFit(display_, font_, text_, size.width, w);
         }
         display_.setFont(oldFont);
         return {w, font_->lineHeight()};
