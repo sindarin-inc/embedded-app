@@ -29,7 +29,7 @@ public:
     auto posixTimezoneString() -> std::string;
     void setTimezone(const std::string &ianaTimezone);
 
-    void setClockTimeFromInternet();
+    auto setClockTimeFromInternet() -> bool;
 
     auto calculateNextSyncTime(time_t now) -> time_t;
 

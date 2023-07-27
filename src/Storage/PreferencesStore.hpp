@@ -19,13 +19,13 @@ typedef uint64_t BLEAddress;
 #define MAX_KEY_LENGTH 15
 
 enum FONT_CHOICES {
-    PREFS_TAHOMA_TINY = 0,
-    PREFS_LUCIDA_SKINNY = 1,
-    PREFS_LUCIDA_FAT = 2,
-    PREFS_LUCIDA_REGULAR = 3,
-    PREFS_TAHOMA_LARGE = 4,
-    PREFS_TAHOMA_REGULAR = 5,
-    PREFS_TAHOMA_HUGE = 6,
+    PREFS_SOL_SMALL = 0,
+    PREFS_UNUSED_1 = 1,
+    PREFS_UNUSED_2 = 2,
+    PREFS_UNUSED_3 = 3,
+    PREFS_SOL_LARGE = 4,
+    PREFS_SOL_MEDIUM = 5,
+    PREFS_UNUSED_6 = 6,
 };
 
 enum class SyncReason {

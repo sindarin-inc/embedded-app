@@ -4,7 +4,6 @@
 #include "Models/JsonSerializable.hpp"
 #include "Models/Place.hpp"
 #include "Models/Readable.hpp"
-#include "Models/UserReadablePartialChapterSummary.hpp"
 
 class UserReadable : JsonSerializable {
 public:
@@ -15,7 +14,6 @@ public:
     std::shared_ptr<Place> placemark;
     bool isArchived;
     std::shared_ptr<Readable> readable = nullptr;
-    std::shared_ptr<UserReadablePartialChapterSummary> partialChapterSummary = nullptr;
 
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("uuid") || !j.containsKey("readable")) {
@@ -26,7 +24,6 @@ public:
         placemark = Place::factory(j["placemark"].as<std::string>());
         isArchived = j["is_archived"].as<bool>();
         readable = SpiRamPtr<Readable>();
-        partialChapterSummary = SpiRamPtr<UserReadablePartialChapterSummary>();
         return readable->fromJson(j["readable"]);
     }
 

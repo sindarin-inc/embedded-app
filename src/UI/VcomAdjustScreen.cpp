@@ -17,7 +17,7 @@ VcomAdjustScreen::VcomAdjustScreen(DisplaySystem &display, PreferencesStore &pre
 }
 
 void VcomAdjustScreen::render(DisplaySystem &display) {
-    display.setFont(static_cast<Font *>(&fontLucidaGrandE10PT7B));
+    display.setFont(static_cast<Font *>(&ibmf75Face2));
 
     auto vcomStr = StringFormat("%dmV", vCom);
 
@@ -32,7 +32,7 @@ void VcomAdjustScreen::render(DisplaySystem &display) {
 
     display.updateDisplay();
 
-    display.setFont(static_cast<Font *>(&fontLucidaGrandE5PT7B));
+    display.setFont(static_cast<Font *>(&ibmf75Face0));
 }
 
 void VcomAdjustScreen::processCommand(RemoteCommand command) {

@@ -30,6 +30,7 @@ protected:
     void writePageTurnerBatteryToCharacteristic(BLECharacteristic *characteristic,
                                                 const std::string &key);
     void disconnectPageTurnerForSeconds(const int seconds);
+    void unpairPageTurner(BLECharacteristic *characteristic, const std::string &key);
     void writeWifiSSIDtoCharacteristic(BLECharacteristic *characteristic, const std::string &key);
     void blinkLedAfterConnect(BLECharacteristic *characteristic, const std::string &key);
 
@@ -117,6 +118,8 @@ protected:
                     this->enclosed->prefs_->cloudToken.set(settingValue);
                 } else if (settingKey == "disconnect-pt-sec") {
                     this->enclosed->disconnectPageTurnerForSeconds(std::stoi(settingValue));
+                } else if (settingKey == "unpair-page-turner") {
+                    this->enclosed->unpairPageTurner(characteristic, settingKey);
                 } else {
                     log_w("GATT client asking to write unknown setting: %s=%s", settingKey.c_str(),
                           settingValue.c_str());

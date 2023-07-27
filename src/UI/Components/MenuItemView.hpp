@@ -13,8 +13,8 @@ class MenuItemView : public EinkView {
 public:
     // Always use the smallest font for subtitles
     MenuItemView(DisplaySystem &display, const MenuItem &menuItem,
-                 Font *font = static_cast<Font *>(&fontTahomaRegularFonT5PT7B),
-                 bool multiLine = false, bool subtitle = true)
+                 Font *font = static_cast<Font *>(&ibmf75Face0), bool multiLine = false,
+                 bool subtitle = true)
         : EinkView(display), indicator_(display, 4) {
         if (multiLine) {
             textMultiView_ =
@@ -24,7 +24,7 @@ public:
         }
         if (!menuItem.subtitle.empty() && subtitle) {
             subtextView_ = std::make_unique<SingleLineTextView>(
-                display, menuItem.subtitle, static_cast<Font *>(&fontTahomaRegularFonT5PT7B), true);
+                display, menuItem.subtitle, static_cast<Font *>(&ibmf75Face0), true);
         }
         log_i("initializing menu item view with title: %s", menuItem.title.c_str());
     }
@@ -37,7 +37,7 @@ public:
     void setRightText(const std::string &rightText) {
         if (rightTextView_ == nullptr) {
             rightTextView_ = std::make_unique<SingleLineTextView>(
-                display_, rightText, static_cast<Font *>(&fontTahomaRegularFonT5PT7B), true);
+                display_, rightText, static_cast<Font *>(&ibmf75Face0), true);
         } else {
             rightTextView_->setText(rightText);
         }

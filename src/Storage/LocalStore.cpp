@@ -336,6 +336,88 @@ auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Reada
     return false;
 }
 
+auto LocalStore::processToCFromServer(const std::shared_ptr<Readable> &readable) -> bool {
+    // Ensure there's a ToC to begin with
+    if (readable->toc.size() == 0) {
+        // If there's no ToC from the server, then we can't update it
+        return false;
+    }
+
+    // Check if the ToC is not yet saved on disk
+    auto tocPath = readable->tocFilePath();
+    SFile tocFile = fileSystem.open(tocPath, FILE_READ, true);
+    if (!tocFile) {
+        log_w("Failed to open TOC file for reading: %s", tocPath.c_str());
+        return true;
+    }
+
+    // Check if the saved ToC is valid JSON
+    auto tocDoc = std::make_unique<SpiRamJsonDocument>(
+        std::max(static_cast<size_t>(50000), 2 * tocFile.size()));
+    auto error = deserializeJson(*tocDoc, tocFile);
+    if (error) {
+        log_e("Failed to parse TOC JSON: %s", error.c_str());
+        return true;
+    }
+
+    // Check if the # of chapters is different
+    auto tocJson = (*tocDoc)["toc"].as<JsonArray>();
+    if (readable->toc.size() != tocJson.size()) {
+        log_d("ToC size mismatch for %s (%zu on disk vs %zu remotely), updating", tocPath.c_str(),
+              tocJson.size(), readable->toc.size());
+        return true;
+    }
+
+    // Check if any of the chapters are different
+    for (int i = 0; i < tocJson.size(); i++) {
+        auto localJson = tocJson[i].as<JsonObject>();
+        auto remoteJson = readable->toc[i];
+
+        if (localJson["title"].as<std::string>() != remoteJson.title ||
+            localJson["href"].as<std::string>() != remoteJson.href ||
+            (localJson.containsKey("in_subsection_href") &&
+             localJson["in_subsection_href"].as<std::string>() != remoteJson.inSubsectionHref) ||
+            localJson["txt_offset"].as<uint32_t>() != remoteJson.txtOffset ||
+            localJson["end_txt_offset"].as<uint32_t>() != remoteJson.endTxtOffset) {
+            log_d("ToC chapter (%s) mismatch for %s, updating", remoteJson.title.c_str(),
+                  tocPath.c_str());
+            return true;
+        }
+
+        // Check if summary exists and is different
+        if (remoteJson.summary.size()) {
+            if (!localJson.containsKey("summary") || localJson["summary"] == nullptr ||
+                localJson["summary"].as<std::string>() != remoteJson.summary) {
+                log_d("ToC chapter summary (%s) mismatch for %s, updating",
+                      remoteJson.title.c_str(), tocPath.c_str());
+                return true;
+            }
+        }
+
+        // Check if partial_chapter_summary exists in remote json and if
+        // partial_chapter_summary.placemark is different
+        if (remoteJson.partialChapterSummary != nullptr) {
+            if (localJson.containsKey("partial_chapter_summary") &&
+                localJson["partial_chapter_summary"] != nullptr) {
+                auto partialChapterSummaryJson =
+                    localJson["partial_chapter_summary"].as<JsonObject>();
+                if (partialChapterSummaryJson["placemark"].as<uint32_t>() !=
+                    remoteJson.partialChapterSummary->placemark) {
+                    log_d("ToC chapter partial summary (%s) mismatch for %s, updating",
+                          remoteJson.title.c_str(), tocPath.c_str());
+                    return true;
+                }
+            } else {
+                log_d("ToC chapter partial summary (%s) mismatch for %s, updating",
+                      remoteJson.title.c_str(), tocPath.c_str());
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 void LocalStore::resetReadablesPlacemarkChanged(const ReadablesVector &readables) {
     for (const auto &readable : readables) {
         bool changed = prefs_.readablePlaceChanged.get(readable->shortenedUuid.c_str());
@@ -385,6 +467,20 @@ void LocalStore::syncFromRemote(
         return;
     }
 
+    // If we don't have a clock that's accurate, sync it
+    if (SolClock::getInstance().getEpochTime() < 1000000000) {
+        log_i("Clock not set, syncing from internet");
+        // Sync the clock
+        auto success = SolClock::getInstance().setClockTimeFromInternet();
+        if (success) {
+            this->telemetry_.logMetric(TelemetryField::METRIC_CLOCK_SET, "success",
+                                       {{"run-time", GetRunTimeMs()}});
+        } else {
+            this->telemetry_.logMetric(TelemetryField::METRIC_CLOCK_SET, "failure",
+                                       {{"run-time", GetRunTimeMs()}});
+        }
+    }
+
     // Uncomment below line to set your access token for local development
     // prefs._cloudToken.set("");
 
@@ -404,10 +500,22 @@ void LocalStore::syncFromRemote(
     // log_w("Access token: %s", token.value().c_str());
 
     SindarinAPI::getInstance()->setAccessToken(token.value());
-    progressCallback(ContentSyncState{.state = ContentSyncState::State::CheckingSync});
+
+    auto queue = DispatchGetCore0BackgroundQueue();
+    queue->dispatch([this, progressCallback] {
+        progressCallback(ContentSyncState{.state = ContentSyncState::State::UploadTelemetry});
+        auto httpCode =
+            this->telemetry_.uploadAndResetTelemetry(this->fileSystem, this->telemetry_);
+        if (httpCode != 201) {
+            this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-telemetry-failed",
+                                       {{"http-code", httpCode}});
+        } else {
+            this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,
+                                       "sync-telemetry-success");
+        }
+    });
 
     // Run this work on a separate thread, since it's long running
-    auto queue = DispatchGetCore0BackgroundQueue();
     queue->dispatch([this, progressCallback] {
         auto syncReason = PreferencesStore::syncReason;
         CheckSyncRequest checkSyncRequest;
@@ -417,6 +525,8 @@ void LocalStore::syncFromRemote(
         bool articlesAlreadySynced = false;
         bool booksNowSynced = false;
         bool articlesNowSynced = false;
+
+        progressCallback(ContentSyncState{.state = ContentSyncState::State::CheckingSync});
 
         std::vector<ReadablesVector *> readablesList = {&books_, &articles_};
         for (auto &readables : readablesList) {
@@ -457,9 +567,20 @@ void LocalStore::syncFromRemote(
                 } else {
                     log_d("Fetching next page (#%d): %s", nextPageCounter + 1, nextPageUrl.c_str());
                 }
+                this->telemetry_.logMetric(
+                    TelemetryField::METRIC_SYNC_STATUS,
+                    StringFormat("sync-%ss-page", ReadableModelTypeToString(modelType).c_str())
+                        .c_str(),
+                    {{"page", nextPageCounter}});
+
                 nextPageCounter += 1;
                 if (nextPageCounter > MAX_NUMBER_OF_PAGES_TO_BACKFILL) {
                     log_w("Too many pages to backfill, aborting");
+                    this->telemetry_.logMetric(
+                        TelemetryField::METRIC_SYNC_STATUS,
+                        StringFormat("sync-%ss-max-backfill",
+                                     ReadableModelTypeToString(modelType).c_str())
+                            .c_str());
                     break;
                 }
 
@@ -475,16 +596,32 @@ void LocalStore::syncFromRemote(
                 }
                 log_d("Server has %d %ss, next page: %s", checkSyncResponse.totalCount,
                       ReadableModelTypeToString(modelType).c_str(), nextPageUrl.c_str());
+                this->telemetry_.logMetric(
+                    TelemetryField::METRIC_SYNC_STATUS,
+                    StringFormat("sync-status-%ss", ReadableModelTypeToString(modelType).c_str())
+                        .c_str(),
+                    {{"http-code", httpCode}});
+                this->telemetry_.logMetric(
+                    TelemetryField::METRIC_SYNC_STATUS,
+                    StringFormat("sync-%ss-count", ReadableModelTypeToString(modelType).c_str())
+                        .c_str(),
+                    {{"total-count", checkSyncResponse.totalCount}});
                 if (httpCode != 200) {
                     log_e("Failed to check sync (HTTP %d)", httpCode);
                     progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
                                                       .message = "Failed to check sync"});
+                    this->telemetry_.logMetric(
+                        TelemetryField::METRIC_SYNC_STATUS,
+                        StringFormat("failed-sync-%ss",
+                                     ReadableModelTypeToString(modelType).c_str())
+                            .c_str(),
+                        {{"http-code", httpCode}});
                     return;
                 }
 
                 // Look through all the books and articles and download any that we don't have
-                // already We also process readables before checking if we're synced before we need
-                // to reset the local changed flags
+                // already We also process readables before checking if we're synced before we
+                // need to reset the local changed flags
                 auto userReadables = modelType == ReadablesModelType::Book
                                          ? checkSyncResponse.userBooks
                                          : checkSyncResponse.userArticles;
@@ -522,6 +659,11 @@ void LocalStore::syncFromRemote(
                         articlesAlreadySynced = true;
                     }
 
+                    this->telemetry_.logMetric(
+                        TelemetryField::METRIC_SYNC_STATUS,
+                        StringFormat("already-synced-%ss",
+                                     ReadableModelTypeToString(modelType).c_str())
+                            .c_str());
                     break;
                 }
 
@@ -557,6 +699,19 @@ void LocalStore::syncFromRemote(
                         });
                     }
                 }
+                // Check if we have any readables to download/delete, and if not, continue paging
+                if (syncState.tasks.size() == 0) {
+                    log_i("No %ss to download or delete, continuing to next page",
+                          ReadableModelTypeToString(modelType).c_str());
+                    if (modelType == ReadablesModelType::Book) {
+                        progressCallback(
+                            ContentSyncState{.state = ContentSyncState::State::SyncingBooks});
+                    } else if (modelType == ReadablesModelType::Article) {
+                        progressCallback(
+                            ContentSyncState{.state = ContentSyncState::State::SyncingArticles});
+                    }
+                    continue;
+                }
                 progressCallback(syncState);
 
                 processReadableDeletion(readablesToDelete, *readables, tasksIndex, syncState,
@@ -569,6 +724,11 @@ void LocalStore::syncFromRemote(
                     log_d("Failed to process %ss, have %zu %ss",
                           ReadableModelTypeToString(modelType).c_str(), readables->size(),
                           ReadableModelTypeToString(modelType).c_str());
+                    this->telemetry_.logMetric(
+                        TelemetryField::METRIC_SYNC_STATUS,
+                        StringFormat("failed-download-%ss",
+                                     ReadableModelTypeToString(modelType).c_str())
+                            .c_str());
                 }
                 progressCallback(syncState);
             }
@@ -576,6 +736,10 @@ void LocalStore::syncFromRemote(
             if (!this->saveReadables(*readables)) {
                 log_e("Failed to save %s", ReadableModelTypeToString(modelType).c_str());
                 failedDownload = true;
+                this->telemetry_.logMetric(
+                    TelemetryField::METRIC_SYNC_STATUS,
+                    StringFormat("failed-save-%ss", ReadableModelTypeToString(modelType).c_str())
+                        .c_str());
             }
 
             // Store since date values for next sync
@@ -619,10 +783,19 @@ void LocalStore::syncFromRemote(
                 } else if (modelType == ReadablesModelType::Article) {
                     articlesNowSynced = true;
                 }
+                this->telemetry_.logMetric(
+                    TelemetryField::METRIC_SYNC_STATUS,
+                    StringFormat("success-download-%ss",
+                                 ReadableModelTypeToString(modelType).c_str()));
             } else {
                 log_w("After running sync, local %ss are still out of sync",
                       ReadableModelTypeToString(modelType).c_str());
                 checkSyncFailures += 1;
+                this->telemetry_.logMetric(
+                    TelemetryField::METRIC_SYNC_STATUS,
+                    StringFormat("failed-finish-sync-%ss",
+                                 ReadableModelTypeToString(modelType).c_str())
+                        .c_str());
             }
         }
 
@@ -653,15 +826,37 @@ auto LocalStore::processReadables(const CheckSyncResponse &checkSyncResponse,
 
     auto serverReadables = modelType == ReadablesModelType::Book ? checkSyncResponse.userBooks
                                                                  : checkSyncResponse.userArticles;
+    log_d("Processing %zu %ss from server", serverReadables.size(),
+          ReadableModelTypeToString(modelType).c_str());
 
     for (auto &userReadable : serverReadables) {
-        log_d("User readable %s (%s)", userReadable.readable->title.c_str(),
+        log_d("Processing user readable %s (%s)", userReadable.readable->title.c_str(),
               userReadable.readable->uuid.c_str());
         SHOW_HEAP();
 
         if (processReadablePlacemarksFromServer(userReadable.readable, userReadable.placemark)) {
             log_i("Placemark for %s updated to %s", userReadable.readable->title.c_str(),
                   userReadable.placemark->str().c_str());
+        }
+
+        if (processToCFromServer(userReadable.readable)) {
+            log_i("TOC for %s updated", userReadable.readable->title.c_str());
+
+            // First remove the ToC file from disk so it can be updated later
+            auto tocPath = userReadable.readable->tocFilePath();
+            if (tocPath.size()) {
+                log_i("Removing TOC for %s: %s", userReadable.readable->title.c_str(),
+                      tocPath.c_str());
+                fileSystem.remove(tocPath.c_str());
+            }
+
+            // Then update the ToC in memory for later storage
+            for (const auto &storedReadable : readables) {
+                if (storedReadable->uuid == userReadable.readable->uuid) {
+                    storedReadable->toc = userReadable.readable->toc;
+                    break;
+                }
+            }
         }
 
         auto found = hasReadable(readables, userReadable.readable, true);
@@ -735,7 +930,7 @@ auto LocalStore::processReadableDownload(
 
         for (int t = 0; t < NUMBER_OF_READABLE_DOWNLOAD_TRIES; t++) {
             auto success = SindarinAPI::getInstance()->downloadReadable(
-                readable, this->fileSystem, path,
+                readable, this->fileSystem, this->telemetry_, path,
                 [progressCallback, &syncState, tasksIndex, currPercentage, pctPerReadable,
                  modelType](int percentage) {
                 if (modelType == ReadablesModelType::Book) {
@@ -751,6 +946,12 @@ auto LocalStore::processReadableDownload(
                 log_d("File successfully downloaded.");
                 if (!saveReadables(readables)) {
                     log_e("Failed to save %s", ReadableModelTypeToString(modelType).c_str());
+
+                    this->telemetry_.logMetric(
+                        TelemetryField::METRIC_SYNC_STATUS,
+                        StringFormat("failed-save-%s",
+                                     ReadableModelTypeToString(modelType).c_str()),
+                        {{"uuid", readable->uuid}, {"title", readable->title.c_str()}});
                 }
 
                 break;
@@ -759,6 +960,12 @@ auto LocalStore::processReadableDownload(
                 if (t == NUMBER_OF_READABLE_DOWNLOAD_TRIES - 1) {
                     log_e("Failed to download file.");
                     failedDownload = true;
+                    this->telemetry_.logMetric(
+                        TelemetryField::METRIC_SYNC_STATUS,
+                        StringFormat("failed-download-%s",
+                                     ReadableModelTypeToString(modelType).c_str())
+                            .c_str(),
+                        {{"uuid", readable->uuid}, {"title", readable->title.c_str()}});
                 }
             }
         }
@@ -963,7 +1170,8 @@ auto LocalStore::saveTableOfContents(const std::shared_ptr<Readable> &readable) 
     std::string path = readable->tocFilePath();
     JsonArray tocJson = doc->createNestedArray("toc");
 
-    log_d("Saving ToC of readable %s in %s", readable->uuid.c_str(), path.c_str());
+    log_d("Saving %zu ToC chapters of readable %s in %s", readable->toc.size(),
+          readable->uuid.c_str(), path.c_str());
     for (const auto &chapter : readable->toc) {
         tocJson.add(chapter);
     }
@@ -1191,9 +1399,9 @@ void LocalStore::migrateIfNeeded() {
               migrationVersion + 1);
         switch (migrationVersion) {
         case 0: {
-            // For a long while we weren't actively cleaning up these old readable-specific keys in
-            // NVS. This migration goes through all readable-keys and purges any keys that don't
-            // correspond to a readable on the glasses.
+            // For a long while we weren't actively cleaning up these old readable-specific keys
+            // in NVS. This migration goes through all readable-keys and purges any keys that
+            // don't correspond to a readable on the glasses.
             garbageCollectPreferences();
             break;
         }

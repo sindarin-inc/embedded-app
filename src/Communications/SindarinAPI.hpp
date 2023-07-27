@@ -4,6 +4,7 @@
 #include <functional>
 
 #include "Communications/HttpClient.hpp"
+#include "Misc/Telemetry.hpp"
 #include "Models/CheckSync.hpp"
 #include "Models/Firmware.hpp"
 #include "Models/FirmwareResponse.hpp"
@@ -31,11 +32,11 @@ public:
     auto checkFirmware(FirmwareResponse *resp) -> int;
 
     auto downloadReadable(const std::shared_ptr<Readable> &readable, FileSystem &fileSystem,
-                          const std::string &path,
+                          Telemetry &telemetry, const std::string &path,
                           const std::function<void(int percentage)> &progressCallback) -> bool;
 
-    auto uploadAndResetVoltageLog(FileSystem &fileSystem) -> int;
-
+    auto uploadTelemetryFile(SFile &telemetryFile, const std::string &localPath,
+                             FileSystem &fileSystem) -> int;
     auto uploadCrashReport(SFile &crashFile, const std::string &contentType) -> int;
 
     void setAuth(HttpClient &client);

@@ -21,8 +21,10 @@ void Battery::loop() {
         this->rightConnected_ = right > BATTERY_DISCONNECT_THRESHOLD;
 
         if (now > lastLoggingTime_ + BATTERY_LOGGING_PERIOD_SECONDS * 1000) {
-            DispatchGetCore1BackgroundQueue()->dispatch(
-                [this, left, right]() { logVoltages(left, right); });
+            DispatchGetCore1BackgroundQueue()->dispatch([this, left, right]() {
+                telemetry_.logMetricData(TelemetryField::METRIC_BATTERY_VOLTAGE,
+                                         {{"l", left}, {"r", right}});
+            });
             lastLoggingTime_ = now;
         }
 
@@ -136,38 +138,6 @@ auto Battery::getDepleted() -> bool {
 #else
     return this->depleted_;
 #endif
-}
-
-void Battery::logVoltages(float lVoltage, float rVoltage) {
-    // create log directory in filesystem if it doesn't exist
-    if (!fileSystem_.createDir("/logs")) {
-        log_e("could not create /logs directory");
-        return;
-    }
-
-    // get current boot count
-    auto bootCount = prefs_.bootCount.get().value_or(0);
-
-    auto runTimeMs = GetRunTimeMs();
-    std::string logString =
-        StringFormat("%d,%d,%.2f,%.2f", bootCount, runTimeMs, lVoltage, rVoltage);
-
-    log_d("Logging voltages:");
-    log_d("Left: %.2fV (%d readings)", lVoltage, this->leftMeasurementCount_);
-    log_d("Right: %.2fV (%d readings)", rVoltage, this->rightMeasurementCount_);
-
-    std::string path = Battery::voltageLogPath();
-    SFile file = fileSystem_.open(path.c_str(), FILE_APPEND);
-    if (file.size() < MAX_VOLTAGE_LOG_SIZE) {
-        file.write((const uint8_t *)logString.c_str(), logString.length());
-        file.write('\n');
-        file.flush();
-        file.close();
-    } else {
-        log_e("Voltage log file is too large. Deleting.");
-        file.close();
-        fileSystem_.remove(path.c_str());
-    }
 }
 
 void Battery::saveLastBatteryReport() {

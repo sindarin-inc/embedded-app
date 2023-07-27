@@ -3,6 +3,7 @@
 #include <functional>
 
 #include "Communications/HttpClient.hpp"
+#include "Misc/Telemetry.hpp"
 #include "Storage/FileSystem.hpp"
 
 auto DownloadFile(
@@ -17,5 +18,6 @@ auto DownloadFile(const char *url,
                   const std::function<void(int bytesWritten, float percentage)> &progressCallback,
                   bool gzip) -> bool;
 
-auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int length,
-                  const std::function<void(float percentage)> &progressCallback, bool gzip) -> bool;
+auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry, const char *path,
+                  int length, const std::function<void(float percentage)> &progressCallback,
+                  bool gzip) -> bool;

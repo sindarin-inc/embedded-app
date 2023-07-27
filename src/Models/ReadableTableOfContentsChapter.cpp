@@ -6,7 +6,11 @@ auto convertToJson(const ReadableTableOfContentsChapter &src, JsonVariant dst) -
     dst["href"] = src.href;
     dst["in_subsection_href"] = src.inSubsectionHref;
     dst["txt_offset"] = src.txtOffset;
+    dst["end_txt_offset"] = src.endTxtOffset;
     dst["summary"] = src.summary;
+    if (src.partialChapterSummary != nullptr) {
+        dst["partial_chapter_summary"] = *src.partialChapterSummary;
+    }
 
     return true;
 }
