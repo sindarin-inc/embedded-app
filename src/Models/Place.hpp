@@ -76,7 +76,7 @@ public:
 
     [[nodiscard]] auto str() const -> std::string override {
         std::string s;
-        s = "[EPUB:offset:";
+        s = "[EPUB;offset:";
         s += std::to_string(offset_);
         s.append(",filename:");
         s += filename_;
