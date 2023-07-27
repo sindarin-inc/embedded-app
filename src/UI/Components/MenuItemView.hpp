@@ -99,13 +99,11 @@ public:
         // Layout the main text item
         if (textMultiView_ != nullptr && !textMultiView_->isHidden()) {
             textRect = context.setViewFrame(
-                *textMultiView_,
-                {{indicatorWidthPlus, y}, {right - x - indicatorWidthPlus, size.height}},
+                *textMultiView_, {{indicatorWidthPlus, y}, {right - x - indicatorWidthPlus, 0}},
                 LayoutOptionsSizeToFitVertical);
         } else {
             textRect = context.setViewFrame(
-                *textView_,
-                {{indicatorWidthPlus, y}, {right - x - indicatorWidthPlus, size.height}},
+                *textView_, {{indicatorWidthPlus, y}, {right - x - indicatorWidthPlus, 0}},
                 LayoutOptionsSizeToFitVertical);
         }
 
@@ -115,11 +113,11 @@ public:
         if (subtextView_ != nullptr && !subtextView_->isHidden()) {
             // Tiny bit of padding in-between
             y += 2;
-            subtextRect = context.setViewFrame(
-                *subtextView_,
-                {{indicatorWidthPlus + indicatorRightPadding, y},
-                 {right - x - indicatorWidthPlus - indicatorRightPadding, size.height}},
-                LayoutOptionsSizeToFitVertical);
+            subtextRect =
+                context.setViewFrame(*subtextView_,
+                                     {{indicatorWidthPlus + indicatorRightPadding, y},
+                                      {right - x - indicatorWidthPlus - indicatorRightPadding, 0}},
+                                     LayoutOptionsSizeToFitVertical);
             y += subtextRect.size.height;
         }
 
@@ -173,7 +171,6 @@ public:
             return;
         }
         selected_ = selected;
-        setNeedsLayout();
     }
 
 protected:
