@@ -124,7 +124,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
                 addToPage();
                 nextByte();
             }
-              break;
+            break;
 
         case '\t':
             if (!pageCompleted) {
