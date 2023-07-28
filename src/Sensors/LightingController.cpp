@@ -65,7 +65,7 @@ void LightingController::enableLighting(int fadeMs) {
 }
 
 void LightingController::setOverrideValuePercent(int percent) {
-    auto dutyCycle = MapRange(percent, 0, 100, static_cast<int>(GetMinLightingDutyCycle()),
+    auto dutyCycle = MapRange(percent, 0, 100, static_cast<int>(GetMinLightingDutyCycleOverride()),
                               static_cast<int>(GetMaxLightingDutyCycle()));
     overrideDutyCycle_ = dutyCycle;
     lightSensor_.disable();

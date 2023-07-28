@@ -42,6 +42,8 @@ void SetRightScreenLightFade(int dutyCycle, int fadeMs) {
 
 auto GetMinLightingDutyCycle() -> uint8_t { return 10; }
 
+auto GetMinLightingDutyCycleOverride() -> uint8_t { return 1; }
+
 auto GetMaxLightingDutyCycle() -> uint8_t { return 210; }
 
 auto GetRunTimeMs() -> uint32_t { return Millis(); }

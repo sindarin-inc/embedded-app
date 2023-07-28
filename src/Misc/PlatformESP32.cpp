@@ -433,6 +433,8 @@ void SetRightScreenLightFade(int dutyCycle, int fadeMs) {
 
 auto GetMinLightingDutyCycle() -> uint8_t { return minLightingDutyCycle; }
 
+auto GetMinLightingDutyCycleOverride() -> uint8_t { return 1; }
+
 auto GetMaxLightingDutyCycle() -> uint8_t { return maxLightingDutyCycle; }
 
 auto GetRunTimeMs() -> uint32_t { return (uint32_t)(xTaskGetTickCount() * portTICK_PERIOD_MS); }
