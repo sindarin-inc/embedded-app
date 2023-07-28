@@ -150,8 +150,6 @@ void ReadableScreen::turnPage() {
         readable_->place = newPlace_;
         prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place);
         prefs_.readablePlaceChanged.set(readable_->shortenedUuid.c_str(), true);
-        prefs_.lastReadTime.set(readable_->shortenedUuid.c_str(),
-                                SolClock::getInstance().getEpochTime());
         speedLinesToSkip_ = 0;
     }
 
@@ -193,8 +191,6 @@ void ReadableScreen::render(DisplaySystem &display) {
     }
 
     prefs_.lastReadableId.set(readable_->uuid);
-    telemetry_.logMetric(TelemetryField::METRIC_READABLE_PLACE, readable_->shortenedUuid.c_str(),
-                         {{"po", readable_->place}});
 
     display.setFont(display.style.getFontFamily().readableFont);
 
@@ -467,13 +463,14 @@ void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
 }
 
 void ReadableScreen::processCommandNormal(RemoteCommand command) {
+    // Go ahead and begin powering on the screen since in all cases we trigger a re-render
+    display_.beginPowerOn();
+
     switch (command) {
     case RemoteCommand::LEFT:
         readable_->place = renderer_.getPreviousPlace();
         prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place);
         prefs_.readablePlaceChanged.set(readable_->shortenedUuid.c_str(), true);
-        prefs_.lastReadTime.set(readable_->shortenedUuid.c_str(),
-                                SolClock::getInstance().getEpochTime());
         break;
     case RemoteCommand::ENTER:
         if (prefs_.fastBookmarkCenter.get().value_or(false)) {
