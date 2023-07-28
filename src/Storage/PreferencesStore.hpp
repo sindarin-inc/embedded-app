@@ -436,6 +436,7 @@ public:
                         log_e("nvs_erase_key failed: %s", esp_err_to_name(err));
                     }
                 }
+                break;
             }
             default:
                 log_e("Unknown migration version: %" PRIu32, migrationVersion);
