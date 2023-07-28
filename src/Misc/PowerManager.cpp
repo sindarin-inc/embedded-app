@@ -310,6 +310,8 @@ auto PowerManager::isTempleOpen(bool &open) -> esp_err_t {
 
 void PowerManager::checkUsb() {
     static uint32_t ledChargedTimer = 0;
+    static bool wasBelow95 =
+        false; // whether the battery percentage was below 95% when USB was connected
     const uint32_t delayPeriod = 30 * 60 * 1000; // 30 min delay upon reaching 95% battery level
 
     if (USBConnected()) {
@@ -320,7 +322,14 @@ void PowerManager::checkUsb() {
         gpio_hold_dis((gpio_num_t)RED_LED);
 
         if (percentage > 95) {
-            if (ledChargedTimer == 0) {
+            if (!wasBelow95) {
+                // USB was connected while battery percentage was already above 95%
+                DigitalWrite(GREEN_LED, LED_ON);
+                DigitalWrite(RED_LED, LED_OFF);
+                gpio_hold_en((gpio_num_t)GREEN_LED);
+                gpio_hold_en((gpio_num_t)RED_LED);
+                gpio_deep_sleep_hold_en();
+            } else if (ledChargedTimer == 0) {
                 // If the battery is fully charged, start the timer before turning on the LED
                 ledChargedTimer = Millis();
             } else if ((Millis() - ledChargedTimer) >= delayPeriod) {
@@ -333,6 +342,7 @@ void PowerManager::checkUsb() {
             }
         } else {
             ledChargedTimer = 0; // reset the timer as battery level is below 95%
+            wasBelow95 = true;
             DigitalWrite(GREEN_LED, LED_OFF);
             DigitalWrite(RED_LED, LED_ON);
             gpio_hold_en((gpio_num_t)GREEN_LED);
@@ -341,6 +351,7 @@ void PowerManager::checkUsb() {
         }
     } else {
         ledChargedTimer = 0; // reset the timer as the USB is disconnected
+        wasBelow95 = false;
         DigitalWrite(GREEN_LED, LED_OFF);
         DigitalWrite(RED_LED, LED_OFF);
         gpio_hold_dis((gpio_num_t)GREEN_LED);
