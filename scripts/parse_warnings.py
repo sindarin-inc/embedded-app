@@ -13,7 +13,7 @@ print(f"GITHUB_SHA: {GITHUB_SHA}")
 print(f"GITHUB_REPOSITORY: {GITHUB_REPOSITORY}")
 
 
-def parse_warnings(file_path, title_prefix, path_prefix):
+def parse_warnings(file_path: str, title_prefix: str, path_prefix: str):
     severity_map = {"warning": "warning", "error": "failure", "note": "notice"}
 
     warning_pattern = re.compile(r"^(.*?):(\d+):(\d+): (warning|error): (.*)$")
@@ -47,14 +47,14 @@ def parse_warnings(file_path, title_prefix, path_prefix):
     return annotations
 
 
-def post_annotations(warnings_and_errors: List[Dict[str, str]]):
+def post_annotations(warnings_and_errors: List[Dict[str, str]], title: str):
     url = f"https://api.github.com/repos/{GITHUB_REPOSITORY}/check-runs"
     headers = {
         "Accept": "application/vnd.github.v3+json",
         "Authorization": f"Bearer {GITHUB_TOKEN}",
     }
     data = {
-        "name": "Clang-Tidy Analysis",
+        "name": title,
         "head_sha": GITHUB_SHA,
         "status": "completed",
         "conclusion": (
@@ -63,7 +63,7 @@ def post_annotations(warnings_and_errors: List[Dict[str, str]]):
             else "failure"
         ),
         "output": {
-            "title": "Clang-Tidy Results",
+            "title": title,
             "summary": f"{len(warnings_and_errors)} issues found",
             "annotations": warnings_and_errors,
         },
@@ -89,4 +89,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     warnings_and_errors = parse_warnings(args.filename, title_prefix=args.title, path_prefix=args.path_prefix)
-    post_annotations_chunked(warnings_and_errors)
+    post_annotations_chunked(warnings_and_errors, args.title)
