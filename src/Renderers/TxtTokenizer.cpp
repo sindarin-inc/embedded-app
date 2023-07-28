@@ -25,7 +25,6 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
     pager.clear();
 
     Token newToken;
-    Token spaceToken;
 
     fromPlace = getFileLocation(fromPlace);
 
@@ -63,8 +62,6 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
             nextByte();
         }
     }
-
-    spaceToken.tokenId = TokenId::NOTOKEN;
 
     // if constexpr (RENDERER_DEBUG) {
     //     log_d("First Character: %c (%02" PRIX8 "H)",
