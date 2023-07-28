@@ -26,14 +26,6 @@ jobs:
           -F "device=GLASSES" \
           -F "release_notes=TODO"
 
-      - name: Notify Slack
-        run: |
-          TAG_NAME="${{ github.ref }}"
-          VERSION=${TAG_NAME#refs/tags/release/v}
-          curl -X POST -H 'Content-type: application/json' \
-          --data "{\"text\":\"New release $VERSION has been uploaded. See it at https://api.sindarin.com/admin/devices/firmwaredownload/\"}" \
-          ${{ secrets.SLACK_WEBHOOK_URL }}
-
       - name: Create GitHub Release
         id: create-release
         uses: actions/create-release@v1
@@ -55,3 +47,11 @@ jobs:
           asset_path: ./embedded-app-${{ github.sha }}-IDF${{ matrix.idf_version }}.zip
           asset_name: embedded-app-${{ github.sha }}-${{ github.ref }}-IDF${{ matrix.idf_version }}.zip
           asset_content_type: application/zip
+
+      - name: Notify Slack
+        run: |
+          TAG_NAME="${{ github.ref }}"
+          VERSION=${TAG_NAME#refs/tags/release/v}
+          curl -X POST -H 'Content-type: application/json' \
+          --data "{\"text\":\"New release $VERSION has been uploaded. See it at https://api.sindarin.com/admin/devices/firmwaredownload/\"}" \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
