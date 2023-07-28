@@ -150,7 +150,7 @@ void Pager::getLine(Idx lineNbr, Line &line) const {
     for (Idx j = lines_[lineNbr].tokenIdx; j <= lastLineTokenIdx(lineNbr); j++) {
         if ((tokens_[j].tokenId != TokenId::NOTOKEN) && (tokens_[j].tokenId != TokenId::NEWLINE) &&
             (tokens_[j].tokenId != TokenId::ENDPARAGRAPH)) {
-            strlcat(line.data(), tokens_[j].cStr, line.size());
+            strncat(line.data(), tokens_[j].cStr, line.size() - strlen(line.data()) - 1);
         }
     }
 }
