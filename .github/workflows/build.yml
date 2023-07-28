@@ -92,57 +92,6 @@ jobs:
             build/partition_table/partition-table.bin
             build/ota_data_initial.bin
 
-  release:
-    name: "Release"
-    if: contains(github.ref, 'refs/tags/release/v')
-    runs-on: ubuntu-latest
-    needs: build-idf
-    steps:
-      - name: Download binaries
+      - name: Release if on a Release tag
         if: contains(github.ref, 'refs/tags/release/v')
-        uses: actions/download-artifact@v3
-        with:
-          name: embedded-app-${{ github.sha }}-IDFv5.1
-
-      - name: Create release
-        run: |
-          TAG_NAME="${{ github.ref }}"
-          VERSION=${TAG_NAME#refs/tags/release/v}
-          curl -X POST 'https://api.sindarin.com/firmware/' \
-          -H "Authorization: Tolkien ${{ secrets.SOL_AUTH_TOLKIEN }}" \
-          -F "version=$VERSION" \
-          -F "file=@${{ github.workspace }}/embedded-app-${{ github.sha }}-IDFv5.1/embedded-app.bin;type=application/octet-stream" \
-          -F "elf=@${{ github.workspace }}/embedded-app-${{ github.sha }}-IDFv5.1/embedded-app.elf;type=application/octet-stream" \
-          -F "role=DEBUG" \
-          -F "device=GLASSES" \
-          -F "release_notes=TODO"
-
-      - name: Notify Slack
-        run: |
-          TAG_NAME="${{ github.ref }}"
-          VERSION=${TAG_NAME#refs/tags/release/v}
-          curl -X POST -H 'Content-type: application/json' \
-          --data "{\"text\":\"New release $VERSION has been uploaded. See it at https://api.sindarin.com/admin/devices/firmwaredownload/\"}" \
-          ${{ secrets.SLACK_WEBHOOK_URL }}
-
-      - name: Create GitHub Release
-        id: create-release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
-
-      - name: Upload Release Asset
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create-release.outputs.upload_url }}
-          asset_path: ./embedded-app-${{ github.sha }}-IDF${{ matrix.idf_version }}.zip
-          asset_name: embedded-app-${{ github.sha }}-${{ github.ref }}-IDF${{ matrix.idf_version }}.zip
-          asset_content_type: application/zip
+        uses: ./.github/workflows/release.yml
