@@ -15,20 +15,20 @@
     auto profileEnd##identifier = std::chrono::high_resolution_clock::now();
 
 #define PROFILE_LOG_MS(identifier)                                                                 \
-    log_d("PROFILE_LOG_MS(" #identifier ") %lldms",                                                \
+    log_d("PROFILE_LOG_MS(" #identifier ") %" PRIu64 "ms",                                                \
           std::chrono::duration_cast<std::chrono::milliseconds>(profileEnd##identifier -           \
                                                                 profileStart##identifier)          \
               .count());
 
 #define PROFILE_LOG_US(identifier)                                                                 \
-    log_d("PROFILE_LOG_US(" #identifier ") %lldus",                                                \
+    log_d("PROFILE_LOG_US(" #identifier ") %" PRIu64 "us",                                                \
           std::chrono::duration_cast<std::chrono::microseconds>(profileEnd##identifier -           \
                                                                 profileStart##identifier)          \
               .count());
 
 // Logs the result of the profile
 #define PROFILE_LOG_NS(identifier)                                                                 \
-    log_d("PROFILE_LOG_US(" #identifier ") %lldns",                                                \
+    log_d("PROFILE_LOG_US(" #identifier ") %" PRIu64 "ns",                                                \
           std::chrono::duration_cast<std::chrono::nanoseconds>(profileEnd##identifier -            \
                                                                profileStart##identifier)           \
               .count());

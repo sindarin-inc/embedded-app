@@ -89,9 +89,6 @@ public:
 
     void setSpaceSize(Token &token);
 
-    // NOLINTNEXTLINE(modernize-use-nodiscard)
-    void setGFXSpaceSize(Token &token, uint8_t nextChar);
-
     void add(Token &token, const char *str = nullptr, uint8_t strSize = 0);
     void addByte(Token &token, uint8_t b);
 

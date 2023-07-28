@@ -47,14 +47,6 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
         pageCompleted = !pager.addLastTokenToPage(backwards) && !backwards;
     };
 
-    auto checkSpace = [&tokens, &spaceToken, &addToPage]() -> void {
-        if (spaceToken.tokenId == TokenId::SPACE) {
-            tokens.add(spaceToken, " ", 1);
-            addToPage();
-            spaceToken.tokenId = TokenId::NOTOKEN;
-        }
-    };
-
     uint8_t curChar = stream_->getNextByte();
 
     auto nextByte = [this, &curChar, &streamRelativeOffset]() -> void {
@@ -91,7 +83,6 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
 
         if (backwards && !tokens.isEmpty() && (newToken.streamPlace.offset >= toPlace->offset)) {
             pager.completeLastLine();
-            checkSpace();
             break;
         }
 
@@ -104,7 +95,6 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
 
         switch (curChar) {
         case '\n':
-            checkSpace();
             if (!pageCompleted) {
                 // No two or more lines with only a \n are allowed.
                 newToken.tokenId = TokenId::NEWLINE;
@@ -127,17 +117,16 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
             break;
 
         case ' ':
-            checkSpace();
             if (!pageCompleted) {
-                spaceToken = newToken;
-                spaceToken.tokenId = TokenId::SPACE;
-                tokens.setSpaceSize(spaceToken);
+                newToken.tokenId = TokenId::SPACE;
+                tokens.setSpaceSize(newToken);
+                tokens.add(newToken, " ", 1);
+                addToPage();
                 nextByte();
             }
-            break;
+              break;
 
         case '\t':
-            checkSpace();
             if (!pageCompleted) {
                 newToken.tokenId = TokenId::TAB;
                 tokens.add(newToken, "\t", 1);
@@ -147,7 +136,6 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
             break;
 
         case '-':
-            checkSpace();
             if (!pageCompleted) {
                 nextByte();
                 if (curChar != '-') {
@@ -172,12 +160,6 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
         default:
             newToken.tokenId = TokenId::TEXT;
             uint16_t textCharCount = 0;
-
-            if (spaceToken.tokenId == TokenId::SPACE) {
-                tokens.setGFXSpaceSize(spaceToken, curChar);
-            }
-
-            checkSpace();
 
             if (!pageCompleted) {
                 do {
@@ -208,8 +190,6 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
             // EMDASH), so forget it
             tokens.forgetLast();
         }
-
-        checkSpace();
     }
 
     if (curChar == 0) {

@@ -68,54 +68,6 @@ void Tokens::setSpaceSize(Token &token) {
     token.height = spaceHeight_;
 }
 
-// Must be called only in the context of loadAndTokenizePage() method.
-// A helper method to fill the size of a token after the tokens have been loaded
-// into the token buffer.
-//
-// The thing is, most tokens are easy to determine the width of because the
-// operation is the same regardless of context. Spaces are the exception.
-// A space may render differently based on the characters before and after it.
-// In my limited testing on our 5pt Tahoma font, spaces can be 3 or 4 pixels wide.
-// I suspect this will only grow as our font rendering becomes more sophisticated.
-// So this returns the obvious thing for non-spaces and does the math for spaces
-// based on the tokens before and after the space.
-//
-// Modified by Guy Turcotte:
-//
-// As this issue maybe related to the GFX way of doing things, the code has been
-// modified to simplify the process when the current font is an IBMF one.
-//
-// Returns the area of the token (width * height)
-// for use in calcuating how much space we need for a page.
-//
-void Tokens::setGFXSpaceSize(Token &spaceToken, uint8_t nextChar) {
-
-    if (display_.getFont()->isA(FontType::GFX)) {
-        // With GFX Fonts, spaces are a mess. The width of them depends on the tokens before and
-        // after. Joy.
-
-        // Check bounds. Punt otherwise.
-        // Get the tokens before and nextChar that is after the space, then do the width
-        // of that whole thing and subtract out the two tokens. That's the
-        // real width of the rendered space.
-        if ((tokensCount_ > 0) && (getLast().tokenId == TokenId::TEXT)) {
-            Token &lastToken = getLast();
-            char temp[4];
-            const char *first = &lastToken.cStr[lastToken.length - 1];
-            temp[0] = first[0];
-            temp[1] = ' ';
-            temp[2] = nextChar;
-            temp[3] = 0;
-
-            spaceToken.height = display_.getTextHeight(temp);
-            spaceToken.width = display_.getTextWidth(temp) - display_.getTextWidth(first) -
-                               display_.getTextWidth(&temp[2]);
-        } else {
-            setSpaceSize(spaceToken);
-        }
-    }
-}
-
 // debugging methods
 void Tokens::show() const {
     if constexpr (RENDERER_DEBUG) {
