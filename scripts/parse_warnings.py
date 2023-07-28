@@ -8,13 +8,12 @@ from typing import List, Dict
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_REPOSITORY = os.getenv("GITHUB_REPOSITORY")
 GITHUB_SHA = os.getenv("PR_GITHUB_SHA")
-PATH_PREFIX = "/__w/embedded-app/embedded-app/"
 
 print(f"GITHUB_SHA: {GITHUB_SHA}")
 print(f"GITHUB_REPOSITORY: {GITHUB_REPOSITORY}")
 
 
-def parse_warnings(file_path, title_prefix):
+def parse_warnings(file_path, title_prefix, path_prefix):
     severity_map = {"warning": "warning", "error": "failure", "note": "notice"}
 
     warning_pattern = re.compile(r"^(.*?):(\d+):(\d+): (warning|error): (.*)$")
@@ -28,7 +27,7 @@ def parse_warnings(file_path, title_prefix):
             if match:
                 file_path, line, column, severity, message = match.groups()
                 # Remove the absolute path prefix to make it a relative path
-                file_path = file_path.replace(PATH_PREFIX, "")
+                file_path = file_path.replace(path_prefix, "")
                 annotation = {
                     "path": file_path,
                     "start_line": int(line),
@@ -86,7 +85,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process a filename and a title.")
     parser.add_argument("--filename", type=str, required=True, help="Filename to process")
     parser.add_argument("--title", type=str, required=True, help="Title to prepend to warnings")
+    parser.add_argument("--path_prefix", type=str, required=True, help="Path to remove from warnings")
     args = parser.parse_args()
 
-    warnings_and_errors = parse_warnings(args.filename, title_prefix=args.title)
+    warnings_and_errors = parse_warnings(args.filename, title_prefix=args.title, path_prefix=args.path_prefix)
     post_annotations_chunked(warnings_and_errors)

@@ -74,7 +74,7 @@ jobs:
       - name: Post errors and warnings as annotations
         run: |
           pip install requests curlify
-          python scripts/parse_warnings.py --filename build-log.txt --title build
+          python scripts/parse_warnings.py --filename build-log.txt --title build --path_prefix "/app/sindarin-inc/embedded-app/"
         env:
           PR_GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
