@@ -74,7 +74,7 @@ struct StreamPlace {
         return (offset == rhs.offset) && (fileNumber == rhs.fileNumber);
     }
 
-    auto str() const -> std::string {
+    [[nodiscard]] auto str() const -> std::string {
         std::string s;
         s = "[offset:";
         s += std::to_string(offset);

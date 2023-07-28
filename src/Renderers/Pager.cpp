@@ -115,7 +115,8 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
 // remains a line that was not completed.
 void Pager::completeLastLine() {
     if (lines_[lineCount_].tokenCount > 0) {
-        if ((lines_[lineCount_].tokenCount == 1) && (tokens_[lines_[lineCount_].tokenIdx].tokenId == TokenId::ENDPARAGRAPH)) {
+        if ((lines_[lineCount_].tokenCount == 1) &&
+            (tokens_[lines_[lineCount_].tokenIdx].tokenId == TokenId::ENDPARAGRAPH)) {
             currentPageDecilineHeight_ += ENDPARAGRAPH_DECI_LINE_HEIGHT;
         } else {
             currentPageDecilineHeight_ += NEWLINE_DECI_LINE_HEIGHT;
@@ -149,7 +150,7 @@ void Pager::getLine(Idx lineNbr, Line &line) const {
     for (Idx j = lines_[lineNbr].tokenIdx; j <= lastLineTokenIdx(lineNbr); j++) {
         if ((tokens_[j].tokenId != TokenId::NOTOKEN) && (tokens_[j].tokenId != TokenId::NEWLINE) &&
             (tokens_[j].tokenId != TokenId::ENDPARAGRAPH)) {
-            strcat(line.data(), tokens_[j].cStr);
+            strlcat(line.data(), tokens_[j].cStr, line.size());
         }
     }
 }
@@ -166,7 +167,8 @@ void Pager::displayPage(int16_t numSkipLines) const {
 
         if (startOfPage && (tokens_[lines_[lineIdx].tokenIdx].tokenId == TokenId::ENDPARAGRAPH)) {
             if constexpr (RENDERER_DEBUG) {
-                log_d("%s: <PARA NOT SHOWN>", tokens_[lines_[lineIdx].tokenIdx].streamPlace.str().c_str());
+                log_d("%s: <PARA NOT SHOWN>",
+                      tokens_[lines_[lineIdx].tokenIdx].streamPlace.str().c_str());
             }
             continue;
         } else {
@@ -184,7 +186,8 @@ void Pager::displayPage(int16_t numSkipLines) const {
                 Line line;
                 getLine(lineIdx, line);
                 if constexpr (RENDERER_DEBUG) {
-                    log_d("%s: <%s>", tokens_[lines_[lineIdx].tokenIdx].streamPlace.str().c_str(), line.data());
+                    log_d("%s: <%s>", tokens_[lines_[lineIdx].tokenIdx].streamPlace.str().c_str(),
+                          line.data());
                 }
                 display_.drawSingleLineOfText(
                     line.data(), 0,
@@ -199,7 +202,6 @@ void Pager::displayPage(int16_t numSkipLines) const {
     }
 }
 
-
 void Pager::setFirstLineIdxBackward() {
     Idx lineIdx = lineCount_;
     if (lineIdx > 0) {
@@ -207,8 +209,8 @@ void Pager::setFirstLineIdxBackward() {
         do {
             lineIdx -= 1;
             uint16_t height = (tokens_[lines_[lineIdx].tokenIdx].tokenId == TokenId::ENDPARAGRAPH)
-                                 ? ENDPARAGRAPH_DECI_LINE_HEIGHT
-                                 : NEWLINE_DECI_LINE_HEIGHT;
+                                  ? ENDPARAGRAPH_DECI_LINE_HEIGHT
+                                  : NEWLINE_DECI_LINE_HEIGHT;
             if ((deciLines + height) > maxDeciLines_) {
                 lineIdx += 1;
                 break;

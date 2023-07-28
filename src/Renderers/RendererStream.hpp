@@ -22,13 +22,13 @@ private:
 
 protected:
     RendererStream(StreamType streamType) : streamType_(streamType) {}
-    RendererStream() {}
+    RendererStream() = default;
 
 public:
     virtual ~RendererStream() = default;
 
-    auto isA(StreamType streamType) const -> bool { return streamType == streamType_; }
-    auto getStreamType() const -> StreamType { return streamType_; }
+    [[nodiscard]] auto isA(StreamType streamType) const -> bool { return streamType == streamType_; }
+    [[nodiscard]] auto getStreamType() const -> StreamType { return streamType_; }
 
     static auto parseStreamType(const char *path) -> StreamType {
         if (HasSuffix(path, ".txt") || HasSuffix(path, ".txt.gz")) {

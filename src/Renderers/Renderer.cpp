@@ -100,7 +100,7 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
         // pager_.getLine(pager_.getLineCount() - 1, line);
         // std::cout << "Last line: [" << line.data() << "]" << std::endl;
 
-        pager_.setNextPagePlace_(fromPlace);
+        pager_.setNextPagePlace(fromPlace);
     } else {
         seekPlace = tokenizer_->loadAndTokenizePage(
             seekPlace, tokens_, pager_); // NOLINT(clang-analyzer-deadcode.DeadStores)

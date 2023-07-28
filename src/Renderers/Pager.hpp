@@ -62,7 +62,7 @@ public:
         return atEOF_ ? StreamPlace{.offset = 0, .fileNumber = 0} : nextPagePlace_;
     }
     
-    inline void setNextPagePlace_(StreamPlace place) { nextPagePlace_ = place; }
+    inline void setNextPagePlace(StreamPlace place) { nextPagePlace_ = place; }
     void setFirstLineIdxBackward();
 
     [[nodiscard]] inline auto getStreamPlaceOfFirstLine() -> StreamPlace {

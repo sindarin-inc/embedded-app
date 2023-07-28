@@ -47,7 +47,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
         pageCompleted = !pager.addLastTokenToPage(backwards) && !backwards;
     };
 
-    auto checkSpace = [&tokens, &spaceToken, &pageCompleted, &backwards, &addToPage]() -> void {
+    auto checkSpace = [&tokens, &spaceToken, &addToPage]() -> void {
         if (spaceToken.tokenId == TokenId::SPACE) {
             tokens.add(spaceToken, " ", 1);
             addToPage();

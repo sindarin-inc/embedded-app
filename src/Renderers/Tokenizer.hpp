@@ -13,6 +13,7 @@ using namespace renderer_defs;
 class Tokenizer {
 public:
     Tokenizer(DisplaySystem &display) : display_(display) {}
+    virtual ~Tokenizer() = default;
 
     [[nodiscard]] static auto factory(std::shared_ptr<RendererStream> stream,
                                       DisplaySystem &display) -> std::shared_ptr<Tokenizer>;
