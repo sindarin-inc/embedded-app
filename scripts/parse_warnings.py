@@ -74,11 +74,11 @@ def post_annotations(warnings_and_errors: List[Dict[str, str]], title: str):
     response.raise_for_status()
 
 
-def post_annotations_chunked(warnings_and_errors: List[Dict[str, str]]):
+def post_annotations_chunked(warnings_and_errors: List[Dict[str, str]], title: str):
     chunk_size = 50
     for i in range(0, len(warnings_and_errors), chunk_size):
         chunk = warnings_and_errors[i : i + chunk_size]
-        post_annotations(chunk)
+        post_annotations(chunk, title)
 
 
 if __name__ == "__main__":
@@ -88,5 +88,5 @@ if __name__ == "__main__":
     parser.add_argument("--path_prefix", type=str, required=True, help="Path to remove from warnings")
     args = parser.parse_args()
 
-    warnings_and_errors = parse_warnings(args.filename, title_prefix=args.title, path_prefix=args.path_prefix)
+    warnings_and_errors = parse_warnings(args.filename, args.title, args.path_prefix)
     post_annotations_chunked(warnings_and_errors, args.title)
