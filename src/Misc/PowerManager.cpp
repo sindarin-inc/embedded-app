@@ -309,24 +309,38 @@ auto PowerManager::isTempleOpen(bool &open) -> esp_err_t {
 }
 
 void PowerManager::checkUsb() {
+    static uint32_t ledChargedTimer = 0;
+    const uint32_t delayPeriod = 30 * 60 * 1000; // 30 min delay upon reaching 95% battery level
+
     if (USBConnected()) {
         // TODO: Should we take multiple measurements?
         battery.loop();
         auto percentage = battery.getBatteryPercentage();
         gpio_hold_dis((gpio_num_t)GREEN_LED);
         gpio_hold_dis((gpio_num_t)RED_LED);
+
         if (percentage > 95) {
-            // If the battery is fully charged, turn the GREEN LED on.
-            DigitalWrite(GREEN_LED, LED_ON);
-            DigitalWrite(RED_LED, LED_OFF);
+            if (ledChargedTimer == 0) {
+                // If the battery is fully charged, start the timer before turning on the LED
+                ledChargedTimer = Millis();
+            } else if ((Millis() - ledChargedTimer) >= delayPeriod) {
+                // If the battery is fully charged and a half hour has passed, turn on the LED
+                DigitalWrite(GREEN_LED, LED_ON);
+                DigitalWrite(RED_LED, LED_OFF);
+                gpio_hold_en((gpio_num_t)GREEN_LED);
+                gpio_hold_en((gpio_num_t)RED_LED);
+                gpio_deep_sleep_hold_en();
+            }
         } else {
+            ledChargedTimer = 0; // reset the timer as battery level is below 95%
             DigitalWrite(GREEN_LED, LED_OFF);
             DigitalWrite(RED_LED, LED_ON);
+            gpio_hold_en((gpio_num_t)GREEN_LED);
+            gpio_hold_en((gpio_num_t)RED_LED);
+            gpio_deep_sleep_hold_en();
         }
-        gpio_hold_en((gpio_num_t)GREEN_LED);
-        gpio_hold_en((gpio_num_t)RED_LED);
-        gpio_deep_sleep_hold_en();
     } else {
+        ledChargedTimer = 0; // reset the timer as the USB is disconnected
         DigitalWrite(GREEN_LED, LED_OFF);
         DigitalWrite(RED_LED, LED_OFF);
         gpio_hold_dis((gpio_num_t)GREEN_LED);
