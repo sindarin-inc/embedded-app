@@ -27,7 +27,9 @@ protected:
 public:
     virtual ~RendererStream() = default;
 
-    [[nodiscard]] auto isA(StreamType streamType) const -> bool { return streamType == streamType_; }
+    [[nodiscard]] auto isA(StreamType streamType) const -> bool {
+        return streamType == streamType_;
+    }
     [[nodiscard]] auto getStreamType() const -> StreamType { return streamType_; }
 
     static auto parseStreamType(const char *path) -> StreamType {
