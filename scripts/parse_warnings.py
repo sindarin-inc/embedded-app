@@ -1,3 +1,4 @@
+import argparse
 import curlify
 import os
 import requests
@@ -7,13 +8,12 @@ from typing import List, Dict
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_REPOSITORY = os.getenv("GITHUB_REPOSITORY")
 GITHUB_SHA = os.getenv("PR_GITHUB_SHA")
-PATH_PREFIX = "/__w/embedded-app/embedded-app/"
 
 print(f"GITHUB_SHA: {GITHUB_SHA}")
 print(f"GITHUB_REPOSITORY: {GITHUB_REPOSITORY}")
 
 
-def parse_warnings(file_path):
+def parse_warnings(file_path: str, title_prefix: str, path_prefix: str):
     severity_map = {"warning": "warning", "error": "failure", "note": "notice"}
 
     warning_pattern = re.compile(r"^(.*?):(\d+):(\d+): (warning|error): (.*)$")
@@ -27,7 +27,7 @@ def parse_warnings(file_path):
             if match:
                 file_path, line, column, severity, message = match.groups()
                 # Remove the absolute path prefix to make it a relative path
-                file_path = file_path.replace(PATH_PREFIX, "")
+                file_path = file_path.replace(path_prefix, "")
                 annotation = {
                     "path": file_path,
                     "start_line": int(line),
@@ -35,7 +35,7 @@ def parse_warnings(file_path):
                     "start_column": int(column),
                     "annotation_level": severity_map.get(severity, "notice"),
                     "message": message,
-                    "title": f"clang-tidy {severity}",
+                    "title": f"{title_prefix} {severity}",
                 }
                 # Check if the annotation already exists
                 annotation_key = f"{file_path}:{line}:{column}:{severity}:{message}"
@@ -47,14 +47,14 @@ def parse_warnings(file_path):
     return annotations
 
 
-def post_annotations(warnings_and_errors: List[Dict[str, str]]):
+def post_annotations(warnings_and_errors: List[Dict[str, str]], title: str):
     url = f"https://api.github.com/repos/{GITHUB_REPOSITORY}/check-runs"
     headers = {
         "Accept": "application/vnd.github.v3+json",
         "Authorization": f"Bearer {GITHUB_TOKEN}",
     }
     data = {
-        "name": "Clang-Tidy Analysis",
+        "name": title,
         "head_sha": GITHUB_SHA,
         "status": "completed",
         "conclusion": (
@@ -63,7 +63,7 @@ def post_annotations(warnings_and_errors: List[Dict[str, str]]):
             else "failure"
         ),
         "output": {
-            "title": "Clang-Tidy Results",
+            "title": title,
             "summary": f"{len(warnings_and_errors)} issues found",
             "annotations": warnings_and_errors,
         },
@@ -74,13 +74,19 @@ def post_annotations(warnings_and_errors: List[Dict[str, str]]):
     response.raise_for_status()
 
 
-def post_annotations_chunked(warnings_and_errors: List[Dict[str, str]]):
+def post_annotations_chunked(warnings_and_errors: List[Dict[str, str]], title: str):
     chunk_size = 50
     for i in range(0, len(warnings_and_errors), chunk_size):
         chunk = warnings_and_errors[i : i + chunk_size]
-        post_annotations(chunk)
+        post_annotations(chunk, title)
 
 
 if __name__ == "__main__":
-    warnings_and_errors = parse_warnings("warnings.txt")
-    post_annotations_chunked(warnings_and_errors)
+    parser = argparse.ArgumentParser(description="Process a filename and a title.")
+    parser.add_argument("--filename", type=str, required=True, help="Filename to process")
+    parser.add_argument("--title", type=str, required=True, help="Title to prepend to warnings")
+    parser.add_argument("--path_prefix", type=str, required=True, help="Path to remove from warnings")
+    args = parser.parse_args()
+
+    warnings_and_errors = parse_warnings(args.filename, args.title, args.path_prefix)
+    post_annotations_chunked(warnings_and_errors, args.title)
