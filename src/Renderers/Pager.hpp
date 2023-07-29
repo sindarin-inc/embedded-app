@@ -76,7 +76,7 @@ public:
     [[nodiscard]] inline auto getFirstLineIdx() const -> Idx { return firstLineIdx_; }
 
     void getLine(Idx lineNbr, Line &line) const;
-    void displayPage(int16_t numSkipLines) const;
+    void displayPage(int16_t numSkipLines);
 
     void endOfFileReached() {
         atEOF_ = true;
