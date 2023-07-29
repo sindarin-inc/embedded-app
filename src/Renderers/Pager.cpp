@@ -155,7 +155,7 @@ void Pager::getLine(Idx lineNbr, Line &line) const {
     }
 }
 
-void Pager::displayPage(int16_t numSkipLines) const {
+void Pager::displayPage(int16_t numSkipLines) {
     uint16_t paraLineAdjust = 0;
 
     // std::cout << "First Line Idx: " << firstLineIdx_ << ", lineCount: " << lineCount_ <<
@@ -165,13 +165,23 @@ void Pager::displayPage(int16_t numSkipLines) const {
     bool startOfPage = true;
     for (Idx lineIdx = firstLineIdx_; lineIdx < lineCount_; lineIdx++) {
 
-        if (startOfPage && (tokens_[lines_[lineIdx].tokenIdx].tokenId == TokenId::ENDPARAGRAPH)) {
-            if constexpr (RENDERER_DEBUG) {
-                log_d("%s: <PARA NOT SHOWN>",
-                      tokens_[lines_[lineIdx].tokenIdx].streamPlace.str().c_str());
+        if (startOfPage) {
+            if (tokens_[lines_[lineIdx].tokenIdx].tokenId == TokenId::ENDPARAGRAPH) {
+                if constexpr (RENDERER_DEBUG) {
+                    log_d("%s: <PARA NOT SHOWN>",
+                          tokens_[lines_[lineIdx].tokenIdx].streamPlace.str().c_str());
+                }
+                continue;
             }
-            continue;
-        } else {
+
+            while (tokens_[lines_[lineIdx].tokenIdx].tokenId == TokenId::SPACE) {
+                lines_[lineIdx].tokenIdx++;
+                if constexpr (RENDERER_DEBUG) {
+                    log_d("%s: <SPACE NOT SHOWN>",
+                          tokens_[lines_[lineIdx].tokenIdx].streamPlace.str().c_str());
+                }
+            }
+
             startOfPage = false;
         }
 
