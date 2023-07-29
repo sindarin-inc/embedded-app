@@ -34,6 +34,8 @@ auto Renderer::renderPage(Place fromPlace, int16_t numSkipLines) -> Place {
 
     PROFILE_END_LOG_MS(loadAndTokenizePage);
 
+    pager_.show();
+
     pager_.displayPage(numSkipLines);
 
     if constexpr (RENDERER_DEBUG) {
