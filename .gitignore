@@ -28,3 +28,4 @@ venv
 test/PyTest/requirements.txt
 current_samples_*
 warnings.txt
+test/CatchTests/TestData/metrics/
