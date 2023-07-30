@@ -1,21 +1,30 @@
 #include "FactoryReset.hpp"
 
+#include <esp_partition.h>
 #include <nvs_flash.h>
 
-#include "Misc/SolMorse.hpp"
 #include "sindarin-debug.h"
 
-void FactoryReset(PreferencesStore &prefs, FileSystem &fs, PowerManager &pm, bool reboot) {
-    log_i("performing factory reset");
-    prefs.clear();
+void SoftFactoryReset(FileSystem &fs) {
+    log_e("Performing soft factory reset");
     fs.deleteAll();
-    // delete entire nvs partition
-    log_i("erasing all nvs");
     nvs_flash_erase();
+}
 
-    if (reboot) {
-        pm.releaseLED();
-        BlinkSol();
-        pm.reboot();
+void HardFactoryReset() {
+    log_e("Performing hard factory reset");
+#if !SIMULATOR
+    auto partition =
+        esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "data");
+    if (partition == nullptr) {
+        log_e("Failed to find filesystem partition");
     }
+    auto err = esp_partition_erase_range(partition, 0, partition->size);
+    if (err != ESP_OK) {
+        log_e("Failed to erase filesystem partition");
+    } else {
+        log_i("Erased filesystem partition");
+    }
+#endif
+    nvs_flash_erase();
 }
