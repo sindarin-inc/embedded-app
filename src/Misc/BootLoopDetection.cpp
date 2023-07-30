@@ -70,9 +70,9 @@ void EraseCurrentReadable() {
 }
 
 void BootLoopCheck(FileSystem &fs, PowerManager &pm) {
-    auto reset_reason = esp_reset_reason();
-    if (reset_reason != ESP_RST_PANIC && reset_reason != ESP_RST_INT_WDT &&
-        reset_reason != ESP_RST_TASK_WDT) {
+    auto resetReason = esp_reset_reason();
+    if (resetReason != ESP_RST_PANIC && resetReason != ESP_RST_INT_WDT &&
+        resetReason != ESP_RST_TASK_WDT) {
         if (badBootCount != 0) {
             log_i("Good boot after %d bad boots", badBootCount);
             badBootCount = 0;
