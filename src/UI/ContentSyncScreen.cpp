@@ -127,7 +127,7 @@ void ContentSyncScreen::render(DisplaySystem &display) {
             drawBulletLine("Connecting WiFi",
                            state_.state > ContentSyncState::ConnectingWifi ? 100 : 0, false);
 
-            drawBulletLine("Syncing telemetry",
+            drawBulletLine("Syncing recent sessions",
                            state_.state > ContentSyncState::CheckingSync ? 100 : 0, false);
 
             drawBulletLine("Checking for update",
