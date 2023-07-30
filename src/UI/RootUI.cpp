@@ -1146,7 +1146,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     systemSettingsMenu->addMenuItem(MenuItem("Factory Defaults",
                                              [this, systemSettingsMenu, display, &fileSystem]() {
-        FactoryReset(prefs_, fileSystem, power_, false);
+        SoftFactoryReset(fileSystem);
         log_w("NVS and FS cleared. Rebooting...");
         systemSettingsMenu->showTemporaryMessage(*display, "Resetting Device! Rebooting...");
         power_.reboot();

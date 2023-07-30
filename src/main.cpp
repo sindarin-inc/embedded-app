@@ -100,7 +100,10 @@ void PollingLoopTask(void *parameter) {
             } else if ((Millis() - factoryResetStartTimeMs) > FACTORY_RESET_MS) {
                 log_i("Button held down for %dms performing factory reset",
                       Millis() - factoryResetStartTimeMs);
-                FactoryReset(prefs, fileSystem, powerManager, true);
+                SoftFactoryReset(fileSystem);
+                powerManager.releaseLED();
+                BlinkSol();
+                powerManager.reboot();
             }
         } else {
             factoryResetStartTimeMs = 0;
@@ -161,7 +164,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     esp_log_level_set("Sol", ESP_LOG_DEBUG);
     powerManager.wakeupCheck(solClock);
 #endif
-    BootLoopCheck();
+    BootLoopCheck(fileSystem, powerManager);
     std::vector<BootError> bootErrors;
 
 #if BOARD_HAS_PSRAM
