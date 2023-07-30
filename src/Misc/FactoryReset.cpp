@@ -13,6 +13,7 @@ void SoftFactoryReset(FileSystem &fs) {
 
 void HardFactoryReset() {
     log_e("Performing hard factory reset");
+#if !SIMULATOR
     auto partition =
         esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "data");
     if (partition == nullptr) {
@@ -24,5 +25,6 @@ void HardFactoryReset() {
     } else {
         log_i("Erased filesystem partition");
     }
+#endif
     nvs_flash_erase();
 }
