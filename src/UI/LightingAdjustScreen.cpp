@@ -2,7 +2,7 @@
 
 #include "UI/Bitmaps/Lightbulb.hpp"
 
-#define LIGHTING_STEP_INCREMENT 10
+#define LIGHTING_STEP_INCREMENT 7
 
 LightingAdjustScreen::LightingAdjustScreen(DisplaySystem &display, PreferencesStore &prefs,
                                            LightingController &lightingController)

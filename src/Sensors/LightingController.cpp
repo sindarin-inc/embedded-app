@@ -1,5 +1,6 @@
 #include "LightingController.hpp"
 
+#include <cmath>
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -65,8 +66,15 @@ void LightingController::enableLighting(int fadeMs) {
 }
 
 void LightingController::setOverrideValuePercent(int percent) {
-    auto dutyCycle = MapRange(percent, 0, 100, static_cast<int>(GetMinLightingDutyCycleOverride()),
-                              static_cast<int>(GetMaxLightingDutyCycle()));
+    auto dutyCycle = percent / 7;
+    if (dutyCycle == 0) {
+        dutyCycle = 1;
+    } else if (dutyCycle == 1) {
+        dutyCycle = 2;
+    } else {
+        dutyCycle *= dutyCycle;
+    }
+
     overrideDutyCycle_ = dutyCycle;
     lightSensor_.disable();
     currentDutyCycle_ = dutyCycle;
@@ -74,8 +82,14 @@ void LightingController::setOverrideValuePercent(int percent) {
 }
 
 auto LightingController::getCurrentPercent() -> int {
-    return MapRange(currentDutyCycle_, static_cast<int>(GetMinLightingDutyCycle()),
-                    static_cast<int>(GetMaxLightingDutyCycle()), 0, 100);
+    if (currentDutyCycle_ == 1) {
+        return 0;
+    } else if (currentDutyCycle_ == 2) {
+        return 7;
+    } else {
+        log_d("Current duty cycle: %d", currentDutyCycle_);
+        return static_cast<int>(std::sqrt(currentDutyCycle_)) * 7;
+    }
 }
 
 void LightingController::setScreenMask(Screens screens, int fadeMs) {
