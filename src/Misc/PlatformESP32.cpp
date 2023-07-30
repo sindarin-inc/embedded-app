@@ -200,7 +200,7 @@ void InitializePlatform() {
         maxLightingDutyCycle = 60;
     } else {
         // Revisions 3 and higher have the 82ohm resistors in series
-        minLightingDutyCycle = 10;
+        minLightingDutyCycle = 2;
         maxLightingDutyCycle = 210;
     }
     // The MCU will keep itself on until the digital magnetometer detects the temples are closed, or
