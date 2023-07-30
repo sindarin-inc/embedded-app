@@ -215,12 +215,22 @@ auto TxtTokenizer::getFileLocation(StreamPlace fromPlace) -> StreamPlace {
         fromPlace = getPlaceAtBeginningOfDocument();
     }
 
+    bool atWordBoundary = fromPlace.offset == 0;
+    if (!atWordBoundary) {
+        fromPlace.offset -= 1;
+    }
+
     if (!stream_->seek(fromPlace.offset)) {
         log_e("failed to seek at streamPlace %s in file!", fromPlace.str().c_str());
         if constexpr (ON_ERROR_EXIT) {
             exit(2);
         }
     } else {
+        while (!atWordBoundary) {
+            uint8_t ch = stream_->read();
+            atWordBoundary = ((ch <= ' ') || (ch == '-'));
+            fromPlace.offset += 1;
+        }
         while (stream_->available()) {
             uint8_t ch = stream_->read();
             // A valid UTF8 character is ASCII or got it's first byte
