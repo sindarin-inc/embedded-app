@@ -112,7 +112,15 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
 
     // std::cout << "Characters count in page: " << pager_.getPageLength() << std::endl;
 
-    return pager_.getStreamPlaceOfFirstLine();
+    StreamPlace startPlace = pager_.getStreamPlaceOfFirstLine();
+    if (startPlace.offset == 0) {
+        // We are now at the beginning of the current file. If the user seeked to some
+        // position that is not the beginning of a page, this will insure than the
+        // renderPage() method will rebuild the whole first page.
+        pager_.clear();
+    }
+
+    return startPlace;
 }
 
 auto Renderer::getPreviousPlace() -> Place {
