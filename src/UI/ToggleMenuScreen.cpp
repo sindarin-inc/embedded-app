@@ -53,8 +53,8 @@ auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
                     // Align the bubble horizontally with the on/off text and vertically witht
                     // the menu item text (with a little nudge)
                     context.setViewSizeInRect(*menuToggleSelectionViews_[place], {7, 7},
-                                              {alignWithRect.origin.x, y + 1,
-                                               alignWithRect.size.width, viewFrame.size.height},
+                                              {{alignWithRect.origin.x, y + 1},
+                                               {alignWithRect.size.width, viewFrame.size.height}},
                                               LayoutOptionsAlignCenter);
                 }
 
