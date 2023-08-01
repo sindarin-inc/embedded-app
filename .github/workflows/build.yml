@@ -92,25 +92,10 @@ jobs:
             build/partition_table/partition-table.bin
             build/ota_data_initial.bin
 
-      - name: Create release
-        if: contains(github.ref, 'refs/tags/release/v')
-        run: |
-          TAG_NAME="${{ github.ref }}"
-          VERSION=${TAG_NAME#refs/tags/release/v}
-          curl -X POST 'https://api.sindarin.com/firmware/' \
-          -H "Authorization: Tolkien ${{ secrets.SOL_AUTH_TOLKIEN }}" \
-          -F "version=$VERSION" \
-          -F "file=@${{ github.workspace }}/build/embedded-app.bin;type=application/octet-stream" \
-          -F "elf=@${{ github.workspace }}/build/embedded-app.elf;type=application/octet-stream" \
-          -F "role=DEBUG" \
-          -F "device=GLASSES" \
-          -F "release_notes=TODO"
-
-      - name: Notify Slack
-        if: contains(github.ref, 'refs/tags/release/v')
-        run: |
-          TAG_NAME="${{ github.ref }}"
-          VERSION=${TAG_NAME#refs/tags/release/v}
-          curl -X POST -H 'Content-type: application/json' \
-          --data "{\"text\":\"New release $VERSION has been uploaded. See it at https://api.sindarin.com/admin/devices/firmwaredownload/\"}" \
-          ${{ secrets.SLACK_WEBHOOK_URL }}
+  release:
+    if: contains(github.ref, 'refs/tags/release/v')
+    needs: build-idf
+    uses: ./.github/workflows/release.yml
+    secrets:
+      slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+      sol-auth-tolkien: ${{ secrets.SOL_AUTH_TOLKIEN }}

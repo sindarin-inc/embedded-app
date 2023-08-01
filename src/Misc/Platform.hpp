@@ -66,6 +66,9 @@ void SetRightScreenLightFade(int dutyCycle, int fadeMs);
 
 auto GetMinLightingDutyCycle() -> uint8_t;
 
+// For when the user wants to override the value manually
+auto GetMinLightingDutyCycleOverride() -> uint8_t;
+
 auto GetMaxLightingDutyCycle() -> uint8_t;
 
 auto GetRunTimeMs() -> uint32_t;

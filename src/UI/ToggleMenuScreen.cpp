@@ -17,21 +17,6 @@ auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     context.setViewFrame(upperLeftTextView_, {{10, 0}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
 
-    context.setSublayoutFrame(
-        {{inset, inset}, {size.width - 2 * inset, 50 - 2 * inset}},
-        LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignRight,
-        [this](LayoutContext &context, Size size) -> Size {
-            int x = 0;
-            int y = 28;
-
-            context.setViewFrame(onTextView_, {{x, y}, size}, LayoutOptionsSizeToFit);
-            x += 25;
-            context.setViewFrame(offTextView_, {{x, y}, size}, LayoutOptionsSizeToFit);
-            x += 40;
-
-            return {x, size.height};
-        });
-
     const auto mainInset = 2;
     const auto mainSpacing = 10;
 
@@ -41,32 +26,36 @@ auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
         [this](LayoutContext &context, Size size) -> Size {
             int x = 0;
             int y = 0;
-            int viewCount = menuItemViews_.size();
-            int boxHeight = (size.height - (viewCount - 1) * mainSpacing) / viewCount + 6;
-            Size boxSize = {size.width, boxHeight};
             int place = 0;
 
+            Rect offRect =
+                context.setViewFrame(offTextView_, {{inset, y}, {size.width - 2 * inset - 19, 0}},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignRight);
+
+            Rect onRect = context.setViewFrame(
+                onTextView_, {{offRect.origin.x - 25, y}, {200, offRect.size.height}},
+                LayoutOptionsSizeToFit);
+
+            y += offRect.size.height;
+
             for (auto &view : menuItemViews_) {
-                auto viewFrame =
-                    context.setViewFrame(*view, {{x, y + 1}, boxSize}, LayoutOptionsSizeToFit);
+                auto viewFrame = context.setViewFrame(*view, {{x + 7, y}, {size.width - 70, 0}},
+                                                      LayoutOptionsSizeToFitVertical);
                 if (place == currSelection_) {
                     context.setViewFrame(*selectedSelectionView_,
-                                         {{x, y + 1}, {boxSize.width - 70, boxSize.height + 1}},
-                                         LayoutOptionsSizeToFit);
+                                         {{x, y}, {size.width - 70, viewFrame.size.height + 1}});
                 }
 
                 // Only layout the bubble if it's visible (doing this here instead of draw since we
                 // already have the place in the vector here)
                 if (showToggleBubble_[place]) {
-                    if (menuToggleValues_[place]) {
-                        context.setViewFrame(*menuToggleSelectionViews_[place],
-                                             {{size.width - 25 - 37, y + 3}, {7, 7}},
-                                             LayoutOptionsSizeToFit);
-                    } else {
-                        context.setViewFrame(*menuToggleSelectionViews_[place],
-                                             {{size.width - 37, y + 3}, {7, 7}},
-                                             LayoutOptionsSizeToFit);
-                    }
+                    Rect alignWithRect = menuToggleValues_[place] ? onRect : offRect;
+                    // Align the bubble horizontally with the on/off text and vertically witht
+                    // the menu item text (with a little nudge)
+                    context.setViewSizeInRect(*menuToggleSelectionViews_[place], {7, 7},
+                                              {{alignWithRect.origin.x, y + 1},
+                                               {alignWithRect.size.width, viewFrame.size.height}},
+                                              LayoutOptionsAlignCenter);
                 }
 
                 y += viewFrame.size.height + 1;
@@ -158,8 +147,8 @@ void ToggleMenuScreen::render(DisplaySystem &display) {
 
         for (auto &menuItem : menuItems_) {
             log_d("Adding menu item %s", menuItem.title.c_str());
-            auto menuItemView =
-                std::make_shared<MenuItemView>(display, menuItem, myStyle_.navigationFont, true);
+            auto menuItemView = std::make_shared<SingleLineTextView>(display, menuItem.title,
+                                                                     myStyle_.navigationFont);
             menuItemViews_.push_back(menuItemView);
             menuToggleSelectionViews_.push_back(std::make_shared<BoxView>(display, 3));
             menuToggleSelectionViews_[menuToggleSelectionViews_.size() - 1]->fillColor =

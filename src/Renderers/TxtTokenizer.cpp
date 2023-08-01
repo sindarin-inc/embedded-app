@@ -25,7 +25,6 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
     pager.clear();
 
     Token newToken;
-    Token spaceToken;
 
     fromPlace = getFileLocation(fromPlace);
 
@@ -63,8 +62,6 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
             nextByte();
         }
     }
-
-    spaceToken.tokenId = TokenId::NOTOKEN;
 
     // if constexpr (RENDERER_DEBUG) {
     //     log_d("First Character: %c (%02" PRIX8 "H)",
@@ -205,9 +202,9 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pa
 }
 
 // Must be called only by the loadAndTokenizePage().
-// From the fromPlace variable, seek into the file and synchronize
-// the value at a valid UTF8 location. An UTF8 character start with
-// a first byte MSBit == 0 or the two MSBits == 11
+// From the fromPlace variable, seek into the file, adjust location to be at a word boundary, and
+// synchronize the value at a valid UTF8 location. An UTF8 character start with a first byte MSBit
+// == 0 or the two MSBits == 11
 //
 // returns an updated fromPlace location or the LOCATION_ERROR value.
 auto TxtTokenizer::getFileLocation(StreamPlace fromPlace) -> StreamPlace {
@@ -218,14 +215,57 @@ auto TxtTokenizer::getFileLocation(StreamPlace fromPlace) -> StreamPlace {
         fromPlace = getPlaceAtBeginningOfDocument();
     }
 
+    // When the offset is 0, we are at a the beginning of a file, so it’s a word boundary.
+    bool atWordBoundary = (fromPlace.offset == 0);
+    if (!atWordBoundary) {
+        // We need to start at the previous byte to check for a word boundary.
+        fromPlace.offset -= 1;
+    }
+
     if (!stream_->seek(fromPlace.offset)) {
         log_e("failed to seek at streamPlace %s in file!", fromPlace.str().c_str());
         if constexpr (ON_ERROR_EXIT) {
             exit(2);
         }
     } else {
+        uint8_t ch = 0;
+        uint16_t count = 0;
+
+        // If not at word boundary, go forward and stop once we found one.
+        // Word boundaries are:
+        // - any byte with value that is lower or equal to a space (0x20). This cover any
+        //   of space, tab, newline or any other special characters.
+        // - any byte with value '-': this is a partial one as many hyphen can be present.
+        //   (see below the while loop)
+        while ((!atWordBoundary) && stream_->available()) {
+            ch = stream_->read();
+            atWordBoundary = ((ch <= ' ') || (ch == '-'));
+            fromPlace.offset += 1;
+            count += 1;
+        }
+
+        if (ch == '-') {
+            // Pass hyphens only if found in the first loop above, else it's going to be
+            // the first shown glyph on the page (hyphen, en-dash, em-dash).
+            // Single hyphen are normally shown glued to the preceeding word, but here there is
+            // no simple way to manage it.
+            if (count == 1) {
+                // Ensure that we skip all other hyphens that are present at word boundary
+                while (stream_->available()) {
+                    ch = stream_->read();
+                    if (ch != '-') {
+                        break;
+                    }
+                    fromPlace.offset += 1;
+                }
+            } else {
+                fromPlace.offset -= 1;
+            }
+            stream_->seek(fromPlace.offset);
+        }
+
         while (stream_->available()) {
-            uint8_t ch = stream_->read();
+            ch = stream_->read();
             // A valid UTF8 character is ASCII or got it's first byte
             // larger or equal to 0xC0
             if ((ch < 0x7FU) || (ch >= 0xC0U)) {
