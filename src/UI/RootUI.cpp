@@ -78,7 +78,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto badBootCount = GetBadBootCount();
     if (badBootCount > 0) {
-        bootData["bbc"] = badBootCount;
+        bootData["bad_bc"] = badBootCount;
     }
 
     this->telemetry_.logMetricData(TelemetryField::METRIC_BOOT, bootData);
