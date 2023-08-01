@@ -1,10 +1,10 @@
 #if !SIMULATOR
 #include <driver/uart.h>
-#include <esp_err.h>
-#include <esp_log.h>
 #include <soc/rtc.h>
 #endif
 
+#include <esp_err.h>
+#include <esp_log.h>
 #include <esp_sleep.h>
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
@@ -159,11 +159,10 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     HardwareInit();
 #endif
 
-#if !SIMULATOR
     // Configure log level for all Sindarin logs
     esp_log_level_set("Sol", ESP_LOG_DEBUG);
     powerManager.wakeupCheck(solClock);
-#endif
+
     BootLoopCheck(fileSystem, powerManager);
     std::vector<BootError> bootErrors;
 

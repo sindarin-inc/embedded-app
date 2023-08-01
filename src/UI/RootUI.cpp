@@ -13,6 +13,7 @@
 #include "EPub/EPubFile.hpp"
 #include "GitVersion.hpp"
 #include "Inputs/RemoteInput.hpp"
+#include "Misc/BootLoopDetection.hpp"
 #include "Misc/FactoryReset.hpp"
 #include "Misc/LookBackStream.hpp"
 #include "Misc/MenuStyle.hpp"
@@ -68,9 +69,19 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     display_ = display;
 
-    this->telemetry_.logMetricData(
-        TelemetryField::METRIC_BOOT,
-        {{"fw", kVersionString}, {"bc", prefs_.bootCount.get().value_or(0)}});
+    std::map<std::string, std::variant<int, uint32_t, float, std::string>> bootData = {
+        {"fw", kVersionString},
+        {"sha", kGitHash},
+        {"bc", prefs_.bootCount.get().value_or(0)},
+        {"br", power_.getBootInfo().telemetryStr()},
+    };
+
+    auto badBootCount = GetBadBootCount();
+    if (badBootCount > 0) {
+        bootData["bbc"] = badBootCount;
+    }
+
+    this->telemetry_.logMetricData(TelemetryField::METRIC_BOOT, bootData);
 
     MenuStyle styleFamilies;
 

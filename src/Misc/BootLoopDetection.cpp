@@ -7,6 +7,7 @@
 
 void BootLoopCheck(FileSystem &fs, PowerManager &pm) {}
 void GoodBootTimer() {}
+auto GetBadBootCount() -> uint8_t { return 0; };
 
 #else
 
@@ -129,5 +130,7 @@ void GoodBootTimer() {
 
     xTimerStart(bootLoopTimer, 0);
 }
+
+auto GetBadBootCount() -> uint8_t { return badBootCount; };
 
 #endif

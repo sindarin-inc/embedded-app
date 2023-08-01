@@ -18,7 +18,6 @@ auto ToggleMenuScreen::layout(LayoutContext &context, Size size) -> Size {
                          LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
 
     const auto mainInset = 2;
-    const auto mainSpacing = 10;
 
     context.setSublayoutFrame(
         {{mainInset, mainInset}, {size.width - 2 * mainInset, size.height - 2 * mainInset}},
