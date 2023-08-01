@@ -127,7 +127,7 @@ void PowerManager::wakeupCheck(SolClock &clock) {
         // TODO: Consider hard power off after brownout?
         break;
     case ESP_RST_WDT:
-        bootInfo_.reason = BootInfo::Reason::Brownout;
+        bootInfo_.reason = BootInfo::Reason::Wdt;
         break;
     case ESP_RST_SDIO:
     case ESP_RST_EXT:
