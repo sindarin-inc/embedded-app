@@ -71,12 +71,17 @@ public:
     StreamPlace(uint32_t offset, uint16_t filenumber) : offset_(offset), fileNumber_(filenumber) {}
     StreamPlace() : offset_(0), fileNumber_(0) {}
 
-    void setOffset(uint32_t offset) { offset_ = offset; }
-    void incOffset() { offset_ += 1; }
-    [[nodiscard]] auto getOffset() const -> uint32_t { return offset_; }
-    [[nodiscard]] auto getFileNumber() const -> uint16_t { return fileNumber_; }
+    inline void setOffset(uint32_t offset) { offset_ = offset; }
+    inline void incOffset() { offset_ += 1; }
+    inline void decOffset() {
+        if (offset_ > 0) {
+            offset_ -= 1;
+        }
+    }
+    [[nodiscard]] inline auto getOffset() const -> uint32_t { return offset_; }
+    [[nodiscard]] inline auto getFileNumber() const -> uint16_t { return fileNumber_; }
 
-    [[nodiscard]] auto operator==(const StreamPlace &rhs) const -> bool {
+    [[nodiscard]] inline auto operator==(const StreamPlace &rhs) const -> bool {
         return (offset_ == rhs.offset_) && (fileNumber_ == rhs.fileNumber_);
     }
 

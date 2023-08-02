@@ -216,14 +216,57 @@ auto TxtTokenizer::getFileLocation(StreamPlace fromPlace) -> StreamPlace {
         fromPlace = getPlaceAtBeginningOfDocument();
     }
 
+    // When the offset is 0, we are at a the beginning of a file, so it’s a word boundary.
+    bool atWordBoundary = (fromPlace.getOffset() == 0);
+    if (!atWordBoundary) {
+        // We need to start at the previous byte to check for a word boundary.
+        fromPlace.decOffset();
+    }
+
     if (!stream_->seek(fromPlace.getOffset())) {
         log_e("failed to seek at streamPlace %s in file!", fromPlace.str().c_str());
         if constexpr (ON_ERROR_EXIT) {
             exit(2);
         }
     } else {
+        uint8_t ch = 0;
+        uint16_t count = 0;
+
+        // If not at word boundary, go forward and stop once we found one.
+        // Word boundaries are:
+        // - any byte with value that is lower or equal to a space (0x20). This cover any
+        //   of space, tab, newline or any other special characters.
+        // - any byte with value '-': this is a partial one as many hyphen can be present.
+        //   (see below the while loop)
+        while ((!atWordBoundary) && stream_->available()) {
+            ch = stream_->read();
+            atWordBoundary = ((ch <= ' ') || (ch == '-'));
+            fromPlace.incOffset();
+            count += 1;
+        }
+
+        if (ch == '-') {
+            // Pass hyphens only if found in the first loop above, else it's going to be
+            // the first shown glyph on the page (hyphen, en-dash, em-dash).
+            // Single hyphen are normally shown glued to the preceeding word, but here there is
+            // no simple way to manage it.
+            if (count == 1) {
+                // Ensure that we skip all other hyphens that are present at word boundary
+                while (stream_->available()) {
+                    ch = stream_->read();
+                    if (ch != '-') {
+                        break;
+                    }
+                    fromPlace.incOffset();
+                }
+            } else {
+                fromPlace.decOffset();
+            }
+            stream_->seek(fromPlace.getOffset());
+        }
+
         while (stream_->available()) {
-            uint8_t ch = stream_->read();
+            ch = stream_->read();
             // A valid UTF8 character is ASCII or got it's first byte
             // larger or equal to 0xC0
             if ((ch < 0x7FU) || (ch >= 0xC0U)) {
