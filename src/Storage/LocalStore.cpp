@@ -140,6 +140,7 @@ auto LocalStore::hasReadable(const ReadablesVector &readables,
     for (const auto &r : readables) {
         auto path = readableFilePathForReading(r);
         if (r->uuid == readable->uuid && !path.empty()) {
+            // First check if file is different
             int fileSize = readableGetUncompressedSize(readable);
 
             if (fileSize <= 0) {
@@ -156,6 +157,12 @@ auto LocalStore::hasReadable(const ReadablesVector &readables,
                 } else {
                     return true;
                 }
+            }
+
+            // Next check if the readable is updated more recently than local copy
+            if (r->dateModified != readable->dateModified) {
+                log_i("Found newer version of %s on server", path.c_str());
+                return false;
             }
             return true;
         }
