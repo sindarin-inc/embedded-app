@@ -28,6 +28,7 @@ public:
     auto setStream(std::shared_ptr<RendererStream> stream) -> void {
         // log_w("setStream...");
         tokenizer_ = Tokenizer::factory(std::move(stream), display_);
+        pager_.clear();
     }
     auto setCurrentPlace(Place newPlace) -> void {
         // log_w("setCurrentPlace...");
@@ -50,7 +51,7 @@ public:
     // for the speed reading functionality.
 
     // NOLINTNEXTLINE(modernize-use-nodiscard)
-    auto renderPage(Place fromPlace, int16_t numSkipLines = 0) -> Place;
+    auto renderPage(Place fromPlace, int16_t numSkipLines = 0, bool forceRefresh = false) -> Place;
 
     // NOLINTNEXTLINE(modernize-use-nodiscard)
     inline auto renderFirstPage(int16_t numSkipLines = 0) -> Place {
