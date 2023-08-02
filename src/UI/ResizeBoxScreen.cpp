@@ -22,6 +22,8 @@ ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs
 }
 
 void ResizeBoxScreen::render(DisplaySystem &display) {
+    DisplayRect currRect = display_.getBoundingBox();
+    display.drawDottedBox(-2, -2, currRect.width + 4, currRect.height + 4, 1, 2);
     this->renderer_.renderPage(0);
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 }

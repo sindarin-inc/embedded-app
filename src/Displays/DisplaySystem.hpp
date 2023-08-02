@@ -184,6 +184,11 @@ public:
     // TODO: We might be able to instead just subclass `drawRect` here instead to be more consistent
     // with Adafruit_GFX
     void drawBox(int xStart, int yStart, int xEnd, int yEnd);
+
+    // Draw a dotted box
+    void drawDottedBox(int xStart, int yStart, int xEnd, int yEnd, int dotSize = 1,
+                       int gapSize = 1);
+
     // Draw a bitmap
     void drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, int16_t h,
                      uint16_t color);
