@@ -4,80 +4,78 @@
 
 auto LegalScreen::layout(LayoutContext &context, Size size) -> Size {
     uint8_t leftPadding = 5;
-    uint8_t yAdvance = 20;
+    uint8_t yAdvance = 16;
+    const uint8_t lineGroupPadding = 4;
 
     int x = 0;
     int y = 10;
 
     x += leftPadding;
 
-    context.setViewFrame(baclLine1View_, {{x, y}, size},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
+    context.setViewFrame(baclLine1View_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
-    y += yAdvance - 8;
+    y += yAdvance;
 
-    context.setViewFrame(baclLine2View_, {{x, y}, size},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
+    context.setViewFrame(baclLine2View_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
-    y += yAdvance - 4;
+    y += yAdvance - lineGroupPadding;
 
-    context.setViewFrame(fcc1LineView_, {{x, y}, size},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
+    context.setViewFrame(fcc1LineView_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
-    y += yAdvance - 8;
+    y += yAdvance;
 
-    context.setViewFrame(fcc1LineViewPart2_, {{x, y}, size},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
+    context.setViewFrame(fcc1LineViewPart2_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
-    y += yAdvance - 4;
+    y += yAdvance - lineGroupPadding;
 
-    context.setViewFrame(fcc2LineView_, {{x, y}, size},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
+    context.setViewFrame(fcc2LineView_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
-    y += yAdvance - 8;
+    y += yAdvance;
 
-    context.setViewFrame(fcc2LineViewPart2_, {{x, y}, size},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
+    context.setViewFrame(fcc2LineViewPart2_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
-    y += yAdvance - 4;
+    y += yAdvance - lineGroupPadding;
 
-    context.setViewFrame(opTemp1_, {{x, y}, size}, LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
+    context.setViewFrame(opTemp1_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
-    y += yAdvance - 8;
+    y += yAdvance;
 
-    context.setViewFrame(opTemp2_, {{x, y}, size}, LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
+    context.setViewFrame(opTemp2_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
-    y += yAdvance - 4;
+    y += yAdvance - lineGroupPadding;
 
-    context.setViewFrame(nonOpTemp1_, {{x, y}, size},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
+    context.setViewFrame(nonOpTemp1_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
-    y += yAdvance - 8;
+    y += yAdvance;
 
-    context.setViewFrame(nonOpTemp2_, {{x, y}, size},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
+    context.setViewFrame(nonOpTemp2_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
-    y += yAdvance - 4;
+    y += yAdvance - lineGroupPadding;
 
-    context.setViewFrame(opAlt_, {{x, y}, size}, LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
+    context.setViewFrame(opAlt_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
-    y += yAdvance - 4;
+    y += yAdvance - lineGroupPadding;
 
-    context.setViewFrame(relativeHumidity1_, {{x, y}, size},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
+    context.setViewFrame(relativeHumidity1_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
-    y += yAdvance - 8;
+    y += yAdvance;
 
-    context.setViewFrame(relativeHumidity2_, {{x, y}, size},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
+    context.setViewFrame(relativeHumidity2_, {{x, y}, size}, LayoutOptionsSizeToFitVertical);
 
-    context.setViewFrame(leftRightView_, {{0, -yAdvance + 4}, size},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenter |
-                             LayoutOptionsAlignBottom);
-
-    context.setViewFrame(returnToMenuView_, {{0, 0}, size},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenter |
-                             LayoutOptionsAlignBottom);
+    context.setSublayoutFrame(
+        {{0, 0}, size}, LayoutOptionsSizeToFitVertical | LayoutOptionsAlignBottom,
+        [this, yAdvance](LayoutContext &context, Size size) -> Size {
+            int y = 0;
+            auto leftRightRect =
+                context.setViewFrame(leftRightView_, {{0, y}, {size.width, 0}},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
+            y += leftRightRect.size.height + 2;
+            auto returnToMenuRect =
+                context.setViewFrame(returnToMenuView_, {{0, y}, {size.width, 0}},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
+            y += returnToMenuRect.size.height;
+            return {size.width, y};
+        });
 
     y = yAdvance * 2;
 
