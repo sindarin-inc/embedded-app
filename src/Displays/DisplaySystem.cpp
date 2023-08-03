@@ -282,9 +282,8 @@ void DisplaySystem::drawBox(int startX, int startY, int endX, int endY) {
 
 void DisplaySystem::drawDottedBox(int startX, int startY, int endX, int endY, int dotSize,
                                   int gapSize) {
-    if ((endX - startX) < (dotSize + gapSize) ||
-        (endY - startY) <
-            (dotSize + gapSize || dotSize < 1 || gapSize < 1 || endX < startX || endY < startY)) {
+    if (((endX - startX) < (dotSize + gapSize)) || ((endY - startY) < (dotSize + gapSize)) ||
+        (dotSize < 1) || (gapSize < 1) || (endX < startX) || (endY < startY)) {
         log_e("Error in inputs to drawDottedBox: startX %d startY %d endX %d endY %d dotSize %d "
               "gapSize %d",
               startX, startY, endX, endY, dotSize, gapSize);
