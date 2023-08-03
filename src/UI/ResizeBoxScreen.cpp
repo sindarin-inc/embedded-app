@@ -11,17 +11,23 @@ ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs
     : display_(display), renderer_(display), prefs_(prefs) {
 
     std::string message;
-    for (int i = 0; i < 15; i++) {
-        message +=
-            "Press up to increase vertical dimension, down to decrease vertical "
-            "dimension, left to increase horizontal dimension, right to decrease "
-            "horizontal dimension. Press \ue000 (center) when finished. Message repeats.\n\n";
-    }
+    message += "Press up to increase vertical dimension, down to decrease vertical "
+               "dimension, left to increase horizontal dimension, right to decrease "
+               "horizontal dimension. Press \ue000 (center) when finished. Message repeats.\n\n";
+    message +=
+        "In a secluded tower lived a wizard named Elinor, obsessed with reading. Her passion lay "
+        "not in spells but in stories. One ancient tome enchanted her; its runes sparkled with "
+        "hidden wisdom. Night after night, she read, the runes dancing around her. Unbeknownst to "
+        "her, they were weaving a spell, granting her unparalleled wisdom. Elinor's library became "
+        "legendary, each book a magical gateway, all thanks to her love for reading.";
+
     auto stream = std::make_shared<StdStringStream>(message);
     renderer_.setStream(stream);
 }
 
 void ResizeBoxScreen::render(DisplaySystem &display) {
+    DisplayRect currRect = display_.getBoundingBox();
+    display.drawDottedBox(-2, -2, currRect.width + 4, currRect.height + 4, 1, 2);
     this->renderer_.renderPage(0, 0, true);
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 }
