@@ -11,10 +11,15 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
 
     std::string message;
     // This needs to be pretty big for smaller fonts
-    for (int i = 0; i < 30; i++) {
-        message += "Press arrows to move box around to your liking. Then "
-                   "press \ue000 (center) when done! Message repeats.\n\n";
-    }
+    message += "Press arrows to move box around to your liking. Then "
+               "press \ue000 (center) when done! Message repeats.\n\n";
+    message +=
+        "Beneath a rugged exterior, Pirate Captain O'Malley harbored a love for poetry. Between "
+        "skirmishes and treasure hunts, he'd pen verses inspired by the sea's beauty. A stolen, "
+        "enchanted quill from a captured merchant vessel soon revealed its magic, making his poems "
+        "come to life. The images he wrote danced in the air, telling tales of love, adventure, "
+        "and the sea. O'Malley's crew, once fierce and merciless, became entranced by the art of "
+        "words, turning their ship into a floating haven of poetry and wonder.";
     auto stream = std::make_shared<StdStringStream>(message);
     renderer_.setStream(stream);
 }
