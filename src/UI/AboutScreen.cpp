@@ -14,23 +14,28 @@ auto AboutScreen::layout(LayoutContext &context, Size size) -> Size {
     y += sol_logo_height + 22;
     x += leftPadding;
 
-    context.setViewFrame(productNameView_, {{x, y}, size});
+    context.setViewFrame(productNameView_, {{x, y}, size},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
     y += yAdvance;
 
-    context.setViewFrame(serialNumberView_, {{x, y}, size});
+    context.setViewFrame(serialNumberView_, {{x, y}, size},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
     y += yAdvance;
 
-    context.setViewFrame(firmwareVersionView_, {{x, y}, size});
+    context.setViewFrame(firmwareVersionView_, {{x, y}, size},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
     y += yAdvance;
 
-    context.setViewFrame(remoteFirmwareVersionView_, {{x, y}, size});
+    context.setViewFrame(remoteFirmwareVersionView_, {{x, y}, size},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
     y += yAdvance;
 
-    context.setViewFrame(remoteBatteryView_, {{x, y}, size});
+    context.setViewFrame(remoteBatteryView_, {{x, y}, size},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
     context.setViewFrame(returnToMenuView_, {{0, 0}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal |
