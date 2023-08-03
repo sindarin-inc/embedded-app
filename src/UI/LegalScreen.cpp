@@ -64,7 +64,7 @@ auto LegalScreen::layout(LayoutContext &context, Size size) -> Size {
 
     context.setSublayoutFrame(
         {{0, 0}, size}, LayoutOptionsSizeToFitVertical | LayoutOptionsAlignBottom,
-        [this, yAdvance](LayoutContext &context, Size size) -> Size {
+        [this](LayoutContext &context, Size size) -> Size {
             int y = 0;
             auto leftRightRect =
                 context.setViewFrame(leftRightView_, {{0, y}, {size.width, 0}},
