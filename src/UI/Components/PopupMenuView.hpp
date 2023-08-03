@@ -30,11 +30,10 @@ public:
     auto layout(LayoutContext &context, Size size) -> Size override {
         auto fullFrame = Rect::fromSize(size);
 
-        context.setViewFrame(popupMenuBackground_, fullFrame, LayoutOptionsAlignCenter);
+        context.setViewFrame(popupMenuBackground_, fullFrame);
 
         // Border is inset by 5 pixels from the total size
-        auto foregroundFrame = context.setViewFrame(popupMenuForeground_, fullFrame.inset(5),
-                                                    LayoutOptionsAlignCenter);
+        auto foregroundFrame = context.setViewFrame(popupMenuForeground_, fullFrame.inset(5));
 
         // Internal content sublayout is further inset
         auto contentFrame = context.setSublayoutFrame(
