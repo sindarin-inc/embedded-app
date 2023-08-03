@@ -4,14 +4,58 @@
 #include "View.hpp"
 
 LayoutContext::LayoutContext(View &view)
-    : layout_([this, &view](LayoutContext &layoutContext, Size size) {
+    : view_(&view), layout_([this, &view](LayoutContext &layoutContext, Size size) {
           return view.layout(*this, size);
       }),
       frame_(Rect::zero()) {}
 
+auto LayoutContext::debugName() -> std::string {
+    if (view_ == nullptr) {
+        if (parentLayout_.has_value()) {
+            return StringFormat("Sublayout of %s", parentLayout_.value()->debugName().c_str());
+        } else {
+            return "Sublayout";
+        }
+    } else {
+        return view_->debugName();
+    }
+}
+
 auto LayoutContext::setLayoutSizeInRect(LayoutContext &layoutContext, const Size &size,
                                         const Rect &inRect, int options) -> Rect {
     layoutContext.parentLayout_ = this;
+
+// Since we don't have run-time type information on the device right now, these logs are only really
+// useful in the sim
+#if SIMULATOR
+    // Make sure we're not trying to both align center and align right
+    if ((options & LayoutOptionsAlignCenterHorizontal) != 0 &&
+        (options & LayoutOptionsAlignRight) != 0) {
+        log_w("Aligning %s inside %s with conflicting alignment options "
+              "(LayoutOptionsAlignCenter/Horizontal and LayoutOptionsAlignRight) (this is "
+              "probably a bug)",
+              layoutContext.debugName().c_str(), debugName().c_str());
+    }
+
+    // Make sure we're not trying to align center and align bottom
+    if ((options & LayoutOptionsAlignCenterVertical) != 0 &&
+        (options & LayoutOptionsAlignBottom) != 0) {
+        log_w("Aligning %s inside %s with conflicting alignment options "
+              "(LayoutOptionsAlignCenter/Vertical and LayoutOptionsAlignBottom) (this is "
+              "probably a bug)",
+              layoutContext.debugName().c_str(), debugName().c_str());
+    }
+
+    // Raise a warning if we're aligning but not sizing (i.e. we are trying to align two equal sized
+    // rects)
+    if (size == inRect.size && ((options & LayoutOptionsSizeToFit) == 0) &&
+        ((options &
+          (LayoutOptionsAlignCenter | LayoutOptionsAlignRight | LayoutOptionsAlignBottom)) != 0)) {
+        log_w("Aligning %s inside %s in an equally sized Rect without sizing (this is probably a "
+              "bug)",
+              layoutContext.debugName().c_str(), debugName().c_str());
+    }
+#endif
 
     auto frame = FrameForLayout(layoutContext, size, inRect, options);
 
