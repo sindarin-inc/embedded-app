@@ -5,7 +5,7 @@
 
 // Show the (already loaded into buffer) current page
 // and load the next page into the next buffer so we have it.
-auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines)
+auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines, bool forceRefresh)
     -> std::shared_ptr<Place> {
 
     currentPlace_ = tokenizer_->toStreamPlace(std::move(fromPlace));
@@ -29,7 +29,8 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
 
     // std::cout << "Pager Line Count: " << pager_.getLineCount() << std::endl;
 
-    if ((pager_.getLineCount() == 0) || (!(currentPlace_ == pager_.getStreamPlaceOfFirstLine()))) {
+    if ((pager_.getLineCount() == 0) || (!(currentPlace_ == pager_.getStreamPlaceOfFirstLine())) ||
+        forceRefresh) {
         currentPlace_ = tokenizer_->loadAndTokenizePage(currentPlace_, tokens_, pager_);
     }
     nextPlace_ = pager_.getNextPageStreamPlace();
