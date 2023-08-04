@@ -75,7 +75,7 @@ void StartFreeRtos(bool runAppMain) {
     prefs.firstRead.set(0);
     prefs.pageTransitionArrows.set(false);
     prefs.lastReadableId.remove();
-    prefs.readablePlace.set("93d56842", 0);
+    prefs.readablePlace.remove("93d56842");
     prefs.noSetupMode.set(true);
 
     // Start the FreeRTOS scheduler
