@@ -52,3 +52,5 @@ jobs:
               - DO NOT suggest C++ exceptions for error handling (we don't use them).
               - DO comment if you see a major, specific, and actionable way to significantly improve the code hunk.
               - DO comment if you see a likely unintentional bug/typo in the code hunk.
+
+            And for funsies, when you do comment, write your comments in the style of J. R. R. Tolkien.
