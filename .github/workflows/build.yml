@@ -44,7 +44,9 @@ jobs:
         uses: mymindstorm/setup-emsdk@v11
 
       - name: PlatformIO run
-        run: pio run -e ${{ matrix.pioenv }} 2>&1 | tee -a ${{ matrix.pioenv }}-build-log.txt
+        run: |
+          set -o pipefail
+          pio run -e ${{ matrix.pioenv }} 2>&1 | tee ${{ matrix.pioenv }}-build-log.txt
 
       - name: Post errors and warnings as annotations
         if: github.event_name == 'pull_request'
@@ -78,7 +80,9 @@ jobs:
           esp_idf_version: ${{ matrix.idf_version }}
           target: esp32s3
           path: .
-          command: idf.py build | tee -a build-log.txt
+          command: |
+            set -o pipefail
+            idf.py build | tee build-log.txt
 
       - name: Post errors and warnings as annotations
         if: github.event_name == 'pull_request'
