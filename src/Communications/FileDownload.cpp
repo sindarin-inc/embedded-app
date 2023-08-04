@@ -19,7 +19,7 @@ auto DownloadFile(
     if (SindarinAPI::isSindarinUrl(url)) {
         std::shared_ptr<SindarinAPI> api = SindarinAPI::getInstance();
         if (api) {
-            log_d("Attaching Sindarin auth to HTTP request to %s", url);
+            log_d("Attaching Sindarin auth to HTTP request to %s");
             api->setAuth(client);
         }
     }

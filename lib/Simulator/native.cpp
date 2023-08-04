@@ -69,6 +69,9 @@ bool saveScreenshotPng(std::string filepath, SDL_Window *window, SDL_Renderer *r
 }
 
 void SimDrawScreen() {
+    int unused;
+    log_d("%d", (long long)3);
+
     for (int x = 0; x < EinkET013TT1_PIXEL_WIDTH; x++) {
         for (int y = 0; y < EinkET013TT1_PIXEL_HEIGHT; y++) {
             uint8_t color = FakeEinkET013TT1ParticlePositions[x + y * EinkET013TT1_PIXEL_WIDTH];
