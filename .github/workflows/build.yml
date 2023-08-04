@@ -47,7 +47,7 @@ jobs:
         run: pio run -e ${{ matrix.pioenv }} 2>&1 | tee -a ${{ matrix.pioenv }}-build-log.txt
 
       - name: Post errors and warnings as annotations
-        if: github.event_name == 'pull_request' && (success() || failure())
+        if: github.event_name == 'pull_request'
         run: |
           pip install requests curlify
           python scripts/parse_warnings.py --filename ${{ matrix.pioenv }}-build-log.txt --title ${{ matrix.pioenv }}-build
@@ -81,7 +81,7 @@ jobs:
           command: idf.py build | tee -a build-log.txt
 
       - name: Post errors and warnings as annotations
-        if: github.event_name == 'pull_request' && (success() || failure())
+        if: github.event_name == 'pull_request'
         run: |
           pip install requests curlify
           python scripts/parse_warnings.py --filename build-log.txt --title build --path_prefix "/app/sindarin-inc/embedded-app/"
