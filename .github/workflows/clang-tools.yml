@@ -36,6 +36,7 @@ jobs:
           idf.py clang-check --run-clang-tidy-py scripts/run-clang-tidy.py --run-clang-tidy-options "-fix -header-filter=embedded-app/src/.*" --exclude-paths managed_components --exclude-paths components
 
       - name: Post errors and warnings as annotations
+        if: github.event_name == 'pull_request' && (success() || failure())
         run: |
           . $IDF_PATH/export.sh
           pip install requests curlify
@@ -43,7 +44,6 @@ jobs:
         env:
           PR_GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        if: github.event_name == 'pull_request'
 
       - uses: DoozyX/clang-format-lint-action@v0.16.2
         with:

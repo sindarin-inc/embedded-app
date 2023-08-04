@@ -298,7 +298,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     if (!(prefs_.tutorialsDeleted.get().value_or(0) & TUTORIAL_SCREEN_BOOKS)) {
         booksMenu->addMenuItem(MenuItem("\ue000 Books Tutorial", "",
                                         [this, createTutorialScreen]() {
-            SpiramString message = SpiRamStringFormat(
+            SpiramString message = SpiramString(
                 "Welcome to the Books menu. This tab "
                 "shows you the books currently synced to your Sol Reader. To add more books or "
                 "manage the books on your device, use the Sol mobile app.\n\n\nPress "

@@ -26,6 +26,17 @@ public:
         drawInRect(layoutContext_.screenFrame());
     }
 
+    virtual auto debugName() -> std::string {
+        // Since IDF uses -fno-rtti by default (no run-time type info) we don't have the name of the
+        // current subclass. If you really want to debug on device, you could always override this
+        // method in the View you're debugging.
+#if SIMULATOR
+        return typeid(*this).name();
+#else
+        return "View";
+#endif
+    }
+
     // Acccessors for hidden_ field
     [[nodiscard]] auto isHidden() const -> bool { return hidden_; }
     void setHidden(bool hidden) { hidden_ = hidden; }

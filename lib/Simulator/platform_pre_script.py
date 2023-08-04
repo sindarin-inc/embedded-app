@@ -32,9 +32,9 @@ def remove_non_simulator_files(node):
     return node
 
 
-def ignore_unzipLIB_warnings(env, node):
+def ignore_node_path_warnings(env, node):
     """
-    Ignore -Wdeprecated-non-prototype warnings for unzipLIB
+    Ignore -Wdeprecated-non-prototype warnings for unzipLIB & zlib-PIO
 
     See https://github.com/madler/zlib/issues/633
 
@@ -43,15 +43,15 @@ def ignore_unzipLIB_warnings(env, node):
     `node.get_abspath()` - an absolute path
     """
 
-    if "unzipLIB" not in node.get_path() and "zlib-PIO" not in node.get_path():
+    if "unzipLIB" in node.get_path() or "zlib-PIO" in node.get_path():
+        return env.Object(
+            node,
+            CPPDEFINES=env["CPPDEFINES"],
+            CCFLAGS=env["CCFLAGS"] + ["-Wno-deprecated-non-prototype"],
+        )
+    else:
         return node
-
-    return env.Object(
-        node,
-        CPPDEFINES=env["CPPDEFINES"],
-        CCFLAGS=env["CCFLAGS"] + ["-Wno-deprecated-non-prototype"],
-    )
 
 
 env.AddBuildMiddleware(remove_non_simulator_files, "*")
-env.AddBuildMiddleware(ignore_unzipLIB_warnings, "*.c")
+env.AddBuildMiddleware(ignore_node_path_warnings, "*.c")

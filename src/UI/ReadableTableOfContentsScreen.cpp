@@ -62,10 +62,6 @@ void ReadableTableOfContentsScreen::drawInRect(Rect rect) {
 }
 
 void ReadableTableOfContentsScreen::render(DisplaySystem &display) {
-    if (menuItemViews_.size() <= 0) {
-        log_w("No views to draw in ReadableTableOfContentsScreen");
-    }
-
     setNeedsLayout();
 
     setFrame(
@@ -106,6 +102,10 @@ void ReadableTableOfContentsScreen::render(DisplaySystem &display) {
         draw();
         PROFILE_END_LOG_US(ReadableTableOfContentsScreenLayoutAndDraw);
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
+    }
+
+    if (menuItemViews_.size() <= 0) {
+        log_w("No views to draw in ReadableTableOfContentsScreen");
     }
 
     std::shared_ptr<MenuItemView> selectedMenuItemView =

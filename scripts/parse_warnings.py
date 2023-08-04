@@ -9,6 +9,7 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_REPOSITORY = os.getenv("GITHUB_REPOSITORY")
 GITHUB_SHA = os.getenv("PR_GITHUB_SHA")
 
+print(f"GITHUB_TOKEN: {'********' if GITHUB_TOKEN is not None else None}")
 print(f"GITHUB_SHA: {GITHUB_SHA}")
 print(f"GITHUB_REPOSITORY: {GITHUB_REPOSITORY}")
 
@@ -85,8 +86,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process a filename and a title.")
     parser.add_argument("--filename", type=str, required=True, help="Filename to process")
     parser.add_argument("--title", type=str, required=True, help="Title to prepend to warnings")
-    parser.add_argument("--path_prefix", type=str, required=True, help="Path to remove from warnings")
+    parser.add_argument(
+        "--path_prefix", type=str, required=False, default="", help="Path to remove from warnings"
+    )
     args = parser.parse_args()
 
     warnings_and_errors = parse_warnings(args.filename, args.title, args.path_prefix)
-    post_annotations_chunked(warnings_and_errors, args.title)
+    print(f"Found {len(warnings_and_errors)} issues:")
+    for issue in warnings_and_errors:
+        print(f"{issue['path']}:{issue['start_line']}:{issue['start_column']}: {issue['message']}")
+    if GITHUB_TOKEN is None or GITHUB_REPOSITORY is None or GITHUB_SHA is None:
+        print("Not running in GitHub Actions, not posting annotations")
+    else:
+        post_annotations_chunked(warnings_and_errors, args.title)
