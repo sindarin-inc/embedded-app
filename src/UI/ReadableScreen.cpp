@@ -469,6 +469,9 @@ void ReadableScreen::processCommandAutoPilot(RemoteCommand command) {
 }
 
 void ReadableScreen::processCommandNormal(RemoteCommand command) {
+    // Go ahead and begin powering on the screen since in all cases we trigger a re-render
+    display_.beginPowerOn();
+
     switch (command) {
     case RemoteCommand::LEFT:
         readable_->place = renderer_.getPreviousPlace();

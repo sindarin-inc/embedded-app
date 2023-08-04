@@ -40,7 +40,6 @@ protected:
     bool bailAfterLens_ = false;
 
     bool dropVcom_ = false;
-    bool skipNextRender_ = false;
 
     bool shownAppDownload_ = false;
 

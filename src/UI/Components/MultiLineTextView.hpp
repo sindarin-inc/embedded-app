@@ -12,27 +12,40 @@
 // A view that draws multiple lines of text
 class MultiLineTextView : public EinkView {
 public:
-    MultiLineTextView(DisplaySystem &display, std::string text, int maxLines, int spacingOffset = 0,
-                      Font *font = static_cast<Font *>(&ibmf75Face0), bool allCaps = false)
-        : EinkView(display), text_(std::move(text)), maxLines_(maxLines),
-          spacingOffset_(spacingOffset), font_(font) {
-        if (allCaps) {
-            std::string subCopy = text_;
-            std::transform(subCopy.begin(), subCopy.end(), subCopy.begin(), ::toupper);
-            text_ = std::move(subCopy);
-        }
-    }
+    MultiLineTextView(DisplaySystem &display, int maxLines, int spacingOffset = 0,
+                      bool allCaps = false)
+        : EinkView(display), maxLines_(maxLines), spacingOffset_(spacingOffset),
+          font_(static_cast<Font *>(&ibmf75Face0)), allCaps_(allCaps){};
+
     ~MultiLineTextView() override = default;
 
-    auto splitMultiLine(DisplaySystem &display, int width, const std::string &text)
-        -> std::vector<std::string> {
-        std::vector<std::string> lines;
+    void setText(std::string text) {
+        if (allCaps_) {
+            std::transform(text.begin(), text.end(), text.begin(), ::toupper);
+        }
+        if (text == text_) {
+            return;
+        }
+        text_ = std::move(text);
+        setNeedsLayout();
+        cachedWidth_ = 0;
+    }
+
+    void setFont(Font *font) { font_ = font; }
+
+    void splitMultiLine(DisplaySystem &display, int width, const std::string &text) {
+        if (cachedWidth_ == width) {
+            return;
+        }
+        splitLines_.clear();
         std::string line;
         std::string word;
-        for (char c : text) {
-            if (c == ' ' || c == '\n' || c == '\t' || c == '\r' || c == '-') {
-                if (display.getTextWidth((line + word).c_str()) > width) {
-                    lines.push_back(line);
+        for (int i = 0; i < text.size(); i++) {
+            char c = text[i];
+            if (c == ' ' || c == '\n' || c == '\t' || c == '\r' || c == '-' ||
+                i == text.size() - 1) {
+                if (display.getTextWidth(line + word) > width) {
+                    splitLines_.push_back(line);
                     line = "";
                 }
                 line += word + c;
@@ -40,21 +53,16 @@ public:
             } else {
                 word += c;
             }
-        }
-
-        // Account for the last word
-        if (!word.empty()) {
-            if (display.getTextWidth((line + word).c_str()) > width) {
-                lines.push_back(line);
-                line = "";
+            // Allow going over the max lines by one, so we can add the ... to the end
+            if (splitLines_.size() > maxLines_) {
+                break;
             }
-            line += word;
         }
 
         if (!line.empty()) {
-            lines.push_back(line);
+            splitLines_.push_back(line);
         }
-        return lines;
+        cachedWidth_ = width;
     }
     auto layout(LayoutContext &context, Size size) -> Size override {
         // Leave the display font the way we found it.
@@ -62,7 +70,7 @@ public:
         Font *oldFont = display_.getFont();
         display_.setFont(font_);
 
-        splitLines_ = splitMultiLine(display_, size.width, text_);
+        splitMultiLine(display_, size.width, text_);
 
         int lineCount = std::min((size_t)maxLines_, splitLines_.size());
         int height = lineCount * font_->lineHeight() + (lineCount - 1) * spacingOffset_;
@@ -107,4 +115,6 @@ protected:
     int spacingOffset_;
     std::vector<std::string> splitLines_;
     Font *font_;
+    bool allCaps_;
+    int cachedWidth_ = 0;
 };

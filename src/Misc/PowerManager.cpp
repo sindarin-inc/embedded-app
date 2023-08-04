@@ -4,10 +4,7 @@
 #include <driver/gpio.h>
 #include <driver/rtc_io.h>
 #include <esp_idf_version.h>
-#include <esp_sleep.h>
-#include <esp_system.h>
 #include <hal/gpio_types.h>
-#include <rom/rtc.h>
 #include <ulp_riscv.h>
 #include <ulp_riscv_i2c.h>
 
@@ -43,88 +40,107 @@ void PowerManager::wakeupCheck(SolClock &clock) {
         Delay(1000);
     }
 
-    esp_reset_reason_t resetReason = esp_reset_reason();
-    switch (resetReason) {
+    // From these three variables we can figure out exactly why we're booting
+    bootInfo_.resetReason = esp_reset_reason();
+    bootInfo_.rtcResetReason = rtc_get_reset_reason(0);
+    bootInfo_.sleepWakeupCause = esp_sleep_get_wakeup_cause();
+
+    switch (bootInfo_.resetReason) {
     case ESP_RST_UNKNOWN: {
-        auto rtcResetReason = rtc_get_reset_reason(0);
-        switch (rtcResetReason) {
+        switch (bootInfo_.rtcResetReason) {
         case USB_UART_CHIP_RESET:
-            log_w("Reboot triggered by USB UART");
+            bootInfo_.reason = BootInfo::Reason::UartChipReset;
             break;
         default:
-            log_w("Reboot triggered by unknown reason (rtc reason = %d)", rtcResetReason);
+            bootInfo_.reason = BootInfo::Reason::Unknown;
             break;
         };
         break;
     }
     case ESP_RST_POWERON:
-        log_i("Booting from power on");
+        bootInfo_.reason = BootInfo::Reason::PowerOn;
         break;
     case ESP_RST_SW:
-        log_i("Booting from software reset");
+        bootInfo_.reason = BootInfo::Reason::Sw;
         break;
     case ESP_RST_PANIC:
-    case ESP_RST_INT_WDT:
-    case ESP_RST_TASK_WDT:
         // TODO: boot loop detector from here?
-        // TODO: if we crashed while in a background sync either try again or go back to sleep. But
+        // TODO: If we crashed while in a background sync either try again or go back to sleep. But
         // we need a way to communicate that.
-        log_i("Booting from unexpected software failure");
+        bootInfo_.reason = BootInfo::Reason::Panic;
+        break;
+    case ESP_RST_INT_WDT:
+        bootInfo_.reason = BootInfo::Reason::IntWdt;
+        break;
+    case ESP_RST_TASK_WDT:
+        bootInfo_.reason = BootInfo::Reason::TaskWdt;
         break;
     case ESP_RST_DEEPSLEEP: {
         log_i("Booting from deep sleep");
-        esp_sleep_wakeup_cause_t sleepWakeupCause = esp_sleep_get_wakeup_cause();
-        switch (sleepWakeupCause) {
+        switch (bootInfo_.sleepWakeupCause) {
         case ESP_SLEEP_WAKEUP_TIMER:
+            bootInfo_.reason = BootInfo::Reason::Timer;
             // We're waking up from a deep sleep timer. We probably wan't to content sync.
-            log_i("Waking up from deep sleep timer");
             state_ = PowerState::Background;
             break;
         case ESP_SLEEP_WAKEUP_ULP:
+            bootInfo_.reason = BootInfo::Reason::UlpMag;
             // We're waking up from a ULP trigger. We probably want to go to active.
-            log_i("Waking up from deep sleep ulp trigger (mag sensor)");
             break;
         case ESP_SLEEP_WAKEUP_EXT0: {
+            bootInfo_.reason = BootInfo::Reason::UsbPlug;
             // We're waking up because USB was connected (so we can set the LED)
-            log_i("Waking up from deep sleep ext0 (USB connected)");
             // Check if the USB LED should be on
             checkUsb();
             auto percentage = battery.getBatteryPercentage();
             if (USBConnected()) {
                 log_i("USB connected, battery level: %d%%", int(percentage));
+                // Wait just a little moment so we can flash software if we get stuck
+                Delay(1000);
             } else if (ulp_waitForClose) {
                 ulp_waitForClose = 0;
                 // If the temples were never closed and usb just disconnected, let's power up
                 log_i("Temple is still open on USB disconnect, turning on");
                 break;
+            } else {
+                // USB disconnected with temples closed, go back to sleep
+                log_i("USB disconnected, battery level: %d%%", int(percentage));
             }
-            // Wait just a little moment so we can flash software if we get stuck
-            Delay(1000);
             // Back to sleep
             ulpDeepSleep(SleepReason::UpdateUSBState);
             break;
         }
         case ESP_SLEEP_WAKEUP_COCPU_TRAP_TRIG:
+            bootInfo_.reason = BootInfo::Reason::CoCpuTrap;
             log_e("ULP crashed");
             // Back to sleep
             ulpDeepSleep(SleepReason::UlpCrashed);
             break;
         default:
-            log_w("Unexpected deep sleep wakeup cause: %d", sleepWakeupCause);
+            bootInfo_.reason = BootInfo::Reason::Unknown;
             break;
         }
         break;
     }
     case ESP_RST_BROWNOUT:
+        bootInfo_.reason = BootInfo::Reason::Brownout;
         // TODO: Consider hard power off after brownout?
-        log_i("Booting from brownout");
         break;
     case ESP_RST_WDT:
+        bootInfo_.reason = BootInfo::Reason::Wdt;
+        break;
     case ESP_RST_SDIO:
     case ESP_RST_EXT:
-    default:
-        log_w("Unexpected reset reason: %d", resetReason);
+        bootInfo_.reason = BootInfo::Reason::Unknown;
         break;
+    }
+
+    if (bootInfo_.reason == BootInfo::Reason::Unknown) {
+        log_e("Unknown boot reason (esp_reset_reason=%d, rtc_get_reset_reason=%d, "
+              "esp_sleep_get_wakeup_cause=%d) ",
+              bootInfo_.resetReason, bootInfo_.rtcResetReason, bootInfo_.sleepWakeupCause);
+    } else {
+        log_i("Boot reason: %s", bootInfo_.humanStr().c_str());
     }
 
     checkUsb();
@@ -315,18 +331,32 @@ void PowerManager::checkUsb() {
         auto percentage = battery.getBatteryPercentage();
         gpio_hold_dis((gpio_num_t)GREEN_LED);
         gpio_hold_dis((gpio_num_t)RED_LED);
+
         if (percentage > 95) {
-            // If the battery is fully charged, turn the GREEN LED on.
-            DigitalWrite(GREEN_LED, LED_ON);
-            DigitalWrite(RED_LED, LED_OFF);
+            const uint32_t delayPeriod = 30 * 60; // 30 min delay upon reaching 95% battery level
+            time_t currentTime = SolClock::getInstance().getEpochTime();
+
+            if (PreferencesStore::ledChargeTime == 0) {
+                // If the battery is fully charged, start the timer before turning on the LED
+                PreferencesStore::ledChargeTime = currentTime + delayPeriod;
+            } else if (currentTime >= PreferencesStore::ledChargeTime + delayPeriod) {
+                // If the battery is fully charged and a half hour has passed, turn on the LED
+                DigitalWrite(GREEN_LED, LED_ON);
+                DigitalWrite(RED_LED, LED_OFF);
+                gpio_hold_en((gpio_num_t)GREEN_LED);
+                gpio_hold_en((gpio_num_t)RED_LED);
+                gpio_deep_sleep_hold_en();
+            }
         } else {
+            PreferencesStore::ledChargeTime = 0; // reset the timer as battery level is below 95%
             DigitalWrite(GREEN_LED, LED_OFF);
             DigitalWrite(RED_LED, LED_ON);
+            gpio_hold_en((gpio_num_t)GREEN_LED);
+            gpio_hold_en((gpio_num_t)RED_LED);
+            gpio_deep_sleep_hold_en();
         }
-        gpio_hold_en((gpio_num_t)GREEN_LED);
-        gpio_hold_en((gpio_num_t)RED_LED);
-        gpio_deep_sleep_hold_en();
     } else {
+        PreferencesStore::ledChargeTime = 0; // reset the timer as the USB is disconnected
         DigitalWrite(GREEN_LED, LED_OFF);
         DigitalWrite(RED_LED, LED_OFF);
         gpio_hold_dis((gpio_num_t)GREEN_LED);

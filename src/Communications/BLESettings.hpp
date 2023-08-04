@@ -25,6 +25,8 @@ protected:
     TTRemoteInput *ttRemoteInput_;
     void writeDeviceSerialToCharacteristic(BLECharacteristic *characteristic,
                                            const std::string &key);
+    void writeFirmwareVersionToCharacteristic(BLECharacteristic *characteristic,
+                                              const std::string &key);
     void writePageTurnerBuildToCharacteristic(BLECharacteristic *characteristic,
                                               const std::string &key);
     void writePageTurnerBatteryToCharacteristic(BLECharacteristic *characteristic,
@@ -53,6 +55,8 @@ protected:
                 // Public settings
                 if (value == "device-serial") {
                     this->enclosed->writeDeviceSerialToCharacteristic(characteristic, value);
+                } else if (value == "firmware-version") {
+                    this->enclosed->writeFirmwareVersionToCharacteristic(characteristic, value);
                 } else if (value == "page-turner-build") {
                     this->enclosed->writePageTurnerBuildToCharacteristic(characteristic, value);
                 } else if (value == "page-turner-battery") {

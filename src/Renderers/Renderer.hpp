@@ -50,11 +50,12 @@ public:
     // for the speed reading functionality.
 
     // NOLINTNEXTLINE(modernize-use-nodiscard)
-    auto renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines = 0, bool forceRefresh = false)
-        -> std::shared_ptr<Place>;
+    auto renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines = 0,
+                    bool forceRefresh = false) -> std::shared_ptr<Place>;
 
     // NOLINTNEXTLINE(modernize-use-nodiscard)
-    inline auto renderFirstPage(int16_t numSkipLines = 0, bool forceRefresh = false) -> std::shared_ptr<Place> {
+    inline auto renderFirstPage(int16_t numSkipLines = 0, bool forceRefresh = false)
+        -> std::shared_ptr<Place> {
         return renderPage(tokenizer_->toPlace(tokenizer_->getPlaceAtBeginningOfDocument()),
                           numSkipLines, forceRefresh);
     }

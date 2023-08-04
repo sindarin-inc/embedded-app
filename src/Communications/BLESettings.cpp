@@ -8,6 +8,7 @@
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/StringUtil.hpp"
+#include "Version.hpp"
 #include "WiFi.hpp"
 #include "sindarin-debug.h"
 
@@ -32,6 +33,14 @@ void BLESettings::writeDeviceSerialToCharacteristic(BLECharacteristic *character
                                                     const std::string &key) {
     std::string value = StringFormat("%s=%s", key.c_str(), GetSerialNumber().c_str());
     log_i("GATT client reading serial number: %s", value.c_str());
+    characteristic->setValue(value);
+    characteristic->notify();
+}
+
+void BLESettings::writeFirmwareVersionToCharacteristic(BLECharacteristic *characteristic,
+                                                       const std::string &key) {
+    std::string value = StringFormat("%s=%s", key.c_str(), kVersionString);
+    log_i("GATT client reading firmware version: %s", value.c_str());
     characteristic->setValue(value);
     characteristic->notify();
 }

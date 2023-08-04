@@ -39,7 +39,7 @@ jobs:
         run: |
           . $IDF_PATH/export.sh
           pip install requests curlify
-          python scripts/parse_warnings.py
+          python scripts/parse_warnings.py --filename warnings.txt --title clang-tidy --path_prefix "/__w/embedded-app/embedded-app/"
         env:
           PR_GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

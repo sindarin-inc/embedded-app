@@ -287,36 +287,71 @@ public:
 
     PreferencesStore() noexcept
         :
+    // Ignoring clang-tidy and keeping these on their own lines otherwise diffs become very
+    // difficult to read
+    // clang-format off
 #if USE_TURN_TOUCH_REMOTE
           pairedTurnTouchAddress(*this, "paired-tt"),
 #endif
-          cloudToken(*this, "cloud-token"), lastReadableId(*this, "rui-readable"),
-          lastPageTurnerBuild(*this, "pt-build"), lastArticlesSince(*this, "articles-since"),
-          lastBooksSince(*this, "readables-since"), sortCriteria(*this, "sort-c"),
-          sortDirection(*this, "sort-d"), lastReadTime(*this, "-lr"), readablePlace(*this, "-p"),
-          readablePlaceChanged(*this, "-pc"), readableArchivedChanged(*this, "-ar"),
-          readableBookmarksChanged(*this, "-bm"), invertSetting(*this, "invert"),
-          vcom(*this, "vcom"), font(*this, "font"), rectX(*this, "rectX"), rectY(*this, "rectY"),
-          rectW(*this, "rectW"), rectH(*this, "rectH"), lineSpacing(*this, "line-space"),
-          noSetupMode(*this, "no-setup"), wordCount(*this, "word-count"),
-          totalReadingTimeSeconds(*this, "tot-rd-time"), bootCount(*this, "boot-count"),
-          firstRead(*this, "first-read"), autoPilotSpeed(*this, "auto-speed"),
-          firstAutopilotRead(*this, "fst-auto-rd"), cesMode(*this, "ces"), emcMode(*this, "emc"),
-          wifiPower(*this, "wifi-power"), tzIana(*this, "tz-iana"), tzPosix(*this, "tz-posix"),
-          firmwareLoaded(*this, "fw-loaded"), sleepReason(*this, "sleep-reason"),
-          noBooks(*this, "no-books"), showNews(*this, "show-news"),
-          noArticles(*this, "no-articles"), noBible(*this, "no-bible"),
-          noDeliverOnClose(*this, "no-deliv-close"), noMorningDelivery(*this, "no-morn-sync"),
-          eveningDelivery(*this, "eve-deliver"), darkMode(*this, "dark-mode"),
-          autoPilot(*this, "auto-pilot"), fastTransitions(*this, "fast-tran"),
-          noUploadCrashes(*this, "no-upload-crash"), showDebugMenu(*this, "show-debug"),
-          fastBookmarkRight(*this, "fst-mark-right"), fastBookmarkCenter(*this, "fst-mark-cent"),
+          cloudToken(*this, "cloud-token"),
+          lastReadableId(*this, "rui-readable"),
+          lastPageTurnerBuild(*this, "pt-build"),
+          lastArticlesSince(*this, "articles-since"),
+          lastBooksSince(*this, "readables-since"),
+          sortCriteria(*this, "sort-c"),
+          sortDirection(*this, "sort-d"),
+          lastReadTime(*this, "-lr"),
+          readablePlace(*this, "-p"),
+          readablePlaceChanged(*this, "-pc"),
+          readableArchivedChanged(*this, "-ar"),
+          readableBookmarksChanged(*this, "-bm"),
+          invertSetting(*this, "invert"),
+          vcom(*this, "vcom"),
+          font(*this, "font"),
+          rectX(*this, "rectX"),
+          rectY(*this, "rectY"),
+          rectW(*this, "rectW"),
+          rectH(*this, "rectH"),
+          lineSpacing(*this, "line-space"),
+          noSetupMode(*this, "no-setup"),
+          wordCount(*this, "word-count"),
+          totalReadingTimeSeconds(*this, "tot-rd-time"),
+          bootCount(*this, "boot-count"),
+          firstRead(*this, "first-read"),
+          autoPilotSpeed(*this, "auto-speed"),
+          firstAutopilotRead(*this, "fst-auto-rd"),
+          cesMode(*this, "ces"),
+          emcMode(*this, "emc"),
+          wifiPower(*this, "wifi-power"),
+          tzIana(*this, "tz-iana"),
+          tzPosix(*this, "tz-posix"),
+          firmwareLoaded(*this, "fw-loaded"),
+          noBooks(*this, "no-books"),
+          showNews(*this, "show-news"),
+          noArticles(*this, "no-articles"),
+          noBible(*this, "no-bible"),
+          noDeliverOnClose(*this, "no-deliv-close"),
+          noMorningDelivery(*this, "no-morn-sync"),
+          eveningDelivery(*this, "eve-deliver"),
+          darkMode(*this, "dark-mode"),
+          autoPilot(*this, "auto-pilot"),
+          fastTransitions(*this, "fast-tran"),
+          noUploadCrashes(*this, "no-upload-crash"),
+          showDebugMenu(*this, "show-debug"),
+          fastBookmarkRight(*this, "fst-mark-right"),
+          fastBookmarkCenter(*this, "fst-mark-cent"),
           pageTransitionArrows(*this, "page-arrows"),
-          allowUsageWhileCharging(*this, "allow-use-chg"), wifiSettingsJson(*this, "wifi-settings"),
-          localStoreMigrationVersion(*this, "ls-version"), fontsLibrary(*this, "fonts-lib"),
-          fontType(*this, "font-type"), tutorialsDeleted(*this, "tutorials"),
-          bleAdvertisingKey(*this, "ble-adv-key"), bleAuthKey(*this, "ble-auth-key"),
+          allowUsageWhileCharging(*this, "allow-use-chg"),
+          wifiSettingsJson(*this, "wifi-settings"),
+          localStoreMigrationVersion(*this, "ls-version"),
+          fontsLibrary(*this, "fonts-lib"),
+          fontType(*this, "font-type"),
+          tutorialsDeleted(*this, "tutorials"),
+          bleAdvertisingKey(*this, "ble-adv-key"),
+          bleAuthKey(*this, "ble-auth-key"),
           preferencesStoreMigrationVersion_(*this, "ps-version"){};
+    // clang-format on
+
     PreferencesStore(PreferencesStore &) = delete;
 
     void migrateIfNeeded() {
@@ -386,6 +421,20 @@ public:
                 err = nvs_erase_key(nvsHandle_, "demo");
                 if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
                     log_e("nvs_erase_key failed: %s", esp_err_to_name(err));
+                }
+                break;
+            }
+            case 3: {
+                std::vector<std::string> keys = {
+                    "morn-deliver",
+                    "no-page-arrows",
+                    "sleep-reason",
+                };
+                for (auto &key : keys) {
+                    esp_err_t err = nvs_erase_key(nvsHandle_, key.c_str());
+                    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
+                        log_e("nvs_erase_key failed: %s", esp_err_to_name(err));
+                    }
                 }
                 break;
             }
@@ -503,7 +552,6 @@ public:
     PrefsItem<std::string> tzPosix;
     // Firmware that's been loaded to the other flash slot but not yet installed
     PrefsItem<std::string> firmwareLoaded;
-    PrefsItem<int> sleepReason;
     PrefsItem<bool> noBooks;
     PrefsItem<bool> showNews;
     PrefsItem<bool> noArticles;
@@ -535,12 +583,13 @@ public:
     // reset on power cycles
     static SyncReason syncReason;
     static uint64_t nextSyncTime;
+    static uint64_t ledChargeTime;
     static uint8_t lastBatteryReport;
     static uint8_t lastPageTurnerBattery;
     static bool settingsOnRestart;
 
 protected:
-    const uint32_t latestMigrationVersion_ = 3;
+    const uint32_t latestMigrationVersion_ = 4;
     uint32_t nvsHandle_;
     bool started_;
 

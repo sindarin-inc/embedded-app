@@ -835,15 +835,6 @@ void DemoScreen::render(DisplaySystem &display) {
         return;
     }
 
-    if (skipNextRender_) {
-        skipNextRender_ = false;
-        // Must stop the timer because ChangePeriod starts it.
-        xTimerStop(DisplaySystem::animationTimer, 0);
-        // Restart the timer if they stopped it.
-        xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
-        return;
-    }
-
     // Alternate left and right on for setup. Note: This seems backwards
     // but it looks right in-glass. Are LEFT and RIGHT backwards in the LightingController?
     if (currentScreen_ == 1) {
@@ -911,8 +902,8 @@ void DemoScreen::processCommand(RemoteCommand command) {
         setNeedsRerender();
         break;
     case RemoteCommand::ENTER:
-        xTimerStop(DisplaySystem::animationTimer, 0);
         if (currentScreen_ >= 9) {
+            xTimerStop(DisplaySystem::animationTimer, 0);
 #if !SIMULATOR
             if (!WiFi::getInstance().hasWiFiCredentials() && !shownAppDownload_) {
 #else
@@ -935,10 +926,6 @@ void DemoScreen::processCommand(RemoteCommand command) {
             currentScreen_++;
             currentSubScreen_ = 0;
             setNeedsRerender();
-        } else {
-            // Since every button press advances the animation, we need to skip the next render
-            // in the cases we want to explicitly ignore.
-            skipNextRender_ = true;
         }
         break;
     case RemoteCommand::RIGHT:

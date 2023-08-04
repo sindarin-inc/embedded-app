@@ -66,6 +66,7 @@ enum class TokenId : uint8_t {
 };
 
 #pragma pack(push, 1)
+
 class StreamPlace {
 public:
     StreamPlace(uint32_t offset, uint16_t filenumber) : offset_(offset), fileNumber_(filenumber) {}

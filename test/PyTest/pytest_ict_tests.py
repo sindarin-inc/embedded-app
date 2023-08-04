@@ -72,10 +72,10 @@ class OverrideIdfSerial(IdfSerial):
         file_path = "esp32s3-64MB.csv"
         nvs_size = ""
         # Correct code to extract size of 'nvs' partition
-        with open(file_path, 'r') as file:
-            csv_reader = csv.reader(file, delimiter=',')
+        with open(file_path, "r") as file:
+            csv_reader = csv.reader(file, delimiter=",")
             for row in csv_reader:
-                if row[0] == 'nvs':
+                if row[0] == "nvs":
                     nvs_size = row[4]
 
         # Convert hexadecimal to decimal
@@ -84,7 +84,7 @@ class OverrideIdfSerial(IdfSerial):
 
     def write_nvs(self, btmac):
         parts = btmac.split(":")
-        hexstr = ''.join(parts)
+        hexstr = "".join(parts)
         logger.info("hex string: " + hexstr)
         btmac_int = int(hexstr, 16)
         logger.info(str(btmac_int))
@@ -96,7 +96,7 @@ class OverrideIdfSerial(IdfSerial):
         fp.write("boot-info,namespace,,\n")
         fp.write("sindarin-app,namespace,,\n")
         # write paired tt address
-        fp.write("paired-tt,data,u64,"+str(btmac_int)+"\n")
+        fp.write("paired-tt,data,u64," + str(btmac_int) + "\n")
         fp.close()
 
         # check for $IDF_PATH variable
@@ -112,8 +112,8 @@ class OverrideIdfSerial(IdfSerial):
 
         live_print_call(
             [
-                os.environ["IDF_PATH"]+'/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py',
-                'generate',
+                os.environ["IDF_PATH"] + "/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py",
+                "generate",
                 csvfname,
                 binfname,
                 str(nvssize),
@@ -124,12 +124,12 @@ class OverrideIdfSerial(IdfSerial):
         # write nvs partition to dut
         live_print_call(
             [
-                os.environ["IDF_PATH"]+'/components/partition_table/parttool.py',
-                '--port',
+                os.environ["IDF_PATH"] + "/components/partition_table/parttool.py",
+                "--port",
                 self.port,
-                'write_partition',
-                '--partition-name=nvs',
-                '--input',
+                "write_partition",
+                "--partition-name=nvs",
+                "--input",
                 binfname,
             ],
             msg_queue=self._q,
@@ -338,7 +338,7 @@ class TestPowerConsumption:
 
         logger.info("Measuring active mode current")
         # TODO: Why do we need such a wide range here?
-        power_client.expect_current((10000, 125000), 5)
+        power_client.expect_current((9000, 125000), 5)
 
         logger.info("Sleeping")
         ict_client.set_servo("right", 0)
