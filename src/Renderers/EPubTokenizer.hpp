@@ -6,7 +6,7 @@ class EPubTokenizer : public Tokenizer {
 
 public:
     EPubTokenizer(DisplaySystem &display) : Tokenizer(display) {}
-    ~EPubTokenizer() = default;
+    ~EPubTokenizer() override = default;
 
     [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pager &pager,
                                            bool backwards = false, StreamPlace *toPlace = nullptr)

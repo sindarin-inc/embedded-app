@@ -14,7 +14,7 @@ private:
     static constexpr bool ON_ERROR_EXIT = true;
 
 public:
-    ~Place() = default;
+    virtual ~Place() = default;
     [[nodiscard]] virtual auto isA(PlaceType placeType) const -> bool = 0;
     [[nodiscard]] virtual auto getPlaceType() const -> PlaceType = 0;
     [[nodiscard]] virtual auto str() const -> std::string = 0;
@@ -29,7 +29,7 @@ protected:
 
 class NonePlace : public Place {
 public:
-    ~NonePlace() = default;
+    ~NonePlace() override = default;
     [[nodiscard]] auto isA(PlaceType placeType) const -> bool override {
         return placeType == PlaceType::NONE;
     }
@@ -41,7 +41,7 @@ class TxtPlace : public Place {
 public:
     TxtPlace(uint32_t offset) { setOffset(offset); }
     TxtPlace() : Place() { setOffset(0); }
-    ~TxtPlace() = default;
+    ~TxtPlace() override = default;
     [[nodiscard]] auto isA(PlaceType placeType) const -> bool override {
         return placeType == PlaceType::TXT;
     }
@@ -63,7 +63,7 @@ public:
         setOffset(offset);
     }
     EPubPlace() : Place(), filename_("") { setOffset(0); }
-    ~EPubPlace() = default;
+    ~EPubPlace() override = default;
 
     [[nodiscard]] auto isA(PlaceType placeType) const -> bool override {
         return placeType == PlaceType::EPUB;
