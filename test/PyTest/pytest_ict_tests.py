@@ -97,6 +97,8 @@ class OverrideIdfSerial(IdfSerial):
         fp.write("sindarin-app,namespace,,\n")
         # write paired tt address
         fp.write("paired-tt,data,u64," + str(btmac_int) + "\n")
+        # Write a cloud-token so the glasses don't try to go back into ship mode upon sleep
+        fp.write("cloud-token,data,string,FAKECLOUDTOKEN\n")
         fp.close()
 
         # check for $IDF_PATH variable
