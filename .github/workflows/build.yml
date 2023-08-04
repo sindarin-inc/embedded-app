@@ -44,13 +44,13 @@ jobs:
         uses: mymindstorm/setup-emsdk@v11
 
       - name: PlatformIO run
-        run: pio run -e ${{ matrix.pioenv }} | tee -a sim-build-log.txt
+        run: pio run -e ${{ matrix.pioenv }} 2>&1 | tee -a ${{ matrix.pioenv }}-build-log.txt
 
       - name: Post errors and warnings as annotations
         if: github.event_name == 'pull_request' && (success() || failure())
         run: |
           pip install requests curlify
-          python scripts/parse_warnings.py --filename sim-build-log.txt --title sim-build --path_prefix "/app/sindarin-inc/embedded-app/"
+          python scripts/parse_warnings.py --filename ${{ matrix.pioenv }}-build-log.txt --title ${{ matrix.pioenv }}-build
         env:
           PR_GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
