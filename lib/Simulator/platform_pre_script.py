@@ -49,13 +49,6 @@ def ignore_some_warnings(env, node):
             CPPDEFINES=env["CPPDEFINES"],
             CCFLAGS=env["CCFLAGS"] + ["-Wno-deprecated-non-prototype"],
         )
-    elif "httplib" in node.get_path():
-        # Ignore deprecated OpenSSL functions
-        return env.Object(
-            node,
-            CPPDEFINES=env["CPPDEFINES"],
-            CCFLAGS=env["CCFLAGS"] + ["-Wno-deprecated-declarations"],
-        )
     else:
         return node
 
