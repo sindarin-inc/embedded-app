@@ -44,7 +44,16 @@ jobs:
         uses: mymindstorm/setup-emsdk@v11
 
       - name: PlatformIO run
-        run: pio run -e ${{ matrix.pioenv }}
+        run: pio run -e ${{ matrix.pioenv }} | tee -a sim-build-log.txt
+
+      - name: Post errors and warnings as annotations
+        if: github.event_name == 'pull_request' && (success() || failure())
+        run: |
+          pip install requests curlify
+          python scripts/parse_warnings.py --filename sim-build-log.txt --title sim-build --path_prefix "/app/sindarin-inc/embedded-app/"
+        env:
+          PR_GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-idf:
     name: "idf.py build"
@@ -72,13 +81,13 @@ jobs:
           command: idf.py build | tee -a build-log.txt
 
       - name: Post errors and warnings as annotations
+        if: github.event_name == 'pull_request' && (success() || failure())
         run: |
           pip install requests curlify
           python scripts/parse_warnings.py --filename build-log.txt --title build --path_prefix "/app/sindarin-inc/embedded-app/"
         env:
           PR_GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        if: github.event_name == 'pull_request'
 
       - name: Upload binaries
         uses: actions/upload-artifact@v3
