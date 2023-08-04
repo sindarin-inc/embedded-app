@@ -32,9 +32,9 @@ def remove_non_simulator_files(node):
     return node
 
 
-def ignore_some_warnings(env, node):
+def ignore_node_path_warnings(env, node):
     """
-    Ignore -Wdeprecated-non-prototype warnings for unzipLIB
+    Ignore -Wdeprecated-non-prototype warnings for unzipLIB & zlib-PIO
 
     See https://github.com/madler/zlib/issues/633
 
@@ -54,4 +54,4 @@ def ignore_some_warnings(env, node):
 
 
 env.AddBuildMiddleware(remove_non_simulator_files, "*")
-env.AddBuildMiddleware(ignore_some_warnings, "*.c")
+env.AddBuildMiddleware(ignore_node_path_warnings, "*.c")
