@@ -32,7 +32,7 @@ def remove_non_simulator_files(node):
     return node
 
 
-def ignore_unzipLIB_warnings(env, node):
+def ignore_some_warnings(env, node):
     """
     Ignore -Wdeprecated-non-prototype warnings for unzipLIB
 
@@ -43,15 +43,22 @@ def ignore_unzipLIB_warnings(env, node):
     `node.get_abspath()` - an absolute path
     """
 
-    if "unzipLIB" not in node.get_path() and "zlib-PIO" not in node.get_path():
+    if "unzipLIB" in node.get_path() or "zlib-PIO" in node.get_path():
+        return env.Object(
+            node,
+            CPPDEFINES=env["CPPDEFINES"],
+            CCFLAGS=env["CCFLAGS"] + ["-Wno-deprecated-non-prototype"],
+        )
+    elif "httplib" in node.get_path():
+        # Ignore deprecated OpenSSL functions
+        return env.Object(
+            node,
+            CPPDEFINES=env["CPPDEFINES"],
+            CCFLAGS=env["CCFLAGS"] + ["-Wno-deprecated-declarations"],
+        )
+    else:
         return node
-
-    return env.Object(
-        node,
-        CPPDEFINES=env["CPPDEFINES"],
-        CCFLAGS=env["CCFLAGS"] + ["-Wno-deprecated-non-prototype"],
-    )
 
 
 env.AddBuildMiddleware(remove_non_simulator_files, "*")
-env.AddBuildMiddleware(ignore_unzipLIB_warnings, "*.c")
+env.AddBuildMiddleware(ignore_some_warnings, "*.c")
