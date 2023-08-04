@@ -465,6 +465,8 @@ public:
         return true;
     }
 
+    auto started() -> bool { return started_; }
+
     auto end() -> esp_err_t {
         if (!started_) {
             return ESP_OK;

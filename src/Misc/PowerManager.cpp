@@ -442,6 +442,13 @@ auto ToString(SleepReason reason) -> std::string {
 void PowerManager::deepSleepInternal(SleepReason reason) {
     log_d("Beginning shutdown sequence with reason %s", ToString(reason).c_str());
 
+    if (prefs_.started() && !prefs_.cloudToken.get().has_value()) {
+        // If these glasses don't have a cloud token (and thus can't background sync), then allow
+        // them to turn off (assuming the left temple is closed).
+        log_w("No cloud token, allowing power off");
+        AllowPowerOff();
+    }
+
     bool syncOnClose = (reason == SleepReason::TempleClosed || reason == SleepReason::Inactivity) &&
                        !prefs_.noDeliverOnClose.get().value_or(false);
     if (syncOnClose) {
