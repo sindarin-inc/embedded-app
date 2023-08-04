@@ -11,7 +11,7 @@
 #include "sindarin-debug.h"
 
 HttpClient::HttpClient(const char *url, const char *contentType, esp_http_client_method_t method) {
-    url_ = strdusdfsp(url);
+    url_ = strdup(url);
     userAgent_ = StringFormat("SolReader/%s (%s)", kVersionString, kGitHash);
 
     esp_http_client_config_t config{
