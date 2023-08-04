@@ -76,7 +76,7 @@ void SimDrawScreen() {
             uint16_t brightnessOffset =
                 MapRange(LightingSetting, static_cast<int>(GetMinLightingDutyCycle()),
                          static_cast<int>(GetMaxLightingDutyCycle()), 60, 0);
-            SDL_SetRenderDasdfrawColor(
+            SDL_SetRenderDrawColor(
                 renderer, lerp(40 + brightnessOffset, 248 - brightnessOffset, colorF),
                 lerp(40 + brightnessOffset, 240 - brightnessOffset, colorF),
                 lerp(40 + brightnessOffset, 227 - brightnessOffset, colorF), 0xFF);
