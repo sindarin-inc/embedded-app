@@ -77,17 +77,15 @@ auto LegalScreen::layout(LayoutContext &context, Size size) -> Size {
             return {size.width, y};
         });
 
-    y = yAdvance * 2;
-
-    context.setViewFrame(ceView_, {{10, y}, size}, LayoutOptionsAlignLeft);
-
-    y -= 5;
-
-    context.setViewFrame(fccView_, {{110, y}, size}, LayoutOptionsAlignLeft);
+    y = 0;
+    context.setViewFrame(baclView_, {{5, y}, size}, LayoutOptionsAlignLeft);
 
     y += 65;
+    context.setViewFrame(fccView_, {{60, y}, size}, LayoutOptionsAlignLeft);
+    y += 72;
+    context.setViewFrame(ceView_, {{20, y}, size}, LayoutOptionsAlignLeft);
 
-    context.setViewFrame(baclView_, {{0, y}, size}, LayoutOptionsAlignLeft);
+    context.setViewFrame(ukcaView_, {{115, y}, size}, LayoutOptionsAlignLeft);
 
     return size;
 }
@@ -111,6 +109,7 @@ void LegalScreen::drawInRect(Rect rect) {
         fccView_.draw();
         ceView_.draw();
         baclView_.draw();
+        ukcaView_.draw();
     }
     leftRightView_.draw();
     returnToMenuView_.draw();
