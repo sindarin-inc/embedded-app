@@ -22,7 +22,7 @@ public:
           fccView_(display, FCC_BITS, fcc_width, fcc_height),
           ceView_(display, CE_BITS, ce_width, ce_height),
           baclView_(display, BACL_BITS, bacl_width, bacl_height),
-          ukcaView_(display, UKCA_BITS, ukca_width, ukca_height),
+          ukcaView_(display, ukcaBits, ukca_width, ukca_height),
           baclLine1View_(display, "BACL: LISTED UL 62368-1,", &ibmf75Face0),
           baclLine2View_(display, "CAN/CSA C22,2 NO. 62368-1, A0049", &ibmf75Face0),
           fcc1LineView_(display, "FCC ID: 2BAHC-READER1,", &ibmf75Face0),
