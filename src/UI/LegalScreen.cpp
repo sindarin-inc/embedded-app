@@ -77,15 +77,30 @@ auto LegalScreen::layout(LayoutContext &context, Size size) -> Size {
             return {size.width, y};
         });
 
-    y = 0;
-    context.setViewFrame(baclView_, {{5, y}, size}, LayoutOptionsAlignLeft);
+    context.setSublayoutFrame(
+        {{0, -15}, size}, LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
+        [this](LayoutContext &context, Size size) -> Size {
+            int ukcaPadding = 22;
+            int y = 0;
+            auto baclRect =
+                context.setViewFrame(baclView_, {{0, y}, {size.width, 0}},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
+            y += baclRect.size.height + 5;
+            auto fccRect =
+                context.setViewFrame(fccView_, {{0, y}, {size.width, 0}},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
+            y += fccRect.size.height + 5;
+            context.setViewFrame(ceView_, {{ukcaPadding, y}, {size.width - ukcaPadding * 2, 0}},
+                                 LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
-    y += 65;
-    context.setViewFrame(fccView_, {{60, y}, size}, LayoutOptionsAlignLeft);
-    y += 72;
-    context.setViewFrame(ceView_, {{20, y}, size}, LayoutOptionsAlignLeft);
+            auto ukcaRect = context.setViewFrame(
+                ukcaView_, {{ukcaPadding, y}, {size.width - ukcaPadding * 2, 0}},
+                LayoutOptionsSizeToFit | LayoutOptionsAlignRight);
 
-    context.setViewFrame(ukcaView_, {{115, y}, size}, LayoutOptionsAlignLeft);
+            y += ukcaRect.size.height;
+
+            return {size.width, y};
+        });
 
     return size;
 }
