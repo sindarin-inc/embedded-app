@@ -10,7 +10,8 @@ auto AboutScreen::layout(LayoutContext &context, Size size) -> Size {
     int y = 10;
 
     context.setViewFrame(solLogoView_, {{x, y}, size},
-                         LayoutOptionsAlignTop | LayoutOptionsAlignCenterHorizontal);
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop |
+                             LayoutOptionsAlignCenterHorizontal);
 
     y += sol_logo_height + 22;
     x += leftPadding;
@@ -39,7 +40,7 @@ auto AboutScreen::layout(LayoutContext &context, Size size) -> Size {
                          LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
     context.setViewFrame(returnToMenuView_, {{0, 0}, size},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenter |
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal |
                              LayoutOptionsAlignBottom);
     return size;
 }

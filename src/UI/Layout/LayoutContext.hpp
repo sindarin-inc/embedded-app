@@ -95,6 +95,10 @@ public:
     auto layoutIfNeeded(const Size &size, bool sizing) -> Size;
 
 protected:
+    // Name of this layout for debugging. Will either reflect view_'s name or the parent layout's
+    // name (if this is a sublayout)
+    auto debugName() -> std::string;
+
     // The root layout method. This is called by setViewSizeInRect and setSublayoutSizeInRect to do
     // all the actual layout work.
     auto setLayoutSizeInRect(LayoutContext &layoutContext, const Size &size, const Rect &inRect,
@@ -103,6 +107,9 @@ protected:
     auto setLayoutFrame(LayoutContext &layoutContext, const Rect &frame, int options) -> Rect {
         return setLayoutSizeInRect(layoutContext, frame.size, frame, options);
     }
+
+    // Reference to the view that owns this layout context
+    View *view_ = nullptr;
 
     // Layout implementation with all the code that represents the view's layout
     LayoutLambda layout_;

@@ -11,11 +11,18 @@
 // From https://stackoverflow.com/a/26221725
 // Or we could copy in the `fmt` library which is the same thing
 // https://github.com/fmtlib/fmt
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wformat-security"
 
 auto WordCount(const char *str) -> int;
 auto BytesToHex(const uint8_t *data, size_t size) -> std::string;
+
+// Normally we would avoid these warnings with something like
+//   __attribute__((format(printf, 1, 2)))
+// But that currently doesn't with variadic templates like we're using here.
+// The fix is coming. See: https://reviews.llvm.org/D112579
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat-security"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-security"
 
 template <typename T, typename... ARGS>
 auto StringFormatInternal(const char *format, ARGS... args) -> T {
@@ -36,6 +43,9 @@ auto StringFormatInternal(const char *format, ARGS... args) -> T {
     return {buf.get(), buf.get() + size - 1};
 }
 
+#pragma GCC diagnostic pop
+#pragma clang diagnostic pop
+
 template <typename... ARGS>
 auto StringFormat(const char *format, ARGS... args) -> std::string {
     return StringFormatInternal<std::string>(format, args...);
@@ -55,5 +65,3 @@ auto HasPrefix(const char *pre, const char *str) -> bool;
 auto Commify(uint32_t n) -> std::string;
 
 auto CaseInsensitiveCompare(const std::string &str1, const std::string &str2) -> bool;
-
-#pragma clang diagnostic pop
