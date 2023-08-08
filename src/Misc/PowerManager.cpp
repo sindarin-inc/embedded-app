@@ -258,13 +258,35 @@ auto PowerManager::begin() -> esp_err_t {
 }
 
 void PowerManager::powerOff() {
-    log_i("Starting power off sequence");
+    beginShutdown();
+    powerOffInternal();
+}
+
+void PowerManager::powerOffInternal() {
+    log_i("Powering off");
+
     AllowPowerOff();
+
+    esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
+
+    // If USB is disconnected, still allow a wakeup if the USB is plugged in
+    enableUsbWakeup();
+
     esp_deep_sleep_start();
 }
 
 void PowerManager::loop() {
     battery.loop();
+    if (battery.getDepleted()) {
+        state_ = PowerState::ActiveBatteryDepleted;
+        DispatchGetUiQueue()->dispatch([this]() {
+            if (stateChangeCallback_ != nullptr) {
+                stateChangeCallback_(state_);
+            }
+            Delay(5000);
+            powerOff();
+        });
+    }
     checkUsb();
 #if USE_MMC5603
     bool templeOpen;
@@ -407,6 +429,27 @@ void PowerManager::beginShutdown() {
         }
     }
     DispatchShutdown();
+
+    // Make sure the ambient light sensor is off so it's not using power while in deep sleep
+    lightingController_.disableLighting(0);
+
+    prefs_.end();
+
+#if USE_TURN_TOUCH_REMOTE || USE_BLE_SERVER_REMOTE
+    if (BLEDevice::getInitialized()) {
+        BLEDevice::deinit();
+    }
+#endif
+
+    esp_err_t err = DeinitializePlatform();
+    if (err != ESP_OK) {
+        log_e("Failed to deinit platform with err %s", esp_err_to_name(err));
+    }
+
+    err = HardwareDeinit();
+    if (err != ESP_OK) {
+        log_e("Failed to deinit hardware with err %s", esp_err_to_name(err));
+    }
 }
 
 void PowerManager::reboot() {
@@ -427,8 +470,8 @@ void PowerManager::deepSleep(SleepReason reason) {
     return;
 #endif
 
-    // This is the block of code that calculates the time for the next WiFi sync. All code that sets
-    // PreferencesStore::syncReason / PreferencesStore::nextSyncTime should happen here
+    // This is the block of code that calculates the time for the next WiFi sync. All code that
+    // sets PreferencesStore::syncReason / PreferencesStore::nextSyncTime should happen here
     auto now = SolClock::getInstance().getEpochTime();
     switch (reason) {
     case SleepReason::Inactivity:
@@ -508,6 +551,24 @@ auto ToString(SleepReason reason) -> const char * {
     }
 }
 
+auto PowerManager::enableUsbWakeup() -> esp_err_t {
+    esp_err_t err;
+    if (USBConnected()) {
+        err = esp_sleep_enable_ext0_wakeup((gpio_num_t)USB_CONNECTED_PIN, 0);
+        if (err != ESP_OK) {
+            log_e("error enabling USB_CONNECTED_PIN low wakeup from deep sleep %d", err);
+            return err;
+        }
+    } else {
+        err = esp_sleep_enable_ext0_wakeup((gpio_num_t)USB_CONNECTED_PIN, 1);
+        if (err != ESP_OK) {
+            log_e("error enabling USB_CONNECTED_PIN high wakeup from deep sleep %d", err);
+            return err;
+        }
+    }
+    return ESP_OK;
+}
+
 void PowerManager::deepSleepInternal(SleepReason reason) {
     log_d("deepSleepInternal with reason %s", ToString(reason));
 
@@ -519,30 +580,11 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
         AllowPowerOff();
     }
 
-    // Make sure the ambient light sensor is off so it's not using power while in deep sleep
-    lightingController_.disableLighting(0);
-
-    prefs_.end();
-
 #if SIMULATOR
     log_i("deepSleepInternal");
 #else
 
     esp_err_t err;
-
-    if (BLEDevice::getInitialized()) {
-        BLEDevice::deinit();
-    }
-
-    err = DeinitializePlatform();
-    if (err != ESP_OK) {
-        log_e("Failed to deinit platform with err %s", esp_err_to_name(err));
-    }
-
-    err = HardwareDeinit();
-    if (err != ESP_OK) {
-        log_e("Failed to deinit hardware with err %s", esp_err_to_name(err));
-    }
 
     err = rtc_gpio_init((gpio_num_t)I2C_MASTER_SDA_IO);
     if (err != ESP_OK) {
@@ -568,7 +610,7 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
     if (err != ESP_OK) {
         log_e("Failed to init I2C with err %s", esp_err_to_name(err));
         // If the magnetometer is not working we can never wake up. Power off instead.
-        powerOff();
+        powerOffInternal();
         return;
     }
 
@@ -596,39 +638,29 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
     err = ulp_riscv_run();
     if (err != ESP_OK) {
         log_e("ulp_riscv_run error %d", err);
-        powerOff();
+        powerOffInternal();
         return;
     }
 
     err = esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
     if (err != ESP_OK) {
         log_e("error enabling ESP_PD_DOMAIN_RTC_PERIPH power domain %d", err);
-        powerOff();
+        powerOffInternal();
         return;
     }
 
     err = esp_sleep_enable_ulp_wakeup();
     if (err != ESP_OK) {
         log_e("error enabling ulp wakeup from deep sleep %d", err);
-        powerOff();
+        powerOffInternal();
         return;
     }
 
     // Enable a wakeup on the USB_CONNECTED_PIN
-    if (USBConnected()) {
-        err = esp_sleep_enable_ext0_wakeup((gpio_num_t)USB_CONNECTED_PIN, 0);
-        if (err != ESP_OK) {
-            log_e("error enabling USB_CONNECTED_PIN low wakeup from deep sleep %d", err);
-            powerOff();
-            return;
-        }
-    } else {
-        err = esp_sleep_enable_ext0_wakeup((gpio_num_t)USB_CONNECTED_PIN, 1);
-        if (err != ESP_OK) {
-            log_e("error enabling USB_CONNECTED_PIN high wakeup from deep sleep %d", err);
-            powerOff();
-            return;
-        }
+    err = enableUsbWakeup();
+    if (err != ESP_OK) {
+        powerOffInternal();
+        return;
     }
 
     uint64_t sleepTime = UINT64_MAX;

@@ -34,6 +34,8 @@ enum class PowerState {
     ActiveUSBCharging,
     // Screen lighting enabled ~10-60mA, inactivity timer at 10s, UI disabled
     ActiveOverTemp,
+    // Screen lighting enabled ~10-60mA, inactivity timer at 10s, UI disabled
+    ActiveBatteryDepleted,
     // Screens/lighting disabled ~6-7mA, inactivity timer disabled.
     Background,
     // Deep sleep with ULP magnetometer and periodic wakeups ~100uA
@@ -256,4 +258,12 @@ protected:
     void deepSleepInternal(SleepReason reason);
 
     void scheduleSync(SyncReason reason, int timeFromNow);
+
+    // Fully power down the device (assuming USB is disconnected and left temple closed)
+    // Note: This should be used sparingly as it's unintuitive to the user if you get into
+    // this state and USB is connected, since the deep-sleep-forever won't exit until usb is
+    // disconnected and the left temple is closed
+    void powerOffInternal();
+
+    auto enableUsbWakeup() -> esp_err_t;
 };

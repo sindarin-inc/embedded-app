@@ -29,6 +29,7 @@
 #include "Storage/PreferencesStore.hpp"
 #include "UI/ChargingScreen.hpp"
 #include "UI/OverTempScreen.hpp"
+#include "UI/PowerDepletedScreen.hpp"
 #include "UI/RootUI.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -241,6 +242,10 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         } else if (state == PowerState::ActiveOverTemp) {
             auto overTempScreen = new OverTempScreen();
             rootUi.setCurrentScreen(*overTempScreen);
+            UIInnerLoop(RemoteCommand::NONE);
+        } else if (state == PowerState::ActiveBatteryDepleted) {
+            auto powerDepletedScreen = new PowerDepletedScreen();
+            rootUi.setCurrentScreen(*powerDepletedScreen);
             UIInnerLoop(RemoteCommand::NONE);
         }
     });

@@ -11,7 +11,7 @@
 #include "esp_err.h"
 
 // #include "hal/touch_sensor_types.h"
-// #include "hal/gpio_types.h"
+#include "hal/gpio_types.h"
 
 // #include "soc/soc_caps.h"
 
@@ -176,8 +176,6 @@ touch_pad_t esp_sleep_get_touchpad_wakeup_status(void);
  */
 // bool esp_sleep_is_valid_wakeup_gpio(gpio_num_t gpio_num);
 
-#if SOC_PM_SUPPORT_EXT_WAKEUP
-
 /**
  * @brief Enable wakeup using a pin
  *
@@ -203,6 +201,8 @@ touch_pad_t esp_sleep_get_touchpad_wakeup_status(void);
  *      - ESP_ERR_INVALID_STATE if wakeup triggers conflict
  */
 esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
+
+#if SOC_PM_SUPPORT_EXT_WAKEUP
 
 /**
  * @brief Enable wakeup using multiple pins

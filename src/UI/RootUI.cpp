@@ -42,7 +42,6 @@
 #include "UI/LogoScreen.hpp"
 #include "UI/MainMenuScreen.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
-#include "UI/PowerDepletedScreen.hpp"
 #include "UI/ReadableScreen.hpp"
 #include "UI/ReleaseNotesScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
@@ -1591,21 +1590,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     delete articlesMenu;
     delete booksMenu;
 #endif
-}
-
-void RootUI::loop(DisplaySystem &display, RemoteCommand command) {
-    // TODO: Move this logic to PowerManager
-    if (power_.battery.getDepleted()) {
-        // Force render immediately as we are about to shut off
-        auto powerDepletedScreen = new PowerDepletedScreen();
-        setCurrentScreen(*powerDepletedScreen);
-        this->render(display);
-        // Wait 5 seconds to be able to see the message
-        Delay(5000);
-        // Unless wake sources are defined, nothing can wake us up. Goodnight.
-        esp_deep_sleep_start();
-    }
-    Screen::loop(display, command);
 }
 
 void RootUI::handleBrowse(FileSystem &fileSystem, MenuScreen *fsMenu, const std::string &path) {

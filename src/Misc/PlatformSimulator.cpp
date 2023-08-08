@@ -11,12 +11,16 @@ int LightingSetting;
 bool ledChange;
 bool simLeds[3];
 
+auto HardwareDeinit() -> esp_err_t { return ESP_OK; }
+
 void InitializePlatform() {
     for (int i = 0; i < 3; i++) {
         simLeds[i] = false;
     }
     ledChange = false;
 }
+
+auto DeinitializePlatform() -> esp_err_t { return ESP_OK; }
 
 auto GetBatteryVoltageLeft() -> float { return 0; }
 
