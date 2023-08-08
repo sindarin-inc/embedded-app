@@ -47,6 +47,8 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
         return;
     }
 
+    telemetry.logMetric(TelemetryField::METRIC_CLOCK_SET, "pre-sync",
+                        {{"run-time", GetRunTimeMs()}});
     auto success = SolClock::getInstance().setClockTimeFromInternet();
     if (success) {
         telemetry.logMetric(TelemetryField::METRIC_CLOCK_SET, "success",

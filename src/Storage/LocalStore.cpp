@@ -467,6 +467,8 @@ void LocalStore::syncFromRemote(
     if (SolClock::getInstance().getEpochTime() < 1000000000) {
         log_i("Clock not set, syncing from internet");
         // Sync the clock
+        this->telemetry_.logMetric(TelemetryField::METRIC_CLOCK_SET, "pre-sync",
+                                   {{"run-time", GetRunTimeMs()}});
         auto success = SolClock::getInstance().setClockTimeFromInternet();
         if (success) {
             this->telemetry_.logMetric(TelemetryField::METRIC_CLOCK_SET, "success",
