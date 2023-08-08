@@ -343,24 +343,25 @@ void PowerManager::checkUsb() {
             time_t currentTime = SolClock::getInstance().getEpochTime();
 
             if (PreferencesStore::ledChargeTime == 0) {
-                // If the battery is fully charged, start the timer before turning on the LED
+                // If the battery is fully charged, start the timer before setting the LED to green
                 PreferencesStore::ledChargeTime = currentTime + delayPeriod;
-            } else if (currentTime >= PreferencesStore::ledChargeTime + delayPeriod) {
+            }
+            if (currentTime >= PreferencesStore::ledChargeTime + delayPeriod) {
                 // If the battery is fully charged and a half hour has passed, turn on the LED
                 DigitalWrite(GREEN_LED, LED_ON);
                 DigitalWrite(RED_LED, LED_OFF);
-                gpio_hold_en((gpio_num_t)GREEN_LED);
-                gpio_hold_en((gpio_num_t)RED_LED);
-                gpio_deep_sleep_hold_en();
+            } else {
+                DigitalWrite(GREEN_LED, LED_OFF);
+                DigitalWrite(RED_LED, LED_ON);
             }
         } else {
             PreferencesStore::ledChargeTime = 0; // reset the timer as battery level is below 95%
             DigitalWrite(GREEN_LED, LED_OFF);
             DigitalWrite(RED_LED, LED_ON);
-            gpio_hold_en((gpio_num_t)GREEN_LED);
-            gpio_hold_en((gpio_num_t)RED_LED);
-            gpio_deep_sleep_hold_en();
         }
+        gpio_hold_en((gpio_num_t)GREEN_LED);
+        gpio_hold_en((gpio_num_t)RED_LED);
+        gpio_deep_sleep_hold_en();
     } else {
         PreferencesStore::ledChargeTime = 0; // reset the timer as the USB is disconnected
         DigitalWrite(GREEN_LED, LED_OFF);
