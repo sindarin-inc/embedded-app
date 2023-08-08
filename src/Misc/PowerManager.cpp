@@ -368,7 +368,7 @@ void PowerManager::checkUsb() {
                 // If the battery is fully charged, start the timer before setting the LED to green
                 PreferencesStore::ledChargeTime = currentTime + delayPeriod;
             }
-            if (currentTime >= PreferencesStore::ledChargeTime + delayPeriod) {
+            if (currentTime >= PreferencesStore::ledChargeTime) {
                 // If the battery is fully charged and a half hour has passed, turn on the LED
                 DigitalWrite(GREEN_LED, LED_ON);
                 DigitalWrite(RED_LED, LED_OFF);
