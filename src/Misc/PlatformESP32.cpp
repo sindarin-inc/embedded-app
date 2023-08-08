@@ -105,9 +105,7 @@ void HardwareInit() {
 
     adc_oneshot_unit_init_cfg_t adcOneshotCfg;
     adcOneshotCfg.unit_id = ADC_UNIT_1;
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
     adcOneshotCfg.clk_src = ADC_RTC_CLK_SRC_DEFAULT;
-#endif
     adcOneshotCfg.ulp_mode = ADC_ULP_MODE_DISABLE;
 
     ESP_ERROR_CHECK(adc_oneshot_new_unit(&adcOneshotCfg, &adcOneshotHandle));
@@ -214,28 +212,18 @@ void InitializePlatform() {
 #endif
 #if LEDC_BACKLIGHT
     // This allows LEDC to work in light sleep on ESP32-S3
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
     esp_err_t err = esp_sleep_pd_config(ESP_PD_DOMAIN_RC_FAST, ESP_PD_OPTION_ON);
-#else
-    esp_err_t err = esp_sleep_pd_config(ESP_PD_DOMAIN_RTC8M, ESP_PD_OPTION_ON);
-#endif
 
     if (err != ESP_OK) {
         log_e("Error configuring esp_sleep_pd_config: %s", esp_err_to_name(err));
     }
 
     // Backlight configs
-    ledc_timer_config_t ledcTimer = {
-        .speed_mode = LEDC_LOW_SPEED_MODE,
-        .duty_resolution = LEDC_TIMER_8_BIT,
-        .timer_num = LEDC_TIMER_0,
-        .freq_hz = 1000,
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
-        .clk_cfg = LEDC_USE_RC_FAST_CLK
-#else
-        .clk_cfg = LEDC_USE_RTC8M_CLK
-#endif
-    };
+    ledc_timer_config_t ledcTimer = {.speed_mode = LEDC_LOW_SPEED_MODE,
+                                     .duty_resolution = LEDC_TIMER_8_BIT,
+                                     .timer_num = LEDC_TIMER_0,
+                                     .freq_hz = 1000,
+                                     .clk_cfg = LEDC_USE_RC_FAST_CLK};
     err = ledc_timer_config(&ledcTimer);
     if (err != ESP_OK) {
         log_e("Error configuring LEDC timer: %s", esp_err_to_name(err));
@@ -292,11 +280,7 @@ auto DeinitializePlatform() -> esp_err_t {
 
     esp_err_t err;
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
     err = esp_sleep_pd_config(ESP_PD_DOMAIN_RC_FAST, ESP_PD_OPTION_OFF);
-#else
-    err = esp_sleep_pd_config(ESP_PD_DOMAIN_RTC8M, ESP_PD_OPTION_OFF);
-#endif
     if (err != ESP_OK) {
         log_e("Failed to disable fast RC oscillator: %d", err);
     }

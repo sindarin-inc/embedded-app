@@ -241,11 +241,7 @@ protected:
     bool templeOpen_ = false;
     BootInfo bootInfo_;
 #if !DISABLE_POWER_MANAGEMENT
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
     esp_pm_config_t pmConfig_;
-#else
-    esp_pm_config_esp32s3_t pmConfig_;
-#endif
 #endif
     void updateState();
 
