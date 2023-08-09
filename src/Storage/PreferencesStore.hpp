@@ -606,7 +606,7 @@ public:
     // reset on power cycles
     static SyncReason syncReason;
     static uint64_t nextSyncTime;
-    static uint64_t ledChargeTime;
+    static int64_t ledChargeTime;
     static uint8_t lastBatteryReport;
     static uint8_t lastPageTurnerBattery;
     static bool settingsOnRestart;
