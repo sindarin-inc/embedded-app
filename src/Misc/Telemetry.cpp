@@ -8,7 +8,7 @@
 #include "Storage/LocalStore.hpp"
 #include "sindarin-debug.h"
 
-DispatchQueue *Telemetry::dispatchQueue_ = nullptr;
+DispatchQueue *Telemetry::dispatchQueue = nullptr;
 
 auto TelemetryFieldToString(TelemetryField field) -> const char * {
     switch (field) {
@@ -79,8 +79,8 @@ auto Telemetry::uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telem
     // On successful telemetry log upload, delete the logs
     if (httpCode == 201) {
         log_d("Deleting %s", localPath.c_str());
-        Telemetry::dispatchQueue_->dispatch(
-            [this, &fileSystem, localPath]() { fileSystem.remove(localPath.c_str()); });
+        Telemetry::dispatchQueue->dispatch(
+            [&fileSystem, localPath]() { fileSystem.remove(localPath.c_str()); });
     } else {
         log_e("Failed to upload telemetry log: %s http code: %d", localPath.c_str(), httpCode);
     }
