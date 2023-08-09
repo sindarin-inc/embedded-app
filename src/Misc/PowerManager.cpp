@@ -359,15 +359,16 @@ void PowerManager::checkUsb() {
         auto percentage = battery.getBatteryPercentage();
         gpio_hold_dis((gpio_num_t)GREEN_LED);
         gpio_hold_dis((gpio_num_t)RED_LED);
-        time_t currentTime = SolClock::getInstance().getEpochTime();
 
         if (percentage > 95) {
             const uint32_t delayPeriod = 30 * 60; // 30 min delay upon reaching 95% battery level
+            time_t currentTime = SolClock::getInstance().getEpochTime();
 
             if (PreferencesStore::ledChargeTime == -1) {
                 // If the battery is fully charged, start the timer before setting the LED to green
                 PreferencesStore::ledChargeTime = currentTime + delayPeriod;
             }
+
             if (PreferencesStore::ledChargeTime == 0 ||
                 currentTime >= PreferencesStore::ledChargeTime) {
                 // If the battery is fully charged and a half hour has passed, turn on the LED
