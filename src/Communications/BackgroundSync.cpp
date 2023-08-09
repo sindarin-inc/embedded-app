@@ -140,9 +140,5 @@ void BackgroundSyncAndSleep(PowerManager &powerManager, PreferencesStore &prefs,
     // TODO: Perhaps try dispatching this (maybe needs to happen outside of app_main)
     WiFi::getInstance().disconnectWiFi();
 
-    // Figure out the next content sync and set the best time for it
-    time_t now = time(nullptr);
-    PreferencesStore::syncReason = SyncReason::Periodic;
-    PreferencesStore::nextSyncTime = SolClock::getInstance().calculateNextSyncTime(now);
-    PowerManager::getInstance().ulpDeepSleep(SleepReason::SyncDone);
+    PowerManager::getInstance().deepSleep(SleepReason::SyncDone);
 }

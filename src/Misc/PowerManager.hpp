@@ -55,6 +55,8 @@ enum class SleepReason {
     WaitingForSync,
 };
 
+auto ToString(SleepReason reason) -> const char *;
+
 struct BootInfo {
     enum class Reason {
         Unknown = 0,
@@ -185,7 +187,7 @@ public:
 
     // Power lifecycle functions
     void reboot();
-    void ulpDeepSleep(SleepReason reason = SleepReason::Unspecified);
+    void deepSleep(SleepReason reason);
     // Fully power down the device (assuming USB is disconnected and left temple closed)
     // Note: This should be used sparingly as it's unintuitive to the user if you get into
     // this state and USB is connected, since the deep-sleep-forever won't exit until usb is
@@ -256,4 +258,6 @@ protected:
     void beginShutdown();
 
     void deepSleepInternal(SleepReason reason);
+
+    void scheduleSync(SyncReason reason, int timeFromNow);
 };

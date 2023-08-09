@@ -33,7 +33,12 @@ enum class SyncReason {
     OnInactivity = 1,
     OnClose = 2,
     Periodic = 3,
+    // iOS = 4,
+    // Android = 5,
+    UsbConnected = 6,
 };
+
+auto ToString(SyncReason reason) -> const char *;
 
 template <typename T>
 auto GetFromStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t {
