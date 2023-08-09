@@ -21,10 +21,8 @@ void Battery::loop() {
         this->rightConnected_ = right > BATTERY_DISCONNECT_THRESHOLD;
 
         if (now > lastLoggingTime_ + BATTERY_LOGGING_PERIOD_SECONDS * 1000) {
-            DispatchGetCore1BackgroundQueue()->dispatch([this, left, right]() {
-                telemetry_.logMetricData(TelemetryField::METRIC_BATTERY_VOLTAGE,
-                                         {{"l", left}, {"r", right}});
-            });
+            telemetry_.logMetricData(TelemetryField::METRIC_BATTERY_VOLTAGE,
+                                     {{"l", left}, {"r", right}});
             lastLoggingTime_ = now;
         }
 
