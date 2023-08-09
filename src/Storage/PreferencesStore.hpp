@@ -461,6 +461,8 @@ public:
         }
         logStats();
         migrateIfNeeded();
+        // Set the (derived) slowmem flag indicating the device is paired.
+        PreferencesStore::paired = cloudToken.get().has_value();
         started_ = true;
         return true;
     }
@@ -589,6 +591,8 @@ public:
     static uint8_t lastBatteryReport;
     static uint8_t lastPageTurnerBattery;
     static bool settingsOnRestart;
+    // Indicates whether the glasses have been paired with a user account
+    static bool paired;
 
 protected:
     const uint32_t latestMigrationVersion_ = 4;

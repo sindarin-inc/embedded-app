@@ -442,10 +442,10 @@ auto ToString(SleepReason reason) -> std::string {
 void PowerManager::deepSleepInternal(SleepReason reason) {
     log_d("Beginning shutdown sequence with reason %s", ToString(reason).c_str());
 
-    if (prefs_.started() && !prefs_.cloudToken.get().has_value()) {
-        // If these glasses don't have a cloud token (and thus can't background sync), then allow
-        // them to turn off (assuming the left temple is closed).
-        log_w("No cloud token, allowing power off");
+    if (!PreferencesStore::paired) {
+        // If these glasses haven't been paired (or haven't ever had an active boot), then allow
+        // them to power back off.
+        log_w("Unpaired glasses, allowing power off");
         AllowPowerOff();
     }
 
