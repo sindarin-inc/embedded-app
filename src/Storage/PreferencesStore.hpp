@@ -519,6 +519,16 @@ public:
 #endif
     }
 
+    static void resetSlowMem() {
+        syncReason = SyncReason::Manual;
+        nextSyncTime = 0;
+        ledChargeTime = 0;
+        lastBatteryReport = 0;
+        lastPageTurnerBattery = 0;
+        settingsOnRestart = 0;
+        paired = false;
+    }
+
 #if USE_TURN_TOUCH_REMOTE
     PrefsItem<BLEAddress> pairedTurnTouchAddress;
 #endif
