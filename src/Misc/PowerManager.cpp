@@ -640,9 +640,10 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
 
     // Otherwise we want to wait until we want to run our next content sync if that's sooner
     // than what we've already set
-    sleepTime = std::min(sleepTime,
-                         (PreferencesStore::nextSyncTime - SolClock::getInstance().getEpochTime()) *
-                             uint64_t(1000000));
+    auto now = SolClock::getInstance().getEpochTime();
+    if (now < PreferencesStore::nextSyncTime) {
+        sleepTime = std::min(sleepTime, (PreferencesStore::nextSyncTime - now) * uint64_t(1000000));
+    }
 
     if (sleepTime != UINT64_MAX) {
         err = esp_sleep_enable_timer_wakeup(sleepTime);
