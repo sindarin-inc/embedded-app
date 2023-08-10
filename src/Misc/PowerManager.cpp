@@ -155,7 +155,13 @@ void PowerManager::wakeupCheck(SolClock &clock) {
             log_e("Error checking temple state: %d, continuing boot", err);
         } else if (!templeOpen_) {
             log_w("Temple is closed at boot, going back to sleep");
-            deepSleep(SleepReason::TempleClosedAtBoot);
+            if (bootInfo_.reason == BootInfo::Reason::PowerOn && USBConnected()) {
+                // If this is a power-on boot, and USB is connected, we mark it as sleep reason
+                // UpdateUSBState so that we will schedule a content sync.
+                deepSleep(SleepReason::UpdateUSBState);
+            } else {
+                deepSleep(SleepReason::TempleClosedAtBoot);
+            }
         }
         state_ = PowerState::Active;
         log_i("Beginning active boot");
