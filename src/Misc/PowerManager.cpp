@@ -508,7 +508,7 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
         log_w("Unpaired glasses, allowing power off");
         AllowPowerOff();
     } else if (PreferencesStore::paired == PairedStatus::Unknown) {
-        log_w("Unknwon pairing state, allowing power off");
+        log_w("Unknown pairing state, allowing power off");
         AllowPowerOff();
     }
 
@@ -624,22 +624,21 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
         }
     }
 
-    uint64_t sleepTime = 0;
+    uint64_t sleepTime = UINT64_MAX;
 
-    // If we have a scheduled sync coming up, lets sleep until that by default
-    auto now = SolClock::getInstance().getEpochTime();
-    if (PreferencesStore::nextSyncTime > now) {
-        sleepTime = (PreferencesStore::nextSyncTime - SolClock::getInstance().getEpochTime()) *
-                    uint64_t(1000000);
-    }
-
-    // If USB is connected, we want to wake up minutely and check the battery level, but only if
-    // we're not already planning a content sync in the next minute.
+    // When USB is connected, we want to wake up minutely and check the battery level (to know
+    // when to turn the LED to green), otherwise we cant wait until the next content sync.
     if (USBConnected()) {
-        sleepTime = std::min(sleepTime, 60 * uint64_t(1000000));
+        sleepTime = 60 * uint64_t(1000000);
     }
 
-    if (sleepTime > 0) {
+    // Otherwise we want to wait until we want to run our next content sync if that's sooner
+    // than what we've already set
+    sleepTime = std::min(sleepTime,
+                         (PreferencesStore::nextSyncTime - SolClock::getInstance().getEpochTime()) *
+                             uint64_t(1000000));
+
+    if (sleepTime != UINT64_MAX) {
         err = esp_sleep_enable_timer_wakeup(sleepTime);
         if (err != ESP_OK) {
             log_e("error enabling timer wakeup for deep sleep %d", err);

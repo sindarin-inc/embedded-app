@@ -537,7 +537,7 @@ public:
         ledChargeTime = 0;
         lastBatteryReport = 0;
         lastPageTurnerBattery = 0;
-        settingsOnRestart = 0;
+        settingsOnRestart = false;
         paired = PairedStatus::Unknown;
     }
 
