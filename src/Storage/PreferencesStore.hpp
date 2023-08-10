@@ -472,9 +472,6 @@ public:
         }
         logStats();
         migrateIfNeeded();
-        // Set the (derived) slowmem flag indicating the device is paired.
-        PreferencesStore::paired =
-            cloudToken.get().has_value() ? PairedStatus::Paired : PairedStatus::Unpaired;
         started_ = true;
         return true;
     }

@@ -460,15 +460,23 @@ void PowerManager::deepSleep(SleepReason reason) {
         break;
     }
 
-    // If there is no other sync scheduled, figure out the right time for the next sync
     if (PreferencesStore::nextSyncTime <= now) {
+        // If there is no other sync scheduled, figure out the right time for the next sync
+        // The only time we expect this to happen is if USB is connected then disconnected in < 30s
         log_w("No sync scheduled, calculating next sync time.");
-        if (prefs_.started()) {
-            scheduleSync(SyncReason::Periodic, SolClock::getInstance().calculateNextSyncTime(now));
-        } else {
-            log_w("Defaulting to attempting sync in 24 hrs");
-            PreferencesStore::nextSyncTime = now + 24 * 60 * 60;
+        if (!prefs_.started()) {
+            prefs_.begin();
         }
+        scheduleSync(SyncReason::Periodic, SolClock::getInstance().calculateNextSyncTime(now));
+    }
+
+    // If we don't know the paired status, load it from NVS so we can know whether to power off
+    if (PreferencesStore::paired == PairedStatus::Unknown) {
+        if (!prefs_.started()) {
+            prefs_.begin();
+        }
+        PreferencesStore::paired =
+            prefs_.cloudToken.get().has_value() ? PairedStatus::Paired : PairedStatus::Unpaired;
     }
 
     beginShutdown();
@@ -502,13 +510,11 @@ auto ToString(SleepReason reason) -> const char * {
 void PowerManager::deepSleepInternal(SleepReason reason) {
     log_d("deepSleepInternal with reason %s", ToString(reason));
 
-    // If these glasses haven't been paired (or haven't ever had an active boot), then allow
-    // them to power back off.
-    if (PreferencesStore::paired == PairedStatus::Unpaired) {
+    // If these glasses haven't been paired (or something went wrong with NVS and we don't know what
+    // state their in), then allow them to power back off.
+    if (PreferencesStore::paired == PairedStatus::Unpaired ||
+        PreferencesStore::paired == PairedStatus::Unknown) {
         log_w("Unpaired glasses, allowing power off");
-        AllowPowerOff();
-    } else if (PreferencesStore::paired == PairedStatus::Unknown) {
-        log_w("Unknown pairing state, allowing power off");
         AllowPowerOff();
     }
 
