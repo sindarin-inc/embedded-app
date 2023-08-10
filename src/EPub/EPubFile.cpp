@@ -23,9 +23,8 @@ auto EPubFile::open() -> bool {
         log_w("Multiple rootfile paths found");
     }
 
-    opf_ = std::make_shared<EPubOpf>(epubZipFile_, manifest.rootfilePaths[0].c_str());    
+    opf_ = std::make_shared<EPubOpf>(epubZipFile_, manifest.rootfilePaths[0].c_str());
     opf_->parse();
-
 
     log_d("Total size of all ePub text is %d", opf_->getTotalSize());
 

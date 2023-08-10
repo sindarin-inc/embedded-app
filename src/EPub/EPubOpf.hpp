@@ -12,7 +12,7 @@ public:
     EPubOpf(ZipFile &zipFile, const char *path) : path_(path), zipFile_(zipFile) {}
     void parse();
 
-    [[nodiscard]] uint32_t getTotalSize() const { return totalSize_; }
+    [[nodiscard]] auto getTotalSize() const -> uint32_t { return totalSize_; }
 
 private:
     const char *path_;
