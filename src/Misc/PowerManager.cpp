@@ -411,7 +411,8 @@ void PowerManager::beginShutdown() {
     }
 
     if (state_ == PowerState::Active || state_ == PowerState::ActiveOverTemp ||
-        state_ == PowerState::ActiveUSBCharging || state_ == PowerState::ActiveForcedOn) {
+        state_ == PowerState::ActiveUSBCharging || state_ == PowerState::ActiveForcedOn ||
+        state_ == PowerState::ActiveBatteryDepleted) {
         lightingController_.disableLighting(200);
         // Delay to see the fade.
         // TODO: Use a callback instead
