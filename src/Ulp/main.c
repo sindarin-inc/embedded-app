@@ -33,7 +33,7 @@ void magReading() {
     ulp_riscv_i2c_master_write_to_device(&dataRd, 1);
 
     // TODO: How is this determined? Is it necessary?
-    ulp_riscv_delay_cycles(10 * ULP_RISCV_CYCLES_PER_MS);
+    ulp_riscv_delay_cycles(1500 * ULP_RISCV_CYCLES_PER_US);
 
     ulp_riscv_i2c_master_set_slave_reg_addr(MAG_DEVICE_STATUS_REG_1);
 
@@ -58,7 +58,7 @@ void magReading() {
 
     // we can maybe read less data here by setting specific addresses perhaps
     // or just reading 5 bytes instead
-    ulp_riscv_i2c_master_read_from_device(magReadingBytes, 9);
+    ulp_riscv_i2c_master_read_from_device(magReadingBytes, 6);
 
     uint8_t xReading = magReadingBytes[MAG_X_OUT_0];
     uint8_t zReading = magReadingBytes[MAG_Z_OUT_0];
