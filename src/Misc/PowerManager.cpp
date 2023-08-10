@@ -451,6 +451,8 @@ void PowerManager::deepSleep(SleepReason reason) {
         }
         break;
     case SleepReason::SyncDone:
+        scheduleSync(SyncReason::Periodic, SolClock::getInstance().calculateNextSyncTime(now));
+        break;
     case SleepReason::Unspecified:
     case SleepReason::TempleClosedAtBoot:
     case SleepReason::UlpCrashed:
@@ -459,8 +461,14 @@ void PowerManager::deepSleep(SleepReason reason) {
     }
 
     // If there is no other sync scheduled, figure out the right time for the next sync
-    if (PreferencesStore::nextSyncTime < now) {
-        scheduleSync(SyncReason::Periodic, SolClock::getInstance().calculateNextSyncTime(now));
+    if (PreferencesStore::nextSyncTime <= now) {
+        log_w("No sync scheduled, calculating next sync time.");
+        if (prefs_.started()) {
+            scheduleSync(SyncReason::Periodic, SolClock::getInstance().calculateNextSyncTime(now));
+        } else {
+            log_w("Defaulting to attempting sync in 24 hrs");
+            PreferencesStore::nextSyncTime = now + 24 * 60 * 60;
+        }
     }
 
     beginShutdown();
