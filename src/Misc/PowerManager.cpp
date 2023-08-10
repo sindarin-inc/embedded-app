@@ -488,10 +488,13 @@ auto ToString(SleepReason reason) -> const char * {
 void PowerManager::deepSleepInternal(SleepReason reason) {
     log_d("deepSleepInternal with reason %s", ToString(reason));
 
-    if (!PreferencesStore::paired) {
-        // If these glasses haven't been paired (or haven't ever had an active boot), then allow
-        // them to power back off.
+    // If these glasses haven't been paired (or haven't ever had an active boot), then allow
+    // them to power back off.
+    if (PreferencesStore::paired == PairedStatus::Unpaired) {
         log_w("Unpaired glasses, allowing power off");
+        AllowPowerOff();
+    } else if (PreferencesStore::paired == PairedStatus::Unknown) {
+        log_w("Unknwon pairing state, allowing power off");
         AllowPowerOff();
     }
 

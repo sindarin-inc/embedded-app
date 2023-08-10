@@ -40,6 +40,12 @@ enum class SyncReason {
 
 auto ToString(SyncReason reason) -> const char *;
 
+enum class PairedStatus {
+    Unknown = 0,
+    Unpaired = 1,
+    Paired = 2,
+};
+
 template <typename T>
 auto GetFromStorage(uint32_t nvsHandle, const char *key, T &value) -> esp_err_t {
     static_assert(
@@ -467,7 +473,8 @@ public:
         logStats();
         migrateIfNeeded();
         // Set the (derived) slowmem flag indicating the device is paired.
-        PreferencesStore::paired = cloudToken.get().has_value();
+        PreferencesStore::paired =
+            cloudToken.get().has_value() ? PairedStatus::Paired : PairedStatus::Unpaired;
         started_ = true;
         return true;
     }
@@ -531,7 +538,7 @@ public:
         lastBatteryReport = 0;
         lastPageTurnerBattery = 0;
         settingsOnRestart = 0;
-        paired = false;
+        paired = PairedStatus::Unknown;
     }
 
 #if USE_TURN_TOUCH_REMOTE
@@ -607,7 +614,7 @@ public:
     static uint8_t lastPageTurnerBattery;
     static bool settingsOnRestart;
     // Indicates whether the glasses have been paired with a user account
-    static bool paired;
+    static PairedStatus paired;
 
 protected:
     const uint32_t latestMigrationVersion_ = 4;

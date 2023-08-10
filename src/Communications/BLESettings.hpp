@@ -120,7 +120,7 @@ protected:
                 } else if (settingKey == "cloud-token") {
                     log_w("Setting cloud access token to %s", settingValue.c_str());
                     this->enclosed->prefs_->cloudToken.set(settingValue);
-                    PreferencesStore::paired = true;
+                    PreferencesStore::paired = PairedStatus::Paired;
                 } else if (settingKey == "disconnect-pt-sec") {
                     this->enclosed->disconnectPageTurnerForSeconds(std::stoi(settingValue));
                 } else if (settingKey == "unpair-page-turner") {
