@@ -169,7 +169,7 @@ void PowerManager::wakeupCheck(SolClock &clock) {
         auto now = SolClock::getInstance().getEpochTime();
         if (PreferencesStore::nextSyncTime && now >= PreferencesStore::nextSyncTime) {
             log_i("Time for background content sync (%" PRIu64 " (now) >= %" PRIu64 ")",
-                  int64_t(now), PreferencesStore::nextSyncTime);
+                  uint64_t(now), PreferencesStore::nextSyncTime);
         } else {
             log_i("Next sync time is %" PRIu64 ". Back to sleep.", PreferencesStore::nextSyncTime);
             deepSleep(SleepReason::WaitingForSync);
@@ -654,7 +654,7 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
         }
     } else {
         log_w("No scheduled wakeup (nextSyncTime=%" PRIu64 ", now=%" PRIu64 ")",
-              PreferencesStore::nextSyncTime, now);
+              PreferencesStore::nextSyncTime, uint64_t(now));
     }
 
     log_i("Entering deep sleep, wake up with magnetometer");
