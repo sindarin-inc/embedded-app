@@ -653,7 +653,8 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
             log_d("Sleeping for %" PRIu64 " seconds", sleepTime / 1000000);
         }
     } else {
-        log_w("No scheduled wakeup");
+        log_w("No scheduled wakeup (nextSyncTime=%" PRIu64 ", now=%" PRIu64 ")",
+              PreferencesStore::nextSyncTime, now);
     }
 
     log_i("Entering deep sleep, wake up with magnetometer");
