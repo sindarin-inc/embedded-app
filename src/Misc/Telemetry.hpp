@@ -52,7 +52,6 @@ public:
     static auto metricLogPath() -> std::string { return "/metrics/telemetry.jsonl"; }
 
     auto uploadAndResetTelemetry(FileSystem &fileSystem, Telemetry &telemetry) -> int;
-    static void setDispatchQueue(DispatchQueue *queue) { Telemetry::dispatchQueue = queue; }
 
 protected:
     FileSystem &fileSystem_;
@@ -60,7 +59,7 @@ protected:
     unsigned long lastLoggingTime_ = 0;
 
 private:
-    static DispatchQueue *dispatchQueue;
+    static auto dispatchQueue() -> DispatchQueue * { return DispatchGetCore1BackgroundQueue(); }
 
     template <typename T>
     void
@@ -99,7 +98,7 @@ private:
 
         log_i("Logging metric: %s %s", TelemetryFieldToString(field), logString.c_str());
 
-        Telemetry::dispatchQueue->dispatch([this, logString, field]() {
+        Telemetry::dispatchQueue()->dispatch([this, logString, field]() {
             std::string path = Telemetry::metricLogPath();
             SFile file = fileSystem_.open(path.c_str(), FILE_APPEND);
             if (file.size() < MAX_TELEMETRY_LOG_SIZE) {

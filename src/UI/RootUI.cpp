@@ -81,7 +81,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         bootData["bad_bc"] = badBootCount;
     }
 
-    Telemetry::setDispatchQueue(DispatchGetCore1BackgroundQueue());
     this->telemetry_.logMetricData(TelemetryField::METRIC_BOOT, bootData);
 
     MenuStyle styleFamilies;
