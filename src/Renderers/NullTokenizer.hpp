@@ -34,6 +34,18 @@ public:
         return std::make_shared<NonePlace>();
     }
 
+    [[nodiscard]] auto streamSize() const -> size_t override {
+        error();
+        return 0;
+    }
+
+    [[nodiscard]] auto isA(StreamType streamType) const -> bool override {
+        error();
+        return false;
+    }
+
+    void setStream(std::shared_ptr<RendererStream> stream) override { error(); }
+
 protected:
     auto getFileLocation(StreamPlace fromPlace) -> StreamPlace override {
         error();
@@ -42,7 +54,7 @@ protected:
 
 private:
     void error() const {
-        log_e("There is no stream defined for the Rendere!!!");
+        log_e("There is no stream defined for the Renderer");
         if constexpr (ON_ERROR_EXIT) {
             exit(1);
         }

@@ -43,12 +43,16 @@ void EPubOpf::parse() {
                     unz_file_info info;
                     zipFile_.getFileInfo(&info, nullptr, 0, nullptr, 0);
                     uint32_t usize = info.uncompressed_size;
-                    totalSize_ += usize;
                     zipFile_.closeFile();
 
-                    spine_.push_back(SpineItem{.idRef = idref, .uncompressedSize = usize});
-                    // log_w("------------> adding spine: idref:%s",
-                    // itemref.attribute("idref").value());
+                    spine_.push_back(SpineItem{
+                        .item = &it->second, .uncompressedSize = usize, .offset = totalSize_});
+                    // log_w("------------> adding spine: idref:%s, href:%s, size:%" PRIu32 "
+                    // offset:%" PRIu32,
+                    //       itemref.attribute("idref").value(), it->second.href.c_str(), usize,
+                    //       totalSize_);
+
+                    totalSize_ += usize;
                 } else {
                     log_e("Spine idref not found in manifest: %s", idref.c_str());
                 }
@@ -59,4 +63,14 @@ void EPubOpf::parse() {
 
         delete[] buffer;
     }
+}
+
+auto EPubOpf::getSpineIdxForOffset(uint32_t offset) const -> uint16_t {
+    int spineIdx = 0;
+    while (spineIdx < spine_.size()) {
+        if (spine_[spineIdx].offset > offset) break;
+        spineIdx += 1;
+    }
+
+    return spineIdx > 0 ? spineIdx - 1 : 0;
 }

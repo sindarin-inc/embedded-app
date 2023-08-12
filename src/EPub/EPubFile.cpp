@@ -1,8 +1,46 @@
 #include "EPubFile.hpp"
 
-#include <expat.h>
-
 #include "EPubMetaFile.hpp"
+
+auto EPubFile::getXHTMLFile(std::string path) -> pugi::xml_document & {
+    if (currentFilePath_ != path) {
+        if (epubZipFile_.openFile(path.c_str()) != UNZ_OK) {
+            log_e("Failed to open XHTML file %s", path.c_str());
+        } else {
+            unz_file_info info;
+            epubZipFile_.getFileInfo(&info, nullptr, 0, nullptr, 0);
+
+            if (currentFileBuffer_ != nullptr) {
+                delete[] currentFileBuffer_;
+            }
+            currentFileBuffer_ = new pugi::char_t[info.uncompressed_size];
+            if (currentFileBuffer_ != nullptr) {
+                size_t len = epubZipFile_.readFromFile((uint8_t *)currentFileBuffer_,
+                                                       info.uncompressed_size);
+                epubZipFile_.closeFile();
+
+                if (len == info.uncompressed_size) {
+                    pugi::xml_document doc;
+                    pugi::xml_parse_result result = doc.load_string(currentFileBuffer_);
+
+                    if (result) {
+                        currentFilePath_ = path;
+                    } else {
+                        log_e("Failed to parse XHTML file %s: %s", path.c_str(),
+                              result.description());
+                    }
+                } else {
+                    log_e("Unable to unzip file %s", path.c_str());
+                }
+            } else {
+                log_e("Unable to allocate space for file %s, space required: %zu", path.c_str(),
+                      info.uncompressed_size);
+            }
+        }
+    }
+
+    return currentFileDoc_;
+}
 
 auto EPubFile::open() -> bool {
     if (!epubZipFile_.open()) {

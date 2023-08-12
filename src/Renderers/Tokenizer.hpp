@@ -22,7 +22,7 @@ public:
                                      bool backwards = false, StreamPlace *toPlace = nullptr)
         -> StreamPlace = 0;
 
-    [[nodiscard]] auto isA(StreamType streamType) const -> bool { return stream_->isA(streamType); }
+    [[nodiscard]] virtual auto isA(StreamType streamType) const -> bool = 0;
 
     void computeMaxTextTokenCharSize() {
         maxTextTokenCharSize_ = display_.width() / display_.getTextWidth("G");
@@ -57,13 +57,12 @@ public:
     [[nodiscard]] virtual auto toPlace(const StreamPlace &streamPlace) const
         -> std::shared_ptr<Place> = 0;
 
-    [[nodiscard]] virtual auto streamSize() const -> size_t {
-        return stream_.get() != nullptr ? stream_->size() : 0;
-    }
+    [[nodiscard]] virtual auto streamSize() const -> size_t = 0;
+
+    virtual void setStream(std::shared_ptr<RendererStream> stream) = 0;
 
 protected:
     DisplaySystem &display_;
-    std::shared_ptr<RendererStream> stream_;
 
     // Computed TEXT Token character size that will fit on a line depending
     // on the current font size and line width

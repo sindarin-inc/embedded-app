@@ -12,12 +12,6 @@ public:
     EPubOpf(ZipFile &zipFile, const char *path) : path_(path), zipFile_(zipFile) {}
     void parse();
 
-    [[nodiscard]] auto getTotalSize() const -> uint32_t { return totalSize_; }
-
-private:
-    const char *path_;
-    ZipFile &zipFile_;
-
     struct ManifestItem {
         std::string href;
         std::string mediaType;
@@ -25,9 +19,20 @@ private:
     };
 
     struct SpineItem {
-        std::string idRef;
+        ManifestItem *item;
         uint32_t uncompressedSize; // Must be loaded seprately
+        uint32_t offset;
     };
+
+    [[nodiscard]] auto getTotalSize() const -> uint32_t { return totalSize_; }
+
+    [[nodiscard]] auto getSpineIdxForOffset(uint32_t offset) const -> uint16_t;
+
+    [[nodiscard]] auto getSpine(uint16_t idx) const -> const SpineItem & { return spine_[idx]; }
+
+private:
+    const char *path_;
+    ZipFile &zipFile_;
 
     using ManifestMap = std::map<std::string, ManifestItem>;
     using ManifestIterator = std::map<std::string, ManifestItem>::iterator;

@@ -21,7 +21,7 @@ auto Tokenizer::factory(std::shared_ptr<RendererStream> stream, DisplaySystem &d
         }
         tokenizer = std::make_shared<NullTokenizer>(display);
     }
-    tokenizer->stream_ = std::move(stream);
+    tokenizer->setStream(std::move(stream));
 
     return tokenizer;
 }

@@ -37,6 +37,18 @@ public:
         return std::make_shared<TxtPlace>(streamPlace.getOffset());
     }
 
+    [[nodiscard]] auto streamSize() const -> size_t override {
+        return stream_.get() != nullptr ? stream_->size() : 0;
+    }
+
+    [[nodiscard]] auto isA(StreamType streamType) const -> bool override {
+        return stream_->isA(streamType);
+    }
+
+    void setStream(std::shared_ptr<RendererStream> stream) override { stream_ = stream; }
+
 private:
+    std::shared_ptr<RendererStream> stream_;
+
     [[nodiscard]] auto getFileLocation(StreamPlace fromPlace) -> StreamPlace override;
 };

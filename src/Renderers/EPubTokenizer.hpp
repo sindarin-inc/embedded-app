@@ -1,5 +1,6 @@
 #pragma once
 
+#include "EPub/EPubFile.hpp"
 #include "Tokenizer.hpp"
 
 class EPubTokenizer : public Tokenizer {
@@ -17,11 +18,11 @@ public:
         return {0, static_cast<uint16_t>(streamPlace.getFileNumber() + 1)};
     }
 
-    // ToDo: To be adjusted related to the upcoming Place definition
     [[nodiscard]] auto toStreamPlace(const std::shared_ptr<Place> place) const
         -> StreamPlace override {
         if (place->isA(PlaceType::EPUB)) {
-            return {place->getOffset(), 0};
+            uint16_t spineIdx = stream_->getSpineIdxForOffset(place->getOffset());
+            return {place->getOffset() - stream_->getSpine(spineIdx).offset, spineIdx};
         } else {
             log_e("Wrong Place Type: %" PRIu8, static_cast<uint8_t>(place->getPlaceType()));
             if constexpr (ON_ERROR_EXIT) {
@@ -34,9 +35,25 @@ public:
 
     [[nodiscard]] inline auto toPlace(const StreamPlace &streamPlace) const
         -> std::shared_ptr<Place> override {
-        return std::make_shared<EPubPlace>(streamPlace.getOffset(), "");
+        const EPubOpf::SpineItem &spineItem = stream_->getSpine(streamPlace.getFileNumber());
+        return std::make_shared<EPubPlace>(streamPlace.getOffset() + spineItem.offset,
+                                           spineItem.item->href);
+    }
+
+    [[nodiscard]] auto streamSize() const -> size_t override {
+        return stream_.get() != nullptr ? stream_->size() : 0;
+    }
+
+    [[nodiscard]] auto isA(StreamType streamType) const -> bool override {
+        return stream_->isA(streamType);
+    }
+
+    void setStream(std::shared_ptr<RendererStream> stream) override {
+        stream_ = std::static_pointer_cast<EPubFile>(stream);
     }
 
 protected:
+    std::shared_ptr<EPubFile> stream_;
+
     auto getFileLocation(StreamPlace fromPlace) -> StreamPlace override;
 };
