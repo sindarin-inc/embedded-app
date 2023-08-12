@@ -52,8 +52,16 @@ public:
         stream_ = std::static_pointer_cast<EPubFile>(stream);
     }
 
-protected:
+private:
     std::shared_ptr<EPubFile> stream_;
 
-    auto getFileLocation(StreamPlace fromPlace) -> StreamPlace override;
+    // clang-format off
+    enum class Tag : uint8_t { NONE, BODY, P, LI, BREAK, H1, H2, H3, H4, H5, H6, 
+                               B, I, A, IMG, IMAGE, EM, DIV, SPAN, PRE,
+                               BLOCKQUOTE, STRONG, ANY, FONT_FACE, PAGE,
+                               SUB, SUP };
+    // clang-format on
+
+    typedef std::map<std::string, Tag> Tags;
+    static Tags tags;
 };

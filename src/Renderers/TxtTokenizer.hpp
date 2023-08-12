@@ -50,5 +50,5 @@ public:
 private:
     std::shared_ptr<RendererStream> stream_;
 
-    [[nodiscard]] auto getFileLocation(StreamPlace fromPlace) -> StreamPlace override;
+    [[nodiscard]] auto getFileLocation(StreamPlace fromPlace) -> StreamPlace;
 };

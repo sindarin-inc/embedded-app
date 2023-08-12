@@ -6,7 +6,8 @@
 class EPubFile : public RendererStream {
 public:
     EPubFile(FileSystem &fs, const char *filename)
-        : RendererStream(StreamType::EPUB), epubZipFile_(fs, filename), currentFilePath_(""), currentFileBuffer_(nullptr) {
+        : RendererStream(StreamType::EPUB), epubZipFile_(fs, filename), currentFilePath_(""),
+          currentFileBuffer_(nullptr) {
         open();
     }
     ~EPubFile() override { close(); };
@@ -26,12 +27,16 @@ public:
 
     [[nodiscard]] auto getXHTMLFile(std::string path) -> pugi::xml_document &;
 
+    [[nodiscard]] inline auto getOffset(const pugi::char_t *item) const -> size_t {
+        return item - currentFileBuffer_;
+    }
+
 private:
     ZipFile epubZipFile_;
     std::shared_ptr<EPubOpf> opf_;
 
-    pugi::char_t * currentFileBuffer_;
-    pugi::xml_document currentFileDoc_; 
+    pugi::char_t *currentFileBuffer_;
+    pugi::xml_document currentFileDoc_;
     std::string currentFilePath_;
 
     auto open() -> bool;

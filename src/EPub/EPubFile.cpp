@@ -3,9 +3,10 @@
 #include "EPubMetaFile.hpp"
 
 auto EPubFile::getXHTMLFile(std::string path) -> pugi::xml_document & {
-    if (currentFilePath_ != path) {
-        if (epubZipFile_.openFile(path.c_str()) != UNZ_OK) {
-            log_e("Failed to open XHTML file %s", path.c_str());
+    std::string filePath = opf_->getFullPath(path);
+    if (currentFilePath_ != filePath) {
+        if (epubZipFile_.openFile(filePath.c_str()) != UNZ_OK) {
+            log_e("Failed to open XHTML file %s", filePath.c_str());
         } else {
             unz_file_info info;
             epubZipFile_.getFileInfo(&info, nullptr, 0, nullptr, 0);
@@ -20,20 +21,24 @@ auto EPubFile::getXHTMLFile(std::string path) -> pugi::xml_document & {
                 epubZipFile_.closeFile();
 
                 if (len == info.uncompressed_size) {
-                    pugi::xml_document doc;
-                    pugi::xml_parse_result result = doc.load_string(currentFileBuffer_);
+                    // Using load_buffer_inplace() is mandatory here as it permits the
+                    // computation of a node offset location, as string elements are taken
+                    // directly in the currentFileBuffer instead of being copied.
+                    // (see the EPubFile::getOffset() method).
+                    pugi::xml_parse_result result =
+                        currentFileDoc_.load_buffer_inplace(currentFileBuffer_, len);
 
                     if (result) {
-                        currentFilePath_ = path;
+                        currentFilePath_ = filePath;
                     } else {
-                        log_e("Failed to parse XHTML file %s: %s", path.c_str(),
+                        log_e("Failed to parse XHTML file %s: %s", filePath.c_str(),
                               result.description());
                     }
                 } else {
-                    log_e("Unable to unzip file %s", path.c_str());
+                    log_e("Unable to unzip file %s", filePath.c_str());
                 }
             } else {
-                log_e("Unable to allocate space for file %s, space required: %zu", path.c_str(),
+                log_e("Unable to allocate space for file %s, space required: %zu", filePath.c_str(),
                       info.uncompressed_size);
             }
         }
@@ -72,4 +77,10 @@ auto EPubFile::open() -> bool {
     return true;
 }
 
-void EPubFile::close() { return epubZipFile_.close(); }
+void EPubFile::close() {
+    if (currentFileBuffer_ != nullptr) {
+        delete[] currentFileBuffer_;
+    }
+
+    return epubZipFile_.close();
+}

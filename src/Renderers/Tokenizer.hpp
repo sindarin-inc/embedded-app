@@ -67,6 +67,4 @@ protected:
     // Computed TEXT Token character size that will fit on a line depending
     // on the current font size and line width
     uint16_t maxTextTokenCharSize_{10};
-
-    virtual auto getFileLocation(StreamPlace fromPlace) -> StreamPlace = 0;
 };

@@ -15,7 +15,6 @@ public:
     struct ManifestItem {
         std::string href;
         std::string mediaType;
-        [[nodiscard]] auto fullPath() const -> std::string { return "OEBPS/" + href; }
     };
 
     struct SpineItem {
@@ -30,9 +29,15 @@ public:
 
     [[nodiscard]] auto getSpine(uint16_t idx) const -> const SpineItem & { return spine_[idx]; }
 
+    [[nodiscard]] auto getFullPath(std::string fileName) const -> std::string {
+        return basePath_ + fileName;
+    }
+
 private:
     const char *path_;
     ZipFile &zipFile_;
+
+    std::string basePath_;
 
     using ManifestMap = std::map<std::string, ManifestItem>;
     using ManifestIterator = std::map<std::string, ManifestItem>::iterator;
@@ -44,4 +49,6 @@ private:
     SpineVector spine_;
 
     uint32_t totalSize_{0};
+
+    void extract_path(const char *fname, std::string &path);
 };

@@ -46,12 +46,6 @@ public:
 
     void setStream(std::shared_ptr<RendererStream> stream) override { error(); }
 
-protected:
-    auto getFileLocation(StreamPlace fromPlace) -> StreamPlace override {
-        error();
-        return fromPlace;
-    };
-
 private:
     void error() const {
         log_e("There is no stream defined for the Renderer");

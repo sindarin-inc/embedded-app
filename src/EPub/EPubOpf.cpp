@@ -7,6 +7,10 @@ void EPubOpf::parse() {
         log_e("Failed to open ePub manifest %s", path_);
     } else {
 
+        basePath_ = "";
+        extract_path(path_, basePath_);
+        log_w("Base Path: %s", basePath_.c_str());
+
         unz_file_info info;
         zipFile_.getFileInfo(&info, nullptr, 0, nullptr, 0);
 
@@ -39,7 +43,7 @@ void EPubOpf::parse() {
 
                 ManifestIterator it = manifest_.find(idref);
                 if (it != manifest_.end()) {
-                    zipFile_.openFile(it->second.fullPath().c_str());
+                    zipFile_.openFile(getFullPath(it->second.href).c_str());
                     unz_file_info info;
                     zipFile_.getFileInfo(&info, nullptr, 0, nullptr, 0);
                     uint32_t usize = info.uncompressed_size;
@@ -73,4 +77,13 @@ auto EPubOpf::getSpineIdxForOffset(uint32_t offset) const -> uint16_t {
     }
 
     return spineIdx > 0 ? spineIdx - 1 : 0;
+}
+
+void EPubOpf::extract_path(const char *fname, std::string &path) {
+    path.clear();
+    int i = strlen(fname) - 1;
+    while ((i > 0) && (fname[i] != '/')) {
+        i--;
+    }
+    if (i > 0) path.assign(fname, ++i);
 }
