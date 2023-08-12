@@ -229,6 +229,28 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         bootErrors.push_back({.type = BootError::Type::LocalStore});
     }
 
+    WiFi::getInstance().setWiFiPower(
+        (wifi_power_t)prefs.wifiPower.get().value_or(WIFI_POWER_16dBm));
+
+    if (powerManager.state() == PowerState::Background) {
+        log_i("Booting into PowerState::Background, running a content sync");
+        // Spin up a task just to check the temple and battery
+        xTaskCreatePinnedToCore(
+            [](void *) {
+            for (;;) {
+                powerManager.loop();
+                vTaskDelay(1000 / portTICK_PERIOD_MS);
+            }
+            },
+            "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
+        BackgroundSyncAndSleep(powerManager, prefs, localStore, telemetry);
+
+        // Should never get here, the system should be asleep
+        return;
+    }
+
+    // Below code should only execute on an Active boot
+
     auto showChargingScreen = []() {
         lightingController.setOverrideValuePercent(100);
         auto chargingScreen = new ChargingScreen(prefs);
@@ -249,26 +271,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             UIInnerLoop(RemoteCommand::NONE);
         }
     });
-
-    WiFi::getInstance().setWiFiPower(
-        (wifi_power_t)prefs.wifiPower.get().value_or(WIFI_POWER_16dBm));
-
-    if (powerManager.state() == PowerState::Background) {
-        log_i("Booting into PowerState::Background, running a content sync");
-        // Spin up a task just to check the temple and battery
-        xTaskCreatePinnedToCore(
-            [](void *) {
-            for (;;) {
-                powerManager.loop();
-                vTaskDelay(1000 / portTICK_PERIOD_MS);
-            }
-            },
-            "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
-        BackgroundSyncAndSleep(powerManager, prefs, localStore, telemetry);
-        // Should never get here, the system should be asleep
-    }
-
-    // Below code should only execute on an Active boot
 
     if (!lightingController.checkSensorAvailable()) {
         bootErrors.push_back({.type = BootError::Type::AmbientLight});

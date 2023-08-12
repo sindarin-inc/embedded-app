@@ -278,9 +278,7 @@ void PowerManager::powerOffInternal() {
 void PowerManager::loop() {
     battery.loop();
     if (battery.getDepleted()) {
-        if (state_ == PowerState::Background) {
-            powerOff();
-        } else {
+        if (state_ == PowerState::Active || state_ == PowerState::ActiveForcedOn) {
             state_ = PowerState::ActiveBatteryDepleted;
             DispatchGetUiQueue()->dispatch([this]() {
                 if (stateChangeCallback_ != nullptr) {
@@ -289,6 +287,8 @@ void PowerManager::loop() {
                 Delay(5000);
                 powerOff();
             });
+        } else {
+            powerOff();
         }
     }
     checkUsb();
