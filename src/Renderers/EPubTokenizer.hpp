@@ -1,5 +1,7 @@
 #pragma once
 
+#include <map>
+
 #include "EPub/EPubFile.hpp"
 #include "Tokenizer.hpp"
 
@@ -62,6 +64,13 @@ private:
                                SUB, SUP };
     // clang-format on
 
-    typedef std::map<std::string, Tag> Tags;
+    using Tags = std::map<std::string, Tag>;
+    using Elements = std::map<std::string, const char *>;
+
     static Tags tags;
+    static Elements elements;
+
+    [[nodiscard]] auto getCharEntity(const char *str) const -> const char *;
+
+
 };
