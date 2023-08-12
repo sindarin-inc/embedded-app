@@ -278,14 +278,18 @@ void PowerManager::powerOffInternal() {
 void PowerManager::loop() {
     battery.loop();
     if (battery.getDepleted()) {
-        state_ = PowerState::ActiveBatteryDepleted;
-        DispatchGetUiQueue()->dispatch([this]() {
-            if (stateChangeCallback_ != nullptr) {
-                stateChangeCallback_(state_);
-            }
-            Delay(5000);
+        if (state_ == PowerState::Background) {
             powerOff();
-        });
+        } else {
+            state_ = PowerState::ActiveBatteryDepleted;
+            DispatchGetUiQueue()->dispatch([this]() {
+                if (stateChangeCallback_ != nullptr) {
+                    stateChangeCallback_(state_);
+                }
+                Delay(5000);
+                powerOff();
+            });
+        }
     }
     checkUsb();
 #if USE_MMC5603
