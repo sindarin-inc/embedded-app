@@ -251,27 +251,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     // Below code should only execute on an Active boot
 
-    auto showChargingScreen = []() {
-        lightingController.setOverrideValuePercent(100);
-        auto chargingScreen = new ChargingScreen(prefs);
-        rootUi.setCurrentScreen(*chargingScreen);
-        UIInnerLoop(RemoteCommand::NONE);
-    };
-
-    powerManager.setStateChangeCallback([&showChargingScreen](PowerState state) {
-        if (state == PowerState::ActiveUSBCharging) {
-            showChargingScreen();
-        } else if (state == PowerState::ActiveOverTemp) {
-            auto overTempScreen = new OverTempScreen();
-            rootUi.setCurrentScreen(*overTempScreen);
-            UIInnerLoop(RemoteCommand::NONE);
-        } else if (state == PowerState::ActiveBatteryDepleted) {
-            auto powerDepletedScreen = new PowerDepletedScreen();
-            rootUi.setCurrentScreen(*powerDepletedScreen);
-            UIInnerLoop(RemoteCommand::NONE);
-        }
-    });
-
     if (!lightingController.checkSensorAvailable()) {
         bootErrors.push_back({.type = BootError::Type::AmbientLight});
     } else {
@@ -436,6 +415,27 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 #if DISABLE_POWER_MANAGEMENT
     log_w("Power Management Disabled");
 #endif
+
+    auto showChargingScreen = []() {
+        lightingController.setOverrideValuePercent(100);
+        auto chargingScreen = new ChargingScreen(prefs);
+        rootUi.setCurrentScreen(*chargingScreen);
+        UIInnerLoop(RemoteCommand::NONE);
+    };
+
+    powerManager.setStateChangeCallback([&showChargingScreen](PowerState state) {
+        if (state == PowerState::ActiveUSBCharging) {
+            showChargingScreen();
+        } else if (state == PowerState::ActiveOverTemp) {
+            auto overTempScreen = new OverTempScreen();
+            rootUi.setCurrentScreen(*overTempScreen);
+            UIInnerLoop(RemoteCommand::NONE);
+        } else if (state == PowerState::ActiveBatteryDepleted) {
+            auto powerDepletedScreen = new PowerDepletedScreen();
+            rootUi.setCurrentScreen(*powerDepletedScreen);
+            UIInnerLoop(RemoteCommand::NONE);
+        }
+    });
 
     BlinkBootErrors(bootErrors);
 
