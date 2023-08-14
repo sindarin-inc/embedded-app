@@ -8,12 +8,12 @@
 class EPubTokenizer : public Tokenizer {
 
 public:
-    EPubTokenizer(DisplaySystem &display) : Tokenizer(display) {}
+    EPubTokenizer(DisplaySystem &display, Tokens &tokens, Pager &pager)
+        : Tokenizer(display, tokens, pager) {}
     ~EPubTokenizer() override = default;
 
-    [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pager &pager,
-                                           bool backwards = false, StreamPlace *toPlace = nullptr)
-        -> StreamPlace override;
+    [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, bool backwards = false,
+                                           StreamPlace *toPlace = nullptr) -> StreamPlace override;
 
     [[nodiscard]] auto getPlaceAfterEndOfFileReached(StreamPlace streamPlace) const
         -> StreamPlace override {
@@ -70,7 +70,13 @@ private:
     static Tags tags;
     static Elements elements;
 
+    StreamPlace fromPlace_;
+    StreamPlace *toPlace_;
+    bool backwards_;
+
+    Idx prevNewParagraphIdx_;
+
     [[nodiscard]] auto getCharEntity(const char *str) const -> const char *;
-
-
+    [[nodiscard]] auto interpret(pugi::xml_node node) -> bool;
+    [[nodiscard]] auto addStrToPage(const pugi::char_t *str, uint16_t len) -> bool;
 };

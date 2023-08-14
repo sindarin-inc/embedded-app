@@ -13,6 +13,8 @@ EPubTokenizer::Tags EPubTokenizer::tags
      {"@page",    Tag::PAGE}, {"@font-face",  Tag::FONT_FACE},
     };
 
+// ToDo: Only put the ones that are defined in the Sol Font
+
 EPubTokenizer::Elements EPubTokenizer::elements 
   = {
     {"nbsp",   "\xC2\xA0"},     // no-break space = non-breaking space, U+00A0 ISOnum
@@ -179,48 +181,303 @@ auto EPubTokenizer::getCharEntity(const char *str) const -> const char * {
 //
 // Returns the computed streamPlace where the page start really.
 //
-auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pager &pager,
-                                        bool backwards, StreamPlace *toPlace) -> StreamPlace {
+auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, StreamPlace *toPlace)
+    -> StreamPlace {
+
+    // Not pretty, but limits the number of parameters to pass to the interpret() method
+    fromPlace_ = fromPlace;
+    toPlace_ = toPlace;
+    backwards_ = backwards;
+    prevNewParagraphIdx_ = 0;
 
     log_w("Opening file at streamPlace %s", fromPlace.str().c_str());
 
     const EPubOpf::SpineItem &spineItem = stream_->getSpine(fromPlace.getFileNumber());
     pugi::xml_document &doc = stream_->getXHTMLFile(spineItem.item->href);
 
+    tokens_.clear();
+    pager_.clear();
+
     if (doc.child("html")) {
-        pugi::xml_node *previousNode = nullptr;
-        pugi::xml_node *theNode = nullptr;
+        pugi::xml_node previousNode;
+        pugi::xml_node theNode;
 
         // Find the first xml_node that is containing the fromPlace offset
-        for (pugi::xml_node &node : doc.child("html").child("body").children()) {
+        for (pugi::xml_node node : doc.child("html").child("body").children()) {
 
-            theNode = &node;
+            theNode = node;
             log_w("Node: %s (%zu)", node.name(), stream_->getOffset(node.name()));
 
             if (stream_->getOffset(node.name()) > fromPlace.getOffset()) {
                 break;
             }
 
-            Tags::iterator tagIt = tags.find(node.name());
-            if (tagIt != tags.end()) {
-                const Tag &tag = tagIt->second;
-            }
-
-            previousNode = &node;
+            previousNode = node;
         }
 
-        if (previousNode != nullptr) {
+        if (previousNode) {
             theNode = previousNode;
         }
 
         // Start the page construction task
 
-        if (theNode != nullptr) {
+        if (theNode) {
+            do {
+                if (!interpret(theNode)) {
+                    break;
+                }
+                theNode = theNode.next_sibling();
+            } while (theNode);
         }
 
+        if (!theNode) {
+            pager_.endOfFileReached();
+        }
     } else {
         log_e("File is of the wrong format");
     }
 
     return fromPlace;
+}
+
+auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
+
+    uint32_t offset;
+
+    if (node.type() == pugi::node_element) {
+        log_w("Interpreting %s", node.name());
+        offset = stream_->getOffset(node.name());
+        if (backwards_ && (offset > toPlace_->getOffset())) {
+            return false;
+        }
+        for (pugi::xml_node n : node.children()) {
+            if (!interpret(n)) {
+                return false;
+            }
+        }
+        Tags::iterator tagIt = tags.find(node.name());
+        if (tagIt != tags.end()) {
+            const Tag &tag = tagIt->second;
+
+            switch (tag) {
+            case Tag::P:
+            case Tag::H1:
+            case Tag::H2:
+            case Tag::H3:
+            case Tag::H4:
+            case Tag::H5:
+            case Tag::H6:
+                // put a END_PARAGRAPH
+                if (addTokenToPage({.cStr = "\n",
+                                    .streamPlace = addOffset(fromPlace_, 0),
+                                    .prevNewParagraphTokenIdx = prevNewParagraphIdx_,
+                                    .width = 0,
+                                    .height = 0,
+                                    .length = 1,
+                                    .tokenId = TokenId::ENDPARAGRAPH},
+                                   backwards_)) {
+                    return false;
+                }
+                break;
+
+            case Tag::BREAK:
+                // put a NEWLINE
+                if (addTokenToPage({.cStr = "\n",
+                                    .streamPlace = addOffset(fromPlace_, 0),
+                                    .prevNewParagraphTokenIdx = prevNewParagraphIdx_,
+                                    .width = 0,
+                                    .height = 0,
+                                    .length = 1,
+                                    .tokenId = TokenId::NEWLINE},
+                                   backwards_)) {
+                    return false;
+                }
+                break;
+
+            default:
+                break;
+            }
+        }
+
+    } else if (node.type() == pugi::node_pcdata) {
+        log_w("Interpreting content %s", node.value());
+
+        const pugi::char_t *str = node.value();
+        uint32_t offset = stream_->getOffset(str);
+        uint16_t len = strlen(str);
+
+        if (backwards_) {
+            if (offset >= toPlace_->getOffset()) {
+                return false;
+            }
+            if ((offset + len) > toPlace_->getOffset()) {
+                len = toPlace_->getOffset() - offset;
+            }
+        }
+
+        return addStrToPage(str, len);
+    }
+
+    return true;
+}
+
+auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint16_t len) -> bool {
+
+    Idx streamRelativeOffset = 0;
+
+    Token newToken;
+
+    bool pageCompleted = false;
+
+    // Keep it DRY
+
+    uint8_t curChar = *str++;
+    len--;
+
+    auto nextByte = [&curChar, &str, &len]() -> void {
+        if (len == 0) {
+            curChar = 0;
+        } else {
+            curChar = *str++;
+            len--;
+        }
+    };
+
+    // If we go backwards, get rid of the first bytes that could be the end of a line/paragraph
+    // if (backwards_ && (fromPlace.getOffset() != 0)) {
+    //     while ((curChar != 0) && (curChar != '\n')) {
+    //         nextByte();
+    //     }
+    //     if (curChar == '\n') {
+    //         nextByte();
+    //     }
+    // }
+
+    // if constexpr (RENDERER_DEBUG) {
+    //     log_d("First Character: %c (%02" PRIX8 "H)",
+    //           (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '), curChar);
+    // }
+
+    while ((!pageCompleted) && (curChar != 0) && (!tokens_.isFull())) {
+
+        newToken = {.cStr = nullptr,
+                    .streamPlace = addOffset(fromPlace_, streamRelativeOffset),
+                    .prevNewParagraphTokenIdx = prevNewParagraphIdx_,
+                    .width = 0,
+                    .height = 0,
+                    .length = 0,
+                    .tokenId = TokenId::NOTOKEN};
+
+        if (backwards_ && !tokens_.isEmpty() &&
+            (newToken.streamPlace.getOffset() >= toPlace_->getOffset())) {
+            pager_.completeLastLine();
+            break;
+        }
+
+        // if constexpr (RENDERER_DEBUG) {
+        //     log_d("Set the stream place to %s",
+        //           addOffset(fromPlace, streamRelativeOffset).str().c_str());
+        //     log_d("Current Character: %c (%02" PRIX8 "H)",
+        //           (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '), curChar);
+        // }
+
+        switch (curChar) {
+        case '\n':
+            if (!pageCompleted) {
+                // No two or more lines with only a \n are allowed.
+                newToken.tokenId = TokenId::NEWLINE;
+                pageCompleted = addTokenToPage(newToken, backwards_, "\n", 1);
+                if (!pageCompleted) {
+                    nextByte();
+                    if (curChar == '\n') {
+                        prevNewParagraphIdx_ = tokens_.getCount();
+                        newToken.tokenId = TokenId::ENDPARAGRAPH;
+                        pageCompleted = addTokenToPage(newToken, backwards_, "\n", 1);
+                        nextByte();
+                        while (curChar == '\n') {
+                            nextByte();
+                        }
+                    }
+                }
+            }
+            break;
+
+        case ' ':
+            if (!pageCompleted) {
+                newToken.tokenId = TokenId::SPACE;
+                tokens_.setSpaceSize(newToken);
+                pageCompleted = addTokenToPage(newToken, backwards_, " ", 1);
+                nextByte();
+            }
+            break;
+
+        case '\t':
+            if (!pageCompleted) {
+                newToken.tokenId = TokenId::TAB;
+                pageCompleted = addTokenToPage(newToken, backwards_, "\t", 1);
+                nextByte();
+            }
+            break;
+
+        case '-':
+            if (!pageCompleted) {
+                nextByte();
+                if (curChar != '-') {
+                    newToken.tokenId = TokenId::HYPHEN;
+                    pageCompleted = addTokenToPage(newToken, backwards_, "-", 1);
+                } else {
+                    nextByte();
+                    if (curChar != '-') {
+                        newToken.tokenId = TokenId::ENDASH;
+                        pageCompleted = addTokenToPage(newToken, backwards_, "--", 2);
+                    } else {
+                        nextByte();
+                        newToken.tokenId = TokenId::EMDASH;
+                        pageCompleted = addTokenToPage(newToken, backwards_, "---", 3);
+                    }
+                }
+            }
+            break;
+
+        // All other characters are considered part of a text token,
+        default:
+            newToken.tokenId = TokenId::TEXT;
+            uint16_t textCharCount = 0;
+
+            if (!pageCompleted) {
+                do {
+                    if ((curChar <= 0x7FU) || (curChar >= 0xC0U)) {
+                        textCharCount += 1;
+                    }
+                    if (!tokens_.cStrIsFull()) {
+                        tokens_.addByte(newToken, curChar);
+                    } else {
+                        break;
+                    }
+                    nextByte();
+                } while ((curChar > ' ') && (curChar != '-') &&
+                         ((textCharCount < maxTextTokenCharSize_) || (curChar >= 0x80U)));
+                // The last test of the while above is to get a complete UTF8 multi-bytes character
+                // if the maximum word size is reached
+
+                pageCompleted = addTokenToPage(newToken, backwards_);
+            }
+            break;
+        }
+    }
+
+    if (!pageCompleted) {
+        if (tokens_.cStrIsFull()) {
+            // There is a potential that the last token is not complete (e.g. a TEXT or ENDASH or
+            // EMDASH), so forget it
+            tokens_.forgetLast();
+        }
+    }
+
+    if constexpr (RENDERER_DEBUG) {
+        log_d("Computed Word Count: %" PRIu16, pager_.getWordCount());
+        log_d("Tokens Count: %" PRIu16, tokens_.getCount());
+    }
+
+    return !pageCompleted;
 }

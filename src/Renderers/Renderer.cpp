@@ -8,6 +8,10 @@
 auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines, bool forceRefresh)
     -> std::shared_ptr<Place> {
 
+    if (fromPlace == nullptr) {
+        fromPlace = tokenizer_->toPlace(tokenizer_->getPlaceAtBeginningOfDocument());
+    }
+
     currentPlace_ = tokenizer_->toStreamPlace(std::move(fromPlace));
 
     if constexpr (RENDERER_DEBUG) {
@@ -31,7 +35,7 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
 
     if ((pager_.getLineCount() == 0) || (!(currentPlace_ == pager_.getStreamPlaceOfFirstLine())) ||
         forceRefresh) {
-        currentPlace_ = tokenizer_->loadAndTokenizePage(currentPlace_, tokens_, pager_);
+        currentPlace_ = tokenizer_->loadAndTokenizePage(currentPlace_);
     }
     nextPlace_ = pager_.getNextPageStreamPlace();
 
@@ -82,7 +86,7 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
     if (!(seekPlace == fromPlace)) {
 
         seekPlace = tokenizer_->loadAndTokenizePage(
-            seekPlace, tokens_, pager_, true,
+            seekPlace, true,
             &fromPlace); // NOLINT(clang-analyzer-deadcode.DeadStores)
 
         // std::cout << "Line Count: " << pager_.getLineCount() << ", Token Count: " <<
@@ -108,7 +112,7 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
         pager_.setNextPagePlace(fromPlace);
     } else {
         seekPlace = tokenizer_->loadAndTokenizePage(
-            seekPlace, tokens_, pager_); // NOLINT(clang-analyzer-deadcode.DeadStores)
+            seekPlace); // NOLINT(clang-analyzer-deadcode.DeadStores)
     }
 
     pager_.show();

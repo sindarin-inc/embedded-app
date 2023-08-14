@@ -12,15 +12,16 @@ using namespace renderer_defs;
 
 class Tokenizer {
 public:
-    Tokenizer(DisplaySystem &display) : display_(display) {}
+    Tokenizer(DisplaySystem &display, Tokens &tokens, Pager &pager)
+        : display_(display), tokens_(tokens), pager_(pager) {}
     virtual ~Tokenizer() = default;
 
     [[nodiscard]] static auto factory(std::shared_ptr<RendererStream> stream,
-                                      DisplaySystem &display) -> std::shared_ptr<Tokenizer>;
+                                      DisplaySystem &display, Tokens &tokens, Pager &pager)
+        -> std::shared_ptr<Tokenizer>;
 
-    virtual auto loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pager &pager,
-                                     bool backwards = false, StreamPlace *toPlace = nullptr)
-        -> StreamPlace = 0;
+    virtual auto loadAndTokenizePage(StreamPlace fromPlace, bool backwards = false,
+                                     StreamPlace *toPlace = nullptr) -> StreamPlace = 0;
 
     [[nodiscard]] virtual auto isA(StreamType streamType) const -> bool = 0;
 
@@ -63,8 +64,15 @@ public:
 
 protected:
     DisplaySystem &display_;
+    Tokens &tokens_;
+    Pager &pager_;
 
     // Computed TEXT Token character size that will fit on a line depending
     // on the current font size and line width
     uint16_t maxTextTokenCharSize_{10};
+
+    inline auto addTokenToPage(Token token, bool backwards, const char *str = nullptr, uint8_t strSize = 0) -> bool {
+        tokens_.add(token, str, strSize);
+        return !pager_.addLastTokenToPage(backwards) && !backwards;
+    }
 };

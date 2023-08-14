@@ -31,12 +31,13 @@ public:
         return item - currentFileBuffer_;
     }
 
+    pugi::xml_document currentFileDoc_;
+
 private:
     ZipFile epubZipFile_;
     std::shared_ptr<EPubOpf> opf_;
 
     pugi::char_t *currentFileBuffer_;
-    pugi::xml_document currentFileDoc_;
     std::string currentFilePath_;
 
     auto open() -> bool;

@@ -5,12 +5,12 @@
 class TxtTokenizer : public Tokenizer {
 
 public:
-    TxtTokenizer(DisplaySystem &display) : Tokenizer(display) {}
+    TxtTokenizer(DisplaySystem &display, Tokens &tokens, Pager &pager)
+        : Tokenizer(display, tokens, pager) {}
     ~TxtTokenizer() override = default;
 
-    [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pager &pager,
-                                           bool backwards = false, StreamPlace *toPlace = nullptr)
-        -> StreamPlace override;
+    [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, bool backwards = false,
+                                           StreamPlace *toPlace = nullptr) -> StreamPlace override;
 
     [[nodiscard]] auto getPlaceAfterEndOfFileReached(StreamPlace streamPlace) const
         -> StreamPlace override {

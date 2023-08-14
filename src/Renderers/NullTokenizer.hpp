@@ -5,12 +5,12 @@
 class NullTokenizer : public Tokenizer {
 
 public:
-    NullTokenizer(DisplaySystem &display) : Tokenizer(display) {}
+    NullTokenizer(DisplaySystem &display, Tokens &tokens, Pager &pager)
+        : Tokenizer(display, tokens, pager) {}
     ~NullTokenizer() override = default;
 
-    [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, Tokens &tokens, Pager &pager,
-                                           bool backwards = false, StreamPlace *toPlace = nullptr)
-        -> StreamPlace override {
+    [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, bool backwards = false,
+                                           StreamPlace *toPlace = nullptr) -> StreamPlace override {
         error();
         return {};
     };
