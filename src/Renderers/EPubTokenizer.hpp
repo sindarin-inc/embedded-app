@@ -73,10 +73,13 @@ private:
     StreamPlace fromPlace_;
     StreamPlace *toPlace_;
     bool backwards_;
+    bool started_;
 
     Idx prevNewParagraphIdx_;
+    Idx lastStreamRelativeOffset_;
 
-    [[nodiscard]] auto getCharEntity(const char *str) const -> const char *;
+    [[nodiscard]] auto getCharEntity(const char *str, const char **newStrLocation) const -> const
+        char *;
     [[nodiscard]] auto interpret(pugi::xml_node node) -> bool;
     [[nodiscard]] auto addStrToPage(const pugi::char_t *str, uint16_t len) -> bool;
 };

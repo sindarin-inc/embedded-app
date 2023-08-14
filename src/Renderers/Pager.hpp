@@ -67,6 +67,7 @@ public:
     }
 
     inline void setNextPagePlace(StreamPlace place) { nextPagePlace_ = place; }
+
     void setFirstLineIdxBackward();
 
     [[nodiscard]] inline auto getStreamPlaceOfFirstLine() -> StreamPlace {
