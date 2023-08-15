@@ -693,7 +693,6 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
               PreferencesStore::nextSyncTime, uint64_t(now));
     }
 
-    log_i("Entering deep sleep, wake up with magnetometer");
     esp_deep_sleep_start();
 #endif
 }
