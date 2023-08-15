@@ -479,9 +479,11 @@ auto GetHardwareRevision() -> uint8_t {
 }
 
 void ForcePowerOn() {
-    PinMode(sysOnPin, OUTPUT);
-    DigitalWrite(sysOnPin, HIGH);
-    gpio_hold_en((gpio_num_t)sysOnPin);
+    gpio_reset_pin(gpio_num_t(sysOnPin));
+    gpio_set_pull_mode(gpio_num_t(sysOnPin), GPIO_FLOATING);
+    gpio_set_direction(gpio_num_t(sysOnPin), GPIO_MODE_OUTPUT);
+    gpio_set_level(gpio_num_t(sysOnPin), 1);
+    gpio_hold_en(gpio_num_t(sysOnPin));
     gpio_deep_sleep_hold_en();
 }
 
