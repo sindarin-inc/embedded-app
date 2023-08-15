@@ -74,6 +74,7 @@ private:
     StreamPlace *toPlace_;
     bool backwards_;
     bool started_;
+    bool pageCompleted_;
 
     Idx prevNewParagraphIdx_;
     Idx lastStreamRelativeOffset_;

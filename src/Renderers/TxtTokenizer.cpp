@@ -90,58 +90,50 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
 
         switch (curChar) {
         case '\n':
+            // No two or more lines with only a \n are allowed.
+            newToken.tokenId = TokenId::NEWLINE;
+            pageCompleted = addTokenToPage(newToken, backwards, "\n", 1);
             if (!pageCompleted) {
-                // No two or more lines with only a \n are allowed.
-                newToken.tokenId = TokenId::NEWLINE;
-                pageCompleted = addTokenToPage(newToken, backwards, "\n", 1);
-                if (!pageCompleted) {
+                nextByte();
+                if (curChar == '\n') {
+                    prevNewParagraphIdx = tokens_.getCount();
+                    newToken.tokenId = TokenId::ENDPARAGRAPH;
+                    pageCompleted = addTokenToPage(newToken, backwards, "\n", 1);
                     nextByte();
-                    if (curChar == '\n') {
-                        prevNewParagraphIdx = tokens_.getCount();
-                        newToken.tokenId = TokenId::ENDPARAGRAPH;
-                        pageCompleted = addTokenToPage(newToken, backwards, "\n", 1);
+                    while (curChar == '\n') {
                         nextByte();
-                        while (curChar == '\n') {
-                            nextByte();
-                        }
                     }
                 }
             }
             break;
 
         case ' ':
-            if (!pageCompleted) {
-                newToken.tokenId = TokenId::SPACE;
-                tokens_.setSpaceSize(newToken);
-                pageCompleted = addTokenToPage(newToken, backwards, " ", 1);
-                nextByte();
-            }
+            newToken.tokenId = TokenId::SPACE;
+            tokens_.setSpaceSize(newToken);
+            pageCompleted = addTokenToPage(newToken, backwards, " ", 1);
+            nextByte();
             break;
 
         case '\t':
-            if (!pageCompleted) {
-                newToken.tokenId = TokenId::TAB;
-                pageCompleted = addTokenToPage(newToken, backwards, "\t", 1);
-                nextByte();
-            }
+            newToken.tokenId = TokenId::TAB;
+            pageCompleted = addTokenToPage(newToken, backwards, "\t", 1);
+            nextByte();
             break;
 
         case '-':
-            if (!pageCompleted) {
+            nextByte();
+            if (curChar != '-') {
+                newToken.tokenId = TokenId::HYPHEN;
+                pageCompleted = addTokenToPage(newToken, backwards, "-", 1);
+            } else {
                 nextByte();
                 if (curChar != '-') {
-                    newToken.tokenId = TokenId::HYPHEN;
-                    pageCompleted = addTokenToPage(newToken, backwards, "-", 1);
+                    newToken.tokenId = TokenId::ENDASH;
+                    pageCompleted = addTokenToPage(newToken, backwards, "--", 2);
                 } else {
                     nextByte();
-                    if (curChar != '-') {
-                        newToken.tokenId = TokenId::ENDASH;
-                        pageCompleted = addTokenToPage(newToken, backwards, "--", 2);
-                    } else {
-                        nextByte();
-                        newToken.tokenId = TokenId::EMDASH;
-                        pageCompleted = addTokenToPage(newToken, backwards, "---", 3);
-                    }
+                    newToken.tokenId = TokenId::EMDASH;
+                    pageCompleted = addTokenToPage(newToken, backwards, "---", 3);
                 }
             }
             break;
@@ -151,34 +143,30 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
             newToken.tokenId = TokenId::TEXT;
             uint16_t textCharCount = 0;
 
-            if (!pageCompleted) {
-                do {
-                    if ((curChar <= 0x7FU) || (curChar >= 0xC0U)) {
-                        textCharCount += 1;
-                    }
-                    if (!tokens_.cStrIsFull()) {
-                        tokens_.addByte(newToken, curChar);
-                    } else {
-                        break;
-                    }
-                    nextByte();
-                } while ((curChar > ' ') && (curChar != '-') &&
-                         ((textCharCount < maxTextTokenCharSize_) || (curChar >= 0x80U)));
-                // The last test of the while above is to get a complete UTF8 multi-bytes character
-                // if the maximum word size is reached
+            do {
+                if ((curChar <= 0x7FU) || (curChar >= 0xC0U)) {
+                    textCharCount += 1;
+                }
+                if (!tokens_.cStrIsFull()) {
+                    tokens_.addByte(newToken, curChar);
+                } else {
+                    break;
+                }
+                nextByte();
+            } while ((curChar > ' ') && (curChar != '-') &&
+                     ((textCharCount < maxTextTokenCharSize_) || (curChar >= 0x80U)));
+            // The last test of the while above is to get a complete UTF8 multi-bytes character
+            // if the maximum word size is reached
 
-                pageCompleted = addTokenToPage(newToken, backwards);
-            }
+            pageCompleted = addTokenToPage(newToken, backwards);
             break;
         }
     }
 
-    if (!pageCompleted) {
-        if (tokens_.cStrIsFull()) {
-            // There is a potential that the last token is not complete (e.g. a TEXT or ENDASH or
-            // EMDASH), so forget it
-            tokens_.forgetLast();
-        }
+    if (!pageCompleted && tokens_.cStrIsFull()) {
+        // There is a potential that the last token is not complete (e.g. a TEXT or ENDASH or
+        // EMDASH), so forget it
+        tokens_.forgetLast();
     }
 
     if (curChar == 0) {
