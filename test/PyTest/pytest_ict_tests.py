@@ -351,4 +351,4 @@ class TestPowerConsumption:
         time.sleep(5)
 
         logger.info("Measuring deep sleep current")
-        power_client.expect_current((150, 250), 5)
+        power_client.expect_current((50, 100), 5)
