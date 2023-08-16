@@ -218,7 +218,13 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
         }
 
         if (!node) {
-            pager_.endOfFileReached();
+            log_e("-------------- End of file detected --------------");
+            Idx maxIdx = stream_->getSpineCount();
+            if ((fromPlace.getFileNumber() + 1) < maxIdx) {
+                pager_.setNextPagePlace({0, fromPlace.getFileNumber() + 1});
+            } else {
+                pager_.endOfFileReached();
+            }
         }
     } else {
         log_e("File is of the wrong format");
@@ -254,8 +260,10 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
         //     }
         // }
         lastStreamRelativeOffset_ += 1;
-        pageCompleted_ = pageCompleted_ || (backwards_ && (lastStreamRelativeOffset_ >= toPlace_->getOffset()));
-        if (!pageCompleted_) { //(!backwards_ || (lastStreamRelativeOffset_ < toPlace_->getOffset())) {
+        pageCompleted_ =
+            pageCompleted_ || (backwards_ && (lastStreamRelativeOffset_ >= toPlace_->getOffset()));
+        if (!pageCompleted_) { //(!backwards_ || (lastStreamRelativeOffset_ <
+                               //toPlace_->getOffset())) {
             Tags::iterator tagIt = tags.find(node.name());
             if (tagIt != tags.end() && started_) {
                 const Tag &tag = tagIt->second;
@@ -319,12 +327,12 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
 
         const pugi::char_t *str = node.value();
         uint32_t offset = stream_->getOffset(str);
-        uint16_t len = strlen(str);
+        uint32_t len = strlen(str);
 
         if (!started_) {
             if ((offset + len) >= fromPlace_.getOffset()) {
                 started_ = true;
-                uint16_t bypass =
+                uint32_t bypass =
                     (fromPlace_.getOffset() > offset) ? fromPlace_.getOffset() - offset : 0;
                 return addStrToPage(str + bypass, len - bypass);
             }
@@ -347,7 +355,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
 
 auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint16_t len) -> bool {
 
-    Idx streamRelativeOffset = stream_->getOffset(str);
+    uint32_t streamRelativeOffset = stream_->getOffset(str);
 
     Token newToken;
 

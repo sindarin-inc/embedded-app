@@ -25,9 +25,11 @@ public:
         return opf_->getSpine(idx);
     }
 
+    [[nodiscard]] inline auto getSpineCount() const -> uint16_t { return opf_->getSpineCount(); }
+
     [[nodiscard]] auto getXHTMLFile(std::string path) -> pugi::xml_document &;
 
-    [[nodiscard]] inline auto getOffset(const pugi::char_t *item) const -> size_t {
+    [[nodiscard]] inline auto getOffset(const pugi::char_t *item) const -> uint32_t {
         return item - currentFileBuffer_;
     }
 

@@ -33,6 +33,8 @@ public:
         return basePath_ + fileName;
     }
 
+    [[nodiscard]] inline auto getSpineCount() const -> uint16_t { return spine_.size(); }
+
 private:
     const char *path_;
     ZipFile &zipFile_;

@@ -77,7 +77,7 @@ private:
     bool pageCompleted_;
 
     Idx prevNewParagraphIdx_;
-    Idx lastStreamRelativeOffset_;
+    uint32_t lastStreamRelativeOffset_;
 
     [[nodiscard]] auto getCharEntity(const char *str, const char **newStrLocation) const -> const
         char *;
