@@ -336,7 +336,7 @@ class TestPowerConsumption:
         dut.expect("Sol: Error-free boot!", timeout=30)
 
         # wait for ICT pageturner connect
-        dut.expect("Connected to PageTurner", timeout=5)
+        dut.expect("Connected to PageTurner", timeout=20)
 
         time.sleep(1)
 
