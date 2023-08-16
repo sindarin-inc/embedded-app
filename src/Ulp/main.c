@@ -32,8 +32,8 @@ void magReading() {
 
     ulp_riscv_i2c_master_write_to_device(&dataRd, 1);
 
-    // TODO: How is this determined? Is it necessary?
-    ulp_riscv_delay_cycles(1500 * ULP_RISCV_CYCLES_PER_US);
+    // Determined experimentally
+    ulp_riscv_delay_cycles(2000 * ULP_RISCV_CYCLES_PER_US);
 
     ulp_riscv_i2c_master_set_slave_reg_addr(MAG_DEVICE_STATUS_REG_1);
 
