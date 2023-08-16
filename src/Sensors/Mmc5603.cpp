@@ -144,7 +144,6 @@ void Mmc5603::configureIfNeeded() {
     Mmc5603Ctrl1Value ctrl1Value;
     ctrl1Value.bw0 = 1;
     ctrl1Value.bw1 = 1;
-    ctrl1Value.yInhibit = 1;
     esp_err_t err = registerWriteByte(MMC5603_REG_CTRL_1, ctrl1Value.raw);
     if (err != ESP_OK) {
         log_e("Failed to write to MMC5603_REG_CTRL_1 (error: %s)", esp_err_to_name(err));
