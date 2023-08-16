@@ -76,6 +76,8 @@ public:
         return pager_.getWordCount();
     }
 
+    [[nodiscard]] inline auto atEndOfFile() const -> bool { return pager_.atEndOfFile(); }
+
 private:
     DisplaySystem &display_;
     Tokens tokens_;

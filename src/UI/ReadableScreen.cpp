@@ -162,7 +162,7 @@ void ReadableScreen::turnPage() {
     prefs_.wordCount.set(wc);
 }
 
-auto ReadableScreen::checkAtEnd() -> bool { return (newPlace_ == nullptr); }
+auto ReadableScreen::checkAtEnd() -> bool { return renderer_.atEndOfFile(); }
 
 void ReadableScreen::render(DisplaySystem &display) {
     // Rendering the popup is a special case. We first re-draw the text onto the background

@@ -170,7 +170,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
     }
 
     if (curChar == 0) {
-        pager_.endOfFileReached();
+        pager_.setEndOfFile();
     }
 
     if constexpr (RENDERER_DEBUG) {

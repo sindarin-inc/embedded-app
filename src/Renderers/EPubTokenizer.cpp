@@ -223,7 +223,7 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
             if ((fromPlace.getFileNumber() + 1) < maxIdx) {
                 pager_.setNextPagePlace({0, fromPlace.getFileNumber() + 1});
             } else {
-                pager_.endOfFileReached();
+                pager_.setEndOfFile();
             }
         }
     } else {
@@ -263,7 +263,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
         pageCompleted_ =
             pageCompleted_ || (backwards_ && (lastStreamRelativeOffset_ >= toPlace_->getOffset()));
         if (!pageCompleted_) { //(!backwards_ || (lastStreamRelativeOffset_ <
-                               //toPlace_->getOffset())) {
+                               // toPlace_->getOffset())) {
             Tags::iterator tagIt = tags.find(node.name());
             if (tagIt != tags.end() && started_) {
                 const Tag &tag = tagIt->second;

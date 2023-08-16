@@ -79,12 +79,15 @@ public:
     void getLine(Idx lineNbr, Line &line) const;
     void displayPage(int16_t numSkipLines);
 
-    void endOfFileReached() {
+    void setEndOfFile() {
         atEOF_ = true;
         if (lines_[lineCount_].tokenCount != 0) {
             lineCount_++;
         }
     }
+
+    [[nodiscard]] auto atEndOfFile() const -> bool { return atEOF_; }
+
     void completeLastLine();
 
     void show() const;
