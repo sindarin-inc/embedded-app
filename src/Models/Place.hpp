@@ -5,7 +5,7 @@
 #include <string>
 #include <utility>
 
-enum class PlaceType : uint8_t { TXT, EPUB, NONE };
+#include "DocType.hpp"
 
 #define PLACE_REGEX "\\[(TXT|EPUB);offset:([0-9]+)(,filename:([^\\]]*))?\\]"
 
@@ -15,8 +15,8 @@ private:
 
 public:
     virtual ~Place() = default;
-    [[nodiscard]] virtual auto isA(PlaceType placeType) const -> bool = 0;
-    [[nodiscard]] virtual auto getPlaceType() const -> PlaceType = 0;
+    [[nodiscard]] virtual auto isFor(DocType docType) const -> bool = 0;
+    [[nodiscard]] virtual auto getDocType() const -> DocType = 0;
     [[nodiscard]] virtual auto str() const -> std::string = 0;
     [[nodiscard]] inline auto getOffset() const -> uint32_t { return offset_; }
     inline void setOffset(uint32_t offset) { offset_ = offset; }
@@ -30,10 +30,10 @@ protected:
 class NonePlace : public Place {
 public:
     ~NonePlace() override = default;
-    [[nodiscard]] auto isA(PlaceType placeType) const -> bool override {
-        return placeType == PlaceType::NONE;
+    [[nodiscard]] auto isFor(DocType docType) const -> bool override {
+        return docType == DocType::NONE;
     }
-    [[nodiscard]] auto getPlaceType() const -> PlaceType override { return PlaceType::NONE; };
+    [[nodiscard]] auto getDocType() const -> DocType override { return DocType::NONE; };
     [[nodiscard]] auto str() const -> std::string override { return "[NONE;INVALID PLACE]"; }
 };
 
@@ -42,10 +42,10 @@ public:
     TxtPlace(uint32_t offset) { setOffset(offset); }
     TxtPlace() : Place() { setOffset(0); }
     ~TxtPlace() override = default;
-    [[nodiscard]] auto isA(PlaceType placeType) const -> bool override {
-        return placeType == PlaceType::TXT;
+    [[nodiscard]] auto isFor(DocType docType) const -> bool override {
+        return docType == DocType::TXT;
     }
-    [[nodiscard]] auto getPlaceType() const -> PlaceType override { return PlaceType::TXT; };
+    [[nodiscard]] auto getDocType() const -> DocType override { return DocType::TXT; };
     [[nodiscard]] auto getOffset() const -> uint32_t { return offset_; }
 
     [[nodiscard]] auto str() const -> std::string override {
@@ -65,10 +65,10 @@ public:
     EPubPlace() : Place(), filename_("") { setOffset(0); }
     ~EPubPlace() override = default;
 
-    [[nodiscard]] auto isA(PlaceType placeType) const -> bool override {
-        return placeType == PlaceType::EPUB;
+    [[nodiscard]] auto isFor(DocType docType) const -> bool override {
+        return docType == DocType::EPUB;
     }
-    [[nodiscard]] auto getPlaceType() const -> PlaceType override { return PlaceType::EPUB; };
+    [[nodiscard]] auto getDocType() const -> DocType override { return DocType::EPUB; };
     [[nodiscard]] auto getOffset() const -> uint32_t { return offset_; }
     [[nodiscard]] auto getFilename() const -> const std::string & { return filename_; }
 

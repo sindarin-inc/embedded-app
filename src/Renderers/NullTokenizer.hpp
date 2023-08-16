@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Models/DocType.hpp"
 #include "Tokenizer.hpp"
 
 class NullTokenizer : public Tokenizer {
@@ -39,7 +40,7 @@ public:
         return 0;
     }
 
-    [[nodiscard]] auto isA(StreamType streamType) const -> bool override {
+    [[nodiscard]] auto isFor(DocType docType) const -> bool override {
         error();
         return false;
     }

@@ -23,7 +23,7 @@ public:
     virtual auto loadAndTokenizePage(StreamPlace fromPlace, bool backwards = false,
                                      StreamPlace *toPlace = nullptr) -> StreamPlace = 0;
 
-    [[nodiscard]] virtual auto isA(StreamType streamType) const -> bool = 0;
+    [[nodiscard]] virtual auto isFor(DocType docType) const -> bool = 0;
 
     void computeMaxTextTokenCharSize() {
         maxTextTokenCharSize_ = display_.width() / display_.getTextWidth("G");
@@ -71,7 +71,8 @@ protected:
     // on the current font size and line width
     uint16_t maxTextTokenCharSize_{10};
 
-    inline auto addTokenToPage(Token token, bool backwards, const char *str = nullptr, uint8_t strSize = 0) -> bool {
+    inline auto addTokenToPage(Token token, bool backwards, const char *str = nullptr,
+                               uint8_t strSize = 0) -> bool {
         tokens_.add(token, str, strSize);
         return !pager_.addLastTokenToPage(backwards) && !backwards;
     }

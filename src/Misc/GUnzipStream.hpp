@@ -3,6 +3,7 @@
 #include <utility>
 
 #include "Misc/GUnzip.hpp"
+#include "Models/DocType.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "Storage/SFile.hpp"
 #include "sindarin-debug.h"
@@ -15,8 +16,8 @@
 
 class GUnzipStream : public RendererStream {
 public:
-    GUnzipStream(SFile gzFile, StreamType streamType = StreamType::TXT)
-        : RendererStream(streamType), gzFile_(std::move(gzFile)) {
+    GUnzipStream(SFile gzFile, DocType docType = DocType::TXT)
+        : RendererStream(docType), gzFile_(std::move(gzFile)) {
         readSize();
     }
     ~GUnzipStream() override { gzFile_.close(); };

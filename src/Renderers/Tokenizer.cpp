@@ -9,13 +9,13 @@ auto Tokenizer::factory(std::shared_ptr<RendererStream> stream, DisplaySystem &d
                         Tokens &tokens, Pager &pager) -> std::shared_ptr<Tokenizer> {
     std::shared_ptr<Tokenizer> tokenizer;
 
-    if (stream->isA(StreamType::TXT)) {
+    if (stream->isFor(DocType::TXT)) {
         tokenizer = std::make_shared<TxtTokenizer>(display, tokens, pager);
-    } else if (stream->isA(StreamType::EPUB)) {
+    } else if (stream->isFor(DocType::EPUB)) {
         tokenizer = std::make_shared<EPubTokenizer>(display, tokens, pager);
     } else {
         log_e("Stream is of wrong type (must be TXT or EPUB)!: %" PRIu8,
-              static_cast<uint8_t>(stream->getStreamType()));
+              static_cast<uint8_t>(stream->getDocType()));
         if constexpr (ON_ERROR_EXIT) {
             exit(1);
         }

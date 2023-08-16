@@ -1,5 +1,6 @@
 #pragma once
 #include "Misc/CircBuffer.hpp"
+#include "Models/DocType.hpp"
 #include "Renderers/RendererStream.hpp"
 
 #define LOOKBACK_BUFFER_SIZE 32768
@@ -7,8 +8,8 @@
 class LookBackStream : public RendererStream {
 public:
     LookBackStream(std::unique_ptr<RendererStream> stream, int lookBackSize,
-                   StreamType streamType = StreamType::OTHER)
-        : RendererStream(streamType), stream_(std::move(stream)), lookBackBuffer_(lookBackSize) {}
+                   DocType docType = DocType::NONE)
+        : RendererStream(docType), stream_(std::move(stream)), lookBackBuffer_(lookBackSize) {}
 
     auto available() -> int override;
     auto readBytes(uint8_t *buf, int size) -> int override;

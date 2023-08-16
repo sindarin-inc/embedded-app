@@ -8,10 +8,11 @@
 auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines, bool forceRefresh)
     -> std::shared_ptr<Place> {
 
-    // if no fromPlace is received (null), get the first page pointer, else convert fromPlace to a
-    // StreamPlace
-    currentPlace_ = (fromPlace == nullptr) ? tokenizer_->getPlaceAtBeginningOfDocument()
-                                           : tokenizer_->toStreamPlace(std::move(fromPlace));
+    // if no fromPlace is received (null) or the place's DocType is wrong, get the first page
+    // pointer, else convert fromPlace to a StreamPlace
+    currentPlace_ = ((fromPlace == nullptr) || (!tokenizer_->isFor(fromPlace->getDocType())))
+                        ? tokenizer_->getPlaceAtBeginningOfDocument()
+                        : tokenizer_->toStreamPlace(std::move(fromPlace));
 
     if constexpr (RENDERER_DEBUG) {
         log_d("%s is place in file being requested", currentPlace_.str().c_str());
@@ -47,6 +48,7 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
     if constexpr (RENDERER_DEBUG) {
         log_w("Returning next page place to be %s", nextPlace_.str().c_str());
     }
+    log_w("Returning next page place to be %s", nextPlace_.str().c_str());
     return tokenizer_->toPlace(nextPlace_);
 }
 

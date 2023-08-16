@@ -1,12 +1,13 @@
 #include "EPubOpf.hpp"
 #include "Misc/ZipFile.hpp"
+#include "Models/DocType.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "pugixml.hpp"
 
 class EPubFile : public RendererStream {
 public:
     EPubFile(FileSystem &fs, const char *filename)
-        : RendererStream(StreamType::EPUB), epubZipFile_(fs, filename), currentFilePath_(""),
+        : RendererStream(DocType::EPUB), epubZipFile_(fs, filename), currentFilePath_(""),
           currentFileBuffer_(nullptr) {
         open();
     }

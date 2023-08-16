@@ -12,34 +12,31 @@
 
 #include "Misc/SpiramAllocator.hpp"
 #include "Misc/StringUtil.hpp"
+#include "Models/DocType.hpp"
 #include "sindarin-debug.h"
-
-enum class StreamType : uint8_t { TXT, EPUB, OTHER };
 
 class RendererStream {
 private:
-    StreamType streamType_{StreamType::OTHER};
+    DocType docType_{DocType::NONE};
 
 protected:
-    RendererStream(StreamType streamType) : streamType_(streamType) {}
+    RendererStream(DocType docType) : docType_(docType) {}
     RendererStream() = default;
 
 public:
     virtual ~RendererStream() = default;
 
-    [[nodiscard]] auto isA(StreamType streamType) const -> bool {
-        return streamType == streamType_;
-    }
-    [[nodiscard]] auto getStreamType() const -> StreamType { return streamType_; }
+    [[nodiscard]] auto isFor(DocType docType) const -> bool { return docType == docType_; }
+    [[nodiscard]] auto getDocType() const -> DocType { return docType_; }
 
-    static auto parseStreamType(const char *path) -> StreamType {
+    static auto parseDocType(const char *path) -> DocType {
         if (HasSuffix(path, ".txt") || HasSuffix(path, ".txt.gz")) {
-            return StreamType::TXT;
+            return DocType::TXT;
         }
         if (HasSuffix(path, ".epub")) {
-            return StreamType::EPUB;
+            return DocType::EPUB;
         }
-        return StreamType::OTHER;
+        return DocType::NONE;
     }
 
     virtual auto getNextByte() -> uint8_t {
@@ -76,10 +73,9 @@ public:
 template <typename T>
 class ContainerStream : public RendererStream {
 public:
-    ContainerStream(StreamType streamType = StreamType::TXT)
-        : RendererStream(streamType), contained_(T()) {}
-    ContainerStream(T contained, StreamType streamType = StreamType::TXT)
-        : RendererStream(streamType), contained_(std::move(contained)) {}
+    ContainerStream(DocType docType = DocType::TXT) : RendererStream(docType), contained_(T()) {}
+    ContainerStream(T contained, DocType docType = DocType::TXT)
+        : RendererStream(docType), contained_(std::move(contained)) {}
 
     auto available() -> int override { return contained_.available(); }
     auto read() -> int override { return contained_.read(); };
@@ -96,12 +92,12 @@ protected:
 
 class StdStringStream : public RendererStream {
 public:
-    StdStringStream(std::string &string, StreamType streamType = StreamType::TXT)
-        : RendererStream(streamType), stream_(std::make_shared<std::istringstream>(string)) {
+    StdStringStream(std::string &string, DocType docType = DocType::TXT)
+        : RendererStream(docType), stream_(std::make_shared<std::istringstream>(string)) {
         setSize(string.length());
     }
-    StdStringStream(SpiramString &string, StreamType streamType = StreamType::TXT)
-        : RendererStream(streamType), stream_(std::make_shared<SpiramIStream>(string)) {
+    StdStringStream(SpiramString &string, DocType docType = DocType::TXT)
+        : RendererStream(docType), stream_(std::make_shared<SpiramIStream>(string)) {
         setSize(string.length());
     }
 
@@ -117,8 +113,8 @@ public:
     auto size() -> size_t override { return size_; }
 
 protected:
-    StdStringStream(std::shared_ptr<std::istream> stream, StreamType streamType = StreamType::TXT)
-        : RendererStream(streamType), stream_(std::move(stream)) {}
+    StdStringStream(std::shared_ptr<std::istream> stream, DocType docType = DocType::TXT)
+        : RendererStream(docType), stream_(std::move(stream)) {}
 
     std::shared_ptr<std::istream> stream_;
     size_t size_ = 0;
@@ -126,8 +122,8 @@ protected:
 
 class BufferStream : public RendererStream {
 public:
-    BufferStream(const uint8_t *data, int size, StreamType streamType = StreamType::TXT)
-        : RendererStream(streamType), data_(data), size_(size) {}
+    BufferStream(const uint8_t *data, int size, DocType docType = DocType::TXT)
+        : RendererStream(docType), data_(data), size_(size) {}
 
     auto read() -> int override { return data_[pos_++]; };
     auto readBytes(uint8_t *buf, int size) -> int override {
