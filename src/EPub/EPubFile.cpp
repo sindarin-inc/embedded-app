@@ -4,7 +4,7 @@
 
 auto EPubFile::getXHTMLFile(std::string path) -> pugi::xml_document & {
     std::string filePath = opf_->getFullPath(path);
-    log_w("Loading file %s", filePath.c_str());
+    // log_w("Loading file %s", filePath.c_str());
     if (currentFilePath_ != filePath) {
         if (epubZipFile_.openFile(filePath.c_str()) != UNZ_OK) {
             log_e("Failed to open XHTML file %s", filePath.c_str());

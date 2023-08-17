@@ -183,17 +183,13 @@ auto EPubTokenizer::subtractOffset(StreamPlace streamPlace, uint32_t offset) -> 
             } else {
                 newOffset = 0;
             }
-            log_e("A...");
             return {newOffset, static_cast<uint16_t>(streamPlace.getFileIdx() - 1)};
         } else {
-            log_e("B...");
             return {fileStartingOffset, streamPlace.getFileIdx()};
         }
     } else if (streamPlace.getOffset() > offset) {
-        log_e("C...");
         return {streamPlace.getOffset() - offset, streamPlace.getFileIdx()};
     } else {
-        log_e("D...");
         return {fileStartingOffset, streamPlace.getFileIdx()};
     }
 }
@@ -270,7 +266,7 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
         }
 
         if (!node) {
-            log_e("-------------- End of file detected --------------");
+            // log_e("-------------- End of file detected --------------");
             Idx maxIdx = stream_->getSpineCount();
             if ((fromPlace.getFileIdx() + 1) < maxIdx) {
                 pager_.setNextPagePlace({0, static_cast<uint16_t>(fromPlace.getFileIdx() + 1)});
@@ -379,7 +375,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
 
         const pugi::char_t *str = node.value();
         uint32_t offset = stream_->getOffset(str);
-        uint32_t len = strlen(str);
+        uint32_t len = strlen(str); // don't like that. Lenght not available from pugixml...
 
         if (!started_) {
             if ((offset + len) >= fromPlace_.getOffset()) {
