@@ -15,11 +15,6 @@ public:
     [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, bool backwards = false,
                                            StreamPlace *toPlace = nullptr) -> StreamPlace override;
 
-    [[nodiscard]] auto getPlaceAfterEndOfFileReached(StreamPlace streamPlace) const
-        -> StreamPlace override {
-        return {0, static_cast<uint16_t>(streamPlace.getFileNumber() + 1)};
-    }
-
     [[nodiscard]] auto toStreamPlace(const std::shared_ptr<Place> place) const
         -> StreamPlace override {
         if (place->isFor(DocType::EPUB)) {
@@ -37,7 +32,7 @@ public:
 
     [[nodiscard]] inline auto toPlace(const StreamPlace &streamPlace) const
         -> std::shared_ptr<Place> override {
-        const EPubOpf::SpineItem &spineItem = stream_->getSpine(streamPlace.getFileNumber());
+        const EPubOpf::SpineItem &spineItem = stream_->getSpine(streamPlace.getFileIdx());
         return std::make_shared<EPubPlace>(streamPlace.getOffset() + spineItem.offset,
                                            spineItem.item->href);
     }
@@ -53,6 +48,11 @@ public:
     void setStream(std::shared_ptr<RendererStream> stream) override {
         stream_ = std::static_pointer_cast<EPubFile>(stream);
     }
+
+    [[nodiscard]] auto computeStartingOffset(StreamPlace streamPlace) -> uint32_t;
+
+    [[nodiscard]] auto subtractOffset(StreamPlace streamPlace, uint32_t offset)
+        -> StreamPlace override;
 
 private:
     std::shared_ptr<EPubFile> stream_;
@@ -72,6 +72,7 @@ private:
 
     StreamPlace fromPlace_;
     StreamPlace *toPlace_;
+
     bool backwards_;
     bool started_;
     bool pageCompleted_;
@@ -81,6 +82,7 @@ private:
 
     [[nodiscard]] auto getCharEntity(const char *str, const char **newStrLocation) const -> const
         char *;
+    [[nodiscard]] auto loadXHTMLAt(Idx fileIdx) -> pugi::xml_document &;
     [[nodiscard]] auto interpret(pugi::xml_node node) -> bool;
     [[nodiscard]] auto addStrToPage(const pugi::char_t *str, uint16_t len) -> bool;
 };

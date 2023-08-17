@@ -14,6 +14,8 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
                         ? tokenizer_->getPlaceAtBeginningOfDocument()
                         : tokenizer_->toStreamPlace(std::move(fromPlace));
 
+    log_d("%s is place in file being requested", currentPlace_.str().c_str());
+
     if constexpr (RENDERER_DEBUG) {
         log_d("%s is place in file being requested", currentPlace_.str().c_str());
     }
@@ -78,17 +80,25 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
     // Figure out how much to read before the current place. If we're too
     // close to the beginning, we just read from the beginning.
 
+    log_e("Before subtractOffset(): fromPlace: %s", fromPlace.str().c_str());
+
     StreamPlace seekPlace =
         tokenizer_->subtractOffset(fromPlace, maxPageCount + MAX_BYTES_PER_PARAGRAPH);
+
+    log_e("After subtractOffset(): seekPlace: %s", seekPlace.str().c_str());
 
     // Tokenize it the same as you would for a forwards render. seekPlace will be returned to be at
     // a UTF8 character boundary
 
     if (!(seekPlace == fromPlace)) {
 
+        StreamPlace lastPlace = fromPlace;
+        if (seekPlace.getFileIdx() != fromPlace.getFileIdx()) {
+            lastPlace = { 99999999, seekPlace.getFileIdx() };
+        }
         seekPlace = tokenizer_->loadAndTokenizePage(
             seekPlace, true,
-            &fromPlace); // NOLINT(clang-analyzer-deadcode.DeadStores)
+            &lastPlace); // NOLINT(clang-analyzer-deadcode.DeadStores)
 
         // std::cout << "Line Count: " << pager_.getLineCount() << ", Token Count: " <<
         // tokens_.getCount()

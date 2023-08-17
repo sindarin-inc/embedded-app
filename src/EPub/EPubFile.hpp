@@ -22,7 +22,7 @@ public:
         return opf_->getSpineIdxForOffset(offset);
     }
 
-    [[nodiscard]] inline auto getSpine(uint16_t idx) const -> const EPubOpf::SpineItem & {
+    [[nodiscard]] inline auto getSpine(Idx idx) const -> const EPubOpf::SpineItem & {
         return opf_->getSpine(idx);
     }
 

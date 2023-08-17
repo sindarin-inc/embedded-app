@@ -69,7 +69,7 @@ void EPubOpf::parse() {
     }
 }
 
-auto EPubOpf::getSpineIdxForOffset(uint32_t offset) const -> uint16_t {
+auto EPubOpf::getSpineIdxForOffset(uint32_t offset) const -> Idx {
     int spineIdx = 0;
     while (spineIdx < spine_.size()) {
         if (spine_[spineIdx].offset > offset) break;

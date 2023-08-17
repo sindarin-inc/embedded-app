@@ -69,8 +69,8 @@ enum class TokenId : uint8_t {
 
 class StreamPlace {
 public:
-    StreamPlace(uint32_t offset, uint16_t filenumber) : offset_(offset), fileNumber_(filenumber) {}
-    StreamPlace() : offset_(0), fileNumber_(0) {}
+    StreamPlace(uint32_t offset, Idx fileIdx) : offset_(offset), fileIdx_(fileIdx) {}
+    StreamPlace() : offset_(0), fileIdx_(0) {}
 
     inline void setOffset(uint32_t offset) { offset_ = offset; }
     inline void incOffset() { offset_ += 1; }
@@ -80,25 +80,25 @@ public:
         }
     }
     [[nodiscard]] inline auto getOffset() const -> uint32_t { return offset_; }
-    [[nodiscard]] inline auto getFileNumber() const -> uint16_t { return fileNumber_; }
+    [[nodiscard]] inline auto getFileIdx() const -> Idx { return fileIdx_; }
 
     [[nodiscard]] inline auto operator==(const StreamPlace &rhs) const -> bool {
-        return (offset_ == rhs.offset_) && (fileNumber_ == rhs.fileNumber_);
+        return (offset_ == rhs.offset_) && (fileIdx_ == rhs.fileIdx_);
     }
 
     [[nodiscard]] auto str() const -> std::string {
         std::string s;
         s = "[offset:";
         s += std::to_string(offset_);
-        s.append(", fileNbr:");
-        s += std::to_string(fileNumber_);
+        s.append(", fileIdx:");
+        s += std::to_string(fileIdx_);
         s.append("]");
         return s;
     }
 
 private:
     uint32_t offset_;
-    uint16_t fileNumber_;
+    Idx fileIdx_;
 };
 #pragma pack(pop)
 

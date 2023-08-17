@@ -30,7 +30,7 @@ public:
     }
 
     [[nodiscard]] auto getPlaceAtBeginningOfFile(StreamPlace streamPlace) const -> StreamPlace {
-        return {0, streamPlace.getFileNumber()};
+        return {0, streamPlace.getFileIdx()};
     }
 
     [[nodiscard]] auto getPlaceAtBeginningOfDocument() const -> StreamPlace { return {}; }
@@ -40,17 +40,14 @@ public:
     }
 
     [[nodiscard]] auto addOffset(StreamPlace streamPlace, uint32_t offset) const -> StreamPlace {
-        return {streamPlace.getOffset() + offset, streamPlace.getFileNumber()};
+        return {streamPlace.getOffset() + offset, streamPlace.getFileIdx()};
     };
 
-    [[nodiscard]] virtual auto subtractOffset(StreamPlace streamPlace, uint32_t offset) const
+    [[nodiscard]] virtual auto subtractOffset(StreamPlace streamPlace, uint32_t offset)
         -> StreamPlace {
         return {(streamPlace.getOffset() >= offset) ? streamPlace.getOffset() - offset : 0,
-                streamPlace.getFileNumber()};
+                streamPlace.getFileIdx()};
     }
-
-    [[nodiscard]] virtual auto getPlaceAfterEndOfFileReached(StreamPlace streamPlace) const
-        -> StreamPlace = 0;
 
     [[nodiscard]] virtual auto toStreamPlace(const std::shared_ptr<Place> place) const
         -> StreamPlace = 0;

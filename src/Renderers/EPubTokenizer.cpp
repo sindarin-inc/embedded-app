@@ -150,6 +150,54 @@ EPubTokenizer::Elements EPubTokenizer::elements
 
 // clang-format on
 
+auto EPubTokenizer::computeStartingOffset(StreamPlace streamPlace) -> uint32_t {
+    pugi::xml_document &doc = loadXHTMLAt(streamPlace.getFileIdx());
+
+    struct Walker : pugi::xml_tree_walker {
+        virtual bool for_each(pugi::xml_node &node) {
+            if (node.type() == pugi::xml_node_type::node_pcdata) {
+                firstNode = node;
+                return false;
+            }
+            return true;
+        }
+
+        pugi::xml_node firstNode;
+    } walker;
+
+    doc.child("html").child("body").traverse(walker);
+    return walker.firstNode ? stream_->getOffset(walker.firstNode.value()) : 0;
+}
+
+// subtractOffset() is used in the context of backwards page displacement. For an EPub
+// document, it is rather complex. If the current place is at the first displayable character
+// of an XHTML file, we have to move to the preceding file and subtract the required offset.
+auto EPubTokenizer::subtractOffset(StreamPlace streamPlace, uint32_t offset) -> StreamPlace {
+    uint32_t fileStartingOffset = computeStartingOffset(streamPlace);
+
+    if (streamPlace.getOffset() <= fileStartingOffset) {
+        if (streamPlace.getFileIdx() > 0) {
+            uint32_t newOffset = stream_->getSpine(streamPlace.getFileIdx() - 1).uncompressedSize;
+            if (newOffset > offset) {
+                newOffset -= offset;
+            } else {
+                newOffset = 0;
+            }
+            log_e("A...");
+            return {newOffset, static_cast<uint16_t>(streamPlace.getFileIdx() - 1)};
+        } else {
+            log_e("B...");
+            return {fileStartingOffset, streamPlace.getFileIdx()};
+        }
+    } else if (streamPlace.getOffset() > offset) {
+        log_e("C...");
+        return {streamPlace.getOffset() - offset, streamPlace.getFileIdx()};
+    } else {
+        log_e("D...");
+        return {fileStartingOffset, streamPlace.getFileIdx()};
+    }
+}
+
 auto EPubTokenizer::getCharEntity(const char *str, const char **newStrLocation) const -> const
     char * {
     const char *start = str;
@@ -167,6 +215,11 @@ auto EPubTokenizer::getCharEntity(const char *str, const char **newStrLocation) 
     }
 
     return "";
+}
+
+auto EPubTokenizer::loadXHTMLAt(Idx fileIdx) -> pugi::xml_document & {
+    const EPubOpf::SpineItem &spineItem = stream_->getSpine(fileIdx);
+    return stream_->getXHTMLFile(spineItem.item->href);
 }
 
 //
@@ -195,8 +248,7 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
     // log_w("Opening file at streamPlace %s", fromPlace.str().c_str());
 
-    const EPubOpf::SpineItem &spineItem = stream_->getSpine(fromPlace.getFileNumber());
-    pugi::xml_document &doc = stream_->getXHTMLFile(spineItem.item->href);
+    pugi::xml_document &doc = loadXHTMLAt(fromPlace.getFileIdx());
 
     tokens_.clear();
     pager_.clear();
@@ -220,8 +272,8 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
         if (!node) {
             log_e("-------------- End of file detected --------------");
             Idx maxIdx = stream_->getSpineCount();
-            if ((fromPlace.getFileNumber() + 1) < maxIdx) {
-                pager_.setNextPagePlace({0, fromPlace.getFileNumber() + 1});
+            if ((fromPlace.getFileIdx() + 1) < maxIdx) {
+                pager_.setNextPagePlace({0, static_cast<uint16_t>(fromPlace.getFileIdx() + 1)});
             } else {
                 pager_.setEndOfFile();
             }
@@ -287,7 +339,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     // }
                     if (addTokenToPage(
                             {.cStr = "\n",
-                             .streamPlace = {lastStreamRelativeOffset_, fromPlace_.getFileNumber()},
+                             .streamPlace = {lastStreamRelativeOffset_, fromPlace_.getFileIdx()},
                              .prevNewParagraphTokenIdx = prevNewParagraphIdx_,
                              .width = 0,
                              .height = 0,
@@ -302,7 +354,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     // put a NEWLINE
                     if (addTokenToPage(
                             {.cStr = "\n",
-                             .streamPlace = {lastStreamRelativeOffset_, fromPlace_.getFileNumber()},
+                             .streamPlace = {lastStreamRelativeOffset_, fromPlace_.getFileIdx()},
                              .prevNewParagraphTokenIdx = prevNewParagraphIdx_,
                              .width = 0,
                              .height = 0,
@@ -392,7 +444,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint16_t len) -> bool 
     while ((!pageCompleted_) && (curChar != 0) && (!tokens_.isFull())) {
 
         newToken = {.cStr = nullptr,
-                    .streamPlace = {streamRelativeOffset, fromPlace_.getFileNumber()},
+                    .streamPlace = {streamRelativeOffset, fromPlace_.getFileIdx()},
                     .prevNewParagraphTokenIdx = prevNewParagraphIdx_,
                     .width = 0,
                     .height = 0,

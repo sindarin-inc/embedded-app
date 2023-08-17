@@ -1,11 +1,12 @@
 #pragma once
 
-// #include <expat.h>
 #include <map>
 #include <string>
 #include <vector>
 
 #include "Misc/ZipFile.hpp"
+
+using Idx = uint16_t;
 
 class EPubOpf {
 public:
@@ -25,9 +26,9 @@ public:
 
     [[nodiscard]] auto getTotalSize() const -> uint32_t { return totalSize_; }
 
-    [[nodiscard]] auto getSpineIdxForOffset(uint32_t offset) const -> uint16_t;
+    [[nodiscard]] auto getSpineIdxForOffset(uint32_t offset) const -> Idx;
 
-    [[nodiscard]] auto getSpine(uint16_t idx) const -> const SpineItem & { return spine_[idx]; }
+    [[nodiscard]] auto getSpine(Idx idx) const -> const SpineItem & { return spine_[idx]; }
 
     [[nodiscard]] auto getFullPath(std::string fileName) const -> std::string {
         return basePath_ + fileName;

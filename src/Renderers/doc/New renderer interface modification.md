@@ -74,18 +74,18 @@ The `Models/Place.hpp` is defined as follow. I've added some useful methods to i
 #pragma pack(push, 1)
 struct Place {
     uint32_t offset;
-    uint16_t fileNumber;
+    Idx fileIdx;
 
     auto operator==(const Place &rhs) const -> bool {
-        return (offset == rhs.offset) && (fileNumber == rhs.fileNumber);
+        return (offset == rhs.offset) && (fileIdx == rhs.fileIdx);
     }
 
     auto str() const -> std::string {
         std::string s;
         s = "[offset:";
         s += std::to_string(offset);
-        s.append(" ,fileNbr:");
-        s += std::to_string(fileNumber);
+        s.append(" ,fileIdx:");
+        s += std::to_string(fileIdx);
         s.append("]");
         return s;
     }

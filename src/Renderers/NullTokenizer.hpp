@@ -16,12 +16,6 @@ public:
         return {};
     };
 
-    [[nodiscard]] auto getPlaceAfterEndOfFileReached(StreamPlace streamPlace) const
-        -> StreamPlace override {
-        error();
-        return {};
-    }
-
     // ToDo: To be adjusted related to the upcoming Place definition
     [[nodiscard]] auto toStreamPlace(const std::shared_ptr<Place> place) const
         -> StreamPlace override {

@@ -12,11 +12,6 @@ public:
     [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, bool backwards = false,
                                            StreamPlace *toPlace = nullptr) -> StreamPlace override;
 
-    [[nodiscard]] auto getPlaceAfterEndOfFileReached(StreamPlace streamPlace) const
-        -> StreamPlace override {
-        return {};
-    }
-
     // ToDo: To be adjusted related to the upcoming Place definition
     [[nodiscard]] auto toStreamPlace(const std::shared_ptr<Place> place) const
         -> StreamPlace override {
