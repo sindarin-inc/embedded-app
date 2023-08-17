@@ -97,3 +97,17 @@ class MFICTClient:
         resp = self.read()
         btmac = resp.split(" ")[1]
         return btmac
+    
+    def get_wifi_ssid(self):
+        self.ser.write("SSID\n".encode())
+        time.sleep(0.1)
+        resp = self.read()
+        ssid = resp.split(" ")[1]
+        return ssid
+    
+    def get_wifi_password(self):
+        self.ser.write("PASS\n".encode())
+        time.sleep(0.1)
+        resp = self.read()
+        password = resp.split(" ")[1]
+        return password

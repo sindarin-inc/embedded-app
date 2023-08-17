@@ -52,8 +52,14 @@ class OverrideIdfSerial(IdfSerial):
         btmac = self.ict_client.get_bt_mac()
         logger.info("ICT bluetooth MAC: " + btmac)
 
+        wifi_ssid = self.ict_client.get_wifi_ssid()
+        logger.info("ICT ssid: " + wifi_ssid)
+
+        wifi_password = self.ict_client.get_wifi_password()
+        logger.info("ICT password: " + wifi_password)
+
         # prepare nvs partition image and write to dut
-        self.write_nvs(btmac)
+        self.write_nvs(btmac, wifi_ssid, wifi_password)
 
         # Close the serial port
         self.close()
@@ -82,7 +88,7 @@ class OverrideIdfSerial(IdfSerial):
         nvs_size_decimal = int(nvs_size, 16)
         return nvs_size_decimal
 
-    def write_nvs(self, btmac):
+    def write_nvs(self, btmac, ict_ssid, ict_pw):
         parts = btmac.split(":")
         hexstr = "".join(parts)
         logger.info("hex string: " + hexstr)
@@ -99,6 +105,10 @@ class OverrideIdfSerial(IdfSerial):
         fp.write("paired-tt,data,u64," + str(btmac_int) + "\n")
         # Write a cloud-token so the glasses don't try to go back into ship mode upon sleep
         fp.write("cloud-token,data,string,FAKECLOUDTOKEN\n")
+
+        wifi_settings_json = "{\"settings\":[{\"ssid\":\"" + ict_ssid + "\",\"password\":\"" + ict_pw + "\"}]}"
+
+        fp.write("wifi-settings,data,string," + wifi_settings_json + "\n")
         fp.close()
 
         # check for $IDF_PATH variable
