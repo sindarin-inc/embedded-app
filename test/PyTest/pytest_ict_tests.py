@@ -346,7 +346,11 @@ class TestPowerConsumption:
         ict_client.set_servo("right", 0)
 
         dut.expect("Sol: Temple is closed", timeout=10)
-        dut.expect("Sol: Sleeping for", timeout=20)
+        # Macs for some reason don't get as many of the logs as Linux. Maybe a PySerial bug?
+        if platform.system() == "Darwin":
+            dut.expect("Sol: deepSleepInternal with", timeout=20)
+        else:
+            dut.expect("Sol: Sleeping for", timeout=20)
 
         time.sleep(5)
 
