@@ -289,7 +289,7 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
     return fromPlace;
 }
 
-auto EPubTokenizer::processPictureTag(pugi::xml_node node) -> bool {
+void EPubTokenizer::processPictureTag(pugi::xml_node node) {
 
     pugi::xml_node source = node.find_child_by_attribute("source", "class", "dithered");
 
@@ -315,8 +315,6 @@ auto EPubTokenizer::processPictureTag(pugi::xml_node node) -> bool {
         // } else {
         //     log_w("Dithered picture not found...");
     }
-
-    return !pageCompleted_;
 }
 
 auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {

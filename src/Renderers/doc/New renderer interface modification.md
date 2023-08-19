@@ -39,7 +39,7 @@ static auto parseStreamType(const char *path) -> StreamType {
             return StreamType::TXT;
         }
         if (HasSuffix(path, ".epub")) {
-            return StreamType::TXT;
+            return StreamType::EPUB;
         }
         return StreamType::OTHER;
 }

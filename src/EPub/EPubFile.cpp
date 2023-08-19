@@ -7,7 +7,7 @@ auto EPubFile::getFile(std::string path) -> std::tuple<std::unique_ptr<uint8_t[]
     std::unique_ptr<uint8_t[]> buffer = nullptr;
 
     std::string filePath = opf_->getFullPath(path);
-    
+
     if (epubZipFile_.openFile(filePath.c_str()) != UNZ_OK) {
         log_e("Failed to open XHTML file %s", filePath.c_str());
     } else {
@@ -18,6 +18,9 @@ auto EPubFile::getFile(std::string path) -> std::tuple<std::unique_ptr<uint8_t[]
         if (buffer != nullptr) {
             size_t len = epubZipFile_.readFromFile(buffer.get(), info.uncompressed_size);
             epubZipFile_.closeFile();
+            if (len != info.uncompressed_size) {
+                log_e("Unable to unzip file %s", filePath.c_str());
+            }
             uint32_t length = info.uncompressed_size;
             return {std::move(buffer), length};
         }

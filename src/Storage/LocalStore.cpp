@@ -1195,6 +1195,10 @@ auto LocalStore::saveTableOfContents(const std::shared_ptr<Readable> &readable) 
 
 auto LocalStore::readableFilePathForWriting(const std::shared_ptr<Readable> &readable) const
     -> std::string {
+    log_w("Extension: %s", readable->url.substr(readable->url.find_last_of(".") + 1).c_str());
+    if (readable->url.substr(readable->url.find_last_of(".") + 1) == "epub") {
+        return StringFormat("/%s/%s.epub", readable->readableType.c_str(), readable->uuid.c_str());
+    }
     return StringFormat("/%s/%s.txt.gz", readable->readableType.c_str(), readable->uuid.c_str());
 }
 

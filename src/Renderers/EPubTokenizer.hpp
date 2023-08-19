@@ -104,5 +104,6 @@ private:
     [[nodiscard]] auto loadXHTMLAt(Idx fileIdx) -> pugi::xml_document &;
     [[nodiscard]] auto interpret(pugi::xml_node node) -> bool;
     [[nodiscard]] auto addStrToPage(const pugi::char_t *str, uint16_t len) -> bool;
-    [[nodiscard]] auto processPictureTag(pugi::xml_node node) -> bool;
+
+    void processPictureTag(pugi::xml_node node);
 };
