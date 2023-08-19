@@ -91,6 +91,7 @@ public:
 
     void add(Token &token, const char *str = nullptr, uint8_t strSize = 0);
     void addByte(Token &token, uint8_t b);
+    void addStr(Token &token, std::string str);
 
     inline void clear() {
         tokensCount_ = 0;

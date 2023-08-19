@@ -5,12 +5,15 @@
 // ToDo: Some cleanup required... there maybe more tags than required here
 
 EPubTokenizer::Tags EPubTokenizer::tags
-  = {{"p",           Tag::P}, {"div",               Tag::DIV}, {"span", Tag::SPAN}, {"br",   Tag::BREAK}, {"h1",                 Tag::H1},  
-     {"h2",         Tag::H2}, {"h3",                 Tag::H3}, {"h4",     Tag::H4}, {"h5",      Tag::H5}, {"h6",                 Tag::H6}, 
-     {"b",           Tag::B}, {"i",                   Tag::I}, {"em",     Tag::EM}, {"body",  Tag::BODY}, {"a",                   Tag::A},
-     {"img",       Tag::IMG}, {"image",           Tag::IMAGE}, {"li",     Tag::LI}, {"pre",    Tag::PRE}, {"blockquote", Tag::BLOCKQUOTE},
-     {"strong", Tag::STRONG}, {"sub",               Tag::SUB}, {"sup",   Tag::SUP}, {"none",  Tag::NONE}, {"*",                 Tag::ANY}, 
-     {"@page",    Tag::PAGE}, {"@font-face",  Tag::FONT_FACE},
+  = {{"p",             Tag::P}, {"div",               Tag::DIV}, {"span",            Tag::SPAN}, 
+     {"br",        Tag::BREAK}, {"h1",                 Tag::H1}, {"h2",                Tag::H2}, 
+     {"h3",           Tag::H3}, {"h4",                 Tag::H4}, {"h5",                Tag::H5}, 
+     {"h6",           Tag::H6}, {"b",                   Tag::B}, {"i",                  Tag::I},
+     {"em",           Tag::EM}, {"a",                   Tag::A}, {"img",              Tag::IMG}, 
+     {"picture", Tag::PICTURE}, {"source",         Tag::SOURCE}, {"li",                Tag::LI}, 
+     {"pre",         Tag::PRE}, {"blockquote", Tag::BLOCKQUOTE}, {"strong",        Tag::STRONG}, 
+     {"sub",         Tag::SUB}, {"sup",               Tag::SUP}, {"none",            Tag::NONE}, 
+     {"*",           Tag::ANY}, {"@page",            Tag::PAGE}, {"@font-face", Tag::FONT_FACE},
     };
 
 // ToDo: Only put the ones that are defined in the Sol Font
@@ -241,6 +244,7 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
     backwards_ = backwards;
     prevNewParagraphIdx_ = 0;
     lastStreamRelativeOffset_ = fromPlace.getOffset();
+    skipNextParagraph_ = false;
 
     // log_w("Opening file at streamPlace %s", fromPlace.str().c_str());
 
@@ -284,94 +288,138 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
     return fromPlace;
 }
 
+auto EPubTokenizer::processPictureTag(pugi::xml_node node) -> bool {
+
+    pugi::xml_node source = node.find_child_by_attribute("source", "class", "dithered");
+
+    if (source) {
+        // log_w("Found dithered picture...");
+        Token pictureToken = {.cStr = nullptr,
+                              .streamPlace = {lastStreamRelativeOffset_, fromPlace_.getFileIdx()},
+                              .prevNewParagraphTokenIdx = prevNewParagraphIdx_,
+                              .width = 0,
+                              .height = 0,
+                              .length = 0,
+                              .tokenId = TokenId::PICTURE};
+        tokens_.addStr(pictureToken, stream_->getFullPath(source.attribute("srcset").value()));
+
+        auto [buffer, len] = stream_->getFile(source.attribute("srcset").value());
+        if (buffer != nullptr) {
+            std::shared_ptr<BMPImage> image = std::make_shared<BMPImage>();
+            image.get()->readFromBytes(buffer.get(), len);
+            pager_.setPicture(image);
+        }
+        pageCompleted_ = addTokenToPage(pictureToken, backwards_);
+        // log_w("Page completed? : %s", pageCompleted_ ? "Yes" : "no");
+        // } else {
+        //     log_w("Dithered picture not found...");
+    }
+
+    return !pageCompleted_;
+}
+
 auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
 
     uint32_t offset;
 
     if (node.type() == pugi::node_element) {
-        // log_w("Interpreting %s", node.name());
+        log_w("Interpreting node element %s", node.name());
         offset = stream_->getOffset(node.name());
         if (backwards_ && (offset >= toPlace_->getOffset())) {
             return false;
         }
-        for (pugi::xml_node n : node.children()) {
-            if (!interpret(n)) {
+
+        Tags::iterator tagIt = tags.find(node.name());
+
+        if ((tagIt != tags.end()) && (tagIt->second == Tag::PICTURE)) {
+            processPictureTag(node);
+            skipNextParagraph_ = true;
+            return true;
+        } else if (skipNextParagraph_) {
+            skipNextParagraph_ = false;
+            return true;
+        } else {
+            for (pugi::xml_node n : node.children()) {
+                if (!interpret(n)) {
+                    log_w("Return from interpret is false");
+                    return false;
+                }
+                log_w("Return from interpret is true");
+            }
+            // if constexpr (RENDERER_DEBUG) {
+            //     if (backwards_) {
+            //         log_w("Backwards processing at end of node %s: lastStreamRelativeOffset_:%"
+            //         PRIu32
+            //               ", toPlace offset:%" PRIu32,
+            //               node.name(), lastStreamRelativeOffset_, toPlace_->getOffset());
+            //     }
+            // }
+            lastStreamRelativeOffset_ += 1;
+            pageCompleted_ = pageCompleted_ ||
+                             (backwards_ && (lastStreamRelativeOffset_ >= toPlace_->getOffset()));
+            if (!pageCompleted_) { //(!backwards_ || (lastStreamRelativeOffset_ <
+                                   // toPlace_->getOffset())) {
+                if (tagIt != tags.end() && started_) {
+                    const Tag &tag = tagIt->second;
+
+                    log_e("Tag: %d", (int)tag);
+
+                    switch (tag) {
+                    case Tag::P:
+                    case Tag::H1:
+                    case Tag::H2:
+                    case Tag::H3:
+                    case Tag::H4:
+                    case Tag::H5:
+                    case Tag::H6:
+                        // put a END_PARAGRAPH
+                        // if constexpr (RENDERER_DEBUG) {
+                        //     if (backwards_) {
+                        //         log_w("Backwards processing at end of node %s: "
+                        //               "lastStreamRelativeOffset_:%" PRIu32 ", toPlace offset:%"
+                        //               PRIu32, node.name(), lastStreamRelativeOffset_,
+                        //               toPlace_->getOffset());
+                        //     }
+                        // }
+                        if (addTokenToPage({.cStr = "\n",
+                                            .streamPlace = {lastStreamRelativeOffset_,
+                                                            fromPlace_.getFileIdx()},
+                                            .prevNewParagraphTokenIdx = prevNewParagraphIdx_,
+                                            .width = 0,
+                                            .height = 0,
+                                            .length = 1,
+                                            .tokenId = TokenId::ENDPARAGRAPH},
+                                           backwards_)) {
+                            return false;
+                        }
+                        break;
+
+                    case Tag::BREAK:
+                        // put a NEWLINE
+                        if (addTokenToPage({.cStr = "\n",
+                                            .streamPlace = {lastStreamRelativeOffset_,
+                                                            fromPlace_.getFileIdx()},
+                                            .prevNewParagraphTokenIdx = prevNewParagraphIdx_,
+                                            .width = 0,
+                                            .height = 0,
+                                            .length = 1,
+                                            .tokenId = TokenId::NEWLINE},
+                                           backwards_)) {
+                            return false;
+                        }
+                        break;
+
+                    default:
+                        break;
+                    }
+                }
+            } else {
+                pager_.completeLastLine();
                 return false;
             }
         }
-        // if constexpr (RENDERER_DEBUG) {
-        //     if (backwards_) {
-        //         log_w("Backwards processing at end of node %s: lastStreamRelativeOffset_:%"
-        //         PRIu32
-        //               ", toPlace offset:%" PRIu32,
-        //               node.name(), lastStreamRelativeOffset_, toPlace_->getOffset());
-        //     }
-        // }
-        lastStreamRelativeOffset_ += 1;
-        pageCompleted_ =
-            pageCompleted_ || (backwards_ && (lastStreamRelativeOffset_ >= toPlace_->getOffset()));
-        if (!pageCompleted_) { //(!backwards_ || (lastStreamRelativeOffset_ <
-                               // toPlace_->getOffset())) {
-            Tags::iterator tagIt = tags.find(node.name());
-            if (tagIt != tags.end() && started_) {
-                const Tag &tag = tagIt->second;
-
-                switch (tag) {
-                case Tag::P:
-                case Tag::H1:
-                case Tag::H2:
-                case Tag::H3:
-                case Tag::H4:
-                case Tag::H5:
-                case Tag::H6:
-                    // put a END_PARAGRAPH
-                    // if constexpr (RENDERER_DEBUG) {
-                    //     if (backwards_) {
-                    //         log_w("Backwards processing at end of node %s: "
-                    //               "lastStreamRelativeOffset_:%" PRIu32 ", toPlace offset:%"
-                    //               PRIu32, node.name(), lastStreamRelativeOffset_,
-                    //               toPlace_->getOffset());
-                    //     }
-                    // }
-                    if (addTokenToPage(
-                            {.cStr = "\n",
-                             .streamPlace = {lastStreamRelativeOffset_, fromPlace_.getFileIdx()},
-                             .prevNewParagraphTokenIdx = prevNewParagraphIdx_,
-                             .width = 0,
-                             .height = 0,
-                             .length = 1,
-                             .tokenId = TokenId::ENDPARAGRAPH},
-                            backwards_)) {
-                        return false;
-                    }
-                    break;
-
-                case Tag::BREAK:
-                    // put a NEWLINE
-                    if (addTokenToPage(
-                            {.cStr = "\n",
-                             .streamPlace = {lastStreamRelativeOffset_, fromPlace_.getFileIdx()},
-                             .prevNewParagraphTokenIdx = prevNewParagraphIdx_,
-                             .width = 0,
-                             .height = 0,
-                             .length = 1,
-                             .tokenId = TokenId::NEWLINE},
-                            backwards_)) {
-                        return false;
-                    }
-                    break;
-
-                default:
-                    break;
-                }
-            }
-        } else {
-            pager_.completeLastLine();
-            return false;
-        }
-
     } else if (node.type() == pugi::node_pcdata) {
-        // log_w("Interpreting content %s", node.value());
+        log_w("Interpreting content %s", node.value());
 
         const pugi::char_t *str = node.value();
         uint32_t offset = stream_->getOffset(str);

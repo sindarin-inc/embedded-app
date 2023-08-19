@@ -2,6 +2,30 @@
 
 #include "EPubMetaFile.hpp"
 
+auto EPubFile::getFile(std::string path) -> std::tuple<std::unique_ptr<uint8_t[]>, uint32_t> {
+
+    std::unique_ptr<uint8_t[]> buffer = nullptr;
+
+    std::string filePath = opf_->getFullPath(path);
+    
+    if (epubZipFile_.openFile(filePath.c_str()) != UNZ_OK) {
+        log_e("Failed to open XHTML file %s", filePath.c_str());
+    } else {
+        unz_file_info info;
+        epubZipFile_.getFileInfo(&info, nullptr, 0, nullptr, 0);
+
+        buffer = std::make_unique<uint8_t[]>(info.uncompressed_size);
+        if (buffer != nullptr) {
+            size_t len = epubZipFile_.readFromFile(buffer.get(), info.uncompressed_size);
+            epubZipFile_.closeFile();
+            uint32_t length = info.uncompressed_size;
+            return {std::move(buffer), length};
+        }
+    }
+
+    return {nullptr, 0};
+}
+
 auto EPubFile::getXHTMLFile(std::string path) -> pugi::xml_document & {
     std::string filePath = opf_->getFullPath(path);
     // log_w("Loading file %s", filePath.c_str());
@@ -39,8 +63,8 @@ auto EPubFile::getXHTMLFile(std::string path) -> pugi::xml_document & {
                     log_e("Unable to unzip file %s", filePath.c_str());
                 }
             } else {
-                log_e("Unable to allocate space for file %s, space required: %zu", filePath.c_str(),
-                      info.uncompressed_size);
+                log_e("Unable to allocate space for file %s, space required: %" PRIu32,
+                      filePath.c_str(), static_cast<uint32_t>(info.uncompressed_size));
             }
         }
     }

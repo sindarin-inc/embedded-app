@@ -60,6 +60,41 @@ void Tokens::addByte(Token &token, uint8_t b) {
     }
 }
 
+void Tokens::addStr(Token &token, std::string str) {
+    // if constexpr (RENDERER_DEBUG) {
+    //   log_d("Adding byte %02" PRIX8 "H to last token at %" PRIu16 ".", b, cStrPoolCount_);
+    // }
+    uint16_t len = str.length();
+    if ((cStrPoolCount_ + len) < (POOL_BUFFER_SIZE - 2)) {
+        token.length += len;
+        const char *s = str.c_str();
+        while (len--) {
+            if (token.cStr == nullptr) {
+                token.cStr = &cStrPool_[cStrPoolCount_];
+            }
+            cStrPool_[cStrPoolCount_++] = *s++;
+        }
+        cStrPool_[cStrPoolCount_++] = 0;
+        if constexpr (RENDERER_DEBUG) {
+            if (strlen(token.cStr) != token.length) {
+                log_e("Hum... token length wrong: %zu vs %" PRIu16, strlen(token.cStr),
+                      token.length);
+                if constexpr (ON_ERROR_EXIT) {
+                    exit(1);
+                }
+            }
+            // log_d("After: tokensCount_: %" PRIu16 ", token length: %" PRIu16
+            //       ", cStrPoolCount_: %" PRIu16,
+            //       tokensCount_, token.length, cStrPoolCount_);
+        }
+    } else {
+        log_e("cStrPool_[] is too small!");
+        if constexpr (ON_ERROR_EXIT) {
+            exit(1);
+        }
+    }
+}
+
 void Tokens::setSpaceSize(Token &token) {
     if (spaceWidth_ == 0) {
         display_.getTextSize(" ", &spaceWidth_, &spaceHeight_);

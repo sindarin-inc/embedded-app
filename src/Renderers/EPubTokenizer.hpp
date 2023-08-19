@@ -58,8 +58,8 @@ private:
     std::shared_ptr<EPubFile> stream_;
 
     // clang-format off
-    enum class Tag : uint8_t { NONE, BODY, P, LI, BREAK, H1, H2, H3, H4, H5, H6, 
-                               B, I, A, IMG, IMAGE, EM, DIV, SPAN, PRE,
+    enum class Tag : uint8_t { NONE, P, LI, BREAK, H1, H2, H3, H4, H5, H6, 
+                               B, I, A, IMG, PICTURE, SOURCE, EM, DIV, SPAN, PRE,
                                BLOCKQUOTE, STRONG, ANY, FONT_FACE, PAGE,
                                SUB, SUP };
     // clang-format on
@@ -76,6 +76,7 @@ private:
     bool backwards_;
     bool started_;
     bool pageCompleted_;
+    bool skipNextParagraph_;
 
     Idx prevNewParagraphIdx_;
     uint32_t lastStreamRelativeOffset_;
@@ -85,4 +86,5 @@ private:
     [[nodiscard]] auto loadXHTMLAt(Idx fileIdx) -> pugi::xml_document &;
     [[nodiscard]] auto interpret(pugi::xml_node node) -> bool;
     [[nodiscard]] auto addStrToPage(const pugi::char_t *str, uint16_t len) -> bool;
+    [[nodiscard]] auto processPictureTag(pugi::xml_node node) -> bool;
 };

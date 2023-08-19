@@ -1,6 +1,6 @@
 #include "EPubMetaFile.hpp"
 
-#include <pugixml.hpp>
+#include "pugixml.hpp"
 
 void EPubMetaFile::parse() {
 
@@ -11,8 +11,12 @@ void EPubMetaFile::parse() {
         zipFile_.getFileInfo(&info, nullptr, 0, nullptr, 0);
 
         char *buffer = new char[info.uncompressed_size];
-        size_t len = zipFile_.readFromFile((uint8_t *)buffer, info.uncompressed_size);
+        uint32_t len = zipFile_.readFromFile((uint8_t *)buffer, info.uncompressed_size);
 
+        if (len != info.uncompressed_size) {
+            log_e("Failed to read file %s: read %" PRIu32 " but expected %" PRIu32 " bytes", path_,
+                  len, info.uncompressed_size);
+        }
         pugi::xml_document doc;
         pugi::xml_parse_result result = doc.load_string(buffer);
 

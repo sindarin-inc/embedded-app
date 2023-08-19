@@ -21,9 +21,13 @@ auto Place::factory(const std::string &placeStr) -> std::shared_ptr<Place> {
             return std::make_shared<EPubPlace>(offset, filename);
         }
     }
-    log_e("Unable to parse place string properly: \"%s\"", placeStr.c_str());
-    if constexpr (ON_ERROR_EXIT) {
-        exit(1);
-    }
-    return std::make_shared<NonePlace>();
+
+    uint32_t offset = atoi(placeStr.c_str());
+    return std::make_shared<TxtPlace>(offset);
+
+    // log_e("Unable to parse place string properly: \"%s\"", placeStr.c_str());
+    // if constexpr (ON_ERROR_EXIT) {
+    //     exit(1);
+    // }
+    // return std::make_shared<NonePlace>();
 };

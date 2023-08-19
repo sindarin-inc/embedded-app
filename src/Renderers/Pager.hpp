@@ -2,6 +2,7 @@
 
 #include <array>
 
+#include "Misc/BMPImage.hpp"
 #include "RendererDefs.hpp"
 #include "Tokens.hpp"
 
@@ -21,12 +22,14 @@ private:
     StreamPlace nextPagePlace_;
     bool atEOF_{false};
 
+    std::shared_ptr<BMPImage> picture_;
+
     [[nodiscard]] inline auto lastLineTokenIdx(Idx lineIdx) const -> Idx {
         return lines_[lineIdx].tokenIdx + lines_[lineIdx].tokenCount - 1;
     }
 
 public:
-    Pager(Tokens &tokens, DisplaySystem &display) : tokens_(tokens), display_(display) {}
+    Pager(Tokens &tokens, DisplaySystem &display) : tokens_(tokens), display_(display), picture_(nullptr) {}
 
     // Switch to 1/10 of a line as this gives us more flexibilty in rendering
     // precision between lines.
@@ -88,6 +91,7 @@ public:
 
     [[nodiscard]] auto atEndOfFile() const -> bool { return atEOF_; }
 
+    void setPicture(std::shared_ptr<BMPImage> picture) { picture_ = picture; }
     void completeLastLine();
 
     void show() const;

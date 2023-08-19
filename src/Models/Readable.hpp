@@ -63,6 +63,12 @@ public:
 
     [[nodiscard]] auto file() const -> const ReadableFile & {
         for (const auto &file : files) {
+            if (file.filetype == "epub") {
+                return file;
+            }
+        }
+
+        for (const auto &file : files) {
             if (file.filetype == "utf8_txt") {
                 return file;
             }
