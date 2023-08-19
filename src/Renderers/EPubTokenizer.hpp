@@ -58,6 +58,9 @@ private:
     std::shared_ptr<EPubFile> stream_;
 
     // clang-format off
+
+    // All the potential tags to do some work on. Not all of them are being processed at this point
+    // in time. Some cleanup maybe required for the ones that are not used.    
     enum class Tag : uint8_t { NONE, P, LI, BREAK, H1, H2, H3, H4, H5, H6, 
                                B, I, A, IMG, PICTURE, SOURCE, EM, DIV, SPAN, PRE,
                                BLOCKQUOTE, STRONG, ANY, FONT_FACE, PAGE,
@@ -67,18 +70,33 @@ private:
     using Tags = std::map<std::string, Tag>;
     using Elements = std::map<std::string, const char *>;
 
+    // Hash tags
     static Tags tags;
+
+    // Hash XHTML identity elements (like &nbsp;)
     static Elements elements;
 
+    // Where the tokenizer will start to parse tokens
     StreamPlace fromPlace_;
+
+    // if back paging, the place to stop (will be the end of the previous page)
     StreamPlace *toPlace_;
 
+    // true if doing a back page displacement
     bool backwards_;
+
+    // true if we are past the fromPlace_ location
     bool started_;
+
+    // true if the page is complete
     bool pageCompleted_;
+
+    // Used to skip the paragraph following a picture. The paragraph is an anotation that could
+    // be displayed if no picture are shown
     bool skipNextParagraph_;
 
     Idx prevNewParagraphIdx_;
+    uint32_t firstOffset_;
     uint32_t lastStreamRelativeOffset_;
 
     [[nodiscard]] auto getCharEntity(const char *str, const char **newStrLocation) const -> const

@@ -8,8 +8,6 @@
 auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines, bool forceRefresh)
     -> std::shared_ptr<Place> {
 
-    log_w("Render Page called...");
-    
     // if no fromPlace is received (null) or the place's DocType is wrong, get the first page
     // pointer, else convert fromPlace to a StreamPlace
     currentPlace_ = ((fromPlace == nullptr) || (!tokenizer_->isFor(fromPlace->getDocType())))

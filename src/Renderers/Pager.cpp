@@ -250,19 +250,19 @@ void Pager::setFirstLineIdxBackward() {
 }
 
 void Pager::show() const {
-    // if constexpr (RENDERER_DEBUG) {
-    for (Idx i = 0; i < lineCount_; i++) {
-        std::cout << i << " " << tokens_[lines_[i].tokenIdx].streamPlace.str() << ": <";
-        for (Idx j = lines_[i].tokenIdx; j <= lastLineTokenIdx(i); j++) {
-            if ((tokens_[j].tokenId != TokenId::NOTOKEN) &&
-                (tokens_[j].tokenId != TokenId::NEWLINE) &&
-                (tokens_[j].tokenId != TokenId::ENDPARAGRAPH)) {
-                std::cout << tokens_[j].cStr;
+    if constexpr (RENDERER_DEBUG) {
+        for (Idx i = 0; i < lineCount_; i++) {
+            std::cout << i << " " << tokens_[lines_[i].tokenIdx].streamPlace.str() << ": <";
+            for (Idx j = lines_[i].tokenIdx; j <= lastLineTokenIdx(i); j++) {
+                if ((tokens_[j].tokenId != TokenId::NOTOKEN) &&
+                    (tokens_[j].tokenId != TokenId::NEWLINE) &&
+                    (tokens_[j].tokenId != TokenId::ENDPARAGRAPH)) {
+                    std::cout << tokens_[j].cStr;
+                }
             }
+            std::cout << ">" << std::endl;
         }
-        std::cout << ">" << std::endl;
+        std::cout << "Next Page Place: " << nextPagePlace_.str().c_str() << std::endl;
+        std::cout << "Page Word Count: " << wordCount_ << std::endl;
     }
-    std::cout << "Next Page Place: " << nextPagePlace_.str().c_str() << std::endl;
-    std::cout << "Page Word Count: " << wordCount_ << std::endl;
-    // }
 }

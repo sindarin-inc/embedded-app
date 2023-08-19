@@ -243,8 +243,12 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
     toPlace_ = toPlace;
     backwards_ = backwards;
     prevNewParagraphIdx_ = 0;
+    firstOffset_ = 0;
     lastStreamRelativeOffset_ = fromPlace.getOffset();
     skipNextParagraph_ = false;
+
+    started_ = false;
+    pageCompleted_ = false;
 
     // log_w("Opening file at streamPlace %s", fromPlace.str().c_str());
 
@@ -254,9 +258,6 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
     pager_.clear();
 
     if (doc.child("html")) {
-
-        started_ = false;
-        pageCompleted_ = false;
 
         pugi::xml_node node = doc.child("html").child("body").first_child();
 
@@ -323,16 +324,27 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
     uint32_t offset;
 
     if (node.type() == pugi::node_element) {
-        log_w("Interpreting node element %s", node.name());
         offset = stream_->getOffset(node.name());
+        lastStreamRelativeOffset_ = offset;
+        // log_w("Interpreting node element %s at offset %" PRIu32, node.name(), offset);
         if (backwards_ && (offset >= toPlace_->getOffset())) {
             return false;
         }
 
+        if (!started_ && (offset >= fromPlace_.getOffset())) {
+            started_ = true;
+        }
+
         Tags::iterator tagIt = tags.find(node.name());
 
+        // if (tagIt != tags.end()) {
+        //     log_e("Tag: %d (%s) at offset %" PRIu32, (int)tag, tagIt->first.c_str(), offset);
+        // }
+
         if ((tagIt != tags.end()) && (tagIt->second == Tag::PICTURE)) {
-            processPictureTag(node);
+            if (started_) {
+                processPictureTag(node);
+            }
             skipNextParagraph_ = true;
             return true;
         } else if (skipNextParagraph_) {
@@ -341,10 +353,10 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
         } else {
             for (pugi::xml_node n : node.children()) {
                 if (!interpret(n)) {
-                    log_w("Return from interpret is false");
+                    // log_w("Return from interpret is false");
                     return false;
                 }
-                log_w("Return from interpret is true");
+                // log_w("Return from interpret is true");
             }
             // if constexpr (RENDERER_DEBUG) {
             //     if (backwards_) {
@@ -361,8 +373,6 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                                    // toPlace_->getOffset())) {
                 if (tagIt != tags.end() && started_) {
                     const Tag &tag = tagIt->second;
-
-                    log_e("Tag: %d", (int)tag);
 
                     switch (tag) {
                     case Tag::P:
@@ -419,7 +429,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
             }
         }
     } else if (node.type() == pugi::node_pcdata) {
-        log_w("Interpreting content %s", node.value());
+        // log_w("Interpreting content %s", node.value());
 
         const pugi::char_t *str = node.value();
         uint32_t offset = stream_->getOffset(str);
@@ -526,7 +536,6 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint16_t len) -> bool 
                     }
                 }
             }
-
             break;
 
         case ' ':

@@ -9,7 +9,7 @@ void EPubOpf::parse() {
 
         basePath_ = "";
         extract_path(path_, basePath_);
-        log_i("Base Path: %s", basePath_.c_str());
+        // log_i("Base Path: %s", basePath_.c_str());
 
         unz_file_info info;
         zipFile_.getFileInfo(&info, nullptr, 0, nullptr, 0);
@@ -20,7 +20,7 @@ void EPubOpf::parse() {
 
         if (len != info.uncompressed_size) {
             log_e("Failed to read file %s: read %" PRIu32 " but expected %" PRIu32 " bytes", path_,
-                  len, info.uncompressed_size);
+                  len, static_cast<uint32_t>(info.uncompressed_size));
         }
 
         pugi::xml_document doc;

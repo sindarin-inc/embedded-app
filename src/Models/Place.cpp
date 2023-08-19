@@ -10,7 +10,7 @@ auto Place::factory(const std::string &placeStr) -> std::shared_ptr<Place> {
     std::regex regExStr("^" PLACE_REGEX "$");
     std::smatch sm;
     if (regex_match(placeStr, sm, regExStr) && (sm.size() == 5)) {
-        std::cout << sm[1] << std::endl;
+        // std::cout << sm[1] << std::endl;
         if (sm[1] == "TXT") {
             uint32_t offset = atoi(sm[2].str().c_str());
             return std::make_shared<TxtPlace>(offset);
@@ -30,4 +30,4 @@ auto Place::factory(const std::string &placeStr) -> std::shared_ptr<Place> {
     //     exit(1);
     // }
     // return std::make_shared<NonePlace>();
-};
+}
