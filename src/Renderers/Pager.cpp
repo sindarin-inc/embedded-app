@@ -108,10 +108,10 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
         if (lines_[lineCount_].tokenCount > 0) {
             newLine(NEWLINE_DECI_LINE_HEIGHT);
         }
-        // if (!dontStop && (currentPageDecilineHeight_ > 0)) {
-        //     setNextPagePlace(token.streamPlace);
-        //     return false;
-        // }
+        if (!dontStop && (currentPageDecilineHeight_ > 0)) {
+            setNextPagePlace(token.streamPlace);
+            return false;
+        }
         lines_[lineCount_].tokenCount = 1;
         lines_[lineCount_].tokenIdx = tokens_.getLastIdx();
         newLine(maxDeciLines_);
@@ -236,9 +236,10 @@ void Pager::setFirstLineIdxBackward() {
         uint16_t deciLines = 0;
         do {
             lineIdx -= 1;
-            uint16_t height = (tokens_[lines_[lineIdx].tokenIdx].tokenId == TokenId::ENDPARAGRAPH)
-                                  ? ENDPARAGRAPH_DECI_LINE_HEIGHT
-                                  : NEWLINE_DECI_LINE_HEIGHT;
+            TokenId id = tokens_[lines_[lineIdx].tokenIdx].tokenId;
+            uint16_t height = (id == TokenId::ENDPARAGRAPH) ? ENDPARAGRAPH_DECI_LINE_HEIGHT
+                              : (id == TokenId::PICTURE)    ? maxDeciLines_
+                                                            : NEWLINE_DECI_LINE_HEIGHT;
             if ((deciLines + height) > maxDeciLines_) {
                 lineIdx += 1;
                 break;
