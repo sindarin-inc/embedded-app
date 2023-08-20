@@ -65,7 +65,8 @@ auto DownloadFile(
 
     if (contentLength <= 0) {
         // if we somehow don't have a content length header, consider it an error for now
-        log_e("Server did not return a content length for %s", url);
+        log_e("Server did not return a content length for %s, retrieved length: %" PRIu16, url,
+              contentLength);
         return false;
     }
 
