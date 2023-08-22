@@ -353,6 +353,15 @@ class TestPowerConsumption:
         # TODO: Why do we need such a wide range here?
         power_client.expect_current((9000, 125000), 5)
 
+        # wait 5 seconds
+        time.sleep(5)
+        
+        # turntouch button
+        ict_client.tt_button()
+
+        # wait for wifi connection
+        dut.expect("Connected, IP address", timeout=30)
+
         logger.info("Sleeping")
         ict_client.set_servo("right", 0)
 
