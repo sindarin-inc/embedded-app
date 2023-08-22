@@ -103,10 +103,11 @@ class OverrideIdfSerial(IdfSerial):
         fp.write("sindarin-app,namespace,,\n")
         # write paired tt address
         fp.write("paired-tt,data,u64," + str(btmac_int) + "\n")
+        fp.write("no-setup,data,u8,1\n");
         # Write a cloud-token so the glasses don't try to go back into ship mode upon sleep
         fp.write("cloud-token,data,string,FAKECLOUDTOKEN\n")
 
-        wifi_settings_json = "{\"settings\":[{\"ssid\":\"" + ict_ssid + "\",\"password\":\"" + ict_pw + "\"}]}"
+        wifi_settings_json = "\"{\"\"settings\"\":[{\"\"ssid\"\":\"\"" + ict_ssid + "\"\",\"\"password\"\":\"\"" + ict_pw + "\"\"}]}\""
 
         fp.write("wifi-settings,data,string," + wifi_settings_json + "\n")
         fp.close()
