@@ -15,6 +15,7 @@ auto DownloadFile(
     -> bool {
 
     HttpClient client(url);
+    bool chunking = false;
 
     if (SindarinAPI::isSindarinUrl(url)) {
         std::shared_ptr<SindarinAPI> api = SindarinAPI::getInstance();
@@ -64,18 +65,44 @@ auto DownloadFile(
     }
 
     if (contentLength <= 0) {
-        // if we somehow don't have a content length header, consider it an error for now
-        log_e("Server did not return a content length for %s, retrieved length: %" PRIu16, url,
-              contentLength);
-        return false;
+        if (esp_http_client_is_chunked_response(client.getHandle())) {
+            chunking = true;
+            char *value;
+            if (client.getResponseHeader("file-size", &value) == ESP_OK) {
+                contentLength = atoi(value);
+                log_d("Chunked transmission of file-size %d", contentLength);
+            };
+            if (contentLength == 0) {
+                log_e("Unable to retrive file-size.");
+                return false;
+            }
+        } else {
+            // if we somehow don't have a content length header, consider it an error for now
+            log_e(
+                "Server did not return a proper content length for %s, retrieved length: %" PRIu16,
+                url, contentLength);
+            return false;
+        }
+
+        // char buffer[512];
+        // int32_t len;
+        // int32_t totalLength = 0;
+        // while ((len = esp_http_client_read_response(client.getHandle(), buffer, 512)) != 0) {
+        //     // log_d("Received %" PRIi32, len);
+        //     totalLength += len;
+        // }
+        // log_w("Total length received: %" PRIi32, totalLength);
+        // return false;
     }
 
     if (!openedConnection(httpCode, contentLength)) {
-        // Get the body anyways, for debugging, since it might contain an error message
-        char buffer[256];
-        auto read = client.read(buffer, sizeof(buffer));
-        if (read > 0) {
-            log_w("Error body: %s", buffer);
+        if (!chunking) {
+            // Get the body anyways, for debugging, since it might contain an error message
+            char buffer[256];
+            auto read = client.read(buffer, sizeof(buffer));
+            if (read > 0) {
+                log_w("Error body: %s", buffer);
+            }
         }
         return false;
     }
@@ -184,25 +211,47 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         progressCallback(percentage / 3);
     };
 
-    auto success = DownloadFile(
-        url,
-        [&fileBuffer, &fileLength, &telemetry](int httpCode, int contentLength) -> bool {
-            fileLength = contentLength;
-            fileBuffer = SpiRamArrayPtr<uint8_t>(contentLength);
-            if (fileBuffer == nullptr) {
-                log_e("Failed to allocate %d bytes for file download", contentLength);
-                telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "failed-allocate",
-                                    {{"content-length", contentLength}});
-                return false;
-            }
-            return true;
-        },
-        [&fileBuffer](HttpClient &client, int index, int contentLength) -> size_t {
-            constexpr int bufferSize = 16384;
-            return client.read((char *)(fileBuffer.get() + index),
-                               std::min(bufferSize, contentLength - index));
-        },
-        fileProgress, gzip);
+    auto success =
+        (gzip)
+            ? DownloadFile(
+                  url,
+                  [&fileBuffer, &fileLength, &telemetry](int httpCode, int contentLength) -> bool {
+                      fileLength = contentLength;
+                      fileBuffer = SpiRamArrayPtr<uint8_t>(contentLength);
+                      if (fileBuffer == nullptr) {
+                          log_e("Failed to allocate %d bytes for file download", contentLength);
+                          telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "failed-allocate",
+                                              {{"content-length", contentLength}});
+                          return false;
+                      }
+                      return true;
+                  },
+                  [&fileBuffer](HttpClient &client, int index, int contentLength) -> size_t {
+                      constexpr int bufferSize = 16384;
+                      return client.read((char *)(fileBuffer.get() + index),
+                                         std::min(bufferSize, contentLength - index));
+                  },
+                  fileProgress, gzip)
+            : DownloadFile(
+                  url,
+                  [&fileBuffer, &fileLength, &telemetry](int httpCode, int contentLength) -> bool {
+                      fileLength = contentLength;
+                      fileBuffer = SpiRamArrayPtr<uint8_t>(contentLength);
+                      if (fileBuffer == nullptr) {
+                          log_e("Failed to allocate %d bytes for file download", contentLength);
+                          telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "failed-allocate",
+                                              {{"content-length", contentLength}});
+                          return false;
+                      }
+                      return true;
+                  },
+                  [&fileBuffer](HttpClient &client, int index, int contentLength) -> size_t {
+                      constexpr int bufferSize = 16384;
+                      return esp_http_client_read_response(
+                          client.getHandle(), (char *)(fileBuffer.get() + index),
+                          std::min(bufferSize, contentLength - index));
+                  },
+                  fileProgress, gzip);
 
     auto time = esp_timer_get_time();
     auto downloadStart = time;

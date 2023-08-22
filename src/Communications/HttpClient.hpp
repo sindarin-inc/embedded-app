@@ -51,6 +51,8 @@ public:
 
     auto makeReadStream() -> std::shared_ptr<HttpIstream<4096>>;
 
+    auto getHandle() -> esp_http_client_handle_t { return client_; }
+
     bool connected;
 
 private:
