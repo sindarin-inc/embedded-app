@@ -174,10 +174,10 @@ void LocalStore::addReadable(ReadablesVector &readables,
                              const std::shared_ptr<Readable> &readable) {
     // Check if we already have a readable with the same uuid, and if so, replace it in readables,
     // otherwise, add it to the end
-    for (auto it = readables.begin(); it != readables.end(); ++it) {
-        if (it->get()->uuid == readable->uuid) {
+    for (auto &it : readables) {
+        if (it.get()->uuid == readable->uuid) {
             log_i("Replacing readable %s", readable->uuid.c_str());
-            *it = readable;
+            it = readable;
             return;
         }
     }
