@@ -172,6 +172,18 @@ auto LocalStore::hasReadable(const ReadablesVector &readables,
 
 void LocalStore::addReadable(ReadablesVector &readables,
                              const std::shared_ptr<Readable> &readable) {
+    // Check if we already have a readable with the same uuid, and if so, replace it in readables,
+    // otherwise, add it to the end
+    for (auto it = readables.begin(); it != readables.end(); ++it) {
+        if (it->get()->uuid == readable->uuid) {
+            log_i("Replacing readable %s", readable->uuid.c_str());
+            *it = readable;
+            return;
+        }
+    }
+
+    // If not found, add to the end
+    log_i("Adding readable %s", readable->uuid.c_str());
     readables.emplace_back(readable);
     return;
 }
