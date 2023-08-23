@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <map>
 
 #include "EPub/EPubFile.hpp"
@@ -69,12 +70,16 @@ private:
 
     using Tags = std::map<std::string, Tag>;
     using Elements = std::map<std::string, const char *>;
+    using SuperscriptNumbers = std::array<const char *, 10>;
 
-    // Hash tags
+    // Hash HTML tags
     static Tags tags;
 
-    // Hash XHTML identity elements (like &nbsp;)
+    // Hash XHTML identity elements (like &nbsp;) and their UTF-8 codification
     static Elements elements;
+
+    // Superscript Numbers UTF-8 codification
+    static SuperscriptNumbers superscriptNumbers;
 
     // Where the tokenizer will start to parse tokens
     StreamPlace fromPlace_;
@@ -106,4 +111,5 @@ private:
     [[nodiscard]] auto addStrToPage(const pugi::char_t *str, uint16_t len) -> bool;
 
     void processPictureTag(pugi::xml_node node);
+    void processSuperscript(pugi::xml_node node);
 };

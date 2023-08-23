@@ -151,6 +151,20 @@ EPubTokenizer::Elements EPubTokenizer::elements
     {"euro",   "\xE2\x80\xAC"}, // euro sign, U+20AC NEW
 };
 
+EPubTokenizer::SuperscriptNumbers EPubTokenizer::superscriptNumbers
+{ 
+    "\xE2\x81\xB0",  // 0
+    "\xC2\xB9",      // 1
+    "\xC2\xB2",      // 2
+    "\xC2\xB3",      // 3
+    "\xE2\x81\xB4",  // 4
+    "\xE2\x81\xB5",  // 5
+    "\xE2\x81\xB6",  // 6
+    "\xE2\x81\xB7",  // 7
+    "\xE2\x81\xB8",  // 8
+    "\xE2\x81\xB9",  // 9
+};
+
 // clang-format on
 
 auto EPubTokenizer::computeStartingOffset(StreamPlace streamPlace) -> uint32_t {
@@ -317,6 +331,31 @@ void EPubTokenizer::processPictureTag(pugi::xml_node node) {
     }
 }
 
+void EPubTokenizer::processSuperscript(pugi::xml_node node) {
+    const pugi::char_t *text = node.value();
+    lastStreamRelativeOffset_ = stream_->getOffset(text);
+    Token newToken = {.cStr = nullptr,
+                      .streamPlace = {lastStreamRelativeOffset_, fromPlace_.getFileIdx()},
+                      .prevNewParagraphTokenIdx = prevNewParagraphIdx_,
+                      .width = 0,
+                      .height = 0,
+                      .length = 0,
+                      .tokenId = TokenId::TEXT};
+    while (*text) {
+        if ((*text >= '0') && (*text <= '9')) {
+            const char *script = superscriptNumbers[*text - '0'];
+            while (*script) {
+                tokens_.addByte(newToken, *script++);
+            }
+        }
+        text++;
+        lastStreamRelativeOffset_++;
+    }
+    if (newToken.length > 0) {
+        pageCompleted_ = addTokenToPage(newToken, backwards_);
+    }
+}
+
 auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
 
     uint32_t offset;
@@ -345,6 +384,11 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
             }
             skipNextParagraph_ = true;
             return true;
+        } else if ((tagIt != tags.end()) && (tagIt->second == Tag::SUP)) {
+            if (started_) {
+                processSuperscript(node);
+            }
+            return !pageCompleted_;
         } else if (skipNextParagraph_) {
             skipNextParagraph_ = false;
             return true;

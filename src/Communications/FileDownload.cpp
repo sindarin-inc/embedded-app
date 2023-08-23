@@ -68,12 +68,12 @@ auto DownloadFile(
         if (esp_http_client_is_chunked_response(client.getHandle())) {
             chunking = true;
             char *value;
-            if (client.getResponseHeader("file-size", &value) == ESP_OK) {
+            if (client.getResponseHeader("File-Size", &value) == ESP_OK) {
                 contentLength = atoi(value);
-                log_d("Chunked transmission of file-size %d", contentLength);
+                log_d("Chunked transmission of File-Size %d", contentLength);
             };
             if (contentLength == 0) {
-                log_e("Unable to retrive file-size.");
+                log_e("Unable to retrive File-Size.");
                 return false;
             }
         } else {
@@ -211,47 +211,42 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         progressCallback(percentage / 3);
     };
 
-    auto success =
-        (gzip)
-            ? DownloadFile(
-                  url,
-                  [&fileBuffer, &fileLength, &telemetry](int httpCode, int contentLength) -> bool {
-                      fileLength = contentLength;
-                      fileBuffer = SpiRamArrayPtr<uint8_t>(contentLength);
-                      if (fileBuffer == nullptr) {
-                          log_e("Failed to allocate %d bytes for file download", contentLength);
-                          telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "failed-allocate",
-                                              {{"content-length", contentLength}});
-                          return false;
-                      }
-                      return true;
-                  },
-                  [&fileBuffer](HttpClient &client, int index, int contentLength) -> size_t {
-                      constexpr int bufferSize = 16384;
-                      return client.read((char *)(fileBuffer.get() + index),
-                                         std::min(bufferSize, contentLength - index));
-                  },
-                  fileProgress, gzip)
-            : DownloadFile(
-                  url,
-                  [&fileBuffer, &fileLength, &telemetry](int httpCode, int contentLength) -> bool {
-                      fileLength = contentLength;
-                      fileBuffer = SpiRamArrayPtr<uint8_t>(contentLength);
-                      if (fileBuffer == nullptr) {
-                          log_e("Failed to allocate %d bytes for file download", contentLength);
-                          telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "failed-allocate",
-                                              {{"content-length", contentLength}});
-                          return false;
-                      }
-                      return true;
-                  },
-                  [&fileBuffer](HttpClient &client, int index, int contentLength) -> size_t {
-                      constexpr int bufferSize = 16384;
-                      return esp_http_client_read_response(
-                          client.getHandle(), (char *)(fileBuffer.get() + index),
-                          std::min(bufferSize, contentLength - index));
-                  },
-                  fileProgress, gzip);
+    auto openedConnection = [&fileBuffer, &fileLength, &telemetry](int httpCode,
+                                                                   int contentLength) -> bool {
+        fileLength = contentLength;
+        fileBuffer = SpiRamArrayPtr<uint8_t>(contentLength);
+        if (fileBuffer == nullptr) {
+            log_e("Failed to allocate %d bytes for file download", contentLength);
+            telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "failed-allocate",
+                                {{"content-length", contentLength}});
+            return false;
+        }
+        return true;
+    };
+
+    auto gzipReader = [&fileBuffer](HttpClient &client, int index, int contentLength) -> size_t {
+        constexpr int bufferSize = 16384;
+        return client.read((char *)(fileBuffer.get() + index),
+                           std::min(bufferSize, contentLength - index));
+    };
+
+    auto chunkedReader = [&fileBuffer](HttpClient &client, int index, int contentLength) -> size_t {
+        constexpr int bufferSize = 16384;
+        int count =
+            esp_http_client_read_response(client.getHandle(), (char *)(fileBuffer.get() + index),
+                                          std::min(bufferSize, contentLength - index));
+        if (index == 0) {
+            if ((fileBuffer.get()[0] == 'P') && (fileBuffer.get()[1] == 'K')) {
+                log_w("It is PKZIP!!");
+            } else {
+                log_w("Must be gzip...");
+            }
+        }
+        return count;
+    };
+
+    auto success = (gzip) ? DownloadFile(url, openedConnection, gzipReader, fileProgress, gzip)
+                          : DownloadFile(url, openedConnection, chunkedReader, fileProgress, gzip);
 
     auto time = esp_timer_get_time();
     auto downloadStart = time;
