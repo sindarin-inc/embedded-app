@@ -11,6 +11,7 @@
 #include "Models/JsonSerializable.hpp"
 #include "Models/ReadableArchive.hpp"
 #include "Models/ReadableBookmark.hpp"
+#include "Models/ReadableDictionary.hpp"
 #include "Models/ReadableFile.hpp"
 #include "Models/ReadablePlacemark.hpp"
 #include "Models/ReadableTableOfContentsChapter.hpp"
@@ -45,9 +46,11 @@ public:
     ReadableFileVector files;
     ReadableBookmarksVector bookmarks;
     ReadableTableOfContentsChapterVector toc;
+    ReadableDictionary dictionary;
     // hasSummary denotes if any of the chapters have a summary, used for determining if we should
     // show the summary menu item
     bool hasSummary = false;
+    bool hasDictionary = false;
 
     SpiramString readableType;
     // TODO: source
@@ -118,6 +121,8 @@ public:
         return summary;
     }
 
+    auto definitions(unsigned long placeInReadable) {}
+
     [[nodiscard]] auto authorString() const -> SpiramString {
         if (authors.size() == 0) {
             log_w("Blank author for %s", title.c_str());
@@ -160,6 +165,10 @@ public:
             if (chapter["summary"].as<std::string>().size() > 0) {
                 hasSummary = true;
             }
+        }
+        if (j.containsKey("toc") && j["toc"].containsKey("dictionary")) {
+            hasDictionary = true;
+            dictionary.fromJson(j["toc"]["dictionary"].as<JsonObject>());
         }
 
         // Temporary migration for stored pocket articles that don't have a readable_type
