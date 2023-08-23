@@ -386,7 +386,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
             return true;
         } else if ((tagIt != tags.end()) && (tagIt->second == Tag::SUP)) {
             if (started_) {
-                processSuperscript(node);
+                processSuperscript(node.first_child());
             }
             return !pageCompleted_;
         } else if (skipNextParagraph_) {
