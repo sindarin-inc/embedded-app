@@ -134,9 +134,9 @@ auto LocalStore::readablesModelType(const ReadablesVector &readables) -> Readabl
     return &readables == &articles_ ? ReadablesModelType::Article : ReadablesModelType::Book;
 }
 
-auto LocalStore::hasReadable(const ReadablesVector &readables,
-                             const std::shared_ptr<Readable> &readable, bool ignoreFileSizeCheck)
-    -> bool {
+auto LocalStore::isReadableUnchanged(const ReadablesVector &readables,
+                                     const std::shared_ptr<Readable> &readable,
+                                     bool ignoreFileSizeCheck) -> bool {
     for (const auto &r : readables) {
         auto path = readableFilePathForReading(r);
         if (r->uuid == readable->uuid && !path.empty()) {
@@ -193,7 +193,7 @@ void LocalStore::removeReadable(ReadablesVector &readables,
     for (auto it = readables.begin(); it != readables.end(); ++it) {
         if (it->get()->uuid == readable->uuid) {
             readables.erase(it);
-            return;
+            // return; // Don't return early in order to catch dupes
         }
     }
 }
@@ -876,19 +876,14 @@ auto LocalStore::processReadables(const CheckSyncResponse &checkSyncResponse,
             }
         }
 
-        auto found = hasReadable(readables, userReadable.readable, true);
+        auto unchanged = isReadableUnchanged(readables, userReadable.readable, true);
         if (userReadable.isArchived) {
             log_i("Readable \"%s\" is archived, will delete", userReadable.readable->title.c_str());
             // TODO: Store these articles in an accessible archive instead of just deleting them
             // and ignoring
-            if (found) {
-                readablesToDelete.push_back(userReadable.readable);
-            } else {
-                log_i("Already deleted \"%s\" %s", userReadable.readable->title.c_str(),
-                      userReadable.readable->uuid.c_str());
-            }
+            readablesToDelete.push_back(userReadable.readable);
             continue;
-        } else if (found) {
+        } else if (unchanged) {
             // Should never get here as readablesSince should hide these articles
             log_w("Already have \"%s\" %s", userReadable.readable->title.c_str(),
                   userReadable.readable->uuid.c_str());
