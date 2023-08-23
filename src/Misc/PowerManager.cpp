@@ -442,12 +442,6 @@ void PowerManager::beginShutdown() {
 
     prefs_.end();
 
-#if USE_TURN_TOUCH_REMOTE || USE_BLE_SERVER_REMOTE
-    if (BLEDevice::getInitialized()) {
-        BLEDevice::deinit();
-    }
-#endif
-
     esp_err_t err = DeinitializePlatform();
     if (err != ESP_OK) {
         log_e("Failed to deinit platform with err %s", esp_err_to_name(err));
