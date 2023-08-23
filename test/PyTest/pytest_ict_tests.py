@@ -377,3 +377,42 @@ class TestPowerConsumption:
 
         logger.info("Measuring deep sleep current")
         power_client.expect_current((50, 100), 5)
+
+
+@pytest.mark.usefixtures("ict_client")
+@pytest.mark.usefixtures("power_client")
+@pytest.mark.ict
+@pytest.mark.power
+class TestLowBatt:
+    def test_battery_depleted(
+        self, dut: OverrideDut, ict_client: MFICTClient, power_client: PowerTester
+    ) -> None:
+        # Serial comms go down here when we're toggling power. Go ahead and close out the connection.
+        dut.serial.close()
+
+        # Note: If the IdfDut tries to connect to the ICT serial port to flash it, it dumps a bunch of serial
+        # garbage to the ICT that will cause it to fail the next command. This clears the input buffer by sending a newline.
+        ict_client.clear_input()
+
+        ict_client.set_power(False)
+        ict_client.set_servo("left", 75)
+        ict_client.set_servo("right", -70)
+
+        # Low battery threshold is 3400mV
+        power_client.turn_on(3300)
+
+        time.sleep(0.5)
+
+        # Wait for serial port to come back
+        # first wait for DUT device to show up
+        # port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
+        # then connect to serial relay for log parsing
+        dut.serial.connect_dut_log_port()
+
+        dut.expect("Sol: Voltage is below threshold", timeout=40)
+
+        if platform.system() == "Darwin":
+            # Powering off would be a more correct log to check, but the last log line doesn't always capture on macOS.
+            dut.expect("Sol: Dispatch queues shutdown", timeout=20)
+        else:
+            dut.expect("Sol: Powering off$", timeout=20)

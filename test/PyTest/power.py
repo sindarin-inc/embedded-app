@@ -29,8 +29,8 @@ class PowerTester:
     def close(self):
         self.ppk = None
 
-    def turn_on(self):
-        self.ppk.set_source_voltage(3800)  # set source voltage in mV
+    def turn_on(self, voltage=3800):
+        self.ppk.set_source_voltage(voltage)  # set source voltage in mV
         self.ppk.toggle_DUT_power("ON")
         self.ppk.start_measuring()
 
