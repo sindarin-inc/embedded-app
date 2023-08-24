@@ -341,8 +341,7 @@ class TestPowerConsumption:
         time.sleep(3)
 
         logger.info("Measuring active mode current")
-        # TODO: Why do we need such a wide range here?
-        power_client.expect_current((9000, 125000), 5)
+        power_client.expect_current((7000, 13000), 5)
 
         logger.info("Sleeping")
         ict_client.set_servo("right", 0)
