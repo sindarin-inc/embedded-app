@@ -338,7 +338,7 @@ class TestPowerConsumption:
         # wait for ICT pageturner connect
         dut.expect("Connected to PageTurner", timeout=20)
 
-        time.sleep(1)
+        time.sleep(3)
 
         logger.info("Measuring active mode current")
         # TODO: Why do we need such a wide range here?
