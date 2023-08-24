@@ -166,10 +166,6 @@ public:
                 hasSummary = true;
             }
         }
-        if (j.containsKey("toc") && j["toc"].containsKey("dictionary")) {
-            hasDictionary = true;
-            dictionary.fromJson(j["toc"]["dictionary"].as<JsonObject>());
-        }
 
         // Temporary migration for stored pocket articles that don't have a readable_type
         // This can probably be removed in a few weeks ~mid-march 2023

@@ -956,6 +956,7 @@ auto LocalStore::processReadableDownload(
             if (success) {
                 addReadable(readables, readable);
                 log_d("File successfully downloaded.");
+                clearReadableFiles(readable);
                 if (!saveReadables(readables)) {
                     log_e("Failed to save %s", ReadableModelTypeToString(modelType).c_str());
 
@@ -1117,6 +1118,15 @@ void LocalStore::sortReadables(ReadablesVector &readables) {
     log_d("Finished sorting");
 }
 
+void LocalStore::clearReadableFiles(const std::shared_ptr<Readable> &readable) {
+    // Delete the TOC files so they can be re-saved with updated copies
+    auto tocPath = readable->tocFilePath();
+    if (tocPath.size()) {
+        log_i("Removing TOC for %s: %s", readable->title.c_str(), tocPath.c_str());
+        fileSystem.remove(tocPath.c_str());
+    }
+}
+
 auto LocalStore::saveReadables(ReadablesVector &readables) -> bool {
     SHOW_HEAP();
 
@@ -1178,7 +1188,7 @@ auto LocalStore::saveTableOfContents(const std::shared_ptr<Readable> &readable) 
 
     auto doc = std::make_unique<SpiRamJsonDocument>(std::max(
         static_cast<size_t>(50000),
-        5000 * readable->toc.size())); // Assuming that the ToC will not exceed 5KB * # of chapter
+        20000 * readable->toc.size())); // Assuming that the ToC will not exceed 20KB * # of chapter
     std::string path = readable->tocFilePath();
     JsonArray tocJson = doc->createNestedArray("toc");
 

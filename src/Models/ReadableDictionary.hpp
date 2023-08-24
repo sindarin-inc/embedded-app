@@ -10,14 +10,20 @@ public:
     ReadableDictionary() = default;
     ~ReadableDictionary() override = default;
 
-    std::map<SpiramString, SpiramString> definitions;
+    SpiramString word;
+    SpiramString definition;
+    std::vector<uint32_t> locations;
 
     auto fromJson(const JsonObject &j) -> bool override {
-        for (const auto &kvp : j) {
-            SpiramString key = kvp.key().c_str();
-            SpiramString value = kvp.value().as<const char *>();
-            definitions.insert({key, value});
+        if (!j.containsKey("w") || !j.containsKey("d") || !j.containsKey("l")) {
+            return false;
         }
+        word = j["w"].as<std::string>();
+        definition = j["d"].as<std::string>();
+        for (const auto &location : j["l"].as<JsonArray>()) {
+            locations.push_back(location.as<uint32_t>());
+        }
+
         return true;
     }
 };
