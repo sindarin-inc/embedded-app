@@ -2,6 +2,7 @@
 
 #include <esp_attr.h>
 #include <memory>
+#include <unordered_map>
 
 RTC_SLOW_ATTR SyncReason PreferencesStore::syncReason;
 RTC_SLOW_ATTR uint64_t PreferencesStore::nextSyncTime;

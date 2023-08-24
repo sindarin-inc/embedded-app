@@ -12,7 +12,7 @@
 
 #if USE_TURN_TOUCH_REMOTE
 #include <NimBLEDevice.h>
-#elif SIMULATOR
+#elif !defined(BLEAddress)
 typedef uint64_t BLEAddress;
 #endif
 
