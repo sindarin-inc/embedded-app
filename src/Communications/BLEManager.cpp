@@ -27,20 +27,18 @@ auto BLEManager::startAdvertisingIfNecessary() -> bool {
     if (server_ != nullptr) {
         auto advertising = server_->getAdvertising();
 
-        // TODO: When is Max used vs Min?
-        // See also TurnTouch defaults
-        // https://github.com/samuelclay/turntouch-remote/blob/f21e795a40b84af7779d7cf2d032c4d81fedc363/firmware/src/main.h#L39
-        // Also see also Apples accessory guide
+        // Apple has very specific requirements for the allowed values here and warns:
+        // > These specific intervals are the ones to be used exactly! Even the slightest deviation
+        // > from these actual intervals may dramatically increase your time to discovery.
+        // See:
+        // https://developer.apple.com/library/archive/qa/qa1931/_index.html
         // https://developer.apple.com/accessories/Accessory-Design-Guidelines.pdf
-        // The TurnTouch uses 3200 which is ~2s. Our app can discover that just fine but won't
-        // connect. It's unclear if that's a problem from the ESP/firmware or with our app or both.
-        // 510 (318.75ms) was the max that worked reliably from my experimentation
-        // This still allows for ~90% (vs 80% with defaults) light sleep time when advertising, so
-        // it's probably fine.
-        advertising->setMaxInterval(510);
-        // Min advertising interval (in units of 0.625 ms). The default value corresponds to 20 ms.
-        advertising->setMinInterval(32);
-        // TODO: Investigate why power is so much higher when the iOS app is connected.
+        // We're using pretty wide intervals since we are typically not connected to the app and we
+        // want to maximize battery life.
+        // Max interval: 1285ms. 1285/0.625=2056. This is the maximum interval allowed by Apple.
+        advertising->setMaxInterval(2056);
+        // Min interval: 546.25ms. 546.25/0.625=874. This is a middling interval allowed by Apple.
+        advertising->setMinInterval(874);
         return advertising->start();
     }
     return false;
