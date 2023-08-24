@@ -434,6 +434,12 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     BlinkBootErrors(bootErrors);
 
+    // Clear screen in case not cleared at shutdown
+    if (!PreferencesStore::screenClearedAtShutdown) {
+        myDisplay.clearScreen();
+    }
+    PreferencesStore::screenClearedAtShutdown = false;
+
     xTaskCreatePinnedToCore(PollingLoopTask, "Polling", 10000, nullptr, 1, nullptr, 0);
     // xTaskCreatePinnedToCore(StatsTask, "Stats", 5000, nullptr, 0, nullptr, 1);
 

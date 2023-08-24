@@ -427,6 +427,7 @@ void PowerManager::beginShutdown() {
             display_.clearDisplay();
             display_.clearFrameBuffer();
             display_.updateDisplay();
+            PreferencesStore::screenClearedAtShutdown = true;
         };
         // If we're on the UiQueue currently, draw directly instead of dispatching
         if (DispatchGetUiQueue()->isInQueue()) {
