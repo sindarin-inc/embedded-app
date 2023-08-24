@@ -330,6 +330,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
 #if USE_BLE
     BLEDevice::init("Sol Reader");
+    NimBLEDevice::setPower(ESP_PWR_LVL_N9, ESP_BLE_PWR_TYPE_DEFAULT);
     auto bleStatus = esp_bt_controller_get_status();
     if (bleStatus != ESP_BT_CONTROLLER_STATUS_ENABLED) {
         bootErrors.push_back({.type = BootError::Type::BLE});
