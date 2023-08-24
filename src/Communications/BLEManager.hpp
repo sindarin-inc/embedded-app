@@ -41,9 +41,15 @@ protected:
     public:
         BLEManager *enclosed;
         ServerCallbacks(BLEManager *enclosure) { enclosed = enclosure; }
-        void onConnect(BLEServer *server) override {
+        void onConnect(BLEServer *server, ble_gap_conn_desc *desc) override {
             SHOW_HEAP();
             log_i("BLE client connected to our server!");
+            // Note(john): Tried this to improve the power consumption when the mobile app is
+            // connected but it didn't help much. Seems like the mobile app is trying to use
+            // something more like 30ms for a connection interval instead of the 50-112.5ms we
+            // request here. This results in an additional ~16mA power consumption when iOS is
+            // connected.
+            server->updateConnParams(desc->conn_handle, 40, 90, 20, 1000);
         }
         void onDisconnect(BLEServer *server) override {
             SHOW_HEAP();
