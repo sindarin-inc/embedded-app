@@ -91,8 +91,9 @@ public:
     auto books() -> ReadablesVector & { return books_; };
     auto articles() -> ReadablesVector & { return articles_; };
     auto readablesModelType(const ReadablesVector &readables) -> ReadablesModelType;
-    auto hasReadable(const ReadablesVector &readables, const std::shared_ptr<Readable> &readable,
-                     bool ignoreFileSizeCheck = false) -> bool;
+    auto isReadableUnchanged(const ReadablesVector &readables,
+                             const std::shared_ptr<Readable> &readable,
+                             bool ignoreFileSizeCheck = false) -> bool;
     void addReadable(ReadablesVector &readables, const std::shared_ptr<Readable> &readable);
     void removeReadable(ReadablesVector &readables, const std::shared_ptr<Readable> &readable);
     auto readablesSince(const ReadablesModelType modelType) -> std::string;

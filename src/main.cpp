@@ -312,11 +312,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     SIZE_OF(myDisplay);
 
-    if (prefs.cesMode.get().value_or(false)) {
-        // In CES mode, we want to turn on the lights to full brightness
-        lightingController.setOverrideValuePercent(100);
-    }
-
     // For all the EMC modes, we'll keep the lights at 100%
     if (prefs.emcMode.get().value_or(false)) {
         lightingController.setOverrideValuePercent(100);
