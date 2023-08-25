@@ -20,7 +20,7 @@ public:
           solLogoView_(display, SOL_LOGO_BITS, sol_logo_width, sol_logo_height),
           productNameView_(display, "Product Name: Sol Reader", &ibmf75Face0),
           serialNumberView_(display, "", &ibmf75Face0),
-          firmwareVersionView_(display, "", &ibmf75Face0),
+          firmwareVersionView_(display, "", &ibmf75Face0), wifiMacView_(display, "", &ibmf75Face0),
           remoteFirmwareVersionView_(display, "", &ibmf75Face0),
           remoteBatteryView_(display, "", &ibmf75Face0),
           returnToMenuView_(display, "Press  \ue000  to return to System Settings", &ibmf75Face0) {
@@ -34,6 +34,9 @@ public:
 #else
         std::string buildString = StringFormat("Reader Firmware: %s", kVersionString);
 #endif
+
+        auto wifiMac = StringFormat("WiFi MAC: %s", GetMacAddress().c_str());
+        wifiMacView_.setText(wifiMac);
 
         firmwareVersionView_.setText(buildString);
 
@@ -69,6 +72,7 @@ protected:
     SingleLineTextView productNameView_;
     SingleLineTextView serialNumberView_;
     SingleLineTextView firmwareVersionView_;
+    SingleLineTextView wifiMacView_;
     SingleLineTextView remoteFirmwareVersionView_;
     SingleLineTextView remoteBatteryView_;
     SingleLineTextView returnToMenuView_;
