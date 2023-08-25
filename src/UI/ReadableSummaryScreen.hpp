@@ -15,10 +15,10 @@
 #include "UI/Screen.hpp"
 #include "sindarin-debug.h"
 
-class ReadableSummaryScreen : public Screen, public EinkView {
+class ReadableDictionaryScreen : public Screen, public EinkView {
 public:
-    ReadableSummaryScreen(PreferencesStore &prefs, std::shared_ptr<Readable> readable,
-                          DisplaySystem &display)
+    ReadableDictionaryScreen(PreferencesStore &prefs, std::shared_ptr<Readable> readable,
+                             DisplaySystem &display)
         : EinkView(display), prefs_(prefs), readable_(std::move(readable)), renderer_(display),
           display_(display), upperLeftTextView_(display, upperLeftText_),
           bottomRightTextView_(display, bottomRightText_), leftArrowView_(display, ArrowUp),

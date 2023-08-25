@@ -67,6 +67,14 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
         }));
     }
 
+    if (readable_->hasDictionary) {
+        addMenuItem(MenuItem("Dictionary", [this]() {
+            readableDictionaryScreen_.setPlaceInReadable(renderer_.getCurrentPlace());
+            readableDictionaryScreen_.setFirstLoad();
+            setCurrentScreen(readableDictionaryScreen_);
+        }));
+    }
+
     addMenuItem(MenuItem("Brightness", [this]() {
         log_d("Setting current screen to brightness screen");
         lightingAdjustScreen_.setFirstLoad();

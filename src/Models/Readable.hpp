@@ -46,7 +46,6 @@ public:
     ReadableFileVector files;
     ReadableBookmarksVector bookmarks;
     ReadableTableOfContentsChapterVector toc;
-    ReadableDictionary dictionary;
     // hasSummary denotes if any of the chapters have a summary, used for determining if we should
     // show the summary menu item
     bool hasSummary = false;
@@ -121,7 +120,26 @@ public:
         return summary;
     }
 
-    auto definitions(unsigned long placeInReadable) {}
+    auto definitions(unsigned long placeInReadable, unsigned long &placeInSummary) -> SpiramString {
+        SpiramString dictionary;
+
+        for (const auto &chapter : toc) {
+            if (placeInReadable >= chapter.txtOffset) {
+                placeInDictionary = dictionary.length();
+            }
+            if (placeInReadable < chapter.txtOffset) {
+                break;
+            }
+            dictionary += chapter.title;
+            dictionary += "\n\n";
+            if (!chapter.summary.empty()) {
+                dictionary += chapter.summary;
+                dictionary += "\n\n";
+            }
+        }
+
+        return dictionary;
+    }
 
     [[nodiscard]] auto authorString() const -> SpiramString {
         if (authors.size() == 0) {
@@ -162,8 +180,11 @@ public:
             toc.emplace_back();
             toc.back().fromJson(chapter);
             // Check if any chapter has a summary, if so, set hasSummary
-            if (chapter["summary"].as<std::string>().size() > 0) {
+            if (!hasSummary && chapter["summary"].as<std::string>().size() > 0) {
                 hasSummary = true;
+            }
+            if (!hasDictionary && chapter["dictionary"].as<JsonArray>().size() > 0) {
+                hasDictionary = true;
             }
         }
 
