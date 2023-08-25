@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <map>
+#include <queue>
 #include <string>
 #include <vector>
 
@@ -120,19 +121,23 @@ public:
 
         return summary;
     }
+#include <queue>
 
     auto definitions(unsigned long placeInReadable, unsigned long &placeInDictionary)
         -> SpiramString {
         SpiramString dictionaryString;
+
+        // Maintain a queue to keep track of the last 5 words added
+        std::queue<SpiramString> lastFiveWords;
+
         log_d("Looking for definitions for place %lu in %zu chapters", placeInReadable, toc.size());
+
         for (const auto &chapter : toc) {
-            log_d("Checking chapter %s: %u to %u", chapter.title.c_str(), chapter.txtOffset,
-                  chapter.endTxtOffset);
             if (placeInReadable < chapter.txtOffset || placeInReadable >= chapter.endTxtOffset) {
                 continue;
             }
 
-            // Add word: definition pairs from the chapter's dictionary array, in order of each
+            // Add `word: definition` pairs from the chapter's dictionary array, in order of each
             // word's location in the chapter
             std::map<unsigned long, ReadableDictionary> locationDictMap;
             for (const auto &dict : chapter.dictionary) {
@@ -140,24 +145,40 @@ public:
                     locationDictMap[location] = dict;
                 }
             }
+
             log_d("Found %zu definitions", locationDictMap.size());
-            SpiramString lastWord = "";
+
             for (const auto &entry : locationDictMap) {
                 auto dict = entry.second;
-                if (dict.word == lastWord) {
-                    continue;
+                bool isWordInLastFive = false;
+
+                // Check if the word is in the last 5 words added
+                std::queue<SpiramString> tempQueue = lastFiveWords;
+                while (!tempQueue.empty()) {
+                    if (tempQueue.front() == dict.word) {
+                        isWordInLastFive = true;
+                        break;
+                    }
+                    tempQueue.pop();
                 }
+
+                if (isWordInLastFive) {
+                    continue; // Skip adding this word
+                }
+
                 if (placeInReadable >= (chapter.txtOffset + entry.first)) {
                     placeInDictionary = dictionaryString.length();
-                    log_d(
-                        "Updating place in dictionary to %lu (readable is at %lu, location is %lu)",
-                        placeInDictionary, placeInReadable, chapter.txtOffset + entry.first);
                 }
+
                 dictionaryString += dict.word;
                 dictionaryString += ": ";
                 dictionaryString += dict.definition;
                 dictionaryString += "\n\n";
-                lastWord = dict.word;
+
+                lastFiveWords.push(dict.word);
+                if (lastFiveWords.size() > 5) {
+                    lastFiveWords.pop();
+                }
             }
 
             // We're only looking for definitions in a single chapter
