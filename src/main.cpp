@@ -332,7 +332,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     BLEDevice::init("Sol Reader");
 
     if (prefs.blePower.get().has_value()) {
-        auto power = prefs.blePower.get().value();
+        auto power = prefs.blePower.get().value_or(ESP_PWR_LVL_P3);
         log_d("Setting default BLE power to %" PRIu32, power);
         esp_err_t err =
             esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, static_cast<esp_power_level_t>(power));
