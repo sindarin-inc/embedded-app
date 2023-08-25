@@ -12,7 +12,7 @@
 
 #if USE_TURN_TOUCH_REMOTE
 #include <NimBLEDevice.h>
-#elif SIMULATOR
+#elif !defined(BLEAddress)
 typedef uint64_t BLEAddress;
 #endif
 
@@ -360,6 +360,7 @@ public:
           tutorialsDeleted(*this, "tutorials"),
           bleAdvertisingKey(*this, "ble-adv-key"),
           bleAuthKey(*this, "ble-auth-key"),
+          blePower(*this, "ble-power"),
           preferencesStoreMigrationVersion_(*this, "ps-version"){};
     // clang-format on
 
@@ -601,6 +602,10 @@ public:
     PrefsItem<std::string> bleAdvertisingKey;
     // Value that's used to authenticate the mobile app to the glasses
     PrefsItem<std::string> bleAuthKey;
+    // BLE default power setting stored as esp_power_level_t enum value
+    // This is here for debugging and investigation but in John's experiments, this didn't save much
+    // battery power. But there might be some tweaking we could do to improve BLE reliability.
+    PrefsItem<uint32_t> blePower;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles
@@ -609,6 +614,7 @@ public:
     static int64_t ledChargeTime;
     static uint8_t lastBatteryReport;
     static uint8_t lastPageTurnerBattery;
+    static bool screenClearedAtShutdown;
     static bool settingsOnRestart;
     // Indicates whether the glasses have been paired with a user account
     static PairedStatus paired;

@@ -41,9 +41,18 @@ protected:
     public:
         BLEManager *enclosed;
         ServerCallbacks(BLEManager *enclosure) { enclosed = enclosure; }
-        void onConnect(BLEServer *server) override {
+        void onConnect(BLEServer *server, ble_gap_conn_desc *desc) override {
             SHOW_HEAP();
             log_i("BLE client connected to our server!");
+            // Apple has _very_ specific requirements for these values and will reject these if
+            // you don't give them something they want
+            // https://developer.apple.com/library/archive/qa/qa1931/_index.html
+            // That doc has broken links to the validation spreadsheet, but it can be found
+            // here:
+            // https://github.com/HoyosIntegrity/V.ALRT-bluetooth-spec/blob/master/qa1931_BLE%20Parameter%20Validation.xlsx
+            // With these settings it costs <1mA to have the iOS app connected. With the default
+            // settings its ~16mA
+            server->updateConnParams(desc->conn_handle, 36, 90, 2, 600);
         }
         void onDisconnect(BLEServer *server) override {
             SHOW_HEAP();

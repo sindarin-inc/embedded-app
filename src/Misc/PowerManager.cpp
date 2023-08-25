@@ -203,8 +203,7 @@ auto PowerManager::begin() -> esp_err_t {
 
     esp_err_t err = ESP_OK;
 #if !DISABLE_POWER_MANAGEMENT
-    pmConfig_.max_freq_mhz =
-        state_ == PowerState::Background ? CPU_FREQ_MHZ_BACKGROUND : CPU_FREQ_MHZ_HIGH;
+    pmConfig_.max_freq_mhz = CPU_FREQ_MHZ_HIGH;
     pmConfig_.min_freq_mhz = CPU_FREQ_MHZ_LOW;
     pmConfig_.light_sleep_enable = !USBConnected();
     err = esp_pm_configure(&pmConfig_);
@@ -427,6 +426,7 @@ void PowerManager::beginShutdown() {
             display_.clearDisplay();
             display_.clearFrameBuffer();
             display_.updateDisplay();
+            PreferencesStore::screenClearedAtShutdown = true;
         };
         // If we're on the UiQueue currently, draw directly instead of dispatching
         if (DispatchGetUiQueue()->isInQueue()) {
@@ -441,12 +441,6 @@ void PowerManager::beginShutdown() {
     lightingController_.disableLighting(0);
 
     prefs_.end();
-
-#if USE_TURN_TOUCH_REMOTE || USE_BLE_SERVER_REMOTE
-    if (BLEDevice::getInitialized()) {
-        BLEDevice::deinit();
-    }
-#endif
 
     esp_err_t err = DeinitializePlatform();
     if (err != ESP_OK) {

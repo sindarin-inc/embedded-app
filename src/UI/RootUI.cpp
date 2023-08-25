@@ -61,6 +61,10 @@
 #include "UI/VcomAdjustScreen.hpp"
 #endif
 
+#if USE_BLE
+#include <NimBLEDevice.h>
+#endif
+
 #define LAST_READABLE_ID "rui-readable"
 
 void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &fileSystem,
@@ -1375,6 +1379,62 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             delete wifiPowerMenu;
         });
     }));
+
+#if USE_BLE
+    debugSettingsMenu->addMenuItem(MenuItem("Set BLE Power", [this, display, debugSettingsMenu]() {
+        static std::map<esp_power_level_t, std::string> blePowerOptions = {
+            {ESP_PWR_LVL_P3, "+3dBm"}, {ESP_PWR_LVL_N0, "0dBm"},    {ESP_PWR_LVL_N3, "-3dBm"},
+            {ESP_PWR_LVL_N9, "-9dBm"}, {ESP_PWR_LVL_N18, "-18dBm"}, {ESP_PWR_LVL_N24, "-24dBm"},
+        };
+
+        auto blePowerMenu =
+            new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle(),
+                           "BLE Power Settings", "Debug Settings");
+
+        auto powerToString = [](esp_power_level_t power) -> std::string {
+            auto it = blePowerOptions.find(power);
+            return it != blePowerOptions.end() ? it->second : "Unknown";
+        };
+
+        esp_power_level_t currentPower = esp_ble_tx_power_get(ESP_BLE_PWR_TYPE_DEFAULT);
+        blePowerMenu->setExtraText(powerToString(currentPower));
+
+        auto confirmMessage =
+            [this, blePowerMenu, display, powerToString](esp_power_level_t power) {
+            esp_err_t err = esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, power);
+            if (err != ESP_OK) {
+                log_e("esp_ble_tx_power_set ESP_BLE_PWR_TYPE_DEFAULT err:%s", esp_err_to_name(err));
+            }
+            prefs_.blePower.set(power);
+            blePowerMenu->showTemporaryMessage(
+                *display, StringFormat("Power set to %s", powerToString(power).c_str()), 200,
+                false);
+            blePowerMenu->back();
+        };
+        for (const auto &powerItem : blePowerOptions) {
+            blePowerMenu->addMenuItem(
+                MenuItem(powerToString(powerItem.first),
+                         [confirmMessage, power = powerItem.first]() { confirmMessage(power); }));
+        }
+
+        // Find the currently selected power
+        int menuIndex = 0;
+        for (const auto &powerItem : blePowerOptions) {
+            if (powerItem.first == currentPower) {
+                break;
+            }
+            menuIndex++;
+        }
+        blePowerMenu->setCurrSelection(menuIndex);
+
+        setCurrentScreen(*blePowerMenu);
+        blePowerMenu->setBackCallback([this, blePowerMenu, debugSettingsMenu]() {
+            debugSettingsMenu->setFirstLoad();
+            setCurrentScreen(*debugSettingsMenu);
+            delete blePowerMenu;
+        });
+    }));
+#endif
 
 #if EINKET013TT1
     debugSettingsMenu->addMenuItem(MenuItem("Set Vcom Precise",

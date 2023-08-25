@@ -11,9 +11,11 @@
 #include "TurnTouch.hpp"
 #include "sindarin-debug.h"
 
+// These should match the page turner `CONFIG_BT_PERIPHERAL_PREF_` settings here:
+// https://github.com/sindarin-inc/page-turner-nrf52/blob/master/prj.conf#L28
 #define CONNECTION_INTERVAL_MIN 40
 #define CONNECTION_INTERVAL_MAX 90
-#define CONNECTION_LATENCY 10
+#define CONNECTION_LATENCY 20
 #define CONNECTION_TIMEOUT 1000
 
 using namespace std::placeholders;
