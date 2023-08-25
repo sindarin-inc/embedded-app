@@ -230,8 +230,6 @@ public:
             if (!hasSummary && chapter["summary"].as<std::string>().size() > 0) {
                 hasSummary = true;
             }
-            log_w("Chapter %s has dictionary %s", chapter["title"].as<std::string>().c_str(),
-                  DumpJson(chapter["dictionary"]).c_str());
             if (!hasDictionary && chapter["dictionary"].as<JsonArray>().size() > 0) {
                 hasDictionary = true;
             }
