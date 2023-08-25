@@ -15,7 +15,7 @@ void EPubMetaFile::parse() {
 
         if (len != info.uncompressed_size) {
             log_e("Failed to read file %s: read %" PRIu32 " but expected %" PRIu32 " bytes", path_,
-                  len, info.uncompressed_size);
+                  len, static_cast<uint32_t>(info.uncompressed_size));
         }
         pugi::xml_document doc;
         pugi::xml_parse_result result = doc.load_string(buffer);
