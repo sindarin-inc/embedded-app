@@ -12,7 +12,7 @@ public:
 
     SpiramString word;
     SpiramString definition;
-    std::vector<uint32_t> locations;
+    std::vector<unsigned long> locations;
 
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("w") || !j.containsKey("d") || !j.containsKey("l")) {
