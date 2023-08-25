@@ -458,7 +458,7 @@ auto GetMacAddress() -> std::string {
         int ret = snprintf(str, sizeof(str), "%02X:%02X:%02X:%02X:%02X:%02X", wifimac[0],
                            wifimac[1], wifimac[2], wifimac[3], wifimac[4], wifimac[5]);
         if (ret < 0 || ret >= sizeof(str)) {
-            log_i("snprintf failure %d!", ret);
+            log_e("snprintf failure %d!", ret);
         }
     } else {
         log_e("esp_read_mac failure %d!", ret);
