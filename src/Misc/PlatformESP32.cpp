@@ -35,8 +35,6 @@ bool platformInitialized;
 static uint8_t minLightingDutyCycle;
 static uint8_t maxLightingDutyCycle;
 
-static const char *tag = "MAINFRAME";
-
 void PinMode(int pin, int mode) { gpio_set_direction((gpio_num_t)pin, (gpio_mode_t)mode); }
 
 void DigitalWrite(int pin, int level) { gpio_set_level((gpio_num_t)pin, (uint32_t)level); }
@@ -460,12 +458,12 @@ auto GetMacAddress() -> std::string {
         int ret = snprintf(str, sizeof(str), "%02X:%02X:%02X:%02X:%02X:%02X", wifimac[0],
                            wifimac[1], wifimac[2], wifimac[3], wifimac[4], wifimac[5]);
         if (ret < 0 || ret >= sizeof(str)) {
-            ESP_LOGI(tag, "snprintf failure %d!", ret);
+            log_i("snprintf failure %d!", ret);
         }
     } else {
-        ESP_LOGE("GetMacAddress", "esp_read_mac failure %d!", ret);
+        log_e("esp_read_mac failure %d!", ret);
     }
-    return std::string(str);
+    return {str};
 }
 
 auto GetHardwareRevision() -> uint8_t {
