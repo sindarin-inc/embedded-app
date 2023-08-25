@@ -7,8 +7,6 @@
 
 #include "DocType.hpp"
 
-#define PLACE_REGEX "\\[(TXT|EPUB);offset:([0-9]+)(,filename:([^\\]]*))?\\]"
-
 class Place {
 private:
     static constexpr bool ON_ERROR_EXIT = true;
@@ -59,10 +57,10 @@ public:
 
 class EPubPlace : public Place {
 public:
-    EPubPlace(uint32_t offset, std::string filename) : filename_(std::move(std::move(filename))) {
+    EPubPlace(uint32_t offset, std::string href) : href_(std::move(std::move(href))) {
         setOffset(offset);
     }
-    EPubPlace() : Place(), filename_("") { setOffset(0); }
+    EPubPlace() : Place(), href_("") { setOffset(0); }
     ~EPubPlace() override = default;
 
     [[nodiscard]] auto isFor(DocType docType) const -> bool override {
@@ -70,18 +68,18 @@ public:
     }
     [[nodiscard]] auto getDocType() const -> DocType override { return DocType::EPUB; };
     [[nodiscard]] auto getOffset() const -> uint32_t { return offset_; }
-    [[nodiscard]] auto getFilename() const -> const std::string & { return filename_; }
+    [[nodiscard]] auto getHRef() const -> const std::string & { return href_; }
 
     [[nodiscard]] auto str() const -> std::string override {
         std::string s;
         s = "[EPUB;offset:";
         s += std::to_string(offset_);
-        s.append(",filename:");
-        s += filename_;
+        s.append(",href:");
+        s += href_;
         s.append("]");
         return s;
     }
 
 private:
-    std::string filename_;
+    std::string href_;
 };

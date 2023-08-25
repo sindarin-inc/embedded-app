@@ -20,13 +20,13 @@ public:
 
     struct SpineItem {
         ManifestItem *item;
-        uint32_t uncompressedSize; // Must be loaded seprately
-        uint32_t offset;
+        // uint32_t uncompressedSize; // Must be loaded seprately
+        // uint32_t offset;
     };
 
-    [[nodiscard]] auto getTotalSize() const -> uint32_t { return totalSize_; }
+    // [[nodiscard]] auto getTotalSize() const -> uint32_t { return totalSize_; }
 
-    [[nodiscard]] auto getSpineIdxForOffset(uint32_t offset) const -> Idx;
+    // [[nodiscard]] auto getSpineIdxForOffset(uint32_t offset) const -> Idx;
 
     [[nodiscard]] auto getSpine(Idx idx) const -> const SpineItem & { return spine_[idx]; }
 
@@ -51,7 +51,7 @@ private:
     ManifestMap manifest_;
     SpineVector spine_;
 
-    uint32_t totalSize_{0};
+    // uint32_t totalSize_{0};
 
     void extract_path(const char *fname, std::string &path);
 };

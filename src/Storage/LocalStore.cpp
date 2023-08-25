@@ -275,7 +275,8 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
                 log_d("Bookmark: %s %s %d", bookmark.firstPlace->str().c_str(),
                       bookmark.lastPlace->str().c_str(), bookmark.status);
 
-                if (bookmark.status == BOOKMARK_ON && bookmark.firstPlace < bookmark.lastPlace) {
+                if (bookmark.status == BOOKMARK_ON &&
+                    (bookmark.firstPlace->getOffset() < bookmark.lastPlace->getOffset())) {
                     bookmarksToAdd[bookmark.firstPlace->str()] = bookmark.lastPlace->str();
                     bookmarksToDelete.erase(bookmark.firstPlace->str());
                 } else if (bookmark.status == BOOKMARK_OFF) {
@@ -1223,6 +1224,10 @@ auto LocalStore::readableFilePathForReading(const std::shared_ptr<Readable> &rea
 
     std::string path;
 
+    path = StringFormat("/%s/%s.epub", type.c_str(), uuid.c_str());
+    if (fileSystem.exists(path)) {
+        return path;
+    }
     path = StringFormat("/%s/%s.txt.gz", type.c_str(), uuid.c_str());
     if (fileSystem.exists(path)) {
         return path;
@@ -1233,12 +1238,12 @@ auto LocalStore::readableFilePathForReading(const std::shared_ptr<Readable> &rea
     }
 
     if (type == "book") {
-        path = StringFormat("/%s/%s.epub", type.c_str(), uuid.c_str());
-        if (fileSystem.exists(path)) {
-            return path;
-        }
         // Previously we also stored books in the root directory
         if (readable->files.size() > 0) {
+            path = StringFormat("/%s.epub", readable->file().name.c_str());
+            if (fileSystem.exists(path)) {
+                return path;
+            }
             path = StringFormat("/%s.gz", readable->file().name.c_str());
             if (fileSystem.exists(path)) {
                 return path;
@@ -1249,6 +1254,10 @@ auto LocalStore::readableFilePathForReading(const std::shared_ptr<Readable> &rea
             }
         }
     } else {
+        path = StringFormat("/articles/%s.epub", uuid.c_str());
+        if (fileSystem.exists(path)) {
+            return path;
+        }
         path = StringFormat("/articles/%s.txt.gz", uuid.c_str());
         if (fileSystem.exists(path)) {
             return path;
@@ -1306,12 +1315,14 @@ void LocalStore::readableFilePurge(const std::shared_ptr<Readable> &readable) {
     fileSystem.remove(StringFormat("/%s/%s.epub", type.c_str(), uuid.c_str()));
 
     if (readable->files.size() > 0) {
+        fileSystem.remove(StringFormat("/%s.epub", readable->file().name.c_str()));
         fileSystem.remove(StringFormat("/%s.gz", readable->file().name.c_str()));
         fileSystem.remove(StringFormat("/%s", readable->file().name.c_str()));
     }
 
     fileSystem.remove(StringFormat("/articles/%s.txt.gz", uuid.c_str()));
     fileSystem.remove(StringFormat("/articles/%s.txt", uuid.c_str()));
+    fileSystem.remove(StringFormat("/articles/%s.epub", uuid.c_str()));
 
     fileSystem.remove(readable->bookmarkFilePath().c_str());
 

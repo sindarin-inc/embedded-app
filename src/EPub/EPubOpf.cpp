@@ -18,16 +18,17 @@ void EPubOpf::parse() {
         uint32_t len = zipFile_.readFromFile((uint8_t *)buffer, info.uncompressed_size);
         zipFile_.closeFile();
 
+        // log_d("OPF content: %.*s", (int)info.uncompressed_size, buffer);
         if (len != info.uncompressed_size) {
             log_e("Failed to read file %s: read %" PRIu32 " but expected %" PRIu32 " bytes", path_,
                   len, static_cast<uint32_t>(info.uncompressed_size));
         }
 
         pugi::xml_document doc;
-        pugi::xml_parse_result result = doc.load_string(buffer);
+        pugi::xml_parse_result result = doc.load_buffer_inplace(buffer, info.uncompressed_size);
 
         if (result) {
-            totalSize_ = 0;
+            // totalSize_ = 0;
 
             pugi::xml_node package = doc.child("package");
             pugi::xml_node metadata = package.child("metadata");
@@ -48,41 +49,41 @@ void EPubOpf::parse() {
 
                 ManifestIterator it = manifest_.find(idref);
                 if (it != manifest_.end()) {
-                    zipFile_.openFile(getFullPath(it->second.href).c_str());
-                    unz_file_info info;
-                    zipFile_.getFileInfo(&info, nullptr, 0, nullptr, 0);
-                    uint32_t usize = info.uncompressed_size;
-                    zipFile_.closeFile();
+                    // zipFile_.openFile(getFullPath(it->second.href).c_str());
+                    // unz_file_info info;
+                    // zipFile_.getFileInfo(&info, nullptr, 0, nullptr, 0);
+                    // uint32_t usize = info.uncompressed_size;
+                    // zipFile_.closeFile();
 
                     spine_.push_back(SpineItem{
-                        .item = &it->second, .uncompressedSize = usize, .offset = totalSize_});
+                        .item = &it->second, /* .uncompressedSize = usize,  .offset = totalSize_ */});
                     // log_w("------------> adding spine: idref:%s, href:%s, size:%" PRIu32 "
                     // offset:%" PRIu32,
                     //       itemref.attribute("idref").value(), it->second.href.c_str(), usize,
                     //       totalSize_);
 
-                    totalSize_ += usize;
+                    // totalSize_ += usize;
                 } else {
                     log_e("Spine idref not found in manifest: %s", idref.c_str());
                 }
             }
         } else {
-            log_e("Faile to parse EPub manifest %s: %s", path_, result.description());
+            log_e("Failed to parse EPub manifest %s: %s", path_, result.description());
         }
 
         delete[] buffer;
     }
 }
 
-auto EPubOpf::getSpineIdxForOffset(uint32_t offset) const -> Idx {
-    int spineIdx = 0;
-    while (spineIdx < spine_.size()) {
-        if (spine_[spineIdx].offset > offset) break;
-        spineIdx += 1;
-    }
+// auto EPubOpf::getSpineIdxForOffset(uint32_t offset) const -> Idx {
+//     int spineIdx = 0;
+//     while (spineIdx < spine_.size()) {
+//         if (spine_[spineIdx].offset > offset) break;
+//         spineIdx += 1;
+//     }
 
-    return spineIdx > 0 ? spineIdx - 1 : 0;
-}
+//     return spineIdx > 0 ? spineIdx - 1 : 0;
+// }
 
 void EPubOpf::extract_path(const char *fname, std::string &path) {
     path.clear();

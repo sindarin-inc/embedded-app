@@ -134,7 +134,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         if (HasSuffix(path, ".epub")) {
             log_i("Opening %s as epub", path.c_str());
-            stream = std::make_shared<EPubFile>(fileSystem, path.c_str());
+            stream = std::make_shared<EPubFile>(fileSystem, path.c_str(), readable);
         } else if (HasSuffix(path, ".txt.gz")) {
             log_i("Opening %s as gzip", path.c_str());
             stream = fileSystem.newGzipRendererStream(path.c_str());

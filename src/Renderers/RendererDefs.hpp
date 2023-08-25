@@ -12,7 +12,6 @@ namespace renderer_defs {
 
 // For deep logging when changing this file
 static constexpr bool RENDERER_DEBUG = false;
-static constexpr bool RENDERER_CHRONO = false;
 static constexpr bool ON_ERROR_EXIT = false;
 
 // Used by the Tokenizer::getFileLocation() method in case of error

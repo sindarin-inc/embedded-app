@@ -16,26 +16,15 @@ public:
     [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, bool backwards = false,
                                            StreamPlace *toPlace = nullptr) -> StreamPlace override;
 
-    [[nodiscard]] auto toStreamPlace(const std::shared_ptr<Place> place) const
-        -> StreamPlace override {
-        if (place->isFor(DocType::EPUB)) {
-            uint16_t spineIdx = stream_->getSpineIdxForOffset(place->getOffset());
-            return {place->getOffset() - stream_->getSpine(spineIdx).offset, spineIdx};
-        } else {
-            log_e("Wrong Place Type: %" PRIu8, static_cast<uint8_t>(place->getDocType()));
-            if constexpr (ON_ERROR_EXIT) {
-                exit(1);
-            }
-        }
+    [[nodiscard]] auto getStreamPlaceFromTxtOffset(uint32_t txtOffset) const -> StreamPlace;
 
-        return {};
-    }
+    [[nodiscard]] auto toStreamPlace(const std::shared_ptr<Place> place) const
+        -> StreamPlace override;
 
     [[nodiscard]] inline auto toPlace(const StreamPlace &streamPlace) const
         -> std::shared_ptr<Place> override {
         const EPubOpf::SpineItem &spineItem = stream_->getSpine(streamPlace.getFileIdx());
-        return std::make_shared<EPubPlace>(streamPlace.getOffset() + spineItem.offset,
-                                           spineItem.item->href);
+        return std::make_shared<EPubPlace>(streamPlace.getOffset(), spineItem.item->href);
     }
 
     [[nodiscard]] auto streamSize() const -> size_t override {

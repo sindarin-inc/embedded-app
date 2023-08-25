@@ -40,6 +40,9 @@
 // #define PUGIXML_MEMORY_OUTPUT_STACK 10240
 // #define PUGIXML_MEMORY_XPATH_PAGE_SIZE 4096
 
+#define PUGIXML_MEMORY_PAGE_SIZE 8192
+#define PUGIXML_MEMORY_OUTPUT_STACK 2048
+
 // Tune this constant to adjust max nesting for XPath queries
 // #define PUGIXML_XPATH_DEPTH_LIMIT 1024
 

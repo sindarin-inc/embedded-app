@@ -1,7 +1,5 @@
 #include "ReadableBookmark.hpp"
 
-#include <regex>
-
 #include "Models/Place.hpp"
 
 // Simply reads from the bookmark file for this Readable and returns whether it was
@@ -29,15 +27,36 @@ auto ReadOneBookmark(SFile &file, LocalBookmark &bookmark) -> bool {
     }
 
     std::string bookmarkStr = file.readStringUntil('\n');
-    std::regex regExStr("^(" PLACE_REGEX ")[ ]+(" PLACE_REGEX ")$");
 
-    std::smatch sm;
-    if (regex_match(bookmarkStr, sm, regExStr) && (sm.size() == 12)) {
-        // log_d("First place: %s, last place: %s", sm[5].str().c_str(), sm[11].str().c_str());
+    // The Place::factory() will parse up to the ']' character, so no need to find the end of the
+    // place string; This also allow for transition of the old offset value as it will be
+    // translated to an TxtPlace through the factory() method.
+    const char *s;
+    s = bookmarkStr.c_str();
+    while (*s && (*s == ' ')) {
+        s++;
+    }
+    if (*s) {
+        bookmark.firstPlace = Place::factory(s);
 
-        bookmark.firstPlace = Place::factory(sm[5].str());
-        bookmark.lastPlace = Place::factory(sm[11].str());
-        return true;
+        if (*s == '[') {
+            s++;
+            while (*s && (*s != '[')) {
+                s++;
+            }
+        } else {
+            while (*s && (*s != ' ')) {
+                s++;
+            }
+            while (*s && (*s == ' ')) {
+                s++;
+            }
+        }
+
+        if (*s) {
+            bookmark.lastPlace = Place::factory(s);
+            return true;
+        }
     }
 
     return false;

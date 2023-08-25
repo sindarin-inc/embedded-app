@@ -194,7 +194,7 @@ auto EPubTokenizer::subtractOffset(StreamPlace streamPlace, uint32_t offset) -> 
 
     if (streamPlace.getOffset() <= fileStartingOffset) {
         if (streamPlace.getFileIdx() > 0) {
-            uint32_t newOffset = stream_->getSpine(streamPlace.getFileIdx() - 1).uncompressedSize;
+            uint32_t newOffset = stream_->getUncompressedSize(streamPlace.getFileIdx() - 1);
             if (newOffset > offset) {
                 newOffset -= offset;
             } else {
@@ -301,6 +301,47 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
     }
 
     return fromPlace;
+}
+
+auto EPubTokenizer::getStreamPlaceFromTxtOffset(uint32_t txtOffset) const -> StreamPlace {
+    if (txtOffset > 0) {
+        for (auto tocEntry : stream_->getToc()) {
+            if ((txtOffset >= tocEntry.txtOffset) && (txtOffset < tocEntry.endTxtOffset)) {
+                uint16_t spineIdx = stream_->getSpineIdx(tocEntry.href);
+                uint32_t charOffset = txtOffset - tocEntry.txtOffset;
+                if (charOffset == 0) {
+                    return {0, spineIdx};
+                } else {
+                    uint32_t offset =
+                        stream_->findFileOffsetAtCharOffset(tocEntry.href, charOffset);
+                    return {offset, spineIdx};
+                }
+                break;
+            }
+        }
+    }
+
+    log_w("txtOffset not found!");
+    return {0, 0};
+}
+
+auto EPubTokenizer::toStreamPlace(const std::shared_ptr<Place> place) const -> StreamPlace {
+    if (place->isFor(DocType::EPUB)) {
+        std::shared_ptr<EPubPlace> ePubPlace = std::dynamic_pointer_cast<EPubPlace>(place);
+        uint16_t spineIdx = stream_->getSpineIdx(ePubPlace->getHRef());
+        return {place->getOffset(), spineIdx};
+    } else if (place->isFor(DocType::TXT)) {
+        auto pl = getStreamPlaceFromTxtOffset(place->getOffset());
+        log_w("Computed place: %s", pl.str().c_str());
+        return pl;
+    } else {
+        log_e("Wrong Place Type: %" PRIu8, static_cast<uint8_t>(place->getDocType()));
+        if constexpr (ON_ERROR_EXIT) {
+            exit(1);
+        }
+    }
+
+    return {};
 }
 
 void EPubTokenizer::processPictureTag(pugi::xml_node node) {

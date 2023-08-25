@@ -2,6 +2,39 @@
 
 #include "EPubMetaFile.hpp"
 
+auto EPubFile::findFileOffsetAtCharOffset(std::string path, uint32_t charOffset) -> uint32_t {
+
+    pugi::xml_document &doc = getXHTMLFile(path);
+
+    struct Walker : pugi::xml_tree_walker {
+        virtual bool for_each(pugi::xml_node &node) {
+            if (node.type() == pugi::xml_node_type::node_pcdata) {
+                uint32_t length = strlen(node.value());
+                if ((chOffset + length) > charOffset) {
+                    offset = epub->getOffset(node.value()) + (charOffset - chOffset);
+                    return false;
+                }
+                chOffset += length;
+            }
+            return true;
+        }
+
+        uint32_t offset;
+        uint32_t chOffset;
+        uint32_t charOffset;
+        EPubFile *epub;
+    } walker;
+
+    walker.offset = walker.chOffset = 0;
+    walker.charOffset = charOffset;
+    walker.epub = this;
+
+    doc.child("html").child("body").traverse(walker);
+    return walker.offset;
+
+    return 0;
+}
+
 auto EPubFile::getFile(std::string path) -> std::tuple<std::unique_ptr<uint8_t[]>, uint32_t> {
 
     std::unique_ptr<uint8_t[]> buffer = nullptr;
