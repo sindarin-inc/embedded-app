@@ -116,15 +116,24 @@ auto LocalStore::loadToc(const std::shared_ptr<Readable> &readable) -> bool {
         readable->toc.back().fromJson(chapter);
 
         // Check if any chapter has a summary, if so, set hasSummary
-        if (chapter["summary"].as<std::string>().size() > 0) {
+        if (!readable->hasSummary && chapter["summary"].as<std::string>().size() > 0) {
             readable->hasSummary = true;
+        }
+        // Check if any chapter has a summary, if so, set hasSummary
+        if (!readable->hasDictionary && chapter["dictionary"].as<JsonArray>().size() > 0) {
+            readable->hasDictionary = true;
         }
     }
     log_d("Loaded %zu chapters from %s", readable->toc.size(), tocPath.c_str());
     if (readable->hasSummary) {
-        log_d("Readable has summary");
+        log_d("Readable %s has summary", readable->uuid.c_str());
     } else {
-        log_d("Readable has no summary");
+        log_d("Readable %s has no summary", readable->uuid.c_str());
+    }
+    if (readable->hasDictionary) {
+        log_d("Readable %s has dictionary", readable->uuid.c_str());
+    } else {
+        log_d("Readable %s has no dictionary", readable->uuid.c_str());
     }
     tocFile.close();
     return true;
@@ -1322,6 +1331,7 @@ void LocalStore::readableFilePurge(const std::shared_ptr<Readable> &readable) {
     fileSystem.remove(StringFormat("/%s/%s.txt.gz", type.c_str(), uuid.c_str()));
     fileSystem.remove(StringFormat("/%s/%s.txt", type.c_str(), uuid.c_str()));
     fileSystem.remove(StringFormat("/%s/%s.epub", type.c_str(), uuid.c_str()));
+    fileSystem.remove(StringFormat("/toc/%s-toc.json", uuid.c_str()));
 
     if (readable->files.size() > 0) {
         fileSystem.remove(StringFormat("/%s.gz", readable->file().name.c_str()));

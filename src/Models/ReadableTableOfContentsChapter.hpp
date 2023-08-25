@@ -45,9 +45,11 @@ public:
         }
 
         dictionary.clear();
-        for (const auto &definition : j["dictionary"].as<JsonArray>()) {
-            dictionary.emplace_back();
-            dictionary.back().fromJson(definition);
+        if (j.containsKey("dictionary")) {
+            for (const auto &definition : j["dictionary"].as<JsonArray>()) {
+                dictionary.emplace_back();
+                dictionary.back().fromJson(definition);
+            }
         }
         return true;
     }

@@ -43,13 +43,6 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
          {display.defaultScreenWidth - 2 * display.defaultXPadding,
           display.defaultScreenHeight - 2 * display.defaultYPadding}});
 
-    if (showUnread_) {
-        bottomRightText_ = "Hide Unread Chapters";
-    } else {
-        bottomRightText_ = "Show Unread Chapters";
-    }
-
-    bottomRightTextView_.setText(bottomRightText_);
     rightArrowView_.setNeedsLayout();
 
     PROFILE_START(ReadableDictionaryScreenLayoutAndDraw);
@@ -66,8 +59,7 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
 
     if (firstLoad_) {
         unsigned long placeInDictionary = 0;
-        SpiramString dictionaryString =
-            readable_->definitions(placeInReadable_, placeInDictionary, showUnread_);
+        SpiramString dictionaryString = readable_->definitions(placeInReadable_, placeInDictionary);
 
         if (preservePlace_) {
             placeInDictionary = preservePlace_;
@@ -97,7 +89,6 @@ void ReadableDictionaryScreen::processCommand(RemoteCommand command) {
         setNeedsRerender();
         break;
     case RemoteCommand::DOWN:
-        showUnread_ = !showUnread_;
         preservePlace_ = prevPlace_;
         setFirstLoad();
         setNeedsRerender();

@@ -120,22 +120,16 @@ public:
         return summary;
     }
 
-    auto definitions(unsigned long placeInReadable, unsigned long &placeInSummary) -> SpiramString {
+    auto definitions(unsigned long placeInReadable, unsigned long &placeInDictionary)
+        -> SpiramString {
         SpiramString dictionary;
 
         for (const auto &chapter : toc) {
-            if (placeInReadable >= chapter.txtOffset) {
-                placeInDictionary = dictionary.length();
-            }
-            if (placeInReadable < chapter.txtOffset) {
+            if (placeInReadable < chapter.txtOffset || placeInReadable > chapter.endTxtOffset) {
                 break;
             }
-            dictionary += chapter.title;
-            dictionary += "\n\n";
-            if (!chapter.summary.empty()) {
-                dictionary += chapter.summary;
-                dictionary += "\n\n";
-            }
+            // Add word: definition pairs from the chapter's dictionary array, in order of each
+            // word's location in the chapter
         }
 
         return dictionary;
@@ -183,6 +177,8 @@ public:
             if (!hasSummary && chapter["summary"].as<std::string>().size() > 0) {
                 hasSummary = true;
             }
+            log_w("Chapter %s has dictionary %s", chapter["title"].as<std::string>().c_str(),
+                  DumpJson(chapter["dictionary"]).c_str());
             if (!hasDictionary && chapter["dictionary"].as<JsonArray>().size() > 0) {
                 hasDictionary = true;
             }

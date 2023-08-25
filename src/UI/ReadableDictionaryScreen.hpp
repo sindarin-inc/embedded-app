@@ -42,7 +42,6 @@ protected:
     DisplaySystem &display_;
 
     bool firstLoad_ = true;
-    bool showUnread_ = false;
     unsigned long placeInReadable_ = 0;
     unsigned long newPlace_ = 0;
     unsigned long prevPlace_ = 0;

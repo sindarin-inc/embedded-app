@@ -24,6 +24,9 @@ auto convertToJson(const Readable &src, JsonVariant dst) -> bool {
         if (!chapter.summary.empty()) {
             dst["has_summary"] = true;
         }
+        if (!chapter.dictionary.empty()) {
+            dst["has_dictionary"] = true;
+        }
     }
     dst["readable_type"] = src.readableType;
 
