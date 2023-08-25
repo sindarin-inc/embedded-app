@@ -186,6 +186,40 @@ auto EPubTokenizer::computeStartingOffset(StreamPlace streamPlace) -> uint32_t {
     return walker.firstNode ? stream_->getOffset(walker.firstNode.value()) : 0;
 }
 
+// Checks if a node is empty (i.e. there is no displayable character and no picture node in it),
+// return true if so. Used with <p></p> only,
+auto EPubTokenizer::isEmpty(pugi::xml_node node) -> bool {
+
+    struct Walker : pugi::xml_tree_walker {
+        virtual bool for_each(pugi::xml_node &node) {
+            if (node.type() == pugi::xml_node_type::node_pcdata) {
+                const pugi::char_t *buffer = node.value();
+                while (*buffer) {
+                    if (!isspace(*buffer)) {
+                        if ((*buffer != '\xC2') || (*++buffer != '\xA0')) {
+                            empty = false;
+                            return false;
+                        }
+                    }
+                    buffer++;
+                }
+            } else if ((node.type() == pugi::xml_node_type::node_element) &&
+                       (strcmp(node.name(), "picture") == 0)) {
+                empty = false;
+                return false;
+            }
+            return true;
+        }
+
+        bool empty;
+    } walker;
+
+    walker.empty = true;
+    node.traverse(walker);
+
+    return walker.empty;
+}
+
 // subtractOffset() is used in the context of backwards page displacement. For an EPub
 // document, it is rather complex. If the current place is at the first displayable character
 // of an XHTML file, we have to move to the preceding file and subtract the required offset.
@@ -430,6 +464,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 processSuperscript(node.first_child());
             }
             return !pageCompleted_;
+        } else if ((tagIt != tags.end()) && (tagIt->second == Tag::P) && isEmpty(node)) {
+            skipNextParagraph_ = false;
+            return true;
         } else if (skipNextParagraph_) {
             skipNextParagraph_ = false;
             return true;

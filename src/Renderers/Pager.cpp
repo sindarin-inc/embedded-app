@@ -92,12 +92,14 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
         }
         if (!dontStop &&
             ((currentPageDecilineHeight_ + ENDPARAGRAPH_DECI_LINE_HEIGHT) > maxDeciLines_)) {
-            setNextPagePlace(token.streamPlace);
+            currentPageDecilineHeight_ += ENDPARAGRAPH_DECI_LINE_HEIGHT;
+            // setNextPagePlace(token.streamPlace);
+            log_w("END PARAGRAPH at the end of the page...");
             if constexpr (RENDERER_DEBUG) {
                 log_w("Page completed: %" PRIu16 " decilines. Max: %" PRIu16,
                       currentPageDecilineHeight_, maxDeciLines_);
             }
-            return false;
+            return true;
         }
         lines_[lineCount_].tokenCount = 1;
         lines_[lineCount_].tokenIdx = tokens_.getLastIdx();

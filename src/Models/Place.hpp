@@ -80,6 +80,8 @@ public:
         return s;
     }
 
+    void setHRef(std::string href) { href_ = href; };
+
 private:
     std::string href_;
 };

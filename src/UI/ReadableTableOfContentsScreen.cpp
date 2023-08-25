@@ -172,7 +172,14 @@ void ReadableTableOfContentsScreen::loadMenuItems() {
 
 void ReadableTableOfContentsScreen::setPlacemark() {
     auto chapter = readable_->toc[getCurrSelection()];
-    readable_->place->setOffset(chapter.txtOffset);
+    if (readable_->place->isFor(DocType::TXT)) {
+        readable_->place->setOffset(chapter.txtOffset);
+    } else if (readable_->place->isFor(DocType::EPUB)) {
+        readable_->place->setOffset(0);
+        std::shared_ptr<EPubPlace> ePubPlace =
+            std::dynamic_pointer_cast<EPubPlace>(readable_->place);
+        ePubPlace->setHRef(chapter.href);
+    }
     renderer_.setCurrentPlace(readable_->place);
     prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place->str());
     prefs_.readablePlaceChanged.set(readable_->shortenedUuid.c_str(), true);
@@ -185,11 +192,22 @@ void ReadableTableOfContentsScreen::setPlacemark() {
 void ReadableTableOfContentsScreen::setNearestChapterSelection(
     const std::shared_ptr<Place> &placeInFile) {
     int nearestChapter = 0;
-    for (int i = 0; i < readable_->toc.size(); i++) {
-        if (readable_->toc[i].txtOffset <= placeInFile->getOffset()) {
-            nearestChapter = i;
-        } else {
-            break;
+    if (placeInFile->isFor(DocType::TXT)) {
+        for (int i = 0; i < readable_->toc.size(); i++) {
+            if (readable_->toc[i].txtOffset <= placeInFile->getOffset()) {
+                nearestChapter = i;
+            } else {
+                break;
+            }
+        }
+    } else if (placeInFile->isFor(DocType::EPUB)) {
+        std::shared_ptr<EPubPlace> ePubPlace = std::dynamic_pointer_cast<EPubPlace>(placeInFile);
+        std::string href = ePubPlace->getHRef();
+        for (int i = 0; i < readable_->toc.size(); i++) {
+            if (readable_->toc[i].href == href) {
+                nearestChapter = i;
+                break;
+            }
         }
     }
     setCurrSelection(nearestChapter);

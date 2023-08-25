@@ -41,6 +41,8 @@ public:
 
     [[nodiscard]] auto computeStartingOffset(StreamPlace streamPlace) -> uint32_t;
 
+    [[nodiscard]] auto isEmpty(pugi::xml_node node) -> bool;
+
     [[nodiscard]] auto subtractOffset(StreamPlace streamPlace, uint32_t offset)
         -> StreamPlace override;
 
