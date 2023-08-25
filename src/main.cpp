@@ -436,7 +436,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     // Clear screen in case not cleared at shutdown
     if (!PreferencesStore::screenClearedAtShutdown) {
-        myDisplay.clearScreen();
+        DispatchGetUiQueue()->dispatch([]() { myDisplay.clearScreen(); });
     }
     PreferencesStore::screenClearedAtShutdown = false;
 
