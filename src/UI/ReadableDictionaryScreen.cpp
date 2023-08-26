@@ -6,7 +6,7 @@ auto ReadableDictionaryScreen::layout(LayoutContext &context, Size size) -> Size
     context.setViewFrame(leftArrowView_, {{0, -5}, {10, 5}});
     context.setViewFrame(upperLeftTextView_, {{15, -8}, size});
 
-    return {size.width, size.height - 10};
+    return {size.width, size.height};
 };
 
 void ReadableDictionaryScreen::drawInRect(Rect rect) {

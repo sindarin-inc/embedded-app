@@ -7,12 +7,13 @@ auto ReadableSummaryScreen::layout(LayoutContext &context, Size size) -> Size {
 
     context.setViewFrame(leftArrowView_, {{0, -5}, {10, 5}});
     context.setViewFrame(upperLeftTextView_, {{15, -8}, size});
-    context.setViewFrame(rightArrowView_, {{size.width, size.height + 1}, {10, 5}});
-    context.setViewFrame(bottomRightTextView_, {{0, size.height - 1}, {size.width - 4, 10}},
+    context.setViewSizeInRect(rightArrowView_, {10, 5}, {{0, 6}, size},
+                              LayoutOptionsAlignBottom | LayoutOptionsAlignRight);
+    context.setViewFrame(bottomRightTextView_, {{0, size.height - 1}, {size.width - 12, 10}},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical |
                              LayoutOptionsAlignRight);
 
-    return {size.width, size.height - 10};
+    return {size.width, size.height};
 };
 
 void ReadableSummaryScreen::drawInRect(Rect rect) {
