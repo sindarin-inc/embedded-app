@@ -121,7 +121,6 @@ public:
 
         return summary;
     }
-#include <queue>
 
     auto definitions(unsigned long placeInReadable, unsigned long &placeInDictionary)
         -> SpiramString {
