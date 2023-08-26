@@ -21,8 +21,7 @@ public:
                              DisplaySystem &display)
         : EinkView(display), prefs_(prefs), readable_(std::move(readable)), renderer_(display),
           display_(display), upperLeftTextView_(display, upperLeftText_),
-          bottomRightTextView_(display, bottomRightText_), leftArrowView_(display, ArrowUp),
-          rightArrowView_(display, ArrowDown) {}
+          leftArrowView_(display, ArrowUp) {}
 
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
@@ -31,6 +30,7 @@ public:
 
     void processCommand(RemoteCommand command) override;
 
+    void resetBoundingBox();
     void setPlacemark();
     void setFirstLoad() { firstLoad_ = true; }
     void setPlaceInReadable(unsigned long placeInReadable);
@@ -40,6 +40,7 @@ protected:
     std::shared_ptr<Readable> readable_;
     Renderer renderer_;
     DisplaySystem &display_;
+    DisplayRect oldDisplayBoundingBox_ = {};
 
     bool firstLoad_ = true;
     unsigned long placeInReadable_ = 0;
@@ -49,9 +50,6 @@ protected:
     bool atEnd_ = false;
 
     std::string upperLeftText_ = "Dismiss";
-    std::string bottomRightText_;
     SingleLineTextView upperLeftTextView_;
-    SingleLineTextView bottomRightTextView_;
     ArrowView leftArrowView_;
-    ArrowView rightArrowView_;
 };

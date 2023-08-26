@@ -10,12 +10,6 @@ auto ReadableDictionaryScreen::layout(LayoutContext &context, Size size) -> Size
                              LayoutOptionsAlignLeft);
     context.setViewFrame(upperLeftTextView_, {{15, 16 - yNavPadding}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
-    context.setViewFrame(rightArrowView_, {{size.width, size.height - (23 - yNavPadding)}, {10, 5}},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
-                             LayoutOptionsAlignLeft);
-    context.setViewFrame(
-        bottomRightTextView_, {{0, size.height - (25 - yNavPadding)}, {size.width - 4, 10}},
-        LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical | LayoutOptionsAlignRight);
 
     return {size.width, size.height - 10};
 };
@@ -23,8 +17,6 @@ auto ReadableDictionaryScreen::layout(LayoutContext &context, Size size) -> Size
 void ReadableDictionaryScreen::drawInRect(Rect rect) {
     leftArrowView_.draw();
     upperLeftTextView_.draw();
-    rightArrowView_.draw();
-    bottomRightTextView_.draw();
 }
 
 void ReadableDictionaryScreen::setPlaceInReadable(unsigned long placeInReadable) {
@@ -35,7 +27,6 @@ void ReadableDictionaryScreen::setPlaceInReadable(unsigned long placeInReadable)
 auto ReadableDictionaryScreen::checkAtEnd() -> bool { return (newPlace_ == 0); }
 
 void ReadableDictionaryScreen::render(DisplaySystem &display) {
-
     setNeedsLayout();
 
     setFrame(
@@ -43,19 +34,17 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
          {display.defaultScreenWidth - 2 * display.defaultXPadding,
           display.defaultScreenHeight - 2 * display.defaultYPadding}});
 
-    rightArrowView_.setNeedsLayout();
-
-    PROFILE_START(ReadableDictionaryScreenLayoutAndDraw);
     draw();
-    PROFILE_END_LOG_US(ReadableDictionaryScreenLayoutAndDraw);
 
     // This is a slight hack to get around the fact that the bounding box of the display is not
     // context specific
-    auto oldDisplayBoundingBox = display_.getBoundingBox();
-    auto newDisplayBoundingBox = display_.getBoundingBox();
-    newDisplayBoundingBox.y += display.defaultYPadding;
-    newDisplayBoundingBox.height -= 2 * display.defaultYPadding;
-    display_.setBoundingBox(newDisplayBoundingBox);
+    if (oldDisplayBoundingBox_.height == 0) {
+        oldDisplayBoundingBox_ = display_.getBoundingBox();
+        auto newDisplayBoundingBox = display_.getBoundingBox();
+        newDisplayBoundingBox.y += display.defaultYPadding;
+        newDisplayBoundingBox.height -= 2 * display.defaultYPadding;
+        display_.setBoundingBox(newDisplayBoundingBox);
+    }
 
     if (firstLoad_) {
         unsigned long placeInDictionary = 0;
@@ -78,13 +67,18 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
     atEnd_ = checkAtEnd();
     display.updateDisplay(DisplaySystem::UpdateType::FULL);
     firstLoad_ = false;
-
-    // Reset to the original bounding box for when we return to another screen
-    display_.setBoundingBox(oldDisplayBoundingBox);
 }
+
+void ReadableDictionaryScreen::resetBoundingBox() {
+    // Reset to the original bounding box for when we return to another screen
+    display_.setBoundingBox(oldDisplayBoundingBox_);
+    oldDisplayBoundingBox_ = {};
+}
+
 void ReadableDictionaryScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::UP:
+        resetBoundingBox();
         back();
         setNeedsRerender();
         break;
@@ -96,6 +90,7 @@ void ReadableDictionaryScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::ENTER:
     case RemoteCommand::RIGHT:
         if (atEnd_) {
+            resetBoundingBox();
             back();
         }
 
