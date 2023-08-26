@@ -91,10 +91,7 @@ public:
     // automatically. Any methods we need from Adafruit_GFX that need to respect the focus area
     // should be copied in here.
     [[nodiscard]] auto width() const -> int16_t { return boundingBox_.width; };
-    [[nodiscard]] auto height() const -> int16_t {
-        log_i("Bounding box height: %u", boundingBox_.height);
-        return boundingBox_.height;
-    };
+    [[nodiscard]] auto height() const -> int16_t { return boundingBox_.height; };
     void fillScreen(uint16_t color) { gfxClass_->fillScreen(color); }
     void fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2,
                       uint16_t color) {
