@@ -3,13 +3,8 @@
 #include "Misc/SpiramAllocator.hpp"
 
 auto ReadableDictionaryScreen::layout(LayoutContext &context, Size size) -> Size {
-    auto yNavPadding = 24;
-
-    context.setViewFrame(leftArrowView_, {{0, 19 - yNavPadding}, {10, 5}},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical |
-                             LayoutOptionsAlignLeft);
-    context.setViewFrame(upperLeftTextView_, {{15, 16 - yNavPadding}, size},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
+    context.setViewFrame(leftArrowView_, {{0, -5}, {10, 5}});
+    context.setViewFrame(upperLeftTextView_, {{15, -8}, size});
 
     return {size.width, size.height - 10};
 };

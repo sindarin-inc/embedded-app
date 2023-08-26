@@ -5,17 +5,12 @@
 auto ReadableSummaryScreen::layout(LayoutContext &context, Size size) -> Size {
     auto yNavPadding = 24;
 
-    context.setViewFrame(leftArrowView_, {{0, 19 - yNavPadding}, {10, 5}},
+    context.setViewFrame(leftArrowView_, {{0, -5}, {10, 5}});
+    context.setViewFrame(upperLeftTextView_, {{15, -8}, size});
+    context.setViewFrame(rightArrowView_, {{size.width, size.height + 1}, {10, 5}});
+    context.setViewFrame(bottomRightTextView_, {{0, size.height - 1}, {size.width - 4, 10}},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical |
-                             LayoutOptionsAlignLeft);
-    context.setViewFrame(upperLeftTextView_, {{15, 16 - yNavPadding}, size},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignLeft);
-    context.setViewFrame(rightArrowView_, {{size.width, size.height - (23 - yNavPadding)}, {10, 5}},
-                         LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
-                             LayoutOptionsAlignLeft);
-    context.setViewFrame(
-        bottomRightTextView_, {{0, size.height - (25 - yNavPadding)}, {size.width - 4, 10}},
-        LayoutOptionsSizeToFit | LayoutOptionsAlignCenterVertical | LayoutOptionsAlignRight);
+                             LayoutOptionsAlignRight);
 
     return {size.width, size.height - 10};
 };
