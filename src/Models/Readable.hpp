@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <deque>
 #include <map>
-#include <queue>
 #include <string>
 #include <vector>
 
@@ -129,13 +129,11 @@ public:
 
         return summary;
     }
-
     auto definitions(unsigned long placeInReadable, unsigned long &placeInDictionary)
         -> SpiramString {
         SpiramString dictionaryString;
 
-        // Maintain a queue to keep track of the last 5 words added
-        std::queue<SpiramString> lastFiveWords;
+        std::deque<SpiramString> lastFiveWords;
 
         log_d("Looking for definitions for place %lu in %zu chapters", placeInReadable, toc.size());
 
@@ -147,8 +145,7 @@ public:
 
         auto &chapter = *chapterPtr;
 
-        // Add `word: definition` pairs from the chapter's dictionary array, in order of each
-        // word's location in the chapter
+        // Create a map to hold the dictionary items sorted by their location.
         std::map<unsigned long, ReadableDictionary> locationDictMap;
         for (const auto &dict : chapter.dictionary) {
             for (const auto &location : dict.locations) {
@@ -158,40 +155,30 @@ public:
 
         log_d("Found %zu definitions", locationDictMap.size());
 
+        // Loop through each dictionary entry sorted by its location.
         for (const auto &entry : locationDictMap) {
-            auto dict = entry.second;
-            bool isWordInLastFive = false;
+            const auto &dict = entry.second;
 
-            // Check if the word is in the last 5 words added
-            std::queue<SpiramString> tempQueue = lastFiveWords;
-            while (!tempQueue.empty()) {
-                if (tempQueue.front() == dict.word) {
-                    isWordInLastFive = true;
-                    break;
-                }
-                tempQueue.pop();
-            }
-
-            if (isWordInLastFive) {
-                continue; // Skip adding this word
+            // Skip the word if it has been listed among the most recent five words.
+            if (std::find(lastFiveWords.begin(), lastFiveWords.end(), dict.word) !=
+                lastFiveWords.end()) {
+                continue;
             }
 
             if (placeInReadable >= (chapter.txtOffset + entry.first)) {
                 placeInDictionary = dictionaryString.length();
             }
 
-            dictionaryString += dict.word;
-            dictionaryString += ": ";
-            dictionaryString += dict.definition;
-            dictionaryString += "\n\n";
+            dictionaryString += dict.word + ": " + dict.definition + "\n\n";
 
-            lastFiveWords.push(dict.word);
+            // Update the queue of the last five words
+            lastFiveWords.push_back(dict.word);
             if (lastFiveWords.size() > 5) {
-                lastFiveWords.pop();
+                lastFiveWords.pop_front();
             }
         }
 
-        if (locationDictMap.size() == 0) {
+        if (locationDictMap.empty()) {
             log_w("No definitions found for %s", title.c_str());
             return "No definitions found in this chapter.";
         }
