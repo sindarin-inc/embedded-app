@@ -48,7 +48,8 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
 
     if (firstLoad_) {
         unsigned long placeInDictionary = 0;
-        SpiramString dictionaryString = readable_->definitions(placeInReadable_, placeInDictionary);
+        SpiramString dictionaryString =
+            readable_->definitions(placeInReadable_, &placeInDictionary);
 
         if (preservePlace_) {
             placeInDictionary = preservePlace_;

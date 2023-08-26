@@ -129,7 +129,8 @@ public:
 
         return summary;
     }
-    auto definitions(unsigned long placeInReadable, unsigned long &placeInDictionary)
+
+    auto definitions(unsigned long placeInReadable, unsigned long *placeInDictionary)
         -> SpiramString {
         SpiramString dictionaryString;
 
@@ -145,33 +146,29 @@ public:
 
         auto &chapter = *chapterPtr;
 
-        // Create a map to hold the dictionary items sorted by their location.
-        std::map<unsigned long, ReadableDictionary> locationDictMap;
+        std::map<unsigned long, std::shared_ptr<ReadableDictionary>> locationDictMap;
         for (const auto &dict : chapter.dictionary) {
             for (const auto &location : dict.locations) {
-                locationDictMap[location] = dict;
+                locationDictMap[location] = std::make_shared<ReadableDictionary>(dict);
             }
         }
 
         log_d("Found %zu definitions", locationDictMap.size());
 
-        // Loop through each dictionary entry sorted by its location.
         for (const auto &entry : locationDictMap) {
-            const auto &dict = entry.second;
+            const auto &dict = *(entry.second);
 
-            // Skip the word if it has been listed among the most recent five words.
             if (std::find(lastFiveWords.begin(), lastFiveWords.end(), dict.word) !=
                 lastFiveWords.end()) {
                 continue;
             }
 
             if (placeInReadable >= (chapter.txtOffset + entry.first)) {
-                placeInDictionary = dictionaryString.length();
+                *placeInDictionary = dictionaryString.length();
             }
 
             dictionaryString += dict.word + ": " + dict.definition + "\n\n";
 
-            // Update the queue of the last five words
             lastFiveWords.push_back(dict.word);
             if (lastFiveWords.size() > 5) {
                 lastFiveWords.pop_front();
