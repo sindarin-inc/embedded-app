@@ -90,6 +90,14 @@ public:
     [[nodiscard]] auto isArticle() const -> bool {
         return readableType == "pocket_article" || readableType == "email_article";
     }
+    auto findChapter(unsigned long placeInReadable) -> ReadableTableOfContentsChapter * {
+        for (auto &chapter : toc) {
+            if (placeInReadable >= chapter.txtOffset && placeInReadable < chapter.endTxtOffset) {
+                return &chapter;
+            }
+        }
+        return nullptr;
+    }
 
     auto summary(unsigned long placeInReadable, unsigned long &placeInSummary, bool includeUnread)
         -> SpiramString {
@@ -131,57 +139,61 @@ public:
 
         log_d("Looking for definitions for place %lu in %zu chapters", placeInReadable, toc.size());
 
-        for (const auto &chapter : toc) {
-            if (placeInReadable < chapter.txtOffset || placeInReadable >= chapter.endTxtOffset) {
-                continue;
+        auto chapterPtr = findChapter(placeInReadable);
+        if (chapterPtr == nullptr) {
+            log_e("Failed to find chapter for place %lu", placeInReadable);
+            return "";
+        }
+
+        auto &chapter = *chapterPtr;
+
+        // Add `word: definition` pairs from the chapter's dictionary array, in order of each
+        // word's location in the chapter
+        std::map<unsigned long, ReadableDictionary> locationDictMap;
+        for (const auto &dict : chapter.dictionary) {
+            for (const auto &location : dict.locations) {
+                locationDictMap[location] = dict;
+            }
+        }
+
+        log_d("Found %zu definitions", locationDictMap.size());
+
+        for (const auto &entry : locationDictMap) {
+            auto dict = entry.second;
+            bool isWordInLastFive = false;
+
+            // Check if the word is in the last 5 words added
+            std::queue<SpiramString> tempQueue = lastFiveWords;
+            while (!tempQueue.empty()) {
+                if (tempQueue.front() == dict.word) {
+                    isWordInLastFive = true;
+                    break;
+                }
+                tempQueue.pop();
             }
 
-            // Add `word: definition` pairs from the chapter's dictionary array, in order of each
-            // word's location in the chapter
-            std::map<unsigned long, ReadableDictionary> locationDictMap;
-            for (const auto &dict : chapter.dictionary) {
-                for (const auto &location : dict.locations) {
-                    locationDictMap[location] = dict;
-                }
+            if (isWordInLastFive) {
+                continue; // Skip adding this word
             }
 
-            log_d("Found %zu definitions", locationDictMap.size());
-
-            for (const auto &entry : locationDictMap) {
-                auto dict = entry.second;
-                bool isWordInLastFive = false;
-
-                // Check if the word is in the last 5 words added
-                std::queue<SpiramString> tempQueue = lastFiveWords;
-                while (!tempQueue.empty()) {
-                    if (tempQueue.front() == dict.word) {
-                        isWordInLastFive = true;
-                        break;
-                    }
-                    tempQueue.pop();
-                }
-
-                if (isWordInLastFive) {
-                    continue; // Skip adding this word
-                }
-
-                if (placeInReadable >= (chapter.txtOffset + entry.first)) {
-                    placeInDictionary = dictionaryString.length();
-                }
-
-                dictionaryString += dict.word;
-                dictionaryString += ": ";
-                dictionaryString += dict.definition;
-                dictionaryString += "\n\n";
-
-                lastFiveWords.push(dict.word);
-                if (lastFiveWords.size() > 5) {
-                    lastFiveWords.pop();
-                }
+            if (placeInReadable >= (chapter.txtOffset + entry.first)) {
+                placeInDictionary = dictionaryString.length();
             }
 
-            // We're only looking for definitions in a single chapter
-            break;
+            dictionaryString += dict.word;
+            dictionaryString += ": ";
+            dictionaryString += dict.definition;
+            dictionaryString += "\n\n";
+
+            lastFiveWords.push(dict.word);
+            if (lastFiveWords.size() > 5) {
+                lastFiveWords.pop();
+            }
+        }
+
+        if (locationDictMap.size() == 0) {
+            log_w("No definitions found for %s", title.c_str());
+            return "No definitions found in this chapter.";
         }
 
         return dictionaryString;
