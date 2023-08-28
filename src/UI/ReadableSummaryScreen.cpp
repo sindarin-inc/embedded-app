@@ -3,8 +3,6 @@
 #include "Misc/SpiramAllocator.hpp"
 
 auto ReadableSummaryScreen::layout(LayoutContext &context, Size size) -> Size {
-    auto yNavPadding = 24;
-
     context.setViewFrame(leftArrowView_, {{0, -5}, {10, 5}});
     context.setViewFrame(upperLeftTextView_, {{15, -8}, size});
     context.setViewSizeInRect(rightArrowView_, {10, 5}, {{0, 6}, size},
