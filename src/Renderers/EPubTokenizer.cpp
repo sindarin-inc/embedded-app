@@ -223,14 +223,14 @@ auto EPubTokenizer::isEmpty(pugi::xml_node node) -> bool {
 // subtractOffset() is used in the context of backwards page displacement. For an EPub
 // document, it is rather complex. If the current place is at the first displayable character
 // of an XHTML file, we have to move to the preceding file and subtract the required offset.
-auto EPubTokenizer::subtractOffset(StreamPlace streamPlace, uint32_t offset) -> StreamPlace {
+auto EPubTokenizer::subtractOffset(StreamPlace streamPlace, uint32_t offsetToSubtract) -> StreamPlace {
     uint32_t fileStartingOffset = computeStartingOffset(streamPlace);
 
     if (streamPlace.getOffset() <= fileStartingOffset) {
         if (streamPlace.getFileIdx() > 0) {
             uint32_t newOffset = stream_->getUncompressedSize(streamPlace.getFileIdx() - 1);
-            if (newOffset > offset) {
-                newOffset -= offset;
+            if (newOffset > offsetToSubtract) {
+                newOffset -= offsetToSubtract;
             } else {
                 newOffset = 0;
             }
@@ -238,8 +238,8 @@ auto EPubTokenizer::subtractOffset(StreamPlace streamPlace, uint32_t offset) -> 
         } else {
             return {fileStartingOffset, streamPlace.getFileIdx()};
         }
-    } else if (streamPlace.getOffset() > offset) {
-        return {streamPlace.getOffset() - offset, streamPlace.getFileIdx()};
+    } else if (streamPlace.getOffset() > offsetToSubtract) {
+        return {streamPlace.getOffset() - offsetToSubtract, streamPlace.getFileIdx()};
     } else {
         return {fileStartingOffset, streamPlace.getFileIdx()};
     }

@@ -43,7 +43,7 @@ public:
 
     [[nodiscard]] auto isEmpty(pugi::xml_node node) -> bool;
 
-    [[nodiscard]] auto subtractOffset(StreamPlace streamPlace, uint32_t offset)
+    [[nodiscard]] auto subtractOffset(StreamPlace streamPlace, uint32_t offsetToSubtract)
         -> StreamPlace override;
 
 private:

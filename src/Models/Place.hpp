@@ -21,6 +21,8 @@ public:
 
     static auto factory(const std::string &placeStr) -> std::shared_ptr<Place>;
 
+    // The following are good for All subclasses BUT the EPubPlace class...
+
     [[nodiscard]] virtual auto operator==(Place &rhs) const -> bool {
         return (offset_ == rhs.getOffset());
     }
@@ -49,6 +51,7 @@ protected:
     uint32_t offset_{0};
 };
 
+// The use of NonePlace will happen if a bug is present in the code.
 class NonePlace : public Place {
 public:
     ~NonePlace() override = default;
@@ -59,6 +62,8 @@ public:
     [[nodiscard]] auto str() const -> std::string override { return "[NONE;INVALID PLACE]"; }
 };
 
+// A TxtPlace is the location inside a .txt/.txt.gz document. As the document is represented by a
+// single file, the offset_ is a displacement from the beginning of the file.
 class TxtPlace : public Place {
 public:
     TxtPlace(uint32_t offset) { setOffset(offset); }
@@ -79,6 +84,13 @@ public:
     }
 };
 
+// An EPubPlace is the location inside a .epub document. The href_ field relates to the href
+// located in the EPub opf's manifest. The offset_ field is a displacement inside the file
+// identified by the href_ field.
+//
+// WARNING:
+// The comparison operators assume that the comparison is done inside the same
+// file. If not, they return false.
 class EPubPlace : public Place {
 public:
     EPubPlace(uint32_t offset, std::string href) : href_(std::move(std::move(href))) {

@@ -99,6 +99,7 @@ public:
                  const std::shared_ptr<Place> &placeInSummary, bool includeUnread) -> SpiramString {
         SpiramString summary;
 
+        // ToDo: Adjust with Place classes (GT)
         for (const auto &chapter : toc) {
             if (placeInReadable->getOffset() >= chapter.txtOffset) {
                 placeInSummary->setOffset(summary.length());
