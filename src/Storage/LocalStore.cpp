@@ -557,7 +557,7 @@ void LocalStore::syncFromRemote(
         bool booksNowSynced = false;
         bool articlesNowSynced = false;
 
-        DispatchGetUiQueue()->dispatch([this, progressCallback] {
+        DispatchGetUiQueue()->dispatch([progressCallback] {
             progressCallback(ContentSyncState{.state = ContentSyncState::State::CheckingSync});
         });
 
@@ -664,7 +664,7 @@ void LocalStore::syncFromRemote(
                     {{"total-count", checkSyncResponse.totalCount}, {"uuids", pageUuids}});
                 if (httpCode != 200) {
                     log_e("Failed to check sync (HTTP %d)", httpCode);
-                    DispatchGetUiQueue()->dispatch([this, progressCallback] {
+                    DispatchGetUiQueue()->dispatch([progressCallback] {
                         progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
                                                           .message = "Failed to check sync"});
                     });
@@ -748,12 +748,12 @@ void LocalStore::syncFromRemote(
                     log_i("No %ss to download or delete, continuing to next page",
                           ReadableModelTypeToString(modelType).c_str());
                     if (modelType == ReadablesModelType::Book) {
-                        DispatchGetUiQueue()->dispatch([this, progressCallback] {
+                        DispatchGetUiQueue()->dispatch([progressCallback] {
                             progressCallback(
                                 ContentSyncState{.state = ContentSyncState::State::SyncingBooks});
                         });
                     } else if (modelType == ReadablesModelType::Article) {
-                        DispatchGetUiQueue()->dispatch([this, progressCallback] {
+                        DispatchGetUiQueue()->dispatch([progressCallback] {
                             progressCallback(ContentSyncState{
                                 .state = ContentSyncState::State::SyncingArticles});
                         });
@@ -761,7 +761,7 @@ void LocalStore::syncFromRemote(
                     continue;
                 }
                 DispatchGetUiQueue()->dispatch(
-                    [this, progressCallback, syncState] { progressCallback(syncState); });
+                    [progressCallback, syncState] { progressCallback(syncState); });
 
                 processReadableDeletion(readablesToDelete, *readables, tasksIndex, syncState,
                                         progressCallback);
@@ -780,7 +780,7 @@ void LocalStore::syncFromRemote(
                             .c_str());
                 }
                 DispatchGetUiQueue()->dispatch(
-                    [this, progressCallback, syncState] { progressCallback(syncState); });
+                    [progressCallback, syncState] { progressCallback(syncState); });
             }
 
             if (!this->saveReadables(*readables)) {
