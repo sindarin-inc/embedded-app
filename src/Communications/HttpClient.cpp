@@ -36,7 +36,7 @@ HttpClient::HttpClient(const char *url, const char *contentType, esp_http_client
             case HTTP_EVENT_ON_HEADER:
                 thisPtr->responseHeaders_.insert(
                     std::pair<std::string, std::string>(event->header_key, event->header_value));
-                log_d("HTTP_EVENT_ON_HEADER %s %s", event->header_key, event->header_value);
+                // log_d("HTTP_EVENT_ON_HEADER %s %s", event->header_key, event->header_value);
                 break;
             case HTTP_EVENT_ON_DATA:
                 break;
