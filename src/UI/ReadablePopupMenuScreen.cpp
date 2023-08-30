@@ -156,7 +156,8 @@ void ReadablePopupMenuScreen::processCommand(RemoteCommand command) {
 void ReadablePopupMenuScreen::drawInRect(Rect rect) {}
 
 auto ReadablePopupMenuScreen::layout(LayoutContext &context, Size size) -> Size {
-    context.setViewFrame(popupMenuView_, {{size.width / 2 - 50, size.height / 2 - 75}, {100, 144}});
+    auto rect = Rect({{0, 0}, size});
+    context.setViewFrame(popupMenuView_, rect, LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
     return size;
 }
 
