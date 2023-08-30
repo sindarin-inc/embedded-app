@@ -40,6 +40,10 @@ cp $IDF_PATH/components/partition_table/gen_esp32part.py $OUTDIR/test/PyTest/ven
 cp $IDF_PATH/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py $OUTDIR/test/PyTest/vendor/components/nvs_flash/nvs_partition_generator/
 cp $IDF_PATH/components/esptool_py/esptool/esptool.py $OUTDIR/test/PyTest/vendor/components/esptool_py/esptool/esptool.py
 
+# copy ict firmware into bundle
+mkdir $OUTDIR/ict
+cp ict/mainframe-tester-*.zip $OUTDIR/ict
+
 pip3 install ppk2-api==0.9.2
 pip freeze > $OUTDIR/requirements.txt
 
