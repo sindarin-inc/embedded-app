@@ -2,22 +2,81 @@ import logging
 import time
 
 import serial
+import os
+import subprocess
 
 from util import find_port_by_device_name
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+# test
+curr_version = "27"
 
 class MFICTClient:
     def __init__(self, baudrate=115200, timeout=1):
         # get first device with this name, other device is serial port relay
-        port = find_port_by_device_name("SOL Mainframe ICT", 0)
-        if port is None:
+        self.port = find_port_by_device_name("SOL Mainframe ICT", 0)
+        if self.port is None:
             # TODO: Retry?
             raise Exception("Failed to find ICT")
-        logger.info("Found ICT on port: " + port)
-        self.ser = serial.Serial(port, baudrate, timeout=timeout, rtscts=False, dsrdtr=False)
+        logger.info("Found ICT on port: " + self.port)
+        self.ser = serial.Serial(self.port, baudrate, timeout=timeout, rtscts=False, dsrdtr=False)
+
+        # check if ICT update is required
+        version = self.get_ict_version()
+        logger.info("ICT version: " + version)
+
+        if version != curr_version:
+            self.flash_firmware(baudrate, timeout)
+
+    def flash_firmware(self, baudrate, timeout):
+        # reboot inot programming mode
+        self.program()
+        self.ser.close()
+        self.ser = None
+
+        logger.info("flashing firmware")
+        time.sleep(5)
+
+        # write nvs partition to dut
+        res = subprocess.run(
+            [
+                "esptool.py",
+                "--chip",
+                "esp32s3",
+                "-p",
+                "/dev/ttyACM0",
+                "-b",
+                "460800",
+                "--before=default_reset",
+                "--after=hard_reset",
+                "write_flash",
+                "--flash_mode",
+                "dio",
+                "--flash_freq",
+                "80m",
+                "--flash_size",
+                "2MB",
+                "0x0",
+                "mt.bin",
+            ]
+        )
+
+        if res != 0:
+            logger.info("failed to flash ict firmware")
+            return
+
+        logger.info("I am here")
+        time.sleep(5)
+
+        self.port = find_port_by_device_name("SOL Mainframe ICT", 0)
+        if self.port is None:
+            # TODO: Retry?
+            raise Exception("Failed to find ICT")
+        logger.info("Found ICT on port: " + self.port)
+        self.ser = serial.Serial(self.port, baudrate, timeout=timeout, rtscts=False, dsrdtr=False)
+        logger.info("flash successful")
 
     def flush_read_buffer(self):
         # Flush read buffer
@@ -97,3 +156,15 @@ class MFICTClient:
         resp = self.read()
         btmac = resp.split(" ")[1]
         return btmac
+    
+    def get_ict_version(self):
+        self.ser.write("VERSION\n".encode())
+        time.sleep(0.1)
+        resp = self.read()
+        version = resp.split(" ")[1]
+        return version
+    
+    def program(self):
+        self.ser.write("PROGRAM\n".encode())
+        #self.write("PROGRAM\n")
+        #self.flush_read_buffer()
