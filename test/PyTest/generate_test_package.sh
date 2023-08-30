@@ -73,6 +73,6 @@ The \`--skip-autoflash=True\` might also come in handy if you are running the te
 Based on a fresh Ubuntu 22.04 install, you'll need to install some packages before running the above:
 
     sudo apt install python3.10-venv python3-pip espeak
-    sudo usermod -a -G dialout $USER
+    sudo usermod -a -G dialout \$USER
     sudo reboot
 EOF
