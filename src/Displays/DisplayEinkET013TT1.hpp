@@ -5,18 +5,20 @@
 #if SIMULATOR
 #include "Displays/FakeEinkET013TT1.hpp"
 #else
-#include "Displays/EinkET013TT1.hpp"
+#include "Displays/EinkED052TC4.hpp"
 #endif
 #include "sindarin-debug.h"
 
-#define EinkET013TT1_X_PIXELS 256
-#define EinkET013TT1_Y_PIXELS 256
+// 936
+// 720
+#define EinkET013TT1_X_PIXELS 512
+#define EinkET013TT1_Y_PIXELS 512
 
 class DisplayEinkET013TT1 : public DisplaySystem {
 public:
     DisplayEinkET013TT1(uint8_t csLeft, uint8_t csRight, uint8_t rst) noexcept
         : DisplaySystem(), gfxCanvas_(EinkET013TT1_X_PIXELS, EinkET013TT1_Y_PIXELS),
-          driver_(csLeft, csRight, rst) {
+          driver_(csRight, rst) {
         gfxClass_ = &gfxCanvas_;
         canvasBuffer_ = gfxCanvas_.getBuffer();
         canvasWidth_ = EinkET013TT1_X_PIXELS;
@@ -33,7 +35,7 @@ public:
                        DisplaySystem::UpdateType altUpdateType = UNSPECIFIED,
                        Rect altRect = {{0, 0}, {0, 0}}) override;
 
-    void beginPowerOn() override { driver_.beginPowerOn(); };
+    // void beginPowerOn() override { driver_.beginPowerOn(); };
 
     void clearDisplay() override { fullRefreshNext_ = true; };
 
@@ -41,14 +43,14 @@ public:
     void invertDisplay(bool newInvert) override;
 
     // For those moments where you need to expose the driver directly
-    auto getDriver() -> EinkET013TT1 * { return &driver_; }
+    auto getDriver() -> EinkED052TC4 * { return &driver_; }
 
     void drawFullscreenBitmapFromFile(RendererStream &stream) override;
 
 protected:
     GFXcanvas1 gfxCanvas_;
 
-    EinkET013TT1 driver_;
+    EinkED052TC4 driver_;
     bool fullRefreshNext_ = false;
     uint16_t au4Count_ = 0;
     uint16_t numPartials_ = 0;

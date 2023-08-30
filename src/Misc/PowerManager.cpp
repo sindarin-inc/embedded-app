@@ -158,9 +158,9 @@ void PowerManager::wakeupCheck(SolClock &clock) {
             if (bootInfo_.reason == BootInfo::Reason::PowerOn && USBConnected()) {
                 // If this is a power-on boot, and USB is connected, we mark it as sleep reason
                 // UpdateUSBState so that we will schedule a content sync.
-                deepSleep(SleepReason::UpdateUSBState);
+                // deepSleep(SleepReason::UpdateUSBState);
             } else {
-                deepSleep(SleepReason::TempleClosedAtBoot);
+                // deepSleep(SleepReason::TempleClosedAtBoot);
             }
         }
         state_ = PowerState::Active;
@@ -195,7 +195,7 @@ auto PowerManager::begin() -> esp_err_t {
         inactivityTimer_.start(
             [this]() {
             log_i("Inactive! Close and open temple to wake");
-            deepSleep(SleepReason::Inactivity);
+            // deepSleep(SleepReason::Inactivity);
             },
             inactivityTimeoutMs);
     }

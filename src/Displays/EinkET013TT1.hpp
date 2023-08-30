@@ -106,6 +106,9 @@ protected:
     inline auto timerRunning() -> bool;
     inline void waitForTimer();
     inline void waitForNotBusy();
+
+    void writeRegister(const uint8_t *data, size_t len);
+
     void updateInternal(const EinkET013TT1Waveform &waveform, const uint8_t *buffer,
                         int32_t overrideVcom, const EinkET013TT1Waveform &altWaveform, EinkBox box);
 

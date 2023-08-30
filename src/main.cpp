@@ -12,6 +12,8 @@
 
 #include "Communications/BackgroundSync.hpp"
 #include "Communications/WiFi.hpp"
+//#include "Displays/DEV_Config.hpp"
+//#include "Displays/EPD_IT8951.hpp"
 #include "Inputs/RemoteInput.hpp"
 #include "Misc/Battery.hpp"
 #include "Misc/BootError.hpp"
@@ -147,10 +149,21 @@ void StatsTask(void *parameter) {
     vTaskDelete(nullptr);
 }
 
+// UWORD VCOM = 2510;
+
+// IT8951_Dev_Info Dev_Info;
+// UWORD Panel_Width;
+// UWORD Panel_Height;
+// UDOUBLE Init_Target_Memory_Addr;
+// int epd_mode = 0; // 0: no rotate, no mirror
+
 void UIInnerLoop(RemoteCommand command) {
     powerManager.feedInactivityTimer();
     rootUi.loop(myDisplay, command);
 }
+
+// int callDevModuleInit() { return DEV_Module_Init(); }
+// IT8951_Dev_Info call_EPD_Init(double VCOM) { return EPD_IT8951_Init(VCOM); }
 
 #if CONFIG_AUTOSTART_ARDUINO
 void loop() { vTaskDelay(portMAX_DELAY); };
@@ -162,6 +175,47 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     // Configure log level for all Sindarin logs
     esp_log_level_set("Sol", ESP_LOG_DEBUG);
+
+    log_d("Hi there! About to DEV_Module_Init");
+    // Init the BCM2835 Device
+    //  if (callDevModuleInit() != 0) {
+    //     log_e("Oops returning from main");
+    //     return;
+    //}
+
+    // sscanf(argv[1],"%lf",&temp);
+    // VCOM = 2680;
+    // log_d("VCOM value:%d", VCOM);
+    // sscanf(argv[2],"%d",&epd_mode);
+    // epd_mode = 2;
+    // log_d("Display mode:%d", epd_mode);
+    // log_d("About to EPD_IT8951_Init");
+    // Dev_Info = call_EPD_Init(VCOM);
+    // log_d("Really hi there!");
+
+    // get some important info from Dev_Info structure
+    // Panel_Width = Dev_Info.Panel_W;
+    // Panel_Height = Dev_Info.Panel_H;
+    // Init_Target_Memory_Addr = Dev_Info.Memory_Addr_L | (Dev_Info.Memory_Addr_H << 16);
+    // char *LUT_Version = (char *)Dev_Info.LUT_Version;
+
+    // A2_Mode = 6;
+
+    // log_d("A2 Mode:%d", A2_Mode);
+
+    // EPD_IT8951_Clear_Refresh(Dev_Info, Init_Target_Memory_Addr, INIT_Mode);
+
+    // log_d("Passed the EPD Clear Refresh command");
+
+    // log_d("Starting real demo\n");
+    //  Show 16 grayscale
+    //   Display_ColorPalette_Example(Panel_Width, Panel_Height, Init_Target_Memory_Addr);
+
+    if (!myDisplay.setup()) {
+        log_e("Display setup failed");
+        // bootErrors.push_back({.type = BootError::Type::Display});
+    }
+
     powerManager.wakeupCheck(solClock);
 
     BootLoopCheck(fileSystem, powerManager);
@@ -295,15 +349,11 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         break;
     }
 
-    if (!myDisplay.setup()) {
-        bootErrors.push_back({.type = BootError::Type::Display});
-    }
-
     DisplayRect initialRect;
-    initialRect.x = prefs.rectX.get().value_or(myDisplay.defaultBoundingBox.x);
-    initialRect.y = prefs.rectY.get().value_or(myDisplay.defaultBoundingBox.y);
-    initialRect.width = prefs.rectW.get().value_or(myDisplay.defaultBoundingBox.width);
-    initialRect.height = prefs.rectH.get().value_or(myDisplay.defaultBoundingBox.height);
+    initialRect.x = 40;       // prefs.rectX.get().value_or(myDisplay.defaultBoundingBox.x);
+    initialRect.y = 15;       // prefs.rectY.get().value_or(myDisplay.defaultBoundingBox.y);
+    initialRect.width = 432;  // prefs.rectW.get().value_or(myDisplay.defaultBoundingBox.width);
+    initialRect.height = 482; // prefs.rectH.get().value_or(myDisplay.defaultBoundingBox.height);
 
     log_d("Initial bounding box is %" PRIu32 " %" PRIu32 " %" PRIu32 " %" PRIu32 "", initialRect.x,
           initialRect.y, initialRect.width, initialRect.height);

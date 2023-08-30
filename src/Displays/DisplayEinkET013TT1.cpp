@@ -90,6 +90,12 @@ void DisplayEinkET013TT1::invertDisplay(bool newInvert) {
 void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bool clearFrameBuffer,
                                         int vcomNudge, DisplaySystem::UpdateType altUpdateType,
                                         Rect altRect) {
+    driver_.Clear_Refresh(driver_.DevInfo_, driver_.targetMem_, 0);
+    driver_.One_bp_Refresh(gfxCanvas_.getBuffer(), 0, 0, EinkED052TC4_PIXEL_WIDTH,
+                           EinkED052TC4_PIXEL_HEIGHT, 6, driver_.targetMem_, false);
+
+    return;
+#if 0
     if (!DispatchGetUiQueue()->isInQueue()) {
         log_w("updateDisplay called from outside the UI queue.");
     }
@@ -117,7 +123,7 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bo
             }
             // NOLINTEND(bugprone-branch-clone)
         } else {
-            driver_.setBorder(bg == 0x00 ? BORDER_SETTING_BLACK : BORDER_SETTING_WHITE);
+            // driver_.setBorder(bg == 0x00 ? BORDER_SETTING_BLACK : BORDER_SETTING_WHITE);
             driver_.update(FULL_REFRESH_WAVEFORM_REGULAR, gfxCanvas_.getBuffer(), adjustedVcom);
         }
         break;
@@ -283,6 +289,7 @@ void DisplayEinkET013TT1::updateDisplay(DisplaySystem::UpdateType updateType, bo
     }
 
     fullRefreshNext_ = false;
+#endif
 }
 
 void DisplayEinkET013TT1::drawFullscreenBitmapFromFile(RendererStream &stream) {

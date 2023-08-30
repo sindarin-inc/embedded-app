@@ -9,7 +9,7 @@
 #include <esp_mac.h>
 #include <esp_sleep.h>
 #include <esp_system.h>
-#include <esp_task_wdt.h>
+//#include <esp_task_wdt.h>
 #include <esp_timer.h>
 #include <hal/gpio_types.h>
 #include <nvs_flash.h>
@@ -174,17 +174,19 @@ auto GetHeapSize() -> size_t {
 }
 
 void EnableCore0Wdt() {
-    TaskHandle_t idle0 = xTaskGetIdleTaskHandleForCPU(0);
-    if (idle0 == nullptr || esp_task_wdt_add(idle0) != ESP_OK) {
-        log_e("Failed to add Core 0 IDLE task to WDT");
-    }
+    /* TaskHandle_t idle0 = xTaskGetIdleTaskHandleForCPU(0);
+     if (idle0 == nullptr || esp_task_wdt_add(idle0) != ESP_OK) {
+         log_e("Failed to add Core 0 IDLE task to WDT");
+     }*/
 }
 
 void DisableCore0Wdt() {
-    TaskHandle_t idle0 = xTaskGetIdleTaskHandleForCPU(0);
-    if (idle0 == nullptr || esp_task_wdt_delete(idle0) != ESP_OK) {
-        log_e("Failed to remove Core 0 IDLE task from WDT");
-    }
+    /*
+        TaskHandle_t idle0 = xTaskGetIdleTaskHandleForCPU(0);
+        if (idle0 == nullptr || esp_task_wdt_delete(idle0) != ESP_OK) {
+            log_e("Failed to remove Core 0 IDLE task from WDT");
+        }
+        */
 }
 
 void InitializePlatform() {
