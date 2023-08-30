@@ -748,15 +748,15 @@ void LocalStore::syncFromRemote(
                     log_i("No %ss to download or delete, continuing to next page",
                           ReadableModelTypeToString(modelType).c_str());
                     if (modelType == ReadablesModelType::Book) {
-                        DispatchGetUiQueue()->dispatch([progressCallback] {
-                            progressCallback(
-                                ContentSyncState{.state = ContentSyncState::State::SyncingBooks});
-                        });
+                        // DispatchGetUiQueue()->dispatch([progressCallback] {
+                        progressCallback(
+                            ContentSyncState{.state = ContentSyncState::State::SyncingBooks});
+                        // });
                     } else if (modelType == ReadablesModelType::Article) {
-                        DispatchGetUiQueue()->dispatch([progressCallback] {
-                            progressCallback(ContentSyncState{
-                                .state = ContentSyncState::State::SyncingArticles});
-                        });
+                        // DispatchGetUiQueue()->dispatch([progressCallback] {
+                        progressCallback(
+                            ContentSyncState{.state = ContentSyncState::State::SyncingArticles});
+                        // });
                     }
                     continue;
                 }
@@ -779,8 +779,9 @@ void LocalStore::syncFromRemote(
                                      ReadableModelTypeToString(modelType).c_str())
                             .c_str());
                 }
-                DispatchGetUiQueue()->dispatch(
-                    [progressCallback, syncState] { progressCallback(syncState); });
+                // DispatchGetUiQueue()->dispatch([progressCallback, syncState] {
+                progressCallback(syncState);
+                // });
             }
 
             if (!this->saveReadables(*readables)) {
