@@ -31,7 +31,8 @@ public:
 
     void processCommand(RemoteCommand command) override;
 
-    void resetBoundingBox();
+    auto insetBoundingBox() -> DisplayRect;
+    void resetBoundingBox(DisplayRect oldDisplayBoundingBox);
     void setPlacemark();
     void setFirstLoad() { firstLoad_ = true; }
     void setPlaceInReadable(unsigned long placeInReadable);
@@ -41,7 +42,6 @@ protected:
     std::shared_ptr<Readable> readable_;
     Renderer renderer_;
     DisplaySystem &display_;
-    DisplayRect oldDisplayBoundingBox_ = {};
 
     bool firstLoad_ = true;
     bool showUnread_ = false;

@@ -49,13 +49,7 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
 
     // This is a slight hack to get around the fact that the bounding box of the display is not
     // context specific
-    if (oldDisplayBoundingBox_.height == 0) {
-        oldDisplayBoundingBox_ = display_.getBoundingBox();
-        auto newDisplayBoundingBox = display_.getBoundingBox();
-        newDisplayBoundingBox.y += display_.defaultYPadding;
-        newDisplayBoundingBox.height -= 2 * display_.defaultYPadding;
-        display_.setBoundingBox(newDisplayBoundingBox);
-    }
+    auto oldDisplayBoundingBox = insetBoundingBox();
 
     if (firstLoad_) {
         unsigned long placeInSummary = 0;
@@ -78,18 +72,27 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
     atEnd_ = checkAtEnd();
     display.updateDisplay(DisplaySystem::UpdateType::FULL);
     firstLoad_ = false;
+
+    resetBoundingBox(oldDisplayBoundingBox);
 }
 
-void ReadableSummaryScreen::resetBoundingBox() {
+auto ReadableSummaryScreen::insetBoundingBox() -> DisplayRect {
+    auto oldDisplayBoundingBox = display_.getBoundingBox();
+    auto newDisplayBoundingBox = display_.getBoundingBox();
+    newDisplayBoundingBox.y += display_.defaultYPadding;
+    newDisplayBoundingBox.height -= 2 * display_.defaultYPadding;
+    display_.setBoundingBox(newDisplayBoundingBox);
+    return oldDisplayBoundingBox;
+}
+
+void ReadableSummaryScreen::resetBoundingBox(DisplayRect oldDisplayBoundingBox) {
     // Reset to the original bounding box for when we return to another screen
-    display_.setBoundingBox(oldDisplayBoundingBox_);
-    oldDisplayBoundingBox_ = {};
+    display_.setBoundingBox(oldDisplayBoundingBox);
 }
 
 void ReadableSummaryScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::UP:
-        resetBoundingBox();
         back();
         setNeedsRerender();
         break;
@@ -102,17 +105,19 @@ void ReadableSummaryScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::ENTER:
     case RemoteCommand::RIGHT:
         if (atEnd_) {
-            resetBoundingBox();
             back();
         }
 
         setNeedsRerender();
         break;
     case RemoteCommand::BACK:
-    case RemoteCommand::LEFT:
+    case RemoteCommand::LEFT: {
+        auto oldDisplayBoundingBox = insetBoundingBox();
         newPlace_ = renderer_.getPreviousPlace();
         setNeedsRerender();
+        resetBoundingBox(oldDisplayBoundingBox);
         break;
+    }
     default:
         break;
     }
