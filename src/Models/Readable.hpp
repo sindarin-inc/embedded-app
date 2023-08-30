@@ -141,7 +141,7 @@ public:
         auto chapterPtr = findChapter(placeInReadable);
         if (chapterPtr == nullptr) {
             log_e("Failed to find chapter for place %lu", placeInReadable);
-            return "";
+            return "No definitions found in this chapter.";
         }
 
         auto &chapter = *chapterPtr;
