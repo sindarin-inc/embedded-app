@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <driver/gpio.h>
 #include <driver/rtc_io.h>
+#include <esp_bt.h>
 #include <esp_idf_version.h>
 #include <esp_wifi.h>
 #include <hal/gpio_types.h>
