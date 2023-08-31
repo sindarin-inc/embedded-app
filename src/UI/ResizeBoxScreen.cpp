@@ -19,8 +19,11 @@ ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs
         "not in spells but in stories. One ancient tome enchanted her; its runes sparkled with "
         "hidden wisdom. Night after night, she read, the runes dancing around her. Unbeknownst to "
         "her, they were weaving a spell, granting her unparalleled wisdom. Elinor's library became "
-        "legendary, each book a magical gateway, all thanks to her love for reading.";
-
+        "legendary, each book a magical gateway, all thanks to her love for reading. "
+        "Elinor soon discovered her wisdom had limits; the books ran out. Venturing outside, she "
+        "sought new stories. She stumbled upon a village terrorized by a dragon. Wisdom in hand, "
+        "she orchestrated a plan. The dragon left, villagers hailed her as a hero. But Elinor "
+        "found no joy; her wisdom couldn't decipher the dragon's untold tale.";
     auto stream = std::make_shared<StdStringStream>(message);
     renderer_.setStream(stream);
 }
