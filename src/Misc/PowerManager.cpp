@@ -4,6 +4,7 @@
 #include <driver/gpio.h>
 #include <driver/rtc_io.h>
 #include <esp_idf_version.h>
+#include <esp_wifi.h>
 #include <hal/gpio_types.h>
 #include <ulp_riscv.h>
 #include <ulp_riscv_i2c.h>
@@ -451,6 +452,9 @@ void PowerManager::beginShutdown() {
     if (err != ESP_OK) {
         log_e("Failed to deinit hardware with err %s", esp_err_to_name(err));
     }
+
+    esp_wifi_stop();
+    esp_bt_controller_disable();
 }
 
 void PowerManager::reboot() {
