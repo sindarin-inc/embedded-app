@@ -990,7 +990,7 @@ auto LocalStore::processReadableDownload(
             if (success) {
                 addReadable(readables, readable);
                 log_d("File successfully downloaded.");
-                clearReadableFiles(readable);
+                purgeReadableToc(readable);
                 if (!saveReadables(readables)) {
                     log_e("Failed to save %s", ReadableModelTypeToString(modelType).c_str());
 
@@ -1152,7 +1152,7 @@ void LocalStore::sortReadables(ReadablesVector &readables) {
     log_d("Finished sorting");
 }
 
-void LocalStore::clearReadableFiles(const std::shared_ptr<Readable> &readable) {
+void LocalStore::purgeReadableToc(const std::shared_ptr<Readable> &readable) {
     // Delete the TOC files so they can be re-saved with updated copies
     auto tocPath = readable->tocFilePath();
     if (tocPath.size()) {

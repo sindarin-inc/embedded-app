@@ -132,24 +132,28 @@ public:
 
     auto definitions(unsigned long placeInReadable, unsigned long *placeInDictionary)
         -> SpiramString {
+        // This code generates the dictionaryString for an entire chapter, making sure to not add
+        // duplicate words within the last 5 words (but duplicates are allowed assuming they are > 5
+        // words ago). It returns the dictionaryString as well as the position of the word closest
+        // to the current page using the placeInDictionary out-value.
+
         SpiramString dictionaryString;
 
         std::deque<SpiramString> lastFiveWords;
 
         log_d("Looking for definitions for place %lu in %zu chapters", placeInReadable, toc.size());
 
-        auto chapterPtr = findChapter(placeInReadable);
-        if (chapterPtr == nullptr) {
+        auto chapter = findChapter(placeInReadable);
+        if (chapter == nullptr) {
             log_e("Failed to find chapter for place %lu", placeInReadable);
             return "No definitions found in this chapter.";
         }
 
-        auto &chapter = *chapterPtr;
+        std::map<unsigned long, ReadableDictionary *> locationDictMap;
 
-        std::map<unsigned long, std::shared_ptr<ReadableDictionary>> locationDictMap;
-        for (const auto &dict : chapter.dictionary) {
+        for (ReadableDictionary &dict : chapter->dictionary) {
             for (const auto &location : dict.locations) {
-                locationDictMap[location] = std::make_shared<ReadableDictionary>(dict);
+                locationDictMap[location] = &dict;
             }
         }
 
@@ -163,7 +167,7 @@ public:
                 continue;
             }
 
-            if (placeInReadable >= (chapter.txtOffset + entry.first)) {
+            if (placeInReadable >= (chapter->txtOffset + entry.first)) {
                 *placeInDictionary = dictionaryString.length();
             }
 
