@@ -16,8 +16,8 @@ jobs:
         id: download
         uses: actions/download-artifact@v3
         with:
-          name: embedded-app-${{ github.sha }}-IDFv5.1
-          path: embedded-app-${{ github.sha }}-IDFv5.1
+          name: embedded-app-${{ github.sha }}-IDFv5.1.1
+          path: embedded-app-${{ github.sha }}-IDFv5.1.1
 
       - name: Create release
         run: |
@@ -33,16 +33,16 @@ jobs:
           -F "release_notes=TODO"
 
       - name: Create the flasher script
-        run: echo "esptool.py -b 460800 --before default_reset --after hard_reset --chip esp32s3  write_flash --flash_mode dio --flash_size 64MB --flash_freq 80m 0x0 bootloader/bootloader.bin 0x8000 partition_table/partition-table.bin 0xe000 ota_data_initial.bin 0x10000 embedded-app.bin" > embedded-app-${{ github.sha }}-IDFv5.1/flash.sh
+        run: echo "esptool.py -b 460800 --before default_reset --after hard_reset --chip esp32s3  write_flash --flash_mode dio --flash_size 64MB --flash_freq 80m 0x0 bootloader/bootloader.bin 0x8000 partition_table/partition-table.bin 0xe000 ota_data_initial.bin 0x10000 embedded-app.bin" > embedded-app-${{ github.sha }}-IDFv5.1.1/flash.sh
 
       - name: Zip back up the build
-        run: zip -r embedded-app-${{ github.sha }}-IDFv5.1.zip embedded-app-${{ github.sha }}-IDFv5.1
+        run: zip -r embedded-app-${{ github.sha }}-IDFv5.1.1.zip embedded-app-${{ github.sha }}-IDFv5.1.1
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: embedded-app-${{ github.sha }}-IDFv5.1.zip
+          files: embedded-app-${{ github.sha }}-IDFv5.1.1.zip
 
       - name: Notify Slack
         run: |
