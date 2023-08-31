@@ -427,20 +427,6 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        std::string message = "Welcome to the Sol Reader! Let's begin...";
-        display.clearDisplay();
-        display.clearFrameBuffer();
-        display.setFont(static_cast<Font *>(&ibmf75Face0));
-        display.drawSingleLineOfText(
-            message.c_str(),
-            display.xAbsolute(display.xAbsoluteCenter() -
-                              display.getTextWidth(message.c_str()) / 2),
-            display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight(message.c_str())),
-            true);
-        nextInterval_ = 10;
-    });
-
-    lambdas_.emplace_back([this](DisplaySystem &display) {
         dropVcom_ = true;
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_BOOK1_BITS,
                             mani_book1_width, mani_book1_height, display.fg);
@@ -871,11 +857,11 @@ void DemoScreen::render(DisplaySystem &display) {
     }
 
     if ((currentScreen_ >= 3) && (currentScreen_ != lambdas_.size() - 1)) {
-        display.updateDisplay(nextUpdateType_, true, nextVcomNudge_);
         // Must stop the timer because ChangePeriod starts it.
         xTimerStop(DisplaySystem::animationTimer, 0);
         // Move to the next animation
         xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
+        display.updateDisplay(nextUpdateType_, true, nextVcomNudge_);
         currentScreen_++;
     } else if (currentScreen_ < 3) {
         // Must stop the timer because ChangePeriod starts it.
