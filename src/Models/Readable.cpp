@@ -20,7 +20,7 @@ auto convertToJson(const Readable &src, JsonVariant dst) -> bool {
     }
 
     // The toc is an empty array because we store it in a separate file but add it back in when
-    // opening a Readable for reading
+    // opening the popup menu in a Readable while reading
     dst.createNestedArray("toc");
 
     return true;

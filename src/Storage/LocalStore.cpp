@@ -202,7 +202,7 @@ void LocalStore::removeReadable(ReadablesVector &readables,
     for (auto it = readables.begin(); it != readables.end(); ++it) {
         if (it->get()->uuid == readable->uuid) {
             readables.erase(it);
-            // return; // Don't return early in order to catch dupes
+            return;
         }
     }
 }
@@ -944,7 +944,7 @@ void LocalStore::processReadableDeletion(
 
         log_i("Deleting %s", readablesToDelete[i]->title.c_str());
         readableFilePurge(readablesToDelete[i]);
-        this->removeReadable(readables, readablesToDelete[i]);
+        removeReadable(readables, readablesToDelete[i]);
     }
 
     // All article deletions take a single task line item
