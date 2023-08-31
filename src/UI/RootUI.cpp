@@ -31,6 +31,7 @@
 #include "UI/CalibrationScreen.hpp"
 #include "UI/ContentSyncScreen.hpp"
 #include "UI/CrashReportScreen.hpp"
+#include "UI/DebugAboutScreen.hpp"
 #include "UI/DemoScreen.hpp"
 #include "UI/FirmwareUpdateScreen.hpp"
 #include "UI/Fonts/Fonts.hpp"
@@ -1057,6 +1058,17 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         power_.reboot();
     }));
 #endif
+
+    debugSettingsMenu->addMenuItem(MenuItem("About", [this, debugSettingsMenu, display]() {
+        auto debugAboutScreen = new DebugAboutScreen(*display);
+        this->setCurrentScreen(*debugAboutScreen);
+        debugAboutScreen->setBackCallback([this, debugAboutScreen, debugSettingsMenu]() {
+            debugSettingsMenu->setFirstLoad();
+            display_->clearDisplay();
+            setCurrentScreen(*debugSettingsMenu);
+            delete debugAboutScreen;
+        });
+    }));
 
     debugSettingsMenu->addMenuItem(
         MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {

@@ -1,5 +1,4 @@
-#ifndef ABOUT_SCREEN_HPP
-#define ABOUT_SCREEN_HPP
+#pragma once
 
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
@@ -77,5 +76,3 @@ protected:
     SingleLineTextView remoteBatteryView_;
     SingleLineTextView returnToMenuView_;
 };
-
-#endif
