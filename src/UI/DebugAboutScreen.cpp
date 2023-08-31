@@ -23,7 +23,9 @@ DebugAboutScreen::DebugAboutScreen(DisplaySystem &display)
     auto idfVersionStr = StringFormat("IDF Version: %s", appDesc->idf_ver);
     textViews_.emplace_back(std::make_shared<SingleLineTextView>(display, idfVersionStr));
 
-    auto elfSha256Str = StringFormat("ELF SHA256: %s", appDesc->app_elf_sha256);
+    char buf[10];
+    esp_app_get_elf_sha256(buf, sizeof(buf));
+    auto elfSha256Str = StringFormat("ELF SHA256: %s...", buf);
     textViews_.emplace_back(std::make_shared<SingleLineTextView>(display, elfSha256Str));
 
     unsigned revision = efuse_hal_chip_revision();

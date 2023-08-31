@@ -1,5 +1,7 @@
 #include "esp_app_desc.h"
 
+#include <cstdio>
+
 // Initialize a global esp_app_desc_t struct
 esp_app_desc_t app_desc = {.magic_word = 0xABCD1234,
                            .secure_version = 1,
@@ -13,3 +15,5 @@ esp_app_desc_t app_desc = {.magic_word = 0xABCD1234,
                            .reserv2 = {0}};
 
 const esp_app_desc_t *esp_app_get_description(void) { return &app_desc; }
+
+int esp_app_get_elf_sha256(char *dst, size_t size) { return snprintf(dst, size, "fakesha"); }
