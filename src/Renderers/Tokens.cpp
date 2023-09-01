@@ -1,6 +1,9 @@
 #include "Tokens.hpp"
 
-void Tokens::add(Token &token, const char *str, uint8_t strSize) {
+// Add a token to the tokens list. The null terminated string is *not* copied to the pool and is
+// expected to be a literal. The token may not be added if there is no space remaining in the tokens
+// array.
+auto Tokens::add(Token &token, const char *str, uint8_t strSize) -> bool {
     if (tokensCount_ < MAX_TOKEN_COUNT) {
         if (str != nullptr) {
             token.cStr = str;
@@ -22,9 +25,14 @@ void Tokens::add(Token &token, const char *str, uint8_t strSize) {
         if constexpr (ON_ERROR_EXIT) {
             exit(1);
         }
+        return false;
     }
+
+    return true;
 }
 
+// Add a byte to the token string. The byte is copied to the pool. The token's length and null
+// terminated string are adjusted.
 void Tokens::addByte(Token &token, uint8_t b) {
     // if constexpr (RENDERER_DEBUG) {
     //   log_d("Adding byte %02" PRIX8 "H to last token at %" PRIu16 ".", b, cStrPoolCount_);
@@ -60,6 +68,7 @@ void Tokens::addByte(Token &token, uint8_t b) {
     }
 }
 
+// Associate the string to the token. The string will be copied to the pool.
 void Tokens::addStr(Token &token, std::string str) {
     // if constexpr (RENDERER_DEBUG) {
     //   log_d("Adding byte %02" PRIX8 "H to last token at %" PRIu16 ".", b, cStrPoolCount_);
@@ -95,6 +104,8 @@ void Tokens::addStr(Token &token, std::string str) {
     }
 }
 
+// Set the size of a space character for the token. If not already retrived for caching, get it
+// through the displau_/font.
 void Tokens::setSpaceSize(Token &token) {
     if (spaceWidth_ == 0) {
         display_.getTextSize(" ", &spaceWidth_, &spaceHeight_);

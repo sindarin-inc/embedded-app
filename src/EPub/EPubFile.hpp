@@ -1,4 +1,5 @@
 #include "EPubOpf.hpp"
+#include "Misc/SpiramAllocator.hpp"
 #include "Misc/ZipFile.hpp"
 #include "Models/DocType.hpp"
 #include "Renderers/RendererStream.hpp"
@@ -52,7 +53,7 @@ public:
     [[nodiscard]] auto getXHTMLFile(std::string path) -> pugi::xml_document &;
 
     [[nodiscard]] inline auto getOffset(const pugi::char_t *item) const -> uint32_t {
-        return item - currentFileBuffer_;
+        return item - currentFileBuffer_.get();
     }
 
     [[nodiscard]] inline auto getFullPath(std::string filename) const -> std::string {
@@ -79,7 +80,8 @@ private:
 
     std::shared_ptr<EPubOpf> opf_;
 
-    pugi::char_t *currentFileBuffer_;
+    // std::unique_ptr<pugi::char_t[]> currentFileBuffer_;
+    std::shared_ptr<pugi::char_t[]> currentFileBuffer_;
     std::string currentFilePath_;
 
     auto open() -> bool;

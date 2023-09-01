@@ -72,12 +72,11 @@ auto EPubFile::getXHTMLFile(std::string path) -> pugi::xml_document & {
             unz_file_info info;
             epubZipFile_.getFileInfo(&info, nullptr, 0, nullptr, 0);
 
+            currentFileBuffer_ = SpiRamArrayPtr<pugi::char_t>(info.uncompressed_size);
+            // currentFileBuffer_ = std::make_unique<pugi::char_t[]>(info.uncompressed_size);
+
             if (currentFileBuffer_ != nullptr) {
-                delete[] currentFileBuffer_;
-            }
-            currentFileBuffer_ = new pugi::char_t[info.uncompressed_size];
-            if (currentFileBuffer_ != nullptr) {
-                size_t len = epubZipFile_.readFromFile((uint8_t *)currentFileBuffer_,
+                size_t len = epubZipFile_.readFromFile((uint8_t *)currentFileBuffer_.get(),
                                                        info.uncompressed_size);
                 epubZipFile_.closeFile();
 
@@ -87,7 +86,7 @@ auto EPubFile::getXHTMLFile(std::string path) -> pugi::xml_document & {
                     // directly in the currentFileBuffer instead of being copied.
                     // (see the EPubFile::getOffset() method).
                     pugi::xml_parse_result result =
-                        currentFileDoc_.load_buffer_inplace(currentFileBuffer_, len);
+                        currentFileDoc_.load_buffer_inplace(currentFileBuffer_.get(), len);
 
                     if (result) {
                         currentFilePath_ = filePath;
@@ -138,10 +137,4 @@ auto EPubFile::open() -> bool {
     return true;
 }
 
-void EPubFile::close() {
-    if (currentFileBuffer_ != nullptr) {
-        delete[] currentFileBuffer_;
-    }
-
-    return epubZipFile_.close();
-}
+void EPubFile::close() { return epubZipFile_.close(); }

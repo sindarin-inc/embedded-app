@@ -70,7 +70,10 @@ protected:
 
     inline auto addTokenToPage(Token token, bool backwards, const char *str = nullptr,
                                uint8_t strSize = 0) -> bool {
-        tokens_.add(token, str, strSize);
-        return !pager_.addLastTokenToPage(backwards) && !backwards;
+        if (tokens_.add(token, str, strSize)) {
+            return !pager_.addLastTokenToPage(backwards) && !backwards;
+        } else {
+            return false;
+        }
     }
 };
