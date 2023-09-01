@@ -88,6 +88,8 @@ void StartFreeRtos(bool runAppMain) {
         log_i("Starting FreeRTOS scheduler");
         vTaskStartScheduler();
     });
+    // Wait for screen refresh at boot (from screenClearedAtShutdown)
+    WAIT_FOR_DRAW();
 }
 
 void StopFreeRtos() {

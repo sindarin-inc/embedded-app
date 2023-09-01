@@ -77,6 +77,8 @@ auto USBConnected() -> bool;
 
 auto GetSerialNumber() -> std::string;
 
+auto GetMacAddress() -> std::string;
+
 auto GetHardwareRevision() -> uint8_t;
 
 void ForcePowerOn();

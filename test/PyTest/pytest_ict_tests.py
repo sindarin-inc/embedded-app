@@ -99,6 +99,8 @@ class OverrideIdfSerial(IdfSerial):
         fp.write("paired-tt,data,u64," + str(btmac_int) + "\n")
         # Write a cloud-token so the glasses don't try to go back into ship mode upon sleep
         fp.write("cloud-token,data,string,FAKECLOUDTOKEN\n")
+        # Skip the onboarding thing since it has a bunch of animations
+        fp.write("no-setup,data,u8,1\n")
         fp.close()
 
         # check for $IDF_PATH variable
@@ -334,13 +336,12 @@ class TestPowerConsumption:
         dut.expect("Sol: Error-free boot!", timeout=30)
 
         # wait for ICT pageturner connect
-        dut.expect("Connected to PageTurner", timeout=5)
+        dut.expect("Connected to PageTurner", timeout=20)
 
-        time.sleep(1)
+        time.sleep(3)
 
         logger.info("Measuring active mode current")
-        # TODO: Why do we need such a wide range here?
-        power_client.expect_current((9000, 125000), 5)
+        power_client.expect_current((7000, 13000), 5)
 
         logger.info("Sleeping")
         ict_client.set_servo("right", 0)

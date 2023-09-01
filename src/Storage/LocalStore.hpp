@@ -130,6 +130,7 @@ public:
     auto saveTableOfContents(const std::shared_ptr<Readable> &readable) -> bool;
     auto removeStopWords(const SpiramString &title) -> std::string;
     void sortReadables(ReadablesVector &readables);
+    void purgeReadableToc(const std::shared_ptr<Readable> &readable);
     auto saveReadables(ReadablesVector &readables) -> bool;
 
     // Methods for interacting with readable files on disk

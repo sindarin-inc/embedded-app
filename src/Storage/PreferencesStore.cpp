@@ -2,12 +2,14 @@
 
 #include <esp_attr.h>
 #include <memory>
+#include <unordered_map>
 
 RTC_SLOW_ATTR SyncReason PreferencesStore::syncReason;
 RTC_SLOW_ATTR uint64_t PreferencesStore::nextSyncTime;
 RTC_SLOW_ATTR int64_t PreferencesStore::ledChargeTime;
 RTC_SLOW_ATTR uint8_t PreferencesStore::lastBatteryReport;
 RTC_SLOW_ATTR uint8_t PreferencesStore::lastPageTurnerBattery;
+RTC_SLOW_ATTR bool PreferencesStore::screenClearedAtShutdown;
 RTC_SLOW_ATTR bool PreferencesStore::settingsOnRestart;
 RTC_SLOW_ATTR PairedStatus PreferencesStore::paired;
 

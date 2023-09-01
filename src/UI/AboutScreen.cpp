@@ -4,7 +4,7 @@
 
 auto AboutScreen::layout(LayoutContext &context, Size size) -> Size {
     uint8_t leftPadding = 20;
-    uint8_t yAdvance = 20;
+    uint8_t yAdvance = 17;
 
     int x = 0;
     int y = 10;
@@ -31,6 +31,11 @@ auto AboutScreen::layout(LayoutContext &context, Size size) -> Size {
 
     y += yAdvance;
 
+    context.setViewFrame(wifiMacView_, {{x, y}, size},
+                         LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
+
+    y += yAdvance;
+
     context.setViewFrame(remoteFirmwareVersionView_, {{x, y}, size},
                          LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
@@ -50,6 +55,7 @@ void AboutScreen::drawInRect(Rect rect) {
     productNameView_.draw();
     serialNumberView_.draw();
     firmwareVersionView_.draw();
+    wifiMacView_.draw();
     remoteFirmwareVersionView_.draw();
     remoteBatteryView_.draw();
     returnToMenuView_.draw();

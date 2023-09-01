@@ -6,7 +6,9 @@
 #include <esp_adc/adc_cali_scheme.h>
 #include <esp_adc/adc_oneshot.h>
 #include <esp_err.h>
+#include <esp_mac.h>
 #include <esp_sleep.h>
+#include <esp_system.h>
 #include <esp_task_wdt.h>
 #include <esp_timer.h>
 #include <hal/gpio_types.h>
@@ -445,6 +447,23 @@ auto GetSerialNumber() -> std::string {
     }
 
     return {(const char *)serialNumber, sizeof(serialNumber)};
+}
+
+auto GetMacAddress() -> std::string {
+    uint8_t wifimac[6];
+    char str[18];
+    str[17] = '\0';
+    esp_err_t ret = esp_read_mac(wifimac, ESP_MAC_WIFI_STA);
+    if (ret == ESP_OK) {
+        int ret = snprintf(str, sizeof(str), "%02X:%02X:%02X:%02X:%02X:%02X", wifimac[0],
+                           wifimac[1], wifimac[2], wifimac[3], wifimac[4], wifimac[5]);
+        if (ret < 0 || ret >= sizeof(str)) {
+            log_e("snprintf failure %d!", ret);
+        }
+    } else {
+        log_e("esp_read_mac failure %d!", ret);
+    }
+    return {str};
 }
 
 auto GetHardwareRevision() -> uint8_t {

@@ -67,6 +67,14 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
         }));
     }
 
+    if (readable_->hasDictionary) {
+        addMenuItem(MenuItem("Dictionary", [this]() {
+            readableDictionaryScreen_.setPlaceInReadable(renderer_.getCurrentPlace());
+            readableDictionaryScreen_.setFirstLoad();
+            setCurrentScreen(readableDictionaryScreen_);
+        }));
+    }
+
     addMenuItem(MenuItem("Brightness", [this]() {
         log_d("Setting current screen to brightness screen");
         lightingAdjustScreen_.setFirstLoad();
@@ -148,7 +156,8 @@ void ReadablePopupMenuScreen::processCommand(RemoteCommand command) {
 void ReadablePopupMenuScreen::drawInRect(Rect rect) {}
 
 auto ReadablePopupMenuScreen::layout(LayoutContext &context, Size size) -> Size {
-    context.setViewFrame(popupMenuView_, {{size.width / 2 - 50, size.height / 2 - 65}, {100, 130}});
+    auto rect = Rect({{0, 0}, size});
+    context.setViewFrame(popupMenuView_, rect, LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
     return size;
 }
 

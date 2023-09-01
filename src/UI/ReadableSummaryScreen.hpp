@@ -31,6 +31,8 @@ public:
 
     void processCommand(RemoteCommand command) override;
 
+    auto insetBoundingBox() -> DisplayRect;
+    void resetBoundingBox(DisplayRect oldDisplayBoundingBox);
     void setPlacemark();
     void setFirstLoad() { firstLoad_ = true; }
     void setPlaceInReadable(unsigned long placeInReadable);
