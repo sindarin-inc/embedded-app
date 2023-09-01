@@ -4,7 +4,7 @@
 // expected to be a literal. The token may not be added if there is no space remaining in the tokens
 // array.
 auto Tokens::add(Token &token, const char *str, uint8_t strSize) -> bool {
-    if (tokensCount_ < MAX_TOKEN_COUNT) {
+    if (!isFull()) {
         if (str != nullptr) {
             token.cStr = str;
             token.length = strSize;
@@ -15,9 +15,10 @@ auto Tokens::add(Token &token, const char *str, uint8_t strSize) -> bool {
             display_.getTextSize(token.cStr, &token.width, &token.height);
         }
 
-        tokens_[tokensCount_++] = token;
+        advanceTail();
+
         // if constexpr (RENDERER_DEBUG) {
-        //     log_d("After: tokensCount_: %" PRIu16 ", cStrPoolCount_: %" PRIu16, tokensCount_,
+        //     log_d("After: tokens count: %" PRIu16 ", cStrPoolCount_: %" PRIu16, getCount(),
         //           cStrPoolCount_);
         // }
     } else {
@@ -117,7 +118,7 @@ void Tokens::setSpaceSize(Token &token) {
 // debugging methods
 void Tokens::show() const {
     if constexpr (RENDERER_DEBUG) {
-        for (Idx i = 0; i < tokensCount_; i++) {
+        for (Idx i = tokensHead_; i != tokensTail_; i = (i + 1) % TOKEN_COUNT) {
             auto currToken = &tokens_[i];
             log_d("TokenIdx: %" PRIu16 ", TokenId: %" PRIu8
                   ", streamPlace: %s, prevNewParagraphIdx: %" PRIu16 ", width: %" PRIu16

@@ -24,8 +24,6 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
     tokens_.clear();
     pager_.clear();
 
-    Token newToken;
-
     fromPlace = getFileLocation(fromPlace);
 
     if (fromPlace.getOffset() == LOCATION_ERROR) {
@@ -66,6 +64,8 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
     // }
 
     while ((!pageCompleted) && (curChar != 0) && (!tokens_.isFull())) {
+
+        Token &newToken = tokens_.getNextAvailable();
 
         newToken = {.cStr = nullptr,
                     .streamPlace = addOffset(fromPlace, streamRelativeOffset),

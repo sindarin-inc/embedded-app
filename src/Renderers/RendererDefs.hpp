@@ -36,7 +36,7 @@ static constexpr uint16_t MAX_BYTES_PER_DISPLAY_PAGE = 2400;
 static constexpr uint16_t MAX_BYTES_TO_RETRIEVE =
     (MAX_BYTES_PER_PARAGRAPH + MAX_BYTES_PER_DISPLAY_PAGE);
 static constexpr uint16_t POOL_BUFFER_SIZE = (MAX_BYTES_PER_PARAGRAPH + MAX_BYTES_PER_DISPLAY_PAGE);
-static constexpr uint16_t MAX_TOKEN_COUNT = POOL_BUFFER_SIZE;
+static constexpr uint16_t TOKEN_COUNT = POOL_BUFFER_SIZE;
 static constexpr uint16_t MAX_BYTES_PER_LINE = 200;
 static constexpr uint16_t MAX_LINES_FOR_PAGER = 300; // 200;
 
@@ -128,7 +128,7 @@ struct LineStruct {
     uint16_t length; // String length
 };
 
-using TokensArray = std::array<Token, MAX_TOKEN_COUNT>;
+using TokensArray = std::array<Token, TOKEN_COUNT>;
 using CStrPool = std::array<char, POOL_BUFFER_SIZE + 1>;
 
 using Line = std::array<char, MAX_BYTES_PER_LINE>;

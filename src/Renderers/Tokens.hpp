@@ -11,10 +11,14 @@ private:
     DisplaySystem &display_;
 
     TokensArray tokens_{};
-    uint16_t tokensCount_{0};
+    Idx tokensHead_{0};
+    Idx tokensTail_{0};
 
     CStrPool cStrPool_{};
     uint16_t cStrPoolCount_{0};
+
+    Idx cStrPoolHead_{0};
+    Idx cStrPoolTail_{0};
 
     uint16_t spaceWidth_{0};
     uint16_t spaceHeight_{0};
@@ -25,54 +29,62 @@ public:
         return tokens_[idx];
     }
 
-    [[nodiscard]] inline auto getCount() const -> uint16_t { return tokensCount_; }
-    [[nodiscard]] inline auto getLast() -> Token & {
-        if constexpr (RENDERER_DEBUG) {
-            if ((tokensCount_ == 0) || (tokensCount_ > MAX_TOKEN_COUNT)) {
-                log_e("Invalid tokensCount_ value: %" PRIu16, tokensCount_);
-                if constexpr (ON_ERROR_EXIT) {
-                    exit(1);
-                }
-            }
-        }
-        return tokens_[tokensCount_ - 1];
-    }
+    [[nodiscard]] inline auto isEmpty() const -> bool { return tokensHead_ == tokensTail_; }
 
     [[nodiscard]] inline auto getLastIdx() const -> Idx {
         if constexpr (RENDERER_DEBUG) {
-            if ((tokensCount_ == 0) || (tokensCount_ > MAX_TOKEN_COUNT)) {
-                log_e("Invalid tokensCount_ value: %" PRIu16, tokensCount_);
+            if (isEmpty()) {
+                log_e("forgetLast(): tokens is empty!");
                 if constexpr (ON_ERROR_EXIT) {
                     exit(1);
                 }
             }
         }
-        return tokensCount_ - 1;
+        return (tokensTail_ == 0) ? (TOKEN_COUNT - 1) : (tokensTail_ - 1);
     }
 
-    [[nodiscard]] inline auto getBeforeLast() -> Token & {
+    [[nodiscard]] inline auto getLast() -> Token & {
         if constexpr (RENDERER_DEBUG) {
-            if ((tokensCount_ < 2) || (tokensCount_ > MAX_TOKEN_COUNT)) {
-                log_e("Invalid tokensCount_ value: %" PRIu16, tokensCount_);
+            if (isEmpty()) {
+                log_e("forgetLast(): tokens is empty!");
                 if constexpr (ON_ERROR_EXIT) {
                     exit(1);
                 }
             }
         }
-        return tokens_[tokensCount_ - 2];
+        return tokens_[getLastIdx()];
+    }
+
+    [[nodiscard]] inline auto getCount() const -> uint16_t {
+        return (tokensHead_ <= tokensTail_) ? (tokensTail_ - tokensHead_)
+                                            : (tokensTail_ + (TOKEN_COUNT - tokensHead_));
+    }
+
+    // The caller must have checked that there is at least 2 entries in the tokens ring before using
+    // this method!!
+    [[nodiscard]] inline auto getBeforeLast() -> Token & {
+        if constexpr (RENDERER_DEBUG) {
+            if (getCount() < 2) {
+                log_e("forgetLast(): tokens not large enough!");
+                if constexpr (ON_ERROR_EXIT) {
+                    exit(1);
+                }
+            }
+        }
+        return tokens_[(tokensTail_ > 1) ? (tokensTail_ - 2) : (TOKEN_COUNT + tokensTail_ - 2)];
     }
 
     inline void forgetLast() {
         if constexpr (RENDERER_DEBUG) {
-            if (tokensCount_ == 0) {
-                log_e("Invalid tokensCount_ value: %" PRIu16, tokensCount_);
+            if (tokensHead_ == tokensTail_) {
+                log_e("forgetLast(): tokens is empty!");
                 if constexpr (ON_ERROR_EXIT) {
                     exit(1);
                 }
             }
         }
-        if (tokensCount_ > 0) {
-            tokensCount_ -= 1;
+        if (tokensHead_ != tokensTail_) {
+            tokensTail_ = (tokensTail_ == 0) ? (TOKEN_COUNT - 1) : (tokensTail_--);
         }
     }
 
@@ -82,10 +94,8 @@ public:
 
     [[nodiscard]] inline auto isFull() const -> bool {
         return ((cStrPoolCount_ >= (POOL_BUFFER_SIZE - 2)) ||
-                (tokensCount_ >= (MAX_TOKEN_COUNT - 2)));
+                (((tokensHead_ + 1) % TOKEN_COUNT) == tokensTail_));
     }
-
-    [[nodiscard]] auto isEmpty() const -> bool { return tokensCount_ == 0; }
 
     [[nodiscard]] auto add(Token &token, const char *str = nullptr, uint8_t strSize = 0) -> bool;
 
@@ -95,9 +105,37 @@ public:
     void setSpaceSize(Token &token);
 
     inline void clear() {
-        tokensCount_ = 0;
+        tokensHead_ = tokensTail_ = 0;
         cStrPoolCount_ = 0;
     }
 
     void show() const;
+
+    // The caller must have checked that there is at least 1 free entry in the tokens ring before
+    // using this method!!
+    [[nodiscard]] inline auto getNextAvailable() -> Token & {
+        if constexpr (RENDERER_DEBUG) {
+            if (isFull()) {
+                log_e("forgetLast(): tokens[] is full!");
+                if constexpr (ON_ERROR_EXIT) {
+                    exit(1);
+                }
+            }
+        }
+
+        return tokens_[tokensTail_];
+    }
+
+    inline void advanceTail() {
+        if constexpr (RENDERER_DEBUG) {
+            if (isFull()) {
+                log_e("forgetLast(): tokens[] is full!");
+                if constexpr (ON_ERROR_EXIT) {
+                    exit(1);
+                }
+            }
+        }
+
+        tokensTail_ = (tokensTail_ + 1) % TOKEN_COUNT;
+    }
 };

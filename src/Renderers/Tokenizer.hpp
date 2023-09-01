@@ -68,7 +68,7 @@ protected:
     // on the current font size and line width
     uint16_t maxTextTokenCharSize_{10};
 
-    inline auto addTokenToPage(Token token, bool backwards, const char *str = nullptr,
+    inline auto addTokenToPage(Token &token, bool backwards, const char *str = nullptr,
                                uint8_t strSize = 0) -> bool {
         if (tokens_.add(token, str, strSize)) {
             return !pager_.addLastTokenToPage(backwards) && !backwards;
