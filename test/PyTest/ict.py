@@ -5,13 +5,13 @@ import serial
 import os
 import subprocess
 
+import zipfile
+import shutil
+
 from util import find_port_by_device_name
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-
-# test
-curr_version = "27"
 
 class MFICTClient:
     def __init__(self, baudrate=115200, timeout=1):
@@ -27,47 +27,99 @@ class MFICTClient:
         version = self.get_ict_version()
         logger.info("ICT version: " + version)
 
-        if version != curr_version:
-            self.flash_firmware(baudrate, timeout)
+        # find filename for firmware
+        # this unzips the firmware files into a separate directory
+        firmware_filename, script_filename, firmware_dir = self.get_firmware_filename()
 
-    def flash_firmware(self, baudrate, timeout):
-        # reboot inot programming mode
+        curr_version = self.get_firmware_version_string(firmware_filename)
+        logger.info("ICT version for test: " + curr_version)
+
+        if version != curr_version:
+            self.flash_firmware(baudrate, timeout, firmware_filename, script_filename)
+
+        # clean up, remove directory with unzipped firmware
+        shutil.rmtree(firmware_dir)
+
+    def get_firmware_filename(self):
+        dir = 'ict'
+        results = []
+        results += [each for each in os.listdir(dir) if each.endswith('.zip')]
+        if len(results) != 1:
+            logger.info("could not find ict firmware file")
+            return ""
+
+        # unzip file
+        zip_fname = dir + '/' + results[0]
+        with zipfile.ZipFile(zip_fname, 'r') as zip_ref:
+            zip_ref.extractall(dir)
+
+        zip_dir = zip_fname.split('.')[0]
+        firmware_files = os.listdir(zip_dir)
+        results = []
+        results += [each for each in firmware_files if each.endswith('.sh')]
+        flash_script_file = zip_dir + '/' + results[0]
+
+        results = []
+        results += [each for each in firmware_files if each.endswith('.hex')]
+        hex_file = zip_dir + '/' + results[0]
+
+        return hex_file, flash_script_file, zip_dir
+    
+    def get_firmware_version_string(self, firmware_filename):
+        f = open(firmware_filename, 'rb')
+
+        # version string is located at offset 0x30 within the app partition
+        # thus, 0x10030
+        f.seek(0x10030)
+
+        # read characters into string until null character
+        verstr = ""
+        while True:
+            char = f.read(1)
+            if ord(char) == 0:
+                break
+            verstr += char.decode()
+        return verstr
+
+    def flash_firmware(self, baudrate, timeout, firmware_filename, script_filename):
+        # reboot into programming mode
         self.program()
         self.ser.close()
         self.ser = None
 
-        logger.info("flashing firmware")
+        # split arguments for esptool command to flash the firmware
+        f = open(script_filename, 'r')
+        flash_script = f.read()
+        flash_script_parts = flash_script.split(' ')
+        parts = []
+        for p in flash_script_parts:
+            p = p.strip()
+            if len(p) > 0:
+                parts.append(p)
+
+        # add the ICT port to the arguments
+        # after first argument (esptool.py)
+        parts.insert(1, "-p")
+        parts.insert(2, self.port)
+
+        # replace the firmware filename with the full path
+        del parts[len(parts)-1]
+        parts.append(firmware_filename)
+        flashcmd = ' '.join(parts)
+
+        logger.info("flashing firmware with command: " + flashcmd)
         time.sleep(5)
 
         # write nvs partition to dut
         res = subprocess.run(
-            [
-                "esptool.py",
-                "--chip",
-                "esp32s3",
-                "-p",
-                "/dev/ttyACM0",
-                "-b",
-                "460800",
-                "--before=default_reset",
-                "--after=hard_reset",
-                "write_flash",
-                "--flash_mode",
-                "dio",
-                "--flash_freq",
-                "80m",
-                "--flash_size",
-                "2MB",
-                "0x0",
-                "mt.bin",
-            ]
+            parts
         )
 
-        if res != 0:
+        if res.returncode != 0:
             logger.info("failed to flash ict firmware")
             return
 
-        logger.info("I am here")
+        logger.info("firmware flash complete, reconnecting to ICT")
         time.sleep(5)
 
         self.port = find_port_by_device_name("SOL Mainframe ICT", 0)
@@ -161,10 +213,11 @@ class MFICTClient:
         self.ser.write("VERSION\n".encode())
         time.sleep(0.1)
         resp = self.read()
+        parts = resp.split(" ")
+        if parts[0] == "Invalid":
+            return "none"
         version = resp.split(" ")[1]
         return version
     
     def program(self):
         self.ser.write("PROGRAM\n".encode())
-        #self.write("PROGRAM\n")
-        #self.flush_read_buffer()
