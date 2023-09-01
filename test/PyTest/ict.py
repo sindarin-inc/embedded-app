@@ -110,7 +110,7 @@ class MFICTClient:
         logger.info("flashing firmware with command: " + flashcmd)
         time.sleep(5)
 
-        # write nvs partition to dut
+        # run esptool to flash ict firmware
         res = subprocess.run(
             parts
         )
