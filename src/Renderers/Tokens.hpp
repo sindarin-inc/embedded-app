@@ -84,7 +84,7 @@ public:
             }
         }
         if (tokensHead_ != tokensTail_) {
-            tokensTail_ = (tokensTail_ == 0) ? (TOKEN_COUNT - 1) : (tokensTail_--);
+            tokensTail_ = (tokensTail_ == 0) ? (TOKEN_COUNT - 1) : (tokensTail_ - 1);
         }
     }
 
@@ -94,7 +94,7 @@ public:
 
     [[nodiscard]] inline auto isFull() const -> bool {
         return ((cStrPoolCount_ >= (POOL_BUFFER_SIZE - 2)) ||
-                (((tokensHead_ + 1) % TOKEN_COUNT) == tokensTail_));
+                (((tokensTail_ + 1) % TOKEN_COUNT) == tokensHead_));
     }
 
     [[nodiscard]] auto add(Token &token, const char *str = nullptr, uint8_t strSize = 0) -> bool;
