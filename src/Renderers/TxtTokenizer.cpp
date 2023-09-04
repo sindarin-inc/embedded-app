@@ -18,7 +18,6 @@
 auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, StreamPlace *toPlace)
     -> StreamPlace {
 
-    Idx prevNewParagraphIdx = 0;
     Idx streamRelativeOffset = 0;
 
     tokens_.clear();
@@ -69,11 +68,11 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
 
         newToken = {.cStr = nullptr,
                     .streamPlace = addOffset(fromPlace, streamRelativeOffset),
-                    .prevNewParagraphTokenIdx = prevNewParagraphIdx,
                     .width = 0,
                     .height = 0,
                     .length = 0,
-                    .tokenId = TokenId::NOTOKEN};
+                    .tokenId = TokenId::NOTOKEN,
+                    .spacesAfter = 0};
 
         if (backwards && !tokens_.isEmpty() &&
             (newToken.streamPlace.getOffset() >= toPlace->getOffset())) {
@@ -96,7 +95,6 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
             if (!pageCompleted) {
                 nextByte();
                 if (curChar == '\n') {
-                    prevNewParagraphIdx = tokens_.getCount();
                     newToken.tokenId = TokenId::ENDPARAGRAPH;
                     pageCompleted = addTokenToPage(newToken, backwards, "\n", 1);
                     nextByte();
@@ -175,7 +173,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
 
     if constexpr (RENDERER_DEBUG) {
         log_d("Computed Word Count: %" PRIu16, pager_.getWordCount());
-        log_d("Tokens Count: %" PRIu16, tokens_.getCount());
+        log_d("Tokens Count: %" PRIu16, tokens_.getTokenCount());
     }
 
     return fromPlace;

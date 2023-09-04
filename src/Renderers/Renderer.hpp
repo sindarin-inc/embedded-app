@@ -69,7 +69,7 @@ public:
     }
 
     [[nodiscard]] inline auto getNumRenderedLines() const -> uint16_t {
-        return pager_.getLineCount();
+        return pager_.getPageLineCount();
     }
 
     [[nodiscard]] inline auto getCurrentPageWordCount() const -> uint16_t {

@@ -11,8 +11,8 @@
 namespace renderer_defs {
 
 // For deep logging when changing this file
-static constexpr bool RENDERER_DEBUG = false;
-static constexpr bool ON_ERROR_EXIT = false;
+static constexpr bool RENDERER_DEBUG = true;
+static constexpr bool ON_ERROR_EXIT = true;
 
 // Used by the Tokenizer::getFileLocation() method in case of error
 static constexpr uint32_t LOCATION_ERROR = 0xFFFFFFFF;
@@ -35,10 +35,10 @@ static constexpr uint16_t MAX_BYTES_PER_PARAGRAPH = 5003; // 1503;
 static constexpr uint16_t MAX_BYTES_PER_DISPLAY_PAGE = 2400;
 static constexpr uint16_t MAX_BYTES_TO_RETRIEVE =
     (MAX_BYTES_PER_PARAGRAPH + MAX_BYTES_PER_DISPLAY_PAGE);
-static constexpr uint16_t POOL_BUFFER_SIZE = (MAX_BYTES_PER_PARAGRAPH + MAX_BYTES_PER_DISPLAY_PAGE);
-static constexpr uint16_t TOKEN_COUNT = POOL_BUFFER_SIZE;
+static constexpr uint16_t CSTR_POOL_SIZE = (MAX_BYTES_PER_PARAGRAPH + MAX_BYTES_PER_DISPLAY_PAGE);
+static constexpr uint16_t TOKENS_SIZE = CSTR_POOL_SIZE;
 static constexpr uint16_t MAX_BYTES_PER_LINE = 200;
-static constexpr uint16_t MAX_LINES_FOR_PAGER = 300; // 200;
+static constexpr uint16_t LINES_SIZE = 30; // 300; // 200;
 
 // NOTE:
 //
@@ -99,7 +99,6 @@ private:
     uint32_t offset_;
     Idx fileIdx_;
 };
-#pragma pack(pop)
 
 // A token is simply a place in the buffer and a token identifer
 // that indicates what type of token it is.
@@ -115,11 +114,11 @@ struct Token {
     // while rendering a back page command.
     const char *cStr;
     StreamPlace streamPlace;
-    Idx prevNewParagraphTokenIdx;
     uint16_t width;
     uint16_t height;
     uint16_t length; // Length in bytes
     TokenId tokenId;
+    uint8_t spacesAfter;
 };
 
 struct LineStruct {
@@ -127,11 +126,12 @@ struct LineStruct {
     uint16_t tokenCount;
     uint16_t length; // String length
 };
+#pragma pack(pop)
 
-using TokensArray = std::array<Token, TOKEN_COUNT>;
-using CStrPool = std::array<char, POOL_BUFFER_SIZE + 1>;
+using TokensArray = std::array<Token, TOKENS_SIZE>;
+using CStrPool = std::array<char, CSTR_POOL_SIZE + 1>;
 
 using Line = std::array<char, MAX_BYTES_PER_LINE>;
-using Lines = std::array<LineStruct, MAX_LINES_FOR_PAGER>;
+using Lines = std::array<LineStruct, LINES_SIZE>;
 
 } // namespace renderer_defs

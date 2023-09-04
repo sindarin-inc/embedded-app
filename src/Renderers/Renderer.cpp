@@ -12,8 +12,6 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
     // pointer, else convert fromPlace to a StreamPlace
     currentPlace_ = ((fromPlace == nullptr)) ? tokenizer_->getPlaceAtBeginningOfDocument()
                                              : tokenizer_->toStreamPlace(std::move(fromPlace));
-
-    log_w("%s is place in file being requested", currentPlace_.str().c_str());
     if constexpr (RENDERER_DEBUG) {
         log_d("%s is place in file being requested", currentPlace_.str().c_str());
     }
@@ -33,7 +31,7 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
 
     // std::cout << "Pager Line Count: " << pager_.getLineCount() << std::endl;
 
-    if ((pager_.getLineCount() == 0) || (!(currentPlace_ == pager_.getStreamPlaceOfFirstLine())) ||
+    if (pager_.linesIsEmpty() || (!(currentPlace_ == pager_.getStreamPlaceOfFirstLine())) ||
         forceRefresh) {
         currentPlace_ = tokenizer_->loadAndTokenizePage(currentPlace_);
     }
@@ -41,7 +39,7 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
 
     PROFILE_END_LOG_MS(loadAndTokenizePage);
 
-    pager_.show();
+    // pager_.show();
 
     pager_.displayPage(numSkipLines);
 

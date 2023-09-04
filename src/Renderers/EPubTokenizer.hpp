@@ -91,7 +91,6 @@ private:
     // be displayed if no picture are shown
     bool skipNextParagraph_;
 
-    Idx prevNewParagraphIdx_;
     uint32_t firstOffset_;
     uint32_t lastStreamRelativeOffset_;
 
