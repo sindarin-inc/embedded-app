@@ -40,6 +40,10 @@ cp $IDF_PATH/components/partition_table/gen_esp32part.py $OUTDIR/test/PyTest/ven
 cp $IDF_PATH/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py $OUTDIR/test/PyTest/vendor/components/nvs_flash/nvs_partition_generator/
 cp $IDF_PATH/components/esptool_py/esptool/esptool.py $OUTDIR/test/PyTest/vendor/components/esptool_py/esptool/esptool.py
 
+# copy ict firmware into bundle
+mkdir $OUTDIR/ict
+cp ict/mainframe-tester-*.zip $OUTDIR/ict
+
 pip3 install ppk2-api==0.9.2
 pip freeze > $OUTDIR/requirements.txt
 
@@ -73,6 +77,6 @@ The \`--skip-autoflash=True\` might also come in handy if you are running the te
 Based on a fresh Ubuntu 22.04 install, you'll need to install some packages before running the above:
 
     sudo apt install python3.10-venv python3-pip espeak
-    sudo usermod -a -G dialout $USER
+    sudo usermod -a -G dialout \$USER
     sudo reboot
 EOF

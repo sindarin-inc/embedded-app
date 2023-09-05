@@ -31,39 +31,39 @@ public:
         auto fullFrame = Rect::fromSize(size);
 
         context.setViewFrame(popupMenuBackground_, fullFrame);
-
         // Border is inset by 5 pixels from the total size
         auto foregroundFrame = context.setViewFrame(popupMenuForeground_, fullFrame.inset(5));
+        auto contentFrame = foregroundFrame.inset(10);
+        auto y = contentFrame.origin.y;
 
-        // Internal content sublayout is further inset
-        auto contentFrame = context.setSublayoutFrame(
-            foregroundFrame.inset(10), LayoutOptionsAlignTop,
-            [this](LayoutContext &context, Size size) -> Size {
-                int x = 0;
-                int y = 0;
+        for (auto &view : menuItemViews) {
+            if (!view->isHidden()) {
+                auto viewFrame =
+                    context.setViewFrame(*view, {{contentFrame.origin.x, y}, contentFrame.size},
+                                         LayoutOptionsSizeToFit | LayoutOptionsAlignTop);
+                y += viewFrame.size.height;
+            }
+        }
 
-                for (auto &view : menuItemViews) {
-                    if (!view->isHidden()) {
-                        auto viewFrame = context.setViewFrame(
-                            *view, {{x, y}, size}, LayoutOptionsSizeToFit | LayoutOptionsAlignTop);
-                        y += viewFrame.size.height;
-                    }
-                }
-
-                return {size.width, y};
-            });
+        // Nudge down the clock
+        y += 10;
 
         // Inset clock and aux horizontally to match the content but with 5px less padding on
         // the bottom
-        context.setViewFrame(clockView_, contentFrame.inset(0, -5),
-                             LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
-                                 LayoutOptionsAlignLeft);
+        auto clockRect = Rect({{contentFrame.origin.x, y}, {contentFrame.size.width, 0}});
+        auto clockFrame = context.setViewFrame(clockView_, clockRect,
+                                               LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
+        y += clockFrame.size.height;
+        context.setViewFrame(auxTextView_, clockRect,
+                             LayoutOptionsSizeToFit | LayoutOptionsAlignRight);
 
-        context.setViewFrame(auxTextView_, contentFrame.inset(0, -5),
-                             LayoutOptionsSizeToFit | LayoutOptionsAlignBottom |
-                                 LayoutOptionsAlignRight);
+        // Add bottom padding
+        y += 5;
 
-        return size;
+        // Make room for foregroundFrame box
+        y += 5;
+
+        return {106, y};
     }
 
     void drawInRect(Rect rect) override {

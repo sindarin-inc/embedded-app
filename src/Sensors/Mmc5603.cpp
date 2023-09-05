@@ -156,10 +156,14 @@ auto Mmc5603::waitForMeasurement() -> bool {
     int timeoutMs = 5;
     auto start = Millis();
 
-    // Experimentally-determined time we need to wait for the reading to be ready.
     // Changing the magnetometer settings (especially bandwidth selection) can affect this.
-    // Mag measurement takes ~10ms with bw0 and bw1 set to 0 and 1790us with bw0 and bw1 set to 1.
-    vTaskDelay(2000 / (1000000 / configTICK_RATE_HZ));
+    // Experimentally: I'm seeing:
+    //  * bw0=0, bw1=0: ~10ms
+    //  * bw0=1, bw0=1: ~1.8ms
+    // But it seems that waiting 2ms isn't enough to reliably get a measurement ready.
+    // So here it's better to wait a bit longer (more time for light sleep) than to get a
+    // measurement right away.
+    vTaskDelay(3000 / (1000000 / configTICK_RATE_HZ));
 
     // Wait for valid data
     Mmc5603StatusValue statusValue;

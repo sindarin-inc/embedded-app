@@ -4,7 +4,10 @@
 
 #include "Misc/SpiramAllocator.hpp"
 #include "Models/JsonSerializable.hpp"
+#include "Models/ReadableDictionary.hpp"
 #include "Models/UserReadablePartialChapterSummary.hpp"
+
+using ReadableDictionaryVector = SpiramVector<ReadableDictionary>;
 
 class ReadableTableOfContentsChapter : public JsonSerializable {
 public:
@@ -18,6 +21,7 @@ public:
     std::string inSubsectionHref;
     std::string summary;
     std::shared_ptr<UserReadablePartialChapterSummary> partialChapterSummary = nullptr;
+    ReadableDictionaryVector dictionary;
 
     auto fromJson(const JsonObject &j) -> bool override {
         if (!j.containsKey("href") || !j.containsKey("txt_offset") || !j.containsKey("title")) {
@@ -38,6 +42,14 @@ public:
         if (j.containsKey("partial_chapter_summary") && !j["partial_chapter_summary"].isNull()) {
             partialChapterSummary = SpiRamPtr<UserReadablePartialChapterSummary>();
             partialChapterSummary->fromJson(j["partial_chapter_summary"]);
+        }
+
+        dictionary.clear();
+        if (j.containsKey("dictionary")) {
+            for (const auto &definition : j["dictionary"].as<JsonArray>()) {
+                dictionary.emplace_back();
+                dictionary.back().fromJson(definition);
+            }
         }
         return true;
     }

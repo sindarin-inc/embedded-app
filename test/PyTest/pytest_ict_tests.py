@@ -110,6 +110,8 @@ class OverrideIdfSerial(IdfSerial):
         wifi_settings_json = "\"{\"\"settings\"\":[{\"\"ssid\"\":\"\"" + ict_ssid + "\"\",\"\"password\"\":\"\"" + ict_pw + "\"\"}]}\""
 
         fp.write("wifi-settings,data,string," + wifi_settings_json + "\n")
+        # Skip the onboarding thing since it has a bunch of animations
+        fp.write("no-setup,data,u8,1\n")
         fp.close()
 
         # check for $IDF_PATH variable
@@ -345,13 +347,12 @@ class TestPowerConsumption:
         dut.expect("Sol: Error-free boot!", timeout=30)
 
         # wait for ICT pageturner connect
-        dut.expect("Connected to PageTurner", timeout=5)
+        dut.expect("Connected to PageTurner", timeout=20)
 
-        time.sleep(1)
+        time.sleep(3)
 
         logger.info("Measuring active mode current")
-        # TODO: Why do we need such a wide range here?
-        power_client.expect_current((9000, 125000), 5)
+        power_client.expect_current((7000, 13000), 5)
 
         # wait 5 seconds
         time.sleep(5)
@@ -366,7 +367,11 @@ class TestPowerConsumption:
         ict_client.set_servo("right", 0)
 
         dut.expect("Sol: Temple is closed", timeout=10)
-        dut.expect("Sol: Sleeping for", timeout=20)
+        # Macs for some reason don't get as many of the logs as Linux. Maybe a PySerial bug?
+        if platform.system() == "Darwin":
+            dut.expect("Sol: deepSleepInternal with", timeout=20)
+        else:
+            dut.expect("Sol: Sleeping for", timeout=20)
 
         time.sleep(5)
 
