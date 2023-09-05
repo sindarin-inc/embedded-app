@@ -223,7 +223,7 @@ class MFICTClient:
         password = resp.split(" ")[1]
         return password
     
-    def tt_button(self):
+    def tt_enter(self):
         self.write("TTENT")
         self.flush_read_buffer()
 

@@ -358,7 +358,7 @@ class TestPowerConsumption:
         time.sleep(5)
         
         # turntouch button
-        ict_client.tt_button()
+        ict_client.tt_enter()
 
         # wait for wifi connection
         dut.expect("Connected, IP address", timeout=30)
