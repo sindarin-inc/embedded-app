@@ -384,13 +384,14 @@ void EPubTokenizer::processPictureTag(pugi::xml_node node) {
 
     if (source) {
         // log_w("Found dithered picture...");
-        Token pictureToken = {.cStr = nullptr,
-                              .streamPlace = {lastStreamRelativeOffset_, fromPlace_.getFileIdx()},
-                              .width = 0,
-                              .height = 0,
-                              .length = 0,
-                              .tokenId = TokenId::PICTURE,
-                              .spacesAfter = 0};
+        Token &pictureToken = tokens_.getNextAvailable();
+        pictureToken = {.cStr = nullptr,
+                        .streamPlace = {lastStreamRelativeOffset_, fromPlace_.getFileIdx()},
+                        .width = 0,
+                        .height = 0,
+                        .length = 0,
+                        .tokenId = TokenId::PICTURE,
+                        .spacesAfter = 0};
         tokens_.addStr(pictureToken, stream_->getFullPath(source.attribute("srcset").value()));
 
         auto [buffer, len] = stream_->getFile(source.attribute("srcset").value());
@@ -426,6 +427,7 @@ void EPubTokenizer::processSuperscript(pugi::xml_node node) {
         text++;
         lastStreamRelativeOffset_++;
     }
+    tokens_.endOfCStr();
     if (newToken.length > 0) {
         pageCompleted_ = addTokenToPage(newToken, backwards_);
     }
@@ -455,6 +457,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
 
         if ((tagIt != tags.end()) && (tagIt->second == Tag::PICTURE)) {
             if (started_) {
+                // log_w("Picture found...");
                 processPictureTag(node);
             }
             skipNextParagraph_ = true;
@@ -511,7 +514,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                         //               toPlace_->getOffset());
                         //     }
                         // }
-                        if (!tokens_.isFull()) {
+                        if (!tokens_.isFull() && !skipNextParagraph_) {
                             Token &newToken = tokens_.getNextAvailable();
                             newToken = {
                                 .cStr = "\n",
@@ -667,6 +670,9 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint16_t len) -> bool 
                 uint16_t textCharCount = 0;
 
                 do {
+                    // log_d("Current Character: %c (%02" PRIX8 "H)",
+                    //       (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '), curChar);
+
                     if (curChar == '&') {
                         const char *newStrLocation;
                         const char *trans = getCharEntity(str, &newStrLocation);
@@ -702,9 +708,12 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint16_t len) -> bool 
                 } while ((curChar > ' ') && (curChar != '-') &&
                          ((textCharCount < maxTextTokenCharSize_) || (curChar >= 0x80U)));
 
+                tokens_.endOfCStr();
+                
                 // The last test of the while above is to get a complete UTF8 multi-bytes
                 // character if the maximum word size is reached
 
+                log_w("Text Token: %s", newToken.cStr);
                 pageCompleted_ = addTokenToPage(newToken, backwards_);
             }
         } else if (curChar == ' ') {

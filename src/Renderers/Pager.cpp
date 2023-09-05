@@ -178,7 +178,9 @@ void Pager::getLine(Idx lineNbr, Line &line) const {
             if ((tokens_[tokenIdx].tokenId != TokenId::NOTOKEN) &&
                 (tokens_[tokenIdx].tokenId != TokenId::NEWLINE) &&
                 (tokens_[tokenIdx].tokenId != TokenId::ENDPARAGRAPH)) {
-                strcat(line.data(), tokens_[tokenIdx].cStr);
+                if (tokens_[tokenIdx].cStr != nullptr) {
+                    strcat(line.data(), tokens_[tokenIdx].cStr);
+                }
                 startOfLine = false;
             }
         }
@@ -198,13 +200,14 @@ void Pager::displayPage(int16_t numSkipLines) {
     for (Idx lineIdx = firstPageLineIdx_; lineIdx != linesTailIdx_;
          nextLineIdx(lineIdx), lineNbr++) {
 
-        const Token & token = tokens_[lines_[lineIdx].tokenIdx];
-        
+        const Token &token = tokens_[lines_[lineIdx].tokenIdx];
+
+        // log_w("TokenId: %" PRIu8, (uint8_t) token.tokenId);
+
         if (startOfPage) {
             if (token.tokenId == TokenId::ENDPARAGRAPH) {
                 if constexpr (RENDERER_DEBUG) {
-                    log_d("%s: <PARA NOT SHOWN>",
-                          token.streamPlace.str().c_str());
+                    log_d("%s: <PARA NOT SHOWN>", token.streamPlace.str().c_str());
                 }
                 noCareLines += 1;
                 continue;
@@ -218,21 +221,22 @@ void Pager::displayPage(int16_t numSkipLines) {
                 log_d("%s: <PARA>", token.streamPlace.str().c_str());
             }
             paraLineAdjust++;
-        } else if (token.tokenId == TokenId::PICTURE &&
-                   (picture_ != nullptr)) {
-            int width = picture_.get()->getWidth();
-            int height = picture_.get()->getHeight();
-            display_.fillScreen(display_.bg);
-            display_.drawXBitmap((display_.width() - width) / 2, (display_.height() - height) / 2,
-                                 picture_.get()->getBuffer(), width, height, display_.fg);
+        } else if (token.tokenId == TokenId::PICTURE) {
+            if (picture_ != nullptr) {
+                int width = picture_.get()->getWidth();
+                int height = picture_.get()->getHeight();
+                display_.fillScreen(display_.bg);
+                display_.drawXBitmap((display_.width() - width) / 2,
+                                     (display_.height() - height) / 2, picture_.get()->getBuffer(),
+                                     width, height, display_.fg);
+            }
         } else {
             // Only draw the lines if it's not skipped from the caller.
             if (lineNbr >= numSkipLines) {
                 Line line;
                 getLine(lineIdx, line);
                 if constexpr (RENDERER_DEBUG) {
-                    log_d("%s: <%s>", token.streamPlace.str().c_str(),
-                          line.data());
+                    log_d("%s: <%s>", token.streamPlace.str().c_str(), line.data());
                 }
                 display_.drawSingleLineOfText(
                     line.data(), 0,

@@ -14,15 +14,41 @@ private:
     Idx tokensHeadIdx_{0};
     Idx tokensTailIdx_{0};
 
+    uint16_t maxTokensCount_;
+
     CStrPool cStrPool_{};
     Idx cStrPoolHeadIdx_{0};
     Idx cStrPoolTailIdx_{0};
 
+    uint16_t maxCStrPoolCount_;
+
     uint16_t spaceWidth_{0};
     uint16_t spaceHeight_{0};
 
-    inline void incrCStrPoolTailIdx() {
+    // Increment the cStrPoolTail_ to the next location in the pool. As a null terminated string
+    // must remain contiguous, it cannot be split between the end and the start of the pool. If so,
+    // it is relocated to the beginning of the pool.
+    inline void incrCStrPoolTailIdx(Token &token) {
         cStrPoolTailIdx_ = (cStrPoolTailIdx_ + 1) % CSTR_POOL_SIZE;
+
+        if (cStrPoolTailIdx_ == 0) {
+            if ((getCStrPoolCount() + token.length) < (CSTR_POOL_SIZE - 2)) {
+                memcpy(&cStrPool_[0], token.cStr, token.length);
+                token.cStr = &cStrPool_[0];
+                cStrPoolTailIdx_ = token.length;
+            } else {
+                log_e("cStrPool_[] is too small!");
+                if constexpr (ON_ERROR_EXIT) {
+                    exit(1);
+                }
+            }
+        }
+        if constexpr (RENDERER_STATS) {
+            uint16_t count = getCStrPoolCount();
+            if (count > maxCStrPoolCount_) {
+                maxCStrPoolCount_ = count;
+            }
+        }
     }
 
 public:
@@ -32,6 +58,9 @@ public:
     }
 
     [[nodiscard]] inline auto isEmpty() const -> bool { return tokensHeadIdx_ == tokensTailIdx_; }
+
+    [[nodiscard]] inline auto getMaxTokensCount() const -> uint16_t { return maxTokensCount_; }
+    [[nodiscard]] inline auto getMaxCStrPoolCount() const -> uint16_t { return maxCStrPoolCount_; }
 
     [[nodiscard]] inline auto getLastIdx() const -> Idx {
         if constexpr (RENDERER_DEBUG) {
@@ -113,14 +142,28 @@ public:
     void addByte(Token &token, uint8_t b);
     void addStr(Token &token, std::string str);
 
+    inline void endOfCStr() {
+        cStrPool_[cStrPoolTailIdx_] = 0;
+        cStrPoolTailIdx_ = (cStrPoolTailIdx_ + 1) % CSTR_POOL_SIZE;
+
+        if constexpr (RENDERER_STATS) {
+            uint16_t count = getCStrPoolCount();
+            if (count > maxCStrPoolCount_) {
+                maxCStrPoolCount_ = count;
+            }
+        }
+    }
+
     void setSpaceSize(Token &token);
 
     inline void clear() {
         tokensHeadIdx_ = tokensTailIdx_ = 0;
         cStrPoolHeadIdx_ = cStrPoolTailIdx_ = 0;
+        maxTokensCount_ = maxCStrPoolCount_ = 0;
     }
 
     void show() const;
+    void showToken(Idx tokenIdx) const;
 
     // The caller must have checked that there is at least 1 free entry in the tokens ring before
     // using this method!!
@@ -133,11 +176,10 @@ public:
                 }
             }
         }
-
         return tokens_[tokensTailIdx_];
     }
 
-    inline void advanceTail() {
+    inline void advanceTokenTail() {
         if constexpr (RENDERER_DEBUG) {
             if (isFull()) {
                 log_e("forgetLast(): tokens[] is full!");
@@ -148,6 +190,13 @@ public:
         }
 
         tokensTailIdx_ = (tokensTailIdx_ + 1) % TOKENS_SIZE;
+
+        if constexpr (RENDERER_STATS) {
+            uint16_t count = getTokenCount();
+            if (count > maxTokensCount_) {
+                maxTokensCount_ = count;
+            }
+        }
     }
 
     void freeTokens(Idx fromTokenIdx, uint16_t count);

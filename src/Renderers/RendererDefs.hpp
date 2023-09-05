@@ -11,8 +11,9 @@
 namespace renderer_defs {
 
 // For deep logging when changing this file
-static constexpr bool RENDERER_DEBUG = true;
-static constexpr bool ON_ERROR_EXIT = true;
+static constexpr bool RENDERER_DEBUG = false;
+static constexpr bool ON_ERROR_EXIT = false;
+static constexpr bool RENDERER_STATS = true;
 
 // Used by the Tokenizer::getFileLocation() method in case of error
 static constexpr uint32_t LOCATION_ERROR = 0xFFFFFFFF;
@@ -35,10 +36,10 @@ static constexpr uint16_t MAX_BYTES_PER_PARAGRAPH = 5003; // 1503;
 static constexpr uint16_t MAX_BYTES_PER_DISPLAY_PAGE = 2400;
 static constexpr uint16_t MAX_BYTES_TO_RETRIEVE =
     (MAX_BYTES_PER_PARAGRAPH + MAX_BYTES_PER_DISPLAY_PAGE);
-static constexpr uint16_t CSTR_POOL_SIZE = (MAX_BYTES_PER_PARAGRAPH + MAX_BYTES_PER_DISPLAY_PAGE);
-static constexpr uint16_t TOKENS_SIZE = CSTR_POOL_SIZE;
+static constexpr uint16_t CSTR_POOL_SIZE = 2000;
+static constexpr uint16_t TOKENS_SIZE = 700;
 static constexpr uint16_t MAX_BYTES_PER_LINE = 200;
-static constexpr uint16_t LINES_SIZE = 30; // 300; // 200;
+static constexpr uint16_t LINES_SIZE = 25; // 300; // 200;
 
 // NOTE:
 //

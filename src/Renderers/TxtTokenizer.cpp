@@ -153,6 +153,9 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
                 nextByte();
             } while ((curChar > ' ') && (curChar != '-') &&
                      ((textCharCount < maxTextTokenCharSize_) || (curChar >= 0x80U)));
+
+            tokens_.endOfCStr();
+
             // The last test of the while above is to get a complete UTF8 multi-bytes character
             // if the maximum word size is reached
 

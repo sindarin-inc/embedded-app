@@ -15,11 +15,16 @@ auto Tokens::add(Token &token, const char *str, uint8_t length) -> bool {
             display_.getTextSize(token.cStr, &token.width, &token.height);
         }
 
-        advanceTail();
+        if constexpr (RENDERER_DEBUG) {
+            showToken(tokensTailIdx_);
+        }
+
+        advanceTokenTail();
 
         // if constexpr (RENDERER_DEBUG) {
-        //     log_d("After: tokens count: %" PRIu16 ", cStrPoolCount_: %" PRIu16, getCount(),
-        //           cStrPoolCount_);
+        //     log_d("After: tokens count: %" PRIu16 ", cStr pool count: %" PRIu16,
+        //     getTokensCount(),
+        //           getCStrPoolCount());
         // }
     } else {
         log_e("tokens_[] too small!: (%s)", tokensIsFull() ? "TOKENS" : "CSTR_POOL");
@@ -32,8 +37,8 @@ auto Tokens::add(Token &token, const char *str, uint8_t length) -> bool {
     return true;
 }
 
-// Add a byte to the token string. The byte is copied to the pool. The token's length and null
-// terminated string are adjusted.
+// Add a byte to the token string. The byte is copied to the pool. The token's length is adjusted. A
+// call to endCStr() will be required to complete the null terminated string.
 void Tokens::addByte(Token &token, uint8_t b) {
     // if constexpr (RENDERER_DEBUG) {
     //   log_d("Adding byte %02" PRIX8 "H to last token at %" PRIu16 ".", b, cStrPoolCount_);
@@ -41,17 +46,12 @@ void Tokens::addByte(Token &token, uint8_t b) {
     if (!cStrIsFull()) {
         if (token.cStr == nullptr) {
             token.cStr = &cStrPool_[cStrPoolTailIdx_];
-            token.length = 1;
-            cStrPool_[cStrPoolTailIdx_] = b;
-            incrCStrPoolTailIdx();
-            cStrPool_[cStrPoolTailIdx_] = 0;
-            incrCStrPoolTailIdx();
-        } else {
-            cStrPool_[(cStrPoolTailIdx_ == 0) ? (CSTR_POOL_SIZE - 1) : (cStrPoolTailIdx_ - 1)] = b;
-            cStrPool_[cStrPoolTailIdx_] = 0;
-            incrCStrPoolTailIdx();
-            token.length++;
+            token.length = 0;
         }
+        cStrPool_[cStrPoolTailIdx_] = b;
+        token.length++; // must be done BEFORE the call to incrCStrPoolTailIdx()
+        incrCStrPoolTailIdx(token);
+
         if constexpr (RENDERER_DEBUG) {
             if (strlen(token.cStr) != token.length) {
                 log_e("Hum... token length wrong: %zu vs %" PRIu16, strlen(token.cStr),
@@ -62,7 +62,7 @@ void Tokens::addByte(Token &token, uint8_t b) {
             }
             // log_d("After: tokensCount_: %" PRIu16 ", token length: %" PRIu16
             //       ", cStrPoolCount_: %" PRIu16,
-            //       tokensCount_, token.length, cStrPoolCount_);
+            //       getTokensCount(), token.length, getCStrPoolCount());
         }
     } else {
         log_e("cStrPool_[] is too small!");
@@ -72,24 +72,25 @@ void Tokens::addByte(Token &token, uint8_t b) {
     }
 }
 
-// Associate the string to the token. The string will be copied to the pool.
+// Associate the string to the token. The string will be copied to the pool. No other characters can
+// be added to the token after it.
 void Tokens::addStr(Token &token, std::string str) {
     // if constexpr (RENDERER_DEBUG) {
     //   log_d("Adding byte %02" PRIX8 "H to last token at %" PRIu16 ".", b, cStrPoolCount_);
     // }
     uint16_t len = str.length();
     if ((getCStrPoolCount() + len) < (CSTR_POOL_SIZE - 2)) {
-        token.length += len;
         const char *s = str.c_str();
         if (token.cStr == nullptr) {
             token.cStr = &cStrPool_[cStrPoolTailIdx_];
         }
         while (len--) {
             cStrPool_[cStrPoolTailIdx_] = *s++;
-            incrCStrPoolTailIdx();
+            token.length++; // must be done BEFORE the call to incrCStrPoolTailIdx(). DO NOT
+                            // OPTIMIZE!
+            incrCStrPoolTailIdx(token);
         }
-        cStrPool_[cStrPoolTailIdx_] = 0;
-        incrCStrPoolTailIdx();
+        endOfCStr();
 
         if constexpr (RENDERER_DEBUG) {
             if (strlen(token.cStr) != token.length) {
@@ -181,17 +182,27 @@ void Tokens::freeTokens(Idx fromTokenIdx, uint16_t count) {
 }
 
 // debugging method
+void Tokens::showToken(Idx tokenIdx) const {
+    if constexpr (RENDERER_DEBUG) {
+        const Token &token = tokens_[tokenIdx];
+        log_d("TokenIdx: %" PRIu16 ", TokenId: %" PRIu8 ", streamPlace: %s, width: %" PRIu16
+              ", height: %" PRIu16 ", Length: %" PRIu16,
+              tokenIdx, (uint8_t)token.tokenId, token.streamPlace.str().c_str(), token.width,
+              token.height, token.length);
+        if (token.tokenId == TokenId::TEXT) {
+            if (token.cStr != nullptr) {
+                log_d("Text Content: [%s]", token.cStr);
+            } else {
+                log_e("Text content is null!!");
+            }
+        }
+    }
+}
+
 void Tokens::show() const {
     if constexpr (RENDERER_DEBUG) {
         for (Idx tokenIdx = tokensHeadIdx_; tokenIdx != tokensTailIdx_; nextTokenIdx(tokenIdx)) {
-            auto &currToken = tokens_[tokenIdx];
-            log_d("TokenIdx: %" PRIu16 ", TokenId: %" PRIu8 ", streamPlace: %s, width: %" PRIu16
-                  ", height: %" PRIu16 ", Length: %" PRIu16,
-                  tokenIdx, (uint8_t)currToken.tokenId, currToken.streamPlace.str().c_str(),
-                  currToken.width, currToken.height, currToken.length);
-            if (currToken.tokenId == TokenId::TEXT) {
-                log_d("Text Content: [%s]", currToken.cStr);
-            }
+            showToken(tokenIdx);
         }
     }
 }
