@@ -410,13 +410,14 @@ void EPubTokenizer::processPictureTag(pugi::xml_node node) {
 void EPubTokenizer::processSuperscript(pugi::xml_node node) {
     const pugi::char_t *text = node.value();
     lastStreamRelativeOffset_ = stream_->getOffset(text);
-    Token newToken = {.cStr = nullptr,
-                      .streamPlace = {lastStreamRelativeOffset_, fromPlace_.getFileIdx()},
-                      .width = 0,
-                      .height = 0,
-                      .length = 0,
-                      .tokenId = TokenId::TEXT,
-                      .spacesAfter = 0};
+    Token &newToken = tokens_.getNextAvailable();
+    newToken = {.cStr = nullptr,
+                .streamPlace = {lastStreamRelativeOffset_, fromPlace_.getFileIdx()},
+                .width = 0,
+                .height = 0,
+                .length = 0,
+                .tokenId = TokenId::TEXT,
+                .spacesAfter = 0};
     while (*text) {
         if ((*text >= '0') && (*text <= '9')) {
             const char *script = superscriptNumbers[*text - '0'];
@@ -709,7 +710,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint16_t len) -> bool 
                          ((textCharCount < maxTextTokenCharSize_) || (curChar >= 0x80U)));
 
                 tokens_.endOfCStr();
-                
+
                 // The last test of the while above is to get a complete UTF8 multi-bytes
                 // character if the maximum word size is reached
 
