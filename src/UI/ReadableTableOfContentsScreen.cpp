@@ -1,5 +1,7 @@
 #include "ReadableTableOfContentsScreen.hpp"
 
+#include "Misc/StringUtil.hpp"
+
 auto ReadableTableOfContentsScreen::layout(LayoutContext &context, Size size) -> Size {
     const auto inset = 2;
 
@@ -60,10 +62,6 @@ void ReadableTableOfContentsScreen::drawInRect(Rect rect) {
 }
 
 void ReadableTableOfContentsScreen::render(DisplaySystem &display) {
-    if (menuItemViews_.size() <= 0) {
-        log_w("No views to draw in ReadableTableOfContentsScreen");
-    }
-
     setNeedsLayout();
 
     setFrame(
@@ -104,6 +102,10 @@ void ReadableTableOfContentsScreen::render(DisplaySystem &display) {
         draw();
         PROFILE_END_LOG_US(ReadableTableOfContentsScreenLayoutAndDraw);
         display.updateDisplay(DisplaySystem::UpdateType::FULL);
+    }
+
+    if (menuItemViews_.size() <= 0) {
+        log_w("No views to draw in ReadableTableOfContentsScreen");
     }
 
     std::shared_ptr<MenuItemView> selectedMenuItemView =
@@ -159,8 +161,12 @@ void ReadableTableOfContentsScreen::processCommand(RemoteCommand command) {
 void ReadableTableOfContentsScreen::loadMenuItems() {
     resetMenuItems();
     for (const ReadableTableOfContentsChapter &chapter : readable_->toc) {
-        addMenuItem(MenuItem(chapter.title, StringFormat("%d", SOL_PAGE_NUMBER(chapter.txtOffset)),
-                             [this]() { back(); }));
+        std::string title = chapter.title;
+        if (!chapter.inSubsectionHref.empty()) {
+            title = StringFormat("  %s", chapter.title.c_str());
+        }
+        addMenuItem(
+            MenuItem(title, Commify(SOL_PAGE_NUMBER(chapter.txtOffset)), [this]() { back(); }));
     }
 }
 
@@ -170,6 +176,10 @@ void ReadableTableOfContentsScreen::setPlacemark() {
     renderer_.setCurrentPlace(readable_->place);
     prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), readable_->place);
     prefs_.readablePlaceChanged.set(readable_->shortenedUuid.c_str(), true);
+    prefs_.lastReadTime.set(readable_->shortenedUuid.c_str(),
+                            SolClock::getInstance().getEpochTime());
+    telemetry_.logMetric(TelemetryField::METRIC_SET_PLACEMARK, readable_->shortenedUuid.c_str(),
+                         {{"po", readable_->place}});
 }
 
 void ReadableTableOfContentsScreen::setNearestChapterSelection(unsigned long placeInFile) {

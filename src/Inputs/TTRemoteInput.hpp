@@ -1,5 +1,4 @@
-#ifndef TTRemoteInput_H
-#define TTRemoteInput_H
+#pragma once
 
 #include <NimBLEDevice.h>
 #include <memory>
@@ -21,6 +20,7 @@ public:
 
     // Scan for a PageTurner. Can be safely called even if one is already connected.
     void scanIfNecessary();
+    void unpairAndDisconnect();
     void disconnectTemporarily(int seconds);
     auto connected() -> bool { return state_ == CONNECTED; }
 
@@ -95,5 +95,3 @@ protected:
 
     ClientCallbacks clientCallbacks_;
 };
-
-#endif

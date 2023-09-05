@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - "release/v*"
 
 jobs:
   build:
@@ -42,17 +44,29 @@ jobs:
         uses: mymindstorm/setup-emsdk@v11
 
       - name: PlatformIO run
-        run: pio run -e ${{ matrix.pioenv }}
+        run: |
+          set -o pipefail
+          pio run -e ${{ matrix.pioenv }} 2>&1 | tee ${{ matrix.pioenv }}-build-log.txt
+
+      - name: Post errors and warnings as annotations
+        if: github.event_name == 'pull_request' && (success() || failure())
+        run: |
+          pip install requests curlify
+          python scripts/parse_warnings.py --filename ${{ matrix.pioenv }}-build-log.txt --title ${{ matrix.pioenv }}-build
+        env:
+          PR_GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-idf:
     name: "idf.py build"
-    runs-on: ubuntu-latest
+    runs-on:
+      group: Medium
     strategy:
       matrix:
         # Tags from here: https://hub.docker.com/r/espressif/idf/tags
         idf_version:
           - v5.1
-          - latest
+          # - latest
 
     steps:
       - name: Checkout repo
@@ -66,3 +80,35 @@ jobs:
           esp_idf_version: ${{ matrix.idf_version }}
           target: esp32s3
           path: .
+          command: |
+            set -o pipefail
+            idf.py build | tee build-log.txt
+
+      - name: Post errors and warnings as annotations
+        if: github.event_name == 'pull_request' && (success() || failure())
+        run: |
+          pip install requests curlify
+          python scripts/parse_warnings.py --filename build-log.txt --title build --path_prefix "/app/sindarin-inc/embedded-app/"
+        env:
+          PR_GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v3
+        if: github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/release/v')
+        with:
+          name: embedded-app-${{ github.sha }}-IDF${{ matrix.idf_version }}
+          path: |
+            build/embedded-app.bin
+            build/embedded-app.elf
+            build/bootloader/bootloader.bin
+            build/partition_table/partition-table.bin
+            build/ota_data_initial.bin
+
+  release:
+    if: contains(github.ref, 'refs/tags/release/v')
+    needs: build-idf
+    uses: ./.github/workflows/release.yml
+    secrets:
+      slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+      sol-auth-tolkien: ${{ secrets.SOL_AUTH_TOLKIEN }}

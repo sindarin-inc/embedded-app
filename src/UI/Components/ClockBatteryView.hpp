@@ -41,7 +41,7 @@ public:
         int y = 0;
         auto clockRect = context.setViewFrame(clockView_, {{x, y}, size}, LayoutOptionsSizeToFit);
         x += clockRect.size.width + 20;
-        y += 1;
+        y += 2;
 
         auto iconRect = context.setViewFrame(batteryIconView_, {{x, y}, {size.width, size.height}},
                                              LayoutOptionsSizeToFit);

@@ -1,0 +1,256 @@
+{
+  "toc": [
+    {
+      "title": "Title Page",
+      "href": "OEBPS/xhtml/title.xhtml",
+      "in_subsection_href": "",
+      "txt_offset": 3,
+      "summary": ""
+    },
+    {
+      "title": "Copyright Notice",
+      "href": "OEBPS/xhtml/copyrightnotice.xhtml",
+      "in_subsection_href": "",
+      "txt_offset": 519,
+      "summary": ""
+    },
+    {
+      "title": "List of Maps and Figures",
+      "href": "OEBPS/xhtml/list-maps-figures.xhtml",
+      "in_subsection_href": "",
+      "txt_offset": 862,
+      "summary": ""
+    },
+    {
+      "title": "Foreword and Dedication",
+      "href": "OEBPS/xhtml/foreword.xhtml",
+      "in_subsection_href": "",
+      "txt_offset": 2656,
+      "summary": ""
+    },
+    {
+      "title": "Acknowledgements",
+      "href": "OEBPS/xhtml/acknowledgments.xhtml",
+      "in_subsection_href": "",
+      "txt_offset": 4904,
+      "summary": ""
+    },
+    {
+      "title": "1. Farewell to Humanity's Childhood: Or, why this is not a book about the origins of inequality",
+      "href": "OEBPS/xhtml/chapter1.xhtml",
+      "in_subsection_href": "",
+      "txt_offset": 8984,
+      "summary": ""
+    },
+    {
+      "title": "2. Wicked Liberty: The indigenous critique and the myth of progress",
+      "href": "OEBPS/xhtml/chapter2.xhtml",
+      "in_subsection_href": "",
+      "txt_offset": 67554,
+      "summary": "- The chapter examines the European fascination with the origins of social inequality in the 18th century and how this was influenced by encounters with indigenous cultures in the Americas.\n      - It argues that indigenous Americans developed a critique of European institutions, focusing first on their lack of freedom and later on inequality.\n      - European intellectuals, influenced by these critiques, began to embrace ideals of individual liberty and political equality inspired by Native American sources and examples.\n      - The chapter discusses the differing views on individual liberty between Europeans and indigenous Americans, with Europeans viewing it as animalistic and indigenous Americans living in generally free societies.\n      - It suggests that European notions of reason, personal freedoms, and the rejection of arbitrary power were influenced by Native American encounters and conversations. \n      \n      Quote: \"What we're going to suggest is that American intellectuals - we are using the term 'American' as it was used at the time, to refer to indigenous inhabitants of the Western Hemisphere; and 'intellectual' to refer to anyone in the habit of arguing about abstract ideas - actually played a role in this conceptual revolution.\"- In political terms, French and Americans were not arguing about equality but about freedom.\n      - French missionaries were impressed by the quality of counterarguments made by Native Americans during debates.\n      - Enlightenment thinkers saw reasoned debate and rejection of arbitrary authority as intrinsically connected.\n      - Louis-Armand de Lom d’Arce and Kandiaronk were influential figures in the formation of the indigenous critique against European society."
+    },
+    {
+      "title": "3. Unfreezing the Ice Age: In and out of chains: the protean possibilities of human politics",
+      "href": "OEBPS/xhtml/chapter3.xhtml",
+      "in_subsection_href": "",
+      "txt_offset": 185628,
+      "summary": ""
+    },
+    {
+      "title": "4. Free People, the Origin of Cultures, and the Advent of Private Property: (Not necessarily in that order)",
+      "href": "OEBPS/xhtml/chapter4.xhtml",
+      "in_subsection_href": "",
+      "txt_offset": 283795,
+      "summary": ""
+    },
+    {
+      "title": "5. Many Seasons Ago: Why Canadian foragers kept slaves and their Californian neighbours didn't; or, the problem with 'modes of production'",
+      "href": "OEBPS/xhtml/chapter5.xhtml",
+      "in_subsection_href": "",
+      "txt_offset": 385249,
+      "summary": ""
+    },
+    {
+      "title": "6. Gardens of Adonis: The revolution that never happened: how Neolithic peoples avoided agriculture",
+      "href": "OEBPS/xhtml/chapter6_split_000.xhtml",
+      "in_subsection_href": "",
+      "txt_offset": 489111,
+      "summary": "Summary of Gardens of Adonis"
+    },
+    {
+      "title": "7. The Ecology of Freedom: How farming first hopped, stumbled and bluffed its way around the world",
+      "href": "OEBPS/xhtml/chapter7.xhtml",
+      "in_subsection_href": "",
+      "txt_offset": 578623,
+      "summary": ""
+    },
+    {
+      "title": "8. Imaginary Cities: Eurasia's first urbanites - in Mesopotamia, the Indus valley, Ukraine and China - and how they built cities without kings",
+      "href": "OEBPS/xhtml/chapter8.xhtml",
+      "in_subsection_href": "",
+      "txt_offset": 637348,
+      "summary": ""
+    },
+    {
+      "title": "9. Hiding in Plain Sight: The indigenous origins of social housing and democracy in the Americas",
+      "href": "OEBPS/xhtml/chapter9.xhtml",
+      "in_subsection_href": "",
+      "txt_offset": 757147,
+      "summary": ""
+    },
+    {
+      "title": "10. Why the State Has No Origin: The humble beginnings of sovereignty, bureaucracy and politics",
+      "href": "OEBPS/xhtml/chapter10.xhtml",
+      "in_subsection_href": "",
+      "txt_offset": 825407,
+      "summary": ""
+    },
+    {
+      "title": "11. Full Circle: On the historical foundations of the indigenous critique",
+      "href": "OEBPS/xhtml/chapter11.xhtml",
+      "in_subsection_href": "",
+      "txt_offset": 1018992,
+      "summary": ""
+    },
+    {
+      "title": "12. Conclusion: The dawn of everything",
+      "href": "OEBPS/xhtml/chapter12.xhtml",
+      "in_subsection_href": "",
+      "txt_offset": 1138254,
+      "summary": ""
+    },
+    {
+      "title": "Notes",
+      "href": "OEBPS/xhtml/notes-ch1.xhtml",
+      "in_subsection_href": "",
+      "txt_offset": 1218168,
+      "summary": ""
+    },
+    {
+      "title": " Notes 2",
+      "href": "OEBPS/xhtml/notes-ch2.xhtml",
+      "in_subsection_href": "OEBPS/xhtml/notes-ch1.xhtml",
+      "txt_offset": 1231898,
+      "summary": ""
+    },
+    {
+      "title": " Notes 3",
+      "href": "OEBPS/xhtml/notes-ch3.xhtml",
+      "in_subsection_href": "OEBPS/xhtml/notes-ch1.xhtml",
+      "txt_offset": 1247879,
+      "summary": ""
+    },
+    {
+      "title": " Notes 4",
+      "href": "OEBPS/xhtml/notes-ch4.xhtml",
+      "in_subsection_href": "OEBPS/xhtml/notes-ch1.xhtml",
+      "txt_offset": 1268632,
+      "summary": ""
+    },
+    {
+      "title": " Notes 5",
+      "href": "OEBPS/xhtml/notes-ch5.xhtml",
+      "in_subsection_href": "OEBPS/xhtml/notes-ch1.xhtml",
+      "txt_offset": 1285401,
+      "summary": ""
+    },
+    {
+      "title": " Notes 6",
+      "href": "OEBPS/xhtml/notes-ch6.xhtml",
+      "in_subsection_href": "OEBPS/xhtml/notes-ch1.xhtml",
+      "txt_offset": 1303459,
+      "summary": ""
+    },
+    {
+      "title": " Notes 7",
+      "href": "OEBPS/xhtml/notes-ch7.xhtml",
+      "in_subsection_href": "OEBPS/xhtml/notes-ch1.xhtml",
+      "txt_offset": 1319842,
+      "summary": ""
+    },
+    {
+      "title": " Notes 8",
+      "href": "OEBPS/xhtml/notes-ch8.xhtml",
+      "in_subsection_href": "OEBPS/xhtml/notes-ch1.xhtml",
+      "txt_offset": 1328965,
+      "summary": ""
+    },
+    {
+      "title": " Notes 9",
+      "href": "OEBPS/xhtml/notes-ch9.xhtml",
+      "in_subsection_href": "OEBPS/xhtml/notes-ch1.xhtml",
+      "txt_offset": 1356802,
+      "summary": ""
+    },
+    {
+      "title": " Notes 10",
+      "href": "OEBPS/xhtml/notes-ch10.xhtml",
+      "in_subsection_href": "OEBPS/xhtml/notes-ch1.xhtml",
+      "txt_offset": 1369697,
+      "summary": ""
+    },
+    {
+      "title": " Notes 11",
+      "href": "OEBPS/xhtml/notes-ch11.xhtml",
+      "in_subsection_href": "OEBPS/xhtml/notes-ch1.xhtml",
+      "txt_offset": 1407685,
+      "summary": ""
+    },
+    {
+      "title": " Notes 12",
+      "href": "OEBPS/xhtml/notes-ch12.xhtml",
+      "in_subsection_href": "OEBPS/xhtml/notes-ch1.xhtml",
+      "txt_offset": 1425997,
+      "summary": ""
+    },
+    {
+      "title": "Bibliography",
+      "href": "OEBPS/xhtml/bibliography.xhtml",
+      "in_subsection_href": "",
+      "txt_offset": 1429253,
+      "summary": ""
+    },
+    {
+      "title": "Index",
+      "href": "OEBPS/xhtml/index.xhtml",
+      "in_subsection_href": "",
+      "txt_offset": 1579825,
+      "summary": ""
+    },
+    {
+      "title": "Also by David Graeber and David Wengrow",
+      "href": "OEBPS/xhtml/adcard.xhtml",
+      "in_subsection_href": "",
+      "txt_offset": 1603539,
+      "summary": ""
+    },
+    {
+      "title": "Praise for The Dawn of Everything",
+      "href": "OEBPS/xhtml/praise.xhtml",
+      "in_subsection_href": "",
+      "txt_offset": 1604328,
+      "summary": ""
+    },
+    {
+      "title": "A Note About the Authors",
+      "href": "OEBPS/xhtml/abouttheauthor.xhtml",
+      "in_subsection_href": "",
+      "txt_offset": 1617515,
+      "summary": ""
+    },
+    {
+      "title": "Newsletter Sign-up",
+      "href": "OEBPS/xhtml/newsletter.xhtml",
+      "in_subsection_href": "",
+      "txt_offset": 1618505,
+      "summary": ""
+    },
+    {
+      "title": "Copyright",
+      "href": "OEBPS/xhtml/copyright.xhtml",
+      "in_subsection_href": "",
+      "txt_offset": 1619944,
+      "summary": ""
+    }
+  ]
+}

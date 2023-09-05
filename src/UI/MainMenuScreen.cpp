@@ -18,8 +18,7 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
 
     // Layout the top bar
     auto topBarRect = context.setSublayoutFrame(
-        {{inset, inset}, {size.width - 2 * inset, 20 - 2 * inset}},
-        LayoutOptionsSizeToFit | LayoutOptionsAlignTop | LayoutOptionsAlignCenterHorizontal,
+        {{inset, inset}, {size.width, 20 - 2 * inset}}, LayoutOptionsNone,
         [this](LayoutContext &context, Size size) -> Size {
             int x = 0;
             int y = 0;
@@ -28,7 +27,6 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
             Size boxSize = {boxWidth, size.height};
 
             int place = 0;
-
             for (auto &view : topBarViews_) {
                 context.setViewFrame(*view, {{x, y}, boxSize},
                                      LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
@@ -39,7 +37,7 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
                 place++;
             };
 
-            return {x, size.height};
+            return size;
         });
 
     // Then layout the clock/battery view on the bottom
@@ -75,16 +73,14 @@ auto MainMenuScreen::layout(LayoutContext &context, Size size) -> Size {
     context.setSublayoutFrame(
         mainRect, LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
         [this](LayoutContext &context, Size size) -> Size {
-            int x = 0;
             int y = 0;
-            int viewCount = menuItemViews_.size();
             const auto mainSpacing = 8;
-            int boxHeight = (size.height - (viewCount - 1) * mainSpacing) / viewCount;
-            Size boxSize = {size.width, boxHeight};
-
             for (auto &view : menuItemViews_) {
-                auto viewFrame =
-                    context.setViewFrame(*view, {{x, y}, boxSize}, LayoutOptionsSizeToFitVertical);
+                if (view->isHidden()) {
+                    continue;
+                }
+                auto viewFrame = context.setViewFrame(*view, {{0, y}, {size.width, 0}},
+                                                      LayoutOptionsSizeToFitVertical);
                 y += viewFrame.size.height + mainSpacing;
             }
             y -= mainSpacing;
@@ -117,7 +113,8 @@ void MainMenuScreen::drawInRect(Rect rect) {
 // This largely mirrors the superclass implementation, but with enough
 // changes that we need to do our own thing here.
 void MainMenuScreen::render(DisplaySystem &display) {
-    setNeedsLayout();
+    // log_i("Menuscreen render (selected = %s)",
+    // subMenus_[currentSelection_]->getMenuName().c_str());
 
     // For the main menu, we want to use the entire screen and ignore the user settings for
     // reading box.
@@ -133,34 +130,44 @@ void MainMenuScreen::render(DisplaySystem &display) {
     // to do a partial refresh with the selector button at a lower/higher vcom to reduce
     // ghosting.
     if (firstLoad_) {
-        topBarViews_.clear();
-        // Only update the time on these partial refreshes
-        clockBatteryView_.updateTime();
-        log_i("Menuscreen render (selected = %s)",
-              subMenus_[currentSelection_]->getMenuName().c_str());
+        setNeedsLayout();
 
-        for (auto &subMenu : subMenus_) {
-            auto topBarView = std::make_shared<SingleLineTextView>(display, subMenu->getMenuName());
-            topBarViews_.push_back(topBarView);
+        if (topBarViews_.size() == 0) {
+            for (auto &subMenu : subMenus_) {
+                auto topBarView =
+                    std::make_shared<SingleLineTextView>(display, subMenu->getMenuName());
+                topBarViews_.push_back(topBarView);
+            }
         }
 
+        // Only update the time on these partial refreshes
+        clockBatteryView_.updateTime();
+
         // Populate the menu items with the correct menus for the current subMenu
-        menuItemViews_.clear();
         menuItems_.clear();
         menuPageViews_.clear();
 
         subMenus_[currentSelection_]->populateMenuItems(menuItems_);
 
-        for (auto &menuItem : menuItems_) {
-            auto menuItemView = std::make_shared<MenuItemView>(
-                display, menuItem,
-                ((subMenus_[currentSelection_]->getMenuName().compare("Books") == 0) ||
-                 (subMenus_[currentSelection_]->getMenuName().compare("Bible") == 0))
-                    ? myStyle_.itemFont
-                    : myStyle_.navigationFont,
-                (subMenus_[currentSelection_]->getMenuName().compare("Articles") == 0) ? true
-                                                                                       : false);
-            menuItemViews_.push_back(menuItemView);
+        for (int i = 0; i < menuItems_.size(); i++) {
+            auto &menuItem = menuItems_[i];
+            Font *font = ((subMenus_[currentSelection_]->getMenuName().compare("Books") == 0) ||
+                          (subMenus_[currentSelection_]->getMenuName().compare("Bible") == 0))
+                             ? myStyle_.itemFont
+                             : myStyle_.navigationFont;
+            bool multiline = (subMenus_[currentSelection_]->getMenuName().compare("Articles") == 0)
+                                 ? true
+                                 : false;
+            if (i >= menuItemViews_.size()) {
+                menuItemViews_.emplace_back(std::make_shared<MenuItemView>(display));
+            }
+            menuItemViews_[i]->setMenuItem(menuItem, font, multiline);
+            menuItemViews_[i]->setSelected(false);
+            menuItemViews_[i]->setHidden(false);
+        }
+        // Hide any menu items that are not in the current menu
+        for (int i = menuItems_.size(); i < menuItemViews_.size(); i++) {
+            menuItemViews_[i]->setHidden(true);
         }
 
         int numPages = subMenus_[currentSelection_]->getNumItems() /

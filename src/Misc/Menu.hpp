@@ -47,6 +47,8 @@ public:
 
     auto getNumItems() -> int;
 
+    auto getMenuItemByTitle(const std::string &title) -> int;
+
     void setCurrSelection(int newSelection);
 
     auto getCurrSelection() -> int;

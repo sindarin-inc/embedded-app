@@ -58,10 +58,11 @@ clean:
 
 .PHONY: clang-tidy
 clang-tidy: check_idf
-	@if ! command -v clang-tidy &> /dev/null ; then \
+	@if ! command -v clang-tidy &> /dev/null || [[ $$(which clang-tidy) != *"esp-clang"* ]]; then \
 		echo "clang-tidy not found. Installing it now:" ; \
 		idf_tools.py install esp-clang ; \
 		pip install --upgrade pyclang ; \
-		source $$IDF_PATH/export.sh ; \
+		echo "Clang-tidy should now be installed. Please reload your IDF environment with:" \
+		echo ". $$IDF_PATH/export.sh" ; \
 	fi
 	idf.py clang-check --run-clang-tidy-py scripts/run-clang-tidy.py --run-clang-tidy-options "-fix -header-filter=embedded-app/src/.*" --exclude-paths managed_components --exclude-paths components

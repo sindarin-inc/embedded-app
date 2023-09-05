@@ -30,7 +30,7 @@ void StatsScreen::render(DisplaySystem &display) {
         timeMessage += formattedString;
     }
 
-    display.setFont(static_cast<Font *>(&fontTahomaRegularFonT8PT7B));
+    display.setFont(static_cast<Font *>(&ibmf75Face0));
     display.drawSingleLineOfText(
         wordsMessage,
         display.xAbsolute(display.xAbsoluteCenter() -

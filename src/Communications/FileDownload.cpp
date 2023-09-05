@@ -155,9 +155,9 @@ auto DownloadFile(const char *url,
         progressCallback, gzip);
 }
 
-auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int length,
-                  const std::function<void(float percentage)> &progressCallback, bool gzip)
-    -> bool {
+auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry, const char *path,
+                  int length, const std::function<void(float percentage)> &progressCallback,
+                  bool gzip) -> bool {
 
     std::string fullPath(path);
 
@@ -185,11 +185,13 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
 
     auto success = DownloadFile(
         url,
-        [&fileBuffer, &fileLength](int httpCode, int contentLength) -> bool {
+        [&fileBuffer, &fileLength, &telemetry](int httpCode, int contentLength) -> bool {
             fileLength = contentLength;
             fileBuffer = SpiRamArrayPtr<uint8_t>(contentLength);
             if (fileBuffer == nullptr) {
                 log_e("Failed to allocate %d bytes for file download", contentLength);
+                telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "failed-allocate",
+                                    {{"content-length", contentLength}});
                 return false;
             }
             return true;
@@ -252,6 +254,8 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, const char *path, int
         // TODO: What's the best API to get errors from the stream?
         log_e("Downloaded file is shorter than expected, expected %d bytes but got %zu bytes",
               length, fileSize);
+        telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "wrong-size",
+                            {{"expected", length}, {"actual", static_cast<int>(fileSize)}});
         return false;
     } else {
         log_d("Downloaded file is correct size: %zu bytes", fileSize);

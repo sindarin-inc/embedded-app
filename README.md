@@ -183,6 +183,8 @@ TODO: This is kinda clunky and it'd be nice to have this easier to setup and run
 
 Since every individual device has its own unique serial number that can't be changed by the user, we need to burn in the serial number before it arrives at their door. Note that `offset` is in bytes, not bits, and comes from `EFusesCustomTable.csv`.
 
+NOTE: The offset for the serial number is set to 8 bytes because the `burn_block_data` command requires the entire block after the offset to be written, so by offsetting to a right-justified serial number, we can reserve the preceding bits for future use without explicitly burning them as leading zeros.
+
 ```bash
 # 
 echo -n SOL01224400001 > serial_number.bin
@@ -211,10 +213,12 @@ This is [fixed](https://github.com/espressif/esp-idf/blob/master/components/efus
 
 ## Run PyTest On-Device Tests
 
-You'll need to make sure you set up IDF with the pytest bits.
+You'll need to make sure you set up IDF with the pytest bits. You'll also need the `ppk2-api` python package.
 
 ```sh
 $IDF_PATH/install.sh esp32s3 --enable-pytest
+. $IDF_PATH/export.sh
+pip install ppk2-api
 ```
 
 You'll need to make sure you have some binaries available

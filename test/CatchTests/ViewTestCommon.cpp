@@ -64,12 +64,14 @@ void StartFreeRtos(bool runAppMain) {
     // TODO: Really mock prefs
     prefs.begin();
     prefs.invertSetting.set(0);
-    prefs.font.set(PREFS_TAHOMA_REGULAR);
+    prefs.font.set(PREFS_SOL_MEDIUM);
     prefs.lineSpacing.set(0);
     prefs.rectX.set(42);
     prefs.rectY.set(30);
     prefs.rectW.set(255 - 42 * 2);
     prefs.rectH.set(255 - 30 * 2);
+    prefs.sortCriteria.set(0);
+    prefs.sortDirection.set(0);
     prefs.firstRead.set(0);
     prefs.pageTransitionArrows.set(false);
     prefs.lastReadableId.remove();
@@ -86,6 +88,8 @@ void StartFreeRtos(bool runAppMain) {
         log_i("Starting FreeRTOS scheduler");
         vTaskStartScheduler();
     });
+    // Wait for screen refresh at boot (from screenClearedAtShutdown)
+    WAIT_FOR_DRAW();
 }
 
 void StopFreeRtos() {
@@ -210,7 +214,7 @@ auto CheckViewUnchanged(std::string key) -> ViewTestResult {
 
 std::shared_ptr<DisplayEinkET013TT1> createDisplay() {
     auto display = std::make_shared<DisplayEinkET013TT1>(0, 0, 0);
-    (*display).style.setFontFamily((*display).style.tahomaRegular);
+    (*display).style.setFontFamily((*display).style.solSansMedium);
     (*display).setBoundingBox((*display).defaultBoundingBox);
     (*display).setLineSpacing(0);
     (*display).setup();

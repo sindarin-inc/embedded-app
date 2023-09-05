@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <deque>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -11,6 +13,7 @@
 #include "Models/JsonSerializable.hpp"
 #include "Models/ReadableArchive.hpp"
 #include "Models/ReadableBookmark.hpp"
+#include "Models/ReadableDictionary.hpp"
 #include "Models/ReadableFile.hpp"
 #include "Models/ReadablePlacemark.hpp"
 #include "Models/ReadableTableOfContentsChapter.hpp"
@@ -45,6 +48,10 @@ public:
     ReadableFileVector files;
     ReadableBookmarksVector bookmarks;
     ReadableTableOfContentsChapterVector toc;
+    // hasSummary denotes if any of the chapters have a summary, used for determining if we should
+    // show the summary menu item
+    bool hasSummary = false;
+    bool hasDictionary = false;
 
     SpiramString readableType;
     // TODO: source
@@ -76,9 +83,116 @@ public:
     [[nodiscard]] auto bookmarkFilePath() const -> std::string {
         return StringFormat("/bookmarks/%s-bookmark.txt", uuid.c_str());
     }
+    [[nodiscard]] auto tocFilePath() const -> std::string {
+        return StringFormat("/toc/%s-toc.json", uuid.c_str());
+    }
     [[nodiscard]] auto remoteUrl() const -> SpiramString { return file().fileProxied; }
     [[nodiscard]] auto isArticle() const -> bool {
         return readableType == "pocket_article" || readableType == "email_article";
+    }
+    auto findChapter(unsigned long placeInReadable) -> ReadableTableOfContentsChapter * {
+        for (auto &chapter : toc) {
+            if (placeInReadable >= chapter.txtOffset && placeInReadable < chapter.endTxtOffset) {
+                return &chapter;
+            }
+        }
+        return nullptr;
+    }
+
+    auto summary(unsigned long placeInReadable, unsigned long &placeInSummary, bool includeUnread)
+        -> SpiramString {
+        SpiramString summary;
+
+        for (const auto &chapter : toc) {
+            if (placeInReadable >= chapter.txtOffset) {
+                placeInSummary = summary.length();
+            }
+            if (placeInReadable < chapter.txtOffset && !includeUnread) {
+                break;
+            }
+            if (chapter.txtOffset < placeInReadable && placeInReadable < chapter.endTxtOffset &&
+                !includeUnread && chapter.partialChapterSummary != nullptr &&
+                !chapter.partialChapterSummary->text.empty()) {
+                summary += chapter.title;
+                summary += StringFormat(" (%d%% read)\n\n", chapter.partialChapterSummary->readPct);
+                summary += chapter.partialChapterSummary->text;
+                summary += "\n\n";
+            } else {
+                summary += chapter.title;
+                summary += "\n\n";
+                if (!chapter.summary.empty()) {
+                    summary += chapter.summary;
+                    summary += "\n\n";
+                }
+            }
+        }
+
+        return summary;
+    }
+
+    auto definitions(unsigned long placeInReadable, unsigned long *placeInDictionary)
+        -> SpiramString {
+        // This code generates the dictionaryString for an entire chapter, making sure to not add
+        // duplicate words within the last 5 words (but duplicates are allowed assuming they are > 5
+        // words ago). It returns the dictionaryString as well as the position of the word closest
+        // to the current page using the placeInDictionary out-value.
+
+        SpiramString dictionaryString;
+
+        std::deque<SpiramString> lastFiveWords;
+
+        log_d("Looking for definitions for place %lu in %zu chapters", placeInReadable, toc.size());
+
+        auto chapter = findChapter(placeInReadable);
+        if (chapter == nullptr) {
+            log_e("Failed to find chapter for place %lu", placeInReadable);
+            return "No definitions found in this chapter.";
+        }
+
+        std::map<unsigned long, ReadableDictionary *> locationDictMap;
+
+        for (ReadableDictionary &dict : chapter->dictionary) {
+            for (const auto &location : dict.locations) {
+                locationDictMap[location] = &dict;
+            }
+        }
+
+        log_d("Found %zu definitions", locationDictMap.size());
+
+        for (const auto &entry : locationDictMap) {
+            const auto &dict = *(entry.second);
+
+            if (std::find(lastFiveWords.begin(), lastFiveWords.end(), dict.word) !=
+                lastFiveWords.end()) {
+                continue;
+            }
+
+            if (placeInReadable >= (chapter->txtOffset + entry.first)) {
+                *placeInDictionary = dictionaryString.length();
+            }
+
+            dictionaryString += dict.word + ": " + dict.definition + "\n\n";
+
+            lastFiveWords.push_back(dict.word);
+            if (lastFiveWords.size() > 5) {
+                lastFiveWords.pop_front();
+            }
+        }
+
+        if (locationDictMap.empty()) {
+            log_w("No definitions found for %s", title.c_str());
+            return "No definitions found in this chapter.";
+        }
+
+        return dictionaryString;
+    }
+
+    [[nodiscard]] auto authorString() const -> SpiramString {
+        if (authors.size() == 0) {
+            log_w("Blank author for %s", title.c_str());
+            return "";
+        }
+        return authors[0].name;
     }
 
     auto fromJson(const JsonObject &j) -> bool override {
@@ -111,6 +225,13 @@ public:
         for (const auto &chapter : j["toc"].as<JsonArray>()) {
             toc.emplace_back();
             toc.back().fromJson(chapter);
+            // Check if any chapter has a summary, if so, set hasSummary
+            if (!hasSummary && chapter["summary"].as<std::string>().size() > 0) {
+                hasSummary = true;
+            }
+            if (!hasDictionary && chapter["dictionary"].as<JsonArray>().size() > 0) {
+                hasDictionary = true;
+            }
         }
 
         // Temporary migration for stored pocket articles that don't have a readable_type

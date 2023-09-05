@@ -12,6 +12,7 @@ __pycache__
 .temp
 # Simulator prefs
 simprefs.ini
+simprefs.bak
 *.old
 build
 screenshot.png
@@ -27,3 +28,5 @@ venv
 test/PyTest/requirements.txt
 current_samples_*
 warnings.txt
+test/CatchTests/TestData/metrics/
+build-log.txt

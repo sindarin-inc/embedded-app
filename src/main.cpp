@@ -1,10 +1,10 @@
 #if !SIMULATOR
 #include <driver/uart.h>
-#include <esp_err.h>
-#include <esp_log.h>
 #include <soc/rtc.h>
 #endif
 
+#include <esp_err.h>
+#include <esp_log.h>
 #include <esp_sleep.h>
 #include <esp_system.h>
 #include <freertos/FreeRTOS.h>
@@ -29,6 +29,7 @@
 #include "Storage/PreferencesStore.hpp"
 #include "UI/ChargingScreen.hpp"
 #include "UI/OverTempScreen.hpp"
+#include "UI/PowerDepletedScreen.hpp"
 #include "UI/RootUI.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -78,9 +79,10 @@ PosixFileSystem fileSystem;
 LittleFSFileSystem fileSystem;
 #endif
 
-PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay);
-LocalStore localStore(fileSystem, prefs, powerManager.battery);
-RootUI rootUi(prefs, powerManager);
+Telemetry telemetry(fileSystem, prefs);
+PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay, telemetry);
+LocalStore localStore(fileSystem, prefs, powerManager.battery, telemetry);
+RootUI rootUi(prefs, powerManager, telemetry);
 SolClock solClock(prefs);
 
 bool bootCompleted = false;
@@ -99,7 +101,10 @@ void PollingLoopTask(void *parameter) {
             } else if ((Millis() - factoryResetStartTimeMs) > FACTORY_RESET_MS) {
                 log_i("Button held down for %dms performing factory reset",
                       Millis() - factoryResetStartTimeMs);
-                FactoryReset(prefs, fileSystem, powerManager, true);
+                SoftFactoryReset(fileSystem);
+                powerManager.releaseLED();
+                BlinkSol();
+                powerManager.reboot();
             }
         } else {
             factoryResetStartTimeMs = 0;
@@ -155,12 +160,11 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     HardwareInit();
 #endif
 
-#if !SIMULATOR
     // Configure log level for all Sindarin logs
     esp_log_level_set("Sol", ESP_LOG_DEBUG);
     powerManager.wakeupCheck(solClock);
-#endif
-    BootLoopCheck();
+
+    BootLoopCheck(fileSystem, powerManager);
     std::vector<BootError> bootErrors;
 
 #if BOARD_HAS_PSRAM
@@ -225,23 +229,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         bootErrors.push_back({.type = BootError::Type::LocalStore});
     }
 
-    auto showChargingScreen = []() {
-        lightingController.setOverrideValuePercent(100);
-        auto chargingScreen = new ChargingScreen(prefs);
-        rootUi.setCurrentScreen(*chargingScreen);
-        UIInnerLoop(RemoteCommand::NONE);
-    };
-
-    powerManager.setStateChangeCallback([&showChargingScreen](PowerState state) {
-        if (state == PowerState::ActiveUSBCharging) {
-            showChargingScreen();
-        } else if (state == PowerState::ActiveOverTemp) {
-            auto overTempScreen = new OverTempScreen();
-            rootUi.setCurrentScreen(*overTempScreen);
-            UIInnerLoop(RemoteCommand::NONE);
-        }
-    });
-
     WiFi::getInstance().setWiFiPower(
         (wifi_power_t)prefs.wifiPower.get().value_or(WIFI_POWER_16dBm));
 
@@ -256,8 +243,10 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             }
             },
             "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
-        BackgroundSyncAndSleep(powerManager, prefs, localStore);
+        BackgroundSyncAndSleep(powerManager, prefs, localStore, telemetry);
+
         // Should never get here, the system should be asleep
+        return;
     }
 
     // Below code should only execute on an Active boot
@@ -294,27 +283,15 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     }
 #endif
 
-    switch (prefs.font.get().value_or(PREFS_TAHOMA_TINY)) {
-    case PREFS_LUCIDA_REGULAR:
-        myDisplay.style.setFontFamily(myDisplay.style.lucidaRegular);
+    switch (prefs.font.get().value_or(PREFS_SOL_SMALL)) {
+    case PREFS_SOL_MEDIUM:
+        myDisplay.style.setFontFamily(myDisplay.style.solSansMedium);
         break;
-    case PREFS_LUCIDA_SKINNY:
-        myDisplay.style.setFontFamily(myDisplay.style.lucidaSkinny);
+    case PREFS_SOL_LARGE:
+        myDisplay.style.setFontFamily(myDisplay.style.solSansLarge);
         break;
-    case PREFS_LUCIDA_FAT:
-        myDisplay.style.setFontFamily(myDisplay.style.lucidaFat);
-        break;
-    case PREFS_TAHOMA_REGULAR:
-        myDisplay.style.setFontFamily(myDisplay.style.tahomaRegular);
-        break;
-    case PREFS_TAHOMA_LARGE:
-        myDisplay.style.setFontFamily(myDisplay.style.tahomaLarge);
-        break;
-    case PREFS_TAHOMA_TINY:
-        myDisplay.style.setFontFamily(myDisplay.style.tahomaTiny);
-        break;
-    case PREFS_TAHOMA_HUGE:
-        myDisplay.style.setFontFamily(myDisplay.style.tahomaHuge);
+    case PREFS_SOL_SMALL:
+        myDisplay.style.setFontFamily(myDisplay.style.solSansSmall);
         break;
     }
 
@@ -335,11 +312,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     SIZE_OF(myDisplay);
 
-    if (prefs.cesMode.get().value_or(false)) {
-        // In CES mode, we want to turn on the lights to full brightness
-        lightingController.setOverrideValuePercent(100);
-    }
-
     // For all the EMC modes, we'll keep the lights at 100%
     if (prefs.emcMode.get().value_or(false)) {
         lightingController.setOverrideValuePercent(100);
@@ -349,7 +321,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             [](void *) {
             for (;;) {
                 PreferencesStore::syncReason = SyncReason::Periodic;
-                BackgroundSync(powerManager, prefs, localStore);
+                BackgroundSync(powerManager, prefs, localStore, telemetry);
                 vTaskDelay(60000 / portTICK_PERIOD_MS);
             }
             },
@@ -358,6 +330,17 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
 #if USE_BLE
     BLEDevice::init("Sol Reader");
+
+    if (prefs.blePower.get().has_value()) {
+        auto power = prefs.blePower.get().value_or(ESP_PWR_LVL_P3);
+        log_d("Setting default BLE power to %" PRIu32, power);
+        esp_err_t err =
+            esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, static_cast<esp_power_level_t>(power));
+        if (err != ESP_OK) {
+            log_e("esp_ble_tx_power_set err: %s", esp_err_to_name(err));
+        }
+    }
+
     auto bleStatus = esp_bt_controller_get_status();
     if (bleStatus != ESP_BT_CONTROLLER_STATUS_ENABLED) {
         bootErrors.push_back({.type = BootError::Type::BLE});
@@ -378,6 +361,7 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
 #if USE_TURN_TOUCH_REMOTE
     ttRemoteInput.setCallback(remoteCallback);
+    powerManager.setBeginShutdownCallback([]() { ttRemoteInput.disconnectTemporarily(60); });
 #endif
 
 #if USE_BLE_SERVER_REMOTE || USE_BLE_SERVER_SETTINGS || USE_BLE_SERVER_IMPROV
@@ -438,7 +422,34 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     log_w("Power Management Disabled");
 #endif
 
+    auto showChargingScreen = []() {
+        lightingController.setOverrideValuePercent(100);
+        auto chargingScreen = new ChargingScreen(prefs);
+        rootUi.setCurrentScreen(*chargingScreen);
+        UIInnerLoop(RemoteCommand::NONE);
+    };
+
+    powerManager.setStateChangeCallback([&showChargingScreen](PowerState state) {
+        if (state == PowerState::ActiveUSBCharging) {
+            showChargingScreen();
+        } else if (state == PowerState::ActiveOverTemp) {
+            auto overTempScreen = new OverTempScreen();
+            rootUi.setCurrentScreen(*overTempScreen);
+            UIInnerLoop(RemoteCommand::NONE);
+        } else if (state == PowerState::ActiveBatteryDepleted) {
+            auto powerDepletedScreen = new PowerDepletedScreen();
+            rootUi.setCurrentScreen(*powerDepletedScreen);
+            UIInnerLoop(RemoteCommand::NONE);
+        }
+    });
+
     BlinkBootErrors(bootErrors);
+
+    // Clear screen in case not cleared at shutdown
+    if (!PreferencesStore::screenClearedAtShutdown) {
+        DispatchGetUiQueue()->dispatch([]() { myDisplay.clearScreen(); });
+    }
+    PreferencesStore::screenClearedAtShutdown = false;
 
     xTaskCreatePinnedToCore(PollingLoopTask, "Polling", 10000, nullptr, 1, nullptr, 0);
     // xTaskCreatePinnedToCore(StatsTask, "Stats", 5000, nullptr, 0, nullptr, 1);

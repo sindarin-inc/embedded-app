@@ -12,20 +12,20 @@
 
 #if USE_TURN_TOUCH_REMOTE
 #include <NimBLEDevice.h>
-#elif SIMULATOR
+#elif !defined(BLEAddress)
 typedef uint64_t BLEAddress;
 #endif
 
 #define MAX_KEY_LENGTH 15
 
 enum FONT_CHOICES {
-    PREFS_TAHOMA_TINY = 0,
-    PREFS_LUCIDA_SKINNY = 1,
-    PREFS_LUCIDA_FAT = 2,
-    PREFS_LUCIDA_REGULAR = 3,
-    PREFS_TAHOMA_LARGE = 4,
-    PREFS_TAHOMA_REGULAR = 5,
-    PREFS_TAHOMA_HUGE = 6,
+    PREFS_SOL_SMALL = 0,
+    PREFS_UNUSED_1 = 1,
+    PREFS_UNUSED_2 = 2,
+    PREFS_UNUSED_3 = 3,
+    PREFS_SOL_LARGE = 4,
+    PREFS_SOL_MEDIUM = 5,
+    PREFS_UNUSED_6 = 6,
 };
 
 enum class SyncReason {
@@ -33,6 +33,17 @@ enum class SyncReason {
     OnInactivity = 1,
     OnClose = 2,
     Periodic = 3,
+    // iOS = 4,
+    // Android = 5,
+    UsbConnected = 6,
+};
+
+auto ToString(SyncReason reason) -> const char *;
+
+enum class PairedStatus {
+    Unknown = 0,
+    Unpaired = 1,
+    Paired = 2,
 };
 
 template <typename T>
@@ -287,35 +298,72 @@ public:
 
     PreferencesStore() noexcept
         :
+    // Ignoring clang-tidy and keeping these on their own lines otherwise diffs become very
+    // difficult to read
+    // clang-format off
 #if USE_TURN_TOUCH_REMOTE
           pairedTurnTouchAddress(*this, "paired-tt"),
 #endif
-          cloudToken(*this, "cloud-token"), lastReadableId(*this, "rui-readable"),
-          lastPageTurnerBuild(*this, "pt-build"), lastArticlesSince(*this, "articles-since"),
-          lastBooksSince(*this, "readables-since"), readablePlace(*this, "-p"),
-          readablePlaceChanged(*this, "-pc"), readableArchivedChanged(*this, "-ar"),
-          readableBookmarksChanged(*this, "-bm"), invertSetting(*this, "invert"),
-          vcom(*this, "vcom"), font(*this, "font"), rectX(*this, "rectX"), rectY(*this, "rectY"),
-          rectW(*this, "rectW"), rectH(*this, "rectH"), lineSpacing(*this, "line-space"),
-          noSetupMode(*this, "no-setup"), wordCount(*this, "word-count"),
-          totalReadingTimeSeconds(*this, "tot-rd-time"), bootCount(*this, "boot-count"),
-          firstRead(*this, "first-read"), autoPilotSpeed(*this, "auto-speed"),
-          firstAutopilotRead(*this, "fst-auto-rd"), cesMode(*this, "ces"), emcMode(*this, "emc"),
-          wifiPower(*this, "wifi-power"), tzIana(*this, "tz-iana"), tzPosix(*this, "tz-posix"),
-          firmwareLoaded(*this, "fw-loaded"), sleepReason(*this, "sleep-reason"),
-          noBooks(*this, "no-books"), showNews(*this, "show-news"),
-          noArticles(*this, "no-articles"), noBible(*this, "no-bible"),
-          noDeliverOnClose(*this, "no-deliv-close"), noMorningDelivery(*this, "no-morn-sync"),
-          eveningDelivery(*this, "eve-deliver"), darkMode(*this, "dark-mode"),
-          autoPilot(*this, "auto-pilot"), fastTransitions(*this, "fast-tran"),
-          noUploadCrashes(*this, "no-upload-crash"), showDebugMenu(*this, "show-debug"),
-          fastBookmarkRight(*this, "fst-mark-right"), fastBookmarkCenter(*this, "fst-mark-cent"),
+          cloudToken(*this, "cloud-token"),
+          lastReadableId(*this, "rui-readable"),
+          lastPageTurnerBuild(*this, "pt-build"),
+          lastArticlesSince(*this, "articles-since"),
+          lastBooksSince(*this, "readables-since"),
+          sortCriteria(*this, "sort-c"),
+          sortDirection(*this, "sort-d"),
+          lastReadTime(*this, "-lr"),
+          readablePlace(*this, "-p"),
+          readablePlaceChanged(*this, "-pc"),
+          readableArchivedChanged(*this, "-ar"),
+          readableBookmarksChanged(*this, "-bm"),
+          invertSetting(*this, "invert"),
+          vcom(*this, "vcom"),
+          font(*this, "font"),
+          rectX(*this, "rectX"),
+          rectY(*this, "rectY"),
+          rectW(*this, "rectW"),
+          rectH(*this, "rectH"),
+          lineSpacing(*this, "line-space"),
+          noSetupMode(*this, "no-setup"),
+          wordCount(*this, "word-count"),
+          totalReadingTimeSeconds(*this, "tot-rd-time"),
+          bootCount(*this, "boot-count"),
+          firstRead(*this, "first-read"),
+          autoPilotSpeed(*this, "auto-speed"),
+          firstAutopilotRead(*this, "fst-auto-rd"),
+          cesMode(*this, "ces"),
+          emcMode(*this, "emc"),
+          wifiPower(*this, "wifi-power"),
+          tzIana(*this, "tz-iana"),
+          tzPosix(*this, "tz-posix"),
+          firmwareLoaded(*this, "fw-loaded"),
+          noBooks(*this, "no-books"),
+          showNews(*this, "show-news"),
+          noArticles(*this, "no-articles"),
+          noBible(*this, "no-bible"),
+          noDeliverOnClose(*this, "no-deliv-close"),
+          noMorningDelivery(*this, "no-morn-sync"),
+          eveningDelivery(*this, "eve-deliver"),
+          darkMode(*this, "dark-mode"),
+          autoPilot(*this, "auto-pilot"),
+          fastTransitions(*this, "fast-tran"),
+          noUploadCrashes(*this, "no-upload-crash"),
+          showDebugMenu(*this, "show-debug"),
+          fastBookmarkRight(*this, "fst-mark-right"),
+          fastBookmarkCenter(*this, "fst-mark-cent"),
           pageTransitionArrows(*this, "page-arrows"),
-          allowUsageWhileCharging(*this, "allow-use-chg"), wifiSettingsJson(*this, "wifi-settings"),
-          localStoreMigrationVersion(*this, "ls-version"), fontsLibrary(*this, "fonts-lib"),
-          fontType(*this, "font-type"), tutorialsDeleted(*this, "tutorials"),
-          bleAdvertisingKey(*this, "ble-adv-key"), bleAuthKey(*this, "ble-auth-key"),
+          allowUsageWhileCharging(*this, "allow-use-chg"),
+          wifiSettingsJson(*this, "wifi-settings"),
+          localStoreMigrationVersion(*this, "ls-version"),
+          fontsLibrary(*this, "fonts-lib"),
+          fontType(*this, "font-type"),
+          tutorialsDeleted(*this, "tutorials"),
+          bleAdvertisingKey(*this, "ble-adv-key"),
+          bleAuthKey(*this, "ble-auth-key"),
+          blePower(*this, "ble-power"),
           preferencesStoreMigrationVersion_(*this, "ps-version"){};
+    // clang-format on
+
     PreferencesStore(PreferencesStore &) = delete;
 
     void migrateIfNeeded() {
@@ -388,6 +436,20 @@ public:
                 }
                 break;
             }
+            case 3: {
+                std::vector<std::string> keys = {
+                    "morn-deliver",
+                    "no-page-arrows",
+                    "sleep-reason",
+                };
+                for (auto &key : keys) {
+                    esp_err_t err = nvs_erase_key(nvsHandle_, key.c_str());
+                    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
+                        log_e("nvs_erase_key failed: %s", esp_err_to_name(err));
+                    }
+                }
+                break;
+            }
             default:
                 log_e("Unknown migration version: %" PRIu32, migrationVersion);
                 return;
@@ -414,6 +476,8 @@ public:
         started_ = true;
         return true;
     }
+
+    auto started() -> bool { return started_; }
 
     auto end() -> esp_err_t {
         if (!started_) {
@@ -465,6 +529,16 @@ public:
 #endif
     }
 
+    static void resetSlowMem() {
+        syncReason = SyncReason::Manual;
+        nextSyncTime = 0;
+        ledChargeTime = 0;
+        lastBatteryReport = 0;
+        lastPageTurnerBattery = 0;
+        settingsOnRestart = false;
+        paired = PairedStatus::Unknown;
+    }
+
 #if USE_TURN_TOUCH_REMOTE
     PrefsItem<BLEAddress> pairedTurnTouchAddress;
 #endif
@@ -473,6 +547,9 @@ public:
     PrefsItem<std::string> lastPageTurnerBuild;
     PrefsItem<std::string> lastArticlesSince;
     PrefsItem<std::string> lastBooksSince;
+    PrefsItem<int> sortCriteria;  // Stored as int, used as LocalStore::SortCriteria
+    PrefsItem<int> sortDirection; // Stored as int, used as LocalStore::SortDirection
+    KeyedPrefsItem<uint64_t> lastReadTime;
     KeyedPrefsItem<uint32_t> readablePlace;
     KeyedPrefsItem<bool> readablePlaceChanged;
     KeyedPrefsItem<bool> readableArchivedChanged;
@@ -499,7 +576,6 @@ public:
     PrefsItem<std::string> tzPosix;
     // Firmware that's been loaded to the other flash slot but not yet installed
     PrefsItem<std::string> firmwareLoaded;
-    PrefsItem<int> sleepReason;
     PrefsItem<bool> noBooks;
     PrefsItem<bool> showNews;
     PrefsItem<bool> noArticles;
@@ -526,17 +602,25 @@ public:
     PrefsItem<std::string> bleAdvertisingKey;
     // Value that's used to authenticate the mobile app to the glasses
     PrefsItem<std::string> bleAuthKey;
+    // BLE default power setting stored as esp_power_level_t enum value
+    // This is here for debugging and investigation but in John's experiments, this didn't save much
+    // battery power. But there might be some tweaking we could do to improve BLE reliability.
+    PrefsItem<uint32_t> blePower;
 
     // These are RTC_SLOW_MEM variables that persist across deep sleep / wake cycles but will be
     // reset on power cycles
     static SyncReason syncReason;
     static uint64_t nextSyncTime;
+    static int64_t ledChargeTime;
     static uint8_t lastBatteryReport;
     static uint8_t lastPageTurnerBattery;
+    static bool screenClearedAtShutdown;
     static bool settingsOnRestart;
+    // Indicates whether the glasses have been paired with a user account
+    static PairedStatus paired;
 
 protected:
-    const uint32_t latestMigrationVersion_ = 3;
+    const uint32_t latestMigrationVersion_ = 4;
     uint32_t nvsHandle_;
     bool started_;
 

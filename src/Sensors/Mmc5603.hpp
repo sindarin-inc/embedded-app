@@ -40,6 +40,8 @@ public:
 
     auto readProductId(uint8_t *productIdOut) -> esp_err_t;
 
+    auto waitForMeasurement() -> bool;
+
     auto readX() -> float;
     auto readX20Bit() -> float;
 
@@ -52,7 +54,10 @@ public:
     auto readTemperature(float &temp) -> esp_err_t;
 
 private:
+    bool configured_ = false;
     int i2cNum_;
+
+    void configureIfNeeded();
 
     auto registerReadByte(mmc5603_reg_t regAddr, uint8_t *data) -> esp_err_t;
 

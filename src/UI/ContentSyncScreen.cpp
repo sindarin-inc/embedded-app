@@ -67,6 +67,7 @@ void ContentSyncScreen::render(DisplaySystem &display) {
 
         { break; }
     case ContentSyncState::ConnectingWifi:
+    case ContentSyncState::UploadTelemetry:
     case ContentSyncState::CheckingSync:
     case ContentSyncState::SyncingBooks:
     case ContentSyncState::SyncingArticles:
@@ -125,6 +126,9 @@ void ContentSyncScreen::render(DisplaySystem &display) {
 
             drawBulletLine("Connecting WiFi",
                            state_.state > ContentSyncState::ConnectingWifi ? 100 : 0, false);
+
+            drawBulletLine("Syncing recent sessions",
+                           state_.state > ContentSyncState::CheckingSync ? 100 : 0, false);
 
             drawBulletLine("Checking for update",
                            state_.state > ContentSyncState::CheckingSync ? 100 : 0, false);
@@ -229,9 +233,6 @@ void ContentSyncScreen::begin() {
 #if !SIMULATOR
             if (state.state == ContentSyncState::Synced) {
                 log_d("Content sync done, rebooting");
-                this->display_.clearDisplay();
-                this->display_.clearFrameBuffer();
-                this->display_.updateDisplay();
                 PowerManager::getInstance().reboot();
             }
 #endif
@@ -241,9 +242,6 @@ void ContentSyncScreen::begin() {
 #if !SIMULATOR
                 if (onboardingSync_) {
                     // Todo: maybe we want to retry once?
-                    this->display_.clearDisplay();
-                    this->display_.clearFrameBuffer();
-                    this->display_.updateDisplay();
                     PowerManager::getInstance().reboot();
                 } else
 #endif

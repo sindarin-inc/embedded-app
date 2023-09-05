@@ -11,12 +11,16 @@ int LightingSetting;
 bool ledChange;
 bool simLeds[3];
 
+auto HardwareDeinit() -> esp_err_t { return ESP_OK; }
+
 void InitializePlatform() {
     for (int i = 0; i < 3; i++) {
         simLeds[i] = false;
     }
     ledChange = false;
 }
+
+auto DeinitializePlatform() -> esp_err_t { return ESP_OK; }
 
 auto GetBatteryVoltageLeft() -> float { return 0; }
 
@@ -42,6 +46,8 @@ void SetRightScreenLightFade(int dutyCycle, int fadeMs) {
 
 auto GetMinLightingDutyCycle() -> uint8_t { return 10; }
 
+auto GetMinLightingDutyCycleOverride() -> uint8_t { return 1; }
+
 auto GetMaxLightingDutyCycle() -> uint8_t { return 210; }
 
 auto GetRunTimeMs() -> uint32_t { return Millis(); }
@@ -49,6 +55,8 @@ auto GetRunTimeMs() -> uint32_t { return Millis(); }
 auto USBConnected() -> bool { return true; }
 
 auto GetSerialNumber() -> std::string { return "SIMULATOR"; }
+
+auto GetMacAddress() -> std::string { return "SIMULATOR"; }
 
 auto GetHardwareRevision() -> uint8_t { return 0; }
 

@@ -226,16 +226,16 @@ auto DispatchWaitForShutdown(int timeoutMs) -> bool {
     bool success = true;
     log_d("Waiting for dispatch queues to shutdown");
     auto core0BgQueue = DispatchGetCore0BackgroundQueue(false);
-    if (core0BgQueue) {
+    if (core0BgQueue && !core0BgQueue->isInQueue()) {
         success &= core0BgQueue->waitForShutdown(timeoutMs);
     }
     auto core1BgQueue = DispatchGetCore1BackgroundQueue(false);
-    if (core1BgQueue) {
+    if (core1BgQueue && !core1BgQueue->isInQueue()) {
         int remainingMs = timeoutMs - std::max(0, Millis() - startMs);
         success &= core1BgQueue->waitForShutdown(remainingMs);
     }
     auto uiQueue = DispatchGetUiQueue(false);
-    if (uiQueue) {
+    if (uiQueue && !uiQueue->isInQueue()) {
         int remainingMs = timeoutMs - std::max(0, Millis() - startMs);
         success &= uiQueue->waitForShutdown(remainingMs);
     }
@@ -250,4 +250,9 @@ auto DispatchWaitForShutdown(int timeoutMs) -> bool {
 
     log_d("Dispatch queues shutdown");
     return success;
+}
+
+auto DispatchShutdown(int timeoutMs) -> bool {
+    DispatchBeginShutdown();
+    return DispatchWaitForShutdown(timeoutMs);
 }

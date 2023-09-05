@@ -427,20 +427,6 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     });
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
-        std::string message = "Welcome to the Sol Reader! Let's begin...";
-        display.clearDisplay();
-        display.clearFrameBuffer();
-        display.setFont(static_cast<Font *>(&ibmf75Face0));
-        display.drawSingleLineOfText(
-            message.c_str(),
-            display.xAbsolute(display.xAbsoluteCenter() -
-                              display.getTextWidth(message.c_str()) / 2),
-            display.yAbsolute(display.yAbsoluteCenter() - display.getTextHeight(message.c_str())),
-            true);
-        nextInterval_ = 10;
-    });
-
-    lambdas_.emplace_back([this](DisplaySystem &display) {
         dropVcom_ = true;
         display.drawXBitmap(display.xAbsolute(0), display.yAbsolute(0), MANI_BOOK1_BITS,
                             mani_book1_width, mani_book1_height, display.fg);
@@ -835,15 +821,6 @@ void DemoScreen::render(DisplaySystem &display) {
         return;
     }
 
-    if (skipNextRender_) {
-        skipNextRender_ = false;
-        // Must stop the timer because ChangePeriod starts it.
-        xTimerStop(DisplaySystem::animationTimer, 0);
-        // Restart the timer if they stopped it.
-        xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
-        return;
-    }
-
     // Alternate left and right on for setup. Note: This seems backwards
     // but it looks right in-glass. Are LEFT and RIGHT backwards in the LightingController?
     if (currentScreen_ == 1) {
@@ -880,11 +857,11 @@ void DemoScreen::render(DisplaySystem &display) {
     }
 
     if ((currentScreen_ >= 3) && (currentScreen_ != lambdas_.size() - 1)) {
-        display.updateDisplay(nextUpdateType_, true, nextVcomNudge_);
         // Must stop the timer because ChangePeriod starts it.
         xTimerStop(DisplaySystem::animationTimer, 0);
         // Move to the next animation
         xTimerChangePeriod(DisplaySystem::animationTimer, pdMS_TO_TICKS(nextInterval_), 0);
+        display.updateDisplay(nextUpdateType_, true, nextVcomNudge_);
         currentScreen_++;
     } else if (currentScreen_ < 3) {
         // Must stop the timer because ChangePeriod starts it.
@@ -911,8 +888,8 @@ void DemoScreen::processCommand(RemoteCommand command) {
         setNeedsRerender();
         break;
     case RemoteCommand::ENTER:
-        xTimerStop(DisplaySystem::animationTimer, 0);
         if (currentScreen_ >= 9) {
+            xTimerStop(DisplaySystem::animationTimer, 0);
 #if !SIMULATOR
             if (!WiFi::getInstance().hasWiFiCredentials() && !shownAppDownload_) {
 #else
@@ -935,10 +912,6 @@ void DemoScreen::processCommand(RemoteCommand command) {
             currentScreen_++;
             currentSubScreen_ = 0;
             setNeedsRerender();
-        } else {
-            // Since every button press advances the animation, we need to skip the next render
-            // in the cases we want to explicitly ignore.
-            skipNextRender_ = true;
         }
         break;
     case RemoteCommand::RIGHT:

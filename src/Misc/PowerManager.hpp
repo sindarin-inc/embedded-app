@@ -1,10 +1,14 @@
 #pragma once
 
+#include <esp_sleep.h>
+#include <esp_system.h>
+#include <rom/rtc.h>
 #include <utility>
 
 #include "Misc/Battery.hpp"
 #include "Misc/InactivityTimer.hpp"
 #include "Misc/SolClock.hpp"
+#include "Misc/Telemetry.hpp"
 #include "Sensors/LightingController.hpp"
 #include "Sensors/Mmc5603.hpp"
 #include "Storage/PreferencesStore.hpp"
@@ -30,6 +34,8 @@ enum class PowerState {
     ActiveUSBCharging,
     // Screen lighting enabled ~10-60mA, inactivity timer at 10s, UI disabled
     ActiveOverTemp,
+    // Screen lighting enabled ~10-60mA, inactivity timer at 10s, UI disabled
+    ActiveBatteryDepleted,
     // Screens/lighting disabled ~6-7mA, inactivity timer disabled.
     Background,
     // Deep sleep with ULP magnetometer and periodic wakeups ~100uA
@@ -51,15 +57,115 @@ enum class SleepReason {
     WaitingForSync,
 };
 
+auto ToString(SleepReason reason) -> const char *;
+
+struct BootInfo {
+    enum class Reason {
+        Unknown = 0,
+
+        // Mirrored from esp_reset_reason_t
+        PowerOn,
+        Sw,
+        Panic,
+        IntWdt,
+        TaskWdt,
+        Wdt,
+        Brownout,
+
+        // Lower level from RESET_REASON (from rtc_get_reset_reason)
+        UartChipReset,
+
+        // Deep sleep wakeup reasons (derived from esp_sleep_wakeup_cause_t)
+        UsbPlug, // AKA Ext0
+        Timer,
+        UlpMag,
+        CoCpuTrap,
+    };
+
+    Reason reason = Reason::Unknown;
+
+    // Raw values from the various reset reasons (for debugging unknown/unexpected conditions)
+    esp_reset_reason_t resetReason = ESP_RST_UNKNOWN;
+    RESET_REASON rtcResetReason = NO_MEAN;
+    esp_sleep_wakeup_cause_t sleepWakeupCause = ESP_SLEEP_WAKEUP_UNDEFINED;
+
+    auto humanStr() -> std::string {
+        switch (reason) {
+        case Reason::UartChipReset:
+            return "USB Uart Reset";
+        case Reason::PowerOn:
+            return "Power On";
+        case Reason::Sw:
+            return "Software Reset";
+        case Reason::Panic:
+            return "Software Panic";
+        case Reason::IntWdt:
+            return "Interrupt Watchdog";
+        case Reason::TaskWdt:
+            return "Task Watchdog";
+        case Reason::Timer:
+            return "Deep Sleep Timer";
+        case Reason::UlpMag:
+            return "ULP Mag Sensor";
+        case Reason::UsbPlug:
+            return "USB Plugged/Unplugged";
+        case Reason::CoCpuTrap:
+            return "ULP Crashed";
+        case Reason::Brownout:
+            return "Brownout";
+        case Reason::Wdt:
+            return "General Watchdog";
+        default:
+            return StringFormat(
+                "Unknown (resetReason: %d, rtcResetReason: %d, sleepWakeupCause: %d)", resetReason,
+                rtcResetReason, sleepWakeupCause);
+        }
+    }
+
+    auto telemetryStr() -> std::string {
+        switch (reason) {
+        case Reason::UartChipReset:
+            return "UartChipReset";
+        case Reason::PowerOn:
+            return "PowerOn";
+        case Reason::Sw:
+            return "Software";
+        case Reason::Panic:
+            return "Panic";
+        case Reason::IntWdt:
+            return "IntWdt";
+        case Reason::TaskWdt:
+            return "TaskWdt";
+        case Reason::Timer:
+            return "Timer";
+        case Reason::UlpMag:
+            return "UlpMag";
+        case Reason::UsbPlug:
+            return "UsbPlug";
+        case Reason::CoCpuTrap:
+            return "CoCpuTrap";
+        case Reason::Brownout:
+            return "Brownout";
+        case Reason::Wdt:
+            return "Wdt";
+        default:
+            return StringFormat("Unknown (%d,%d,%d)", resetReason, rtcResetReason,
+                                sleepWakeupCause);
+        }
+    }
+};
+
 class PowerManager {
 public:
     static auto getInstance() -> PowerManager &;
 
     // Power manager initialization need to be as simple as possible
     PowerManager(FileSystem &fileSystem, PreferencesStore &prefs,
-                 LightingController &lightingController, DisplaySystem &display)
-        : battery(fileSystem, prefs), prefs_(prefs), lightingController_(lightingController),
-          display_(display), magSensor_(0) {}
+                 LightingController &lightingController, DisplaySystem &display,
+                 Telemetry &telemetry)
+        : battery(fileSystem, prefs, telemetry), prefs_(prefs),
+          lightingController_(lightingController), display_(display), telemetry_(telemetry),
+          magSensor_(0) {}
 
     PowerManager(const PowerManager &) = delete;
 
@@ -77,10 +183,13 @@ public:
         stateChangeCallback_ = std::move(callback);
     }
 
+    void setBeginShutdownCallback(const std::function<void()> &callback) {
+        beginShutdownCallback_ = callback;
+    }
+
     // Power lifecycle functions
-    auto beginShutdown() -> bool;
     void reboot();
-    void ulpDeepSleep(SleepReason reason = SleepReason::Unspecified);
+    void deepSleep(SleepReason reason);
     // Fully power down the device (assuming USB is disconnected and left temple closed)
     // Note: This should be used sparingly as it's unintuitive to the user if you get into
     // this state and USB is connected, since the deep-sleep-forever won't exit until usb is
@@ -115,6 +224,8 @@ public:
 #endif
     }
 
+    auto getBootInfo() -> BootInfo { return bootInfo_; }
+
     // Exposed in public: for easier refactoring, but we should consider only exposing the necessary
     // methods
     Battery battery;
@@ -123,17 +234,16 @@ protected:
     PreferencesStore &prefs_;
     PowerState state_ = PowerState::Booting;
     std::function<void(PowerState)> stateChangeCallback_;
+    std::function<void()> beginShutdownCallback_;
     LightingController &lightingController_;
     DisplaySystem &display_;
     InactivityTimer inactivityTimer_;
+    Telemetry &telemetry_;
     Mmc5603 magSensor_;
     bool templeOpen_ = false;
+    BootInfo bootInfo_;
 #if !DISABLE_POWER_MANAGEMENT
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
     esp_pm_config_t pmConfig_;
-#else
-    esp_pm_config_esp32s3_t pmConfig_;
-#endif
 #endif
     void updateState();
 
@@ -143,5 +253,17 @@ protected:
     // red or green depending on the charge of the battery.
     void checkUsb();
 
-    void waitForQueuesThenDeepSleep(SleepReason reason);
+    void beginShutdown();
+
+    void deepSleepInternal(SleepReason reason);
+
+    void scheduleSync(SyncReason reason, int timeFromNow);
+
+    // Fully power down the device (assuming USB is disconnected and left temple closed)
+    // Note: This should be used sparingly as it's unintuitive to the user if you get into
+    // this state and USB is connected, since the deep-sleep-forever won't exit until usb is
+    // disconnected and the left temple is closed
+    void powerOffInternal();
+
+    auto enableUsbWakeup() -> esp_err_t;
 };

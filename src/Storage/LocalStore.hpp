@@ -6,16 +6,54 @@
 #include "Communications/SindarinAPI.hpp"
 #include "Misc/Battery.hpp"
 #include "Misc/Dispatch.hpp"
+#include "Misc/Telemetry.hpp"
 #include "Models/CheckSync.hpp"
 #include "Models/Readable.hpp"
 #include "Models/UserReadable.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
 
+struct SortCriteria {
+    enum Type { DateModified, Alphabetical, LastRead, Random } type = DateModified;
+
+    [[nodiscard]] auto toString() const -> std::string {
+        switch (type) {
+        case SortCriteria::DateModified:
+            return "date modified";
+        case SortCriteria::Alphabetical:
+            return "alphabetical";
+        case SortCriteria::LastRead:
+            return "last read";
+        case SortCriteria::Random:
+            return "random";
+        }
+        return "date modified";
+    }
+
+    auto operator==(const SortCriteria &other) const -> bool { return type == other.type; }
+};
+
+struct SortDirection {
+    enum Type { Descending, Ascending } type = Descending;
+
+    [[nodiscard]] auto toString() const -> std::string {
+        switch (type) {
+        case SortDirection::Descending:
+            return "descending";
+        case SortDirection::Ascending:
+            return "ascending";
+        }
+        return "descending";
+    }
+
+    auto operator==(const SortDirection &other) const -> bool { return type == other.type; }
+};
+
 struct ContentSyncState {
     enum State {
         Idle,
         ConnectingWifi,
+        UploadTelemetry,
         CheckingSync,
         SyncingBooks,
         SyncingArticles,
@@ -40,19 +78,22 @@ using UserReadablesVector = SpiramVector<UserReadable>;
 //! Interface for local storage of structured data
 class LocalStore {
 public:
-    LocalStore(FileSystem &fileSystem, PreferencesStore &prefs, Battery &battery)
-        : fileSystem(fileSystem), prefs_(prefs), battery_(battery){};
+    LocalStore(FileSystem &fileSystem, PreferencesStore &prefs, Battery &battery,
+               Telemetry &telemetry)
+        : fileSystem(fileSystem), prefs_(prefs), battery_(battery), telemetry_(telemetry){};
     LocalStore(LocalStore const &) = delete;
 
     auto begin() -> bool;
     auto loadReadablesFromFile(ReadablesVector &readables, const std::string &path) -> bool;
+    auto loadToc(const std::shared_ptr<Readable> &readable) -> bool;
 
     // Convenience methods
     auto books() -> ReadablesVector & { return books_; };
     auto articles() -> ReadablesVector & { return articles_; };
     auto readablesModelType(const ReadablesVector &readables) -> ReadablesModelType;
-    auto hasReadable(const ReadablesVector &readables, const std::shared_ptr<Readable> &readable,
-                     bool ignoreFileSizeCheck = false) -> bool;
+    auto isReadableUnchanged(const ReadablesVector &readables,
+                             const std::shared_ptr<Readable> &readable,
+                             bool ignoreFileSizeCheck = false) -> bool;
     void addReadable(ReadablesVector &readables, const std::shared_ptr<Readable> &readable);
     void removeReadable(ReadablesVector &readables, const std::shared_ptr<Readable> &readable);
     auto readablesSince(const ReadablesModelType modelType) -> std::string;
@@ -65,6 +106,7 @@ public:
     void changedReadablesBookmarksJson(ReadableBookmarksVector &bookmarks);
     auto processReadablePlacemarksFromServer(const std::shared_ptr<Readable> &readable,
                                              const uint32_t placemark) -> bool;
+    auto processToCFromServer(const std::shared_ptr<Readable> &readable) -> bool;
     void resetReadablesPlacemarkChanged(const ReadablesVector &readables);
     void resetReadablesArchivedChanged(const ReadablesVector &readables);
     void resetReadablesBookmarksChanged(const ReadablesVector &readables);
@@ -85,7 +127,11 @@ public:
     void deleteReadables(bool restart = true);
     void deleteArticles(bool restart = true);
     void deleteReadableFiles(const ReadablesVector &readables, bool restart);
-    auto saveReadables(const ReadablesVector &readables) -> bool;
+    auto saveTableOfContents(const std::shared_ptr<Readable> &readable) -> bool;
+    auto removeStopWords(const SpiramString &title) -> std::string;
+    void sortReadables(ReadablesVector &readables);
+    void purgeReadableToc(const std::shared_ptr<Readable> &readable);
+    auto saveReadables(ReadablesVector &readables) -> bool;
 
     // Methods for interacting with readable files on disk
     [[nodiscard]] auto readableFilePathForWriting(const std::shared_ptr<Readable> &readable) const
@@ -115,6 +161,7 @@ private:
     const uint32_t latestMigrationVersion_ = 1;
     PreferencesStore &prefs_;
     Battery &battery_;
+    Telemetry &telemetry_;
 
     ReadablesVector books_;
     ReadablesVector articles_;

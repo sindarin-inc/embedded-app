@@ -233,11 +233,11 @@ void DisplaySystem::drawSingleLineOfCenteredText(const std::string &line) {
         this->yAbsolute(this->yAbsoluteCenter() - this->getTextHeight() / 2));
 }
 
-void DisplaySystem::getTextSize(const char *buffer, uint16_t *w, uint16_t *h) {
+void DisplaySystem::getTextSize(const std::string &buffer, uint16_t *w, uint16_t *h) {
     if (font_ != nullptr) {
         if (font_->isA(FontType::GFX)) {
             int16_t x, y;
-            gfxClass_->getTextBounds(buffer, 0, 0, &x, &y, w, h);
+            gfxClass_->getTextBounds(buffer.c_str(), 0, 0, &x, &y, w, h);
         } else {
             Dim dim = static_cast<IBMFFont *>(font_)->getTextSize(buffer);
             *w = dim.width;
@@ -248,13 +248,13 @@ void DisplaySystem::getTextSize(const char *buffer, uint16_t *w, uint16_t *h) {
 
 auto DisplaySystem::getTextHeight() -> int { return font_->lineHeight() + lineSpacing_; }
 
-auto DisplaySystem::getTextHeight(const char *buffer) -> int {
+auto DisplaySystem::getTextHeight(const std::string &buffer) -> int {
     uint16_t h = 0;
     if (font_ != nullptr) {
         if (font_->isA(FontType::GFX)) {
             int16_t x, y;
             uint16_t w;
-            gfxClass_->getTextBounds(buffer, 0, 0, &x, &y, &w, &h);
+            gfxClass_->getTextBounds(buffer.c_str(), 0, 0, &x, &y, &w, &h);
         } else {
             h = static_cast<IBMFFont *>(font_)->getTextHeight(buffer);
         }
@@ -262,13 +262,13 @@ auto DisplaySystem::getTextHeight(const char *buffer) -> int {
     return h;
 }
 
-auto DisplaySystem::getTextWidth(const char *buffer) -> int {
+auto DisplaySystem::getTextWidth(const std::string &buffer) -> int {
     uint16_t w = 0;
     if (font_ != nullptr) {
         if (font_->isA(FontType::GFX)) {
             int16_t x, y;
             uint16_t h;
-            gfxClass_->getTextBounds(buffer, 0, 0, &x, &y, &w, &h);
+            gfxClass_->getTextBounds(buffer.c_str(), 0, 0, &x, &y, &w, &h);
         } else {
             w = static_cast<IBMFFont *>(font_)->getTextWidth(buffer);
         }
@@ -278,6 +278,41 @@ auto DisplaySystem::getTextWidth(const char *buffer) -> int {
 
 void DisplaySystem::drawBox(int startX, int startY, int endX, int endY) {
     gfxClass_->drawRect(xOffset(startX), yOffset(startY), endX - startX, endY - startY, fg);
+}
+
+void DisplaySystem::drawDottedBox(int startX, int startY, int endX, int endY, int dotSize,
+                                  int gapSize) {
+    if (((endX - startX) < (dotSize + gapSize)) || ((endY - startY) < (dotSize + gapSize)) ||
+        (dotSize < 1) || (gapSize < 1) || (endX < startX) || (endY < startY)) {
+        log_e("Error in inputs to drawDottedBox: startX %d startY %d endX %d endY %d dotSize %d "
+              "gapSize %d",
+              startX, startY, endX, endY, dotSize, gapSize);
+        return;
+    }
+    // Draw a rect with dotted lines that are dotSize pixels long and gapSize pixels in between the
+    // dots Do not fill in the rect
+
+    // Draw the top line
+    for (int i = startX; i < endX; i += dotSize + gapSize) {
+        gfxClass_->drawLine(xOffset(i), yOffset(startY), xOffset(i + dotSize - 1), yOffset(startY),
+                            fg);
+    }
+
+    // Draw the bottom line
+    for (int i = startX; i < endX; i += dotSize + gapSize) {
+        gfxClass_->drawLine(xOffset(i), yOffset(endY), xOffset(i + dotSize - 1), yOffset(endY), fg);
+    }
+
+    // Draw the left line
+    for (int i = startY + 2; i < endY - 1; i += dotSize + gapSize) {
+        gfxClass_->drawLine(xOffset(startX), yOffset(i), xOffset(startX), yOffset(i + dotSize - 1),
+                            fg);
+    }
+
+    // Draw the right line
+    for (int i = startY + 2; i < endY - 1; i += dotSize + gapSize) {
+        gfxClass_->drawLine(xOffset(endX), yOffset(i), xOffset(endX), yOffset(i + dotSize - 1), fg);
+    }
 }
 
 void DisplaySystem::drawXBitmap(int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, int16_t h,

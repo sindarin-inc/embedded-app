@@ -15,7 +15,10 @@
 
 class GUnzipStream : public RendererStream {
 public:
-    GUnzipStream(SFile gzFile) : gzFile_(std::move(gzFile)) { readSize(); }
+    GUnzipStream(SFile gzFile, StreamType streamType = StreamType::TXT)
+        : RendererStream(streamType), gzFile_(std::move(gzFile)) {
+        readSize();
+    }
     ~GUnzipStream() override { gzFile_.close(); };
 
     auto available() -> int override;

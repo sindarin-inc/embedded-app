@@ -9,6 +9,7 @@
 #include <random>
 
 #include "../Communications/WiFi.hpp"
+#include "../Misc/Platform.hpp"
 #include "../Misc/StringUtil.hpp"
 #include "../Misc/Timezones.hpp"
 
@@ -102,19 +103,13 @@ void SolClock::getClockTime(uint8_t &hours, uint8_t &minutes) {
     minutes = timeinfo.tm_min;
 }
 
-void SolClock::setClockTimeFromInternet() {
+auto SolClock::setClockTimeFromInternet() -> bool {
 #if !SIMULATOR
 
     // Configure the SNTP client
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
     esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
     esp_sntp_setservername(0, "time.google.com");
     esp_sntp_init();
-#else
-    sntp_setoperatingmode(SNTP_OPMODE_POLL);
-    sntp_setservername(0, "time.google.com");
-    sntp_init();
-#endif
 
     // Wait for the SNTP client to get the time
     time_t now = 0;
@@ -131,16 +126,13 @@ void SolClock::setClockTimeFromInternet() {
 
     if (bits == 0) {
         log_e("Failed to sync time");
+        return false;
     } else {
         now = time(nullptr);
         localtime_r(&now, &timeinfo);
     }
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
     esp_sntp_stop();
-#else
-    sntp_stop();
-#endif
 
     // Print the time as a string
     char strftimeBuf[64];
@@ -152,6 +144,8 @@ void SolClock::setClockTimeFromInternet() {
 #else
     log_i("Not setting clock time from internet in simulator");
 #endif
+
+    return true;
 }
 
 auto SolClock::calculateNextSyncTime(time_t now) -> time_t {

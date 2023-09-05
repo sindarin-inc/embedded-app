@@ -38,6 +38,8 @@ void ReadablePopupMenuScreen::addMenuItem(const MenuItem &newItem) {
 
 void ReadablePopupMenuScreen::populatePopupMenu() {
     resetMenuItems();
+    localStore_.loadToc(readable_);
+
     addMenuItem(MenuItem("Main Menu", [this]() { onMainMenu(); }));
 
     addMenuItem(MenuItem("Archive", [this]() {
@@ -57,7 +59,21 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
         back();
     }));
 
-    addMenuItem(MenuItem("Text", [this]() { back(); }));
+    if (readable_->hasSummary) {
+        addMenuItem(MenuItem("Summary", [this]() {
+            readableSummaryScreen_.setPlaceInReadable(renderer_.getCurrentPlace());
+            readableSummaryScreen_.setFirstLoad();
+            setCurrentScreen(readableSummaryScreen_);
+        }));
+    }
+
+    if (readable_->hasDictionary) {
+        addMenuItem(MenuItem("Dictionary", [this]() {
+            readableDictionaryScreen_.setPlaceInReadable(renderer_.getCurrentPlace());
+            readableDictionaryScreen_.setFirstLoad();
+            setCurrentScreen(readableDictionaryScreen_);
+        }));
+    }
 
     addMenuItem(MenuItem("Brightness", [this]() {
         log_d("Setting current screen to brightness screen");
@@ -140,8 +156,8 @@ void ReadablePopupMenuScreen::processCommand(RemoteCommand command) {
 void ReadablePopupMenuScreen::drawInRect(Rect rect) {}
 
 auto ReadablePopupMenuScreen::layout(LayoutContext &context, Size size) -> Size {
-    context.setViewFrame(popupMenuView_, {{size.width / 2 - 50, size.height / 2 - 65}, {100, 130}},
-                         LayoutOptionsAlignCenter);
+    auto rect = Rect({{0, 0}, size});
+    context.setViewFrame(popupMenuView_, rect, LayoutOptionsSizeToFit | LayoutOptionsAlignCenter);
     return size;
 }
 
