@@ -47,30 +47,38 @@ TEST_CASE("Test GZip Stream compression") {
     auto outFile = fs.open("/book/last-question.txt.gz", "w", true);
 
     GZipStream gzstream;
-    uint8_t outputBuffer[100000];
+    uint8_t outputBuffer[9];
     uint8_t inputBuffer[1024];
     int chunkSize = 1024;
     int fileSize = file.size();
     int compressedBytes;
+    bool flushDone = false;
 
     gzstream.init();
     do {
         int bytesToRead = fileSize < chunkSize ? fileSize : chunkSize;
         size_t r = file.read(inputBuffer, bytesToRead);
         REQUIRE(r == bytesToRead);
-        gzstream.write(inputBuffer, bytesToRead, outputBuffer, &compressedBytes,
-                       sizeof(outputBuffer));
-        if (compressedBytes > 0) {
-            outFile.write(outputBuffer, compressedBytes);
-        }
+
+        flushDone = false;
+        do {
+            gzstream.write(inputBuffer, bytesToRead, outputBuffer, &compressedBytes,
+                           sizeof(outputBuffer), flushDone);
+            if (compressedBytes > 0) {
+                outFile.write(outputBuffer, compressedBytes);
+            }
+        } while (!flushDone);
 
         fileSize -= bytesToRead;
     } while (fileSize > 0);
 
-    gzstream.flush(outputBuffer, &compressedBytes, sizeof(outputBuffer));
-    if (compressedBytes > 0) {
-        outFile.write(outputBuffer, compressedBytes);
-    }
+    do {
+        gzstream.flush(outputBuffer, &compressedBytes, sizeof(outputBuffer), flushDone);
+        log_i("flush size %d done %d", compressedBytes, flushDone);
+        if (compressedBytes > 0) {
+            outFile.write(outputBuffer, compressedBytes);
+        }
+    } while (!flushDone);
 
     file.close();
     outFile.close();

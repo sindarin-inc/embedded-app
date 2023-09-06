@@ -9,8 +9,6 @@
 
 #include "SpiramAllocator.hpp"
 
-#define GZIP_CHUNK_SIZE 4096
-
 class GZipStream {
 public:
     GZipStream() : _chunkBuffer(NULL), _bytesInBuffer(0) {
@@ -27,18 +25,17 @@ public:
     bool init();
 
     auto write(uint8_t *dataToCompress, int dataToCompressLength, uint8_t *outputBuffer,
-               int *outputBufferLength, int outputBufferSize) -> bool;
-    auto flush(uint8_t *outputBuffer, int *outputBufferLength, int outputBufferSize) -> bool;
+               int *outputBufferLength, int outputBufferSize, bool &done) -> bool;
+    auto flush(uint8_t *outputBuffer, int *outputBufferLength, int outputBufferSize, bool &done)
+        -> bool;
 
 protected:
     uint8_t *_chunkBuffer;
     int _bytesInBuffer;
 
-    auto write(uint8_t *dataToCompress, int dataToCompressLength, uint8_t *outputBuffer,
-               int *outputBufferLength, int outputBufferSize, bool flush) -> bool;
-
-    auto compressBlock(int blockSize, uint8_t *outputBuffer, int *outputBufferLength,
-                       int outputBufferSize, bool flush) -> bool;
+    auto compressBlock(uint8_t *inputBuffer, int blockSize, uint8_t *outputBuffer,
+                       int *outputBufferLength, int outputBufferSize, bool flush, bool &done)
+        -> bool;
 
     z_stream zs;
 };
