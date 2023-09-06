@@ -11,10 +11,10 @@
 
 class GZipStream {
 public:
-    GZipStream() {}
-    ~GZipStream() {}
+    GZipStream() = default;
+    ~GZipStream() = default;
 
-    bool init();
+    auto init() -> bool;
 
     auto write(uint8_t *dataToCompress, int dataToCompressLength, uint8_t *outputBuffer,
                int *outputBufferLength, int outputBufferSize, bool &done) -> bool;
@@ -26,5 +26,5 @@ protected:
                        int *outputBufferLength, int outputBufferSize, bool flush, bool &done)
         -> bool;
 
-    z_stream zs;
+    z_stream zs_;
 };
