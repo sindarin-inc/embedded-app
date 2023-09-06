@@ -1,7 +1,9 @@
 #include <catch_amalgamated.hpp>
 
-#include "Storage/PosixFileSystem.hpp"
+#include "Misc/GUnzip.hpp"
 #include "Misc/GZip.hpp"
+#include "Misc/GZipStream.hpp"
+#include "Storage/PosixFileSystem.hpp"
 #include "ViewTestCommon.hpp"
 
 TEST_CASE("Test GZip compression") {
@@ -30,9 +32,68 @@ TEST_CASE("Test GZip compression") {
     REQUIRE(stream->position() == 25924);
 
     file = fs.open("/book/last-question.txt");
-    REQUIRE(file.readBytes((char*)testBuffer[1], 25924) == 25924);
+    REQUIRE(file.readBytes((char *)testBuffer[1], 25924) == 25924);
 
     REQUIRE(memcmp(testBuffer[0], testBuffer[1], 25924) == 0);
+}
+
+TEST_CASE("Test GZip Stream compression") {
+    SetupFileSystemMock("TestData");
+
+    PosixFileSystem fs;
+    fs.begin();
+
+    auto file = fs.open("/book/last-question.txt");
+    auto outFile = fs.open("/book/last-question.txt.gz", "w", true);
+
+    GZipStream gzstream;
+    uint8_t outputBuffer[16384];
+    uint8_t inputBuffer[1024];
+    int chunkSize = 1024;
+    int fileSize = file.size();
+    int compressedBytes;
+
+    do {
+        int bytesToRead = fileSize < chunkSize ? fileSize : chunkSize;
+        size_t r = file.read(inputBuffer, bytesToRead);
+        REQUIRE(r == bytesToRead);
+        gzstream.write(inputBuffer, bytesToRead, outputBuffer, &compressedBytes,
+                       sizeof(outputBuffer));
+        if (compressedBytes > 0) {
+            outFile.write(outputBuffer, compressedBytes);
+        }
+
+        fileSize -= bytesToRead;
+    } while (fileSize > 0);
+
+    gzstream.flush(outputBuffer, &compressedBytes, sizeof(outputBuffer));
+    if (compressedBytes > 0) {
+        outFile.write(outputBuffer, compressedBytes);
+    }
+
+    file.close();
+    outFile.close();
+
+    /*
+    auto stream = fs.newGzipRendererStream("/book/last-question.txt.gz");
+    log_i("gzip strem size: %d", stream->size());
+
+    // REQUIRE(stream->size() == 25924);
+
+    uint8_t testBuffer[2][25924];
+    stream->readBytes(testBuffer[0], 25924);
+    REQUIRE(stream->position() == 25924);
+
+    file = fs.open("/book/last-question.txt");
+    REQUIRE(file.readBytes((char *)testBuffer[1], 25924) == 25924);
+
+    REQUIRE(memcmp(testBuffer[0], testBuffer[1], 25924) == 0);
+    */
+
+    GUnzip gunzip;
+    gunzip.init();
+
+    gunzip.decompressFile(fs, "/book/last-question.txt.gz", "/book/last-question-decompressed.txt");
 }
 
 TEST_CASE("Test GZip stream handling") {
