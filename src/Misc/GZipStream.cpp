@@ -31,12 +31,7 @@ auto GZipStream::compressBlock(int blockSize, uint8_t *outputBuffer, int *output
         zs.next_out = out;
         zs.avail_out = outputSizeRemaining;
 
-        printf("1: ai %d ao %d\n", zs.avail_in, zs.avail_out);
-
         ret = deflate(&zs, flush_type);
-        printf("ret: %d\n", ret);
-        printf("2: ai %d ao %d to %d\n", zs.avail_in, zs.avail_out, (int)zs.total_out);
-
         if (flush) {
             if (ret != Z_STREAM_END) {
                 log_e("error flushing gzip stream: %d %s", ret, zs.msg);
@@ -55,10 +50,6 @@ auto GZipStream::compressBlock(int blockSize, uint8_t *outputBuffer, int *output
             outputSizeRemaining -= compressedBytes;
         }
     } while (zs.avail_in != 0);
-
-    if (zs.avail_in != 0) {
-        printf("compress error: not all input bytes consumed %d\n", zs.avail_in);
-    }
 
     if (flush) {
         deflateEnd(&zs);
