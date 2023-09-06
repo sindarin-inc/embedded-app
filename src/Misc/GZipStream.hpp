@@ -11,16 +11,8 @@
 
 class GZipStream {
 public:
-    GZipStream() : _chunkBuffer(NULL), _bytesInBuffer(0) {
-        _chunkBuffer = (uint8_t *)SpiRamMalloc(GZIP_CHUNK_SIZE);
-    }
-
-    ~GZipStream() {
-        if (_chunkBuffer) {
-            SpiRamFree(_chunkBuffer);
-            _chunkBuffer = NULL;
-        }
-    }
+    GZipStream() {}
+    ~GZipStream() {}
 
     bool init();
 
@@ -30,9 +22,6 @@ public:
         -> bool;
 
 protected:
-    uint8_t *_chunkBuffer;
-    int _bytesInBuffer;
-
     auto compressBlock(uint8_t *inputBuffer, int blockSize, uint8_t *outputBuffer,
                        int *outputBufferLength, int outputBufferSize, bool flush, bool &done)
         -> bool;

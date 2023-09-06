@@ -1,10 +1,6 @@
 #include "GZipStream.hpp"
 
-//#include "SpiramAllocator.hpp"
 #include "sindarin-debug.h"
-
-// typedef voidpf (*alloc_func) OF((voidpf opaque, uInt items, uInt size));
-// typedef void   (*free_func)  OF((voidpf opaque, voidpf address));
 
 static void *spiZAlloc(void *opaque, uInt items, uInt size) { return SpiRamMalloc(items * size); }
 static void spiZFree(void *opaque, void *address) { SpiRamFree(address); }
@@ -22,8 +18,6 @@ bool GZipStream::init() {
 auto GZipStream::compressBlock(uint8_t *inputBuffer, int blockSize, uint8_t *outputBuffer,
                                int *outputBufferLength, int outputBufferSize, bool flush,
                                bool &done) -> bool {
-    printf("compressing block size: %d flush %d\n", blockSize, flush);
-
     done = false;
 
     zs.next_in = inputBuffer;
@@ -43,7 +37,6 @@ auto GZipStream::compressBlock(uint8_t *inputBuffer, int blockSize, uint8_t *out
         zs.avail_out = outputSizeRemaining;
 
         ret = deflate(&zs, flush_type);
-        log_i("ret: %d ai %d ao %d", ret, zs.avail_in, zs.avail_out);
         if (flush) {
             if (ret == Z_STREAM_END) {
                 // nothing left to flush
@@ -71,10 +64,7 @@ auto GZipStream::compressBlock(uint8_t *inputBuffer, int blockSize, uint8_t *out
         }
     } while (zs.avail_in != 0 && outputSizeRemaining > 0 != 0 && !flush);
 
-    log_i("output: %d bytes", *outputBufferLength);
-
     if (flush && done) {
-        log_i("deflateEnd");
         deflateEnd(&zs);
     }
 
