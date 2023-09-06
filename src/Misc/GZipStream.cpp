@@ -1,9 +1,12 @@
 #include "GZipStream.hpp"
 
-auto GZipStream::init() -> bool {
-    memset(&_zs, 0, sizeof(_zs));
+//#include "SpiramAllocator.hpp"
+//#include "sindarin-debug.h"
 
-    if (deflateInit2(&_zs, Z_BEST_COMPRESSION, Z_DEFLATED, 31, 8, Z_DEFAULT_STRATEGY) != Z_OK) {
+bool GZipStream::init() {
+    memset(&zs, 0, sizeof(zs));
+
+    if (deflateInit2(&zs, Z_BEST_COMPRESSION, Z_DEFLATED, 31, 8, Z_DEFAULT_STRATEGY) != Z_OK) {
         return false;
     }
 
@@ -12,40 +15,101 @@ auto GZipStream::init() -> bool {
 
 auto GZipStream::compressBlock(int blockSize, uint8_t *outputBuffer, int *outputBufferLength,
                                int outputBufferSize, bool flush) -> bool {
-    _zs.next_in = _chunkBuffer;
-    _zs.avail_in = blockSize;
+    // z_stream zs;
+    // memset(&zs, 0, sizeof(zs));
+
+    // if (deflateInit2(&zs, Z_BEST_COMPRESSION, Z_DEFLATED, 31, 8, Z_DEFAULT_STRATEGY) != Z_OK) {
+    //     return false;
+    // }
+
+    // init();
+
+    printf("compressing block size: %d\n", blockSize);
+
+    zs.next_in = _chunkBuffer;
+    zs.avail_in = blockSize;
 
     int ret;
     *outputBufferLength = 0;
     uint8_t *out = outputBuffer;
     int outputSizeRemaining = outputBufferSize;
 
-    log_i("compressBlock input size %d flush %d osr %d", blockSize, flush, outputSizeRemaining);
-
     int flush_type = flush ? Z_FINISH : Z_NO_FLUSH;
     // retrieve the compressed bytes blockwise
+
+    /*
     do {
-        _zs.next_out = out;
-        _zs.avail_out = outputSizeRemaining;
+        zs.next_out = out;
+        zs.avail_out = outputSizeRemaining;
 
-        ret = deflate(&_zs, flush_type);
-        if (ret != Z_OK) {
-            log_e("zlib deflate failed: %d %s", ret, _zs.msg);
-            return false;
+        printf("1: ai %d ao %d\n", zs.avail_in, zs.avail_out);
+
+        ret = deflate(&zs, flush_type);
+        printf("2: ai %d ao %d to %d\n", zs.avail_in, zs.avail_out, (int)zs.total_out);
+        if (zs.total_out > 0) {
+            out += zs.total_out;
+            *outputBufferLength += zs.total_out;
+            outputSizeRemaining -= zs.total_out;
         }
+    } while (ret == Z_OK);
+    */
 
-        if (_zs.total_out > 0) {
-            out += _zs.total_out;
-            *outputBufferLength += _zs.total_out;
-            outputSizeRemaining -= _zs.total_out;
+    /*
+    zs.next_out = out;
+    zs.avail_out = outputSizeRemaining;
+
+    printf("1: ai %d ao %d\n", zs.avail_in, zs.avail_out);
+
+    ret = deflate(&zs, flush_type);
+    printf("2: ai %d ao %d to %d\n", zs.avail_in, zs.avail_out, (int)zs.total_out);
+    if (zs.total_out > 0) {
+        out += zs.total_out;
+        *outputBufferLength += zs.total_out;
+        outputSizeRemaining -= zs.total_out;
+    }
+    */
+
+    do {
+        zs.next_out = out;
+        zs.avail_out = outputSizeRemaining;
+
+        printf("1: ai %d ao %d\n", zs.avail_in, zs.avail_out);
+
+        ret = deflate(&zs, flush_type);
+        printf("ret: %d\n", ret);
+        printf("2: ai %d ao %d to %d\n", zs.avail_in, zs.avail_out, (int)zs.total_out);
+        /*
+        if (zs.total_out > 0) {
+            out += zs.total_out;
+            *outputBufferLength += zs.total_out;
+            outputSizeRemaining -= zs.total_out;
         }
-    } while (_zs.avail_in != 0);
+        */
 
-    log_i("compressBlock got bytes %d", *outputBufferLength);
+        int compressedBytes = outputSizeRemaining - zs.avail_out;
+        if (compressedBytes > 0) {
+            out += compressedBytes;
+            *outputBufferLength += compressedBytes;
+            outputSizeRemaining -= compressedBytes;
+        }
+    } while (zs.avail_in != 0);
+
+    if (zs.avail_in != 0) {
+        printf("compress error: not all input bytes consumed %d\n", zs.avail_in);
+    }
 
     if (flush) {
-        deflateEnd(&_zs);
+        deflateEnd(&zs);
     }
+
+    /*
+    if (ret != Z_STREAM_END) {
+        printf("error: %d %s\n", ret, zs.msg);
+        return NULL;
+    }
+    */
+
+    printf("compress: %d bytes\n", *outputBufferLength);
 
     return true;
 }
@@ -63,6 +127,8 @@ auto GZipStream::write(uint8_t *dataToCompress, int dataToCompressLength, uint8_
     int bytesToCompress = dataToCompressLength;
     *outputBufferLength = 0;
     int outputSizeRemaining = outputBufferSize;
+
+    // printf("write %d\n", dataToCompressLength);
 
     do {
         // copy data into chunk buffer
@@ -84,6 +150,7 @@ auto GZipStream::write(uint8_t *dataToCompress, int dataToCompressLength, uint8_
             bool ret =
                 compressBlock(_bytesInBuffer, output, &compressedBytes, outputSizeRemaining, flush);
             if (!ret) {
+                printf("compressBlock failed\n");
                 return false;
             }
 

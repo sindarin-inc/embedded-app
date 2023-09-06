@@ -47,12 +47,13 @@ TEST_CASE("Test GZip Stream compression") {
     auto outFile = fs.open("/book/last-question.txt.gz", "w", true);
 
     GZipStream gzstream;
-    uint8_t outputBuffer[16384];
+    uint8_t outputBuffer[100000];
     uint8_t inputBuffer[1024];
     int chunkSize = 1024;
     int fileSize = file.size();
     int compressedBytes;
 
+    gzstream.init();
     do {
         int bytesToRead = fileSize < chunkSize ? fileSize : chunkSize;
         size_t r = file.read(inputBuffer, bytesToRead);
@@ -74,11 +75,10 @@ TEST_CASE("Test GZip Stream compression") {
     file.close();
     outFile.close();
 
-    /*
     auto stream = fs.newGzipRendererStream("/book/last-question.txt.gz");
-    log_i("gzip strem size: %d", stream->size());
+    printf("gzip strem size: %d\n", stream->size());
 
-    // REQUIRE(stream->size() == 25924);
+    REQUIRE(stream->size() == 25924);
 
     uint8_t testBuffer[2][25924];
     stream->readBytes(testBuffer[0], 25924);
@@ -88,12 +88,6 @@ TEST_CASE("Test GZip Stream compression") {
     REQUIRE(file.readBytes((char *)testBuffer[1], 25924) == 25924);
 
     REQUIRE(memcmp(testBuffer[0], testBuffer[1], 25924) == 0);
-    */
-
-    GUnzip gunzip;
-    gunzip.init();
-
-    gunzip.decompressFile(fs, "/book/last-question.txt.gz", "/book/last-question-decompressed.txt");
 }
 
 TEST_CASE("Test GZip stream handling") {
