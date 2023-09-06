@@ -37,14 +37,17 @@ TEST_CASE("Test GZip compression") {
     REQUIRE(memcmp(testBuffer[0], testBuffer[1], 25924) == 0);
 }
 
-TEST_CASE("Test GZip Stream compression") {
+TEST_CASE("Test GZip Stream compression, small buffers") {
     SetupFileSystemMock("TestData");
 
     PosixFileSystem fs;
     fs.begin();
 
-    auto file = fs.open("/book/last-question.txt");
-    auto outFile = fs.open("/book/last-question.txt.gz", "w", true);
+    std::string uncFileName = "/book/last-question.txt";
+    std::string compFileName = "/book/last-question.txt.gz";
+
+    auto file = fs.open(uncFileName);
+    auto outFile = fs.open(compFileName, "w", true);
 
     GZipStream gzstream;
 
@@ -53,6 +56,10 @@ TEST_CASE("Test GZip Stream compression") {
     uint8_t outputBuffer[8];
     uint8_t inputBuffer[8];
     int fileSize = file.size();
+    int uncompressedSize = fileSize;
+
+    REQUIRE(uncompressedSize == 25924);
+
     int compressedBytes;
     bool flushDone = false;
 
@@ -84,19 +91,26 @@ TEST_CASE("Test GZip Stream compression") {
     file.close();
     outFile.close();
 
-    auto stream = fs.newGzipRendererStream("/book/last-question.txt.gz");
-    printf("gzip strem size: %d\n", stream->size());
+    auto stream = fs.newGzipRendererStream(compFileName.c_str());
+    REQUIRE(stream->size() == uncompressedSize);
 
-    REQUIRE(stream->size() == 25924);
+    uint8_t *testBuffer[2];
+    for (int i = 0; i < 2; i++) {
+        testBuffer[i] = (uint8_t *)malloc(uncompressedSize);
+    }
 
-    uint8_t testBuffer[2][25924];
-    stream->readBytes(testBuffer[0], 25924);
-    REQUIRE(stream->position() == 25924);
+    stream->readBytes(testBuffer[0], uncompressedSize);
+    REQUIRE(stream->position() == uncompressedSize);
 
-    file = fs.open("/book/last-question.txt");
-    REQUIRE(file.readBytes((char *)testBuffer[1], 25924) == 25924);
+    file = fs.open(uncFileName);
+    REQUIRE(file.readBytes((char *)testBuffer[1], uncompressedSize) == uncompressedSize);
 
-    REQUIRE(memcmp(testBuffer[0], testBuffer[1], 25924) == 0);
+    REQUIRE(memcmp(testBuffer[0], testBuffer[1], uncompressedSize) == 0);
+
+    for (int i = 0; i < 2; i++) {
+        free(testBuffer[i]);
+        testBuffer[i] = NULL;
+    }
 }
 
 TEST_CASE("Test GZip stream handling") {
