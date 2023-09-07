@@ -8,6 +8,7 @@
 #include <zlib.h>
 
 #include "SpiramAllocator.hpp"
+#include "Storage/SFile.hpp"
 
 class GZipStream {
 public:
@@ -20,6 +21,9 @@ public:
                int *outputBufferLength, int outputBufferSize, bool &done) -> bool;
     auto flush(uint8_t *outputBuffer, int *outputBufferLength, int outputBufferSize, bool &done)
         -> bool;
+
+    auto compressFileToMemory(SFile &file, uint8_t *outputBuffer, int outputBufferSize,
+                              int &compressedSize) -> bool;
 
 protected:
     auto compressBlock(uint8_t *inputBuffer, int blockSize, uint8_t *outputBuffer,

@@ -2,13 +2,20 @@
 
 #include "sindarin-debug.h"
 
-static auto spiZAlloc(void *opaque, uInt items, uInt size) -> void * {
+static void *spiZAlloc(void *opaque, uInt items, uInt size) {
+    log_d("spiZAlloc: %d %d", (int)items, (int)size);
     return SpiRamMalloc(items * size);
 }
-static void spiZFree(void *opaque, void *address) { SpiRamFree(address); }
+static void spiZFree(void *opaque, void *address) {
+    log_d("spiZFree");
+    SpiRamFree(address);
+}
 
 auto GZipStream::init() -> bool {
     memset(&zs_, 0, sizeof(zs_));
+
+    zs_.zalloc = spiZAlloc;
+    zs_.zfree = spiZFree;
 
     if (deflateInit2(&zs_, Z_BEST_COMPRESSION, Z_DEFLATED, 31, 8, Z_DEFAULT_STRATEGY) != Z_OK) {
         return false;
@@ -24,8 +31,6 @@ auto GZipStream::compressBlock(uint8_t *inputBuffer, int blockSize, uint8_t *out
 
     zs_.next_in = inputBuffer;
     zs_.avail_in = blockSize;
-    zs_.zalloc = spiZAlloc;
-    zs_.zfree = spiZFree;
 
     int ret;
     *outputBufferLength = 0;
@@ -64,7 +69,7 @@ auto GZipStream::compressBlock(uint8_t *inputBuffer, int blockSize, uint8_t *out
             *outputBufferLength += compressedBytes;
             outputSizeRemaining -= compressedBytes;
         }
-    } while (zs_.avail_in != 0 && outputSizeRemaining > 0 != 0 && !flush);
+    } while ((zs_.avail_in != 0) && (outputSizeRemaining > 0) && !flush);
 
     if (flush && done) {
         deflateEnd(&zs_);
@@ -84,4 +89,25 @@ auto GZipStream::flush(uint8_t *outputBuffer, int *outputBufferLength, int outpu
                        bool &done) -> bool {
     return compressBlock(nullptr, 0, outputBuffer, outputBufferLength, outputBufferSize, true,
                          done);
+}
+
+auto GZipStream::compressFileToMemory(SFile &file, uint8_t *outputBuffer, int outputBufferSize,
+                                      int &compressedSize) -> bool {
+    init();
+
+    int fileSize = file.size();
+    auto inBuf = SpiRamArrayPtr<uint8_t>(fileSize);
+
+    // compress entire file
+    file.read(inBuf.get(), fileSize);
+
+    compressedSize = 0;
+    bool done = false;
+    bool ret = compressBlock(inBuf.get(), fileSize, outputBuffer, &compressedSize, outputBufferSize,
+                             true, done);
+    if (!ret || !done) {
+        return false;
+    }
+
+    return true;
 }
