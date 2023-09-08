@@ -235,7 +235,13 @@ auto SindarinAPI::uploadCrashReport(SFile &crashFile, const std::string &content
     int bytesWritten = 0;
     while (bytesWritten < writeSize) {
         auto bytesRead = crashFile.readBytes(buffer.get(), bufferSize);
-        bytesWritten += client.write(buffer.get(), bytesRead);
+        int b = client.write(buffer.get(), bytesRead);
+        if (b < 0) {
+            // error
+            log_e("error in uploadCrashReport");
+            return -1;
+        }
+        bytesWritten += b;
     }
 
     client.fetchHeaders();

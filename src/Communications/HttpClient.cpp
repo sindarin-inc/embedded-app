@@ -116,16 +116,11 @@ auto HttpClient::open(int contentLength) -> esp_err_t {
 auto HttpClient::write(const char *body, int length) -> int {
     // check for gzip encoding
     // TODO: check if the stream is already gzipped
-    if (length <= 0) {
-        return 0;
-    }
-
     if (gzip_) {
         if (!gz_.initialized()) {
             gz_.init();
         }
 
-        log_i("gzip: writing %d bytes", length);
         if (!gz_.write((uint8_t *)body, length)) {
             log_e("failed to gzip %d bytes", length);
             return -1;
@@ -140,29 +135,11 @@ auto HttpClient::write(const char *body, int length) -> int {
                 return -1;
             }
             gzCompressedLength_ += bytesToRead;
-
-            /*
-            int bytesToRead = gz_.available();
-            if (gz_.read(gzipBuffer_.get(), bytesToRead) != bytesToRead) {
-                log_e("failed to read gzip data");
-                return false;
-            }
-            */
-
-            /*
-            log_i("http writing %d bytes", bytesToRead);
-            if (esp_http_client_write(client_, (const char *)gzipBuffer_.get(), bytesToRead) !=
-                bytesToRead) {
-                log_e("http failed to write %d gz bytes", bytesToRead);
-                return -1;
-            }
-            */
         }
 
         // if all uncompressed bytes have been sent, make the request
         // since we now know the size
         if (gzUncompressedLength_ == 0) {
-            log_i("done sending bytes, flushing stream");
             if (!gz_.flush()) {
                 log_e("failed to flush gzip stream");
                 return -1;
@@ -183,7 +160,6 @@ auto HttpClient::write(const char *body, int length) -> int {
             }
 
             // send compressed bytes
-            log_i("gz writing %d bytes", gzCompressedLength_);
             if (esp_http_client_write(client_, (const char *)gzipBuffer_.get(),
                                       gzCompressedLength_) != gzCompressedLength_) {
                 log_e("http failed to write %d gz bytes", gzCompressedLength_);
@@ -202,10 +178,7 @@ auto HttpClient::makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> {
     return std::make_shared<HttpOstream<4096>>(client_);
 }
 
-auto HttpClient::fetchHeaders() -> int {
-    log_i("fetching headers.");
-    return esp_http_client_fetch_headers(client_);
-}
+auto HttpClient::fetchHeaders() -> int { return esp_http_client_fetch_headers(client_); }
 
 // auto HttpClient::getContentLength() -> int { return esp_http_client_get_content_length(client_);
 // }
