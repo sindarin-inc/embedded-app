@@ -10,7 +10,8 @@
 #include "Version.hpp"
 #include "sindarin-debug.h"
 
-HttpClient::HttpClient(const char *url, const char *contentType, esp_http_client_method_t method) {
+HttpClient::HttpClient(const char *url, const char *contentType, esp_http_client_method_t method,
+                       bool gzip) {
     url_ = strdup(url);
     userAgent_ = StringFormat("SolReader/%s (%s)", kVersionString, kGitHash);
 
@@ -70,6 +71,14 @@ HttpClient::HttpClient(const char *url, const char *contentType, esp_http_client
             log_e("Failed esp_http_client_set_header with %s", esp_err_to_name(err));
         }
     }
+
+    gzip_ = gzip;
+    if (gzip_) {
+        esp_err_t err = esp_http_client_set_header(client_, "Content-Encoding", "gzip");
+        if (err != ESP_OK) {
+            log_e("Failed esp_http_client_set_header with %s", esp_err_to_name(err));
+        }
+    }
 }
 
 HttpClient::~HttpClient() {
@@ -93,20 +102,110 @@ auto HttpClient::getResponseHeader(const char *key, char **value) -> esp_err_t {
 }
 
 auto HttpClient::open(int contentLength) -> esp_err_t {
+    if (gzip_) {
+        gzUncompressedLength_ = contentLength;
+        gzCompressedLength_ = 0;
+        gzipBuffer_ = SpiRamArrayPtr<uint8_t>(gzUncompressedLength_);
+        return ESP_OK;
+    }
     return esp_http_client_open(client_, contentLength);
 }
 
 // auto HttpClient::perform() -> esp_err_t { return esp_http_client_perform(client_); }
 
 auto HttpClient::write(const char *body, int length) -> int {
-    return esp_http_client_write(client_, body, length);
+    // check for gzip encoding
+    // TODO: check if the stream is already gzipped
+    if (length <= 0) {
+        return 0;
+    }
+
+    if (gzip_) {
+        if (!gz_.initialized()) {
+            gz_.init();
+        }
+
+        log_i("gzip: writing %d bytes", length);
+        if (!gz_.write((uint8_t *)body, length)) {
+            log_e("failed to gzip %d bytes", length);
+            return -1;
+        }
+
+        gzUncompressedLength_ -= length;
+
+        if (gz_.available() > 0) {
+            int bytesToRead = gz_.available();
+            if (gz_.read(&gzipBuffer_.get()[gzCompressedLength_], bytesToRead) != bytesToRead) {
+                log_e("failed to read gzip data");
+                return -1;
+            }
+            gzCompressedLength_ += bytesToRead;
+
+            /*
+            int bytesToRead = gz_.available();
+            if (gz_.read(gzipBuffer_.get(), bytesToRead) != bytesToRead) {
+                log_e("failed to read gzip data");
+                return false;
+            }
+            */
+
+            /*
+            log_i("http writing %d bytes", bytesToRead);
+            if (esp_http_client_write(client_, (const char *)gzipBuffer_.get(), bytesToRead) !=
+                bytesToRead) {
+                log_e("http failed to write %d gz bytes", bytesToRead);
+                return -1;
+            }
+            */
+        }
+
+        // if all uncompressed bytes have been sent, make the request
+        // since we now know the size
+        if (gzUncompressedLength_ == 0) {
+            log_i("done sending bytes, flushing stream");
+            if (!gz_.flush()) {
+                log_e("failed to flush gzip stream");
+                return -1;
+            }
+
+            int bytesToRead = gz_.available();
+            if (gz_.read(&gzipBuffer_.get()[gzCompressedLength_], bytesToRead) != bytesToRead) {
+                log_e("failed to read gzip data");
+                return -1;
+            }
+            gzCompressedLength_ += bytesToRead;
+
+            // start http client
+            esp_err_t err = esp_http_client_open(client_, gzCompressedLength_);
+            if (err != ESP_OK) {
+                log_e("gz could not open http client length %d", gzCompressedLength_);
+                return -1;
+            }
+
+            // send compressed bytes
+            log_i("gz writing %d bytes", gzCompressedLength_);
+            if (esp_http_client_write(client_, (const char *)gzipBuffer_.get(),
+                                      gzCompressedLength_) != gzCompressedLength_) {
+                log_e("http failed to write %d gz bytes", gzCompressedLength_);
+                return -1;
+            }
+        }
+
+        // return number of bytes consumed
+        return length;
+    } else {
+        return esp_http_client_write(client_, body, length);
+    }
 }
 
 auto HttpClient::makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> {
     return std::make_shared<HttpOstream<4096>>(client_);
 }
 
-auto HttpClient::fetchHeaders() -> int { return esp_http_client_fetch_headers(client_); }
+auto HttpClient::fetchHeaders() -> int {
+    log_i("fetching headers.");
+    return esp_http_client_fetch_headers(client_);
+}
 
 // auto HttpClient::getContentLength() -> int { return esp_http_client_get_content_length(client_);
 // }

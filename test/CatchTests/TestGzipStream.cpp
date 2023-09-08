@@ -37,6 +37,91 @@ TEST_CASE("Test GZip compression") {
     REQUIRE(memcmp(testBuffer[0], testBuffer[1], 25924) == 0);
 }
 
+TEST_CASE("Test GZip Stream compression") {
+    SetupFileSystemMock("TestData");
+
+    PosixFileSystem fs;
+    fs.begin();
+
+    std::string uncFileName = "/book/last-question.txt";
+    std::string compFileName = "/book/last-question.txt.stream.gz";
+
+    auto file = fs.open(uncFileName);
+    auto outFile = fs.open(compFileName, "w", true);
+
+    GZipStream gzstream;
+    uint8_t inputBuffer[1024];
+    uint8_t outputBuffer[1024];
+    int fileSize = file.size();
+    int uncompressedSize = fileSize;
+
+    REQUIRE(uncompressedSize == 25924);
+    REQUIRE(gzstream.init());
+    do {
+        // read chunk of file
+        int bytesToRead =
+            file.available() < sizeof(inputBuffer) ? file.available() : sizeof(inputBuffer);
+        size_t r = file.read(inputBuffer, bytesToRead);
+        REQUIRE(r == bytesToRead);
+
+        // write chunk to gzip stream
+        REQUIRE(gzstream.write(inputBuffer, bytesToRead));
+
+        while (gzstream.available() > 0) {
+            int bytesToRead = gzstream.available() > sizeof(outputBuffer) ? sizeof(outputBuffer)
+                                                                          : gzstream.available();
+            REQUIRE(gzstream.read(outputBuffer, bytesToRead) == bytesToRead);
+            if (bytesToRead > 0) {
+                log_i("outfile write: %d", bytesToRead);
+                outFile.write(outputBuffer, bytesToRead);
+            }
+        }
+    } while (file.available() > 0);
+
+    REQUIRE(gzstream.flush());
+    while (gzstream.available() > 0) {
+        log_i("flush avail %d", gzstream.available());
+        int bytesToRead = gzstream.available() > sizeof(outputBuffer) ? sizeof(outputBuffer)
+                                                                      : gzstream.available();
+        log_i("btr %d", bytesToRead);
+        REQUIRE(gzstream.read(outputBuffer, bytesToRead) == bytesToRead);
+        if (bytesToRead > 0) {
+            log_i("flush write %d", bytesToRead);
+            outFile.write(outputBuffer, bytesToRead);
+        }
+    }
+
+    file.close();
+    outFile.close();
+
+    outFile = fs.open(compFileName, "r");
+    log_i("opened, size is %d", outFile.size());
+    outFile.close();
+
+    auto stream = fs.newGzipRendererStream(compFileName.c_str());
+    log_i("stream size is: %d", stream->size());
+
+    REQUIRE(stream->size() == uncompressedSize);
+
+    uint8_t *testBuffer[2];
+    for (int i = 0; i < 2; i++) {
+        testBuffer[i] = (uint8_t *)malloc(uncompressedSize);
+    }
+
+    stream->readBytes(testBuffer[0], uncompressedSize);
+    REQUIRE(stream->position() == uncompressedSize);
+
+    file = fs.open(uncFileName);
+    REQUIRE(file.readBytes((char *)testBuffer[1], uncompressedSize) == uncompressedSize);
+
+    REQUIRE(memcmp(testBuffer[0], testBuffer[1], uncompressedSize) == 0);
+
+    for (int i = 0; i < 2; i++) {
+        free(testBuffer[i]);
+        testBuffer[i] = NULL;
+    }
+}
+
 TEST_CASE("Test GZip Stream compression, small buffers") {
     SetupFileSystemMock("TestData");
 

@@ -9,6 +9,7 @@
 
 #include "Communications/HttpIstream.hpp"
 #include "Communications/HttpOstream.hpp"
+#include "Misc/GZipStream.hpp"
 
 struct CaseInsensitive {
     auto operator()(const std::string &s1, const std::string &s2) const -> bool {
@@ -22,7 +23,7 @@ struct CaseInsensitive {
 class HttpClient {
 public:
     HttpClient(const char *url, const char *contentType = "",
-               esp_http_client_method_t method = HTTP_METHOD_GET);
+               esp_http_client_method_t method = HTTP_METHOD_GET, bool gzip = false);
     HttpClient(const HttpClient &) = delete;
 
     ~HttpClient();
@@ -58,4 +59,9 @@ private:
     std::string userAgent_;
     esp_http_client_handle_t client_;
     std::multimap<std::string, std::string, CaseInsensitive> responseHeaders_;
+    bool gzip_;
+    GZipStream gz_;
+    std::shared_ptr<uint8_t[]> gzipBuffer_{nullptr};
+    int gzUncompressedLength_;
+    int gzCompressedLength_;
 };

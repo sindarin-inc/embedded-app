@@ -2,6 +2,8 @@
 
 #include "sindarin-debug.h"
 
+#define MAX_GZIP_CHUNK_SIZE 32768
+
 static void *spiZAlloc(void *opaque, uInt items, uInt size) {
     log_d("spiZAlloc: %d %d", (int)items, (int)size);
     return SpiRamMalloc(items * size);
@@ -20,6 +22,10 @@ auto GZipStream::init() -> bool {
     if (deflateInit2(&zs_, Z_BEST_COMPRESSION, Z_DEFLATED, 31, 8, Z_DEFAULT_STRATEGY) != Z_OK) {
         return false;
     }
+
+    outputBuffer_ = SpiRamArrayPtr<uint8_t>(MAX_GZIP_CHUNK_SIZE);
+    outputAvailable_ = 0;
+    init_ = true;
 
     return true;
 }
@@ -85,11 +91,34 @@ auto GZipStream::write(uint8_t *dataToCompress, int dataToCompressLength, uint8_
                          outputBufferSize, false, done);
 }
 
+auto GZipStream::write(uint8_t *dataToCompress, int dataToCompressLength) -> bool {
+    return write(dataToCompress, dataToCompressLength, false);
+}
+
+auto GZipStream::write(uint8_t *dataToCompress, int dataToCompressLength, bool flush) -> bool {
+    int compressedLength = 0;
+    uint8_t *outputBuffer = &outputBuffer_.get()[outputAvailable_];
+    bool done;
+    bool ret = compressBlock(dataToCompress, dataToCompressLength, outputBuffer, &compressedLength,
+                             MAX_GZIP_CHUNK_SIZE - outputAvailable_, flush, done);
+    if (!ret || !done) {
+        log_e("error compressing %d bytes", dataToCompressLength);
+        return false;
+    }
+
+    log_i("cbytes %d", compressedLength);
+
+    outputAvailable_ += compressedLength;
+    return true;
+}
+
 auto GZipStream::flush(uint8_t *outputBuffer, int *outputBufferLength, int outputBufferSize,
                        bool &done) -> bool {
     return compressBlock(nullptr, 0, outputBuffer, outputBufferLength, outputBufferSize, true,
                          done);
 }
+
+auto GZipStream::flush() -> bool { return write(NULL, 0, true); }
 
 auto GZipStream::compressFileToMemory(SFile &file, uint8_t *outputBuffer, int outputBufferSize,
                                       int &compressedSize) -> bool {
@@ -110,4 +139,21 @@ auto GZipStream::compressFileToMemory(SFile &file, uint8_t *outputBuffer, int ou
     }
 
     return true;
+}
+
+auto GZipStream::read(uint8_t *destBuffer, int destBufferSize) -> int {
+    int bytesToRead = destBufferSize < outputAvailable_ ? destBufferSize : outputAvailable_;
+    memcpy(destBuffer, outputBuffer_.get(), bytesToRead);
+
+    if (bytesToRead < outputAvailable_) {
+        int bytesRemaining = outputAvailable_ - bytesToRead;
+        log_i("br %d btr %d", bytesRemaining, bytesToRead);
+        memmove(outputBuffer_.get(), &outputBuffer_.get()[bytesToRead], bytesRemaining);
+        outputAvailable_ -= bytesToRead;
+        log_i("oa %d", outputAvailable_);
+    } else {
+        outputAvailable_ = 0;
+    }
+
+    return bytesToRead;
 }

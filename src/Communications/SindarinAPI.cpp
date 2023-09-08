@@ -221,7 +221,8 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
 }
 
 auto SindarinAPI::uploadCrashReport(SFile &crashFile, const std::string &contentType) -> int {
-    HttpClient client(SINDARIN_SERVER_URL "/coredumps/", contentType.c_str(), HTTP_METHOD_POST);
+    HttpClient client(SINDARIN_SERVER_URL "/coredumps/", contentType.c_str(), HTTP_METHOD_POST,
+                      true);
     setAuth(client);
 
     int writeSize = crashFile.size();
