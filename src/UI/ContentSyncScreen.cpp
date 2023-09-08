@@ -181,6 +181,9 @@ void ContentSyncScreen::processCommand(RemoteCommand command) {
 
 void ContentSyncScreen::fail(const std::string &message) {
     log_w("Content sync failed: %s", message.c_str());
+
+    this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-failed",
+                               {{"message", message}});
     state_.state = ContentSyncState::Failure;
     state_.message = message;
     setNeedsRerender();
