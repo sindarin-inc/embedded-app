@@ -11,19 +11,15 @@ private:
     DisplaySystem &display_;
 
     TokensArray tokens_{};
-    Idx tokensHeadIdx_{0};
     Idx tokensTailIdx_{0};
-
-    uint16_t maxTokensCount_;
+    Idx tokensHeadIdx_{0};
 
     CStrPool cStrPool_{};
-    Idx cStrPoolHeadIdx_{0};
     Idx cStrPoolTailIdx_{0};
+    Idx cStrPoolHeadIdx_{0};
 
     uint16_t maxCStrPoolCount_;
-
-    uint16_t spaceWidth_{0};
-    uint16_t spaceHeight_{0};
+    uint16_t maxTokensCount_;
 
     // Increment the cStrPoolTail_ to the next location in the pool. As a null terminated string
     // must remain contiguous, it cannot be split between the end and the start of the pool. If so,
@@ -57,8 +53,6 @@ public:
         return tokens_[idx];
     }
 
-    [[nodiscard]] inline auto isEmpty() const -> bool { return tokensHeadIdx_ == tokensTailIdx_; }
-
     [[nodiscard]] inline auto getMaxTokensCount() const -> uint16_t { return maxTokensCount_; }
     [[nodiscard]] inline auto getMaxCStrPoolCount() const -> uint16_t { return maxCStrPoolCount_; }
 
@@ -71,10 +65,12 @@ public:
                 }
             }
         }
+
         return (tokensTailIdx_ == 0) ? (TOKENS_SIZE - 1) : (tokensTailIdx_ - 1);
     }
 
     [[nodiscard]] inline auto getLast() -> Token & {
+
         if constexpr (RENDERER_DEBUG) {
             if (isEmpty()) {
                 log_e("getLast(): tokens is empty!");
@@ -116,10 +112,13 @@ public:
                 }
             }
         }
+
         if (tokensHeadIdx_ != tokensTailIdx_) {
             prevTokenIdx(tokensTailIdx_);
         }
     }
+
+    [[nodiscard]] inline auto isEmpty() const -> bool { return tokensHeadIdx_ == tokensTailIdx_; }
 
     [[nodiscard]] inline auto getCStrPoolCount() const -> uint16_t {
         return (cStrPoolHeadIdx_ <= cStrPoolTailIdx_)
@@ -154,12 +153,12 @@ public:
         }
     }
 
-    void setSpaceSize(Token &token);
-
     inline void clear() {
-        tokensHeadIdx_ = tokensTailIdx_ = 0;
-        cStrPoolHeadIdx_ = cStrPoolTailIdx_ = 0;
-        maxTokensCount_ = maxCStrPoolCount_ = 0;
+        tokensTailIdx_ = cStrPoolTailIdx_ = 0;
+        tokensHeadIdx_ = cStrPoolHeadIdx_ = 0;
+        if constexpr (RENDERER_STATS) {
+            maxTokensCount_ = maxCStrPoolCount_ = 0;
+        }
     }
 
     void show() const;
@@ -180,6 +179,7 @@ public:
     }
 
     inline void advanceTokenTail() {
+
         if constexpr (RENDERER_DEBUG) {
             if (isFull()) {
                 log_e("forgetLast(): tokens[] is full!");
@@ -188,7 +188,6 @@ public:
                 }
             }
         }
-
         tokensTailIdx_ = (tokensTailIdx_ + 1) % TOKENS_SIZE;
 
         if constexpr (RENDERER_STATS) {

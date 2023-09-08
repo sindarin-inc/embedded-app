@@ -20,6 +20,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
 
     Idx streamRelativeOffset = 0;
 
+    lastToken_ = nullptr;
     tokens_.clear();
     pager_.clear();
 
@@ -71,7 +72,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
                     .width = 0,
                     .height = 0,
                     .length = 0,
-                    .tokenId = TokenId::NOTOKEN,
+                    .tokenId = TokenId::TEXT,
                     .spacesAfter = 0};
 
         if (backwards && !tokens_.isEmpty() &&
@@ -91,6 +92,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
         case '\n':
             // No two or more lines with only a \n are allowed.
             newToken.tokenId = TokenId::NEWLINE;
+            lastToken_ = nullptr;
             pageCompleted = addTokenToPage(newToken, backwards, "\n", 1);
             if (!pageCompleted) {
                 nextByte();
@@ -106,14 +108,19 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
             break;
 
         case ' ':
-            newToken.tokenId = TokenId::SPACE;
-            tokens_.setSpaceSize(newToken);
-            pageCompleted = addTokenToPage(newToken, backwards, " ", 1);
+            if (lastToken_ != nullptr) {
+                lastToken_->spacesAfter++;
+                pager_.addSpaceWidth();
+            }
+            // newToken.tokenId = TokenId::SPACE;
+            // tokens_.setSpaceSize(newToken);
+            // pageCompleted = addTokenToPage(newToken, backwards, " ", 1);
             nextByte();
             break;
 
         case '\t':
             newToken.tokenId = TokenId::TAB;
+            lastToken_ = &newToken;
             pageCompleted = addTokenToPage(newToken, backwards, "\t", 1);
             nextByte();
             break;
@@ -134,11 +141,13 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
                     pageCompleted = addTokenToPage(newToken, backwards, "---", 3);
                 }
             }
+            lastToken_ = &newToken;
             break;
 
         // All other characters are considered part of a text token,
         default:
-            newToken.tokenId = TokenId::TEXT;
+            // newToken.tokenId = TokenId::TEXT; // already set at beginning of loop
+            lastToken_ = &newToken;
             uint16_t textCharCount = 0;
 
             do {

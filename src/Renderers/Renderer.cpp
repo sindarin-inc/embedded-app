@@ -54,12 +54,6 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
     return tokenizer_->toPlace(nextPlace_);
 }
 
-void Renderer::showStats() {
-    if constexpr (RENDERER_STATS) {
-        log_w("Circular buffer max lenghts: Tokens: %" PRIu16 ", CStrPool: %" PRIu16,
-              tokens_.getMaxTokensCount(), tokens_.getMaxCStrPoolCount());
-    }
-}
 // Seeks backwards and returns the place of one page previous.
 auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
 

@@ -25,6 +25,8 @@ private:
     StreamPlace nextPagePlace_;
     bool atEOF_{false};
 
+    uint16_t spaceWidth_{0};
+
     std::shared_ptr<BMPImage> picture_;
 
     [[nodiscard]] inline auto lastLineTokenIdx(Idx lineIdx) const -> Idx {
@@ -44,7 +46,12 @@ private:
     inline void prevLineIdx(Idx &idx) const { idx = (idx == 0) ? (LINES_SIZE - 1) : (idx - 1); }
 
     inline void incrLinesHeadIdx() { linesHeadIdx_ = (linesHeadIdx_ + 1) % LINES_SIZE; }
-    inline void incrLinesTailIdx() { linesTailIdx_ = (linesTailIdx_ + 1) % LINES_SIZE; }
+    inline void incrLinesTailIdx() {
+        if (linesIsFull()) {
+            freeLineHead();
+        }
+        linesTailIdx_ = (linesTailIdx_ + 1) % LINES_SIZE;
+    }
 
 public:
     Pager(Tokens &tokens, DisplaySystem &display)
@@ -66,6 +73,9 @@ public:
         maxDeciLines_ = getMaxDeciLines();
         maxLineWidth_ = display_.width();
         lines_[0].tokenCount = 0;
+
+        uint16_t notUsed;
+        display_.getTextSize(" ", &spaceWidth_, &notUsed);
     }
 
     // Returns false if the last token is not part of the page.
@@ -121,11 +131,13 @@ public:
 
     inline void freeLineHead() {
         if (linesHeadIdx_ != linesTailIdx_) {
+
             tokens_.freeTokens(lines_[linesHeadIdx_].tokenIdx, lines_[linesHeadIdx_].tokenCount);
+
             incrLinesHeadIdx();
             if constexpr (RENDERER_DEBUG) {
                 if (linesHeadIdx_ == linesTailIdx_) {
-                    log_e("Hum... lines_ is empty!!");
+                    log_e("lines_[] is empty!!");
                     if constexpr (ON_ERROR_EXIT) {
                         exit(1);
                     }
@@ -133,6 +145,8 @@ public:
             }
         }
     }
+
+    inline void addSpaceWidth() { currentLineWidth_ += spaceWidth_; }
 
     void show() const;
 };

@@ -15,9 +15,9 @@ auto Tokens::add(Token &token, const char *str, uint8_t length) -> bool {
             display_.getTextSize(token.cStr, &token.width, &token.height);
         }
 
-        if constexpr (RENDERER_DEBUG) {
-            showToken(tokensTailIdx_);
-        }
+        // if constexpr (RENDERER_DEBUG) {
+        //     showToken(tokensTailIdx_);
+        // }
 
         advanceTokenTail();
 
@@ -33,7 +33,6 @@ auto Tokens::add(Token &token, const char *str, uint8_t length) -> bool {
         }
         return false;
     }
-
     return true;
 }
 
@@ -51,19 +50,6 @@ void Tokens::addByte(Token &token, uint8_t b) {
         cStrPool_[cStrPoolTailIdx_] = b;
         token.length++; // must be done BEFORE the call to incrCStrPoolTailIdx()
         incrCStrPoolTailIdx(token);
-
-        if constexpr (RENDERER_DEBUG) {
-            if (strlen(token.cStr) != token.length) {
-                log_e("Hum... token length wrong: %zu vs %" PRIu16, strlen(token.cStr),
-                      token.length);
-                if constexpr (ON_ERROR_EXIT) {
-                    exit(1);
-                }
-            }
-            // log_d("After: tokensCount_: %" PRIu16 ", token length: %" PRIu16
-            //       ", cStrPoolCount_: %" PRIu16,
-            //       getTokensCount(), token.length, getCStrPoolCount());
-        }
     } else {
         log_e("cStrPool_[] is too small!");
         if constexpr (ON_ERROR_EXIT) {
@@ -110,16 +96,6 @@ void Tokens::addStr(Token &token, std::string str) {
             exit(1);
         }
     }
-}
-
-// Set the size of a space character for the token. If not already retrieved for caching, get it
-// through the display_/font.
-void Tokens::setSpaceSize(Token &token) {
-    if (spaceWidth_ == 0) {
-        display_.getTextSize(" ", &spaceWidth_, &spaceHeight_);
-    }
-    token.width = spaceWidth_;
-    token.height = spaceHeight_;
 }
 
 // This will free space taken by the tokens that are part of the Head Line. It is expected the
@@ -181,7 +157,8 @@ void Tokens::freeTokens(Idx fromTokenIdx, uint16_t count) {
     }
 }
 
-// debugging method
+// debugging methods
+
 void Tokens::showToken(Idx tokenIdx) const {
     if constexpr (RENDERER_DEBUG) {
         const Token &token = tokens_[tokenIdx];

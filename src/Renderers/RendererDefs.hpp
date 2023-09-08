@@ -12,7 +12,7 @@ namespace renderer_defs {
 
 // For deep logging when changing this file
 static constexpr bool RENDERER_DEBUG = false;
-static constexpr bool ON_ERROR_EXIT = false;
+static constexpr bool ON_ERROR_EXIT = true;
 static constexpr bool RENDERER_STATS = true;
 
 // Used by the Tokenizer::getFileLocation() method in case of error
@@ -37,9 +37,9 @@ static constexpr uint16_t MAX_BYTES_PER_DISPLAY_PAGE = 2400;
 static constexpr uint16_t MAX_BYTES_TO_RETRIEVE =
     (MAX_BYTES_PER_PARAGRAPH + MAX_BYTES_PER_DISPLAY_PAGE);
 static constexpr uint16_t CSTR_POOL_SIZE = 2000;
-static constexpr uint16_t TOKENS_SIZE = 700;
+static constexpr uint16_t TOKENS_SIZE = 500;
 static constexpr uint16_t MAX_BYTES_PER_LINE = 200;
-static constexpr uint16_t LINES_SIZE = 25; // 300; // 200;
+static constexpr uint16_t LINES_SIZE = 36;
 
 // NOTE:
 //
@@ -56,7 +56,6 @@ enum class TokenId : uint8_t {
     TEXT = 0,
     NEWLINE,
     ENDPARAGRAPH,
-    SPACE,
     HYPHEN,
     ENDASH,
     EMDASH,
@@ -130,7 +129,7 @@ struct LineStruct {
 #pragma pack(pop)
 
 using TokensArray = std::array<Token, TOKENS_SIZE>;
-using CStrPool = std::array<char, CSTR_POOL_SIZE + 1>;
+using CStrPool = std::array<char, CSTR_POOL_SIZE>;
 
 using Line = std::array<char, MAX_BYTES_PER_LINE>;
 using Lines = std::array<LineStruct, LINES_SIZE>;

@@ -53,7 +53,10 @@ public:
     auto renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines = 0,
                     bool forceRefresh = false) -> std::shared_ptr<Place>;
 
-    void showStats();
+    void showStats() {
+        log_w("Circular buffer max lenghts: Tokens: %" PRIu16 ", CStrPool: %" PRIu16,
+              tokens_.getMaxTokensCount(), tokens_.getMaxCStrPoolCount());
+    }
 
     // NOLINTNEXTLINE(modernize-use-nodiscard)
     inline auto renderFirstPage(int16_t numSkipLines = 0, bool forceRefresh = false)

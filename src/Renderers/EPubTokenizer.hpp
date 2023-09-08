@@ -41,7 +41,7 @@ public:
 
     [[nodiscard]] auto computeStartingOffset(StreamPlace streamPlace) -> uint32_t;
 
-    [[nodiscard]] auto isEmpty(pugi::xml_node node) -> bool;
+    // [[nodiscard]] auto isEmpty(pugi::xml_node node) -> bool;
 
     [[nodiscard]] auto subtractOffset(StreamPlace streamPlace, uint32_t offsetToSubtract)
         -> StreamPlace override;
@@ -78,6 +78,9 @@ private:
     // if back paging, the place to stop (will be the end of the previous page)
     StreamPlace *toPlace_;
 
+    // Used to add space qty that follow a token
+    Token *lastToken_;
+
     // true if doing a back page displacement
     bool backwards_;
 
@@ -98,7 +101,7 @@ private:
         char *;
     [[nodiscard]] auto loadXHTMLAt(Idx fileIdx) -> pugi::xml_document &;
     [[nodiscard]] auto interpret(pugi::xml_node node) -> bool;
-    [[nodiscard]] auto addStrToPage(const pugi::char_t *str, uint16_t len) -> bool;
+    [[nodiscard]] auto addStrToPage(const pugi::char_t *str, uint32_t len) -> bool;
 
     void processPictureTag(pugi::xml_node node);
     void processSuperscript(pugi::xml_node node);

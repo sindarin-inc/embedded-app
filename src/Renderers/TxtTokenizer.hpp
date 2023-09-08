@@ -45,5 +45,8 @@ public:
 private:
     std::shared_ptr<RendererStream> stream_;
 
+    // Used to add space qty that follow a token
+    Token *lastToken_;
+
     [[nodiscard]] auto getFileLocation(StreamPlace fromPlace) -> StreamPlace;
 };
