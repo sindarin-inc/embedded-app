@@ -84,13 +84,6 @@ auto GZipStream::compressBlock(uint8_t *inputBuffer, int blockSize, uint8_t *out
     return true;
 }
 
-auto GZipStream::write(uint8_t *dataToCompress, int dataToCompressLength, uint8_t *outputBuffer,
-                       int *outputBufferLength, int outputBufferSize, bool &done) -> bool {
-
-    return compressBlock(dataToCompress, dataToCompressLength, outputBuffer, outputBufferLength,
-                         outputBufferSize, false, done);
-}
-
 auto GZipStream::write(uint8_t *dataToCompress, int dataToCompressLength) -> bool {
     return write(dataToCompress, dataToCompressLength, false);
 }
@@ -106,40 +99,11 @@ auto GZipStream::write(uint8_t *dataToCompress, int dataToCompressLength, bool f
         return false;
     }
 
-    log_i("cbytes %d", compressedLength);
-
     outputAvailable_ += compressedLength;
     return true;
 }
 
-auto GZipStream::flush(uint8_t *outputBuffer, int *outputBufferLength, int outputBufferSize,
-                       bool &done) -> bool {
-    return compressBlock(nullptr, 0, outputBuffer, outputBufferLength, outputBufferSize, true,
-                         done);
-}
-
 auto GZipStream::flush() -> bool { return write(NULL, 0, true); }
-
-auto GZipStream::compressFileToMemory(SFile &file, uint8_t *outputBuffer, int outputBufferSize,
-                                      int &compressedSize) -> bool {
-    init();
-
-    int fileSize = file.size();
-    auto inBuf = SpiRamArrayPtr<uint8_t>(fileSize);
-
-    // compress entire file
-    file.read(inBuf.get(), fileSize);
-
-    compressedSize = 0;
-    bool done = false;
-    bool ret = compressBlock(inBuf.get(), fileSize, outputBuffer, &compressedSize, outputBufferSize,
-                             true, done);
-    if (!ret || !done) {
-        return false;
-    }
-
-    return true;
-}
 
 auto GZipStream::read(uint8_t *destBuffer, int destBufferSize) -> int {
     int bytesToRead = destBufferSize < outputAvailable_ ? destBufferSize : outputAvailable_;
@@ -147,10 +111,8 @@ auto GZipStream::read(uint8_t *destBuffer, int destBufferSize) -> int {
 
     if (bytesToRead < outputAvailable_) {
         int bytesRemaining = outputAvailable_ - bytesToRead;
-        log_i("br %d btr %d", bytesRemaining, bytesToRead);
         memmove(outputBuffer_.get(), &outputBuffer_.get()[bytesToRead], bytesRemaining);
         outputAvailable_ -= bytesToRead;
-        log_i("oa %d", outputAvailable_);
     } else {
         outputAvailable_ = 0;
     }

@@ -17,23 +17,11 @@ public:
 
     auto init() -> bool;
 
-    auto write(uint8_t *dataToCompress, int dataToCompressLength, uint8_t *outputBuffer,
-               int *outputBufferLength, int outputBufferSize, bool &done) -> bool;
-
     auto write(uint8_t *dataToCompress, int dataToCompressLength) -> bool;
-
-    auto flush(uint8_t *outputBuffer, int *outputBufferLength, int outputBufferSize, bool &done)
-        -> bool;
-
     auto flush() -> bool;
 
     int available() { return outputAvailable_; }
-    // uint8_t *getOutputBuffer() { return outputBuffer_.get(); }
-
     int read(uint8_t *destBuffer, int destBufferSize);
-
-    auto compressFileToMemory(SFile &file, uint8_t *outputBuffer, int outputBufferSize,
-                              int &compressedSize) -> bool;
 
     bool initialized() { return init_; }
 
