@@ -2,6 +2,7 @@
 
 #include "BLEManager.hpp"
 
+#include "Storage/PreferencesStore.hpp"
 #include "config.h"
 
 std::shared_ptr<BLEManager> BLEManager::instance = nullptr;
