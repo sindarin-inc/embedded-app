@@ -480,7 +480,7 @@ void LocalStore::resetReadablesBookmarksChanged(const ReadablesVector &readables
 }
 
 void LocalStore::syncFromRemote(
-    const std::function<void(ContentSyncState state)> &progressCallback) {
+    SyncReason syncReason, const std::function<void(ContentSyncState state)> &progressCallback) {
 
     if (!WiFi::getInstance().hasWiFiCredentials()) {
         progressCallback(
@@ -547,8 +547,7 @@ void LocalStore::syncFromRemote(
     });
 
     // Run this work on a separate thread, since it's long running
-    queue->dispatch([this, progressCallback] {
-        auto syncReason = PreferencesStore::syncReason;
+    queue->dispatch([this, syncReason, progressCallback] {
         CheckSyncRequest checkSyncRequest;
         CheckSyncResponse checkSyncResponse;
         int checkSyncFailures = 0;

@@ -17,7 +17,8 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
     auto backgroundGroup = xEventGroupCreate();
     auto &fileSystem = localStore.fileSystem;
 
-    localStore.syncFromRemote([&powerManager, &backgroundGroup](const ContentSyncState &state) {
+    localStore.syncFromRemote(PreferencesStore::syncReason,
+                              [&powerManager, &backgroundGroup](const ContentSyncState &state) {
         powerManager.feedInactivityTimer();
 
         if (state.state == ContentSyncState::Failure || state.state == ContentSyncState::Synced ||
