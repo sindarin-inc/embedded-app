@@ -12,7 +12,7 @@
 
 class GZipStream {
 public:
-    GZipStream() : outputAvailable_(0), init_(false) {}
+    GZipStream() {}
     ~GZipStream() = default;
 
     auto init() -> bool;
@@ -20,10 +20,10 @@ public:
     auto write(uint8_t *dataToCompress, int dataToCompressLength) -> bool;
     auto flush() -> bool;
 
-    int available() { return outputAvailable_; }
-    int read(uint8_t *destBuffer, int destBufferSize);
+    auto available() -> int { return outputAvailable_; }
+    auto read(uint8_t *destBuffer, int destBufferSize) -> int;
 
-    bool initialized() { return init_; }
+    auto initialized() -> bool { return init_; }
 
 protected:
     auto write(uint8_t *dataToCompress, int dataToCompressLength, bool flush) -> bool;
@@ -31,8 +31,8 @@ protected:
                        int *outputBufferLength, int outputBufferSize, bool flush, bool &done)
         -> bool;
 
-    int outputAvailable_;
+    int outputAvailable_{0};
     std::shared_ptr<uint8_t[]> outputBuffer_;
     z_stream zs_;
-    bool init_;
+    bool init_{false};
 };

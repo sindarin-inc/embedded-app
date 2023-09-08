@@ -4,7 +4,7 @@
 
 #define MAX_GZIP_CHUNK_SIZE 32768
 
-static void *spiZAlloc(void *opaque, uInt items, uInt size) {
+static auto spiZAlloc(void *opaque, uInt items, uInt size) -> void * {
     log_d("spiZAlloc: %d %d", (int)items, (int)size);
     return SpiRamMalloc(items * size);
 }
@@ -103,7 +103,7 @@ auto GZipStream::write(uint8_t *dataToCompress, int dataToCompressLength, bool f
     return true;
 }
 
-auto GZipStream::flush() -> bool { return write(NULL, 0, true); }
+auto GZipStream::flush() -> bool { return write(nullptr, 0, true); }
 
 auto GZipStream::read(uint8_t *destBuffer, int destBufferSize) -> int {
     int bytesToRead = destBufferSize < outputAvailable_ ? destBufferSize : outputAvailable_;
