@@ -520,8 +520,6 @@ void PowerManager::deepSleep(SleepReason reason) {
         if (!prefs_.started()) {
             prefs_.begin();
         }
-        PreferencesStore::paired =
-            prefs_.cloudToken.get().has_value() ? PairedStatus::Paired : PairedStatus::Unpaired;
     }
 
     beginShutdown();
