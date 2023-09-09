@@ -6,6 +6,8 @@
 #include "RendererDefs.hpp"
 #include "Tokens.hpp"
 
+// From the token stream, generate pages content, separating tokens into lines and pages that fit
+// the current display region. The last page retrieved is found in the lines_[] circular array.
 class Pager {
 private:
     Tokens &tokens_;

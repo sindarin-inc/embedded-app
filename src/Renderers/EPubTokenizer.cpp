@@ -394,7 +394,7 @@ void EPubTokenizer::processPictureTag(pugi::xml_node node) {
         pictureToken = {.cStr = nullptr,
                         .streamPlace = {lastStreamRelativeOffset_, fromPlace_.getFileIdx()},
                         .width = 0,
-                        .height = 0,
+                        //.height = 0,
                         .length = 0,
                         .tokenId = TokenId::PICTURE,
                         .spacesAfter = 0};
@@ -422,7 +422,7 @@ void EPubTokenizer::processSuperscript(pugi::xml_node node) {
     newToken = {.cStr = nullptr,
                 .streamPlace = {lastStreamRelativeOffset_, fromPlace_.getFileIdx()},
                 .width = 0,
-                .height = 0,
+                //.height = 0,
                 .length = 0,
                 .tokenId = TokenId::TEXT,
                 .spacesAfter = 0};
@@ -530,7 +530,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                                 .cStr = "\n",
                                 .streamPlace = {lastStreamRelativeOffset_, fromPlace_.getFileIdx()},
                                 .width = 0,
-                                .height = 0,
+                                //.height = 0,
                                 .length = 1,
                                 .tokenId = TokenId::ENDPARAGRAPH,
                                 .spacesAfter = 0};
@@ -550,7 +550,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                                 .cStr = "\n",
                                 .streamPlace = {lastStreamRelativeOffset_, fromPlace_.getFileIdx()},
                                 .width = 0,
-                                .height = 0,
+                                //.height = 0,
                                 .length = 1,
                                 .tokenId = TokenId::NEWLINE,
                                 .spacesAfter = 0};
@@ -648,7 +648,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
             newToken = {.cStr = nullptr,
                         .streamPlace = {streamRelativeOffset, fromPlace_.getFileIdx()},
                         .width = 0,
-                        .height = 0,
+                        //.height = 0,
                         .length = 0,
                         .tokenId = TokenId::TEXT,
                         .spacesAfter = 0};
@@ -738,7 +738,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
             newToken = {.cStr = nullptr,
                         .streamPlace = {streamRelativeOffset, fromPlace_.getFileIdx()},
                         .width = 0,
-                        .height = 0,
+                        //.height = 0,
                         .length = 0,
                         .tokenId = TokenId::NEWLINE,
                         .spacesAfter = 0};
@@ -761,7 +761,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
             newToken = {.cStr = nullptr,
                         .streamPlace = {streamRelativeOffset, fromPlace_.getFileIdx()},
                         .width = 0,
-                        .height = 0,
+                        //.height = 0,
                         .length = 0,
                         .tokenId = TokenId::TAB,
                         .spacesAfter = 0};

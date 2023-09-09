@@ -31,6 +31,9 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
 
     // std::cout << "Pager Line Count: " << pager_.getLineCount() << std::endl;
 
+    // We only re-tokenize if required (or forced through the forceRefresh param). May already been
+    // done from the getPreviousPlace() method.
+
     if (pager_.linesIsEmpty() || (!(currentPlace_ == pager_.getStreamPlaceOfFirstLine())) ||
         forceRefresh) {
         currentPlace_ = tokenizer_->loadAndTokenizePage(currentPlace_);

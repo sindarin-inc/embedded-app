@@ -2,6 +2,7 @@
 
 #include <utility>
 
+#include "EPubPageMgr.hpp"
 #include "NullTokenizer.hpp"
 #include "Pager.hpp"
 #include "RendererDefs.hpp"
@@ -87,6 +88,8 @@ private:
     DisplaySystem &display_;
     Tokens tokens_;
     Pager pager_;
+    EPubPageMgr pageMgr_;
+
     std::shared_ptr<Tokenizer> tokenizer_{nullptr};
 
     StreamPlace currentPlace_{};

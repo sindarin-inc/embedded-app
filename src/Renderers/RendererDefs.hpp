@@ -40,6 +40,7 @@ static constexpr uint16_t CSTR_POOL_SIZE = 2000;
 static constexpr uint16_t TOKENS_SIZE = 500;
 static constexpr uint16_t MAX_BYTES_PER_LINE = 200;
 static constexpr uint16_t LINES_SIZE = 36;
+static constexpr uint16_t PAGE_INDEX_SIZE = 500;
 
 // NOTE:
 //
@@ -115,7 +116,7 @@ struct Token {
     const char *cStr;
     StreamPlace streamPlace;
     uint16_t width;
-    uint16_t height;
+    //uint16_t height;
     uint16_t length; // Length in bytes
     TokenId tokenId;
     uint8_t spacesAfter;
@@ -133,5 +134,7 @@ using CStrPool = std::array<char, CSTR_POOL_SIZE>;
 
 using Line = std::array<char, MAX_BYTES_PER_LINE>;
 using Lines = std::array<LineStruct, LINES_SIZE>;
+
+using PageIndex = std::array<uint32_t, PAGE_INDEX_SIZE>;
 
 } // namespace renderer_defs

@@ -70,7 +70,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
         newToken = {.cStr = nullptr,
                     .streamPlace = addOffset(fromPlace, streamRelativeOffset),
                     .width = 0,
-                    .height = 0,
+                    //.height = 0,
                     .length = 0,
                     .tokenId = TokenId::TEXT,
                     .spacesAfter = 0};

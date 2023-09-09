@@ -10,9 +10,9 @@ auto Tokens::add(Token &token, const char *str, uint8_t length) -> bool {
             token.length = length;
         }
 
-        // ToDo: Remove the last test when the old Page computation algo is out
         if ((token.width == 0) && (token.cStr != nullptr) && (token.cStr[0] != '\n')) {
-            display_.getTextSize(token.cStr, &token.width, &token.height);
+            token.width = display_.getTextWidthQuick(token.cStr);
+            // log_w("Token width of %s is %" PRIu16, token.cStr, token.width);
         }
 
         // if constexpr (RENDERER_DEBUG) {
@@ -163,9 +163,11 @@ void Tokens::showToken(Idx tokenIdx) const {
     if constexpr (RENDERER_DEBUG) {
         const Token &token = tokens_[tokenIdx];
         log_d("TokenIdx: %" PRIu16 ", TokenId: %" PRIu8 ", streamPlace: %s, width: %" PRIu16
-              ", height: %" PRIu16 ", Length: %" PRIu16,
+              //", height: %" PRIu16
+              ", Length: %" PRIu16,
               tokenIdx, (uint8_t)token.tokenId, token.streamPlace.str().c_str(), token.width,
-              token.height, token.length);
+              // token.height,
+              token.length);
         if (token.tokenId == TokenId::TEXT) {
             if (token.cStr != nullptr) {
                 log_d("Text Content: [%s]", token.cStr);
