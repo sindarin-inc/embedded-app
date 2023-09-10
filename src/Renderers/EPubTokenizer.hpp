@@ -14,7 +14,7 @@ public:
     ~EPubTokenizer() override = default;
 
     [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, bool backwards = false,
-                                           StreamPlace *toPlace = nullptr) -> StreamPlace override;
+                                           StreamPlace *toPlace = nullptr) ->  StreamPlace override;
 
     [[nodiscard]] auto getStreamPlaceFromTxtOffset(uint32_t txtOffset) const -> StreamPlace;
 
@@ -41,9 +41,9 @@ public:
 
     [[nodiscard]] auto computeStartingOffset(StreamPlace streamPlace) -> uint32_t;
 
-    // [[nodiscard]] auto isEmpty(pugi::xml_node node) -> bool;
+    [[nodiscard]] auto isEmpty(pugi::xml_node node) -> bool;
 
-    [[nodiscard]] auto subtractOffset(StreamPlace streamPlace, uint32_t offsetToSubtract)
+    [[nodiscard]] auto goBackward(StreamPlace streamPlace, uint32_t offsetToSubtract)
         -> StreamPlace override;
 
 private:
@@ -75,14 +75,8 @@ private:
     // Where the tokenizer will start to parse tokens
     StreamPlace fromPlace_;
 
-    // if back paging, the place to stop (will be the end of the previous page)
-    StreamPlace *toPlace_;
-
     // Used to add space qty that follow a token
     Token *lastToken_;
-
-    // true if doing a back page displacement
-    bool backwards_;
 
     // true if we are past the fromPlace_ location
     bool started_;
@@ -94,7 +88,6 @@ private:
     // be displayed if no picture are shown
     bool skipNextParagraph_;
 
-    uint32_t firstOffset_;
     uint32_t lastStreamRelativeOffset_;
 
     [[nodiscard]] auto getCharEntity(const char *str, const char **newStrLocation) const -> const

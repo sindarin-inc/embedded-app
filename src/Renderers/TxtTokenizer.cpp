@@ -188,7 +188,11 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
         log_d("Tokens Count: %" PRIu16, tokens_.getTokenCount());
     }
 
-    return fromPlace;
+    if (backwards) {
+        pager_.setFirstLineIdxBackward();
+    }
+
+    return pager_.getStreamPlaceOfFirstLine();
 }
 
 // Must be called only by the loadAndTokenizePage().

@@ -12,6 +12,9 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
     // pointer, else convert fromPlace to a StreamPlace
     currentPlace_ = ((fromPlace == nullptr)) ? tokenizer_->getPlaceAtBeginningOfDocument()
                                              : tokenizer_->toStreamPlace(std::move(fromPlace));
+
+    log_d("%s is place in file being requested", currentPlace_.str().c_str());
+    
     if constexpr (RENDERER_DEBUG) {
         log_d("%s is place in file being requested", currentPlace_.str().c_str());
     }
@@ -83,12 +86,13 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
     // Figure out how much to read before the current place. If we're too
     // close to the beginning, we just read from the beginning.
 
-    // log_e("Before subtractOffset(): fromPlace: %s", fromPlace.str().c_str());
+    // log_e("Before goBackward(): fromPlace: %s", fromPlace.str().c_str());
 
     StreamPlace seekPlace =
-        tokenizer_->subtractOffset(fromPlace, maxPageCount + MAX_BYTES_PER_PARAGRAPH);
+        tokenizer_->goBackward(fromPlace, maxPageCount + MAX_BYTES_PER_PARAGRAPH);
+    StreamPlace startPlace;
 
-    // log_e("After subtractOffset(): seekPlace: %s", seekPlace.str().c_str());
+    // log_e("After goBackward(): seekPlace: %s", seekPlace.str().c_str());
 
     // Tokenize it the same as you would for a forwards render. seekPlace will be returned to be at
     // a UTF8 character boundary
@@ -99,7 +103,7 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
         if (seekPlace.getFileIdx() != fromPlace.getFileIdx()) {
             lastPlace = {99999999, seekPlace.getFileIdx()};
         }
-        seekPlace = tokenizer_->loadAndTokenizePage(
+        startPlace = tokenizer_->loadAndTokenizePage(
             seekPlace, true,
             &lastPlace); // NOLINT(clang-analyzer-deadcode.DeadStores)
 
@@ -112,8 +116,6 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
         //      std::cout << "Last token doesn't point at fromPlace" << std::endl;
         //  }
 
-        pager_.setFirstLineIdxBackward();
-
         // Idx firstLineIdx = pager_.getFirstLineIdx();
         // std::cout << "First line Idx of the page: " << firstLineIdx << std::endl;
 
@@ -125,7 +127,7 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
 
         pager_.setNextPagePlace(fromPlace);
     } else {
-        seekPlace = tokenizer_->loadAndTokenizePage(
+        startPlace = tokenizer_->loadAndTokenizePage(
             seekPlace); // NOLINT(clang-analyzer-deadcode.DeadStores)
     }
 
@@ -133,7 +135,6 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
 
     // std::cout << "Characters count in page: " << pager_.getPageLength() << std::endl;
 
-    StreamPlace startPlace = pager_.getStreamPlaceOfFirstLine();
     if (startPlace.getOffset() == 0) {
         // We are now at the beginning of the current file. If the user seeked to some
         // position that is not the beginning of a page, this will insure than the

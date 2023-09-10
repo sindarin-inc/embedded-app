@@ -46,8 +46,7 @@ public:
         return {streamPlace.getOffset() + offset, streamPlace.getFileIdx()};
     };
 
-    [[nodiscard]] virtual auto subtractOffset(StreamPlace streamPlace, uint32_t offset)
-        -> StreamPlace {
+    [[nodiscard]] virtual auto goBackward(StreamPlace streamPlace, uint32_t offset) -> StreamPlace {
         return {(streamPlace.getOffset() >= offset) ? streamPlace.getOffset() - offset : 0,
                 streamPlace.getFileIdx()};
     }
@@ -71,7 +70,7 @@ protected:
     // on the current font size and line width
     uint16_t maxTextTokenCharSize_{10};
 
-    inline auto addTokenToPage(Token &token, bool backwards, const char *str = nullptr,
+    inline auto addTokenToPage(Token &token, bool backwards = false, const char *str = nullptr,
                                uint8_t strSize = 0) -> bool {
         if (tokens_.add(token, str, strSize)) {
             return !pager_.addLastTokenToPage(backwards) && !backwards;
