@@ -8,65 +8,81 @@
 
 TEST_CASE("Test GZip compression") {
     SetupFileSystemMock("TestData");
-
     PosixFileSystem fs;
     fs.begin();
 
-    auto file = fs.open("/book/last-question.txt");
-    auto outFile = fs.open("/book/last-question.txt.gz", "w", true);
+    std::string inFileName = "/book/last-question.txt";
+    std::string outFileName = "/book/last-question.txt.gz";
 
-    GZip gzip;
-    bool ret = gzip.initWithOutputFile(outFile);
-    REQUIRE(ret == true);
+    SECTION("test") {
+        auto file = fs.open(inFileName);
+        auto outFile = fs.open(outFileName, "w", true);
+        GZip gzip;
+        bool ret = gzip.initWithOutputFile(outFile);
+        REQUIRE(ret == true);
 
-    ret = gzip.compressFile(file);
-    REQUIRE(ret == true);
+        ret = gzip.compressFile(file);
+        REQUIRE(ret == true);
 
-    file.close();
+        file.close();
 
-    auto stream = fs.newGzipRendererStream("/book/last-question.txt.gz");
-    REQUIRE(stream->size() == 25924);
+        auto stream = fs.newGzipRendererStream(outFileName.c_str());
+        REQUIRE(stream->size() == 25924);
 
-    uint8_t testBuffer[2][25924];
-    stream->readBytes(testBuffer[0], 25924);
-    REQUIRE(stream->position() == 25924);
+        uint8_t testBuffer[2][25924];
+        stream->readBytes(testBuffer[0], 25924);
+        REQUIRE(stream->position() == 25924);
 
-    file = fs.open("/book/last-question.txt");
-    REQUIRE(file.readBytes((char *)testBuffer[1], 25924) == 25924);
+        file = fs.open(inFileName);
+        REQUIRE(file.readBytes((char *)testBuffer[1], 25924) == 25924);
 
-    REQUIRE(memcmp(testBuffer[0], testBuffer[1], 25924) == 0);
+        REQUIRE(memcmp(testBuffer[0], testBuffer[1], 25924) == 0);
+    }
+    SECTION("cleanup") { fs.remove(outFileName); }
 }
 
 TEST_CASE("Test GZip Stream compression") {
     SetupFileSystemMock("TestData");
-
     PosixFileSystem fs;
     fs.begin();
 
     std::string uncFileName = "/book/last-question.txt";
     std::string compFileName = "/book/last-question.txt.stream.gz";
 
-    auto file = fs.open(uncFileName);
-    auto outFile = fs.open(compFileName, "w", true);
+    SECTION("test") {
+        auto file = fs.open(uncFileName);
+        auto outFile = fs.open(compFileName, "w", true);
 
-    GZipStream gzstream;
-    uint8_t inputBuffer[1024];
-    uint8_t outputBuffer[1024];
-    int fileSize = file.size();
-    int uncompressedSize = fileSize;
+        GZipStream gzstream;
+        uint8_t inputBuffer[1024];
+        uint8_t outputBuffer[1024];
+        int fileSize = file.size();
+        int uncompressedSize = fileSize;
 
-    REQUIRE(uncompressedSize == 25924);
-    REQUIRE(gzstream.init());
-    do {
-        // read chunk of file
-        int bytesToRead =
-            file.available() < sizeof(inputBuffer) ? file.available() : sizeof(inputBuffer);
-        size_t r = file.read(inputBuffer, bytesToRead);
-        REQUIRE(r == bytesToRead);
+        REQUIRE(uncompressedSize == 25924);
+        REQUIRE(gzstream.init());
+        do {
+            // read chunk of file
+            int bytesToRead =
+                file.available() < sizeof(inputBuffer) ? file.available() : sizeof(inputBuffer);
+            size_t r = file.read(inputBuffer, bytesToRead);
+            REQUIRE(r == bytesToRead);
 
-        // write chunk to gzip stream
-        REQUIRE(gzstream.write(inputBuffer, bytesToRead));
+            // write chunk to gzip stream
+            REQUIRE(gzstream.write(inputBuffer, bytesToRead));
 
+            while (gzstream.available() > 0) {
+                int bytesToRead = gzstream.available() > sizeof(outputBuffer)
+                                      ? sizeof(outputBuffer)
+                                      : gzstream.available();
+                REQUIRE(gzstream.read(outputBuffer, bytesToRead) == bytesToRead);
+                if (bytesToRead > 0) {
+                    outFile.write(outputBuffer, bytesToRead);
+                }
+            }
+        } while (file.available() > 0);
+
+        REQUIRE(gzstream.flush());
         while (gzstream.available() > 0) {
             int bytesToRead = gzstream.available() > sizeof(outputBuffer) ? sizeof(outputBuffer)
                                                                           : gzstream.available();
@@ -75,44 +91,35 @@ TEST_CASE("Test GZip Stream compression") {
                 outFile.write(outputBuffer, bytesToRead);
             }
         }
-    } while (file.available() > 0);
 
-    REQUIRE(gzstream.flush());
-    while (gzstream.available() > 0) {
-        int bytesToRead = gzstream.available() > sizeof(outputBuffer) ? sizeof(outputBuffer)
-                                                                      : gzstream.available();
-        REQUIRE(gzstream.read(outputBuffer, bytesToRead) == bytesToRead);
-        if (bytesToRead > 0) {
-            outFile.write(outputBuffer, bytesToRead);
+        file.close();
+        outFile.close();
+
+        outFile = fs.open(compFileName, "r");
+        outFile.close();
+
+        auto stream = fs.newGzipRendererStream(compFileName.c_str());
+        REQUIRE(stream->size() == uncompressedSize);
+
+        uint8_t *testBuffer[2];
+        for (int i = 0; i < 2; i++) {
+            testBuffer[i] = (uint8_t *)malloc(uncompressedSize);
+        }
+
+        stream->readBytes(testBuffer[0], uncompressedSize);
+        REQUIRE(stream->position() == uncompressedSize);
+
+        file = fs.open(uncFileName);
+        REQUIRE(file.readBytes((char *)testBuffer[1], uncompressedSize) == uncompressedSize);
+
+        REQUIRE(memcmp(testBuffer[0], testBuffer[1], uncompressedSize) == 0);
+
+        for (int i = 0; i < 2; i++) {
+            free(testBuffer[i]);
+            testBuffer[i] = NULL;
         }
     }
-
-    file.close();
-    outFile.close();
-
-    outFile = fs.open(compFileName, "r");
-    outFile.close();
-
-    auto stream = fs.newGzipRendererStream(compFileName.c_str());
-    REQUIRE(stream->size() == uncompressedSize);
-
-    uint8_t *testBuffer[2];
-    for (int i = 0; i < 2; i++) {
-        testBuffer[i] = (uint8_t *)malloc(uncompressedSize);
-    }
-
-    stream->readBytes(testBuffer[0], uncompressedSize);
-    REQUIRE(stream->position() == uncompressedSize);
-
-    file = fs.open(uncFileName);
-    REQUIRE(file.readBytes((char *)testBuffer[1], uncompressedSize) == uncompressedSize);
-
-    REQUIRE(memcmp(testBuffer[0], testBuffer[1], uncompressedSize) == 0);
-
-    for (int i = 0; i < 2; i++) {
-        free(testBuffer[i]);
-        testBuffer[i] = NULL;
-    }
+    SECTION("cleanup") { fs.remove(compFileName); }
 }
 
 TEST_CASE("Test GZip stream handling") {
