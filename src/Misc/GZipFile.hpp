@@ -7,10 +7,10 @@
 
 #include "Storage/FileSystem.hpp"
 
-class GZip {
+class GZipFile {
 public:
-    GZip() = default;
-    ~GZip() = default;
+    GZipFile() = default;
+    ~GZipFile() = default;
 
     auto initWithOutputFileName(const std::string &outputFileName) -> bool;
     auto initWithOutputFile(SFile &f) -> bool;

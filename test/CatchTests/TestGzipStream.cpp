@@ -1,7 +1,7 @@
 #include <catch_amalgamated.hpp>
 
 #include "Misc/GUnzip.hpp"
-#include "Misc/GZip.hpp"
+#include "Misc/GZipFile.hpp"
 #include "Misc/GZipStream.hpp"
 #include "Storage/PosixFileSystem.hpp"
 #include "ViewTestCommon.hpp"
@@ -17,7 +17,7 @@ TEST_CASE("Test GZip compression") {
     SECTION("test") {
         auto file = fs.open(inFileName);
         auto outFile = fs.open(outFileName, "w", true);
-        GZip gzip;
+        GZipFile gzip;
         bool ret = gzip.initWithOutputFile(outFile);
         REQUIRE(ret == true);
 
