@@ -62,6 +62,6 @@ private:
     bool gzip_;
     GZipStream gz_;
     std::shared_ptr<uint8_t[]> gzipBuffer_{nullptr};
-    int gzUncompressedLength_;
+    int gzUncompressedBytesRemaining_;
     int gzCompressedLength_;
 };

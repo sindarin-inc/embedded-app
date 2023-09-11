@@ -102,13 +102,16 @@ auto HttpClient::getResponseHeader(const char *key, char **value) -> esp_err_t {
 }
 
 auto HttpClient::open(int contentLength) -> esp_err_t {
+    esp_err_t ret = ESP_OK;
     if (gzip_) {
-        gzUncompressedLength_ = contentLength;
+        gzUncompressedBytesRemaining_ = contentLength;
         gzCompressedLength_ = 0;
-        gzipBuffer_ = SpiRamArrayPtr<uint8_t>(gzUncompressedLength_);
-        return ESP_OK;
+        gzipBuffer_ = SpiRamArrayPtr<uint8_t>(gzUncompressedBytesRemaining_);
+    } else {
+        ret = esp_http_client_open(client_, contentLength);
     }
-    return esp_http_client_open(client_, contentLength);
+
+    return ret;
 }
 
 // auto HttpClient::perform() -> esp_err_t { return esp_http_client_perform(client_); }
@@ -117,19 +120,29 @@ auto HttpClient::write(const char *body, int length) -> int {
     // check for gzip encoding
     // TODO: check if the stream is already gzipped
     if (gzip_) {
+
+        // initialize gz stream if needed
         if (!gz_.initialized()) {
             gz_.init();
         }
 
+        // write current block of bytes to gzip stream
         if (!gz_.write((uint8_t *)body, length)) {
             log_e("failed to gzip %d bytes", length);
             return -1;
         }
 
-        gzUncompressedLength_ -= length;
+        // decrement written uncompressed bytes so we know when
+        // the request is complete and we can send the compressed version.
+
+        // Currently, need to wait until all uncompressed bytes are written first
+        // because only then do we know how large the compressed version is.
+        gzUncompressedBytesRemaining_ -= length;
 
         if (gz_.available() > 0) {
             int bytesToRead = gz_.available();
+
+            // read out any available bytes into the preallocated gzip buffer
             if (gz_.read(&gzipBuffer_.get()[gzCompressedLength_], bytesToRead) != bytesToRead) {
                 log_e("failed to read gzip data");
                 return -1;
@@ -139,12 +152,13 @@ auto HttpClient::write(const char *body, int length) -> int {
 
         // if all uncompressed bytes have been sent, make the request
         // since we now know the size
-        if (gzUncompressedLength_ == 0) {
+        if (gzUncompressedBytesRemaining_ == 0) {
             if (!gz_.flush()) {
                 log_e("failed to flush gzip stream");
                 return -1;
             }
 
+            // read any bytes available after flushing
             int bytesToRead = gz_.available();
             if (gz_.read(&gzipBuffer_.get()[gzCompressedLength_], bytesToRead) != bytesToRead) {
                 log_e("failed to read gzip data");
@@ -152,7 +166,7 @@ auto HttpClient::write(const char *body, int length) -> int {
             }
             gzCompressedLength_ += bytesToRead;
 
-            // start http client
+            // start http client, using the compressed size
             esp_err_t err = esp_http_client_open(client_, gzCompressedLength_);
             if (err != ESP_OK) {
                 log_e("gz could not open http client length %d", gzCompressedLength_);

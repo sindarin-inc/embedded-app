@@ -66,9 +66,10 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
 
     client.open(bodyLength);
     int writeLength = client.write(reqBody.get(), bodyLength);
-    if (writeLength < bodyLength) {
+    if (writeLength != bodyLength) {
         log_w("HttpClient failed to write (writeLength=%d, bodyLength=%zu)", writeLength,
               bodyLength);
+        client.close();
         return 0;
     }
 
@@ -198,7 +199,16 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
     setAuth(client);
     client.setHeader("X-Serial-Number", GetSerialNumber().c_str());
     client.open(totalSize);
-    client.write(header.c_str(), header.size());
+
+    int bytesToWrite = header.size();
+    int ret = client.write(header.c_str(), bytesToWrite);
+    if (ret != bytesToWrite) {
+        // http client error
+        log_w("uploadTelemetryFile: error writing %d bytes to http client (got %d)", bytesToWrite,
+              ret);
+        client.close();
+        return -1;
+    }
 
     // Write the file data in chunks
     size_t bufferSize = 4096;
@@ -207,11 +217,25 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
     int writeSize = telemetryFile.size();
     while (bytesWritten < writeSize) {
         auto bytesRead = telemetryFile.readBytes(buffer.get(), bufferSize);
-        bytesWritten += client.write(buffer.get(), bytesRead);
+        ret = client.write(buffer.get(), bytesRead);
+        if (ret != bytesRead) {
+            log_w("uploadTelemetryFile: error writing %d bytes to http client (got %d)", bytesRead,
+                  ret);
+            client.close();
+            return -1;
+        }
+        bytesWritten += bytesRead;
     }
 
     // Write the multipart footer
-    client.write(footer.c_str(), footer.size());
+    bytesToWrite = footer.size();
+    ret = client.write(footer.c_str(), footer.size());
+    if (ret != bytesToWrite) {
+        log_e("uploadTelemetryFile: error writing %d bytes to http client (got %d)", bytesToWrite,
+              ret);
+        client.close();
+        return -1;
+    }
 
     // Send request and fetch response
     client.fetchHeaders();
@@ -236,9 +260,10 @@ auto SindarinAPI::uploadCrashReport(SFile &crashFile, const std::string &content
     while (bytesWritten < writeSize) {
         auto bytesRead = crashFile.readBytes(buffer.get(), bufferSize);
         int b = client.write(buffer.get(), bytesRead);
-        if (b < 0) {
+        if (b != bytesRead) {
             // error
-            log_e("error in uploadCrashReport");
+            log_w("uploadCrashReport: http client failed to write %d bytes (got %d)", bytesRead, b);
+            client.close();
             return -1;
         }
         bytesWritten += b;
