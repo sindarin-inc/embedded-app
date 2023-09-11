@@ -587,7 +587,7 @@ void LocalStore::syncFromRemote(
     // Run this work on a separate thread, since it's long running
     queue->dispatch([this, syncReason, progressCallback] {
         CheckSyncRequest checkSyncRequest;
-        CheckSyncResponse checkSyncResponse;
+        CheckSyncResponse checkSyncResponse = {};
         int checkSyncFailures = 0;
         bool booksAlreadySynced = false;
         bool articlesAlreadySynced = false;
@@ -672,12 +672,13 @@ void LocalStore::syncFromRemote(
                 int httpCode = 0;
                 if (nextPageCounter == 1) {
                     SHOW_HEAP();
-                    httpCode =
-                        SindarinAPI::getInstance()->checkSync(checkSyncRequest, &checkSyncResponse);
+                    httpCode = SindarinAPI::getInstance()->checkSync(
+                        checkSyncRequest, &checkSyncResponse, this->telemetry_);
                     SHOW_HEAP();
                 } else {
-                    httpCode = SindarinAPI::getInstance()->checkSync(
-                        nextPageUrl.c_str(), checkSyncRequest, &checkSyncResponse);
+                    httpCode =
+                        SindarinAPI::getInstance()->checkSync(nextPageUrl.c_str(), checkSyncRequest,
+                                                              &checkSyncResponse, this->telemetry_);
                 }
                 log_d("Server has %d %ss, next page: %s", checkSyncResponse.totalCount,
                       ReadableModelTypeToString(modelType).c_str(), nextPageUrl.c_str());
@@ -861,7 +862,8 @@ void LocalStore::syncFromRemote(
             checkSyncRequest.since = serverSince;
 
             SHOW_HEAP();
-            SindarinAPI::getInstance()->checkSync(checkSyncRequest, &checkSyncResponse);
+            SindarinAPI::getInstance()->checkSync(checkSyncRequest, &checkSyncResponse,
+                                                  this->telemetry_);
 
             // TODO: Force reload of rootUI instead of rebooting
             if (checkSyncResponse.synced) {
