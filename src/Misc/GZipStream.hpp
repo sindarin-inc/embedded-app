@@ -12,7 +12,7 @@
 
 class GZipStream {
 public:
-    GZipStream() {}
+    GZipStream() = default;
     ~GZipStream() = default;
 
     auto init() -> bool;
