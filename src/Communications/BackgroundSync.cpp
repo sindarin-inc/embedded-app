@@ -18,6 +18,7 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
     auto &fileSystem = localStore.fileSystem;
 
     localStore.syncFromRemote(
+        PreferencesStore::syncReason,
         [&powerManager, &backgroundGroup, &telemetry](const ContentSyncState &state) {
         powerManager.feedInactivityTimer();
 
@@ -38,7 +39,7 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
             }
             xEventGroupSetBits(backgroundGroup, 1);
         }
-    });
+        });
 
     // Wait for content sync to finish
     auto bits =

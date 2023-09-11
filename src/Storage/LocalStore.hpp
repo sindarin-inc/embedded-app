@@ -111,7 +111,8 @@ public:
     void resetReadablesArchivedChanged(const ReadablesVector &readables);
     void resetReadablesBookmarksChanged(const ReadablesVector &readables);
 
-    void syncFromRemote(const std::function<void(ContentSyncState state)> &progressCallback);
+    void syncFromRemote(SyncReason syncReason,
+                        const std::function<void(ContentSyncState state)> &progressCallback);
     auto processReadables(const CheckSyncResponse &checkSyncResponse,
                           const ReadablesVector &readables, UserReadablesVector &userReadables)
         -> std::pair<ReadablesVector, ReadablesVector>;
