@@ -52,8 +52,14 @@ class OverrideIdfSerial(IdfSerial):
         btmac = self.ict_client.get_bt_mac()
         logger.info("ICT bluetooth MAC: " + btmac)
 
+        wifi_ssid = self.ict_client.get_wifi_ssid()
+        logger.info("ICT ssid: " + wifi_ssid)
+
+        wifi_password = self.ict_client.get_wifi_password()
+        logger.info("ICT password: " + wifi_password)
+
         # prepare nvs partition image and write to dut
-        self.write_nvs(btmac)
+        self.write_nvs(btmac, wifi_ssid, wifi_password)
 
         # Close the serial port
         self.close()
@@ -82,7 +88,7 @@ class OverrideIdfSerial(IdfSerial):
         nvs_size_decimal = int(nvs_size, 16)
         return nvs_size_decimal
 
-    def write_nvs(self, btmac):
+    def write_nvs(self, btmac, ict_ssid, ict_pw):
         parts = btmac.split(":")
         hexstr = "".join(parts)
         logger.info("hex string: " + hexstr)
@@ -97,8 +103,13 @@ class OverrideIdfSerial(IdfSerial):
         fp.write("sindarin-app,namespace,,\n")
         # write paired tt address
         fp.write("paired-tt,data,u64," + str(btmac_int) + "\n")
+        fp.write("no-setup,data,u8,1\n");
         # Write a cloud-token so the glasses don't try to go back into ship mode upon sleep
         fp.write("cloud-token,data,string,FAKECLOUDTOKEN\n")
+
+        wifi_settings_json = "\"{\"\"settings\"\":[{\"\"ssid\"\":\"\"" + ict_ssid + "\"\",\"\"password\"\":\"\"" + ict_pw + "\"\"}]}\""
+
+        fp.write("wifi-settings,data,string," + wifi_settings_json + "\n")
         # Skip the onboarding thing since it has a bunch of animations
         fp.write("no-setup,data,u8,1\n")
         fp.close()
@@ -342,6 +353,15 @@ class TestPowerConsumption:
 
         logger.info("Measuring active mode current")
         power_client.expect_current((7000, 13000), 5)
+
+        # wait 5 seconds
+        time.sleep(5)
+        
+        # turntouch button
+        ict_client.tt_enter()
+
+        # wait for wifi connection
+        dut.expect("Connected, IP address", timeout=30)
 
         logger.info("Sleeping")
         ict_client.set_servo("right", 0)

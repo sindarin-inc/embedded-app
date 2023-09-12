@@ -1,6 +1,5 @@
 import logging
 import time
-
 import serial
 import os
 import subprocess
@@ -8,7 +7,7 @@ import subprocess
 import zipfile
 import shutil
 
-from util import find_port_by_device_name
+from util import find_port_by_device_name, wait_for_port_by_device_name
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -16,12 +15,12 @@ logger.setLevel(logging.DEBUG)
 class MFICTClient:
     def __init__(self, baudrate=115200, timeout=1):
         # get first device with this name, other device is serial port relay
-        self.port = find_port_by_device_name("SOL Mainframe ICT", 0)
-        if self.port is None:
+        port = find_port_by_device_name("SOL Mainframe ICT", 0)
+        if port is None:
             # TODO: Retry?
             raise Exception("Failed to find ICT")
-        logger.info("Found ICT on port: " + self.port)
-        self.ser = serial.Serial(self.port, baudrate, timeout=timeout, rtscts=False, dsrdtr=False)
+        logger.info("Found ICT on port: " + port)
+        self.ser = serial.Serial(port, baudrate, timeout=timeout, rtscts=False, dsrdtr=False)
 
         # check if ICT update is required
         version = self.get_ict_version()
@@ -82,10 +81,21 @@ class MFICTClient:
         return verstr
 
     def flash_firmware(self, baudrate, timeout, firmware_filename, script_filename):
+        # power off dut, just in case it is on
+        # prevents duplicate JTAG port from showing up
+        self.set_power(False)
+
         # reboot into programming mode
         self.program()
         self.ser.close()
         self.ser = None
+
+        # wait for JTAG port to appear
+        port = wait_for_port_by_device_name("USB JTAG/serial debug unit", 0, timeout=10)
+        if port is None:
+            # TODO: Retry?
+            raise Exception("Failed to find ICT JTAG")
+        logger.info("Found ICT JTAG on port: " + port)
 
         # split arguments for esptool command to flash the firmware
         f = open(script_filename, 'r')
@@ -100,7 +110,7 @@ class MFICTClient:
         # add the ICT port to the arguments
         # after first argument (esptool.py)
         parts.insert(1, "-p")
-        parts.insert(2, self.port)
+        parts.insert(2, port)
 
         # replace the firmware filename with the full path
         del parts[len(parts)-1]
@@ -108,7 +118,6 @@ class MFICTClient:
         flashcmd = ' '.join(parts)
 
         logger.info("flashing firmware with command: " + flashcmd)
-        time.sleep(5)
 
         # run esptool to flash ict firmware
         res = subprocess.run(
@@ -120,14 +129,12 @@ class MFICTClient:
             return
 
         logger.info("firmware flash complete, reconnecting to ICT")
-        time.sleep(5)
-
-        self.port = find_port_by_device_name("SOL Mainframe ICT", 0)
-        if self.port is None:
+        port = wait_for_port_by_device_name("SOL Mainframe ICT", 0)
+        if port is None:
             # TODO: Retry?
             raise Exception("Failed to find ICT")
-        logger.info("Found ICT on port: " + self.port)
-        self.ser = serial.Serial(self.port, baudrate, timeout=timeout, rtscts=False, dsrdtr=False)
+        logger.info("Found ICT on port: " + port)
+        self.ser = serial.Serial(port, baudrate, timeout=timeout, rtscts=False, dsrdtr=False)
         logger.info("flash successful")
 
     def flush_read_buffer(self):
@@ -139,6 +146,9 @@ class MFICTClient:
         out = (command + "\n").encode()
         logger.debug(f"ICT ->: {out}")
         self.ser.write(out)
+
+    def write_with_ack(self, command):
+        self.write(command)
         # TODO: Would be nice to really wait instead of sleeping
         # Allow time for the message to be processed and an ACK to be sent
         time.sleep(0.1)
@@ -155,23 +165,23 @@ class MFICTClient:
         return None
 
     def set_power(self, state):
-        self.write("ON" if state else "OFF")
+        self.write_with_ack("ON" if state else "OFF")
         self.flush_read_buffer()
 
     def reset_dut(self):
-        self.write("RST")
+        self.write_with_ack("RST")
         self.flush_read_buffer()
 
     def set_servo(self, servo, position):
-        self.write(("LS" if servo == "left" else "RS") + " " + str(position))
+        self.write_with_ack(("LS" if servo == "left" else "RS") + " " + str(position))
         self.flush_read_buffer()
 
     def set_led_brightness(self, brightness):
-        self.write("LED" + " " + str(brightness))
+        self.write_with_ack("LED" + " " + str(brightness))
         self.flush_read_buffer()
 
     def get_voltage(self, voltage_type):
-        self.ser.write((voltage_type + "\n").encode())
+        self.write(voltage_type)
         time.sleep(0.1)
         voltage_line = self.ser.readline().decode().strip()
         if not voltage_line.startswith(voltage_type):
@@ -180,17 +190,16 @@ class MFICTClient:
         return float(voltage_str)
 
     def get_magnet_status(self):
-        self.ser.write("LMAG\n".encode())
+        self.write("LMAG")
         return bool(int(self.read().split(" ")[1]))
 
     def set_gpio0(self, level):
-        self.write("IO0" + " " + str(level))
+        self.write_with_ack("IO0" + " " + str(level))
         self.flush_read_buffer()
 
     def clear_input(self):
         """Sometimes there can be garbage on the serial line due to pytest trying to use the ICT as the DUT. This routine gets us back to a clean state."""
-        out = "\n".encode()
-        self.ser.write(out)
+        self.write("");
         # TODO: Would be nice to really wait instead of sleeping
         # Allow time for the message to be processed and an ACK to be sent
         time.sleep(0.3)
@@ -203,14 +212,32 @@ class MFICTClient:
                 logger.debug(f"ICT <-: {self.ser.readline()}")
 
     def get_bt_mac(self):
-        self.ser.write("BTMAC\n".encode())
+        self.write("BTMAC")
         time.sleep(0.1)
         resp = self.read()
         btmac = resp.split(" ")[1]
         return btmac
     
+    def get_wifi_ssid(self):
+        self.write("SSID")
+        time.sleep(0.1)
+        resp = self.read()
+        ssid = resp.split(" ")[1]
+        return ssid
+    
+    def get_wifi_password(self):
+        self.write("PASS")
+        time.sleep(0.1)
+        resp = self.read()
+        password = resp.split(" ")[1]
+        return password
+    
+    def tt_enter(self):
+        self.write_with_ack("TTENT")
+        self.flush_read_buffer()
+
     def get_ict_version(self):
-        self.ser.write("VERSION\n".encode())
+        self.write("VERSION")
         time.sleep(0.1)
         resp = self.read()
         parts = resp.split(" ")
@@ -220,4 +247,4 @@ class MFICTClient:
         return version
     
     def program(self):
-        self.ser.write("PROGRAM\n".encode())
+        self.write("PROGRAM")
