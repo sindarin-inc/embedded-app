@@ -14,12 +14,12 @@ void ReadableDictionaryScreen::drawInRect(Rect rect) {
     upperLeftTextView_.draw();
 }
 
-void ReadableDictionaryScreen::setPlaceInReadable(unsigned long placeInReadable) {
-    placeInReadable_ = placeInReadable;
-    preservePlace_ = 0;
+void ReadableDictionaryScreen::setPlaceInReadable(std::shared_ptr<Place> placeInReadable) {
+    placeInReadable_ = std::move(placeInReadable);
+    preservePlace_ = nullptr;
 }
 
-auto ReadableDictionaryScreen::checkAtEnd() -> bool { return (newPlace_ == 0); }
+auto ReadableDictionaryScreen::checkAtEnd() -> bool { return (newPlace_ == nullptr); }
 
 void ReadableDictionaryScreen::render(DisplaySystem &display) {
     setNeedsLayout();
@@ -36,19 +36,18 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
     auto oldDisplayBoundingBox = insetBoundingBox();
 
     if (firstLoad_) {
-        unsigned long placeInDictionary = 0;
-        SpiramString dictionaryString =
-            readable_->definitions(placeInReadable_, &placeInDictionary);
+        std::shared_ptr<Place> placeInDictionary = nullptr;
+        SpiramString dictionaryString = readable_->definitions(placeInReadable_, placeInDictionary);
 
         if (preservePlace_) {
             placeInDictionary = preservePlace_;
-            preservePlace_ = 0;
+            preservePlace_ = nullptr;
         }
         auto stream = std::make_shared<StdStringStream>(dictionaryString);
         renderer_.setStream(stream);
         newPlace_ = renderer_.renderPage(placeInDictionary);
-        log_d("Place in readable: %lu, place in dictionary: %lu", placeInReadable_,
-              placeInDictionary);
+        log_d("Place in readable: %s, place in dictionary: %s", placeInReadable_->str().c_str(),
+              placeInDictionary->str().c_str());
     } else {
         prevPlace_ = newPlace_;
         newPlace_ = renderer_.renderPage(newPlace_);

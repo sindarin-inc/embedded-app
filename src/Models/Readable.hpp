@@ -140,18 +140,22 @@ public:
         return summary;
     }
 
-    auto definitions(unsigned long placeInReadable, unsigned long *placeInDictionary)
-        -> SpiramString {
+    auto definitions(std::shared_ptr<Place> placeInReadable,
+                     std::shared_ptr<Place> placeInDictionaryOut) -> SpiramString {
         // This code generates the dictionaryString for an entire chapter, making sure to not add
         // duplicate words within the last 5 words (but duplicates are allowed assuming they are > 5
         // words ago). It returns the dictionaryString as well as the position of the word closest
-        // to the current page using the placeInDictionary out-value.
+        // to the current page using the placeInDictionaryOut out-value.
 
+        // NOTE(john): Punting for now since this is going to get included in the epub file
+        return "";
+        /*
         SpiramString dictionaryString;
 
         std::deque<SpiramString> lastFiveWords;
 
-        log_d("Looking for definitions for place %lu in %zu chapters", placeInReadable, toc.size());
+        log_d("Looking for definitions for place %s in %zu chapters", placeInReadable.str().c_str(),
+        toc.size());
 
         auto chapter = findChapter(placeInReadable);
         if (chapter == nullptr) {
@@ -195,6 +199,7 @@ public:
         }
 
         return dictionaryString;
+        */
     }
 
     [[nodiscard]] auto authorString() const -> SpiramString {

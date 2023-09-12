@@ -34,7 +34,7 @@ public:
     void resetBoundingBox(DisplayRect oldDisplayBoundingBox);
     void setPlacemark();
     void setFirstLoad() { firstLoad_ = true; }
-    void setPlaceInReadable(unsigned long placeInReadable);
+    void setPlaceInReadable(std::shared_ptr<Place> placeInReadable);
 
 protected:
     PreferencesStore &prefs_;
@@ -43,10 +43,10 @@ protected:
     DisplaySystem &display_;
 
     bool firstLoad_ = true;
-    unsigned long placeInReadable_ = 0;
-    unsigned long newPlace_ = 0;
-    unsigned long prevPlace_ = 0;
-    unsigned long preservePlace_ = 0;
+    std::shared_ptr<Place> placeInReadable_ = nullptr;
+    std::shared_ptr<Place> newPlace_ = nullptr;
+    std::shared_ptr<Place> prevPlace_ = nullptr;
+    std::shared_ptr<Place> preservePlace_ = nullptr;
     bool atEnd_ = false;
 
     std::string upperLeftText_ = "Dismiss";
