@@ -30,7 +30,7 @@ public:
 
     [[nodiscard]] auto getSpine(Idx idx) const -> const SpineItem & { return spine_[idx]; }
 
-    [[nodiscard]] auto getFullPath(std::string fileName) const -> std::string {
+    [[nodiscard]] auto getFullPath(const std::string &fileName) const -> std::string {
         return basePath_ + fileName;
     }
 
@@ -53,5 +53,5 @@ private:
 
     // uint32_t totalSize_{0};
 
-    void extract_path(const char *fname, std::string &path);
+    void extractPath(const char *fname, std::string &path);
 };

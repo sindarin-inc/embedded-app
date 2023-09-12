@@ -60,7 +60,7 @@ void Tokens::addByte(Token &token, uint8_t b) {
 
 // Associate the string to the token. The string will be copied to the pool. No other characters can
 // be added to the token after it.
-void Tokens::addStr(Token &token, std::string str) {
+void Tokens::addStr(Token &token, const std::string &str) {
     // if constexpr (RENDERER_DEBUG) {
     //   log_d("Adding byte %02" PRIX8 "H to last token at %" PRIu16 ".", b, cStrPoolCount_);
     // }

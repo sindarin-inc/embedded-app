@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <utility>
 
 #include "Misc/BMPImage.hpp"
 #include "RendererDefs.hpp"
@@ -128,7 +129,7 @@ public:
 
     [[nodiscard]] auto atEndOfFile() const -> bool { return atEOF_; }
 
-    void setPicture(std::shared_ptr<BMPImage> picture) { picture_ = picture; }
+    void setPicture(std::shared_ptr<BMPImage> picture) { picture_ = std::move(picture); }
     void completeLastLine();
 
     inline void freeLineHead() {

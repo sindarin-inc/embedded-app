@@ -14,7 +14,7 @@ public:
     ~EPubTokenizer() override = default;
 
     [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, bool backwards = false,
-                                           StreamPlace *toPlace = nullptr) ->  StreamPlace override;
+                                           StreamPlace *toPlace = nullptr) -> StreamPlace override;
 
     [[nodiscard]] auto getStreamPlaceFromTxtOffset(uint32_t txtOffset) const -> StreamPlace;
 

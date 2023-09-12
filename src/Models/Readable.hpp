@@ -140,8 +140,8 @@ public:
         return summary;
     }
 
-    auto definitions(std::shared_ptr<Place> placeInReadable,
-                     std::shared_ptr<Place> placeInDictionaryOut) -> SpiramString {
+    auto definitions(const std::shared_ptr<Place> &placeInReadable,
+                     const std::shared_ptr<Place> &placeInDictionaryOut) -> SpiramString {
         // This code generates the dictionaryString for an entire chapter, making sure to not add
         // duplicate words within the last 5 words (but duplicates are allowed assuming they are > 5
         // words ago). It returns the dictionaryString as well as the position of the word closest

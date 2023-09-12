@@ -239,8 +239,8 @@ public:
     }
 
     // Non-validating algorithm
-    char32_t toChar32(const char **str) {
-        const uint8_t *s = reinterpret_cast<const uint8_t *>(*str);
+    auto toChar32(const char **str) -> char32_t {
+        const auto *s = reinterpret_cast<const uint8_t *>(*str);
         uint8_t c1 = *s++;
 
         char32_t res;

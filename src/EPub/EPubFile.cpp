@@ -1,13 +1,15 @@
 #include "EPubFile.hpp"
 
+#include <utility>
+
 #include "EPubMetaFile.hpp"
 
 auto EPubFile::findFileOffsetAtCharOffset(std::string path, uint32_t charOffset) -> uint32_t {
 
-    pugi::xml_document &doc = getXHTMLFile(path);
+    pugi::xml_document &doc = getXHTMLFile(std::move(path));
 
     struct Walker : pugi::xml_tree_walker {
-        virtual bool for_each(pugi::xml_node &node) {
+        auto for_each(pugi::xml_node &node) -> bool override {
             if (node.type() == pugi::xml_node_type::node_pcdata) {
                 uint32_t length = strlen(node.value());
                 if ((chOffset + length) > charOffset) {
@@ -41,7 +43,7 @@ auto EPubFile::getFile(std::string path) -> std::tuple<std::unique_ptr<uint8_t[]
 
     std::unique_ptr<uint8_t[]> buffer = nullptr;
 
-    std::string filePath = opf_->getFullPath(path);
+    std::string filePath = opf_->getFullPath(std::move(path));
 
     if (epubZipFile_.openFile(filePath.c_str()) != UNZ_OK) {
         log_e("Failed to open XHTML file %s", filePath.c_str());
@@ -65,7 +67,7 @@ auto EPubFile::getFile(std::string path) -> std::tuple<std::unique_ptr<uint8_t[]
 }
 
 auto EPubFile::getXHTMLFile(std::string path) -> pugi::xml_document & {
-    std::string filePath = opf_->getFullPath(path);
+    std::string filePath = opf_->getFullPath(std::move(path));
     // log_w("Loading file %s", filePath.c_str());
     if (currentFilePath_ != filePath) {
         if (epubZipFile_.openFile(filePath.c_str()) != UNZ_OK) {
@@ -88,7 +90,7 @@ auto EPubFile::getXHTMLFile(std::string path) -> pugi::xml_document & {
                     // directly in the currentFileBuffer instead of being copied.
                     // (see the EPubFile::getOffset() method).
                     pugi::xml_parse_result result =
-                        currentFileDoc_.load_buffer_inplace(currentFileBuffer_.get(), len);
+                        currentFileDoc.load_buffer_inplace(currentFileBuffer_.get(), len);
 
                     if (result) {
                         currentFilePath_ = filePath;
@@ -106,7 +108,7 @@ auto EPubFile::getXHTMLFile(std::string path) -> pugi::xml_document & {
         }
     }
 
-    return currentFileDoc_;
+    return currentFileDoc;
 }
 
 auto EPubFile::open() -> bool {

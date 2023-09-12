@@ -116,7 +116,7 @@ public:
         return s;
     }
 
-    void setHRef(std::string href) { href_ = href; };
+    void setHRef(std::string href) { href_ = std::move(href); };
 
     [[nodiscard]] auto operator==(Place &rhs) const -> bool override {
         return rhs.isFor(DocType::EPUB) && (offset_ == rhs.getOffset()) &&

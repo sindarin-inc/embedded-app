@@ -23,7 +23,7 @@ void EPubMetaFile::parse() {
         if (result) {
             for (pugi::xml_node rootfile :
                  doc.child("container").child("rootfiles").children("rootfile")) {
-                rootfilePaths.push_back(rootfile.attribute("full-path").value());
+                rootfilePaths.emplace_back(rootfile.attribute("full-path").value());
                 // log_w("-----------> adding %s", rootfile.attribute("full-path").value());
             }
         } else {

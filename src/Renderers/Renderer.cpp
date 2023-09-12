@@ -14,7 +14,7 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
                                              : tokenizer_->toStreamPlace(std::move(fromPlace));
 
     log_d("%s is place in file being requested", currentPlace_.str().c_str());
-    
+
     if constexpr (RENDERER_DEBUG) {
         log_d("%s is place in file being requested", currentPlace_.str().c_str());
     }

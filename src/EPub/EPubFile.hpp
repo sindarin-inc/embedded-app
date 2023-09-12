@@ -1,3 +1,5 @@
+#include <utility>
+
 #include "EPubOpf.hpp"
 #include "Misc/SpiramAllocator.hpp"
 #include "Misc/ZipFile.hpp"
@@ -39,7 +41,7 @@ public:
         return readable_->toc;
     }
 
-    [[nodiscard]] auto getSpineIdx(std::string href) {
+    [[nodiscard]] auto getSpineIdx(const std::string &href) {
         uint16_t spineIdx = 0;
         while (spineIdx < opf_->getSpineCount()) {
             if (opf_->getSpine(spineIdx).item->href == href) {
@@ -57,7 +59,7 @@ public:
     }
 
     [[nodiscard]] inline auto getFullPath(std::string filename) const -> std::string {
-        return opf_->getFullPath(filename);
+        return opf_->getFullPath(std::move(filename));
     }
 
     [[nodiscard]] auto getUncompressedSize(Idx spineIdx) -> uint32_t {
@@ -72,7 +74,7 @@ public:
         return 0;
     }
 
-    pugi::xml_document currentFileDoc_;
+    pugi::xml_document currentFileDoc;
 
 private:
     ZipFile epubZipFile_;

@@ -139,7 +139,7 @@ public:
     [[nodiscard]] auto add(Token &token, const char *str = nullptr, uint8_t length = 0) -> bool;
 
     void addByte(Token &token, uint8_t b);
-    void addStr(Token &token, std::string str);
+    void addStr(Token &token, const std::string &str);
 
     inline void endOfCStr() {
         cStrPool_[cStrPoolTailIdx_] = 0;
@@ -200,10 +200,10 @@ public:
 
     void freeTokens(Idx fromTokenIdx, uint16_t count);
 
-    inline auto addToTokenIdx(Idx idx, uint16_t val) const -> Idx {
+    [[nodiscard]] inline auto addToTokenIdx(Idx idx, uint16_t val) const -> Idx {
         return (idx + val) % TOKENS_SIZE;
     }
-    inline auto addToCStrPoolIdx(Idx idx, uint16_t val) const -> Idx {
+    [[nodiscard]] inline auto addToCStrPoolIdx(Idx idx, uint16_t val) const -> Idx {
         return (idx + val) % CSTR_POOL_SIZE;
     }
 
