@@ -11,7 +11,8 @@ public:
     ~NullTokenizer() override = default;
 
     [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, bool backwards = false,
-                                           StreamPlace *toPlace = nullptr) -> StreamPlace override {
+                                           StreamPlace *toPlace = nullptr)
+        -> std::pair<StreamPlace, StreamPlace> override {
         error();
         return {};
     };

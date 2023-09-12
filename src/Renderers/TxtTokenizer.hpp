@@ -10,7 +10,8 @@ public:
     ~TxtTokenizer() override = default;
 
     [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, bool backwards = false,
-                                           StreamPlace *toPlace = nullptr) -> StreamPlace override;
+                                           StreamPlace *toPlace = nullptr)
+        -> std::pair<StreamPlace, StreamPlace> override;
 
     // ToDo: To be adjusted related to the upcoming Place definition
     [[nodiscard]] auto toStreamPlace(const std::shared_ptr<Place> place) const

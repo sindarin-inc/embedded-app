@@ -14,7 +14,8 @@ public:
     ~EPubTokenizer() override = default;
 
     [[nodiscard]] auto loadAndTokenizePage(StreamPlace fromPlace, bool backwards = false,
-                                           StreamPlace *toPlace = nullptr) ->  StreamPlace override;
+                                           StreamPlace *toPlace = nullptr)
+        -> std::pair<StreamPlace, StreamPlace> override;
 
     [[nodiscard]] auto getStreamPlaceFromTxtOffset(uint32_t txtOffset) const -> StreamPlace;
 
@@ -94,8 +95,21 @@ private:
         char *;
     [[nodiscard]] auto loadXHTMLAt(Idx fileIdx) -> pugi::xml_document &;
     [[nodiscard]] auto interpret(pugi::xml_node node) -> bool;
-    [[nodiscard]] auto addStrToPage(const pugi::char_t *str, uint32_t len) -> bool;
+    [[nodiscard]] auto addStrToPage(uint32_t offset, const pugi::char_t *str, uint32_t len) -> bool;
+    [[nodiscard]] auto forwardToNextPageOffset(pugi::xml_node node) const -> uint32_t;
 
     void processPictureTag(pugi::xml_node node);
     void processSuperscript(pugi::xml_node node);
+
+    [[nodiscard]] static inline auto isSpaces(const char *cstr) -> bool {
+        while (*cstr) {
+            if (!isspace(*cstr)) {
+                if ((*cstr != '\xC2') || (*++cstr != '\xA0')) {
+                    return false;
+                }
+            }
+            cstr++;
+        }
+        return true;
+    }
 };

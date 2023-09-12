@@ -32,8 +32,7 @@ public:
 
     [[nodiscard]] inline auto getSpineCount() const -> uint16_t { return opf_->getSpineCount(); }
 
-    [[nodiscard]] auto getFile(std::string path)
-        -> std::tuple<std::unique_ptr<uint8_t[]>, uint32_t>;
+    [[nodiscard]] auto getFile(std::string path) -> std::pair<std::unique_ptr<uint8_t[]>, uint32_t>;
 
     [[nodiscard]] inline auto getToc() const -> ReadableTableOfContentsChapterVector {
         return readable_->toc;

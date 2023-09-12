@@ -93,7 +93,7 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
         if (!dontStop &&
             ((currentPageDecilineHeight_ + ENDPARAGRAPH_DECI_LINE_HEIGHT) > maxDeciLines_)) {
             currentPageDecilineHeight_ += ENDPARAGRAPH_DECI_LINE_HEIGHT;
-            nextPagePlace_ = token.streamPlace;
+            setNextPagePlace(token.streamPlace);
             if constexpr (RENDERER_DEBUG) {
                 log_w("Page completed: %" PRIu16 " decilines. Max: %" PRIu16,
                       currentPageDecilineHeight_, maxDeciLines_);

@@ -96,5 +96,5 @@ private:
     StreamPlace previousPlace_{};
     StreamPlace nextPlace_{};
 
-    auto goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace;
+    auto goBackwardsOnePage(StreamPlace endPlace) -> StreamPlace;
 };

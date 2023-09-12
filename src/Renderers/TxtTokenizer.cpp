@@ -16,7 +16,7 @@
 //
 // IMPORTANT: The getFileLocation() method must be called only through this method.
 auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, StreamPlace *toPlace)
-    -> StreamPlace {
+    -> std::pair<StreamPlace, StreamPlace> {
 
     Idx streamRelativeOffset = 0;
 
@@ -27,7 +27,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
     fromPlace = getFileLocation(fromPlace);
 
     if (fromPlace.getOffset() == LOCATION_ERROR) {
-        return getPlaceAtBeginningOfDocument();
+        return {getPlaceAtBeginningOfDocument(), {0, 0}};
     }
 
     if constexpr (RENDERER_DEBUG) {
@@ -97,7 +97,15 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
             if (!pageCompleted) {
                 nextByte();
                 if (curChar == '\n') {
-                    newToken.tokenId = TokenId::ENDPARAGRAPH;
+                    Token &newToken = tokens_.getNextAvailable();
+
+                    newToken = {.cStr = nullptr,
+                                .streamPlace = addOffset(fromPlace, streamRelativeOffset),
+                                .width = 0,
+                                //.height = 0,
+                                .length = 0,
+                                .tokenId = TokenId::ENDPARAGRAPH,
+                                .spacesAfter = 0};
                     pageCompleted = addTokenToPage(newToken, backwards, "\n", 1);
                     nextByte();
                     while (curChar == '\n') {
@@ -192,7 +200,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
         pager_.setFirstLineIdxBackward();
     }
 
-    return pager_.getStreamPlaceOfFirstLine();
+    return {pager_.getStreamPlaceOfFirstLine(), pager_.getNextPageStreamPlace()};
 }
 
 // Must be called only by the loadAndTokenizePage().

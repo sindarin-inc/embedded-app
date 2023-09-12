@@ -20,6 +20,8 @@ public:
     inline void setOffset(uint32_t offset) { offset_ = offset; }
 
     static auto factory(const std::string &placeStr) -> std::shared_ptr<Place>;
+    static auto factory(const uint32_t offset) -> std::shared_ptr<Place>;
+    static auto factory(const uint32_t offset, const std::string &href) -> std::shared_ptr<Place>;
 
     // The following are good for All subclasses BUT the EPubPlace class...
 

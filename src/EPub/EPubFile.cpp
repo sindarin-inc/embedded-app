@@ -37,7 +37,7 @@ auto EPubFile::findFileOffsetAtCharOffset(std::string path, uint32_t charOffset)
 
 // Returns a pointer to the buffer containing the extracted file from the EPub and it's length in a
 // tuple
-auto EPubFile::getFile(std::string path) -> std::tuple<std::unique_ptr<uint8_t[]>, uint32_t> {
+auto EPubFile::getFile(std::string path) -> std::pair<std::unique_ptr<uint8_t[]>, uint32_t> {
 
     std::unique_ptr<uint8_t[]> buffer = nullptr;
 

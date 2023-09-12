@@ -3,20 +3,19 @@
 #include <algorithm>
 #include <utility>
 
-// Show the (already loaded into buffer) current page
-// and load the next page into the next buffer so we have it.
+// Retrieve and show the page at fromPlace location.
 auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines, bool forceRefresh)
     -> std::shared_ptr<Place> {
 
     // if no fromPlace is received (null) or the place's DocType is wrong, get the first page
     // pointer, else convert fromPlace to a StreamPlace
-    currentPlace_ = ((fromPlace == nullptr)) ? tokenizer_->getPlaceAtBeginningOfDocument()
-                                             : tokenizer_->toStreamPlace(std::move(fromPlace));
+    StreamPlace startPlace = (fromPlace == nullptr)
+                                 ? tokenizer_->getPlaceAtBeginningOfDocument()
+                                 : tokenizer_->toStreamPlace(std::move(fromPlace));
 
-    log_d("%s is place in file being requested", currentPlace_.str().c_str());
-    
     if constexpr (RENDERER_DEBUG) {
-        log_d("%s is place in file being requested", currentPlace_.str().c_str());
+        log_w("%s is place in file being requested (%s)", startPlace.str().c_str(),
+              (fromPlace == nullptr) ? "NULL" : fromPlace->str().c_str());
     }
 
     // This needs to happen before loading into buffer since it will affect what we load into the
@@ -37,11 +36,10 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
     // We only re-tokenize if required (or forced through the forceRefresh param). May already been
     // done from the getPreviousPlace() method.
 
-    if (pager_.linesIsEmpty() || (!(currentPlace_ == pager_.getStreamPlaceOfFirstLine())) ||
+    if (pager_.linesIsEmpty() || (!(startPlace == pager_.getStreamPlaceOfFirstLine())) ||
         forceRefresh) {
-        currentPlace_ = tokenizer_->loadAndTokenizePage(currentPlace_);
+        std::tie(currentPlace_, nextPlace_) = tokenizer_->loadAndTokenizePage(startPlace);
     }
-    nextPlace_ = pager_.getNextPageStreamPlace();
 
     PROFILE_END_LOG_MS(loadAndTokenizePage);
 
@@ -61,7 +59,7 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
 }
 
 // Seeks backwards and returns the place of one page previous.
-auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
+auto Renderer::goBackwardsOnePage(StreamPlace endPlace) -> StreamPlace {
 
     display_.setFont(display_.style.getFontFamily().readableFont);
     tokenizer_->computeMaxTextTokenCharSize();
@@ -86,63 +84,41 @@ auto Renderer::goBackwardsOnePage(StreamPlace fromPlace) -> StreamPlace {
     // Figure out how much to read before the current place. If we're too
     // close to the beginning, we just read from the beginning.
 
-    // log_e("Before goBackward(): fromPlace: %s", fromPlace.str().c_str());
+    // log_e("Before goBackward(): endPlace: %s", endPlace.str().c_str());
 
     StreamPlace seekPlace =
-        tokenizer_->goBackward(fromPlace, maxPageCount + MAX_BYTES_PER_PARAGRAPH);
-    StreamPlace startPlace;
+        tokenizer_->goBackward(endPlace, maxPageCount + MAX_BYTES_PER_PARAGRAPH);
 
     // log_e("After goBackward(): seekPlace: %s", seekPlace.str().c_str());
 
     // Tokenize it the same as you would for a forwards render. seekPlace will be returned to be at
     // a UTF8 character boundary
 
-    if (!(seekPlace == fromPlace)) {
-
-        StreamPlace lastPlace = fromPlace;
-        if (seekPlace.getFileIdx() != fromPlace.getFileIdx()) {
+    if (!(seekPlace == endPlace)) {
+        StreamPlace lastPlace = endPlace;
+        if (seekPlace.getFileIdx() != endPlace.getFileIdx()) {
             lastPlace = {99999999, seekPlace.getFileIdx()};
         }
-        startPlace = tokenizer_->loadAndTokenizePage(
+        std::tie(currentPlace_, nextPlace_) = tokenizer_->loadAndTokenizePage(
             seekPlace, true,
             &lastPlace); // NOLINT(clang-analyzer-deadcode.DeadStores)
-
-        // std::cout << "Line Count: " << pager_.getLineCount() << ", Token Count: " <<
-        // tokens_.getCount()
-        //           << std::endl;
-        //  if (tokens_.getLast().streamPlace.offset == fromPlace.offset) {
-        //      std::cout << "Last token point at fromPlace" << std::endl;
-        //  } else {
-        //      std::cout << "Last token doesn't point at fromPlace" << std::endl;
-        //  }
-
-        // Idx firstLineIdx = pager_.getFirstLineIdx();
-        // std::cout << "First line Idx of the page: " << firstLineIdx << std::endl;
-
-        // Line line;
-        // pager_.getLine(firstLineIdx, line);
-        // std::cout << "First line: [" << line.data() << "]" << std::endl;
-        // pager_.getLine(pager_.getLineCount() - 1, line);
-        // std::cout << "Last line: [" << line.data() << "]" << std::endl;
-
-        pager_.setNextPagePlace(fromPlace);
     } else {
-        startPlace = tokenizer_->loadAndTokenizePage(
+        std::tie(currentPlace_, nextPlace_) = tokenizer_->loadAndTokenizePage(
             seekPlace); // NOLINT(clang-analyzer-deadcode.DeadStores)
     }
 
-    pager_.show();
+    // pager_.show();
 
     // std::cout << "Characters count in page: " << pager_.getPageLength() << std::endl;
 
-    if (startPlace.getOffset() == 0) {
+    if (currentPlace_.getOffset() == 0) {
         // We are now at the beginning of the current file. If the user seeked to some
         // position that is not the beginning of a page, this will insure than the
         // renderPage() method will rebuild the whole first page.
         pager_.clear();
     }
 
-    return startPlace;
+    return currentPlace_;
 }
 
 auto Renderer::getPreviousPlace() -> std::shared_ptr<Place> {

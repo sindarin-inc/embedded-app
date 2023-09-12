@@ -218,7 +218,7 @@ void LocalStore::changedReadablePlacemarkJson(const ReadablesVector &readables,
                   readable->uuid.c_str(), place.c_str());
             ReadablePlacemark placemark;
             placemark.uuid = readable->uuid;
-            placemark.position = place;
+            placemark.place = Place::factory(place);
             placemarks.emplace_back(placemark);
         }
     }

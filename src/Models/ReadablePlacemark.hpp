@@ -12,15 +12,27 @@ public:
     ~ReadablePlacemark() override = default;
 
     std::string uuid;
-    std::string position;
+    std::shared_ptr<Place> place;
 
     auto fromJson(const JsonObject &j) -> bool override {
-        if (!j.containsKey("uuid") || !j.containsKey("position")) {
-            return false;
+        uuid.clear();
+
+        if (j.containsKey("uuid")) {
+            uuid = j["uuid"].as<std::string>();
+            if (j.containsKey("position")) {
+                place = Place::factory(j["position"].as<uint32_t>());
+            } else if (j.containsKey("chapter") && j.containsKey("chapter_offset")) {
+                place = Place::factory(j["chapter_offset"].as<std::uint32_t>(),
+                                       j["chapter"].as<std::string>());
+            } else {
+                place = std::make_shared<NonePlace>();
+                return false;
+            }
+
+            return true;
         }
-        uuid = j["uuid"].as<std::string>();
-        position = j["position"].as<std::string>();
-        return true;
+
+        return false;
     }
 };
 

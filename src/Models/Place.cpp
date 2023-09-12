@@ -58,3 +58,11 @@ auto Place::factory(const std::string &placeStr) -> std::shared_ptr<Place> {
     // }
     // return std::make_shared<NonePlace>();
 }
+
+auto Place::factory(const uint32_t offset, const std::string &href) -> std::shared_ptr<Place> {
+    return std::make_shared<EPubPlace>(offset, href);
+}
+
+auto Place::factory(const uint32_t offset) -> std::shared_ptr<Place> {
+    return std::make_shared<TxtPlace>(offset);
+}
