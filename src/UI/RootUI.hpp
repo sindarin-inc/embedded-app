@@ -23,7 +23,6 @@ public:
 
     void setup(DisplaySystem *display, LocalStore &localStore, FileSystem &fileSystem,
                LightingController &lightingController);
-    void loop(DisplaySystem &display, RemoteCommand command) override;
     void handleBrowse(FileSystem &fileSystem, MenuScreen *fsMenu, const std::string &path = "/");
 
 protected:

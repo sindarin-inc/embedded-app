@@ -29,6 +29,7 @@
 #include "Storage/PreferencesStore.hpp"
 #include "UI/ChargingScreen.hpp"
 #include "UI/OverTempScreen.hpp"
+#include "UI/PowerDepletedScreen.hpp"
 #include "UI/RootUI.hpp"
 #include "config.h"
 #include "sindarin-debug.h"
@@ -228,23 +229,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
         bootErrors.push_back({.type = BootError::Type::LocalStore});
     }
 
-    auto showChargingScreen = []() {
-        lightingController.setOverrideValuePercent(100);
-        auto chargingScreen = new ChargingScreen(prefs);
-        rootUi.setCurrentScreen(*chargingScreen);
-        UIInnerLoop(RemoteCommand::NONE);
-    };
-
-    powerManager.setStateChangeCallback([&showChargingScreen](PowerState state) {
-        if (state == PowerState::ActiveUSBCharging) {
-            showChargingScreen();
-        } else if (state == PowerState::ActiveOverTemp) {
-            auto overTempScreen = new OverTempScreen();
-            rootUi.setCurrentScreen(*overTempScreen);
-            UIInnerLoop(RemoteCommand::NONE);
-        }
-    });
-
     WiFi::getInstance().setWiFiPower(
         (wifi_power_t)prefs.wifiPower.get().value_or(WIFI_POWER_16dBm));
 
@@ -260,7 +244,9 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
             },
             "BackgroundPowerLoop", 4096, nullptr, 1, nullptr, 1);
         BackgroundSyncAndSleep(powerManager, prefs, localStore, telemetry);
+
         // Should never get here, the system should be asleep
+        return;
     }
 
     // Below code should only execute on an Active boot
@@ -326,11 +312,6 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
     SIZE_OF(myDisplay);
 
-    if (prefs.cesMode.get().value_or(false)) {
-        // In CES mode, we want to turn on the lights to full brightness
-        lightingController.setOverrideValuePercent(100);
-    }
-
     // For all the EMC modes, we'll keep the lights at 100%
     if (prefs.emcMode.get().value_or(false)) {
         lightingController.setOverrideValuePercent(100);
@@ -349,6 +330,17 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
 
 #if USE_BLE
     BLEDevice::init("Sol Reader");
+
+    if (prefs.blePower.get().has_value()) {
+        auto power = prefs.blePower.get().value_or(ESP_PWR_LVL_P3);
+        log_d("Setting default BLE power to %" PRIu32, power);
+        esp_err_t err =
+            esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, static_cast<esp_power_level_t>(power));
+        if (err != ESP_OK) {
+            log_e("esp_ble_tx_power_set err: %s", esp_err_to_name(err));
+        }
+    }
+
     auto bleStatus = esp_bt_controller_get_status();
     if (bleStatus != ESP_BT_CONTROLLER_STATUS_ENABLED) {
         bootErrors.push_back({.type = BootError::Type::BLE});
@@ -430,7 +422,34 @@ extern "C" void app_main(void) { // NOLINT(readability-identifier-naming)
     log_w("Power Management Disabled");
 #endif
 
+    auto showChargingScreen = []() {
+        lightingController.setOverrideValuePercent(100);
+        auto chargingScreen = new ChargingScreen(prefs);
+        rootUi.setCurrentScreen(*chargingScreen);
+        UIInnerLoop(RemoteCommand::NONE);
+    };
+
+    powerManager.setStateChangeCallback([&showChargingScreen](PowerState state) {
+        if (state == PowerState::ActiveUSBCharging) {
+            showChargingScreen();
+        } else if (state == PowerState::ActiveOverTemp) {
+            auto overTempScreen = new OverTempScreen();
+            rootUi.setCurrentScreen(*overTempScreen);
+            UIInnerLoop(RemoteCommand::NONE);
+        } else if (state == PowerState::ActiveBatteryDepleted) {
+            auto powerDepletedScreen = new PowerDepletedScreen();
+            rootUi.setCurrentScreen(*powerDepletedScreen);
+            UIInnerLoop(RemoteCommand::NONE);
+        }
+    });
+
     BlinkBootErrors(bootErrors);
+
+    // Clear screen in case not cleared at shutdown
+    if (!PreferencesStore::screenClearedAtShutdown) {
+        DispatchGetUiQueue()->dispatch([]() { myDisplay.clearScreen(); });
+    }
+    PreferencesStore::screenClearedAtShutdown = false;
 
     xTaskCreatePinnedToCore(PollingLoopTask, "Polling", 10000, nullptr, 1, nullptr, 0);
     // xTaskCreatePinnedToCore(StatsTask, "Stats", 5000, nullptr, 0, nullptr, 1);

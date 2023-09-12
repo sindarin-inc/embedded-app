@@ -8,7 +8,7 @@ void EPubOpf::parse() {
     } else {
 
         basePath_ = "";
-        extract_path(path_, basePath_);
+        extractPath(path_, basePath_);
         // log_i("Base Path: %s", basePath_.c_str());
 
         unz_file_info info;
@@ -47,7 +47,7 @@ void EPubOpf::parse() {
             for (auto itemref : package.child("spine").children("itemref")) {
                 std::string idref = itemref.attribute("idref").value();
 
-                ManifestIterator it = manifest_.find(idref);
+                auto it = manifest_.find(idref);
                 if (it != manifest_.end()) {
                     // zipFile_.openFile(getFullPath(it->second.href).c_str());
                     // unz_file_info info;
@@ -55,8 +55,9 @@ void EPubOpf::parse() {
                     // uint32_t usize = info.uncompressed_size;
                     // zipFile_.closeFile();
 
-                    spine_.push_back(SpineItem{
-                        .item = &it->second, /* .uncompressedSize = usize,  .offset = totalSize_ */});
+                    spine_.push_back(
+                        SpineItem{.item = &it->second,
+                                  /* .uncompressedSize = usize,  .offset = totalSize_ */});
                     // log_w("------------> adding spine: idref:%s, href:%s, size:%" PRIu32 "
                     // offset:%" PRIu32,
                     //       itemref.attribute("idref").value(), it->second.href.c_str(), usize,
@@ -85,11 +86,13 @@ void EPubOpf::parse() {
 //     return spineIdx > 0 ? spineIdx - 1 : 0;
 // }
 
-void EPubOpf::extract_path(const char *fname, std::string &path) {
+void EPubOpf::extractPath(const char *fname, std::string &path) {
     path.clear();
     int i = strlen(fname) - 1;
     while ((i > 0) && (fname[i] != '/')) {
         i--;
     }
-    if (i > 0) path.assign(fname, ++i);
+    if (i > 0) {
+        path.assign(fname, ++i);
+    }
 }

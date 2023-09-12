@@ -17,7 +17,8 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
     auto backgroundGroup = xEventGroupCreate();
     auto &fileSystem = localStore.fileSystem;
 
-    localStore.syncFromRemote([&powerManager, &backgroundGroup](const ContentSyncState &state) {
+    localStore.syncFromRemote(PreferencesStore::syncReason,
+                              [&powerManager, &backgroundGroup](const ContentSyncState &state) {
         powerManager.feedInactivityTimer();
 
         if (state.state == ContentSyncState::Failure || state.state == ContentSyncState::Synced ||
@@ -47,6 +48,8 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
         return;
     }
 
+    telemetry.logMetric(TelemetryField::METRIC_CLOCK_SET, "pre-sync",
+                        {{"run-time", GetRunTimeMs()}});
     auto success = SolClock::getInstance().setClockTimeFromInternet();
     if (success) {
         telemetry.logMetric(TelemetryField::METRIC_CLOCK_SET, "success",
@@ -140,9 +143,5 @@ void BackgroundSyncAndSleep(PowerManager &powerManager, PreferencesStore &prefs,
     // TODO: Perhaps try dispatching this (maybe needs to happen outside of app_main)
     WiFi::getInstance().disconnectWiFi();
 
-    // Figure out the next content sync and set the best time for it
-    time_t now = time(nullptr);
-    PreferencesStore::syncReason = SyncReason::Periodic;
-    PreferencesStore::nextSyncTime = SolClock::getInstance().calculateNextSyncTime(now);
-    PowerManager::getInstance().ulpDeepSleep(SleepReason::SyncDone);
+    PowerManager::getInstance().deepSleep(SleepReason::SyncDone);
 }

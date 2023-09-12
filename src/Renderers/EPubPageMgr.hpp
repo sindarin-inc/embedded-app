@@ -20,7 +20,7 @@ private:
     bool empty_{true};
 
 public:
-    EPubPageMgr() {}
+    EPubPageMgr() = default;
 
     void clear() {
         pageIndexHead_ = pageIndexTail_ = 0;
@@ -31,8 +31,9 @@ public:
 
     void incPageIndexTail() {
         pageIndexTail_ = (pageIndexTail_ + 1) % PAGE_INDEX_SIZE;
-        if (pageIndexTail_ == pageIndexHead_)
+        if (pageIndexTail_ == pageIndexHead_) {
             pageIndexHead_ = (pageIndexHead_ + 1) % PAGE_INDEX_SIZE;
+        }
     }
 
     void setFirstPageIndex(uint16_t chapterNbr, uint32_t offset) {

@@ -9,6 +9,7 @@ auto convertToJson(const Readable &src, JsonVariant dst) -> bool {
     dst["date_created"] = src.dateCreated;
     dst["date_modified"] = src.dateModified;
     dst["date_published"] = src.datePublished;
+    dst["readable_type"] = src.readableType;
     auto authorsJson = dst.createNestedArray("authors");
     for (const auto &author : src.authors) {
         authorsJson.add(author);
@@ -17,15 +18,10 @@ auto convertToJson(const Readable &src, JsonVariant dst) -> bool {
     for (const auto &file : src.files) {
         filesJson.add(file);
     }
-    auto tocJson = dst.createNestedArray("toc");
-    for (const auto &chapter : src.toc) {
-        tocJson.add(chapter);
-        // Check if any chapter has a summary, if so, set hasSummary
-        if (!chapter.summary.empty()) {
-            dst["has_summary"] = true;
-        }
-    }
-    dst["readable_type"] = src.readableType;
+
+    // The toc is an empty array because we store it in a separate file but add it back in when
+    // opening the popup menu in a Readable while reading
+    dst.createNestedArray("toc");
 
     return true;
 }

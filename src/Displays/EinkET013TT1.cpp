@@ -258,16 +258,16 @@ void EinkET013TT1::updateInternal(const EinkET013TT1Waveform &waveform, const ui
     if (leftPumpStatus.bits.unused != 0 || rightPumpStatus.bits.unused != 0) {
         log_e("Garbage data in pump status (MISO line pulled high?) Left: LVDS=%d VCPOK=%d "
               "temp=%dºC (0x%02X) Right: LVDS=%d VCPOK=%d temp=%dºC (0x%02X)",
-              leftPumpStatus.bits.lvds, leftPumpStatus.bits.vcpok, leftTemp,
-              rightPumpStatus.bits.lvds, leftPumpStatus.value, rightPumpStatus.bits.vcpok,
-              rightTemp, rightPumpStatus.value);
+              leftPumpStatus.bits.lvds, leftPumpStatus.bits.vcpok, leftTemp, leftPumpStatus.value,
+              rightPumpStatus.bits.lvds, rightPumpStatus.bits.vcpok, rightTemp,
+              rightPumpStatus.value);
         error_ = true;
     } else if (!leftPumpStatus.bits.vcpok || !rightPumpStatus.bits.vcpok) {
         log_e("Pump not ready! Left: LVDS=%d VCPOK=%d temp=%dºC (0x%02X) Right: LVDS=%d VCPOK=%d "
               "temp=%dºC (0x%02X)",
-              leftPumpStatus.bits.lvds, leftPumpStatus.bits.vcpok, leftTemp,
-              rightPumpStatus.bits.lvds, leftPumpStatus.value, rightPumpStatus.bits.vcpok,
-              rightTemp, rightPumpStatus.value);
+              leftPumpStatus.bits.lvds, leftPumpStatus.bits.vcpok, leftTemp, leftPumpStatus.value,
+              rightPumpStatus.bits.lvds, rightPumpStatus.bits.vcpok, rightTemp,
+              rightPumpStatus.value);
         error_ = true;
     } else if (leftPumpStatus.bits.lvds || rightPumpStatus.bits.lvds) {
         log_e("Low voltage detected! Left: LVDS=%d VCPOK=%d temp=%dºC (0x%02X) Right: LVDS=%d "

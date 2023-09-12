@@ -3,12 +3,14 @@
 #include <esp_partition.h>
 #include <nvs_flash.h>
 
+#include "Storage/PreferencesStore.hpp"
 #include "sindarin-debug.h"
 
 void SoftFactoryReset(FileSystem &fs) {
     log_e("Performing soft factory reset");
     fs.deleteAll();
     nvs_flash_erase();
+    PreferencesStore::resetSlowMem();
 }
 
 void HardFactoryReset() {
@@ -28,4 +30,5 @@ void HardFactoryReset() {
     }
 #endif
     nvs_flash_erase();
+    PreferencesStore::resetSlowMem();
 }

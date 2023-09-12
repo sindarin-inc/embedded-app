@@ -19,7 +19,12 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
         "enchanted quill from a captured merchant vessel soon revealed its magic, making his poems "
         "come to life. The images he wrote danced in the air, telling tales of love, adventure, "
         "and the sea. O'Malley's crew, once fierce and merciless, became entranced by the art of "
-        "words, turning their ship into a floating haven of poetry and wonder.";
+        "words, turning their ship into a floating haven of poetry and wonder. "
+        "However, the enchanted quill's magic drew the ire of Poseidon, god of the sea. Waves "
+        "turned treacherous, testing the pirate crew's newfound love for poetry. Frustrated, "
+        "O'Malley used the quill to write a poem addressing Poseidon. The god appeared, "
+        "challenging O'Malley to a duel of verses. Poseidon's poetry conjured storms; O'Malley's "
+        "verses evoked calm seas.";
     auto stream = std::make_shared<StdStringStream>(message);
     renderer_.setStream(stream);
 }

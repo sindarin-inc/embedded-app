@@ -116,7 +116,7 @@ struct Token {
     const char *cStr;
     StreamPlace streamPlace;
     uint16_t width;
-    //uint16_t height;
+    // uint16_t height;
     uint16_t length; // Length in bytes
     TokenId tokenId;
     uint8_t spacesAfter;

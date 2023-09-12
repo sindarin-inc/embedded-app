@@ -213,10 +213,12 @@ This is [fixed](https://github.com/espressif/esp-idf/blob/master/components/efus
 
 ## Run PyTest On-Device Tests
 
-You'll need to make sure you set up IDF with the pytest bits.
+You'll need to make sure you set up IDF with the pytest bits. You'll also need the `ppk2-api` python package.
 
 ```sh
 $IDF_PATH/install.sh esp32s3 --enable-pytest
+. $IDF_PATH/export.sh
+pip install ppk2-api
 ```
 
 You'll need to make sure you have some binaries available

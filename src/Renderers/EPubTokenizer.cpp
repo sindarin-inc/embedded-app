@@ -116,11 +116,11 @@ EPubTokenizer::Elements EPubTokenizer::elements
     {"yacute", "\xC3\xBD"},     // latin small letter y with acute, U+00FD ISOlat1
     {"thorn",  "\xC3\xBE"},     // latin small letter thorn, U+00FE ISOlat1
     {"yuml",   "\xC3\xBF"},     // latin small letter y with diaeresis, U+00FF ISOlat1
-    {"quot",   "\x22"},         // quotation mark, U+0022 ISOnum
-    {"amp",    "\x26"},         // ampersand, U+0026 ISOnum
-    {"lt",     "\x3C"},         // less-than sign, U+003C ISOnum
-    {"gt",     "\x3E"},         // greater-than sign, U+003E ISOnum
-    {"apos",   "\x27"},         // apostrophe = APL quote, U+0027 ISOnum
+    {"quot",   R"(")"},         // quotation mark, U+0022 ISOnum
+    {"amp",    R"(&)"},         // ampersand, U+0026 ISOnum
+    {"lt",     R"(<)"},         // less-than sign, U+003C ISOnum
+    {"gt",     R"(>)"},         // greater-than sign, U+003E ISOnum
+    {"apos",   R"(')"},         // apostrophe = APL quote, U+0027 ISOnum
     {"OElig",  "\xC5\x92"},     // latin capital ligature OE, U+0152 ISOlat2
     {"oelig",  "\xC5\x93"},     // latin small ligature oe, U+0153 ISOlat2
     {"Scaron", "\xC5\xA0"},     // latin capital letter S with caron, U+0160 ISOlat2
@@ -192,7 +192,7 @@ auto EPubTokenizer::computeStartingOffset(StreamPlace streamPlace) -> uint32_t {
 auto EPubTokenizer::isEmpty(pugi::xml_node node) -> bool {
 
     struct Walker : pugi::xml_tree_walker {
-        virtual bool for_each(pugi::xml_node &node) {
+        auto for_each(pugi::xml_node &node) -> bool override {
             if (node.type() == pugi::xml_node_type::node_pcdata) {
                 if (!EPubTokenizer::isSpaces(node.value())) {
                     empty = false;
@@ -400,7 +400,7 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
 auto EPubTokenizer::getStreamPlaceFromTxtOffset(uint32_t txtOffset) const -> StreamPlace {
     if (txtOffset > 0) {
-        for (auto tocEntry : stream_->getToc()) {
+        for (const auto &tocEntry : stream_->getToc()) {
             if ((txtOffset >= tocEntry.txtOffset) && (txtOffset < tocEntry.endTxtOffset)) {
                 uint16_t spineIdx = stream_->getSpineIdx(tocEntry.href);
                 uint32_t charOffset = txtOffset - tocEntry.txtOffset;
@@ -511,7 +511,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
             started_ = true;
         }
 
-        Tags::iterator tagIt = tags.find(node.name());
+        auto tagIt = tags.find(node.name());
 
         // if (tagIt != tags.end()) {
         //     log_e("Tag: %d (%s) at offset %" PRIu32, (int)tag, tagIt->first.c_str(), offset);

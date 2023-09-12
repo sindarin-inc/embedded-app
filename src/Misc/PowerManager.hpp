@@ -34,6 +34,8 @@ enum class PowerState {
     ActiveUSBCharging,
     // Screen lighting enabled ~10-60mA, inactivity timer at 10s, UI disabled
     ActiveOverTemp,
+    // Screen lighting enabled ~10-60mA, inactivity timer at 10s, UI disabled
+    ActiveBatteryDepleted,
     // Screens/lighting disabled ~6-7mA, inactivity timer disabled.
     Background,
     // Deep sleep with ULP magnetometer and periodic wakeups ~100uA
@@ -54,6 +56,8 @@ enum class SleepReason {
     UpdateUSBState,
     WaitingForSync,
 };
+
+auto ToString(SleepReason reason) -> const char *;
 
 struct BootInfo {
     enum class Reason {
@@ -185,7 +189,7 @@ public:
 
     // Power lifecycle functions
     void reboot();
-    void ulpDeepSleep(SleepReason reason = SleepReason::Unspecified);
+    void deepSleep(SleepReason reason);
     // Fully power down the device (assuming USB is disconnected and left temple closed)
     // Note: This should be used sparingly as it's unintuitive to the user if you get into
     // this state and USB is connected, since the deep-sleep-forever won't exit until usb is
@@ -239,11 +243,7 @@ protected:
     bool templeOpen_ = false;
     BootInfo bootInfo_;
 #if !DISABLE_POWER_MANAGEMENT
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
     esp_pm_config_t pmConfig_;
-#else
-    esp_pm_config_esp32s3_t pmConfig_;
-#endif
 #endif
     void updateState();
 
@@ -256,4 +256,14 @@ protected:
     void beginShutdown();
 
     void deepSleepInternal(SleepReason reason);
+
+    void scheduleSync(SyncReason reason, int timeFromNow);
+
+    // Fully power down the device (assuming USB is disconnected and left temple closed)
+    // Note: This should be used sparingly as it's unintuitive to the user if you get into
+    // this state and USB is connected, since the deep-sleep-forever won't exit until usb is
+    // disconnected and the left temple is closed
+    void powerOffInternal();
+
+    auto enableUsbWakeup() -> esp_err_t;
 };

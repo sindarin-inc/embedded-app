@@ -59,6 +59,8 @@ protected:
     unsigned long lastLoggingTime_ = 0;
 
 private:
+    static auto dispatchQueue() -> DispatchQueue * { return DispatchGetCore1BackgroundQueue(); }
+
     template <typename T>
     void
     logMetricImpl(TelemetryField field, T value,
@@ -96,7 +98,7 @@ private:
 
         log_i("Logging metric: %s %s", TelemetryFieldToString(field), logString.c_str());
 
-        DispatchGetCore1BackgroundQueue()->dispatch([this, logString, field]() {
+        Telemetry::dispatchQueue()->dispatch([this, logString, field]() {
             std::string path = Telemetry::metricLogPath();
             SFile file = fileSystem_.open(path.c_str(), FILE_APPEND);
             if (file.size() < MAX_TELEMETRY_LOG_SIZE) {
