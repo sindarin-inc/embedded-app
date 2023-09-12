@@ -21,10 +21,8 @@ void Battery::loop() {
         this->rightConnected_ = right > BATTERY_DISCONNECT_THRESHOLD;
 
         if (now > lastLoggingTime_ + BATTERY_LOGGING_PERIOD_SECONDS * 1000) {
-            DispatchGetCore1BackgroundQueue()->dispatch([this, left, right]() {
-                telemetry_.logMetricData(TelemetryField::METRIC_BATTERY_VOLTAGE,
-                                         {{"l", left}, {"r", right}});
-            });
+            telemetry_.logMetricData(TelemetryField::METRIC_BATTERY_VOLTAGE,
+                                     {{"l", left}, {"r", right}});
             lastLoggingTime_ = now;
         }
 
@@ -56,7 +54,7 @@ void Battery::loop() {
         auto leftBatteryVoltage = this->getLeftBatteryVoltage();
         auto rightBatteryVoltage = this->getRightBatteryVoltage();
         if (leftBatteryVoltage < BATTERY_MIN_VOLTAGE && rightBatteryVoltage < BATTERY_MIN_VOLTAGE &&
-            this->leftConnected_ && this->rightConnected_) {
+            (this->leftConnected_ || this->rightConnected_)) {
             log_i("Voltage is below threshold. Halting. (L: %.2fV, R: %.2fV, < %.2fV)",
                   leftBatteryVoltage, rightBatteryVoltage, BATTERY_MIN_VOLTAGE);
             this->depleted_ = true;

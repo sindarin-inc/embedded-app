@@ -78,6 +78,45 @@ struct Mmc5603Ctrl0Value {
     };
 };
 
+struct Mmc5603Ctrl1Value {
+    union {
+        uint8_t raw;
+        struct {
+            // These bandwidth selection bits adjust the length of the decimation filter. They
+            // control the duration of each measurement.
+            // | BW1 | BW0 | Measurement Time |
+            // |-----|-----|------------------|
+            // | 0   | 0   | 6.6ms            |
+            // | 0   | 1   | 3.5ms            |
+            // | 1   | 0   | 2.0ms            |
+            // | 1   | 1   | 1.2ms            |
+            // Note: X/Y/Z channel measurements are taken sequentially. Delay Time among those
+            // measurements is 1/3 of the Measurement Time defined in the table.
+            uint8_t bw0 : 1;
+            uint8_t bw1 : 1;
+            // Writing "1" will disable this channel, and reduce Measurement Time and total charge
+            // per measurement.When a channel is disabled it is simply skipped during Take Measure
+            // routine. Its output register is not reset and will maintain the last value written to
+            // it when this channel was active. Note: Y/Z needs to be inhibited the same time in
+            // case needed.
+            uint8_t xInhibit : 1;
+            uint8_t yInhibit : 1;
+            uint8_t zInhibit : 1;
+            // Writing "1" into this location will bring a DC current through the self-test coil of
+            // the sensor. This current will cause an offset of the magnetic field. This function is
+            // used to check whether the sensor has been saturated.
+            uint8_t stEnp : 1;
+            // The function of this bit is similar to ST_ENP, but the offset of the magnetic field
+            // is of opposite polarity.
+            uint8_t stEnm : 1;
+            // Software Reset. Writing "1" will cause the part to reset, similar to power-up. It
+            // will clear all registers and also re-read OTP as part of its startup routine. The
+            // power on time is 20mS.
+            uint8_t swReset : 1;
+        };
+    };
+};
+
 auto Mmc5603::registerReadByte(mmc5603_reg_t regAddr, uint8_t *data) -> esp_err_t {
     return i2c_master_write_read_device((i2c_port_t)i2cNum_, MMC5603_SENSOR_ADDR,
                                         (uint8_t *)&regAddr, 1, data, 1,
@@ -97,11 +136,63 @@ auto Mmc5603::readProductId(uint8_t *productIdOut) -> esp_err_t {
     return registerReadByte(MMC5603_REG_PRODUCT_ID, productIdOut);
 }
 
+void Mmc5603::configureIfNeeded() {
+    if (configured_) {
+        return;
+    }
+    log_d("Configuring MMC5603");
+    Mmc5603Ctrl1Value ctrl1Value;
+    ctrl1Value.bw0 = 1;
+    ctrl1Value.bw1 = 1;
+    esp_err_t err = registerWriteByte(MMC5603_REG_CTRL_1, ctrl1Value.raw);
+    if (err != ESP_OK) {
+        log_e("Failed to write to MMC5603_REG_CTRL_1 (error: %s)", esp_err_to_name(err));
+        return;
+    }
+    configured_ = true;
+}
+
+auto Mmc5603::waitForMeasurement() -> bool {
+    int timeoutMs = 5;
+    auto start = Millis();
+
+    // Changing the magnetometer settings (especially bandwidth selection) can affect this.
+    // Experimentally: I'm seeing:
+    //  * bw0=0, bw1=0: ~10ms
+    //  * bw0=1, bw0=1: ~1.8ms
+    // But it seems that waiting 2ms isn't enough to reliably get a measurement ready.
+    // So here it's better to wait a bit longer (more time for light sleep) than to get a
+    // measurement right away.
+    vTaskDelay(3000 / (1000000 / configTICK_RATE_HZ));
+
+    // Wait for valid data
+    Mmc5603StatusValue statusValue;
+    statusValue.raw = 0;
+    while ((Millis() - start) < timeoutMs) {
+        esp_err_t err = registerReadByte(MMC5603_REG_STATUS_1, (uint8_t *)&statusValue.raw);
+        if (err != ESP_OK) {
+            log_e("Failed to read from MMC5603_REG_STATUS_1 (error: %s)", esp_err_to_name(err));
+            return err;
+        }
+        if (statusValue.measMDone == 1) {
+            return true;
+            break;
+        }
+        Delay(1);
+        log_w("Mag sensor not ready");
+    }
+    return false;
+}
+
 auto Mmc5603::readX20Bit() -> float {
+    configureIfNeeded();
+
     Mmc5603Ctrl0Value ctrl0Value;
     ctrl0Value.autoSrEn = 1;
     ctrl0Value.takeMeasM = 1;
     ESP_ERROR_CHECK(registerWriteByte(MMC5603_REG_CTRL_0, ctrl0Value.raw));
+
+    waitForMeasurement();
 
     uint32_t xInt = 0;
     float xValue = 0;
@@ -119,10 +210,14 @@ auto Mmc5603::readX20Bit() -> float {
 }
 
 auto Mmc5603::readX() -> float {
+    configureIfNeeded();
+
     Mmc5603Ctrl0Value ctrl0Value;
     ctrl0Value.autoSrEn = 1;
     ctrl0Value.takeMeasM = 1;
     ESP_ERROR_CHECK(registerWriteByte(MMC5603_REG_CTRL_0, ctrl0Value.raw));
+
+    waitForMeasurement();
 
     // 16 bit mode
     uint32_t xInt = 0;
@@ -139,6 +234,8 @@ auto Mmc5603::readX() -> float {
 }
 
 auto Mmc5603::readXYZ8Bit(Xyz8bit &out) -> esp_err_t {
+    configureIfNeeded();
+
     Mmc5603Ctrl0Value ctrl0Value;
     ctrl0Value.autoSrEn = 1;
     ctrl0Value.takeMeasM = 1;
@@ -148,6 +245,9 @@ auto Mmc5603::readXYZ8Bit(Xyz8bit &out) -> esp_err_t {
         log_e("Failed to write to MMC5603_REG_CTRL_0 (error: %s)", esp_err_to_name(err));
         return err;
     }
+
+    waitForMeasurement();
+
     err = registerReadByte(MMC5603_REG_XOUT_0, (uint8_t *)&(out.x));
     if (err != ESP_OK) {
         log_e("Failed to read from MMC5603_REG_XOUT_0 (error: %s)", esp_err_to_name(err));
@@ -170,6 +270,8 @@ auto Mmc5603::readXYZ8Bit(Xyz8bit &out) -> esp_err_t {
 }
 
 auto Mmc5603::readXZ8Bit(Xyz8bit &out) -> esp_err_t {
+    configureIfNeeded();
+
     Mmc5603Ctrl0Value ctrl0Value;
     ctrl0Value.autoSrEn = 1;
     ctrl0Value.takeMeasM = 1;
@@ -179,6 +281,9 @@ auto Mmc5603::readXZ8Bit(Xyz8bit &out) -> esp_err_t {
         log_e("Failed to write to MMC5603_REG_CTRL_0 (error: %s)", esp_err_to_name(err));
         return err;
     }
+
+    waitForMeasurement();
+
     err = registerReadByte(MMC5603_REG_XOUT_0, (uint8_t *)&(out.x));
     if (err != ESP_OK) {
         log_e("Failed to read from MMC5603_REG_XOUT_0 (error: %s)", esp_err_to_name(err));
@@ -196,6 +301,8 @@ auto Mmc5603::readXZ8Bit(Xyz8bit &out) -> esp_err_t {
 }
 
 auto Mmc5603::readTemperature(float &temp) -> esp_err_t {
+    configureIfNeeded();
+
     Mmc5603Ctrl0Value ctrl0Value;
     ctrl0Value.autoSrEn = 1;
     ctrl0Value.takeMeasT = 1;
@@ -206,6 +313,9 @@ auto Mmc5603::readTemperature(float &temp) -> esp_err_t {
         return err;
     }
     uint8_t raw;
+
+    // TODO: Wait for measurement
+
     err = registerReadByte(MMC5603_REG_TOUT, &raw);
     if (err != ESP_OK) {
         log_e("Failed to read from MMC5603_REG_TOUT (error: %s)", esp_err_to_name(err));

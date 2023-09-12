@@ -11,6 +11,10 @@ auto convertToJson(const ReadableTableOfContentsChapter &src, JsonVariant dst) -
     if (src.partialChapterSummary != nullptr) {
         dst["partial_chapter_summary"] = *src.partialChapterSummary;
     }
+    auto dictionary = dst.createNestedArray("dictionary");
+    for (const auto &definition : src.dictionary) {
+        dictionary.add(definition);
+    }
 
     return true;
 }

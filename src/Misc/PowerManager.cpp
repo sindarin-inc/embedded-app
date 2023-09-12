@@ -107,14 +107,14 @@ void PowerManager::wakeupCheck(SolClock &clock) {
                 log_i("USB disconnected, battery level: %d%%", int(percentage));
             }
             // Back to sleep
-            ulpDeepSleep(SleepReason::UpdateUSBState);
+            deepSleep(SleepReason::UpdateUSBState);
             break;
         }
         case ESP_SLEEP_WAKEUP_COCPU_TRAP_TRIG:
             bootInfo_.reason = BootInfo::Reason::CoCpuTrap;
             log_e("ULP crashed");
             // Back to sleep
-            ulpDeepSleep(SleepReason::UlpCrashed);
+            deepSleep(SleepReason::UlpCrashed);
             break;
         default:
             bootInfo_.reason = BootInfo::Reason::Unknown;
@@ -155,7 +155,13 @@ void PowerManager::wakeupCheck(SolClock &clock) {
             log_e("Error checking temple state: %d, continuing boot", err);
         } else if (!templeOpen_) {
             log_w("Temple is closed at boot, going back to sleep");
-            ulpDeepSleep(SleepReason::TempleClosedAtBoot);
+            if (bootInfo_.reason == BootInfo::Reason::PowerOn && USBConnected()) {
+                // If this is a power-on boot, and USB is connected, we mark it as sleep reason
+                // UpdateUSBState so that we will schedule a content sync.
+                deepSleep(SleepReason::UpdateUSBState);
+            } else {
+                deepSleep(SleepReason::TempleClosedAtBoot);
+            }
         }
         state_ = PowerState::Active;
         log_i("Beginning active boot");
@@ -163,10 +169,10 @@ void PowerManager::wakeupCheck(SolClock &clock) {
         auto now = SolClock::getInstance().getEpochTime();
         if (PreferencesStore::nextSyncTime && now >= PreferencesStore::nextSyncTime) {
             log_i("Time for background content sync (%" PRIu64 " (now) >= %" PRIu64 ")",
-                  int64_t(now), PreferencesStore::nextSyncTime);
+                  uint64_t(now), PreferencesStore::nextSyncTime);
         } else {
             log_i("Next sync time is %" PRIu64 ". Back to sleep.", PreferencesStore::nextSyncTime);
-            ulpDeepSleep(SleepReason::WaitingForSync);
+            deepSleep(SleepReason::WaitingForSync);
         }
     } else {
         log_w("Unexpectedly resuming boot");
@@ -189,7 +195,7 @@ auto PowerManager::begin() -> esp_err_t {
         inactivityTimer_.start(
             [this]() {
             log_i("Inactive! Close and open temple to wake");
-            ulpDeepSleep(SleepReason::Inactivity);
+            deepSleep(SleepReason::Inactivity);
             },
             inactivityTimeoutMs);
     }
@@ -197,8 +203,7 @@ auto PowerManager::begin() -> esp_err_t {
 
     esp_err_t err = ESP_OK;
 #if !DISABLE_POWER_MANAGEMENT
-    pmConfig_.max_freq_mhz =
-        state_ == PowerState::Background ? CPU_FREQ_MHZ_BACKGROUND : CPU_FREQ_MHZ_HIGH;
+    pmConfig_.max_freq_mhz = CPU_FREQ_MHZ_HIGH;
     pmConfig_.min_freq_mhz = CPU_FREQ_MHZ_LOW;
     pmConfig_.light_sleep_enable = !USBConnected();
     err = esp_pm_configure(&pmConfig_);
@@ -213,7 +218,13 @@ auto PowerManager::begin() -> esp_err_t {
             if (USBConnected() && !prefs_.allowUsageWhileCharging.get().value_or(false)) {
                 log_i("USB connected, switching to ActiveUSBCharging");
                 state_ = PowerState::ActiveUSBCharging;
-                inactivityTimer_.setTimeoutMs(10 * 1000);
+                // Longer timeout for unpaired glasses in case users try to set-up the glasses while
+                // connected to USB
+                if (PreferencesStore::paired == PairedStatus::Unpaired) {
+                    inactivityTimer_.setTimeoutMs(5 * 60 * 1000);
+                } else {
+                    inactivityTimer_.setTimeoutMs(15 * 1000);
+                }
                 DispatchGetUiQueue()->dispatch([this]() {
                     if (stateChangeCallback_ != nullptr) {
                         stateChangeCallback_(state_);
@@ -252,13 +263,39 @@ auto PowerManager::begin() -> esp_err_t {
 }
 
 void PowerManager::powerOff() {
-    log_i("Starting power off sequence");
+    beginShutdown();
+    powerOffInternal();
+}
+
+void PowerManager::powerOffInternal() {
+    log_i("Powering off");
+
     AllowPowerOff();
+
+    esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
+
+    // If USB is disconnected, still allow a wakeup if the USB is plugged in
+    enableUsbWakeup();
+
     esp_deep_sleep_start();
 }
 
 void PowerManager::loop() {
     battery.loop();
+    if (battery.getDepleted()) {
+        if (state_ == PowerState::Active || state_ == PowerState::ActiveForcedOn) {
+            state_ = PowerState::ActiveBatteryDepleted;
+            DispatchGetUiQueue()->dispatch([this]() {
+                if (stateChangeCallback_ != nullptr) {
+                    stateChangeCallback_(state_);
+                }
+                Delay(5000);
+                powerOff();
+            });
+        } else {
+            powerOff();
+        }
+    }
     checkUsb();
 #if USE_MMC5603
     bool templeOpen;
@@ -272,7 +309,7 @@ void PowerManager::loop() {
         case PowerState::ActiveUSBCharging:
         case PowerState::ActiveOverTemp:
             if (!templeOpen) {
-                ulpDeepSleep(SleepReason::TempleClosed);
+                deepSleep(SleepReason::TempleClosed);
             }
             break;
         case PowerState::Background:
@@ -336,25 +373,28 @@ void PowerManager::checkUsb() {
             const uint32_t delayPeriod = 30 * 60; // 30 min delay upon reaching 95% battery level
             time_t currentTime = SolClock::getInstance().getEpochTime();
 
-            if (PreferencesStore::ledChargeTime == 0) {
-                // If the battery is fully charged, start the timer before turning on the LED
+            if (PreferencesStore::ledChargeTime == -1) {
+                // If the battery is fully charged, start the timer before setting the LED to green
                 PreferencesStore::ledChargeTime = currentTime + delayPeriod;
-            } else if (currentTime >= PreferencesStore::ledChargeTime + delayPeriod) {
+            }
+
+            if (PreferencesStore::ledChargeTime == 0 ||
+                currentTime >= PreferencesStore::ledChargeTime) {
                 // If the battery is fully charged and a half hour has passed, turn on the LED
                 DigitalWrite(GREEN_LED, LED_ON);
                 DigitalWrite(RED_LED, LED_OFF);
-                gpio_hold_en((gpio_num_t)GREEN_LED);
-                gpio_hold_en((gpio_num_t)RED_LED);
-                gpio_deep_sleep_hold_en();
+            } else {
+                DigitalWrite(GREEN_LED, LED_OFF);
+                DigitalWrite(RED_LED, LED_ON);
             }
         } else {
-            PreferencesStore::ledChargeTime = 0; // reset the timer as battery level is below 95%
+            PreferencesStore::ledChargeTime = -1; // reset the timer as battery level is below 95%
             DigitalWrite(GREEN_LED, LED_OFF);
             DigitalWrite(RED_LED, LED_ON);
-            gpio_hold_en((gpio_num_t)GREEN_LED);
-            gpio_hold_en((gpio_num_t)RED_LED);
-            gpio_deep_sleep_hold_en();
         }
+        gpio_hold_en((gpio_num_t)GREEN_LED);
+        gpio_hold_en((gpio_num_t)RED_LED);
+        gpio_deep_sleep_hold_en();
     } else {
         PreferencesStore::ledChargeTime = 0; // reset the timer as the USB is disconnected
         DigitalWrite(GREEN_LED, LED_OFF);
@@ -382,7 +422,8 @@ void PowerManager::beginShutdown() {
     }
 
     if (state_ == PowerState::Active || state_ == PowerState::ActiveOverTemp ||
-        state_ == PowerState::ActiveUSBCharging || state_ == PowerState::ActiveForcedOn) {
+        state_ == PowerState::ActiveUSBCharging || state_ == PowerState::ActiveForcedOn ||
+        state_ == PowerState::ActiveBatteryDepleted) {
         lightingController_.disableLighting(200);
         // Delay to see the fade.
         // TODO: Use a callback instead
@@ -391,6 +432,7 @@ void PowerManager::beginShutdown() {
             display_.clearDisplay();
             display_.clearFrameBuffer();
             display_.updateDisplay();
+            PreferencesStore::screenClearedAtShutdown = true;
         };
         // If we're on the UiQueue currently, draw directly instead of dispatching
         if (DispatchGetUiQueue()->isInQueue()) {
@@ -400,6 +442,21 @@ void PowerManager::beginShutdown() {
         }
     }
     DispatchShutdown();
+
+    // Make sure the ambient light sensor is off so it's not using power while in deep sleep
+    lightingController_.disableLighting(0);
+
+    prefs_.end();
+
+    esp_err_t err = DeinitializePlatform();
+    if (err != ESP_OK) {
+        log_e("Failed to deinit platform with err %s", esp_err_to_name(err));
+    }
+
+    err = HardwareDeinit();
+    if (err != ESP_OK) {
+        log_e("Failed to deinit hardware with err %s", esp_err_to_name(err));
+    }
 }
 
 void PowerManager::reboot() {
@@ -407,16 +464,75 @@ void PowerManager::reboot() {
     esp_restart();
 }
 
-void PowerManager::ulpDeepSleep(SleepReason reason) {
+void PowerManager::scheduleSync(SyncReason reason, int time) {
+    PreferencesStore::syncReason = reason;
+    PreferencesStore::nextSyncTime = time;
+    log_d("Sync on %s scheduled for %" PRIu64, ToString(PreferencesStore::syncReason),
+          PreferencesStore::nextSyncTime);
+}
+
+void PowerManager::deepSleep(SleepReason reason) {
 #if DISABLE_DEEP_SLEEP
     log_w("Deep sleep disabled. Not sleeping.");
     return;
 #endif
+
+    // This is the block of code that calculates the time for the next WiFi sync. All code that
+    // sets PreferencesStore::syncReason / PreferencesStore::nextSyncTime should happen here
+    auto now = SolClock::getInstance().getEpochTime();
+    switch (reason) {
+    case SleepReason::Inactivity:
+        if (!prefs_.noDeliverOnClose.get().value_or(false) &&
+            state_ != PowerState::ActiveOverTemp) {
+            scheduleSync(SyncReason::OnInactivity, now + 30);
+        }
+        break;
+    case SleepReason::TempleClosed:
+        if (!prefs_.noDeliverOnClose.get().value_or(false)) {
+            scheduleSync(SyncReason::OnClose, now + 30);
+        }
+        break;
+    case SleepReason::UpdateUSBState:
+        if (USBConnected()) {
+            scheduleSync(SyncReason::UsbConnected, now + 30);
+        } else if (PreferencesStore::syncReason == SyncReason::UsbConnected) {
+            // USB is disconnected now, cancel pending UsbConnected sync
+            PreferencesStore::syncReason = SyncReason::Manual;
+            PreferencesStore::nextSyncTime = 0;
+        }
+        break;
+    case SleepReason::SyncDone:
+        scheduleSync(SyncReason::Periodic, SolClock::getInstance().calculateNextSyncTime(now));
+        break;
+    case SleepReason::Unspecified:
+    case SleepReason::TempleClosedAtBoot:
+    case SleepReason::UlpCrashed:
+    case SleepReason::WaitingForSync:
+        break;
+    }
+
+    if (PreferencesStore::nextSyncTime <= now) {
+        // If there is no other sync scheduled, figure out the right time for the next sync
+        // The only time we expect this to happen is if USB is connected then disconnected in < 30s
+        log_w("No sync scheduled, calculating next sync time.");
+        if (!prefs_.started()) {
+            prefs_.begin();
+        }
+        scheduleSync(SyncReason::Periodic, SolClock::getInstance().calculateNextSyncTime(now));
+    }
+
+    // If we don't know the paired status, load it from NVS so we can know whether to power off
+    if (PreferencesStore::paired == PairedStatus::Unknown) {
+        if (!prefs_.started()) {
+            prefs_.begin();
+        }
+    }
+
     beginShutdown();
     deepSleepInternal(reason);
 }
 
-auto ToString(SleepReason reason) -> std::string {
+auto ToString(SleepReason reason) -> const char * {
     switch (reason) {
     case SleepReason::Unspecified:
         return "Unspecified";
@@ -435,53 +551,45 @@ auto ToString(SleepReason reason) -> std::string {
     case SleepReason::WaitingForSync:
         return "WaitingForSync";
     default:
+        log_e("Unknown SleepReason: %d", static_cast<int>(reason));
         return "Unknown";
     }
 }
 
-void PowerManager::deepSleepInternal(SleepReason reason) {
-    log_d("Beginning shutdown sequence with reason %s", ToString(reason).c_str());
-
-    bool syncOnClose = (reason == SleepReason::TempleClosed || reason == SleepReason::Inactivity) &&
-                       !prefs_.noDeliverOnClose.get().value_or(false);
-    if (syncOnClose) {
-        // On temples close or inactivity we want to set a sync-on-close timer 30s after sleep
-        // starts. This is mostly to save placemarks after reading
-        if (reason == SleepReason::TempleClosed) {
-            PreferencesStore::syncReason = SyncReason::OnClose;
-            PreferencesStore::nextSyncTime = SolClock::getInstance().getEpochTime() + 30;
-            log_d("Sync-on-close scheduled for %" PRIu64, PreferencesStore::nextSyncTime);
-        } else if (reason == SleepReason::Inactivity && state_ != PowerState::ActiveOverTemp) {
-            PreferencesStore::syncReason = SyncReason::OnInactivity;
-            PreferencesStore::nextSyncTime = SolClock::getInstance().getEpochTime() + 30;
-            log_d("Sync-after-inactivity scheduled for %" PRIu64, PreferencesStore::nextSyncTime);
+auto PowerManager::enableUsbWakeup() -> esp_err_t {
+    esp_err_t err;
+    if (USBConnected()) {
+        err = esp_sleep_enable_ext0_wakeup((gpio_num_t)USB_CONNECTED_PIN, 0);
+        if (err != ESP_OK) {
+            log_e("error enabling USB_CONNECTED_PIN low wakeup from deep sleep %d", err);
+            return err;
+        }
+    } else {
+        err = esp_sleep_enable_ext0_wakeup((gpio_num_t)USB_CONNECTED_PIN, 1);
+        if (err != ESP_OK) {
+            log_e("error enabling USB_CONNECTED_PIN high wakeup from deep sleep %d", err);
+            return err;
         }
     }
+    return ESP_OK;
+}
 
-    // Make sure the ambient light sensor is off so it's not using power while in deep sleep
-    lightingController_.disableLighting(0);
+void PowerManager::deepSleepInternal(SleepReason reason) {
+    log_d("deepSleepInternal with reason %s", ToString(reason));
 
-    prefs_.end();
+    // If these glasses haven't been paired (or something went wrong with NVS and we don't know what
+    // state their in), then allow them to power back off.
+    if (PreferencesStore::paired == PairedStatus::Unpaired ||
+        PreferencesStore::paired == PairedStatus::Unknown) {
+        log_w("Unpaired glasses, allowing power off");
+        AllowPowerOff();
+    }
 
 #if SIMULATOR
-    log_i("ulpDeepSleep");
+    log_i("deepSleepInternal");
 #else
 
     esp_err_t err;
-
-    if (BLEDevice::getInitialized()) {
-        BLEDevice::deinit();
-    }
-
-    err = DeinitializePlatform();
-    if (err != ESP_OK) {
-        log_e("Failed to deinit platform with err %s", esp_err_to_name(err));
-    }
-
-    err = HardwareDeinit();
-    if (err != ESP_OK) {
-        log_e("Failed to deinit hardware with err %s", esp_err_to_name(err));
-    }
 
     err = rtc_gpio_init((gpio_num_t)I2C_MASTER_SDA_IO);
     if (err != ESP_OK) {
@@ -507,7 +615,7 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
     if (err != ESP_OK) {
         log_e("Failed to init I2C with err %s", esp_err_to_name(err));
         // If the magnetometer is not working we can never wake up. Power off instead.
-        powerOff();
+        powerOffInternal();
         return;
     }
 
@@ -535,43 +643,32 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
     err = ulp_riscv_run();
     if (err != ESP_OK) {
         log_e("ulp_riscv_run error %d", err);
-        powerOff();
+        powerOffInternal();
         return;
     }
 
     err = esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
     if (err != ESP_OK) {
         log_e("error enabling ESP_PD_DOMAIN_RTC_PERIPH power domain %d", err);
-        powerOff();
+        powerOffInternal();
         return;
     }
 
     err = esp_sleep_enable_ulp_wakeup();
     if (err != ESP_OK) {
         log_e("error enabling ulp wakeup from deep sleep %d", err);
-        powerOff();
+        powerOffInternal();
         return;
     }
 
     // Enable a wakeup on the USB_CONNECTED_PIN
-    if (USBConnected()) {
-        err = esp_sleep_enable_ext0_wakeup((gpio_num_t)USB_CONNECTED_PIN, 0);
-        if (err != ESP_OK) {
-            log_e("error enabling USB_CONNECTED_PIN low wakeup from deep sleep %d", err);
-            powerOff();
-            return;
-        }
-    } else {
-        err = esp_sleep_enable_ext0_wakeup((gpio_num_t)USB_CONNECTED_PIN, 1);
-        if (err != ESP_OK) {
-            log_e("error enabling USB_CONNECTED_PIN high wakeup from deep sleep %d", err);
-            powerOff();
-            return;
-        }
+    err = enableUsbWakeup();
+    if (err != ESP_OK) {
+        powerOffInternal();
+        return;
     }
 
-    // By default sync every 24 hours
-    auto sleepTime = uint64_t(24) * 60 * 60 * 1000000;
+    uint64_t sleepTime = UINT64_MAX;
 
     // When USB is connected, we want to wake up minutely and check the battery level (to know
     // when to turn the LED to green), otherwise we cant wait until the next content sync.
@@ -581,20 +678,23 @@ void PowerManager::deepSleepInternal(SleepReason reason) {
 
     // Otherwise we want to wait until we want to run our next content sync if that's sooner
     // than what we've already set
-    sleepTime = std::min(sleepTime,
-                         (PreferencesStore::nextSyncTime - SolClock::getInstance().getEpochTime()) *
-                             uint64_t(1000000));
-
-    err = esp_sleep_enable_timer_wakeup(sleepTime);
-    if (err != ESP_OK) {
-        log_e("error enabling timer wakeup for deep sleep %d", err);
-    } else {
-        log_d("Sleeping for %" PRIu64 " seconds", sleepTime / 1000000);
+    auto now = SolClock::getInstance().getEpochTime();
+    if (now < PreferencesStore::nextSyncTime) {
+        sleepTime = std::min(sleepTime, (PreferencesStore::nextSyncTime - now) * uint64_t(1000000));
     }
 
-    log_i("Entering deep sleep, wake up with magnetometer");
-    // Wait a moment for these last logs to go out (for the benefit of the ICT)
-    vTaskDelay(pdMS_TO_TICKS(100));
+    if (sleepTime != UINT64_MAX) {
+        err = esp_sleep_enable_timer_wakeup(sleepTime);
+        if (err != ESP_OK) {
+            log_e("error enabling timer wakeup for deep sleep %d", err);
+        } else {
+            log_d("Sleeping for %" PRIu64 " seconds", sleepTime / 1000000);
+        }
+    } else {
+        log_w("No scheduled wakeup (nextSyncTime=%" PRIu64 ", now=%" PRIu64 ")",
+              PreferencesStore::nextSyncTime, uint64_t(now));
+    }
+
     esp_deep_sleep_start();
 #endif
 }

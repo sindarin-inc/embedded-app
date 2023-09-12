@@ -31,6 +31,7 @@
 #include "UI/CalibrationScreen.hpp"
 #include "UI/ContentSyncScreen.hpp"
 #include "UI/CrashReportScreen.hpp"
+#include "UI/DebugAboutScreen.hpp"
 #include "UI/DemoScreen.hpp"
 #include "UI/FirmwareUpdateScreen.hpp"
 #include "UI/Fonts/Fonts.hpp"
@@ -42,7 +43,6 @@
 #include "UI/LogoScreen.hpp"
 #include "UI/MainMenuScreen.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
-#include "UI/PowerDepletedScreen.hpp"
 #include "UI/ReadableScreen.hpp"
 #include "UI/ReleaseNotesScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
@@ -60,6 +60,10 @@
 #if EINKET013TT1
 #include "Displays/DisplayEinkET013TT1.hpp"
 #include "UI/VcomAdjustScreen.hpp"
+#endif
+
+#if USE_BLE
+#include <NimBLEDevice.h>
 #endif
 
 #define LAST_READABLE_ID "rui-readable"
@@ -1017,6 +1021,20 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         });
     }));
 
+    systemSettingsMenu->addMenuItem(MenuItem("Firmware Update",
+                                             [this, systemSettingsMenu, display]() {
+        auto firmwareUpdateScreen = new FirmwareUpdateScreen(*display, this->prefs_);
+        this->setCurrentScreen(*firmwareUpdateScreen);
+        firmwareUpdateScreen->setBackCallback(
+            [this, firmwareUpdateScreen, systemSettingsMenu, display]() {
+            systemSettingsMenu->setFirstLoad();
+            setCurrentScreen(*systemSettingsMenu);
+            systemSettingsMenu->render(*display);
+            delete firmwareUpdateScreen;
+        });
+        firmwareUpdateScreen->begin();
+    }));
+
     systemSettingsMenu->addMenuItem(MenuItem("First Time Setup",
                                              [this, systemSettingsMenu, display]() {
         prefs_.noSetupMode.remove();
@@ -1037,6 +1055,17 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         power_.reboot();
     }));
 #endif
+
+    debugSettingsMenu->addMenuItem(MenuItem("About", [this, debugSettingsMenu, display]() {
+        auto debugAboutScreen = new DebugAboutScreen(*display);
+        this->setCurrentScreen(*debugAboutScreen);
+        debugAboutScreen->setBackCallback([this, debugAboutScreen, debugSettingsMenu]() {
+            debugSettingsMenu->setFirstLoad();
+            display_->clearDisplay();
+            setCurrentScreen(*debugSettingsMenu);
+            delete debugAboutScreen;
+        });
+    }));
 
     debugSettingsMenu->addMenuItem(
         MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
@@ -1086,12 +1115,12 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         systemSettingsMenu->showTemporaryMessage(*display, "WiFi settings cleared.", 2000, true);
     }));
 
-    systemSettingsMenu->addMenuItem(MenuItem("Reset Preferences",
-                                             [this, systemSettingsMenu, display]() {
+    debugSettingsMenu->addMenuItem(MenuItem("Reset Preferences",
+                                            [this, debugSettingsMenu, display]() {
         prefs_.clear();
         log_w("Preferences cleared. Rebooting...");
-        systemSettingsMenu->showTemporaryMessage(*display, "Preferences cleared. Rebooting...",
-                                                 2000, false);
+        debugSettingsMenu->showTemporaryMessage(*display, "Preferences cleared. Rebooting...", 2000,
+                                                false);
         power_.reboot();
     }));
 
@@ -1112,20 +1141,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             power_.reboot();
         }));
     }
-
-    debugSettingsMenu->addMenuItem(MenuItem("Firmware Update",
-                                            [this, debugSettingsMenu, display]() {
-        auto firmwareUpdateScreen = new FirmwareUpdateScreen(*display, this->prefs_);
-        this->setCurrentScreen(*firmwareUpdateScreen);
-        firmwareUpdateScreen->setBackCallback(
-            [this, firmwareUpdateScreen, debugSettingsMenu, display]() {
-            debugSettingsMenu->setFirstLoad();
-            setCurrentScreen(*debugSettingsMenu);
-            debugSettingsMenu->render(*display);
-            delete firmwareUpdateScreen;
-        });
-        firmwareUpdateScreen->begin();
-    }));
 
     debugSettingsMenu->addMenuItem(MenuItem("Clear Books and Restart",
                                             [debugSettingsMenu, display, &localStore]() {
@@ -1374,6 +1389,62 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         });
     }));
 
+#if USE_BLE
+    debugSettingsMenu->addMenuItem(MenuItem("Set BLE Power", [this, display, debugSettingsMenu]() {
+        static std::map<esp_power_level_t, std::string> blePowerOptions = {
+            {ESP_PWR_LVL_P3, "+3dBm"}, {ESP_PWR_LVL_N0, "0dBm"},    {ESP_PWR_LVL_N3, "-3dBm"},
+            {ESP_PWR_LVL_N9, "-9dBm"}, {ESP_PWR_LVL_N18, "-18dBm"}, {ESP_PWR_LVL_N24, "-24dBm"},
+        };
+
+        auto blePowerMenu =
+            new MenuScreen(power_.battery, *display, debugSettingsMenu->getMyStyle(),
+                           "BLE Power Settings", "Debug Settings");
+
+        auto powerToString = [](esp_power_level_t power) -> std::string {
+            auto it = blePowerOptions.find(power);
+            return it != blePowerOptions.end() ? it->second : "Unknown";
+        };
+
+        esp_power_level_t currentPower = esp_ble_tx_power_get(ESP_BLE_PWR_TYPE_DEFAULT);
+        blePowerMenu->setExtraText(powerToString(currentPower));
+
+        auto confirmMessage =
+            [this, blePowerMenu, display, powerToString](esp_power_level_t power) {
+            esp_err_t err = esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, power);
+            if (err != ESP_OK) {
+                log_e("esp_ble_tx_power_set ESP_BLE_PWR_TYPE_DEFAULT err:%s", esp_err_to_name(err));
+            }
+            prefs_.blePower.set(power);
+            blePowerMenu->showTemporaryMessage(
+                *display, StringFormat("Power set to %s", powerToString(power).c_str()), 200,
+                false);
+            blePowerMenu->back();
+        };
+        for (const auto &powerItem : blePowerOptions) {
+            blePowerMenu->addMenuItem(
+                MenuItem(powerToString(powerItem.first),
+                         [confirmMessage, power = powerItem.first]() { confirmMessage(power); }));
+        }
+
+        // Find the currently selected power
+        int menuIndex = 0;
+        for (const auto &powerItem : blePowerOptions) {
+            if (powerItem.first == currentPower) {
+                break;
+            }
+            menuIndex++;
+        }
+        blePowerMenu->setCurrSelection(menuIndex);
+
+        setCurrentScreen(*blePowerMenu);
+        blePowerMenu->setBackCallback([this, blePowerMenu, debugSettingsMenu]() {
+            debugSettingsMenu->setFirstLoad();
+            setCurrentScreen(*debugSettingsMenu);
+            delete blePowerMenu;
+        });
+    }));
+#endif
+
 #if EINKET013TT1
     debugSettingsMenu->addMenuItem(MenuItem("Set Vcom Precise",
                                             [this, display, debugSettingsMenu]() {
@@ -1589,21 +1660,6 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     delete articlesMenu;
     delete booksMenu;
 #endif
-}
-
-void RootUI::loop(DisplaySystem &display, RemoteCommand command) {
-    // TODO: Move this logic to PowerManager
-    if (power_.battery.getDepleted()) {
-        // Force render immediately as we are about to shut off
-        auto powerDepletedScreen = new PowerDepletedScreen();
-        setCurrentScreen(*powerDepletedScreen);
-        this->render(display);
-        // Wait 5 seconds to be able to see the message
-        Delay(5000);
-        // Unless wake sources are defined, nothing can wake us up. Goodnight.
-        esp_deep_sleep_start();
-    }
-    Screen::loop(display, command);
 }
 
 void RootUI::handleBrowse(FileSystem &fileSystem, MenuScreen *fsMenu, const std::string &path) {

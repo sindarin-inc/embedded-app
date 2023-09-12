@@ -77,17 +77,30 @@ auto LegalScreen::layout(LayoutContext &context, Size size) -> Size {
             return {size.width, y};
         });
 
-    y = yAdvance * 2;
+    context.setSublayoutFrame(
+        {{0, -15}, size}, LayoutOptionsSizeToFitVertical | LayoutOptionsAlignCenterVertical,
+        [this](LayoutContext &context, Size size) -> Size {
+            int ukcaPadding = 22;
+            int y = 0;
+            auto baclRect =
+                context.setViewFrame(baclView_, {{0, y}, {size.width, 0}},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
+            y += baclRect.size.height + 5;
+            auto fccRect =
+                context.setViewFrame(fccView_, {{0, y}, {size.width, 0}},
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
+            y += fccRect.size.height + 5;
+            context.setViewFrame(ceView_, {{ukcaPadding, y}, {size.width - ukcaPadding * 2, 0}},
+                                 LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
 
-    context.setViewFrame(ceView_, {{10, y}, size}, LayoutOptionsAlignLeft);
+            auto ukcaRect = context.setViewFrame(
+                ukcaView_, {{ukcaPadding, y}, {size.width - ukcaPadding * 2, 0}},
+                LayoutOptionsSizeToFit | LayoutOptionsAlignRight);
 
-    y -= 5;
+            y += ukcaRect.size.height;
 
-    context.setViewFrame(fccView_, {{110, y}, size}, LayoutOptionsAlignLeft);
-
-    y += 65;
-
-    context.setViewFrame(baclView_, {{0, y}, size}, LayoutOptionsAlignLeft);
+            return {size.width, y};
+        });
 
     return size;
 }
@@ -111,6 +124,7 @@ void LegalScreen::drawInRect(Rect rect) {
         fccView_.draw();
         ceView_.draw();
         baclView_.draw();
+        ukcaView_.draw();
     }
     leftRightView_.draw();
     returnToMenuView_.draw();

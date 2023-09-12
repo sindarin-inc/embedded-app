@@ -92,8 +92,9 @@ public:
     auto books() -> ReadablesVector & { return books_; };
     auto articles() -> ReadablesVector & { return articles_; };
     auto readablesModelType(const ReadablesVector &readables) -> ReadablesModelType;
-    auto hasReadable(const ReadablesVector &readables, const std::shared_ptr<Readable> &readable,
-                     bool ignoreFileSizeCheck = false) -> bool;
+    auto isReadableUnchanged(const ReadablesVector &readables,
+                             const std::shared_ptr<Readable> &readable,
+                             bool ignoreFileSizeCheck = false) -> bool;
     void addReadable(ReadablesVector &readables, const std::shared_ptr<Readable> &readable);
     void removeReadable(ReadablesVector &readables, const std::shared_ptr<Readable> &readable);
     auto readablesSince(const ReadablesModelType modelType) -> std::string;
@@ -111,7 +112,8 @@ public:
     void resetReadablesArchivedChanged(const ReadablesVector &readables);
     void resetReadablesBookmarksChanged(const ReadablesVector &readables);
 
-    void syncFromRemote(const std::function<void(ContentSyncState state)> &progressCallback);
+    void syncFromRemote(SyncReason syncReason,
+                        const std::function<void(ContentSyncState state)> &progressCallback);
     auto processReadables(const CheckSyncResponse &checkSyncResponse,
                           const ReadablesVector &readables, UserReadablesVector &userReadables)
         -> std::pair<ReadablesVector, ReadablesVector>;
@@ -130,6 +132,7 @@ public:
     auto saveTableOfContents(const std::shared_ptr<Readable> &readable) -> bool;
     auto removeStopWords(const SpiramString &title) -> std::string;
     void sortReadables(ReadablesVector &readables);
+    void purgeReadableToc(const std::shared_ptr<Readable> &readable);
     auto saveReadables(ReadablesVector &readables) -> bool;
 
     // Methods for interacting with readable files on disk

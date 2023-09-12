@@ -8,6 +8,7 @@
 #include "UI/Bitmaps/bacl.hpp"
 #include "UI/Bitmaps/ce.hpp"
 #include "UI/Bitmaps/fcc.hpp"
+#include "UI/Bitmaps/ukca.hpp"
 #include "UI/Components/EinkView.hpp"
 #include "UI/Components/IconView.hpp"
 #include "UI/Components/SingleLineTextView.hpp"
@@ -21,12 +22,13 @@ public:
           fccView_(display, FCC_BITS, fcc_width, fcc_height),
           ceView_(display, CE_BITS, ce_width, ce_height),
           baclView_(display, BACL_BITS, bacl_width, bacl_height),
+          ukcaView_(display, ukcaBits, ukca_width, ukca_height),
           baclLine1View_(display, "BACL: LISTED UL 62368-1,", &ibmf75Face0),
           baclLine2View_(display, "CAN/CSA C22,2 NO. 62368-1, A0049", &ibmf75Face0),
           fcc1LineView_(display, "FCC ID: 2BAHC-READER1,", &ibmf75Face0),
-          fcc1LineViewPart2_(display, "IC: 30424-READER1, Model: ED1-READER", &ibmf75Face0),
+          fcc1LineViewPart2_(display, "IC: 30424-READER1, HVIN: ED1-READER1", &ibmf75Face0),
           fcc2LineView_(display, "FCC ID: 2BAHC-PT1,", &ibmf75Face0),
-          fcc2LineViewPart2_(display, "IC: 30424-PT1, Model: ED1-PT1", &ibmf75Face0),
+          fcc2LineViewPart2_(display, "IC: 30424-PT1, HVIN: ED1-PT1", &ibmf75Face0),
           opTemp1_(display, "Operating ambient temperature:", &ibmf75Face0),
           opTemp2_(display, "45-100°F (7°C to 37°C)", &ibmf75Face0),
           nonOpTemp1_(display, "Nonoperating temperature:", &ibmf75Face0),
@@ -51,6 +53,7 @@ protected:
     IconView fccView_;
     IconView ceView_;
     IconView baclView_;
+    IconView ukcaView_;
 
     bool logosPage_ = true;
 
