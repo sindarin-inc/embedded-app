@@ -171,7 +171,7 @@ auto EPubTokenizer::computeStartingOffset(StreamPlace streamPlace) -> uint32_t {
     pugi::xml_document &doc = loadXHTMLAt(streamPlace.getFileIdx());
 
     struct Walker : pugi::xml_tree_walker {
-        virtual bool for_each(pugi::xml_node &node) {
+        auto for_each(pugi::xml_node &node) -> bool override {
             if ((node.type() == pugi::xml_node_type::node_pcdata) &&
                 !EPubTokenizer::isSpaces(node.value())) {
                 firstNode = node;
@@ -264,7 +264,7 @@ auto EPubTokenizer::loadXHTMLAt(Idx fileIdx) -> pugi::xml_document & {
 auto EPubTokenizer::forwardToNextPageOffset(pugi::xml_node node) const -> uint32_t {
 
     struct Walker : pugi::xml_tree_walker {
-        virtual bool for_each(pugi::xml_node &node) {
+        auto for_each(pugi::xml_node &node) -> bool override {
             if (started) {
                 if (node.type() == pugi::xml_node_type::node_pcdata) {
                     if (!EPubTokenizer::isSpaces(node.value())) {

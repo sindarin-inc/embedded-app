@@ -39,11 +39,11 @@ auto EPubFile::findFileOffsetAtCharOffset(std::string path, uint32_t charOffset)
 
 // Returns a pointer to the buffer containing the extracted file from the EPub and it's length in a
 // tuple
-auto EPubFile::getFile(std::string path) -> std::pair<std::unique_ptr<uint8_t[]>, uint32_t> {
+auto EPubFile::getFile(const std::string &path) -> std::pair<std::unique_ptr<uint8_t[]>, uint32_t> {
 
     std::unique_ptr<uint8_t[]> buffer = nullptr;
 
-    std::string filePath = opf_->getFullPath(std::move(path));
+    std::string filePath = opf_->getFullPath(path);
 
     if (epubZipFile_.openFile(filePath.c_str()) != UNZ_OK) {
         log_e("Failed to open XHTML file %s", filePath.c_str());
@@ -66,8 +66,8 @@ auto EPubFile::getFile(std::string path) -> std::pair<std::unique_ptr<uint8_t[]>
     return {nullptr, 0};
 }
 
-auto EPubFile::getXHTMLFile(std::string path) -> pugi::xml_document & {
-    std::string filePath = opf_->getFullPath(std::move(path));
+auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
+    std::string filePath = opf_->getFullPath(path);
     // log_w("Loading file %s", filePath.c_str());
     if (currentFilePath_ != filePath) {
         if (epubZipFile_.openFile(filePath.c_str()) != UNZ_OK) {

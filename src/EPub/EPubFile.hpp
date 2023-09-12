@@ -34,7 +34,8 @@ public:
 
     [[nodiscard]] inline auto getSpineCount() const -> uint16_t { return opf_->getSpineCount(); }
 
-    [[nodiscard]] auto getFile(std::string path) -> std::pair<std::unique_ptr<uint8_t[]>, uint32_t>;
+    [[nodiscard]] auto getFile(const std::string &path)
+        -> std::pair<std::unique_ptr<uint8_t[]>, uint32_t>;
 
     [[nodiscard]] inline auto getToc() const -> ReadableTableOfContentsChapterVector {
         return readable_->toc;
@@ -51,14 +52,14 @@ public:
         return (spineIdx < opf_->getSpineCount()) ? spineIdx : 0;
     }
 
-    [[nodiscard]] auto getXHTMLFile(std::string path) -> pugi::xml_document &;
+    [[nodiscard]] auto getXHTMLFile(const std::string &path) -> pugi::xml_document &;
 
     [[nodiscard]] inline auto getOffset(const pugi::char_t *item) const -> uint32_t {
         return item - currentFileBuffer_.get();
     }
 
-    [[nodiscard]] inline auto getFullPath(std::string filename) const -> std::string {
-        return opf_->getFullPath(std::move(filename));
+    [[nodiscard]] inline auto getFullPath(const std::string &filename) const -> std::string {
+        return opf_->getFullPath(filename);
     }
 
     [[nodiscard]] auto getUncompressedSize(Idx spineIdx) -> uint32_t {
