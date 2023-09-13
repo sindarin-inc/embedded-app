@@ -239,6 +239,11 @@ void LocalStore::changedReadablePlacemarkJson(const ReadablesVector &readables,
 
         bool changed = prefs_.readablePlaceChanged.get(readable->shortenedUuid.c_str());
         if (changed) {
+            this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,
+                                       StringFormat("sync-%ss-placemark-upload",
+                                                    ReadableModelTypeToString(modelType).c_str())
+                                           .c_str(),
+                                       {{"uuid", readable->shortenedUuid.c_str()}});
             uint32_t place = prefs_.readablePlace.get(readable->shortenedUuid.c_str());
             log_i("Placemark on %s %s %s has changed to %" PRIu32,
                   ReadableModelTypeToString(modelType).c_str(), readable->title.c_str(),
@@ -262,6 +267,11 @@ void LocalStore::changedReadablesArchivedJson(const ReadablesVector &readables,
 
         bool changed = prefs_.readableArchivedChanged.get(readable->shortenedUuid.c_str());
         if (changed) {
+            this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,
+                                       StringFormat("sync-%ss-archive-upload",
+                                                    ReadableModelTypeToString(modelType).c_str())
+                                           .c_str(),
+                                       {{"uuid", readable->shortenedUuid.c_str()}});
             log_i("Archived %s %s %s", ReadableModelTypeToString(modelType).c_str(),
                   readable->title.c_str(), readable->uuid.c_str());
             ReadableArchive archive;
@@ -274,6 +284,7 @@ void LocalStore::changedReadablesArchivedJson(const ReadablesVector &readables,
 
 void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmarks) {
     for (auto &readables : {books_, articles_}) {
+        auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
         for (const auto &readable : readables) {
             if (readable->localOnly) {
                 continue;
@@ -284,9 +295,13 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
                 continue;
             }
 
-            auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
             log_i("Bookmarks changed on %s %s %s", ReadableModelTypeToString(modelType).c_str(),
                   readable->title.c_str(), readable->uuid.c_str());
+            this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,
+                                       StringFormat("sync-%ss-bookmark-upload",
+                                                    ReadableModelTypeToString(modelType).c_str())
+                                           .c_str(),
+                                       {{"uuid", readable->shortenedUuid.c_str()}});
             std::string bookmarkPath = readable->bookmarkFilePath();
             SFile bookmarkFile = fileSystem.open(bookmarkPath.c_str(), FILE_READ, false);
             if (!bookmarkFile) {
@@ -447,9 +462,16 @@ auto LocalStore::processToCFromServer(const std::shared_ptr<Readable> &readable)
 }
 
 void LocalStore::resetReadablesPlacemarkChanged(const ReadablesVector &readables) {
+    auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
+
     for (const auto &readable : readables) {
         bool changed = prefs_.readablePlaceChanged.get(readable->shortenedUuid.c_str());
         if (!readable->localOnly && changed) {
+            this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,
+                                       StringFormat("sync-%ss-placemark-synced",
+                                                    ReadableModelTypeToString(modelType).c_str())
+                                           .c_str(),
+                                       {{"uuid", readable->shortenedUuid.c_str()}});
             log_d("Resetting placemark changed for \"%s\" (now synced to server)",
                   readable->title.c_str());
             prefs_.readablePlaceChanged.remove(readable->shortenedUuid.c_str());
@@ -458,9 +480,16 @@ void LocalStore::resetReadablesPlacemarkChanged(const ReadablesVector &readables
 }
 
 void LocalStore::resetReadablesArchivedChanged(const ReadablesVector &readables) {
+    auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
+
     for (const auto &readable : readables) {
         bool changed = prefs_.readableArchivedChanged.get(readable->shortenedUuid.c_str());
         if (!readable->localOnly && changed) {
+            this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,
+                                       StringFormat("sync-%ss-archive-synced",
+                                                    ReadableModelTypeToString(modelType).c_str())
+                                           .c_str(),
+                                       {{"uuid", readable->shortenedUuid.c_str()}});
             log_d("Resetting article archive changed for \"%s\" (now synced to server)",
                   readable->title.c_str());
             prefs_.readableArchivedChanged.remove(readable->shortenedUuid.c_str());
@@ -469,9 +498,16 @@ void LocalStore::resetReadablesArchivedChanged(const ReadablesVector &readables)
 }
 
 void LocalStore::resetReadablesBookmarksChanged(const ReadablesVector &readables) {
+    auto modelType = this->readablesModelType(const_cast<ReadablesVector &>(readables));
+
     for (const auto &readable : readables) {
         bool changed = prefs_.readableBookmarksChanged.get(readable->shortenedUuid.c_str());
         if (!readable->localOnly && changed) {
+            this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,
+                                       StringFormat("sync-%ss-bookmark-synced",
+                                                    ReadableModelTypeToString(modelType).c_str())
+                                           .c_str(),
+                                       {{"uuid", readable->shortenedUuid.c_str()}});
             log_d("Resetting bookmarks changed for \"%s\" (now synced to server)",
                   readable->title.c_str());
             prefs_.readableBookmarksChanged.remove(readable->shortenedUuid.c_str());
@@ -483,6 +519,7 @@ void LocalStore::syncFromRemote(
     SyncReason syncReason, const std::function<void(ContentSyncState state)> &progressCallback) {
 
     if (!WiFi::getInstance().hasWiFiCredentials()) {
+        this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-wifi-no-credentials");
         progressCallback(
             ContentSyncState{.state = ContentSyncState::State::Failure,
                              .message = "Go to Settings > WiFi Setup in the Sol app."});
@@ -490,6 +527,7 @@ void LocalStore::syncFromRemote(
     }
 
     if (!WiFi::getInstance().connectWiFiFromSettings()) {
+        this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-wifi-failed");
         progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
                                           .message = "Failed to connect to WiFi."});
         return;
@@ -549,7 +587,7 @@ void LocalStore::syncFromRemote(
     // Run this work on a separate thread, since it's long running
     queue->dispatch([this, syncReason, progressCallback] {
         CheckSyncRequest checkSyncRequest;
-        CheckSyncResponse checkSyncResponse;
+        CheckSyncResponse checkSyncResponse = {};
         int checkSyncFailures = 0;
         bool booksAlreadySynced = false;
         bool articlesAlreadySynced = false;
@@ -634,12 +672,13 @@ void LocalStore::syncFromRemote(
                 int httpCode = 0;
                 if (nextPageCounter == 1) {
                     SHOW_HEAP();
-                    httpCode =
-                        SindarinAPI::getInstance()->checkSync(checkSyncRequest, &checkSyncResponse);
+                    httpCode = SindarinAPI::getInstance()->checkSync(
+                        checkSyncRequest, &checkSyncResponse, this->telemetry_);
                     SHOW_HEAP();
                 } else {
-                    httpCode = SindarinAPI::getInstance()->checkSync(
-                        nextPageUrl.c_str(), checkSyncRequest, &checkSyncResponse);
+                    httpCode =
+                        SindarinAPI::getInstance()->checkSync(nextPageUrl.c_str(), checkSyncRequest,
+                                                              &checkSyncResponse, this->telemetry_);
                 }
                 log_d("Server has %d %ss, next page: %s", checkSyncResponse.totalCount,
                       ReadableModelTypeToString(modelType).c_str(), nextPageUrl.c_str());
@@ -823,7 +862,8 @@ void LocalStore::syncFromRemote(
             checkSyncRequest.since = serverSince;
 
             SHOW_HEAP();
-            SindarinAPI::getInstance()->checkSync(checkSyncRequest, &checkSyncResponse);
+            SindarinAPI::getInstance()->checkSync(checkSyncRequest, &checkSyncResponse,
+                                                  this->telemetry_);
 
             // TODO: Force reload of rootUI instead of rebooting
             if (checkSyncResponse.synced) {

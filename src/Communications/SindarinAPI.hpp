@@ -27,8 +27,9 @@ public:
 
     void setAccessToken(const std::string &accessToken);
 
-    auto checkSync(CheckSyncRequest &req, CheckSyncResponse *resp) -> int;
-    auto checkSync(const std::string &url, CheckSyncRequest &req, CheckSyncResponse *resp) -> int;
+    auto checkSync(CheckSyncRequest &req, CheckSyncResponse *resp, Telemetry &telemetry) -> int;
+    auto checkSync(const std::string &url, CheckSyncRequest &req, CheckSyncResponse *resp,
+                   Telemetry &telemetry) -> int;
     auto checkFirmware(FirmwareResponse *resp) -> int;
 
     auto downloadReadable(const std::shared_ptr<Readable> &readable, FileSystem &fileSystem,
