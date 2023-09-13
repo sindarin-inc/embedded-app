@@ -29,7 +29,7 @@ public:
         return opf_->getSpine(idx);
     }
 
-    [[nodiscard]] auto findFileOffsetAtCharOffset(std::string path, uint32_t charOffset)
+    [[nodiscard]] auto findFileOffsetAtCharOffset(const std::string &path, uint32_t charOffset)
         -> uint32_t;
 
     [[nodiscard]] inline auto getSpineCount() const -> uint16_t { return opf_->getSpineCount(); }

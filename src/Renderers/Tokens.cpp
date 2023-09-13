@@ -113,29 +113,31 @@ void Tokens::freeTokens(Idx fromTokenIdx, uint16_t count) {
         }
     }
     if (count > 0) {
-    //     if constexpr (RENDERER_DEBUG) {
-    //         Idx lastTokenIdx = addToTokenIdx(fromTokenIdx, count);
-    //         Idx tokenIdx = fromTokenIdx;
-    //         while (tokenIdx != lastTokenIdx) {
-    //             if ((tokens_[tokenIdx].tokenId == TokenId::TEXT) ||
-    //                 (tokens_[tokenIdx].tokenId == TokenId::PICTURE)) {
-    //                 Idx poolIdx = (Idx)(tokens_[tokenIdx].cStr - cStrPool_.data());
-    //                 Idx poolHead = cStrPoolHeadIdx_;
-    //                 if ((cStrPoolHeadIdx_ + tokens_[tokenIdx].length + 1) >= CSTR_POOL_SIZE) {
-    //                     cStrPoolHeadIdx_ = 0;
-    //                 }
-    //                 if (poolIdx != cStrPoolHeadIdx_) {
-    //                     log_e("cStrPool pointers discrepancies: %" PRIu16 " vs %" PRIu16, poolIdx,
-    //                           cStrPoolHeadIdx_);
-    //                     if constexpr (ON_ERROR_EXIT) {
-    //                         exit(1);
-    //                     }
-    //                 }
-    //                 break;
-    //             }
-    //             nextTokenIdx(tokenIdx);
-    //         }
-    //     }
+        //     if constexpr (RENDERER_DEBUG) {
+        //         Idx lastTokenIdx = addToTokenIdx(fromTokenIdx, count);
+        //         Idx tokenIdx = fromTokenIdx;
+        //         while (tokenIdx != lastTokenIdx) {
+        //             if ((tokens_[tokenIdx].tokenId == TokenId::TEXT) ||
+        //                 (tokens_[tokenIdx].tokenId == TokenId::PICTURE)) {
+        //                 Idx poolIdx = (Idx)(tokens_[tokenIdx].cStr - cStrPool_.data());
+        //                 Idx poolHead = cStrPoolHeadIdx_;
+        //                 if ((cStrPoolHeadIdx_ + tokens_[tokenIdx].length + 1) >= CSTR_POOL_SIZE)
+        //                 {
+        //                     cStrPoolHeadIdx_ = 0;
+        //                 }
+        //                 if (poolIdx != cStrPoolHeadIdx_) {
+        //                     log_e("cStrPool pointers discrepancies: %" PRIu16 " vs %" PRIu16,
+        //                     poolIdx,
+        //                           cStrPoolHeadIdx_);
+        //                     if constexpr (ON_ERROR_EXIT) {
+        //                         exit(1);
+        //                     }
+        //                 }
+        //                 break;
+        //             }
+        //             nextTokenIdx(tokenIdx);
+        //         }
+        //     }
 
         // Search the last token that contains a pointer inside the pool
         int32_t poolCount = getCStrPoolCount();
@@ -161,7 +163,8 @@ void Tokens::freeTokens(Idx fromTokenIdx, uint16_t count) {
         }
 
         // if constexpr (RENDERER_DEBUG) {
-        //     log_w("cStrPool reduced from %" PRIi32 " to %" PRIi32, poolCount, getCStrPoolCount());
+        //     log_w("cStrPool reduced from %" PRIi32 " to %" PRIi32, poolCount,
+        //     getCStrPoolCount());
         // }
 
         tokensHeadIdx_ = addToTokenIdx(fromTokenIdx, count);

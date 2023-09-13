@@ -74,7 +74,8 @@ protected:
     inline auto addTokenToPage(Token &token, bool backwards = false, const char *str = nullptr,
                                uint8_t strSize = 0) -> bool {
         if (tokens_.add(token, str, strSize)) {
-            // log_w("Token Id: %" PRIu8 " at idx: %" PRIu16, (uint8_t)token.tokenId, tokens_.getLastIdx());
+            // log_w("Token Id: %" PRIu8 " at idx: %" PRIu16, (uint8_t)token.tokenId,
+            // tokens_.getLastIdx());
             return !pager_.addLastTokenToPage(backwards) && !backwards;
         } else {
             return false;
