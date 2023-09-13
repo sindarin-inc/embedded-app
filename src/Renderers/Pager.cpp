@@ -5,7 +5,8 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
     Token &token = tokens_.getLast();
 
     // if constexpr (RENDERER_DEBUG) {
-    //     log_w("[%" PRIu16 "](%" PRIu16 ") tokenIdx:%" PRIu16 ", Id:%" PRIu8 ", cStrPool:%" PRIi32,
+    //     log_w("[%" PRIu16 "](%" PRIu16 ") tokenIdx:%" PRIu16 ", Id:%" PRIu8 ", cStrPool:%"
+    //     PRIi32,
     //           linesTailIdx_, lines_[linesTailIdx_].tokenCount, tokens_.getLastIdx(),
     //           (uint8_t)token.tokenId, tokens_.getCStrPoolCount());
     // }

@@ -31,7 +31,8 @@ public:
             txtPlace = std::make_shared<NonePlace>();
         }
         if (j.containsKey("chapter") && j.containsKey("chapter_offset")) {
-            ePubPlace = Place::factory(j["chapter_offset"].as<uint32_t>(), j["chapter"].as<std::string>());
+            ePubPlace =
+                Place::factory(j["chapter_offset"].as<uint32_t>(), j["chapter"].as<std::string>());
         } else {
             ePubPlace = std::make_shared<NonePlace>();
         }
@@ -42,7 +43,7 @@ public:
 
         isArchived = j["is_archived"].as<bool>();
         readable = SpiRamPtr<Readable>();
-        
+
         return readable->fromJson(j["readable"]);
     }
 

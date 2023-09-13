@@ -4,9 +4,10 @@
 
 #include "EPubMetaFile.hpp"
 
-auto EPubFile::findFileOffsetAtCharOffset(std::string path, uint32_t charOffset) -> uint32_t {
+auto EPubFile::findFileOffsetAtCharOffset(const std::string &path, uint32_t charOffset)
+    -> uint32_t {
 
-    pugi::xml_document &doc = getXHTMLFile(std::move(path));
+    pugi::xml_document &doc = getXHTMLFile(path);
 
     struct Walker : pugi::xml_tree_walker {
         auto for_each(pugi::xml_node &node) -> bool override {
