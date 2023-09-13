@@ -240,6 +240,11 @@ void LocalStore::changedReadablePlacemarkJson(const ReadablesVector &readables,
 
         bool changed = prefs_.readablePlaceChanged.get(readable->shortenedUuid.c_str());
         if (changed) {
+            this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,
+                                       StringFormat("sync-%ss-placemark-upload",
+                                                    ReadableModelTypeToString(modelType).c_str())
+                                           .c_str(),
+                                       {{"uuid", readable->shortenedUuid.c_str()}});
             std::string place = prefs_.readablePlace.get(readable->shortenedUuid.c_str());
             log_i("Placemark on %s %s %s has changed to %s",
                   ReadableModelTypeToString(modelType).c_str(), readable->title.c_str(),
@@ -501,7 +506,6 @@ void LocalStore::resetReadablesBookmarksChanged(const ReadablesVector &readables
 
 void LocalStore::syncFromRemote(
     SyncReason syncReason, const std::function<void(ContentSyncState state)> &progressCallback) {
-
     if (!WiFi::getInstance().hasWiFiCredentials()) {
         progressCallback(
             ContentSyncState{.state = ContentSyncState::State::Failure,
@@ -1273,7 +1277,6 @@ auto LocalStore::saveTableOfContents(const std::shared_ptr<Readable> &readable) 
 
 auto LocalStore::readableFilePathForWriting(const std::shared_ptr<Readable> &readable) const
     -> std::string {
-
     if (readable->remoteUrl().substr(readable->remoteUrl().find_last_of('.') + 1) == "epub") {
         return StringFormat("/%s/%s.epub", readable->readableType.c_str(), readable->uuid.c_str());
     }
