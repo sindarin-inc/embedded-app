@@ -337,27 +337,42 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
 }
 
 auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Readable> &readable,
-                                                     const std::shared_ptr<Place> &placemark)
+                                                     const std::shared_ptr<Place> &txtPlace,
+                                                     const std::shared_ptr<Place> &ePubPlace)
     -> bool {
-    std::shared_ptr<Place> onDevicePlace =
+    std::shared_ptr<Place> prefsPlace =
         Place::factory(prefs_.readablePlace.get(readable->shortenedUuid.c_str()));
     bool changed = prefs_.readablePlaceChanged.get(readable->shortenedUuid.c_str());
 
-    if (placemark == onDevicePlace) {
+    std::shared_ptr<Place> serverPlace = prefsPlace->isFor(DocType::TXT) ? txtPlace : ePubPlace;
+
+    int16_t prefsFileIdx = prefsPlace->isFor(DocType::TXT)
+                               ? 0
+                               : readable->findEPubHRefChapterIdx(
+                                     std::dynamic_pointer_cast<EPubPlace>(prefsPlace)->getHRef());
+    int16_t serverFileIdx = serverPlace->isFor(DocType::TXT)
+                                ? 0
+                                : readable->findEPubHRefChapterIdx(
+                                      std::dynamic_pointer_cast<EPubPlace>(serverPlace)->getHRef());
+
+    if (*serverPlace.get() == *prefsPlace.get()) {
         // If the placemark on the server is the same as the one on the device, don't change it
         return false;
-    } else if ((placemark > onDevicePlace) && !changed) {
+    } else if (((serverFileIdx > prefsFileIdx) ||
+                ((serverFileIdx == prefsFileIdx) &&
+                 (serverPlace->getOffset() > prefsPlace->getOffset()))) &&
+               !changed) {
         // Placemark on server is further than on the device, so update to the server value
         log_i("Updating placemark for \"%s\" from device value of %s to server "
               "value of %s",
-              readable->title.c_str(), onDevicePlace->str().c_str(), placemark->str().c_str());
-        prefs_.readablePlace.set(readable->shortenedUuid.c_str(), placemark->str());
+              readable->title.c_str(), prefsPlace->str().c_str(), serverPlace->str().c_str());
+        prefs_.readablePlace.set(readable->shortenedUuid.c_str(), serverPlace->str());
         return true;
-    } else if (placemark != nullptr) {
+    } else if ((serverPlace != nullptr) && !serverPlace->isFor(DocType::NONE)) {
         // Placemark on server is less than on the device, so don't update to the server value
         log_i("Not updating placemark for \"%s\" from device value of %s to server "
               "value of %s. Changed: %d",
-              readable->title.c_str(), onDevicePlace->str().c_str(), placemark->str().c_str(),
+              readable->title.c_str(), prefsPlace->str().c_str(), serverPlace->str().c_str(),
               changed);
         return false;
     }
@@ -889,9 +904,11 @@ auto LocalStore::processReadables(const CheckSyncResponse &checkSyncResponse,
               userReadable.readable->uuid.c_str());
         SHOW_HEAP();
 
-        if (processReadablePlacemarksFromServer(userReadable.readable, userReadable.placemark)) {
-            log_i("Placemark for %s updated to %s", userReadable.readable->title.c_str(),
-                  userReadable.placemark->str().c_str());
+        if (processReadablePlacemarksFromServer(userReadable.readable, userReadable.txtPlace,
+                                                userReadable.ePubPlace)) {
+            log_i("Placemark for %s updated to txt:%s and epub:%s",
+                  userReadable.readable->title.c_str(), userReadable.txtPlace->str().c_str(),
+                  userReadable.ePubPlace->str().c_str());
         }
 
         if (processToCFromServer(userReadable.readable)) {

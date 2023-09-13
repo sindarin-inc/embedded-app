@@ -18,7 +18,7 @@
 auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, StreamPlace *toPlace)
     -> std::pair<StreamPlace, StreamPlace> {
 
-    Idx streamRelativeOffset = 0;
+    uint32_t streamRelativeOffset = 0;
 
     lastToken_ = nullptr;
     tokens_.clear();
@@ -90,26 +90,53 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
 
         switch (curChar) {
         case '\n':
-            // No two or more lines with only a \n are allowed.
-            newToken.tokenId = TokenId::NEWLINE;
-            lastToken_ = nullptr;
-            pageCompleted = addTokenToPage(newToken, backwards, "\n", 1);
-            if (!pageCompleted) {
+            if (tokens_.getTokenCount() == 0) {
+                // of a newline character appears at the beginning of the parsing process, it must
+                // be an end of paragraph, as the preceding newline was absorbed by the preceding
+                // page
+                newToken = {.cStr = nullptr,
+                            .streamPlace = addOffset(fromPlace, streamRelativeOffset),
+                            .width = 0,
+                            //.height = 0,
+                            .length = 0,
+                            .tokenId = TokenId::ENDPARAGRAPH,
+                            .spacesAfter = 0};
+                pageCompleted = addTokenToPage(newToken, backwards, "\n", 1);
                 nextByte();
-                if (curChar == '\n') {
-                    Token &newToken = tokens_.getNextAvailable();
-
-                    newToken = {.cStr = nullptr,
-                                .streamPlace = addOffset(fromPlace, streamRelativeOffset),
-                                .width = 0,
-                                //.height = 0,
-                                .length = 0,
-                                .tokenId = TokenId::ENDPARAGRAPH,
-                                .spacesAfter = 0};
-                    pageCompleted = addTokenToPage(newToken, backwards, "\n", 1);
+                // No two or more lines with only a \n are allowed.
+                while (curChar == '\n') {
                     nextByte();
-                    while (curChar == '\n') {
+                }
+            } else {
+                newToken.tokenId = TokenId::NEWLINE;
+                lastToken_ = nullptr;
+                pageCompleted = addTokenToPage(newToken, backwards, "\n", 1);
+                if (!pageCompleted) {
+                    nextByte();
+                    if (curChar == '\n') {
+                        // log_w("Stream relative offset:%" PRIu32, streamRelativeOffset);
+                        if (backwards && !tokens_.isEmpty() &&
+                            ((fromPlace.getOffset() + streamRelativeOffset) >=
+                             toPlace->getOffset())) {
+                            pageCompleted = true;
+                            break;
+                        }
+
+                        Token &newToken = tokens_.getNextAvailable();
+
+                        newToken = {.cStr = nullptr,
+                                    .streamPlace = addOffset(fromPlace, streamRelativeOffset),
+                                    .width = 0,
+                                    //.height = 0,
+                                    .length = 0,
+                                    .tokenId = TokenId::ENDPARAGRAPH,
+                                    .spacesAfter = 0};
+                        pageCompleted = addTokenToPage(newToken, backwards, "\n", 1);
                         nextByte();
+                        // No two or more lines with only a \n are allowed.
+                        while (curChar == '\n') {
+                            nextByte();
+                        }
                     }
                 }
             }
@@ -198,6 +225,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
 
     if (backwards) {
         pager_.setFirstLineIdxBackward();
+        pager_.setNextPagePlace(*toPlace);
     }
 
     return {pager_.getStreamPlaceOfFirstLine(), pager_.getNextPageStreamPlace()};

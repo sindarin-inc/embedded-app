@@ -11,7 +11,9 @@ public:
     ~UserReadable() override = default;
 
     std::string uuid;
-    std::shared_ptr<Place> placemark;
+    std::shared_ptr<Place> txtPlace;
+    std::shared_ptr<Place> ePubPlace;
+
     bool isArchived;
     std::shared_ptr<Readable> readable = nullptr;
 
@@ -20,10 +22,27 @@ public:
             log_w("Failed to parse UserReadable with JSON %s", DumpJson(j).c_str());
             return false;
         }
+
         uuid = j["uuid"].as<std::string>();
-        placemark = Place::factory(j["placemark"].as<std::string>());
+
+        if (j.containsKey("placemark")) {
+            txtPlace = Place::factory(j["placemark"].as<uint32_t>());
+        } else {
+            txtPlace = std::make_shared<NonePlace>();
+        }
+        if (j.containsKey("chapter") && j.containsKey("chapter_offset")) {
+            ePubPlace = Place::factory(j["chapter_offset"].as<uint32_t>(), j["chapter"].as<std::string>());
+        } else {
+            ePubPlace = std::make_shared<NonePlace>();
+        }
+        if (txtPlace->isFor(DocType::NONE) && ePubPlace->isFor(DocType::NONE)) {
+            log_w("Failed to parse UserReadable with JSON: No Txt or EPub location detected.");
+            return false;
+        }
+
         isArchived = j["is_archived"].as<bool>();
         readable = SpiRamPtr<Readable>();
+        
         return readable->fromJson(j["readable"]);
     }
 

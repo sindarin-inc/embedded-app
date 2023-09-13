@@ -107,6 +107,17 @@ public:
         return nullptr;
     }
 
+    auto findEPubHRefChapterIdx(std::string href) -> int16_t {
+        int16_t idx = 0;
+        for (auto &chapter : toc) {
+            if (chapter.href == href) {
+                return idx;
+            }
+            idx++;
+        }
+        return -1;
+    }
+
     auto summary(const std::shared_ptr<Place> &placeInReadable,
                  const std::shared_ptr<Place> &placeInSummary, bool includeUnread) -> SpiramString {
         SpiramString summary;

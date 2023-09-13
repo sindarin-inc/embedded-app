@@ -126,6 +126,7 @@ struct LineStruct {
     Idx tokenIdx;
     uint16_t tokenCount;
     uint16_t length; // String length
+    uint16_t height;
 };
 #pragma pack(pop)
 

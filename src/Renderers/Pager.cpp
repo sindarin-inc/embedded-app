@@ -4,17 +4,27 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
 
     Token &token = tokens_.getLast();
 
+    // if constexpr (RENDERER_DEBUG) {
+    //     log_w("[%" PRIu16 "](%" PRIu16 ") tokenIdx:%" PRIu16 ", Id:%" PRIu8 ", cStrPool:%" PRIi32,
+    //           linesTailIdx_, lines_[linesTailIdx_].tokenCount, tokens_.getLastIdx(),
+    //           (uint8_t)token.tokenId, tokens_.getCStrPoolCount());
+    // }
+
     auto newLine = [this](uint16_t height) {
-        if constexpr (RENDERER_DEBUG) {
-            log_w("NewLine with tokenCount: %" PRIu16, lines_[linesTailIdx_].tokenCount);
-        }
+        // if constexpr (RENDERER_DEBUG) {
+        //     log_w("[%" PRIu16 "](%" PRIu16 ") NewLine, first tokenidx %" PRIu16, linesTailIdx_,
+        //           lines_[linesTailIdx_].tokenCount, lines_[linesTailIdx_].tokenIdx);
+        // }
 
         currentPageDecilineHeight_ += height;
+        lines_[linesTailIdx_].height = height;
+
         incrLinesTailIdx();
 
         currentLineWidth_ = 0;
         lines_[linesTailIdx_].tokenCount = 0;
         lines_[linesTailIdx_].length = 0;
+        lines_[linesTailIdx_].height = 0;
     };
 
     switch (token.tokenId) {
@@ -44,12 +54,12 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
                 // The page is not complete, the current token is the first to appear on next line
                 currentLineWidth_ += token.width;
                 lines_[linesTailIdx_].tokenIdx = tokens_.getLastIdx();
-                lines_[linesTailIdx_].tokenCount = 1;
+                lines_[linesTailIdx_].tokenCount++;
                 lines_[linesTailIdx_].length += token.length;
             }
         } else if (lines_[linesTailIdx_].tokenCount == 0) {
-
-            if ((token.tokenId != TokenId::TAB) || (linesTailIdx_ == linesHeadIdx_) ||
+            // We are at the beginning of a line
+            if ((token.tokenId != TokenId::TAB) || (tokens_.getTokenCount() < 2) ||
                 ((tokens_.getBeforeLast().tokenId == TokenId::NEWLINE) ||
                  (tokens_.getBeforeLast().tokenId == TokenId::ENDPARAGRAPH))) {
                 if (!dontStop &&
@@ -62,7 +72,7 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
                     return false;
                 }
                 lines_[linesTailIdx_].tokenIdx = tokens_.getLastIdx();
-                lines_[linesTailIdx_].tokenCount = 1;
+                lines_[linesTailIdx_].tokenCount++;
                 lines_[linesTailIdx_].length += token.length;
                 currentLineWidth_ = token.width;
             } else {
@@ -70,7 +80,7 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
             }
         } else {
             currentLineWidth_ += token.width;
-            lines_[linesTailIdx_].tokenCount += 1;
+            lines_[linesTailIdx_].tokenCount++;
             lines_[linesTailIdx_].length += token.length;
         }
 
@@ -81,6 +91,7 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
 
     case TokenId::NEWLINE:
         // token.tokenId = TokenId::NOTOKEN;
+        tokens_.forgetLast();
         if (lines_[linesTailIdx_].tokenCount > 0) {
             newLine(NEWLINE_DECI_LINE_HEIGHT);
         }

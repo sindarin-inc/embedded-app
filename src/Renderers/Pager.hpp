@@ -135,6 +135,10 @@ public:
     inline void freeLineHead() {
         if (linesHeadIdx_ != linesTailIdx_) {
 
+            // if constexpr (RENDERER_DEBUG) {
+            //     log_w("Freeing line at idx %" PRIu16, linesHeadIdx_);
+            // }
+
             tokens_.freeTokens(lines_[linesHeadIdx_].tokenIdx, lines_[linesHeadIdx_].tokenCount);
 
             incrLinesHeadIdx();
