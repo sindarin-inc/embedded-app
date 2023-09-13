@@ -17,24 +17,29 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
     auto backgroundGroup = xEventGroupCreate();
     auto &fileSystem = localStore.fileSystem;
 
-    localStore.syncFromRemote(PreferencesStore::syncReason,
-                              [&powerManager, &backgroundGroup](const ContentSyncState &state) {
+    localStore.syncFromRemote(
+        PreferencesStore::syncReason,
+        [&powerManager, &backgroundGroup, &telemetry](const ContentSyncState &state) {
         powerManager.feedInactivityTimer();
 
         if (state.state == ContentSyncState::Failure || state.state == ContentSyncState::Synced ||
             state.state == ContentSyncState::AlreadySynced) {
             if (state.state == ContentSyncState::Failure) {
+                telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-failed",
+                                    {{"message", state.message.c_str()}});
                 log_i("Content sync failed with error: %s", state.message.c_str());
             } else if (state.state == ContentSyncState::Synced) {
+                telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-success");
                 log_i("Content sync successful");
             } else if (state.state == ContentSyncState::AlreadySynced) {
+                telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-already-synced");
                 log_i("Content sync already synced");
             } else {
                 return;
             }
             xEventGroupSetBits(backgroundGroup, 1);
         }
-    });
+        });
 
     // Wait for content sync to finish
     auto bits =
