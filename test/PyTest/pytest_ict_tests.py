@@ -6,6 +6,7 @@ from typing import Any
 import platform
 import os
 import csv
+import sys
 
 import pytest
 import serial
@@ -54,12 +55,32 @@ class OverrideIdfSerial(IdfSerial):
 
         wifi_ssid = self.ict_client.get_wifi_ssid()
         logger.info("ICT ssid: " + wifi_ssid)
-
         wifi_password = self.ict_client.get_wifi_password()
         logger.info("ICT password: " + wifi_password)
 
+        cloudtoken = "FAKECLOUDTOKEN"
+
+        # set up wifi credentials to connect dut
+        # either local wifi hosted on ICT, or an actual wifi network
+        # check for existence of wifi credentials
+        if os.path.isfile("wifi.csv"):
+            with open('wifi.csv', newline='') as csvfile:
+                rdr = csv.reader(csvfile, delimiter=',')
+                for row in rdr:
+                    print(', '.join(row))
+                    if row[0] == 'ssid':
+                        wifi_ssid = row[1]
+                    elif row[0] == 'password':
+                        wifi_password = row[1]
+                    elif row[0] == 'token':
+                        cloudtoken = row[1]
+
+        print("ssid: " + wifi_ssid)
+        print("pass: " + wifi_password)
+        print("token: " + cloudtoken)
+
         # prepare nvs partition image and write to dut
-        self.write_nvs(btmac, wifi_ssid, wifi_password)
+        self.write_nvs(btmac, wifi_ssid, wifi_password, cloudtoken)
 
         # Close the serial port
         self.close()
@@ -88,7 +109,7 @@ class OverrideIdfSerial(IdfSerial):
         nvs_size_decimal = int(nvs_size, 16)
         return nvs_size_decimal
 
-    def write_nvs(self, btmac, ict_ssid, ict_pw):
+    def write_nvs(self, btmac, ict_ssid, ict_pw, cloudtoken):
         parts = btmac.split(":")
         hexstr = "".join(parts)
         logger.info("hex string: " + hexstr)
@@ -105,7 +126,7 @@ class OverrideIdfSerial(IdfSerial):
         fp.write("paired-tt,data,u64," + str(btmac_int) + "\n")
         fp.write("no-setup,data,u8,1\n");
         # Write a cloud-token so the glasses don't try to go back into ship mode upon sleep
-        fp.write("cloud-token,data,string,FAKECLOUDTOKEN\n")
+        fp.write("cloud-token,data,string," + cloudtoken + "\n")
 
         wifi_settings_json = "\"{\"\"settings\"\":[{\"\"ssid\"\":\"\"" + ict_ssid + "\"\",\"\"password\"\":\"\"" + ict_pw + "\"\"}]}\""
 
@@ -377,3 +398,42 @@ class TestPowerConsumption:
 
         logger.info("Measuring deep sleep current")
         power_client.expect_current((50, 100), 5)
+
+@pytest.mark.usefixtures("ict_client")
+@pytest.mark.ict
+class TestFullContentSync:
+    def test_full_content_sync(self, dut: OverrideDut, ict_client: MFICTClient) -> None:
+        # Serial comms go down here when we're toggling power. Go ahead and close out the connection.
+        dut.serial.close()
+
+        # Note: If the IdfDut tries to connect to the ICT serial port to flash it, it dumps a bunch of serial
+        # garbage to the ICT that will cause it to fail the next command. This clears the input buffer by sending a newline.
+        ict_client.clear_input()
+
+        ict_client.set_power(False)
+        ict_client.set_servo("right", -70)
+        ict_client.set_servo("left", 75)
+
+        #ict_client.set_power(True)
+
+        # connect to serial relay for log parsing
+        dut.serial.connect_dut_log_port()
+        ict_client.reset_dut()
+
+        maybe_format(dut)
+        dut.expect("Sol: Error-free boot!", timeout=30)
+
+        # wait for ICT pageturner connect
+        dut.expect("Connected to PageTurner", timeout=20)
+
+        # wait 5 seconds
+        time.sleep(5)
+        
+        # turntouch button
+        ict_client.tt_enter()
+
+        # wait for wifi connection
+        dut.expect("Connected, IP address", timeout=30)
+
+        dut.expect("books are in sync", timeout=60)
+        dut.expect("articles are in sync", timeout=60)
