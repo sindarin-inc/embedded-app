@@ -243,7 +243,7 @@ protected:
     Mmc5603 magSensor_;
     bool templeOpen_ = false;
     BootInfo bootInfo_;
-    Xyz8bit lastMagReading_;
+    Xyz8bit lastMagReading_ = {};
 #if !DISABLE_POWER_MANAGEMENT
     esp_pm_config_t pmConfig_;
 #endif
