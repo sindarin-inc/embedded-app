@@ -225,6 +225,7 @@ public:
     }
 
     auto getBootInfo() -> BootInfo { return bootInfo_; }
+    auto getLastMagReading() -> Xyz8bit { return lastMagReading_; }
 
     // Exposed in public: for easier refactoring, but we should consider only exposing the necessary
     // methods
@@ -242,6 +243,7 @@ protected:
     Mmc5603 magSensor_;
     bool templeOpen_ = false;
     BootInfo bootInfo_;
+    Xyz8bit lastMagReading_;
 #if !DISABLE_POWER_MANAGEMENT
     esp_pm_config_t pmConfig_;
 #endif

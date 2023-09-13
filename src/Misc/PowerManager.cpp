@@ -348,6 +348,7 @@ auto PowerManager::isTempleOpen(bool &open) -> esp_err_t {
         log_e("Failed to read magnetometer");
         return err;
     }
+    lastMagReading_ = magReading;
     open = IsTempleOpen(magReading.x, magReading.z);
 #else
     open = true;
