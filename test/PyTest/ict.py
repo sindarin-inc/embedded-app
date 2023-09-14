@@ -232,6 +232,22 @@ class MFICTClient:
         password = resp.split(" ")[1]
         return password
     
+    def tt_up(self):
+        self.write_with_ack("TTUP")
+        self.flush_read_buffer()
+
+    def tt_down(self):
+        self.write_with_ack("TTDOWN")
+        self.flush_read_buffer()
+
+    def tt_left(self):
+        self.write_with_ack("TTLEFT")
+        self.flush_read_buffer()
+
+    def tt_right(self):
+        self.write_with_ack("TTRIGHT")
+        self.flush_read_buffer()
+    
     def tt_enter(self):
         self.write_with_ack("TTENT")
         self.flush_read_buffer()

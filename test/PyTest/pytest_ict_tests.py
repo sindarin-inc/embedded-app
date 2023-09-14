@@ -404,36 +404,81 @@ class TestPowerConsumption:
 class TestFullContentSync:
     def test_full_content_sync(self, dut: OverrideDut, ict_client: MFICTClient) -> None:
         # Serial comms go down here when we're toggling power. Go ahead and close out the connection.
+        logger.info("closing dut serial")
         dut.serial.close()
 
         # Note: If the IdfDut tries to connect to the ICT serial port to flash it, it dumps a bunch of serial
         # garbage to the ICT that will cause it to fail the next command. This clears the input buffer by sending a newline.
         ict_client.clear_input()
 
+        logger.info("turn off usb power to dut")
         ict_client.set_power(False)
-        ict_client.set_servo("right", -70)
-        ict_client.set_servo("left", 75)
-
-        #ict_client.set_power(True)
+        # ict_client.set_servo("right", -70)
+        # ict_client.set_servo("left", 75)
 
         # connect to serial relay for log parsing
+        logger.info("connect dut log port")
         dut.serial.connect_dut_log_port()
+        logger.info("reset dut")
         ict_client.reset_dut()
 
         maybe_format(dut)
         dut.expect("Sol: Error-free boot!", timeout=30)
+        logger.info("got boot message")
 
         # wait for ICT pageturner connect
         dut.expect("Connected to PageTurner", timeout=20)
+        logger.info("got pageturner message")
 
         # wait 5 seconds
         time.sleep(5)
-        
-        # turntouch button
+
+        # go to system menu, clear all content and restart
+        ict_client.tt_left()
+        time.sleep(1.0)
+        ict_client.tt_down()
+        time.sleep(1.0)
+        ict_client.tt_down()
+        time.sleep(1.0)
         ict_client.tt_enter()
+        time.sleep(1.0)
+        ict_client.tt_up()
+        time.sleep(1.0)
+        ict_client.tt_up()
+        time.sleep(1.0)
+        ict_client.tt_up()
+        time.sleep(1.0)
+        ict_client.tt_enter()
+
+        # at this point the dut will restart
+        # wait again for startup messages
+
+        dut.expect("Sol: Error-free boot!", timeout=30)
+        logger.info("got boot message")
+
+        # wait for ICT pageturner connect
+        dut.expect("Connected to PageTurner", timeout=20)
+        logger.info("got pageturner message")
+        
+        time.sleep(5.0)
+
+        # now we should be on the content sync option
+        ict_client.tt_enter()
+
+        # sequence of tt commands to enter the content menu and do content sync
+        # ict_client.tt_left()
+        # time.sleep(1.0)
+        # ict_client.tt_down()
+        # time.sleep(1.0)
+        # ict_client.tt_enter()
+        # time.sleep(1.0)
+        # ict_client.tt_up()
+        # time.sleep(1.0)
+        # ict_client.tt_enter()
+        # logger.info("tt enter command")
 
         # wait for wifi connection
         dut.expect("Connected, IP address", timeout=30)
 
-        dut.expect("books are in sync", timeout=60)
-        dut.expect("articles are in sync", timeout=60)
+        dut.expect("books are in sync", timeout=180)
+        dut.expect("articles are in sync", timeout=180)
