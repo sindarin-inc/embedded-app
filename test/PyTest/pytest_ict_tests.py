@@ -29,7 +29,7 @@ dut_port_index = 0
 dut_log_port_name = "SOL Mainframe ICT"
 dut_log_port_index = 1
 
-test_config_filename = "wifi.csv"
+test_config_filename = "test/PyTest/pytest_config.csv"
 full_sync_test = 0
 cfg_ssid = ""
 cfg_password = ""
