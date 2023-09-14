@@ -119,7 +119,7 @@ public:
         return -1;
     }
 
-    auto telemetryPlacemarkMetrics() const
+    [[nodiscard]] auto telemetryPlacemarkMetrics() const
         -> std::map<std::string, std::variant<int, uint32_t, float, std::string>>;
 
     auto summary(const std::shared_ptr<Place> &placeInReadable,
