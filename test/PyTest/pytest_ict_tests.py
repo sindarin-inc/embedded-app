@@ -413,8 +413,16 @@ class TestFullContentSync:
 
         logger.info("turn off usb power to dut")
         ict_client.set_power(False)
-        # ict_client.set_servo("right", -70)
-        # ict_client.set_servo("left", 75)
+        
+        # servo values for full tester:
+        # left temple open: 0
+        # left temple closed: -75
+
+        # right temple open: 0
+        # right temple closed: 100
+
+        ict_client.set_servo("right", 0)
+        ict_client.set_servo("left", 0)
 
         # connect to serial relay for log parsing
         logger.info("connect dut log port")
@@ -434,6 +442,7 @@ class TestFullContentSync:
         time.sleep(5)
 
         # go to system menu, clear all content and restart
+        # ensure that actual downloads happen during the content sync
         ict_client.tt_left()
         time.sleep(1.0)
         ict_client.tt_down()
@@ -462,20 +471,9 @@ class TestFullContentSync:
         
         time.sleep(5.0)
 
-        # now we should be on the content sync option
+        # content has been cleared and we have restarted,
+        # so we should be on the content sync option now
         ict_client.tt_enter()
-
-        # sequence of tt commands to enter the content menu and do content sync
-        # ict_client.tt_left()
-        # time.sleep(1.0)
-        # ict_client.tt_down()
-        # time.sleep(1.0)
-        # ict_client.tt_enter()
-        # time.sleep(1.0)
-        # ict_client.tt_up()
-        # time.sleep(1.0)
-        # ict_client.tt_enter()
-        # logger.info("tt enter command")
 
         # wait for wifi connection
         dut.expect("Connected, IP address", timeout=30)
