@@ -29,6 +29,49 @@ dut_port_index = 0
 dut_log_port_name = "SOL Mainframe ICT"
 dut_log_port_index = 1
 
+test_config_filename = "wifi.csv"
+full_sync_test = 0
+cfg_ssid = ""
+cfg_password = ""
+cfg_token = ""
+config_read = False
+
+def full_test_config_exists():
+    if os.path.isfile(test_config_filename):
+        return True
+    return False
+
+def get_test_config():
+    global full_sync_test
+    global cfg_ssid
+    global cfg_password
+    global cfg_token
+    global config_read
+    if config_read:
+        return
+
+    if full_test_config_exists():
+        with open(test_config_filename, newline='') as csvfile:
+            rdr = csv.reader(csvfile, delimiter=',')
+            for row in rdr:
+                print(', '.join(row))
+                if row[0] == 'ssid':
+                    cfg_ssid = row[1]
+                elif row[0] == 'password':
+                    cfg_password = row[1]
+                elif row[0] == 'token':
+                    cfg_token = row[1]
+                elif row[0] == 'fullsync':
+                    full_sync_test = int(row[1])
+                    print("got fs: " + str(full_sync_test))
+    config_read = True
+
+def run_full_sync():
+    get_test_config()
+    global full_sync_test
+    if full_sync_test <= 0:
+        return False
+    return True
 
 @pytest.fixture
 def port(request: FixtureRequest) -> t.Optional[str]:
@@ -54,30 +97,18 @@ class OverrideIdfSerial(IdfSerial):
         logger.info("ICT bluetooth MAC: " + btmac)
 
         wifi_ssid = self.ict_client.get_wifi_ssid()
-        logger.info("ICT ssid: " + wifi_ssid)
         wifi_password = self.ict_client.get_wifi_password()
-        logger.info("ICT password: " + wifi_password)
-
+        
         cloudtoken = "FAKECLOUDTOKEN"
 
-        # set up wifi credentials to connect dut
-        # either local wifi hosted on ICT, or an actual wifi network
-        # check for existence of wifi credentials
-        if os.path.isfile("wifi.csv"):
-            with open('wifi.csv', newline='') as csvfile:
-                rdr = csv.reader(csvfile, delimiter=',')
-                for row in rdr:
-                    print(', '.join(row))
-                    if row[0] == 'ssid':
-                        wifi_ssid = row[1]
-                    elif row[0] == 'password':
-                        wifi_password = row[1]
-                    elif row[0] == 'token':
-                        cloudtoken = row[1]
+        if run_full_sync():
+            global cfg_ssid
+            global cfg_password
+            global cfg_token
 
-        print("ssid: " + wifi_ssid)
-        print("pass: " + wifi_password)
-        print("token: " + cloudtoken)
+            wifi_ssid = cfg_ssid
+            wifi_password = cfg_password
+            cloudtoken = cfg_token
 
         # prepare nvs partition image and write to dut
         self.write_nvs(btmac, wifi_ssid, wifi_password, cloudtoken)
@@ -312,6 +343,7 @@ class TestWithIctOnly:
 @pytest.mark.usefixtures("power_client")
 @pytest.mark.ict
 @pytest.mark.power
+@pytest.mark.skipif(run_full_sync(), reason="running full content sync")
 class TestPowerConsumption:
     def test_power(self, dut: OverrideDut, ict_client: MFICTClient, power_client: PowerTester) -> None:
         # Serial comms go down here when we're toggling power. Go ahead and close out the connection.
@@ -401,6 +433,7 @@ class TestPowerConsumption:
 
 @pytest.mark.usefixtures("ict_client")
 @pytest.mark.ict
+@pytest.mark.skipif(run_full_sync() == False, reason="full test not selected, add 'fulltest,1' to " + test_config_filename)
 class TestFullContentSync:
     def test_full_content_sync(self, dut: OverrideDut, ict_client: MFICTClient) -> None:
         # Serial comms go down here when we're toggling power. Go ahead and close out the connection.
