@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Misc/Telemetry.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/LocalStore.hpp"
 #include "Storage/PreferencesStore.hpp"
@@ -8,8 +9,8 @@
 class ContentSyncScreen : public Screen {
 public:
     ContentSyncScreen(DisplaySystem &display, LocalStore &localStore, PreferencesStore &prefs,
-                      bool onboardingSync = false)
-        : display_(display), localStore_(localStore), prefs_(prefs),
+                      Telemetry &telemetry, bool onboardingSync = false)
+        : display_(display), localStore_(localStore), prefs_(prefs), telemetry_(telemetry),
           onboardingSync_(onboardingSync), onboardingSyncRenderer_(display){};
 
     void render(DisplaySystem &display) override;
@@ -20,6 +21,7 @@ protected:
     DisplaySystem &display_;
     LocalStore &localStore_;
     PreferencesStore &prefs_;
+    Telemetry &telemetry_;
     ContentSyncState lastState_;
     ContentSyncState state_;
 

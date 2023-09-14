@@ -264,7 +264,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     if (readables.size() == 0) {
         booksMenu->addMenuItem(
             MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
-                auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
+                auto contentSyncScreen =
+                    new ContentSyncScreen(*display, localStore, this->prefs_, this->telemetry_);
                 lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
                 display->setFont(mainMenu->getMyStyle().navigationFont);
                 this->setCurrentScreen(*contentSyncScreen);
@@ -326,7 +327,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     if (articles.size() == 0) {
         articlesMenu->addMenuItem(
             MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
-                auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
+                auto contentSyncScreen =
+                    new ContentSyncScreen(*display, localStore, this->prefs_, this->telemetry_);
                 lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
                 display->setFont(mainMenu->getMyStyle().navigationFont);
                 this->setCurrentScreen(*contentSyncScreen);
@@ -637,7 +639,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     contentSettingsMenu->addMenuItem(
         MenuItem("Sync content now", [this, display, &localStore, mainMenu, &lightingController]() {
-            auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
+            auto contentSyncScreen =
+                new ContentSyncScreen(*display, localStore, this->prefs_, this->telemetry_);
             lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
             display->setFont(mainMenu->getMyStyle().navigationFont);
             this->setCurrentScreen(*contentSyncScreen);
@@ -827,8 +830,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     /*
         settingsMenu->addMenuItem(
             MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
-                auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
-                this->setCurrentScreen(*contentSyncScreen);
+                auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_,
+       this->telemetry_); this->setCurrentScreen(*contentSyncScreen);
                 lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
                 contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
                     this->display_->clearDisplay();
@@ -1072,7 +1075,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     debugSettingsMenu->addMenuItem(
         MenuItem("Sync Content", [this, display, &localStore, mainMenu, &lightingController]() {
-            auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_);
+            auto contentSyncScreen =
+                new ContentSyncScreen(*display, localStore, this->prefs_, this->telemetry_);
             this->setCurrentScreen(*contentSyncScreen);
             lightingController.setOverrideValuePercent(lightingController.getCurrentPercent());
             contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
@@ -1521,7 +1525,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     if (inDemo) {
         auto demoScreen = new DemoScreen(*display, prefs_, lightingController);
-        auto contentSyncScreen = new ContentSyncScreen(*display, localStore, this->prefs_, true);
+        auto contentSyncScreen =
+            new ContentSyncScreen(*display, localStore, this->prefs_, this->telemetry_, true);
         contentSyncScreen->setBackCallback([this, contentSyncScreen, mainMenu, display]() {
             if (!WiFi::getInstance().hasWiFiCredentials()) {
                 display->clearDisplay();

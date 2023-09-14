@@ -218,7 +218,13 @@ auto PowerManager::begin() -> esp_err_t {
             if (USBConnected() && !prefs_.allowUsageWhileCharging.get().value_or(false)) {
                 log_i("USB connected, switching to ActiveUSBCharging");
                 state_ = PowerState::ActiveUSBCharging;
-                inactivityTimer_.setTimeoutMs(10 * 1000);
+                // Longer timeout for unpaired glasses in case users try to set-up the glasses while
+                // connected to USB
+                if (PreferencesStore::paired == PairedStatus::Unpaired) {
+                    inactivityTimer_.setTimeoutMs(5 * 60 * 1000);
+                } else {
+                    inactivityTimer_.setTimeoutMs(15 * 1000);
+                }
                 DispatchGetUiQueue()->dispatch([this]() {
                     if (stateChangeCallback_ != nullptr) {
                         stateChangeCallback_(state_);
@@ -520,8 +526,6 @@ void PowerManager::deepSleep(SleepReason reason) {
         if (!prefs_.started()) {
             prefs_.begin();
         }
-        PreferencesStore::paired =
-            prefs_.cloudToken.get().has_value() ? PairedStatus::Paired : PairedStatus::Unpaired;
     }
 
     beginShutdown();

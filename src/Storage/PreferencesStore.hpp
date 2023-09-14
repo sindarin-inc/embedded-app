@@ -473,6 +473,10 @@ public:
         }
         logStats();
         migrateIfNeeded();
+
+        PreferencesStore::paired =
+            cloudToken.get().has_value() ? PairedStatus::Paired : PairedStatus::Unpaired;
+
         started_ = true;
         return true;
     }

@@ -41,16 +41,17 @@ void SindarinAPI::setAuth(HttpClient &client) {
 
 void SindarinAPI::setAccessToken(const std::string &token) { accessToken_ = token; }
 
-auto SindarinAPI::checkSync(CheckSyncRequest &req, CheckSyncResponse *resp) -> int {
+auto SindarinAPI::checkSync(CheckSyncRequest &req, CheckSyncResponse *resp, Telemetry &telemetry)
+    -> int {
     auto url = StringFormat(SINDARIN_SERVER_URL "/sync/%ss/",
                             ReadableModelTypeToString(req.modelType).c_str());
     log_d("Checking sync for %s: %s", ReadableModelTypeToString(req.modelType).c_str(),
           url.c_str());
-    return checkSync(url, req, resp);
+    return checkSync(url, req, resp, telemetry);
 }
 
-auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, CheckSyncResponse *resp)
-    -> int {
+auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, CheckSyncResponse *resp,
+                            Telemetry &telemetry) -> int {
     HttpClient client(url.c_str(), "application/json", HTTP_METHOD_POST);
     setAuth(client);
 
@@ -67,19 +68,28 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
     client.open(bodyLength);
     int writeLength = client.write(reqBody.get(), bodyLength);
     if (writeLength < bodyLength) {
-        log_w("HttpClient failed to write (writeLength=%d, bodyLength=%zu)", writeLength,
-              bodyLength);
+        auto message = StringFormat("HttpClient failed to write (writeLength=%d, bodyLength=%zu)",
+                                    writeLength, bodyLength);
+        log_w("%s", message.c_str());
+        telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-failed",
+                            {{"message", message.c_str()}});
         return 0;
     }
 
     int contentLength = client.fetchHeaders();
     if (contentLength <= 0) {
-        log_e("Failed to fetch headers");
+        auto message = "Failed to fetch headers";
+        log_e("%s", message);
+        telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-failed",
+                            {{"message", message}});
         return 0;
     }
     int httpCode = client.getStatusCode();
     if (httpCode != 200) {
-        log_e("Failed to check sync: %d", httpCode);
+        auto message = StringFormat("Failed to check sync: %d", httpCode);
+        log_e("%s", message.c_str());
+        telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-failed",
+                            {{"message", message.c_str()}});
         return httpCode;
     }
     auto stream = client.makeReadStream();
@@ -92,14 +102,21 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
     SHOW_HEAP();
 
     if (error.code() != DeserializationError::Ok) {
-        log_e("Failed to deserialize sync response: %s (length=%d)", error.c_str(), contentLength);
+        auto message = StringFormat("Failed to deserialize sync response: %s (length=%d)",
+                                    error.c_str(), contentLength);
+        log_e("%s", message.c_str());
+        telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-failed",
+                            {{"message", message.c_str()}});
         return 0;
     }
 
     SHOW_HEAP();
 
     if (!resp->fromJson(respJson->as<JsonObject>())) {
-        log_e("Failed to parse sync response");
+        auto message = "Failed to parse sync response";
+        log_e("%s", message);
+        telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-failed",
+                            {{"message", message}});
         return 0;
     }
 
