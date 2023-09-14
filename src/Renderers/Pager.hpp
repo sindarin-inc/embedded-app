@@ -56,6 +56,8 @@ private:
         linesTailIdx_ = (linesTailIdx_ + 1) % LINES_SIZE;
     }
 
+    void newLine(uint16_t height);
+
 public:
     Pager(Tokens &tokens, DisplaySystem &display)
         : tokens_(tokens), display_(display), picture_(nullptr) {}

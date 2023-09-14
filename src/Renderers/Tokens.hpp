@@ -141,6 +141,7 @@ public:
     void addByte(Token &token, uint8_t b);
     void addStr(Token &token, const std::string &str);
 
+    // Adds a null character at the end of a cStr that is in the cStr pool
     inline void endOfCStr() {
         cStrPool_[cStrPoolTailIdx_] = 0;
         cStrPoolTailIdx_ = (cStrPoolTailIdx_ + 1) % CSTR_POOL_SIZE;
@@ -164,8 +165,6 @@ public:
     void show() const;
     void showToken(Idx tokenIdx) const;
 
-    // The caller must have checked that there is at least 1 free entry in the tokens ring before
-    // using this method!!
     [[nodiscard]] inline auto getNextAvailable() -> Token & {
         if constexpr (RENDERER_DEBUG) {
             if (isFull()) {

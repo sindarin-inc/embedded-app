@@ -70,15 +70,4 @@ protected:
     // Computed TEXT Token character size that will fit on a line depending
     // on the current font size and line width
     uint16_t maxTextTokenCharSize_{10};
-
-    inline auto addTokenToPage(Token &token, bool backwards = false, const char *str = nullptr,
-                               uint8_t strSize = 0) -> bool {
-        if (tokens_.add(token, str, strSize)) {
-            // log_w("Token Id: %" PRIu8 " at idx: %" PRIu16, (uint8_t)token.tokenId,
-            // tokens_.getLastIdx());
-            return !pager_.addLastTokenToPage(backwards) && !backwards;
-        } else {
-            return false;
-        }
-    }
 };

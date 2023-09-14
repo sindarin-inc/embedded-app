@@ -1,5 +1,13 @@
 #include "Pager.hpp"
 
+// Takes the last token entered in the tokens_[] array and include it in the page.
+//
+// The dontStop parameter is used in the context of the TXT file format when going backward, such
+// that lines will be continuously added to the lines_[] circular array. The caller method is then
+// responsible to stop the process of adding tokens when the target location is reached.
+//
+// returns true if there is still some room in the page or dontStop is true, false if the page is
+// complete.
 auto Pager::addLastTokenToPage(bool dontStop) -> bool {
 
     Token &token = tokens_.getLast();
@@ -10,23 +18,6 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
     //           linesTailIdx_, lines_[linesTailIdx_].tokenCount, tokens_.getLastIdx(),
     //           (uint8_t)token.tokenId, tokens_.getCStrPoolCount());
     // }
-
-    auto newLine = [this](uint16_t height) {
-        // if constexpr (RENDERER_DEBUG) {
-        //     log_w("[%" PRIu16 "](%" PRIu16 ") NewLine, first tokenidx %" PRIu16, linesTailIdx_,
-        //           lines_[linesTailIdx_].tokenCount, lines_[linesTailIdx_].tokenIdx);
-        // }
-
-        currentPageDecilineHeight_ += height;
-        lines_[linesTailIdx_].height = height;
-
-        incrLinesTailIdx();
-
-        currentLineWidth_ = 0;
-        lines_[linesTailIdx_].tokenCount = 0;
-        lines_[linesTailIdx_].length = 0;
-        lines_[linesTailIdx_].height = 0;
-    };
 
     switch (token.tokenId) {
     case TokenId::TEXT:
@@ -105,6 +96,7 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
         if (!dontStop &&
             ((currentPageDecilineHeight_ + ENDPARAGRAPH_DECI_LINE_HEIGHT) > maxDeciLines_)) {
             currentPageDecilineHeight_ += ENDPARAGRAPH_DECI_LINE_HEIGHT;
+            log_e("ENDPARAGRAPH!!!: %" PRIu32, token.streamPlace.getOffset());
             setNextPagePlace(token.streamPlace);
             if constexpr (RENDERER_DEBUG) {
                 log_w("Page completed: %" PRIu16 " decilines. Max: %" PRIu16,
@@ -134,6 +126,24 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
         newLine(maxDeciLines_);
         break;
 
+        // case TokenId::PICTURE:
+        //     if (lines_[linesTailIdx_].tokenCount > 0) {
+        //         newLine(NEWLINE_DECI_LINE_HEIGHT);
+        //     }
+        //     if (!dontStop &&
+        //         ((currentPageDecilineHeight_ + picture_.get()->getHeight()) > maxDeciLines_)) {
+        //         setNextPagePlace(token.streamPlace);
+        //         if constexpr (RENDERER_DEBUG) {
+        //             log_w("Page completed: %" PRIu16 " decilines. Max: %" PRIu16,
+        //                   currentPageDecilineHeight_, maxDeciLines_);
+        //         }
+        //         return false;
+        //     }
+        //     lines_[linesTailIdx_].tokenCount = 1;
+        //     lines_[linesTailIdx_].tokenIdx = tokens_.getLastIdx();
+        //     newLine(picture_.get()->getHeight());
+        //     break;
+
     case TokenId::NOTOKEN:
         break;
     }
@@ -141,17 +151,35 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
     return true;
 }
 
+void Pager::newLine(uint16_t height) {
+
+    if constexpr (RENDERER_DEBUG) {
+        log_w("[%" PRIu16 "](%" PRIu16 ") NewLine, first tokenidx %" PRIu16 " %s", linesTailIdx_,
+              lines_[linesTailIdx_].tokenCount, lines_[linesTailIdx_].tokenIdx,
+              tokens_[lines_[linesTailIdx_].tokenIdx].streamPlace.str().c_str());
+    }
+
+    currentPageDecilineHeight_ += height;
+    lines_[linesTailIdx_].height = height;
+
+    incrLinesTailIdx();
+
+    currentLineWidth_ = 0;
+    lines_[linesTailIdx_].tokenCount = 0;
+    lines_[linesTailIdx_].length = 0;
+    lines_[linesTailIdx_].height = 0;
+};
+
 // Called when going back and the end place is found. Their may
 // remains a line that was not completed.
 void Pager::completeLastLine() {
     if (lines_[linesTailIdx_].tokenCount > 0) {
         if ((lines_[linesTailIdx_].tokenCount == 1) &&
             (tokens_[lines_[linesTailIdx_].tokenIdx].tokenId == TokenId::ENDPARAGRAPH)) {
-            currentPageDecilineHeight_ += ENDPARAGRAPH_DECI_LINE_HEIGHT;
+            newLine(ENDPARAGRAPH_DECI_LINE_HEIGHT);
         } else {
-            currentPageDecilineHeight_ += NEWLINE_DECI_LINE_HEIGHT;
+            newLine(NEWLINE_DECI_LINE_HEIGHT);
         }
-        incrLinesTailIdx();
     }
 }
 
@@ -180,6 +208,7 @@ auto Pager::getPageLength() const -> uint16_t {
     return length;
 }
 
+// Prepare a line to be displayed on screen
 void Pager::getLine(Idx lineNbr, Line &line) const {
     line[0] = 0;
     Idx endTokenIdx = tokens_.addToTokenIdx(lines_[lineNbr].tokenIdx, lines_[lineNbr].tokenCount);
@@ -195,7 +224,7 @@ void Pager::getLine(Idx lineNbr, Line &line) const {
                 memcpy(line.data() + lineIdx, tokens_[tokenIdx].cStr, tokens_[tokenIdx].length);
                 lineIdx += tokens_[tokenIdx].length;
             }
-            if (tokens_[tokenIdx].spacesAfter != 0) {
+            for (int i = 0; i < tokens_[tokenIdx].spacesAfter; i++) {
                 line[lineIdx++] = ' ';
             }
         }
@@ -223,7 +252,8 @@ void Pager::displayPage(int16_t numSkipLines) {
         if (startOfPage) {
             if (token.tokenId == TokenId::ENDPARAGRAPH) {
                 if constexpr (RENDERER_DEBUG) {
-                    log_d("%s: <PARA NOT SHOWN>", token.streamPlace.str().c_str());
+                    log_d("[%" PRIu16 "] %s: <PARA NOT SHOWN>", lineIdx,
+                          token.streamPlace.str().c_str());
                 }
                 noCareLines += 1;
                 continue;
@@ -234,7 +264,7 @@ void Pager::displayPage(int16_t numSkipLines) {
 
         if (token.tokenId == TokenId::ENDPARAGRAPH) {
             if constexpr (RENDERER_DEBUG) {
-                log_d("%s: <PARA>", token.streamPlace.str().c_str());
+                log_d("[%" PRIu16 "] %s: <PARA>", lineIdx, token.streamPlace.str().c_str());
             }
             paraLineAdjust++;
         } else if (token.tokenId == TokenId::PICTURE) {
@@ -267,6 +297,8 @@ void Pager::displayPage(int16_t numSkipLines) {
     }
 }
 
+// Used in the TXT book/article context to find the beginning of the page to show when going
+// backward.
 void Pager::setFirstLineIdxBackward() {
     if constexpr (RENDERER_DEBUG) {
         log_w("Start of First Line Idx search...");

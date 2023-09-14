@@ -4,6 +4,7 @@
 #include <deque>
 #include <map>
 #include <string>
+#include <variant>
 #include <vector>
 
 #include "Misc/SpiramAllocator.hpp"
@@ -117,6 +118,9 @@ public:
         }
         return -1;
     }
+
+    auto telemetryPlacemarkMetrics() const
+        -> std::map<std::string, std::variant<int, uint32_t, float, std::string>>;
 
     auto summary(const std::shared_ptr<Place> &placeInReadable,
                  const std::shared_ptr<Place> &placeInSummary, bool includeUnread) -> SpiramString {

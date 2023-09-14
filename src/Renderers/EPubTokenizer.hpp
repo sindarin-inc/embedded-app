@@ -76,6 +76,10 @@ private:
     // Where the tokenizer will start to parse tokens
     StreamPlace fromPlace_;
 
+    // Where it will end in case of backward movements
+    StreamPlace *toPlace_;
+    bool backwards_;
+
     // Used to add space qty that follow a token
     Token *lastToken_;
 
@@ -96,7 +100,8 @@ private:
     [[nodiscard]] auto loadXHTMLAt(Idx fileIdx) -> pugi::xml_document &;
     [[nodiscard]] auto interpret(pugi::xml_node node) -> bool;
     [[nodiscard]] auto addStrToPage(uint32_t offset, const pugi::char_t *str, uint32_t len) -> bool;
-    [[nodiscard]] auto forwardToNextPageOffset(pugi::xml_node node) const -> uint32_t;
+
+    // [[nodiscard]] auto forwardToNextPageOffset(pugi::xml_node node) const -> uint32_t;
 
     void processPictureTag(pugi::xml_node node);
     void processSuperscript(pugi::xml_node node);
@@ -112,4 +117,6 @@ private:
         }
         return true;
     }
+
+    auto addTokenToPage(Token &token, const char *str = nullptr, uint8_t strSize = 0) -> bool;
 };

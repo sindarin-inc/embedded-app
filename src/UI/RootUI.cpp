@@ -151,7 +151,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                localStore, fileSystem, lightingController);
 
         this->telemetry_.logMetric(TelemetryField::METRIC_READABLE_OPEN, readable->uuid,
-                                   {{"po", readable->place->getOffset()}});
+                                   readable->telemetryPlacemarkMetrics());
 
         // When switching to a readable from a menu, we should clear the display
         // to make the whites really white and the blacks really black.

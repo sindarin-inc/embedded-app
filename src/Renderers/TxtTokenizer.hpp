@@ -13,7 +13,7 @@ public:
                                            StreamPlace *toPlace = nullptr)
         -> std::pair<StreamPlace, StreamPlace> override;
 
-    // ToDo: To be adjusted related to the upcoming Place definition
+    // ToDo: May have to be adjusted related to the upcoming Place definition
     [[nodiscard]] auto toStreamPlace(const std::shared_ptr<Place> place) const
         -> StreamPlace override {
         if (place->isFor(DocType::TXT)) {
@@ -50,4 +50,17 @@ private:
     Token *lastToken_;
 
     [[nodiscard]] auto getFileLocation(StreamPlace fromPlace) -> StreamPlace;
+
+    // Integrates the token to the tokens_[] array and to the page.
+    // Returns true if the page is ready.
+    inline auto addTokenToPage(Token &token, bool backwards = false, const char *str = nullptr,
+                               uint8_t strSize = 0) -> bool {
+        if (tokens_.add(token, str, strSize)) {
+            // log_w("Token Id: %" PRIu8 " at idx: %" PRIu16, (uint8_t)token.tokenId,
+            // tokens_.getLastIdx());
+            return !pager_.addLastTokenToPage(backwards) && !backwards;
+        } else {
+            return false;
+        }
+    }
 };

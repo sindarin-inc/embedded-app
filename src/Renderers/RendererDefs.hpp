@@ -11,7 +11,7 @@
 namespace renderer_defs {
 
 // For deep logging when changing this file
-static constexpr bool RENDERER_DEBUG = false;
+static constexpr bool RENDERER_DEBUG = true;
 static constexpr bool ON_ERROR_EXIT = true;
 static constexpr bool RENDERER_STATS = true;
 

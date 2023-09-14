@@ -14,8 +14,7 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
                                  : tokenizer_->toStreamPlace(std::move(fromPlace));
 
     if constexpr (RENDERER_DEBUG) {
-        log_w("%s is place in file being requested (%s)", startPlace.str().c_str(),
-              (fromPlace == nullptr) ? "NULL" : fromPlace->str().c_str());
+        log_w("%s is place in file being requested.", startPlace.str().c_str());
     }
 
     // This needs to happen before loading into buffer since it will affect what we load into the
