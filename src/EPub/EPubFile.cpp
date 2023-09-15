@@ -41,9 +41,9 @@ auto EPubFile::findFileOffsetAtCharOffset(const std::string &path, uint32_t char
 // Returns a pointer to the buffer containing the extracted file from the EPub and it's length in a
 // tuple
 auto EPubFile::getFile(const std::string &completeFilePath)
-    -> std::pair<std::unique_ptr<uint8_t[]>, uint32_t> {
+    -> std::pair<std::shared_ptr<uint8_t[]>, uint32_t> {
 
-    std::unique_ptr<uint8_t[]> buffer = nullptr;
+    std::shared_ptr<uint8_t[]> buffer = nullptr;
 
     if (epubZipFile_.openFile(completeFilePath.c_str()) != UNZ_OK) {
         log_e("Failed to open XHTML file %s", completeFilePath.c_str());
@@ -51,14 +51,16 @@ auto EPubFile::getFile(const std::string &completeFilePath)
         unz_file_info info;
         epubZipFile_.getFileInfo(&info, nullptr, 0, nullptr, 0);
 
-        buffer = std::make_unique<uint8_t[]>(info.uncompressed_size);
+        buffer = SpiRamArrayPtr<uint8_t>(info.uncompressed_size + 1);
+
         if (buffer != nullptr) {
             size_t len = epubZipFile_.readFromFile(buffer.get(), info.uncompressed_size);
             epubZipFile_.closeFile();
             if (len != info.uncompressed_size) {
                 log_e("Unable to unzip file %s", completeFilePath.c_str());
             }
-            uint32_t length = info.uncompressed_size;
+            uint32_t length = info.uncompressed_size + 1;
+            buffer[len] = '\0';
             return {std::move(buffer), length};
         }
     }
@@ -76,19 +78,21 @@ auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
             unz_file_info info;
             epubZipFile_.getFileInfo(&info, nullptr, 0, nullptr, 0);
 
-            currentFileBuffer_ = SpiRamArrayPtr<pugi::char_t>(info.uncompressed_size);
+            currentFileBuffer_ = SpiRamArrayPtr<pugi::char_t>(info.uncompressed_size + 1);
             // currentFileBuffer_ = std::make_unique<pugi::char_t[]>(info.uncompressed_size);
 
             if (currentFileBuffer_ != nullptr) {
                 size_t len = epubZipFile_.readFromFile((uint8_t *)currentFileBuffer_.get(),
                                                        info.uncompressed_size);
                 epubZipFile_.closeFile();
+                currentFileBuffer_[len] = '\0';
 
                 if (len == info.uncompressed_size) {
                     // Using load_buffer_inplace() is mandatory here as it permits the
                     // computation of a node offset location, as string elements are taken
                     // directly in the currentFileBuffer instead of being copied.
                     // (see the EPubFile::getOffset() method).
+
                     pugi::xml_parse_result result =
                         currentFileDoc.load_buffer_inplace(currentFileBuffer_.get(), len);
 
