@@ -36,6 +36,8 @@ public:
 
     [[nodiscard]] inline auto getSpineCount() const -> uint16_t { return spine_.size(); }
 
+    void extractPath(const char *fname, std::string &path);
+
 private:
     const char *path_;
     ZipFile &zipFile_;
@@ -52,6 +54,4 @@ private:
     SpineVector spine_;
 
     // uint32_t totalSize_{0};
-
-    void extractPath(const char *fname, std::string &path);
 };

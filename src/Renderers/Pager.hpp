@@ -77,7 +77,8 @@ public:
         currentPageDecilineHeight_ = 0;
         maxDeciLines_ = getMaxDeciLines();
         maxLineWidth_ = display_.width();
-        lines_[0].tokenCount = 0;
+        lines_[0] = {};
+        picture_ = nullptr;
 
         uint16_t notUsed;
         display_.getTextSize(" ", &spaceWidth_, &notUsed);

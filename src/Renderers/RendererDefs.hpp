@@ -11,7 +11,7 @@
 namespace renderer_defs {
 
 // For deep logging when changing this file
-static constexpr bool RENDERER_DEBUG = true;
+static constexpr bool RENDERER_DEBUG = false;
 static constexpr bool ON_ERROR_EXIT = true;
 static constexpr bool RENDERER_STATS = true;
 
@@ -21,7 +21,7 @@ static constexpr uint32_t LOCATION_ERROR = 0xFFFFFFFF;
 // This is the number of SUB-lines we want to split a line into to be able to render bare
 // newlines as less than a full line height of the text. (Deci was chosen as 1/10) So what the
 // two lines below mean is that a new line by itself on a line will render as 4/10s of a full
-// line height. Theoretically we can do any percent       age we want here, but there is a lot of
+// line height. Theoretically we can do any percentage we want here, but there is a lot of
 // testing to do for that!
 
 static constexpr uint16_t NEWLINE_DECI_LINE_HEIGHT = 10;
@@ -55,6 +55,7 @@ using Idx = uint16_t;
 // we more easily know what to do with the text.
 enum class TokenId : uint8_t {
     TEXT = 0,
+    GTEXT, // Glued text: Token that must stay on the same line as the preceding one (TBD)
     NEWLINE,
     ENDPARAGRAPH,
     HYPHEN,
@@ -62,6 +63,7 @@ enum class TokenId : uint8_t {
     EMDASH,
     TAB,
     PICTURE,
+    HLINE, // Horizontal line (TBD)
     NOTOKEN
 };
 

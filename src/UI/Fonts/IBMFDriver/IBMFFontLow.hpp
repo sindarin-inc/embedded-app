@@ -257,7 +257,7 @@ public:
         }
 #endif
 
-        if (preamble_->bits.fontFormat == FontFormat::UTF32) {
+        if ((codePoint != 0xA0) && (preamble_->bits.fontFormat == FontFormat::UTF32)) {
             auto planeIdx = static_cast<uint16_t>(codePoint >> 16);
 
             if (planeIdx <= 3) {

@@ -80,6 +80,9 @@ private:
     StreamPlace *toPlace_;
     bool backwards_;
 
+    // true when a <SUP></SUP> if being processed
+    bool superscript_;
+
     // Used to add space qty that follow a token
     Token *lastToken_;
 
@@ -93,18 +96,18 @@ private:
     // be displayed if no picture are shown
     bool skipNextParagraph_;
 
-    uint32_t lastStreamRelativeOffset_;
+    uint32_t currentStreamOffset_;
 
     [[nodiscard]] auto getCharEntity(const char *str, const char **newStrLocation) const -> const
         char *;
     [[nodiscard]] auto loadXHTMLAt(Idx fileIdx) -> pugi::xml_document &;
     [[nodiscard]] auto interpret(pugi::xml_node node) -> bool;
-    [[nodiscard]] auto addStrToPage(uint32_t offset, const pugi::char_t *str, uint32_t len) -> bool;
+    [[nodiscard]] auto addStrToPage(const pugi::char_t *str, uint32_t len) -> bool;
 
     // [[nodiscard]] auto forwardToNextPageOffset(pugi::xml_node node) const -> uint32_t;
 
     void processPictureTag(pugi::xml_node node);
-    void processSuperscript(pugi::xml_node node);
+    // void processSuperscript(pugi::xml_node node);
 
     [[nodiscard]] static inline auto isSpaces(const char *cstr) -> bool {
         while (*cstr) {

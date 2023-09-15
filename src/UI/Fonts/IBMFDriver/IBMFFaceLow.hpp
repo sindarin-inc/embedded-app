@@ -102,7 +102,9 @@ public:
     }
 
     [[nodiscard]] inline auto getGlyphWidth(GlyphCode glyphCode) const -> uint8_t {
-        return (*glyphsInfo_)[glyphCode].bitmapWidth;
+        return (glyphCode < SPACE_CODE)
+                   ? (*glyphsInfo_)[glyphCode].bitmapWidth
+                   : static_cast<FIX16>(static_cast<uint16_t>(faceHeader_->spaceSize));
     }
 
     [[nodiscard]] inline auto getLigKernPgmIndex(GlyphCode glyphCode) const -> uint16_t {

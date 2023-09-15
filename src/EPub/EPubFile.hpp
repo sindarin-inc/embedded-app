@@ -62,6 +62,14 @@ public:
         return opf_->getFullPath(filename);
     }
 
+    [[nodiscard]] auto getRelativeFilePath(const std::string &filename, Idx spineIdx) const
+        -> std::string {
+        std::string mainFilePath = opf_->getFullPath(opf_->getSpine(spineIdx).item->href);
+        std::string path;
+        opf_->extractPath(mainFilePath.c_str(), path);
+        return path + filename;
+    }
+
     [[nodiscard]] auto getUncompressedSize(Idx spineIdx) -> uint32_t {
         std::string filePath = opf_->getFullPath(opf_->getSpine(spineIdx).item->href);
         // log_w("Loading file %s", filePath.c_str());

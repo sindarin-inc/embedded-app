@@ -96,7 +96,6 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
         if (!dontStop &&
             ((currentPageDecilineHeight_ + ENDPARAGRAPH_DECI_LINE_HEIGHT) > maxDeciLines_)) {
             currentPageDecilineHeight_ += ENDPARAGRAPH_DECI_LINE_HEIGHT;
-            log_e("ENDPARAGRAPH!!!: %" PRIu32, token.streamPlace.getOffset());
             setNextPagePlace(token.streamPlace);
             if constexpr (RENDERER_DEBUG) {
                 log_w("Page completed: %" PRIu16 " decilines. Max: %" PRIu16,
@@ -165,9 +164,7 @@ void Pager::newLine(uint16_t height) {
     incrLinesTailIdx();
 
     currentLineWidth_ = 0;
-    lines_[linesTailIdx_].tokenCount = 0;
-    lines_[linesTailIdx_].length = 0;
-    lines_[linesTailIdx_].height = 0;
+    lines_[linesTailIdx_] = {};
 };
 
 // Called when going back and the end place is found. Their may
@@ -268,6 +265,9 @@ void Pager::displayPage(int16_t numSkipLines) {
             }
             paraLineAdjust++;
         } else if (token.tokenId == TokenId::PICTURE) {
+            if constexpr (RENDERER_DEBUG) {
+                log_d("[%" PRIu16 "] %s: <PICTURE> %s", lineIdx, token.streamPlace.str().c_str(), token.cStr);
+            }
             if (picture_ != nullptr) {
                 int width = picture_.get()->getWidth();
                 int height = picture_.get()->getHeight();
