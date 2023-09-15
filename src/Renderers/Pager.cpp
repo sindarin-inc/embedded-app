@@ -276,7 +276,7 @@ void Pager::displayPage(int16_t numSkipLines) {
     // linesTailIdx_);
 
     uint16_t lineNbr = 0;
-    int deci_y = 0;
+    int deciY = 0;
 
     for (Idx lineIdx = firstPageLineIdx_; lineIdx != linesTailIdx_;
          nextLineIdx(lineIdx), lineNbr++) {
@@ -313,11 +313,9 @@ void Pager::displayPage(int16_t numSkipLines) {
                 int width = token.picture->getWidth();
                 int height = token.picture->getHeight();
                 // int16_t y = deciToPix(deci_y + ENDPARAGRAPH_DECI_LINE_HEIGHT) + height / 2;
-                display_.drawXBitmap(
-                    (display_.width() - width) / 2,
-                    deciToPix(deci_y),
-                    token.picture->getBuffer(), width, height, display_.fg);
-                deci_y += pixToDeci(height + 4);
+                display_.drawXBitmap((display_.width() - width) / 2, deciToPix(deciY),
+                                     token.picture->getBuffer(), width, height, display_.fg);
+                deciY += pixToDeci(height + 4);
             } else {
                 log_e("Picture not there!!");
                 if constexpr (ON_ERROR_EXIT) {
@@ -325,7 +323,7 @@ void Pager::displayPage(int16_t numSkipLines) {
                 }
             }
         } else if (token.tokenId == TokenId::ENDPARAGRAPH) {
-            if (deci_y == 0) {
+            if (deciY == 0) {
                 if constexpr (RENDERER_DEBUG) {
                     log_d("[%" PRIu16 "] %s: <PARA NOT SHOWN>", lineIdx,
                           token.streamPlace.str().c_str());
@@ -335,14 +333,14 @@ void Pager::displayPage(int16_t numSkipLines) {
             if constexpr (RENDERER_DEBUG) {
                 log_d("[%" PRIu16 "] %s: <PARA>", lineIdx, token.streamPlace.str().c_str());
             }
-            deci_y += lines_[lineIdx].height;
+            deciY += lines_[lineIdx].height;
         } else if (token.tokenId == TokenId::HRULE) {
             if constexpr (RENDERER_DEBUG) {
                 log_d("[%" PRIu16 "] %s: <HRULE>", lineIdx, token.streamPlace.str().c_str());
             }
-            uint16_t y = deciToPix(deci_y + (lines_[lineIdx].height / 2));
+            uint16_t y = deciToPix(deciY + (lines_[lineIdx].height / 2));
             display_.drawLine(0, y, display_.width(), y, display_.fg);
-            deci_y += lines_[lineIdx].height;
+            deciY += lines_[lineIdx].height;
         } else {
             // Only draw the lines if it's not skipped from the caller.
             if (lineNbr >= numSkipLines) {
@@ -352,13 +350,13 @@ void Pager::displayPage(int16_t numSkipLines) {
                     log_d("[%" PRIu16 "] %s: <%s>", lineIdx, token.streamPlace.str().c_str(),
                           line.data());
                 }
-                display_.drawSingleLineOfText(line.data(), 0, deciToPix(deci_y));
+                display_.drawSingleLineOfText(line.data(), 0, deciToPix(deciY));
             } else {
                 if constexpr (RENDERER_DEBUG) {
                     log_d("[%" PRIu16 "] %s: <SKIPPED>", lineIdx, token.streamPlace.str().c_str());
                 }
             }
-            deci_y += NEWLINE_DECI_LINE_HEIGHT;
+            deciY += NEWLINE_DECI_LINE_HEIGHT;
         }
     }
 }

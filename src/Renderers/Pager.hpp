@@ -66,8 +66,7 @@ private:
     void newLine(uint16_t height);
 
 public:
-    Pager(Tokens &tokens, DisplaySystem &display)
-        : tokens_(tokens), display_(display) {}
+    Pager(Tokens &tokens, DisplaySystem &display) : tokens_(tokens), display_(display) {}
 
     // Switch to 1/10 of a line as this gives us more flexibilty in rendering
     // precision between lines.
