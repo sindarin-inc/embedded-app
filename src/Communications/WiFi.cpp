@@ -256,8 +256,20 @@ auto WiFi::scanNetworks(const std::function<void(std::shared_ptr<wifi_ap_record_
 }
 
 auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> esp_err_t {
+    esp_err_t err = begin();
+    if (err != ESP_OK) {
+        log_e("begin failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+
+    err = esp_wifi_start();
+    if (err != ESP_OK) {
+        log_e("esp_wifi_start failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+
     // We have to have wifi sleep enabled otherwise Bluetooth can't work
-    esp_err_t err = esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
+    err = esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
     if (err != ESP_OK) {
         log_e("esp_wifi_set_ps failed with error %s", esp_err_to_name(err));
         return err;
