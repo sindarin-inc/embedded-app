@@ -139,7 +139,8 @@ void Tokens::freeTokens(Idx fromTokenIdx, uint16_t count) {
         //         }
         //     }
 
-        // Release pointers on pictures if exists, save the last entry where there is a pool string pointer
+        // Release pointers on pictures if exists, save the last entry where there is a pool string
+        // pointer
         Idx idx = fromTokenIdx;
         Idx lastTokenPoolIdx = fromTokenIdx;
         TokenId id = tokens_[idx].tokenId;
