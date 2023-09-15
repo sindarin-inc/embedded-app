@@ -54,8 +54,11 @@ auto EPubFile::getFile(const std::string &completeFilePath)
         buffer = SpiRamArrayPtr<uint8_t>(info.uncompressed_size + 1);
 
         if (buffer != nullptr) {
+            PROFILE_START(ReadPictureFromEPub);
             size_t len = epubZipFile_.readFromFile(buffer.get(), info.uncompressed_size);
             epubZipFile_.closeFile();
+            PROFILE_END_LOG_MS(ReadPictureFromEPub);
+
             if (len != info.uncompressed_size) {
                 log_e("Unable to unzip file %s", completeFilePath.c_str());
             }
@@ -72,19 +75,32 @@ auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
     std::string filePath = opf_->getFullPath(path);
     // log_w("Loading file %s", filePath.c_str());
     if (currentFilePath_ != filePath) {
-        if (epubZipFile_.openFile(filePath.c_str()) != UNZ_OK) {
+
+        log_w("currentFilePath_: %s, filePath : %s", currentFilePath_.c_str(), filePath.c_str());
+
+        PROFILE_START(OpenXHTMLFile);
+        auto res = epubZipFile_.openFile(filePath.c_str());
+        PROFILE_END_LOG_MS(OpenXHTMLFile);
+
+        if (res != UNZ_OK) {
             log_e("Failed to open XHTML file %s", filePath.c_str());
         } else {
             unz_file_info info;
+
+            PROFILE_START(getFileInfo);
             epubZipFile_.getFileInfo(&info, nullptr, 0, nullptr, 0);
+            PROFILE_END_LOG_MS(getFileInfo);
 
             currentFileBuffer_ = SpiRamArrayPtr<pugi::char_t>(info.uncompressed_size + 1);
             // currentFileBuffer_ = std::make_unique<pugi::char_t[]>(info.uncompressed_size);
 
             if (currentFileBuffer_ != nullptr) {
+                PROFILE_START(ReadXHTMLFromEPub);
                 size_t len = epubZipFile_.readFromFile((uint8_t *)currentFileBuffer_.get(),
                                                        info.uncompressed_size);
                 epubZipFile_.closeFile();
+                PROFILE_END_LOG_MS(ReadXHTMLFromEPub);
+
                 currentFileBuffer_[len] = '\0';
 
                 if (len == info.uncompressed_size) {
@@ -93,8 +109,10 @@ auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
                     // directly in the currentFileBuffer instead of being copied.
                     // (see the EPubFile::getOffset() method).
 
+                    PROFILE_START(ParseXHTML);
                     pugi::xml_parse_result result =
                         currentFileDoc.load_buffer_inplace(currentFileBuffer_.get(), len);
+                    PROFILE_END_LOG_MS(ParseXHTML);
 
                     if (result) {
                         currentFilePath_ = filePath;
@@ -116,13 +134,16 @@ auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
 }
 
 auto EPubFile::open() -> bool {
+    PROFILE_START(openEPubZipFile);
     if (!epubZipFile_.open()) {
         log_e("Failed to open ePub file");
         return false;
     }
+    PROFILE_END_LOG_MS(openEPubZipFile);
 
     EPubMetaFile manifest(epubZipFile_, "META-INF/container.xml");
     manifest.parse();
+
     // for (auto &path : manifest.rootfilePaths) {
     //     log_i("Rootfile path: %s", path.c_str());
     // }
