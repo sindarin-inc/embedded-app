@@ -347,15 +347,13 @@ void PowerManager::loop() {
 }
 
 auto PowerManager::isTempleOpen(bool &open) -> esp_err_t {
-    Xyz8bit magReading;
 #if USE_MMC5603
-    auto err = magSensor_.readXZ8Bit(magReading);
+    auto err = magSensor_.readXZ8Bit(lastMagReading_);
     if (err != ESP_OK) {
         log_e("Failed to read magnetometer");
         return err;
     }
-    lastMagReading_ = magReading;
-    open = IsTempleOpen(magReading.x, magReading.z);
+    open = IsTempleOpen(lastMagReading_.x, lastMagReading_.z);
 #else
     open = true;
 #endif
