@@ -57,7 +57,7 @@ private:
     enum class Tag : uint8_t { NONE, P, LI, BREAK, H1, H2, H3, H4, H5, H6, 
                                B, I, A, IMG, PICTURE, SOURCE, EM, DIV, SPAN, PRE,
                                BLOCKQUOTE, STRONG, ANY, FONT_FACE, PAGE,
-                               SUB, SUP };
+                               SUB, SUP, HR };
     // clang-format on
 
     using Tags = std::map<std::string, Tag>;
@@ -107,7 +107,6 @@ private:
     // [[nodiscard]] auto forwardToNextPageOffset(pugi::xml_node node) const -> uint32_t;
 
     void processPictureTag(pugi::xml_node node);
-    // void processSuperscript(pugi::xml_node node);
 
     [[nodiscard]] static inline auto isSpaces(const char *cstr) -> bool {
         while (*cstr) {

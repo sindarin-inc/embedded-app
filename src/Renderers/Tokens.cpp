@@ -139,18 +139,45 @@ void Tokens::freeTokens(Idx fromTokenIdx, uint16_t count) {
         //         }
         //     }
 
+        // Release pointers on pictures if exists, save the last entry where there is a pool string pointer
+        Idx idx = fromTokenIdx;
+        Idx lastTokenPoolIdx = fromTokenIdx;
+        TokenId id = tokens_[idx].tokenId;
+        for (int i = 0; i < count; i++, nextTokenIdx(idx)) {
+            if (tokens_[idx].picture != nullptr) {
+                tokens_[idx].picture.reset();
+            }
+            // Not all tokens are using the pool
+            if ((id == TokenId::TEXT) || (id == TokenId::PICTURE) || (id == TokenId::EPICTURE)) {
+                lastTokenPoolIdx = idx;
+                id = tokens_[idx].tokenId;
+            }
+        }
         // Search the last token that contains a pointer inside the pool
         int32_t poolCount = getCStrPoolCount();
-        Idx tokenIdx = addToTokenIdx(fromTokenIdx, count - 1);
-        while ((tokenIdx != fromTokenIdx) && (tokens_[tokenIdx].tokenId != TokenId::TEXT) &&
-               (tokens_[tokenIdx].tokenId != TokenId::PICTURE)) {
-            prevTokenIdx(tokenIdx);
-        }
-        if ((tokens_[tokenIdx].tokenId == TokenId::TEXT) ||
-            (tokens_[tokenIdx].tokenId == TokenId::PICTURE)) {
+        // Idx tokenIdx = addToTokenIdx(fromTokenIdx, count - 1);
+        // TokenId id = tokens_[tokenIdx].tokenId;
+        // while ((tokenIdx != fromTokenIdx) && (id != TokenId::TEXT) && (id != TokenId::PICTURE) &&
+        //        (id != TokenId::EPICTURE)) {
+        //     prevTokenIdx(tokenIdx);
+        //     id = tokens_[tokenIdx].tokenId;
+        // }
+        // Not all tokens are using the pool
+        if ((id == TokenId::TEXT) || (id == TokenId::PICTURE) || (id == TokenId::EPICTURE)) {
             // Free space in string pool
-            Idx poolIdx = tokens_[tokenIdx].cStr - cStrPool_.data();
-            cStrPoolHeadIdx_ = addToCStrPoolIdx(poolIdx, tokens_[tokenIdx].length + 1);
+            Idx poolIdx = tokens_[lastTokenPoolIdx].cStr - cStrPool_.data();
+
+            if constexpr (RENDERER_DEBUG) {
+                if (poolIdx >= CSTR_POOL_SIZE) {
+                    log_e("poolIdx too large: %" PRIu16 ", must be smaller than %" PRIu16, poolIdx,
+                          CSTR_POOL_SIZE);
+                    if (ON_ERROR_EXIT) {
+                        exit(1);
+                    }
+                }
+            }
+
+            cStrPoolHeadIdx_ = addToCStrPoolIdx(poolIdx, tokens_[lastTokenPoolIdx].length + 1);
         }
 
         if (poolCount < getCStrPoolCount()) {

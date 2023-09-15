@@ -5,15 +5,16 @@
 // ToDo: Some cleanup required... there maybe more tags than required here
 
 EPubTokenizer::Tags EPubTokenizer::tags
-  = {{"p",             Tag::P}, {"div",               Tag::DIV}, {"span",            Tag::SPAN}, 
-     {"br",        Tag::BREAK}, {"h1",                 Tag::H1}, {"h2",                Tag::H2}, 
-     {"h3",           Tag::H3}, {"h4",                 Tag::H4}, {"h5",                Tag::H5}, 
-     {"h6",           Tag::H6}, {"b",                   Tag::B}, {"i",                  Tag::I},
-     {"em",           Tag::EM}, {"a",                   Tag::A}, {"img",              Tag::IMG}, 
-     {"picture", Tag::PICTURE}, {"source",         Tag::SOURCE}, {"li",                Tag::LI}, 
-     {"pre",         Tag::PRE}, {"blockquote", Tag::BLOCKQUOTE}, {"strong",        Tag::STRONG}, 
-     {"sub",         Tag::SUB}, {"sup",               Tag::SUP}, {"none",            Tag::NONE}, 
-     {"*",           Tag::ANY}, {"@page",            Tag::PAGE}, {"@font-face", Tag::FONT_FACE},
+  = {{"p",                   Tag::P}, {"div",       Tag::DIV}, {"span",     Tag::SPAN}, 
+     {"br",              Tag::BREAK}, {"h1",         Tag::H1}, {"h2",         Tag::H2}, 
+     {"h3",                 Tag::H3}, {"h4",         Tag::H4}, {"h5",         Tag::H5}, 
+     {"h6",                 Tag::H6}, {"b",           Tag::B}, {"i",           Tag::I},
+     {"em",                 Tag::EM}, {"a",           Tag::A}, {"img",       Tag::IMG}, 
+     {"picture",       Tag::PICTURE}, {"source", Tag::SOURCE}, {"li",         Tag::LI}, 
+     {"blockquote", Tag::BLOCKQUOTE}, {"pre",       Tag::PRE}, {"strong", Tag::STRONG}, 
+     {"sub",               Tag::SUB}, {"sup",       Tag::SUP}, {"hr",         Tag::HR},
+     {"none",             Tag::NONE}, {"*",         Tag::ANY}, {"@page",    Tag::PAGE},
+     {"@font-face",  Tag::FONT_FACE},
     };
 
 // ToDo: Only put the ones that are defined in the Sol Font
@@ -464,54 +465,37 @@ void EPubTokenizer::processPictureTag(pugi::xml_node node) {
             source.attribute("srcset").value(), fromPlace_.getFileIdx());
         tokens_.addStr(pictureToken, pictureFilePath);
 
-        pageCompleted_ = addTokenToPage(pictureToken);
-        lastToken_ = &pictureToken;
-
-        if (!pageCompleted_) {
-            auto [buffer, len] = stream_->getFile(pictureFilePath);
-            if (buffer != nullptr) {
-                std::shared_ptr<BMPImage> image = std::make_shared<BMPImage>();
-                image.get()->readFromBytes(buffer.get(), len);
-                pager_.setPicture(image);
-            }
-        }
-    }
-}
-
-#if 0
-void EPubTokenizer::processSuperscript(pugi::xml_node node) {
-    const pugi::char_t *text = node.value();
-    currentStreamOffset_ = node.offset_debug(); // stream_->getOffset(text);
-    if (started_) {
-        Token &newToken = tokens_.getNextAvailable();
-        newToken = {.cStr = nullptr,
-                    .streamPlace = {currentStreamOffset_, fromPlace_.getFileIdx()},
-                    .width = 0,
-                    //.height = 0,
-                    .length = 0,
-                    .tokenId = TokenId::TEXT,
-                    .spacesAfter = 0};
-        while (*text) {
-            if ((*text >= '0') && (*text <= '9')) {
-                const char *script = superscriptNumbers[*text - '0'];
-                while (*script) {
-                    tokens_.addByte(newToken, *script++);
+        auto [buffer, len] = stream_->getFile(pictureFilePath);
+        if (buffer != nullptr) {
+            pictureToken.picture = std::make_shared<BMPImage>();
+            if (!pictureToken.picture->readFromBytes(buffer.get(), len)) {
+                log_e("Unable ro retrieve the BMP picture from EPub");
+                if constexpr (ON_ERROR_EXIT) {
+                    exit(1);
+                }
+            } else {
+                if (((pictureToken.picture->getHeight() + ENDPARAGRAPH_DECI_LINE_HEIGHT)) <
+                    display_.height()) {
+                    pictureToken.tokenId = TokenId::EPICTURE;
+                }
+                if constexpr (RENDERER_DEBUG) {
+                    log_w("Picture retrieved, length: %" PRIu32 ". Full page picture: %s", len,
+                          pictureToken.tokenId == TokenId::PICTURE ? "YES" : "NO");
                 }
             }
-            text++;
-            currentStreamOffset_++;
+        } else {
+            if constexpr (RENDERER_DEBUG) {
+                log_e("buffer is empty!");
+                if constexpr (ON_ERROR_EXIT) {
+                    exit(1);
+                }
+            }
         }
-        tokens_.endOfCStr();
-        if (newToken.length > 0) {
-            pageCompleted_ = addTokenToPage(newToken);
-            lastToken_ = &newToken;
-        }
-        currentStreamOffset_++;
-    } else {
-        currentStreamOffset_ += strlen(text);
+
+        pageCompleted_ = addTokenToPage(pictureToken);
+        lastToken_ = nullptr;
     }
 }
-#endif
 
 // Integrates the token to the tokens_[] array and to the page.
 //
@@ -539,6 +523,7 @@ auto EPubTokenizer::addTokenToPage(Token &token, const char *str, uint8_t strSiz
                     // a constant string that is outside of the pool.
                     Token tempToken;
                     std::string tempStr;
+                    std::shared_ptr<BMPImage> picture = std::move(token.picture);
                     if (str == nullptr) {
                         tempStr = token.cStr;
                         token.cStr = nullptr;
@@ -551,6 +536,8 @@ auto EPubTokenizer::addTokenToPage(Token &token, const char *str, uint8_t strSiz
 
                     Token &newToken = tokens_.getNextAvailable();
                     newToken = tempToken;
+                    newToken.picture = std::move(picture);
+
                     if (lastToken_ != nullptr) {
                         lastToken_ = &newToken;
                     }
@@ -683,6 +670,25 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                         }
                         break;
 
+                    case Tag::HR:
+                        // put a NEWLINE
+                        if (!tokens_.isFull() && started_) {
+                            Token &newToken = tokens_.getNextAvailable();
+                            newToken = {
+                                .cStr = "\n",
+                                .streamPlace = {currentStreamOffset_, fromPlace_.getFileIdx()},
+                                .width = 0,
+                                //.height = 0,
+                                .length = 1,
+                                .tokenId = TokenId::HRULE,
+                                .spacesAfter = 0};
+                            lastToken_ = nullptr;
+                            if (addTokenToPage(newToken)) {
+                                return false;
+                            }
+                        }
+                        break;
+
                     default:
                         break;
                     }
@@ -778,7 +784,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
 
             do {
                 if ((curChar >= '0') && (curChar <= '9')) {
-                    const char *script = superscriptNumbers[curChar - '0'];
+                    const char *script = superscriptNumbers[curChar > '3' ? 2 : curChar - '0'];
                     while (*script) {
                         if (!tokens_.cStrIsFull()) {
                             tokens_.addByte(newToken, *script++);

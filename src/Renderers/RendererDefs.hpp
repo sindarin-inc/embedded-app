@@ -3,6 +3,7 @@
 #include <utility>
 
 #include "Displays/DisplaySystem.hpp"
+#include "Misc/BMPImage.hpp"
 #include "Misc/Platform.hpp"
 #include "Models/Place.hpp"
 #include "config.h"
@@ -12,8 +13,8 @@ namespace renderer_defs {
 
 // For deep logging when changing this file
 static constexpr bool RENDERER_DEBUG = false;
-static constexpr bool ON_ERROR_EXIT = true;
-static constexpr bool RENDERER_STATS = true;
+static constexpr bool ON_ERROR_EXIT = false;
+static constexpr bool RENDERER_STATS = false;
 
 // Used by the Tokenizer::getFileLocation() method in case of error
 static constexpr uint32_t LOCATION_ERROR = 0xFFFFFFFF;
@@ -54,17 +55,18 @@ using Idx = uint16_t;
 // These are the different tokens so as we parse a buffer
 // we more easily know what to do with the text.
 enum class TokenId : uint8_t {
-    TEXT = 0,
-    GTEXT, // Glued text: Token that must stay on the same line as the preceding one (TBD)
-    NEWLINE,
-    ENDPARAGRAPH,
-    HYPHEN,
-    ENDASH,
-    EMDASH,
-    TAB,
-    PICTURE,
-    HLINE, // Horizontal line (TBD)
-    NOTOKEN
+    TEXT = 0,     // Usually a word. Can contain NBSP characters
+    GTEXT,        // Glued text: Token that must stay on the same line as the next one (TBD)
+    NEWLINE,      // Full line vertical space
+    ENDPARAGRAPH, // After paragraph vertical space
+    HYPHEN,       // ASCII hyphen "-"
+    ENDASH,       // Unicode En Dash (U+2013) "–"
+    EMDASH,       // Unicode Em Dash (U+2014) "—"
+    TAB,          // Tab character
+    PICTURE,      // Whole screen picture
+    EPICTURE,     // Embedded in page picture (between paragraphs)
+    HRULE,        // Horizontal line
+    NOTOKEN       // In case a token needs to be hidden
 };
 
 #pragma pack(push, 1)
@@ -116,6 +118,7 @@ struct Token {
     // start is for where it's located. It's useful for looking backwards
     // while rendering a back page command.
     const char *cStr;
+    std::shared_ptr<BMPImage> picture;
     StreamPlace streamPlace;
     uint16_t width;
     // uint16_t height;
@@ -124,7 +127,7 @@ struct Token {
     uint8_t spacesAfter;
 };
 
-struct LineStruct {
+struct LineInfo {
     Idx tokenIdx;
     uint16_t tokenCount;
     uint16_t length; // String length
@@ -136,7 +139,7 @@ using TokensArray = std::array<Token, TOKENS_SIZE>;
 using CStrPool = std::array<char, CSTR_POOL_SIZE>;
 
 using Line = std::array<char, MAX_BYTES_PER_LINE>;
-using Lines = std::array<LineStruct, LINES_SIZE>;
+using Lines = std::array<LineInfo, LINES_SIZE>;
 
 using PageIndex = std::array<uint32_t, PAGE_INDEX_SIZE>;
 

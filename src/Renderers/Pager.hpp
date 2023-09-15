@@ -30,8 +30,6 @@ private:
 
     uint16_t spaceWidth_{0};
 
-    std::shared_ptr<BMPImage> picture_;
-
     [[nodiscard]] inline auto lastLineTokenIdx(Idx lineIdx) const -> Idx {
         return lines_[lineIdx].tokenIdx + lines_[lineIdx].tokenCount - 1;
     }
@@ -45,6 +43,14 @@ private:
         return (linesTailIdx_ == 0) ? (LINES_SIZE - 1) : (linesTailIdx_ - 1);
     }
 
+    [[nodiscard]] inline auto deciToPix(uint16_t decilineValue) const -> uint16_t {
+        return (display_.getTextHeight() * decilineValue) / NEWLINE_DECI_LINE_HEIGHT;
+    }
+
+    [[nodiscard]] inline auto pixToDeci(uint16_t pixValue) const -> uint16_t {
+        return ((int)(NEWLINE_DECI_LINE_HEIGHT * pixValue)) / display_.getTextHeight();
+    }
+
     inline void nextLineIdx(Idx &idx) const { idx = (idx + 1) % LINES_SIZE; }
     inline void prevLineIdx(Idx &idx) const { idx = (idx == 0) ? (LINES_SIZE - 1) : (idx - 1); }
 
@@ -56,11 +62,12 @@ private:
         linesTailIdx_ = (linesTailIdx_ + 1) % LINES_SIZE;
     }
 
+    void getLine(LineInfo &lineStruct, Line &line) const;
     void newLine(uint16_t height);
 
 public:
     Pager(Tokens &tokens, DisplaySystem &display)
-        : tokens_(tokens), display_(display), picture_(nullptr) {}
+        : tokens_(tokens), display_(display) {}
 
     // Switch to 1/10 of a line as this gives us more flexibilty in rendering
     // precision between lines.
@@ -78,7 +85,6 @@ public:
         maxDeciLines_ = getMaxDeciLines();
         maxLineWidth_ = display_.width();
         lines_[0] = {};
-        picture_ = nullptr;
 
         uint16_t notUsed;
         display_.getTextSize(" ", &spaceWidth_, &notUsed);
@@ -120,7 +126,6 @@ public:
 
     [[nodiscard]] inline auto getFirstLineIdx() const -> Idx { return firstPageLineIdx_; }
 
-    void getLine(Idx lineNbr, Line &line) const;
     void displayPage(int16_t numSkipLines);
 
     void setEndOfFile() {
@@ -132,7 +137,6 @@ public:
 
     [[nodiscard]] auto atEndOfFile() const -> bool { return atEOF_; }
 
-    void setPicture(std::shared_ptr<BMPImage> picture) { picture_ = std::move(picture); }
     void completeLastLine();
 
     inline void freeLineHead() {
