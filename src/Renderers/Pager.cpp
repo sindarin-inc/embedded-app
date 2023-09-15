@@ -266,7 +266,8 @@ void Pager::displayPage(int16_t numSkipLines) {
             paraLineAdjust++;
         } else if (token.tokenId == TokenId::PICTURE) {
             if constexpr (RENDERER_DEBUG) {
-                log_d("[%" PRIu16 "] %s: <PICTURE> %s", lineIdx, token.streamPlace.str().c_str(), token.cStr);
+                log_d("[%" PRIu16 "] %s: <PICTURE> %s", lineIdx, token.streamPlace.str().c_str(),
+                      token.cStr);
             }
             if (picture_ != nullptr) {
                 int width = picture_.get()->getWidth();
