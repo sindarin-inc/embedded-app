@@ -18,7 +18,7 @@ void EPubMetaFile::parse() {
                   len, static_cast<uint32_t>(info.uncompressed_size));
         }
         buffer[len] = '\0';
-        
+
         pugi::xml_document doc;
         pugi::xml_parse_result result = doc.load_string(buffer);
 
