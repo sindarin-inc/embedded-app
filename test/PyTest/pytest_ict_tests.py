@@ -140,6 +140,20 @@ class OverrideIdfSerial(IdfSerial):
         nvs_size_decimal = int(nvs_size, 16)
         return nvs_size_decimal
 
+    def clear_nvs(self):
+        logger.info("Clearing NVS")
+        # write nvs partition to dut
+        live_print_call(
+            [
+                os.environ["IDF_PATH"] + "/components/partition_table/parttool.py",
+                "--port",
+                self.port,
+                "erase_partition",
+                "--partition-name=nvs",
+            ],
+            msg_queue=self._q,
+        )
+
     def write_nvs(self, btmac, ict_ssid, ict_pw, cloudtoken):
         parts = btmac.split(":")
         hexstr = "".join(parts)
