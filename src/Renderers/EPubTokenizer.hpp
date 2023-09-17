@@ -92,6 +92,9 @@ private:
     // true if the page is complete
     bool pageCompleted_;
 
+    // true when a paragrapg node (<p>, <h1>..<h6>) has just started to be parsed
+    bool startOfParagraph_;
+
     // Used to skip the paragraph following a picture. The paragraph is an anotation that could
     // be displayed if no picture are shown
     bool skipNextParagraph_;

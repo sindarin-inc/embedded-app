@@ -16,6 +16,15 @@ static constexpr bool RENDERER_DEBUG = false;
 static constexpr bool ON_ERROR_EXIT = false;
 static constexpr bool RENDERER_STATS = false;
 
+#define RENDERER_PROFILING 1
+
+#if RENDERER_PROFILING
+#define RENDERER_PROFILE_START(v) PROFILE_START(v)
+#define RENDERER_PROFILE_END(v) PROFILE_END_LOG_MS(v)
+#else
+#define RENDERER_PROFILE_START(v) 
+#define RENDERER_PROFILE_END(v)
+#endif
 // Used by the Tokenizer::getFileLocation() method in case of error
 static constexpr uint32_t LOCATION_ERROR = 0xFFFFFFFF;
 
@@ -120,9 +129,9 @@ struct Token {
     const char *cStr;
     std::shared_ptr<BMPImage> picture;
     StreamPlace streamPlace;
-    uint16_t width;
-    // uint16_t height;
-    uint16_t length; // Length in bytes
+    uint16_t pixWidth;  // Width in pixels. Used with pictures and text tokens
+    uint16_t pixHeight; // Height in pixels. Used with pictures tokens
+    uint16_t length;    // Length in bytes
     TokenId tokenId;
     uint8_t spacesAfter;
 };
@@ -130,8 +139,8 @@ struct Token {
 struct LineInfo {
     Idx tokenIdx;
     uint16_t tokenCount;
-    uint16_t length; // String length
-    uint16_t height;
+    uint16_t length;     // String length
+    uint16_t deciHeight; // Height in decilines
 };
 #pragma pack(pop)
 

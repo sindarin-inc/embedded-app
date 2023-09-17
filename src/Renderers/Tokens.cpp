@@ -10,9 +10,9 @@ auto Tokens::add(Token &token, const char *str, uint8_t length) -> bool {
             token.length = length;
         }
 
-        if ((token.width == 0) && (token.cStr != nullptr) && (token.cStr[0] != '\n')) {
-            token.width = display_.getTextWidthQuick(token.cStr);
-            // log_w("Token width of %s is %" PRIu16, token.cStr, token.width);
+        if ((token.pixWidth == 0) && (token.cStr != nullptr) && (token.cStr[0] != '\n')) {
+            token.pixWidth = display_.getTextWidthQuick(token.cStr);
+            // log_w("Token width of %s is %" PRIu16, token.cStr, token.pixWidth);
         }
 
         // if constexpr (RENDERER_DEBUG) {
@@ -216,7 +216,7 @@ void Tokens::showToken(Idx tokenIdx) const {
         log_d("TokenIdx: %" PRIu16 ", TokenId: %" PRIu8 ", streamPlace: %s, width: %" PRIu16
               //", height: %" PRIu16
               ", Length: %" PRIu16,
-              tokenIdx, (uint8_t)token.tokenId, token.streamPlace.str().c_str(), token.width,
+              tokenIdx, (uint8_t)token.tokenId, token.streamPlace.str().c_str(), token.pixWidth,
               // token.height,
               token.length);
         if (token.tokenId == TokenId::TEXT) {

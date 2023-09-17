@@ -21,12 +21,12 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
 
     switch (token.tokenId) {
     case TokenId::TEXT:
-    case TokenId::GTEXT: // No in use yet
+    case TokenId::GTEXT: // Not in use yet
     case TokenId::HYPHEN:
     case TokenId::ENDASH:
     case TokenId::EMDASH:
     case TokenId::TAB:
-        if ((token.width + currentLineWidth_) > maxLineWidth_) {
+        if ((token.pixWidth + currentLineWidth_) > maxLineWidth_) {
             // We are at the end of a line
             if (token.tokenId == TokenId::TAB) {
                 // get rid of tab character present at the end of the line
@@ -45,7 +45,7 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
                     return false;
                 }
                 // The page is not complete, the current token is the first to appear on next line
-                currentLineWidth_ += token.width;
+                currentLineWidth_ += token.pixWidth;
                 lines_[linesTailIdx_].tokenIdx = tokens_.getLastIdx();
                 lines_[linesTailIdx_].tokenCount++;
                 lines_[linesTailIdx_].length += token.length;
@@ -67,12 +67,12 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
                 lines_[linesTailIdx_].tokenIdx = tokens_.getLastIdx();
                 lines_[linesTailIdx_].tokenCount++;
                 lines_[linesTailIdx_].length += token.length;
-                currentLineWidth_ = token.width;
+                currentLineWidth_ = token.pixWidth;
             } else {
                 tokens_.forgetLast();
             }
         } else {
-            currentLineWidth_ += token.width;
+            currentLineWidth_ += token.pixWidth;
             lines_[linesTailIdx_].tokenCount++;
             lines_[linesTailIdx_].length += token.length;
         }
@@ -151,7 +151,7 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
         if (lines_[linesTailIdx_].tokenCount > 0) {
             newLine(NEWLINE_DECI_LINE_HEIGHT);
         }
-        uint16_t deciHeight = pixToDeci(token.picture->getHeight());
+        uint16_t deciHeight = pixToDeci(token.pixHeight);
         if (!dontStop && ((currentPageDecilineHeight_ + deciHeight) > maxDeciLines_)) {
             setNextPagePlace(token.streamPlace);
             if constexpr (RENDERER_DEBUG) {
@@ -162,26 +162,8 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
         }
         lines_[linesTailIdx_].tokenCount = 1;
         lines_[linesTailIdx_].tokenIdx = tokens_.getLastIdx();
-        newLine(pixToDeci(token.picture->getHeight() + 4));
+        newLine(deciHeight + 4);
     } break;
-
-        // case TokenId::PICTURE:
-        //     if (lines_[linesTailIdx_].tokenCount > 0) {
-        //         newLine(NEWLINE_DECI_LINE_HEIGHT);
-        //     }
-        //     if (!dontStop &&
-        //         ((currentPageDecilineHeight_ + picture_.get()->getHeight()) > maxDeciLines_)) {
-        //         setNextPagePlace(token.streamPlace);
-        //         if constexpr (RENDERER_DEBUG) {
-        //             log_w("Page completed: %" PRIu16 " decilines. Max: %" PRIu16,
-        //                   currentPageDecilineHeight_, maxDeciLines_);
-        //         }
-        //         return false;
-        //     }
-        //     lines_[linesTailIdx_].tokenCount = 1;
-        //     lines_[linesTailIdx_].tokenIdx = tokens_.getLastIdx();
-        //     newLine(picture_.get()->getHeight());
-        //     break;
 
     case TokenId::NOTOKEN:
         break;
@@ -199,7 +181,7 @@ void Pager::newLine(uint16_t height) {
     }
 
     currentPageDecilineHeight_ += height;
-    lines_[linesTailIdx_].height = height;
+    lines_[linesTailIdx_].deciHeight = height;
 
     incrLinesTailIdx();
 
@@ -285,14 +267,15 @@ void Pager::displayPage(int16_t numSkipLines) {
 
         // log_w("TokenId: %" PRIu8, (uint8_t) token.tokenId);
 
-        if (token.tokenId == TokenId::PICTURE) {
+        switch (token.tokenId) {
+        case TokenId::PICTURE:
             if constexpr (RENDERER_DEBUG) {
                 log_d("[%" PRIu16 "] %s: <PICTURE> %s", lineIdx, token.streamPlace.str().c_str(),
                       token.cStr);
             }
             if ((token.picture != nullptr) && (token.picture.get() != nullptr)) {
-                int width = token.picture->getWidth();
-                int height = token.picture->getHeight();
+                int width = token.pixWidth;
+                int height = token.pixHeight;
                 display_.fillScreen(display_.bg);
                 display_.drawXBitmap((display_.width() - width) / 2,
                                      (display_.height() - height) / 2, token.picture->getBuffer(),
@@ -304,14 +287,16 @@ void Pager::displayPage(int16_t numSkipLines) {
                     exit(1);
                 }
             }
-        } else if (token.tokenId == TokenId::EPICTURE) {
+            break;
+
+        case TokenId::EPICTURE:
             if constexpr (RENDERER_DEBUG) {
                 log_d("[%" PRIu16 "] %s: <EPICTURE> %s", lineIdx, token.streamPlace.str().c_str(),
                       token.cStr);
             }
             if ((token.picture != nullptr) && (token.picture.get() != nullptr)) {
-                int width = token.picture->getWidth();
-                int height = token.picture->getHeight();
+                int width = token.pixWidth;
+                int height = token.pixHeight;
                 // int16_t y = deciToPix(deci_y + ENDPARAGRAPH_DECI_LINE_HEIGHT) + height / 2;
                 display_.drawXBitmap((display_.width() - width) / 2, deciToPix(deciY),
                                      token.picture->getBuffer(), width, height, display_.fg);
@@ -322,7 +307,9 @@ void Pager::displayPage(int16_t numSkipLines) {
                     exit(1);
                 }
             }
-        } else if (token.tokenId == TokenId::ENDPARAGRAPH) {
+            break;
+
+        case TokenId::ENDPARAGRAPH:
             if (deciY == 0) {
                 if constexpr (RENDERER_DEBUG) {
                     log_d("[%" PRIu16 "] %s: <PARA NOT SHOWN>", lineIdx,
@@ -333,15 +320,19 @@ void Pager::displayPage(int16_t numSkipLines) {
             if constexpr (RENDERER_DEBUG) {
                 log_d("[%" PRIu16 "] %s: <PARA>", lineIdx, token.streamPlace.str().c_str());
             }
-            deciY += lines_[lineIdx].height;
-        } else if (token.tokenId == TokenId::HRULE) {
+            deciY += lines_[lineIdx].deciHeight;
+            break;
+
+        case TokenId::HRULE: {
             if constexpr (RENDERER_DEBUG) {
                 log_d("[%" PRIu16 "] %s: <HRULE>", lineIdx, token.streamPlace.str().c_str());
             }
-            uint16_t y = deciToPix(deciY + (lines_[lineIdx].height / 2));
+            uint16_t y = deciToPix(deciY + (lines_[lineIdx].deciHeight / 2));
             display_.drawLine(0, y, display_.width(), y, display_.fg);
-            deciY += lines_[lineIdx].height;
-        } else {
+            deciY += lines_[lineIdx].deciHeight;
+        } break;
+
+        default:
             // Only draw the lines if it's not skipped from the caller.
             if (lineNbr >= numSkipLines) {
                 Line line;
@@ -357,6 +348,7 @@ void Pager::displayPage(int16_t numSkipLines) {
                 }
             }
             deciY += NEWLINE_DECI_LINE_HEIGHT;
+            break;
         }
     }
 }

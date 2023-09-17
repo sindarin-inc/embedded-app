@@ -68,9 +68,10 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
         Token &newToken = tokens_.getNextAvailable();
 
         newToken = {.cStr = nullptr,
+                    .picture = nullptr,
                     .streamPlace = addOffset(fromPlace, streamRelativeOffset),
-                    .width = 0,
-                    //.height = 0,
+                    .pixWidth = 0,
+                    .pixHeight = 0,
                     .length = 0,
                     .tokenId = TokenId::TEXT,
                     .spacesAfter = 0};
@@ -95,9 +96,10 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
                 // be an end of paragraph, as the preceding newline was absorbed by the preceding
                 // page
                 newToken = {.cStr = nullptr,
+                            .picture = nullptr,
                             .streamPlace = addOffset(fromPlace, streamRelativeOffset),
-                            .width = 0,
-                            //.height = 0,
+                            .pixWidth = 0,
+                            .pixHeight = 0,
                             .length = 0,
                             .tokenId = TokenId::ENDPARAGRAPH,
                             .spacesAfter = 0};
@@ -125,9 +127,10 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
                         Token &newToken = tokens_.getNextAvailable();
 
                         newToken = {.cStr = nullptr,
+                                    .picture = nullptr,
                                     .streamPlace = addOffset(fromPlace, streamRelativeOffset),
-                                    .width = 0,
-                                    //.height = 0,
+                                    .pixWidth = 0,
+                                    .pixHeight = 0,
                                     .length = 0,
                                     .tokenId = TokenId::ENDPARAGRAPH,
                                     .spacesAfter = 0};

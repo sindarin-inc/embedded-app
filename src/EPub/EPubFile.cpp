@@ -2,6 +2,7 @@
 
 #include <utility>
 
+#include "EPubDefs.hpp"
 #include "EPubMetaFile.hpp"
 
 auto EPubFile::findFileOffsetAtCharOffset(const std::string &path, uint32_t charOffset)
@@ -54,10 +55,8 @@ auto EPubFile::getFile(const std::string &completeFilePath)
         buffer = SpiRamArrayPtr<uint8_t>(info.uncompressed_size + 1);
 
         if (buffer != nullptr) {
-            PROFILE_START(ReadPictureFromEPub);
             size_t len = epubZipFile_.readFromFile(buffer.get(), info.uncompressed_size);
             epubZipFile_.closeFile();
-            PROFILE_END_LOG_MS(ReadPictureFromEPub);
 
             if (len != info.uncompressed_size) {
                 log_e("Unable to unzip file %s", completeFilePath.c_str());
@@ -134,15 +133,17 @@ auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
 }
 
 auto EPubFile::open() -> bool {
-    PROFILE_START(openEPubZipFile);
+    EPUB_PROFILE_START(openEPubZipFile);
     if (!epubZipFile_.open()) {
         log_e("Failed to open ePub file");
         return false;
     }
-    PROFILE_END_LOG_MS(openEPubZipFile);
+    EPUB_PROFILE_END(openEPubZipFile);
 
+    EPUB_PROFILE_START(EPubManifest);
     EPubMetaFile manifest(epubZipFile_, "META-INF/container.xml");
     manifest.parse();
+    EPUB_PROFILE_END(EPubManifest);
 
     // for (auto &path : manifest.rootfilePaths) {
     //     log_i("Rootfile path: %s", path.c_str());
@@ -155,14 +156,12 @@ auto EPubFile::open() -> bool {
         log_w("Multiple rootfile paths found");
     }
 
+    EPUB_PROFILE_START(EPubOpf)
     opf_ = std::make_shared<EPubOpf>(epubZipFile_, manifest.rootfilePaths[0].c_str());
     opf_->parse();
+    EPUB_PROFILE_END(EPubOpf)
 
     // log_d("Total size of all ePub text is %d", opf_->getTotalSize());
-
-    // Open the first file
-    // epubZipFile_.openFile(xhtmlItems_[0].fullPath().c_str());
-
     return true;
 }
 

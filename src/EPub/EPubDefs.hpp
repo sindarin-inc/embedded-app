@@ -1,0 +1,9 @@
+#define EPUB_PROFILING 1
+
+#if EPUB_PROFILING
+#define EPUB_PROFILE_START(v) PROFILE_START(v)
+#define EPUB_PROFILE_END(v) PROFILE_END_LOG_MS(v)
+#else
+#define EPUB_PROFILE_START(v)
+#define EPUB_PROFILE_END(v)
+#endif

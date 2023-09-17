@@ -203,8 +203,7 @@ auto EPubTokenizer::isEmpty(pugi::xml_node node) -> bool {
                     empty = false;
                     return false;
                 }
-            } else if ((node.type() == pugi::xml_node_type::node_element) &&
-                       (strcmp(node.name(), "picture") == 0)) {
+            } else if (node.type() == pugi::xml_node_type::node_element) {
                 empty = false;
                 return false;
             }
@@ -353,13 +352,18 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
               (toPlace == nullptr ? "" : toPlace->str().c_str()));
     }
 
+    RENDERER_PROFILE_START(loadXHTMLFile)
     pugi::xml_document &doc = loadXHTMLAt(fromPlace.getFileIdx());
+    RENDERER_PROFILE_END(loadXHTMLFile)
+
+    RENDERER_PROFILE_START(tokenizeProcess);
 
     pugi::xml_node node = doc.child("html").child("body").first_child();
 
     if (node) {
 
         currentStreamOffset_ = fromPlace_.getOffset();
+        startOfParagraph_ = false;
         skipNextParagraph_ = false;
         lastToken_ = nullptr;
 
@@ -403,6 +407,8 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
               pager_.getStreamPlaceOfFirstLine().str().c_str(),
               pager_.getNextPageStreamPlace().str().c_str());
     }
+
+    RENDERER_PROFILE_END(tokenizeProcess);
 
     return {pager_.getStreamPlaceOfFirstLine(), pager_.getNextPageStreamPlace()};
 }
@@ -453,11 +459,13 @@ void EPubTokenizer::processPictureTag(pugi::xml_node node) {
     pugi::xml_node source = node.find_child_by_attribute("source", "class", "dithered");
 
     if (source) {
+        // skipNextParagraph_ = true;
         Token &pictureToken = tokens_.getNextAvailable();
         pictureToken = {.cStr = nullptr,
+                        .picture = nullptr,
                         .streamPlace = {currentStreamOffset_, fromPlace_.getFileIdx()},
-                        .width = 0,
-                        //.height = 0,
+                        .pixWidth = 0,
+                        .pixHeight = 0,
                         .length = 0,
                         .tokenId = TokenId::PICTURE,
                         .spacesAfter = 0};
@@ -465,7 +473,10 @@ void EPubTokenizer::processPictureTag(pugi::xml_node node) {
             source.attribute("srcset").value(), fromPlace_.getFileIdx());
         tokens_.addStr(pictureToken, pictureFilePath);
 
+        RENDERER_PROFILE_START(ReadPictureFromEPub);
         auto [buffer, len] = stream_->getFile(pictureFilePath);
+        RENDERER_PROFILE_END(ReadPictureFromEPub);
+
         if (buffer != nullptr) {
             pictureToken.picture = std::make_shared<BMPImage>();
             if (!pictureToken.picture->readFromBytes(buffer.get(), len)) {
@@ -474,9 +485,12 @@ void EPubTokenizer::processPictureTag(pugi::xml_node node) {
                     exit(1);
                 }
             } else {
-                if (((pictureToken.picture->getHeight() + ENDPARAGRAPH_DECI_LINE_HEIGHT)) <
+                pictureToken.pixHeight = pictureToken.picture->getHeight();
+                pictureToken.pixWidth = pictureToken.picture->getWidth();
+                if (((pictureToken.pixHeight + ENDPARAGRAPH_DECI_LINE_HEIGHT)) <
                     display_.height()) {
                     pictureToken.tokenId = TokenId::EPICTURE;
+                    // skipNextParagraph_ = false;
                 }
                 if constexpr (RENDERER_DEBUG) {
                     log_w("Picture retrieved, length: %" PRIu32 ". Full page picture: %s", len,
@@ -492,8 +506,10 @@ void EPubTokenizer::processPictureTag(pugi::xml_node node) {
             }
         }
 
-        pageCompleted_ = addTokenToPage(pictureToken);
         lastToken_ = nullptr;
+
+        // After the following call, pictureToken may become irrelevant
+        pageCompleted_ = addTokenToPage(pictureToken);
     }
 }
 
@@ -502,7 +518,11 @@ void EPubTokenizer::processPictureTag(pugi::xml_node node) {
 // Returns true if the page is ready.
 //
 // Takes into account the need, in the context of backward movements, to wait until the target
-// location is reached.
+// location is reached. If the target location wasn't reached and the pager_ returns with a
+// completed page signal (pager_.addLastTokenToPage(false) returns false), the last token entered is
+// saved to be pushed back in the tokens_ stream. Note that the token parameter may then become
+// irrelevant as it could have been moved (very high probability) through the process of
+// initializing the objects for next page preparation.
 auto EPubTokenizer::addTokenToPage(Token &token, const char *str, uint8_t strSize) -> bool {
     if (tokens_.add(token, str, strSize)) {
         // log_w("Token Id: %" PRIu8 " at idx: %" PRIu16, (uint8_t)token.tokenId,
@@ -538,6 +558,7 @@ auto EPubTokenizer::addTokenToPage(Token &token, const char *str, uint8_t strSiz
                     newToken = tempToken;
                     newToken.picture = std::move(picture);
 
+                    // lastToken_ must have been properly set BEFORE a call to this method.
                     if (lastToken_ != nullptr) {
                         lastToken_ = &newToken;
                     }
@@ -546,6 +567,7 @@ auto EPubTokenizer::addTokenToPage(Token &token, const char *str, uint8_t strSiz
                     }
 
                     // Recursive call
+                    // After the following call, newToken may become irrelevant
                     return addTokenToPage(newToken, str, strSize);
                 }
             } else {
@@ -590,113 +612,127 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
         //     currentStreamOffset_);
         // }
 
+        // Start of a node element processing
+
         if (tagIt != tags.end()) {
-            if (tagIt->second == Tag::PICTURE) {
+            switch (tagIt->second) {
+            case Tag::P:
+            case Tag::H1:
+            case Tag::H2:
+            case Tag::H3:
+            case Tag::H4:
+            case Tag::H5:
+            case Tag::H6:
+                if (isEmpty(node) || skipNextParagraph_) {
+                    skipNextParagraph_ = false;
+                    return true;
+                } else {
+                    startOfParagraph_ = true;
+                }
+                break;
+            case Tag::PICTURE:
                 if (started_) {
                     // log_w("Picture found...");
                     processPictureTag(node);
                 }
-                skipNextParagraph_ = true;
                 return true;
-            } else if (tagIt->second == Tag::SUP) {
+            case Tag::SUP:
                 superscript_ = true;
-            } else if ((tagIt->second == Tag::P) && isEmpty(node)) {
-                skipNextParagraph_ = false;
-                return true;
+                break;
+            default:
+                break;
             }
         }
-        if (skipNextParagraph_) {
-            skipNextParagraph_ = false;
-            return true;
-        } else {
-            for (pugi::xml_node subNode : node.children()) {
-                if (!interpret(subNode)) {
-                    return false;
-                }
-            }
 
-            // We now are at the end of the node element
-
-            if (!pageCompleted_) {
-                if (tagIt != tags.end()) {
-                    const Tag &tag = tagIt->second;
-
-                    switch (tag) {
-                    case Tag::P:
-                    case Tag::H1:
-                    case Tag::H2:
-                    case Tag::H3:
-                    case Tag::H4:
-                    case Tag::H5:
-                    case Tag::H6:
-                        if (!tokens_.isFull() && !skipNextParagraph_ && started_) {
-                            Token &newToken = tokens_.getNextAvailable();
-                            newToken = {
-                                .cStr = "\n",
-                                .streamPlace = {currentStreamOffset_, fromPlace_.getFileIdx()},
-                                .width = 0,
-                                //.height = 0,
-                                .length = 1,
-                                .tokenId = TokenId::ENDPARAGRAPH,
-                                .spacesAfter = 0};
-                            lastToken_ = nullptr;
-
-                            if (addTokenToPage(newToken)) {
-                                return false;
-                            }
-                        }
-                        break;
-
-                    case Tag::SUP:
-                        superscript_ = false;
-                        break;
-
-                    case Tag::BREAK:
-                        // put a NEWLINE
-                        if (!tokens_.isFull() && started_) {
-                            Token &newToken = tokens_.getNextAvailable();
-                            newToken = {
-                                .cStr = "\n",
-                                .streamPlace = {currentStreamOffset_, fromPlace_.getFileIdx()},
-                                .width = 0,
-                                //.height = 0,
-                                .length = 1,
-                                .tokenId = TokenId::NEWLINE,
-                                .spacesAfter = 0};
-                            lastToken_ = nullptr;
-                            if (addTokenToPage(newToken)) {
-                                return false;
-                            }
-                        }
-                        break;
-
-                    case Tag::HR:
-                        // put a NEWLINE
-                        if (!tokens_.isFull() && started_) {
-                            Token &newToken = tokens_.getNextAvailable();
-                            newToken = {
-                                .cStr = "\n",
-                                .streamPlace = {currentStreamOffset_, fromPlace_.getFileIdx()},
-                                .width = 0,
-                                //.height = 0,
-                                .length = 1,
-                                .tokenId = TokenId::HRULE,
-                                .spacesAfter = 0};
-                            lastToken_ = nullptr;
-                            if (addTokenToPage(newToken)) {
-                                return false;
-                            }
-                        }
-                        break;
-
-                    default:
-                        break;
-                    }
-                }
-            } else {
+        for (pugi::xml_node subNode : node.children()) {
+            if (!interpret(subNode)) {
                 return false;
             }
+            startOfParagraph_ = false;
         }
+        startOfParagraph_ = false; // In cases when there is no child
+
+        // End of the node element processing
+
+        if (!pageCompleted_) {
+            if (tagIt != tags.end()) {
+                switch (tagIt->second) {
+                case Tag::P:
+                case Tag::H1:
+                case Tag::H2:
+                case Tag::H3:
+                case Tag::H4:
+                case Tag::H5:
+                case Tag::H6:
+                    startOfParagraph_ = true;
+                    if (!tokens_.isFull() && !skipNextParagraph_ && started_) {
+                        Token &newToken = tokens_.getNextAvailable();
+                        newToken = {.cStr = "\n",
+                                    .picture = nullptr,
+                                    .streamPlace = {currentStreamOffset_, fromPlace_.getFileIdx()},
+                                    .pixWidth = 0,
+                                    .pixHeight = 0,
+                                    .length = 1,
+                                    .tokenId = TokenId::ENDPARAGRAPH,
+                                    .spacesAfter = 0};
+                        lastToken_ = nullptr;
+
+                        if (addTokenToPage(newToken)) {
+                            return false;
+                        }
+                    }
+                    break;
+
+                case Tag::SUP:
+                    superscript_ = false;
+                    break;
+
+                case Tag::BREAK:
+                    // put a NEWLINE
+                    if (!tokens_.isFull() && started_) {
+                        Token &newToken = tokens_.getNextAvailable();
+                        newToken = {.cStr = "\n",
+                                    .picture = nullptr,
+                                    .streamPlace = {currentStreamOffset_, fromPlace_.getFileIdx()},
+                                    .pixWidth = 0,
+                                    .pixHeight = 0,
+                                    .length = 1,
+                                    .tokenId = TokenId::NEWLINE,
+                                    .spacesAfter = 0};
+                        lastToken_ = nullptr;
+                        if (addTokenToPage(newToken)) {
+                            return false;
+                        }
+                    }
+                    break;
+
+                case Tag::HR:
+                    // put a NEWLINE
+                    if (!tokens_.isFull() && started_) {
+                        Token &newToken = tokens_.getNextAvailable();
+                        newToken = {.cStr = "\n",
+                                    .picture = nullptr,
+                                    .streamPlace = {currentStreamOffset_, fromPlace_.getFileIdx()},
+                                    .pixWidth = 0,
+                                    .pixHeight = 0,
+                                    .length = 1,
+                                    .tokenId = TokenId::HRULE,
+                                    .spacesAfter = 0};
+                        lastToken_ = nullptr;
+                        if (addTokenToPage(newToken)) {
+                            return false;
+                        }
+                    }
+                    break;
+
+                default:
+                    break;
+                }
+            }
+        } else {
+            return false;
+        }
+
     } else if (node.type() == pugi::node_pcdata) {
         // log_w("Interpreting pcdata %s", node.value());
 
@@ -774,14 +810,13 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
             superscript_ = false;
             Token &newToken = tokens_.getNextAvailable();
             newToken = {.cStr = nullptr,
+                        .picture = nullptr,
                         .streamPlace = {streamOffset, fromPlace_.getFileIdx()},
-                        .width = 0,
-                        //.height = 0,
+                        .pixWidth = 0,
+                        .pixHeight = 0,
                         .length = 0,
                         .tokenId = TokenId::TEXT,
                         .spacesAfter = 0};
-            lastToken_ = &newToken;
-
             do {
                 if ((curChar >= '0') && (curChar <= '9')) {
                     const char *script = superscriptNumbers[curChar > '3' ? 2 : curChar - '0'];
@@ -795,38 +830,44 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                 }
                 nextByte();
             } while (curChar != 0);
-            tokens_.endOfCStr();
 
             if (newToken.length > 0) {
+                tokens_.endOfCStr();
+                lastToken_ = &newToken; // Must be done before calling addTokenToPage()
+
+                // After the following call, newToken may become irrelevant
                 pageCompleted_ = addTokenToPage(newToken);
-                lastToken_ = &newToken;
             }
 
         } else if (curChar > ' ') {
             Token &newToken = tokens_.getNextAvailable();
 
             newToken = {.cStr = nullptr,
+                        .picture = nullptr,
                         .streamPlace = {streamOffset, fromPlace_.getFileIdx()},
-                        .width = 0,
-                        //.height = 0,
+                        .pixWidth = 0,
+                        .pixHeight = 0,
                         .length = 0,
                         .tokenId = TokenId::TEXT,
                         .spacesAfter = 0};
-            lastToken_ = &newToken;
+            lastToken_ = &newToken; // Must be done before calling addTokenToPage()
 
             if (curChar == '-') {
                 nextByte();
                 if (curChar != '-') {
                     newToken.tokenId = TokenId::HYPHEN;
+                    // After the following call, newToken may become irrelevant
                     pageCompleted_ = addTokenToPage(newToken, "-", 1);
                 } else {
                     nextByte();
                     if (curChar != '-') {
                         newToken.tokenId = TokenId::ENDASH;
+                        // After the following call, newToken may become irrelevant
                         pageCompleted_ = addTokenToPage(newToken, "--", 2);
                     } else {
                         nextByte();
                         newToken.tokenId = TokenId::EMDASH;
+                        // After the following call, newToken may become irrelevant
                         pageCompleted_ = addTokenToPage(newToken, "---", 3);
                     }
                 }
@@ -882,16 +923,17 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                 } while ((curChar > ' ') && (curChar != '-') &&
                          ((textCharCount < maxTextTokenCharSize_) || (curChar >= 0x80U)));
 
-                tokens_.endOfCStr();
-
                 // The last test of the while above is to get a complete UTF8 multi-bytes
                 // character if the maximum word size is reached
 
-                //  log_w("Text Token: %s", newToken.cStr);
-                pageCompleted_ = addTokenToPage(newToken);
+                if (newToken.length > 0) {
+                    tokens_.endOfCStr();
+                    //  log_w("Text Token: %s", newToken.cStr);
+                    // After the following call, newToken may become irrelevant
+                    pageCompleted_ = addTokenToPage(newToken);
+                }
             }
         } else if (curChar == ' ') {
-
             if (lastToken_ != nullptr) {
                 lastToken_->spacesAfter++;
                 pager_.addSpaceWidth();
@@ -900,21 +942,23 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
         } else if (curChar == '\n') { // Maybe irrelevant in a xhtml context
             Token &newToken = tokens_.getNextAvailable();
 
-            lastToken_ = nullptr;
-
             newToken = {.cStr = nullptr,
+                        .picture = nullptr,
                         .streamPlace = {streamOffset, fromPlace_.getFileIdx()},
-                        .width = 0,
-                        //.height = 0,
+                        .pixWidth = 0,
+                        .pixHeight = 0,
                         .length = 0,
                         .tokenId = TokenId::NEWLINE,
                         .spacesAfter = 0};
 
+            lastToken_ = nullptr;
+            // After the following call, newToken may become irrelevant
             pageCompleted_ = addTokenToPage(newToken, "\n", 1);
             if (!pageCompleted_) {
                 nextByte();
                 if (curChar == '\n') {
                     newToken.tokenId = TokenId::ENDPARAGRAPH;
+                    // After the following call, newToken may become irrelevant
                     pageCompleted_ = addTokenToPage(newToken, "\n", 1);
                     nextByte();
                     while (curChar == '\n') {
@@ -926,15 +970,18 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
             Token &newToken = tokens_.getNextAvailable();
 
             newToken = {.cStr = nullptr,
+                        .picture = nullptr,
                         .streamPlace = {streamOffset, fromPlace_.getFileIdx()},
-                        .width = 0,
-                        //.height = 0,
+                        .pixWidth = 0,
+                        .pixHeight = 0,
                         .length = 0,
                         .tokenId = TokenId::TAB,
                         .spacesAfter = 0};
 
+            lastToken_ = &newToken; // Must be done before calling addTokenToPage()
+
+            // After the following call, newToken may become irrelevant
             pageCompleted_ = addTokenToPage(newToken, "\t", 1);
-            lastToken_ = &newToken;
 
             nextByte();
         }
