@@ -22,7 +22,7 @@ static constexpr bool RENDERER_STATS = false;
 #define RENDERER_PROFILE_START(v) PROFILE_START(v)
 #define RENDERER_PROFILE_END(v) PROFILE_END_LOG_MS(v)
 #else
-#define RENDERER_PROFILE_START(v) 
+#define RENDERER_PROFILE_START(v)
 #define RENDERER_PROFILE_END(v)
 #endif
 // Used by the Tokenizer::getFileLocation() method in case of error
