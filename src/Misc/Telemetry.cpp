@@ -26,8 +26,8 @@ auto TelemetryFieldToString(TelemetryField field) -> const char * {
         return "bo";
     case METRIC_CLOCK_SET:
         return "cl";
-    default:
-        return "";
+    case METRIC_SHUTDOWN:
+        return "sd";
     }
 }
 
