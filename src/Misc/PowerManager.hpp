@@ -30,11 +30,12 @@ enum class PowerState {
     // Same as Active but no turning off when the temples are closed until
     // explictly taken out of this state or put to deep sleep.
     ActiveForcedOn,
-    // Screen lighting enabled ~10-60mA, inactivity timer at 10s, UI disabled
+    // Screen lighting enabled ~10-60mA, inactivity timer at 15s, UI disabled
     ActiveUSBCharging,
     // Screen lighting enabled ~10-60mA, inactivity timer at 10s, UI disabled
     ActiveOverTemp,
-    // Screen lighting enabled ~10-60mA, inactivity timer at 10s, UI disabled
+    // Screen lighting enabled ~10-60mA, inactivity timer disabled (will force powerOff 5s after
+    // showing the depleted UI), UI disabled
     ActiveBatteryDepleted,
     // Screens/lighting disabled ~6-7mA, inactivity timer disabled.
     Background,
@@ -268,4 +269,6 @@ protected:
     void powerOffInternal();
 
     auto enableUsbWakeup() -> esp_err_t;
+
+    auto inactivityTimeoutMs() -> int;
 };
