@@ -29,6 +29,9 @@ auto TelemetryFieldToString(TelemetryField field) -> const char * {
     case METRIC_SHUTDOWN:
         return "sd";
     }
+    // Explicitly don't have a `default` case so the compiler can warn us when we have unhandled
+    // enum values
+    return "??";
 }
 
 auto Telemetry::variantToJson(const std::variant<int, uint32_t, float, std::string> &v)
