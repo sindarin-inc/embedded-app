@@ -125,6 +125,8 @@ private:
         return *(uint16_t *)b;
     }
 
+    auto cleanFilePath(const char *filePath) -> char *;
+
     uint16_t repeat;
     uint16_t remains;
     uint16_t current;

@@ -176,17 +176,8 @@ void Unzipper::close() {
     }
 }
 
-#if 0
-/**
- * @brief Clean filePath path
- *
- * This function cleans filePath path that may contain relation folders (like '..').
- *
- * @param filePath The filePath to clean
- * @return char * The cleaned up filePath. Must be freed after usage.
- */
-
-auto cleanFilePath(const char *filePath) -> char * {
+// This method cleans filePath path that may contain relation folders (like '..').
+auto Unzipper::cleanFilePath(const char *filePath) -> char * {
     char *str = new char[strlen(filePath) + 1];
 
     const char *s = filePath;
@@ -214,7 +205,6 @@ auto cleanFilePath(const char *filePath) -> char * {
 
     return str;
 }
-#endif
 
 auto Unzipper::getFileSize() -> uint32_t {
     if (!isOpen_ || (currentFileEntry_ == nullptr)) {
@@ -232,7 +222,9 @@ auto Unzipper::fileExists(const std::string &filePath) -> bool {
         return false;
     }
 
-    return fileEntries_.find(filePath) != fileEntries_.end();
+    std::string cleanedFilePath = cleanFilePath(filePath.c_str());
+
+    return fileEntries_.find(cleanedFilePath) != fileEntries_.end();
 }
 
 void Unzipper::showEntries() {
@@ -255,8 +247,10 @@ auto Unzipper::openFile(const std::string &filePath) -> bool {
         return false;
     }
 
-    if (auto it = fileEntries_.find(filePath); it == fileEntries_.end()) {
-        log_e("Unzipper openFile: File not found: <%s>", filePath.c_str());
+    std::string cleanedFilePath = cleanFilePath(filePath.c_str());
+
+    if (auto it = fileEntries_.find(cleanedFilePath); it == fileEntries_.end()) {
+        log_e("Unzipper openFile: File not found: <%s>", cleanedFilePath.c_str());
         showEntries();
     } else {
         currentFileEntry_ = it->second;
