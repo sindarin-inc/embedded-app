@@ -130,7 +130,7 @@
 #define MINIZ_NO_ARCHIVE_APIS
 #define MINIZ_NO_ARCHIVE_WRITING_APIS
 #define MINIZ_NO_ZLIB_COMPATIBLE_NAMES
-#define MINIZ_NO_MALLOC
+// #define MINIZ_NO_MALLOC
 #define MINIZ_NO_DEFLATE_APIS
 
 /* Defines to completely disable specific portions of miniz.c:
