@@ -11,7 +11,7 @@
 // components. But that's a little more complexity than I want to bite off right now. This is
 // easier.
 
-WiFi wiFi;
+extern WiFi wiFi;
 
 auto WiFi::getInstance() -> WiFi & { return wiFi; }
 
