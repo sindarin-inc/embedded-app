@@ -50,7 +50,7 @@ void MenuScreen::drawMenuItems(DisplaySystem &display, bool withBullet, bool wit
         // If we still don't fit, shrink the string until we do.
         while (display.getTextWidth(itemTitle.c_str()) > MAX_WIDTH) {
             if (itemTitle.length() > 4) {
-                itemTitle = itemTitle.substr(0, itemTitle.length() - 4) + "...";
+                itemTitle = Utf8Substr(itemTitle, 0, itemTitle.length() - 4) + "...";
             } else {
                 // Practically, this shouldn't ever happen, but I'm doing
                 // the bounds check here just in case we do hit it some day.
