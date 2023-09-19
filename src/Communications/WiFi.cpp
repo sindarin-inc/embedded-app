@@ -444,7 +444,7 @@ void WiFi::wiFiEventHandler(void *arg, esp_event_base_t eventBase, int32_t event
         log_d("WIFI_EVENT_STA_START");
         break;
     case WIFI_EVENT_STA_DISCONNECTED: {
-        wifi_event_sta_disconnected_t *disconnected = (wifi_event_sta_disconnected_t *)eventData;
+        auto *disconnected = (wifi_event_sta_disconnected_t *)eventData;
         // These reasons are used in Espressif's WiFi provisioning component to
         // signify un-retryable auth problem. See:
         // https://github.com/espressif/esp-idf/blob/cbce221e88d52665523093b2b6dd0ebe3f1243f1/components/wifi_provisioning/src/manager.c#L953
