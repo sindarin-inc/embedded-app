@@ -27,11 +27,11 @@ auto Utf8Substr(const std::string &str, unsigned int start, size_t leng) -> std:
             i += 2;
         } else if ((c & 0xF8) == 0xF0) {
             i += 3;
-        // else if (($c & 0xFC) == 0xF8) i+=4; // 111110bb //byte 5, unnecessary in 4 byte UTF-8
-        // else if (($c & 0xFE) == 0xFC) i+=5; // 1111110b //byte 6, unnecessary in 4 byte UTF-8
+            // else if (($c & 0xFC) == 0xF8) i+=4; // 111110bb //byte 5, unnecessary in 4 byte UTF-8
+            // else if (($c & 0xFE) == 0xFC) i+=5; // 1111110b //byte 6, unnecessary in 4 byte UTF-8
         } else {
             return ""; // invalid utf8
-}
+        }
     }
     if (q <= start + leng || leng == std::string::npos) {
         max = i;
