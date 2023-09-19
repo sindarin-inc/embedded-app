@@ -9,6 +9,7 @@
 #include <string>
 
 #include "Communications/WiFiSettings.hpp"
+#include "Misc/Telemetry.hpp"
 #include "Storage/PreferencesStore.hpp"
 
 typedef enum {
@@ -41,7 +42,7 @@ class WiFi {
 public:
     static auto getInstance() -> WiFi &;
 
-    WiFi() = default;
+    WiFi(Telemetry &telemetry) : telemetry_(telemetry){};
     WiFi(WiFi const &) = delete;
 
     // Credentials
@@ -83,6 +84,7 @@ public:
     bool retryable = false;
 
 protected:
+    Telemetry &telemetry_;
     WiFiState wiFiState_ = UNINITIALIZED;
     wifi_power_t wiFiPower_ = WIFI_POWER_19_5dBm;
     esp_netif_t *staNetif_;
