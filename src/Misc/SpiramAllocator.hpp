@@ -47,6 +47,7 @@ auto operator!=(const SpiramAllocator<T> &, const SpiramAllocator<U> &) -> bool 
 }
 
 typedef std::basic_string<char, std::char_traits<char>, SpiramAllocator<char>> SpiramString;
+bool operator==(const SpiramString &spiramStr, const std::string &stdStr);
 
 template <typename T>
 class CustomDeleter {
