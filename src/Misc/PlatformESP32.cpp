@@ -24,7 +24,7 @@
 #include "sindarin-debug.h"
 
 #define BACKLIGHT_PWM_CHANNEL 0
-#define HARDWARE_REVSION_LATEST 2
+#define HARDWARE_REVSION_LATEST 3
 
 adc_cali_handle_t adcCalHandle;
 adc_oneshot_unit_handle_t adcOneshotHandle;
