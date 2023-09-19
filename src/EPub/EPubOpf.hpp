@@ -1,17 +1,17 @@
 #pragma once
 
-#include <map>
+#include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
-#include "Misc/ZipFile.hpp"
-
-using Idx = uint16_t;
+#include "EPubDefs.hpp"
 
 class EPubOpf {
 public:
-    EPubOpf(ZipFile &zipFile, const char *path) : path_(path), zipFile_(zipFile) {}
-    void parse();
+    EPubOpf(const char *path) : path_(path) {}
+
+    void parse(std::shared_ptr<uint8_t[]> buffer, uint32_t length);
 
     struct ManifestItem {
         std::string href;
@@ -40,12 +40,11 @@ public:
 
 private:
     const char *path_;
-    ZipFile &zipFile_;
 
     std::string basePath_;
 
-    using ManifestMap = std::map<std::string, ManifestItem>;
-    using ManifestIterator = std::map<std::string, ManifestItem>::iterator;
+    using ManifestMap = std::unordered_map<std::string, ManifestItem>;
+    using ManifestIterator = std::unordered_map<std::string, ManifestItem>::iterator;
     using SpineVector = std::vector<SpineItem>;
 
     std::string title_;

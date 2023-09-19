@@ -1,8 +1,11 @@
+#pragma once
+
 #include <utility>
 
+#include "EPubDefs.hpp"
 #include "EPubOpf.hpp"
 #include "Misc/SpiramAllocator.hpp"
-#include "Misc/ZipFile.hpp"
+#include "Misc/unzipper.hpp"
 #include "Models/DocType.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "pugixml.hpp"
@@ -10,7 +13,7 @@
 class EPubFile : public RendererStream {
 public:
     EPubFile(FileSystem &fs, const char *filename, const std::shared_ptr<Readable> &readable)
-        : RendererStream(DocType::EPUB), epubZipFile_(fs, filename), readable_(readable),
+        : RendererStream(DocType::EPUB), epubUnzipper_(fs, filename), readable_(readable),
           currentFileBuffer_(nullptr), currentFilePath_("") {
         open();
     }
@@ -41,21 +44,21 @@ public:
         return readable_->toc;
     }
 
-    [[nodiscard]] auto getSpineIdx(const std::string &href) {
+    [[nodiscard]] auto getSpineIdx(const std::string &href) const -> uint16_t {
         uint16_t spineIdx = 0;
         while (spineIdx < opf_->getSpineCount()) {
             if (opf_->getSpine(spineIdx).item->href == href) {
-                break;
+                return spineIdx;
             }
             spineIdx += 1;
         }
-        return (spineIdx < opf_->getSpineCount()) ? spineIdx : 0;
+        return 0;
     }
 
     [[nodiscard]] auto getXHTMLFile(const std::string &path) -> pugi::xml_document &;
 
     [[nodiscard]] inline auto getOffset(const pugi::char_t *item) const -> uint32_t {
-        return item - currentFileBuffer_.get();
+        return item - (pugi::char_t *)currentFileBuffer_.get();
     }
 
     [[nodiscard]] inline auto getFullPath(const std::string &filename) const -> std::string {
@@ -73,11 +76,10 @@ public:
     [[nodiscard]] auto getUncompressedSize(Idx spineIdx) -> uint32_t {
         std::string filePath = opf_->getFullPath(opf_->getSpine(spineIdx).item->href);
         // log_w("Loading file %s", filePath.c_str());
-        if (epubZipFile_.openFile(filePath.c_str()) == UNZ_OK) {
-            unz_file_info info;
-            epubZipFile_.getFileInfo(&info, nullptr, 0, nullptr, 0);
-            epubZipFile_.closeFile();
-            return info.uncompressed_size;
+        if (epubUnzipper_.openFile(filePath.c_str())) {
+            uint32_t size = epubUnzipper_.getFileSize();
+            epubUnzipper_.closeFile();
+            return size;
         }
         return 0;
     }
@@ -85,13 +87,13 @@ public:
     pugi::xml_document currentFileDoc;
 
 private:
-    ZipFile epubZipFile_;
+    Unzipper epubUnzipper_;
     const std::shared_ptr<Readable> &readable_;
 
     std::shared_ptr<EPubOpf> opf_;
 
     // std::unique_ptr<pugi::char_t[]> currentFileBuffer_;
-    std::shared_ptr<pugi::char_t[]> currentFileBuffer_;
+    std::shared_ptr<uint8_t[]> currentFileBuffer_;
     std::string currentFilePath_;
 
     auto open() -> bool;

@@ -2,18 +2,18 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
-#include "Misc/ZipFile.hpp"
+#include "EPubDefs.hpp"
 
 class EPubMetaFile {
 public:
-    EPubMetaFile(ZipFile &zipFile, const char *path) : path_(path), zipFile_(zipFile) {}
+    EPubMetaFile(const char *path) : path_(path) {}
 
-    void parse();
+    void parse(std::shared_ptr<uint8_t[]> buffer, uint32_t length);
 
-    std::vector<std::string> rootfilePaths;
+    std::vector<std::string> rootfilePaths_;
 
 private:
     const char *path_;
-    ZipFile &zipFile_;
 };
