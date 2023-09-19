@@ -10,7 +10,7 @@ public:
     ReadableArchive() = default;
     ~ReadableArchive() override = default;
 
-    std::string uuid;
+    SpiramString uuid;
     bool isArchived;
 
     auto fromJson(const JsonObject &j) -> bool override {

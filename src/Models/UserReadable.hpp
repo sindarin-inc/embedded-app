@@ -9,7 +9,7 @@ public:
     UserReadable() = default;
     ~UserReadable() override = default;
 
-    std::string uuid;
+    SpiramString uuid;
     uint32_t placemark;
     bool isArchived;
     std::shared_ptr<Readable> readable = nullptr;
@@ -26,7 +26,7 @@ public:
         return readable->fromJson(j["readable"]);
     }
 
-    operator std::string() const { return uuid; }
+    operator std::string() const { return std::string(uuid); }
 };
 
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name

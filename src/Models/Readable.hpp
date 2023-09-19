@@ -35,7 +35,7 @@ public:
     Readable() = default;
     ~Readable() override = default;
 
-    std::string uuid;
+    SpiramString uuid;
     SpiramString shortenedUuid;
     SpiramString title;
     // TODO: Remove

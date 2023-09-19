@@ -10,7 +10,7 @@ public:
     UserReadablePartialChapterSummary() = default;
     ~UserReadablePartialChapterSummary() override = default;
 
-    std::string text;
+    SpiramString text;
     uint32_t placemark;
     uint8_t readPct;
 

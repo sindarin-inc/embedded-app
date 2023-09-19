@@ -10,7 +10,7 @@ public:
     ReadablePlacemark() = default;
     ~ReadablePlacemark() override = default;
 
-    std::string uuid;
+    SpiramString uuid;
     uint32_t position;
 
     auto fromJson(const JsonObject &j) -> bool override {
