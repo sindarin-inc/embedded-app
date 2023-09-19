@@ -76,6 +76,12 @@ public:
         return hasWiFiCredentials() ? settings_.settings[0].ssid : "";
     }
 
+    auto state() -> WiFiState { return wiFiState_; }
+
+    // Whether the connection failure is retryable. This could potentially be expanded to an enum
+    // value if we had other attributes of the disconnection we want to capture.
+    bool retryable = false;
+
 protected:
     WiFiState wiFiState_ = UNINITIALIZED;
     wifi_power_t wiFiPower_ = WIFI_POWER_19_5dBm;
