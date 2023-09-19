@@ -22,10 +22,6 @@
 #include "UI/Fonts/Font.hpp"
 #include "UI/Layout/Types.hpp"
 
-// This isn't the best -- we may want to make this dynamically
-// allocated instead in the object?
-#define MAX_LINES_IN_SPLIT 100
-
 #define INVERTED_DISPLAY true
 // #define INVERTED_DISPLAY false
 // We allow x & y to be negative so the bounds checking code is more
