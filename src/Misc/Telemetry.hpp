@@ -7,6 +7,7 @@
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/SolClock.hpp"
+#include "Misc/SpiramAllocator.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
@@ -28,28 +29,26 @@ enum TelemetryField {
 };
 auto TelemetryFieldToString(TelemetryField field) -> const char *;
 
+typedef std::variant<int, uint32_t, float, const char *, std::string, SpiramString>
+    TelemetryVariant;
+
 class Telemetry {
 public:
     Telemetry(FileSystem &fs, PreferencesStore &prefs) : fileSystem_(fs), prefs_(prefs) {}
     Telemetry(const Telemetry &) = delete;
 
-    void logMetricData(
-        TelemetryField field,
-        std::map<std::string, std::variant<int, uint32_t, float, std::string>> data = {}) {
+    void logMetricData(TelemetryField field, std::map<std::string, TelemetryVariant> data = {}) {
         logMetricImpl(field, "", data);
     }
 
     template <typename T>
-    void
-    logMetric(TelemetryField field, T value,
-              std::map<std::string, std::variant<int, uint32_t, float, std::string>> data = {}) {
+    void logMetric(TelemetryField field, T value,
+                   std::map<std::string, TelemetryVariant> data = {}) {
         logMetricImpl(field, value, data);
     }
 
-    auto variantToJson(const std::variant<int, uint32_t, float, std::string> &v) -> std::string;
-    auto
-    mapToJson(const std::map<std::string, std::variant<int, uint32_t, float, std::string>> &data)
-        -> std::string;
+    auto variantToJson(const TelemetryVariant &v) -> std::string;
+    auto mapToJson(const std::map<std::string, TelemetryVariant> &data) -> std::string;
 
     static auto metricLogPath() -> std::string { return "/metrics/telemetry.jsonl"; }
 
@@ -64,9 +63,8 @@ private:
     static auto dispatchQueue() -> DispatchQueue * { return DispatchGetCore1BackgroundQueue(); }
 
     template <typename T>
-    void
-    logMetricImpl(TelemetryField field, T value,
-                  std::map<std::string, std::variant<int, uint32_t, float, std::string>> &data) {
+    void logMetricImpl(TelemetryField field, T value,
+                       std::map<std::string, TelemetryVariant> &data) {
         // create log directory in filesystem if it doesn't exist
         if (!fileSystem_.createDir("/metrics")) {
             log_e("could not create /metrics directory");

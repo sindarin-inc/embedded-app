@@ -36,8 +36,7 @@ auto TelemetryFieldToString(TelemetryField field) -> const char * {
     return "??";
 }
 
-auto Telemetry::variantToJson(const std::variant<int, uint32_t, float, std::string> &v)
-    -> std::string {
+auto Telemetry::variantToJson(const TelemetryVariant &v) -> std::string {
     if (std::holds_alternative<int>(v)) {
         return std::to_string(std::get<int>(v));
     } else if (std::holds_alternative<uint32_t>(v)) {
@@ -46,14 +45,16 @@ auto Telemetry::variantToJson(const std::variant<int, uint32_t, float, std::stri
         std::ostringstream ss;
         ss << std::fixed << std::setprecision(2) << std::get<float>(v);
         return ss.str();
+    } else if (std::holds_alternative<SpiramString>(v)) {
+        return "\"" + std::string(std::get<SpiramString>(v)) + "\"";
+    } else if (std::holds_alternative<const char *>(v)) {
+        return "\"" + std::string(std::get<const char *>(v)) + "\"";
     } else {
         return "\"" + std::get<std::string>(v) + "\"";
     }
 }
 
-auto Telemetry::mapToJson(
-    const std::map<std::string, std::variant<int, uint32_t, float, std::string>> &data)
-    -> std::string {
+auto Telemetry::mapToJson(const std::map<std::string, TelemetryVariant> &data) -> std::string {
     std::string json;
     for (const auto &kv : data) {
         json += StringFormat(",\"%s\":%s", kv.first.c_str(), variantToJson(kv.second).c_str());

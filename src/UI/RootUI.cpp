@@ -74,7 +74,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     display_ = display;
     auto lastMagReading = power_.getLastMagReading();
 
-    std::map<std::string, std::variant<int, uint32_t, float, std::string>> bootData = {
+    std::map<std::string, TelemetryVariant> bootData = {
         {"fw", kVersionString},
         {"sha", kGitHash},
         {"bc", prefs_.bootCount.get().value_or(0)},
