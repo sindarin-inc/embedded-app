@@ -466,6 +466,9 @@ void WiFi::wiFiEventHandler(void *arg, esp_event_base_t eventBase, int32_t event
             tthis->retryable = true;
         }
 
+        telemetry.logMetric(TelemetryField::METRIC_WIFI, "disconnect",
+                            {{"reason", disconnected->reason}});
+
         tthis->wiFiState_ = DISCONNECTED;
         xEventGroupSetBits(tthis->wifiEventGroup_, DISCONNECTED);
         break;

@@ -519,7 +519,7 @@ void LocalStore::syncFromRemote(
     SyncReason syncReason, const std::function<void(ContentSyncState state)> &progressCallback) {
 
     if (!WiFi::getInstance().hasWiFiCredentials()) {
-        this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-wifi-no-credentials");
+        this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-no-credentials");
         progressCallback(
             ContentSyncState{.state = ContentSyncState::State::Failure,
                              .message = "Go to Settings > WiFi Setup in the Sol app."});
@@ -527,7 +527,7 @@ void LocalStore::syncFromRemote(
     }
 
     if (!WiFi::getInstance().connectWiFiFromSettings()) {
-        this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-wifi-failed");
+        this->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "sync-wifi-failed");
         progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
                                           .message = "Failed to connect to WiFi."});
         return;
