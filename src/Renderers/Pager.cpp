@@ -52,9 +52,15 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
             }
         } else if (lines_[linesTailIdx_].tokenCount == 0) {
             // We are at the beginning of a line
-            if ((token.tokenId != TokenId::TAB) || (tokens_.getTokenCount() < 2) ||
-                ((tokens_.getBeforeLast().tokenId == TokenId::NEWLINE) ||
-                 (tokens_.getBeforeLast().tokenId == TokenId::ENDPARAGRAPH))) {
+            if (token.tokenId == TokenId::TAB) {
+                token.pixWidth = spaceWidth_ << 3;
+                lines_[linesTailIdx_].tokenIdx = tokens_.getLastIdx();
+                lines_[linesTailIdx_].tokenCount = 1;
+                lines_[linesTailIdx_].length += token.length;
+                currentLineWidth_ = token.pixWidth;
+            } else if ((tokens_.getTokenCount() < 2) ||
+                       ((tokens_.getBeforeLast().tokenId == TokenId::NEWLINE) ||
+                        (tokens_.getBeforeLast().tokenId == TokenId::ENDPARAGRAPH))) {
                 if (!dontStop &&
                     ((currentPageDecilineHeight_ + NEWLINE_DECI_LINE_HEIGHT) > maxDeciLines_)) {
                     setNextPagePlace(token.streamPlace);
@@ -65,13 +71,16 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
                     return false;
                 }
                 lines_[linesTailIdx_].tokenIdx = tokens_.getLastIdx();
-                lines_[linesTailIdx_].tokenCount++;
+                lines_[linesTailIdx_].tokenCount = 1;
                 lines_[linesTailIdx_].length += token.length;
                 currentLineWidth_ = token.pixWidth;
             } else {
                 tokens_.forgetLast();
             }
         } else {
+            if (token.tokenId == TokenId::TAB) {
+                token.pixWidth = spaceWidth_ << 3;
+            }
             currentLineWidth_ += token.pixWidth;
             lines_[linesTailIdx_].tokenCount++;
             lines_[linesTailIdx_].length += token.length;
@@ -235,9 +244,13 @@ void Pager::getLine(LineInfo &lineStruct, Line &line) const {
     for (Idx tokenIdx = lineStruct.tokenIdx; tokenIdx != endTokenIdx;
          tokens_.nextTokenIdx(tokenIdx)) {
 
-        if ((tokens_[tokenIdx].tokenId != TokenId::NOTOKEN) &&
-            (tokens_[tokenIdx].tokenId != TokenId::NEWLINE) &&
-            (tokens_[tokenIdx].tokenId != TokenId::ENDPARAGRAPH)) {
+        auto tokenId = tokens_[tokenIdx].tokenId;
+        if (tokenId == TokenId::TAB) {
+            for (int i = 0; i < 8; i++) {
+                line[lineIdx++] = ' ';
+            }
+        } else if ((tokenId != TokenId::NOTOKEN) && (tokenId != TokenId::NEWLINE) &&
+                   (tokenId != TokenId::ENDPARAGRAPH)) {
             if (tokens_[tokenIdx].cStr != nullptr) {
                 // strcat(line.data(), tokens_[tokenIdx].cStr);
                 memcpy(line.data() + lineIdx, tokens_[tokenIdx].cStr, tokens_[tokenIdx].length);

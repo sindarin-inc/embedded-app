@@ -176,6 +176,152 @@ void Unzipper::close() {
     }
 }
 
+#if 0
+struct dir_component {
+    char * dir;         // one component of the path (no separators)
+    int    len;         // length of this component
+};
+
+// a way to print struct dir_component entries for debug
+static char lbuf[32];
+char *
+dc_str(struct dir_component * dir)
+{
+    int len = dir->len;
+
+    if (len > sizeof(lbuf)-1)
+        len = sizeof(lbuf)-1;
+
+    if (len)
+        strncpy(lbuf, dir->dir, len);
+    lbuf[len] = '\0';
+
+    return lbuf;
+}
+
+
+char *
+canonicalize_path(char * path, int debug)
+{
+    struct dir_component * dirs;
+    struct dir_component * dp;
+    char * p;
+    char * q;
+    int    n_dirs;
+    int    first_dir;
+    int    i;
+    int    j;
+
+    if (path[0] == '\0')
+        return path;
+
+    //
+    // estimate the number of directory components in path
+    //
+
+    n_dirs = 1;
+    for (p = path; *p; p++)
+        if (*p == '/')
+            n_dirs++;
+
+    if (debug) {
+        printf("========\n");
+        printf("in: %s (%d)\n", path, n_dirs);
+    }
+
+    dirs = malloc(sizeof(struct dir_component) * n_dirs);
+    if (dirs == NULL) {
+        printf("canonicalize_path: out of memory\n");
+        return NULL;
+    }
+
+    //
+    // break path into component parts
+    //
+    // path separators mark the start of each directory component
+    // (except maybe the first)
+    //
+
+    n_dirs = 0;
+    dirs[n_dirs].dir = path;
+    dirs[n_dirs].len = 0;
+
+    for (p = path; *p; p++) {
+        if (*p == '/') {
+            // found a new component, save its location
+            // and start counting its length
+            n_dirs++;
+            dirs[n_dirs].dir = p + 1;
+            dirs[n_dirs].len = 0;
+        } else {
+            dirs[n_dirs].len++;
+        }
+    }
+    n_dirs++;
+
+    if (debug) {
+        for (i = 0; i < n_dirs; i++)
+            printf(" %2d %s\n", dirs[i].len, dc_str(&dirs[i]));
+    }
+
+    //
+    // canonicalize '.' and '..'
+    //
+
+    for (i = 0; i < n_dirs; i++) {
+        dp = &dirs[i];
+
+        // mark '.' as an empty component
+        if (dp->len == 1  &&  dp->dir[0] == '.') {
+            dirs[i].len = 0;
+            continue;
+        }
+
+        // '..' eliminates the previous non-empty component
+        if (dp->len == 2  &&  dp->dir[0] == '.'  &&  dp->dir[1] == '.') {
+            dirs[i].len = 0;
+            for (j = i - 1; j >= 0; j--)
+                if (dirs[j].len > 0)
+                    break;
+            if (j < 0) {
+                free(dirs);     // no previous components are available,
+                return NULL;    // the path is invalid
+            }
+            dirs[j].len = 0;
+        }
+    }
+
+    if (debug) {
+        printf("----\n");
+        for (i = 0; i < n_dirs; i++)
+            printf(" %2d %s\n", dirs[i].len, dc_str(&dirs[i]));
+    }
+
+    //
+    // reconstruct path using non-zero length components
+    //
+
+    p = path;
+    if (*p == '/')              // if path was absolute, keep it that way
+        p++;
+    first_dir = 1;
+    for (i = 0; i < n_dirs; i++)
+        if (dirs[i].len > 0) {
+            if (!first_dir)
+                *p++ = '/';
+            q = dirs[i].dir;
+            j = dirs[i].len;
+            while (j--)
+                *p++ = *q++;
+            first_dir = 0;
+        }
+    *p = '\0';
+
+    free(dirs);
+    return path;
+}
+#endif
+
 // This method cleans filePath path that may contain relation folders (like '..').
 auto Unzipper::cleanFilePath(const char *filePath) -> char * {
     char *str = new char[strlen(filePath) + 1];

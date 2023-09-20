@@ -596,7 +596,8 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
     if (node.type() == pugi::node_element) {
         currentStreamOffset_ = node.offset_debug();
 
-        // log_w("Interpreting node element %s at offset %" PRIu32, node.name(), offset);
+        // log_w("Interpreting node element <%s> at offset %" PRIu32, node.name(),
+        //       currentStreamOffset_);
 
         if (!started_ && (currentStreamOffset_ >= fromPlace_.getOffset())) {
             started_ = true;
@@ -734,7 +735,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
         }
 
     } else if (node.type() == pugi::node_pcdata) {
-        // log_w("Interpreting pcdata %s", node.value());
+        // log_w("Interpreting pcdata '%s'", node.value());
 
         const pugi::char_t *str = node.value();
         currentStreamOffset_ = node.offset_debug(); // stream_->getOffset(str);
@@ -937,6 +938,8 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
             if (lastToken_ != nullptr) {
                 lastToken_->spacesAfter++;
                 pager_.addSpaceWidth();
+                // } else {
+                // log_e("Lost a space....");
             }
             nextByte();
         } else if (curChar == '\n') { // Maybe irrelevant in a xhtml context
