@@ -441,6 +441,8 @@ void EinkET013TT1::update(const EinkET013TT1Waveform &waveform, const uint8_t *b
     if (bits != 1) {
         log_e("Timed out waiting for update to finish!");
     }
+
+    vEventGroupDelete(group);
 }
 
 void EinkET013TT1::writeRegister(Register index, const uint8_t *data, size_t len) {

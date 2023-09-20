@@ -120,6 +120,8 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
             log_w("Coredump upload timed out");
         }
     }
+
+    vEventGroupDelete(backgroundGroup);
 }
 
 void BackgroundSync(PowerManager &powerManager, PreferencesStore &prefs, LocalStore &localStore,

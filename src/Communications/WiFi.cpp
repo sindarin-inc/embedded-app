@@ -126,6 +126,9 @@ auto WiFi::end() -> esp_err_t {
         return err;
     }
 
+    vEventGroupDelete(wifiEventGroup_);
+    wifiEventGroup_ = nullptr;
+
     setState(WiFiState::UNINITIALIZED);
     return ESP_OK;
 }
