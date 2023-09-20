@@ -64,7 +64,7 @@ private:
 
     template <typename T>
     void logMetricImpl(TelemetryField field, T value,
-                       std::map<std::string, TelemetryVariant> &data) {
+                       std::map<std::string, TelemetryVariant> &data) noexcept {
         // create log directory in filesystem if it doesn't exist
         if (!fileSystem_.createDir("/metrics")) {
             log_e("could not create /metrics directory");
@@ -89,6 +89,8 @@ private:
             if (!value.empty()) { // Check if the std::string is not empty
                 valueFormat = StringFormat(R"(,"v":"%s")", value.c_str());
             }
+        } else {
+            throw std::logic_error("Unsupported logMetricImpl type!");
         }
 
         std::string format = R"({"ts":%lld,"k":"%s"%s%s})";
