@@ -64,20 +64,20 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
                             {{"run-time", GetRunTimeMs()}});
     }
 
-    FirmwareDownloader firmwareDownloader(prefs, true);
-    firmwareDownloader.downloadFirmware(
-        [&firmwareDownloader, &localStore, &backgroundGroup](const FirmwareDownloadState &state) {
+    auto firmwareDownloader = std::make_shared<FirmwareDownloader>(prefs, true);
+    firmwareDownloader->downloadFirmware(
+        [firmwareDownloader, &localStore, &backgroundGroup](const FirmwareDownloadState &state) {
         if (state.state == FirmwareDownloadState::Failure) {
             log_i("Firmware download for %s failed with error: %s",
-                  firmwareDownloader.response.latestGlassesFirmware.version.c_str(),
+                  firmwareDownloader->response.latestGlassesFirmware.version.c_str(),
                   state.message.c_str());
         } else if (state.state == FirmwareDownloadState::AlreadyDownloaded) {
             log_i("Firmware download for %s already queued.",
-                  firmwareDownloader.response.latestGlassesFirmware.version.c_str());
+                  firmwareDownloader->response.latestGlassesFirmware.version.c_str());
         } else if (state.state == FirmwareDownloadState::Downloaded) {
             log_i("Firmware download for %s successful. Mark for install.",
-                  firmwareDownloader.response.latestGlassesFirmware.version.c_str());
-            localStore.saveFirmware(firmwareDownloader.response.latestGlassesFirmware);
+                  firmwareDownloader->response.latestGlassesFirmware.version.c_str());
+            localStore.saveFirmware(firmwareDownloader->response.latestGlassesFirmware);
         } else if (state.state == FirmwareDownloadState::AlreadyUpToDate) {
             log_i("Firmware up to date.");
         } else {
@@ -89,6 +89,7 @@ void BackgroundSyncInternal(PowerManager &powerManager, PreferencesStore &prefs,
     // Wait for firmware download to finish
     bits = xEventGroupWaitBits(backgroundGroup, 1, pdTRUE, pdTRUE, pdMS_TO_TICKS(5 * 60 * 1000));
     if (!(bits & 1)) {
+        firmwareDownloader->cancel();
         log_w("Firmware download timed out");
     }
 

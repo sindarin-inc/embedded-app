@@ -38,6 +38,7 @@ public:
         : prefs_(prefs), skipInstall_(skipInstall){};
 
     void downloadFirmware(const std::function<void(FirmwareDownloadState state)> &progressCallback);
+    void cancel() { canelled_ = true; }
 
     std::string versionString;
     FirmwareResponse response;
@@ -45,4 +46,5 @@ public:
 protected:
     PreferencesStore &prefs_;
     bool skipInstall_;
+    bool canelled_ = false;
 };
