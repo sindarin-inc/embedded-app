@@ -84,7 +84,8 @@ private:
             if (value && strcmp(value, "") != 0) { // Check if the C-style string is not empty
                 valueFormat = StringFormat(R"(,"v":"%s")", value);
             }
-        } else if constexpr (std::is_same<T, std::string>::value) {
+        } else if constexpr (std::is_same<T, std::string>::value ||
+                             std::is_same<T, SpiramString>::value) {
             if (!value.empty()) { // Check if the std::string is not empty
                 valueFormat = StringFormat(R"(,"v":"%s")", value.c_str());
             }
