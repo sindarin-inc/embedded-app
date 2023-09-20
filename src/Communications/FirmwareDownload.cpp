@@ -3,6 +3,7 @@
 #include <Update.h>
 #include <cstdio>
 #include <string>
+#include <utility>
 
 #include "Communications/FileDownload.hpp"
 #include "Communications/HttpClient.hpp"
@@ -22,7 +23,7 @@ void FirmwareDownloader::downloadFirmware(
         if (canelled_) {
             return;
         }
-        progressCallback(state);
+        progressCallback(std::move(state));
     };
 
     // Grab the token here from prefs if set
