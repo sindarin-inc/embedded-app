@@ -24,7 +24,7 @@
 #include "sindarin-debug.h"
 
 #define BACKLIGHT_PWM_CHANNEL 0
-#define HARDWARE_REVSION_LATEST 2
+#define HARDWARE_REVISION_LATEST 3
 
 adc_cali_handle_t adcCalHandle;
 adc_oneshot_unit_handle_t adcOneshotHandle;
@@ -480,14 +480,14 @@ auto GetHardwareRevision() -> uint8_t {
     // If these bytes are null, assume it's the latest hardware version
     if (serialNumber[3] == 0 || serialNumber[4] == 0) {
         log_d("Unset SN (null), assuming latest hardware revision");
-        return HARDWARE_REVSION_LATEST;
+        return HARDWARE_REVISION_LATEST;
     }
 
     // Check that the first two bytes are in ascii numeric range
     if (serialNumber[3] < '0' || serialNumber[3] > '9' || serialNumber[4] < '0' ||
         serialNumber[4] > '9') {
         log_e("Invalid SN (out of ascii ranges), assuming latest hardware revision");
-        return HARDWARE_REVSION_LATEST;
+        return HARDWARE_REVISION_LATEST;
     }
 
     // Serial number starts with SOL01 where the `01` is the hardware revision. Turn those two ascii

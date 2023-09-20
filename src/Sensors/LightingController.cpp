@@ -76,6 +76,7 @@ void LightingController::setOverrideValuePercent(int percent) {
     }
 
     overrideDutyCycle_ = dutyCycle;
+    log_d("Override duty cycle: %d (%d%%)", dutyCycle, percent);
     lightSensor_.disable();
     currentDutyCycle_ = dutyCycle;
     setCurrentDutyCycle(currentDutyCycle_, 100);
@@ -87,7 +88,6 @@ auto LightingController::getCurrentPercent() -> int {
     } else if (currentDutyCycle_ == 2) {
         return 7;
     } else {
-        log_d("Current duty cycle: %d", currentDutyCycle_);
         return static_cast<int>(std::sqrt(currentDutyCycle_)) * 7;
     }
 }
