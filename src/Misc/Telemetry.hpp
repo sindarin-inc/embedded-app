@@ -64,7 +64,7 @@ private:
 
     template <typename T>
     void logMetricImpl(TelemetryField field, T value,
-                       std::map<std::string, TelemetryVariant> &data) noexcept {
+                       std::map<std::string, TelemetryVariant> &data) {
         static_assert(
             std::disjunction_v<std::is_same<T, float>, std::is_same<T, uint32_t>,
                                std::is_same<T, int>, std::is_same<T, char *>,
