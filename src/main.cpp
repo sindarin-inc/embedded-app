@@ -84,6 +84,7 @@ PowerManager powerManager(fileSystem, prefs, lightingController, myDisplay, tele
 LocalStore localStore(fileSystem, prefs, powerManager.battery, telemetry);
 RootUI rootUi(prefs, powerManager, telemetry);
 SolClock solClock(prefs);
+WiFi wiFi(telemetry);
 
 bool bootCompleted = false;
 

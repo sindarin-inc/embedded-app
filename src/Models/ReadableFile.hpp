@@ -10,7 +10,7 @@ public:
     ReadableFile() = default;
     ~ReadableFile() override = default;
 
-    std::string uuid;
+    SpiramString uuid;
     SpiramString name;
     int size;
     SpiramString filetype;

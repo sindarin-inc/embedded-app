@@ -7,7 +7,7 @@
 #include "config.h"
 #include "sindarin-debug.h"
 
-WiFi wiFi;
+extern WiFi wiFi;
 
 auto WiFi::getInstance() -> WiFi & { return wiFi; }
 
@@ -79,7 +79,8 @@ auto WiFi::begin() -> esp_err_t {
     }
     SHOW_HEAP();
 
-    wiFiState_ = IDLE;
+    setState(WiFiState::IDLE);
+
     return ESP_OK;
 }
 
@@ -125,7 +126,10 @@ auto WiFi::end() -> esp_err_t {
         return err;
     }
 
-    wiFiState_ = UNINITIALIZED;
+    vEventGroupDelete(wifiEventGroup_);
+    wifiEventGroup_ = nullptr;
+
+    setState(WiFiState::UNINITIALIZED);
     return ESP_OK;
 }
 
@@ -197,6 +201,8 @@ auto WiFi::scanNetworks(const std::function<void(std::shared_ptr<wifi_ap_record_
         return err;
     }
 
+    setState(WiFiState::SCANNING);
+
     err = esp_wifi_start();
     if (err != ESP_OK) {
         log_e("esp_wifi_start failed with error %s", esp_err_to_name(err));
@@ -246,6 +252,7 @@ auto WiFi::scanNetworks(const std::function<void(std::shared_ptr<wifi_ap_record_
     SHOW_HEAP();
 
     err = esp_wifi_stop();
+    setState(WiFiState::IDLE);
     if (err != ESP_OK) {
         log_e("esp_wifi_stop failed with error %s", esp_err_to_name(err));
         return err;
@@ -256,8 +263,20 @@ auto WiFi::scanNetworks(const std::function<void(std::shared_ptr<wifi_ap_record_
 }
 
 auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> esp_err_t {
+    esp_err_t err = begin();
+    if (err != ESP_OK) {
+        log_e("begin failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+
+    err = esp_wifi_start();
+    if (err != ESP_OK) {
+        log_e("esp_wifi_start failed with error %s", esp_err_to_name(err));
+        return err;
+    }
+
     // We have to have wifi sleep enabled otherwise Bluetooth can't work
-    esp_err_t err = esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
+    err = esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
     if (err != ESP_OK) {
         log_e("esp_wifi_set_ps failed with error %s", esp_err_to_name(err));
         return err;
@@ -312,7 +331,7 @@ auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> 
         return err;
     }
 
-    wiFiState_ = CONNECTING;
+    setState(WiFiState::CONNECTING);
 
     return ESP_OK;
 }
@@ -370,7 +389,7 @@ auto WiFi::connectWiFiSettingWithTimeout(int timeoutMs, const std::string &ssid,
         if (err != ESP_OK) {
             log_w("error in esp_wifi_disconnect: %d", err);
         }
-        wiFiState_ = IDLE;
+        setState(WiFiState::IDLE);
         return false;
     }
 
@@ -431,11 +450,37 @@ void WiFi::wiFiEventHandler(void *arg, esp_event_base_t eventBase, int32_t event
     case WIFI_EVENT_STA_START:
         log_d("WIFI_EVENT_STA_START");
         break;
-    case WIFI_EVENT_STA_DISCONNECTED:
-        log_i("WIFI_EVENT_STA_DISCONNECTED");
-        tthis->wiFiState_ = DISCONNECTED;
+    case WIFI_EVENT_STA_DISCONNECTED: {
+        auto *disconnected = (wifi_event_sta_disconnected_t *)eventData;
+        // These reasons are used in Espressif's WiFi provisioning component to
+        // signify un-retryable auth problem. See:
+        // https://github.com/espressif/esp-idf/blob/cbce221e88d52665523093b2b6dd0ebe3f1243f1/components/wifi_provisioning/src/manager.c#L953
+        switch (disconnected->reason) {
+        case WIFI_REASON_AUTH_EXPIRE:
+        case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
+        case WIFI_REASON_AUTH_FAIL:
+        case WIFI_REASON_HANDSHAKE_TIMEOUT:
+        case WIFI_REASON_MIC_FAILURE:
+            log_e("WiFi Auth Error (%d)", disconnected->reason);
+            tthis->retryable = false;
+            break;
+        case WIFI_REASON_NO_AP_FOUND:
+            log_e("No AP found");
+            tthis->retryable = true;
+            break;
+        default:
+            log_e("WiFi Disconnect Error (%d)", disconnected->reason);
+            tthis->retryable = true;
+            break;
+        }
+
+        tthis->telemetry_.logMetric(TelemetryField::METRIC_WIFI, "disconnect",
+                                    {{"reason", disconnected->reason}});
+
+        tthis->setState(WiFiState::DISCONNECTED);
         xEventGroupSetBits(tthis->wifiEventGroup_, DISCONNECTED);
         break;
+    }
     default:
         log_d("WIFI_EVENT: %" PRIi32, eventId);
     }
@@ -465,7 +510,7 @@ void WiFi::ipEventHandler(void *arg, esp_event_base_t eventBase, int32_t eventId
 
         tthis->settings_.setActiveSetting(ssid, password);
         tthis->settings_.save();
-        tthis->wiFiState_ = CONNECTED;
+        tthis->setState(WiFiState::CONNECTED);
         xEventGroupSetBits(tthis->wifiEventGroup_, CONNECTED);
         break;
     }

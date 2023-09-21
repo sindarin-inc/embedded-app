@@ -14,12 +14,12 @@ public:
     ReadableTableOfContentsChapter() = default;
     ~ReadableTableOfContentsChapter() override = default;
 
-    std::string title;
-    std::string href;
+    SpiramString title;
+    SpiramString href;
     uint32_t txtOffset;
     uint32_t endTxtOffset;
-    std::string inSubsectionHref;
-    std::string summary;
+    SpiramString inSubsectionHref;
+    SpiramString summary;
     std::shared_ptr<UserReadablePartialChapterSummary> partialChapterSummary = nullptr;
     ReadableDictionaryVector dictionary;
 

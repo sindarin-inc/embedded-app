@@ -11,7 +11,7 @@
 // components. But that's a little more complexity than I want to bite off right now. This is
 // easier.
 
-WiFi wiFi;
+extern WiFi wiFi;
 
 auto WiFi::getInstance() -> WiFi & { return wiFi; }
 
@@ -35,20 +35,20 @@ auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> 
     log_i("Pretending to connect WiFi (wiFiPower_=%d, ssid=%s, password=%s)", wiFiPower_,
           ssid.c_str(), password.c_str());
     Delay(1000);
-    wiFiState_ = CONNECTED;
+    setState(WiFiState::CONNECTED);
     return ESP_OK;
 }
 
 auto WiFi::connectWiFiFromSettings() -> bool {
     log_i("Pretending to connect WiFi (wiFiPower_=%d)", wiFiPower_);
     Delay(1000);
-    wiFiState_ = CONNECTED;
+    setState(WiFiState::CONNECTED);
     return true;
 }
 
 void WiFi::disconnectWiFi() {
     log_i("Pretending to disconnect WiFi");
-    wiFiState_ = UNINITIALIZED;
+    setState(WiFiState::UNINITIALIZED);
 }
 
 auto WiFi::connected() -> bool { return wiFiState_ == CONNECTED; }

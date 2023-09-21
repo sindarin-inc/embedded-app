@@ -9,6 +9,7 @@
 #include <string>
 
 #include "Communications/WiFiSettings.hpp"
+#include "Misc/Telemetry.hpp"
 #include "Storage/PreferencesStore.hpp"
 
 typedef enum {
@@ -33,7 +34,8 @@ typedef enum {
     IDLE = 1 << 0,
     CONNECTING = 1 << 1,
     CONNECTED = 1 << 2,
-    DISCONNECTED = 1 << 3
+    DISCONNECTED = 1 << 3,
+    SCANNING = 1 << 4
 } WiFiState;
 
 class WiFi {
@@ -41,7 +43,7 @@ class WiFi {
 public:
     static auto getInstance() -> WiFi &;
 
-    WiFi() = default;
+    WiFi(Telemetry &telemetry) : telemetry_(telemetry){};
     WiFi(WiFi const &) = delete;
 
     // Credentials
@@ -76,14 +78,26 @@ public:
         return hasWiFiCredentials() ? settings_.settings[0].ssid : "";
     }
 
+    auto state() -> WiFiState { return wiFiState_; }
+
+    // Whether the connection failure is retryable. This could potentially be expanded to an enum
+    // value if we had other attributes of the disconnection we want to capture.
+    bool retryable = false;
+
 protected:
-    WiFiState wiFiState_ = UNINITIALIZED;
+    Telemetry &telemetry_;
+    WiFiState wiFiState_ = WiFiState::UNINITIALIZED;
     wifi_power_t wiFiPower_ = WIFI_POWER_19_5dBm;
     esp_netif_t *staNetif_;
     esp_event_handler_instance_t wifiEventHandlerInstance_;
     esp_event_handler_instance_t ipEventHandlerInstance_;
     WiFiSettings settings_;
     EventGroupHandle_t wifiEventGroup_ = nullptr;
+
+    void setState(WiFiState state) {
+        log_d("WiFi::wiFiState_ set to %d", state);
+        wiFiState_ = state;
+    }
 
     // Lifecycle init/deinit
     auto begin() -> esp_err_t;

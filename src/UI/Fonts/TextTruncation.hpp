@@ -16,3 +16,5 @@
 
 auto TruncateStringToFit(DisplaySystem &display, Font *font, const std::string &str,
                          uint16_t maxWidth, uint16_t &initialWidth) -> std::string;
+
+auto Utf8Substr(const std::string &str, unsigned int start, size_t leng) -> std::string;

@@ -22,10 +22,6 @@
 #include "UI/Fonts/Font.hpp"
 #include "UI/Layout/Types.hpp"
 
-// This isn't the best -- we may want to make this dynamically
-// allocated instead in the object?
-#define MAX_LINES_IN_SPLIT 100
-
 #define INVERTED_DISPLAY true
 // #define INVERTED_DISPLAY false
 // We allow x & y to be negative so the bounds checking code is more
@@ -228,8 +224,6 @@ protected:
     inline auto xOffset(int16_t value) -> int16_t { return value + boundingBox_.x; }
     inline auto yOffset(int16_t value) -> int16_t { return value + boundingBox_.y; }
 
-    void splitStringToLines(const std::string &stringToSplit,
-                            std::array<std::string, MAX_LINES_IN_SPLIT> &lines, int &numLines);
     void rotate(uint16_t &x, uint16_t &y, uint16_t &w, uint16_t &h);
     void computeMinMax();
 

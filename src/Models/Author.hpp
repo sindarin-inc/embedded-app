@@ -10,7 +10,7 @@ public:
     Author() = default;
     ~Author() override = default;
 
-    std::string uuid;
+    SpiramString uuid;
     SpiramString name;
     SpiramString description;
 

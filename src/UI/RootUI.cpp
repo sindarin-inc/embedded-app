@@ -72,12 +72,15 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                    LightingController &lightingController) {
 
     display_ = display;
+    auto lastMagReading = power_.getLastMagReading();
 
-    std::map<std::string, std::variant<int, uint32_t, float, std::string>> bootData = {
+    std::map<std::string, TelemetryVariant> bootData = {
         {"fw", kVersionString},
         {"sha", kGitHash},
         {"bc", prefs_.bootCount.get().value_or(0)},
         {"br", power_.getBootInfo().telemetryStr()},
+        {"mag_x", lastMagReading.x},
+        {"mag_z", lastMagReading.z},
     };
 
     auto badBootCount = GetBadBootCount();
@@ -218,7 +221,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     bool hasLastQuestion = false;
     it = std::find_if(readables.begin(), readables.end(), [](const std::shared_ptr<Readable> &x) {
-        return (x->title.compare("The Last Question") == 0);
+        return (x->title == "The Last Question");
     });
     if (it == readables.end()) {
         log_d("Could not find readable: %s, not enabling CES or EMC modes", "The Last Question");
@@ -1553,7 +1556,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         log_d("Starting CES mode readable load");
         auto it = std::find_if(readables.begin(), readables.end(),
                                [](const std::shared_ptr<Readable> &x) {
-            return (x->title.compare("The Last Question") == 0);
+            return (x->title == "The Last Question");
         });
         if (it == readables.end()) {
             log_e("Could not find readable: %s", "The Last Question");
@@ -1574,7 +1577,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         log_d("Starting EMC mode readable reading turn page every 30s and content sync every 60s");
         auto it = std::find_if(readables.begin(), readables.end(),
                                [](const std::shared_ptr<Readable> &x) {
-            return (x->title.compare("The Last Question") == 0);
+            return (x->title == "The Last Question");
         });
         if (it == readables.end()) {
             log_e("Could not find readable: %s", "The Last Question");
