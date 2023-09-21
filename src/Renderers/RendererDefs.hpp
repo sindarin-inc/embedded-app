@@ -14,9 +14,16 @@ namespace renderer_defs {
 // For deep logging when changing this file
 static constexpr bool RENDERER_DEBUG = false;
 static constexpr bool ON_ERROR_EXIT = false;
-static constexpr bool RENDERER_STATS = false;
+static constexpr bool RENDERER_STATS = true;
 
-#define RENDERER_PROFILING 1
+#define DEBUG_RENDERER 0
+#define RENDERER_PROFILING 0
+
+#if DEBUG_RENDERER
+#define LOGIT(f, ...) log_w(f, ##__VA_ARGS__);
+#else
+#define LOGIT(...)
+#endif
 
 #if RENDERER_PROFILING
 #define RENDERER_PROFILE_START(v) PROFILE_START(v)
@@ -61,23 +68,28 @@ static constexpr uint16_t PAGE_INDEX_SIZE = 500;
 
 using Idx = uint16_t;
 
-// These are the different tokens so as we parse a buffer
-// we more easily know what to do with the text.
-enum class TokenId : uint8_t {
-    TEXT = 0,     // Usually a word. Can contain NBSP characters
-    GTEXT,        // Glued text: Token that must stay on the same line as the next one (TBD)
-    NEWLINE,      // Full line vertical space
-    ENDPARAGRAPH, // After paragraph vertical space
-    HYPHEN,       // ASCII hyphen "-"
-    ENDASH,       // Unicode En Dash (U+2013) "–"
-    EMDASH,       // Unicode Em Dash (U+2014) "—"
-    TAB,          // Tab character
-    PICTURE,      // Whole screen picture
-    EPICTURE,     // Embedded in page picture (between paragraphs)
-    HRULE,        // Horizontal line
-    NOTOKEN       // In case a token needs to be hidden
+// These are the different tokens so as we parse a buffer, we more easily know what to do with the
+// text. Bits are assigned to each such that they can be combined in a mask for comparisons.
+enum class TokenId : uint16_t {
+    TEXT = 1,          // Usually a word. Can contain &NBSP; and spaces characters for formatting
+    ITEXT = 2,         // Indent *next* lines using this token width
+    GTEXT = 4,         // Glued text: Token that must stay on the same line as the next one (TBD)
+    NEWLINE = 8,       // Full line vertical space. Break lines
+    ENDPARAGRAPH = 16, // After paragraph vertical space
+    HYPHEN = 32,       // ASCII hyphen "-"
+    ENDASH = 64,       // Unicode En Dash (U+2013) "–"
+    EMDASH = 128,      // Unicode Em Dash (U+2014) "—"
+    TAB = 256,         // Tab character
+    PICTURE = 512,     // Whole screen picture
+    EPICTURE = 1024,   // Embedded in page picture (between paragraphs)
+    HRULE = 2048,      // Horizontal line
+    NOTOKEN = 4096     // In case a token needs to be hidden
 };
 
+// BitMask of all token ids that are using the pool space
+static const uint16_t POOL_TOKENS = (uint16_t)TokenId::TEXT | (uint16_t)TokenId::ITEXT |
+                                    (uint16_t)TokenId::GTEXT | (uint16_t)TokenId::PICTURE |
+                                    (uint16_t)TokenId::EPICTURE;
 #pragma pack(push, 1)
 
 class StreamPlace {
@@ -141,6 +153,7 @@ struct LineInfo {
     uint16_t tokenCount;
     uint16_t length;     // String length
     uint16_t deciHeight; // Height in decilines
+    uint16_t leftIndent; // Line Left Indentation
 };
 #pragma pack(pop)
 

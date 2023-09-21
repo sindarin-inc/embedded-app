@@ -11,13 +11,13 @@ auto Tokens::add(Token &token, const char *str, uint8_t length) -> bool {
         }
 
         if ((token.pixWidth == 0) && (token.cStr != nullptr) && (token.cStr[0] != '\n')) {
-            token.pixWidth = display_.getTextWidthQuick(token.cStr);
+            token.pixWidth = (token.tokenId == TokenId::ITEXT) ? display_.getTextWidth(token.cStr) : display_.getTextWidthQuick(token.cStr);
             // log_w("Token width of %s is %" PRIu16, token.cStr, token.pixWidth);
         }
 
-        // if constexpr (RENDERER_DEBUG) {
-        //     showToken(tokensTailIdx_);
-        // }
+        if constexpr (RENDERER_DEBUG) {
+            showToken(tokensTailIdx_);
+        }
 
         advanceTokenTail();
 
@@ -144,16 +144,18 @@ void Tokens::freeTokens(Idx fromTokenIdx, uint16_t count) {
         Idx idx = fromTokenIdx;
         Idx lastTokenPoolIdx = fromTokenIdx;
         TokenId id = tokens_[idx].tokenId;
+
         for (int i = 0; i < count; i++, nextTokenIdx(idx)) {
             if (tokens_[idx].picture != nullptr) {
                 tokens_[idx].picture.reset();
             }
-            // Not all tokens are using the pool
-            if ((id == TokenId::TEXT) || (id == TokenId::PICTURE) || (id == TokenId::EPICTURE)) {
+            // Not all tokens that are using the pool
+            if (((uint16_t)id & POOL_TOKENS) != 0) {
                 lastTokenPoolIdx = idx;
                 id = tokens_[idx].tokenId;
             }
         }
+
         // Search the last token that contains a pointer inside the pool
         int32_t poolCount = getCStrPoolCount();
         // Idx tokenIdx = addToTokenIdx(fromTokenIdx, count - 1);
@@ -164,7 +166,7 @@ void Tokens::freeTokens(Idx fromTokenIdx, uint16_t count) {
         //     id = tokens_[tokenIdx].tokenId;
         // }
         // Not all tokens are using the pool
-        if ((id == TokenId::TEXT) || (id == TokenId::PICTURE) || (id == TokenId::EPICTURE)) {
+        if (((uint16_t)id & POOL_TOKENS) != 0) {
             // Free space in string pool
             Idx poolIdx = tokens_[lastTokenPoolIdx].cStr - cStrPool_.data();
 

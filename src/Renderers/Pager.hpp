@@ -23,6 +23,9 @@ private:
     Idx linesHeadIdx_{0};
     Idx linesTailIdx_{0};
 
+    uint16_t leftIndent_{0};
+    uint16_t rightIndent_{0};
+
     uint16_t maxDeciLines_{0};
     uint16_t maxLineWidth_{0};
     StreamPlace nextPagePlace_;
@@ -74,7 +77,10 @@ public:
         return (display_.height() * NEWLINE_DECI_LINE_HEIGHT) / (this->display_.getTextHeight());
     }
 
-    inline void clear() {
+    inline void clear(uint16_t leftIndent = 0, uint16_t rightIndent = 0) {
+
+        leftIndent_ = leftIndent;
+        rightIndent_ = rightIndent;
         atEOF_ = false;
         wordCount_ = 0;
         linesHeadIdx_ = linesTailIdx_ = 0;
@@ -83,10 +89,20 @@ public:
         currentPageDecilineHeight_ = 0;
         maxDeciLines_ = getMaxDeciLines();
         maxLineWidth_ = display_.width();
-        lines_[0] = {};
-
+        lines_[0] = {0, 0, 0, 0, leftIndent_};
         uint16_t notUsed;
         display_.getTextSize(" ", &spaceWidth_, &notUsed);
+    }
+
+    inline void setLineIndent(uint16_t leftIndent = 0, uint16_t rightIndent = 0) {
+        leftIndent_ = leftIndent;
+        lines_[linesTailIdx_].leftIndent = leftIndent_;
+
+        rightIndent_ = rightIndent;
+    }
+
+    inline auto getLineIndent() -> std::pair<uint16_t, uint16_t> {
+        return {leftIndent_, rightIndent_};
     }
 
     // Returns false if the last token is not part of the page.

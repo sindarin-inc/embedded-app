@@ -57,11 +57,11 @@ private:
     enum class Tag : uint8_t { NONE, P, LI, BREAK, H1, H2, H3, H4, H5, H6, 
                                B, I, A, IMG, PICTURE, SOURCE, EM, DIV, SPAN, PRE,
                                BLOCKQUOTE, STRONG, ANY, FONT_FACE, PAGE,
-                               SUB, SUP, HR };
+                               SUB, SUP, HR, OL, UL, HEADER, FIGURE, FIGCAPTION };
     // clang-format on
 
-    using Tags = std::map<std::string, Tag>;
-    using Elements = std::map<std::string, const char *>;
+    using Tags = std::unordered_map<std::string, Tag>;
+    using Elements = std::unordered_map<std::string, const char *>;
     using SuperscriptNumbers = std::array<const char *, 10>;
 
     // Hash HTML tags
@@ -99,7 +99,22 @@ private:
     // be displayed if no picture are shown
     bool skipNextParagraph_;
 
+    char listLineStart_[50];
+
     uint32_t currentStreamOffset_;
+
+    static constexpr const uint8_t MaxLevelCount = 5;
+
+    enum ListType { ORDERED, UNORDERED };
+    uint16_t listSeqNbr_[MaxLevelCount];
+    ListType listType_[MaxLevelCount];
+    int8_t listLevel_;
+
+    uint16_t savedLeftIndent_{};
+    uint16_t savedBlockquoteLeftIndent_{};
+    uint16_t savedBlockquoteRightIndent_{};
+
+    static const constexpr char *levelChar_ = "-o-o-";
 
     [[nodiscard]] auto getCharEntity(const char *str, const char **newStrLocation) const -> const
         char *;
@@ -124,4 +139,5 @@ private:
     }
 
     auto addTokenToPage(Token &token, const char *str = nullptr, uint8_t strSize = 0) -> bool;
+    auto findNodeEndOffset(pugi::xml_node node) -> uint32_t;
 };
