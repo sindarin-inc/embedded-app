@@ -16,7 +16,7 @@ static constexpr bool RENDERER_DEBUG = false;
 static constexpr bool ON_ERROR_EXIT = false;
 static constexpr bool RENDERER_STATS = false;
 
-#define DEBUG_RENDERER 1
+#define DEBUG_RENDERER 0
 #define RENDERER_PROFILING 0
 
 #if DEBUG_RENDERER
