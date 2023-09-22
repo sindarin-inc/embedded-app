@@ -3,6 +3,7 @@
 #include <Update.h>
 #include <cstdio>
 #include <string>
+#include <utility>
 
 #include "Communications/FileDownload.hpp"
 #include "Communications/HttpClient.hpp"
@@ -17,6 +18,14 @@
 void FirmwareDownloader::downloadFirmware(
     const std::function<void(FirmwareDownloadState state)> &progressCallback) {
 
+    auto setState = [progressCallback, this](FirmwareDownloadState state) {
+        // Don't call the callback if we've been cancelled
+        if (canelled_) {
+            return;
+        }
+        progressCallback(std::move(state));
+    };
+
     // Grab the token here from prefs if set
     auto token = prefs_.cloudToken.get();
     if (!token.has_value()) {
@@ -25,23 +34,22 @@ void FirmwareDownloader::downloadFirmware(
         SindarinAPI::getInstance()->setAccessToken(token.value());
     }
 
-    progressCallback(
-        FirmwareDownloadState{.state = FirmwareDownloadState::State::CheckingForLatest});
+    setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::CheckingForLatest});
 
     auto queue = DispatchGetCore0BackgroundQueue();
-    queue->dispatch([this, progressCallback] {
+    queue->dispatch([this, setState] {
         auto httpCode = SindarinAPI::getInstance()->checkFirmware(&response);
         if (httpCode != 200) {
             log_e("Failed to get firmware (HTTP %d)", httpCode);
-            progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
-                                                   .message = "Failed to check for update"});
+            setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
+                                           .message = "Failed to check for update"});
             return;
         }
 
         if (skipInstall_ && prefs_.firmwareLoaded.get().value_or("0.0.0") ==
                                 response.latestGlassesFirmware.version) {
             log_d("Firmware already downloaded and ready to install.");
-            progressCallback(
+            setState(
                 FirmwareDownloadState{.state = FirmwareDownloadState::State::AlreadyDownloaded});
             return;
         }
@@ -51,15 +59,14 @@ void FirmwareDownloader::downloadFirmware(
               response.latestGlassesFirmware.version.c_str());
         if (SemVerCompareVersions(response.latestGlassesFirmware.version, versionString) !=
             SemVerComparison::GreaterThan) {
-            progressCallback(
-                FirmwareDownloadState{.state = FirmwareDownloadState::State::AlreadyUpToDate});
+            setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::AlreadyUpToDate});
             return;
         }
 
         versionString = response.latestGlassesFirmware.version;
 
-        progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloading,
-                                               .downloadPercentage = 0});
+        setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloading,
+                                       .downloadPercentage = 0});
 
         log_d("Downloading firmware from %s", response.latestGlassesFirmware.url.c_str());
         std::string failMessage = "";
@@ -90,45 +97,42 @@ void FirmwareDownloader::downloadFirmware(
                 return true;
             },
             [](const uint8_t *buf, size_t size) { return Update.write((uint8_t *)buf, size); },
-            [progressCallback](int bytesWritten, float percentage) {
-            progressCallback(
-                FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloading,
-                                      .downloadPercentage = static_cast<int>(percentage)});
+            [setState](int bytesWritten, float percentage) {
+            setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloading,
+                                           .downloadPercentage = static_cast<int>(percentage)});
             },
             false);
 
         if (!success) {
             log_e("Failed to download firmware");
             if (!WiFi::getInstance().connected()) {
-                progressCallback(
-                    FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
-                                          .message = "Failed: WiFi disconnected!"});
+                setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
+                                               .message = "Failed: WiFi disconnected!"});
             } else {
-                progressCallback(FirmwareDownloadState{
-                    .state = FirmwareDownloadState::State::Failure, .message = failMessage});
+                setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Failure,
+                                               .message = failMessage});
             }
             Update.abort();
             return;
         }
 
         if (skipInstall_) {
-            progressCallback(
-                FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloaded});
+            setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Downloaded});
             return;
         }
 
-        progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Installing});
+        setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Installing});
 
         // Swap out the firmware
         if (!Update.end()) {
             auto error = Update.getError();
             log_e("Failed to Update.end() (%d)", error);
-            progressCallback(FirmwareDownloadState{
+            setState(FirmwareDownloadState{
                 .state = FirmwareDownloadState::State::Failure,
                 .message = StringFormat("Failed to finalize update (%d)", error)});
             return;
         }
 
-        progressCallback(FirmwareDownloadState{.state = FirmwareDownloadState::State::Installed});
+        setState(FirmwareDownloadState{.state = FirmwareDownloadState::State::Installed});
     });
 }

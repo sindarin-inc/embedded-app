@@ -52,12 +52,12 @@ public:
     ~CheckSyncResponse() override = default;
 
     bool synced;
-    std::string message;
-    std::vector<UserReadable, SpiramAllocator<UserReadable>> userBooks;
-    std::vector<UserReadable, SpiramAllocator<UserReadable>> userArticles;
-    std::string booksSince;
-    std::string articlesSince;
-    std::string nextPageUrl;
+    SpiramString message;
+    SpiramVector<UserReadable> userBooks;
+    SpiramVector<UserReadable> userArticles;
+    SpiramString booksSince;
+    SpiramString articlesSince;
+    SpiramString nextPageUrl;
     int totalCount;
     std::string timezone;
 

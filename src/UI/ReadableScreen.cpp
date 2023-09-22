@@ -194,7 +194,7 @@ void ReadableScreen::render(DisplaySystem &display) {
         }
     }
 
-    prefs_.lastReadableId.set(readable_->uuid);
+    prefs_.lastReadableId.set(readable_->uuid.c_str());
     telemetry_.logMetric(TelemetryField::METRIC_READABLE_PLACE, readable_->shortenedUuid.c_str(),
                          readable_->telemetryPlacemarkMetrics());
 

@@ -92,9 +92,9 @@ public:
                 i++;
             }
             if (i < splitLines_.size() - 1) {
-                splitLines_[maxLines_ - 1] =
-                    splitLines_[maxLines_ - 1].substr(0, splitLines_[maxLines_ - 1].size() - i) +
-                    "...";
+                splitLines_[maxLines_ - 1] = Utf8Substr(splitLines_[maxLines_ - 1], 0,
+                                                        splitLines_[maxLines_ - 1].size() - i) +
+                                             "...";
             } else {
                 log_i("Didn't find a good delimeter for the ... addition");
             }

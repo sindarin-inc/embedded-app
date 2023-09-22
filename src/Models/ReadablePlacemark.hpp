@@ -11,7 +11,7 @@ public:
     ReadablePlacemark() = default;
     ~ReadablePlacemark() override = default;
 
-    std::string uuid;
+    SpiramString uuid;
     std::shared_ptr<Place> place;
 
     auto fromJson(const JsonObject &j) -> bool override {

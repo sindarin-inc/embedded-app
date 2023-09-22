@@ -14,6 +14,7 @@ public:
 
     SolClock(PreferencesStore &prefs) : prefs_(prefs) { timeSyncEventGroup_ = xEventGroupCreate(); }
     SolClock(SolClock const &) = delete;
+    ~SolClock() { vEventGroupDelete(timeSyncEventGroup_); }
 
     void begin() { loadTimeZone(); }
 

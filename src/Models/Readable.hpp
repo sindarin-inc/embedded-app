@@ -9,6 +9,7 @@
 
 #include "Misc/SpiramAllocator.hpp"
 #include "Misc/StringUtil.hpp"
+#include "Misc/TelemetryVariant.hpp"
 #include "Models/Author.hpp"
 #include "Models/Json.hpp"
 #include "Models/JsonSerializable.hpp"
@@ -37,7 +38,7 @@ public:
     Readable() = default;
     ~Readable() override = default;
 
-    std::string uuid;
+    SpiramString uuid;
     SpiramString shortenedUuid;
     SpiramString title;
     // TODO: Remove
@@ -119,8 +120,7 @@ public:
         return -1;
     }
 
-    [[nodiscard]] auto telemetryPlacemarkMetrics() const
-        -> std::map<std::string, std::variant<int, uint32_t, float, std::string>>;
+    [[nodiscard]] auto telemetryPlacemarkMetrics() const -> std::map<std::string, TelemetryVariant>;
 
     auto summary(const std::shared_ptr<Place> &placeInReadable,
                  const std::shared_ptr<Place> &placeInSummary, bool includeUnread) -> SpiramString {

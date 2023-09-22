@@ -161,7 +161,7 @@ void ReadableTableOfContentsScreen::processCommand(RemoteCommand command) {
 void ReadableTableOfContentsScreen::loadMenuItems() {
     resetMenuItems();
     for (const ReadableTableOfContentsChapter &chapter : readable_->toc) {
-        std::string title = chapter.title;
+        std::string title = std::string(chapter.title);
         if (!chapter.inSubsectionHref.empty()) {
             title = StringFormat("  %s", chapter.title.c_str());
         }

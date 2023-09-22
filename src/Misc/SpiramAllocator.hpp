@@ -47,6 +47,13 @@ auto operator!=(const SpiramAllocator<T> &, const SpiramAllocator<U> &) -> bool 
 }
 
 typedef std::basic_string<char, std::char_traits<char>, SpiramAllocator<char>> SpiramString;
+auto operator==(const SpiramString &spiramStr, const std::string &stdStr) -> bool;
+
+// For some reason in the sim (and on idf only on linux) the compiler is dumb and can't derive these
+// from the equality operator. I think the <=> (spaceship operator) in c++ is supposed to fix this.
+auto operator!=(const SpiramString &spiramStr, const std::string &stdStr) -> bool;
+auto operator==(const std::string &stdStr, const SpiramString &spiramStr) -> bool;
+auto operator!=(const std::string &stdStr, const SpiramString &spiramStr) -> bool;
 
 template <typename T>
 class CustomDeleter {

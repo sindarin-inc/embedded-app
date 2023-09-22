@@ -27,8 +27,7 @@ auto convertToJson(const Readable &src, JsonVariant dst) -> bool {
 }
 
 // Returns the approptiate map for Telemetry::logMetric() calls.
-auto Readable::telemetryPlacemarkMetrics() const
-    -> std::map<std::string, std::variant<int, uint32_t, float, std::string>> {
+auto Readable::telemetryPlacemarkMetrics() const -> std::map<std::string, TelemetryVariant> {
     if (place->isFor(DocType::TXT)) {
         return {{"po", place->getOffset()}};
     } else if (place->isFor(DocType::EPUB)) {

@@ -179,6 +179,25 @@ void PowerManager::wakeupCheck(SolClock &clock) {
     }
 }
 
+auto PowerManager::inactivityTimeoutMs() -> int {
+    if (state_ == PowerState::ActiveUSBCharging) {
+        if (PreferencesStore::paired == PairedStatus::Paired) {
+            // Paired glasses turn off quickly with USB connected
+            return 15 * 1000;
+        } else {
+            // Longer timeout for unpaired glasses in case users try to set-up the glasses while
+            // connected to USB
+            return 5 * 60 * 1000;
+        }
+    } else if (state_ == PowerState::ActiveOverTemp) {
+        // Shutdown relatively quickly if we're too hot
+        return 10 * 1000;
+    } else {
+        // Normal inactivity timeout is 10 minutes
+        return 10 * 60 * 1000;
+    }
+}
+
 auto PowerManager::begin() -> esp_err_t {
 #if !SIMULATOR
     // If USB is connected, disable operation unless we've disabled this behavior
@@ -189,15 +208,12 @@ auto PowerManager::begin() -> esp_err_t {
     }
     // Disable inactivity timer in emc testing mode
     if (!prefs_.emcMode.get().value_or(false)) {
-        int inactivityTimeoutMs =
-            state_ == PowerState::ActiveUSBCharging ? 15 * 1000 : 10 * 60 * 1000;
-        log_d("Setting inactivity timeout to %d ms", inactivityTimeoutMs);
         inactivityTimer_.start(
             [this]() {
             log_i("Inactive! Close and open temple to wake");
             deepSleep(SleepReason::Inactivity);
             },
-            inactivityTimeoutMs);
+            inactivityTimeoutMs());
     }
 #endif
 
@@ -218,13 +234,7 @@ auto PowerManager::begin() -> esp_err_t {
             if (USBConnected() && !prefs_.allowUsageWhileCharging.get().value_or(false)) {
                 log_i("USB connected, switching to ActiveUSBCharging");
                 state_ = PowerState::ActiveUSBCharging;
-                // Longer timeout for unpaired glasses in case users try to set-up the glasses while
-                // connected to USB
-                if (PreferencesStore::paired == PairedStatus::Unpaired) {
-                    inactivityTimer_.setTimeoutMs(5 * 60 * 1000);
-                } else {
-                    inactivityTimer_.setTimeoutMs(15 * 1000);
-                }
+                inactivityTimer_.setTimeoutMs(inactivityTimeoutMs());
                 DispatchGetUiQueue()->dispatch([this]() {
                     if (stateChangeCallback_ != nullptr) {
                         stateChangeCallback_(state_);
@@ -263,6 +273,8 @@ auto PowerManager::begin() -> esp_err_t {
 }
 
 void PowerManager::powerOff() {
+    this->telemetry_.logMetric(TelemetryField::METRIC_SHUTDOWN, "PowerOff");
+
     beginShutdown();
     powerOffInternal();
 }
@@ -335,7 +347,7 @@ void PowerManager::loop() {
                temperature > MAX_OPERATIONAL_TEMPERATURE_C) {
         log_e("Temperature is too high! Going to sleep.");
         state_ = PowerState::ActiveOverTemp;
-        inactivityTimer_.setTimeoutMs(10 * 1000);
+        inactivityTimer_.setTimeoutMs(inactivityTimeoutMs());
         DispatchGetUiQueue()->dispatch([this]() {
             if (stateChangeCallback_ != nullptr) {
                 stateChangeCallback_(state_);
@@ -347,14 +359,13 @@ void PowerManager::loop() {
 }
 
 auto PowerManager::isTempleOpen(bool &open) -> esp_err_t {
-    Xyz8bit magReading;
 #if USE_MMC5603
-    auto err = magSensor_.readXZ8Bit(magReading);
+    auto err = magSensor_.readXZ8Bit(lastMagReading_);
     if (err != ESP_OK) {
         log_e("Failed to read magnetometer");
         return err;
     }
-    open = IsTempleOpen(magReading.x, magReading.z);
+    open = IsTempleOpen(lastMagReading_.x, lastMagReading_.z);
 #else
     open = true;
 #endif
@@ -472,6 +483,8 @@ void PowerManager::scheduleSync(SyncReason reason, int time) {
 }
 
 void PowerManager::deepSleep(SleepReason reason) {
+    this->telemetry_.logMetric(TelemetryField::METRIC_SHUTDOWN, ToString(reason));
+
 #if DISABLE_DEEP_SLEEP
     log_w("Deep sleep disabled. Not sleeping.");
     return;

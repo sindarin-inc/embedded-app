@@ -20,7 +20,7 @@ public:
     ReadableBookmark() = default;
     ~ReadableBookmark() override = default;
 
-    std::string uuid;
+    SpiramString uuid;
     std::string startingPosition;
     std::string endingPosition;
     SpiramString readable;

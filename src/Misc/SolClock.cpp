@@ -124,6 +124,8 @@ auto SolClock::setClockTimeFromInternet() -> bool {
     EventBits_t bits =
         xEventGroupWaitBits(timeSyncEventGroup_, 1, true, true, pdMS_TO_TICKS(10000));
 
+    esp_sntp_stop();
+
     if (bits == 0) {
         log_e("Failed to sync time");
         return false;
@@ -131,8 +133,6 @@ auto SolClock::setClockTimeFromInternet() -> bool {
         now = time(nullptr);
         localtime_r(&now, &timeinfo);
     }
-
-    esp_sntp_stop();
 
     // Print the time as a string
     char strftimeBuf[64];

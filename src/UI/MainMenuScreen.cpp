@@ -151,13 +151,12 @@ void MainMenuScreen::render(DisplaySystem &display) {
 
         for (int i = 0; i < menuItems_.size(); i++) {
             auto &menuItem = menuItems_[i];
-            Font *font = ((subMenus_[currentSelection_]->getMenuName().compare("Books") == 0) ||
-                          (subMenus_[currentSelection_]->getMenuName().compare("Bible") == 0))
+            Font *font = ((subMenus_[currentSelection_]->getMenuName() == "Books") ||
+                          (subMenus_[currentSelection_]->getMenuName() == "Bible"))
                              ? myStyle_.itemFont
                              : myStyle_.navigationFont;
-            bool multiline = (subMenus_[currentSelection_]->getMenuName().compare("Articles") == 0)
-                                 ? true
-                                 : false;
+            bool multiline =
+                (subMenus_[currentSelection_]->getMenuName() == "Articles") ? true : false;
             if (i >= menuItemViews_.size()) {
                 menuItemViews_.emplace_back(std::make_shared<MenuItemView>(display));
             }

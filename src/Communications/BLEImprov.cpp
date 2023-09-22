@@ -128,11 +128,20 @@ void BLEImprov::loop() {
             this->rpcResultCharacteristic_->setValue(response.data(), response.size());
             this->rpcResultCharacteristic_->notify();
             this->doneConnecting();
-        } else if (now - this->lastStateChangeMillis_ > 30000) {
-            log_w("Timed out connecting to WiFi");
-            this->setState(STATE_WAITING);
-            this->setError(improv::ERROR_UNABLE_TO_CONNECT);
-            WiFi::getInstance().disconnectWiFi();
+        } else if (WiFi::getInstance().state() == DISCONNECTED) {
+            if (WiFi::getInstance().retryable && now - this->lastStateChangeMillis_ < 30000) {
+                // Try again
+                improv::ImprovCommand command = this->lastCommand_;
+                log_d("Retrying connection to: %s Password: %s (WiFi connnected = %d)",
+                      command.ssid.c_str(), command.password.c_str(),
+                      WiFi::getInstance().connected());
+                WiFi::getInstance().connectWiFi(command.ssid, command.password);
+            } else {
+                log_w("Failed to connecting to WiFi");
+                this->setState(STATE_WAITING);
+                this->setError(improv::ERROR_UNABLE_TO_CONNECT);
+                WiFi::getInstance().disconnectWiFi();
+            }
         }
     } else if (this->state_ == STATE_READY_TO_SCAN) {
         this->setState(STATE_SCANNING);

@@ -153,46 +153,6 @@ auto DisplaySystem::setBoundingBox(DisplayRect newBox) -> DisplayRect {
 
 auto DisplaySystem::getFont() -> Font * { return font_; }
 
-// Takes the member variable string_to_draw and splits it
-// based on the \n characater and populates the String* lines;
-void DisplaySystem::splitStringToLines(const std::string &stringToSplit,
-                                       std::array<std::string, MAX_LINES_IN_SPLIT> &lines,
-                                       int &numLines) {
-    int len, i, startPos, endPos;
-
-    len = stringToSplit.length();
-
-    // Track where we are in the string
-    startPos = 0;
-    endPos = 0;
-    numLines = 1;
-
-    for (i = 0; i < len; i++) {
-        // We found a new line. Split off the previous line and
-        // start processing the new line
-
-        if (stringToSplit.at(i) == '\n') {
-            lines[numLines - 1] = stringToSplit.substr(startPos, endPos - startPos + 1);
-            numLines++;
-            assert(numLines < MAX_LINES_IN_SPLIT);
-            startPos = i + 1;
-            endPos = i + 1;
-        } else {
-            endPos = i;
-        }
-    }
-
-    // If \n is *not* the last character, we need to add the last line to the
-    // array, but if \n is the last character, we don't need to do anything and
-    // we can decrement num_lines since the above loop assumes that there will
-    // be more characters after the \n.
-    if (stringToSplit.length() > 0 && (startPos != endPos)) {
-        lines[numLines - 1] = stringToSplit.substr(startPos, endPos - startPos + 1);
-    } else {
-        numLines--;
-    }
-}
-
 // Eventually, we could add an optional argument at the end to wrap the text
 // and return whether the text was wrapped or not.
 // But that's for another day.

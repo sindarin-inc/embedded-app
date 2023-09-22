@@ -1,13 +1,12 @@
 #pragma once
 
 #include <map>
-#include <string>
-#include <variant>
 
 #include "Misc/Dispatch.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/SolClock.hpp"
 #include "Misc/StringUtil.hpp"
+#include "Misc/TelemetryVariant.hpp"
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
 
@@ -23,6 +22,8 @@ enum TelemetryField {
     METRIC_SYNC_STATUS,
     METRIC_BOOT,
     METRIC_CLOCK_SET,
+    METRIC_SHUTDOWN,
+    METRIC_WIFI,
 };
 auto TelemetryFieldToString(TelemetryField field) -> const char *;
 
@@ -31,23 +32,18 @@ public:
     Telemetry(FileSystem &fs, PreferencesStore &prefs) : fileSystem_(fs), prefs_(prefs) {}
     Telemetry(const Telemetry &) = delete;
 
-    void logMetricData(
-        TelemetryField field,
-        std::map<std::string, std::variant<int, uint32_t, float, std::string>> data = {}) {
+    void logMetricData(TelemetryField field, std::map<std::string, TelemetryVariant> data = {}) {
         logMetricImpl(field, "", data);
     }
 
     template <typename T>
-    void
-    logMetric(TelemetryField field, T value,
-              std::map<std::string, std::variant<int, uint32_t, float, std::string>> data = {}) {
+    void logMetric(TelemetryField field, T value,
+                   std::map<std::string, TelemetryVariant> data = {}) {
         logMetricImpl(field, value, data);
     }
 
-    auto variantToJson(const std::variant<int, uint32_t, float, std::string> &v) -> std::string;
-    auto
-    mapToJson(const std::map<std::string, std::variant<int, uint32_t, float, std::string>> &data)
-        -> std::string;
+    auto variantToJson(const TelemetryVariant &v) -> std::string;
+    auto mapToJson(const std::map<std::string, TelemetryVariant> &data) -> std::string;
 
     static auto metricLogPath() -> std::string { return "/metrics/telemetry.jsonl"; }
 
@@ -62,9 +58,15 @@ private:
     static auto dispatchQueue() -> DispatchQueue * { return DispatchGetCore1BackgroundQueue(); }
 
     template <typename T>
-    void
-    logMetricImpl(TelemetryField field, T value,
-                  std::map<std::string, std::variant<int, uint32_t, float, std::string>> &data) {
+    void logMetricImpl(TelemetryField field, T value,
+                       std::map<std::string, TelemetryVariant> &data) {
+        static_assert(
+            std::disjunction_v<std::is_same<T, float>, std::is_same<T, uint32_t>,
+                               std::is_same<T, int>, std::is_same<T, char *>,
+                               std::is_same<T, const char *>, std::is_same<T, std::string>,
+                               std::is_same<T, SpiramString>>,
+            "Unsupported type for logMetricImpl");
+
         // create log directory in filesystem if it doesn't exist
         if (!fileSystem_.createDir("/metrics")) {
             log_e("could not create /metrics directory");
@@ -84,7 +86,8 @@ private:
             if (value && strcmp(value, "") != 0) { // Check if the C-style string is not empty
                 valueFormat = StringFormat(R"(,"v":"%s")", value);
             }
-        } else if constexpr (std::is_same<T, std::string>::value) {
+        } else if constexpr (std::is_same<T, std::string>::value ||
+                             std::is_same<T, SpiramString>::value) {
             if (!value.empty()) { // Check if the std::string is not empty
                 valueFormat = StringFormat(R"(,"v":"%s")", value.c_str());
             }
