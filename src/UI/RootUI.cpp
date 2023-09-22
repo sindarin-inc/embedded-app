@@ -237,7 +237,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     // If there is firmware available, show the Update Firmware item in the books tab.
-    auto makeReleaseNotesMenuItem = [this, &localStore, display, mainMenu](Firmware firmware) {
+    auto makeReleaseNotesMenuItem =
+        [this, &localStore, display, mainMenu](const Firmware &firmware) {
         log_i("Found pending firmware update %s", firmware.version.c_str());
         return MenuItem("Upgrade Software",
                         StringFormat("From %s to %s", kVersionString, firmware.version.c_str()),
