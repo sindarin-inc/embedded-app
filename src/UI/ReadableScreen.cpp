@@ -253,9 +253,11 @@ void ReadableScreen::render(DisplaySystem &display) {
         return;
     }
 
+    uint8_t darkPicturePercent = 0;
+
     if (pageSpeed_ == 0) {
         // Regular Reading
-        newPlace_ = renderer_.renderPage(readable_->place);
+        std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(readable_->place);
         atEnd_ = checkAtEnd();
     } else {
         // Autopilot Reading
@@ -265,7 +267,8 @@ void ReadableScreen::render(DisplaySystem &display) {
             speedLinesToSkip_++;
         }
 
-        newPlace_ = renderer_.renderPage(readable_->place, speedLinesToSkip_);
+        std::tie(newPlace_, darkPicturePercent) =
+            renderer_.renderPage(readable_->place, speedLinesToSkip_);
         atEnd_ = checkAtEnd();
 
         // If the line is blank, we want to skip it. Also, skip multiple newlines in a row.
@@ -321,10 +324,12 @@ void ReadableScreen::render(DisplaySystem &display) {
         popupMenuScreen_.render(display);
     } else if ((pageSpeed_ != 0) && (speedLinesToSkip_ > 0)) {
         if (autoPilotForceFull_) {
-            display.updateDisplay(DisplaySystem::UpdateType::FULL);
+            display.updateDisplay(DisplaySystem::UpdateType::FULL, true,
+                                  display.darkPictureVComAdj(darkPicturePercent));
             autoPilotForceFull_ = false;
         } else {
-            display.updateDisplay(DisplaySystem::UpdateType::FAST_ORIGINAL_AU4);
+            display.updateDisplay(DisplaySystem::UpdateType::FAST_ORIGINAL_AU4, true,
+                                  display.darkPictureVComAdj(darkPicturePercent));
         }
     } else {
         if (renderTransitionArrows) {
@@ -332,14 +337,17 @@ void ReadableScreen::render(DisplaySystem &display) {
         }
         if (prefs_.fastTransitions.get().value_or(false)) {
             display.updateDisplay(DisplaySystem::UpdateType::PARTIAL,
-                                  (renderTransitionArrows) ? false : true);
+                                  (renderTransitionArrows) ? false : true,
+                                  display.darkPictureVComAdj(darkPicturePercent));
         } else {
             display.updateDisplay(DisplaySystem::UpdateType::FULL,
-                                  (renderTransitionArrows) ? false : true);
+                                  (renderTransitionArrows) ? false : true,
+                                  display.darkPictureVComAdj(darkPicturePercent));
         }
         if (renderTransitionArrows) {
             drawArrows(true);
-            display.updateDisplay(DisplaySystem::UpdateType::ERASE, false);
+            display.updateDisplay(DisplaySystem::UpdateType::ERASE, false,
+                                  display.darkPictureVComAdj(darkPicturePercent));
         }
     }
 

@@ -221,6 +221,8 @@ public:
     auto xAbsoluteMax() -> int { return 255; }
     auto yAbsoluteMax() -> int { return 255; }
 
+    virtual auto darkPictureVComAdj(uint8_t darkPixelsPercent) const -> int { return 0; }
+
 protected:
     // Must be set in the constructor of subclasses
     Adafruit_GFX *gfxClass_ = nullptr;

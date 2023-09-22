@@ -5,7 +5,7 @@
 
 // Retrieve and show the page at fromPlace location.
 auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines, bool forceRefresh)
-    -> std::shared_ptr<Place> {
+    -> std::pair<std::shared_ptr<Place>, uint8_t> {
 
     // if no fromPlace is received (null) or the place's DocType is wrong, get the first page
     // pointer, else convert fromPlace to a StreamPlace
@@ -13,9 +13,7 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
                                  ? tokenizer_->getPlaceAtBeginningOfDocument()
                                  : tokenizer_->toStreamPlace(std::move(fromPlace));
 
-    if constexpr (RENDERER_DEBUG) {
-        log_w("%s is place in file being requested.", startPlace.str().c_str());
-    }
+    RLOG("%s is place in file being requested.", startPlace.str().c_str());
 
     // This needs to happen before loading into buffer since it will affect what we load into the
     // buffer.
@@ -44,17 +42,15 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
 
     // pager_.show();
 
-    pager_.displayPage(numSkipLines);
+    uint8_t darkPicturePercent = pager_.displayPage(numSkipLines);
 
-    if constexpr (RENDERER_DEBUG) {
-        log_w("Returning next page place to be %s", nextPlace_.str().c_str());
-    }
+    RLOG("Returning next page place to be %s", nextPlace_.str().c_str());
 
     if constexpr (RENDERER_STATS) {
         showStats();
     }
 
-    return tokenizer_->toPlace(nextPlace_);
+    return {tokenizer_->toPlace(nextPlace_), darkPicturePercent};
 }
 
 // Seeks backwards and returns the place of one page previous.
@@ -128,8 +124,7 @@ auto Renderer::getPreviousPlace() -> std::shared_ptr<Place> {
 
     PROFILE_END_LOG_MS(goBackwardsOnePage);
 
-    if constexpr (RENDERER_DEBUG) {
-        log_w("Computed place: %s", previousPlace_.str().c_str());
-    }
+    RLOG("Computed place: %s", previousPlace_.str().c_str());
+
     return tokenizer_->toPlace(previousPlace_);
 }

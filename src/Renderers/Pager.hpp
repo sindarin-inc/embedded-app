@@ -66,6 +66,8 @@ private:
     }
 
     void getLine(LineInfo &lineStruct, Line &line) const;
+    auto computeDarkPercent(const uint8_t *bitmap, uint16_t width, uint16_t height) const
+        -> uint8_t;
     void newLine(uint16_t height);
 
 public:
@@ -141,7 +143,7 @@ public:
 
     [[nodiscard]] inline auto getFirstLineIdx() const -> Idx { return firstPageLineIdx_; }
 
-    void displayPage(int16_t numSkipLines);
+    auto displayPage(int16_t numSkipLines) -> uint8_t;
 
     void setEndOfFile() {
         atEOF_ = true;
@@ -157,9 +159,7 @@ public:
     inline void freeLineHead() {
         if (linesHeadIdx_ != linesTailIdx_) {
 
-            // if constexpr (RENDERER_DEBUG) {
-            //     log_w("Freeing line at idx %" PRIu16, linesHeadIdx_);
-            // }
+            // RLOG("Freeing line at idx %" PRIu16, linesHeadIdx_);
 
             tokens_.freeTokens(lines_[linesHeadIdx_].tokenIdx, lines_[linesHeadIdx_].tokenCount);
 

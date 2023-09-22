@@ -34,6 +34,7 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
     // This is a slight hack to get around the fact that the bounding box of the display is not
     // context specific
     auto oldDisplayBoundingBox = insetBoundingBox();
+    uint8_t darkPicturePercent = 0;
 
     if (firstLoad_) {
         std::shared_ptr<Place> placeInDictionary = nullptr;
@@ -45,16 +46,17 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
         }
         auto stream = std::make_shared<StdStringStream>(dictionaryString);
         renderer_.setStream(stream);
-        newPlace_ = renderer_.renderPage(placeInDictionary);
+        std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(placeInDictionary);
         log_d("Place in readable: %s, place in dictionary: %s", placeInReadable_->str().c_str(),
               placeInDictionary->str().c_str());
     } else {
         prevPlace_ = newPlace_;
-        newPlace_ = renderer_.renderPage(newPlace_);
+        std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(newPlace_);
     }
 
     atEnd_ = checkAtEnd();
-    display.updateDisplay(DisplaySystem::UpdateType::FULL);
+    display.updateDisplay(DisplaySystem::UpdateType::FULL, true,
+                          display.darkPictureVComAdj(darkPicturePercent));
     firstLoad_ = false;
 
     resetBoundingBox(oldDisplayBoundingBox);

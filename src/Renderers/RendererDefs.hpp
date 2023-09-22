@@ -14,15 +14,15 @@ namespace renderer_defs {
 // For deep logging when changing this file
 static constexpr bool RENDERER_DEBUG = false;
 static constexpr bool ON_ERROR_EXIT = false;
-static constexpr bool RENDERER_STATS = true;
+static constexpr bool RENDERER_STATS = false;
 
-#define DEBUG_RENDERER 0
+#define DEBUG_RENDERER 1
 #define RENDERER_PROFILING 0
 
 #if DEBUG_RENDERER
-#define LOGIT(f, ...) log_w(f, ##__VA_ARGS__);
+#define RLOG(f, ...) log_w(f, ##__VA_ARGS__);
 #else
-#define LOGIT(...)
+#define RLOG(...)
 #endif
 
 #if RENDERER_PROFILING
@@ -81,9 +81,8 @@ enum class TokenId : uint16_t {
     EMDASH = 128,      // Unicode Em Dash (U+2014) "—"
     TAB = 256,         // Tab character
     PICTURE = 512,     // Whole screen picture
-    EPICTURE = 1024,   // Embedded in page picture (between paragraphs)
-    HRULE = 2048,      // Horizontal line
-    NOTOKEN = 4096     // In case a token needs to be hidden
+    EPICTURE = 1024,   // Embedded in page picture (between paragraphs) More than one can be present
+    HRULE = 2048       // Horizontal line
 };
 
 // BitMask of all token ids that are using the pool space
@@ -109,6 +108,11 @@ public:
 
     [[nodiscard]] inline auto operator==(const StreamPlace &rhs) const -> bool {
         return (offset_ == rhs.offset_) && (fileIdx_ == rhs.fileIdx_);
+    }
+
+    [[nodiscard]] inline auto operator>=(const StreamPlace &rhs) const -> bool {
+        return (fileIdx_ > rhs.fileIdx_) ||
+               ((fileIdx_ == rhs.fileIdx_) && (offset_ >= rhs.offset_));
     }
 
     [[nodiscard]] auto str() const -> std::string {

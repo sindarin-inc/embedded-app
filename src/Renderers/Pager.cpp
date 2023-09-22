@@ -12,23 +12,22 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
 
     Token &token = tokens_.getLast();
 
-    // if constexpr (RENDERER_DEBUG) {
-    //     log_w("[%" PRIu16 "](%" PRIu16 ") tokenIdx:%" PRIu16 ", Id:%" PRIu8 ", cStrPool:%"
-    //     PRIi32,
-    //           linesTailIdx_, lines_[linesTailIdx_].tokenCount, tokens_.getLastIdx(),
-    //           (uint8_t)token.tokenId, tokens_.getCStrPoolCount());
-    // }
+    // RLOG("[%" PRIu16 "](%" PRIu16 ") tokenIdx:%" PRIu16 ", Id:%" PRIu8 ", cStrPool:%"
+    //       PRIi32,
+    //       linesTailIdx_, lines_[linesTailIdx_].tokenCount, tokens_.getLastIdx(),
+    //       (uint8_t)token.tokenId, tokens_.getCStrPoolCount());
 
     switch (token.tokenId) {
     case TokenId::TAB:
-        token.pixWidth = spaceWidth_ << 3;
+        token.pixWidth = spaceWidth_ << 1;
+        [[fallthrough]];
     case TokenId::TEXT:
     case TokenId::ITEXT:
     case TokenId::GTEXT: // Not in use yet
     case TokenId::HYPHEN:
     case TokenId::ENDASH:
     case TokenId::EMDASH:
-        LOGIT("TEXT...");
+        RLOG("TEXT...");
         if (token.tokenId == TokenId::ITEXT) {
             leftIndent_ = token.pixWidth;
         }
@@ -44,8 +43,8 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
                     ((currentPageDecilineHeight_ + NEWLINE_DECI_LINE_HEIGHT) > maxDeciLines_)) {
                     // The page is complete. The current token will be the first to next line
                     setNextPagePlace(token.streamPlace);
-                    LOGIT("Page completed: %" PRIu16 " decilines. Max: %" PRIu16,
-                          currentPageDecilineHeight_, maxDeciLines_);
+                    RLOG("Page completed: %" PRIu16 " decilines. Max: %" PRIu16,
+                         currentPageDecilineHeight_, maxDeciLines_);
                     return false;
                 }
                 // The page is not complete, the current token is the first to appear on next line
@@ -58,8 +57,8 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
             if (!dontStop &&
                 ((currentPageDecilineHeight_ + NEWLINE_DECI_LINE_HEIGHT) > maxDeciLines_)) {
                 setNextPagePlace(token.streamPlace);
-                LOGIT("Page completed: %" PRIu16 " decilines. Max: %" PRIu16,
-                      currentPageDecilineHeight_, maxDeciLines_);
+                RLOG("Page completed: %" PRIu16 " decilines. Max: %" PRIu16,
+                     currentPageDecilineHeight_, maxDeciLines_);
                 return false;
             }
             lines_[linesTailIdx_].tokenIdx = tokens_.getLastIdx();
@@ -78,17 +77,15 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
         break;
 
     case TokenId::NEWLINE:
-        LOGIT("NEWLINE...");
-        // token.tokenId = TokenId::NOTOKEN;
+        RLOG("NEWLINE...");
         tokens_.forgetLast();
-        // leftIndent_ = 0;
         if (lines_[linesTailIdx_].tokenCount > 0) {
             newLine(NEWLINE_DECI_LINE_HEIGHT);
         }
         break;
 
     case TokenId::HRULE: {
-        LOGIT("HRULE...");
+        RLOG("HRULE...");
         uint16_t height = 0;
         if (lines_[linesTailIdx_].tokenCount > 0) {
             newLine(NEWLINE_DECI_LINE_HEIGHT);
@@ -98,8 +95,8 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
                           maxDeciLines_)) {
             currentPageDecilineHeight_ += ENDPARAGRAPH_DECI_LINE_HEIGHT;
             setNextPagePlace(token.streamPlace);
-            LOGIT("Page completed: %" PRIu16 " decilines. Max: %" PRIu16,
-                  currentPageDecilineHeight_, maxDeciLines_);
+            RLOG("Page completed: %" PRIu16 " decilines. Max: %" PRIu16, currentPageDecilineHeight_,
+                 maxDeciLines_);
             return false;
         }
         lines_[linesTailIdx_].tokenCount = 1;
@@ -108,7 +105,7 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
     } break;
 
     case TokenId::ENDPARAGRAPH:
-        LOGIT("ENDPARAGRAPH...");
+        RLOG("ENDPARAGRAPH...");
         if (lines_[linesTailIdx_].tokenCount > 0) {
             newLine(NEWLINE_DECI_LINE_HEIGHT);
         }
@@ -116,8 +113,8 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
             ((currentPageDecilineHeight_ + ENDPARAGRAPH_DECI_LINE_HEIGHT) > maxDeciLines_)) {
             currentPageDecilineHeight_ += ENDPARAGRAPH_DECI_LINE_HEIGHT;
             setNextPagePlace(token.streamPlace);
-            LOGIT("Page completed: %" PRIu16 " decilines. Max: %" PRIu16 " token at %s",
-                  currentPageDecilineHeight_, maxDeciLines_, token.streamPlace.str().c_str());
+            RLOG("Page completed: %" PRIu16 " decilines. Max: %" PRIu16 " token at %s",
+                 currentPageDecilineHeight_, maxDeciLines_, token.streamPlace.str().c_str());
             return false;
         }
         lines_[linesTailIdx_].tokenCount = 1;
@@ -126,14 +123,14 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
         break;
 
     case TokenId::PICTURE:
-        LOGIT("PICTURE...");
+        RLOG("PICTURE...");
         if (lines_[linesTailIdx_].tokenCount > 0) {
             newLine(NEWLINE_DECI_LINE_HEIGHT);
         }
         if (!dontStop && (currentPageDecilineHeight_ > 0)) {
             setNextPagePlace(token.streamPlace);
-            LOGIT("Page completed: %" PRIu16 " decilines. Max: %" PRIu16,
-                  currentPageDecilineHeight_, maxDeciLines_);
+            RLOG("Page completed: %" PRIu16 " decilines. Max: %" PRIu16, currentPageDecilineHeight_,
+                 maxDeciLines_);
             return false;
         }
         lines_[linesTailIdx_].tokenCount = 1;
@@ -142,24 +139,21 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
         break;
 
     case TokenId::EPICTURE: {
-        LOGIT("EPICTURE...");
+        RLOG("EPICTURE...");
         if (lines_[linesTailIdx_].tokenCount > 0) {
             newLine(NEWLINE_DECI_LINE_HEIGHT);
         }
         uint16_t deciHeight = pixToDeci(token.pixHeight);
         if (!dontStop && ((currentPageDecilineHeight_ + deciHeight) > maxDeciLines_)) {
             setNextPagePlace(token.streamPlace);
-            LOGIT("Page completed: %" PRIu16 " decilines. Max: %" PRIu16,
-                  currentPageDecilineHeight_, maxDeciLines_);
+            RLOG("Page completed: %" PRIu16 " decilines. Max: %" PRIu16, currentPageDecilineHeight_,
+                 maxDeciLines_);
             return false;
         }
         lines_[linesTailIdx_].tokenCount = 1;
         lines_[linesTailIdx_].tokenIdx = tokens_.getLastIdx();
         newLine(deciHeight + 4);
     } break;
-
-    case TokenId::NOTOKEN:
-        break;
     }
 
     return true;
@@ -167,9 +161,9 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
 
 void Pager::newLine(uint16_t height) {
 
-    LOGIT("[%" PRIu16 "](%" PRIu16 ") NewLine, first tokenidx %" PRIu16 " %s", linesTailIdx_,
-          lines_[linesTailIdx_].tokenCount, lines_[linesTailIdx_].tokenIdx,
-          tokens_[lines_[linesTailIdx_].tokenIdx].streamPlace.str().c_str());
+    RLOG("[%" PRIu16 "](%" PRIu16 ") NewLine, first tokenidx %" PRIu16 " %s", linesTailIdx_,
+         lines_[linesTailIdx_].tokenCount, lines_[linesTailIdx_].tokenIdx,
+         tokens_[lines_[linesTailIdx_].tokenIdx].streamPlace.str().c_str());
 
     currentPageDecilineHeight_ += height;
     lines_[linesTailIdx_].deciHeight = height;
@@ -228,11 +222,13 @@ void Pager::getLine(LineInfo &lineStruct, Line &line) const {
 
         auto tokenId = tokens_[tokenIdx].tokenId;
         if (tokenId == TokenId::TAB) {
-            for (int i = 0; i < 8; i++) {
-                line[lineIdx++] = ' ';
-            }
-        } else if (((uint16_t)tokenId & ((uint16_t)TokenId::NOTOKEN | (uint16_t)TokenId::NEWLINE |
-                                         (uint16_t)TokenId::ENDPARAGRAPH)) == 0) {
+            // for (int i = 0; i < 8; i++) {
+            //     line[lineIdx++] = ' ';
+            // }
+            line[lineIdx++] = ' ';
+            line[lineIdx++] = ' ';
+        } else if (((uint16_t)tokenId &
+                    ((uint16_t)TokenId::NEWLINE | (uint16_t)TokenId::ENDPARAGRAPH)) == 0) {
             if (tokens_[tokenIdx].cStr != nullptr) {
                 // strcat(line.data(), tokens_[tokenIdx].cStr);
                 memcpy(line.data() + lineIdx, tokens_[tokenIdx].cStr, tokens_[tokenIdx].length);
@@ -249,13 +245,36 @@ void Pager::getLine(LineInfo &lineStruct, Line &line) const {
     line[lineIdx] = 0;
 }
 
-void Pager::displayPage(int16_t numSkipLines) {
+auto Pager::computeDarkPercent(const uint8_t *bitmap, uint16_t width, uint16_t height) const
+    -> uint8_t {
+    static uint8_t pixelsDensity[256] = {
+        0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3,
+        4, 4, 5, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4,
+        4, 5, 4, 5, 5, 6, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4,
+        5, 3, 4, 4, 5, 4, 5, 5, 6, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 3, 4, 4, 5,
+        4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 2,
+        3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5,
+        5, 6, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4,
+        5, 4, 5, 5, 6, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 3, 4, 4, 5, 4, 5, 5, 6,
+        4, 5, 5, 6, 5, 6, 6, 7, 4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8};
+
+    uint16_t size = ((width + 7) >> 3) * height;
+    int32_t sum = 0;
+    for (int i = 0; i < size; i++) {
+        sum += pixelsDensity[bitmap[i]];
+    }
+    return (sum * 100) / 65536;
+}
+
+// Returns true if page contains picture(s) requiring constrast adjustment (dark pictures)
+auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
 
     // log_w("First Line Idx: %" PRIu16 ", Last Line Idx: %" PRIu16 , firstPageLineIdx_,
     // linesTailIdx_);
 
     uint16_t lineNbr = 0;
     int deciY = 0;
+    uint8_t darkPicturePercent = 0;
 
     for (Idx lineIdx = firstPageLineIdx_; lineIdx != linesTailIdx_;
          nextLineIdx(lineIdx), lineNbr++) {
@@ -266,15 +285,20 @@ void Pager::displayPage(int16_t numSkipLines) {
 
         switch (token.tokenId) {
         case TokenId::PICTURE:
-            LOGIT("[%" PRIu16 "] %s: <PICTURE> %s", lineIdx, token.streamPlace.str().c_str(),
-                  token.cStr);
+            RLOG("[%" PRIu16 "] %s: <PICTURE> %s", lineIdx, token.streamPlace.str().c_str(),
+                 token.cStr);
             if ((token.picture != nullptr) && (token.picture.get() != nullptr)) {
-                int width = token.pixWidth;
-                int height = token.pixHeight;
+                auto bitmap = token.picture->getBuffer();
+                uint16_t width = token.pixWidth;
+                uint16_t height = token.pixHeight;
+
+                darkPicturePercent = computeDarkPercent(bitmap, width, height);
+                RLOG("Dark Picture Percentage: %" PRIu8, darkPicturePercent);
+
                 display_.fillScreen(display_.bg);
                 display_.drawXBitmap((display_.width() - width) / 2,
-                                     (display_.height() - height) / 2, token.picture->getBuffer(),
-                                     width, height, display_.fg);
+                                     (display_.height() - height) / 2, bitmap, width, height,
+                                     display_.fg);
                 break;
             } else {
                 log_e("Picture not there!!");
@@ -285,14 +309,19 @@ void Pager::displayPage(int16_t numSkipLines) {
             break;
 
         case TokenId::EPICTURE:
-            LOGIT("[%" PRIu16 "] %s: <EPICTURE> %s", lineIdx, token.streamPlace.str().c_str(),
-                  token.cStr);
+            RLOG("[%" PRIu16 "] %s: <EPICTURE> %s", lineIdx, token.streamPlace.str().c_str(),
+                 token.cStr);
             if ((token.picture != nullptr) && (token.picture.get() != nullptr)) {
-                int width = token.pixWidth;
-                int height = token.pixHeight;
+                auto bitmap = token.picture->getBuffer();
+                uint16_t width = token.pixWidth;
+                uint16_t height = token.pixHeight;
                 // int16_t y = deciToPix(deci_y + ENDPARAGRAPH_DECI_LINE_HEIGHT) + height / 2;
-                display_.drawXBitmap((display_.width() - width) / 2, deciToPix(deciY),
-                                     token.picture->getBuffer(), width, height, display_.fg);
+                uint8_t darkPercent = computeDarkPercent(bitmap, width, height);
+                if (darkPercent > darkPicturePercent) {
+                    darkPicturePercent = darkPercent;
+                }
+                display_.drawXBitmap((display_.width() - width) / 2, deciToPix(deciY), bitmap,
+                                     width, height, display_.fg);
                 deciY += pixToDeci(height + 4);
             } else {
                 log_e("Picture not there!!");
@@ -304,18 +333,16 @@ void Pager::displayPage(int16_t numSkipLines) {
 
         case TokenId::ENDPARAGRAPH:
             if (deciY == 0) {
-                LOGIT("[%" PRIu16 "] %s: <PARA NOT SHOWN>", lineIdx,
-                      token.streamPlace.str().c_str());
+                RLOG("[%" PRIu16 "] %s: <PARA NOT SHOWN>", lineIdx,
+                     token.streamPlace.str().c_str());
                 continue;
             }
-            if constexpr (RENDERER_DEBUG) {
-                log_d("[%" PRIu16 "] %s: <PARA>", lineIdx, token.streamPlace.str().c_str());
-            }
+            RLOG("[%" PRIu16 "] %s: <PARA>", lineIdx, token.streamPlace.str().c_str());
             deciY += lines_[lineIdx].deciHeight;
             break;
 
         case TokenId::HRULE: {
-            LOGIT("[%" PRIu16 "] %s: <HRULE>", lineIdx, token.streamPlace.str().c_str());
+            RLOG("[%" PRIu16 "] %s: <HRULE>", lineIdx, token.streamPlace.str().c_str());
             uint16_t y = deciToPix(deciY + (lines_[lineIdx].deciHeight / 2));
             display_.drawLine(0, y, display_.width(), y, display_.fg);
             deciY += lines_[lineIdx].deciHeight;
@@ -326,23 +353,25 @@ void Pager::displayPage(int16_t numSkipLines) {
             if (lineNbr >= numSkipLines) {
                 Line line;
                 getLine(lines_[lineIdx], line);
-                LOGIT("[%" PRIu16 "] %s: <%s>", lineIdx, token.streamPlace.str().c_str(),
-                      line.data());
+                RLOG("[%" PRIu16 "] %s: <%s>", lineIdx, token.streamPlace.str().c_str(),
+                     line.data());
                 display_.drawSingleLineOfText(line.data(), lines_[lineIdx].leftIndent,
                                               deciToPix(deciY));
             } else {
-                LOGIT("[%" PRIu16 "] %s: <SKIPPED>", lineIdx, token.streamPlace.str().c_str());
+                RLOG("[%" PRIu16 "] %s: <SKIPPED>", lineIdx, token.streamPlace.str().c_str());
             }
             deciY += NEWLINE_DECI_LINE_HEIGHT;
             break;
         }
     }
+
+    return darkPicturePercent;
 }
 
 // Used in the TXT book/article context to find the beginning of the page to show when going
 // backward.
 void Pager::setFirstLineIdxBackward() {
-    LOGIT("Start of First Line Idx search...");
+    RLOG("Start of First Line Idx search...");
     Idx lineIdx = linesTailIdx_;
     if (lineIdx != linesHeadIdx_) {
         uint16_t deciLines = 0;
@@ -381,8 +410,7 @@ void Pager::show() const {
             for (Idx tokenIdx = lines_[lineIdx].tokenIdx; tokenIdx != lastTokenIdx;
                  tokens_.nextTokenIdx(tokenIdx)) {
                 if (((uint16_t)tokens_[tokenIdx].tokenId &
-                     ((uint16_t)TokenId::NOTOKEN | (uint16_t)TokenId::NEWLINE |
-                      (uint16_t)TokenId::ENDPARAGRAPH)) == 0) {
+                     ((uint16_t)TokenId::NEWLINE | (uint16_t)TokenId::ENDPARAGRAPH)) == 0) {
                     std::cout << tokens_[tokenIdx].cStr;
                     if (tokens_[tokenIdx].spacesAfter) {
                         std::cout << " ";

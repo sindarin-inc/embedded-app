@@ -52,7 +52,7 @@ public:
 
     // NOLINTNEXTLINE(modernize-use-nodiscard)
     auto renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines = 0,
-                    bool forceRefresh = false) -> std::shared_ptr<Place>;
+                    bool forceRefresh = false) -> std::pair<std::shared_ptr<Place>, uint8_t>;
 
     void showStats() {
         log_w("Circular buffer max lenghts: Tokens: %" PRIu16 ", CStrPool: %" PRIu16,
@@ -61,7 +61,7 @@ public:
 
     // NOLINTNEXTLINE(modernize-use-nodiscard)
     inline auto renderFirstPage(int16_t numSkipLines = 0, bool forceRefresh = false)
-        -> std::shared_ptr<Place> {
+        -> std::pair<std::shared_ptr<Place>, bool> {
         return renderPage(tokenizer_->toPlace(tokenizer_->getPlaceAtBeginningOfDocument()),
                           numSkipLines, forceRefresh);
     }

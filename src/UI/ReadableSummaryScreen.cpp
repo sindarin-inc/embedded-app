@@ -52,6 +52,7 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
     // This is a slight hack to get around the fact that the bounding box of the display is not
     // context specific
     auto oldDisplayBoundingBox = insetBoundingBox();
+    uint8_t darkPicturePercent = 0;
 
     if (firstLoad_) {
         std::shared_ptr<Place> placeInSummary = nullptr;
@@ -64,16 +65,17 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
         }
         auto stream = std::make_shared<StdStringStream>(summaryString);
         renderer_.setStream(stream);
-        newPlace_ = renderer_.renderPage(placeInSummary);
+        std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(placeInSummary);
         log_d("Place in readable: %s, place in summary: %s", placeInReadable_->str().c_str(),
               placeInSummary->str().c_str());
     } else {
         prevPlace_ = newPlace_;
-        newPlace_ = renderer_.renderPage(newPlace_);
+        std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(newPlace_);
     }
 
     atEnd_ = checkAtEnd();
-    display.updateDisplay(DisplaySystem::UpdateType::FULL);
+    display.updateDisplay(DisplaySystem::UpdateType::FULL, true,
+                          display.darkPictureVComAdj(darkPicturePercent));
     firstLoad_ = false;
 
     resetBoundingBox(oldDisplayBoundingBox);

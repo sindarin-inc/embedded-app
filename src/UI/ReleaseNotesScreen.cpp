@@ -31,12 +31,15 @@ void ReleaseNotesScreen::render(DisplaySystem &display) {
         return;
     }
 
-    newPlace_ = this->renderer_.renderPage(place_);
+    uint8_t darkPicturePercent = 0;
+    std::tie(newPlace_, darkPicturePercent) = this->renderer_.renderPage(place_);
 
     if (firstLoad_) {
-        display.updateDisplay(DisplaySystem::UpdateType::FULL);
+        display.updateDisplay(DisplaySystem::UpdateType::FULL, true,
+                              display.darkPictureVComAdj(darkPicturePercent));
     } else {
-        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+        display.updateDisplay(DisplaySystem::UpdateType::PARTIAL, true,
+                              display.darkPictureVComAdj(darkPicturePercent));
     }
 }
 

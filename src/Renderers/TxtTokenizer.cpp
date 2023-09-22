@@ -58,10 +58,8 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
         }
     }
 
-    // if constexpr (RENDERER_DEBUG) {
-    //     log_d("First Character: %c (%02" PRIX8 "H)",
-    //           (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '), curChar);
-    // }
+    // RLOG("First Character: %c (%02" PRIX8 "H)",
+    //       (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '), curChar);
 
     while ((!pageCompleted) && (curChar != 0) && (!tokens_.isFull())) {
 
@@ -82,12 +80,10 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
             break;
         }
 
-        // if constexpr (RENDERER_DEBUG) {
-        //     log_d("Set the stream place to %s",
-        //           addOffset(fromPlace, streamRelativeOffset).str().c_str());
-        //     log_d("Current Character: %c (%02" PRIX8 "H)",
-        //           (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '), curChar);
-        // }
+        // RLOG("Set the stream place to %s",
+        //       addOffset(fromPlace, streamRelativeOffset).str().c_str());
+        // RLOG("Current Character: %c (%02" PRIX8 "H)",
+        //       (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '), curChar);
 
         switch (curChar) {
         case '\n':
@@ -221,10 +217,8 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
         pager_.setEndOfFile();
     }
 
-    if constexpr (RENDERER_DEBUG) {
-        log_d("Computed Word Count: %" PRIu16, pager_.getWordCount());
-        log_d("Tokens Count: %" PRIu16, tokens_.getTokenCount());
-    }
+    RLOG("Computed Word Count: %" PRIu16, pager_.getWordCount());
+    RLOG("Tokens Count: %" PRIu16, tokens_.getTokenCount());
 
     if (backwards) {
         pager_.setFirstLineIdxBackward();
