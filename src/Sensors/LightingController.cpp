@@ -7,6 +7,7 @@
 
 #include "Misc/Math.hpp"
 #include "Misc/Platform.hpp"
+#include "Misc/Telemetry.hpp"
 #include "sindarin-debug.h"
 
 auto LightingController::checkSensorAvailable() -> bool {

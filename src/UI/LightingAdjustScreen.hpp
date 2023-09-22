@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Misc/Telemetry.hpp"
 #include "Sensors/LightingController.hpp"
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/ArrowView.hpp"
@@ -12,7 +13,7 @@
 class LightingAdjustScreen : public Screen, public EinkView {
 public:
     LightingAdjustScreen(DisplaySystem &display, PreferencesStore &prefs,
-                         LightingController &lightingController);
+                         LightingController &lightingController, Telemetry &telemetry);
 
     void processCommand(RemoteCommand command) override;
     void render(DisplaySystem &display) override;
@@ -25,6 +26,7 @@ public:
 protected:
     PreferencesStore &prefs_;
     LightingController &lightingController_;
+    Telemetry &telemetry_;
     bool firstLoad_ = true;
 
     // Subviews

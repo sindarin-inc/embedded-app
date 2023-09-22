@@ -5,8 +5,10 @@
 #define LIGHTING_STEP_INCREMENT 7
 
 LightingAdjustScreen::LightingAdjustScreen(DisplaySystem &display, PreferencesStore &prefs,
-                                           LightingController &lightingController)
-    : Screen(), EinkView(display), prefs_(prefs), lightingController_(lightingController),
+                                           LightingController &lightingController,
+                                           Telemetry &telemetry)
+    : Screen(), EinkView(display), prefs_(prefs), telemetry_(telemetry),
+      lightingController_(lightingController),
       lightbulbView_(display, LIGHTBULB_BITS, Lightbulb_width, Lightbulb_height), barView_(display),
       fillView_(display), firstLine_(display, "Press up and down"),
       secondLine_(display, "to adjust brightness"), leftArrowView_(display, ArrowLeft),
@@ -101,6 +103,9 @@ void LightingAdjustScreen::processCommand(RemoteCommand command) {
         auto setting =
             std::min(lightingController_.getCurrentPercent() + LIGHTING_STEP_INCREMENT, 100);
         lightingController_.setOverrideValuePercent(setting);
+        telemetry_.logMetric(TelemetryField::METRIC_EVENT, setting,
+                             {{"event", "lighting_override"}, {"direction", "up"}});
+
         setNeedsRerender();
         break;
     }
@@ -108,6 +113,8 @@ void LightingAdjustScreen::processCommand(RemoteCommand command) {
         auto setting =
             std::max(lightingController_.getCurrentPercent() - LIGHTING_STEP_INCREMENT, 0);
         lightingController_.setOverrideValuePercent(setting);
+        telemetry_.logMetric(TelemetryField::METRIC_EVENT, setting,
+                             {{"event", "lighting_override"}, {"direction", "down"}});
         setNeedsRerender();
         break;
     }
