@@ -361,7 +361,6 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
     if (node) {
 
         currentStreamOffset_ = fromPlace_.getOffset();
-        startOfParagraph_ = false;
         skipNextParagraph_ = false;
         lastToken_ = nullptr;
 
@@ -370,7 +369,10 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
         superscript_ = false;
 
         listLevel_ = -1;
-        listLineStart_[0] = '\0';
+        savedLeftIndent_ = 0;
+
+        savedBlockquoteLeftIndent_ = 0;
+        savedBlockquoteRightIndent_ = 0;
 
         tokens_.clear();
         pager_.clear();
@@ -530,7 +532,7 @@ auto EPubTokenizer::addTokenToPage(Token &token, const char *str, uint8_t strSiz
             // This is the first token added, so we are at the beginning of a page
             // We need to adjust the indentation if the token is part of a list if the token is not
             // the first of a list entry
-            pager_.setLineIndent(display_.getTextWidth(listLineStart_) + savedBlockquoteLeftIndent_,
+            pager_.setLineIndent(savedLeftIndent_ + savedBlockquoteLeftIndent_,
                                  savedBlockquoteRightIndent_);
         }
         if (!pager_.addLastTokenToPage(false)) {
@@ -555,11 +557,10 @@ auto EPubTokenizer::addTokenToPage(Token &token, const char *str, uint8_t strSiz
                     }
                     tempToken = token;
                     tokens_.clear();
-                    if ((listLevel_ != -1) && (tempToken.tokenId != TokenId::ITEXT)) {
+                    if (tempToken.tokenId != TokenId::ITEXT) {
                         // We are in a list that requires indentation and not on the first
                         // token of a list entry. We have to reinstate the indentation level.
-                        pager_.clear(display_.getTextWidth(listLineStart_) +
-                                         savedBlockquoteLeftIndent_,
+                        pager_.clear(savedLeftIndent_ + savedBlockquoteLeftIndent_,
                                      savedBlockquoteRightIndent_);
                     } else {
                         pager_.clear();
@@ -649,13 +650,10 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 if (isEmpty(node) || skipNextParagraph_) {
                     skipNextParagraph_ = false;
                     return true;
-                } else {
-                    startOfParagraph_ = true;
                 }
                 break;
 
             case Tag::BLOCKQUOTE:
-                savedLeftIndent_ = (listLevel_ > -1) ? display_.getTextWidth(listLineStart_) : 0;
                 if (savedLeftIndent_ == 0) {
                     savedBlockquoteLeftIndent_ = 40;
                     savedBlockquoteRightIndent_ = 40;
@@ -680,7 +678,23 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 break;
 
             case Tag::OL:
-                // log_w("<OL>...");
+                if (started_ && (listLevel_ >= 0)) {
+                    Token &newToken = tokens_.getNextAvailable();
+                    newToken = {.cStr = "\n",
+                                .picture = nullptr,
+                                .streamPlace = {currentStreamOffset_, fromPlace_.getFileIdx()},
+                                .pixWidth = 0,
+                                .pixHeight = 0,
+                                .length = 1,
+                                .tokenId = TokenId::NEWLINE,
+                                .spacesAfter = 0};
+                    lastToken_ = nullptr;
+                    if (addTokenToPage(newToken)) {
+                        return false;
+                    }
+                    pager_.setLineIndent(0, 0);
+                }
+
                 if (listLevel_ < (MaxLevelCount - 2)) {
                     listLevel_ += 1;
                     listType_[listLevel_] = ListType::ORDERED;
@@ -689,49 +703,66 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 break;
 
             case Tag::UL:
-                // log_w("<UL>...");
+                if (started_ && (listLevel_ >= 0)) {
+                    Token &newToken = tokens_.getNextAvailable();
+                    newToken = {.cStr = "\n",
+                                .picture = nullptr,
+                                .streamPlace = {currentStreamOffset_, fromPlace_.getFileIdx()},
+                                .pixWidth = 0,
+                                .pixHeight = 0,
+                                .length = 1,
+                                .tokenId = TokenId::NEWLINE,
+                                .spacesAfter = 0};
+                    lastToken_ = nullptr;
+                    if (addTokenToPage(newToken)) {
+                        return false;
+                    }
+                    pager_.setLineIndent(0, 0);
+                }
+
                 if (listLevel_ < (MaxLevelCount - 2)) {
                     listLevel_ += 1;
-                    listType_[listLevel_ - 1] = ListType::UNORDERED;
+                    listType_[listLevel_] = ListType::UNORDERED;
+                    listSeqNbr_[listLevel_] = 0;
                 }
                 break;
 
-            case Tag::LI:
-                // log_w("<LI>...");
-                startOfParagraph_ = true;
+            case Tag::LI: {
+                char listLineStart[50];
+
                 if (listLevel_ >= 0) {
                     if (listType_[listLevel_] == ListType::ORDERED) {
-                        (void)sprintf(listLineStart_, "%*s%" PRIu16 ". ", listLevel_ * 4, "",
+                        (void)sprintf(listLineStart, "%*s%" PRIu16 ".  ", listLevel_ * 5, "",
                                       listSeqNbr_[listLevel_] + 1);
                     } else {
-                        (void)sprintf(listLineStart_, "%*s%c ", listLevel_ * 3, "",
+                        (void)sprintf(listLineStart, "%*s%c  ", listLevel_ * 4, "",
                                       levelChar_[listLevel_]);
                     }
+                    savedLeftIndent_ = display_.getTextWidth(listLineStart);
                 } else {
-                    listLineStart_[0] = '\0';
+                    savedLeftIndent_ = 0;
                 }
-                if (!tokens_.isFull() && !skipNextParagraph_ && started_) {
-                    if (listLevel_ >= 0) {
-                        Token &newToken = tokens_.getNextAvailable();
-                        // log_w("LI start: %s", listLineStart_);
-                        newToken = {.cStr = nullptr,
-                                    .picture = nullptr,
-                                    .streamPlace = {currentStreamOffset_, fromPlace_.getFileIdx()},
-                                    .pixWidth = 0,
-                                    .pixHeight = 0,
-                                    .length = 0,
-                                    .tokenId = TokenId::ITEXT,
-                                    .spacesAfter = 0};
-                        tokens_.addStr(newToken, listLineStart_);
-                        lastToken_ = nullptr;
 
-                        if (addTokenToPage(newToken)) {
-                            return false;
-                        }
+                if (!tokens_.isFull() && !skipNextParagraph_ && started_ && (listLevel_ >= 0)) {
+                    Token &newToken = tokens_.getNextAvailable();
+                    // log_w("LI start: %s", listLineStart_);
+                    newToken = {.cStr = nullptr,
+                                .picture = nullptr,
+                                .streamPlace = {currentStreamOffset_, fromPlace_.getFileIdx()},
+                                .pixWidth = 0,
+                                .pixHeight = 0,
+                                .length = 0,
+                                .tokenId = TokenId::ITEXT,
+                                .spacesAfter = 0};
+                    tokens_.addStr(newToken, listLineStart);
+                    lastToken_ = nullptr;
+
+                    if (addTokenToPage(newToken)) {
+                        return false;
                     }
                 }
                 listSeqNbr_[listLevel_]++;
-                break;
+            } break;
 
             default:
                 break;
@@ -744,15 +775,16 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
             if (!interpret(subNode)) {
                 return false;
             }
-            startOfParagraph_ = false;
         }
-        startOfParagraph_ = false; // In cases when there is no child
 
         // End of the node element processing
-        // currentStreamOffset_ = node.offset_debug() + strlen(node.value());
-
         currentStreamOffset_ = findNodeEndOffset(node);
         RLOG("Offset at the end of the node: %" PRIu32, currentStreamOffset_);
+
+        if (!started_ && (currentStreamOffset_ >= fromPlace_.getOffset())) {
+            started_ = true;
+            RLOG("Started at %" PRIu32, currentStreamOffset_);
+        }
 
         if (!pageCompleted_) {
             if (tagIt != tags.end()) {
@@ -765,7 +797,6 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 case Tag::H5:
                 case Tag::H6:
                 case Tag::HEADER:
-                    startOfParagraph_ = false;
                     if (!tokens_.isFull() && !skipNextParagraph_ && started_) {
                         Token &newToken = tokens_.getNextAvailable();
                         newToken = {.cStr = "\n",
@@ -833,7 +864,6 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     break;
 
                 case Tag::OL:
-                    // log_w("</OL>");
                     if (listLevel_ >= 0) {
                         listLevel_ -= 1;
                     }
@@ -856,7 +886,6 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     break;
 
                 case Tag::UL:
-                    // log_w("</UL>");
                     if (listLevel_ >= 0) {
                         listLevel_ -= 1;
                     }
@@ -891,11 +920,12 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                                     .tokenId = TokenId::NEWLINE,
                                     .spacesAfter = 0};
                         lastToken_ = nullptr;
-                        pager_.setLineIndent(0);
                         if (addTokenToPage(newToken)) {
                             return false;
                         }
+                        pager_.setLineIndent(0, 0);
                     }
+                    savedLeftIndent_ = 0;
                     break;
 
                 default:
