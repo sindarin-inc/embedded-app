@@ -1,8 +1,10 @@
 #pragma once
 
 #include <array>
+#include <memory>
 #include <utility>
 
+#include "EPub/EPubFile.hpp"
 #include "Misc/BMPImage.hpp"
 #include "RendererDefs.hpp"
 #include "Tokens.hpp"
@@ -13,6 +15,7 @@ class Pager {
 private:
     Tokens &tokens_;
     DisplaySystem &display_;
+    std::shared_ptr<EPubFile> stream_;
 
     uint16_t wordCount_{0};
     uint16_t currentPageDecilineHeight_{0};
@@ -73,6 +76,10 @@ private:
 public:
     Pager(Tokens &tokens, DisplaySystem &display) : tokens_(tokens), display_(display) {}
 
+    void setStream(std::shared_ptr<RendererStream> stream) {
+        stream_ = std::static_pointer_cast<EPubFile>(stream);
+    }
+
     // Switch to 1/10 of a line as this gives us more flexibilty in rendering
     // precision between lines.
     [[nodiscard]] auto getMaxDeciLines() -> int16_t {
@@ -90,7 +97,7 @@ public:
         currentLineWidth_ = 0;
         currentPageDecilineHeight_ = 0;
         maxDeciLines_ = getMaxDeciLines();
-        maxLineWidth_ = display_.width();
+        maxLineWidth_ = display_.width() - rightIndent;
         lines_[0] = {0, 0, 0, 0, leftIndent_};
         uint16_t notUsed;
         display_.getTextSize(" ", &spaceWidth_, &notUsed);
@@ -101,6 +108,7 @@ public:
         lines_[linesTailIdx_].leftIndent = leftIndent_;
 
         rightIndent_ = rightIndent;
+        maxLineWidth_ = display_.width() - rightIndent;
     }
 
     inline auto getLineIndent() -> std::pair<uint16_t, uint16_t> {
@@ -159,17 +167,14 @@ public:
     inline void freeLineHead() {
         if (linesHeadIdx_ != linesTailIdx_) {
 
-            // RLOG("Freeing line at idx %" PRIu16, linesHeadIdx_);
+            // REND_WLOG("Freeing line at idx %" PRIu16, linesHeadIdx_);
 
             tokens_.freeTokens(lines_[linesHeadIdx_].tokenIdx, lines_[linesHeadIdx_].tokenCount);
 
             incrLinesHeadIdx();
-            if constexpr (RENDERER_DEBUG) {
+            if constexpr (REND_DEBUG) {
                 if (linesHeadIdx_ == linesTailIdx_) {
-                    log_e("lines_[] is empty!!");
-                    if constexpr (ON_ERROR_EXIT) {
-                        exit(1);
-                    }
+                    REND_ELOG("lines_[] is empty!!");
                 }
             }
         }
@@ -178,4 +183,15 @@ public:
     inline void addSpaceWidth() { currentLineWidth_ += spaceWidth_; }
 
     void show() const;
+
+#if REND_DEBUGGING
+    auto getTokenIdStr(TokenId id) const -> const char * {
+        for (int idx = 0; idx < 16; idx++) {
+            if ((uint16_t)id & (1 << idx)) {
+                return TokenIdStr[idx];
+            }
+        }
+        return "UNKNOWN";
+    }
+#endif
 };

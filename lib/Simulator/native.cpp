@@ -254,6 +254,28 @@ void runBackwardsUnitTest(SDL_Window *window, SDL_Renderer *renderer) {
     std::cerr << "unit test passed\n";
 }
 
+// Only press 'a' when you are on a page in a readable.
+void previousPageFast(SDL_Window *window, SDL_Renderer *renderer) {
+    auto skipWaveform = FakeEinkET013TT1SkipWaveform;
+    FakeEinkET013TT1SkipWaveform = true;
+
+    sendCodeAndRender(RemoteCommand::LEFT, renderer);
+
+    FakeEinkET013TT1SkipWaveform = skipWaveform;
+    std::cerr << "unit test passed\n";
+}
+
+// Only press 's' when you are on a page in a readable.
+void nextPageFast(SDL_Window *window, SDL_Renderer *renderer) {
+    auto skipWaveform = FakeEinkET013TT1SkipWaveform;
+    FakeEinkET013TT1SkipWaveform = true;
+
+    sendCodeAndRender(RemoteCommand::ENTER, renderer);
+
+    FakeEinkET013TT1SkipWaveform = skipWaveform;
+    std::cerr << "unit test passed\n";
+}
+
 void goBackNumPages(SDL_Window *window, SDL_Renderer *renderer, int numPages) {
     int i = 0;
 
@@ -301,6 +323,12 @@ auto mainLoop() -> bool {
                 break;
             case 'b':
                 goBackNumPages(window, renderer, 50);
+                break;
+            case 'a':
+                previousPageFast(window, renderer);
+                break;
+            case 's':
+                nextPageFast(window, renderer);
                 break;
             }
 

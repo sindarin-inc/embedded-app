@@ -53,7 +53,7 @@ auto Place::factory(const std::string &placeStr) -> std::shared_ptr<Place> {
     return std::make_shared<TxtPlace>(0);
 
     // log_e("Unable to parse place string properly: \"%s\"", placeStr.c_str());
-    // if constexpr (ON_ERROR_EXIT) {
+    // if constexpr (REND_ON_ERROR_EXIT) {
     //     exit(1);
     // }
     // return std::make_shared<NonePlace>();

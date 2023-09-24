@@ -17,20 +17,18 @@ auto Tokens::add(Token &token, const char *str, uint8_t length) -> bool {
             // log_w("Token width of %s is %" PRIu16, token.cStr, token.pixWidth);
         }
 
-        // if constexpr (RENDERER_DEBUG) {
+        // if constexpr (REND_DEBUG) {
         //     showToken(tokensTailIdx_);
         // }
 
         advanceTokenTail();
 
-        // RLOG("After: tokens count: %" PRIu16 ", cStr pool count: %" PRIu16,
+        // REND_WLOG("After: tokens count: %" PRIu16 ", cStr pool count: %" PRIu16,
         //     getTokensCount(),
         //     getCStrPoolCount());
     } else {
         log_e("tokens_[] too small!: (%s)", tokensIsFull() ? "TOKENS" : "CSTR_POOL");
-        if constexpr (ON_ERROR_EXIT) {
-            exit(1);
-        }
+        REND_EXIT_SIM;
         return false;
     }
     return true;
@@ -39,7 +37,7 @@ auto Tokens::add(Token &token, const char *str, uint8_t length) -> bool {
 // Add a byte to the token string. The byte is copied to the pool. The token's length is adjusted. A
 // call to endCStr() will be required to complete the null terminated string.
 void Tokens::addByte(Token &token, uint8_t b) {
-    // RLOG("Adding byte %02" PRIX8 "H to last token at %" PRIu16 ".", b, cStrPoolCount_);
+    // REND_WLOG("Adding byte %02" PRIX8 "H to last token at %" PRIu16 ".", b, cStrPoolCount_);
     if (!cStrIsFull()) {
         if (token.cStr == nullptr) {
             token.cStr = &cStrPool_[cStrPoolTailIdx_];
@@ -50,16 +48,14 @@ void Tokens::addByte(Token &token, uint8_t b) {
         incrCStrPoolTailIdx(token);
     } else {
         log_e("cStrPool_[] is too small!");
-        if constexpr (ON_ERROR_EXIT) {
-            exit(1);
-        }
+        REND_EXIT_SIM;
     }
 }
 
 // Associate the string to the token. The string will be copied to the pool. No other characters can
 // be added to the token after it.
 void Tokens::addStr(Token &token, const std::string &str) {
-    // RLOG("Adding byte %02" PRIX8 "H to last token at %" PRIu16 ".", b, cStrPoolCount_);
+    // REND_WLOG("Adding byte %02" PRIX8 "H to last token at %" PRIu16 ".", b, cStrPoolCount_);
 
     uint16_t len = str.length();
     if ((getCStrPoolCount() + len) < (CSTR_POOL_SIZE - 2)) {
@@ -75,13 +71,10 @@ void Tokens::addStr(Token &token, const std::string &str) {
         }
         endOfCStr();
 
-        if constexpr (RENDERER_DEBUG) {
+        if constexpr (REND_DEBUG) {
             if (strlen(token.cStr) != token.length) {
-                log_e("Hum... token length wrong: %zu vs %" PRIu16, strlen(token.cStr),
-                      token.length);
-                if constexpr (ON_ERROR_EXIT) {
-                    exit(1);
-                }
+                REND_ELOG("Hum... token length wrong: %zu vs %" PRIu16, strlen(token.cStr),
+                          token.length);
             }
             // log_d("After: tokensCount_: %" PRIu16 ", token length: %" PRIu16
             //       ", cStrPoolCount_: %" PRIu16,
@@ -89,9 +82,7 @@ void Tokens::addStr(Token &token, const std::string &str) {
         }
     } else {
         log_e("cStrPool_[] is too small!");
-        if constexpr (ON_ERROR_EXIT) {
-            exit(1);
-        }
+        REND_EXIT_SIM;
     }
 }
 
@@ -99,18 +90,15 @@ void Tokens::addStr(Token &token, const std::string &str) {
 // fromTokenIdx is equal to the tokensHeadIdx_.
 void Tokens::freeTokens(Idx fromTokenIdx, uint16_t count) {
 
-    if constexpr (RENDERER_DEBUG) {
+    if constexpr (REND_DEBUG) {
         // log_w("fromTokenIdx: %" PRIu16 " , count: %" PRIu16, fromTokenIdx, count);
         if (fromTokenIdx != tokensHeadIdx_) {
-            log_e("freeTokens received a bad fromTokenIdx (%" PRIu16 "), expected %" PRIu16,
-                  fromTokenIdx, tokensHeadIdx_);
-            if constexpr (ON_ERROR_EXIT) {
-                exit(1);
-            }
+            REND_ELOG("freeTokens received a bad fromTokenIdx (%" PRIu16 "), expected %" PRIu16,
+                      fromTokenIdx, tokensHeadIdx_);
         }
     }
     if (count > 0) {
-        //     if constexpr (RENDERER_DEBUG) {
+        //     if constexpr (REND_DEBUG) {
         //         Idx lastTokenIdx = addToTokenIdx(fromTokenIdx, count);
         //         Idx tokenIdx = fromTokenIdx;
         //         while (tokenIdx != lastTokenIdx) {
@@ -126,9 +114,7 @@ void Tokens::freeTokens(Idx fromTokenIdx, uint16_t count) {
         //                     log_e("cStrPool pointers discrepancies: %" PRIu16 " vs %" PRIu16,
         //                     poolIdx,
         //                           cStrPoolHeadIdx_);
-        //                     if constexpr (ON_ERROR_EXIT) {
-        //                         exit(1);
-        //                     }
+        //                     REND_EXIT_SIM;
         //                 }
         //                 break;
         //             }
@@ -167,13 +153,10 @@ void Tokens::freeTokens(Idx fromTokenIdx, uint16_t count) {
             // Free space in string pool
             Idx poolIdx = tokens_[lastTokenPoolIdx].cStr - cStrPool_.data();
 
-            if constexpr (RENDERER_DEBUG) {
+            if constexpr (REND_DEBUG) {
                 if (poolIdx >= CSTR_POOL_SIZE) {
-                    log_e("poolIdx too large: %" PRIu16 ", must be smaller than %" PRIu16, poolIdx,
-                          CSTR_POOL_SIZE);
-                    if (ON_ERROR_EXIT) {
-                        exit(1);
-                    }
+                    REND_ELOG("poolIdx too large: %" PRIu16 ", must be smaller than %" PRIu16,
+                              poolIdx, CSTR_POOL_SIZE);
                 }
             }
 
@@ -184,22 +167,17 @@ void Tokens::freeTokens(Idx fromTokenIdx, uint16_t count) {
             log_e("cStrPool is larger than before freeing space! old size: %" PRIi32
                   ", new: %" PRIu16,
                   poolCount, getCStrPoolCount());
-            if constexpr (ON_ERROR_EXIT) {
-                exit(1);
-            }
+            REND_EXIT_SIM;
         }
 
-        // RLOG("cStrPool reduced from %" PRIi32 " to %" PRIi32, poolCount,
+        // REND_WLOG("cStrPool reduced from %" PRIi32 " to %" PRIi32, poolCount,
         //     getCStrPoolCount());
 
         tokensHeadIdx_ = addToTokenIdx(fromTokenIdx, count);
 
-        if constexpr (RENDERER_DEBUG) {
+        if constexpr (REND_DEBUG) {
             if (getTokenCount() == 0) {
-                log_e("Hum... Tokens is empty!!");
-                if constexpr (ON_ERROR_EXIT) {
-                    exit(1);
-                }
+                REND_ELOG("Hum... Tokens is empty!!");
             }
         }
     }
@@ -208,7 +186,7 @@ void Tokens::freeTokens(Idx fromTokenIdx, uint16_t count) {
 // debugging methods
 
 void Tokens::showToken(Idx tokenIdx) const {
-    if constexpr (RENDERER_DEBUG) {
+    if constexpr (REND_DEBUG) {
         const Token &token = tokens_[tokenIdx];
         log_d("TokenIdx: %" PRIu16 ", TokenId: %" PRIu8 ", streamPlace: %s, width: %" PRIu16
               //", height: %" PRIu16
@@ -227,7 +205,7 @@ void Tokens::showToken(Idx tokenIdx) const {
 }
 
 void Tokens::show() const {
-    if constexpr (RENDERER_DEBUG) {
+    if constexpr (REND_DEBUG) {
         for (Idx tokenIdx = tokensHeadIdx_; tokenIdx != tokensTailIdx_; nextTokenIdx(tokenIdx)) {
             showToken(tokenIdx);
         }

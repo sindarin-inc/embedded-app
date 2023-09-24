@@ -30,7 +30,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
         return {getPlaceAtBeginningOfDocument(), {0, 0}};
     }
 
-    if constexpr (RENDERER_DEBUG) {
+    if constexpr (REND_DEBUG) {
         log_w("Starting tokenizer at streamPlace %s", fromPlace.str().c_str());
         if (backwards) {
             log_w("Going up to place %s", toPlace->str().c_str());
@@ -58,7 +58,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
         }
     }
 
-    // RLOG("First Character: %c (%02" PRIX8 "H)",
+    // REND_WLOG("First Character: %c (%02" PRIX8 "H)",
     //       (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '), curChar);
 
     while ((!pageCompleted) && (curChar != 0) && (!tokens_.isFull())) {
@@ -80,9 +80,9 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
             break;
         }
 
-        // RLOG("Set the stream place to %s",
+        // REND_WLOG("Set the stream place to %s",
         //       addOffset(fromPlace, streamRelativeOffset).str().c_str());
-        // RLOG("Current Character: %c (%02" PRIX8 "H)",
+        // REND_WLOG("Current Character: %c (%02" PRIX8 "H)",
         //       (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '), curChar);
 
         switch (curChar) {
@@ -142,6 +142,7 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
             break;
 
         case ' ':
+        case '\t':
             if (lastToken_ != nullptr) {
                 lastToken_->spacesAfter++;
                 pager_.addSpaceWidth();
@@ -149,13 +150,6 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
             // newToken.tokenId = TokenId::SPACE;
             // tokens_.setSpaceSize(newToken);
             // pageCompleted = addTokenToPage(newToken, backwards, " ", 1);
-            nextByte();
-            break;
-
-        case '\t':
-            newToken.tokenId = TokenId::TAB;
-            lastToken_ = &newToken;
-            pageCompleted = addTokenToPage(newToken, backwards, "\t", 1);
             nextByte();
             break;
 
@@ -217,8 +211,8 @@ auto TxtTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, St
         pager_.setEndOfFile();
     }
 
-    RLOG("Computed Word Count: %" PRIu16, pager_.getWordCount());
-    RLOG("Tokens Count: %" PRIu16, tokens_.getTokenCount());
+    REND_WLOG("Computed Word Count: %" PRIu16, pager_.getWordCount());
+    REND_WLOG("Tokens Count: %" PRIu16, tokens_.getTokenCount());
 
     if (backwards) {
         pager_.setFirstLineIdxBackward();
@@ -251,9 +245,7 @@ auto TxtTokenizer::getFileLocation(StreamPlace fromPlace) -> StreamPlace {
 
     if (!stream_->seek(fromPlace.getOffset())) {
         log_e("failed to seek at streamPlace %s in file!", fromPlace.str().c_str());
-        if constexpr (ON_ERROR_EXIT) {
-            exit(2);
-        }
+        REND_EXIT_SIM;
     } else {
         uint8_t ch = 0;
         uint16_t count = 0;
@@ -300,7 +292,7 @@ auto TxtTokenizer::getFileLocation(StreamPlace fromPlace) -> StreamPlace {
                 return fromPlace;
             }
             fromPlace.incOffset();
-            if constexpr (RENDERER_DEBUG) {
+            if constexpr (REND_DEBUG) {
                 log_d("Synching to start of UTF8 character at streamPlace %s",
                       fromPlace.str().c_str());
             }

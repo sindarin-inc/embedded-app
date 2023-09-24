@@ -20,9 +20,7 @@ public:
             return {place->getOffset(), 0};
         } else {
             log_e("Wrong Place Type: %" PRIu8, static_cast<uint8_t>(place->getDocType()));
-            if constexpr (ON_ERROR_EXIT) {
-                exit(1);
-            }
+            REND_EXIT_SIM;
         }
 
         return {};

@@ -11,27 +11,59 @@
 
 namespace renderer_defs {
 
-// For deep logging when changing this file
-static constexpr bool RENDERER_DEBUG = false;
-static constexpr bool ON_ERROR_EXIT = false;
-static constexpr bool RENDERER_STATS = false;
+// The following defines are helpers for code development
+// That is specific to the renderer
 
-#define DEBUG_RENDERER 0
-#define RENDERER_PROFILING 0
+#define REND_DEBUGGING 0     // Show debugging messages where appropriate
+#define REND_EXIT_ON_ERROR 0 // Simulator Only!!
+#define REND_PROFILING 0     // Speed measurements
+#define REND_STATISTICS 0    // Stats on Tokens size and Lines size
 
-#if DEBUG_RENDERER
-#define RLOG(f, ...) log_w(f, ##__VA_ARGS__);
-#else
-#define RLOG(...)
+#if !SIMULATOR
+#undef REND_EXIT_ON_ERROR // To be sure there will be no exit() call on the Sol device
 #endif
 
-#if RENDERER_PROFILING
-#define RENDERER_PROFILE_START(v) PROFILE_START(v)
-#define RENDERER_PROFILE_END(v) PROFILE_END_LOG_MS(v)
+#if REND_EXIT_ON_ERROR
+static constexpr bool REND_ON_ERROR_EXIT = true;
+#define REND_EXIT_SIM exit(1)
+#define REND_ELOG(f, ...)                                                                          \
+    {                                                                                              \
+        log_e(f, ##__VA_ARGS__);                                                                   \
+        exit(1);                                                                                   \
+    }
 #else
-#define RENDERER_PROFILE_START(v)
-#define RENDERER_PROFILE_END(v)
+static constexpr bool REND_ON_ERROR_EXIT = false;
+#define REND_EXIT_SIM
 #endif
+
+#if REND_DEBUGGING
+static constexpr bool REND_DEBUG = true;
+#define REND_WLOG(f, ...) log_w(f, ##__VA_ARGS__);
+#ifndef REND_ELOG
+#define REND_ELOG(f, ...) log_e(f, ##__VA_ARGS__);
+#endif
+#else
+static constexpr bool REND_DEBUG = false;
+#define REND_WLOG(...)
+#ifndef REND_ELOG
+#define REND_ELOG(...)
+#endif
+#endif
+
+#if REND_PROFILING
+#define REND_PROFILE_START(v) PROFILE_START(v)
+#define REND_PROFILE_END(v) PROFILE_END_LOG_MS(v)
+#else
+#define REND_PROFILE_START(v)
+#define REND_PROFILE_END(v)
+#endif
+
+#if REND_STATISTICS
+static constexpr bool REND_STATS = true;
+#else
+static constexpr bool REND_STATS = false;
+#endif
+
 // Used by the Tokenizer::getFileLocation() method in case of error
 static constexpr uint32_t LOCATION_ERROR = 0xFFFFFFFF;
 
@@ -79,11 +111,16 @@ enum class TokenId : uint16_t {
     HYPHEN = 32,       // ASCII hyphen "-"
     ENDASH = 64,       // Unicode En Dash (U+2013) "–"
     EMDASH = 128,      // Unicode Em Dash (U+2014) "—"
-    TAB = 256,         // Tab character
-    PICTURE = 512,     // Whole screen picture
-    EPICTURE = 1024,   // Embedded in page picture (between paragraphs) More than one can be present
-    HRULE = 2048       // Horizontal line
+    PICTURE = 256,     // Whole screen picture
+    EPICTURE = 512,    // Embedded in page picture (between paragraphs) More than one can be present
+    HRULE = 1024       // Horizontal line
 };
+
+#if REND_DEBUGGING
+static const char *TokenIdStr[] = {"TEXT",         "ITEXT",    "GTEXT",  "NEWLINE",
+                                   "ENDPARAGRAPH", "HYPHEN",   "ENDASH", "EMDASH",
+                                   "PICTURE",      "EPICTURE", "HRULE"};
+#endif
 
 // BitMask of all token ids that are using the pool space
 static const uint16_t POOL_TOKENS = (uint16_t)TokenId::TEXT | (uint16_t)TokenId::ITEXT |

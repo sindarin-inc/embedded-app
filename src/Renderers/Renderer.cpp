@@ -13,7 +13,7 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
                                  ? tokenizer_->getPlaceAtBeginningOfDocument()
                                  : tokenizer_->toStreamPlace(std::move(fromPlace));
 
-    RLOG("%s is place in file being requested.", startPlace.str().c_str());
+    REND_WLOG("%s is place in file being requested.", startPlace.str().c_str());
 
     // This needs to happen before loading into buffer since it will affect what we load into the
     // buffer.
@@ -44,9 +44,9 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
 
     uint8_t darkPicturePercent = pager_.displayPage(numSkipLines);
 
-    RLOG("Returning next page place to be %s", nextPlace_.str().c_str());
+    REND_WLOG("Returning next page place to be %s", nextPlace_.str().c_str());
 
-    if constexpr (RENDERER_STATS) {
+    if constexpr (REND_STATS) {
         showStats();
     }
 
@@ -124,7 +124,7 @@ auto Renderer::getPreviousPlace() -> std::shared_ptr<Place> {
 
     PROFILE_END_LOG_MS(goBackwardsOnePage);
 
-    RLOG("Computed place: %s", previousPlace_.str().c_str());
+    REND_WLOG("Computed place: %s", previousPlace_.str().c_str());
 
     return tokenizer_->toPlace(previousPlace_);
 }

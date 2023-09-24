@@ -45,8 +45,6 @@ public:
 private:
     void error() const {
         log_e("There is no stream defined for the Renderer");
-        if constexpr (ON_ERROR_EXIT) {
-            exit(1);
-        }
+        REND_EXIT_SIM;
     }
 };

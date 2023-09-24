@@ -13,9 +13,8 @@ EPubTokenizer::Tags EPubTokenizer::tags
      {"picture",       Tag::PICTURE}, {"source", Tag::SOURCE}, {"li",         Tag::LI}, 
      {"blockquote", Tag::BLOCKQUOTE}, {"pre",       Tag::PRE}, {"strong", Tag::STRONG}, 
      {"figure",         Tag::FIGURE}, {"sup",       Tag::SUP}, {"hr",         Tag::HR},
-     {"figcaption", Tag::FIGCAPTION}, {"*",         Tag::ANY}, {"@page",    Tag::PAGE},
-     {"@font-face",  Tag::FONT_FACE}, {"ol",         Tag::OL}, {"ul",         Tag::UL},
-     {"header",         Tag::HEADER}, {"sub",       Tag::SUB}, {"none",     Tag::NONE}
+     {"figcaption", Tag::FIGCAPTION}, {"*",         Tag::ANY}, {"ol",         Tag::OL},
+     {"header",         Tag::HEADER}, {"sub",       Tag::SUB}, {"ul",         Tag::UL}
     };
 
 // ToDo: Only put the ones that are defined in the Sol Font
@@ -204,7 +203,8 @@ auto EPubTokenizer::isEmpty(pugi::xml_node node) -> bool {
                     empty = false;
                     return false;
                 }
-            } else if (node.type() == pugi::xml_node_type::node_element) {
+            } else if ((node.type() == pugi::xml_node_type::node_element) &&
+                       (strcmp(node.name(), "span") != 0)) {
                 empty = false;
                 return false;
             }
@@ -316,7 +316,7 @@ auto EPubTokenizer::forwardToNextPageOffset(pugi::xml_node node) const -> uint32
 
     uint32_t theOffset = walker.started ? walker.offset : 9999999;
 
-    RLOG("Computed offset: %" PRIu32 ", search from offset: %" PRIu32, theOffset,
+    REND_WLOG("Computed offset: %" PRIu32 ", search from offset: %" PRIu32, theOffset,
             fromPlace_.getOffset());
 
     return theOffset;
@@ -347,24 +347,24 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
     toPlace_ = toPlace;
     backwards_ = backwards;
 
-    RLOG("Opening file at streamPlace %s, backwards: %s%s", fromPlace.str().c_str(),
-         (backwards ? "YES, Up to: " : "NO"), (toPlace == nullptr ? "" : toPlace->str().c_str()));
+    REND_WLOG("Opening file at streamPlace %s, backwards: %s%s", fromPlace.str().c_str(),
+              (backwards ? "YES, Up to: " : "NO"),
+              (toPlace == nullptr ? "" : toPlace->str().c_str()));
 
-    RENDERER_PROFILE_START(loadXHTMLFile)
+    REND_PROFILE_START(loadXHTMLFile)
     pugi::xml_document &doc = loadXHTMLAt(fromPlace.getFileIdx());
-    RENDERER_PROFILE_END(loadXHTMLFile)
+    REND_PROFILE_END(loadXHTMLFile)
 
-    RENDERER_PROFILE_START(tokenizeProcess);
+    REND_PROFILE_START(tokenizeProcess);
 
     pugi::xml_node node = doc.child("html").child("body").first_child();
 
     if (node) {
 
         currentStreamOffset_ = fromPlace_.getOffset();
-        skipNextParagraph_ = false;
         lastToken_ = nullptr;
 
-        started_ = false;
+        tokenizingStarted_ = false;
         pageCompleted_ = false;
         superscript_ = false;
 
@@ -373,6 +373,8 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
         savedBlockquoteLeftIndent_ = 0;
         savedBlockquoteRightIndent_ = 0;
+
+        hyperlinkRightBracket_ = false;
 
         tokens_.clear();
         pager_.clear();
@@ -400,16 +402,14 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
     } else {
         log_e("File is of the wrong format");
-        if constexpr (ON_ERROR_EXIT) {
-            exit(1);
-        }
+        REND_EXIT_SIM;
     }
 
-    RLOG("End of job: Page start: %s, next page at: %s",
-         pager_.getStreamPlaceOfFirstLine().str().c_str(),
-         pager_.getNextPageStreamPlace().str().c_str());
+    REND_WLOG("End of job: Page start: %s, next page at: %s",
+              pager_.getStreamPlaceOfFirstLine().str().c_str(),
+              pager_.getNextPageStreamPlace().str().c_str());
 
-    RENDERER_PROFILE_END(tokenizeProcess);
+    REND_PROFILE_END(tokenizeProcess);
 
     return {pager_.getStreamPlaceOfFirstLine(), pager_.getNextPageStreamPlace()};
 }
@@ -432,7 +432,7 @@ auto EPubTokenizer::getStreamPlaceFromTxtOffset(uint32_t txtOffset) const -> Str
         }
     }
 
-    RLOG("txtOffset not found!");
+    REND_WLOG("txtOffset not found!");
 
     return {0, 0};
 }
@@ -448,9 +448,7 @@ auto EPubTokenizer::toStreamPlace(const std::shared_ptr<Place> place) const -> S
         return pl;
     } else {
         log_e("Wrong Place Type: %" PRIu8, static_cast<uint8_t>(place->getDocType()));
-        if constexpr (ON_ERROR_EXIT) {
-            exit(1);
-        }
+        REND_EXIT_SIM;
     }
 
     return {};
@@ -460,8 +458,7 @@ void EPubTokenizer::processPictureTag(pugi::xml_node node) {
 
     pugi::xml_node source = node.find_child_by_attribute("source", "class", "dithered");
 
-    if (source) {
-        // skipNextParagraph_ = true;
+    if (source && tokenizingStarted_) {
         Token &pictureToken = tokens_.getNextAvailable();
         pictureToken = {.cStr = nullptr,
                         .picture = nullptr,
@@ -471,39 +468,42 @@ void EPubTokenizer::processPictureTag(pugi::xml_node node) {
                         .length = 0,
                         .tokenId = TokenId::PICTURE,
                         .spacesAfter = 0};
+
         std::string pictureFilePath = stream_->getRelativeFilePath(
             source.attribute("srcset").value(), fromPlace_.getFileIdx());
         tokens_.addStr(pictureToken, pictureFilePath);
 
-        RENDERER_PROFILE_START(ReadPictureFromEPub);
-        auto [buffer, len] = stream_->getFile(pictureFilePath);
-        RENDERER_PROFILE_END(ReadPictureFromEPub);
+        pictureToken.pixWidth = pictureToken.pixHeight = 0;
 
-        if (buffer != nullptr) {
-            pictureToken.picture = std::make_shared<BMPImage>();
-            if (!pictureToken.picture->readFromBytes(buffer.get(), len)) {
-                log_e("Unable ro retrieve the BMP picture from EPub");
-                if constexpr (ON_ERROR_EXIT) {
-                    exit(1);
+        // Optimization: if <source> contains the width and height, the picture will
+        // be loaded at the page generation time.
+        if (source.attribute("width") && source.attribute("height")) {
+            pictureToken.pixWidth = atoi(source.attribute("width").value());
+            pictureToken.pixHeight = atoi(source.attribute("height").value());
+            pictureToken.picture = nullptr;
+        } else {
+            REND_ELOG("Loading picture at the wrong moment!");
+
+            REND_PROFILE_START(ReadPictureFromEPub);
+            auto [buffer, len] = stream_->getFile(pictureFilePath);
+            REND_PROFILE_END(ReadPictureFromEPub);
+
+            if (buffer != nullptr) {
+                pictureToken.picture = std::make_shared<BMPImage>();
+                if (!pictureToken.picture->readFromBytes(buffer.get(), len)) {
+                    log_e("Unable ro retrieve the BMP picture from EPub");
+                    REND_EXIT_SIM;
+                } else {
+                    pictureToken.pixHeight = pictureToken.picture->getHeight();
+                    pictureToken.pixWidth = pictureToken.picture->getWidth();
                 }
             } else {
-                pictureToken.pixHeight = pictureToken.picture->getHeight();
-                pictureToken.pixWidth = pictureToken.picture->getWidth();
-                if (((pictureToken.pixHeight + ENDPARAGRAPH_DECI_LINE_HEIGHT)) <
-                    display_.height()) {
-                    pictureToken.tokenId = TokenId::EPICTURE;
-                    // skipNextParagraph_ = false;
-                }
-                RLOG("Picture retrieved, length: %" PRIu32 ". Full page picture: %s", len,
-                     pictureToken.tokenId == TokenId::PICTURE ? "YES" : "NO");
+                REND_ELOG("buffer is empty!");
             }
-        } else {
-            if constexpr (RENDERER_DEBUG) {
-                log_e("buffer is empty!");
-                if constexpr (ON_ERROR_EXIT) {
-                    exit(1);
-                }
-            }
+        }
+
+        if (((pictureToken.pixHeight + ENDPARAGRAPH_DECI_LINE_HEIGHT)) < display_.height()) {
+            pictureToken.tokenId = TokenId::EPICTURE;
         }
 
         lastToken_ = nullptr;
@@ -592,9 +592,7 @@ auto EPubTokenizer::addTokenToPage(Token &token, const char *str, uint8_t strSiz
 
         log_e("Internal error. Tokens::tokens_[] circular array not expected to be full. Not large "
               "enough!");
-        if constexpr (ON_ERROR_EXIT) {
-            exit(1);
-        }
+        REND_EXIT_SIM;
 
         return true;
     }
@@ -624,9 +622,13 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
         // log_w("Interpreting node element <%s> at offset %" PRIu32, node.name(),
         //       currentStreamOffset_);
 
-        if (!started_ && (currentStreamOffset_ >= fromPlace_.getOffset())) {
-            started_ = true;
-            RLOG("Started at %" PRIu32, currentStreamOffset_);
+        if (!tokenizingStarted_) {
+            if (currentStreamOffset_ >= fromPlace_.getOffset()) {
+                tokenizingStarted_ = true;
+                REND_WLOG("Started at %" PRIu32, currentStreamOffset_);
+                // } else if (findNodeEndOffset(node) < fromPlace_.getOffset()) {
+                //     return true;
+            }
         }
 
         auto tagIt = tags.find(node.name());
@@ -647,19 +649,18 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
             case Tag::H4:
             case Tag::H5:
             case Tag::H6:
-                if (isEmpty(node) || skipNextParagraph_) {
-                    skipNextParagraph_ = false;
+                if (isEmpty(node)) {
                     return true;
                 }
                 break;
 
             case Tag::BLOCKQUOTE:
                 if (savedLeftIndent_ == 0) {
-                    savedBlockquoteLeftIndent_ = 40;
-                    savedBlockquoteRightIndent_ = 40;
+                    savedBlockquoteLeftIndent_ = 30;
+                    savedBlockquoteRightIndent_ = 30;
                 } else {
                     savedBlockquoteLeftIndent_ = 15;
-                    savedBlockquoteRightIndent_ = 40;
+                    savedBlockquoteRightIndent_ = 30;
                 }
                 // std::tie(savedLeftIndent_, savedPixRightIndent_) = pager_.getLineIndent();
                 pager_.setLineIndent(savedLeftIndent_ + savedBlockquoteLeftIndent_,
@@ -667,9 +668,12 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 break;
 
             case Tag::PICTURE:
-                if (started_) {
+                if (tokenizingStarted_) {
                     // log_w("Picture found...");
                     processPictureTag(node);
+                    if (pageCompleted_) {
+                        return false;
+                    }
                 }
                 return true;
 
@@ -678,7 +682,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 break;
 
             case Tag::OL:
-                if (started_ && (listLevel_ >= 0)) {
+                if (tokenizingStarted_ && (listLevel_ >= 0)) {
                     Token &newToken = tokens_.getNextAvailable();
                     newToken = {.cStr = "\n",
                                 .picture = nullptr,
@@ -703,7 +707,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 break;
 
             case Tag::UL:
-                if (started_ && (listLevel_ >= 0)) {
+                if (tokenizingStarted_ && (listLevel_ >= 0)) {
                     Token &newToken = tokens_.getNextAvailable();
                     newToken = {.cStr = "\n",
                                 .picture = nullptr,
@@ -742,8 +746,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 } else {
                     savedLeftIndent_ = 0;
                 }
+                listSeqNbr_[listLevel_]++;
 
-                if (!tokens_.isFull() && !skipNextParagraph_ && started_ && (listLevel_ >= 0)) {
+                if (tokenizingStarted_ && (listLevel_ >= 0)) {
                     Token &newToken = tokens_.getNextAvailable();
                     // log_w("LI start: %s", listLineStart_);
                     newToken = {.cStr = nullptr,
@@ -761,8 +766,36 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                         return false;
                     }
                 }
-                listSeqNbr_[listLevel_]++;
             } break;
+
+            case Tag::A:
+                if (tokenizingStarted_) {
+                    const pugi::char_t *v = node.child_value();
+                    if (!superscript_ && (v[0] != '\0') && (v[0] != '(') && (v[0] != '[') &&
+                        (v[0] != '<') && (v[0] != '{')) {
+                        hyperlinkRightBracket_ = true;
+                        if (lastToken_ != nullptr) {
+                            lastToken_->spacesAfter++;
+                            if (lastToken_->spacesAfter == 1) {
+                                pager_.addSpaceWidth();
+                            }
+                        }
+                        Token &newToken = tokens_.getNextAvailable();
+                        newToken = {.cStr = "[",
+                                    .picture = nullptr,
+                                    .streamPlace = {currentStreamOffset_, fromPlace_.getFileIdx()},
+                                    .pixWidth = 0,
+                                    .pixHeight = 0,
+                                    .length = 1,
+                                    .tokenId = TokenId::TEXT,
+                                    .spacesAfter = 0};
+                        lastToken_ = nullptr;
+                        if (addTokenToPage(newToken)) {
+                            return false;
+                        }
+                    }
+                }
+                break;
 
             default:
                 break;
@@ -778,12 +811,13 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
         }
 
         // End of the node element processing
-        currentStreamOffset_ = findNodeEndOffset(node);
-        RLOG("Offset at the end of the node: %" PRIu32, currentStreamOffset_);
 
-        if (!started_ && (currentStreamOffset_ >= fromPlace_.getOffset())) {
-            started_ = true;
-            RLOG("Started at %" PRIu32, currentStreamOffset_);
+        currentStreamOffset_ = findNodeEndOffset(node);
+        // REND_WLOG("Offset at the end of the node: %" PRIu32, currentStreamOffset_);
+
+        if (!tokenizingStarted_ && (currentStreamOffset_ >= fromPlace_.getOffset())) {
+            tokenizingStarted_ = true;
+            REND_WLOG("Started at %" PRIu32, currentStreamOffset_);
         }
 
         if (!pageCompleted_) {
@@ -797,7 +831,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 case Tag::H5:
                 case Tag::H6:
                 case Tag::HEADER:
-                    if (!tokens_.isFull() && !skipNextParagraph_ && started_) {
+                    if (tokenizingStarted_) {
                         Token &newToken = tokens_.getNextAvailable();
                         newToken = {.cStr = "\n",
                                     .picture = nullptr,
@@ -826,27 +860,18 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     break;
 
                 case Tag::BREAK:
-                    // put a NEWLINE
-                    if (!tokens_.isFull() && started_) {
-                        Token &newToken = tokens_.getNextAvailable();
-                        newToken = {.cStr = " ",
-                                    .picture = nullptr,
-                                    .streamPlace = {currentStreamOffset_, fromPlace_.getFileIdx()},
-                                    .pixWidth = 0,
-                                    .pixHeight = 0,
-                                    .length = 1,
-                                    .tokenId = TokenId::TEXT,
-                                    .spacesAfter = 0};
-                        lastToken_ = &newToken;
-                        if (addTokenToPage(newToken)) {
-                            return false;
+                    // put a SPACE
+                    if ((lastToken_ != nullptr) && tokenizingStarted_) {
+                        lastToken_->spacesAfter++;
+                        if (lastToken_->spacesAfter == 1) {
+                            pager_.addSpaceWidth();
                         }
                     }
                     break;
 
                 case Tag::HR:
                     // put a NEWLINE
-                    if (!tokens_.isFull() && started_) {
+                    if (tokenizingStarted_) {
                         Token &newToken = tokens_.getNextAvailable();
                         newToken = {.cStr = "\n",
                                     .picture = nullptr,
@@ -867,7 +892,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     if (listLevel_ >= 0) {
                         listLevel_ -= 1;
                     }
-                    if (!tokens_.isFull() && !skipNextParagraph_ && started_) {
+                    if (tokenizingStarted_) {
                         Token &newToken = tokens_.getNextAvailable();
                         newToken = {.cStr = "\n",
                                     .picture = nullptr,
@@ -889,7 +914,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     if (listLevel_ >= 0) {
                         listLevel_ -= 1;
                     }
-                    if (!tokens_.isFull() && !skipNextParagraph_ && started_) {
+                    if (tokenizingStarted_) {
                         Token &newToken = tokens_.getNextAvailable();
                         newToken = {.cStr = "\n",
                                     .picture = nullptr,
@@ -909,7 +934,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
 
                 case Tag::LI:
                     // log_w("</LI>");
-                    if (!tokens_.isFull() && !skipNextParagraph_ && started_) {
+                    if (tokenizingStarted_) {
                         Token &newToken = tokens_.getNextAvailable();
                         newToken = {.cStr = "\n",
                                     .picture = nullptr,
@@ -923,9 +948,28 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                         if (addTokenToPage(newToken)) {
                             return false;
                         }
-                        pager_.setLineIndent(0, 0);
                     }
+                    pager_.setLineIndent(0, 0);
                     savedLeftIndent_ = 0;
+                    break;
+
+                case Tag::A:
+                    if (tokenizingStarted_ && hyperlinkRightBracket_) {
+                        hyperlinkRightBracket_ = false;
+                        Token &newToken = tokens_.getNextAvailable();
+                        newToken = {.cStr = "]",
+                                    .picture = nullptr,
+                                    .streamPlace = {currentStreamOffset_, fromPlace_.getFileIdx()},
+                                    .pixWidth = 0,
+                                    .pixHeight = 0,
+                                    .length = 1,
+                                    .tokenId = TokenId::TEXT,
+                                    .spacesAfter = 0};
+                        lastToken_ = &newToken;
+                        if (addTokenToPage(newToken)) {
+                            return false;
+                        }
+                    }
                     break;
 
                 default:
@@ -942,15 +986,15 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
         currentStreamOffset_ = node.offset_debug(); // stream_->getOffset(str);
         uint32_t len = strlen(str); // don't like that. Lenght not available from pugixml...
 
-        if (!started_) {
+        if (!tokenizingStarted_) {
             if ((currentStreamOffset_ + len) >= fromPlace_.getOffset()) {
-                started_ = true;
+                tokenizingStarted_ = true;
                 uint32_t bypass = (fromPlace_.getOffset() > currentStreamOffset_)
                                       ? fromPlace_.getOffset() - currentStreamOffset_
                                       : 0;
 
-                RLOG("Starting at %" PRIu32 ", bypass: %" PRIu32 ", length: %" PRIu32,
-                     currentStreamOffset_ + bypass, bypass, len);
+                REND_WLOG("Starting at %" PRIu32 ", bypass: %" PRIu32 ", length: %" PRIu32,
+                          currentStreamOffset_ + bypass, bypass, len);
 
                 currentStreamOffset_ += bypass;
                 if (str[bypass] == '\0') {
@@ -973,7 +1017,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
 
     uint32_t streamOffset = currentStreamOffset_;
 
-    // RLOG("Started at offset: %" PRIu32, streamOffset);
+    // REND_WLOG("Started at offset: %" PRIu32, streamOffset);
 
     uint8_t curChar = *str++;
     len--;
@@ -990,14 +1034,14 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
         }
     };
 
-    // RLOG("First Character: %c (%02" PRIX8 "H)",
+    // REND_WLOG("First Character: %c (%02" PRIX8 "H)",
     //       (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '), curChar);
 
-    while ((!pageCompleted_) && (curChar != 0) && (!tokens_.isFull())) {
+    while ((!pageCompleted_) && (curChar != 0)) {
 
-        // RLOG("Set the stream place to %s",
+        // REND_WLOG("Set the stream place to %s",
         //       addOffset(fromPlace, streamOffset).str().c_str());
-        // RLOG("Current Character: %c (%02" PRIX8 "H)",
+        // REND_WLOG("Current Character: %c (%02" PRIX8 "H)",
         //       (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '), curChar);
 
         if (superscript_) {
@@ -1127,10 +1171,12 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                     pageCompleted_ = addTokenToPage(newToken);
                 }
             }
-        } else if (curChar == ' ') {
+        } else if ((curChar == ' ') || (curChar == '\t')) {
             if (lastToken_ != nullptr) {
                 lastToken_->spacesAfter++;
-                pager_.addSpaceWidth();
+                if (lastToken_->spacesAfter == 1) {
+                    pager_.addSpaceWidth();
+                }
                 // } else {
                 // log_e("Lost a space....");
             }
@@ -1163,24 +1209,24 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
             //         }
             //     }
             // }
-        } else if (curChar == '\t') {
-            Token &newToken = tokens_.getNextAvailable();
+            // } else if (curChar == '\t') {
+            //     Token &newToken = tokens_.getNextAvailable();
 
-            newToken = {.cStr = nullptr,
-                        .picture = nullptr,
-                        .streamPlace = {streamOffset, fromPlace_.getFileIdx()},
-                        .pixWidth = 0,
-                        .pixHeight = 0,
-                        .length = 0,
-                        .tokenId = TokenId::TAB,
-                        .spacesAfter = 0};
+            //     newToken = {.cStr = nullptr,
+            //                 .picture = nullptr,
+            //                 .streamPlace = {streamOffset, fromPlace_.getFileIdx()},
+            //                 .pixWidth = 0,
+            //                 .pixHeight = 0,
+            //                 .length = 0,
+            //                 .tokenId = TokenId::TAB,
+            //                 .spacesAfter = 0};
 
-            lastToken_ = &newToken; // Must be done before calling addTokenToPage()
+            //     lastToken_ = &newToken; // Must be done before calling addTokenToPage()
 
-            // After the following call, newToken may become irrelevant
-            pageCompleted_ = addTokenToPage(newToken, "\t", 1);
+            //     // After the following call, newToken may become irrelevant
+            //     pageCompleted_ = addTokenToPage(newToken, "\t", 1);
 
-            nextByte();
+            //     nextByte();
         }
     }
 
@@ -1190,17 +1236,14 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
     //     tokens_.forgetLast();
     // }
 
-    // RLOG("Computed Word Count: %" PRIu16, pager_.getWordCount());
-    // RLOG("Tokens Count: %" PRIu16, tokens_.getTokenCount());
+    // REND_WLOG("Computed Word Count: %" PRIu16, pager_.getWordCount());
+    // REND_WLOG("Tokens Count: %" PRIu16, tokens_.getTokenCount());
 
     currentStreamOffset_ = streamOffset + 1;
 
-    if constexpr (RENDERER_DEBUG) {
+    if constexpr (REND_DEBUG) {
         if (tokens_.isFull()) {
-            log_e("Tokens_[] is full");
-            if constexpr (ON_ERROR_EXIT) {
-                exit(1);
-            }
+            REND_ELOG("Tokens_[] is full");
         }
     }
 

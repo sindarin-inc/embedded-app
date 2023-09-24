@@ -9,7 +9,7 @@
 
 class Place {
 private:
-    static constexpr bool ON_ERROR_EXIT = true;
+    static constexpr bool REND_ON_ERROR_EXIT = true;
 
 public:
     virtual ~Place() = default;

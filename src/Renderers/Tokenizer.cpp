@@ -16,12 +16,11 @@ auto Tokenizer::factory(std::shared_ptr<RendererStream> stream, DisplaySystem &d
     } else {
         log_e("Stream is of wrong type (must be TXT or EPUB)!: %" PRIu8,
               static_cast<uint8_t>(stream->getDocType()));
-        if constexpr (ON_ERROR_EXIT) {
-            exit(1);
-        }
+        REND_EXIT_SIM;
         tokenizer = std::make_shared<NullTokenizer>(display, tokens, pager);
     }
-    tokenizer->setStream(std::move(stream));
+    tokenizer->setStream(stream);
+    pager.setStream(std::move(stream));
 
     return tokenizer;
 }

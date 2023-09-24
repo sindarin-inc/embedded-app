@@ -34,12 +34,10 @@ private:
                 cStrPoolTailIdx_ = token.length;
             } else {
                 log_e("cStrPool_[] is too small!");
-                if constexpr (ON_ERROR_EXIT) {
-                    exit(1);
-                }
+                REND_EXIT_SIM;
             }
         }
-        if constexpr (RENDERER_STATS) {
+        if constexpr (REND_STATS) {
             uint16_t count = getCStrPoolCount();
             if (count > maxCStrPoolCount_) {
                 maxCStrPoolCount_ = count;
@@ -53,16 +51,15 @@ public:
         return tokens_[idx];
     }
 
+    [[nodiscard]] inline auto tokenAt(renderer_defs::Idx idx) -> Token & { return tokens_[idx]; }
+
     [[nodiscard]] inline auto getMaxTokensCount() const -> uint16_t { return maxTokensCount_; }
     [[nodiscard]] inline auto getMaxCStrPoolCount() const -> uint16_t { return maxCStrPoolCount_; }
 
     [[nodiscard]] inline auto getLastIdx() const -> Idx {
-        if constexpr (RENDERER_DEBUG) {
+        if constexpr (REND_DEBUG) {
             if (isEmpty()) {
-                log_e("forgetLast(): tokens is empty!");
-                if constexpr (ON_ERROR_EXIT) {
-                    exit(1);
-                }
+                REND_ELOG("forgetLast(): tokens is empty!");
             }
         }
 
@@ -71,12 +68,9 @@ public:
 
     [[nodiscard]] inline auto getLast() -> Token & {
 
-        if constexpr (RENDERER_DEBUG) {
+        if constexpr (REND_DEBUG) {
             if (isEmpty()) {
-                log_e("getLast(): tokens is empty!");
-                if constexpr (ON_ERROR_EXIT) {
-                    exit(1);
-                }
+                REND_ELOG("getLast(): tokens is empty!");
             }
         }
         return tokens_[getLastIdx()];
@@ -91,12 +85,9 @@ public:
     // The caller must have checked that there is at least 2 entries in the tokens ring before using
     // this method!!
     [[nodiscard]] inline auto getBeforeLast() -> Token & {
-        if constexpr (RENDERER_DEBUG) {
+        if constexpr (REND_DEBUG) {
             if (getTokenCount() < 2) {
-                log_e("getBeforeLast(): tokens not large enough!");
-                if constexpr (ON_ERROR_EXIT) {
-                    exit(1);
-                }
+                REND_ELOG("getBeforeLast(): tokens not large enough!");
             }
         }
         return tokens_[(tokensTailIdx_ > 1) ? (tokensTailIdx_ - 2)
@@ -104,12 +95,9 @@ public:
     }
 
     inline void forgetLast() {
-        if constexpr (RENDERER_DEBUG) {
+        if constexpr (REND_DEBUG) {
             if (tokensHeadIdx_ == tokensTailIdx_) {
-                log_e("forgetLast(): tokens is empty!");
-                if constexpr (ON_ERROR_EXIT) {
-                    exit(1);
-                }
+                REND_ELOG("forgetLast(): tokens is empty!");
             }
         }
 
@@ -146,7 +134,7 @@ public:
         cStrPool_[cStrPoolTailIdx_] = 0;
         cStrPoolTailIdx_ = (cStrPoolTailIdx_ + 1) % CSTR_POOL_SIZE;
 
-        if constexpr (RENDERER_STATS) {
+        if constexpr (REND_STATS) {
             uint16_t count = getCStrPoolCount();
             if (count > maxCStrPoolCount_) {
                 maxCStrPoolCount_ = count;
@@ -157,7 +145,7 @@ public:
     inline void clear() {
         tokensTailIdx_ = cStrPoolTailIdx_ = 0;
         tokensHeadIdx_ = cStrPoolHeadIdx_ = 0;
-        if constexpr (RENDERER_STATS) {
+        if constexpr (REND_STATS) {
             maxTokensCount_ = maxCStrPoolCount_ = 0;
         }
     }
@@ -166,12 +154,9 @@ public:
     void showToken(Idx tokenIdx) const;
 
     [[nodiscard]] inline auto getNextAvailable() -> Token & {
-        if constexpr (RENDERER_DEBUG) {
+        if constexpr (REND_DEBUG) {
             if (isFull()) {
-                log_e("forgetLast(): tokens[] is full!");
-                if constexpr (ON_ERROR_EXIT) {
-                    exit(1);
-                }
+                REND_ELOG("forgetLast(): tokens[] is full!");
             }
         }
         return tokens_[tokensTailIdx_];
@@ -179,17 +164,14 @@ public:
 
     inline void advanceTokenTail() {
 
-        if constexpr (RENDERER_DEBUG) {
+        if constexpr (REND_DEBUG) {
             if (isFull()) {
-                log_e("forgetLast(): tokens[] is full!");
-                if constexpr (ON_ERROR_EXIT) {
-                    exit(1);
-                }
+                REND_ELOG("forgetLast(): tokens[] is full!");
             }
         }
         tokensTailIdx_ = (tokensTailIdx_ + 1) % TOKENS_SIZE;
 
-        if constexpr (RENDERER_STATS) {
+        if constexpr (REND_STATS) {
             uint16_t count = getTokenCount();
             if (count > maxTokensCount_) {
                 maxTokensCount_ = count;
