@@ -19,7 +19,7 @@ EPubTokenizer::Tags EPubTokenizer::tags
 
 // ToDo: Only put the ones that are defined in the Sol Font
 
-EPubTokenizer::Elements EPubTokenizer::elements 
+EPubTokenizer::Entities EPubTokenizer::entities 
   = {
     {"nbsp",   "\xC2\xA0"},     // no-break space = non-breaking space, U+00A0 ISOnum
     {"iexcl",  "\xC2\xA1"},     // inverted exclamation mark, U+00A1 ISOnum
@@ -237,21 +237,62 @@ auto EPubTokenizer::goBackward(StreamPlace streamPlace, uint32_t offsetToSubtrac
     }
 }
 
+auto EPubTokenizer::toUtf8(uint32_t val) -> char * {
+    char *s = utf8Ch_;
+    if (val <= 0x7F) {
+        // Plain ASCII
+        *s++ = (char)val;
+        *s = 0;
+    } else if (val <= 0x07FF) {
+        // 2-byte unicode
+        *s++ = (char)(((val >> 6) & 0x1F) | 0xC0);
+        *s++ = (char)(((val >> 0) & 0x3F) | 0x80);
+        *s = 0;
+    } else if (val <= 0xFFFF) {
+        // 3-byte unicode
+        *s++ = (char)(((val >> 12) & 0x0F) | 0xE0);
+        *s++ = (char)(((val >> 6) & 0x3F) | 0x80);
+        *s++ = (char)(((val >> 0) & 0x3F) | 0x80);
+        *s = 0;
+    } else if (val <= 0x10FFFF) {
+        // 4-byte unicode
+        *s++ = (char)(((val >> 18) & 0x07) | 0xF0);
+        *s++ = (char)(((val >> 12) & 0x3F) | 0x80);
+        *s++ = (char)(((val >> 6) & 0x3F) | 0x80);
+        *s++ = (char)(((val >> 0) & 0x3F) | 0x80);
+        *s = 0;
+    } else {
+        // error - use replacement character
+        *s++ = (char)0xEF;
+        *s++ = (char)0xBF;
+        *s++ = (char)0xBD;
+        *s = 0;
+    }
+    return utf8Ch_;
+}
+
 // An entity as been detected, find it in the table to translate it to the right UTF8 character.
 // It has the form &xxx; in text.
-auto EPubTokenizer::getCharEntity(const char *str, const char **newStrLocation) const -> const
-    char * {
-    const char *start = str;
+auto EPubTokenizer::getCharEntity(const char *str, const char **newStrLocation) -> const char * {
     unsigned int len = 0;
+    bool number = *str == '#';
+    if (number) {
+        str++;
+    }
+    const char *start = str;
     while ((len++ < 10) && (*str != '\0') && (*str != ';')) {
         str++;
     }
+    std::string theStr = std::string(start, str - start);
     if (*str == ';') {
-        auto search = elements.at(std::string(start, str - start));
-        str++;
-        if (search != nullptr) {
-            *newStrLocation = str;
-            return search;
+        *newStrLocation = ++str;
+        if (number) {
+            return toUtf8(atoi(theStr.c_str()));
+        } else {
+            auto search = entities.at(theStr);
+            if (search != nullptr) {
+                return search;
+            }
         }
     }
 
@@ -375,6 +416,9 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
         savedBlockquoteRightIndent_ = 0;
 
         hyperlinkRightBracket_ = false;
+        startOfHeader_ = false;
+
+        preText_[0] = postText_[0] = '\0';
 
         tokens_.clear();
         pager_.clear();
@@ -652,15 +696,18 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 if (isEmpty(node)) {
                     return true;
                 }
+                if (tagIt->second != Tag::P) {
+                    startOfHeader_ = true;
+                }
                 break;
 
             case Tag::BLOCKQUOTE:
                 if (savedLeftIndent_ == 0) {
-                    savedBlockquoteLeftIndent_ = 30;
-                    savedBlockquoteRightIndent_ = 30;
+                    savedBlockquoteLeftIndent_ = 20;
+                    savedBlockquoteRightIndent_ = 20;
                 } else {
-                    savedBlockquoteLeftIndent_ = 15;
-                    savedBlockquoteRightIndent_ = 30;
+                    savedBlockquoteLeftIndent_ = 12;
+                    savedBlockquoteRightIndent_ = 20;
                 }
                 // std::tie(savedLeftIndent_, savedPixRightIndent_) = pager_.getLineIndent();
                 pager_.setLineIndent(savedLeftIndent_ + savedBlockquoteLeftIndent_,
@@ -702,7 +749,8 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 if (listLevel_ < (MaxLevelCount - 2)) {
                     listLevel_ += 1;
                     listType_[listLevel_] = ListType::ORDERED;
-                    listSeqNbr_[listLevel_] = 0;
+                    pugi::xml_attribute attr = node.attribute("start");
+                    listSeqNbr_[listLevel_] = attr ? atoi(attr.value()) : 1;
                 }
                 break;
 
@@ -727,7 +775,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 if (listLevel_ < (MaxLevelCount - 2)) {
                     listLevel_ += 1;
                     listType_[listLevel_] = ListType::UNORDERED;
-                    listSeqNbr_[listLevel_] = 0;
+                    listSeqNbr_[listLevel_] = 1;
                 }
                 break;
 
@@ -736,8 +784,11 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
 
                 if (listLevel_ >= 0) {
                     if (listType_[listLevel_] == ListType::ORDERED) {
+                        pugi::xml_attribute attr = node.attribute("value");
+                        int32_t seqNbr = attr ? atoi(attr.value()) : listSeqNbr_[listLevel_];
                         (void)sprintf(listLineStart, "%*s%" PRIu16 ".  ", listLevel_ * 5, "",
-                                      listSeqNbr_[listLevel_] + 1);
+                                      seqNbr);
+                        listSeqNbr_[listLevel_] = ++seqNbr;
                     } else {
                         (void)sprintf(listLineStart, "%*s%c  ", listLevel_ * 4, "",
                                       levelChar_[listLevel_]);
@@ -746,7 +797,6 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 } else {
                     savedLeftIndent_ = 0;
                 }
-                listSeqNbr_[listLevel_]++;
 
                 if (tokenizingStarted_ && (listLevel_ >= 0)) {
                     Token &newToken = tokens_.getNextAvailable();
@@ -768,34 +818,39 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 }
             } break;
 
-            case Tag::A:
-                if (tokenizingStarted_) {
-                    const pugi::char_t *v = node.child_value();
-                    if (!superscript_ && (v[0] != '\0') && (v[0] != '(') && (v[0] != '[') &&
-                        (v[0] != '<') && (v[0] != '{')) {
-                        hyperlinkRightBracket_ = true;
-                        if (lastToken_ != nullptr) {
-                            lastToken_->spacesAfter++;
-                            if (lastToken_->spacesAfter == 1) {
-                                pager_.addSpaceWidth();
-                            }
-                        }
-                        Token &newToken = tokens_.getNextAvailable();
-                        newToken = {.cStr = "[",
-                                    .picture = nullptr,
-                                    .streamPlace = {currentStreamOffset_, fromPlace_.getFileIdx()},
-                                    .pixWidth = 0,
-                                    .pixHeight = 0,
-                                    .length = 1,
-                                    .tokenId = TokenId::TEXT,
-                                    .spacesAfter = 0};
-                        lastToken_ = nullptr;
-                        if (addTokenToPage(newToken)) {
-                            return false;
-                        }
-                    }
+            case Tag::A: {
+                const pugi::char_t *v = node.child_value();
+                if (!superscript_ && (v[0] != '\0') && (v[0] != '(') && (v[0] != '[') &&
+                    (v[0] != '<') && (v[0] != '{')) {
+                    preText_[0] = '[';
+                    postText_[0] = ']';
+                    preText_[1] = postText_[1] = '\0';
                 }
-                break;
+                // hyperlinkRightBracket_ = (!superscript_ && (v[0] != '\0') && (v[0] != '(') &&
+                //                           (v[0] != '[') && (v[0] != '<') && (v[0] != '{'));
+
+                // if (tokenizingStarted_) {
+                //     if (lastToken_ != nullptr) {
+                //         lastToken_->spacesAfter++;
+                //         if (lastToken_->spacesAfter == 1) {
+                //             pager_.addSpaceWidth();
+                //         }
+                //     }
+                //     Token &newToken = tokens_.getNextAvailable();
+                //     newToken = {.cStr = "[",
+                //                 .picture = nullptr,
+                //                 .streamPlace = {currentStreamOffset_, fromPlace_.getFileIdx()},
+                //                 .pixWidth = 0,
+                //                 .pixHeight = 0,
+                //                 .length = 1,
+                //                 .tokenId = TokenId::TEXT,
+                //                 .spacesAfter = 0};
+                //     lastToken_ = nullptr;
+                //     if (addTokenToPage(newToken)) {
+                //         return false;
+                //     }
+                // }
+            } break;
 
             default:
                 break;
@@ -954,23 +1009,31 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     break;
 
                 case Tag::A:
-                    if (tokenizingStarted_ && hyperlinkRightBracket_) {
-                        hyperlinkRightBracket_ = false;
-                        Token &newToken = tokens_.getNextAvailable();
-                        newToken = {.cStr = "]",
-                                    .picture = nullptr,
-                                    .streamPlace = {currentStreamOffset_, fromPlace_.getFileIdx()},
-                                    .pixWidth = 0,
-                                    .pixHeight = 0,
-                                    .length = 1,
-                                    .tokenId = TokenId::TEXT,
-                                    .spacesAfter = 0};
-                        lastToken_ = &newToken;
-                        if (addTokenToPage(newToken)) {
-                            return false;
-                        }
+                    if (tokenizingStarted_ && (postText_[0] != '\0')) {
+                        Token &token = tokens_.getLast();
+                        tokens_.insertBytesAtEnd(token, postText_);
                     }
+                    preText_[0] = postText_[0] = '\0';
                     break;
+                    //     if (hyperlinkRightBracket_) {
+                    //         hyperlinkRightBracket_ = false;
+                    //         if (tokenizingStarted_) {
+                    //             Token &newToken = tokens_.getNextAvailable();
+                    //             newToken = {
+                    //                 .cStr = "]",
+                    //                 .picture = nullptr,
+                    //                 .streamPlace = {currentStreamOffset_,
+                    //                 fromPlace_.getFileIdx()}, .pixWidth = 0, .pixHeight = 0,
+                    //                 .length = 1,
+                    //                 .tokenId = TokenId::TEXT,
+                    //                 .spacesAfter = 0};
+                    //             lastToken_ = &newToken;
+                    //             if (addTokenToPage(newToken)) {
+                    //                 return false;
+                    //             }
+                    //         }
+                    //     }
+                    //     break;
 
                 default:
                     break;
@@ -998,8 +1061,12 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
 
                 currentStreamOffset_ += bypass;
                 if (str[bypass] == '\0') {
+                    preText_[0] = postText_[0] = '\0';
                     return true;
                 } else {
+                    if (bypass > 0) {
+                        preText_[0] = '\0';
+                    }
                     return addStrToPage(str + bypass, len - bypass);
                 }
             } else {
@@ -1037,6 +1104,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
     // REND_WLOG("First Character: %c (%02" PRIX8 "H)",
     //       (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '), curChar);
 
+    bool beginingOfStr = true;
     while ((!pageCompleted_) && (curChar != 0)) {
 
         // REND_WLOG("Set the stream place to %s",
@@ -1090,28 +1158,46 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                         .spacesAfter = 0};
             lastToken_ = &newToken; // Must be done before calling addTokenToPage()
 
+            if (beginingOfStr && (preText_[0] != '\0')) {
+                tokens_.addBytes(newToken, preText_);
+                preText_[0] = '\0';
+            }
+
             if (curChar == '-') {
+                newToken.tokenId = startOfHeader_ ? TokenId::HTEXT : TokenId::HYPHEN;
+                startOfHeader_ = false;
+                tokens_.addByte(newToken, '-');
                 nextByte();
-                if (curChar != '-') {
-                    newToken.tokenId = TokenId::HYPHEN;
-                    // After the following call, newToken may become irrelevant
-                    pageCompleted_ = addTokenToPage(newToken, "-", 1);
-                } else {
-                    nextByte();
-                    if (curChar != '-') {
-                        newToken.tokenId = TokenId::ENDASH;
-                        // After the following call, newToken may become irrelevant
-                        pageCompleted_ = addTokenToPage(newToken, "--", 2);
-                    } else {
-                        nextByte();
-                        newToken.tokenId = TokenId::EMDASH;
-                        // After the following call, newToken may become irrelevant
-                        pageCompleted_ = addTokenToPage(newToken, "---", 3);
-                    }
-                }
+                tokens_.endOfCStr();
+
+                // After the following call, newToken may become irrelevant
+                pageCompleted_ = addTokenToPage(newToken);
+                // nextByte();
+                // if (curChar != '-') {
+                //     newToken.tokenId = TokenId::HYPHEN;
+                //     // After the following call, newToken may become irrelevant
+                //     pageCompleted_ = addTokenToPage(newToken, "-", 1);
+                // } else {
+                //     nextByte();
+                //     if (curChar != '-') {
+                //         newToken.tokenId = TokenId::ENDASH;
+                //         // After the following call, newToken may become irrelevant
+                //         pageCompleted_ = addTokenToPage(newToken, "--", 2);
+                //     } else {
+                //         nextByte();
+                //         newToken.tokenId = TokenId::EMDASH;
+                //         // After the following call, newToken may become irrelevant
+                //         pageCompleted_ = addTokenToPage(newToken, "---", 3);
+                //     }
+                // }
             } else {
                 uint16_t textCharCount = 0;
 
+                if (startOfHeader_) {
+                    newToken.tokenId = TokenId::HTEXT;
+                    startOfHeader_ = false;
+                }
+                
                 do {
                     // log_d("Current Character: %c (%02" PRIX8 "H)",
                     //       (((curChar >= ' ') && (curChar < 127)) ? curChar : ' '),
@@ -1228,6 +1314,8 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
 
             //     nextByte();
         }
+
+        beginingOfStr = false;
     }
 
     // if (!pageCompleted_ && tokens_.cStrIsFull()) {

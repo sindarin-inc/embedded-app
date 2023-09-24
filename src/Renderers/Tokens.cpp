@@ -52,6 +52,23 @@ void Tokens::addByte(Token &token, uint8_t b) {
     }
 }
 
+void Tokens::addBytes(Token &token, const char *str) {
+    while (*str) {
+        addByte(token, *str++);
+    }
+}
+
+void Tokens::insertBytesAtEnd(Token &token, const char *str) {
+    if (token.cStr != nullptr) {
+        cStrPoolTailIdx_ = (cStrPoolTailIdx_ == 0) ? (CSTR_POOL_SIZE - 1) : cStrPoolTailIdx_ - 1;
+
+        while (*str) {
+            addByte(token, *str++);
+        }
+        endOfCStr();
+    }
+}
+
 // Associate the string to the token. The string will be copied to the pool. No other characters can
 // be added to the token after it.
 void Tokens::addStr(Token &token, const std::string &str) {

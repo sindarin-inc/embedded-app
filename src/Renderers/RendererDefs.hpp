@@ -105,7 +105,7 @@ using Idx = uint16_t;
 enum class TokenId : uint16_t {
     TEXT = 1,          // Usually a word. Can contain &NBSP; and spaces characters for formatting
     ITEXT = 2,         // Indent *next* lines using this token width
-    GTEXT = 4,         // Glued text: Token that must stay on the same line as the next one (TBD)
+    HTEXT = 4,         // Start of a <H1>..<h6> header tag
     NEWLINE = 8,       // Full line vertical space. Break lines
     ENDPARAGRAPH = 16, // After paragraph vertical space
     HYPHEN = 32,       // ASCII hyphen "-"
@@ -117,14 +117,14 @@ enum class TokenId : uint16_t {
 };
 
 #if REND_DEBUGGING
-static const char *TokenIdStr[] = {"TEXT",         "ITEXT",    "GTEXT",  "NEWLINE",
+static const char *TokenIdStr[] = {"TEXT",         "ITEXT",    "HTEXT",  "NEWLINE",
                                    "ENDPARAGRAPH", "HYPHEN",   "ENDASH", "EMDASH",
                                    "PICTURE",      "EPICTURE", "HRULE"};
 #endif
 
 // BitMask of all token ids that are using the pool space
 static const uint16_t POOL_TOKENS = (uint16_t)TokenId::TEXT | (uint16_t)TokenId::ITEXT |
-                                    (uint16_t)TokenId::GTEXT | (uint16_t)TokenId::PICTURE |
+                                    (uint16_t)TokenId::HTEXT | (uint16_t)TokenId::PICTURE |
                                     (uint16_t)TokenId::EPICTURE;
 #pragma pack(push, 1)
 

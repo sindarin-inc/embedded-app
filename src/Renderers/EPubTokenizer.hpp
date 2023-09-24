@@ -40,52 +40,6 @@
 //   to be displayed.
 //
 // TBC
-//
-// Heuristics:
-//
-// <P><H1>..<H6> Those constitute normal paragraphs. Words are tokenized and presented as a single
-//       paragraph, terminated with a small vertical gap before next one will appears. Empty
-//       paragraphs are bypassed. An empty paragraph is one that contains only spaces or <span>
-//       tags. They are often used to generate easy vertical space in title pages instead of using
-//       CSS.
-//
-// <A>   Hyperlink. The text that is part of this tag is put in square brackets, unless it is
-//       located inside a superscript, that there is no text, or if the text starts with '(', '['
-//       '<' or '{'.
-//
-// <PICTURE> Picture are normally loaded in memory by the Pager class when it is ready to
-//       generate the content to be displayed. The server generated EPub arrange to have the width
-//       and height of the picture as attribute to the <source> tag, This to permit to optimize the
-//       moment the picture will be loaded when it is really required (the width and height are
-//       sufficiant to compute the page required space) as these informations are part of the
-//       generated token.
-//
-// Space Multiple space characters in a row are replaced with a single space. Paragraphs that
-//       contain only space characters are eliminated from the output (Often used to do easy
-//       placement in pages instead of using CSS).
-//
-// <BR/> Used to generate a break in paragraphs. Can be used in many different contexts,
-//       one of which is to do formatting instead of using CSS. Bad formatting occurs on the Sol as
-//       the available screen space is smaller than usually available with ereaders. It is then
-//       replaced with a space character.
-//
-// Tab   That character is managed as space characters (see the definition above).
-//       Could eventually be replaced with a displacement toward dedicated horizontal tabulator
-//       locations or other means. Would require many changes to the Pager class.
-//
-// <SUP> Superscript processing is limited to the decimal digits 0 to 9. Other characters are
-//       ignored. TBD: Superscript text need to be glued (i.e. no newline before it) to the
-//       preceding word, or the following word (i.e. no newline after it) if located at the
-//       beginning of a paragraph as usually used for notes at the end of a chapter or section.
-//
-// <HR/> Generates a horizontal rule.
-//
-// &...; HTML elements are translated to their UTF8 counterpart.
-//
-// &nbsp; Stand for "Not Breakable Space". Considered as part of a word, as for the other HTML
-//       elements.
-//
-// TBC
 
 class EPubTokenizer : public Tokenizer {
 
@@ -142,14 +96,14 @@ private:
     // clang-format on
 
     using Tags = std::unordered_map<std::string, Tag>;
-    using Elements = std::unordered_map<std::string, const char *>;
+    using Entities = std::unordered_map<std::string, const char *>;
     using SuperscriptNumbers = std::array<const char *, 10>;
 
     // Hash HTML tags
     static Tags tags;
 
-    // Hash XHTML identity elements (like &nbsp;) and their UTF-8 codification
-    static Elements elements;
+    // Hash XHTML character entities (like &nbsp;) and their UTF-8 codification
+    static Entities entities;
 
     // Superscript Numbers UTF-8 codification
     static SuperscriptNumbers superscriptNumbers;
@@ -176,6 +130,10 @@ private:
     // used by the <a> processing to signify the need to add a ']' at the text's end.
     bool hyperlinkRightBracket_;
 
+    // used for <h1>..<h6>
+    bool startOfHeader_;
+
+    // The offset where we are tokenizing
     uint32_t currentStreamOffset_;
 
     static constexpr const uint8_t MaxLevelCount = 5;
@@ -191,8 +149,16 @@ private:
 
     static const constexpr char *levelChar_ = "-o-o-";
 
-    [[nodiscard]] auto getCharEntity(const char *str, const char **newStrLocation) const -> const
-        char *;
+    // Could eventually be made smaller.
+    // For now, used only for bracketing <a> tags pcdata
+    char preText_[21];
+    char postText_[21];
+
+    // used to transform HTML character entities to their UTF8 char.
+    char utf8Ch_[6];
+    auto toUtf8(uint32_t val) -> char *;
+
+    [[nodiscard]] auto getCharEntity(const char *str, const char **newStrLocation) -> const char *;
     [[nodiscard]] auto loadXHTMLAt(Idx fileIdx) -> pugi::xml_document &;
     [[nodiscard]] auto interpret(pugi::xml_node node) -> bool;
     [[nodiscard]] auto addStrToPage(const pugi::char_t *str, uint32_t len) -> bool;

@@ -127,7 +127,9 @@ public:
     [[nodiscard]] auto add(Token &token, const char *str = nullptr, uint8_t length = 0) -> bool;
 
     void addByte(Token &token, uint8_t b);
+    void addBytes(Token &token, const char *str);
     void addStr(Token &token, const std::string &str);
+    void insertBytesAtEnd(Token &token, const char *str);
 
     // Adds a null character at the end of a cStr that is in the cStr pool
     inline void endOfCStr() {

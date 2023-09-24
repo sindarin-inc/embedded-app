@@ -22,21 +22,25 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
     switch (token.tokenId) {
     case TokenId::TEXT:
     case TokenId::ITEXT:
-    case TokenId::GTEXT: // Not in use yet
+    case TokenId::HTEXT:
     case TokenId::HYPHEN:
-    case TokenId::ENDASH:
-    case TokenId::EMDASH:
+    case TokenId::ENDASH: // Not used for EPub, used for TXT
+    case TokenId::EMDASH: // Not used for EPub, used for TXT
+    {
         if (token.tokenId == TokenId::ITEXT) {
             leftIndent_ = token.pixWidth; // For next lines
         }
+        uint16_t heightRequired =
+            (token.tokenId == TokenId::HTEXT)
+                ? (NEWLINE_DECI_LINE_HEIGHT << 1) + ENDPARAGRAPH_DECI_LINE_HEIGHT
+                : NEWLINE_DECI_LINE_HEIGHT;
         if ((token.pixWidth + currentLineWidth_) > (maxLineWidth_ - rightIndent_)) {
             // We are at the end of a line
 
             // Complete the line, passing to the next one
             newLine(NEWLINE_DECI_LINE_HEIGHT);
-            if (!dontStop &&
-                ((currentPageDecilineHeight_ + NEWLINE_DECI_LINE_HEIGHT) > maxDeciLines_)) {
-                // The page is complete. The current token will be the first to next line
+            if (!dontStop && ((currentPageDecilineHeight_ + heightRequired) > maxDeciLines_)) {
+                // The page is complete. The current token will be the first to next page
                 setNextPagePlace(token.streamPlace);
                 REND_WLOG("Page completed: %" PRIu16 " decilines. Max: %" PRIu16,
                           currentPageDecilineHeight_, maxDeciLines_);
@@ -48,8 +52,7 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
             lines_[linesTailIdx_].tokenCount++;
             lines_[linesTailIdx_].length += token.length;
         } else if (lines_[linesTailIdx_].tokenCount == 0) {
-            if (!dontStop &&
-                ((currentPageDecilineHeight_ + NEWLINE_DECI_LINE_HEIGHT) > maxDeciLines_)) {
+            if (!dontStop && ((currentPageDecilineHeight_ + heightRequired) > maxDeciLines_)) {
                 setNextPagePlace(token.streamPlace);
                 REND_WLOG("Page completed: %" PRIu16 " decilines. Max: %" PRIu16,
                           currentPageDecilineHeight_, maxDeciLines_);
@@ -68,7 +71,7 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
         if (token.tokenId == TokenId::TEXT) {
             wordCount_ += 1;
         }
-        break;
+    } break;
 
     case TokenId::NEWLINE:
         tokens_.forgetLast();
