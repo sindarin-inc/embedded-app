@@ -4,7 +4,7 @@
 
 #define MAX_GZIP_CHUNK_SIZE 32768
 
-static auto spiZAlloc(void *opaque, uInt items, uInt size) -> void * {
+static auto spiZAlloc(void *opaque, size_t items, size_t size) -> void * {
     log_d("spiZAlloc: %d %d", (int)items, (int)size);
     return SpiRamMalloc(items * size);
 }
@@ -19,12 +19,30 @@ auto GZipStream::init() -> bool {
     zs_.zalloc = spiZAlloc;
     zs_.zfree = spiZFree;
 
-    if (deflateInit2(&zs_, Z_BEST_COMPRESSION, Z_DEFLATED, 31, 8, Z_DEFAULT_STRATEGY) != Z_OK) {
+    int ret = mz_deflateInit2(&zs_, MZ_BEST_COMPRESSION, MZ_DEFLATED, -MZ_DEFAULT_WINDOW_BITS, 8, MZ_DEFAULT_STRATEGY);
+    if (ret != MZ_OK) {
+        log_e("error in mz_deflateInit2: %d", ret);
         return false;
     }
 
-    outputBuffer_ = SpiRamArrayPtr<uint8_t>(MAX_GZIP_CHUNK_SIZE);
-    outputAvailable_ = 0;
+    outputBuffer_ = SpiRamArrayPtr<uint8_t>(MAX_GZIP_CHUNK_SIZE + 10);
+
+    // writing gz header
+    // fixed 10 bytes
+    uint8_t* ob = outputBuffer_.get();
+    ob[0] = 0x1F;
+    ob[1] = 0x8B;
+    ob[2] = 8;
+    ob[3] = 0;
+    ob[4] = 0;
+    ob[5] = 0;
+    ob[6] = 0;
+    ob[7] = 0;
+    ob[8] = 0;
+    ob[9] = 0xFF;
+
+    outputAvailable_ = 10;
+
     init_ = true;
 
     return true;
@@ -35,6 +53,11 @@ auto GZipStream::compressBlock(uint8_t *inputBuffer, int blockSize, uint8_t *out
                                bool &done) -> bool {
     done = false;
 
+    // calculate crc
+    if (blockSize > 0) {
+        crc_ = mz_crc32(crc_, inputBuffer, blockSize);
+    }
+
     zs_.next_in = inputBuffer;
     zs_.avail_in = blockSize;
 
@@ -43,23 +66,23 @@ auto GZipStream::compressBlock(uint8_t *inputBuffer, int blockSize, uint8_t *out
     uint8_t *out = outputBuffer;
     int outputSizeRemaining = outputBufferSize;
 
-    int flushType = flush ? Z_FINISH : Z_NO_FLUSH;
+    int flushType = flush ? MZ_FINISH : MZ_NO_FLUSH;
 
     do {
         zs_.next_out = out;
         zs_.avail_out = outputSizeRemaining;
 
-        ret = deflate(&zs_, flushType);
+        ret = mz_deflate(&zs_, flushType);
         if (flush) {
-            if (ret == Z_STREAM_END) {
+            if (ret == MZ_STREAM_END) {
                 // nothing left to flush
                 done = true;
-            } else if (ret != Z_OK) {
+            } else if (ret != MZ_OK) {
                 log_e("error flushing gzip stream: %d %s", ret, zs_.msg);
                 return false;
             }
         } else {
-            if (ret != Z_OK) {
+            if (ret != MZ_OK) {
                 log_e("error in zlib deflate: %d %s", ret, zs_.msg);
                 return false;
             }
@@ -78,8 +101,10 @@ auto GZipStream::compressBlock(uint8_t *inputBuffer, int blockSize, uint8_t *out
     } while ((zs_.avail_in != 0) && (outputSizeRemaining > 0) && !flush);
 
     if (flush && done) {
-        deflateEnd(&zs_);
+        mz_deflateEnd(&zs_);
     }
+
+    uncompressedSize_ += blockSize;
 
     return true;
 }
@@ -103,7 +128,28 @@ auto GZipStream::write(uint8_t *dataToCompress, int dataToCompressLength, bool f
     return true;
 }
 
-auto GZipStream::flush() -> bool { return write(nullptr, 0, true); }
+auto GZipStream::flush() -> bool { 
+    bool ret = write(nullptr, 0, true);
+    if (!ret) {
+        return false;
+    }
+    
+    // write footer
+    uint8_t* f = &outputBuffer_.get()[outputAvailable_];
+
+    f[0] = crc_ & 0xFF;
+    f[1] = (crc_ >> 8) & 0xFF;
+    f[2] = (crc_ >> 16) & 0xFF;
+    f[3] = (crc_ >> 24) & 0xFF;
+    f[4] = uncompressedSize_ & 0xFF;
+    f[5] = (uncompressedSize_ >> 8) & 0xFF;
+    f[6] = (uncompressedSize_ >> 16) & 0xFF;
+    f[7] = (uncompressedSize_ >> 24) & 0xFF;
+
+    outputAvailable_ += 8;
+    
+    return true;
+}
 
 auto GZipStream::read(uint8_t *destBuffer, int destBufferSize) -> int {
     int bytesToRead = destBufferSize < outputAvailable_ ? destBufferSize : outputAvailable_;
