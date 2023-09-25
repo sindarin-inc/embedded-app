@@ -22,6 +22,7 @@ public:
     void drawInRect(Rect rect) override;
 
     void setFirstLoad() { firstLoad_ = true; }
+    void logTelemetry(int setting, const char *direction);
 
 protected:
     PreferencesStore &prefs_;

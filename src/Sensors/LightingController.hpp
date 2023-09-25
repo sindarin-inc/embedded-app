@@ -18,6 +18,10 @@ public:
     // Enable updates and use the ambient light sensor to adjust the lighting
     void begin();
 
+    // If lighting is overridden, turn ambient light sensor off, since it was turned on for
+    // telemetry
+    void returnToDisabledState();
+
     // Disable lights altogether
     void disableLighting(int fadeMs = 200);
 
@@ -26,7 +30,7 @@ public:
 
     // Disable updates and keeps a specific lighting setting (for when the user adjusts the setting
     // manually)
-    void setOverrideValuePercent(int percent);
+    void setOverrideValuePercent(int percent, bool maintainLightSensor = false);
     auto getCurrentPercent() -> int;
 
     // Allow lighting only one of the screens, or both
@@ -36,6 +40,8 @@ public:
         BOTH = LEFT | RIGHT,
     };
     void setScreenMask(Screens screens, int fadeMs = 200);
+
+    bool readAmbientLightData(uint16_t &channel1, uint16_t &channel0);
 
     // This should happen periodically to check the ambient light and adjust the screen lighting
     // accordingly

@@ -90,6 +90,19 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
     display.updateDisplay(firstLoad_ ? DisplaySystem::UpdateType::FULL
                                      : DisplaySystem::UpdateType::FAST);
     firstLoad_ = false;
+
+    // Enable the ambient light sensor when this screen is shown
+    lightingController_.begin();
+}
+
+void LightingAdjustScreen::logTelemetry(int setting, const char *direction) {
+    DispatchGetCore0BackgroundQueue()->dispatch([this, setting, direction]() {
+        lightingController_.begin();
+        uint16_t channel1, channel0;
+        lightingController_.readAmbientLightData(channel1, channel0);
+        telemetry_.logMetric(TelemetryField::METRIC_LIGHTING, setting,
+                             {{"dir", direction}, {"ch1", channel1}, {"ch0", channel0}});
+    });
 }
 
 void LightingAdjustScreen::processCommand(RemoteCommand command) {
@@ -97,15 +110,15 @@ void LightingAdjustScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::LEFT:
     case RemoteCommand::RIGHT:
     case RemoteCommand::ENTER:
+    case RemoteCommand::BACK:
+        lightingController_.returnToDisabledState();
         back();
         break;
     case RemoteCommand::UP: {
         auto setting =
             std::min(lightingController_.getCurrentPercent() + LIGHTING_STEP_INCREMENT, 100);
         lightingController_.setOverrideValuePercent(setting);
-        telemetry_.logMetric(TelemetryField::METRIC_EVENT, setting,
-                             {{"event", "lighting_override"}, {"direction", "up"}});
-
+        logTelemetry(setting, "up");
         setNeedsRerender();
         break;
     }
@@ -113,14 +126,10 @@ void LightingAdjustScreen::processCommand(RemoteCommand command) {
         auto setting =
             std::max(lightingController_.getCurrentPercent() - LIGHTING_STEP_INCREMENT, 0);
         lightingController_.setOverrideValuePercent(setting);
-        telemetry_.logMetric(TelemetryField::METRIC_EVENT, setting,
-                             {{"event", "lighting_override"}, {"direction", "down"}});
+        logTelemetry(setting, "down");
         setNeedsRerender();
         break;
     }
-    case RemoteCommand::BACK:
-        back();
-        break;
     default:
         break;
     }
