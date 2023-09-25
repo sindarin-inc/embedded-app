@@ -5,6 +5,7 @@
 
 #include "sindarin-debug.h"
 
+/*
 extern "C" {
 #ifndef ZLIB_INTERNAL
 #define ZLIB_INTERNAL
@@ -15,20 +16,33 @@ extern "C" {
 extern "C" {
 #include <inflate.h>
 }
+*/
 
 #define ZLIB_WINDOW_SIZE 32768
 #define ZLIB_INFLATE_STATE_SIZE 7168
 
+static auto spiZAlloc(void *opaque, size_t items, size_t size) -> void * {
+    log_d("spiZAlloc: %d %d", (int)items, (int)size);
+    return SpiRamMalloc(items * size);
+}
+static void spiZFree(void *opaque, void *address) {
+    log_d("spiZFree");
+    SpiRamFree(address);
+}
+
 auto GUnzip::init() -> bool {
 
+    /*
     if (!inflateBuf_) {
         // allocate enough memory for zlib's sliding window of uncompressed data
         // plus the size of its inflate_state struct.
         inflateBuf_ = std::make_unique<uint8_t[]>(ZLIB_WINDOW_SIZE + ZLIB_INFLATE_STATE_SIZE);
     }
+    */
 
-    int err = Z_OK;
+    int err = MZ_OK;
 
+    /*
     zstr_.zalloc = (alloc_func) nullptr;
     zstr_.zfree = (free_func) nullptr;
     zstr_.opaque = (voidpf) nullptr;
@@ -36,13 +50,18 @@ auto GUnzip::init() -> bool {
     zstr_.state = (struct internal_state *)&inflateBuf_[ZLIB_WINDOW_SIZE];
     auto *st = (inflate_state *)zstr_.state;
     st->window = inflateBuf_.get();
+    */
+    init_ = true;
+
+    zstr_.zalloc = spiZAlloc;
+    zstr_.zfree = spiZFree;
 
     zstr_.avail_in = 0;
-    zstr_.next_in = Z_NULL;
+    zstr_.next_in = 0;
 
-    err = inflateInit2(&zstr_, 16 + MAX_WBITS);
+    err = mz_inflateInit2(&zstr_, MZ_DEFAULT_WINDOW_BITS);
 
-    if (err == Z_OK) {
+    if (err == MZ_OK) {
         log_i("zlib init ok");
         return true;
     } else {
@@ -54,10 +73,20 @@ auto GUnzip::init() -> bool {
 auto GUnzip::decompress(uint8_t *input, int inputSize, uint8_t *output, int outputSize,
                         int &inputRead, int &outputAvail) -> int {
 
-    if (!inflateBuf_) {
+    if (!init_) {
         if (!init()) {
             return false;
         }
+
+        /*
+        // parse header
+        printf("skipping header %d\n", inputSize);
+        for (int i = 0; i < 10; i++) {
+            printf("%d: %X\n", i, input[i]);
+        }
+        input += 10;
+        inputSize -= 10;
+        */
     }
 
     zstr_.next_in = input;
@@ -68,8 +97,9 @@ auto GUnzip::decompress(uint8_t *input, int inputSize, uint8_t *output, int outp
     int inBefore = zstr_.total_in;
     int outBefore = zstr_.total_out;
 
-    int err = Z_OK;
-    err = inflate(&zstr_, Z_SYNC_FLUSH);
+    int err = MZ_OK;
+    //err = mz_inflate(&zstr_, MZ_SYNC_FLUSH);
+    err = mz_inflate(&zstr_, MZ_NO_FLUSH);
 
     inputRead = zstr_.total_in - inBefore;
     outputAvail = zstr_.total_out - outBefore;
@@ -115,7 +145,7 @@ auto GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFile
         }
 
         int err = decompress(&inBuf[inputIndex], inputAvail, outBuf, 1024, inputRead, outputAvail);
-        if (err != Z_OK && err != Z_STREAM_END) {
+        if (err != MZ_OK && err != MZ_STREAM_END) {
             log_e("Error decompressing %d", err);
             return false;
         }
@@ -129,7 +159,7 @@ auto GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFile
         while (outputAvail == 1024) {
             int ir = 0;
             err = decompress(inBuf, 0, outBuf, 1024, ir, outputAvail);
-            if (err != Z_OK && err != Z_STREAM_END) {
+            if (err != MZ_OK && err != MZ_STREAM_END) {
                 log_e("Error decompressing %d", err);
                 return false;
             }
@@ -200,7 +230,7 @@ auto GUnzip::decompressMemory(uint8_t *input, int inputSize) -> bool {
         }
 
         int err = decompress(&inBuf[inputIndex], inputAvail, outBuf, 1024, inputRead, outputAvail);
-        if (err != Z_OK && err != Z_STREAM_END) {
+        if (err != MZ_OK && err != MZ_STREAM_END) {
             log_e("Error decompressing %d", err);
         }
 
@@ -208,7 +238,7 @@ auto GUnzip::decompressMemory(uint8_t *input, int inputSize) -> bool {
         while (outputAvail == 1024) {
             int ir = 0;
             err = decompress(inBuf, 0, outBuf, 1024, ir, outputAvail);
-            if (err != Z_OK && err != Z_STREAM_END) {
+            if (err != MZ_OK && err != MZ_STREAM_END) {
                 log_e("error decompressing: %d", err);
                 return false;
             }

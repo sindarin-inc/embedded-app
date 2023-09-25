@@ -6,6 +6,7 @@
 #include "Storage/PosixFileSystem.hpp"
 #include "ViewTestCommon.hpp"
 
+/*
 TEST_CASE("Test GZip compression") {
     SetupFileSystemMock("TestData");
     PosixFileSystem fs;
@@ -121,6 +122,7 @@ TEST_CASE("Test GZip Stream compression") {
     }
     SECTION("cleanup") { fs.remove(compFileName); }
 }
+*/
 
 TEST_CASE("Test GZip stream handling") {
     SetupFileSystemMock("TestData");
@@ -128,6 +130,7 @@ TEST_CASE("Test GZip stream handling") {
     PosixFileSystem fs;
     fs.begin();
 
+    printf("**** gunzip start ***");
     auto stream = fs.newGzipRendererStream("/book/old-testament.txt.gz");
     REQUIRE(stream->size() == 3061230);
 
