@@ -88,6 +88,7 @@ void LightingController::setOverrideValuePercent(int percent, bool maintainLight
     log_d("Override duty cycle: %d (%d%%)", dutyCycle, percent);
     if (!maintainLightSensor) {
         lightSensor_.disable();
+        enabled_ = false;
     }
     currentDutyCycle_ = dutyCycle;
     setCurrentDutyCycle(currentDutyCycle_, 100);

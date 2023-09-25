@@ -117,7 +117,7 @@ void LightingAdjustScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::UP: {
         auto setting =
             std::min(lightingController_.getCurrentPercent() + LIGHTING_STEP_INCREMENT, 100);
-        lightingController_.setOverrideValuePercent(setting);
+        lightingController_.setOverrideValuePercent(setting, true);
         logTelemetry(setting, "up");
         setNeedsRerender();
         break;
@@ -125,7 +125,7 @@ void LightingAdjustScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::DOWN: {
         auto setting =
             std::max(lightingController_.getCurrentPercent() - LIGHTING_STEP_INCREMENT, 0);
-        lightingController_.setOverrideValuePercent(setting);
+        lightingController_.setOverrideValuePercent(setting, true);
         logTelemetry(setting, "down");
         setNeedsRerender();
         break;

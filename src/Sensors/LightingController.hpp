@@ -55,7 +55,10 @@ protected:
 
     int currentDutyCycle_ = 0;
     int overrideDutyCycle_{-1};
+
+    // enabled_ refers to the ambient light sensor being turned on, not the lights themselves
     bool enabled_ = false;
+    // lightsOut refers to the lights being turned off
     bool lightsOut_;
 
     void setCurrentDutyCycle(int dutyCycle, int fadeMs);
