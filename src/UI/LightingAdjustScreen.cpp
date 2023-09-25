@@ -7,8 +7,8 @@
 LightingAdjustScreen::LightingAdjustScreen(DisplaySystem &display, PreferencesStore &prefs,
                                            LightingController &lightingController,
                                            Telemetry &telemetry)
-    : Screen(), EinkView(display), prefs_(prefs), telemetry_(telemetry),
-      lightingController_(lightingController),
+    : Screen(), EinkView(display), prefs_(prefs), lightingController_(lightingController),
+      telemetry_(telemetry),
       lightbulbView_(display, LIGHTBULB_BITS, Lightbulb_width, Lightbulb_height), barView_(display),
       fillView_(display), firstLine_(display, "Press up and down"),
       secondLine_(display, "to adjust brightness"), leftArrowView_(display, ArrowLeft),
