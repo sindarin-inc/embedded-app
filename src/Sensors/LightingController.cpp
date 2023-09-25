@@ -110,7 +110,7 @@ void LightingController::setScreenMask(Screens screens, int fadeMs) {
     setCurrentDutyCycle(currentDutyCycle_, fadeMs);
 };
 
-bool LightingController::readAmbientLightData(uint16_t &channel1, uint16_t &channel0) {
+auto LightingController::readAmbientLightData(uint16_t &channel1, uint16_t &channel0) -> bool {
     if (!lightSensor_.readData(channel1, channel0)) {
         // Failed to read data, so just return false
         return false;

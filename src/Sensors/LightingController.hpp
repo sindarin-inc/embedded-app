@@ -41,7 +41,7 @@ public:
     };
     void setScreenMask(Screens screens, int fadeMs = 200);
 
-    bool readAmbientLightData(uint16_t &channel1, uint16_t &channel0);
+    auto readAmbientLightData(uint16_t &channel1, uint16_t &channel0) -> bool;
 
     // This should happen periodically to check the ambient light and adjust the screen lighting
     // accordingly
