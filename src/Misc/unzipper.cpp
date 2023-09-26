@@ -17,7 +17,7 @@ auto Unzipper::open() -> bool {
     }
     isOpen_ = true;
 
-    int err = 0;
+    int err = 99;
 
 #define ERR(e)                                                                                     \
     {                                                                                              \
@@ -108,21 +108,17 @@ auto Unzipper::open() -> bool {
 
             if (!file_.seek(startOffset, SSeekSet)) ERR(9);
             auto entries = SpiRamArrayPtr<uint8_t>(length);
-            if (file_.read(entries.get(), length) != length) ERR(10);
+            if ((entries == nullptr) || (entries.get() == nullptr)) ERR(10);
+            if (file_.read(entries.get(), length) != length) ERR(11);
 
             // fileEntries_.resize(count);
             // uint32_t fileEntryOffset = startOffset;
             uint32_t fileEntryOffset = 0;
-            while (true) {
+            while (count > 0) {
                 DirFileHeader *dirFileHeader = (DirFileHeader *)&entries[fileEntryOffset];
 
                 if (dirFileHeader->signature != dirFileHeaderSignature) {
-                    if ((fileEntryOffset != length) || (count != 0))
-                        ERR(11)
-                    else {
-                        completed = true;
-                        break;
-                    }
+                    if (fileEntryOffset != length) ERR(11);
                 }
 
                 const char *fName = (char *)&entries[fileEntryOffset + sizeof(DirFileHeader)];
@@ -139,6 +135,7 @@ auto Unzipper::open() -> bool {
                                    dirFileHeader->commentFieldLength;
                 count--;
             }
+            completed = count == 0;
         } else {
             log_e("Unable to read central directory.");
             ERR(14);

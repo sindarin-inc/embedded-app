@@ -14,7 +14,7 @@ class EPubFile : public RendererStream {
 public:
     EPubFile(FileSystem &fs, const char *filename, const std::shared_ptr<Readable> &readable)
         : RendererStream(DocType::EPUB), epubUnzipper_(fs, filename), readable_(readable),
-          currentFileBuffer_(nullptr), currentFilePath_("") {
+          fileOpen_(false), currentFileBuffer_(nullptr), currentFilePath_("") {
         open();
     }
     ~EPubFile() override { close(); };
@@ -23,6 +23,8 @@ public:
     [[nodiscard]] auto seek(uint32_t pos) -> bool override { return false; }
     [[nodiscard]] auto position() -> size_t override { return 0; }
     [[nodiscard]] auto size() -> size_t override { return 0; /* opf_->getTotalSize(); */ }
+
+    [[nodiscard]] auto isAnArticle() const -> bool { return readable_->isArticle(); }
 
     // [[nodiscard]] inline auto getSpineIdxForOffset(uint32_t offset) const -> Idx {
     //     return opf_->getSpineIdxForOffset(offset);
@@ -65,6 +67,8 @@ public:
         return opf_->getFullPath(filename);
     }
 
+    [[nodiscard]] inline auto isOpen() const -> bool { return fileOpen_; }
+
     [[nodiscard]] auto getRelativeFilePath(const std::string &filename, Idx spineIdx) const
         -> std::string {
         std::string mainFilePath = opf_->getFullPath(opf_->getSpine(spineIdx).item->href);
@@ -89,6 +93,8 @@ public:
 private:
     Unzipper epubUnzipper_;
     const std::shared_ptr<Readable> &readable_;
+
+    bool fileOpen_;
 
     std::shared_ptr<EPubOpf> opf_;
 

@@ -73,6 +73,7 @@ public:
 
     void setStream(std::shared_ptr<RendererStream> stream) override {
         stream_ = std::static_pointer_cast<EPubFile>(stream);
+        log_w("Document type: %s", stream_->isAnArticle() ? "article" : "book");
     }
 
     [[nodiscard]] auto computeStartingOffset(StreamPlace streamPlace) -> uint32_t;
@@ -135,6 +136,7 @@ private:
 
     // The offset where we are tokenizing
     uint32_t currentStreamOffset_;
+    uint16_t currentFileIdx_;
 
     static constexpr const uint8_t MaxLevelCount = 5;
 

@@ -121,8 +121,7 @@ auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
 
             EPUB_PROFILE_START(ParseXHTML);
             pugi::xml_parse_result result = currentFileDoc.load_buffer_inplace(
-                currentFileBuffer_.get(), length,
-                pugi::parse_default | pugi::parse_ws_pcdata);
+                currentFileBuffer_.get(), length, pugi::parse_default | pugi::parse_ws_pcdata);
             EPUB_PROFILE_END(ParseXHTML);
 
             if (result) {
@@ -185,7 +184,12 @@ auto EPubFile::open() -> bool {
     PROFILE_END_LOG_MS(openEPub);
 
     // log_d("Total size of all ePub text is %d", opf_->getTotalSize());
+    fileOpen_ = true;
+
     return true;
 }
 
-void EPubFile::close() { epubUnzipper_.close(); }
+void EPubFile::close() {
+    epubUnzipper_.close();
+    fileOpen_ = false;
+}
