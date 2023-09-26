@@ -2,7 +2,7 @@
 
 Here is the list of all supported features that are part of EPub's XHTML files, and how the Renderer is displaying those features on screen.
 
-**`<p><h1>..<h6>`** : Those constitute normal paragraphs. Words are tokenized and presented as a single paragraph, terminated with a small vertical gap to separate paragraphs. Empty paragraphs are bypassed. An empty paragraph contains only spaces or **`<span>`** tags with or without spaces. They are often used to generate easy vertical space in title pages instead of using CSS. When part of a list or blockquote, paragraphs are indented at the appropriate level, supporting nested lists and blockquotes.
+**`<p><div><h1>..<h6>`** : Those constitute normal paragraphs. Words are tokenized and presented as a single paragraph, terminated with a small vertical gap to separate paragraphs. Empty paragraphs are bypassed. An empty paragraph contains only spaces or **`<span>`** tags with or without spaces. They are often used to generate easy vertical space in title pages instead of using CSS. When part of a list or blockquote, paragraphs are indented at the appropriate level, supporting nested lists and blockquotes.
 
 Partially working: For header tags (**`<h1>..<h6>`**), the first line of the following paragraph will be kept on the same page: if there is not enough space at the end of the current page, the header will appears on next page.
 
@@ -16,7 +16,7 @@ Partially working: For header tags (**`<h1>..<h6>`**), the first line of the fol
 
 Nested lists are allowed up to 5 levels. Both Ordered and Unordered lists can be used in nested lists. Each level of a nested list is indented from the preceding level. Items can be composed of paragraphs and blockquotes and are indented as well. 
 
-**`<blockquote>`** : Left and Right indent are added to paragraphs that are part of a blockquote. When located outside of any lists, the left and right indent are set to 20 pixels. When located inside an item of a list, 12 pixels are added to the item's left indent. The right indent remains at 20 pixels.
+**`<blockquote>`** : Left and Right indent are added to paragraphs that are part of a blockquote. When located outside of any lists, the left and right indent are set to 12 pixels. When located inside an item of a list, 8 pixels are added to the item's left indent. The right indent remains at 12 pixels.
 
 **`Space`** : Multiple space characters in a row are replaced with a single space. Paragraphs that contain only space characters are eliminated from the output (Often used to do easy placement in pages instead of using CSS).
 

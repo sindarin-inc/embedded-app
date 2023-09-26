@@ -383,6 +383,8 @@ auto EPubTokenizer::forwardToNextPageOffset(pugi::xml_node node) const -> uint32
 auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, StreamPlace *toPlace)
     -> std::pair<StreamPlace, StreamPlace> {
 
+    if (stream_->isAnArticle()) log_w("article");
+
     // Not pretty, but limits the number of parameters to pass to the interpret() method
     fromPlace_ = fromPlace;
     toPlace_ = toPlace;
@@ -759,11 +761,11 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
 
             case Tag::BLOCKQUOTE:
                 if (savedLeftIndent_ == 0) {
-                    savedBlockquoteLeftIndent_ = 20;
-                    savedBlockquoteRightIndent_ = 20;
-                } else {
                     savedBlockquoteLeftIndent_ = 12;
-                    savedBlockquoteRightIndent_ = 20;
+                    savedBlockquoteRightIndent_ = 12;
+                } else {
+                    savedBlockquoteLeftIndent_ = 8;
+                    savedBlockquoteRightIndent_ = 12;
                 }
                 // std::tie(savedLeftIndent_, savedPixRightIndent_) = pager_.getLineIndent();
                 pager_.setLineIndent(savedLeftIndent_ + savedBlockquoteLeftIndent_,

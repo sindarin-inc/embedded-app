@@ -73,7 +73,6 @@ public:
 
     void setStream(std::shared_ptr<RendererStream> stream) override {
         stream_ = std::static_pointer_cast<EPubFile>(stream);
-        log_w("Document type: %s", stream_->isAnArticle() ? "article" : "book");
     }
 
     [[nodiscard]] auto computeStartingOffset(StreamPlace streamPlace) -> uint32_t;
@@ -82,6 +81,12 @@ public:
 
     [[nodiscard]] auto goBackward(StreamPlace streamPlace, uint32_t offsetToSubtract)
         -> StreamPlace override;
+
+    [[nodiscard]] inline auto isAnArticle() const -> bool override {
+        return stream_->isAnArticle();
+    }
+
+    void checkReadable(const char *msg) override { stream_->checkReadable(msg); }
 
 private:
     std::shared_ptr<EPubFile> stream_;

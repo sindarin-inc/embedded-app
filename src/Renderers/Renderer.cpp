@@ -7,6 +7,8 @@
 auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines, bool forceRefresh)
     -> std::pair<std::shared_ptr<Place>, uint8_t> {
 
+    if (tokenizer_->isAnArticle()) log_w("article");
+
     // if no fromPlace is received (null) or the place's DocType is wrong, get the first page
     // pointer, else convert fromPlace to a StreamPlace
     StreamPlace startPlace = (fromPlace == nullptr)

@@ -62,6 +62,10 @@ public:
 
     virtual void setStream(std::shared_ptr<RendererStream> stream) = 0;
 
+    [[nodiscard]] virtual inline auto isAnArticle() const -> bool { return true; }
+
+    virtual void checkReadable(const char *msg) {}
+
 protected:
     DisplaySystem &display_;
     Tokens &tokens_;

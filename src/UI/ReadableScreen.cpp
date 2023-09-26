@@ -165,6 +165,7 @@ void ReadableScreen::turnPage() {
 auto ReadableScreen::checkAtEnd() -> bool { return renderer_.atEndOfFile(); }
 
 void ReadableScreen::render(DisplaySystem &display) {
+    renderer_.checkReadable("ReadableScreen::render start");
     // Rendering the popup is a special case. We first re-draw the text onto the background
     // (since it would have been cleared at the end of the last updateDisplay), then we render
     // the popup over it, then we draw that as a partial refresh. Then we only render the popup

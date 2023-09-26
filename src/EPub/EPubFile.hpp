@@ -24,7 +24,14 @@ public:
     [[nodiscard]] auto position() -> size_t override { return 0; }
     [[nodiscard]] auto size() -> size_t override { return 0; /* opf_->getTotalSize(); */ }
 
-    [[nodiscard]] auto isAnArticle() const -> bool { return readable_->isArticle(); }
+    [[nodiscard]] auto isAnArticle() const -> bool {
+        checkReadable("isAnArticle");
+        return readable_->isArticle();
+    }
+
+    void checkReadable(const char *msg) const {
+        log_w("%s - Readable adr: %p %p", msg, &readable_, readable_.get());
+    };
 
     // [[nodiscard]] inline auto getSpineIdxForOffset(uint32_t offset) const -> Idx {
     //     return opf_->getSpineIdxForOffset(offset);

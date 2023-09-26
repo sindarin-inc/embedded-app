@@ -153,6 +153,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             new ReadableScreen(stream, *display, readable, this->prefs_, this->telemetry_,
                                localStore, fileSystem, lightingController);
 
+        readableScreen->checkReadable("RootUI 1");
+
         this->telemetry_.logMetric(TelemetryField::METRIC_READABLE_OPEN, readable->uuid,
                                    readable->telemetryPlacemarkMetrics());
 
@@ -197,6 +199,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             // so that the `backCallback` is copied by the parent screen, and then executed there.
             delete readableScreen;
         });
+
+        readableScreen->checkReadable("RootUI 2");
         return readableScreen;
     };
 
@@ -298,6 +302,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                         [this, r, createReadableScreen]() {
             auto readableScreen = createReadableScreen(r);
             this->setCurrentScreen(*readableScreen);
+            readableScreen->checkReadable("addMenuItem");
         }));
     }
 

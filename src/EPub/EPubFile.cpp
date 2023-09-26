@@ -32,9 +32,9 @@ auto EPubFile::findFileOffsetAtCharOffset(const std::string &path, uint32_t char
     walker.epub = this;
 
     doc.child("html").child("body").traverse(walker);
-    return walker.offset;
+    if (readable_->isArticle()) log_w("article");
 
-    return 0;
+    return walker.offset;
 }
 
 // Returns a pointer to the buffer containing the extracted file from the EPub and it's length in a
@@ -64,6 +64,8 @@ auto EPubFile::getFile(const std::string &completeFilePath)
                 epubUnzipper_.closeFile();
                 EPUB_PROFILE_END(UnzipperReadFromFile);
                 if (length == size) {
+                    if (readable_->isArticle()) log_w("article");
+
                     return {std::move(buffer), length};
                 }
             } else {
@@ -73,6 +75,8 @@ auto EPubFile::getFile(const std::string &completeFilePath)
             }
         }
     }
+
+    if (readable_->isArticle()) log_w("article");
 
     return {nullptr, 0};
 
@@ -134,6 +138,8 @@ auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
         }
     }
 
+    if (readable_->isArticle()) log_w("article");
+
     return currentFileDoc;
 }
 
@@ -186,6 +192,7 @@ auto EPubFile::open() -> bool {
     // log_d("Total size of all ePub text is %d", opf_->getTotalSize());
     fileOpen_ = true;
 
+    checkReadable("EPubFile::open");
     return true;
 }
 

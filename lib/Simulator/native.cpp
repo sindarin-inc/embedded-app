@@ -285,6 +285,17 @@ void goBackNumPages(SDL_Window *window, SDL_Renderer *renderer, int numPages) {
     }
 }
 
+void goForwardNumPages(SDL_Window *window, SDL_Renderer *renderer, int numPages) {
+    auto skipWaveform = FakeEinkET013TT1SkipWaveform;
+    FakeEinkET013TT1SkipWaveform = true;
+
+    while (numPages--) {
+        sendCodeAndRender(RemoteCommand::RIGHT, renderer);
+        usleep(1000000.0 / 2.0);
+    }
+    FakeEinkET013TT1SkipWaveform = false;
+}
+
 // Returns false if the program should quit
 auto mainLoop() -> bool {
     SDL_Event e;
@@ -329,6 +340,9 @@ auto mainLoop() -> bool {
                 break;
             case 's':
                 nextPageFast(window, renderer);
+                break;
+            case 'w':
+                goForwardNumPages(window, renderer, 200);
                 break;
             }
 

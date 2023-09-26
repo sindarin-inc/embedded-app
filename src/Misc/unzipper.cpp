@@ -115,7 +115,7 @@ auto Unzipper::open() -> bool {
             // uint32_t fileEntryOffset = startOffset;
             uint32_t fileEntryOffset = 0;
             while (count > 0) {
-                DirFileHeader *dirFileHeader = (DirFileHeader *)&entries[fileEntryOffset];
+                auto *dirFileHeader = (DirFileHeader *)&entries[fileEntryOffset];
 
                 if (dirFileHeader->signature != dirFileHeaderSignature) {
                     if (fileEntryOffset != length) ERR(11);
@@ -424,11 +424,11 @@ void Unzipper::closeFile() {
     currentFileEntry_ = nullptr;
 }
 
-auto Unzipper::readFile(uint8_t *buffer, uint32_t bufferSize) -> uint32_t {
+auto Unzipper::readFile(uint8_t *fileData, uint32_t fileDataSize) -> uint32_t {
     // log_d("getFile: %s", filePath);
 
     if (!isOpen_ || (currentFileEntry_ == nullptr) ||
-        ((currentFileEntry_->size + 1) != bufferSize)) {
+        ((currentFileEntry_->size + 1) != fileDataSize)) {
         return 0;
     }
 
@@ -443,11 +443,11 @@ auto Unzipper::readFile(uint8_t *buffer, uint32_t bufferSize) -> uint32_t {
                         SSeekSet))
             ERR(17);
 
-        if (buffer == nullptr) ERR(18);
-        buffer[currentFileEntry_->size] = 0;
+        if (fileData == nullptr) ERR(18);
+        fileData[currentFileEntry_->size] = 0;
 
         if (currentFileEntry_->method == 0) { // No Compression
-            if (file_.read((uint8_t *)buffer, currentFileEntry_->size) != currentFileEntry_->size)
+            if (file_.read((uint8_t *)fileData, currentFileEntry_->size) != currentFileEntry_->size)
                 ERR(19);
         } else if (currentFileEntry_->method == 8) { // Deflate compression
 
@@ -461,7 +461,7 @@ auto Unzipper::readFile(uint8_t *buffer, uint32_t bufferSize) -> uint32_t {
             zstr_.next_in = nullptr;
             zstr_.avail_in = 0;
             zstr_.avail_out = currentFileEntry_->size;
-            zstr_.next_out = (unsigned char *)buffer;
+            zstr_.next_out = (unsigned char *)fileData;
 
             int zret = mz_inflateInit2(&zstr_, -15);
 
