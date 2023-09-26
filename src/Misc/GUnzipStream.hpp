@@ -18,6 +18,7 @@ public:
     GUnzipStream(SFile gzFile, StreamType streamType = StreamType::TXT)
         : RendererStream(streamType), gzFile_(std::move(gzFile)) {
         readSize();
+        gunzip_.setCompressedSize(gzFile_.size());
     }
     ~GUnzipStream() override { gzFile_.close(); };
 

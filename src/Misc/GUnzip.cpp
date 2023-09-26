@@ -5,23 +5,21 @@
 
 #include "sindarin-debug.h"
 
-/*
-extern "C" {
-#ifndef ZLIB_INTERNAL
-#define ZLIB_INTERNAL
-#endif
-#include <inftrees.h>
-}
+//#define ZLIB_WINDOW_SIZE 32768
+//#define ZLIB_INFLATE_STATE_SIZE 7168
 
-extern "C" {
-#include <inflate.h>
-}
-*/
+typedef struct __attribute__((__packed__)) {
+    uint8_t magic[2];
+    uint8_t compressionMethod;
+    uint8_t fileFlags;
+    uint32_t timestamp;
+    uint8_t compressionFlags;
+    uint8_t operatingSystemID;
+} gzHeader;
 
-#define ZLIB_WINDOW_SIZE 32768
-#define ZLIB_INFLATE_STATE_SIZE 7168
+static gzHeader gzhdr;
 
-static auto spiZAlloc(void *opaque, size_t items, size_t size) -> void * {
+static void *spiZAlloc(void *opaque, size_t items, size_t size) {
     log_d("spiZAlloc: %d %d", (int)items, (int)size);
     return SpiRamMalloc(items * size);
 }
@@ -32,34 +30,20 @@ static void spiZFree(void *opaque, void *address) {
 
 auto GUnzip::init() -> bool {
 
-    /*
-    if (!inflateBuf_) {
-        // allocate enough memory for zlib's sliding window of uncompressed data
-        // plus the size of its inflate_state struct.
-        inflateBuf_ = std::make_unique<uint8_t[]>(ZLIB_WINDOW_SIZE + ZLIB_INFLATE_STATE_SIZE);
-    }
-    */
-
     int err = MZ_OK;
-
-    /*
-    zstr_.zalloc = (alloc_func) nullptr;
-    zstr_.zfree = (free_func) nullptr;
-    zstr_.opaque = (voidpf) nullptr;
-    // put inflate_state pointer at the end of the window region
-    zstr_.state = (struct internal_state *)&inflateBuf_[ZLIB_WINDOW_SIZE];
-    auto *st = (inflate_state *)zstr_.state;
-    st->window = inflateBuf_.get();
-    */
     init_ = true;
+    compressedPos_ = 0;
+    uncompressedPos_ = 0;
 
+    memset(&zstr_, 0, sizeof(mz_stream));
+    memset(&gzhdr, 0, sizeof(gzHeader));
     zstr_.zalloc = spiZAlloc;
     zstr_.zfree = spiZFree;
 
     zstr_.avail_in = 0;
     zstr_.next_in = 0;
 
-    err = mz_inflateInit2(&zstr_, MZ_DEFAULT_WINDOW_BITS);
+    err = mz_inflateInit2(&zstr_, -MZ_DEFAULT_WINDOW_BITS);
 
     if (err == MZ_OK) {
         log_i("zlib init ok");
@@ -73,20 +57,51 @@ auto GUnzip::init() -> bool {
 auto GUnzip::decompress(uint8_t *input, int inputSize, uint8_t *output, int outputSize,
                         int &inputRead, int &outputAvail) -> int {
 
+    // printf("dec %d\n", inputSize);
+    //  if we are into the footer section, skip
+    if (compressedPos_ >= (compressedSize_ - 8)) {
+        inputRead = inputSize;
+        outputAvail = 0;
+        return MZ_STREAM_END;
+    }
+
+    inputRead = 0;
     if (!init_) {
         if (!init()) {
             return false;
         }
+    }
 
-        /*
-        // parse header
-        printf("skipping header %d\n", inputSize);
-        for (int i = 0; i < 10; i++) {
-            printf("%d: %X\n", i, input[i]);
+    if (gzhdr.magic[0] == 0x00) {
+        printf("reading header\n");
+        memcpy(&gzhdr, input, sizeof(gzHeader));
+        printf("%x %x\n", gzhdr.magic[0], gzhdr.magic[1]);
+        input += sizeof(gzHeader);
+        inputSize -= sizeof(gzHeader);
+        inputRead += sizeof(gzHeader);
+
+        // check for filename
+        if ((gzhdr.fileFlags & 0x08) != 0) {
+            // skip filename
+            while (*input != 0x00) {
+                input++;
+                inputSize--;
+                inputRead++;
+            }
+
+            // skip one more byte
+            input++;
+            inputSize--;
+            inputRead++;
         }
-        input += 10;
-        inputSize -= 10;
-        */
+    }
+
+    int newPos = compressedPos_ + inputRead + inputSize;
+    int footer = 0;
+    if (newPos > compressedSize_ - 8) { // skip footer
+        footer = newPos - (compressedSize_ - 8);
+        inputSize -= footer;
+        inputRead += footer;
     }
 
     zstr_.next_in = input;
@@ -98,11 +113,25 @@ auto GUnzip::decompress(uint8_t *input, int inputSize, uint8_t *output, int outp
     int outBefore = zstr_.total_out;
 
     int err = MZ_OK;
-    //err = mz_inflate(&zstr_, MZ_SYNC_FLUSH);
-    err = mz_inflate(&zstr_, MZ_NO_FLUSH);
+    err = mz_inflate(&zstr_, MZ_SYNC_FLUSH);
 
-    inputRead = zstr_.total_in - inBefore;
+    inputRead += zstr_.total_in - inBefore;
     outputAvail = zstr_.total_out - outBefore;
+
+    // printf("dec read %d avail %d\n", inputRead, outputAvail);
+    if (outputAvail > 0) {
+        printf("upos %d\n", uncompressedPos_);
+        for (int i = 0; i < outputAvail; i++) {
+            printf("%c", output[i]);
+        }
+        printf("***\n");
+    }
+
+    compressedPos_ += inputRead;
+    uncompressedPos_ += outputAvail;
+
+    // printf("cpos %d upos %d\n", compressedPos_, uncompressedPos_);
+
     return err;
 }
 
@@ -111,6 +140,8 @@ auto GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFile
 
     SFile in = fileSystem.open(inputFileName);
     SFile out = fileSystem.open(outputFileName, "w", true);
+
+    compressedSize_ = in.size();
 
     bool done = false;
     uint8_t inBuf[1024];
@@ -121,7 +152,6 @@ auto GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFile
     int outputAvail = 0;
     bool last = false;
     while (!done) {
-
         if (inputAvail == 0) {
 
             if (last) {
@@ -150,23 +180,21 @@ auto GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFile
             return false;
         }
 
-        // write block
-        if (outputAvail > 0) {
+        while (outputAvail > 0) {
             out.write(outBuf, outputAvail);
-        }
+            if (outputAvail < 1024) {
+                break;
+            }
 
-        // continue reading until no more output available
-        while (outputAvail == 1024) {
             int ir = 0;
             err = decompress(inBuf, 0, outBuf, 1024, ir, outputAvail);
+            if (outputAvail == 0 && err == MZ_BUF_ERROR) {
+                break;
+            }
+
             if (err != MZ_OK && err != MZ_STREAM_END) {
                 log_e("Error decompressing %d", err);
                 return false;
-            }
-
-            // write block
-            if (outputAvail > 0) {
-                out.write(outBuf, outputAvail);
             }
         }
 

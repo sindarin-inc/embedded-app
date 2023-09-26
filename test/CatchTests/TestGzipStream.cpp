@@ -124,13 +124,27 @@ TEST_CASE("Test GZip Stream compression") {
 }
 */
 
+/*
 TEST_CASE("Test GZip stream handling") {
     SetupFileSystemMock("TestData");
 
     PosixFileSystem fs;
     fs.begin();
 
-    printf("**** gunzip start ***");
+    printf("**** gunzip start ***\n");
+
+    GUnzip gunzip;
+    gunzip.decompressFile(fs, "/book/old-testament.txt.gz", "/book/ot.txt");
+}
+*/
+
+TEST_CASE("Test GZip stream handling") {
+    SetupFileSystemMock("TestData");
+
+    PosixFileSystem fs;
+    fs.begin();
+
+    printf("**** gunzip start ***\n");
     auto stream = fs.newGzipRendererStream("/book/old-testament.txt.gz");
     REQUIRE(stream->size() == 3061230);
 
@@ -145,20 +159,25 @@ TEST_CASE("Test GZip stream handling") {
     REQUIRE(strcmp((char *)buffer, "Old Testament\n\nGenesis (50 Chapters)\n\n\nGENESIS 1 In the "
                                    "beginning, God created the heavens and the ") == 0);
 
+    printf("1\n");
+
     // Grab the next buffer
     uint8_t buffer2[100];
     int bufferLen2 = sizeof(buffer2) - 1;
     buffer2[sizeof(buffer2) - 1] = 0;
     stream->readBytes(buffer2, bufferLen2);
-    // log_d("Got buffer: \n%s", buffer2);
+    log_i("Got buffer: \n%s", buffer2);
     REQUIRE(strcmp((char *)buffer2, "earth. The earth was without form and void, and darkness was "
                                     "over the face of the deep. And the Spi") == 0);
+
+    printf("2 pos %d\n", stream->position());
 
     // Seek past the look back buffer threshold
     stream->seek(50000);
     REQUIRE(stream->position() == 50000);
+    printf("here1\n");
     stream->readBytes(buffer, bufferLen);
-    // log_d("Got buffer: \n%s", buffer);
+    log_i("Got buffer: \n%s", buffer);
     REQUIRE(strcmp((char *)buffer, "e they ate.\n\nThey said to him, \"Where is Sarah your wife?\" "
                                    "And he said, \"She is in the tent.\" The L") == 0);
 
@@ -192,4 +211,5 @@ TEST_CASE("Test GZip stream handling") {
     // log_d("Got buffer: \n%s", buffer);
     REQUIRE(strcmp((char *)buffer, "f Judah. And his offering was one silver plate whose weight "
                                    "was 130 shekels, one silver basin of 70") == 0);
+    printf("*** gunzip end\n");
 }

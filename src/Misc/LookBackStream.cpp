@@ -5,6 +5,7 @@
 auto LookBackStream::available() -> int { return size() - position(); }
 
 auto LookBackStream::readBytes(uint8_t *buf, int size) -> int {
+    printf("LBS readbytes %d\n", size);
     int bytesCopied = 0;
     while (bytesCopied < size) {
         // first check if we are reading from the lookback buffer
@@ -54,6 +55,7 @@ auto LookBackStream::read() -> int {
 }
 
 auto LookBackStream::seek(uint32_t pos) -> bool {
+    printf("LBS seek %d position %d\n", pos, position_);
     // check direction of seek
     if (pos == position_) {
         // nothing to do
@@ -117,6 +119,7 @@ auto LookBackStream::seek(uint32_t pos) -> bool {
     }
 
     if (bytesToReadForward > 0) {
+        printf("fbytes %d pos %d\n", bytesToReadForward, position_);
         // need to read forward to fill up the lookback buffer
         uint8_t buf[1024];
         int bytesCopied = 0;
@@ -124,6 +127,12 @@ auto LookBackStream::seek(uint32_t pos) -> bool {
             int bytesToCopy = std::min(bytesToReadForward - bytesCopied, (int)sizeof(buf));
             int bytesRead = readBytes(buf, bytesToCopy);
             bytesCopied += bytesRead;
+            printf("pos now %d\n", (int)position());
+
+            for (int i = 0; i < 10; i++) {
+                printf("%d: %c\n", position_ - 10 + i, buf[1023 - 10 + i]);
+            }
+
             if (bytesRead != bytesToCopy) {
                 log_i("failed to seek to %" PRIu32 "", pos);
                 return false;

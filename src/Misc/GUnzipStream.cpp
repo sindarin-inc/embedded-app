@@ -96,11 +96,18 @@ auto GUnzipStream::read() -> int {
 }
 
 auto GUnzipStream::seek(uint32_t pos) -> bool {
+    printf("seek: %d\n", pos);
     size_t newPosition = pos;
     if (newPosition > position_) {
         // for forwards seeks, decompress until desired location is reached.
         int offset = newPosition - position_;
+        printf("seeking %d\n", offset);
         readBytes(nullptr, offset);
+        printf("os %d oi %d\n", outSize_, outIndex_);
+        for (int i = outIndex_; i < outSize_; i++) {
+            printf("%c", outBuf_[i]);
+        }
+        printf("**\n");
     } else if (newPosition < position_) {
         // need to start over from beginning of the file
         // and decompress to new position
