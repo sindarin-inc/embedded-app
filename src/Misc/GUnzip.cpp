@@ -5,8 +5,7 @@
 
 #include "sindarin-debug.h"
 
-//#define ZLIB_WINDOW_SIZE 32768
-//#define ZLIB_INFLATE_STATE_SIZE 7168
+#define BSIZE 128
 
 typedef struct __attribute__((__packed__)) {
     uint8_t magic[2];
@@ -57,15 +56,13 @@ auto GUnzip::init() -> bool {
 auto GUnzip::decompress(uint8_t *input, int inputSize, uint8_t *output, int outputSize,
                         int &inputRead, int &outputAvail) -> int {
 
-    // printf("dec %d\n", inputSize);
-    //  if we are into the footer section, skip
+    //   if we are into the footer section, skip input bytes
+    inputRead = 0;
     if (compressedPos_ >= (compressedSize_ - 8)) {
         inputRead = inputSize;
-        outputAvail = 0;
-        return MZ_STREAM_END;
+        inputSize = 0;
     }
 
-    inputRead = 0;
     if (!init_) {
         if (!init()) {
             return false;
@@ -73,9 +70,7 @@ auto GUnzip::decompress(uint8_t *input, int inputSize, uint8_t *output, int outp
     }
 
     if (gzhdr.magic[0] == 0x00) {
-        printf("reading header\n");
         memcpy(&gzhdr, input, sizeof(gzHeader));
-        printf("%x %x\n", gzhdr.magic[0], gzhdr.magic[1]);
         input += sizeof(gzHeader);
         inputSize -= sizeof(gzHeader);
         inputRead += sizeof(gzHeader);
@@ -96,12 +91,14 @@ auto GUnzip::decompress(uint8_t *input, int inputSize, uint8_t *output, int outp
         }
     }
 
-    int newPos = compressedPos_ + inputRead + inputSize;
-    int footer = 0;
-    if (newPos > compressedSize_ - 8) { // skip footer
-        footer = newPos - (compressedSize_ - 8);
-        inputSize -= footer;
-        inputRead += footer;
+    if (inputSize > 0) {
+        int newPos = compressedPos_ + inputRead + inputSize;
+        int footer = 0;
+        if (newPos > compressedSize_ - 8) { // skip footer
+            footer = newPos - (compressedSize_ - 8);
+            inputSize -= footer;
+            inputRead += footer;
+        }
     }
 
     zstr_.next_in = input;
@@ -118,19 +115,8 @@ auto GUnzip::decompress(uint8_t *input, int inputSize, uint8_t *output, int outp
     inputRead += zstr_.total_in - inBefore;
     outputAvail = zstr_.total_out - outBefore;
 
-    // printf("dec read %d avail %d\n", inputRead, outputAvail);
-    if (outputAvail > 0) {
-        printf("upos %d\n", uncompressedPos_);
-        for (int i = 0; i < outputAvail; i++) {
-            printf("%c", output[i]);
-        }
-        printf("***\n");
-    }
-
     compressedPos_ += inputRead;
     uncompressedPos_ += outputAvail;
-
-    // printf("cpos %d upos %d\n", compressedPos_, uncompressedPos_);
 
     return err;
 }
@@ -144,8 +130,8 @@ auto GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFile
     compressedSize_ = in.size();
 
     bool done = false;
-    uint8_t inBuf[1024];
-    uint8_t outBuf[1024];
+    uint8_t inBuf[BSIZE];
+    uint8_t outBuf[BSIZE];
     int inputAvail = 0;
     int inputIndex = 0;
     int inputRead = 0;
@@ -159,14 +145,14 @@ auto GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFile
                 continue;
             }
 
-            int readBytes = in.readBytes((char *)inBuf, 1024);
+            int readBytes = in.readBytes((char *)inBuf, BSIZE);
             if (readBytes == 0) {
                 log_i("done reading!");
                 done = true;
                 continue;
             }
 
-            if (readBytes < 1024) {
+            if (readBytes < BSIZE) {
                 last = true;
             }
 
@@ -174,7 +160,7 @@ auto GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFile
             inputIndex = 0;
         }
 
-        int err = decompress(&inBuf[inputIndex], inputAvail, outBuf, 1024, inputRead, outputAvail);
+        int err = decompress(&inBuf[inputIndex], inputAvail, outBuf, BSIZE, inputRead, outputAvail);
         if (err != MZ_OK && err != MZ_STREAM_END) {
             log_e("Error decompressing %d", err);
             return false;
@@ -182,12 +168,13 @@ auto GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFile
 
         while (outputAvail > 0) {
             out.write(outBuf, outputAvail);
-            if (outputAvail < 1024) {
+            out.flush();
+            if (outputAvail < BSIZE) {
                 break;
             }
 
             int ir = 0;
-            err = decompress(inBuf, 0, outBuf, 1024, ir, outputAvail);
+            err = decompress(inBuf, 0, outBuf, BSIZE, ir, outputAvail);
             if (outputAvail == 0 && err == MZ_BUF_ERROR) {
                 break;
             }

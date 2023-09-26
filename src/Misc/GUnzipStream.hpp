@@ -41,6 +41,7 @@ private:
     int outSize_{0};
     int outIndex_{0};
     bool lastInput_{false};
+    bool lastOutputInBlock_{false};
 
     void readSize();
 };

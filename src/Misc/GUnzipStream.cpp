@@ -29,8 +29,18 @@ auto GUnzipStream::readBytes(uint8_t *buf, int size) -> int {
             // and we will have to provide more input data to proceed.
             // at this point we are only attempting to flush remaining output data,
             // and no new input data is provided to zlib.
+            if (lastOutputInBlock_) {
+                lastOutputInBlock_ = false;
+                outIndex_ = 0;
+                continue;
+            }
+
             int inputRead = 0;
             int err = gunzip_.decompress(nullptr, 0, outBuf_, GZ_BUFFER_SIZE, inputRead, outSize_);
+            if (outSize_ < GZ_BUFFER_SIZE) {
+                lastOutputInBlock_ = true;
+            }
+
             if (err == MZ_BUF_ERROR) {
                 // no more output to flush
                 outSize_ = 0;
@@ -80,6 +90,7 @@ auto GUnzipStream::readBytes(uint8_t *buf, int size) -> int {
         inSize_ -= inputRead;
         inIndex_ += inputRead;
         outIndex_ = 0;
+        lastOutputInBlock_ = false;
     }
 
     return bytesCopied;
@@ -96,18 +107,11 @@ auto GUnzipStream::read() -> int {
 }
 
 auto GUnzipStream::seek(uint32_t pos) -> bool {
-    printf("seek: %d\n", pos);
     size_t newPosition = pos;
     if (newPosition > position_) {
         // for forwards seeks, decompress until desired location is reached.
         int offset = newPosition - position_;
-        printf("seeking %d\n", offset);
         readBytes(nullptr, offset);
-        printf("os %d oi %d\n", outSize_, outIndex_);
-        for (int i = outIndex_; i < outSize_; i++) {
-            printf("%c", outBuf_[i]);
-        }
-        printf("**\n");
     } else if (newPosition < position_) {
         // need to start over from beginning of the file
         // and decompress to new position
