@@ -237,9 +237,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     }
 
     // If there is firmware available, show the Update Firmware item in the books tab.
-    auto makeReleaseNotesMenuItem = [this, &localStore, display, mainMenu]() {
-        Firmware firmware;
-        localStore.getPendingFirmwareUpdate(firmware);
+    auto makeReleaseNotesMenuItem =
+        [this, &localStore, display, mainMenu](const Firmware &firmware) {
         log_i("Found pending firmware update %s", firmware.version.c_str());
         return MenuItem("Upgrade Software",
                         StringFormat("From %s to %s", kVersionString, firmware.version.c_str()),
@@ -260,7 +259,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     };
 
     if (prefs_.firmwareLoaded.get().has_value()) {
-        booksMenu->addMenuItem(makeReleaseNotesMenuItem());
+        Firmware firmware;
+        auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
+        if (upgradeAvailable) {
+            booksMenu->addMenuItem(makeReleaseNotesMenuItem(firmware));
+        }
     }
 
     // If there are no books, show the Sync Content item in the books tab.
@@ -323,7 +326,11 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     log_i("Loading %zu Pocket articles", articles.size());
 
     if (prefs_.firmwareLoaded.get().has_value()) {
-        articlesMenu->addMenuItem(makeReleaseNotesMenuItem());
+        Firmware firmware;
+        auto upgradeAvailable = localStore.getPendingFirmwareUpdate(firmware);
+        if (upgradeAvailable) {
+            articlesMenu->addMenuItem(makeReleaseNotesMenuItem(firmware));
+        }
     }
 
     // If there are no articles, show the Sync Content item in the articles tab.
