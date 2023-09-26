@@ -955,7 +955,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     readingSettingsMenu->addMenuItem(MenuItem("Brightness", [this, display, readingSettingsMenu,
                                                              &lightingController]() {
         auto lightingAdjustScreen =
-            new LightingAdjustScreen(*display, this->prefs_, lightingController);
+            new LightingAdjustScreen(*display, this->prefs_, lightingController, this->telemetry_);
         this->display_->clearDisplay();
         setCurrentScreen(*lightingAdjustScreen);
         lightingAdjustScreen->setBackCallback([this, lightingAdjustScreen, readingSettingsMenu]() {

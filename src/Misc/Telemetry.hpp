@@ -26,10 +26,11 @@ enum TelemetryField {
     METRIC_CLOCK_SET,
     METRIC_SHUTDOWN,
     METRIC_WIFI,
+    METRIC_LIGHTING,
 };
 auto TelemetryFieldToString(TelemetryField field) -> const char *;
 
-typedef std::variant<int, uint32_t, float, const char *, std::string, SpiramString>
+typedef std::variant<int, uint32_t, uint16_t, float, const char *, std::string, SpiramString>
     TelemetryVariant;
 
 class Telemetry {
@@ -67,9 +68,9 @@ private:
                        std::map<std::string, TelemetryVariant> &data) {
         static_assert(
             std::disjunction_v<std::is_same<T, float>, std::is_same<T, uint32_t>,
-                               std::is_same<T, int>, std::is_same<T, char *>,
-                               std::is_same<T, const char *>, std::is_same<T, std::string>,
-                               std::is_same<T, SpiramString>>,
+                               std::is_same<T, uint16_t>, std::is_same<T, int>,
+                               std::is_same<T, char *>, std::is_same<T, const char *>,
+                               std::is_same<T, std::string>, std::is_same<T, SpiramString>>,
             "Unsupported type for logMetricImpl");
 
         // create log directory in filesystem if it doesn't exist
@@ -83,9 +84,11 @@ private:
         std::string dataJsonFormat = mapToJson(data);
         std::string valueFormat = "";
         if constexpr (std::is_same<T, float>::value) {
-            valueFormat = StringFormat(R"(,"v":%.2f)", *value);
-        } else if constexpr (std::is_same<T, uint32_t>::value || std::is_same<T, int>::value) {
-            valueFormat = StringFormat(R"(,"v":%u)", *value);
+            valueFormat = StringFormat(R"(,"v":%.2f)", value);
+        } else if constexpr (std::is_same<T, uint32_t>::value || std::is_same<T, uint16_t>::value) {
+            valueFormat = StringFormat(R"(,"v":%u)", value);
+        } else if constexpr (std::is_same<T, int>::value) {
+            valueFormat = StringFormat(R"(,"v":%d)", value);
         } else if constexpr (std::is_same<T, char *>::value ||
                              std::is_same<T, const char *>::value) {
             if (value && strcmp(value, "") != 0) { // Check if the C-style string is not empty

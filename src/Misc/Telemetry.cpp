@@ -30,6 +30,8 @@ auto TelemetryFieldToString(TelemetryField field) -> const char * {
         return "sd";
     case METRIC_WIFI:
         return "wf";
+    case METRIC_LIGHTING:
+        return "li";
     }
     // Explicitly don't have a `default` case so the compiler can warn us when we have unhandled
     // enum values
@@ -41,6 +43,8 @@ auto Telemetry::variantToJson(const TelemetryVariant &v) -> std::string {
         return std::to_string(std::get<int>(v));
     } else if (std::holds_alternative<uint32_t>(v)) {
         return std::to_string(std::get<uint32_t>(v));
+    } else if (std::holds_alternative<uint16_t>(v)) {
+        return std::to_string(std::get<uint16_t>(v));
     } else if (std::holds_alternative<float>(v)) {
         std::ostringstream ss;
         ss << std::fixed << std::setprecision(2) << std::get<float>(v);

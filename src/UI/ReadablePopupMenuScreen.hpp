@@ -19,7 +19,7 @@ public:
                             LocalStore &localStore, Telemetry &telemetry)
         : display_(display), prefs_(prefs), readable_(readable), renderer_(renderer),
           popupMenuView_(display), localStore_(localStore), telemetry_(telemetry),
-          lightingAdjustScreen_(display, prefs, lightingController),
+          lightingAdjustScreen_(display, prefs, lightingController, telemetry),
           readableSeekScreen_(prefs, readable, renderer),
           readableTableOfContentsScreen_(prefs, readable, renderer, display, telemetry),
           readableSummaryScreen_(prefs, readable, display),
