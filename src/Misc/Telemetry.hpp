@@ -85,9 +85,10 @@ private:
         std::string valueFormat = "";
         if constexpr (std::is_same<T, float>::value) {
             valueFormat = StringFormat(R"(,"v":%.2f)", value);
-        } else if constexpr (std::is_same<T, uint32_t>::value || std::is_same<T, uint16_t>::value ||
-                             std::is_same<T, int>::value) {
+        } else if constexpr (std::is_same<T, uint32_t>::value || std::is_same<T, uint16_t>::value) {
             valueFormat = StringFormat(R"(,"v":%u)", value);
+        } else if constexpr (std::is_same<T, int>::value) {
+            valueFormat = StringFormat(R"(,"v":%d)", value);
         } else if constexpr (std::is_same<T, char *>::value ||
                              std::is_same<T, const char *>::value) {
             if (value && strcmp(value, "") != 0) { // Check if the C-style string is not empty
