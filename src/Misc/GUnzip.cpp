@@ -19,7 +19,7 @@ typedef struct __attribute__((__packed__)) {
 
 static gzHeader gzhdr;
 
-static void *spiZAlloc(void *opaque, size_t items, size_t size) {
+static auto spiZAlloc(void *opaque, size_t items, size_t size) -> void * {
     log_d("spiZAlloc: %d %d", (int)items, (int)size);
     return SpiRamMalloc(items * size);
 }
@@ -50,7 +50,7 @@ auto GUnzip::init() -> bool {
     zstr_.zfree = spiZFree;
 
     zstr_.avail_in = 0;
-    zstr_.next_in = 0;
+    zstr_.next_in = nullptr;
 
     // initialize inflate with -MZ_DEFAULT_WINDOW_BITS to decompress a raw stream,
     // instead of a gz stream with header.
@@ -84,7 +84,7 @@ auto GUnzip::decompress(uint8_t *input, int inputSize, uint8_t *output, int outp
     }
 
     if (!readHeader_) {
-        uint8_t *hdr = (uint8_t *)&gzhdr;
+        auto *hdr = (uint8_t *)&gzhdr;
         while (gzHeaderBytes_ < 10) {
             if (inputSize == 0) {
                 // still reading header, but no more data
