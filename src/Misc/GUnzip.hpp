@@ -7,9 +7,7 @@
 
 class GUnzip {
 public:
-    GUnzip()
-        : init_(false), compressedSize_(0), compressedPos_(0), uncompressedPos_(0), bufPos_(0),
-          readHeader_(false), gzHeaderBytes_(0) {}
+    GUnzip() {}
     ~GUnzip() = default;
 
     auto decompressFile(FileSystem &fileSystem, const std::string &inputFileName,
@@ -26,13 +24,13 @@ public:
 
 protected:
     mz_stream zstr_;
-    bool init_;
-    int compressedSize_;
-    int compressedPos_;
-    int uncompressedPos_;
+    bool init_{false};
+    int compressedSize_{0};
+    int compressedPos_{0};
+    int uncompressedPos_{0};
     uint8_t buf_[1024];
-    int bufPos_;
+    int bufPos_{0};
 
-    bool readHeader_;
-    int gzHeaderBytes_;
+    bool readHeader_{false};
+    int gzHeaderBytes_{0};
 };

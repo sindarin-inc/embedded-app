@@ -19,7 +19,7 @@ typedef struct __attribute__((__packed__)) {
 
 static gzHeader gzhdr;
 
-static void *spiZAlloc(void *opaque, size_t items, size_t size) {
+static auto spiZAlloc(void *opaque, size_t items, size_t size) -> void * {
     log_d("spiZAlloc: %d %d", (int)items, (int)size);
     return SpiRamMalloc(items * size);
 }
@@ -34,7 +34,7 @@ auto GUnzip::init() -> bool {
 
     if (init_) {
         // starting over, so clean up existing decompressor
-        err = mz_inflateEnd(&zstr_);
+        err = MzInflateEnd(&zstr_);
     }
 
     init_ = true;
@@ -49,13 +49,13 @@ auto GUnzip::init() -> bool {
     zstr_.zalloc = spiZAlloc;
     zstr_.zfree = spiZFree;
 
-    zstr_.avail_in = 0;
-    zstr_.next_in = 0;
+    zstr_.availIn = 0;
+    zstr_.nextIn = nullptr;
 
     // initialize inflate with -MZ_DEFAULT_WINDOW_BITS to decompress a raw stream,
     // instead of a gz stream with header.
     // miniz doesn't parse gz headers correctly
-    err = mz_inflateInit2(&zstr_, -MZ_DEFAULT_WINDOW_BITS);
+    err = MzInflateInit2(&zstr_, -MZ_DEFAULT_WINDOW_BITS);
 
     if (err == MZ_OK) {
         log_i("zlib init ok");
@@ -84,7 +84,7 @@ auto GUnzip::decompress(uint8_t *input, int inputSize, uint8_t *output, int outp
     }
 
     if (!readHeader_) {
-        uint8_t *hdr = (uint8_t *)&gzhdr;
+        auto *hdr = (uint8_t *)&gzhdr;
         while (gzHeaderBytes_ < 10) {
             if (inputSize == 0) {
                 // still reading header, but no more data
@@ -134,19 +134,19 @@ auto GUnzip::decompress(uint8_t *input, int inputSize, uint8_t *output, int outp
         }
     }
 
-    zstr_.next_in = input;
-    zstr_.avail_in = inputSize;
-    zstr_.next_out = output;
-    zstr_.avail_out = outputSize;
+    zstr_.nextIn = input;
+    zstr_.availIn = inputSize;
+    zstr_.nextOut = output;
+    zstr_.availOut = outputSize;
 
-    int inBefore = zstr_.total_in;
-    int outBefore = zstr_.total_out;
+    int inBefore = zstr_.totalIn;
+    int outBefore = zstr_.totalOut;
 
     int err = MZ_OK;
-    err = mz_inflate(&zstr_, MZ_SYNC_FLUSH);
+    err = MzInflate(&zstr_, MZ_SYNC_FLUSH);
 
-    inputRead += zstr_.total_in - inBefore;
-    outputAvail = zstr_.total_out - outBefore;
+    inputRead += zstr_.totalIn - inBefore;
+    outputAvail = zstr_.totalOut - outBefore;
 
     compressedPos_ += inputRead;
     uncompressedPos_ += outputAvail;
