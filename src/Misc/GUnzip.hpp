@@ -7,7 +7,7 @@
 
 class GUnzip {
 public:
-    GUnzip() {}
+    GUnzip() = default;
     ~GUnzip() = default;
 
     auto decompressFile(FileSystem &fileSystem, const std::string &inputFileName,
