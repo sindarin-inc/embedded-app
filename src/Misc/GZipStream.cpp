@@ -19,8 +19,8 @@ auto GZipStream::init() -> bool {
     zs_.zalloc = spiZAlloc;
     zs_.zfree = spiZFree;
 
-    int ret = MzDeflateInit2(&zs_, MZ_BEST_COMPRESSION, MZ_DEFLATED, -MZ_DEFAULT_WINDOW_BITS, 8,
-                             MZ_DEFAULT_STRATEGY);
+    int ret = mz_deflateInit2(&zs_, MZ_BEST_COMPRESSION, MZ_DEFLATED, -MZ_DEFAULT_WINDOW_BITS, 8,
+                              MZ_DEFAULT_STRATEGY);
     if (ret != MZ_OK) {
         log_e("error in mz_deflateInit2: %d", ret);
         return false;
@@ -56,11 +56,11 @@ auto GZipStream::compressBlock(uint8_t *inputBuffer, int blockSize, uint8_t *out
 
     // calculate crc
     if (blockSize > 0) {
-        crc_ = MzCrc32(crc_, inputBuffer, blockSize);
+        crc_ = mz_crc32(crc_, inputBuffer, blockSize);
     }
 
-    zs_.nextIn = inputBuffer;
-    zs_.availIn = blockSize;
+    zs_.next_in = inputBuffer;
+    zs_.avail_in = blockSize;
 
     int ret;
     *outputBufferLength = 0;
@@ -70,10 +70,10 @@ auto GZipStream::compressBlock(uint8_t *inputBuffer, int blockSize, uint8_t *out
     int flushType = flush ? MZ_FINISH : MZ_NO_FLUSH;
 
     do {
-        zs_.nextOut = out;
-        zs_.availOut = outputSizeRemaining;
+        zs_.next_out = out;
+        zs_.avail_out = outputSizeRemaining;
 
-        ret = MzDeflate(&zs_, flushType);
+        ret = mz_deflate(&zs_, flushType);
         if (flush) {
             if (ret == MZ_STREAM_END) {
                 // nothing left to flush
@@ -88,21 +88,21 @@ auto GZipStream::compressBlock(uint8_t *inputBuffer, int blockSize, uint8_t *out
                 return false;
             }
 
-            if (zs_.availIn == 0) {
+            if (zs_.avail_in == 0) {
                 done = true;
             }
         }
 
-        int compressedBytes = outputSizeRemaining - zs_.availOut;
+        int compressedBytes = outputSizeRemaining - zs_.avail_out;
         if (compressedBytes > 0) {
             out += compressedBytes;
             *outputBufferLength += compressedBytes;
             outputSizeRemaining -= compressedBytes;
         }
-    } while ((zs_.availIn != 0) && (outputSizeRemaining > 0) && !flush);
+    } while ((zs_.avail_in != 0) && (outputSizeRemaining > 0) && !flush);
 
     if (flush && done) {
-        MzDeflateEnd(&zs_);
+        mz_deflateEnd(&zs_);
     }
 
     uncompressedSize_ += blockSize;
