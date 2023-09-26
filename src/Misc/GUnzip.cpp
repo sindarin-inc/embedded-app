@@ -6,6 +6,7 @@
 #include "sindarin-debug.h"
 
 #define BSIZE 128
+#define GZ_FILE_HEADER_MASK 0x08
 
 typedef struct __attribute__((__packed__)) {
     uint8_t magic[2];
@@ -42,12 +43,18 @@ auto GUnzip::init() -> bool {
 
     memset(&zstr_, 0, sizeof(mz_stream));
     memset(&gzhdr, 0, sizeof(gzHeader));
+    gzHeaderBytes_ = 0;
+    readHeader_ = false;
+
     zstr_.zalloc = spiZAlloc;
     zstr_.zfree = spiZFree;
 
     zstr_.avail_in = 0;
     zstr_.next_in = 0;
 
+    // initialize inflate with -MZ_DEFAULT_WINDOW_BITS to decompress a raw stream,
+    // instead of a gz stream with header.
+    // miniz doesn't parse gz headers correctly
     err = mz_inflateInit2(&zstr_, -MZ_DEFAULT_WINDOW_BITS);
 
     if (err == MZ_OK) {
@@ -64,6 +71,7 @@ auto GUnzip::decompress(uint8_t *input, int inputSize, uint8_t *output, int outp
 
     //   if we are into the footer section, skip input bytes
     inputRead = 0;
+    outputAvail = 0;
     if (compressedPos_ >= (compressedSize_ - 8)) {
         inputRead = inputSize;
         inputSize = 0;
@@ -75,25 +83,44 @@ auto GUnzip::decompress(uint8_t *input, int inputSize, uint8_t *output, int outp
         }
     }
 
-    if (gzhdr.magic[0] == 0x00) {
-        memcpy(&gzhdr, input, sizeof(gzHeader));
-        input += sizeof(gzHeader);
-        inputSize -= sizeof(gzHeader);
-        inputRead += sizeof(gzHeader);
-
-        // check for filename
-        if ((gzhdr.fileFlags & 0x08) != 0) {
-            // skip filename
-            while (*input != 0x00) {
-                input++;
-                inputSize--;
-                inputRead++;
+    if (!readHeader_) {
+        uint8_t *hdr = (uint8_t *)&gzhdr;
+        while (gzHeaderBytes_ < 10) {
+            if (inputSize == 0) {
+                // still reading header, but no more data
+                // keep reading next call
+                return MZ_OK;
             }
 
-            // skip one more byte
+            hdr[gzHeaderBytes_] = *input;
             input++;
             inputSize--;
             inputRead++;
+            gzHeaderBytes_++;
+        }
+
+        if (inputSize == 0) {
+            return MZ_OK;
+        }
+
+        // check for filename in the gz header
+        if ((gzhdr.fileFlags & GZ_FILE_HEADER_MASK) != 0) {
+            while (!readHeader_) {
+                if (*input == 0x00) {
+                    readHeader_ = true;
+                }
+
+                input++;
+                inputSize--;
+                inputRead++;
+
+                if (inputSize == 0) {
+                    // keep reading filename next call
+                    return MZ_OK;
+                }
+            }
+        } else {
+            readHeader_ = true;
         }
     }
 
@@ -172,17 +199,23 @@ auto GUnzip::decompressFile(FileSystem &fileSystem, const std::string &inputFile
             return false;
         }
 
+        bool lastOutput = false;
         while (outputAvail > 0) {
             out.write(outBuf, outputAvail);
             out.flush();
-            if (outputAvail < BSIZE) {
+
+            outputAvail = 0;
+
+            if (lastOutput) {
                 break;
             }
 
             int ir = 0;
             err = decompress(inBuf, 0, outBuf, BSIZE, ir, outputAvail);
-            if (outputAvail == 0 && err == MZ_BUF_ERROR) {
-                break;
+
+            if (err == MZ_BUF_ERROR) {
+                lastOutput = true;
+                continue;
             }
 
             if (err != MZ_OK && err != MZ_STREAM_END) {

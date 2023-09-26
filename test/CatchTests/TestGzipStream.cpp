@@ -177,7 +177,8 @@ TEST_CASE("Test Gunzip functionality") {
         uint8_t inBuffer[128];
         uint8_t outBuffer[128];
 
-        int testBufSize = 128;
+        // test worst case scenario - 1 byte input and output buffers
+        int testBufSize = 1;
 
         bool done = false;
         int inputBytesAvailable = 0;
@@ -213,18 +214,21 @@ TEST_CASE("Test Gunzip functionality") {
             }
 
             // keep reading until all output bytes are read
+            bool lastOutput = false;
             while (outputBytesAvail > 0) {
                 outFile.write(outBuffer, outputBytesAvail);
-                if (outputBytesAvail < testBufSize) {
+                outFile.flush();
+
+                if (lastOutput) {
                     break;
                 }
 
                 err = gunzip.decompress(nullptr, 0, outBuffer, testBufSize, inputBytesRead,
                                         outputBytesAvail);
-                REQUIRE(!((err == MZ_BUF_ERROR) && (outputBytesAvail != 0)));
+
                 if (err == MZ_BUF_ERROR) {
                     // no more output to read
-                    break;
+                    lastOutput = true;
                 }
             }
         } while (!done);
