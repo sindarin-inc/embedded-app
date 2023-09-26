@@ -67,20 +67,24 @@ HttpClient::HttpClient(const char *url, const char *contentType, esp_http_client
     if (method != HTTP_METHOD_GET) {
         esp_err_t err = esp_http_client_set_header(client_, "Content-Type", contentType);
         if (err != ESP_OK) {
-            log_e("Failed esp_http_client_set_header with %s", esp_err_to_name(err));
+            log_e("esp_http_client_set_header err=%s", esp_err_to_name(err));
         }
     }
 }
 
 HttpClient::~HttpClient() {
+    // In case the connection wasn't already closed
     esp_http_client_close(client_);
     esp_http_client_cleanup(client_);
-    responseHeaders_.clear();
     free(url_);
 }
 
 auto HttpClient::setHeader(const char *key, const char *value) -> esp_err_t {
-    return esp_http_client_set_header(client_, key, value);
+    auto err = esp_http_client_set_header(client_, key, value);
+    if (err != ESP_OK) {
+        log_e("esp_http_client_set_header err=%s", esp_err_to_name(err));
+    }
+    return err;
 }
 
 auto HttpClient::getResponseHeader(const char *key, char **value) -> esp_err_t {
@@ -93,7 +97,11 @@ auto HttpClient::getResponseHeader(const char *key, char **value) -> esp_err_t {
 }
 
 auto HttpClient::open(int contentLength) -> esp_err_t {
-    return esp_http_client_open(client_, contentLength);
+    auto err = esp_http_client_open(client_, contentLength);
+    if (err != ESP_OK) {
+        log_e("esp_http_client_open err=%s", esp_err_to_name(err));
+    }
+    return err;
 }
 
 // auto HttpClient::perform() -> esp_err_t { return esp_http_client_perform(client_); }
@@ -117,7 +125,13 @@ auto HttpClient::read(char *buffer, int length) -> int {
     return esp_http_client_read(client_, buffer, length);
 }
 
-auto HttpClient::close() -> esp_err_t { return esp_http_client_close(client_); }
+auto HttpClient::close() -> esp_err_t {
+    auto err = esp_http_client_close(client_);
+    if (err != ESP_OK) {
+        log_e("esp_http_client_close err=%s", esp_err_to_name(err));
+    }
+    return err;
+}
 
 auto HttpClient::makeReadStream() -> std::shared_ptr<HttpIstream<4096>> {
     return std::make_shared<HttpIstream<4096>>(client_);

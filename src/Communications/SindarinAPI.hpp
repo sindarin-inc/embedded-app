@@ -40,7 +40,7 @@ public:
                              FileSystem &fileSystem) -> int;
     auto uploadCrashReport(SFile &crashFile, const std::string &contentType) -> int;
 
-    void setAuth(HttpClient &client);
+    auto setAuth(HttpClient &client) -> esp_err_t;
 
 protected:
     static std::shared_ptr<SindarinAPI> instance;

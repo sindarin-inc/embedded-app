@@ -5,6 +5,7 @@
 #include "FileDownload.hpp"
 #include "GitVersion.hpp"
 #include "Misc/Battery.hpp"
+#include "Misc/Defer.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/StringUtil.hpp"
 #include "Models/Json.hpp"
@@ -29,14 +30,13 @@ auto SindarinAPI::isSindarinUrl(const char *url) -> bool {
     return HasPrefix(url, SINDARIN_SERVER_URL);
 }
 
-void SindarinAPI::setAuth(HttpClient &client) {
-    if (!accessToken_.empty()) {
-        esp_err_t err = client.setHeader("Authorization",
-                                         StringFormat("Tolkien %s", accessToken_.c_str()).c_str());
-        if (err != ESP_OK) {
-            log_e("Failed addHeader with %s", esp_err_to_name(err));
-        }
+auto SindarinAPI::setAuth(HttpClient &client) -> esp_err_t {
+    if (accessToken_.empty()) {
+        log_w("Called setAuth, but no access token is set");
+        return ESP_ERR_NOT_FOUND;
     }
+    return client.setHeader("Authorization",
+                            StringFormat("Tolkien %s", accessToken_.c_str()).c_str());
 }
 
 void SindarinAPI::setAccessToken(const std::string &token) { accessToken_ = token; }
@@ -53,7 +53,10 @@ auto SindarinAPI::checkSync(CheckSyncRequest &req, CheckSyncResponse *resp, Tele
 auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, CheckSyncResponse *resp,
                             Telemetry &telemetry) -> int {
     HttpClient client(url.c_str(), "application/json", HTTP_METHOD_POST);
-    setAuth(client);
+    auto err = setAuth(client);
+    if (err != ESP_OK) {
+        return 0;
+    }
 
     auto doc = std::make_shared<SpiRamJsonDocument>(
         2048 * std::max(1, (int)(req.placemarks.size() + req.archives.size() +
@@ -65,7 +68,12 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
     auto reqBody = SpiRamArrayPtr<char>(serializedMaxSize);
     size_t bodyLength = serializeJson(*doc, reqBody.get(), serializedMaxSize);
 
-    client.open(bodyLength);
+    err = client.open(bodyLength);
+    if (err != ESP_OK) {
+        return 0;
+    }
+    defer { client.close(); };
+
     int writeLength = client.write(reqBody.get(), bodyLength);
     if (writeLength < bodyLength) {
         auto message = StringFormat("HttpClient failed to write (writeLength=%d, bodyLength=%zu)",
@@ -120,8 +128,6 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
         return 0;
     }
 
-    SHOW_HEAP();
-
     log_d("Synced: %d Message: %s", resp->synced, resp->message.c_str());
 
     SHOW_HEAP();
@@ -131,15 +137,24 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
 
 auto SindarinAPI::checkFirmware(FirmwareResponse *resp) -> int {
     HttpClient client(SINDARIN_SERVER_URL "/firmware/");
-    setAuth(client);
 
-    client.open(0);
+    auto err = setAuth(client);
+    if (err != ESP_OK) {
+        return 0;
+    }
 
-    int contentLength = client.fetchHeaders();
+    err = client.open(0);
+    if (err != ESP_OK) {
+        return 0;
+    }
+    defer { client.close(); };
+
+    auto contentLength = client.fetchHeaders();
     if (contentLength <= 0) {
         log_e("Failed to fetch headers");
         return 0;
     }
+
     int httpCode = client.getStatusCode();
     if (httpCode != 200) {
         log_e("Failed to check sync: %d", httpCode);
@@ -211,53 +226,92 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
     // Create client with multipart headers and write the header
     int totalSize = header.size() + telemetryFile.size() + footer.size();
     auto contentType = "multipart/form-data; boundary=" + boundary;
+
     HttpClient client(SINDARIN_SERVER_URL "/telemetry/", contentType.c_str(), HTTP_METHOD_POST);
-    setAuth(client);
-    client.setHeader("X-Serial-Number", GetSerialNumber().c_str());
-    client.open(totalSize);
-    client.write(header.c_str(), header.size());
+
+    auto err = setAuth(client);
+    if (err != ESP_OK) {
+        return 0;
+    }
+
+    err = client.setHeader("X-Serial-Number", GetSerialNumber().c_str());
+    if (err != ESP_OK) {
+        return 0;
+    }
+
+    err = client.open(totalSize);
+    if (err != ESP_OK) {
+        return 0;
+    }
+    defer { client.close(); };
+
+    auto bytesWritten = client.write(header.c_str(), header.size());
+    if (bytesWritten < header.size()) {
+        log_e("Telemetry multipart write failure (%d < %zu)", bytesWritten, header.size());
+        return 0;
+    }
 
     // Write the file data in chunks
     size_t bufferSize = 4096;
     auto buffer = SpiRamArrayPtr<char>(bufferSize);
-    int bytesWritten = 0;
+    int totalBytesWritten = 0;
     int writeSize = telemetryFile.size();
-    while (bytesWritten < writeSize) {
+    while (totalBytesWritten < writeSize) {
         auto bytesRead = telemetryFile.readBytes(buffer.get(), bufferSize);
-        bytesWritten += client.write(buffer.get(), bytesRead);
+        auto bytesWritten = client.write(buffer.get(), bytesRead);
+        if (bytesWritten <= 0) {
+            log_w("client.write failed (bytesWritten == %d)", bytesWritten);
+            if (!client.connected) {
+                log_w("Connection closed, bailing out");
+                return 0;
+            }
+        }
+        totalBytesWritten += bytesWritten;
     }
 
     // Write the multipart footer
-    client.write(footer.c_str(), footer.size());
+    bytesWritten = client.write(footer.c_str(), footer.size());
+    if (bytesWritten < footer.size()) {
+        log_w("client.write failed (%d < %zu)", bytesWritten, footer.size());
+        return 0;
+    }
 
     // Send request and fetch response
     client.fetchHeaders();
-    int httpCode = client.getStatusCode();
-
-    return httpCode;
+    return client.getStatusCode();
 }
 
 auto SindarinAPI::uploadCrashReport(SFile &crashFile, const std::string &contentType) -> int {
     HttpClient client(SINDARIN_SERVER_URL "/coredumps/", contentType.c_str(), HTTP_METHOD_POST);
-    setAuth(client);
+    auto err = setAuth(client);
+    if (err != ESP_OK) {
+        return 0;
+    }
 
     int writeSize = crashFile.size();
-    client.open(writeSize);
+    err = client.open(writeSize);
+    if (err != ESP_OK) {
+        return 0;
+    }
+    defer { client.close(); };
 
     size_t bufferSize = 4096;
     auto buffer = SpiRamArrayPtr<char>(bufferSize);
 
-    // NOTE: crashFile.available() never goes down but it seems like it should
-    int bytesWritten = 0;
-    while (bytesWritten < writeSize) {
+    int totalBytesWritten = 0;
+    while (totalBytesWritten < writeSize) {
         auto bytesRead = crashFile.readBytes(buffer.get(), bufferSize);
-        bytesWritten += client.write(buffer.get(), bytesRead);
+        auto bytesWritten = client.write(buffer.get(), bytesRead);
+        if (bytesWritten <= 0) {
+            log_w("client.write failed (bytesWritten == %d)", bytesWritten);
+            if (!client.connected) {
+                log_w("Connection closed, bailing out");
+                return 0;
+            }
+        }
+        totalBytesWritten += bytesWritten;
     }
 
     client.fetchHeaders();
-    int httpCode = client.getStatusCode();
-
-    log_d("uploadCrashReport http code %d", httpCode);
-
-    return httpCode;
+    return client.getStatusCode();
 }

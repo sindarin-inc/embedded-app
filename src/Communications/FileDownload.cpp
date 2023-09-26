@@ -5,6 +5,7 @@
 
 #include "Communications/HttpClient.hpp"
 #include "Communications/SindarinAPI.hpp"
+#include "Misc/Defer.hpp"
 #include "Misc/GUnzipStream.hpp"
 #include "sindarin-debug.h"
 
@@ -17,28 +18,31 @@ auto DownloadFile(
     HttpClient client(url);
 
     if (SindarinAPI::isSindarinUrl(url)) {
-        std::shared_ptr<SindarinAPI> api = SindarinAPI::getInstance();
-        if (api) {
-            log_d("Attaching Sindarin auth to HTTP request to %s", url);
-            api->setAuth(client);
-        }
+        SindarinAPI::getInstance()->setAuth(client);
     }
 
     auto time = esp_timer_get_time();
     auto downloadStart = time;
 
     if (gzip) {
-        client.setHeader("Accept-Encoding", "gzip");
-        // TODO: check server headers to verify we got gzip
+        auto err = client.setHeader("Accept-Encoding", "gzip");
+        if (err != ESP_OK) {
+            return err;
+        }
     }
 
     esp_err_t err = client.open();
     if (err != ESP_OK) {
-        log_e("Failed to open HTTP connection: %s", esp_err_to_name(err));
         return false;
     }
+    defer { client.close(); };
 
     auto contentLength = client.fetchHeaders();
+    if (contentLength <= 0) {
+        // if we somehow don't have a content length header, consider it an error for now
+        log_e("Server did not return a content length for %s", url);
+        return false;
+    }
 
     auto httpCode = client.getStatusCode();
     if (httpCode != 200) {
@@ -63,12 +67,6 @@ auto DownloadFile(
         }
     }
 
-    if (contentLength <= 0) {
-        // if we somehow don't have a content length header, consider it an error for now
-        log_e("Server did not return a content length for %s", url);
-        return false;
-    }
-
     if (!openedConnection(httpCode, contentLength)) {
         // Get the body anyways, for debugging, since it might contain an error message
         char buffer[256];
@@ -85,10 +83,9 @@ auto DownloadFile(
     while (totalReadLen < contentLength) {
         int readLen = readWrite(client, totalReadLen, contentLength);
         if (readLen <= 0) {
-            log_w("Error read data (readLen == 0)");
+            log_w("readWrite failed (readLen == %d)", readLen);
             if (!client.connected) {
                 log_w("Connection closed, bailing out");
-                client.close();
                 return false;
             }
         }
@@ -117,8 +114,6 @@ auto DownloadFile(
 
     float percentProgress = (float)totalReadLen / contentLength * 100.0f;
     progressCallback(totalReadLen, percentProgress);
-
-    client.close();
 
     // verify we received enough bytes according to the content length header
     // rather than the length passed in, this works for compressed or uncompressed files
@@ -244,6 +239,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         file = fileSystem.open(fullPath.c_str());
         GUnzipStream gzStream(file);
         fileSize = gzStream.size();
+        file.close();
     } else {
         file = fileSystem.open(fullPath.c_str());
         fileSize = file.size();

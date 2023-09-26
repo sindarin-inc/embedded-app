@@ -6,7 +6,6 @@
 #include <utility>
 
 #include "Communications/FileDownload.hpp"
-#include "Communications/HttpClient.hpp"
 #include "Communications/WiFi.hpp"
 #include "GitVersion.hpp"
 #include "Misc/Dispatch.hpp"
