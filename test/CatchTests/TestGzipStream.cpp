@@ -1,10 +1,32 @@
 #include <catch_amalgamated.hpp>
 
 #include "Misc/GUnzip.hpp"
+#include "Misc/GUnzipStream.hpp"
 #include "Misc/GZipFile.hpp"
 #include "Misc/GZipStream.hpp"
 #include "Storage/PosixFileSystem.hpp"
 #include "ViewTestCommon.hpp"
+
+static bool compareFiles(SFile &f1, SFile &f2) {
+    if (f1.size() != f2.size()) {
+        return false;
+    }
+
+    f1.seek(0);
+    f2.seek(0);
+
+    int size = f1.size();
+    for (int i = 0; i < size; i++) {
+        if (f1.read() != f2.read()) {
+            return false;
+        }
+    }
+
+    f1.seek(0);
+    f2.seek(0);
+
+    return true;
+}
 
 TEST_CASE("Test GZip compression") {
     SetupFileSystemMock("TestData");
@@ -122,6 +144,145 @@ TEST_CASE("Test GZip Stream compression") {
     SECTION("cleanup") { fs.remove(compFileName); }
 }
 
+TEST_CASE("Test Gunzip decompress file") {
+    SetupFileSystemMock("TestData");
+
+    PosixFileSystem fs;
+    fs.begin();
+
+    SECTION("test") {
+        GUnzip gunzip;
+        REQUIRE(gunzip.decompressFile(fs, "/book/old-testament.txt.gz",
+                                      "/book/old-testament.decompressed.txt"));
+        SFile f1 = fs.open("/book/old-testament.decompressed.txt");
+        SFile f2 = fs.open("/book/old-testament.txt");
+        REQUIRE(compareFiles(f1, f2));
+    }
+    SECTION("cleanup") { fs.remove("/book/old-testament.decompressed.txt"); }
+}
+
+TEST_CASE("Test Gunzip functionality") {
+    SetupFileSystemMock("TestData");
+
+    PosixFileSystem fs;
+    fs.begin();
+
+    SECTION("test") {
+        SFile compFile = fs.open("/book/old-testament.txt.gz");
+        SFile outFile = fs.open("/book/old-testament.decompressed.txt", "w", true);
+
+        GUnzip gunzip;
+        gunzip.setCompressedSize(compFile.size());
+
+        uint8_t inBuffer[128];
+        uint8_t outBuffer[128];
+
+        // test worst case scenario - 1 byte input and output buffers
+        int testBufSize = 1;
+
+        bool done = false;
+        int inputBytesAvailable = 0;
+        int inputIndex = 0;
+        do {
+            if (inputBytesAvailable == 0) {
+                // read more
+                int read = compFile.readBytes((char *)inBuffer, testBufSize);
+                if (read == 0) {
+                    done = true;
+                    break;
+                }
+
+                inputBytesAvailable = read;
+                inputIndex = 0;
+            }
+
+            // push some input data
+            int inputBytesRead = 0;
+            int outputBytesAvail = 0;
+            int err = gunzip.decompress(&inBuffer[inputIndex], inputBytesAvailable, outBuffer,
+                                        testBufSize, inputBytesRead, outputBytesAvail);
+            REQUIRE(((err == MZ_OK) || (err == MZ_STREAM_END)));
+
+            if (err == MZ_STREAM_END) {
+                done = true;
+            }
+
+            // decrease input bytes
+            if (inputBytesRead > 0) {
+                inputBytesAvailable -= inputBytesRead;
+                inputIndex += inputBytesRead;
+            }
+
+            // keep reading until all output bytes are read
+            bool lastOutput = false;
+            while (outputBytesAvail > 0) {
+                outFile.write(outBuffer, outputBytesAvail);
+                outFile.flush();
+
+                if (lastOutput) {
+                    break;
+                }
+
+                err = gunzip.decompress(nullptr, 0, outBuffer, testBufSize, inputBytesRead,
+                                        outputBytesAvail);
+
+                if (err == MZ_BUF_ERROR) {
+                    // no more output to read
+                    lastOutput = true;
+                }
+            }
+        } while (!done);
+
+        compFile.close();
+        outFile.close();
+        SFile uncFile1 = fs.open("/book/old-testament.decompressed.txt");
+        SFile uncFile2 = fs.open("/book/old-testament.txt");
+        REQUIRE(compareFiles(uncFile1, uncFile2));
+    }
+    SECTION("cleanup") { fs.remove("/book/old-testament.decompressed.txt"); }
+}
+
+TEST_CASE("Test Gunzip stream reading") {
+    SetupFileSystemMock("TestData");
+
+    PosixFileSystem fs;
+    fs.begin();
+
+    SFile f1 = fs.open("/book/old-testament.txt.gz");
+    GUnzipStream s1(f1);
+    RendererStream *stream = &s1;
+    REQUIRE(stream->size() == 3061230);
+
+    auto streamz = fs.newGzipRendererStream("/book/old-testament.txt.gz");
+    REQUIRE(streamz->size() == 3061230);
+
+    SFile ufile = fs.open("/book/old-testament.txt");
+
+    uint8_t buffer1[100];
+    uint8_t buffer2[100];
+    uint8_t buffer3[100];
+    int bufferLen = sizeof(buffer1) - 1;
+
+    int res1, res2, res3;
+    int total = 0;
+    do {
+        memset(buffer1, 0, 100);
+        memset(buffer2, 0, 100);
+        memset(buffer3, 0, 100);
+
+        res1 = stream->readBytes(buffer1, bufferLen);
+        res2 = streamz->readBytes(buffer2, bufferLen);
+        res3 = ufile.readBytes((char *)buffer3, bufferLen);
+
+        REQUIRE(res1 == res2);
+        REQUIRE(res1 == res3);
+
+        total += res1;
+        REQUIRE(memcmp(buffer1, buffer2, res1) == 0);
+        REQUIRE(memcmp(buffer1, buffer3, res1) == 0);
+    } while (res1 == bufferLen);
+}
+
 TEST_CASE("Test GZip stream handling") {
     SetupFileSystemMock("TestData");
 
@@ -147,7 +308,6 @@ TEST_CASE("Test GZip stream handling") {
     int bufferLen2 = sizeof(buffer2) - 1;
     buffer2[sizeof(buffer2) - 1] = 0;
     stream->readBytes(buffer2, bufferLen2);
-    // log_d("Got buffer: \n%s", buffer2);
     REQUIRE(strcmp((char *)buffer2, "earth. The earth was without form and void, and darkness was "
                                     "over the face of the deep. And the Spi") == 0);
 
@@ -155,7 +315,6 @@ TEST_CASE("Test GZip stream handling") {
     stream->seek(50000);
     REQUIRE(stream->position() == 50000);
     stream->readBytes(buffer, bufferLen);
-    // log_d("Got buffer: \n%s", buffer);
     REQUIRE(strcmp((char *)buffer, "e they ate.\n\nThey said to him, \"Where is Sarah your wife?\" "
                                    "And he said, \"She is in the tent.\" The L") == 0);
 

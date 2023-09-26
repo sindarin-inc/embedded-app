@@ -1,13 +1,15 @@
 #pragma once
 
 #include <cstdint>
-#include <zlib.h>
 
 #include "Storage/FileSystem.hpp"
+#include "miniz.h"
 
 class GUnzip {
 public:
-    GUnzip() : inflateBuf_(nullptr) {}
+    GUnzip()
+        : init_(false), compressedSize_(0), compressedPos_(0), uncompressedPos_(0), bufPos_(0),
+          readHeader_(false), gzHeaderBytes_(0) {}
     ~GUnzip() = default;
 
     auto decompressFile(FileSystem &fileSystem, const std::string &inputFileName,
@@ -20,7 +22,17 @@ public:
 
     auto init() -> bool;
 
+    void setCompressedSize(int s) { compressedSize_ = s; }
+
 protected:
-    z_stream zstr_;
-    std::unique_ptr<uint8_t[]> inflateBuf_;
+    mz_stream zstr_;
+    bool init_;
+    int compressedSize_;
+    int compressedPos_;
+    int uncompressedPos_;
+    uint8_t buf_[1024];
+    int bufPos_;
+
+    bool readHeader_;
+    int gzHeaderBytes_;
 };

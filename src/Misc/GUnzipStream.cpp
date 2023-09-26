@@ -29,11 +29,25 @@ auto GUnzipStream::readBytes(uint8_t *buf, int size) -> int {
             // and we will have to provide more input data to proceed.
             // at this point we are only attempting to flush remaining output data,
             // and no new input data is provided to zlib.
+            if (lastOutputInBlock_) {
+                lastOutputInBlock_ = false;
+                outIndex_ = 0;
+                continue;
+            }
+
             int inputRead = 0;
             int err = gunzip_.decompress(nullptr, 0, outBuf_, GZ_BUFFER_SIZE, inputRead, outSize_);
-            if (err == Z_BUF_ERROR) {
+
+            /*
+            if (outSize_ < GZ_BUFFER_SIZE) {
+                lastOutputInBlock_ = true;
+            }
+            */
+
+            if (err == MZ_BUF_ERROR) {
                 // no more output to flush
-                outSize_ = 0;
+                // outSize_ = 0;
+                lastOutputInBlock_ = true;
             }
 
             outIndex_ = 0;
@@ -72,7 +86,7 @@ auto GUnzipStream::readBytes(uint8_t *buf, int size) -> int {
         int err = gunzip_.decompress(&inBuf_[inIndex_], inSize_, outBuf_, GZ_BUFFER_SIZE, inputRead,
                                      outSize_);
 
-        if (err != Z_OK && err != Z_STREAM_END) {
+        if (err != MZ_OK && err != MZ_STREAM_END) {
             log_e("GUNzipFile: Error decompressing %d", err);
             return 0;
         }
@@ -80,6 +94,7 @@ auto GUnzipStream::readBytes(uint8_t *buf, int size) -> int {
         inSize_ -= inputRead;
         inIndex_ += inputRead;
         outIndex_ = 0;
+        lastOutputInBlock_ = false;
     }
 
     return bytesCopied;
