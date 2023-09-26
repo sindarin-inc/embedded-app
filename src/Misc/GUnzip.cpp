@@ -30,6 +30,12 @@ static void spiZFree(void *opaque, void *address) {
 auto GUnzip::init() -> bool {
 
     int err = MZ_OK;
+
+    if (init_) {
+        // starting over, so clean up existing decompressor
+        err = mz_inflateEnd(&zstr_);
+    }
+
     init_ = true;
     compressedPos_ = 0;
     uncompressedPos_ = 0;
