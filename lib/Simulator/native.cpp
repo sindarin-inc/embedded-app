@@ -291,7 +291,7 @@ void goForwardNumPages(SDL_Window *window, SDL_Renderer *renderer, int numPages)
 
     while (numPages--) {
         sendCodeAndRender(RemoteCommand::RIGHT, renderer);
-        usleep(1000000.0 / 2.0);
+        usleep(1000000.0 / 1.5);
     }
     FakeEinkET013TT1SkipWaveform = false;
 }

@@ -844,7 +844,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     if (listType_[listLevel_] == ListType::ORDERED) {
                         pugi::xml_attribute attr = node.attribute("value");
                         int32_t seqNbr = attr ? atoi(attr.value()) : listSeqNbr_[listLevel_];
-                        (void)sprintf(listLineStart, "%*s%" PRIu16 ".  ", listLevel_ * 5, "",
+                        (void)sprintf(listLineStart, "%*s%" PRIi32 ".  ", listLevel_ * 5, "",
                                       seqNbr);
                         listSeqNbr_[listLevel_] = ++seqNbr;
                     } else {

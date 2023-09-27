@@ -25,13 +25,8 @@ public:
     [[nodiscard]] auto size() -> size_t override { return 0; /* opf_->getTotalSize(); */ }
 
     [[nodiscard]] auto isAnArticle() const -> bool {
-        checkReadable("isAnArticle");
         return readable_->isArticle();
     }
-
-    void checkReadable(const char *msg) const {
-        log_w("%s - Readable adr: %p %p", msg, &readable_, readable_.get());
-    };
 
     // [[nodiscard]] inline auto getSpineIdxForOffset(uint32_t offset) const -> Idx {
     //     return opf_->getSpineIdxForOffset(offset);
@@ -99,7 +94,7 @@ public:
 
 private:
     Unzipper epubUnzipper_;
-    const std::shared_ptr<Readable> &readable_;
+    const std::shared_ptr<Readable> readable_;
 
     bool fileOpen_;
 

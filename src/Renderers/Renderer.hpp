@@ -84,8 +84,6 @@ public:
 
     [[nodiscard]] inline auto atEndOfFile() const -> bool { return pager_.atEndOfFile(); }
 
-    void checkReadable(const char *msg) { tokenizer_->checkReadable(msg); }
-
 private:
     DisplaySystem &display_;
     Tokens tokens_;

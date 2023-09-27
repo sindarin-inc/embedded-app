@@ -3,6 +3,19 @@
 #include <iomanip>
 #include <iostream>
 
+#include "Misc/SpiramAllocator.hpp"
+
+static auto spiZAlloc(void *opaque, size_t items, size_t size) -> void * {
+    // log_d("spiZAlloc: %d %d", (int)items, (int)size);
+    return SpiRamMalloc(items * size);
+}
+
+static void spiZFree(void *opaque, void *address) {
+    // log_d("spiZFree");
+    // SpiRamFree(address);
+    heap_caps_free(address);
+}
+
 auto Unzipper::open() -> bool {
 
     // Open zip file
@@ -455,8 +468,10 @@ auto Unzipper::readFile(uint8_t *fileData, uint32_t fileDataSize) -> uint32_t {
             remains = currentFileEntry_->compressedSize % BUFFER_SIZE;
             current = 0;
 
-            zstr_.zalloc = nullptr;
-            zstr_.zfree = nullptr;
+            zstr_.zalloc = spiZAlloc;
+            zstr_.zfree = spiZFree;
+            // zstr_.zalloc = nullptr;
+            // zstr_.zfree = nullptr;
             zstr_.opaque = nullptr;
             zstr_.next_in = nullptr;
             zstr_.avail_in = 0;

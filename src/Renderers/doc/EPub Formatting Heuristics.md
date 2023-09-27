@@ -168,4 +168,14 @@ Nested lists are allowed up to 5 levels. Both Ordered and Unordered lists can be
     euro    - euro sign, U+20AC NEW
 ```
 
+### Some notes:
+
+- As we are not using CSS to format the content, there is many cases for which the pages could be showing things that are not expected. For example, items could be made hidden or displayed with specific characteristics depending on some information in CSS, like @media type. Pictures could be shown in different flavors, sometimes being show two or three times in a row, the CSS-based selection not being interpreted.
+
+- Some formatting is made using HTML tags, doing a nice job for larger displays, but not that good for small screens like the Sol glasses.
+
+- The Sol's font doesn't contain all possible characters. When a character is not available in the font, the driver replace it with a space.
+
+- Some books are using specialized fonts to display nice drawing effects in paragraphs or between them. If those drawings are encoded using the same byte code used for normal characters, those normal characters will then appear instead.
+
 [The End]

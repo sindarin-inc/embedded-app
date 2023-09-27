@@ -86,8 +86,6 @@ public:
         return stream_->isAnArticle();
     }
 
-    void checkReadable(const char *msg) override { stream_->checkReadable(msg); }
-
 private:
     std::shared_ptr<EPubFile> stream_;
 

@@ -79,12 +79,10 @@ public:
         };
 
         popupMenuScreen_.onRerender = [this]() { renderPopup_ = true; };
-        checkReadable("ReadableScreen::ReadableScreen");
     }
 
     ~ReadableScreen() override = default;
 
-    void checkReadable(const char *msg) { renderer_.checkReadable(msg); }
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
 

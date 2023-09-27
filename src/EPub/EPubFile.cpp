@@ -191,8 +191,6 @@ auto EPubFile::open() -> bool {
 
     // log_d("Total size of all ePub text is %d", opf_->getTotalSize());
     fileOpen_ = true;
-
-    checkReadable("EPubFile::open");
     return true;
 }
 
