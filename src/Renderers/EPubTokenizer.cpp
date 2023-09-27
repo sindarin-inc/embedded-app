@@ -751,7 +751,8 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
             case Tag::H5:
             case Tag::H6:
                 startOfHeader_ = true;
-            [[fallthrough]] case Tag::P:
+                [[fallthrough]];
+            case Tag::P:
             case Tag::DIV:
                 if (isEmpty(node)) {
                     startOfHeader_ = false;
@@ -844,12 +845,12 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     if (listType_[listLevel_] == ListType::ORDERED) {
                         pugi::xml_attribute attr = node.attribute("value");
                         int32_t seqNbr = attr ? atoi(attr.value()) : listSeqNbr_[listLevel_];
-                        (void)sprintf(listLineStart, "%*s%" PRIi32 ".  ", listLevel_ * 5, "",
-                                      seqNbr);
+                        (void)snprintf(listLineStart, 49, "%*s%" PRIi32 ".  ", listLevel_ * 5, "",
+                                       seqNbr);
                         listSeqNbr_[listLevel_] = ++seqNbr;
                     } else {
-                        (void)sprintf(listLineStart, "%*s%c  ", listLevel_ * 4, "",
-                                      levelChar_[listLevel_]);
+                        (void)snprintf(listLineStart, 49, "%*s%c  ", listLevel_ * 4, "",
+                                       levelChar_[listLevel_]);
                     }
                     savedLeftIndent_ = display_.getTextWidth(listLineStart);
                 } else {
@@ -948,7 +949,8 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 case Tag::H5:
                 case Tag::H6:
                     startOfHeader_ = false; // Needed if going forward
-                [[fallthrough]] case Tag::P:
+                    [[fallthrough]];
+                case Tag::P:
                 case Tag::DIV:
                 case Tag::HEADER:
                     if (tokenizingStarted_) {
