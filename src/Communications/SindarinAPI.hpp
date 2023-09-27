@@ -17,6 +17,17 @@
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
 
+enum {
+    ERR_SET_AUTH = -1,
+    ERR_CLIENT_OPEN = -2,
+    ERR_CLIENT_WRITE = -3,
+    ERR_CONTENT_LENGTH = -4,
+    ERR_JSON_DESERIALIZE = -5,
+    ERR_JSON_OBJECT_PARSE = -6,
+    ERR_SET_HEADER = -7,
+    ERR_CLIENT_DISCONNECTED = -8,
+}
+
 class SindarinAPI {
 public:
     SindarinAPI() = default;

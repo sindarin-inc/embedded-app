@@ -55,7 +55,7 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
     HttpClient client(url.c_str(), "application/json", HTTP_METHOD_POST);
     auto err = setAuth(client);
     if (err != ESP_OK) {
-        return 0;
+        return ERR_SET_AUTH;
     }
 
     auto doc = std::make_shared<SpiRamJsonDocument>(
@@ -70,7 +70,7 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
 
     err = client.open(bodyLength);
     if (err != ESP_OK) {
-        return 0;
+        return ERR_CLIENT_OPEN;
     }
     defer { client.close(); };
 
@@ -81,7 +81,7 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
         log_w("%s", message.c_str());
         telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-failed",
                             {{"message", message.c_str()}});
-        return 0;
+        return ERR_CLIENT_WRITE;
     }
 
     int contentLength = client.fetchHeaders();
@@ -90,7 +90,7 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
         log_e("%s", message);
         telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-failed",
                             {{"message", message}});
-        return 0;
+        return ERR_CONTENT_LENGTH;
     }
     int httpCode = client.getStatusCode();
     if (httpCode != 200) {
@@ -115,7 +115,7 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
         log_e("%s", message.c_str());
         telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-failed",
                             {{"message", message.c_str()}});
-        return 0;
+        return ERR_JSON_DESERIALIZE;
     }
 
     SHOW_HEAP();
@@ -125,7 +125,7 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
         log_e("%s", message);
         telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-failed",
                             {{"message", message}});
-        return 0;
+        return ERR_JSON_OBJECT_PARSE;
     }
 
     log_d("Synced: %d Message: %s", resp->synced, resp->message.c_str());
@@ -140,19 +140,19 @@ auto SindarinAPI::checkFirmware(FirmwareResponse *resp) -> int {
 
     auto err = setAuth(client);
     if (err != ESP_OK) {
-        return 0;
+        return ERR_SET_AUTH;
     }
 
     err = client.open(0);
     if (err != ESP_OK) {
-        return 0;
+        return ERR_CLIENT_OPEN;
     }
     defer { client.close(); };
 
     auto contentLength = client.fetchHeaders();
     if (contentLength <= 0) {
         log_e("Failed to fetch headers");
-        return 0;
+        return ERR_CONTENT_LENGTH;
     }
 
     int httpCode = client.getStatusCode();
@@ -171,12 +171,12 @@ auto SindarinAPI::checkFirmware(FirmwareResponse *resp) -> int {
 
     if (error.code() != DeserializationError::Ok) {
         log_e("Failed to deserialize sync response: %s (length=%d)", error.c_str(), contentLength);
-        return 0;
+        return ERR_JSON_DESERIALIZE;
     }
 
     if (!resp->fromJson(respJson->as<JsonObject>())) {
         log_e("Failed to parse firmware response");
-        return 0;
+        return ERR_JSON_OBJECT_PARSE;
     }
 
     SHOW_HEAP();
@@ -231,24 +231,24 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
 
     auto err = setAuth(client);
     if (err != ESP_OK) {
-        return 0;
+        return ERR_SET_AUTH;
     }
 
     err = client.setHeader("X-Serial-Number", GetSerialNumber().c_str());
     if (err != ESP_OK) {
-        return 0;
+        return ERR_SET_HEADER;
     }
 
     err = client.open(totalSize);
     if (err != ESP_OK) {
-        return 0;
+        return ERR_CLIENT_OPEN;
     }
     defer { client.close(); };
 
     auto bytesWritten = client.write(header.c_str(), header.size());
     if (bytesWritten < header.size()) {
         log_e("Telemetry multipart write failure (%d < %zu)", bytesWritten, header.size());
-        return 0;
+        return ERR_CLIENT_WRITE;
     }
 
     // Write the file data in chunks
@@ -263,7 +263,7 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
             log_w("client.write failed (bytesWritten == %d)", bytesWritten);
             if (!client.connected) {
                 log_w("Connection closed, bailing out");
-                return 0;
+                return ERR_CLIENT_DISCONNECTED;
             }
         }
         totalBytesWritten += bytesWritten;
@@ -273,7 +273,7 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
     bytesWritten = client.write(footer.c_str(), footer.size());
     if (bytesWritten < footer.size()) {
         log_w("client.write failed (%d < %zu)", bytesWritten, footer.size());
-        return 0;
+        return ERR_CLIENT_WRITE;
     }
 
     // Send request and fetch response
@@ -285,13 +285,13 @@ auto SindarinAPI::uploadCrashReport(SFile &crashFile, const std::string &content
     HttpClient client(SINDARIN_SERVER_URL "/coredumps/", contentType.c_str(), HTTP_METHOD_POST);
     auto err = setAuth(client);
     if (err != ESP_OK) {
-        return 0;
+        return ERR_SET_AUTH;
     }
 
     int writeSize = crashFile.size();
     err = client.open(writeSize);
     if (err != ESP_OK) {
-        return 0;
+        return ERR_CLIENT_OPEN;
     }
     defer { client.close(); };
 
@@ -306,7 +306,7 @@ auto SindarinAPI::uploadCrashReport(SFile &crashFile, const std::string &content
             log_w("client.write failed (bytesWritten == %d)", bytesWritten);
             if (!client.connected) {
                 log_w("Connection closed, bailing out");
-                return 0;
+                return ERR_CLIENT_DISCONNECTED;
             }
         }
         totalBytesWritten += bytesWritten;
