@@ -17,7 +17,7 @@
 #include "Storage/FileSystem.hpp"
 #include "Storage/PreferencesStore.hpp"
 
-enum {
+enum SindarinError {
     ERR_SET_AUTH = -1,
     ERR_CLIENT_OPEN = -2,
     ERR_CLIENT_WRITE = -3,
@@ -26,7 +26,12 @@ enum {
     ERR_JSON_OBJECT_PARSE = -6,
     ERR_SET_HEADER = -7,
     ERR_CLIENT_DISCONNECTED = -8,
-}
+    ERR_CREATE_DIR = -12,
+    // Used in FileDownload
+    ERR_OPEN_BLOCK = -9,
+    ERR_SIZE_MISMATCH = -10,
+    ERR_FILE_OPEN = -11,
+};
 
 class SindarinAPI {
 public:
@@ -45,7 +50,7 @@ public:
 
     auto downloadReadable(const std::shared_ptr<Readable> &readable, FileSystem &fileSystem,
                           Telemetry &telemetry, const std::string &path,
-                          const std::function<void(int percentage)> &progressCallback) -> bool;
+                          const std::function<void(int percentage)> &progressCallback) -> int;
 
     auto uploadTelemetryFile(SFile &telemetryFile, const std::string &localPath,
                              FileSystem &fileSystem) -> int;

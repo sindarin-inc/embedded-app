@@ -188,8 +188,7 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
                                    FileSystem &fileSystem, Telemetry &telemetry,
                                    const std::string &path,
                                    const std::function<void(int percentage)> &progressCallback)
-    -> bool {
-    bool success = false;
+    -> int {
     // auto remoteUrl = readable.remoteUrl();
     auto file = readable->file();
     auto remoteUrl = file.fileProxied;
@@ -202,16 +201,16 @@ auto SindarinAPI::downloadReadable(const std::shared_ptr<Readable> &readable,
         log_d("Creating directory %s", dir.c_str());
         if (!fileSystem.createDir(dir)) {
             log_e("Could not create %s directory", dir.c_str());
-            return false;
+            return ERR_CREATE_DIR;
         }
     }
 
     bool gzip = HasSuffix(path, ".gz");
-    success = DownloadFile(
+    auto httpCode = DownloadFile(
         remoteUrl.c_str(), fileSystem, telemetry, path.c_str(), fileSize,
         [progressCallback](float percentage) { progressCallback(percentage); }, gzip);
 
-    return success;
+    return httpCode;
 }
 
 auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &localPath,
