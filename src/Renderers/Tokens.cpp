@@ -17,9 +17,9 @@ auto Tokens::add(Token &token, const char *str, uint8_t length) -> bool {
             // log_w("Token width of %s is %" PRIu16, token.cStr, token.pixWidth);
         }
 
-        // if constexpr (REND_DEBUG) {
-        //     showToken(tokensTailIdx_);
-        // }
+        if constexpr (REND_DEBUG) {
+            showToken(tokensTailIdx_);
+        }
 
         advanceTokenTail();
 

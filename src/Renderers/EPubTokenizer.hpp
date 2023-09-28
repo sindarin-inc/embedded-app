@@ -141,6 +141,12 @@ private:
     uint32_t currentStreamOffset_;
     uint16_t currentFileIdx_;
 
+    // Not null if there is a text token to be closed. This is required to take into account words
+    // that could be containing tags like <b/> <i/> etc. These will be processed recursively, the
+    // content potentially part of a word.
+    Token *textToken_;
+    uint16_t textCharCount_;
+
     static constexpr const uint8_t MaxLevelCount = 5;
 
     enum ListType { ORDERED, UNORDERED };
@@ -182,6 +188,20 @@ private:
             cstr++;
         }
         return true;
+    }
+
+    // Called when it's time to close the last textToken, if there is any waiting to be closed.
+    // Returns true if page is completed.
+    auto closeTextToken() -> bool {
+        if (textToken_ != nullptr) {
+            tokens_.endOfCStr();
+            lastToken_ = textToken_;
+            pageCompleted_ = addTokenToPage(*textToken_);
+            textToken_ = nullptr;
+            return pageCompleted_;
+        } else {
+            return false;
+        }
     }
 
     auto addTokenToPage(Token &token, const char *str = nullptr, uint8_t strSize = 0) -> bool;
