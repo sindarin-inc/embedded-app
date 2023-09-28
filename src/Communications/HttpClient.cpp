@@ -103,10 +103,20 @@ auto HttpClient::getResponseHeader(const char *key, char **value) -> esp_err_t {
 
 auto HttpClient::open(int contentLength) -> esp_err_t {
     esp_err_t ret = ESP_OK;
+    /*
     if (gzip_) {
         gzUncompressedBytesRemaining_ = contentLength;
         gzCompressedLength_ = 0;
         gzipBuffer_ = SpiRamArrayPtr<uint8_t>(gzUncompressedBytesRemaining_);
+    } else {
+        ret = esp_http_client_open(client_, contentLength);
+    }
+    */
+
+    if (gzip_) {
+        // use chunked transfer for gzip requests,
+        // since we do not know the content length until after compression.
+        ret = esp_http_client_open(client_, -1);
     } else {
         ret = esp_http_client_open(client_, contentLength);
     }
@@ -137,6 +147,8 @@ auto HttpClient::write(const char *body, int length) -> int {
 
         // Currently, need to wait until all uncompressed bytes are written first
         // because only then do we know how large the compressed version is.
+
+        /*
         gzUncompressedBytesRemaining_ -= length;
 
         if (gz_.available() > 0) {
@@ -149,7 +161,9 @@ auto HttpClient::write(const char *body, int length) -> int {
             }
             gzCompressedLength_ += bytesToRead;
         }
+        */
 
+        /*
         // if all uncompressed bytes have been sent, make the request
         // since we now know the size
         if (gzUncompressedBytesRemaining_ == 0) {
@@ -180,6 +194,7 @@ auto HttpClient::write(const char *body, int length) -> int {
                 return -1;
             }
         }
+        */
 
         // return number of bytes consumed
         return length;

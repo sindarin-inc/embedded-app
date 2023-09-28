@@ -23,6 +23,8 @@ public:
     auto available() -> int { return outputAvailable_; }
     auto read(uint8_t *destBuffer, int destBufferSize) -> int;
 
+    auto getDataPtr(int bytesToRead) -> uint8_t *;
+
     auto initialized() -> bool { return init_; }
 
 protected:
