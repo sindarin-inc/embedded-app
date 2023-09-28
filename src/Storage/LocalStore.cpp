@@ -1322,15 +1322,17 @@ auto LocalStore::readableFilePathForReading(const std::shared_ptr<Readable> &rea
     -> std::string {
     // We look for the readable file in the following order:
     // We first try the most modern path style:
+    // /[readableType]/[uuid].epub
     // /[readableType]/[uuid].txt.gz
     // /[readableType]/[uuid].txt
 
     // Then if it's a book we try:
-    // /[readableType]/[uuid].epub
+    // /[file().name].epub
     // /[file().name].txt.gz
     // /[file().name].txt
 
     // Then if it's not a book we will search:
+    // /articles/[uuid].epub
     // /articles/[uuid].txt.gz
     // /articles/[uuid].txt
 
@@ -1416,10 +1418,15 @@ void LocalStore::readableFilePurge(const std::shared_ptr<Readable> &readable) {
     // /[readableType]/[uuid].txt.gz
     // /[readableType]/[uuid].txt
     // /[readableType]/[uuid].epub
+    // /toc/[uuid]-toc.json
+    // /[file().name].epub
     // /[file().name].txt.gz
     // /[file().name].txt
+    // /articles/[uuid].epub
     // /articles/[uuid].txt.gz
     // /articles/[uuid].txt
+    // Bookmarks
+    // Placemarks in NVS
 
     auto type = readable->readableType;
     auto &uuid = readable->uuid;
