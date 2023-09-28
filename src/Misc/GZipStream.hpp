@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstring>
-#include <miniz.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +8,7 @@
 
 #include "SpiramAllocator.hpp"
 #include "Storage/SFile.hpp"
+#include "miniz.h"
 
 class GZipStream {
 public:
