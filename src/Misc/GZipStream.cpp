@@ -156,13 +156,20 @@ auto GZipStream::read(uint8_t *destBuffer, int destBufferSize) -> int {
     int bytesToRead = destBufferSize < outputAvailable_ ? destBufferSize : outputAvailable_;
     memcpy(destBuffer, outputBuffer_.get(), bytesToRead);
 
-    if (bytesToRead < outputAvailable_) {
-        int bytesRemaining = outputAvailable_ - bytesToRead;
-        memmove(outputBuffer_.get(), &outputBuffer_.get()[bytesToRead], bytesRemaining);
-        outputAvailable_ -= bytesToRead;
+    advance(bytesToRead);
+    return bytesToRead;
+}
+
+auto GZipStream::getDataPtr() -> uint8_t * {
+    return outputBuffer_.get();
+}
+
+void GZipStream::advance(int size) {
+    if (size < outputAvailable_) {
+        int bytesRemaining = outputAvailable_ - size;
+        memmove(outputBuffer_.get(), &outputBuffer_.get()[size], bytesRemaining);
+        outputAvailable_ -= size;
     } else {
         outputAvailable_ = 0;
     }
-
-    return bytesToRead;
 }

@@ -63,5 +63,8 @@ private:
     GZipStream gz_;
     std::shared_ptr<uint8_t[]> gzipBuffer_{nullptr};
     int gzUncompressedBytesRemaining_;
-    int gzCompressedLength_;
+
+    auto writeAvailableCompressedData() -> bool;
+    auto writeChunkedData(const char* data, int length) -> bool;
+    auto endChunkedData();
 };

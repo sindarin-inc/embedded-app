@@ -103,10 +103,22 @@ auto HttpClient::getResponseHeader(const char *key, char **value) -> esp_err_t {
 
 auto HttpClient::open(int contentLength) -> esp_err_t {
     esp_err_t ret = ESP_OK;
+    /*
     if (gzip_) {
         gzUncompressedBytesRemaining_ = contentLength;
         gzCompressedLength_ = 0;
         gzipBuffer_ = SpiRamArrayPtr<uint8_t>(gzUncompressedBytesRemaining_);
+    } else {
+        ret = esp_http_client_open(client_, contentLength);
+    }
+    */
+
+    if (gzip_) {
+        // use chunked transfer for gzip requests,
+        // since we do not know the content length until after compression.
+        gzUncompressedBytesRemaining_ = contentLength;
+        log_i("http client: unc %d", gzUncompressedBytesRemaining_);
+        ret = esp_http_client_open(client_, -1);
     } else {
         ret = esp_http_client_open(client_, contentLength);
     }
@@ -117,10 +129,7 @@ auto HttpClient::open(int contentLength) -> esp_err_t {
 // auto HttpClient::perform() -> esp_err_t { return esp_http_client_perform(client_); }
 
 auto HttpClient::write(const char *body, int length) -> int {
-    // check for gzip encoding
-    // TODO: check if the stream is already gzipped
     if (gzip_) {
-
         // initialize gz stream if needed
         if (!gz_.initialized()) {
             gz_.init();
@@ -132,53 +141,24 @@ auto HttpClient::write(const char *body, int length) -> int {
             return -1;
         }
 
-        // decrement written uncompressed bytes so we know when
-        // the request is complete and we can send the compressed version.
-
-        // Currently, need to wait until all uncompressed bytes are written first
-        // because only then do we know how large the compressed version is.
         gzUncompressedBytesRemaining_ -= length;
-
-        if (gz_.available() > 0) {
-            int bytesToRead = gz_.available();
-
-            // read out any available bytes into the preallocated gzip buffer
-            if (gz_.read(&gzipBuffer_.get()[gzCompressedLength_], bytesToRead) != bytesToRead) {
-                log_e("failed to read gzip data");
-                return -1;
-            }
-            gzCompressedLength_ += bytesToRead;
+        if (!writeAvailableCompressedData()) {
+            return -1;
         }
 
-        // if all uncompressed bytes have been sent, make the request
-        // since we now know the size
         if (gzUncompressedBytesRemaining_ == 0) {
             if (!gz_.flush()) {
-                log_e("failed to flush gzip stream");
+                log_e("failed to flush gz stream");
                 return -1;
             }
 
-            // read any bytes available after flushing
-            int bytesToRead = gz_.available();
-            if (gz_.read(&gzipBuffer_.get()[gzCompressedLength_], bytesToRead) != bytesToRead) {
-                log_e("failed to read gzip data");
-                return -1;
-            }
-            gzCompressedLength_ += bytesToRead;
-
-            // start http client, using the compressed size
-            esp_err_t err = esp_http_client_open(client_, gzCompressedLength_);
-            if (err != ESP_OK) {
-                log_e("gz could not open http client length %d", gzCompressedLength_);
+            if (!writeAvailableCompressedData()) {
                 return -1;
             }
 
-            // send compressed bytes
-            if (esp_http_client_write(client_, (const char *)gzipBuffer_.get(),
-                                      gzCompressedLength_) != gzCompressedLength_) {
-                log_e("http failed to write %d gz bytes", gzCompressedLength_);
-                return -1;
-            }
+            // write empty chunk to end the chunked encoding
+            writeChunkedData(nullptr, 0);
+
         }
 
         // return number of bytes consumed
@@ -186,6 +166,47 @@ auto HttpClient::write(const char *body, int length) -> int {
     } else {
         return esp_http_client_write(client_, body, length);
     }
+}
+
+auto HttpClient::writeAvailableCompressedData() -> bool {
+    int avail = gz_.available();
+    if (avail > 0) {
+        if (!writeChunkedData((const char*)gz_.getDataPtr(), avail)) {
+            return false;
+        }
+        gz_.advance(avail);
+    }
+    return true;
+}
+
+auto HttpClient::writeChunkedData(const char* data, int length) -> bool {
+    char lstr[32];
+    if (!SafeSnprintf(lstr, sizeof(lstr), "%x\r\n", length)) {
+        return false;
+    }
+
+    if (esp_http_client_write(client_, lstr, strlen(lstr)) != strlen(lstr)) {
+        log_e("http failed to write %d bytes", strlen(lstr));
+        return false;
+    }
+
+    if (length > 0) {
+        if (esp_http_client_write(client_, data, length) != length) {
+            log_e("http failed to write %d gz bytes", length);
+            return false;
+        }
+    }
+
+    if (!SafeSnprintf(lstr, sizeof(lstr), "\r\n")) {
+        return false;
+    }
+    
+    if (esp_http_client_write(client_, lstr, strlen(lstr)) != strlen(lstr)) {
+        log_e("http failed to write %d bytes", strlen(lstr));
+        return false;
+    }
+
+    return true;
 }
 
 auto HttpClient::makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> {
