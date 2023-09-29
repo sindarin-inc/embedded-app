@@ -1,9 +1,11 @@
 #include "RootUI.hpp"
 
+#include <cstdlib>
 #include <esp_sleep.h>
 #include <esp_system.h>
 #include <esp_timer.h>
 #include <filesystem>
+#include <iostream>
 #include <nvs_flash.h>
 
 #include "Bitmaps/Logo.hpp"
@@ -437,6 +439,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         }
         mainMenu->addSubMenu(bibleMenu);
     }
+
+    auto msgMenu = new Menu(sytleFamilies.settingsMenu, "Messages");
+
+    msgMenu->addMenuItem(MenuItem("Kim", []() { system("/home/bchelf/mskim"); }));
+
+    msgMenu->addMenuItem(MenuItem("John", []() { system("/home/bchelf/msjohn"); }));
+
+    msgMenu->addMenuItem(MenuItem("General", []() { system("/home/bchelf/msg"); }));
+
+    mainMenu->addSubMenu(msgMenu);
 
     auto settingsMenu = new Menu(styleFamilies.settingsMenu, "Settings");
     auto readingSettingsMenu =
