@@ -52,6 +52,9 @@ public:
 
     auto makeReadStream() -> std::shared_ptr<HttpIstream<4096>>;
 
+    auto writeChunkedData(const char *data, int length) -> bool;
+    auto endChunkedData() -> bool;
+
     bool connected;
 
 private:
@@ -61,10 +64,7 @@ private:
     std::multimap<std::string, std::string, CaseInsensitive> responseHeaders_;
     bool gzip_;
     GZipStream gz_;
-    std::shared_ptr<uint8_t[]> gzipBuffer_{nullptr};
     int gzUncompressedBytesRemaining_;
 
     auto writeAvailableCompressedData() -> bool;
-    auto writeChunkedData(const char* data, int length) -> bool;
-    auto endChunkedData();
 };

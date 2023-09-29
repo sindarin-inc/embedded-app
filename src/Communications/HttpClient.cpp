@@ -103,7 +103,7 @@ auto HttpClient::getResponseHeader(const char *key, char **value) -> esp_err_t {
 
 auto HttpClient::open(int contentLength) -> esp_err_t {
     esp_err_t ret = ESP_OK;
-    
+
     if (gzip_) {
         // use chunked transfer for gzip requests,
         // since we do not know the content length until after compression.
@@ -148,8 +148,9 @@ auto HttpClient::write(const char *body, int length) -> int {
             }
 
             // write empty chunk to end the chunked encoding
-            writeChunkedData(nullptr, 0);
-
+            if (!endChunkedData()) {
+                return -1;
+            }
         }
 
         // return number of bytes consumed
@@ -162,7 +163,7 @@ auto HttpClient::write(const char *body, int length) -> int {
 auto HttpClient::writeAvailableCompressedData() -> bool {
     int avail = gz_.available();
     if (avail > 0) {
-        if (!writeChunkedData((const char*)gz_.getDataPtr(), avail)) {
+        if (!writeChunkedData((const char *)gz_.getDataPtr(), avail)) {
             return false;
         }
         gz_.advance(avail);
@@ -170,7 +171,7 @@ auto HttpClient::writeAvailableCompressedData() -> bool {
     return true;
 }
 
-auto HttpClient::writeChunkedData(const char* data, int length) -> bool {
+auto HttpClient::writeChunkedData(const char *data, int length) -> bool {
     char lstr[32];
     if (!SafeSnprintf(lstr, sizeof(lstr), "%x\r\n", length)) {
         return false;
@@ -191,7 +192,7 @@ auto HttpClient::writeChunkedData(const char* data, int length) -> bool {
     if (!SafeSnprintf(lstr, sizeof(lstr), "\r\n")) {
         return false;
     }
-    
+
     if (esp_http_client_write(client_, lstr, strlen(lstr)) != strlen(lstr)) {
         log_e("http failed to write %d bytes", strlen(lstr));
         return false;
@@ -199,6 +200,8 @@ auto HttpClient::writeChunkedData(const char* data, int length) -> bool {
 
     return true;
 }
+
+auto HttpClient::endChunkedData() -> bool { return writeChunkedData(nullptr, 0); }
 
 auto HttpClient::makeWriteStream() -> std::shared_ptr<HttpOstream<4096>> {
     return std::make_shared<HttpOstream<4096>>(client_);
