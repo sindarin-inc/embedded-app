@@ -160,9 +160,7 @@ auto GZipStream::read(uint8_t *destBuffer, int destBufferSize) -> int {
     return bytesToRead;
 }
 
-auto GZipStream::getDataPtr() -> uint8_t * {
-    return outputBuffer_.get();
-}
+auto GZipStream::getDataPtr() -> uint8_t * { return outputBuffer_.get(); }
 
 void GZipStream::advance(int size) {
     if (size < outputAvailable_) {
