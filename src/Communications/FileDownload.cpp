@@ -5,6 +5,7 @@
 
 #include "Communications/HttpClient.hpp"
 #include "Communications/SindarinAPI.hpp"
+#include "Misc/Defer.hpp"
 #include "Misc/GUnzipStream.hpp"
 #include "sindarin-debug.h"
 
@@ -12,38 +13,41 @@ auto DownloadFile(
     const char *url, const std::function<bool(int httpCode, int contentLength)> &openedConnection,
     const std::function<size_t(HttpClient &client, int index, int contentLength)> &readWrite,
     const std::function<void(int bytesWritten, float percentage)> &progressCallback, bool gzip)
-    -> bool {
+    -> int {
 
     HttpClient client(url);
 
     if (SindarinAPI::isSindarinUrl(url)) {
-        std::shared_ptr<SindarinAPI> api = SindarinAPI::getInstance();
-        if (api) {
-            log_d("Attaching Sindarin auth to HTTP request to %s", url);
-            api->setAuth(client);
-        }
+        SindarinAPI::getInstance()->setAuth(client);
     }
 
     auto time = esp_timer_get_time();
     auto downloadStart = time;
 
     if (gzip) {
-        client.setHeader("Accept-Encoding", "gzip");
-        // TODO: check server headers to verify we got gzip
+        auto err = client.setHeader("Accept-Encoding", "gzip");
+        if (err != ESP_OK) {
+            return ERR_SET_HEADER;
+        }
     }
 
     esp_err_t err = client.open();
     if (err != ESP_OK) {
-        log_e("Failed to open HTTP connection: %s", esp_err_to_name(err));
-        return false;
+        return ERR_CLIENT_OPEN;
     }
+    defer { client.close(); };
 
     auto contentLength = client.fetchHeaders();
+    if (contentLength <= 0) {
+        // if we somehow don't have a content length header, consider it an error for now
+        log_e("Server did not return a content length for %s", url);
+        return ERR_CONTENT_LENGTH;
+    }
 
     auto httpCode = client.getStatusCode();
     if (httpCode != 200) {
         log_w("Status code was %d", httpCode);
-        return false;
+        return httpCode;
     }
 
     if (gzip) {
@@ -63,12 +67,6 @@ auto DownloadFile(
         }
     }
 
-    if (contentLength <= 0) {
-        // if we somehow don't have a content length header, consider it an error for now
-        log_e("Server did not return a content length for %s", url);
-        return false;
-    }
-
     if (!openedConnection(httpCode, contentLength)) {
         // Get the body anyways, for debugging, since it might contain an error message
         char buffer[256];
@@ -76,7 +74,7 @@ auto DownloadFile(
         if (read > 0) {
             log_w("Error body: %s", buffer);
         }
-        return false;
+        return ERR_OPEN_BLOCK;
     }
 
     int totalReadLen = 0;
@@ -85,11 +83,10 @@ auto DownloadFile(
     while (totalReadLen < contentLength) {
         int readLen = readWrite(client, totalReadLen, contentLength);
         if (readLen <= 0) {
-            log_w("Error read data (readLen == 0)");
+            log_w("readWrite failed (readLen == %d)", readLen);
             if (!client.connected) {
                 log_w("Connection closed, bailing out");
-                client.close();
-                return false;
+                return ERR_CLIENT_DISCONNECTED;
             }
         }
 
@@ -118,23 +115,22 @@ auto DownloadFile(
     float percentProgress = (float)totalReadLen / contentLength * 100.0f;
     progressCallback(totalReadLen, percentProgress);
 
-    client.close();
-
     // verify we received enough bytes according to the content length header
     // rather than the length passed in, this works for compressed or uncompressed files
     if (contentLength != totalReadLen) {
         log_e("Wrote fewer bytes than expected, expected %d bytes but got %d bytes", contentLength,
               totalReadLen);
-        return false;
+        return ERR_SIZE_MISMATCH;
     }
-    return true;
+
+    return httpCode;
 }
 
 auto DownloadFile(const char *url,
                   const std::function<bool(int httpCode, int contentLength)> &openedConnection,
                   const std::function<size_t(const uint8_t *buf, size_t size)> &writeBytes,
                   const std::function<void(int bytesWritten, float percentage)> &progressCallback,
-                  bool gzip) -> bool {
+                  bool gzip) -> int {
 
     constexpr int bufferSize = 4096;
     auto buffer = SpiRamArrayPtr<uint8_t>(bufferSize);
@@ -157,7 +153,7 @@ auto DownloadFile(const char *url,
 
 auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry, const char *path,
                   int length, const std::function<void(float percentage)> &progressCallback,
-                  bool gzip) -> bool {
+                  bool gzip) -> int {
 
     std::string fullPath(path);
 
@@ -183,7 +179,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         progressCallback(percentage / 3);
     };
 
-    auto success = DownloadFile(
+    auto httpCode = DownloadFile(
         url,
         [&fileBuffer, &fileLength, &telemetry](int httpCode, int contentLength) -> bool {
             fileLength = contentLength;
@@ -206,15 +202,15 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
     auto time = esp_timer_get_time();
     auto downloadStart = time;
 
-    if (!success) {
+    if (httpCode != 200) {
         log_e("Failed to download file");
-        return false;
+        return httpCode;
     }
 
     auto file = fileSystem.open(fullPath.c_str(), FILE_WRITE, true);
     if (!file) {
         log_e("Failed to open file %s for writing", fullPath.c_str());
-        return false;
+        return ERR_FILE_OPEN;
     }
 
     int written = 0;
@@ -244,6 +240,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         file = fileSystem.open(fullPath.c_str());
         GUnzipStream gzStream(file);
         fileSize = gzStream.size();
+        file.close();
     } else {
         file = fileSystem.open(fullPath.c_str());
         fileSize = file.size();
@@ -256,10 +253,10 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
               length, fileSize);
         telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "wrong-size",
                             {{"expected", length}, {"actual", static_cast<int>(fileSize)}});
-        return false;
+        return ERR_SIZE_MISMATCH;
     } else {
         log_d("Downloaded file is correct size: %zu bytes", fileSize);
     }
 
-    return true;
+    return httpCode;
 }

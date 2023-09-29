@@ -357,7 +357,7 @@ auto main(int argc, char *argv[]) -> int {
     }
 
     SDL_CreateWindowAndRenderer(EinkET013TT1_PIXEL_WIDTH * SCALE,
-                                ((EinkET013TT1_PIXEL_WIDTH + SIM_LED_DIM) * SCALE), 0, &window,
+                                ((EinkET013TT1_PIXEL_HEIGHT + SIM_LED_DIM) * SCALE), 0, &window,
                                 &renderer);
     if (renderer == NULL) {
         fprintf(stderr, "Could not create renderer: %s\n", SDL_GetError());
