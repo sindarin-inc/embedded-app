@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include <miniz_component.h>
+#include <miniz/miniz.h>
 
 #include "Storage/FileSystem.hpp"
 

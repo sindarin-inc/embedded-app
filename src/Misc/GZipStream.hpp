@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstring>
-#include <miniz_component.h>
+#include <miniz/miniz.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
