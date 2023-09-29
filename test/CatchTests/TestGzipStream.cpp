@@ -2,7 +2,6 @@
 
 #include "Misc/GUnzip.hpp"
 #include "Misc/GUnzipStream.hpp"
-#include "Misc/GZipFile.hpp"
 #include "Misc/GZipStream.hpp"
 #include "Storage/PosixFileSystem.hpp"
 #include "ViewTestCommon.hpp"
@@ -26,41 +25,6 @@ static bool compareFiles(SFile &f1, SFile &f2) {
     f2.seek(0);
 
     return true;
-}
-
-TEST_CASE("Test GZip compression") {
-    SetupFileSystemMock("TestData");
-    PosixFileSystem fs;
-    fs.begin();
-
-    std::string inFileName = "/book/last-question.txt";
-    std::string outFileName = "/book/last-question.txt.gz";
-
-    SECTION("test") {
-        auto file = fs.open(inFileName);
-        auto outFile = fs.open(outFileName, "w", true);
-        GZipFile gzip;
-        bool ret = gzip.initWithOutputFile(outFile);
-        REQUIRE(ret == true);
-
-        ret = gzip.compressFile(file);
-        REQUIRE(ret == true);
-
-        file.close();
-
-        auto stream = fs.newGzipRendererStream(outFileName.c_str());
-        REQUIRE(stream->size() == 25924);
-
-        uint8_t testBuffer[2][25924];
-        stream->readBytes(testBuffer[0], 25924);
-        REQUIRE(stream->position() == 25924);
-
-        file = fs.open(inFileName);
-        REQUIRE(file.readBytes((char *)testBuffer[1], 25924) == 25924);
-
-        REQUIRE(memcmp(testBuffer[0], testBuffer[1], 25924) == 0);
-    }
-    SECTION("cleanup") { fs.remove(outFileName); }
 }
 
 TEST_CASE("Test GZip Stream compression") {
