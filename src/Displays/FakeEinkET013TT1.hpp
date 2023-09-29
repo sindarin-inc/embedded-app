@@ -10,8 +10,8 @@
 #include "CustomWaveforms.hpp"
 #include "EinkTypes.hpp"
 
-#define EinkET013TT1_PIXEL_WIDTH 256
-#define EinkET013TT1_PIXEL_HEIGHT 256
+#define EinkET013TT1_PIXEL_WIDTH 400
+#define EinkET013TT1_PIXEL_HEIGHT 240
 #define FRAMERATE_DEFAULT 24
 #define PARTICLE_MOVEMENT_DEFAULT 40
 

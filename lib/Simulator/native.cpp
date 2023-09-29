@@ -5,6 +5,9 @@
 
 #ifndef SOL_COMPANION
 #include <SDL2/SDL.h>
+#else
+#include <linux/fb.h>
+#include <linux/input.h>
 #endif
 
 #include <cstring>
@@ -25,7 +28,6 @@
 #include <fcntl.h>
 #include <fstream>
 #include <iostream>
-#include <linux/fb.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <termios.h>
@@ -51,9 +53,115 @@
 #define SIM_LED_DIM 0
 #endif
 
+class KeyboardInputPoller {
+public:
+    KeyboardInputPoller(const std::string &deviceFile) : deviceFile_(deviceFile) {
+        inputDevice_ = open(deviceFile_.c_str(), O_RDONLY | O_NONBLOCK);
+        if (inputDevice_ == -1) {
+            std::cerr << "Failed to open input device: " << deviceFile_ << std::endl;
+        }
+    }
+
+    ~KeyboardInputPoller() {
+        if (inputDevice_ != -1) {
+            close(inputDevice_);
+        }
+    }
+
+    bool IsOpen() const { return inputDevice_ != -1; }
+
+    std::string Poll() {
+        struct input_event ev;
+        std::string keyPress = "Unknown";
+
+        if (inputDevice_ != -1) {
+            ssize_t bytesRead = read(inputDevice_, &ev, sizeof(ev));
+            if (bytesRead == sizeof(ev) && ev.type == EV_KEY && ev.value == 1) {
+                keyPress = KeycodeToString(ev.code);
+            }
+        }
+
+        return keyPress;
+    }
+
+private:
+    std::string deviceFile_;
+    int inputDevice_ = -1;
+
+    std::string KeycodeToString(int keycode) {
+        switch (keycode) {
+            // map all the KEY_X to the equivalent 'x' key
+            // Letters
+        case KEY_Q:
+            return "q";
+        case KEY_W:
+            return "w";
+        case KEY_E:
+            return "e";
+        case KEY_R:
+            return "r";
+        case KEY_T:
+            return "t";
+        case KEY_Y:
+            return "y";
+        case KEY_U:
+            return "u";
+        case KEY_I:
+            return "i";
+        case KEY_O:
+            return "o";
+        case KEY_P:
+            return "p";
+        case KEY_A:
+            return "a";
+        case KEY_S:
+            return "s";
+        case KEY_D:
+            return "d";
+        case KEY_F:
+            return "f";
+        case KEY_G:
+            return "g";
+        case KEY_H:
+            return "h";
+        case KEY_J:
+            return "j";
+        case KEY_K:
+            return "k";
+        case KEY_L:
+            return "l";
+        case KEY_Z:
+            return "z";
+        case KEY_X:
+            return "x";
+        case KEY_C:
+            return "c";
+        case KEY_V:
+            return "v";
+        case KEY_B:
+            return "b";
+        case KEY_N:
+            return "n";
+        case KEY_M:
+            return "m";
+        case KEY_BACKSPACE:
+            return "p";
+        case KEY_ENTER:
+            return "$";
+            // Punctuation and other keys
+        case KEY_SPACE:
+            return " ";
+        // Add more key mappings as needed.
+        default:
+            return "Unknown";
+        }
+    }
+};
+
 int mygetch() {
     struct termios oldt, newt;
     int ch;
+    int oldf;
 
     // Get the current terminal settings
     tcgetattr(STDIN_FILENO, &oldt);
@@ -67,11 +175,16 @@ int mygetch() {
     // Set the new terminal settings
     tcsetattr(STDIN_FILENO, TCSANOW, &newt);
 
-    // Read a single character from the terminal
+    // Make stdin non-blocking
+    oldf = fcntl(STDIN_FILENO, F_GETFL);
+    fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
+
+    // Read a single character from the terminal (non-blocking)
     ch = getchar();
 
-    // Restore the old terminal settings
+    // Restore the old terminal settings and stdin blocking mode
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+    fcntl(STDIN_FILENO, F_SETFL, oldf);
 
     return ch;
 }
@@ -115,10 +228,15 @@ bool saveScreenshotPng(std::string filepath, SDL_Window *window, SDL_Renderer *r
 bool saveScreenshotPng() { return true; }
 #endif
 
+int fbfd = -1;
+
 void SimDrawScreen() {
 #ifdef SOL_COMPANION
     // Open the framebuffer device
-    int fbfd = open("/dev/fb1", O_RDWR);
+    if (fbfd == -1) {
+        fbfd = open("/dev/fb1", O_RDWR);
+    }
+
     if (fbfd == -1) {
         std::cerr << "Unable to open framebuffer device\n";
         return;
@@ -164,37 +282,17 @@ void SimDrawScreen() {
         }
     }
 #else
-    for (int y = 8; y < EinkET013TT1_PIXEL_HEIGHT - 8; y++) {
+    for (int y = 0; y < EinkET013TT1_PIXEL_HEIGHT; y++) {
         // It's 400 pixels wide and we write 8 pixels / bits at a time to the buffer
         for (int x = 0; x < 400; x++) {
             // Draw left and right side bars
-            if (x < 80 || x >= 320) {
+            /*if (x < 80 || x >= 320) {
                 framebuffer[(x + (y - 8) * vinfo.xres)] = 0xFFFFFFFF;
-            } else {
-                size_t offset = (x - 80) + y * EinkET013TT1_PIXEL_WIDTH;
-                framebuffer[(x + (y - 8) * vinfo.xres)] =
-                    (FakeEinkET013TT1ParticlePositions[offset]) == 0 ? 0xFFFFFFFF : 0;
-                // uint8_t color0;
-                /*uint8_t color1 = FakeEinkET013TT1ParticlePositions[offset + 1];
-                uint8_t color2 = FakeEinkET013TT1ParticlePositions[offset + 2];
-                uint8_t color3 = FakeEinkET013TT1ParticlePositions[offset + 3];
-                uint8_t color4 = FakeEinkET013TT1ParticlePositions[offset + 4];
-                uint8_t color5 = FakeEinkET013TT1ParticlePositions[offset + 5];
-                uint8_t color6 = FakeEinkET013TT1ParticlePositions[offset + 6];
-                uint8_t color7 = FakeEinkET013TT1ParticlePositions[offset + 7];
-
-                color0 = color0 > 0 ? 1 : 0;
-                color1 = color1 > 0 ? 1 << 1 : 0;
-                color2 = color2 > 0 ? 1 << 2 : 0;
-                color3 = color3 > 0 ? 1 << 3 : 0;
-                color4 = color4 > 0 ? 1 << 4 : 0;
-                color5 = color5 > 0 ? 1 << 5 : 0;
-                color6 = color6 > 0 ? 1 << 6 : 0;
-                color7 = color7 > 0 ? 1 << 7 : 0;
-*/
-                // framebuffer[(x + y * vinfo.xres)] = color0;
-                //  color0 | color1 | color2 | color3 | color4 | color5 | color6 | color7;
-            }
+            } else {*/
+            size_t offset = x + y * EinkET013TT1_PIXEL_WIDTH;
+            framebuffer[(x + y * vinfo.xres)] =
+                (FakeEinkET013TT1ParticlePositions[offset]) == 0 ? 0xFFFFFFFF : 0;
+            /*}*/
         }
     }
 #endif
@@ -209,12 +307,12 @@ void SimDrawScreen() {
     }
 
 #ifdef SOL_COMPANION
-    std::cout << " ";
+    // std::cout << " ";
     int dummy = 0;
     ioctl(fbfd, FBIOBLANK, &dummy); // Blank and unblank to force a redraw
     ioctl(fbfd, FBIOBLANK, FB_BLANK_UNBLANK);
     munmap(framebuffer, framebufferSize);
-    close(fbfd);
+    // close(fbfd);
 #endif
 }
 
@@ -445,24 +543,35 @@ auto mainLoop() -> bool {
         }
     }
 #else
-    // char input = 'w';
-    std::cout << "About to read a character\n";
+
     char input = mygetch();
-    std::cout << "Got the following character: " << input << "\n";
+
     switch (input) {
-    case 'i':
+    case 'r':
+    case 't':
+    case 'y':
+    case 'u':
         remoteCode = RemoteCommand::UP;
         break;
-    case 'j':
+    case 'a':
+    case 's':
+    case 'd':
         remoteCode = RemoteCommand::LEFT;
         break;
-    case 'k':
+    case '$':
         remoteCode = RemoteCommand::ENTER;
         break;
+    case 'j':
+    case 'k':
     case 'l':
+    case 'p':
         remoteCode = RemoteCommand::RIGHT;
         break;
-    case 'm':
+    case 'c':
+    case 'v':
+    case 'b':
+    case 'n':
+    case ' ':
         remoteCode = RemoteCommand::DOWN;
         break;
     case 'q':
@@ -473,11 +582,12 @@ auto mainLoop() -> bool {
         remoteCode = RemoteCommand::NONE;
     }
 
-    std::cout << "Sending the command to the dispatch queue: " << remoteCode << "\n";
+    // std::cout << "Sending the command to the dispatch queue: " << remoteCode << "\n";
     if (remoteCode != RemoteCommand::NONE) {
         DispatchGetUiQueue()->dispatchFromISR([remoteCode]() { UIInnerLoop(remoteCode); });
     }
-    std::cout << "Dispatched!\n";
+    // std::cout << "Dispatched!\n";
+
 #endif
 
 #if SIMULATOR_BLE
@@ -496,10 +606,10 @@ auto mainLoop() -> bool {
         SDL_SetRenderTarget(renderer, NULL);
         SDL_RenderCopy(renderer, deviceScreen, NULL, NULL);
 #endif
-        std::cout << "starting draw screen\n";
+        // std::cout << "starting draw screen\n";
         SimDrawScreen();
         //        SimDrawLeds();
-        std::cout << "ending draw screen\n";
+        // std::cout << "ending draw screen\n";
 #ifndef SOL_COMPANION
         SDL_RenderPresent(renderer);
 #endif

@@ -51,8 +51,8 @@ public:
 
     int32_t defaultXPadding = 30;
     int32_t defaultYPadding = 20;
-    int32_t defaultScreenWidth = 255;
-    int32_t defaultScreenHeight = 255;
+    int32_t defaultScreenWidth = 399;
+    int32_t defaultScreenHeight = 239;
 
     DisplayRect defaultBoundingBox = {defaultXPadding, defaultYPadding,
                                       defaultScreenWidth - (uint32_t)defaultXPadding * 2,
@@ -207,11 +207,11 @@ public:
     inline auto yAbsolute(int y) -> int { return y - boundingBox_.y; }
 
     // Should these be in the subclasses instead?
-    auto xAbsoluteCenter() -> int { return 128; }
-    auto yAbsoluteCenter() -> int { return 128; }
+    auto xAbsoluteCenter() -> int { return 200; }
+    auto yAbsoluteCenter() -> int { return 120; }
 
-    auto xAbsoluteMax() -> int { return 255; }
-    auto yAbsoluteMax() -> int { return 255; }
+    auto xAbsoluteMax() -> int { return 399; }
+    auto yAbsoluteMax() -> int { return 239; }
 
 protected:
     // Must be set in the constructor of subclasses
