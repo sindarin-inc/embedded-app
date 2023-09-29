@@ -9,8 +9,8 @@
 #endif
 #include "sindarin-debug.h"
 
-#define EinkET013TT1_X_PIXELS 256
-#define EinkET013TT1_Y_PIXELS 256
+#define EinkET013TT1_X_PIXELS 400
+#define EinkET013TT1_Y_PIXELS 240
 
 class DisplayEinkET013TT1 : public DisplaySystem {
 public:
