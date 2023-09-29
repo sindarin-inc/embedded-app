@@ -23,7 +23,9 @@ public:
     auto available() -> int { return outputAvailable_; }
     auto read(uint8_t *destBuffer, int destBufferSize) -> int;
 
-    auto getDataPtr(int bytesToRead) -> uint8_t *;
+    // interface for direct access to the compressed data, so a copy is not required.
+    auto getDataPtr() -> uint8_t *;
+    void advance(int size);
 
     auto initialized() -> bool { return init_; }
 

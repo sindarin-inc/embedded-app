@@ -38,12 +38,6 @@ auto GUnzipStream::readBytes(uint8_t *buf, int size) -> int {
             int inputRead = 0;
             int err = gunzip_.decompress(nullptr, 0, outBuf_, GZ_BUFFER_SIZE, inputRead, outSize_);
 
-            /*
-            if (outSize_ < GZ_BUFFER_SIZE) {
-                lastOutputInBlock_ = true;
-            }
-            */
-
             if (err == MZ_BUF_ERROR) {
                 // no more output to flush
                 // outSize_ = 0;
