@@ -5,8 +5,10 @@
 #define LIGHTING_STEP_INCREMENT 7
 
 LightingAdjustScreen::LightingAdjustScreen(DisplaySystem &display, PreferencesStore &prefs,
-                                           LightingController &lightingController)
+                                           LightingController &lightingController,
+                                           Telemetry &telemetry)
     : Screen(), EinkView(display), prefs_(prefs), lightingController_(lightingController),
+      telemetry_(telemetry),
       lightbulbView_(display, LIGHTBULB_BITS, Lightbulb_width, Lightbulb_height), barView_(display),
       fillView_(display), firstLine_(display, "Press up and down"),
       secondLine_(display, "to adjust brightness"), leftArrowView_(display, ArrowLeft),
@@ -88,6 +90,21 @@ void LightingAdjustScreen::render(DisplaySystem &display) {
     display.updateDisplay(firstLoad_ ? DisplaySystem::UpdateType::FULL
                                      : DisplaySystem::UpdateType::FAST);
     firstLoad_ = false;
+
+    // Enable the ambient light sensor when this screen is shown
+    lightingController_.begin();
+}
+
+void LightingAdjustScreen::logTelemetry(int setting, const char *direction) {
+    DispatchGetCore0BackgroundQueue()->dispatch([this, setting, direction]() {
+        lightingController_.begin();
+        uint16_t channel1, channel0;
+        lightingController_.readAmbientLightData(channel1, channel0);
+        int darkMode = this->prefs_.darkMode.get().value_or(false) ? 1 : 0;
+        telemetry_.logMetric(
+            TelemetryField::METRIC_LIGHTING, setting,
+            {{"dir", direction}, {"ch1", channel1}, {"ch0", channel0}, {"dark", darkMode}});
+    });
 }
 
 void LightingAdjustScreen::processCommand(RemoteCommand command) {
@@ -95,25 +112,26 @@ void LightingAdjustScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::LEFT:
     case RemoteCommand::RIGHT:
     case RemoteCommand::ENTER:
+    case RemoteCommand::BACK:
+        lightingController_.returnToDisabledState();
         back();
         break;
     case RemoteCommand::UP: {
         auto setting =
             std::min(lightingController_.getCurrentPercent() + LIGHTING_STEP_INCREMENT, 100);
-        lightingController_.setOverrideValuePercent(setting);
+        lightingController_.setOverrideValuePercent(setting, true);
+        logTelemetry(setting, "up");
         setNeedsRerender();
         break;
     }
     case RemoteCommand::DOWN: {
         auto setting =
             std::max(lightingController_.getCurrentPercent() - LIGHTING_STEP_INCREMENT, 0);
-        lightingController_.setOverrideValuePercent(setting);
+        lightingController_.setOverrideValuePercent(setting, true);
+        logTelemetry(setting, "down");
         setNeedsRerender();
         break;
     }
-    case RemoteCommand::BACK:
-        back();
-        break;
     default:
         break;
     }

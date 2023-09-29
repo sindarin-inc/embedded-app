@@ -71,6 +71,7 @@ private:
 // It's heap_caps_malloc but with always uses MALLOC_CAP_SPIRAM to have a malloc-compatible
 // interface.
 auto SpiRamMalloc(size_t size) -> void *;
+void SpiRamFree(void *ptr);
 
 template <typename T>
 auto CustomArrayPtr(size_t len, void *(*mallocFunc)(size_t), void (*freeFunc)(void *))

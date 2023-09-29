@@ -35,8 +35,17 @@ void LightingController::begin() {
     // Not pictured here: all the LEDC configuration that happens in PlatformESP32.cpp. We keep that
     // code over there because the LEDC driver is configured globally and we'll probably also want
     // to configure the RGB LEDs with LEDC eventually
-    lightSensor_.enable();
-    enabled_ = true;
+    if (!enabled_) {
+        lightSensor_.enable();
+        enabled_ = true;
+    }
+}
+
+void LightingController::returnToDisabledState() {
+    if (enabled_ && overrideDutyCycle_ != -1) {
+        lightSensor_.disable();
+        enabled_ = false;
+    }
 }
 
 void LightingController::disableLighting(int fadeMs) {
@@ -65,7 +74,7 @@ void LightingController::enableLighting(int fadeMs) {
     }
 }
 
-void LightingController::setOverrideValuePercent(int percent) {
+void LightingController::setOverrideValuePercent(int percent, bool maintainLightSensor) {
     auto dutyCycle = percent / 7;
     if (dutyCycle == 0) {
         dutyCycle = 1;
@@ -77,7 +86,10 @@ void LightingController::setOverrideValuePercent(int percent) {
 
     overrideDutyCycle_ = dutyCycle;
     log_d("Override duty cycle: %d (%d%%)", dutyCycle, percent);
-    lightSensor_.disable();
+    if (!maintainLightSensor) {
+        lightSensor_.disable();
+        enabled_ = false;
+    }
     currentDutyCycle_ = dutyCycle;
     setCurrentDutyCycle(currentDutyCycle_, 100);
 }
@@ -98,6 +110,14 @@ void LightingController::setScreenMask(Screens screens, int fadeMs) {
     setCurrentDutyCycle(currentDutyCycle_, fadeMs);
 };
 
+auto LightingController::readAmbientLightData(uint16_t &channel1, uint16_t &channel0) -> bool {
+    if (!lightSensor_.readData(channel1, channel0)) {
+        // Failed to read data, so just return false
+        return false;
+    }
+    return true;
+}
+
 void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
     if (lightsOut_) {
         return;
@@ -107,7 +127,7 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
     }
 
     uint16_t channel1, channel0;
-    if (!lightSensor_.readData(channel1, channel0)) {
+    if (!readAmbientLightData(channel1, channel0)) {
         // Failed to read data, so just give up and return (will be logged from the Ltr329Als
         // driver)
         return;

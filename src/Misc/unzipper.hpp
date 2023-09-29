@@ -3,14 +3,11 @@
 #include <cinttypes>
 #include <cstring>
 #include <memory>
+#include <miniz/miniz.h>
 #include <string>
 #include <unordered_map>
 
 #include "Storage/FileSystem.hpp"
-
-// Those are comfiguration definitions for miniz. See the include file for their meaning
-
-#include "miniz.h"
 
 static const constexpr bool UNZIPPER_DEBUG = false;
 

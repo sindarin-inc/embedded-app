@@ -1035,7 +1035,7 @@ auto LocalStore::processReadableDownload(
         SHOW_HEAP();
 
         for (int t = 0; t < NUMBER_OF_READABLE_DOWNLOAD_TRIES; t++) {
-            auto success = SindarinAPI::getInstance()->downloadReadable(
+            auto httpCode = SindarinAPI::getInstance()->downloadReadable(
                 readable, this->fileSystem, this->telemetry_, path,
                 [progressCallback, &syncState, tasksIndex, currPercentage, pctPerReadable,
                  modelType](int percentage) {
@@ -1047,7 +1047,7 @@ auto LocalStore::processReadableDownload(
                 }
                 progressCallback(syncState);
                 });
-            if (success) {
+            if (httpCode == 200) {
                 addReadable(readables, readable);
                 log_d("File successfully downloaded.");
                 purgeReadableToc(readable);
@@ -1072,7 +1072,9 @@ auto LocalStore::processReadableDownload(
                         StringFormat("failed-download-%s",
                                      ReadableModelTypeToString(modelType).c_str())
                             .c_str(),
-                        {{"uuid", readable->uuid}, {"title", readable->title.c_str()}});
+                        {{"uuid", readable->uuid},
+                         {"title", readable->title.c_str()},
+                         {"http-code", httpCode}});
                 }
             }
         }

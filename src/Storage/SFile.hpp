@@ -25,6 +25,7 @@ public:
     [[nodiscard]] virtual auto size() const -> size_t = 0;
     virtual auto close() -> int = 0;
     virtual operator bool() const = 0;
+    virtual auto getFilePtr() -> FILE * = 0;
 };
 
 class SStream {
@@ -87,6 +88,8 @@ public:
     auto close() -> int;
     operator bool() const;
 
+    auto getFilePtr() -> FILE * { return p_->getFilePtr(); }
+
 protected:
     std::shared_ptr<SFileImpl> p_;
 };
@@ -128,6 +131,7 @@ public:
     [[nodiscard]] auto size() const -> size_t override;
     auto close() -> int override;
     operator bool() const override;
+    auto getFilePtr() -> FILE * override;
 
 protected:
     FILE *fp_{nullptr};

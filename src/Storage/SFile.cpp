@@ -178,3 +178,5 @@ VFSFile::operator bool() const {
 
     return false;
 }
+
+auto VFSFile::getFilePtr() -> FILE * { return fp_; }
