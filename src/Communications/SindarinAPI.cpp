@@ -258,7 +258,7 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
     while (totalBytesWritten < writeSize) {
         auto bytesRead = telemetryFile.readBytes(buffer.get(), bufferSize);
         auto bytesWritten = client.write(buffer.get(), bytesRead);
-        if (bytesWritten != 0) {
+        if (bytesWritten != bytesRead) {
             log_w("client.write failed (bytesWritten == %d)", bytesWritten);
             if (!client.connected) {
                 log_w("Connection closed, bailing out");
@@ -302,7 +302,7 @@ auto SindarinAPI::uploadCrashReport(SFile &crashFile, const std::string &content
     while (totalBytesWritten < writeSize) {
         auto bytesRead = crashFile.readBytes(buffer.get(), bufferSize);
         auto bytesWritten = client.write(buffer.get(), bytesRead);
-        if (bytesWritten != 0) {
+        if (bytesWritten != bytesRead) {
             log_w("client.write failed (bytesWritten == %d)", bytesWritten);
             if (!client.connected) {
                 log_w("Connection closed, bailing out");
