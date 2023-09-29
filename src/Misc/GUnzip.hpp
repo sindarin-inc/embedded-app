@@ -28,7 +28,6 @@ protected:
     int compressedSize_{0};
     int compressedPos_{0};
     int uncompressedPos_{0};
-    uint8_t buf_[1024];
     int bufPos_{0};
 
     bool readHeader_{false};
