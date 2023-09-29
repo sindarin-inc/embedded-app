@@ -20,13 +20,9 @@ typedef struct __attribute__((__packed__)) {
 static gzHeader gzhdr;
 
 static auto spiZAlloc(void *opaque, size_t items, size_t size) -> void * {
-    log_d("spiZAlloc: %d %d", (int)items, (int)size);
     return SpiRamMalloc(items * size);
 }
-static void spiZFree(void *opaque, void *address) {
-    log_d("spiZFree");
-    SpiRamFree(address);
-}
+static void spiZFree(void *opaque, void *address) { SpiRamFree(address); }
 
 auto GUnzip::init() -> bool {
 
