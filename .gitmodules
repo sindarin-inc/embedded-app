@@ -22,3 +22,6 @@
 [submodule "components/astubs"]
 	path = components/astubs
 	url = git@github.com:sindarin-inc/astubs.git
+[submodule "components/miniz"]
+	path = components/miniz
+	url = git@github.com:sindarin-inc/miniz.git
