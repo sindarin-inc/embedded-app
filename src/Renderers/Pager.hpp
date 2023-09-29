@@ -49,14 +49,6 @@ private:
         return (linesTailIdx_ == 0) ? (LINES_SIZE - 1) : (linesTailIdx_ - 1);
     }
 
-    [[nodiscard]] inline auto deciToPix(uint16_t decilineValue) const -> uint16_t {
-        return (display_.getTextHeight() * decilineValue) / NEWLINE_DECI_LINE_HEIGHT;
-    }
-
-    [[nodiscard]] inline auto pixToDeci(uint16_t pixValue) const -> uint16_t {
-        return ((int)(NEWLINE_DECI_LINE_HEIGHT * pixValue)) / display_.getTextHeight();
-    }
-
     inline void nextLineIdx(Idx &idx) const { idx = (idx + 1) % LINES_SIZE; }
     inline void prevLineIdx(Idx &idx) const { idx = (idx == 0) ? (LINES_SIZE - 1) : (idx - 1); }
 
@@ -120,8 +112,12 @@ public:
     [[nodiscard]] auto addLastTokenToPage(bool dontStop = false) -> bool;
     [[nodiscard]] auto computeWordCount() const -> uint16_t;
 
-    [[nodiscard]] inline auto linesIsFull() const -> bool { return getLineCount() > (LINES_SIZE - 2); }
-    [[nodiscard]] inline auto linesIsEmpty() const -> bool { return linesHeadIdx_ == linesTailIdx_; }
+    [[nodiscard]] inline auto linesIsFull() const -> bool {
+        return getLineCount() > (LINES_SIZE - 2);
+    }
+    [[nodiscard]] inline auto linesIsEmpty() const -> bool {
+        return linesHeadIdx_ == linesTailIdx_;
+    }
 
     [[nodiscard]] inline auto getPageLineCount() const -> uint16_t {
         return (firstPageLineIdx_ < linesTailIdx_)
@@ -181,6 +177,14 @@ public:
     }
 
     inline void addSpaceWidth() { currentLineWidth_ += spaceWidth_; }
+
+    [[nodiscard]] inline auto deciToPix(uint16_t decilineValue) const -> uint16_t {
+        return (display_.getTextHeight() * decilineValue) / NEWLINE_DECI_LINE_HEIGHT;
+    }
+
+    [[nodiscard]] inline auto pixToDeci(uint16_t pixValue) const -> uint16_t {
+        return ((int)(NEWLINE_DECI_LINE_HEIGHT * pixValue)) / display_.getTextHeight();
+    }
 
     void show() const;
 

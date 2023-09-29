@@ -135,8 +135,12 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
         if (lines_[linesTailIdx_].tokenCount > 0) {
             newLine(NEWLINE_DECI_LINE_HEIGHT);
         }
+        // Try to fit the picture and some place for at least one line of caption into the current
+        // page. The picture will go on next page if this doesn't fit.
+
         uint16_t deciHeight = pixToDeci(token.pixHeight);
-        if (!dontStop && ((currentPageDecilineHeight_ + deciHeight) > maxDeciLines_)) {
+        if (!dontStop && ((currentPageDecilineHeight_ + deciHeight + ENDPARAGRAPH_DECI_LINE_HEIGHT + NEWLINE_DECI_LINE_HEIGHT) >
+                          maxDeciLines_)) {
             setNextPagePlace(token.streamPlace);
             REND_WLOG("Page completed: %" PRIu16 " decilines. Max: %" PRIu16,
                       currentPageDecilineHeight_, maxDeciLines_);
@@ -330,10 +334,10 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
                 uint16_t width = token.pixWidth;
                 uint16_t height = token.pixHeight;
                 // int16_t y = deciToPix(deci_y + ENDPARAGRAPH_DECI_LINE_HEIGHT) + height / 2;
-                uint8_t darkPercent = computeDarkPercent(bitmap, width, height);
-                if (darkPercent > darkPicturePercent) {
-                    darkPicturePercent = darkPercent;
-                }
+                // uint8_t darkPercent = computeDarkPercent(bitmap, width, height);
+                // if (darkPercent > darkPicturePercent) {
+                //     darkPicturePercent = darkPercent;
+                // }
                 display_.drawXBitmap((display_.width() - width) / 2, deciToPix(deciY), bitmap,
                                      width, height, display_.fg);
                 deciY += pixToDeci(height + 4);
