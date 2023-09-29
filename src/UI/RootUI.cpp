@@ -440,13 +440,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         mainMenu->addSubMenu(bibleMenu);
     }
 
-    auto msgMenu = new Menu(sytleFamilies.settingsMenu, "Messages");
+    auto msgMenu = new Menu(styleFamilies.settingsMenu, "Messages");
 
-    msgMenu->addMenuItem(MenuItem("Kim", []() { system("/home/bchelf/mskim"); }));
+    msgMenu->addMenuItem(
+        MenuItem("Kim", []() { system("cd /home/bchelf && /home/bchelf/mskim"); }));
 
-    msgMenu->addMenuItem(MenuItem("John", []() { system("/home/bchelf/msjohn"); }));
+    msgMenu->addMenuItem(
+        MenuItem("John", []() { system("cd /home/bchelf && /home/bchelf/msjohn"); }));
 
-    msgMenu->addMenuItem(MenuItem("General", []() { system("/home/bchelf/msg"); }));
+    msgMenu->addMenuItem(
+        MenuItem("General", []() { system("cd /home/bchelf && /home/bchelf/msg"); }));
 
     mainMenu->addSubMenu(msgMenu);
 
