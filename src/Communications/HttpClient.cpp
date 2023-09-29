@@ -112,7 +112,6 @@ auto HttpClient::open(int contentLength) -> esp_err_t {
         // use chunked transfer for gzip requests,
         // since we do not know the content length until after compression.
         gzUncompressedBytesRemaining_ = contentLength;
-        log_i("http client: unc %d", gzUncompressedBytesRemaining_);
         ret = esp_http_client_open(client_, -1);
     } else {
         ret = esp_http_client_open(client_, contentLength);
