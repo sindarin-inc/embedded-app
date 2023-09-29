@@ -103,16 +103,7 @@ auto HttpClient::getResponseHeader(const char *key, char **value) -> esp_err_t {
 
 auto HttpClient::open(int contentLength) -> esp_err_t {
     esp_err_t ret = ESP_OK;
-    /*
-    if (gzip_) {
-        gzUncompressedBytesRemaining_ = contentLength;
-        gzCompressedLength_ = 0;
-        gzipBuffer_ = SpiRamArrayPtr<uint8_t>(gzUncompressedBytesRemaining_);
-    } else {
-        ret = esp_http_client_open(client_, contentLength);
-    }
-    */
-
+    
     if (gzip_) {
         // use chunked transfer for gzip requests,
         // since we do not know the content length until after compression.

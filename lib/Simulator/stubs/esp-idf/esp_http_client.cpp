@@ -177,6 +177,11 @@ esp_err_t esp_http_client_open(esp_http_client_handle_t client, int write_len) {
         log_d("httpclient: %s %s%s (status=%d)", req.method.c_str(), client->host.c_str(),
               req.path.c_str(), res.status);
     });
+
+    if (write_len == -1) {
+        esp_http_client_set_header(client, "Transfer-Encoding", "chunked");
+    }
+
     return ESP_OK;
 }
 
