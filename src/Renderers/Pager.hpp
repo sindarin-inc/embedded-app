@@ -120,8 +120,8 @@ public:
     [[nodiscard]] auto addLastTokenToPage(bool dontStop = false) -> bool;
     [[nodiscard]] auto computeWordCount() const -> uint16_t;
 
-    [[nodiscard]] auto linesIsFull() const -> bool { return getLineCount() > (LINES_SIZE - 2); }
-    [[nodiscard]] auto linesIsEmpty() const -> bool { return linesHeadIdx_ == linesTailIdx_; }
+    [[nodiscard]] inline auto linesIsFull() const -> bool { return getLineCount() > (LINES_SIZE - 2); }
+    [[nodiscard]] inline auto linesIsEmpty() const -> bool { return linesHeadIdx_ == linesTailIdx_; }
 
     [[nodiscard]] inline auto getPageLineCount() const -> uint16_t {
         return (firstPageLineIdx_ < linesTailIdx_)

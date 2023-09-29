@@ -91,6 +91,7 @@ static constexpr uint16_t MAX_BYTES_PER_LINE = 200;
 static constexpr uint16_t LINES_SIZE = 36;
 static constexpr uint16_t PAGE_INDEX_SIZE = 500;
 
+static constexpr uint32_t END_OFFSET = 999999999U;
 // NOTE:
 //
 // In the renderer class definitions:

@@ -92,7 +92,7 @@ auto Renderer::goBackwardsOnePage(StreamPlace endPlace) -> StreamPlace {
     if (!(seekPlace == endPlace)) {
         StreamPlace lastPlace = endPlace;
         if (seekPlace.getFileIdx() != endPlace.getFileIdx()) {
-            lastPlace = {99999999, seekPlace.getFileIdx()};
+            lastPlace = {END_OFFSET, seekPlace.getFileIdx()};
         }
         std::tie(currentPlace_, nextPlace_) = tokenizer_->loadAndTokenizePage(
             seekPlace, true,

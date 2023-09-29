@@ -88,6 +88,7 @@ public:
 
 private:
     std::shared_ptr<EPubFile> stream_;
+    pugi::xml_node body_;
 
     // clang-format off
 
@@ -104,13 +105,13 @@ private:
     using SuperscriptNumbers = std::array<const char *, 10>;
 
     // Hash HTML tags
-    static Tags tags;
+    static Tags tags_;
 
     // Hash XHTML character entities (like &nbsp;) and their UTF-8 codification
-    static Entities entities;
+    static Entities entities_;
 
     // Superscript Numbers UTF-8 codification
-    static SuperscriptNumbers superscriptNumbers;
+    static SuperscriptNumbers superscriptNumbers_;
 
     // Where the tokenizer will start to parse tokens
     StreamPlace fromPlace_;
@@ -127,6 +128,9 @@ private:
 
     // true if we are tokenizing/paging the content
     bool tokenizingStarted_;
+
+    // true if at beginning of page and no tokens / lines where kept.
+    bool beginningOfPage_;
 
     // true if the page is complete
     bool pageCompleted_;
@@ -196,13 +200,15 @@ private:
         if (textToken_ != nullptr) {
             tokens_.endOfCStr();
             lastToken_ = textToken_;
-            pageCompleted_ = addTokenToPage(*textToken_);
+            addTokenToPage(*textToken_);
             textToken_ = nullptr;
             return pageCompleted_;
         } else {
             return false;
         }
     }
+
+    void startNewPageWithToken(Token &token, const char *str, uint8_t strSize);
 
     auto addTokenToPage(Token &token, const char *str = nullptr, uint8_t strSize = 0) -> bool;
     auto findNodeEndOffset(pugi::xml_node node) -> uint32_t;

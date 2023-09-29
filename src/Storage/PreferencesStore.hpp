@@ -312,7 +312,8 @@ public:
           sortCriteria(*this, "sort-c"),
           sortDirection(*this, "sort-d"),
           lastReadTime(*this, "-lr"),
-          readablePlace(*this, "-p"),
+          oldReadablePlace(*this, "-p"),
+          readablePlace(*this, "-po"),
           readablePlaceChanged(*this, "-pc"),
           readableArchivedChanged(*this, "-ar"),
           readableBookmarksChanged(*this, "-bm"),
@@ -554,6 +555,7 @@ public:
     PrefsItem<int> sortCriteria;  // Stored as int, used as LocalStore::SortCriteria
     PrefsItem<int> sortDirection; // Stored as int, used as LocalStore::SortDirection
     KeyedPrefsItem<uint64_t> lastReadTime;
+    KeyedPrefsItem<uint32_t> oldReadablePlace;
     KeyedPrefsItem<std::string> readablePlace;
     KeyedPrefsItem<bool> readablePlaceChanged;
     KeyedPrefsItem<bool> readableArchivedChanged;
