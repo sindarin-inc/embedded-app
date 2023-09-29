@@ -111,6 +111,7 @@ auto GUnzipStream::seek(uint32_t pos) -> bool {
         inIndex_ = 0;
         outSize_ = 0;
         outIndex_ = 0;
+        lastInput_ = false;
         gunzip_.init();
 
         // decompress enough to get to the new position

@@ -70,4 +70,22 @@ TEST_CASE("Test GZip stream handling") {
     // log_d("Got buffer: \n%s", buffer);
     REQUIRE(strcmp((char *)buffer, "f Judah. And his offering was one silver plate whose weight "
                                    "was 130 shekels, one silver basin of 70") == 0);
+
+    // seek all the way to the end
+    stream->seek(3061220);
+    // try to read one byte past the end
+    int bytesRead = stream->readBytes(buffer, 11);
+    // stream is at the end now
+    REQUIRE(bytesRead == 10);
+    REQUIRE(stream->position() == 3061230);
+    // seek back to the start
+    stream->seek(0);
+
+    // re-test the beginning
+    // Grab the very start of the file
+    stream->readBytes(buffer, bufferLen);
+    REQUIRE(stream->position() == bufferLen);
+    // log_d("Got buffer: \n%s", buffer);
+    REQUIRE(strcmp((char *)buffer, "Old Testament\n\nGenesis (50 Chapters)\n\n\nGENESIS 1 In the "
+                                   "beginning, God created the heavens and the ") == 0);
 }
