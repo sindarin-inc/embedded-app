@@ -1,9 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <miniz_component.h>
 
 #include "Storage/FileSystem.hpp"
-#include "miniz.h"
 
 class GUnzip {
 public:
