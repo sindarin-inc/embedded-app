@@ -143,7 +143,7 @@ auto GUnzip::decompress(uint8_t *input, int inputSize, uint8_t *output, int outp
     int outBefore = zstr_.total_out;
 
     int err = MZ_OK;
-    err = mz_inflate(&zstr_, TDEFL_SYNC_FLUSH);
+    err = mz_inflate(&zstr_, MZ_SYNC_FLUSH); // NOLINT : prevent changing define
 
     inputRead += zstr_.total_in - inBefore;
     outputAvail = zstr_.total_out - outBefore;
