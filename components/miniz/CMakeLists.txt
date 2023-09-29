@@ -5,4 +5,9 @@ idf_component_register(
      INCLUDE_DIRS "."
 )
 
+set_source_files_properties(
+    miniz/miniz.c
+    PROPERTIES COMPILE_FLAGS "-Wno-type-limits"
+)
+
 project(miniz)
