@@ -90,12 +90,13 @@ public:
         return 0;
     }
 
-    pugi::xml_document currentFileDoc;
 
 private:
     Unzipper epubUnzipper_;
     const std::shared_ptr<Readable> readable_;
 
+    pugi::xml_document currentFileDoc_;
+    
     bool fileOpen_;
 
     std::shared_ptr<EPubOpf> opf_;

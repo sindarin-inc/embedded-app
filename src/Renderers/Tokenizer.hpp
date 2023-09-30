@@ -64,6 +64,10 @@ public:
 
     [[nodiscard]] virtual inline auto isAnArticle() const -> bool { return true; }
 
+    [[nodiscard]] virtual inline auto isReady() const -> bool { return false; }
+
+    [[nodiscard]] virtual inline auto errorPlace() const -> std::shared_ptr<Place> = 0;
+
 protected:
     DisplaySystem &display_;
     Tokens &tokens_;

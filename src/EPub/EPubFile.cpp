@@ -124,7 +124,7 @@ auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
             // (see the EPubFile::getOffset() method).
 
             EPUB_PROFILE_START(ParseXHTML);
-            pugi::xml_parse_result result = currentFileDoc.load_buffer_inplace(
+            pugi::xml_parse_result result = currentFileDoc_.load_buffer_inplace(
                 currentFileBuffer_.get(), length, pugi::parse_default | pugi::parse_ws_pcdata);
             EPUB_PROFILE_END(ParseXHTML);
 
@@ -140,7 +140,7 @@ auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
 
     if (readable_->isArticle()) log_w("article");
 
-    return currentFileDoc;
+    return currentFileDoc_;
 }
 
 auto EPubFile::open() -> bool {

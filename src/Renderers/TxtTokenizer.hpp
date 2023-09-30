@@ -41,6 +41,12 @@ public:
 
     void setStream(std::shared_ptr<RendererStream> stream) override { stream_ = stream; }
 
+    [[nodiscard]] virtual inline auto errorPlace() const -> std::shared_ptr<Place> override {
+        return std::make_shared<TxtPlace>(0);
+    }
+
+    [[nodiscard]] inline auto isReady() const -> bool override { return stream_.get() != nullptr; }
+
 private:
     std::shared_ptr<RendererStream> stream_;
 

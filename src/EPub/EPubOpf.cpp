@@ -53,7 +53,7 @@ void EPubOpf::parse(std::shared_ptr<uint8_t[]> buffer, uint32_t length) {
             }
         }
     } else {
-        log_e("Failed to parse EPub manifest %s: %s", path_, result.description());
+        log_e("Failed to parse EPub opf %s: %s", path_, result.description());
     }
 }
 

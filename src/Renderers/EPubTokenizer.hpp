@@ -86,6 +86,14 @@ public:
         return stream_->isAnArticle();
     }
 
+    [[nodiscard]] inline auto isReady() const -> bool override {
+        return (stream_.get() != nullptr) && stream_->isOpen();
+    }
+
+    [[nodiscard]] virtual inline auto errorPlace() const -> std::shared_ptr<Place> override {
+        return std::make_shared<EPubPlace>(0, "Error");
+    }
+
 private:
     std::shared_ptr<EPubFile> stream_;
     pugi::xml_node body_;

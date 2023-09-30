@@ -42,6 +42,7 @@
 #include "UI/LineSpacingScreen.hpp"
 #include "UI/LogoScreen.hpp"
 #include "UI/MainMenuScreen.hpp"
+#include "UI/MsgPopup.hpp"
 #include "UI/OffsetAdjustScreen.hpp"
 #include "UI/ReadableScreen.hpp"
 #include "UI/ReleaseNotesScreen.hpp"
@@ -141,12 +142,16 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         if (HasSuffix(path, ".epub")) {
             log_i("Opening %s as epub", path.c_str());
-            stream = std::make_shared<EPubFile>(fileSystem, path.c_str(), readable);
+            stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
         } else if (HasSuffix(path, ".txt.gz")) {
             log_i("Opening %s as gzip", path.c_str());
             stream = fileSystem.newGzipRendererStream(path.c_str());
         } else {
             stream = fileSystem.newRendererStream(path.c_str());
+        }
+
+        if (stream == nullptr) {
+            return nullptr;
         }
 
         auto *readableScreen =
@@ -296,9 +301,20 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         booksMenu->addMenuItem(MenuItem(StringFormat("%s", title.c_str()),
                                         StringFormat("%s", r->authorString().c_str()),
-                                        [this, r, createReadableScreen]() {
+                                        [this, r, display, mainMenu, createReadableScreen]() {
             auto readableScreen = createReadableScreen(r);
-            this->setCurrentScreen(*readableScreen);
+            if (readableScreen != nullptr) {
+                this->setCurrentScreen(*readableScreen);
+            } else {
+                MsgPopup *errorPopup = new MsgPopup(*display, itemErrorMsg);
+                this->setCurrentScreen(*errorPopup);
+                errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
+                    mainMenu->setFirstLoad();
+                    display_->clearDisplay();
+                    setCurrentScreen(*mainMenu);
+                    delete errorPopup;
+                });
+            }
         }));
     }
 
@@ -359,17 +375,29 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             MenuItem(title, [this, display, articlesMenu, mainMenu, r, createReadableScreen]() {
                 display->clearDisplay();
                 auto readableScreen = createReadableScreen(r);
-                setCurrentScreen(*readableScreen);
-                readableScreen->setBackCallback(
-                    [this, r, display, readableScreen, mainMenu, articlesMenu]() {
-                bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
-                auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
-                articlesMenu->changeItemTitleAt(articlesMenu->getCurrSelection(), title);
-                display->clearDisplay();
-                mainMenu->setFirstLoad();
-                setCurrentScreen(*mainMenu);
-                delete readableScreen;
-                });
+                if (readableScreen != nullptr) {
+                    setCurrentScreen(*readableScreen);
+                    readableScreen->setBackCallback(
+                        [this, r, display, readableScreen, mainMenu, articlesMenu]() {
+                    bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
+                    auto title =
+                        StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
+                    articlesMenu->changeItemTitleAt(articlesMenu->getCurrSelection(), title);
+                    display->clearDisplay();
+                    mainMenu->setFirstLoad();
+                    setCurrentScreen(*mainMenu);
+                    delete readableScreen;
+                    });
+                } else {
+                    MsgPopup *errorPopup = new MsgPopup(*display, itemErrorMsg);
+                    this->setCurrentScreen(*errorPopup);
+                    errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
+                        mainMenu->setFirstLoad();
+                        display_->clearDisplay();
+                        setCurrentScreen(*mainMenu);
+                        delete errorPopup;
+                    });
+                }
             }));
     }
 
@@ -398,17 +426,29 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             if (isBible(r)) {
                 bool archived = prefs_.readableArchivedChanged.get(r->shortenedUuid.c_str());
                 auto title = StringFormat("%s%s", archived ? "Archived: " : "", r->title.c_str());
-                bibleMenu->addMenuItem(MenuItem(title, [this, r, createReadableScreen, display,
-                                                        mainMenu]() {
-                    auto readableScreen = createReadableScreen(r);
-                    this->setCurrentScreen(*readableScreen);
-                    readableScreen->setBackCallback([this, r, display, readableScreen, mainMenu]() {
-                        display->clearDisplay();
-                        mainMenu->setFirstLoad();
-                        setCurrentScreen(*mainMenu);
-                        delete readableScreen;
-                    });
-                }));
+                bibleMenu->addMenuItem(
+                    MenuItem(title, [this, r, createReadableScreen, display, mainMenu]() {
+                        auto readableScreen = createReadableScreen(r);
+                        if (readableScreen != nullptr) {
+                            this->setCurrentScreen(*readableScreen);
+                            readableScreen->setBackCallback(
+                                [this, r, display, readableScreen, mainMenu]() {
+                            display->clearDisplay();
+                            mainMenu->setFirstLoad();
+                            setCurrentScreen(*mainMenu);
+                            delete readableScreen;
+                            });
+                        } else {
+                            MsgPopup *errorPopup = new MsgPopup(*display, itemErrorMsg);
+                            this->setCurrentScreen(*errorPopup);
+                            errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
+                                mainMenu->setFirstLoad();
+                                display_->clearDisplay();
+                                setCurrentScreen(*mainMenu);
+                                delete errorPopup;
+                            });
+                        }
+                    }));
             }
         }
 
@@ -1569,15 +1609,26 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             log_d("Found readable: %s", (*it)->title.c_str());
         }
         auto readableScreen = createReadableScreen(*it);
-        cesScreen->setBackCallback([this, cesScreen, display, readableScreen]() {
-            display->clearDisplay();
-            this->display_->setFont(this->display_->style.getFontFamily().readableFont);
-            log_i("Setting Readable Screen after focus in CES mode");
-            this->setCurrentScreen(*readableScreen);
-            readableScreen->render(*this->display_);
-            delete cesScreen;
-        });
-        this->setCurrentScreen(*cesScreen);
+        if (readableScreen != nullptr) {
+            cesScreen->setBackCallback([this, cesScreen, display, readableScreen]() {
+                display->clearDisplay();
+                this->display_->setFont(this->display_->style.getFontFamily().readableFont);
+                log_i("Setting Readable Screen after focus in CES mode");
+                this->setCurrentScreen(*readableScreen);
+                readableScreen->render(*this->display_);
+                delete cesScreen;
+            });
+            this->setCurrentScreen(*cesScreen);
+        } else {
+            MsgPopup *errorPopup = new MsgPopup(*display, itemErrorMsg);
+            this->setCurrentScreen(*errorPopup);
+            errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
+                mainMenu->setFirstLoad();
+                display_->clearDisplay();
+                setCurrentScreen(*mainMenu);
+                delete errorPopup;
+            });
+        }
     } else if (prefs_.emcMode.get().value_or(false)) {
         log_d("Starting EMC mode readable reading turn page every 30s and content sync every 60s");
         auto it = std::find_if(readables.begin(), readables.end(),
@@ -1590,9 +1641,20 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             log_d("Found readable: %s", (*it)->title.c_str());
         }
         auto readableScreen = createReadableScreen(*it);
-        display->clearDisplay();
-        this->display_->setFont(this->display_->style.getFontFamily().readableFont);
-        this->setCurrentScreen(*readableScreen);
+        if (readableScreen != nullptr) {
+            display->clearDisplay();
+            this->display_->setFont(this->display_->style.getFontFamily().readableFont);
+            this->setCurrentScreen(*readableScreen);
+        } else {
+            MsgPopup *errorPopup = new MsgPopup(*display, itemErrorMsg);
+            this->setCurrentScreen(*errorPopup);
+            errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
+                mainMenu->setFirstLoad();
+                display_->clearDisplay();
+                setCurrentScreen(*mainMenu);
+                delete errorPopup;
+            });
+        }
     } else if (currentReadable.has_value()) {
         // Check if we left-off on a readable and if so, reload that readable by default
         log_d("Attempting to find readable: %s", currentReadable.value().c_str());
@@ -1609,15 +1671,26 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
         if (booksIterator != readables.end() || articlesIterator != articles.end()) {
             auto it = (booksIterator != readables.end()) ? booksIterator : articlesIterator;
             auto readableScreen = createReadableScreen(*it);
-            this->display_->setFont(this->display_->style.getFontFamily().readableFont);
-            log_i("Setting Readable Screen on boot in %.0f ms", esp_timer_get_time() / 1000.0f);
-            this->setCurrentScreen(*readableScreen);
-            log_i("Resuming readable %s at place %s", (*it)->title.c_str(),
-                  (*it)->place->str().c_str());
-            if (articlesIterator != articles.end()) {
-                mainMenu->setTabToArticles();
-            } else if (isBible(*it)) {
-                mainMenu->setTabToBible();
+            if (readableScreen != nullptr) {
+                this->display_->setFont(this->display_->style.getFontFamily().readableFont);
+                log_i("Setting Readable Screen on boot in %.0f ms", esp_timer_get_time() / 1000.0f);
+                this->setCurrentScreen(*readableScreen);
+                log_i("Resuming readable %s at place %s", (*it)->title.c_str(),
+                      (*it)->place->str().c_str());
+                if (articlesIterator != articles.end()) {
+                    mainMenu->setTabToArticles();
+                } else if (isBible(*it)) {
+                    mainMenu->setTabToBible();
+                }
+            } else {
+                MsgPopup *errorPopup = new MsgPopup(*display, itemErrorMsg);
+                this->setCurrentScreen(*errorPopup);
+                errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
+                    mainMenu->setFirstLoad();
+                    display_->clearDisplay();
+                    setCurrentScreen(*mainMenu);
+                    delete errorPopup;
+                });
             }
         } else {
             // Assume this readable has gone away (or changed from id to uuid)

@@ -383,6 +383,11 @@ auto EPubTokenizer::forwardToNextPageOffset(pugi::xml_node node) const -> uint32
 auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, StreamPlace *toPlace)
     -> std::pair<StreamPlace, StreamPlace> {
 
+    if (!stream_->isOpen()) {
+        pager_.clear();
+        return {{0, 0}, {0, 0}};
+    }
+
     // if (stream_->isAnArticle()) log_w("article");
 
     // Not pretty, but limits the number of parameters to pass to the interpret() method
