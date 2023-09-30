@@ -52,7 +52,7 @@ auto GZipStream::compressBlock(uint8_t *inputBuffer, int blockSize, uint8_t *out
 
     // calculate crc
     if (blockSize > 0) {
-        crc_ = mz_crc32(crc_, inputBuffer, blockSize);
+        crc_ = mz2_crc32(crc_, inputBuffer, blockSize);
     }
 
     zs_.next_in = inputBuffer;
