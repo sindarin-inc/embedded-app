@@ -16,7 +16,7 @@
      approximately as well as zlib.
 
      Decompression: Use the "tinfl" API's. The entire decompressor is implemented as a single function
-     coroutine: see tinfl_decompress(). It supports decompression into a 32KB (or larger power of 2) wrapping buffer, or into a memory
+     coroutine: see tinfl2_decompress(). It supports decompression into a 32KB (or larger power of 2) wrapping buffer, or into a memory
      block large enough to hold the entire file.
 
      The low-level tdefl/tinfl API's do not make any use of dynamic memory allocation.
@@ -149,7 +149,7 @@
 /* Define MINIZ_NO_MALLOC to disable all calls to malloc, free, and realloc. 
    Note if MINIZ_NO_MALLOC is defined then the user must always provide custom user alloc/free/realloc
    callbacks to the zlib and archive API's, and a few stand-alone helper API's which don't provide custom user
-   functions (such as tdefl_compress_mem_to_heap() and tinfl_decompress_mem_to_heap()) won't work. */
+   functions (such as tdefl_compress_mem_to_heap() and tinfl2_decompress_mem_to_heap()) won't work. */
 #define MINIZ_NO_MALLOC
 
 #ifdef MINIZ_NO_INFLATE_APIS
@@ -234,16 +234,16 @@ extern "C" {
 /* For more compatibility with zlib, miniz.c uses unsigned long for some parameters/struct members. Beware: mz_ulong can be either 32 or 64-bits! */
 typedef unsigned long mz_ulong;
 
-/* mz_free() internally uses the MZ_FREE() macro (which by default calls free() unless you've modified the MZ_MALLOC macro) to release a block allocated from the heap. */
-MINIZ_EXPORT void mz_free(void *p);
+/* mz2_free() internally uses the MZ_FREE() macro (which by default calls free() unless you've modified the MZ_MALLOC macro) to release a block allocated from the heap. */
+MINIZ_EXPORT void mz2_free(void *p);
 
 #define MZ_ADLER32_INIT (1)
-/* mz_adler32() returns the initial adler-32 value to use when called with ptr==NULL. */
-MINIZ_EXPORT mz_ulong mz_adler32(mz_ulong adler, const unsigned char *ptr, size_t buf_len);
+/* mz2_adler32() returns the initial adler-32 value to use when called with ptr==NULL. */
+MINIZ_EXPORT mz_ulong mz2_adler32(mz_ulong adler, const unsigned char *ptr, size_t buf_len);
 
 #define MZ_CRC32_INIT (0)
-/* mz_crc32() returns the initial CRC-32 value to use when called with ptr==NULL. */
-MINIZ_EXPORT mz_ulong mz_crc32(mz_ulong crc, const unsigned char *ptr, size_t buf_len);
+/* mz2_crc32() returns the initial CRC-32 value to use when called with ptr==NULL. */
+MINIZ_EXPORT mz_ulong mz2_crc32(mz_ulong crc, const unsigned char *ptr, size_t buf_len);
 
 /* Compression strategies. */
 enum
@@ -261,7 +261,7 @@ enum
 /* Heap allocation callbacks.
 Note that mz_alloc_func parameter types purposely differ from zlib's: items/size is size_t, not unsigned long. */
 typedef void *(*mz_alloc_func)(void *opaque, size_t items, size_t size);
-typedef void (*mz_free_func)(void *opaque, void *address);
+typedef void (*mz2_free_func)(void *opaque, void *address);
 typedef void *(*mz_realloc_func)(void *opaque, void *address, size_t items, size_t size);
 
 /* Compression levels: 0-9 are the standard zlib-style levels, 10 is best possible compression (not zlib compatible, and may be very slow), MZ_DEFAULT_COMPRESSION=MZ_DEFAULT_LEVEL. */
@@ -330,7 +330,7 @@ typedef struct mz_stream_s
     struct mz_internal_state *state; /* internal state, allocated by zalloc/zfree */
 
     mz_alloc_func zalloc; /* optional heap allocation function (defaults to malloc) */
-    mz_free_func zfree;   /* optional heap free function (defaults to free) */
+    mz2_free_func zfree;   /* optional heap free function (defaults to free) */
     void *opaque;         /* heap alloc function user pointer */
 
     int data_type;     /* data_type (unused) */
@@ -482,7 +482,7 @@ typedef void *const voidpc;
 #define Z_DEFLATED MZ_DEFLATED
 #define Z_DEFAULT_WINDOW_BITS MZ_DEFAULT_WINDOW_BITS
 #define alloc_func mz_alloc_func
-#define free_func mz_free_func
+#define free_func mz2_free_func
 #define internal_state mz_internal_state
 #define z_stream mz_stream
 
@@ -696,7 +696,7 @@ MINIZ_EXPORT size_t tdefl_compress_mem_to_mem(void *pOut_buf, size_t out_buf_len
 /* On return: */
 /*  Function returns a pointer to the compressed data, or NULL on failure. */
 /*  *pLen_out will be set to the size of the PNG image file. */
-/*  The caller must mz_free() the returned heap block (which will typically be larger than *pLen_out) when it's no longer needed. */
+/*  The caller must mz2_free() the returned heap block (which will typically be larger than *pLen_out) when it's no longer needed. */
 MINIZ_EXPORT void *tdefl_write_image_to_png_file_in_memory_ex(const void *pImage, int w, int h, int num_chans, size_t *pLen_out, mz_uint level, mz_bool flip);
 MINIZ_EXPORT void *tdefl_write_image_to_png_file_in_memory(const void *pImage, int w, int h, int num_chans, size_t *pLen_out);
 
@@ -832,7 +832,7 @@ MINIZ_EXPORT void tdefl_compressor_free(tdefl_compressor *pComp);
 #ifdef __cplusplus
 extern "C" {
 #endif
-/* Decompression flags used by tinfl_decompress(). */
+/* Decompression flags used by tinfl2_decompress(). */
 /* TINFL_FLAG_PARSE_ZLIB_HEADER: If set, the input has a valid zlib header and ends with an adler32 checksum (it's a valid zlib stream). Otherwise, the input is a raw deflate stream. */
 /* TINFL_FLAG_HAS_MORE_INPUT: If set, there are more input bytes available beyond the end of the supplied input buffer. If clear, the input buffer contains all remaining input. */
 /* TINFL_FLAG_USING_NON_WRAPPING_OUTPUT_BUF: If set, the output buffer is large enough to hold the entire decompressed stream. If clear, the output buffer is at least the size of the dictionary (typically 32KB). */
@@ -846,24 +846,24 @@ enum
 };
 
 /* High level decompression functions: */
-/* tinfl_decompress_mem_to_heap() decompresses a block in memory to a heap block allocated via malloc(). */
+/* tinfl2_decompress_mem_to_heap() decompresses a block in memory to a heap block allocated via malloc(). */
 /* On entry: */
 /*  pSrc_buf, src_buf_len: Pointer and size of the Deflate or zlib source data to decompress. */
 /* On return: */
 /*  Function returns a pointer to the decompressed data, or NULL on failure. */
 /*  *pOut_len will be set to the decompressed data's size, which could be larger than src_buf_len on uncompressible data. */
-/*  The caller must call mz_free() on the returned block when it's no longer needed. */
-MINIZ_EXPORT void *tinfl_decompress_mem_to_heap(const void *pSrc_buf, size_t src_buf_len, size_t *pOut_len, int flags);
+/*  The caller must call mz2_free() on the returned block when it's no longer needed. */
+MINIZ_EXPORT void *tinfl2_decompress_mem_to_heap(const void *pSrc_buf, size_t src_buf_len, size_t *pOut_len, int flags);
 
-/* tinfl_decompress_mem_to_mem() decompresses a block in memory to another block in memory. */
+/* tinfl2_decompress_mem_to_mem() decompresses a block in memory to another block in memory. */
 /* Returns TINFL_DECOMPRESS_MEM_TO_MEM_FAILED on failure, or the number of bytes written on success. */
 #define TINFL_DECOMPRESS_MEM_TO_MEM_FAILED ((size_t)(-1))
-MINIZ_EXPORT size_t tinfl_decompress_mem_to_mem(void *pOut_buf, size_t out_buf_len, const void *pSrc_buf, size_t src_buf_len, int flags);
+MINIZ_EXPORT size_t tinfl2_decompress_mem_to_mem(void *pOut_buf, size_t out_buf_len, const void *pSrc_buf, size_t src_buf_len, int flags);
 
-/* tinfl_decompress_mem_to_callback() decompresses a block in memory to an internal 32KB buffer, and a user provided callback function will be called to flush the buffer. */
+/* tinfl2_decompress_mem_to_callback() decompresses a block in memory to an internal 32KB buffer, and a user provided callback function will be called to flush the buffer. */
 /* Returns 1 on success or 0 on failure. */
 typedef int (*tinfl_put_buf_func_ptr)(const void *pBuf, int len, void *pUser);
-MINIZ_EXPORT int tinfl_decompress_mem_to_callback(const void *pIn_buf, size_t *pIn_buf_size, tinfl_put_buf_func_ptr pPut_buf_func, void *pPut_buf_user, int flags);
+MINIZ_EXPORT int tinfl2_decompress_mem_to_callback(const void *pIn_buf, size_t *pIn_buf_size, tinfl_put_buf_func_ptr pPut_buf_func, void *pPut_buf_user, int flags);
 
 struct tinfl_decompressor_tag;
 typedef struct tinfl_decompressor_tag tinfl_decompressor;
@@ -924,7 +924,7 @@ typedef enum {
 
 /* Main low-level decompressor coroutine function. This is the only function actually needed for decompression. All the other functions are just high-level helpers for improved usability. */
 /* This is a universal API, i.e. it can be used as a building block to build any desired higher level decompression API. In the limit case, it can be called once per every byte input or output. */
-MINIZ_EXPORT tinfl_status tinfl_decompress(tinfl_decompressor *r, const mz_uint8 *pIn_buf_next, size_t *pIn_buf_size, mz_uint8 *pOut_buf_start, mz_uint8 *pOut_buf_next, size_t *pOut_buf_size, const mz_uint32 decomp_flags);
+MINIZ_EXPORT tinfl_status tinfl2_decompress(tinfl_decompressor *r, const mz_uint8 *pIn_buf_next, size_t *pIn_buf_size, mz_uint8 *pOut_buf_start, mz_uint8 *pOut_buf_next, size_t *pOut_buf_size, const mz_uint32 decomp_flags);
 
 /* Internal/private bits follow. */
 enum
@@ -1138,7 +1138,7 @@ typedef struct
     mz_uint64 m_file_offset_alignment;
 
     mz_alloc_func m_pAlloc;
-    mz_free_func m_pFree;
+    mz2_free_func m_pFree;
     mz_realloc_func m_pRealloc;
     void *m_pAlloc_opaque;
 
