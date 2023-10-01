@@ -7,10 +7,6 @@
 auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines, bool forceRefresh)
     -> std::pair<std::shared_ptr<Place>, uint8_t> {
 
-    if (!tokenizer_->isReady()) {
-        return {tokenizer_->errorPlace(), 0};
-    }
-
     // if no fromPlace is received (null) or the place's DocType is wrong, get the first page
     // pointer, else convert fromPlace to a StreamPlace
     StreamPlace startPlace = (fromPlace == nullptr)
@@ -121,10 +117,6 @@ auto Renderer::goBackwardsOnePage(StreamPlace endPlace) -> StreamPlace {
 }
 
 auto Renderer::getPreviousPlace() -> std::shared_ptr<Place> {
-
-    if (!tokenizer_->isReady()) {
-        return tokenizer_->errorPlace();
-    }
 
     PROFILE_START(goBackwardsOnePage);
 

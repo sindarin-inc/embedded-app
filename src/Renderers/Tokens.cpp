@@ -211,7 +211,8 @@ void Tokens::showToken(Idx tokenIdx) const {
               tokenIdx, (uint8_t)token.tokenId, token.streamPlace.str().c_str(), token.pixWidth,
               // token.height,
               token.length);
-        if (token.tokenId == TokenId::TEXT) {
+        if ((uint16_t)token.tokenId & ((uint16_t)TokenId::TEXT | (uint16_t)TokenId::ITEXT |
+                                       (uint16_t)TokenId::HTEXT | (uint16_t)TokenId::NTEXT)) {
             if (token.cStr != nullptr) {
                 log_d("Text Content: [%s]", token.cStr);
             } else {

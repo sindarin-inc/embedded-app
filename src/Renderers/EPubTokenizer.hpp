@@ -90,10 +90,6 @@ public:
         return (stream_.get() != nullptr) && stream_->isOpen();
     }
 
-    [[nodiscard]] virtual inline auto errorPlace() const -> std::shared_ptr<Place> override {
-        return std::make_shared<EPubPlace>(0, "Error");
-    }
-
 private:
     std::shared_ptr<EPubFile> stream_;
     pugi::xml_node body_;
@@ -105,7 +101,7 @@ private:
     enum class Tag : uint8_t { P, LI, BREAK, H1, H2, H3, H4, H5, H6, 
                                B, I, A, IMG, PICTURE, SOURCE, EM, DIV, SPAN, PRE,
                                BLOCKQUOTE, STRONG, ANY, SUB, SUP, HR, OL, UL, 
-                               HEADER, FIGURE, FIGCAPTION };
+                               HEADER, FIGURE, FIGCAPTION, TABLE, TH, TR, TD, THEAD };
     // clang-format on
 
     using Tags = std::unordered_map<std::string, Tag>;
@@ -185,6 +181,7 @@ private:
     [[nodiscard]] auto loadXHTMLAt(Idx fileIdx) -> pugi::xml_document &;
     [[nodiscard]] auto interpret(pugi::xml_node node) -> bool;
     [[nodiscard]] auto addStrToPage(const pugi::char_t *str, uint32_t len) -> bool;
+    [[nodiscard]] auto searchStart(pugi::xml_node node) -> uint32_t;
 
     // [[nodiscard]] auto forwardToNextPageOffset(pugi::xml_node node) const -> uint32_t;
 

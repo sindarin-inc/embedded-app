@@ -23,6 +23,7 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
     case TokenId::TEXT:
     case TokenId::ITEXT:
     case TokenId::HTEXT:
+    case TokenId::NTEXT:
     case TokenId::HYPHEN:
     case TokenId::ENDASH: // Not used for EPub, used for TXT
     case TokenId::EMDASH: // Not used for EPub, used for TXT
@@ -68,7 +69,8 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
             lines_[linesTailIdx_].length += token.length;
         }
 
-        if (token.tokenId == TokenId::TEXT) {
+        if ((uint16_t)token.tokenId & ((uint16_t)TokenId::TEXT | (uint16_t)TokenId::ITEXT |
+                                       (uint16_t)TokenId::HTEXT | (uint16_t)TokenId::NTEXT)) {
             wordCount_ += 1;
         }
     } break;
@@ -100,6 +102,14 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
     } break;
 
     case TokenId::ENDPARAGRAPH:
+        if (tokens_.getTokenCount() > 1) {
+            Token &token = tokens_.getBeforeLast();
+            if (token.tokenId == TokenId::ENDPARAGRAPH) {
+                tokens_.forgetLast();
+                return true;
+            }
+        }
+
         if (lines_[linesTailIdx_].tokenCount > 0) {
             newLine(NEWLINE_DECI_LINE_HEIGHT);
         }
@@ -139,8 +149,8 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
         // page. The picture will go on next page if this doesn't fit.
 
         uint16_t deciHeight = pixToDeci(token.pixHeight);
-        if (!dontStop && ((currentPageDecilineHeight_ + deciHeight + ENDPARAGRAPH_DECI_LINE_HEIGHT + NEWLINE_DECI_LINE_HEIGHT) >
-                          maxDeciLines_)) {
+        if (!dontStop && ((currentPageDecilineHeight_ + deciHeight + ENDPARAGRAPH_DECI_LINE_HEIGHT +
+                           NEWLINE_DECI_LINE_HEIGHT) > maxDeciLines_)) {
             setNextPagePlace(token.streamPlace);
             REND_WLOG("Page completed: %" PRIu16 " decilines. Max: %" PRIu16,
                       currentPageDecilineHeight_, maxDeciLines_);
@@ -192,7 +202,9 @@ auto Pager::computeWordCount() const -> uint16_t {
             tokens_.addToTokenIdx(lines_[lastLineIdx].tokenIdx, lines_[lastLineIdx].tokenCount);
         for (Idx tokenIdx = firstTokenIdx; tokenIdx != lastTokenIdx;
              tokens_.nextTokenIdx(tokenIdx)) {
-            if (tokens_[tokenIdx].tokenId == TokenId::TEXT) {
+            if ((uint16_t)tokens_[tokenIdx].tokenId &
+                ((uint16_t)TokenId::TEXT | (uint16_t)TokenId::ITEXT | (uint16_t)TokenId::HTEXT |
+                 (uint16_t)TokenId::NTEXT)) {
                 wordCount += 1;
             }
         }

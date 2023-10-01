@@ -21,6 +21,8 @@ public:
 
     void render(DisplaySystem &display) override {
 
+        display_.setFont(display_.style.getFontFamily().popupFont);
+
         uint16_t width = display_.getTextWidth(ask);
         uint16_t height =
             display_.getTextHeight() * (msg_.size() + 1) + (display_.getTextHeight() >> 1);

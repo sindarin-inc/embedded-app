@@ -107,20 +107,21 @@ enum class TokenId : uint16_t {
     TEXT = 1,          // Usually a word. Can contain &NBSP; and spaces characters for formatting
     ITEXT = 2,         // Indent *next* lines using this token width
     HTEXT = 4,         // Start of a <H1>..<h6> header tag
-    NEWLINE = 8,       // Full line vertical space. Break lines
-    ENDPARAGRAPH = 16, // After paragraph vertical space
-    HYPHEN = 32,       // ASCII hyphen "-"
-    ENDASH = 64,       // Unicode En Dash (U+2013) "–"
-    EMDASH = 128,      // Unicode Em Dash (U+2014) "—"
-    PICTURE = 256,     // Whole screen picture
-    EPICTURE = 512,    // Embedded in page picture (between paragraphs) More than one can be present
-    HRULE = 1024       // Horizontal line
+    NTEXT = 8,         // Text that is *NOT* in the pool
+    NEWLINE = 16,      // Full line vertical space. Break lines
+    ENDPARAGRAPH = 32, // After paragraph vertical space
+    HYPHEN = 64,       // ASCII hyphen "-"
+    ENDASH = 128,      // Unicode En Dash (U+2013) "–"
+    EMDASH = 256,      // Unicode Em Dash (U+2014) "—"
+    PICTURE = 512,     // Whole screen picture
+    EPICTURE = 1024,   // Embedded in page picture (between paragraphs) More than one can be present
+    HRULE = 2048       // Horizontal line
 };
 
 #if REND_DEBUGGING
-static const char *TokenIdStr[] = {"TEXT",         "ITEXT",    "HTEXT",  "NEWLINE",
-                                   "ENDPARAGRAPH", "HYPHEN",   "ENDASH", "EMDASH",
-                                   "PICTURE",      "EPICTURE", "HRULE"};
+static const char *TokenIdStr[] = {"TEXT",    "ITEXT",        "HTEXT",    "NTEXT",
+                                   "NEWLINE", "ENDPARAGRAPH", "HYPHEN",   "ENDASH",
+                                   "EMDASH",  "PICTURE",      "EPICTURE", "HRULE"};
 #endif
 
 // BitMask of all token ids that are using the pool space

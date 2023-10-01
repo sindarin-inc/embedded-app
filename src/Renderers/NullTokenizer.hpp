@@ -42,10 +42,6 @@ public:
 
     void setStream(std::shared_ptr<RendererStream> stream) override { error(); }
 
-    [[nodiscard]] virtual inline auto errorPlace() const -> std::shared_ptr<Place> override {
-        return std::make_shared<NonePlace>();
-    }
-
 private:
     void error() const {
         log_e("There is no stream defined for the Renderer");

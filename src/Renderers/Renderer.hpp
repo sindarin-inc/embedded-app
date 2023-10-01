@@ -38,8 +38,7 @@ public:
     [[nodiscard]] auto getPreviousPlace() -> std::shared_ptr<Place>;
 
     [[nodiscard]] inline auto getCurrentPlace() const -> std::shared_ptr<Place> {
-        return tokenizer_->isReady() ? tokenizer_->toPlace(currentPlace_)
-                                     : tokenizer_->errorPlace();
+        return tokenizer_->toPlace(currentPlace_);
     }
 
     [[nodiscard]] inline auto size() const -> uint32_t { return tokenizer_->streamSize(); }
