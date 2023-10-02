@@ -185,7 +185,7 @@ auto HttpClient::writeChunkedData(const char *data, int length) -> bool {
     }
 
     if (esp_http_client_write(client_, lstr, strlen(lstr)) != strlen(lstr)) {
-        log_e("http failed to write %d bytes", strlen(lstr));
+        log_e("http failed to write %zu bytes", strlen(lstr));
         return false;
     }
 
@@ -201,7 +201,7 @@ auto HttpClient::writeChunkedData(const char *data, int length) -> bool {
     }
 
     if (esp_http_client_write(client_, lstr, strlen(lstr)) != strlen(lstr)) {
-        log_e("http failed to write %d bytes", strlen(lstr));
+        log_e("http failed to write %zu bytes", strlen(lstr));
         return false;
     }
 

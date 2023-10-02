@@ -30,7 +30,7 @@ auto GUnzip::init() -> bool {
 
     if (init_) {
         // starting over, so clean up existing decompressor
-        err = mz_inflateEnd(&zstr_);
+        mz_inflateEnd(&zstr_);
     }
 
     init_ = true;
@@ -54,10 +54,10 @@ auto GUnzip::init() -> bool {
     err = mz_inflateInit2(&zstr_, -MZ_DEFAULT_WINDOW_BITS);
 
     if (err == MZ_OK) {
-        log_i("zlib init ok");
+        log_i("miniz init ok");
         return true;
     } else {
-        log_i("zlib error: %d", err);
+        log_i("miniz error: %d", err);
         return false;
     }
 }
