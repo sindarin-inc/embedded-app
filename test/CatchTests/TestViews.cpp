@@ -219,32 +219,31 @@ TEST_CASE("Test some views independently") {
         prefs.rectW.remove();
         prefs.rectH.remove();
         prefs.noSetupMode.set(true);
+        PosixFileSystem fileSystem;
+        Telemetry telemetry = Telemetry(fileSystem, prefs);
 
         SECTION("Test OffsetAdjustScreen") {
-            OffsetAdjustScreen screen(*display, prefs);
+            OffsetAdjustScreen screen(*display, prefs, telemetry);
             screen.render(*display);
             ASSERT_VIEW_UNCHANGED("OffsetAdjustScreen");
         }
 
         SECTION("Test ResizeBoxScreen") {
-            ResizeBoxScreen screen(*display, prefs);
+            ResizeBoxScreen screen(*display, prefs, telemetry);
             screen.render(*display);
             ASSERT_VIEW_UNCHANGED("ResizeBoxScreen");
         }
 
         SECTION("Test LineSpacingScreen") {
-            LineSpacingScreen screen(*display, prefs);
+            LineSpacingScreen screen(*display, prefs, telemetry);
             screen.render(*display);
             ASSERT_VIEW_UNCHANGED("LineSpacingScreen");
         }
-
-        PosixFileSystem fileSystem;
 
         SECTION("Test ReadableTableOfContentsScreen") {
             auto readable = std::make_shared<Readable>();
             auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables.json");
             readable->fromJson((*readablesJsonDoc)["readables"][1]);
-            Telemetry telemetry = Telemetry(fileSystem, prefs);
 
             Renderer renderer(*display);
             ReadableTableOfContentsScreen screen(prefs, readable, renderer, *display, telemetry);
