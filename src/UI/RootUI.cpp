@@ -896,18 +896,21 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             this->display_->style.setFontFamily(this->display_->style.solSansSmall);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_SOL_SMALL);
+            this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE, {{"text-size", "small"}});
             fontMenu->setNeedsRerender();
         }));
         fontMenu->addMenuItem(MenuItem("Medium", [this, fontMenu]() {
             this->display_->style.setFontFamily(this->display_->style.solSansMedium);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_SOL_MEDIUM);
+            this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE, {{"text-size", "medium"}});
             fontMenu->setNeedsRerender();
         }));
         fontMenu->addMenuItem(MenuItem("Large", [this, fontMenu]() {
             this->display_->style.setFontFamily(this->display_->style.solSansLarge);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_SOL_LARGE);
+            this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE, {{"text-size", "large"}});
             fontMenu->setNeedsRerender();
         }));
         int menuIndex = 0;
@@ -968,7 +971,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     readingSettingsMenu->addMenuItem(MenuItem("Move Page in Display",
                                               [this, readingSettingsMenu, display]() {
         log_d("Loading adjust offset");
-        auto offsetAdjust = new OffsetAdjustScreen(*display, prefs_);
+        auto offsetAdjust = new OffsetAdjustScreen(*display, prefs_, this->telemetry_);
         this->setCurrentScreen(*offsetAdjust);
         log_d("setting up callback");
         offsetAdjust->setBackCallback([this, offsetAdjust, readingSettingsMenu]() {
@@ -982,7 +985,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
     readingSettingsMenu->addMenuItem(MenuItem("Resize Page",
                                               [this, readingSettingsMenu, display]() {
         log_d("Loading resize box");
-        auto resizeBox = new ResizeBoxScreen(*display, prefs_);
+        auto resizeBox = new ResizeBoxScreen(*display, prefs_, this->telemetry_);
         this->setCurrentScreen(*resizeBox);
         log_d("setting up callback");
         resizeBox->setBackCallback([this, resizeBox, readingSettingsMenu]() {
@@ -995,7 +998,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     readingSettingsMenu->addMenuItem(MenuItem("Line Spacing",
                                               [this, readingSettingsMenu, display]() {
-        auto lineSpacingScreen = new LineSpacingScreen(*display, prefs_);
+        auto lineSpacingScreen = new LineSpacingScreen(*display, prefs_, this->telemetry_);
         this->setCurrentScreen(*lineSpacingScreen);
         lineSpacingScreen->setBackCallback([this, lineSpacingScreen, readingSettingsMenu]() {
             readingSettingsMenu->setFirstLoad();

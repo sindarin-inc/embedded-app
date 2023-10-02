@@ -7,8 +7,9 @@
 // We will want a more intuitive way to do this in the final system,
 // but since it's so dependent on what the PageTurner ends up being,
 // I didn't want to over-engineer it here.
-ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs)
-    : display_(display), renderer_(display), prefs_(prefs) {
+ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs,
+                                 Telemetry &telemetry)
+    : display_(display), renderer_(display), prefs_(prefs), telemetry_(telemetry) {
 
     std::string message;
     message += "Press up to increase vertical dimension, down to decrease vertical "
@@ -76,6 +77,13 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
         prefs_.rectH.set(display_.getBoundingBox().height);
         log_d("Saving bounding box to preferences: (%s)",
               display_.getBoundingBox().toString().c_str());
+
+        telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
+                                 {{"bb_x", display_.getBoundingBox().x},
+                                  {"bb_y", display_.getBoundingBox().y},
+                                  {"bb_w", display_.getBoundingBox().width},
+                                  {"bb_h", display_.getBoundingBox().height}});
+
         back();
         break;
     default:

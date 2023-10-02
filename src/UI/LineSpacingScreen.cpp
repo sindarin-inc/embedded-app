@@ -5,8 +5,9 @@
 #define MIN_LINE_SPACING (-2)
 #define MAX_LINE_SPACING 5
 
-LineSpacingScreen::LineSpacingScreen(DisplaySystem &display, PreferencesStore &prefs)
-    : display_(display), renderer_(display), prefs_(prefs),
+LineSpacingScreen::LineSpacingScreen(DisplaySystem &display, PreferencesStore &prefs,
+                                     Telemetry &telemetry)
+    : display_(display), renderer_(display), prefs_(prefs), telemetry_(telemetry),
       lineSpacing_(prefs.lineSpacing.get().value_or(0)) {
 
     std::string message;
@@ -52,6 +53,9 @@ void LineSpacingScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::ENTER:
         prefs_.lineSpacing.set(lineSpacing_);
         log_d("Saving lineSpacing to preferences: (%d)", lineSpacing_);
+
+        telemetry_.logMetricData(TelemetryField::METRIC_STYLE, {{"line_spacing", lineSpacing_}});
+
         back();
         break;
     default:

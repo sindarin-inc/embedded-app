@@ -27,6 +27,7 @@ enum TelemetryField {
     METRIC_SHUTDOWN,
     METRIC_WIFI,
     METRIC_LIGHTING,
+    METRIC_STYLE,
 };
 auto TelemetryFieldToString(TelemetryField field) -> const char *;
 
