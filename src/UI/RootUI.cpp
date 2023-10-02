@@ -896,21 +896,21 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             this->display_->style.setFontFamily(this->display_->style.solSansSmall);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_SOL_SMALL);
-            this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE, {{"text-size", "small"}});
+            this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE, {{"text_size", "small"}});
             fontMenu->setNeedsRerender();
         }));
         fontMenu->addMenuItem(MenuItem("Medium", [this, fontMenu]() {
             this->display_->style.setFontFamily(this->display_->style.solSansMedium);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_SOL_MEDIUM);
-            this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE, {{"text-size", "medium"}});
+            this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE, {{"text_size", "medium"}});
             fontMenu->setNeedsRerender();
         }));
         fontMenu->addMenuItem(MenuItem("Large", [this, fontMenu]() {
             this->display_->style.setFontFamily(this->display_->style.solSansLarge);
             this->display_->clearDisplay();
             prefs_.font.set(PREFS_SOL_LARGE);
-            this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE, {{"text-size", "large"}});
+            this->telemetry_.logMetricData(TelemetryField::METRIC_STYLE, {{"text_size", "large"}});
             fontMenu->setNeedsRerender();
         }));
         int menuIndex = 0;
