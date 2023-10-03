@@ -472,6 +472,7 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
         do {
             currentStreamOffset_ = 0;
+            currentTxtOffset_ = 0;
 
             REND_PROFILE_START(loadXHTMLFile)
             pugi::xml_document &doc = loadXHTMLAt(currentFileIdx_);
@@ -514,6 +515,7 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
         currentFileIdx_ = fromPlace.getFileIdx();
         currentStreamOffset_ = 0;
+        currentTxtOffset_ = 0;
 
         REND_PROFILE_START(loadXHTMLFile)
 
@@ -1437,6 +1439,8 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
 
         const pugi::char_t *str = node.value();
         uint32_t len = strlen(str); // don't like that. Lenght not available from pugixml...
+        // Count forward the number of non-tag bytes (for estimating page number)
+        currentTxtOffset_ = 0;
 
         if (!tokenizingStarted_) {
             if (((currentFileIdx_ == fromPlace_.getFileIdx()) &&

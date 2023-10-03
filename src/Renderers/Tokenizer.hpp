@@ -66,6 +66,8 @@ public:
 
     [[nodiscard]] virtual inline auto isReady() const -> bool { return false; }
 
+    [[nodiscard]] virtual inline auto getTxtOffset() const -> uint32_t { return 0; };
+
 protected:
     DisplaySystem &display_;
     Tokens &tokens_;

@@ -2,7 +2,6 @@
 
 void ReadablePopupMenuScreen::setUpPopupMenu() {
     std::shared_ptr<Place> place = renderer_.getCurrentPlace();
-    size_t lengthOfFile = renderer_.size();
 
     std::string placeStringForBottom;
 
@@ -17,7 +16,7 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
             // TODO(john): This isn't exactly right because `place->getOffset()` is a byte offset,
             // not a letter offset from the beginning of the chapter. The chapters always start with
             // extra html-y stuff at the start so this is always inflated by some amount.
-            auto currentOffset = chapter.txtOffset + place->getOffset();
+            auto currentOffset = chapter.txtOffset + renderer_.getTxtOffset();
 
             // Get the end offset of the last chapter (to determine the length of the book)
             auto &lastChapter = readable_->toc[readable_->toc.size() - 1];
@@ -27,7 +26,8 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
                                                 SOL_PAGE_NUMBER(lastChapterEndOffset));
         }
     } else {
-        placeStringForBottom = StringFormat("%d/%d", SOL_PAGE_NUMBER(place->getOffset()),
+        size_t lengthOfFile = renderer_.size();
+        placeStringForBottom = StringFormat("%d/%d", SOL_PAGE_NUMBER(renderer_.getTxtOffset()),
                                             SOL_PAGE_NUMBER(lengthOfFile));
     }
 

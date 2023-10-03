@@ -90,6 +90,10 @@ public:
         return (stream_.get() != nullptr) && stream_->isOpen();
     }
 
+    [[nodiscard]] inline auto getTxtOffset() const -> uint32_t override {
+        return currentTxtOffset_;
+    }
+
 private:
     std::shared_ptr<EPubFile> stream_;
     pugi::xml_node body_;
@@ -148,6 +152,9 @@ private:
     // The offset where we are tokenizing
     uint32_t currentStreamOffset_;
     uint16_t currentFileIdx_;
+
+    // The byte offset ignoring all tag bytes
+    uint32_t currentTxtOffset_ = 0;
 
     // Not null if there is a text token to be closed. This is required to take into account words
     // that could be containing tags like <b/> <i/> etc. These will be processed recursively, the

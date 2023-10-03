@@ -41,6 +41,10 @@ public:
         return tokenizer_->toPlace(currentPlace_);
     }
 
+    [[nodiscard]] inline auto getTxtOffset() const -> uint32_t {
+        return tokenizer_->getTxtOffset();
+    }
+
     [[nodiscard]] inline auto size() const -> uint32_t { return tokenizer_->streamSize(); }
 
     // Render a page of text with the current place
