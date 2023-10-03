@@ -42,7 +42,6 @@ components_dir = pathlib.Path(f"{script_dir}/../../components").resolve()
 component_libs = [
     "Adafruit-GFX-Library",
     "ArduinoJson",
-    "unzipLIB/src",
 ]
 
 lib_includes += "\n" + "\n".join(

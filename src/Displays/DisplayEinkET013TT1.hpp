@@ -45,7 +45,7 @@ public:
 
     void drawFullscreenBitmapFromFile(RendererStream &stream) override;
 
-    auto darkPictureVComAdj(uint8_t darkPixelsPercent) const -> int override {
+    [[nodiscard]] auto darkPictureVComAdj(uint8_t darkPixelsPercent) const -> int override {
         return darkPixelsPercent > 40 ? -2500 : 0;
     }
 

@@ -1,8 +1,8 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
 
 #include "EPubDefs.hpp"
 
@@ -10,9 +10,9 @@ class EPubMetaFile {
 public:
     EPubMetaFile(const char *path) : path_(path) {}
 
-    void parse(std::shared_ptr<uint8_t[]> buffer, uint32_t length);
+    void parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length);
 
-    std::vector<std::string> rootfilePaths_;
+    std::vector<std::string> rootfilePaths;
 
 private:
     const char *path_;

@@ -40,8 +40,12 @@ public:
     }
 
     void setStream(std::shared_ptr<RendererStream> stream) override { stream_ = stream; }
-    
+
     [[nodiscard]] inline auto isReady() const -> bool override { return stream_.get() != nullptr; }
+
+    [[nodiscard]] inline auto getTxtOffset() const -> uint32_t override {
+        return stream_->position();
+    }
 
 private:
     std::shared_ptr<RendererStream> stream_;

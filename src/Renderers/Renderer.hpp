@@ -26,9 +26,9 @@ public:
         tokenizer_ = std::make_shared<NullTokenizer>(display, tokens_, pager_);
     }
 
-    auto setStream(std::shared_ptr<RendererStream> stream) -> void {
+    auto setStream(const std::shared_ptr<RendererStream> &stream) -> void {
         // log_w("setStream...");
-        tokenizer_ = Tokenizer::factory(std::move(stream), display_, tokens_, pager_);
+        tokenizer_ = Tokenizer::factory(stream, display_, tokens_, pager_);
     }
     auto setCurrentPlace(std::shared_ptr<Place> newPlace) -> void {
         // log_w("setCurrentPlace...");
@@ -39,6 +39,10 @@ public:
 
     [[nodiscard]] inline auto getCurrentPlace() const -> std::shared_ptr<Place> {
         return tokenizer_->toPlace(currentPlace_);
+    }
+
+    [[nodiscard]] inline auto getTxtOffset() const -> uint32_t {
+        return tokenizer_->getTxtOffset();
     }
 
     [[nodiscard]] inline auto size() const -> uint32_t { return tokenizer_->streamSize(); }

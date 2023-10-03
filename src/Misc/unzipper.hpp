@@ -90,9 +90,9 @@ private:
     } fileHeader_;
 #pragma pack(pop)
 
-    static constexpr const uint32_t dirFileHeaderSignature = 0x02014b50;
-    static constexpr const uint32_t fileHeaderSignature = 0x04034b50U;
-    static constexpr const uint32_t dirEndSignature = 0x06054b50;
+    static constexpr const uint32_t DIR_FILE_HEADER_SIGNATURE = 0x02014b50;
+    static constexpr const uint32_t FILE_HEADER_SIGNATURE = 0x04034b50U;
+    static constexpr const uint32_t DIR_END_SIGNATURE = 0x06054b50;
 
     static const int BUFFER_SIZE = 1024 * 16;
     uint8_t buffer_[BUFFER_SIZE];
@@ -120,27 +120,26 @@ private:
 
     auto cleanFilePath(const char *filePath) -> char *;
 
-    uint16_t repeat;
-    uint16_t remains;
-    uint16_t current;
-    bool aborted;
+    uint16_t repeat_;
+    uint16_t remains_;
+    uint16_t current_;
+    bool aborted_;
 
     SFile file_; // Current File Descriptor
-    bool isOpen_;
+    bool isOpen_{false};
     FileSystem &fileSystem_;
     std::string filePath_;
 
     mz_stream zstr_;
 
 public:
-    Unzipper(FileSystem &fs, const char *filePath)
-        : isOpen_(false), fileSystem_(fs), filePath_(filePath) {}
+    Unzipper(FileSystem &fs, const char *filePath) : fileSystem_(fs), filePath_(filePath) {}
     ~Unzipper() {
         if (isOpen_) {
             close();
         }
     }
-    bool open();
+    auto open() -> bool;
     void close();
 
     auto getFileSize() -> uint32_t;

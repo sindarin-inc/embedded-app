@@ -12,18 +12,18 @@ private:
     DisplaySystem &display_;
     const std::vector<std::string> &msg_;
 
-    static constexpr const char *ask = "Press\u00a0\u00a0\ue000\u00a0\u00a0to return";
+    static constexpr const char *ASK = "Press\u00a0\u00a0\ue000\u00a0\u00a0to return";
 
 public:
     MsgPopup(DisplaySystem &display, const std::vector<std::string> &msg)
         : boxView_(display, 8), display_(display), msg_(msg) {}
-    ~MsgPopup() = default;
+    ~MsgPopup() override = default;
 
     void render(DisplaySystem &display) override {
 
         display_.setFont(display_.style.getFontFamily().popupFont);
 
-        uint16_t width = display_.getTextWidth(ask);
+        uint16_t width = display_.getTextWidth(ASK);
         uint16_t height =
             display_.getTextHeight() * (msg_.size() + 1) + (display_.getTextHeight() >> 1);
         for (auto &s : msg_) {
@@ -50,7 +50,7 @@ public:
         y += display_.getTextHeight() >> 1;
 
         display_.drawSingleLineOfText(
-            ask, (display_.width() >> 1) - (display_.getTextWidth(ask) >> 1), y);
+            ASK, (display_.width() >> 1) - (display_.getTextWidth(ASK) >> 1), y);
 
         display_.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
     }

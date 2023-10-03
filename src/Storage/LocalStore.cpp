@@ -96,6 +96,10 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
 }
 
 auto LocalStore::loadToc(const std::shared_ptr<Readable> &readable) -> bool {
+    // Don't load the ToC if it's already loaded
+    if (readable->toc.size() > 0) {
+        return true;
+    }
     std::string tocPath = readable->tocFilePath();
     SFile tocFile = fileSystem.open(tocPath, FILE_READ, true);
     if (!tocFile) {

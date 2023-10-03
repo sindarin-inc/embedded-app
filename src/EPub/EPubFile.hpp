@@ -12,9 +12,9 @@
 
 class EPubFile : public RendererStream {
 public:
-    EPubFile(FileSystem &fs, const char *filename, const std::shared_ptr<Readable> &readable)
-        : RendererStream(DocType::EPUB), epubUnzipper_(fs, filename), readable_(readable),
-          fileOpen_(false), currentFileBuffer_(nullptr), currentFilePath_("") {
+    EPubFile(FileSystem &fs, const char *filename, std::shared_ptr<Readable> readable)
+        : RendererStream(DocType::EPUB), epubUnzipper_(fs, filename),
+          readable_(std::move(readable)), currentFileBuffer_(nullptr), currentFilePath_("") {
         open();
     }
     ~EPubFile() override { close(); };
@@ -24,9 +24,7 @@ public:
     [[nodiscard]] auto position() -> size_t override { return 0; }
     [[nodiscard]] auto size() -> size_t override { return 0; /* opf_->getTotalSize(); */ }
 
-    [[nodiscard]] auto isAnArticle() const -> bool {
-        return readable_->isArticle();
-    }
+    [[nodiscard]] auto isAnArticle() const -> bool { return readable_->isArticle(); }
 
     // [[nodiscard]] inline auto getSpineIdxForOffset(uint32_t offset) const -> Idx {
     //     return opf_->getSpineIdxForOffset(offset);
@@ -90,14 +88,13 @@ public:
         return 0;
     }
 
-
 private:
     Unzipper epubUnzipper_;
     const std::shared_ptr<Readable> readable_;
 
     pugi::xml_document currentFileDoc_;
-    
-    bool fileOpen_;
+
+    bool fileOpen_{false};
 
     std::shared_ptr<EPubOpf> opf_;
 

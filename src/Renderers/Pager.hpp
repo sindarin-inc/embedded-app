@@ -68,7 +68,7 @@ private:
 public:
     Pager(Tokens &tokens, DisplaySystem &display) : tokens_(tokens), display_(display) {}
 
-    void setStream(std::shared_ptr<RendererStream> stream) {
+    void setStream(const std::shared_ptr<RendererStream> &stream) {
         stream_ = std::static_pointer_cast<EPubFile>(stream);
     }
 

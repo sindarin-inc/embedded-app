@@ -2,7 +2,7 @@
 
 #include "pugixml.hpp"
 
-void EPubMetaFile::parse(std::shared_ptr<uint8_t[]> buffer, uint32_t length) {
+void EPubMetaFile::parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length) {
 
     pugi::xml_document doc;
 
@@ -13,7 +13,7 @@ void EPubMetaFile::parse(std::shared_ptr<uint8_t[]> buffer, uint32_t length) {
     if (result) {
         for (pugi::xml_node &rootfile :
              doc.child("container").child("rootfiles").children("rootfile")) {
-            rootfilePaths_.emplace_back(rootfile.attribute("full-path").value());
+            rootfilePaths.emplace_back(rootfile.attribute("full-path").value());
             // log_w("-----------> adding %s", rootfile.attribute("full-path").value());
         }
     } else {

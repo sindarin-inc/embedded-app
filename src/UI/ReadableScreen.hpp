@@ -25,7 +25,7 @@ enum LastArrowPress {
 // TODO: make the readable copy here in Spiram
 class ReadableScreen : public ContainerScreen, public EinkView {
 public:
-    ReadableScreen(std::shared_ptr<RendererStream> stream, DisplaySystem &display,
+    ReadableScreen(const std::shared_ptr<RendererStream> &stream, DisplaySystem &display,
                    const std::shared_ptr<Readable> &readable, PreferencesStore &prefs,
                    Telemetry &telemetry, LocalStore &localStore, FileSystem &fileSystem,
                    LightingController &lightingController)
@@ -37,7 +37,7 @@ public:
           upArrowView_(display, ArrowUp), downArrowView_(display, ArrowDown) {
 
         currentScreen_ = this;
-        renderer_.setStream(std::move(stream));
+        renderer_.setStream(stream);
 
         pageSpeed_ = prefs_.autoPilotSpeed.get().value_or(0);
         std::string thePlace = prefs_.readablePlace.get(readable_->shortenedUuid.c_str());
