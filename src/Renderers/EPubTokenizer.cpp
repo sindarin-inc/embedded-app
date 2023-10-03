@@ -1440,7 +1440,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
         const pugi::char_t *str = node.value();
         uint32_t len = strlen(str); // don't like that. Lenght not available from pugixml...
         // Count forward the number of non-tag bytes (for estimating page number)
-        //currentTxtOffset_ = 0;
+        // currentTxtOffset_ = 0;
 
         if (!tokenizingStarted_) {
             if (((currentFileIdx_ == fromPlace_.getFileIdx()) &&
@@ -1489,7 +1489,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
 
     // Keep it DRY
 
-    auto nextByte = [&curChar, &str, &len, &streamOffset]() -> void {
+    auto nextByte = [&curChar, &str, &len, &streamOffset, this]() -> void {
         if (len == 0) {
             curChar = 0;
         } else {
