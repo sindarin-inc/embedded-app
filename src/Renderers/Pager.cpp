@@ -29,7 +29,7 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
     case TokenId::EMDASH: // Not used for EPub, used for TXT
     {
         if (token.tokenId == TokenId::ITEXT) {
-            leftIndent_ = token.pixWidth; // For next lines
+            leftIndent_ += token.pixWidth; // For next lines
         }
         uint16_t heightRequired =
             (token.tokenId == TokenId::HTEXT)

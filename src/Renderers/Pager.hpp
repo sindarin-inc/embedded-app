@@ -78,10 +78,10 @@ public:
         return (display_.height() * NEWLINE_DECI_LINE_HEIGHT) / (this->display_.getTextHeight());
     }
 
-    inline void clear(uint16_t leftIndent = 0, uint16_t rightIndent = 0) {
+    inline void clear() {
 
-        leftIndent_ = leftIndent;
-        rightIndent_ = rightIndent;
+        leftIndent_ = 0;
+        rightIndent_ = 0;
         atEOF_ = false;
         wordCount_ = 0;
         linesHeadIdx_ = linesTailIdx_ = 0;
@@ -89,8 +89,8 @@ public:
         currentLineWidth_ = 0;
         currentPageDecilineHeight_ = 0;
         maxDeciLines_ = getMaxDeciLines();
-        maxLineWidth_ = display_.width() - rightIndent;
-        lines_[0] = {0, 0, 0, 0, leftIndent_};
+        maxLineWidth_ = display_.width();
+        lines_[0] = {0, 0, 0, 0, 0};
         uint16_t notUsed;
         display_.getTextSize(" ", &spaceWidth_, &notUsed);
     }

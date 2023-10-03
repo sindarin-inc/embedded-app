@@ -125,7 +125,8 @@ auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
 
             EPUB_PROFILE_START(ParseXHTML);
             pugi::xml_parse_result result = currentFileDoc_.load_buffer_inplace(
-                currentFileBuffer_.get(), length, pugi::parse_default | pugi::parse_ws_pcdata);
+                currentFileBuffer_.get(), length,
+                (pugi::parse_default | pugi::parse_ws_pcdata) & ~pugi::parse_escapes);
             EPUB_PROFILE_END(ParseXHTML);
 
             if (result) {

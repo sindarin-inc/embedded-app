@@ -162,9 +162,11 @@ private:
     ListType listType_[MaxLevelCount];
     int8_t listLevel_;
 
-    uint16_t savedLeftIndent_{};
+    uint16_t listIndent_[MaxLevelCount];
+    uint16_t listUndent_[MaxLevelCount];
     uint16_t savedBlockquoteLeftIndent_{};
     uint16_t savedBlockquoteRightIndent_{};
+    uint16_t savedRowIndent_{}; // table rows;
 
     static const constexpr char *levelChar_ = "-o-o-";
 
@@ -177,7 +179,7 @@ private:
     char utf8Ch_[6];
     auto toUtf8(uint32_t val) -> char *;
 
-    [[nodiscard]] auto getCharEntity(const char *str, const char **newStrLocation) -> const char *;
+    [[nodiscard]] auto getCharEntity(const char *str) -> std::pair<const char *, const char *>;
     [[nodiscard]] auto loadXHTMLAt(Idx fileIdx) -> pugi::xml_document &;
     [[nodiscard]] auto interpret(pugi::xml_node node) -> bool;
     [[nodiscard]] auto addStrToPage(const pugi::char_t *str, uint32_t len) -> bool;
@@ -186,6 +188,7 @@ private:
     // [[nodiscard]] auto forwardToNextPageOffset(pugi::xml_node node) const -> uint32_t;
 
     void processPictureTag(pugi::xml_node node);
+    void updatePagerIndent(bool iText);
 
     [[nodiscard]] static inline auto isSpaces(const char *cstr) -> bool {
         while (*cstr) {

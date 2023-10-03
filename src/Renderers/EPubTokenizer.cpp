@@ -306,12 +306,17 @@ auto EPubTokenizer::toUtf8(uint32_t val) -> char * {
     return utf8Ch_;
 }
 
-// An entity as been detected, find it in the table to translate it to the right UTF8 character.
-// It has the form &xxx; in text.
-auto EPubTokenizer::getCharEntity(const char *str, const char **newStrLocation) -> const char * {
+// From the string that follow the '&' character, retrieve the entity's UTF8 or the unicode UTF8
+// corresponding to the decimal (&#...;) or hexadecimal number (&#x...;). It returns the
+// corresponding UTF8 translation and the next position in the input string.
+auto EPubTokenizer::getCharEntity(const char *str) -> std::pair<const char *, const char *> {
     unsigned int len = 0;
     bool number = *str == '#';
     if (number) {
+        str++;
+    }
+    bool hexNumber = *str == 'x';
+    if (hexNumber) {
         str++;
     }
     const char *start = str;
@@ -320,18 +325,20 @@ auto EPubTokenizer::getCharEntity(const char *str, const char **newStrLocation) 
     }
     std::string theStr = std::string(start, str - start);
     if (*str == ';') {
-        *newStrLocation = ++str;
-        if (number) {
-            return toUtf8(atoi(theStr.c_str()));
+        str++;
+        if (hexNumber) {
+            return {toUtf8(strtol(theStr.c_str(), nullptr, 16)), str};
+        } else if (number) {
+            return {toUtf8(atoi(theStr.c_str())), str};
         } else {
             auto search = entities_.at(theStr);
             if (search != nullptr) {
-                return search;
+                return {search, str};
             }
         }
     }
 
-    return "";
+    return {"", str};
 }
 
 auto EPubTokenizer::loadXHTMLAt(Idx fileIdx) -> pugi::xml_document & {
@@ -438,10 +445,10 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
     superscript_ = false;
 
     listLevel_ = -1;
-    savedLeftIndent_ = 0;
 
     savedBlockquoteLeftIndent_ = 0;
     savedBlockquoteRightIndent_ = 0;
+    savedRowIndent_ = 0;
 
     hyperlinkRightBracket_ = false;
     startOfHeader_ = false;
@@ -509,44 +516,71 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
         currentStreamOffset_ = 0;
 
         REND_PROFILE_START(loadXHTMLFile)
-        pugi::xml_document &doc = loadXHTMLAt(currentFileIdx_);
-        REND_PROFILE_END(loadXHTMLFile)
 
-        REND_PROFILE_START(tokenizeProcess);
+        bool startOffset = 0;
 
-        body_ = doc.child("html").child("body");
-        pugi::xml_node node = body_.first_child();
+        pugi::xml_document *doc;
 
-        if (node) {
-            do {
-                REND_WLOG("Node name: %s", node.name());
-                if (!interpret(node)) {
+        // Bypass empty chapters, if any
+        do {
+            doc = &loadXHTMLAt(currentFileIdx_);
+            body_ = doc->child("html").child("body");
+            for (auto node : body_.children()) {
+                startOffset = searchStart(node);
+                if (startOffset != 0) {
                     break;
                 }
-                node = node.next_sibling();
-            } while (node);
-
-            REND_WLOG("currentStreamOffset_: %" PRIu32, currentStreamOffset_);
-
-            if (!node || (currentStreamOffset_ == END_OFFSET)) {
-                REND_WLOG("-------------- End of chapter detected --------------");
-                Idx maxIdx = stream_->getSpineCount();
-                if ((fromPlace.getFileIdx() + 1) < maxIdx) {
-                    pager_.setNextPagePlace({0, static_cast<uint16_t>(fromPlace.getFileIdx() + 1)});
+            }
+            if (startOffset == 0) {
+                if ((currentFileIdx_ + 1) < stream_->getSpineCount()) {
+                    currentFileIdx_ += 1;
+                    fromPlace = {fromPlace.getOffset(), currentFileIdx_};
                 } else {
-                    REND_WLOG("-------------- End of book detected --------------");
                     pager_.setEndOfFile();
+                    break;
                 }
             }
+        } while (startOffset == 0);
 
-            pager_.completeLastLine();
+        REND_PROFILE_END(loadXHTMLFile)
 
-        } else {
-            log_e("File is of the wrong format");
-            REND_EXIT_SIM;
+        if (startOffset != 0) {
+            REND_PROFILE_START(tokenizeProcess);
+
+            pugi::xml_node node = body_.first_child();
+
+            if (node) {
+                do {
+                    REND_WLOG("Node name: %s", node.name());
+                    if (!interpret(node)) {
+                        break;
+                    }
+                    node = node.next_sibling();
+                } while (node);
+
+                REND_WLOG("currentStreamOffset_: %" PRIu32, currentStreamOffset_);
+
+                if (!node || (currentStreamOffset_ == END_OFFSET)) {
+                    REND_WLOG("-------------- End of chapter detected --------------");
+                    Idx maxIdx = stream_->getSpineCount();
+                    if ((fromPlace.getFileIdx() + 1) < maxIdx) {
+                        pager_.setNextPagePlace(
+                            {0, static_cast<uint16_t>(fromPlace.getFileIdx() + 1)});
+                    } else {
+                        REND_WLOG("-------------- End of book detected --------------");
+                        pager_.setEndOfFile();
+                    }
+                }
+
+                pager_.completeLastLine();
+
+            } else {
+                log_e("File is of the wrong format");
+                REND_EXIT_SIM;
+            }
+
+            REND_PROFILE_END(tokenizeProcess);
         }
-
-        REND_PROFILE_END(tokenizeProcess);
     }
 
     REND_WLOG("End of job: Page start: %s, next page at: %s",
@@ -675,13 +709,9 @@ void EPubTokenizer::startNewPageWithToken(Token &token, const char *str, uint8_t
     }
     tempToken = token;
     tokens_.clear();
-    if (tempToken.tokenId != TokenId::ITEXT) {
-        // We are in a list that requires indentation and not on the first
-        // token of a list entry. We have to reinstate the indentation level.
-        pager_.clear(savedLeftIndent_ + savedBlockquoteLeftIndent_, savedBlockquoteRightIndent_);
-    } else {
-        pager_.clear();
-    }
+    pager_.clear();
+
+    updatePagerIndent(tempToken.tokenId == TokenId::ITEXT);
 
     Token &newToken = tokens_.getNextAvailable();
     newToken = tempToken;
@@ -716,12 +746,7 @@ auto EPubTokenizer::addTokenToPage(Token &token, const char *str, uint8_t strSiz
         // tokens_.getLastIdx());
         if (!backwards_ && (tokens_.getTokenCount() == 1)) {
             // This is the first token added, so we are at the beginning of a page
-            if ((listLevel_ == -1) || (token.tokenId != TokenId::ITEXT)) {
-                // We need to adjust the indentation if the token is part of a list if the token
-                // is not the first of a list entry
-                pager_.setLineIndent(savedLeftIndent_ + savedBlockquoteLeftIndent_,
-                                     savedBlockquoteRightIndent_);
-            }
+            updatePagerIndent(token.tokenId == TokenId::ITEXT);
         }
 
         if (!pager_.addLastTokenToPage(false)) {
@@ -763,6 +788,33 @@ auto EPubTokenizer::findNodeEndOffset(pugi::xml_node node) -> uint32_t {
     }
     uint32_t offset = (node == body_) ? END_OFFSET : node.next_sibling().offset_debug() - 1;
     return offset;
+}
+
+// Adjust pager indentation
+void EPubTokenizer::updatePagerIndent(bool iText) {
+    if (listLevel_ == -1) {
+        pager_.setLineIndent(savedBlockquoteLeftIndent_ + savedRowIndent_,
+                             savedBlockquoteRightIndent_);
+        // } else if (iText) {
+        //     if (listLevel_ > 0) {
+        //         pager_.setLineIndent(listIndent_[listLevel_ - 1] + savedBlockquoteLeftIndent_ +
+        //                                  savedRowIndent_,
+        //                              savedBlockquoteRightIndent_);
+        //     } else {
+        //         pager_.setLineIndent(savedBlockquoteLeftIndent_ + savedRowIndent_,
+        //                              savedBlockquoteRightIndent_);
+        //     }
+    } else {
+        if (iText) {
+            pager_.setLineIndent(listIndent_[listLevel_] + savedBlockquoteLeftIndent_ +
+                                     savedRowIndent_,
+                                 savedBlockquoteRightIndent_);
+        } else {
+            pager_.setLineIndent(listIndent_[listLevel_] + listUndent_[listLevel_] +
+                                     savedBlockquoteLeftIndent_ + savedRowIndent_,
+                                 savedBlockquoteRightIndent_);
+        }
+    }
 }
 
 // Process node content, going recursively for all its parts. Returns true if parsing must
@@ -826,16 +878,14 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 if (tokenizingStarted_ && closeTextToken()) {
                     return false;
                 }
-                if (savedLeftIndent_ == 0) {
+                if (listLevel_ == -1) {
                     savedBlockquoteLeftIndent_ = 12;
                     savedBlockquoteRightIndent_ = 12;
                 } else {
-                    savedBlockquoteLeftIndent_ = 8;
+                    savedBlockquoteLeftIndent_ = 15;
                     savedBlockquoteRightIndent_ = 12;
                 }
-                // std::tie(savedLeftIndent_, savedPixRightIndent_) = pager_.getLineIndent();
-                pager_.setLineIndent(savedLeftIndent_ + savedBlockquoteLeftIndent_,
-                                     savedBlockquoteRightIndent_);
+                updatePagerIndent(false);
                 break;
 
             case Tag::PICTURE:
@@ -844,6 +894,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                         return false;
                     }
                     // log_w("Picture found...");
+                    currentStreamOffset_ = node.offset_debug();
                     processPictureTag(node);
                     return !pageCompleted_;
                 }
@@ -878,7 +929,6 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
 
                             addTokenToPage(newToken);
                         }
-                        pager_.setLineIndent(0, 0);
                     }
                 }
 
@@ -887,6 +937,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     listType_[listLevel_] = ListType::ORDERED;
                     pugi::xml_attribute attr = node.attribute("start");
                     listSeqNbr_[listLevel_] = attr ? atoi(attr.value()) : 1;
+                    listIndent_[listLevel_] = 0; // To be computed in <li> processing
                 }
                 break;
 
@@ -910,7 +961,6 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
 
                             addTokenToPage(newToken);
                         }
-                        pager_.setLineIndent(0, 0);
                     }
                 }
 
@@ -918,6 +968,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     listLevel_ += 1;
                     listType_[listLevel_] = ListType::UNORDERED;
                     listSeqNbr_[listLevel_] = 1;
+                    listIndent_[listLevel_] = 0; // To be computed in <li> processing
                 }
                 break;
 
@@ -932,19 +983,17 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     if (listType_[listLevel_] == ListType::ORDERED) {
                         pugi::xml_attribute attr = node.attribute("value");
                         int32_t seqNbr = attr ? atoi(attr.value()) : listSeqNbr_[listLevel_];
-                        (void)snprintf(listLineStart, 49, "%*s%" PRIi32 ".  ", listLevel_ * 5, "",
-                                       seqNbr);
+                        (void)snprintf(listLineStart, 49, "%" PRIi32 ".  ", seqNbr);
                         listSeqNbr_[listLevel_] = ++seqNbr;
                     } else {
-                        (void)snprintf(listLineStart, 49, "%*s%c  ", listLevel_ * 4, "",
-                                       levelChar_[listLevel_]);
+                        (void)snprintf(listLineStart, 49, "%c  ", levelChar_[listLevel_]);
                     }
-                    savedLeftIndent_ = display_.getTextWidth(listLineStart);
-                } else {
-                    savedLeftIndent_ = 0;
+                    listIndent_[listLevel_] = (listLevel_ * 15) + 5;
+                    listUndent_[listLevel_] = display_.getTextWidth(listLineStart);
                 }
 
                 if (tokenizingStarted_ && (listLevel_ >= 0)) {
+                    updatePagerIndent(true);
                     Token &newToken = tokens_.getNextAvailable();
                     // log_w("LI start: %s", listLineStart_);
                     newToken = {.cStr = nullptr,
@@ -1082,9 +1131,9 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     if (addTokenToPage(newToken2)) {
                         return false;
                     }
-                    pager_.setLineIndent(15, 0);
                 }
-                savedLeftIndent_ = 15;
+                savedRowIndent_ = 15;
+                updatePagerIndent(false);
                 break;
 
             default:
@@ -1155,17 +1204,17 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     break;
 
                 case Tag::BLOCKQUOTE:
-                    pager_.setLineIndent(savedLeftIndent_, 0);
                     savedBlockquoteLeftIndent_ = 0;
                     savedBlockquoteRightIndent_ = 0;
                     if ((tokenizingStarted_) && closeTextToken()) {
                         return false;
                     }
+                    updatePagerIndent(false);
                     break;
 
                 case Tag::SUP:
                     superscript_ = false;
-                    if ((tokenizingStarted_) && closeTextToken()) {
+                    if (tokenizingStarted_ && closeTextToken()) {
                         return false;
                     }
                     break;
@@ -1229,6 +1278,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                             addTokenToPage(newToken);
                         }
                     }
+                    updatePagerIndent(false);
                     break;
 
                 case Tag::UL:
@@ -1254,6 +1304,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                             addTokenToPage(newToken);
                         }
                     }
+                    updatePagerIndent(false);
                     break;
 
                 case Tag::LI:
@@ -1277,8 +1328,6 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                             addTokenToPage(newToken);
                         }
                     }
-                    pager_.setLineIndent(0, 0);
-                    savedLeftIndent_ = 0;
                     break;
 
                 case Tag::A:
@@ -1371,10 +1420,11 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                         if (closeTextToken()) {
                             return false;
                         }
-                        pager_.setLineIndent(0, 0);
                     }
-                    savedLeftIndent_ = 0;
+                    savedRowIndent_ = 0;
+                    updatePagerIndent(false);
                     break;
+
                 default:
                     break;
                 }
@@ -1476,7 +1526,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                         .spacesAfter = 0};
             do {
                 if ((curChar >= '0') && (curChar <= '9')) {
-                    const char *script = superscriptNumbers_[curChar > '3' ? 2 : curChar - '0'];
+                    const char *script = superscriptNumbers_[curChar - '0'];
                     while (*script) {
                         if (!tokens_.cStrIsFull()) {
                             tokens_.addByte(newToken, *script++);
@@ -1534,15 +1584,15 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                     //       curChar);
 
                     if (curChar == '&') {
-                        const char *newStrLocation;
-                        const char *trans = getCharEntity(str, &newStrLocation);
+                        auto [trans, newStrLocation] = getCharEntity(str);
                         if (*trans != '\0') {
                             len -= (newStrLocation - str);
                             streamOffset += (newStrLocation - str);
                             while (*trans && !tokens_.cStrIsFull()) {
                                 if (*trans > ' ') {
-                                    tokens_.addByte(*textToken_, *trans++);
+                                    tokens_.addByte(*textToken_, *trans);
                                 }
+                                trans++;
                             }
 
                             textCharCount_ += 1;
