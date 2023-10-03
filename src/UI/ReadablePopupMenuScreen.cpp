@@ -4,11 +4,32 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
     std::shared_ptr<Place> place = renderer_.getCurrentPlace();
     size_t lengthOfFile = renderer_.size();
 
-    float placeInTextPercentage = (float)place->getOffset() / (float)lengthOfFile * 100;
+    std::string placeStringForBottom;
 
-    std::string placeString = StringFormat("%.1f%%", placeInTextPercentage);
-    std::string placeStringForBottom =
-        StringFormat("%d/%d", SOL_PAGE_NUMBER(place->getOffset()), SOL_PAGE_NUMBER(lengthOfFile));
+    if (place->isFor(DocType::EPUB)) {
+        localStore_.loadToc(readable_);
+
+        auto &chapterHref = std::dynamic_pointer_cast<EPubPlace>(place)->getHRef();
+        auto chapterIndex = readable_->findEPubHRefChapterIdx(chapterHref);
+        if (chapterIndex > 0) {
+            auto &chapter = readable_->toc[chapterIndex];
+
+            // TODO(john): This isn't exactly right because `place->getOffset()` is a byte offset,
+            // not a letter offset from the beginning of the chapter. The chapters always start with
+            // extra html-y stuff at the start so this is always inflated by some amount.
+            auto currentOffset = chapter.txtOffset + place->getOffset();
+
+            // Get the end offset of the last chapter (to determine the length of the book)
+            auto &lastChapter = readable_->toc[readable_->toc.size() - 1];
+            auto lastChapterEndOffset = lastChapter.endTxtOffset;
+
+            placeStringForBottom = StringFormat("%d/%d", SOL_PAGE_NUMBER(currentOffset),
+                                                SOL_PAGE_NUMBER(lastChapterEndOffset));
+        }
+    } else {
+        placeStringForBottom = StringFormat("%d/%d", SOL_PAGE_NUMBER(place->getOffset()),
+                                            SOL_PAGE_NUMBER(lengthOfFile));
+    }
 
     popupMenuView_.setAuxText(placeStringForBottom);
 
