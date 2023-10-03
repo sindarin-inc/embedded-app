@@ -34,7 +34,7 @@ def remove_non_simulator_files(node):
 
 def ignore_node_path_warnings(env, node):
     """
-    Ignore -Wdeprecated-non-prototype warnings for unzipLIB & zlib-PIO
+    Ignore -Wdeprecated-non-prototype warnings for zlib-PIO
 
     See https://github.com/madler/zlib/issues/633
 
@@ -43,7 +43,7 @@ def ignore_node_path_warnings(env, node):
     `node.get_abspath()` - an absolute path
     """
 
-    if "unzipLIB" in node.get_path() or "zlib-PIO" in node.get_path():
+    if "zlib-PIO" in node.get_path():
         return env.Object(
             node,
             CPPDEFINES=env["CPPDEFINES"],
