@@ -453,6 +453,9 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
     hyperlinkRightBracket_ = false;
     startOfHeader_ = false;
 
+    currentTxtOffset_ = 0;
+    currentPageTxtOffset_ = 0;
+
     textToken_ = nullptr;
 
     preText_[0] = postText_[0] = '\0';
@@ -472,7 +475,6 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
         do {
             currentStreamOffset_ = 0;
-            currentTxtOffset_ = 0;
 
             REND_PROFILE_START(loadXHTMLFile)
             pugi::xml_document &doc = loadXHTMLAt(currentFileIdx_);
@@ -494,6 +496,15 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
             if (!node) {
                 if (!completed) {
                     if (++currentFileIdx_ >= stream_->getSpineCount()) {
+                        if (currentPageTxtOffset_ <= currentTxtOffset_) {
+                            currentTxtOffset_ -= currentPageTxtOffset_;
+                        } else {
+                            currentTxtOffset_ = 0;
+                        }
+                        currentPageTxtOffset_ = 0;
+                        log_w("End of Article, end of page: currentTxtOffset: %" PRIu32
+                              ", currentPageTxtOffset: %" PRIu32,
+                              currentTxtOffset_, currentPageTxtOffset_);
                         pager_.setEndOfFile();
                         break;
                     }
@@ -515,7 +526,6 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
         currentFileIdx_ = fromPlace.getFileIdx();
         currentStreamOffset_ = 0;
-        currentTxtOffset_ = 0;
 
         REND_PROFILE_START(loadXHTMLFile)
 
@@ -564,6 +574,15 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
                 if (!node || (currentStreamOffset_ == END_OFFSET)) {
                     REND_WLOG("-------------- End of chapter detected --------------");
+                    if (currentPageTxtOffset_ <= currentTxtOffset_) {
+                        currentTxtOffset_ -= currentPageTxtOffset_;
+                    } else {
+                        currentTxtOffset_ = 0;
+                    }
+                    currentPageTxtOffset_ = 0;
+                    log_w("End of Chapter, end of page: currentTxtOffset: %" PRIu32
+                          ", currentPageTxtOffset: %" PRIu32,
+                          currentTxtOffset_, currentPageTxtOffset_);
                     Idx maxIdx = stream_->getSpineCount();
                     if ((fromPlace.getFileIdx() + 1) < maxIdx) {
                         pager_.setNextPagePlace(
@@ -746,9 +765,13 @@ auto EPubTokenizer::addTokenToPage(Token &token, const char *str, uint8_t strSiz
     if (tokens_.add(token, str, strSize)) {
         // log_w("Token Id: %" PRIu8 " at idx: %" PRIu16, (uint8_t)token.tokenId,
         // tokens_.getLastIdx());
-        if (!backwards_ && (tokens_.getTokenCount() == 1)) {
-            // This is the first token added, so we are at the beginning of a page
-            updatePagerIndent(token.tokenId == TokenId::ITEXT);
+        if (tokens_.getTokenCount() == 1) {
+            if (!backwards_) {
+                // This is the first token added, so we are at the beginning of a page
+                updatePagerIndent(token.tokenId == TokenId::ITEXT);
+            } else {
+                currentPageTxtOffset_ = token.length;
+            }
         }
 
         if (!pager_.addLastTokenToPage(false)) {
@@ -759,11 +782,22 @@ auto EPubTokenizer::addTokenToPage(Token &token, const char *str, uint8_t strSiz
                         // So we are at the location correspondig to the end of the requested
                         // page.
                         pageCompleted_ = true;
+                        if (currentPageTxtOffset_ <= currentTxtOffset_) {
+                            currentTxtOffset_ -= currentPageTxtOffset_;
+                        } else {
+                            currentTxtOffset_ = 0;
+                        }
+                        log_w("Backward end of page: currentTxtOffset: %" PRIu32
+                              ", currentPageTxtOffset: %" PRIu32,
+                              currentTxtOffset_, currentPageTxtOffset_);
                     } else {
                         startNewPageWithToken(token, str, strSize);
                     }
                 } else {
                     pageCompleted_ = true;
+                    log_w("Forward end of page: currentTxtOffset: %" PRIu32
+                          ", currentPageTxtOffset: %" PRIu32,
+                          currentTxtOffset_, currentPageTxtOffset_);
                 }
             }
         } else {
@@ -839,8 +873,6 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 beginningOfPage_ = true;
                 REND_WLOG("Started at [offset:%" PRIu32 ",fileIdx:%" PRIu16 "]",
                           currentStreamOffset_, currentFileIdx_);
-                // } else if (findNodeEndOffset(node) < fromPlace_.getOffset()) {
-                //     return true;
             }
         }
 
@@ -1469,6 +1501,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 }
             } else {
                 currentStreamOffset_ += len;
+                currentTxtOffset_ += len;
             }
         } else {
             return addStrToPage(str, len);
@@ -1496,6 +1529,10 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
             curChar = *str++;
             len--;
             streamOffset++;
+            if (backwards_) {
+                currentTxtOffset_++;
+                currentPageTxtOffset_++;
+            }
         }
     };
 
