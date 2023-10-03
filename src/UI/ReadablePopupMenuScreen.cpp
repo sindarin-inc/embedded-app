@@ -11,7 +11,7 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
 
         auto &chapterHref = std::dynamic_pointer_cast<EPubPlace>(place)->getHRef();
         auto chapterIndex = readable_->findEPubHRefChapterIdx(chapterHref);
-        if (chapterIndex > 0) {
+        if (chapterIndex >= 0) {
             auto &chapter = readable_->toc[chapterIndex];
 
             // TODO(john): This isn't exactly right because `place->getOffset()` is a byte offset,
