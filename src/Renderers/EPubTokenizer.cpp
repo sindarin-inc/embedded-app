@@ -501,10 +501,10 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
                         } else {
                             currentTxtOffset_ = 0;
                         }
+                        REND_WLOG("End of Article, end of page: currentTxtOffset: %" PRIu32
+                                  ", currentPageTxtOffset: %" PRIu32,
+                                  currentTxtOffset_, currentPageTxtOffset_);
                         currentPageTxtOffset_ = 0;
-                        log_w("End of Article, end of page: currentTxtOffset: %" PRIu32
-                              ", currentPageTxtOffset: %" PRIu32,
-                              currentTxtOffset_, currentPageTxtOffset_);
                         pager_.setEndOfFile();
                         break;
                     }
@@ -579,10 +579,10 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
                     } else {
                         currentTxtOffset_ = 0;
                     }
+                    REND_WLOG("End of Chapter, end of page: currentTxtOffset: %" PRIu32
+                              ", currentPageTxtOffset: %" PRIu32,
+                              currentTxtOffset_, currentPageTxtOffset_);
                     currentPageTxtOffset_ = 0;
-                    log_w("End of Chapter, end of page: currentTxtOffset: %" PRIu32
-                          ", currentPageTxtOffset: %" PRIu32,
-                          currentTxtOffset_, currentPageTxtOffset_);
                     Idx maxIdx = stream_->getSpineCount();
                     if ((fromPlace.getFileIdx() + 1) < maxIdx) {
                         pager_.setNextPagePlace(
@@ -787,17 +787,18 @@ auto EPubTokenizer::addTokenToPage(Token &token, const char *str, uint8_t strSiz
                         } else {
                             currentTxtOffset_ = 0;
                         }
-                        log_w("Backward end of page: currentTxtOffset: %" PRIu32
-                              ", currentPageTxtOffset: %" PRIu32,
-                              currentTxtOffset_, currentPageTxtOffset_);
+                        REND_WLOG("Backward end of page: currentTxtOffset: %" PRIu32
+                                  ", currentPageTxtOffset: %" PRIu32,
+                                  currentTxtOffset_, currentPageTxtOffset_);
+                        currentPageTxtOffset_ = 0;
                     } else {
                         startNewPageWithToken(token, str, strSize);
                     }
                 } else {
                     pageCompleted_ = true;
-                    log_w("Forward end of page: currentTxtOffset: %" PRIu32
-                          ", currentPageTxtOffset: %" PRIu32,
-                          currentTxtOffset_, currentPageTxtOffset_);
+                    REND_WLOG("Forward end of page: currentTxtOffset: %" PRIu32
+                              ", currentPageTxtOffset: %" PRIu32,
+                              currentTxtOffset_, currentPageTxtOffset_);
                 }
             }
         } else {
