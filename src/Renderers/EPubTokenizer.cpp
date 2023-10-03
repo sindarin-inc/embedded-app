@@ -4,7 +4,7 @@
 
 // ToDo: Some cleanup required... there maybe more tags than required here
 
-EPubTokenizer::Tags EPubTokenizer::tags_
+EPubTokenizer::Tags EPubTokenizer::tags
   = {{"p",                   Tag::P}, {"div",       Tag::DIV}, {"span",     Tag::SPAN}, 
      {"br",              Tag::BREAK}, {"h1",         Tag::H1}, {"h2",         Tag::H2}, 
      {"h3",                 Tag::H3}, {"h4",         Tag::H4}, {"h5",         Tag::H5}, 
@@ -21,7 +21,7 @@ EPubTokenizer::Tags EPubTokenizer::tags_
 
 // ToDo: Only put the ones that are defined in the Sol Font
 
-EPubTokenizer::Entities EPubTokenizer::entities_ 
+EPubTokenizer::Entities EPubTokenizer::entities 
   = {
     {"nbsp",   "\xC2\xA0"},     // no-break space = non-breaking space, U+00A0 ISOnum
     {"iexcl",  "\xC2\xA1"},     // inverted exclamation mark, U+00A1 ISOnum
@@ -154,7 +154,7 @@ EPubTokenizer::Entities EPubTokenizer::entities_
     {"euro",   "\xE2\x80\xAC"}, // euro sign, U+20AC NEW
 };
 
-EPubTokenizer::SuperscriptNumbers EPubTokenizer::superscriptNumbers_
+EPubTokenizer::SuperscriptNumbers EPubTokenizer::superscriptNumbers
 { 
     "\xE2\x81\xB0",  // 0
     "\xC2\xB9",      // 1
@@ -186,8 +186,8 @@ auto EPubTokenizer::searchStart(pugi::xml_node node) -> uint32_t {
         }
     } else if (node.type() == pugi::xml_node_type::node_element) {
         // log_w("<%s>...", node.name());
-        auto tagIt = tags_.find(node.name());
-        if (tagIt != tags_.end()) {
+        auto tagIt = tags.find(node.name());
+        if (tagIt != tags.end()) {
             switch (tagIt->second) {
             case Tag::PICTURE:
                 return node.offset_debug();
@@ -331,7 +331,7 @@ auto EPubTokenizer::getCharEntity(const char *str) -> std::pair<const char *, co
         } else if (number) {
             return {toUtf8(atoi(theStr.c_str())), str};
         } else {
-            auto search = entities_.at(theStr);
+            auto search = entities.at(theStr);
             if (search != nullptr) {
                 return {search, str};
             }
@@ -517,7 +517,7 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
         REND_PROFILE_START(loadXHTMLFile)
 
-        bool startOffset = 0;
+        bool startOffset = false;
 
         pugi::xml_document *doc;
 
@@ -842,7 +842,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
             }
         }
 
-        auto tagIt = tags_.find(node.name());
+        auto tagIt = tags.find(node.name());
 
         // if (tagIt != tags_.end()) {
         //     log_e("Tag: %d (%s) at offset %" PRIu32, (int)tag, tagIt->first.c_str(),
@@ -851,7 +851,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
 
         // Start of a node element processing
 
-        if (tagIt != tags_.end()) {
+        if (tagIt != tags.end()) {
             switch (tagIt->second) {
             case Tag::H1:
             case Tag::H2:
@@ -932,7 +932,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     }
                 }
 
-                if (listLevel_ < (MaxLevelCount - 2)) {
+                if (listLevel_ < (MAX_LEVEL_COUNT - 2)) {
                     listLevel_ += 1;
                     listType_[listLevel_] = ListType::ORDERED;
                     pugi::xml_attribute attr = node.attribute("start");
@@ -964,7 +964,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     }
                 }
 
-                if (listLevel_ < (MaxLevelCount - 2)) {
+                if (listLevel_ < (MAX_LEVEL_COUNT - 2)) {
                     listLevel_ += 1;
                     listType_[listLevel_] = ListType::UNORDERED;
                     listSeqNbr_[listLevel_] = 1;
@@ -986,7 +986,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                         (void)snprintf(listLineStart, 49, "%" PRIi32 ".  ", seqNbr);
                         listSeqNbr_[listLevel_] = ++seqNbr;
                     } else {
-                        (void)snprintf(listLineStart, 49, "%c  ", levelChar_[listLevel_]);
+                        (void)snprintf(listLineStart, 49, "%c  ", LEVEL_CHAR[listLevel_]);
                     }
                     listIndent_[listLevel_] = (listLevel_ * 15) + 5;
                     listUndent_[listLevel_] = display_.getTextWidth(listLineStart);
@@ -1167,7 +1167,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
         }
 
         if (!pageCompleted_) {
-            if (tagIt != tags_.end()) {
+            if (tagIt != tags.end()) {
                 switch (tagIt->second) {
                 case Tag::H1:
                 case Tag::H2:
@@ -1526,7 +1526,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                         .spacesAfter = 0};
             do {
                 if ((curChar >= '0') && (curChar <= '9')) {
-                    const char *script = superscriptNumbers_[curChar - '0'];
+                    const char *script = superscriptNumbers[curChar - '0'];
                     while (*script) {
                         if (!tokens_.cStrIsFull()) {
                             tokens_.addByte(newToken, *script++);

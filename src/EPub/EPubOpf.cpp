@@ -5,7 +5,7 @@
 #include "EPubDefs.hpp"
 #include "pugixml.hpp"
 
-void EPubOpf::parse(std::shared_ptr<uint8_t[]> buffer, uint32_t length) {
+void EPubOpf::parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length) {
 
     basePath_ = "";
     extractPath(path_, basePath_);

@@ -170,20 +170,20 @@ auto EPubFile::open() -> bool {
     //     log_i("Rootfile path: %s", path.c_str());
     // }
 
-    if (manifest.rootfilePaths_.size() == 0) {
+    if (manifest.rootfilePaths.size() == 0) {
         log_e("No rootfile paths found");
         return false;
-    } else if (manifest.rootfilePaths_.size() > 1) {
+    } else if (manifest.rootfilePaths.size() > 1) {
         log_w("Multiple rootfile paths found");
     }
 
     EPUB_PROFILE_START(EPubOpf)
-    auto [opfBuffer, length] = getFile(manifest.rootfilePaths_[0].c_str());
+    auto [opfBuffer, length] = getFile(manifest.rootfilePaths[0].c_str());
     if (opfBuffer == nullptr) {
-        log_e("Failed to open ePub's opf %s", manifest.rootfilePaths_[0].c_str());
+        log_e("Failed to open ePub's opf %s", manifest.rootfilePaths[0].c_str());
         return false;
     } else {
-        opf_ = std::make_shared<EPubOpf>(manifest.rootfilePaths_[0].c_str());
+        opf_ = std::make_shared<EPubOpf>(manifest.rootfilePaths[0].c_str());
         opf_->parse(opfBuffer, length);
     }
     EPUB_PROFILE_END(EPubOpf)

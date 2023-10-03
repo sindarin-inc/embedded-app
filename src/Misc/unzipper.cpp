@@ -77,7 +77,7 @@ auto Unzipper::open() -> bool {
 
         if (!file_.seek(ecdOffset, SSeekSet)) ERR(2);
         if (file_.read(buffer_, fileCentralSize) != fileCentralSize) ERR(3);
-        if (getuint32(buffer_) != dirEndSignature) {
+        if (getuint32(buffer_) != DIR_END_SIGNATURE) {
             // There must be a comment in the last entry. Search for the beginning of the entry
             off_t endOffset = ecdOffset - 65536;
             if (endOffset < 0) {
@@ -130,7 +130,7 @@ auto Unzipper::open() -> bool {
             while (count > 0) {
                 auto *dirFileHeader = (DirFileHeader *)&entries[fileEntryOffset];
 
-                if (dirFileHeader->signature != dirFileHeaderSignature) {
+                if (dirFileHeader->signature != DIR_FILE_HEADER_SIGNATURE) {
                     if (fileEntryOffset != length) ERR(11);
                 }
 
@@ -343,17 +343,21 @@ auto Unzipper::cleanFilePath(const char *filePath) -> char * {
             u--;
         } while ((u > ss) && (*u != '/'));
         if (u >= ss) {
-            while (ss != u)
+            while (ss != u) {
                 *t++ = *ss++;
+            }
         } else if ((*u != '/') && (t > str)) {
             do {
                 t--;
             } while ((t > str) && (*t != '/'));
         }
     }
-    if ((t == str) && (*s == '/')) s++;
-    while ((*t++ = *s++))
+    if ((t == str) && (*s == '/')) {
+        s++;
+    }
+    while ((*t++ = *s++)) {
         ;
+    }
 
     return str;
 }
@@ -414,7 +418,7 @@ auto Unzipper::openFile(const std::string &filePath) -> bool {
             if (file_.read((uint8_t *)&fileHeader_, sizeof(FileHeader)) != sizeof(FileHeader))
                 ERR(14);
 
-            if (fileHeader_.signature != fileHeaderSignature) ERR(15);
+            if (fileHeader_.signature != FILE_HEADER_SIGNATURE) ERR(15);
 
             completed = true;
             break;
@@ -464,9 +468,9 @@ auto Unzipper::readFile(uint8_t *fileData, uint32_t fileDataSize) -> uint32_t {
                 ERR(19);
         } else if (currentFileEntry_->method == 8) { // Deflate compression
 
-            repeat = currentFileEntry_->compressedSize / BUFFER_SIZE;
-            remains = currentFileEntry_->compressedSize % BUFFER_SIZE;
-            current = 0;
+            repeat_ = currentFileEntry_->compressedSize / BUFFER_SIZE;
+            remains_ = currentFileEntry_->compressedSize % BUFFER_SIZE;
+            current_ = 0;
 
             zstr_.zalloc = spiZAlloc;
             zstr_.zfree = spiZFree;
@@ -489,7 +493,7 @@ auto Unzipper::readFile(uint8_t *fileData, uint32_t fileDataSize) -> uint32_t {
 
             // Decompress until deflate stream ends or end of file
             do {
-                uint16_t size = current < repeat ? BUFFER_SIZE : remains;
+                uint16_t size = current_ < repeat_ ? BUFFER_SIZE : remains_;
 
                 if constexpr (UNZIPPER_DEBUG) {
                     log_w("File size to read: %" PRIu16, size);
@@ -501,7 +505,7 @@ auto Unzipper::readFile(uint8_t *fileData, uint32_t fileDataSize) -> uint32_t {
                     goto error;
                 }
 
-                current++;
+                current_++;
 
                 zstr_.avail_in = size;
                 zstr_.next_in = (unsigned char *)buffer_;
@@ -517,7 +521,7 @@ auto Unzipper::readFile(uint8_t *fileData, uint32_t fileDataSize) -> uint32_t {
                     goto error;
                 default:;
                 }
-            } while (current <= repeat);
+            } while (current_ <= repeat_);
 
             mz_inflateEnd(&zstr_);
 

@@ -40,7 +40,7 @@ public:
     }
 
     void setStream(std::shared_ptr<RendererStream> stream) override { stream_ = stream; }
-    
+
     [[nodiscard]] inline auto isReady() const -> bool override { return stream_.get() != nullptr; }
 
 private:

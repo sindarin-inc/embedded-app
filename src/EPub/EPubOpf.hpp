@@ -11,7 +11,7 @@ class EPubOpf {
 public:
     EPubOpf(const char *path) : path_(path) {}
 
-    void parse(std::shared_ptr<uint8_t[]> buffer, uint32_t length);
+    void parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length);
 
     struct ManifestItem {
         std::string href;

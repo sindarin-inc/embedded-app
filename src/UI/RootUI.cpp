@@ -306,7 +306,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             if (readableScreen != nullptr) {
                 this->setCurrentScreen(*readableScreen);
             } else {
-                MsgPopup *errorPopup = new MsgPopup(*display, itemErrorMsg);
+                auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
                 this->setCurrentScreen(*errorPopup);
                 errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
                     mainMenu->setFirstLoad();
@@ -389,7 +389,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     delete readableScreen;
                     });
                 } else {
-                    MsgPopup *errorPopup = new MsgPopup(*display, itemErrorMsg);
+                    auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
                     this->setCurrentScreen(*errorPopup);
                     errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
                         mainMenu->setFirstLoad();
@@ -439,7 +439,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                             delete readableScreen;
                             });
                         } else {
-                            MsgPopup *errorPopup = new MsgPopup(*display, itemErrorMsg);
+                            auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
                             this->setCurrentScreen(*errorPopup);
                             errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
                                 mainMenu->setFirstLoad();
@@ -1620,7 +1620,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             });
             this->setCurrentScreen(*cesScreen);
         } else {
-            MsgPopup *errorPopup = new MsgPopup(*display, itemErrorMsg);
+            auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
             this->setCurrentScreen(*errorPopup);
             errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
                 mainMenu->setFirstLoad();
@@ -1646,7 +1646,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
             this->display_->setFont(this->display_->style.getFontFamily().readableFont);
             this->setCurrentScreen(*readableScreen);
         } else {
-            MsgPopup *errorPopup = new MsgPopup(*display, itemErrorMsg);
+            auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
             this->setCurrentScreen(*errorPopup);
             errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
                 mainMenu->setFirstLoad();
@@ -1683,7 +1683,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                     mainMenu->setTabToBible();
                 }
             } else {
-                MsgPopup *errorPopup = new MsgPopup(*display, itemErrorMsg);
+                auto *errorPopup = new MsgPopup(*display, itemErrorMsg_);
                 this->setCurrentScreen(*errorPopup);
                 errorPopup->setBackCallback([this, errorPopup, mainMenu]() {
                     mainMenu->setFirstLoad();
