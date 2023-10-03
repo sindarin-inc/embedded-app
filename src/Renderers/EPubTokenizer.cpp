@@ -1496,11 +1496,10 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
             curChar = *str++;
             len--;
             streamOffset++;
-            currentTxtOffset_++;
         }
     };
 
-    if (beginningOfPage_) { // || pageCompleted_) {
+    if (beginningOfPage_) {
         while ((curChar != 0) && isspace(curChar)) {
             nextByte();
         }
