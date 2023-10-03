@@ -16,7 +16,7 @@ public:
         : display_(display), tokens_(tokens), pager_(pager) {}
     virtual ~Tokenizer() = default;
 
-    [[nodiscard]] static auto factory(std::shared_ptr<RendererStream> stream,
+    [[nodiscard]] static auto factory(const std::shared_ptr<RendererStream> &stream,
                                       DisplaySystem &display, Tokens &tokens, Pager &pager)
         -> std::shared_ptr<Tokenizer>;
 
@@ -65,6 +65,8 @@ public:
     [[nodiscard]] virtual inline auto isAnArticle() const -> bool { return true; }
 
     [[nodiscard]] virtual inline auto isReady() const -> bool { return false; }
+
+    [[nodiscard]] virtual inline auto getTxtOffset() const -> uint32_t { return 0; };
 
 protected:
     DisplaySystem &display_;

@@ -472,6 +472,7 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
         do {
             currentStreamOffset_ = 0;
+            currentTxtOffset_ = 0;
 
             REND_PROFILE_START(loadXHTMLFile)
             pugi::xml_document &doc = loadXHTMLAt(currentFileIdx_);
@@ -514,6 +515,7 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
         currentFileIdx_ = fromPlace.getFileIdx();
         currentStreamOffset_ = 0;
+        currentTxtOffset_ = 0;
 
         REND_PROFILE_START(loadXHTMLFile)
 
@@ -1437,6 +1439,8 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
 
         const pugi::char_t *str = node.value();
         uint32_t len = strlen(str); // don't like that. Lenght not available from pugixml...
+        // Count forward the number of non-tag bytes (for estimating page number)
+        // currentTxtOffset_ = 0;
 
         if (!tokenizingStarted_) {
             if (((currentFileIdx_ == fromPlace_.getFileIdx()) &&
@@ -1454,11 +1458,13 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 currentStreamOffset_ += bypass;
                 if (str[bypass] == '\0') {
                     preText_[0] = postText_[0] = '\0';
+                    currentTxtOffset_ += len;
                     return true;
                 } else {
                     if (bypass > 0) {
                         preText_[0] = '\0';
                     }
+                    currentTxtOffset_ += bypass;
                     return addStrToPage(str + bypass, len - bypass);
                 }
             } else {
@@ -1483,13 +1489,14 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
 
     // Keep it DRY
 
-    auto nextByte = [&curChar, &str, &len, &streamOffset]() -> void {
+    auto nextByte = [&curChar, &str, &len, &streamOffset, this]() -> void {
         if (len == 0) {
             curChar = 0;
         } else {
             curChar = *str++;
             len--;
             streamOffset++;
+            currentTxtOffset_++;
         }
     };
 
