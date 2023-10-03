@@ -5,7 +5,7 @@
 #include "Renderers/RendererStream.hpp"
 #include "TxtTokenizer.hpp"
 
-auto Tokenizer::factory(std::shared_ptr<RendererStream> stream, DisplaySystem &display,
+auto Tokenizer::factory(const std::shared_ptr<RendererStream> &stream, DisplaySystem &display,
                         Tokens &tokens, Pager &pager) -> std::shared_ptr<Tokenizer> {
     std::shared_ptr<Tokenizer> tokenizer;
 
@@ -20,7 +20,7 @@ auto Tokenizer::factory(std::shared_ptr<RendererStream> stream, DisplaySystem &d
         tokenizer = std::make_shared<NullTokenizer>(display, tokens, pager);
     }
     tokenizer->setStream(stream);
-    pager.setStream(std::move(stream));
+    pager.setStream(stream);
 
     return tokenizer;
 }

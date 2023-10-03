@@ -16,7 +16,7 @@ public:
         : display_(display), tokens_(tokens), pager_(pager) {}
     virtual ~Tokenizer() = default;
 
-    [[nodiscard]] static auto factory(std::shared_ptr<RendererStream> stream,
+    [[nodiscard]] static auto factory(const std::shared_ptr<RendererStream> &stream,
                                       DisplaySystem &display, Tokens &tokens, Pager &pager)
         -> std::shared_ptr<Tokenizer>;
 
