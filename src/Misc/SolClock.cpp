@@ -26,13 +26,15 @@ auto SolClock::getTimeString() -> std::string {
 
     getClockTime(hours, minutes);
 
+    std::string suffix = "am";
     if (hours == 0) {
         hours = 12;
     }
     if (hours > 12) {
         hours -= 12;
+        suffix = "pm";
     }
-    return StringFormat("%d:%02d", hours, minutes);
+    return StringFormat("%d:%02d %s", hours, minutes, suffix.c_str());
 }
 
 void SolClock::loadTimeZone() {

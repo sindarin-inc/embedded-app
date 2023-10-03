@@ -31,6 +31,8 @@ public:
         }
     }
 
+    auto getText() -> const std::string & { return text_; }
+
     void setFont(Font *font) { font_ = font; }
 
     auto layout(LayoutContext &context, Size size) -> Size override {
