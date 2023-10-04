@@ -62,6 +62,8 @@ public:
 
     virtual void setStream(std::shared_ptr<RendererStream> stream) = 0;
 
+    [[nodiscard]] virtual auto getStream() -> std::shared_ptr<RendererStream> = 0;
+
     [[nodiscard]] virtual inline auto isAnArticle() const -> bool { return true; }
 
     [[nodiscard]] virtual inline auto isReady() const -> bool { return false; }

@@ -13,8 +13,9 @@
 class EPubFile : public RendererStream {
 public:
     EPubFile(FileSystem &fs, const char *filename, std::shared_ptr<Readable> readable)
-        : RendererStream(DocType::EPUB), epubUnzipper_(fs, filename),
-          readable_(std::move(readable)), currentFileBuffer_(nullptr), currentFilePath_("") {
+        : RendererStream(DocType::EPUB), epubUnzipper_(fs, filename), readable_(readable),
+          currentFileBuffer_(nullptr), currentFilePath_("") {
+        log_w("Opening EPubFile... readable TOC size:%zu", readable_->toc.size());
         open();
     }
     ~EPubFile() override { close(); };
@@ -46,15 +47,8 @@ public:
         return readable_->toc;
     }
 
-    [[nodiscard]] auto getSpineIdx(const std::string &href) const -> uint16_t {
-        uint16_t spineIdx = 0;
-        while (spineIdx < opf_->getSpineCount()) {
-            if (opf_->getSpine(spineIdx).item->href == href) {
-                return spineIdx;
-            }
-            spineIdx += 1;
-        }
-        return 0;
+    [[nodiscard]] inline auto getSpineIdx(const std::string &href) const -> uint16_t {
+        return opf_->getSpineIdx(href);
     }
 
     [[nodiscard]] auto getXHTMLFile(const std::string &path) -> pugi::xml_document &;
@@ -87,6 +81,8 @@ public:
         }
         return 0;
     }
+
+    auto getReadableChapterIndex(std::shared_ptr<EPubPlace> ePubPlace) const -> int;
 
 private:
     Unzipper epubUnzipper_;

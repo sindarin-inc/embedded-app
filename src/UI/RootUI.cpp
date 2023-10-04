@@ -134,7 +134,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
     auto createReadableScreen = [this, display, mainMenu, booksMenu, bibleMenu, articlesMenu,
                                  hasBible, &fileSystem, &lightingController, &localStore](
-                                    const std::shared_ptr<Readable> &readable) -> ReadableScreen * {
+                                    const std::shared_ptr<Readable> readable) -> ReadableScreen * {
         // TODO: Would be better to not allocate / delete these all the time
 
         std::shared_ptr<RendererStream> stream;
@@ -142,6 +142,7 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
 
         if (HasSuffix(path, ".epub")) {
             log_i("Opening %s as epub", path.c_str());
+            log_w("Readable TOC size is %zu", readable->toc.size());
             stream = fileSystem.newEPubRendererStream(path.c_str(), readable);
         } else if (HasSuffix(path, ".txt.gz")) {
             log_i("Opening %s as gzip", path.c_str());

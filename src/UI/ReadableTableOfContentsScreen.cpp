@@ -201,14 +201,19 @@ void ReadableTableOfContentsScreen::setNearestChapterSelection(
             }
         }
     } else if (placeInFile->isFor(DocType::EPUB)) {
-        std::shared_ptr<EPubPlace> ePubPlace = std::dynamic_pointer_cast<EPubPlace>(placeInFile);
-        std::string href = ePubPlace->getHRef();
-        for (int i = 0; i < readable_->toc.size(); i++) {
-            if (readable_->toc[i].href == href) {
-                nearestChapter = i;
-                break;
-            }
-        }
+        auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
+        auto ePubPlace = std::dynamic_pointer_cast<EPubPlace>(placeInFile);
+
+        nearestChapter = stream->getReadableChapterIndex(ePubPlace);
+
+        // std::shared_ptr<EPubPlace> ePubPlace = std::dynamic_pointer_cast<EPubPlace>(placeInFile);
+        // std::string href = ePubPlace->getHRef();
+        // for (int i = 0; i < readable_->toc.size(); i++) {
+        //     if (readable_->toc[i].href == href) {
+        //         nearestChapter = i;
+        //         break;
+        //     }
+        // }
     }
     setCurrSelection(nearestChapter);
 }
