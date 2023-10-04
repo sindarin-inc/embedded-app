@@ -59,6 +59,7 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
         unarchiveMenuItemView_->setHidden(true);
     }
     popupMenuView_.setNeedsLayout();
+    setNeedsLayout();
     setFirstLoad();
 }
 
