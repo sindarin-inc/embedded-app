@@ -144,6 +144,11 @@ auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
     return currentFileDoc_;
 }
 
+auto EPubFile::getReadableChapterIndex(const std::shared_ptr<EPubPlace> ePubPlace) const -> int {
+
+    return opf_->getReadableChapterIndex(ePubPlace->getHRef());
+}
+
 auto EPubFile::open() -> bool {
 
     PROFILE_START(openEPub);
@@ -184,7 +189,7 @@ auto EPubFile::open() -> bool {
         return false;
     } else {
         opf_ = std::make_shared<EPubOpf>(manifest.rootfilePaths[0].c_str());
-        opf_->parse(opfBuffer, length);
+        opf_->parse(opfBuffer, length, readable_);
     }
     EPUB_PROFILE_END(EPubOpf)
 

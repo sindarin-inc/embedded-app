@@ -42,6 +42,8 @@ public:
 
     void setStream(std::shared_ptr<RendererStream> stream) override { error(); }
 
+    [[nodiscard]] auto getStream() -> std::shared_ptr<RendererStream> override { return nullptr; }
+
 private:
     void error() const {
         log_e("There is no stream defined for the Renderer");

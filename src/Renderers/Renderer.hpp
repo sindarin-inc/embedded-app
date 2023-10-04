@@ -30,6 +30,11 @@ public:
         // log_w("setStream...");
         tokenizer_ = Tokenizer::factory(stream, display_, tokens_, pager_);
     }
+
+    [[nodiscard]] inline auto getStream() -> std::shared_ptr<RendererStream> {
+        return tokenizer_->getStream();
+    }
+
     auto setCurrentPlace(std::shared_ptr<Place> newPlace) -> void {
         // log_w("setCurrentPlace...");
         currentPlace_ = tokenizer_->toStreamPlace(std::move(newPlace));

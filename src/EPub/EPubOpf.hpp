@@ -6,12 +6,14 @@
 #include <vector>
 
 #include "EPubDefs.hpp"
+#include "Models/Readable.hpp"
 
 class EPubOpf {
 public:
     EPubOpf(const char *path) : path_(path) {}
 
-    void parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length);
+    void parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length,
+               const std::shared_ptr<Readable> readable);
 
     struct ManifestItem {
         std::string href;
@@ -20,6 +22,7 @@ public:
 
     struct SpineItem {
         ManifestItem *item;
+        int readableChapterIndex; // = -1 if not a chapter in the readable TOC
         // uint32_t uncompressedSize; // Must be loaded seprately
         // uint32_t offset;
     };
@@ -37,6 +40,10 @@ public:
     [[nodiscard]] inline auto getSpineCount() const -> uint16_t { return spine_.size(); }
 
     void extractPath(const char *fname, std::string &path);
+
+    auto getSpineIdx(const std::string &href) const -> int;
+
+    auto getReadableChapterIndex(const std::string &href) const -> int;
 
 private:
     const char *path_;

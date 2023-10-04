@@ -5,7 +5,8 @@
 #include "EPubDefs.hpp"
 #include "pugixml.hpp"
 
-void EPubOpf::parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length) {
+void EPubOpf::parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length,
+                    const std::shared_ptr<Readable> readable) {
 
     basePath_ = "";
     extractPath(path_, basePath_);
@@ -40,7 +41,7 @@ void EPubOpf::parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length) {
             auto it = manifest_.find(idref);
             if (it != manifest_.end()) {
 
-                spine_.push_back(SpineItem{.item = &it->second,
+                spine_.push_back(SpineItem{.item = &it->second, .readableChapterIndex = -1
                                            /* .uncompressedSize = usize,  .offset = totalSize_ */});
                 // log_w("------------> adding spine: idref:%s, href:%s, size:%" PRIu32 "
                 // offset:%" PRIu32,
@@ -51,6 +52,16 @@ void EPubOpf::parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length) {
             } else {
                 log_e("Spine idref not found in manifest: %s", idref.c_str());
             }
+        }
+
+        if (readable->toc.size() == 0) {
+            log_e("Readable TOC size is 0!!");
+        }
+        for (int32_t i = 0; i < readable->toc.size(); i++) {
+            log_w("toc href: %s", readable->toc[i].href.c_str());
+            int32_t spineIdx = getSpineIdx(readable->toc[i].href);
+            spine_[spineIdx].readableChapterIndex = i;
+            log_w("Found spineIdx %" PRIi32 "for Chapter Idx %" PRIi32, spineIdx, i);
         }
     } else {
         log_e("Failed to parse EPub opf %s: %s", path_, result.description());
@@ -76,4 +87,25 @@ void EPubOpf::extractPath(const char *fname, std::string &path) {
     if (i > 0) {
         path.assign(fname, ++i);
     }
+}
+
+auto EPubOpf::getSpineIdx(const std::string &href) const -> int {
+    for (int spineIdx = 0; spineIdx < spine_.size(); spineIdx++) {
+        if (spine_[spineIdx].item->href == href) {
+            return spineIdx;
+        }
+    }
+    return 0;
+}
+
+auto EPubOpf::getReadableChapterIndex(const std::string &href) const -> int {
+    int spineIdx = getSpineIdx(href);
+    while (spineIdx >= 0) {
+        if (spine_[spineIdx].readableChapterIndex != -1) {
+            return spine_[spineIdx].readableChapterIndex;
+        }
+        spineIdx -= 1;
+    }
+
+    return 0;
 }
