@@ -29,7 +29,8 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
             // Determine how many Sol Pages are left in the chapter
             auto chapterPagesRemaining = chapter.endTxtOffset - currentOffset;
             chapterPagesRemainingString =
-                StringFormat("%d pages left", SOL_PAGE_NUMBER(chapterPagesRemaining));
+                StringFormat("%d page%s left", SOL_PAGE_NUMBER(chapterPagesRemaining),
+                             SOL_PAGE_NUMBER(chapterPagesRemaining) == 1 ? "" : "s");
         }
     } else {
         size_t lengthOfFile = renderer_.size();
