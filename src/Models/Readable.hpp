@@ -70,7 +70,7 @@ public:
     [[nodiscard]] auto file(const std::string &path = "") const -> const ReadableFile & {
         for (const auto &file : files) {
             if (file.filetype == "epub" &&
-                (path.empty() || path.find(".epub") != std::string::npos)) {
+                (path.empty() || HasSuffix(path, ".epub")) {
                 return file;
             }
         }
