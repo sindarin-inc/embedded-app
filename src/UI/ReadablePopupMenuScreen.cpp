@@ -4,6 +4,7 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
     std::shared_ptr<Place> place = renderer_.getCurrentPlace();
 
     std::string placeStringForBottom;
+    std::string chapterPagesRemainingString;
 
     if (place->isFor(DocType::EPUB)) {
         localStore_.loadToc(readable_);
@@ -22,16 +23,27 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
             auto &lastChapter = readable_->toc[readable_->toc.size() - 1];
             auto lastChapterEndOffset = lastChapter.endTxtOffset;
 
-            placeStringForBottom = StringFormat("%d/%d", SOL_PAGE_NUMBER(currentOffset),
+            placeStringForBottom = StringFormat("%d of %d", SOL_PAGE_NUMBER(currentOffset),
                                                 SOL_PAGE_NUMBER(lastChapterEndOffset));
+
+            // Determine how many Sol Pages are left in the chapter
+            auto chapterPagesRemaining = chapter.endTxtOffset - currentOffset;
+            chapterPagesRemainingString =
+                StringFormat("%d pages left", SOL_PAGE_NUMBER(chapterPagesRemaining));
         }
     } else {
         size_t lengthOfFile = renderer_.size();
-        placeStringForBottom = StringFormat("%d/%d", SOL_PAGE_NUMBER(renderer_.getTxtOffset()),
+        placeStringForBottom = StringFormat("%d of %d", SOL_PAGE_NUMBER(renderer_.getTxtOffset()),
                                             SOL_PAGE_NUMBER(lengthOfFile));
     }
 
-    popupMenuView_.setAuxText(placeStringForBottom);
+    popupMenuView_.setFooter1Text(chapterPagesRemainingString);
+
+    popupMenuView_.setFooter2Text(placeStringForBottom);
+
+    SolClock &theClock = SolClock::getInstance();
+    auto timeString = theClock.getTimeString();
+    popupMenuView_.setFooter3Text(timeString);
 
     if (popupMenuView_.menuItemViews.size() == 0) {
         populatePopupMenu();
@@ -47,6 +59,7 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
         unarchiveMenuItemView_->setHidden(true);
     }
     popupMenuView_.setNeedsLayout();
+    setNeedsLayout();
     setFirstLoad();
 }
 
@@ -198,7 +211,6 @@ void ReadablePopupMenuScreen::render(DisplaySystem &display) {
             menuItemView->setSelected(false);
         }
 
-        popupMenuView_.updateTime();
         popupMenuView_.draw();
 
         display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);

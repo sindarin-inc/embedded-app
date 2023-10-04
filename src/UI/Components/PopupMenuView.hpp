@@ -12,18 +12,23 @@ class PopupMenuView : public View, public Menu {
 public:
     PopupMenuView(DisplaySystem &display)
         : View(), display_(display), popupMenuBackground_(display, 5),
-          popupMenuForeground_(display, 5), clockView_(display, ""), auxTextView_(display, "") {}
+          popupMenuForeground_(display, 5), footer1TextView_(display, ""),
+          footer2TextView_(display, ""), footer3TextView_(display, "") {}
 
     ~PopupMenuView() override = default;
 
-    void setAuxText(std::string auxText) {
-        auxTextView_.setText(std::move(auxText));
+    void setFooter1Text(std::string text) {
+        footer1TextView_.setText(std::move(text));
         setNeedsLayout();
     }
 
-    auto updateTime() {
-        SolClock &theClock = SolClock::getInstance();
-        clockView_.setText(theClock.getTimeString());
+    void setFooter2Text(std::string text) {
+        footer2TextView_.setText(std::move(text));
+        setNeedsLayout();
+    }
+
+    void setFooter3Text(std::string text) {
+        footer3TextView_.setText(std::move(text));
         setNeedsLayout();
     }
 
@@ -45,17 +50,32 @@ public:
             }
         }
 
-        // Nudge down the clock
-        y += 10;
+        // Nudge down the footers
+        if (footer1TextView_.getText().size() > 0 || footer2TextView_.getText().size() > 0) {
+            y += 5;
+        }
 
-        // Inset clock and aux horizontally to match the content but with 5px less padding on
-        // the bottom
-        auto clockRect = Rect({{contentFrame.origin.x, y}, {contentFrame.size.width, 0}});
-        auto clockFrame = context.setViewFrame(clockView_, clockRect,
-                                               LayoutOptionsSizeToFit | LayoutOptionsAlignLeft);
-        y += clockFrame.size.height;
-        context.setViewFrame(auxTextView_, clockRect,
-                             LayoutOptionsSizeToFit | LayoutOptionsAlignRight);
+        auto footerRect = Rect({{contentFrame.origin.x, y}, {contentFrame.size.width, 0}});
+        if (footer1TextView_.getText().size() > 0) {
+            auto footerTopRect =
+                context.setViewFrame(footer1TextView_, footerRect,
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
+            y += footerTopRect.size.height;
+            footerRect.origin.y = y;
+        }
+        if (footer2TextView_.getText().size() > 0) {
+            auto footerBottomRect =
+                context.setViewFrame(footer2TextView_, footerRect,
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
+            y += footerBottomRect.size.height;
+            footerRect.origin.y = y;
+        }
+        if (footer3TextView_.getText().size() > 0) {
+            auto footerBottomBottomRect =
+                context.setViewFrame(footer3TextView_, footerRect,
+                                     LayoutOptionsSizeToFit | LayoutOptionsAlignCenterHorizontal);
+            y += footerBottomBottomRect.size.height;
+        }
 
         // Add bottom padding
         y += 5;
@@ -80,11 +100,9 @@ public:
             }
         }
 
-        if (showClock_) {
-            clockView_.draw();
-        }
-
-        auxTextView_.draw();
+        footer1TextView_.draw();
+        footer2TextView_.draw();
+        footer3TextView_.draw();
     }
 
     std::vector<std::shared_ptr<MenuItemView>> menuItemViews;
@@ -95,11 +113,8 @@ protected:
     BoxView popupMenuBackground_;
     BoxView popupMenuForeground_;
 
-    // Every popup has the clock on the lower left if they want it
-    SingleLineTextView clockView_;
-
-    // Aux text to show on the lower right
-    SingleLineTextView auxTextView_;
-
-    bool showClock_ = true;
+    // Two lines of footer to put stuff like the clock on
+    SingleLineTextView footer1TextView_;
+    SingleLineTextView footer2TextView_;
+    SingleLineTextView footer3TextView_;
 };
