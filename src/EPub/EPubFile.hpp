@@ -12,10 +12,9 @@
 
 class EPubFile : public RendererStream {
 public:
-    EPubFile(FileSystem &fs, const char *filename, std::shared_ptr<Readable> readable)
+    EPubFile(FileSystem &fs, const char *filename, const std::shared_ptr<Readable> &readable)
         : RendererStream(DocType::EPUB), epubUnzipper_(fs, filename), readable_(readable),
           currentFileBuffer_(nullptr), currentFilePath_("") {
-        log_w("Opening EPubFile... readable TOC size:%zu", readable_->toc.size());
         open();
     }
     ~EPubFile() override { close(); };
