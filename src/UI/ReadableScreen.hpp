@@ -39,9 +39,18 @@ public:
         currentScreen_ = this;
         renderer_.setStream(stream);
 
-        pageSpeed_ = prefs_.autoPilotSpeed.get().value_or(0);
+        // If old txt place still exists, use it to overwrite the new place and then delete the old
+        // txt place
+        auto oldPlace = prefs_.oldReadablePlace.get(readable_->shortenedUuid.c_str());
+        if (oldPlace > 0) {
+            auto newPlace = Place::factory(oldPlace);
+            prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), newPlace->str().c_str());
+            prefs_.oldReadablePlace.remove(readable_->shortenedUuid.c_str());
+        }
+
         std::string thePlace = prefs_.readablePlace.get(readable_->shortenedUuid.c_str());
         log_d("readablePlace: \"%s\"", thePlace.c_str());
+
         if (!prefs_.cesMode.get().value_or(false) && !thePlace.empty()) {
             readable_->place = Place::factory(thePlace);
         } else {
@@ -51,6 +60,7 @@ public:
         // interrupted.
         newPlace_ = readable_->place;
         atEnd_ = this->checkAtEnd();
+        pageSpeed_ = prefs_.autoPilotSpeed.get().value_or(0);
 
         log_d("Found place for %s = %s %s", readable_->shortenedUuid.c_str(),
               readable_->place->str().c_str(), atEnd_ ? "(at end)" : "");

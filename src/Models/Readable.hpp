@@ -69,22 +69,20 @@ public:
 
     [[nodiscard]] auto file(const std::string &path = "") const -> const ReadableFile & {
         for (const auto &file : files) {
-            if (file.filetype == "epub" &&
-                (path.empty() || HasSuffix(path, ".epub")) {
+            if (file.filetype == "epub" && (path.empty() || HasSuffix(path, ".epub"))) {
                 return file;
             }
         }
 
         for (const auto &file : files) {
-            if (file.filetype == "utf8_txt" &&
-                (path.empty() || HasSuffix(path, ". txt")) {
+            if (file.filetype == "utf8_txt" && (path.empty() || HasSuffix(path, ". txt"))) {
                 return file;
             }
         }
 
         for (const auto &file : files) {
             if (file.filetype == "txt" &&
-                (path.empty() || HasSuffix(path, ".txt") || HasSuffix(path, ".txt.gz")) {
+                (path.empty() || HasSuffix(path, ".txt") || HasSuffix(path, ".txt.gz"))) {
                 return file;
             }
         }
