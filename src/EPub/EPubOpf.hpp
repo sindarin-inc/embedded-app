@@ -13,7 +13,7 @@ public:
     EPubOpf(const char *path) : path_(path) {}
 
     void parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length,
-               const std::shared_ptr<Readable> readable);
+               const std::shared_ptr<Readable> &readable);
 
     struct ManifestItem {
         std::string href;
@@ -23,13 +23,7 @@ public:
     struct SpineItem {
         ManifestItem *item;
         int readableChapterIndex; // = -1 if not a chapter in the readable TOC
-        // uint32_t uncompressedSize; // Must be loaded seprately
-        // uint32_t offset;
     };
-
-    // [[nodiscard]] auto getTotalSize() const -> uint32_t { return totalSize_; }
-
-    // [[nodiscard]] auto getSpineIdxForOffset(uint32_t offset) const -> Idx;
 
     [[nodiscard]] auto getSpine(Idx idx) const -> const SpineItem & { return spine_[idx]; }
 
@@ -58,6 +52,4 @@ private:
     std::string creator_;
     ManifestMap manifest_;
     SpineVector spine_;
-
-    // uint32_t totalSize_{0};
 };
