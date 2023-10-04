@@ -77,7 +77,7 @@ public:
 
         for (const auto &file : files) {
             if (file.filetype == "utf8_txt" &&
-                (path.empty() || path.find(".txt") != std::string::npos)) {
+                (path.empty() || HasSuffix(path, ". txt")) {
                 return file;
             }
         }
