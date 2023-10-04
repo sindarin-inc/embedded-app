@@ -84,7 +84,7 @@ public:
 
         for (const auto &file : files) {
             if (file.filetype == "txt" &&
-                (path.empty() || path.find(".txt") != std::string::npos)) {
+                (path.empty() || HasSuffix(path, ".txt") || HasSuffix(path, ".txt.gz")) {
                 return file;
             }
         }
