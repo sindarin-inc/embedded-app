@@ -31,6 +31,9 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
             chapterPagesRemainingString =
                 StringFormat("%d page%s left", SOL_PAGE_NUMBER(chapterPagesRemaining),
                              SOL_PAGE_NUMBER(chapterPagesRemaining) == 1 ? "" : "s");
+        } else {
+            log_w("Couldn't find chapter index (%d) for href %s", chapterIndex,
+                  chapterHref.c_str());
         }
     } else {
         size_t lengthOfFile = renderer_.size();

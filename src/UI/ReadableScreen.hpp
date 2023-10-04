@@ -39,17 +39,6 @@ public:
         currentScreen_ = this;
         renderer_.setStream(stream);
 
-        // If old txt place still exists, use it to overwrite the new place and then delete the old
-        // txt place
-        auto oldPlace = prefs_.oldReadablePlace.get(readable_->shortenedUuid.c_str());
-        if (oldPlace > 0) {
-            log_d("Found old place for %s = %u, migrating to new place format",
-                  readable_->shortenedUuid.c_str(), oldPlace);
-            auto newPlace = Place::factory(oldPlace);
-            prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), newPlace->str().c_str());
-            prefs_.oldReadablePlace.remove(readable_->shortenedUuid.c_str());
-        }
-
         std::string thePlace = prefs_.readablePlace.get(readable_->shortenedUuid.c_str());
         log_d("readablePlace: \"%s\"", thePlace.c_str());
 

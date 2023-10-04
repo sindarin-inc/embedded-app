@@ -1527,6 +1527,24 @@ auto LocalStore::getPendingFirmwareUpdate(Firmware &firmware) -> bool {
 
 void LocalStore::resetFirmware() { fileSystem.remove(firmwarePath); }
 
+void LocalStore::migrateTxtPlacemarksToEpubPlacemarks() {
+    // If old txt place still exists, use it to overwrite the new place and then delete the old
+    // txt place
+    std::vector<ReadablesVector *> readablesList = {&books_, &articles_};
+    for (auto &readables : readablesList) {
+        for (auto &readable_ : *readables) {
+            auto oldPlace = prefs_.oldReadablePlace.get(readable_->shortenedUuid.c_str());
+            if (oldPlace > 0) {
+                log_d("Found old place for %s = %u, migrating to new place format",
+                      readable_->shortenedUuid.c_str(), oldPlace);
+                auto newPlace = Place::factory(oldPlace);
+                prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), newPlace->str().c_str());
+                prefs_.oldReadablePlace.remove(readable_->shortenedUuid.c_str());
+            }
+        }
+    }
+}
+
 void LocalStore::garbageCollectPreferences() {
     log_i("Running NVS garbage collection");
     prefs_.logStats();
@@ -1577,6 +1595,9 @@ void LocalStore::migrateIfNeeded() {
             // don't correspond to a readable on the glasses.
             garbageCollectPreferences();
             break;
+        }
+        case 1: {
+            migrateTxtPlacemarksToEpubPlacemarks();
         }
         default:
             log_e("Unknown LocalStore migration version: %" PRIu32, migrationVersion);
