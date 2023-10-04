@@ -11,6 +11,15 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
 
         auto &chapterHref = std::dynamic_pointer_cast<EPubPlace>(place)->getHRef();
         auto chapterIndex = readable_->findEPubHRefChapterIdx(chapterHref);
+
+        // If the chapter isn't found in the ToC, find it in the spine and walk backwards until we
+        // find a chapter that is found in the ToC.
+        if (chapterIndex == -1) {
+            auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
+            auto ePubPlace = std::dynamic_pointer_cast<EPubPlace>(place);
+            chapterIndex = stream->getReadableChapterIndex(ePubPlace);
+        }
+
         if (chapterIndex >= 0) {
             auto &chapter = readable_->toc[chapterIndex];
 
