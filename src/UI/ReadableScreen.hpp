@@ -12,6 +12,7 @@
 #include "UI/MsgPopup.hpp"
 #include "UI/ReadablePopupMenuScreen.hpp"
 #include "UI/Screen.hpp"
+#include "Version.hpp"
 #include "config.h"
 
 enum LastArrowPress {
@@ -82,8 +83,9 @@ public:
 
         popupMenuScreen_.onReport = [this, &display]() {
             setNeedsRerender();
-            telemetry_.logMetric(TelemetryField::METRIC_REPORT, readable_->uuid.c_str(),
-                                 readable_->telemetryPlacemarkMetrics());
+            auto metrics = readable_->telemetryPlacemarkMetrics();
+            metrics["fw"] = kVersionString;
+            telemetry_.logMetric(TelemetryField::METRIC_REPORT, readable_->uuid.c_str(), metrics);
             static std::vector<std::string> reportMsg = {
                 "Thank you, our team will", "review this page for", "formatting issues."};
             auto *reportPopup = new MsgPopup(display, reportMsg);
