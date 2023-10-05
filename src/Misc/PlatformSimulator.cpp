@@ -1,6 +1,7 @@
 #if SIMULATOR
 
 #include <chrono>
+#include <cstring>
 #include <freertos/FreeRTOS.h>
 #include <string>
 
