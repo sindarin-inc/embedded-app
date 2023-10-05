@@ -320,19 +320,13 @@ auto mainLoop() -> bool {
 
     // Check if there's something to draw and draw it
     uint8_t out;
-    if (FakeEinkET013TT1RenderQueue != nullptr &&
-        xQueueReceiveFromISR(FakeEinkET013TT1RenderQueue, &out, nullptr) == pdTRUE) {
+    if (ledChange || (FakeEinkET013TT1RenderQueue != nullptr &&
+                      xQueueReceiveFromISR(FakeEinkET013TT1RenderQueue, &out, nullptr) == pdTRUE)) {
         SDL_SetRenderTarget(renderer, NULL);
         SDL_RenderCopy(renderer, deviceScreen, NULL, NULL);
         SimDrawScreen();
         SimDrawLeds();
         SDL_RenderPresent(renderer);
-    } else if (ledChange) {
-#if SIM_LED_ON
-        SDL_SetRenderTarget(renderer, NULL);
-        SimDrawLeds();
-        SDL_RenderPresent(renderer);
-#endif
     }
 
     return true;

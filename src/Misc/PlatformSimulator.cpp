@@ -79,6 +79,9 @@ int Millis() {
 }
 
 void DigitalWrite(int pin, int level) {
+    bool oldSimLeds[3];
+    memcpy(oldSimLeds, simLeds, sizeof(oldSimLeds));
+
     if (pin == RED_LED) {
         if (level == LED_OFF) {
             simLeds[0] = false;
@@ -99,7 +102,12 @@ void DigitalWrite(int pin, int level) {
         }
     }
 
-    ledChange = true;
+    // Detect change so we only rerender when there's a change
+    for (int i = 0; i < 3; i++) {
+        if (oldSimLeds[i] != simLeds[i]) {
+            ledChange = true;
+        }
+    }
 }
 
 // mock for reading GPIO, default to logic high
