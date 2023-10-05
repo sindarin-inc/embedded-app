@@ -11,6 +11,15 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
 
         auto &chapterHref = std::dynamic_pointer_cast<EPubPlace>(place)->getHRef();
         auto chapterIndex = readable_->findEPubHRefChapterIdx(chapterHref);
+
+        // If the chapter isn't found in the ToC, find it in the spine and walk backwards until we
+        // find a chapter that is found in the ToC.
+        if (chapterIndex == -1) {
+            auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
+            auto ePubPlace = std::dynamic_pointer_cast<EPubPlace>(place);
+            chapterIndex = stream->getReadableChapterIndex(ePubPlace);
+        }
+
         if (chapterIndex >= 0) {
             auto &chapter = readable_->toc[chapterIndex];
 
@@ -29,7 +38,11 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
             // Determine how many Sol Pages are left in the chapter
             auto chapterPagesRemaining = chapter.endTxtOffset - currentOffset;
             chapterPagesRemainingString =
-                StringFormat("%d pages left", SOL_PAGE_NUMBER(chapterPagesRemaining));
+                StringFormat("%d page%s left", SOL_PAGE_NUMBER(chapterPagesRemaining),
+                             SOL_PAGE_NUMBER(chapterPagesRemaining) == 1 ? "" : "s");
+        } else {
+            log_w("Couldn't find chapter index (%d) for href %s", chapterIndex,
+                  chapterHref.c_str());
         }
     } else {
         size_t lengthOfFile = renderer_.size();

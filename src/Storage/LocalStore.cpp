@@ -21,6 +21,7 @@
 #include "Models/Json.hpp"
 #include "Models/Place.hpp"
 #include "Models/ReadableBookmark.hpp"
+#include "Renderers/RendererStream.hpp"
 #include "Version.hpp"
 #include "sindarin-debug.h"
 
@@ -82,9 +83,9 @@ auto LocalStore::loadReadablesFromFile(ReadablesVector &readables, const std::st
         }
         int fileSize = readableGetUncompressedSize(readable);
 
-        if (fileSize >= 0 && readable->files.size() && fileSize != readable->file().size) {
+        if (fileSize >= 0 && readable->files.size() && fileSize != readable->file(path).size) {
             log_w("File size mismatch for %s (%d on disk vs %d in local store), ignoring",
-                  path.c_str(), fileSize, readable->file().size);
+                  path.c_str(), fileSize, readable->file(path).size);
             continue;
         }
         readables.push_back(readable);
@@ -162,6 +163,16 @@ auto LocalStore::isReadableUnchanged(const ReadablesVector &readables,
                 return false;
             }
 
+            // If we have a txt file and an epub exists among the readable->files(), download it
+            if (RendererStream::parseDocType(path.c_str()) == DocType::TXT) {
+                for (const auto &file : readable->files) {
+                    if (file.filetype == "epub") {
+                        log_i("Found epub file for %s, downloading", path.c_str());
+                        return false;
+                    }
+                }
+            }
+
             // If we have a file object, check that the size matches
             if (r->files.size() > 0 && !ignoreFileSizeCheck) {
                 if (fileSize >= 0 && fileSize != readable->file().size) {
@@ -229,6 +240,24 @@ void LocalStore::storedReadableUuids(const ReadablesVector &readables,
         if (readable->localOnly) {
             continue;
         }
+
+        // If we have a txt file and an epub exists among the readable->files(), don't add it to
+        // storedUuids so it gets downloaded
+        auto path = readableFilePathForReading(readable);
+        if (RendererStream::parseDocType(path.c_str()) == DocType::TXT) {
+            auto foundEpub = false;
+            for (const auto &file : readable->files) {
+                if (file.filetype == "epub") {
+                    log_i("Found epub file for %s, forcing download", path.c_str());
+                    foundEpub = true;
+                    break;
+                }
+            }
+            if (foundEpub) {
+                continue;
+            }
+        }
+
         storedUuids.emplace_back(readable->uuid);
     }
 }
@@ -1498,6 +1527,24 @@ auto LocalStore::getPendingFirmwareUpdate(Firmware &firmware) -> bool {
 
 void LocalStore::resetFirmware() { fileSystem.remove(firmwarePath); }
 
+void LocalStore::migrateTxtPlacemarksToEpubPlacemarks() {
+    // If old txt place still exists, use it to overwrite the new place and then delete the old
+    // txt place
+    std::vector<ReadablesVector *> readablesList = {&books_, &articles_};
+    for (auto &readables : readablesList) {
+        for (auto &readable : *readables) {
+            auto oldPlace = prefs_.oldReadablePlace.get(readable->shortenedUuid.c_str());
+            if (oldPlace > 0) {
+                log_d("Found old place for %s = %u, migrating to new place format",
+                      readable->shortenedUuid.c_str(), oldPlace);
+                auto newPlace = Place::factory(oldPlace);
+                prefs_.readablePlace.set(readable->shortenedUuid.c_str(), newPlace->str().c_str());
+                prefs_.oldReadablePlace.remove(readable->shortenedUuid.c_str());
+            }
+        }
+    }
+}
+
 void LocalStore::garbageCollectPreferences() {
     log_i("Running NVS garbage collection");
     prefs_.logStats();
@@ -1548,6 +1595,9 @@ void LocalStore::migrateIfNeeded() {
             // don't correspond to a readable on the glasses.
             garbageCollectPreferences();
             break;
+        }
+        case 1: {
+            migrateTxtPlacemarksToEpubPlacemarks();
         }
         default:
             log_e("Unknown LocalStore migration version: %" PRIu32, migrationVersion);

@@ -67,21 +67,23 @@ public:
     //! server)
     bool localOnly = false;
 
-    [[nodiscard]] auto file() const -> const ReadableFile & {
+    [[nodiscard]] auto file(const std::string &path = "") const -> const ReadableFile & {
         for (const auto &file : files) {
-            if (file.filetype == "epub") {
+            if (file.filetype == "epub" && (path.empty() || HasSuffix(path, ".epub"))) {
                 return file;
             }
         }
 
         for (const auto &file : files) {
-            if (file.filetype == "utf8_txt") {
+            if (file.filetype == "utf8_txt" &&
+                (path.empty() || HasSuffix(path, ".txt") || HasSuffix(path, ".gz"))) {
                 return file;
             }
         }
 
         for (const auto &file : files) {
-            if (file.filetype == "txt") {
+            if (file.filetype == "txt" &&
+                (path.empty() || HasSuffix(path, ".txt") || HasSuffix(path, ".txt.gz"))) {
                 return file;
             }
         }
@@ -157,10 +159,10 @@ public:
 
     auto definitions(const std::shared_ptr<Place> &placeInReadable,
                      const std::shared_ptr<Place> &placeInDictionaryOut) -> SpiramString {
-        // This code generates the dictionaryString for an entire chapter, making sure to not add
-        // duplicate words within the last 5 words (but duplicates are allowed assuming they are > 5
-        // words ago). It returns the dictionaryString as well as the position of the word closest
-        // to the current page using the placeInDictionaryOut out-value.
+        // This code generates the dictionaryString for an entire chapter, making sure to not
+        // add duplicate words within the last 5 words (but duplicates are allowed assuming they
+        // are > 5 words ago). It returns the dictionaryString as well as the position of the
+        // word closest to the current page using the placeInDictionaryOut out-value.
 
         // NOTE(john): Punting for now since this is going to get included in the epub file
         return "";
@@ -169,8 +171,8 @@ public:
 
         std::deque<SpiramString> lastFiveWords;
 
-        log_d("Looking for definitions for place %s in %zu chapters", placeInReadable.str().c_str(),
-        toc.size());
+        log_d("Looking for definitions for place %s in %zu chapters",
+        placeInReadable.str().c_str(), toc.size());
 
         auto chapter = findChapter(placeInReadable);
         if (chapter == nullptr) {
