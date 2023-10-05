@@ -76,7 +76,7 @@ public:
 
         for (const auto &file : files) {
             if (file.filetype == "utf8_txt" &&
-                (path.empty() || HasSuffix(path, ".txt") || HasSuffix(path, ".gz"))) {
+                (path.empty() || HasSuffix(path, ".txt") || HasSuffix(path, ".txt.gz"))) {
                 return file;
             }
         }
