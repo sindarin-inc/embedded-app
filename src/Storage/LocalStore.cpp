@@ -1598,6 +1598,7 @@ void LocalStore::migrateIfNeeded() {
         }
         case 1: {
             migrateTxtPlacemarksToEpubPlacemarks();
+            break;
         }
         default:
             log_e("Unknown LocalStore migration version: %" PRIu32, migrationVersion);
