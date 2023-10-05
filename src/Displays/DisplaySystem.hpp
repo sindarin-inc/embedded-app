@@ -43,6 +43,9 @@ public:
     DisplaySystem(DisplaySystem const &) = delete;
     ~DisplaySystem() = default;
 
+    static constexpr DisplayRect maxBoundingBox = {5, 5, 246, 246};
+    static constexpr DisplayRect minBoundingBox = {0, 0, 125, 45};
+
     virtual auto setup() -> bool;
 
     static void animationTimerCallback(TimerHandle_t timer);

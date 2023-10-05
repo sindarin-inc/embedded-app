@@ -13,7 +13,7 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
     std::string message;
     // This needs to be pretty big for smaller fonts
     message += "Press arrows to move box around to your liking. Then "
-               "press \ue000 (center) when done! Message repeats.\n\n";
+               "press \ue000 (center) when done!\n\n";
     message +=
         "Beneath a rugged exterior, Pirate Captain O'Malley harbored a love for poetry. Between "
         "skirmishes and treasure hunts, he'd pen verses inspired by the sea's beauty. A stolen, "
@@ -32,7 +32,9 @@ OffsetAdjustScreen::OffsetAdjustScreen(DisplaySystem &display, PreferencesStore 
 
 void OffsetAdjustScreen::render(DisplaySystem &display) {
     DisplayRect currRect = display_.getBoundingBox();
-    display.drawDottedBox(-2, -2, currRect.width + 4, currRect.height + 4, 1, 2);
+    // The natural line spacing handles the vertical padding
+    // The horizontal padding adds one blank pixel column on either side of the rect
+    display.drawDottedBox(-2, 0, currRect.width + 1, currRect.height - 1, 1, 2);
     this->renderer_.renderPage(0, 0, true);
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 }
