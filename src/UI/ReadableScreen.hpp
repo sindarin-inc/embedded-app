@@ -78,6 +78,14 @@ public:
             writeOutBookmarkUpdate();
         };
 
+        popupMenuScreen_.onReport = [this, &display]() {
+            setNeedsRerender();
+            telemetry_.logMetric(TelemetryField::METRIC_REPORT, readable_->uuid.c_str(),
+                                 readable_->telemetryPlacemarkMetrics());
+            popupMenuScreen_.showTemporaryMessage(display,
+                                                  "Thank you, our team will review this page.");
+        };
+
         popupMenuScreen_.onRerender = [this]() { renderPopup_ = true; };
     }
 

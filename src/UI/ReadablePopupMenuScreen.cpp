@@ -58,6 +58,7 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
         archiveMenuItemView_->setHidden(false);
         unarchiveMenuItemView_->setHidden(true);
     }
+
     popupMenuView_.setNeedsLayout();
     setNeedsLayout();
     setFirstLoad();
@@ -113,6 +114,12 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
         log_d("Setting current screen to brightness screen");
         lightingAdjustScreen_.setFirstLoad();
         setCurrentScreen(lightingAdjustScreen_);
+    }));
+
+    addMenuItem(MenuItem("Report", [this]() {
+        log_d("Reporting a problem with the page");
+        onReport();
+        back();
     }));
 
     auto hasToc = readable_->toc.size() >= 1;
@@ -236,3 +243,11 @@ void ReadablePopupMenuScreen::render(DisplaySystem &display) {
         display.updateDisplay(DisplaySystem::UpdateType::FAST_WITH_VCOM_NUDGE);
     }
 };
+
+void ReadablePopupMenuScreen::showTemporaryMessage(DisplaySystem &display,
+                                                   const std::string &message, int duration) {
+    display.setFont(display.style.getFontFamily().settingsFont);
+    display.drawSingleLineOfCenteredText(message);
+    display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
+    Delay(duration);
+}

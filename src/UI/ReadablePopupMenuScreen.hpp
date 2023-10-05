@@ -63,8 +63,12 @@ public:
     void preselectFirstItem();
     void preselectLastItem();
 
+    void showTemporaryMessage(DisplaySystem &display, const std::string &message,
+                              int duration = 2000);
+
     std::function<void()> onMainMenu;
     std::function<void()> onBookmarkToggle;
+    std::function<void()> onReport;
     std::function<void()> onRerender;
 
 protected:
