@@ -12,9 +12,9 @@
 
 class EPubFile : public RendererStream {
 public:
-    EPubFile(FileSystem &fs, const char *filename, const std::shared_ptr<Readable> &readable)
-        : RendererStream(DocType::EPUB), epubUnzipper_(fs, filename), readable_(readable),
-          currentFileBuffer_(nullptr), currentFilePath_("") {
+    EPubFile(FileSystem &fs, const char *filename, std::shared_ptr<Readable> readable)
+        : RendererStream(DocType::EPUB), epubUnzipper_(fs, filename),
+          readable_(std::move(readable)), currentFileBuffer_(nullptr), currentFilePath_("") {
         open();
     }
     ~EPubFile() override { close(); };
@@ -81,7 +81,7 @@ public:
         return 0;
     }
 
-    auto getReadableChapterIndex(std::shared_ptr<EPubPlace> ePubPlace) const -> int;
+    auto getReadableChapterIndex(const std::shared_ptr<EPubPlace> &ePubPlace) const -> int;
 
 private:
     Unzipper epubUnzipper_;
