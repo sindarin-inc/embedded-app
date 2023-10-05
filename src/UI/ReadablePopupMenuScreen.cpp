@@ -129,10 +129,9 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
         setCurrentScreen(lightingAdjustScreen_);
     }));
 
-    addMenuItem(MenuItem("Report", [this]() {
+    addMenuItem(MenuItem("Report page", [this]() {
         log_d("Reporting a problem with the page");
         onReport();
-        back();
     }));
 
     auto hasToc = readable_->toc.size() >= 1;

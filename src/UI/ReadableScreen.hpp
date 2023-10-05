@@ -9,6 +9,7 @@
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/ArrowView.hpp"
 #include "UI/ContainerScreen.hpp"
+#include "UI/MsgPopup.hpp"
 #include "UI/ReadablePopupMenuScreen.hpp"
 #include "UI/Screen.hpp"
 #include "config.h"
@@ -83,8 +84,16 @@ public:
             setNeedsRerender();
             telemetry_.logMetric(TelemetryField::METRIC_REPORT, readable_->uuid.c_str(),
                                  readable_->telemetryPlacemarkMetrics());
-            popupMenuScreen_.showTemporaryMessage(display,
-                                                  "Thank you, our team will review this page.");
+            static std::vector<std::string> reportMsg = {
+                "Thank you, our team will", "review this page for", "formatting issues."};
+            auto *reportPopup = new MsgPopup(display, reportMsg);
+            display.clearDisplay();
+            this->setCurrentScreen(*reportPopup);
+            reportPopup->setBackCallback([this, reportPopup, &display]() {
+                display.clearDisplay();
+                this->setCurrentScreen(*this);
+                delete reportPopup;
+            });
         };
 
         popupMenuScreen_.onRerender = [this]() { renderPopup_ = true; };
