@@ -1532,14 +1532,14 @@ void LocalStore::migrateTxtPlacemarksToEpubPlacemarks() {
     // txt place
     std::vector<ReadablesVector *> readablesList = {&books_, &articles_};
     for (auto &readables : readablesList) {
-        for (auto &readable_ : *readables) {
-            auto oldPlace = prefs_.oldReadablePlace.get(readable_->shortenedUuid.c_str());
+        for (auto &readable : *readables) {
+            auto oldPlace = prefs_.oldReadablePlace.get(readable->shortenedUuid.c_str());
             if (oldPlace > 0) {
                 log_d("Found old place for %s = %u, migrating to new place format",
-                      readable_->shortenedUuid.c_str(), oldPlace);
+                      readable->shortenedUuid.c_str(), oldPlace);
                 auto newPlace = Place::factory(oldPlace);
-                prefs_.readablePlace.set(readable_->shortenedUuid.c_str(), newPlace->str().c_str());
-                prefs_.oldReadablePlace.remove(readable_->shortenedUuid.c_str());
+                prefs_.readablePlace.set(readable->shortenedUuid.c_str(), newPlace->str().c_str());
+                prefs_.oldReadablePlace.remove(readable->shortenedUuid.c_str());
             }
         }
     }
