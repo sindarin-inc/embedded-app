@@ -39,9 +39,9 @@ public:
         currentScreen_ = this;
         renderer_.setStream(stream);
 
-        pageSpeed_ = prefs_.autoPilotSpeed.get().value_or(0);
         std::string thePlace = prefs_.readablePlace.get(readable_->shortenedUuid.c_str());
         log_d("readablePlace: \"%s\"", thePlace.c_str());
+
         if (!prefs_.cesMode.get().value_or(false) && !thePlace.empty()) {
             readable_->place = Place::factory(thePlace);
         } else {
@@ -51,6 +51,7 @@ public:
         // interrupted.
         newPlace_ = readable_->place;
         atEnd_ = this->checkAtEnd();
+        pageSpeed_ = prefs_.autoPilotSpeed.get().value_or(0);
 
         log_d("Found place for %s = %s %s", readable_->shortenedUuid.c_str(),
               readable_->place->str().c_str(), atEnd_ ? "(at end)" : "");

@@ -156,12 +156,13 @@ public:
 
     // Clean up old keys in NVS
     void garbageCollectPreferences();
+    void migrateTxtPlacemarksToEpubPlacemarks();
     void migrateIfNeeded();
 
     FileSystem &fileSystem;
 
 private:
-    const uint32_t latestMigrationVersion_ = 1;
+    const uint32_t latestMigrationVersion_ = 2;
     PreferencesStore &prefs_;
     Battery &battery_;
     Telemetry &telemetry_;

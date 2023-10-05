@@ -96,6 +96,15 @@ void ReadableScreen::updateBookmarkStatus() {
     while (ReadOneBookmark(bookmarkFile, bookmark)) {
         // A decent heuristic for now. If the midpoint of the bookmark is within
         // the current page range, then turn the bookmark on for this page.
+
+        // Ensure that the current chapter matches the place in the bookmark
+        if (bookmark.firstPlace->isFor(DocType::EPUB)) {
+            if (std::dynamic_pointer_cast<EPubPlace>(bookmark.firstPlace)->getHRef() !=
+                std::dynamic_pointer_cast<EPubPlace>(readable_->place)->getHRef()) {
+                continue;
+            }
+        }
+
         uint32_t averagePlace =
             (bookmark.lastPlace->getOffset() - bookmark.firstPlace->getOffset()) / 2 +
             bookmark.firstPlace->getOffset();
