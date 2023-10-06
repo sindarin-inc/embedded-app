@@ -149,7 +149,7 @@ private:
 
     using Tags = std::unordered_map<std::string, Tag>;
     using Entities = std::unordered_map<std::string, const char *>;
-    using SuperscriptNumbers = std::array<const char *, 10>;
+    using Digits = std::array<const char *, 10>;
 
     // Hash HTML tags
     static Tags tags;
@@ -158,7 +158,10 @@ private:
     static Entities entities;
 
     // Superscript Numbers UTF-8 codification
-    static SuperscriptNumbers superscriptNumbers;
+    static Digits superscriptNumbers;
+
+    // Subscript Numbers UTF-8 codification
+    static Digits subscriptNumbers;
 
     // Where the tokenizer will start to parse tokens
     StreamPlace fromPlace_;
@@ -169,6 +172,9 @@ private:
 
     // true when a <SUP></SUP> if being processed
     bool superscript_;
+
+    // true when a <SUB></SUB> if being processed
+    bool subscript_;
 
     // Used to add space qty that follow a token
     Token *lastToken_;

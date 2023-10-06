@@ -154,7 +154,7 @@ EPubTokenizer::Entities EPubTokenizer::entities
     {"euro",   "\xE2\x80\xAC"}, // euro sign, U+20AC NEW
 };
 
-EPubTokenizer::SuperscriptNumbers EPubTokenizer::superscriptNumbers
+EPubTokenizer::Digits EPubTokenizer::superscriptNumbers
 { 
     "\xE2\x81\xB0",  // 0
     "\xC2\xB9",      // 1
@@ -166,6 +166,20 @@ EPubTokenizer::SuperscriptNumbers EPubTokenizer::superscriptNumbers
     "\xE2\x81\xB7",  // 7
     "\xE2\x81\xB8",  // 8
     "\xE2\x81\xB9",  // 9
+};
+
+EPubTokenizer::Digits EPubTokenizer::subscriptNumbers
+{ 
+    "\xE2\x82\x80",  // 0
+    "\xE2\x82\x81",  // 1
+    "\xE2\x82\x82",  // 2
+    "\xE2\x82\x83",  // 3
+    "\xE2\x82\x84",  // 4
+    "\xE2\x82\x85",  // 5
+    "\xE2\x82\x86",  // 6
+    "\xE2\x82\x87",  // 7
+    "\xE2\x82\x88",  // 8
+    "\xE2\x82\x89",  // 9
 };
 
 // clang-format on
@@ -192,6 +206,7 @@ auto EPubTokenizer::searchStart(pugi::xml_node node) -> uint32_t {
             case Tag::PICTURE:
                 return node.offset_debug();
             case Tag::SUP:
+            case Tag::SUB:
                 return 0;
             default:
                 break;
@@ -446,9 +461,9 @@ auto EPubTokenizer::forwardToNextPageOffset(pugi::xml_node node) const -> uint32
 //
 // 6) To have spaces properly added between text tokens (words)
 //
-// 7) To have supercript properly processed
+// 7) To have supercript/subscript properly processed
 //
-//    As a superscript consitute a special kind of word, the state of displaying superscripts
+//    As superscripts/subscripts consitute special kind of words, the state of displaying them
 //    must be propagated through the interpreter recursion
 //
 // 8) To add brackets around hyperlinks
@@ -507,9 +522,10 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
     lastToken_ = nullptr; // To which token spaces will be attached to (as a count)
 
-    // ----> 6) To have supercript properly processed
+    // ----> 6) To have supercript/subscript properly processed
 
     superscript_ = false;
+    subscript_ = false;
 
     // ----> 7) To add brackets around hyperlinks
 
@@ -1017,6 +1033,13 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 superscript_ = true;
                 break;
 
+            case Tag::SUB:
+                if (tokenizingStarted_ && closeTextToken()) {
+                    return false;
+                }
+                subscript_ = true;
+                break;
+
             case Tag::OL:
                 if (tokenizingStarted_) {
                     if (closeTextToken()) {
@@ -1127,8 +1150,8 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     return false;
                 }
                 const pugi::char_t *v = node.child_value();
-                if (!superscript_ && (v[0] != '\0') && (v[0] != '(') && (v[0] != '[') &&
-                    (v[0] != '<') && (v[0] != '{')) {
+                if (!superscript_ && !subscript_ && (v[0] != '\0') && (v[0] != '(') &&
+                    (v[0] != '[') && (v[0] != '<') && (v[0] != '{')) {
                     preText_[0] = '[';
                     postText_[0] = ']';
                     preText_[1] = postText_[1] = '\0';
@@ -1259,6 +1282,13 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
 
                 case Tag::SUP:
                     superscript_ = false;
+                    if (tokenizingStarted_ && closeTextToken()) {
+                        return false;
+                    }
+                    break;
+
+                case Tag::SUB:
+                    subscript_ = false;
                     if (tokenizingStarted_ && closeTextToken()) {
                         return false;
                     }
@@ -1530,6 +1560,39 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
             do {
                 if ((curChar >= '0') && (curChar <= '9')) {
                     const char *script = superscriptNumbers[curChar - '0'];
+                    while (*script) {
+                        if (!tokens_.cStrIsFull()) {
+                            tokens_.addByte(newToken, *script++);
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                nextByte();
+            } while (curChar != 0);
+
+            if (newToken.length > 0) {
+                tokens_.endOfCStr();
+                lastToken_ = &newToken; // Must be done before calling addTokenToPage()
+
+                // After the following call, newToken may become irrelevant
+                addTokenToPage(newToken);
+            }
+
+        } else if (subscript_) {
+            subscript_ = false;
+            Token &newToken = tokens_.getNextAvailable();
+            newToken = {.cStr = nullptr,
+                        .picture = nullptr,
+                        .streamPlace = {streamOffset, currentFileIdx_},
+                        .pixWidth = 0,
+                        .pixHeight = 0,
+                        .length = 0,
+                        .tokenId = TokenId::TEXT,
+                        .spacesAfter = 0};
+            do {
+                if ((curChar >= '0') && (curChar <= '9')) {
+                    const char *script = subscriptNumbers[curChar - '0'];
                     while (*script) {
                         if (!tokens_.cStrIsFull()) {
                             tokens_.addByte(newToken, *script++);
