@@ -145,9 +145,6 @@ private:
     // true if the page is complete
     bool pageCompleted_;
 
-    // used by the <a> processing to signify the need to add a ']' at the text's end.
-    bool hyperlinkRightBracket_;
-
     // used for <h1>..<h6>
     bool startOfHeader_;
 

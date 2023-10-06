@@ -427,7 +427,8 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
     // if (stream_->isAnArticle()) log_w("article");
 
-    // Not pretty, but limits the number of parameters to pass to the interpret() method
+    // Not pretty, but limits the number of parameters to pass to the interpret() method as it is
+    // recursively called
     fromPlace_ = fromPlace;
     toPlace_ = toPlace;
     backwards_ = backwards;
@@ -436,30 +437,100 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
               (backwards ? "YES, Up to: " : "NO"),
               (toPlace == nullptr ? "" : toPlace->str().c_str()));
 
-    lastToken_ = nullptr;
+    // Here are the elements that constitute the global state of the tokenizer. This state must be
+    // maintained up to date in both forward and backward displacements. The objectives are
+    //
+    // 1) To control when it's time to start creating tokens
+    //
+    // 2) To permit the page to be displayed to have proper indentation
+    //
+    // 3) To limit empty vertical space at beginning of pages
+    //
+    // 4) To reconduct the last token not part of the preceding page
+    //
+    //    As the process of generating a page uses a one token look-ahead approach, reconduct the
+    //    last token processed by the pager at the end of the preceding page to be the first one on
+    //    the new page
+    //
+    // 5) To have header paragraphs (<h1> .. <h6>) not being orphaned
+    //
+    //    Ensure that headers are displayed on the same page of the following first
+    //    line of text. A TokenId::HTEXT will be used for the first header word.
+    //
+    // 6) To have spaces properly added between text tokens (words)
+    //
+    // 7) To have supercript properly processed
+    //
+    //    As a superscript consitute a special kind of word, the state of displaying superscripts
+    //    must be propagated through the interpreter recursion
+    //
+    // 8) To add brackets around hyperlinks
+    //
+    // 9) To maintain the current bytes offset in the current chapter
+    //
+    // 10) To remove paragraph indentation in tables' rows
+    //
+    // 11) To complete last word token in pcdata
+    //
+    //     The last word present in a string needs to be completed only when it is safe to do so.
+    //     Some formatting tags like <b>, <i>, <u> may cut a word, having an impact of misplaced
+    //     newlines if the first part of a word is found at the end of a line.
+    //
+    // 12) When the page to be displayed is ready
+    //
+    // ----
+
+    // ----> 1) to control when it's time to start creating tokens
 
     tokenizingStarted_ = backwards;
-    beginningOfPage_ = backwards;
+    currentStreamOffset_ = 0;
 
-    pageCompleted_ = false;
-    superscript_ = false;
+    // ----> 2) to permit the page to be displayed to have proper indentation
 
     listLevel_ = -1;
 
     savedBlockquoteLeftIndent_ = 0;
     savedBlockquoteRightIndent_ = 0;
     savedRowIndent_ = 0;
-    inTableRow_ = false;
 
-    hyperlinkRightBracket_ = false;
+    // ----> 3) to limit empty vertical space at beginning of pages
+
+    beginningOfPage_ = backwards;
+
+    // ----> 4) To have header paragraphs (<h1> .. <h6>) not being orphaned
+
     startOfHeader_ = false;
+
+    // ----> 5) To have spaces properly added between text tokens (words)
+
+    lastToken_ = nullptr; // To which token spaces will be attached to (as a count)
+
+    // ----> 6) To have supercript properly processed
+
+    superscript_ = false;
+
+    // ----> 7) To add brackets around hyperlinks
+
+    preText_[0] = postText_[0] = '\0';
+
+    // ----> 8) To maintain the current bytes offset in the current chapter
 
     currentTxtOffset_ = 0;
     currentPageTxtOffset_ = 0;
 
+    // ----> 9) To remove paragraph indentation in tables' rows
+
+    inTableRow_ = false;
+
+    // ----> 10) To complete last word token in pcdata
+
     textToken_ = nullptr;
 
-    preText_[0] = postText_[0] = '\0';
+    // ----> 11) When the page to be displayed is ready
+
+    pageCompleted_ = false;
+
+    // ---
 
     tokens_.clear();
     pager_.clear();
