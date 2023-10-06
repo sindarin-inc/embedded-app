@@ -80,5 +80,5 @@ auto EPubOpf::getReadableChapterIndex(const std::string &href) const -> int {
         spineIdx -= 1;
     }
 
-    return 0;
+    return -1;
 }
