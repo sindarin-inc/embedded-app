@@ -9,6 +9,7 @@ class MsgPopup : public Screen {
 
 private:
     BoxView boxView_;
+    BoxView backgroundView_;
     DisplaySystem &display_;
     const std::vector<std::string> &msg_;
 
@@ -16,7 +17,7 @@ private:
 
 public:
     MsgPopup(DisplaySystem &display, const std::vector<std::string> &msg)
-        : boxView_(display, 8), display_(display), msg_(msg) {}
+        : boxView_(display, 8), backgroundView_(display, 8), display_(display), msg_(msg) {}
     ~MsgPopup() override = default;
 
     void render(DisplaySystem &display) override {
@@ -38,6 +39,14 @@ public:
         Rect rect = {.origin = {.x = (display_.width() >> 1) - (width >> 1),
                                 .y = (display_.height() >> 1) - (height >> 1)},
                      .size = {.width = width, .height = height}};
+        Rect backgroundRect = {
+            .origin = {.x = rect.origin.x - 5, .y = rect.origin.y - 5},
+            .size = {.width = rect.size.width + 10, .height = rect.size.height + 10}};
+
+        backgroundView_.fillColor = display_.bg;
+        backgroundView_.strokeColor = display_.bg;
+
+        backgroundView_.drawInRect(backgroundRect);
 
         boxView_.drawInRect(rect);
 
