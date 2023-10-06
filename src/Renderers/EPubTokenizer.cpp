@@ -421,6 +421,51 @@ auto EPubTokenizer::forwardToNextPageOffset(pugi::xml_node node) const -> uint32
 //
 // For backward displacements, parsing starts at the beginning of the DOM and will end when the
 // toPlace argument is reached (it is the start of the following page).
+//
+// ----
+//
+// Here are the elements that constitute the global state of the tokenizer. This state must be
+// maintained up to date in both forward and backward displacements. The objectives are
+//
+// 1) To control when it's time to start creating tokens
+//
+// 2) To permit the page to be displayed to have proper indentation
+//
+// 3) To limit empty vertical space at beginning of pages
+//
+// 4) To reconduct the last token not part of the preceding page
+//
+//    As the process of generating a page uses a one token look-ahead approach, reconduct the
+//    last token processed by the pager at the end of the preceding page to be the first one on
+//    the new page
+//
+// 5) To have header paragraphs (<h1> .. <h6>) not being orphaned
+//
+//    Ensure that headers are displayed on the same page of the following first
+//    line of text. A TokenId::HTEXT will be used for the first header word.
+//
+// 6) To have spaces properly added between text tokens (words)
+//
+// 7) To have supercript properly processed
+//
+//    As a superscript consitute a special kind of word, the state of displaying superscripts
+//    must be propagated through the interpreter recursion
+//
+// 8) To add brackets around hyperlinks
+//
+// 9) To maintain the current bytes offset in the current chapter
+//
+// 10) To remove paragraph indentation in tables' rows
+//
+// 11) To complete last word token in pcdata
+//
+//     The last word present in a string needs to be completed only when it is safe to do so.
+//     Some formatting tags like <b>, <i>, <u> may cut a word, having an impact of misplaced
+//     newlines if the first part of a word is found at the end of a line.
+//
+// 12) When the page to be displayed is ready
+//
+// ----
 
 auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, StreamPlace *toPlace)
     -> std::pair<StreamPlace, StreamPlace> {
@@ -436,49 +481,6 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
     REND_WLOG("Opening file at streamPlace %s, backwards: %s%s", fromPlace.str().c_str(),
               (backwards ? "YES, Up to: " : "NO"),
               (toPlace == nullptr ? "" : toPlace->str().c_str()));
-
-    // Here are the elements that constitute the global state of the tokenizer. This state must be
-    // maintained up to date in both forward and backward displacements. The objectives are
-    //
-    // 1) To control when it's time to start creating tokens
-    //
-    // 2) To permit the page to be displayed to have proper indentation
-    //
-    // 3) To limit empty vertical space at beginning of pages
-    //
-    // 4) To reconduct the last token not part of the preceding page
-    //
-    //    As the process of generating a page uses a one token look-ahead approach, reconduct the
-    //    last token processed by the pager at the end of the preceding page to be the first one on
-    //    the new page
-    //
-    // 5) To have header paragraphs (<h1> .. <h6>) not being orphaned
-    //
-    //    Ensure that headers are displayed on the same page of the following first
-    //    line of text. A TokenId::HTEXT will be used for the first header word.
-    //
-    // 6) To have spaces properly added between text tokens (words)
-    //
-    // 7) To have supercript properly processed
-    //
-    //    As a superscript consitute a special kind of word, the state of displaying superscripts
-    //    must be propagated through the interpreter recursion
-    //
-    // 8) To add brackets around hyperlinks
-    //
-    // 9) To maintain the current bytes offset in the current chapter
-    //
-    // 10) To remove paragraph indentation in tables' rows
-    //
-    // 11) To complete last word token in pcdata
-    //
-    //     The last word present in a string needs to be completed only when it is safe to do so.
-    //     Some formatting tags like <b>, <i>, <u> may cut a word, having an impact of misplaced
-    //     newlines if the first part of a word is found at the end of a line.
-    //
-    // 12) When the page to be displayed is ready
-    //
-    // ----
 
     // ----> 1) to control when it's time to start creating tokens
 
