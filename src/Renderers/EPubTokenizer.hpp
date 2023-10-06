@@ -39,6 +39,43 @@
 //   build pages one at a time until the *toPlace* is reached. The last page built is then the one
 //   to be displayed.
 //
+// See the documentation about the tokenizer global state variables in the EPubTokenizer.cpp file.
+//
+// Some caution about modifying the EPub tokenizer:
+//
+// - Always respect the ONE TOKEN LOOKEHEAD principle: The Pager expects to take the proper action
+// to
+//   format the current page using only one token look-ahead. You will not get a good result if more
+//   than one token is used to format information at a specific offset in the XHTML input file.
+//
+//   The only case that is allowed to bypass this rule is when sending NEWLINE and ENDPARAGRAPH
+//   tokens. Those must be included only when not at beginning of a page being constructed. See the
+//   existing code for examples on how to ensure that using the beginingOfPage_ variable.
+//
+// - The Tokens class is both responsible of managing the tokens vector and the characters pool. The
+//   only information that can be sent to the characters pool is the strings built in support of the
+//   tokens that are defined with the following Token types: TEXT, ITEXT, HTEXT, PICTURE and
+//   EPICTURE. For these types, characters that are added to the token must use on of the following
+//   Tokens class methods:
+//
+//       void addByte(Token &token, uint8_t b);
+//       void addBytes(Token &token, const char *str);
+//       void addStr(Token &token, const std::string &str);
+//       void insertBytesAtEnd(Token &token, const char *str);
+//
+//   For the first two methods, the corresponding string created in the pool *must* be closed once
+//   it is complete with a call to the following Tokens method (will add a null character to the end
+//   of the string):
+//
+//       inline void endOfCStr();
+//
+//
+//   For all the other token types, the text *must* come from constant expressions and added to the
+//   token when calling the addTokenToPage() method.
+//
+// - When creating a new Token, *NEVER* initialize the .cStr and .length to something else than
+//   nullptr and 0.
+//
 // TBC
 
 class EPubTokenizer : public Tokenizer {
@@ -145,9 +182,6 @@ private:
     // true if the page is complete
     bool pageCompleted_;
 
-    // used by the <a> processing to signify the need to add a ']' at the text's end.
-    bool hyperlinkRightBracket_;
-
     // used for <h1>..<h6>
     bool startOfHeader_;
 
@@ -179,6 +213,8 @@ private:
     uint16_t savedBlockquoteLeftIndent_{};
     uint16_t savedBlockquoteRightIndent_{};
     uint16_t savedRowIndent_{}; // table rows;
+
+    bool inTableRow_;
 
     static const constexpr char *LEVEL_CHAR = "-o-o-";
 
