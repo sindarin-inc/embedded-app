@@ -88,8 +88,8 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
             newLine(NEWLINE_DECI_LINE_HEIGHT);
             height = ENDPARAGRAPH_DECI_LINE_HEIGHT;
         }
-        if (!dontStop && ((currentPageDecilineHeight_ + height + ENDPARAGRAPH_DECI_LINE_HEIGHT) >
-                          maxDeciLines_)) {
+        if (!dontStop &&
+            ((currentPageDecilineHeight_ + height + HRULE_DECI_LINE_HEIGHT) > maxDeciLines_)) {
             currentPageDecilineHeight_ += ENDPARAGRAPH_DECI_LINE_HEIGHT;
             setNextPagePlace(token.streamPlace);
             REND_WLOG("Page completed: %" PRIu16 " decilines. Max: %" PRIu16,
@@ -98,7 +98,7 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
         }
         lines_[linesTailIdx_].tokenCount = 1;
         lines_[linesTailIdx_].tokenIdx = tokens_.getLastIdx();
-        newLine(height + ENDPARAGRAPH_DECI_LINE_HEIGHT);
+        newLine(height + HRULE_DECI_LINE_HEIGHT);
     } break;
 
     case TokenId::ENDPARAGRAPH:
@@ -159,6 +159,45 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
         lines_[linesTailIdx_].tokenCount = 1;
         lines_[linesTailIdx_].tokenIdx = tokens_.getLastIdx();
         newLine(deciHeight + 4);
+    } break;
+
+    case TokenId::BTABLE: {
+        // Will show the cStr (normally {TABLE}) followed by a newline. Add an ENDPARAGRAPH before
+        // if not at beginning of a page and the previous line is to be completed.
+        uint16_t height = NEWLINE_DECI_LINE_HEIGHT;
+        if (lines_[linesTailIdx_].tokenCount > 0) {
+            newLine(NEWLINE_DECI_LINE_HEIGHT);
+            height += ENDPARAGRAPH_DECI_LINE_HEIGHT;
+        }
+        if (!dontStop && ((currentPageDecilineHeight_ + height) > maxDeciLines_)) {
+            currentPageDecilineHeight_ += ENDPARAGRAPH_DECI_LINE_HEIGHT;
+            setNextPagePlace(token.streamPlace);
+            REND_WLOG("Page completed: %" PRIu16 " decilines. Max: %" PRIu16,
+                      currentPageDecilineHeight_, maxDeciLines_);
+            return false;
+        }
+        lines_[linesTailIdx_].tokenCount = 1;
+        lines_[linesTailIdx_].tokenIdx = tokens_.getLastIdx();
+        newLine(height);
+    } break;
+
+    case TokenId::ETABLE: {
+        // Will show a HRULE followed with the cStr text (normally {END TABLE}) and an ENDPARAGRAPH
+        // if enough space on page.
+        uint16_t height = NEWLINE_DECI_LINE_HEIGHT + HRULE_DECI_LINE_HEIGHT;
+        if (lines_[linesTailIdx_].tokenCount > 0) {
+            newLine(NEWLINE_DECI_LINE_HEIGHT);
+        }
+        if (!dontStop && ((currentPageDecilineHeight_ + height) > maxDeciLines_)) {
+            currentPageDecilineHeight_ += ENDPARAGRAPH_DECI_LINE_HEIGHT;
+            setNextPagePlace(token.streamPlace);
+            REND_WLOG("Page completed: %" PRIu16 " decilines. Max: %" PRIu16,
+                      currentPageDecilineHeight_, maxDeciLines_);
+            return false;
+        }
+        lines_[linesTailIdx_].tokenCount = 1;
+        lines_[linesTailIdx_].tokenIdx = tokens_.getLastIdx();
+        newLine(height + ENDPARAGRAPH_DECI_LINE_HEIGHT);
     } break;
     }
 
@@ -374,6 +413,30 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
             uint16_t y = deciToPix(deciY + (lines_[lineIdx].deciHeight / 2));
             display_.drawLine(0, y, display_.width(), y, display_.fg);
             deciY += lines_[lineIdx].deciHeight;
+        } break;
+
+        case TokenId::BTABLE:
+            REND_WLOG("[%" PRIu16 "] %s: <BTABLE>", lineIdx, token.streamPlace.str().c_str());
+            if (lines_[lineIdx].deciHeight > NEWLINE_DECI_LINE_HEIGHT) {
+                deciY += ENDPARAGRAPH_DECI_LINE_HEIGHT;
+            }
+            Line line;
+            getLine(lines_[lineIdx], line);
+            display_.drawSingleLineOfText(line.data(), lines_[lineIdx].leftIndent,
+                                          deciToPix(deciY));
+            deciY += NEWLINE_DECI_LINE_HEIGHT;
+            break;
+
+        case TokenId::ETABLE: {
+            REND_WLOG("[%" PRIu16 "] %s: <ETABLE>", lineIdx, token.streamPlace.str().c_str());
+            uint16_t y = deciToPix(deciY + (HRULE_DECI_LINE_HEIGHT / 2));
+            display_.drawLine(0, y, display_.width(), y, display_.fg);
+            deciY += HRULE_DECI_LINE_HEIGHT;
+            Line line;
+            getLine(lines_[lineIdx], line);
+            display_.drawSingleLineOfText(line.data(), lines_[lineIdx].leftIndent,
+                                          deciToPix(deciY));
+            deciY += NEWLINE_DECI_LINE_HEIGHT + ENDPARAGRAPH_DECI_LINE_HEIGHT;
         } break;
 
         default:

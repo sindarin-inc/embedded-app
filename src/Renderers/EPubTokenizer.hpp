@@ -180,6 +180,8 @@ private:
     uint16_t savedBlockquoteRightIndent_{};
     uint16_t savedRowIndent_{}; // table rows;
 
+    bool inTableRow_;
+
     static const constexpr char *LEVEL_CHAR = "-o-o-";
 
     // Could eventually be made smaller.

@@ -75,6 +75,7 @@ static constexpr uint32_t LOCATION_ERROR = 0xFFFFFFFF;
 
 static constexpr uint16_t NEWLINE_DECI_LINE_HEIGHT = 10;
 static constexpr uint16_t ENDPARAGRAPH_DECI_LINE_HEIGHT = 4;
+static constexpr uint16_t HRULE_DECI_LINE_HEIGHT = 4;
 
 // A Page array must be large enough to accommodate the need to load a complete display page,
 // but also able to load a complete paragraph that can precede the page when the back page
@@ -115,7 +116,9 @@ enum class TokenId : uint16_t {
     EMDASH = 256,      // Unicode Em Dash (U+2014) "—"
     PICTURE = 512,     // Whole screen picture
     EPICTURE = 1024,   // Embedded in page picture (between paragraphs) More than one can be present
-    HRULE = 2048       // Horizontal line
+    HRULE = 2048,      // Horizontal line
+    BTABLE = 4096,     // Beginning of a table
+    ETABLE = 8192      // End of table
 };
 
 #if REND_DEBUGGING
