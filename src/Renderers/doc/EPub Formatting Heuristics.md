@@ -16,6 +16,8 @@ Partially working: For header tags (**`<h1>..<h6>`**), the first line of the fol
 
 Nested lists are allowed up to 5 levels. Both Ordered and Unordered lists can be used in nested lists. Each level of a nested list is indented from the preceding level. Items can be composed of paragraphs and blockquotes and are indented as well. 
 
+**`<table>`** : Table formatting is partial: a table will start with "{TABLE}" shown at the beginning, and "{END TABLE}" shown at the end. Every row is separated with an horizontal rule. Rows are usually having one or more "cells" into them that are normally being shown in different columns. The renderer keeps the cells in separate lines: The screen width, the complexity of showing properly columns render the task of displaying them properly beyond the current capability: often the same cell must be aligned inside many columns or many rows, CSS is often used to control various aspect of cell formatting. Could be revisited in a subsequent version if better rendering solutions are identified.
+
 **`<blockquote>`** : Left and Right indent are added to paragraphs that are part of a blockquote. When located outside of any lists, the left and right indent are set to 12 pixels. When located inside an item of a list, 8 pixels are added to the item's left indent. The right indent remains at 12 pixels.
 
 **`Space`** : Multiple space characters in a row are replaced with a single space. Paragraphs that contain only space characters are eliminated from the output (Often used to do easy placement in pages instead of using CSS).
@@ -170,7 +172,7 @@ Nested lists are allowed up to 5 levels. Both Ordered and Unordered lists can be
 
 ### Some notes:
 
-- As we are not using CSS to format the content, there is many cases for which the pages could be showing things that are not expected. For example, items could be made hidden or displayed with specific characteristics depending on some information in CSS, like @media type. Pictures could be shown in different flavors, sometimes being show two or three times in a row, the CSS-based selection not being interpreted.
+- As we are not using CSS to format the content, there is many cases for which the pages could be showing things that are not expected. For example, items could be made hidden or displayed with specific characteristics depending on some information in CSS, like @media type that we don't interpret. Pictures could be shown in different flavors, sometimes being show two or three times in a row, the CSS-based selection not being interpreted.
 
 - Some formatting is made using HTML tags, doing a nice job for larger displays, but not that good for small screens like the Sol glasses.
 
