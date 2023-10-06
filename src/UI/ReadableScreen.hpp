@@ -9,8 +9,10 @@
 #include "Storage/PreferencesStore.hpp"
 #include "UI/Components/ArrowView.hpp"
 #include "UI/ContainerScreen.hpp"
+#include "UI/MsgPopup.hpp"
 #include "UI/ReadablePopupMenuScreen.hpp"
 #include "UI/Screen.hpp"
+#include "Version.hpp"
 #include "config.h"
 
 enum LastArrowPress {
@@ -77,6 +79,23 @@ public:
             inBookmark_ = !inBookmark_;
             setNeedsRerender();
             writeOutBookmarkUpdate();
+        };
+
+        popupMenuScreen_.onReport = [this, &display]() {
+            setNeedsRerender();
+            auto metrics = readable_->telemetryPlacemarkMetrics();
+            metrics["fw"] = kVersionString;
+            telemetry_.logMetric(TelemetryField::METRIC_REPORT, readable_->uuid.c_str(), metrics);
+            static std::vector<std::string> reportMsg = {
+                "Thank you, our team will", "review this page for", "formatting issues."};
+            auto *reportPopup = new MsgPopup(display, reportMsg);
+            display.clearDisplay();
+            this->setCurrentScreen(*reportPopup);
+            reportPopup->setBackCallback([this, reportPopup, &display]() {
+                display.clearDisplay();
+                this->setCurrentScreen(*this);
+                delete reportPopup;
+            });
         };
 
         popupMenuScreen_.onRerender = [this]() { renderPopup_ = true; };

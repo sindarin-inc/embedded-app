@@ -71,9 +71,8 @@ auto DownloadFile(
             log_d("Chunked transmission of File-Size %d", contentLength);
         } else {
             // if we somehow don't have a content length header, consider it an error for now
-            log_e(
-                "Server did not return a proper content length for %s, retrieved length: %" PRIu16,
-                url, contentLength);
+            log_e("Server did not return a proper content length for %s, retrieved length: %d", url,
+                  contentLength);
             return ERR_CONTENT_LENGTH;
         }
     }
