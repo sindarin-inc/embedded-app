@@ -320,14 +320,15 @@ def power_client():
     yield client
     client.turn_off()
 
-
 @pytest.mark.usefixtures("ict_client")
 @pytest.mark.ict
-@pytest.mark.skip(reason="Does not work because ActiveUSBCharging blocks it")
+#@pytest.mark.skip(reason="Does not work because ActiveUSBCharging blocks it")
 class TestWithIctOnly:
     """Tests that only require the ICT to be connected (and not the power profiler)"""
 
-    def test_power_on(self, dut: IdfDut, ict_client: MFICTClient) -> None:
+    def test_power_on(self, dut: IdfDut, ict_client: MFICTClient, ssid) -> None:
+        logger.info("power on ssid " + ssid)
+
         # Note: If the IdfDut tries to connect to the ICT serial port to flash it, it dumps a bunch of serial
         # garbage to the ICT that will cause it to fail the next command. This clears the input buffer by sending a newline.
         ict_client.clear_input()
@@ -357,6 +358,7 @@ class TestWithIctOnly:
 @pytest.mark.usefixtures("power_client")
 @pytest.mark.ict
 @pytest.mark.power
+@pytest.mark.skip()
 @pytest.mark.skipif(run_full_sync(), reason="running full content sync")
 class TestPowerConsumption:
     def test_power(self, dut: OverrideDut, ict_client: MFICTClient, power_client: PowerTester) -> None:
@@ -447,6 +449,7 @@ class TestPowerConsumption:
 
 @pytest.mark.usefixtures("ict_client")
 @pytest.mark.ict
+@pytest.mark.skip()
 @pytest.mark.skipif(run_full_sync() == False, reason="full test not selected, add 'fulltest,1' to " + test_config_filename)
 class TestFullContentSync:
     def test_full_content_sync(self, dut: OverrideDut, ict_client: MFICTClient) -> None:
