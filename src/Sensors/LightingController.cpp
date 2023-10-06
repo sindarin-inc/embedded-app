@@ -74,6 +74,9 @@ void LightingController::enableLighting(int fadeMs) {
     }
 }
 
+void LightingController::enableOnlyIncreaseMode() { onlyIncreaseMode_ = true; }
+void LightingController::disableOnlyIncreaseMode() { onlyIncreaseMode_ = false; }
+
 void LightingController::setOverrideValuePercent(int percent, bool maintainLightSensor) {
     auto dutyCycle = percent / 7;
     if (dutyCycle == 0) {
@@ -117,7 +120,6 @@ auto LightingController::readAmbientLightData(uint16_t &channel1, uint16_t &chan
     }
     return true;
 }
-
 void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
     if (lightsOut_) {
         return;
@@ -137,10 +139,16 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
     movingAverage_.add(std::min(channel1, uint16_t(1000)));
     auto average = movingAverage_.average();
 
-    currentDutyCycle_ = MapRange(average, 0, 1000, static_cast<int>(GetMinLightingDutyCycle()),
-                                 static_cast<int>(GetMaxLightingDutyCycle()));
-    // log_d("Light sensor ch1: %d ch0: %d average: %d setting: %d", channel1, channel0, average,
-    // currentDutyCycle_);
+    int newDutyCycle = MapRange(average, 0, 1000, static_cast<int>(GetMinLightingDutyCycle()),
+                                static_cast<int>(GetMaxLightingDutyCycle()));
+
+    // If onlyIncreaseMode_ is enabled, only increase the duty cycle if the new value is greater
+    // than current
+    if (onlyIncreaseMode_ && newDutyCycle < currentDutyCycle_) {
+        return;
+    }
+
+    currentDutyCycle_ = newDutyCycle;
     setCurrentDutyCycle(currentDutyCycle_, fadeMs);
 }
 
