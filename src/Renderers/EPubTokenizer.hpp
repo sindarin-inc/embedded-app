@@ -149,7 +149,7 @@ private:
 
     using Tags = std::unordered_map<std::string, Tag>;
     using Entities = std::unordered_map<std::string, const char *>;
-    using Digits = std::array<const char *, 10>;
+    using Characters = std::unordered_map<std::string, const char *>;
 
     // Hash HTML tags
     static Tags tags;
@@ -157,11 +157,11 @@ private:
     // Hash XHTML character entities (like &nbsp;) and their UTF-8 codification
     static Entities entities;
 
-    // Superscript Numbers UTF-8 codification
-    static Digits superscriptNumbers;
+    // Superscript Characters UTF-8 codification
+    static Characters superscriptCharacters;
 
-    // Subscript Numbers UTF-8 codification
-    static Digits subscriptNumbers;
+    // Subscript Characters UTF-8 codification
+    static Characters subscriptCharacters;
 
     // Where the tokenizer will start to parse tokens
     StreamPlace fromPlace_;

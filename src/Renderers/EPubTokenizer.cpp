@@ -1,5 +1,7 @@
 #include "EPubTokenizer.hpp"
 
+#include <string>
+
 // clang-format off
 
 // ToDo: Some cleanup required... there maybe more tags than required here
@@ -154,32 +156,152 @@ EPubTokenizer::Entities EPubTokenizer::entities
     {"euro",   "\xE2\x80\xAC"}, // euro sign, U+20AC NEW
 };
 
-EPubTokenizer::Digits EPubTokenizer::superscriptNumbers
-{ 
-    "\xE2\x81\xB0",  // 0
-    "\xC2\xB9",      // 1
-    "\xC2\xB2",      // 2
-    "\xC2\xB3",      // 3
-    "\xE2\x81\xB4",  // 4
-    "\xE2\x81\xB5",  // 5
-    "\xE2\x81\xB6",  // 6
-    "\xE2\x81\xB7",  // 7
-    "\xE2\x81\xB8",  // 8
-    "\xE2\x81\xB9",  // 9
+EPubTokenizer::Characters EPubTokenizer::superscriptCharacters
+{
+    {"0", "\xE2\x81\xB0"},
+    {"1", "\xC2\xB9"},    
+    {"2", "\xC2\xB2"},    
+    {"3", "\xC2\xB3"},    
+    {"4", "\xE2\x81\xB4"},
+    {"5", "\xE2\x81\xB5"},
+    {"6", "\xE2\x81\xB6"},
+    {"7", "\xE2\x81\xB7"},
+    {"8", "\xE2\x81\xB8"},
+    {"9", "\xE2\x81\xB9"},
+
+    {"A", "\xEE\x81\x81"}, 
+    {"B", "\xEE\x81\x82"}, 
+    {"C", "\xEE\x81\x83"}, 
+    {"D", "\xEE\x81\x84"}, 
+    {"E", "\xEE\x81\x85"}, 
+    {"F", "\xEE\x81\x86"}, 
+    {"G", "\xEE\x81\x87"}, 
+    {"H", "\xEE\x81\x88"}, 
+    {"I", "\xEE\x81\x89"}, 
+    {"J", "\xEE\x81\x8A"}, 
+    {"K", "\xEE\x81\x8B"}, 
+    {"L", "\xEE\x81\x8C"}, 
+    {"M", "\xEE\x81\x8D"}, 
+    {"N", "\xEE\x81\x8E"}, 
+    {"O", "\xEE\x81\x8F"}, 
+    {"P", "\xEE\x81\x90"}, 
+    {"Q", "\xEE\x81\x91"}, 
+    {"R", "\xEE\x81\x92"}, 
+    {"S", "\xEE\x81\x93"}, 
+    {"T", "\xEE\x81\x94"}, 
+    {"U", "\xEE\x81\x95"}, 
+    {"V", "\xEE\x81\x96"}, 
+    {"W", "\xEE\x81\x97"}, 
+    {"X", "\xEE\x81\x98"}, 
+    {"Y", "\xEE\x81\x99"}, 
+    {"Z", "\xEE\x81\x9A"}, 
+    {"a", "\xEE\x81\x9F"}, 
+    {"b", "\xEE\x81\xA0"}, 
+    {"c", "\xEE\x81\xA1"}, 
+    {"d", "\xEE\x81\xA2"}, 
+    {"e", "\xEE\x81\xA3"}, 
+    {"f", "\xEE\x81\xA4"}, 
+    {"g", "\xEE\x81\xA5"}, 
+    {"h", "\xEE\x81\xA6"}, 
+    {"i", "\xEE\x81\xA7"}, 
+    {"j", "\xEE\x81\xA8"}, 
+    {"k", "\xEE\x81\xA9"}, 
+    {"l", "\xEE\x81\xAA"}, 
+    {"m", "\xEE\x81\xAB"}, 
+    {"n", "\xEE\x81\xAC"}, 
+    {"o", "\xEE\x81\xAD"}, 
+    {"p", "\xEE\x81\xAE"}, 
+    {"q", "\xEE\x81\xAF"}, 
+    {"r", "\xEE\x81\xB0"}, 
+    {"s", "\xEE\x81\xB1"}, 
+    {"t", "\xEE\x81\xB2"}, 
+    {"u", "\xEE\x81\xB3"}, 
+    {"v", "\xEE\x81\xB4"}, 
+    {"w", "\xEE\x81\xB5"}, 
+    {"x", "\xEE\x81\xB6"}, 
+    {"y", "\xEE\x81\xB7"}, 
+    {"z", "\xEE\x81\xB8"}, 
+
+    {"*", "\xEE\x81\xB9"},
+    {"+", "\xE2\x81\xBA"},
+    {"-", "\xE2\x81\xBB"},
+    {"=", "\xE2\x81\xBC"},
+    {"(", "\xE2\x81\xBD"},
+    {")", "\xE2\x81\xBE"},
 };
 
-EPubTokenizer::Digits EPubTokenizer::subscriptNumbers
-{ 
-    "\xE2\x82\x80",  // 0
-    "\xE2\x82\x81",  // 1
-    "\xE2\x82\x82",  // 2
-    "\xE2\x82\x83",  // 3
-    "\xE2\x82\x84",  // 4
-    "\xE2\x82\x85",  // 5
-    "\xE2\x82\x86",  // 6
-    "\xE2\x82\x87",  // 7
-    "\xE2\x82\x88",  // 8
-    "\xE2\x82\x89",  // 9
+EPubTokenizer::Characters EPubTokenizer::subscriptCharacters
+{
+    {"0", "\xE2\x82\x80"},
+    {"1", "\xE2\x82\x81"},
+    {"2", "\xE2\x82\x82"},
+    {"3", "\xE2\x82\x83"},
+    {"4", "\xE2\x82\x84"},
+    {"5", "\xE2\x82\x85"},
+    {"6", "\xE2\x82\x86"},
+    {"7", "\xE2\x82\x87"},
+    {"8", "\xE2\x82\x88"},
+    {"9", "\xE2\x82\x89"},
+
+    {"A", "\xEE\x80\x85"},
+    {"B", "\xEE\x80\x86"},
+    {"C", "\xEE\x80\x87"},
+    {"D", "\xEE\x80\x88"},
+    {"E", "\xEE\x80\x89"},
+    {"F", "\xEE\x80\x8A"},
+    {"G", "\xEE\x80\x8B"},
+    {"H", "\xEE\x80\x8C"},
+    {"I", "\xEE\x80\x8D"},
+    {"J", "\xEE\x80\x8E"},
+    {"K", "\xEE\x80\x8F"},
+    {"L", "\xEE\x80\x90"},
+    {"M", "\xEE\x80\x91"},
+    {"N", "\xEE\x80\x92"},
+    {"O", "\xEE\x80\x93"},
+    {"P", "\xEE\x80\x94"},
+    {"Q", "\xEE\x80\x95"},
+    {"R", "\xEE\x80\x96"},
+    {"S", "\xEE\x80\x97"},
+    {"T", "\xEE\x80\x98"},
+    {"U", "\xEE\x80\x99"},
+    {"V", "\xEE\x80\x9A"},
+    {"W", "\xEE\x80\x9B"},
+    {"X", "\xEE\x80\x9C"},
+    {"Y", "\xEE\x80\x9D"},
+    {"Z", "\xEE\x80\x9E"},
+    {"a", "\xEE\x80\xA3"},
+    {"b", "\xEE\x80\xA4"},
+    {"c", "\xEE\x80\xA5"},
+    {"d", "\xEE\x80\xA6"},
+    {"e", "\xEE\x80\xA7"},
+    {"f", "\xEE\x80\xA8"},
+    {"g", "\xEE\x80\xA9"},
+    {"h", "\xEE\x80\xAA"},
+    {"i", "\xEE\x80\xAB"},
+    {"j", "\xEE\x80\xAC"},
+    {"k", "\xEE\x80\xAD"},
+    {"l", "\xEE\x80\xAE"},
+    {"m", "\xEE\x80\xAF"},
+    {"n", "\xEE\x80\xB0"},
+    {"o", "\xEE\x80\xB1"},
+    {"p", "\xEE\x80\xB2"},
+    {"q", "\xEE\x80\xB3"},
+    {"r", "\xEE\x80\xB4"},
+    {"s", "\xEE\x80\xB5"},
+    {"t", "\xEE\x80\xB6"},
+    {"u", "\xEE\x80\xB7"},
+    {"v", "\xEE\x80\xB8"},
+    {"w", "\xEE\x80\xB9"},
+    {"x", "\xEE\x80\xBA"},
+    {"y", "\xEE\x80\xBB"},
+    {"z", "\xEE\x80\xBC"},
+
+    {"*", "\xEE\x80\xBD"},
+    {"+", "\xE2\x82\x8A"},
+    {"-", "\xE2\x82\x8B"},
+    {"=", "\xE2\x82\x8C"},
+    {"(", "\xE2\x82\x8D"},
+    {")", "\xE2\x82\x8E"},
 };
 
 // clang-format on
@@ -1558,8 +1680,9 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                         .tokenId = TokenId::TEXT,
                         .spacesAfter = 0};
             do {
-                if ((curChar >= '0') && (curChar <= '9')) {
-                    const char *script = superscriptNumbers[curChar - '0'];
+                auto chIt = superscriptCharacters.find(std::string((char *)&curChar, 1));
+                if (chIt != superscriptCharacters.end()) {
+                    const char *script = chIt->second;
                     while (*script) {
                         if (!tokens_.cStrIsFull()) {
                             tokens_.addByte(newToken, *script++);
@@ -1591,8 +1714,9 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                         .tokenId = TokenId::TEXT,
                         .spacesAfter = 0};
             do {
-                if ((curChar >= '0') && (curChar <= '9')) {
-                    const char *script = subscriptNumbers[curChar - '0'];
+                auto chIt = subscriptCharacters.find(std::string((char *)&curChar, 1));
+                if (chIt != subscriptCharacters.end()) {
+                    const char *script = chIt->second;
                     while (*script) {
                         if (!tokens_.cStrIsFull()) {
                             tokens_.addByte(newToken, *script++);
