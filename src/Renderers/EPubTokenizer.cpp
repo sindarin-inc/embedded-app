@@ -194,7 +194,8 @@ EPubTokenizer::Characters EPubTokenizer::superscriptCharacters
     {"W", "\xEE\x81\x97"}, 
     {"X", "\xEE\x81\x98"}, 
     {"Y", "\xEE\x81\x99"}, 
-    {"Z", "\xEE\x81\x9A"}, 
+    {"Z", "\xEE\x81\x9A"},
+
     {"a", "\xEE\x81\x9F"}, 
     {"b", "\xEE\x81\xA0"}, 
     {"c", "\xEE\x81\xA1"}, 
@@ -228,6 +229,11 @@ EPubTokenizer::Characters EPubTokenizer::superscriptCharacters
     {"=", "\xE2\x81\xBC"},
     {"(", "\xE2\x81\xBD"},
     {")", "\xE2\x81\xBE"},
+    {"[", "\xEE\x81\xBB"},
+    {"]", "\xEE\x81\xBC"},
+    {",", "\xEE\x81\x9B"},
+    {".", "\xEE\x81\x9C"},
+    {"/", "\xEE\x81\x9D"},
 };
 
 EPubTokenizer::Characters EPubTokenizer::subscriptCharacters
@@ -269,6 +275,7 @@ EPubTokenizer::Characters EPubTokenizer::subscriptCharacters
     {"X", "\xEE\x80\x9C"},
     {"Y", "\xEE\x80\x9D"},
     {"Z", "\xEE\x80\x9E"},
+
     {"a", "\xEE\x80\xA3"},
     {"b", "\xEE\x80\xA4"},
     {"c", "\xEE\x80\xA5"},
@@ -302,6 +309,11 @@ EPubTokenizer::Characters EPubTokenizer::subscriptCharacters
     {"=", "\xE2\x82\x8C"},
     {"(", "\xE2\x82\x8D"},
     {")", "\xE2\x82\x8E"},
+    {"[", "\xEE\x80\xBF"},
+    {"]", "\xEE\x81\x80"},
+    {",", "\xEE\x80\x9F"},
+    {".", "\xEE\x80\xA0"},
+    {"/", "\xEE\x80\xA1"},
 };
 
 // clang-format on
