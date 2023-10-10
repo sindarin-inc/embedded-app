@@ -116,9 +116,6 @@ void DisplaySystem::setFullWindow() {
 }
 
 void DisplaySystem::ensureBoundaries() {
-    int gfxW = gfxClass_->width();
-    int gfxH = gfxClass_->height();
-
     log_d("Bounding Box before is %s", boundingBox_.toString().c_str());
 
     // First constrain position
