@@ -14,7 +14,7 @@ void ReadableDictionaryScreen::drawInRect(Rect rect) {
     upperLeftTextView_.draw();
 }
 
-void ReadableDictionaryScreen::setPlaceInReadable(std::shared_ptr<Place> placeInReadable) {
+void ReadableDictionaryScreen::setPlaceInReadable(std::shared_ptr<EPubPlace> placeInReadable) {
     placeInReadable_ = std::move(placeInReadable);
     preservePlace_ = nullptr;
 }
@@ -36,9 +36,14 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
     auto oldDisplayBoundingBox = insetBoundingBox();
     uint8_t darkPicturePercent = 0;
 
-    if (firstLoad_) {
+    if (loadedChapterId_ != placeInReadable_->getHRef()) {
         std::shared_ptr<Place> placeInDictionary = nullptr;
-        SpiramString dictionaryString = readable_->definitions(placeInReadable_, placeInDictionary);
+        auto rendererStream = epubRenderer_.getStream();
+        auto epubStream = std::dynamic_pointer_cast<EPubFile>(rendererStream);
+        auto chapterId = epubStream->getIdByHref(placeInReadable_->getHRef());
+        log_d("Loading dictionary for chapter: %s", chapterId.c_str());
+        auto dictionaryString = epubStream->getDictionaryContent(chapterId);
+        // SpiramString dictionaryString = readable_->definitions(chapterId, placeInDictionary);
 
         if (preservePlace_) {
             placeInDictionary = preservePlace_;
@@ -46,18 +51,22 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
         }
         auto stream = std::make_shared<StdStringStream>(dictionaryString);
         renderer_.setStream(stream);
-        std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(placeInDictionary);
-        log_d("Place in readable: %s, place in dictionary: %s", placeInReadable_->str().c_str(),
-              placeInDictionary->str().c_str());
+        auto resultPair = renderer_.renderPage(placeInDictionary);
+        newPlace_ = std::dynamic_pointer_cast<EPubPlace>(resultPair.first);
+        darkPicturePercent = resultPair.second;
+        // log_d("Place in readable: %s, place in dictionary: %s", placeInReadable_->str().c_str(),
+        //   placeInDictionary->str().c_str());
     } else {
         prevPlace_ = newPlace_;
-        std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(newPlace_);
+        auto resultPair = renderer_.renderPage(newPlace_);
+        newPlace_ = std::dynamic_pointer_cast<EPubPlace>(resultPair.first);
+        darkPicturePercent = resultPair.second;
     }
 
     atEnd_ = checkAtEnd();
     display.updateDisplay(DisplaySystem::UpdateType::FULL, true,
                           display.darkPictureVComAdj(darkPicturePercent));
-    firstLoad_ = false;
+    loadedChapterId_ = placeInReadable_->getHRef();
 
     resetBoundingBox(oldDisplayBoundingBox);
 }
@@ -98,7 +107,7 @@ void ReadableDictionaryScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::BACK:
     case RemoteCommand::LEFT: {
         auto oldDisplayBoundingBox = insetBoundingBox();
-        newPlace_ = renderer_.getPreviousPlace();
+        newPlace_ = std::dynamic_pointer_cast<EPubPlace>(renderer_.getPreviousPlace());
         setNeedsRerender();
         resetBoundingBox(oldDisplayBoundingBox);
         break;

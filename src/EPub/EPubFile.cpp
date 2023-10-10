@@ -149,6 +149,33 @@ auto EPubFile::getReadableChapterIndex(const std::shared_ptr<EPubPlace> &ePubPla
     return opf_->getReadableChapterIndex(ePubPlace->getHRef());
 }
 
+auto EPubFile::hasDictionary(const std::string &chapterID) -> bool {
+    std::string dictionaryID = "dictionary-" + chapterID;
+
+    return opf_->exists(dictionaryID);
+}
+
+auto EPubFile::getDictionaryContent(const std::string &chapterID) -> std::string {
+    if (!hasDictionary(chapterID)) {
+        return "This chapter does not have any dictionary definitions.";
+    }
+
+    // Convert chapterID to dictionary file path
+    std::string dictionaryID = "dictionary-" + chapterID;
+    std::string dictionaryPath = opf_->getHrefByID(dictionaryID);
+
+    // Load the dictionary xhtml content
+    pugi::xml_document &doc = getXHTMLFile(dictionaryPath);
+
+    // Extract the <p> elements
+    std::string dictionaryText = "";
+    for (auto p : doc.child("html").child("body").children("p")) {
+        dictionaryText += StringFormat("%s\n\n", p.child_value());
+    }
+
+    return dictionaryText;
+}
+
 auto EPubFile::open() -> bool {
 
     PROFILE_START(openEPub);

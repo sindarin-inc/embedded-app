@@ -4,6 +4,7 @@
 #include <utility>
 #include <vector>
 
+#include "Models/Place.hpp"
 #include "Models/Readable.hpp"
 #include "Renderers/Renderer.hpp"
 #include "Storage/PreferencesStore.hpp"
@@ -18,10 +19,10 @@
 class ReadableDictionaryScreen : public Screen, public EinkView {
 public:
     ReadableDictionaryScreen(PreferencesStore &prefs, std::shared_ptr<Readable> readable,
-                             DisplaySystem &display)
-        : EinkView(display), prefs_(prefs), readable_(std::move(readable)), renderer_(display),
-          display_(display), upperLeftTextView_(display, upperLeftText_),
-          leftArrowView_(display, ArrowUp) {}
+                             DisplaySystem &display, Renderer &epubRenderer)
+        : EinkView(display), prefs_(prefs), readable_(std::move(readable)),
+          epubRenderer_(epubRenderer), renderer_(display), display_(display),
+          upperLeftTextView_(display, upperLeftText_), leftArrowView_(display, ArrowUp) {}
 
     auto layout(LayoutContext &context, Size size) -> Size override;
     void drawInRect(Rect rect) override;
@@ -33,20 +34,21 @@ public:
     auto insetBoundingBox() -> DisplayRect;
     void resetBoundingBox(DisplayRect oldDisplayBoundingBox);
     void setPlacemark();
-    void setFirstLoad() { firstLoad_ = true; }
-    void setPlaceInReadable(std::shared_ptr<Place> placeInReadable);
+    void setFirstLoad() { loadedChapterId_ = ""; }
+    void setPlaceInReadable(std::shared_ptr<EPubPlace> placeInReadable);
 
 protected:
     PreferencesStore &prefs_;
     std::shared_ptr<Readable> readable_;
+    Renderer &epubRenderer_;
     Renderer renderer_;
     DisplaySystem &display_;
 
-    bool firstLoad_ = true;
-    std::shared_ptr<Place> placeInReadable_ = nullptr;
-    std::shared_ptr<Place> newPlace_ = nullptr;
-    std::shared_ptr<Place> prevPlace_ = nullptr;
-    std::shared_ptr<Place> preservePlace_ = nullptr;
+    std::string loadedChapterId_ = "";
+    std::shared_ptr<EPubPlace> placeInReadable_ = nullptr;
+    std::shared_ptr<EPubPlace> newPlace_ = nullptr;
+    std::shared_ptr<EPubPlace> prevPlace_ = nullptr;
+    std::shared_ptr<EPubPlace> preservePlace_ = nullptr;
     bool atEnd_ = false;
 
     std::string upperLeftText_ = "Dismiss";

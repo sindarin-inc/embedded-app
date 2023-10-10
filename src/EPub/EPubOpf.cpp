@@ -82,3 +82,26 @@ auto EPubOpf::getReadableChapterIndex(const std::string &href) const -> int {
 
     return -1;
 }
+
+auto EPubOpf::exists(const std::string &id) const -> bool {
+    log_d("Checking if %s exists in manifest: %d", id.c_str(),
+          manifest_.find(id) != manifest_.end());
+    return manifest_.find(id) != manifest_.end();
+}
+
+auto EPubOpf::getHrefByID(const std::string &id) const -> std::string {
+    auto it = manifest_.find(id);
+    if (it != manifest_.end()) {
+        return it->second.href;
+    }
+    return "";
+}
+
+auto EPubOpf::getIdByHref(const std::string &href) const -> std::string {
+    for (auto &item : manifest_) {
+        if (item.second.href == href) {
+            return item.first;
+        }
+    }
+    return "";
+}

@@ -157,12 +157,11 @@ public:
         return summary;
     }
 
-    auto definitions(const std::shared_ptr<Place> &placeInReadable,
+    auto definitions(const std::string chapterId,
                      const std::shared_ptr<Place> &placeInDictionaryOut) -> SpiramString {
-        // This code generates the dictionaryString for an entire chapter, making sure to not
-        // add duplicate words within the last 5 words (but duplicates are allowed assuming they
-        // are > 5 words ago). It returns the dictionaryString as well as the position of the
-        // word closest to the current page using the placeInDictionaryOut out-value.
+        // This code generates the dictionaryString for an entire chapter. It returns the
+        // dictionaryString as well as the position of the word closest to the current page using
+        // the placeInDictionaryOut out-value.
 
         // NOTE(john): Punting for now since this is going to get included in the epub file
         return "";

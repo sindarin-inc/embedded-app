@@ -23,7 +23,7 @@ public:
           readableSeekScreen_(prefs, readable, renderer),
           readableTableOfContentsScreen_(prefs, readable, renderer, display, telemetry),
           readableSummaryScreen_(prefs, readable, display),
-          readableDictionaryScreen_(prefs, readable, display) {
+          readableDictionaryScreen_(prefs, readable, display, renderer) {
         this->setCurrentScreen(*this);
 
         lightingAdjustScreen_.setBackCallback([this]() {

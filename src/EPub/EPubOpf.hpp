@@ -39,6 +39,11 @@ public:
 
     auto getReadableChapterIndex(const std::string &href) const -> int;
 
+    auto exists(const std::string &id) const -> bool;
+
+    auto getHrefByID(const std::string &id) const -> std::string;
+    auto getIdByHref(const std::string &href) const -> std::string;
+
 private:
     const char *path_;
 
