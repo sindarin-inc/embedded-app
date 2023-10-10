@@ -126,7 +126,6 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
         return;
     }
     if (overrideDutyCycle_ != -1) {
-        log_i("Ambient light check requested but override duty cycle is set, ignoring");
         return;
     }
 
