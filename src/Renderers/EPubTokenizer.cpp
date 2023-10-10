@@ -1541,13 +1541,13 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
 
                 case Tag::A:
                     if (tokenizingStarted_) {
-                        if (closeTextToken()) {
+                        if (closeTextToken(true)) {
                             return false;
                         }
-                        if (postText_[0] != '\0') {
-                            Token &token = tokens_.getLast();
-                            tokens_.insertBytesAtEnd(token, postText_);
-                        }
+                        // if (postText_[0] != '\0') {
+                        //     Token &token = tokens_.getLast();
+                        //     tokens_.insertBytesAtEnd(token, postText_);
+                        // }
                     }
                     preText_[0] = postText_[0] = '\0';
                     break;
