@@ -537,6 +537,7 @@ public:
         syncReason = SyncReason::Manual;
         nextSyncTime = 0;
         ledChargeTime = 0;
+        isCharged = false;
         lastBatteryReport = 0;
         lastPageTurnerBattery = 0;
         settingsOnRestart = false;

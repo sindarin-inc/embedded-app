@@ -420,6 +420,7 @@ void PowerManager::checkUsb() {
         gpio_hold_en((gpio_num_t)RED_LED);
         gpio_deep_sleep_hold_en();
     } else {
+        // log_d("USB disconnected, resetting charged LED");
         PreferencesStore::ledChargeTime = 0; // reset the timer as the USB is disconnected
         PreferencesStore::isCharged = false; // reset the isCharged flag as the USB is disconnected
         DigitalWrite(GREEN_LED, LED_OFF);
