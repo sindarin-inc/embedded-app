@@ -98,9 +98,12 @@ public:
     inline void setLineIndent(uint16_t leftIndent = 0, uint16_t rightIndent = 0) {
         leftIndent_ = leftIndent;
         lines_[linesTailIdx_].leftIndent = leftIndent_;
+        currentLineWidth_ = leftIndent_;
 
         rightIndent_ = rightIndent;
         maxLineWidth_ = display_.width() - rightIndent;
+
+        // log_w("Set Line Indent: %" PRIu16 " - %" PRIu16, leftIndent_, rightIndent_);
     }
 
     inline auto getLineIndent() -> std::pair<uint16_t, uint16_t> {
