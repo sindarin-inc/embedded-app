@@ -77,8 +77,6 @@ void IBMFFont::drawSingleLineOfText(ibmf_defs::Bitmap &canvas, ibmf_defs::Pos po
                                           (kern / 64) - glyph.metrics.xoff
                                     : ((glyph.metrics.advance + kern) >> 6);
                 }
-            } else {
-                LOGW("Unable to retrieve glyph for glyphCode %d", glyphCode);
             }
         });
     }
