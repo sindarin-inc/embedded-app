@@ -381,12 +381,14 @@ void PowerManager::checkUsb() {
         gpio_hold_dis((gpio_num_t)RED_LED);
 
         if (percentage > 95) {
+            PreferencesStore::isCharged = true;
             const uint32_t delayPeriod = 30 * 60; // 30 min delay upon reaching 95% battery level
             time_t currentTime = SolClock::getInstance().getEpochTime();
 
             if (PreferencesStore::ledChargeTime == -1) {
                 // If the battery is fully charged, start the timer before setting the LED to green
                 PreferencesStore::ledChargeTime = currentTime + delayPeriod;
+                // log_i("Battery fully charged, starting timer for %lu seconds", delayPeriod);
             }
 
             if (PreferencesStore::ledChargeTime == 0 ||
@@ -394,20 +396,32 @@ void PowerManager::checkUsb() {
                 // If the battery is fully charged and a half hour has passed, turn on the LED
                 DigitalWrite(GREEN_LED, LED_ON);
                 DigitalWrite(RED_LED, LED_OFF);
+                // log_i("Battery fully charged, turning on green LED");
             } else {
                 DigitalWrite(GREEN_LED, LED_OFF);
                 DigitalWrite(RED_LED, LED_ON);
+                // log_i("Battery fully charged, waiting for %" PRId64 " seconds",
+                //       PreferencesStore::ledChargeTime - currentTime);
             }
+        } else if (percentage > 85 && PreferencesStore::isCharged) {
+            // Keep the LED green if it's charged and between 85-95%
+            DigitalWrite(GREEN_LED, LED_ON);
+            DigitalWrite(RED_LED, LED_OFF);
+            // log_i("Battery level is above 85%%, keeping green LED on.");
         } else {
-            PreferencesStore::ledChargeTime = -1; // reset the timer as battery level is below 95%
+            PreferencesStore::isCharged = false;
+            PreferencesStore::ledChargeTime = -1;
             DigitalWrite(GREEN_LED, LED_OFF);
             DigitalWrite(RED_LED, LED_ON);
+            // log_d("Battery not fully charged, turning on red LED. Percentage: %d%%",
+            //       int(percentage));
         }
         gpio_hold_en((gpio_num_t)GREEN_LED);
         gpio_hold_en((gpio_num_t)RED_LED);
         gpio_deep_sleep_hold_en();
     } else {
         PreferencesStore::ledChargeTime = 0; // reset the timer as the USB is disconnected
+        PreferencesStore::isCharged = false; // reset the isCharged flag as the USB is disconnected
         DigitalWrite(GREEN_LED, LED_OFF);
         DigitalWrite(RED_LED, LED_OFF);
         gpio_hold_dis((gpio_num_t)GREEN_LED);
