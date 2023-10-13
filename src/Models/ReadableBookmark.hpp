@@ -22,6 +22,8 @@ public:
 
     SpiramString uuid;
     std::string startingPosition;
+    std::string chapter;
+    uint32_t chapterOffset;
     std::string endingPosition;
     SpiramString readable;
     bool willDelete;
@@ -34,6 +36,8 @@ public:
         uuid = j["uuid"].as<std::string>();
         startingPosition = j["starting_position"].as<std::string>();
         endingPosition = j["ending_position"].as<std::string>();
+        chapter = j["chapter"].as<std::string>();
+        chapterOffset = j["chapter_offset"].as<uint32_t>();
         readable = j["readable"].as<std::string>();
 
         return true;

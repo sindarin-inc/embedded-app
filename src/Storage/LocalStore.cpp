@@ -366,8 +366,15 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
             for (const auto &[startingPosition, endingPosition] : bookmarksToAdd) {
                 ReadableBookmark bookmark;
                 bookmark.readable = readable->uuid;
-                bookmark.startingPosition = startingPosition;
-                bookmark.endingPosition = endingPosition;
+                auto place = Place::factory(startingPosition);
+                if (place->isFor(DocType::TXT)) {
+                    bookmark.startingPosition = startingPosition;
+                    bookmark.endingPosition = endingPosition;
+                } else if (place->isFor(DocType::EPUB)) {
+                    auto ePubPlace = std::dynamic_pointer_cast<EPubPlace>(place);
+                    bookmark.chapter = ePubPlace->getHRef();
+                    bookmark.chapterOffset = ePubPlace->getOffset();
+                }
                 bookmarks.emplace_back(bookmark);
             }
 
@@ -375,8 +382,15 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
             for (const auto &[startingPosition, endingPosition] : bookmarksToDelete) {
                 ReadableBookmark bookmark;
                 bookmark.readable = readable->uuid;
-                bookmark.startingPosition = startingPosition;
-                bookmark.endingPosition = endingPosition;
+                auto place = Place::factory(startingPosition);
+                if (place->isFor(DocType::TXT)) {
+                    bookmark.startingPosition = startingPosition;
+                    bookmark.endingPosition = endingPosition;
+                } else if (place->isFor(DocType::EPUB)) {
+                    auto ePubPlace = std::dynamic_pointer_cast<EPubPlace>(place);
+                    bookmark.chapter = ePubPlace->getHRef();
+                    bookmark.chapterOffset = ePubPlace->getOffset();
+                }
                 bookmark.willDelete = true;
                 bookmarks.emplace_back(bookmark);
             }
