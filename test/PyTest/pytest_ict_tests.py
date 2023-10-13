@@ -7,6 +7,7 @@ import platform
 import os
 import csv
 import sys
+import subprocess
 
 import pytest
 import serial
@@ -14,7 +15,6 @@ from _pytest.fixtures import FixtureRequest
 from pytest import MonkeyPatch
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.serial import IdfSerial
-from pytest_embedded.log import live_print_call
 
 from ict import MFICTClient
 from power import PowerTester
@@ -35,6 +35,8 @@ cfg_ssid = ""
 cfg_password = ""
 cfg_token = ""
 config_read = False
+
+test_user_cloud_token = "c7092bfc68fac544fbe46e75ef06948b867a4854ce4271c2f9fea16abfd20125"
 
 def full_test_config_exists():
     if os.path.isfile(test_config_filename):
@@ -73,6 +75,101 @@ def run_full_sync():
         return False
     return True
 
+def get_nvs_partition_size():
+        file_path = "esp32s3-64MB.csv"
+        nvs_size = ""
+        # Correct code to extract size of 'nvs' partition
+        with open(file_path, "r") as file:
+            csv_reader = csv.reader(file, delimiter=",")
+            for row in csv_reader:
+                if row[0] == "nvs":
+                    nvs_size = row[4]
+
+        # Convert hexadecimal to decimal
+        nvs_size_decimal = int(nvs_size, 16)
+        return nvs_size_decimal
+
+def clear_nvs(port):
+    logger.info("Clearing NVS")
+    # write nvs partition to dut
+    subprocess.run(
+        [
+            os.environ["IDF_PATH"] + "/components/partition_table/parttool.py",
+            "--port",
+            port,
+            "erase_partition",
+            "--partition-name=nvs",
+        ]
+    )
+
+def write_nvs(port, btmac, ict_ssid, ict_pw, cloudtoken):
+    parts = btmac.split(":")
+    hexstr = "".join(parts)
+    logger.info("hex string: " + hexstr)
+    btmac_int = int(hexstr, 16)
+    logger.info(str(btmac_int))
+
+    # create partition csv file
+    csvfname = "dutnvs.csv"
+    fp = open(csvfname, "w")
+    fp.write("key,type,encoding,value\n")
+    fp.write("boot-info,namespace,,\n")
+    fp.write("sindarin-app,namespace,,\n")
+    # write paired tt address
+    fp.write("paired-tt,data,u64," + str(btmac_int) + "\n")
+    fp.write("no-setup,data,u8,1\n");
+    # Write a cloud-token so the glasses don't try to go back into ship mode upon sleep
+    fp.write("cloud-token,data,string," + cloudtoken + "\n")
+
+    wifi_settings_json = "\"{\"\"settings\"\":[{\"\"ssid\"\":\"\"" + ict_ssid + "\"\",\"\"password\"\":\"\"" + ict_pw + "\"\"}]}\""
+
+    fp.write("wifi-settings,data,string," + wifi_settings_json + "\n")
+    # Skip the onboarding thing since it has a bunch of animations
+    fp.write("no-setup,data,u8,1\n")
+    fp.close()
+
+    # check for $IDF_PATH variable
+    if "IDF_PATH" not in os.environ:
+        # no idf path set, must be running from an exported test package
+        # set the variable so tools can be found
+        os.environ["IDF_PATH"] = "test/PyTest/vendor"
+
+    # create partition bin file
+    binfname = "dutnvs.bin"
+    nvssize = get_nvs_partition_size()
+    logger.info("nvs partition size: " + str(nvssize))
+
+    subprocess.run(
+        [
+            os.environ["IDF_PATH"] + "/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py",
+            "generate",
+            csvfname,
+            binfname,
+            str(nvssize),
+        ]
+    )
+
+    parts = [
+                os.environ["IDF_PATH"] + "/components/partition_table/parttool.py",
+                "--port",
+                port,
+                "write_partition",
+                "--partition-name=nvs",
+                "--input",
+                binfname,
+            ]
+    
+    print("command:")
+    print(' '.join(parts))
+
+    # write nvs partition to dut
+    subprocess.run(
+        parts
+    )
+
+    # os.remove(csvfname)
+    # os.remove(binfname)
+
 @pytest.fixture
 def port(request: FixtureRequest) -> t.Optional[str]:
     """Overridden to make sure we pick the right USB port for the DUT"""
@@ -93,25 +190,25 @@ class OverrideIdfSerial(IdfSerial):
         super()._start()
 
         # read ict's bluetooth mac
-        btmac = self.ict_client.get_bt_mac()
-        logger.info("ICT bluetooth MAC: " + btmac)
+        # btmac = self.ict_client.get_bt_mac()
+        # logger.info("ICT bluetooth MAC: " + btmac)
 
-        wifi_ssid = self.ict_client.get_wifi_ssid()
-        wifi_password = self.ict_client.get_wifi_password()
+        # wifi_ssid = self.ict_client.get_wifi_ssid()
+        # wifi_password = self.ict_client.get_wifi_password()
         
-        cloudtoken = "FAKECLOUDTOKEN"
+        # cloudtoken = "FAKECLOUDTOKEN"
 
-        if run_full_sync():
-            global cfg_ssid
-            global cfg_password
-            global cfg_token
+        # if run_full_sync():
+        #     global cfg_ssid
+        #     global cfg_password
+        #     global cfg_token
 
-            wifi_ssid = cfg_ssid
-            wifi_password = cfg_password
-            cloudtoken = cfg_token
+        #     wifi_ssid = cfg_ssid
+        #     wifi_password = cfg_password
+        #     cloudtoken = cfg_token
 
         # prepare nvs partition image and write to dut
-        self.write_nvs(btmac, wifi_ssid, wifi_password, cloudtoken)
+        # self.write_nvs(btmac, wifi_ssid, wifi_password, cloudtoken)
 
         # Close the serial port
         self.close()
@@ -125,99 +222,6 @@ class OverrideIdfSerial(IdfSerial):
         port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
 
         self.connect_dut_log_port()
-
-    def get_nvs_partition_size(self):
-        file_path = "esp32s3-64MB.csv"
-        nvs_size = ""
-        # Correct code to extract size of 'nvs' partition
-        with open(file_path, "r") as file:
-            csv_reader = csv.reader(file, delimiter=",")
-            for row in csv_reader:
-                if row[0] == "nvs":
-                    nvs_size = row[4]
-
-        # Convert hexadecimal to decimal
-        nvs_size_decimal = int(nvs_size, 16)
-        return nvs_size_decimal
-
-    def clear_nvs(self):
-        logger.info("Clearing NVS")
-        # write nvs partition to dut
-        live_print_call(
-            [
-                os.environ["IDF_PATH"] + "/components/partition_table/parttool.py",
-                "--port",
-                self.port,
-                "erase_partition",
-                "--partition-name=nvs",
-            ],
-            msg_queue=self._q,
-        )
-
-    def write_nvs(self, btmac, ict_ssid, ict_pw, cloudtoken):
-        parts = btmac.split(":")
-        hexstr = "".join(parts)
-        logger.info("hex string: " + hexstr)
-        btmac_int = int(hexstr, 16)
-        logger.info(str(btmac_int))
-
-        # create partition csv file
-        csvfname = "dutnvs.csv"
-        fp = open(csvfname, "w")
-        fp.write("key,type,encoding,value\n")
-        fp.write("boot-info,namespace,,\n")
-        fp.write("sindarin-app,namespace,,\n")
-        # write paired tt address
-        fp.write("paired-tt,data,u64," + str(btmac_int) + "\n")
-        fp.write("no-setup,data,u8,1\n");
-        # Write a cloud-token so the glasses don't try to go back into ship mode upon sleep
-        fp.write("cloud-token,data,string," + cloudtoken + "\n")
-
-        wifi_settings_json = "\"{\"\"settings\"\":[{\"\"ssid\"\":\"\"" + ict_ssid + "\"\",\"\"password\"\":\"\"" + ict_pw + "\"\"}]}\""
-
-        fp.write("wifi-settings,data,string," + wifi_settings_json + "\n")
-        # Skip the onboarding thing since it has a bunch of animations
-        fp.write("no-setup,data,u8,1\n")
-        fp.close()
-
-        # check for $IDF_PATH variable
-        if "IDF_PATH" not in os.environ:
-            # no idf path set, must be running from an exported test package
-            # set the variable so tools can be found
-            os.environ["IDF_PATH"] = "test/PyTest/vendor"
-
-        # create partition bin file
-        binfname = "dutnvs.bin"
-        nvssize = self.get_nvs_partition_size()
-        logger.info("nvs partition size: " + str(nvssize))
-
-        live_print_call(
-            [
-                os.environ["IDF_PATH"] + "/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py",
-                "generate",
-                csvfname,
-                binfname,
-                str(nvssize),
-            ],
-            msg_queue=self._q,
-        )
-
-        # write nvs partition to dut
-        live_print_call(
-            [
-                os.environ["IDF_PATH"] + "/components/partition_table/parttool.py",
-                "--port",
-                self.port,
-                "write_partition",
-                "--partition-name=nvs",
-                "--input",
-                binfname,
-            ],
-            msg_queue=self._q,
-        )
-
-        os.remove(csvfname)
-        os.remove(binfname)
 
     def connect_dut_log_port(self):
         max_attempts = 3
@@ -322,7 +326,7 @@ def power_client():
 
 @pytest.mark.usefixtures("ict_client")
 @pytest.mark.ict
-#@pytest.mark.skip(reason="Does not work because ActiveUSBCharging blocks it")
+@pytest.mark.skip(reason="Does not work because ActiveUSBCharging blocks it")
 class TestWithIctOnly:
     """Tests that only require the ICT to be connected (and not the power profiler)"""
 
@@ -449,20 +453,68 @@ class TestPowerConsumption:
 
 @pytest.mark.usefixtures("ict_client")
 @pytest.mark.ict
-@pytest.mark.skip()
-@pytest.mark.skipif(run_full_sync() == False, reason="full test not selected, add 'fulltest,1' to " + test_config_filename)
+# @pytest.mark.skipif(run_full_sync() == False, reason="full test not selected, add 'fulltest,1' to " + test_config_filename)
 class TestFullContentSync:
-    def test_full_content_sync(self, dut: OverrideDut, ict_client: MFICTClient) -> None:
-        # Serial comms go down here when we're toggling power. Go ahead and close out the connection.
-        logger.info("closing dut serial")
+    def test_full_content_sync(self, dut: OverrideDut, ict_client: MFICTClient, ssid, password) -> None:
+
+        # write nvs
+        # read ict's bluetooth mac
+        btmac = ict_client.get_bt_mac()
+        logger.info("ICT bluetooth MAC: " + btmac)
+
+        wifi_ssid = ict_client.get_wifi_ssid()
+        wifi_password = ict_client.get_wifi_password()
+
+        if ssid != "" and password != "":
+            wifi_ssid = ssid
+            wifi_password = password
+
+        logger.info("params user " + wifi_ssid + " password " + wifi_password)
+        logger.info("closing dut serial 1")
         dut.serial.close()
+
+        # put dut into programming mode
+
+        logger.info("dut power off")
+        ict_client.set_power(False)
+        ict_client.set_gpio0(0)
+        time.sleep(2)
+        ict_client.set_power(True)
+        time.sleep(2)
+        ict_client.reset_dut()
+        time.sleep(2)
+        ict_client.set_gpio0(1)
+
+        # look for jtag port
+        time.sleep(2)
+        port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
+        logger.info("dut port: " + port)
+
+        write_nvs(port, btmac, wifi_ssid, wifi_password, test_user_cloud_token)
+
+       
+
+        logger.info("reset")
+        ict_client.reset_dut()
+
+        time.sleep(2)
+        port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
+        logger.info("dut port: " + port)
+
+        # Serial comms go down here when we're toggling power. Go ahead and close out the connection.
+        #logger.info("closing dut serial")
+        #dut.serial.close()
+
+        
 
         # Note: If the IdfDut tries to connect to the ICT serial port to flash it, it dumps a bunch of serial
         # garbage to the ICT that will cause it to fail the next command. This clears the input buffer by sending a newline.
         ict_client.clear_input()
 
         logger.info("turn off usb power to dut")
-        ict_client.set_power(False)
+        
+        # todo: turn off power if running on batteries
+        #ict_client.set_power(False)
         
         # servo values for full tester:
         # left temple open: 0
@@ -471,8 +523,14 @@ class TestFullContentSync:
         # right temple open: 0
         # right temple closed: 100
 
-        ict_client.set_servo("right", 0)
-        ict_client.set_servo("left", 0)
+        # values for full glasses tester
+        # ict_client.set_servo("right", 0)
+        # ict_client.set_servo("left", 0)
+
+        logger.info("Powering on DUT")
+        ict_client.set_servo("right", -70)
+        time.sleep(0.5)
+        ict_client.set_servo("left", 75)
 
         # connect to serial relay for log parsing
         logger.info("connect dut log port")

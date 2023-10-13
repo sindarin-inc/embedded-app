@@ -33,8 +33,8 @@ class MFICTClient:
         curr_version = self.get_firmware_version_string(firmware_filename)
         logger.info("ICT version for test: " + curr_version)
 
-        if version != curr_version:
-            self.flash_firmware(baudrate, timeout, firmware_filename, script_filename)
+        #if version != curr_version:
+        #    self.flash_firmware(baudrate, timeout, firmware_filename, script_filename)
 
         # clean up, remove directory with unzipped firmware
         shutil.rmtree(firmware_dir)
@@ -233,22 +233,27 @@ class MFICTClient:
         return password
     
     def tt_up(self):
+        logger.info("tt_up")
         self.write_with_ack("TTUP")
         self.flush_read_buffer()
 
     def tt_down(self):
+        logger.info("tt_down")
         self.write_with_ack("TTDOWN")
         self.flush_read_buffer()
 
     def tt_left(self):
+        logger.info("tt_left")
         self.write_with_ack("TTLEFT")
         self.flush_read_buffer()
 
     def tt_right(self):
+        logger.info("tt_right")
         self.write_with_ack("TTRIGHT")
         self.flush_read_buffer()
     
     def tt_enter(self):
+        logger.info("tt_enter")
         self.write_with_ack("TTENT")
         self.flush_read_buffer()
 

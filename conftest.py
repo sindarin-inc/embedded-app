@@ -13,7 +13,7 @@ def ssid(request):
 
 @pytest.fixture(scope='session')
 def password(request):
-    password_value = request.config.option.ssid
+    password_value = request.config.option.password
     if password_value is None:
         pytest.skip()
     return password_value
