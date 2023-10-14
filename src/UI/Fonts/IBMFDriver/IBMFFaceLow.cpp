@@ -58,8 +58,7 @@ auto IBMFFaceLow::load(const MemoryPtr dataStart, const int dataLength, FontForm
 /// @return True if a ligature was found, false otherwise.
 ///
 auto IBMFFaceLow::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) -> bool {
-    if ((glyphCode1 == NO_GLYPH_CODE) || (glyphCode1 == SPACE_CODE) ||
-        (*glyphCode2 == NO_GLYPH_CODE) || (*glyphCode2 == SPACE_CODE)) {
+    if ((glyphCode1 >= ZERO_WIDTH_CODE) || (*glyphCode2 >= ZERO_WIDTH_CODE)) {
         *kern = 0;
         return false;
     }
