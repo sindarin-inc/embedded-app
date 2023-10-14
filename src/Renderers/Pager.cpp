@@ -30,6 +30,8 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
     {
         if (token.tokenId == TokenId::ITEXT) {
             leftIndent_ += token.pixWidth; // For next lines
+            // log_w("IText (%s) new left indent %" PRIu16 ", Current Line Width: %" PRIu16,
+            //     token.cStr, leftIndent_, currentLineWidth_);
         }
         uint16_t heightRequired =
             (token.tokenId == TokenId::HTEXT)
@@ -38,6 +40,7 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
         if ((token.pixWidth + currentLineWidth_) > (maxLineWidth_ - rightIndent_)) {
             // We are at the end of a line
 
+            // log_w("--> End of line, Line width: %" PRIu16, currentLineWidth_);
             // Complete the line, passing to the next one
             newLine(NEWLINE_DECI_LINE_HEIGHT);
             if (!dontStop && ((currentPageDecilineHeight_ + heightRequired) > maxDeciLines_)) {
@@ -62,7 +65,7 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
             lines_[linesTailIdx_].tokenIdx = tokens_.getLastIdx();
             lines_[linesTailIdx_].tokenCount = 1;
             lines_[linesTailIdx_].length += token.length;
-            currentLineWidth_ = token.pixWidth;
+            currentLineWidth_ += token.pixWidth;
         } else {
             currentLineWidth_ += token.pixWidth;
             lines_[linesTailIdx_].tokenCount++;
@@ -201,6 +204,7 @@ auto Pager::addLastTokenToPage(bool dontStop) -> bool {
     } break;
     }
 
+    // log_w("Current line width: %" PRIu16, currentLineWidth_);
     return true;
 }
 
@@ -217,6 +221,8 @@ void Pager::newLine(uint16_t height) {
 
     currentLineWidth_ = leftIndent_;
     lines_[linesTailIdx_] = {0, 0, 0, 0, leftIndent_};
+
+    // log_w("NewLine left Indent: %" PRIu16, leftIndent_);
 };
 
 // Called when going back and the end place is found. Their may
@@ -444,6 +450,9 @@ auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
             if (lineNbr >= numSkipLines) {
                 Line line;
                 getLine(lines_[lineIdx], line);
+                // log_w("Real line width: %" PRIu16 " indent: %" PRIu16,
+                //       display_.getTextWidth(line.data()) + lines_[lineIdx].leftIndent,
+                //       lines_[lineIdx].leftIndent);
                 REND_WLOG("[%" PRIu16 "] %s: <%s>", lineIdx, token.streamPlace.str().c_str(),
                           line.data());
                 display_.drawSingleLineOfText(line.data(), lines_[lineIdx].leftIndent,

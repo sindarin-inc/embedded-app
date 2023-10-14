@@ -258,8 +258,11 @@ private:
 
     // Called when it's time to close the last textToken, if there is any waiting to be closed.
     // Returns true if page is completed.
-    auto closeTextToken() -> bool {
+    auto closeTextToken(bool addPostText = false) -> bool {
         if (textToken_ != nullptr) {
+            if (addPostText && (postText_[0] != '\0')) {
+                tokens_.addBytes(*textToken_, postText_);
+            }
             tokens_.endOfCStr();
             lastToken_ = textToken_;
             addTokenToPage(*textToken_);
