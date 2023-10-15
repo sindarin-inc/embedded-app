@@ -196,10 +196,13 @@ auto IBMFFontLow::load(MemoryPtr fontData, uint32_t length) -> bool {
     }
 #endif
 
-    if ((codePoint == ' ') || (codePoint == 0xA0)) {
+    if ((codePoint == ' ') || (codePoint == 0xA0) ||
+        ((codePoint >= 0x2000) && (codePoint <= 0x200F))) {
         glyphCode = SPACE_CODE;
     } else if (codePoint == ZERO_WIDTH_CODEPOINT) {
         glyphCode = ZERO_WIDTH_CODE;
+    } else if ((codePoint >= 0xFFF0) && (codePoint <= 0xFFFF)) {
+        glyphCode = DONT_CARE_CODE;
     } else {
         // if ((codePoint != 0xA0) && (preamble_->bits.fontFormat == FontFormat::UTF32)) {
         auto planeIdx = static_cast<uint16_t>(codePoint >> 16);
@@ -228,7 +231,7 @@ auto IBMFFontLow::load(MemoryPtr fontData, uint32_t length) -> bool {
     }
 
     if (glyphCode == UNKNOWN_GLYPH_CODE) {
-        log_w("Code Point not found in font: %" PRIu32, (uint32_t)codePoint);
+        log_w("Code Point not found in font: U+%04" PRIx32, (uint32_t)codePoint);
     }
 
     return glyphCode;

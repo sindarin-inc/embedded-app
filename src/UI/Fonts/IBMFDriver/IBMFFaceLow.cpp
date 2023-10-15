@@ -58,13 +58,8 @@ auto IBMFFaceLow::load(const MemoryPtr dataStart, const int dataLength, FontForm
 /// @return True if a ligature was found, false otherwise.
 ///
 auto IBMFFaceLow::ligKern(const GlyphCode glyphCode1, GlyphCode *glyphCode2, FIX16 *kern) -> bool {
-    if ((glyphCode1 >= ZERO_WIDTH_CODE) || (*glyphCode2 >= ZERO_WIDTH_CODE)) {
-        *kern = 0;
-        return false;
-    }
+
     if ((glyphCode1 >= faceHeader_->glyphCount) || (*glyphCode2 >= faceHeader_->glyphCount)) {
-        LOGE("Bad Glyphcode glyphCode1: %d, glyphCode2: %d, max: %d", glyphCode1, *glyphCode2,
-             faceHeader_->glyphCount);
         *kern = 0;
         return false;
     }
@@ -440,7 +435,8 @@ auto IBMFFaceLow::getGlyph(GlyphCode glyphCode, Glyph &appGlyph, bool loadBitmap
     }
 
     if ((glyphCode == SPACE_CODE) ||
-        ((*glyphsInfo_)[glyphCode].bitmapWidth == 0)) { // send as a space character
+        ((glyphCode < faceHeader_->glyphCount) &&
+         ((*glyphsInfo_)[glyphCode].bitmapWidth == 0))) { // send as a space character
         appGlyph.pointSize = faceHeader_->pointSize;
         appGlyph.metrics = {
             .xoff = 0,
@@ -537,7 +533,8 @@ auto IBMFFaceLow::getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool 
     appGlyph.clear();
 
     if ((glyphCode == SPACE_CODE) ||
-        ((*glyphsInfo_)[glyphCode].bitmapWidth == 0)) { // send as a space character
+        ((glyphCode < faceHeader_->glyphCount) &&
+         ((*glyphsInfo_)[glyphCode].bitmapWidth == 0))) { // send as a space character
         appGlyph.pointSize = faceHeader_->pointSize;
         appGlyph.metrics = {
             .xoff = 0,
@@ -575,8 +572,8 @@ auto IBMFFaceLow::getGlyphMetrics(GlyphCode glyphCode, Glyph &appGlyph) -> bool 
 
 // auto IBMFFaceLow::getGlyphApproxWidth(GlyphCode glyphCode, int16_t *approxWidth) -> bool {
 
-//     if ((glyphCode == SPACE_CODE) ||
-//         ((*glyphsInfo_)[glyphCode].bitmapWidth == 0)) { // send as a space character
+//     if ((glyphCode == SPACE_CODE) || ((glyphCode < faceHeader_->glyphCount)
+//         ((*glyphsInfo_)[glyphCode].bitmapWidth == 0))) { // send as a space character
 //         *approxWidth = static_cast<int16_t>(faceHeader_->spaceSize);
 //         return true;
 //     }

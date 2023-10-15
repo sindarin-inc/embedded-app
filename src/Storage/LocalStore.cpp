@@ -1549,7 +1549,7 @@ void LocalStore::migrateTxtPlacemarksToEpubPlacemarks() {
         for (auto &readable : *readables) {
             auto oldPlace = prefs_.oldReadablePlace.get(readable->shortenedUuid.c_str());
             if (oldPlace > 0) {
-                log_d("Found old place for %s = %u, migrating to new place format",
+                log_d("Found old place for %s = %" PRIu32 ", migrating to new place format",
                       readable->shortenedUuid.c_str(), oldPlace);
                 auto newPlace = Place::factory(oldPlace);
                 prefs_.readablePlace.set(readable->shortenedUuid.c_str(), newPlace->str().c_str());

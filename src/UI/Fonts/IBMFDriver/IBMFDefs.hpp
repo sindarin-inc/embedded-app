@@ -483,6 +483,7 @@ struct Glyph {
 
 // Used in context of both supported Font Formats.
 
+const constexpr GlyphCode DONT_CARE_CODE = 0x7FFC;
 const constexpr GlyphCode ZERO_WIDTH_CODE = 0x7FFD;
 const constexpr GlyphCode SPACE_CODE = 0x7FFE;
 const constexpr GlyphCode NO_GLYPH_CODE = 0x7FFF;
