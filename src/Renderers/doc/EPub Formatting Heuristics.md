@@ -18,7 +18,7 @@ Nested lists are allowed up to 5 levels. Both Ordered and Unordered lists can be
 
 **`<table>`** : Table formatting is partial: a table will start with "{TABLE}" shown at the beginning, and "{END TABLE}" shown at the end. Every row is separated with an horizontal rule. Rows are usually having one or more "cells" into them that are normally being shown in different columns. The renderer keeps the cells in separate lines: The screen width, the complexity of showing properly columns render the task of displaying them properly beyond the current capability: often the same cell must be aligned inside many columns or many rows, CSS is often used to control various aspect of cell formatting. Could be revisited in a subsequent version if better rendering solutions are identified.
 
-**`<blockquote>`** : Left and Right indent are added to paragraphs that are part of a blockquote. When located outside of any lists, the left and right indent are set to 12 pixels. When located inside an item of a list, 8 pixels are added to the item's left indent. The right indent remains at 12 pixels.
+**`<blockquote>`** : Left and Right indent are added to paragraphs that are part of a blockquote. The left and right indent are set to 12 and 8 pixels respectively for the first level. Blockquotes can be nested into each other. 8 pixels are added at additional level of indentation.
 
 **`Space`** : Multiple space characters in a row are replaced with a single space. Paragraphs that contain only space characters are eliminated from the output (Often used to do easy placement in pages instead of using CSS). 
 
