@@ -129,4 +129,6 @@ const char *pathToFileName(const char *path) {
     return path + pos;
 }
 
+uint32_t esp_random(void) { return (uint32_t)rand(); }
+
 #endif

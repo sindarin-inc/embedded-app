@@ -521,3 +521,5 @@ void AllowPowerOff() {
     // pinMode(sysOnPin, OUTPUT);
     // DigitalWrite(sysOnPin, LOW);
 }
+
+uint32_t esp_random(void) { return (uint32_t)esp_random(); }
