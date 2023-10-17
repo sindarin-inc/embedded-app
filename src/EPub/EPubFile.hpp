@@ -92,7 +92,8 @@ public:
     auto getReadableChapterIndex(const std::shared_ptr<EPubPlace> &ePubPlace) const -> int;
 
     auto hasDictionary(const std::string &chapterID) -> bool;
-    auto getDictionaryContent(const std::string &chapterID) -> std::string;
+    auto getDictionaryContent(const std::string &chapterID, std::shared_ptr<Place> placeInReadable,
+                              std::shared_ptr<Place> &placeInDictionary) -> std::string;
 
 private:
     Unzipper epubUnzipper_;

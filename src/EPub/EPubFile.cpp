@@ -155,8 +155,12 @@ auto EPubFile::hasDictionary(const std::string &chapterID) -> bool {
     return opf_->exists(dictionaryID);
 }
 
-auto EPubFile::getDictionaryContent(const std::string &chapterID) -> std::string {
+auto EPubFile::getDictionaryContent(const std::string &chapterID,
+                                    std::shared_ptr<Place> placeInReadable,
+                                    std::shared_ptr<Place> &placeInDictionary) -> std::string {
+
     if (!hasDictionary(chapterID)) {
+        log_e("This chapter does not have any dictionary definitions.");
         return "This chapter does not have any dictionary definitions.";
     }
 
@@ -167,10 +171,32 @@ auto EPubFile::getDictionaryContent(const std::string &chapterID) -> std::string
     // Load the dictionary xhtml content
     pugi::xml_document &doc = getXHTMLFile(dictionaryPath);
 
-    // Extract the <p> elements
+    int currentOffset = placeInReadable->getOffset();
+    std::string searchString;
     std::string dictionaryText = "";
+
+    // Extract the placeInDictionary based on the XML content
     for (auto p : doc.child("html").child("body").children("p")) {
         dictionaryText += StringFormat("%s\n\n", p.child_value());
+        int location = p.attribute("data-locations").as_int();
+        if (location <= currentOffset) {
+            searchString = "data-locations=\"" + std::to_string(location) + "\"";
+        } else {
+            break;
+        }
+    }
+
+    // Find the byte offset of the beginning of the line with the matching data-locations attribute
+    size_t offset = dictionaryText.find(searchString);
+    log_d("Searching for %s in %s", searchString.c_str(), dictionaryText.c_str());
+    if (offset != std::string::npos) {
+        while (offset > 0 && dictionaryText[offset - 1] != '\n' &&
+               dictionaryText[offset - 1] != '\r') {
+            offset--;
+        }
+        placeInDictionary = Place::factory(offset);
+    } else {
+        log_e("Line not found in dictionaryString");
     }
 
     return dictionaryText;

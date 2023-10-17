@@ -1,6 +1,7 @@
 #include "ReadableDictionaryScreen.hpp"
 
 #include "Misc/SpiramAllocator.hpp"
+#include "pugixml.hpp"
 
 auto ReadableDictionaryScreen::layout(LayoutContext &context, Size size) -> Size {
     context.setViewFrame(leftArrowView_, {{0, -5}, {10, 5}});
@@ -41,9 +42,10 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
         auto rendererStream = epubRenderer_.getStream();
         auto epubStream = std::dynamic_pointer_cast<EPubFile>(rendererStream);
         auto chapterId = epubStream->getIdByHref(placeInReadable_->getHRef());
-        log_d("Loading dictionary for chapter: %s", chapterId.c_str());
-        auto dictionaryString = epubStream->getDictionaryContent(chapterId);
-        // SpiramString dictionaryString = readable_->definitions(chapterId, placeInDictionary);
+        int currentOffset = placeInReadable_->getOffset();
+        log_d("Loading dictionary for chapter: %s : %d", chapterId.c_str(), currentOffset);
+        auto dictionaryString =
+            epubStream->getDictionaryContent(chapterId, placeInReadable_, placeInDictionary);
 
         if (preservePlace_) {
             placeInDictionary = preservePlace_;
@@ -51,11 +53,14 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
         }
         auto stream = std::make_shared<StdStringStream>(dictionaryString);
         renderer_.setStream(stream);
+        if (placeInDictionary == nullptr) {
+            placeInDictionary = Place::factory(0);
+        }
         auto resultPair = renderer_.renderPage(placeInDictionary);
         newPlace_ = std::dynamic_pointer_cast<EPubPlace>(resultPair.first);
         darkPicturePercent = resultPair.second;
-        // log_d("Place in readable: %s, place in dictionary: %s", placeInReadable_->str().c_str(),
-        //   placeInDictionary->str().c_str());
+        log_d("Place in readable: %s, place in dictionary: %s", placeInReadable_->str().c_str(),
+              placeInDictionary->str().c_str());
     } else {
         prevPlace_ = newPlace_;
         auto resultPair = renderer_.renderPage(newPlace_);
