@@ -7,6 +7,7 @@
 #include <freertos/task.h>
 #include <iostream>
 #include <signal.h>
+#include <sstream>
 #include <thread>
 #include <unistd.h>
 #pragma clang diagnostic push
@@ -22,6 +23,8 @@
 #include "Misc/Math.hpp"
 #include "Misc/Platform.hpp"
 #include "Sensors/LightingController.hpp"
+#include "UI/ReadableScreen.hpp"
+#include "UI/Screen.hpp"
 #include "sindarin-debug.h"
 
 #if SIMULATOR_BLE
@@ -38,6 +41,8 @@
 #endif
 
 extern void UIInnerLoop(RemoteCommand command);
+extern Screen *UIGetCurrentScreen();
+
 extern "C" void app_main(void); // NOLINT(readability-identifier-naming)
 
 const char *kGitHash = "SIMULATOR";
@@ -254,6 +259,31 @@ void runBackwardsUnitTest(SDL_Window *window, SDL_Renderer *renderer) {
     std::cerr << "unit test passed\n";
 }
 
+// This is used to save all png images of a book in support of the
+// automated testing capability
+void saveBookImages(SDL_Window *window, SDL_Renderer *renderer) {
+    auto skipWaveform = FakeEinkET013TT1SkipWaveform;
+    FakeEinkET013TT1SkipWaveform = true;
+
+    auto screen = UIGetCurrentScreen();
+    auto readable = dynamic_cast<ReadableScreen *>(screen);
+
+    if (readable != nullptr) {
+        for (int i = 0;; i++) {
+            std::ostringstream fname;
+            fname << "bookImages/" << i << ".png";
+            saveScreenshotPng(fname.str(), window, renderer);
+            sendCodeAndRender(RemoteCommand::ENTER, renderer);
+            if (readable->checkAtEnd()) break;
+        }
+        std::cerr << "Save Book Image Completed!" << std::endl;
+    } else {
+        std::cerr << "Not in a ReadableScreen!" << std::endl;
+    }
+
+    FakeEinkET013TT1SkipWaveform = skipWaveform;
+}
+
 // Only press 'a' when you are on a page in a readable.
 void previousPageFast(SDL_Window *window, SDL_Renderer *renderer) {
     auto skipWaveform = FakeEinkET013TT1SkipWaveform;
@@ -284,7 +314,6 @@ void goBackNumPages(SDL_Window *window, SDL_Renderer *renderer, int numPages) {
         usleep(1000000.0 / 240.0);
     }
 }
-
 
 void goBackwardNumPages(SDL_Window *window, SDL_Renderer *renderer, int numPages) {
     auto skipWaveform = FakeEinkET013TT1SkipWaveform;
@@ -358,6 +387,9 @@ auto mainLoop() -> bool {
                 break;
             case 'w':
                 goForwardNumPages(window, renderer, 200);
+                break;
+            case 'i':
+                saveBookImages(window, renderer);
                 break;
             }
 
