@@ -110,6 +110,7 @@ public:
     void processCommand(RemoteCommand command) override;
     void writeOutBookmarkUpdate();
     void updateBookmarkStatus();
+    auto checkAtEnd() -> bool;
 
 protected:
     void processCommandDemoMode(RemoteCommand command);
@@ -156,7 +157,6 @@ protected:
 private:
     void incrementReadingTime();
     void turnPage();
-    auto checkAtEnd() -> bool;
     uint32_t readingStartTime_;
     LastArrowPress lastArrowPress_ = REMOTE_NONE;
 

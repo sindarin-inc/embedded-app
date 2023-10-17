@@ -316,8 +316,7 @@ auto Pager::computeDarkPercent(const uint8_t *bitmap, uint16_t width, uint16_t h
 // Returns true if page contains picture(s) requiring constrast adjustment (dark pictures)
 auto Pager::displayPage(int16_t numSkipLines) -> uint8_t {
 
-    // log_w("First Line Idx: %" PRIu16 ", Last Line Idx: %" PRIu16 , firstPageLineIdx_,
-    // linesTailIdx_);
+    REND_WLOG("First Line Idx: %" PRIu16 ", Last Line Idx: %" PRIu16, firstPageLineIdx_, linesTailIdx_);
 
     uint16_t lineNbr = 0;
     int deciY = 0;

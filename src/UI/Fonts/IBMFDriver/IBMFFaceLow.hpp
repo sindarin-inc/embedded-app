@@ -55,27 +55,27 @@ public:
     }
     [[nodiscard]] inline auto getResolution() const -> PixelResolution { return resolution_; }
 
-    [[nodiscard]] inline auto getGlyphInfo(GlyphCode glyphCode) const -> const GlyphInfo & {
-        return (*glyphsInfo_)[glyphCode];
-    }
-
     [[nodiscard]] inline auto getGlyphHOffset(GlyphCode glyphCode) const -> int8_t {
-        if (glyphCode == SPACE_CODE) {
+        if (glyphCode >= faceHeader_->glyphCount) {
             return 0;
         }
         return (*glyphsInfo_)[glyphCode].horizontalOffset;
     }
 
     [[nodiscard]] inline auto getGlyphWidth(GlyphCode glyphCode) const -> uint8_t {
-        return (glyphCode < ZERO_WIDTH_CODE)
-                   ? (*glyphsInfo_)[glyphCode].bitmapWidth
-                   : static_cast<FIX16>(static_cast<uint16_t>(faceHeader_->spaceSize));
+        if (glyphCode < faceHeader_->glyphCount) {
+            return (*glyphsInfo_)[glyphCode].bitmapWidth;
+        } else if (glyphCode == SPACE_CODE) {
+            return static_cast<FIX16>(static_cast<uint16_t>(faceHeader_->spaceSize));
+        } else {
+            return 0;
+        }
     }
 
     [[nodiscard]] inline auto getLigKernPgmIndex(GlyphCode glyphCode) const -> uint16_t {
 
-        return (glyphCode < ZERO_WIDTH_CODE) ? (*glyphsInfo_)[glyphCode].ligKernPgmIndex
-                                             : NO_LIG_KERN_PGM;
+        return (glyphCode < faceHeader_->glyphCount) ? (*glyphsInfo_)[glyphCode].ligKernPgmIndex
+                                                     : NO_LIG_KERN_PGM;
     }
 
     inline auto setResolution(PixelResolution res) -> void { resolution_ = res; }

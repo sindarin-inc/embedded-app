@@ -216,8 +216,11 @@ private:
 
     uint16_t listIndent_[MAX_LEVEL_COUNT];
     uint16_t listUndent_[MAX_LEVEL_COUNT];
+
     uint16_t savedBlockquoteLeftIndent_{};
     uint16_t savedBlockquoteRightIndent_{};
+    int8_t blockquoteLevel_;
+
     uint16_t savedRowIndent_{}; // table rows;
 
     bool inTableRow_;

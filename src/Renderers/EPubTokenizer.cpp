@@ -642,6 +642,8 @@ auto EPubTokenizer::loadAndTokenizePage(StreamPlace fromPlace, bool backwards, S
 
     savedBlockquoteLeftIndent_ = 0;
     savedBlockquoteRightIndent_ = 0;
+    blockquoteLevel_ = -1;
+
     savedRowIndent_ = 0;
 
     // ----> 3) to limit empty vertical space at beginning of pages
@@ -1137,13 +1139,11 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 if (tokenizingStarted_ && closeTextToken()) {
                     return false;
                 }
-                if (listLevel_ == -1) {
-                    savedBlockquoteLeftIndent_ = 12;
-                    savedBlockquoteRightIndent_ = 12;
-                } else {
-                    savedBlockquoteLeftIndent_ = 15;
-                    savedBlockquoteRightIndent_ = 12;
-                }
+
+                blockquoteLevel_ += 1;
+                savedBlockquoteLeftIndent_ += (blockquoteLevel_ == 0) ? 12 : 8;
+                savedBlockquoteRightIndent_ += 8;
+
                 updatePagerIndent(false);
                 break;
 
@@ -1406,10 +1406,36 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     break;
 
                 case Tag::BLOCKQUOTE:
-                    savedBlockquoteLeftIndent_ = 0;
-                    savedBlockquoteRightIndent_ = 0;
-                    if ((tokenizingStarted_) && closeTextToken()) {
-                        return false;
+                    savedBlockquoteLeftIndent_ =
+                        (savedBlockquoteLeftIndent_ > 0)
+                            ? savedBlockquoteLeftIndent_ - ((blockquoteLevel_ == 0) ? 12 : 8)
+                            : 0;
+                    savedBlockquoteRightIndent_ =
+                        (savedBlockquoteRightIndent_ > 0) ? savedBlockquoteRightIndent_ - 8 : 0;
+
+                    if (blockquoteLevel_ >= 0) {
+                        blockquoteLevel_--;
+                    }
+
+                    if (tokenizingStarted_) {
+                        if (closeTextToken()) {
+                            return false;
+                        }
+                        if (!beginningOfPage_) {
+                            Token &newToken = tokens_.getNextAvailable();
+                            newToken = {.cStr = nullptr,
+                                        .picture = nullptr,
+                                        .streamPlace = {currentStreamOffset_, currentFileIdx_},
+                                        .pixWidth = 0,
+                                        .pixHeight = 0,
+                                        .length = 0,
+                                        .tokenId =
+                                            inTableRow_ ? TokenId::NEWLINE : TokenId::ENDPARAGRAPH,
+                                        .spacesAfter = 0};
+                            lastToken_ = nullptr;
+
+                            addTokenToPage(newToken, "\n", 1);
+                        }
                     }
                     updatePagerIndent(false);
                     break;
@@ -1858,7 +1884,7 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
             }
             nextByte();
         } else if (curChar == '\n') {
-            closeTextToken();
+            // closeTextToken();
             nextByte();
         } else {
             nextByte();
