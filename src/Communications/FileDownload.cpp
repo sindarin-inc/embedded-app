@@ -196,50 +196,96 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         return true;
     };
 
-    auto file = fileSystem.open(fullPath.c_str(), FILE_WRITE, true);
-    if (!file) {
-        log_e("Failed to open file %s for writing", fullPath.c_str());
-        return false;
-    }
-
-    auto data = std::make_shared<uint8_t[]>(4096);
-
-    auto reader = [bufferQueue, &file, data](HttpClient &client, int index,
-                                             int contentLength) -> size_t {
-        int bytesRead = client.read((char *)data.get(), 4096);
-        if (bytesRead <= 0) {
-            log_w("client.read returned %d bytes", bytesRead);
+    auto reader = [bufferQueue](HttpClient &client, int index, int contentLength) -> size_t {
+        uint8_t *data = (uint8_t *)heap_caps_malloc(bufferSize, MALLOC_CAP_SPIRAM);
+        if (data == nullptr) {
+            log_e("heap_caps_malloc(%d) failed", bufferSize);
             return 0;
         }
-
-        auto bytesWritten = file.write(data.get(), bytesRead); // Adjust size as needed
-        if (bytesWritten != bytesRead) {
-            log_e("Failed to write %d bytes, wrote %zu", bytesRead, bytesWritten);
-            // TODO: Fail the download
+        int bytesRead = client.read((char *)data, bufferSize);
+        if (bytesRead <= 0) {
+            log_w("client.read returned %d bytes", bytesRead);
+            heap_caps_free(data);
+            return 0;
         }
-
+        DataBlock block = {data, bytesRead};
+        if (xQueueSend(bufferQueue, &block, portMAX_DELAY) != pdPASS) {
+            log_e("xQueueSend failed");
+            heap_caps_free(data);
+            return 0;
+        }
         return bytesRead;
     };
 
     auto downloadStart = esp_timer_get_time();
 
+    // Spin up the low-priority disk writer task
+    DispatchQueue::dispatchOneOff(
+        [&fileSystem, bufferQueue, fullPath, &fileLength, progressCallback, downloadStart,
+         writeCompleteSemaphore] {
+        auto file = fileSystem.open(fullPath.c_str(), FILE_WRITE, true);
+        if (!file) {
+            log_e("Failed to open file %s for writing", fullPath.c_str());
+            return;
+        }
+        defer { file.close(); };
+        int written = 0;
+        auto time = esp_timer_get_time();
+
+        while (true) {
+            DataBlock block;
+            if (xQueueReceive(bufferQueue, &block, portMAX_DELAY) != pdPASS) {
+                log_e("xQueueReceive failed");
+            }
+
+            // TODO: Remove after testing
+            // log_d("Writing %d bytes %p", block.size, block.data);
+
+            // This is the signal for EOF
+            if (block.data == nullptr) {
+                break;
+            }
+
+            auto bytesWritten = file.write(block.data, block.size); // Adjust size as needed
+            if (bytesWritten != block.size) {
+                log_e("Failed to write %d bytes, wrote %zu", block.size, bytesWritten);
+                // TODO: Fail the download
+            }
+
+            written += bytesWritten;
+
+            // Report every 5s
+            auto now = esp_timer_get_time();
+            if (now - time > 5000000) {
+                float percentProgress = (float)written / fileLength * 100.0f;
+                log_d("Wrote %.1f%% (%.1f KB/s)", percentProgress,
+                      fileLength / 1024.0f / ((esp_timer_get_time() - downloadStart) / 1000000.0f));
+                progressCallback(percentProgress);
+                time = now;
+            }
+
+            heap_caps_free(block.data);
+        }
+        xSemaphoreGive(writeCompleteSemaphore);
+        UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
+        log_d("Disk writer task stack high watermark: %d", watermark);
+        },
+        4000, 1, 1);
+
     int httpCode;
     DispatchQueue::dispatchOneOff(
-        [url, openedConnection, reader, gzip, &httpCode, bufferQueue, writeCompleteSemaphore]() {
+        [url, openedConnection, reader, gzip, &httpCode, bufferQueue]() {
         httpCode = DownloadFile(url, openedConnection, reader, nullptr, gzip);
         // Once we get here the download is done, so we can signal the writer task to exit
         DataBlock block = {nullptr, 0};
         if (xQueueSend(bufferQueue, &block, portMAX_DELAY) != pdPASS) {
             log_e("xQueueSend error");
         }
-        xSemaphoreGive(writeCompleteSemaphore);
         },
         4000, 3, 1);
 
     xSemaphoreTake(writeCompleteSemaphore, portMAX_DELAY);
     auto diskWriteEnd = esp_timer_get_time();
-
-    file.close();
 
     if (httpCode != 200) {
         log_e("Failed to download file");
@@ -253,14 +299,14 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
 
     // Open the file to make sure it's the right size
     size_t fileSize = 0;
-    auto checkFile = fileSystem.open(fullPath.c_str());
+    auto file = fileSystem.open(fullPath.c_str());
     if (gzip) {
-        GUnzipStream gzStream(checkFile);
+        GUnzipStream gzStream(file);
         fileSize = gzStream.size();
     } else {
-        fileSize = checkFile.size();
+        fileSize = file.size();
     }
-    checkFile.close();
+    file.close();
 
     if (length != fileSize) {
         // TODO: What's the best API to get errors from the stream?
