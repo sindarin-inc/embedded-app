@@ -111,7 +111,7 @@ auto DownloadFile(
     int64_t duration = end - downloadStart;
     float bps = totalReadLen / (duration / 1000000.0f);
 
-    log_i("Downloadeded %d bytes in %.2fs (%.1f KB/s)", totalReadLen, duration / 1000000.0f,
+    log_i("Downloaded %d bytes in %.2fs (%.1f KB/s)", totalReadLen, duration / 1000000.0f,
           bps / 1000);
 
     float percentProgress = (float)totalReadLen / contentLength * 100.0f;
@@ -178,10 +178,12 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
     // fully fit in SPIRAM. We accomplish this by running the disk writing in a separate task
     // (thread) and passing data between the downloader and the file writer using a FreeRTOS queue.
 
-    // 70 queue slots * 65536 bytes = 4587520 bytes. Any files bigger than this _might_ get their
+    // 280 queue slots * 16384 bytes = 4587520 bytes. Any files bigger than this _might_ get their
     // download delayed by disk write performance.
-    constexpr int bufferSize = 65536;
-    QueueHandle_t bufferQueue = xQueueCreate(70, sizeof(DataBlock));
+    constexpr int bufferSize = 4096;
+    QueueHandle_t bufferQueue = xQueueCreate(4 * 280, sizeof(DataBlock));
+    defer { vQueueDelete(bufferQueue); };
+    SemaphoreHandle_t writeCompleteSemaphore = xSemaphoreCreateBinary();
     if (bufferQueue == NULL) {
         log_e("xQueueCreate failed");
         return ERR_ALLOCATION;
@@ -219,7 +221,8 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
 
     // Spin up the low-priority disk writer task
     DispatchQueue::dispatchOneOff(
-        [&fileSystem, bufferQueue, fullPath, &fileLength, progressCallback, downloadStart] {
+        [&fileSystem, bufferQueue, fullPath, &fileLength, progressCallback, downloadStart,
+         writeCompleteSemaphore] {
         auto file = fileSystem.open(fullPath.c_str(), FILE_WRITE, true);
         if (!file) {
             log_e("Failed to open file %s for writing", fullPath.c_str());
@@ -236,7 +239,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
             }
 
             // TODO: Remove after testing
-            log_d("Writing %d bytes %p", block.size, block.data);
+            // log_d("Writing %d bytes %p", block.size, block.data);
 
             // This is the signal for EOF
             if (block.data == nullptr) {
@@ -263,25 +266,25 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
 
             heap_caps_free(block.data);
         }
+        xSemaphoreGive(writeCompleteSemaphore);
         UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
         log_d("Disk writer task stack high watermark: %d", watermark);
         },
-        4000, 0, 1);
+        4000, 1, 1);
 
-    auto httpCode = DownloadFile(url, openedConnection, reader, nullptr, gzip);
+    int httpCode;
+    DispatchQueue::dispatchOneOff(
+        [url, openedConnection, reader, gzip, &httpCode, bufferQueue]() {
+        httpCode = DownloadFile(url, openedConnection, reader, nullptr, gzip);
+        // Once we get here the download is done, so we can signal the writer task to exit
+        DataBlock block = {nullptr, 0};
+        if (xQueueSend(bufferQueue, &block, portMAX_DELAY) != pdPASS) {
+            log_e("xQueueSend error");
+        }
+        },
+        4000, 3, 1);
 
-    // Once we get here the download is done, so we can signal the writer task to exit
-    DataBlock block = {nullptr, 0};
-    if (xQueueSend(bufferQueue, &block, portMAX_DELAY) != pdPASS) {
-        log_e("xQueueSend error");
-    }
-
-    // Wait for the disk write to complete
-    while (uxQueueMessagesWaiting(bufferQueue) > 0) {
-        log_d("Waiting for file write...");
-        vTaskDelay(pdMS_TO_TICKS(500));
-    }
-
+    xSemaphoreTake(writeCompleteSemaphore, portMAX_DELAY);
     auto diskWriteEnd = esp_timer_get_time();
 
     if (httpCode != 200) {
