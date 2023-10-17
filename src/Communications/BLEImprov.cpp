@@ -56,7 +56,7 @@ void BLEImprov::setState(BLEImprovState state) {
     }
     this->state_ = state;
     // Translate BLEImprov state to the most relevant Improv state
-    int improvState;
+    int improvState = 0;
     switch (state) {
     case STATE_WAITING:
         improvState = improv::STATE_AUTHORIZED;

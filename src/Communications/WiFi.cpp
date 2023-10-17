@@ -298,8 +298,9 @@ auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> 
     } else {
         log_i("Using provided WiFi credentials: %s/%s", ssid.c_str(), password.c_str());
         wifiConfig.sta.sae_pwe_h2e = WPA3_SAE_PWE_BOTH;
-        strncpy((char *)wifiConfig.sta.ssid, ssid.c_str(), sizeof(wifiConfig.sta.ssid));
-        strncpy((char *)wifiConfig.sta.password, password.c_str(), sizeof(wifiConfig.sta.password));
+        strncpy((char *)wifiConfig.sta.ssid, ssid.c_str(), sizeof(wifiConfig.sta.ssid) - 1);
+        strncpy((char *)wifiConfig.sta.password, password.c_str(),
+                sizeof(wifiConfig.sta.password) - 1);
     }
 
     err = esp_wifi_set_mode(WIFI_MODE_STA);
