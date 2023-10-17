@@ -235,28 +235,38 @@ void sendCodeAndRender(RemoteCommand command, SDL_Renderer *renderer) {
 void runBackwardsUnitTest(SDL_Window *window, SDL_Renderer *renderer) {
     auto skipWaveform = FakeEinkET013TT1SkipWaveform;
     FakeEinkET013TT1SkipWaveform = true;
-    bool first = true;
-    for (int i = 0; i < 10000; i++) {
-        if (!first) {
-            saveScreenshotPng("current.png", window, renderer);
+
+    auto screen = UIGetCurrentScreen();
+    auto readable = dynamic_cast<ReadableScreen *>(screen);
+
+    if (readable != nullptr) {
+        bool first = true;
+        for (int i = 0;; i++) {
+            if (!first) {
+                saveScreenshotPng("current.png", window, renderer);
+                if (readable->checkAtEnd()) break;
+                sendCodeAndRender(RemoteCommand::ENTER, renderer);
+            }
+            first = false;
+            saveScreenshotPng("next.png", window, renderer);
+            if (readable->checkAtEnd()) break;
             sendCodeAndRender(RemoteCommand::ENTER, renderer);
+            saveScreenshotPng("nextnext.png", window, renderer);
+            sendCodeAndRender(RemoteCommand::LEFT, renderer);
+            saveScreenshotPng("nextprev.png", window, renderer);
+            // compare the most two recent pngs -- they should be the same.
+            // if not, error out.
+            if (!isPngEqual("./next.png", "./nextprev.png")) {
+                std::cerr << "images don't match, sad face\n";
+                std::cerr << "check out next.png and nextprev.png for the diffs\n";
+                exit(1);
+            }
         }
-        first = false;
-        saveScreenshotPng("next.png", window, renderer);
-        sendCodeAndRender(RemoteCommand::ENTER, renderer);
-        saveScreenshotPng("nextnext.png", window, renderer);
-        sendCodeAndRender(RemoteCommand::LEFT, renderer);
-        saveScreenshotPng("nextprev.png", window, renderer);
-        // compare the most two recent pngs -- they should be the same.
-        // if not, error out.
-        if (!isPngEqual("./next.png", "./nextprev.png")) {
-            std::cerr << "images don't match, sad face\n";
-            std::cerr << "check out next.png and nextprev.png for the diffs\n";
-            exit(1);
-        }
+        std::cerr << "Unit test passed\n";
+    } else {
+        std::cerr << "Not in a readableScreen!!\n";
     }
     FakeEinkET013TT1SkipWaveform = skipWaveform;
-    std::cerr << "unit test passed\n";
 }
 
 // This is used to save all png images of a book in support of the
@@ -273,8 +283,8 @@ void saveBookImages(SDL_Window *window, SDL_Renderer *renderer) {
             std::ostringstream fname;
             fname << "bookImages/" << i << ".png";
             saveScreenshotPng(fname.str(), window, renderer);
-            sendCodeAndRender(RemoteCommand::ENTER, renderer);
             if (readable->checkAtEnd()) break;
+            sendCodeAndRender(RemoteCommand::ENTER, renderer);
         }
         std::cerr << "Save Book Image Completed!" << std::endl;
     } else {
