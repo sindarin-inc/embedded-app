@@ -181,7 +181,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
     // download delayed by disk write performance.
     constexpr int bufferSize = 4096;
     QueueHandle_t bufferQueue = xQueueCreate(1000, sizeof(DataBlock));
-    if (bufferQueue == NULL) {
+    if (bufferQueue == nullptr) {
         log_e("xQueueCreate failed");
         return ERR_ALLOCATION;
     }
@@ -204,7 +204,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
     };
 
     auto reader = [bufferQueue](HttpClient &client, int index, int contentLength) -> size_t {
-        uint8_t *data = (uint8_t *)heap_caps_malloc(bufferSize, MALLOC_CAP_SPIRAM);
+        auto *data = (uint8_t *)heap_caps_malloc(bufferSize, MALLOC_CAP_SPIRAM);
         if (data == nullptr) {
             log_e("heap_caps_malloc(%d) failed", bufferSize);
             return 0;
