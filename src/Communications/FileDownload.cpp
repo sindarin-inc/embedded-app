@@ -132,6 +132,7 @@ auto DownloadFile(const char *url,
                   const std::function<size_t(const uint8_t *buf, size_t size)> &writeBytes,
                   const std::function<void(int bytesWritten, float percentage)> &progressCallback,
                   bool gzip) -> int {
+
     constexpr int bufferSize = 4096;
     auto buffer = SpiRamArrayPtr<uint8_t>(bufferSize);
 
@@ -159,6 +160,7 @@ struct DataBlock {
 auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry, const char *path,
                   int length, const std::function<void(float percentage)> &progressCallback,
                   bool gzip) -> int {
+
     std::string fullPath(path);
 
     SHOW_HEAP();
