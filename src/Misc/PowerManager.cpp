@@ -345,7 +345,7 @@ void PowerManager::loop() {
         log_e("Error reading temperature %d, ignoring.", err);
     } else if (state_ != PowerState::ActiveOverTemp &&
                temperature > MAX_OPERATIONAL_TEMPERATURE_C) {
-        log_e("Temperature is too high! Going to sleep.");
+        log_e("Temperature is too high (%.1f)! Going to sleep.", temperature);
         state_ = PowerState::ActiveOverTemp;
         inactivityTimer_.setTimeoutMs(inactivityTimeoutMs());
         DispatchGetUiQueue()->dispatch([this]() {

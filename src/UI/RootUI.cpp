@@ -1123,9 +1123,8 @@ void RootUI::setup(DisplaySystem *display, LocalStore &localStore, FileSystem &f
                                              [this, systemSettingsMenu, display, &localStore]() {
         localStore.deleteReadables(false);
         localStore.deleteArticles(false);
-        systemSettingsMenu->showTemporaryMessage(*display, "Content cleared.");
-        Delay(1500);
-        this->power_.reboot();
+        systemSettingsMenu->showTemporaryMessage(*display, "Content cleared.", 2000, false);
+        power_.reboot();
     }));
 
     systemSettingsMenu->addMenuItem(MenuItem("Clear WiFi Settings",

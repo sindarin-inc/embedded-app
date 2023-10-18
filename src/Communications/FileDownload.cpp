@@ -7,6 +7,7 @@
 #include "Communications/SindarinAPI.hpp"
 #include "Misc/Defer.hpp"
 #include "Misc/GUnzipStream.hpp"
+#include "Misc/RateLimiter.hpp"
 #include "sindarin-debug.h"
 
 auto DownloadFile(
@@ -78,6 +79,7 @@ auto DownloadFile(
     }
 
     int totalReadLen = 0;
+    RateLimiter rl(5, 20, 10);
 
     while (totalReadLen < contentLength) {
         int readLen = readWrite(client, totalReadLen, contentLength);
@@ -91,17 +93,15 @@ auto DownloadFile(
 
         totalReadLen += readLen;
 
-        // Report every 5s
-        auto now = esp_timer_get_time();
-        if (now - time > 5000000) {
-            float percentProgress = (float)totalReadLen / contentLength * 100.0f;
-            log_d("Downloaded %.1f%% (%.1f KB/s)", percentProgress,
-                  totalReadLen / 1024.0f / ((esp_timer_get_time() - downloadStart) / 1000000.0f));
+        float percentage = (float)totalReadLen / contentLength * 100.0f;
+        rl.checkAndExecute(percentage, [totalReadLen, downloadStart,
+                                        progressCallback](int64_t time, float percentage) {
+            log_d("Downloaded %.1f%% (%.1f KB/s)", percentage,
+                  totalReadLen / 1024.0f / ((time - downloadStart) / 1000000.0f));
             if (progressCallback != nullptr) {
-                progressCallback(totalReadLen, percentProgress);
+                progressCallback(totalReadLen, percentage);
             }
-            time = now;
-        }
+        });
     }
 
     int64_t end = esp_timer_get_time();
@@ -226,22 +226,10 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
 
     auto downloadStart = esp_timer_get_time();
 
-    auto progressReporter = [progressCallback, downloadStart, &fileLength](int64_t &lastTime,
-                                                                           int written) -> void {
-        // Report every 5s
-        auto now = esp_timer_get_time();
-        if (now - lastTime > 5000000) {
-            float percentProgress = (float)written / fileLength * 100.0f;
-            log_d("Wrote %.1f%% (%.1f KB/s)", percentProgress,
-                  fileLength / 1024.0f / ((esp_timer_get_time() - downloadStart) / 1000000.0f));
-            progressCallback(percentProgress);
-            lastTime = now;
-        }
-    };
-
-    auto writer = [&file, bufferQueue, progressReporter]() -> void {
+    RateLimiter rl(5, 20, 10);
+    auto writer = [&file, bufferQueue, progressCallback, downloadStart, &fileLength,
+                   &rl]() -> void {
         int written = 0;
-        auto time = esp_timer_get_time();
 
         while (true) {
             DataBlock block;
@@ -253,6 +241,7 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
 
             // This is the signal for EOF
             if (block.data == nullptr) {
+                progressCallback(100);
                 break;
             }
 
@@ -265,7 +254,14 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
             }
 
             written += bytesWritten;
-            progressReporter(time, written);
+
+            float percentage = (float)written / fileLength * 100.0f;
+            rl.checkAndExecute(percentage, [written, downloadStart,
+                                            progressCallback](int64_t time, float percentage) {
+                log_d("Wrote %.1f%% (%.1f KB/s)", percentage,
+                      written / 1024.0f / ((time - downloadStart) / 1000000.0f));
+                progressCallback(percentage);
+            });
         }
     };
 
