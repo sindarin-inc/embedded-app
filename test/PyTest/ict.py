@@ -282,4 +282,5 @@ class MFICTClient:
         logger.info("reset")
         time.sleep(2)
         self.reset_dut()
-        # self.set_gpio0(1)
+        time.sleep(2)
+        self.set_gpio0(1)
