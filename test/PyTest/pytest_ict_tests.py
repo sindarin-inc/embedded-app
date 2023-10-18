@@ -139,7 +139,7 @@ def write_nvs(port, btmac, ict_ssid, ict_pw, cloudtoken):
     nvssize = get_nvs_partition_size()
     logger.info("nvs partition size: " + str(nvssize))
 
-    subprocess.run(
+    ret = subprocess.run(
         [
             os.environ["IDF_PATH"] + "/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py",
             "generate",
@@ -148,6 +148,9 @@ def write_nvs(port, btmac, ict_ssid, ict_pw, cloudtoken):
             str(nvssize),
         ]
     )
+
+    logger.info("generate partition return value " + str(ret.returncode))
+    ret.check_returncode()
 
     parts = [
                 os.environ["IDF_PATH"] + "/components/partition_table/parttool.py",
@@ -162,13 +165,36 @@ def write_nvs(port, btmac, ict_ssid, ict_pw, cloudtoken):
     print("command:")
     print(' '.join(parts))
 
+    input("press key to continue.")
+
     # write nvs partition to dut
-    subprocess.run(
+    ret = subprocess.run(
         parts
     )
 
-    # os.remove(csvfname)
+    os.remove(csvfname)
     # os.remove(binfname)
+
+    ret.check_returncode()
+    
+def clear_content_and_restart(ict_client):
+    # go to system menu, clear all content and restart
+    # ensure that actual downloads happen during the content sync
+    ict_client.tt_left()
+    time.sleep(1.0)
+    ict_client.tt_down()
+    time.sleep(1.0)
+    ict_client.tt_down()
+    time.sleep(1.0)
+    ict_client.tt_enter()
+    time.sleep(1.0)
+    ict_client.tt_up()
+    time.sleep(1.0)
+    ict_client.tt_up()
+    time.sleep(1.0)
+    ict_client.tt_up()
+    time.sleep(1.0)
+    ict_client.tt_enter()
 
 @pytest.fixture
 def port(request: FixtureRequest) -> t.Optional[str]:
@@ -188,27 +214,6 @@ class OverrideIdfSerial(IdfSerial):
 
         # The DUT is flashed here unless using --skip-autoflash=True
         super()._start()
-
-        # read ict's bluetooth mac
-        # btmac = self.ict_client.get_bt_mac()
-        # logger.info("ICT bluetooth MAC: " + btmac)
-
-        # wifi_ssid = self.ict_client.get_wifi_ssid()
-        # wifi_password = self.ict_client.get_wifi_password()
-        
-        # cloudtoken = "FAKECLOUDTOKEN"
-
-        # if run_full_sync():
-        #     global cfg_ssid
-        #     global cfg_password
-        #     global cfg_token
-
-        #     wifi_ssid = cfg_ssid
-        #     wifi_password = cfg_password
-        #     cloudtoken = cfg_token
-
-        # prepare nvs partition image and write to dut
-        # self.write_nvs(btmac, wifi_ssid, wifi_password, cloudtoken)
 
         # Close the serial port
         self.close()
@@ -429,6 +434,19 @@ class TestPowerConsumption:
 
         # wait 5 seconds
         time.sleep(5)
+
+        # clear content, ensure next button press triggers content sync
+        # this will reset the dut
+        clear_content_and_restart(ict_client)
+
+        # wait for boot again
+        dut.expect("Sol: Error-free boot!", timeout=30)
+
+        # wait for ICT pageturner connect
+        dut.expect("Connected to PageTurner", timeout=20)
+        logger.info("got pageturner message")
+        
+        time.sleep(5.0)
         
         # turntouch button
         ict_client.tt_enter()
@@ -472,27 +490,18 @@ class TestFullContentSync:
         logger.info("params user " + wifi_ssid + " password " + wifi_password)
         logger.info("closing dut serial 1")
         dut.serial.close()
+        logger.info("serial closed")
 
         # put dut into programming mode
-
-        logger.info("dut power off")
-        ict_client.set_power(False)
-        ict_client.set_gpio0(0)
-        time.sleep(2)
-        ict_client.set_power(True)
-        time.sleep(2)
-        ict_client.reset_dut()
-        time.sleep(2)
-        ict_client.set_gpio0(1)
+        ict_client.dut_programming_mode()
 
         # look for jtag port
         time.sleep(2)
         port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
         logger.info("dut port: " + port)
 
+        logger.info("write nvs")
         write_nvs(port, btmac, wifi_ssid, wifi_password, test_user_cloud_token)
-
-       
 
         logger.info("reset")
         ict_client.reset_dut()
@@ -501,11 +510,6 @@ class TestFullContentSync:
         port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
         logger.info("dut port: " + port)
 
-        # Serial comms go down here when we're toggling power. Go ahead and close out the connection.
-        #logger.info("closing dut serial")
-        #dut.serial.close()
-
-        
 
         # Note: If the IdfDut tries to connect to the ICT serial port to flash it, it dumps a bunch of serial
         # garbage to the ICT that will cause it to fail the next command. This clears the input buffer by sending a newline.
@@ -549,23 +553,7 @@ class TestFullContentSync:
         # wait 5 seconds
         time.sleep(5)
 
-        # go to system menu, clear all content and restart
-        # ensure that actual downloads happen during the content sync
-        ict_client.tt_left()
-        time.sleep(1.0)
-        ict_client.tt_down()
-        time.sleep(1.0)
-        ict_client.tt_down()
-        time.sleep(1.0)
-        ict_client.tt_enter()
-        time.sleep(1.0)
-        ict_client.tt_up()
-        time.sleep(1.0)
-        ict_client.tt_up()
-        time.sleep(1.0)
-        ict_client.tt_up()
-        time.sleep(1.0)
-        ict_client.tt_enter()
+        clear_content_and_restart(ict_client)
 
         # at this point the dut will restart
         # wait again for startup messages

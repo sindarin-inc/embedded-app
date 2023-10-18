@@ -33,8 +33,8 @@ class MFICTClient:
         curr_version = self.get_firmware_version_string(firmware_filename)
         logger.info("ICT version for test: " + curr_version)
 
-        #if version != curr_version:
-        #    self.flash_firmware(baudrate, timeout, firmware_filename, script_filename)
+        if version != curr_version:
+            self.flash_firmware(baudrate, timeout, firmware_filename, script_filename)
 
         # clean up, remove directory with unzipped firmware
         shutil.rmtree(firmware_dir)
@@ -269,3 +269,17 @@ class MFICTClient:
     
     def program(self):
         self.write("PROGRAM")
+
+    def dut_programming_mode(self):
+        self.set_power(False)
+        time.sleep(2)
+        self.set_gpio0(0)
+        time.sleep(2)
+        self.set_power(True)
+        logger.info("on")
+        time.sleep(2)
+        self.reset_dut()
+        logger.info("reset")
+        time.sleep(2)
+        self.reset_dut()
+        # self.set_gpio0(1)
