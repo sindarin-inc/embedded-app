@@ -23,6 +23,7 @@ next.png
 nextnext.png
 nextprev.png
 test/CatchTests/Images/TestRun
+test/CatchTests/EPubImages/TestRun
 reports
 managed_components
 sol-pytest-*
@@ -31,4 +32,5 @@ test/PyTest/requirements.txt
 current_samples_*
 warnings.txt
 test/CatchTests/TestData/metrics/
+test/CatchTests/EPubTestData/metrics/
 build-log.txt
