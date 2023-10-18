@@ -148,7 +148,7 @@ void StatsTask(void *parameter) {
     vTaskDelete(nullptr);
 }
 
-Screen *UIGetCurrentScreen() { return rootUi.getCurrentScreen(); }
+auto UIGetCurrentScreen() { return rootUi.getCurrentScreen(); }
 
 void UIInnerLoop(RemoteCommand command) {
     powerManager.feedInactivityTimer();

@@ -20,7 +20,7 @@ auto Place::factory(const std::string &placeStr) -> std::shared_ptr<Place> {
                 e++;
             }
             if (*e == ']') {
-                offset = atoi(s);
+                offset = strtol(s, nullptr, 10);
                 return std::make_shared<TxtPlace>(offset);
             }
         } else if (strncmp(s, "EPUB;offset:", 12) == 0) {
@@ -30,7 +30,7 @@ auto Place::factory(const std::string &placeStr) -> std::shared_ptr<Place> {
                 e++;
             }
             if (*e++ == ',') {
-                offset = atoi(s);
+                offset = strtol(s, nullptr, 10);
                 s = e;
                 if (strncmp(s, "href:", 5) == 0) {
                     s += 5;
@@ -46,7 +46,7 @@ auto Place::factory(const std::string &placeStr) -> std::shared_ptr<Place> {
             }
         }
     } else {
-        offset = atoi(placeStr.c_str());
+        offset = strtol(placeStr.c_str(), nullptr, 10);
         return std::make_shared<TxtPlace>(offset);
     }
 

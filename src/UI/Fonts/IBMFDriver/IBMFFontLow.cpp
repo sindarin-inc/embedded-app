@@ -64,12 +64,11 @@ auto IBMFFontLow::load(MemoryPtr fontData, uint32_t length) -> bool {
     }
 
     uint32_t binFaceLengths[MAX_FACE_COUNT];
-    for (int i = 0; i < preamble_->faceCount; i++) {
+
+    for (uint8_t i = 0; i < preamble_->faceCount; i++) {
         binFaceLengths[i] = ((i < (preamble_->faceCount - 1)) ? (*binFaceOffsets)[i + 1] : length) -
                             (*binFaceOffsets)[i];
-    }
 
-    for (int i = 0; i < preamble_->faceCount; i++) {
         if (!faces_[i].load(fontData + (*binFaceOffsets)[i], binFaceLengths[i],
                             preamble_->bits.fontFormat)) {
             LOGE("Unable to load face %d", i);

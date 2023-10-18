@@ -11,12 +11,12 @@ using namespace ibmf_defs;
 class RLEExtractor {
 private:
     static constexpr char const *TAG = "RLEExtractor";
-    MemoryPtr fromPixelsPtr_, fromPixelsEnd_;
+    MemoryPtr fromPixelsPtr_{nullptr}, fromPixelsEnd_{nullptr};
 
-    uint32_t repeatCount_;
+    uint32_t repeatCount_{0};
 
     uint8_t nybbleFlipper_ = 0xf0U;
-    uint8_t nybbleByte_;
+    uint8_t nybbleByte_{0};
 
     PixelResolution resolution_;
 

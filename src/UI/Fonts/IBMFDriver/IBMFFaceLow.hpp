@@ -120,6 +120,7 @@ public:
 
         FIX16 adj = glyphInfo->advance < ((glyphInfo->bitmapWidth + 1) << 6) ? (1 << 6) : 0;
 
+        // NOLINTNEXTLINE(bugprone-signed-char-misuse, cert-str34-c)
         *xoff = static_cast<int16_t>(glyphInfo->horizontalOffset);
         *advance = glyphInfo->advance + adj;
 

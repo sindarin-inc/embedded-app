@@ -13,7 +13,6 @@
 
 #include "Displays/FakeEinkET013TT1.hpp"
 #include "Misc/Dispatch.hpp"
-#include "Storage/PreferencesStore.hpp"
 #include "sindarin-debug.h"
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
@@ -46,7 +45,7 @@ void appMainTask(void *parameters) {
     vTaskDelete(NULL);
 }
 
-void StartFreeRtos(bool runAppMain) {
+void StartFreeRtos(bool runAppMain, FONT_CHOICES font, int x, int y, int lineSpacing) {
     // The FreeRTOS tick handler happens via SIGALRM, and it also kicks off preemptive task
     // switching, which is not what we want on the main thread, since it's not a real FreeRTOS task.
     // Just disable SIGALRM on this thread so that it only happens on FreeRTOS tasks.
@@ -64,12 +63,12 @@ void StartFreeRtos(bool runAppMain) {
     // TODO: Really mock prefs
     prefs.begin();
     prefs.invertSetting.set(0);
-    prefs.font.set(PREFS_SOL_MEDIUM);
-    prefs.lineSpacing.set(0);
-    prefs.rectX.set(42);
-    prefs.rectY.set(30);
-    prefs.rectW.set(255 - 42 * 2);
-    prefs.rectH.set(255 - 30 * 2);
+    prefs.font.set(font);
+    prefs.lineSpacing.set(lineSpacing);
+    prefs.rectX.set(x);
+    prefs.rectY.set(y);
+    prefs.rectW.set(256 - x * 2);
+    prefs.rectH.set(256 - y * 2);
     prefs.sortCriteria.set(0);
     prefs.sortDirection.set(0);
     prefs.firstRead.set(0);
@@ -124,9 +123,19 @@ void SendRemoteCommand(RemoteCommand command) {
     DispatchGetUiQueue()->dispatchFromISR([command]() { UIInnerLoop(command); });
 }
 
-auto GetDirectory() -> std::string {
+void SetImagesFolder(std::string folder) {
+    testRunPrefix = folder + "/TestRun/";
+    acceptedPathPrefix = folder + "/Accepted/";
+}
+
+auto GetDirectory(std::string filename = "") -> std::string {
     // gets the current source file path
-    std::string path = __FILE__;
+    std::string path;
+    if (filename.empty()) {
+        path = __FILE__;
+    } else {
+        path = filename;
+    }
 
     // Extract the directory by finding the last '/' character and
     // removing everything after it
@@ -146,7 +155,7 @@ auto CheckViewUnchanged(std::string key) -> ViewTestResult {
     };
 
     // Create the TestRun directory if needed
-    std::filesystem::create_directory(directory + testRunPrefix);
+    std::filesystem::create_directory(GetDirectory(directory + testRunPrefix + key));
 
     // Render out the FakeEinkET013TT1ParticlePositions to a png
     if (!stbi_write_png(result.renderedImagePath.c_str(), EinkET013TT1_PIXEL_WIDTH,

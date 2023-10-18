@@ -123,7 +123,6 @@ private:
     uint16_t repeat_;
     uint16_t remains_;
     uint16_t current_;
-    bool aborted_;
 
     SFile file_; // Current File Descriptor
     bool isOpen_{false};

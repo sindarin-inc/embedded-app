@@ -3,10 +3,14 @@
 
 #include "Displays/DisplayEinkET013TT1.hpp"
 #include "Inputs/RemoteInput.hpp"
+#include "Storage/PreferencesStore.hpp"
 
-void StartFreeRtos(bool runAppMain = true);
+void StartFreeRtos(bool runAppMain = true, FONT_CHOICES font = FONT_CHOICES::PREFS_SOL_MEDIUM,
+                   int x = 42, int y = 30, int lineSpacing = 0);
 
 void StopFreeRtos();
+
+void SetImagesFolder(std::string folder);
 
 void SendRemoteCommand(RemoteCommand command);
 
