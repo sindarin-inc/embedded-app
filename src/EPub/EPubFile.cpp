@@ -32,7 +32,7 @@ auto EPubFile::findFileOffsetAtCharOffset(const std::string &path, uint32_t char
     walker.epub = this;
 
     doc.child("html").child("body").traverse(walker);
-    if (readable_->isArticle()) log_w("article");
+    // if (readable_->isArticle()) log_w("article");
 
     return walker.offset;
 }
@@ -64,7 +64,7 @@ auto EPubFile::getFile(const std::string &completeFilePath)
                 epubUnzipper_.closeFile();
                 EPUB_PROFILE_END(UnzipperReadFromFile);
                 if (length == size) {
-                    if (readable_->isArticle()) log_w("article");
+                    // if (readable_->isArticle()) log_w("article");
 
                     return {std::move(buffer), length};
                 }
@@ -76,7 +76,7 @@ auto EPubFile::getFile(const std::string &completeFilePath)
         }
     }
 
-    if (readable_->isArticle()) log_w("article");
+    // if (readable_->isArticle()) log_w("article");
 
     return {nullptr, 0};
 
@@ -139,7 +139,7 @@ auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
         }
     }
 
-    if (readable_->isArticle()) log_w("article");
+    // if (readable_->isArticle()) log_w("article");
 
     return currentFileDoc_;
 }

@@ -67,7 +67,7 @@ auto DownloadFile(
     if (contentLength <= 0) {
         char *value;
         if (client.isChunkedResponse() && client.getResponseHeader("File-Size", &value) == ESP_OK) {
-            contentLength = atoi(value);
+            contentLength = strtol(value, nullptr, 10);
             log_d("Chunked transmission of File-Size %d", contentLength);
         } else {
             // if we somehow don't have a content length header, consider it an error for now

@@ -1,3 +1,4 @@
+#if 1
 #include <catch_amalgamated.hpp>
 
 // Allow access to protected methods from tests
@@ -20,9 +21,11 @@
 #undef private
 
 TEST_CASE("First few screens render correctly and handle remote commands") {
-    StartFreeRtos();
 
     SetupFileSystemMock("TestData");
+    SetImagesFolder("Images");
+
+    StartFreeRtos();
 
     // First screen renders twice once with a full refresh and once with a AU4
     WAIT_FOR_DRAW();
@@ -290,3 +293,5 @@ TEST_CASE("Test bmp file rendering") {
         ASSERT_VIEW_UNCHANGED("BitmapViewBooks");
     }
 }
+
+#endif

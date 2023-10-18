@@ -99,10 +99,9 @@ public:
         while (*buffer) {
             int16_t xoff;
             FIX16 advance;
-            GlyphCode glyphCode;
+            GlyphCode glyphCode = font_->translate(toChar32(&buffer));
 
-            if (face->getGlyphHorizontalMetrics(glyphCode = font_->translate(toChar32(&buffer)),
-                                                &xoff, &advance)) {
+            if (face->getGlyphHorizontalMetrics(glyphCode, &xoff, &advance)) {
                 width +=
                     (*buffer == '\0') ? (face->getGlyphWidth(glyphCode) - xoff) : (advance >> 6);
             }

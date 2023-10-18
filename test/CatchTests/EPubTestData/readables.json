@@ -1,0 +1,88 @@
+{
+    "readables": [
+        {
+            "uuid": "00491216-5612-4863-8735-b42004f3e64a",
+            "title": "Book1",
+            "date_created": "2023-05-23T08:44:55.813541-07:00",
+            "date_modified": "2023-05-23T08:44:55.813554-07:00",
+            "date_published": "null",
+            "authors": [
+                {
+                    "uuid": "91ae1429-c6d4-4b8b-88fa-81041d838f92",
+                    "name": "Author Book 1",
+                    "description": "null"
+                }
+            ],
+            "files": [
+                {
+                    "uuid": "06aa0331-2758-49d5-83d8-f2e4929ee333",
+                    "name": "Book1.epub",
+                    "size": 753750,
+                    "filetype": "epub",
+                    "uploaded_at": "2022-10-20T08:44:53.847361-07:00",
+                    "sha_hash": "db07de86d749785a210282636c412ada8efc7046f8bb55a7ba06527714e89344",
+                    "file": "06aa0331-2758-49d5-83d8-f2e4929ee333.epub",
+                    "readable_type": "book"
+                }
+            ],
+            "toc": [],
+            "readable_type": "book"
+        },
+        {
+            "uuid": "91ebc912-c83e-4d85-91c7-9506ae02af50",
+            "title": "Book 2",
+            "date_created": "2023-05-22T00:06:04.209990-07:00",
+            "date_modified": "2023-05-22T00:06:09.971522-07:00",
+            "date_published": "null",
+            "authors": [
+                {
+                    "uuid": "4cb461ce-e238-4d6b-85bd-bbe5257e282e",
+                    "name": "Author Book 2",
+                    "description": "null"
+                }
+            ],
+            "files": [
+                {
+                    "uuid": "745d8a61-560a-49a6-a883-62aad758cf4d",
+                    "name": "Book2.epub",
+                    "size": 171992,
+                    "filetype": "epub",
+                    "uploaded_at": "2023-05-22T00:06:04.204864-07:00",
+                    "sha_hash": "c9858661cd49b34c53b6182256f8e918b74df7b9e2f9cb8a7a131dc8f0074f23",
+                    "file": "745d8a61-560a-49a6-a883-62aad758cf4d.epub",
+                    "readable_type": "book"
+                }
+            ],
+            "toc": [],
+            "readable_type": "book"
+        },
+        {
+            "uuid": "81ebc912-c83e-4d85-91c7-9506ae02af50",
+            "title": "Book 3",
+            "date_created": "2023-05-22T00:06:04.209990-07:00",
+            "date_modified": "2023-05-22T00:06:09.971522-07:00",
+            "date_published": "null",
+            "authors": [
+                {
+                    "uuid": "4cb461ce-e238-4d6b-85bd-bbe5257e282e",
+                    "name": "Author Book 3",
+                    "description": "null"
+                }
+            ],
+            "files": [
+                {
+                    "uuid": "745d8a61-560a-49a6-a883-62aad758cf4d",
+                    "name": "Book3.epub",
+                    "size": 378301,
+                    "filetype": "epub",
+                    "uploaded_at": "2023-05-22T00:06:04.204864-07:00",
+                    "sha_hash": "c9858661cd49b34c53b6182256f8e918b74df7b9e2f9cb8a7a131dc8f0074f23",
+                    "file": "745d8a61-560a-49a6-a883-62aad758cf4d.epub",
+                    "readable_type": "book"
+                }
+            ],
+            "toc": [],
+            "readable_type": "book"
+        }
+    ]
+}

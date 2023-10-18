@@ -31,6 +31,10 @@ auto GUnzip::init() -> bool {
     if (init_) {
         // starting over, so clean up existing decompressor
         err = mz_inflateEnd(&zstr_);
+        if (err != MZ_OK) {
+            log_i("zlib error: %d", err);
+            return false;
+        }
     }
 
     init_ = true;

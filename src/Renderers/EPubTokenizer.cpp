@@ -478,7 +478,7 @@ auto EPubTokenizer::getCharEntity(const char *str) -> std::pair<const char *, co
         if (hexNumber) {
             return {toUtf8(strtol(theStr.c_str(), nullptr, 16)), str};
         } else if (number) {
-            return {toUtf8(atoi(theStr.c_str())), str};
+            return {toUtf8(strtol(theStr.c_str(), nullptr, 10)), str};
         } else {
             auto search = entities.at(theStr);
             if (search != nullptr) {
@@ -901,8 +901,8 @@ void EPubTokenizer::processPictureTag(pugi::xml_node node) {
         // Optimization: if <source> contains the width and height, the picture will
         // be loaded at the page generation time.
         if (source.attribute("width") && source.attribute("height")) {
-            pictureToken.pixWidth = atoi(source.attribute("width").value());
-            pictureToken.pixHeight = atoi(source.attribute("height").value());
+            pictureToken.pixWidth = strtol(source.attribute("width").value(), nullptr, 10);
+            pictureToken.pixHeight = strtol(source.attribute("height").value(), nullptr, 10);
             pictureToken.picture = nullptr;
         } else {
             REND_ELOG("Loading picture at the wrong moment!");
@@ -1202,7 +1202,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                     listLevel_ += 1;
                     listType_[listLevel_] = ListType::ORDERED;
                     pugi::xml_attribute attr = node.attribute("start");
-                    listSeqNbr_[listLevel_] = attr ? atoi(attr.value()) : 1;
+                    listSeqNbr_[listLevel_] = attr ? strtol(attr.value(), nullptr, 10) : 1;
                     listIndent_[listLevel_] = 0; // To be computed in <li> processing
                 }
                 break;
@@ -1248,7 +1248,8 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
                 if (listLevel_ >= 0) {
                     if (listType_[listLevel_] == ListType::ORDERED) {
                         pugi::xml_attribute attr = node.attribute("value");
-                        int32_t seqNbr = attr ? atoi(attr.value()) : listSeqNbr_[listLevel_];
+                        int32_t seqNbr =
+                            attr ? strtol(attr.value(), nullptr, 10) : listSeqNbr_[listLevel_];
                         (void)snprintf(listLineStart, 49, "%" PRIi32 ".  ", seqNbr);
                         listSeqNbr_[listLevel_] = ++seqNbr;
                     } else {
@@ -1882,9 +1883,6 @@ auto EPubTokenizer::addStrToPage(const pugi::char_t *str, uint32_t len) -> bool 
                 // } else {
                 // log_e("Lost a space....");
             }
-            nextByte();
-        } else if (curChar == '\n') {
-            // closeTextToken();
             nextByte();
         } else {
             nextByte();
