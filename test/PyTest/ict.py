@@ -272,15 +272,9 @@ class MFICTClient:
 
     def dut_programming_mode(self):
         self.set_power(False)
-        time.sleep(2)
         self.set_gpio0(0)
-        time.sleep(2)
         self.set_power(True)
         logger.info("on")
-        time.sleep(2)
         self.reset_dut()
         logger.info("reset")
-        time.sleep(2)
-        self.reset_dut()
-        time.sleep(2)
         self.set_gpio0(1)

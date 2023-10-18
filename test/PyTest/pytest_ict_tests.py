@@ -102,7 +102,7 @@ def clear_nvs(port):
         ]
     )
 
-def write_nvs(port, btmac, ict_ssid, ict_pw, cloudtoken):
+def write_nvs(ict_client, port, btmac, ict_ssid, ict_pw, cloudtoken):
     parts = btmac.split(":")
     hexstr = "".join(parts)
     logger.info("hex string: " + hexstr)
@@ -165,18 +165,28 @@ def write_nvs(port, btmac, ict_ssid, ict_pw, cloudtoken):
     print("command:")
     print(' '.join(parts))
 
-    input("press key to continue.")
-
     # write nvs partition to dut
     ret = subprocess.run(
         parts
     )
 
+    max_retries = 5
+    retry = 0
+    while ret.returncode != 0 and retry < max_retries:
+        logger.info('retry')
+        retry += 1
+        ict_client.dut_programming_mode()
+        # look for jtag port
+        time.sleep(2)
+        port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
+        logger.info("dut port: " + port)
+        ret = subprocess.run(parts)
+
     os.remove(csvfname)
-    # os.remove(binfname)
+    os.remove(binfname)
 
     ret.check_returncode()
-    
+
 def clear_content_and_restart(ict_client):
     # go to system menu, clear all content and restart
     # ensure that actual downloads happen during the content sync
@@ -223,7 +233,7 @@ def generate_and_write_nvs(ict_client, dut, ssid, password):
     logger.info("dut port: " + port)
 
     logger.info("write nvs")
-    write_nvs(port, btmac, wifi_ssid, wifi_password, test_user_cloud_token)
+    write_nvs(ict_client, port, btmac, wifi_ssid, wifi_password, test_user_cloud_token)
 
     logger.info("reset")
     ict_client.reset_dut()
@@ -507,11 +517,10 @@ class TestPowerConsumption:
 
 @pytest.mark.usefixtures("ict_client")
 @pytest.mark.ict
-@pytest.mark.skip()
-# @pytest.mark.skipif(run_full_sync() == False, reason="full test not selected, add 'fulltest,1' to " + test_config_filename)
+@pytest.mark.fullsync
 class TestFullContentSync:
     def test_full_content_sync(self, dut: OverrideDut, ict_client: MFICTClient, ssid, password) -> None:
-
+        logger.info("TestFullContentSync")
         generate_and_write_nvs(ict_client, dut, ssid, password)
 
         # Note: If the IdfDut tries to connect to the ICT serial port to flash it, it dumps a bunch of serial
@@ -521,7 +530,7 @@ class TestFullContentSync:
         logger.info("turn off usb power to dut")
         
         # todo: turn off power if running on batteries
-        #ict_client.set_power(False)
+        # ict_client.set_power(False)
         
         # servo values for full tester:
         # left temple open: 0
@@ -541,9 +550,15 @@ class TestFullContentSync:
         time.sleep(0.5)
         ict_client.set_servo("left", 75)
 
-        # connect to serial relay for log parsing
-        logger.info("connect dut log port")
+        # Wait for serial port to come back
+        # first wait for DUT device to show up
+        port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
+        # then connect to serial relay for log parsing
         dut.serial.connect_dut_log_port()
+
+        # connect to serial relay for log parsing
+        #logger.info("connect dut log port")
+        #dut.serial.connect_dut_log_port()
         logger.info("reset dut")
         ict_client.reset_dut()
 
