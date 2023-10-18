@@ -78,7 +78,6 @@ auto DownloadFile(
     }
 
     int totalReadLen = 0;
-    int lastPercentage = 0;
 
     while (totalReadLen < contentLength) {
         int readLen = readWrite(client, totalReadLen, contentLength);
@@ -92,18 +91,16 @@ auto DownloadFile(
 
         totalReadLen += readLen;
 
-        float percentProgress = (float)totalReadLen / contentLength * 100.0f;
+        // Report every 5s
         auto now = esp_timer_get_time();
-        // Report every 5-20s OR every 5% progress, whichever comes first
-        if ((now - time > 5000000) &&
-            (now - time > 20000000 || (percentProgress - lastPercentage) > 5)) {
+        if (now - time > 5000000) {
+            float percentProgress = (float)totalReadLen / contentLength * 100.0f;
             log_d("Downloaded %.1f%% (%.1f KB/s)", percentProgress,
                   totalReadLen / 1024.0f / ((esp_timer_get_time() - downloadStart) / 1000000.0f));
             if (progressCallback != nullptr) {
                 progressCallback(totalReadLen, percentProgress);
             }
             time = now;
-            lastPercentage = percentProgress;
         }
     }
 
@@ -178,15 +175,23 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
     // fully fit in SPIRAM. We accomplish this by running the disk writing in a separate task
     // (thread) and passing data between the downloader and the file writer using a FreeRTOS queue.
 
-    // 280 queue slots * 16384 bytes = 4587520 bytes. Any files bigger than this _might_ get their
+    // 1000 queue slots * 4096 bytes = 4096000 bytes. Any files bigger than this _might_ get their
     // download delayed by disk write performance.
     constexpr int bufferSize = 4096;
-    QueueHandle_t bufferQueue = xQueueCreate(4 * 280, sizeof(DataBlock));
-    defer { vQueueDelete(bufferQueue); };
-    SemaphoreHandle_t writeCompleteSemaphore = xSemaphoreCreateBinary();
+    QueueHandle_t bufferQueue = xQueueCreate(1000, sizeof(DataBlock));
     if (bufferQueue == NULL) {
         log_e("xQueueCreate failed");
         return ERR_ALLOCATION;
+    }
+    defer { vQueueDelete(bufferQueue); };
+    SemaphoreHandle_t writeCompleteSemaphore = xSemaphoreCreateBinary();
+    defer { vSemaphoreDelete(writeCompleteSemaphore); };
+
+    // Open the file for writing
+    auto file = fileSystem.open(fullPath.c_str(), FILE_WRITE, true);
+    if (!file) {
+        log_e("Failed to open file %s for writing", fullPath.c_str());
+        return ERR_FILE_OPEN;
     }
 
     int fileLength = 0;
@@ -219,16 +224,20 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
 
     auto downloadStart = esp_timer_get_time();
 
-    // Spin up the low-priority disk writer task
-    DispatchQueue::dispatchOneOff(
-        [&fileSystem, bufferQueue, fullPath, &fileLength, progressCallback, downloadStart,
-         writeCompleteSemaphore] {
-        auto file = fileSystem.open(fullPath.c_str(), FILE_WRITE, true);
-        if (!file) {
-            log_e("Failed to open file %s for writing", fullPath.c_str());
-            return;
+    auto progressReporter = [progressCallback, downloadStart, &fileLength](int64_t &lastTime,
+                                                                           int written) -> void {
+        // Report every 5s
+        auto now = esp_timer_get_time();
+        if (now - lastTime > 5000000) {
+            float percentProgress = (float)written / fileLength * 100.0f;
+            log_d("Wrote %.1f%% (%.1f KB/s)", percentProgress,
+                  fileLength / 1024.0f / ((esp_timer_get_time() - downloadStart) / 1000000.0f));
+            progressCallback(percentProgress);
+            lastTime = now;
         }
-        defer { file.close(); };
+    };
+
+    auto writer = [&file, bufferQueue, progressReporter]() -> void {
         int written = 0;
         auto time = esp_timer_get_time();
 
@@ -238,7 +247,6 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
                 log_e("xQueueReceive failed");
             }
 
-            // TODO: Remove after testing
             // log_d("Writing %d bytes %p", block.size, block.data);
 
             // This is the signal for EOF
@@ -247,31 +255,29 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
             }
 
             auto bytesWritten = file.write(block.data, block.size); // Adjust size as needed
+            heap_caps_free(block.data);
             if (bytesWritten != block.size) {
                 log_e("Failed to write %d bytes, wrote %zu", block.size, bytesWritten);
-                // TODO: Fail the download
+                // We'll catch the failure at the filesize check at the end
+                break;
             }
 
             written += bytesWritten;
-
-            // Report every 5s
-            auto now = esp_timer_get_time();
-            if (now - time > 5000000) {
-                float percentProgress = (float)written / fileLength * 100.0f;
-                log_d("Wrote %.1f%% (%.1f KB/s)", percentProgress,
-                      fileLength / 1024.0f / ((esp_timer_get_time() - downloadStart) / 1000000.0f));
-                progressCallback(percentProgress);
-                time = now;
-            }
-
-            heap_caps_free(block.data);
+            progressReporter(time, written);
         }
-        xSemaphoreGive(writeCompleteSemaphore);
-        UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
-        log_d("Disk writer task stack high watermark: %d", watermark);
-        },
-        4000, 1, 1);
+    };
 
+    // Spin up the disk writer task and wait for bytes in the queue
+    DispatchQueue::dispatchOneOff(
+        [writer, writeCompleteSemaphore]() {
+        writer();
+        xSemaphoreGive(writeCompleteSemaphore);
+        // UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
+        // log_d("Disk writer task stack high watermark: %d", watermark);
+        },
+        4000, 2, 1);
+
+    // Spin up the downloader task
     int httpCode;
     DispatchQueue::dispatchOneOff(
         [url, openedConnection, reader, gzip, &httpCode, bufferQueue]() {
@@ -281,14 +287,20 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         if (xQueueSend(bufferQueue, &block, portMAX_DELAY) != pdPASS) {
             log_e("xQueueSend error");
         }
+        // UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
+        // log_d("Downloader task stack high watermark: %d", watermark);
         },
-        4000, 3, 1);
+        2000, 3, 1);
 
+    // Wait for disk write to complete
     xSemaphoreTake(writeCompleteSemaphore, portMAX_DELAY);
+
+    file.close();
+
     auto diskWriteEnd = esp_timer_get_time();
 
     if (httpCode != 200) {
-        log_e("Failed to download file");
+        log_e("Failed to download file (http: %d)", httpCode);
         return httpCode;
     }
 
@@ -299,14 +311,14 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
 
     // Open the file to make sure it's the right size
     size_t fileSize = 0;
-    auto file = fileSystem.open(fullPath.c_str());
+    auto sizedFile = fileSystem.open(fullPath.c_str());
     if (gzip) {
-        GUnzipStream gzStream(file);
+        GUnzipStream gzStream(sizedFile);
         fileSize = gzStream.size();
     } else {
-        fileSize = file.size();
+        fileSize = sizedFile.size();
     }
-    file.close();
+    sizedFile.close();
 
     if (length != fileSize) {
         // TODO: What's the best API to get errors from the stream?
@@ -315,8 +327,6 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "wrong-size",
                             {{"expected", length}, {"actual", static_cast<int>(fileSize)}});
         return ERR_SIZE_MISMATCH;
-    } else {
-        log_d("Downloaded file is correct size: %zu bytes", fileSize);
     }
 
     return httpCode;
