@@ -7,7 +7,7 @@ import subprocess
 import zipfile
 import shutil
 
-from util import find_port_by_device_name, wait_for_port_by_device_name
+from util import find_port_by_device_name, wait_for_port_by_device_name, find_ports_by_device_name
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -21,6 +21,8 @@ class MFICTClient:
             raise Exception("Failed to find ICT")
         logger.info("Found ICT on port: " + port)
         self.ser = serial.Serial(port, baudrate, timeout=timeout, rtscts=False, dsrdtr=False)
+
+        self.mode = self.get_ict_mode()
 
         # check if ICT update is required
         version = self.get_ict_version()
@@ -85,17 +87,37 @@ class MFICTClient:
         # prevents duplicate JTAG port from showing up
         self.set_power(False)
 
+        # also close right temple (prevent JTAG port if glasses tester)
+        dut_jtag_port = ""
+        if self.mode == 1:
+            logger.info("reset dut")
+            self.reset_dut()
+            time.sleep(2)
+            # get dut jtag port
+            dut_jtag_port = wait_for_port_by_device_name("USB JTAG/serial debug unit", 0, timeout=10)
+            logger.info("dut jtag: " + dut_jtag_port)
+            #self.close_right_temple()
+            #time.sleep(2.0)
+            input("press key 1")
+
         # reboot into programming mode
         self.program()
         self.ser.close()
         self.ser = None
 
+        input("press key 2")
+
         # wait for JTAG port to appear
-        port = wait_for_port_by_device_name("USB JTAG/serial debug unit", 0, timeout=10)
-        if port is None:
-            # TODO: Retry?
-            raise Exception("Failed to find ICT JTAG")
-        logger.info("Found ICT JTAG on port: " + port)
+        time.sleep(4)
+        ports = find_ports_by_device_name("USB JTAG/serial debug unit")
+        port = ""
+        for p in ports:
+            if p != dut_jtag_port:
+                port = p
+                break
+
+        logger.info("ICT Jtag found: " + port)
+        input("ppp")
 
         # split arguments for esptool command to flash the firmware
         f = open(script_filename, 'r')
@@ -136,6 +158,16 @@ class MFICTClient:
         logger.info("Found ICT on port: " + port)
         self.ser = serial.Serial(port, baudrate, timeout=timeout, rtscts=False, dsrdtr=False)
         logger.info("flash successful")
+
+        if self.mode == 1:
+            #self.open_right_temple()
+            self.reset_dut()
+            time.sleep(2.0)
+            input("here")
+            # wait for dut jtag to reappear
+            dut_after = wait_for_port_by_device_name("USB JTAG/serial debug unit", 0, timeout=10)
+            logger.info("dut 2 " + dut_after)
+            input("here2")
 
     def flush_read_buffer(self):
         # Flush read buffer
@@ -267,6 +299,20 @@ class MFICTClient:
         version = resp.split(" ")[1]
         return version
     
+    def get_ict_mode(self):
+        # temp
+        return 1
+
+        self.write("GETMODE")
+        time.sleep(0.1)
+        resp = self.read()
+        logger.info("getmode got: " + resp)
+        parts = resp.split(" ")
+        if parts[0] == "Invalid":
+            return 1
+        modestr = resp.split(" ")[1]
+        return int(modestr)
+    
     def program(self):
         self.write("PROGRAM")
 
@@ -278,3 +324,39 @@ class MFICTClient:
         self.reset_dut()
         logger.info("reset")
         self.set_gpio0(1)
+
+    def left_open_value(self):
+        if self.mode == 0:
+            return 75
+        else:
+            return 0
+        
+    def right_open_value(self):
+        if self.mode == 0:
+            return -70
+        else:
+            return 0
+
+    def left_closed_value(self):
+        if self.mode == 0:
+            return 0
+        else:
+            return -75
+
+    def right_closed_value(self):
+        if self.mode == 0:
+            return 0
+        else:
+            return 100
+
+    def close_right_temple(self):
+        self.set_servo("right", self.right_closed_value())
+
+    def open_right_temple(self):
+        self.set_servo("right", self.right_open_value())
+
+    def close_left_temple(self):
+        self.set_servo("left", self.left_closed_value())
+
+    def open_left_temple(self):
+        self.set_servo("left", self.left_open_value())

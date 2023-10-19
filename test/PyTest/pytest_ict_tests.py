@@ -279,8 +279,11 @@ class OverrideIdfSerial(IdfSerial):
         super().__init__(*args, **kwargs)
 
     def _start(self):
+        ict_mode = self.ict_client.get_ict_mode()
+        logger.info("start ict mode " + str(ict_mode))
+
         # Wake up from sleep if necessary
-        self.ict_client.set_servo("right", -70)
+        self.ict_client.set_servo("right", right_open_value(ict_mode))
         
         # The DUT is flashed here unless using --skip-autoflash=True
         super()._start()
@@ -343,6 +346,7 @@ class OverrideDut(IdfDut):
         port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
         kwargs["port"] = port
         super().__init__(*args, **kwargs)
+        logger.info("done init idfdut")
 
 
 @pytest.fixture(scope="module")
@@ -387,9 +391,11 @@ def ict_client():
 
     logger.debug("Tearing down MFICTClient")
 
+    ict_mode = client.get_ict_mode()
+
     # Reset everything back to a default state
-    client.set_servo("right", 0)
-    client.set_servo("left", 0)
+    client.set_servo("right", right_open_value(ict_mode))
+    client.set_servo("left", left_open_value(ict_mode))
     client.set_power(False)
 
 
@@ -555,6 +561,10 @@ class TestFullContentSync:
         # garbage to the ICT that will cause it to fail the next command. This clears the input buffer by sending a newline.
         ict_client.clear_input()
 
+        # get ict mode (0: board only, 1: glasses)
+        ict_mode = ict_client.get_ict_mode()
+        logger.info("ict mode: " + str(ict_mode))
+
         logger.info("turn off usb power to dut")
         
         # todo: turn off power if running on batteries
@@ -568,10 +578,8 @@ class TestFullContentSync:
         # right temple closed: 100
 
         # values for full glasses tester
-        ict_client.set_servo("right", 0)
-        ict_client.set_servo("left", 0)
-
-        # switch for full glasses or board test?
+        ict_client.set_servo("right", right_open_value(ict_mode))
+        ict_client.set_servo("left", left_open_value(ict_mode))
 
         # Wait for serial port to come back
         # first wait for DUT device to show up
