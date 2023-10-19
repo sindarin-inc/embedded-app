@@ -400,7 +400,10 @@ auto mainLoop() -> bool {
                 }
                 break;
             case 'w':
-                goForwardNumPages(window, renderer, 200);
+                // Ignore cmd-w (close on macOS)
+                if (!(modState & KMOD_GUI)) {
+                    goForwardNumPages(window, renderer, 200);
+                }
                 break;
             case 'i':
                 saveBookImages(window, renderer);
