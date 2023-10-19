@@ -206,7 +206,7 @@ def clear_content_and_restart(ict_client):
     time.sleep(1.0)
     ict_client.tt_enter()
 
-def generate_and_write_nvs(ict_client, dut, ssid, password):
+def generate_and_write_nvs(ict_client, dut, ssid, password, fullsync):
     # write nvs
     # read ict's bluetooth mac
     btmac = ict_client.get_bt_mac()
@@ -215,7 +215,7 @@ def generate_and_write_nvs(ict_client, dut, ssid, password):
     wifi_ssid = ict_client.get_wifi_ssid()
     wifi_password = ict_client.get_wifi_password()
 
-    if ssid != "" and password != "":
+    if ssid != "" and password != "" and fullsync != "":
         wifi_ssid = ssid
         wifi_password = password
 
@@ -242,6 +242,30 @@ def generate_and_write_nvs(ict_client, dut, ssid, password):
     port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
     logger.info("dut port: " + port)
 
+def left_open_value(mode):
+    if mode == 0:
+        return 75
+    else:
+        return 0
+    
+def right_open_value(mode):
+    if mode == 0:
+        return -70
+    else:
+        return 0
+
+def left_closed_value(mode):
+    if mode == 0:
+        return 0
+    else:
+        return -75
+
+def right_closed_value(mode):
+    if mode == 0:
+        return 0
+    else:
+        return 100
+
 @pytest.fixture
 def port(request: FixtureRequest) -> t.Optional[str]:
     """Overridden to make sure we pick the right USB port for the DUT"""
@@ -257,7 +281,7 @@ class OverrideIdfSerial(IdfSerial):
     def _start(self):
         # Wake up from sleep if necessary
         self.ict_client.set_servo("right", -70)
-
+        
         # The DUT is flashed here unless using --skip-autoflash=True
         super()._start()
 
@@ -413,12 +437,11 @@ class TestWithIctOnly:
 @pytest.mark.usefixtures("power_client")
 @pytest.mark.ict
 @pytest.mark.power
-#@pytest.mark.skip()
-@pytest.mark.skipif(run_full_sync(), reason="running full content sync")
+@pytest.mark.skip()
 class TestPowerConsumption:
-    def test_power(self, dut: OverrideDut, ict_client: MFICTClient, power_client: PowerTester, ssid, password) -> None:
+    def test_power(self, dut: OverrideDut, ict_client: MFICTClient, power_client: PowerTester, ssid, password, fullsync) -> None:
 
-        generate_and_write_nvs(ict_client, dut, ssid, password)
+        generate_and_write_nvs(ict_client, dut, ssid, password, fullsync)
 
         logger.info("Testing voltage rails")
 
@@ -500,6 +523,12 @@ class TestPowerConsumption:
         # wait for wifi connection
         dut.expect("Connected, IP address", timeout=30)
 
+        # if fullsync, wait for it
+        if fullsync != "":
+            logger.info("waiting for full sync")
+            dut.expect("books are in sync", timeout=180)
+            dut.expect("articles are in sync", timeout=180)
+
         logger.info("Sleeping")
         ict_client.set_servo("right", 0)
 
@@ -517,11 +546,10 @@ class TestPowerConsumption:
 
 @pytest.mark.usefixtures("ict_client")
 @pytest.mark.ict
-@pytest.mark.fullsync
 class TestFullContentSync:
-    def test_full_content_sync(self, dut: OverrideDut, ict_client: MFICTClient, ssid, password) -> None:
+    def test_full_content_sync(self, dut: OverrideDut, ict_client: MFICTClient, ssid, password, fullsync) -> None:
         logger.info("TestFullContentSync")
-        generate_and_write_nvs(ict_client, dut, ssid, password)
+        generate_and_write_nvs(ict_client, dut, ssid, password, fullsync)
 
         # Note: If the IdfDut tries to connect to the ICT serial port to flash it, it dumps a bunch of serial
         # garbage to the ICT that will cause it to fail the next command. This clears the input buffer by sending a newline.
@@ -530,7 +558,7 @@ class TestFullContentSync:
         logger.info("turn off usb power to dut")
         
         # todo: turn off power if running on batteries
-        # ict_client.set_power(False)
+        ict_client.set_power(False)
         
         # servo values for full tester:
         # left temple open: 0
@@ -540,15 +568,10 @@ class TestFullContentSync:
         # right temple closed: 100
 
         # values for full glasses tester
-        # ict_client.set_servo("right", 0)
-        # ict_client.set_servo("left", 0)
+        ict_client.set_servo("right", 0)
+        ict_client.set_servo("left", 0)
 
         # switch for full glasses or board test?
-
-        logger.info("Powering on DUT")
-        ict_client.set_servo("right", -70)
-        time.sleep(0.5)
-        ict_client.set_servo("left", 75)
 
         # Wait for serial port to come back
         # first wait for DUT device to show up

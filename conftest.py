@@ -3,6 +3,7 @@ import pytest
 def pytest_addoption(parser):
     parser.addoption("--ssid", action="store", default="")
     parser.addoption("--password", action="store", default="")
+    parser.addoption("--fullsync", action="store", default="")
 
 @pytest.fixture(scope='session')
 def ssid(request):
@@ -17,3 +18,10 @@ def password(request):
     if password_value is None:
         pytest.skip()
     return password_value
+
+@pytest.fixture(scope='session')
+def fullsync(request):
+    fullsync_value = request.config.option.fullsync
+    if fullsync_value is None:
+        pytest.skip()
+    return fullsync_value
