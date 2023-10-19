@@ -11,12 +11,6 @@
 
 using namespace renderer_defs;
 
-// ToDo: The renderer interface has been adjusted to consider a new upcoming Place struct.
-//       It is now using a Place as an uint32_t, independant of an renderer independant
-//       StreamPlace, to support it's development in the current Sol app that support only
-//       TXT files.
-//       Will need to be adjusted considering the upcoming Place definition...
-
 class Renderer {
 
 public:
@@ -38,6 +32,11 @@ public:
     auto setCurrentPlace(std::shared_ptr<Place> newPlace) -> void {
         // log_w("setCurrentPlace...");
         currentPlace_ = tokenizer_->toStreamPlace(std::move(newPlace));
+    }
+
+    [[nodiscard]] auto getStreamPlace(std::shared_ptr<Place> place) -> StreamPlace {
+        // log_w("setCurrentPlace...");
+        return tokenizer_->toStreamPlace(place);
     }
 
     [[nodiscard]] auto getPreviousPlace() -> std::shared_ptr<Place>;

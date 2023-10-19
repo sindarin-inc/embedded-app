@@ -54,6 +54,7 @@ DemoScreen::DemoScreen(DisplaySystem &display, PreferencesStore &prefs,
     // This allows us to cross ownership boundaries and to force a partial update
     // even when we switch to the main menu the first time.
     display.forceDontChangeRefreshType();
+    lightingController_.enableOnlyIncreaseMode();
 
     lambdas_.emplace_back([this](DisplaySystem &display) {
         // Don't need to set it after that as they are on.
@@ -806,6 +807,9 @@ void DemoScreen::finishDemo() {
     dropVcom_ = false;
     display_.invertDisplay(false);
     prefs_.noSetupMode.set(true);
+
+    lightingController_.disableOnlyIncreaseMode();
+
     back();
 }
 

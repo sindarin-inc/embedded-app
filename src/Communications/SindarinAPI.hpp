@@ -31,6 +31,7 @@ enum SindarinError {
     ERR_OPEN_BLOCK = -9,
     ERR_SIZE_MISMATCH = -10,
     ERR_FILE_OPEN = -11,
+    ERR_ALLOCATION = -12,
 };
 
 class SindarinAPI {

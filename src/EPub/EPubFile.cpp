@@ -37,6 +37,39 @@ auto EPubFile::findFileOffsetAtCharOffset(const std::string &path, uint32_t char
     return walker.offset;
 }
 
+auto EPubFile::findCharOffsetAtFileOffset(const std::string &path, uint32_t fileOffset)
+    -> uint32_t {
+
+    pugi::xml_document &doc = getXHTMLFile(path);
+
+    struct Walker : pugi::xml_tree_walker {
+        auto for_each(pugi::xml_node &node) -> bool override {
+            if (node.type() == pugi::xml_node_type::node_pcdata) {
+                uint32_t length = strlen(node.value());
+                uint32_t nodeOffset = node.offset_debug();
+                if ((nodeOffset + length) >= fileOffset) {
+                    uint32_t offset = (fileOffset > nodeOffset) ? fileOffset - nodeOffset : 0;
+                    charOffset += offset;
+                    return false;
+                }
+                charOffset += length;
+            }
+            return true;
+        }
+
+        uint32_t charOffset;
+        uint32_t fileOffset;
+    } walker;
+
+    walker.charOffset = 0;
+    walker.fileOffset = fileOffset;
+
+    doc.child("html").child("body").traverse(walker);
+    // if (readable_->isArticle()) log_w("article");
+
+    return walker.charOffset;
+}
+
 // Returns a pointer to the buffer containing the extracted file from the EPub and it's length in a
 // tuple
 auto EPubFile::getFile(const std::string &completeFilePath)

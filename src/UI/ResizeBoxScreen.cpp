@@ -7,13 +7,14 @@
 // We will want a more intuitive way to do this in the final system,
 // but since it's so dependent on what the PageTurner ends up being,
 // I didn't want to over-engineer it here.
-ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs)
-    : display_(display), renderer_(display), prefs_(prefs) {
+ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs,
+                                 Telemetry &telemetry)
+    : display_(display), renderer_(display), prefs_(prefs), telemetry_(telemetry) {
 
     std::string message;
     message += "Press up to increase vertical dimension, down to decrease vertical "
                "dimension, left to increase horizontal dimension, right to decrease "
-               "horizontal dimension. Press \ue000 (center) when finished. Message repeats.\n\n";
+               "horizontal dimension. Press \ue000 (center) when finished.\n\n";
     message +=
         "In a secluded tower lived a wizard named Elinor, obsessed with reading. Her passion lay "
         "not in spells but in stories. One ancient tome enchanted her; its runes sparkled with "
@@ -30,7 +31,9 @@ ResizeBoxScreen::ResizeBoxScreen(DisplaySystem &display, PreferencesStore &prefs
 
 void ResizeBoxScreen::render(DisplaySystem &display) {
     DisplayRect currRect = display_.getBoundingBox();
-    display.drawDottedBox(-2, -2, currRect.width + 4, currRect.height + 4, 1, 2);
+    // The natural line spacing handles the vertical padding
+    // The horizontal padding adds one blank pixel column on either side of the rect
+    display.drawDottedBox(-2, 0, currRect.width + 1, currRect.height - 1, 1, 2);
     this->renderer_.renderFirstPage(0, true);
     display.updateDisplay(DisplaySystem::UpdateType::PARTIAL);
 }
@@ -40,24 +43,37 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::LEFT:
         oldRect.width += BOX_OFFSET_ADJUST_AMOUNT;
+        // Don't move the y if we're at the minimum height
         oldRect.x -= BOX_OFFSET_ADJUST_AMOUNT / 2;
         setNeedsRerender();
         break;
-    case RemoteCommand::RIGHT:
-        oldRect.width -= BOX_OFFSET_ADJUST_AMOUNT;
-        oldRect.x += BOX_OFFSET_ADJUST_AMOUNT / 2;
+    case RemoteCommand::RIGHT: {
+        // We apply the rect's bounding box in DisplaySystem, but we need to make sure to not adjust
+        // the X if we're already at the minimum
+        auto targetWidth = std::max(DisplaySystem::MIN_BOUNDING_BOX.width,
+                                    oldRect.width - BOX_OFFSET_ADJUST_AMOUNT);
+        auto subtractWidth = oldRect.width - targetWidth;
+        oldRect.width -= subtractWidth;
+        oldRect.x += subtractWidth / 2;
         setNeedsRerender();
         break;
+    }
     case RemoteCommand::UP:
         oldRect.height += BOX_OFFSET_ADJUST_AMOUNT;
         oldRect.y -= BOX_OFFSET_ADJUST_AMOUNT / 2;
         setNeedsRerender();
         break;
-    case RemoteCommand::DOWN:
-        oldRect.height -= BOX_OFFSET_ADJUST_AMOUNT;
-        oldRect.y += BOX_OFFSET_ADJUST_AMOUNT / 2;
+    case RemoteCommand::DOWN: {
+        // We apply the rect's bounding box in DisplaySystem, but we need to make sure to not adjust
+        // the Y if we're already at the minimum
+        auto targetHeight = std::max(DisplaySystem::MIN_BOUNDING_BOX.height,
+                                     oldRect.height - BOX_OFFSET_ADJUST_AMOUNT);
+        auto subtractHeight = oldRect.height - targetHeight;
+        oldRect.height -= subtractHeight;
+        oldRect.y += subtractHeight / 2;
         setNeedsRerender();
         break;
+    }
     case RemoteCommand::BACK:
         // The Turn Touch also sends a left keypress when long-pressing back so let's undo that
         // keystroke before saving.
@@ -76,6 +92,13 @@ void ResizeBoxScreen::processCommand(RemoteCommand command) {
         prefs_.rectH.set(display_.getBoundingBox().height);
         log_d("Saving bounding box to preferences: (%s)",
               display_.getBoundingBox().toString().c_str());
+
+        telemetry_.logMetricData(TelemetryField::METRIC_STYLE,
+                                 {{"bb_x", display_.getBoundingBox().x},
+                                  {"bb_y", display_.getBoundingBox().y},
+                                  {"bb_w", display_.getBoundingBox().width},
+                                  {"bb_h", display_.getBoundingBox().height}});
+
         back();
         break;
     default:

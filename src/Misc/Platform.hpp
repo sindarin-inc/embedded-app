@@ -99,5 +99,5 @@ auto GetHeapSize() -> size_t;
 void EnableCore0Wdt();
 void DisableCore0Wdt();
 #else
-
+uint32_t esp_random(void);
 #endif

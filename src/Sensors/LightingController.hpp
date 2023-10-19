@@ -28,6 +28,11 @@ public:
     // Enable lights altogether
     void enableLighting(int fadeMs = 200);
 
+    // Enable only-increase mode, used to only allow ambient light sensor to increase the lighting
+    // during setup
+    void enableOnlyIncreaseMode();
+    void disableOnlyIncreaseMode();
+
     // Disable updates and keeps a specific lighting setting (for when the user adjusts the setting
     // manually)
     void setOverrideValuePercent(int percent, bool maintainLightSensor = false);
@@ -60,6 +65,7 @@ protected:
     bool enabled_ = false;
     // lightsOut refers to the lights being turned off
     bool lightsOut_;
+    bool onlyIncreaseMode_ = false;
 
     void setCurrentDutyCycle(int dutyCycle, int fadeMs);
     auto getCurrentDutyCycle() -> int { return currentDutyCycle_; }

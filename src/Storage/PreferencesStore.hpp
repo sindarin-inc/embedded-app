@@ -538,6 +538,7 @@ public:
         syncReason = SyncReason::Manual;
         nextSyncTime = 0;
         ledChargeTime = 0;
+        isCharged = false;
         lastBatteryReport = 0;
         lastPageTurnerBattery = 0;
         settingsOnRestart = false;
@@ -622,6 +623,7 @@ public:
     static uint8_t lastPageTurnerBattery;
     static bool screenClearedAtShutdown;
     static bool settingsOnRestart;
+    static bool isCharged;
     // Indicates whether the glasses have been paired with a user account
     static PairedStatus paired;
 

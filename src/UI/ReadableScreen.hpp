@@ -111,6 +111,13 @@ public:
     void writeOutBookmarkUpdate();
     void updateBookmarkStatus();
     auto checkAtEnd() -> bool;
+    auto getScreenCurrentCharOffset() -> uint32_t;
+
+    // Used to retrieve the current spine idx and offset in the corresponding file.
+    // See test/CatchTests/TestEPub.cpp
+    auto getStreamPlace() -> renderer_defs::StreamPlace {
+        return renderer_.getStreamPlace(readable_->place);
+    }
 
 protected:
     void processCommandDemoMode(RemoteCommand command);

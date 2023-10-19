@@ -7,6 +7,7 @@
 #include "Communications/SindarinAPI.hpp"
 #include "Misc/Defer.hpp"
 #include "Misc/GUnzipStream.hpp"
+#include "Misc/RateLimiter.hpp"
 #include "sindarin-debug.h"
 
 auto DownloadFile(
@@ -94,7 +95,7 @@ auto DownloadFile(
     }
 
     int totalReadLen = 0;
-    int lastPercentage = 0;
+    RateLimiter rl(5, 20, 10);
 
     while (totalReadLen < contentLength) {
         int readLen = readWrite(client, totalReadLen, contentLength);
@@ -108,28 +109,28 @@ auto DownloadFile(
 
         totalReadLen += readLen;
 
-        float percentProgress = (float)totalReadLen / contentLength * 100.0f;
-        auto now = esp_timer_get_time();
-        // Report every 5-20s OR every 5% progress, whichever comes first
-        if ((now - time > 5000000) &&
-            (now - time > 20000000 || (percentProgress - lastPercentage) > 5)) {
-            log_d("Downloaded %.1f%% (%.1f KB/s)", percentProgress,
-                  totalReadLen / 1024.0f / ((esp_timer_get_time() - downloadStart) / 1000000.0f));
-            progressCallback(totalReadLen, percentProgress);
-            time = now;
-            lastPercentage = percentProgress;
-        }
+        float percentage = (float)totalReadLen / contentLength * 100.0f;
+        rl.checkAndExecute(percentage, [totalReadLen, downloadStart,
+                                        progressCallback](int64_t time, float percentage) {
+            log_d("Downloaded %.1f%% (%.1f KB/s)", percentage,
+                  totalReadLen / 1024.0f / ((time - downloadStart) / 1000000.0f));
+            if (progressCallback != nullptr) {
+                progressCallback(totalReadLen, percentage);
+            }
+        });
     }
 
     int64_t end = esp_timer_get_time();
     int64_t duration = end - downloadStart;
     float bps = totalReadLen / (duration / 1000000.0f);
 
-    log_i("DownloadFile complete %d in %" PRId64 "us (%f Bps %f KB/s, %f kbps)", totalReadLen,
-          duration, bps, bps / 1000, 8 * bps / 1000);
+    log_i("Downloaded %d bytes in %.2fs (%.1f KB/s)", totalReadLen, duration / 1000000.0f,
+          bps / 1000);
 
     float percentProgress = (float)totalReadLen / contentLength * 100.0f;
-    progressCallback(totalReadLen, percentProgress);
+    if (progressCallback != nullptr) {
+        progressCallback(totalReadLen, percentProgress);
+    }
 
     // verify we received enough bytes according to the content length header
     // rather than the length passed in, this works for compressed or uncompressed files
@@ -167,6 +168,11 @@ auto DownloadFile(const char *url,
         progressCallback, gzip);
 }
 
+struct DataBlock {
+    uint8_t *data;
+    int size;
+};
+
 auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry, const char *path,
                   int length, const std::function<void(float percentage)> &progressCallback,
                   bool gzip) -> int {
@@ -181,88 +187,152 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         log_d("Deleted %s", path);
     }
 
-    // Load the whole file into SPIRAM for fast network operations then write to disk
-    // TODO: We could probably improve overall speed, while minimizing WiFi connected time by
-    // writing to disk as we go from another core or writing to disk from a lower priority task. But
-    // that will be harder to make
-    std::shared_ptr<uint8_t[]> fileBuffer;
-    int fileLength;
+    // Disk writes are relatively slow (~40KB/s) while network downloads may be 10x faster. To
+    // minimize the chances of a network hiccup breaking the download, we want to download as fast
+    // as possible to SPIRAM but we still want to be able to download large files that _may_ not
+    // fully fit in SPIRAM. We accomplish this by running the disk writing in a separate task
+    // (thread) and passing data between the downloader and the file writer using a FreeRTOS queue.
 
-    // Because file writes tend to be twice the time the http download takes right now, adjust the
-    // progress accordingly
-
-    auto fileProgress = [progressCallback](int bytesWritten, float percentage) {
-        progressCallback(percentage / 3);
-    };
-
-    auto openedConnection = [&fileBuffer, &fileLength, &telemetry](int httpCode,
-                                                                   int contentLength) -> bool {
-        fileLength = contentLength;
-        fileBuffer = SpiRamArrayPtr<uint8_t>(contentLength);
-        if (fileBuffer == nullptr) {
-            log_e("Failed to allocate %d bytes for file download", contentLength);
-            telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "failed-allocate",
-                                {{"content-length", contentLength}});
-            return false;
-        }
-        return true;
-    };
-
-    auto gzipReader = [&fileBuffer](HttpClient &client, int index, int contentLength) -> size_t {
-        constexpr int bufferSize = 16384;
-        return client.read((char *)(fileBuffer.get() + index),
-                           std::min(bufferSize, contentLength - index));
-    };
-
-    auto httpCode = DownloadFile(url, openedConnection, gzipReader, fileProgress, gzip);
-
-    auto time = esp_timer_get_time();
-    auto downloadStart = time;
-
-    if (httpCode != 200) {
-        log_e("Failed to download file");
-        return httpCode;
+    // 1000 queue slots * 4096 bytes = 4096000 bytes. Any files bigger than this _might_ get their
+    // download delayed by disk write performance.
+    constexpr int bufferSize = 4096;
+    QueueHandle_t bufferQueue = xQueueCreate(1000, sizeof(DataBlock));
+    if (bufferQueue == nullptr) {
+        log_e("xQueueCreate failed");
+        return ERR_ALLOCATION;
     }
+    defer { vQueueDelete(bufferQueue); };
+    SemaphoreHandle_t writeCompleteSemaphore = xSemaphoreCreateBinary();
+    defer { vSemaphoreDelete(writeCompleteSemaphore); };
 
+    // Open the file for writing
     auto file = fileSystem.open(fullPath.c_str(), FILE_WRITE, true);
     if (!file) {
         log_e("Failed to open file %s for writing", fullPath.c_str());
         return ERR_FILE_OPEN;
     }
 
-    int written = 0;
-    while (written < fileLength) {
-        // Every ~ 6s at ~40-44KB/S
-        auto bytesWrittenToFile =
-            file.write(fileBuffer.get() + written, std::min(fileLength - written, 262144));
-        if (bytesWrittenToFile <= 0) {
-            log_w("Failed to write to file");
-            break;
+    int fileLength = 0;
+    auto openedConnection = [&fileLength](int httpCode, int contentLength) -> bool {
+        fileLength = contentLength;
+        // TODO: Bail out early if we don't have enough disk space to do this download
+        return true;
+    };
+
+    auto reader = [bufferQueue](HttpClient &client, int index, int contentLength) -> size_t {
+        auto *data = (uint8_t *)heap_caps_malloc(bufferSize, MALLOC_CAP_SPIRAM);
+        if (data == nullptr) {
+            log_e("heap_caps_malloc(%d) failed", bufferSize);
+            return 0;
         }
-        written += bytesWrittenToFile;
-        progressCallback(66.6 * written / fileLength + 33.4);
-    }
+        int bytesRead = client.read((char *)data, bufferSize);
+        if (bytesRead <= 0) {
+            log_w("client.read returned %d bytes", bytesRead);
+            heap_caps_free(data);
+            return 0;
+        }
+        DataBlock block = {data, bytesRead};
+        if (xQueueSend(bufferQueue, &block, portMAX_DELAY) != pdPASS) {
+            log_e("xQueueSend failed");
+            heap_caps_free(data);
+            return 0;
+        }
+        return bytesRead;
+    };
+
+    auto downloadStart = esp_timer_get_time();
+
+    RateLimiter rl(5, 20, 10);
+    auto writer = [&file, bufferQueue, progressCallback, downloadStart, &fileLength,
+                   &rl]() -> void {
+        int written = 0;
+
+        while (true) {
+            DataBlock block;
+            if (xQueueReceive(bufferQueue, &block, portMAX_DELAY) != pdPASS) {
+                log_e("xQueueReceive failed");
+            }
+
+            // log_d("Writing %d bytes %p", block.size, block.data);
+
+            // This is the signal for EOF
+            if (block.data == nullptr) {
+                progressCallback(100);
+                break;
+            }
+
+            auto bytesWritten = file.write(block.data, block.size); // Adjust size as needed
+            heap_caps_free(block.data);
+            if (bytesWritten != block.size) {
+                log_e("Failed to write %d bytes, wrote %zu", block.size, bytesWritten);
+                // We'll catch the failure at the filesize check at the end
+                break;
+            }
+
+            written += bytesWritten;
+
+            float percentage = (float)written / fileLength * 100.0f;
+            rl.checkAndExecute(percentage, [written, downloadStart,
+                                            progressCallback](int64_t time, float percentage) {
+                log_d("Wrote %.1f%% (%.1f KB/s)", percentage,
+                      written / 1024.0f / ((time - downloadStart) / 1000000.0f));
+                progressCallback(percentage);
+            });
+        }
+    };
+
+    // Spin up the disk writer task and wait for bytes in the queue
+    DispatchQueue::dispatchOneOff(
+        [writer, writeCompleteSemaphore]() {
+        writer();
+        xSemaphoreGive(writeCompleteSemaphore);
+        // UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
+        // log_d("Disk writer task stack high watermark: %d", watermark);
+        },
+        4000, 2, 1);
+
+    // Spin up the downloader task
+    int httpCode;
+    DispatchQueue::dispatchOneOff(
+        [url, openedConnection, reader, gzip, &httpCode, bufferQueue]() {
+        httpCode = DownloadFile(url, openedConnection, reader, nullptr, gzip);
+        // Once we get here the download is done, so we can signal the writer task to exit
+        DataBlock block = {nullptr, 0};
+        if (xQueueSend(bufferQueue, &block, portMAX_DELAY) != pdPASS) {
+            log_e("xQueueSend error");
+        }
+        // UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
+        // log_d("Downloader task stack high watermark: %d", watermark);
+        },
+        4000, 3, 1);
+
+    // Wait for disk write to complete
+    xSemaphoreTake(writeCompleteSemaphore, portMAX_DELAY);
 
     file.close();
 
-    int64_t end = esp_timer_get_time();
-    int64_t duration = end - downloadStart;
-    float bps = fileLength / (duration / 1000000.0f);
-    log_i("File write complete %d in %" PRId64 "us (%f Bps %f KB/s, %f kbps)", fileLength, duration,
-          bps, bps / 1000, 8 * bps / 1000);
+    auto diskWriteEnd = esp_timer_get_time();
 
-    // The file must be re-opened to check its size
-    size_t fileSize = 0;
-    if (gzip) {
-        file = fileSystem.open(fullPath.c_str());
-        GUnzipStream gzStream(file);
-        fileSize = gzStream.size();
-        file.close();
-    } else {
-        file = fileSystem.open(fullPath.c_str());
-        fileSize = file.size();
-        file.close();
+    if (httpCode != 200) {
+        log_e("Failed to download file (http: %d)", httpCode);
+        return httpCode;
     }
+
+    int64_t diskWriteDuration = diskWriteEnd - downloadStart;
+    float diskWriteBps = fileLength / (diskWriteDuration / 1000000.0f);
+    log_i("Downloaded+wrote %d bytes in %.2fs (%.1f KB/s)", fileLength,
+          diskWriteDuration / 1000000.0f, diskWriteBps / 1000);
+
+    // Open the file to make sure it's the right size
+    size_t fileSize = 0;
+    auto sizedFile = fileSystem.open(fullPath.c_str());
+    if (gzip) {
+        GUnzipStream gzStream(sizedFile);
+        fileSize = gzStream.size();
+    } else {
+        fileSize = sizedFile.size();
+    }
+    sizedFile.close();
 
     if (length != fileSize) {
         // TODO: What's the best API to get errors from the stream?
@@ -271,8 +341,6 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
         telemetry.logMetric(TelemetryField::METRIC_SYNC_STATUS, "wrong-size",
                             {{"expected", length}, {"actual", static_cast<int>(fileSize)}});
         return ERR_SIZE_MISMATCH;
-    } else {
-        log_d("Downloaded file is correct size: %zu bytes", fileSize);
     }
 
     return httpCode;

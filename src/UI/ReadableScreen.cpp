@@ -120,6 +120,16 @@ void ReadableScreen::updateBookmarkStatus() {
     bookmarkFile.close();
 }
 
+auto ReadableScreen::getScreenCurrentCharOffset() -> uint32_t {
+    auto epubFile = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
+    auto epubPlace = std::dynamic_pointer_cast<EPubPlace>(readable_->place);
+    if ((epubFile != nullptr) && (epubPlace != nullptr)) {
+        return epubFile->findCharOffsetAtFileOffset(epubPlace->getHRef(), epubPlace->getOffset());
+    } else {
+        return 0;
+    }
+}
+
 void ReadableScreen::writeOutBookmarkUpdate() {
     // create log directory in filesystem if it doesn't exist
     if (!fileSystem_.createDir("/bookmarks")) {
@@ -268,6 +278,7 @@ void ReadableScreen::render(DisplaySystem &display) {
     if (pageSpeed_ == 0) {
         // Regular Reading
         std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(readable_->place);
+        log_w("Char Offset: %" PRIu32, getScreenCurrentCharOffset());
         atEnd_ = checkAtEnd();
     } else {
         // Autopilot Reading
