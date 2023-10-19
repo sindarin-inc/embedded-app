@@ -5,7 +5,7 @@
 #include "EPubDefs.hpp"
 #include "EPubOpf.hpp"
 #include "Misc/SpiramAllocator.hpp"
-#include "Misc/unzipper.hpp"
+#include "Misc/Unzipper.hpp"
 #include "Models/DocType.hpp"
 #include "Renderers/RendererStream.hpp"
 #include "pugixml.hpp"
