@@ -70,11 +70,6 @@ auto DownloadFile(
         if (client.isChunkedResponse() && client.getResponseHeader("File-Size", &value) == ESP_OK) {
             contentLength = strtol(value, nullptr, 10);
             log_d("Chunked transmission of File-Size %d", contentLength);
-        } else {
-            // if we somehow don't have a content length header, consider it an error for now
-            log_e("Server did not return a proper content length for %s, retrieved length: %d", url,
-                  contentLength);
-            return ERR_CONTENT_LENGTH;
         }
     }
 
@@ -168,11 +163,6 @@ auto DownloadFile(const char *url,
         progressCallback, gzip);
 }
 
-struct DataBlock {
-    uint8_t *data;
-    int size;
-};
-
 auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry, const char *path,
                   int length, const std::function<void(float percentage)> &progressCallback,
                   bool gzip) -> int {
@@ -195,6 +185,10 @@ auto DownloadFile(const char *url, FileSystem &fileSystem, Telemetry &telemetry,
 
     // 1000 queue slots * 4096 bytes = 4096000 bytes. Any files bigger than this _might_ get their
     // download delayed by disk write performance.
+    struct DataBlock {
+        uint8_t *data;
+        int size;
+    };
     constexpr int bufferSize = 4096;
     QueueHandle_t bufferQueue = xQueueCreate(1000, sizeof(DataBlock));
     if (bufferQueue == nullptr) {

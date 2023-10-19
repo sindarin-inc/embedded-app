@@ -237,19 +237,19 @@ void runBackwardsUnitTest(SDL_Window *window, SDL_Renderer *renderer) {
     FakeEinkET013TT1SkipWaveform = true;
 
     auto screen = UIGetCurrentScreen();
-    auto readable = dynamic_cast<ReadableScreen *>(screen);
+    auto readableScreen = dynamic_cast<ReadableScreen *>(screen);
 
-    if (readable != nullptr) {
+    if (readableScreen != nullptr) {
         bool first = true;
         for (int i = 0;; i++) {
             if (!first) {
                 saveScreenshotPng("current.png", window, renderer);
-                if (readable->checkAtEnd()) break;
+                if (readableScreen->checkAtEnd()) break;
                 sendCodeAndRender(RemoteCommand::ENTER, renderer);
             }
             first = false;
             saveScreenshotPng("next.png", window, renderer);
-            if (readable->checkAtEnd()) break;
+            if (readableScreen->checkAtEnd()) break;
             sendCodeAndRender(RemoteCommand::ENTER, renderer);
             saveScreenshotPng("nextnext.png", window, renderer);
             sendCodeAndRender(RemoteCommand::LEFT, renderer);
@@ -276,14 +276,14 @@ void saveBookImages(SDL_Window *window, SDL_Renderer *renderer) {
     FakeEinkET013TT1SkipWaveform = true;
 
     auto screen = UIGetCurrentScreen();
-    auto readable = dynamic_cast<ReadableScreen *>(screen);
+    auto readableScreen = dynamic_cast<ReadableScreen *>(screen);
 
-    if (readable != nullptr) {
+    if (readableScreen != nullptr) {
         for (int i = 0;; i++) {
             std::ostringstream fname;
             fname << "bookImages/" << i << ".png";
             saveScreenshotPng(fname.str(), window, renderer);
-            if (readable->checkAtEnd()) break;
+            if (readableScreen->checkAtEnd()) break;
             sendCodeAndRender(RemoteCommand::ENTER, renderer);
         }
         std::cerr << "Save Book Image Completed!" << std::endl;
@@ -352,6 +352,7 @@ auto mainLoop() -> bool {
     SDL_Event e;
     RemoteCommand remoteCode = RemoteCommand::NONE;
     while (SDL_PollEvent(&e)) {
+        SDL_Keymod modState = SDL_GetModState();
         if (e.type == SDL_QUIT) {
             return false;
         } else if (e.type == SDL_KEYDOWN) {
@@ -393,10 +394,16 @@ auto mainLoop() -> bool {
                 nextPageFast(window, renderer);
                 break;
             case 'q':
-                goBackwardNumPages(window, renderer, 200);
+                // Ignore cmd-q (quit on macOS)
+                if (!(modState & KMOD_GUI)) {
+                    goBackwardNumPages(window, renderer, 200);
+                }
                 break;
             case 'w':
-                goForwardNumPages(window, renderer, 200);
+                // Ignore cmd-w (close on macOS)
+                if (!(modState & KMOD_GUI)) {
+                    goForwardNumPages(window, renderer, 200);
+                }
                 break;
             case 'i':
                 saveBookImages(window, renderer);
