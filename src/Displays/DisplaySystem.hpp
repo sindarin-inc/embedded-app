@@ -43,6 +43,9 @@ public:
     DisplaySystem(DisplaySystem const &) = delete;
     ~DisplaySystem() = default;
 
+    static constexpr DisplayRect MAX_BOUNDING_BOX = {5, 5, 246, 246};
+    static constexpr DisplayRect MIN_BOUNDING_BOX = {0, 0, 125, 45};
+
     virtual auto setup() -> bool;
 
     static void animationTimerCallback(TimerHandle_t timer);
@@ -51,8 +54,8 @@ public:
 
     int32_t defaultXPadding = 30;
     int32_t defaultYPadding = 20;
-    int32_t defaultScreenWidth = 255;
-    int32_t defaultScreenHeight = 255;
+    int32_t defaultScreenWidth = 256;
+    int32_t defaultScreenHeight = 256;
 
     DisplayRect defaultBoundingBox = {defaultXPadding, defaultYPadding,
                                       defaultScreenWidth - (uint32_t)defaultXPadding * 2,

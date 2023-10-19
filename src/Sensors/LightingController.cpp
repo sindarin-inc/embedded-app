@@ -74,6 +74,9 @@ void LightingController::enableLighting(int fadeMs) {
     }
 }
 
+void LightingController::enableOnlyIncreaseMode() { onlyIncreaseMode_ = true; }
+void LightingController::disableOnlyIncreaseMode() { onlyIncreaseMode_ = false; }
+
 void LightingController::setOverrideValuePercent(int percent, bool maintainLightSensor) {
     auto dutyCycle = percent / 7;
     if (dutyCycle == 0) {
@@ -117,9 +120,9 @@ auto LightingController::readAmbientLightData(uint16_t &channel1, uint16_t &chan
     }
     return true;
 }
-
 void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
     if (lightsOut_) {
+        log_i("Ambient light check requested but lights are out, ignoring");
         return;
     }
     if (overrideDutyCycle_ != -1) {
@@ -130,6 +133,7 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
     if (!readAmbientLightData(channel1, channel0)) {
         // Failed to read data, so just give up and return (will be logged from the Ltr329Als
         // driver)
+        log_w("Failed to read ambient light data from LTR329ALS");
         return;
     }
 
@@ -137,11 +141,21 @@ void LightingController::checkAmbientLight(int fadeMs, int timeoutMs) {
     movingAverage_.add(std::min(channel1, uint16_t(1000)));
     auto average = movingAverage_.average();
 
-    currentDutyCycle_ = MapRange(average, 0, 1000, static_cast<int>(GetMinLightingDutyCycle()),
-                                 static_cast<int>(GetMaxLightingDutyCycle()));
-    // log_d("Light sensor ch1: %d ch0: %d average: %d setting: %d", channel1, channel0, average,
-    // currentDutyCycle_);
+    int newDutyCycle = MapRange(average, 0, 1000, static_cast<int>(GetMinLightingDutyCycle()),
+                                static_cast<int>(GetMaxLightingDutyCycle()));
+
+    // If onlyIncreaseMode_ is enabled, only increase the duty cycle if the new value is greater
+    // than current
+    if (onlyIncreaseMode_ && newDutyCycle < currentDutyCycle_) {
+        log_w("Only increase mode enabled, not decreasing duty cycle (new=%d, current=%d)",
+              newDutyCycle, currentDutyCycle_);
+        return;
+    }
+
+    currentDutyCycle_ = newDutyCycle;
     setCurrentDutyCycle(currentDutyCycle_, fadeMs);
+    // log_w("Ambient light check: channel1=%d, channel0=%d, average=%d, dutyCycle=%d", channel1,
+    //       channel0, average, currentDutyCycle_);
 }
 
 void LightingController::setCurrentDutyCycle(int dutyCycle, int fadeMs) {

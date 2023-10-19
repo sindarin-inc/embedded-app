@@ -1,5 +1,6 @@
 #include "DisplaySystem.hpp"
 
+#include <algorithm>
 #include <freertos/FreeRTOS.h>
 #include <freertos/timers.h>
 #include <utility>
@@ -115,31 +116,21 @@ void DisplaySystem::setFullWindow() {
 }
 
 void DisplaySystem::ensureBoundaries() {
-    int gfxW = gfxClass_->width();
-    int gfxH = gfxClass_->height();
-
     log_d("Bounding Box before is %s", boundingBox_.toString().c_str());
 
-    if (boundingBox_.x < 0) {
-        boundingBox_.x = 0;
-    }
+    // First constrain position
+    boundingBox_.x = std::clamp(boundingBox_.x, MAX_BOUNDING_BOX.x,
+                                (int32_t)(MAX_BOUNDING_BOX.x + MAX_BOUNDING_BOX.width -
+                                          std::max(MIN_BOUNDING_BOX.width, boundingBox_.width)));
+    boundingBox_.y = std::clamp(boundingBox_.y, MAX_BOUNDING_BOX.y,
+                                (int32_t)(MAX_BOUNDING_BOX.y + MAX_BOUNDING_BOX.height -
+                                          std::max(MIN_BOUNDING_BOX.height, boundingBox_.height)));
 
-    if (boundingBox_.y < 0) {
-        boundingBox_.y = 0;
-    }
-
-    // Always keep the x & y the same. Use the width
-    // and height of the rectangle to stay in bounds.
-    //
-    // We may choose to do something more sophisticated later
-    // but for now this is fine.
-    if ((boundingBox_.x + boundingBox_.width) > gfxW) {
-        boundingBox_.width = gfxW - boundingBox_.x;
-    }
-
-    if ((boundingBox_.y + boundingBox_.height) > gfxH) {
-        boundingBox_.height = gfxH - boundingBox_.y;
-    }
+    // Then constrain dimensions
+    boundingBox_.width =
+        std::clamp(boundingBox_.width, MIN_BOUNDING_BOX.width, MAX_BOUNDING_BOX.width);
+    boundingBox_.height =
+        std::clamp(boundingBox_.height, MIN_BOUNDING_BOX.height, MAX_BOUNDING_BOX.height);
 
     log_d("Bounding Box after is %s", boundingBox_.toString().c_str());
 }

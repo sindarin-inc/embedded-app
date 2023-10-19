@@ -10,7 +10,7 @@ auto LineMenuScreen::layout(LayoutContext &context, Size size) -> Size {
         [this](LayoutContext &context, Size size) -> Size {
             int x = 0;
             int y = 0;
-            log_i("Archive menu layout: %zu views in size %dpx x %d", menuItemViews_.size(),
+            log_i("Line menu layout: %zu views in size %dpx x %d", menuItemViews_.size(),
                   size.width, size.height);
 
             for (auto &view : menuItemViews_) {

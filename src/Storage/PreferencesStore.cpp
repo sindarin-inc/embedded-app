@@ -12,6 +12,7 @@ RTC_SLOW_ATTR uint8_t PreferencesStore::lastPageTurnerBattery;
 RTC_SLOW_ATTR bool PreferencesStore::screenClearedAtShutdown;
 RTC_SLOW_ATTR bool PreferencesStore::settingsOnRestart;
 RTC_SLOW_ATTR PairedStatus PreferencesStore::paired;
+RTC_SLOW_ATTR bool PreferencesStore::isCharged;
 
 auto ToString(SyncReason reason) -> const char * {
     switch (reason) {
