@@ -1143,11 +1143,17 @@ auto LocalStore::processReadableDownload(
 void LocalStore::deleteReadables(bool restart) {
     deleteReadableFiles(books_, restart);
     books_.clear();
+
+    // Also delete localStoreMigrationVersion
+    prefs_.localStoreMigrationVersion.remove();
 }
 
 void LocalStore::deleteArticles(bool restart) {
     deleteReadableFiles(articles_, restart);
     articles_.clear();
+
+    // Also delete localStoreMigrationVersion
+    prefs_.localStoreMigrationVersion.remove();
 }
 
 void LocalStore::deleteReadableFiles(const ReadablesVector &readables, bool restart) {
