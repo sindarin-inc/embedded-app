@@ -366,12 +366,13 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
             for (const auto &[startingPosition, endingPosition] : bookmarksToAdd) {
                 ReadableBookmark bookmark;
                 bookmark.readable = readable->uuid;
-                auto place = Place::factory(startingPosition);
-                if (place->isFor(DocType::TXT)) {
-                    bookmark.startingPosition = startingPosition;
-                    bookmark.endingPosition = endingPosition;
-                } else if (place->isFor(DocType::EPUB)) {
-                    auto ePubPlace = std::dynamic_pointer_cast<EPubPlace>(place);
+                auto placeStart = Place::factory(startingPosition);
+                auto placeEnd = Place::factory(endingPosition);
+                if (placeStart->isFor(DocType::TXT)) {
+                    bookmark.startingPosition = placeStart->getOffset();
+                    bookmark.endingPosition = placeEnd->getOffset();
+                } else if (placeStart->isFor(DocType::EPUB)) {
+                    auto ePubPlace = std::dynamic_pointer_cast<EPubPlace>(placeStart);
                     bookmark.chapter = ePubPlace->getHRef();
                     bookmark.chapterOffset = ePubPlace->getOffset();
                 }
@@ -382,12 +383,13 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
             for (const auto &[startingPosition, endingPosition] : bookmarksToDelete) {
                 ReadableBookmark bookmark;
                 bookmark.readable = readable->uuid;
-                auto place = Place::factory(startingPosition);
-                if (place->isFor(DocType::TXT)) {
-                    bookmark.startingPosition = startingPosition;
-                    bookmark.endingPosition = endingPosition;
-                } else if (place->isFor(DocType::EPUB)) {
-                    auto ePubPlace = std::dynamic_pointer_cast<EPubPlace>(place);
+                auto placeStart = Place::factory(startingPosition);
+                auto placeEnd = Place::factory(endingPosition);
+                if (placeStart->isFor(DocType::TXT)) {
+                    bookmark.startingPosition = placeStart->getOffset();
+                    bookmark.endingPosition = placeEnd->getOffset();
+                } else if (placeStart->isFor(DocType::EPUB)) {
+                    auto ePubPlace = std::dynamic_pointer_cast<EPubPlace>(placeStart);
                     bookmark.chapter = ePubPlace->getHRef();
                     bookmark.chapterOffset = ePubPlace->getOffset();
                 }
