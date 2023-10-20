@@ -36,7 +36,7 @@ public:
 
     [[nodiscard]] auto getStreamPlace(std::shared_ptr<Place> place) -> StreamPlace {
         // log_w("setCurrentPlace...");
-        return tokenizer_->toStreamPlace(place);
+        return tokenizer_->toStreamPlace(std::move(place));
     }
 
     [[nodiscard]] auto getPreviousPlace() -> std::shared_ptr<Place>;
