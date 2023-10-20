@@ -27,7 +27,7 @@ public:
     [[nodiscard]] virtual auto isFor(DocType docType) const -> bool = 0;
 
     // Get the largest token to accept to have on a single line. As this ia an approximation, the
-    // "G" character is a compromise between a versy small width character (like the lowercase "l")
+    // "G" character is a compromise between a very small width character (like the lowercase "l")
     // and a very large one (like the uppercase "W").
     void computeMaxTextTokenCharSize() {
         maxTextTokenCharSize_ = display_.width() / display_.getTextWidth("G");

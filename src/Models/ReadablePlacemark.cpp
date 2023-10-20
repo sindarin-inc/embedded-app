@@ -17,11 +17,11 @@ auto convertToJson(const ReadablePlacemark &src, JsonVariant dst) -> bool {
 // NOLINTNEXTLINE(readability-identifier-naming) - ArduinoJson requires this name
 void convertFromJson(JsonVariantConst src, ReadablePlacemark &dst) {
     dst.uuid = src["uuid"].as<std::string>();
-    if (src.containsKey("position")) {
-        dst.place = Place::factory(src["position"].as<uint32_t>());
-    } else if (src.containsKey("chapter") && src.containsKey("chapter_offset")) {
+    if (src.containsKey("chapter") && src.containsKey("chapter_offset")) {
         dst.place = Place::factory(src["chapter_offset"].as<std::uint32_t>(),
                                    src["chapter"].as<std::string>());
+    } else if (src.containsKey("position")) {
+        dst.place = Place::factory(src["position"].as<uint32_t>());
     } else {
         dst.place = std::make_shared<NonePlace>();
     }
