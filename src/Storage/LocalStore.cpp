@@ -411,7 +411,7 @@ auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Reada
 
     std::shared_ptr<Place> serverPlace = prefsPlace->isFor(DocType::TXT) ? txtPlace : ePubPlace;
 
-    auto getSpineIndex = [this, readable](const std::shared_ptr<Place> place) -> int16_t {
+    auto getSpineIndex = [this, readable](const std::shared_ptr<Place> &place) -> int16_t {
         if (place->isFor(DocType::TXT)) {
             return 0;
         }
