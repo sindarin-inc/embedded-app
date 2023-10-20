@@ -105,20 +105,21 @@ using Idx = uint16_t;
 // These are the different tokens so as we parse a buffer, we more easily know what to do with the
 // text. Bits are assigned to each such that they can be combined in a mask for comparisons.
 enum class TokenId : uint16_t {
-    TEXT = 1,          // Usually a word. Can contain &NBSP; and spaces characters for formatting
-    ITEXT = 2,         // Indent *next* lines using this token width
-    HTEXT = 4,         // Start of a <H1>..<h6> header tag
-    NTEXT = 8,         // Text that is *NOT* in the pool
-    NEWLINE = 16,      // Full line vertical space. Break lines
-    ENDPARAGRAPH = 32, // After paragraph vertical space
-    HYPHEN = 64,       // ASCII hyphen "-"
-    ENDASH = 128,      // Unicode En Dash (U+2013) "–"
-    EMDASH = 256,      // Unicode Em Dash (U+2014) "—"
-    PICTURE = 512,     // Whole screen picture
-    EPICTURE = 1024,   // Embedded in page picture (between paragraphs) More than one can be present
-    HRULE = 2048,      // Horizontal line
-    BTABLE = 4096,     // Beginning of a table
-    ETABLE = 8192      // End of table
+    TEXT = 1 << 0,    // Usually a word. Can contain &NBSP; and spaces characters for formatting
+    ITEXT = 1 << 1,   // Indent *next* lines using this token width
+    HTEXT = 1 << 2,   // Start of a <H1>..<h6> header tag
+    NTEXT = 1 << 3,   // Text that is *NOT* in the pool
+    NEWLINE = 1 << 4, // Full line vertical space. Break lines
+    ENDPARAGRAPH = 1 << 5, // After paragraph vertical space
+    HYPHEN = 1 << 6,       // ASCII hyphen "-"
+    ENDASH = 1 << 7,       // Unicode En Dash (U+2013) "–"
+    EMDASH = 1 << 8,       // Unicode Em Dash (U+2014) "—"
+    PICTURE = 1 << 9,      // Whole screen picture
+    EPICTURE =
+        1 << 10,      // Embedded in page picture (between paragraphs) More than one can be present
+    HRULE = 1 << 11,  // Horizontal line
+    BTABLE = 1 << 12, // Beginning of a table
+    ETABLE = 1 << 13  // End of table
 };
 
 #if REND_DEBUGGING
