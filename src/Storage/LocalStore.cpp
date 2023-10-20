@@ -11,6 +11,7 @@
 
 #include "Communications/HtmlCleaner.hpp"
 #include "Communications/WiFi.hpp"
+#include "EPub/EPubFile.hpp"
 #include "GitVersion.hpp"
 #include "Misc/Crypto.hpp"
 #include "Misc/GUnzipStream.hpp"
@@ -410,14 +411,19 @@ auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Reada
 
     std::shared_ptr<Place> serverPlace = prefsPlace->isFor(DocType::TXT) ? txtPlace : ePubPlace;
 
-    int16_t prefsFileIdx = prefsPlace->isFor(DocType::TXT)
-                               ? 0
-                               : readable->findEPubHRefChapterIdx(
-                                     std::dynamic_pointer_cast<EPubPlace>(prefsPlace)->getHRef());
-    int16_t serverFileIdx = serverPlace->isFor(DocType::TXT)
-                                ? 0
-                                : readable->findEPubHRefChapterIdx(
-                                      std::dynamic_pointer_cast<EPubPlace>(serverPlace)->getHRef());
+    auto getSpineIndex = [this, readable](const std::shared_ptr<Place> place) -> int16_t {
+        if (place->isFor(DocType::TXT)) {
+            return 0;
+        }
+        // The only real way to compare epub placemark positions is via the spine
+        auto stream = EPubFile(fileSystem, readableFilePathForReading(readable).c_str(), readable);
+        auto ePubPlace = std::dynamic_pointer_cast<EPubPlace>(place);
+        auto index = stream.getSpineIdx(ePubPlace->getHRef());
+        return index;
+    };
+
+    int16_t prefsFileIdx = getSpineIndex(prefsPlace);
+    int16_t serverFileIdx = getSpineIndex(serverPlace);
 
     if (*serverPlace.get() == *prefsPlace.get()) {
         // If the placemark on the server is the same as the one on the device, don't change it
