@@ -885,6 +885,26 @@ void LocalStore::syncFromRemote(
                                      ReadableModelTypeToString(modelType).c_str())
                             .c_str());
                 }
+
+                // For any Readables that are downloaded as epub, but still have a TXT placemark,
+                // let's replace the placemark with the server placemark (and trust the server to do
+                // appropriate migrations)
+                for (auto &userReadable : userReadables) {
+                    auto readable = userReadable.readable;
+                    std::shared_ptr<Place> prefsPlace =
+                        Place::factory(prefs_.readablePlace.get(readable->shortenedUuid.c_str()));
+                    if (prefsPlace->isFor(DocType::TXT) &&
+                        RendererStream::parseDocType(
+                            readableFilePathForReading(readable).c_str()) == DocType::EPUB) {
+                        log_i(
+                            "Migrating epub placemark for \"%s\" from %s (locally) to %s (server)",
+                            readable->title.c_str(), prefsPlace->str().c_str(),
+                            userReadable.ePubPlace->str().c_str());
+                        prefs_.readablePlace.set(readable->shortenedUuid.c_str(),
+                                                 userReadable.ePubPlace->str());
+                    }
+                }
+
                 // DispatchGetUiQueue()->dispatch([progressCallback, syncState] {
                 progressCallback(syncState);
                 // });
