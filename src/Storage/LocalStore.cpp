@@ -417,6 +417,10 @@ auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Reada
         }
         // The only real way to compare epub placemark positions is via the spine
         auto stream = EPubFile(fileSystem, readableFilePathForReading(readable).c_str(), readable);
+        if (!stream.isOpen()) {
+            log_w("Failed to open ePub file for reading");
+            return -1;
+        }
         auto ePubPlace = std::dynamic_pointer_cast<EPubPlace>(place);
         auto index = stream.getSpineIdx(ePubPlace->getHRef());
         return index;
