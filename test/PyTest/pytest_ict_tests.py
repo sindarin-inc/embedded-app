@@ -270,13 +270,30 @@ def right_closed_value(mode):
 def port(request: FixtureRequest) -> t.Optional[str]:
     """Overridden to make sure we pick the right USB port for the DUT"""
     custom_port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
+    logger.info("custom port: " + custom_port)
     return custom_port
 
 
 class OverrideIdfSerial(IdfSerial):
     def __init__(self, ict_client: MFICTClient, *args: Any, **kwargs: Any) -> None:
         self.ict_client = ict_client
-        super().__init__(*args, **kwargs)
+        logger.info("overrideidfserial")
+
+        self.ict_client.dut_programming_mode()
+        logger.info("prog mode")
+
+        #super().__init__(*args, **kwargs)
+        s = False
+        while s == False:
+            try:
+                s = True
+                super().__init__(*args, **kwargs)
+            except Exception as e:
+                    logger.info("retry!")
+                    s = False
+                    self.ict_client.reset_dut()
+                    time.sleep(2)
+                    input("try again")
 
     def _start(self):
         ict_mode = self.ict_client.get_ict_mode()

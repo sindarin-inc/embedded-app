@@ -96,9 +96,6 @@ class MFICTClient:
             # get dut jtag port
             dut_jtag_port = wait_for_port_by_device_name("USB JTAG/serial debug unit", 0, timeout=10)
             logger.info("dut jtag: " + dut_jtag_port)
-            #self.close_right_temple()
-            #time.sleep(2.0)
-            input("press key 1")
 
         # reboot into programming mode
         self.program()
@@ -109,12 +106,15 @@ class MFICTClient:
 
         # wait for JTAG port to appear
         time.sleep(4)
-        ports = find_ports_by_device_name("USB JTAG/serial debug unit")
         port = ""
-        for p in ports:
-            if p != dut_jtag_port:
-                port = p
-                break
+        while port == "":
+            ports = find_ports_by_device_name("USB JTAG/serial debug unit")
+            for p in ports:
+                logger.info("found " + p)
+                if p != dut_jtag_port:
+                    port = p
+                    break
+            input("push")
 
         logger.info("ICT Jtag found: " + port)
         input("ppp")
