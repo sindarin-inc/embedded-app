@@ -94,7 +94,7 @@ private:
 
     bool fileOpen_{false};
 
-    std::shared_ptr<EPubOpf> opf_;
+    std::shared_ptr<EPubOpf> opf_{nullptr};
 
     // std::unique_ptr<pugi::char_t[]> currentFileBuffer_;
     std::shared_ptr<uint8_t[]> currentFileBuffer_;
