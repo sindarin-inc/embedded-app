@@ -70,8 +70,7 @@ auto convertToJson(const ReadableBookmark &src, JsonVariant dst) -> bool {
     if (src.chapter.length() > 0) {
         dst["chapter"] = src.chapter;
         dst["chapter_offset"] = src.chapterOffset;
-    }
-    if (src.startingPosition.length() > 0) {
+    } else if (src.startingPosition) {
         dst["starting_position"] = src.startingPosition;
         dst["ending_position"] = src.endingPosition;
     }
@@ -88,7 +87,7 @@ void convertFromJson(JsonVariantConst src, ReadableBookmark &dst) {
     dst.uuid = src["uuid"].as<std::string>();
     dst.chapter = src["chapter"].as<std::string>();
     dst.chapterOffset = src["chapter_offset"].as<uint32_t>();
-    dst.startingPosition = src["starting_position"].as<std::string>();
-    dst.endingPosition = src["ending_position"].as<std::string>();
+    dst.startingPosition = src["starting_position"].as<uint32_t>();
+    dst.endingPosition = src["ending_position"].as<uint32_t>();
     dst.readable = src["readable"].as<std::string>();
 }

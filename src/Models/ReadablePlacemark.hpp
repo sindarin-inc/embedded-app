@@ -19,11 +19,11 @@ public:
 
         if (j.containsKey("uuid")) {
             uuid = j["uuid"].as<std::string>();
-            if (j.containsKey("position")) {
-                place = Place::factory(j["position"].as<uint32_t>());
-            } else if (j.containsKey("chapter") && j.containsKey("chapter_offset")) {
+            if (j.containsKey("chapter") && j.containsKey("chapter_offset")) {
                 place = Place::factory(j["chapter_offset"].as<std::uint32_t>(),
                                        j["chapter"].as<std::string>());
+            } else if (j.containsKey("position")) {
+                place = Place::factory(j["position"].as<uint32_t>());
             } else {
                 place = std::make_shared<NonePlace>();
                 return false;

@@ -112,31 +112,6 @@ auto EPubFile::getFile(const std::string &completeFilePath)
     // if (readable_->isArticle()) log_w("article");
 
     return {nullptr, 0};
-
-#if 0
-    if (epubZipFile_.openFile(completeFilePath.c_str()) != UNZ_OK) {
-        log_e("Failed to open XHTML file %s", completeFilePath.c_str());
-    } else {
-        unz_file_info info;
-        epubZipFile_.getFileInfo(&info, nullptr, 0, nullptr, 0);
-
-        buffer = SpiRamArrayPtr<uint8_t>(info.uncompressed_size + 1);
-
-        if (buffer != nullptr) {
-            size_t len = epubZipFile_.readFromFile(buffer.get(), info.uncompressed_size);
-            epubZipFile_.closeFile();
-
-            if (len != info.uncompressed_size) {
-                log_e("Unable to unzip file %s", completeFilePath.c_str());
-            }
-            uint32_t length = info.uncompressed_size + 1;
-            buffer[len] = '\0';
-            return {std::move(buffer), length};
-        }
-    }
-
-    return {nullptr, 0};
-#endif
 }
 
 auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
