@@ -162,7 +162,6 @@ auto EPubFile::hasDictionary(const std::string &chapterID) -> bool {
 
     return opf_->exists(dictionaryID);
 }
-
 auto EPubFile::getDictionaryContent(const std::string &chapterID,
                                     std::shared_ptr<Place> placeInReadable,
                                     std::shared_ptr<Place> &placeInDictionary) -> std::string {
@@ -177,32 +176,53 @@ auto EPubFile::getDictionaryContent(const std::string &chapterID,
     std::string dictionaryPath = opf_->getHrefByID(dictionaryID);
 
     // Load the dictionary xhtml content
-    pugi::xml_document &doc = getXHTMLFile(dictionaryPath);
-
     int currentOffset = placeInReadable->getOffset();
-    std::string searchString;
-    std::string dictionaryText = "";
+    pugi::xml_document &doc = getXHTMLFile(dictionaryPath);
+    pugi::xml_node closestNode;
+    pugi::xml_node prevNode;
+    int closestLocation = -1;
+    int prevLocation = -1;
 
-    // Extract the placeInDictionary based on the XML content
+    // Search for the closest data-locations attribute closest to currentOffset without going over
     for (auto p : doc.child("html").child("body").children("p")) {
-        dictionaryText += StringFormat("%s\n\n", p.child_value());
         int location = p.attribute("data-locations").as_int();
-        if (location <= currentOffset) {
-            searchString = "data-locations=\"" + std::to_string(location) + "\"";
-        } else {
+        if (location >= currentOffset) {
+            if (prevLocation != -1) {
+                closestLocation = prevLocation;
+                closestNode = prevNode;
+            }
             break;
         }
+
+        prevLocation = location;
+        prevNode = p;
     }
 
-    // Find the byte offset of the beginning of the line with the matching data-locations attribute
-    size_t offset = dictionaryText.find(searchString);
-    log_d("Searching for %s in %s", searchString.c_str(), dictionaryText.c_str());
-    if (offset != std::string::npos) {
-        while (offset > 0 && dictionaryText[offset - 1] != '\n' &&
-               dictionaryText[offset - 1] != '\r') {
-            offset--;
+    std::string dictionaryText;
+    std::string beforeClosestNodeText;
+    if (closestLocation != -1) {
+        // Construct the text with the XML before the closest node
+        for (auto p : doc.child("html").child("body").children("p")) {
+            beforeClosestNodeText += StringFormat("%s\n\n", p.child_value());
+            if (p == closestNode) {
+                break; // stop once we reach the closestNode
+            }
         }
-        placeInDictionary = Place::factory(offset);
+
+        // Construct the text with the XML after the closest node
+        for (auto p = closestNode.next_sibling(); p; p = p.next_sibling()) {
+            dictionaryText += StringFormat("%s\n\n", p.child_value());
+        }
+
+        // Set the place in the dictionary based on the length of the text before the closest node
+        uint32_t charOffset = beforeClosestNodeText.length();
+        placeInDictionary = Place::factory(charOffset);
+
+        // Concatenate to form the full dictionaryText
+        dictionaryText = beforeClosestNodeText + dictionaryText;
+
+        log_i("Found closest node at char offset: %d for location: %d/%d", charOffset,
+              closestLocation, currentOffset);
     } else {
         log_e("Line not found in dictionaryString");
     }
