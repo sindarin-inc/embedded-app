@@ -20,7 +20,7 @@ public:
         int pageStartIndex = page * glyphsPerPage;
         for (int i = 0; i < glyphsPerPage; i++) {
             int index = pageStartIndex + i;
-            if (i >= glyphs.size()) {
+            if (index >= glyphs.size()) {
                 break;
             }
             int x = (i % gridWidth) * xSpacing;
