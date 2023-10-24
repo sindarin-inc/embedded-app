@@ -16,20 +16,12 @@ public:
         int xSpacing = display.width() / gridWidth;
         int ySpacing = display.height() / gridHeight;
 
-        int index = 0;
-        for (int y = 0; y < gridHeight; ++y) {
-            for (int x = 0; x < gridWidth; ++x) {
-                if (index >= glyphs.size()) break;
-
-                Point p;
-                p.x = x * xSpacing;
-                p.y = y * ySpacing;
-
-                display.drawSingleLineOfText(glyphs[index], p.x, p.y);
-
-                ++index;
-            }
-            if (index >= glyphs.size()) break;
+        int glyphsPerPage = gridWidth * gridHeight;
+        int index = page * glyphsPerPage;
+        for (int i = 0; i < glyphsPerPage; i++) {
+            int x = (i % gridWidth) * xSpacing;
+            int y = (i / gridWidth) * ySpacing;
+            display.drawSingleLineOfText(glyphs[index + i], x, y);
         }
 
         display.updateDisplay();
@@ -37,10 +29,14 @@ public:
 
     void processCommand(RemoteCommand command) override{};
 
+    auto pages() -> int { return (glyphs.size() / (gridWidth * gridHeight)) + 1; }
+    void setPage(int page) { this->page = page; }
+
 private:
     std::vector<std::string> glyphs;
     int gridWidth;
     int gridHeight;
+    int page = 0;
 };
 
 TEST_CASE("Test glyph rendering") {
@@ -58,28 +54,34 @@ TEST_CASE("Test glyph rendering") {
         "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "á", "é",
         "í", "ó", "ú", "ü", "ñ", "ß", "ç", "Á", "É", "Í", "Ó", "Ú", "Ü", "Ñ", "Ç"};
 
-    SECTION("Test small font Glyphs") {
-        GlyphTestScreen screen(glyphs, 16, 16);
-        display->setFont(display->style.solSansSmall.readableFont);
-        screen.render(*display);
+    std::vector<std::string> glyphPairs;
+    for (const auto &glyph1 : glyphs) {
+        for (const auto &glyph2 : glyphs) {
+            glyphPairs.push_back(glyph1 + glyph2);
+        }
+    }
 
-        ASSERT_VIEW_UNCHANGED("GlyphTestScreenS");
+    auto renderGlyphs =
+        [&glyphPairs, &display](const std::string &key, int gridWidth, int gridHeight, Font *font) {
+        GlyphTestScreen screen(glyphPairs, gridWidth, gridHeight);
+        display->setFont(font);
+        for (int i = 0; i < screen.pages(); i++) {
+            screen.setPage(i);
+            screen.render(*display);
+            ASSERT_VIEW_UNCHANGED(key + std::to_string(i));
+        }
+    };
+
+    SECTION("Test small font Glyphs") {
+        renderGlyphs("GlyphTestS", 12, 16, display->style.solSansSmall.readableFont);
     }
 
     SECTION("Test medium font Glyphs") {
-        GlyphTestScreen screen(glyphs, 14, 14);
-        display->setFont(display->style.solSansMedium.readableFont);
-        screen.render(*display);
-
-        ASSERT_VIEW_UNCHANGED("GlyphTestScreenM");
+        renderGlyphs("GlyphTestM", 10, 14, display->style.solSansMedium.readableFont);
     }
 
     SECTION("Test large font Glyphs") {
-        GlyphTestScreen screen(glyphs, 12, 12);
-        display->setFont(display->style.solSansLarge.readableFont);
-        screen.render(*display);
-
-        ASSERT_VIEW_UNCHANGED("GlyphTestScreenL");
+        renderGlyphs("GlyphTestL", 8, 12, display->style.solSansLarge.readableFont);
     }
 
     FakeEinkET013TT1SkipSignalling = false;
