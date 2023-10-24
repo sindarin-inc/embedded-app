@@ -171,7 +171,7 @@ static DispatchQueue *einkQueue = nullptr;
 
 auto DispatchGetCore0BackgroundQueue(bool create) -> DispatchQueue * {
     if (core0BackgroundQueue == nullptr && create) {
-        core0BackgroundQueue = new DispatchQueue("Core0BG", 1, 10000, 0, 0);
+        core0BackgroundQueue = new DispatchQueue("Core0BG", 1, 13000, 0, 0);
     }
     return core0BackgroundQueue;
 }

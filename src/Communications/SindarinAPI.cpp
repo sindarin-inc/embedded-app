@@ -52,7 +52,8 @@ auto SindarinAPI::checkSync(CheckSyncRequest &req, CheckSyncResponse *resp, Tele
 
 auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, CheckSyncResponse *resp,
                             Telemetry &telemetry) -> int {
-    HttpClient client(url.c_str(), "application/json", HTTP_METHOD_POST);
+    PROFILE_START(checkSync);
+    HttpClient client(url.c_str(), "application/json", HTTP_METHOD_POST, false);
     auto err = setAuth(client);
     if (err != ESP_OK) {
         return ERR_SET_AUTH;
@@ -127,6 +128,8 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
                             {{"message", message}});
         return ERR_JSON_OBJECT_PARSE;
     }
+
+    PROFILE_END_LOG_MS(checkSync);
 
     log_d("Synced: %d Message: %s", resp->synced, resp->message.c_str());
 
@@ -226,7 +229,9 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
     int totalSize = header.size() + telemetryFile.size() + footer.size();
     auto contentType = "multipart/form-data; boundary=" + boundary;
 
-    HttpClient client(SINDARIN_SERVER_URL "/telemetry/", contentType.c_str(), HTTP_METHOD_POST);
+    PROFILE_START(uploadTelemetryFile);
+    HttpClient client(SINDARIN_SERVER_URL "/telemetry/", contentType.c_str(), HTTP_METHOD_POST,
+                      false);
 
     auto err = setAuth(client);
     if (err != ESP_OK) {
@@ -277,6 +282,8 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
 
     // Send request and fetch response
     client.fetchHeaders();
+
+    PROFILE_END_LOG_MS(uploadTelemetryFile);
     return client.getStatusCode();
 }
 
