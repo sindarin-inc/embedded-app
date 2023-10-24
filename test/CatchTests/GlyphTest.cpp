@@ -17,11 +17,15 @@ public:
         int ySpacing = display.height() / gridHeight;
 
         int glyphsPerPage = gridWidth * gridHeight;
-        int index = page * glyphsPerPage;
+        int pageStartIndex = page * glyphsPerPage;
         for (int i = 0; i < glyphsPerPage; i++) {
+            int index = pageStartIndex + i;
+            if (i >= glyphs.size()) {
+                break;
+            }
             int x = (i % gridWidth) * xSpacing;
             int y = (i / gridWidth) * ySpacing;
-            display.drawSingleLineOfText(glyphs[index + i], x, y);
+            display.drawSingleLineOfText(glyphs[pageStartIndex + i], x, y);
         }
 
         display.updateDisplay();
