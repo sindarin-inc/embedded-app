@@ -66,8 +66,10 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
         auto stream = std::make_shared<StdStringStream>(summaryString);
         renderer_.setStream(stream);
         std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(placeInSummary);
-        log_d("Place in readable: %s, place in summary: %s", placeInReadable_->str().c_str(),
-              placeInSummary->str().c_str());
+        if (placeInSummary != nullptr) {
+            log_d("Place in readable: %s, place in summary: %s", placeInReadable_->str().c_str(),
+                  placeInSummary->str().c_str());
+        }
     } else {
         prevPlace_ = newPlace_;
         std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(newPlace_);
