@@ -37,26 +37,46 @@ public:
         if (cachedWidth_ == width) {
             return;
         }
+        // TODO: It would be better to reuse the logic from Pager.cpp
         splitLines_.clear();
         std::string line;
         std::string word;
-        for (int i = 0; i < text.size(); i++) {
+        for (int i = 0; i < text.size();) {
             char c = text[i];
+
+            unsigned int charLen = 1;
+            if ((c & 0xF0) == 0xF0) {
+                charLen = 4;
+            } else if ((c & 0xE0) == 0xE0) {
+                charLen = 3;
+            } else if ((c & 0xC0) == 0xC0) {
+                charLen = 2;
+            }
+
+            if (i + charLen > text.size()) {
+                log_e("Invalid UTF-8 string: %s", text.c_str());
+                break;
+            }
+
+            std::string_view currentChar(&text[i], charLen);
+
             if (c == ' ' || c == '\n' || c == '\t' || c == '\r' || c == '-' ||
-                i == text.size() - 1) {
+                i + charLen == text.size()) {
                 if (display.getTextWidth(line + word) > width) {
                     splitLines_.push_back(line);
                     line = "";
                 }
-                line += word + c;
+                line.append(word);
+                line.append(currentChar);
                 word = "";
             } else {
-                word += c;
+                word.append(currentChar);
             }
             // Allow going over the max lines by one, so we can add the ... to the end
             if (splitLines_.size() > maxLines_) {
                 break;
             }
+            i += charLen;
         }
 
         if (!line.empty()) {
@@ -64,6 +84,7 @@ public:
         }
         cachedWidth_ = width;
     }
+
     auto layout(LayoutContext &context, Size size) -> Size override {
         // Leave the display font the way we found it.
         // Probably not ideal, but for now it'll have to do.
