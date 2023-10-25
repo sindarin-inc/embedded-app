@@ -175,26 +175,32 @@ auto EPubFile::getDictionaryContent(const std::string &chapterID,
     std::string dictionaryPath = opf_->getHrefByID(dictionaryID);
 
     // Load the dictionary xhtml content
-    int currentOffset = placeInReadable->getOffset();
+    int fileOffset = placeInReadable->getOffset();
+    auto chapterHref = opf_->getHrefByID(chapterID);
+    int currentOffset = findCharOffsetAtFileOffset(chapterHref, fileOffset);
     pugi::xml_document &doc = getXHTMLFile(dictionaryPath);
     pugi::xml_node closestNode;
-    pugi::xml_node prevNode;
     int closestLocation = -1;
-    int prevLocation = -1;
 
+    log_d("Loading dictionary for chapter: %s. Current offset: %d", chapterID.c_str(),
+          currentOffset);
     // Search for the closest data-locations attribute closest to currentOffset without going over
     for (auto p : doc.child("html").child("body").children("p")) {
         int location = p.attribute("data-locations").as_int();
-        if (location >= currentOffset) {
-            if (prevLocation != -1) {
-                closestLocation = prevLocation;
-                closestNode = prevNode;
-            }
+
+        // If currentOffset is 0, set the closestNode as the first node
+        if (currentOffset == 0) {
+            closestNode = p;
+            closestLocation = location;
             break;
         }
 
-        prevLocation = location;
-        prevNode = p;
+        if (location <= currentOffset) {
+            closestLocation = location;
+            closestNode = p;
+        } else {
+            break;
+        }
     }
 
     std::string dictionaryText;
@@ -202,10 +208,15 @@ auto EPubFile::getDictionaryContent(const std::string &chapterID,
     if (closestLocation != -1) {
         // Construct the text with the XML before the closest node
         for (auto p : doc.child("html").child("body").children("p")) {
-            beforeClosestNodeText += StringFormat("%s\n\n", p.child_value());
             if (p == closestNode) {
-                break; // stop once we reach the closestNode
+                if (closestLocation < currentOffset) {
+                    beforeClosestNodeText += StringFormat("%s\n\n", p.child_value());
+                } else {
+                    dictionaryText += StringFormat("%s\n\n", p.child_value());
+                }
+                break;
             }
+            beforeClosestNodeText += StringFormat("%s\n\n", p.child_value());
         }
 
         // Construct the text with the XML after the closest node
@@ -223,7 +234,8 @@ auto EPubFile::getDictionaryContent(const std::string &chapterID,
         log_i("Found closest node at char offset: %d for location: %d/%d", charOffset,
               closestLocation, currentOffset);
     } else {
-        log_e("Line not found in dictionaryString");
+        log_e("Location not found in dictionaryString chapter: %s : %d", chapterID.c_str(),
+              currentOffset);
     }
 
     return dictionaryText;

@@ -20,7 +20,9 @@ void ReadableDictionaryScreen::setPlaceInReadable(std::shared_ptr<EPubPlace> pla
     preservePlace_ = nullptr;
 }
 
-auto ReadableDictionaryScreen::checkAtEnd() -> bool { return (newPlace_ == nullptr); }
+auto ReadableDictionaryScreen::checkAtEnd() -> bool {
+    return (newPlace_ == nullptr) || newPlace_->getOffset() == 0;
+}
 
 void ReadableDictionaryScreen::render(DisplaySystem &display) {
     setNeedsLayout();
