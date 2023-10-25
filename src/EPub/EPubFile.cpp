@@ -162,7 +162,7 @@ auto EPubFile::hasDictionary(const std::string &chapterID) -> bool {
     return opf_->exists(dictionaryID);
 }
 auto EPubFile::getDictionaryContent(const std::string &chapterID,
-                                    std::shared_ptr<Place> placeInReadable,
+                                    const std::shared_ptr<Place> &placeInReadable,
                                     std::shared_ptr<Place> &placeInDictionary) -> std::string {
 
     if (!hasDictionary(chapterID)) {

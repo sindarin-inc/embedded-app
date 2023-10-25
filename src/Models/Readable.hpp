@@ -157,7 +157,7 @@ public:
         return summary;
     }
 
-    auto definitions(const std::string chapterId,
+    auto definitions(const std::string &chapterId,
                      const std::shared_ptr<Place> &placeInDictionaryOut) -> SpiramString {
         // This code generates the dictionaryString for an entire chapter. It returns the
         // dictionaryString as well as the position of the word closest to the current page using
