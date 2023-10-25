@@ -44,8 +44,12 @@ private:
 };
 
 TEST_CASE("Test glyph rendering") {
+
+    ViewTestCommon *viewTestCommon = new ViewTestCommon();
+
     // Just create and render a PowerDepletedScreen
-    auto display = createDisplay();
+
+    auto display = viewTestCommon->createDisplay();
     display->setBoundingBox({0, 0, static_cast<uint32_t>(display->defaultScreenWidth),
                              static_cast<uint32_t>(display->defaultScreenHeight)});
 
@@ -68,14 +72,14 @@ TEST_CASE("Test glyph rendering") {
         }
     }
 
-    auto renderGlyphs =
-        [&glyphPairs, &display](const std::string &key, int gridWidth, int gridHeight, Font *font) {
+    auto renderGlyphs = [&glyphPairs, &display, viewTestCommon](
+                            const std::string &key, int gridWidth, int gridHeight, Font *font) {
         GlyphTestScreen screen(glyphPairs, gridWidth, gridHeight);
         display->setFont(font);
         for (int i = 0; i < screen.pages(); i++) {
             screen.setPage(i);
             screen.render(*display);
-            ASSERT_VIEW_UNCHANGED(key + std::to_string(i));
+            ASSERT_VIEW_UNCHANGED(viewTestCommon, key + std::to_string(i));
         }
     };
 
@@ -92,4 +96,6 @@ TEST_CASE("Test glyph rendering") {
     }
 
     FakeEinkET013TT1SkipSignalling = false;
+
+    delete viewTestCommon;
 }

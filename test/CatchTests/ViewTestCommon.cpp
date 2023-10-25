@@ -8,44 +8,30 @@
 #include <iostream>
 #include <memory>
 #include <signal.h>
-#include <thread>
 #include <unistd.h>
 
 #include "Displays/FakeEinkET013TT1.hpp"
 #include "Misc/Dispatch.hpp"
 #include "sindarin-debug.h"
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-#pragma clang diagnostic pop
 
-extern bool useSimulatorTestTime;
-extern int simulatorTestHours;
-extern int simulatorTestMinutes;
+#pragma clang diagnostic pop
 
 extern PreferencesStore prefs;
 extern void UIInnerLoop(RemoteCommand command);
-extern "C" void app_main(void); // NOLINT(readability-identifier-naming)
-std::shared_ptr<std::thread> SchedulerThread;
-const char *kGitHash = "SIMULATOR";
 extern char posixFileSystemPrefix[64];
 
-std::string directory;
-std::string testRunPrefix = "Images/TestRun/";
-std::string acceptedPathPrefix = "Images/Accepted/";
+const char *kGitHash = "SIMULATOR";
 
-void appMainTask(void *parameters) {
-    useSimulatorTestTime = true;
-    simulatorTestHours = 12;
-    simulatorTestMinutes = 21;
-    app_main();
-    vTaskDelete(NULL);
-}
-
-void StartFreeRtos(bool runAppMain, FONT_CHOICES font, int x, int y, int lineSpacing) {
+void ViewTestCommon::StartFreeRtos(bool runAppMain, FONT_CHOICES font, int x, int y,
+                                   int lineSpacing) {
     // The FreeRTOS tick handler happens via SIGALRM, and it also kicks off preemptive task
     // switching, which is not what we want on the main thread, since it's not a real FreeRTOS task.
     // Just disable SIGALRM on this thread so that it only happens on FreeRTOS tasks.
@@ -78,7 +64,7 @@ void StartFreeRtos(bool runAppMain, FONT_CHOICES font, int x, int y, int lineSpa
     prefs.noSetupMode.set(true);
 
     // Start the FreeRTOS scheduler
-    SchedulerThread = std::make_unique<std::thread>([runAppMain]() {
+    schedulerThread_ = std::make_unique<std::thread>([runAppMain]() {
         if (runAppMain) {
             // ESP-IDF does `app_main` in a task as well. We need to do this so we can use
             // FreeRTOS-timed stuff like vTaskDelay
@@ -88,16 +74,16 @@ void StartFreeRtos(bool runAppMain, FONT_CHOICES font, int x, int y, int lineSpa
         vTaskStartScheduler();
     });
     // Wait for screen refresh at boot (from screenClearedAtShutdown)
-    WAIT_FOR_DRAW();
+    WAIT_FOR_DRAW(this);
 }
 
-void StopFreeRtos() {
+void ViewTestCommon::StopFreeRtos() {
     vTaskEndScheduler();
-    (*SchedulerThread).join();
+    (*schedulerThread_).join();
     log_i("Stopped FreeRTOS scheduler");
 }
 
-auto WaitForDraw(long timeoutSeconds) -> bool {
+auto ViewTestCommon::WaitForDraw(long timeoutSeconds) -> bool {
     struct timespec startTime;
     clock_gettime(CLOCK_MONOTONIC, &startTime);
 
@@ -119,16 +105,16 @@ auto WaitForDraw(long timeoutSeconds) -> bool {
     return true;
 }
 
-void SendRemoteCommand(RemoteCommand command) {
+void ViewTestCommon::SendRemoteCommand(RemoteCommand command) {
     DispatchGetUiQueue()->dispatchFromISR([command]() { UIInnerLoop(command); });
 }
 
-void SetImagesFolder(std::string folder) {
-    testRunPrefix = folder + "/TestRun/";
-    acceptedPathPrefix = folder + "/Accepted/";
+void ViewTestCommon::SetImagesFolder(std::string folder) {
+    testRunPrefix_ = folder + "/TestRun/";
+    acceptedPathPrefix_ = folder + "/Accepted/";
 }
 
-auto GetDirectory(std::string filename = "") -> std::string {
+auto ViewTestCommon::GetDirectory(std::string filename) -> std::string {
     // gets the current source file path
     std::string path;
     if (filename.empty()) {
@@ -146,16 +132,16 @@ auto GetDirectory(std::string filename = "") -> std::string {
 }
 
 // TODO: How do we use the test name also for the key
-auto CheckViewUnchanged(std::string key) -> ViewTestResult {
+auto ViewTestCommon::CheckViewUnchanged(std::string key) -> ViewTestResult {
     auto directory = GetDirectory();
     ViewTestResult result = {
         .passed = false,
-        .acceptedImagePath = directory + acceptedPathPrefix + key + ".png",
-        .renderedImagePath = directory + testRunPrefix + key + ".png",
+        .acceptedImagePath = directory + acceptedPathPrefix_ + key + ".png",
+        .renderedImagePath = directory + testRunPrefix_ + key + ".png",
     };
 
     // Create the TestRun directory if needed
-    std::filesystem::create_directory(GetDirectory(directory + testRunPrefix + key));
+    std::filesystem::create_directory(GetDirectory(directory + testRunPrefix_ + key));
 
     // Render out the FakeEinkET013TT1ParticlePositions to a png
     if (!stbi_write_png(result.renderedImagePath.c_str(), EinkET013TT1_PIXEL_WIDTH,
@@ -195,7 +181,7 @@ auto CheckViewUnchanged(std::string key) -> ViewTestResult {
 
     if (!result.passed) {
         // Render out the diff image to a png
-        result.diffImagePath = directory + testRunPrefix + key + "_diff.png";
+        result.diffImagePath = directory + testRunPrefix_ + key + "_diff.png";
         if (!stbi_write_png(result.diffImagePath.c_str(), EinkET013TT1_PIXEL_WIDTH,
                             EinkET013TT1_PIXEL_HEIGHT, 1, diffData, 0)) {
             log_e("Unable to save diff image to %s", result.diffImagePath.c_str());
@@ -221,7 +207,7 @@ auto CheckViewUnchanged(std::string key) -> ViewTestResult {
     return result;
 }
 
-std::shared_ptr<DisplayEinkET013TT1> createDisplay() {
+auto ViewTestCommon::createDisplay() -> std::shared_ptr<DisplayEinkET013TT1> {
     auto display = std::make_shared<DisplayEinkET013TT1>(0, 0, 0);
     (*display).style.setFontFamily((*display).style.solSansMedium);
     (*display).setBoundingBox((*display).defaultBoundingBox);
@@ -231,7 +217,7 @@ std::shared_ptr<DisplayEinkET013TT1> createDisplay() {
     return display;
 }
 
-void SetupFileSystemMock(const std::string &directory) {
+void ViewTestCommon::SetupFileSystemMock(const std::string &directory) {
     auto path = GetDirectory() + directory;
     log_i("Setting filesystem prefix to %s", path.c_str());
     strncpy(posixFileSystemPrefix, path.c_str(), sizeof(posixFileSystemPrefix) - 1);
@@ -243,7 +229,7 @@ void SetupFileSystemMock(const std::string &directory) {
     std::filesystem::remove_all(logs);
 }
 
-auto LoadJsonDoc(FileSystem &fileSystem, const std::string &path)
+auto ViewTestCommon::LoadJsonDoc(FileSystem &fileSystem, const std::string &path)
     -> std::unique_ptr<SpiRamJsonDocument> {
     SFile readablesFile = fileSystem.open(path);
     if (!readablesFile || (int)readablesFile.size() == 0) {

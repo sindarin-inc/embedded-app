@@ -22,193 +22,200 @@
 
 TEST_CASE("First few screens render correctly and handle remote commands") {
 
-    SetupFileSystemMock("TestData");
-    SetImagesFolder("Images");
+    ViewTestCommon *viewTestCommon = new ViewTestCommon();
 
-    StartFreeRtos();
+    viewTestCommon->SetupFileSystemMock("TestData");
+    viewTestCommon->SetImagesFolder("Images");
+
+    viewTestCommon->StartFreeRtos();
 
     // First screen renders twice once with a full refresh and once with a AU4
-    WAIT_FOR_DRAW();
-    WAIT_FOR_DRAW();
+    WAIT_FOR_DRAW(viewTestCommon);
+    WAIT_FOR_DRAW(viewTestCommon);
 
-    ASSERT_VIEW_UNCHANGED("FirstScreen");
+    ASSERT_VIEW_UNCHANGED(viewTestCommon, "FirstScreen");
 
     // TODO: Currently there's a problem with starting and stopping the scheduler that makes the
     // tests lock up with multiple SECTIONs, otherwise we should split up indivitual test flows into
     // multiple sections so that all the state resets between tests.
     SECTION("Render a bunch of views") {
         // Send a remote command for left (for Settings)
-        SendRemoteCommand(LEFT);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
+        viewTestCommon->SendRemoteCommand(LEFT);
+        WAIT_FOR_DRAW(viewTestCommon);
+        WAIT_FOR_DRAW(viewTestCommon);
 
-        ASSERT_VIEW_UNCHANGED("Settings");
+        ASSERT_VIEW_UNCHANGED(viewTestCommon, "Settings");
 
-        SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW();
+        viewTestCommon->SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW(viewTestCommon);
 
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
+        viewTestCommon->SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(viewTestCommon);
+        WAIT_FOR_DRAW(viewTestCommon);
 
-        ASSERT_VIEW_UNCHANGED("ContentSettings");
+        ASSERT_VIEW_UNCHANGED(viewTestCommon, "ContentSettings");
 
-        SendRemoteCommand(LEFT);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
+        viewTestCommon->SendRemoteCommand(LEFT);
+        WAIT_FOR_DRAW(viewTestCommon);
+        WAIT_FOR_DRAW(viewTestCommon);
 
         // Go back to the main screen
-        SendRemoteCommand(RIGHT);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
+        viewTestCommon->SendRemoteCommand(RIGHT);
+        WAIT_FOR_DRAW(viewTestCommon);
+        WAIT_FOR_DRAW(viewTestCommon);
 
         // Render a bunch of readable pages
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
+        viewTestCommon->SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(viewTestCommon);
 
-        ASSERT_VIEW_UNCHANGED("ReadableIntro");
+        ASSERT_VIEW_UNCHANGED(viewTestCommon, "ReadableIntro");
 
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("LastQuestion1");
+        viewTestCommon->SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(viewTestCommon);
+        ASSERT_VIEW_UNCHANGED(viewTestCommon, "LastQuestion1");
 
         // Check to make sure going forward from page 1 and then back
         // results in the same page.
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        SendRemoteCommand(LEFT);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("LastQuestion1");
+        viewTestCommon->SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(viewTestCommon);
+        viewTestCommon->SendRemoteCommand(LEFT);
+        WAIT_FOR_DRAW(viewTestCommon);
+        ASSERT_VIEW_UNCHANGED(viewTestCommon, "LastQuestion1");
 
         // This is the new default way to get a bookmark on a page
-        SendRemoteCommand(UP);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
-        SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW();
-        SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW();
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("LastQuestion1Bookmarked");
+        viewTestCommon->SendRemoteCommand(UP);
+        WAIT_FOR_DRAW(viewTestCommon);
+        WAIT_FOR_DRAW(viewTestCommon);
+        viewTestCommon->SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW(viewTestCommon);
+        viewTestCommon->SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW(viewTestCommon);
+        viewTestCommon->SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(viewTestCommon);
+        ASSERT_VIEW_UNCHANGED(viewTestCommon, "LastQuestion1Bookmarked");
 
         // Render the popup menu to confirm page 1
-        SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("PopupMenu1");
+        viewTestCommon->SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW(viewTestCommon);
+        WAIT_FOR_DRAW(viewTestCommon);
+        ASSERT_VIEW_UNCHANGED(viewTestCommon, "PopupMenu1");
 
         // Return to book on page 1, then start paging through the book
-        SendRemoteCommand(LEFT);
-        WAIT_FOR_DRAW();
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("LastQuestion2");
+        viewTestCommon->SendRemoteCommand(LEFT);
+        WAIT_FOR_DRAW(viewTestCommon);
+        viewTestCommon->SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(viewTestCommon);
+        ASSERT_VIEW_UNCHANGED(viewTestCommon, "LastQuestion2");
 
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("LastQuestion3");
+        viewTestCommon->SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(viewTestCommon);
+        ASSERT_VIEW_UNCHANGED(viewTestCommon, "LastQuestion3");
 
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("LastQuestion4");
+        viewTestCommon->SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(viewTestCommon);
+        ASSERT_VIEW_UNCHANGED(viewTestCommon, "LastQuestion4");
 
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("LastQuestion5");
+        viewTestCommon->SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(viewTestCommon);
+        ASSERT_VIEW_UNCHANGED(viewTestCommon, "LastQuestion5");
 
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("LastQuestion6");
+        viewTestCommon->SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(viewTestCommon);
+        ASSERT_VIEW_UNCHANGED(viewTestCommon, "LastQuestion6");
 
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("LastQuestion7");
+        viewTestCommon->SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(viewTestCommon);
+        ASSERT_VIEW_UNCHANGED(viewTestCommon, "LastQuestion7");
 
         // Render the popup menu
-        SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("PopupMenu2");
+        viewTestCommon->SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW(viewTestCommon);
+        WAIT_FOR_DRAW(viewTestCommon);
+        ASSERT_VIEW_UNCHANGED(viewTestCommon, "PopupMenu2");
 
         // Seek to the end of the book, then confirm page number
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        SendRemoteCommand(DOWN); // 1% granularity
-        WAIT_FOR_DRAW();
-        SendRemoteCommand(DOWN); // 0.1% granularity
-        WAIT_FOR_DRAW();
-        SendRemoteCommand(DOWN); // 10% granularity
-        WAIT_FOR_DRAW();
+        viewTestCommon->SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(viewTestCommon);
+        viewTestCommon->SendRemoteCommand(DOWN); // 1% granularity
+        WAIT_FOR_DRAW(viewTestCommon);
+        viewTestCommon->SendRemoteCommand(DOWN); // 0.1% granularity
+        WAIT_FOR_DRAW(viewTestCommon);
+        viewTestCommon->SendRemoteCommand(DOWN); // 10% granularity
+        WAIT_FOR_DRAW(viewTestCommon);
         for (int i = 0; i < 10; i++) {
-            SendRemoteCommand(RIGHT);
-            WAIT_FOR_DRAW();
+            viewTestCommon->SendRemoteCommand(RIGHT);
+            WAIT_FOR_DRAW(viewTestCommon);
         }
-        SendRemoteCommand(UP);
-        WAIT_FOR_DRAW();
-        SendRemoteCommand(UP); // Show popup menu
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("PopupMenu3");
+        viewTestCommon->SendRemoteCommand(UP);
+        WAIT_FOR_DRAW(viewTestCommon);
+        viewTestCommon->SendRemoteCommand(UP); // Show popup menu
+        WAIT_FOR_DRAW(viewTestCommon);
+        WAIT_FOR_DRAW(viewTestCommon);
+        ASSERT_VIEW_UNCHANGED(viewTestCommon, "PopupMenu3");
 
         // Go back to the main menu
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
+        viewTestCommon->SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(viewTestCommon);
+        WAIT_FOR_DRAW(viewTestCommon);
 
         // Go to the second readable (which has a TOC)
-        SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW();
+        viewTestCommon->SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW(viewTestCommon);
 
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
+        viewTestCommon->SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(viewTestCommon);
 
         // Render the popup menu
-        SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
+        viewTestCommon->SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW(viewTestCommon);
+        WAIT_FOR_DRAW(viewTestCommon);
 
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
+        viewTestCommon->SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(viewTestCommon);
+        WAIT_FOR_DRAW(viewTestCommon);
 
         for (int i = 0; i < 6; i++) {
-            SendRemoteCommand(DOWN);
-            WAIT_FOR_DRAW();
+            viewTestCommon->SendRemoteCommand(DOWN);
+            WAIT_FOR_DRAW(viewTestCommon);
         }
 
-        ASSERT_VIEW_UNCHANGED("PopupTOC");
+        ASSERT_VIEW_UNCHANGED(viewTestCommon, "PopupTOC");
 
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
+        viewTestCommon->SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(viewTestCommon);
 
-        ASSERT_VIEW_UNCHANGED("Dawn");
+        ASSERT_VIEW_UNCHANGED(viewTestCommon, "Dawn");
 
         // Render the popup menu
-        SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("PopupMenu4"); // Should show the updated seeked spot from the TOC
+        viewTestCommon->SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW(viewTestCommon);
+        WAIT_FOR_DRAW(viewTestCommon);
+        ASSERT_VIEW_UNCHANGED(viewTestCommon,
+                              "PopupMenu4"); // Should show the updated seeked spot from the TOC
     }
 
-    StopFreeRtos();
+    viewTestCommon->StopFreeRtos();
+    delete viewTestCommon;
 }
 
 TEST_CASE("Test some views independently") {
+
+    ViewTestCommon *viewTestCommon = new ViewTestCommon();
+
     // Just create and render a PowerDepletedScreen
-    auto display = createDisplay();
+    auto display = viewTestCommon->createDisplay();
 
     SECTION("Test PowerDepletedScreen") {
         PowerDepletedScreen screen;
         screen.render(*display);
-        ASSERT_VIEW_UNCHANGED("PowerDepletedScreen");
+        ASSERT_VIEW_UNCHANGED(viewTestCommon, "PowerDepletedScreen");
     }
 
     /* With the main menu refactor, this test hangs and does not complete. */
     SECTION("Test LayoutTestScreen") {
         LayoutTestScreen screen(*display);
         screen.render(*display);
-        ASSERT_VIEW_UNCHANGED("LayoutTestScreen");
+        ASSERT_VIEW_UNCHANGED(viewTestCommon, "LayoutTestScreen");
     }
 
     SECTION("Test things that need prefs") {
@@ -228,24 +235,24 @@ TEST_CASE("Test some views independently") {
         SECTION("Test OffsetAdjustScreen") {
             OffsetAdjustScreen screen(*display, prefs, telemetry);
             screen.render(*display);
-            ASSERT_VIEW_UNCHANGED("OffsetAdjustScreen");
+            ASSERT_VIEW_UNCHANGED(viewTestCommon, "OffsetAdjustScreen");
         }
 
         SECTION("Test ResizeBoxScreen") {
             ResizeBoxScreen screen(*display, prefs, telemetry);
             screen.render(*display);
-            ASSERT_VIEW_UNCHANGED("ResizeBoxScreen");
+            ASSERT_VIEW_UNCHANGED(viewTestCommon, "ResizeBoxScreen");
         }
 
         SECTION("Test LineSpacingScreen") {
             LineSpacingScreen screen(*display, prefs, telemetry);
             screen.render(*display);
-            ASSERT_VIEW_UNCHANGED("LineSpacingScreen");
+            ASSERT_VIEW_UNCHANGED(viewTestCommon, "LineSpacingScreen");
         }
 
         SECTION("Test ReadableTableOfContentsScreen") {
             auto readable = std::make_shared<Readable>();
-            auto readablesJsonDoc = LoadJsonDoc(fileSystem, "/readables.json");
+            auto readablesJsonDoc = viewTestCommon->LoadJsonDoc(fileSystem, "/readables.json");
             readable->fromJson((*readablesJsonDoc)["readables"][1]);
 
             Renderer renderer(*display);
@@ -257,18 +264,23 @@ TEST_CASE("Test some views independently") {
             FakeEinkET013TT1SkipSignalling = true;
             screen.render(*display);
             FakeEinkET013TT1SkipSignalling = false;
-            ASSERT_VIEW_UNCHANGED("ReadableTableOfContentsScreen");
+            ASSERT_VIEW_UNCHANGED(viewTestCommon, "ReadableTableOfContentsScreen");
         }
     }
+
+    delete viewTestCommon;
 }
 
 TEST_CASE("Test bmp file rendering") {
-    SetupFileSystemMock("TestData");
+
+    ViewTestCommon *viewTestCommon = new ViewTestCommon();
+
+    viewTestCommon->SetupFileSystemMock("TestData");
 
     PosixFileSystem fs;
     fs.begin();
     // create and render a full screen bitmap view
-    auto display = createDisplay();
+    auto display = viewTestCommon->createDisplay();
 
     SECTION("Test bitmap view Books (grayscale)") {
         SFile file = fs.open("/books.bmp");
@@ -278,7 +290,7 @@ TEST_CASE("Test bmp file rendering") {
 
         BitmapScreen screen(image.getBuffer(), image.getWidth(), image.getHeight());
         screen.render(*display);
-        ASSERT_VIEW_UNCHANGED("BitmapViewBooks");
+        ASSERT_VIEW_UNCHANGED(viewTestCommon, "BitmapViewBooks");
     }
 
     SECTION("Test bitmap view Books (pre-dithered)") {
@@ -289,8 +301,10 @@ TEST_CASE("Test bmp file rendering") {
 
         BitmapScreen screen(image.getBuffer(), image.getWidth(), image.getHeight());
         screen.render(*display);
-        ASSERT_VIEW_UNCHANGED("BitmapViewBooks");
+        ASSERT_VIEW_UNCHANGED(viewTestCommon, "BitmapViewBooks");
     }
+
+    delete viewTestCommon;
 }
 
 #endif

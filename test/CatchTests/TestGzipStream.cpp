@@ -28,7 +28,10 @@ static bool compareFiles(SFile &f1, SFile &f2) {
 }
 
 TEST_CASE("Test GZip Stream compression") {
-    SetupFileSystemMock("TestData");
+
+    ViewTestCommon *viewTestCommon = new ViewTestCommon();
+
+    viewTestCommon->SetupFileSystemMock("TestData");
     PosixFileSystem fs;
     fs.begin();
 
@@ -106,10 +109,15 @@ TEST_CASE("Test GZip Stream compression") {
         }
     }
     SECTION("cleanup") { fs.remove(compFileName); }
+
+    delete viewTestCommon;
 }
 
 TEST_CASE("Test Gunzip decompress file") {
-    SetupFileSystemMock("TestData");
+
+    ViewTestCommon *viewTestCommon = new ViewTestCommon();
+
+    viewTestCommon->SetupFileSystemMock("TestData");
 
     PosixFileSystem fs;
     fs.begin();
@@ -123,10 +131,15 @@ TEST_CASE("Test Gunzip decompress file") {
         REQUIRE(compareFiles(f1, f2));
     }
     SECTION("cleanup") { fs.remove("/book/old-testament.decompressed.txt"); }
+
+    delete viewTestCommon;
 }
 
 TEST_CASE("Test Gunzip functionality") {
-    SetupFileSystemMock("TestData");
+
+    ViewTestCommon *viewTestCommon = new ViewTestCommon();
+
+    viewTestCommon->SetupFileSystemMock("TestData");
 
     PosixFileSystem fs;
     fs.begin();
@@ -204,10 +217,15 @@ TEST_CASE("Test Gunzip functionality") {
         REQUIRE(compareFiles(uncFile1, uncFile2));
     }
     SECTION("cleanup") { fs.remove("/book/old-testament.decompressed.txt"); }
+
+    delete viewTestCommon;
 }
 
 TEST_CASE("Test Gunzip stream reading") {
-    SetupFileSystemMock("TestData");
+
+    ViewTestCommon *viewTestCommon = new ViewTestCommon();
+
+    viewTestCommon->SetupFileSystemMock("TestData");
 
     PosixFileSystem fs;
     fs.begin();
@@ -245,10 +263,15 @@ TEST_CASE("Test Gunzip stream reading") {
         REQUIRE(memcmp(buffer1, buffer2, res1) == 0);
         REQUIRE(memcmp(buffer1, buffer3, res1) == 0);
     } while (res1 == bufferLen);
+
+    delete viewTestCommon;
 }
 
 TEST_CASE("Test GZip stream handling") {
-    SetupFileSystemMock("TestData");
+
+    ViewTestCommon *viewTestCommon = new ViewTestCommon();
+
+    viewTestCommon->SetupFileSystemMock("TestData");
 
     PosixFileSystem fs;
     fs.begin();
@@ -330,4 +353,6 @@ TEST_CASE("Test GZip stream handling") {
     // log_d("Got buffer: \n%s", buffer);
     REQUIRE(strcmp((char *)buffer, "Old Testament\n\nGenesis (50 Chapters)\n\n\nGENESIS 1 In the "
                                    "beginning, God created the heavens and the ") == 0);
+
+    delete viewTestCommon;
 }

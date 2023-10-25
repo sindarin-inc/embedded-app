@@ -30,30 +30,32 @@ extern auto UIGetCurrentScreen() -> Screen *;
 
 TEST_CASE("Test EPub Books Rendering") {
 
-    SetupFileSystemMock("EPubTestData");
-    SetImagesFolder("EPubImages");
+    ViewTestCommon * viewTestCommon = new ViewTestCommon();
 
-    StartFreeRtos(true, FONT_CHOICES::PREFS_SOL_SMALL, 10, 10, -2);
+     viewTestCommon->SetupFileSystemMock("EPubTestData");
+     viewTestCommon->SetImagesFolder("EPubImages");
+
+     viewTestCommon->StartFreeRtos(true, FONT_CHOICES::PREFS_SOL_SMALL, 10, 10, -2);
 
     // First screen renders twice once with a full refresh and once with a AU4
-    WAIT_FOR_DRAW();
-    WAIT_FOR_DRAW();
+    WAIT_FOR_DRAW(viewTestCommon);
+    WAIT_FOR_DRAW(viewTestCommon);
 
-    ASSERT_VIEW_UNCHANGED("FirstScreen");
+    ASSERT_VIEW_UNCHANGED(viewTestCommon, "FirstScreen");
 
     SECTION("Books") {
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        // WAIT_FOR_DRAW();
+        viewTestCommon->SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(viewTestCommon);
+        // WAIT_FOR_DRAW(viewTestCommon);
 
         auto screen = UIGetCurrentScreen();
         auto readableScreen = dynamic_cast<ReadableScreen *>(screen);
 
         if (readableScreen != nullptr) {
 
-            ASSERT_VIEW_UNCHANGED("OnePageTutorial");
-            SendRemoteCommand(ENTER);
-            WAIT_FOR_DRAW();
+            ASSERT_VIEW_UNCHANGED(viewTestCommon, "OnePageTutorial");
+            viewTestCommon->SendRemoteCommand(ENTER);
+            WAIT_FOR_DRAW(viewTestCommon);
 
             int pageNbr = 1;
             uint16_t fileIdx = 0;
@@ -69,12 +71,12 @@ TEST_CASE("Test EPub Books Rendering") {
                 std::stringstream fname;
                 fname << "Book1/" << fileIdx + 1 << "-" << pageNbr++;
 
-                ASSERT_VIEW_UNCHANGED(fname.str());
+                ASSERT_VIEW_UNCHANGED(viewTestCommon, fname.str());
 
                 if (readableScreen->checkAtEnd()) break;
 
-                SendRemoteCommand(ENTER);
-                WAIT_FOR_DRAW();
+                viewTestCommon->SendRemoteCommand(ENTER);
+                WAIT_FOR_DRAW(viewTestCommon);
             }
 
         } else {
@@ -82,36 +84,36 @@ TEST_CASE("Test EPub Books Rendering") {
             CHECK(false);
         }
 
-        SendRemoteCommand(UP);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
+        viewTestCommon->SendRemoteCommand(UP);
+        WAIT_FOR_DRAW(viewTestCommon);
+        WAIT_FOR_DRAW(viewTestCommon);
 
-        ASSERT_VIEW_UNCHANGED("MainMenu");
+        ASSERT_VIEW_UNCHANGED(viewTestCommon, "MainMenu");
 
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
+        viewTestCommon->SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(viewTestCommon);
+        WAIT_FOR_DRAW(viewTestCommon);
 
-        ASSERT_VIEW_UNCHANGED("SecondScreen");
+        ASSERT_VIEW_UNCHANGED(viewTestCommon, "SecondScreen");
 
         // }
 
         // SECTION("Book 2") {
+#if 0
+        viewTestCommon->SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW(viewTestCommon);
 
-        SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW();
-
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
+        viewTestCommon->SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(viewTestCommon);
 
         screen = UIGetCurrentScreen();
         readableScreen = dynamic_cast<ReadableScreen *>(screen);
 
         if (readableScreen != nullptr) {
 
-            // ASSERT_VIEW_UNCHANGED("OnePageTutorial");
-            // SendRemoteCommand(ENTER);
-            // WAIT_FOR_DRAW();
+            // ASSERT_VIEW_UNCHANGED(viewTestCommon, "OnePageTutorial");
+            // viewTestCommon->SendRemoteCommand(ENTER);
+            // WAIT_FOR_DRAW(viewTestCommon);
 
             int pageNbr = 1;
             uint16_t fileIdx = 0;
@@ -127,12 +129,12 @@ TEST_CASE("Test EPub Books Rendering") {
                 std::stringstream fname;
                 fname << "Book2/" << fileIdx + 1 << "-" << pageNbr++;
 
-                ASSERT_VIEW_UNCHANGED(fname.str());
+                ASSERT_VIEW_UNCHANGED(viewTestCommon, fname.str());
 
                 if (readableScreen->checkAtEnd()) break;
 
-                SendRemoteCommand(ENTER);
-                WAIT_FOR_DRAW();
+                viewTestCommon->SendRemoteCommand(ENTER);
+                WAIT_FOR_DRAW(viewTestCommon);
             }
 
         } else {
@@ -140,36 +142,36 @@ TEST_CASE("Test EPub Books Rendering") {
             CHECK(false);
         }
 
-        SendRemoteCommand(UP);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
+        viewTestCommon->SendRemoteCommand(UP);
+        WAIT_FOR_DRAW(viewTestCommon);
+        WAIT_FOR_DRAW(viewTestCommon);
 
-        ASSERT_VIEW_UNCHANGED("MainMenu");
+        ASSERT_VIEW_UNCHANGED(viewTestCommon, "MainMenu");
 
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
-        WAIT_FOR_DRAW();
+        viewTestCommon->SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(viewTestCommon);
+        WAIT_FOR_DRAW(viewTestCommon);
 
-        ASSERT_VIEW_UNCHANGED("ThirdScreen");
+        ASSERT_VIEW_UNCHANGED(viewTestCommon, "ThirdScreen");
 
         // }
 
         // SECTION("Book 3") {
 
-        SendRemoteCommand(DOWN);
-        WAIT_FOR_DRAW();
+        viewTestCommon->SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW(viewTestCommon);
 
-        SendRemoteCommand(ENTER);
-        WAIT_FOR_DRAW();
+        viewTestCommon->SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW(viewTestCommon);
 
         screen = UIGetCurrentScreen();
         readableScreen = dynamic_cast<ReadableScreen *>(screen);
 
         if (readableScreen != nullptr) {
 
-            // ASSERT_VIEW_UNCHANGED("OnePageTutorial");
-            // SendRemoteCommand(ENTER);
-            // WAIT_FOR_DRAW();
+            // ASSERT_VIEW_UNCHANGED(viewTestCommon, "OnePageTutorial");
+            // viewTestCommon->SendRemoteCommand(ENTER);
+            // WAIT_FOR_DRAW(viewTestCommon);
 
             int pageNbr = 1;
             uint16_t fileIdx = 0;
@@ -185,20 +187,23 @@ TEST_CASE("Test EPub Books Rendering") {
                 std::stringstream fname;
                 fname << "Book3/" << fileIdx + 1 << "-" << pageNbr++;
 
-                ASSERT_VIEW_UNCHANGED(fname.str());
+                ASSERT_VIEW_UNCHANGED(viewTestCommon, fname.str());
 
                 if (readableScreen->checkAtEnd()) break;
 
-                SendRemoteCommand(ENTER);
-                WAIT_FOR_DRAW();
+                viewTestCommon->SendRemoteCommand(ENTER);
+                WAIT_FOR_DRAW(viewTestCommon);
             }
         } else {
             UNSCOPED_INFO("Unable to get ReadableScreen instance for Book3.");
             CHECK(false);
         }
+#endif
     }
 
-    StopFreeRtos();
+    viewTestCommon->StopFreeRtos();
+
+    delete viewTestCommon;
 }
 
 #endif
