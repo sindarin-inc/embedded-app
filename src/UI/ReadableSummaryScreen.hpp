@@ -46,9 +46,9 @@ protected:
     bool firstLoad_ = true;
     bool showUnread_ = false;
     std::shared_ptr<Place> placeInReadable_;
-    std::shared_ptr<Place> newPlace_;
-    std::shared_ptr<Place> prevPlace_;
-    std::shared_ptr<Place> preservePlace_;
+    std::shared_ptr<TxtPlace> newPlace_;
+    std::shared_ptr<TxtPlace> prevPlace_;
+    std::shared_ptr<TxtPlace> preservePlace_;
     bool atEnd_ = false;
 
     std::string upperLeftText_ = "Dismiss";
