@@ -47,9 +47,9 @@ protected:
 
     std::string loadedChapterId_ = "";
     std::shared_ptr<EPubPlace> placeInReadable_ = nullptr;
-    std::shared_ptr<EPubPlace> newPlace_ = nullptr;
-    std::shared_ptr<EPubPlace> prevPlace_ = nullptr;
-    std::shared_ptr<EPubPlace> preservePlace_ = nullptr;
+    std::shared_ptr<TxtPlace> newPlace_ = nullptr;
+    std::shared_ptr<TxtPlace> prevPlace_ = nullptr;
+    std::shared_ptr<TxtPlace> preservePlace_ = nullptr;
     bool atEnd_ = false;
 
     std::string upperLeftText_ = "Dismiss";

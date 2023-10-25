@@ -51,20 +51,22 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
             placeInDictionary = preservePlace_;
             preservePlace_ = nullptr;
         }
+
         auto stream = std::make_shared<StdStringStream>(dictionaryString);
         renderer_.setStream(stream);
         if (placeInDictionary == nullptr) {
             placeInDictionary = Place::factory(0);
         }
         auto resultPair = renderer_.renderPage(placeInDictionary);
-        newPlace_ = std::dynamic_pointer_cast<EPubPlace>(resultPair.first);
+        newPlace_ = std::dynamic_pointer_cast<TxtPlace>(resultPair.first);
         darkPicturePercent = resultPair.second;
-        log_d("Place in readable: %s, place in dictionary: %s", placeInReadable_->str().c_str(),
-              placeInDictionary->str().c_str());
+        log_d("Place in readable: %s, place in dictionary: %s. Next place: %d",
+              placeInReadable_->str().c_str(), placeInDictionary->str().c_str(),
+              newPlace_ != nullptr ? newPlace_->getOffset() : -1);
     } else {
         prevPlace_ = newPlace_;
         auto resultPair = renderer_.renderPage(newPlace_);
-        newPlace_ = std::dynamic_pointer_cast<EPubPlace>(resultPair.first);
+        newPlace_ = std::dynamic_pointer_cast<TxtPlace>(resultPair.first);
         darkPicturePercent = resultPair.second;
     }
 
@@ -112,7 +114,7 @@ void ReadableDictionaryScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::BACK:
     case RemoteCommand::LEFT: {
         auto oldDisplayBoundingBox = insetBoundingBox();
-        newPlace_ = std::dynamic_pointer_cast<EPubPlace>(renderer_.getPreviousPlace());
+        newPlace_ = std::dynamic_pointer_cast<TxtPlace>(renderer_.getPreviousPlace());
         setNeedsRerender();
         resetBoundingBox(oldDisplayBoundingBox);
         break;
