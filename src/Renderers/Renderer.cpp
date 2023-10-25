@@ -13,7 +13,7 @@ auto Renderer::renderPage(std::shared_ptr<Place> fromPlace, int16_t numSkipLines
                                  ? tokenizer_->getPlaceAtBeginningOfDocument()
                                  : tokenizer_->toStreamPlace(std::move(fromPlace));
 
-    log_w("%s is place in file being requested.", startPlace.str().c_str());
+    REND_WLOG("%s is place in file being requested.", startPlace.str().c_str());
 
     // This needs to happen before loading into buffer since it will affect what we load into the
     // buffer.
