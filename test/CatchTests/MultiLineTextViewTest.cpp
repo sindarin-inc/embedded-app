@@ -1,12 +1,11 @@
+#include <catch_amalgamated.hpp>
+
 #define protected public
 #define private public
 #include "UI/Components/MultiLineTextView.hpp"
+#include "ViewTestCommon.hpp"
 #undef protected
 #undef private
-
-#include <catch_amalgamated.hpp>
-
-#include "ViewTestCommon.hpp"
 
 TEST_CASE("MultiLineTextView splitLines creation") {
     auto display = createDisplay();
