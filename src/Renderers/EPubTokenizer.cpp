@@ -1281,10 +1281,10 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
             } break;
 
             case Tag::A: {
-                if (tokenizingStarted_ && closeTextToken()) {
+                const pugi::char_t *v = node.child_value();
+                if ((v[0] != '\0') && tokenizingStarted_ && closeTextToken()) {
                     return false;
                 }
-                const pugi::char_t *v = node.child_value();
                 if (!superscript_ && !subscript_ && (v[0] != '\0') && (v[0] != '(') &&
                     (v[0] != '[') && (v[0] != '<') && (v[0] != '{')) {
                     preText_[0] = '[';
@@ -1568,7 +1568,7 @@ auto EPubTokenizer::interpret(pugi::xml_node node) -> bool {
 
                 case Tag::A:
                     if (tokenizingStarted_) {
-                        if (closeTextToken(true)) {
+                        if ((postText_[0] != '\0') && closeTextToken(true)) {
                             return false;
                         }
                         // if (postText_[0] != '\0') {
