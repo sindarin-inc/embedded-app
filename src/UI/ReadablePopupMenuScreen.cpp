@@ -38,8 +38,7 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
             // Determine how many Sol Pages are left in the chapter
             auto chapterPagesRemaining = chapter.endTxtOffset - currentOffset;
             chapterPagesRemainingString =
-                StringFormat("%d page%s left", SOL_PAGE_NUMBER(chapterPagesRemaining),
-                             SOL_PAGE_NUMBER(chapterPagesRemaining) == 1 ? "" : "s");
+                StringFormat("%d remain", SOL_PAGE_NUMBER(chapterPagesRemaining));
         } else {
             log_w("Couldn't find chapter index (%d) for href %s", chapterIndex,
                   chapterHref.c_str());
