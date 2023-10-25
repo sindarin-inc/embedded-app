@@ -28,7 +28,9 @@ void ReadableSummaryScreen::setPlaceInReadable(std::shared_ptr<Place> placeInRea
     preservePlace_ = nullptr;
 }
 
-auto ReadableSummaryScreen::checkAtEnd() -> bool { return (newPlace_ == nullptr); }
+auto ReadableSummaryScreen::checkAtEnd() -> bool {
+    return (newPlace_ == nullptr) || newPlace_->getOffset() == 0;
+}
 
 void ReadableSummaryScreen::render(DisplaySystem &display) {
     setNeedsLayout();
@@ -64,7 +66,7 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
             placeInSummary = preservePlace_;
             preservePlace_ = nullptr;
         }
-        auto stream = std::make_shared<StdStringStream>(summaryString);
+        auto stream = std::make_shared<StdStringStream>(summaryString, DocType::TXT);
         renderer_.setStream(stream);
         auto resultPair = renderer_.renderPage(placeInSummary);
         newPlace_ = std::dynamic_pointer_cast<TxtPlace>(resultPair.first);
@@ -80,8 +82,9 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
         darkPicturePercent = resultPair.second;
     }
 
-    log_d("Rendering summary with newPlace: %s", newPlace_->str().c_str());
     atEnd_ = checkAtEnd();
+    log_d("Rendering summary with newPlace: %s %s", newPlace_->str().c_str(),
+          atEnd_ ? "(at EOF)" : "(not at EOF)");
     display.updateDisplay(DisplaySystem::UpdateType::FULL, true,
                           display.darkPictureVComAdj(darkPicturePercent));
     firstLoad_ = false;

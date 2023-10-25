@@ -128,15 +128,13 @@ public:
                  const std::shared_ptr<TxtPlace> &placeInSummary, bool includeUnread)
         -> SpiramString {
         SpiramString summary;
+
         auto currentChapterIdx = -1;
         if (placeInReadable->isFor(DocType::EPUB)) {
             currentChapterIdx = findEPubHRefChapterIdx(
                 std::dynamic_pointer_cast<EPubPlace>(placeInReadable)->getHRef());
-            log_d("Current chapter (%s) %s, index %d", placeInReadable->str().c_str(),
-                  std::dynamic_pointer_cast<EPubPlace>(placeInReadable)->getHRef().c_str(),
-                  currentChapterIdx);
         }
-        // ToDo: Adjust with Place classes (GT)
+
         for (const auto &chapter : toc) {
             auto sameChapter =
                 (placeInReadable->isFor(DocType::EPUB) &&
@@ -157,9 +155,11 @@ public:
             if (pastOrSameChapter) {
                 placeInSummary->setOffset(summary.length());
             }
+
             if (futureChapter && !includeUnread) {
                 break;
             }
+
             if (sameChapter && !includeUnread && chapter.partialChapterSummary != nullptr &&
                 !chapter.partialChapterSummary->text.empty()) {
                 summary += chapter.title;
