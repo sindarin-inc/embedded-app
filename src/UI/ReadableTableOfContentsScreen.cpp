@@ -206,6 +206,11 @@ void ReadableTableOfContentsScreen::setNearestChapterSelection(
 
         nearestChapter = stream->getReadableChapterIndex(ePubPlace);
 
+        if (nearestChapter == -1) {
+            log_w("Unable to find nearest chapter for %s", ePubPlace->getHRef().c_str());
+            nearestChapter = 0;
+        }
+
         // std::shared_ptr<EPubPlace> ePubPlace = std::dynamic_pointer_cast<EPubPlace>(placeInFile);
         // std::string href = ePubPlace->getHRef();
         // for (int i = 0; i < readable_->toc.size(); i++) {

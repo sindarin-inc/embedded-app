@@ -73,6 +73,7 @@ auto EPubOpf::getSpineIdx(const std::string &href) const -> int {
 
 auto EPubOpf::getReadableChapterIndex(const std::string &href) const -> int {
     int spineIdx = getSpineIdx(href);
+
     while (spineIdx >= 0) {
         if (spine_[spineIdx].readableChapterIndex != -1) {
             return spine_[spineIdx].readableChapterIndex;
