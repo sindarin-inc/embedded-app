@@ -215,7 +215,52 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         SendRemoteCommand(DOWN);
         WAIT_FOR_DRAW();
         WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("PopupMenu4"); // Should show the updated seeked spot from the TOC
+        ASSERT_VIEW_UNCHANGED("PopupMenu4");
+
+        // Open the next chapter to ensure the dictionary shows something different
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("DawnToC");
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("DawnToC2");
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+
+        ASSERT_VIEW_UNCHANGED("Dawn2");
+
+        // Render the popup menu
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("PopupMenu5");
+
+        // Open the dictionary
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW();
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW();
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW();
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("Dictionary4");
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("Dictionary5");
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("Dictionary6");
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("Dawn3");
+
+        // Render the popup menu
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("PopupMenu5");
 
         // Open the summary
         SendRemoteCommand(UP);
@@ -238,12 +283,30 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("Summary4");
-        SendRemoteCommand(DOWN);
+        SendRemoteCommand(ENTER);
         WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("Summary5");
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("Summary6");
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("Summary7");
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("Summary8");
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("Summary9");
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("Summary10");
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("Summary11");
         SendRemoteCommand(UP);
         WAIT_FOR_DRAW();
-        ASSERT_VIEW_UNCHANGED("Dawn");
+        ASSERT_VIEW_UNCHANGED("Dawn4");
     }
 
     StopFreeRtos();
