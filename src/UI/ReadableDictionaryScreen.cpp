@@ -60,17 +60,17 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
         if (placeInDictionary == nullptr) {
             placeInDictionary = Place::factory(0);
         }
-        auto resultPair = renderer_.renderPage(placeInDictionary);
-        newPlace_ = std::dynamic_pointer_cast<TxtPlace>(resultPair.first);
-        darkPicturePercent = resultPair.second;
+        std::shared_ptr<Place> newPlace;
+        std::tie(newPlace, darkPicturePercent) = renderer_.renderPage(placeInDictionary);
+        newPlace_ = std::dynamic_pointer_cast<TxtPlace>(newPlace);
         log_d("Place in readable: %s, place in dictionary: %s. Next place: %u",
               placeInReadable_->str().c_str(), placeInDictionary->str().c_str(),
               newPlace_ != nullptr ? newPlace_->getOffset() : -1);
     } else {
         prevPlace_ = newPlace_;
-        auto resultPair = renderer_.renderPage(newPlace_);
-        newPlace_ = std::dynamic_pointer_cast<TxtPlace>(resultPair.first);
-        darkPicturePercent = resultPair.second;
+        std::shared_ptr<Place> newPlace;
+        std::tie(newPlace, darkPicturePercent) = renderer_.renderPage(newPlace_);
+        newPlace_ = std::dynamic_pointer_cast<TxtPlace>(newPlace);
     }
 
     atEnd_ = checkAtEnd();
