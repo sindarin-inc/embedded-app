@@ -43,7 +43,7 @@
             ],
             "files": [
                 {
-                    "uuid": "b8ede347-e701-4c2a-b4cb-b5f7780bc4e9",
+                    "uuid": "91ebc912-c83e-4d85-91c7-9506ae02af50",
                     "name": "91ebc912-c83e-4d85-91c7-9506ae02af50.epub.txt",
                     "size": 1621458,
                     "filetype": "txt",
@@ -77,8 +77,8 @@
                 },
                 {
                     "uuid": "0545b4f6-1b41-469f-9e9e-7e26d921f622",
-                    "name": "91ebc912-c83e-4d85-91c7-9506ae02af50.epub.utf8_txt",
-                    "size": 1646212,
+                    "name": "0545b4f6-1b41-469f-9e9e-7e26d921f622.epub.utf8_txt",
+                    "size": 1621527,
                     "filetype": "utf8_txt",
                     "uploaded_at": "2023-07-12T14:28:44.610790-07:00",
                     "sha_hash": "2ecb97ec467a7fdb4a76d81bc7d3577ee76e78c0ed0d2797d43ec18e1c9ad3aa",
