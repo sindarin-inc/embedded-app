@@ -445,7 +445,7 @@ auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Reada
     if (prefsFileIdx == serverFileIdx && *serverPlace.get() == *prefsPlace.get()) {
         // Do not overwrite the local placemark if the server placemark is the same as the local one
         return false;
-    } else if (prefsPlaceString == "" && path == "" && serverEPubPlace->getHRef() != "null") {
+    } else if (prefsPlaceString == "" && path == "" && !serverEPubPlace->isZero()) {
         // Set the local placemark with the epub version if:
         // * There is no local placemark
         // * The readable is not yet downloaded
@@ -1013,9 +1013,8 @@ auto LocalStore::processReadables(const ReadablesVector &readables,
 
         if (processReadablePlacemarksFromServer(userReadable.readable, userReadable.txtPlace,
                                                 userReadable.ePubPlace)) {
-            log_i("Placemark for %s updated to txt:%s and epub:%s",
-                  userReadable.readable->title.c_str(), userReadable.txtPlace->str().c_str(),
-                  userReadable.ePubPlace->str().c_str());
+            log_i("Placemark for %s updated to %s", userReadable.readable->title.c_str(),
+                  prefs_.readablePlace.get(userReadable.readable->shortenedUuid.c_str()).c_str());
         }
 
         if (processToCFromServer(userReadable.readable)) {
@@ -1129,14 +1128,16 @@ auto LocalStore::processReadableDownload(
                                      ReadableModelTypeToString(modelType).c_str()),
                         {{"uuid", readable->uuid}, {"title", readable->title.c_str()}});
                 } else {
-                    // For any Readables that are downloaded as epub, but still have a TXT
+                    // For any Readables that are downloaded as epub, and don't have an epub
                     // placemark, let's replace the placemark with the server placemark (and trust
                     // the server to do appropriate migrations)
                     std::shared_ptr<Place> prefsPlace =
                         Place::factory(prefs_.readablePlace.get(readable->shortenedUuid.c_str()));
+                    auto ePubPlace = std::dynamic_pointer_cast<EPubPlace>(userReadable.ePubPlace);
                     if (prefsPlace->isFor(DocType::TXT) &&
                         RendererStream::parseDocType(
-                            readableFilePathForReading(readable).c_str()) == DocType::EPUB) {
+                            readableFilePathForReading(readable).c_str()) == DocType::EPUB &&
+                        !ePubPlace->isZero()) {
                         log_i("Migrating epub placemark for \"%s\" from %s (locally) to %s "
                               "(server)",
                               readable->title.c_str(), prefsPlace->str().c_str(),
