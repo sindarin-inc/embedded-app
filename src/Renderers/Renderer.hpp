@@ -2,7 +2,6 @@
 
 #include <utility>
 
-#include "EPubPageMgr.hpp"
 #include "NullTokenizer.hpp"
 #include "Pager.hpp"
 #include "RendererDefs.hpp"
@@ -22,6 +21,8 @@ public:
 
     auto setStream(const std::shared_ptr<RendererStream> &stream) -> void {
         // log_w("setStream...");
+        tokens_.clear();
+        pager_.clear();
         tokenizer_ = Tokenizer::factory(stream, display_, tokens_, pager_);
     }
 
@@ -96,7 +97,6 @@ private:
     DisplaySystem &display_;
     Tokens tokens_;
     Pager pager_;
-    EPubPageMgr pageMgr_;
 
     std::shared_ptr<Tokenizer> tokenizer_{nullptr};
 

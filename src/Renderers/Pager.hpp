@@ -67,6 +67,7 @@ private:
 
 public:
     Pager(Tokens &tokens, DisplaySystem &display) : tokens_(tokens), display_(display) {}
+    Pager(const Pager &) = delete;
 
     void setStream(const std::shared_ptr<RendererStream> &stream) {
         stream_ = std::static_pointer_cast<EPubFile>(stream);
