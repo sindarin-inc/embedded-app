@@ -1,7 +1,8 @@
 #include "ReadableDictionaryScreen.hpp"
 
-#include "Misc/SpiramAllocator.hpp"
 #include <pugixml.hpp>
+
+#include "Misc/SpiramAllocator.hpp"
 
 auto ReadableDictionaryScreen::layout(LayoutContext &context, Size size) -> Size {
     context.setViewFrame(leftArrowView_, {{0, -5}, {10, 5}});
