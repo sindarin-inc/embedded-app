@@ -64,11 +64,12 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
 
         SpiramString summaryString =
             readable_->summary(placeInReadable_, placeInSummary, showUnread_, currentChapterIdx_);
-
         if (preservePlace_) {
             placeInSummary = preservePlace_;
             preservePlace_ = nullptr;
         }
+        log_d("Rendering summary (showUnread: %d) with place: %s. Summary: %s", showUnread_,
+              placeInSummary->str().c_str(), summaryString.c_str());
         auto stream = std::make_shared<StdStringStream>(summaryString, DocType::TXT);
         renderer_.setStream(stream);
         std::shared_ptr<Place> newPlace;
