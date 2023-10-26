@@ -22,6 +22,8 @@
 #include <stb_image.h>
 #pragma clang diagnostic pop
 
+#define ACCEPT_CHANGES 1
+
 extern bool useSimulatorTestTime;
 extern int simulatorTestHours;
 extern int simulatorTestMinutes;
@@ -212,6 +214,12 @@ auto CheckViewUnchanged(std::string key) -> ViewTestResult {
         UNSCOPED_INFO("  Accept this change: ");
         UNSCOPED_INFO("    cp " << result.renderedImagePath.c_str() << " \\\n    "
                                 << result.acceptedImagePath.c_str());
+        // If ACCEPT_CHANGES is defined, automatically accept the changes
+#ifdef ACCEPT_CHANGES
+        log_i("Accepting changes");
+        std::filesystem::copy(result.renderedImagePath, result.acceptedImagePath,
+                              std::filesystem::copy_options::overwrite_existing);
+#endif
     } else {
         // Delete generated image files for passing tests
         remove(result.renderedImagePath.c_str());

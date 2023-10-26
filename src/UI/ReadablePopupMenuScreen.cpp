@@ -115,16 +115,18 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
         }));
     }
 
-    auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
-    auto chapterId = stream->getIdByHref(
-        std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace())->getHRef());
-    if (stream->hasDictionary(chapterId)) {
-        addMenuItem(MenuItem("Dictionary", [this]() {
-            auto epubPlace = std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
-            readableDictionaryScreen_.setPlaceInReadable(epubPlace);
-            readableDictionaryScreen_.setFirstLoad();
-            setCurrentScreen(readableDictionaryScreen_);
-        }));
+    if (renderer_.getCurrentPlace()->isFor(DocType::EPUB)) {
+        auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
+        auto chapterId = stream->getIdByHref(
+            std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace())->getHRef());
+        if (stream->hasDictionary(chapterId)) {
+            addMenuItem(MenuItem("Dictionary", [this]() {
+                auto epubPlace = std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
+                readableDictionaryScreen_.setPlaceInReadable(epubPlace);
+                readableDictionaryScreen_.setFirstLoad();
+                setCurrentScreen(readableDictionaryScreen_);
+            }));
+        }
     }
 
     addMenuItem(MenuItem("Brightness", [this]() {
