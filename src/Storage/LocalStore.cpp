@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <esp_system.h>
 #include <esp_timer.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 #include <limits>
 #include <memory>
 #include <set>
@@ -410,41 +412,49 @@ auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Reada
         Place::factory(prefs_.readablePlace.get(readable->shortenedUuid.c_str()));
     bool changed = prefs_.readablePlaceChanged.get(readable->shortenedUuid.c_str());
 
-    std::shared_ptr<Place> serverPlace = prefsPlace->isFor(DocType::TXT) ? txtPlace : ePubPlace;
+    int16_t prefsFileIdx = -1;
+    int16_t serverFileIdx = -1;
 
-    auto getSpineIndex = [this, readable](const std::shared_ptr<Place> &place) -> int16_t {
-        if (place->isFor(DocType::TXT)) {
-            return 0;
+    std::shared_ptr<Place> serverPlace;
+    if (prefsPlace->isFor(DocType::EPUB)) {
+        serverPlace = ePubPlace;
+        // The only real way to compare epub placemark positions is via the spine, but we can only
+        // do that if we have the epub downloaded. If we don't have the epub downloaded, just save
+        // the server position
+        auto path = readableFilePathForReading(readable);
+        if (path != "") {
+            auto stream = std::make_shared<EPubFile>(fileSystem, path.c_str(), readable);
+            if (stream->isOpen()) {
+                auto prefsEPubPlace = std::dynamic_pointer_cast<EPubPlace>(prefsPlace);
+                auto serverEPubPlace = std::dynamic_pointer_cast<EPubPlace>(ePubPlace);
+                prefsFileIdx = stream->getSpineIdx(prefsEPubPlace->getHRef());
+                serverFileIdx = stream->getSpineIdx(serverEPubPlace->getHRef());
+            } else {
+                log_w("Failed to open ePub file for reading");
+            }
         }
-        // The only real way to compare epub placemark positions is via the spine
-        auto stream = EPubFile(fileSystem, readableFilePathForReading(readable).c_str(), readable);
-        if (!stream.isOpen()) {
-            log_w("Failed to open ePub file for reading");
-            return -1;
-        }
-        auto ePubPlace = std::dynamic_pointer_cast<EPubPlace>(place);
-        auto index = stream.getSpineIdx(ePubPlace->getHRef());
-        return index;
-    };
+    } else {
+        serverPlace = txtPlace;
+        prefsFileIdx = 0;
+        serverFileIdx = 0;
+    }
 
-    int16_t prefsFileIdx = getSpineIndex(prefsPlace);
-    int16_t serverFileIdx = getSpineIndex(serverPlace);
-
-    if (*serverPlace.get() == *prefsPlace.get()) {
-        // If the placemark on the server is the same as the one on the device, don't change it
+    if (prefsFileIdx == serverFileIdx && *serverPlace.get() == *prefsPlace.get()) {
+        // Do not overwrite the local placemark if the server placemark is the same as the local one
         return false;
     } else if (((serverFileIdx > prefsFileIdx) ||
                 ((serverFileIdx == prefsFileIdx) &&
                  (serverPlace->getOffset() > prefsPlace->getOffset()))) &&
                !changed) {
-        // Placemark on server is further than on the device, so update to the server value
+        // Overwrite the local placemark with the server one if server placemark is further than on
+        // the device
         log_i("Updating placemark for \"%s\" from device value of %s to server "
               "value of %s",
               readable->title.c_str(), prefsPlace->str().c_str(), serverPlace->str().c_str());
         prefs_.readablePlace.set(readable->shortenedUuid.c_str(), serverPlace->str());
         return true;
     } else if ((serverPlace != nullptr) && !serverPlace->isFor(DocType::NONE)) {
-        // Placemark on server is less than on the device, so don't update to the server value
+        // Do not overwrite the local placemark if the placemark on server is less than on device
         log_i("Not updating placemark for \"%s\" from device value of %s to server "
               "value of %s. Changed: %d",
               readable->title.c_str(), prefsPlace->str().c_str(), serverPlace->str().c_str(),
@@ -987,6 +997,8 @@ void LocalStore::syncFromRemote(
             progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced,
                                               .message = "Already synced"});
         }
+        log_d("Min watermark for task %s: %u bytes (%s:%d)", pcTaskGetName(nullptr),
+              (unsigned int)uxTaskGetStackHighWaterMark(NULL), __FILE__, __LINE__);
     });
 }
 
