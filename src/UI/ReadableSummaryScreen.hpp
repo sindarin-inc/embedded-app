@@ -35,7 +35,7 @@ public:
     void resetBoundingBox(DisplayRect oldDisplayBoundingBox);
     void setPlacemark();
     void setFirstLoad() { firstLoad_ = true; }
-    void setPlaceInReadable(std::shared_ptr<Place> placeInReadable);
+    void setPlaceInReadable(std::shared_ptr<Place> placeInReadable, int currentChapterIdx);
 
 protected:
     PreferencesStore &prefs_;
@@ -46,10 +46,11 @@ protected:
     bool firstLoad_ = true;
     bool showUnread_ = false;
     std::shared_ptr<Place> placeInReadable_;
-    std::shared_ptr<Place> newPlace_;
-    std::shared_ptr<Place> prevPlace_;
-    std::shared_ptr<Place> preservePlace_;
+    std::shared_ptr<TxtPlace> newPlace_;
+    std::shared_ptr<TxtPlace> prevPlace_;
+    std::shared_ptr<TxtPlace> preservePlace_;
     bool atEnd_ = false;
+    int currentChapterIdx_ = -1;
 
     std::string upperLeftText_ = "Dismiss";
     std::string bottomRightText_;

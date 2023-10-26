@@ -204,7 +204,7 @@ void ReadableTableOfContentsScreen::setNearestChapterSelection(
         auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
         auto ePubPlace = std::dynamic_pointer_cast<EPubPlace>(placeInFile);
 
-        nearestChapter = stream->getReadableChapterIndex(ePubPlace);
+        nearestChapter = stream->getReadableToCChapterIndex(ePubPlace);
 
         if (nearestChapter == -1) {
             log_w("Unable to find nearest chapter for %s", ePubPlace->getHRef().c_str());

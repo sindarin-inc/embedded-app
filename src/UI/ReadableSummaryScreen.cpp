@@ -23,12 +23,16 @@ void ReadableSummaryScreen::drawInRect(Rect rect) {
     bottomRightTextView_.draw();
 }
 
-void ReadableSummaryScreen::setPlaceInReadable(std::shared_ptr<Place> placeInReadable) {
+void ReadableSummaryScreen::setPlaceInReadable(std::shared_ptr<Place> placeInReadable,
+                                               int currentChapterIdx) {
     placeInReadable_ = std::move(placeInReadable);
+    currentChapterIdx_ = currentChapterIdx;
     preservePlace_ = nullptr;
 }
 
-auto ReadableSummaryScreen::checkAtEnd() -> bool { return (newPlace_ == nullptr); }
+auto ReadableSummaryScreen::checkAtEnd() -> bool {
+    return (newPlace_ == nullptr) || newPlace_->getOffset() == 0;
+}
 
 void ReadableSummaryScreen::render(DisplaySystem &display) {
     setNeedsLayout();
@@ -55,25 +59,35 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
     uint8_t darkPicturePercent = 0;
 
     if (firstLoad_) {
-        std::shared_ptr<Place> placeInSummary = nullptr;
+        std::shared_ptr<TxtPlace> placeInSummary =
+            std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
+
         SpiramString summaryString =
-            readable_->summary(placeInReadable_, placeInSummary, showUnread_);
+            readable_->summary(placeInReadable_, placeInSummary, showUnread_, currentChapterIdx_);
 
         if (preservePlace_) {
             placeInSummary = preservePlace_;
             preservePlace_ = nullptr;
         }
-        auto stream = std::make_shared<StdStringStream>(summaryString);
+        auto stream = std::make_shared<StdStringStream>(summaryString, DocType::TXT);
         renderer_.setStream(stream);
-        std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(placeInSummary);
-        log_d("Place in readable: %s, place in summary: %s", placeInReadable_->str().c_str(),
-              placeInSummary->str().c_str());
+        std::shared_ptr<Place> newPlace;
+        std::tie(newPlace, darkPicturePercent) = renderer_.renderPage(placeInSummary);
+        newPlace_ = std::dynamic_pointer_cast<TxtPlace>(newPlace);
+        if (placeInSummary != nullptr) {
+            log_d("Place in readable: %s, place in summary: %s", placeInReadable_->str().c_str(),
+                  placeInSummary->str().c_str());
+        }
     } else {
         prevPlace_ = newPlace_;
-        std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(newPlace_);
+        std::shared_ptr<Place> newPlace;
+        std::tie(newPlace, darkPicturePercent) = renderer_.renderPage(newPlace_);
+        newPlace_ = std::dynamic_pointer_cast<TxtPlace>(newPlace);
     }
 
     atEnd_ = checkAtEnd();
+    log_d("Rendering summary with newPlace: %s %s", newPlace_->str().c_str(),
+          atEnd_ ? "(at EOF)" : "(not at EOF)");
     display.updateDisplay(DisplaySystem::UpdateType::FULL, true,
                           display.darkPictureVComAdj(darkPicturePercent));
     firstLoad_ = false;
@@ -118,7 +132,7 @@ void ReadableSummaryScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::BACK:
     case RemoteCommand::LEFT: {
         auto oldDisplayBoundingBox = insetBoundingBox();
-        newPlace_ = renderer_.getPreviousPlace();
+        newPlace_ = std::dynamic_pointer_cast<TxtPlace>(renderer_.getPreviousPlace());
         setNeedsRerender();
         resetBoundingBox(oldDisplayBoundingBox);
         break;

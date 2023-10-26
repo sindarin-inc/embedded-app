@@ -125,20 +125,36 @@ public:
     [[nodiscard]] auto telemetryPlacemarkMetrics() const -> std::map<std::string, TelemetryVariant>;
 
     auto summary(const std::shared_ptr<Place> &placeInReadable,
-                 const std::shared_ptr<Place> &placeInSummary, bool includeUnread) -> SpiramString {
+                 const std::shared_ptr<TxtPlace> &placeInSummary, bool includeUnread,
+                 int currentChapterIdx) -> SpiramString {
         SpiramString summary;
 
-        // ToDo: Adjust with Place classes (GT)
         for (const auto &chapter : toc) {
-            if (placeInReadable->getOffset() >= chapter.txtOffset) {
+            auto sameChapter =
+                (placeInReadable->isFor(DocType::EPUB) &&
+                 chapter.href ==
+                     std::dynamic_pointer_cast<EPubPlace>(placeInReadable)->getHRef()) ||
+                (placeInReadable->isFor(DocType::TXT) &&
+                 chapter.txtOffset < placeInReadable->getOffset() &&
+                 placeInReadable->getOffset() < chapter.endTxtOffset);
+            auto futureChapter = (placeInReadable->isFor(DocType::EPUB) &&
+                                  findEPubHRefChapterIdx(chapter.href) > currentChapterIdx) ||
+                                 (placeInReadable->isFor(DocType::TXT) &&
+                                  placeInReadable->getOffset() < chapter.txtOffset);
+            auto pastOrSameChapter = (placeInReadable->isFor(DocType::EPUB) &&
+                                      findEPubHRefChapterIdx(chapter.href) <= currentChapterIdx) ||
+                                     (placeInReadable->isFor(DocType::TXT) &&
+                                      placeInReadable->getOffset() >= chapter.txtOffset);
+
+            if (pastOrSameChapter) {
                 placeInSummary->setOffset(summary.length());
             }
-            if ((placeInReadable->getOffset() < chapter.txtOffset) && !includeUnread) {
+
+            if (futureChapter && !includeUnread) {
                 break;
             }
-            if (chapter.txtOffset < placeInReadable->getOffset() &&
-                placeInReadable->getOffset() < chapter.endTxtOffset && !includeUnread &&
-                chapter.partialChapterSummary != nullptr &&
+
+            if (sameChapter && !includeUnread && chapter.partialChapterSummary != nullptr &&
                 !chapter.partialChapterSummary->text.empty()) {
                 summary += chapter.title;
                 summary += StringFormat(" (%d%% read)\n\n", chapter.partialChapterSummary->readPct);

@@ -10,18 +10,18 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
         localStore_.loadToc(readable_);
 
         auto &chapterHref = std::dynamic_pointer_cast<EPubPlace>(place)->getHRef();
-        auto chapterIndex = readable_->findEPubHRefChapterIdx(chapterHref);
+        currentChapterIdx_ = readable_->findEPubHRefChapterIdx(chapterHref);
 
         // If the chapter isn't found in the ToC, find it in the spine and walk backwards until we
         // find a chapter that is found in the ToC.
-        if (chapterIndex == -1) {
+        if (currentChapterIdx_ == -1) {
             auto stream = std::dynamic_pointer_cast<EPubFile>(renderer_.getStream());
             auto ePubPlace = std::dynamic_pointer_cast<EPubPlace>(place);
-            chapterIndex = stream->getReadableChapterIndex(ePubPlace);
+            currentChapterIdx_ = stream->getReadableToCChapterIndex(ePubPlace);
         }
 
-        if (chapterIndex >= 0) {
-            auto &chapter = readable_->toc[chapterIndex];
+        if (currentChapterIdx_ >= 0) {
+            auto &chapter = readable_->toc[currentChapterIdx_];
 
             // TODO(john): This isn't exactly right because `place->getOffset()` is a byte offset,
             // not a letter offset from the beginning of the chapter. The chapters always start with
@@ -41,7 +41,7 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
                 StringFormat("%d page%s left", SOL_PAGE_NUMBER(chapterPagesRemaining),
                              SOL_PAGE_NUMBER(chapterPagesRemaining) == 1 ? "" : "s");
         } else {
-            log_w("Couldn't find chapter index (%d) for href %s", chapterIndex,
+            log_w("Couldn't find chapter index (%d) for href %s", currentChapterIdx_,
                   chapterHref.c_str());
         }
     } else {
@@ -109,7 +109,8 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
 
     if (readable_->hasSummary) {
         addMenuItem(MenuItem("Summary", [this]() {
-            readableSummaryScreen_.setPlaceInReadable(renderer_.getCurrentPlace());
+            readableSummaryScreen_.setPlaceInReadable(renderer_.getCurrentPlace(),
+                                                      currentChapterIdx_);
             readableSummaryScreen_.setFirstLoad();
             setCurrentScreen(readableSummaryScreen_);
         }));

@@ -81,6 +81,7 @@ protected:
     Telemetry &telemetry_;
 
     bool firstLoad_ = true;
+    int currentChapterIdx_ = -1;
 
     std::shared_ptr<MenuItemView> archiveMenuItemView_;
     std::shared_ptr<MenuItemView> unarchiveMenuItemView_;

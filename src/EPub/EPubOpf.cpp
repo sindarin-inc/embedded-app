@@ -36,7 +36,7 @@ void EPubOpf::parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length,
 
             auto it = manifest_.find(idref);
             if (it != manifest_.end()) {
-                spine_.push_back(SpineItem{.item = &it->second, .readableChapterIndex = -1});
+                spine_.push_back(SpineItem{.item = &it->second, .readableToCChapterIndex = -1});
             } else {
                 log_e("Spine idref not found in manifest: %s", idref.c_str());
             }
@@ -44,7 +44,7 @@ void EPubOpf::parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length,
 
         for (int32_t i = 0; i < readable->toc.size(); i++) {
             int32_t spineIdx = getSpineIdx(readable->toc[i].href);
-            spine_[spineIdx].readableChapterIndex = i;
+            spine_[spineIdx].readableToCChapterIndex = i;
         }
     } else {
         log_e("Failed to parse EPub opf %s: %s", path_, result.description());
@@ -71,12 +71,12 @@ auto EPubOpf::getSpineIdx(const std::string &href) const -> int {
     return 0;
 }
 
-auto EPubOpf::getReadableChapterIndex(const std::string &href) const -> int {
+auto EPubOpf::getReadableToCChapterIndex(const std::string &href) const -> int {
     int spineIdx = getSpineIdx(href);
 
     while (spineIdx >= 0) {
-        if (spine_[spineIdx].readableChapterIndex != -1) {
-            return spine_[spineIdx].readableChapterIndex;
+        if (spine_[spineIdx].readableToCChapterIndex != -1) {
+            return spine_[spineIdx].readableToCChapterIndex;
         }
         spineIdx -= 1;
     }
