@@ -44,7 +44,6 @@ private:
 };
 
 TEST_CASE("Test glyph rendering") {
-    // Just create and render a PowerDepletedScreen
     auto display = createDisplay();
     display->setBoundingBox({0, 0, static_cast<uint32_t>(display->defaultScreenWidth),
                              static_cast<uint32_t>(display->defaultScreenHeight)});
