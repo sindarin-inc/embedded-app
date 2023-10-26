@@ -1,6 +1,6 @@
 #include "EPubMetaFile.hpp"
 
-#include "pugixml.hpp"
+#include <pugixml.hpp>
 
 void EPubMetaFile::parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length) {
 

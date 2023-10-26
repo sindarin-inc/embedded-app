@@ -1,5 +1,6 @@
 #pragma once
 
+#include <pugixml.hpp>
 #include <utility>
 
 #include "EPubDefs.hpp"
@@ -8,7 +9,6 @@
 #include "Misc/Unzipper.hpp"
 #include "Models/DocType.hpp"
 #include "Renderers/RendererStream.hpp"
-#include "pugixml.hpp"
 
 class EPubFile : public RendererStream {
 public:
