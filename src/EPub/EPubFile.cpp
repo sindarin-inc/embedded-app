@@ -233,7 +233,7 @@ auto EPubFile::getDictionaryContent(const std::string &chapterID,
         // Concatenate to form the full dictionaryText
         dictionaryText = beforeClosestNodeText + dictionaryText;
 
-        log_i("Found closest node at char offset: %u for location: %d/%d", charOffset,
+        log_i("Found closest node at char offset: %lu for location: %d/%d", charOffset,
               closestLocation, currentOffset);
     } else {
         log_e("Location not found in dictionaryString chapter: %s : %d", chapterID.c_str(),
