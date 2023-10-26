@@ -14,6 +14,7 @@
 #include "EPub/EPubFile.hpp"
 #include "GitVersion.hpp"
 #include "Misc/Crypto.hpp"
+#include "Misc/Defer.hpp"
 #include "Misc/GUnzipStream.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
@@ -1546,20 +1547,22 @@ auto LocalStore::getPendingFirmwareUpdate(Firmware &firmware) -> bool {
     auto firmwareFile = fileSystem.open(firmwarePath, "r");
     if (!firmwareFile) {
         return false;
-    } else {
-        auto doc = std::make_unique<SpiRamJsonDocument>(firmwareFile.size() * 4);
-
-        DeserializationError error = deserializeJson(*doc, firmwareFile);
-        if (error) {
-            log_e("Failed to parse firmware file: %s", error.c_str());
-            return false;
-        }
-        firmware.fromJson(doc->as<JsonObject>());
-        firmwareFile.close();
-
-        return SemVerCompareVersions(kVersionString, firmware.version) ==
-               SemVerComparison::LessThan;
     }
+    defer { firmwareFile.close(); };
+    auto doc = std::make_unique<SpiRamJsonDocument>(firmwareFile.size() * 4);
+
+    DeserializationError error = deserializeJson(*doc, firmwareFile);
+    if (error) {
+        log_e("Failed to parse firmware file JSON: %s", error.c_str());
+        return false;
+    }
+    auto parsed = firmware.fromJson(doc->as<JsonObject>());
+    if (!parsed) {
+        log_e("Failed to parse firmware file");
+        return false;
+    }
+
+    return SemVerCompareVersions(kVersionString, firmware.version) == SemVerComparison::LessThan;
 }
 
 void LocalStore::resetFirmware() { fileSystem.remove(firmwarePath); }
