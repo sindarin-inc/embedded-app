@@ -216,7 +216,7 @@ auto CheckViewUnchanged(std::string key) -> ViewTestResult {
                                 << result.acceptedImagePath.c_str());
         // If ACCEPT_CHANGES is defined, automatically accept the changes
 #ifdef ACCEPT_CHANGES
-        log_i("Accepting changes");
+        UNSCOPED_INFO("  ---> Accepting changes");
         std::filesystem::copy(result.renderedImagePath, result.acceptedImagePath,
                               std::filesystem::copy_options::overwrite_existing);
 #endif
