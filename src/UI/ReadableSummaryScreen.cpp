@@ -71,18 +71,18 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
         }
         auto stream = std::make_shared<StdStringStream>(summaryString, DocType::TXT);
         renderer_.setStream(stream);
-        auto resultPair = renderer_.renderPage(placeInSummary);
-        newPlace_ = std::dynamic_pointer_cast<TxtPlace>(resultPair.first);
-        darkPicturePercent = resultPair.second;
+        std::shared_ptr<Place> newPlace;
+        std::tie(newPlace, darkPicturePercent) = renderer_.renderPage(placeInSummary);
+        newPlace_ = std::dynamic_pointer_cast<TxtPlace>(newPlace);
         if (placeInSummary != nullptr) {
             log_d("Place in readable: %s, place in summary: %s", placeInReadable_->str().c_str(),
                   placeInSummary->str().c_str());
         }
     } else {
         prevPlace_ = newPlace_;
-        auto resultPair = renderer_.renderPage(newPlace_);
-        newPlace_ = std::dynamic_pointer_cast<TxtPlace>(resultPair.first);
-        darkPicturePercent = resultPair.second;
+        std::shared_ptr<Place> newPlace;
+        std::tie(newPlace, darkPicturePercent) = renderer_.renderPage(newPlace_);
+        newPlace_ = std::dynamic_pointer_cast<TxtPlace>(newPlace);
     }
 
     atEnd_ = checkAtEnd();
