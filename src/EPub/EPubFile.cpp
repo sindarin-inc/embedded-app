@@ -153,7 +153,6 @@ auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
 }
 
 auto EPubFile::getReadableToCChapterIndex(const std::shared_ptr<EPubPlace> &ePubPlace) const
-
     -> int {
     return opf_->getReadableToCChapterIndex(ePubPlace->getHRef());
 }
