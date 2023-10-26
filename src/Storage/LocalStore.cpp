@@ -408,12 +408,15 @@ auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Reada
                                                      const std::shared_ptr<Place> &txtPlace,
                                                      const std::shared_ptr<Place> &ePubPlace)
     -> bool {
-    std::shared_ptr<Place> prefsPlace =
-        Place::factory(prefs_.readablePlace.get(readable->shortenedUuid.c_str()));
+    auto prefsPlaceString = prefs_.readablePlace.get(readable->shortenedUuid.c_str());
+    std::shared_ptr<Place> prefsPlace = Place::factory(prefsPlaceString);
     bool changed = prefs_.readablePlaceChanged.get(readable->shortenedUuid.c_str());
 
     int16_t prefsFileIdx = -1;
     int16_t serverFileIdx = -1;
+
+    auto path = readableFilePathForReading(readable);
+    bool hasEpub = path != "" && HasSuffix(path, ".epub");
 
     std::shared_ptr<Place> serverPlace;
     if (prefsPlace->isFor(DocType::EPUB)) {
@@ -421,8 +424,7 @@ auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Reada
         // The only real way to compare epub placemark positions is via the spine, but we can only
         // do that if we have the epub downloaded. If we don't have the epub downloaded, just save
         // the server position
-        auto path = readableFilePathForReading(readable);
-        if (path != "") {
+        if (hasEpub) {
             auto stream = std::make_shared<EPubFile>(fileSystem, path.c_str(), readable);
             if (stream->isOpen()) {
                 auto prefsEPubPlace = std::dynamic_pointer_cast<EPubPlace>(prefsPlace);
@@ -442,14 +444,22 @@ auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Reada
     if (prefsFileIdx == serverFileIdx && *serverPlace.get() == *prefsPlace.get()) {
         // Do not overwrite the local placemark if the server placemark is the same as the local one
         return false;
+    } else if (prefsPlaceString == "" && !hasEpub) {
+        // Set the local placemark with the epub version if:
+        // * There is no local placemark
+        // * The epub is not yet downloaded
+        log_i("Setting placemark for \"%s\" from unset to value server value of %s",
+              readable->title.c_str(), serverPlace->str().c_str());
+        prefs_.readablePlace.set(readable->shortenedUuid.c_str(), serverPlace->str());
+        return true;
+
     } else if (((serverFileIdx > prefsFileIdx) ||
                 ((serverFileIdx == prefsFileIdx) &&
                  (serverPlace->getOffset() > prefsPlace->getOffset()))) &&
                !changed) {
         // Overwrite the local placemark with the server one if server placemark is further than on
         // the device
-        log_i("Updating placemark for \"%s\" from device value of %s to server "
-              "value of %s",
+        log_i("Updating placemark for \"%s\" from device value of %s to server value of %s",
               readable->title.c_str(), prefsPlace->str().c_str(), serverPlace->str().c_str());
         prefs_.readablePlace.set(readable->shortenedUuid.c_str(), serverPlace->str());
         return true;
@@ -897,6 +907,9 @@ void LocalStore::syncFromRemote(
                 // For any Readables that are downloaded as epub, but still have a TXT placemark,
                 // let's replace the placemark with the server placemark (and trust the server to do
                 // appropriate migrations)
+                // TODO: It would be better to move this logic immediately after download of the
+                // readable, so if downloading fails part-way through, then we still do this for the
+                // ones that succeeded.
                 for (auto &userReadable : userReadables) {
                     auto readable = userReadable.readable;
                     std::shared_ptr<Place> prefsPlace =
