@@ -63,7 +63,7 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
         std::shared_ptr<Place> newPlace;
         std::tie(newPlace, darkPicturePercent) = renderer_.renderPage(placeInDictionary);
         newPlace_ = std::dynamic_pointer_cast<TxtPlace>(newPlace);
-        log_d("Place in readable: %s, place in dictionary: %s. Next place: %lu",
+        log_d("Place in readable: %s, place in dictionary: %s. Next place: %u",
               placeInReadable_->str().c_str(), placeInDictionary->str().c_str(),
               newPlace_ != nullptr ? newPlace_->getOffset() : -1);
     } else {
