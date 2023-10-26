@@ -23,8 +23,10 @@ void ReadableSummaryScreen::drawInRect(Rect rect) {
     bottomRightTextView_.draw();
 }
 
-void ReadableSummaryScreen::setPlaceInReadable(std::shared_ptr<Place> placeInReadable) {
+void ReadableSummaryScreen::setPlaceInReadable(std::shared_ptr<Place> placeInReadable,
+                                               int currentChapterIdx) {
     placeInReadable_ = std::move(placeInReadable);
+    currentChapterIdx_ = currentChapterIdx;
     preservePlace_ = nullptr;
 }
 
@@ -59,8 +61,9 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
     if (firstLoad_) {
         std::shared_ptr<TxtPlace> placeInSummary =
             std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
+
         SpiramString summaryString =
-            readable_->summary(placeInReadable_, placeInSummary, showUnread_);
+            readable_->summary(placeInReadable_, placeInSummary, showUnread_, currentChapterIdx_);
 
         if (preservePlace_) {
             placeInSummary = preservePlace_;

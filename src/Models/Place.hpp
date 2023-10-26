@@ -6,7 +6,6 @@
 #include <utility>
 
 #include "DocType.hpp"
-#include "sindarin-debug.h"
 
 class Place {
 private:

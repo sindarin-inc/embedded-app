@@ -84,7 +84,7 @@ public:
         return 0;
     }
 
-    auto getReadableChapterIndex(const std::shared_ptr<EPubPlace> &ePubPlace) const -> int;
+    auto getReadableToCChapterIndex(const std::shared_ptr<EPubPlace> &ePubPlace) const -> int;
 
 private:
     Unzipper epubUnzipper_;

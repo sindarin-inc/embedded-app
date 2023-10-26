@@ -125,15 +125,9 @@ public:
     [[nodiscard]] auto telemetryPlacemarkMetrics() const -> std::map<std::string, TelemetryVariant>;
 
     auto summary(const std::shared_ptr<Place> &placeInReadable,
-                 const std::shared_ptr<TxtPlace> &placeInSummary, bool includeUnread)
-        -> SpiramString {
+                 const std::shared_ptr<TxtPlace> &placeInSummary, bool includeUnread,
+                 int currentChapterIdx) -> SpiramString {
         SpiramString summary;
-
-        auto currentChapterIdx = -1;
-        if (placeInReadable->isFor(DocType::EPUB)) {
-            currentChapterIdx = findEPubHRefChapterIdx(
-                std::dynamic_pointer_cast<EPubPlace>(placeInReadable)->getHRef());
-        }
 
         for (const auto &chapter : toc) {
             auto sameChapter =

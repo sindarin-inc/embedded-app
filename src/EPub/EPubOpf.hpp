@@ -22,7 +22,7 @@ public:
 
     struct SpineItem {
         ManifestItem *item;
-        int readableChapterIndex; // = -1 if not a chapter in the readable TOC
+        int readableToCChapterIndex; // = -1 if not a chapter in the readable TOC
     };
 
     [[nodiscard]] auto getSpine(Idx idx) const -> const SpineItem & { return spine_[idx]; }
@@ -37,7 +37,7 @@ public:
 
     auto getSpineIdx(const std::string &href) const -> int;
 
-    auto getReadableChapterIndex(const std::string &href) const -> int;
+    auto getReadableToCChapterIndex(const std::string &href) const -> int;
 
 private:
     const char *path_;
