@@ -1,9 +1,9 @@
 #include "EPubOpf.hpp"
 
 #include <cstring>
+#include <pugixml.hpp>
 
 #include "EPubDefs.hpp"
-#include "pugixml.hpp"
 
 void EPubOpf::parse(const std::shared_ptr<uint8_t[]> &buffer, uint32_t length,
                     const std::shared_ptr<Readable> &readable) {

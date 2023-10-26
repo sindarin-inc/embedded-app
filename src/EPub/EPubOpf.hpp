@@ -37,7 +37,7 @@ public:
 
     auto getSpineIdx(const std::string &href) const -> int;
 
-    auto getReadableToCChapterIndex(const std::string &href) const -> int;
+    auto getReadableToCToCChapterIndex(const std::string &href) const -> int;
 
     auto exists(const std::string &id) const -> bool;
 
