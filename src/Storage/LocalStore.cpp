@@ -416,7 +416,9 @@ auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Reada
     int16_t serverFileIdx = -1;
 
     auto path = readableFilePathForReading(readable);
-    bool hasEpub = path != "" && HasSuffix(path, ".epub");
+    bool hasEpub = RendererStream::parseDocType(path.c_str()) == DocType::EPUB;
+
+    auto serverEPubPlace = std::dynamic_pointer_cast<EPubPlace>(ePubPlace);
 
     std::shared_ptr<Place> serverPlace;
     if (prefsPlace->isFor(DocType::EPUB)) {
@@ -428,7 +430,6 @@ auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Reada
             auto stream = std::make_shared<EPubFile>(fileSystem, path.c_str(), readable);
             if (stream->isOpen()) {
                 auto prefsEPubPlace = std::dynamic_pointer_cast<EPubPlace>(prefsPlace);
-                auto serverEPubPlace = std::dynamic_pointer_cast<EPubPlace>(ePubPlace);
                 prefsFileIdx = stream->getSpineIdx(prefsEPubPlace->getHRef());
                 serverFileIdx = stream->getSpineIdx(serverEPubPlace->getHRef());
             } else {
@@ -444,15 +445,15 @@ auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Reada
     if (prefsFileIdx == serverFileIdx && *serverPlace.get() == *prefsPlace.get()) {
         // Do not overwrite the local placemark if the server placemark is the same as the local one
         return false;
-    } else if (prefsPlaceString == "" && !hasEpub) {
+    } else if (prefsPlaceString == "" && !hasEpub && serverEPubPlace->getHRef() != "null") {
         // Set the local placemark with the epub version if:
         // * There is no local placemark
         // * The epub is not yet downloaded
+        // * The server placemark is valid
         log_i("Setting placemark for \"%s\" from unset to value server value of %s",
               readable->title.c_str(), serverPlace->str().c_str());
         prefs_.readablePlace.set(readable->shortenedUuid.c_str(), serverPlace->str());
         return true;
-
     } else if (((serverFileIdx > prefsFileIdx) ||
                 ((serverFileIdx == prefsFileIdx) &&
                  (serverPlace->getOffset() > prefsPlace->getOffset()))) &&
