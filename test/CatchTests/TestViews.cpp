@@ -172,7 +172,7 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         WAIT_FOR_DRAW();
         WAIT_FOR_DRAW();
 
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < 7; i++) {
             SendRemoteCommand(DOWN);
             WAIT_FOR_DRAW();
         }

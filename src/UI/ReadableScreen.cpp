@@ -278,7 +278,7 @@ void ReadableScreen::render(DisplaySystem &display) {
     if (pageSpeed_ == 0) {
         // Regular Reading
         std::tie(newPlace_, darkPicturePercent) = renderer_.renderPage(readable_->place);
-        log_w("Char Offset: %" PRIu32, getScreenCurrentCharOffset());
+        // log_w("Char Offset: %" PRIu32, getScreenCurrentCharOffset());
         atEnd_ = checkAtEnd();
     } else {
         // Autopilot Reading
