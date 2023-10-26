@@ -152,10 +152,10 @@ auto EPubFile::getXHTMLFile(const std::string &path) -> pugi::xml_document & {
     return currentFileDoc_;
 }
 
-auto EPubFile::getReadableToCToCChapterIndex(const std::shared_ptr<EPubPlace> &ePubPlace) const
+auto EPubFile::getReadableToCChapterIndex(const std::shared_ptr<EPubPlace> &ePubPlace) const
 
     -> int {
-    return opf_->getReadableToCToCChapterIndex(ePubPlace->getHRef());
+    return opf_->getReadableToCChapterIndex(ePubPlace->getHRef());
 }
 
 auto EPubFile::hasDictionary(const std::string &chapterID) -> bool {
