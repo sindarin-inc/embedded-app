@@ -188,9 +188,10 @@ auto EPubFile::getDictionaryContent(const std::string &chapterID,
     // Search for the closest data-locations attribute closest to currentOffset without going over
     for (auto p : doc.child("html").child("body").children("p")) {
         int location = p.attribute("data-locations").as_int();
+        log_d("Found dictionary location: %d", location);
 
         // If currentOffset is 0, set the closestNode as the first node
-        if (currentOffset == 0) {
+        if (currentOffset == 0 || closestNode == nullptr) {
             closestNode = p;
             closestLocation = location;
             break;

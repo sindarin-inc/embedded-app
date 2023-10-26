@@ -177,6 +177,12 @@ auto CheckViewUnchanged(std::string key) -> ViewTestResult {
         UNSCOPED_INFO("Run the following command to create an accepted test image:");
         UNSCOPED_INFO("  cp " << result.renderedImagePath << " \\\n  " << result.acceptedImagePath);
         CHECK(data != nullptr);
+        // If ACCEPT_CHANGES is defined, automatically accept the changes
+#ifdef ACCEPT_CHANGES
+        UNSCOPED_INFO("  ---> Accepting changes");
+        std::filesystem::copy(result.renderedImagePath, result.acceptedImagePath,
+                              std::filesystem::copy_options::overwrite_existing);
+#endif
         return result;
     };
 

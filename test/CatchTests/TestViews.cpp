@@ -17,6 +17,7 @@
 #include "UI/ReleaseNotesScreen.hpp"
 #include "UI/ResizeBoxScreen.hpp"
 #include "ViewTestCommon.hpp"
+#include "sindarin-debug.h"
 #undef protected
 #undef private
 
@@ -189,6 +190,60 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
         WAIT_FOR_DRAW();
         WAIT_FOR_DRAW();
         ASSERT_VIEW_UNCHANGED("PopupMenu4"); // Should show the updated seeked spot from the TOC
+
+        // Open the dictionary
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW();
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW();
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW();
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("Dictionary1");
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("Dictionary2");
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("Dictionary3");
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("Dawn");
+
+        // Render the popup menu
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW();
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("PopupMenu4"); // Should show the updated seeked spot from the TOC
+
+        // Open the summary
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW();
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW();
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW();
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW();
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("Summary1");
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("Summary2");
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("Summary3");
+        SendRemoteCommand(ENTER);
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("Summary4");
+        SendRemoteCommand(DOWN);
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("Summary5");
+        SendRemoteCommand(UP);
+        WAIT_FOR_DRAW();
+        ASSERT_VIEW_UNCHANGED("Dawn");
     }
 
     StopFreeRtos();

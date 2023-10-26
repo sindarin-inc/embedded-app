@@ -58,9 +58,9 @@ void ReadablePopupMenuScreen::setUpPopupMenu() {
     auto timeString = theClock.getTimeString();
     popupMenuView_.setFooter3Text(timeString);
 
-    if (popupMenuView_.menuItemViews.size() == 0) {
-        populatePopupMenu();
-    }
+    // Always populate the popup menu because each chapter may have different entries (dictionary,
+    // summary)
+    populatePopupMenu();
 
     // Figure out if you should show the Archive menu item or the Unarchive menu item.
     bool archived = prefs_.readableArchivedChanged.get(readable_->shortenedUuid.c_str());
@@ -127,7 +127,11 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
                 readableDictionaryScreen_.setFirstLoad();
                 setCurrentScreen(readableDictionaryScreen_);
             }));
+        } else {
+            log_d("No dictionary for chapter %s", chapterId.c_str());
         }
+    } else {
+        log_d("Not an EPub, so no dictionary");
     }
 
     addMenuItem(MenuItem("Brightness", [this]() {
