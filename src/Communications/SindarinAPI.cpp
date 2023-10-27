@@ -21,14 +21,12 @@ std::shared_ptr<SindarinAPI> SindarinAPI::instance = nullptr;
 
 auto SindarinAPI::getInstance() -> std::shared_ptr<SindarinAPI> {
     if (instance == nullptr) {
-        instance = std::make_shared<SindarinAPI>();
+        instance = std::make_shared<SindarinAPI>(SINDARIN_SERVER_URL);
     }
     return instance;
 }
 
-auto SindarinAPI::isSindarinUrl(const char *url) -> bool {
-    return HasPrefix(url, SINDARIN_SERVER_URL);
-}
+auto SindarinAPI::isSindarinUrl(const char *url) -> bool { return HasPrefix(url, baseUrl_); }
 
 auto SindarinAPI::setAuth(HttpClient &client) -> esp_err_t {
     if (accessToken_.empty()) {
@@ -43,8 +41,8 @@ void SindarinAPI::setAccessToken(const std::string &token) { accessToken_ = toke
 
 auto SindarinAPI::checkSync(CheckSyncRequest &req, CheckSyncResponse *resp, Telemetry &telemetry)
     -> int {
-    auto url = StringFormat(SINDARIN_SERVER_URL "/sync/%ss/",
-                            ReadableModelTypeToString(req.modelType).c_str());
+    auto url =
+        StringFormat("%s/sync/%ss/", baseUrl_, ReadableModelTypeToString(req.modelType).c_str());
     log_d("Checking sync for %s: %s", ReadableModelTypeToString(req.modelType).c_str(),
           url.c_str());
     return checkSync(url, req, resp, telemetry);
@@ -136,7 +134,7 @@ auto SindarinAPI::checkSync(const std::string &url, CheckSyncRequest &req, Check
 }
 
 auto SindarinAPI::checkFirmware(FirmwareResponse *resp) -> int {
-    HttpClient client(SINDARIN_SERVER_URL "/firmware/");
+    HttpClient client(StringFormat("%s/firmware/", baseUrl_).c_str());
 
     auto err = setAuth(client);
     if (err != ESP_OK) {
@@ -226,7 +224,8 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
     int totalSize = header.size() + telemetryFile.size() + footer.size();
     auto contentType = "multipart/form-data; boundary=" + boundary;
 
-    HttpClient client(SINDARIN_SERVER_URL "/telemetry/", contentType.c_str(), HTTP_METHOD_POST);
+    HttpClient client(StringFormat("%s/telemetry/", baseUrl_).c_str(), contentType.c_str(),
+                      HTTP_METHOD_POST);
 
     auto err = setAuth(client);
     if (err != ESP_OK) {
@@ -281,8 +280,8 @@ auto SindarinAPI::uploadTelemetryFile(SFile &telemetryFile, const std::string &l
 }
 
 auto SindarinAPI::uploadCrashReport(SFile &crashFile, const std::string &contentType) -> int {
-    HttpClient client(SINDARIN_SERVER_URL "/coredumps/", contentType.c_str(), HTTP_METHOD_POST,
-                      true);
+    HttpClient client(StringFormat("%s/coredumps/", baseUrl_).c_str(), contentType.c_str(),
+                      HTTP_METHOD_POST, true);
     auto err = setAuth(client);
     if (err != ESP_OK) {
         return ERR_SET_AUTH;

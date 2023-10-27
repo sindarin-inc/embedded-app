@@ -18,8 +18,9 @@ auto DownloadFile(
 
     HttpClient client(url);
 
-    if (SindarinAPI::isSindarinUrl(url)) {
-        SindarinAPI::getInstance()->setAuth(client);
+    auto sindarinApi = SindarinAPI::getInstance();
+    if (sindarinApi->isSindarinUrl(url)) {
+        sindarinApi->setAuth(client);
     }
 
     auto time = esp_timer_get_time();

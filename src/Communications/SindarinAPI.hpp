@@ -36,12 +36,13 @@ enum SindarinError {
 
 class SindarinAPI {
 public:
-    SindarinAPI() = default;
+    SindarinAPI(const char *baseUrl) { baseUrl_ = baseUrl; }
     SindarinAPI(SindarinAPI const &) = delete;
 
     static auto getInstance() -> std::shared_ptr<SindarinAPI>;
-    static auto isSindarinUrl(const char *url) -> bool;
 
+    void overrideBaseUrl(const char *baseUrl) { baseUrl_ = baseUrl; }
+    auto isSindarinUrl(const char *url) -> bool;
     void setAccessToken(const std::string &accessToken);
 
     auto checkSync(CheckSyncRequest &req, CheckSyncResponse *resp, Telemetry &telemetry) -> int;
@@ -61,5 +62,6 @@ public:
 
 protected:
     static std::shared_ptr<SindarinAPI> instance;
+    const char *baseUrl_;
     std::string accessToken_;
 };
