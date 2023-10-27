@@ -463,11 +463,11 @@ public:
         }
     }
 
-    auto begin() -> bool {
+    auto begin(const char *name = "sindarin-app") -> bool {
         if (started_) {
             return true;
         }
-        esp_err_t err = nvs_open("sindarin-app", NVS_READWRITE, &nvsHandle_);
+        esp_err_t err = nvs_open(name, NVS_READWRITE, &nvsHandle_);
         if (err) {
             log_e("nvs_open failed: %s", esp_err_to_name(err));
             return false;
