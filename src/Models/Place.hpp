@@ -16,6 +16,7 @@ public:
     [[nodiscard]] virtual auto isFor(DocType docType) const -> bool = 0;
     [[nodiscard]] virtual auto getDocType() const -> DocType = 0;
     [[nodiscard]] virtual auto str() const -> std::string = 0;
+    [[nodiscard]] virtual auto isZero() const -> bool = 0;
     [[nodiscard]] inline auto getOffset() const -> uint32_t { return offset_; }
     inline void setOffset(uint32_t offset) { offset_ = offset; }
 
@@ -62,6 +63,7 @@ public:
     }
     [[nodiscard]] auto getDocType() const -> DocType override { return DocType::NONE; };
     [[nodiscard]] auto str() const -> std::string override { return "[NONE;INVALID PLACE]"; }
+    [[nodiscard]] auto isZero() const -> bool override { return true; };
 };
 
 // A TxtPlace is the location inside a .txt/.txt.gz document. As the document is represented by a
@@ -84,6 +86,7 @@ public:
         s.append("]");
         return s;
     }
+    [[nodiscard]] auto isZero() const -> bool override { return offset_ == 0; };
 };
 
 // An EPubPlace is the location inside a .epub document. The href_ field relates to the href
@@ -117,6 +120,8 @@ public:
         s.append("]");
         return s;
     }
+
+    [[nodiscard]] auto isZero() const -> bool override { return href_ == "null"; };
 
     void setHRef(std::string href) { href_ = std::move(href); };
 

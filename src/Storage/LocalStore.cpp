@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <esp_system.h>
 #include <esp_timer.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 #include <limits>
 #include <memory>
 #include <set>
@@ -14,6 +16,7 @@
 #include "EPub/EPubFile.hpp"
 #include "GitVersion.hpp"
 #include "Misc/Crypto.hpp"
+#include "Misc/Defer.hpp"
 #include "Misc/GUnzipStream.hpp"
 #include "Misc/Platform.hpp"
 #include "Misc/PowerManager.hpp"
@@ -402,55 +405,40 @@ void LocalStore::changedReadablesBookmarksJson(ReadableBookmarksVector &bookmark
 }
 
 auto LocalStore::processReadablePlacemarksFromServer(const std::shared_ptr<Readable> &readable,
-                                                     const std::shared_ptr<Place> &txtPlace,
-                                                     const std::shared_ptr<Place> &ePubPlace)
+                                                     const std::shared_ptr<TxtPlace> &txtPlace,
+                                                     const std::shared_ptr<EPubPlace> &ePubPlace)
     -> bool {
-    std::shared_ptr<Place> prefsPlace =
-        Place::factory(prefs_.readablePlace.get(readable->shortenedUuid.c_str()));
-    bool changed = prefs_.readablePlaceChanged.get(readable->shortenedUuid.c_str());
+    auto path = readableFilePathForReading(readable);
+    auto docType = RendererStream::parseDocType(path.c_str());
+    auto prefsPlaceString = prefs_.readablePlace.get(readable->shortenedUuid.c_str());
 
-    std::shared_ptr<Place> serverPlace = prefsPlace->isFor(DocType::TXT) ? txtPlace : ePubPlace;
-
-    auto getSpineIndex = [this, readable](const std::shared_ptr<Place> &place) -> int16_t {
-        if (place->isFor(DocType::TXT)) {
-            return 0;
+    if (docType == DocType::TXT) {
+        // If we have a txt file (and not an epub file), and the server place is non-zero and
+        // different, then save the txt place
+        if (txtPlace != nullptr && !txtPlace->isZero() && prefsPlaceString != txtPlace->str()) {
+            log_i("Updating TXT placemark for \"%s\" from device value of `%s` to server value of "
+                  "`%s`",
+                  readable->title.c_str(), prefsPlaceString.c_str(), txtPlace->str().c_str());
+            prefs_.readablePlace.set(readable->shortenedUuid.c_str(), txtPlace->str());
+            return true;
         }
-        // The only real way to compare epub placemark positions is via the spine
-        auto stream = EPubFile(fileSystem, readableFilePathForReading(readable).c_str(), readable);
-        if (!stream.isOpen()) {
-            log_w("Failed to open ePub file for reading");
-            return -1;
+    } else if (docType == DocType::EPUB || docType == DocType::NONE) {
+        // If we have an epub file (or no file at all), and the server place is non-zero and
+        // different, then save the epub place
+        if (ePubPlace != nullptr && !ePubPlace->isZero() && prefsPlaceString != ePubPlace->str()) {
+            log_i("Updating EPUB placemark for \"%s\" from device value of `%s` to server value of "
+                  "`%s`",
+                  readable->title.c_str(), prefsPlaceString.c_str(), ePubPlace->str().c_str());
+            prefs_.readablePlace.set(readable->shortenedUuid.c_str(), ePubPlace->str());
+            return true;
         }
-        auto ePubPlace = std::dynamic_pointer_cast<EPubPlace>(place);
-        auto index = stream.getSpineIdx(ePubPlace->getHRef());
-        return index;
-    };
-
-    int16_t prefsFileIdx = getSpineIndex(prefsPlace);
-    int16_t serverFileIdx = getSpineIndex(serverPlace);
-
-    if (*serverPlace.get() == *prefsPlace.get()) {
-        // If the placemark on the server is the same as the one on the device, don't change it
-        return false;
-    } else if (((serverFileIdx > prefsFileIdx) ||
-                ((serverFileIdx == prefsFileIdx) &&
-                 (serverPlace->getOffset() > prefsPlace->getOffset()))) &&
-               !changed) {
-        // Placemark on server is further than on the device, so update to the server value
-        log_i("Updating placemark for \"%s\" from device value of %s to server "
-              "value of %s",
-              readable->title.c_str(), prefsPlace->str().c_str(), serverPlace->str().c_str());
-        prefs_.readablePlace.set(readable->shortenedUuid.c_str(), serverPlace->str());
-        return true;
-    } else if ((serverPlace != nullptr) && !serverPlace->isFor(DocType::NONE)) {
-        // Placemark on server is less than on the device, so don't update to the server value
-        log_i("Not updating placemark for \"%s\" from device value of %s to server "
-              "value of %s. Changed: %d",
-              readable->title.c_str(), prefsPlace->str().c_str(), serverPlace->str().c_str(),
-              changed);
-        return false;
     }
-
+    // Otherwise do nothing
+    auto placeStr = ePubPlace == nullptr ? "null" : ePubPlace->str();
+    log_d("Not updating placemark for \"%s\" (path: %s) from device value of `%s` to server "
+          "value of `%s`",
+          readable->title.c_str(), path.c_str(), prefsPlaceString.c_str(),
+          ePubPlace->str().c_str());
     return false;
 }
 
@@ -789,7 +777,7 @@ void LocalStore::syncFromRemote(
                 // already We also process readables before checking if we're synced before we
                 // need to reset the local changed flags
                 auto [readablesToDownload, readablesToDelete] =
-                    this->processReadables(checkSyncResponse, *readables, userReadables);
+                    this->processReadables(*readables, userReadables);
 
                 SHOW_HEAP();
                 log_d("%ss to download: %zu", ReadableModelTypeToString(modelType).c_str(),
@@ -824,16 +812,18 @@ void LocalStore::syncFromRemote(
                 auto tasksIndex = 0;
 
                 if (modelType == ReadablesModelType::Book) {
-                    for (const auto &readable : readablesToDelete) {
+                    for (const auto &userReadable : readablesToDelete) {
                         syncState.tasks.push_back(ContentSyncState::Task{
-                            .message = StringFormat("Delete: %s", readable->title.c_str()),
+                            .message =
+                                StringFormat("Delete: %s", userReadable.readable->title.c_str()),
                             .percentage = 0,
                         });
                     }
 
-                    for (const auto &readable : readablesToDownload) {
+                    for (const auto &userReadable : readablesToDownload) {
                         syncState.tasks.push_back(ContentSyncState::Task{
-                            .message = StringFormat("Get: %s", readable->title.c_str()),
+                            .message =
+                                StringFormat("Get: %s", userReadable.readable->title.c_str()),
                             .percentage = 0,
                         });
                     }
@@ -881,25 +871,6 @@ void LocalStore::syncFromRemote(
                         StringFormat("failed-download-%ss",
                                      ReadableModelTypeToString(modelType).c_str())
                             .c_str());
-                }
-
-                // For any Readables that are downloaded as epub, but still have a TXT placemark,
-                // let's replace the placemark with the server placemark (and trust the server to do
-                // appropriate migrations)
-                for (auto &userReadable : userReadables) {
-                    auto readable = userReadable.readable;
-                    std::shared_ptr<Place> prefsPlace =
-                        Place::factory(prefs_.readablePlace.get(readable->shortenedUuid.c_str()));
-                    if (prefsPlace->isFor(DocType::TXT) &&
-                        RendererStream::parseDocType(
-                            readableFilePathForReading(readable).c_str()) == DocType::EPUB) {
-                        log_i(
-                            "Migrating epub placemark for \"%s\" from %s (locally) to %s (server)",
-                            readable->title.c_str(), prefsPlace->str().c_str(),
-                            userReadable.ePubPlace->str().c_str());
-                        prefs_.readablePlace.set(readable->shortenedUuid.c_str(),
-                                                 userReadable.ePubPlace->str());
-                    }
                 }
 
                 progressCallback(syncState);
@@ -986,19 +957,18 @@ void LocalStore::syncFromRemote(
             progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced,
                                               .message = "Already synced"});
         }
+        log_d("Min watermark for task %s: %u bytes (%s:%d)", pcTaskGetName(nullptr),
+              (unsigned int)uxTaskGetStackHighWaterMark(NULL), __FILE__, __LINE__);
     });
 }
 
-auto LocalStore::processReadables(const CheckSyncResponse &checkSyncResponse,
-                                  const ReadablesVector &readables,
-                                  UserReadablesVector &userReadables)
-    -> std::pair<ReadablesVector, ReadablesVector> {
-    ReadablesVector readablesToDownload = {};
-    ReadablesVector readablesToDelete = {};
+auto LocalStore::processReadables(const ReadablesVector &readables,
+                                  UserReadablesVector &serverReadables)
+    -> std::pair<UserReadablesVector, UserReadablesVector> {
+    UserReadablesVector readablesToDownload = {};
+    UserReadablesVector readablesToDelete = {};
     auto modelType = readablesModelType(const_cast<ReadablesVector &>(readables));
 
-    auto serverReadables = modelType == ReadablesModelType::Book ? checkSyncResponse.userBooks
-                                                                 : checkSyncResponse.userArticles;
     log_d("Processing %zu %ss from server", serverReadables.size(),
           ReadableModelTypeToString(modelType).c_str());
 
@@ -1009,9 +979,8 @@ auto LocalStore::processReadables(const CheckSyncResponse &checkSyncResponse,
 
         if (processReadablePlacemarksFromServer(userReadable.readable, userReadable.txtPlace,
                                                 userReadable.ePubPlace)) {
-            log_i("Placemark for %s updated to txt:%s and epub:%s",
-                  userReadable.readable->title.c_str(), userReadable.txtPlace->str().c_str(),
-                  userReadable.ePubPlace->str().c_str());
+            log_i("Placemark for %s updated to %s", userReadable.readable->title.c_str(),
+                  prefs_.readablePlace.get(userReadable.readable->shortenedUuid.c_str()).c_str());
         }
 
         if (processToCFromServer(userReadable.readable)) {
@@ -1039,7 +1008,7 @@ auto LocalStore::processReadables(const CheckSyncResponse &checkSyncResponse,
             log_i("Readable \"%s\" is archived, will delete", userReadable.readable->title.c_str());
             // TODO: Store these articles in an accessible archive instead of just deleting them
             // and ignoring
-            readablesToDelete.push_back(userReadable.readable);
+            readablesToDelete.push_back(userReadable);
             continue;
         } else if (unchanged) {
             // Should never get here as readablesSince should hide these articles
@@ -1047,7 +1016,7 @@ auto LocalStore::processReadables(const CheckSyncResponse &checkSyncResponse,
                   userReadable.readable->uuid.c_str());
             continue;
         }
-        readablesToDownload.push_back(userReadable.readable);
+        readablesToDownload.push_back(userReadable);
     }
     resetReadablesPlacemarkChanged(readables);
     resetReadablesArchivedChanged(readables);
@@ -1060,15 +1029,15 @@ auto LocalStore::processReadables(const CheckSyncResponse &checkSyncResponse,
 }
 
 void LocalStore::processReadableDeletion(
-    const ReadablesVector &readablesToDelete, ReadablesVector &readables, int &tasksIndex,
+    const UserReadablesVector &readablesToDelete, ReadablesVector &readables, int &tasksIndex,
     ContentSyncState &syncState, const std::function<void(ContentSyncState)> &progressCallback) {
     for (int i = 0; i < readablesToDelete.size(); i++) {
 
         syncState.tasks[tasksIndex].percentage = (float(i + 1) / readablesToDelete.size()) * 100;
 
-        log_i("Deleting %s", readablesToDelete[i]->title.c_str());
-        readableFilePurge(readablesToDelete[i]);
-        removeReadable(readables, readablesToDelete[i]);
+        log_i("Deleting %s", readablesToDelete[i].readable->title.c_str());
+        readableFilePurge(readablesToDelete[i].readable);
+        removeReadable(readables, readablesToDelete[i].readable);
     }
 
     // All article deletions take a single task line item
@@ -1079,7 +1048,7 @@ void LocalStore::processReadableDeletion(
 }
 
 auto LocalStore::processReadableDownload(
-    const ReadablesVector &readablesToDownload, ReadablesVector &readables, int &tasksIndex,
+    const UserReadablesVector &readablesToDownload, ReadablesVector &readables, int &tasksIndex,
     ContentSyncState &syncState, const std::function<void(ContentSyncState)> &progressCallback,
     ReadablesModelType modelType) -> bool {
     bool failedDownload = false;
@@ -1092,7 +1061,8 @@ auto LocalStore::processReadableDownload(
     float pctPerReadable = 100.0 / readablesToDownload.size();
     for (int i = 0; i < readablesToDownload.size(); i++) {
         float currPercentage = (float)i * pctPerReadable;
-        const auto &readable = readablesToDownload[i];
+        const auto &userReadable = readablesToDownload[i];
+        const auto &readable = userReadable.readable;
         auto path = readableFilePathForWriting(readable);
         log_i("Downloading %s (file=%s, url=%s)", readable->title.c_str(), path.c_str(),
               readable->remoteUrl().c_str());
@@ -1123,6 +1093,11 @@ auto LocalStore::processReadableDownload(
                         StringFormat("failed-save-%s",
                                      ReadableModelTypeToString(modelType).c_str()),
                         {{"uuid", readable->uuid}, {"title", readable->title.c_str()}});
+                } else {
+                    // Readables that were previously TXT and are now EPUB may still need their
+                    // placemark updated
+                    processReadablePlacemarksFromServer(readable, userReadable.txtPlace,
+                                                        userReadable.ePubPlace);
                 }
 
                 break;
@@ -1456,7 +1431,7 @@ auto LocalStore::readableFilePathForReading(const std::shared_ptr<Readable> &rea
             return path;
         }
     }
-    log_w("Unable to find readable file for %s (%s)", readable->title.c_str(), uuid.c_str());
+    // log_w("Unable to find readable file for %s (%s)", readable->title.c_str(), uuid.c_str());
     return "";
 }
 
@@ -1546,20 +1521,22 @@ auto LocalStore::getPendingFirmwareUpdate(Firmware &firmware) -> bool {
     auto firmwareFile = fileSystem.open(firmwarePath, "r");
     if (!firmwareFile) {
         return false;
-    } else {
-        auto doc = std::make_unique<SpiRamJsonDocument>(firmwareFile.size() * 4);
-
-        DeserializationError error = deserializeJson(*doc, firmwareFile);
-        if (error) {
-            log_e("Failed to parse firmware file: %s", error.c_str());
-            return false;
-        }
-        firmware.fromJson(doc->as<JsonObject>());
-        firmwareFile.close();
-
-        return SemVerCompareVersions(kVersionString, firmware.version) ==
-               SemVerComparison::LessThan;
     }
+    defer { firmwareFile.close(); };
+    auto doc = std::make_unique<SpiRamJsonDocument>(firmwareFile.size() * 4);
+
+    DeserializationError error = deserializeJson(*doc, firmwareFile);
+    if (error) {
+        log_e("Failed to parse firmware file JSON: %s", error.c_str());
+        return false;
+    }
+    auto parsed = firmware.fromJson(doc->as<JsonObject>());
+    if (!parsed) {
+        log_e("Failed to parse firmware file");
+        return false;
+    }
+
+    return SemVerCompareVersions(kVersionString, firmware.version) == SemVerComparison::LessThan;
 }
 
 void LocalStore::resetFirmware() { fileSystem.remove(firmwarePath); }

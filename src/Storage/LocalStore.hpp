@@ -106,8 +106,8 @@ public:
                                       ReadableArchivesVector &archives);
     void changedReadablesBookmarksJson(ReadableBookmarksVector &bookmarks);
     auto processReadablePlacemarksFromServer(const std::shared_ptr<Readable> &readable,
-                                             const std::shared_ptr<Place> &txtPlace,
-                                             const std::shared_ptr<Place> &ePubPlace) -> bool;
+                                             const std::shared_ptr<TxtPlace> &txtPlace,
+                                             const std::shared_ptr<EPubPlace> &ePubPlace) -> bool;
     auto processToCFromServer(const std::shared_ptr<Readable> &readable) -> bool;
     void resetReadablesPlacemarkChanged(const ReadablesVector &readables);
     void resetReadablesArchivedChanged(const ReadablesVector &readables);
@@ -115,14 +115,13 @@ public:
 
     void syncFromRemote(SyncReason syncReason,
                         const std::function<void(ContentSyncState state)> &progressCallback);
-    auto processReadables(const CheckSyncResponse &checkSyncResponse,
-                          const ReadablesVector &readables, UserReadablesVector &userReadables)
-        -> std::pair<ReadablesVector, ReadablesVector>;
-    void processReadableDeletion(const ReadablesVector &readablesToDelete,
+    auto processReadables(const ReadablesVector &readables, UserReadablesVector &serverReadables)
+        -> std::pair<UserReadablesVector, UserReadablesVector>;
+    void processReadableDeletion(const UserReadablesVector &readablesToDelete,
                                  ReadablesVector &readables, int &tasksIndex,
                                  ContentSyncState &syncState,
                                  const std::function<void(ContentSyncState)> &progressCallback);
-    auto processReadableDownload(const ReadablesVector &readablesToDownload,
+    auto processReadableDownload(const UserReadablesVector &readablesToDownload,
                                  ReadablesVector &readables, int &tasksIndex,
                                  ContentSyncState &syncState,
                                  const std::function<void(ContentSyncState)> &progressCallback,

@@ -11,8 +11,8 @@ public:
     ~UserReadable() override = default;
 
     SpiramString uuid;
-    std::shared_ptr<Place> txtPlace;
-    std::shared_ptr<Place> ePubPlace;
+    std::shared_ptr<TxtPlace> txtPlace;
+    std::shared_ptr<EPubPlace> ePubPlace;
 
     bool isArchived;
     std::shared_ptr<Readable> readable = nullptr;
@@ -26,15 +26,16 @@ public:
         uuid = j["uuid"].as<std::string>();
 
         if (j.containsKey("placemark")) {
-            txtPlace = Place::factory(j["placemark"].as<uint32_t>());
+            txtPlace =
+                std::dynamic_pointer_cast<TxtPlace>(Place::factory(j["placemark"].as<uint32_t>()));
         } else {
-            txtPlace = std::make_shared<NonePlace>();
+            txtPlace = nullptr;
         }
         if (j.containsKey("chapter") && j.containsKey("chapter_offset")) {
-            ePubPlace =
-                Place::factory(j["chapter_offset"].as<uint32_t>(), j["chapter"].as<std::string>());
+            ePubPlace = std::dynamic_pointer_cast<EPubPlace>(
+                Place::factory(j["chapter_offset"].as<uint32_t>(), j["chapter"].as<std::string>()));
         } else {
-            ePubPlace = std::make_shared<NonePlace>();
+            ePubPlace = nullptr;
         }
         if (txtPlace->isFor(DocType::NONE) && ePubPlace->isFor(DocType::NONE)) {
             log_w("Failed to parse UserReadable with JSON: No Txt or EPub location detected.");
