@@ -162,6 +162,7 @@ auto EPubFile::hasDictionary(const std::string &chapterID) -> bool {
 
     return opf_->exists(dictionaryID);
 }
+
 auto EPubFile::getDictionaryContent(const std::string &chapterID,
                                     const std::shared_ptr<Place> &placeInReadable,
                                     std::shared_ptr<Place> &placeInDictionary) -> std::string {
@@ -178,9 +179,11 @@ auto EPubFile::getDictionaryContent(const std::string &chapterID,
     // Load the dictionary xhtml content
     int fileOffset = placeInReadable->getOffset();
     auto chapterHref = opf_->getHrefByID(chapterID);
-    int currentOffset = findCharOffsetAtFileOffset(chapterHref, fileOffset);
+    // int currentOffset = findCharOffsetAtFileOffset(chapterHref, fileOffset);
+    int currentOffset = fileOffset;
     pugi::xml_document &doc = getXHTMLFile(dictionaryPath);
     pugi::xml_node closestNode;
+    pugi::xml_node prevNode;
     int closestLocation = -1;
 
     log_d("Loading dictionary for chapter: %s. Current offset: %d", chapterID.c_str(),
@@ -194,15 +197,27 @@ auto EPubFile::getDictionaryContent(const std::string &chapterID,
         if (currentOffset == 0 || closestNode == nullptr) {
             closestNode = p;
             closestLocation = location;
-            break;
         }
 
         if (location <= currentOffset) {
+            // Still finding nodes behind the user's placemark
             closestLocation = location;
+            prevNode = closestNode;
             closestNode = p;
         } else {
+            // If we've gone over and the location is greater than the offset, we're good with
+            // what's left. Clearing prevNode means we haven't exhausted all definitions and will
+            // still have some to show.
+            prevNode = pugi::xml_node();
             break;
         }
+    }
+
+    // If closestNode refers to the last entry and there was no break, backtrack one entry so we
+    // always show one dictionary definition
+    if (prevNode) {
+        closestNode = prevNode;
+        closestLocation = closestNode.attribute("data-locations").as_int();
     }
 
     std::string dictionaryText;
