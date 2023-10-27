@@ -98,9 +98,7 @@ public:
 // file. If not, they return false.
 class EPubPlace : public Place {
 public:
-    EPubPlace(uint32_t offset, std::string href) : href_(std::move(std::move(href))) {
-        setOffset(offset);
-    }
+    EPubPlace(uint32_t offset, std::string href) : href_(std::move(href)) { setOffset(offset); }
     EPubPlace() : Place(), href_("") { setOffset(0); }
     ~EPubPlace() override = default;
 

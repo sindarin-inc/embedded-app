@@ -8,34 +8,26 @@
 
 #include "sindarin-debug.h"
 
-char posixFileSystemPrefix[64] = "./data";
-
-void PosixFileSystem::createPath(char *output, size_t outputSize, const std::string &path) const {
-    strncpy(output, posixFileSystemPrefix, outputSize);
-    strncat(output, path.c_str(), outputSize - 1);
+auto PosixFileSystem::createPath(const std::string &path) const -> std::string {
+    return StringFormat("%s%s", prefix_.c_str(), path.c_str());
 }
-
-auto PosixFileSystem::begin() -> bool { return true; }
 
 auto PosixFileSystem::open(const std::string &path, const char *mode, const bool create) const
     -> SFile {
-    char prefixedPath[200];
-    createPath(prefixedPath, sizeof(prefixedPath), path);
-    auto file = SFile(std::make_shared<VFSFile>(prefixedPath, mode, create));
+    auto prefixedPath = createPath(path);
+    auto file = SFile(std::make_shared<VFSFile>(prefixedPath.c_str(), mode, create));
     return file;
 }
 
 auto PosixFileSystem::exists(const std::string &path) const -> bool {
-    char prefixedPath[200];
-    createPath(prefixedPath, sizeof(prefixedPath), path);
+    auto prefixedPath = createPath(path);
     struct stat buffer;
-    return (stat(prefixedPath, &buffer) == 0);
+    return (stat(prefixedPath.c_str(), &buffer) == 0);
 }
 
 auto PosixFileSystem::listDir(const std::string &path, FileList &files, int limit) const -> int {
-    char prefixedPath[200];
-    createPath(prefixedPath, sizeof(prefixedPath), path);
-    DIR *dp = opendir(prefixedPath);
+    auto prefixedPath = createPath(path);
+    DIR *dp = opendir(prefixedPath.c_str());
     if (dp != nullptr) {
         struct dirent *ep;
         int counted = 0;
@@ -57,9 +49,8 @@ auto PosixFileSystem::listDir(const std::string &path, FileList &files, int limi
 
 auto PosixFileSystem::listDirWithSubdirectories(const std::string &path, FileList &files,
                                                 FileList &dirs) const -> int {
-    char prefixedPath[200];
-    createPath(prefixedPath, sizeof(prefixedPath), path);
-    DIR *dp = opendir(prefixedPath);
+    auto prefixedPath = createPath(path);
+    DIR *dp = opendir(prefixedPath.c_str());
     if (dp != nullptr) {
         struct dirent *ep;
         while ((ep = readdir(dp))) {
@@ -77,9 +68,8 @@ auto PosixFileSystem::listDirWithSubdirectories(const std::string &path, FileLis
 }
 
 auto PosixFileSystem::createDir(const std::string &path, bool allowExists) -> bool {
-    char prefixedPath[200];
-    createPath(prefixedPath, sizeof(prefixedPath), path);
-    if (mkdir(prefixedPath, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
+    auto prefixedPath = createPath(path);
+    if (mkdir(prefixedPath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
         if (errno == EEXIST && allowExists) {
             // Silently pass
         } else {
@@ -91,24 +81,15 @@ auto PosixFileSystem::createDir(const std::string &path, bool allowExists) -> bo
 }
 
 auto PosixFileSystem::remove(const std::string &path) -> bool {
-    char prefixedPath[200];
-    createPath(prefixedPath, sizeof(prefixedPath), path);
-
-    return (::remove(prefixedPath) == 0);
+    auto prefixedPath = createPath(path);
+    return (::remove(prefixedPath.c_str()) == 0);
 }
 
 void PosixFileSystem::close() {}
 
-void PosixFileSystem::setPrefix(const std::string &prefix) {
-    strncpy(posixFileSystemPrefix, prefix.c_str(), sizeof(posixFileSystemPrefix) - 1);
-}
-
-auto PosixFileSystem::getPrefix() -> const char * { return posixFileSystemPrefix; }
-
 auto PosixFileSystem::removeDir(const std::string &path) -> bool {
     FileList files;
     FileList dirs;
-    char fullPath[200];
     log_i("removeDir: %s", path.c_str());
 
     if (listDirWithSubdirectories(path, files, dirs) != 0) {
@@ -117,11 +98,11 @@ auto PosixFileSystem::removeDir(const std::string &path) -> bool {
     }
 
     for (auto &file : files) {
-        (void)snprintf(fullPath, sizeof(fullPath), "%s/%s", path.c_str(), file.c_str());
+        auto fullPath = StringFormat("%s/%s", path.c_str(), file.c_str());
         log_i("deleting %s", file.c_str());
-        bool removed = remove(fullPath);
+        bool removed = remove(fullPath.c_str());
         if (!removed) {
-            log_e("failed to remove: %s", fullPath);
+            log_e("failed to remove: %s", fullPath.c_str());
             return false;
         }
     }
@@ -129,9 +110,9 @@ auto PosixFileSystem::removeDir(const std::string &path) -> bool {
     for (auto &dir : dirs) {
         log_i("deleting dir: %s", dir.c_str());
         // delete this directory
-        (void)snprintf(fullPath, sizeof(fullPath), "%s/%s", path.c_str(), dir.c_str());
-        if (!removeDir(fullPath)) {
-            log_e("failed to remove: %s", fullPath);
+        auto fullPath = StringFormat("%s/%s", path.c_str(), dir.c_str());
+        if (!removeDir(fullPath.c_str())) {
+            log_e("failed to remove: %s", fullPath.c_str());
             return false;
         }
     }
@@ -141,6 +122,6 @@ auto PosixFileSystem::removeDir(const std::string &path) -> bool {
         return true;
     }
 
-    createPath(fullPath, sizeof(fullPath), path);
-    return (rmdir(fullPath) == 0);
+    auto fullPath = createPath(path);
+    return (rmdir(fullPath.c_str()) == 0);
 }

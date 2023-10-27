@@ -1,13 +1,15 @@
 #pragma once
 
+#include <utility>
+
 #include "Storage/FileSystem.hpp"
 
 class PosixFileSystem : public FileSystem {
 public:
-    PosixFileSystem() noexcept : FileSystem(){};
+    PosixFileSystem(std::string prefix = "./data") noexcept
+        : FileSystem(), prefix_(std::move(prefix)){};
     PosixFileSystem(PosixFileSystem const &) = delete;
 
-    auto begin() -> bool override;
     auto open(const std::string &path, const char *mode = FILE_READ,
               const bool create = false) const -> SFile override;
     [[nodiscard]] auto exists(const std::string &path) const -> bool override;
@@ -17,11 +19,12 @@ public:
     auto createDir(const std::string &path, bool allowExists = true) -> bool override;
     auto remove(const std::string &path) -> bool override;
     virtual void close();
-    void setPrefix(const std::string &prefix);
-    auto getPrefix() -> const char *;
+    void setPrefix(std::string prefix) { prefix_ = std::move(prefix); }
+    auto getPrefix() -> std::string { return prefix_; };
 
     auto removeDir(const std::string &path) -> bool override;
 
 protected:
-    void createPath(char *output, size_t outputSize, const std::string &path) const;
+    std::string prefix_;
+    [[nodiscard]] auto createPath(const std::string &path) const -> std::string;
 };

@@ -28,8 +28,7 @@ static bool compareFiles(SFile &f1, SFile &f2) {
 }
 
 TEST_CASE("Test GZip Stream compression") {
-    SetupFileSystemMock("TestData");
-    PosixFileSystem fs;
+    PosixFileSystem fs("./test/CatchTests/TestData");
     fs.begin();
 
     std::string uncFileName = "/book/last-question.txt";
@@ -109,9 +108,8 @@ TEST_CASE("Test GZip Stream compression") {
 }
 
 TEST_CASE("Test Gunzip decompress file") {
-    SetupFileSystemMock("TestData");
+    PosixFileSystem fs("./test/CatchTests/TestData");
 
-    PosixFileSystem fs;
     fs.begin();
 
     SECTION("test") {
@@ -126,9 +124,7 @@ TEST_CASE("Test Gunzip decompress file") {
 }
 
 TEST_CASE("Test Gunzip functionality") {
-    SetupFileSystemMock("TestData");
-
-    PosixFileSystem fs;
+    PosixFileSystem fs("./test/CatchTests/TestData");
     fs.begin();
 
     SECTION("test") {
@@ -207,9 +203,7 @@ TEST_CASE("Test Gunzip functionality") {
 }
 
 TEST_CASE("Test Gunzip stream reading") {
-    SetupFileSystemMock("TestData");
-
-    PosixFileSystem fs;
+    PosixFileSystem fs("./test/CatchTests/TestData");
     fs.begin();
 
     SFile f1 = fs.open("/book/old-testament.txt.gz");
@@ -248,9 +242,7 @@ TEST_CASE("Test Gunzip stream reading") {
 }
 
 TEST_CASE("Test GZip stream handling") {
-    SetupFileSystemMock("TestData");
-
-    PosixFileSystem fs;
+    PosixFileSystem fs("./test/CatchTests/TestData");
     fs.begin();
 
     auto stream = fs.newGzipRendererStream("/book/old-testament.txt.gz");

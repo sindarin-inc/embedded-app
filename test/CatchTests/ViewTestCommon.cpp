@@ -10,10 +10,6 @@
 #include <signal.h>
 #include <thread>
 #include <unistd.h>
-
-#include "Displays/FakeEinkET013TT1.hpp"
-#include "Misc/Dispatch.hpp"
-#include "sindarin-debug.h"
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -21,6 +17,11 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #pragma clang diagnostic pop
+
+#include "Displays/FakeEinkET013TT1.hpp"
+#include "Misc/Dispatch.hpp"
+#include "Storage/PosixFileSystem.hpp"
+#include "sindarin-debug.h"
 
 #define ACCEPT_CHANGES 1
 
@@ -33,7 +34,7 @@ extern void UIInnerLoop(RemoteCommand command);
 extern "C" void app_main(void); // NOLINT(readability-identifier-naming)
 std::shared_ptr<std::thread> SchedulerThread;
 const char *kGitHash = "SIMULATOR";
-extern char posixFileSystemPrefix[64];
+extern PosixFileSystem fileSystem;
 
 std::string directory;
 std::string testRunPrefix = "Images/TestRun/";
@@ -250,7 +251,7 @@ std::shared_ptr<DisplayEinkET013TT1> createDisplay() {
 void SetupFileSystemMock(const std::string &directory) {
     auto path = GetDirectory() + directory;
     log_i("Setting filesystem prefix to %s", path.c_str());
-    strncpy(posixFileSystemPrefix, path.c_str(), sizeof(posixFileSystemPrefix) - 1);
+    fileSystem.setPrefix(path);
 
     // Clear bookmarks & logs directories
     auto bookmarks = path + std::string("/bookmarks");
