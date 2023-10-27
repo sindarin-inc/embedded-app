@@ -94,6 +94,10 @@ public:
 
     auto getReadableToCChapterIndex(const std::shared_ptr<EPubPlace> &ePubPlace) const -> int;
 
+    auto hasSummary(const std::string &chapterID) -> bool;
+    auto getSummaryContent(const std::string &chapterID,
+                           const std::shared_ptr<Place> &placeInReadable,
+                           std::shared_ptr<Place> &placeInSummary) -> std::string;
     auto hasDictionary(const std::string &chapterID) -> bool;
     auto getDictionaryContent(const std::string &chapterID,
                               const std::shared_ptr<Place> &placeInReadable,

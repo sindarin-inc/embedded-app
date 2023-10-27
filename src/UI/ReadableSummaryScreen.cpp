@@ -61,9 +61,16 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
     if (firstLoad_) {
         std::shared_ptr<TxtPlace> placeInSummary =
             std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
+        auto rendererStream = epubRenderer_.getStream();
+        auto epubStream = std::dynamic_pointer_cast<EPubFile>(rendererStream);
+        auto chapterId = epubStream->getIdByHref(placeInReadable_->getHRef());
+        int currentOffset = placeInReadable_->getOffset();
 
+        // SpiramString summaryString =
+        //     readable_->summary(placeInReadable_, placeInSummary, showUnread_,
+        //     currentChapterIdx_);
         SpiramString summaryString =
-            readable_->summary(placeInReadable_, placeInSummary, showUnread_, currentChapterIdx_);
+            epubStream->getSummaryContent(chapterId, placeInReadable_, placeInDictionary);
 
         if (preservePlace_) {
             placeInSummary = preservePlace_;

@@ -157,6 +157,78 @@ auto EPubFile::getReadableToCChapterIndex(const std::shared_ptr<EPubPlace> &ePub
     return opf_->getReadableToCChapterIndex(ePubPlace->getHRef());
 }
 
+auto EPubFile::hasSummary(const std::string &chapterID) -> bool {
+    std::string summaryID = "summary-" + chapterID;
+
+    return opf_->exists(summaryID);
+}
+
+auto EPubFile::getSummaryContent(const std::string &chapterID,
+                                 const std::shared_ptr<Place> &placeInReadable,
+                                 std::shared_ptr<Place> &placeInSummary) -> std::string {
+
+    if (!hasSummary(chapterID)) {
+        log_e("This chapter does not have a summary.");
+        return "This chapter does not have a summary.";
+    }
+
+    // Convert chapterID to summary file path
+    std::string summaryID = "summary-" + chapterID;
+    std::string summaryPath = opf_->getHrefByID(summaryID);
+
+    // Load the summary xhtml content
+    int fileOffset = placeInReadable->getOffset();
+    auto chapterHref = opf_->getHrefByID(chapterID);
+    // int currentOffset = findCharOffsetAtFileOffset(chapterHref, fileOffset);
+    int currentOffset = fileOffset;
+    pugi::xml_document &doc = getXHTMLFile(summaryPath);
+
+    log_d("Loading summary for chapter: %s. Current offset: %d", chapterID.c_str(), currentOffset);
+    SpiramString summary;
+
+    for (const auto &chapter : toc) {
+        auto sameChapter =
+            (placeInReadable->isFor(DocType::EPUB) &&
+             chapter.href == std::dynamic_pointer_cast<EPubPlace>(placeInReadable)->getHRef()) ||
+            (placeInReadable->isFor(DocType::TXT) &&
+             chapter.txtOffset < placeInReadable->getOffset() &&
+             placeInReadable->getOffset() < chapter.endTxtOffset);
+        auto futureChapter = (placeInReadable->isFor(DocType::EPUB) &&
+                              findEPubHRefChapterIdx(chapter.href) > currentChapterIdx) ||
+                             (placeInReadable->isFor(DocType::TXT) &&
+                              placeInReadable->getOffset() < chapter.txtOffset);
+        auto pastOrSameChapter = (placeInReadable->isFor(DocType::EPUB) &&
+                                  findEPubHRefChapterIdx(chapter.href) <= currentChapterIdx) ||
+                                 (placeInReadable->isFor(DocType::TXT) &&
+                                  placeInReadable->getOffset() >= chapter.txtOffset);
+
+        if (pastOrSameChapter) {
+            placeInSummary->setOffset(summary.length());
+        }
+
+        if (futureChapter && !includeUnread) {
+            break;
+        }
+
+        if (sameChapter && !includeUnread && chapter.partialChapterSummary != nullptr &&
+            !chapter.partialChapterSummary->text.empty()) {
+            summary += chapter.title;
+            summary += StringFormat(" (%d%% read)\n\n", chapter.partialChapterSummary->readPct);
+            summary += chapter.partialChapterSummary->text;
+            summary += "\n\n";
+        } else {
+            for (auto node : doc.child("html").child("body").children()) {
+                if (std::string(node.name()) == "h1" || std::string(node.name()) == "p") {
+                    summary += node.text().get();
+                    summary += "\n";
+                }
+            }
+        }
+    }
+
+    return summaryText;
+}
+
 auto EPubFile::hasDictionary(const std::string &chapterID) -> bool {
     std::string dictionaryID = "dictionary-" + chapterID;
 
