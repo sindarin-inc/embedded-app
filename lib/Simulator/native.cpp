@@ -23,6 +23,7 @@
 #include "Misc/Math.hpp"
 #include "Misc/Platform.hpp"
 #include "Sensors/LightingController.hpp"
+#include "Storage/PreferencesStore.hpp"
 #include "UI/ReadableScreen.hpp"
 #include "UI/Screen.hpp"
 #include "sindarin-debug.h"
@@ -40,6 +41,7 @@
 #define SIM_LED_DIM 0
 #endif
 
+extern PreferencesStore prefs;
 extern void UIInnerLoop(RemoteCommand command);
 extern Screen *UIGetCurrentScreen();
 
@@ -471,6 +473,9 @@ auto main(int argc, char *argv[]) -> int {
 #if defined(EMSCRIPTEN)
     emscripten_set_main_loop(emscriptemLoop, 0, 0);
 #else
+
+    // Pre-initialize PreferencesStore to point to simprefs.ini
+    prefs.begin("simprefs.ini");
 
     // The FreeRTOS tick handler happens via SIGALRM, and it also kicks off preemptive task
     // switching, which is not what we want on the main thread, since it's not a real FreeRTOS task.

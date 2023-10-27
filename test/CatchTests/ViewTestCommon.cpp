@@ -63,7 +63,7 @@ void StartFreeRtos(bool runAppMain, FONT_CHOICES font, int x, int y, int lineSpa
     FakeEinkET013TT1SkipSignalling = !runAppMain;
 
     // TODO: Really mock prefs
-    prefs.begin();
+    prefs.begin("test/CatchTests/TestData/simprefs.ini");
     prefs.invertSetting.set(0);
     prefs.font.set(font);
     prefs.lineSpacing.set(lineSpacing);

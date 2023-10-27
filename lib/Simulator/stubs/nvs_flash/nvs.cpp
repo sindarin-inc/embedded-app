@@ -8,7 +8,7 @@
 #include "sindarin-debug.h"
 
 static const char *PrefsKey = "prefs";
-static const char *SimprefsIni = "simprefs.ini";
+static std::string SimPrefsIniFilename;
 
 ini::IniFile IniFile;
 
@@ -36,7 +36,8 @@ struct Convert<std::optional<T>> {
 } // namespace ini
 
 esp_err_t nvs_open(const char *name, nvs_open_mode_t open_mode, nvs_handle_t *out_handle) {
-    IniFile.load(SimprefsIni);
+    SimPrefsIniFilename = name;
+    IniFile.load(name);
     return ESP_OK;
 }
 
@@ -131,7 +132,7 @@ esp_err_t nvs_erase_all(nvs_handle_t handle) {
 }
 
 esp_err_t nvs_commit(nvs_handle_t handle) {
-    IniFile.save(SimprefsIni);
+    IniFile.save(SimPrefsIniFilename);
     return ESP_OK;
 }
 
