@@ -26,7 +26,7 @@ TEST_CASE("First few screens render correctly and handle remote commands") {
     SetupFileSystemMock("TestData");
     SetImagesFolder("Images");
 
-    StartFreeRtos();
+    StartAppMain();
 
     // First screen renders twice once with a full refresh and once with a AU4
     WAIT_FOR_DRAW();

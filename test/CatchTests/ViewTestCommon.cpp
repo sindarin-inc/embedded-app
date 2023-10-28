@@ -48,7 +48,7 @@ void appMainTask(void *parameters) {
     vTaskDelete(NULL);
 }
 
-void StartFreeRtos(bool runAppMain, FONT_CHOICES font, int x, int y, int lineSpacing) {
+void StartFreeRtos(bool runAppMain) {
     // The FreeRTOS tick handler happens via SIGALRM, and it also kicks off preemptive task
     // switching, which is not what we want on the main thread, since it's not a real FreeRTOS task.
     // Just disable SIGALRM on this thread so that it only happens on FreeRTOS tasks.
@@ -56,31 +56,6 @@ void StartFreeRtos(bool runAppMain, FONT_CHOICES font, int x, int y, int lineSpa
     sigemptyset(&mask);
     sigaddset(&mask, SIGALRM);
     pthread_sigmask(SIG_BLOCK, &mask, NULL);
-
-    // Skip waveform processing. Technically not a FreeRTOS thing but this is a convenient spot to
-    // do it
-    FakeEinkET013TT1SkipWaveform = true;
-    // If we're not running the full app, we can just call render directly and don't need to signal
-    FakeEinkET013TT1SkipSignalling = !runAppMain;
-
-    auto prefsFile = "test/CatchTests/TestData/simprefs.ini";
-    // Delete the prefs file and start fresh
-    std::filesystem::remove(prefsFile);
-    prefs.begin(prefsFile);
-    prefs.invertSetting.set(0);
-    prefs.font.set(font);
-    prefs.lineSpacing.set(lineSpacing);
-    prefs.rectX.set(x);
-    prefs.rectY.set(y);
-    prefs.rectW.set(256 - x * 2);
-    prefs.rectH.set(256 - y * 2);
-    prefs.sortCriteria.set(0);
-    prefs.sortDirection.set(0);
-    prefs.firstRead.set(0);
-    prefs.pageTransitionArrows.set(false);
-    prefs.lastReadableId.remove();
-    prefs.readablePlace.remove("93d56842");
-    prefs.noSetupMode.set(true);
 
     // Start the FreeRTOS scheduler
     SchedulerThread = std::make_unique<std::thread>([runAppMain]() {
@@ -92,6 +67,30 @@ void StartFreeRtos(bool runAppMain, FONT_CHOICES font, int x, int y, int lineSpa
         log_i("Starting FreeRTOS scheduler");
         vTaskStartScheduler();
     });
+}
+
+void StartAppMain(FONT_CHOICES font, int x, int y, int lineSpacing) {
+
+    // Skip waveform processing. Technically not a FreeRTOS thing but this is a convenient spot to
+    // do it
+    FakeEinkET013TT1SkipWaveform = true;
+    // If we're not running the full app, we can just call render directly and don't need to signal
+    FakeEinkET013TT1SkipSignalling = true;
+
+    auto prefsFile = "test/CatchTests/TestData/simprefs.ini";
+    // Delete the prefs file and start fresh
+    std::filesystem::remove(prefsFile);
+    prefs.begin(prefsFile);
+    prefs.font.set(font);
+    prefs.lineSpacing.set(lineSpacing);
+    prefs.rectX.set(x);
+    prefs.rectY.set(y);
+    prefs.rectW.set(256 - x * 2);
+    prefs.rectH.set(256 - y * 2);
+    prefs.noSetupMode.set(true);
+
+    StartFreeRtos(true);
+
     // Wait for screen refresh at boot (from screenClearedAtShutdown)
     WAIT_FOR_DRAW();
 }
