@@ -3,9 +3,9 @@
 auto IBMFFont::ligKernUTF8Map(const std::string &line, LigKernMappingHandler handler) const
     -> void {
     if (line.length() != 0) {
-        UTF8Iterator iter = line.begin();
-        GlyphCode glyphCode1 = font_->translate(*iter++);
-        GlyphCode glyphCode2 = (iter == line.end()) ? NO_GLYPH_CODE : font_->translate(*iter++);
+        auto iter = UTF8Iterator(line);
+        auto glyphCode1 = font_->translate(*iter++);
+        auto glyphCode2 = (iter == line.end()) ? NO_GLYPH_CODE : font_->translate(*iter++);
         FIX16 kern;
         bool firstWordChar = true;
         bool wasEndOfWord = false;
@@ -23,7 +23,7 @@ auto IBMFFont::ligKernUTF8Map(const std::string &line, LigKernMappingHandler han
             }
 
             // Ligature loop for glyphCode2
-            GlyphCode glyphCode3 = (iter == line.end()) ? NO_GLYPH_CODE : font_->translate(*iter);
+            auto glyphCode3 = (iter == line.end()) ? NO_GLYPH_CODE : font_->translate(*iter);
             if (glyphCode3 != NO_GLYPH_CODE) {
                 bool someLig = false;
                 FIX16 k;

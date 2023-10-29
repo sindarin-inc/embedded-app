@@ -78,6 +78,8 @@ auto IBMFFontLow::load(MemoryPtr fontData, uint32_t length) -> bool {
 
     initialized_ = true;
     currentFontData_ = fontData;
+    unknownGlyphCode_ = translate(UNKNOWN_CODEPOINT);
+
     // showFont();
     return true;
 }
@@ -136,7 +138,7 @@ auto IBMFFontLow::load(MemoryPtr fontData, uint32_t length) -> bool {
  * @return The internal representation of CodePoint
  */
 [[nodiscard]] auto IBMFFontLow::translate(char32_t codePoint) const -> GlyphCode {
-    GlyphCode glyphCode = UNKNOWN_GLYPH_CODE;
+    GlyphCode glyphCode = unknownGlyphCode_;
 
 #if LATIN_SUPPORT
     if (preamble_->bits.fontFormat == FontFormat::LATIN) {
@@ -227,10 +229,6 @@ auto IBMFFontLow::load(MemoryPtr fontData, uint32_t length) -> bool {
                 glyphCode = gCode + u16 - (*codePointBundles_)[codePointBundleIdx].firstCodePoint;
             }
         }
-    }
-
-    if (glyphCode == UNKNOWN_GLYPH_CODE) {
-        log_w("Code Point not found in font: U+%04" PRIx32, (uint32_t)codePoint);
     }
 
     return glyphCode;
