@@ -195,7 +195,7 @@ auto IBMFFontLow::load(MemoryPtr fontData, uint32_t length) -> bool {
     }
 #endif
 
-    if ((codePoint == ' ') || (codePoint == 0xA0) ||
+    if ((codePoint == ' ') || (codePoint == 0xA0) || (codePoint == 0x202F) ||
         ((codePoint >= 0x2000) && (codePoint <= 0x200F))) {
         glyphCode = SPACE_CODE;
     } else if (codePoint == ZERO_WIDTH_CODEPOINT) {
