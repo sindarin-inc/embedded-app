@@ -1,4 +1,4 @@
-#if 0
+#if 1
 
 #include <catch_amalgamated.hpp>
 
@@ -67,7 +67,7 @@ TEST_CASE("Test EPub Books Rendering") {
                 }
 
                 std::stringstream fname;
-                fname << "Book1/" << fileIdx + 1 << "-" << pageNbr++;
+                fname << "TestBook/" << fileIdx + 1 << "-" << pageNbr++;
 
                 ASSERT_VIEW_UNCHANGED(fname.str());
 
@@ -94,6 +94,7 @@ TEST_CASE("Test EPub Books Rendering") {
 
         ASSERT_VIEW_UNCHANGED("SecondScreen");
 
+#if 0
         // }
 
         // SECTION("Book 2") {
@@ -196,6 +197,7 @@ TEST_CASE("Test EPub Books Rendering") {
             UNSCOPED_INFO("Unable to get ReadableScreen instance for Book3.");
             CHECK(false);
         }
+#endif
     }
 
     StopFreeRtos();
