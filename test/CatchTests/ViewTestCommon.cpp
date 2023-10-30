@@ -62,8 +62,10 @@ void StartFreeRtos(bool runAppMain, FONT_CHOICES font, int x, int y, int lineSpa
     // If we're not running the full app, we can just call render directly and don't need to signal
     FakeEinkET013TT1SkipSignalling = !runAppMain;
 
-    // TODO: Really mock prefs
-    prefs.begin();
+    auto prefsFile = "test/CatchTests/TestData/simprefs.ini";
+    // Delete the prefs file and start fresh
+    std::filesystem::remove(prefsFile);
+    prefs.begin(prefsFile);
     prefs.invertSetting.set(0);
     prefs.font.set(font);
     prefs.lineSpacing.set(lineSpacing);
