@@ -96,12 +96,13 @@ public:
 
     auto hasSummary(const std::string &chapterID) -> bool;
     auto getSummaryContent(const std::string &chapterID,
-                           const std::shared_ptr<Place> &placeInReadable,
-                           std::shared_ptr<Place> &placeInSummary) -> std::string;
+                           const std::shared_ptr<EPubPlace> &placeInReadable,
+                           std::shared_ptr<TxtPlace> &placeInSummary, bool includeUnread)
+        -> SpiramString;
     auto hasDictionary(const std::string &chapterID) -> bool;
     auto getDictionaryContent(const std::string &chapterID,
-                              const std::shared_ptr<Place> &placeInReadable,
-                              std::shared_ptr<Place> &placeInDictionary) -> std::string;
+                              const std::shared_ptr<EPubPlace> &placeInReadable,
+                              std::shared_ptr<TxtPlace> &placeInDictionary) -> SpiramString;
 
 private:
     Unzipper epubUnzipper_;

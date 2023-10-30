@@ -109,8 +109,8 @@ void ReadablePopupMenuScreen::populatePopupMenu() {
 
     if (readable_->hasSummary) {
         addMenuItem(MenuItem("Summary", [this]() {
-            readableSummaryScreen_.setPlaceInReadable(renderer_.getCurrentPlace(),
-                                                      currentChapterIdx_);
+            auto epubPlace = std::dynamic_pointer_cast<EPubPlace>(renderer_.getCurrentPlace());
+            readableSummaryScreen_.setPlaceInReadable(epubPlace);
             readableSummaryScreen_.setFirstLoad();
             setCurrentScreen(readableSummaryScreen_);
         }));

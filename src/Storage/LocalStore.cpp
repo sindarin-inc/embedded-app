@@ -491,16 +491,6 @@ auto LocalStore::processToCFromServer(const std::shared_ptr<Readable> &readable)
             return true;
         }
 
-        // Check if summary exists and is different
-        if (remoteJson.summary.size()) {
-            if (!localJson.containsKey("summary") || localJson["summary"] == nullptr ||
-                localJson["summary"].as<std::string>() != remoteJson.summary) {
-                log_d("ToC chapter summary (%s) mismatch for %s, updating",
-                      remoteJson.title.c_str(), tocPath.c_str());
-                return true;
-            }
-        }
-
         // Check if partial_chapter_summary exists in remote json and if
         // partial_chapter_summary.placemark is different
         if (remoteJson.partialChapterSummary != nullptr) {

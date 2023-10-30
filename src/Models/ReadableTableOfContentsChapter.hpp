@@ -19,7 +19,6 @@ public:
     uint32_t txtOffset;
     uint32_t endTxtOffset;
     SpiramString inSubsectionHref;
-    SpiramString summary;
     std::shared_ptr<UserReadablePartialChapterSummary> partialChapterSummary = nullptr;
     ReadableDictionaryVector dictionary;
 
@@ -35,9 +34,6 @@ public:
         txtOffset = j["txt_offset"].as<uint32_t>();
         if (j.containsKey("end_txt_offset") && !j["end_txt_offset"].isNull()) {
             endTxtOffset = j["end_txt_offset"].as<uint32_t>();
-        }
-        if (j.containsKey("summary") && !j["summary"].isNull()) {
-            summary = j["summary"].as<std::string>();
         }
         if (j.containsKey("partial_chapter_summary") && !j["partial_chapter_summary"].isNull()) {
             partialChapterSummary = SpiRamPtr<UserReadablePartialChapterSummary>();

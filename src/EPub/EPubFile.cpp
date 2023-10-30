@@ -164,8 +164,9 @@ auto EPubFile::hasSummary(const std::string &chapterID) -> bool {
 }
 
 auto EPubFile::getSummaryContent(const std::string &chapterID,
-                                 const std::shared_ptr<Place> &placeInReadable,
-                                 std::shared_ptr<Place> &placeInSummary) -> std::string {
+                                 const std::shared_ptr<EPubPlace> &placeInReadable,
+                                 std::shared_ptr<TxtPlace> &placeInSummary, bool includeUnread)
+    -> SpiramString {
 
     if (!hasSummary(chapterID)) {
         log_e("This chapter does not have a summary.");
@@ -179,14 +180,15 @@ auto EPubFile::getSummaryContent(const std::string &chapterID,
     // Load the summary xhtml content
     int fileOffset = placeInReadable->getOffset();
     auto chapterHref = opf_->getHrefByID(chapterID);
+    auto chapterIdx = readable_->findEPubHRefChapterIdx(chapterHref);
     // int currentOffset = findCharOffsetAtFileOffset(chapterHref, fileOffset);
     int currentOffset = fileOffset;
     pugi::xml_document &doc = getXHTMLFile(summaryPath);
 
     log_d("Loading summary for chapter: %s. Current offset: %d", chapterID.c_str(), currentOffset);
-    SpiramString summary;
+    SpiramString summaryText;
 
-    for (const auto &chapter : toc) {
+    for (const auto &chapter : getToc()) {
         auto sameChapter =
             (placeInReadable->isFor(DocType::EPUB) &&
              chapter.href == std::dynamic_pointer_cast<EPubPlace>(placeInReadable)->getHRef()) ||
@@ -194,16 +196,16 @@ auto EPubFile::getSummaryContent(const std::string &chapterID,
              chapter.txtOffset < placeInReadable->getOffset() &&
              placeInReadable->getOffset() < chapter.endTxtOffset);
         auto futureChapter = (placeInReadable->isFor(DocType::EPUB) &&
-                              findEPubHRefChapterIdx(chapter.href) > currentChapterIdx) ||
+                              readable_->findEPubHRefChapterIdx(chapter.href) > chapterIdx) ||
                              (placeInReadable->isFor(DocType::TXT) &&
                               placeInReadable->getOffset() < chapter.txtOffset);
         auto pastOrSameChapter = (placeInReadable->isFor(DocType::EPUB) &&
-                                  findEPubHRefChapterIdx(chapter.href) <= currentChapterIdx) ||
+                                  readable_->findEPubHRefChapterIdx(chapter.href) <= chapterIdx) ||
                                  (placeInReadable->isFor(DocType::TXT) &&
                                   placeInReadable->getOffset() >= chapter.txtOffset);
 
         if (pastOrSameChapter) {
-            placeInSummary->setOffset(summary.length());
+            placeInSummary->setOffset(summaryText.length());
         }
 
         if (futureChapter && !includeUnread) {
@@ -212,15 +214,34 @@ auto EPubFile::getSummaryContent(const std::string &chapterID,
 
         if (sameChapter && !includeUnread && chapter.partialChapterSummary != nullptr &&
             !chapter.partialChapterSummary->text.empty()) {
-            summary += chapter.title;
-            summary += StringFormat(" (%d%% read)\n\n", chapter.partialChapterSummary->readPct);
-            summary += chapter.partialChapterSummary->text;
-            summary += "\n\n";
+            summaryText += chapter.title;
+            summaryText += StringFormat(" (%d%% read)\n\n", chapter.partialChapterSummary->readPct);
+            summaryText += chapter.partialChapterSummary->text;
+            summaryText += "\n\n";
         } else {
-            for (auto node : doc.child("html").child("body").children()) {
-                if (std::string(node.name()) == "h1" || std::string(node.name()) == "p") {
-                    summary += node.text().get();
-                    summary += "\n";
+            std::string chapterId = opf_->getIdByHref(chapter.href);
+            std::string currentSummaryPath = opf_->getHrefByID("summary-" + chapterId);
+            pugi::xml_document &currentDoc = getXHTMLFile(currentSummaryPath);
+
+            for (auto node : currentDoc.child("html").child("body").children()) {
+                // If the node is p or other nodes with child nodes
+                if (std::string(node.name()) == "p") {
+                    for (auto child : node.children()) {
+                        if (child.type() == pugi::node_pcdata) { // If child is plain character data
+                            summaryText += child.value();
+                        }
+                        if (std::string(child.name()) == "br") {
+                            summaryText += "\n";
+                        }
+                    }
+                    summaryText += "\n\n";
+                } else if (std::string(node.name()) == "h1") {
+                    summaryText += node.text().get();
+                    summaryText += "\n\n";
+                } else if (std::string(node.name()) == "br") {
+                    summaryText += "\n";
+                } else {
+                    summaryText += node.text().get();
                 }
             }
         }
@@ -236,8 +257,8 @@ auto EPubFile::hasDictionary(const std::string &chapterID) -> bool {
 }
 
 auto EPubFile::getDictionaryContent(const std::string &chapterID,
-                                    const std::shared_ptr<Place> &placeInReadable,
-                                    std::shared_ptr<Place> &placeInDictionary) -> std::string {
+                                    const std::shared_ptr<EPubPlace> &placeInReadable,
+                                    std::shared_ptr<TxtPlace> &placeInDictionary) -> SpiramString {
 
     if (!hasDictionary(chapterID)) {
         log_e("This chapter does not have any dictionary definitions.");
@@ -292,8 +313,8 @@ auto EPubFile::getDictionaryContent(const std::string &chapterID,
         closestLocation = closestNode.attribute("data-locations").as_int();
     }
 
-    std::string dictionaryText;
-    std::string beforeClosestNodeText;
+    SpiramString dictionaryText;
+    SpiramString beforeClosestNodeText;
     if (closestLocation != -1) {
         // Construct the text with the XML before the closest node
         for (auto p : doc.child("html").child("body").children("p")) {
@@ -315,7 +336,7 @@ auto EPubFile::getDictionaryContent(const std::string &chapterID,
 
         // Set the place in the dictionary based on the length of the text before the closest node
         uint32_t charOffset = beforeClosestNodeText.length();
-        placeInDictionary = Place::factory(charOffset);
+        placeInDictionary = std::dynamic_pointer_cast<TxtPlace>(Place::factory(charOffset));
 
         // Concatenate to form the full dictionaryText
         dictionaryText = beforeClosestNodeText + dictionaryText;

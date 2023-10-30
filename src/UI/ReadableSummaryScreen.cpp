@@ -23,10 +23,8 @@ void ReadableSummaryScreen::drawInRect(Rect rect) {
     bottomRightTextView_.draw();
 }
 
-void ReadableSummaryScreen::setPlaceInReadable(std::shared_ptr<Place> placeInReadable,
-                                               int currentChapterIdx) {
+void ReadableSummaryScreen::setPlaceInReadable(std::shared_ptr<EPubPlace> placeInReadable) {
     placeInReadable_ = std::move(placeInReadable);
-    currentChapterIdx_ = currentChapterIdx;
     preservePlace_ = nullptr;
 }
 
@@ -64,13 +62,9 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
         auto rendererStream = epubRenderer_.getStream();
         auto epubStream = std::dynamic_pointer_cast<EPubFile>(rendererStream);
         auto chapterId = epubStream->getIdByHref(placeInReadable_->getHRef());
-        int currentOffset = placeInReadable_->getOffset();
 
-        // SpiramString summaryString =
-        //     readable_->summary(placeInReadable_, placeInSummary, showUnread_,
-        //     currentChapterIdx_);
         SpiramString summaryString =
-            epubStream->getSummaryContent(chapterId, placeInReadable_, placeInDictionary);
+            epubStream->getSummaryContent(chapterId, placeInReadable_, placeInSummary, showUnread_);
 
         if (preservePlace_) {
             placeInSummary = preservePlace_;

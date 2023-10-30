@@ -41,7 +41,7 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
     uint8_t darkPicturePercent = 0;
 
     if (loadedChapterId_ != placeInReadable_->getHRef()) {
-        std::shared_ptr<Place> placeInDictionary = nullptr;
+        std::shared_ptr<TxtPlace> placeInDictionary = nullptr;
         auto rendererStream = epubRenderer_.getStream();
         auto epubStream = std::dynamic_pointer_cast<EPubFile>(rendererStream);
         auto chapterId = epubStream->getIdByHref(placeInReadable_->getHRef());
@@ -58,7 +58,7 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
         auto stream = std::make_shared<StdStringStream>(dictionaryString);
         renderer_.setStream(stream);
         if (placeInDictionary == nullptr) {
-            placeInDictionary = Place::factory(0);
+            placeInDictionary = std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
         }
         std::shared_ptr<Place> newPlace;
         std::tie(newPlace, darkPicturePercent) = renderer_.renderPage(placeInDictionary);
