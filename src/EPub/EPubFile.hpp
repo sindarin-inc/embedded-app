@@ -58,6 +58,7 @@ public:
     }
 
     [[nodiscard]] inline auto getIdByHref(const std::string &href) const -> std::string {
+        log_w("getIdByHref(%s): opf: %p", href.c_str(), opf_.get());
         return opf_->getIdByHref(href);
     }
 

@@ -18,10 +18,9 @@
 class ReadableSummaryScreen : public Screen, public EinkView {
 public:
     ReadableSummaryScreen(PreferencesStore &prefs, std::shared_ptr<Readable> readable,
-                          DisplaySystem &display, Renderer &epubRenderer)
-        : EinkView(display), prefs_(prefs), readable_(std::move(readable)),
-          epubRenderer_(epubRenderer), renderer_(display), display_(display),
-          upperLeftTextView_(display, upperLeftText_),
+                          DisplaySystem &display, Renderer &renderer)
+        : EinkView(display), prefs_(prefs), readable_(std::move(readable)), renderer_(renderer),
+          display_(display), upperLeftTextView_(display, upperLeftText_),
           bottomRightTextView_(display, bottomRightText_), leftArrowView_(display, ArrowUp),
           rightArrowView_(display, ArrowDown) {}
 
@@ -29,6 +28,7 @@ public:
     void drawInRect(Rect rect) override;
     auto checkAtEnd() -> bool;
     void render(DisplaySystem &display) override;
+    void restoreRendererStream();
 
     void processCommand(RemoteCommand command) override;
 
@@ -41,8 +41,7 @@ public:
 protected:
     PreferencesStore &prefs_;
     std::shared_ptr<Readable> readable_;
-    Renderer &epubRenderer_;
-    Renderer renderer_;
+    Renderer &renderer_;
     DisplaySystem &display_;
 
     bool firstLoad_ = true;
@@ -51,6 +50,7 @@ protected:
     std::shared_ptr<TxtPlace> newPlace_;
     std::shared_ptr<TxtPlace> prevPlace_;
     std::shared_ptr<TxtPlace> preservePlace_;
+    std::shared_ptr<RendererStream> rendererStream_;
     bool atEnd_ = false;
 
     std::string upperLeftText_ = "Dismiss";

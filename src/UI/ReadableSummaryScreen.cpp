@@ -59,8 +59,10 @@ void ReadableSummaryScreen::render(DisplaySystem &display) {
     if (firstLoad_) {
         std::shared_ptr<TxtPlace> placeInSummary =
             std::dynamic_pointer_cast<TxtPlace>(Place::factory(0));
-        auto rendererStream = epubRenderer_.getStream();
-        auto epubStream = std::dynamic_pointer_cast<EPubFile>(rendererStream);
+        if (rendererStream_ == nullptr) {
+            rendererStream_ = renderer_.getStream();
+        }
+        auto epubStream = std::dynamic_pointer_cast<EPubFile>(rendererStream_);
         auto chapterId = epubStream->getIdByHref(placeInReadable_->getHRef());
 
         SpiramString summaryString =
@@ -110,9 +112,15 @@ void ReadableSummaryScreen::resetBoundingBox(DisplayRect oldDisplayBoundingBox) 
     display_.setBoundingBox(oldDisplayBoundingBox);
 }
 
+void ReadableSummaryScreen::restoreRendererStream() {
+    renderer_.setStream(rendererStream_);
+    rendererStream_ = nullptr;
+}
+
 void ReadableSummaryScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::UP:
+        restoreRendererStream();
         back();
         setNeedsRerender();
         break;
@@ -125,6 +133,7 @@ void ReadableSummaryScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::ENTER:
     case RemoteCommand::RIGHT:
         if (atEnd_) {
+            restoreRendererStream();
             back();
         }
 

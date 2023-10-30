@@ -42,8 +42,11 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
 
     if (loadedChapterId_ != placeInReadable_->getHRef()) {
         std::shared_ptr<TxtPlace> placeInDictionary = nullptr;
-        auto rendererStream = epubRenderer_.getStream();
-        auto epubStream = std::dynamic_pointer_cast<EPubFile>(rendererStream);
+        rendererStream_ = renderer_.getStream();
+        if (rendererStream_ == nullptr) {
+            rendererStream_ = renderer_.getStream();
+        }
+        auto epubStream = std::dynamic_pointer_cast<EPubFile>(rendererStream_);
         auto chapterId = epubStream->getIdByHref(placeInReadable_->getHRef());
         int currentOffset = placeInReadable_->getOffset();
         log_d("Loading dictionary for chapter: %s : %d", chapterId.c_str(), currentOffset);
@@ -81,6 +84,11 @@ void ReadableDictionaryScreen::render(DisplaySystem &display) {
     resetBoundingBox(oldDisplayBoundingBox);
 }
 
+void ReadableDictionaryScreen::restoreRendererStream() {
+    renderer_.setStream(rendererStream_);
+    rendererStream_ = nullptr;
+}
+
 auto ReadableDictionaryScreen::insetBoundingBox() -> DisplayRect {
     auto oldDisplayBoundingBox = display_.getBoundingBox();
     auto newDisplayBoundingBox = display_.getBoundingBox();
@@ -98,6 +106,7 @@ void ReadableDictionaryScreen::resetBoundingBox(DisplayRect oldDisplayBoundingBo
 void ReadableDictionaryScreen::processCommand(RemoteCommand command) {
     switch (command) {
     case RemoteCommand::UP:
+        restoreRendererStream();
         back();
         setNeedsRerender();
         break;
@@ -109,6 +118,7 @@ void ReadableDictionaryScreen::processCommand(RemoteCommand command) {
     case RemoteCommand::ENTER:
     case RemoteCommand::RIGHT:
         if (atEnd_) {
+            restoreRendererStream();
             back();
         }
 
