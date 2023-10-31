@@ -1,5 +1,3 @@
-#if 0
-
 #include <catch_amalgamated.hpp>
 
 // Allow access to protected methods from tests
@@ -28,7 +26,7 @@
 
 extern auto UIGetCurrentScreen() -> Screen *;
 
-TEST_CASE("Test EPub Books Rendering") {
+TEST_CASE("Test EPub Books Rendering", "[.][epub]") {
 
     SetupFileSystemMock("EPubTestData");
     SetImagesFolder("EPubImages");
@@ -203,5 +201,3 @@ TEST_CASE("Test EPub Books Rendering") {
 
     StopFreeRtos();
 }
-
-#endif
