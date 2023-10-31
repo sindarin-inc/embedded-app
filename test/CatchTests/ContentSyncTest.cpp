@@ -1,8 +1,10 @@
 #include <catch_amalgamated.hpp>
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <httplib.h>
 #include <streambuf>
+#include <thread>
 
 #include "Misc/Battery.hpp"
 #include "Misc/Defer.hpp"
@@ -15,7 +17,8 @@ std::string loadMockResponse(const std::string &filepath) {
     return {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
 }
 
-auto setupTestServer() -> std::shared_ptr<httplib::Server> {
+auto setupTestServer()
+    -> std::pair<std::shared_ptr<httplib::Server>, std::shared_ptr<std::thread>> {
     auto server = std::make_shared<httplib::Server>();
 
     server->Post("/telemetry/", [](const httplib::Request &, httplib::Response &res) {
@@ -33,7 +36,12 @@ auto setupTestServer() -> std::shared_ptr<httplib::Server> {
         (*booksCount)++;
     });
 
-    // TODO: Mock out file downloading
+    server->Get("/epub/alchemyst.epub", [](const httplib::Request &, httplib::Response &res) {
+        log_i("Mock server got request for /epub/alchemyst.epub");
+        auto content = loadMockResponse("./test/CatchTests/Fixtures/epub/alchemyst.epub");
+        res.set_header("Content-Length", std::to_string(content.length()));
+        res.set_content(content, "application/epub+zip");
+    });
 
     server->Post("/sync/articles/", [](const httplib::Request &, httplib::Response &res) {
         log_i("Mock server got request for /sync/articles");
@@ -46,15 +54,13 @@ auto setupTestServer() -> std::shared_ptr<httplib::Server> {
         throw std::runtime_error("Failed to bind to port");
     }
 
-    // Raw std::thread doesn't play nicely with the FreeRTOS posix port so we have to use FreeRTOS
-    // tasks
-    DispatchQueue::dispatchOneOff([server]() {
+    auto serverThread = std::make_shared<std::thread>([server]() {
         log_i("Mock server starting");
         server->listen_after_bind();
         log_i("Mock server shut down");
     });
 
-    return server;
+    return {server, serverThread};
 }
 
 TEST_CASE("Run a basic content sync", "[.][content-sync]") {
@@ -90,28 +96,48 @@ TEST_CASE("Run a basic content sync", "[.][content-sync]") {
 
     LocalStore localStore(fs, prefs, battery, telemetry);
 
-    auto server = setupTestServer();
-    StartFreeRtos();
-    defer {
-        server->stop();
-        StopFreeRtos();
-    };
-
-    // TODO: Do we need to wait until FreeRTOS is running?
-
     ContentSyncState lastState;
-    localStore.syncFromRemote(SyncReason::Manual, [&lastState](ContentSyncState state) {
-        log_i("Test sync state: %d", state.state);
-        lastState = state;
+    DispatchQueue::dispatchOneOff([&lastState, &localStore]() {
+        // This needs to run in a task to have things like Delay work
+        localStore.syncFromRemote(SyncReason::Manual, [&lastState](ContentSyncState state) {
+            log_i("Test sync state: %d", state.state);
+            lastState = state;
+        });
     });
 
-    // DispatchQueue::dispatchOneOff([&lastState, &localStore]() {
-    //     // This needs to run in a task to have things like Delay work
-    //     localStore.syncFromRemote(SyncReason::Manual, [&lastState](ContentSyncState state) {
-    //         log_i("Test sync state: %d", state.state);
-    //         lastState = state;
-    //     });
-    // });
+    StartFreeRtos();
+    std::shared_ptr<httplib::Server> server;
+    std::shared_ptr<std::thread> serverThread;
+    std::tie(server, serverThread) = setupTestServer();
+    defer {
+        StopFreeRtos();
+        server->stop();
+        log_d("wait for server to exit");
+        serverThread->join();
+    };
+
+    // Wait until content sync is done but with a 30s timeout
+    auto start = std::chrono::steady_clock::now();
+    bool done = false;
+    while (!done && (std::chrono::steady_clock::now() - start < std::chrono::seconds(30))) {
+        switch (lastState.state) {
+        case ContentSyncState::Idle:
+        case ContentSyncState::ConnectingWifi:
+        case ContentSyncState::UploadTelemetry:
+        case ContentSyncState::CheckingSync:
+        case ContentSyncState::SyncingBooks:
+        case ContentSyncState::SyncingArticles:
+        case ContentSyncState::Syncing:
+            break;
+        case ContentSyncState::Synced:
+        case ContentSyncState::AlreadySynced:
+        case ContentSyncState::Failure:
+            done = true;
+            break;
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
 
     REQUIRE(lastState.state == ContentSyncState::Synced);
     REQUIRE(prefs.readablePlace.get("66d82199") ==

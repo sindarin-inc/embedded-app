@@ -637,313 +637,342 @@ void LocalStore::syncFromRemote(
 
     progressCallback(ContentSyncState{.state = ContentSyncState::State::UploadTelemetry});
 
-    auto httpCode = this->telemetry_.uploadAndResetTelemetry(this->fileSystem, this->telemetry_);
-    if (httpCode != 201) {
-        this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-telemetry-failed",
-                                   {{"http-code", httpCode}});
-    } else {
-        this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-telemetry-success");
-    }
+    // TODO: Thinking more about this, we should probably trust the caller of `syncFromRempte` to
+    // call from whatever queue is most fitting based on the context. In tests, this might not be in
+    // a queue.
+    log_d("GOING TO RUN");
+    auto queue = DispatchGetCore0BackgroundQueue();
+    // TODOODODOD: WHYYYY does this not run from the test?
+    queue->dispatch([this] {
+        log_d("RUNNING");
+        auto httpCode =
+            this->telemetry_.uploadAndResetTelemetry(this->fileSystem, this->telemetry_);
+        if (httpCode != 201) {
+            this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS, "sync-telemetry-failed",
+                                       {{"http-code", httpCode}});
+        } else {
+            this->telemetry_.logMetric(TelemetryField::METRIC_SYNC_STATUS,
+                                       "sync-telemetry-success");
+        }
+    });
 
     // Run this work on a separate thread, since it's long running
-    CheckSyncRequest checkSyncRequest;
-    CheckSyncResponse checkSyncResponse = {};
-    int checkSyncFailures = 0;
-    bool booksAlreadySynced = false;
-    bool articlesAlreadySynced = false;
-    bool booksNowSynced = false;
-    bool articlesNowSynced = false;
+    queue->dispatch([this, syncReason, progressCallback] {
+        log_d("SYNCING");
 
-    progressCallback(ContentSyncState{.state = ContentSyncState::State::CheckingSync});
+        CheckSyncRequest checkSyncRequest;
+        CheckSyncResponse checkSyncResponse = {};
+        int checkSyncFailures = 0;
+        bool booksAlreadySynced = false;
+        bool articlesAlreadySynced = false;
+        bool booksNowSynced = false;
+        bool articlesNowSynced = false;
 
-    std::vector<ReadablesVector *> readablesList = {&books_, &articles_};
-    for (auto &readables : readablesList) {
-        bool failedDownload = false;
-        auto modelType = readablesModelType(const_cast<ReadablesVector &>(*readables));
-        auto since = this->readablesSince(modelType);
-        StoredUuidsVector storedUuids;
-        ReadableArchivesVector archives;
-        ReadableBookmarksVector bookmarks;
-        ReadablePlacemarksVector placemarks;
+        progressCallback(ContentSyncState{.state = ContentSyncState::State::CheckingSync});
 
-        this->storedReadableUuids(*readables, storedUuids);
-        this->changedReadablePlacemarkJson(*readables, placemarks);
-        this->changedReadablesArchivedJson(*readables, archives);
-        this->changedReadablesBookmarksJson(bookmarks);
+        std::vector<ReadablesVector *> readablesList = {&books_, &articles_};
+        for (auto &readables : readablesList) {
+            bool failedDownload = false;
+            auto modelType = readablesModelType(const_cast<ReadablesVector &>(*readables));
+            auto since = this->readablesSince(modelType);
+            StoredUuidsVector storedUuids;
+            ReadableArchivesVector archives;
+            ReadableBookmarksVector bookmarks;
+            ReadablePlacemarksVector placemarks;
 
-        checkSyncRequest.syncReason = syncReason;
-        checkSyncRequest.modelType = modelType;
-        checkSyncRequest.since = since;
-        checkSyncRequest.archives = archives;
-        checkSyncRequest.placemarks = placemarks;
-        checkSyncRequest.bookmarks = bookmarks;
-        checkSyncRequest.storedUuids = storedUuids;
-        checkSyncRequest.skipContent = true;
-        checkSyncRequest.ptBattery = PreferencesStore::lastPageTurnerBattery;
-        checkSyncRequest.battery = (uint8_t)battery_.getBatteryPercentage();
-        checkSyncRequest.ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or("");
-        checkSyncRequest.build = kVersionString;
-        checkSyncRequest.gitHash = kGitHash;
-        checkSyncRequest.sn = GetSerialNumber();
+            this->storedReadableUuids(*readables, storedUuids);
+            this->changedReadablePlacemarkJson(*readables, placemarks);
+            this->changedReadablesArchivedJson(*readables, archives);
+            this->changedReadablesBookmarksJson(bookmarks);
 
-        auto nextPageCounter = 0;
-        auto nextPageUrl = std::string();
-        while (nextPageUrl.length() || nextPageCounter == 0) {
-            if (nextPageCounter == 0) {
-                log_d("Fetching first page of %ss", ReadableModelTypeToString(modelType).c_str());
-            } else {
-                log_d("Fetching next page (#%d): %s", nextPageCounter + 1, nextPageUrl.c_str());
-            }
-            this->telemetry_.logMetric(
-                TelemetryField::METRIC_SYNC_STATUS,
-                StringFormat("sync-%ss-page", ReadableModelTypeToString(modelType).c_str()).c_str(),
-                {{"page", nextPageCounter}});
+            checkSyncRequest.syncReason = syncReason;
+            checkSyncRequest.modelType = modelType;
+            checkSyncRequest.since = since;
+            checkSyncRequest.archives = archives;
+            checkSyncRequest.placemarks = placemarks;
+            checkSyncRequest.bookmarks = bookmarks;
+            checkSyncRequest.storedUuids = storedUuids;
+            checkSyncRequest.skipContent = true;
+            checkSyncRequest.ptBattery = PreferencesStore::lastPageTurnerBattery;
+            checkSyncRequest.battery = (uint8_t)battery_.getBatteryPercentage();
+            checkSyncRequest.ptBuild = this->prefs_.lastPageTurnerBuild.get().value_or("");
+            checkSyncRequest.build = kVersionString;
+            checkSyncRequest.gitHash = kGitHash;
+            checkSyncRequest.sn = GetSerialNumber();
 
-            ContentSyncState syncState;
-            if (modelType == ReadablesModelType::Book) {
-                progressCallback(ContentSyncState{.state = ContentSyncState::State::SyncingBooks});
-                syncState = {.state = ContentSyncState::State::Syncing};
-            } else if (modelType == ReadablesModelType::Article) {
-                progressCallback(
-                    ContentSyncState{.state = ContentSyncState::State::SyncingArticles});
-                syncState = {.state = ContentSyncState::State::Syncing};
-            }
-
-            nextPageCounter += 1;
-            if (nextPageCounter > MAX_NUMBER_OF_PAGES_TO_BACKFILL) {
-                log_w("Too many pages to backfill, aborting");
+            auto nextPageCounter = 0;
+            auto nextPageUrl = std::string();
+            while (nextPageUrl.length() || nextPageCounter == 0) {
+                if (nextPageCounter == 0) {
+                    log_d("Fetching first page of %ss",
+                          ReadableModelTypeToString(modelType).c_str());
+                } else {
+                    log_d("Fetching next page (#%d): %s", nextPageCounter + 1, nextPageUrl.c_str());
+                }
                 this->telemetry_.logMetric(
                     TelemetryField::METRIC_SYNC_STATUS,
-                    StringFormat("sync-%ss-max-backfill",
-                                 ReadableModelTypeToString(modelType).c_str())
-                        .c_str());
-                break;
-            }
-
-            int httpCode = 0;
-            if (nextPageCounter == 1) {
-                SHOW_HEAP();
-                httpCode = SindarinAPI::getInstance()->checkSync(
-                    checkSyncRequest, &checkSyncResponse, this->telemetry_);
-                SHOW_HEAP();
-            } else {
-                httpCode = SindarinAPI::getInstance()->checkSync(
-                    nextPageUrl.c_str(), checkSyncRequest, &checkSyncResponse, this->telemetry_);
-            }
-            log_d("Server has %d %ss, next page: %s", checkSyncResponse.totalCount,
-                  ReadableModelTypeToString(modelType).c_str(), nextPageUrl.c_str());
-            this->telemetry_.logMetric(
-                TelemetryField::METRIC_SYNC_STATUS,
-                StringFormat("sync-status-%ss", ReadableModelTypeToString(modelType).c_str())
-                    .c_str(),
-                {{"http-code", httpCode}});
-            auto pageUuids = std::string();
-            auto userReadables = modelType == ReadablesModelType::Book
-                                     ? checkSyncResponse.userBooks
-                                     : checkSyncResponse.userArticles;
-            // Log the uuids of the readables into the pageUuids string
-            for (const auto &readable : userReadables) {
-                pageUuids += readable.readable->shortenedUuid + ",";
-            }
-            this->telemetry_.logMetric(
-                TelemetryField::METRIC_SYNC_STATUS,
-                StringFormat("sync-%ss-count", ReadableModelTypeToString(modelType).c_str())
-                    .c_str(),
-                {{"total-count", checkSyncResponse.totalCount}, {"uuids", pageUuids}});
-            if (httpCode != 200) {
-                log_e("Failed to check sync (HTTP %d)", httpCode);
-                progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
-                                                  .message = "Failed to check sync"});
-                this->telemetry_.logMetric(
-                    TelemetryField::METRIC_SYNC_STATUS,
-                    StringFormat("failed-sync-%ss", ReadableModelTypeToString(modelType).c_str())
+                    StringFormat("sync-%ss-page", ReadableModelTypeToString(modelType).c_str())
                         .c_str(),
-                    {{"http-code", httpCode}});
-                return;
-            }
+                    {{"page", nextPageCounter}});
 
-            // Look through all the books and articles and download any that we don't have
-            // already We also process readables before checking if we're synced before we
-            // need to reset the local changed flags
-            auto [readablesToDownload, readablesToDelete] =
-                this->processReadables(*readables, userReadables);
-
-            SHOW_HEAP();
-            log_d("%ss to download: %zu", ReadableModelTypeToString(modelType).c_str(),
-                  readablesToDownload.size());
-            log_d("%ss to delete: %zu", ReadableModelTypeToString(modelType).c_str(),
-                  readablesToDelete.size());
-            nextPageUrl = checkSyncResponse.nextPageUrl;
-
-            if (checkSyncResponse.timezone.size()) {
-                SolClock::getInstance().setTimezone(checkSyncResponse.timezone);
-            }
-
-            if (checkSyncResponse.synced) {
-                log_i("%ss are already in sync, no need to download anything",
-                      ReadableModelTypeToString(modelType).c_str());
-                if (modelType == ReadablesModelType::Book) {
-                    booksAlreadySynced = true;
-                } else if (modelType == ReadablesModelType::Article) {
-                    articlesAlreadySynced = true;
-                }
-
-                this->telemetry_.logMetric(
-                    TelemetryField::METRIC_SYNC_STATUS,
-                    StringFormat("already-synced-%ss", ReadableModelTypeToString(modelType).c_str())
-                        .c_str());
-                break;
-            }
-
-            // Count books/articles to download and delete
-            syncState.tasks.reserve(readablesToDownload.size() + readablesToDelete.size());
-            auto tasksIndex = 0;
-
-            if (modelType == ReadablesModelType::Book) {
-                for (const auto &userReadable : readablesToDelete) {
-                    syncState.tasks.push_back(ContentSyncState::Task{
-                        .message = StringFormat("Delete: %s", userReadable.readable->title.c_str()),
-                        .percentage = 0,
-                    });
-                }
-
-                for (const auto &userReadable : readablesToDownload) {
-                    syncState.tasks.push_back(ContentSyncState::Task{
-                        .message = StringFormat("Get: %s", userReadable.readable->title.c_str()),
-                        .percentage = 0,
-                    });
-                }
-            } else {
-                if (readablesToDelete.size() > 0) {
-                    syncState.tasks.push_back(ContentSyncState::Task{
-                        .message = "Delete: Archived articles",
-                        .percentage = 0,
-                    });
-                }
-                if (readablesToDownload.size() > 0) {
-                    syncState.tasks.push_back(ContentSyncState::Task{
-                        .message = "Get: Articles and newsletters",
-                        .percentage = 0,
-                    });
-                }
-            }
-            // Check if we have any readables to download/delete, and if not, continue paging
-            if (syncState.tasks.size() == 0) {
-                log_i("No %ss to download or delete, continuing to next page",
-                      ReadableModelTypeToString(modelType).c_str());
+                ContentSyncState syncState;
                 if (modelType == ReadablesModelType::Book) {
                     progressCallback(
                         ContentSyncState{.state = ContentSyncState::State::SyncingBooks});
+                    syncState = {.state = ContentSyncState::State::Syncing};
                 } else if (modelType == ReadablesModelType::Article) {
                     progressCallback(
                         ContentSyncState{.state = ContentSyncState::State::SyncingArticles});
+                    syncState = {.state = ContentSyncState::State::Syncing};
                 }
-                continue;
-            }
-            progressCallback(syncState);
 
-            processReadableDeletion(readablesToDelete, *readables, tasksIndex, syncState,
-                                    progressCallback);
-            failedDownload = processReadableDownload(readablesToDownload, *readables, tasksIndex,
-                                                     syncState, progressCallback, modelType) ||
-                             failedDownload;
-            if (failedDownload) {
-                log_d("Failed to process %ss, have %zu %ss",
-                      ReadableModelTypeToString(modelType).c_str(), readables->size(),
-                      ReadableModelTypeToString(modelType).c_str());
+                nextPageCounter += 1;
+                if (nextPageCounter > MAX_NUMBER_OF_PAGES_TO_BACKFILL) {
+                    log_w("Too many pages to backfill, aborting");
+                    this->telemetry_.logMetric(
+                        TelemetryField::METRIC_SYNC_STATUS,
+                        StringFormat("sync-%ss-max-backfill",
+                                     ReadableModelTypeToString(modelType).c_str())
+                            .c_str());
+                    break;
+                }
+
+                int httpCode = 0;
+                if (nextPageCounter == 1) {
+                    SHOW_HEAP();
+                    httpCode = SindarinAPI::getInstance()->checkSync(
+                        checkSyncRequest, &checkSyncResponse, this->telemetry_);
+                    SHOW_HEAP();
+                } else {
+                    httpCode =
+                        SindarinAPI::getInstance()->checkSync(nextPageUrl.c_str(), checkSyncRequest,
+                                                              &checkSyncResponse, this->telemetry_);
+                }
+                log_d("Server has %d %ss, next page: %s", checkSyncResponse.totalCount,
+                      ReadableModelTypeToString(modelType).c_str(), nextPageUrl.c_str());
                 this->telemetry_.logMetric(
                     TelemetryField::METRIC_SYNC_STATUS,
-                    StringFormat("failed-download-%ss",
-                                 ReadableModelTypeToString(modelType).c_str())
+                    StringFormat("sync-status-%ss", ReadableModelTypeToString(modelType).c_str())
+                        .c_str(),
+                    {{"http-code", httpCode}});
+                auto pageUuids = std::string();
+                auto userReadables = modelType == ReadablesModelType::Book
+                                         ? checkSyncResponse.userBooks
+                                         : checkSyncResponse.userArticles;
+                // Log the uuids of the readables into the pageUuids string
+                for (const auto &readable : userReadables) {
+                    pageUuids += readable.readable->shortenedUuid + ",";
+                }
+                this->telemetry_.logMetric(
+                    TelemetryField::METRIC_SYNC_STATUS,
+                    StringFormat("sync-%ss-count", ReadableModelTypeToString(modelType).c_str())
+                        .c_str(),
+                    {{"total-count", checkSyncResponse.totalCount}, {"uuids", pageUuids}});
+                if (httpCode != 200) {
+                    log_e("Failed to check sync (HTTP %d)", httpCode);
+                    progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                                      .message = "Failed to check sync"});
+                    this->telemetry_.logMetric(
+                        TelemetryField::METRIC_SYNC_STATUS,
+                        StringFormat("failed-sync-%ss",
+                                     ReadableModelTypeToString(modelType).c_str())
+                            .c_str(),
+                        {{"http-code", httpCode}});
+                    return;
+                }
+
+                // Look through all the books and articles and download any that we don't have
+                // already We also process readables before checking if we're synced before we
+                // need to reset the local changed flags
+                auto [readablesToDownload, readablesToDelete] =
+                    this->processReadables(*readables, userReadables);
+
+                SHOW_HEAP();
+                log_d("%ss to download: %zu", ReadableModelTypeToString(modelType).c_str(),
+                      readablesToDownload.size());
+                log_d("%ss to delete: %zu", ReadableModelTypeToString(modelType).c_str(),
+                      readablesToDelete.size());
+                nextPageUrl = checkSyncResponse.nextPageUrl;
+
+                if (checkSyncResponse.timezone.size()) {
+                    SolClock::getInstance().setTimezone(checkSyncResponse.timezone);
+                }
+
+                if (checkSyncResponse.synced) {
+                    log_i("%ss are already in sync, no need to download anything",
+                          ReadableModelTypeToString(modelType).c_str());
+                    if (modelType == ReadablesModelType::Book) {
+                        booksAlreadySynced = true;
+                    } else if (modelType == ReadablesModelType::Article) {
+                        articlesAlreadySynced = true;
+                    }
+
+                    this->telemetry_.logMetric(
+                        TelemetryField::METRIC_SYNC_STATUS,
+                        StringFormat("already-synced-%ss",
+                                     ReadableModelTypeToString(modelType).c_str())
+                            .c_str());
+                    break;
+                }
+
+                // Count books/articles to download and delete
+                syncState.tasks.reserve(readablesToDownload.size() + readablesToDelete.size());
+                auto tasksIndex = 0;
+
+                if (modelType == ReadablesModelType::Book) {
+                    for (const auto &userReadable : readablesToDelete) {
+                        syncState.tasks.push_back(ContentSyncState::Task{
+                            .message =
+                                StringFormat("Delete: %s", userReadable.readable->title.c_str()),
+                            .percentage = 0,
+                        });
+                    }
+
+                    for (const auto &userReadable : readablesToDownload) {
+                        syncState.tasks.push_back(ContentSyncState::Task{
+                            .message =
+                                StringFormat("Get: %s", userReadable.readable->title.c_str()),
+                            .percentage = 0,
+                        });
+                    }
+                } else {
+                    if (readablesToDelete.size() > 0) {
+                        syncState.tasks.push_back(ContentSyncState::Task{
+                            .message = "Delete: Archived articles",
+                            .percentage = 0,
+                        });
+                    }
+                    if (readablesToDownload.size() > 0) {
+                        syncState.tasks.push_back(ContentSyncState::Task{
+                            .message = "Get: Articles and newsletters",
+                            .percentage = 0,
+                        });
+                    }
+                }
+                // Check if we have any readables to download/delete, and if not, continue paging
+                if (syncState.tasks.size() == 0) {
+                    log_i("No %ss to download or delete, continuing to next page",
+                          ReadableModelTypeToString(modelType).c_str());
+                    if (modelType == ReadablesModelType::Book) {
+                        progressCallback(
+                            ContentSyncState{.state = ContentSyncState::State::SyncingBooks});
+                    } else if (modelType == ReadablesModelType::Article) {
+                        progressCallback(
+                            ContentSyncState{.state = ContentSyncState::State::SyncingArticles});
+                    }
+                    continue;
+                }
+                progressCallback(syncState);
+
+                processReadableDeletion(readablesToDelete, *readables, tasksIndex, syncState,
+                                        progressCallback);
+                failedDownload =
+                    processReadableDownload(readablesToDownload, *readables, tasksIndex, syncState,
+                                            progressCallback, modelType) ||
+                    failedDownload;
+                if (failedDownload) {
+                    log_d("Failed to process %ss, have %zu %ss",
+                          ReadableModelTypeToString(modelType).c_str(), readables->size(),
+                          ReadableModelTypeToString(modelType).c_str());
+                    this->telemetry_.logMetric(
+                        TelemetryField::METRIC_SYNC_STATUS,
+                        StringFormat("failed-download-%ss",
+                                     ReadableModelTypeToString(modelType).c_str())
+                            .c_str());
+                }
+
+                progressCallback(syncState);
+            }
+
+            if (!this->saveReadables(*readables)) {
+                log_e("Failed to save %s", ReadableModelTypeToString(modelType).c_str());
+                failedDownload = true;
+                this->telemetry_.logMetric(
+                    TelemetryField::METRIC_SYNC_STATUS,
+                    StringFormat("failed-save-%ss", ReadableModelTypeToString(modelType).c_str())
                         .c_str());
             }
 
-            progressCallback(syncState);
-        }
-
-        if (!this->saveReadables(*readables)) {
-            log_e("Failed to save %s", ReadableModelTypeToString(modelType).c_str());
-            failedDownload = true;
-            this->telemetry_.logMetric(
-                TelemetryField::METRIC_SYNC_STATUS,
-                StringFormat("failed-save-%ss", ReadableModelTypeToString(modelType).c_str())
-                    .c_str());
-        }
-
-        // Store since date values for next sync
-        log_i("%sSetting last%sSince to %s/%s", failedDownload ? "Not " : "",
-              ReadableModelTypeToString(modelType).c_str(), checkSyncResponse.booksSince.c_str(),
-              checkSyncResponse.articlesSince.c_str());
-        std::string serverSince;
-        if (!failedDownload) {
-            if (checkSyncResponse.booksSince != "") {
-                this->prefs_.lastBooksSince.set(checkSyncResponse.booksSince.c_str());
-                serverSince = checkSyncResponse.booksSince;
+            // Store since date values for next sync
+            log_i("%sSetting last%sSince to %s/%s", failedDownload ? "Not " : "",
+                  ReadableModelTypeToString(modelType).c_str(),
+                  checkSyncResponse.booksSince.c_str(), checkSyncResponse.articlesSince.c_str());
+            std::string serverSince;
+            if (!failedDownload) {
+                if (checkSyncResponse.booksSince != "") {
+                    this->prefs_.lastBooksSince.set(checkSyncResponse.booksSince.c_str());
+                    serverSince = checkSyncResponse.booksSince;
+                }
+                if (checkSyncResponse.articlesSince != "") {
+                    this->prefs_.lastArticlesSince.set(checkSyncResponse.articlesSince.c_str());
+                    serverSince = checkSyncResponse.articlesSince;
+                }
             }
-            if (checkSyncResponse.articlesSince != "") {
-                this->prefs_.lastArticlesSince.set(checkSyncResponse.articlesSince.c_str());
-                serverSince = checkSyncResponse.articlesSince;
+
+            if ((modelType == ReadablesModelType::Book && booksAlreadySynced) ||
+                (modelType == ReadablesModelType::Article && articlesAlreadySynced)) {
+                continue;
+            }
+
+            // Update the since dates and try once more to sync to ensure we don't miss anything
+            storedUuids.clear();
+            this->storedReadableUuids(*readables, storedUuids);
+            checkSyncRequest.storedUuids = storedUuids;
+            checkSyncRequest.bookmarks = {};
+            checkSyncRequest.archives = {};
+            checkSyncRequest.placemarks = {};
+            checkSyncRequest.since = serverSince;
+
+            SHOW_HEAP();
+            log_i("CHECK SYNC AGAIN");
+            SindarinAPI::getInstance()->checkSync(checkSyncRequest, &checkSyncResponse,
+                                                  this->telemetry_);
+
+            // TODO: Force reload of rootUI instead of rebooting
+            if (checkSyncResponse.synced) {
+                log_i("%ss are in sync", ReadableModelTypeToString(modelType).c_str());
+                if (modelType == ReadablesModelType::Book) {
+                    booksNowSynced = true;
+                } else if (modelType == ReadablesModelType::Article) {
+                    articlesNowSynced = true;
+                }
+                this->telemetry_.logMetric(
+                    TelemetryField::METRIC_SYNC_STATUS,
+                    StringFormat("success-download-%ss",
+                                 ReadableModelTypeToString(modelType).c_str()));
+            } else {
+                log_w("After running sync, local %ss are still out of sync",
+                      ReadableModelTypeToString(modelType).c_str());
+                checkSyncFailures += 1;
+                this->telemetry_.logMetric(
+                    TelemetryField::METRIC_SYNC_STATUS,
+                    StringFormat("failed-finish-sync-%ss",
+                                 ReadableModelTypeToString(modelType).c_str())
+                        .c_str());
             }
         }
 
-        if ((modelType == ReadablesModelType::Book && booksAlreadySynced) ||
-            (modelType == ReadablesModelType::Article && articlesAlreadySynced)) {
-            continue;
-        }
-
-        // Update the since dates and try once more to sync to ensure we don't miss anything
-        storedUuids.clear();
-        this->storedReadableUuids(*readables, storedUuids);
-        checkSyncRequest.storedUuids = storedUuids;
-        checkSyncRequest.bookmarks = {};
-        checkSyncRequest.archives = {};
-        checkSyncRequest.placemarks = {};
-        checkSyncRequest.since = serverSince;
-
-        SHOW_HEAP();
-        SindarinAPI::getInstance()->checkSync(checkSyncRequest, &checkSyncResponse,
-                                              this->telemetry_);
-
-        // TODO: Force reload of rootUI instead of rebooting
-        if (checkSyncResponse.synced) {
-            log_i("%ss are in sync", ReadableModelTypeToString(modelType).c_str());
-            if (modelType == ReadablesModelType::Book) {
-                booksNowSynced = true;
-            } else if (modelType == ReadablesModelType::Article) {
-                articlesNowSynced = true;
-            }
-            this->telemetry_.logMetric(
-                TelemetryField::METRIC_SYNC_STATUS,
-                StringFormat("success-download-%ss", ReadableModelTypeToString(modelType).c_str()));
-        } else {
-            log_w("After running sync, local %ss are still out of sync",
-                  ReadableModelTypeToString(modelType).c_str());
-            checkSyncFailures += 1;
-            this->telemetry_.logMetric(
-                TelemetryField::METRIC_SYNC_STATUS,
-                StringFormat("failed-finish-sync-%ss", ReadableModelTypeToString(modelType).c_str())
-                    .c_str());
-        }
-    }
-
-    // Artificially delay so the user has the satisfaction of seeing the list done
-    if (syncReason == SyncReason::Manual) {
+        // Artificially delay so the user has the satisfaction of seeing the list done
+        // #if !TESTS
         Delay(1000);
-    }
+        // #endif
 
-    if (booksAlreadySynced && articlesAlreadySynced) {
-        progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
-    } else if (booksNowSynced || articlesNowSynced) {
-        progressCallback(ContentSyncState{.state = ContentSyncState::State::Synced});
-    } else if (checkSyncFailures > 0) {
-        progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
-                                          .message = "Failed to check sync"});
-    } else {
-        progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced,
-                                          .message = "Already synced"});
-    }
-    // log_d("Min watermark for task %s: %u bytes (%s:%d)", pcTaskGetName(nullptr),
-    //       (unsigned int)uxTaskGetStackHighWaterMark(NULL), __FILE__, __LINE__);
+        if (booksAlreadySynced && articlesAlreadySynced) {
+            progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced});
+        } else if (booksNowSynced || articlesNowSynced) {
+            log_d("synced1");
+            progressCallback(ContentSyncState{.state = ContentSyncState::State::Synced});
+            log_d("synced2");
+        } else if (checkSyncFailures > 0) {
+            progressCallback(ContentSyncState{.state = ContentSyncState::State::Failure,
+                                              .message = "Failed to check sync"});
+        } else {
+            progressCallback(ContentSyncState{.state = ContentSyncState::State::AlreadySynced,
+                                              .message = "Already synced"});
+        }
+        log_d("Min watermark for task %s: %u bytes (%s:%d)", pcTaskGetName(nullptr),
+              (unsigned int)uxTaskGetStackHighWaterMark(NULL), __FILE__, __LINE__);
+    });
 }
 
 auto LocalStore::processReadables(const ReadablesVector &readables,

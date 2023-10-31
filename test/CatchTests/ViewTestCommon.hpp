@@ -5,6 +5,8 @@
 #include "Inputs/RemoteInput.hpp"
 #include "Storage/PreferencesStore.hpp"
 
+// NOTE: If not running app_main from here, you need to have at least one task already created
+// before calling this API.
 void StartFreeRtos(bool runAppMain = false);
 
 void StopFreeRtos();

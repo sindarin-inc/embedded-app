@@ -58,7 +58,7 @@
                             "sha_hash": "61ec056bc4003d782b07cd2ee34f1e09a61784f1db44c01dfdb11c9eb43c132e",
                             "file": "https://nyc3.digitaloceanspaces.com/sol-cloud/uploads/readables/7bb1c7be-41a2-4662-80ed-3c0b890b02cf.epub",
                             "file_original": "https://nyc3.digitaloceanspaces.com/sol-cloud/uploads/readables/7bb1c7be-41a2-4662-80ed-3c0b890b02cf.epub",
-                            "file_proxied": "https://api.sindarin.com/proxy/?url=https%3A%2F%2Fnyc3.digitaloceanspaces.com%2Fsol-cloud%2Fuploads%2Freadables%2F7bb1c7be-41a2-4662-80ed-3c0b890b02cf.epub"
+                            "file_proxied": "http://localhost:55011/epub/alchemyst.epub"
                         }
                     ],
                     "source": null,
