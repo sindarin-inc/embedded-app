@@ -179,7 +179,7 @@ def write_nvs(ict_client, port, btmac, ict_ssid, ict_pw, cloudtoken):
         # look for jtag port
         time.sleep(2)
         port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
-        logger.info("dut port: " + port)
+        logger.info("nvs retry dut port: " + port)
         parts = [
                 os.environ["IDF_PATH"] + "/components/partition_table/parttool.py",
                 "--port",
@@ -244,7 +244,7 @@ def generate_and_write_nvs(ict_client, dut, ssid, password, fullsync):
     # look for jtag port
     time.sleep(2)
     port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
-    logger.info("dut port: " + port)
+    logger.info("nvs dut port: " + port)
 
     logger.info("write nvs")
     write_nvs(ict_client, port, btmac, wifi_ssid, wifi_password, test_user_cloud_token)
@@ -254,7 +254,7 @@ def generate_and_write_nvs(ict_client, dut, ssid, password, fullsync):
 
     time.sleep(2)
     port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
-    logger.info("dut port: " + port)
+    logger.info("post program nvs dut port: " + port)
 
 def left_open_value(mode):
     if mode == 0:
@@ -294,7 +294,7 @@ class OverrideIdfSerial(IdfSerial):
         logger.info("opening temple")
         self.ict_client.open_right_temple()
         self.ict_client.dut_programming_mode()
-        # super().__init__(*args, **kwargs)
+        
         s = False
         while s == False:
             try:
@@ -480,7 +480,7 @@ class TestWithIctOnly:
 @pytest.mark.usefixtures("power_client")
 @pytest.mark.ict
 @pytest.mark.power
-@pytest.mark.skip()
+@pytest.mark.skipif(MFICTClient().get_ict_mode() == 1, reason="not board tester")
 class TestPowerConsumption:
     def test_power(self, dut: OverrideDut, ict_client: MFICTClient, power_client: PowerTester, ssid, password, fullsync) -> None:
 
@@ -589,6 +589,7 @@ class TestPowerConsumption:
 
 @pytest.mark.usefixtures("ict_client")
 @pytest.mark.ict
+@pytest.mark.skipif((MFICTClient().get_ict_mode()) == 0, reason="not glasses tester")
 class TestFullContentSync:
     def test_full_content_sync(self, dut: OverrideDut, ict_client: MFICTClient, ssid, password, fullsync) -> None:
         logger.info("TestFullContentSync")
@@ -598,25 +599,13 @@ class TestFullContentSync:
         # garbage to the ICT that will cause it to fail the next command. This clears the input buffer by sending a newline.
         ict_client.clear_input()
 
-        # get ict mode (0: board only, 1: glasses)
-        ict_mode = ict_client.get_ict_mode()
-        logger.info("ict mode: " + str(ict_mode))
-
         logger.info("turn off usb power to dut")
         
         # todo: turn off power if running on batteries
         ict_client.set_power(False)
         
-        # servo values for full tester:
-        # left temple open: 0
-        # left temple closed: -75
-
-        # right temple open: 0
-        # right temple closed: 100
-
-        # values for full glasses tester
-        ict_client.set_servo("right", right_open_value(ict_mode))
-        ict_client.set_servo("left", left_open_value(ict_mode))
+        ict_client.open_right_temple()
+        ict_client.open_left_temple()
 
         # Wait for serial port to come back
         # first wait for DUT device to show up

@@ -294,16 +294,13 @@ class MFICTClient:
         return version
     
     def get_ict_mode(self):
-        # temp
-        return 1
-
         self.write("GETMODE")
         time.sleep(0.1)
         resp = self.read()
         logger.info("getmode got: " + resp)
         parts = resp.split(" ")
         if parts[0] == "Invalid":
-            return 1
+            return 0
         modestr = resp.split(" ")[1]
         return int(modestr)
     
@@ -313,9 +310,12 @@ class MFICTClient:
     def dut_programming_mode(self):
         self.set_power(False)
         self.set_gpio0(0)
+        time.sleep(1)
         self.set_power(True)
         logger.info("on")
+        time.sleep(1)
         self.reset_dut()
+        time.sleep(1)
         logger.info("reset")
         self.set_gpio0(1)
 
