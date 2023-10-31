@@ -301,15 +301,15 @@ class OverrideIdfSerial(IdfSerial):
                 s = True
                 super().__init__(*args, **kwargs)
             except Exception as e:
-                    logger.info("retry!")
+                    logger.info("failed to open dut port, retrying")
                     s = False
-                    #self.ict_client.reset_dut()
+                    
+                    logger.info("dut going into programming mode")
                     self.ict_client.dut_programming_mode()
                     port = wait_for_port_by_device_name(dut_port_name, dut_port_index)
                     logger.info("found dut port: " + port)
                     kwargs["port"] = port
-                    time.sleep(2)
-                    input("try again")
+                    logger.info("retrying connect to " + port)
 
     def _start(self):
         ict_mode = self.ict_client.get_ict_mode()
@@ -413,6 +413,10 @@ def ict_client():
     # Set everything up to be discoverable over USB
     client = MFICTClient()
     client.clear_input()
+    if client.get_ict_mode() == 1:
+        logger.info("ict client opening dut temple")
+        client.open_right_temple()
+
     client.set_gpio0(0)
     client.set_power(True)
     client.reset_dut()

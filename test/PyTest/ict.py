@@ -23,6 +23,8 @@ class MFICTClient:
         self.ser = serial.Serial(port, baudrate, timeout=timeout, rtscts=False, dsrdtr=False)
 
         self.mode = self.get_ict_mode()
+        if self.mode == 1:
+            self.open_right_temple()
 
         # check if ICT update is required
         version = self.get_ict_version()
@@ -92,28 +94,28 @@ class MFICTClient:
         if self.mode == 1:
             # get jtag port now, so we can wait for it to go away
             dut_jtag_port = wait_for_port_by_device_name("USB JTAG/serial debug unit", 0, timeout=10)
+            logger.info("before programming mode, dut jtag port is " + dut_jtag_port)
             self.close_right_temple()
             
-        input("about to go into programming mode")
         # reboot into programming mode
         self.program()
         self.ser.close()
         self.ser = None
 
-        dut_jtag_port = ""
         if self.mode == 1:
-            
             # wait for jtag port to go away
-            logger.info("close temple, wait for jtag port to go away")
-            while len(dut_jtag_port) > 0:
-                dut_jtag_port = wait_for_port_by_device_name("USB JTAG/serial debug unit", 0, timeout=1)
-
-        input("press key 2")
+            logger.info("close temple, wait for jtag port " + dut_jtag_port + " to go away")
+            jtag_ports = [dut_jtag_port]
+            
+            # check all jtag ports until there is only one, highlander style
+            while dut_jtag_port in jtag_ports:
+                jtag_ports = find_ports_by_device_name("USB JTAG/serial debug unit")
+                if dut_jtag_port in jtag_ports:
+                    time.sleep(1)
 
         # wait for JTAG port to appear
         port = wait_for_port_by_device_name("USB JTAG/serial debug unit", 0, timeout=10)
-        
-        logger.info("ICT Jtag found: " + port)
+        logger.info("ICT JTAG found: " + port)
         
         # split arguments for esptool command to flash the firmware
         f = open(script_filename, 'r')
@@ -157,10 +159,9 @@ class MFICTClient:
 
         if self.mode == 1:
             self.open_right_temple()
-            input("look for jtag port")
             # wait for dut jtag to reappear
             dut_after = wait_for_port_by_device_name("USB JTAG/serial debug unit", 0, timeout=10)
-            logger.info("dut 2 " + dut_after)
+            logger.info("after ict programming, dut port is " + dut_after)
 
     def flush_read_buffer(self):
         # Flush read buffer
