@@ -34,8 +34,7 @@ auto WiFi::scanNetworks(const std::function<void(std::shared_ptr<wifi_ap_record_
 auto WiFi::connectWiFi(const std::string &ssid, const std::string &password) -> esp_err_t {
     log_i("Pretending to connect WiFi (wiFiPower_=%d, ssid=%s, password=%s)", wiFiPower_,
           ssid.c_str(), password.c_str());
-// TODO: This causes problems when testing Content Sync outside of the context of a freertos
-// task
+// This causes problems when testing Content Sync outside of the context of a FreeRTOS task
 #if !TESTS
     Delay(1000);
 #endif

@@ -46,13 +46,10 @@ auto setupTestServer() -> std::shared_ptr<httplib::Server> {
         throw std::runtime_error("Failed to bind to port");
     }
 
-    // Raw threads don't play nicely with the FreeRTOS posix port so we have to use FreeRTOS tasks
-    // auto serverThread = std::make_shared<std::thread>([server]() {
-    //     server->listen_after_bind();
-    //     log_i("Mock server shut down");
-    // });
-
+    // Raw std::thread doesn't play nicely with the FreeRTOS posix port so we have to use FreeRTOS
+    // tasks
     DispatchQueue::dispatchOneOff([server]() {
+        log_i("Mock server starting");
         server->listen_after_bind();
         log_i("Mock server shut down");
     });
@@ -86,7 +83,7 @@ TEST_CASE("Run a basic content sync", "[.][content-sync]") {
     Telemetry telemetry(fs, prefs);
     Battery battery(fs, prefs, telemetry);
     // Need to have at least one battery measurement
-    // TODO: Maybe we could have this fail more gracefully
+    // TODO: Maybe we could have Battery fail more gracefully when there are no battery measurements
     battery.loop();
     auto api = SindarinAPI::getInstance();
     api->overrideBaseUrl("http://localhost:55011");
@@ -119,13 +116,4 @@ TEST_CASE("Run a basic content sync", "[.][content-sync]") {
     REQUIRE(lastState.state == ContentSyncState::Synced);
     REQUIRE(prefs.readablePlace.get("66d82199") ==
             "[EPUB;offset:433,href:OEBPS/xhtml/Scot_9780375843174_epub3_adc_r1.xhtml]");
-
-    // Example of a pure API test
-    // CheckSyncRequest req;
-    // req.modelType = ReadablesModelType::Book;
-    // CheckSyncResponse resp;
-    // SindarinAPI api("http://localhost:55011");
-    // api.setAccessToken("test-token");
-    // auto httpCode = api.checkSync(req, &resp, telemetry);
-    // REQUIRE(httpCode == 200);
 }
